@@ -145,7 +145,9 @@ describe("PointInTimeLoader.loadH2HLegs / loadH2HScore", () => {
 
   it("loadH2HScore returns null below the minimum sample, same as computeH2HScoreFromLegs", async () => {
     const loader = new PointInTimeLoader(
-      makeFixtureClient([{ homeTeamId: "h", awayTeamId: "a", homeScore: 1, awayScore: 0 }]),
+      makeFixtureClient([
+        { homeTeamId: "h", awayTeamId: "a", homeScore: 1, awayScore: 0 },
+      ]),
     );
 
     const score = await loader.loadH2HScore({
@@ -163,9 +165,9 @@ describe("PointInTimeLoader.loadCongestionScore", () => {
   it("scores 0 for two fully rested teams with no upcoming fixtures", async () => {
     const findFirst = vi.fn().mockResolvedValue(null); // no last-played fixture
     const count = vi.fn().mockResolvedValue(0); // no upcoming fixtures
-    const loader = new PointInTimeLoader(
-      { fixture: { findFirst, count } } as unknown as PrismaClient,
-    );
+    const loader = new PointInTimeLoader({
+      fixture: { findFirst, count },
+    } as unknown as PrismaClient);
 
     const score = await loader.loadCongestionScore({
       homeTeamId: "h",
@@ -188,9 +190,9 @@ describe("PointInTimeLoader.loadCongestionScore", () => {
       .fn()
       .mockResolvedValueOnce(3) // home: congested schedule
       .mockResolvedValueOnce(0); // away: nothing upcoming
-    const loader = new PointInTimeLoader(
-      { fixture: { findFirst, count } } as unknown as PrismaClient,
-    );
+    const loader = new PointInTimeLoader({
+      fixture: { findFirst, count },
+    } as unknown as PrismaClient);
 
     const score = await loader.loadCongestionScore({
       homeTeamId: "h",

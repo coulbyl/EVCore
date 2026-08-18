@@ -184,10 +184,16 @@ async function main() {
   };
 
   out("═══════════════════════════════════════════════════════");
-  out("  EVCore — Recalibration jointProbability sur CouponProposal réel réglé");
-  out(`  ${dateLabel} — seuil min-échantillon par bucket : n>=${MIN_SPLIT_SAMPLE}`);
+  out(
+    "  EVCore — Recalibration jointProbability sur CouponProposal réel réglé",
+  );
+  out(
+    `  ${dateLabel} — seuil min-échantillon par bucket : n>=${MIN_SPLIT_SAMPLE}`,
+  );
   out("  ⚠ Biais de survie + calibratedProbability figée au moment de chaque");
-  out("  génération historique (pas un rejeu du modèle actuel) — voir en-tête.");
+  out(
+    "  génération historique (pas un rejeu du modèle actuel) — voir en-tête.",
+  );
   out("═══════════════════════════════════════════════════════");
 
   const allRows = await fetchRows();
@@ -215,7 +221,10 @@ async function main() {
     scoredTrainByFactor.set(factor, scoredTrain);
     scoredValidByFactor.set(factor, scoredValid);
 
-    const label = factor === 1.0 ? `${factor.toFixed(3)} (pas de correction)` : factor.toFixed(3);
+    const label =
+      factor === 1.0
+        ? `${factor.toFixed(3)} (pas de correction)`
+        : factor.toFixed(3);
     out(`  factor = ${label} :`);
     out(
       `    overall : ${formatStats(statsFor(scoredAll, LIVE_MIN_JOINT_PROBABILITY, LIVE_MIN_COUPON_EV, LIVE_MAX_COMBINED_ODDS))}`,
@@ -252,7 +261,9 @@ async function main() {
   out();
   out("═══════════════════════════════════════════════════════");
   out("  Verdict : un facteur/seuil n'est actionnable que si train ET valid");
-  out("  dépassent n>=MIN_SPLIT_SAMPLE et donnent un ROI positif dans les deux.");
+  out(
+    "  dépassent n>=MIN_SPLIT_SAMPLE et donnent un ROI positif dans les deux.",
+  );
   out("═══════════════════════════════════════════════════════");
 
   const report = lines.join("\n");

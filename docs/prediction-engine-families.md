@@ -24,14 +24,14 @@ EVCore a aujourd'hui 20 canaux actifs (`registry.ts`, `V1_STRATEGIES`). Le
 nombre ne change pas : ce qui change, c'est la famille qui nourrit chacun, et
 pour VALUE/SAFE, la phase à laquelle ils s'exécutent.
 
-| Canal(aux) | Marché(s) | Famille | Statut du moteur |
-| --- | --- | --- | --- |
-| DOMINANT, GOALS, CLEAN_SHEET, TEAM_TOTAL, DOUBLE_CHANCE, DRAW_NO_BET, WIN_TO_NIL, RESULT_TOTAL_GOALS, RESULT_BTTS, BTTS | 1X2, O/U, Clean Sheet, Team Total, DC, DNB, WTN, composites, BTTS | **A — Poisson plein-match** | Existant, mature (`lambda.home`/`lambda.away`, corrigé H2H) |
-| CORRECT_SCORE | Score exact | **A-bis — matrice complète** | Existant, validé 2026-08-15 (signal H2H scoreline) |
-| WIN_EITHER_HALF, OVER_UNDER_HT, FIRST_HALF_WINNER, HALF_TIME_FULL_TIME | Marchés mi-temps | **A' — distribution buts 1ère MT** | **Faux moteur** : `lambda × 0.44` fixe, aucune calibration ligue/équipe (`FIRST_HALF_GOAL_FRACTION`, poisson.ts:23) — cause probable du HT Over désactivé (recalibration WC 2026-07-01) |
-| DRAW | ONE_X_TWO (DRAW) | **D — implicite marché** | Existant, correct (`1/drawOdds`) |
-| VALUE, SAFE | transversal | *filtres*, pas une famille | Existant mais mal placé — scanne `evaluatedMarkets` en Phase 1 au lieu de filtrer les décisions Phase 1 des 16 autres canaux |
-| CONSENSUS, AVOID | méta | lisent tout le reste | Existant, Phase 2 |
+| Canal(aux)                                                                                                              | Marché(s)                                                         | Famille                            | Statut du moteur                                                                                                                                                                        |
+| ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DOMINANT, GOALS, CLEAN_SHEET, TEAM_TOTAL, DOUBLE_CHANCE, DRAW_NO_BET, WIN_TO_NIL, RESULT_TOTAL_GOALS, RESULT_BTTS, BTTS | 1X2, O/U, Clean Sheet, Team Total, DC, DNB, WTN, composites, BTTS | **A — Poisson plein-match**        | Existant, mature (`lambda.home`/`lambda.away`, corrigé H2H)                                                                                                                             |
+| CORRECT_SCORE                                                                                                           | Score exact                                                       | **A-bis — matrice complète**       | Existant, validé 2026-08-15 (signal H2H scoreline)                                                                                                                                      |
+| WIN_EITHER_HALF, OVER_UNDER_HT, FIRST_HALF_WINNER, HALF_TIME_FULL_TIME                                                  | Marchés mi-temps                                                  | **A' — distribution buts 1ère MT** | **Faux moteur** : `lambda × 0.44` fixe, aucune calibration ligue/équipe (`FIRST_HALF_GOAL_FRACTION`, poisson.ts:23) — cause probable du HT Over désactivé (recalibration WC 2026-07-01) |
+| DRAW                                                                                                                    | ONE_X_TWO (DRAW)                                                  | **D — implicite marché**           | Existant, correct (`1/drawOdds`)                                                                                                                                                        |
+| VALUE, SAFE                                                                                                             | transversal                                                       | _filtres_, pas une famille         | Existant mais mal placé — scanne `evaluatedMarkets` en Phase 1 au lieu de filtrer les décisions Phase 1 des 16 autres canaux                                                            |
+| CONSENSUS, AVOID                                                                                                        | méta                                                              | lisent tout le reste               | Existant, Phase 2                                                                                                                                                                       |
 
 ### 0.2 Pipeline de lecture d'une fiche de match (cible)
 
@@ -115,7 +115,7 @@ C'est la correction à apporter à `docs/multi-sport-extension.md` §2, qui
 pose aujourd'hui « un socle par sport ». Plus précis : **un moteur par
 famille de processus générateur, réutilisé par tous les sports qui
 partagent cette famille.** Le socle réellement spécifique au sport, ce sont
-les *paramètres d'entrée* du moteur (xG et forme pour le football, rating
+les _paramètres d'entrée_ du moteur (xG et forme pour le football, rating
 d'efficacité × rythme pour le basket, Elo par surface pour le tennis), pas
 la famille elle-même.
 
@@ -244,12 +244,12 @@ Phase Boundaries), simplement noté ici pour que l'architecture n'ait pas à
 
 ### 1.4 Ce que ça change pour l'architecture cible
 
-| Famille | Processus | Sports concernés (aujourd'hui + à terme) | Statut EVCore |
-| ------- | --------- | ----------------------------------------- | ------------- |
-| A — Arrivée discrète (Poisson/NegBin) | Comptage d'événements rares | Football (buts ✅, cartons/corners à construire), basket (fautes), hockey (pénalités) | Moteur buts existant ; cartons = 2ᵉ instance à construire |
-| B — Marge/total continu | Score dense, quasi-normal | Basket, football américain, handball | Inexistant — nécessaire si basket s'ouvre |
-| C — Hiérarchique point→jeu→set | Chaîne Markov/binomiale imbriquée | Tennis, volleyball, tennis de table, badminton | Inexistant — pressenti pour le 2ᵉ sport (tennis) |
-| D — Implicite marché (fallback) | Aucun — lecture de cote dévigée | Tous, marché par marché où le moteur interne est prouvé faible | Existant sur DRAW, à généraliser comme pattern explicite |
+| Famille                               | Processus                         | Sports concernés (aujourd'hui + à terme)                                              | Statut EVCore                                             |
+| ------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| A — Arrivée discrète (Poisson/NegBin) | Comptage d'événements rares       | Football (buts ✅, cartons/corners à construire), basket (fautes), hockey (pénalités) | Moteur buts existant ; cartons = 2ᵉ instance à construire |
+| B — Marge/total continu               | Score dense, quasi-normal         | Basket, football américain, handball                                                  | Inexistant — nécessaire si basket s'ouvre                 |
+| C — Hiérarchique point→jeu→set        | Chaîne Markov/binomiale imbriquée | Tennis, volleyball, tennis de table, badminton                                        | Inexistant — pressenti pour le 2ᵉ sport (tennis)          |
+| D — Implicite marché (fallback)       | Aucun — lecture de cote dévigée   | Tous, marché par marché où le moteur interne est prouvé faible                        | Existant sur DRAW, à généraliser comme pattern explicite  |
 
 La conséquence architecturale directe : la couche `ChannelStrategy` /
 `StrategyContext` (déjà découplée du calcul de probabilité, voir

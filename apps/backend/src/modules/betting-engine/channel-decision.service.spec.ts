@@ -43,10 +43,13 @@ const ODDS: FullOddsSnapshot = {
 };
 
 function richContext(): StrategyContext {
+  // No longer read by VALUE/SAFE (Phase 2 since 2026-08-18, filtering
+  // previousDecisions instead of evaluatedMarkets) — kept only because
+  // buildStrategyContext still requires evaluatedPicks. TODO.md: candidate
+  // for removal alongside evaluatedMarkets.
   const evPick: EvaluatedPick = {
     market: Market.ONE_X_TWO,
     pick: 'HOME',
-    // edge = 0.64 − 1/1.90 = 0.114, above VALUE_MIN_EDGE (0.10) so VALUE selects it.
     probability: new Decimal('0.64'),
     odds: new Decimal('1.90'),
     ev: new Decimal('0.22'),
@@ -62,8 +65,13 @@ function richContext(): StrategyContext {
     competitionCode: 'BL1',
     deterministicScore: new Decimal('0.80'),
     probabilities: {
-      home: new Decimal('0.60'),
-      draw: new Decimal('0.25'),
+      // home=0.65 (not 0.60): VALUE/SAFE no longer read evaluatedMarkets
+      // (Phase 2 since 2026-08-18, filtering previousDecisions instead) —
+      // VALUE's ONE_X_TWO candidate now comes from what DOMINANT itself
+      // derives from these probabilities, and needs edge ≥ VALUE_MIN_EDGE
+      // (0.65 − 1/1.90 = 0.126 ≥ 0.10).
+      home: new Decimal('0.65'),
+      draw: new Decimal('0.20'),
       away: new Decimal('0.15'),
       bttsYes: new Decimal('0.65'),
       bttsNo: new Decimal('0.35'),

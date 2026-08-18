@@ -98,31 +98,31 @@ Le moteur expose deux familles de canaux :
 
 **Canaux basés sur l'EV (Bet)**
 
-| Canal             | Critère           | Marché                                                                                                                | Pick                                    |
-| ----------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| Canal             | Critère           | Marché                                                                                                                                           | Pick                                    |
+| ----------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
 | **EV**            | EV ≥ 8%           | 1X2, O/U, BTTS, DC, HT/FT, O/U HT, First Half Winner, DNB, Team Total, Clean Sheet, Win to Nil, Win Either Half, RESULT_TOTAL_GOALS, RESULT_BTTS | HOME / DRAW / AWAY / OVER / UNDER / YES |
-| **SV** (Sécurité) | P ≥ 68% + EV ≥ 0% | 1X2, O/U, BTTS, DC                                                                                                    | HOME / DRAW / AWAY / OVER / UNDER / YES |
+| **SV** (Sécurité) | P ≥ 68% + EV ≥ 0% | 1X2, O/U, BTTS, DC                                                                                                                               | HOME / DRAW / AWAY / OVER / UNDER / YES |
 
 **Canaux de prédiction pure (PredictionChannel — indépendants des cotes)**
 
-| Canal                | Critère                      | Marché                       | Signal                             |
-| -------------------- | ---------------------------- | ---------------------------- | ---------------------------------- |
-| **CONF** (Confiance) | P_max ≥ seuil ligue          | ONE_X_TWO                    | argmax(HOME, DRAW, AWAY)           |
-| **BTTS**             | P(BTTS) ≥ seuil ligue        | BTTS                         | YES uniquement                     |
-| **DRAW** (Nul)       | 1/drawOdds ≥ seuil ligue     | ONE_X_TWO                    | DRAW uniquement                    |
-| **GOALS**            | P(side) ≥ seuil ligne/ligue  | OVER_UNDER (1.5/2.5/3.5/4.5) | meilleur (ligne × side) par EV     |
-| **CLEAN_SHEET**      | P(clean sheet) ≥ seuil ligue | CLEAN_SHEET_HOME/AWAY        | argmax(HOME, AWAY), YES uniquement |
-| **TEAM_TOTAL**       | P(side) ≥ seuil ligne/ligue  | TEAM_TOTAL_HOME/AWAY         | meilleur (équipe × ligne × side)   |
-| **WIN_EITHER_HALF**  | P(side) ≥ seuil ligue        | TO_WIN_EITHER_HALF           | argmax(HOME, AWAY)                 |
-| **CORRECT_SCORE**    | P(score) ≥ seuil global      | CORRECT_SCORE                | argmax probabilité (pas EV — évite le bruit longshot) |
-| **RESULT_TOTAL_GOALS** | P(side×ligne UNDER) ≥ seuil ligue | RESULT_TOTAL_GOALS      | meilleur (side × ligne) par EV     |
-| **OVER_UNDER_HT**    | P(side) ≥ seuil ligue        | OVER_UNDER_HT                 | meilleur (ligne × side) par EV     |
-| **RESULT_BTTS**      | P(side×issue) ≥ seuil ligue  | RESULT_BTTS                  | meilleur (side × YES/NO) par EV    |
-| **DRAW_NO_BET**      | P(side) ≥ seuil ligue        | DRAW_NO_BET                   | argmax(HOME, AWAY)                 |
-| **WIN_TO_NIL**       | P(side) ≥ seuil ligue        | WIN_TO_NIL_HOME/AWAY         | argmax(HOME, AWAY), YES uniquement |
-| **DOUBLE_CHANCE**    | P(combo) ≥ seuil global      | DOUBLE_CHANCE                 | meilleur (1X/X2/12) par EV         |
-| **FIRST_HALF_WINNER**| P_max HT ≥ seuil ligue       | FIRST_HALF_WINNER             | argmax(HOME, DRAW, AWAY) à la mi-temps |
-| **HALF_TIME_FULL_TIME** | P(combo) ≥ seuil global   | HALF_TIME_FULL_TIME           | argmax probabilité sur la grille 9 cases HT×FT |
+| Canal                   | Critère                           | Marché                       | Signal                                                |
+| ----------------------- | --------------------------------- | ---------------------------- | ----------------------------------------------------- |
+| **CONF** (Confiance)    | P_max ≥ seuil ligue               | ONE_X_TWO                    | argmax(HOME, DRAW, AWAY)                              |
+| **BTTS**                | P(BTTS) ≥ seuil ligue             | BTTS                         | YES uniquement                                        |
+| **DRAW** (Nul)          | 1/drawOdds ≥ seuil ligue          | ONE_X_TWO                    | DRAW uniquement                                       |
+| **GOALS**               | P(side) ≥ seuil ligne/ligue       | OVER_UNDER (1.5/2.5/3.5/4.5) | meilleur (ligne × side) par EV                        |
+| **CLEAN_SHEET**         | P(clean sheet) ≥ seuil ligue      | CLEAN_SHEET_HOME/AWAY        | argmax(HOME, AWAY), YES uniquement                    |
+| **TEAM_TOTAL**          | P(side) ≥ seuil ligne/ligue       | TEAM_TOTAL_HOME/AWAY         | meilleur (équipe × ligne × side)                      |
+| **WIN_EITHER_HALF**     | P(side) ≥ seuil ligue             | TO_WIN_EITHER_HALF           | argmax(HOME, AWAY)                                    |
+| **CORRECT_SCORE**       | P(score) ≥ seuil global           | CORRECT_SCORE                | argmax probabilité (pas EV — évite le bruit longshot) |
+| **RESULT_TOTAL_GOALS**  | P(side×ligne UNDER) ≥ seuil ligue | RESULT_TOTAL_GOALS           | meilleur (side × ligne) par EV                        |
+| **OVER_UNDER_HT**       | P(side) ≥ seuil ligue             | OVER_UNDER_HT                | meilleur (ligne × side) par EV                        |
+| **RESULT_BTTS**         | P(side×issue) ≥ seuil ligue       | RESULT_BTTS                  | meilleur (side × YES/NO) par EV                       |
+| **DRAW_NO_BET**         | P(side) ≥ seuil ligue             | DRAW_NO_BET                  | argmax(HOME, AWAY)                                    |
+| **WIN_TO_NIL**          | P(side) ≥ seuil ligue             | WIN_TO_NIL_HOME/AWAY         | argmax(HOME, AWAY), YES uniquement                    |
+| **DOUBLE_CHANCE**       | P(combo) ≥ seuil global           | DOUBLE_CHANCE                | meilleur (1X/X2/12) par EV                            |
+| **FIRST_HALF_WINNER**   | P_max HT ≥ seuil ligue            | FIRST_HALF_WINNER            | argmax(HOME, DRAW, AWAY) à la mi-temps                |
+| **HALF_TIME_FULL_TIME** | P(combo) ≥ seuil global           | HALF_TIME_FULL_TIME          | argmax probabilité sur la grille 9 cases HT×FT        |
 
 Les seuils des canaux de prédiction sont configurés par ligue dans `prediction.constants.ts` et calibrés par backtest avant activation. Le canal DRAW utilise la probabilité implicite bookmaker (`1/drawOdds`) comme signal principal — le modèle Poisson est un mauvais discriminateur de nul (plafond structurel ~0.32). CLEAN_SHEET, TEAM_TOTAL et WIN_EITHER_HALF ont été ajoutés le 2026-07-18 : entièrement câblés (moteur, settlement, UI). Aucune cote historique n'existe pour ces marchés (uniquement la sync PREMATCH forward, démarrée le même jour), donc pas de vrai backtest ROI possible — les trois tournent en **OBSERVATION** avec un seuil dérivé du taux de base réel par ligue (jamais misé, même méthodologie que GOALS ; TEAM_TOTAL doublé sur la dimension équipe, avec exclusion des lignes quasi-certaines > 90% de base rate).
 

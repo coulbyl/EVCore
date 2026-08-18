@@ -1,17 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import Decimal from 'decimal.js';
-import { Market } from '@evcore/analysis-core';
-import { SafeStrategy } from './safe.strategy';
 import {
+  Market,
   CHANNEL_DECISION_STATUS,
   STRATEGY_CHANNEL,
-} from '../channel-strategy.types';
+} from '@evcore/analysis-core';
+import type { StrategyChannel, StrategyDecision } from '@evcore/analysis-core';
+import { SafeStrategy } from './safe.strategy';
+import type { StrategyContext } from '../channel-strategy.types';
 import type {
-  StrategyContext,
-  StrategyDecision,
-} from '../channel-strategy.types';
-import type {
-  EvaluatedPick,
   FullOddsSnapshot,
   MatchProbabilities,
 } from '../betting-engine.types';
@@ -49,8 +46,24 @@ const BASE_ODDS: FullOddsSnapshot = {
   resultBttsOdds: {},
 };
 
-function makeSafePick(overrides: Partial<EvaluatedPick> = {}): EvaluatedPick {
+// SAFE (Phase 2, since 2026-08-18) no longer scans evaluatedMarkets — it
+// filters the SELECTED picks Phase-1 market specialists already vetted.
+// Tests build previousDecisions directly: one fake Phase-1 channel decision
+// per candidate pick.
+type CandidatePick = {
+  channel: StrategyChannel;
+  market: Market;
+  pick: string;
+  probability: Decimal;
+  odds: Decimal;
+  ev: Decimal;
+};
+
+function makeSafeCandidate(
+  overrides: Partial<CandidatePick> = {},
+): CandidatePick {
   return {
+    channel: STRATEGY_CHANNEL.DOMINANT,
     market: Market.ONE_X_TWO,
     pick: 'HOME',
     // High probability, low EV — typical safe value profile
@@ -58,9 +71,31 @@ function makeSafePick(overrides: Partial<EvaluatedPick> = {}): EvaluatedPick {
     probability: new Decimal('0.72'),
     odds: new Decimal('1.45'),
     ev: new Decimal('0.06'),
-    qualityScore: new Decimal('0.08'),
     ...overrides,
   };
+}
+
+function decisionFrom(c: CandidatePick): StrategyDecision {
+  return {
+    channel: c.channel,
+    status: CHANNEL_DECISION_STATUS.SELECTED,
+    selections: [
+      {
+        market: c.market,
+        pick: c.pick,
+        probability: c.probability,
+        odds: c.odds,
+        ev: c.ev,
+        rank: 1,
+      },
+    ],
+  };
+}
+
+function previousDecisionsFrom(
+  candidates: CandidatePick[],
+): Map<StrategyChannel, StrategyDecision> {
+  return new Map(candidates.map((c) => [c.channel, decisionFrom(c)]));
 }
 
 function makeContext(
@@ -124,18 +159,14 @@ describe('SafeStrategy', () => {
   });
 
   it('returns SELECTED with a high-probability single pick', () => {
-    const pick = makeSafePick();
-    const ctx = makeContext({
-      evaluatedMarkets: [{ market: Market.ONE_X_TWO, picks: [pick] }],
-    });
-    const decision = strategy.evaluate(ctx);
+    const previousDecisions = previousDecisionsFrom([makeSafeCandidate()]);
+    const decision = strategy.evaluate(makeContext({ previousDecisions }));
     expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
     expect(decision.selections[0].probability.toNumber()).toBeCloseTo(0.72);
     expect(decision.selections[0].rank).toBe(1);
   });
 
   it('excludes the EV pick from SAFE candidates', () => {
-    const evPickKey = 'ONE_X_TWO|HOME|-|-';
     const evDecision: StrategyDecision = {
       channel: STRATEGY_CHANNEL.VALUE,
       status: CHANNEL_DECISION_STATUS.SELECTED,
@@ -148,52 +179,36 @@ describe('SafeStrategy', () => {
         },
       ],
     };
-    const safeAlt = makeSafePick({
-      pick: 'AWAY',
-      probability: new Decimal('0.70'),
-      odds: new Decimal('1.45'),
-      ev: new Decimal('0.06'),
-    });
-    const evPick = makeSafePick({
+    const evPick = makeSafeCandidate({
+      channel: STRATEGY_CHANNEL.DOMINANT,
       pick: 'HOME',
       probability: new Decimal('0.72'),
       odds: new Decimal('1.40'),
       ev: new Decimal('0.06'),
     });
-    const ctx = makeContext({
-      evaluatedMarkets: [
-        { market: Market.ONE_X_TWO, picks: [evPick, safeAlt] },
-      ],
-      selectionConfig: {
-        leagueEvThreshold: new Decimal('0.08'),
-        svMinProbability: new Decimal('0.68'),
-        svMinOdds: new Decimal('1.15'),
-        htftCalibrated: false,
-        pickDirectionProbabilityThreshold: () => new Decimal('0'),
-        pickEvFloor: (_m: unknown, _p: unknown, leagueFloor: Decimal) =>
-          leagueFloor,
-        pickEvSoftCap: () => new Decimal('0.90'),
-        pickMinSelectionOdds: () => new Decimal('1.15'),
-        pickMaxSelectionOdds: () => null,
-      },
-      modelScoreThreshold: new Decimal('0.60'),
-      previousDecisions: new Map([[STRATEGY_CHANNEL.VALUE, evDecision]]),
+    const safeAlt = makeSafeCandidate({
+      channel: 'FAKE_ALT' as StrategyChannel,
+      pick: 'AWAY',
+      probability: new Decimal('0.70'),
+      odds: new Decimal('1.45'),
+      ev: new Decimal('0.06'),
     });
-    const decision = strategy.evaluate(ctx);
-    expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
-    // HOME is excluded (matches EV pick key), so AWAY is selected
-    expect(decision.selections[0].pick).toBe('AWAY');
+    const previousDecisions = previousDecisionsFrom([evPick, safeAlt]);
+    previousDecisions.set(STRATEGY_CHANNEL.VALUE, evDecision);
 
-    void evPickKey; // suppress lint
+    const decision = strategy.evaluate(makeContext({ previousDecisions }));
+    expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
+    // HOME is excluded (matches EV's pick key), so AWAY is selected
+    expect(decision.selections[0].pick).toBe('AWAY');
   });
 
   it('only selects from SAFE markets (ONE_X_TWO, OVER_UNDER, BTTS, OVER_UNDER_HT)', () => {
     // A pick on an unsupported market (DOUBLE_CHANCE) should not be selected
-    const pick = makeSafePick({ market: Market.DOUBLE_CHANCE, pick: '1X' });
-    const ctx = makeContext({
-      evaluatedMarkets: [{ market: Market.DOUBLE_CHANCE, picks: [pick] }],
-    });
-    expect(strategy.evaluate(ctx).status).toBe(
+    // even though its Phase-1 channel decision is SELECTED.
+    const previousDecisions = previousDecisionsFrom([
+      makeSafeCandidate({ market: Market.DOUBLE_CHANCE, pick: '1X' }),
+    ]);
+    expect(strategy.evaluate(makeContext({ previousDecisions })).status).toBe(
       CHANNEL_DECISION_STATUS.REJECTED,
     );
   });

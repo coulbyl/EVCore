@@ -1364,7 +1364,10 @@ const CLEAN_SHEET_WIN_EITHER_HALF_SHRINKAGE: Record<
 for (const [code, block] of Object.entries(
   CLEAN_SHEET_WIN_EITHER_HALF_SHRINKAGE,
 )) {
-  OU_SHRINKAGE_CONFIG[code] = { ...(OU_SHRINKAGE_CONFIG[code] ?? {}), ...block };
+  OU_SHRINKAGE_CONFIG[code] = {
+    ...(OU_SHRINKAGE_CONFIG[code] ?? {}),
+    ...block,
+  };
 }
 
 // ouHt for the 7 htftCalibrated leagues (ev.constants.ts
@@ -1394,7 +1397,10 @@ const OVER_UNDER_HT_UNSHRUNK_BASE: Record<string, OverUnderShrinkageConfig> = {
 };
 
 for (const [code, block] of Object.entries(OVER_UNDER_HT_UNSHRUNK_BASE)) {
-  OU_SHRINKAGE_CONFIG[code] = { ...(OU_SHRINKAGE_CONFIG[code] ?? {}), ...block };
+  OU_SHRINKAGE_CONFIG[code] = {
+    ...(OU_SHRINKAGE_CONFIG[code] ?? {}),
+    ...block,
+  };
 }
 
 export function getOverUnderShrinkageConfig(

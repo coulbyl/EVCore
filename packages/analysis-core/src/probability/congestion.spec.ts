@@ -20,7 +20,9 @@ describe("computeRestPenalty", () => {
   });
 
   it("scales linearly between 0 and 3 days of rest", () => {
-    const oneDayAgo = new Date(FIXTURE_DATE.getTime() - 1 * 24 * 60 * 60 * 1000);
+    const oneDayAgo = new Date(
+      FIXTURE_DATE.getTime() - 1 * 24 * 60 * 60 * 1000,
+    );
     expect(computeRestPenalty(oneDayAgo, FIXTURE_DATE)).toBeCloseTo(2 / 3, 5);
   });
 });

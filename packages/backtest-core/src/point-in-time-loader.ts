@@ -155,7 +155,10 @@ export class PointInTimeLoader {
       ? await this.client.teamStats.findFirst({
           where: {
             teamId,
-            afterFixture: { scheduledAt: { lt: asOf }, seasonId: { not: seasonId } },
+            afterFixture: {
+              scheduledAt: { lt: asOf },
+              seasonId: { not: seasonId },
+            },
           },
           orderBy: { afterFixture: { scheduledAt: "desc" } },
         })

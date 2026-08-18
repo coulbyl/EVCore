@@ -5,20 +5,23 @@
 > Objectif : rendre explicite le fonctionnement multi-canal d'EVCore, réduire
 > les ambiguïtés du modèle actuel et faciliter l'ajout de nouvelles stratégies.
 >
-> **Complément 2026-08-17** : ce document décrit comment les canaux
-> s'orchestrent (contrat, phases, persistance). Il ne dit pas d'où vient la
-> probabilité que chaque canal interprète — c'est l'objet de
-> `docs/prediction-engine-families.md` (§0, portée football actuelle) : un
-> canal de marché n'est plus un simple consommateur d'un socle Poisson
+> **Complément 2026-08-17, VALUE/SAFE fait le 08-18** : ce document décrit
+> comment les canaux s'orchestrent (contrat, phases, persistance). Il ne dit
+> pas d'où vient la probabilité que chaque canal interprète — c'est l'objet
+> de `docs/prediction-engine-families.md` (§0, portée football actuelle) :
+> un canal de marché n'est plus un simple consommateur d'un socle Poisson
 > unique, mais le lecteur d'une **famille de moteur** dédiée à son marché.
-> Deux conséquences directes sur ce document, détaillées §5 et §6.1 :
-> `VALUE`/`SAFE` (nommés `EV`/`SAFE` plus bas, voir note) migrent de la
-> Phase 1 vers la Phase 2 — ils filtrent les décisions déjà prises par les
-> canaux de marché au lieu de re-scanner tous les marchés évalués — et les
-> canaux de mi-temps (`OVER_UNDER_HT`, `FIRST_HALF_WINNER`,
-> `HALF_TIME_FULL_TIME`, `WIN_EITHER_HALF`) dépendent d'une Famille A' encore
-> à construire (le code actuel dérive la mi-temps du plein-match par une
-> fraction fixe `0.44`, pas un moteur calibré).
+>
+> `VALUE`/`SAFE` (nommés `EV`/`SAFE` plus bas, voir note) sont **passés en
+> Phase 2** (`FILTER_STRATEGY_CHANNELS`, `orchestrator.ts`) : ils filtrent
+> les décisions déjà prises par les canaux de marché au lieu de re-scanner
+> `evaluatedMarkets`, désormais mort (plus lu par aucun canal — TODO.md).
+>
+> La Famille A' (mi-temps) reste, elle, en pause — pas construite : le
+> backtest walk-forward déjà existant sur OVER_UNDER_HT montre que la
+> fraction fixe `0.44` est déjà bien calibrée sur les ligues où
+> `OverUnderHtStrategy` tourne (voir ROADMAP.md/TODO.md), donc aucun
+> chantier de calibration n'a été lancé sans évidence.
 
 ## 1. Contexte
 

@@ -2,6 +2,7 @@ export { Market } from "./market";
 export { BetStatus } from "./bet-status";
 export {
   STRATEGY_CHANNEL,
+  FILTER_STRATEGY_CHANNELS,
   META_STRATEGY_CHANNELS,
   type StrategyChannel,
 } from "./strategy-channel";

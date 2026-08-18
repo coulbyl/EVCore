@@ -23,7 +23,9 @@ import { BacktestRunner } from "../src/backtest-runner";
 
 function parseArg(name: string): string | undefined {
   const prefix = `--${name}=`;
-  return process.argv.find((arg) => arg.startsWith(prefix))?.slice(prefix.length);
+  return process.argv
+    .find((arg) => arg.startsWith(prefix))
+    ?.slice(prefix.length);
 }
 
 async function main(): Promise<void> {
@@ -73,7 +75,8 @@ async function main(): Promise<void> {
     byCompetition.set(step.fixture.competitionCode, bucket);
   }
 
-  const pct = (n: number, d: number) => (d === 0 ? "n/a" : `${((n / d) * 100).toFixed(1)}%`);
+  const pct = (n: number, d: number) =>
+    d === 0 ? "n/a" : `${((n / d) * 100).toFixed(1)}%`;
 
   const lines: string[] = [
     `Backtest harness coverage check`,

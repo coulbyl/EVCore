@@ -746,32 +746,47 @@ Docs de cadrage Phase 3:
 
 ---
 
-## Refactor Domaine — Familles de moteurs prédictifs (cadrage 2026-08-17, non implémenté)
+## Refactor Domaine — Familles de moteurs prédictifs (cadrage 2026-08-17, VALUE/SAFE fait le 08-18)
 
 > Cadrage : [docs/prediction-engine-families.md](docs/prediction-engine-families.md)
 > (§0, portée football actuelle) · orchestration mise à jour en conséquence
 > dans [docs/channel-strategy-architecture.md](docs/channel-strategy-architecture.md)
 > (§5, §6.1, §11).
 >
-> Constat qui déclenche ce refactor : `EV`/`SAFE` ne filtrent pas les
+> Constat qui a déclenché ce refactor : `EV`/`SAFE` ne filtraient pas les
 > meilleures prédictions déjà validées par les 18 autres canaux — ils
-> re-scannent tout `evaluatedMarkets` en parallèle, indépendamment des
-> canaux de marché (`value.strategy.ts`, `safe.strategy.ts`). Et les marchés
-> de mi-temps (`OVER_UNDER_HT`, `FIRST_HALF_WINNER`, `HALF_TIME_FULL_TIME`,
-> `WIN_EITHER_HALF`) sont dérivés du λ plein-match par une constante fixe
-> `FIRST_HALF_GOAL_FRACTION = 0.44` (`poisson.ts`) — pas un moteur calibré
-> par ligue, cause probable du HT Over désactivé (recalibration WC
-> 2026-07-01). Portée : football et marchés déjà en scope uniquement, aucun
-> nouveau marché ni sport.
+> re-scannaient tout `evaluatedMarkets` en parallèle, indépendamment des
+> canaux de marché. **Corrigé le 08-18** (voir item ci-dessous).
+>
+> **Famille A' — reportée, pas abandonnée par manque d'intérêt mais parce
+> que l'évidence ne la justifie pas encore** (2026-08-17) : le backtest
+> walk-forward déjà existant sur OVER_UNDER_HT
+> (`backtest-over-under-ht-shrinkage-calibration-2026-08-16.txt`) montre que
+> le Poisson brut basé sur `FIRST_HALF_GOAL_FRACTION = 0.44` est **déjà bien
+> calibré** sur 6 des 7 ligues où le canal a le droit de tourner (ΔBrier
+> ≈ 0.0000). L'hypothèse initiale ("0.44 cause probable du HT Over
+> désactivé") ne tient pas pour les ligues domestiques — le vrai contexte du
+> HT Over désactivé est la Coupe du Monde/sélections nationales, où le
+> volume est structurellement insuffisant pour calibrer par cette méthode
+> (WC : train=4, test=8). Pas de chantier de calibration lancé sans
+> évidence — voir TODO.md.
 
-- [ ] **Famille A'** — remplacer `FIRST_HALF_GOAL_FRACTION` (constante
-      globale 0.44) par un ratio buts-1ère-mi-temps calibré par ligue
-      (équipe si le volume le permet), sur données historiques réelles
-- [ ] **VALUE/SAFE en Phase 2** — `value.strategy.ts`/`safe.strategy.ts`
-      cessent de lire `context.evaluatedMarkets`, lisent
-      `context.previousDecisions` (décisions des 16 canaux de marché de
-      Phase 1) ; déplacement hors de la boucle Phase 1 de l'orchestrateur
-      (`orchestrator.ts`), aux côtés de `CONSENSUS`/`AVOID`
+- [-] **Famille A'** — reportée (voir constat ci-dessus), pas de biais
+      démontré à corriger sur les ligues où ça compte
+- [x] **VALUE/SAFE en Phase 2** (2026-08-18) — orchestrateur à 3 phases
+      (`FILTER_STRATEGY_CHANNELS` nouveau, décisions accumulées sur les 3
+      phases au lieu d'un snapshot figé pour la Phase 2 méta) :
+      Phase 1 = 16 canaux de marché → Phase 2 = VALUE/SAFE (filtrent les
+      décisions Phase 1 via `viablePicksFromPreviousDecisions`, plus de
+      scan de `evaluatedMarkets`) → Phase 3 = CONSENSUS/AVOID (inchangé,
+      voit maintenant VALUE/SAFE via la map accumulée). `context.
+      evaluatedMarkets` n'est plus lu par aucun canal — candidat à
+      suppression (TODO.md). Simplification assumée : l'exception SAFE
+      "comparaison OVER/UNDER symétrique à haut lambda" (avait besoin de
+      plusieurs lignes O/U simultanées, incompatible avec "un pick par
+      canal de marché") a été retirée plutôt que bricolée — à revoir
+      pendant l'audit de calibration si son absence coûte du ROI. Suite
+      backend 957/957 verte, monorepo entier vert.
 - [ ] **Audit de calibration par (marché × ligue)** — une fois les deux
       chantiers ci-dessus faits, établir lesquels des 16 canaux de marché
       méritent réellement d'alimenter VALUE/SAFE

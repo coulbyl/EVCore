@@ -321,7 +321,10 @@ async function main() {
     const trainBase =
       train.reduce((s, p) => s + p.actualOver, 0) / train.length;
 
-    const testIdentity = test.map((p) => ({ prob: p.prob, actual: p.actualOver }));
+    const testIdentity = test.map((p) => ({
+      prob: p.prob,
+      actual: p.actualOver,
+    }));
     const testShrunk = test.map((p) => ({
       prob: shrink(p.prob, trainBase, trainSlope),
       actual: p.actualOver,
@@ -405,7 +408,7 @@ async function main() {
   );
   out(
     "     OverUnderHtStrategy/FirstHalfWinnerStrategy/HalfTimeFullTimeStrategy",
-    );
+  );
   out("     ont le droit de tourner.)");
 
   out();

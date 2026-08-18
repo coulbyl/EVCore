@@ -129,7 +129,7 @@
   probabilité ajouté** (résolu 2026-08-15, trouvé en creusant le point
   VALUE ci-dessus sur le replay 08-13→08-16) — rank 3 du 08-15 associait
   `Kashima OVER_0_5 HT` (SAFE, 77.2%, GAGNÉ) à `Ljungskile-Osters RESULT_BTTS
-  HOME_NO` (VALUE, **43.4%** — sous 50%, PERDU). La jambe VALUE passait déjà
+HOME_NO` (VALUE, **43.4%** — sous 50%, PERDU). La jambe VALUE passait déjà
   `clearsValueEdgeFloor` (edge=0.167≥0.10) grâce à un EV apparent énorme
   (+62.7%, cote 3.75) — rien ne vérifiait que la jambe elle-même était plus
   probable que défavorable. Fix : nouveau `clearsMinLegProbability()`
@@ -166,7 +166,7 @@
   Fix (`coupon-composer.service.ts`, `coupon.constants.ts`) : `buildCandidatePool()`
   remplace le tri à plat — partition ancre (`legProbability≥ANCHOR_MIN_PROBABILITY=0.70`)
   / valeur, EV plafonné à `EV_MAX_SOFT_ALERT` (réutilisé de `betting-engine/
-  ev.constants.ts`, pas un nouveau chiffre) pour le tri du mode valeur
+ev.constants.ts`, pas un nouveau chiffre) pour le tri du mode valeur
   uniquement (pas un rejet), diversification par compétition
   (`MAX_POOL_PER_COMPETITION=2`, même chiffre que le plafond anti-corrélation
   intra-coupon existant), allocation ~50/50 ancre/valeur avec backfill
@@ -241,7 +241,7 @@
   `windowRate_VALUE` est actuellement bas (~0.365-0.369, mesuré directement
   sur les jambes VALUE stakées de cette période) à cause de la dégradation
   VALUE déjà trouvée plus haut (50.3%→39.0%). Résultat concret : `Omonia
-  Nicosia–Lincoln CLEAN_SHEET_HOME NO` (68.7% de proba brute, EV=0.80,
+Nicosia–Lincoln CLEAN_SHEET_HOME NO` (68.7% de proba brute, EV=0.80,
   `viable`, jamais stakée) se retrouve calibrée à **0.527 — sous le plancher
   `MIN_LEG_PROBABILITY=0.55`** malgré un signal brut fort. Ce n'est pas un
   bug isolé du nouveau mécanisme : c'est la dégradation VALUE (item
@@ -290,10 +290,10 @@
   2. Les 3 vues incluent désormais `PARTIAL` (`IN (WON, LOST, PARTIAL)`,
      `VOID` reste exclu) et calculent le gain sur `realizedOdds ?? combinedOdds`
      — jamais la cote pleine d'origine pour un coupon partiellement voidé.
-  **Reste à faire** : lancer la migration côté utilisateur (`prisma migrate` +
-  `db generate`, cf. règle mémoire) — en attendant, `realizedOdds` cause 2
-  erreurs de typecheck attendues sur le type Prisma généré (pas encore
-  régénéré).
+     **Reste à faire** : lancer la migration côté utilisateur (`prisma migrate` +
+     `db generate`, cf. règle mémoire) — en attendant, `realizedOdds` cause 2
+     erreurs de typecheck attendues sur le type Prisma généré (pas encore
+     régénéré).
 
 - `[ ]` **Calibration `k`/`decayHalfLifeDays`/`windowDays`** — mesurée
   (`db:backtest:signal-window-calibration`), gain réel mais marginal et pas
@@ -327,23 +327,23 @@
   - **WIN_TO_NIL_HOME/AWAY**
   - **RESULT_TOTAL_GOALS**
   - **RESULT_BTTS**
-  À faire : revue complète de chaque `*.strategy.ts` existant (cohérence,
-  dette), puis évaluer marché par marché s'il mérite un canal dédié
-  (hypothèse → backtest séparé → observation → whitelist par ligue →
-  staking, même méthode que le "Checklist par nouveau canal" en bas de ce
-  fichier) plutôt que de rester une sélection opportuniste sans stratégie
-  propre.
-  **Connexion trouvée 2026-08-16** (élargissement du pool de coupon à
-  `evaluatedPicks`, section Générateur de coupon) : router tous ces marchés
-  "orphelins" vers le canal VALUE pour le pool de coupon leur fait hériter
-  du blend de calibration dégradé de VALUE (`windowRate≈0.37` actuellement)
-  — écrasant des jambes à signal individuellement fort (ex.
-  `CLEAN_SHEET_HOME NO` à 68.7% de proba brute calibré à 0.527, sous le
-  plancher). Direction proposée par l'utilisateur : ériger chaque marché
-  orphelin en canal/stratégie propre (sa propre calibration, pas celle de
-  VALUE) plutôt que de continuer à les faire dépendre du blend d'un canal
-  qui ne leur correspond pas — réglerait ce point ET le chantier ci-dessus
-  en même temps.
+    À faire : revue complète de chaque `*.strategy.ts` existant (cohérence,
+    dette), puis évaluer marché par marché s'il mérite un canal dédié
+    (hypothèse → backtest séparé → observation → whitelist par ligue →
+    staking, même méthode que le "Checklist par nouveau canal" en bas de ce
+    fichier) plutôt que de rester une sélection opportuniste sans stratégie
+    propre.
+    **Connexion trouvée 2026-08-16** (élargissement du pool de coupon à
+    `evaluatedPicks`, section Générateur de coupon) : router tous ces marchés
+    "orphelins" vers le canal VALUE pour le pool de coupon leur fait hériter
+    du blend de calibration dégradé de VALUE (`windowRate≈0.37` actuellement)
+    — écrasant des jambes à signal individuellement fort (ex.
+    `CLEAN_SHEET_HOME NO` à 68.7% de proba brute calibré à 0.527, sous le
+    plancher). Direction proposée par l'utilisateur : ériger chaque marché
+    orphelin en canal/stratégie propre (sa propre calibration, pas celle de
+    VALUE) plutôt que de continuer à les faire dépendre du blend d'un canal
+    qui ne leur correspond pas — réglerait ce point ET le chantier ci-dessus
+    en même temps.
 
 - `[~]` **RESULT_TOTAL_GOALS — premier marché orphelin sorti de VALUE, canal
   dédié en OBSERVATION** (2026-08-16) — premier candidat traité parmi les 8
@@ -361,7 +361,7 @@
   bases joint ~0.03–0.44 vs marginales ~0.5). `ResultTotalGoalsStrategy`
   (`result-total-goals.strategy.ts`) mirrors exactement `TeamTotalStrategy` :
   1 sélection max, tri par EV décroissant, `REJECTED reasonCode:
-  below_threshold` sinon. **OBSERVATION mode strict, comme TEAM_TOTAL à son
+below_threshold` sinon. **OBSERVATION mode strict, comme TEAM_TOTAL à son
   lancement** : aucun wiring `CouponChannel`/`CANAL_BASE_WEIGHT`/invest/
   frontend — seulement stratégie + config + enregistrement channel + tests.
   `StrategyChannel` (Prisma `schema.prisma`) gagne une valeur `RESULT_TOTAL_GOALS` ;
@@ -393,7 +393,7 @@
   UNDER si base≤0.45, bande 0.45–0.55 ignorée (non informative), threshold =
   (base du côté choisi) − 0.05. `OverUnderHtStrategy` mirrors `GoalsStrategy`/
   `TeamTotalStrategy` (1 sélection max, tri EV décroissant, `REJECTED
-  reasonCode: below_threshold`). OBSERVATION stricte, même périmètre que
+reasonCode: below_threshold`). OBSERVATION stricte, même périmètre que
   RESULT_TOTAL_GOALS (aucun wiring coupon/invest/frontend). `StrategyChannel`
   (Prisma) gagne `OVER_UNDER_HT` ; migration écrite
   (`20260816130000_add_over_under_ht_channel`), **pas lancée**. Suite verte
@@ -446,7 +446,7 @@
   - `[ ]` Même séquence que les canaux précédents : observer avant tout
     backtest ROI ou wiring coupon/invest. Vu l'absence de calibration
     walk-forward ici, envisager un script `backtest-result-btts-shrinkage-
-    calibration.ts` (même modèle que TEAM_TOTAL) une fois assez de volume
+calibration.ts` (même modèle que TEAM_TOTAL) une fois assez de volume
     RESULT_BTTS réglé pour un vrai split train/test.
 
 - `[~]` **DRAW_NO_BET — quatrième marché orphelin sorti de VALUE, canal
@@ -535,7 +535,7 @@
     cote plus courte), **pas un clone de DOMINANT/DRAW**. `DoubleChanceStrategy`
     (config globale, pas de table par ligue) : 3 candidats statiques
     (1X/X2/12), seuil de conviction global `DOUBLE_CHANCE_CONFIG.minProbability
-    = 0.75` (structurel, non backtesté, même statut que `CORRECT_SCORE_CONFIG`
+= 0.75` (structurel, non backtesté, même statut que `CORRECT_SCORE_CONFIG`
     à son lancement), tri EV décroissant façon GOALS. Aucune migration
     (`STRATEGY_CHANNEL.DOUBLE_CHANCE` déjà réservé dans le schéma Prisma
     depuis le début).
@@ -556,12 +556,12 @@
     compatible = `CorrectScoreStrategy` (argmax de probabilité, PAS d'EV —
     même raisonnement anti-bruit-longshot que l'audit CORRECT_SCORE du
     2026-07-01). `HalfTimeFullTimeStrategy` : `HALF_TIME_FULL_TIME_CONFIG.
-    minProbability=0.20` (global, mis à l'échelle du `0.05` de CORRECT_SCORE
+minProbability=0.20` (global, mis à l'échelle du `0.05` de CORRECT_SCORE
     ~20-30 cases vs les 9 cases ici, même position relative au-dessus de
     l'uniforme). `StrategyChannel` (Prisma) gagne cette valeur (aucun
     placeholder préexistant ici) ; migration écrite
     (`20260816170000_add_half_time_full_time_channel`), **lancée + `db
-    generate` régénéré le jour même**.
+generate` régénéré le jour même**.
   - **Gate partagé, déjà existant** : `SelectionConfig.htftCalibrated`
     restreint HALF_TIME_FULL_TIME/FIRST_HALF_WINNER (et OVER_UNDER_HT depuis
     une correction du 2026-08-13) aux 7 ligues calibrées — "les ligues
@@ -595,14 +595,14 @@
 
 - `[~]` **Nouveaux marchés (DNB/TEAM_TOTAL/CLEAN_SHEET/WIN_TO_NIL/
   WIN_EITHER_HALF/RESULT_TOTAL_GOALS/RESULT_BTTS)** — wired dans VALUE/SAFE.
-  **Correction 2026-08-15** : TEAM_TOTAL n'est plus observation-only comme
+  **Correction 2026-08-15** : TEAM*TOTAL n'est plus observation-only comme
   écrit ici — il est **staké en coupon** depuis le 07-28 (`coupon.constants.ts` :
   `CANAL_BASE_WEIGHT.TEAM_TOTAL=0.15`, `MAX_COUPON_SELECTIONS.TEAM_TOTAL=3`,
   backtesté +3.40% ROI n=845). Seuls `CLEAN_SHEET`/`WIN_EITHER_HALF` restent
   observation-only à raison (confirmé plus haut : 0 ligue confirmée en
   whitelist). Extension SAFE/VALUE reste bloquée tant que les cotes forward
   ne sont pas accumulées (`CouponChannel` toujours limité à
-  `VALUE/SAFE/BTTS/DRAW/DOMINANT/TEAM_TOTAL`) — ne pas activer de pick `AWAY_*`
+  `VALUE/SAFE/BTTS/DRAW/DOMINANT/TEAM_TOTAL`) — ne pas activer de pick `AWAY*\*`
   sur ces marchés avant, le biais AWAY reste net-négatif même après
   recalibration homeAdvFactor.
 
@@ -753,6 +753,40 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
 
 ---
 
+## Refactor familles de moteurs prédictifs
+
+> Suivi détaillé : [ROADMAP.md](ROADMAP.md) "Refactor Domaine — Familles de
+> moteurs prédictifs" · Cadrage : [docs/prediction-engine-families.md](docs/prediction-engine-families.md)
+
+- `[x]` **VALUE/SAFE déplacés en Phase 2** (2026-08-18) — filtrent
+  désormais les décisions Phase 1 (`previousDecisions`) au lieu de scanner
+  `context.evaluatedMarkets`. Orchestrateur à 3 phases
+  (`FILTER_STRATEGY_CHANNELS`).
+- `[ ]` **`context.evaluatedMarkets` mort** — plus aucun canal ne le lit
+  depuis le passage VALUE/SAFE en Phase 2. Candidat à suppression du type
+  `StrategyContext` (et de `EvaluatedMarket`, `context-builder.ts`,
+  `evaluatedPicks`→`groupPicksByMarket`) — pas fait ce soir pour rester
+  dans le périmètre de l'orchestrateur, à traiter comme un nettoyage séparé.
+- `[ ]` **Exception SAFE "OVER/UNDER symétrique à haut lambda" retirée, pas
+  préservée** — l'ancienne `selectSafeValuePick` comparait son pick UNDER
+  gagnant à des lignes OVER alternatives à haut λ total
+  (`SV_UNDER_LAMBDA_COMPARISON_THRESHOLD`), une logique qui a besoin de
+  plusieurs lignes OVER_UNDER simultanées — incompatible avec "un candidat
+  par canal de marché" (GOALS ne choisit qu'une seule ligne). Retirée plutôt
+  que bricolée pour continuer à lire le pool brut. À vérifier pendant
+  l'audit de calibration si cette absence coûte du ROI à SAFE.
+- `[-]` **Famille A' (calibration `FIRST_HALF_GOAL_FRACTION` par ligue)** —
+  reportée 2026-08-17, pas abandonnée par désintérêt mais faute d'évidence :
+  le backtest walk-forward déjà existant sur OVER_UNDER_HT
+  (`backtest-over-under-ht-shrinkage-calibration-2026-08-16.txt`) montre le
+  Poisson brut (basé sur 0.44) déjà bien calibré sur 6/7 ligues où le canal
+  tourne (ΔBrier ≈ 0.0000). L'hypothèse "0.44 cause du HT Over désactivé"
+  ne tenait que pour le contexte Coupe du Monde/sélections nationales
+  (volume insuffisant pour calibrer par cette méthode : WC train=4, test=8),
+  pas pour les ligues domestiques.
+
+---
+
 ## Harnais de backtest partagé
 
 > Suivi détaillé : [ROADMAP.md](ROADMAP.md) "Harnais de backtest partagé" ·
@@ -791,7 +825,7 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
 - `[x]` **`cutoff` ignoré pour 16 marchés sur 17 dans `OddsSnapshotLoader`**
   (résolu 2026-08-17, trouvé en cadrant le harnais de backtest — voir
   `docs/backtest-harness-architecture.md`) — `findLatestOddsSnapshot(fixtureId,
-  cutoff)` n'appliquait le paramètre `cutoff` qu'à la jambe `ONE_X_TWO` ;
+cutoff)` n'appliquait le paramètre `cutoff` qu'à la jambe `ONE_X_TWO` ;
   `findBestBookmakerForMarket` recevait `_cutoff` (paramètre explicitement
   inutilisé) pour BTTS/HT-FT/First Half Winner/Double Chance/Draw No
   Bet/Clean Sheet ×2/Win to Nil ×2/Win Either Half, et `findPerPickOddsPerLine`
@@ -883,8 +917,8 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
   importe combien de fixtures historiques on rejoue, les cotes n'existaient
   simplement pas à ces dates : les sélections `SELECTED` de ces canaux dans
   le rejeu portent bien une décision mais **aucune cote** (100% `odds IS
-  NULL`), donc aucun ROI mesurable. Seuls `OVER_UNDER_HT` et
-  `FIRST_HALF_WINNER` ont une vraie profondeur (cotes depuis 2023) — 
+NULL`), donc aucun ROI mesurable. Seuls `OVER_UNDER_HT` et
+  `FIRST_HALF_WINNER` ont une vraie profondeur (cotes depuis 2023) —
   `FIRST_HALF_WINNER` a d'ailleurs produit un vrai résultat exploitable dans
   ce rejeu partiel (n=1326, **PL et BL1 confirmés positifs** train+valid,
   voir rapport `backtest-channel-league-whitelist-2026-08-16.txt`).
@@ -920,7 +954,7 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
   résolu en 2 migrations (2026-08-15, lancées par l'utilisateur).
   `20260815120000_dedupe_and_add_unique_odds_snapshot` : 797 844 lignes
   dupliquées supprimées (3 202 638 → 2 404 794), `@@unique([fixtureId,
-  bookmaker, market, pick, snapshotAt])` posé, ancien `@@index` redondant
+bookmaker, market, pick, snapshotAt])` posé, ancien `@@index` redondant
   supprimé. Gap trouvé le jour même : `pick` est `NULL` pour ONE_X_TWO, et un
   `@@unique` standard traite chaque `NULL` comme distinct — deux lignes
   ONE_X_TWO strictement identiques s'inséraient sans erreur (vérifié

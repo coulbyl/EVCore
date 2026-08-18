@@ -1,11 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import Decimal from 'decimal.js';
-import { Market } from '@evcore/analysis-core';
+import {
+  Market,
+  CHANNEL_DECISION_STATUS,
+  STRATEGY_CHANNEL,
+} from '@evcore/analysis-core';
+import type { StrategyChannel, StrategyDecision } from '@evcore/analysis-core';
 import { ValueStrategy } from './value.strategy';
-import { CHANNEL_DECISION_STATUS } from '../channel-strategy.types';
 import type { StrategyContext } from '../channel-strategy.types';
 import type {
-  EvaluatedPick,
   FullOddsSnapshot,
   MatchProbabilities,
 } from '../betting-engine.types';
@@ -43,17 +46,57 @@ const BASE_ODDS: FullOddsSnapshot = {
   resultBttsOdds: {},
 };
 
-function makePick(overrides: Partial<EvaluatedPick> = {}): EvaluatedPick {
+// VALUE (Phase 2, since 2026-08-18) no longer scans evaluatedMarkets — it
+// filters the SELECTED picks Phase-1 market specialists already vetted.
+// Tests build previousDecisions directly instead of evaluatedMarkets: one
+// fake Phase-1 channel decision per candidate pick.
+type CandidatePick = {
+  channel?: StrategyChannel;
+  market: Market;
+  pick: string;
+  probability: Decimal;
+  odds: Decimal;
+  ev: Decimal;
+};
+
+function makeCandidate(overrides: Partial<CandidatePick> = {}): CandidatePick {
   // Default edge = 0.68 − 1/1.80 = 0.124, comfortably above VALUE_MIN_EDGE (0.10).
   return {
+    channel: STRATEGY_CHANNEL.DOMINANT,
     market: Market.ONE_X_TWO,
     pick: 'HOME',
     probability: new Decimal('0.68'),
     odds: new Decimal('1.80'),
     ev: new Decimal('0.22'),
-    qualityScore: new Decimal('0.11'),
     ...overrides,
   };
+}
+
+function previousDecisionsFrom(
+  candidates: CandidatePick[],
+): Map<StrategyChannel, StrategyDecision> {
+  const map = new Map<StrategyChannel, StrategyDecision>();
+  // Distinct channel per candidate by default (a real Phase-1 channel emits
+  // exactly one SELECTED decision) — tests that need several candidates on
+  // the same channel key pass explicit distinct `channel` overrides.
+  candidates.forEach((c, i) => {
+    const channel = c.channel ?? (`FAKE_${i}` as StrategyChannel);
+    map.set(channel, {
+      channel,
+      status: CHANNEL_DECISION_STATUS.SELECTED,
+      selections: [
+        {
+          market: c.market,
+          pick: c.pick,
+          probability: c.probability,
+          odds: c.odds,
+          ev: c.ev,
+          rank: 1,
+        },
+      ],
+    });
+  });
+  return map;
 }
 
 function makeContext(
@@ -117,18 +160,34 @@ describe('ValueStrategy', () => {
     expect(decision.selections).toHaveLength(0);
   });
 
-  it('returns REJECTED with no_viable_pick when evaluatedMarkets is empty', () => {
-    const decision = strategy.evaluate(makeContext({ evaluatedMarkets: [] }));
+  it('returns REJECTED with no_viable_pick when no Phase-1 channel selected anything', () => {
+    const decision = strategy.evaluate(
+      makeContext({ previousDecisions: new Map() }),
+    );
+    expect(decision.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
+    expect(decision.reasonCode).toBe('no_viable_pick');
+  });
+
+  it('ignores a REJECTED Phase-1 decision — no candidate contributed', () => {
+    const previousDecisions = new Map<StrategyChannel, StrategyDecision>([
+      [
+        STRATEGY_CHANNEL.DOMINANT,
+        {
+          channel: STRATEGY_CHANNEL.DOMINANT,
+          status: CHANNEL_DECISION_STATUS.REJECTED,
+          reasonCode: 'below_threshold',
+          selections: [],
+        },
+      ],
+    ]);
+    const decision = strategy.evaluate(makeContext({ previousDecisions }));
     expect(decision.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
     expect(decision.reasonCode).toBe('no_viable_pick');
   });
 
   it('returns SELECTED with the best viable pick', () => {
-    const pick = makePick({ qualityScore: new Decimal('0.12') });
-    const ctx = makeContext({
-      evaluatedMarkets: [{ market: Market.ONE_X_TWO, picks: [pick] }],
-    });
-    const decision = strategy.evaluate(ctx);
+    const previousDecisions = previousDecisionsFrom([makeCandidate()]);
+    const decision = strategy.evaluate(makeContext({ previousDecisions }));
     expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
     expect(decision.selections).toHaveLength(1);
     expect(decision.selections[0].market).toBe(Market.ONE_X_TWO);
@@ -136,10 +195,29 @@ describe('ValueStrategy', () => {
     expect(decision.selections[0].rank).toBe(1);
   });
 
+  it('picks the best edge among several Phase-1 channels on different markets', () => {
+    const strongerEdge = makeCandidate({
+      channel: STRATEGY_CHANNEL.GOALS,
+      market: Market.OVER_UNDER,
+      pick: 'OVER',
+      probability: new Decimal('0.75'),
+      odds: new Decimal('1.80'),
+      ev: new Decimal('0.35'),
+    });
+    const previousDecisions = previousDecisionsFrom([
+      makeCandidate(),
+      strongerEdge,
+    ]);
+    const decision = strategy.evaluate(makeContext({ previousDecisions }));
+    expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
+    expect(decision.selections[0].market).toBe(Market.OVER_UNDER);
+    expect(decision.selections[0].pick).toBe('OVER');
+  });
+
   it('returns REJECTED with line_movement when movement > 0.10', () => {
-    const pick = makePick();
+    const previousDecisions = previousDecisionsFrom([makeCandidate()]);
     const ctx = makeContext({
-      evaluatedMarkets: [{ market: Market.ONE_X_TWO, picks: [pick] }],
+      previousDecisions,
       signals: {
         suspendedMarkets: new Set(),
         lambdaFloorHit: false,
@@ -155,9 +233,9 @@ describe('ValueStrategy', () => {
   });
 
   it('does not reject when line_movement is exactly at threshold (0.10)', () => {
-    const pick = makePick();
+    const previousDecisions = previousDecisionsFrom([makeCandidate()]);
     const ctx = makeContext({
-      evaluatedMarkets: [{ market: Market.ONE_X_TWO, picks: [pick] }],
+      previousDecisions,
       signals: {
         suspendedMarkets: new Set(),
         lambdaFloorHit: false,
@@ -173,52 +251,21 @@ describe('ValueStrategy', () => {
     );
   });
 
-  it('falls back to FALLBACK_MIN_QUALITY_SCORE when primary pick is rejected', () => {
-    const topRejected = makePick({
-      qualityScore: new Decimal('0.20'),
-      rejectionReason: 'odds_above_cap',
-    });
-    const fallback = makePick({
-      qualityScore: new Decimal('0.09'),
-      pick: 'AWAY',
-    });
-    const belowFallback = makePick({
-      qualityScore: new Decimal('0.05'),
-      pick: 'DRAW',
-    });
-    const ctx = makeContext({
-      evaluatedMarkets: [
-        {
-          market: Market.ONE_X_TWO,
-          picks: [topRejected, fallback, belowFallback],
-        },
-      ],
-    });
-    const decision = strategy.evaluate(ctx);
-    expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
-    expect(decision.selections[0].pick).toBe('AWAY');
-  });
-
   it('rejects a positive-EV pick whose edge is below VALUE_MIN_EDGE (0.10)', () => {
     // prob 0.62 @ 1.80 → EV +0.116 (positive) but edge = 0.62 − 0.556 = 0.064 < 0.10.
-    const lowEdge = makePick({
+    const lowEdge = makeCandidate({
       probability: new Decimal('0.62'),
       ev: new Decimal('0.116'),
     });
-    const decision = strategy.evaluate(
-      makeContext({
-        evaluatedMarkets: [{ market: Market.ONE_X_TWO, picks: [lowEdge] }],
-      }),
-    );
+    const previousDecisions = previousDecisionsFrom([lowEdge]);
+    const decision = strategy.evaluate(makeContext({ previousDecisions }));
     expect(decision.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
     expect(decision.reasonCode).toBe('no_viable_pick');
   });
 
   it('suspends VALUE when the league config sets an unreachable edge floor', () => {
-    const pick = makePick(); // edge 0.124 — would normally be selected
-    const base = makeContext({
-      evaluatedMarkets: [{ market: Market.ONE_X_TWO, picks: [pick] }],
-    });
+    const previousDecisions = previousDecisionsFrom([makeCandidate()]); // edge 0.124 — would normally be selected
+    const base = makeContext({ previousDecisions });
     const decision = strategy.evaluate({
       ...base,
       selectionConfig: {

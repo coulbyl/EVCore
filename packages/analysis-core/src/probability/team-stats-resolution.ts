@@ -105,7 +105,10 @@ export function resolveEffectiveTeamStats(
     gamesPlayedThisSeason,
   } = input;
 
-  const blendWith = (formWeight: number, xgWeight: number): TeamStatsInput | null => {
+  const blendWith = (
+    formWeight: number,
+    xgWeight: number,
+  ): TeamStatsInput | null => {
     if (crossCompStats === null) return primaryStats;
     if (primaryStats === null) return crossCompStats;
     return blendTeamStats({
@@ -117,7 +120,10 @@ export function resolveEffectiveTeamStats(
   };
 
   if (isEuropeanCompetition(competitionCode)) {
-    return blendWith(EUROPEAN_CROSS_COMP_FORM_WEIGHT, EUROPEAN_CROSS_COMP_XG_WEIGHT);
+    return blendWith(
+      EUROPEAN_CROSS_COMP_FORM_WEIGHT,
+      EUROPEAN_CROSS_COMP_XG_WEIGHT,
+    );
   }
 
   if (isNationalTeamCompetition(competitionCode)) {

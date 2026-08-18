@@ -48,12 +48,15 @@ describe("backtest-core architecture boundary", () => {
     expect(files.length).toBeGreaterThan(0);
   });
 
-  it.each(GLOBAL_FORBIDDEN)("forbids $label imports anywhere", ({ pattern }) => {
-    const offenders = files.filter((file) =>
-      pattern.test(readFileSync(file, "utf8")),
-    );
-    expect(offenders).toEqual([]);
-  });
+  it.each(GLOBAL_FORBIDDEN)(
+    "forbids $label imports anywhere",
+    ({ pattern }) => {
+      const offenders = files.filter((file) =>
+        pattern.test(readFileSync(file, "utf8")),
+      );
+      expect(offenders).toEqual([]);
+    },
+  );
 
   it("forbids @evcore/db imports outside point-in-time-loader.ts", () => {
     const offenders = files

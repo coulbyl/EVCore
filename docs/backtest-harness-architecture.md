@@ -179,7 +179,7 @@ blender, avec quels poids) a été extraite en fonction pure dans
 `isNationalTeamCompetition`, poids de blend, `DOMESTIC_SEASON_ROLLOVER_MIN_GAMES`).
 `apps/backend/.../ev.constants.ts` les ré-exporte désormais au lieu de les
 dupliquer. Comme pour les cotes : une seule implémentation de la politique,
-partagée par la prod et le harnais — seule la logique de *fetch* (quelles
+partagée par la prod et le harnais — seule la logique de _fetch_ (quelles
 lignes aller chercher, avec quel `asOf`) reste distincte entre
 `BettingEngineService` (Prisma direct, requêtes "maintenant") et
 `PointInTimeLoader` (Prisma direct, requêtes bornées par `asOf`).

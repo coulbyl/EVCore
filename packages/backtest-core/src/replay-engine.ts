@@ -29,7 +29,9 @@ export type ReplayStep = {
 };
 
 export class ReplayEngine {
-  constructor(private readonly loader: PointInTimeLoader = new PointInTimeLoader()) {}
+  constructor(
+    private readonly loader: PointInTimeLoader = new PointInTimeLoader(),
+  ) {}
 
   // Async generator, not "load everything into an array first": a replay
   // over a full season is thousands of fixtures, and callers (a script

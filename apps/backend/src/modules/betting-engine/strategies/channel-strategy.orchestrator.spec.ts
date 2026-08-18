@@ -12,7 +12,6 @@ import {
   type StrategyDecision,
 } from '../channel-strategy.types';
 import type {
-  EvaluatedPick,
   FullOddsSnapshot,
   MatchProbabilities,
 } from '../betting-engine.types';
@@ -23,7 +22,11 @@ const BASE_ODDS: FullOddsSnapshot = {
   homeOdds: new Decimal('1.90'),
   drawOdds: new Decimal('3.30'), // implied 0.303 ≥ BL1 DRAW threshold 0.28
   awayOdds: new Decimal('4.50'),
-  overUnderOdds: {},
+  // BL1's GOALS config only enables 1.5 OVER (thr .78), 2.5 OVER (thr .45),
+  // 3.5 UNDER (thr .53) — under35=0.82 below clears 3.5 UNDER, priced here so
+  // GOALS can actually select it (an unpriced line is never selected — see
+  // goals.strategy.ts).
+  overUnderOdds: { UNDER_3_5: new Decimal('1.30') },
   bttsYesOdds: null,
   bttsNoOdds: null,
   htftOdds: {},
@@ -42,19 +45,6 @@ const BASE_ODDS: FullOddsSnapshot = {
   resultBttsOdds: {},
 };
 
-function pick(overrides: Partial<EvaluatedPick>): EvaluatedPick {
-  // Default edge = 0.64 − 1/1.90 = 0.114, above VALUE_MIN_EDGE (0.10).
-  return {
-    market: Market.ONE_X_TWO,
-    pick: 'HOME',
-    probability: new Decimal('0.64'),
-    odds: new Decimal('1.90'),
-    ev: new Decimal('0.22'),
-    qualityScore: new Decimal('0.20'),
-    ...overrides,
-  };
-}
-
 function makeContext(
   overrides: Partial<StrategyContext> = {},
 ): StrategyContext {
@@ -70,8 +60,14 @@ function makeContext(
     phase: 'PRE_KICKOFF',
     deterministicScore: new Decimal('0.80'),
     probabilities: {
-      home: new Decimal('0.60'),
-      draw: new Decimal('0.25'),
+      // home=0.65 so DOMINANT clears its margin AND VALUE clears its edge
+      // floor from DOMINANT's own priced selection (0.65 - 1/1.90 = 0.126 ≥
+      // VALUE_MIN_EDGE 0.10) — VALUE/SAFE no longer read evaluatedMarkets
+      // (moved to Phase 2, filtering Phase-1 SELECTED decisions instead,
+      // 2026-08-18), so every candidate here must come from what a market
+      // specialist naturally derives from these probabilities + BASE_ODDS.
+      home: new Decimal('0.65'),
+      draw: new Decimal('0.20'),
       away: new Decimal('0.15'),
       bttsYes: new Decimal('0.65'), // ≥ BL1 BTTS threshold 0.60
       bttsNo: new Decimal('0.35'),
@@ -125,24 +121,11 @@ function makeContext(
         AWAY_AWAY: new Decimal('0'),
       },
     } as unknown as MatchProbabilities,
-    evaluatedMarkets: [
-      // EV picks this (highest qualityScore); too low prob for SAFE.
-      { market: Market.ONE_X_TWO, picks: [pick({})] },
-      // SAFE picks this (prob ≥ 0.68, ev/odds in range); excluded from EV.
-      {
-        market: Market.OVER_UNDER,
-        picks: [
-          pick({
-            market: Market.OVER_UNDER,
-            pick: 'UNDER_4_5',
-            probability: new Decimal('0.84'),
-            odds: new Decimal('1.27'),
-            ev: new Decimal('0.067'),
-            qualityScore: new Decimal('0.05'),
-          }),
-        ],
-      },
-    ],
+    // No longer read by any strategy (VALUE/SAFE moved to Phase 2 on
+    // 2026-08-18, filtering previousDecisions instead) — kept only because
+    // StrategyContext still declares the field. TODO.md: candidate for
+    // removal.
+    evaluatedMarkets: [],
     odds: BASE_ODDS,
     signals: {
       suspendedMarkets: new Set(),

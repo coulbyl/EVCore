@@ -1,9 +1,8 @@
 import Decimal from "decimal.js";
 import { Market } from "../types";
-import type { EvaluatedPick, ViablePick } from "../selection/types";
+import type { ViablePick } from "../selection/types";
 import { bestQualityPickDetails } from "../selection";
 import {
-  FALLBACK_MIN_QUALITY_SCORE,
   LINE_MOVEMENT_THRESHOLD,
   VALUE_MIN_EDGE,
 } from "../selection/constants";
@@ -13,6 +12,7 @@ import type {
   StrategyContext,
   StrategyDecision,
 } from "./types";
+import { viablePicksFromPreviousDecisions } from "./filter-candidates";
 
 // Must mirror every market listEvaluatedPicks() (selection/pick-evaluation.ts)
 // can emit a candidate for — the orchestrator rejects any VALUE selection on
@@ -37,6 +37,13 @@ const ALL_MARKETS: readonly Market[] = [
   Market.RESULT_BTTS,
 ];
 
+// VALUE — Phase 2 filter (docs/prediction-engine-families.md §0, docs/
+// channel-strategy-architecture.md §5). Moved out of Phase 1 on 2026-08-18:
+// it no longer scans the full evaluated-markets pool on its own — it picks
+// the best edge among the picks the Phase-1 market specialists already
+// selected for their own market. A market with no Phase-1 SELECTED decision
+// (channel rejected, disabled, or missing data) contributes no candidate
+// here; that's the point, not a gap to patch.
 export class ValueStrategy implements ChannelStrategy {
   readonly channel = STRATEGY_CHANNEL.VALUE;
   readonly allowedMarkets = ALL_MARKETS;
@@ -65,25 +72,27 @@ export class ValueStrategy implements ChannelStrategy {
       };
     }
 
-    const allPicks = context.evaluatedMarkets.flatMap((m) => m.picks);
-    // Edge floor (probability − 1/odds): the model is overconfident, so require a
-    // real market edge, not just positive EV/quality. Per-league config may set it
-    // unreachably high to suspend VALUE for a structurally uninformative league.
+    // Only markets a Phase-1 specialist actually SELECTED, priced (DRAW's
+    // picks carry no odds by design — see StrategySelection's comment in
+    // strategies/types.ts — and are naturally excluded here).
+    const candidates = viablePicksFromPreviousDecisions(
+      context.previousDecisions,
+      ALL_MARKETS,
+      context.deterministicScore,
+    );
+
     const minEdge = context.selectionConfig.valueMinEdge ?? VALUE_MIN_EDGE;
-    const best = selectBestEvPick(allPicks, minEdge);
+    const best = selectBestEdgePick(candidates, minEdge);
 
     if (best === null) {
       return {
         channel: ch,
         status: CHANNEL_DECISION_STATUS.REJECTED,
         reasonCode: "no_viable_pick",
-        // Unlike DOMINANT/BTTS/WIN_EITHER_HALF/CLEAN_SHEET, VALUE's rejection
-        // used to carry no market/pick detail at all — auditing "what would
-        // VALUE have picked" required re-deriving selectBestEvPick's ranking
-        // externally from evaluatedPicks. Logging the pool's own top-quality
-        // candidate (even though it didn't clear the edge floor / was
-        // rejected upstream) closes that gap.
-        reasonDetails: bestQualityPickDetails(allPicks),
+        // What the best-quality specialist-vetted candidate looked like,
+        // even though it didn't clear the edge floor — closes the audit gap
+        // ("what would VALUE have picked") without re-deriving anything.
+        reasonDetails: bestQualityPickDetails(candidates),
         selections: [],
       };
     }
@@ -119,35 +128,23 @@ export class ValueStrategy implements ChannelStrategy {
   }
 }
 
-function selectBestEvPick(
-  picks: EvaluatedPick[],
+// Best edge (probability − 1/odds) among specialist-vetted candidates, tie-
+// broken by qualityScore. Simpler than the old evaluatedMarkets-era
+// selectBestEvPick: every candidate here already passed a Phase-1 channel's
+// own thresholds, so there's no "best candidate was rejected by an internal
+// gate, fall back to a lesser one" case left to handle — that fallback only
+// made sense when scanning a raw pool that included rejected picks.
+function selectBestEdgePick(
+  picks: ViablePick[],
   minEdge: Decimal,
 ): ViablePick | null {
-  if (picks.length === 0) return null;
-
-  const topByQuality = picks.reduce<EvaluatedPick | null>(
-    (best, p) =>
-      best === null || p.qualityScore.greaterThan(best.qualityScore) ? p : best,
-    null,
-  );
-  const primaryWasRejected = topByQuality?.rejectionReason !== undefined;
-
   const viable = picks
-    .filter((p): p is ViablePick => p.rejectionReason === undefined)
     .filter((p) =>
       p.probability
         .minus(new Decimal(1).div(p.odds))
         .greaterThanOrEqualTo(minEdge),
     )
     .sort((a, b) => b.qualityScore.comparedTo(a.qualityScore));
-
-  if (primaryWasRejected) {
-    return (
-      viable.find((p) =>
-        p.qualityScore.greaterThanOrEqualTo(FALLBACK_MIN_QUALITY_SCORE),
-      ) ?? null
-    );
-  }
 
   return viable[0] ?? null;
 }

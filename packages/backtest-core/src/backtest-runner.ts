@@ -40,32 +40,36 @@ export class BacktestRunner {
     for await (const step of this.replayEngine.replay(options)) {
       const { fixture, context } = step;
 
-      const [homeTeamStats, awayTeamStats, h2hScoreHomeReference, congestionScore] =
-        await Promise.all([
-          this.loader.loadTeamStats({
-            teamId: fixture.homeTeamId,
-            seasonId: fixture.seasonId,
-            competitionCode: fixture.competitionCode,
-            asOf: context.asOf,
-          }),
-          this.loader.loadTeamStats({
-            teamId: fixture.awayTeamId,
-            seasonId: fixture.seasonId,
-            competitionCode: fixture.competitionCode,
-            asOf: context.asOf,
-          }),
-          this.loader.loadH2HScore({
-            homeTeamId: fixture.homeTeamId,
-            awayTeamId: fixture.awayTeamId,
-            favoriteTeamId: fixture.homeTeamId,
-            asOf: context.asOf,
-          }),
-          this.loader.loadCongestionScore({
-            homeTeamId: fixture.homeTeamId,
-            awayTeamId: fixture.awayTeamId,
-            asOf: context.asOf,
-          }),
-        ]);
+      const [
+        homeTeamStats,
+        awayTeamStats,
+        h2hScoreHomeReference,
+        congestionScore,
+      ] = await Promise.all([
+        this.loader.loadTeamStats({
+          teamId: fixture.homeTeamId,
+          seasonId: fixture.seasonId,
+          competitionCode: fixture.competitionCode,
+          asOf: context.asOf,
+        }),
+        this.loader.loadTeamStats({
+          teamId: fixture.awayTeamId,
+          seasonId: fixture.seasonId,
+          competitionCode: fixture.competitionCode,
+          asOf: context.asOf,
+        }),
+        this.loader.loadH2HScore({
+          homeTeamId: fixture.homeTeamId,
+          awayTeamId: fixture.awayTeamId,
+          favoriteTeamId: fixture.homeTeamId,
+          asOf: context.asOf,
+        }),
+        this.loader.loadCongestionScore({
+          homeTeamId: fixture.homeTeamId,
+          awayTeamId: fixture.awayTeamId,
+          asOf: context.asOf,
+        }),
+      ]);
 
       yield {
         ...step,
