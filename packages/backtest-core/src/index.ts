@@ -6,3 +6,4 @@
 // Enforced by architecture.guard.spec.ts.
 export * from "./point-in-time-loader";
 export * from "./replay-engine";
+export * from "./backtest-runner";

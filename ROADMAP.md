@@ -822,7 +822,15 @@ Docs de cadrage Phase 3:
       encore extrait, même patron déjà applicable (utils déjà purs avec
       leurs propres tests) ; reporté, canal de niche (V1 `ONE_X_TWO`
       uniquement), voir TODO.md
-- [ ] `backtest-runner.ts` — façade CLI
+- [x] `backtest-runner.ts` — façade CLI (`BacktestRunner`, assemble cotes +
+      team stats + H2H + congestion par fixture)
+- [x] Premier script réel — `packages/backtest-core/scripts/coverage-check.ts`
+      (contrôle de couverture des données point-in-time). **Correction** :
+      les scripts consommant `backtest-core` vivent dans
+      `packages/backtest-core/scripts/`, pas `packages/db/scripts/` —
+      `@evcore/backtest-core` dépend déjà de `@evcore/db`, donc l'inverse
+      créerait un cycle de dépendance de package (trouvé en écrivant ce
+      script). Voir docs/backtest-harness-architecture.md §6.
 - [ ] Migration des 27 scripts existants vers le harnais, en commençant par
       les 10 identifiés à risque
 

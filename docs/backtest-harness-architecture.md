@@ -1,8 +1,9 @@
 # Harnais de backtest — cadrage architecture
 
-> Statut : cadrage + premier chantier en cours (`packages/backtest-core`,
-> `point-in-time-loader.ts`). Non finalisé — les 27 scripts existants ne
-> sont pas encore migrés.
+> Statut : `packages/backtest-core` fonctionnel (fixtures, cotes, team
+> stats, H2H, congestion, `BacktestRunner`, premier script CLI). Non
+> finalisé — Elo FRI pas extrait, les 27 scripts existants pas migrés (voir
+> §6 pour où ils doivent migrer — pas `packages/db/scripts`).
 >
 > Objectif : remplacer 27 scripts de backtest indépendants (11 338 lignes,
 > `packages/db/scripts/backtest-*.ts`), sans harnais partagé, par un socle
@@ -217,13 +218,33 @@ le même patron s'applique — reporté : c'est un canal de niche (V1 limitée �
 que le harnais couvre le cas majoritaire des compétitions domestiques/
 européennes/sélections nationales en tournoi. Voir TODO.md.
 
-## 6. Migration des 27 scripts (plus tard, pas ce soir)
+## 6. Où vivent les scripts CLI — correction 2026-08-18
 
-Les scripts `packages/db/scripts/backtest-*.ts` deviendront de fins
-wrappers CLI : parsing d'arguments + appel à `backtest-core` + écriture du
-rapport. Priorité de migration : les 10 scripts identifiés §1 comme
-n'utilisant pas `analysis-core` — candidats les plus probables au même bug
-que le whitelist.
+**Les scripts qui consomment `@evcore/backtest-core` ne peuvent pas vivre
+dans `packages/db/scripts`.** `@evcore/backtest-core` dépend déjà de
+`@evcore/db` (pour Prisma) ; un script dans `packages/db/scripts` important
+`@evcore/backtest-core` forcerait `packages/db/package.json` à dépendre de
+`@evcore/backtest-core` en retour — dépendance circulaire au niveau du
+package (`db → backtest-core → db`), que pnpm/Turborepo ne peuvent pas
+ordonnancer pour le build. Trouvé en écrivant le premier script réel
+(`coverage-check.ts`).
+
+**Conséquence** : les scripts CLI du harnais vivent dans
+`packages/backtest-core/scripts/`, pas dans `packages/db/scripts/`. Premier
+script : `coverage-check.ts` — rejoue une plage de dates et rapporte la
+couverture des données point-in-time (cotes, team stats des deux équipes)
+par fixture et par compétition ; pas un backtest de calibration en soi, un
+contrôle de santé pour vérifier que la couverture est suffisante avant d'en
+lancer un. `pnpm --filter @evcore/backtest-core run backtest:coverage-check
+-- --from=... --to=... [--competition=...]`, rapport écrit dans
+`packages/backtest-core/reports/`.
+
+Migration des 27 scripts existants (`packages/db/scripts/backtest-*.ts`) :
+même conclusion — ceux qui adoptent le harnais migrent physiquement vers
+`packages/backtest-core/scripts/`, ils ne peuvent pas simplement importer
+`backtest-core` depuis leur emplacement actuel. Priorité : les 10 scripts
+identifiés §1 comme n'utilisant pas `analysis-core` — candidats les plus
+probables au même bug que le whitelist.
 
 ## 7. Sources consultées (août 2026)
 

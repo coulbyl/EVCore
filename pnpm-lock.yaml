@@ -594,9 +594,15 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 22.15.3
+      dotenv:
+        specifier: 'catalog:'
+        version: 16.6.1
       eslint:
         specifier: 'catalog:'
         version: 9.39.4(jiti@2.6.1)
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
       typescript:
         specifier: 'catalog:'
         version: 6.0.2

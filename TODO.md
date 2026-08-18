@@ -770,11 +770,13 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
   Reporté : canal de niche (V1 limitée à `ONE_X_TWO`, fallback hors pipeline
   Poisson principal), pas nécessaire pour couvrir le cas majoritaire
   (domestique/Europe/sélections nationales en tournoi).
-- `[ ]` **`backtest-runner.ts` (façade CLI)** — assembler
-  `ReplayEngine`/`PointInTimeLoader` en une façade que les scripts peuvent
-  appeler, puis migrer les 27 scripts `packages/db/scripts/backtest-*.ts`
-  (priorité aux 10 identifiés à risque, voir
-  `docs/backtest-harness-architecture.md` §1) vers de fins wrappers CLI.
+- `[x]` **`backtest-runner.ts` (façade CLI)** — `BacktestRunner` assemble
+  `ReplayEngine`/`PointInTimeLoader` ; premier script réel
+  `packages/backtest-core/scripts/coverage-check.ts`.
+- `[ ]` **Migrer les 27 scripts `packages/db/scripts/backtest-*.ts`** vers
+  `packages/backtest-core/scripts/` (pas `packages/db/scripts` — cycle de
+  dépendance de package, voir `docs/backtest-harness-architecture.md` §6),
+  priorité aux 10 identifiés à risque (§1 du même doc).
 
 ---
 
