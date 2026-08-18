@@ -753,6 +753,49 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
 
 ---
 
+## Ménage backend (2026-08-18)
+
+> Suite à l'audit demandé par l'utilisateur du dossier `apps/backend`
+> (scripts, organisation des modules, code mort).
+
+- `[x]` **Module `calibration/` supprimé** — `CalibrationRepository`/
+  `CalibrationModule` (enregistré dans `app.module.ts`) exposaient
+  `saveReport`/`saveTuningResult` vers deux tables Postgres
+  (`calibrationReport`, `channelTuningResult`, schéma `calibration`)
+  construites avec une vraie migration ("Étape 5") mais jamais appelées —
+  `model-calibration.service.ts`/`channel-tuning.service.ts` utilisent
+  `BacktestRepository` pour la persistance, pas ce module. Module +
+  modèles Prisma retirés (schéma `calibration` conservé : `AdjustmentProposal`/
+  `MarketSuspension` y vivent toujours, actifs).
+  **Reste à faire : migration Prisma pour dropper les deux tables**
+  (`calibration_report`, `channel_tuning_result`) — pas lancée ce soir
+  (règle du projet : jamais `db generate`/`db build` par Claude, c'est
+  l'utilisateur qui gère via son CLI). À faire : `pnpm --filter @evcore/db
+  db:migrate` après avoir vérifié le diff du schéma.
+- `[x]` **`modules/etl/schemas/result.schema.ts` supprimé** — `ResultSchema`
+  orphelin, aucun appelant en dehors de son propre spec ; la validation
+  réelle des résultats de fixture passe par
+  `ApiFootballFixturesResponseSchema` (`pending-bets-settlement.worker.ts`),
+  pas ce schéma-là.
+- `[ ]` **Couche repository incohérente** — plusieurs services font des
+  appels Prisma directs au lieu de passer par un repository dédié
+  (`auth.service.ts` 36 appels, `rolling-stats.service.ts` 15,
+  `announcements.service.ts` 11, `notification.service.ts` 11,
+  `admin-users.service.ts` 7, `adjustment.service.ts` 7, `etl.service.ts` 5,
+  `gamification.service.ts` 5, `risk.service.ts` 5). Pas corrigé ce soir —
+  gros chantier, à prioriser sur `auth.service.ts` si repris.
+- `[ ]` **Confusion de nommage "Calibration"** — 3 classes restantes
+  partagent le mot dans leur nom (`CalibrationService` dans `adjustment/`,
+  `ModelCalibrationService` dans `backtest/`,
+  `InvestmentCalibrationRepository` dans `investment/`) — toutes réelles et
+  utilisées, mais un renommage plus précis par domaine éviterait la
+  confusion maintenant que la 4ᵉ (le module mort) a disparu.
+- `[ ]` **Commentaire mort** — `betting-engine.service.ts:1794` référence
+  "TODO Étape 5" qui n'existe dans aucune section de `TODO.md`. À corriger
+  ou retirer.
+
+---
+
 ## Refactor familles de moteurs prédictifs
 
 > Suivi détaillé : [ROADMAP.md](ROADMAP.md) "Refactor Domaine — Familles de

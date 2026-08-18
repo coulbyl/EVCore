@@ -1791,7 +1791,7 @@ export class BettingEngineService {
 // Resolves the persisted ChannelSelection id whose pick matches a materialised
 // Bet, so Bet.channelSelectionId can point at the exact analytical selection.
 // Returns null when the channel did not select, or the live engine pick diverges
-// from the strategy pick (a known live/backtest edge case — see TODO Étape 5).
+// from the strategy pick (a known live/backtest edge case).
 // Exported for unit testing.
 export function findChannelSelectionId(
   decisions: readonly PersistedChannelDecision[],

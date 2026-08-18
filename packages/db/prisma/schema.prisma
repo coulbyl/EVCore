@@ -1210,50 +1210,8 @@ model ChatUsage {
 }
 
 // ─────────────────────────────────────────────
-// CALIBRATION SCHEMA — analytics & learning loop
-// ─────────────────────────────────────────────
-
-// Snapshot of per-channel calibration metrics at a point in time.
-// Written by the auto-calibration loop after each AdjustmentProposal is evaluated.
-// Used by the backtest controller and Grafana dashboards (Phase 2).
-model CalibrationReport {
-  id               String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  channel          StrategyChannel
-  competitionCode  String? // null = all leagues combined
-  startDate        DateTime        @db.Date
-  endDate          DateTime        @db.Date
-  betCount         Int
-  brierScore       Decimal         @db.Decimal(8, 6)
-  calibrationError Decimal         @db.Decimal(8, 6)
-  roi              Decimal         @db.Decimal(8, 5)
-  // Serialized EV-bin distribution (analysis-core EvBin[])
-  evBins           Json            @default("[]")
-  triggeredBy      String          @default("auto") // "auto" | "manual"
-  createdAt        DateTime        @default(now())
-
-  @@index([channel, endDate])
-  @@index([createdAt])
-  @@map("calibration_report")
-  @@schema("calibration")
-}
-
-// Per-channel tuning result produced by the channel-tuning backtest.
-// Replaces the current in-memory-only output of ChannelTuningService.
-model ChannelTuningResult {
-  id              String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  channel         StrategyChannel
-  competitionCode String?
-  configSnapshot  Json // serialized ChannelStrategyConfigChannel config
-  betCount        Int
-  roi             Decimal         @db.Decimal(8, 5)
-  hitRate         Decimal         @db.Decimal(5, 4)
-  maxDrawdown     Decimal         @db.Decimal(8, 5)
-  // Whether this result beat the current prod config (for auto-apply gating)
-  improved        Boolean         @default(false)
-  appliedAt       DateTime?
-  createdAt       DateTime        @default(now())
-
-  @@index([channel, createdAt])
-  @@map("channel_tuning_result")
-  @@schema("calibration")
-}
+// The CalibrationReport/ChannelTuningResult models that used to live here
+// (dedicated "CALIBRATION SCHEMA" section) were removed 2026-08-18 — built
+// with a real migration (Étape 5) but never wired to a caller;
+// model-calibration.service.ts/channel-tuning.service.ts use
+// BacktestRepository for persistence instead. See TODO.md/ROADMAP.md.

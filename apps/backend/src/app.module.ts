@@ -10,7 +10,6 @@ import { BacktestModule } from './modules/backtest/backtest.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { RiskModule } from './modules/risk/risk.module';
 import { AdjustmentModule } from './modules/adjustment/adjustment.module';
-import { CalibrationModule } from './modules/calibration/calibration.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -51,7 +50,6 @@ import { RedisModule } from './common/redis/redis.module';
     NotificationModule,
     RiskModule,
     AdjustmentModule,
-    CalibrationModule,
     AuthModule,
     BetSlipModule,
     BetModule,
