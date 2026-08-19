@@ -73,6 +73,10 @@ export {
   computeCongestionScoreFromTeams,
 } from "./congestion";
 export {
+  CONGESTION_SIGNAL_DELTA,
+  applyCongestionSignalCorrection,
+} from "./congestion-signal-correction";
+export {
   type ResolveEffectiveTeamStatsInput,
   EUROPEAN_COMPETITION_CODE_SET,
   isEuropeanCompetition,

@@ -10,7 +10,7 @@ export const FEATURE_FLAGS = {
     INJURIES: false, // shadow collected by injuries-sync worker
     H2H: true, // lambda-adjustment applied in BettingEngineService (docs/h2h-service-v2-plan.md §4, activated 2026-07-23)
     H2H_MARKET_SIGNALS: true, // per-market logit-shift (BTTS/OVER25/CLEAN_SHEET/WIN_TO_NIL) applied in BettingEngineService — combined backtest confirmed gain on top of H2H lambda correction, 6/6 markets (packages/db/reports/backtest-h2h-market-signals-combined-2026-07-28.txt), activated 2026-07-28
-    CONGESTION: false, // shadow value computed in BettingEngineService
+    CONGESTION: true, // logit-shift on OVER25/BTTS (applyCongestionSignalCorrection) — validated 2026-08-19 (packages/db/reports/backtest-congestion-signal-value-2026-08-19.txt), real gain but ~10x smaller than H2H_MARKET_SIGNALS (score is 0 for most fixtures — weekly domestic calendars rarely produce short rest)
     LINEUPS: false, // post-hoc only — shadow value: null
     ML_CORRECTION: process.env['ML_CORRECTION_ENABLED'] === 'true', // activate after ≥50 shadow picks validated
     // API-Football /predictions as an independent second model — shadow only:

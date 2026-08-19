@@ -1000,6 +1000,51 @@ db:migrate` après avoir vérifié le diff du schéma.
     revérifié ligne par ligne avant application. Aucune donnée corrompue au
     final, mais à garder en tête pour les prochaines fusions de ce type :
     toujours vérifier la profondeur, pas juste la présence du nom de champ.
+- `[x]` **Filtres VALUE/SAFE et signaux inexploités — revue** (2026-08-19,
+  demande explicite utilisateur). Résultat :
+  - **Signal H2H par marché** : fausse piste, déjà activé en prod le
+    07-28 (mémoire `project_h2h_market_signals_ready` était périmée,
+    corrigée). Re-testé sur données fraîches : gain confirmé sur 6/6
+    marchés, rien à faire.
+  - **VALUE sur-représenté sur `TEAM_TOTAL_HOME UNDER_1_5`** (n=158,
+    3ème jambe la plus jouée) : 55.1% de probabilité annoncée vs 33.8% de
+    hit réel (−21pp). Trop fragmenté par ligue (25 ligues, n=1-14) pour
+    blâmer une ligue précise — biais agrégé historique, antérieur à la
+    recalibration GOALS/TEAM_TOTAL de cette session.
+  - **SAFE sur `OVER_UNDER UNDER`** : même famille de biais. Testé
+    l'hypothèse de l'ancienne comparaison lambda retirée (`SV_UNDER_
+    LAMBDA_COMPARISON_THRESHOLD`) — le UNDER haute-lambda est bien pire
+    (65.5% vs 68.7% hit) mais même le UNDER bas-lambda est déjà sous le
+    seuil de rentabilité (68.7% hit pour des cotes qui demandent ~71%) :
+    réintégrer cette comparaison ne réglerait qu'une fraction du
+    problème, pas la cause principale.
+  - **Signal de congestion (fatigue/enchaînement) — ACTIVÉ**
+    (`FEATURE_FLAGS.SCORING.CONGESTION: true`, 2026-08-19). Nouveau script
+    `db:backtest:congestion-signal-value` (même protocole logit-shift +
+    grid search que le H2H combiné, testé AU-DESSUS de la config déjà
+    recalibrée cette session) : gain réel confirmé sur OVER_2.5
+    (ΔBrier −0.000095) et BTTS (−0.000111) — mais ~10-15× plus petit que
+    le gain H2H, la médiane du score de congestion étant 0.00 sur
+    l'ensemble du dataset (calendriers domestiques hebdomadaires =
+    fatigue rare). Point méthodologique important : `CongestionService`
+    (prod) filtre les fixtures à venir par statut `SCHEDULED` — correct
+    en live, mais ce filtre renvoie toujours 0 en rejouant l'historique
+    (tout y est `FINISHED`) ; le script de backtest compte sans filtrer
+    par statut, seulement par fenêtre de date, pour rester fidèle à ce
+    que le modèle savait à l'époque. Nouveau
+    `applyCongestionSignalCorrection` (analysis-core, même forme que
+    `applyH2HMarketSignalCorrection`), câblé dans
+    `betting-engine.service.ts` — a nécessité de déplacer le calcul de
+    `shadowCongestion` plus tôt dans la fonction (il arrivait après le
+    calcul de `probabilities`, donc trop tard pour le corriger). Activé
+    directement plutôt que laissé en shadow "pour plus tard" — retour
+    utilisateur explicite : un signal validé qu'on laisse dormir en
+    attendant un moment qui ne vient jamais, ce n'est jamais activé (cf.
+    [[feedback_no_dormant_flags]]).
+  - **Reste à faire** : le replay complet (rejouer le pipeline actuel sur
+    tout l'historique avec les nouvelles configs GOALS/TEAM_TOTAL/BTTS/1X2/
+    congestion) pour voir si les biais VALUE/SAFE ci-dessus se résorbent —
+    explicitement demandé par l'utilisateur comme prochaine étape.
 
 ---
 

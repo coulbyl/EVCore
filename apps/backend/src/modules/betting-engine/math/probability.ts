@@ -42,4 +42,5 @@ export {
   buildMatchupFeatures,
   blendTeamStats,
   applyH2HMarketSignalCorrection,
+  applyCongestionSignalCorrection,
 } from '@evcore/analysis-core';

@@ -89,6 +89,7 @@ import {
   getOverUnderShrinkageConfig,
   shrinkOverUnderProbabilities,
   applyH2HMarketSignalCorrection,
+  applyCongestionSignalCorrection,
 } from './math/probability';
 import { getLeagueThreeWayEmpiricalBlendWeight } from '@evcore/analysis-core';
 import { getPickOdds } from './pricing/odds-mapping';
@@ -678,38 +679,54 @@ export class BettingEngineService {
     const favoriteTeamId = favoriteIsHome
       ? fixture.homeTeamId
       : fixture.awayTeamId;
-    const [shadowH2h, shadowH2hMarketSignals, shadowH2hScoreline] =
-      await Promise.all([
-        this.h2hService.computeH2HScore({
-          homeTeamId: fixture.homeTeamId,
-          awayTeamId: fixture.awayTeamId,
-          favoriteTeamId,
-          fixtureDate: fixture.scheduledAt,
-          limit: 5,
-        }),
-        // v2.2 (docs/h2h-service-v2-plan.md §3.3) — per-market rates, shadow
-        // only: backtested individually (5/6 show a real out-of-sample Brier
-        // gain, BTTS is noise-level) but not yet activated — needs a combined
-        // backtest against the lambda correction above to rule out
-        // double-counting the correlated result-based H2H signal.
-        this.h2hService.computeH2HMarketSignals({
-          homeTeamId: fixture.homeTeamId,
-          awayTeamId: fixture.awayTeamId,
-          fixtureDate: fixture.scheduledAt,
-          limit: 5,
-        }),
-        // CORRECT_SCORE-specific, shadow only (memory
-        // project-correct-score-immature, 2026-07-28) — marginal, not yet
-        // significant lift (p=0.06-0.08 on historical backtest); logged so
-        // backtest-h2h-scoreline-signal.ts can re-evaluate as live volume
-        // grows, never read by decision logic.
-        this.h2hService.computeH2HScorelineSignal({
-          homeTeamId: fixture.homeTeamId,
-          awayTeamId: fixture.awayTeamId,
-          fixtureDate: fixture.scheduledAt,
-          limit: 5,
-        }),
-      ]);
+    const [
+      shadowH2h,
+      shadowH2hMarketSignals,
+      shadowH2hScoreline,
+      shadowCongestion,
+    ] = await Promise.all([
+      this.h2hService.computeH2HScore({
+        homeTeamId: fixture.homeTeamId,
+        awayTeamId: fixture.awayTeamId,
+        favoriteTeamId,
+        fixtureDate: fixture.scheduledAt,
+        limit: 5,
+      }),
+      // v2.2 (docs/h2h-service-v2-plan.md §3.3) — per-market rates. Combined
+      // backtest confirmed a real gain on top of the H2H lambda correction
+      // below (6/6 markets, memory project-h2h-market-signals-ready,
+      // packages/db/reports/backtest-h2h-market-signals-combined-2026-07-28.txt),
+      // activated 2026-07-28.
+      this.h2hService.computeH2HMarketSignals({
+        homeTeamId: fixture.homeTeamId,
+        awayTeamId: fixture.awayTeamId,
+        fixtureDate: fixture.scheduledAt,
+        limit: 5,
+      }),
+      // CORRECT_SCORE-specific, shadow only (memory
+      // project-correct-score-immature, 2026-07-28) — marginal, not yet
+      // significant lift (p=0.06-0.08 on historical backtest); logged so
+      // backtest-h2h-scoreline-signal.ts can re-evaluate as live volume
+      // grows, never read by decision logic.
+      this.h2hService.computeH2HScorelineSignal({
+        homeTeamId: fixture.homeTeamId,
+        awayTeamId: fixture.awayTeamId,
+        fixtureDate: fixture.scheduledAt,
+        limit: 5,
+      }),
+      // Rest/schedule-density fatigue — validated 2026-08-19
+      // (db:backtest:congestion-signal-value): real but an order of
+      // magnitude smaller gain than the H2H market signal above (the
+      // combined score is 0 for most fixtures — weekly domestic calendars
+      // rarely produce short rest). Moved earlier (was computed after
+      // `probabilities` until 2026-08-19, too late to correct it) so the
+      // shift below can actually apply.
+      this.congestionService.computeCongestionScore({
+        homeTeamId: fixture.homeTeamId,
+        awayTeamId: fixture.awayTeamId,
+        fixtureDate: fixture.scheduledAt,
+      }),
+    ]);
 
     const h2hCorrectionApplied =
       FEATURE_FLAGS.SCORING.H2H && shadowH2h !== null;
@@ -734,12 +751,16 @@ export class BettingEngineService {
     // markets, not redundant with the H2H lambda correction above (see
     // memory project-h2h-market-signals-ready, packages/db/reports/
     // backtest-h2h-market-signals-combined-2026-07-28.txt).
-    const probabilities = FEATURE_FLAGS.SCORING.H2H_MARKET_SIGNALS
+    const postH2hProbabilities = FEATURE_FLAGS.SCORING.H2H_MARKET_SIGNALS
       ? applyH2HMarketSignalCorrection(
           preMarketSignalProbabilities,
           shadowH2hMarketSignals,
         )
       : preMarketSignalProbabilities;
+    const congestionCorrectionApplied = FEATURE_FLAGS.SCORING.CONGESTION;
+    const probabilities = congestionCorrectionApplied
+      ? applyCongestionSignalCorrection(postH2hProbabilities, shadowCongestion)
+      : postH2hProbabilities;
 
     const lambdaFloorHit =
       lambda.home <= MIN_LAMBDA + Number.EPSILON ||
@@ -805,13 +826,6 @@ export class BettingEngineService {
 
     let valueBet: ViablePick | null = candidatePicks[0] ?? null;
     const initialValueBet = valueBet;
-
-    const shadowCongestion =
-      await this.congestionService.computeCongestionScore({
-        homeTeamId: fixture.homeTeamId,
-        awayTeamId: fixture.awayTeamId,
-        fixtureDate: fixture.scheduledAt,
-      });
 
     // Line movement filter — exclude picks with >10% adverse odds drop over 7 days.
     let shadowLineMovement: number | null = null;
@@ -1068,6 +1082,7 @@ export class BettingEngineService {
       shadow_h2h_scoreline: shadowH2hScoreline.scoreline,
       shadow_h2h_scoreline_confidence: shadowH2hScoreline.confidence,
       shadow_congestion: shadowCongestion,
+      congestion_correction_applied: congestionCorrectionApplied,
       shadow_lineups: null,
       shadow_injuries: null,
       shadow_ml_corrected_p: null,
