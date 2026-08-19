@@ -12,9 +12,22 @@ export type StrategyChannel =
   | "CLEAN_SHEET"
   | "TEAM_TOTAL"
   | "WIN_EITHER_HALF"
+  | "FIRST_HALF"
+  | "DOUBLE_CHANCE"
+  | "UNDERDOG"
+  | "FAVORITE"
+  | "LIVE_VALUE"
+  | "MARKET_MOVE"
   | "CONSENSUS"
+  | "CONTRARIAN"
   | "AVOID"
-  | "CORRECT_SCORE";
+  | "CORRECT_SCORE"
+  | "RESULT_TOTAL_GOALS"
+  | "OVER_UNDER_HT"
+  | "RESULT_BTTS"
+  | "DRAW_NO_BET"
+  | "WIN_TO_NIL"
+  | "HALF_TIME_FULL_TIME";
 
 export type ChannelDecisionStatus =
   | "SELECTED"

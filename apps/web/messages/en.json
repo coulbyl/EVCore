@@ -84,9 +84,37 @@
         "label": "Wins a half",
         "description": "A team wins at least one of the two halves."
       },
+      "FIRST_HALF": {
+        "label": "1st half",
+        "description": "First-half winner."
+      },
+      "DOUBLE_CHANCE": {
+        "label": "Double chance",
+        "description": "Double chance (1X, X2, or 12)."
+      },
+      "UNDERDOG": {
+        "label": "Underdog",
+        "description": "Backs the market's underdog."
+      },
+      "FAVORITE": {
+        "label": "Favorite",
+        "description": "Backs the market's favorite."
+      },
+      "LIVE_VALUE": {
+        "label": "Live value",
+        "description": "Value detected live during the match."
+      },
+      "MARKET_MOVE": {
+        "label": "Line move",
+        "description": "Significant pre-match odds movement detected."
+      },
       "CONSENSUS": {
         "label": "Consensus",
         "description": "Several independent strategies converge on the same pick."
+      },
+      "CONTRARIAN": {
+        "label": "Contrarian",
+        "description": "Position against the market."
       },
       "AVOID": {
         "label": "Caution",
@@ -95,6 +123,30 @@
       "CORRECT_SCORE": {
         "label": "Exact score",
         "description": "Most likely exact scoreline (observation only, never staked)."
+      },
+      "RESULT_TOTAL_GOALS": {
+        "label": "Result + Goals",
+        "description": "Match result combined with total goals."
+      },
+      "OVER_UNDER_HT": {
+        "label": "HT goals",
+        "description": "Over/under goals at half-time."
+      },
+      "RESULT_BTTS": {
+        "label": "Result + BTTS",
+        "description": "Match result combined with both teams to score."
+      },
+      "DRAW_NO_BET": {
+        "label": "Draw no bet",
+        "description": "Result excluding the draw — stake refunded on a draw."
+      },
+      "WIN_TO_NIL": {
+        "label": "Win to nil",
+        "description": "A team wins the match without conceding."
+      },
+      "HALF_TIME_FULL_TIME": {
+        "label": "HT/FT",
+        "description": "Half-time result combined with the final result."
       }
     },
     "reasons": {

@@ -14,9 +14,22 @@ export const CHANNEL_COLOR: Record<StrategyChannel, string> = {
   CLEAN_SHEET: "var(--canal-clean-sheet)",
   TEAM_TOTAL: "var(--canal-team-total)",
   WIN_EITHER_HALF: "var(--canal-win-either-half)",
+  FIRST_HALF: "var(--canal-first-half)",
+  DOUBLE_CHANCE: "var(--canal-double-chance)",
+  UNDERDOG: "var(--canal-neutral)",
+  FAVORITE: "var(--canal-neutral)",
+  LIVE_VALUE: "var(--canal-neutral)",
+  MARKET_MOVE: "var(--canal-neutral)",
   CONSENSUS: "var(--canal-consensus)",
+  CONTRARIAN: "var(--canal-neutral)",
   AVOID: "var(--canal-avoid)",
   CORRECT_SCORE: "var(--canal-correct-score)",
+  RESULT_TOTAL_GOALS: "var(--canal-result-total-goals)",
+  OVER_UNDER_HT: "var(--canal-over-under-ht)",
+  RESULT_BTTS: "var(--canal-result-btts)",
+  DRAW_NO_BET: "var(--canal-draw-no-bet)",
+  WIN_TO_NIL: "var(--canal-win-to-nil)",
+  HALF_TIME_FULL_TIME: "var(--canal-half-time-full-time)",
 };
 
 export const CHANNEL_COLOR_SOFT: Record<StrategyChannel, string> = {
@@ -29,9 +42,22 @@ export const CHANNEL_COLOR_SOFT: Record<StrategyChannel, string> = {
   CLEAN_SHEET: "var(--canal-clean-sheet-soft)",
   TEAM_TOTAL: "var(--canal-team-total-soft)",
   WIN_EITHER_HALF: "var(--canal-win-either-half-soft)",
+  FIRST_HALF: "var(--canal-first-half-soft)",
+  DOUBLE_CHANCE: "var(--canal-double-chance-soft)",
+  UNDERDOG: "var(--canal-neutral-soft)",
+  FAVORITE: "var(--canal-neutral-soft)",
+  LIVE_VALUE: "var(--canal-neutral-soft)",
+  MARKET_MOVE: "var(--canal-neutral-soft)",
   CONSENSUS: "var(--canal-consensus-soft)",
+  CONTRARIAN: "var(--canal-neutral-soft)",
   AVOID: "var(--canal-avoid-soft)",
   CORRECT_SCORE: "var(--canal-correct-score-soft)",
+  RESULT_TOTAL_GOALS: "var(--canal-result-total-goals-soft)",
+  OVER_UNDER_HT: "var(--canal-over-under-ht-soft)",
+  RESULT_BTTS: "var(--canal-result-btts-soft)",
+  DRAW_NO_BET: "var(--canal-draw-no-bet-soft)",
+  WIN_TO_NIL: "var(--canal-win-to-nil-soft)",
+  HALF_TIME_FULL_TIME: "var(--canal-half-time-full-time-soft)",
 };
 
 const CHANNEL_LABEL_KEY: Record<StrategyChannel, string> = {
@@ -44,9 +70,22 @@ const CHANNEL_LABEL_KEY: Record<StrategyChannel, string> = {
   CLEAN_SHEET: "channels.CLEAN_SHEET.label",
   TEAM_TOTAL: "channels.TEAM_TOTAL.label",
   WIN_EITHER_HALF: "channels.WIN_EITHER_HALF.label",
+  FIRST_HALF: "channels.FIRST_HALF.label",
+  DOUBLE_CHANCE: "channels.DOUBLE_CHANCE.label",
+  UNDERDOG: "channels.UNDERDOG.label",
+  FAVORITE: "channels.FAVORITE.label",
+  LIVE_VALUE: "channels.LIVE_VALUE.label",
+  MARKET_MOVE: "channels.MARKET_MOVE.label",
   CONSENSUS: "channels.CONSENSUS.label",
+  CONTRARIAN: "channels.CONTRARIAN.label",
   AVOID: "channels.AVOID.label",
   CORRECT_SCORE: "channels.CORRECT_SCORE.label",
+  RESULT_TOTAL_GOALS: "channels.RESULT_TOTAL_GOALS.label",
+  OVER_UNDER_HT: "channels.OVER_UNDER_HT.label",
+  RESULT_BTTS: "channels.RESULT_BTTS.label",
+  DRAW_NO_BET: "channels.DRAW_NO_BET.label",
+  WIN_TO_NIL: "channels.WIN_TO_NIL.label",
+  HALF_TIME_FULL_TIME: "channels.HALF_TIME_FULL_TIME.label",
 };
 
 const CHANNEL_DESCRIPTION_KEY: Record<StrategyChannel, string> = {
@@ -59,23 +98,51 @@ const CHANNEL_DESCRIPTION_KEY: Record<StrategyChannel, string> = {
   CLEAN_SHEET: "channels.CLEAN_SHEET.description",
   TEAM_TOTAL: "channels.TEAM_TOTAL.description",
   WIN_EITHER_HALF: "channels.WIN_EITHER_HALF.description",
+  FIRST_HALF: "channels.FIRST_HALF.description",
+  DOUBLE_CHANCE: "channels.DOUBLE_CHANCE.description",
+  UNDERDOG: "channels.UNDERDOG.description",
+  FAVORITE: "channels.FAVORITE.description",
+  LIVE_VALUE: "channels.LIVE_VALUE.description",
+  MARKET_MOVE: "channels.MARKET_MOVE.description",
   CONSENSUS: "channels.CONSENSUS.description",
+  CONTRARIAN: "channels.CONTRARIAN.description",
   AVOID: "channels.AVOID.description",
   CORRECT_SCORE: "channels.CORRECT_SCORE.description",
+  RESULT_TOTAL_GOALS: "channels.RESULT_TOTAL_GOALS.description",
+  OVER_UNDER_HT: "channels.OVER_UNDER_HT.description",
+  RESULT_BTTS: "channels.RESULT_BTTS.description",
+  DRAW_NO_BET: "channels.DRAW_NO_BET.description",
+  WIN_TO_NIL: "channels.WIN_TO_NIL.description",
+  HALF_TIME_FULL_TIME: "channels.HALF_TIME_FULL_TIME.description",
 };
 
 // Display order across both lenses (primaries, then AVOID gate, then the
-// CONSENSUS aggregation as the final meta-channel).
+// CONSENSUS aggregation as the final meta-channel). UNDERDOG/FAVORITE/
+// LIVE_VALUE/MARKET_MOVE/CONTRARIAN are intentionally absent — never
+// implemented as real strategies (see analysis-core's META_STRATEGY_
+// CHANNELS/strategy registry), so nothing should ever list them, but they
+// still need CHANNEL_COLOR/CHANNEL_LABEL_KEY entries above so a
+// StrategyChannel value the frontend doesn't expect to render can't crash
+// channelLabel/channelDescription if it ever appears (that's the bug this
+// whole exhaustive-map pass fixes — DRAW_NO_BET hit it in production).
 export const CHANNEL_ORDER: StrategyChannel[] = [
   "VALUE",
   "SAFE",
   "DOMINANT",
-  "BTTS",
   "DRAW",
+  "BTTS",
   "GOALS",
   "CLEAN_SHEET",
   "TEAM_TOTAL",
   "WIN_EITHER_HALF",
+  "FIRST_HALF",
+  "DOUBLE_CHANCE",
+  "DRAW_NO_BET",
+  "WIN_TO_NIL",
+  "OVER_UNDER_HT",
+  "HALF_TIME_FULL_TIME",
+  "RESULT_TOTAL_GOALS",
+  "RESULT_BTTS",
   "CORRECT_SCORE",
   "AVOID",
   "CONSENSUS",

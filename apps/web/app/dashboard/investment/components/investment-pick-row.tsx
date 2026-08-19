@@ -87,7 +87,11 @@ export function InvestmentPickRow({
               {ev}
             </Badge>
           )}
-          <ResultBadge result={pick.result} finished={pick.score !== null} />
+          <ResultBadge
+            result={pick.result}
+            finished={pick.score !== null}
+            market={pick.market}
+          />
           {pick.score === null && (
             <span className="ml-auto">
               <AddToCouponButton item={slipItem} />

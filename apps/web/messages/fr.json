@@ -84,9 +84,37 @@
         "label": "Gagne une mi-temps",
         "description": "Une équipe gagne au moins l'une des deux mi-temps."
       },
+      "FIRST_HALF": {
+        "label": "1ère mi-temps",
+        "description": "Vainqueur de la première mi-temps."
+      },
+      "DOUBLE_CHANCE": {
+        "label": "Double chance",
+        "description": "Double chance (1N, N2 ou 12)."
+      },
+      "UNDERDOG": {
+        "label": "Outsider",
+        "description": "Mise sur l'outsider face au favori du marché."
+      },
+      "FAVORITE": {
+        "label": "Favori",
+        "description": "Mise sur le favori du marché."
+      },
+      "LIVE_VALUE": {
+        "label": "Valeur live",
+        "description": "Valeur détectée en direct pendant le match."
+      },
+      "MARKET_MOVE": {
+        "label": "Mouvement de cote",
+        "description": "Mouvement de cote significatif détecté avant le match."
+      },
       "CONSENSUS": {
         "label": "Consensus",
         "description": "Plusieurs stratégies indépendantes convergent sur le même pick."
+      },
+      "CONTRARIAN": {
+        "label": "Contrarian",
+        "description": "Position à contre-courant du marché."
       },
       "AVOID": {
         "label": "Attention",
@@ -95,6 +123,30 @@
       "CORRECT_SCORE": {
         "label": "Score exact",
         "description": "Score exact le plus probable (observation seule, jamais misé)."
+      },
+      "RESULT_TOTAL_GOALS": {
+        "label": "Résultat + Buts",
+        "description": "Résultat du match combiné au total de buts."
+      },
+      "OVER_UNDER_HT": {
+        "label": "Buts 1ère MT",
+        "description": "Plus/moins de buts à la mi-temps."
+      },
+      "RESULT_BTTS": {
+        "label": "Résultat + BB",
+        "description": "Résultat du match combiné aux deux équipes qui marquent."
+      },
+      "DRAW_NO_BET": {
+        "label": "Sans le nul",
+        "description": "Résultat sans le nul — mise remboursée en cas de match nul."
+      },
+      "WIN_TO_NIL": {
+        "label": "Gagne sans encaisser",
+        "description": "Une équipe gagne le match sans encaisser de but."
+      },
+      "HALF_TIME_FULL_TIME": {
+        "label": "Mi-temps / Fin de match",
+        "description": "Résultat à la mi-temps combiné au résultat final."
       }
     },
     "reasons": {

@@ -102,7 +102,10 @@ export function ChannelRow({
             <div className="flex shrink-0 items-center gap-1.5">
               {avoidEdge !== undefined && <AvoidEdgeBadge edge={avoidEdge} />}
               {OBSERVATION_ONLY.has(channel) && <ObservationBadge />}
-              <ResultBadge result={selection.result} />
+              <ResultBadge
+                result={selection.result}
+                market={selection.market}
+              />
               {slipContext && SLIPPABLE.has(channel) && decision && (
                 <SlipButton
                   channel={channel}
