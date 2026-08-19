@@ -1089,6 +1089,99 @@ channel, opts)` : lit directement la sélection persistée de VALUE/SAFE
   en dépendent pour le calcul de ROI. Doc `coupon/DESIGN.md` mise à jour
   (Étape 5 marquée retirée, anti-objectif Kelly supprimé).
 
+- `[x]` **Plafond d'edge VALUE — calibrage walk-forward : aucun plafond ne
+  généralise** (2026-08-19, nouveau `db:backtest:value-edge-ceiling-
+calibration`, lit les `channel_selection` Phase 1 du replay complet — pas
+  un re-replay TeamStats, cf. commentaire du script sur pourquoi c'est
+  légitime ici). ROI train reste -4.5% à -5% à TOUS les plafonds testés
+  (0.15 à aucun) : ce n'est pas la taille de l'edge qui pose problème.
+  **Vrai diagnostic** : VALUE compare l'edge entre 17 marchés hétérogènes
+  pour choisir le meilleur — certains marchés (WIN_TO_NIL/CLEAN_SHEET/
+  RESULT_TOTAL_GOALS/RESULT_BTTS/TO_WIN_EITHER_HALF/DRAW_NO_BET/BTTS) sont
+  structurellement perdants même au-dessus du plancher d'edge (confirmé
+  large, pas concentré par ligue : ex. WIN_TO_NIL_AWAY 5/5 ligues à n≥5 en
+  ROI négatif, -75.6% moyen) et gagnent le "concours du meilleur edge"
+  précisément parce que leur proba est mal calibrée, pas parce qu'ils sont
+  bons — pendant que DOUBLE_CHANCE (+23.3% ROI), OVER_UNDER_HT (+10.7%),
+  TEAM_TOTAL_HOME (+6.9%) performent bien mais se font noyer dans la
+  comparaison. Conforme à [[feedback_fix_not_disable]] : pas d'exclusion de
+  marché, calibrer plutôt (voir ci-dessous).
+
+- `[x]` **Shrinkage DRAW_NO_BET / WIN_TO_NIL / RESULT_BTTS — 3 nouveaux
+  scripts, jamais calibrés avant** (2026-08-19, même protocole walk-forward
+  que BTTS/GOALS/TEAM_TOTAL : train=toutes saisons sauf la + récente,
+  test=la + récente, ΔBrier≥0.001 tenu-à-l'écart). Résultats :
+  - `db:backtest:draw-no-bet-shrinkage-calibration` (nouveau) : dnbHome
+    calibré sur les matchs non-nuls uniquement (le marché se règle push sur
+    nul) — 32/61 ligues livrées.
+  - `db:backtest:win-to-nil-shrinkage-calibration` (nouveau) : 46 blocs
+    livrés sur 132 (ligue×côté) — probabilité composée (cleanSheet × P(marque
+    ≥1)), plus bruitée que cleanSheet seul, cohérent avec le -75.6% ROI
+    observé.
+  - `db:backtest:result-btts-shrinkage-calibration` (nouveau) : shrink la
+    proba jointe YES par côté, NO dérivé de la masse du côté (même relation
+    que resultTotalGoals, sans dimension ligne) — 35 blocs sur 198.
+  - `OU_SHRINKAGE_CONFIG` (ou-shrinkage.ts) : nouveaux champs `dnbHome`,
+    `winToNilHome`/`winToNilAway`, `resultBtts` + `shrinkResultBtts` (miroir
+    de `shrinkResultTotalGoals`) + 3 overlays mergés (pattern
+    `CLEAN_SHEET_WIN_EITHER_HALF_SHRINKAGE` déjà en place, jamais d'édition
+    en place des ~60 entrées existantes). 6 nouveaux tests unitaires
+    (`ou-shrinkage.spec.ts`) + fix d'un test préexistant périmé (`PL`
+    attendait `null` mais avait déjà un bloc `ouHt` depuis le 08-16 → remplacé
+    par `GER2`, vraiment sans aucune config).
+  - CLEAN_SHEET/WIN_EITHER_HALF et RESULT_TOTAL_GOALS re-testés sur les
+    données fraîches post-replay : stables (résultats quasi identiques,
+    106 vs 104 blocs, écart de bruit) — pas de mise à jour nécessaire pour
+    CLEAN_SHEET/WIN_EITHER_HALF. RESULT_TOTAL_GOALS a maintenant un export
+    JSON (`result-total-goals-shrinkage-shipped.json`, manquant avant) mais
+    ses ~168 entrées restent celles déjà en place (interleaved dans les blocs
+    par ligue, pas un overlay séparé — refresh en place plus risqué,
+    reporté : priorité donnée aux 3 marchés qui n'avaient AUCUNE correction).
+  - **Reste à faire** : re-mesurer le ROI VALUE par marché après ce
+    déploiement (attendre l'accumulation de nouveaux settlements sous la
+    config corrigée, ou un nouveau replay) pour confirmer que ces 3 marchés
+    ne noient plus les bons dans le classement par edge de VALUE.
+
+- `[x]` **VALUE — pondération de confiance par marché (winner's curse
+  cross-marché), SAFE élargi à tous les marchés** (2026-08-19, question
+  explicite utilisateur : "vas-y" pour VALUE, puis "fait pareil pour safe,
+  il doit pouvoir piocher dans tous les marchés"). Nouveau
+  `db:backtest:market-trust-calibration` : mesure, par marché, le ROI
+  walk-forward parmi les candidats Phase 1 (split PAR MARCHÉ — pas un
+  cutoff global, plusieurs marchés WIN_TO_NIL/CLEAN_SHEET/DRAW_NO_BET/
+  TEAM_TOTAL/RESULT_TOTAL_GOALS/RESULT_BTTS/DOUBLE_CHANCE n'ont que ~1 mois
+  d'historique — un split global les aurait tous fait défaut à trust=1),
+  dérive `trust = clamp(trainROI / 0.15, 0.05, 1)`, valide hors échantillon.
+  Bug intermédiaire trouvé et corrigé pendant le calibrage : `qualityScore`
+  n'est JAMAIS persisté pour les lignes Phase 1 (seul VALUE/SAFE le
+  renseigne pour leur propre sélection) — la première mesure comparait
+  0×trust contre 0×trust partout (zéro flip possible). Recalculé via
+  `buildQualityScore` (analysis-core) comme le fait `viablePicksFrom
+PreviousDecisions` en prod.
+  - **VALUE** : pondération validée, **+0.86pp ROI hors échantillon**
+    (1.53%→2.39%, n=1881). Câblée en prod : `SelectionConfig.
+valueMarketTrust`, `getValueMarketTrust`/`VALUE_MARKET_TRUST_MAP`
+    (ev.constants.ts), appliqué dans `ValueStrategy.selectBestEdgePick`
+    (qualityScore × trust avant le tri). ONE_X_TWO/OVER_UNDER/BTTS à 0.05
+    (les 3 plus gros volumes, tous nettement perdants au-dessus du plancher
+    d'edge) ; DOUBLE_CHANCE à 1.00 (+31.7% ROI train) ; TEAM_TOTAL_HOME 0.58,
+    RESULT_BTTS 0.67, OVER_UNDER_HT 0.49 ; le reste à 0.05 (jamais 0 —
+    feedback_fix_not_disable).
+  - **SAFE élargi** de 4 marchés (ONE_X_TWO/OVER_UNDER/BTTS/OVER_UNDER_HT) à
+    les 17 marchés de VALUE (`PHASE2_FILTER_MARKETS`, désormais partagé
+    entre les deux strategies dans `filter-candidates.ts`) — décision
+    produit explicite.
+  - **SAFE — pondération PAS câblée** : un jeu de poids mesuré séparément
+    sur le pool propre de SAFE (proba≥0.68, ev∈[.05,.90], odds∈[1.15,2.20])
+    n'atteint que -0.04pp hors échantillon (bruit, pas une vraie
+    amélioration — le pool éligible de SAFE est trop étroit pour que la
+    pondération change souvent le gagnant). `SelectionConfig.
+safeMarketTrust` existe (même mécanique que VALUE, testée unitairement)
+    mais reste non câblé côté app — SAFE tourne donc élargi mais SANS
+    protection winner's-curse pour l'instant. **Risque accepté
+    consciemment, pas oublié** : à recalibrer quand les marchés récents
+    auront plus de volume côté SAFE.
+
 ---
 
 ## Harnais de backtest partagé

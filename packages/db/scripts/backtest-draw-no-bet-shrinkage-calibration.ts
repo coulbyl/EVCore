@@ -1,29 +1,32 @@
 /// <reference types="node" />
 /**
- * Calibration walk-forward de RESULT_TOTAL_GOALS — même protocole que
- * OU_SHRINKAGE_CONFIG / TEAM_TOTAL (backtest-team-total-shrinkage-calibration.ts) :
- * régresser la probabilité Poisson brute sur l'issue réelle par
- * ligue+côté+ligne, valider hors échantillon (train = toutes saisons sauf
- * la plus récente ; test = la plus récente), ne livrer un bloc que si le
- * Brier tenu-à-l'écart s'améliore d'au moins 0.001 vs l'identité (factor=1).
+ * Calibration walk-forward de DRAW_NO_BET (dnbHome/dnbAway) — même
+ * protocole que backtest-clean-sheet-win-either-half-shrinkage-calibration.ts :
+ * régresser la probabilité Poisson brute sur l'issue réelle par ligue,
+ * valider hors échantillon (train = toutes saisons sauf la plus récente ;
+ * test = la plus récente), ne livrer un bloc que si le Brier tenu-à-l'écart
+ * s'améliore d'au moins 0.001 vs l'identité (factor=1).
  *
- * Différence structurelle avec TEAM_TOTAL/O/U : RESULT_TOTAL_GOALS est un
- * prix joint réel (ex. "HOME_OVER_2_5" = P(home gagne ET plus de 2,5 buts)).
- * Le complément n'est PAS `1 − under` mais `oneXTwo[side] − under` (voir
- * computeResultTotalGoalsProba et rebalanceThreeWayProbabilities). On
- * régresse et on shrink donc la probabilité jointe UNDER elle-même (le pick
- * OVER dérivé n'a pas besoin d'être régressé séparément — voir
- * shrinkResultTotalGoals dans ou-shrinkage.ts qui recalcule OVER à partir de
- * la masse du côté).
+ * Contexte (2026-08-19) : l'audit du replay complet (reanalyze-scope) montre
+ * DRAW_NO_BET structurellement perdant dans la plupart des ligues avec un
+ * échantillon suffisant (13/22 ligues à n≥5 en ROI négatif, ROI moyen/ligue
+ * -1.4%) une fois filtré sur l'edge ≥0.10 de VALUE — et ce marché n'a jamais
+ * eu de shrinkage dans OU_SHRINKAGE_CONFIG (contrairement à BTTS/O-U/TEAM_
+ * TOTAL/RESULT_TOTAL_GOALS/CLEAN_SHEET/WIN_EITHER_HALF).
  *
- * Réutilise la même infrastructure de replay que
- * backtest-team-total-shrinkage-calibration.ts (TeamStats point-in-time,
- * pipeline réel deriveLambdas -> computePoissonMarkets, sans rebalance 1X2 —
- * la probabilité UNDER régressée ici est la somme jointe pure, non affectée
- * par le rebalance, donc sans incidence sur la calibration mesurée).
+ * dnbHome = oneXTwo.home / (oneXTwo.home + oneXTwo.away) — une probabilité
+ * CONDITIONNELLE au match non-nul (poisson.ts). Le marché lui-même se règle
+ * ainsi en réalité : un match nul est remboursé (push), ni gagné ni perdu.
+ * On calibre donc uniquement sur les matchs non-nuls — inclure les nuls
+ * biaiserait la mesure puisque dnbHome/dnbAway n'attribuent déjà aucune
+ * masse au nul par construction. dnbHome + dnbAway = 1 (paire complémentaire,
+ * comme bttsYes/bttsNo) : on régresse dnbHome, dnbAway = 1 − dnbHome.
  *
- * Run: pnpm --filter @evcore/db db:backtest:result-total-goals-shrinkage-calibration
- * Output: packages/db/reports/backtest-result-total-goals-shrinkage-calibration-YYYY-MM-DD.txt
+ * Réutilise la même infrastructure de replay (TeamStats point-in-time,
+ * pipeline réel deriveLambdas -> computePoissonMarkets).
+ *
+ * Run: pnpm --filter @evcore/db db:backtest:draw-no-bet-shrinkage-calibration
+ * Output: packages/db/reports/backtest-draw-no-bet-shrinkage-calibration-YYYY-MM-DD.txt
  */
 import "dotenv/config";
 import { mkdirSync, writeFileSync } from "fs";
@@ -48,10 +51,6 @@ const MIN_TRAIN_VOLUME = 60;
 const MIN_TEST_VOLUME = 20;
 const MIN_BRIER_IMPROVEMENT = 0.001;
 
-const LINES = ["1_5", "2_5", "3_5", "4_5"] as const;
-type Line = (typeof LINES)[number];
-type Side = "HOME" | "DRAW" | "AWAY";
-
 type FixtureRow = {
   id: string;
   scheduledAt: Date;
@@ -70,10 +69,8 @@ type Point = {
   competitionCode: string;
   seasonName: string;
   scheduledAt: Date;
-  side: Side;
-  line: Line;
-  prob: number; // raw Poisson P(side wins AND under line) — the joint sum
-  actualUnder: 0 | 1;
+  prob: number; // dnbHome
+  actual: 0 | 1; // home won, conditional on non-draw
 };
 
 function findPriorStats(
@@ -93,7 +90,6 @@ function findPriorStats(
   return { stats: arr[lastIdx]!.stats, priorCount: lastIdx + 1 };
 }
 
-// Calibration slope: OLS slope of actual (0/1) on predicted probability.
 function olsSlope(predicted: number[], actual: number[]): number {
   const n = predicted.length;
   const meanX = predicted.reduce((a, b) => a + b, 0) / n;
@@ -120,12 +116,6 @@ function shrink(prob: number, base: number, factor: number): number {
   return Math.max(0, Math.min(1, shrunk));
 }
 
-function outcomeFromScores(home: number, away: number): Side {
-  if (home > away) return "HOME";
-  if (home < away) return "AWAY";
-  return "DRAW";
-}
-
 async function main() {
   const generatedAt = new Date();
   const dateLabel = generatedAt.toISOString().slice(0, 10);
@@ -133,7 +123,7 @@ async function main() {
   mkdirSync(reportsDir, { recursive: true });
   const outputPath = join(
     reportsDir,
-    `backtest-result-total-goals-shrinkage-calibration-${dateLabel}.txt`,
+    `backtest-draw-no-bet-shrinkage-calibration-${dateLabel}.txt`,
   );
   const lines: string[] = [];
   const out = (line = "") => {
@@ -141,7 +131,7 @@ async function main() {
     lines.push(line);
   };
 
-  out("Chargement des fixtures terminées...");
+  out("Chargement des fixtures terminées non-nulles...");
   const fixturesRaw = await prisma.fixture.findMany({
     where: {
       status: "FINISHED",
@@ -163,18 +153,22 @@ async function main() {
     orderBy: { scheduledAt: "asc" },
   });
 
-  const fixtures: FixtureRow[] = fixturesRaw.map((f) => ({
-    id: f.id,
-    scheduledAt: f.scheduledAt,
-    seasonId: f.seasonId,
-    seasonName: f.season.name,
-    homeTeamId: f.homeTeamId,
-    awayTeamId: f.awayTeamId,
-    homeScore: f.homeScore!,
-    awayScore: f.awayScore!,
-    competitionCode: f.season.competition.code,
-  }));
-  out(`  ${fixtures.length} fixtures terminées trouvées.`);
+  const fixtures: FixtureRow[] = fixturesRaw
+    .filter((f) => f.homeScore !== f.awayScore)
+    .map((f) => ({
+      id: f.id,
+      scheduledAt: f.scheduledAt,
+      seasonId: f.seasonId,
+      seasonName: f.season.name,
+      homeTeamId: f.homeTeamId,
+      awayTeamId: f.awayTeamId,
+      homeScore: f.homeScore!,
+      awayScore: f.awayScore!,
+      competitionCode: f.season.competition.code,
+    }));
+  out(
+    `  ${fixturesRaw.length} fixtures terminées, ${fixtures.length} non-nulles conservées (DNB se règle push sur nul).`,
+  );
 
   out("Chargement des TeamStats point-in-time...");
   const teamIds = Array.from(
@@ -218,7 +212,7 @@ async function main() {
     `  ${statsRaw.length} lignes TeamStats chargées (${teamIds.length} équipes).`,
   );
 
-  out("Replay du pipeline Poisson (résultat×buts joint) par fixture...");
+  out("Replay du pipeline Poisson par fixture...");
   const points: Point[] = [];
   let processed = 0;
   let skippedColdStart = 0;
@@ -250,28 +244,13 @@ async function main() {
     const markets = computePoissonMarkets(lambda.home, lambda.away);
     processed++;
 
-    const actualOutcome = outcomeFromScores(
-      fixture.homeScore,
-      fixture.awayScore,
-    );
-    const totalGoals = fixture.homeScore + fixture.awayScore;
-
-    for (const side of ["HOME", "DRAW", "AWAY"] as const) {
-      for (const line of LINES) {
-        const lineValue = Number(line.replace("_", "."));
-        const under = markets.resultTotalGoals[`${side}_UNDER_${line}`];
-        if (under === undefined) continue;
-        points.push({
-          competitionCode: fixture.competitionCode,
-          seasonName: fixture.seasonName,
-          scheduledAt: fixture.scheduledAt,
-          side,
-          line,
-          prob: under.toNumber(),
-          actualUnder: actualOutcome === side && totalGoals < lineValue ? 1 : 0,
-        });
-      }
-    }
+    points.push({
+      competitionCode: fixture.competitionCode,
+      seasonName: fixture.seasonName,
+      scheduledAt: fixture.scheduledAt,
+      prob: markets.dnbHome.toNumber(),
+      actual: fixture.homeScore > fixture.awayScore ? 1 : 0,
+    });
   }
   out(
     `  ${processed} fixtures traitées, ${skippedColdStart} exclues (cold-start < ${MIN_PRIOR_TEAM_STATS} TeamStats).`,
@@ -279,33 +258,25 @@ async function main() {
 
   const groups = new Map<string, Point[]>();
   for (const p of points) {
-    const key = `${p.competitionCode}::${p.side}::${p.line}`;
-    const arr = groups.get(key) ?? [];
+    const arr = groups.get(p.competitionCode) ?? [];
     arr.push(p);
-    groups.set(key, arr);
+    groups.set(p.competitionCode, arr);
   }
 
   type ShippedRow = {
     competitionCode: string;
-    side: Side;
-    line: Line;
     trainN: number;
     testN: number;
     trainSlope: number;
     brierImprovement: number;
     fullFactor: number;
     recentBase: number;
+    fitWindow: "historique" | "recent3";
   };
   const shipped: ShippedRow[] = [];
   const rejected: { key: string; reason: string }[] = [];
 
-  for (const [key, pts] of groups) {
-    const [competitionCode, side, line] = key.split("::") as [
-      string,
-      Side,
-      Line,
-    ];
-
+  for (const [competitionCode, pts] of groups) {
     const seasonOrder = Array.from(
       new Set(
         pts
@@ -315,7 +286,10 @@ async function main() {
       ),
     );
     if (seasonOrder.length < 2) {
-      rejected.push({ key, reason: `1 seule saison (${pts.length} picks)` });
+      rejected.push({
+        key: competitionCode,
+        reason: `1 seule saison (${pts.length} picks)`,
+      });
       continue;
     }
 
@@ -325,122 +299,138 @@ async function main() {
 
     if (train.length < MIN_TRAIN_VOLUME || test.length < MIN_TEST_VOLUME) {
       rejected.push({
-        key,
+        key: competitionCode,
         reason: `volume insuffisant (train=${train.length}, test=${test.length})`,
       });
       continue;
     }
 
-    const trainSlope = olsSlope(
+    const allSlope = olsSlope(
       train.map((p) => p.prob),
-      train.map((p) => p.actualUnder),
+      train.map((p) => p.actual),
     );
-    const trainBase =
-      train.reduce((s, p) => s + p.actualUnder, 0) / train.length;
+    const allBase = train.reduce((s, p) => s + p.actual, 0) / train.length;
+    const testIdentity = test.map((p) => ({ prob: p.prob, actual: p.actual }));
+    const brierIdentity = brier(testIdentity);
+    const improvementAll =
+      brierIdentity -
+      brier(
+        test.map((p) => ({
+          prob: shrink(p.prob, allBase, allSlope),
+          actual: p.actual,
+        })),
+      );
 
-    const testIdentity = test.map((p) => ({
-      prob: p.prob,
-      actual: p.actualUnder,
-    }));
-    const testShrunk = test.map((p) => ({
-      prob: shrink(p.prob, trainBase, trainSlope),
-      actual: p.actualUnder,
-    }));
+    const trainSeasonOrder = seasonOrder.slice(0, -1);
+    const recentTrainSeasons = new Set(trainSeasonOrder.slice(-2));
+    const recentTrain = train.filter((p) =>
+      recentTrainSeasons.has(p.seasonName),
+    );
+    let improvementRecent = -Infinity;
+    let recentSlope = 1;
+    let recentTrainBase = allBase;
+    if (recentTrain.length >= MIN_TRAIN_VOLUME) {
+      recentSlope = olsSlope(
+        recentTrain.map((p) => p.prob),
+        recentTrain.map((p) => p.actual),
+      );
+      recentTrainBase =
+        recentTrain.reduce((s, p) => s + p.actual, 0) / recentTrain.length;
+      improvementRecent =
+        brierIdentity -
+        brier(
+          test.map((p) => ({
+            prob: shrink(p.prob, recentTrainBase, recentSlope),
+            actual: p.actual,
+          })),
+        );
+    }
 
-    const brierImprovement = brier(testIdentity) - brier(testShrunk);
+    const useRecent =
+      improvementRecent > improvementAll &&
+      improvementRecent >= MIN_BRIER_IMPROVEMENT;
+    const trainSlope = useRecent ? recentSlope : allSlope;
+    const brierImprovement = useRecent ? improvementRecent : improvementAll;
 
     if (brierImprovement < MIN_BRIER_IMPROVEMENT) {
       rejected.push({
-        key,
-        reason: `ΔBrier insuffisant (${brierImprovement >= 0 ? "+" : ""}${brierImprovement.toFixed(4)})`,
+        key: competitionCode,
+        reason:
+          `ΔBrier insuffisant (historique complet ${improvementAll >= 0 ? "+" : ""}${improvementAll.toFixed(4)}, ` +
+          `fenêtre récente ${improvementRecent === -Infinity ? "n/a" : (improvementRecent >= 0 ? "+" : "") + improvementRecent.toFixed(4)})`,
       });
       continue;
     }
 
     const fullFactor = olsSlope(
       pts.map((p) => p.prob),
-      pts.map((p) => p.actualUnder),
+      pts.map((p) => p.actual),
     );
-    const recentSeasons = new Set(seasonOrder.slice(-2));
+    const recentSeasons = new Set(seasonOrder.slice(useRecent ? -3 : -2));
     const recentPts = pts.filter((p) => recentSeasons.has(p.seasonName));
     const recentBase =
-      recentPts.reduce((s, p) => s + p.actualUnder, 0) / recentPts.length;
+      recentPts.reduce((s, p) => s + p.actual, 0) / recentPts.length;
+    const recentWindowSlope = useRecent
+      ? olsSlope(
+          recentPts.map((p) => p.prob),
+          recentPts.map((p) => p.actual),
+        )
+      : fullFactor;
 
     shipped.push({
       competitionCode,
-      side,
-      line,
       trainN: train.length,
       testN: test.length,
       trainSlope,
       brierImprovement,
-      fullFactor: Math.min(1, Math.max(0, fullFactor)),
+      fullFactor: Math.min(
+        1,
+        Math.max(0, useRecent ? recentWindowSlope : fullFactor),
+      ),
       recentBase,
+      fitWindow: useRecent ? "recent3" : "historique",
     });
   }
 
   out();
   out("═══════════════════════════════════════════════════════");
-  out("  EVCore — Calibration walk-forward RESULT_TOTAL_GOALS");
+  out("  EVCore — Calibration walk-forward DRAW_NO_BET (dnbHome/dnbAway)");
   out(
     `  ${dateLabel} — train=toutes saisons sauf la + récente, test=la + récente`,
   );
   out("═══════════════════════════════════════════════════════");
   out();
   out(
-    `${shipped.length} bloc(s) livré(s) sur ${groups.size} combinaisons (compétition×côté×ligne) observées ` +
-      `(${rejected.length} rejetés : volume insuffisant ou pas d'amélioration Brier).`,
+    `${shipped.length} bloc(s) livré(s) sur ${groups.size} ligues observées ` +
+      `(${rejected.length} rejetées : volume insuffisant ou pas d'amélioration Brier).`,
   );
   out();
 
-  shipped.sort(
-    (a, b) =>
-      a.competitionCode.localeCompare(b.competitionCode) ||
-      a.side.localeCompare(b.side) ||
-      a.line.localeCompare(b.line),
-  );
-
-  for (const r of shipped) {
+  const rows = shipped
+    .slice()
+    .sort((a, b) => a.competitionCode.localeCompare(b.competitionCode));
+  for (const r of rows) {
     out(
-      `${r.competitionCode.padEnd(6)} ${r.side.padEnd(5)} ${r.line.padEnd(4)}  ` +
-        `train n=${String(r.trainN).padEnd(5)} test n=${String(r.testN).padEnd(4)}  ` +
+      `${r.competitionCode.padEnd(6)}  train n=${String(r.trainN).padEnd(5)} test n=${String(r.testN).padEnd(4)}  ` +
         `slope(train)=${r.trainSlope.toFixed(2)}  ΔBrier(test)=${r.brierImprovement >= 0 ? "-" : "+"}${Math.abs(r.brierImprovement).toFixed(4)}  ` +
-        `→ factor(full)=${r.fullFactor.toFixed(2)} base(recent, joint)=${r.recentBase.toFixed(3)}`,
+        `→ factor(full)=${r.fullFactor.toFixed(2)} base(recent)=${r.recentBase.toFixed(2)} fit=${r.fitWindow}`,
+    );
+  }
+  if (rows.length === 0) out("  (aucun bloc livré)");
+
+  out();
+  out(
+    "--- Config générée (à coller/fusionner dans OU_SHRINKAGE_CONFIG, champ dnbHome) ---",
+  );
+  out();
+  for (const r of rows) {
+    out(
+      `// ${r.competitionCode}: dnbHome: { factor: ${r.fullFactor.toFixed(2)}, base: ${r.recentBase.toFixed(2)} },`,
     );
   }
 
   out();
-  out(
-    "--- Config générée (à coller/fusionner dans OU_SHRINKAGE_CONFIG.resultTotalGoals) ---",
-  );
-  out();
-  const byCompetition = new Map<string, ShippedRow[]>();
-  for (const r of shipped) {
-    const arr = byCompetition.get(r.competitionCode) ?? [];
-    arr.push(r);
-    byCompetition.set(r.competitionCode, arr);
-  }
-  for (const [code, rows] of Array.from(byCompetition.entries()).sort((a, b) =>
-    a[0].localeCompare(b[0]),
-  )) {
-    out(`// ${code}:`);
-    out(`//   resultTotalGoals: {`);
-    for (const side of ["HOME", "DRAW", "AWAY"] as const) {
-      const sideLines = rows.filter((r) => r.side === side);
-      if (sideLines.length === 0) continue;
-      out(`//     ${side}: {`);
-      for (const r of sideLines) {
-        out(
-          `//       "${r.line.replace("_", "")}": { factor: ${r.fullFactor.toFixed(2)}, base: ${r.recentBase.toFixed(3)} },`,
-        );
-      }
-      out(`//     },`);
-    }
-    out(`//   },`);
-    out();
-  }
-
-  out("--- Rejetés (diagnostic) ---");
+  out("--- Rejetées (diagnostic) ---");
   for (const r of rejected.sort((a, b) => a.key.localeCompare(b.key))) {
     out(`  ${r.key}: ${r.reason}`);
   }
@@ -449,10 +439,7 @@ async function main() {
   writeFileSync(outputPath, `${report}\n`, "utf8");
   console.log(`\nRapport écrit : reports/${outputPath.split("/").pop()}`);
 
-  const jsonPath = join(
-    reportsDir,
-    "result-total-goals-shrinkage-shipped.json",
-  );
+  const jsonPath = join(reportsDir, "draw-no-bet-shrinkage-shipped.json");
   writeFileSync(jsonPath, JSON.stringify(shipped, null, 2), "utf8");
   console.log(
     `Données structurées écrites : reports/${jsonPath.split("/").pop()}`,

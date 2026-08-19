@@ -553,6 +553,49 @@ export function getValueMinEdge(
   return undefined;
 }
 
+// Cross-market ranking discount for VALUE (2026-08-19, db:backtest:market-
+// trust-calibration, walk-forward: train = each market's own earliest 75%
+// of edge≥0.10 candidates, test = the shared most-recent 25% of fixtures —
+// +0.86pp ROI vs unweighted on that held-out window). VALUE compares the
+// best qualityScore across all 17 markets it can draw from; markets whose
+// apparent edge is largely noise (not real signal) win that comparison
+// disproportionately (winner's curse) — trust = clamp(trainROI / 0.15,
+// 0.05, 1) discounts each market's qualityScore by its own measured
+// reliability before ranking. Never 0 (feedback_fix_not_disable): a market
+// can still win if nothing else is on offer for that fixture, it just needs
+// to clear a much higher bar against a rival market.
+// Not (yet) applied to SAFE: db:backtest:market-trust-calibration measured
+// a SEPARATE SAFE-specific set of weights (SAFE's eligible pool is narrow
+// enough — probability≥0.68 plus EV/odds bounds — that discounting barely
+// changes who wins) and it only reached -0.04pp out-of-sample, not a real
+// improvement. Revisit once the newer markets below accumulate more
+// SAFE-eligible volume.
+const VALUE_MARKET_TRUST_MAP: Record<string, Decimal> = {
+  ONE_X_TWO: new Decimal('0.05'),
+  OVER_UNDER: new Decimal('0.05'),
+  BTTS: new Decimal('0.05'),
+  DOUBLE_CHANCE: new Decimal('1.00'),
+  // HALF_TIME_FULL_TIME: volume insuffisant (n=23) pour mesurer un poids —
+  // trust=1 par défaut, à recalibrer quand le volume aura grossi.
+  HALF_TIME_FULL_TIME: new Decimal('1.00'),
+  OVER_UNDER_HT: new Decimal('0.49'),
+  FIRST_HALF_WINNER: new Decimal('0.09'),
+  DRAW_NO_BET: new Decimal('0.05'),
+  TEAM_TOTAL_HOME: new Decimal('0.58'),
+  TEAM_TOTAL_AWAY: new Decimal('0.05'),
+  CLEAN_SHEET_HOME: new Decimal('0.05'),
+  CLEAN_SHEET_AWAY: new Decimal('0.05'),
+  WIN_TO_NIL_HOME: new Decimal('0.05'),
+  WIN_TO_NIL_AWAY: new Decimal('0.05'),
+  TO_WIN_EITHER_HALF: new Decimal('0.05'),
+  RESULT_TOTAL_GOALS: new Decimal('0.05'),
+  RESULT_BTTS: new Decimal('0.67'),
+};
+
+export function getValueMarketTrust(market: string): Decimal {
+  return VALUE_MARKET_TRUST_MAP[market] ?? new Decimal('1');
+}
+
 // ─── Cross-competition team-stats fallback policy ──────────────────────────
 //
 // isEuropeanCompetition/isNationalTeamCompetition, the blend weights, and

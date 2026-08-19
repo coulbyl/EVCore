@@ -64,6 +64,11 @@
     "db:backtest:over-under-ht-shrinkage-calibration": "tsx scripts/backtest-over-under-ht-shrinkage-calibration.ts",
     "db:backtest:longshot-penalty-odds-buckets": "tsx scripts/backtest-longshot-penalty-odds-buckets.ts",
     "db:backtest:calibration-alert-over-under": "tsx scripts/backtest-calibration-alert-over-under.ts",
+    "db:backtest:value-edge-ceiling-calibration": "tsx scripts/backtest-value-edge-ceiling-calibration.ts",
+    "db:backtest:draw-no-bet-shrinkage-calibration": "tsx scripts/backtest-draw-no-bet-shrinkage-calibration.ts",
+    "db:backtest:win-to-nil-shrinkage-calibration": "tsx scripts/backtest-win-to-nil-shrinkage-calibration.ts",
+    "db:backtest:result-btts-shrinkage-calibration": "tsx scripts/backtest-result-btts-shrinkage-calibration.ts",
+    "db:backtest:market-trust-calibration": "tsx scripts/backtest-market-trust-calibration.ts",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },

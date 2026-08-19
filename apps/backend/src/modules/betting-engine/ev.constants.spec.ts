@@ -9,6 +9,7 @@ import {
   getPickEvFloor,
   getPickMaxSelectionOdds,
   getPickMinSelectionOdds,
+  getValueMarketTrust,
 } from './ev.constants';
 
 describe('getLeagueEvThreshold', () => {
@@ -364,5 +365,21 @@ describe('getPickEvFloor', () => {
         new Decimal('0.08'),
       ).toNumber(),
     ).toBe(0.99);
+  });
+});
+
+describe('getValueMarketTrust', () => {
+  it('heavily discounts the highest-volume, worst-calibrated markets', () => {
+    expect(getValueMarketTrust('ONE_X_TWO').toNumber()).toBe(0.05);
+    expect(getValueMarketTrust('OVER_UNDER').toNumber()).toBe(0.05);
+    expect(getValueMarketTrust('BTTS').toNumber()).toBe(0.05);
+  });
+
+  it('gives full trust to a validated-reliable market', () => {
+    expect(getValueMarketTrust('DOUBLE_CHANCE').toNumber()).toBe(1);
+  });
+
+  it('falls back to full trust (1) for an unknown market', () => {
+    expect(getValueMarketTrust('SOME_FUTURE_MARKET').toNumber()).toBe(1);
   });
 });

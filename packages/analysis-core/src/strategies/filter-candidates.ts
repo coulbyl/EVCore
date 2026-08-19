@@ -1,9 +1,35 @@
 import type Decimal from "decimal.js";
-import type { Market, StrategyChannel } from "../types";
-import { CHANNEL_DECISION_STATUS } from "../types";
+import type { StrategyChannel } from "../types";
+import { CHANNEL_DECISION_STATUS, Market } from "../types";
 import type { ViablePick } from "../selection/types";
 import { buildQualityScore } from "../selection";
 import type { StrategyDecision } from "./types";
+
+// Every market a Phase-1 specialist can emit a candidate for — shared by
+// both Phase-2 filters (VALUE, SAFE: since 2026-08-19 SAFE draws from the
+// same pool as VALUE, see safe.strategy.ts). Must mirror every market
+// listEvaluatedPicks() (selection/pick-evaluation.ts) can emit a candidate
+// for — the orchestrator rejects any VALUE/SAFE selection on a market
+// outside this list (see orchestrator.ts's allowedMarkets check).
+export const PHASE2_FILTER_MARKETS: readonly Market[] = [
+  Market.ONE_X_TWO,
+  Market.OVER_UNDER,
+  Market.BTTS,
+  Market.DOUBLE_CHANCE,
+  Market.HALF_TIME_FULL_TIME,
+  Market.OVER_UNDER_HT,
+  Market.FIRST_HALF_WINNER,
+  Market.DRAW_NO_BET,
+  Market.TEAM_TOTAL_HOME,
+  Market.TEAM_TOTAL_AWAY,
+  Market.CLEAN_SHEET_HOME,
+  Market.CLEAN_SHEET_AWAY,
+  Market.WIN_TO_NIL_HOME,
+  Market.WIN_TO_NIL_AWAY,
+  Market.TO_WIN_EITHER_HALF,
+  Market.RESULT_TOTAL_GOALS,
+  Market.RESULT_BTTS,
+];
 
 // Shared by the Phase-2 filter channels (VALUE, SAFE): turns every Phase-1
 // market specialist's SELECTED pick into a priced ViablePick, restricted to

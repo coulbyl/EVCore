@@ -195,19 +195,49 @@ describe("SafeStrategy", () => {
     expect(decision.selections[0]!.pick).toBe("AWAY");
   });
 
-  it("only selects from SAFE markets (ONE_X_TWO, OVER_UNDER, BTTS, OVER_UNDER_HT)", () => {
-    // A pick on an unsupported market (DOUBLE_CHANCE) should not be selected
-    // even though its Phase-1 channel decision is SELECTED.
+  it("discounts a market's probability/EV by marketTrust before ranking, so a lower-probability but more trusted market can win", () => {
+    // Without trust, BTTS (higher probability) wins the ranking — same
+    // shape as ValueStrategy's equivalent test. A near-zero trust on BTTS
+    // flips the winner to ONE_X_TWO.
+    const higherProbUntrusted = makeSafeCandidate({
+      channel: "FAKE_BTTS" as StrategyChannel,
+      market: Market.BTTS,
+      pick: "YES",
+      probability: new Decimal("0.80"),
+      odds: new Decimal("1.30"),
+      ev: new Decimal("0.06"),
+    });
+    const previousDecisions = previousDecisionsFrom([
+      makeSafeCandidate(), // ONE_X_TWO/HOME, probability 0.72
+      higherProbUntrusted,
+    ]);
+    const base = makeContext({ previousDecisions });
+    const decision = strategy.evaluate({
+      ...base,
+      selectionConfig: {
+        ...base.selectionConfig,
+        safeMarketTrust: (market) =>
+          market === Market.BTTS ? new Decimal("0.05") : new Decimal(1),
+      },
+    });
+    expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
+    expect(decision.selections[0]!.market).toBe(Market.ONE_X_TWO);
+  });
+
+  it("selects from any VALUE market, not just ONE_X_TWO/OVER_UNDER/BTTS/OVER_UNDER_HT", () => {
+    // Widened 2026-08-19 (explicit product decision) to draw from the same
+    // pool as VALUE — a pick on DOUBLE_CHANCE is now eligible when its
+    // Phase-1 channel decision is SELECTED and it clears SAFE's own gates.
     const previousDecisions = previousDecisionsFrom([
       makeSafeCandidate({ market: Market.DOUBLE_CHANCE, pick: "1X" }),
     ]);
     expect(strategy.evaluate(makeContext({ previousDecisions })).status).toBe(
-      CHANNEL_DECISION_STATUS.REJECTED,
+      CHANNEL_DECISION_STATUS.SELECTED,
     );
   });
 
-  it("allowedMarkets does not include DOUBLE_CHANCE or HALF_TIME_FULL_TIME", () => {
-    expect(strategy.allowedMarkets).not.toContain(Market.DOUBLE_CHANCE);
-    expect(strategy.allowedMarkets).not.toContain(Market.HALF_TIME_FULL_TIME);
+  it("allowedMarkets includes every VALUE market (DOUBLE_CHANCE, HALF_TIME_FULL_TIME included)", () => {
+    expect(strategy.allowedMarkets).toContain(Market.DOUBLE_CHANCE);
+    expect(strategy.allowedMarkets).toContain(Market.HALF_TIME_FULL_TIME);
   });
 });

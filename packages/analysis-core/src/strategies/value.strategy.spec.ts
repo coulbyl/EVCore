@@ -207,6 +207,34 @@ describe("ValueStrategy", () => {
     expect(decision.selections[0]!.pick).toBe("OVER");
   });
 
+  it("discounts a market's qualityScore by marketTrust before ranking, so a lower-quality but more trusted market can win", () => {
+    // Without trust, OVER_UNDER (higher edge/EV) would win — see the test
+    // above. A near-zero trust on OVER_UNDER flips the winner to ONE_X_TWO.
+    const strongerEdgeUntrusted = makeCandidate({
+      channel: STRATEGY_CHANNEL.GOALS,
+      market: Market.OVER_UNDER,
+      pick: "OVER",
+      probability: new Decimal("0.75"),
+      odds: new Decimal("1.80"),
+      ev: new Decimal("0.35"),
+    });
+    const previousDecisions = previousDecisionsFrom([
+      makeCandidate(), // ONE_X_TWO/HOME, default candidate
+      strongerEdgeUntrusted,
+    ]);
+    const base = makeContext({ previousDecisions });
+    const decision = strategy.evaluate({
+      ...base,
+      selectionConfig: {
+        ...base.selectionConfig,
+        valueMarketTrust: (market) =>
+          market === Market.OVER_UNDER ? new Decimal("0.05") : new Decimal(1),
+      },
+    });
+    expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
+    expect(decision.selections[0]!.market).toBe(Market.ONE_X_TWO);
+  });
+
   it("returns REJECTED with line_movement when movement > 0.10", () => {
     const previousDecisions = previousDecisionsFrom([makeCandidate()]);
     const ctx = makeContext({
