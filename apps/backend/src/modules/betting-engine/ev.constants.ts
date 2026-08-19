@@ -1153,11 +1153,5 @@ export const LINE_MOVEMENT_THRESHOLD = new Decimal('0.10');
 // picks where bookmaker margin erodes expected value disproportionately.
 export const SAFE_VALUE_MIN_ODDS = new Decimal('1.15');
 
-// Flat stake used when KELLY_ENABLED=false (default — safe fallback)
+// Flat stake applied to every staked bet.
 export const DEFAULT_STAKE_PCT = new Decimal('0.01');
-
-// Fractional Kelly staking — enabled via KELLY_ENABLED=true config flag.
-// Quarter Kelly (0.25) reduces variance significantly vs full Kelly.
-// Hard cap at 5% per bet regardless of computed Kelly size.
-export const KELLY_FRACTION = new Decimal('0.25');
-export const KELLY_MAX_STAKE_PCT = new Decimal('0.05');

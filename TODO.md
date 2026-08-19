@@ -1013,7 +1013,7 @@ db:migrate` après avoir vérifié le diff du schéma.
     recalibration GOALS/TEAM_TOTAL de cette session.
   - **SAFE sur `OVER_UNDER UNDER`** : même famille de biais. Testé
     l'hypothèse de l'ancienne comparaison lambda retirée (`SV_UNDER_
-    LAMBDA_COMPARISON_THRESHOLD`) — le UNDER haute-lambda est bien pire
+LAMBDA_COMPARISON_THRESHOLD`) — le UNDER haute-lambda est bien pire
     (65.5% vs 68.7% hit) mais même le UNDER bas-lambda est déjà sous le
     seuil de rentabilité (68.7% hit pour des cotes qui demandent ~71%) :
     réintégrer cette comparaison ne réglerait qu'une fraction du
@@ -1041,10 +1041,53 @@ db:migrate` après avoir vérifié le diff du schéma.
     utilisateur explicite : un signal validé qu'on laisse dormir en
     attendant un moment qui ne vient jamais, ce n'est jamais activé (cf.
     [[feedback_no_dormant_flags]]).
-  - **Reste à faire** : le replay complet (rejouer le pipeline actuel sur
-    tout l'historique avec les nouvelles configs GOALS/TEAM_TOTAL/BTTS/1X2/
-    congestion) pour voir si les biais VALUE/SAFE ci-dessus se résorbent —
-    explicitement demandé par l'utilisateur comme prochaine étape.
+  - **Replay complet exécuté** (2026-08-19, `reanalyze-scope.js
+--season-name "2024-25,2025,2025-26,2026,2026-27"`, 38 761 fixtures,
+    38 500 analysées / 261 skip / 290 595 sélections resettle) — lancé par
+    l'utilisateur lui-même (jamais exécuté par l'assistant, sur demande
+    explicite). Reste à faire côté analyse : re-vérifier si les biais VALUE/
+    SAFE ci-dessus (TEAM_TOTAL_HOME UNDER_1_5, OVER_UNDER UNDER) se
+    résorbent avec les nouvelles configs GOALS/TEAM_TOTAL/BTTS/1X2/congestion.
+
+- `[x]` **`bet` VALUE/SAFE recâblé sur la décision Phase 2 persistée**
+  (2026-08-19, découvert pendant le replay ci-dessus) — depuis le passage de
+  VALUE/SAFE en Phase 2 (2026-08-18, [[project_prediction_engine_families_redefinition]]),
+  `betting-engine.service.ts` matérialisait encore la ligne `bet` réelle
+  depuis l'ancien pipeline (`evaluatedPicks`/`candidatePicks[0]`/
+  `selectSafeValuePick`), relié à la sélection persistée seulement par un
+  FK lookup a posteriori (`findChannelSelectionId`, matching par market+pick)
+  — un `bet` pouvait donc diverger du `channel_selection` que la fiche
+  d'analyse affiche pour le même fixture. Nouveau `persistChannelBet(decisions,
+channel, opts)` : lit directement la sélection persistée de VALUE/SAFE
+  (`persistedChannelDecisions`) et écrit le `bet` à partir de son propre id
+  — plus de re-matching, plus de divergence possible. `evaluatedPicks`/
+  `candidatePicks`/`valueBet` restent calculés (diagnostics : signal de line
+  movement, alerte EV, `modelRunFeatures`) mais ne pilotent plus l'écriture du
+  `bet`. Tests : les tests qui verrouillaient l'ancien pipeline (7 dans
+  `betting-engine.service.spec.ts` + le golden test) fournissent maintenant un
+  mock `ChannelDecisionService` qui reproduit l'algorithme pré-Phase-2
+  directement depuis `context.evaluatedMarkets` — teste le branchement
+  bet↔décision, pas les seuils par ligue des spécialistes Phase 1 (couverts
+  par leurs propres tests analysis-core).
+
+- `[x]` **Kelly retiré du code (betting-engine + coupon)** (2026-08-19,
+  demande explicite utilisateur pendant la revue ci-dessus). Jamais activé en
+  prod (`KELLY_ENABLED` restait `false` partout) — retiré plutôt que laissé
+  en flag dormant : le sizing Kelly amplifie l'edge annoncé par le modèle,
+  donc amplifierait aussi le biais de surconfiance ~8pp déjà identifié
+  ([[project_value_edge_floor]]) tant que VALUE n'est pas calibré de façon
+  fiable sur tous les marchés — l'activer aurait concentré le risque sur les
+  picks les moins dignes de confiance. Supprimé : `calculateKellyStakePct`
+  (analysis-core `ev/ev-math.ts` + export), `KELLY_FRACTION`/
+  `KELLY_MAX_STAKE_PCT` (`ev.constants.ts`), `kellyEnabled`/`ConfigService`
+  des constructeurs `BettingEngineService` et `CouponService`,
+  `recommendedCouponStakePct` (coupon-composer, remplacé par
+  `DEFAULT_STAKE_PCT.toNumber()` inline), champ `stakingMode` du `reasoning`
+  coupon (toujours `FLAT`, donc sans valeur informative), `KELLY_ENABLED` de
+  `.env.example`. `stakePct` reste : chaque bet garde une mise plate
+  `DEFAULT_STAKE_PCT` (1%), aucun changement pour `bet-slip`/`dashboard` qui
+  en dépendent pour le calcul de ROI. Doc `coupon/DESIGN.md` mise à jour
+  (Étape 5 marquée retirée, anti-objectif Kelly supprimé).
 
 ---
 

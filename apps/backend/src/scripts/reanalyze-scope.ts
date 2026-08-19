@@ -11,10 +11,11 @@
  *
  * Dev-only. Run after build:
  *   cd apps/backend && pnpm build
- *   node dist/scripts/reanalyze-scope.js --competition WC --dry-run
- *   node dist/scripts/reanalyze-scope.js --competition WC
- *   node dist/scripts/reanalyze-scope.js --season <seasonId>
- *   node dist/scripts/reanalyze-scope.js --from 2025-07-01 --to 2026-06-30
+ *   node dist/src/scripts/reanalyze-scope.js --competition WC --dry-run
+ *   node dist/src/scripts/reanalyze-scope.js --competition WC
+ *   node dist/src/scripts/reanalyze-scope.js --season <seasonId>
+ *   node dist/src/scripts/reanalyze-scope.js --from 2025-07-01 --to 2026-06-30
+ *   node dist/src/scripts/reanalyze-scope.js --season-name "2024-25,2025,2025-26,2026,2026-27" --dry-run
  */
 
 // Must run before any import that initialises the Prisma client (@evcore/db).
@@ -33,6 +34,7 @@ import { ChannelDecisionService } from '@modules/betting-engine/channel-decision
 type ScriptArgs = {
   competition: string | null;
   season: string | null;
+  seasonNames: string[] | null;
   from: string | null;
   to: string | null;
   dryRun: boolean;
@@ -57,6 +59,7 @@ function parseArgs(argv: string[]): ScriptArgs {
   const args: ScriptArgs = {
     competition: null,
     season: null,
+    seasonNames: null,
     from: null,
     to: null,
     dryRun: false,
@@ -66,17 +69,22 @@ function parseArgs(argv: string[]): ScriptArgs {
     if (arg === '--dry-run') args.dryRun = true;
     else if (arg === '--competition') args.competition = argv[(i += 1)] ?? null;
     else if (arg === '--season') args.season = argv[(i += 1)] ?? null;
-    else if (arg === '--from') args.from = argv[(i += 1)] ?? null;
+    else if (arg === '--season-name') {
+      const value = argv[(i += 1)] ?? null;
+      args.seasonNames = value ? value.split(',').map((s) => s.trim()) : null;
+    } else if (arg === '--from') args.from = argv[(i += 1)] ?? null;
     else if (arg === '--to') args.to = argv[(i += 1)] ?? null;
     else if (arg === '--help' || arg === '-h') {
       console.log(
-        'Usage: node dist/scripts/reanalyze-scope.js (--competition CODE | --season ID) [--from D --to D] [--dry-run]',
+        'Usage: node dist/scripts/reanalyze-scope.js (--competition CODE | --season ID | --season-name "2025-26,2026") [--from D --to D] [--dry-run]',
       );
       process.exit(0);
     } else throw new Error(`Unknown argument: ${arg}`);
   }
-  if (!args.competition && !args.season && !args.from) {
-    throw new Error('Provide --competition, --season, or --from/--to');
+  if (!args.competition && !args.season && !args.seasonNames && !args.from) {
+    throw new Error(
+      'Provide --competition, --season, --season-name, or --from/--to',
+    );
   }
   return args;
 }
@@ -84,8 +92,16 @@ function parseArgs(argv: string[]): ScriptArgs {
 function buildFixtureWhere(args: ScriptArgs): Prisma.FixtureWhereInput {
   const where: Prisma.FixtureWhereInput = { status: FixtureStatus.FINISHED };
   if (args.season) where.seasonId = args.season;
-  if (args.competition) {
-    where.season = { competition: { code: args.competition } };
+  // Season LABELS (e.g. "2025-26") repeat across every competition — unlike
+  // --season (one seasonId, one competition), this matches all of them at
+  // once. Deliberately NOT a scheduledAt date range: some season labels
+  // (multi-year qualification cycles) span years wider than their label
+  // suggests, so filtering by date would silently pull in unrelated history.
+  if (args.seasonNames || args.competition) {
+    where.season = {
+      ...(args.seasonNames ? { name: { in: args.seasonNames } } : {}),
+      ...(args.competition ? { competition: { code: args.competition } } : {}),
+    };
   }
   if (args.from || args.to) {
     where.scheduledAt = {
@@ -98,11 +114,13 @@ function buildFixtureWhere(args: ScriptArgs): Prisma.FixtureWhereInput {
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
-  const scope = args.competition
-    ? `competition=${args.competition}`
-    : args.season
-      ? `season=${args.season}`
-      : `${args.from ?? '…'}→${args.to ?? '…'}`;
+  const scopeParts = [
+    args.competition ? `competition=${args.competition}` : null,
+    args.season ? `season=${args.season}` : null,
+    args.seasonNames ? `seasonNames=${args.seasonNames.join('|')}` : null,
+    args.from || args.to ? `${args.from ?? '…'}→${args.to ?? '…'}` : null,
+  ].filter((p): p is string => p !== null);
+  const scope = scopeParts.join(', ');
   console.log(`EVCore — reanalyze scope (${scope}, dryRun=${args.dryRun})`);
 
   const app = await NestFactory.createApplicationContext(ReanalyzeScopeModule, {

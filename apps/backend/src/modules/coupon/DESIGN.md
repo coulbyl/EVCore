@@ -26,7 +26,7 @@ est **déjà implémenté et testé** ailleurs dans le backend. Le module coupon
 | Loi de Poisson (λ dom/ext, matrice de scores)      | ✅ Fait                | `buildPoissonDistributions`, `computePoissonMarkets`, `deriveMarketsFromPoisson` ([betting-engine.utils.ts](betting-engine.utils.ts))                                                                                                                                                                                                                                                                 |
 | `EV = p × cote − 1`, filtre EV strict              | ✅ Fait                | `calculateEV`, `EV_THRESHOLD = 0.08`, seuils par ligue `LEAGUE_EV_THRESHOLD_MAP` ([ev.constants.ts](../betting-engine/ev.constants.ts))                                                                                                                                                                                                                                                               |
 | Proba jointe **corrélée** même-match (pas `p1×p2`) | ❌ Retiré (2026-07-18) | Système synthétique retiré ; remplacé par de vraies cotes bookmaker pré-combinées (`RESULT_TOTAL_GOALS`, `RESULT_BTTS`). Voir Étape 6 ci-dessous.                                                                                                                                                                                                                                                     |
-| Kelly fractionnaire (Quarter Kelly, cap mise)      | ✅ Fait                | `calculateKellyStakePct`, `KELLY_FRACTION=0.25`, `KELLY_MAX_STAKE_PCT=0.05`, flag `KELLY_ENABLED`                                                                                                                                                                                                                                                                                                     |
+| Kelly fractionnaire (Quarter Kelly, cap mise)      | ❌ Retiré (2026-08-19) | Jamais activé en prod (`KELLY_ENABLED` restait `false`) ; retiré : le sizing Kelly amplifie l'edge annoncé, donc aussi le biais de surconfiance du modèle (~8pp, cf. plancher d'edge VALUE) — mise toujours plate `DEFAULT_STAKE_PCT`.                                                                                                                                                                |
 | Calibration — **mesure**                           | ✅ Fait                | `CalibrationService` (Brier, meanError) → déclenche `AdjustmentProposal`. ⚠️ **mesure seulement, ne corrige aucune proba au runtime.**                                                                                                                                                                                                                                                                |
 | Calibration — **correction de proba**              | ⚠️ **PAS en prod**     | Couche ML XGBoost (`predictShadowCorrection`) = **shadow only** : `shadowMlCorrectedP` est loggé, la décision garde la **proba Poisson brute** ([betting-engine.service.ts:905-925](../betting-engine/betting-engine.service.ts)). Promotion hors shadow = TODO ROADMAP. La seule « calibration » réellement appliquée est **manuelle** : corrections λ + seuils EV par ligue dans `ev.constants.ts`. |
 | Proba implicite bookmaker                          | ✅ Fait (partiel)      | canal DRAW utilise `1/drawOdds`                                                                                                                                                                                                                                                                                                                                                                       |
@@ -35,7 +35,7 @@ est **déjà implémenté et testé** ailleurs dans le backend. Le module coupon
 
 - ❌ **Ne pas** réimplémenter une formule Kelly inline dans le coupon
   (règle CLAUDE.md : « Kelly criterion formula — not before Phase 2 config flag » ;
-  il existe, derrière `KELLY_ENABLED`). Réutiliser `calculateKellyStakePct`.
+  retiré du code le 2026-08-19, voir ligne ci-dessus).
 - ❌ **Ne pas** réimplémenter `EV = p×cote−1` inline (règle CLAUDE.md : EV défini
   une seule fois dans `config/`). Réutiliser `calculateEV`.
 - ❌ **Ne pas** réintroduire de proba jointe synthétique pour deux marchés du
@@ -405,6 +405,13 @@ findLatestOddsSnapshot`, as-of coup d'envoi) ; helper `computeMarketFair`
   `recommendedStakePct` + `stakingMode` (`KELLY`/`FLAT`) dans le `reasoning` du
   coupon (pas de colonne dédiée → pas de migration). Tests : flat, Kelly capé,
   quarter-Kelly sous le cap, 0 si Kelly ≤ 0. backend typecheck/lint/574 tests.
+- ❌ **Retiré le 2026-08-19** : Kelly n'a jamais été activé en prod
+  (`KELLY_ENABLED` toujours `false`) et le sizing Kelly amplifie l'edge
+  annoncé — donc aussi le biais de surconfiance du modèle (~8pp, plancher
+  d'edge VALUE). `recommendedCouponStakePct`/`calculateKellyStakePct`/
+  `KELLY_FRACTION`/`KELLY_MAX_STAKE_PCT`/`stakingMode` supprimés du code ;
+  `recommendedStakePct` reste tracé dans le `reasoning`, toujours égal à
+  `DEFAULT_STAKE_PCT`.
 
 ### ❌ Étape 6 — Combos même-match à value (corrige B11) — RETIRÉ (2026-07-18)
 
@@ -462,7 +469,9 @@ Règle produit à graver (reformulation EVCore de la conclusion ChatGPT) :
 ## 6. Anti-objectifs (à refuser explicitement)
 
 - Introduire Elo/Glicko, Dixon-Coles manuel, ou un modèle ML dans le module coupon.
-- Réimplémenter EV ou Kelly inline (réutiliser `calculateEV` / `calculateKellyStakePct`).
+- Réimplémenter EV inline (réutiliser `calculateEV`). Kelly a été retiré
+  (2026-08-19, Étape 5 ci-dessus) — ne pas le réintroduire avant une décision
+  produit explicite (règle CLAUDE.md, phase 2).
 - Calculer une EV sur une cote fallback inventée.
 - Activer un profil/canal sans backtest séparé vert.
 - `p1 × p2` pour deux marchés du même match.

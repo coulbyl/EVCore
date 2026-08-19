@@ -3,15 +3,9 @@ import Decimal from 'decimal.js';
 import { VALUE_MIN_EDGE } from '@evcore/analysis-core';
 import { productDecimal } from '@utils/decimal.utils';
 import { MIN_BET_COUNT } from '@modules/adjustment/adjustment.constants';
+import { calculateEV } from '@modules/betting-engine/betting-engine.utils';
 import {
-  calculateEV,
-  calculateKellyStakePct,
-} from '@modules/betting-engine/betting-engine.utils';
-import {
-  DEFAULT_STAKE_PCT,
   EV_MAX_SOFT_ALERT,
-  KELLY_FRACTION,
-  KELLY_MAX_STAKE_PCT,
   getValueMinEdge,
 } from '@modules/betting-engine/ev.constants';
 import {
@@ -744,19 +738,4 @@ export function compareCouponsByEV(
     return b.jointProbability - a.jointProbability;
   }
   return a.legs.length - b.legs.length;
-}
-
-// Mise recommandée pour un coupon (% bankroll), Étape 5 / B10. Derrière
-// `KELLY_ENABLED` : Kelly fractionnaire sur (P_coupon, Odd_coupon) via la formule
-// canonique `calculateKellyStakePct` (jamais de Kelly inline) ; sinon mise plate
-// `DEFAULT_STAKE_PCT`. Renvoie 0 si Kelly ≤ 0 (coupon sans value — déjà filtré).
-export function recommendedCouponStakePct(
-  coupon: { jointProbability: number; combinedOdds: number },
-  kellyEnabled: boolean,
-): number {
-  if (!kellyEnabled) return DEFAULT_STAKE_PCT.toNumber();
-  return calculateKellyStakePct(coupon.jointProbability, coupon.combinedOdds, {
-    fraction: KELLY_FRACTION,
-    maxStake: KELLY_MAX_STAKE_PCT,
-  }).toNumber();
 }

@@ -9,7 +9,6 @@ import {
   clearsValueEdgeFloor,
   comparePicksBySignalThenProbability,
   depthRank,
-  recommendedCouponStakePct,
   LEG_PROBABILITY_MODEL_WEIGHT,
 } from './coupon-composer.service';
 import { COUPON_PROFILES } from './coupon.constants';
@@ -980,42 +979,5 @@ describe('CouponComposerService.compose — cross-coupon diversity', () => {
       c.legs.some((l) => l.fixtureId === 'crosscanal'),
     );
     expect(withCrossCanal.length).toBeLessThanOrEqual(1);
-  });
-});
-
-describe('recommendedCouponStakePct', () => {
-  it('returns the flat default stake when Kelly is disabled', () => {
-    const stake = recommendedCouponStakePct(
-      { jointProbability: 0.5, combinedOdds: 3 },
-      false,
-    );
-    expect(stake).toBeCloseTo(0.01, 10); // DEFAULT_STAKE_PCT
-  });
-
-  it('applies fractional Kelly when enabled, capped at the max stake', () => {
-    // P=0.5, O=3 → Kelly=(1.5−1)/(3−1)=0.25 → ×0.25=0.0625 → capped at 0.05.
-    const stake = recommendedCouponStakePct(
-      { jointProbability: 0.5, combinedOdds: 3 },
-      true,
-    );
-    expect(stake).toBeCloseTo(0.05, 10); // KELLY_MAX_STAKE_PCT cap
-  });
-
-  it('returns the uncapped quarter-Kelly stake for a smaller edge', () => {
-    // P=0.4, O=3 → Kelly=(1.2−1)/(3−1)=0.1 → ×0.25=0.025 (below cap).
-    const stake = recommendedCouponStakePct(
-      { jointProbability: 0.4, combinedOdds: 3 },
-      true,
-    );
-    expect(stake).toBeCloseTo(0.025, 10);
-  });
-
-  it('returns 0 for a non-value coupon (negative Kelly)', () => {
-    // P=0.3, O=3 → P×O=0.9 < 1 → Kelly ≤ 0.
-    const stake = recommendedCouponStakePct(
-      { jointProbability: 0.3, combinedOdds: 3 },
-      true,
-    );
-    expect(stake).toBe(0);
   });
 });

@@ -1,6 +1,1 @@
-export {
-  calculateEV,
-  bookmakerMargin,
-  removeOverround,
-  calculateKellyStakePct,
-} from "./ev-math";
+export { calculateEV, bookmakerMargin, removeOverround } from "./ev-math";

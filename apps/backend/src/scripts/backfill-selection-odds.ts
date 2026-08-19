@@ -14,9 +14,9 @@
  * Run after build:
  *   cd apps/backend
  *   pnpm build
- *   node dist/scripts/backfill-selection-odds.js --dry-run
- *   node dist/scripts/backfill-selection-odds.js
- *   node dist/scripts/backfill-selection-odds.js --limit 500
+ *   node dist/src/scripts/backfill-selection-odds.js --dry-run
+ *   node dist/src/scripts/backfill-selection-odds.js
+ *   node dist/src/scripts/backfill-selection-odds.js --limit 500
  */
 
 // Must run before any import that initialises the Prisma client (@evcore/db),
@@ -66,7 +66,7 @@ function parseArgs(argv: string[]): ScriptArgs {
       i += 1;
     } else if (arg === '--help' || arg === '-h') {
       console.log(
-        'Usage: node dist/scripts/backfill-selection-odds.js [--dry-run] [--limit N]',
+        'Usage: node dist/src/scripts/backfill-selection-odds.js [--dry-run] [--limit N]',
       );
       process.exit(0);
     } else {

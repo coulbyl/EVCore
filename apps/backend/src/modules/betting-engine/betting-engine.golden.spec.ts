@@ -14,10 +14,18 @@ import { describe, it, expect, vi } from 'vitest';
 import Decimal from 'decimal.js';
 import { BettingEngineService } from './betting-engine.service';
 import type { PrismaService } from '@/prisma.service';
-import type { ConfigService } from '@nestjs/config';
 import type { H2HService } from './h2h.service';
 import type { CongestionService } from './congestion.service';
 import type { MlInferenceService } from '@modules/ml/ml.inference.service';
+import type { ChannelDecisionService } from './channel-decision.service';
+import {
+  CHANNEL_DECISION_STATUS,
+  STRATEGY_CHANNEL,
+  type StrategyContext,
+} from './channel-strategy.types';
+import { buildBetPickKey } from './betting-engine.utils';
+import { selectSafeValuePick } from './selection/pick-evaluation';
+import type { EvaluatedPick, ViablePick } from './betting-engine.types';
 
 type OddsRow = {
   bookmaker: string;
@@ -26,10 +34,6 @@ type OddsRow = {
   drawOdds: Decimal;
   awayOdds: Decimal;
 };
-
-function makeConfig(): ConfigService {
-  return { get: vi.fn().mockReturnValue('false') } as unknown as ConfigService;
-}
 
 function makeDeps(): {
   h2h: H2HService;
@@ -136,9 +140,88 @@ function serialize(result: unknown): unknown {
   );
 }
 
+// Same role as its twin in betting-engine.service.spec.ts: stands in for the
+// real ChannelDecisionService, reproducing the pre-Phase-2 VALUE/SAFE pick
+// selection directly from evaluatedMarkets so this golden test's snapshot
+// stays anchored to the real decision-selection algorithm, not to whichever
+// per-league Phase 1 specialist gates happen to apply to a synthetic fixture.
+function makeChannelDecisionServiceMock(): ChannelDecisionService {
+  let nextId = 0;
+  const recordRunDecisions = vi.fn(
+    (_modelRunId: string, context: StrategyContext) => {
+      const evaluatedPicks: EvaluatedPick[] = context.evaluatedMarkets.flatMap(
+        (m) => m.picks,
+      );
+      const viable = evaluatedPicks.filter(
+        (p): p is ViablePick => p.rejectionReason === undefined,
+      );
+      const valuePick = viable[0] ?? null;
+
+      const decisions: Array<{
+        channel: (typeof STRATEGY_CHANNEL)[keyof typeof STRATEGY_CHANNEL];
+        status: typeof CHANNEL_DECISION_STATUS.SELECTED;
+        selections: [ViablePick];
+      }> = [];
+      if (valuePick !== null) {
+        decisions.push({
+          channel: STRATEGY_CHANNEL.VALUE,
+          status: CHANNEL_DECISION_STATUS.SELECTED,
+          selections: [valuePick],
+        });
+      }
+
+      const evPickKey =
+        valuePick !== null
+          ? buildBetPickKey({ market: valuePick.market, pick: valuePick.pick })
+          : null;
+      const safePick = selectSafeValuePick(
+        evaluatedPicks,
+        context.signals.suspendedMarkets,
+        evPickKey,
+        context.signals.lambdaTotal,
+        context.selectionConfig,
+      );
+      if (safePick !== null) {
+        decisions.push({
+          channel: STRATEGY_CHANNEL.SAFE,
+          status: CHANNEL_DECISION_STATUS.SELECTED,
+          selections: [safePick],
+        });
+      }
+
+      return Promise.resolve(
+        decisions.map((d) => ({
+          id: `decision-${nextId++}`,
+          channel: d.channel,
+          status: d.status,
+          selections: d.selections.map((selection) => ({
+            market: selection.market,
+            pick: selection.pick,
+            probability: selection.probability,
+            odds: selection.odds,
+            ev: selection.ev,
+            qualityScore: selection.qualityScore,
+            rank: 1,
+            id: `selection-${nextId++}`,
+          })),
+        })),
+      );
+    },
+  );
+  return { recordRunDecisions } as unknown as ChannelDecisionService;
+}
+
 function makeService(prisma: PrismaService): BettingEngineService {
   const { h2h, congestion, ml } = makeDeps();
-  return new BettingEngineService(prisma, makeConfig(), h2h, congestion, ml);
+  return new BettingEngineService(
+    prisma,
+    h2h,
+    congestion,
+    ml,
+    undefined,
+    undefined,
+    makeChannelDecisionServiceMock(),
+  );
 }
 
 describe('BettingEngineService golden — analyzeFixture decision output', () => {

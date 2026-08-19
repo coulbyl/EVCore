@@ -14,7 +14,6 @@ export {
   calculateEV,
   bookmakerMargin,
   removeOverround,
-  calculateKellyStakePct,
   resolveHalfTimeFullTimeBetStatus,
   resolveFirstHalfBetStatus,
   resolveEarlyBetStatus,

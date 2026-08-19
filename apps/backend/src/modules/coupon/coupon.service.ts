@@ -1,26 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { CouponProposalStatus } from '@evcore/db';
 import { createLogger } from '@utils/logger';
 import { CouponRepository } from './coupon.repository';
 import { SignalWindowService } from './signal-window.service';
-import {
-  CouponComposerService,
-  recommendedCouponStakePct,
-} from './coupon-composer.service';
+import { CouponComposerService } from './coupon-composer.service';
 import {
   COUPON_PARAMS,
   COUPON_PROFILES,
   resolveCouponProfile,
   type CouponProfileName,
 } from './coupon.constants';
+import { DEFAULT_STAKE_PCT } from '@modules/betting-engine/ev.constants';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
 
 const logger = createLogger('coupon');
 
 @Injectable()
 export class CouponService {
-  private readonly kellyEnabled: boolean;
   // DRAW/TEAM_TOTAL/BTTS staking, AVOID enforcement, evaluated-markets pool
   // widening — all default-on, no env kill-switch. Project philosophy: ship
   // as the real default behaviour and observe/iterate on real results,
@@ -51,15 +47,11 @@ export class CouponService {
   private readonly enableAvoidFade = true;
   private readonly includeEvaluatedMarkets = true;
 
-  // eslint-disable-next-line max-params -- Explicit NestJS service injection.
   constructor(
     private readonly repo: CouponRepository,
     private readonly signalWindow: SignalWindowService,
     private readonly composer: CouponComposerService,
-    config: ConfigService,
-  ) {
-    this.kellyEnabled = config.get<string>('KELLY_ENABLED', 'false') === 'true';
-  }
+  ) {}
 
   async generateCoupons(
     date: string,
@@ -127,12 +119,11 @@ export class CouponService {
         .map((leg) => leg.scheduledAt)
         .reduce((a, b) => (a > b ? a : b));
 
-      // Mise recommandée (% bankroll) — Kelly fractionnaire derrière KELLY_ENABLED,
-      // mise plate sinon. Tracée dans le reasoning (pas de colonne dédiée).
-      const recommendedStakePct = recommendedCouponStakePct(
-        coupon,
-        this.kellyEnabled,
-      );
+      // Mise recommandée (% bankroll) — toujours plate (pas de Kelly : le
+      // sizing Kelly amplifierait l'edge annoncé, donc aussi le biais de
+      // surconfiance du modèle). Tracée dans le reasoning (pas de colonne
+      // dédiée).
+      const recommendedStakePct = DEFAULT_STAKE_PCT.toNumber();
 
       await this.repo.upsertProposal({
         forDate: new Date(`${date}T00:00:00.000Z`),
@@ -154,7 +145,6 @@ export class CouponService {
         reasoning: {
           ...coupon.reasoning,
           recommendedStakePct,
-          stakingMode: this.kellyEnabled ? 'KELLY' : 'FLAT',
         },
         legs: coupon.legs.map((leg) => ({
           fixtureId: leg.fixtureId,
