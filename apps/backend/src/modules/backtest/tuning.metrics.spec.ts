@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import {
-  buildBttsNoSweep,
   buildChannelThresholdSweep,
   buildGoalsLineSweep,
   buildTeamTotalSweep,
@@ -212,21 +211,6 @@ describe('buildChannelThresholdSweep — WIN_EITHER_HALF', () => {
     ];
     const sweep = buildChannelThresholdSweep('WIN_EITHER_HALF', rows);
     expect(sweep.candidates).toBe(2);
-    const at60 = sweep.points.find((p) => p.threshold === 0.6)!;
-    expect(at60.total).toBe(2);
-    expect(at60.won).toBe(1);
-  });
-});
-
-describe('buildBttsNoSweep', () => {
-  it('wins when NOT both teams score, using the NO probability + odds', () => {
-    const rows: ChannelTuningRow[] = [
-      row({ probBttsNo: 0.66, oddsBttsNo: 1.9, homeScore: 1, awayScore: 0 }), // no BTTS → won
-      row({ probBttsNo: 0.6, oddsBttsNo: 2.0, homeScore: 2, awayScore: 1 }), // both score → lost
-      row({ probBttsNo: 0.7, oddsBttsNo: null, homeScore: 0, awayScore: 0 }), // no odds → dropped
-    ];
-    const sweep = buildBttsNoSweep(rows);
-    expect(sweep.candidates).toBe(2); // third dropped (no odds)
     const at60 = sweep.points.find((p) => p.threshold === 0.6)!;
     expect(at60.total).toBe(2);
     expect(at60.won).toBe(1);

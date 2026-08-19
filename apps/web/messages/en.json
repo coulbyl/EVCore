@@ -691,7 +691,6 @@
     "colSegment": "Line",
     "colTeam": "Team",
     "goalsSection": "GOALS — over/under sweep (line × side)",
-    "bttsNoSection": "BTTS NO — per-league sweep (observation)",
     "teamTotalSection": "TEAM_TOTAL — per-team sweep (line × side, observation)",
     "verdict": {
       "PASS": "Pass",

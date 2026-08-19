@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getChannelStrategyConfig } from "./config";
+import { getChannelStrategyConfig } from "./channel-strategy.config";
 
 describe("getChannelStrategyConfig — DOMINANT channel", () => {
   it("returns the BL1 DOMINANT config (enabled, threshold 0.55)", () => {

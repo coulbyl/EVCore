@@ -106,26 +106,6 @@ export type GoalsTuningReport = {
   recommended: ThresholdRecommendation | null;
 };
 
-/** The BTTS NO threshold currently configured for a competition (per-league). */
-export type CurrentBttsNoConfig = {
-  enabled: boolean;
-  threshold: number;
-};
-
-/**
- * Offline tuning report for BTTS NO on one competition. NO is calibrated
- * separately from the YES side (different probability scale) and per-league.
- * Advisory only — observation channel, never staked.
- */
-export type BttsNoTuningReport = {
-  competitionCode: string;
-  competitionName: string;
-  candidates: number;
-  current: CurrentBttsNoConfig;
-  points: ThresholdPoint[];
-  recommended: ThresholdRecommendation | null;
-};
-
 /** HOME/AWAY side that the TEAM_TOTAL tuning sweep evaluates independently. */
 export type TeamTotalTeam = "HOME" | "AWAY";
 
@@ -151,7 +131,6 @@ export type ChannelTuningResponse = {
   to: string;
   reports: ChannelTuningReport[];
   goalsReports: GoalsTuningReport[];
-  bttsNoReports: BttsNoTuningReport[];
   teamTotalReports: TeamTotalTuningReport[];
   generatedAt: string;
 };

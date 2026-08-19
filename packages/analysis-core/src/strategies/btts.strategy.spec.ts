@@ -83,25 +83,26 @@ function makeContext(
 describe("BttsStrategy", () => {
   const strategy = new BttsStrategy();
 
-  it("is DISABLED when a league has neither a YES nor a NO config", () => {
-    // Unknown league → YES disabled and NO disabled (NO is per-league now,
-    // default disabled). No candidate to evaluate → DISABLED, not REJECTED.
+  it("is DISABLED when a league has no BTTS config", () => {
+    // Unknown league → no config at all (BTTS_DEFAULT, disabled). No
+    // candidate to evaluate → DISABLED, not REJECTED.
     expect(strategy.evaluate(makeContext(0.2, "UNKNOWN_LEAGUE")).status).toBe(
       CHANNEL_DECISION_STATUS.DISABLED,
     );
   });
 
-  it("selects the NO side when bttsNo clears the per-league threshold", () => {
-    // SA has NO enabled at 0.58 (observation). bttsYes 0.20 → bttsNo 0.80 ≥ 0.58.
-    const decision = strategy.evaluate(makeContext(0.2, "SA"));
+  it("selects the NO side when bttsNo clears the same per-league threshold as YES", () => {
+    // BL1 threshold 0.62 applies symmetrically to both sides — one config,
+    // one question, argmax(YES, NO). bttsYes 0.20 → bttsNo 0.80 ≥ 0.62.
+    const decision = strategy.evaluate(makeContext(0.2, "BL1"));
     expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
     expect(decision.selections[0]!.pick).toBe("NO");
     expect(decision.selections[0]!.probability.toNumber()).toBeCloseTo(0.8);
   });
 
   it("prefers the more confident side when both clear (YES vs NO)", () => {
-    // BL1 YES threshold 0.62. bttsYes 0.66 ≥ 0.62 (YES clears); bttsNo 0.34 < 0.65.
-    // Only YES clears → YES.
+    // BL1 threshold 0.62. bttsYes 0.66 ≥ 0.62 (clears); bttsNo 0.34 < 0.62
+    // (does not clear) → only YES is a candidate.
     expect(
       strategy.evaluate(makeContext(0.66, "BL1")).selections[0]!.pick,
     ).toBe("YES");
