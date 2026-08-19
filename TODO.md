@@ -973,6 +973,33 @@ db:migrate` après avoir vérifié le diff du schéma.
   depuis `@evcore/analysis-core`. `H2H_GAMMA` et `LAMBDA_SHRINKAGE_FACTOR` restent en place
   (hors périmètre — le second est un doublon déjà présent dans
   `match-stats.ts`, à auditer séparément).
+- `[x]` **Calibration GOALS (O/U plein-temps) par ligue**
+  (`db:backtest:goals-shrinkage-calibration`, nouveau script, même protocole
+  double-hypothèse — un seul facteur groupé sur les 4 lignes à la fois,
+  fidèle à `shrinkOverUnderProbabilities` qui applique UN facteur partagé
+  par ligue, pas un facteur par ligne comme TEAM_TOTAL). Résultat très
+  différent des autres marchés : **8/66 ligues seulement** livrent un
+  facteur, et les 58 autres ont un ΔBrier quasi nul (souvent `+0.0000`) à
+  n'importe quel facteur testé — confirme que GOALS est déjà, de loin, le
+  marché le mieux calibré nativement (cohérent avec l'audit live). Mais
+  parmi les 8 livrées, une trouvaille importante : **SWE2 et UECL avaient
+  un facteur agressif (0.07 — 93% de repli vers le taux de base) depuis le
+  passage initial du 2026-07-03, alors que le nouveau fit walk-forward
+  valide un facteur proche de l'identité (0.84 et 0.95)** — même histoire
+  que le blend 1X2 (UEL/UECL) et TEAM_TOTAL/CLEAN_SHEET : l'ancien réglage
+  ponctuel ne généralisait pas et sur-corrigeait. Idem NOR1 (0.27→0.92),
+  ARG1 (0.31→0.93 — sur `teamTotalHome`, pas confondu avec le nouveau champ
+  `factor`/`baseRates` top-niveau ajouté), USA2 (0.28→0.86), LAT1
+  (0.46→0.89). FIN1/SP2 (déjà `factor: 1`) confirmés avec un très léger
+  ajustement (0.92/0.91).
+  - `[ ]` **Bug détecté et corrigé pendant la fusion** : le script de
+    fusion cherchait `factor:` n'importe où dans le bloc de la ligue et a
+    d'abord matché un `factor` imbriqué dans `teamTotalHome`/`teamTotalAway`
+    pour ARG1/USA2 (qui n'avaient pas encore de `factor` top-niveau) —
+    corrigé avant merge en exigeant profondeur 0 (accolades comptées), diff
+    revérifié ligne par ligne avant application. Aucune donnée corrompue au
+    final, mais à garder en tête pour les prochaines fusions de ce type :
+    toujours vérifier la profondeur, pas juste la présence du nom de champ.
 
 ---
 

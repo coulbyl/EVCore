@@ -220,8 +220,9 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   },
   // FIN1: full-sample slopes o15 0.11 · o25 0.13 · o35 0.47 · o45 0.40; forward ΔBrier OU -0.0009 (2/4).
   FIN1: {
-    factor: 1,
-    baseRates: { over15: 0.83, over25: 0.66, over35: 0.45, over45: 0.26 },
+    // Walk-forward 2026-08-19 (db:backtest:goals-shrinkage-calibration, train=toutes saisons sauf la + récente, test=la + récente, fenêtre récente): factor re-fit à 0.92 (ΔBrier test -0.0024, n train=417/test=44).
+    factor: 0.92,
+    baseRates: { over15: 0.82, over25: 0.63, over35: 0.38, over45: 0.18 },
     btts: { factor: 0.41, baseYes: 0.62 },
     ouHt: { factor05: 1, base05: 0.72, factor15: 0.05, base15: 0.4 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -354,8 +355,9 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   },
   // LAT1: full-sample slopes o15 0.00 · o25 0.23 · o35 0.62 · o45 0.97; forward ΔBrier OU -0.0067 (4/4).
   LAT1: {
-    factor: 0.46,
-    baseRates: { over15: 0.78, over25: 0.57, over35: 0.36, over45: 0.23 },
+    // Walk-forward 2026-08-19 (db:backtest:goals-shrinkage-calibration, train=toutes saisons sauf la + récente, test=la + récente, fenêtre récente): factor re-fit à 0.89 (ΔBrier test -0.0023, n train=464/test=30).
+    factor: 0.89,
+    baseRates: { over15: 0.79, over25: 0.59, over35: 0.37, over45: 0.23 },
     btts: { factor: 0.15, baseYes: 0.51 },
     ouHt: { factor05: 0.0, base05: 0.74, factor15: 0.72, base15: 0.38 },
     // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
@@ -407,8 +409,9 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   },
   // NOR1: full-sample slopes o15 0.13 · o25 0.33 · o35 0.31 · o45 0.30; forward ΔBrier OU -0.0047 (4/4).
   NOR1: {
-    factor: 0.27,
-    baseRates: { over15: 0.83, over25: 0.62, over35: 0.41, over45: 0.23 },
+    // Walk-forward 2026-08-19 (db:backtest:goals-shrinkage-calibration, train=toutes saisons sauf la + récente, test=la + récente): factor re-fit à 0.92 (ΔBrier test -0.0018, n train=591/test=46).
+    factor: 0.92,
+    baseRates: { over15: 0.83, over25: 0.64, over35: 0.4, over45: 0.23 },
     btts: { factor: 0.43, baseYes: 0.58 },
     ouHt: { factor05: 0.03, base05: 0.77, factor15: 0.0, base15: 0.42 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -480,8 +483,9 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   },
   // SP2: full-sample slopes o15 0.38 · o25 0.17 · o35 0.02 · o45 0.45; forward ΔBrier OU +0.0023 (1/4).
   SP2: {
-    factor: 1,
-    baseRates: { over15: 0.7, over25: 0.49, over35: 0.28, over45: 0.13 },
+    // Walk-forward 2026-08-19 (db:backtest:goals-shrinkage-calibration, train=toutes saisons sauf la + récente, test=la + récente): factor re-fit à 0.91 (ΔBrier test -0.0014, n train=826/test=412).
+    factor: 0.91,
+    baseRates: { over15: 0.71, over25: 0.49, over35: 0.28, over45: 0.13 },
     ouHt: { factor05: 0.02, base05: 0.66, factor15: 1, base15: 0.31 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalAway: {
@@ -594,8 +598,9 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   },
   // SWE2: full-sample slopes o15 0.13 · o25 0.08 · o35 0.14 · o45 -0.07; forward ΔBrier OU -0.0124 (4/4).
   SWE2: {
-    factor: 0.07,
-    baseRates: { over15: 0.79, over25: 0.55, over35: 0.34, over45: 0.16 },
+    // Walk-forward 2026-08-19 (db:backtest:goals-shrinkage-calibration, train=toutes saisons sauf la + récente, test=la + récente, fenêtre récente): factor re-fit à 0.84 (ΔBrier test -0.0061, n train=600/test=56).
+    factor: 0.84,
+    baseRates: { over15: 0.77, over25: 0.55, over35: 0.34, over45: 0.16 },
     btts: { factor: 0.0, baseYes: 0.57 },
     ouHt: { factor05: 0.0, base05: 0.74, factor15: 0.0, base15: 0.37 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -685,8 +690,9 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   },
   // UECL: full-sample slopes o15 -0.02 · o25 -0.03 · o35 0.17 · o45 0.15; forward ΔBrier OU -0.0094 (4/4).
   UECL: {
-    factor: 0.07,
-    baseRates: { over15: 0.75, over25: 0.54, over35: 0.31, over45: 0.16 },
+    // Walk-forward 2026-08-19 (db:backtest:goals-shrinkage-calibration, train=toutes saisons sauf la + récente, test=la + récente): factor re-fit à 0.95 (ΔBrier test -0.0011, n train=155/test=92).
+    factor: 0.95,
+    baseRates: { over15: 0.74, over25: 0.53, over35: 0.29, over45: 0.11 },
     btts: { factor: 0.34, baseYes: 0.48 },
     ouHt: { factor05: 0.0, base05: 0.68, factor15: 0.0, base15: 0.33 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -815,6 +821,9 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       AWAY: { "15": { factor: 0.0, base: 0.102 } },
     },
     btts: { factor: 0.23, baseYes: 0.41 },
+    // Walk-forward 2026-08-19 (db:backtest:goals-shrinkage-calibration, train=toutes saisons sauf la + récente, test=la + récente, fenêtre récente): factor re-fit à 0.93 (ΔBrier test -0.0012, n train=1049/test=254).
+    factor: 0.93,
+    baseRates: { over15: 0.6, over25: 0.32, over35: 0.14, over45: 0.06 },
   },
   // ARG2: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -1235,6 +1244,9 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       },
     },
     btts: { factor: 0.2, baseYes: 0.52 },
+    // Walk-forward 2026-08-19 (db:backtest:goals-shrinkage-calibration, train=toutes saisons sauf la + récente, test=la + récente, fenêtre récente): factor re-fit à 0.86 (ΔBrier test -0.0014, n train=1026/test=170).
+    factor: 0.86,
+    baseRates: { over15: 0.71, over25: 0.48, over35: 0.28, over45: 0.16 },
   },
 };
 
