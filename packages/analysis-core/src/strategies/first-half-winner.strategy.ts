@@ -1,10 +1,8 @@
 import { Market } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
 import { priceForSelection } from "../selection";
-import {
-  FIRST_HALF_WINNER_MIN_MARGIN,
-  getChannelStrategyConfig,
-} from "./config";
+import { FIRST_HALF_WINNER_MIN_MARGIN } from "./first-half-winner.config";
+import { getChannelStrategyConfig } from "./channel-strategy.config";
 import type {
   ChannelStrategy,
   StrategyContext,

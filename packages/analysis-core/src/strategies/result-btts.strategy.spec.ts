@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import Decimal from "decimal.js";
 import { Market } from "../types";
 import { ResultBttsStrategy, decideResultBtts } from "./result-btts.strategy";
-import type { ResultBttsPickConfig } from "./config";
+import type { ResultBttsPickConfig } from "./result-btts.config";
 import { CHANNEL_DECISION_STATUS } from "../types";
 import type { StrategyContext } from "./types";
 import type { FullOddsSnapshot, MatchProbabilities } from "../selection/types";

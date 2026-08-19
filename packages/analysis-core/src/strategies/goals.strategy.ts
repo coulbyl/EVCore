@@ -7,7 +7,7 @@ import {
   type GoalsLine,
   type GoalsLineConfig,
   type GoalsSide,
-} from "./config";
+} from "./goals.config";
 import type {
   ChannelStrategy,
   StrategyContext,

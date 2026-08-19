@@ -5,7 +5,7 @@ import {
   type HalfTimeFullTimePick,
 } from "../probability";
 import { priceForSelection } from "../selection";
-import { HALF_TIME_FULL_TIME_CONFIG } from "./config";
+import { HALF_TIME_FULL_TIME_CONFIG } from "./half-time-full-time.config";
 import type {
   ChannelStrategy,
   StrategyContext,

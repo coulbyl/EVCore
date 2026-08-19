@@ -7,7 +7,7 @@ import {
   type ResultTotalGoalsLine,
   type ResultTotalGoalsLineConfig,
   type ResultTotalGoalsSide,
-} from "./config";
+} from "./result-total-goals.config";
 import type {
   ChannelStrategy,
   StrategyContext,

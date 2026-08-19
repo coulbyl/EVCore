@@ -5,7 +5,7 @@ import {
   OverUnderHtStrategy,
   decideOverUnderHt,
 } from "./over-under-ht.strategy";
-import type { OverUnderHtLineConfig } from "./config";
+import type { OverUnderHtLineConfig } from "./over-under-ht.config";
 import { CHANNEL_DECISION_STATUS } from "../types";
 import type { StrategyContext } from "./types";
 import type { FullOddsSnapshot, MatchProbabilities } from "../selection/types";

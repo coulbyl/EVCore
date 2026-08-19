@@ -7,7 +7,7 @@ import {
   type ResultBttsOutcome,
   type ResultBttsPickConfig,
   type ResultBttsSide,
-} from "./config";
+} from "./result-btts.config";
 import type {
   ChannelStrategy,
   StrategyContext,

@@ -7,7 +7,7 @@ import {
   type OverUnderHtLine,
   type OverUnderHtLineConfig,
   type OverUnderHtSide,
-} from "./config";
+} from "./over-under-ht.config";
 import type {
   ChannelStrategy,
   StrategyContext,

@@ -5,7 +5,7 @@ import {
   ResultTotalGoalsStrategy,
   decideResultTotalGoals,
 } from "./result-total-goals.strategy";
-import type { ResultTotalGoalsLineConfig } from "./config";
+import type { ResultTotalGoalsLineConfig } from "./result-total-goals.config";
 import { CHANNEL_DECISION_STATUS } from "../types";
 import type { StrategyContext } from "./types";
 import type { FullOddsSnapshot, MatchProbabilities } from "../selection/types";

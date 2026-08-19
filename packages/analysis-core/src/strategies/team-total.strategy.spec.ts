@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import Decimal from "decimal.js";
 import { Market } from "../types";
 import { TeamTotalStrategy, decideTeamTotal } from "./team-total.strategy";
-import type { TeamTotalLineConfig } from "./config";
+import type { TeamTotalLineConfig } from "./team-total.config";
 import { CHANNEL_DECISION_STATUS } from "../types";
 import type { StrategyContext } from "./types";
 import type { FullOddsSnapshot, MatchProbabilities } from "../selection/types";

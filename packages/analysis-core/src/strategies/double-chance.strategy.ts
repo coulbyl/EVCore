@@ -2,7 +2,7 @@ import type Decimal from "decimal.js";
 import { Market } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
 import { priceForSelection } from "../selection";
-import { DOUBLE_CHANCE_CONFIG } from "./config";
+import { DOUBLE_CHANCE_CONFIG } from "./double-chance.config";
 import type {
   ChannelStrategy,
   StrategyContext,

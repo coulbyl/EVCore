@@ -1,7 +1,7 @@
 import Decimal from "decimal.js";
 import type { Market, StrategyChannel } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
-import { AVOID_CONFIG } from "./config";
+import { AVOID_CONFIG } from "./avoid.config";
 import type {
   ChannelStrategy,
   StrategyContext,

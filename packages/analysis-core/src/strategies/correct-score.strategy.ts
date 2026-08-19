@@ -2,7 +2,7 @@ import Decimal from "decimal.js";
 import { CHANNEL_DECISION_STATUS, Market, STRATEGY_CHANNEL } from "../types";
 import { computeCorrectScoreMatrix } from "../probability";
 import { priceForSelection } from "../selection";
-import { CORRECT_SCORE_CONFIG } from "./config";
+import { CORRECT_SCORE_CONFIG } from "./correct-score.config";
 import type {
   ChannelStrategy,
   StrategyContext,

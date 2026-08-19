@@ -5,7 +5,7 @@ import {
   WinEitherHalfStrategy,
   decideWinEitherHalf,
 } from "./win-either-half.strategy";
-import type { ChannelStrategyLeagueConfig } from "./config";
+import type { ChannelStrategyLeagueConfig } from "./channel-strategy-config.types";
 import { CHANNEL_DECISION_STATUS } from "../types";
 import type { StrategyContext } from "./types";
 import type { FullOddsSnapshot, MatchProbabilities } from "../selection/types";
