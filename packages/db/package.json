@@ -69,6 +69,7 @@
     "db:backtest:win-to-nil-shrinkage-calibration": "tsx scripts/backtest-win-to-nil-shrinkage-calibration.ts",
     "db:backtest:result-btts-shrinkage-calibration": "tsx scripts/backtest-result-btts-shrinkage-calibration.ts",
     "db:backtest:market-trust-calibration": "tsx scripts/backtest-market-trust-calibration.ts",
+    "db:backtest:result-btts-away-threshold-calibration": "tsx scripts/backtest-result-btts-away-threshold-calibration.ts",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },

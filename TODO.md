@@ -1210,10 +1210,34 @@ safeMarketTrust` existe (même mécanique que VALUE, testée unitairement)
     petit — jamais revalidé sur plus de données). Le vrai coupable est
     vraisemblablement le **seuil de sélection Phase 1**
     (`result-btts.config.ts`, `getResultBttsPickConfigs` — seuil ≈ 0.85×
-    base par pick) qui laisse passer une sélection trop permissive côté
-    AWAY dans ces 3 coupes. Pas encore corrigé — nécessite d'étudier
-    `decideResultBtts`/le tie-break EV (`compareResultBttsCandidates`), pas
-    juste la proba Poisson brute.
+    base par pick, jamais backtesté ROI, comme TEAM*TOTAL/RESULT_TOTAL*
+    GOALS/OVER_UNDER_HT à leur lancement) qui laisse passer une sélection
+    trop permissive côté AWAY dans ces 3 coupes.
+
+- `[ ]` **RESULT_BTTS AWAY (UCL/UEL/UECL) — calibrage du seuil : résultat
+  négatif honnête, pas de fix trouvé** (2026-08-19, nouveau
+  `db:backtest:result-btts-away-threshold-calibration`, grid-search sur le
+  ratio seuil=ratio×base, walk-forward poolé). Deux limites trouvées :
+  1. **Pas de cotes réelles avant ~2026-07-19** (marché trop jeune) — un
+     split walk-forward par saison tombe entièrement avant cette date,
+     donc impossible de valider par ROI (premier essai : n=0 partout).
+     Retombé sur un critère de calibration pure (écart proba/hit, Brier).
+  2. **Le signal est faible et incohérent** : sur train, l'écart de
+     calibration ne s'améliore PAS en durcissant le seuil (il empire même,
+     6.8pp à 0.85 → 9.9pp à 1.4) ; le "meilleur" ratio trouvé (0.7, plus
+     PERMISSIF que l'actuel) améliore le Brier test (0.1577 vs 0.1699) mais
+     PAS l'écart de calibration (1.7pp vs 0.9pp — pire). Sur la saison
+     2025-26 tenue à l'écart, le seuil ACTUEL (0.85) est en fait déjà bien
+     calibré (écart 0.9pp) — très différent du 0/34 catastrophique observé
+     en direct sur 2026-27. **Hypothèse la plus probable** : le problème
+     n'est pas un biais structurel stable du seuil, mais un effet propre à
+     la saison 2026-27 en cours (forme d'équipes/transferts/cold-start —
+     cf. [[project_season_rollover_teamstats_gap]]), pas quelque chose
+     qu'un seuil statique peut corriger. Aucun changement de config
+     livré — à réauditer quand 2026-27 aura accumulé plus de matchs
+     terminés (même principe que
+     [[project_new_markets_underperforming]] : n trop petit pour trancher
+     maintenant).
 
 ---
 
