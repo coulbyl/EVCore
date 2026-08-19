@@ -56,6 +56,7 @@
     "db:backtest:ml-shadow-correction": "tsx scripts/backtest-ml-shadow-correction.ts",
     "db:backtest:team-total-shrinkage-calibration": "tsx scripts/backtest-team-total-shrinkage-calibration.ts",
     "db:backtest:btts-shrinkage-calibration": "tsx scripts/backtest-btts-shrinkage-calibration.ts",
+    "db:backtest:three-way-empirical-blend-calibration": "tsx scripts/backtest-three-way-empirical-blend-calibration.ts",
     "db:backtest:clean-sheet-win-either-half-shrinkage-calibration": "tsx scripts/backtest-clean-sheet-win-either-half-shrinkage-calibration.ts",
     "db:backtest:result-total-goals-shrinkage-calibration": "tsx scripts/backtest-result-total-goals-shrinkage-calibration.ts",
     "db:backtest:over-under-ht-shrinkage-calibration": "tsx scripts/backtest-over-under-ht-shrinkage-calibration.ts",

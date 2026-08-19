@@ -32,7 +32,7 @@ import {
   type TeamStatsInput,
 } from '@modules/betting-engine/math/probability';
 import { computePoissonMarkets } from '@modules/betting-engine/betting-engine.utils';
-import { getLeagueThreeWayEmpiricalBlendWeight } from '@modules/betting-engine/ev.constants';
+import { getLeagueThreeWayEmpiricalBlendWeight } from '@evcore/analysis-core';
 import {
   brierScoreOneXTwo,
   getOneXTwoOutcome,

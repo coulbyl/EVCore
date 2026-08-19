@@ -90,7 +90,7 @@ import {
   shrinkOverUnderProbabilities,
   applyH2HMarketSignalCorrection,
 } from './math/probability';
-import { getLeagueThreeWayEmpiricalBlendWeight } from './ev.constants';
+import { getLeagueThreeWayEmpiricalBlendWeight } from '@evcore/analysis-core';
 import { getPickOdds } from './pricing/odds-mapping';
 import {
   summarizeEvaluatedPicks,

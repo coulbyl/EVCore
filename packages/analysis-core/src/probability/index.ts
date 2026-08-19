@@ -37,7 +37,15 @@ export {
   rebalanceThreeWayProbabilities,
   buildMatchupFeatures,
   blendTeamStats,
+  getLeagueThreeWayEmpiricalBlendWeight,
 } from "./match-stats";
+export {
+  getLeagueMeanLambda,
+  getLeagueHomeAwayFactors,
+  getLeagueLambdaScale,
+  HOME_ADVANTAGE_LAMBDA_FACTOR,
+  AWAY_DISADVANTAGE_LAMBDA_FACTOR,
+} from "./league-lambda-config";
 export {
   type H2HMarketSignalInputs,
   H2H_MARKET_SIGNAL_DELTAS,

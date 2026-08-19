@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   computeOffensiveBalance,
   deriveLambdas,
+  getLeagueThreeWayEmpiricalBlendWeight,
   type LambdaConfig,
 } from "./match-stats";
 
@@ -77,5 +78,22 @@ describe("computeOffensiveBalance", () => {
     const result = computeOffensiveBalance(1.5, 0);
     expect(result.ratio).toBe(0);
     expect(result.classification).toBe("STRONGLY_ASYMMETRIC");
+  });
+});
+
+// Moved 2026-08-19 from apps/backend/.../ev.constants.spec.ts — the config
+// itself moved here (same category as OU_SHRINKAGE_CONFIG, calibrates the
+// shared 1X2 probability rather than a staking decision).
+describe("getLeagueThreeWayEmpiricalBlendWeight", () => {
+  it("returns the I2 empirical rebalance weight", () => {
+    expect(getLeagueThreeWayEmpiricalBlendWeight("I2").toNumber()).toBe(0.4);
+  });
+
+  it("returns 0 for F2 — removed 2026-08-19, did not survive walk-forward validation", () => {
+    expect(getLeagueThreeWayEmpiricalBlendWeight("F2").toNumber()).toBe(0);
+  });
+
+  it("returns 0 for an unmapped league", () => {
+    expect(getLeagueThreeWayEmpiricalBlendWeight("UNKNOWN").toNumber()).toBe(0);
   });
 });

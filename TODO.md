@@ -932,6 +932,47 @@ db:migrate` après avoir vérifié le diff du schéma.
   nécessaire. `btts` n'existait avant que pour ~32/60 ligues (dérivé en même
   temps que le shrinkage O/U 2026-07-03, jamais réévalué indépendamment) —
   couverture étendue à 35 ligues propres, sur les 66 observées.
+- `[x]` **Calibration 1X2/DOMINANT par ligue**
+  (`db:backtest:three-way-empirical-blend-calibration`, nouveau script,
+  même protocole double-hypothèse) — le seul levier de calibration du 1X2
+  aujourd'hui est `THREE_WAY_EMPIRICAL_BLEND_WEIGHT_MAP`
+  (`ev.constants.ts`), qui mélange le Poisson brut vers un vecteur empirique
+  (TeamStats home/away win rate + draw rate). Les 11 entrées existantes
+  venaient d'audits ponctuels (2026-04-24 → 2026-06-30), jamais validés
+  walk-forward. Résultat, grid-search sur le Brier 3-way validé hors
+  échantillon : **33/66 ligues** avec un poids qui tient, extension large
+  au-delà des 11 initiales (ARG1, ARG2, BEL1, BL1, CHI1, D3, EL1, ERD, GRE1,
+  IRL1, ISL1, KOR2, LL, MX1, NOR2, PL, RUS1, SA, SCO1, SRB1, SUI2, SVN1,
+  SWE2, TUR2, USA2, WCQSA en plus des existantes). **4 réglages existants
+  retirés** (D2, F2, SUI1, NOR1) — leur meilleur poids trouvé sur le train
+  dégrade le Brier hors-échantillon à tout niveau testé : le diagnostic
+  ponctuel d'origine ne généralisait pas. UEL/UECL gardés mais abaissés
+  (0.35→0.20 chacun) — l'ancien poids était sur-corrigé. Cohérent avec
+  l'audit live : UEL/UECL/F2/SUI1 restaient sur-confiants malgré leur blend
+  existant — confirme que ces réglages n'étaient pas la bonne config, pas
+  qu'il fallait pousser plus fort dans la même direction.
+- `[x]` **Calibration probabilité déménagée hors de `ev.constants.ts`**
+  (2026-08-19, retour utilisateur direct) — `ev.constants.ts` mélangeait la
+  config VALUE/staking (`EV_THRESHOLD`, `PICK_EV_FLOOR_MAP`) avec des
+  leviers qui calibrent la probabilité 1X2 elle-même, partagée par tous les
+  canaux (DOMINANT, VALUE, SAFE, CONSENSUS) : `LEAGUE_MEAN_LAMBDA_MAP`,
+  `HOME_ADVANTAGE_LAMBDA_FACTOR`/`LEAGUE_HOME_ADVANTAGE_MAP`,
+  `LAMBDA_SCALE_MAP`, `THREE_WAY_EMPIRICAL_BLEND_WEIGHT_MAP` — même nature
+  que `OU_SHRINKAGE_CONFIG`, qui vit déjà dans `analysis-core`. Déplacés
+  vers `packages/analysis-core/src/probability/league-lambda-config.ts`
+  (les trois premiers) et `match-stats.ts` (le blend, à côté de
+  `rebalanceThreeWayProbabilities` qui le consomme), tests colocalisés
+  déménagés avec (`league-lambda-config.spec.ts`, nouveau, +
+  `match-stats.spec.ts`). **Correction (même session)** : j'avais d'abord
+  laissé `ev.constants.ts` importer + ré-exporter ces symboles (même
+  convention que `FEATURE_WEIGHTS`/`EV_HARD_CAP`) — retour utilisateur
+  immédiat : `ev.constants.ts` ne doit pas exporter des choses qui ne sont
+  pas de l'EV, même en ré-export. Retiré ; les 3 vrais consommateurs
+  (`betting-engine.service.ts`, `math/probability.ts`,
+  `backtest-domestic-rollover-weights.ts`) importent maintenant directement
+  depuis `@evcore/analysis-core`. `H2H_GAMMA` et `LAMBDA_SHRINKAGE_FACTOR` restent en place
+  (hors périmètre — le second est un doublon déjà présent dans
+  `match-stats.ts`, à auditer séparément).
 
 ---
 

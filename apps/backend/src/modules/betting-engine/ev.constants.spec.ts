@@ -3,9 +3,7 @@ import Decimal from 'decimal.js';
 import {
   EV_THRESHOLD,
   getLeagueEvThreshold,
-  getLeagueHomeAwayFactors,
   getLeagueMinSelectionOdds,
-  getLeagueThreeWayEmpiricalBlendWeight,
   getModelScoreThreshold,
   getPickDirectionProbabilityThreshold,
   getPickEvFloor,
@@ -196,18 +194,6 @@ describe('getPickMaxSelectionOdds', () => {
     expect(getPickMaxSelectionOdds('LL', 'ONE_X_TWO', 'HOME')?.toNumber()).toBe(
       1.99,
     );
-  });
-});
-
-describe('getLeagueHomeAwayFactors', () => {
-  it('returns the reduced home-advantage override for D2', () => {
-    expect(getLeagueHomeAwayFactors('D2')).toEqual([1.02, 0.98]);
-  });
-});
-
-describe('getLeagueThreeWayEmpiricalBlendWeight', () => {
-  it('returns the F2 empirical rebalance weight', () => {
-    expect(getLeagueThreeWayEmpiricalBlendWeight('F2').toNumber()).toBe(0.3);
   });
 });
 
