@@ -27,6 +27,7 @@
     "db:cleanup:legacy-ml-models": "tsx scripts/cleanup-legacy-ml-models.ts",
     "db:scheduled": "tsx scripts/scheduled-fixtures-report.ts",
     "db:audit:fixtures": "tsx scripts/audit-fixtures.ts",
+    "db:audit:channel-market-league-calibration": "tsx scripts/audit-channel-market-league-calibration.ts",
     "db:audit:fri-goals": "tsx scripts/fri-goal-model-audit.ts",
     "db:audit:fri-xg": "tsx scripts/fri-xg-audit.ts",
     "db:audit:fri-elo": "tsx scripts/fri-elo-audit.ts",

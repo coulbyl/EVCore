@@ -323,6 +323,7 @@ async function main() {
     brierImprovement: number;
     fullFactor: number;
     recentBase: number;
+    fitWindow: "historique" | "recent3";
   };
   const shipped: ShippedRow[] = [];
   const rejected: { key: string; reason: string }[] = [];
@@ -359,38 +360,89 @@ async function main() {
       continue;
     }
 
-    const trainSlope = olsSlope(
+    // Hypothèse 1 : slope fitté sur tout l'historique d'entraînement (toutes
+    // saisons sauf la plus récente). Si l'historique complet ne généralise
+    // pas à la saison la plus récente (dérive de saison, cf. mémoire
+    // lambda-scale-fin1-bl1), cette hypothèse échoue même quand un biais
+    // réel existe — il faut alors la retester sur une fenêtre plus courte
+    // (principe "replay jusqu'à trouver la bonne config", pas un seul essai).
+    const allSlope = olsSlope(
       train.map((p) => p.prob),
       train.map((p) => p.actual),
     );
-    const trainBase = train.reduce((s, p) => s + p.actual, 0) / train.length;
-
+    const allBase = train.reduce((s, p) => s + p.actual, 0) / train.length;
     const testIdentity = test.map((p) => ({ prob: p.prob, actual: p.actual }));
-    const testShrunk = test.map((p) => ({
-      prob: shrink(p.prob, trainBase, trainSlope),
-      actual: p.actual,
-    }));
+    const brierIdentity = brier(testIdentity);
+    const improvementAll =
+      brierIdentity -
+      brier(
+        test.map((p) => ({
+          prob: shrink(p.prob, allBase, allSlope),
+          actual: p.actual,
+        })),
+      );
 
-    const testBrierIdentity = brier(testIdentity);
-    const testBrierShrunk = brier(testShrunk);
-    const brierImprovement = testBrierIdentity - testBrierShrunk;
+    // Hypothèse 2 : slope fitté seulement sur les 2 saisons de train les plus
+    // récentes (fenêtre courte) — capte un biais qui a pu évoluer plutôt que
+    // la moyenne diluée sur tout l'historique.
+    const trainSeasonOrder = seasonOrder.slice(0, -1);
+    const recentTrainSeasons = new Set(trainSeasonOrder.slice(-2));
+    const recentTrain = train.filter((p) =>
+      recentTrainSeasons.has(p.seasonName),
+    );
+    let improvementRecent = -Infinity;
+    let recentSlope = 1;
+    let recentTrainBase = allBase;
+    if (recentTrain.length >= MIN_TRAIN_VOLUME) {
+      recentSlope = olsSlope(
+        recentTrain.map((p) => p.prob),
+        recentTrain.map((p) => p.actual),
+      );
+      recentTrainBase =
+        recentTrain.reduce((s, p) => s + p.actual, 0) / recentTrain.length;
+      improvementRecent =
+        brierIdentity -
+        brier(
+          test.map((p) => ({
+            prob: shrink(p.prob, recentTrainBase, recentSlope),
+            actual: p.actual,
+          })),
+        );
+    }
+
+    const useRecent =
+      improvementRecent > improvementAll &&
+      improvementRecent >= MIN_BRIER_IMPROVEMENT;
+    const trainSlope = useRecent ? recentSlope : allSlope;
+    const brierImprovement = useRecent ? improvementRecent : improvementAll;
 
     if (brierImprovement < MIN_BRIER_IMPROVEMENT) {
       rejected.push({
         key,
-        reason: `ΔBrier insuffisant (${brierImprovement >= 0 ? "+" : ""}${brierImprovement.toFixed(4)})`,
+        reason:
+          `ΔBrier insuffisant (historique complet ${improvementAll >= 0 ? "+" : ""}${improvementAll.toFixed(4)}, ` +
+          `fenêtre récente ${improvementRecent === -Infinity ? "n/a" : (improvementRecent >= 0 ? "+" : "") + improvementRecent.toFixed(4)})`,
       });
       continue;
     }
 
+    // Numéros de production : réutilise tout le signal disponible (train+test)
+    // — la coupure train/test ne sert qu'à valider l'hypothèse ci-dessus, pas
+    // à priver la config finale de la saison la plus récente.
     const fullFactor = olsSlope(
       pts.map((p) => p.prob),
       pts.map((p) => p.actual),
     );
-    const recentSeasons = new Set(seasonOrder.slice(-2));
+    const recentSeasons = new Set(seasonOrder.slice(useRecent ? -3 : -2));
     const recentPts = pts.filter((p) => recentSeasons.has(p.seasonName));
     const recentBase =
       recentPts.reduce((s, p) => s + p.actual, 0) / recentPts.length;
+    const recentWindowSlope = useRecent
+      ? olsSlope(
+          recentPts.map((p) => p.prob),
+          recentPts.map((p) => p.actual),
+        )
+      : fullFactor;
 
     shipped.push({
       market,
@@ -400,8 +452,12 @@ async function main() {
       testN: test.length,
       trainSlope,
       brierImprovement,
-      fullFactor: Math.min(1, Math.max(0, fullFactor)),
+      fullFactor: Math.min(
+        1,
+        Math.max(0, useRecent ? recentWindowSlope : fullFactor),
+      ),
       recentBase,
+      fitWindow: useRecent ? "recent3" : "historique",
     });
   }
 
@@ -433,7 +489,7 @@ async function main() {
         `${r.competitionCode.padEnd(6)} ${r.side.padEnd(5)}  ` +
           `train n=${String(r.trainN).padEnd(5)} test n=${String(r.testN).padEnd(4)}  ` +
           `slope(train)=${r.trainSlope.toFixed(2)}  ΔBrier(test)=${r.brierImprovement >= 0 ? "-" : "+"}${Math.abs(r.brierImprovement).toFixed(4)}  ` +
-          `→ factor(full)=${r.fullFactor.toFixed(2)} base(recent)=${r.recentBase.toFixed(2)}`,
+          `→ factor(full)=${r.fullFactor.toFixed(2)} base(recent)=${r.recentBase.toFixed(2)} fit=${r.fitWindow}`,
       );
     }
     if (rows.length === 0) out("  (aucun bloc livré)");
@@ -475,6 +531,15 @@ async function main() {
   const report = lines.join("\n");
   writeFileSync(outputPath, `${report}\n`, "utf8");
   console.log(`\nRapport écrit : reports/${outputPath.split("/").pop()}`);
+
+  const jsonPath = join(
+    reportsDir,
+    "clean-sheet-win-either-half-shrinkage-shipped.json",
+  );
+  writeFileSync(jsonPath, JSON.stringify(shipped, null, 2), "utf8");
+  console.log(
+    `Données structurées écrites : reports/${jsonPath.split("/").pop()}`,
+  );
 }
 
 main()
