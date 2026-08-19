@@ -918,6 +918,20 @@ db:migrate` après avoir vérifié le diff du schéma.
   (`ChannelPromotionRule` avec `roiFloor`) est donc à repenser pour ce
   contexte avant de rouvrir le NO au staking, pas seulement à étendre
   telle quelle au NO.
+- `[x]` **Calibration BTTS par ligue** (`db:backtest:btts-shrinkage-calibration`,
+  nouveau script, même protocole double-hypothèse que TEAM_TOTAL/CLEAN_SHEET) —
+  35/66 ligues livrent un shrinkage validé, fusionné dans
+  `OU_SHRINKAGE_CONFIG[LIGUE].btts`. bttsNo = 1 − bttsYes (une seule
+  probabilité à corriger, pas deux côtés indépendants comme TEAM_TOTAL) donc
+  calibrer bttsYes calibre les deux à la fois — cohérent avec l'unification
+  YES/NO ci-dessus. Cas sévères découverts : **TUR1 slope=-0.65** (le signal
+  brut est inversé — plus le modèle est confiant, moins c'est fiable),
+  AUT1/SWE2/SUI2 slope proche de 0 (quasi aucun signal réel, `factor` clampé
+  à 0.00 → repli quasi total sur le taux de base). Plusieurs grosses ligues
+  (BL1, PL, LL, CH, I2, SA) déjà bien calibrées nativement — pas de shrinkage
+  nécessaire. `btts` n'existait avant que pour ~32/60 ligues (dérivé en même
+  temps que le shrinkage O/U 2026-07-03, jamais réévalué indépendamment) —
+  couverture étendue à 35 ligues propres, sur les 66 observées.
 
 ---
 

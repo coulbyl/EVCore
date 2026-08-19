@@ -130,7 +130,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   CSL: {
     factor: 0.59,
     baseRates: { over15: 0.83, over25: 0.63, over35: 0.45, over45: 0.21 },
-    btts: { factor: 0.17, baseYes: 0.63 },
+    btts: { factor: 0.11, baseYes: 0.62 },
     ouHt: { factor05: 0.4, base05: 0.83, factor15: 1, base15: 0.43 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalHome: {
@@ -149,7 +149,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   D2: {
     factor: 1,
     baseRates: { over15: 0.8, over25: 0.58, over35: 0.34, over45: 0.17 },
-    btts: { factor: 0.15, baseYes: 0.6 },
+    btts: { factor: 0.19, baseYes: 0.61 },
     ouHt: { factor05: 1, base05: 0.72, factor15: 0.14, base15: 0.38 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalHome: {
@@ -168,7 +168,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   EL1: {
     factor: 0.4,
     baseRates: { over15: 0.72, over25: 0.5, over35: 0.26, over45: 0.12 },
-    btts: { factor: 0.51, baseYes: 0.52 },
+    btts: { factor: 0.44, baseYes: 0.52 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalHome: {
       "15": { factor: 0.62, base: 0.41 },
@@ -185,7 +185,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   EL2: {
     factor: 0.24,
     baseRates: { over15: 0.72, over25: 0.47, over35: 0.25, over45: 0.11 },
-    btts: { factor: 0.38, baseYes: 0.51 },
+    btts: { factor: 0.39, baseYes: 0.51 },
     ouHt: { factor05: 1, base05: 0.66, factor15: 0.33, base15: 0.32 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalAway: {
@@ -202,7 +202,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   F2: {
     factor: 0.08,
     baseRates: { over15: 0.69, over25: 0.48, over35: 0.27, over45: 0.12 },
-    btts: { factor: 0.32, baseYes: 0.5 },
+    btts: { factor: 0.22, baseYes: 0.5 },
     ouHt: { factor05: 0.0, base05: 0.67, factor15: 0.0, base15: 0.31 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalAway: {
@@ -222,7 +222,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   FIN1: {
     factor: 1,
     baseRates: { over15: 0.83, over25: 0.66, over35: 0.45, over45: 0.26 },
-    btts: { factor: 0.3, baseYes: 0.64 },
+    btts: { factor: 0.41, baseYes: 0.62 },
     ouHt: { factor05: 1, base05: 0.72, factor15: 0.05, base15: 0.4 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalHome: {
@@ -297,12 +297,13 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
         "45": { factor: 0.74, base: 0.157 },
       },
     },
+    btts: { factor: 0.02, baseYes: 0.67 },
   },
   // J1: full-sample slopes o15 0.36 · o25 0.35 · o35 0.62 · o45 0.49; forward ΔBrier OU -0.0047 (4/4).
   J1: {
     factor: 0.46,
     baseRates: { over15: 0.7, over25: 0.46, over35: 0.22, over45: 0.1 },
-    btts: { factor: 0.17, baseYes: 0.49 },
+    btts: { factor: 0.4, baseYes: 0.51 },
     ouHt: { factor05: 1, base05: 0.62, factor15: 0.32, base15: 0.3 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalHome: {
@@ -355,7 +356,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   LAT1: {
     factor: 0.46,
     baseRates: { over15: 0.78, over25: 0.57, over35: 0.36, over45: 0.23 },
-    btts: { factor: 0.32, baseYes: 0.52 },
+    btts: { factor: 0.15, baseYes: 0.51 },
     ouHt: { factor05: 0.0, base05: 0.74, factor15: 0.72, base15: 0.38 },
     // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
     resultTotalGoals: {
@@ -371,7 +372,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   MLS: {
     factor: 0.3,
     baseRates: { over15: 0.8, over25: 0.6, over35: 0.36, over45: 0.2 },
-    btts: { factor: 0.28, baseYes: 0.61 },
+    btts: { factor: 0.34, baseYes: 0.62 },
     ouHt: { factor05: 0.3, base05: 0.78, factor15: 0.22, base15: 0.41 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalHome: {
@@ -451,7 +452,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   POL1: {
     factor: 0.35,
     baseRates: { over15: 0.76, over25: 0.51, over35: 0.3, over45: 0.14 },
-    btts: { factor: 0.09, baseYes: 0.57 },
+    btts: { factor: 0.23, baseYes: 0.57 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalHome: {
       "05": { factor: 0.25, base: 0.8 },
@@ -499,7 +500,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   SRB1: {
     factor: 1,
     baseRates: { over15: 0.74, over25: 0.53, over35: 0.32, over45: 0.16 },
-    btts: { factor: 0.05, baseYes: 0.54 },
+    btts: { factor: 0.16, baseYes: 0.54 },
     ouHt: { factor05: 0.57, base05: 0.71, factor15: 1, base15: 0.36 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalHome: {
@@ -523,7 +524,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   SUI1: {
     factor: 1,
     baseRates: { over15: 0.83, over25: 0.61, over35: 0.37, over45: 0.2 },
-    btts: { factor: 0.0, baseYes: 0.63 },
+    btts: { factor: 0.04, baseYes: 0.63 },
     ouHt: { factor05: 0.09, base05: 0.75, factor15: 1, base15: 0.41 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalHome: {
@@ -537,7 +538,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   SUI2: {
     factor: 0.05,
     baseRates: { over15: 0.8, over25: 0.61, over35: 0.36, over45: 0.16 },
-    btts: { factor: 0.0, baseYes: 0.59 },
+    btts: { factor: 0.0, baseYes: 0.6 },
     ouHt: { factor05: 0.08, base05: 0.76, factor15: 1, base15: 0.44 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalHome: {
@@ -559,7 +560,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   SVN1: {
     factor: 0.14,
     baseRates: { over15: 0.8, over25: 0.57, over35: 0.32, over45: 0.18 },
-    btts: { factor: 0.51, baseYes: 0.55 },
+    btts: { factor: 0.22, baseYes: 0.55 },
     ouHt: { factor05: 0.0, base05: 0.8, factor15: 0.0, base15: 0.33 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalAway: {
@@ -589,12 +590,13 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     teamTotalHome: {
       "15": { factor: 0.7, base: 0.43 },
     },
+    btts: { factor: 0.07, baseYes: 0.53 },
   },
   // SWE2: full-sample slopes o15 0.13 · o25 0.08 · o35 0.14 · o45 -0.07; forward ΔBrier OU -0.0124 (4/4).
   SWE2: {
     factor: 0.07,
     baseRates: { over15: 0.79, over25: 0.55, over35: 0.34, over45: 0.16 },
-    btts: { factor: 0.07, baseYes: 0.55 },
+    btts: { factor: 0.0, baseYes: 0.57 },
     ouHt: { factor05: 0.0, base05: 0.74, factor15: 0.0, base15: 0.37 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalHome: {
@@ -655,7 +657,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   TUR2: {
     factor: 0.55,
     baseRates: { over15: 0.75, over25: 0.51, over35: 0.31, over45: 0.16 },
-    btts: { factor: 0.22, baseYes: 0.47 },
+    btts: { factor: 0.23, baseYes: 0.46 },
     ouHt: { factor05: 0.07, base05: 0.71, factor15: 1, base15: 0.37 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalHome: {
@@ -685,7 +687,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   UECL: {
     factor: 0.07,
     baseRates: { over15: 0.75, over25: 0.54, over35: 0.31, over45: 0.16 },
-    btts: { factor: 0.09, baseYes: 0.48 },
+    btts: { factor: 0.34, baseYes: 0.48 },
     ouHt: { factor05: 0.0, base05: 0.68, factor15: 0.0, base15: 0.33 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalAway: {
@@ -713,7 +715,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   UEL: {
     factor: 0.2,
     baseRates: { over15: 0.75, over25: 0.54, over35: 0.3, over45: 0.14 },
-    btts: { factor: 0.04, baseYes: 0.51 },
+    btts: { factor: 0.38, baseYes: 0.53 },
     ouHt: { factor05: 1, base05: 0.71, factor15: 0.14, base15: 0.37 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalAway: {
@@ -777,7 +779,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   WCQSA: {
     factor: 0.6,
     baseRates: { over15: 0.62, over25: 0.41, over35: 0.21, over45: 0.09 },
-    btts: { factor: 0.0, baseYes: 0.34 },
+    btts: { factor: 0.38, baseYes: 0.33 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalHome: {
       "15": { factor: 0.89, base: 0.41 },
@@ -812,6 +814,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       },
       AWAY: { "15": { factor: 0.0, base: 0.102 } },
     },
+    btts: { factor: 0.23, baseYes: 0.41 },
   },
   // ARG2: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -844,6 +847,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
         "45": { factor: 0.49, base: 0.203 },
       },
     },
+    btts: { factor: 0.44, baseYes: 0.36 },
   },
   // AUS1: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -865,6 +869,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
         "45": { factor: 0.45, base: 0.298 },
       },
     },
+    btts: { factor: 0.79, baseYes: 0.62 },
   },
   // AUT1: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -892,6 +897,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
         "45": { factor: 0.58, base: 0.25 },
       },
     },
+    btts: { factor: 0.0, baseYes: 0.55 },
   },
   // BEL1: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -911,6 +917,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
         "35": { factor: 0.64, base: 0.223 },
       },
     },
+    btts: { factor: 0.55, baseYes: 0.53 },
   },
   // BRA2: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -996,6 +1003,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
         "45": { factor: 0.1, base: 0.267 },
       },
     },
+    btts: { factor: 0.46, baseYes: 0.53 },
   },
   // CHN2: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -1008,6 +1016,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       DRAW: { "15": { factor: 0.04, base: 0.069 } },
       AWAY: { "25": { factor: 0.84, base: 0.119 } },
     },
+    btts: { factor: 0.34, baseYes: 0.55 },
   },
   // D3: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -1029,6 +1038,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
         "45": { factor: 0.67, base: 0.214 },
       },
     },
+    btts: { factor: 0.52, baseYes: 0.62 },
   },
   // DEN1: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -1049,6 +1059,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       },
       AWAY: { "25": { factor: 0.35, base: 0.077 } },
     },
+    btts: { factor: 0.44, baseYes: 0.62 },
   },
   // FIN2: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -1072,6 +1083,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     teamTotalAway: {
       "25": { factor: 0.75, base: 0.1 },
     },
+    btts: { factor: 0.36, baseYes: 0.48 },
   },
   // IRL1: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -1117,6 +1129,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
         "45": { factor: 0.56, base: 0.308 },
       },
     },
+    btts: { factor: 0.66, baseYes: 0.53 },
   },
   // KSA1: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -1124,6 +1137,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     teamTotalHome: {
       "05": { factor: 0.67, base: 0.8 },
     },
+    btts: { factor: 0.28, baseYes: 0.57 },
   },
   // LL: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -1220,6 +1234,7 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
         "45": { factor: 0.43, base: 0.229 },
       },
     },
+    btts: { factor: 0.2, baseYes: 0.52 },
   },
 };
 
