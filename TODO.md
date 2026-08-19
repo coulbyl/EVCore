@@ -1182,6 +1182,39 @@ safeMarketTrust` existe (même mécanique que VALUE, testée unitairement)
     consciemment, pas oublié** : à recalibrer quand les marchés récents
     auront plus de volume côté SAFE.
 
+- `[x]` **Replay mai-août 2026 : confirme les fixes, révèle un nouveau point
+  noir (RESULT_BTTS AWAY en coupes UEFA)** (2026-08-19). Résultat replay :
+  SAFE passe de −14.0% à **+1.2% ROI** (n=270) ; VALUE reste légèrement
+  négatif (−1.2%, n=528) mais `TEAM_TOTAL_HOME UNDER_1_5` (le biais suivi
+  depuis le début) affiche maintenant +25.5% ROI, et `DOUBLE_CHANCE 1X` est
+  devenu le pick le plus fréquent de VALUE (n=97, +22.1% ROI) — la
+  pondération de confiance fonctionne comme prévu.
+  - **RESULT_BTTS AWAY_YES/AWAY_NO reste cassé en UCL/UEL/UECL** :
+    0/34 sur le sous-ensemble sélectionné par VALUE. Vérifié que ce n'est
+    **pas** un winner's curse par tranche d'edge (le hit rate reste mauvais
+    même aux edges les plus bas — 6-33% sur tout le pool Phase 1, n=1074).
+    `db:backtest:result-btts-shrinkage-calibration` étendu pour pouvoir
+    regrouper des compétitions ("pooling") — UCL/UEL/UECL calibrées
+    ensemble (même famille structurelle, chacune trop mince seule). Bug
+    trouvé et corrigé au passage : la saison chronologiquement la plus
+    récente (2026-27, encore en cours) était choisie comme test même
+    quand elle n'avait qu'1 point utilisable après le cold-start TeamStats
+    — le script cherche maintenant en remontant la saison la plus récente
+    qui atteint `MIN_TEST_VOLUME`.
+  - **DRAW_NO/DRAW_YES recalibrées** (factor 0.50, base 0.13, partagé par
+    les 3 compétitions) — ΔBrier validé hors échantillon.
+  - **AWAY_NO/AWAY_YES : la proba brute n'est PAS le problème** — le
+    shrinkage n'améliore pas le Brier hors échantillon même sur
+    l'échantillon poolé (+0.0005, rejeté) ; l'ancien réglage UECL seul
+    (factor 0.52) est retiré (probablement du bruit sur un train trop
+    petit — jamais revalidé sur plus de données). Le vrai coupable est
+    vraisemblablement le **seuil de sélection Phase 1**
+    (`result-btts.config.ts`, `getResultBttsPickConfigs` — seuil ≈ 0.85×
+    base par pick) qui laisse passer une sélection trop permissive côté
+    AWAY dans ces 3 coupes. Pas encore corrigé — nécessite d'étudier
+    `decideResultBtts`/le tie-break EV (`compareResultBttsCandidates`), pas
+    juste la proba Poisson brute.
+
 ---
 
 ## Harnais de backtest partagé

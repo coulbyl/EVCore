@@ -1719,12 +1719,22 @@ const RESULT_BTTS_SHRINKAGE: Record<
     },
   },
   TUR2: { resultBtts: { HOME: { factor: 0.46, base: 0.16 } } },
-  UECL: {
-    resultBtts: {
-      AWAY: { factor: 0.52, base: 0.16 },
-      DRAW: { factor: 0, base: 0.13 },
-    },
-  },
+  // UCL/UEL/UECL DRAW re-fit 2026-08-19, pooled across the three (same
+  // structural pattern — continental cup away legs — each individually too
+  // thin: UCL/UEL had no resultBtts shrinkage at all, UECL's DRAW existed
+  // but on 1/3 the sample). AWAY retiré : le train UECL seul avait trouvé
+  // factor=0.52 (ΔBrier -0.0011), mais le même protocole sur l'échantillon
+  // triplé (pooling) ne trouve plus d'amélioration Brier significative
+  // (+0.0005) — le signal AWAY à l'ancienne mesure était probablement du
+  // bruit sur un train trop petit, pas un vrai biais de la proba Poisson
+  // brute (confirmé par l'audit replay : le ROI dégradé de RESULT_BTTS AWAY
+  // en coupes UEFA reste mauvais même aux tranches d'edge les plus basses,
+  // cohérent avec un problème de SEUIL de sélection Phase 1
+  // (result-btts.config.ts), pas de calibration de proba — reste à traiter
+  // séparément, voir TODO.md).
+  UCL: { resultBtts: { DRAW: { factor: 0.5, base: 0.13 } } },
+  UEL: { resultBtts: { DRAW: { factor: 0.5, base: 0.13 } } },
+  UECL: { resultBtts: { DRAW: { factor: 0.5, base: 0.13 } } },
   USA2: {
     resultBtts: {
       AWAY: { factor: 0.5, base: 0.12 },

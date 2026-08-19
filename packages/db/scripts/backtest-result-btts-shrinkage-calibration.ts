@@ -50,6 +50,30 @@ const MIN_TRAIN_VOLUME = 60;
 const MIN_TEST_VOLUME = 20;
 const MIN_BRIER_IMPROVEMENT = 0.001;
 
+// UCL/UEL/UECL pooled for calibration (2026-08-19): audit of the replay
+// complet found RESULT_BTTS AWAY badly overconfident in all three (proba
+// annoncée 25-34% vs hit réel 12-22%, n=1074 combiné) — same structural
+// pattern (continental cup away legs), each individually too thin to
+// calibrate alone (UCL/UEL had ZERO resultBtts shrinkage at all; UECL's
+// existing factor=0.52 wasn't aggressive enough — real hit stayed well
+// below even the shrunk probability). Pooling triples the effective sample
+// for the walk-forward fit; the shipped factor/base applies to all three
+// codes identically (see the config-output expansion below).
+const POOL_GROUPS: Record<string, string> = {
+  UCL: "UEFA_CUPS",
+  UEL: "UEFA_CUPS",
+  UECL: "UEFA_CUPS",
+};
+function groupKeyFor(competitionCode: string): string {
+  return POOL_GROUPS[competitionCode] ?? competitionCode;
+}
+function expandGroupKey(groupKey: string): string[] {
+  if (groupKey !== "UEFA_CUPS") return [groupKey];
+  return Object.entries(POOL_GROUPS)
+    .filter(([, group]) => group === groupKey)
+    .map(([code]) => code);
+}
+
 type Side = "HOME" | "DRAW" | "AWAY";
 
 type FixtureRow = {
@@ -273,14 +297,14 @@ async function main() {
 
   const groups = new Map<string, Point[]>();
   for (const p of points) {
-    const key = `${p.competitionCode}::${p.side}`;
+    const key = `${groupKeyFor(p.competitionCode)}::${p.side}`;
     const arr = groups.get(key) ?? [];
     arr.push(p);
     groups.set(key, arr);
   }
 
   type ShippedRow = {
-    competitionCode: string;
+    competitionCode: string; // may be a pool group id (e.g. "UEFA_CUPS") — expanded at output time
     side: Side;
     trainN: number;
     testN: number;
@@ -309,8 +333,37 @@ async function main() {
       continue;
     }
 
-    const latestSeason = seasonOrder[seasonOrder.length - 1]!;
-    const train = pts.filter((p) => p.seasonName !== latestSeason);
+    // The chronologically-latest season label isn't always usable as test:
+    // an in-progress season (e.g. "2026-27" a couple months in) can have
+    // too few FINISHED, cold-start-passing points yet — walk backward to
+    // the most recent season that actually clears MIN_TEST_VOLUME, rather
+    // than rejecting the whole group on a season that just hasn't finished
+    // playing yet (found while pooling UCL/UEL/UECL, 2026-08-19: the
+    // trailing 2026-27 season had 344 fixtures scheduled but only 1 passing
+    // point per side after per-season TeamStats cold-start).
+    let latestSeason: string | undefined;
+    for (let i = seasonOrder.length - 1; i >= 1; i--) {
+      const candidate = seasonOrder[i]!;
+      const candidateTestN = pts.filter(
+        (p) => p.seasonName === candidate,
+      ).length;
+      if (candidateTestN >= MIN_TEST_VOLUME) {
+        latestSeason = candidate;
+        break;
+      }
+    }
+    if (latestSeason === undefined) {
+      rejected.push({
+        key,
+        reason: `aucune saison récente n'atteint test≥${MIN_TEST_VOLUME} (${pts.length} picks au total)`,
+      });
+      continue;
+    }
+    const train = pts.filter(
+      (p) =>
+        p.seasonName !== latestSeason &&
+        seasonOrder.indexOf(p.seasonName) < seasonOrder.indexOf(latestSeason!),
+    );
     const test = pts.filter((p) => p.seasonName === latestSeason);
 
     if (train.length < MIN_TRAIN_VOLUME || test.length < MIN_TEST_VOLUME) {
@@ -340,7 +393,10 @@ async function main() {
         })),
       );
 
-    const trainSeasonOrder = seasonOrder.slice(0, -1);
+    const trainSeasonOrder = seasonOrder.slice(
+      0,
+      seasonOrder.indexOf(latestSeason),
+    );
     const recentTrainSeasons = new Set(trainSeasonOrder.slice(-2));
     const recentTrain = train.filter((p) =>
       recentTrainSeasons.has(p.seasonName),
@@ -449,9 +505,11 @@ async function main() {
   out();
   const byCompetition = new Map<string, ShippedRow[]>();
   for (const r of shipped) {
-    const arr = byCompetition.get(r.competitionCode) ?? [];
-    arr.push(r);
-    byCompetition.set(r.competitionCode, arr);
+    for (const realCode of expandGroupKey(r.competitionCode)) {
+      const arr = byCompetition.get(realCode) ?? [];
+      arr.push(r);
+      byCompetition.set(realCode, arr);
+    }
   }
   for (const [code, codeRows] of Array.from(byCompetition.entries()).sort(
     (a, b) => a[0].localeCompare(b[0]),
