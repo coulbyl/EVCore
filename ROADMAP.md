@@ -744,22 +744,22 @@ Docs de cadrage Phase 3:
   `FIRST_HALF`, `LIVE_VALUE`) ; seul `BB` côté `NO` (BTTS NO) reste en
   observation avant activation — voir TODO.md
 - [x] **Coquilles de ré-export nettoyées (2026-08-18)** — 23 fichiers dans
-  `apps/backend/.../betting-engine/strategies/` ne faisaient que
-  ré-exporter `@evcore/analysis-core` (reliquat de l'extraction jamais
-  nettoyé) ; audit : zéro consommateur de prod dans ce dossier, seuls leurs
-  propres `.spec.ts` colocalisés les importaient — violant "tests
-  colocalisés avec la source" (CLAUDE.md), puisque la vraie source vit dans
-  `analysis-core`. Les 22 `.spec.ts` déménagés vers
-  `packages/analysis-core/src/strategies/` (+ `selection-odds.spec.ts` →
-  `packages/analysis-core/src/selection/odds.spec.ts`), les 23 coquilles
-  supprimées. 8 vrais consommateurs de prod trouvés hors de ce dossier
-  (`apps/backend/src/modules/backtest/*`, `coupon/signal-window.service.ts`,
-  `betting-engine/channel-decision.service.ts`,
-  `scripts/backfill-selection-odds.ts`) — repointés directement vers
-  `@evcore/analysis-core`. `strategy-context.builder.ts` (vraie logique
-  app-side, pas une coquille) reste en place. Suite analysis-core
-  356/357 verte (même échec préexistant sans rapport), backend 736/736
-  verte, monorepo entier vert.
+      `apps/backend/.../betting-engine/strategies/` ne faisaient que
+      ré-exporter `@evcore/analysis-core` (reliquat de l'extraction jamais
+      nettoyé) ; audit : zéro consommateur de prod dans ce dossier, seuls leurs
+      propres `.spec.ts` colocalisés les importaient — violant "tests
+      colocalisés avec la source" (CLAUDE.md), puisque la vraie source vit dans
+      `analysis-core`. Les 22 `.spec.ts` déménagés vers
+      `packages/analysis-core/src/strategies/` (+ `selection-odds.spec.ts` →
+      `packages/analysis-core/src/selection/odds.spec.ts`), les 23 coquilles
+      supprimées. 8 vrais consommateurs de prod trouvés hors de ce dossier
+      (`apps/backend/src/modules/backtest/*`, `coupon/signal-window.service.ts`,
+      `betting-engine/channel-decision.service.ts`,
+      `scripts/backfill-selection-odds.ts`) — repointés directement vers
+      `@evcore/analysis-core`. `strategy-context.builder.ts` (vraie logique
+      app-side, pas une coquille) reste en place. Suite analysis-core
+      356/357 verte (même échec préexistant sans rapport), backend 736/736
+      verte, monorepo entier vert.
 
 ---
 
@@ -797,7 +797,7 @@ Docs de cadrage Phase 3:
       décisions Phase 1 via `viablePicksFromPreviousDecisions`, plus de
       scan de `evaluatedMarkets`) → Phase 3 = CONSENSUS/AVOID (inchangé,
       voit maintenant VALUE/SAFE via la map accumulée). `context.
-    evaluatedMarkets` n'est plus lu par aucun canal — candidat à
+evaluatedMarkets` n'est plus lu par aucun canal — candidat à
       suppression (TODO.md). Simplification assumée : l'exception SAFE
       "comparaison OVER/UNDER symétrique à haut lambda" (avait besoin de
       plusieurs lignes O/U simultanées, incompatible avec "un pick par

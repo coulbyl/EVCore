@@ -771,7 +771,7 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
   (`calibration_report`, `channel_tuning_result`) — pas lancée ce soir
   (règle du projet : jamais `db generate`/`db build` par Claude, c'est
   l'utilisateur qui gère via son CLI). À faire : `pnpm --filter @evcore/db
-  db:migrate` après avoir vérifié le diff du schéma.
+db:migrate` après avoir vérifié le diff du schéma.
 - `[x]` **`modules/etl/schemas/result.schema.ts` supprimé** — `ResultSchema`
   orphelin, aucun appelant en dehors de son propre spec ; la validation
   réelle des résultats de fixture passe par
@@ -827,6 +827,97 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
   ne tenait que pour le contexte Coupe du Monde/sélections nationales
   (volume insuffisant pour calibrer par cette méthode : WC train=4, test=8),
   pas pour les ligues domestiques.
+
+---
+
+## Audit calibration canal×marché×ligue (2026-08-18)
+
+> Script : `packages/db/scripts/audit-channel-market-league-calibration.ts` ·
+> Rapport : `packages/db/reports/audit-channel-market-league-calibration-2026-08-18.txt`
+> (413 combos n≥30, sur données prod fraîches). Principe directeur : jamais de
+> whitelist qui exclut une ligue faible — chercher la config qui rend le canal
+> fort sur cette ligue (voir mémoire `fix-not-disable`, extension 08-18).
+
+- `[x]` **TEAM_TOTAL sur-confiant sur la quasi-totalité des ligues** — canal
+  staké en prod. Première passe (08-18) : shrinkage re-testé sur données
+  fraîches, facteurs quasi identiques à la version 08-15, pas de dérive.
+  Deuxième passe (08-19, principe "replay jusqu'à la bonne config", pas un
+  seul essai) : ajout d'une hypothèse "fenêtre 3 saisons récentes" en plus de
+  "tout l'historique" dans `backtest-team-total-shrinkage-calibration.ts` —
+  176→**180 blocs livrés** (35 rescapés par la fenêtre récente). **Fusionné
+  dans `OU_SHRINKAGE_CONFIG`** (script `/tmp/.../merge-shrinkage.js`,
+  183 champs mis à jour/insérés, typecheck+lint+tests backend 727/727 verts).
+  Reste bloqué (pas une question de config, plafond de données réel) :
+  - **UCL/UECL** : `volume insuffisant (train=255, test=1)` — la saison la
+    plus récente n'a qu'1 match dans le split walk-forward (nouvelle saison
+    Champions/Europa) ; se résorbera avec l'accumulation de matches.
+  - **UECL HOME, MLS AWAY, etc.** : `ΔBrier insuffisant` même avec la fenêtre
+    récente (2-3 saisons dispo au total = fenêtre récente ≈ tout l'historique
+    déjà) — le shrinkage linéaire toward-base-rate n'aide pas le Brier ici ;
+    pas assez de saisons pour trancher, pas un défaut de méthode.
+- `[x]` **CLEAN_SHEET / WIN_EITHER_HALF** — même double passe (08-18 puis
+  08-19 fenêtre récente) : 103→**126 blocs livrés** (23 rescapés). Fusionné
+  dans `CLEAN_SHEET_WIN_EITHER_HALF_SHRINKAGE` (même script de merge, 105
+  champs). Même plafond de données pour UECL/UEL/UCL restants.
+- `[ ]` **DOMINANT/DRAW — pas de mécanisme de calibration par ligue, juste
+  une whitelist binaire** (`backtest-channel-league-whitelist.ts`).
+  Contraire au principe directeur ci-dessus : à faire évoluer vers un
+  réglage par ligue (ex: seuil de confiance ajusté par ligue) plutôt qu'un
+  simple activé/désactivé. DOMINANT est bimodal par ligue (CZE1/TUR1/LL
+  très bons, UEL/UECL/CH/F2/SUI1 sur-confiants) — bon candidat pour prouver
+  le principe.
+- `[ ]` **CORRECT_SCORE — aucun mécanisme de calibration par ligue** au-delà
+  du signal H2H scoreline (déjà en observation, `reasonDetails` uniquement).
+  Même les combos "bien calibrés" par calibGap restent à ROI quasi nul —
+  marché trop longshot pour qu'un petit gap se traduise en edge réel ;
+  cohérent avec [[correct-score-immature]].
+- `[x]` **GOALS / BTTS confirmés solides** — 15/16 et 16/18 combos n≥100
+  bien calibrés respectivement, quelques ligues isolées à traiter au cas
+  par cas (F2/SWE2/ARG2/CHN2 pour GOALS).
+
+---
+
+## Découpage `strategies/config.ts` + unification BTTS (2026-08-19)
+
+- `[x]` **`strategies/config.ts` (10 539 lignes) éclaté en 18 fichiers** — un
+  par canal (`dominant.config.ts`, `btts.config.ts`, `clean-sheet.config.ts`,
+  `goals.config.ts`, `team-total.config.ts`, `result-btts.config.ts`, etc.),
+  un dispatcher (`channel-strategy.config.ts` pour `getChannelStrategyConfig`)
+  et un fichier de types partagés (`channel-strategy-config.types.ts`). Même
+  esprit que `ev.constants.ts` pour VALUE/SAFE, mais un fichier par canal
+  plutôt qu'un fichier unique pour tous les canaux. Extraction mécanique
+  (scripts jetables, diff des exports vérifié 1:1), tous les imports des ~25
+  fichiers consommateurs repointés — zéro barrel de ré-export laissé derrière
+  (même principe que le nettoyage des shims `betting-engine/strategies/*`
+  plus tôt cette session : jamais de fichier qui ne fait que ré-exporter).
+  Typecheck+lint+tests
+  (356/357 analysis-core, 727/727 backend) verts avant et après.
+- `[x]` **BTTS unifié YES/NO (une seule question, un seul config)** — retiré
+  `BTTS_NO_CONFIG`/`getBttsNoConfig`/`BttsNoLeagueConfig`, qui calibraient le
+  côté NO séparément (méthode structurelle, "observation only") du côté YES
+  (méthode ROI-backtestée). `btts.strategy.ts` évalue maintenant bttsYes et
+  bttsNo contre LE MÊME seuil par ligue (`BTTS_CONFIG`), argmax entre les
+  deux — exactement le patron déjà utilisé par CLEAN_SHEET/WIN_TO_NIL/
+  WIN_EITHER_HALF (`decideCleanSheet` etc.), qui était déjà documenté comme
+  "same pattern as BttsStrategy" avant que BTTS ne dérive vers deux configs
+  asymétriques. Cascade nettoyée jusqu'au bout : sweep de tuning dédié
+  `buildBttsNoSweep`/`BTTS_NO_TUNING_THRESHOLD_GRID`/`BTTS_NO_PROMOTION_RULE`
+  (backend `tuning.metrics.ts`/`tuning.constants.ts`), DTO `BttsNoTuningReport`
+  (`backtest-tuning.dto.ts` + type miroir web `channel-backtest.ts`), section
+  UI dédiée (`tuning-tab.tsx`, clé i18n `bttsNoSection`) — tous supprimés,
+  plus aucune référence dans le repo hors le commentaire explicatif du retrait
+  dans `btts.config.ts`.
+- `[ ]` **Politique de staking BTTS à revoir séparément** (explicitement
+  différé) — `BTTS_STAKED_LEAGUES = ['PL', 'BL1']` (2 ligues) reste
+  déconnecté de `BTTS_CONFIG` (58 ligues activées côté décision de canal), et
+  le coupon ne connaît qu'un pseudo-canal `BTTS_YES` (le côté NO n'est pas
+  misable du tout aujourd'hui, même là où il serait maintenant symétriquement
+  calibré). **Ne pas se baser sur le ROI pour promouvoir une jambe dans un
+  coupon — chaque jambe y est indépendante** (retour explicite de
+  l'utilisateur, 2026-08-19) : la méthode de promotion actuelle
+  (`ChannelPromotionRule` avec `roiFloor`) est donc à repenser pour ce
+  contexte avant de rouvrir le NO au staking, pas seulement à étendre
+  telle quelle au NO.
 
 ---
 
