@@ -556,8 +556,10 @@ export class CouponComposerService {
     });
 
     // Filtre value (bornes du profil) : nombre de jambes, cote combinée, proba
-    // jointe ET EV de coupon. Tri par EV décroissante (ADN value), proba jointe en
-    // tie-break, puis le coupon le plus court à EV égale (cf. DESIGN.md §5).
+    // jointe ET EV de coupon — inchangé, ce sont les bornes qui définissent
+    // le profil (SAFE/BALANCED/AGGRESSIVE/LONGSHOT). Tri désormais par
+    // signalScore décroissant (voir compareCouponsBySignalThenEV) plutôt que
+    // par EV — l'EV de coupon reste le premier tie-break.
     const viable = unique
       .filter(
         (c) =>
@@ -566,7 +568,7 @@ export class CouponComposerService {
           c.jointProbability >= profile.minJointProbability &&
           c.couponEV >= profile.minCouponEV,
       )
-      .sort(compareCouponsByEV);
+      .sort(compareCouponsBySignalThenEV);
 
     return selectDiverseCoupons(viable, COUPON_PARAMS.maxCoupons).map(
       (c, i) => ({ ...c, rank: i + 1 }),
@@ -719,12 +721,28 @@ export class CouponComposerService {
   }
 }
 
-// Classement value-driven (DESIGN.md §5) : EV de coupon d'abord, proba jointe en
-// tie-break, puis le coupon le plus court à EV/proba égales.
-export function compareCouponsByEV(
+// Classement signal-first (2026-08-20, remplace l'ancien tri EV-first —
+// DESIGN.md §5 historique). Un audit complet de session a montré que
+// `jointProbability`/`couponEV` (produit brut des probas de jambes, même
+// après calibration) n'a quasiment aucun pouvoir différenciant une fois
+// honnêtement mesuré (db:backtest:coupon-joint-probability-shrinkage-
+// calibration : facteur de shrink optimal 0.00-0.05 sur deux essais
+// successifs) — chercher le meilleur `couponEV` parmi des centaines de
+// combos revient à sélectionner le gagnant d'une loterie de bruit
+// (winner's curse au niveau de la combinaison, pas seulement de la
+// jambe). `signalScore` (canal×jour×ligue calibré), lui, montre une
+// relation quasi monotone avec le taux de victoire réel des jambes de
+// coupon (0.30-0.40 -> 42.5% réel, 0.70-0.80 -> 65.8%, 0.80-0.85 -> 68.6%)
+// — le signal le mieux calibré disponible, jusqu'ici seulement utilisé en
+// tie-break de scoring de jambe, jamais dans le classement final des
+// coupons. `couponEV` reste le premier tie-break (préserve un peu
+// d'orientation value entre coupons à signal égal), `jointProbability`
+// ensuite, puis le coupon le plus court.
+export function compareCouponsBySignalThenEV(
   a: ComposedCoupon,
   b: ComposedCoupon,
 ): number {
+  if (b.signalScore !== a.signalScore) return b.signalScore - a.signalScore;
   if (b.couponEV !== a.couponEV) return b.couponEV - a.couponEV;
   if (b.jointProbability !== a.jointProbability) {
     return b.jointProbability - a.jointProbability;

@@ -532,7 +532,7 @@ describe('CouponComposerService.compose', () => {
     expect(c.couponEV).toBeCloseTo(c.jointProbability * c.combinedOdds - 1, 10);
   });
 
-  it('ranks coupons by descending couponEV, not joint probability', () => {
+  it('ranks coupons by descending signalScore, not couponEV', () => {
     // A second, fixture-disjoint clone of safePick — otherwise both combos
     // would share the "safePick" leg and the strict no-shared-leg diversity
     // rule would only ever publish one of them (a separate concern, see
@@ -558,12 +558,13 @@ describe('CouponComposerService.compose', () => {
       { ...bttsWeak, competition: 'League C' },
     ]);
     expect(coupons[0].rank).toBe(1);
-    expect(coupons[0].couponEV).toBeGreaterThanOrEqual(coupons[1].couponEV);
-    // safe+bttsWeak has the higher EV (longer odds) despite a lower joint prob —
-    // so the value-driven order is the inverse of the joint-probability order.
-    expect(coupons[0].jointProbability).toBeLessThan(
-      coupons[1].jointProbability,
-    );
+    // safe+bttsStrong averages signalScore (0.7+0.65)/2=0.675, higher than
+    // safe+bttsWeak's (0.7+0.6)/2=0.65 — it now ranks first even though
+    // bttsWeak's longer odds give the OTHER combo the higher couponEV. The
+    // value-driven order (old behaviour) would have picked the opposite —
+    // see compareCouponsBySignalThenEV's doc comment for why.
+    expect(coupons[0].signalScore).toBeGreaterThan(coupons[1].signalScore);
+    expect(coupons[0].couponEV).toBeLessThan(coupons[1].couponEV);
   });
 
   it('excludes legs without real odds (no FALLBACK_ODDS)', () => {
