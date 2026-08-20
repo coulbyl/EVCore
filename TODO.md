@@ -76,6 +76,37 @@
     reflète le modèle en vigueur à la génération de CHAQUE coupon historique,
     pas le modèle actuel).
 
+- `[ ]` **PRIORITÉ — ROI du composeur négatif dans TOUTES les configurations
+  testées (-9% à -29%), y compris l'état d'avant-session** (trouvé 2026-08-20)
+  — un bug d'`upsertProposal` (bail-out silencieux sur toute proposal déjà
+  `EXPIRED`, pas seulement `ACCEPTED`/`REJECTED`) rendait chaque "validation"
+  précédente un no-op qui re-mesurait le même jeu de données figé ; corrigé
+  via `CouponRepository.deleteExpiredInRange` (purge avant régénération,
+  `apps/backend/src/scripts/regenerate-coupons.ts`). Une fois l'outil
+  réellement fiable, 6+ configurations testées cette nuit (calibration par
+  canal, tri par signalScore, plancher signalScore, `includeEvaluatedMarkets`
+  on/off, `MIN_LEG_PROBABILITY` 0.55/0.65) donnent TOUTES un ROI négatif —
+  y compris l'état de production d'avant cette session (-9,06%, n=371). Ce
+  n'est pas une régression de cette nuit : c'est une propriété préexistante
+  du composeur, jamais vue avant faute d'un outil de mesure fiable.
+  Plan détaillé ancré dans la littérature externe (Deflated Sharpe Ratio,
+  shrinkage empirique de Bayes/James-Stein, corrélation des parlays,
+  dérive de calibration) dans [recherche.md](apps/backend/src/modules/coupon/recherche.md)
+  (section "CLAUDE — session du 2026-08-19/20"). Ordre à essayer demain :
+  - `[ ]` Shrinkage James-Stein continu pour `calibrateLegProbability` (au
+    lieu du couperet dur `betCount >= MIN_BET_COUNT` + repli blend 50/50) —
+    le plus mécanique/sûr, à tenter en premier.
+  - `[ ]` Déflation de `couponEV`/`jointProbability` par la taille réelle du
+    pool combinatoire exploré ce jour-là (façon Deflated Sharpe Ratio) —
+    remplace le facteur fixe `JOINT_PROBABILITY_CORRELATION_FACTOR`.
+  - `[ ]` Fréquence empirique historique de coupons à profil similaire au
+    lieu du produit naïf de marginales pour `jointProbability`.
+  - `[ ]` Cadence de recalibration suivant un Brier score glissant surveillé
+    (pas un calendrier fixe) une fois qu'une config marche.
+  - Valider chaque piste avec la boucle régénère+règle+recalibre déjà en
+    place (`regenerate-coupons.ts` + `db:backtest:coupon-joint-probability-
+    shrinkage-calibration`) — ne RIEN shipper sans un vrai cycle complet.
+
 - `[x]` **Jambe partagée entre coupons classés (rank 1/2/3+) — zéro tolérance**
   (résolu 2026-08-15, trouvé en creusant le fix PARTIAL/VOID ci-dessous) — la
   règle de diversité inter-coupons (`selectDiverseCoupons`) tolérait jusqu'à
