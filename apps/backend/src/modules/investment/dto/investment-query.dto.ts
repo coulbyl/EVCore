@@ -27,8 +27,10 @@ export class InvestmentQueryDto {
 
   // "probability" (default): tous les canaux, classés par chance de gagner.
   // "value": VALUE uniquement, EV >= EV_THRESHOLD, classés par edge calibré.
-  // "safe"/"dominant"/"btts"/"goals"/"draw"/"teamTotal": ce canal seul, tri et
-  // cap par canal (voir MODE_RANKING).
+  // "safe"/"dominant"/"btts"/"goals"/"draw"/"teamTotal"/"cleanSheet"/
+  // "winEitherHalf"/"firstHalf"/"doubleChance"/"resultTotalGoals"/
+  // "overUnderHt"/"resultBtts"/"drawNoBet"/"winToNil"/"halfTimeFullTime":
+  // ce canal seul, tri et cap par canal (voir MODE_RANKING).
   @IsOptional()
   @IsIn([
     'probability',
@@ -39,6 +41,16 @@ export class InvestmentQueryDto {
     'goals',
     'draw',
     'teamTotal',
+    'cleanSheet',
+    'winEitherHalf',
+    'firstHalf',
+    'doubleChance',
+    'resultTotalGoals',
+    'overUnderHt',
+    'resultBtts',
+    'drawNoBet',
+    'winToNil',
+    'halfTimeFullTime',
   ])
   mode?: InvestmentMode;
 

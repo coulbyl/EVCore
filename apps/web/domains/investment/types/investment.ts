@@ -12,7 +12,17 @@ export type InvestmentMode =
   | "btts"
   | "goals"
   | "draw"
-  | "teamTotal";
+  | "teamTotal"
+  | "cleanSheet"
+  | "winEitherHalf"
+  | "firstHalf"
+  | "doubleChance"
+  | "resultTotalGoals"
+  | "overUnderHt"
+  | "resultBtts"
+  | "drawNoBet"
+  | "winToNil"
+  | "halfTimeFullTime";
 
 export type FixtureStatus =
   | "SCHEDULED"
@@ -42,7 +52,17 @@ export type InvestmentPick = {
     | "BTTS"
     | "DRAW"
     | "GOALS"
-    | "TEAM_TOTAL";
+    | "TEAM_TOTAL"
+    | "CLEAN_SHEET"
+    | "WIN_EITHER_HALF"
+    | "FIRST_HALF"
+    | "DOUBLE_CHANCE"
+    | "RESULT_TOTAL_GOALS"
+    | "OVER_UNDER_HT"
+    | "RESULT_BTTS"
+    | "DRAW_NO_BET"
+    | "WIN_TO_NIL"
+    | "HALF_TIME_FULL_TIME";
   market: string;
   pick: string;
   // Calibrated (bias-corrected) probability — drives probabilityBucket and

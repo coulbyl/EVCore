@@ -18,6 +18,16 @@ const CHANNEL_MODE_KEY: Record<
   goals: "GOALS",
   draw: "DRAW",
   teamTotal: "TEAM_TOTAL",
+  cleanSheet: "CLEAN_SHEET",
+  winEitherHalf: "WIN_EITHER_HALF",
+  firstHalf: "FIRST_HALF",
+  doubleChance: "DOUBLE_CHANCE",
+  resultTotalGoals: "RESULT_TOTAL_GOALS",
+  overUnderHt: "OVER_UNDER_HT",
+  resultBtts: "RESULT_BTTS",
+  drawNoBet: "DRAW_NO_BET",
+  winToNil: "WIN_TO_NIL",
+  halfTimeFullTime: "HALF_TIME_FULL_TIME",
 };
 
 const MODE_ORDER: InvestmentMode[] = [
@@ -29,6 +39,16 @@ const MODE_ORDER: InvestmentMode[] = [
   "btts",
   "goals",
   "draw",
+  "doubleChance",
+  "drawNoBet",
+  "cleanSheet",
+  "winToNil",
+  "winEitherHalf",
+  "firstHalf",
+  "overUnderHt",
+  "halfTimeFullTime",
+  "resultTotalGoals",
+  "resultBtts",
 ];
 
 export function InvestmentModeToggle({

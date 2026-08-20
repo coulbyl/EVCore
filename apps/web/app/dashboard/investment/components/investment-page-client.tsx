@@ -39,6 +39,16 @@ const VALID_MODES: InvestmentMode[] = [
   "goals",
   "draw",
   "teamTotal",
+  "cleanSheet",
+  "winEitherHalf",
+  "firstHalf",
+  "doubleChance",
+  "resultTotalGoals",
+  "overUnderHt",
+  "resultBtts",
+  "drawNoBet",
+  "winToNil",
+  "halfTimeFullTime",
 ];
 
 // DOMINANT/BTTS/GOALS have a negative aggregate settled ROI played solo

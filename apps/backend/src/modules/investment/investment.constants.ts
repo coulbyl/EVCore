@@ -59,7 +59,17 @@ export type SingleChannelMode =
   | 'btts'
   | 'goals'
   | 'draw'
-  | 'teamTotal';
+  | 'teamTotal'
+  | 'cleanSheet'
+  | 'winEitherHalf'
+  | 'firstHalf'
+  | 'doubleChance'
+  | 'resultTotalGoals'
+  | 'overUnderHt'
+  | 'resultBtts'
+  | 'drawNoBet'
+  | 'winToNil'
+  | 'halfTimeFullTime';
 export type InvestmentMode = 'probability' | 'value' | SingleChannelMode;
 
 // EV only predicts a better outcome within VALUE — verified 2026-07-06 with a
@@ -75,6 +85,16 @@ export const VALUE_MODE_CHANNELS = ['VALUE'] as const;
 
 // One mode per remaining channel, each restricted to that channel alone and
 // ranked per MODE_RANKING below.
+//
+// 10 modes added 2026-08-20 (cleanSheet..halfTimeFullTime) — these channels
+// already produce real, settled channel_decision/channel_selection rows
+// (hundreds to low-thousands each over the last 45 days) but were never
+// wired into Investment at all, on any mode: computed and settled, never
+// reviewable. Deliberately NOT added: CORRECT_SCORE (already excluded from
+// ANALYSIS_SHEET_CHANNELS — near-zero settled volume/immature, see that doc
+// comment) and CONSENSUS/AVOID (meta-channels that aggregate other channels'
+// selections rather than making an independent pick — not a comparable
+// individual position).
 export const SINGLE_CHANNEL_MODE_MAP: Record<SingleChannelMode, string> = {
   safe: 'SAFE',
   dominant: 'DOMINANT',
@@ -82,6 +102,16 @@ export const SINGLE_CHANNEL_MODE_MAP: Record<SingleChannelMode, string> = {
   goals: 'GOALS',
   draw: 'DRAW',
   teamTotal: 'TEAM_TOTAL',
+  cleanSheet: 'CLEAN_SHEET',
+  winEitherHalf: 'WIN_EITHER_HALF',
+  firstHalf: 'FIRST_HALF',
+  doubleChance: 'DOUBLE_CHANCE',
+  resultTotalGoals: 'RESULT_TOTAL_GOALS',
+  overUnderHt: 'OVER_UNDER_HT',
+  resultBtts: 'RESULT_BTTS',
+  drawNoBet: 'DRAW_NO_BET',
+  winToNil: 'WIN_TO_NIL',
+  halfTimeFullTime: 'HALF_TIME_FULL_TIME',
 };
 
 export type ModeRankingSort = 'probability' | 'edge';
@@ -106,6 +136,10 @@ export type ModeRankingSort = 'probability' | 'edge';
 //   vs edge/EV (+24% to +27% top3) — same "high probas die, low ones cash"
 //   pattern as value/draw. Provisional: measured on only 9 trading days
 //   (db:backtest:invest-ranking, 2026-07-28) — revisit once more data accrues.
+// The 10 modes added 2026-08-20 (cleanSheet..halfTimeFullTime, see
+// SINGLE_CHANNEL_MODE_MAP) default to `{ sort: 'probability', topN: null }` —
+// same as btts/goals: no ranking has been backtested for them yet, so no
+// topN cap is claimed. Full review surface, no calibrated confidence implied.
 export const MODE_RANKING = {
   probability: { sort: 'probability', topN: null },
   value: { sort: 'edge', topN: 5 },
@@ -115,6 +149,16 @@ export const MODE_RANKING = {
   goals: { sort: 'probability', topN: null },
   draw: { sort: 'edge', topN: 5 },
   teamTotal: { sort: 'edge', topN: 3 },
+  cleanSheet: { sort: 'probability', topN: null },
+  winEitherHalf: { sort: 'probability', topN: null },
+  firstHalf: { sort: 'probability', topN: null },
+  doubleChance: { sort: 'probability', topN: null },
+  resultTotalGoals: { sort: 'probability', topN: null },
+  overUnderHt: { sort: 'probability', topN: null },
+  resultBtts: { sort: 'probability', topN: null },
+  drawNoBet: { sort: 'probability', topN: null },
+  winToNil: { sort: 'probability', topN: null },
+  halfTimeFullTime: { sort: 'probability', topN: null },
 } as const satisfies Record<
   InvestmentMode,
   { sort: ModeRankingSort; topN: number | null }
