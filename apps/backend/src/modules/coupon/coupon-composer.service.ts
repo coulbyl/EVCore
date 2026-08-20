@@ -63,44 +63,35 @@ export function calibratedLegProbability(leg: {
   );
 }
 
-// Markets with a production calibration sample — these are exactly the markets
-// CalibrationService tracks (ONE_X_TWO / OVER_UNDER / BTTS / TEAM_TOTAL_HOME /
-// TEAM_TOTAL_AWAY / OVER_UNDER_HT). Other leg markets (DOUBLE_CHANCE, …) have no
-// measured bias and fall back to the legacy blend. TEAM_TOTAL_HOME/AWAY added
-// 2026-08 alongside TEAM_TOTAL staking — betCount was 28/19 (VALUE/SAFE picks
-// landing on these markets) as of 2026-07-28, both below MIN_BET_COUNT=50, but
-// the `cal.betCount >= MIN_BET_COUNT` gate below already ramps this up safely:
-// it silently keeps using the legacy blend until each market crosses 50, no
-// separate activation step needed once that happens. OVER_UNDER_HT added
-// 2026-08-01 (subscription audit): 132 settled bets, meanError +0.075
-// (mild overconfidence) — coupon legs on this market were previously
-// unadjusted, e.g. a repeated 0.76-modelled UNDER_1_5 HT pick that lost
-// across all three ranked coupons on 2026-07-29.
-const CALIBRATED_MARKETS = new Set([
-  'ONE_X_TWO',
-  'OVER_UNDER',
-  'BTTS',
-  'TEAM_TOTAL_HOME',
-  'TEAM_TOTAL_AWAY',
-  'OVER_UNDER_HT',
-]);
-
-// Principled per-market calibration: shift the raw model probability by the
-// measured mean signed error (meanError = mean(p − outcome); positive = the
-// model is over-confident, so we subtract it). This replaces the arbitrary
-// 50/50 model-vs-canal blend with an empirical, data-backed correction.
-// Falls back to `calibratedLegProbability` when the leg's market has no
-// production calibration sample (untracked market, or < MIN_BET_COUNT bets).
+// Principled per-(channel, market) calibration: shift the raw model
+// probability by the measured mean signed error (meanError = mean(p −
+// outcome); positive = the model is over-confident, so we subtract it).
+// This replaces the arbitrary 50/50 model-vs-canal blend with an empirical,
+// data-backed correction.
+//
+// Rebuilt 2026-08-20 to key on (channel, market) instead of market alone,
+// sourced from `ChannelMarketCalibrationRepository` (channel_decision/
+// channel_selection directly, rolling window) instead of the old
+// `CalibrationService` (`bet` table, channel-agnostic, unbounded window,
+// 6-market cap): a session-long audit found VALUE and DOMINANT drift very
+// differently on the SAME market (e.g. ONE_X_TWO) — pooling them together
+// under-corrects both, and DOMINANT never produces a `bet` row at all so it
+// could never be calibrated by the old path regardless of volume.
+//
+// Falls back to `calibratedLegProbability` when the leg's (channel, market)
+// pair has no production calibration sample yet (untracked pair, or below
+// the repository's own minSamples gate).
 export function calibrateLegProbability(
-  leg: { probability: number; calibratedHitRate: number; market: string },
+  leg: {
+    probability: number;
+    calibratedHitRate: number;
+    market: string;
+    canal: string;
+  },
   marketCalibration: MarketCalibration,
 ): number {
-  const cal = marketCalibration[leg.market];
-  if (
-    cal &&
-    CALIBRATED_MARKETS.has(leg.market) &&
-    cal.betCount >= MIN_BET_COUNT
-  ) {
+  const cal = marketCalibration[leg.canal]?.[leg.market];
+  if (cal && cal.betCount >= MIN_BET_COUNT) {
     const corrected = leg.probability - cal.meanError;
     return Math.min(
       COUPON_PARAMS.capMax,
@@ -473,11 +464,12 @@ export class CouponComposerService {
           probability: pick.probability,
           calibratedHitRate: windowRate,
           market: pick.market,
+          canal: pick.canal,
         },
         window.marketCalibration,
       );
       const marketMeanError =
-        window.marketCalibration[pick.market]?.meanError ?? null;
+        window.marketCalibration[pick.canal]?.[pick.market]?.meanError ?? null;
 
       // EV de jambe sur la cote RÉELLE uniquement (jamais de cote inventée) —
       // une jambe sans cote ne porte pas d'EV et sera exclue des coupons.

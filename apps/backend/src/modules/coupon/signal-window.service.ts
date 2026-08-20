@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { Market, StrategyChannel } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
-import { CalibrationService } from '@modules/adjustment/calibration.service';
+import { ChannelMarketCalibrationRepository } from '@modules/calibration/channel-market-calibration.repository';
+import { MIN_BET_COUNT } from '@modules/adjustment/adjustment.constants';
 import { OddsSnapshotLoader } from '@modules/betting-engine/pricing/odds-snapshot.loader';
 import {
   bookmakerMargin as computeBookmakerMargin,
@@ -71,14 +72,19 @@ function findChannelSelection(
 const DOW_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const;
 
 /**
- * Per-market mean signed calibration error, keyed by `Market` enum value.
- * `meanError = mean(probEstimated - outcome)` — positive = model overconfidence.
- * Only markets with ≥ MIN_BET_COUNT settled bets are present (others fall back to
- * the legacy blend at scoring time).
+ * Per (channel, market) mean signed calibration error — `meanError =
+ * mean(probability - outcome)`, positive = model overconfidence. Sourced
+ * from `channel_decision`/`channel_selection` directly (rolling window,
+ * every channel that ever produces a rank=1 SELECTED pick), not the `bet`
+ * table — see `ChannelMarketCalibrationRepository`'s doc for why the old
+ * `bet`-scoped calibration structurally missed whole channels (e.g.
+ * DOMINANT, never materialized as a real Bet). Only (channel, market) pairs
+ * with enough settled samples are present; others fall back to the legacy
+ * blend at scoring time.
  */
 export type MarketCalibration = Record<
   string,
-  { meanError: number; betCount: number }
+  Record<string, { meanError: number; betCount: number }>
 >;
 
 export type SignalWindow = {
@@ -520,7 +526,7 @@ export function resolveEvaluatedMarketLeg(
 export class SignalWindowService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly calibration: CalibrationService,
+    private readonly calibration: ChannelMarketCalibrationRepository,
     private readonly oddsLoader: OddsSnapshotLoader,
   ) {}
 
@@ -644,15 +650,19 @@ export class SignalWindowService {
       }),
     ) as Record<Canal, Record<string, number>>;
 
-    const marketResults = await this.calibration.computeAllMarkets({ asOf });
+    const channelMarketResults = await this.calibration.computeMeanError(
+      canals,
+      windowDays,
+      { asOf, minSamples: MIN_BET_COUNT },
+    );
     const marketCalibration: MarketCalibration = {};
-    for (const [market, result] of Object.entries(marketResults)) {
-      if (result) {
-        marketCalibration[market] = {
-          meanError: result.meanError.toNumber(),
-          betCount: result.betCount,
-        };
-      }
+    for (const [channel, byMarket] of Object.entries(channelMarketResults)) {
+      marketCalibration[channel] = Object.fromEntries(
+        Object.entries(byMarket).map(([market, result]) => [
+          market,
+          { meanError: result.meanError, betCount: result.n },
+        ]),
+      );
     }
 
     return {

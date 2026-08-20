@@ -95,14 +95,21 @@ describe('calibratedLegProbability', () => {
 
 describe('calibrateLegProbability', () => {
   const calibration: MarketCalibration = {
-    OVER_UNDER: { meanError: 0.1285, betCount: 595 },
-    BTTS: { meanError: 0.039, betCount: 341 },
-    ONE_X_TWO: { meanError: 0.2, betCount: 10 }, // tracked but below MIN_BET_COUNT
+    VALUE: {
+      OVER_UNDER: { meanError: 0.1285, betCount: 595 },
+      BTTS: { meanError: 0.039, betCount: 341 },
+      ONE_X_TWO: { meanError: 0.2, betCount: 10 }, // tracked but below MIN_BET_COUNT
+    },
   };
 
-  it('subtracts the measured mean error for a tracked, well-sampled market', () => {
+  it('subtracts the measured mean error for a tracked, well-sampled (channel, market)', () => {
     const value = calibrateLegProbability(
-      { probability: 0.66, calibratedHitRate: 0.6, market: 'OVER_UNDER' },
+      {
+        probability: 0.66,
+        calibratedHitRate: 0.6,
+        market: 'OVER_UNDER',
+        canal: 'VALUE',
+      },
       calibration,
     );
     expect(value).toBeCloseTo(0.66 - 0.1285, 10);
@@ -110,8 +117,13 @@ describe('calibrateLegProbability', () => {
 
   it('clamps the corrected probability into [capMin, capMax]', () => {
     const value = calibrateLegProbability(
-      { probability: 0.05, calibratedHitRate: 0.6, market: 'OVER_UNDER' },
-      { OVER_UNDER: { meanError: 0.5, betCount: 200 } },
+      {
+        probability: 0.05,
+        calibratedHitRate: 0.6,
+        market: 'OVER_UNDER',
+        canal: 'VALUE',
+      },
+      { VALUE: { OVER_UNDER: { meanError: 0.5, betCount: 200 } } },
     );
     expect(value).toBeGreaterThanOrEqual(0.05); // capMin
   });
@@ -119,16 +131,25 @@ describe('calibrateLegProbability', () => {
   it('falls back to the blend for an untracked market (e.g. DOUBLE_CHANCE)', () => {
     const leg = { probability: 0.8, calibratedHitRate: 0.6 };
     const value = calibrateLegProbability(
-      { ...leg, market: 'DOUBLE_CHANCE' },
+      { ...leg, market: 'DOUBLE_CHANCE', canal: 'VALUE' },
       calibration,
     );
     expect(value).toBeCloseTo(calibratedLegProbability(leg), 10);
   });
 
-  it('falls back to the blend when the market sample is below MIN_BET_COUNT', () => {
+  it('falls back to the blend when the (channel, market) sample is below MIN_BET_COUNT', () => {
     const leg = { probability: 0.8, calibratedHitRate: 0.6 };
     const value = calibrateLegProbability(
-      { ...leg, market: 'ONE_X_TWO' },
+      { ...leg, market: 'ONE_X_TWO', canal: 'VALUE' },
+      calibration,
+    );
+    expect(value).toBeCloseTo(calibratedLegProbability(leg), 10);
+  });
+
+  it('falls back to the blend when the same market is tracked for a different channel', () => {
+    const leg = { probability: 0.8, calibratedHitRate: 0.6 };
+    const value = calibrateLegProbability(
+      { ...leg, market: 'OVER_UNDER', canal: 'DOMINANT' },
       calibration,
     );
     expect(value).toBeCloseTo(calibratedLegProbability(leg), 10);

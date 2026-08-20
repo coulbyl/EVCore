@@ -553,23 +553,31 @@ export function getValueMinEdge(
   return undefined;
 }
 
-// Cross-market ranking discount for VALUE (2026-08-19, db:backtest:market-
-// trust-calibration, walk-forward: train = each market's own earliest 75%
-// of edge≥0.10 candidates, test = the shared most-recent 25% of fixtures —
-// +0.86pp ROI vs unweighted on that held-out window). VALUE compares the
-// best qualityScore across all 17 markets it can draw from; markets whose
+// Cross-market ranking discount for VALUE (recalibrated 2026-08-20,
+// db:backtest:market-trust-calibration, walk-forward: train = each market's
+// own earliest 75% of edge≥0.10 candidates, test = the shared most-recent
+// 25% of fixtures — +4.90pp ROI vs unweighted on that held-out window, up
+// from +0.86pp when first validated 2026-08-19: VALUE's real overconfidence
+// has grown since (a session-long audit the same day found VALUE's live
+// per-market bias at 18-26pp, vs ~9.8pp when this map was first built), so
+// correcting it now pays off more, not less. VALUE compares the best
+// qualityScore across all 17 markets it can draw from; markets whose
 // apparent edge is largely noise (not real signal) win that comparison
 // disproportionately (winner's curse) — trust = clamp(trainROI / 0.15,
 // 0.05, 1) discounts each market's qualityScore by its own measured
 // reliability before ranking. Never 0 (feedback_fix_not_disable): a market
 // can still win if nothing else is on offer for that fixture, it just needs
-// to clear a much higher bar against a rival market.
+// to clear a much higher bar against a rival market. Only two values moved
+// vs the 2026-08-19 map: TEAM_TOTAL_HOME 0.58->0.51, RESULT_BTTS 0.67->0.12
+// (RESULT_BTTS's train ROI collapsed to +1.8% from whatever supported 0.67
+// before — consistent with this market's ongoing AWAY/DRAW calibration
+// trouble tracked separately in ou-shrinkage.ts).
 // Not (yet) applied to SAFE: db:backtest:market-trust-calibration measured
 // a SEPARATE SAFE-specific set of weights (SAFE's eligible pool is narrow
 // enough — probability≥0.68 plus EV/odds bounds — that discounting barely
-// changes who wins) and it only reached -0.04pp out-of-sample, not a real
-// improvement. Revisit once the newer markets below accumulate more
-// SAFE-eligible volume.
+// changes who wins) and it only reached +0.04pp out-of-sample on this same
+// rerun, still not a real improvement. Revisit once the newer markets below
+// accumulate more SAFE-eligible volume.
 const VALUE_MARKET_TRUST_MAP: Record<string, Decimal> = {
   ONE_X_TWO: new Decimal('0.05'),
   OVER_UNDER: new Decimal('0.05'),
@@ -581,7 +589,7 @@ const VALUE_MARKET_TRUST_MAP: Record<string, Decimal> = {
   OVER_UNDER_HT: new Decimal('0.49'),
   FIRST_HALF_WINNER: new Decimal('0.09'),
   DRAW_NO_BET: new Decimal('0.05'),
-  TEAM_TOTAL_HOME: new Decimal('0.58'),
+  TEAM_TOTAL_HOME: new Decimal('0.51'),
   TEAM_TOTAL_AWAY: new Decimal('0.05'),
   CLEAN_SHEET_HOME: new Decimal('0.05'),
   CLEAN_SHEET_AWAY: new Decimal('0.05'),
@@ -589,7 +597,7 @@ const VALUE_MARKET_TRUST_MAP: Record<string, Decimal> = {
   WIN_TO_NIL_AWAY: new Decimal('0.05'),
   TO_WIN_EITHER_HALF: new Decimal('0.05'),
   RESULT_TOTAL_GOALS: new Decimal('0.05'),
-  RESULT_BTTS: new Decimal('0.67'),
+  RESULT_BTTS: new Decimal('0.12'),
 };
 
 export function getValueMarketTrust(market: string): Decimal {
