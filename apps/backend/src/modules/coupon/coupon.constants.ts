@@ -187,34 +187,26 @@ export const JOINT_PROBABILITY_CORRELATION_FACTOR = {
  * pour qu'une jambe soit dite fiable) — pas un chiffre backtesté pour le
  * composeur automatique.
  *
- * Relevé 0.55 → 0.65 le 2026-08-19 : l'audit du backtest complet
- * 2025-08-01→2026-08-19 a montré que `jointProbability` n'a quasiment aucun
- * pouvoir différenciant une fois honnêtement calibré (facteur de shrink
- * optimal 0.00-0.05, cf. db:backtest:coupon-joint-probability-shrinkage-
- * calibration). En bucketant les coupons déjà réglés par la probabilité de
- * leur jambe la PLUS FAIBLE : 0.50-0.60 → 23.7% de victoires réelles,
- * 0.60-0.70 → 26.4%, 0.70-0.80 → 35.1% (n=57) — une vraie amélioration, mais
- * partielle (l'écart proba annoncée/réel ne se referme pas complètement).
- * ⚠ Ceci est une analyse a posteriori sur les coupons déjà composés avec
- * l'ancien plancher (0.55) — PAS un vrai backtest contrefactuel (relever le
- * plancher change QUELS candidats entrent dans la recherche combinatoire,
- * pas seulement lesquels passent un filtre après coup). 0.65 est un premier
- * pas prudent entre l'ancienne valeur et la zone 0.70-0.80 où le signal est
- * meilleur ; à valider par un vrai cycle régénération+règlement avant
- * d'aller plus loin.
+ * Relevé à 0.65 le 2026-08-19 sur une analyse a posteriori (pas un vrai
+ * backtest contrefactuel), puis reramené ici le 2026-08-20 : un outil de
+ * backtest fiable (deleteExpiredInRange, coupon.repository.ts — un bug
+ * antérieur d'upsertProposal rendait toute "validation" précédente un no-op
+ * silencieux) a montré que 0.65 réduit le volume de coupons de moitié sans
+ * améliorer le ROI par rapport à 0.55 une fois `includeEvaluatedMarkets`
+ * remis à `true` (coupon.service.ts) — voir son commentaire pour le tableau
+ * de comparaison complet. Le ROI du composeur reste négatif dans toutes les
+ * configurations testées ce soir-là (-9% à -29%), avant même cette session ;
+ * ce plancher n'est pas la cause ni le fix.
  */
-export const MIN_LEG_PROBABILITY = 0.65;
+export const MIN_LEG_PROBABILITY = 0.55;
 
 // Un plancher MIN_LEG_SIGNAL_SCORE (0.6) a été essayé le 2026-08-20 pour
 // forcer une vraie séparation au rang 1 (qui ne battait pas le rang 2/3 même
 // après le tri par signalScore, cf. compareCouponsBySignalThenEV) — retiré le
-// jour même : une fois le bug de non-régénération corrigé (upsertProposal
-// bloquait sur EXPIRED, voir deleteExpiredInRange, coupon.repository.ts) et
-// le plancher réellement testé, le ROI s'est effondré à -24.78% (n=85, contre
-// +4.77% sans lui) : couper le pool à ce point écrase VALUE au point que SAFE
-// domine par défaut, et SAFE porte sa propre surconfiance non corrigée
-// (ex. OVER_UNDER_HT annoncé 73.5%, réel 20%). Pas réintroduit sans un vrai
-// fix de la calibration SAFE en amont.
+// jour même : une fois testé avec l'outil de backtest corrigé, il écrase
+// VALUE au point que SAFE domine le pool par défaut, et SAFE porte sa propre
+// surconfiance jamais corrigée (ex. OVER_UNDER_HT annoncé 73.5%, réel 20%).
+// Pas réintroduit sans un vrai fix de la calibration SAFE en amont.
 
 /**
  * Plancher de probabilité calibrée pour qu'une jambe soit une "ancre" (porte

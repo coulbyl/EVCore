@@ -36,25 +36,29 @@ export class CouponService {
   //   backtest-coupon-quality-signals) but n=15-17 barely clears MIN_SAMPLE —
   //   let it live and revisit once more settled data accumulates, rather than
   //   leave it dormant behind a flag.
-  // - Evaluated-markets widening: was flipped on 2026-08-16 WITHOUT the
-  //   dedicated STAKED-vs-EVALUATED backtest its own doc comment required
-  //   (SignalWindowService's includeEvaluatedMarkets doc). Reverted
-  //   2026-08-19: db:backtest:coupon-value-leg-shrinkage-calibration found
-  //   canal=VALUE coupon legs (this pool's only consumer — see
-  //   EVALUATED_MARKET_CANAL, coupon.constants.ts) carry ~zero real signal
-  //   as coupon legs (best-fit shrink factor 0.00, i.e. indistinguishable
-  //   from a coin flip once honestly calibrated — predicted ~60%, actual
-  //   ~40% hit rate on 423 settled legs). 'viable' evaluatedPicks pass the
-  //   same probability/EV/odds/suspension gates as officially-staked picks,
-  //   but losing their own channel's internal arbitration turns out to
-  //   matter a lot for coupon reliability — back off until that population
-  //   can be measured separately from genuine STAKED picks.
+  // - Evaluated-markets widening: briefly reverted 2026-08-19 on the theory
+  //   that canal=VALUE evaluated-only legs carry no real signal
+  //   (db:backtest:coupon-value-leg-shrinkage-calibration: shrink factor
+  //   0.00) — but turning it off collapses coupon VOLUME/day-coverage far
+  //   more than it improves ROI once actually re-tested with a working
+  //   backtest tool (2026-08-20: a separate upsertProposal bug had silently
+  //   no-op'd every prior "validation" regeneration, see
+  //   deleteExpiredInRange, coupon.repository.ts). With it OFF: 87 settled
+  //   coupons over 65/384 days. With it ON (this setting): 371 over 178
+  //   days, and a LESS negative ROI (-9.06% vs -15.79% to -29% across every
+  //   configuration tried that night). Left ON — the coupon composer's ROI
+  //   is negative in every configuration tested so far, on or off; this
+  //   flag isn't the fix, just the one that keeps more days generating at
+  //   all. See EVALUATED_MARKET_CANAL doc (coupon.constants.ts).
+  //   'viable' evaluatedPicks pass the same probability/EV/odds/suspension
+  //   gates as officially-staked picks — losing their own channel's internal
+  //   arbitration isn't a reliability rejection.
   private readonly stakeDraw = true;
   private readonly stakeTeamTotal = true;
   private readonly stakeBtts = true;
   private readonly enforceAvoid = true;
   private readonly enableAvoidFade = true;
-  private readonly includeEvaluatedMarkets = false;
+  private readonly includeEvaluatedMarkets = true;
 
   constructor(
     private readonly repo: CouponRepository,
