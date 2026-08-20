@@ -264,6 +264,41 @@ export class CouponRepository {
     });
   }
 
+  /**
+   * Dev/backtest only — wipes EXPIRED proposals (and their legs) in a
+   * `forDate` range, never ACCEPTED/REJECTED/PENDING. Needed because
+   * `upsertProposal` deliberately bails out on any non-PENDING status
+   * (including EXPIRED) to protect human decisions — but that same guard
+   * silently no-ops a backtest re-run against a date range that was already
+   * settled by a PRIOR run: `generateCoupons` would compute fresh legs under
+   * updated code, find an EXPIRED row already sitting at that (forDate,
+   * signalWindowDays, targetOddsMin, targetOddsMax, rank) key, and discard
+   * the fresh computation entirely, leaving the OLD legs in place forever
+   * (found 2026-08-20: several backtest iterations this session re-measured
+   * the exact same frozen dataset from one early run instead of the current
+   * code). Call this BEFORE regenerating a range that was previously
+   * regenerated+settled, so `upsertProposal` sees no `existing` row and
+   * actually persists the new computation.
+   */
+  async deleteExpiredInRange(from: Date, to: Date): Promise<number> {
+    const expired = await this.prisma.client.couponProposal.findMany({
+      where: {
+        forDate: { gte: from, lte: to },
+        status: CouponProposalStatus.EXPIRED,
+      },
+      select: { id: true },
+    });
+    if (expired.length === 0) return 0;
+    const ids = expired.map((p) => p.id);
+    await this.prisma.client.couponProposalLeg.deleteMany({
+      where: { couponProposalId: { in: ids } },
+    });
+    await this.prisma.client.couponProposal.deleteMany({
+      where: { id: { in: ids } },
+    });
+    return ids.length;
+  }
+
   async findByIdWithLegs(id: string): Promise<CouponProposalWithLegs | null> {
     return this.prisma.client.couponProposal.findUnique({
       where: { id },

@@ -50,6 +50,7 @@ import { PrismaModule } from '@/prisma.module';
 import { CouponModule } from '@modules/coupon/coupon.module';
 import { CouponService } from '@modules/coupon/coupon.service';
 import { CouponSettlementService } from '@modules/coupon/coupon-settlement.service';
+import { CouponRepository } from '@modules/coupon/coupon.repository';
 import { resolveGenerationWindow } from '@modules/etl/workers/coupon.worker';
 import type { CouponProfileName } from '@modules/coupon/coupon.constants';
 import { formatDateUtc } from '@utils/date.utils';
@@ -149,6 +150,20 @@ async function main(): Promise<void> {
   );
   const coupon = app.get(CouponService);
   const settlement = app.get(CouponSettlementService);
+  const repo = app.get(CouponRepository);
+
+  // Wipe EXPIRED proposals in the range FIRST — upsertProposal bails out on
+  // any non-PENDING status (including EXPIRED) to protect human decisions,
+  // which silently no-ops a re-run against a range a PRIOR run already
+  // regenerated+settled (see deleteExpiredInRange's doc). Never touches
+  // ACCEPTED/REJECTED.
+  const wiped = await repo.deleteExpiredInRange(
+    new Date(`${args.from}T00:00:00.000Z`),
+    new Date(`${args.to}T23:59:59.999Z`),
+  );
+  if (wiped > 0) {
+    console.log(`Wiped ${wiped} previously-EXPIRED proposal(s) in range.`);
+  }
 
   let done = 0;
   for (const date of dates) {

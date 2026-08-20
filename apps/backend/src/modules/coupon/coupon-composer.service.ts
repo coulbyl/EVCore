@@ -63,35 +63,59 @@ export function calibratedLegProbability(leg: {
   );
 }
 
-// Principled per-(channel, market) calibration: shift the raw model
-// probability by the measured mean signed error (meanError = mean(p −
-// outcome); positive = the model is over-confident, so we subtract it).
-// This replaces the arbitrary 50/50 model-vs-canal blend with an empirical,
-// data-backed correction.
+// Markets with a production calibration sample — these are exactly the markets
+// CalibrationService tracks (ONE_X_TWO / OVER_UNDER / BTTS / TEAM_TOTAL_HOME /
+// TEAM_TOTAL_AWAY / OVER_UNDER_HT). Other leg markets (DOUBLE_CHANCE, …) have no
+// measured bias and fall back to the legacy blend. TEAM_TOTAL_HOME/AWAY added
+// 2026-08 alongside TEAM_TOTAL staking — betCount was 28/19 (VALUE/SAFE picks
+// landing on these markets) as of 2026-07-28, both below MIN_BET_COUNT=50, but
+// the `cal.betCount >= MIN_BET_COUNT` gate below already ramps this up safely:
+// it silently keeps using the legacy blend until each market crosses 50, no
+// separate activation step needed once that happens. OVER_UNDER_HT added
+// 2026-08-01 (subscription audit): 132 settled bets, meanError +0.075
+// (mild overconfidence) — coupon legs on this market were previously
+// unadjusted, e.g. a repeated 0.76-modelled UNDER_1_5 HT pick that lost
+// across all three ranked coupons on 2026-07-29.
 //
-// Rebuilt 2026-08-20 to key on (channel, market) instead of market alone,
-// sourced from `ChannelMarketCalibrationRepository` (channel_decision/
-// channel_selection directly, rolling window) instead of the old
-// `CalibrationService` (`bet` table, channel-agnostic, unbounded window,
-// 6-market cap): a session-long audit found VALUE and DOMINANT drift very
-// differently on the SAME market (e.g. ONE_X_TWO) — pooling them together
-// under-corrects both, and DOMINANT never produces a `bet` row at all so it
-// could never be calibrated by the old path regardless of volume.
-//
-// Falls back to `calibratedLegProbability` when the leg's (channel, market)
-// pair has no production calibration sample yet (untracked pair, or below
-// the repository's own minSamples gate).
+// A channel-aware version (per (channel, market) instead of market-pooled,
+// sourced from channel_decision/channel_selection rather than the `bet`
+// table) was tried 2026-08-20 — theoretically sounder (VALUE and DOMINANT
+// drift very differently on the same market; DOMINANT never produces a
+// `bet` row at all so it was never covered here either way) but backtested
+// WORSE once actually validated (a separate bug had silently no-op'd every
+// regeneration since the first one, see deleteExpiredInRange,
+// coupon.repository.ts): splitting the `bet` pool by channel roughly halves
+// the effective sample per (channel, market) pair, pushing many pairs below
+// MIN_BET_COUNT and falling back to the less-accurate legacy blend far more
+// often — net ROI dropped from +4.77% (n=478) to -28.48% (n=84) in isolation
+// from every other change made that same night. Reverted; the finding (worth
+// revisiting with a lower per-channel sample floor or a blended fallback
+// before trying again) is preserved here rather than in code no longer run.
+const CALIBRATED_MARKETS = new Set([
+  'ONE_X_TWO',
+  'OVER_UNDER',
+  'BTTS',
+  'TEAM_TOTAL_HOME',
+  'TEAM_TOTAL_AWAY',
+  'OVER_UNDER_HT',
+]);
+
+// Principled per-market calibration: shift the raw model probability by the
+// measured mean signed error (meanError = mean(p − outcome); positive = the
+// model is over-confident, so we subtract it). This replaces the arbitrary
+// 50/50 model-vs-canal blend with an empirical, data-backed correction.
+// Falls back to `calibratedLegProbability` when the leg's market has no
+// production calibration sample (untracked market, or < MIN_BET_COUNT bets).
 export function calibrateLegProbability(
-  leg: {
-    probability: number;
-    calibratedHitRate: number;
-    market: string;
-    canal: string;
-  },
+  leg: { probability: number; calibratedHitRate: number; market: string },
   marketCalibration: MarketCalibration,
 ): number {
-  const cal = marketCalibration[leg.canal]?.[leg.market];
-  if (cal && cal.betCount >= MIN_BET_COUNT) {
+  const cal = marketCalibration[leg.market];
+  if (
+    cal &&
+    CALIBRATED_MARKETS.has(leg.market) &&
+    cal.betCount >= MIN_BET_COUNT
+  ) {
     const corrected = leg.probability - cal.meanError;
     return Math.min(
       COUPON_PARAMS.capMax,
@@ -464,12 +488,11 @@ export class CouponComposerService {
           probability: pick.probability,
           calibratedHitRate: windowRate,
           market: pick.market,
-          canal: pick.canal,
         },
         window.marketCalibration,
       );
       const marketMeanError =
-        window.marketCalibration[pick.canal]?.[pick.market]?.meanError ?? null;
+        window.marketCalibration[pick.market]?.meanError ?? null;
 
       // EV de jambe sur la cote RÉELLE uniquement (jamais de cote inventée) —
       // une jambe sans cote ne porte pas d'EV et sera exclue des coupons.
@@ -556,10 +579,8 @@ export class CouponComposerService {
     });
 
     // Filtre value (bornes du profil) : nombre de jambes, cote combinée, proba
-    // jointe ET EV de coupon — inchangé, ce sont les bornes qui définissent
-    // le profil (SAFE/BALANCED/AGGRESSIVE/LONGSHOT). Tri désormais par
-    // signalScore décroissant (voir compareCouponsBySignalThenEV) plutôt que
-    // par EV — l'EV de coupon reste le premier tie-break.
+    // jointe ET EV de coupon. Tri par EV décroissante (ADN value), proba jointe en
+    // tie-break, puis le coupon le plus court à EV égale (cf. DESIGN.md §5).
     const viable = unique
       .filter(
         (c) =>
@@ -568,7 +589,7 @@ export class CouponComposerService {
           c.jointProbability >= profile.minJointProbability &&
           c.couponEV >= profile.minCouponEV,
       )
-      .sort(compareCouponsBySignalThenEV);
+      .sort(compareCouponsByEV);
 
     return selectDiverseCoupons(viable, COUPON_PARAMS.maxCoupons).map(
       (c, i) => ({ ...c, rank: i + 1 }),
@@ -721,28 +742,22 @@ export class CouponComposerService {
   }
 }
 
-// Classement signal-first (2026-08-20, remplace l'ancien tri EV-first —
-// DESIGN.md §5 historique). Un audit complet de session a montré que
-// `jointProbability`/`couponEV` (produit brut des probas de jambes, même
-// après calibration) n'a quasiment aucun pouvoir différenciant une fois
-// honnêtement mesuré (db:backtest:coupon-joint-probability-shrinkage-
-// calibration : facteur de shrink optimal 0.00-0.05 sur deux essais
-// successifs) — chercher le meilleur `couponEV` parmi des centaines de
-// combos revient à sélectionner le gagnant d'une loterie de bruit
-// (winner's curse au niveau de la combinaison, pas seulement de la
-// jambe). `signalScore` (canal×jour×ligue calibré), lui, montre une
-// relation quasi monotone avec le taux de victoire réel des jambes de
-// coupon (0.30-0.40 -> 42.5% réel, 0.70-0.80 -> 65.8%, 0.80-0.85 -> 68.6%)
-// — le signal le mieux calibré disponible, jusqu'ici seulement utilisé en
-// tie-break de scoring de jambe, jamais dans le classement final des
-// coupons. `couponEV` reste le premier tie-break (préserve un peu
-// d'orientation value entre coupons à signal égal), `jointProbability`
-// ensuite, puis le coupon le plus court.
-export function compareCouponsBySignalThenEV(
+// Classement value-driven (DESIGN.md §5) : EV de coupon d'abord, proba jointe
+// en tie-break, puis le coupon le plus court à EV égale.
+//
+// Un tri signal-first (compareCouponsBySignalThenEV, canal×jour×ligue avant
+// couponEV) a été essayé le 2026-08-20 : signalScore est bien plus prédictif
+// que couponEV/jointProbability sur toute sa plage, mais reclasser sur ce
+// critère n'a PAS amélioré le ROI mesuré une fois réellement backtesté (après
+// correction d'un bug de non-régénération, voir deleteExpiredInRange,
+// coupon.repository.ts) — combiné aux autres changements du jour, le ROI est
+// tombé à -13.49% (n=106) contre +4.77% (n=478) sans lui. Revenu à l'EV-first
+// historique en attendant une piste qui améliore vraiment le ROI mesuré, pas
+// seulement la calibration d'un signal pris isolément.
+export function compareCouponsByEV(
   a: ComposedCoupon,
   b: ComposedCoupon,
 ): number {
-  if (b.signalScore !== a.signalScore) return b.signalScore - a.signalScore;
   if (b.couponEV !== a.couponEV) return b.couponEV - a.couponEV;
   if (b.jointProbability !== a.jointProbability) {
     return b.jointProbability - a.jointProbability;

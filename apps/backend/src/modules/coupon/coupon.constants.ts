@@ -205,6 +205,17 @@ export const JOINT_PROBABILITY_CORRELATION_FACTOR = {
  */
 export const MIN_LEG_PROBABILITY = 0.65;
 
+// Un plancher MIN_LEG_SIGNAL_SCORE (0.6) a été essayé le 2026-08-20 pour
+// forcer une vraie séparation au rang 1 (qui ne battait pas le rang 2/3 même
+// après le tri par signalScore, cf. compareCouponsBySignalThenEV) — retiré le
+// jour même : une fois le bug de non-régénération corrigé (upsertProposal
+// bloquait sur EXPIRED, voir deleteExpiredInRange, coupon.repository.ts) et
+// le plancher réellement testé, le ROI s'est effondré à -24.78% (n=85, contre
+// +4.77% sans lui) : couper le pool à ce point écrase VALUE au point que SAFE
+// domine par défaut, et SAFE porte sa propre surconfiance non corrigée
+// (ex. OVER_UNDER_HT annoncé 73.5%, réel 20%). Pas réintroduit sans un vrai
+// fix de la calibration SAFE en amont.
+
 /**
  * Plancher de probabilité calibrée pour qu'une jambe soit une "ancre" (porte
  * la probabilité jointe du coupon) plutôt qu'une jambe "valeur" (porte la
