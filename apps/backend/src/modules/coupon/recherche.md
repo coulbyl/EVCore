@@ -718,6 +718,69 @@ Un bon coupon est celui qui conserve une EV positive après calibration, marge b
 
 La prochaine étape logique serait de transformer ça en **design technique du module coupon EVCore** : tables Prisma, services NestJS, jobs de génération, scoring, backtest et endpoint API.
 
+---
+
+- CLAUDE (session du 2026-08-19/20 — diagnostic réel + littérature externe)
+
+Tout ce qui précède (Gemini/Google/ChatGPT) est de la théorie générique, jamais vérifiée sur nos propres données. Cette nuit, on a construit un vrai outil de backtest (régénère + règle + recalibre sur données historiques, `apps/backend/src/scripts/regenerate-coupons.ts`) et testé 6+ configurations réelles du composeur EVCore. **Conclusion dure : toutes les configurations testées, y compris l'état de production d'avant cette session, donnent un ROI négatif (-9% à -29%) une fois honnêtement mesurées.** Avant cette nuit, l'outil de mesure lui-même était cassé (`upsertProposal` bloquait silencieusement toute réécriture d'une proposal déjà réglée, donc chaque "validation" antérieure re-mesurait le même jeu de données figé) — donc ce chiffre négatif n'était simplement jamais vu.
+
+Plutôt que de deviner d'autres réglages, j'ai été chercher ce que dit la littérature externe sur exactement les symptômes qu'on a mesurés. Trois correspondances sont directes.
+
+### A. Le "Deflated Sharpe Ratio" — notre recherche combinatoire EST un backtest non corrigé
+
+Le composeur (`composeExhaustive`/`composeGreedy`, `coupon-composer.service.ts`) explore des centaines de combinaisons de jambes par jour et retient celle au meilleur `couponEV` apparent. C'est très exactement le scénario que Bailey & López de Prado (2014) ont formalisé en finance quantitative : après 1000 essais indépendants, le Sharpe Ratio maximum attendu est de **3,26 même si la vraie stratégie sous-jacente a un Sharpe de zéro** — la sélection du meilleur parmi N essais gonfle mécaniquement la métrique choisie, indépendamment de tout edge réel. Le "Deflated Sharpe Ratio" corrige ce biais de sélection en ajustant la métrique par le nombre d'essais effectivement tentés.
+
+Notre `jointProbability`/`couponEV` n'a jamais eu cette correction — on l'a mesuré empiriquement cette nuit (facteur de shrink optimal 0.00-0.05 sur `db:backtest:coupon-joint-probability-shrinkage-calibration`, deux fois de suite), sans savoir qu'il existait un cadre mathématique établi pour le prédire et le corriger a priori plutôt que de le découvrir a posteriori.
+
+**Action concrète pour demain** : calculer un facteur de déflation basé sur le nombre RÉEL de combinaisons évaluées par jour (`composeExhaustive` génère C(pool, legs) candidats), et l'appliquer à `couponEV`/`jointProbability` avant le filtre de viabilité — pas un facteur fixe comme `JOINT_PROBABILITY_CORRELATION_FACTOR` actuel, mais un facteur qui grandit avec la taille du pool exploré ce jour-là.
+
+### B. Shrinkage empirique de Bayes (James-Stein) — pourquoi notre calibration par canal a échoué
+
+Cette nuit, on a testé une calibration par (canal, marché) au lieu d'un pooling par marché seul (`ChannelMarketCalibrationRepository`, abandonné). Elle était plus juste en théorie (VALUE et DOMINANT dérivent très différemment sur ONE_X_TWO) mais a fait s'effondrer le ROI (+4,77% → -28,48%) : scinder par canal réduit l'échantillon effectif sous notre seuil `MIN_BET_COUNT=50`, forçant un repli plus fréquent vers un blend 50/50 encore pire.
+
+L'estimateur de James-Stein / shrinkage empirique de Bayes est fait exactement pour ce problème : au lieu d'un couperet binaire (n≥50 → valeur propre au canal, sinon fallback), on **shrink continûment** chaque estimation canal×marché vers la moyenne poolée, proportionnellement à sa propre taille d'échantillon :
+
+$$\hat\theta_i = (1-t)\, \bar{X} + t\, X_i, \quad t = \frac{n_i}{n_i + k}$$
+
+Un canal avec n=10 reste presque à la moyenne poolée ; un canal avec n=500 reste presque à sa propre valeur. Pas de seuil dur, pas de "aucune calibration du tout" en dessous d'un cutoff. C'est la solution mathématiquement correcte au problème qu'on a buté dessus cette nuit sans le nommer.
+
+**Action concrète pour demain** : remplacer le gate `cal.betCount >= MIN_BET_COUNT` (`calibrateLegProbability`, `coupon-composer.service.ts`) par un shrinkage continu vers la calibration poolée par marché, avec `k` (taille d'échantillon "virtuelle" du prior) à calibrer par walk-forward — probablement k≈30-50 vu nos volumes actuels.
+
+### C. Parlays corrélés — notre `jointProbability` naïf multiplie des probabilités qui ne sont pas indépendantes
+
+La littérature sur les same-game parlays confirme ce qu'on a supposé sans le vérifier : multiplier des probabilités marginales suppose l'indépendance, alors que même des jambes de matchs DIFFÉRENTS (pas seulement le même match) peuvent être corrélées (même journée, même ligue, même biais systémique du modèle sur une période). L'approche recommandée qui ne nécessite aucune hypothèse de forme (contrairement aux copules gaussiennes) : **compter la fréquence empirique historique de combinaisons similaires**, pas multiplier les marginales.
+
+C'est cohérent avec notre propre découverte que `signalScore` (canal×jour×ligue, une fréquence empirique) est bien mieux calibré que `jointProbability` (produit de marginales) — la littérature dit essentiellement la même chose : préférer la fréquence empirique observée à l'hypothèse d'indépendance.
+
+**Action concrète pour demain** : au lieu de `rawJointProbability = Π legProbability(leg)`, mesurer la fréquence empirique historique de coupons avec un profil similaire (même nombre de jambes, mêmes canaux, cote combinée proche) et calibrer dessus — même esprit que `signalScore` mais appliqué au niveau du COUPON entier, pas juste par jambe.
+
+### D. Dérive de calibration — pourquoi les poids statiques (VALUE_MARKET_TRUST_MAP) périment vite
+
+VALUE est passé de +9,8pp de surconfiance (validé 2026-07-06) à +18-26pp (mesuré 2026-08-19) en six semaines — un poids figé calibré une fois devient obsolète en quelques semaines. La littérature sur le "concept drift" en ML de production confirme : la fréquence de recalibration doit suivre le taux de dérive observé, pas un calendrier fixe — et le signal de déclenchement doit être une MÉTRIQUE surveillée en continu (Brier score glissant), pas une date arbitraire.
+
+**Action concrète pour demain** : un job (ou juste un rappel manuel hebdomadaire tant qu'on n'a pas de cron dédié) qui recalcule `VALUE_MARKET_TRUST_MAP` et vérifie le Brier score glissant par (canal, marché) — alerter si l'écart dépasse un seuil, comme le fait déjà `AdjustmentService` pour les poids de canal.
+
+### Priorité pour demain
+
+1. **B (shrinkage James-Stein)** en premier — c'est la correction la plus mécanique/sûre, elle ne change pas la stratégie, juste la qualité de l'estimation. À valider avec le même outil `regenerate-coupons.ts` + `deleteExpiredInRange` déjà en place.
+2. **A (déflation par taille de pool)** ensuite — touche directement le winner's curse combinatoire qu'on n'a jamais réussi à corriger par le tri (signalScore-first a échoué) ni par un plancher (MIN_LEG_SIGNAL_SCORE a échoué).
+3. **C (fréquence empirique de coupon)** — plus gros chantier (besoin d'assez d'historique par "profil" de coupon), à ne tenter qu'après A et B.
+4. **D (cadence de recalibration)** — hygiène de processus, pas un fix ponctuel ; à mettre en place une fois qu'on a une config qui marche, pour ne pas la laisser périmer pareil.
+
+Sources :
+
+- [The Deflated Sharpe Ratio: Correcting for Selection Bias, Backtest Overfitting, and Non-Normality (Bailey & López de Prado)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551)
+- [Deflated Sharpe Ratio — Wikipedia](https://en.wikipedia.org/wiki/Deflated_Sharpe_ratio)
+- [Deflated Sharpe Ratio (how to avoid been fooled by randomness) — Quantdare](https://quantdare.com/deflated-sharpe-ratio-how-to-avoid-been-fooled-by-randomness/)
+- [Shrinkage and empirical Bayes — Peter Hoff (Duke)](https://www2.stat.duke.edu/~pdh10/Teaching/732/Notes/shrinkage.pdf)
+- [James-Stein Shrinkage Estimator — MetricGate](https://metricgate.com/docs/james-stein-shrinkage-estimator/)
+- [In-season prediction of batting averages: empirical Bayes field test](https://arxiv.org/pdf/0803.3697)
+- [Same-Game Parlays: The Mathematics of Correlation — Wizard of Odds](https://wizardofodds.com/article/same-game-parlays-the-mathematics-of-correlation/)
+- [Correlation in Same Game Parlays: How Sportsbooks are Tackling the Challenge — OpticOdds](https://opticodds.com/blog/correlation-in-same-game-parlays)
+- [What is concept drift in ML, and how to detect and address it — Evidently AI](https://www.evidentlyai.com/ml-in-production/concept-drift)
+- [AI Model Calibration for Sports Betting: Brier Score & Reliability](https://www.sports-ai.dev/blog/ai-model-calibration-brier-score)
+- [Sports Betting: Understanding the Kelly Criterion — correlated bets limitation](https://medium.com/@pelicanlabs/sports-betting-understanding-the-kelly-criterion-fdca4d0f029e)
+
 [1]: https://www.econstor.eu/bitstream/10419/296678/1/WP23_04.pdf "Calculating the bookmaker's margin: Why bets lose more on average than you are warned"
 [2]: https://arxiv.org/abs/2303.06021 '[2303.06021] Machine learning for sports betting: should model selection be based on accuracy or calibration?'
 [3]: https://journals.sagepub.com/doi/10.1177/22150218261416681 'Can simple models predict football — and beat the odds? Lessons from the German Bundesliga - Sascha Wilkens, 2026 '
