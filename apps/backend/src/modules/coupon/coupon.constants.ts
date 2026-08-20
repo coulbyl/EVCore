@@ -185,10 +185,25 @@ export const JOINT_PROBABILITY_CORRELATION_FACTOR = {
  * Valeur initiale = seuil déjà utilisé par le processus d'analyse manuel
  * (COUPON_ANALYSIS_TEMPLATE.md, Étape 0 : "probability (calibrée) ≥ ~55-60%"
  * pour qu'une jambe soit dite fiable) — pas un chiffre backtesté pour le
- * composeur automatique, à affiner par un futur backtest dédié une fois
- * l'effet sur le volume/ROI de coupon mesurable.
+ * composeur automatique.
+ *
+ * Relevé 0.55 → 0.65 le 2026-08-19 : l'audit du backtest complet
+ * 2025-08-01→2026-08-19 a montré que `jointProbability` n'a quasiment aucun
+ * pouvoir différenciant une fois honnêtement calibré (facteur de shrink
+ * optimal 0.00-0.05, cf. db:backtest:coupon-joint-probability-shrinkage-
+ * calibration). En bucketant les coupons déjà réglés par la probabilité de
+ * leur jambe la PLUS FAIBLE : 0.50-0.60 → 23.7% de victoires réelles,
+ * 0.60-0.70 → 26.4%, 0.70-0.80 → 35.1% (n=57) — une vraie amélioration, mais
+ * partielle (l'écart proba annoncée/réel ne se referme pas complètement).
+ * ⚠ Ceci est une analyse a posteriori sur les coupons déjà composés avec
+ * l'ancien plancher (0.55) — PAS un vrai backtest contrefactuel (relever le
+ * plancher change QUELS candidats entrent dans la recherche combinatoire,
+ * pas seulement lesquels passent un filtre après coup). 0.65 est un premier
+ * pas prudent entre l'ancienne valeur et la zone 0.70-0.80 où le signal est
+ * meilleur ; à valider par un vrai cycle régénération+règlement avant
+ * d'aller plus loin.
  */
-export const MIN_LEG_PROBABILITY = 0.55;
+export const MIN_LEG_PROBABILITY = 0.65;
 
 /**
  * Plancher de probabilité calibrée pour qu'une jambe soit une "ancre" (porte

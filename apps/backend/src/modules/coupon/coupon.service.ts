@@ -36,16 +36,25 @@ export class CouponService {
   //   backtest-coupon-quality-signals) but n=15-17 barely clears MIN_SAMPLE —
   //   let it live and revisit once more settled data accumulates, rather than
   //   leave it dormant behind a flag.
-  // - Evaluated-markets widening: 'viable' evaluatedPicks already pass the
-  //   same probability/EV/odds/suspension gates as officially-staked
-  //   picks (see EVALUATED_MARKET_CANAL doc, coupon.constants.ts) — losing
-  //   their own channel's internal arbitration isn't a reliability rejection.
+  // - Evaluated-markets widening: was flipped on 2026-08-16 WITHOUT the
+  //   dedicated STAKED-vs-EVALUATED backtest its own doc comment required
+  //   (SignalWindowService's includeEvaluatedMarkets doc). Reverted
+  //   2026-08-19: db:backtest:coupon-value-leg-shrinkage-calibration found
+  //   canal=VALUE coupon legs (this pool's only consumer — see
+  //   EVALUATED_MARKET_CANAL, coupon.constants.ts) carry ~zero real signal
+  //   as coupon legs (best-fit shrink factor 0.00, i.e. indistinguishable
+  //   from a coin flip once honestly calibrated — predicted ~60%, actual
+  //   ~40% hit rate on 423 settled legs). 'viable' evaluatedPicks pass the
+  //   same probability/EV/odds/suspension gates as officially-staked picks,
+  //   but losing their own channel's internal arbitration turns out to
+  //   matter a lot for coupon reliability — back off until that population
+  //   can be measured separately from genuine STAKED picks.
   private readonly stakeDraw = true;
   private readonly stakeTeamTotal = true;
   private readonly stakeBtts = true;
   private readonly enforceAvoid = true;
   private readonly enableAvoidFade = true;
-  private readonly includeEvaluatedMarkets = true;
+  private readonly includeEvaluatedMarkets = false;
 
   constructor(
     private readonly repo: CouponRepository,

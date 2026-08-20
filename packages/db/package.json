@@ -70,6 +70,8 @@
     "db:backtest:result-btts-shrinkage-calibration": "tsx scripts/backtest-result-btts-shrinkage-calibration.ts",
     "db:backtest:market-trust-calibration": "tsx scripts/backtest-market-trust-calibration.ts",
     "db:backtest:result-btts-away-threshold-calibration": "tsx scripts/backtest-result-btts-away-threshold-calibration.ts",
+    "db:backtest:coupon-joint-probability-shrinkage-calibration": "tsx scripts/backtest-coupon-joint-probability-shrinkage-calibration.ts",
+    "db:backtest:coupon-value-leg-shrinkage-calibration": "tsx scripts/backtest-coupon-value-leg-shrinkage-calibration.ts",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },
