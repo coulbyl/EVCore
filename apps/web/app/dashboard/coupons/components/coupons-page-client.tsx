@@ -6,37 +6,10 @@ import { Page, PageHeader, PageHeaderActions, PageContent } from "@evcore/ui";
 import { useTranslations, useLocale } from "next-intl";
 import { useCoupons } from "@/domains/coupon/use-cases/use-coupons";
 import { useCouponCelebration } from "@/hooks/use-coupon-celebration";
-import { todayIso, formatDayLabel } from "@/lib/date";
+import { todayIso } from "@/lib/date";
 import { DateNav } from "@/components/date-nav";
 import { FormationHelpLink } from "@/components/formation-help-link";
 import { CouponCard } from "./coupon-card";
-import type { CouponProposalDto } from "@/domains/coupon/types/coupon";
-
-// findByDate (backend) returns every coupon batch whose fixture window
-// OVERLAPS the requested day, not just batches actually generated for it —
-// a weekend/midweek batch generated on forDate=D1 with a multi-day window
-// still shows up when viewing D2. Each batch ranks itself independently
-// (rank 1 = "Meilleur" within its own generation), so two batches sharing
-// the viewed day each contribute their own rank 1 — grouping by forDate
-// (and labeling the group) is what tells them apart instead of rendering
-// two unlabeled "Meilleur · Coupon 1" cards side by side.
-function groupByForDate(
-  coupons: CouponProposalDto[],
-): { forDate: string; coupons: CouponProposalDto[] }[] {
-  const byDate = new Map<string, CouponProposalDto[]>();
-  for (const coupon of coupons) {
-    const key = coupon.forDate.slice(0, 10);
-    const arr = byDate.get(key) ?? [];
-    arr.push(coupon);
-    byDate.set(key, arr);
-  }
-  return Array.from(byDate.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([forDate, group]) => ({
-      forDate,
-      coupons: group.slice().sort((a, b) => a.rank - b.rank),
-    }));
-}
 
 export function CouponsPageClient() {
   const t = useTranslations("coupons");
@@ -47,9 +20,8 @@ export function CouponsPageClient() {
   const date = searchParams.get("date") ?? todayIso();
   const { data, isLoading, isError } = useCoupons(date);
 
-  const coupons = data ?? [];
+  const coupons = (data ?? []).slice().sort((a, b) => a.rank - b.rank);
   useCouponCelebration(coupons);
-  const groups = groupByForDate(coupons);
 
   function navigateTo(iso: string) {
     const params = new URLSearchParams({ date: iso });
@@ -97,25 +69,14 @@ export function CouponsPageClient() {
             )}
 
             {!isLoading && !isError && coupons.length > 0 && (
-              <div className="flex flex-col gap-4 pb-4">
-                {groups.map((group) => (
-                  <div key={group.forDate} className="flex flex-col gap-2">
-                    {groups.length > 1 && (
-                      <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        {formatDayLabel(group.forDate)}
-                      </p>
-                    )}
-                    <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {group.coupons.map((coupon) => (
-                        <CouponCard
-                          key={coupon.id}
-                          coupon={coupon}
-                          locale={locale}
-                          isTop={coupon.rank === 1}
-                        />
-                      ))}
-                    </div>
-                  </div>
+              <div className="grid grid-cols-1 items-stretch gap-4 pb-4 sm:grid-cols-2 lg:grid-cols-3">
+                {coupons.map((coupon) => (
+                  <CouponCard
+                    key={coupon.id}
+                    coupon={coupon}
+                    locale={locale}
+                    isTop={coupon.rank === 1}
+                  />
                 ))}
               </div>
             )}

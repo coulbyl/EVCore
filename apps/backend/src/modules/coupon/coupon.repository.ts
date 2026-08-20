@@ -8,7 +8,7 @@ import {
   StrategyChannel,
 } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
-import { endOfUtcDay, startOfUtcDay } from '@utils/date.utils';
+import { startOfUtcDay } from '@utils/date.utils';
 
 const FIXTURE_SELECT = {
   id: true,
@@ -185,26 +185,23 @@ export class CouponRepository {
     }
   }
 
-  // "Live on this day" — NOT `forDate` equality. A multi-day window (weekend/
-  // midweek LONGSHOT, cf. SignalWindowService.getPoolForRange) is generated
-  // once, keyed on its first day (`forDate` = the Friday it was generated),
-  // but its legs keep playing through Sunday — a coupon must stay visible
-  // on Saturday and Sunday too, not only on the exact day it was generated.
-  // `lastFixtureScheduledAt` (already the max of every leg's kickoff) makes
-  // this a pure range check with no schema change: the window
-  // [forDate, lastFixtureScheduledAt] must overlap the requested day.
-  // Degenerates to the old exact-match behaviour for every single-day
-  // profile, where lastFixtureScheduledAt always falls on `forDate` itself.
+  // `forDate` equality — the coupon's own generation date, not an overlap
+  // window. A prior version matched any batch whose [forDate,
+  // lastFixtureScheduledAt] window overlapped the requested day, so a
+  // multi-day weekend/midweek LONGSHOT batch (forDate = the Friday it was
+  // generated) stayed visible on Saturday/Sunday too — but that meant one
+  // viewed day could surface TWO independently-ranked batches at once (each
+  // showing its own "rank 1"), with no way to tell them apart in the UI
+  // (2026-08-19 incident). Pinning to `forDate` removes the ambiguity: one
+  // day shows exactly the batch generated that day, full stop.
   async findByDate(
     day: Date,
     status?: CouponProposalStatus,
   ): Promise<CouponProposalWithLegs[]> {
     const dayStart = startOfUtcDay(day);
-    const dayEnd = endOfUtcDay(day);
     return this.prisma.client.couponProposal.findMany({
       where: {
-        forDate: { lte: dayEnd },
-        lastFixtureScheduledAt: { gte: dayStart },
+        forDate: dayStart,
         ...(status ? { status } : {}),
       },
       include: WITH_LEGS,
