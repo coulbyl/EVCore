@@ -11,12 +11,13 @@ import {
   depthRank,
   LEG_PROBABILITY_MODEL_WEIGHT,
 } from './coupon-composer.service';
-import { COUPON_PROFILES } from './coupon.constants';
-import type {
-  Canal,
-  MarketCalibration,
-  ScoredPick,
-} from './signal-window.service';
+import {
+  COUPON_PARAMS,
+  COUPON_PROFILES,
+  DEFAULT_COUPON_PROFILE,
+  MAX_POOL_PER_COMPETITION,
+} from './coupon.constants';
+import type { Canal, ScoredPick } from './signal-window.service';
 
 function makePick(overrides: {
   fixtureId: string;
@@ -74,7 +75,7 @@ function makePick(overrides: {
     awayScore: null,
     homeHtScore: null,
     awayHtScore: null,
-    betId: null,
+    channelSelectionId: null,
     modelRunId: null,
   };
 }
@@ -94,44 +95,69 @@ describe('calibratedLegProbability', () => {
 });
 
 describe('calibrateLegProbability', () => {
-  const calibration: MarketCalibration = {
-    OVER_UNDER: { meanError: 0.1285, betCount: 595 },
-    BTTS: { meanError: 0.039, betCount: 341 },
-    ONE_X_TWO: { meanError: 0.2, betCount: 10 }, // tracked but below MIN_BET_COUNT
-  };
+  const identity = { a: 1, b: 0, n: 0 };
+  // Slope < 1 flattens an over-confident channel toward its base rate — the
+  // shape every channel measured on 2026-08-22 actually needs.
+  const flattening = { a: 0.4, b: -0.3, n: 5000 };
 
-  it('subtracts the measured mean error for a tracked, well-sampled market', () => {
-    const value = calibrateLegProbability(
-      { probability: 0.66, calibratedHitRate: 0.6, market: 'OVER_UNDER' },
-      calibration,
-    );
-    expect(value).toBeCloseTo(0.66 - 0.1285, 10);
+  const makeWindow = (byChannel: Record<string, typeof identity>) => ({
+    channelReliability: byChannel,
+    pooledReliability: flattening,
   });
 
-  it('clamps the corrected probability into [capMin, capMax]', () => {
+  it('leaves a probability untouched under an identity curve', () => {
     const value = calibrateLegProbability(
-      { probability: 0.05, calibratedHitRate: 0.6, market: 'OVER_UNDER' },
-      { OVER_UNDER: { meanError: 0.5, betCount: 200 } },
+      { probability: 0.66, canal: 'DRAW' },
+      makeWindow({ DRAW: identity }),
     );
-    expect(value).toBeGreaterThanOrEqual(0.05); // capMin
+    expect(value).toBeCloseTo(0.66, 10);
   });
 
-  it('falls back to the blend for an untracked market (e.g. DOUBLE_CHANCE)', () => {
-    const leg = { probability: 0.8, calibratedHitRate: 0.6 };
-    const value = calibrateLegProbability(
-      { ...leg, market: 'DOUBLE_CHANCE' },
-      calibration,
+  it('applies the leg own channel curve, not another channel curve', () => {
+    const window = makeWindow({ DRAW: identity, VALUE: flattening });
+    const drawValue = calibrateLegProbability(
+      { probability: 0.8, canal: 'DRAW' },
+      window,
     );
-    expect(value).toBeCloseTo(calibratedLegProbability(leg), 10);
+    const valueValue = calibrateLegProbability(
+      { probability: 0.8, canal: 'VALUE' },
+      window,
+    );
+    expect(drawValue).toBeCloseTo(0.8, 10);
+    expect(valueValue).toBeLessThan(0.8);
   });
 
-  it('falls back to the blend when the market sample is below MIN_BET_COUNT', () => {
-    const leg = { probability: 0.8, calibratedHitRate: 0.6 };
-    const value = calibrateLegProbability(
-      { ...leg, market: 'ONE_X_TWO' },
-      calibration,
+  it('pulls an over-confident probability down and a low one up (flatter slope)', () => {
+    const window = makeWindow({ VALUE: flattening });
+    expect(
+      calibrateLegProbability({ probability: 0.85, canal: 'VALUE' }, window),
+    ).toBeLessThan(0.85);
+    expect(
+      calibrateLegProbability({ probability: 0.15, canal: 'VALUE' }, window),
+    ).toBeGreaterThan(0.15);
+  });
+
+  it('falls back to the pooled curve for a channel with no fit of its own', () => {
+    const window = makeWindow({ DRAW: identity });
+    const unknown = calibrateLegProbability(
+      { probability: 0.8, canal: 'HALF_TIME_FULL_TIME' },
+      window,
     );
-    expect(value).toBeCloseTo(calibratedLegProbability(leg), 10);
+    const pooled = calibrateLegProbability(
+      { probability: 0.8, canal: 'VALUE' },
+      makeWindow({ VALUE: flattening }),
+    );
+    expect(unknown).toBeCloseTo(pooled, 10);
+  });
+
+  it('clamps the calibrated probability into [capMin, capMax]', () => {
+    const extreme = { a: 5, b: 6, n: 5000 };
+    const value = calibrateLegProbability(
+      { probability: 0.99, canal: 'DRAW' },
+      makeWindow({ DRAW: extreme }),
+    );
+    expect(value).toBeLessThanOrEqual(COUPON_PARAMS.capMax);
+    expect(value).toBeGreaterThanOrEqual(COUPON_PARAMS.capMin);
   });
 });
 
@@ -198,22 +224,31 @@ describe('clearsMinLegProbability', () => {
   // cleared clearsValueEdgeFloor (edge=0.167≥0.10) on the strength of a huge
   // apparent EV (odds 3.75), with nothing checking that the leg itself was
   // more likely to lose than win.
-  it('rejects a leg below MIN_LEG_PROBABILITY even with a large edge/EV', () => {
+  it('rejects a leg below the profile floor even with a large edge/EV', () => {
     const leg = {
       calibratedProbability: 0.4339,
       probability: 0.4339,
       calibratedHitRate: 0.4339,
     };
-    expect(clearsMinLegProbability(leg)).toBe(false);
+    expect(clearsMinLegProbability(leg, 0.55)).toBe(false);
   });
 
-  it('accepts a leg at or above MIN_LEG_PROBABILITY', () => {
+  it('accepts a leg at or above the profile floor', () => {
     const leg = {
       calibratedProbability: 0.772,
       probability: 0.772,
       calibratedHitRate: 0.772,
     };
-    expect(clearsMinLegProbability(leg)).toBe(true);
+    expect(clearsMinLegProbability(leg, 0.55)).toBe(true);
+  });
+
+  it('imposes no floor when the profile sets none (LONGSHOT)', () => {
+    const leg = {
+      calibratedProbability: 0.31,
+      probability: 0.31,
+      calibratedHitRate: 0.31,
+    };
+    expect(clearsMinLegProbability(leg, undefined)).toBe(true);
   });
 
   it('falls back to the legacy blend when calibratedProbability is null', () => {
@@ -222,11 +257,11 @@ describe('clearsMinLegProbability', () => {
       probability: 0.9,
       calibratedHitRate: 0.9,
     };
-    expect(clearsMinLegProbability(leg)).toBe(true);
+    expect(clearsMinLegProbability(leg, 0.55)).toBe(true);
   });
 });
 
-describe('CouponComposerService.compose — MIN_LEG_PROBABILITY floor', () => {
+describe('CouponComposerService.compose — per-leg probability floor', () => {
   const service = new CouponComposerService();
 
   it('excludes a below-floor VALUE leg even when its edge/EV clears the VALUE floor', () => {
@@ -261,7 +296,10 @@ describe('CouponComposerService.compose — MIN_LEG_PROBABILITY floor', () => {
       signalScore: 0.75,
     });
 
-    const coupons = service.compose([reliable, reliablePartner, coinFlip]);
+    const coupons = service.compose([reliable, reliablePartner, coinFlip], {
+      ...DEFAULT_COUPON_PROFILE,
+      minLegProbability: 0.55,
+    });
     expect(coupons.length).toBeGreaterThan(0);
     expect(
       coupons.some((c) => c.legs.some((l) => l.fixtureId === 'ljungskile')),
@@ -361,10 +399,16 @@ describe('CouponComposerService.compose — anchor/value pool mix', () => {
     ).toBe(true);
   });
 
-  it('caps candidates per competition in the pool (per mode)', () => {
-    // 4 anchor-grade legs all in the SAME competition — the pool should
-    // only ever keep MAX_POOL_PER_COMPETITION (2) of them.
-    const sameLeague = Array.from({ length: 4 }, (_, i) =>
+  it('caps candidates per competition in the pool, and legs per competition inside a coupon', () => {
+    // 10 anchor-grade legs all in the SAME competition. Two distinct rules
+    // apply and are deliberately different: the POOL keeps at most
+    // MAX_POOL_PER_COMPETITION of them (candidate diversity), while any
+    // single published coupon carries at most 2 (anti-correlation, see
+    // violatesAntiCorrelation). The pool cap was lowered to the intra-coupon
+    // value of 2 for a long time, which starved the search 75% of days
+    // without protecting anything the intra-coupon rule did not already
+    // cover — see MAX_POOL_PER_COMPETITION.
+    const sameLeague = Array.from({ length: 10 }, (_, i) =>
       makePick({
         fixtureId: `same${i}`,
         canal: 'SAFE',
@@ -385,10 +429,18 @@ describe('CouponComposerService.compose — anchor/value pool mix', () => {
       minJointProbability: 0,
       minCouponEV: -1,
     });
+
     const usedFixtures = new Set(
       coupons.flatMap((c) => c.legs.map((l) => l.fixtureId)),
     );
-    expect(usedFixtures.size).toBeLessThanOrEqual(2);
+    expect(usedFixtures.size).toBeLessThanOrEqual(MAX_POOL_PER_COMPETITION);
+
+    for (const coupon of coupons) {
+      const fromCrowded = coupon.legs.filter(
+        (l) => l.competition === 'Crowded League',
+      );
+      expect(fromCrowded.length).toBeLessThanOrEqual(2);
+    }
   });
 });
 

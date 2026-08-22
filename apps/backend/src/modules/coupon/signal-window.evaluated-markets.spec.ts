@@ -47,8 +47,8 @@ describe('resolveEvaluatedMarketLeg', () => {
   });
 
   it('excludes a pick already staked for this fixture (dedup)', () => {
-    const evaluated = makeEvaluated({ market: 'BTTS', pick: 'YES' });
-    const opts = { ...baseOpts, stakedKeys: new Set(['BTTS:YES']) };
+    const evaluated = makeEvaluated({ market: 'DOUBLE_CHANCE', pick: '1X' });
+    const opts = { ...baseOpts, stakedKeys: new Set(['DOUBLE_CHANCE:1X']) };
     expect(resolveEvaluatedMarketLeg(evaluated, opts)).toBeNull();
   });
 
@@ -61,37 +61,55 @@ describe('resolveEvaluatedMarketLeg', () => {
     });
   });
 
-  it('maps TEAM_TOTAL_HOME/AWAY to TEAM_TOTAL', () => {
-    const home = makeEvaluated({ market: 'TEAM_TOTAL_HOME', pick: 'OVER_1_5' });
-    const away = makeEvaluated({
-      market: 'TEAM_TOTAL_AWAY',
-      pick: 'UNDER_1_5',
-    });
-    expect(resolveEvaluatedMarketLeg(home, baseOpts)?.canal).toBe('TEAM_TOTAL');
-    expect(resolveEvaluatedMarketLeg(away, baseOpts)?.canal).toBe('TEAM_TOTAL');
+  it('maps each market to its own specialist channel, not to VALUE', () => {
+    const cases: Array<[string, string, string]> = [
+      ['DOUBLE_CHANCE', '1X', 'DOUBLE_CHANCE'],
+      ['DRAW_NO_BET', 'HOME', 'DRAW_NO_BET'],
+      ['HALF_TIME_FULL_TIME', 'HOME_HOME', 'HALF_TIME_FULL_TIME'],
+      ['FIRST_HALF_WINNER', 'HOME', 'FIRST_HALF'],
+      ['TO_WIN_EITHER_HALF', 'HOME', 'WIN_EITHER_HALF'],
+      ['WIN_TO_NIL_HOME', 'YES', 'WIN_TO_NIL'],
+      ['WIN_TO_NIL_AWAY', 'YES', 'WIN_TO_NIL'],
+    ];
+    for (const [market, pick, canal] of cases) {
+      const evaluated = makeEvaluated({ market, pick });
+      expect(resolveEvaluatedMarketLeg(evaluated, baseOpts)?.canal).toBe(canal);
+    }
   });
 
-  it('maps everything else (e.g. OVER_UNDER, CLEAN_SHEET_HOME) to VALUE', () => {
-    const overUnder = makeEvaluated({ market: 'OVER_UNDER', pick: 'OVER_2_5' });
-    const cleanSheet = makeEvaluated({
-      market: 'CLEAN_SHEET_HOME',
-      pick: 'YES',
-    });
-    expect(resolveEvaluatedMarketLeg(overUnder, baseOpts)?.canal).toBe('VALUE');
-    expect(resolveEvaluatedMarketLeg(cleanSheet, baseOpts)?.canal).toBe(
-      'VALUE',
-    );
+  // The evaluatedPicks path resolves each market to the channel that owns it,
+  // and drops what it cannot resolve — so an evaluated pick can never enter
+  // the pool wearing a channel label that is not its own.
+  it('routes every mapped market to its own owning channel', () => {
+    const cases: Array<[string, string, string]> = [
+      ['OVER_UNDER', 'OVER_2_5', 'GOALS'],
+      ['BTTS', 'YES', 'BTTS'],
+      ['TEAM_TOTAL_HOME', 'OVER_1_5', 'TEAM_TOTAL'],
+      ['CLEAN_SHEET_HOME', 'YES', 'CLEAN_SHEET'],
+      ['RESULT_BTTS', 'HOME_YES', 'RESULT_BTTS'],
+    ];
+    for (const [market, pick, canal] of cases) {
+      expect(
+        resolveEvaluatedMarketLeg(makeEvaluated({ market, pick }), baseOpts)
+          ?.canal,
+      ).toBe(canal);
+    }
+  });
+
+  it('drops a market with no owning channel (CORRECT_SCORE — signal validated for reasonDetails only)', () => {
+    const evaluated = makeEvaluated({ market: 'CORRECT_SCORE', pick: '2-1' });
+    expect(resolveEvaluatedMarketLeg(evaluated, baseOpts)).toBeNull();
   });
 
   it('parses string probability/odds into numbers', () => {
     const evaluated = makeEvaluated({
-      market: 'BTTS',
-      pick: 'YES',
+      market: 'DRAW_NO_BET',
+      pick: 'HOME',
       probability: '0.6234',
       odds: '2.10',
     });
     expect(resolveEvaluatedMarketLeg(evaluated, baseOpts)).toEqual({
-      canal: 'BTTS',
+      canal: 'DRAW_NO_BET',
       probability: 0.6234,
       oddsSnapshot: 2.1,
     });
@@ -100,8 +118,8 @@ describe('resolveEvaluatedMarketLeg', () => {
   it('excludes a leg with extreme model↔market divergence alone (FADE regime — no opposite-leg construction here, treated like DROP)', () => {
     // 0.90 - 1/2.50 = 0.50 ≥ AVOID_CONFIG.maxEdge (0.30) → FADE
     const evaluated = makeEvaluated({
-      market: 'BTTS',
-      pick: 'YES',
+      market: 'DRAW_NO_BET',
+      pick: 'HOME',
       probability: '0.9000',
       odds: '2.50',
     });
@@ -111,8 +129,8 @@ describe('resolveEvaluatedMarketLeg', () => {
 
   it('excludes a leg with a calibration alert alone (DROP regime)', () => {
     const evaluated = makeEvaluated({
-      market: 'BTTS',
-      pick: 'YES',
+      market: 'DRAW_NO_BET',
+      pick: 'HOME',
       probability: '0.6000',
       odds: '1.90',
     });
@@ -122,8 +140,8 @@ describe('resolveEvaluatedMarketLeg', () => {
 
   it('keeps a KEEP-regime leg (both extreme divergence and calibration alert) even with AVOID enforced', () => {
     const evaluated = makeEvaluated({
-      market: 'BTTS',
-      pick: 'YES',
+      market: 'DRAW_NO_BET',
+      pick: 'HOME',
       probability: '0.9000',
       odds: '2.50',
     });

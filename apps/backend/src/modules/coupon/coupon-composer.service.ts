@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { VALUE_MIN_EDGE } from '@evcore/analysis-core';
 import { productDecimal } from '@utils/decimal.utils';
-import { MIN_BET_COUNT } from '@modules/adjustment/adjustment.constants';
 import { calculateEV } from '@modules/betting-engine/betting-engine.utils';
 import {
   EV_MAX_SOFT_ALERT,
@@ -11,20 +10,22 @@ import {
 import {
   COUPON_PARAMS,
   CANAL_BASE_WEIGHT,
+  DEFAULT_CANAL_BASE_WEIGHT,
   DEFAULT_COUPON_PROFILE,
   EXHAUSTIVE_LEG_THRESHOLD,
   GREEDY_START_VARIANTS,
   JOINT_PROBABILITY_CORRELATION_FACTOR,
-  MIN_LEG_PROBABILITY,
+  COUPON_EV_DEFLATION,
   ANCHOR_MIN_PROBABILITY,
   MAX_POOL_PER_COMPETITION,
   type CouponProfileBounds,
 } from './coupon.constants';
-import type {
-  MarketCalibration,
-  ScoredPick,
-  SignalWindow,
-} from './signal-window.service';
+import {
+  applyReliability,
+  type ChannelReliability,
+  type ChannelReliabilityMap,
+} from '@modules/adjustment/channel-reliability';
+import type { ScoredPick, SignalWindow } from './signal-window.service';
 
 const DOW_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const;
 
@@ -40,6 +41,13 @@ export type ComposedCoupon = {
   jointProbability: number;
   /** EV du coupon : `P_coupon × Odd_coupon − 1` (cf. DESIGN.md Étape 1). */
   couponEV: number;
+  /**
+   * `couponEV` moins la pénalité de biais de sélection (COUPON_EV_DEFLATION).
+   * Filtre de viabilité et classement s'appliquent à CETTE valeur ; `couponEV`
+   * reste la valeur brute, recalculable à la main depuis les jambes stockées.
+   * `undefined` hors de `compose()`.
+   */
+  deflatedCouponEV?: number;
   signalScore: number;
   reasoning: Record<string, unknown>;
 };
@@ -63,66 +71,40 @@ export function calibratedLegProbability(leg: {
   );
 }
 
-// Markets with a production calibration sample — these are exactly the markets
-// CalibrationService tracks (ONE_X_TWO / OVER_UNDER / BTTS / TEAM_TOTAL_HOME /
-// TEAM_TOTAL_AWAY / OVER_UNDER_HT). Other leg markets (DOUBLE_CHANCE, …) have no
-// measured bias and fall back to the legacy blend. TEAM_TOTAL_HOME/AWAY added
-// 2026-08 alongside TEAM_TOTAL staking — betCount was 28/19 (VALUE/SAFE picks
-// landing on these markets) as of 2026-07-28, both below MIN_BET_COUNT=50, but
-// the `cal.betCount >= MIN_BET_COUNT` gate below already ramps this up safely:
-// it silently keeps using the legacy blend until each market crosses 50, no
-// separate activation step needed once that happens. OVER_UNDER_HT added
-// 2026-08-01 (subscription audit): 132 settled bets, meanError +0.075
-// (mild overconfidence) — coupon legs on this market were previously
-// unadjusted, e.g. a repeated 0.76-modelled UNDER_1_5 HT pick that lost
-// across all three ranked coupons on 2026-07-29.
+// Per-leg probability calibration — applies the leg's OWN channel reliability
+// curve (Platt on the logit scale, see channel-reliability.ts).
 //
-// A channel-aware version (per (channel, market) instead of market-pooled,
-// sourced from channel_decision/channel_selection rather than the `bet`
-// table) was tried 2026-08-20 — theoretically sounder (VALUE and DOMINANT
-// drift very differently on the same market; DOMINANT never produces a
-// `bet` row at all so it was never covered here either way) but backtested
-// WORSE once actually validated (a separate bug had silently no-op'd every
-// regeneration since the first one, see deleteExpiredInRange,
-// coupon.repository.ts): splitting the `bet` pool by channel roughly halves
-// the effective sample per (channel, market) pair, pushing many pairs below
-// MIN_BET_COUNT and falling back to the less-accurate legacy blend far more
-// often — net ROI dropped from +4.77% (n=478) to -28.48% (n=84) in isolation
-// from every other change made that same night. Reverted; the finding (worth
-// revisiting with a lower per-channel sample floor or a blended fallback
-// before trying again) is preserved here rather than in code no longer run.
-const CALIBRATED_MARKETS = new Set([
-  'ONE_X_TWO',
-  'OVER_UNDER',
-  'BTTS',
-  'TEAM_TOTAL_HOME',
-  'TEAM_TOTAL_AWAY',
-  'OVER_UNDER_HT',
-]);
-
-// Principled per-market calibration: shift the raw model probability by the
-// measured mean signed error (meanError = mean(p − outcome); positive = the
-// model is over-confident, so we subtract it). This replaces the arbitrary
-// 50/50 model-vs-canal blend with an empirical, data-backed correction.
-// Falls back to `calibratedLegProbability` when the leg's market has no
-// production calibration sample (untracked market, or < MIN_BET_COUNT bets).
+// Replaces a per-market mean-error shift (`marketCalibration[market].meanError`,
+// subtracted from the raw probability) that was wrong in two ways, both
+// measured 2026-08-22:
+//
+//   1. Wrong SHAPE. The reliability curve is flatter than the diagonal, not
+//      offset from it: announced 0.46 -> 0.81 while realised moves only
+//      0.46 -> 0.59. A constant shift under-corrects the top of the range and
+//      over-corrects the bottom, whatever value it takes.
+//   2. Wrong GROUPING. The bias is channel-specific (realised/announced from
+//      1.016 for DRAW to 0.623 for RESULT_BTTS), and a market-pooled figure
+//      averages channels that need opposite corrections. Grouping by channel
+//      also subsumes the market grouping in practice, since a channel owns one
+//      or two markets.
+//
+// A channel with little settled history is shrunk toward the pooled curve in
+// proportion to its sample size rather than dropped to a fallback, so there is
+// no cliff and no "uncalibrated" branch left (see shrinkTowardPooled).
 export function calibrateLegProbability(
-  leg: { probability: number; calibratedHitRate: number; market: string },
-  marketCalibration: MarketCalibration,
+  leg: { probability: number; canal: string },
+  window: {
+    channelReliability: ChannelReliabilityMap;
+    pooledReliability: ChannelReliability;
+  },
 ): number {
-  const cal = marketCalibration[leg.market];
-  if (
-    cal &&
-    CALIBRATED_MARKETS.has(leg.market) &&
-    cal.betCount >= MIN_BET_COUNT
-  ) {
-    const corrected = leg.probability - cal.meanError;
-    return Math.min(
-      COUPON_PARAMS.capMax,
-      Math.max(COUPON_PARAMS.capMin, corrected),
-    );
-  }
-  return calibratedLegProbability(leg);
+  const reliability =
+    window.channelReliability[leg.canal] ?? window.pooledReliability;
+  const calibrated = applyReliability(leg.probability, reliability);
+  return Math.min(
+    COUPON_PARAMS.capMax,
+    Math.max(COUPON_PARAMS.capMin, calibrated),
+  );
 }
 
 // Single source of truth for a leg's probability inside a coupon: the calibrated
@@ -143,6 +125,72 @@ export function legProbability(leg: {
 export function calibrateJointProbability(rawJointProbability: number): number {
   const { factor, capMin, capMax } = JOINT_PROBABILITY_CORRELATION_FACTOR;
   return Math.min(capMax, Math.max(capMin, rawJointProbability * factor));
+}
+
+/**
+ * Standard error of a coupon's EV estimate, propagated from the estimation
+ * error of each leg's calibrated probability.
+ *
+ * `couponEV + 1 = (prod p_i) * (prod odds_i)`. The odds are observed, not
+ * estimated, so all the uncertainty sits in the product of probabilities, and
+ * relative errors add in quadrature:
+ *
+ *     se(couponEV) = (1 + couponEV) * sqrt( sum_i (se(p_i) / p_i)^2 )
+ *     se(p_i) = sqrt( p_i * (1 - p_i) / n_i )
+ *
+ * `n_i` is the settled sample the leg's channel reliability curve was fitted
+ * on. A leg from a thin channel therefore widens the interval — and gets
+ * penalised harder by the deflation below — which is the behaviour we want:
+ * uncertainty about a channel is a reason to trust its EV less.
+ */
+export function couponEVStandardError(
+  legs: ScoredPick[],
+  couponEV: number,
+): number {
+  let relativeVariance = 0;
+  for (const leg of legs) {
+    const p = legProbability(leg);
+    const n = leg.calibrationSampleSize ?? 0;
+    if (n <= 0 || p <= 0 || p >= 1) continue;
+    const se = Math.sqrt((p * (1 - p)) / n);
+    relativeVariance += (se / p) ** 2;
+  }
+  return Math.abs(1 + couponEV) * Math.sqrt(relativeVariance);
+}
+
+/**
+ * Selection-bias deflation of a candidate's EV — see COUPON_EV_DEFLATION.
+ *
+ * `compose()` keeps the best candidate by EV, and the maximum of N noisy
+ * estimates sits about `sqrt(2 ln N)` standard errors above the truth even
+ * when no candidate has any real edge. Subtracting that much brings the
+ * winner's EV back to what it is worth in expectation.
+ *
+ * `trials` is the POOL SIZE, not the number of candidate combinations. The
+ * combinations are not independent draws — they are built from the same legs
+ * and overlap heavily, so `C(pool, legs)` would wildly overstate how many
+ * genuinely distinct chances the search had. The number of distinct legs is
+ * the honest bound on the search's freedom.
+ *
+ * A first version used the dispersion of candidate EVs as the standard error
+ * and the raw candidate count as `trials` (2026-08-22). Both were wrong: the
+ * candidate spread is driven by genuine odds differences rather than by
+ * estimation noise, and with sigma ~0.33 over ~136 candidates it deflated
+ * every coupon by ~1.0 EV point against a 0.15 threshold. That did not filter
+ * out lucky maxima, it filtered out everything EXCEPT the most extreme
+ * long-odds outliers — the opposite of the intent. Measured: 141 settled
+ * coupons over the same range before, 23 after, and those 23 the highest-EV.
+ */
+export function deflateCouponEV(
+  couponEV: number,
+  search: { trials: number; standardError: number },
+): number {
+  if (!COUPON_EV_DEFLATION.enabled) return couponEV;
+  const trials = Math.min(
+    Math.max(search.trials, Math.E),
+    COUPON_EV_DEFLATION.trialsCap,
+  );
+  return couponEV - search.standardError * Math.sqrt(2 * Math.log(trials));
 }
 
 // signalScore is a (canal, dow, league) environment rate — within one canal on
@@ -328,14 +376,22 @@ export function clearsValueEdgeFloor(
 // All-canal probability floor — a high-EV leg is not automatically a safe
 // coupon leg: it can still be more likely to lose than win. Distinct from
 // clearsValueEdgeFloor (VALUE-only, edge-based) — this checks the leg's own
-// calibrated probability, whatever canal it came from. See MIN_LEG_PROBABILITY
-// doc (coupon.constants.ts) for the incident that motivated it.
-export function clearsMinLegProbability(leg: {
-  calibratedProbability: number | null;
-  probability: number;
-  calibratedHitRate: number;
-}): boolean {
-  return legProbability(leg) >= MIN_LEG_PROBABILITY;
+// calibrated probability, whatever canal it came from. The floor is a PROFILE
+// bound now, not a global constant — see LEGACY_MIN_LEG_PROBABILITY
+// (coupon.constants.ts) for the incident that motivated it and why a single
+// global value made the best-calibrated channels unusable. A profile with no
+// `minLegProbability` imposes no per-leg floor and relies on
+// `minJointProbability` instead.
+export function clearsMinLegProbability(
+  leg: {
+    calibratedProbability: number | null;
+    probability: number;
+    calibratedHitRate: number;
+  },
+  minLegProbability: number | undefined,
+): boolean {
+  if (minLegProbability === undefined) return true;
+  return legProbability(leg) >= minLegProbability;
 }
 
 // Shared anti-correlation bookkeeping — used identically by composeExhaustive
@@ -472,7 +528,8 @@ export class CouponComposerService {
     return picks.map((pick) => {
       const d = new Date(`${pick.dayBucket}T12:00:00.000Z`);
       const dow = DOW_LABELS[(d.getUTCDay() + 6) % 7];
-      const canalBase = CANAL_BASE_WEIGHT[pick.canal];
+      const canalBase =
+        CANAL_BASE_WEIGHT[pick.canal] ?? DEFAULT_CANAL_BASE_WEIGHT;
       const windowRate =
         window.calibratedCanalHitRates[pick.canal] ?? canalBase;
       const dowRate = window.canalDowFactors[pick.canal]?.[dow] ?? windowRate;
@@ -484,15 +541,11 @@ export class CouponComposerService {
       const signalScore = windowRate * 0.5 + dowRate * 0.3 + leagueRate * 0.2;
 
       const calibratedProbability = calibrateLegProbability(
-        {
-          probability: pick.probability,
-          calibratedHitRate: windowRate,
-          market: pick.market,
-        },
-        window.marketCalibration,
+        { probability: pick.probability, canal: pick.canal },
+        window,
       );
-      const marketMeanError =
-        window.marketCalibration[pick.market]?.meanError ?? null;
+      const reliability =
+        window.channelReliability[pick.canal] ?? window.pooledReliability;
 
       // EV de jambe sur la cote RÉELLE uniquement (jamais de cote inventée) —
       // une jambe sans cote ne porte pas d'EV et sera exclue des coupons.
@@ -518,7 +571,9 @@ export class CouponComposerService {
         calibratedLeagueHitRate: leagueRate,
         signalScore,
         calibratedProbability,
-        marketMeanError,
+        channelReliabilityA: reliability.a,
+        channelReliabilityB: reliability.b,
+        channelReliabilityN: reliability.n,
         legEV,
         pMarketFair: pick.pMarketFair,
         bookmakerMargin: pick.bookmakerMargin,
@@ -529,6 +584,7 @@ export class CouponComposerService {
         ...pick,
         calibratedHitRate: windowRate,
         calibratedProbability,
+        calibrationSampleSize: reliability.n,
         legEV,
         edge,
         signalScore,
@@ -546,7 +602,7 @@ export class CouponComposerService {
     const pricedPicks = scoredPicks
       .filter((p) => p.oddsSnapshot !== null)
       .filter((p) => clearsValueEdgeFloor(p))
-      .filter((p) => clearsMinLegProbability(p));
+      .filter((p) => clearsMinLegProbability(p, profile.minLegProbability));
 
     const distinctFixtures = new Set(pricedPicks.map((p) => p.fixtureId));
     if (distinctFixtures.size < MIN_DISTINCT_FIXTURES) return [];
@@ -579,15 +635,37 @@ export class CouponComposerService {
     });
 
     // Filtre value (bornes du profil) : nombre de jambes, cote combinée, proba
-    // jointe ET EV de coupon. Tri par EV décroissante (ADN value), proba jointe en
-    // tie-break, puis le coupon le plus court à EV égale (cf. DESIGN.md §5).
-    const viable = unique
+    // jointe ET EV de coupon — ce dernier DÉFLATÉ par la largeur réelle de la
+    // recherche menée ce jour-là (cf. COUPON_EV_DEFLATION). Sans déflation, le
+    // filtre et le tri s'appliquent au maximum d'un échantillon, donc à une
+    // valeur gonflée par le nombre d'essais et non par un edge réel.
+    const deflated = unique.map((c) => {
+      const standardError = couponEVStandardError(c.legs, c.couponEV);
+      const deflatedCouponEV = deflateCouponEV(c.couponEV, {
+        trials: pool.length,
+        standardError,
+      });
+      return {
+        ...c,
+        deflatedCouponEV,
+        // Traced so a published coupon can be audited: how wide was the search
+        // it won, and how much EV did winning it cost in deflation.
+        reasoning: {
+          ...c.reasoning,
+          deflatedCouponEV,
+          searchTrials: pool.length,
+          couponEVStandardError: standardError,
+        },
+      };
+    });
+
+    const viable = deflated
       .filter(
         (c) =>
           c.legs.length >= profile.minLegs &&
           c.combinedOdds >= profile.minCombinedOdds &&
           c.jointProbability >= profile.minJointProbability &&
-          c.couponEV >= profile.minCouponEV,
+          c.deflatedCouponEV >= profile.minCouponEV,
       )
       .sort(compareCouponsByEV);
 
@@ -758,7 +836,12 @@ export function compareCouponsByEV(
   a: ComposedCoupon,
   b: ComposedCoupon,
 ): number {
-  if (b.couponEV !== a.couponEV) return b.couponEV - a.couponEV;
+  // Ranks on the deflated EV when present (compose() sets it on every
+  // candidate); falls back to the raw EV for callers that build a
+  // ComposedCoupon directly, e.g. unit tests.
+  const aEV = a.deflatedCouponEV ?? a.couponEV;
+  const bEV = b.deflatedCouponEV ?? b.couponEV;
+  if (bEV !== aEV) return bEV - aEV;
   if (b.jointProbability !== a.jointProbability) {
     return b.jointProbability - a.jointProbability;
   }

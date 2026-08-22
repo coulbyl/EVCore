@@ -25,9 +25,11 @@ export class CouponService {
   // repeated the exact "surface not depth" problem this feature fixes).
   //
   // - DRAW: backtested +9.9% ROI, product-approved (B7).
-  // - TEAM_TOTAL: backtested +3.40% ROI, n=845, all leagues (2026-07-28).
-  // - BTTS: restricted to BTTS_STAKED_LEAGUES inside getPoolForRange
-  //   (per-league split shows a real edge/loss divide, not a uniform +0.76%).
+  // - TEAM_TOTAL / BTTS: no longer reach the pool at all since 2026-08-22 —
+  //   both fall under the calibration-ratio bar in POOL_ELIGIBLE_CHANNELS
+  //   (0.830 and 0.893), so their staking flags gated nothing and were
+  //   removed. Their per-league ROI backtests stay valid; what disqualifies
+  //   them is the multiplicative probability bias they inject into a parlay.
   // - AVOID: drops picks whose model↔market divergence is implausible
   //   (≥ AVOID_CONFIG.maxEdge) — validated -20% ROI on those picks over 3
   //   seasons.
@@ -54,8 +56,6 @@ export class CouponService {
   //   gates as officially-staked picks — losing their own channel's internal
   //   arbitration isn't a reliability rejection.
   private readonly stakeDraw = true;
-  private readonly stakeTeamTotal = true;
-  private readonly stakeBtts = true;
   private readonly enforceAvoid = true;
   private readonly enableAvoidFade = true;
   private readonly includeEvaluatedMarkets = true;
@@ -102,8 +102,6 @@ export class CouponService {
       this.signalWindow.computeSignalWindow(windowDays, asOf),
       this.signalWindow.getPoolForRange(date, to, {
         includeDraw: this.stakeDraw,
-        includeTeamTotal: this.stakeTeamTotal,
-        includeBtts: this.stakeBtts,
         enforceAvoid: this.enforceAvoid,
         enableAvoidFade: this.enableAvoidFade,
         includeEvaluatedMarkets: this.includeEvaluatedMarkets,

@@ -10,7 +10,11 @@ import type {
   CouponSummaryResponse,
   CouponSummaryStats,
 } from './dto/coupon-summary.dto';
-import { type CouponChannel, MAX_COUPON_SELECTIONS } from './coupon.constants';
+import {
+  type CouponChannel,
+  DEFAULT_MAX_COUPON_SELECTIONS,
+  MAX_COUPON_SELECTIONS,
+} from './coupon.constants';
 
 function buildProgression(
   items: { date: string; result: 'WON' | 'LOST' | 'PARTIAL' }[],
@@ -117,7 +121,9 @@ export class CouponSummaryService {
     to: string | undefined,
   ): Promise<CouponSummaryResponse> {
     const range = dateRange(from, to);
-    const maxPerDay = MAX_COUPON_SELECTIONS[canal as CouponChannel];
+    const maxPerDay =
+      MAX_COUPON_SELECTIONS[canal as CouponChannel] ??
+      DEFAULT_MAX_COUPON_SELECTIONS;
 
     let picks: CouponSummaryPickRow[];
 
