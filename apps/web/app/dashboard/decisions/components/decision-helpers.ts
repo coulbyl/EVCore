@@ -4,14 +4,25 @@ import type {
   StrategyChannel,
   AvoidOffender,
   AvoidReasonDetails,
+  ConsensusReasonDetails,
 } from "@/domains/channel-decision/types/channel-decision";
 
-// Channels that express agreement/meta signals rather than a fresh market read.
-export const META_CHANNELS: readonly StrategyChannel[] = ["CONSENSUS", "AVOID"];
+/**
+ * Méta-canaux : ils lisent les décisions des autres au lieu de prendre une
+ * position propre, donc ils n'émettent aucun pick et ne sont jamais ajoutables
+ * à un coupon.
+ *
+ * Source unique — cette liste était dupliquée dans channel-row.tsx sous le
+ * même nom avec un contenu différent.
+ */
+export const META_CHANNELS: ReadonlySet<StrategyChannel> = new Set([
+  "CONSENSUS",
+  "CONTRARIAN",
+  "AVOID",
+]);
 
-// AVOID is a negative, fixture-level verdict — it carries no pick.
 export function isMetaChannel(channel: StrategyChannel): boolean {
-  return META_CHANNELS.includes(channel);
+  return META_CHANNELS.has(channel);
 }
 
 export type AvoidFlag = {
@@ -45,17 +56,24 @@ export function avoidFlag(group: ChannelDecisionMatchDto): AvoidFlag | null {
   return null;
 }
 
-function bestEv(decision: ChannelDecisionMatchDecisionDto): number | null {
-  return decision.selections[0]?.ev ?? null;
-}
-
 function bestProbability(decision: ChannelDecisionMatchDecisionDto): number {
   return decision.selections[0]?.probability ?? 0;
 }
 
-// Decisions that produced a real market pick (SELECTED with a selection).
-// Meta-channels stay fixture-level signals: CONSENSUS is shown in the card
-// header, and AVOID is shown as a banner.
+/**
+ * Décisions ayant produit un vrai pick de marché (SELECTED avec sélection),
+ * classées par probabilité décroissante.
+ *
+ * Le tri était par EV décroissante jusqu'au 2026-08-22. Mesuré au niveau
+ * coupon, le tri par EV perd contre le tri par probabilité dans 13
+ * configurations appariées sur 16, et hors échantillon −25.94% contre
+ * −6.57% : c'est le critère qu'Investir a cessé d'utiliser le même jour.
+ * Garder l'EV ici aurait mis en avant, sur la fiche de match, exactement ce
+ * que la page de mise ne classe plus.
+ *
+ * Les méta-canaux restent des signaux au niveau du match : CONSENSUS dans
+ * l'en-tête de la carte, AVOID en bandeau.
+ */
 export function selectedPicks(
   group: ChannelDecisionMatchDto,
 ): ChannelDecisionMatchDecisionDto[] {
@@ -66,14 +84,7 @@ export function selectedPicks(
         d.status === "SELECTED" &&
         d.selections.length > 0,
     )
-    .sort((a, b) => {
-      const aEv = bestEv(a);
-      const bEv = bestEv(b);
-      if (aEv !== null && bEv !== null && aEv !== bEv) return bEv - aEv;
-      if (aEv !== null && bEv === null) return -1;
-      if (aEv === null && bEv !== null) return 1;
-      return bestProbability(b) - bestProbability(a);
-    });
+    .sort((a, b) => bestProbability(b) - bestProbability(a));
 }
 
 // The remaining primary-channel decisions (rejected / disabled /
@@ -87,11 +98,37 @@ export function evaluatedRest(
   );
 }
 
-export function hasConsensus(group: ChannelDecisionMatchDto): boolean {
-  return group.decisions.some(
-    (d) =>
-      d.channel === "CONSENSUS" &&
-      d.status === "SELECTED" &&
-      d.selections.length > 0,
+/**
+ * Canaux indépendants qui convergent sur ce match, ou liste vide.
+ *
+ * Lit `reasonDetails`, PAS les sélections : depuis le 2026-08-22 CONSENSUS
+ * n'émet plus de pick (ses 765 sélections étaient des doublons exacts, et sa
+ * probabilité — le maximum des canaux d'accord — était biaisée vers le haut
+ * par construction). Le niveau d'accord reste publié dans `reasonDetails`,
+ * et c'est désormais la seule trace exploitable.
+ *
+ * Le test précédent exigeait `selections.length > 0`. Il passait encore
+ * uniquement parce qu'aucun run n'avait tourné depuis le changement : au
+ * premier run suivant, le badge et la liste des canaux convergents auraient
+ * disparu de l'app sans que rien ne le signale.
+ */
+export function consensusChannels(
+  group: ChannelDecisionMatchDto,
+): StrategyChannel[] {
+  const consensus = group.decisions.find(
+    (d) => d.channel === "CONSENSUS" && d.status === "SELECTED",
   );
+  if (!consensus) return [];
+  const raw = consensus.reasonDetails;
+  if (!raw || typeof raw !== "object") return [];
+  const details = raw as Partial<ConsensusReasonDetails>;
+  return Array.isArray(details.channels)
+    ? details.channels.filter(
+        (c): c is StrategyChannel => typeof c === "string",
+      )
+    : [];
+}
+
+export function hasConsensus(group: ChannelDecisionMatchDto): boolean {
+  return consensusChannels(group).length > 0;
 }

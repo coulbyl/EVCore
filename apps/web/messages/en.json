@@ -192,7 +192,8 @@
     },
     "consensus": {
       "tooltipLabel": "Consensus signal",
-      "tooltipDetail": "Multiple independent channels selected the same outcome without coordination. This is a reinforced conviction signal — prioritise it in your bankroll allocation."
+      "tooltipDetail": "Several independent channels selected the same outcome without coordinating. It is an agreement, not a guarantee: CONSENSUS no longer emits a pick or a probability of its own — the one it used to publish was the maximum across the agreeing channels, and therefore optimistic by construction.",
+      "rowLabel": "Agreement:"
     },
     "noPick": "No pick retained on this fixture.",
     "noPickShort": "no pick",

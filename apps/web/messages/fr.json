@@ -192,7 +192,8 @@
     },
     "consensus": {
       "tooltipLabel": "Signal consensus",
-      "tooltipDetail": "Plusieurs canaux indépendants ont sélectionné le même outcome sans se concerter. C'est un signal de conviction renforcée — à prioriser dans votre allocation bankroll."
+      "tooltipDetail": "Plusieurs canaux indépendants ont sélectionné le même outcome sans se concerter. C'est une convergence, pas une garantie : CONSENSUS n'émet plus de pronostic ni de probabilité propre — celle qu'il publiait était le maximum des canaux d'accord, donc optimiste par construction.",
+      "rowLabel": "Convergence :"
     },
     "noPick": "Aucun pick retenu sur ce match.",
     "noPickShort": "aucun pick",

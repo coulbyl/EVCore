@@ -4,7 +4,7 @@ category: bases
 difficulty: beginner
 order: 4
 slug: comment-lire-un-pick
-summary: "Canal, cote, probabilité, edge, raison de décision : ce que chaque élément d'un pick veut dire, et pourquoi certains matchs n'ont volontairement aucun pick."
+summary: "Canal, cote, probabilité, raison de décision : ce que chaque élément d'un pronostic veut dire, pourquoi le même pronostic n'affiche pas le même pourcentage sur Decisions et sur Investir, et pourquoi certains matchs n'ont volontairement aucun pick."
 updatedAt: "2026-08-22"
 related: ["cotes-probabilites-implicites", "ev-probabilites-cotes"]
 ---
@@ -46,15 +46,25 @@ CORRECT_SCORE, enfin, affiche le score exact jugé le plus probable. C'est le ca
 
 Sa prudence n'a pourtant rien à voir avec celle de BTTS ou GOALS. Ces deux-là restent en observation parce que leurs chiffres, testés sur un historique conséquent, sont négatifs. CORRECT_SCORE, lui, est simplement trop récent pour être jugé : le canal existe depuis le 1er juillet 2026, contre plusieurs mois pour VALUE, SAFE, DRAW et BTTS. Ses premiers chiffres sont même prometteurs, mais deux semaines sur une seule compétition ne font pas un historique. Il sera réévalué avec du recul, comme DRAW l'a été avant lui.
 
-## Les trois chiffres à lire ensemble
+## Les chiffres à lire ensemble
 
-Sur chaque pick misable figurent la cote, la probabilité calibrée, et l'edge ou l'EV selon la vue — jamais un seul de ces chiffres isolé :
+Sur chaque pronostic figurent la cote et une probabilité — jamais l'une sans l'autre. Une cote seule se lit comme une promesse.
 
 - **La cote** : le prix affiché par le bookmaker.
-- **La probabilité calibrée** : l'estimation propre du moteur, indépendante du marché.
-- **L'edge ou l'EV** : l'écart entre les deux, détaillé dans la leçon précédente.
+- **La probabilité** : ce que le moteur estime, indépendamment du marché.
+- **L'edge ou l'EV** : l'écart entre les deux. Affiché à titre indicatif, il ne classe rien — la leçon précédente explique pourquoi.
 
-Une probabilité élevée avec un edge nul ne fait pas un bon pick au sens EVCore. Le modèle est simplement d'accord avec le marché — il n'y a rien à exploiter. C'est l'écart qui justifie la mise, jamais la confiance affichée seule.
+Contrairement à ce que l'intuition suggère, un gros écart avec le marché n'est pas un bon signe. Il indique surtout que le modèle et le bookmaker sont en désaccord, et le bookmaker a raison la plupart du temps. C'est la probabilité qui classe les pronostics dans toute l'app, jamais l'écart.
+
+### Pourquoi le même pronostic n'affiche pas le même pourcentage partout
+
+Ce n'est pas un bug, et c'est utile à comprendre.
+
+**Decisions** montre la **sortie brute du modèle**. C'est la page « qu'a décidé chaque canal » : elle affiche ce que le moteur a calculé, sans retouche, y compris pour les canaux qu'on ne joue pas.
+
+**Investir** montre la **probabilité calibrée**. Chaque canal a une tendance mesurée à sur-estimer ou sous-estimer ses chances, mesurée sur son historique réglé, et cette correction est appliquée avant affichage. Quand l'écart avec le brut dépasse deux points, Investir affiche aussi la valeur d'origine, étiquetée « Modèle brut ».
+
+Sur les canaux les plus sur-confiants, l'écart entre les deux pages peut atteindre plusieurs points. **C'est la valeur d'Investir qu'il faut retenir pour décider** : c'est celle qui a été confrontée aux résultats réels.
 
 ## Pourquoi certains matchs n'ont aucun pick
 
@@ -71,6 +81,6 @@ Un jour sans pick sur un match qui vous intéresse n'est pas un manque de servic
 ## À retenir
 
 - Le canal dit quelle question a été posée au match, pas seulement la réponse trouvée.
-- Cote, probabilité calibrée et edge/EV se lisent toujours ensemble.
+- La cote ne se lit jamais sans sa probabilité. Decisions affiche le modèle brut, Investir la valeur calibrée — c'est cette dernière qui sert à décider.
 - CONSENSUS signale un accord, AVOID protège, CORRECT_SCORE informe — aucun des trois n'émet de pari.
 - L'absence de pick est un résultat normal du filtre, pas un défaut.
