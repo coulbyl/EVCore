@@ -791,3 +791,59 @@ Sources :
 			'
 [6]: https://www.princeton.edu/~wbialek/rome/refs/kelly_56.pdf 'kelly.tex typeset'
 [7]: https://www.washingtonpost.com/sports/interactive/2025/parlay-popularity-odds-sportsbooks/?utm_source=chatgpt.com "Americans can't stop betting parlays. Sportsbooks are cashing in."
+
+---
+
+- CLAUDE (session du 2026-08-22 — résultats, et ce que la mesure a invalidé)
+
+Le plan A/B/C/D ci-dessus a été exécuté. **Trois pistes sur quatre sont mortes, et la quatrième a marché pour une raison différente de celle annoncée.** Le détail compte plus que le verdict : c'est ce qui empêchera de les retenter.
+
+### Ce qui a marché
+
+**Calibration par canal (courbe de Platt sur l'échelle logit, shrinkage James-Stein continu).** Le ratio réalisé/annoncé par jambe est passé de **0.819 à 1.016** (n=7076, 5 passes de régénération 2025-01 → 2026-08). Le modèle n'exagère plus ses jambes.
+
+Mais l'ingrédient qui a fait le travail n'était pas le shrinkage (piste B) : c'était de corriger la **FORME** de la courbe. Le décalage moyen par marché (`meanError`) qui existait avant supposait une courbe _décalée_ ; la mesure montre une courbe _plate_ — l'annoncé monte de 0.46 à 0.81 pendant que le réel ne bouge que de 0.46 à 0.59. Aucune valeur de décalage constant ne peut corriger une pente fausse. Le shrinkage James-Stein a résolu le problème d'échantillon fin, réel mais secondaire.
+
+**Le plafond d'edge (`MAX_LEG_EDGE = 0.10`)**, qui ne figurait dans aucune des quatre pistes, est le second levier. Sur 51 860 sélections réglées, le ratio s'effondre monotonement avec l'edge revendiqué — 1.062 sous 0, 0.537 au-dessus de 0.25 — pendant que le taux réel reste **PLAT** (0.51 → 0.38). L'edge du modèle ne porte aucune information sur le résultat, seulement sur l'ampleur de son erreur.
+
+### A — Déflation type Deflated Sharpe : abandonnée
+
+Implémentée deux fois, retirée deux fois.
+
+La première version prenait la dispersion des candidats comme écart-type et leur nombre comme essais : pénalité de ~1.0 point d'EV contre un seuil de 0.15, donc 141 coupons réglés avant, **23 après**, et ces 23 les plus extrêmes. Anti-sélectif.
+
+La seconde, calibrée sur l'erreur-type propagée depuis l'incertitude par jambe, était correcte mais négligeable (n dans les milliers ⇒ ~0.007 par jambe, deux ordres de grandeur sous le biais réel).
+
+**La leçon dépasse la piste** : toute correction appliquée à la quantité sur laquelle le composeur filtre ou classe se fait absorber par la sélection. Mesuré, en séquence — ajustement population seul ratio 0.803, + ajustement conditionné 0.770, + pénalité uniforme 0.699 — pendant que la proba brute des jambes survivantes montait de 0.656 à 0.750. Même une pénalité UNIFORME, qui ne réordonne pourtant rien, déplace le seuil d'admission : **tronquer par le bas une distribution biaisée conserve sa queue la plus biaisée**. Ce qui marche à la place est une contrainte sur une quantité EXOGÈNE que le composeur ne peut pas déplacer — la cote.
+
+### B — Shrinkage James-Stein : retenu, mais pas pour la raison prévue
+
+Voir plus haut. Le couperet `betCount >= MIN_BET_COUNT` a bien disparu au profit d'un shrinkage continu, et c'est mieux. Mais l'effondrement de ROI du 2026-08-20 qui motivait la piste (+4.77% → -28.48% en scindant par canal) était du **bruit** : à n=84 et n=478, avec un écart-type de 1.85 par coupon, ces deux chiffres ne se distinguent ni l'un de l'autre ni de zéro.
+
+Une variante — ajuster la courbe sur la population **conditionnée à la sélection** — a été essayée et **dégrade** (ratio 0.770 contre 0.803). Le biais de sélection est créé par le composeur au moment où il choisit et dépend de la correction en vigueur : l'ajuster a posteriori court derrière une cible qu'on déplace soi-même. Ne pas retenter sans traiter d'abord la circularité.
+
+### C — Fréquence empirique de coupons similaires : morte
+
+**Les jambes sont indépendantes.** Sur les coupons à 2 jambes : 17/29/21 observés contre 15/33/19 attendus sous indépendance, χ² ≈ 1.2, non significatif.
+
+Le produit naïf des marginales n'est donc pas ce qui tue les coupons, et la littérature sur les same-game parlays ne s'applique pas à notre cas — nos jambes sont sur des matchs différents. Piste fermée.
+
+### D — Cadence de recalibration sur Brier glissant : sans objet
+
+La courbe de fiabilité est recalculée à chaque génération avec garde point-in-time (`CalibrationService.computeChannelReliability({ asOf })`). Il n'y a plus de constante figée à faire périmer : `VALUE_MARKET_TRUST_MAP` a disparu avec VALUE du pool de coupon. La dérive reste un vrai sujet pour les configs statiques restantes, mais pas ici.
+
+### Ce que la session a appris et qui n'était dans aucune piste
+
+**1. Le ROI de coupon n'a aucune puissance statistique.** Écart-type 1.821 par coupon, 3 coupons/jour : détecter 10 points demande ~2,5 ans, 2 points ne le seront jamais. Toutes les décisions de la session du 19/20 — et la moitié de ses reverts — ont été prises sur des différences de 10 à 30 points dont la SE valait 13 à 18 points. **La boucle d'apprentissage doit tourner au niveau jambe** (SD 1.247, ~7000/mois, 2 points détectables en ~4 mois).
+
+**2. Le pool était structurellement aveugle.** Il lisait `run.bets`, que `persistChannelBet` n'écrit que pour VALUE et SAFE : 4 canaux sur 25 pouvaient produire une jambe, et les deux qui en fournissaient 68% étaient les deux plus mal calibrés du système. `CalibrationService` lisait la même table, donc le `meanError` appliqué à TOUTES les jambes était ajusté sur ces deux canaux — trois marchés sur six n'atteignaient jamais `MIN_BET_COUNT` et BTTS était corrigé **dans le mauvais sens**.
+
+**3. Sélectionner dégrade la calibration, à chaque étage.** A/B direct sur le même pool de picks Phase 1 : ratio 0.915 pour ceux que VALUE/SAFE n'ont pas repris, **0.739** pour ceux qu'ils ont repris. Même mécanique pour CONSENSUS (`maxProbability` = max de k estimations bruitées, biaisé vers le haut par construction) et pour le composeur lui-même.
+
+**4. La marge est le terme dominant.** 5.36% par jambe, et le modèle en récupère 2 à 3 points au mieux. Prendre la meilleure cote multi-bookmaker rapporte +0.57% par jambe — réel, gratuit, mais pas de quoi inverser le signe.
+
+### Ce qui reste crédible
+
+Le **mouvement des cotes**. 16 615 matchs ont des cotes suivies sur ~15h et on ne les a jamais regardées. C'est le prédicteur le mieux établi de la littérature, et c'est une entrée CAUSALE — pas un historique de résultats découpé en tranches, catégorie dans laquelle les six signaux morts tombent tous. C'est aussi la forme du seul signal de sélection qui ait jamais marché chez nous : `AVOID`, bâti sur la divergence modèle↔marché.
+
+Ne pas rouvrir : le découpage des résultats passés par ligue × canal × marché × tranche. Six tentatives, zéro survivante, et la décomposition de variance dit pourquoi — **88% de bruit à cette granularité**, contre 46-72% au niveau canal ou ligue seuls.

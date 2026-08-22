@@ -468,6 +468,65 @@ TODO.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
 
 ---
 
+### Bloc 12 — Reconstruction du composeur de coupon (2026-08-20 → 22, branche `fix/todo-2026-08-15`)
+
+> Point de départ : ROI négatif dans toutes les configurations testées (-9% à
+> -29%), révélé une fois `deleteExpiredInRange` corrigé. Le plan de recherche
+> initial (Deflated Sharpe, James-Stein, parlays corrélés, dérive) a été
+> exécuté puis **largement invalidé par la mesure** — détail par piste dans
+> `apps/backend/src/modules/coupon/recherche.md` §"Résultats du 2026-08-22".
+
+**Résultat mesuré** (5 passes de régénération, 2025-01 → 2026-08) :
+
+- [x] **Calibration par jambe : ratio réalisé/annoncé 0.819 → 1.016** (n=7076).
+      Le modèle n'exagère plus ses jambes, dans aucun sens. C'est l'acquis.
+- [x] ROI coupon **-3.34% ± 4.32** (n=2844, t=-0.77) — indistinguable de zéro,
+      contre -9.7% au départ. Ce n'est pas un profit.
+
+**Ce qui a été corrigé**
+
+- [x] **Le pool était aveugle à 21 canaux sur 25.** Il lisait `run.bets`, que
+      `persistChannelBet` n'écrit que pour VALUE/SAFE. `CalibrationService`
+      lisait la même table : trois marchés sur six n'atteignaient jamais
+      `MIN_BET_COUNT` et BTTS était corrigé **dans le mauvais sens**. Les deux
+      lisent désormais `channel_selection`, tous canaux.
+- [x] **Six signaux de sélection retirés**, morts ou anti-prédictifs, chacun
+      avec sa mesure conservée dans le code : tri par EV du coupon,
+      `signalScore` et la fenêtre glissante de 38 jours, l'edge revendiqué, la
+      qualité par (canal, tranche) et par (ligue, canal, tranche), l'ajustement
+      conditionné à la sélection, la pénalité de sélection uniforme.
+- [x] **CONSENSUS n'émet plus de pick** — ses 765 sélections étaient des
+      doublons exacts d'un pick Phase 1, et `maxProbability` (max de k
+      estimations bruitées) expliquait à lui seul son ratio de 0.726 contre
+      0.918 pour DOMINANT qu'il agrège.
+- [x] **Profils supprimés**, remplacés par trois **classes** différenciées par
+      la bande de cote de leurs jambes — bandes disjointes, donc produits
+      réellement distincts : cote 1.94 / 5.39 / 12.26 et taux de réussite
+      49.1% / 19.8% / 9.0%.
+- [x] **DNB sur match nul bloquait le règlement** : `resolveIsCorrect` rendait
+      `null` aussi bien pour un remboursement que pour « pas encore
+      calculable », et l'appelant lisait `null` comme non résolu. Le coupon ne
+      se réglait jamais.
+- [x] **Déphasage abonnements** créé par les classes : `COUPON_BEST` lisait
+      `rank = 1`, devenu ambigu (3 lignes par date) ; `COUPON_ALL` serait passé
+      de 3 à 9 coupons/jour, triplant l'exposition d'un abonné existant.
+
+**La leçon de méthode, qui vaut plus que les correctifs**
+
+- [x] **Le ROI de coupon n'a aucune puissance statistique.** SD 1.821, 3
+      coupons/jour ⇒ ~2,5 ans pour détecter 10 points, 2 points jamais. Les
+      décisions de la session du 19/20 portaient sur des écarts de 10-30 points
+      dont la SE valait 13-18. **La boucle d'apprentissage doit tourner au
+      niveau jambe** (SD 1.247, ~7000/mois, 2 points en ~4 mois).
+
+**Reste ouvert** — voir [TODO.md](TODO.md) §"Générateur de coupon" : mouvement
+des cotes (seule piste de découverte crédible), meilleure cote étendue au
+moteur, abonnements par classe, sélecteur de classe côté UX.
+
+Aucune migration Prisma.
+
+---
+
 ### Bloc 11 — Corrections audit systémique : résolution bookmaker par ligne, garde-fous 1X2-only (2026-08-15, branche `fix/systemic-audit-market-guards`)
 
 > Reprise du reste de l'audit systémique du Bloc 10 (post-mortem

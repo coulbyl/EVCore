@@ -1,6 +1,7 @@
 # Familles de moteurs prédictifs
 
-> Statut : note de cadrage stratégique, **non implémentée**.
+> Statut : note de cadrage stratégique — **§0.3 chantier 2 livré** (2026-08-18),
+> le reste non implémenté.
 >
 > Objectif : identifier les **familles de moteurs prédictifs** qu'EVCore doit
 > porter — pas marché par marché, pas sport par sport, mais par **processus
@@ -67,7 +68,8 @@ pour VALUE/SAFE, la phase à laquelle ils s'exécutent.
 
 ### 0.3 Chantiers concrets, dans l'ordre
 
-1. **Famille A'** : remplacer `FIRST_HALF_GOAL_FRACTION = 0.44` par un ratio
+1. **Famille A'** (toujours à faire, et devenu le chantier n°1) : remplacer
+   `FIRST_HALF_GOAL_FRACTION = 0.44` par un ratio
    calibré par ligue (voire par équipe si le volume le permet) sur la donnée
    réelle de buts avant 45'. Mono-sport, mono-famille, corrige un biais déjà
    identifié (HT Over désactivé) — premier cas réel pour valider le
@@ -80,14 +82,44 @@ pour VALUE/SAFE, la phase à laquelle ils s'exécutent.
      cotent des lignes `2.5`+ en pratique une fois le vrai moteur mi-temps
      construit — sinon `2.5`+ reste hors scope sans jamais avoir été
      explicitement tranché.
-2. **VALUE/SAFE en Phase 2** : `value.strategy.ts` et `safe.strategy.ts`
-   cessent de scanner `context.evaluatedMarkets` et lisent
-   `context.previousDecisions` à la place ; déplacement de `VALUE`/`SAFE`
-   hors de la boucle Phase 1 de l'orchestrateur (`orchestrator.ts`), aux
-   côtés de `CONSENSUS`/`AVOID`.
-3. **Audit de calibration par (marché × ligue)** une fois les deux premiers
-   chantiers faits, pour établir lesquels des 16 canaux de marché méritent
-   réellement d'alimenter VALUE/SAFE aujourd'hui.
+2. ~~**VALUE/SAFE en Phase 2**~~ — **FAIT le 2026-08-18.** `orchestrator.ts`
+   tourne en 3 phases (`FILTER_STRATEGY_CHANNELS`), et les deux stratégies
+   lisent `previousDecisions`.
+
+   Ce que la mesure a ajouté depuis (2026-08-22) : en tant que filtres, VALUE
+   et SAFE **dupliquent** massivement la Phase 1 — 89.5% et 93.3% de leurs
+   sélections reprennent exactement un pick Phase 1 (même run, même marché,
+   même pick, même probabilité à 4 décimales). Et l'acte de sélection dégrade
+   la calibration : sur le MÊME pool de picks Phase 1, ratio réalisé/annoncé
+   0.915 pour ceux qu'ils n'ont pas repris, **0.739** pour ceux qu'ils ont
+   repris. Ils sont donc exclus du pool de coupon (`POOL_EXCLUDED_CHANNELS`).
+
+   Même constat pour CONSENSUS, avec une cause mécanique identifiée : il
+   publiait `probability: best.maxProbability`, et le maximum de k estimations
+   bruitées est biaisé vers le haut par construction — ratio 0.726 alors qu'il
+   agrège DOMINANT à 0.918. Il n'émet plus de sélection (`selections: []`), son
+   niveau d'accord reste dans `reasonDetails`.
+
+3. ~~**Audit de calibration par (marché × ligue)**~~ — **fait, et il dit de ne
+   PAS découper à cette granularité.** Décomposition de variance sur 51 860
+   sélections réglées (2026-08-22), part RÉELLE de l'écart entre cases après
+   retrait du bruit d'échantillonnage :
+
+   | découpage                   | cases | part réelle |
+   | --------------------------- | ----- | ----------- |
+   | canal                       | 16    | **72%**     |
+   | marché                      | 18    | 68%         |
+   | canal × tranche de cote     | 37    | 59%         |
+   | ligue                       | 53    | 46%         |
+   | ligue × canal               | 94    | 15%         |
+   | **ligue × canal × tranche** | 161   | **12%**     |
+
+   À granularité fine — exactement le découpage que cette étape proposait —
+   88% de l'écart observé est du bruit. Testé hors échantillon : 0 case sur
+   117 fiablement positive, et au niveau coupon l'effet est nul (+1.22% ±
+   21.3, t=0.06). L'hétérogénéité entre ligues est réelle (~4 points de ROI
+   d'écart-type) mais ne s'exploite qu'au niveau COARSE, et le shrinkage
+   hiérarchique est le seul estimateur honnête à cette échelle.
 
 Aucun de ces trois chantiers n'ouvre de nouveau marché ni de nouveau sport —
 strictement une reformulation interne de ce qui existe déjà.

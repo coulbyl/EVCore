@@ -5,6 +5,12 @@
 > (Phase 3, juin 2026). Rédigé par revue du code existant, pas une compilation
 > de recettes génériques.
 >
+> ⚠️ **B1 EST INVALIDÉ PAR LA MESURE (2026-08-22)** — voir la note dans sa
+> section. Ce document reste l'archive de l'audit de juin 2026 ; il n'est plus
+> la référence du comportement actuel du composeur. Pour l'état réel, lire
+> `COUPON_BOUNDS` / `COUPON_CLASSES` / `MAX_LEG_EDGE` (coupon.constants.ts) et
+> `recherche.md` §"Résultats du 2026-08-22".
+>
 > **Thèse centrale** : les recherches sont correctes mais génériques. Or EVCore
 > possède **déjà** presque toute la machinerie qu'elles décrivent (Poisson
 > bivarié, EV, proba jointe corrélée, Kelly, calibration, couche ML). Le vrai
@@ -73,8 +79,30 @@ gain sélectionne des **favoris**, pas de la **value** — exactement l'erreur q
 les trois recherches dénoncent en premier (« un coupon de favoris à 1.20 finit
 par perdre »).
 
-→ **Corriger** : calculer `legEV = calculateEV(pLeg, oddsLeg)` et
-`couponEV = P_coupon × Odd_coupon − 1`, filtrer et trier dessus.
+→ ~~**Corriger** : calculer `legEV` et `couponEV`, filtrer et trier dessus.~~
+
+> ⚠️ **FAIT en juin 2026, puis ANNULÉ le 2026-08-22 après mesure. Ce
+> diagnostic était faux.**
+>
+> Le tri par EV de coupon a été implémenté, puis retiré : il perd contre le tri
+> par probabilité dans **13 des 16** configurations comparées deux à deux
+> (+6.7 points de ROI en moyenne), et hors échantillon au niveau coupon,
+> **-25.94% contre -6.57%**.
+>
+> La raison tient en une ligne : `EV = p × cote − 1` et `p` est quasi constant
+> à l'intérieur d'un canal, donc **un plancher d'EV est un plancher de COTE
+> déguisé**. Il force la sélection vers les cotes longues — précisément la zone
+> où le modèle réalise 0.694 de ce qu'il annonce, contre 0.954 ailleurs. Les
+> jambes que le modèle sait estimer ne pouvaient mathématiquement pas franchir
+> la barre ; seules les non fiables y arrivaient.
+>
+> Le raisonnement « un coupon de favoris à 1.20 finit par perdre » est correct
+> mais ne mène pas à l'EV : il mène à un **plancher de cote** (`MIN_LEG_ODDS`),
+> qui vise la même chose sans sélectionner sur une quantité biaisée. Et l'edge
+> revendiqué, cœur de l'ADN « value », s'est révélé **anti-prédictif** — le
+> taux réel est PLAT (0.51 → 0.38) pendant que l'annoncé grimpe de 0.481 à
+> 0.699 sur 51 860 sélections. D'où `MAX_LEG_EDGE`, qui plafonne ce que B1
+> proposait de maximiser.
 
 ### 🔴 B2 — Cotes fallback inventées
 

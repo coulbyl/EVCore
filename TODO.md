@@ -76,36 +76,57 @@
     reflète le modèle en vigueur à la génération de CHAQUE coupon historique,
     pas le modèle actuel).
 
-- `[ ]` **PRIORITÉ — ROI du composeur négatif dans TOUTES les configurations
-  testées (-9% à -29%), y compris l'état d'avant-session** (trouvé 2026-08-20)
-  — un bug d'`upsertProposal` (bail-out silencieux sur toute proposal déjà
-  `EXPIRED`, pas seulement `ACCEPTED`/`REJECTED`) rendait chaque "validation"
-  précédente un no-op qui re-mesurait le même jeu de données figé ; corrigé
-  via `CouponRepository.deleteExpiredInRange` (purge avant régénération,
-  `apps/backend/src/scripts/regenerate-coupons.ts`). Une fois l'outil
-  réellement fiable, 6+ configurations testées cette nuit (calibration par
-  canal, tri par signalScore, plancher signalScore, `includeEvaluatedMarkets`
-  on/off, `MIN_LEG_PROBABILITY` 0.55/0.65) donnent TOUTES un ROI négatif —
-  y compris l'état de production d'avant cette session (-9,06%, n=371). Ce
-  n'est pas une régression de cette nuit : c'est une propriété préexistante
-  du composeur, jamais vue avant faute d'un outil de mesure fiable.
-  Plan détaillé ancré dans la littérature externe (Deflated Sharpe Ratio,
-  shrinkage empirique de Bayes/James-Stein, corrélation des parlays,
-  dérive de calibration) dans [recherche.md](apps/backend/src/modules/coupon/recherche.md)
-  (section "CLAUDE — session du 2026-08-19/20"). Ordre à essayer demain :
-  - `[ ]` Shrinkage James-Stein continu pour `calibrateLegProbability` (au
-    lieu du couperet dur `betCount >= MIN_BET_COUNT` + repli blend 50/50) —
-    le plus mécanique/sûr, à tenter en premier.
-  - `[ ]` Déflation de `couponEV`/`jointProbability` par la taille réelle du
-    pool combinatoire exploré ce jour-là (façon Deflated Sharpe Ratio) —
-    remplace le facteur fixe `JOINT_PROBABILITY_CORRELATION_FACTOR`.
-  - `[ ]` Fréquence empirique historique de coupons à profil similaire au
-    lieu du produit naïf de marginales pour `jointProbability`.
-  - `[ ]` Cadence de recalibration suivant un Brier score glissant surveillé
-    (pas un calendrier fixe) une fois qu'une config marche.
-  - Valider chaque piste avec la boucle régénère+règle+recalibre déjà en
-    place (`regenerate-coupons.ts` + `db:backtest:coupon-joint-probability-
-    shrinkage-calibration`) — ne RIEN shipper sans un vrai cycle complet.
+- `[~]` **Composeur reconstruit — calibration réparée, ROI ramené à l'équilibre**
+  (2026-08-20 → 2026-08-22) — le point de départ était un ROI négatif dans
+  toutes les configurations testées (-9% à -29%), révélé une fois
+  `deleteExpiredInRange` corrigé. Le plan initial (recherche.md, section
+  "CLAUDE — session du 2026-08-19/20") a été suivi puis largement **invalidé
+  par la mesure** ; le détail par piste est dans recherche.md, section
+  "Résultats du 2026-08-22".
+
+  **Résultat mesuré** (5 passes de régénération, 2025-01 → 2026-08) :
+  - calibration par jambe **0.819 → 1.016** (n=7076) — le modèle n'exagère
+    plus ses jambes, dans aucun sens. C'est l'acquis de la session.
+  - ROI coupon **-3.34% ± 4.32** (n=2844, t=-0.77) — indistinguable de zéro,
+    contre -9.7% au départ. Ce n'est pas un profit.
+
+  **Six signaux de sélection retirés**, chacun avec sa mesure conservée dans le
+  code à côté de ce qui l'a remplacé (commit `f94235c3`) : tri par EV du
+  coupon, `signalScore` et toute la fenêtre glissante de 38 jours, l'edge
+  revendiqué, la qualité par (canal, tranche) et par (ligue, canal, tranche),
+  l'ajustement conditionné à la sélection, la pénalité de sélection uniforme.
+  Tous morts ou **anti-prédictifs**.
+
+  **Ce qui reste ouvert**, par ordre de valeur :
+  - `[ ]` **Mouvement des cotes** — 16 615 matchs ont des cotes suivies sur
+    ~15h et on ne les a jamais regardées. C'est le prédicteur le mieux établi
+    de la littérature (closing line value) et, surtout, une entrée CAUSALE et
+    non un historique de résultats découpé en tranches — donc d'une autre
+    nature que les six signaux qui ont échoué. Seule piste de découverte
+    encore crédible.
+  - `[ ]` **Déplacer la boucle d'apprentissage au niveau jambe.** Ce n'est pas
+    une piste, c'est une règle de méthode : à 3 coupons/jour (SD 1.821), il
+    faut ~2,5 ans pour détecter 10 points de ROI, et 2 points ne le seront
+    jamais. Au niveau jambe (SD 1.247, ~7000/mois), 2 points se détectent en
+    ~4 mois. Toute décision prise sur un ROI de coupon est prise sur du bruit —
+    c'est l'origine de la moitié des reverts de la session précédente.
+  - `[ ]` **Meilleure cote multi-bookmaker, étendue au moteur.** Les jambes de
+    coupon sont désormais misées au meilleur prix (gain mesuré +0.57%, bien
+    moins que les +1.85-3.19% annoncés : cette estimation se comparait à la
+    MOYENNE des maisons alors que la référence était déjà la mieux classée).
+    `FullOddsSnapshot` et `bookmakerRank` n'ont volontairement PAS été touchés
+    — les changer modifierait l'EV et la sélection de tous les canaux.
+  - `[ ]` **Abonnements par classe.** `COUPON_ALL` est borné à la classe à cote
+    courte pour ne pas tripler l'exposition d'un abonné existant. Couvrir les
+    trois demande un type de source par classe (enum Prisma
+    `SubscriptionSourceType`, donc migration).
+  - `[ ]` **Sélecteur de classe côté UX.** Les trois classes s'affichent
+    ensemble, étiquetées et triées. Un filtre pour n'en voir qu'une reste à
+    faire.
+  - `[-]` Fréquence empirique de coupons à profil similaire (piste C de
+    recherche.md) — **abandonnée** : les jambes sont indépendantes (17/29/21
+    observés contre 15/33/19 attendus, χ² ≈ 1.2), donc le produit naïf des
+    marginales n'est pas ce qui tue les coupons.
 
 - `[x]` **Jambe partagée entre coupons classés (rank 1/2/3+) — zéro tolérance**
   (résolu 2026-08-15, trouvé en creusant le fix PARTIAL/VOID ci-dessous) — la
