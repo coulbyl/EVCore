@@ -16,12 +16,20 @@ const STATUS_DOT: Record<ChannelStatus, string> = {
   INSUFFICIENT_DATA: "bg-muted-foreground/50",
 };
 
+// Sous-ensemble VOLONTAIRE : ce bandeau est un coup d'œil, pas un suivi. La
+// liste complète des canaux est sur Track Record, qui n'en filtre plus aucun.
+//
+// La composition a été revue le 2026-08-22 : c'étaient les six canaux
+// historiques, écrits avant l'ouverture des autres, et il en manquait
+// DOUBLE_CHANCE — le mieux mesuré du système. Les deux canaux assumés
+// ouvrent désormais le bandeau.
 const CHANNEL_ORDER = [
-  "VALUE",
-  "SAFE",
-  "DOMINANT",
-  "BTTS",
+  "DOUBLE_CHANCE",
   "DRAW",
+  "VALUE",
+  "DOMINANT",
+  "TEAM_TOTAL",
+  "BTTS",
   "GOALS",
 ] as const satisfies readonly ChannelHealthItem["channel"][];
 
@@ -31,16 +39,18 @@ const CHANNEL_ORDER = [
  * source of truth for depth; duplicating it here caused scale/period bugs. */
 export function ChannelStatusStrip({ from, to }: { from: string; to: string }) {
   const tPicks = useTranslations("picks");
+  const tChannels = useTranslations("decisions");
   const { data: healthItems = [], isLoading } = useChannelHealth(from, to);
 
   const byChannel = new Map(healthItems.map((h) => [h.channel, h]));
 
   const CHANNEL_LABEL: Record<(typeof CHANNEL_ORDER)[number], string> = {
-    VALUE: tPicks("evChannel"),
-    SAFE: tPicks("safeValue"),
-    DOMINANT: tPicks("confidence"),
-    BTTS: tPicks("btts"),
+    DOUBLE_CHANCE: tChannels("channels.DOUBLE_CHANCE.label"),
     DRAW: tPicks("matchNull"),
+    VALUE: tPicks("evChannel"),
+    DOMINANT: tPicks("confidence"),
+    TEAM_TOTAL: tChannels("channels.TEAM_TOTAL.label"),
+    BTTS: tPicks("btts"),
     GOALS: tPicks("goals"),
   };
 

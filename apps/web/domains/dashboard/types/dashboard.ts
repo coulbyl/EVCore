@@ -75,18 +75,32 @@ export type ChannelStatus =
   | "INACTIVE"
   | "INSUFFICIENT_DATA";
 
+// Canal suivi côté Track Record. Reprend la liste des canaux plutôt que de la
+// réénumérer : une union écrite à la main ne se met pas à jour, et c'est ce
+// qui avait laissé 8 canaux hors de la page de performance (voir
+// TRACKED_CHANNELS côté backend).
+export type TrackedChannel =
+  | "VALUE"
+  | "SAFE"
+  | "DOMINANT"
+  | "BTTS"
+  | "DRAW"
+  | "GOALS"
+  | "CLEAN_SHEET"
+  | "TEAM_TOTAL"
+  | "FIRST_HALF"
+  | "DOUBLE_CHANCE"
+  | "RESULT_TOTAL_GOALS"
+  | "OVER_UNDER_HT"
+  | "RESULT_BTTS"
+  | "DRAW_NO_BET"
+  | "WIN_TO_NIL"
+  | "HALF_TIME_FULL_TIME"
+  | "WIN_EITHER_HALF"
+  | "CORRECT_SCORE";
+
 export type ChannelHealthItem = {
-  channel:
-    | "VALUE"
-    | "SAFE"
-    | "DOMINANT"
-    | "BTTS"
-    | "DRAW"
-    | "GOALS"
-    | "CLEAN_SHEET"
-    | "TEAM_TOTAL"
-    | "WIN_EITHER_HALF"
-    | "CORRECT_SCORE";
+  channel: TrackedChannel;
   status: ChannelStatus;
   primaryMetric: number;
   primaryMetricType: "ROI" | "HIT_RATE";
@@ -97,17 +111,7 @@ export type ChannelHealthItem = {
 };
 
 export type ChannelStatsItem = {
-  channel:
-    | "VALUE"
-    | "SAFE"
-    | "DOMINANT"
-    | "BTTS"
-    | "DRAW"
-    | "GOALS"
-    | "CLEAN_SHEET"
-    | "TEAM_TOTAL"
-    | "WIN_EITHER_HALF"
-    | "CORRECT_SCORE";
+  channel: TrackedChannel;
   hitRate: number | null;
   avgThreshold: number | null;
   vsThreshold: number | null;

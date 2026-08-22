@@ -14,6 +14,10 @@ import {
   buildWorkerStatus,
   notificationSeverity,
 } from './dashboard.utils';
+import {
+  PRIMARY_METRIC_BY_CHANNEL,
+  TRACKED_CHANNELS,
+} from './dashboard.constants';
 import { DashboardRepository } from './dashboard.repository';
 import type {
   ChannelCompetitionStatItem,
@@ -358,6 +362,21 @@ export class DashboardService {
     });
   }
 
+  /**
+   * Santé de chaque canal suivi.
+   *
+   * Itère sur TRACKED_CHANNELS au lieu d'énumérer les canaux : la version
+   * précédente en listait 10 en dur, et les 8 canaux ouverts depuis
+   * n'apparaissaient nulle part malgré leurs résultats réglés.
+   *
+   * Tout est lu depuis `channel_selection`, y compris VALUE et SAFE qui
+   * passaient auparavant par la table `bet`. Deux raisons : `bet` n'est écrit
+   * que pour ces deux canaux (persistChannelBet), donc leurs lignes n'étaient
+   * pas comparables aux autres sur cette page ; et c'est la source qu'ont déjà
+   * adoptée la calibration et le pool de coupon pour cette raison exacte.
+   * Effet de bord bienvenu : VALUE et SAFE ont désormais un taux de réussite,
+   * là où ils affichaient `null`.
+   */
   async getChannelHealth(
     from: string,
     to: string,
@@ -366,76 +385,23 @@ export class DashboardService {
       since: startOfUtcDay(parseIsoDate(from)),
       until: endOfUtcDay(parseIsoDate(to)),
     };
-    const [
-      evBets,
-      svBets,
-      dominantSel,
-      bttsSel,
-      drawSel,
-      goalsSel,
-      cleanSheetSel,
-      teamTotalSel,
-      winEitherHalfSel,
-      correctScoreSel,
-    ] = await Promise.all([
-      this.repo.findModelBetsInRange(StrategyChannel.VALUE, range),
-      this.repo.findModelBetsInRange(StrategyChannel.SAFE, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.DOMINANT, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.BTTS, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.DRAW, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.GOALS, range),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.CLEAN_SHEET,
-        range,
-      ),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.TEAM_TOTAL, range),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.WIN_EITHER_HALF,
-        range,
-      ),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.CORRECT_SCORE,
-        range,
-      ),
-    ]);
+    const bySelection = await Promise.all(
+      TRACKED_CHANNELS.map(async (channel) => ({
+        channel,
+        selections: await this.repo.findChannelSelectionsInRange(
+          channel,
+          range,
+        ),
+      })),
+    );
 
-    const evRoi = flatBetRoi(evBets);
-    const svRoi = flatBetRoi(svBets);
-
-    return [
-      {
-        channel: 'VALUE',
-        status: evRoiStatus(evRoi, evBets.length, 30),
-        primaryMetric: evRoi ?? 0,
-        primaryMetricType: 'ROI',
-        roi: evRoi,
-        hitRate: null,
-        vsThreshold: null,
-        sampleSize: evBets.length,
-      },
-      {
-        channel: 'SAFE',
-        status: evRoiStatus(svRoi, svBets.length, 30),
-        primaryMetric: svRoi ?? 0,
-        primaryMetricType: 'ROI',
-        roi: svRoi,
-        hitRate: null,
-        vsThreshold: null,
-        sampleSize: svBets.length,
-      },
-      channelHealthFromSelections('DOMINANT', dominantSel, 'HIT_RATE'),
-      channelHealthFromSelections('BTTS', bttsSel, 'HIT_RATE'),
-      channelHealthFromSelections('DRAW', drawSel, 'ROI'),
-      channelHealthFromSelections('GOALS', goalsSel, 'HIT_RATE'),
-      channelHealthFromSelections('CLEAN_SHEET', cleanSheetSel, 'HIT_RATE'),
-      channelHealthFromSelections('TEAM_TOTAL', teamTotalSel, 'HIT_RATE'),
+    return bySelection.map(({ channel, selections }) =>
       channelHealthFromSelections(
-        'WIN_EITHER_HALF',
-        winEitherHalfSel,
-        'HIT_RATE',
+        channel,
+        selections,
+        PRIMARY_METRIC_BY_CHANNEL[channel] ?? 'HIT_RATE',
       ),
-      channelHealthFromSelections('CORRECT_SCORE', correctScoreSel, 'HIT_RATE'),
-    ];
+    );
   }
 
   async getChannelStats(from: string, to: string): Promise<ChannelStatsItem[]> {
@@ -443,77 +409,19 @@ export class DashboardService {
       since: startOfUtcDay(parseIsoDate(from)),
       until: endOfUtcDay(parseIsoDate(to)),
     };
-    const [
-      evBets,
-      svBets,
-      dominantSel,
-      bttsSel,
-      drawSel,
-      goalsSel,
-      cleanSheetSel,
-      teamTotalSel,
-      winEitherHalfSel,
-      correctScoreSel,
-    ] = await Promise.all([
-      this.repo.findModelBetsInRange(StrategyChannel.VALUE, range),
-      this.repo.findModelBetsInRange(StrategyChannel.SAFE, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.DOMINANT, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.BTTS, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.DRAW, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.GOALS, range),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.CLEAN_SHEET,
-        range,
-      ),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.TEAM_TOTAL, range),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.WIN_EITHER_HALF,
-        range,
-      ),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.CORRECT_SCORE,
-        range,
-      ),
-    ]);
+    const bySelection = await Promise.all(
+      TRACKED_CHANNELS.map(async (channel) => ({
+        channel,
+        selections: await this.repo.findChannelSelectionsInRange(
+          channel,
+          range,
+        ),
+      })),
+    );
 
-    // Reverse desc→asc for chronological drawdown computation
-    const evChron = [...evBets].reverse();
-    const svChron = [...svBets].reverse();
-
-    return [
-      {
-        channel: 'VALUE',
-        hitRate: null,
-        avgThreshold: null,
-        vsThreshold: null,
-        roi: flatBetRoi(evBets),
-        netUnits: netUnitsFromBets(evBets),
-        maxDrawdown: maxDrawdownFromBets(evChron),
-        sampleSize: evBets.length,
-        oddsAvailabilityRate: 1,
-        trend: 'FLAT' as const,
-      },
-      {
-        channel: 'SAFE',
-        hitRate: null,
-        avgThreshold: null,
-        vsThreshold: null,
-        roi: flatBetRoi(svBets),
-        netUnits: netUnitsFromBets(svBets),
-        maxDrawdown: maxDrawdownFromBets(svChron),
-        sampleSize: svBets.length,
-        oddsAvailabilityRate: 1,
-        trend: 'FLAT' as const,
-      },
-      channelStatsFromSelections('DOMINANT', dominantSel),
-      channelStatsFromSelections('BTTS', bttsSel),
-      channelStatsFromSelections('DRAW', drawSel),
-      channelStatsFromSelections('GOALS', goalsSel),
-      channelStatsFromSelections('CLEAN_SHEET', cleanSheetSel),
-      channelStatsFromSelections('TEAM_TOTAL', teamTotalSel),
-      channelStatsFromSelections('WIN_EITHER_HALF', winEitherHalfSel),
-      channelStatsFromSelections('CORRECT_SCORE', correctScoreSel),
-    ];
+    return bySelection.map(({ channel, selections }) =>
+      channelStatsFromSelections(channel, selections),
+    );
   }
 
   /** Same settled data as getChannelStats, one level finer — grouped by
@@ -528,57 +436,19 @@ export class DashboardService {
       since: startOfUtcDay(parseIsoDate(from)),
       until: endOfUtcDay(parseIsoDate(to)),
     };
-    const [
-      evBets,
-      svBets,
-      dominantSel,
-      bttsSel,
-      drawSel,
-      goalsSel,
-      cleanSheetSel,
-      teamTotalSel,
-      winEitherHalfSel,
-      correctScoreSel,
-    ] = await Promise.all([
-      this.repo.findModelBetsInRange(StrategyChannel.VALUE, range),
-      this.repo.findModelBetsInRange(StrategyChannel.SAFE, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.DOMINANT, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.BTTS, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.DRAW, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.GOALS, range),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.CLEAN_SHEET,
-        range,
-      ),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.TEAM_TOTAL, range),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.WIN_EITHER_HALF,
-        range,
-      ),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.CORRECT_SCORE,
-        range,
-      ),
-    ]);
+    const bySelection = await Promise.all(
+      TRACKED_CHANNELS.map(async (channel) => ({
+        channel,
+        selections: await this.repo.findChannelSelectionsInRange(
+          channel,
+          range,
+        ),
+      })),
+    );
 
-    return [
-      ...channelCompetitionStatsFromBets('VALUE', evBets),
-      ...channelCompetitionStatsFromBets('SAFE', svBets),
-      ...channelCompetitionStatsFromSelections('DOMINANT', dominantSel),
-      ...channelCompetitionStatsFromSelections('BTTS', bttsSel),
-      ...channelCompetitionStatsFromSelections('DRAW', drawSel),
-      ...channelCompetitionStatsFromSelections('GOALS', goalsSel),
-      ...channelCompetitionStatsFromSelections('CLEAN_SHEET', cleanSheetSel),
-      ...channelCompetitionStatsFromSelections('TEAM_TOTAL', teamTotalSel),
-      ...channelCompetitionStatsFromSelections(
-        'WIN_EITHER_HALF',
-        winEitherHalfSel,
-      ),
-      ...channelCompetitionStatsFromSelections(
-        'CORRECT_SCORE',
-        correctScoreSel,
-      ),
-    ];
+    return bySelection.flatMap(({ channel, selections }) =>
+      channelCompetitionStatsFromSelections(channel, selections),
+    );
   }
 
   async getLeaderboard(): Promise<LeaderboardEntry[]> {
@@ -744,10 +614,6 @@ function channelHealthFromSelections(
 
 type CompetitionRef = { code: string; name: string; country: string };
 
-type BetWithCompetition = FlatBet & {
-  modelRun: { fixture: { season: { competition: CompetitionRef } } };
-};
-
 type SelectionWithCompetition = SettledSelection & {
   channelDecision: {
     modelRun: { fixture: { season: { competition: CompetitionRef } } };
@@ -770,32 +636,6 @@ function groupByCompetition<T>(
   }
   return groups;
 }
-
-function channelCompetitionStatsFromBets(
-  channel: ChannelCompetitionStatItem['channel'],
-  bets: BetWithCompetition[],
-): ChannelCompetitionStatItem[] {
-  const groups = groupByCompetition(
-    bets,
-    (b) => b.modelRun.fixture.season.competition,
-  );
-  return Array.from(groups.entries()).map(
-    ([competitionCode, { name, country, rows }]) => {
-      const roi = flatBetRoi(rows);
-      return {
-        channel,
-        competitionCode,
-        competitionName: name,
-        competitionCountry: country,
-        roi,
-        hitRate: null,
-        sampleSize: rows.length,
-        status: evRoiStatus(roi, rows.length, 30),
-      };
-    },
-  );
-}
-
 function channelCompetitionStatsFromSelections(
   channel: ChannelCompetitionStatItem['channel'],
   selections: SelectionWithCompetition[],

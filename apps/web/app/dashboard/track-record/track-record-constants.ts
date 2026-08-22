@@ -54,54 +54,84 @@ export const CHANNEL_LABELS: Record<ChannelStatsItem["channel"], string> = {
   GOALS: "GOALS (Buts)",
   CLEAN_SHEET: "CLEAN_SHEET (Cage inviolée)",
   TEAM_TOTAL: "TEAM_TOTAL (Buts par équipe)",
+  DOUBLE_CHANCE: "DOUBLE_CHANCE (Double chance)",
+  DRAW_NO_BET: "DRAW_NO_BET (Remboursé si nul)",
+  WIN_TO_NIL: "WIN_TO_NIL (Gagne sans encaisser)",
+  FIRST_HALF: "FIRST_HALF (1ʳᵉ mi-temps)",
+  OVER_UNDER_HT: "OVER_UNDER_HT (Plus/moins mi-temps)",
+  HALF_TIME_FULL_TIME: "HALF_TIME_FULL_TIME (Mi-temps/Fin)",
+  RESULT_TOTAL_GOALS: "RESULT_TOTAL_GOALS (Issue + total)",
+  RESULT_BTTS: "RESULT_BTTS (Issue + BB)",
   WIN_EITHER_HALF: "WIN_EITHER_HALF (Gagne une mi-temps)",
   CORRECT_SCORE: "CORRECT_SCORE (Score exact)",
 };
 
-// Display order matching the formation lessons (VALUE/SAFE proven or
-// promising, DOMINANT/DRAW improving, BTTS/GOALS exploratory signals).
-// CLEAN_SHEET/TEAM_TOTAL/WIN_EITHER_HALF/CORRECT_SCORE appended last —
-// newer, observation-only channels (see docs/ml-worker-sync.md,
-// project-correct-score-immature memory), shown honestly like every other
-// channel rather than hidden.
+/**
+ * Ordre d'affichage — purement cosmétique.
+ *
+ * Ce n'est PAS un filtre, et c'est la correction du 2026-08-22 : cette liste
+ * en contenait 10 et servait de `filter()`, ce qui rendait 8 canaux
+ * invisibles sur la page de performance malgré leurs résultats réglés —
+ * DOUBLE_CHANCE le premier, alors qu'il est le mieux mesuré du système. Les
+ * canaux absents d'ici sont désormais affichés à la suite, jamais masqués
+ * (voir mergedChannelRows).
+ */
 export const CHANNEL_DISPLAY_ORDER: ChannelStatsItem["channel"][] = [
+  "DOUBLE_CHANCE",
+  "DRAW",
   "VALUE",
   "SAFE",
   "DOMINANT",
-  "DRAW",
+  "TEAM_TOTAL",
+  "DRAW_NO_BET",
   "BTTS",
   "GOALS",
+  "FIRST_HALF",
+  "OVER_UNDER_HT",
   "CLEAN_SHEET",
-  "TEAM_TOTAL",
   "WIN_EITHER_HALF",
+  "WIN_TO_NIL",
+  "RESULT_TOTAL_GOALS",
+  "RESULT_BTTS",
+  "HALF_TIME_FULL_TIME",
   "CORRECT_SCORE",
 ];
+
+/** Canaux reçus, classés selon CHANNEL_DISPLAY_ORDER, inconnus à la fin. */
+export function orderChannels<
+  T extends { channel: ChannelStatsItem["channel"] },
+>(items: readonly T[]): T[] {
+  const rank = (channel: ChannelStatsItem["channel"]) => {
+    const i = CHANNEL_DISPLAY_ORDER.indexOf(channel);
+    return i === -1 ? CHANNEL_DISPLAY_ORDER.length : i;
+  };
+  return [...items].sort((a, b) => rank(a.channel) - rank(b.channel));
+}
 
 export type MergedChannelRow = ChannelStatsItem & {
   status: ChannelHealthItem["status"];
 };
 
+/**
+ * Fusionne stats et santé, pour TOUS les canaux renvoyés par le serveur.
+ *
+ * On part de `stats`, pas d'une liste locale : c'est le serveur qui sait
+ * quels canaux existent. La version précédente itérait sur
+ * CHANNEL_DISPLAY_ORDER, ce qui transformait un ordre d'affichage en filtre —
+ * un canal absent de la liste locale disparaissait de la page même quand le
+ * serveur renvoyait ses résultats.
+ */
 export function mergeChannelData(
   stats: ChannelStatsItem[],
   health: ChannelHealthItem[],
 ): MergedChannelRow[] {
   const statusByChannel = new Map(health.map((h) => [h.channel, h.status]));
-  return CHANNEL_DISPLAY_ORDER.map((channel) => {
-    const row = stats.find((s) => s.channel === channel);
-    return {
-      channel,
-      hitRate: row?.hitRate ?? null,
-      avgThreshold: row?.avgThreshold ?? null,
-      vsThreshold: row?.vsThreshold ?? null,
-      roi: row?.roi ?? null,
-      netUnits: row?.netUnits ?? null,
-      maxDrawdown: row?.maxDrawdown ?? null,
-      sampleSize: row?.sampleSize ?? 0,
-      oddsAvailabilityRate: row?.oddsAvailabilityRate ?? 0,
-      trend: row?.trend ?? "FLAT",
-      status: statusByChannel.get(channel) ?? "INSUFFICIENT_DATA",
-    };
-  });
+  return orderChannels(
+    stats.map((row) => ({
+      ...row,
+      status: statusByChannel.get(row.channel) ?? "INSUFFICIENT_DATA",
+    })),
+  );
 }
 
 // `roi`/`netUnits` come back from the backend already in percentage-number

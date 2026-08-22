@@ -18,7 +18,7 @@ import {
 import { translateCountry } from "@/lib/competition-i18n";
 import type { ChannelCompetitionStatItem } from "@/domains/dashboard/types/dashboard";
 import {
-  CHANNEL_DISPLAY_ORDER,
+  orderChannels,
   CHANNEL_LABELS,
   formatHitRate,
   formatRoi,
@@ -26,32 +26,37 @@ import {
 import { ChannelStatusBadge } from "./channel-status-badge";
 
 /** Independent from the "Par canal" summary above — same settled data, one
- * level finer (channel × compétition). A dropdown, not tabs: 10 channels
- * don't fit as tabs without wrapping/overlapping on mobile. All channels are
- * fetched once server-side, so switching is instant (no reload). */
+ * level finer (channel × compétition). A dropdown, not tabs: eighteen
+ * channels don't fit as tabs without wrapping/overlapping on mobile. All
+ * channels are fetched once server-side, so switching is instant (no
+ * reload). */
 export function ChannelCompetitionSection({
   rows,
 }: {
   rows: ChannelCompetitionStatItem[];
 }) {
   const locale = useLocale();
-  const channelsWithData = useMemo(
-    () =>
-      CHANNEL_DISPLAY_ORDER.filter((channel) =>
-        rows.some((r) => r.channel === channel),
-      ),
-    [rows],
-  );
-  const [selected, setSelected] = useState(
-    channelsWithData[0] ?? CHANNEL_DISPLAY_ORDER[0],
-  );
+  // Les canaux viennent des données reçues, pas d'une liste locale : celle-ci
+  // ne sert plus qu'à les ORDONNER (voir orderChannels).
+  const channelsWithData = useMemo(() => {
+    const seen = new Set(rows.map((r) => r.channel));
+    return orderChannels([...seen].map((channel) => ({ channel }))).map(
+      (c) => c.channel,
+    );
+  }, [rows]);
+  // `selected` peut être vide au premier rendu si les données arrivent après
+  // le montage — on retombe alors sur le premier canal disponible plutôt que
+  // de filtrer sur `undefined` et d'afficher un tableau vide.
+  const [selected, setSelected] =
+    useState<ChannelCompetitionStatItem["channel"]>();
+  const active = selected ?? channelsWithData[0];
 
   const filtered = useMemo(
     () =>
       rows
-        .filter((r) => r.channel === selected)
+        .filter((r) => r.channel === active)
         .sort((a, b) => b.sampleSize - a.sampleSize),
-    [rows, selected],
+    [rows, active],
   );
 
   if (channelsWithData.length === 0) return null;
@@ -63,7 +68,7 @@ export function ChannelCompetitionSection({
           Par compétition
         </h2>
         <Select
-          value={selected}
+          value={active}
           onValueChange={(v) =>
             setSelected(v as ChannelCompetitionStatItem["channel"])
           }

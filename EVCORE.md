@@ -94,16 +94,32 @@ Ces 4 marchés partagent le même modèle sous-jacent (probabilité de buts par 
 
 ### Canaux de décision
 
-Le moteur expose deux familles de canaux :
+> **Nomenclature** : les codes de canal sont en anglais dans tout le code —
+> `VALUE`, `SAFE`, `DOMINANT`, `DRAW`, `BTTS`. Les tags historiques EV, SV,
+> CONF, NUL, BB qui subsistent dans les tableaux ci-dessous sont les anciens
+> noms des trois premiers ; ils ne correspondent à aucun identifiant réel.
 
-**Canaux basés sur l'EV (Bet)**
+**Filtres de Phase 2 (VALUE, SAFE)**
 
-| Canal             | Critère           | Marché                                                                                                                                           | Pick                                    |
-| ----------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
-| **EV**            | EV ≥ 8%           | 1X2, O/U, BTTS, DC, HT/FT, O/U HT, First Half Winner, DNB, Team Total, Clean Sheet, Win to Nil, Win Either Half, RESULT_TOTAL_GOALS, RESULT_BTTS | HOME / DRAW / AWAY / OVER / UNDER / YES |
-| **SV** (Sécurité) | P ≥ 68% + EV ≥ 0% | 1X2, O/U, BTTS, DC                                                                                                                               | HOME / DRAW / AWAY / OVER / UNDER / YES |
+Ils ne scannent plus `evaluatedMarkets` : ils re-sélectionnent parmi les
+décisions déjà prises par les canaux de marché (voir la redéfinition
+architecturale plus bas, livrée le 2026-08-18).
 
-**Canaux de prédiction pure (PredictionChannel — indépendants des cotes)**
+| Canal              | Critère           | Portée                                    |
+| ------------------ | ----------------- | ----------------------------------------- |
+| **VALUE** (ex-EV)  | edge ≥ 0.10       | toute décision de Phase 1                 |
+| **SAFE** (ex-SV)   | P ≥ 68% + EV ≥ 0% | toute décision de Phase 1                 |
+
+⚠️ **Le critère de VALUE est mesuré anti-prédictif** (audit 2026-08-22,
+51 860 sélections : taux réel plat 0.511 → 0.375 pendant que l'annoncé monte à
+0.699). Toute surface de mise applique donc `MAX_LEG_EDGE = 0.10` en
+**plafond**, complément exact du seuil du canal — la plupart des picks VALUE
+atterrissent dans la vue « Écarté » d'Investir. Ne pas ajouter de nouvelle
+logique de sélection indexée sur l'EV ou l'edge. La piste en cours est de
+réduire VALUE à ses picks propres (8% de ses sélections, les seuls qui ne
+soient pas des doublons de Phase 1), non validée à ce jour.
+
+**Canaux de prédiction (Phase 1 — un par marché)**
 
 | Canal                   | Critère                           | Marché                       | Signal                                                |
 | ----------------------- | --------------------------------- | ---------------------------- | ----------------------------------------------------- |
@@ -126,15 +142,19 @@ Le moteur expose deux familles de canaux :
 
 Les seuils des canaux de prédiction sont configurés par ligue dans `prediction.constants.ts` et calibrés par backtest avant activation. Le canal DRAW utilise la probabilité implicite bookmaker (`1/drawOdds`) comme signal principal — le modèle Poisson est un mauvais discriminateur de nul (plafond structurel ~0.32). CLEAN_SHEET, TEAM_TOTAL et WIN_EITHER_HALF ont été ajoutés le 2026-07-18 : entièrement câblés (moteur, settlement, UI). Aucune cote historique n'existe pour ces marchés (uniquement la sync PREMATCH forward, démarrée le même jour), donc pas de vrai backtest ROI possible — les trois tournent en **OBSERVATION** avec un seuil dérivé du taux de base réel par ligue (jamais misé, même méthodologie que GOALS ; TEAM_TOTAL doublé sur la dimension équipe, avec exclusion des lignes quasi-certaines > 90% de base rate).
 
-CORRECT_SCORE (2026-06-30) et les 8 canaux ajoutés le 2026-08-16 (RESULT_TOTAL_GOALS, OVER_UNDER_HT, RESULT_BTTS, DRAW_NO_BET, WIN_TO_NIL, DOUBLE_CHANCE, FIRST_HALF_WINNER, HALF_TIME_FULL_TIME) complètent la couverture de l'enum `Market` — chaque marché a désormais un canal de prédiction dédié plutôt que de dépendre uniquement de la sélection opportuniste d'EV. Tous tournent en **OBSERVATION** (décision enregistrée + réglée analytiquement, jamais misée) ; seuls **EV, SV, BTTS, DRAW, CONF (DOMINANT) et TEAM_TOTAL** sont aujourd'hui staké dans le générateur de coupon (`CouponChannel`). Le passage OBSERVATION → staking suit toujours le même parcours : hypothèse → backtest séparé → observation → whitelist par ligue → staking (voir TODO.md, "Checklist par nouveau canal").
+CORRECT_SCORE (2026-06-30) et les 8 canaux ajoutés le 2026-08-16 (RESULT_TOTAL_GOALS, OVER_UNDER_HT, RESULT_BTTS, DRAW_NO_BET, WIN_TO_NIL, DOUBLE_CHANCE, FIRST_HALF_WINNER, HALF_TIME_FULL_TIME) complètent la couverture de l'enum `Market` — chaque marché a désormais un canal de prédiction dédié plutôt que de dépendre uniquement de la sélection opportuniste d'EV. ⚠️ **Périmètre de staking réécrit le 2026-08-22.** Le pool de coupon ne part plus d'une liste positive de canaux stakés : il prend tout canal non-méta et non-filtre (`POOL_EXCLUDED_CHANNELS` ne retire que CONSENSUS/CONTRARIAN/AVOID et VALUE/SAFE). L'admission se juge sur la **calibration** — ratio réalisé/annoncé — et non sur le ROI, qui n'a aucune puissance statistique à ces volumes. Les restrictions par ligue qui subsistent (`DRAW_STAKED_LEAGUES`, `BTTS_STAKED_LEAGUES`) sont documentées à leur point de définition, avec pour BTTS un risque ouvert consigné dans TODO.md.
 
-> **Redéfinition architecturale (2026-08-17, en cours, non implémentée)** :
+Côté surface de consultation, Investir sépare les canaux dont le **ROI shrinké** (Bayes empirique) reste positif — deux sur dix-neuf au dernier relevé — de ceux en observation, et affiche à part ce que les garde-fous écartent.
+
+> **Redéfinition architecturale (2026-08-17 — livrée le 2026-08-18 pour VALUE/SAFE)** :
 > un canal n'est plus un consommateur direct et indépendant du socle Poisson
 > unique — c'est un lecteur de **famille de moteur prédictif** (un processus
 > générateur par famille, plusieurs canaux/marchés peuvent partager la même
 > famille). EV et SV cessent d'être des chercheurs de valeur indépendants
 > scannant tous les marchés ; ils deviennent des **filtres** appliqués aux
-> décisions déjà prises par les canaux de marché. Voir
+> décisions déjà prises par les canaux de marché — **c'est le cas depuis le
+> 2026-08-18** (orchestrateur à 3 phases). Le reste du cadrage (moteur λ
+> mi-temps dédié notamment) n'est pas implémenté. Voir
 > `docs/prediction-engine-families.md` (cadrage, portée football actuelle en
 > §0) et `docs/channel-strategy-architecture.md` (orchestration, phases mises
 > à jour en conséquence).
@@ -293,6 +313,12 @@ EV = (Probabilité × Cote) − 1
 Seuil initial :
 
 - EV ≥ 8%
+
+⚠️ Ce seuil existe toujours dans le code (`EV_THRESHOLD`, gate du canal VALUE)
+mais **il ne sélectionne pas sur une quantité prédictive** — voir l'encadré de
+§ « Canaux de décision ». Un plafond `MAX_LEG_EDGE = 0.10` s'applique
+par-dessus sur toute surface de mise, et le classement se fait partout sur la
+probabilité calibrée.
 
 ---
 
