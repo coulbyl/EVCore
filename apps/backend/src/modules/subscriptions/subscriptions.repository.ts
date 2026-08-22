@@ -7,6 +7,7 @@ import {
   SubscriptionStatus,
 } from '@evcore/db';
 import Decimal from 'decimal.js';
+import { SUBSCRIPTION_COUPON_CLASS } from './subscription.constants';
 import { PrismaService } from '@/prisma.service';
 import { SUBSCRIPTION_DETAIL_EVENTS_LIMIT } from './subscription.constants';
 
@@ -173,9 +174,29 @@ export class SubscriptionsRepository {
     });
   }
 
+  /**
+   * Le coupon « du jour » pour un abonnement COUPON_BEST.
+   *
+   * Ne peut plus être `{ forDate, rank: 1 }` : depuis l'introduction des
+   * classes (2026-08-22), CHAQUE classe écrit ses propres rangs 1..3, donc
+   * trois lignes portent `rank = 1` sur une même date — vérifié en base, 3
+   * collisions par jour sur 9 propositions. `findFirst` sans tri en prenait
+   * une au hasard : l'abonné recevait un coupon non déterministe, qui pouvait
+   * changer d'une exécution du cron à l'autre.
+   *
+   * Et « meilleur » ne veut plus rien dire non plus : mesuré sur 5 passes de
+   * régénération, le rang 1 ne fait pas mieux que le rang 2 (en classe à cote
+   * courte, -7.5% contre +2.6%, tous les écarts dans le bruit).
+   *
+   * Choix retenu : le coupon de plus forte probabilité jointe de la journée,
+   * ce qui revient au rang 1 de la classe à cote courte. C'est déterministe,
+   * c'est ce qu'un abonné « un coupon par jour » attend, et ça ne prétend pas
+   * à une hiérarchie qu'on ne sait pas produire.
+   */
   findCouponProposalRankOne(forDate: Date) {
     return this.prisma.client.couponProposal.findFirst({
-      where: { forDate, rank: 1 },
+      where: { forDate },
+      orderBy: [{ jointProbability: 'desc' }, { rank: 'asc' }],
       select: {
         id: true,
         combinedOdds: true,
@@ -185,9 +206,27 @@ export class SubscriptionsRepository {
     });
   }
 
+  /**
+   * Tous les coupons du jour pour un abonnement COUPON_ALL — mise pleine sur
+   * chacun.
+   *
+   * ⚠️ Le VOLUME a triplé le 2026-08-22 avec les classes : jusqu'à 9 coupons
+   * par jour (3 classes × 3) au lieu de 3, donc trois fois la mise engagée
+   * pour un abonné qui n'a rien changé à son abonnement. Vérifié en base.
+   *
+   * Restreint à la classe à cote courte pour préserver ce à quoi les abonnés
+   * existants ont souscrit — un volume et un profil de risque comparables à
+   * l'avant-classes. Couvrir les trois classes est une décision produit
+   * distincte : elle demanderait un nouveau type de source par classe (enum
+   * Prisma `SubscriptionSourceType`, donc migration) plutôt que d'élargir
+   * silencieusement un abonnement en cours.
+   */
   findAllCouponProposals(forDate: Date) {
     return this.prisma.client.couponProposal.findMany({
-      where: { forDate },
+      where: {
+        forDate,
+        targetOddsMin: SUBSCRIPTION_COUPON_CLASS.targetOddsMin,
+      },
       select: {
         id: true,
         combinedOdds: true,

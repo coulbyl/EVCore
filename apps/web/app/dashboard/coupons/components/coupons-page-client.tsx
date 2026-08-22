@@ -10,6 +10,7 @@ import { todayIso } from "@/lib/date";
 import { DateNav } from "@/components/date-nav";
 import { FormationHelpLink } from "@/components/formation-help-link";
 import { CouponCard } from "./coupon-card";
+import { couponClassMeta } from "@/domains/coupon/helpers/coupon-class";
 
 export function CouponsPageClient() {
   const t = useTranslations("coupons");
@@ -20,7 +21,15 @@ export function CouponsPageClient() {
   const date = searchParams.get("date") ?? todayIso();
   const { data, isLoading, isError } = useCoupons(date);
 
-  const coupons = (data ?? []).slice().sort((a, b) => a.rank - b.rank);
+  // Tri par CLASSE (du plus fréquent au plus rare), puis par rang à
+  // l'intérieur d'une classe. Le rang n'exprime plus une qualité — mesuré sur
+  // 5 passes, le rang 1 n'est pas meilleur que le rang 2 — c'est juste un
+  // ordre stable d'affichage.
+  const coupons = (data ?? []).slice().sort((a, b) => {
+    const oa = couponClassMeta(a.couponClass)?.order ?? 99;
+    const ob = couponClassMeta(b.couponClass)?.order ?? 99;
+    return oa !== ob ? oa - ob : a.rank - b.rank;
+  });
   useCouponCelebration(coupons);
 
   function navigateTo(iso: string) {
@@ -75,7 +84,6 @@ export function CouponsPageClient() {
                     key={coupon.id}
                     coupon={coupon}
                     locale={locale}
-                    isTop={coupon.rank === 1}
                   />
                 ))}
               </div>

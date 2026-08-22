@@ -59,8 +59,20 @@ const VALUE_TOPN_OPTIONS = [1, 5] as const;
 // de quoi les ajouter — CORRECT_SCORE catastrophique sur le split valid a
 // tout topN, les deux autres n'ont que 13-14 jours de données exploitables.
 export const SUBSCRIPTION_SOURCES: readonly SubscriptionSourceDef[] = [
-  { id: 'COUPON_BEST', label: 'Coupon (meilleur du jour)', kind: 'COUPON' },
-  { id: 'COUPON_ALL', label: 'Coupon (chaque coupon généré)', kind: 'COUPON' },
+  // « meilleur » retiré du libellé : mesuré sur 5 passes de régénération, le
+  // rang 1 ne fait pas mieux que les suivants. C'est le coupon de plus forte
+  // probabilité du jour, ce qui est descriptif et vrai.
+  {
+    id: 'COUPON_BEST',
+    label: 'Coupon (le plus probable du jour)',
+    kind: 'COUPON',
+  },
+  // Borné à la classe à cote courte — voir SUBSCRIPTION_COUPON_CLASS.
+  {
+    id: 'COUPON_ALL',
+    label: 'Coupons du jour (cote courte)',
+    kind: 'COUPON',
+  },
   {
     id: 'CHANNEL_VALUE',
     label: 'VALUE (Valeur)',
@@ -178,3 +190,17 @@ export function findSubscriptionSource(
 ): SubscriptionSourceDef | undefined {
   return SUBSCRIPTION_SOURCES.find((s) => s.id === id);
 }
+
+/**
+ * Classe de coupon couverte par les abonnements COUPON_ALL.
+ *
+ * Les classes (2026-08-22) ont fait passer la génération de 3 à 9 coupons par
+ * jour. Un abonnement COUPON_ALL mise pleinement sur chacun : sans borne, un
+ * abonné existant aurait vu son exposition tripler sans avoir rien demandé.
+ * On le fixe donc sur la classe à cote courte, la plus proche du produit
+ * auquel il a souscrit (cote ~1.94, ≈ 1 gagnant sur 2).
+ *
+ * `targetOddsMin` est le discriminant de classe persisté sur
+ * `coupon_proposal` — voir COUPON_CLASSES (coupon.constants.ts).
+ */
+export const SUBSCRIPTION_COUPON_CLASS = { targetOddsMin: 1.0 } as const;

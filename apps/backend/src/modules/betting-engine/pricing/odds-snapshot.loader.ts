@@ -780,4 +780,79 @@ export class OddsSnapshotLoader {
       odds,
     }));
   }
+  /**
+   * Meilleure cote disponible par (fixture, marché, pick), toutes maisons
+   * confondues, au dernier instantané antérieur au coup d'envoi.
+   *
+   * DISTINCT de `findLatestOddsSnapshotsBatch`, qui résout la maison la mieux
+   * CLASSÉE (`bookmakerRank` : Pinnacle d'abord, la plus juste) et non la
+   * mieux PAYÉE. Les deux sont nécessaires et ne servent pas à la même chose :
+   *
+   *   - la maison la plus juste donne la référence de marché — `pMarketFair`,
+   *     la marge, et la divergence modèle↔marché que `MAX_LEG_EDGE` plafonne.
+   *     La remplacer par le meilleur prix ferait mécaniquement monter tous les
+   *     edges d'environ 2% et relâcherait ce garde-fou sans qu'on le décide.
+   *   - la mieux payée donne le prix auquel on mise réellement.
+   *
+   * Ce que ça vaut, mesuré sur 65 000 lignes multi-maisons (2026-08-22),
+   * meilleure cote contre moyenne des maisons :
+   *
+   *   cote 1.20-1.50  n=15 516  +1.85%
+   *   cote 1.50-2.00  n=16 880  +2.34%
+   *   cote 2.00-2.50  n=13 496  +3.19%
+   *   cote 2.50-4.00  n=19 005  +4.07%
+   *
+   * Sur la meilleure tranche de jambes, ça fait passer le ROI de -3.06% à
+   * environ -1.27% — le plus gros levier mesuré, et le seul qui ne demande de
+   * découvrir aucun signal.
+   *
+   * Clé de la map retournée : `${fixtureId}:${market}:${pick}`.
+   */
+  async findBestPricesBatch(
+    targets: readonly { fixtureId: string; cutoff: Date }[],
+  ): Promise<Map<string, number>> {
+    if (targets.length === 0) return new Map();
+
+    const rows = await this.prisma.client.oddsSnapshot.findMany({
+      where: {
+        OR: targets.map(({ fixtureId, cutoff }) => ({
+          fixtureId,
+          snapshotAt: { lte: cutoff },
+        })),
+        odds: { not: null },
+        pick: { not: null },
+      },
+      select: {
+        fixtureId: true,
+        market: true,
+        pick: true,
+        odds: true,
+        snapshotAt: true,
+      },
+    });
+
+    // Le maximum est pris au DERNIER instantané de chaque (fixture, marché,
+    // pick) : comparer des prix relevés à des heures différentes reviendrait à
+    // choisir le meilleur moment autant que la meilleure maison, ce qui n'est
+    // pas jouable en pratique.
+    const latestAt = new Map<string, number>();
+    for (const r of rows) {
+      if (!r.pick) continue;
+      const key = `${r.fixtureId}:${r.market}:${r.pick}`;
+      const ts = r.snapshotAt.getTime();
+      const seen = latestAt.get(key);
+      if (seen === undefined || ts > seen) latestAt.set(key, ts);
+    }
+
+    const best = new Map<string, number>();
+    for (const r of rows) {
+      if (!r.pick || r.odds === null) continue;
+      const key = `${r.fixtureId}:${r.market}:${r.pick}`;
+      if (r.snapshotAt.getTime() !== latestAt.get(key)) continue;
+      const odds = Number(r.odds);
+      const current = best.get(key);
+      if (current === undefined || odds > current) best.set(key, odds);
+    }
+    return best;
+  }
 }

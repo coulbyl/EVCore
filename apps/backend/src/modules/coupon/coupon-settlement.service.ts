@@ -20,11 +20,27 @@ type MatchScores = {
   awayHtScore: number | null;
 };
 
+/**
+ * Trois issues, pas deux.
+ *
+ * `VOID` (mise remboursée) et `UNRESOLVED` (score pas encore exploitable)
+ * étaient tous deux rendus par `null`, et l'appelant traitait `null` comme
+ * « pas encore résolu ». Conséquence : une jambe DRAW_NO_BET sur un match nul
+ * — un remboursement, cas parfaitement normal — bloquait le coupon
+ * indéfiniment. Constaté en production le 2026-08-22 : des coupons affichant
+ * « Terminé » sur la jambe et jamais réglés.
+ *
+ * Un VOID doit sortir de la combinatoire exactement comme un match reporté :
+ * la jambe ne compte ni en gain ni en perte, sa cote ne gonfle pas le
+ * paiement, et le coupon se règle sur les jambes restantes.
+ */
+type LegOutcome = boolean | 'VOID' | 'UNRESOLVED';
+
 function resolveIsCorrect(
   market: Market,
   pick: string,
   scores: MatchScores,
-): boolean | null {
+): LegOutcome {
   const { homeScore, awayScore, homeHtScore, awayHtScore } = scores;
 
   let status: BetStatus;
@@ -55,7 +71,8 @@ function resolveIsCorrect(
 
   if (status === BetStatus.WON) return true;
   if (status === BetStatus.LOST) return false;
-  return null; // VOID — scores not yet available or unknown pick
+  if (status === BetStatus.VOID) return 'VOID';
+  return 'UNRESOLVED';
 }
 
 @Injectable()
@@ -138,10 +155,6 @@ export class CouponSettlementService {
         continue;
       }
 
-      if (leg.oddsSnapshot !== null) {
-        survivingOdds.push(leg.oddsSnapshot);
-      }
-
       // HT markets only need half-time scores — don't wait for full-time
       const isHtMarket =
         leg.market === Market.OVER_UNDER_HT ||
@@ -171,12 +184,29 @@ export class CouponSettlementService {
         homeHtScore: fixture.homeHtScore,
         awayHtScore: fixture.awayHtScore,
       };
-      const isCorrect = resolveIsCorrect(leg.market, leg.pick, scores);
+      const outcome = resolveIsCorrect(leg.market, leg.pick, scores);
 
-      if (isCorrect === null) {
+      if (outcome === 'UNRESOLVED') {
         allResolved = false;
         continue;
       }
+
+      // Remboursement (DRAW_NO_BET sur un nul, WIN_TO_NIL voidé, …) : même
+      // traitement qu'un match reporté — hors combinatoire, hors cote payable.
+      if (outcome === 'VOID') {
+        await this.repo.settleLeg(leg.id, null);
+        voidedLegs++;
+        continue;
+      }
+
+      // La cote n'entre dans le paiement qu'une fois la jambe réellement
+      // gradée : la pousser avant de connaître l'issue faisait compter une
+      // jambe remboursée dans `realizedOdds`.
+      if (leg.oddsSnapshot !== null) {
+        survivingOdds.push(leg.oddsSnapshot);
+      }
+
+      const isCorrect = outcome;
 
       // Always recompute (never trust a previously stored isCorrect) so a leg
       // settled from a stale in-progress score before FINISHED self-corrects

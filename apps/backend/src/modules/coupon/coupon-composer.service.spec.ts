@@ -12,8 +12,10 @@ import {
 } from './coupon-composer.service';
 import {
   COUPON_BOUNDS,
+  COUPON_CLASSES,
   COUPON_PARAMS,
   MAX_POOL_PER_COMPETITION,
+  MIN_LEG_ODDS,
 } from './coupon.constants';
 import type { Canal, ScoredPick } from './signal-window.service';
 
@@ -48,6 +50,7 @@ function makePick(overrides: {
     calibratedHitRate: overrides.calibratedHitRate,
     calibratedProbability: overrides.calibratedProbability ?? null,
     oddsSnapshot: overrides.oddsSnapshot,
+    referenceOdds: overrides.oddsSnapshot,
     legEV: overrides.legEV ?? null,
     pMarketFair: null,
     bookmakerMargin: null,
@@ -779,6 +782,24 @@ describe('clearsMaxLegEdge', () => {
   it('rejects a leg with no real odds — edge is undefined without a price', () => {
     expect(clearsMaxLegEdge(leg(0.6, null))).toBe(false);
   });
+
+  // Le point critique du passage au meilleur prix : miser plus cher ne doit
+  // pas relâcher le plafond de divergence. Même jambe, prix de mise amélioré
+  // de 2.0 à 2.6 — l'edge mesuré ne bouge pas, parce qu'il se calcule sur la
+  // cote de référence.
+  it('measures the edge on the reference odds, not on the improved stake price', () => {
+    const improved = {
+      calibratedProbability: 0.55,
+      probability: 0.55,
+      calibratedHitRate: 0.55,
+      oddsSnapshot: 2.6, // meilleur prix : 0.55 - 1/2.6 = 0.165 > MAX_LEG_EDGE
+      referenceOdds: 2.0, // référence   : 0.55 - 1/2.0 = 0.05  <= MAX_LEG_EDGE
+    };
+    expect(clearsMaxLegEdge(improved)).toBe(true);
+
+    const genuinelyDivergent = { ...improved, referenceOdds: 2.6 };
+    expect(clearsMaxLegEdge(genuinelyDivergent)).toBe(false);
+  });
 });
 
 describe('clearsMinLegOdds', () => {
@@ -795,6 +816,41 @@ describe('clearsMinLegOdds', () => {
 
   it('rejects a leg with no real odds', () => {
     expect(clearsMinLegOdds({ oddsSnapshot: null })).toBe(false);
+  });
+
+  // Ce qui différencie les classes : chacune n'admet que sa bande de cote, et
+  // les bandes sont disjointes — un même pick ne peut donc jamais apparaître
+  // dans deux classes.
+  it('confines a leg to its class band, exclusive at the upper bound', () => {
+    const safe = { minLegOdds: 1.2, maxLegOdds: 1.6 };
+    const balanced = { minLegOdds: 1.6, maxLegOdds: 2.3 };
+
+    expect(clearsMinLegOdds({ oddsSnapshot: 1.45 }, safe)).toBe(true);
+    expect(clearsMinLegOdds({ oddsSnapshot: 1.45 }, balanced)).toBe(false);
+
+    // 1.60 appartient à BALANCED, pas à SAFE — borne haute exclusive, sans
+    // quoi les bandes se chevaucheraient d'un pick.
+    expect(clearsMinLegOdds({ oddsSnapshot: 1.6 }, safe)).toBe(false);
+    expect(clearsMinLegOdds({ oddsSnapshot: 1.6 }, balanced)).toBe(true);
+  });
+});
+
+describe('COUPON_CLASSES', () => {
+  it('covers the odds range without gap or overlap', () => {
+    for (let i = 1; i < COUPON_CLASSES.length; i += 1) {
+      expect(COUPON_CLASSES[i].minLegOdds).toBe(
+        COUPON_CLASSES[i - 1].maxLegOdds,
+      );
+    }
+    expect(COUPON_CLASSES[0].minLegOdds).toBe(MIN_LEG_ODDS);
+  });
+
+  it('lands each class on a distinct persisted odds range', () => {
+    for (let i = 1; i < COUPON_CLASSES.length; i += 1) {
+      expect(COUPON_CLASSES[i].targetOddsMin).toBeGreaterThan(
+        COUPON_CLASSES[i - 1].targetOddsMax,
+      );
+    }
   });
 });
 
@@ -825,10 +881,44 @@ describe('CouponComposerService.compose — cible de cote par classe', () => {
     expect(coupon.combinedOdds).toBeGreaterThanOrEqual(3.0);
   });
 
-  it('never exceeds maxLegs even when the target is out of reach', () => {
-    const coupons = service.compose(legs, { targetCombinedOdds: 50 });
-    for (const c of coupons) {
-      expect(c.legs.length).toBeLessThanOrEqual(COUPON_BOUNDS.maxLegs);
-    }
+  it('publishes nothing rather than a coupon below its target', () => {
+    // 1.5^3 = 3.375 < 50 : aucune construction ne peut atteindre la cible.
+    // Publier quand même était le bug du 2026-08-22 — 60% des coupons de la
+    // classe à cote courte sortaient sous 2.0, jusqu'à 1.44.
+    expect(service.compose(legs, { targetCombinedOdds: 50 })).toHaveLength(0);
+  });
+
+  it('reaches the target from deeper in the pool when the top legs cannot', () => {
+    // Deux jambes très courtes en tête (produit 1.32 < 2.0) et des jambes plus
+    // longues derrière : le glouton doit repartir plus bas dans le vivier
+    // plutôt que publier sous la cible.
+    const short = ['s1', 's2'].map((id, i) =>
+      makeEdgePick({
+        fixtureId: id,
+        canal: 'SAFE',
+        market: `SHORT_${id}`,
+        oddsSnapshot: 1.15,
+        signalScore: 0.99 - i * 0.01,
+        competition: `Short ${id}`,
+      }),
+    );
+    const longer = ['l1', 'l2'].map((id, i) =>
+      makeEdgePick({
+        fixtureId: id,
+        canal: 'DOMINANT',
+        market: `LONG_${id}`,
+        oddsSnapshot: 1.6,
+        signalScore: 0.5 - i * 0.01,
+        competition: `Long ${id}`,
+      }),
+    );
+
+    const [coupon] = service.compose([...short, ...longer], {
+      targetCombinedOdds: 2.0,
+      bounds: { ...COUPON_BOUNDS, maxLegs: 2 },
+    });
+
+    expect(coupon).toBeDefined();
+    expect(coupon.combinedOdds).toBeGreaterThanOrEqual(2.0);
   });
 });

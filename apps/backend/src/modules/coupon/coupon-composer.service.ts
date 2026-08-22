@@ -213,10 +213,17 @@ export function clearsValueEdgeFloor(
 // wrong (ratio 0.694 above 0.10, 0.954 below).
 // Plancher de cote — voir MIN_LEG_ODDS. Contrainte produit (un coupon bâti sur
 // des jambes à 1.04 n'en est pas un), sans coût mesuré en ROI.
-export function clearsMinLegOdds(leg: {
-  oddsSnapshot: number | null;
-}): boolean {
-  return leg.oddsSnapshot !== null && leg.oddsSnapshot >= MIN_LEG_ODDS;
+export function clearsMinLegOdds(
+  leg: { oddsSnapshot: number | null },
+  band: { minLegOdds: number; maxLegOdds: number } = {
+    minLegOdds: MIN_LEG_ODDS,
+    maxLegOdds: Number.POSITIVE_INFINITY,
+  },
+): boolean {
+  if (leg.oddsSnapshot === null) return false;
+  return (
+    leg.oddsSnapshot >= band.minLegOdds && leg.oddsSnapshot < band.maxLegOdds
+  );
 }
 
 export function clearsMaxLegEdge(leg: {
@@ -224,9 +231,16 @@ export function clearsMaxLegEdge(leg: {
   probability: number;
   calibratedHitRate: number;
   oddsSnapshot: number | null;
+  referenceOdds?: number | null;
 }): boolean {
-  if (leg.oddsSnapshot === null || leg.oddsSnapshot <= 1) return false;
-  return legProbability(leg) - 1 / leg.oddsSnapshot <= MAX_LEG_EDGE;
+  // Mesuré sur la cote de RÉFÉRENCE (maison la mieux classée), jamais sur le
+  // prix de mise. Depuis qu'on mise au meilleur prix toutes maisons
+  // confondues (findBestPricesBatch), utiliser `oddsSnapshot` ferait monter
+  // tous les edges d'environ 2% et relâcherait ce plafond sans décision — on
+  // relâcherait un garde-fou en croyant améliorer un prix.
+  const reference = leg.referenceOdds ?? leg.oddsSnapshot;
+  if (reference === null || reference <= 1) return false;
+  return legProbability(leg) - 1 / reference <= MAX_LEG_EDGE;
 }
 
 // Shared anti-correlation bookkeeping — used identically by composeExhaustive
@@ -363,20 +377,33 @@ export class CouponComposerService {
 
   compose(
     scoredPicks: ScoredPick[],
-    opts: { bounds?: CouponBounds; targetCombinedOdds?: number } = {},
+    opts: {
+      bounds?: CouponBounds;
+      targetCombinedOdds?: number;
+      /**
+       * Bande de cote des jambes admises. Ce qui différencie les classes —
+       * elles sont disjointes, donc un même pick n'apparaît jamais dans deux
+       * classes. Par défaut : le plancher global, sans plafond.
+       */
+      legOddsBand?: { minLegOdds: number; maxLegOdds: number };
+      /** Plafond de jambes propre à la classe (défaut `bounds.maxLegs`). */
+      maxLegs?: number;
+    } = {},
   ): ComposedCoupon[] {
-    const bounds = opts.bounds ?? COUPON_BOUNDS;
+    const bounds = { ...(opts.bounds ?? COUPON_BOUNDS) };
+    if (opts.maxLegs !== undefined) bounds.maxLegs = opts.maxLegs;
     // Règle d'ARRÊT : on cesse d'ajouter des jambes dès que la cible est
-    // atteinte. Sans cible, on remplit jusqu'à `maxLegs` (comportement
-    // historique, conservé pour les tests unitaires).
-    const target = opts.targetCombinedOdds ?? Infinity;
+    // atteinte, ET le coupon n'est publié que s'il l'atteint. `undefined` =
+    // pas de cible : on remplit jusqu'à `maxLegs` et on publie (comportement
+    // historique, conservé pour les tests unitaires et les appels sans classe).
+    const target = opts.targetCombinedOdds;
     // EVCore est value-driven : un coupon ne se construit que sur des jambes à
     // cote RÉELLE (B2 — plus de FALLBACK_ODDS). Une jambe sans cote n'a pas d'EV.
     const pricedPicks = scoredPicks
       .filter((p) => p.oddsSnapshot !== null)
       .filter((p) => clearsValueEdgeFloor(p))
       .filter((p) => clearsMaxLegEdge(p))
-      .filter((p) => clearsMinLegOdds(p));
+      .filter((p) => clearsMinLegOdds(p, opts.legOddsBand));
 
     const distinctFixtures = new Set(pricedPicks.map((p) => p.fixtureId));
     if (distinctFixtures.size < MIN_DISTINCT_FIXTURES) return [];
@@ -410,11 +437,54 @@ export class CouponComposerService {
     const coupons: ComposedCoupon[] = [];
 
     for (let rank = 1; rank <= COUPON_PARAMS.maxCoupons; rank += 1) {
+      const built = this.buildOne({ pool, bounds, target, usedFixtures });
+      if (!built) break;
+
+      for (const leg of built.legs) usedFixtures.add(leg.fixtureId);
+      coupons.push({
+        ...this.buildCoupon(built.legs, this.computeCombinedOdds(built.legs)),
+        rank,
+      });
+    }
+
+    return coupons;
+  }
+
+  /**
+   * Un coupon glouton qui ATTEINT la cible de cote, ou rien.
+   *
+   * Le glouton part des plus fortes probabilités, donc des cotes les plus
+   * courtes : ses premières jambes peuvent très bien multiplier sous la cible
+   * sans qu'aucune jambe restante ne puisse rattraper. Une version antérieure
+   * publiait alors le coupon tel quel — mesuré le 2026-08-22 : 60% des
+   * coupons de la classe à cote courte sortaient sous 2.0, jusqu'à 1.44.
+   *
+   * On balaie donc les points de départ dans le vivier (déjà trié par
+   * probabilité décroissante) et on retient la PREMIÈRE construction qui
+   * franchit la cible — donc celle de plus forte probabilité parmi les
+   * valides. Si aucune ne la franchit, on ne publie rien pour ce rang : mieux
+   * vaut deux coupons honnêtes que trois dont un hors cible.
+   *
+   * Balayage linéaire sur la taille du vivier, pas combinatoire : on ne
+   * réintroduit pas la recherche exhaustive retirée le 2026-08-22, qui
+   * choisissait le maximum de centaines de candidats et créait le winner's
+   * curse qu'on passe la journée à corriger.
+   */
+  private buildOne(ctx: {
+    pool: ScoredPick[];
+    bounds: CouponBounds;
+    target: number | undefined;
+    usedFixtures: ReadonlySet<string>;
+  }): { legs: ScoredPick[] } | null {
+    const { pool, bounds, target, usedFixtures } = ctx;
+
+    for (let offset = 0; offset < pool.length; offset += 1) {
       const legs: ScoredPick[] = [];
       const state = createAntiCorrelationState(legs);
       let combinedOdds = 1;
 
-      for (const candidate of pool) {
+      for (let i = offset; i < pool.length; i += 1) {
+        const candidate = pool[i];
         if (legs.length >= bounds.maxLegs) break;
         if (usedFixtures.has(candidate.fixtureId)) continue;
         if (violatesAntiCorrelation(legs, candidate, { state, bounds })) {
@@ -426,22 +496,26 @@ export class CouponComposerService {
         legs.push(candidate);
         recordAntiCorrelation(state, candidate);
         combinedOdds = nextOdds;
-        if (combinedOdds >= target && legs.length >= bounds.minLegs) break;
+        if (
+          target !== undefined &&
+          combinedOdds >= target &&
+          legs.length >= bounds.minLegs
+        ) {
+          break;
+        }
       }
 
-      if (legs.length < bounds.minLegs) break;
+      if (legs.length < bounds.minLegs) continue;
       if (new Set(legs.map((l) => l.fixtureId)).size < MIN_DISTINCT_FIXTURES) {
-        break;
+        continue;
       }
+      if (target !== undefined && combinedOdds < target) continue;
+      if (combinedOdds < bounds.minCombinedOdds) continue;
 
-      const coupon = this.buildCoupon(legs, this.computeCombinedOdds(legs));
-      if (coupon.combinedOdds < bounds.minCombinedOdds) break;
-
-      for (const leg of legs) usedFixtures.add(leg.fixtureId);
-      coupons.push({ ...coupon, rank });
+      return { legs };
     }
 
-    return coupons;
+    return null;
   }
 
   private computeCombinedOdds(legs: ScoredPick[]): number {

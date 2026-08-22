@@ -189,6 +189,13 @@ export type ScoredPick = {
   homeHtScore: number | null;
   awayHtScore: number | null;
   /** ID du bet MODEL existant (SAFE/EV uniquement). */
+  /**
+   * Cote de RÉFÉRENCE : celle de la maison la mieux classée (`bookmakerRank`,
+   * Pinnacle d'abord). Sert à mesurer la divergence modèle↔marché
+   * (`clearsMaxLegEdge`), jamais à miser. `oddsSnapshot` porte le prix de
+   * mise, qui est le meilleur disponible et donc toujours >= celle-ci.
+   */
+  referenceOdds: number | null;
   /** Provenance: the `channel_selection` row this leg came from (`null`
    * for evaluatedPicks legs, which no channel selected). */
   channelSelectionId: string | null;
@@ -669,11 +676,16 @@ export class SignalWindowService {
     // One batched query for every fixture's odds instead of one per fixture
     // (findLatestOddsSnapshot alone runs ~34 sequential Prisma calls each) —
     // condition of viability once the pool spans more than a single day.
-    const oddsSnapshots = await this.oddsLoader.findLatestOddsSnapshotsBatch(
-      fixtures
-        .filter((f) => f.modelRuns[0])
-        .map((f) => ({ fixtureId: f.id, cutoff: f.scheduledAt })),
-    );
+    const oddsTargets = fixtures
+      .filter((f) => f.modelRuns[0])
+      .map((f) => ({ fixtureId: f.id, cutoff: f.scheduledAt }));
+    const [oddsSnapshots, bestPrices] = await Promise.all([
+      this.oddsLoader.findLatestOddsSnapshotsBatch(oddsTargets),
+      // Prix de MISE — la meilleure cote toutes maisons confondues, distincte
+      // de la cote de RÉFÉRENCE ci-dessus (maison la plus juste). Voir
+      // findBestPricesBatch pour pourquoi les deux doivent coexister.
+      this.oddsLoader.findBestPricesBatch(oddsTargets),
+    ]);
 
     const picks: ScoredPick[] = [];
 
@@ -826,6 +838,11 @@ export class SignalWindowService {
           const fair = snapshot
             ? computeMarketFair(market, pick, snapshot)
             : null;
+          // On mise au meilleur prix disponible, on mesure la divergence sur
+          // la cote de référence — cf. findBestPricesBatch.
+          const bestOdds = bestPrices.get(`${f.id}:${market}:${pick}`);
+          const stakeOdds =
+            bestOdds !== undefined && bestOdds > legOdds ? bestOdds : legOdds;
 
           picks.push({
             ...base,
@@ -835,7 +852,8 @@ export class SignalWindowService {
             probability,
             calibratedHitRate: 0, // set in CouponComposerService.scorePicks()
             calibratedProbability: null, // set in CouponComposerService.scorePicks()
-            oddsSnapshot: legOdds,
+            oddsSnapshot: stakeOdds,
+            referenceOdds: legOdds,
             pMarketFair: fair?.pMarketFair ?? null,
             bookmakerMargin: fair?.bookmakerMargin ?? null,
             // A faded leg is a synthetic pick the model never actually
@@ -886,6 +904,10 @@ export class SignalWindowService {
               calibratedHitRate: 0,
               calibratedProbability: null,
               oddsSnapshot: legOdds,
+              // Chemin evaluatedPicks : la cote vient du diagnostic du
+              // ModelRun, pas d'une sélection de canal — pas de meilleur prix
+              // à substituer, la référence est donc la même.
+              referenceOdds: legOdds,
               legEV: calculateEV(probability, legOdds).toNumber(),
               pMarketFair: fair?.pMarketFair ?? null,
               bookmakerMargin: fair?.bookmakerMargin ?? null,
@@ -1054,6 +1076,9 @@ export class SignalWindowService {
           calibratedHitRate,
           calibratedProbability: null,
           oddsSnapshot: odds,
+          // Pool virtuel (observation seule, jamais staké) : pas de
+          // substitution de prix, référence = cote observée.
+          referenceOdds: odds,
           isCorrect: resolveVirtualPickCorrect({
             market: evaluated.market,
             pick: evaluated.pick,

@@ -112,10 +112,10 @@ export class CouponService {
 
     const scoredPicks = this.composer.scorePicks(rawPicks, window);
 
-    // Une passe par classe. Les classes partagent le même vivier et peuvent
-    // donc proposer le même match : c'est voulu, un utilisateur n'en joue
-    // qu'une. La disjonction stricte n'a de sens qu'À L'INTÉRIEUR d'une
-    // classe, où les coupons sont proposés ensemble.
+    // Une passe par classe. Les bandes de cote de jambe étant disjointes
+    // (voir COUPON_CLASSES), un même pick ne peut jamais apparaître dans deux
+    // classes : chacune est un produit distinct, pas une variante de mise en
+    // forme du même coupon.
     let total = 0;
     for (const couponClass of COUPON_CLASSES) {
       total += await this.generateForClass({
@@ -139,6 +139,11 @@ export class CouponService {
     const { date, couponClass, scoredPicks } = args;
     const coupons = this.composer.compose(scoredPicks, {
       targetCombinedOdds: couponClass.targetCombinedOdds,
+      legOddsBand: {
+        minLegOdds: couponClass.minLegOdds,
+        maxLegOdds: couponClass.maxLegOdds,
+      },
+      maxLegs: couponClass.maxLegs,
     });
 
     for (const coupon of coupons) {

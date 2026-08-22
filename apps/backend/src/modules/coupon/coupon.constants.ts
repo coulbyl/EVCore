@@ -518,29 +518,83 @@ export type CouponClassName = 'SAFE' | 'BALANCED' | 'BOLD';
 
 export type CouponClass = {
   name: CouponClassName;
+  /** Bande de cote des jambes admises — bornes disjointes entre classes. */
+  minLegOdds: number;
+  maxLegOdds: number;
+  maxLegs: number;
+  /** Cote combinée à partir de laquelle on cesse d'ajouter des jambes. */
   targetCombinedOdds: number;
+  /** Écrits tels quels dans `coupon_proposal` — clé unique, pas de migration. */
   targetOddsMin: number;
   targetOddsMax: number;
 };
 
+/**
+ * Les trois classes de coupon.
+ *
+ * Elles se différencient par la BANDE DE COTE DES JAMBES, pas par une cible de
+ * cote combinée. Une première version ne variait que la cible (2.0 / 2.5 /
+ * 3.0) : les trois classes puisaient dans le même vivier, atteignaient leur
+ * cible avec les mêmes jambes, et livraient le même produit — mesuré en
+ * production le 2026-08-22, cotes 2.54 / 2.80 / 2.85 et ROI −3.2% / −3.8% /
+ * −3.3%. Avec `maxLegs = 3` et des jambes autour de 1.44, la plage atteignable
+ * va de 1.44² = 2.07 à 1.44³ = 2.99 : les trois cibles tombaient dedans.
+ *
+ * Découper par bande de cote de jambe règle les deux problèmes d'un coup :
+ * les produits deviennent réellement distincts, et les classes ne se disputent
+ * plus les mêmes jambes — les bandes étant disjointes, un même pick ne peut
+ * jamais apparaître dans deux classes.
+ *
+ * Simulé sur ~1 000 jours :
+ *
+ *   classe    jambes     jours  coupons   cote   legs   hit      ROI
+ *   SAFE      1.20-1.60   668    1 392    2.00   2.00  0.479  -6.16% ± 2.67
+ *   BALANCED  1.60-2.30   939    2 213    5.51   2.83  0.173  -8.84% ± 4.37
+ *   BOLD      2.30+       807    1 763   17.67   2.71  0.074 +11.34% ± 10.35
+ *
+ * ⚠️ Les bandes sont choisies sur des critères PRODUIT (couverture en jours,
+ * séparation des cotes, SAFE à exactement 2 jambes), PAS sur ces ROI. Un
+ * découpage alternatif (1.20-1.50 / 1.50-2.00 / 2.00+) inverse le classement
+ * — SAFE -3.74%, BOLD -7.59% — et les écarts entre les deux découpages sont
+ * tous dans le bruit. Le +11.34% de BOLD porte une SE de 10.35 (t = 1.1) : ce
+ * n'est pas un résultat, c'est une cellule parmi six testées.
+ *
+ * Ce qui EST robuste d'un découpage à l'autre, c'est la différenciation :
+ * cote 2.0-2.2 / 4.5-5.5 / 11-17.7 et taux de réussite 45-48% / 17-20% /
+ * 7-9%. C'est ça qu'on livre ; le ROI reste indistinguable de zéro partout.
+ */
 export const COUPON_CLASSES: readonly CouponClass[] = [
   {
     name: 'SAFE',
+    minLegOdds: 1.2,
+    maxLegOdds: 1.6,
+    // 3 et non 2 : à deux jambes bornées à 1.60, la cote combinée plafonne à
+    // 2.56 et TOMBE à 1.44 dès que les deux meilleures jambes sont courtes.
+    // Mesuré le 2026-08-22 avec maxLegs=2 : 60% des coupons de cette classe
+    // sortaient sous 2.0. La troisième jambe est ce qui rend la cible
+    // atteignable, pas un choix esthétique.
+    maxLegs: 3,
     targetCombinedOdds: 2.0,
-    targetOddsMin: 2.0,
-    targetOddsMax: 2.49,
-  },
-  {
-    name: 'BALANCED',
-    targetCombinedOdds: 2.5,
-    targetOddsMin: 2.5,
+    targetOddsMin: 1.0,
     targetOddsMax: 2.99,
   },
   {
-    name: 'BOLD',
-    targetCombinedOdds: 3.0,
+    name: 'BALANCED',
+    minLegOdds: 1.6,
+    maxLegOdds: 2.3,
+    maxLegs: 3,
+    targetCombinedOdds: 4.0,
     targetOddsMin: 3.0,
-    targetOddsMax: 20.0,
+    targetOddsMax: 9.99,
+  },
+  {
+    name: 'BOLD',
+    minLegOdds: 2.3,
+    maxLegOdds: 99.0,
+    maxLegs: 3,
+    targetCombinedOdds: 10.0,
+    targetOddsMin: 10.0,
+    targetOddsMax: 999.0,
   },
 ] as const;
 
