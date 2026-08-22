@@ -297,7 +297,9 @@ export class SubscriptionsRepository {
         subscriptionId: true,
         stake: true,
         odds: true,
-        subscription: { select: { userId: true, sourceLabel: true } },
+        subscription: {
+          select: { userId: true, sourceType: true, sourceLabel: true },
+        },
         couponProposal: { select: { result: true } },
         channelSelection: { select: { result: true } },
       },

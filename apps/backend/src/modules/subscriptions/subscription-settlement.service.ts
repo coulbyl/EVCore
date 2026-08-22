@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { BetStatus, CouponResult, NotificationType } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { createLogger } from '@utils/logger';
+import { subscriptionSourceLabel } from './subscription.constants';
 import { SubscriptionsRepository } from './subscriptions.repository';
 import { SubscriptionNotifierService } from './subscription-notifier.service';
 
@@ -9,6 +10,7 @@ const logger = createLogger('subscription-settlement');
 
 type SettlementTally = {
   userId: string;
+  sourceType: string;
   sourceLabel: string;
   won: number;
   lost: number;
@@ -95,6 +97,7 @@ export class SubscriptionSettlementService {
 
       const tally = tallies.get(event.subscriptionId) ?? {
         userId: event.subscription.userId,
+        sourceType: event.subscription.sourceType,
         sourceLabel: event.subscription.sourceLabel,
         won: 0,
         lost: 0,
@@ -113,7 +116,10 @@ export class SubscriptionSettlementService {
         this.notifier.notify({
           userId: tally.userId,
           type: NotificationType.SUBSCRIPTION_SETTLED,
-          title: `Abonnement — ${tally.sourceLabel}`,
+          title: `Abonnement — ${subscriptionSourceLabel(
+            tally.sourceType,
+            tally.sourceLabel,
+          )}`,
           body: tallyMessage(tally),
           url: `/dashboard/subscriptions/${subscriptionId}`,
           payload: {

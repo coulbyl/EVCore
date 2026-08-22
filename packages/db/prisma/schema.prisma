@@ -253,14 +253,15 @@ enum SubscriptionStatus {
 // Uniquement pertinent quand sourceType est un CHANNEL_* (ignoré/null pour
 // COUPON_BEST/COUPON_ALL, validé côté API — voir DESIGN.md).
 enum SubscriptionChannelPickMode {
-  INVESTIR // pick(s) classé(s)/calibré(s) (MODE_RANKING), comme la page Investir
+  INVESTIR // pick(s) classé(s) par probabilité calibrée, comme la page Investir
   // Les deux variantes DECISIONS_* restent volontairement sans classement
   // (pas de proba/edge/calibration) — seul l'axe chronologique change. Un
   // backtest day-by-day (db:backtest:decisions-ranking, 2026-07-29) montre
-  // que "derniers du jour" bat ou égale "premiers du jour" sur les 6 canaux
-  // CHANNEL_* (ex. TEAM_TOTAL top3 : -13.00% -> +21.15%, BTTS top3 : -3.28%
-  // -> +1.39%) sans qu'aucune des deux ne domine partout à tous les topN —
-  // laissé au choix de l'utilisateur plutôt que tranché unilatéralement.
+  // que "derniers du jour" bat ou égale "premiers du jour" sur les canaux
+  // testés, sans qu'aucune des deux ne domine partout — laissé au choix de
+  // l'utilisateur plutôt que tranché unilatéralement. ⚠️ Les chiffres de ce
+  // backtest portaient sur des topN par canal supprimés depuis (audit
+  // 2026-08-22) ; seule la comparaison premiers/derniers reste valable.
   DECISIONS_FIRST // match(s) le(s) plus tôt du jour par heure de coup d'envoi
   DECISIONS_LAST // match(s) le(s) plus tard du jour par heure de coup d'envoi
 
@@ -976,9 +977,15 @@ model Subscription {
   userId          String                       @db.Uuid
   user            User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
   sourceType      SubscriptionSourceType
-  // Dénormalisé au moment de la création — si le catalogue change de libellé
-  // plus tard, l'historique affiché reste celui vu par l'utilisateur au moment
-  // de l'abonnement, pas une réécriture rétroactive.
+  // Instantané du libellé au moment de la création. TRACE D'AUDIT UNIQUEMENT :
+  // ne jamais s'en servir pour afficher quoi que ce soit — utiliser
+  // subscriptionSourceLabel(sourceType), qui rend le libellé courant.
+  //
+  // Le figeage était volontaire (préserver ce que l'utilisateur avait vu) et
+  // s'est retourné contre nous le 2026-08-22 : deux libellés du catalogue
+  // étaient factuellement faux, et les figer revenait à continuer de les
+  // affirmer indéfiniment dans les notifications des abonnés existants. Un
+  // instantané peut préserver une formulation, pas perpétuer une erreur.
   sourceLabel     String
   // Obligatoire si sourceType est un CHANNEL_*, doit être null pour
   // COUPON_BEST/COUPON_ALL (validé côté API, pas de contrainte DB — Prisma ne

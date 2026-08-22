@@ -64,7 +64,6 @@ export type SubscriptionCatalog = {
 export type Subscription = {
   id: string;
   sourceType: SubscriptionSourceType;
-  sourceLabel: string;
   channelPickMode: SubscriptionChannelPickMode | null;
   topN: number | null;
   stakePerEvent: string;

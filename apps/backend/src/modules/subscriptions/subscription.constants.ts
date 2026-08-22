@@ -231,6 +231,32 @@ export function findSubscriptionSource(
 }
 
 /**
+ * Libellé COURANT d'une source, dérivé de son `sourceType`.
+ *
+ * À utiliser partout où un libellé s'affiche — jamais la colonne
+ * `subscription.sourceLabel`, qui est un instantané figé à la création.
+ *
+ * Le figeage était volontaire (« l'historique reste celui vu par
+ * l'utilisateur au moment de l'abonnement »), et c'est défendable pour un
+ * simple renommage. Ça s'est retourné contre nous le 2026-08-22 : deux
+ * libellés étaient factuellement FAUX — « Coupon (meilleur du jour) » alors
+ * que le rang 1 ne fait pas mieux que les suivants, et « chaque coupon
+ * généré » alors que l'abonnement est borné à la classe à cote courte. Les
+ * figer revenait à continuer d'affirmer indéfiniment, dans les notifications
+ * des abonnés existants, ce qu'on venait de retirer du produit parce que
+ * c'était inexact.
+ *
+ * Un instantané peut préserver une formulation ; il ne doit pas perpétuer une
+ * erreur. L'identité d'un abonnement est son `sourceType`, pas une phrase.
+ */
+export function subscriptionSourceLabel(
+  sourceType: string,
+  fallback: string,
+): string {
+  return findSubscriptionSource(sourceType)?.label ?? fallback;
+}
+
+/**
  * Classe de coupon couverte par les abonnements COUPON_ALL.
  *
  * Les classes (2026-08-22) ont fait passer la génération de 3 à 9 coupons par

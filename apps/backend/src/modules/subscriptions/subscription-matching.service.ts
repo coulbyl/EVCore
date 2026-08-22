@@ -4,7 +4,10 @@ import Decimal from 'decimal.js';
 import { createLogger } from '@utils/logger';
 import { InvestmentService } from '@modules/investment/investment.service';
 import { ChannelDecisionService } from '@modules/betting-engine/channel-decision.service';
-import { findSubscriptionSource } from './subscription.constants';
+import {
+  findSubscriptionSource,
+  subscriptionSourceLabel,
+} from './subscription.constants';
 import { SubscriptionsRepository } from './subscriptions.repository';
 import { SubscriptionNotifierService } from './subscription-notifier.service';
 
@@ -147,7 +150,10 @@ export class SubscriptionMatchingService {
       await this.notifier.notify({
         userId: subscription.userId,
         type: NotificationType.SUBSCRIPTION_EVENTS_ADDED,
-        title: `Abonnement — ${subscription.sourceLabel}`,
+        title: `Abonnement — ${subscriptionSourceLabel(
+          subscription.sourceType,
+          subscription.sourceLabel,
+        )}`,
         body:
           created > 1
             ? `${created} nouveaux événements ajoutés`

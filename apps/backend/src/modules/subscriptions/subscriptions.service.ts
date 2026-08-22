@@ -38,7 +38,6 @@ function startOfTodayUtc(): Date {
 function serializeSubscription(sub: {
   id: string;
   sourceType: string;
-  sourceLabel: string;
   channelPickMode: string | null;
   topN: number | null;
   stakePerEvent: Decimal;
@@ -58,7 +57,6 @@ function serializeSubscription(sub: {
   return {
     id: sub.id,
     sourceType: sub.sourceType,
-    sourceLabel: sub.sourceLabel,
     channelPickMode: sub.channelPickMode,
     topN: sub.topN,
     stakePerEvent: sub.stakePerEvent.toFixed(2),
