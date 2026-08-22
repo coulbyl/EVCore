@@ -17,14 +17,14 @@ Une fiche EVCore n'est pas un tip isolé. C'est la sortie d'un calcul, et chaque
 
 Chaque pick appartient à un canal, affiché en badge. Le canal indique quelle question le moteur a posée au match, pas seulement quelle réponse il a trouvée :
 
-| Famille de canaux                 | Ce qu'ils cherchent                                                                      |
-| --------------------------------- | ---------------------------------------------------------------------------------------- |
-| **Issue du match**                | Qui gagne, ou le nul : victoire affirmée, double chance, remboursé si nul, gagne sans encaisser |
-| **Buts**                          | Plus ou moins de buts, les deux équipes marquent, buts d'une seule équipe, cage inviolée  |
-| **Mi-temps**                      | Les mêmes questions sur la première période seule, plus le couple mi-temps / fin de match |
-| **Composites**                    | Deux conditions à la fois — issue et total de buts, issue et « les deux marquent »        |
-| **Filtres** (Valeur, Sécurité)    | Ne cherchent rien eux-mêmes : ils re-sélectionnent parmi les décisions ci-dessus          |
-| **Garde-fous** (Attention, Consensus) | N'émettent pas de pick : ils qualifient ou écartent une décision                      |
+| Famille de canaux                     | Ce qu'ils cherchent                                                                             |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Issue du match**                    | Qui gagne, ou le nul : victoire affirmée, double chance, remboursé si nul, gagne sans encaisser |
+| **Buts**                              | Plus ou moins de buts, les deux équipes marquent, buts d'une seule équipe, cage inviolée        |
+| **Mi-temps**                          | Les mêmes questions sur la première période seule, plus le couple mi-temps / fin de match       |
+| **Composites**                        | Deux conditions à la fois — issue et total de buts, issue et « les deux marquent »              |
+| **Filtres** (Valeur, Sécurité)        | Ne cherchent rien eux-mêmes : ils re-sélectionnent parmi les décisions ci-dessus                |
+| **Garde-fous** (Attention, Consensus) | N'émettent pas de pick : ils qualifient ou écartent une décision                                |
 
 Dix-neuf canaux produisent une décision, répartis dans ces familles. **Deux seulement sont assumés à ce jour** — ceux dont l'avantage résiste au bruit d'échantillonnage. Les autres sont calculés, réglés, affichés, et rangés en observation.
 

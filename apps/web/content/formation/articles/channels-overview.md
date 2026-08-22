@@ -48,7 +48,7 @@ Ce qui reste après cette correction est ce sur quoi on s'appuie. Aujourd'hui, d
 
 ## Ce que nous avons cru, et qui était faux
 
-Cette formation a longtemps répété une idée : *le classement compte plus que le canal*. L'argument semblait solide — un canal perdant dans son ensemble redevenait rentable si on ne gardait que ses 5 meilleurs picks du jour.
+Cette formation a longtemps répété une idée : _le classement compte plus que le canal_. L'argument semblait solide — un canal perdant dans son ensemble redevenait rentable si on ne gardait que ses 5 meilleurs picks du jour.
 
 Cinq de ces règles de classement ont été testées correctement en août 2026, en comparant le top-5 à la liste entière **le même jour** plutôt que sur des périodes différentes. **Aucune n'est ressortie significative.** Les deux qui s'approchaient le plus du seuil étaient négatives : sur DRAW, le meilleur canal du système, le plafond coûtait plusieurs points par jour.
 

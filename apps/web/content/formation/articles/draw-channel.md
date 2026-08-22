@@ -6,7 +6,8 @@ order: 5
 slug: draw-channel
 summary: "DRAW est le canal le mieux calibré d'EVCore : il annonce à peu près ce qu'il réalise. Il y arrive par un chemin inattendu — en ne modélisant rien du tout."
 updatedAt: "2026-08-22"
-related: ["channels-overview", "cotes-probabilites-implicites", "dominant-channel"]
+related:
+  ["channels-overview", "cotes-probabilites-implicites", "dominant-channel"]
 ---
 
 ## Ce que le canal cherche

@@ -27,7 +27,7 @@ Deux raisons se combinent.
 
 **L'échantillon.** GOALS produit plus de sélections réglées que n'importe quel autre canal — un ordre de grandeur au-dessus de la plupart. Un chiffre mesuré sur un tel volume bouge peu, parce qu'il n'y a presque plus de hasard dedans.
 
-**L'absence de sélection.** Les chiffres positifs des autres pages avaient été retenus *parce qu'ils étaient positifs* — sur la période et la formule où ils l'étaient. Un chiffre choisi pour sa valeur revient toujours vers la moyenne quand on le remesure. Un chiffre qu'on n'avait aucune envie de mettre en avant, personne ne l'a optimisé : il n'a nulle part où revenir.
+**L'absence de sélection.** Les chiffres positifs des autres pages avaient été retenus _parce qu'ils étaient positifs_ — sur la période et la formule où ils l'étaient. Un chiffre choisi pour sa valeur revient toujours vers la moyenne quand on le remesure. Un chiffre qu'on n'avait aucune envie de mettre en avant, personne ne l'a optimisé : il n'a nulle part où revenir.
 
 Autrement dit : méfiez-vous d'un bon résultat, il a souvent été choisi. Un mauvais résultat, personne ne l'a cherché.
 

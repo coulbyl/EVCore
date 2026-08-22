@@ -39,7 +39,11 @@ export type CouponCardProps = {
    * cote de 12 sans « 1 gagnant sur 11 » à côté se lit comme « la même chose
    * en mieux », ce que la mesure contredit.
    */
-  couponClass?: { label: string; frequency: string; badgeVariant: string } | null;
+  couponClass?: {
+    label: string;
+    frequency: string;
+    badgeVariant: string;
+  } | null;
   combinedOdds: number;
   jointProbability: number;
   signalScore: number;
@@ -80,12 +84,7 @@ export function CouponCard({
         : "text-muted-foreground";
 
   return (
-    <Card
-      className={cn(
-        "gap-3 rounded-2xl py-3",
-        "border-border/70",
-      )}
-    >
+    <Card className={cn("gap-3 rounded-2xl py-3", "border-border/70")}>
       <CardHeader className="px-4">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">

@@ -547,12 +547,12 @@ TODO.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
 
 - [ ] **VALUE réduit à ses picks propres** — les 8% de sélections qui ne sont
       pas des doublons de Phase 1 font +14.1% (n=173, t≈1.4). C'est la seule
-      piste du système où une couche de sélection *ajoute*. **À valider au
+      piste du système où une couche de sélection _ajoute_. **À valider au
       niveau jambe avant de shipper** ; SAFE n'a pas cette excuse (29 picks
       propres, −19.7%).
 - [ ] **Mouvement des cotes** — 16 615 matchs suivis sur ~15h en moyenne,
       jamais exploités. Seule piste de découverte que l'audit laisse ouverte,
-      et la seule entrée *causale* plutôt qu'un historique découpé.
+      et la seule entrée _causale_ plutôt qu'un historique découpé.
 
 Migration Prisma : `20260822120000_add_double_chance_subscription_source`.
 

@@ -244,13 +244,13 @@ Un seul plafond sur cinq semble améliorer les choses. Mais la comparaison
 ci-dessus mélange des jours différents ; le test correct est **apparié**, top-N
 contre liste entière **le même jour** :
 
-| canal | écart par jour | SE | **t** | jours |
-| --- | --- | --- | --- | --- |
-| VALUE | +2.93% | 3.67 | **+0.80** | 101 |
-| TEAM_TOTAL | +6.91% | 9.89 | +0.70 | 31 |
-| DOMINANT | −0.76% | 1.52 | −0.50 | 333 |
-| SAFE | −6.19% | 5.16 | −1.20 | 17 |
-| DRAW | −4.38% | 2.52 | **−1.74** | 403 |
+| canal      | écart par jour | SE   | **t**     | jours |
+| ---------- | -------------- | ---- | --------- | ----- |
+| VALUE      | +2.93%         | 3.67 | **+0.80** | 101   |
+| TEAM_TOTAL | +6.91%         | 9.89 | +0.70     | 31    |
+| DOMINANT   | −0.76%         | 1.52 | −0.50     | 333   |
+| SAFE       | −6.19%         | 5.16 | −1.20     | 17    |
+| DRAW       | −4.38%         | 2.52 | **−1.74** | 403   |
 
 **Aucun plafond n'est significatif, dans aucun sens.** Et les deux qui
 s'approchent le plus du seuil sont **négatifs**. Le meilleur positif est à
@@ -377,7 +377,7 @@ canal du système.
 **Ne pas garder « celui qui marche » parmi plusieurs règles testées.** Cinq
 plafonds `topN` ont été mesurés ; un seul paraît positif, à t = 0.80. Sur cinq
 essais c'est exactement ce que le hasard produit. La règle générale : quand on
-teste *k* variantes, la meilleure doit franchir un seuil relevé en conséquence,
+teste _k_ variantes, la meilleure doit franchir un seuil relevé en conséquence,
 sinon on ne sélectionne que du bruit — c'est le même mécanisme que le winner's
 curse du composeur, appliqué aux règles plutôt qu'aux picks.
 

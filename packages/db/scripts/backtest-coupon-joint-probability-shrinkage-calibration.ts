@@ -55,7 +55,10 @@ type SettledCoupon = {
   won: boolean;
 };
 
-function brier(rows: SettledCoupon[], predict: (raw: number) => number): number {
+function brier(
+  rows: SettledCoupon[],
+  predict: (raw: number) => number,
+): number {
   const sumSq = rows.reduce((acc, r) => {
     const p = predict(r.jointProbability);
     const outcome = r.won ? 1 : 0;
@@ -98,8 +101,12 @@ async function main(): Promise<void> {
     console.log(line);
   };
 
-  log(`Coupon jointProbability shrinkage calibration — ${new Date().toISOString()}`);
-  log(`Total settled coupons: ${rows.length} (train=${train.length}, test=${test.length})`);
+  log(
+    `Coupon jointProbability shrinkage calibration — ${new Date().toISOString()}`,
+  );
+  log(
+    `Total settled coupons: ${rows.length} (train=${train.length}, test=${test.length})`,
+  );
 
   if (train.length < MIN_TRAIN_VOLUME || test.length < MIN_TEST_VOLUME) {
     log(
@@ -131,14 +138,20 @@ async function main(): Promise<void> {
   const rawTestBrier = brier(test, (p) => p);
   const shrunkTestBrier = brier(test, (p) => shrink(p, base, bestFactor));
   const improvement = rawTestBrier - shrunkTestBrier;
-  log(`test Brier — raw = ${rawTestBrier.toFixed(4)}, shrunk = ${shrunkTestBrier.toFixed(4)}`);
-  log(`test Brier improvement = ${improvement.toFixed(4)} (need >= ${MIN_BRIER_IMPROVEMENT})`);
+  log(
+    `test Brier — raw = ${rawTestBrier.toFixed(4)}, shrunk = ${shrunkTestBrier.toFixed(4)}`,
+  );
+  log(
+    `test Brier improvement = ${improvement.toFixed(4)} (need >= ${MIN_BRIER_IMPROVEMENT})`,
+  );
 
   // Reliability check — bucket the SHRUNK probability on test, compare to
   // actual win rate, so a human can see whether the fitted curve actually
   // closes the gap found in the initial audit (not just a lower Brier score).
   log("");
-  log("Reliability on test (shrunk vs actual, by decile of shrunk probability):");
+  log(
+    "Reliability on test (shrunk vs actual, by decile of shrunk probability):",
+  );
   const deciles = new Map<number, { n: number; won: number; sumP: number }>();
   for (const r of test) {
     const shrunkP = shrink(r.jointProbability, base, bestFactor);
@@ -149,7 +162,9 @@ async function main(): Promise<void> {
     entry.sumP += shrunkP;
     deciles.set(bucket, entry);
   }
-  for (const [bucket, entry] of [...deciles.entries()].sort((a, b) => a[0] - b[0])) {
+  for (const [bucket, entry] of [...deciles.entries()].sort(
+    (a, b) => a[0] - b[0],
+  )) {
     log(
       `  [${(bucket / 10).toFixed(1)}-${((bucket + 1) / 10).toFixed(1)}) n=${entry.n} predicted=${(entry.sumP / entry.n).toFixed(3)} actual=${(entry.won / entry.n).toFixed(3)}`,
     );
@@ -161,7 +176,9 @@ async function main(): Promise<void> {
       `SHIP: JOINT_PROBABILITY_CORRELATION_FACTOR = { base: ${base.toFixed(4)}, factor: ${bestFactor.toFixed(2)}, capMin: ${CAP_MIN}, capMax: ${CAP_MAX} }`,
     );
   } else {
-    log("NO SHIP — factor=1 (identity) already best on test, or improvement below threshold.");
+    log(
+      "NO SHIP — factor=1 (identity) already best on test, or improvement below threshold.",
+    );
   }
 
   await writeReport(lines);

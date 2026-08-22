@@ -97,7 +97,9 @@ async function main(): Promise<void> {
   };
 
   log(`Coupon VALUE-leg shrinkage calibration — ${new Date().toISOString()}`);
-  log(`Total VALUE legs: ${rows.length} (train=${train.length}, test=${test.length})`);
+  log(
+    `Total VALUE legs: ${rows.length} (train=${train.length}, test=${test.length})`,
+  );
 
   if (train.length < MIN_TRAIN_VOLUME || test.length < MIN_TEST_VOLUME) {
     log(
@@ -126,21 +128,37 @@ async function main(): Promise<void> {
   const rawTestBrier = brier(test, (p) => p);
   const shrunkTestBrier = brier(test, (p) => shrink(p, bestFactor));
   const improvement = rawTestBrier - shrunkTestBrier;
-  log(`test Brier — raw = ${rawTestBrier.toFixed(4)}, shrunk = ${shrunkTestBrier.toFixed(4)}`);
-  log(`test Brier improvement = ${improvement.toFixed(4)} (need >= ${MIN_BRIER_IMPROVEMENT})`);
+  log(
+    `test Brier — raw = ${rawTestBrier.toFixed(4)}, shrunk = ${shrunkTestBrier.toFixed(4)}`,
+  );
+  log(
+    `test Brier improvement = ${improvement.toFixed(4)} (need >= ${MIN_BRIER_IMPROVEMENT})`,
+  );
 
   log("");
-  log("Per-market breakdown on test (raw vs shrunk, informational only — n too thin to fit per-market):");
-  const byMarket = new Map<string, { n: number; won: number; sumRaw: number; sumShrunk: number }>();
+  log(
+    "Per-market breakdown on test (raw vs shrunk, informational only — n too thin to fit per-market):",
+  );
+  const byMarket = new Map<
+    string,
+    { n: number; won: number; sumRaw: number; sumShrunk: number }
+  >();
   for (const r of test) {
-    const entry = byMarket.get(r.market) ?? { n: 0, won: 0, sumRaw: 0, sumShrunk: 0 };
+    const entry = byMarket.get(r.market) ?? {
+      n: 0,
+      won: 0,
+      sumRaw: 0,
+      sumShrunk: 0,
+    };
     entry.n += 1;
     entry.won += r.won ? 1 : 0;
     entry.sumRaw += r.probability;
     entry.sumShrunk += shrink(r.probability, bestFactor);
     byMarket.set(r.market, entry);
   }
-  for (const [market, e] of [...byMarket.entries()].sort((a, b) => b[1].n - a[1].n)) {
+  for (const [market, e] of [...byMarket.entries()].sort(
+    (a, b) => b[1].n - a[1].n,
+  )) {
     log(
       `  ${market}: n=${e.n} actual=${(e.won / e.n).toFixed(3)} raw=${(e.sumRaw / e.n).toFixed(3)} shrunk=${(e.sumShrunk / e.n).toFixed(3)}`,
     );
@@ -148,9 +166,13 @@ async function main(): Promise<void> {
 
   log("");
   if (improvement >= MIN_BRIER_IMPROVEMENT && bestFactor < 1.0) {
-    log(`SHIP: VALUE leg probability shrink factor = ${bestFactor.toFixed(2)} (p' = 0.5 + factor × (p − 0.5))`);
+    log(
+      `SHIP: VALUE leg probability shrink factor = ${bestFactor.toFixed(2)} (p' = 0.5 + factor × (p − 0.5))`,
+    );
   } else {
-    log("NO SHIP — factor=1 (identity) already best on test, or improvement below threshold.");
+    log(
+      "NO SHIP — factor=1 (identity) already best on test, or improvement below threshold.",
+    );
   }
 
   await writeReport(lines);

@@ -105,10 +105,10 @@ Ils ne scannent plus `evaluatedMarkets` : ils re-sélectionnent parmi les
 décisions déjà prises par les canaux de marché (voir la redéfinition
 architecturale plus bas, livrée le 2026-08-18).
 
-| Canal              | Critère           | Portée                                    |
-| ------------------ | ----------------- | ----------------------------------------- |
-| **VALUE** (ex-EV)  | edge ≥ 0.10       | toute décision de Phase 1                 |
-| **SAFE** (ex-SV)   | P ≥ 68% + EV ≥ 0% | toute décision de Phase 1                 |
+| Canal             | Critère           | Portée                    |
+| ----------------- | ----------------- | ------------------------- |
+| **VALUE** (ex-EV) | edge ≥ 0.10       | toute décision de Phase 1 |
+| **SAFE** (ex-SV)  | P ≥ 68% + EV ≥ 0% | toute décision de Phase 1 |
 
 ⚠️ **Le critère de VALUE est mesuré anti-prédictif** (audit 2026-08-22,
 51 860 sélections : taux réel plat 0.511 → 0.375 pendant que l'annoncé monte à

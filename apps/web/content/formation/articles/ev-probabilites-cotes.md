@@ -48,7 +48,7 @@ L'audit du 2026-08-22 a rangé 51 860 sélections réglées par tranche d'edge r
 
 Lisez la colonne « réel » de haut en bas : elle **descend**. De 51% à 37%. Pendant que la colonne « annoncé » monte de 48% à 70%.
 
-Autrement dit : plus le modèle annonce un gros avantage, moins le pari passe. L'edge revendiqué ne porte aucune information sur le résultat — il mesure uniquement **l'ampleur de l'erreur du modèle** sur ce match. Et là où le modèle price *en dessous* du marché (edge négatif), il est même trop prudent : ces picks réalisent 6% de plus qu'annoncé.
+Autrement dit : plus le modèle annonce un gros avantage, moins le pari passe. L'edge revendiqué ne porte aucune information sur le résultat — il mesure uniquement **l'ampleur de l'erreur du modèle** sur ce match. Et là où le modèle price _en dessous_ du marché (edge négatif), il est même trop prudent : ces picks réalisent 6% de plus qu'annoncé.
 
 ## Pourquoi c'est logique, après coup
 
@@ -68,13 +68,13 @@ Le renversement est complet, et il est visible dans l'app.
 
 **Le classement se fait sur la probabilité calibrée**, jamais sur l'EV ni sur l'edge. Mesuré au niveau coupon : le tri par EV perd contre le tri par probabilité dans 13 configurations appariées sur 16.
 
-**L'EV reste affiché**, parce qu'il décrit correctement ce qu'un pari rapporterait *si* la probabilité était juste. C'est une information sur le rendement, pas un critère de tri.
+**L'EV reste affiché**, parce qu'il décrit correctement ce qu'un pari rapporterait _si_ la probabilité était juste. C'est une information sur le rendement, pas un critère de tri.
 
 ## Une tension que nous n'avons pas encore résolue
 
 Le canal VALUE sélectionne, par définition, les picks dont l'edge dépasse 10 points — c'est-à-dire précisément la zone que le plafond écarte. Ses picks atterrissent donc massivement dans « Écarté ».
 
-Ce n'est pas un bug, c'est un constat en cours de traitement. La piste mesurée est que VALUE n'apporte quelque chose que sur les picks qui lui sont *propres* — ceux qu'aucun autre canal n'a émis — et rien sur les 92% qu'il reprend ailleurs. Tant que ce n'est pas validé sur un échantillon suffisant, rien n'est changé, et la tension reste affichée telle quelle plutôt que maquillée.
+Ce n'est pas un bug, c'est un constat en cours de traitement. La piste mesurée est que VALUE n'apporte quelque chose que sur les picks qui lui sont _propres_ — ceux qu'aucun autre canal n'a émis — et rien sur les 92% qu'il reprend ailleurs. Tant que ce n'est pas validé sur un échantillon suffisant, rien n'est changé, et la tension reste affichée telle quelle plutôt que maquillée.
 
 ## À retenir
 

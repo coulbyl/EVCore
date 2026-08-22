@@ -33,11 +33,11 @@
   pour instabilité de signe. Mesuré à nouveau le 2026-08-22 sur les sélections
   réglées à cote réelle :
 
-  | ligue        | justification 2026-08-09 | 2026-08-22            |
-  | ------------ | ------------------------ | --------------------- |
-  | BTTS / BL1   | +5.19%                   | **−0.43%** ± 5.45 (n=181) |
-  | BTTS / PL    | +2.64%                   | **−3.62%** ± 3.43 (n=729) |
-  | BTTS / SA    | écartée                  | −2.23% (n=711)        |
+  | ligue      | justification 2026-08-09 | 2026-08-22                |
+  | ---------- | ------------------------ | ------------------------- |
+  | BTTS / BL1 | +5.19%                   | **−0.43%** ± 5.45 (n=181) |
+  | BTTS / PL  | +2.64%                   | **−3.62%** ± 3.43 (n=729) |
+  | BTTS / SA  | écartée                  | −2.23% (n=711)            |
 
   Les deux ligues encore misées sont passées négatives. BTTS agrégé est à
   −6.70% (n=5 191).
@@ -54,7 +54,6 @@
 
   Risque assumé en attendant : BTTS continue d'être misé sur deux ligues dont
   l'avantage mesuré n'existe plus.
-
 
 - `[x]` **LONGSHOT_WEEKEND/MIDWEEK — pool dédié desserré** (résolu 2026-08-15) —
   `MAX_POOL_SIZE` était un module-level constant figé à 25, partagé par tous
