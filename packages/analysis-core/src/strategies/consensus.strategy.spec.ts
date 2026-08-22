@@ -126,10 +126,13 @@ describe("decideConsensus", () => {
       ON,
     );
     expect(d.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
-    expect(d.selections[0]!.pick).toBe("HOME");
-    expect(d.selections[0]!.market).toBe(Market.ONE_X_TWO);
-    expect(d.selections[0]!.qualityScore?.toNumber()).toBe(2);
-    expect(d.reasonDetails).toMatchObject({ level: 2 });
+    // Meta-strategy: the agreement is reported, no pick is originated.
+    expect(d.selections).toHaveLength(0);
+    expect(d.reasonDetails).toMatchObject({
+      level: 2,
+      market: Market.ONE_X_TWO,
+      pick: "HOME",
+    });
   });
 
   it("collapses same-class channels to one vote (VALUE + SAFE = 1 level)", () => {
@@ -144,7 +147,12 @@ describe("decideConsensus", () => {
     expect(d.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
   });
 
-  it("uses the max agreeing probability and prices via the snapshot", () => {
+  // Used to assert `probability = max over agreeing channels`. That operator
+  // was the reason CONSENSUS measured a realised/announced ratio of 0.726
+  // while DOMINANT, one of the channels it aggregates, sat at 0.918: the max
+  // of k noisy estimates is biased upward by construction. It no longer
+  // publishes a probability at all — only which pick the classes agreed on.
+  it("reports the agreed pick without attaching a probability to it", () => {
     const d = decideConsensus(
       ctx([
         selected("DOMINANT", "HOME", { probability: 0.62 }),
@@ -152,10 +160,8 @@ describe("decideConsensus", () => {
       ]),
       ON,
     );
-    const sel = d.selections[0]!;
-    expect(sel.probability.toNumber()).toBeCloseTo(0.62);
-    expect(sel.odds?.toNumber()).toBe(2.0);
-    expect(sel.ev?.toNumber()).toBeCloseTo(0.62 * 2.0 - 1, 10);
+    expect(d.selections).toHaveLength(0);
+    expect(d.reasonDetails).toMatchObject({ pick: "HOME", level: 2 });
   });
 
   it("ignores non-1X2 agreement in v1 (BTTS consensus does not count)", () => {
@@ -179,7 +185,7 @@ describe("decideConsensus", () => {
       ]),
       ON,
     );
-    expect(d.selections[0]!.pick).toBe("HOME");
+    expect(d.reasonDetails).toMatchObject({ pick: "HOME", level: 2 });
   });
 
   it("does not count REJECTED/DISABLED primaries as votes", () => {

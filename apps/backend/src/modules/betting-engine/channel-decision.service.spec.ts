@@ -188,7 +188,12 @@ describe('ChannelDecisionService', () => {
       (d: { channel: string }) => d.channel === STRATEGY_CHANNEL.CONSENSUS,
     );
     expect(consensus?.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
-    expect(consensus?.selections[0]?.pick).toBe('HOME');
+    // Meta-strategy: reports the agreement in reasonDetails, emits no
+    // selection of its own (consensus.strategy.ts, 2026-08-22).
+    expect(consensus?.selections).toHaveLength(0);
+    expect(
+      (consensus?.reasonDetails as { pick?: string } | undefined)?.pick,
+    ).toBe('HOME');
 
     // AVOID (phase 2): the HOME pick edge (0.64 − 1/1.90 ≈ 0.11) is nowhere near
     // the 0.30 divergence floor → nothing to avoid.

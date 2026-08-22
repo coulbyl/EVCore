@@ -1,13 +1,11 @@
 import Decimal from "decimal.js";
 import { Market, type StrategyChannel } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
-import { priceForSelection } from "../selection";
 import { CONSENSUS_CONFIG } from "./consensus.config";
 import type {
   ChannelStrategy,
   StrategyContext,
   StrategyDecision,
-  StrategySelection,
 } from "./types";
 
 // Independence classes for the primary channels. Two strategies in the same
@@ -91,20 +89,25 @@ export function decideConsensus(
     return b.maxProbability.greaterThan(a.maxProbability) ? b : a;
   });
 
-  const selection: StrategySelection = {
-    market: Market.ONE_X_TWO,
-    pick: best.pick,
-    probability: best.maxProbability,
-    ...priceForSelection({
-      odds: context.odds,
-      market: Market.ONE_X_TWO,
-      pick: best.pick,
-      probability: best.maxProbability,
-    }),
-    qualityScore: new Decimal(best.classes.size),
-    rank: 1,
-  };
-
+  // Emits NO selection (2026-08-22). CONSENSUS is a meta-strategy: it observes
+  // that several independent classes agree, it does not originate a pick.
+  //
+  // It used to publish `{ market: ONE_X_TWO, pick: best.pick, probability:
+  // best.maxProbability }`, which was harmful twice over:
+  //
+  //   1. Pure duplication — all 765 of its settled selections matched another
+  //      channel's on the same model run, same market, same pick, same
+  //      probability to 4 decimals. Downstream (coupon pool, calibration) it
+  //      was the same bet counted twice under a second label.
+  //   2. `maxProbability` is the MAXIMUM over the agreeing channels, and the
+  //      max of k noisy estimates is biased upward by construction. That alone
+  //      explains why CONSENSUS measured a realised/announced ratio of 0.726
+  //      while DOMINANT, one of the channels it aggregates, sat at 0.918. The
+  //      agreement signal is real; the probability attached to it was not.
+  //
+  // The agreement level stays available in reasonDetails for anything that
+  // wants to weigh it — the same "signal without staking" shape as the H2H
+  // scoreline signal on CORRECT_SCORE.
   return {
     channel,
     status: CHANNEL_DECISION_STATUS.SELECTED,
@@ -113,14 +116,17 @@ export function decideConsensus(
       level: best.classes.size,
       classes: [...best.classes],
       channels: best.channels,
+      market: Market.ONE_X_TWO,
+      pick: best.pick,
     },
-    selections: [selection],
+    selections: [],
   };
 }
 
-// CONSENSUS — meta-strategy (orchestrator phase 2). Reads the phase-1 primary
-// decisions and emits a 1X2 selection only when ≥ minLevel independent strategy
-// classes converge on the same pick. Calibrated globally (see CONSENSUS_CONFIG).
+// CONSENSUS — meta-strategy (orchestrator phase 3). Reads the phase-1 primary
+// decisions and reports, in reasonDetails, when ≥ minLevel independent strategy
+// classes converge on the same 1X2 pick. Emits no selection of its own — see
+// decideConsensus. Calibrated globally (see CONSENSUS_CONFIG).
 export class ConsensusStrategy implements ChannelStrategy {
   readonly channel = STRATEGY_CHANNEL.CONSENSUS;
   readonly allowedMarkets: readonly Market[] = [Market.ONE_X_TWO];
