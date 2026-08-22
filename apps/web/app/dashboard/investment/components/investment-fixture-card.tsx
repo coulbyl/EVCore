@@ -1,13 +1,16 @@
 import { FixtureCard } from "@/components/fixture-card";
 import { NewCoachChip } from "@/components/new-coach-badge";
+import type { InvestmentView } from "@/domains/investment/types/investment";
 import type { InvestmentFixtureGroup } from "./investment-constants";
 import { InvestmentPickRow } from "./investment-pick-row";
 
 export function InvestmentFixtureCard({
   group,
+  view,
   locale,
 }: {
   group: InvestmentFixtureGroup;
+  view: InvestmentView;
   locale: string;
 }) {
   return (
@@ -33,9 +36,12 @@ export function InvestmentFixtureCard({
         <InvestmentPickRow
           key={`${pick.fixtureId}:${pick.channel}`}
           pick={pick}
+          view={view}
           locale={locale}
-          connector={group.picks.length > 1}
-          isLast={idx === group.picks.length - 1}
+          connector={{
+            show: group.picks.length > 1,
+            isLast: idx === group.picks.length - 1,
+          }}
         />
       ))}
     </FixtureCard>

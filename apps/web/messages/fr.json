@@ -185,10 +185,6 @@
       "edge": "écart",
       "edgeTooltip": "Divergence modèle/marché : {pct} — ce pick a déclenché le signal Attention"
     },
-    "observation": {
-      "badge": "Observation",
-      "tooltip": "Canal de prédiction (score exact le plus probable) — jamais misé par le moteur."
-    },
     "calibration": {
       "banner": "Données suspectes",
       "tooltipLabel": "Alerte calibration",
@@ -280,7 +276,7 @@
     },
     "investment": {
       "title": "Investir",
-      "description": "Tous les picks du jour classés par probabilité ou par EV, canal par canal. Le « ? » détaille comment l'edge et l'EV sont calculés."
+      "description": "Trois vues : ce qu'on assume (les canaux mesurés rentables), ce qu'on observe, et ce que les garde-fous ont écarté — avec la raison. Le « ? » détaille comment l'edge et l'EV sont calculés."
     },
     "fixtures": {
       "title": "Matchs",
@@ -839,46 +835,40 @@
   },
   "investment": {
     "pageTitle": "Investir",
-    "modeProbabilityLabel": "Probabilité",
-    "subtitle": "Picks individuels classés par probabilité de réussite — EV affichée à titre indicatif, aucune garantie de gain.",
-    "subtitleByMode": {
-      "value": "Picks à forte value (canal Valeur, EV ≥ 8%), classés par EV décroissante.",
-      "safe": "Picks du canal Sécurité, classés par probabilité de réussite.",
-      "dominant": "Picks du canal Victoire, classés par probabilité — ROI historique négatif en position solo (-23%), à considérer avec prudence.",
-      "btts": "Picks du canal BB, classés par probabilité — ROI historique négatif en position solo (-37%), à considérer avec prudence.",
-      "goals": "Picks du canal Buts, classés par probabilité — ROI historique négatif en position solo (-26%), à considérer avec prudence.",
-      "draw": "Picks du canal Nul, classés par probabilité de réussite.",
-      "teamTotal": "Picks du canal Buts par équipe, classés par probabilité de réussite.",
-      "cleanSheet": "Picks du canal Clean Sheet, classés par probabilité — canal récemment ouvert, pas encore de ROI validé en position solo.",
-      "winEitherHalf": "Picks du canal Gagne une mi-temps, classés par probabilité — canal récemment ouvert, pas encore de ROI validé en position solo.",
-      "firstHalf": "Picks du canal 1ère mi-temps, classés par probabilité — canal récemment ouvert, pas encore de ROI validé en position solo.",
-      "doubleChance": "Picks du canal Double chance, classés par probabilité — canal récemment ouvert, pas encore de ROI validé en position solo.",
-      "resultTotalGoals": "Picks du canal Score exact + total buts, classés par probabilité — canal récemment ouvert, pas encore de ROI validé en position solo.",
-      "overUnderHt": "Picks du canal Plus/Moins mi-temps, classés par probabilité — canal récemment ouvert, pas encore de ROI validé en position solo.",
-      "resultBtts": "Picks du canal Score exact + BB, classés par probabilité — canal récemment ouvert, pas encore de ROI validé en position solo.",
-      "drawNoBet": "Picks du canal Remboursé si nul, classés par probabilité — canal récemment ouvert, pas encore de ROI validé en position solo.",
-      "winToNil": "Picks du canal Gagne sans encaisser, classés par probabilité — canal récemment ouvert, pas encore de ROI validé en position solo.",
-      "halfTimeFullTime": "Picks du canal Mi-temps/Fin de match, classés par probabilité — canal récemment ouvert, pas encore de ROI validé en position solo."
+    "views": {
+      "assumed": {
+        "label": "Ce qu'on assume",
+        "subtitle": "Les canaux dont le ROI reste positif une fois le bruit d'échantillonnage retiré — 2 sur 18 au dernier relevé. Classés par fréquence de réussite attendue. DRAW n'y figure que sur les ligues où il est mesuré.",
+        "empty": "Aucun pick assumé pour cette date."
+      },
+      "watch": {
+        "label": "En observation",
+        "subtitle": "Tous les autres canaux, dans une seule liste filtrable. Chaque pick porte le ROI de son canal, ramené vers la moyenne selon le volume qui le soutient : c'est un contexte, pas une recommandation.",
+        "empty": "Aucun pick en observation pour cette date."
+      },
+      "excluded": {
+        "label": "Écarté",
+        "subtitle": "Ce que les garde-fous ont retiré, et pourquoi. Un filtre se juge à ce qu'il exclut : cette vue existe pour que ce soit vérifiable.",
+        "empty": "Aucun pick écarté pour cette date."
+      }
     },
+    "exclusion": {
+      "AVOID": "AVOID sur ce match",
+      "CALIBRATION_ALERT": "Modèle et marché incohérents",
+      "LAMBDA_INCOHERENT": "Contredit le lambda du modèle",
+      "EDGE_TOO_HIGH": "Edge revendiqué trop élevé",
+      "ODDS_TOO_SHORT": "Cote trop courte"
+    },
+    "expectedRate": "{rate} attendus",
+    "channelRoi": "canal {roi}",
+    "channelRoiHint": "ROI du canal {channel} ramené vers la moyenne, mesuré sur {n} sélections réglées.",
+    "channelFilterLabel": "Canal",
+    "channelFilterAll": "Tous les canaux",
     "empty": "Aucun pick disponible pour cette date.",
     "loadError": "Impossible de charger les picks.",
     "addToSlip": "Ajouter au coupon",
     "added": "Ajouté",
-    "modelProbability": "modèle :",
-    "bucket": {
-      "veryLikely": "Très probable",
-      "solid": "Solide",
-      "moderate": "Moyen",
-      "speculative": "Spéculatif"
-    },
-    "badge": {
-      "evPositive": "Value positive",
-      "evNegative": "EV négative",
-      "shortOdds": "Cote très courte",
-      "channelRoiFlag": "Canal à ROI historique négatif"
-    },
-    "topNLabel": "Nombre de picks",
-    "topNAuto": "Auto",
+    "modelProbability": "Modèle brut :",
     "filtersLabel": "Filtres",
     "groupByNone": "Aucun groupement",
     "groupByLeague": "Grouper par ligue",
@@ -918,13 +908,14 @@
       "CANCELLED": "Annulé"
     },
     "sources": {
-      "COUPON_BEST": "Coupon (meilleur du jour)",
-      "COUPON_ALL": "Coupon (chaque coupon généré)",
+      "COUPON_BEST": "Coupon (le plus probable du jour)",
+      "COUPON_ALL": "Coupons du jour (cote courte)",
       "CHANNEL_VALUE": "VALUE (Valeur)",
       "CHANNEL_SAFE": "SAFE (Sécurité)",
       "CHANNEL_DOMINANT": "DOMINANT (Victoire)",
       "CHANNEL_DRAW": "DRAW (Nul)",
       "CHANNEL_BTTS": "BTTS (BB)",
+      "CHANNEL_DOUBLE_CHANCE": "DOUBLE_CHANCE (Double chance)",
       "CHANNEL_TEAM_TOTAL": "TEAM_TOTAL"
     },
     "pickModes": {
@@ -984,7 +975,11 @@
       "endDateBeforeStart": "La date de fin doit être après la date de début.",
       "createError": "Impossible de créer l'abonnement.",
       "submitting": "Création…",
-      "submit": "Créer l'abonnement"
+      "submit": "Créer l'abonnement",
+      "sourceGroupCoupon": "Coupons",
+      "sourceGroupBacked": "Canaux assumés (ROI mesuré positif)",
+      "sourceGroupWatch": "Canaux en observation (ROI mesuré négatif)",
+      "sourceRoiHint": "ROI mesuré de ce canal : {roi}, sur {n} sélections réglées, ramené vers la moyenne selon le volume qui le soutient. Ce n'est pas une prévision."
     },
     "detail": {
       "notFoundTitle": "Détail de l'abonnement",

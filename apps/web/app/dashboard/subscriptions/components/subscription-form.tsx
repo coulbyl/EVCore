@@ -26,9 +26,9 @@ import type {
 import {
   leaguePresetLabel,
   pickModeLabel,
-  sourceLabel,
   weekdayFullLabel,
 } from "../subscriptions-constants";
+import { SubscriptionSourceSelect } from "./subscription-source-select";
 
 function todayIsoDate(): string {
   return new Date().toISOString().slice(0, 10);
@@ -146,21 +146,20 @@ export function SubscriptionForm() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:gap-5">
       <div className="space-y-1.5">
         <Label>{t("form.sourceLabel")}</Label>
-        <Select
-          value={sourceType ?? undefined}
-          onValueChange={(v) => setSourceType(v as SubscriptionSourceType)}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {catalog.sources.map((s) => (
-              <SelectItem key={s.id} value={s.id}>
-                {sourceLabel(s.id, t)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SubscriptionSourceSelect
+          sources={catalog.sources}
+          value={sourceType}
+          onChange={(v) => setSourceType(v)}
+        />
+        {selectedSource?.roiShrunk !== null &&
+          selectedSource?.roiShrunk !== undefined && (
+            <p className="text-[0.68rem] text-muted-foreground">
+              {t("form.sourceRoiHint", {
+                roi: `${selectedSource.roiShrunk >= 0 ? "+" : "−"}${Math.abs(selectedSource.roiShrunk * 100).toFixed(1)}%`,
+                n: selectedSource.roiSampleSize ?? 0,
+              })}
+            </p>
+          )}
       </div>
 
       {isChannelSource ? (

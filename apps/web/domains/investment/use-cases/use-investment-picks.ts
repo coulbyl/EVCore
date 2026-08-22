@@ -2,20 +2,25 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { clientApiRequest } from "@/lib/api/client-api";
-import type { InvestmentMode, InvestmentPick } from "../types/investment";
+import type {
+  InvestmentChannel,
+  InvestmentPick,
+  InvestmentView,
+} from "../types/investment";
 
 export function useInvestmentPicks(query: {
   date: string;
-  mode: InvestmentMode;
-  // null = laisser le backend appliquer le topN par défaut du mode
-  topN: number | null;
+  view: InvestmentView;
+  // Colonne filtrable des vues « En observation » et « Écarté ». Sans effet
+  // sur « Ce qu'on assume », dont le contenu est défini par la mesure.
+  channel: InvestmentChannel | null;
 }) {
-  const { date, mode, topN } = query;
+  const { date, view, channel } = query;
   return useQuery({
-    queryKey: ["investments", date, mode, topN],
+    queryKey: ["investments", date, view, channel],
     queryFn: () => {
-      const params = new URLSearchParams({ date, mode });
-      if (topN !== null) params.set("topN", String(topN));
+      const params = new URLSearchParams({ date, view });
+      if (channel !== null) params.set("channel", channel);
       return clientApiRequest<InvestmentPick[]>(
         `/investments?${params.toString()}`,
         { fallbackErrorMessage: "Impossible de charger les picks." },

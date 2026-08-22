@@ -4,7 +4,13 @@
  * rester "premiers matchs du jour par heure de coup d'envoi" (comportement
  * actuel de SubscriptionMatchingService, DESIGN.md §Décisions de conception,
  * point 2) ou passer à un classement edge/probabilité comme le mode
- * "INVESTIR" (MODE_RANKING) ?
+ * "INVESTIR" ?
+ *
+ * ⚠️ Écrit avant le 2026-08-22 : le mode INVESTIR classait alors par
+ * MODE_RANKING (un tri et un plafond topN par canal), supprimé depuis — il
+ * classe désormais par probabilité calibrée, sans plafond. Les conclusions de
+ * ce script sur le mode INVESTIR sont donc périmées ; celles sur DECISIONS
+ * (premiers vs derniers matchs du jour) tiennent toujours.
  *
  * Run: pnpm --filter @evcore/db db:backtest:decisions-ranking
  * Output: packages/db/reports/backtest-decisions-ranking-YYYY-MM-DD.txt

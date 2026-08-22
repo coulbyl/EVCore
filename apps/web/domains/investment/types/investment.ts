@@ -1,28 +1,39 @@
-export type ProbabilityBucket =
-  | "veryLikely"
-  | "solid"
-  | "moderate"
-  | "speculative";
+// Les trois vues d'Investir (backend : investment.constants.ts). Investir
+// n'est plus une surface de revue exhaustive à 18 onglets mais un point de
+// filtre unique — voir docs/audit-canaux-investir-2026-08-22.md §5.
+export type InvestmentView = "assumed" | "watch" | "excluded";
 
-export type InvestmentMode =
-  | "probability"
-  | "value"
-  | "safe"
-  | "dominant"
-  | "btts"
-  | "goals"
-  | "draw"
-  | "teamTotal"
-  | "cleanSheet"
-  | "winEitherHalf"
-  | "firstHalf"
-  | "doubleChance"
-  | "resultTotalGoals"
-  | "overUnderHt"
-  | "resultBtts"
-  | "drawNoBet"
-  | "winToNil"
-  | "halfTimeFullTime";
+export const INVESTMENT_VIEWS: InvestmentView[] = [
+  "assumed",
+  "watch",
+  "excluded",
+];
+
+export type ExclusionReason =
+  | "AVOID"
+  | "CALIBRATION_ALERT"
+  | "LAMBDA_INCOHERENT"
+  | "EDGE_TOO_HIGH"
+  | "ODDS_TOO_SHORT";
+
+export type InvestmentChannel =
+  | "VALUE"
+  | "SAFE"
+  | "DOMINANT"
+  | "BTTS"
+  | "DRAW"
+  | "GOALS"
+  | "TEAM_TOTAL"
+  | "CLEAN_SHEET"
+  | "WIN_EITHER_HALF"
+  | "FIRST_HALF"
+  | "DOUBLE_CHANCE"
+  | "RESULT_TOTAL_GOALS"
+  | "OVER_UNDER_HT"
+  | "RESULT_BTTS"
+  | "DRAW_NO_BET"
+  | "WIN_TO_NIL"
+  | "HALF_TIME_FULL_TIME";
 
 export type FixtureStatus =
   | "SCHEDULED"
@@ -36,6 +47,7 @@ export type InvestmentPick = {
   fixtureStatus: FixtureStatus;
   fixture: string;
   competition: string | null;
+  competitionCode: string;
   country: string | null;
   kickoff: string;
   scheduledAt: string;
@@ -45,31 +57,13 @@ export type InvestmentPick = {
   // played fewer than 5 finished matches under its current coach.
   homeNewCoach: boolean;
   awayNewCoach: boolean;
-  channel:
-    | "VALUE"
-    | "SAFE"
-    | "DOMINANT"
-    | "BTTS"
-    | "DRAW"
-    | "GOALS"
-    | "TEAM_TOTAL"
-    | "CLEAN_SHEET"
-    | "WIN_EITHER_HALF"
-    | "FIRST_HALF"
-    | "DOUBLE_CHANCE"
-    | "RESULT_TOTAL_GOALS"
-    | "OVER_UNDER_HT"
-    | "RESULT_BTTS"
-    | "DRAW_NO_BET"
-    | "WIN_TO_NIL"
-    | "HALF_TIME_FULL_TIME";
+  channel: InvestmentChannel;
   market: string;
   pick: string;
-  // Calibrated (bias-corrected) probability — drives probabilityBucket and
-  // the ranking. modelProbability is the raw, uncorrected model output.
+  // Probabilité calibrée par la courbe de fiabilité du canal : la fréquence
+  // de réussite attendue, et le seul critère de tri de la page.
   probability: number;
   modelProbability: number;
-  probabilityBucket: ProbabilityBucket;
   odds: number;
   ev: number | null;
   qualityScore: number | null;
@@ -78,7 +72,10 @@ export type InvestmentPick = {
   score: string | null;
   htScore: string | null;
   result: "WON" | "LOST" | "VOID" | null;
-  evSign: "positive" | "negative" | null;
-  shortOdds: boolean;
-  channelRoiFlag: boolean;
+  // ROI shrinké du canal et le volume réglé qui le soutient.
+  channelRoiShrunk: number;
+  channelRoiSampleSize: number;
+  channelHitRate: number;
+  // Renseigné uniquement dans la vue « Écarté ».
+  exclusionReason: ExclusionReason | null;
 };

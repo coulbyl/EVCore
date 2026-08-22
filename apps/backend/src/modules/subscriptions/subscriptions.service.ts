@@ -8,6 +8,7 @@ import { Queue } from 'bullmq';
 import Decimal from 'decimal.js';
 import { createLogger } from '@utils/logger';
 import { BULLMQ_QUEUES } from '@config/etl.constants';
+import { InvestmentService } from '@modules/investment/investment.service';
 import { SubscriptionsRepository } from './subscriptions.repository';
 import type { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import {
@@ -83,14 +84,48 @@ function serializeSubscription(sub: {
 export class SubscriptionsService {
   constructor(
     private readonly repository: SubscriptionsRepository,
+    private readonly investments: InvestmentService,
     @InjectQueue(BULLMQ_QUEUES.SUBSCRIPTION_MATCHING)
     private readonly subscriptionMatchingQueue: Queue<SubscriptionMatchingJobData>,
   ) {}
 
+  /**
+   * Catalogue des sources proposables, chaque source canal portant ce qui est
+   * MESURÉ sur elle.
+   *
+   * Le catalogue présentait sept canaux à égalité visuelle alors que cinq
+   * sont mesurés perdants — le même défaut qu'Investir avait avec ses 18
+   * onglets. On ne masque pas les canaux négatifs (un pick d'un canal
+   * perdant reste un choix individuel légitime, et masquer ne fait que
+   * déplacer la décision hors de vue) : on refuse de les présenter comme
+   * équivalents aux deux qui tiennent.
+   *
+   * Les sources `retired` ne sont pas listées : elles ne sont plus
+   * proposables à la création, mais les abonnements existants qui les
+   * ciblent continuent de tourner normalement.
+   */
   async getCatalog() {
     const competitions = await this.repository.findActiveCompetitions();
+    const today = new Date().toISOString().slice(0, 10);
+    const stats = await this.investments.listChannelStats(today);
+
+    const sources = SUBSCRIPTION_SOURCES.filter((s) => !s.retired).map(
+      (source) => {
+        const measured =
+          source.channel === undefined ? undefined : stats[source.channel];
+        return {
+          ...source,
+          // `tier` est CALCULÉ, jamais figé : si un canal repasse au-dessus
+          // de zéro, il remonte tout seul — et l'inverse aussi.
+          tier: measured && measured.roiShrunk > 0 ? 'BACKED' : 'WATCH',
+          roiShrunk: measured?.roiShrunk ?? null,
+          roiSampleSize: measured?.n ?? null,
+        };
+      },
+    );
+
     return {
-      sources: SUBSCRIPTION_SOURCES,
+      sources,
       channelPickModes: SUBSCRIPTION_CHANNEL_PICK_MODES,
       leaguePresets: SUBSCRIPTION_LEAGUE_PRESETS,
       weekdays: SUBSCRIPTION_WEEKDAYS,
@@ -104,6 +139,11 @@ export class SubscriptionsService {
       // IsEnum au niveau du DTO empêche déjà ça en pratique — garde-fou
       // explicite si le catalogue et l'enum Prisma venaient à diverger.
       throw new BadRequestException('Source inconnue');
+    }
+    if (source.retired) {
+      throw new BadRequestException(
+        `La source ${source.label} n'est plus proposée pour un nouvel abonnement`,
+      );
     }
 
     if (source.kind === 'CHANNEL') {

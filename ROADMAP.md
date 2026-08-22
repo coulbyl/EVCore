@@ -468,6 +468,96 @@ TODO.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
 
 ---
 
+### Bloc 13 — Refonte d'Investir : trois vues, plus de `topN` (2026-08-22, branche `fix/todo-2026-08-15`)
+
+> Suite directe de l'audit [docs/audit-canaux-investir-2026-08-22.md](docs/audit-canaux-investir-2026-08-22.md)
+> §5. Investir n'est plus une surface de revue exhaustive (18 modes, un par
+> canal) mais **le point de filtre unique** du système : un filtre se juge à
+> ce qu'il exclut, pas à ce qu'il expose.
+
+**Ce qui a été supprimé, et sur quelle mesure**
+
+- [x] **`topN` en entier, sans exception.** Les 5 plafonds testés en apparié
+      (top-N contre liste entière le même jour) : VALUE t=+0.80, TEAM_TOTAL
+      +0.70, DOMINANT −0.50, SAFE −1.20, DRAW −1.74. Aucun significatif, les
+      deux plus proches du seuil négatifs. Garder VALUE parce qu'il « marche »
+      parmi cinq essais, c'est le winner's curse appliqué aux règles.
+- [x] `MODE_RANKING`, `SINGLE_CHANNEL_MODE_MAP`, `VALUE_MODE_CHANNELS`,
+      `InvestmentMode` → une seule liste de canaux et un tri unique, la
+      probabilité calibrée.
+- [x] `NEGATIVE_ROI_CHANNELS` (liste figée de 2 canaux, datée du 2026-07-06)
+      → **ROI shrinké recalculé** par Bayes empirique. La liste figée en
+      nommait 2 alors que 16 canaux sur 18 sont négatifs.
+- [x] `PROBABILITY_BUCKETS` et le badge EV vert/rouge du front. L'EV se calcule
+      sur l'edge revendiqué, mesuré anti-prédictif ; l'afficher en vert mettait
+      en avant l'ampleur de l'erreur du modèle.
+
+**Ce qui remplace**
+
+- [x] **Trois vues** : « Ce qu'on assume » (canaux à ROI shrinké positif — 2
+      sur 18, DOUBLE_CHANCE et DRAW —, DRAW borné à `DRAW_STAKED_LEAGUES`),
+      « En observation » (tout le reste, une liste filtrable par canal, ROI du
+      canal affiché sur chaque pick), « Écarté » (ce que les garde-fous ont
+      retiré, avec la raison). La troisième manquait et c'est celle qui rend
+      le filtre auditable.
+- [x] **Calibration par courbe de Platt** (`channel-reliability.ts`) au lieu du
+      décalage constant `meanError` : la courbe est plus plate que la
+      diagonale, pas décalée. C'est l'acquis du Bloc 12, ratio 0.819 → 1.016.
+- [x] **`MAX_LEG_EDGE` et `MIN_LEG_ODDS` remontés du coupon vers Investir**,
+      pour qu'ils s'appliquent à toute surface de mise. Conséquence assumée :
+      les picks VALUE, que `VALUE_MIN_EDGE = 0.10` sélectionne au-dessus du
+      plafond, atterrissent massivement dans « Écarté ».
+- [x] **Abonnements** : `investmentMode` remplacé par le canal ; les options
+      `topN` par canal (VALUE [1,5], TEAM_TOTAL 3) unifiées, leur
+      justification reposant sur les mêmes backtests invalidés — le `topN`
+      d'abonnement redevient un curseur d'exposition, pas une règle calibrée.
+      `CHANNEL_DOUBLE_CHANCE` ajouté au catalogue (meilleur canal mesuré).
+- [x] **Catalogue d'abonnement réaligné sur la mesure.** Il proposait sept
+      canaux à égalité visuelle alors que cinq sont mesurés perdants — le même
+      défaut qu'Investir avec ses 18 onglets. `/subscriptions/catalog` renvoie
+      désormais le ROI shrinké et un `tier` **calculé** (`BACKED` / `WATCH`)
+      par source ; le formulaire les groupe et affiche le ROI à côté de chaque
+      canal. Rien n'est masqué : on refuse seulement de présenter comme
+      équivalent ce qui ne l'est pas.
+- [x] **`CHANNEL_SAFE` retiré** des sources proposables (`retired: true`) —
+      pas pour son ROI mais parce que 95% de ses sélections sont des doublons
+      exacts de Phase 1 : s'y abonner, c'est suivre un sous-ensemble d'un
+      autre canal en croyant en suivre un nouveau. Les abonnements existants
+      continuent de tourner.
+- [x] **Badge « Observation » retiré de Decisions.** Il marquait 4 canaux
+      (CORRECT_SCORE, CLEAN_SHEET, TEAM_TOTAL, WIN_EITHER_HALF) comme « pas
+      encore de edge backtesté » — écrit avant que ces canaux produisent des
+      décisions réglées. Ils sont désormais tous mesurés, et la liste figée de
+      4 noms laissait entendre que les 21 autres étaient validés : le même
+      défaut que `NEGATIVE_ROI_CHANNELS`.
+- [x] **`SLIPPABLE` remplacé par `META_CHANNELS`** (liste positive → liste
+      d'exclusion). L'ancienne liste de 6 canaux privait DOUBLE_CHANCE de
+      bouton « ajouter au coupon » dans Decisions alors que c'est le canal le
+      mieux mesuré et qu'Investir le propose déjà. Une liste de canaux
+      « autorisés » se périme à chaque canal ajouté ; une liste de méta-canaux,
+      non.
+- [x] **Deux libellés faux corrigés côté web**, qui avaient dérivé parce que
+      le front duplique les libellés du backend en i18n au lieu de les lire :
+      « Coupon (meilleur du jour) » — le rang 1 ne fait pas mieux que les
+      suivants, mesuré — et « Coupon (chaque coupon généré) » — borné à la
+      classe à cote courte depuis les classes de coupon, donc l'abonné lisait
+      « tous » et recevait une classe sur trois.
+
+**Reste ouvert**
+
+- [ ] **VALUE réduit à ses picks propres** — les 8% de sélections qui ne sont
+      pas des doublons de Phase 1 font +14.1% (n=173, t≈1.4). C'est la seule
+      piste du système où une couche de sélection *ajoute*. **À valider au
+      niveau jambe avant de shipper** ; SAFE n'a pas cette excuse (29 picks
+      propres, −19.7%).
+- [ ] **Mouvement des cotes** — 16 615 matchs suivis sur ~15h en moyenne,
+      jamais exploités. Seule piste de découverte que l'audit laisse ouverte,
+      et la seule entrée *causale* plutôt qu'un historique découpé.
+
+Migration Prisma : `20260822120000_add_double_chance_subscription_source`.
+
+---
+
 ### Bloc 12 — Reconstruction du composeur de coupon (2026-08-20 → 22, branche `fix/todo-2026-08-15`)
 
 > Point de départ : ROI négatif dans toutes les configurations testées (-9% à

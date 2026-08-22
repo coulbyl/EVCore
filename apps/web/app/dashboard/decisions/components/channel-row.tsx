@@ -26,27 +26,23 @@ import {
   statusLabel,
 } from "./channel-constants";
 import { ResultBadge } from "@/components/result-badge";
-import { ObservationBadge } from "./observation-badge";
 
-/** Channels that produce a real pick that can be added to a slip. */
-const SLIPPABLE: ReadonlySet<StrategyChannel> = new Set([
-  "VALUE",
-  "SAFE",
-  "DOMINANT",
-  "BTTS",
-  "DRAW",
-  "GOALS",
-]);
-
-/** Prediction channels never staked — recorded/settled analytically only,
- * no backtested edge yet (unvalidated thresholds). Flagged with
- * ObservationBadge so readers don't mistake a SELECTED decision for a
- * playable bet. */
-const OBSERVATION_ONLY: ReadonlySet<StrategyChannel> = new Set([
-  "CORRECT_SCORE",
-  "CLEAN_SHEET",
-  "TEAM_TOTAL",
-  "WIN_EITHER_HALF",
+/**
+ * Méta-canaux : ils agrègent les décisions des autres au lieu de prendre une
+ * position propre, donc il n'y a rien à ajouter à un coupon. Tout le reste
+ * est jouable.
+ *
+ * Défini par EXCLUSION depuis le 2026-08-22. C'était avant une liste positive
+ * de 6 canaux (`SLIPPABLE`), figée à une époque où les autres n'émettaient
+ * pas encore de décision réglée — elle laissait DOUBLE_CHANCE sans bouton
+ * alors que c'est le canal le mieux mesuré du système, et qu'Investir permet
+ * déjà de l'ajouter. Une liste positive de canaux « autorisés » se périme en
+ * silence à chaque canal ajouté ; une liste de méta-canaux, non.
+ */
+const META_CHANNELS: ReadonlySet<StrategyChannel> = new Set([
+  "AVOID",
+  "CONSENSUS",
+  "CONTRARIAN",
 ]);
 
 export type SlipContext = {
@@ -101,12 +97,11 @@ export function ChannelRow({
             </p>
             <div className="flex shrink-0 items-center gap-1.5">
               {avoidEdge !== undefined && <AvoidEdgeBadge edge={avoidEdge} />}
-              {OBSERVATION_ONLY.has(channel) && <ObservationBadge />}
               <ResultBadge
                 result={selection.result}
                 market={selection.market}
               />
-              {slipContext && SLIPPABLE.has(channel) && decision && (
+              {slipContext && !META_CHANNELS.has(channel) && decision && (
                 <SlipButton
                   channel={channel}
                   decision={decision}

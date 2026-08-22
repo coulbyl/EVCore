@@ -5,15 +5,17 @@ import type {
   ChannelDecisionService,
   ChannelSelectionItem,
 } from '@modules/betting-engine/channel-decision.service';
+import { IDENTITY_RELIABILITY } from '@modules/adjustment/channel-reliability';
 import type {
-  ChannelCalibration,
-  InvestmentCalibrationRepository,
-} from './investment-calibration.repository';
+  ChannelStats,
+  ChannelStatsMap,
+  InvestmentChannelStatsRepository,
+} from './investment-channel-stats.repository';
 import type {
   InvestmentCoherenceRepository,
   LambdaTotals,
 } from './investment-coherence.repository';
-import { INVESTMENT_LIMITS, MODE_RANKING } from './investment.constants';
+import { INVESTMENT_LIMITS } from './investment.constants';
 import { InvestmentService } from './investment.service';
 
 function selection(
@@ -52,7 +54,7 @@ function item(
     homeNewCoach: false,
     awayNewCoach: false,
     kickoff: '18:00',
-    scheduledAt: '2026-07-06T18:00:00.000Z',
+    scheduledAt: '2026-08-22T18:00:00.000Z',
     score: null,
     htScore: null,
     phase: 'ADVANCE',
@@ -73,715 +75,498 @@ function group(
   return { channel, decisions };
 }
 
+function stats(overrides: Partial<ChannelStats> = {}): ChannelStats {
+  return {
+    reliability: IDENTITY_RELIABILITY,
+    roiRaw: 0,
+    roiShrunk: 0,
+    roiWeight: 0,
+    hitRate: 0.5,
+    n: 1000,
+    ...overrides,
+  };
+}
+
+/** Un canal assumé : ROI shrinké strictement positif. */
+const POSITIVE = stats({ roiShrunk: 0.0224, roiRaw: 0.0434 });
+/** Un canal en observation : ROI shrinké négatif. */
+const NEGATIVE = stats({ roiShrunk: -0.0463, roiRaw: -0.0463 });
+
 function makeService(
   groups: ChannelDecisionChannelGroup[],
-  calibration: ChannelCalibration = {},
+  channelStats: ChannelStatsMap = {},
   lambdaTotals: LambdaTotals = new Map(),
 ) {
   const channelDecisions = {
     listByChannel: vi.fn().mockResolvedValue(groups),
   } as unknown as ChannelDecisionService;
-  const calibrationRepository = {
-    computeMeanError: vi.fn().mockResolvedValue(calibration),
-  } as unknown as InvestmentCalibrationRepository;
+  const statsRepository = {
+    compute: vi.fn().mockResolvedValue(channelStats),
+  } as unknown as InvestmentChannelStatsRepository;
   const coherenceRepository = {
     findLambdaTotals: vi.fn().mockResolvedValue(lambdaTotals),
   } as unknown as InvestmentCoherenceRepository;
   return new InvestmentService(
     channelDecisions,
-    calibrationRepository,
+    statsRepository,
     coherenceRepository,
   );
 }
 
-describe('InvestmentService.listBestPicks', () => {
-  it('ranks by probability bucket first, then probability within the bucket', async () => {
-    const service = makeService([
-      group('VALUE', [
+// Un pick à cote 2.5 et proba brute 0.5 : edge = 0.5 - 0.4 = 0.10, pile au
+// plafond, donc conservé (le garde-fou exclut au-delà, pas à égalité).
+function safePick(overrides: Partial<ChannelSelectionItem> = {}) {
+  return selection({ probability: 0.5, odds: 2.5, ...overrides });
+}
+
+describe('InvestmentService.listPicks — partition des vues', () => {
+  it('assume les canaux à ROI shrinké positif et met les autres en observation', async () => {
+    const groups = [
+      group('DOUBLE_CHANCE', [
         item({
-          fixtureId: 'fx-solid',
-          selections: [selection({ probability: 0.7 })],
+          fixtureId: 'fx-dc',
+          channel: 'DOUBLE_CHANCE',
+          selections: [safePick()],
         }),
       ]),
-      group('SAFE', [
+      group('GOALS', [
         item({
-          fixtureId: 'fx-very-likely-lower',
-          channel: 'SAFE',
-          selections: [selection({ probability: 0.82 })],
-        }),
-        item({
-          fixtureId: 'fx-very-likely-higher',
-          channel: 'SAFE',
-          selections: [selection({ probability: 0.95 })],
+          fixtureId: 'fx-goals',
+          channel: 'GOALS',
+          selections: [safePick()],
         }),
       ]),
-    ]);
+    ];
+    const channelStats = { DOUBLE_CHANCE: POSITIVE, GOALS: NEGATIVE };
 
-    const picks = await service.listBestPicks({ date: '2026-07-06' });
+    const assumed = await makeService(groups, channelStats).listPicks({
+      date: '2026-08-22',
+      view: 'assumed',
+    });
+    const watch = await makeService(groups, channelStats).listPicks({
+      date: '2026-08-22',
+      view: 'watch',
+    });
 
-    expect(picks.map((p) => p.fixtureId)).toEqual([
-      'fx-very-likely-higher',
-      'fx-very-likely-lower',
-      'fx-solid',
-    ]);
-    expect(picks[0]?.probabilityBucket).toBe('veryLikely');
-    expect(picks[2]?.probabilityBucket).toBe('solid');
+    expect(assumed.map((p) => p.fixtureId)).toEqual(['fx-dc']);
+    expect(watch.map((p) => p.fixtureId)).toEqual(['fx-goals']);
   });
 
-  it('corrects the displayed probability and bucket by the measured per-channel bias', async () => {
-    const service = makeService(
-      [
-        group('SAFE', [
-          item({
-            fixtureId: 'fx-overconfident-safe',
-            channel: 'SAFE',
-            selections: [selection({ probability: 0.87 })],
-          }),
-        ]),
-      ],
-      { SAFE: 0.125 },
-    );
+  it('assume DRAW seulement sur les ligues où il est mesuré', async () => {
+    const groups = [
+      group('DRAW', [
+        item({
+          fixtureId: 'fx-draw-i2',
+          channel: 'DRAW',
+          competition: 'I2',
+          selections: [safePick()],
+        }),
+        item({
+          fixtureId: 'fx-draw-pl',
+          channel: 'DRAW',
+          competition: 'PL',
+          selections: [safePick()],
+        }),
+      ]),
+    ];
+    const channelStats = { DRAW: POSITIVE };
 
-    const picks = await service.listBestPicks({ date: '2026-07-06' });
+    const assumed = await makeService(groups, channelStats).listPicks({
+      date: '2026-08-22',
+      view: 'assumed',
+    });
+    const watch = await makeService(groups, channelStats).listPicks({
+      date: '2026-08-22',
+      view: 'watch',
+    });
+
+    expect(assumed.map((p) => p.fixtureId)).toEqual(['fx-draw-i2']);
+    // Hors périmètre mesuré, le pick retombe en observation — pas écarté.
+    expect(watch.map((p) => p.fixtureId)).toEqual(['fx-draw-pl']);
+  });
+
+  it('ne filtre par canal que les surfaces de revue', async () => {
+    const groups = [
+      group('GOALS', [
+        item({
+          fixtureId: 'fx-goals',
+          channel: 'GOALS',
+          selections: [safePick()],
+        }),
+      ]),
+      group('BTTS', [
+        item({
+          fixtureId: 'fx-btts',
+          channel: 'BTTS',
+          selections: [safePick()],
+        }),
+      ]),
+    ];
+    const channelStats = { GOALS: NEGATIVE, BTTS: NEGATIVE };
+
+    const picks = await makeService(groups, channelStats).listPicks({
+      date: '2026-08-22',
+      view: 'watch',
+      channel: 'BTTS',
+    });
+
+    expect(picks.map((p) => p.fixtureId)).toEqual(['fx-btts']);
+  });
+
+  it('ne retient aucun canal quand tous les ROI shrinkés sont négatifs', async () => {
+    const groups = [
+      group('GOALS', [
+        item({
+          fixtureId: 'fx-goals',
+          channel: 'GOALS',
+          selections: [safePick()],
+        }),
+      ]),
+    ];
+
+    const assumed = await makeService(groups, { GOALS: NEGATIVE }).listPicks({
+      date: '2026-08-22',
+      view: 'assumed',
+    });
+
+    expect(assumed).toEqual([]);
+  });
+});
+
+describe('InvestmentService.listPicks — garde-fous et vue « Écarté »', () => {
+  async function excludedFor(
+    decision: ChannelDecisionItem,
+    lambdaTotals: LambdaTotals = new Map(),
+  ) {
+    const service = makeService(
+      [group(decision.channel, [decision])],
+      { [decision.channel]: NEGATIVE },
+      lambdaTotals,
+    );
+    return service.listPicks({ date: '2026-08-22', view: 'excluded' });
+  }
+
+  it('écarte un edge revendiqué au-delà du plafond', async () => {
+    // proba 0.7, cote 2.5 -> edge 0.30, très au-dessus de 0.10.
+    const picks = await excludedFor(
+      item({
+        channel: 'GOALS',
+        selections: [selection({ probability: 0.7, odds: 2.5 })],
+      }),
+    );
 
     expect(picks).toHaveLength(1);
-    expect(picks[0]?.modelProbability).toBe(0.87);
-    expect(picks[0]?.probability).toBeCloseTo(0.745, 5);
-    expect(picks[0]?.probabilityBucket).toBe('solid');
+    expect(picks[0]?.exclusionReason).toBe('EDGE_TOO_HIGH');
   });
 
-  it('leaves probability unchanged for a channel with no measured bias', async () => {
-    const service = makeService(
-      [
-        group('DRAW', [
-          item({
-            fixtureId: 'fx-draw',
-            channel: 'DRAW',
-            selections: [selection({ probability: 0.6 })],
-          }),
-        ]),
-      ],
-      { SAFE: 0.125 },
+  it('écarte une cote sous le plancher', async () => {
+    const picks = await excludedFor(
+      item({
+        channel: 'GOALS',
+        selections: [selection({ probability: 0.8, odds: 1.15 })],
+      }),
     );
 
-    const picks = await service.listBestPicks({ date: '2026-07-06' });
-
-    expect(picks[0]?.modelProbability).toBe(0.6);
-    expect(picks[0]?.probability).toBe(0.6);
+    expect(picks).toHaveLength(1);
+    expect(picks[0]?.exclusionReason).toBe('ODDS_TOO_SHORT');
   });
 
-  it('excludes a GOALS Under 2.5 pick when the model lambda contradicts it', async () => {
+  it('écarte un pick GOALS Under que le lambda du modèle contredit', async () => {
+    const picks = await excludedFor(
+      item({
+        channel: 'GOALS',
+        modelRunId: 'run-incoherent',
+        selections: [safePick({ market: 'OVER_UNDER', pick: 'UNDER' })],
+      }),
+      new Map([['run-incoherent', 3.6]]), // lambda 3.6 > ligne 2.5
+    );
+
+    expect(picks).toHaveLength(1);
+    expect(picks[0]?.exclusionReason).toBe('LAMBDA_INCOHERENT');
+  });
+
+  it('garde un pick GOALS Under que le lambda du modèle confirme', async () => {
     const service = makeService(
       [
         group('GOALS', [
           item({
-            fixtureId: 'fx-incoherent-under',
-            modelRunId: 'run-incoherent',
             channel: 'GOALS',
-            selections: [
-              selection({
-                market: 'OVER_UNDER',
-                pick: 'UNDER',
-                probability: 0.5,
-              }),
-            ],
+            modelRunId: 'run-coherent',
+            selections: [safePick({ market: 'OVER_UNDER', pick: 'UNDER' })],
           }),
         ]),
       ],
-      {},
-      new Map([['run-incoherent', 3.6]]), // lambda total 3.6 > the 2.5 line
+      { GOALS: NEGATIVE },
+      new Map([['run-coherent', 2.1]]),
     );
 
-    const picks = await service.listBestPicks({ date: '2026-07-06' });
+    const picks = await service.listPicks({
+      date: '2026-08-22',
+      view: 'watch',
+    });
+
+    expect(picks).toHaveLength(1);
+  });
+
+  it("n'applique le contrôle de lambda qu'au canal GOALS", async () => {
+    const service = makeService(
+      [
+        group('BTTS', [
+          item({
+            channel: 'BTTS',
+            modelRunId: 'run-btts',
+            selections: [safePick({ market: 'OVER_UNDER', pick: 'UNDER' })],
+          }),
+        ]),
+      ],
+      { BTTS: NEGATIVE },
+      new Map([['run-btts', 3.6]]),
+    );
+
+    const picks = await service.listPicks({
+      date: '2026-08-22',
+      view: 'watch',
+    });
+
+    expect(picks).toHaveLength(1);
+  });
+
+  it("écarte tous les picks d'un match sur lequel AVOID a été sélectionné", async () => {
+    const service = makeService(
+      [
+        group('GOALS', [
+          item({
+            fixtureId: 'fx-avoided',
+            channel: 'GOALS',
+            selections: [safePick()],
+          }),
+        ]),
+        group('AVOID', [item({ fixtureId: 'fx-avoided', channel: 'AVOID' })]),
+      ],
+      { GOALS: NEGATIVE },
+    );
+
+    const excluded = await service.listPicks({
+      date: '2026-08-22',
+      view: 'excluded',
+    });
+    const watch = await makeService(
+      [
+        group('GOALS', [
+          item({
+            fixtureId: 'fx-avoided',
+            channel: 'GOALS',
+            selections: [safePick()],
+          }),
+        ]),
+        group('AVOID', [item({ fixtureId: 'fx-avoided', channel: 'AVOID' })]),
+      ],
+      { GOALS: NEGATIVE },
+    ).listPicks({ date: '2026-08-22', view: 'watch' });
+
+    expect(excluded).toHaveLength(1);
+    expect(excluded[0]?.exclusionReason).toBe('AVOID');
+    expect(watch).toEqual([]);
+  });
+
+  it('reporte la raison de niveau match avant celle de niveau pick', async () => {
+    // Le pick enfreint AUSSI le plafond d'edge, mais AVOID prime : la vue
+    // répond à « pourquoi celui-là n'est pas dans la liste ».
+    const service = makeService(
+      [
+        group('GOALS', [
+          item({
+            fixtureId: 'fx-both',
+            channel: 'GOALS',
+            selections: [selection({ probability: 0.9, odds: 2.5 })],
+          }),
+        ]),
+        group('AVOID', [item({ fixtureId: 'fx-both', channel: 'AVOID' })]),
+      ],
+      { GOALS: NEGATIVE },
+    );
+
+    const picks = await service.listPicks({
+      date: '2026-08-22',
+      view: 'excluded',
+    });
+
+    expect(picks[0]?.exclusionReason).toBe('AVOID');
+  });
+
+  it('écarte un match dont le garde-fou de calibration a sauté', async () => {
+    const picks = await excludedFor(
+      item({
+        channel: 'GOALS',
+        calibrationAlert: true,
+        selections: [safePick()],
+      }),
+    );
+
+    expect(picks[0]?.exclusionReason).toBe('CALIBRATION_ALERT');
+  });
+
+  it('ignore une décision sans cote plutôt que de la présenter écartée', async () => {
+    const picks = await excludedFor(
+      item({ channel: 'GOALS', selections: [selection({ odds: null })] }),
+    );
 
     expect(picks).toEqual([]);
   });
+});
 
-  it('keeps a GOALS Under 2.5 pick when the model lambda agrees with it', async () => {
+describe('InvestmentService.listPicks — probabilité et classement', () => {
+  it('applique la courbe de fiabilité du canal à la probabilité affichée', async () => {
+    // a = 0.5 aplatit la pente : sigmoid(0.5 * logit(0.7)) ≈ 0.606.
     const service = makeService(
       [
         group('GOALS', [
           item({
-            fixtureId: 'fx-coherent-under',
-            modelRunId: 'run-coherent',
             channel: 'GOALS',
-            selections: [
-              selection({
-                market: 'OVER_UNDER',
-                pick: 'UNDER',
-                probability: 0.5,
-              }),
-            ],
+            selections: [selection({ probability: 0.7, odds: 1.9 })],
           }),
         ]),
       ],
-      {},
-      new Map([['run-coherent', 2.1]]), // lambda total 2.1 <= the 2.5 line
+      {
+        GOALS: stats({
+          roiShrunk: -0.05,
+          reliability: { a: 0.5, b: 0, n: 500 },
+        }),
+      },
     );
 
-    const picks = await service.listBestPicks({ date: '2026-07-06' });
+    const picks = await service.listPicks({
+      date: '2026-08-22',
+      view: 'watch',
+    });
 
-    expect(picks).toHaveLength(1);
+    expect(picks[0]?.modelProbability).toBe(0.7);
+    expect(picks[0]?.probability).toBeCloseTo(0.6044, 3);
   });
 
-  it('does not apply the lambda-coherence check to non-GOALS channels', async () => {
-    const service = makeService(
-      [
-        group('VALUE', [
-          item({
-            fixtureId: 'fx-value-over-under',
-            modelRunId: 'run-value',
-            channel: 'VALUE',
-            selections: [
-              selection({
-                market: 'OVER_UNDER',
-                pick: 'UNDER',
-                probability: 0.5,
-              }),
-            ],
-          }),
-        ]),
-      ],
-      {},
-      new Map([['run-value', 3.6]]),
-    );
-
-    const picks = await service.listBestPicks({ date: '2026-07-06' });
-
-    expect(picks).toHaveLength(1);
-  });
-
-  it('does not exclude a high-probability pick with negative EV', async () => {
-    const service = makeService([
-      group('SAFE', [
-        item({
-          fixtureId: 'fx-safe-negative-ev',
-          channel: 'SAFE',
-          selections: [selection({ probability: 0.92, odds: 1.05, ev: -0.03 })],
-        }),
-      ]),
-    ]);
-
-    const picks = await service.listBestPicks({ date: '2026-07-06' });
-
-    expect(picks).toHaveLength(1);
-    expect(picks[0]?.ev).toBe(-0.03);
-    expect(picks[0]?.evSign).toBe('negative');
-  });
-
-  it('flags short odds and negative-ROI channels without excluding the pick', async () => {
-    const service = makeService([
-      group('DOMINANT', [
-        item({
-          fixtureId: 'fx-dominant',
-          channel: 'DOMINANT',
-          selections: [selection({ probability: 0.66, odds: 1.15, ev: -0.05 })],
-        }),
-      ]),
-    ]);
-
-    const picks = await service.listBestPicks({ date: '2026-07-06' });
-
-    expect(picks).toHaveLength(1);
-    expect(picks[0]?.shortOdds).toBe(true);
-    expect(picks[0]?.channelRoiFlag).toBe(true);
-  });
-
-  it('includes speculative (sub-50%) picks with the correct bucket, never excluded', async () => {
+  it('laisse la probabilité intacte pour un canal sans mesure', async () => {
     const service = makeService([
       group('GOALS', [
         item({
-          fixtureId: 'fx-speculative',
           channel: 'GOALS',
-          selections: [selection({ probability: 0.44, ev: 0.09 })],
+          selections: [safePick({ probability: 0.6, odds: 1.9 })],
         }),
       ]),
     ]);
 
-    const picks = await service.listBestPicks({ date: '2026-07-06' });
+    const picks = await service.listPicks({
+      date: '2026-08-22',
+      view: 'watch',
+    });
 
-    expect(picks).toHaveLength(1);
-    expect(picks[0]?.probabilityBucket).toBe('speculative');
+    expect(picks[0]?.probability).toBeCloseTo(0.6, 6);
   });
 
-  it('keeps already-played fixtures with their score and result (past-date review)', async () => {
-    const service = makeService([
-      group('VALUE', [
-        item({
-          fixtureId: 'fx-finished',
-          score: '2-1',
-          selections: [selection({ result: 'WON' })],
-        }),
-      ]),
-    ]);
-
-    const picks = await service.listBestPicks({ date: '2026-07-01' });
-
-    expect(picks).toHaveLength(1);
-    expect(picks[0]?.score).toBe('2-1');
-    expect(picks[0]?.result).toBe('WON');
-  });
-
-  it('excludes fixtures with a calibration alert', async () => {
-    const service = makeService([
-      group('VALUE', [
-        item({ fixtureId: 'fx-calibration', calibrationAlert: true }),
-      ]),
-    ]);
-
-    const picks = await service.listBestPicks({ date: '2026-07-06' });
-
-    expect(picks).toEqual([]);
-  });
-
-  it('excludes fixtures flagged by AVOID', async () => {
-    const service = makeService([
-      group('VALUE', [item({ fixtureId: 'fx-avoided' })]),
-      group('AVOID', [
-        item({
-          fixtureId: 'fx-avoided',
-          channel: 'AVOID',
-          selections: [],
-        }),
-      ]),
-    ]);
-
-    const picks = await service.listBestPicks({ date: '2026-07-06' });
-
-    expect(picks).toEqual([]);
-  });
-
-  it('excludes CORRECT_SCORE and other non-investment channels', async () => {
-    const service = makeService([
-      group('CORRECT_SCORE' as ChannelDecisionChannelGroup['channel'], [
-        item({
-          fixtureId: 'fx-correct-score',
-          channel: 'CORRECT_SCORE' as ChannelDecisionItem['channel'],
-        }),
-      ]),
-    ]);
-
-    const picks = await service.listBestPicks({ date: '2026-07-06' });
-
-    expect(picks).toEqual([]);
-  });
-
-  it('drops picks with no real odds', async () => {
-    const service = makeService([
-      group('VALUE', [
-        item({
-          fixtureId: 'fx-no-odds',
-          selections: [selection({ odds: null })],
-        }),
-      ]),
-    ]);
-
-    const picks = await service.listBestPicks({ date: '2026-07-06' });
-
-    expect(picks).toEqual([]);
-  });
-
-  it('caps the result at INVESTMENT_LIMITS.maxPicks', async () => {
-    const decisions = Array.from(
-      { length: INVESTMENT_LIMITS.maxPicks + 5 },
-      (_, i) =>
-        item({
-          fixtureId: `fx-${i}`,
-          selections: [selection({ probability: 0.5 + i * 0.001 })],
-        }),
+  it("classe par probabilité calibrée, puis affiche par heure de coup d'envoi", async () => {
+    const service = makeService(
+      [
+        group('GOALS', [
+          item({
+            fixtureId: 'fx-late-strong',
+            channel: 'GOALS',
+            scheduledAt: '2026-08-22T20:00:00.000Z',
+            selections: [safePick({ probability: 0.55, odds: 2 })],
+          }),
+          item({
+            fixtureId: 'fx-early-weak',
+            channel: 'GOALS',
+            scheduledAt: '2026-08-22T15:00:00.000Z',
+            selections: [safePick({ probability: 0.3, odds: 5 })],
+          }),
+        ]),
+      ],
+      { GOALS: NEGATIVE },
     );
-    const service = makeService([group('VALUE', decisions)]);
 
-    const picks = await service.listBestPicks({ date: '2026-07-06' });
+    const picks = await service.listPicks({
+      date: '2026-08-22',
+      view: 'watch',
+    });
 
-    expect(picks).toHaveLength(INVESTMENT_LIMITS.maxPicks);
+    expect(picks.map((p) => p.fixtureId)).toEqual([
+      'fx-early-weak',
+      'fx-late-strong',
+    ]);
   });
 
-  describe('mode: "value"', () => {
-    it('restricts to VALUE only (not SAFE, not other channels)', async () => {
-      const service = makeService([
-        group('VALUE', [
-          item({
-            fixtureId: 'fx-value',
-            selections: [selection({ ev: 0.2, probability: 0.6 })],
-          }),
-        ]),
-        group('SAFE', [
-          item({
-            fixtureId: 'fx-safe',
-            channel: 'SAFE',
-            selections: [selection({ ev: 0.1, probability: 0.7 })],
-          }),
-        ]),
-        group('GOALS', [
-          item({
-            fixtureId: 'fx-goals',
-            channel: 'GOALS',
-            selections: [
-              selection({
-                market: 'OVER_UNDER',
-                pick: 'OVER',
-                ev: 0.3,
-                probability: 0.55,
-              }),
-            ],
-          }),
-        ]),
-      ]);
-
-      const picks = await service.listBestPicks({
-        date: '2026-07-06',
-        mode: 'value',
-      });
-
-      expect(picks.map((p) => p.channel)).toEqual(['VALUE']);
-    });
-
-    it('excludes picks below the EV threshold', async () => {
-      const service = makeService([
-        group('VALUE', [
-          item({
-            fixtureId: 'fx-below-threshold',
-            selections: [selection({ ev: 0.05 })],
-          }),
-        ]),
-      ]);
-
-      const picks = await service.listBestPicks({
-        date: '2026-07-06',
-        mode: 'value',
-      });
-
-      expect(picks).toEqual([]);
-    });
-
-    it('ranks by calibrated edge (probability - 1/odds), not by stored EV', async () => {
-      // A: ev 0.20 but edge 0.5 - 1/2.4  = 0.083
-      // B: ev 0.16 but edge 0.8 - 1/1.45 = 0.110 — edge order inverts EV order
-      const service = makeService([
-        group('VALUE', [
-          item({
-            fixtureId: 'fx-higher-ev-lower-edge',
-            selections: [selection({ ev: 0.2, probability: 0.5, odds: 2.4 })],
-          }),
-          item({
-            fixtureId: 'fx-lower-ev-higher-edge',
-            selections: [selection({ ev: 0.16, probability: 0.8, odds: 1.45 })],
-          }),
-        ]),
-      ]);
-
-      const picks = await service.listBestPicks({
-        date: '2026-07-06',
-        mode: 'value',
-      });
-
-      expect(picks.map((p) => p.fixtureId)).toEqual([
-        'fx-lower-ev-higher-edge',
-        'fx-higher-ev-lower-edge',
-      ]);
-    });
-
-    it('caps the list at MODE_RANKING.value.topN', async () => {
-      const decisions = Array.from(
-        { length: MODE_RANKING.value.topN + 3 },
-        (_, i) =>
-          item({
-            fixtureId: `fx-value-${i}`,
-            selections: [selection({ ev: 0.1 + i * 0.01, odds: 2.0 })],
-          }),
+  it('plafonne la surface de mise, pas les surfaces de revue', async () => {
+    const many = (channel: 'DOUBLE_CHANCE' | 'GOALS', count: number) =>
+      Array.from({ length: count }, (_, i) =>
+        item({
+          fixtureId: `${channel}-${i}`,
+          channel,
+          selections: [safePick({ probability: 0.5 - i * 0.001, odds: 2.5 })],
+        }),
       );
-      const service = makeService([group('VALUE', decisions)]);
+    const groups = [
+      group('DOUBLE_CHANCE', many('DOUBLE_CHANCE', 40)),
+      group('GOALS', many('GOALS', 40)),
+    ];
+    const channelStats = { DOUBLE_CHANCE: POSITIVE, GOALS: NEGATIVE };
 
-      const picks = await service.listBestPicks({
-        date: '2026-07-06',
-        mode: 'value',
-      });
-
-      expect(picks).toHaveLength(MODE_RANKING.value.topN);
+    const assumed = await makeService(groups, channelStats).listPicks({
+      date: '2026-08-22',
+      view: 'assumed',
+    });
+    const watch = await makeService(groups, channelStats).listPicks({
+      date: '2026-08-22',
+      view: 'watch',
     });
 
-    it('defaults to "probability" mode when mode is omitted', async () => {
-      const service = makeService([
-        group('GOALS', [
-          item({
-            fixtureId: 'fx-goals-default',
-            channel: 'GOALS',
-            selections: [
-              selection({ market: 'OVER_UNDER', pick: 'OVER', ev: -0.1 }),
-            ],
-          }),
-        ]),
-      ]);
+    expect(assumed).toHaveLength(INVESTMENT_LIMITS.assumedMaxPicks);
+    expect(watch).toHaveLength(40);
+  });
+});
 
-      const picks = await service.listBestPicks({ date: '2026-07-06' });
+describe('InvestmentService.listChannelPicks', () => {
+  it("renvoie les picks d'un canal quelle que soit la vue où il tombe", async () => {
+    const groups = [
+      group('DRAW', [
+        item({
+          fixtureId: 'fx-draw-pl',
+          channel: 'DRAW',
+          competition: 'PL',
+          selections: [safePick()],
+        }),
+      ]),
+      group('GOALS', [
+        item({
+          fixtureId: 'fx-goals',
+          channel: 'GOALS',
+          selections: [safePick()],
+        }),
+      ]),
+    ];
 
-      expect(picks).toHaveLength(1);
-    });
+    const picks = await makeService(groups, {
+      DRAW: POSITIVE,
+      GOALS: NEGATIVE,
+    }).listChannelPicks({ date: '2026-08-22', channel: 'DRAW' });
+
+    // DRAW hors DRAW_STAKED_LEAGUES n'est pas dans « Ce qu'on assume », mais
+    // un abonné au canal DRAW le reçoit quand même.
+    expect(picks.map((p) => p.fixtureId)).toEqual(['fx-draw-pl']);
   });
 
-  describe('mode: "safe"', () => {
-    it('restricts to SAFE only', async () => {
-      const service = makeService([
-        group('SAFE', [
-          item({
-            fixtureId: 'fx-safe',
-            channel: 'SAFE',
-            selections: [selection({ probability: 0.85, ev: -0.02 })],
-          }),
-        ]),
-        group('VALUE', [
-          item({
-            fixtureId: 'fx-value',
-            selections: [selection({ ev: 0.2, probability: 0.6 })],
-          }),
-        ]),
-      ]);
-
-      const picks = await service.listBestPicks({
-        date: '2026-07-06',
-        mode: 'safe',
-      });
-
-      expect(picks.map((p) => p.channel)).toEqual(['SAFE']);
-    });
-
-    it('does not apply an EV floor — a negative-EV SAFE pick still shows', async () => {
-      const service = makeService([
-        group('SAFE', [
-          item({
-            fixtureId: 'fx-safe-negative-ev',
-            channel: 'SAFE',
-            selections: [selection({ probability: 0.9, ev: -0.05 })],
-          }),
-        ]),
-      ]);
-
-      const picks = await service.listBestPicks({
-        date: '2026-07-06',
-        mode: 'safe',
-      });
-
-      expect(picks).toHaveLength(1);
-      expect(picks[0]?.evSign).toBe('negative');
-    });
-
-    it('ranks by probability bucket, like probability mode', async () => {
-      const service = makeService([
-        group('SAFE', [
-          item({
-            fixtureId: 'fx-safe-lower',
-            channel: 'SAFE',
-            selections: [selection({ probability: 0.7 })],
-          }),
-          item({
-            fixtureId: 'fx-safe-higher',
-            channel: 'SAFE',
-            selections: [selection({ probability: 0.95 })],
-          }),
-        ]),
-      ]);
-
-      const picks = await service.listBestPicks({
-        date: '2026-07-06',
-        mode: 'safe',
-      });
-
-      expect(picks.map((p) => p.fixtureId)).toEqual([
-        'fx-safe-higher',
-        'fx-safe-lower',
-      ]);
-    });
-  });
-
-  describe.each([
-    ['dominant', 'DOMINANT'] as const,
-    ['btts', 'BTTS'] as const,
-    ['goals', 'GOALS'] as const,
-  ])('mode: "%s"', (mode, channel) => {
-    it(`restricts to ${channel} only and ranks by probability`, async () => {
-      const service = makeService([
-        group(channel, [
-          item({
-            fixtureId: `fx-${mode}-lower`,
-            channel,
-            selections: [
-              selection({
-                market: channel === 'GOALS' ? 'OVER_UNDER' : 'ONE_X_TWO',
-                pick: channel === 'GOALS' ? 'OVER' : 'HOME',
-                probability: 0.6,
-              }),
-            ],
-          }),
-          item({
-            fixtureId: `fx-${mode}-higher`,
-            channel,
-            selections: [
-              selection({
-                market: channel === 'GOALS' ? 'OVER_UNDER' : 'ONE_X_TWO',
-                pick: channel === 'GOALS' ? 'OVER' : 'HOME',
-                probability: 0.9,
-              }),
-            ],
-          }),
-        ]),
-        group('VALUE', [
-          item({
-            fixtureId: 'fx-value-noise',
-            selections: [selection({ ev: 0.5, probability: 0.99 })],
-          }),
-        ]),
-      ]);
-
-      const picks = await service.listBestPicks({ date: '2026-07-06', mode });
-
-      expect(picks.map((p) => p.channel)).toEqual([channel, channel]);
-      expect(picks.map((p) => p.fixtureId)).toEqual([
-        `fx-${mode}-higher`,
-        `fx-${mode}-lower`,
-      ]);
-    });
-  });
-
-  describe('mode: "draw"', () => {
-    it('restricts to DRAW and ranks by calibrated edge, not probability', async () => {
-      // A: p 0.30 @ 3.6 -> edge 0.022 ; B: p 0.34 @ 3.0 -> edge 0.007 —
-      // probability would rank B first, edge ranks A first.
-      const service = makeService([
+  it('applique les mêmes garde-fous que les vues', async () => {
+    const picks = await makeService(
+      [
         group('DRAW', [
           item({
-            fixtureId: 'fx-draw-higher-prob-lower-edge',
             channel: 'DRAW',
-            selections: [selection({ probability: 0.34, odds: 3.0 })],
-          }),
-          item({
-            fixtureId: 'fx-draw-lower-prob-higher-edge',
-            channel: 'DRAW',
-            selections: [selection({ probability: 0.3, odds: 3.6 })],
+            competition: 'I2',
+            selections: [selection({ probability: 0.9, odds: 2.5 })],
           }),
         ]),
-        group('VALUE', [
-          item({
-            fixtureId: 'fx-value-noise',
-            selections: [selection({ ev: 0.5, probability: 0.99 })],
-          }),
-        ]),
-      ]);
+      ],
+      { DRAW: POSITIVE },
+    ).listChannelPicks({ date: '2026-08-22', channel: 'DRAW' });
 
-      const picks = await service.listBestPicks({
-        date: '2026-07-06',
-        mode: 'draw',
-      });
-
-      expect(picks.map((p) => p.channel)).toEqual(['DRAW', 'DRAW']);
-      expect(picks.map((p) => p.fixtureId)).toEqual([
-        'fx-draw-lower-prob-higher-edge',
-        'fx-draw-higher-prob-lower-edge',
-      ]);
-    });
-
-    it('caps the list at MODE_RANKING.draw.topN', async () => {
-      const decisions = Array.from(
-        { length: MODE_RANKING.draw.topN + 3 },
-        (_, i) =>
-          item({
-            fixtureId: `fx-draw-${i}`,
-            channel: 'DRAW',
-            selections: [selection({ probability: 0.3, odds: 3.0 + i * 0.1 })],
-          }),
-      );
-      const service = makeService([group('DRAW', decisions)]);
-
-      const picks = await service.listBestPicks({
-        date: '2026-07-06',
-        mode: 'draw',
-      });
-
-      expect(picks).toHaveLength(MODE_RANKING.draw.topN);
-    });
-  });
-
-  describe('topN caps per single-channel mode', () => {
-    function manyDecisions(channel: ChannelDecisionItem['channel']) {
-      return Array.from({ length: 8 }, (_, i) =>
-        item({
-          fixtureId: `fx-${channel}-${i}`,
-          channel,
-          selections: [selection({ probability: 0.5 + i * 0.01 })],
-        }),
-      );
-    }
-
-    it('caps dominant and safe at their topN', async () => {
-      const dominant = makeService([
-        group('DOMINANT', manyDecisions('DOMINANT')),
-      ]);
-      const safe = makeService([group('SAFE', manyDecisions('SAFE'))]);
-
-      const dominantPicks = await dominant.listBestPicks({
-        date: '2026-07-06',
-        mode: 'dominant',
-      });
-      const safePicks = await safe.listBestPicks({
-        date: '2026-07-06',
-        mode: 'safe',
-      });
-
-      expect(dominantPicks).toHaveLength(MODE_RANKING.dominant.topN);
-      expect(safePicks).toHaveLength(MODE_RANKING.safe.topN);
-    });
-
-    it('lets an explicit topN override the mode default in both directions', async () => {
-      const tighten = makeService([
-        group('DOMINANT', manyDecisions('DOMINANT')),
-      ]);
-      const loosen = makeService([
-        group('DOMINANT', manyDecisions('DOMINANT')),
-      ]);
-
-      const tightened = await tighten.listBestPicks({
-        date: '2026-07-06',
-        mode: 'dominant',
-        topN: 2,
-      });
-      const loosened = await loosen.listBestPicks({
-        date: '2026-07-06',
-        mode: 'dominant',
-        topN: 8,
-      });
-
-      expect(tightened).toHaveLength(2);
-      expect(loosened).toHaveLength(8);
-    });
-
-    it('never exceeds maxPicks even with a larger explicit topN', async () => {
-      const decisions = Array.from(
-        { length: INVESTMENT_LIMITS.maxPicks + 5 },
-        (_, i) =>
-          item({
-            fixtureId: `fx-many-${i}`,
-            selections: [selection({ probability: 0.5 + i * 0.001 })],
-          }),
-      );
-      const service = makeService([group('VALUE', decisions)]);
-
-      const picks = await service.listBestPicks({
-        date: '2026-07-06',
-        topN: INVESTMENT_LIMITS.maxPicks + 5,
-      });
-
-      expect(picks).toHaveLength(INVESTMENT_LIMITS.maxPicks);
-    });
-
-    it('does not cap btts below maxPicks (no profitable ranking to trust)', async () => {
-      const service = makeService([group('BTTS', manyDecisions('BTTS'))]);
-
-      const picks = await service.listBestPicks({
-        date: '2026-07-06',
-        mode: 'btts',
-      });
-
-      expect(picks).toHaveLength(8);
-    });
+    expect(picks).toEqual([]);
   });
 });

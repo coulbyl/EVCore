@@ -289,6 +289,11 @@ dise laquelle vaut quelque chose.
 
 ## 5. Redéfinition proposée
 
+> **Implémenté le 2026-08-22** (branche `fix/todo-2026-08-15`, ROADMAP.md
+> Bloc 13). Ce qui suit décrit la cible ; c'est aussi ce que le code fait
+> désormais, à une réserve près : la réduction de VALUE à ses picks propres
+> (§2.4) reste **non shippée**, en attente d'une validation au niveau jambe.
+
 ### 5.1 Principe
 
 Investir doit devenir **le point de filtre unique**, et un filtre se juge à ce

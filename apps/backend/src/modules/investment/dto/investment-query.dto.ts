@@ -1,17 +1,10 @@
-import { Type } from 'class-transformer';
+import { IsIn, IsOptional, IsString, Matches } from 'class-validator';
 import {
-  IsIn,
-  IsInt,
-  IsOptional,
-  IsString,
-  Matches,
-  Max,
-  Min,
-} from 'class-validator';
-import {
-  INVESTMENT_LIMITS,
-  type InvestmentMode,
+  INVESTMENT_CHANNELS,
+  INVESTMENT_VIEWS,
+  type InvestmentView,
 } from '../investment.constants';
+import type { StrategyChannel } from '@modules/betting-engine/channel-strategy.types';
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -25,41 +18,17 @@ export class InvestmentQueryDto {
   @IsString()
   competitionCode?: string;
 
-  // "probability" (default): tous les canaux, classés par chance de gagner.
-  // "value": VALUE uniquement, EV >= EV_THRESHOLD, classés par edge calibré.
-  // "safe"/"dominant"/"btts"/"goals"/"draw"/"teamTotal"/"cleanSheet"/
-  // "winEitherHalf"/"firstHalf"/"doubleChance"/"resultTotalGoals"/
-  // "overUnderHt"/"resultBtts"/"drawNoBet"/"winToNil"/"halfTimeFullTime":
-  // ce canal seul, tri et cap par canal (voir MODE_RANKING).
+  // "assumed" (défaut) : les canaux à ROI shrinké positif, la surface de mise.
+  // "watch" : tout le reste, filtrable par canal.
+  // "excluded" : ce que les garde-fous ont retiré, avec la raison.
   @IsOptional()
-  @IsIn([
-    'probability',
-    'value',
-    'safe',
-    'dominant',
-    'btts',
-    'goals',
-    'draw',
-    'teamTotal',
-    'cleanSheet',
-    'winEitherHalf',
-    'firstHalf',
-    'doubleChance',
-    'resultTotalGoals',
-    'overUnderHt',
-    'resultBtts',
-    'drawNoBet',
-    'winToNil',
-    'halfTimeFullTime',
-  ])
-  mode?: InvestmentMode;
+  @IsIn([...INVESTMENT_VIEWS])
+  view?: InvestmentView;
 
-  // Filtre d'affichage côté client : remplace le topN par défaut du mode
-  // (MODE_RANKING), borné par le plafond global — jamais au-delà.
+  // Colonne filtrable des vues "watch" et "excluded" — jamais un onglet, et
+  // sans effet sur "assumed", qui est définie par la mesure et pas par un
+  // choix d'affichage.
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(INVESTMENT_LIMITS.maxPicks)
-  topN?: number;
+  @IsIn([...INVESTMENT_CHANNELS])
+  channel?: StrategyChannel;
 }

@@ -234,6 +234,7 @@ enum SubscriptionSourceType {
   CHANNEL_DOMINANT
   CHANNEL_DRAW
   CHANNEL_BTTS
+  CHANNEL_DOUBLE_CHANCE
   CHANNEL_TEAM_TOTAL
 
   @@map("subscription_source_type")

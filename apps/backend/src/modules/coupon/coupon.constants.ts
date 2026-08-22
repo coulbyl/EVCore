@@ -126,8 +126,12 @@ export const MAX_COUPON_SELECTIONS: Partial<Record<CouponChannel, number>> = {
   DOMINANT: 5,
   DRAW: 2,
   VALUE: 2,
-  // Aligned with the backtested topN=3 ranking (db:backtest:invest-ranking,
-  // 2026-07-28) — edge-ranked, not probability-ranked (see MODE_RANKING.teamTotal).
+  // Was aligned with a backtested topN=3 edge ranking in Investment
+  // (db:backtest:invest-ranking, 2026-07-28). That backtest was invalidated on
+  // 2026-08-22 — the paired test on TEAM_TOTAL's own cap came out at t=+0.70,
+  // indistinguable du hasard sur 31 jours — and MODE_RANKING was deleted with
+  // it. The cap survives here as a per-channel EXPOSURE bound in a coupon, not
+  // as a claim that the top 3 rank better than the rest.
   TEAM_TOTAL: 3,
   // Admitted to the pool 2026-08-22 (POOL_ELIGIBLE_CHANNELS). None has any
   // coupon history yet, so all start at DRAW/VALUE's conservative cap of 2

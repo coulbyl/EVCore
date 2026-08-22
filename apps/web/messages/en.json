@@ -185,10 +185,6 @@
       "edge": "gap",
       "edgeTooltip": "Model/market divergence: {pct} — this pick triggered the Caution signal"
     },
-    "observation": {
-      "badge": "Observation",
-      "tooltip": "Prediction channel (most likely scoreline) — never staked by the engine."
-    },
     "calibration": {
       "banner": "Suspect data",
       "tooltipLabel": "Calibration alert",
@@ -280,7 +276,7 @@
     },
     "investment": {
       "title": "Investment",
-      "description": "All of today's picks ranked by probability or EV, channel by channel. The \"?\" breaks down how edge and EV are calculated."
+      "description": "Three views: what we back (the channels measured profitable), what we watch, and what the guardrails filtered out — with the reason. The “?” explains how edge and EV are computed."
     },
     "fixtures": {
       "title": "Matches",
@@ -839,46 +835,40 @@
   },
   "investment": {
     "pageTitle": "Invest",
-    "modeProbabilityLabel": "Probability",
-    "subtitle": "Individual picks ranked by win probability — EV shown for information only, no guarantee of profit.",
-    "subtitleByMode": {
-      "value": "High-value picks (Value channel, EV ≥ 8%), ranked by EV descending.",
-      "safe": "Safety channel picks, ranked by win probability.",
-      "dominant": "Winner channel picks, ranked by probability — negative historical ROI played solo (-23%), consider with caution.",
-      "btts": "BTTS channel picks, ranked by probability — negative historical ROI played solo (-37%), consider with caution.",
-      "goals": "Goals channel picks, ranked by probability — negative historical ROI played solo (-26%), consider with caution.",
-      "draw": "Draw channel picks, ranked by win probability.",
-      "teamTotal": "Team total channel picks, ranked by win probability.",
-      "cleanSheet": "Clean Sheet channel picks, ranked by probability — recently opened channel, no validated solo ROI yet.",
-      "winEitherHalf": "Wins Either Half channel picks, ranked by probability — recently opened channel, no validated solo ROI yet.",
-      "firstHalf": "First Half channel picks, ranked by probability — recently opened channel, no validated solo ROI yet.",
-      "doubleChance": "Double Chance channel picks, ranked by probability — recently opened channel, no validated solo ROI yet.",
-      "resultTotalGoals": "Correct Score + Total Goals channel picks, ranked by probability — recently opened channel, no validated solo ROI yet.",
-      "overUnderHt": "Half-Time Over/Under channel picks, ranked by probability — recently opened channel, no validated solo ROI yet.",
-      "resultBtts": "Correct Score + BTTS channel picks, ranked by probability — recently opened channel, no validated solo ROI yet.",
-      "drawNoBet": "Draw No Bet channel picks, ranked by probability — recently opened channel, no validated solo ROI yet.",
-      "winToNil": "Win To Nil channel picks, ranked by probability — recently opened channel, no validated solo ROI yet.",
-      "halfTimeFullTime": "Half-Time/Full-Time channel picks, ranked by probability — recently opened channel, no validated solo ROI yet."
+    "views": {
+      "assumed": {
+        "label": "What we back",
+        "subtitle": "The channels whose ROI stays positive once sampling noise is removed — 2 out of 18 at the last measurement. Ranked by expected hit rate. DRAW appears only in the leagues where it is measured.",
+        "empty": "No backed pick for this date."
+      },
+      "watch": {
+        "label": "Under watch",
+        "subtitle": "Every other channel, in one filterable list. Each pick carries its channel's ROI, shrunk toward the mean by the volume behind it: context, not a recommendation.",
+        "empty": "No pick under watch for this date."
+      },
+      "excluded": {
+        "label": "Filtered out",
+        "subtitle": "What the guardrails removed, and why. A filter is judged on what it excludes: this view exists so that can be checked.",
+        "empty": "No pick filtered out for this date."
+      }
     },
-    "empty": "No picks available for this date.",
-    "loadError": "Unable to load picks.",
-    "addToSlip": "Add to bet slip",
+    "exclusion": {
+      "AVOID": "AVOID on this fixture",
+      "CALIBRATION_ALERT": "Model and market disagree",
+      "LAMBDA_INCOHERENT": "Contradicts the model's lambda",
+      "EDGE_TOO_HIGH": "Claimed edge too high",
+      "ODDS_TOO_SHORT": "Odds too short"
+    },
+    "expectedRate": "{rate} expected",
+    "channelRoi": "channel {roi}",
+    "channelRoiHint": "{channel} channel ROI shrunk toward the mean, measured on {n} settled selections.",
+    "channelFilterLabel": "Channel",
+    "channelFilterAll": "All channels",
+    "empty": "No pick available for this date.",
+    "loadError": "Could not load picks.",
+    "addToSlip": "Add to slip",
     "added": "Added",
-    "modelProbability": "model:",
-    "bucket": {
-      "veryLikely": "Very likely",
-      "solid": "Solid",
-      "moderate": "Moderate",
-      "speculative": "Speculative"
-    },
-    "badge": {
-      "evPositive": "Positive value",
-      "evNegative": "Negative EV",
-      "shortOdds": "Very short odds",
-      "channelRoiFlag": "Channel with negative historical ROI"
-    },
-    "topNLabel": "Number of picks",
-    "topNAuto": "Auto",
+    "modelProbability": "Raw model:",
     "filtersLabel": "Filters",
     "groupByNone": "No grouping",
     "groupByLeague": "Group by league",
@@ -918,13 +908,14 @@
       "CANCELLED": "Cancelled"
     },
     "sources": {
-      "COUPON_BEST": "Bet slip (best of the day)",
-      "COUPON_ALL": "Bet slip (every slip generated)",
+      "COUPON_BEST": "Bet slip (most likely of the day)",
+      "COUPON_ALL": "Bet slips of the day (short odds)",
       "CHANNEL_VALUE": "VALUE",
       "CHANNEL_SAFE": "SAFE",
       "CHANNEL_DOMINANT": "DOMINANT",
       "CHANNEL_DRAW": "DRAW",
       "CHANNEL_BTTS": "BTTS",
+      "CHANNEL_DOUBLE_CHANCE": "DOUBLE_CHANCE",
       "CHANNEL_TEAM_TOTAL": "TEAM_TOTAL"
     },
     "pickModes": {
@@ -984,7 +975,11 @@
       "endDateBeforeStart": "End date must be after start date.",
       "createError": "Unable to create the subscription.",
       "submitting": "Creating…",
-      "submit": "Create subscription"
+      "submit": "Create subscription",
+      "sourceGroupCoupon": "Bet slips",
+      "sourceGroupBacked": "Backed channels (measured ROI positive)",
+      "sourceGroupWatch": "Channels under watch (measured ROI negative)",
+      "sourceRoiHint": "Measured ROI for this channel: {roi}, over {n} settled selections, shrunk toward the mean by the volume behind it. This is not a forecast."
     },
     "detail": {
       "notFoundTitle": "Subscription detail",

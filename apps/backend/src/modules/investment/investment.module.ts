@@ -4,7 +4,7 @@ import { BettingEngineModule } from '@modules/betting-engine/betting-engine.modu
 import { AuthModule } from '@modules/auth/auth.module';
 import { InvestmentController } from './investment.controller';
 import { InvestmentService } from './investment.service';
-import { InvestmentCalibrationRepository } from './investment-calibration.repository';
+import { InvestmentChannelStatsRepository } from './investment-channel-stats.repository';
 import { InvestmentCoherenceRepository } from './investment-coherence.repository';
 
 @Module({
@@ -12,7 +12,7 @@ import { InvestmentCoherenceRepository } from './investment-coherence.repository
   controllers: [InvestmentController],
   providers: [
     InvestmentService,
-    InvestmentCalibrationRepository,
+    InvestmentChannelStatsRepository,
     InvestmentCoherenceRepository,
   ],
   exports: [InvestmentService],

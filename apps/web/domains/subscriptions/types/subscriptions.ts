@@ -6,6 +6,7 @@ export type SubscriptionSourceType =
   | "CHANNEL_DOMINANT"
   | "CHANNEL_DRAW"
   | "CHANNEL_BTTS"
+  | "CHANNEL_DOUBLE_CHANCE"
   | "CHANNEL_TEAM_TOTAL";
 
 export type SubscriptionChannelPickMode =
@@ -15,14 +16,22 @@ export type SubscriptionChannelPickMode =
 
 export type SubscriptionStatus = "ACTIVE" | "ENDED" | "CANCELLED";
 
+// Rang mesuré d'une source canal, CALCULÉ à chaque appel du catalogue (ROI
+// shrinké > 0 ou non), jamais figé côté client.
+export type SubscriptionSourceTier = "BACKED" | "WATCH";
+
 export type SubscriptionSourceDef = {
   id: SubscriptionSourceType;
   label: string;
   kind: "COUPON" | "CHANNEL";
   channel?: string;
-  investmentMode?: string;
   // topN autorisés pour ce canal — absent sur une source COUPON.
   topNOptions?: number[];
+  tier: SubscriptionSourceTier;
+  // ROI du canal ramené vers la moyenne selon le volume qui le soutient, et
+  // ce volume. `null` sur une source COUPON, ou sur un canal sans mesure.
+  roiShrunk: number | null;
+  roiSampleSize: number | null;
 };
 
 export type SubscriptionChannelPickModeDef = {

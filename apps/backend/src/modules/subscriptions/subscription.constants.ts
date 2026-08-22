@@ -1,5 +1,4 @@
 import type { StrategyChannel } from '@evcore/db';
-import type { InvestmentMode } from '@modules/investment/investment.constants';
 
 // Payload du job BullMQ SUBSCRIPTION_MATCHING — vide, le job réévalue tous
 // les abonnements actifs à chaque passage (voir SubscriptionMatchingService).
@@ -27,37 +26,67 @@ export type SubscriptionSourceDef = {
     | 'CHANNEL_DOMINANT'
     | 'CHANNEL_DRAW'
     | 'CHANNEL_BTTS'
+    | 'CHANNEL_DOUBLE_CHANCE'
     | 'CHANNEL_TEAM_TOTAL';
   label: string;
   kind: 'COUPON' | 'CHANNEL';
+  // Canal interrogé quand channelPickMode === 'INVESTIR' : Investir classe
+  // ses picks par probabilité calibrée, tous canaux sur le même tri (voir
+  // InvestmentService). Il n'y a plus de « mode » par canal à référencer.
   channel?: StrategyChannel;
-  // Mode Investir réutilisé quand channelPickMode === 'INVESTIR'.
-  investmentMode?: InvestmentMode;
   // topN autorisés pour ce canal — undefined sur une source COUPON.
   topNOptions?: readonly number[];
+  /**
+   * Retiré du catalogue pour les NOUVEAUX abonnements, sans casser les
+   * existants : leur ligne, leur historique et leurs notifications continuent
+   * de fonctionner. Une source ne se retire que sur une raison de fond
+   * documentée sur place — pas parce qu'un ROI a passé la tête sous zéro un
+   * mois (le ROI mesuré est déjà exposé sur chaque source, à l'utilisateur de
+   * juger).
+   */
+  retired?: true;
 };
 
-// Catalogue fermé, pas un entier libre — 1 seul événement/jour n'a pas de
-// sens statistique pour juger une discipline ; 3 et 5 sont repris tels quels
-// des valeurs déjà backtestées dans MODE_RANKING (TOP_NS = [3, 5]).
+/**
+ * Combien d'événements par jour un abonnement suit sur son canal.
+ *
+ * C'est un curseur d'EXPOSITION laissé à l'abonné, pas une règle de sélection
+ * calibrée. La distinction est le fond de l'audit du 2026-08-22 : les cinq
+ * plafonds `topN` d'Investir prétendaient améliorer le ROI en coupant la
+ * liste, et testés en apparié aucun n'était significatif (VALUE t=+0.80,
+ * TEAM_TOTAL +0.70, DOMINANT −0.50, SAFE −1.20, DRAW −1.74) — les deux plus
+ * proches du seuil étant négatifs. Ces plafonds ont été supprimés d'Investir.
+ *
+ * Le catalogue reste fermé et identique pour tous les canaux : les valeurs
+ * par canal qui vivaient ici (VALUE [1, 5], TEAM_TOTAL 3) ne s'appuyaient que
+ * sur ces mêmes backtests invalidés. Un entier libre n'aurait pas plus de
+ * sens — 1 seul événement/jour ne suffit pas à juger une discipline.
+ */
 const DEFAULT_CHANNEL_TOPN_OPTIONS = [1, 3, 5] as const;
 
-// VALUE : top3 retiré — db:backtest:invest-ranking (2026-08-01, tout
-// l'historique + 2026 isole) montre edgeCal top3 nettement sous top5
-// (ROI 10.4% vs 14.5% tout l'historique, -7.8% vs +6.7% sur 2026 seul,
-// valid split 3.6% vs 9.7%). Ni un plafonnement ni une penalite de l'edge
-// au-dela du pic observe (0.15-0.2) ne rattrape l'ecart en topN=3 — la
-// largeur (5) compte plus que la forme du score a ce N. TEAM_TOTAL a ete
-// teste dans l'autre sens (son topN=3 actuel bat 5/7/10, ne pas y toucher).
-const VALUE_TOPN_OPTIONS = [1, 5] as const;
-
-// Catalogue fermé — voir DESIGN.md §Décisions de conception, point 1. GOALS
-// exclu volontairement : mesuré négatif (-5.39% ROI, 15 685 sélections,
-// db:backtest:team-total-btts-competition 2026-07-28), l'offrir comme cible
-// d'abonnement contredirait la discipline documentée dans goals-channel.md.
-// CORRECT_SCORE/CLEAN_SHEET/WIN_EITHER_HALF testés aussi (2026-08-01) : pas
-// de quoi les ajouter — CORRECT_SCORE catastrophique sur le split valid a
-// tout topN, les deux autres n'ont que 13-14 jours de données exploitables.
+/**
+ * Catalogue fermé — voir DESIGN.md §Décisions de conception, point 1.
+ *
+ * DOUBLE_CHANCE ajouté le 2026-08-22 : c'est, avec DRAW, l'un des deux seuls
+ * canaux sur 18 dont le ROI reste positif après shrinkage (+2.24%, n=1 431).
+ * L'omettre pendant qu'on propose des canaux mesurés perdants n'était pas
+ * défendable.
+ *
+ * GOALS reste exclu : mesuré négatif (−5.39% ROI, 15 685 sélections,
+ * db:backtest:team-total-btts-competition 2026-07-28), l'offrir comme cible
+ * d'abonnement contredirait la discipline documentée dans goals-channel.md.
+ * CORRECT_SCORE/CLEAN_SHEET/WIN_EITHER_HALF testés aussi (2026-08-01) : pas
+ * de quoi les ajouter — CORRECT_SCORE catastrophique sur le split valid à
+ * tout topN, les deux autres n'ont que 13-14 jours de données exploitables.
+ *
+ * VALUE et SAFE restent au catalogue parce que des abonnements actifs les
+ * ciblent, mais l'audit du 2026-08-22 leur retire leur justification : 92% des
+ * sélections de VALUE et 95% de celles de SAFE sont des doublons exacts de
+ * décisions de Phase 1, et re-sélectionner DÉGRADE la calibration (ratio
+ * réalisé/annoncé 0.915 sur les picks non repris, 0.739 sur les repris). Ne
+ * pas les remettre en avant avant que la réduction de VALUE à ses picks
+ * propres ait été validée au niveau jambe.
+ */
 export const SUBSCRIPTION_SOURCES: readonly SubscriptionSourceDef[] = [
   // « meilleur » retiré du libellé : mesuré sur 5 passes de régénération, le
   // rang 1 ne fait pas mieux que les suivants. C'est le coupon de plus forte
@@ -78,23 +107,29 @@ export const SUBSCRIPTION_SOURCES: readonly SubscriptionSourceDef[] = [
     label: 'VALUE (Valeur)',
     kind: 'CHANNEL',
     channel: 'VALUE',
-    investmentMode: 'value',
-    topNOptions: VALUE_TOPN_OPTIONS,
+    topNOptions: DEFAULT_CHANNEL_TOPN_OPTIONS,
   },
+  // Retiré le 2026-08-22. Pas pour son ROI (−6.05% shrinké, d'autres sont
+  // dans le même ordre de grandeur et restent proposés) mais parce que le
+  // canal n'a plus d'objet : 95% de ses sélections sont des doublons exacts
+  // d'un pick de Phase 1, et ses 5% de picks propres sont les pires du
+  // système (n=29, −19.7%). Ce qu'il exprimait — « haute probabilité » — se
+  // lit directement sur la probabilité calibrée. S'abonner à SAFE, c'est
+  // s'abonner à un sous-ensemble d'un autre canal en croyant en suivre un
+  // nouveau. Voir docs/audit-canaux-investir-2026-08-22.md §2.4.
   {
     id: 'CHANNEL_SAFE',
     label: 'SAFE (Sécurité)',
     kind: 'CHANNEL',
     channel: 'SAFE',
-    investmentMode: 'safe',
     topNOptions: DEFAULT_CHANNEL_TOPN_OPTIONS,
+    retired: true,
   },
   {
     id: 'CHANNEL_DOMINANT',
     label: 'DOMINANT (Victoire)',
     kind: 'CHANNEL',
     channel: 'DOMINANT',
-    investmentMode: 'dominant',
     topNOptions: DEFAULT_CHANNEL_TOPN_OPTIONS,
   },
   {
@@ -102,7 +137,6 @@ export const SUBSCRIPTION_SOURCES: readonly SubscriptionSourceDef[] = [
     label: 'DRAW (Nul)',
     kind: 'CHANNEL',
     channel: 'DRAW',
-    investmentMode: 'draw',
     topNOptions: DEFAULT_CHANNEL_TOPN_OPTIONS,
   },
   {
@@ -110,7 +144,13 @@ export const SUBSCRIPTION_SOURCES: readonly SubscriptionSourceDef[] = [
     label: 'BTTS (BB)',
     kind: 'CHANNEL',
     channel: 'BTTS',
-    investmentMode: 'btts',
+    topNOptions: DEFAULT_CHANNEL_TOPN_OPTIONS,
+  },
+  {
+    id: 'CHANNEL_DOUBLE_CHANCE',
+    label: 'DOUBLE_CHANCE (Double chance)',
+    kind: 'CHANNEL',
+    channel: 'DOUBLE_CHANCE',
     topNOptions: DEFAULT_CHANNEL_TOPN_OPTIONS,
   },
   {
@@ -118,7 +158,6 @@ export const SUBSCRIPTION_SOURCES: readonly SubscriptionSourceDef[] = [
     label: 'TEAM_TOTAL',
     kind: 'CHANNEL',
     channel: 'TEAM_TOTAL',
-    investmentMode: 'teamTotal',
     topNOptions: DEFAULT_CHANNEL_TOPN_OPTIONS,
   },
 ] as const;
