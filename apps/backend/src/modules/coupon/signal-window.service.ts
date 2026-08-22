@@ -35,8 +35,6 @@ import {
   type VirtualCouponChannel,
   DRAW_STAKED_LEAGUES,
   POOL_ELIGIBLE_CHANNELS,
-  CANAL_BASE_WEIGHT,
-  DEFAULT_CANAL_BASE_WEIGHT,
   COUPON_PARAMS,
   EVALUATED_MARKET_CANAL,
   VIRTUAL_COUPON_RULES,
@@ -58,8 +56,6 @@ export function isExtremeDivergence(
   return probability - 1 / odds >= AVOID_CONFIG.maxEdge;
 }
 
-const DOW_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const;
-
 /**
  * Per-market mean signed calibration error, keyed by `Market` enum value.
  * `meanError = mean(probEstimated - outcome)` — positive = model overconfidence.
@@ -76,14 +72,15 @@ export type MarketCalibration = Record<
   { meanError: number; betCount: number }
 >;
 
-export type SignalWindow = {
-  calibratedCanalHitRates: Record<Canal, number>;
-  calibratedCanalLeagueHitRates: Record<Canal, Record<string, number>>;
-  canalDowFactors: Record<Canal, Record<string, number | null>>;
-  marketCalibration: MarketCalibration;
-  /** Per-channel Platt curves — see CalibrationService.computeChannelReliability. */
+/**
+ * Tout ce dont le scoring d'une jambe a besoin. Anciennement `SignalWindow`,
+ * qui portait aussi des taux de réussite glissants sur 38 jours — voir
+ * `computeLegCalibration` pour pourquoi ils ont été retirés.
+ */
+export type LegCalibration = {
+  /** Courbes de Platt par canal — cf. CalibrationService.computeChannelReliability. */
   channelReliability: ChannelReliabilityMap;
-  /** Fallback curve for a channel with no settled history of its own. */
+  /** Courbe de repli pour un canal sans historique propre. */
   pooledReliability: ChannelReliability;
 };
 
@@ -195,12 +192,6 @@ export type ScoredPick = {
   /** Provenance: the `channel_selection` row this leg came from (`null`
    * for evaluatedPicks legs, which no channel selected). */
   channelSelectionId: string | null;
-  /**
-   * Settled sample the leg's channel reliability curve was fitted on. Drives
-   * the estimation-error term in `couponEVStandardError`. `null` until
-   * `CouponComposerService.scorePicks()` has run.
-   */
-  calibrationSampleSize?: number | null;
   /** ID du ModelRun source (BTTS/DRAW/DOMINANT — pour création d'un bet USER). */
   modelRunId: string | null;
 };
@@ -341,52 +332,6 @@ function resolveVirtualPickCorrect(input: {
   }
 
   return null;
-}
-
-type AggEntry = {
-  canal: Canal;
-  correct: boolean;
-  dow: number;
-  league: string;
-  count: number;
-  day: Date;
-};
-
-function decayWeight(
-  dayMs: number,
-  nowMs: number,
-  halfLifeDays: number,
-): number {
-  const daysAgo = (nowMs - dayMs) / 86400000;
-  return Math.pow(0.5, daysAgo / halfLifeDays);
-}
-
-// eslint-disable-next-line max-params
-function hitsForWeighted(
-  entries: AggEntry[],
-  filter: (e: AggEntry) => boolean,
-  nowMs: number,
-  halfLifeDays: number,
-): { correct: number; total: number } {
-  let correct = 0;
-  let total = 0;
-  for (const e of entries) {
-    if (!filter(e)) continue;
-    const w = decayWeight(e.day.getTime(), nowMs, halfLifeDays) * e.count;
-    total += w;
-    if (e.correct) correct += w;
-  }
-  return { correct, total };
-}
-
-function calibrate(
-  weightedCorrect: number,
-  weightedTotal: number,
-  prior: number,
-): number {
-  const { k, capMin, capMax } = COUPON_PARAMS;
-  const raw = (weightedCorrect + k * prior) / (weightedTotal + k);
-  return Math.min(capMax, Math.max(capMin, raw));
 }
 
 // Opposite pick of an OVER_UNDER(_HT) line — pairs OVER_x with UNDER_x to recover
@@ -539,147 +484,47 @@ export class SignalWindowService {
   ) {}
 
   /**
-   * @param asOf point-in-time cutoff — only fixtures played strictly before this
-   *   instant feed the calibration. Defaults to "now" (live generation). Pass the
-   *   target day's start to make the signal reproducible and leak-free when
-   *   (re)generating for a past or specific date.
+   * Calibration des jambes — courbes de fiabilité par canal, point-in-time.
+   *
+   * Remplace `computeSignalWindow(windowDays, asOf)` et toute la notion de
+   * fenêtre glissante de 38 jours (supprimée le 2026-08-22).
+   *
+   * Ce que la fenêtre produisait :
+   *   - `calibratedCanalHitRates`, `canalDowFactors`,
+   *     `calibratedCanalLeagueHitRates` — des taux de réussite passés par
+   *     (canal), (canal×jour), (canal×ligue), agrégés en `signalScore` ;
+   *   - `marketCalibration` — un décalage moyen par marché.
+   *
+   * Pourquoi c'est parti :
+   *   - `signalScore` a été mesuré ANTI-PRÉDICTIF à probabilité constante :
+   *     0.681 (n=1120) contre 0.631 (n=1190) selon qu'il est bas ou haut,
+   *     -5.0 points ± 2.0, et dans le même sens sur les quatre bandes de
+   *     probabilité. Détail dans `CouponComposerService.scorePicks`.
+   *   - la décomposition de variance dit pourquoi : (canal×jour×ligue) est le
+   *     découpage où 88% de l'écart observé entre cases est du bruit.
+   *     Sélectionner sur un taux passé bruité, c'est sélectionner la
+   *     régression vers la moyenne.
+   *   - `marketCalibration` avait déjà été remplacé par les courbes par canal
+   *     (mauvaise forme — la courbe est plate, pas décalée — et mauvais
+   *     groupement).
+   *
+   * Ce qui RESTE du passé, et qui marche : la courbe de fiabilité par canal.
+   * La distinction est celle entre CALIBRER (transformer une probabilité
+   * annoncée en probabilité honnête — ratio passé de 0.819 à 1.05-1.10) et
+   * PRÉFÉRER (choisir une jambe plutôt qu'une autre sur son historique), qui
+   * est ce qui échouait.
+   *
+   * @param asOf borne point-in-time — seules les rencontres jouées strictement
+   *   avant cet instant alimentent la calibration. Défaut « maintenant »
+   *   (génération live) ; passer le début du jour cible pour une régénération
+   *   reproductible et sans fuite.
    */
-  async computeSignalWindow(
-    windowDays: number,
+  async computeLegCalibration(
     asOf: Date = new Date(),
-  ): Promise<SignalWindow> {
-    const nowMs = asOf.getTime();
-    const since = new Date(nowMs - windowDays * 24 * 60 * 60 * 1000);
-    const halfLifeDays = COUPON_PARAMS.decayHalfLifeDays;
-
-    type BetAggRow = {
-      day: Date;
-      channel: StrategyChannel;
-      is_won: boolean;
-      dow: number;
-      league: string;
-      cnt: bigint;
-    };
-    // Window + leak guard are on f."scheduledAt" (when the result became known),
-    // consistent with the recency decay which keys on the fixture day. The
-    // channel filter is intentionally absent: every canal is calibrated from its
-    // own settled MODEL bets, and canals with no sample fall back to their
-    // CANAL_BASE_WEIGHT prior via calibrate() (B6).
-    const betRows = await this.prisma.client.$queryRaw<BetAggRow[]>`
-      SELECT
-        DATE(f."scheduledAt")                                   AS day,
-        cd.channel                                              AS channel,
-        (b.status = 'WON')                                      AS is_won,
-        (EXTRACT(ISODOW FROM f."scheduledAt")::int - 1)         AS dow,
-        c.code                                                  AS league,
-        COUNT(*)                                                AS cnt
-      FROM bet b
-      JOIN channel_selection cs ON cs.id = b."channelSelectionId"
-      JOIN channel_decision  cd ON cd.id = cs."channelDecisionId"
-      JOIN fixture     f ON f.id = b."fixtureId"
-      JOIN season      s ON s.id = f."seasonId"
-      JOIN competition c ON c.id = s."competitionId"
-      WHERE b.status IN ('WON', 'LOST')
-        AND f."scheduledAt" >= ${since}
-        AND f."scheduledAt" < ${asOf}
-        AND b.source = 'MODEL'
-      GROUP BY DATE(f."scheduledAt"), cd.channel, b.status,
-               EXTRACT(ISODOW FROM f."scheduledAt"), c.code
-    `;
-
-    const entries: AggEntry[] = [];
-
-    for (const r of betRows) {
-      entries.push({
-        canal: r.channel,
-        correct: r.is_won,
-        dow: Number(r.dow),
-        league: r.league,
-        count: Number(r.cnt),
-        day: r.day,
-      });
-    }
-
-    const canals: Canal[] = [
-      'VALUE',
-      'SAFE',
-      'BTTS',
-      'DRAW',
-      'DOMINANT',
-      'TEAM_TOTAL',
-    ];
-
-    const calibratedCanalHitRates = Object.fromEntries(
-      canals.map((c) => {
-        const prior = CANAL_BASE_WEIGHT[c] ?? DEFAULT_CANAL_BASE_WEIGHT;
-        const { correct, total } = hitsForWeighted(
-          entries,
-          (e) => e.canal === c,
-          nowMs,
-          halfLifeDays,
-        );
-        return [c, calibrate(correct, total, prior)];
-      }),
-    ) as Record<Canal, number>;
-
-    const canalDowFactors = Object.fromEntries(
-      canals.map((c) => {
-        const dowMap = Object.fromEntries(
-          DOW_LABELS.map((label, i) => {
-            const { correct, total } = hitsForWeighted(
-              entries,
-              (e) => e.canal === c && e.dow === i,
-              nowMs,
-              halfLifeDays,
-            );
-            return [label, total > 0 ? correct / total : null];
-          }),
-        );
-        return [c, dowMap];
-      }),
-    ) as Record<Canal, Record<string, number | null>>;
-
-    const allLeagues = [...new Set(entries.map((e) => e.league))];
-    const calibratedCanalLeagueHitRates = Object.fromEntries(
-      canals.map((c) => {
-        const canalPrior = calibratedCanalHitRates[c];
-        const leagueMap = Object.fromEntries(
-          allLeagues.map((l) => {
-            const { correct, total } = hitsForWeighted(
-              entries,
-              (e) => e.canal === c && e.league === l,
-              nowMs,
-              halfLifeDays,
-            );
-            return [l, calibrate(correct, total, canalPrior)];
-          }),
-        );
-        return [c, leagueMap];
-      }),
-    ) as Record<Canal, Record<string, number>>;
-
-    const { byChannel: channelReliability, pooled: pooledReliability } =
+  ): Promise<LegCalibration> {
+    const { byChannel, pooled } =
       await this.calibration.computeChannelReliability({ asOf });
-
-    const marketResults = await this.calibration.computeAllMarkets({ asOf });
-    const marketCalibration: MarketCalibration = {};
-    for (const [market, result] of Object.entries(marketResults)) {
-      if (result) {
-        marketCalibration[market] = {
-          meanError: result.meanError.toNumber(),
-          betCount: result.betCount,
-        };
-      }
-    }
-
-    return {
-      calibratedCanalHitRates,
-      calibratedCanalLeagueHitRates,
-      canalDowFactors,
-      marketCalibration,
-      channelReliability,
-      pooledReliability,
-    };
+    return { channelReliability: byChannel, pooledReliability: pooled };
   }
 
   /**
@@ -1229,7 +1074,11 @@ export class SignalWindowService {
     const counts = new Map<VirtualCouponChannel, number>();
     const seenFixturesByCanal = new Set<string>();
 
-    for (const pick of picks.sort((a, b) => b.signalScore - a.signalScore)) {
+    // Trié par probabilité, plus par signalScore : celui-ci est mesuré
+    // anti-prédictif à probabilité constante (voir scorePicks,
+    // coupon-composer.service.ts). Ce pool est en observation seule, mais il
+    // ne sert à rien d'observer une sélection qu'on sait inversée.
+    for (const pick of picks.sort((a, b) => b.probability - a.probability)) {
       const count = counts.get(pick.canal) ?? 0;
       if (count >= MAX_VIRTUAL_COUPON_SELECTIONS[pick.canal]) continue;
 

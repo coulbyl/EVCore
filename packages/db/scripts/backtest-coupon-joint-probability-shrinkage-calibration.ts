@@ -1,5 +1,13 @@
 /// <reference types="node" />
 /**
+ * ⚠️ OBSOLÈTE (2026-08-22) — ce script calibre `JOINT_PROBABILITY_CORRELATION_FACTOR`,
+ * une constante qui n'existe plus. Le facteur global neutralisé qu'elle portait a
+ * été remplacé par `LEG_SELECTION_PENALTY` (apps/backend/src/modules/coupon/
+ * coupon.constants.ts) : une pénalité de sélection par jambe, mesurée en comparant
+ * le ratio réalisé/annoncé d'un canal sur sa population entière à celui des jambes
+ * réellement retenues en coupon. Ne pas "SHIP" sa sortie telle quelle.
+ */
+/**
  * Calibration walk-forward de `jointProbability` (coupon.constants.ts's
  * JOINT_PROBABILITY_CORRELATION_FACTOR) — actuellement neutralisé
  * (factor=1.0, no-op) depuis l'audit 2026-08-12, en attente de "la

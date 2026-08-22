@@ -162,6 +162,13 @@ export class CalibrationService {
    * degrades gracefully toward the pooled curve instead of falling off a
    * MIN_BET_COUNT cliff.
    *
+   * Fitted on the channel's POPULATION, deliberately, not on the legs the
+   * composer selected. Conditioning on selection was tried and measured worse
+   * (ratio 0.770 vs 0.803) — see the "piste testée et invalidée" block in
+   * channel-reliability.ts for why it cannot work as a per-channel fit. The
+   * selection bias is handled instead by LEG_SELECTION_PENALTY, uniformly, at
+   * the coupon level.
+   *
    * `asOf` is the same point-in-time guard as computeForMarket: only fixtures
    * whose result was known before the cutoff, so a backtest never calibrates
    * on its own future.

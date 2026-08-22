@@ -1,5 +1,16 @@
 /// <reference types="node" />
 /**
+ * ⚠️ OBSOLÈTE (2026-08-22) — ce script calibre `k` / `decayHalfLifeDays` /
+ * `windowDays` / `nLeagueMin` de `SignalWindowService.computeSignalWindow`,
+ * c'est-à-dire la fenêtre glissante de 38 jours et le `signalScore` qui en
+ * dérivait. Les deux ont été SUPPRIMÉS : `signalScore` a été mesuré
+ * anti-prédictif à probabilité constante (0.681 contre 0.631 selon qu'il est
+ * bas ou haut, -5.0 points ± 2.0, même sens sur les 4 bandes de probabilité).
+ * La calibration des jambes passe désormais par les courbes de fiabilité par
+ * canal (`channel-reliability.ts`). Ne pas relancer ce script pour régler
+ * quoi que ce soit.
+ */
+/**
  * `k` / `decayHalfLifeDays` / `windowDays` / `capMin` / `capMax`
  * (`COUPON_PARAMS`) drive `SignalWindowService.computeSignalWindow`'s
  * per-canal calibrated hit rate — never re-validated (no surviving

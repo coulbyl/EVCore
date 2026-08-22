@@ -20,24 +20,18 @@
  * untouched (upsertProposal bails out on non-PENDING status) — re-running
  * this can never silently discard a decision someone already made.
  *
- * Mirrors CouponWorker.process's real window/profile logic
- * (resolveGenerationWindow: Fri→Sun and Tue→Thu widen the fixture pool and
- * add a LONGSHOT_WEEKEND/MIDWEEK profile) so the replayed output matches
- * what production would have generated under today's code, not a
- * simplified single-day approximation.
+ * Mirrors CouponWorker.process's real window logic (resolveGenerationWindow:
+ * Fri→Sun and Tue→Thu widen the fixture pool) so the replayed output matches
+ * what production would have generated under today's code, not a simplified
+ * single-day approximation.
  *
- * `--profile SAFE|BALANCED|AGGRESSIVE` forces every day onto that single
- * named profile (coupon.constants.ts's COUPON_PROFILES) instead of the live
- * DEFAULT_COUPON_PROFILE + auto weekend/midweek longshot window — for
- * A/B-backtesting an alternative profile. Safe to rerun on the same range
- * as a DEFAULT run: distinct profiles land on distinct targetOddsMin/Max,
- * hence distinct unique-constraint rows (no clobbering).
+ * `--profile` a disparu avec les profils eux-mêmes (2026-08-22, voir
+ * COUPON_BOUNDS) : il n'existe plus qu'un seul jeu de bornes.
  *
  * Dev-only. Run after build:
  *   cd apps/backend && pnpm build
  *   node dist/src/scripts/regenerate-coupons.js --from 2026-05-01 --to 2026-08-31 --dry-run
  *   node dist/src/scripts/regenerate-coupons.js --from 2026-05-01 --to 2026-08-31
- *   node dist/src/scripts/regenerate-coupons.js --from 2026-05-01 --to 2026-08-31 --profile SAFE
  */
 
 // Must run before any import that initialises the Prisma client (@evcore/db).
@@ -52,24 +46,15 @@ import { CouponService } from '@modules/coupon/coupon.service';
 import { CouponSettlementService } from '@modules/coupon/coupon-settlement.service';
 import { CouponRepository } from '@modules/coupon/coupon.repository';
 import { resolveGenerationWindow } from '@modules/etl/workers/coupon.worker';
-import type { CouponProfileName } from '@modules/coupon/coupon.constants';
 import { formatDateUtc } from '@utils/date.utils';
 import { createLogger } from '@utils/logger';
 
 const logger = createLogger('regenerate-coupons');
 
-const NAMED_PROFILES = ['SAFE', 'BALANCED', 'AGGRESSIVE'] as const;
-
 type ScriptArgs = {
   from: string | null;
   to: string | null;
   dryRun: boolean;
-  // Forces every day onto this single named profile instead of the live
-  // DEFAULT_COUPON_PROFILE + auto weekend/midweek longshot window — for
-  // A/B-backtesting an alternative profile (e.g. SAFE) without disturbing
-  // the DEFAULT rows already generated for the same range (distinct
-  // targetOddsMin/Max ⇒ distinct unique-constraint rows, see coupon.service.ts).
-  profile: (typeof NAMED_PROFILES)[number] | null;
 };
 
 @Module({
@@ -86,27 +71,15 @@ function parseArgs(argv: string[]): ScriptArgs {
     from: null,
     to: null,
     dryRun: false,
-    profile: null,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--dry-run') args.dryRun = true;
     else if (arg === '--from') args.from = argv[(i += 1)] ?? null;
     else if (arg === '--to') args.to = argv[(i += 1)] ?? null;
-    else if (arg === '--profile') {
-      const value = argv[(i += 1)] ?? null;
-      if (
-        !value ||
-        !NAMED_PROFILES.includes(value as (typeof NAMED_PROFILES)[number])
-      ) {
-        throw new Error(
-          `--profile must be one of: ${NAMED_PROFILES.join(', ')}`,
-        );
-      }
-      args.profile = value as (typeof NAMED_PROFILES)[number];
-    } else if (arg === '--help' || arg === '-h') {
+    else if (arg === '--help' || arg === '-h') {
       console.log(
-        'Usage: node dist/src/scripts/regenerate-coupons.js --from D --to D [--dry-run] [--profile SAFE|BALANCED|AGGRESSIVE]',
+        'Usage: node dist/src/scripts/regenerate-coupons.js --from D --to D [--dry-run]',
       );
       process.exit(0);
     } else throw new Error(`Unknown argument: ${arg}`);
@@ -135,10 +108,8 @@ async function main(): Promise<void> {
 
   if (args.dryRun) {
     for (const date of dates) {
-      const { to, longshotProfile } = resolveGenerationWindow(date);
-      console.log(
-        `  ${date} → window to=${to}${longshotProfile ? `, +${longshotProfile}` : ''}`,
-      );
+      const { to } = resolveGenerationWindow(date);
+      console.log(`  ${date} → window to=${to}`);
     }
     console.log(`Would regenerate ${dates.length} day(s), see windows above.`);
     return;
@@ -168,18 +139,8 @@ async function main(): Promise<void> {
   let done = 0;
   for (const date of dates) {
     try {
-      if (args.profile) {
-        await coupon.generateCoupons(date, {
-          to: date,
-          profile: args.profile as CouponProfileName,
-        });
-      } else {
-        const { to, longshotProfile } = resolveGenerationWindow(date);
-        await coupon.generateCoupons(date, { to });
-        if (longshotProfile) {
-          await coupon.generateCoupons(date, { to, profile: longshotProfile });
-        }
-      }
+      const { to } = resolveGenerationWindow(date);
+      await coupon.generateCoupons(date, { to });
     } catch (err) {
       logger.error({ date, err }, 'Failed to regenerate coupons for date');
     }

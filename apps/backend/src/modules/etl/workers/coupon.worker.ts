@@ -16,12 +16,14 @@ const logger = createLogger('coupon-worker');
 // every other day stays single-day (unchanged behaviour). `date` is the day
 // betting-engine-analysis just finished analyzing (J+1), which is also the
 // day the resulting CouponProposal.forDate is keyed on; only the fixture pool
-// widens to `to`. `longshotProfile` names which LONGSHOT profile (if any)
-// matches this window — null outside a Fri→Sun/Tue→Thu window, since a
-// longshot coupon needs the wider multi-day pool to reach 8-12 legs.
+// widens to `to`.
+//
+// Ne renvoie plus de `longshotProfile` : les profils ont été supprimés le
+// 2026-08-22 (voir COUPON_BOUNDS). La fenêtre multi-jours, elle, reste utile
+// et indépendante — elle élargit simplement le vivier de matchs disponibles
+// un vendredi ou un mardi.
 export function resolveGenerationWindow(date: string): {
   to: string;
-  longshotProfile: 'LONGSHOT_WEEKEND' | 'LONGSHOT_MIDWEEK' | null;
 } {
   // Noon UTC — same "avoid any timezone/DST boundary" trick used elsewhere
   // in this codebase (cf. the removed per-call `date` param in
@@ -30,18 +32,12 @@ export function resolveGenerationWindow(date: string): {
   const noonUtc = new Date(`${date}T12:00:00.000Z`);
   const dow = noonUtc.getUTCDay(); // 0=Sun..6=Sat
   if (dow === 5) {
-    return {
-      to: formatDateUtc(addDays(noonUtc, 2)),
-      longshotProfile: 'LONGSHOT_WEEKEND',
-    };
+    return { to: formatDateUtc(addDays(noonUtc, 2)) };
   }
   if (dow === 2) {
-    return {
-      to: formatDateUtc(addDays(noonUtc, 2)),
-      longshotProfile: 'LONGSHOT_MIDWEEK',
-    };
+    return { to: formatDateUtc(addDays(noonUtc, 2)) };
   }
-  return { to: date, longshotProfile: null };
+  return { to: date };
 }
 
 @Processor(BULLMQ_QUEUES.AI_ENGINE)
@@ -56,22 +52,10 @@ export class CouponWorker extends WorkerHost {
 
   async process(job: Job<AiEngineJobData>): Promise<void> {
     const { date } = job.data;
-    const { to, longshotProfile } = resolveGenerationWindow(date);
+    const { to } = resolveGenerationWindow(date);
     logger.info({ date, to }, 'Starting coupon generation');
     await this.coupon.generateCoupons(date, { to });
     logger.info({ date, to }, 'Coupon generation complete');
-
-    if (longshotProfile) {
-      logger.info(
-        { date, to, profile: longshotProfile },
-        'Starting longshot observation generation',
-      );
-      await this.coupon.generateCoupons(date, { to, profile: longshotProfile });
-      logger.info(
-        { date, to, profile: longshotProfile },
-        'Longshot observation generation complete',
-      );
-    }
 
     await this.couponSettlement.settleReadyProposals();
     logger.info({ date }, 'Ready coupon settlement complete');

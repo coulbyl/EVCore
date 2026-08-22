@@ -25,13 +25,60 @@ export type ChannelReliability = {
   a: number;
   /** Intercept on the logit scale. 0 = leave the channel's level untouched. */
   b: number;
-  /** Settled selections the fit was computed on (before shrinkage). */
+  /**
+   * Settled selections in the channel's POPULATION sample (every rank-1
+   * SELECTED selection with real odds). Traced onto each scored pick so a
+   * published coupon shows how much evidence its correction rests on.
+   */
   n: number;
 };
 
 export type ChannelReliabilityMap = Record<string, ChannelReliability>;
 
 export const IDENTITY_RELIABILITY: ChannelReliability = { a: 1, b: 0, n: 0 };
+
+// ── Piste testée et invalidée : ajustement conditionné à la sélection ──────
+//
+// La courbe ci-dessus est ajustée sur la POPULATION d'un canal puis appliquée
+// aux jambes que le composeur a SÉLECTIONNÉES — deux distributions
+// différentes. Mesuré le 2026-08-22, la sélection est le plus gros des deux
+// biais (ratio réalisé/annoncé) :
+//
+//   canal          population   en coupon   coût de la sélection
+//   DRAW_NO_BET         0.969       0.694                 -0.271
+//   DOUBLE_CHANCE       0.932       0.728                 -0.204
+//   BTTS                0.958       0.778                 -0.180
+//   GOALS               0.890       0.778                 -0.112
+//   DOMINANT            0.835       0.753                 -0.082
+//
+// Une hiérarchie à deux niveaux a donc été essayée : ajustement sur
+// `coupon_proposal_leg` (les jambes retenues), shrinké vers l'ajustement
+// population du canal, lui-même shrinké vers le poolé. Validée en deux passes
+// chronologiques (entraînement jan→avr, validation mai→août out-of-sample).
+//
+// **Elle a dégradé la calibration** : ratio par jambe 0.770 contre 0.803 avec
+// l'ajustement population seul. Le pire résultat est tombé sur BTTS, le canal
+// le MIEUX informé par le conditionnement (186 jambes d'entraînement) :
+// ratio 0.890 → 0.550, avec une courbe à `a = 1.149` qui accentue la pente au
+// lieu de l'aplatir.
+//
+// La raison n'est pas un mauvais réglage de `k` : **le biais de sélection
+// n'est pas une propriété du canal qu'on peut pré-ajuster.** Il est créé par
+// le composeur au moment où il choisit, et il dépend de la correction en
+// vigueur à cet instant. Ajuster sur des jambes choisies sous la correction
+// C0, appliquer comme C1, et le composeur choisit alors d'autres jambes : le
+// biais que C1 corrigeait ne décrit plus ce qui est sélectionné. L'estimateur
+// court derrière une cible qu'il déplace lui-même. Ce n'est pas un point fixe
+// qui converge, c'est une boucle de rétroaction.
+//
+// Ce qui marche à la place, parce que ça ne réordonne pas les candidats et ne
+// referme donc pas la boucle : une pénalité de sélection UNIFORME au niveau du
+// coupon (`LEG_SELECTION_PENALTY`, coupon.constants.ts), mesurée à 0.805 par
+// jambe sur 821 jambes en coupon contre 12 748 en population.
+//
+// Ne pas retenter une correction PAR CANAL du biais de sélection sans traiter
+// d'abord la circularité — le résultat ci-dessus n'est pas un échec de
+// calibration, c'est un échec de la démarche.
 
 // Probabilities are clamped before logit so a degenerate 0 or 1 estimate
 // cannot produce an infinite feature and blow up the fit.

@@ -1,3 +1,4 @@
+import type { CouponClassName } from '../coupon.constants';
 import type {
   CouponProposalStatus,
   CouponResult,
@@ -43,6 +44,12 @@ export type CouponProposalDto = {
    * the backtested default profile.
    */
   experimental: boolean;
+  /**
+   * Classe du coupon — SAFE / BALANCED / BOLD, une cible de cote combinée
+   * chacune (voir COUPON_CLASSES). `null` pour les propositions historiques
+   * générées avant les classes.
+   */
+  couponClass: CouponClassName | null;
   combinedOdds: number;
   jointProbability: number;
   signalScore: number;

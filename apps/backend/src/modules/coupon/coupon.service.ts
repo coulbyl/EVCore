@@ -5,13 +5,15 @@ import { CouponRepository } from './coupon.repository';
 import { SignalWindowService } from './signal-window.service';
 import { CouponComposerService } from './coupon-composer.service';
 import {
+  COUPON_CLASSES,
   COUPON_PARAMS,
-  COUPON_PROFILES,
-  resolveCouponProfile,
-  type CouponProfileName,
+  LEGACY_LONGSHOT_MIN_ODDS,
+  classForTargetOddsMin,
+  type CouponClass,
 } from './coupon.constants';
 import { DEFAULT_STAKE_PCT } from '@modules/betting-engine/ev.constants';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
+import type { ScoredPick } from './signal-window.service';
 
 const logger = createLogger('coupon');
 
@@ -69,8 +71,6 @@ export class CouponService {
   async generateCoupons(
     date: string,
     opts: {
-      windowDays?: number;
-      profile?: CouponProfileName;
       /**
        * Last day (inclusive) of a multi-day fixture window — e.g. `date`
        * Friday, `to` Sunday for a weekend coupon, or `date` Tuesday, `to`
@@ -82,24 +82,20 @@ export class CouponService {
       to?: string;
     } = {},
   ): Promise<void> {
-    const { windowDays = COUPON_PARAMS.windowDays, profile, to = date } = opts;
-    // Profil indicatif optionnel ; défaut = bornes backtestées (pas de régression,
-    // multi-profil non activé tant que la gate de backtest n'est pas verte).
-    const profileBounds = resolveCouponProfile(profile);
-    logger.info(
-      { date, to, windowDays, profile: profile ?? 'DEFAULT' },
-      'Generating coupons',
-    );
+    const { to = date } = opts;
+    logger.info({ date, to }, 'Generating coupons');
 
     const asOf = new Date(`${date}T00:00:00.000Z`);
-    await this.repo.deletePendingForDate(
-      asOf,
-      profileBounds.minCombinedOdds,
-      profileBounds.maxCombinedOdds,
-    );
+    for (const couponClass of COUPON_CLASSES) {
+      await this.repo.deletePendingForDate(
+        asOf,
+        couponClass.targetOddsMin,
+        couponClass.targetOddsMax,
+      );
+    }
 
     const [window, rawPicks] = await Promise.all([
-      this.signalWindow.computeSignalWindow(windowDays, asOf),
+      this.signalWindow.computeLegCalibration(asOf),
       this.signalWindow.getPoolForRange(date, to, {
         includeDraw: this.stakeDraw,
         enforceAvoid: this.enforceAvoid,
@@ -115,15 +111,35 @@ export class CouponService {
     );
 
     const scoredPicks = this.composer.scorePicks(rawPicks, window);
-    const coupons = this.composer.compose(scoredPicks, profileBounds);
 
-    if (coupons.length === 0) {
-      logger.info(
-        { date, picks: rawPicks.length, distinctFixtures },
-        'No viable coupons generated',
-      );
-      return;
+    // Une passe par classe. Les classes partagent le même vivier et peuvent
+    // donc proposer le même match : c'est voulu, un utilisateur n'en joue
+    // qu'une. La disjonction stricte n'a de sens qu'À L'INTÉRIEUR d'une
+    // classe, où les coupons sont proposés ensemble.
+    let total = 0;
+    for (const couponClass of COUPON_CLASSES) {
+      total += await this.generateForClass({
+        date,
+        couponClass,
+        scoredPicks,
+      });
     }
+
+    logger.info(
+      { date, count: total, picks: rawPicks.length, distinctFixtures },
+      total === 0 ? 'No viable coupons generated' : 'Coupons upserted',
+    );
+  }
+
+  private async generateForClass(args: {
+    date: string;
+    couponClass: CouponClass;
+    scoredPicks: ScoredPick[];
+  }): Promise<number> {
+    const { date, couponClass, scoredPicks } = args;
+    const coupons = this.composer.compose(scoredPicks, {
+      targetCombinedOdds: couponClass.targetCombinedOdds,
+    });
 
     for (const coupon of coupons) {
       const lastScheduledAt = coupon.legs
@@ -139,16 +155,14 @@ export class CouponService {
       await this.repo.upsertProposal({
         forDate: new Date(`${date}T00:00:00.000Z`),
         rank: coupon.rank,
-        signalWindowDays: windowDays,
-        // Reflects the PROFILE actually used, not a hardcoded default — two
-        // profiles generated for the same date/windowDays must land on
-        // distinct rows under the forDate_signalWindowDays_targetOddsMin_
-        // targetOddsMax_rank unique constraint, not silently upsert into
-        // each other. For the (unnamed) default profile this is numerically
-        // identical to the previous hardcoded 1.0/maxCombinedOdds, so no
-        // change for existing live generation.
-        targetOddsMin: profileBounds.minCombinedOdds,
-        targetOddsMax: profileBounds.maxCombinedOdds,
+        signalWindowDays: COUPON_PARAMS.legacySignalWindowDays,
+        // Porte la CLASSE : c'est ce qui permet aux trois de coexister sur une
+        // même date sous la contrainte unique
+        // (forDate, signalWindowDays, targetOddsMin, targetOddsMax, rank)
+        // au lieu de s'écraser l'une l'autre. Sert aussi de discriminant de
+        // classe à la lecture, sans colonne supplémentaire ni migration.
+        targetOddsMin: couponClass.targetOddsMin,
+        targetOddsMax: couponClass.targetOddsMax,
         combinedOdds: coupon.combinedOdds,
         jointProbability: coupon.jointProbability,
         signalScore: coupon.signalScore,
@@ -170,7 +184,7 @@ export class CouponService {
       });
     }
 
-    logger.info({ date, count: coupons.length }, 'Coupons upserted');
+    return coupons.length;
   }
 
   async getCoupons(
@@ -187,9 +201,11 @@ export class CouponService {
       signalWindowDays: p.signalWindowDays,
       targetOddsMin: Number(p.targetOddsMin),
       targetOddsMax: Number(p.targetOddsMax),
-      experimental:
-        Number(p.targetOddsMin) >=
-        COUPON_PROFILES.LONGSHOT_WEEKEND.minCombinedOdds,
+      // Le badge "Expérimental" marquait les coupons LONGSHOT. Ces profils
+      // n'existent plus (COUPON_BOUNDS) ; les lignes historiques gardent leur
+      // targetOddsMin élevé, on continue donc de les marquer telles quelles.
+      experimental: Number(p.targetOddsMin) >= LEGACY_LONGSHOT_MIN_ODDS,
+      couponClass: classForTargetOddsMin(Number(p.targetOddsMin)),
       combinedOdds: Number(p.combinedOdds),
       jointProbability: Number(p.jointProbability),
       signalScore: Number(p.signalScore),

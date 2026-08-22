@@ -112,7 +112,7 @@ export type CouponOutputChannel = CouponChannel | VirtualCouponChannel;
 
 // Plafond du nombre de sélections RETENUES par canal dans le POOL (par jour),
 // PAS le nombre de jambes d'un coupon — concept distinct des bornes de profil
-// (`CouponProfileBounds.maxLegs`). Levée d'ambiguïté B8 : un coupon est borné par
+// (`COUPON_BOUNDS.maxLegs`). Levée d'ambiguïté B8 : un coupon est borné par
 // son profil ; ceci borne combien de candidats d'un canal entrent dans le pool.
 // Per-canal cap on legs contributed to one day's coupons. Partial on purpose:
 // a channel with no entry uses DEFAULT_MAX_COUPON_SELECTIONS. Caps are earned
@@ -172,130 +172,120 @@ export const CANAL_BASE_WEIGHT: Partial<Record<CouponChannel, number>> = {
 } as const;
 
 export const COUPON_PARAMS = {
-  k: 20,
   capMin: 0.05,
   capMax: 0.8,
-  minCalibratedJointProbability: 0.25,
   // Seuil d'EV de coupon (Étape 1 — EV au cœur du coupon). Un coupon n'est viable
   // que si `couponEV = P_coupon × Odd_coupon − 1 ≥ minCouponEV`. Resserré de
   // 0.05 à 0.15 le 2026-08-09 (db:backtest:coupon-params-validation, sur les
   // 403 CouponProposal réels réglés) : train ROI +28.3%→+29.2%, valid ROI
   // +19.8%→+23.2%, les deux améliorés — 0.20 dégrade train, 0.30 inverse le
   // signe, non retenus.
-  minCouponEV: 0.15,
-  maxLegs: 3,
-  // Plafond de garde-fou, PAS un objectif de compte fixe (revu 2026-08-15,
-  // TODO.md "jambe partagée entre rank 1/2/3") — depuis l'incident du 08-15
-  // (une même jambe TEAM_TOTAL_HOME présente en rank 1 ET rank 2, tous deux
-  // perdus ensemble), `selectDiverseCoupons` n'accepte plus AUCUNE jambe
-  // partagée entre coupons publiés (avant : un ratio ≤50% laissait passer une
-  // jambe partagée dès qu'un coupon avait ≥3 jambes). Le nombre de coupons
-  // publiés dépend donc désormais du pool réel (autant de combinaisons
-  // disjointes que le pool le permet) — ce plafond borne juste le haut, pas
-  // un nombre à atteindre coûte que coûte.
-  maxCoupons: 10,
-  maxCombinedOdds: 6.0,
-  recencyWeighting: 'exponential_decay_14d' as const,
-  decayHalfLifeDays: 14,
-  nLeagueMin: 15,
-  windowDays: 38,
-  includeConfInCoupons: true,
-  couponMinSample: {
-    SAFE: 10,
-    BTTS: 10,
-    VALUE: 5,
-    DOMINANT: 20,
-    DRAW: 20,
-    TEAM_TOTAL: 20,
-    DRAW_NO_BET: 20,
-    WIN_EITHER_HALF: 20,
-    HALF_TIME_FULL_TIME: 20,
-    DOUBLE_CHANCE: 20,
-    WIN_TO_NIL: 20,
-    FIRST_HALF: 20,
-  } as Partial<Record<CouponChannel, number>>,
+  legacyMinCouponEV: 0.15,
+  // Nombre maximum de coupons publiés par jour. Ramené de 10 à 3 le
+  // 2026-08-22 : 3 est ce que la simulation hors échantillon a validé
+  // (ROI −6.57% ± 11.1) et ce que le produit demande. À 10, les rangs 4 à 10
+  // se construisent sur les jambes restantes une fois les bonnes consommées —
+  // ce sont des fonds de panier que rien ne justifie de publier.
+  maxCoupons: 3,
+  /**
+   * Valeur écrite dans `coupon_proposal.signalWindowDays` (colonne NOT NULL et
+   * composante de la clé unique). Depuis la suppression de la fenêtre
+   * glissante le 2026-08-22, elle ne décrit plus rien : c'est un discriminant
+   * constant, conservé pour ne pas exiger de migration.
+   */
+  legacySignalWindowDays: 38,
 } as const;
 
 /**
- * Correction de la surconfiance de `jointProbability` (audit 2026-08-12, 409
- * `CouponProposal` réglés) — le produit brut des probas par jambe ne corrige
- * pas la corrélation entre jambes (même jour, même round, même scénario
- * incertain) : le bucket ~44% annoncé s'est réglé à ~20% réel sur un seul
- * bucket, n=30, cause du coupon manuel perdu du 2026-08-11.
+ * Plafond d'edge par jambe : `probabilité − 1/cote`. Une jambe au-dessus est
+ * rejetée du pool de coupon.
  *
- * Mécanique choisie délibérément : facteur multiplicatif plutôt que le
- * shrinkage bayésien de `calibrate()` — `calibrate()` shrink un TAUX déjà
- * mesuré sur un vrai échantillon pondéré (dizaines d'observations), un
- * `jointProbability` de coupon n'a pas cet équivalent ; le traiter comme "1
- * observation" face au même `k` l'écraserait vers `prior` quel que soit le
- * raw, recréant le bug dégénéré que `LEG_PROBABILITY_MODEL_WEIGHT` avait déjà
- * corrigé. Le facteur multiplicatif préserve l'ordre et la granularité
- * pick-spécifique.
+ * C'est le levier qui a fonctionné, après trois tentatives de correction de
+ * `p̂` qui ont toutes échoué (voir plus bas). Mesuré le 2026-08-22 sur 51 860
+ * sélections réglées à cote réelle, hors canaux meta et filtres — ratio
+ * réalisé/annoncé par tranche d'edge :
  *
- * `factor` = 1.0 (neutre, PAS de correction actuellement appliquée) — revu
- * 2026-08-15 après `db:backtest:joint-probability-calibration` sur les 410
- * `CouponProposal` réglés (train/valid 60/40 par jour, comme
- * `coupon-params-validation.ts`) :
- *   - factor=1.0 (système historique, sans correction) : train ROI +30.0%,
- *     valid ROI +22.9%, les deux positifs, n≥20 des deux côtés.
- *   - factor=0.8 : train ROI -18.2%, valid ROI +74.3% — signe qui s'inverse,
- *     non actionnable.
- *   - factor=0.7 : même inversion de signe, et n<20 des deux côtés.
- *   - factor=0.4545 (valeur initialement retenue après l'audit) : n=0 des
- *     deux côtés — élimine tout l'historique des seuils actuels, confirmé
- *     indépendamment par un replay du 08-13→08-16 avec le moteur actuel.
- * Conclusion : le biais du bucket ~44%→20% (n=30) ne se généralise PAS en un
- * facteur global — l'appliquer partout sur-corrige et élimine un historique
- * par ailleurs rentable. Facteur remis à 1.0 (no-op) en attendant une
- * calibration PAR BUCKET de probabilité (le bucket 44% peut rester
- * spécifiquement biaisé sans que ça généralise). Le mécanisme
- * (`calibrateJointProbability`, appliqué partout — filtre, EV, Kelly,
- * persistance) reste en place pour recevoir cette calibration par bucket une
- * fois construite ; seule la valeur du facteur est neutralisée ici.
+ *   edge          n        annoncé   réel    ratio
+ *   < 0        18 750       0.481   0.511    1.062
+ *   0.00-0.05  16 880       0.463   0.421    0.910
+ *   0.05-0.10   8 162       0.550   0.447    0.814
+ *   0.10-0.15   4 053       0.597   0.452    0.758
+ *   0.15-0.25   2 776       0.637   0.435    0.683
+ *   > 0.25      1 239       0.699   0.375    0.537
+ *
+ * Monotone, sur un volume énorme, et indépendant du canal. Le fait décisif est
+ * dans les deux colonnes du milieu : le taux réel est PLAT (0.51, 0.42, 0.45,
+ * 0.45, 0.44, 0.38) pendant que la probabilité annoncée grimpe de 0.481 à
+ * 0.699. **L'edge revendiqué par le modèle ne porte aucune information sur le
+ * résultat — seulement sur l'ampleur de son erreur.** Là où le modèle
+ * contredit le plus le marché, il se trompe le plus ; là où il annonce MOINS
+ * que le marché (edge < 0), il est même sous-confiant (ratio 1.062).
+ *
+ * Coupé à 0.10 : garde 84.4% du volume avec un ratio de 0.954, contre 0.694
+ * pour les 15.6% rejetés.
+ *
+ * Symétrie à noter : `VALUE_MIN_EDGE = 0.10` (analysis-core) EXIGE au moins
+ * autant d'edge pour qu'un pick VALUE soit retenu — c'est-à-dire qu'il
+ * sélectionne exactement la région que cette mesure disqualifie.
+ *
+ * ── Pourquoi une contrainte sur l'edge et pas une correction de plus ────────
+ *
+ * Trois corrections de `p̂` ont été essayées et mesurées le 2026-08-22, chacune
+ * dégradant la calibration par jambe et le volume :
+ *
+ *   ajustement population seul          ratio 0.803   237 coupons / 80 jours
+ *   + ajustement conditionné sélection  ratio 0.770   138 coupons / 60 jours
+ *   + pénalité de sélection uniforme    ratio 0.699    71 coupons / 37 jours
+ *
+ * et la proba BRUTE des jambes survivantes montait à chaque étape (0.656 →
+ * 0.707 → 0.750). Raison : le composeur filtre et classe sur la quantité
+ * corrigée, donc toute correction est absorbée par la sélection. Baisser `p̂`
+ * relève la barre d'EV effective, ce qui ne garde que les candidats les plus
+ * extrêmes — et « extrême » et « mal estimé » sont ici la même chose. Même une
+ * pénalité UNIFORME, qui ne réordonne pourtant rien, déplace le seuil
+ * d'admission : tronquer par le bas une distribution biaisée conserve la queue
+ * la plus biaisée. La troncature est une sélection.
+ *
+ * L'edge, lui, est bâti sur la COTE, qui est exogène : le composeur ne peut
+ * pas la déplacer en changeant ses préférences. La contrainte retire la cause
+ * (des jambes que le modèle ne sait pas estimer) au lieu de pénaliser le
+ * symptôme.
+ *
+ * ⚠️ Conséquence assumée : `minCouponEV` devient bien plus dur à atteindre,
+ * puisque l'EV d'une jambe vaut ~edge × cote. C'est le fond du problème, pas
+ * un effet de bord — s'il n'existe aucun coupon à +15% d'EV construit sur des
+ * jambes que le modèle sait estimer, alors ces +15% n'ont jamais existé.
+ * Arbitrer `minCouponEV` contre le volume est une décision produit.
  */
-export const JOINT_PROBABILITY_CORRELATION_FACTOR = {
-  factor: 1.0,
-  capMin: 0.01,
-  capMax: 0.8,
-} as const;
+export const MAX_LEG_EDGE = 0.1;
 
 /**
- * Selection-bias deflation of `couponEV` (Bailey & López de Prado's Deflated
- * Sharpe Ratio, applied to a combinatorial search instead of a backtest grid).
+ * Cote minimale d'une jambe.
  *
- * `compose()` enumerates every admissible leg combination for the day and
- * keeps the best by EV. Taking the maximum over N trials inflates the winning
- * metric mechanically, with NO underlying edge required: the expected maximum
- * of N draws grows like sqrt(2 ln N) standard deviations above the mean. The
- * old fixed `JOINT_PROBABILITY_CORRELATION_FACTOR` could not model this,
- * because the inflation depends on how wide the search actually was that day —
- * a 6-leg pool and a 60-leg pool are not the same statistical situation.
+ * Contrainte PRODUIT avant tout : depuis que le composeur sélectionne par
+ * probabilité décroissante, il va chercher les jambes les plus courtes du
+ * vivier. Sans plancher, 39% des jambes publiées tombaient sous 1.20 (309 sur
+ * 786 le 2026-08-22) et des coupons sortaient à 1.30 de cote combinée, avec
+ * des jambes à 1.04. Ce n'est pas un produit : il faut une mise énorme pour un
+ * retour dérisoire, et une seule surprise efface tout.
  *
- * Deflation applied to the winning coupon's EV:
+ * Et ça ne coûte rien en ROI — la bande qu'on retire est même la pire des
+ * courtes. ROI par jambe mesuré (sélections réglées, edge ≤ MAX_LEG_EDGE) :
  *
- *     deflated = couponEV - sigma * sqrt(2 * ln(max(trials, e)))
+ *   cote          n        hit     ROI jambe
+ *   < 1.10       346      0.945    -0.62% ± 1.30
+ *   1.10-1.20    742      0.829    -5.17% ± 1.59   ← retirée
+ *   1.20-1.35  2 173      0.763    -3.06% ± 1.16   ← meilleure bande à volume
+ *   1.35-1.60  5 506      0.644    -4.74% ± 0.96
+ *   >= 1.60   35 025      0.405    -4.83% ± 0.72
  *
- * `sigma` is the day-to-day dispersion of coupon outcomes, not a fitted
- * parameter: a coupon returns `odds - 1` or `-1`, so its standard deviation is
- * dominated by the odds level. It is measured per composition from the
- * candidate set rather than hardcoded.
- *
- * Deflation is applied to the VIABILITY FILTER and the RANKING only — the
- * persisted `couponEV` stays the raw, interpretable "P x odds - 1" a human can
- * recompute by hand from the stored legs.
- *
- * `trialsCap` bounds the log term so a pathologically wide pool (LONGSHOT
- * profiles read 3 days of fixtures) cannot deflate every candidate below the
- * threshold and publish nothing.
+ * La bande < 1.10 est la seule meilleure, mais à 346 lignes elle ne porte
+ * aucun volume, et c'est celle qui produit les coupons à 1.30.
  */
-export const COUPON_EV_DEFLATION = {
-  enabled: true,
-  trialsCap: 100_000,
-} as const;
+export const MIN_LEG_ODDS = 1.2;
 
 /**
- * Plancher de probabilité calibrée par jambe — désormais porté par le PROFIL
- * (`CouponProfileBounds.minLegProbability`), plus par une constante globale.
+ * Plancher de probabilité calibrée par jambe — supprimé le 2026-08-22.
  *
  * Il existait comme constante unique à 0.55 (2026-08-15), après un coupon perdu
  * où une jambe à 43.4% était passée sur un EV gonflé (cote 3.75, edge apparent
@@ -326,13 +316,11 @@ export const COUPON_EV_DEFLATION = {
  * jambes à 0.31 donnent un coupon à 3%, ce qui est un profil LONGSHOT assumé,
  * pas un défaut.
  *
- * Porté au profil parce que l'appétit de risque est précisément ce qu'un
- * profil exprime : SAFE veut légitimement des jambes hautes, LONGSHOT ne le
- * peut pas. `undefined` = pas de plancher par jambe (le profil s'en remet à
- * `minJointProbability`).
- *
- * ⚠️ Valeurs ci-dessous à confirmer par un cycle régénère+règle avant de les
- * considérer acquises — elles élargissent le pool de façon substantielle.
+ * `MAX_LEG_EDGE` fait désormais ce travail, et mieux : une jambe n'a d'EV
+ * apparente gonflée que si le modèle s'écarte fortement du marché, ce que le
+ * plafond d'edge interdit directement. Ce qui reste sous 0.55 après ce
+ * plafond, ce sont des jambes que le MARCHÉ juge peu probables et que le
+ * modèle price pareil — des paris de valeur sains, pas des coin-flips.
  */
 export const LEGACY_MIN_LEG_PROBABILITY = 0.55;
 
@@ -458,170 +446,152 @@ export const EVALUATED_MARKET_CANAL: Record<string, CouponChannel> = {
 } as const;
 
 // ─────────────────────────────────────────────
-// Profils de risque (Étape 4 — corrige B8/B9)
+// Bornes de composition (profils supprimés — 2026-08-22)
 // ─────────────────────────────────────────────
 
-export type CouponProfileName =
-  | 'SAFE'
-  | 'BALANCED'
-  | 'AGGRESSIVE'
-  | 'LONGSHOT_WEEKEND'
-  | 'LONGSHOT_MIDWEEK';
+/**
+ * Bornes de composition partagées par toutes les classes de coupon.
+ * Remplace les cinq profils (SAFE/BALANCED/AGGRESSIVE/LONGSHOT_*) supprimés le
+ * 2026-08-22 : trois d'entre eux ne tournaient jamais en production, LONGSHOT
+ * tournait contre son propre commentaire, et leurs bornes se sur-déterminaient
+ * (`couponEV = P × cote − 1` — fixer cote ET proba jointe ET EV décrit le même
+ * plan à deux dimensions, sans qu'on sache laquelle mordait).
+ *
+ * Ce qui varie d'une classe à l'autre tient désormais en UN paramètre, la
+ * cible de cote combinée (voir COUPON_CLASSES). Tout le reste est ici.
+ */
+export const COUPON_BOUNDS = {
+  minLegs: 2,
+  /**
+   * Ramené de 5 à 3 le 2026-08-22.
+   *
+   * Le composeur remplit gloutonnement jusqu'à `maxLegs`, et chaque jambe
+   * ajoutée fait mécaniquement BAISSER la probabilité que le coupon tombe.
+   * À 5, le coupon de rang 1 — celui présenté comme le meilleur — était celui
+   * qui tombait le moins souvent :
+   *
+   *   rang 1 : 3.62 jambes · cote 3.16 · tombe 39.0%
+   *   rang 3 : 2.44 jambes · cote 2.67 · tombe 43.9%
+   *   rang 5 : 2.03 jambes · cote 1.71 · tombe 63.3%
+   *
+   * « Au maximum 5 jambes » ne disait pas QUAND s'arrêter et le glouton
+   * répondait « jamais ». La règle d'arrêt est maintenant explicite : on
+   * s'arrête dès que la cible de cote de la classe est atteinte.
+   */
+  maxLegs: 3,
+  minCombinedOdds: 1.0,
+  /** Garde-fou produit, pas un critère de sélection. */
+  maxCombinedOdds: 20.0,
+} as const;
 
 /**
- * Bornes d'un profil de risque — source unique des contraintes appliquées par
- * `CouponComposerService.compose`. Un coupon n'est viable que s'il respecte TOUTES
- * ces bornes : nombre de jambes, cote combinée, proba jointe et EV de coupon.
+ * Classes de coupon — un seul paramètre chacune : la cible de cote combinée.
+ *
+ * Le composeur ajoute des jambes par probabilité décroissante et S'ARRÊTE dès
+ * que `targetCombinedOdds` est atteinte. C'est une règle d'ARRÊT, jamais un
+ * filtre : un plancher qui rejette après coup coupe la journée entière, parce
+ * que le glouton produit d'abord le coupon de cote la plus COURTE (bug commis
+ * le 2026-08-22 avec `minCouponEV`, 3 coupons publiés sur 2 jours au lieu de
+ * 136 sur 73).
+ *
+ * Prix mesuré de la cote, simulé sur ~1 000 jours (n≈2 600 coupons par
+ * classe, SE ~3 points) :
+ *
+ *   cible   cote obtenue   jambes   hit     ROI
+ *   2.0         2.86        2.20   0.346   -5.36%
+ *   2.5         3.40        2.44   0.279   -8.86%
+ *   3.0         4.08        2.64   0.234  -10.03%
+ *   3.5         4.78        2.76   0.196  -12.15%
+ *
+ * Le ROI se dégrade de façon monotone quand la cible monte : ~1 point de ROI
+ * pour 0.3 de cote combinée. Le mécanisme est mesuré — viser plus haut force
+ * des jambes plus longues, et la calibration des jambes se dégrade avec leur
+ * cote (ratio 1.054 entre 1.20 et 1.35, 0.928 au-delà de 1.60). La classe
+ * BOLD n'est donc pas « plus risquée à espérance égale » : elle est
+ * réellement moins bonne, et l'affichage doit le dire.
+ *
+ * `targetOddsMin`/`targetOddsMax` sont ce qui est écrit dans les colonnes du
+ * même nom, composantes de la clé unique de `coupon_proposal` — c'est ce qui
+ * permet aux trois classes de coexister sur une même date sans migration.
  */
-export type CouponProfileBounds = {
-  /**
-   * Plancher de probabilité calibrée par jambe. `undefined` = aucun plancher,
-   * le profil s'en remet à `minJointProbability` (voir
-   * LEGACY_MIN_LEG_PROBABILITY pour pourquoi ce plancher a quitté le global).
-   */
-  minLegProbability?: number;
+export type CouponClassName = 'SAFE' | 'BALANCED' | 'BOLD';
+
+export type CouponClass = {
+  name: CouponClassName;
+  targetCombinedOdds: number;
+  targetOddsMin: number;
+  targetOddsMax: number;
+};
+
+export const COUPON_CLASSES: readonly CouponClass[] = [
+  {
+    name: 'SAFE',
+    targetCombinedOdds: 2.0,
+    targetOddsMin: 2.0,
+    targetOddsMax: 2.49,
+  },
+  {
+    name: 'BALANCED',
+    targetCombinedOdds: 2.5,
+    targetOddsMin: 2.5,
+    targetOddsMax: 2.99,
+  },
+  {
+    name: 'BOLD',
+    targetCombinedOdds: 3.0,
+    targetOddsMin: 3.0,
+    targetOddsMax: 20.0,
+  },
+] as const;
+
+/** Retrouve la classe d'une proposition persistée depuis son `targetOddsMin`. */
+export function classForTargetOddsMin(
+  targetOddsMin: number,
+): CouponClassName | null {
+  return (
+    COUPON_CLASSES.find((c) => c.targetOddsMin === targetOddsMin)?.name ?? null
+  );
+}
+
+/**
+ * Il n'y a volontairement NI plancher de probabilité jointe NI plancher d'EV
+ * de coupon. Les deux ont existé (`minJointProbability: 0.25`,
+ * `minCouponEV: 0.15`) et les deux sont incompatibles avec la façon dont le
+ * composeur choisit désormais.
+ *
+ * `minCouponEV` était un plancher de COTE déguisé : `EV = p × cote − 1` et
+ * `p` est quasi constant dans un canal, donc exiger de l'EV revient à exiger
+ * des cotes longues — précisément la zone où le modèle réalise 0.694 de ce
+ * qu'il annonce contre 0.954 ailleurs (cf. MAX_LEG_EDGE).
+ *
+ * Pire avec la composition gloutonne : le glouton prend d'abord les plus
+ * fortes probabilités, donc les cotes les plus courtes, donc l'EV la plus
+ * BASSE. Le premier coupon de la journée est celui qui échoue le plus
+ * facilement à un plancher d'EV. Mesuré le 2026-08-22 avec un plancher à 0 :
+ * 3 coupons publiés sur 2 jours, contre 136 sur 73 sans lui.
+ *
+ * Et la simulation qui valide ces bornes (ROI −6.57% ± 11.1 hors échantillon)
+ * n'appliquait aucun des deux. Les remettre n'est pas un durcissement
+ * prudent : c'est un changement non testé qui filtre sur une quantité qu'on a
+ * mesurée anti-prédictive.
+ */
+
+/** Forme des bornes — volontairement large (pas `typeof COUPON_BOUNDS`, dont
+ * les types littéraux issus de `as const` interdiraient toute autre valeur). */
+/**
+ * Borne basse de cote combinée des anciens profils LONGSHOT. Ils n'existent
+ * plus, mais les `CouponProposal` générés avant le 2026-08-22 portent encore
+ * ce `targetOddsMin` : c'est ce qui permet de continuer à les afficher comme
+ * "Expérimental" dans l'historique.
+ */
+export const LEGACY_LONGSHOT_MIN_ODDS = 50.0;
+
+export type CouponBounds = {
   minLegs: number;
   maxLegs: number;
   minCombinedOdds: number;
   maxCombinedOdds: number;
-  minJointProbability: number;
-  minCouponEV: number;
-  /**
-   * Plafond de jambes par jour calendaire (`ScoredPick.dayBucket`) — évite
-   * qu'un coupon multi-jours (fenêtre weekend/midweek) concentre tout son
-   * risque sur un seul jour. `undefined` = pas de plafond (profils mono-jour
-   * actuels, comportement inchangé).
-   */
-  maxLegsPerDay?: number;
-  /**
-   * Override du pool de candidats (défaut : `MAX_POOL_SIZE` dans
-   * coupon-composer.service.ts, 25) avant `composeExhaustive`/`composeGreedy`.
-   * Nécessaire pour LONGSHOT (voir TODO.md "Générateur de coupon") : la règle
-   * anti-corrélation "1 leg/canal+marché" limite le nombre de jambes utilisables
-   * à peu près au nombre de combos canal×marché distincts du pool — avec
-   * `minLegs: 6`, un pool à 25 concentré sur peu de canaux (SAFE domine via
-   * `CANAL_BASE_WEIGHT`) starve `composeGreedy` avant d'atteindre `minLegs`,
-   * d'où 0 coupon LONGSHOT généré (confirmé par l'audit 2026-08-12 — pas un
-   * bug de câblage, un pool structurellement trop court pour ce profil).
-   * `undefined` = pas d'override (profils SAFE/BALANCED/AGGRESSIVE, comportement
-   * inchangé).
-   */
-  maxPoolSize?: number;
 };
-
-/**
- * Au-delà de ce nombre de jambes, `compose()` bascule de la recherche
- * exhaustive (`composeExhaustive`, DFS sur le pool trié) au glouton borné
- * (`composeGreedy`) — C(25,5)=2300 combinaisons reste traitable, C(25,8)≈1M
- * ne l'est plus. Les profils actuels (SAFE/BALANCED/AGGRESSIVE, ≤5 legs)
- * restent tous sur l'exhaustif ; seuls les profils LONGSHOT (8-12 legs)
- * basculent sur le glouton.
- */
-export const EXHAUSTIVE_LEG_THRESHOLD = 5;
-
-/**
- * Nombre de points de départ distincts essayés par `composeGreedy` (chacun
- * force la jambe de rang N du pool trié en premier, puis complète glouton) —
- * donne plusieurs coupons longshot candidats au lieu d'un seul, sans repasser
- * à une recherche exhaustive intraitable sur autant de jambes.
- */
-export const GREEDY_START_VARIANTS = 3;
-
-/**
- * Profils indicatifs (DESIGN.md Étape 4) — **valeurs à confirmer par backtest,
- * pas encore activées en génération** (cf. gate Étape 7). La génération live passe
- * par `DEFAULT_COUPON_PROFILE` (bornes backtestées). Ces presets sont disponibles
- * pour expérimentation / backtest avant promotion.
- */
-export const COUPON_PROFILES: Record<CouponProfileName, CouponProfileBounds> = {
-  SAFE: {
-    minLegProbability: 0.6,
-    minLegs: 2,
-    maxLegs: 3,
-    minCombinedOdds: 1.6,
-    maxCombinedOdds: 2.5,
-    minJointProbability: 0.45,
-    minCouponEV: 0.03,
-  },
-  BALANCED: {
-    minLegProbability: 0.5,
-    minLegs: 2,
-    maxLegs: 4,
-    minCombinedOdds: 2.2,
-    maxCombinedOdds: 5.0,
-    minJointProbability: 0.25,
-    minCouponEV: 0.08,
-  },
-  AGGRESSIVE: {
-    minLegProbability: 0.4,
-    minLegs: 3,
-    maxLegs: 5,
-    minCombinedOdds: 4.0,
-    maxCombinedOdds: 12.0,
-    minJointProbability: 0.1,
-    minCouponEV: 0.15,
-  },
-  // Longshot multi-jours (plan coupon 2026-08-09) — cote combinée cible
-  // 50-70 sur la fenêtre weekend (ven→dim) / midweek européen (mar→jeu),
-  // routé vers CouponComposerService.composeGreedy (> EXHAUSTIVE_LEG_THRESHOLD
-  // legs). maxLegsPerDay évite qu'un coupon 3 jours se concentre sur un seul
-  // jour. Valeurs indicatives — comme SAFE/BALANCED/AGGRESSIVE, à confirmer
-  // par un backtest dédié (db:backtest:coupon-longshot, pas encore écrit)
-  // avant toute activation en génération live.
-  LONGSHOT_WEEKEND: {
-    // Aucun plancher par jambe : un longshot à cote 50-70 se construit
-    // précisément sur des jambes que 0.55 interdisait.
-    minLegs: 6,
-    maxLegs: 12,
-    minCombinedOdds: 50.0,
-    maxCombinedOdds: 70.0,
-    minJointProbability: 0.01,
-    minCouponEV: 0.2,
-    maxLegsPerDay: 5,
-    // Pool dédié plus large (défaut 25) — voir maxPoolSize doc ci-dessus. Une
-    // fenêtre weekend couvre 3 jours de matchs (ven→dim) contre un seul pour
-    // les profils courts, donc un pool nettement plus large reste cohérent
-    // avec le volume de jambes réellement disponible sur la fenêtre.
-    maxPoolSize: 80,
-  },
-  LONGSHOT_MIDWEEK: {
-    minLegs: 6,
-    maxLegs: 12,
-    minCombinedOdds: 50.0,
-    maxCombinedOdds: 70.0,
-    minJointProbability: 0.01,
-    minCouponEV: 0.2,
-    maxLegsPerDay: 5,
-    maxPoolSize: 80,
-  },
-} as const;
-
-/**
- * Profil appliqué en génération live — dérivé des paramètres **backtestés**
- * (`COUPON_PARAMS`, backtest 2026-05-19), donc aucune régression vs l'existant.
- * Correspond grosso modo à un BALANCED élargi ; les profils nommés ci-dessus ne le
- * remplacent qu'après gate de backtest vert (Étape 7).
- */
-export const DEFAULT_COUPON_PROFILE: CouponProfileBounds = {
-  // Abaissé de 0.55 (ancien global) à 0.45 : au-dessus de 0.55 les canaux les
-  // mieux calibrés du système ne peuvent produire aucune jambe (voir
-  // LEGACY_MIN_LEG_PROBABILITY). 0.45 laisse entrer DRAW_NO_BET, GOALS,
-  // WIN_EITHER_HALF et FIRST_HALF sans ouvrir jusqu'aux marchés à 0.15-0.30,
-  // que `minJointProbability` gouverne mieux au niveau du coupon.
-  minLegProbability: 0.45,
-  minLegs: 2,
-  maxLegs: COUPON_PARAMS.maxLegs,
-  minCombinedOdds: 1.0,
-  maxCombinedOdds: COUPON_PARAMS.maxCombinedOdds,
-  minJointProbability: COUPON_PARAMS.minCalibratedJointProbability,
-  minCouponEV: COUPON_PARAMS.minCouponEV,
-};
-
-export function resolveCouponProfile(
-  name?: CouponProfileName,
-): CouponProfileBounds {
-  return name ? COUPON_PROFILES[name] : DEFAULT_COUPON_PROFILE;
-}
 
 export type VirtualCouponRule = {
   canal: VirtualCouponChannel;
