@@ -25,6 +25,37 @@
 
 ## Générateur de coupon
 
+- `[ ]` **BTTS misé sur PL/BL1 alors que les deux ROI se sont inversés**
+  (relevé 2026-08-22, décision : ne rien changer avant un backtest propre) —
+  `BTTS_STAKED_LEAGUES = ['PL', 'BL1']` (coupon.constants.ts) mise réellement
+  sur ces deux ligues. La whitelist a été justifiée le 2026-08-09 par
+  `db:backtest:channel-league-whitelist` : BL1 +5.19%, PL +2.64%, SA écartée
+  pour instabilité de signe. Mesuré à nouveau le 2026-08-22 sur les sélections
+  réglées à cote réelle :
+
+  | ligue        | justification 2026-08-09 | 2026-08-22            |
+  | ------------ | ------------------------ | --------------------- |
+  | BTTS / BL1   | +5.19%                   | **−0.43%** ± 5.45 (n=181) |
+  | BTTS / PL    | +2.64%                   | **−3.62%** ± 3.43 (n=729) |
+  | BTTS / SA    | écartée                  | −2.23% (n=711)        |
+
+  Les deux ligues encore misées sont passées négatives. BTTS agrégé est à
+  −6.70% (n=5 191).
+
+  **Pourquoi on n'a rien touché** : cette mesure LIT l'historique au lieu de
+  rejouer le pipeline — le trou documenté dans
+  `backtest-channel-league-whitelist.ts`. Retirer une whitelist de mise sur
+  une mesure dont on sait qu'elle a un défaut de méthode reviendrait à
+  reproduire l'erreur qui a produit la whitelist. Le préalable est un backtest
+  qui rejoue la configuration actuelle sur données historiques.
+
+  À noter : `DRAW_STAKED_LEAGUES` a été vérifié en même temps et tient —
+  I2 +6.70%, POR +10.36%, BL1 +16.80%, CSL +27.95%, toutes positives.
+
+  Risque assumé en attendant : BTTS continue d'être misé sur deux ligues dont
+  l'avantage mesuré n'existe plus.
+
+
 - `[x]` **LONGSHOT_WEEKEND/MIDWEEK — pool dédié desserré** (résolu 2026-08-15) —
   `MAX_POOL_SIZE` était un module-level constant figé à 25, partagé par tous
   les profils ; nouveau champ optionnel `CouponProfileBounds.maxPoolSize`

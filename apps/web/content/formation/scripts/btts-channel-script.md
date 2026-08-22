@@ -14,7 +14,11 @@ BTTS identifie les matchs où le modèle juge probable que les deux équipes mar
 
 ## Le chiffre, sans détour
 
-BTTS, canal complet : moins 37,22% de ROI. GOALS : moins 26,05%. Contrairement à DOMINANT, aucune méthode de classement testée jusqu'ici — par probabilité, par edge, ou autre — ne rend ces deux canaux rentables.
+BTTS a été misé sur les seuls championnats où son avantage avait été confirmé — et la démarche était sérieuse : le découpage a été validé sur deux périodes distinctes, et un championnat qui changeait de signe entre les deux a été écarté pour cette raison.
+
+Remesurés quelques mois plus tard, les championnats retenus étaient passés négatifs. Tous.
+
+Aucune erreur de calcul n'explique ça. Découper par championnat multiplie les cases, et chaque case est petite. À cette taille, l'écart entre les cases est surtout du bruit d'échantillonnage, pas une différence réelle entre les championnats. Retenir les meilleures cases revient à retenir celles qui ont eu de la chance — et la chance ne se reconduit pas.
 
 ## Pourquoi EVCore les garde quand même
 

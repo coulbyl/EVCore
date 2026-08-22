@@ -1,42 +1,43 @@
 ---
-title: "Le canal DRAW (Nul) : une amélioration réelle, mesurée dans le temps"
+title: "Le canal DRAW (Nul) : le seul qui estime juste"
 category: channels
 difficulty: intermediate
 order: 5
 slug: draw-channel
-summary: "DRAW était nettement négatif il y a deux ans. Il est aujourd'hui l'un des deux canaux les plus solides d'EVCore, avec des signes clairs d'amélioration continue. Voici comment lire une trajectoire, pas seulement un chiffre figé."
-updatedAt: "2026-07-28"
-related: ["channels-overview", "value-channel", "dominant-channel"]
+summary: "DRAW est le canal le mieux calibré d'EVCore : il annonce à peu près ce qu'il réalise. Il y arrive par un chemin inattendu — en ne modélisant rien du tout."
+updatedAt: "2026-08-22"
+related: ["channels-overview", "cotes-probabilites-implicites", "dominant-channel"]
 ---
 
 ## Ce que le canal cherche
 
-DRAW cible le match nul, via la probabilité implicite du marché sur cette issue précise. C'est un pari historiquement difficile dans le secteur : le nul reste l'issue la plus dure à prédire dans le football, et la plupart des approches génériques échouent à en tirer un edge stable.
+DRAW cible le match nul, via la probabilité implicite du marché sur cette issue précise. Le nul reste l'issue la plus difficile à prédire au football, et la plupart des approches génériques échouent à en tirer un avantage stable.
 
-## Une trajectoire, pas un chiffre unique
+## Ce qui le rend particulier
 
-Sur l'ensemble de la période testée (4 110 sélections réglées, au dernier audit du 2026-07-28), DRAW affiche un ROI de **+5.35%** — l'un des deux canaux les plus solides d'EVCore avec VALUE. Ce chiffre global masque une évolution encore plus intéressante que sa moyenne :
+DRAW est le canal **le mieux calibré du système** : le taux de réussite qu'il réalise correspond à ce qu'il annonce, à un ou deux pour cent près. Aucun autre canal n'en est là — la plupart réalisent entre 70 et 90% de ce qu'ils promettent.
 
-| Période                | ROI mesuré                |
-| ---------------------- | ------------------------- |
-| 2023                   | **−19%**                  |
-| Tout l'historique      | +5.35% (4 110 sélections) |
-| 2026, selon la formule | **+11% à +16%**           |
+La raison est instructive : DRAW ne modélise rien. Il lit la probabilité que le bookmaker a inscrite dans sa cote, et s'en sert telle quelle. Il n'a donc aucune occasion d'être sur-confiant, puisqu'il n'a pas d'opinion propre à sur-vendre.
 
-DRAW n'a pas toujours été un canal viable — il l'était nettement moins en 2023. La progression continue vers 2026 vient d'un travail de calibration mesuré dans le temps, pas d'un signal qui aurait toujours été bon et qu'on découvrirait seulement maintenant.
+C'est un contre-exemple utile à l'intuition dominante. On imagine volontiers qu'un bon canal est un canal qui « sait quelque chose que le marché ignore ». Le mieux calibré du lot est celui qui a décidé de faire confiance au marché.
 
-## Pourquoi cette leçon compte au-delà du chiffre
+## Un canal assumé, mais pas partout
 
-DRAW montre un principe que VALUE et DOMINANT n'illustrent pas aussi bien : un canal peut réellement s'améliorer, à condition que l'amélioration soit mesurée sur des données neuves et documentée dans le temps — pas simplement affirmée. La discipline EVCore consiste à dire "ce canal était mauvais, et voici les chiffres qui montrent qu'il progresse", plutôt que d'effacer discrètement les mauvaises années.
+DRAW n'est misé que sur une poignée de championnats, ceux où son avantage a été confirmé sur deux périodes distinctes. Ailleurs, ses picks restent consultables mais rangés en observation.
 
-C'est aussi un rappel utile : un canal qui n'est pas encore au niveau de VALUE aujourd'hui n'est pas condamné à y rester. La calibration continue, documentée en toute transparence, en est la preuve.
+Cette restriction n'est pas de la prudence décorative. Le ROI de DRAW variait énormément d'un championnat à l'autre — d'un extrême nettement positif à un extrême nettement négatif. La moyenne globale cachait ces deux réalités et n'aurait décrit aucun des deux.
 
-## Ce que ce résultat ne dit pas
+## Une leçon sur la lecture d'une trajectoire
 
-+11/+16% sur 2026 reste une période récente et courte comparée à l'historique complet — la tendance se confirme, elle ne clôt pas le sujet. Et passer de −19% à +16% ne signifie pas que la marge d'erreur a disparu : un canal qui a beaucoup varié dans le passé reste, par nature, plus à surveiller qu'un canal stable depuis longtemps.
+Une version précédente de cette page présentait DRAW comme un canal en amélioration continue : négatif en 2023, franchement positif en 2026. La trajectoire était réelle sur les données de l'époque.
+
+Elle s'est aplatie depuis. Ce n'est pas que le canal se soit dégradé — c'est que découper l'historique en tranches annuelles produit des tranches de quelques centaines de lignes, où le hasard suffit à dessiner une pente. Lire une tendance dans ce genre de découpage est l'une des erreurs de méthode que ce produit a le plus payées.
+
+DRAW reste l'un des deux canaux assumés. Pour sa calibration, pas pour sa pente.
 
 ## À retenir
 
-- DRAW est passé d'un ROI franchement négatif en 2023 à un ROI positif et croissant en 2026 — une vraie trajectoire, mesurée et datée.
-- Le chiffre global (+5.35% sur tout l'historique, 4 110 sélections) confirme DRAW comme l'un des deux canaux les plus solides d'EVCore, aux côtés de VALUE.
-- Un canal encore jeune peut mûrir, à condition que la preuve suive.
+- DRAW annonce à peu près ce qu'il réalise. C'est le seul dans ce cas.
+- Il y arrive en ne modélisant rien : il lit la probabilité du marché et la prend au sérieux.
+- Il n'est assumé que sur les championnats où c'est confirmé, pas globalement.
+- Une pente lue sur des tranches annuelles n'est pas une tendance. C'est souvent du bruit.

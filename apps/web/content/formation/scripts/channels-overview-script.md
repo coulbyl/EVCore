@@ -18,7 +18,7 @@ VALUE, en français Valeur : le seul canal qui reste positif hors échantillon, 
 
 SAFE, en français Sécurité : des signes positifs récents, mais un échantillon encore trop fin pour figer une formule.
 
-DOMINANT, en français Victoire : le canal brut perd de l'argent, mais bien classé — son top 5 quotidien — redevient rentable.
+DOMINANT, en français Victoire : il enseigne la régularité la plus utile du système — la fiabilité du modèle s'effondre à mesure que la cote monte.
 
 DRAW, en français Nul : en amélioration réelle et mesurée, pas encore au niveau de VALUE.
 

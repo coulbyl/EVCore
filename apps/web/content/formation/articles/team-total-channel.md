@@ -1,37 +1,49 @@
 ---
-title: "Le canal TEAM_TOTAL : un edge net, sur un historique encore court"
+title: "Le canal TEAM_TOTAL : ce qu'a coûté une promotion sur neuf jours"
 category: channels
 difficulty: intermediate
 order: 8
 slug: team-total-channel
-summary: "Le plus jeune canal misé d'EVCore, activé le 2026-07-28. Le signal est net, mais repose sur seulement quelques jours de données — cette leçon explique pourquoi il est misé quand même, et avec quelle prudence."
-updatedAt: "2026-07-28"
-related: ["channels-overview", "btts-channel", "draw-channel"]
+summary: "TEAM_TOTAL a été misé sur un signal jugé net, mesuré sur neuf jours d'historique. La leçon écrite à l'époque annonçait déjà la prudence nécessaire. Elle avait raison, et ça n'a pas suffi."
+updatedAt: "2026-08-22"
+related: ["channels-overview", "btts-channel", "safe-channel"]
 ---
 
 ## Ce que ce canal cherche
 
-TEAM_TOTAL cible le nombre de buts marqués par une seule équipe (domicile ou extérieur), plus ou moins une ligne donnée — pas le total du match comme GOALS, mais le total d'un seul camp. Le moteur évalue toutes les combinaisons ligne × côté × équipe activées pour la ligue du match, et retient la seule meilleure par valeur attendue.
+TEAM_TOTAL cible le nombre de buts marqués par **une seule équipe** — pas le total du match comme GOALS, mais le total d'un camp. Le moteur évalue les combinaisons ligne × côté activées pour la ligue et retient la meilleure.
 
-## Un canal jeune, activé sur un signal net
+## Ce qui s'est passé
 
-TEAM_TOTAL affiche un ROI de **+3.40%** sur 845 sélections réglées, toutes ligues confondues, avec un taux de réussite de 62.1% — un profil comparable à SAFE en termes de régularité. C'est le meilleur signal observé parmi les canaux récemment promus.
+En juillet 2026, TEAM_TOTAL affichait un signal net : un ROI positif et un taux de réussite élevé. Le canal a été promu et misé.
 
-Mais une précision s'impose, par honnêteté plutôt que par prudence excessive : cet historique ne couvre que **9 jours de mises réelles** au moment de l'activation. C'est un canal qui vient tout juste de démarrer, pas un canal éprouvé sur plusieurs saisons comme VALUE ou DRAW.
+L'historique disponible représentait alors **neuf jours de données**.
 
-## Pourquoi l'activer quand même, alors ?
+La leçon écrite à ce moment-là ne cachait rien. Elle disait, mot pour mot, qu'il fallait traiter ce canal « comme un canal en observation renforcée » et que l'historique était court. Elle a été honnête sur son incertitude — et le canal a quand même été misé.
 
-Deux raisons, aucune des deux n'étant "on est pressé de lancer un nouveau canal" :
+Le signal s'est depuis inversé.
 
-1. **Le classement suit le même schéma que VALUE et DRAW.** Trié par probabilité brute — la méthode par défaut pour un canal single-mode — TEAM_TOTAL est franchement négatif (−3.3% à −6.3% selon le nombre de picks retenus par jour). Trié par edge calibré, il devient fortement positif (+24% à +27% sur les 3 meilleurs picks du jour). C'est exactement le même renversement que celui documenté pour VALUE et DRAW dans la leçon sur les canaux — un schéma déjà validé sur deux canaux matures, pas une coïncidence isolée.
-2. **Aucun championnat n'a encore assez de volume pour être jugé séparément.** Contrairement à BTTS, où découper par championnat a révélé un vrai clivage, aucune ligue ne dépasse 90 sélections réglées sur TEAM_TOTAL — trop peu pour trancher. Le canal est donc misé sur l'ensemble des ligues, sans restriction géographique, en attendant d'avoir assez de volume pour vérifier s'il existe, comme pour BTTS, des poches à exclure ou à privilégier.
+## L'erreur n'était pas dans le chiffre
 
-## Ce que ça veut dire pour vous
+C'est le point important, et il est plus subtil qu'il n'en a l'air.
 
-TEAM_TOTAL entre dans le pool de mise réelle, classé par edge calibré, plafonné à 3 sélections retenues par jour. C'est un canal à surveiller de plus près que VALUE ou DRAW dans les semaines qui suivent son lancement — pas parce que le signal est faible, mais parce que l'échantillon qui le soutient est encore mince. Cette leçon sera revue une fois l'historique plus long.
+Le chiffre de juillet était correct. La mise en garde était correcte. Ce qui n'allait pas, c'est qu'on ait agi **malgré** la mise en garde, en la considérant comme un avertissement à afficher plutôt que comme une raison de ne rien faire.
+
+Une réserve écrite ne réduit pas le risque. Elle documente qu'on le connaissait. Ce sont deux choses très différentes, et la seconde est confortable : elle permet de prendre la décision tout en ayant l'air prudent.
+
+## Comment un canal devrait être promu
+
+Ce que l'expérience a coûté, et qui vaut pour tous les canaux à venir :
+
+**Un volume, pas une durée.** Neuf jours peuvent représenter beaucoup de sélections ou très peu. C'est le nombre de résultats réglés qui compte, et il en faut beaucoup plus qu'on ne le croit — le bruit d'échantillonnage est bien plus large que l'écart qu'on cherche à mesurer.
+
+**Deux périodes, dont une jamais regardée.** Établir la règle sur la première, la vérifier sur la seconde. Et si les deux moitiés divergent, ne pas retenir la plus favorable.
+
+**Le doute tranche vers l'inaction.** Un canal qu'on hésite à promouvoir n'est pas promu. On ne perd rien à attendre : les données continuent de s'accumuler, et la décision sera meilleure dans trois mois.
 
 ## À retenir
 
-- TEAM_TOTAL est misé depuis le 2026-07-28, sur un signal net (+3.40% ROI, hit 62.1%) mais un historique de seulement 9 jours — à traiter comme un canal en observation renforcée, pas encore comme VALUE ou DRAW.
-- Le classement par edge calibré est indispensable : par probabilité brute, le même canal serait négatif.
-- Pas de restriction par championnat pour l'instant, faute de volume suffisant pour en juger — contrairement à BTTS, où ce découpage a révélé un vrai clivage.
+- TEAM_TOTAL a été misé sur neuf jours d'historique, avec une mise en garde explicite. Le signal s'est inversé.
+- Une réserve écrite documente le risque, elle ne le réduit pas.
+- Ce qui compte pour promouvoir un canal : le volume réglé, deux périodes distinctes, et un doute qui tranche vers l'inaction.
+- Le chiffre à jour du canal est dans Track Record.

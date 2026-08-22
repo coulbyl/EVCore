@@ -10,11 +10,13 @@ Vous connaissez maintenant tous les canaux EVCore et leurs vrais chiffres. Cette
 
 ## Erreur 1 — confondre haute probabilité et bon pick
 
-Le classement par probabilité brute sur VALUE, en français Valeur, tombe à moins 12,70% hors échantillon. Le classement par edge calibré, sur les mêmes picks, reste à plus 2,27%. Un pick à 80% n'est pas automatiquement meilleur qu'un pick à 60% — tout dépend de l'écart avec le marché.
+Un pick à 80% n'est pas automatiquement meilleur qu'un pick à 60% : il rapporte moins quand il passe, et la probabilité annoncée est d'autant plus optimiste qu'elle est haute. C'est pour ça que la probabilité affichée dans l'app diffère parfois de celle du modèle brut, affichée juste à côté.
+
+Mais surtout, ne corrigez pas dans l'autre sens en cherchant le plus gros écart avec le marché. Cet écart est anti-prédictif : plus il est grand, moins le pari passe.
 
 ## Erreur 2 — traiter un canal brut comme un produit fini
 
-DOMINANT, en français Victoire, le prouve : le canal complet perd de l'argent, son top 5 quotidien en gagne. Prendre tous les picks plutôt que la sélection testée revient à ignorer ce qui rend le canal exploitable.
+Cette formation a longtemps enseigné l'inverse : qu'un canal perdant redevenait rentable réduit à ses meilleurs picks du jour. Cinq règles de ce type ont été testées correctement en août 2026. Aucune n'est ressortie significative, et les deux plus proches du seuil étaient négatives. Un canal faible reste faible — ce qui change son résultat, c'est la tranche de cotes sur laquelle il opère, pas l'ordre dans lequel on lit ses picks.
 
 ## Erreur 3 — traiter BTTS (BB) ou GOALS (Buts) comme des canaux prouvés
 
@@ -26,7 +28,7 @@ Un canal avec un edge réel peut perdre plusieurs paris d'affilée sans que l'ed
 
 ## Erreur 5 — oublier que les chiffres sont datés, pas garantis
 
-Chaque chiffre de cette formation est une mesure historique à une date précise. DRAW, en français Nul, est passé de moins 19% en 2023 à des chiffres nettement positifs en 2026 — les canaux sont recalibrés régulièrement, et un chiffre positif aujourd'hui peut évoluer.
+Vous ne trouverez plus de chiffre de performance dans cette formation. Ces pages en affichaient, datés, canal par canal. Remesurés quelques mois plus tard, presque tous étaient faux — et toujours dans le même sens : les positifs s'étaient érodés, le seul resté vrai était négatif. Chacun avait été retenu parce qu'il était bon. Les chiffres vivants sont dans l'app : Track Record, et la vue « En observation » d'Investir.
 
 ## Erreur 6 — ignorer les jours sans pick
 

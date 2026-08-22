@@ -1,17 +1,17 @@
 ---
-title: "L'edge et l'EV : pourquoi un pari n'est intéressant qu'au-delà d'un seuil"
+title: "L'edge et l'EV : deux chiffres utiles, et un piège"
 category: bases
 difficulty: beginner
 order: 3
 slug: ev-probabilites-cotes
-summary: "L'EV et l'edge sont les deux chiffres qui décident si un pick mérite d'être misé. Comprenez leur calcul, leur seuil, et pourquoi trier par EV brut peut être trompeur."
-updatedAt: "2026-07-16"
+summary: "L'edge et l'EV mesurent l'avantage que le modèle croit avoir. Mesuré sur 51 860 sélections, cet avantage revendiqué ne prédit pas le résultat — il mesure l'erreur du modèle. Voici pourquoi, et ce qu'EVCore en a fait."
+updatedAt: "2026-08-22"
 related: ["cotes-probabilites-implicites", "comment-lire-un-pick"]
 ---
 
-## Deux façons de mesurer le même avantage
+## Deux façons de mesurer la même chose
 
-La leçon précédente a posé la base : un pari n'a d'intérêt que si la probabilité calibrée dépasse la probabilité implicite de la cote. EVCore traduit cet écart en deux chiffres, tous deux affichés sur chaque pick.
+La leçon précédente a posé la base : la cote contient une probabilité implicite, et le modèle produit sa propre probabilité. L'écart entre les deux se dit de deux façons.
 
 ### L'edge
 
@@ -27,28 +27,58 @@ L'écart brut, en points de pourcentage. Un edge de +10 points signifie que le m
 EV = (probabilité calibrée × cote) − 1
 ```
 
-Même avantage, exprimé cette fois en rendement attendu par unité misée. Un EV de +8% veut dire qu'en moyenne, sur un grand nombre de paris similaires, chaque unité misée rapporte 0,08 unité — en moyenne sur la durée, jamais sur un pari isolé.
+Le même écart, exprimé en rendement attendu par unité misée. Un EV de +8% veut dire qu'en moyenne, sur un grand nombre de paris similaires, chaque unité misée rapporterait 0,08 unité.
 
-## Pourquoi un seuil, et pas n'importe quel EV positif
+Notez le conditionnel. Il porte tout le reste de cette leçon.
 
-En théorie, un EV légèrement positif suffirait à justifier un pari. Dans les faits, EVCore n'affiche un pick VALUE qu'à partir d'un EV de 8% ou plus, pour deux raisons.
+## Le résultat qui a tout changé
 
-D'abord, le modèle n'est jamais parfait : une estimation de probabilité comporte toujours une marge d'erreur. Un EV de +2% peut disparaître entièrement si le modèle se trompe légèrement sur ce match précis — le bruit statistique mange l'avantage. Ensuite, plus l'edge affiché est faible, plus il devient difficile de distinguer une vraie lecture du match d'un simple artefact de calcul.
+Pendant longtemps, EVCore a traité l'edge comme un critère de sélection : plus il était élevé, plus le pick était censé être intéressant. C'était l'intuition évidente, et elle est fausse.
 
-Un seuil élevé filtre mécaniquement les picks les plus fragiles. C'est un choix de discipline, pas une garantie de gain — le point suivant y revient.
+L'audit du 2026-08-22 a rangé 51 860 sélections réglées par tranche d'edge revendiqué, et comparé ce que chaque tranche annonçait à ce qu'elle a réellement réalisé :
 
-## Pourquoi le tri par EV brut peut tromper
+| edge revendiqué | annoncé | réel      | réalisé / annoncé |
+| --------------- | ------- | --------- | ----------------- |
+| négatif         | 0.481   | **0.511** | **1.062**         |
+| 0 à 5 points    | 0.463   | 0.421     | 0.910             |
+| 5 à 10 points   | 0.550   | 0.447     | 0.814             |
+| 10 à 15 points  | 0.597   | 0.452     | 0.758             |
+| 15 à 25 points  | 0.637   | 0.435     | 0.683             |
+| plus de 25      | 0.699   | **0.375** | **0.537**         |
 
-Voici le résultat le plus contre-intuitif de toute cette formation : classer les picks VALUE par EV brut décroissant n'est pas la meilleure stratégie. Sur les données réelles suivies par EVCore, le classement par edge calibré tient sur des données hors échantillon là où le tri par EV brut ou par probabilité brute s'effondre.
+Lisez la colonne « réel » de haut en bas : elle **descend**. De 51% à 37%. Pendant que la colonne « annoncé » monte de 48% à 70%.
 
-Un EV élevé peut venir de deux origines très différentes. Soit une vraie divergence d'analyse entre le modèle et le marché — le cas qu'on cherche à capter. Soit une cote anormalement généreuse sur un match à faible probabilité, où la moindre erreur du modèle se retrouve amplifiée par la cote elle-même. Le classement par edge calibré filtre mieux ce second cas. C'est pour ça que le Coupon Composer et la page Investir s'appuient sur des méthodes testées, pas sur l'intuition "plus l'EV est haut, mieux c'est".
+Autrement dit : plus le modèle annonce un gros avantage, moins le pari passe. L'edge revendiqué ne porte aucune information sur le résultat — il mesure uniquement **l'ampleur de l'erreur du modèle** sur ce match. Et là où le modèle price *en dessous* du marché (edge négatif), il est même trop prudent : ces picks réalisent 6% de plus qu'annoncé.
 
-## Ce que ce chiffre ne dit pas
+## Pourquoi c'est logique, après coup
 
-Un EV positif ne garantit rien sur un pari donné — c'est une espérance statistique sur un grand nombre de paris, pas une prédiction individuelle. Un canal rentable en moyenne peut perdre plusieurs paris consécutifs sans que ça remette rien en cause : c'est la variance, pas un signe d'échec du modèle, et la leçon sur la bankroll y revient en détail. Enfin, aucune performance passée, même bien documentée, ne constitue une promesse pour l'avenir.
+Un gros edge peut avoir deux origines.
+
+Soit le modèle a vu quelque chose que le marché a raté. C'est le cas qu'on cherche, et il existe — mais il est rare.
+
+Soit le modèle s'est trompé. Et le marché, lui, a raison la plupart du temps : c'est son métier, il intègre des milliers de mises et des informations que le modèle n'a pas.
+
+Quand on trie par edge décroissant, on ne trie pas par « qualité de la lecture ». On trie par **distance au marché**. Or la deuxième explication est bien plus fréquente que la première. On remonte donc mécaniquement les matchs où le modèle se trompe le plus.
+
+## Ce qu'EVCore en a fait
+
+Le renversement est complet, et il est visible dans l'app.
+
+**L'edge est devenu un plafond, plus un seuil.** Un pick dont l'edge dépasse 10 points est écarté — vous le trouvez dans la vue « Écarté » d'Investir, avec le motif « edge revendiqué trop élevé ». C'est l'inverse exact de ce que le système faisait avant.
+
+**Le classement se fait sur la probabilité calibrée**, jamais sur l'EV ni sur l'edge. Mesuré au niveau coupon : le tri par EV perd contre le tri par probabilité dans 13 configurations appariées sur 16.
+
+**L'EV reste affiché**, parce qu'il décrit correctement ce qu'un pari rapporterait *si* la probabilité était juste. C'est une information sur le rendement, pas un critère de tri.
+
+## Une tension que nous n'avons pas encore résolue
+
+Le canal VALUE sélectionne, par définition, les picks dont l'edge dépasse 10 points — c'est-à-dire précisément la zone que le plafond écarte. Ses picks atterrissent donc massivement dans « Écarté ».
+
+Ce n'est pas un bug, c'est un constat en cours de traitement. La piste mesurée est que VALUE n'apporte quelque chose que sur les picks qui lui sont *propres* — ceux qu'aucun autre canal n'a émis — et rien sur les 92% qu'il reprend ailleurs. Tant que ce n'est pas validé sur un échantillon suffisant, rien n'est changé, et la tension reste affichée telle quelle plutôt que maquillée.
 
 ## À retenir
 
-- Edge : écart de probabilité. EV : rendement attendu par unité misée. Deux angles du même avantage.
-- Le seuil (≥8% pour VALUE) filtre les picks trop fragiles pour être fiables — il ne cherche pas à maximiser le nombre de picks affichés.
-- Trier par edge calibré protège mieux contre les cotes trompeuses que trier par EV brut. Un résultat vérifié sur les données, pas une préférence esthétique.
+- Edge et EV mesurent l'avantage que le modèle **croit** avoir, pas celui qu'il a.
+- Mesuré sur 51 860 sélections : plus l'edge annoncé est gros, moins le pari passe. La quantité est anti-prédictive.
+- EVCore s'en sert désormais comme d'un plafond d'exclusion, et classe sur la probabilité calibrée.
+- Un chiffre affiché sur un pick n'est pas forcément un critère de décision. Celui-ci a mis trois ans à être démasqué.

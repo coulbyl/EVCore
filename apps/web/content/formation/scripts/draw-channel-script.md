@@ -14,7 +14,11 @@ DRAW cible le match nul, via la probabilité implicite du marché sur cette issu
 
 ## Une trajectoire, pas un chiffre unique
 
-Sur toute la période testée, 1 119 picks, DRAW affiche plus 1,61% de ROI — modeste, mais positif. Ce chiffre cache une évolution plus intéressante : moins 19% en 2023, puis entre plus 11% et plus 16% en 2026, selon la formule.
+DRAW est le canal le mieux calibré du système : le taux qu'il réalise correspond à ce qu'il annonce, à un ou deux pour cent près. Aucun autre n'en est là — la plupart réalisent entre 70 et 90% de ce qu'ils promettent.
+
+La raison est instructive : DRAW ne modélise rien. Il lit la probabilité que le bookmaker a inscrite dans sa cote et s'en sert telle quelle. Il n'a donc aucune occasion d'être sur-confiant, puisqu'il n'a pas d'opinion propre à sur-vendre.
+
+C'est un contre-exemple utile. On imagine volontiers qu'un bon canal est un canal qui sait quelque chose que le marché ignore. Le mieux calibré du lot est celui qui a décidé de faire confiance au marché.
 
 DRAW n'a pas toujours été viable. La progression vers 2026 est le résultat d'un travail de calibration mesuré dans le temps — pas un signal qu'on découvrirait seulement maintenant.
 
