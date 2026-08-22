@@ -19,6 +19,12 @@ import {
   TRACKED_CHANNELS,
 } from './dashboard.constants';
 import { DashboardRepository } from './dashboard.repository';
+
+// Assez long pour couvrir les appels simultanés d'un chargement de page et un
+// rafraîchissement rapide ; assez court pour qu'un nouveau règlement apparaisse
+// sans redémarrage.
+const SETTLED_CACHE_TTL_MS = 60_000;
+const SETTLED_CACHE_MAX_ENTRIES = 6;
 import type {
   ChannelCompetitionStatItem,
   ChannelHealthItem,
@@ -49,6 +55,19 @@ type UnreadNotification = SummaryData['unreadNotifications'][number];
 
 @Injectable()
 export class DashboardService {
+  /**
+   * Mémoïsation courte des sélections réglées, par plage de dates. Sert
+   * d'abord à collapser les trois appels simultanés d'un même chargement de
+   * page en une seule requête — voir settledByChannel.
+   */
+  private readonly settledCache = new Map<
+    string,
+    {
+      at: number;
+      rows: Promise<Map<StrategyChannel, SelectionWithCompetition[]>>;
+    }
+  >();
+
   constructor(private readonly repo: DashboardRepository) {}
 
   async getSummary(pnlDate?: string): Promise<DashboardSummary> {
@@ -363,6 +382,66 @@ export class DashboardService {
   }
 
   /**
+   * Charge une fois les sélections réglées de tous les canaux suivis, et les
+   * regroupe par canal.
+   *
+   * La PROMESSE est mise en cache, pas son résultat : les trois endpoints de
+   * la page partent en parallèle sur la même plage, donc mémoriser la valeur
+   * résolue arriverait trop tard — les trois requêtes seraient déjà lancées.
+   * En cachant la promesse, les deux appels suivants attendent la première.
+   *
+   * Les trois endpoints appelaient auparavant une requête PAR CANAL, toutes
+   * lancées en parallèle. Tenable à 10 canaux, plus du tout à
+   * 18 : chaque worker parallèle de Postgres réclame un segment de mémoire
+   * partagée, et le conteneur n'a que les 64 Mo de `/dev/shm` par défaut. La
+   * page tombait sur « could not resize shared memory segment » (SQLSTATE
+   * 53100) dès la période « tout l'historique ».
+   *
+   * Chaque canal suivi est présent dans la carte même sans sélection sur la
+   * période : un canal silencieux doit figurer à zéro, pas disparaître.
+   */
+  private settledByChannel(range: {
+    since: Date;
+    until: Date;
+  }): Promise<Map<StrategyChannel, SelectionWithCompetition[]>> {
+    const key = `${range.since.toISOString()}..${range.until.toISOString()}`;
+    const cached = this.settledCache.get(key);
+    if (cached && Date.now() - cached.at < SETTLED_CACHE_TTL_MS) {
+      return cached.rows;
+    }
+
+    const rows = this.loadSettledByChannel(range);
+    if (this.settledCache.size >= SETTLED_CACHE_MAX_ENTRIES) {
+      const oldest = [...this.settledCache.entries()].sort(
+        (a, b) => a[1].at - b[1].at,
+      )[0];
+      if (oldest) this.settledCache.delete(oldest[0]);
+    }
+    this.settledCache.set(key, { at: Date.now(), rows });
+    // Un échec ne doit pas rester en cache : la prochaine requête doit
+    // retenter au lieu de resservir la promesse rejetée pendant tout le TTL.
+    rows.catch(() => this.settledCache.delete(key));
+    return rows;
+  }
+
+  private async loadSettledByChannel(range: {
+    since: Date;
+    until: Date;
+  }): Promise<Map<StrategyChannel, SelectionWithCompetition[]>> {
+    const rows = await this.repo.findChannelSelectionsInRange(
+      TRACKED_CHANNELS,
+      range,
+    );
+    const byChannel = new Map<StrategyChannel, SelectionWithCompetition[]>(
+      TRACKED_CHANNELS.map((channel) => [channel, []]),
+    );
+    for (const row of rows) {
+      byChannel.get(row.channelDecision.channel)?.push(row);
+    }
+    return byChannel;
+  }
+
+  /**
    * Santé de chaque canal suivi.
    *
    * Itère sur TRACKED_CHANNELS au lieu d'énumérer les canaux : la version
@@ -385,17 +464,9 @@ export class DashboardService {
       since: startOfUtcDay(parseIsoDate(from)),
       until: endOfUtcDay(parseIsoDate(to)),
     };
-    const bySelection = await Promise.all(
-      TRACKED_CHANNELS.map(async (channel) => ({
-        channel,
-        selections: await this.repo.findChannelSelectionsInRange(
-          channel,
-          range,
-        ),
-      })),
-    );
+    const bySelection = await this.settledByChannel(range);
 
-    return bySelection.map(({ channel, selections }) =>
+    return [...bySelection].map(([channel, selections]) =>
       channelHealthFromSelections(
         channel,
         selections,
@@ -409,17 +480,9 @@ export class DashboardService {
       since: startOfUtcDay(parseIsoDate(from)),
       until: endOfUtcDay(parseIsoDate(to)),
     };
-    const bySelection = await Promise.all(
-      TRACKED_CHANNELS.map(async (channel) => ({
-        channel,
-        selections: await this.repo.findChannelSelectionsInRange(
-          channel,
-          range,
-        ),
-      })),
-    );
+    const bySelection = await this.settledByChannel(range);
 
-    return bySelection.map(({ channel, selections }) =>
+    return [...bySelection].map(([channel, selections]) =>
       channelStatsFromSelections(channel, selections),
     );
   }
@@ -436,17 +499,9 @@ export class DashboardService {
       since: startOfUtcDay(parseIsoDate(from)),
       until: endOfUtcDay(parseIsoDate(to)),
     };
-    const bySelection = await Promise.all(
-      TRACKED_CHANNELS.map(async (channel) => ({
-        channel,
-        selections: await this.repo.findChannelSelectionsInRange(
-          channel,
-          range,
-        ),
-      })),
-    );
+    const bySelection = await this.settledByChannel(range);
 
-    return bySelection.flatMap(({ channel, selections }) =>
+    return [...bySelection].flatMap(([channel, selections]) =>
       channelCompetitionStatsFromSelections(channel, selections),
     );
   }
