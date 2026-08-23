@@ -18,7 +18,6 @@ import {
 } from "@/app/dashboard/decisions/components/channel-constants";
 import { useRunChannelTuning } from "@/domains/backtest/use-cases/run-channel-backtest";
 import type {
-  BttsNoTuningReport,
   ChannelTuningReport,
   GoalsTuningReport,
   TeamTotalTuningReport,
@@ -47,9 +46,8 @@ export function TuningTab() {
     mutation.data,
     ANALYSIS_STORAGE_KEY.tuning,
   );
-  // Older stored results predate goalsReports/bttsNoReports/teamTotalReports — default to empty.
+  // Older stored results predate goalsReports/teamTotalReports — default to empty.
   const goalsReports = result?.goalsReports ?? [];
-  const bttsNoReports = result?.bttsNoReports ?? [];
   const teamTotalReports = result?.teamTotalReports ?? [];
 
   const columns: ColumnDef<ChannelTuningReport>[] = [
@@ -246,83 +244,6 @@ export function TuningTab() {
     },
   ];
 
-  const bttsNoColumns: ColumnDef<BttsNoTuningReport>[] = [
-    {
-      id: "competition",
-      header: t("colCompetition"),
-      accessorFn: (r) => r.competitionCode,
-      cell: ({ row }) => (
-        <span className="text-xs font-medium text-foreground">
-          {row.original.competitionCode}
-        </span>
-      ),
-    },
-    {
-      id: "current",
-      header: t("colCurrent"),
-      accessorFn: (r) => r.current.threshold,
-      meta: { align: "right" },
-      cell: ({ row }) => (
-        <span
-          className={`tabular-nums ${row.original.current.enabled ? "text-foreground" : "text-muted-foreground line-through"}`}
-        >
-          {formatThreshold(row.original.current.threshold)}
-        </span>
-      ),
-    },
-    {
-      id: "recommended",
-      header: t("colRecommended"),
-      accessorFn: (r) => r.recommended?.threshold ?? -1,
-      meta: { align: "right" },
-      cell: ({ row }) => {
-        const rec = row.original.recommended;
-        if (!rec)
-          return <span className="text-xs text-muted-foreground">—</span>;
-        const changed = rec.threshold !== row.original.current.threshold;
-        return (
-          <span
-            className={`tabular-nums font-semibold ${changed ? "text-accent" : "text-foreground"}`}
-          >
-            {formatThreshold(rec.threshold)}
-          </span>
-        );
-      },
-    },
-    {
-      id: "recRoi",
-      header: t("colRecRoi"),
-      accessorFn: (r) => r.recommended?.roi ?? Number.NEGATIVE_INFINITY,
-      meta: { align: "right" },
-      cell: ({ row }) => {
-        const rec = row.original.recommended;
-        if (!rec) return <span className="text-muted-foreground">—</span>;
-        return (
-          <span
-            className={`tabular-nums font-semibold ${roiToneClass(rec.roi)}`}
-          >
-            {formatSignedPct(rec.roi)}
-          </span>
-        );
-      },
-    },
-    {
-      id: "recSample",
-      header: t("colRecSample"),
-      accessorFn: (r) => r.recommended?.total ?? 0,
-      meta: { align: "right" },
-      cell: ({ row }) => {
-        const rec = row.original.recommended;
-        if (!rec) return <span className="text-muted-foreground">—</span>;
-        return (
-          <span className="tabular-nums text-muted-foreground">
-            {rec.total} · {formatPct(rec.hitRate)}
-          </span>
-        );
-      },
-    },
-  ];
-
   const teamTotalColumns: ColumnDef<TeamTotalTuningReport>[] = [
     {
       id: "competition",
@@ -460,7 +381,6 @@ export function TuningTab() {
         <p className="text-sm text-muted-foreground">{t("analysisIdle")}</p>
       ) : result.reports.length === 0 &&
         goalsReports.length === 0 &&
-        bttsNoReports.length === 0 &&
         teamTotalReports.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("analysisEmpty")}</p>
       ) : (
@@ -549,62 +469,6 @@ export function TuningTab() {
                           {report.current
                             ? formatThreshold(report.current.threshold)
                             : "—"}
-                          {" → "}
-                          {rec ? formatThreshold(rec.threshold) : "—"}
-                        </p>
-                      </div>
-                      <div className="shrink-0 text-right text-xs tabular-nums">
-                        {rec ? (
-                          <>
-                            <span
-                              className={`font-semibold ${roiToneClass(rec.roi)}`}
-                            >
-                              {formatSignedPct(rec.roi)}
-                            </span>
-                            <p className="text-[0.65rem] text-muted-foreground">
-                              {rec.total} · {formatPct(rec.hitRate)}
-                            </p>
-                          </>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                }}
-              />
-            </section>
-          ) : null}
-          {bttsNoReports.length > 0 ? (
-            <section className="flex flex-col gap-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {t("bttsNoSection")}
-              </h3>
-              <DataTable
-                columns={bttsNoColumns}
-                data={bttsNoReports}
-                initialSorting={[{ id: "recRoi", desc: true }]}
-                mobileCard={(report) => {
-                  const rec = report.recommended;
-                  return (
-                    <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-3 last:border-0">
-                      <div className="min-w-0">
-                        <Badge
-                          variant="outline"
-                          className="text-[0.6rem] font-semibold"
-                          style={{
-                            borderColor: CHANNEL_COLOR.BTTS,
-                            color: CHANNEL_COLOR.BTTS,
-                          }}
-                        >
-                          {channelLabel("BTTS", tc)} NO
-                        </Badge>
-                        <p className="mt-1 text-xs font-semibold text-foreground">
-                          {report.competitionCode}
-                        </p>
-                        <p className="text-[0.65rem] text-muted-foreground">
-                          {t("colCurrent")}:{" "}
-                          {formatThreshold(report.current.threshold)}
                           {" → "}
                           {rec ? formatThreshold(rec.threshold) : "—"}
                         </p>

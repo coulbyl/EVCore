@@ -2,6 +2,7 @@ import type { SelectionConfig } from '@evcore/analysis-core';
 import {
   getLeagueEvThreshold,
   getValueMinEdge,
+  getValueMarketTrust,
   getPickDirectionProbabilityThreshold,
   getPickEvFloor,
   getPickEvSoftCap,
@@ -34,5 +35,9 @@ export function buildSelectionConfig(
       getPickMinSelectionOdds(competitionCode, market, pick),
     pickMaxSelectionOdds: (market, pick) =>
       getPickMaxSelectionOdds(competitionCode, market, pick),
+    // League-independent (measured per market, not per market×league — see
+    // getValueMarketTrust). safeMarketTrust is deliberately left unset:
+    // no validated SAFE-specific weights ship yet (see its doc comment).
+    valueMarketTrust: (market) => getValueMarketTrust(market),
   };
 }

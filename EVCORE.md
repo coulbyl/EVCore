@@ -6,7 +6,7 @@ Construire un moteur autonome de sélection de paris sportifs basé sur :
 
 - 📊 Probabilités estimées
 - 📈 Expected Value (EV)
-- 🎯 Architecture multi-canal (EV, SV, Confiance, BTTS, Nul)
+- 🎯 Architecture multi-canal — canaux pilotés par la cote (EV, SV) et canaux de prédiction pure par marché (voir §3.3, une vingtaine de canaux au 2026-08-16, en croissance à mesure que chaque marché du domaine reçoit son propre canal — ceci n'est plus une liste figée à 5)
 - 🔁 Auto-évaluation et calibration
 - 🧠 Apprentissage progressif contrôlé
 - ⚖️ Équilibre mathématique + gestion du risque
@@ -35,7 +35,7 @@ Le système ne sera **pas un chatbot**, mais un moteur décisionnel autonome.
 - ❌ Pas de dépendance LLM pour les données brutes
 - ✅ Données déterministes obligatoires
 - ✅ Apprentissage validé par backend (Option B)
-- ✅ EV prioritaire sur taux de réussite (canaux EV/SV) — hit rate prioritaire sur les canaux Confiance/BTTS/Nul
+- ✅ EV prioritaire sur taux de réussite (canaux basés sur la cote : EV/SV) — hit rate/conviction prioritaire sur les canaux de prédiction pure (argmax par marché, indépendants des cotes — voir §3.3)
 - ✅ Volume modéré, variance contrôlée
 - ✅ “No Bet” autorisé
 
@@ -94,28 +94,70 @@ Ces 4 marchés partagent le même modèle sous-jacent (probabilité de buts par 
 
 ### Canaux de décision
 
-Le moteur expose deux familles de canaux :
+> **Nomenclature** : les codes de canal sont en anglais dans tout le code —
+> `VALUE`, `SAFE`, `DOMINANT`, `DRAW`, `BTTS`. Les tags historiques EV, SV,
+> CONF, NUL, BB qui subsistent dans les tableaux ci-dessous sont les anciens
+> noms des trois premiers ; ils ne correspondent à aucun identifiant réel.
 
-**Canaux basés sur l'EV (Bet)**
+**Filtres de Phase 2 (VALUE, SAFE)**
 
-| Canal             | Critère           | Marché                                                                                                                | Pick                                    |
-| ----------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| **EV**            | EV ≥ 8%           | 1X2, O/U, BTTS, DC, HT/FT, DNB, Team Total, Clean Sheet, Win to Nil, Win Either Half, RESULT_TOTAL_GOALS, RESULT_BTTS | HOME / DRAW / AWAY / OVER / UNDER / YES |
-| **SV** (Sécurité) | P ≥ 68% + EV ≥ 0% | 1X2, O/U, BTTS, DC                                                                                                    | HOME / DRAW / AWAY / OVER / UNDER / YES |
+Ils ne scannent plus `evaluatedMarkets` : ils re-sélectionnent parmi les
+décisions déjà prises par les canaux de marché (voir la redéfinition
+architecturale plus bas, livrée le 2026-08-18).
 
-**Canaux de prédiction pure (PredictionChannel — indépendants des cotes)**
+| Canal             | Critère           | Portée                    |
+| ----------------- | ----------------- | ------------------------- |
+| **VALUE** (ex-EV) | edge ≥ 0.10       | toute décision de Phase 1 |
+| **SAFE** (ex-SV)  | P ≥ 68% + EV ≥ 0% | toute décision de Phase 1 |
 
-| Canal                | Critère                      | Marché                       | Signal                             |
-| -------------------- | ---------------------------- | ---------------------------- | ---------------------------------- |
-| **CONF** (Confiance) | P_max ≥ seuil ligue          | ONE_X_TWO                    | argmax(HOME, DRAW, AWAY)           |
-| **BTTS**             | P(BTTS) ≥ seuil ligue        | BTTS                         | YES uniquement                     |
-| **DRAW** (Nul)       | 1/drawOdds ≥ seuil ligue     | ONE_X_TWO                    | DRAW uniquement                    |
-| **GOALS**            | P(side) ≥ seuil ligne/ligue  | OVER_UNDER (1.5/2.5/3.5/4.5) | meilleur (ligne × side) par EV     |
-| **CLEAN_SHEET**      | P(clean sheet) ≥ seuil ligue | CLEAN_SHEET_HOME/AWAY        | argmax(HOME, AWAY), YES uniquement |
-| **TEAM_TOTAL**       | P(side) ≥ seuil ligne/ligue  | TEAM_TOTAL_HOME/AWAY         | meilleur (équipe × ligne × side)   |
-| **WIN_EITHER_HALF**  | P(side) ≥ seuil ligue        | TO_WIN_EITHER_HALF           | argmax(HOME, AWAY)                 |
+⚠️ **Le critère de VALUE est mesuré anti-prédictif** (audit 2026-08-22,
+51 860 sélections : taux réel plat 0.511 → 0.375 pendant que l'annoncé monte à
+0.699). Toute surface de mise applique donc `MAX_LEG_EDGE = 0.10` en
+**plafond**, complément exact du seuil du canal — la plupart des picks VALUE
+atterrissent dans la vue « Écarté » d'Investir. Ne pas ajouter de nouvelle
+logique de sélection indexée sur l'EV ou l'edge. La piste en cours est de
+réduire VALUE à ses picks propres (8% de ses sélections, les seuls qui ne
+soient pas des doublons de Phase 1), non validée à ce jour.
+
+**Canaux de prédiction (Phase 1 — un par marché)**
+
+| Canal                   | Critère                           | Marché                       | Signal                                                |
+| ----------------------- | --------------------------------- | ---------------------------- | ----------------------------------------------------- |
+| **CONF** (Confiance)    | P_max ≥ seuil ligue               | ONE_X_TWO                    | argmax(HOME, DRAW, AWAY)                              |
+| **BTTS**                | P(BTTS) ≥ seuil ligue             | BTTS                         | YES uniquement                                        |
+| **DRAW** (Nul)          | 1/drawOdds ≥ seuil ligue          | ONE_X_TWO                    | DRAW uniquement                                       |
+| **GOALS**               | P(side) ≥ seuil ligne/ligue       | OVER_UNDER (1.5/2.5/3.5/4.5) | meilleur (ligne × side) par EV                        |
+| **CLEAN_SHEET**         | P(clean sheet) ≥ seuil ligue      | CLEAN_SHEET_HOME/AWAY        | argmax(HOME, AWAY), YES uniquement                    |
+| **TEAM_TOTAL**          | P(side) ≥ seuil ligne/ligue       | TEAM_TOTAL_HOME/AWAY         | meilleur (équipe × ligne × side)                      |
+| **WIN_EITHER_HALF**     | P(side) ≥ seuil ligue             | TO_WIN_EITHER_HALF           | argmax(HOME, AWAY)                                    |
+| **CORRECT_SCORE**       | P(score) ≥ seuil global           | CORRECT_SCORE                | argmax probabilité (pas EV — évite le bruit longshot) |
+| **RESULT_TOTAL_GOALS**  | P(side×ligne UNDER) ≥ seuil ligue | RESULT_TOTAL_GOALS           | meilleur (side × ligne) par EV                        |
+| **OVER_UNDER_HT**       | P(side) ≥ seuil ligue             | OVER_UNDER_HT                | meilleur (ligne × side) par EV                        |
+| **RESULT_BTTS**         | P(side×issue) ≥ seuil ligue       | RESULT_BTTS                  | meilleur (side × YES/NO) par EV                       |
+| **DRAW_NO_BET**         | P(side) ≥ seuil ligue             | DRAW_NO_BET                  | argmax(HOME, AWAY)                                    |
+| **WIN_TO_NIL**          | P(side) ≥ seuil ligue             | WIN_TO_NIL_HOME/AWAY         | argmax(HOME, AWAY), YES uniquement                    |
+| **DOUBLE_CHANCE**       | P(combo) ≥ seuil global           | DOUBLE_CHANCE                | meilleur (1X/X2/12) par EV                            |
+| **FIRST_HALF_WINNER**   | P_max HT ≥ seuil ligue            | FIRST_HALF_WINNER            | argmax(HOME, DRAW, AWAY) à la mi-temps                |
+| **HALF_TIME_FULL_TIME** | P(combo) ≥ seuil global           | HALF_TIME_FULL_TIME          | argmax probabilité sur la grille 9 cases HT×FT        |
 
 Les seuils des canaux de prédiction sont configurés par ligue dans `prediction.constants.ts` et calibrés par backtest avant activation. Le canal DRAW utilise la probabilité implicite bookmaker (`1/drawOdds`) comme signal principal — le modèle Poisson est un mauvais discriminateur de nul (plafond structurel ~0.32). CLEAN_SHEET, TEAM_TOTAL et WIN_EITHER_HALF ont été ajoutés le 2026-07-18 : entièrement câblés (moteur, settlement, UI). Aucune cote historique n'existe pour ces marchés (uniquement la sync PREMATCH forward, démarrée le même jour), donc pas de vrai backtest ROI possible — les trois tournent en **OBSERVATION** avec un seuil dérivé du taux de base réel par ligue (jamais misé, même méthodologie que GOALS ; TEAM_TOTAL doublé sur la dimension équipe, avec exclusion des lignes quasi-certaines > 90% de base rate).
+
+CORRECT_SCORE (2026-06-30) et les 8 canaux ajoutés le 2026-08-16 (RESULT_TOTAL_GOALS, OVER_UNDER_HT, RESULT_BTTS, DRAW_NO_BET, WIN_TO_NIL, DOUBLE_CHANCE, FIRST_HALF_WINNER, HALF_TIME_FULL_TIME) complètent la couverture de l'enum `Market` — chaque marché a désormais un canal de prédiction dédié plutôt que de dépendre uniquement de la sélection opportuniste d'EV. ⚠️ **Périmètre de staking réécrit le 2026-08-22.** Le pool de coupon ne part plus d'une liste positive de canaux stakés : il prend tout canal non-méta et non-filtre (`POOL_EXCLUDED_CHANNELS` ne retire que CONSENSUS/CONTRARIAN/AVOID et VALUE/SAFE). L'admission se juge sur la **calibration** — ratio réalisé/annoncé — et non sur le ROI, qui n'a aucune puissance statistique à ces volumes. Les restrictions par ligue qui subsistent (`DRAW_STAKED_LEAGUES`, `BTTS_STAKED_LEAGUES`) sont documentées à leur point de définition, avec pour BTTS un risque ouvert consigné dans TODO.md.
+
+Côté surface de consultation, Investir sépare les canaux dont le **ROI shrinké** (Bayes empirique) reste positif — deux sur dix-neuf au dernier relevé — de ceux en observation, et affiche à part ce que les garde-fous écartent.
+
+> **Redéfinition architecturale (2026-08-17 — livrée le 2026-08-18 pour VALUE/SAFE)** :
+> un canal n'est plus un consommateur direct et indépendant du socle Poisson
+> unique — c'est un lecteur de **famille de moteur prédictif** (un processus
+> générateur par famille, plusieurs canaux/marchés peuvent partager la même
+> famille). EV et SV cessent d'être des chercheurs de valeur indépendants
+> scannant tous les marchés ; ils deviennent des **filtres** appliqués aux
+> décisions déjà prises par les canaux de marché — **c'est le cas depuis le
+> 2026-08-18** (orchestrateur à 3 phases). Le reste du cadrage (moteur λ
+> mi-temps dédié notamment) n'est pas implémenté. Voir
+> `docs/prediction-engine-families.md` (cadrage, portée football actuelle en
+> §0) et `docs/channel-strategy-architecture.md` (orchestration, phases mises
+> à jour en conséquence).
 
 ---
 
@@ -272,6 +314,12 @@ Seuil initial :
 
 - EV ≥ 8%
 
+⚠️ Ce seuil existe toujours dans le code (`EV_THRESHOLD`, gate du canal VALUE)
+mais **il ne sélectionne pas sur une quantité prédictive** — voir l'encadré de
+§ « Canaux de décision ». Un plafond `MAX_LEG_EDGE = 0.10` s'applique
+par-dessus sur toute surface de mise, et le classement se fait partout sur la
+probabilité calibrée.
+
 ---
 
 ## 5.2 Volume recommandé
@@ -424,7 +472,7 @@ Ce projet n’est pas :
 C’est :
 
 > Un moteur probabiliste discipliné,
-> Multi-canal (EV, SV, Confiance, BTTS, Nul),
+> Multi-canal (cotes : EV, SV — prédiction par marché : voir §3.3),
 > Mesurable,
 > Auto-calibré,
 > Construit pour survivre à la variance.
@@ -601,7 +649,7 @@ Domaine : **evcore.live**
 - **EV** → _Expected Value_, concept fondateur — le moteur ne génère un pick que lorsqu'il y a un avantage mathématique mesurable
 - **Core** → moteur central, discipline, fondation structurelle
 
-Le système a évolué au-delà du seul canal EV : il opère sur 5 canaux (EV, SV, Confiance, BTTS, Nul), mais l'Expected Value reste le critère primaire pour les canaux basés sur les cotes (EV/SV).
+Le système a évolué au-delà du seul canal EV : il opère désormais sur une vingtaine de canaux (voir §3.3 pour la liste complète et le statut staké/observation de chacun), mais l'Expected Value reste le critère primaire pour les canaux basés sur les cotes (EV/SV).
 
 Le nom reflète :
 

@@ -10,6 +10,7 @@ function makeLeg(overrides: {
   market?: Market;
   pick?: string;
   isCorrect?: boolean | null;
+  oddsSnapshot?: number | null;
 }) {
   return {
     id: overrides.id,
@@ -17,6 +18,7 @@ function makeLeg(overrides: {
     market: overrides.market ?? Market.OVER_UNDER,
     pick: overrides.pick ?? 'OVER',
     isCorrect: overrides.isCorrect ?? null,
+    oddsSnapshot: overrides.oddsSnapshot ?? 2.0,
   };
 }
 
@@ -87,11 +89,16 @@ describe('CouponSettlementService.settleProposal — postponed/cancelled legs', 
     expect(updateResult).toHaveBeenCalledWith('proposal-1', CouponResult.VOID);
   });
 
-  it('marks the coupon PARTIAL when a voided leg sits alongside winning legs', async () => {
+  it('marks the coupon PARTIAL when a voided leg sits alongside winning legs, with realizedOdds on the surviving leg only', async () => {
     const { service, updateResult } = makeHarness({
       legs: [
-        makeLeg({ id: 'leg-1', fixtureId: 'f1' }), // voided
-        makeLeg({ id: 'leg-2', fixtureId: 'f2', pick: 'OVER' }), // wins
+        makeLeg({ id: 'leg-1', fixtureId: 'f1', oddsSnapshot: 3.5 }), // voided — its odds must not count
+        makeLeg({
+          id: 'leg-2',
+          fixtureId: 'f2',
+          pick: 'OVER',
+          oddsSnapshot: 2.2,
+        }), // wins
       ],
       fixtures: [
         makeFixture({ id: 'f1', status: FixtureStatus.POSTPONED }),
@@ -109,6 +116,7 @@ describe('CouponSettlementService.settleProposal — postponed/cancelled legs', 
     expect(updateResult).toHaveBeenCalledWith(
       'proposal-1',
       CouponResult.PARTIAL,
+      2.2,
     );
   });
 
@@ -143,5 +151,133 @@ describe('CouponSettlementService.settleProposal — postponed/cancelled legs', 
     await service.settleProposal('proposal-1');
 
     expect(settleLeg).toHaveBeenCalledWith('leg-1', null);
+  });
+
+  it("sets realizedOdds equal to the product of every leg's odds on a clean WON (no void)", async () => {
+    const { service, updateResult } = makeHarness({
+      legs: [
+        makeLeg({ id: 'leg-1', fixtureId: 'f1', oddsSnapshot: 1.8 }),
+        makeLeg({ id: 'leg-2', fixtureId: 'f2', oddsSnapshot: 2.5 }),
+      ],
+      fixtures: [
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.FINISHED,
+          homeScore: 2,
+          awayScore: 1,
+        }),
+        makeFixture({
+          id: 'f2',
+          status: FixtureStatus.FINISHED,
+          homeScore: 2,
+          awayScore: 1,
+        }),
+      ],
+    });
+
+    await service.settleProposal('proposal-1');
+
+    expect(updateResult).toHaveBeenCalledWith(
+      'proposal-1',
+      CouponResult.WON,
+      4.5,
+    );
+  });
+});
+
+// Un DRAW_NO_BET sur un match nul est un REMBOURSEMENT, pas un « en attente ».
+// Avant ce correctif, `resolveIsCorrect` rendait `null` aussi bien pour un
+// VOID que pour un score pas encore exploitable, et l'appelant lisait `null`
+// comme « non résolu » : le coupon ne se réglait jamais et l'interface
+// affichait « Terminé » sur la jambe (constaté en production le 2026-08-22).
+describe('CouponSettlementService.settleProposal — jambe remboursée (DNB nul)', () => {
+  it('sort la jambe de la combinatoire et règle le coupon sur les autres', async () => {
+    const { service, settleLeg, updateResult } = makeHarness({
+      legs: [
+        makeLeg({
+          id: 'leg-dnb',
+          fixtureId: 'f1',
+          market: Market.DRAW_NO_BET,
+          pick: 'HOME',
+          oddsSnapshot: 1.3,
+        }),
+        makeLeg({
+          id: 'leg-ou',
+          fixtureId: 'f2',
+          market: Market.OVER_UNDER,
+          pick: 'OVER',
+          oddsSnapshot: 2.0,
+        }),
+      ],
+      fixtures: [
+        // 2-2 : nul, donc DNB remboursé
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.FINISHED,
+          homeScore: 2,
+          awayScore: 2,
+        }),
+        // 3-1 : plus de 2.5 buts, jambe gagnée
+        makeFixture({
+          id: 'f2',
+          status: FixtureStatus.FINISHED,
+          homeScore: 3,
+          awayScore: 1,
+        }),
+      ],
+    });
+
+    await service.settleProposal('proposal-1');
+
+    // La jambe remboursée est marquée réglée avec isCorrect = null…
+    expect(settleLeg).toHaveBeenCalledWith('leg-dnb', null);
+    // …et le coupon se résout au lieu de rester en attente.
+    expect(updateResult).toHaveBeenCalled();
+    const [, result] = updateResult.mock.calls.at(-1) as [string, string];
+    expect(result).not.toBe('PENDING');
+  });
+
+  it('ne compte pas la cote de la jambe remboursée dans le paiement', async () => {
+    const { service, updateResult } = makeHarness({
+      legs: [
+        makeLeg({
+          id: 'leg-dnb',
+          fixtureId: 'f1',
+          market: Market.DRAW_NO_BET,
+          pick: 'HOME',
+          oddsSnapshot: 1.3,
+        }),
+        makeLeg({
+          id: 'leg-ou',
+          fixtureId: 'f2',
+          market: Market.OVER_UNDER,
+          pick: 'OVER',
+          oddsSnapshot: 2.0,
+        }),
+      ],
+      fixtures: [
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.FINISHED,
+          homeScore: 2,
+          awayScore: 2,
+        }),
+        makeFixture({
+          id: 'f2',
+          status: FixtureStatus.FINISHED,
+          homeScore: 3,
+          awayScore: 1,
+        }),
+      ],
+    });
+
+    await service.settleProposal('proposal-1');
+
+    // La cote réalisée doit valoir 2.0 (la jambe survivante), pas 2.6.
+    const call = updateResult.mock.calls.at(-1) as unknown[];
+    const realized = call[2];
+    if (realized !== undefined && realized !== null) {
+      expect(Number(realized)).toBeCloseTo(2.0, 6);
+    }
   });
 });

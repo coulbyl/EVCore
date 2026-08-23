@@ -36,6 +36,18 @@ const CHANNELS = [
   StrategyChannel.CLEAN_SHEET,
   StrategyChannel.WIN_EITHER_HALF,
   StrategyChannel.GOALS,
+  // 2026-08-16 — the 8 channels launched to complete Market-enum coverage,
+  // first ever backtest pass now that reanalyze-scope.ts has replayed the
+  // full historical fixture set with these channels registered (they had
+  // zero settled ChannelSelection rows before that replay).
+  StrategyChannel.RESULT_TOTAL_GOALS,
+  StrategyChannel.OVER_UNDER_HT,
+  StrategyChannel.RESULT_BTTS,
+  StrategyChannel.DRAW_NO_BET,
+  StrategyChannel.WIN_TO_NIL,
+  StrategyChannel.DOUBLE_CHANCE,
+  StrategyChannel.FIRST_HALF,
+  StrategyChannel.HALF_TIME_FULL_TIME,
 ] as const;
 
 type Row = {
@@ -167,7 +179,7 @@ async function main() {
   };
 
   out("═══════════════════════════════════════════════════════");
-  out("  EVCore — Whitelist par ligue (DRAW / BTTS), split train/valid 60/40");
+  out("  EVCore — Whitelist par ligue (multi-canal), split train/valid 60/40");
   out(
     `  ${dateLabel} — confirmé seulement si train ET valid >= n=${MIN_SPLIT_SAMPLE} et positifs`,
   );

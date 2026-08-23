@@ -2,7 +2,7 @@ import Decimal from "decimal.js";
 import { Market } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
 import { LINE_MOVEMENT_THRESHOLD } from "../selection/constants";
-import { getChannelStrategyConfig } from "./config";
+import { getChannelStrategyConfig } from "./channel-strategy.config";
 import type {
   ChannelStrategy,
   StrategyContext,

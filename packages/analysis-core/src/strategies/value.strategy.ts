@@ -1,9 +1,8 @@
 import Decimal from "decimal.js";
-import { Market } from "../types";
-import type { EvaluatedPick, ViablePick } from "../selection/types";
+import type { Market } from "../types";
+import type { ViablePick } from "../selection/types";
 import { bestQualityPickDetails } from "../selection";
 import {
-  FALLBACK_MIN_QUALITY_SCORE,
   LINE_MOVEMENT_THRESHOLD,
   VALUE_MIN_EDGE,
 } from "../selection/constants";
@@ -13,33 +12,21 @@ import type {
   StrategyContext,
   StrategyDecision,
 } from "./types";
+import {
+  PHASE2_FILTER_MARKETS,
+  viablePicksFromPreviousDecisions,
+} from "./filter-candidates";
 
-// Must mirror every market listEvaluatedPicks() (selection/pick-evaluation.ts)
-// can emit a candidate for — the orchestrator rejects any VALUE selection on
-// a market outside this list (see orchestrator.ts's allowedMarkets check).
-const ALL_MARKETS: readonly Market[] = [
-  Market.ONE_X_TWO,
-  Market.OVER_UNDER,
-  Market.BTTS,
-  Market.DOUBLE_CHANCE,
-  Market.HALF_TIME_FULL_TIME,
-  Market.OVER_UNDER_HT,
-  Market.FIRST_HALF_WINNER,
-  Market.DRAW_NO_BET,
-  Market.TEAM_TOTAL_HOME,
-  Market.TEAM_TOTAL_AWAY,
-  Market.CLEAN_SHEET_HOME,
-  Market.CLEAN_SHEET_AWAY,
-  Market.WIN_TO_NIL_HOME,
-  Market.WIN_TO_NIL_AWAY,
-  Market.TO_WIN_EITHER_HALF,
-  Market.RESULT_TOTAL_GOALS,
-  Market.RESULT_BTTS,
-];
-
+// VALUE — Phase 2 filter (docs/prediction-engine-families.md §0, docs/
+// channel-strategy-architecture.md §5). Moved out of Phase 1 on 2026-08-18:
+// it no longer scans the full evaluated-markets pool on its own — it picks
+// the best edge among the picks the Phase-1 market specialists already
+// selected for their own market. A market with no Phase-1 SELECTED decision
+// (channel rejected, disabled, or missing data) contributes no candidate
+// here; that's the point, not a gap to patch.
 export class ValueStrategy implements ChannelStrategy {
   readonly channel = STRATEGY_CHANNEL.VALUE;
-  readonly allowedMarkets = ALL_MARKETS;
+  readonly allowedMarkets = PHASE2_FILTER_MARKETS;
 
   evaluate(context: StrategyContext): StrategyDecision {
     const ch = this.channel;
@@ -65,25 +52,31 @@ export class ValueStrategy implements ChannelStrategy {
       };
     }
 
-    const allPicks = context.evaluatedMarkets.flatMap((m) => m.picks);
-    // Edge floor (probability − 1/odds): the model is overconfident, so require a
-    // real market edge, not just positive EV/quality. Per-league config may set it
-    // unreachably high to suspend VALUE for a structurally uninformative league.
+    // Only markets a Phase-1 specialist actually SELECTED, priced (DRAW's
+    // picks carry no odds by design — see StrategySelection's comment in
+    // strategies/types.ts — and are naturally excluded here).
+    const candidates = viablePicksFromPreviousDecisions(
+      context.previousDecisions,
+      PHASE2_FILTER_MARKETS,
+      context.deterministicScore,
+    );
+
     const minEdge = context.selectionConfig.valueMinEdge ?? VALUE_MIN_EDGE;
-    const best = selectBestEvPick(allPicks, minEdge);
+    const best = selectBestEdgePick(
+      candidates,
+      minEdge,
+      context.selectionConfig.valueMarketTrust,
+    );
 
     if (best === null) {
       return {
         channel: ch,
         status: CHANNEL_DECISION_STATUS.REJECTED,
         reasonCode: "no_viable_pick",
-        // Unlike DOMINANT/BTTS/WIN_EITHER_HALF/CLEAN_SHEET, VALUE's rejection
-        // used to carry no market/pick detail at all — auditing "what would
-        // VALUE have picked" required re-deriving selectBestEvPick's ranking
-        // externally from evaluatedPicks. Logging the pool's own top-quality
-        // candidate (even though it didn't clear the edge floor / was
-        // rejected upstream) closes that gap.
-        reasonDetails: bestQualityPickDetails(allPicks),
+        // What the best-quality specialist-vetted candidate looked like,
+        // even though it didn't clear the edge floor — closes the audit gap
+        // ("what would VALUE have picked") without re-deriving anything.
+        reasonDetails: bestQualityPickDetails(candidates),
         selections: [],
       };
     }
@@ -119,35 +112,41 @@ export class ValueStrategy implements ChannelStrategy {
   }
 }
 
-function selectBestEvPick(
-  picks: EvaluatedPick[],
+// Best edge (probability − 1/odds) among specialist-vetted candidates, tie-
+// broken by qualityScore × marketTrust. Simpler than the old evaluatedMarkets-
+// era selectBestEvPick: every candidate here already passed a Phase-1
+// channel's own thresholds, so there's no "best candidate was rejected by an
+// internal gate, fall back to a lesser one" case left to handle — that
+// fallback only made sense when scanning a raw pool that included rejected
+// picks.
+//
+// marketTrust (2026-08-19, db:backtest:market-trust-calibration): comparing
+// raw qualityScore across 17 markets of very different calibration
+// reliability lets the worst-calibrated markets win the argmax precisely
+// because their noise is largest, not because they're genuinely the best
+// pick (winner's curse — audit of the replay complet found VALUE's edge
+// floor alone doesn't fix this: no edge ceiling improved ROI at any
+// threshold, but per-market ROI ranged from +23% to -76%). Discounting
+// qualityScore by each market's measured reliability before ranking fixes
+// the comparison without excluding any market outright (feedback_fix_not_
+// disable) — undefined resolver ⇒ trust=1 (identity, pre-2026-08-19
+// behavior) for every caller that hasn't wired the config yet.
+function selectBestEdgePick(
+  picks: ViablePick[],
   minEdge: Decimal,
+  marketTrust?: (market: Market) => Decimal,
 ): ViablePick | null {
-  if (picks.length === 0) return null;
-
-  const topByQuality = picks.reduce<EvaluatedPick | null>(
-    (best, p) =>
-      best === null || p.qualityScore.greaterThan(best.qualityScore) ? p : best,
-    null,
-  );
-  const primaryWasRejected = topByQuality?.rejectionReason !== undefined;
-
   const viable = picks
-    .filter((p): p is ViablePick => p.rejectionReason === undefined)
     .filter((p) =>
       p.probability
         .minus(new Decimal(1).div(p.odds))
         .greaterThanOrEqualTo(minEdge),
     )
-    .sort((a, b) => b.qualityScore.comparedTo(a.qualityScore));
-
-  if (primaryWasRejected) {
-    return (
-      viable.find((p) =>
-        p.qualityScore.greaterThanOrEqualTo(FALLBACK_MIN_QUALITY_SCORE),
-      ) ?? null
+    .sort((a, b) =>
+      b.qualityScore
+        .times(marketTrust?.(b.market) ?? 1)
+        .comparedTo(a.qualityScore.times(marketTrust?.(a.market) ?? 1)),
     );
-  }
 
   return viable[0] ?? null;
 }

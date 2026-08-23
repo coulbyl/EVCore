@@ -26,28 +26,11 @@ import {
   statusLabel,
 } from "./channel-constants";
 import { ResultBadge } from "@/components/result-badge";
-import { ObservationBadge } from "./observation-badge";
-
-/** Channels that produce a real pick that can be added to a slip. */
-const SLIPPABLE: ReadonlySet<StrategyChannel> = new Set([
-  "VALUE",
-  "SAFE",
-  "DOMINANT",
-  "BTTS",
-  "DRAW",
-  "GOALS",
-]);
-
-/** Prediction channels never staked — recorded/settled analytically only,
- * no backtested edge yet (unvalidated thresholds). Flagged with
- * ObservationBadge so readers don't mistake a SELECTED decision for a
- * playable bet. */
-const OBSERVATION_ONLY: ReadonlySet<StrategyChannel> = new Set([
-  "CORRECT_SCORE",
-  "CLEAN_SHEET",
-  "TEAM_TOTAL",
-  "WIN_EITHER_HALF",
-]);
+// Un pick est ajoutable à un coupon sauf s'il vient d'un méta-canal. C'était
+// une liste positive de 6 canaux (`SLIPPABLE`) jusqu'au 2026-08-22, figée
+// avant l'ouverture des autres : elle privait DOUBLE_CHANCE — le canal le
+// mieux mesuré — de bouton, alors qu'Investir permettait déjà de l'ajouter.
+import { isMetaChannel } from "./decision-helpers";
 
 export type SlipContext = {
   fixtureId: string;
@@ -86,7 +69,10 @@ export function ChannelRow({
   // by construction — hide it rather than display a meaningless +0%.
   const ev = selection && channel !== "DRAW" ? formatEv(selection.ev) : null;
 
-  const consensusChannels =
+  // Lu depuis reasonDetails, pas depuis les sélections : CONSENSUS n'émet
+  // plus de pick, et ces pastilles étaient rendues dans la branche « a une
+  // sélection » — elles auraient disparu au premier run suivant.
+  const convergingChannels =
     channel === "CONSENSUS" && decision?.status === "SELECTED"
       ? parseConsensusChannels(decision.reasonDetails)
       : [];
@@ -101,9 +87,11 @@ export function ChannelRow({
             </p>
             <div className="flex shrink-0 items-center gap-1.5">
               {avoidEdge !== undefined && <AvoidEdgeBadge edge={avoidEdge} />}
-              {OBSERVATION_ONLY.has(channel) && <ObservationBadge />}
-              <ResultBadge result={selection.result} />
-              {slipContext && SLIPPABLE.has(channel) && decision && (
+              <ResultBadge
+                result={selection.result}
+                market={selection.market}
+              />
+              {slipContext && !isMetaChannel(channel) && decision && (
                 <SlipButton
                   channel={channel}
                   decision={decision}
@@ -130,10 +118,9 @@ export function ChannelRow({
             )}
             {ev !== null && <span className="tabular-nums">{ev}</span>}
           </p>
-          {consensusChannels.length > 0 && (
-            <ConsensusSourcePills channels={consensusChannels} />
-          )}
         </div>
+      ) : convergingChannels.length > 0 ? (
+        <ConsensusRow channels={convergingChannels} />
       ) : (
         <RejectedLabel decision={decision} />
       )}
@@ -180,10 +167,14 @@ function AvoidEdgeBadge({ edge }: { edge: number }) {
   );
 }
 
-function ConsensusSourcePills({ channels }: { channels: StrategyChannel[] }) {
+/** CONSENSUS n'a pas de pick : il montre qui converge, et c'est tout. */
+function ConsensusRow({ channels }: { channels: StrategyChannel[] }) {
   const t = useTranslations("decisions");
   return (
-    <div className="mt-1.5 flex flex-wrap gap-1">
+    <div className="flex flex-wrap items-center gap-1">
+      <span className="text-[0.68rem] text-muted-foreground">
+        {t("consensus.rowLabel")}
+      </span>
       {channels.map((ch) => (
         <Badge
           key={ch}

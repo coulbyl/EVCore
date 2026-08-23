@@ -4,6 +4,7 @@ import {
 } from "@/helpers/fixture";
 import { formatKickoff } from "@/domains/fixture/helpers/fixture";
 import type { CouponProposalDto } from "@/domains/coupon/types/coupon";
+import { couponClassMeta } from "@/domains/coupon/helpers/coupon-class";
 import {
   CouponCard as SharedCouponCard,
   type NormalizedCouponLeg,
@@ -12,11 +13,9 @@ import {
 export function CouponCard({
   coupon,
   locale,
-  isTop,
 }: {
   coupon: CouponProposalDto;
   locale: string;
-  isTop: boolean;
 }) {
   const loc = locale === "en" ? "en" : "fr";
   const displayResult =
@@ -49,11 +48,10 @@ export function CouponCard({
   return (
     <SharedCouponCard
       locale={locale}
-      rank={coupon.rank}
       combinedOdds={coupon.combinedOdds}
       jointProbability={coupon.jointProbability}
       signalScore={coupon.signalScore}
-      isTop={isTop}
+      couponClass={couponClassMeta(coupon.couponClass)}
       isExperimental={coupon.experimental}
       betStatus={displayResult}
       legs={legs}

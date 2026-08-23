@@ -2,14 +2,16 @@
 // (@evcore/analysis-core/probability). Re-exported here so existing
 // './math/probability' imports keep resolving unchanged.
 //
-// buildLambdaConfig is the one app-side factory: it reads the league lookup
-// tables from ev.constants and produces the plain LambdaConfig the core needs.
-import type { LambdaConfig } from '@evcore/analysis-core';
+// buildLambdaConfig is the one app-side factory: it reads the per-league
+// lookup tables (also in @evcore/analysis-core — same category as
+// OU_SHRINKAGE_CONFIG, calibrates the shared probability rather than a
+// staking decision) and produces the plain LambdaConfig the core needs.
 import {
+  type LambdaConfig,
   getLeagueHomeAwayFactors,
   getLeagueLambdaScale,
   getLeagueMeanLambda,
-} from '../ev.constants';
+} from '@evcore/analysis-core';
 
 export function buildLambdaConfig(
   competitionCode?: string | null,
@@ -40,4 +42,5 @@ export {
   buildMatchupFeatures,
   blendTeamStats,
   applyH2HMarketSignalCorrection,
+  applyCongestionSignalCorrection,
 } from '@evcore/analysis-core';

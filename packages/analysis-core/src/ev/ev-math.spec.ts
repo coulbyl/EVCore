@@ -1,11 +1,6 @@
 import Decimal from "decimal.js";
 import { describe, expect, it } from "vitest";
-import {
-  bookmakerMargin,
-  calculateEV,
-  calculateKellyStakePct,
-  removeOverround,
-} from "./ev-math";
+import { bookmakerMargin, calculateEV, removeOverround } from "./ev-math";
 
 describe("calculateEV", () => {
   it("applies EV = probability × odds − 1", () => {
@@ -47,26 +42,5 @@ describe("removeOverround", () => {
   it("throws on empty input and on odds ≤ 1", () => {
     expect(() => removeOverround([])).toThrow(RangeError);
     expect(() => removeOverround([0.5])).toThrow(RangeError);
-  });
-});
-
-describe("calculateKellyStakePct", () => {
-  const opts = { fraction: 0.25, maxStake: 0.05 };
-
-  it("returns fraction × Kelly for a positive edge", () => {
-    // K = (0.6×2 − 1)/(2 − 1) = 0.2 → 0.25 × 0.2 = 0.05
-    expect(calculateKellyStakePct(0.6, 2, opts).toNumber()).toBeCloseTo(
-      0.05,
-      10,
-    );
-  });
-
-  it("caps at maxStake", () => {
-    expect(calculateKellyStakePct(0.9, 3, opts).toNumber()).toBe(0.05);
-  });
-
-  it("returns 0 for a non-positive edge or degenerate odds", () => {
-    expect(calculateKellyStakePct(0.4, 2, opts).toNumber()).toBe(0);
-    expect(calculateKellyStakePct(0.9, 1, opts).toNumber()).toBe(0);
   });
 });

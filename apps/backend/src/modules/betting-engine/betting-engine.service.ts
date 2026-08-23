@@ -1,5 +1,4 @@
 import { Injectable, Optional } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   AdjustmentStatus,
   BetStatus,
@@ -16,7 +15,6 @@ import {
   computePoissonMarkets,
   calculateDeterministicScore,
   calculateEV as calcEV,
-  calculateKellyStakePct,
   type DeterministicFeatures,
   type FeatureWeights,
 } from './betting-engine.utils';
@@ -45,8 +43,6 @@ import {
   EV_MAX_SOFT_ALERT,
   FEATURE_WEIGHTS,
   getModelScoreThreshold,
-  KELLY_FRACTION,
-  KELLY_MAX_STAKE_PCT,
   isEuropeanCompetition,
   EUROPEAN_CROSS_COMP_FORM_WEIGHT,
   EUROPEAN_CROSS_COMP_XG_WEIGHT,
@@ -89,8 +85,9 @@ import {
   getOverUnderShrinkageConfig,
   shrinkOverUnderProbabilities,
   applyH2HMarketSignalCorrection,
+  applyCongestionSignalCorrection,
 } from './math/probability';
-import { getLeagueThreeWayEmpiricalBlendWeight } from './ev.constants';
+import { getLeagueThreeWayEmpiricalBlendWeight } from '@evcore/analysis-core';
 import { getPickOdds } from './pricing/odds-mapping';
 import {
   summarizeEvaluatedPicks,
@@ -150,7 +147,6 @@ type AnalyzeFixtureResult =
 
 @Injectable()
 export class BettingEngineService {
-  private readonly kellyEnabled: boolean;
   private readonly friModelService: FriModelService;
   private readonly oddsLoader: OddsSnapshotLoader;
   private readonly betSettlement: BetSettlementService;
@@ -158,7 +154,6 @@ export class BettingEngineService {
   // eslint-disable-next-line max-params -- Explicit service injection keeps scoring dependencies transparent.
   constructor(
     private readonly prisma: PrismaService,
-    config: ConfigService,
     private readonly h2hService: H2HService,
     private readonly congestionService: CongestionService,
     private readonly mlInference: MlInferenceService,
@@ -178,7 +173,6 @@ export class BettingEngineService {
     @Optional()
     private readonly shadowPredictionsService?: ShadowPredictionsService,
   ) {
-    this.kellyEnabled = config.get<string>('KELLY_ENABLED', 'false') === 'true';
     this.friModelService = friModelService ?? new FriModelService(this.prisma);
     this.oddsLoader = oddsLoader ?? new OddsSnapshotLoader(this.prisma);
     this.betSettlement =
@@ -678,38 +672,54 @@ export class BettingEngineService {
     const favoriteTeamId = favoriteIsHome
       ? fixture.homeTeamId
       : fixture.awayTeamId;
-    const [shadowH2h, shadowH2hMarketSignals, shadowH2hScoreline] =
-      await Promise.all([
-        this.h2hService.computeH2HScore({
-          homeTeamId: fixture.homeTeamId,
-          awayTeamId: fixture.awayTeamId,
-          favoriteTeamId,
-          fixtureDate: fixture.scheduledAt,
-          limit: 5,
-        }),
-        // v2.2 (docs/h2h-service-v2-plan.md §3.3) — per-market rates, shadow
-        // only: backtested individually (5/6 show a real out-of-sample Brier
-        // gain, BTTS is noise-level) but not yet activated — needs a combined
-        // backtest against the lambda correction above to rule out
-        // double-counting the correlated result-based H2H signal.
-        this.h2hService.computeH2HMarketSignals({
-          homeTeamId: fixture.homeTeamId,
-          awayTeamId: fixture.awayTeamId,
-          fixtureDate: fixture.scheduledAt,
-          limit: 5,
-        }),
-        // CORRECT_SCORE-specific, shadow only (memory
-        // project-correct-score-immature, 2026-07-28) — marginal, not yet
-        // significant lift (p=0.06-0.08 on historical backtest); logged so
-        // backtest-h2h-scoreline-signal.ts can re-evaluate as live volume
-        // grows, never read by decision logic.
-        this.h2hService.computeH2HScorelineSignal({
-          homeTeamId: fixture.homeTeamId,
-          awayTeamId: fixture.awayTeamId,
-          fixtureDate: fixture.scheduledAt,
-          limit: 5,
-        }),
-      ]);
+    const [
+      shadowH2h,
+      shadowH2hMarketSignals,
+      shadowH2hScoreline,
+      shadowCongestion,
+    ] = await Promise.all([
+      this.h2hService.computeH2HScore({
+        homeTeamId: fixture.homeTeamId,
+        awayTeamId: fixture.awayTeamId,
+        favoriteTeamId,
+        fixtureDate: fixture.scheduledAt,
+        limit: 5,
+      }),
+      // v2.2 (docs/h2h-service-v2-plan.md §3.3) — per-market rates. Combined
+      // backtest confirmed a real gain on top of the H2H lambda correction
+      // below (6/6 markets, memory project-h2h-market-signals-ready,
+      // packages/db/reports/backtest-h2h-market-signals-combined-2026-07-28.txt),
+      // activated 2026-07-28.
+      this.h2hService.computeH2HMarketSignals({
+        homeTeamId: fixture.homeTeamId,
+        awayTeamId: fixture.awayTeamId,
+        fixtureDate: fixture.scheduledAt,
+        limit: 5,
+      }),
+      // CORRECT_SCORE-specific, shadow only (memory
+      // project-correct-score-immature, 2026-07-28) — marginal, not yet
+      // significant lift (p=0.06-0.08 on historical backtest); logged so
+      // backtest-h2h-scoreline-signal.ts can re-evaluate as live volume
+      // grows, never read by decision logic.
+      this.h2hService.computeH2HScorelineSignal({
+        homeTeamId: fixture.homeTeamId,
+        awayTeamId: fixture.awayTeamId,
+        fixtureDate: fixture.scheduledAt,
+        limit: 5,
+      }),
+      // Rest/schedule-density fatigue — validated 2026-08-19
+      // (db:backtest:congestion-signal-value): real but an order of
+      // magnitude smaller gain than the H2H market signal above (the
+      // combined score is 0 for most fixtures — weekly domestic calendars
+      // rarely produce short rest). Moved earlier (was computed after
+      // `probabilities` until 2026-08-19, too late to correct it) so the
+      // shift below can actually apply.
+      this.congestionService.computeCongestionScore({
+        homeTeamId: fixture.homeTeamId,
+        awayTeamId: fixture.awayTeamId,
+        fixtureDate: fixture.scheduledAt,
+      }),
+    ]);
 
     const h2hCorrectionApplied =
       FEATURE_FLAGS.SCORING.H2H && shadowH2h !== null;
@@ -734,12 +744,16 @@ export class BettingEngineService {
     // markets, not redundant with the H2H lambda correction above (see
     // memory project-h2h-market-signals-ready, packages/db/reports/
     // backtest-h2h-market-signals-combined-2026-07-28.txt).
-    const probabilities = FEATURE_FLAGS.SCORING.H2H_MARKET_SIGNALS
+    const postH2hProbabilities = FEATURE_FLAGS.SCORING.H2H_MARKET_SIGNALS
       ? applyH2HMarketSignalCorrection(
           preMarketSignalProbabilities,
           shadowH2hMarketSignals,
         )
       : preMarketSignalProbabilities;
+    const congestionCorrectionApplied = FEATURE_FLAGS.SCORING.CONGESTION;
+    const probabilities = congestionCorrectionApplied
+      ? applyCongestionSignalCorrection(postH2hProbabilities, shadowCongestion)
+      : postH2hProbabilities;
 
     const lambdaFloorHit =
       lambda.home <= MIN_LAMBDA + Number.EPSILON ||
@@ -805,13 +819,6 @@ export class BettingEngineService {
 
     let valueBet: ViablePick | null = candidatePicks[0] ?? null;
     const initialValueBet = valueBet;
-
-    const shadowCongestion =
-      await this.congestionService.computeCongestionScore({
-        homeTeamId: fixture.homeTeamId,
-        awayTeamId: fixture.awayTeamId,
-        fixtureDate: fixture.scheduledAt,
-      });
 
     // Line movement filter — exclude picks with >10% adverse odds drop over 7 days.
     let shadowLineMovement: number | null = null;
@@ -1068,6 +1075,7 @@ export class BettingEngineService {
       shadow_h2h_scoreline: shadowH2hScoreline.scoreline,
       shadow_h2h_scoreline_confidence: shadowH2hScoreline.confidence,
       shadow_congestion: shadowCongestion,
+      congestion_correction_applied: congestionCorrectionApplied,
       shadow_lineups: null,
       shadow_injuries: null,
       shadow_ml_corrected_p: null,
@@ -1175,153 +1183,27 @@ export class BettingEngineService {
       }
     }
 
-    let betCandidate: BetCandidate | null = null;
-    let evPickKey: string | null = null;
-
-    if (hasEvBet && valueBet !== null) {
-      const stakePct = this.kellyEnabled
-        ? calculateKellyStakePct(valueBet.probability, valueBet.odds, {
-            fraction: KELLY_FRACTION,
-            maxStake: KELLY_MAX_STAKE_PCT,
-          })
-        : DEFAULT_STAKE_PCT;
-
-      const pickKey = buildBetPickKey({
-        market: valueBet.market,
-        pick: valueBet.pick,
-      });
-      evPickKey = pickKey;
-
-      const channelSelectionId = findChannelSelectionId(
-        persistedChannelDecisions,
-        STRATEGY_CHANNEL.VALUE,
-        { market: valueBet.market, pick: valueBet.pick },
-      );
-
-      betCandidate = {
+    // Materialise real `bet` rows from what VALUE/SAFE actually SELECTED
+    // (persistedChannelDecisions) — never re-derive the pick from the raw
+    // evaluatedPicks pool. Before 2026-08-19 this block used
+    // candidatePicks[0]/selectSafeValuePick directly, so a staked `bet` could
+    // diverge from the Phase-2 decision the analysis sheet shows for the same
+    // fixture (see findChannelSelectionId's "live/backtest edge case" note,
+    // now moot: we key off the selection's own id, no re-matching by pick).
+    const betCandidate = await this.persistChannelBet(
+      persistedChannelDecisions,
+      STRATEGY_CHANNEL.VALUE,
+      { fixtureId, modelRunId: modelRun.id, pickKeyPrefix: '' },
+    );
+    await this.persistChannelBet(
+      persistedChannelDecisions,
+      STRATEGY_CHANNEL.SAFE,
+      {
         fixtureId,
         modelRunId: modelRun.id,
-        market: valueBet.market,
-        pick: valueBet.pick,
-        pickKey,
-        probability: valueBet.probability,
-        odds: valueBet.odds,
-        ev: valueBet.ev,
-        stakePct,
-        qualityScore: valueBet.qualityScore,
-      };
-
-      const existingBet = await this.prisma.client.bet.findFirst({
-        where: { fixtureId, pickKey, userId: null },
-        select: { id: true },
-      });
-      if (existingBet) {
-        await this.prisma.client.bet.update({
-          where: { id: existingBet.id },
-          data: {
-            modelRunId: modelRun.id,
-            channelSelectionId,
-            probEstimated: toPrismaDecimal(valueBet.probability, 4),
-            oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
-            ev: toPrismaDecimal(valueBet.ev, 4),
-            qualityScore: toPrismaDecimal(valueBet.qualityScore, 4),
-            stakePct: toPrismaDecimal(stakePct, 4),
-            status: BetStatus.PENDING,
-          },
-        });
-      } else {
-        await this.prisma.client.bet.create({
-          data: {
-            modelRunId: modelRun.id,
-            fixtureId,
-            channelSelectionId,
-            market: valueBet.market,
-            pick: valueBet.pick,
-            pickKey,
-            probEstimated: toPrismaDecimal(valueBet.probability, 4),
-            oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
-            ev: toPrismaDecimal(valueBet.ev, 4),
-            qualityScore: toPrismaDecimal(valueBet.qualityScore, 4),
-            stakePct: toPrismaDecimal(stakePct, 4),
-          },
-        });
-      }
-    }
-
-    // Safe value pass — only when the model score threshold is met (same guard as EV).
-    // Reuses the already-computed evaluatedPicks but applies SAFE_VALUE criteria.
-    if (deterministicDecision === 'BET' && latestOdds !== null) {
-      const svPick = selectSafeValuePick(
-        evaluatedPicks,
-        suspendedMarkets,
-        evPickKey,
-        lambdaTotal,
-        selectionConfig,
-      );
-
-      if (svPick !== null) {
-        const svPickKey = `sv:${buildBetPickKey({
-          market: svPick.market,
-          pick: svPick.pick,
-        })}`;
-
-        const channelSelectionId = findChannelSelectionId(
-          persistedChannelDecisions,
-          STRATEGY_CHANNEL.SAFE,
-          { market: svPick.market, pick: svPick.pick },
-        );
-
-        const existingSvBet = await this.prisma.client.bet.findFirst({
-          where: { fixtureId, pickKey: svPickKey, userId: null },
-          select: { id: true },
-        });
-        if (existingSvBet) {
-          await this.prisma.client.bet.update({
-            where: { id: existingSvBet.id },
-            data: {
-              modelRunId: modelRun.id,
-              channelSelectionId,
-              probEstimated: toPrismaDecimal(svPick.probability, 4),
-              oddsSnapshot: toPrismaDecimal(svPick.odds, 3),
-              ev: toPrismaDecimal(svPick.ev, 4),
-              qualityScore: toPrismaDecimal(svPick.qualityScore, 4),
-              stakePct: toPrismaDecimal(DEFAULT_STAKE_PCT, 4),
-              status: BetStatus.PENDING,
-            },
-          });
-        } else {
-          await this.prisma.client.bet.create({
-            data: {
-              modelRunId: modelRun.id,
-              fixtureId,
-              channelSelectionId,
-              market: svPick.market,
-              pick: svPick.pick,
-              pickKey: svPickKey,
-              probEstimated: toPrismaDecimal(svPick.probability, 4),
-              oddsSnapshot: toPrismaDecimal(svPick.odds, 3),
-              ev: toPrismaDecimal(svPick.ev, 4),
-              qualityScore: toPrismaDecimal(svPick.qualityScore, 4),
-              stakePct: toPrismaDecimal(DEFAULT_STAKE_PCT, 4),
-            },
-          });
-        }
-
-        logger.info(
-          {
-            fixtureId,
-            scheduledAt,
-            competitionCode,
-            market: svPick.market,
-            pick: svPick.pick,
-            probability: svPick.probability.toNumber(),
-            ev: svPick.ev.toNumber(),
-            odds: svPick.odds.toNumber(),
-          },
-          'Safe value pick saved',
-        );
-      }
-    }
+        pickKeyPrefix: 'sv:',
+      },
+    );
 
     return {
       status: 'analyzed',
@@ -1330,6 +1212,79 @@ export class BettingEngineService {
       deterministicScore: deterministicScore.toNumber(),
       probabilities: mapProbabilitiesToNumber(probabilities),
       valueBet: betCandidate,
+    };
+  }
+
+  // Materialises the real `bet` row for a staking channel (VALUE, SAFE) from
+  // its persisted Phase-2 selection — the single source of truth for what
+  // that channel picked. Every bet is staked at the flat DEFAULT_STAKE_PCT
+  // (no Kelly sizing: it would scale the stake with the model's stated
+  // edge, amplifying exactly the ~8pp overconfidence bias the VALUE edge
+  // floor already exists to contain).
+  private async persistChannelBet(
+    decisions: readonly PersistedChannelDecision[],
+    channel: StrategyChannel,
+    opts: { fixtureId: string; modelRunId: string; pickKeyPrefix: string },
+  ): Promise<BetCandidate | null> {
+    const selection =
+      decisions.find((d) => d.channel === channel)?.selections[0] ?? null;
+    if (
+      selection === null ||
+      selection.odds === undefined ||
+      selection.ev === undefined
+    ) {
+      return null;
+    }
+
+    const stakePct = DEFAULT_STAKE_PCT;
+    const qualityScore = selection.qualityScore ?? new Decimal(0);
+    const pickKey = `${opts.pickKeyPrefix}${buildBetPickKey({
+      market: selection.market,
+      pick: selection.pick,
+    })}`;
+
+    const persistData = {
+      modelRunId: opts.modelRunId,
+      channelSelectionId: selection.id,
+      probEstimated: toPrismaDecimal(selection.probability, 4),
+      oddsSnapshot: toPrismaDecimal(selection.odds, 3),
+      ev: toPrismaDecimal(selection.ev, 4),
+      qualityScore: toPrismaDecimal(qualityScore, 4),
+      stakePct: toPrismaDecimal(stakePct, 4),
+    };
+
+    const existingBet = await this.prisma.client.bet.findFirst({
+      where: { fixtureId: opts.fixtureId, pickKey, userId: null },
+      select: { id: true },
+    });
+    if (existingBet) {
+      await this.prisma.client.bet.update({
+        where: { id: existingBet.id },
+        data: { ...persistData, status: BetStatus.PENDING },
+      });
+    } else {
+      await this.prisma.client.bet.create({
+        data: {
+          ...persistData,
+          fixtureId: opts.fixtureId,
+          market: selection.market,
+          pick: selection.pick,
+          pickKey,
+        },
+      });
+    }
+
+    return {
+      fixtureId: opts.fixtureId,
+      modelRunId: opts.modelRunId,
+      market: selection.market,
+      pick: selection.pick,
+      pickKey,
+      probability: selection.probability,
+      odds: selection.odds,
+      ev: selection.ev,
+      stakePct,
+      qualityScore,
     };
   }
 
@@ -1556,75 +1511,11 @@ export class BettingEngineService {
         )) ?? [];
     }
 
-    let betCandidate: BetCandidate | null = null;
-    if (hasEvBet && valueBet !== null) {
-      const stakePct = this.kellyEnabled
-        ? calculateKellyStakePct(valueBet.probability, valueBet.odds, {
-            fraction: KELLY_FRACTION,
-            maxStake: KELLY_MAX_STAKE_PCT,
-          })
-        : DEFAULT_STAKE_PCT;
-
-      const pickKey = buildBetPickKey({
-        market: valueBet.market,
-        pick: valueBet.pick,
-      });
-
-      const channelSelectionId = findChannelSelectionId(
-        persistedChannelDecisions,
-        STRATEGY_CHANNEL.VALUE,
-        { market: valueBet.market, pick: valueBet.pick },
-      );
-
-      betCandidate = {
-        fixtureId,
-        modelRunId: modelRun.id,
-        market: valueBet.market,
-        pick: valueBet.pick,
-        pickKey,
-        probability: valueBet.probability,
-        odds: valueBet.odds,
-        ev: valueBet.ev,
-        stakePct,
-        qualityScore: valueBet.qualityScore,
-      };
-
-      const existingBet2 = await this.prisma.client.bet.findFirst({
-        where: { fixtureId, pickKey, userId: null },
-        select: { id: true },
-      });
-      if (existingBet2) {
-        await this.prisma.client.bet.update({
-          where: { id: existingBet2.id },
-          data: {
-            modelRunId: modelRun.id,
-            channelSelectionId,
-            probEstimated: toPrismaDecimal(valueBet.probability, 4),
-            oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
-            ev: toPrismaDecimal(valueBet.ev, 4),
-            qualityScore: toPrismaDecimal(valueBet.qualityScore, 4),
-            stakePct: toPrismaDecimal(stakePct, 4),
-            status: BetStatus.PENDING,
-          },
-        });
-      } else {
-        await this.prisma.client.bet.create({
-          data: {
-            modelRunId: modelRun.id,
-            fixtureId,
-            channelSelectionId,
-            market: valueBet.market,
-            pick: valueBet.pick,
-            pickKey,
-            probEstimated: toPrismaDecimal(valueBet.probability, 4),
-            oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
-            ev: toPrismaDecimal(valueBet.ev, 4),
-            qualityScore: toPrismaDecimal(valueBet.qualityScore, 4),
-            stakePct: toPrismaDecimal(stakePct, 4),
-          },
-        });
-      }
-    }
+    const betCandidate = await this.persistChannelBet(
+      persistedChannelDecisions,
+      STRATEGY_CHANNEL.VALUE,
+      { fixtureId, modelRunId: modelRun.id, pickKeyPrefix: '' },
+    );
 
     return {
       status: 'analyzed',
@@ -1791,7 +1682,7 @@ export class BettingEngineService {
 // Resolves the persisted ChannelSelection id whose pick matches a materialised
 // Bet, so Bet.channelSelectionId can point at the exact analytical selection.
 // Returns null when the channel did not select, or the live engine pick diverges
-// from the strategy pick (a known live/backtest edge case — see TODO Étape 5).
+// from the strategy pick (a known live/backtest edge case).
 // Exported for unit testing.
 export function findChannelSelectionId(
   decisions: readonly PersistedChannelDecision[],

@@ -6,7 +6,7 @@ Durée cible : `4 min`
 
 Bienvenue dans EVCore. Ici, le but n’est pas de te donner des paris magiques, mais de t’aider à comprendre pourquoi un pick existe, comment le lire, et comment l’utiliser avec discipline.
 
-En 4 minutes, tu vas comprendre les 5 canaux, lire une carte pick, et savoir quoi faire concrètement dans l’app.
+En 4 minutes, tu vas comprendre comment EVCore lit un match, lire une carte pick, et savoir quoi faire concrètement dans l’app.
 
 ## 0:20 — 0:55 | Ce qu’est EVCore
 
@@ -16,33 +16,27 @@ Toi, tu gardes toujours la décision finale. L’app ne remplace pas ton jugemen
 
 Ce qu’il faut retenir tout de suite : un bon signal ne garantit pas le résultat d’un match. Il donne un avantage statistique sur le long terme.
 
-## 0:55 — 1:40 | Les 5 canaux
+## 0:55 — 1:40 | Les canaux
 
-EVCore fonctionne aujourd’hui avec 5 canaux.
+EVCore fait tourner dix-neuf canaux de prédiction. Chacun pose une question différente au même match.
 
-Le canal **EV** cherche la value : une cote jugée trop haute par rapport à la probabilité estimée.
+Le canal **Victoire** affiche l’issue jugée la plus probable sur le 1X2. **Double chance** couvre deux issues sur trois. **Nul** isole le scénario de match nul. **BB** regarde si les deux équipes marquent, **Buts** le total du match, **Buts par équipe** celui d’un seul camp. D’autres travaillent sur la première mi-temps seule, ou combinent deux conditions à la fois.
 
-Le canal **SV**, pour Safe Value, garde une logique proche, mais avec des signaux plus prudents.
+Deux canaux ne cherchent rien par eux-mêmes : **Valeur** et **Sécurité** sont des filtres. Ils regardent les décisions prises par les autres et en re-sélectionnent une partie.
 
-Le canal **Victoire** affiche l’issue jugée la plus probable sur le 1X2.
-
-Le canal **NUL** isole les matchs où le modèle voit un scénario de nul.
-
-Et le canal **BB** concerne les matchs où les deux équipes marquent, en oui ou non selon le signal.
-
-Tous ces canaux ne répondent pas à la même question. EV et SV sont des lectures de valeur. Confiance, NUL et BB sont d’abord des lectures de prédiction.
+Et le point le plus important : sur ces dix-neuf canaux, **deux seulement sont assumés** à ce jour — ceux dont l’avantage résiste au bruit d’échantillonnage. Les autres sont calculés, réglés, affichés, et rangés en observation. L’app ne te le cache jamais : le résultat mesuré de chaque canal accompagne ses pronostics.
 
 ## 1:40 — 2:35 | Lire un pick
 
 Quand tu ouvres la page Picks du jour, chaque carte te donne les informations essentielles.
 
-D’abord, le **badge canal** : EV, SV, Conf., NUL ou BB.
+D’abord, le **badge canal** : Valeur, Sécurité, Victoire, Nul, BB, Buts, Double chance…
 
 Ensuite, la **sélection** : par exemple victoire domicile, plus de 2,5 buts, ou les deux équipes marquent.
 
-Sur un pick EV ou SV, tu verras aussi une **EV signée**. Si tu lis `+14,7 %`, cela veut dire que le modèle estime ce pari au-dessus de son prix de marché.
+Puis la **cote**, et juste à côté la **fréquence de réussite attendue**. Ces deux-là vont toujours ensemble : une cote seule se lit comme une promesse.
 
-Tu vois aussi la **probabilité estimée** du modèle, et la **cote disponible**. C’est l’écart entre les deux qui crée la value.
+Un mot sur l’**EV**, que tu verras affichée. Elle décrit ce que le pari rapporterait si la probabilité était juste. Ce n’est pas un critère de tri, et surtout pas un signe qu’un gros chiffre vaut mieux qu’un petit — la leçon sur l’edge et l’EV montre que c’est mesurément l’inverse.
 
 Enfin, si tu ouvres le détail, tu peux voir pourquoi le pick existe : forme récente, xG, avantage domicile ou extérieur, et stabilité de la ligue.
 
@@ -50,11 +44,11 @@ Enfin, si tu ouvres le détail, tu peux voir pourquoi le pick existe : forme ré
 
 Concrètement, ta routine peut être très simple.
 
-Le matin, tu ouvres **Picks du jour**.
+Le matin, tu ouvres **Investir**.
 
-Tu repères d’abord les signaux EV et SV si tu veux chercher de la value.
+Tu commences par « Ce qu’on assume » : les canaux mesurés fiables, classés par fréquence de réussite attendue.
 
-Tu peux ensuite utiliser Confiance, NUL ou BB pour compléter ta lecture d’un match.
+Si tu veux élargir, « En observation » te montre tout le reste, avec le résultat mesuré de chaque canal à côté de chaque pronostic. Et « Écarté » te dit ce que les garde-fous ont retiré, et pourquoi.
 
 Si un pick t’intéresse, tu peux l’ajouter au coupon. EVCore peut aussi pré-remplir ta mise par unité selon tes paramètres : en montant fixe ou en pourcentage de bankroll.
 
@@ -70,6 +64,6 @@ L’objectif n’est pas de forcer plus de paris. L’objectif, c’est de mieux
 
 ## 3:45 — 4:00 | Outro
 
-Si tu débutes, commence par trois contenus : les 5 canaux EVCore, lire un pick, et bankroll & discipline.
+Si tu débutes, commence par trois contenus : la carte des canaux EVCore, lire un pick, et bankroll & discipline.
 
 Une fois que tu comprends ces bases, l’app devient beaucoup plus claire. Et chaque pick devient une décision lisible, pas juste un chiffre à suivre.

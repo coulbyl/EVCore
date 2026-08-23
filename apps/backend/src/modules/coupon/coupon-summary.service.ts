@@ -10,17 +10,23 @@ import type {
   CouponSummaryResponse,
   CouponSummaryStats,
 } from './dto/coupon-summary.dto';
-import { type CouponChannel, MAX_COUPON_SELECTIONS } from './coupon.constants';
+import {
+  type CouponChannel,
+  DEFAULT_MAX_COUPON_SELECTIONS,
+  MAX_COUPON_SELECTIONS,
+} from './coupon.constants';
 
 function buildProgression(
-  items: { date: string; result: 'WON' | 'LOST' }[],
+  items: { date: string; result: 'WON' | 'LOST' | 'PARTIAL' }[],
 ): CouponSummaryProgressionPoint[] {
   const sorted = [...items].sort((a, b) => a.date.localeCompare(b.date));
   const byDate = new Map<string, { won: number; lost: number }>();
   for (const item of sorted) {
     const entry = byDate.get(item.date) ?? { won: 0, lost: 0 };
-    if (item.result === 'WON') entry.won += 1;
-    else entry.lost += 1;
+    // PARTIAL = tous les legs gradés gagnés (une jambe voidée en route) —
+    // compte comme un win dans la progression, pas une perte.
+    if (item.result === 'LOST') entry.lost += 1;
+    else entry.won += 1;
     byDate.set(item.date, entry);
   }
   let cumWon = 0;
@@ -34,14 +40,18 @@ function buildProgression(
   return points;
 }
 
-function computeRoi(items: { odds: number | null; result: 'WON' | 'LOST' }[]): {
+function computeRoi(
+  items: { odds: number | null; result: 'WON' | 'LOST' | 'PARTIAL' }[],
+): {
   roi: string | null;
   roiPickCount: number;
 } {
   const withOdds = items.filter((i) => i.odds !== null);
   if (!withOdds.length) return { roi: null, roiPickCount: 0 };
   const totalReturned = withOdds.reduce((acc, i) => {
-    return i.result === 'WON' && i.odds !== null ? acc + i.odds : acc;
+    // PARTIAL paie sur la cote réalisée (déjà substituée par l'appelant via
+    // `odds`), donc se traite comme un WON ici.
+    return i.result !== 'LOST' && i.odds !== null ? acc + i.odds : acc;
   }, 0);
   const net = totalReturned - withOdds.length;
   const pct = (net / withOdds.length) * 100;
@@ -111,7 +121,9 @@ export class CouponSummaryService {
     to: string | undefined,
   ): Promise<CouponSummaryResponse> {
     const range = dateRange(from, to);
-    const maxPerDay = MAX_COUPON_SELECTIONS[canal as CouponChannel];
+    const maxPerDay =
+      MAX_COUPON_SELECTIONS[canal as CouponChannel] ??
+      DEFAULT_MAX_COUPON_SELECTIONS;
 
     let picks: CouponSummaryPickRow[];
 
@@ -200,14 +212,18 @@ export class CouponSummaryService {
     );
 
     const coupons: CouponSummaryRow[] = proposals
-      .filter((p) => p.result === 'WON' || p.result === 'LOST')
+      .filter(
+        (p) =>
+          p.result === 'WON' || p.result === 'LOST' || p.result === 'PARTIAL',
+      )
       .map((p) => ({
         id: p.id,
         forDate: p.forDate.toISOString().slice(0, 10),
         rank: p.rank,
         combinedOdds: Number(p.combinedOdds),
+        realizedOdds: p.realizedOdds !== null ? Number(p.realizedOdds) : null,
         jointProbability: Number(p.jointProbability),
-        result: p.result as 'WON' | 'LOST',
+        result: p.result as 'WON' | 'LOST' | 'PARTIAL',
         legs: p.legs.map((l) => ({
           fixtureId: l.fixtureId,
           fixture: `${l.fixture.homeTeam.name} vs ${l.fixture.awayTeam.name}`,
@@ -223,12 +239,17 @@ export class CouponSummaryService {
         })),
       }));
 
-    const won = coupons.filter((c) => c.result === 'WON');
+    // PARTIAL = tous les legs gradés gagnés (une jambe voidée en route) —
+    // compte comme un win, sur la cote réellement payée (realizedOdds), pas
+    // la cote combinée d'origine.
+    const won = coupons.filter(
+      (c) => c.result === 'WON' || c.result === 'PARTIAL',
+    );
     const lost = coupons.filter((c) => c.result === 'LOST');
 
     const { roi, roiPickCount } = computeRoi(
       coupons.map((c) => ({
-        odds: c.combinedOdds,
+        odds: c.realizedOdds ?? c.combinedOdds,
         result: c.result,
       })),
     );

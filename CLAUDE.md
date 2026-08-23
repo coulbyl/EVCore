@@ -4,7 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**EVCore** is an autonomous, value-driven sports betting engine operating across **5 prediction channels**: EV (Expected Value ≥ 8%), SV (Safe Value — high confidence + positive edge), Confiance (argmax outcome above league threshold), BTTS (both teams score), and Nul (draw via bookmaker implied probability). It is a disciplined probabilistic decision system — not a tip generator or AI chatbot. The system targets long-term ROI through deterministic data scoring (70%) refined by LLM context (30%), with the backend always acting as the final authority.
+**EVCore** is an autonomous, probability-driven sports betting engine. It analyses and proposes — it never places a bet on a user's behalf.
+
+**19 prediction channels** emit a decision, grouped by the generating process that feeds them rather than by market (`docs/prediction-engine-families.md`): full-match Poisson (DOMINANT, GOALS, BTTS, DOUBLE_CHANCE, TEAM_TOTAL, CLEAN_SHEET, …), first-half distribution (FIRST_HALF, OVER_UNDER_HT, HALF_TIME_FULL_TIME, WIN_EITHER_HALF), and market-implied (DRAW). VALUE and SAFE are **Phase-2 filters**, not independent scanners: they re-select among Phase-1 decisions. CONSENSUS/CONTRARIAN/AVOID are Phase-3 meta-channels that emit no pick of their own.
+
+Channel naming is always the English code (`DRAW`, `SAFE`, `BTTS`, `DOUBLE_CHANCE`) — the old French tags (NUL, SV, BB, CONF) are retired everywhere in code.
+
+It is a disciplined probabilistic decision system — not a tip generator or AI chatbot. The system targets long-term ROI through deterministic data scoring (70%) refined by LLM context (30%), with the backend always acting as the final authority.
+
+⚠️ **Two measured results that override older intuitions in this repo** (audit 2026-08-22, `docs/audit-canaux-investir-2026-08-22.md`):
+
+- **Claimed edge (`p − 1/odds`) is anti-predictive.** Across 51 860 settled selections the realised rate is flat (0.511 → 0.375) while the announced rate climbs from 0.481 to 0.699. It is now used as a **ceiling** (`MAX_LEG_EDGE = 0.10`), never as a selection floor, and ranking is done on calibrated probability. Treat any `EV ≥ 8%` framing found elsewhere in the docs as historical.
+- **Coupon ROI has no statistical power** at current volumes (SE 13–18 points for 10-point differences). The learning loop runs at the **leg** level. Never conclude from a coupon-level ROI.
 
 Read [EVCORE.md](EVCORE.md) for the full product specification before making any architectural decision.
 Check [ROADMAP.md](ROADMAP.md) to know the current implementation state before adding or modifying any feature.
@@ -267,7 +278,7 @@ These rules reflect the product specification in EVCORE.md and must never be byp
 
 ### Hard constraints (backend enforces, never client)
 
-- EV threshold: `≥ 0.08` — defined in config, never hardcoded inline
+- EV threshold: `≥ 0.08` — defined in config, never hardcoded inline. Still gates the VALUE channel, but **it is no longer a quality signal**: see the anti-predictive edge result in the overview. Every surface that stakes now applies `MAX_LEG_EDGE = 0.10` as a ceiling on top of it, which is the exact complement — most VALUE picks therefore land in Investir's "Écarté" view. Do not add new selection logic keyed on EV or edge.
 - OpenClaw weight cap: `≤ 0.30` — enforced server-side, never trust frontend or LLM output
 - Weight adjustment: minimum 50 bets on market, maximum 5% change per week
 - Market suspension: automatic at ROI < -15% over 50+ bets — never manual shortcut

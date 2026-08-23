@@ -8,7 +8,7 @@ import {
   StrategyChannel,
 } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
-import { endOfUtcDay, startOfUtcDay } from '@utils/date.utils';
+import { startOfUtcDay } from '@utils/date.utils';
 
 const FIXTURE_SELECT = {
   id: true,
@@ -185,26 +185,23 @@ export class CouponRepository {
     }
   }
 
-  // "Live on this day" — NOT `forDate` equality. A multi-day window (weekend/
-  // midweek LONGSHOT, cf. SignalWindowService.getPoolForRange) is generated
-  // once, keyed on its first day (`forDate` = the Friday it was generated),
-  // but its legs keep playing through Sunday — a coupon must stay visible
-  // on Saturday and Sunday too, not only on the exact day it was generated.
-  // `lastFixtureScheduledAt` (already the max of every leg's kickoff) makes
-  // this a pure range check with no schema change: the window
-  // [forDate, lastFixtureScheduledAt] must overlap the requested day.
-  // Degenerates to the old exact-match behaviour for every single-day
-  // profile, where lastFixtureScheduledAt always falls on `forDate` itself.
+  // `forDate` equality — the coupon's own generation date, not an overlap
+  // window. A prior version matched any batch whose [forDate,
+  // lastFixtureScheduledAt] window overlapped the requested day, so a
+  // multi-day weekend/midweek LONGSHOT batch (forDate = the Friday it was
+  // generated) stayed visible on Saturday/Sunday too — but that meant one
+  // viewed day could surface TWO independently-ranked batches at once (each
+  // showing its own "rank 1"), with no way to tell them apart in the UI
+  // (2026-08-19 incident). Pinning to `forDate` removes the ambiguity: one
+  // day shows exactly the batch generated that day, full stop.
   async findByDate(
     day: Date,
     status?: CouponProposalStatus,
   ): Promise<CouponProposalWithLegs[]> {
     const dayStart = startOfUtcDay(day);
-    const dayEnd = endOfUtcDay(day);
     return this.prisma.client.couponProposal.findMany({
       where: {
-        forDate: { lte: dayEnd },
-        lastFixtureScheduledAt: { gte: dayStart },
+        forDate: dayStart,
         ...(status ? { status } : {}),
       },
       include: WITH_LEGS,
@@ -264,6 +261,41 @@ export class CouponRepository {
     });
   }
 
+  /**
+   * Dev/backtest only — wipes EXPIRED proposals (and their legs) in a
+   * `forDate` range, never ACCEPTED/REJECTED/PENDING. Needed because
+   * `upsertProposal` deliberately bails out on any non-PENDING status
+   * (including EXPIRED) to protect human decisions — but that same guard
+   * silently no-ops a backtest re-run against a date range that was already
+   * settled by a PRIOR run: `generateCoupons` would compute fresh legs under
+   * updated code, find an EXPIRED row already sitting at that (forDate,
+   * signalWindowDays, targetOddsMin, targetOddsMax, rank) key, and discard
+   * the fresh computation entirely, leaving the OLD legs in place forever
+   * (found 2026-08-20: several backtest iterations this session re-measured
+   * the exact same frozen dataset from one early run instead of the current
+   * code). Call this BEFORE regenerating a range that was previously
+   * regenerated+settled, so `upsertProposal` sees no `existing` row and
+   * actually persists the new computation.
+   */
+  async deleteExpiredInRange(from: Date, to: Date): Promise<number> {
+    const expired = await this.prisma.client.couponProposal.findMany({
+      where: {
+        forDate: { gte: from, lte: to },
+        status: CouponProposalStatus.EXPIRED,
+      },
+      select: { id: true },
+    });
+    if (expired.length === 0) return 0;
+    const ids = expired.map((p) => p.id);
+    await this.prisma.client.couponProposalLeg.deleteMany({
+      where: { couponProposalId: { in: ids } },
+    });
+    await this.prisma.client.couponProposal.deleteMany({
+      where: { id: { in: ids } },
+    });
+    return ids.length;
+  }
+
   async findByIdWithLegs(id: string): Promise<CouponProposalWithLegs | null> {
     return this.prisma.client.couponProposal.findUnique({
       where: { id },
@@ -277,7 +309,12 @@ export class CouponRepository {
   ): Promise<CouponProposalWithLegs[]> {
     return this.prisma.client.couponProposal.findMany({
       where: {
-        result: { in: [CouponResult.WON, CouponResult.LOST] },
+        // VOID reste exclu (aucun gain, aucune perte) ; PARTIAL est inclus —
+        // son ROI se calcule sur `realizedOdds`, pas `combinedOdds` (voir
+        // CouponSettlementService).
+        result: {
+          in: [CouponResult.WON, CouponResult.LOST, CouponResult.PARTIAL],
+        },
         forDate: { gte: from, lte: to },
       },
       include: WITH_LEGS,
@@ -324,19 +361,28 @@ export class CouponRepository {
       jointProbability: Prisma.Decimal;
       result: CouponResult;
       combinedOdds: Prisma.Decimal;
+      realizedOdds: Prisma.Decimal | null;
     }[]
   > {
     return this.prisma.client.couponProposal.findMany({
       where: {
-        result: { in: [CouponResult.WON, CouponResult.LOST] },
+        result: {
+          in: [CouponResult.WON, CouponResult.LOST, CouponResult.PARTIAL],
+        },
         forDate: { gte: from, lte: to },
       },
-      select: { jointProbability: true, result: true, combinedOdds: true },
+      select: {
+        jointProbability: true,
+        result: true,
+        combinedOdds: true,
+        realizedOdds: true,
+      },
     }) as unknown as Promise<
       {
         jointProbability: Prisma.Decimal;
         result: CouponResult;
         combinedOdds: Prisma.Decimal;
+        realizedOdds: Prisma.Decimal | null;
       }[]
     >;
   }
@@ -382,10 +428,20 @@ export class CouponRepository {
     }));
   }
 
-  async updateResult(id: string, result: CouponResult): Promise<void> {
+  async updateResult(
+    id: string,
+    result: CouponResult,
+    realizedOdds?: number,
+  ): Promise<void> {
     await this.prisma.client.couponProposal.update({
       where: { id },
-      data: { result, status: CouponProposalStatus.EXPIRED },
+      data: {
+        result,
+        status: CouponProposalStatus.EXPIRED,
+        ...(realizedOdds !== undefined
+          ? { realizedOdds: new Prisma.Decimal(realizedOdds) }
+          : {}),
+      },
     });
   }
 

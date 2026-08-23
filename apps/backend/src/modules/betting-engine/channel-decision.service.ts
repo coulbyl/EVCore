@@ -12,8 +12,10 @@ import {
   type ChannelSelectionReadRow,
   type PersistedChannelDecision,
 } from './channel-decision.repository';
-import { ChannelStrategyOrchestrator } from './strategies/channel-strategy.orchestrator';
-import { createChannelStrategyOrchestrator } from './strategies/registry';
+import {
+  ChannelStrategyOrchestrator,
+  createChannelStrategyOrchestrator,
+} from '@evcore/analysis-core';
 import type {
   ChannelDecisionStatus,
   StrategyChannel,
@@ -343,6 +345,14 @@ const READ_CHANNEL_ORDER: readonly StrategyChannel[] = [
   STRATEGY_CHANNEL.TEAM_TOTAL,
   STRATEGY_CHANNEL.WIN_EITHER_HALF,
   STRATEGY_CHANNEL.CORRECT_SCORE,
+  STRATEGY_CHANNEL.RESULT_TOTAL_GOALS,
+  STRATEGY_CHANNEL.OVER_UNDER_HT,
+  STRATEGY_CHANNEL.FIRST_HALF,
+  STRATEGY_CHANNEL.HALF_TIME_FULL_TIME,
+  STRATEGY_CHANNEL.DOUBLE_CHANCE,
+  STRATEGY_CHANNEL.RESULT_BTTS,
+  STRATEGY_CHANNEL.DRAW_NO_BET,
+  STRATEGY_CHANNEL.WIN_TO_NIL,
   // AVOID gates the primaries above; CONSENSUS aggregates them last.
   STRATEGY_CHANNEL.AVOID,
   STRATEGY_CHANNEL.CONSENSUS,

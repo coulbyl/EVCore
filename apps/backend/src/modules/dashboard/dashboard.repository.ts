@@ -298,8 +298,22 @@ export class DashboardRepository {
   // DOMINANT/BTTS/DRAW/GOALS never materialise a Bet (analytical-only channels —
   // see BetSettlementService docblock), so their settled record lives on
   // ChannelSelection.result directly instead of the bet table.
+  /**
+   * Sélections réglées de PLUSIEURS canaux, en une seule requête.
+   *
+   * Une requête par canal auparavant, lancées en parallèle par `Promise.all`.
+   * Tenable à 10 canaux, plus du tout à 18 : les workers parallèles de
+   * Postgres réclament chacun un segment de mémoire partagée, et le conteneur
+   * n'a que les 64 Mo de `/dev/shm` par défaut. Trois endpoints × 18 requêtes
+   * lourdes en simultané faisaient tomber la page entière sur
+   * « could not resize shared memory segment » (SQLSTATE 53100), sur la
+   * période « tout l'historique ».
+   *
+   * Le canal remonte dans le résultat pour que l'appelant regroupe en
+   * mémoire — bien moins cher qu'un aller-retour par canal.
+   */
   findChannelSelectionsInRange(
-    channel: StrategyChannel,
+    channels: readonly StrategyChannel[],
     range: { since: Date; until: Date },
   ) {
     return this.prisma.client.channelSelection.findMany({
@@ -308,7 +322,7 @@ export class DashboardRepository {
         odds: { not: null },
         channelDecision: {
           is: {
-            channel,
+            channel: { in: [...channels] },
             modelRun: {
               is: {
                 fixture: {
@@ -324,6 +338,7 @@ export class DashboardRepository {
         odds: true,
         channelDecision: {
           select: {
+            channel: true,
             modelRun: {
               select: {
                 fixture: {

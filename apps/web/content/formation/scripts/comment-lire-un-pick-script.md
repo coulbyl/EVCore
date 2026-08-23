@@ -38,9 +38,9 @@ Ces bandeaux ne sont pas des erreurs à ignorer — ce sont des garde-fous qui f
 
 Parfois, plusieurs canaux indépendants arrivent à la même conclusion sur un même match. Dans ce cas, un badge **Consensus** apparaît dans l'en-tête de la carte, avec la liste des canaux qui convergent — un signal renforcé, mais qui reste soumis aux mêmes règles de lecture que les autres : cote, probabilité, edge, jamais un seul chiffre isolé.
 
-## Le badge Observation — canal Score exact
+## Le canal Score exact
 
-Un dernier cas à connaître : le canal **Score exact**. Sur sa ligne, un badge **Observation** apparaît, et le marché n'est même pas affiché — parce qu'il n'y en a pas besoin. Score exact montre le résultat exact jugé le plus probable par le modèle, mais il n'est jamais proposé à la mise. C'est une information, pas une recommandation.
+Un dernier cas à connaître : le canal **Score exact**. Il montre le résultat exact jugé le plus probable par le modèle. C'est le canal le plus faible du système sur les résultats réglés, et il n'a jamais été misé — une information sur la façon dont le modèle voit le match, pas une recommandation.
 
 Une précision importante : ce n'est pas la même prudence que pour BTTS ou GOALS. Ces deux-là sont en observation parce que leurs chiffres, testés longuement, restent négatifs. Score exact est en observation parce qu'il est tout jeune — lancé le 1er juillet 2026, contre plusieurs mois pour les autres canaux. Les premiers résultats sont même prometteurs, mais sur deux semaines à peine, ce n'est pas encore un historique.
 

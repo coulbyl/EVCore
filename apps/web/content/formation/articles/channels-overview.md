@@ -4,8 +4,8 @@ category: channels
 difficulty: intermediate
 order: 1
 slug: channels-overview
-summary: "Tous les canaux ne se valent pas, et EVCore ne le cache jamais. Voici l'état réel de chaque canal — ce qui tient sur des données jamais vues par le modèle, et ce qui reste à l'état de signal."
-updatedAt: "2026-07-28"
+summary: "Dix-neuf canaux calculent, deux sont assumés. Cette leçon explique comment se lit cette hiérarchie, où trouver le chiffre à jour de chaque canal, et pourquoi la façon dont on croyait la construire était fausse."
+updatedAt: "2026-08-22"
 related:
   [
     "value-channel",
@@ -20,40 +20,59 @@ related:
 
 ## Pourquoi cette leçon existe
 
-EVCore produit des picks sur sept canaux : VALUE (Valeur), SAFE (Sécurité), DOMINANT (Victoire), DRAW (Nul), BTTS (BB), TEAM_TOTAL, GOALS (Buts). Le plus simple serait de les présenter comme sept variantes équivalentes du même produit — sept façons de gagner. Ce ne serait pas honnête, et ce n'est pas ce qu'EVCore fait.
+EVCore fait tourner dix-neuf canaux de prédiction. Le plus simple serait de les présenter comme dix-neuf variantes équivalentes du même produit — dix-neuf façons de gagner. Ce ne serait pas honnête, et ce n'est pas ce que l'app fait.
 
-Chaque canal a été confronté à des données qu'il n'a jamais vues à l'entraînement — des paris "hors échantillon", postérieurs à la période utilisée pour calibrer le modèle. Certains tiennent cette épreuve. D'autres pas encore, ou pas sur toutes les méthodes de classement testées, ou seulement sur une partie des championnats. Cette leçon sert de carte avant d'entrer dans le détail canal par canal.
+Deux canaux seulement sont présentés comme assumés à ce jour. Les dix-sept autres sont calculés, réglés, affichés — et rangés en observation. Cette leçon explique comment cette hiérarchie est construite, et surtout **comment elle se lit dans l'app** plutôt que dans un tableau figé ici.
 
-## L'état réel, au dernier audit (2026-07-28)
+## Où sont les chiffres
 
-| Canal                   | Ce qu'il cherche                                  | Statut réel                                                                                                                 |
-| ----------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **VALUE** (Valeur)      | Cotes à valeur attendue positive                  | Le canal le plus solide hors échantillon : +9.71% ROI sur 1 333 sélections réglées                                          |
-| **DRAW** (Nul)          | Match nul, via la probabilité implicite du marché | Rentable et confirmé sur gros volume : +5.35% ROI sur 4 110 sélections                                                      |
-| **TEAM_TOTAL**          | Buts d'une seule équipe, plus ou moins une ligne  | Signal net (+3.40% ROI, hit 62.1%) mais tout juste activé — seulement 9 jours d'historique, à surveiller de près            |
-| **BTTS** (BB)           | Les deux équipes marquent                         | Rentable, mais seulement sur Premier League/Bundesliga/Serie A (+2.6% à +5.2%) — négatif sur les autres championnats testés |
-| **SAFE** (Sécurité)     | Sélections prudentes, rendement régulier          | Quasi neutre (+0.23% ROI) — sert de stabilisateur plus que de moteur de gain                                                |
-| **DOMINANT** (Victoire) | Angle le plus affirmé sur l'issue du match        | Le canal brut reste légèrement négatif (−1.38%) — mais bien classé (top 5 du jour), une partie redevient rentable           |
-| **GOALS** (Buts)        | Plus ou moins de buts                             | Pas rentable sur aucun classement testé à ce jour — −5.39% ROI sur 15 685 sélections, le plus gros échantillon d'EVCore     |
+Vous ne trouverez pas de tableau de ROI par canal dans cette leçon, ni dans les leçons dédiées à chaque canal. C'est délibéré, et c'est une correction.
 
-Un canal peut progresser, comme DRAW et BTTS l'ont fait, ou régresser si le marché change. Cette table sera revue à chaque nouvel audit. Aucune ligne n'est une promesse pour l'avenir — juste une photographie datée.
+Les versions précédentes de ces pages affichaient des ROI datés, canal par canal. Presque tous se sont révélés faux quelques mois plus tard, et systématiquement dans le même sens : les chiffres positifs se sont érodés ou inversés, le seul qui a tenu était négatif. La raison est simple et elle est instructive — chaque chiffre avait été retenu parce qu'il était bon, sur la période et la formule où il l'était. Une leçon qui gèle un bon résultat enseigne surtout comment on se raconte des histoires.
 
-## Ce que cette formation répète le plus : le classement compte plus que le canal
+Les chiffres vivants sont dans l'app, à trois endroits :
 
-DOMINANT en est la preuve la plus nette. Sur la période testée, le canal complet perd de l'argent. Mais ses 5 meilleurs picks du jour, classés par probabilité, redeviennent rentables — jour après jour. Ni coïncidence, ni tour de passe-passe statistique : c'est exactement le principe du Coupon Composer et de la page Investir. Ne pas montrer tout ce que le modèle produit. Sélectionner ce qui a démontré tenir la route.
+- **Track Record** — le ROI et le taux de réussite de chaque canal, sur l'historique complet.
+- **Investir, vue « En observation »** — chaque pick porte le ROI mesuré de son canal, ramené vers la moyenne selon le volume qui le soutient.
+- **Abonnements** — les canaux y sont groupés en « assumés » et « en observation », avec leur chiffre.
 
-TEAM_TOTAL illustre la même idée sous un autre angle : trié par probabilité brute, il serait négatif ; trié par edge calibré, il devient fortement positif. Et BTTS montre qu'un bon découpage géographique peut avoir le même effet qu'un bon classement — voir la leçon dédiée à chacun de ces deux canaux.
+Ces trois surfaces se recalculent. Cette leçon, non. C'est pour ça qu'elle ne contient plus de nombres.
 
-C'est pour ça qu'EVCore ne vend jamais un "accès à un canal" comme produit fini. Ce qui a de la valeur, c'est le résultat d'un classement (et, pour BTTS, d'un découpage) testé — la curation — pas le flux brut derrière.
+## Comment un canal devient « assumé »
+
+Sur le ROI **corrigé du bruit**, jamais sur le ROI brut.
+
+Un canal qui affiche +28% sur 121 sélections n'a rien démontré : à ce volume, une bonne série suffit à produire ce chiffre. Un canal à −4% sur 17 000 sélections, lui, a dit quelque chose. Le système ramène donc chaque canal vers la moyenne générale, d'autant plus fort que son échantillon est mince — un canal fin garde peu de son écart apparent, un canal massif le garde presque entier.
+
+Ce qui reste après cette correction est ce sur quoi on s'appuie. Aujourd'hui, deux canaux passent au-dessus de zéro. Ce nombre n'est pas une cible : si un troisième y arrive, il rejoint la liste sans que personne n'intervienne ; si l'un des deux repasse dessous, il en sort de la même façon.
+
+## Ce que nous avons cru, et qui était faux
+
+Cette formation a longtemps répété une idée : _le classement compte plus que le canal_. L'argument semblait solide — un canal perdant dans son ensemble redevenait rentable si on ne gardait que ses 5 meilleurs picks du jour.
+
+Cinq de ces règles de classement ont été testées correctement en août 2026, en comparant le top-5 à la liste entière **le même jour** plutôt que sur des périodes différentes. **Aucune n'est ressortie significative.** Les deux qui s'approchaient le plus du seuil étaient négatives : sur DRAW, le meilleur canal du système, le plafond coûtait plusieurs points par jour.
+
+Ce qui s'était passé est un piège classique. En testant cinq règles et en gardant celle qui paraît marcher, on ne sélectionne pas une méthode : on sélectionne du bruit. Le meilleur de cinq essais a l'air bon même quand aucun ne vaut rien.
+
+Toutes ces règles de classement ont été supprimées. Il n'y a plus de « top 5 » nulle part dans l'app.
+
+## Ce qui compte vraiment
+
+Trois régularités ont survécu à la mesure, et elles valent mieux que n'importe quelle liste de canaux.
+
+**La fiabilité s'effondre avec la cote.** Le modèle est bien calibré là où le marché est d'accord avec lui, et catastrophique là où il le contredit. Un canal qui annonce 57% sur une cote au-delà de 3.50 en réalise 20.
+
+**L'avantage revendiqué est anti-prédictif.** Plus le modèle annonce un gros écart avec le marché, moins le pari passe. La leçon sur l'edge et l'EV détaille cette mesure, qui est la plus lourde de conséquences de tout le système.
+
+**La marge du bookmaker domine.** Environ 5 points par pari. C'est l'adversaire réel, et aucun classement ne le fait disparaître.
 
 ## Ce que cette carte n'est pas
 
-Elle ne garantit aucun résultat futur, sur aucun canal, VALUE compris. Elle ne dit pas non plus que GOALS est inutile : ce signal nourrit d'autres décisions en coulisse — la page Investir, par exemple, exclut certains picks GOALS qui contredisent le reste du modèle. Simplement, on ne le vend pas comme un edge démontré, parce qu'il ne l'est pas.
-
-Et elle change avec le temps. DRAW était nettement plus faible il y a deux ans qu'aujourd'hui, et BTTS n'était pas misé du tout avant le 2026-07-28. La discipline, c'est suivre ces chiffres dans la durée — pas les figer une fois pour toutes.
+Elle ne garantit aucun résultat futur, sur aucun canal. Elle ne dit pas non plus qu'un canal en observation est inutile : il nourrit d'autres décisions en coulisse, et un pick individuel venant d'un canal en moyenne perdant peut rester un choix défendable — c'est vous qui tranchez, avec le chiffre du canal sous les yeux.
 
 ## À retenir
 
-- Tous les canaux n'ont pas le même niveau de preuve, et la formation ne le cache jamais.
-- VALUE et DRAW sont les canaux les plus solides aujourd'hui ; TEAM_TOTAL et BTTS viennent d'être promus (le second avec une restriction géographique) ; GOALS reste un signal, pas un edge.
-- Le classement — ou, pour BTTS, le découpage par championnat — fait souvent plus la différence que le signal brut.
+- Dix-neuf canaux calculent, deux sont assumés. La hiérarchie est visible partout dans l'app, elle n'est figée nulle part.
+- Un canal est jugé sur son ROI corrigé du bruit d'échantillonnage, jamais sur son ROI brut.
+- « Le classement compte plus que le canal » était faux : cinq règles testées, aucune significative. Elles ont toutes été retirées.
+- Ce qui tient : la cote courte, la calibration par canal, et le refus. Pas la curation.

@@ -369,86 +369,6 @@ export const MIN_SELECTION_ODDS = LEAGUE_MIN_SELECTION_ODDS_DEFAULT;
 // Computed from DB team_stats (April 2026, 7 leagues, includeInBacktest = true).
 export const LAMBDA_SHRINKAGE_FACTOR = 0.7;
 
-const LEAGUE_MEAN_LAMBDA_MAP: Record<string, number> = {
-  // Raised 1.574 → 1.70: prod measurement 3.39 goals/match = 1.695/team.
-  // Shrinkage anchor at 1.574 underestimated P(over 2.5) by ~2pp on average.
-  BL1: 1.7,
-  CH: 1.263,
-  L1: 1.431,
-  LL: 1.298,
-  PL: 1.468,
-  SA: 1.247,
-  SP2: 1.449,
-  // ERD: Eredivisie is one of the highest-scoring leagues in Europe (~3.3 goals/game).
-  // Without this entry the default (1.4) is used, causing Poisson to massively
-  // over-estimate extreme outcomes — 67 ev_above_hard_cap AWAY cases (avg EV 1.63)
-  // and 18 ev_above_hard_cap DRAW cases (avg EV 1.49) in audit 2026-04-04.
-  // Estimated from historical Eredivisie data; refine after stats sync.
-  ERD: 1.75,
-  // I2: Serie B remains one of the most draw-heavy leagues in the pool (~32% draws).
-  // Even after the earlier 1.45 → 1.1 correction, the latest reruns still needed
-  // extra draw support. Keep the 0.95 anchor as the best compromise for totals,
-  // and let the empirical 1X2 blend handle the remaining directional calibration
-  // instead of pushing lambda lower again.
-  I2: 0.95,
-  // TUR1: Süper Lig historical goal rate is lower than the global default 1.40.
-  // Backtest 2026-04-30: 12 UNDER bets blocked by under_high_lambda (λ > 2.5)
-  // went 9W/3L with an average of 2.33 actual goals — model overestimates scoring.
-  // Anchor 1.25 pulls lambda toward the observed rate and raises P(UNDER), allowing
-  // high-confidence UNDER picks to reach the EV threshold.
-  TUR1: 1.25,
-  // UCL: computed from team_stats (1,432 records, April 2026 — 3 seasons).
-  // avg_xg_for=1.843, avg_xg_against=1.335, avg_lambda=1.589.
-  // Previous value 1.35 was based on "elite defenses" assumption (~2.7 goals/game)
-  // but DB measurement shows UCL runs closer to ~3.2 goals/game. Corrected.
-  UCL: 1.59,
-  LDC: 1.59, // legacy alias for UCL
-  // UEL: computed from team_stats (1,326 records). avg_lambda=1.437 ≈ default 1.4.
-  // No lambda correction needed — miscalibration is EV overconfidence, not lambda.
-  UEL: 1.4,
-  // UECL: computed from team_stats (2,253 records). avg_lambda=1.464 ≈ config 1.45.
-  UECL: 1.45,
-  // WC: WC 2022 and 2018 averaged 2.65–2.69 goals/game (λ ≈ 1.33/team). Cross-comp stats
-  // (WCQAF/FRI friendlies used for teams without in-tournament data) inflate λ because
-  // qualifying is more attacking than the tournament itself. Anchor at 1.3 pulls shrinkage
-  // toward the observed tournament goal rate and prevents OVER_3_5/OVER picks from
-  // receiving unrealistically high λ values when the primary stat source is friendlies.
-  WC: 1.3,
-};
-
-const LEAGUE_MEAN_LAMBDA_DEFAULT = 1.4;
-
-export function getLeagueMeanLambda(
-  competitionCode: string | null | undefined,
-): number {
-  if (competitionCode != null && competitionCode in LEAGUE_MEAN_LAMBDA_MAP) {
-    return LEAGUE_MEAN_LAMBDA_MAP[competitionCode];
-  }
-  return LEAGUE_MEAN_LAMBDA_DEFAULT;
-}
-
-// Home advantage correction applied to Poisson lambdas before probability
-// computation. Academic literature (Dixon-Coles, Karlis-Ntzoufras) measures
-// home advantage at 5-8%. Previously raised from 0.93→0.95 after audit
-// 2026-03-22, which fixed 3 specific fixtures with extreme away-λ
-// underestimation (Hertha 1.11→5, Alaves 0.76→4, Kiel 0.98→3) — a narrow
-// fix for clamp-floor cases, not a global calibration check.
-// Recalibrated 2026-07-19 via grid-search Brier/ECE backtest on 46 679
-// historical fixtures (packages/db/scripts/backtest-home-advantage-calibration.ts):
-// the 3-way Brier/ECE was minimized at homeAdvFactor=1.00, awayDisadvFactor=0.75
-// (ECE HOME 0.040→0.020, ECE AWAY 0.053→0.016), confirmed non-overfit via a
-// 70/30 chronological train/test split (same optimum on train-only, still
-// beats the old factors out-of-sample). ROI-impact check on ONE_X_TWO VALUE
-// simulation (packages/db/scripts/backtest-home-advantage-roi-impact.ts,
-// EV>=0.08 only, no edge-floor gate): +0.78pp ROI, but AWAY-side picks that
-// still clear the threshold remain net-negative post-recalibration — the
-// edge-floor gate (getValueMinEdge, VALUE-only) stays the primary AWAY-side
-// safeguard, this factor alone doesn't fully close that gap.
-// No longer symmetric (1.00 × 0.75 = 0.75, not ≈1) — the prior symmetric
-// design assumption didn't hold up against the full historical distribution.
-export const HOME_ADVANTAGE_LAMBDA_FACTOR = 1.0;
-export const AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0.75;
-
 // H2H v2.0 lambda-adjustment coefficient (docs/h2h-service-v2-plan.md §4,
 // scope large — shifts lambdaHome/lambdaAway toward the H2H-dominant side
 // before Poisson markets are computed, so every derived market stays
@@ -459,175 +379,6 @@ export const AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0.75;
 // FEATURE_FLAGS.SCORING.H2H — h2h.utils.ts no-ops if the score is null
 // (n<3 H2H legs) regardless of this constant.
 export const H2H_GAMMA = 0.2;
-
-// Per-league home advantage overrides.
-// Most leagues use the global 1.05 / 0.95 factors. Balanced divisions with
-// more parity or lower tactical asymmetry require a smaller correction.
-//
-// I2 (Serie B): 22-team league with high promotion/relegation turnover and
-// narrow squad investment gaps. Empirical home win rate ~44% vs ~50-52% in
-// Serie A. Audit 2026-04-05: modeled P(home) averaged 56% on 26 bets placed
-// while actual win rate was 27% — gap of 29pp. Reducing HA factor from 1.05
-// to 1.02 (symmetric AWAY 0.98) closes this systematic bias.
-const LEAGUE_HOME_ADVANTAGE_MAP: Record<string, [number, number]> = {
-  // [homeAdvFactor, awayDisadvFactor]
-  // D2: 2. Bundesliga — per-season home win rates: S1=42.7%, S2=46.1%, S3=44.9%.
-  // 2026-04-18: HA 1.01/0.99 worsened Brier vs 1.02/0.98 — keep mild override.
-  // 2026-04-25: S2 calibration fix attempted via HA neutralization; the empirical
-  // blend (0.30) captures the inter-season variance more cleanly without HA change.
-  D2: [1.02, 0.98],
-  // I2 latest rerun still spreads too much probability to home/away tails despite
-  // the disabled 1X2 branches. Neutralize home advantage completely to lift draw
-  // probability in this very balanced league.
-  // 2026-04-24: HA 1.06/0.94 tested for Brier improvement (0.658→0.655) but
-  // shifted UNDER_1_5 EV calculations and generated 4 extra losing picks. The
-  // per-league Brier threshold (0.66) makes HA tuning unnecessary — revert to
-  // 1.00/1.00 to keep UNDER_1_5 volume clean.
-  I2: [1.0, 1.0],
-  // European competitions: home advantage is structurally lower than domestic
-  // leagues (Dixon-Coles meta-analyses; UEFA Champions League empirical studies).
-  // Teams that qualify are elite — talent gap is narrower and travel is managed.
-  // Estimate: ~3% home advantage vs 5% global default. Refine after backtest.
-  UCL: [1.03, 0.97],
-  LDC: [1.03, 0.97], // legacy alias for UCL
-  UEL: [1.04, 0.96],
-  UECL: [1.04, 0.96],
-};
-
-export function getLeagueHomeAwayFactors(
-  competitionCode: string | null | undefined,
-): [number, number] {
-  if (competitionCode != null && competitionCode in LEAGUE_HOME_ADVANTAGE_MAP) {
-    return LEAGUE_HOME_ADVANTAGE_MAP[competitionCode];
-  }
-  return [HOME_ADVANTAGE_LAMBDA_FACTOR, AWAY_DISADVANTAGE_LAMBDA_FACTOR];
-}
-
-// League-specific 1X2 empirical rebalance applied after Poisson computation.
-// The Poisson core remains the primary signal; this weight blends the raw
-// HOME/DRAW/AWAY vector toward empirical team rates derived from TeamStats.
-// Use sparingly for leagues where xG-only probabilities stay miscalibrated.
-const THREE_WAY_EMPIRICAL_BLEND_WEIGHT_MAP: Record<string, Decimal> = {
-  // I2 backtest 2026-04-24: after lowering lambda and neutralizing HA, ROI
-  // became healthy again but Brier still failed at 0.669 and calibration at
-  // 0.056. The remaining issue is the 1X2 distribution: TeamStats already
-  // carries homeWinRate / awayWinRate / drawRate, but Poisson uses only xG.
-  // Blend 45% toward those empirical rates to reduce over-confident tails
-  // without disturbing totals markets, which are already the profitable axis.
-  I2: new Decimal('0.45'),
-  // D2 audit 2026-04-25: S2 (2024-25) Brier 0.6915 vs floor 0.6416 — the model
-  // over-predicts away wins (S1 had 32.7% away rate; S2 collapsed to 28.7%).
-  // The Poisson core doesn't see team roster changes at season boundaries; the
-  // empirical blend pulls 1X2 toward per-team actual rates, reducing S2 noise.
-  // Tested 0.25/0.35/0.45: 0.30 is the Brier optimum (0.651 overall).
-  // Side-effect: DRAW picks at ~4.0 odds emerge (6 bets 3W/3L, +99% ROI).
-  D2: new Decimal('0.30'),
-  // F2 audit 2026-04-24: the league fails Brier by a narrow margin (0.659 vs
-  // 0.65) while 1X2 HOME remains profitable. Test a light empirical rebalance
-  // before touching home-advantage or selection filters.
-  F2: new Decimal('0.30'),
-  // J1 audit 2026-04-25: Brier 0.6741 (FAIL). Actual J1 rates: 41.4%H/26.5%D/32.1%A.
-  // Model over-predicts HOME wins — high-EV picks lose more than low-EV (0.328 vs 0.245).
-  // Blend 0.30 improved Brier to 0.6659 but S4 (early-season 2026, Brier 0.7157) keeps
-  // the average above 0.65. Blend 0.40 applies stronger correction to reduce the
-  // systematic HOME over-confidence across all seasons.
-  J1: new Decimal('0.40'),
-  // Backtest 2026-04-30: SUI1 Brier 0.6503 (FAIL, threshold 0.65). S2 drives it up
-  // (0.6599). Poisson over-predicts HOME wins in the balanced Swiss league — blend
-  // toward empirical team win-rates to reduce the directional bias.
-  SUI1: new Decimal('0.20'),
-  // Backtest 2026-04-30: UEL Brier 0.659, CalibErr 0.057 (both FAIL). Poisson
-  // over-predicts HOME probability (modeled ~43% vs actual ~30% win rate). HOME
-  // blocked in PICK_EV_FLOOR_MAP — only DRAW survives (+89.8% ROI, 6b).
-  // Diagnostic 2026-06-30 (1y, n=152): still FAIL (ECE 0.050). Bias flipped to
-  // over-DRAW (+8pp: pred 25% vs real 17%) and under-HOME (39% vs 49% — strong
-  // home teams in continental cups). Blend 0.20 → 0.35 to pull toward empirical.
-  UEL: new Decimal('0.35'),
-  // Backtest 2026-04-30: POL1 Brier 0.6710 (FAIL). Poisson over-predicts HOME in
-  // the balanced Polish Ekstraklasa. Blend 0.20 améliore partiellement.
-  // Diagnostic 2026-06-30 (1y, n=250): worst league (Brier 0.688, ECE 0.074),
-  // over-AWAY +7pp (pred 33% vs real 26%), under-DRAW (25% vs 30%). 0.20 proven
-  // insufficient → 0.40 (same magnitude as J1's HOME-overprediction fix).
-  POL1: new Decimal('0.40'),
-  // Diagnostic 2026-06-30 (1y, n=141): NOR1 fails ECE (0.053) and is the largest
-  // model↔market gap (+0.104). Poisson badly under-models Norwegian home
-  // advantage — pred 40% HOME vs real 56% (over-AWAY +11pp). Strong empirical
-  // pull warranted. Starting 0.40; confirm Brier/ECE post-rebuild.
-  NOR1: new Decimal('0.40'),
-  // Diagnostic 2026-06-30 (1y, n=90): UECL fails ECE (0.054). Same cup pattern as
-  // UEL — under-HOME (pred 39% vs real 52%), over-DRAW (+7pp). Starting 0.35.
-  UECL: new Decimal('0.35'),
-  // Diagnostic 2026-06-30 (1y, n=71): CSL fails ECE (0.060). Mild over-AWAY (+6pp,
-  // pred 36% vs real 30%). Light empirical pull — starting 0.25.
-  CSL: new Decimal('0.25'),
-  // Diagnostic 2026-06-30 (1y, n=300): MLS fails Brier (0.659) but ECE is fine
-  // (0.036) → mostly a discrimination/parity problem (MLS is structurally
-  // balanced), not a systematic bias. Mild over-AWAY (+5pp). Trial 0.25; expect
-  // limited gain — if Brier stays > 0.65 post-rebuild, accept MLS as a hard league.
-  MLS: new Decimal('0.25'),
-};
-
-export function getLeagueThreeWayEmpiricalBlendWeight(
-  competitionCode: string | null | undefined,
-): Decimal {
-  if (
-    competitionCode != null &&
-    competitionCode in THREE_WAY_EMPIRICAL_BLEND_WEIGHT_MAP
-  ) {
-    return THREE_WAY_EMPIRICAL_BLEND_WEIGHT_MAP[competitionCode];
-  }
-  return new Decimal(0);
-}
-
-// Per-league goal-LEVEL correction (chantier B, 2026-06-30). Multiplies both
-// lambdas to fix a structural bias where the xG-shrinkage goal expectation is
-// systematically too high (scale < 1) or too low (scale > 1) for a league.
-// Derived by minimising the Over/Under-2.5 + BTTS Brier on the stored lambdas
-// (35k matches) — a deterministic transform validated offline. Direction is
-// stable across 3-4 seasons (over-predictors over-predict every season, etc.),
-// so unlike ROI fits this is robust; magnitudes are kept conservative (capped
-// ±0.10, gentler on the over-predictors whose bias softened in 2025-26).
-// Weighted Brier gain +0.0058 over the original 11 leagues (2026-06-30);
-// FIN1/BL1 added 2026-07-28 with their own validated per-league gains (see
-// comments below) — not yet folded into this aggregate figure. Default 1.0
-// elsewhere.
-const LAMBDA_SCALE_MAP: Record<string, number> = {
-  // Under-predict goals (scale up): -Δtot every season.
-  MLS: 1.1, // -0.24/-0.17/-0.84
-  TUR1: 1.1, // -0.22/-0.28/-0.18
-  NOR1: 1.1, // -0.35/-0.09/-0.24/-0.46
-  NOR2: 1.1, // -0.13/-0.19/-0.21
-  SUI2: 1.1, // -0.17/-0.10/-0.24
-  CSL: 1.1, // -0.29/-0.35
-  ISL1: 1.1, // -0.47/-0.64 (capped from fitted 1.20; low data)
-  SWE2: 1.05, // -0.14/-0.11/-0.18 (smaller bias)
-  // FIN1: season-by-season gap +5.4%/+0.2%/+7.5%/+38.4% (2026 partial,
-  // n=50) — stable, never negative, accelerating. No prior lambda
-  // correction (OU_SHRINKAGE_CONFIG.FIN1.factor=1, a no-op on full-time
-  // lines). Backtest 2026-07-28 (db:backtest:lambda-scale-calibration):
-  // fitted 1.22 on OVER2.5+BTTS Brier, capped 1.10 (ISL1 precedent) →
-  // validation Brier -0.0166 (n=443, real out-of-sample gain).
-  FIN1: 1.1,
-  // BL1: season-by-season gap +0.042/+0.071/+0.112 goals/match (2023-24 →
-  // 2025-26), stable and growing DESPITE the existing meanLambda anchor
-  // (LEAGUE_MEAN_LAMBDA_MAP.BL1=1.7) — the anchor alone no longer covers
-  // the drift. Backtest 2026-07-28: fitted 1.14, capped 1.10 → validation
-  // Brier -0.0105 (n=783).
-  BL1: 1.1,
-  // Over-predict goals (scale down): +Δtot every season, softened in 2025-26.
-  SP2: 0.95, // +0.70/+0.01/+0.33 (variable → gentle)
-  MX1: 0.95, // +0.54/+0.53/+0.06
-  J1: 0.95, // +0.43/+0.14/+0.19/+0.09
-};
-
-export function getLeagueLambdaScale(
-  competitionCode: string | null | undefined,
-): number {
-  if (competitionCode != null && competitionCode in LAMBDA_SCALE_MAP) {
-    return LAMBDA_SCALE_MAP[competitionCode];
-  }
-  return 1;
-}
 
 // MODEL_SCORE_THRESHOLD — minimum deterministic score required for a BET
 // decision. Differentiated by market efficiency tier (audit finding: the flat
@@ -802,85 +553,79 @@ export function getValueMinEdge(
   return undefined;
 }
 
-// ─── European competitions ───────────────────────────────────────────────────
-
-// All competition codes treated as European (UCL/UEL/UECL + legacy alias LDC).
-const EUROPEAN_COMPETITION_CODE_SET = new Set(['UCL', 'UEL', 'UECL', 'LDC']);
-
-export function isEuropeanCompetition(
-  code: string | null | undefined,
-): boolean {
-  return code != null && EUROPEAN_COMPETITION_CODE_SET.has(code);
-}
-
-// Cross-competition form blending weights for European fixture analysis.
-// European recentForm is weighted higher (direct competitive context).
-// Domestic xg is weighted higher (30+ match sample vs 5-8 European matches).
-export const EUROPEAN_CROSS_COMP_FORM_WEIGHT = 0.6;
-export const EUROPEAN_CROSS_COMP_XG_WEIGHT = 0.4;
-
-// ─── National team competitions ──────────────────────────────────────────────
-
-// Competitions involving national teams. These have no prior in-tournament stats
-// at the start of the event, so cross-comp fallback (qualifiers, Nations League)
-// is required to produce any analysis at all.
-const NATIONAL_TEAM_COMPETITION_CODE_SET = new Set([
-  'WC',
-  'WCQE',
-  'WCQCA',
-  'WCQSA',
-  'WCQAS',
-  'WCQAF',
-  'WCQOC',
-  'UNL',
-  'CAN',
-  'COPA',
-]);
-
-export function isNationalTeamCompetition(
-  code: string | null | undefined,
-): boolean {
-  return code != null && NATIONAL_TEAM_COMPETITION_CODE_SET.has(code);
-}
-
-// Cross-competition form blending weights for national team fixture analysis.
-// xG weight is 0: non-European qualifying competitions (WCQCA/WCQSA/WCQAS/WCQAF/WCQOC)
-// do not provide reliable xG data, so blending it in adds noise.
-// Calibration scan 2026-06-02 on WC 2022 (64 fixtures): Brier monotonically improves
-// as xG weight decreases — (0.65/0.35)→0.658, (0.80/0.20)→0.657, (1.0/0.0)→0.654.
-export const NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT = 1.0;
-export const NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT = 0.0;
-
-// ─── Domestic season rollover ────────────────────────────────────────────────
-
-// Every other competition (domestic leagues, not European club comps or
-// national team competitions above): at the start of a new season, teamStats
-// scoped to the current season is empty for every fixture until enough
-// matchdays accumulate — analyzeFixture skips the whole opening stretch with
-// reason 'missing_team_stats'. Found 2026-08-07 across F2/ERD/POR/D2/D3/
-// BEL1/TUR2/SUI2/SVN1 (all rolled over their 2026-27 season with zero
-// ModelRun). Cross-season fallback via findCrossCompStats mirrors the pattern
-// already used above for European/national-team competitions.
+// Cross-market ranking discount for VALUE (2026-08-19, db:backtest:market-
+// trust-calibration, walk-forward: train = each market's own earliest 75%
+// of edge≥0.10 candidates, test = the shared most-recent 25% of fixtures —
+// +0.86pp ROI vs unweighted on that held-out window). VALUE compares the
+// best qualityScore across all 17 markets it can draw from; markets whose
+// apparent edge is largely noise (not real signal) win that comparison
+// disproportionately (winner's curse) — trust = clamp(trainROI / 0.15,
+// 0.05, 1) discounts each market's qualityScore by its own measured
+// reliability before ranking. Never 0 (feedback_fix_not_disable): a market
+// can still win if nothing else is on offer for that fixture, it just needs
+// to clear a much higher bar against a rival market.
 //
-// Brier scan 2026-08-07 (scripts/backtest-domestic-rollover-weights.ts,
-// read-only, 54155 historical domestic fixtures, 3313 in the fallback's
-// scope): brier improves as xG weight moves toward the fallback and peaks
-// at 0.35 — (1.0/1.0)→0.678 [no fallback at all], (1.0/0.0)→0.656 [pure
-// fallback xG], (1.0/0.35)→0.647 [best]. FORM_WEIGHT is NOT Brier-
-// discriminable at any value tested (0-1, step 0.15, all identical): unlike
-// xgFor/xgAgainst, recentForm never reaches deriveLambdas or
-// rebalanceThreeWayProbabilities — it only feeds calculateDeterministicScore
-// (bet quality gating, not the probability estimate), same reason the WC
-// 2022 scan above never varied it either. Kept at 1.0 (trust the current
-// season's own recent form once any exists), matching that precedent.
-export const DOMESTIC_SEASON_ROLLOVER_FORM_WEIGHT = 1.0;
-export const DOMESTIC_SEASON_ROLLOVER_XG_WEIGHT = 0.35;
+// Rerun 2026-08-20 with fresher data (+4.90pp on that rerun's test window)
+// suggested TEAM_TOTAL_HOME 0.58->0.51 and RESULT_BTTS 0.67->0.12 — reverted
+// same day: once the coupon calibration-unification fix was ACTUALLY
+// backtested (a separate bug had silently no-op'd every regeneration since,
+// see deleteExpiredInRange, coupon.repository.ts), VALUE nearly vanished
+// from composed coupons and overall ROI collapsed (+4.77% -> -13.49%). Kept
+// at the 2026-08-19 values pending a clean, isolated re-test of the
+// calibration-unification change alone.
+// Not (yet) applied to SAFE: db:backtest:market-trust-calibration measured
+// a SEPARATE SAFE-specific set of weights (SAFE's eligible pool is narrow
+// enough — probability≥0.68 plus EV/odds bounds — that discounting barely
+// changes who wins) and it only reached -0.04pp out-of-sample, not a real
+// improvement. Revisit once the newer markets below accumulate more
+// SAFE-eligible volume.
+const VALUE_MARKET_TRUST_MAP: Record<string, Decimal> = {
+  ONE_X_TWO: new Decimal('0.05'),
+  OVER_UNDER: new Decimal('0.05'),
+  BTTS: new Decimal('0.05'),
+  DOUBLE_CHANCE: new Decimal('1.00'),
+  // HALF_TIME_FULL_TIME: volume insuffisant (n=23) pour mesurer un poids —
+  // trust=1 par défaut, à recalibrer quand le volume aura grossi.
+  HALF_TIME_FULL_TIME: new Decimal('1.00'),
+  OVER_UNDER_HT: new Decimal('0.49'),
+  FIRST_HALF_WINNER: new Decimal('0.09'),
+  DRAW_NO_BET: new Decimal('0.05'),
+  TEAM_TOTAL_HOME: new Decimal('0.58'),
+  TEAM_TOTAL_AWAY: new Decimal('0.05'),
+  CLEAN_SHEET_HOME: new Decimal('0.05'),
+  CLEAN_SHEET_AWAY: new Decimal('0.05'),
+  WIN_TO_NIL_HOME: new Decimal('0.05'),
+  WIN_TO_NIL_AWAY: new Decimal('0.05'),
+  TO_WIN_EITHER_HALF: new Decimal('0.05'),
+  RESULT_TOTAL_GOALS: new Decimal('0.05'),
+  RESULT_BTTS: new Decimal('0.67'),
+};
 
-// Below this many current-season matches, a team's teamStats sample is
-// considered thin enough to stabilise against the prior-season snapshot.
-// Also unvalidated — chosen to roughly cover "first couple of matchdays",
-// not backtested.
-export const DOMESTIC_SEASON_ROLLOVER_MIN_GAMES = 3;
+export function getValueMarketTrust(market: string): Decimal {
+  return VALUE_MARKET_TRUST_MAP[market] ?? new Decimal('1');
+}
+
+// ─── Cross-competition team-stats fallback policy ──────────────────────────
+//
+// isEuropeanCompetition/isNationalTeamCompetition, the blend weights, and
+// DOMESTIC_SEASON_ROLLOVER_MIN_GAMES now live in @evcore/analysis-core
+// (packages/analysis-core/src/probability/team-stats-resolution.ts),
+// extracted 2026-08-18 alongside resolveEffectiveTeamStats so the backtest
+// harness (@evcore/backtest-core) replays the exact same fallback decision
+// as analyzeFixture instead of a second guess at it. Re-exported here so
+// existing `./ev.constants` imports (season.utils.ts, betting-engine.service.ts)
+// keep resolving unchanged.
+export {
+  isEuropeanCompetition,
+  isNationalTeamCompetition,
+  EUROPEAN_CROSS_COMP_FORM_WEIGHT,
+  EUROPEAN_CROSS_COMP_XG_WEIGHT,
+  NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT,
+  NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT,
+  DOMESTIC_SEASON_ROLLOVER_FORM_WEIGHT,
+  DOMESTIC_SEASON_ROLLOVER_XG_WEIGHT,
+  DOMESTIC_SEASON_ROLLOVER_MIN_GAMES,
+} from '@evcore/analysis-core';
 
 // Combo picks (multi-leg accumulators) are disabled during the single-pick
 // calibration phase. The backtest tracks combos under their primary market
@@ -1460,11 +1205,5 @@ export const LINE_MOVEMENT_THRESHOLD = new Decimal('0.10');
 // picks where bookmaker margin erodes expected value disproportionately.
 export const SAFE_VALUE_MIN_ODDS = new Decimal('1.15');
 
-// Flat stake used when KELLY_ENABLED=false (default — safe fallback)
+// Flat stake applied to every staked bet.
 export const DEFAULT_STAKE_PCT = new Decimal('0.01');
-
-// Fractional Kelly staking — enabled via KELLY_ENABLED=true config flag.
-// Quarter Kelly (0.25) reduces variance significantly vs full Kelly.
-// Hard cap at 5% per bet regardless of computed Kelly size.
-export const KELLY_FRACTION = new Decimal('0.25');
-export const KELLY_MAX_STAKE_PCT = new Decimal('0.05');

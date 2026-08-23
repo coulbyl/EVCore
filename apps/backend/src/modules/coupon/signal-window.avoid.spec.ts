@@ -3,7 +3,7 @@ import {
   classifyAvoidSignal,
   isExtremeDivergence,
 } from './signal-window.service';
-import { AVOID_CONFIG } from '@modules/betting-engine/strategies/channel-strategy.config';
+import { AVOID_CONFIG } from '@evcore/analysis-core';
 
 // AVOID enforcement at staking time — drops legs whose model edge over the
 // market (probability − 1/odds) reaches AVOID_CONFIG.maxEdge. Mirrors the AVOID

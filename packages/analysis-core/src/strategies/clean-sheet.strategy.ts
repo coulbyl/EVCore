@@ -2,8 +2,8 @@ import Decimal from "decimal.js";
 import { Market } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
 import { priceForSelection } from "../selection";
-import { getChannelStrategyConfig } from "./config";
-import type { ChannelStrategyLeagueConfig } from "./config";
+import { getChannelStrategyConfig } from "./channel-strategy.config";
+import type { ChannelStrategyLeagueConfig } from "./channel-strategy-config.types";
 import type {
   ChannelStrategy,
   StrategyContext,

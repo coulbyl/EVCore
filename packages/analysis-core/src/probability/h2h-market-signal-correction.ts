@@ -23,9 +23,8 @@ export const H2H_MARKET_SIGNAL_DELTAS = {
   winToNilAway: 0.5,
 } as const;
 
-// Mirrors H2HService.H2HMarketSignals minus sampleSize — kept local to
-// analysis-core (a pure package) instead of importing the backend type, to
-// avoid a backend -> core dependency.
+// Base shape reused by H2HMarketSignals (./h2h.ts, sampleSize added there) —
+// kept here to avoid a circular import between the two files.
 export type H2HMarketSignalInputs = {
   btts: number | null;
   over25: number | null;

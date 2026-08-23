@@ -210,6 +210,64 @@ describe('OddsSnapshotLoader.findLatestOddsSnapshotsBatch', () => {
     expect(results.get('f1')).toBeNull();
   });
 
+  it('applies the cutoff to non-ONE_X_TWO markets too (regression, 2026-08-17 point-in-time audit)', async () => {
+    // Before the fix, pickBestBookmaker/rowsForMarketBookmaker/
+    // resolvePerPickOddsPerLine ignored `cutoff` entirely for every market
+    // except ONE_X_TWO — a backtest or the live line-movement filter
+    // (cutoff7d in analyzeFixture) asking "what were the odds as of date X"
+    // silently got the newest OVER_UNDER/BTTS/... price in the DB instead,
+    // regardless of X. This pins the fix: a price recorded after cutoff must
+    // never be visible.
+    const beforeCutoff = new Date('2026-08-09T06:00:00.000Z');
+    const afterCutoff = new Date('2026-08-10T00:00:00.000Z'); // after CUTOFF
+    const { loader } = makeBatchLoader([
+      oneXTwoRow({
+        fixtureId: 'f1',
+        bookmaker: 'Bet365',
+        snapshotAt: beforeCutoff,
+        homeOdds: 1.9,
+        drawOdds: 3.3,
+        awayOdds: 4.0,
+      }),
+      // Only quote available for OVER/UNDER is dated after cutoff.
+      pickRow({
+        fixtureId: 'f1',
+        bookmaker: 'Bet365',
+        market: Market.OVER_UNDER,
+        pick: 'OVER',
+        odds: 1.9,
+        snapshotAt: afterCutoff,
+      }),
+      pickRow({
+        fixtureId: 'f1',
+        bookmaker: 'Bet365',
+        market: Market.OVER_UNDER,
+        pick: 'UNDER',
+        odds: 1.95,
+        snapshotAt: afterCutoff,
+      }),
+      // BTTS resolved through the "one bookmaker for the whole market" path
+      // (pickBestBookmaker/rowsForMarketBookmaker) — same bug, same fix.
+      pickRow({
+        fixtureId: 'f1',
+        bookmaker: 'Bet365',
+        market: Market.BTTS,
+        pick: 'YES',
+        odds: 1.8,
+        snapshotAt: afterCutoff,
+      }),
+    ]);
+
+    const results = await loader.findLatestOddsSnapshotsBatch([
+      { fixtureId: 'f1', cutoff: CUTOFF },
+    ]);
+
+    const snapshot = results.get('f1');
+    expect(snapshot?.overUnderOdds.OVER).toBeUndefined();
+    expect(snapshot?.overUnderOdds.UNDER).toBeUndefined();
+    expect(snapshot?.bttsYesOdds).toBeNull();
+  });
+
   it('resolves TEAM_TOTAL_HOME per line too — the OVER_UNDER fix generalizes to every sparse-pick market', async () => {
     // Same shape as the OVER_UNDER regression above, generalized (audit
     // 2026-08-13 "reste ouvert"): TEAM_TOTAL_HOME/AWAY, RESULT_TOTAL_GOALS,

@@ -1,37 +1,47 @@
 ---
-title: "Le canal SAFE (Sécurité) : prometteur, mais encore trop jeune pour être figé"
+title: "Le canal SAFE (Sécurité) : ce qu'il exprimait, la probabilité le dit déjà"
 category: channels
 difficulty: intermediate
 order: 3
 slug: safe-channel
-summary: "SAFE affiche des signes positifs sur les données récentes, mais l'échantillon reste trop fin pour en tirer une formule définitive. Voici pourquoi la prudence s'impose, y compris sur un canal qui a l'air bon."
-updatedAt: "2026-07-16"
-related: ["channels-overview", "value-channel", "dominant-channel"]
+summary: "SAFE devait apporter la régularité. La mesure a montré qu'il reprenait presque intégralement les décisions d'autres canaux — et qu'il n'ajoutait rien. Il n'est plus proposé aux nouveaux abonnements."
+updatedAt: "2026-08-22"
+related: ["channels-overview", "value-channel", "comment-lire-un-pick"]
 ---
 
-## Ce que le canal cherche
+## Ce que le canal cherchait
 
-SAFE sélectionne des paris à confiance élevée et rendement plus modeste que VALUE. L'idée n'est pas de maximiser l'edge, mais de viser la régularité — un profil de risque différent, pas une version dégradée de VALUE.
+SAFE sélectionnait des paris à confiance élevée et rendement modeste. L'idée n'était pas de maximiser l'écart avec le marché mais de viser la régularité — un profil de risque différent de VALUE, pas une version dégradée.
 
-## Les chiffres, et pourquoi ils sont difficiles à trancher
+Comme VALUE, il a été reclassé en **filtre** en août 2026 : il ne cherche plus dans les marchés, il choisit parmi les décisions déjà prises par les canaux spécialisés.
 
-Sur l'ensemble de la période testée, seuls 28 jours ont été éligibles à un classement top 5 sur SAFE — un volume nettement plus faible que VALUE ou DOMINANT. Le ROI mesuré varie fortement selon la période :
+## Ce que la mesure a trouvé
 
-| Période                         | ROI mesuré                         |
-| ------------------------------- | ---------------------------------- |
-| Données d'entraînement (train)  | −27%                               |
-| Données 2026 (hors échantillon) | +2% à +10% selon la formule testée |
+**95% de ses sélections sont des doublons exacts.** Même match, même marché, même pick, même probabilité qu'une décision déjà émise ailleurs. Sous un second nom.
 
-Cet écart entre −27% et +2/+10% n'est pas une contradiction à balayer. C'est au contraire le signe le plus clair qu'il manque encore de données pour trancher. Avec 28 jours seulement, chaque résultat individuel pèse lourd dans la moyenne.
+**Les 5% restants sont les pires du système.** Sur le petit nombre de picks réellement propres à SAFE, le résultat est franchement négatif — là où le segment équivalent chez VALUE est au contraire le seul endroit prometteur.
 
-## Pourquoi cette leçon insiste sur la prudence plutôt que l'enthousiasme
+SAFE n'a donc pas l'excuse de VALUE. Il ne reprend pas seulement les autres : quand il choisit seul, il choisit mal.
 
-Il serait tentant de ne retenir que le +2/+10% de 2026 et de présenter SAFE comme validé. Ce serait exactement le type de sur-vente que la discipline EVCore refuse ailleurs. La lecture honnête est plus nuancée : SAFE montre des signes encourageants récents, mais n'a pas encore traversé assez de volume pour qu'une formule de classement tienne dans la durée, comme c'est déjà le cas pour VALUE.
+## Pourquoi le canal n'avait pas d'objet
 
-C'est une différence de statut, pas de qualité. SAFE n'est pas un mauvais canal — sa preuve est encore en construction.
+Ce que SAFE exprimait — « ce pick a une forte probabilité de passer » — est directement lisible sur la probabilité calibrée affichée sur chaque pick. Il n'a jamais eu besoin d'un canal dédié pour être dit.
+
+Et un canal dédié n'est pas neutre : il donne à un sous-ensemble d'un autre canal l'apparence d'une source indépendante. Un abonné à SAFE croyait suivre une seconde stratégie ; il suivait une tranche de la première, comptée deux fois.
+
+## Ce qui a changé dans l'app
+
+SAFE n'est plus proposé à la création d'un abonnement. Les abonnements existants qui le ciblent continuent de fonctionner normalement — leur historique, leurs notifications et leurs résultats sont intacts. C'est la création qui est fermée, pas le canal.
+
+## Ce que cette leçon remplace
+
+Cette page présentait SAFE comme « prometteur, mais encore trop jeune pour être figé », sur la foi de résultats récents positifs mesurés sur 28 jours éligibles. Elle avertissait elle-même que l'échantillon était trop fin pour conclure. Elle avait raison sur l'avertissement, et le résultat s'est inversé depuis.
+
+C'est une bonne illustration d'un principe qui traverse toute cette formation : quand on écrit noir sur blanc que l'échantillon ne permet pas de conclure, la conclusion prudente est de ne pas conclure — pas de conclure en ajoutant une réserve.
 
 ## À retenir
 
-- Signaux positifs récents (+2% à +10% en 2026 selon la formule), mais sur seulement 28 jours éligibles : un échantillon trop fin pour conclure.
-- L'écart entre −27% (entraînement) et +2/+10% (2026) illustre pourquoi la taille d'échantillon compte autant que le résultat lui-même.
-- À suivre dans le temps, pas encore à traiter comme aussi établi que VALUE.
+- 95% des sélections SAFE sont des doublons d'un autre canal ; ses picks propres sont les moins bons du système.
+- « Forte probabilité » se lit déjà sur la probabilité calibrée. Un canal dédié n'ajoutait qu'un double comptage.
+- Le canal n'est plus proposé aux nouveaux abonnements ; les existants tournent toujours.
+- Un avertissement sur la taille d'échantillon n'annule pas la conclusion qu'il accompagne.

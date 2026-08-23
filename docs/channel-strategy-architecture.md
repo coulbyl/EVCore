@@ -4,6 +4,24 @@
 >
 > Objectif : rendre explicite le fonctionnement multi-canal d'EVCore, réduire
 > les ambiguïtés du modèle actuel et faciliter l'ajout de nouvelles stratégies.
+>
+> **Complément 2026-08-17, VALUE/SAFE fait le 08-18** : ce document décrit
+> comment les canaux s'orchestrent (contrat, phases, persistance). Il ne dit
+> pas d'où vient la probabilité que chaque canal interprète — c'est l'objet
+> de `docs/prediction-engine-families.md` (§0, portée football actuelle) :
+> un canal de marché n'est plus un simple consommateur d'un socle Poisson
+> unique, mais le lecteur d'une **famille de moteur** dédiée à son marché.
+>
+> `VALUE`/`SAFE` (nommés `EV`/`SAFE` plus bas, voir note) sont **passés en
+> Phase 2** (`FILTER_STRATEGY_CHANNELS`, `orchestrator.ts`) : ils filtrent
+> les décisions déjà prises par les canaux de marché au lieu de re-scanner
+> `evaluatedMarkets`, désormais mort (plus lu par aucun canal — TODO.md).
+>
+> La Famille A' (mi-temps) reste, elle, en pause — pas construite : le
+> backtest walk-forward déjà existant sur OVER_UNDER_HT montre que la
+> fraction fixe `0.44` est déjà bien calibrée sur les ligues où
+> `OverUnderHtStrategy` tourne (voir ROADMAP.md/TODO.md), donc aucun
+> chantier de calibration n'a été lancé sans évidence.
 
 ## 1. Contexte
 
@@ -350,11 +368,23 @@ await channelDecisionRepository.saveRunDecisions(modelRun.id, decisions);
 ```
 
 Les stratégies dépendantes d'autres canaux, comme `CONSENSUS`, doivent être
-exécutées dans une seconde phase explicite.
+exécutées dans une seconde phase explicite. **Mise à jour 2026-08-17** :
+`EV`/`SAFE` (canaux transverses) ne doivent plus scanner `evaluatedMarkets`
+directement — ce sont des **filtres** sur les décisions déjà prises par les
+canaux de marché (spécialisés), pas des sélecteurs indépendants de plein
+droit. Ils rejoignent donc une phase intermédiaire, après les canaux
+spécialisés et avant les méta-stratégies :
 
 ```text
-Phase 1 : EV, SAFE, DOMINANT, BTTS, DRAW, GOALS, UNDERDOG, etc.
-Phase 2 : CONSENSUS, CONTRARIAN, AVOID ou autres méta-stratégies.
+Phase 1 : DOMINANT, BTTS, DRAW, GOALS, TEAM_TOTAL, CLEAN_SHEET, WIN_TO_NIL,
+          DOUBLE_CHANCE, DRAW_NO_BET, CORRECT_SCORE, RESULT_TOTAL_GOALS,
+          RESULT_BTTS, OVER_UNDER_HT, FIRST_HALF_WINNER, WIN_EITHER_HALF,
+          HALF_TIME_FULL_TIME — canaux spécialisés marché, un par famille
+          (voir docs/prediction-engine-families.md §0.1).
+Phase 2 : EV, SAFE — filtres transverses, lisent previousDecisions au lieu
+          d'evaluatedMarkets.
+Phase 3 : CONSENSUS, CONTRARIAN, AVOID — méta-stratégies, lisent tout ce qui
+          précède.
 ```
 
 ## 6. Catalogue des canaux
@@ -850,7 +880,11 @@ Checklist minimale :
 1. Définir l'objectif et la question à laquelle le canal répond.
 2. Identifier ses entrées et ses dépendances.
 3. Choisir sa famille (spécialisé marché ou transverse) et définir ses
-   `allowedMarkets` en conséquence (section 3.1).
+   `allowedMarkets` en conséquence (section 3.1). Pour un canal spécialisé,
+   identifier aussi de quelle **famille de moteur prédictif** il dépend
+   (`docs/prediction-engine-families.md` §0.1) — un canal de marché n'a pas
+   de calibration propre tant que le moteur de sa famille n'est pas
+   lui-même prouvé pour ce marché.
 4. Définir ses critères `SELECTED` et ses codes de rejet.
 5. Définir ses seuils par compétition ou son comportement par défaut.
 6. Implémenter la stratégie derrière le contrat commun.

@@ -9,6 +9,7 @@ import {
 } from '../betting-engine/betting-engine.utils';
 import { CouponRepository } from './coupon.repository';
 import { createLogger } from '@utils/logger';
+import { productDecimal, type DecimalLike } from '@utils/decimal.utils';
 
 const logger = createLogger('coupon-settlement');
 
@@ -19,11 +20,27 @@ type MatchScores = {
   awayHtScore: number | null;
 };
 
+/**
+ * Trois issues, pas deux.
+ *
+ * `VOID` (mise remboursée) et `UNRESOLVED` (score pas encore exploitable)
+ * étaient tous deux rendus par `null`, et l'appelant traitait `null` comme
+ * « pas encore résolu ». Conséquence : une jambe DRAW_NO_BET sur un match nul
+ * — un remboursement, cas parfaitement normal — bloquait le coupon
+ * indéfiniment. Constaté en production le 2026-08-22 : des coupons affichant
+ * « Terminé » sur la jambe et jamais réglés.
+ *
+ * Un VOID doit sortir de la combinatoire exactement comme un match reporté :
+ * la jambe ne compte ni en gain ni en perte, sa cote ne gonfle pas le
+ * paiement, et le coupon se règle sur les jambes restantes.
+ */
+type LegOutcome = boolean | 'VOID' | 'UNRESOLVED';
+
 function resolveIsCorrect(
   market: Market,
   pick: string,
   scores: MatchScores,
-): boolean | null {
+): LegOutcome {
   const { homeScore, awayScore, homeHtScore, awayHtScore } = scores;
 
   let status: BetStatus;
@@ -54,7 +71,8 @@ function resolveIsCorrect(
 
   if (status === BetStatus.WON) return true;
   if (status === BetStatus.LOST) return false;
-  return null; // VOID — scores not yet available or unknown pick
+  if (status === BetStatus.VOID) return 'VOID';
+  return 'UNRESOLVED';
 }
 
 @Injectable()
@@ -108,6 +126,10 @@ export class CouponSettlementService {
     let allResolved = true;
     let voidedLegs = 0;
     const legResults: boolean[] = [];
+    // Odds of every non-voided leg — the cote réellement payable au
+    // settlement (a voided leg never enters the combinatorics, so its odds
+    // must never inflate the payout either).
+    const survivingOdds: DecimalLike[] = [];
 
     for (const leg of proposal.legs) {
       const fixture = fixtureMap.get(leg.fixtureId);
@@ -162,12 +184,29 @@ export class CouponSettlementService {
         homeHtScore: fixture.homeHtScore,
         awayHtScore: fixture.awayHtScore,
       };
-      const isCorrect = resolveIsCorrect(leg.market, leg.pick, scores);
+      const outcome = resolveIsCorrect(leg.market, leg.pick, scores);
 
-      if (isCorrect === null) {
+      if (outcome === 'UNRESOLVED') {
         allResolved = false;
         continue;
       }
+
+      // Remboursement (DRAW_NO_BET sur un nul, WIN_TO_NIL voidé, …) : même
+      // traitement qu'un match reporté — hors combinatoire, hors cote payable.
+      if (outcome === 'VOID') {
+        await this.repo.settleLeg(leg.id, null);
+        voidedLegs++;
+        continue;
+      }
+
+      // La cote n'entre dans le paiement qu'une fois la jambe réellement
+      // gradée : la pousser avant de connaître l'issue faisait compter une
+      // jambe remboursée dans `realizedOdds`.
+      if (leg.oddsSnapshot !== null) {
+        survivingOdds.push(leg.oddsSnapshot);
+      }
+
+      const isCorrect = outcome;
 
       // Always recompute (never trust a previously stored isCorrect) so a leg
       // settled from a stale in-progress score before FINISHED self-corrects
@@ -225,9 +264,22 @@ export class CouponSettlementService {
           : CouponResult.WON
         : CouponResult.PARTIAL;
 
-    await this.repo.updateResult(proposalId, result);
+    // Cote réellement payée : produit des cotes des jambes non-voidées
+    // uniquement. Sur un WON sans void, égale à combinedOdds (toutes les
+    // jambes ont survécu) ; sur un PARTIAL, strictement inférieure — sans ce
+    // recalcul, le ROI agrégé surestimerait le gain réel du coupon.
+    const realizedOdds = productDecimal(survivingOdds).toNumber();
+
+    await this.repo.updateResult(proposalId, result, realizedOdds);
     logger.info(
-      { proposalId, result, correct, total: legResults.length, voidedLegs },
+      {
+        proposalId,
+        result,
+        correct,
+        total: legResults.length,
+        voidedLegs,
+        realizedOdds,
+      },
       'Proposal settled',
     );
   }

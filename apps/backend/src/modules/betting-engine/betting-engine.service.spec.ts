@@ -4,7 +4,6 @@ import { BetStatus, FixtureStatus, Market, ModelRunPhase } from '@evcore/db';
 import {
   poissonProba,
   calculateDeterministicScore,
-  calculateKellyStakePct,
   deriveMarketsFromPoisson,
   buildPoissonDistributions,
   resolveHalfTimeFullTimeBetStatus,
@@ -15,11 +14,19 @@ import {
 } from './betting-engine.service';
 import { blendTeamStats } from './math/probability';
 import type { PrismaService } from '@/prisma.service';
-import type { ConfigService } from '@nestjs/config';
 import type { H2HService } from './h2h.service';
 import type { CongestionService } from './congestion.service';
 import type { BankrollService } from '@modules/bankroll/bankroll.service';
 import type { MlInferenceService } from '@modules/ml/ml.inference.service';
+import type { ChannelDecisionService } from './channel-decision.service';
+import {
+  CHANNEL_DECISION_STATUS,
+  STRATEGY_CHANNEL,
+  type StrategyContext,
+} from './channel-strategy.types';
+import { buildBetPickKey } from './betting-engine.utils';
+import { selectSafeValuePick } from './selection/pick-evaluation';
+import type { EvaluatedPick, ViablePick } from './betting-engine.types';
 
 function makeHtftProbabilities(defaultValue = '0.111111') {
   return {
@@ -83,12 +90,6 @@ function makeMockProbabilities() {
   };
 }
 
-function makeConfig(kellyEnabled = false): ConfigService {
-  return {
-    get: vi.fn().mockReturnValue(kellyEnabled ? 'true' : 'false'),
-  } as unknown as ConfigService;
-}
-
 function makeH2hServiceMock(score: number | null = null): H2HService {
   return {
     computeH2HScore: vi.fn().mockResolvedValue(score),
@@ -129,6 +130,85 @@ function makeBankrollServiceMock(): Pick<
     recordBetWon: vi.fn().mockResolvedValue(undefined),
     recordBetVoid: vi.fn().mockResolvedValue(undefined),
   };
+}
+
+// Stands in for the real ChannelDecisionService in tests that predate the
+// Phase 2 refactor (2026-08-18): reproduces the pre-refactor VALUE/SAFE pick
+// selection (best-quality viable pick across every market for VALUE,
+// selectSafeValuePick for SAFE — the exact pre-refactor algorithm, still
+// exported for the backtest wrappers) directly from the context's
+// evaluatedMarkets, then stamps fake ids on the result the same way
+// ChannelDecisionRepository does in production. This is what makes the
+// `bet` row assertions below meaningful: since 2026-08-19 that row is
+// materialised strictly from the channel's persisted decision (by its own
+// id), never re-derived from the raw evaluatedPicks pool — this mock
+// supplies that decision instead of running the full, per-league-gated
+// Phase 1 specialists, which are out of scope here (own tests in
+// analysis-core cover them).
+function makeChannelDecisionServiceMock(): ChannelDecisionService {
+  let nextId = 0;
+  const recordRunDecisions = vi.fn(
+    (_modelRunId: string, context: StrategyContext) => {
+      const evaluatedPicks: EvaluatedPick[] = context.evaluatedMarkets.flatMap(
+        (m) => m.picks,
+      );
+      const viable = evaluatedPicks.filter(
+        (p): p is ViablePick => p.rejectionReason === undefined,
+      );
+      const valuePick = viable[0] ?? null;
+
+      const decisions: Array<{
+        channel: (typeof STRATEGY_CHANNEL)[keyof typeof STRATEGY_CHANNEL];
+        status: typeof CHANNEL_DECISION_STATUS.SELECTED;
+        selections: [ViablePick];
+      }> = [];
+      if (valuePick !== null) {
+        decisions.push({
+          channel: STRATEGY_CHANNEL.VALUE,
+          status: CHANNEL_DECISION_STATUS.SELECTED,
+          selections: [valuePick],
+        });
+      }
+
+      const evPickKey =
+        valuePick !== null
+          ? buildBetPickKey({ market: valuePick.market, pick: valuePick.pick })
+          : null;
+      const safePick = selectSafeValuePick(
+        evaluatedPicks,
+        context.signals.suspendedMarkets,
+        evPickKey,
+        context.signals.lambdaTotal,
+        context.selectionConfig,
+      );
+      if (safePick !== null) {
+        decisions.push({
+          channel: STRATEGY_CHANNEL.SAFE,
+          status: CHANNEL_DECISION_STATUS.SELECTED,
+          selections: [safePick],
+        });
+      }
+
+      return Promise.resolve(
+        decisions.map((d) => ({
+          id: `decision-${nextId++}`,
+          channel: d.channel,
+          status: d.status,
+          selections: d.selections.map((selection) => ({
+            market: selection.market,
+            pick: selection.pick,
+            probability: selection.probability,
+            odds: selection.odds,
+            ev: selection.ev,
+            qualityScore: selection.qualityScore,
+            rank: 1,
+            id: `selection-${nextId++}`,
+          })),
+        })),
+      );
+    },
+  );
+  return { recordRunDecisions } as unknown as ChannelDecisionService;
 }
 
 // Minimal Prisma mock shared across analyzeFixture tests.
@@ -271,29 +351,6 @@ describe('calculateDeterministicScore', () => {
   });
 });
 
-describe('calculateKellyStakePct', () => {
-  const cfg = { fraction: 0.25, maxStake: 0.05 };
-
-  it('returns 0 when odds are at or below 1', () => {
-    expect(calculateKellyStakePct(0.6, 1.0, cfg).toNumber()).toBe(0);
-  });
-
-  it('returns 0 when Kelly is negative (no edge)', () => {
-    expect(calculateKellyStakePct(0.4, 2.0, cfg).toNumber()).toBe(0);
-  });
-
-  it('computes fractional Kelly for known inputs', () => {
-    expect(calculateKellyStakePct(0.55, 2.0, cfg).toNumber()).toBeCloseTo(
-      0.025,
-      6,
-    );
-  });
-
-  it('caps stake at maxStake', () => {
-    expect(calculateKellyStakePct(0.9, 3.0, cfg).toNumber()).toBe(0.05);
-  });
-});
-
 describe('deriveModelRunPhase', () => {
   it('marks fixtures before their UTC match day as advance analysis', () => {
     expect(
@@ -377,7 +434,6 @@ describe('settleOpenBets', () => {
 
     const service = new BettingEngineService(
       prismaMock,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
@@ -483,7 +539,6 @@ describe('settleOpenBets', () => {
 
     const service = new BettingEngineService(
       prismaMock,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
@@ -574,7 +629,6 @@ describe('settleOpenBets', () => {
 
     const service = new BettingEngineService(
       prismaMock,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
@@ -628,7 +682,6 @@ describe('BettingEngineService', () => {
   it('calculates EV using decimal arithmetic', () => {
     const service = new BettingEngineService(
       {} as PrismaService,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
@@ -640,7 +693,6 @@ describe('BettingEngineService', () => {
   it('computes 1X2 and derived probabilities together', () => {
     const service = new BettingEngineService(
       {} as PrismaService,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
@@ -655,7 +707,6 @@ describe('BettingEngineService', () => {
   it('analyzes and persists a model run when fixture and team stats exist', async () => {
     const service = new BettingEngineService(
       makePrismaMock(),
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
@@ -707,7 +758,6 @@ describe('BettingEngineService', () => {
 
     const service = new BettingEngineService(
       prismaMock,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
@@ -785,10 +835,12 @@ describe('BettingEngineService', () => {
 
     const service = new BettingEngineService(
       prismaMock,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
+      undefined,
+      undefined,
+      makeChannelDecisionServiceMock(),
     );
 
     const result = await service.analyzeFixture('fixture-id');
@@ -883,10 +935,12 @@ describe('BettingEngineService', () => {
 
     const service = new BettingEngineService(
       prismaMock,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
+      undefined,
+      undefined,
+      makeChannelDecisionServiceMock(),
     );
 
     const result = await service.analyzeFixture('fixture-id');
@@ -956,7 +1010,6 @@ describe('BettingEngineService', () => {
 
     const service = new BettingEngineService(
       prismaMock,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
@@ -1051,10 +1104,12 @@ describe('BettingEngineService', () => {
     const congestionService = makeCongestionServiceMock(0.2);
     const service = new BettingEngineService(
       prismaMock,
-      makeConfig(),
       h2hService,
       congestionService,
       makeMlInferenceServiceMock(),
+      undefined,
+      undefined,
+      makeChannelDecisionServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
       deterministicScore: new Decimal('0.7'),
@@ -1178,7 +1233,6 @@ describe('BettingEngineService', () => {
 
     const service = new BettingEngineService(
       prismaMock,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
@@ -1268,7 +1322,6 @@ describe('BettingEngineService', () => {
 
     const service = new BettingEngineService(
       prismaMock,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
@@ -1400,7 +1453,6 @@ describe('BettingEngineService', () => {
 
     const service = new BettingEngineService(
       prismaMock,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
@@ -1471,7 +1523,6 @@ describe('BettingEngineService', () => {
   it('selectBestViablePickForBacktest returns null when all picks exceed MAX_SELECTION_ODDS', () => {
     const service = new BettingEngineService(
       {} as unknown as PrismaService,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
@@ -1559,7 +1610,6 @@ describe('BettingEngineService', () => {
   it('selectBestViablePickForBacktest returns null when all picks are below MIN_SELECTION_ODDS', () => {
     const service = new BettingEngineService(
       {} as unknown as PrismaService,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
@@ -1647,7 +1697,6 @@ describe('BettingEngineService', () => {
   it('selectBestViablePickForBacktest rejects Championship 1X2 HOME picks below 5.00', () => {
     const service = new BettingEngineService(
       {} as unknown as PrismaService,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
@@ -1732,97 +1781,6 @@ describe('BettingEngineService', () => {
 
     expect(result).not.toBeNull();
     expect(result?.pick).not.toBe('HOME');
-  });
-
-  it('uses Kelly stake size instead of flat stake when KELLY_ENABLED=true', async () => {
-    const createModelRun = vi.fn().mockResolvedValue({ id: 'run-id' });
-    const prismaMock = {
-      client: {
-        fixture: {
-          findUnique: vi.fn().mockResolvedValue({
-            id: 'fixture-id',
-            seasonId: 'season-id',
-            scheduledAt: new Date('2023-01-01T12:00:00.000Z'),
-            homeTeamId: 'home-team',
-            awayTeamId: 'away-team',
-            status: 'FINISHED',
-          }),
-        },
-        teamStats: {
-          count: vi.fn().mockResolvedValue(10),
-          findFirst: vi
-            .fn()
-            .mockResolvedValueOnce({
-              recentForm: new Decimal('0.7'),
-              xgFor: new Decimal('1.8'),
-              xgAgainst: new Decimal('1.1'),
-              homeWinRate: new Decimal('0.65'),
-              awayWinRate: new Decimal('0.35'),
-              drawRate: new Decimal('0.20'),
-              leagueVolatility: new Decimal('1.5'),
-            })
-            .mockResolvedValueOnce({
-              recentForm: new Decimal('0.4'),
-              xgFor: new Decimal('1.2'),
-              xgAgainst: new Decimal('1.6'),
-              homeWinRate: new Decimal('0.45'),
-              awayWinRate: new Decimal('0.30'),
-              drawRate: new Decimal('0.25'),
-              leagueVolatility: new Decimal('1.4'),
-            }),
-        },
-        oddsSnapshot: {
-          findMany: vi.fn().mockResolvedValue([
-            {
-              bookmaker: 'Pinnacle',
-              snapshotAt: new Date('2023-01-01T11:00:00.000Z'),
-              homeOdds: new Decimal('2.20'),
-              drawOdds: new Decimal('2.7'),
-              awayOdds: new Decimal('5.4'),
-            },
-          ]),
-          findFirst: vi.fn().mockResolvedValue(null),
-        },
-        marketSuspension: {
-          findMany: vi.fn().mockResolvedValue([]),
-        },
-        adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
-        modelRun: { create: createModelRun },
-        bet: {
-          findFirst: vi.fn().mockResolvedValue(null),
-          create: vi.fn().mockResolvedValue({ id: 'bet-id' }),
-          update: vi.fn().mockResolvedValue({ id: 'bet-id' }),
-        },
-      },
-    } as unknown as PrismaService;
-
-    const service = new BettingEngineService(
-      prismaMock,
-      makeConfig(true),
-      makeH2hServiceMock(),
-      makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
-    );
-    vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
-      deterministicScore: new Decimal('0.7'),
-      lambda: { home: 1.4, away: 1.1 },
-      probabilities: makeMockProbabilities(),
-      rawProbabilities: makeMockProbabilities(),
-      features: {
-        recentForm: new Decimal('0.7'),
-        xg: new Decimal('0.7'),
-        domExtPerf: new Decimal('0.6'),
-        leagueVolat: new Decimal('0.4'),
-      },
-    });
-
-    const result = await service.analyzeFixture('fixture-id');
-    expect(result.status).toBe('analyzed');
-    if (result.status === 'analyzed') {
-      expect(result.valueBet).not.toBeNull();
-      expect(result.valueBet?.stakePct.toNumber()).toBeCloseTo(0.0208, 3);
-      expect(result.valueBet?.stakePct.toNumber()).not.toBeCloseTo(0.01, 4);
-    }
   });
 
   it('can select HALF_TIME_FULL_TIME when it has the best viable EV', async () => {
@@ -1910,10 +1868,12 @@ describe('BettingEngineService', () => {
 
     const service = new BettingEngineService(
       prismaMock,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
+      undefined,
+      undefined,
+      makeChannelDecisionServiceMock(),
     );
 
     const probabilities1948 = {
@@ -2140,10 +2100,12 @@ describe('BettingEngineService', () => {
     const { betCreate, prisma } = makeSafeValuePrismaMock('1.65', '3.0');
     const service = new BettingEngineService(
       prisma,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
+      undefined,
+      undefined,
+      makeChannelDecisionServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue(
       makeSafeValueProbabilities('0.72'),
@@ -2181,10 +2143,12 @@ describe('BettingEngineService', () => {
     const { betCreate, prisma } = makeSafeValuePrismaMock('2.10', '3.0');
     const service = new BettingEngineService(
       prisma,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
+      undefined,
+      undefined,
+      makeChannelDecisionServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue(
       makeSafeValueProbabilities('0.60'),
@@ -2203,10 +2167,12 @@ describe('BettingEngineService', () => {
     const { betCreate, prisma } = makeSafeValuePrismaMock('2.10', null);
     const service = new BettingEngineService(
       prisma,
-      makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
+      undefined,
+      undefined,
+      makeChannelDecisionServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue(
       makeSafeValueProbabilities('0.75'),

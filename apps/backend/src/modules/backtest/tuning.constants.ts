@@ -3,7 +3,7 @@ import type {
   GoalsLine,
   TeamTotalLine,
   TeamTotalTeam,
-} from '@modules/betting-engine/strategies/channel-strategy.config';
+} from '@evcore/analysis-core';
 
 /**
  * Offline threshold-tuning grids and promotion floors for the three
@@ -33,6 +33,16 @@ export const TUNING_THRESHOLD_GRID: Record<
   // comment), so the grid reaches higher than BTTS/CLEAN_SHEET. Placeholder
   // grid (2026-07-18, no backtest yet).
   WIN_EITHER_HALF: [0.5, 0.55, 0.6, 0.65, 0.7, 0.75],
+  // WIN_TO_NIL signal = model P(side wins AND opponent scores 0). Placeholder
+  // grid (2026-08-16, no backtest yet) — same scale as CLEAN_SHEET (both are
+  // defensive+result combo signals derived from settled base rates ~0.15-0.4).
+  WIN_TO_NIL: [0.15, 0.2, 0.25, 0.3, 0.35, 0.4],
+  // FIRST_HALF signal = argmax(HOME/DRAW/AWAY) probability at half-time.
+  // Placeholder grid (2026-08-16, no backtest yet) — shifted well below
+  // DOMINANT's full-time range: DRAW is the modal HT outcome in most
+  // htft-calibrated leagues (~0.30-0.43), a 3-way split with much less
+  // separation than full-time favorites.
+  FIRST_HALF: [0.3, 0.35, 0.4, 0.45, 0.5, 0.55],
 };
 
 /**
@@ -60,6 +70,11 @@ export const CHANNEL_PROMOTION_RULE: Record<
   // candidates), to be confirmed once real settled data accumulates.
   CLEAN_SHEET: { minSample: 20, hitRateFloor: 0.55, roiFloor: 0 },
   WIN_EITHER_HALF: { minSample: 20, hitRateFloor: 0.55, roiFloor: 0 },
+  WIN_TO_NIL: { minSample: 20, hitRateFloor: 0.55, roiFloor: 0 },
+  // Lower floor than DOMINANT/BTTS (0.55): DRAW is the modal HT outcome at
+  // only ~30-43% base rate in htft-calibrated leagues, so a 0.55 floor would
+  // be unreachable by construction, not a real quality bar.
+  FIRST_HALF: { minSample: 20, hitRateFloor: 0.4, roiFloor: 0 },
 };
 
 export const TUNING_CHANNELS: ChannelStrategyConfigChannel[] = [
@@ -68,6 +83,8 @@ export const TUNING_CHANNELS: ChannelStrategyConfigChannel[] = [
   'BTTS',
   'CLEAN_SHEET',
   'WIN_EITHER_HALF',
+  'WIN_TO_NIL',
+  'FIRST_HALF',
 ];
 
 /**
@@ -121,23 +138,4 @@ export const TEAM_TOTAL_PROMOTION_RULE: ChannelPromotionRule = {
   minSample: 20,
   hitRateFloor: null,
   roiFloor: 0.05,
-};
-
-/**
- * BTTS NO tuning — calibrated separately from the YES side. The signal is the
- * model P(NO BTTS) = 1 − P(YES). NO is structurally more likely in defensive
- * leagues, so the grid reaches higher than the YES grid. v1 was a single global
- * threshold (BTTS_NO_CONFIG); this sweep produces a per-league recommendation so
- * NO can be calibrated championship by championship like YES. Promotion mirrors
- * BTTS YES (hit rate + non-negative ROI) — BTTS is a prediction channel (never
- * staked), so a NO selection is recorded + settled analytically only.
- */
-export const BTTS_NO_TUNING_THRESHOLD_GRID: number[] = [
-  0.5, 0.55, 0.58, 0.6, 0.62, 0.65, 0.68, 0.7,
-];
-
-export const BTTS_NO_PROMOTION_RULE: ChannelPromotionRule = {
-  minSample: 20,
-  hitRateFloor: 0.55,
-  roiFloor: 0,
 };

@@ -43,10 +43,13 @@ const ODDS: FullOddsSnapshot = {
 };
 
 function richContext(): StrategyContext {
+  // No longer read by VALUE/SAFE (Phase 2 since 2026-08-18, filtering
+  // previousDecisions instead of evaluatedMarkets) — kept only because
+  // buildStrategyContext still requires evaluatedPicks. TODO.md: candidate
+  // for removal alongside evaluatedMarkets.
   const evPick: EvaluatedPick = {
     market: Market.ONE_X_TWO,
     pick: 'HOME',
-    // edge = 0.64 − 1/1.90 = 0.114, above VALUE_MIN_EDGE (0.10) so VALUE selects it.
     probability: new Decimal('0.64'),
     odds: new Decimal('1.90'),
     ev: new Decimal('0.22'),
@@ -62,8 +65,13 @@ function richContext(): StrategyContext {
     competitionCode: 'BL1',
     deterministicScore: new Decimal('0.80'),
     probabilities: {
-      home: new Decimal('0.60'),
-      draw: new Decimal('0.25'),
+      // home=0.65 (not 0.60): VALUE/SAFE no longer read evaluatedMarkets
+      // (Phase 2 since 2026-08-18, filtering previousDecisions instead) —
+      // VALUE's ONE_X_TWO candidate now comes from what DOMINANT itself
+      // derives from these probabilities, and needs edge ≥ VALUE_MIN_EDGE
+      // (0.65 − 1/1.90 = 0.126 ≥ 0.10).
+      home: new Decimal('0.65'),
+      draw: new Decimal('0.20'),
       away: new Decimal('0.15'),
       bttsYes: new Decimal('0.65'),
       bttsNo: new Decimal('0.35'),
@@ -81,6 +89,43 @@ function richContext(): StrategyContext {
       winEitherHalfAway: new Decimal('0.45'),
       teamTotalHome: {},
       teamTotalAway: {},
+      ouHT: {},
+      resultTotalGoals: {},
+      resultBtts: {},
+      // Below BL1's DRAW_NO_BET_CONFIG threshold (0.5125) so DRAW_NO_BET is
+      // REJECTED here, not exercised beyond the probability read.
+      dnbHome: new Decimal('0.5'),
+      dnbAway: new Decimal('0.35'),
+      // Below BL1's WIN_TO_NIL_CONFIG threshold (0.15) so WIN_TO_NIL is
+      // REJECTED here, not exercised beyond the probability read.
+      winToNilHome: new Decimal('0.1'),
+      winToNilAway: new Decimal('0.08'),
+      // Below DOUBLE_CHANCE_CONFIG.minProbability (0.75) so DOUBLE_CHANCE is
+      // REJECTED here, not exercised beyond the probability read.
+      dc1X: new Decimal('0.5'),
+      dcX2: new Decimal('0.5'),
+      dc12: new Decimal('0.5'),
+      // Below BL1's FIRST_HALF_CONFIG threshold (0.31) so FIRST_HALF_WINNER
+      // is REJECTED here, not exercised beyond the probability read.
+      firstHalfWinner: {
+        home: new Decimal('0.3'),
+        draw: new Decimal('0.3'),
+        away: new Decimal('0.3'),
+      },
+      // htftOdds is empty in this fixture's ODDS, so every HALF_TIME_FULL_TIME
+      // pick resolves to no price and is skipped before its probability is
+      // read — populated anyway for completeness/defensiveness.
+      htft: {
+        HOME_HOME: new Decimal('0'),
+        HOME_DRAW: new Decimal('0'),
+        HOME_AWAY: new Decimal('0'),
+        DRAW_HOME: new Decimal('0'),
+        DRAW_DRAW: new Decimal('0'),
+        DRAW_AWAY: new Decimal('0'),
+        AWAY_HOME: new Decimal('0'),
+        AWAY_DRAW: new Decimal('0'),
+        AWAY_AWAY: new Decimal('0'),
+      },
     } as unknown as MatchProbabilities,
     evaluatedPicks: [evPick],
     odds: ODDS,
@@ -109,8 +154,11 @@ describe('ChannelDecisionService', () => {
     expect(runId).toBe('run-1');
 
     // Orchestrator ran every primary strategy (incl. CORRECT_SCORE, CLEAN_SHEET,
-    // TEAM_TOTAL, WIN_EITHER_HALF) + the CONSENSUS & AVOID meta-strategies.
-    expect(evaluated).toHaveLength(12);
+    // TEAM_TOTAL, WIN_EITHER_HALF, RESULT_TOTAL_GOALS, OVER_UNDER_HT,
+    // RESULT_BTTS, DRAW_NO_BET, WIN_TO_NIL, FIRST_HALF_WINNER,
+    // HALF_TIME_FULL_TIME, DOUBLE_CHANCE) + the CONSENSUS & AVOID
+    // meta-strategies.
+    expect(evaluated).toHaveLength(20);
 
     // CORRECT_SCORE: this context carries no lambdas → the strategy can't build
     // the score matrix → REJECTED (no_model), still recorded as a decision.
@@ -140,7 +188,12 @@ describe('ChannelDecisionService', () => {
       (d: { channel: string }) => d.channel === STRATEGY_CHANNEL.CONSENSUS,
     );
     expect(consensus?.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
-    expect(consensus?.selections[0]?.pick).toBe('HOME');
+    // Meta-strategy: reports the agreement in reasonDetails, emits no
+    // selection of its own (consensus.strategy.ts, 2026-08-22).
+    expect(consensus?.selections).toHaveLength(0);
+    expect(
+      (consensus?.reasonDetails as { pick?: string } | undefined)?.pick,
+    ).toBe('HOME');
 
     // AVOID (phase 2): the HOME pick edge (0.64 − 1/1.90 ≈ 0.11) is nowhere near
     // the 0.30 divergence floor → nothing to avoid.

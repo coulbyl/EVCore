@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import Decimal from 'decimal.js';
-import { BetStatus, Market } from '@evcore/db';
+import { BetStatus, ChannelDecisionStatus, Market } from '@evcore/db';
 import { CalibrationService } from './calibration.service';
 import type { PrismaService } from '@/prisma.service';
 
@@ -72,10 +72,10 @@ describe('CalibrationService.compute', () => {
 });
 
 describe('CalibrationService.computeAllMarkets', () => {
-  it('returns null for each market when fewer than MIN_BET_COUNT bets are settled', async () => {
+  it('returns null for each market when fewer than MIN_BET_COUNT selections are settled', async () => {
     const prisma = {
       client: {
-        bet: {
+        channelSelection: {
           findMany: vi.fn().mockResolvedValue([]),
         },
       },
@@ -95,7 +95,7 @@ describe('CalibrationService.computeAllMarkets', () => {
   it('queries each market independently', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
     const prisma = {
-      client: { bet: { findMany } },
+      client: { channelSelection: { findMany } },
     } as unknown as PrismaService;
 
     const service = new CalibrationService(prisma);
@@ -118,7 +118,7 @@ describe('CalibrationService.computeForMarket with excludeLambdaFloorHit', () =>
   it('includes a NOT filter when excludeLambdaFloorHit is true', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
     const prisma = {
-      client: { bet: { findMany } },
+      client: { channelSelection: { findMany } },
     } as unknown as PrismaService;
 
     const service = new CalibrationService(prisma);
@@ -127,14 +127,14 @@ describe('CalibrationService.computeForMarket with excludeLambdaFloorHit', () =>
     });
 
     const whereClause = (findMany.mock.calls[0] as [{ where: unknown }])[0]
-      .where as Record<string, unknown>;
-    expect(whereClause).toHaveProperty('NOT');
+      .where as { channelDecision: Record<string, unknown> };
+    expect(whereClause.channelDecision).toHaveProperty('NOT');
   });
 
   it('does not include a NOT filter when excludeLambdaFloorHit is false', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
     const prisma = {
-      client: { bet: { findMany } },
+      client: { channelSelection: { findMany } },
     } as unknown as PrismaService;
 
     const service = new CalibrationService(prisma);
@@ -143,17 +143,21 @@ describe('CalibrationService.computeForMarket with excludeLambdaFloorHit', () =>
     });
 
     const whereClause = (findMany.mock.calls[0] as [{ where: unknown }])[0]
-      .where as Record<string, unknown>;
-    expect(whereClause).not.toHaveProperty('NOT');
+      .where as { channelDecision: Record<string, unknown> };
+    expect(whereClause.channelDecision).not.toHaveProperty('NOT');
   });
 
-  it('returns a CalibrationResult when enough bets are settled', async () => {
-    const mockBets = Array.from({ length: 50 }, (_, i) => ({
-      probEstimated: new Decimal('0.6'),
-      status: i % 2 === 0 ? BetStatus.WON : BetStatus.LOST,
+  it('returns a CalibrationResult when enough selections are settled', async () => {
+    const mockSelections = Array.from({ length: 50 }, (_, i) => ({
+      probability: new Decimal('0.6'),
+      result: i % 2 === 0 ? BetStatus.WON : BetStatus.LOST,
     }));
     const prisma = {
-      client: { bet: { findMany: vi.fn().mockResolvedValue(mockBets) } },
+      client: {
+        channelSelection: {
+          findMany: vi.fn().mockResolvedValue(mockSelections),
+        },
+      },
     } as unknown as PrismaService;
 
     const service = new CalibrationService(prisma);
@@ -161,5 +165,45 @@ describe('CalibrationService.computeForMarket with excludeLambdaFloorHit', () =>
 
     expect(result).not.toBeNull();
     expect(result?.betCount).toBe(50);
+  });
+});
+
+describe('CalibrationService.computeForMarket source scoping', () => {
+  it('reads rank-1 selections of SELECTED decisions only, across every channel', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const prisma = {
+      client: { channelSelection: { findMany } },
+    } as unknown as PrismaService;
+
+    const service = new CalibrationService(prisma);
+    await service.computeForMarket(Market.TEAM_TOTAL_HOME);
+
+    const where = (findMany.mock.calls[0] as [{ where: unknown }])[0].where as {
+      rank: number;
+      channelDecision: Record<string, unknown>;
+    };
+    expect(where.rank).toBe(1);
+    expect(where.channelDecision.status).toBe(ChannelDecisionStatus.SELECTED);
+    // No channel filter: pooling every channel per market is the whole point
+    // of moving off `bet` (VALUE/SAFE only).
+    expect(where.channelDecision).not.toHaveProperty('channel');
+  });
+
+  it('reaches the point-in-time guard through modelRun, not a direct fixture relation', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const prisma = {
+      client: { channelSelection: { findMany } },
+    } as unknown as PrismaService;
+
+    const service = new CalibrationService(prisma);
+    const asOf = new Date('2026-08-01T00:00:00.000Z');
+    await service.computeForMarket(Market.ONE_X_TWO, { asOf });
+
+    const where = (findMany.mock.calls[0] as [{ where: unknown }])[0].where as {
+      channelDecision: {
+        modelRun?: { fixture: { scheduledAt: { lt: Date } } };
+      };
+    };
+    expect(where.channelDecision.modelRun?.fixture.scheduledAt.lt).toBe(asOf);
   });
 });

@@ -13,3 +13,4 @@ export * from "./settlement";
 export * from "./selection";
 export * from "./strategies";
 export * from "./metrics";
+export * from "./pricing";

@@ -4,8 +4,8 @@ category: bankroll
 difficulty: intermediate
 order: 3
 slug: allocation-et-timing
-summary: "L'unité de mise règle le combien. Cette leçon règle le où et le quand : comment répartir un capital entre des canaux qui n'ont pas tous le même niveau de preuve, et pourquoi le calendrier des championnats change la donne."
-updatedAt: "2026-07-28"
+summary: "L'unité de mise règle le combien. Cette leçon règle le où et le quand — et explique pourquoi elle ne donne aucun pourcentage d'allocation, ni aucun classement de coupon à privilégier."
+updatedAt: "2026-08-22"
 related: ["unite-de-mise", "variance-et-patience", "channels-overview"]
 ---
 
@@ -15,34 +15,33 @@ La leçon sur l'unité de mise répond à "combien miser par pari". Celle sur la
 
 ## Tous les canaux ne méritent pas la même part du capital
 
-La carte des canaux distingue déjà des niveaux de preuve différents. Ça doit se refléter dans la répartition, pas seulement dans le discours :
+Ça, c'est vrai et ça le restera. Ce qui a changé, c'est la façon d'établir la hiérarchie.
 
-- **VALUE et DRAW** sont les deux canaux les plus solides aujourd'hui (+9.71% et +5.35% ROI, sur respectivement 1 333 et 4 110 sélections réglées) — ils méritent la part la plus large du capital consacré à la mise.
-- **SAFE** est quasi neutre (+0.23%) : il ne fait pas gagner beaucoup à lui seul, mais son taux de réussite élevé (66.1%) en fait un stabilisateur utile pour lisser les séries de pertes des deux canaux précédents.
-- **TEAM_TOTAL et BTTS** sont des canaux satellites — récemment promus, avec des réserves documentées dans leurs leçons respectives (historique de 9 jours pour l'un, restriction à trois championnats pour l'autre). Une part de capital plus réduite leur revient, pas parce que le signal est faible, mais parce que la preuve est plus jeune.
-- **GOALS** ne mérite aucune part du capital de mise — ce n'est pas un désaccord d'opinion, c'est ce que montre son propre audit (−5.39% sur le plus gros échantillon d'EVCore).
+Une version précédente de cette leçon nommait les canaux un par un, avec leur ROI, et en tirait une répartition : ceux-ci en premier, celui-là en stabilisateur, cet autre jamais. Remesurés quelques mois plus tard, presque tous ces chiffres avaient changé de signe. Une répartition de capital bâtie dessus aurait donc été fausse pendant des mois, avec l'autorité d'une leçon écrite.
 
-Cette hiérarchie n'est pas figée : elle change avec chaque audit, exactement comme le montre la trajectoire de DRAW ou la promotion récente de BTTS et TEAM_TOTAL.
+La hiérarchie existe toujours, mais elle se lit **dans l'app**, où elle se recalcule :
 
-## Ce que dit l'historique des coupons déjà générés
+- **Investir, vue « Ce qu'on assume »** : les canaux dont l'avantage résiste au bruit d'échantillonnage. Deux à ce jour. C'est là que va la part la plus large du capital de mise.
+- **Investir, vue « En observation »** : tout le reste, chaque pronostic accompagné du ROI mesuré de son canal. Une part réduite, en connaissance de cause, ou rien du tout.
+- **Track Record** : le bilan complet par canal, pour arbitrer.
 
-Le Coupon Composer applique déjà cette logique de pondération par canal en coulisse. Sur 376 coupons réglés au dernier audit, le résultat global est un ROI de +32.2% à mise plate — mais ce chiffre demande deux nuances avant d'en tirer une conclusion :
+La règle durable tient en une phrase : **la part du capital suit le niveau de preuve mesuré, et ce niveau se lit là où il se recalcule** — pas dans un texte écrit il y a six mois.
 
-|                           | Volume | Taux de réussite | ROI (mise plate) |
-| ------------------------- | ------ | ---------------- | ---------------- |
-| Coupon classé n°1 du jour | 171    | 32.2%            | **+45.3%**       |
-| Coupon classé n°2 du jour | 116    | 30.2%            | +28.4%           |
-| Coupon classé n°3 du jour | 89     | 28.1%            | +12.0%           |
+## Le coupon n°1 du jour n'est pas meilleur que les autres
 
-D'abord, la cote combinée moyenne de ces coupons (4.36) explique le taux de réussite modeste : c'est un profil de combiné, où le profit vient de gains ponctuels qui compensent large — exactement le principe déjà couvert par la leçon sur la variance. Ensuite, le coupon classé n°1 du jour est nettement plus rentable que les suivants : à capital limité, le prioriser a plus de sens que de répartir également entre les trois.
+Cette leçon affirmait le contraire, chiffres à l'appui : le coupon classé premier rapportait nettement plus que le deuxième, lui-même plus que le troisième. La conclusion pratique — « à capital limité, priorisez le n°1 » — semblait couler de source.
 
-Cet historique ne couvre pas encore de coupons avec des jambes TEAM_TOTAL ou BTTS — trop récents. Il sera revu une fois ces canaux réglés en volume.
+Elle était fausse, et l'erreur est instructive parce qu'elle n'est pas une erreur de calcul.
+
+Mesuré correctement sur cinq régénérations complètes de l'historique, **le rang 1 ne fait pas mieux que les suivants**. La dégradation apparente venait du volume : quelques centaines de coupons réglés, à une cote combinée élevée où le résultat dépend de gains rares. À ce volume, l'incertitude sur un ROI de coupon se compte en dizaines de points de pourcentage. Un écart de trente points entre le n°1 et le n°3 ne prouve donc rien du tout — il rentre entièrement dans la marge d'erreur.
+
+C'est le résultat le plus utile de tout ce chapitre : **on ne peut pas juger une méthode sur un ROI de coupon.** Il faudrait des années pour distinguer dix points de rendement à ce rythme. C'est aussi pourquoi le rang n'apparaît plus comme un argument dans l'app : le libellé de l'abonnement dit « le coupon le plus probable du jour », ce qui est descriptif, et non « le meilleur ».
 
 ## Le calendrier des championnats n'est pas neutre
 
 Deux périodes méritent une attention particulière, pour des raisons différentes :
 
-**La reprise des grands championnats (août pour Premier League, Bundesliga, Serie A)** est la période la plus favorable pour déployer du capital. C'est là que le volume de matchs à cotes liquides et fiables est le plus élevé, et c'est précisément le périmètre où BTTS est rentable — le canal reste inactif sur ces trois championnats tant qu'ils ne jouent pas.
+**La reprise des grands championnats (août pour Premier League, Bundesliga, Serie A)** est la période la plus favorable pour déployer du capital, pour une raison qui ne dépend d'aucun canal en particulier : c'est là que le volume de matchs à cotes liquides est le plus élevé. Plus le marché est liquide, plus la cote est informative — et le modèle est fiable là où le marché l'est.
 
 **La fin de saison (avril-mai selon les championnats)** demande l'inverse : plus de prudence, pas d'arrêt brutal. Des matchs sans enjeu sportif réel (équipe déjà reléguée ou déjà titrée) rendent les résultats plus imprévisibles que d'habitude. Réduire la mise plutôt que l'augmenter est la bonne réaction dans cette fenêtre.
 
@@ -50,10 +49,11 @@ Les trêves internationales et les championnats à faible volume suivent la mêm
 
 ## Ce que cette leçon ne dit pas
 
-Elle ne donne pas de pourcentages d'allocation figés par canal — ce serait prétendre à une précision que les données actuelles ne permettent pas, surtout pour des canaux aussi jeunes que TEAM_TOTAL. Elle ne dit pas non plus que suivre cette répartition garantit un résultat sur une période donnée : la leçon sur la variance s'applique ici comme partout ailleurs.
+Elle ne donne aucun pourcentage d'allocation par canal, et elle n'en donnera pas. Ce serait prétendre à une précision que les données ne permettent pas — et surtout figer dans un texte une hiérarchie qui se recalcule ailleurs.
 
 ## À retenir
 
-- La répartition du capital doit refléter le niveau de preuve réel de chaque canal, pas une répartition égale par confort : VALUE et DRAW en premier, SAFE en stabilisateur, TEAM_TOTAL et BTTS en satellites, GOALS jamais.
-- Le coupon classé n°1 du jour est historiquement le plus rentable des trois — le prioriser a du sens à capital limité.
-- Le calendrier compte : la reprise des grands championnats en août est la période la plus favorable, la fin de saison appelle plus de prudence, pas un arrêt.
+- La part du capital suit le niveau de preuve mesuré. Ce niveau se lit dans Investir et Track Record, pas dans cette leçon.
+- Le coupon n°1 du jour ne fait pas mieux que les suivants. L'écart apparent tenait entièrement dans la marge d'erreur.
+- On ne juge pas une méthode sur un ROI de coupon : à ces volumes, il faudrait des années pour distinguer dix points de rendement.
+- Le calendrier compte : la reprise des grands championnats est la période la plus liquide, la fin de saison appelle plus de prudence, pas un arrêt.

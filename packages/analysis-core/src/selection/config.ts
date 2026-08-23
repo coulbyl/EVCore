@@ -34,4 +34,25 @@ export type SelectionConfig = {
   pickMinSelectionOdds(market: Market, pick: string): Decimal;
   // Per-(market, pick) odds ceiling; null falls back to the global cap.
   pickMaxSelectionOdds(market: Market, pick: string): Decimal | null;
+  // Cross-market ranking discount for VALUE (2026-08-19, db:backtest:
+  // market-trust-calibration) — VALUE compares candidates from 17 markets
+  // of very different calibration reliability; ranking on raw qualityScore
+  // lets the worst-calibrated market win by having the largest noise, not
+  // the best real pick (winner's curse). Walk-forward validated: +0.86pp
+  // ROI on the held-out test window vs unweighted. Optional: undefined ⇒
+  // trust=1 (identity) for every market — matches VALUE's pre-2026-08-19
+  // behavior, so existing callers that haven't wired this still work
+  // unchanged.
+  valueMarketTrust?(market: Market): Decimal;
+  // Same idea for SAFE (widened from 4 to all 17 markets on 2026-08-19,
+  // same day) — kept as a SEPARATE resolver, not shared with valueMarketTrust:
+  // the weights measured on VALUE's edge≥0.10 population regressed SAFE's
+  // own (much narrower, high-probability) population by -0.28pp out-of-
+  // sample; a SAFE-specific measurement only got to -0.04pp (noise-level,
+  // not a validated improvement — db:backtest:market-trust-calibration
+  // report, 2026-08-19). No app-side implementation ships this yet
+  // (getMarketTrust in ev.constants.ts only feeds valueMarketTrust); revisit
+  // once the newer markets (WIN_TO_NIL/CLEAN_SHEET/etc., ~1 month old)
+  // accumulate enough SAFE-eligible volume for a real measurement.
+  safeMarketTrust?(market: Market): Decimal;
 };

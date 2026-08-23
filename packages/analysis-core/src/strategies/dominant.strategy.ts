@@ -2,11 +2,8 @@ import { Market } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
 import { priceForSelection } from "../selection";
 import { LINE_MOVEMENT_THRESHOLD } from "../selection/constants";
-import {
-  DOMINANT_MIN_MARGIN,
-  DOMINANT_MIN_ODDS,
-  getChannelStrategyConfig,
-} from "./config";
+import { DOMINANT_MIN_MARGIN, DOMINANT_MIN_ODDS } from "./dominant.config";
+import { getChannelStrategyConfig } from "./channel-strategy.config";
 import type {
   ChannelStrategy,
   StrategyContext,

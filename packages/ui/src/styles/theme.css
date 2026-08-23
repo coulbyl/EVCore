@@ -64,6 +64,29 @@
   --canal-avoid-soft: rgba(220, 38, 38, 0.11);
   --canal-correct-score: #7c3aed;
   --canal-correct-score-soft: rgba(124, 58, 237, 0.11);
+  --canal-first-half: #2563eb;
+  --canal-first-half-soft: rgba(37, 99, 235, 0.11);
+  --canal-double-chance: #0891b2;
+  --canal-double-chance-soft: rgba(8, 145, 178, 0.11);
+  --canal-result-total-goals: #ea580c;
+  --canal-result-total-goals-soft: rgba(234, 88, 12, 0.11);
+  --canal-over-under-ht: #65a30d;
+  --canal-over-under-ht-soft: rgba(101, 163, 13, 0.11);
+  --canal-result-btts: #e11d48;
+  --canal-result-btts-soft: rgba(225, 29, 72, 0.11);
+  --canal-draw-no-bet: #a21caf;
+  --canal-draw-no-bet-soft: rgba(162, 28, 175, 0.11);
+  --canal-win-to-nil: #b45309;
+  --canal-win-to-nil-soft: rgba(180, 83, 9, 0.11);
+  --canal-half-time-full-time: #475569;
+  --canal-half-time-full-time-soft: rgba(71, 85, 105, 0.11);
+  /* Shared by not-yet-implemented channels (UNDERDOG/FAVORITE/LIVE_VALUE/
+     MARKET_MOVE/CONTRARIAN — kept in the StrategyChannel union for
+     completeness, never actually emitted by a strategy today) so the
+     color/label lookups stay exhaustive without inventing a real identity
+     for a channel nobody has seen render yet. */
+  --canal-neutral: var(--muted);
+  --canal-neutral-soft: rgba(100, 116, 139, 0.11);
 
   /* Not a channel — informational-only team status (e.g. "new coach" on a
      match card). Fuchsia so it never overlaps a canal hue or the accent
@@ -147,6 +170,24 @@
   --canal-avoid-soft: rgba(248, 113, 113, 0.13);
   --canal-correct-score: #a78bfa;
   --canal-correct-score-soft: rgba(167, 139, 250, 0.13);
+  --canal-first-half: #60a5fa;
+  --canal-first-half-soft: rgba(96, 165, 250, 0.13);
+  --canal-double-chance: #22d3ee;
+  --canal-double-chance-soft: rgba(34, 211, 238, 0.13);
+  --canal-result-total-goals: #fb923c;
+  --canal-result-total-goals-soft: rgba(251, 146, 60, 0.13);
+  --canal-over-under-ht: #a3e635;
+  --canal-over-under-ht-soft: rgba(163, 230, 53, 0.13);
+  --canal-result-btts: #fb7185;
+  --canal-result-btts-soft: rgba(251, 113, 133, 0.13);
+  --canal-draw-no-bet: #d946ef;
+  --canal-draw-no-bet-soft: rgba(217, 70, 239, 0.13);
+  --canal-win-to-nil: #fbbf24;
+  --canal-win-to-nil-soft: rgba(251, 191, 36, 0.13);
+  --canal-half-time-full-time: #94a3b8;
+  --canal-half-time-full-time-soft: rgba(148, 163, 184, 0.13);
+  --canal-neutral: var(--muted);
+  --canal-neutral-soft: rgba(148, 163, 184, 0.13);
 
   --new-coach: #e879f9;
   --new-coach-soft: rgba(232, 121, 249, 0.13);

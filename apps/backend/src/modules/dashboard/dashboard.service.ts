@@ -14,7 +14,17 @@ import {
   buildWorkerStatus,
   notificationSeverity,
 } from './dashboard.utils';
+import {
+  PRIMARY_METRIC_BY_CHANNEL,
+  TRACKED_CHANNELS,
+} from './dashboard.constants';
 import { DashboardRepository } from './dashboard.repository';
+
+// Assez long pour couvrir les appels simultanés d'un chargement de page et un
+// rafraîchissement rapide ; assez court pour qu'un nouveau règlement apparaisse
+// sans redémarrage.
+const SETTLED_CACHE_TTL_MS = 60_000;
+const SETTLED_CACHE_MAX_ENTRIES = 6;
 import type {
   ChannelCompetitionStatItem,
   ChannelHealthItem,
@@ -45,6 +55,19 @@ type UnreadNotification = SummaryData['unreadNotifications'][number];
 
 @Injectable()
 export class DashboardService {
+  /**
+   * Mémoïsation courte des sélections réglées, par plage de dates. Sert
+   * d'abord à collapser les trois appels simultanés d'un même chargement de
+   * page en une seule requête — voir settledByChannel.
+   */
+  private readonly settledCache = new Map<
+    string,
+    {
+      at: number;
+      rows: Promise<Map<StrategyChannel, SelectionWithCompetition[]>>;
+    }
+  >();
+
   constructor(private readonly repo: DashboardRepository) {}
 
   async getSummary(pnlDate?: string): Promise<DashboardSummary> {
@@ -358,6 +381,81 @@ export class DashboardService {
     });
   }
 
+  /**
+   * Charge une fois les sélections réglées de tous les canaux suivis, et les
+   * regroupe par canal.
+   *
+   * La PROMESSE est mise en cache, pas son résultat : les trois endpoints de
+   * la page partent en parallèle sur la même plage, donc mémoriser la valeur
+   * résolue arriverait trop tard — les trois requêtes seraient déjà lancées.
+   * En cachant la promesse, les deux appels suivants attendent la première.
+   *
+   * Les trois endpoints appelaient auparavant une requête PAR CANAL, toutes
+   * lancées en parallèle. Tenable à 10 canaux, plus du tout à
+   * 18 : chaque worker parallèle de Postgres réclame un segment de mémoire
+   * partagée, et le conteneur n'a que les 64 Mo de `/dev/shm` par défaut. La
+   * page tombait sur « could not resize shared memory segment » (SQLSTATE
+   * 53100) dès la période « tout l'historique ».
+   *
+   * Chaque canal suivi est présent dans la carte même sans sélection sur la
+   * période : un canal silencieux doit figurer à zéro, pas disparaître.
+   */
+  private settledByChannel(range: {
+    since: Date;
+    until: Date;
+  }): Promise<Map<StrategyChannel, SelectionWithCompetition[]>> {
+    const key = `${range.since.toISOString()}..${range.until.toISOString()}`;
+    const cached = this.settledCache.get(key);
+    if (cached && Date.now() - cached.at < SETTLED_CACHE_TTL_MS) {
+      return cached.rows;
+    }
+
+    const rows = this.loadSettledByChannel(range);
+    if (this.settledCache.size >= SETTLED_CACHE_MAX_ENTRIES) {
+      const oldest = [...this.settledCache.entries()].sort(
+        (a, b) => a[1].at - b[1].at,
+      )[0];
+      if (oldest) this.settledCache.delete(oldest[0]);
+    }
+    this.settledCache.set(key, { at: Date.now(), rows });
+    // Un échec ne doit pas rester en cache : la prochaine requête doit
+    // retenter au lieu de resservir la promesse rejetée pendant tout le TTL.
+    rows.catch(() => this.settledCache.delete(key));
+    return rows;
+  }
+
+  private async loadSettledByChannel(range: {
+    since: Date;
+    until: Date;
+  }): Promise<Map<StrategyChannel, SelectionWithCompetition[]>> {
+    const rows = await this.repo.findChannelSelectionsInRange(
+      TRACKED_CHANNELS,
+      range,
+    );
+    const byChannel = new Map<StrategyChannel, SelectionWithCompetition[]>(
+      TRACKED_CHANNELS.map((channel) => [channel, []]),
+    );
+    for (const row of rows) {
+      byChannel.get(row.channelDecision.channel)?.push(row);
+    }
+    return byChannel;
+  }
+
+  /**
+   * Santé de chaque canal suivi.
+   *
+   * Itère sur TRACKED_CHANNELS au lieu d'énumérer les canaux : la version
+   * précédente en listait 10 en dur, et les 8 canaux ouverts depuis
+   * n'apparaissaient nulle part malgré leurs résultats réglés.
+   *
+   * Tout est lu depuis `channel_selection`, y compris VALUE et SAFE qui
+   * passaient auparavant par la table `bet`. Deux raisons : `bet` n'est écrit
+   * que pour ces deux canaux (persistChannelBet), donc leurs lignes n'étaient
+   * pas comparables aux autres sur cette page ; et c'est la source qu'ont déjà
+   * adoptée la calibration et le pool de coupon pour cette raison exacte.
+   * Effet de bord bienvenu : VALUE et SAFE ont désormais un taux de réussite,
+   * là où ils affichaient `null`.
+   */
   async getChannelHealth(
     from: string,
     to: string,
@@ -366,76 +464,15 @@ export class DashboardService {
       since: startOfUtcDay(parseIsoDate(from)),
       until: endOfUtcDay(parseIsoDate(to)),
     };
-    const [
-      evBets,
-      svBets,
-      dominantSel,
-      bttsSel,
-      drawSel,
-      goalsSel,
-      cleanSheetSel,
-      teamTotalSel,
-      winEitherHalfSel,
-      correctScoreSel,
-    ] = await Promise.all([
-      this.repo.findModelBetsInRange(StrategyChannel.VALUE, range),
-      this.repo.findModelBetsInRange(StrategyChannel.SAFE, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.DOMINANT, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.BTTS, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.DRAW, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.GOALS, range),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.CLEAN_SHEET,
-        range,
-      ),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.TEAM_TOTAL, range),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.WIN_EITHER_HALF,
-        range,
-      ),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.CORRECT_SCORE,
-        range,
-      ),
-    ]);
+    const bySelection = await this.settledByChannel(range);
 
-    const evRoi = flatBetRoi(evBets);
-    const svRoi = flatBetRoi(svBets);
-
-    return [
-      {
-        channel: 'VALUE',
-        status: evRoiStatus(evRoi, evBets.length, 30),
-        primaryMetric: evRoi ?? 0,
-        primaryMetricType: 'ROI',
-        roi: evRoi,
-        hitRate: null,
-        vsThreshold: null,
-        sampleSize: evBets.length,
-      },
-      {
-        channel: 'SAFE',
-        status: evRoiStatus(svRoi, svBets.length, 30),
-        primaryMetric: svRoi ?? 0,
-        primaryMetricType: 'ROI',
-        roi: svRoi,
-        hitRate: null,
-        vsThreshold: null,
-        sampleSize: svBets.length,
-      },
-      channelHealthFromSelections('DOMINANT', dominantSel, 'HIT_RATE'),
-      channelHealthFromSelections('BTTS', bttsSel, 'HIT_RATE'),
-      channelHealthFromSelections('DRAW', drawSel, 'ROI'),
-      channelHealthFromSelections('GOALS', goalsSel, 'HIT_RATE'),
-      channelHealthFromSelections('CLEAN_SHEET', cleanSheetSel, 'HIT_RATE'),
-      channelHealthFromSelections('TEAM_TOTAL', teamTotalSel, 'HIT_RATE'),
+    return [...bySelection].map(([channel, selections]) =>
       channelHealthFromSelections(
-        'WIN_EITHER_HALF',
-        winEitherHalfSel,
-        'HIT_RATE',
+        channel,
+        selections,
+        PRIMARY_METRIC_BY_CHANNEL[channel] ?? 'HIT_RATE',
       ),
-      channelHealthFromSelections('CORRECT_SCORE', correctScoreSel, 'HIT_RATE'),
-    ];
+    );
   }
 
   async getChannelStats(from: string, to: string): Promise<ChannelStatsItem[]> {
@@ -443,77 +480,11 @@ export class DashboardService {
       since: startOfUtcDay(parseIsoDate(from)),
       until: endOfUtcDay(parseIsoDate(to)),
     };
-    const [
-      evBets,
-      svBets,
-      dominantSel,
-      bttsSel,
-      drawSel,
-      goalsSel,
-      cleanSheetSel,
-      teamTotalSel,
-      winEitherHalfSel,
-      correctScoreSel,
-    ] = await Promise.all([
-      this.repo.findModelBetsInRange(StrategyChannel.VALUE, range),
-      this.repo.findModelBetsInRange(StrategyChannel.SAFE, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.DOMINANT, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.BTTS, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.DRAW, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.GOALS, range),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.CLEAN_SHEET,
-        range,
-      ),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.TEAM_TOTAL, range),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.WIN_EITHER_HALF,
-        range,
-      ),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.CORRECT_SCORE,
-        range,
-      ),
-    ]);
+    const bySelection = await this.settledByChannel(range);
 
-    // Reverse desc→asc for chronological drawdown computation
-    const evChron = [...evBets].reverse();
-    const svChron = [...svBets].reverse();
-
-    return [
-      {
-        channel: 'VALUE',
-        hitRate: null,
-        avgThreshold: null,
-        vsThreshold: null,
-        roi: flatBetRoi(evBets),
-        netUnits: netUnitsFromBets(evBets),
-        maxDrawdown: maxDrawdownFromBets(evChron),
-        sampleSize: evBets.length,
-        oddsAvailabilityRate: 1,
-        trend: 'FLAT' as const,
-      },
-      {
-        channel: 'SAFE',
-        hitRate: null,
-        avgThreshold: null,
-        vsThreshold: null,
-        roi: flatBetRoi(svBets),
-        netUnits: netUnitsFromBets(svBets),
-        maxDrawdown: maxDrawdownFromBets(svChron),
-        sampleSize: svBets.length,
-        oddsAvailabilityRate: 1,
-        trend: 'FLAT' as const,
-      },
-      channelStatsFromSelections('DOMINANT', dominantSel),
-      channelStatsFromSelections('BTTS', bttsSel),
-      channelStatsFromSelections('DRAW', drawSel),
-      channelStatsFromSelections('GOALS', goalsSel),
-      channelStatsFromSelections('CLEAN_SHEET', cleanSheetSel),
-      channelStatsFromSelections('TEAM_TOTAL', teamTotalSel),
-      channelStatsFromSelections('WIN_EITHER_HALF', winEitherHalfSel),
-      channelStatsFromSelections('CORRECT_SCORE', correctScoreSel),
-    ];
+    return [...bySelection].map(([channel, selections]) =>
+      channelStatsFromSelections(channel, selections),
+    );
   }
 
   /** Same settled data as getChannelStats, one level finer — grouped by
@@ -528,57 +499,11 @@ export class DashboardService {
       since: startOfUtcDay(parseIsoDate(from)),
       until: endOfUtcDay(parseIsoDate(to)),
     };
-    const [
-      evBets,
-      svBets,
-      dominantSel,
-      bttsSel,
-      drawSel,
-      goalsSel,
-      cleanSheetSel,
-      teamTotalSel,
-      winEitherHalfSel,
-      correctScoreSel,
-    ] = await Promise.all([
-      this.repo.findModelBetsInRange(StrategyChannel.VALUE, range),
-      this.repo.findModelBetsInRange(StrategyChannel.SAFE, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.DOMINANT, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.BTTS, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.DRAW, range),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.GOALS, range),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.CLEAN_SHEET,
-        range,
-      ),
-      this.repo.findChannelSelectionsInRange(StrategyChannel.TEAM_TOTAL, range),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.WIN_EITHER_HALF,
-        range,
-      ),
-      this.repo.findChannelSelectionsInRange(
-        StrategyChannel.CORRECT_SCORE,
-        range,
-      ),
-    ]);
+    const bySelection = await this.settledByChannel(range);
 
-    return [
-      ...channelCompetitionStatsFromBets('VALUE', evBets),
-      ...channelCompetitionStatsFromBets('SAFE', svBets),
-      ...channelCompetitionStatsFromSelections('DOMINANT', dominantSel),
-      ...channelCompetitionStatsFromSelections('BTTS', bttsSel),
-      ...channelCompetitionStatsFromSelections('DRAW', drawSel),
-      ...channelCompetitionStatsFromSelections('GOALS', goalsSel),
-      ...channelCompetitionStatsFromSelections('CLEAN_SHEET', cleanSheetSel),
-      ...channelCompetitionStatsFromSelections('TEAM_TOTAL', teamTotalSel),
-      ...channelCompetitionStatsFromSelections(
-        'WIN_EITHER_HALF',
-        winEitherHalfSel,
-      ),
-      ...channelCompetitionStatsFromSelections(
-        'CORRECT_SCORE',
-        correctScoreSel,
-      ),
-    ];
+    return [...bySelection].flatMap(([channel, selections]) =>
+      channelCompetitionStatsFromSelections(channel, selections),
+    );
   }
 
   async getLeaderboard(): Promise<LeaderboardEntry[]> {
@@ -744,10 +669,6 @@ function channelHealthFromSelections(
 
 type CompetitionRef = { code: string; name: string; country: string };
 
-type BetWithCompetition = FlatBet & {
-  modelRun: { fixture: { season: { competition: CompetitionRef } } };
-};
-
 type SelectionWithCompetition = SettledSelection & {
   channelDecision: {
     modelRun: { fixture: { season: { competition: CompetitionRef } } };
@@ -770,32 +691,6 @@ function groupByCompetition<T>(
   }
   return groups;
 }
-
-function channelCompetitionStatsFromBets(
-  channel: ChannelCompetitionStatItem['channel'],
-  bets: BetWithCompetition[],
-): ChannelCompetitionStatItem[] {
-  const groups = groupByCompetition(
-    bets,
-    (b) => b.modelRun.fixture.season.competition,
-  );
-  return Array.from(groups.entries()).map(
-    ([competitionCode, { name, country, rows }]) => {
-      const roi = flatBetRoi(rows);
-      return {
-        channel,
-        competitionCode,
-        competitionName: name,
-        competitionCountry: country,
-        roi,
-        hitRate: null,
-        sampleSize: rows.length,
-        status: evRoiStatus(roi, rows.length, 30),
-      };
-    },
-  );
-}
-
 function channelCompetitionStatsFromSelections(
   channel: ChannelCompetitionStatItem['channel'],
   selections: SelectionWithCompetition[],

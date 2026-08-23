@@ -468,6 +468,155 @@ TODO.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
 
 ---
 
+### Bloc 13 — Refonte d'Investir : trois vues, plus de `topN` (2026-08-22, branche `fix/todo-2026-08-15`)
+
+> Suite directe de l'audit [docs/audit-canaux-investir-2026-08-22.md](docs/audit-canaux-investir-2026-08-22.md)
+> §5. Investir n'est plus une surface de revue exhaustive (18 modes, un par
+> canal) mais **le point de filtre unique** du système : un filtre se juge à
+> ce qu'il exclut, pas à ce qu'il expose.
+
+**Ce qui a été supprimé, et sur quelle mesure**
+
+- [x] **`topN` en entier, sans exception.** Les 5 plafonds testés en apparié
+      (top-N contre liste entière le même jour) : VALUE t=+0.80, TEAM_TOTAL
+      +0.70, DOMINANT −0.50, SAFE −1.20, DRAW −1.74. Aucun significatif, les
+      deux plus proches du seuil négatifs. Garder VALUE parce qu'il « marche »
+      parmi cinq essais, c'est le winner's curse appliqué aux règles.
+- [x] `MODE_RANKING`, `SINGLE_CHANNEL_MODE_MAP`, `VALUE_MODE_CHANNELS`,
+      `InvestmentMode` → une seule liste de canaux et un tri unique, la
+      probabilité calibrée.
+- [x] `NEGATIVE_ROI_CHANNELS` (liste figée de 2 canaux, datée du 2026-07-06)
+      → **ROI shrinké recalculé** par Bayes empirique. La liste figée en
+      nommait 2 alors que 16 canaux sur 18 sont négatifs.
+- [x] `PROBABILITY_BUCKETS` et le badge EV vert/rouge du front. L'EV se calcule
+      sur l'edge revendiqué, mesuré anti-prédictif ; l'afficher en vert mettait
+      en avant l'ampleur de l'erreur du modèle.
+
+**Ce qui remplace**
+
+- [x] **Trois vues** : « Ce qu'on assume » (canaux à ROI shrinké positif — 2
+      sur 18, DOUBLE_CHANCE et DRAW —, DRAW borné à `DRAW_STAKED_LEAGUES`),
+      « En observation » (tout le reste, une liste filtrable par canal, ROI du
+      canal affiché sur chaque pick), « Écarté » (ce que les garde-fous ont
+      retiré, avec la raison). La troisième manquait et c'est celle qui rend
+      le filtre auditable.
+- [x] **Calibration par courbe de Platt** (`channel-reliability.ts`) au lieu du
+      décalage constant `meanError` : la courbe est plus plate que la
+      diagonale, pas décalée. C'est l'acquis du Bloc 12, ratio 0.819 → 1.016.
+- [x] **`MAX_LEG_EDGE` et `MIN_LEG_ODDS` remontés du coupon vers Investir**,
+      pour qu'ils s'appliquent à toute surface de mise. Conséquence assumée :
+      les picks VALUE, que `VALUE_MIN_EDGE = 0.10` sélectionne au-dessus du
+      plafond, atterrissent massivement dans « Écarté ».
+- [x] **Abonnements** : `investmentMode` remplacé par le canal ; les options
+      `topN` par canal (VALUE [1,5], TEAM_TOTAL 3) unifiées, leur
+      justification reposant sur les mêmes backtests invalidés — le `topN`
+      d'abonnement redevient un curseur d'exposition, pas une règle calibrée.
+      `CHANNEL_DOUBLE_CHANCE` ajouté au catalogue (meilleur canal mesuré).
+- [x] **Catalogue d'abonnement réaligné sur la mesure.** Il proposait sept
+      canaux à égalité visuelle alors que cinq sont mesurés perdants — le même
+      défaut qu'Investir avec ses 18 onglets. `/subscriptions/catalog` renvoie
+      désormais le ROI shrinké et un `tier` **calculé** (`BACKED` / `WATCH`)
+      par source ; le formulaire les groupe et affiche le ROI à côté de chaque
+      canal. Rien n'est masqué : on refuse seulement de présenter comme
+      équivalent ce qui ne l'est pas.
+- [x] **`CHANNEL_SAFE` retiré** des sources proposables (`retired: true`) —
+      pas pour son ROI mais parce que 95% de ses sélections sont des doublons
+      exacts de Phase 1 : s'y abonner, c'est suivre un sous-ensemble d'un
+      autre canal en croyant en suivre un nouveau. Les abonnements existants
+      continuent de tourner.
+- [x] **Badge « Observation » retiré de Decisions.** Il marquait 4 canaux
+      (CORRECT_SCORE, CLEAN_SHEET, TEAM_TOTAL, WIN_EITHER_HALF) comme « pas
+      encore de edge backtesté » — écrit avant que ces canaux produisent des
+      décisions réglées. Ils sont désormais tous mesurés, et la liste figée de
+      4 noms laissait entendre que les 21 autres étaient validés : le même
+      défaut que `NEGATIVE_ROI_CHANNELS`.
+- [x] **`SLIPPABLE` remplacé par `META_CHANNELS`** (liste positive → liste
+      d'exclusion). L'ancienne liste de 6 canaux privait DOUBLE_CHANCE de
+      bouton « ajouter au coupon » dans Decisions alors que c'est le canal le
+      mieux mesuré et qu'Investir le propose déjà. Une liste de canaux
+      « autorisés » se périme à chaque canal ajouté ; une liste de méta-canaux,
+      non.
+- [x] **Deux libellés faux corrigés côté web**, qui avaient dérivé parce que
+      le front duplique les libellés du backend en i18n au lieu de les lire :
+      « Coupon (meilleur du jour) » — le rang 1 ne fait pas mieux que les
+      suivants, mesuré — et « Coupon (chaque coupon généré) » — borné à la
+      classe à cote courte depuis les classes de coupon, donc l'abonné lisait
+      « tous » et recevait une classe sur trois.
+
+**Reste ouvert**
+
+- [ ] **VALUE réduit à ses picks propres** — les 8% de sélections qui ne sont
+      pas des doublons de Phase 1 font +14.1% (n=173, t≈1.4). C'est la seule
+      piste du système où une couche de sélection _ajoute_. **À valider au
+      niveau jambe avant de shipper** ; SAFE n'a pas cette excuse (29 picks
+      propres, −19.7%).
+- [ ] **Mouvement des cotes** — 16 615 matchs suivis sur ~15h en moyenne,
+      jamais exploités. Seule piste de découverte que l'audit laisse ouverte,
+      et la seule entrée _causale_ plutôt qu'un historique découpé.
+
+Migration Prisma : `20260822120000_add_double_chance_subscription_source`.
+
+---
+
+### Bloc 12 — Reconstruction du composeur de coupon (2026-08-20 → 22, branche `fix/todo-2026-08-15`)
+
+> Point de départ : ROI négatif dans toutes les configurations testées (-9% à
+> -29%), révélé une fois `deleteExpiredInRange` corrigé. Le plan de recherche
+> initial (Deflated Sharpe, James-Stein, parlays corrélés, dérive) a été
+> exécuté puis **largement invalidé par la mesure** — détail par piste dans
+> `apps/backend/src/modules/coupon/recherche.md` §"Résultats du 2026-08-22".
+
+**Résultat mesuré** (5 passes de régénération, 2025-01 → 2026-08) :
+
+- [x] **Calibration par jambe : ratio réalisé/annoncé 0.819 → 1.016** (n=7076).
+      Le modèle n'exagère plus ses jambes, dans aucun sens. C'est l'acquis.
+- [x] ROI coupon **-3.34% ± 4.32** (n=2844, t=-0.77) — indistinguable de zéro,
+      contre -9.7% au départ. Ce n'est pas un profit.
+
+**Ce qui a été corrigé**
+
+- [x] **Le pool était aveugle à 21 canaux sur 25.** Il lisait `run.bets`, que
+      `persistChannelBet` n'écrit que pour VALUE/SAFE. `CalibrationService`
+      lisait la même table : trois marchés sur six n'atteignaient jamais
+      `MIN_BET_COUNT` et BTTS était corrigé **dans le mauvais sens**. Les deux
+      lisent désormais `channel_selection`, tous canaux.
+- [x] **Six signaux de sélection retirés**, morts ou anti-prédictifs, chacun
+      avec sa mesure conservée dans le code : tri par EV du coupon,
+      `signalScore` et la fenêtre glissante de 38 jours, l'edge revendiqué, la
+      qualité par (canal, tranche) et par (ligue, canal, tranche), l'ajustement
+      conditionné à la sélection, la pénalité de sélection uniforme.
+- [x] **CONSENSUS n'émet plus de pick** — ses 765 sélections étaient des
+      doublons exacts d'un pick Phase 1, et `maxProbability` (max de k
+      estimations bruitées) expliquait à lui seul son ratio de 0.726 contre
+      0.918 pour DOMINANT qu'il agrège.
+- [x] **Profils supprimés**, remplacés par trois **classes** différenciées par
+      la bande de cote de leurs jambes — bandes disjointes, donc produits
+      réellement distincts : cote 1.94 / 5.39 / 12.26 et taux de réussite
+      49.1% / 19.8% / 9.0%.
+- [x] **DNB sur match nul bloquait le règlement** : `resolveIsCorrect` rendait
+      `null` aussi bien pour un remboursement que pour « pas encore
+      calculable », et l'appelant lisait `null` comme non résolu. Le coupon ne
+      se réglait jamais.
+- [x] **Déphasage abonnements** créé par les classes : `COUPON_BEST` lisait
+      `rank = 1`, devenu ambigu (3 lignes par date) ; `COUPON_ALL` serait passé
+      de 3 à 9 coupons/jour, triplant l'exposition d'un abonné existant.
+
+**La leçon de méthode, qui vaut plus que les correctifs**
+
+- [x] **Le ROI de coupon n'a aucune puissance statistique.** SD 1.821, 3
+      coupons/jour ⇒ ~2,5 ans pour détecter 10 points, 2 points jamais. Les
+      décisions de la session du 19/20 portaient sur des écarts de 10-30 points
+      dont la SE valait 13-18. **La boucle d'apprentissage doit tourner au
+      niveau jambe** (SD 1.247, ~7000/mois, 2 points en ~4 mois).
+
+**Reste ouvert** — voir [TODO.md](TODO.md) §"Générateur de coupon" : mouvement
+des cotes (seule piste de découverte crédible), meilleure cote étendue au
+moteur, abonnements par classe, sélecteur de classe côté UX.
+
+Aucune migration Prisma.
+
+---
+
 ### Bloc 11 — Corrections audit systémique : résolution bookmaker par ligne, garde-fous 1X2-only (2026-08-15, branche `fix/systemic-audit-market-guards`)
 
 > Reprise du reste de l'audit systémique du Bloc 10 (post-mortem
@@ -743,6 +892,134 @@ Docs de cadrage Phase 3:
   (`GOALS`, `CONSENSUS`, `AVOID`, `UNDERDOG`, `FAVORITE`, `MARKET_MOVE`,
   `FIRST_HALF`, `LIVE_VALUE`) ; seul `BB` côté `NO` (BTTS NO) reste en
   observation avant activation — voir TODO.md
+- [x] **Coquilles de ré-export nettoyées (2026-08-18)** — 23 fichiers dans
+      `apps/backend/.../betting-engine/strategies/` ne faisaient que
+      ré-exporter `@evcore/analysis-core` (reliquat de l'extraction jamais
+      nettoyé) ; audit : zéro consommateur de prod dans ce dossier, seuls leurs
+      propres `.spec.ts` colocalisés les importaient — violant "tests
+      colocalisés avec la source" (CLAUDE.md), puisque la vraie source vit dans
+      `analysis-core`. Les 22 `.spec.ts` déménagés vers
+      `packages/analysis-core/src/strategies/` (+ `selection-odds.spec.ts` →
+      `packages/analysis-core/src/selection/odds.spec.ts`), les 23 coquilles
+      supprimées. 8 vrais consommateurs de prod trouvés hors de ce dossier
+      (`apps/backend/src/modules/backtest/*`, `coupon/signal-window.service.ts`,
+      `betting-engine/channel-decision.service.ts`,
+      `scripts/backfill-selection-odds.ts`) — repointés directement vers
+      `@evcore/analysis-core`. `strategy-context.builder.ts` (vraie logique
+      app-side, pas une coquille) reste en place. Suite analysis-core
+      356/357 verte (même échec préexistant sans rapport), backend 736/736
+      verte, monorepo entier vert.
+
+---
+
+## Refactor Domaine — Familles de moteurs prédictifs (cadrage 2026-08-17, VALUE/SAFE fait le 08-18)
+
+> Cadrage : [docs/prediction-engine-families.md](docs/prediction-engine-families.md)
+> (§0, portée football actuelle) · orchestration mise à jour en conséquence
+> dans [docs/channel-strategy-architecture.md](docs/channel-strategy-architecture.md)
+> (§5, §6.1, §11).
+>
+> Constat qui a déclenché ce refactor : `EV`/`SAFE` ne filtraient pas les
+> meilleures prédictions déjà validées par les 18 autres canaux — ils
+> re-scannaient tout `evaluatedMarkets` en parallèle, indépendamment des
+> canaux de marché. **Corrigé le 08-18** (voir item ci-dessous).
+>
+> **Famille A' — reportée, pas abandonnée par manque d'intérêt mais parce
+> que l'évidence ne la justifie pas encore** (2026-08-17) : le backtest
+> walk-forward déjà existant sur OVER_UNDER_HT
+> (`backtest-over-under-ht-shrinkage-calibration-2026-08-16.txt`) montre que
+> le Poisson brut basé sur `FIRST_HALF_GOAL_FRACTION = 0.44` est **déjà bien
+> calibré** sur 6 des 7 ligues où le canal a le droit de tourner (ΔBrier
+> ≈ 0.0000). L'hypothèse initiale ("0.44 cause probable du HT Over
+> désactivé") ne tient pas pour les ligues domestiques — le vrai contexte du
+> HT Over désactivé est la Coupe du Monde/sélections nationales, où le
+> volume est structurellement insuffisant pour calibrer par cette méthode
+> (WC : train=4, test=8). Pas de chantier de calibration lancé sans
+> évidence — voir TODO.md.
+
+- [-] **Famille A'** — reportée (voir constat ci-dessus), pas de biais
+  démontré à corriger sur les ligues où ça compte
+- [x] **VALUE/SAFE en Phase 2** (2026-08-18) — orchestrateur à 3 phases
+      (`FILTER_STRATEGY_CHANNELS` nouveau, décisions accumulées sur les 3
+      phases au lieu d'un snapshot figé pour la Phase 2 méta) :
+      Phase 1 = 16 canaux de marché → Phase 2 = VALUE/SAFE (filtrent les
+      décisions Phase 1 via `viablePicksFromPreviousDecisions`, plus de
+      scan de `evaluatedMarkets`) → Phase 3 = CONSENSUS/AVOID (inchangé,
+      voit maintenant VALUE/SAFE via la map accumulée). `context.
+evaluatedMarkets` n'est plus lu par aucun canal — candidat à
+      suppression (TODO.md). Simplification assumée : l'exception SAFE
+      "comparaison OVER/UNDER symétrique à haut lambda" (avait besoin de
+      plusieurs lignes O/U simultanées, incompatible avec "un pick par
+      canal de marché") a été retirée plutôt que bricolée — à revoir
+      pendant l'audit de calibration si son absence coûte du ROI. Suite
+      backend 957/957 verte, monorepo entier vert.
+- [ ] **Audit de calibration par (marché × ligue)** — une fois les deux
+      chantiers ci-dessus faits, établir lesquels des 16 canaux de marché
+      méritent réellement d'alimenter VALUE/SAFE
+
+---
+
+## Harnais de backtest partagé (cadrage + démarré 2026-08-17, non fini)
+
+> Cadrage : [docs/backtest-harness-architecture.md](docs/backtest-harness-architecture.md).
+> Déclenché par le même chantier que les familles ci-dessus : 27 scripts
+> `packages/db/scripts/backtest-*.ts` (11 338 lignes), aucun harnais
+> partagé — 17 rejouent le pipeline chacun à sa façon, 10 lisent Prisma
+> directement (même risque que `project_channel_whitelist_replay_gap`,
+> jamais audité sur les 9 autres).
+
+- [x] Bug trouvé et corrigé : `OddsSnapshotLoader.findLatestOddsSnapshot`
+      n'appliquait `cutoff` qu'au marché `ONE_X_TWO` — 16 marchés sur 17
+      retournaient toujours la cote la plus récente en base, cutoff ignoré
+      (impactait déjà le filtre de mouvement de cote en prod). Fix +
+      régression test, suite backend 956/956 verte (voir TODO.md "Bugs &
+      dette technique")
+- [x] Extraction `assembleFullOddsSnapshot` et dépendances pures
+      (`apps/backend/.../odds-snapshot.loader.ts` →
+      `packages/analysis-core/src/pricing/odds-assembly.ts`) — une seule
+      implémentation partagée par la prod et le futur harnais, plus de
+      copie qui pouvait diverger silencieusement
+- [x] `packages/backtest-core` — scaffold + garde-fou d'architecture testé
+      (seul `point-in-time-loader.ts` a le droit d'importer `@evcore/db`)
+- [x] `point-in-time-loader.ts` — cotes (`loadOdds`/`loadOddsBatch`, via
+      `assembleFullOddsSnapshot`) + énumération fixtures (`listFixtures`,
+      chronologique, `FINISHED` uniquement, respecte
+      `Competition.includeInBacktest`)
+- [x] `replay-engine.ts` — boucle chronologique (générateur async, un
+      `PointInTimeContext` propre par fixture)
+- [x] `PointInTimeLoader.loadTeamStats` — politique de repli
+      cross-compétition (Europe/sélections nationales/rollover domestique)
+      extraite en fonction pure `resolveEffectiveTeamStats`
+      (`packages/analysis-core/src/probability/team-stats-resolution.ts`) ;
+      `ev.constants.ts` ré-exporte au lieu de dupliquer
+- [x] `PointInTimeLoader.loadH2HLegs`/`loadH2HScore`/`loadH2HMarketSignals`/
+      `loadH2HScorelineSignal` — calcul pur extrait
+      (`packages/analysis-core/src/probability/h2h.ts`), `H2HService`
+      devient un pur appelant Prisma
+- [x] `PointInTimeLoader.loadCongestionScore` — calcul pur extrait
+      (`packages/analysis-core/src/probability/congestion.ts`),
+      `CongestionService` devient un pur appelant Prisma
+- [ ] Elo FRI (`fri-model.service.ts`/`fri-model.utils.ts`, canal FRI) — pas
+      encore extrait, même patron déjà applicable (utils déjà purs avec
+      leurs propres tests) ; reporté, canal de niche (V1 `ONE_X_TWO`
+      uniquement), voir TODO.md
+- [x] `backtest-runner.ts` — façade CLI (`BacktestRunner`, assemble cotes +
+      team stats + H2H + congestion par fixture)
+- [x] Premier script réel — `packages/backtest-core/scripts/coverage-check.ts`
+      (contrôle de couverture des données point-in-time). **Correction** :
+      les scripts consommant `backtest-core` vivent dans
+      `packages/backtest-core/scripts/`, pas `packages/db/scripts/` —
+      `@evcore/backtest-core` dépend déjà de `@evcore/db`, donc l'inverse
+      créerait un cycle de dépendance de package (trouvé en écrivant ce
+      script). Voir docs/backtest-harness-architecture.md §6.
+- [ ] Migration des 27 scripts existants vers le harnais, en commençant par
+      les 10 identifiés à risque
+- [ ] Composition finale : `deriveLambdas` + détermination du côté favori
+      (aujourd'hui inline dans `BettingEngineService.analyzeFixture`, pas
+      extraite) pour transformer les inputs assemblés par `BacktestRunner`
+      (cotes, team stats, H2H, congestion) en la probabilité/λ que le
+      moteur live aurait réellement produite — `BacktestRunner` fournit les
+      inputs point-in-time, pas encore la prédiction finale
 
 ---
 
@@ -777,7 +1054,12 @@ Docs de cadrage Phase 3:
 
 ## Au-delà — Extension multi-sport (différé, non planifié)
 
-> Cadrage : [docs/multi-sport-extension.md](docs/multi-sport-extension.md)
+> Cadrage : [docs/multi-sport-extension.md](docs/multi-sport-extension.md),
+> nuancé par [docs/prediction-engine-families.md](docs/prediction-engine-families.md)
+> §1 : pas « un socle par sport » mais **un moteur par famille de processus
+> générateur**, réutilisé par tous les sports qui la partagent (ex. basket et
+> foot US partageraient une famille marge/total, tennis et volleyball une
+> famille hiérarchique point→jeu→set).
 >
 > Le cœur probabiliste (Poisson) est spécifique au football ; « ajouter un sport »
 > = écrire un **second socle** derrière la même colonne stratégie/décision, pas une

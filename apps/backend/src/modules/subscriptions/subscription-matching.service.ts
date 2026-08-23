@@ -4,7 +4,10 @@ import Decimal from 'decimal.js';
 import { createLogger } from '@utils/logger';
 import { InvestmentService } from '@modules/investment/investment.service';
 import { ChannelDecisionService } from '@modules/betting-engine/channel-decision.service';
-import { findSubscriptionSource } from './subscription.constants';
+import {
+  findSubscriptionSource,
+  subscriptionSourceLabel,
+} from './subscription.constants';
 import { SubscriptionsRepository } from './subscriptions.repository';
 import { SubscriptionNotifierService } from './subscription-notifier.service';
 
@@ -147,7 +150,10 @@ export class SubscriptionMatchingService {
       await this.notifier.notify({
         userId: subscription.userId,
         type: NotificationType.SUBSCRIPTION_EVENTS_ADDED,
-        title: `Abonnement — ${subscription.sourceLabel}`,
+        title: `Abonnement — ${subscriptionSourceLabel(
+          subscription.sourceType,
+          subscription.sourceLabel,
+        )}`,
         body:
           created > 1
             ? `${created} nouveaux événements ajoutés`
@@ -215,21 +221,18 @@ export class SubscriptionMatchingService {
     // Sources CHANNEL_* : channelPickMode et topN sont garantis non-null par
     // la validation à la création (SubscriptionsService.create).
     const source = findSubscriptionSource(subscription.sourceType);
-    if (
-      !source ||
-      source.kind !== 'CHANNEL' ||
-      !source.channel ||
-      !source.investmentMode
-    ) {
+    if (!source || source.kind !== 'CHANNEL' || !source.channel) {
       return [];
     }
     const topN = subscription.topN ?? 1;
 
     if (subscription.channelPickMode === 'INVESTIR') {
-      const picks = await this.investmentService.listBestPicks({
+      // listChannelPicks, pas listPicks : un abonné a souscrit à un canal
+      // nommé, pas à la partition assumé/observation d'Investir, qui se
+      // recalcule à chaque mesure et peut basculer d'un jour à l'autre.
+      const picks = await this.investmentService.listChannelPicks({
         date: toIsoDate(today),
-        mode: source.investmentMode,
-        topN,
+        channel: source.channel,
       });
       return picks
         .filter((pick) => new Date(pick.scheduledAt) >= createdAt)

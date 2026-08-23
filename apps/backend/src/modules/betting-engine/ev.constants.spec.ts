@@ -3,14 +3,13 @@ import Decimal from 'decimal.js';
 import {
   EV_THRESHOLD,
   getLeagueEvThreshold,
-  getLeagueHomeAwayFactors,
   getLeagueMinSelectionOdds,
-  getLeagueThreeWayEmpiricalBlendWeight,
   getModelScoreThreshold,
   getPickDirectionProbabilityThreshold,
   getPickEvFloor,
   getPickMaxSelectionOdds,
   getPickMinSelectionOdds,
+  getValueMarketTrust,
 } from './ev.constants';
 
 describe('getLeagueEvThreshold', () => {
@@ -199,18 +198,6 @@ describe('getPickMaxSelectionOdds', () => {
   });
 });
 
-describe('getLeagueHomeAwayFactors', () => {
-  it('returns the reduced home-advantage override for D2', () => {
-    expect(getLeagueHomeAwayFactors('D2')).toEqual([1.02, 0.98]);
-  });
-});
-
-describe('getLeagueThreeWayEmpiricalBlendWeight', () => {
-  it('returns the F2 empirical rebalance weight', () => {
-    expect(getLeagueThreeWayEmpiricalBlendWeight('F2').toNumber()).toBe(0.3);
-  });
-});
-
 describe('getPickEvFloor', () => {
   it('returns a stronger EV floor for D2 1X2 HOME', () => {
     expect(
@@ -378,5 +365,21 @@ describe('getPickEvFloor', () => {
         new Decimal('0.08'),
       ).toNumber(),
     ).toBe(0.99);
+  });
+});
+
+describe('getValueMarketTrust', () => {
+  it('heavily discounts the highest-volume, worst-calibrated markets', () => {
+    expect(getValueMarketTrust('ONE_X_TWO').toNumber()).toBe(0.05);
+    expect(getValueMarketTrust('OVER_UNDER').toNumber()).toBe(0.05);
+    expect(getValueMarketTrust('BTTS').toNumber()).toBe(0.05);
+  });
+
+  it('gives full trust to a validated-reliable market', () => {
+    expect(getValueMarketTrust('DOUBLE_CHANCE').toNumber()).toBe(1);
+  });
+
+  it('falls back to full trust (1) for an unknown market', () => {
+    expect(getValueMarketTrust('SOME_FUTURE_MARKET').toNumber()).toBe(1);
   });
 });

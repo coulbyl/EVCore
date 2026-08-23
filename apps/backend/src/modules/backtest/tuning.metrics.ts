@@ -2,14 +2,17 @@
 // no Prisma — every channel's selection is reconstructed from the stored
 // signals + odds at each candidate threshold, then scored flat-stake.
 
-import { DOMINANT_MIN_MARGIN } from '@modules/betting-engine/strategies/channel-strategy.config';
-import type { ChannelStrategyConfigChannel } from '@modules/betting-engine/strategies/channel-strategy.config';
+import { DOMINANT_MIN_MARGIN } from '@evcore/analysis-core';
+import type {
+  ChannelStrategyConfigChannel,
+  GoalsLine,
+  TeamTotalLine,
+  TeamTotalTeam,
+} from '@evcore/analysis-core';
 import { getOneXTwoOutcome } from './backtest.report';
 import { flatRoi } from './backtest.metrics';
 import type { ChannelTuningRow } from './backtest.repository';
 import {
-  BTTS_NO_PROMOTION_RULE,
-  BTTS_NO_TUNING_THRESHOLD_GRID,
   CHANNEL_PROMOTION_RULE,
   GOALS_PROMOTION_RULE,
   GOALS_TUNING_THRESHOLD_GRID,
@@ -19,11 +22,6 @@ import {
   type ChannelPromotionRule,
   type GoalsTuningSide,
 } from './tuning.constants';
-import type {
-  GoalsLine,
-  TeamTotalLine,
-  TeamTotalTeam,
-} from '@modules/betting-engine/strategies/channel-strategy.config';
 
 const DOMINANT_MARGIN = DOMINANT_MIN_MARGIN.toNumber();
 
@@ -315,45 +313,6 @@ function goalsSelectables(
     });
   }
   return out;
-}
-
-// ─────────────────────────────────────────────
-// BTTS NO sweep — calibrated separately from YES and per-league. Signal is the
-// model P(NO BTTS); a selection wins when NOT both teams score. Promotion mirrors
-// BTTS YES (hit rate + non-negative ROI). Produces a per-competition threshold
-// recommendation so NO can be tuned championship by championship.
-// ─────────────────────────────────────────────
-
-export type BttsNoSweep = {
-  candidates: number;
-  points: ThresholdPoint[];
-  recommended: ThresholdRecommendation | null;
-};
-
-function bttsNoSelectables(rows: ChannelTuningRow[]): Selectable[] {
-  const out: Selectable[] = [];
-  for (const r of rows) {
-    if (r.probBttsNo === null || r.oddsBttsNo === null || r.oddsBttsNo <= 0) {
-      continue;
-    }
-    out.push({
-      signal: r.probBttsNo,
-      won: !(r.homeScore > 0 && r.awayScore > 0),
-      odds: r.oddsBttsNo,
-    });
-  }
-  return out;
-}
-
-/** Threshold sweep + recommendation for the BTTS NO side over a fixture set. */
-export function buildBttsNoSweep(rows: ChannelTuningRow[]): BttsNoSweep {
-  const selectables = bttsNoSelectables(rows);
-  const points = sweepGrid(BTTS_NO_TUNING_THRESHOLD_GRID, selectables);
-  return {
-    candidates: selectables.length,
-    points,
-    recommended: recommendFrom(BTTS_NO_PROMOTION_RULE, points),
-  };
 }
 
 /** Threshold sweep + ROI-driven recommendation for one GOALS (line × side). */

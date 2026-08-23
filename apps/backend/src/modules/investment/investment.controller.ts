@@ -11,11 +11,11 @@ export class InvestmentController {
   @Get()
   list(@Query() query: InvestmentQueryDto): Promise<InvestmentPick[]> {
     const today = new Date().toISOString().slice(0, 10);
-    return this.investments.listBestPicks({
+    return this.investments.listPicks({
       date: query.date ?? today,
+      view: query.view ?? 'assumed',
+      channel: query.channel,
       competitionCode: query.competitionCode,
-      mode: query.mode ?? 'probability',
-      topN: query.topN,
     });
   }
 }

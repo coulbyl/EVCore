@@ -46,7 +46,23 @@ const STATUS_LABEL: Record<ItemStatus, string> = {
   VOID: "Annulé",
 };
 
-function ResultPill({ status }: { status: ItemStatus }) {
+// DRAW_NO_BET's VOID is a stake refund on a drawn match, not a genuine
+// cancellation — same ItemStatus.VOID value (no distinct "refunded" status
+// in the data model), so the distinction has to be made here from the
+// item's market rather than the status alone.
+const REFUND_MARKETS = new Set(["DRAW_NO_BET"]);
+
+function ResultPill({
+  status,
+  market,
+}: {
+  status: ItemStatus;
+  market?: string;
+}) {
+  const label =
+    status === "VOID" && market !== undefined && REFUND_MARKETS.has(market)
+      ? "Remboursé"
+      : STATUS_LABEL[status];
   return (
     <span
       className={cn(
@@ -54,7 +70,7 @@ function ResultPill({ status }: { status: ItemStatus }) {
         STATUS_PILL[status],
       )}
     >
-      {STATUS_LABEL[status]}
+      {label}
     </span>
   );
 }
@@ -181,7 +197,7 @@ function SlipLeg({
               </span>
             )}
             <PnlDisplay item={item} slipType={slipType} />
-            <ResultPill status={status} />
+            <ResultPill status={status} market={item.market} />
           </div>
         </div>
 

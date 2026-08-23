@@ -5,16 +5,19 @@ import {
   calibratedLegProbability,
   calibrateLegProbability,
   clearsValueEdgeFloor,
-  comparePicksBySignalThenProbability,
-  recommendedCouponStakePct,
+  clearsMaxLegEdge,
+  clearsMinLegOdds,
+  depthRank,
   LEG_PROBABILITY_MODEL_WEIGHT,
 } from './coupon-composer.service';
-import { COUPON_PROFILES } from './coupon.constants';
-import type {
-  Canal,
-  MarketCalibration,
-  ScoredPick,
-} from './signal-window.service';
+import {
+  COUPON_BOUNDS,
+  COUPON_CLASSES,
+  COUPON_PARAMS,
+  MAX_POOL_PER_COMPETITION,
+  MIN_LEG_ODDS,
+} from './coupon.constants';
+import type { Canal, ScoredPick } from './signal-window.service';
 
 function makePick(overrides: {
   fixtureId: string;
@@ -27,6 +30,10 @@ function makePick(overrides: {
   calibratedProbability?: number | null;
   competition?: string;
   dayBucket?: string;
+  shadowConflict?: boolean | null;
+  offensiveBalance?: 'BALANCED' | 'ASYMMETRIC' | 'STRONGLY_ASYMMETRIC' | null;
+  priorAnalysisCount?: number;
+  legEV?: number | null;
 }): ScoredPick {
   return {
     fixtureId: overrides.fixtureId,
@@ -43,7 +50,8 @@ function makePick(overrides: {
     calibratedHitRate: overrides.calibratedHitRate,
     calibratedProbability: overrides.calibratedProbability ?? null,
     oddsSnapshot: overrides.oddsSnapshot,
-    legEV: null,
+    referenceOdds: overrides.oddsSnapshot,
+    legEV: overrides.legEV ?? null,
     pMarketFair: null,
     bookmakerMargin: null,
     edge: null,
@@ -55,11 +63,12 @@ function makePick(overrides: {
     recentForm: null,
     modelProbabilities: {},
     dataCoverage: null,
-    shadowConflict: null,
-    offensiveBalance: null,
-    priorAnalysisCount: 0,
+    shadowConflict: overrides.shadowConflict ?? null,
+    offensiveBalance: overrides.offensiveBalance ?? null,
+    priorAnalysisCount: overrides.priorAnalysisCount ?? 0,
     isCorrect: null,
     signalScore: overrides.signalScore,
+    pickSource: 'STAKED',
     featureSnapshot: {},
     homeLogo: null,
     awayLogo: null,
@@ -67,9 +76,37 @@ function makePick(overrides: {
     awayScore: null,
     homeHtScore: null,
     awayHtScore: null,
-    betId: null,
+    channelSelectionId: null,
     modelRunId: null,
   };
+}
+
+// Construit une jambe à divergence modèle↔marché RÉALISTE : la probabilité est
+// dérivée du prix (`1/cote + edge`) au lieu d'être choisie librement.
+//
+// Les fixtures portaient des edges de 0.17 à 0.52 (p. ex. probabilité 0.85 à
+// la cote 3.00 — le modèle annonçant 85% sur ce que le marché price à 33%).
+// Mesurée sur 51 860 sélections réglées, cette zone ne réalise que 0.537 de ce
+// qu'elle annonce, et MAX_LEG_EDGE la rejette désormais. Tester le composeur
+// sur des jambes qu'il ne verra plus jamais revenait à vérifier son
+// comportement sur une distribution qui n'existe pas.
+function makeEdgePick(overrides: {
+  fixtureId: string;
+  canal: Canal;
+  market: string;
+  oddsSnapshot: number;
+  signalScore: number;
+  edge?: number;
+  competition?: string;
+  dayBucket?: string;
+}): ScoredPick {
+  const probability = 1 / overrides.oddsSnapshot + (overrides.edge ?? 0.08);
+  return makePick({
+    ...overrides,
+    probability,
+    calibratedHitRate: probability,
+    calibratedProbability: probability,
+  });
 }
 
 describe('calibratedLegProbability', () => {
@@ -87,44 +124,69 @@ describe('calibratedLegProbability', () => {
 });
 
 describe('calibrateLegProbability', () => {
-  const calibration: MarketCalibration = {
-    OVER_UNDER: { meanError: 0.1285, betCount: 595 },
-    BTTS: { meanError: 0.039, betCount: 341 },
-    ONE_X_TWO: { meanError: 0.2, betCount: 10 }, // tracked but below MIN_BET_COUNT
-  };
+  const identity = { a: 1, b: 0, n: 0 };
+  // Slope < 1 flattens an over-confident channel toward its base rate — the
+  // shape every channel measured on 2026-08-22 actually needs.
+  const flattening = { a: 0.4, b: -0.3, n: 5000 };
 
-  it('subtracts the measured mean error for a tracked, well-sampled market', () => {
-    const value = calibrateLegProbability(
-      { probability: 0.66, calibratedHitRate: 0.6, market: 'OVER_UNDER' },
-      calibration,
-    );
-    expect(value).toBeCloseTo(0.66 - 0.1285, 10);
+  const makeWindow = (byChannel: Record<string, typeof identity>) => ({
+    channelReliability: byChannel,
+    pooledReliability: flattening,
   });
 
-  it('clamps the corrected probability into [capMin, capMax]', () => {
+  it('leaves a probability untouched under an identity curve', () => {
     const value = calibrateLegProbability(
-      { probability: 0.05, calibratedHitRate: 0.6, market: 'OVER_UNDER' },
-      { OVER_UNDER: { meanError: 0.5, betCount: 200 } },
+      { probability: 0.66, canal: 'DRAW' },
+      makeWindow({ DRAW: identity }),
     );
-    expect(value).toBeGreaterThanOrEqual(0.05); // capMin
+    expect(value).toBeCloseTo(0.66, 10);
   });
 
-  it('falls back to the blend for an untracked market (e.g. DOUBLE_CHANCE)', () => {
-    const leg = { probability: 0.8, calibratedHitRate: 0.6 };
-    const value = calibrateLegProbability(
-      { ...leg, market: 'DOUBLE_CHANCE' },
-      calibration,
+  it('applies the leg own channel curve, not another channel curve', () => {
+    const window = makeWindow({ DRAW: identity, VALUE: flattening });
+    const drawValue = calibrateLegProbability(
+      { probability: 0.8, canal: 'DRAW' },
+      window,
     );
-    expect(value).toBeCloseTo(calibratedLegProbability(leg), 10);
+    const valueValue = calibrateLegProbability(
+      { probability: 0.8, canal: 'VALUE' },
+      window,
+    );
+    expect(drawValue).toBeCloseTo(0.8, 10);
+    expect(valueValue).toBeLessThan(0.8);
   });
 
-  it('falls back to the blend when the market sample is below MIN_BET_COUNT', () => {
-    const leg = { probability: 0.8, calibratedHitRate: 0.6 };
-    const value = calibrateLegProbability(
-      { ...leg, market: 'ONE_X_TWO' },
-      calibration,
+  it('pulls an over-confident probability down and a low one up (flatter slope)', () => {
+    const window = makeWindow({ VALUE: flattening });
+    expect(
+      calibrateLegProbability({ probability: 0.85, canal: 'VALUE' }, window),
+    ).toBeLessThan(0.85);
+    expect(
+      calibrateLegProbability({ probability: 0.15, canal: 'VALUE' }, window),
+    ).toBeGreaterThan(0.15);
+  });
+
+  it('falls back to the pooled curve for a channel with no fit of its own', () => {
+    const window = makeWindow({ DRAW: identity });
+    const unknown = calibrateLegProbability(
+      { probability: 0.8, canal: 'HALF_TIME_FULL_TIME' },
+      window,
     );
-    expect(value).toBeCloseTo(calibratedLegProbability(leg), 10);
+    const pooled = calibrateLegProbability(
+      { probability: 0.8, canal: 'VALUE' },
+      makeWindow({ VALUE: flattening }),
+    );
+    expect(unknown).toBeCloseTo(pooled, 10);
+  });
+
+  it('clamps the calibrated probability into [capMin, capMax]', () => {
+    const extreme = { a: 5, b: 6, n: 5000 };
+    const value = calibrateLegProbability(
+      { probability: 0.99, canal: 'DRAW' },
+      makeWindow({ DRAW: extreme }),
+    );
+    expect(value).toBeLessThanOrEqual(COUPON_PARAMS.capMax);
+    expect(value).toBeGreaterThanOrEqual(COUPON_PARAMS.capMin);
   });
 });
 
@@ -184,59 +246,175 @@ describe('clearsValueEdgeFloor', () => {
   });
 });
 
-describe('comparePicksBySignalThenProbability', () => {
-  it('orders by signalScore first', () => {
-    const high = { signalScore: 0.7, probability: 0.5, calibratedHitRate: 0.5 };
-    const low = { signalScore: 0.6, probability: 0.9, calibratedHitRate: 0.9 };
-    expect(comparePicksBySignalThenProbability(high, low)).toBeLessThan(0);
+describe('depthRank', () => {
+  it('ranks BALANCED offensiveBalance above unknown above ASYMMETRIC above STRONGLY_ASYMMETRIC', () => {
+    const base = { shadowConflict: null, priorAnalysisCount: 0 };
+    const balanced = depthRank({ ...base, offensiveBalance: 'BALANCED' });
+    const unknown = depthRank({ ...base, offensiveBalance: null });
+    const asymmetric = depthRank({ ...base, offensiveBalance: 'ASYMMETRIC' });
+    const stronglyAsymmetric = depthRank({
+      ...base,
+      offensiveBalance: 'STRONGLY_ASYMMETRIC',
+    });
+    expect(balanced).toBeGreaterThan(unknown);
+    expect(unknown).toBeGreaterThan(asymmetric);
+    expect(asymmetric).toBeGreaterThan(stronglyAsymmetric);
   });
 
-  it('tie-breaks same-canal picks on blended probability, not insertion order', () => {
-    const weak = {
-      signalScore: 0.7,
-      probability: 0.55,
-      calibratedHitRate: 0.69,
-    };
-    const strong = {
-      signalScore: 0.7,
-      probability: 0.86,
-      calibratedHitRate: 0.69,
-    };
-    expect([weak, strong].sort(comparePicksBySignalThenProbability)[0]).toBe(
-      strong,
+  it('ranks no shadow conflict above unknown above conflict', () => {
+    const base = { offensiveBalance: null, priorAnalysisCount: 0 };
+    const noConflict = depthRank({ ...base, shadowConflict: false });
+    const unknown = depthRank({ ...base, shadowConflict: null });
+    const conflict = depthRank({ ...base, shadowConflict: true });
+    expect(noConflict).toBeGreaterThan(unknown);
+    expect(unknown).toBeGreaterThan(conflict);
+  });
+
+  it('prefers a higher priorAnalysisCount as a minor tie-break', () => {
+    const base = { offensiveBalance: null, shadowConflict: null };
+    const more = depthRank({ ...base, priorAnalysisCount: 5 });
+    const fewer = depthRank({ ...base, priorAnalysisCount: 0 });
+    expect(more).toBeGreaterThan(fewer);
+    // Capped — priorAnalysisCount alone must never outweigh offensiveBalance
+    // or shadowConflict, only break ties within the same tier.
+    const manyAnalysesButAsymmetric = depthRank({
+      offensiveBalance: 'ASYMMETRIC',
+      shadowConflict: null,
+      priorAnalysisCount: 100,
+    });
+    const noAnalysesButBalanced = depthRank({
+      offensiveBalance: 'BALANCED',
+      shadowConflict: null,
+      priorAnalysisCount: 0,
+    });
+    expect(noAnalysesButBalanced).toBeGreaterThan(manyAnalysesButAsymmetric);
+  });
+});
+
+describe('CouponComposerService.compose — anchor/value pool mix', () => {
+  const service = new CouponComposerService();
+
+  it('keeps both anchor and value legs in the pool instead of one dominant canal crowding it out', () => {
+    // 6 SAFE anchors (high probability, same canal — would flat-out dominate
+    // a pool sorted only by signalScore, since SAFE's CANAL_BASE_WEIGHT is
+    // the highest) across 6 different competitions, plus a genuinely good
+    // VALUE leg (moderate probability, real edge) on a 7th competition —
+    // the flat sort would never even consider whether VALUE has anything
+    // worth including.
+    const anchors = Array.from({ length: 6 }, (_, i) =>
+      makePick({
+        fixtureId: `anchor${i}`,
+        canal: 'SAFE',
+        market: `MARKET_A${i}`,
+        probability: 0.85,
+        calibratedHitRate: 0.85,
+        oddsSnapshot: 1.3,
+        signalScore: 0.9,
+        competition: `Anchor League ${i}`,
+      }),
     );
+    // Canal DOMINANT et non VALUE : VALUE ne fait plus partie du pool
+    // (POOL_EXCLUDED_CHANNELS) et son plancher d'edge `clearsValueEdgeFloor`
+    // (>= 0.10) est exactement le complémentaire de MAX_LEG_EDGE (<= 0.10).
+    const valueLeg = makePick({
+      fixtureId: 'value1',
+      canal: 'DOMINANT',
+      market: 'ONE_X_TWO',
+      probability: 0.535,
+      calibratedHitRate: 0.535,
+      calibratedProbability: 0.535,
+      oddsSnapshot: 2.2,
+      signalScore: 0.5,
+      competition: 'Value League',
+    });
+
+    const coupons = service.compose([...anchors, valueLeg], {
+      bounds: {
+        minLegs: 2,
+        maxLegs: 5,
+        minCombinedOdds: 1.0,
+        maxCombinedOdds: 20.0,
+      },
+    });
+    expect(
+      coupons.some((c) => c.legs.some((l) => l.fixtureId === 'value1')),
+    ).toBe(true);
+  });
+
+  it('caps candidates per competition in the pool, and legs per competition inside a coupon', () => {
+    // 10 anchor-grade legs all in the SAME competition. Two distinct rules
+    // apply and are deliberately different: the POOL keeps at most
+    // MAX_POOL_PER_COMPETITION of them (candidate diversity), while any
+    // single published coupon carries at most 2 (anti-correlation, see
+    // violatesAntiCorrelation). The pool cap was lowered to the intra-coupon
+    // value of 2 for a long time, which starved the search 75% of days
+    // without protecting anything the intra-coupon rule did not already
+    // cover — see MAX_POOL_PER_COMPETITION.
+    const sameLeague = Array.from({ length: 10 }, (_, i) =>
+      makePick({
+        fixtureId: `same${i}`,
+        canal: 'SAFE',
+        market: `MARKET_S${i}`,
+        probability: 0.8,
+        calibratedHitRate: 0.8,
+        oddsSnapshot: 1.35,
+        signalScore: 0.9 - i * 0.01,
+        competition: 'Crowded League',
+      }),
+    );
+
+    const coupons = service.compose(sameLeague, {
+      bounds: {
+        minLegs: 2,
+        maxLegs: 4,
+        minCombinedOdds: 1.0,
+        maxCombinedOdds: 10.0,
+      },
+    });
+
+    const usedFixtures = new Set(
+      coupons.flatMap((c) => c.legs.map((l) => l.fixtureId)),
+    );
+    expect(usedFixtures.size).toBeLessThanOrEqual(MAX_POOL_PER_COMPETITION);
+
+    for (const coupon of coupons) {
+      const fromCrowded = coupon.legs.filter(
+        (l) => l.competition === 'Crowded League',
+      );
+      expect(fromCrowded.length).toBeLessThanOrEqual(2);
+    }
   });
 });
 
 describe('CouponComposerService.compose', () => {
   const service = new CouponComposerService();
 
-  const safePick = makePick({
+  // Probabilities/odds raised vs. the pre-2026-08-15 fixtures — the
+  // Plus de correction au niveau coupon (voir MAX_LEG_EDGE) : la proba jointe
+  // combos need noticeably stronger raw numbers to still clear
+  // est le produit brut des probas de jambe, sans plancher d'EV ni de proba.
+  const safePick = makeEdgePick({
     fixtureId: 'f1',
     canal: 'SAFE',
     market: 'OVER_UNDER',
-    probability: 0.86,
-    calibratedHitRate: 0.69,
     oddsSnapshot: 1.35,
     signalScore: 0.7,
   });
-  const bttsStrong = makePick({
+  const bttsStrong = makeEdgePick({
     fixtureId: 'f2',
     canal: 'BTTS',
     market: 'BTTS',
-    probability: 0.65,
-    calibratedHitRate: 0.6875,
-    oddsSnapshot: 2.0,
+    oddsSnapshot: 2.4,
     signalScore: 0.65,
+    edge: 0.06,
   });
-  const bttsWeak = makePick({
+  const bttsWeak = makeEdgePick({
     fixtureId: 'f3',
     canal: 'BTTS',
     market: 'BTTS',
-    probability: 0.44,
-    calibratedHitRate: 0.6875,
-    oddsSnapshot: 2.5,
+    oddsSnapshot: 3.6,
     signalScore: 0.6,
+    edge: 0.075,
   });
 
   it('excludes a VALUE leg below the edge floor from every composed coupon', () => {
@@ -266,25 +444,28 @@ describe('CouponComposerService.compose', () => {
   });
 
   it('computes pick-specific joint probabilities for the same canal mix', () => {
-    const coupons = service.compose([safePick, bttsStrong, bttsWeak]);
+    // safePick+bttsStrong and safePick+bttsWeak share the "safePick" leg, so
+    // the strict no-shared-leg diversity rule (selectDiverseCoupons) would
+    // only ever publish one of them from a single compose() call together —
+    // composed independently here since the point of this test is that each
+    // pick-specific mix computes its OWN joint probability, not that both
+    // publish simultaneously (a separate concern, covered by the
+    // cross-coupon-diversity describe block below).
+    const strongCoupons = service.compose([safePick, bttsStrong]);
+    const weakCoupons = service.compose([safePick, bttsWeak]);
+    expect(strongCoupons).toHaveLength(1);
+    expect(weakCoupons).toHaveLength(1);
 
-    expect(coupons).toHaveLength(2);
-    const joints = coupons.map((c) => c.jointProbability).sort();
-    expect(joints[0]).not.toBeCloseTo(joints[1], 10);
+    const rawStrong = strongCoupons[0].rawJointProbability;
+    const rawWeak = weakCoupons[0].rawJointProbability;
+    expect(rawStrong).not.toBeCloseTo(rawWeak, 10);
 
     const expectedStrong =
       calibratedLegProbability(safePick) * calibratedLegProbability(bttsStrong);
     const expectedWeak =
       calibratedLegProbability(safePick) * calibratedLegProbability(bttsWeak);
-    // Both same-canal mixes are present, each with its own joint probability.
-    expect(
-      coupons.some(
-        (c) => Math.abs(c.jointProbability - expectedStrong) < 1e-10,
-      ),
-    ).toBe(true);
-    expect(
-      coupons.some((c) => Math.abs(c.jointProbability - expectedWeak) < 1e-10),
-    ).toBe(true);
+    expect(strongCoupons[0].jointProbability).toBeCloseTo(expectedStrong, 10);
+    expect(weakCoupons[0].jointProbability).toBeCloseTo(expectedWeak, 10);
   });
 
   it('sets couponEV = P_coupon × Odd_coupon − 1 from real odds', () => {
@@ -294,13 +475,53 @@ describe('CouponComposerService.compose', () => {
     expect(c.couponEV).toBeCloseTo(c.jointProbability * c.combinedOdds - 1, 10);
   });
 
-  it('ranks coupons by descending couponEV, not joint probability', () => {
-    const coupons = service.compose([safePick, bttsStrong, bttsWeak]);
-    expect(coupons[0].rank).toBe(1);
-    expect(coupons[0].couponEV).toBeGreaterThanOrEqual(coupons[1].couponEV);
-    // safe+bttsWeak has the higher EV (longer odds) despite a lower joint prob —
-    // so the value-driven order is the inverse of the joint-probability order.
-    expect(coupons[0].jointProbability).toBeLessThan(
+  it('publishes the highest-probability legs first, later coupons from what is left', () => {
+    // Le classement par EV décroissante a été retiré le 2026-08-22 : il perd
+    // contre le tri par probabilité dans 13 des 16 configurations comparées
+    // deux à deux (+6.7 points), et sur le test hors échantillon au niveau
+    // coupon (−25.94% contre −6.57%). La composition est gloutonne par
+    // probabilité, et chaque coupon consomme ses matchs.
+    const strong = makeEdgePick({
+      fixtureId: 'strong',
+      canal: 'SAFE',
+      market: 'OVER_UNDER',
+      oddsSnapshot: 1.3,
+      signalScore: 0.5,
+    });
+    const strong2 = makeEdgePick({
+      fixtureId: 'strong2',
+      canal: 'DOMINANT',
+      market: 'ONE_X_TWO',
+      oddsSnapshot: 1.35,
+      signalScore: 0.5,
+    });
+    const weak = makeEdgePick({
+      fixtureId: 'weak',
+      canal: 'GOALS',
+      market: 'BTTS',
+      oddsSnapshot: 3.4,
+      signalScore: 0.9, // signalScore élevé : ne doit PAS le faire remonter
+    });
+    const weak2 = makeEdgePick({
+      fixtureId: 'weak2',
+      canal: 'DRAW',
+      market: 'DOUBLE_CHANCE',
+      oddsSnapshot: 3.6,
+      signalScore: 0.9,
+    });
+
+    const coupons = service.compose([weak, weak2, strong, strong2]);
+
+    expect(coupons).toHaveLength(2);
+    expect(coupons[0].legs.map((l) => l.fixtureId).sort()).toEqual([
+      'strong',
+      'strong2',
+    ]);
+    expect(coupons[1].legs.map((l) => l.fixtureId).sort()).toEqual([
+      'weak',
+      'weak2',
+    ]);
+    expect(coupons[0].jointProbability).toBeGreaterThan(
       coupons[1].jointProbability,
     );
   });
@@ -349,8 +570,8 @@ describe('CouponComposerService.compose', () => {
       fixtureId: 'f1',
       canal: 'BTTS',
       market: 'BTTS',
-      probability: 0.7,
-      calibratedHitRate: 0.6875,
+      probability: 0.636,
+      calibratedHitRate: 0.636,
       oddsSnapshot: 1.8,
       signalScore: 0.66,
     });
@@ -363,220 +584,41 @@ describe('CouponComposerService.compose', () => {
   });
 });
 
-describe('CouponComposerService.compose — risk profiles', () => {
-  const service = new CouponComposerService();
-
-  // Short-odds, high-probability legs → fit the SAFE band (low combined odds,
-  // high joint probability).
-  const shortLegs = [
-    makePick({
-      fixtureId: 's1',
-      canal: 'SAFE',
-      market: 'OVER_UNDER',
-      probability: 0.9,
-      calibratedHitRate: 0.88,
-      oddsSnapshot: 1.3,
-      signalScore: 0.72,
-    }),
-    makePick({
-      fixtureId: 's2',
-      canal: 'DOMINANT',
-      market: 'ONE_X_TWO',
-      probability: 0.88,
-      calibratedHitRate: 0.86,
-      oddsSnapshot: 1.3,
-      signalScore: 0.71,
-    }),
-  ];
-
-  // Long-odds, moderate-probability legs → fit the AGGRESSIVE band (high combined
-  // odds, ≥ 3 legs).
-  const longLegs = [
-    makePick({
-      fixtureId: 'l1',
-      canal: 'SAFE',
-      market: 'OVER_UNDER',
-      probability: 0.62,
-      calibratedHitRate: 0.6,
-      oddsSnapshot: 1.8,
-      signalScore: 0.66,
-      competition: 'League A',
-    }),
-    makePick({
-      fixtureId: 'l2',
-      canal: 'DOMINANT',
-      market: 'ONE_X_TWO',
-      probability: 0.62,
-      calibratedHitRate: 0.6,
-      oddsSnapshot: 1.8,
-      signalScore: 0.65,
-      competition: 'League B',
-    }),
-    makePick({
-      fixtureId: 'l3',
-      canal: 'BTTS',
-      market: 'BTTS',
-      probability: 0.62,
-      calibratedHitRate: 0.6,
-      oddsSnapshot: 1.8,
-      signalScore: 0.64,
-      competition: 'League C',
-    }),
-  ];
-
-  it('SAFE keeps a viable short-odds, high-probability coupon within its bounds', () => {
-    const { SAFE } = COUPON_PROFILES;
-    const coupons = service.compose(shortLegs, SAFE);
-    expect(coupons.length).toBeGreaterThan(0);
-    for (const coupon of coupons) {
-      expect(coupon.legs.length).toBeGreaterThanOrEqual(SAFE.minLegs);
-      expect(coupon.combinedOdds).toBeLessThanOrEqual(SAFE.maxCombinedOdds);
-      expect(coupon.combinedOdds).toBeGreaterThanOrEqual(SAFE.minCombinedOdds);
-      expect(coupon.jointProbability).toBeGreaterThanOrEqual(
-        SAFE.minJointProbability,
-      );
-      expect(coupon.couponEV).toBeGreaterThanOrEqual(SAFE.minCouponEV);
-    }
-  });
-
-  it('SAFE rejects long-odds coupons (combined odds above its cap)', () => {
-    expect(service.compose(longLegs, COUPON_PROFILES.SAFE)).toHaveLength(0);
-  });
-
-  it('AGGRESSIVE requires ≥ 3 legs and high combined odds', () => {
-    const { AGGRESSIVE } = COUPON_PROFILES;
-    const coupons = service.compose(longLegs, AGGRESSIVE);
-    expect(coupons.length).toBeGreaterThan(0);
-    for (const coupon of coupons) {
-      expect(coupon.legs.length).toBeGreaterThanOrEqual(AGGRESSIVE.minLegs);
-      expect(coupon.combinedOdds).toBeGreaterThanOrEqual(
-        AGGRESSIVE.minCombinedOdds,
-      );
-    }
-  });
-
-  it('AGGRESSIVE excludes the 2-leg short-odds coupon (below minLegs/minCombinedOdds)', () => {
-    expect(service.compose(shortLegs, COUPON_PROFILES.AGGRESSIVE)).toHaveLength(
-      0,
-    );
-  });
-});
-
-describe('CouponComposerService.compose — longshot (composeGreedy)', () => {
-  const service = new CouponComposerService();
-
-  // 12 legs, odds 1.7 each: 1.7^8 ≈ 69.8 (inside [50,70]), 1.7^9 ≈ 118.7 (out
-  // of band) — the greedy walk should settle around 8 legs. Spread across 3
-  // days (4 legs/day) and 6 competitions (2 legs/competition, at the
-  // max-2-per-competition anti-correlation cap) with a distinct market per
-  // leg so the 1-per-(canal,market) cap never binds.
-  const days = ['2026-08-07', '2026-08-08', '2026-08-09'];
-  const competitions = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6'];
-  const canals: Canal[] = ['VALUE', 'SAFE', 'BTTS', 'DRAW', 'DOMINANT'];
-  const longshotLegs = Array.from({ length: 12 }, (_, i) =>
-    makePick({
-      fixtureId: `ls${i}`,
-      canal: canals[i % canals.length],
-      market: `MARKET_${i}`,
-      probability: 0.65,
-      calibratedHitRate: 0.65,
-      oddsSnapshot: 1.7,
-      signalScore: 0.9 - i * 0.01,
-      competition: competitions[i % competitions.length],
-      dayBucket: days[i % days.length],
-    }),
-  );
-
-  it('routes to composeGreedy above EXHAUSTIVE_LEG_THRESHOLD and hits the target odds band', () => {
-    const { LONGSHOT_WEEKEND } = COUPON_PROFILES;
-    const coupons = service.compose(longshotLegs, LONGSHOT_WEEKEND);
-    expect(coupons.length).toBeGreaterThan(0);
-    for (const coupon of coupons) {
-      expect(coupon.legs.length).toBeGreaterThanOrEqual(
-        LONGSHOT_WEEKEND.minLegs,
-      );
-      expect(coupon.legs.length).toBeLessThanOrEqual(LONGSHOT_WEEKEND.maxLegs);
-      expect(coupon.combinedOdds).toBeGreaterThanOrEqual(
-        LONGSHOT_WEEKEND.minCombinedOdds,
-      );
-      expect(coupon.combinedOdds).toBeLessThanOrEqual(
-        LONGSHOT_WEEKEND.maxCombinedOdds,
-      );
-      // No two legs share a fixture, and no competition contributes more
-      // than 2 legs — same anti-correlation rules as the exhaustive path.
-      const fixtureIds = coupon.legs.map((l) => l.fixtureId);
-      expect(new Set(fixtureIds).size).toBe(fixtureIds.length);
-      const perCompetition = new Map<string, number>();
-      for (const leg of coupon.legs) {
-        perCompetition.set(
-          leg.competition,
-          (perCompetition.get(leg.competition) ?? 0) + 1,
-        );
-      }
-      for (const count of perCompetition.values()) {
-        expect(count).toBeLessThanOrEqual(2);
-      }
-    }
-  });
-
-  it('caps legs per day at maxLegsPerDay', () => {
-    const { LONGSHOT_WEEKEND } = COUPON_PROFILES;
-    const coupons = service.compose(longshotLegs, LONGSHOT_WEEKEND);
-    expect(coupons.length).toBeGreaterThan(0);
-    for (const coupon of coupons) {
-      const perDay = new Map<string, number>();
-      for (const leg of coupon.legs) {
-        perDay.set(leg.dayBucket, (perDay.get(leg.dayBucket) ?? 0) + 1);
-      }
-      for (const count of perDay.values()) {
-        expect(count).toBeLessThanOrEqual(LONGSHOT_WEEKEND.maxLegsPerDay!);
-      }
-    }
-  });
-
-  it('a tight maxLegsPerDay forces the walk to spread across more days', () => {
-    const tightProfile = {
-      ...COUPON_PROFILES.LONGSHOT_WEEKEND,
-      maxLegsPerDay: 2,
-      minLegs: 2,
-      minCombinedOdds: 1.0,
-      minJointProbability: 0,
-      minCouponEV: -1,
-    };
-    const coupons = service.compose(longshotLegs, tightProfile);
-    expect(coupons.length).toBeGreaterThan(0);
-    for (const coupon of coupons) {
-      const perDay = new Map<string, number>();
-      for (const leg of coupon.legs) {
-        perDay.set(leg.dayBucket, (perDay.get(leg.dayBucket) ?? 0) + 1);
-      }
-      for (const count of perDay.values()) {
-        expect(count).toBeLessThanOrEqual(2);
-      }
-    }
-  });
-});
-
 describe('CouponComposerService.compose — cross-coupon diversity', () => {
   const service = new CouponComposerService();
 
-  // A dominant "star" leg (high probability) paired with 4 weaker partners —
+  // Permissive bounds, decoupled from any specific profile's backtested
+  // thresholds — these tests exercise `selectDiverseCoupons`'s no-shared-leg
+  // rule itself, not a profile's business viability numbers (which, post
+  // jointProbability correction, would force unrealistically near-certain
+  // fixture probabilities just to clear minJointProbability/minCouponEV).
+  const DIVERSITY_TEST_PROFILE = {
+    bounds: {
+      minLegs: 2,
+      maxLegs: 5,
+      minCombinedOdds: 1.0,
+      maxCombinedOdds: 20.0,
+    },
+  };
+
+  // A dominant "star" leg (high probability) paired with 6 weaker partners —
   // every star+partner pair beats every partner+partner pair on EV, so a
-  // naive top-3-by-EV would return star+p1, star+p2, star+p3: the star leg
-  // in all 3 coupons, exactly the "répétition absurde" this fix targets.
-  // Partner+partner pairs still clear the profile's viability bounds on
-  // their own, so there ARE genuine star-free alternatives available.
+  // naive EV-only ranking would return star+p1, star+p2, star+p3, ...: the
+  // star leg riding into every published coupon. With 6 partners the pool
+  // supports 3 fully leg-disjoint pairs (star+p_i, then two partner-only
+  // pairs using the rest) — enough to show the star is confined to at most
+  // one coupon while still publishing multiple coupons, not just fewer.
   const star = makePick({
     fixtureId: 'star',
     canal: 'SAFE',
     market: 'OVER_UNDER',
-    probability: 0.85,
-    calibratedHitRate: 0.85,
+    probability: 0.713,
+    calibratedHitRate: 0.713,
     oddsSnapshot: 1.58,
     signalScore: 0.9,
     competition: 'Star League',
   });
-  const partners = ['p1', 'p2', 'p3', 'p4'].map((id, i) =>
+  const partners = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'].map((id, i) =>
     makePick({
       fixtureId: id,
       canal: 'DOMINANT',
@@ -589,55 +631,294 @@ describe('CouponComposerService.compose — cross-coupon diversity', () => {
     }),
   );
 
-  it('does not let one dominant leg ride into every returned coupon', () => {
-    const coupons = service.compose([star, ...partners], COUPON_PROFILES.SAFE);
-    expect(coupons).toHaveLength(3);
-    const withoutStar = coupons.filter(
-      (c) => !c.legs.some((l) => l.fixtureId === 'star'),
+  it('confines the dominant leg to at most one published coupon, and none share a leg', () => {
+    const coupons = service.compose(
+      [star, ...partners],
+      DIVERSITY_TEST_PROFILE,
     );
-    expect(withoutStar.length).toBeGreaterThan(0);
+    expect(coupons.length).toBeGreaterThan(1);
+    const withStar = coupons.filter((c) =>
+      c.legs.some((l) => l.fixtureId === 'star'),
+    );
+    expect(withStar.length).toBeLessThanOrEqual(1);
+    // No two published coupons may share a single leg — the exact rule that
+    // caused two ranked coupons to lose together on 2026-08-15 (a shared
+    // TEAM_TOTAL_HOME leg at 1/3 overlap, under the old 50% ratio threshold).
+    for (let i = 0; i < coupons.length; i++) {
+      for (let j = i + 1; j < coupons.length; j++) {
+        const keysA = new Set(coupons[i].legs.map((l) => l.fixtureId));
+        const overlaps = coupons[j].legs.some((l) => keysA.has(l.fixtureId));
+        expect(overlaps).toBe(false);
+      }
+    }
   });
 
   it('still returns the single best (highest-EV) coupon first', () => {
-    const coupons = service.compose([star, ...partners], COUPON_PROFILES.SAFE);
+    const coupons = service.compose(
+      [star, ...partners],
+      DIVERSITY_TEST_PROFILE,
+    );
     expect(coupons[0]?.legs.some((l) => l.fixtureId === 'star')).toBe(true);
     expect(coupons[0]?.rank).toBe(1);
   });
+
+  // Direct regression for the 2026-08-15 incident: a coupon sharing exactly
+  // one leg out of three (ratio 1/3 ≈ 0.33) with an already-selected coupon
+  // used to be ACCEPTED (old threshold was ratio ≥ 0.5). It must now be
+  // rejected outright, even though a genuinely disjoint alternative exists.
+  it('rejects a 3-leg coupon sharing just one leg with an already-selected coupon', () => {
+    const shared = makePick({
+      fixtureId: 'shared',
+      canal: 'SAFE',
+      market: 'OVER_UNDER',
+      probability: 0.58,
+      calibratedHitRate: 0.58,
+      oddsSnapshot: 2.0,
+      signalScore: 0.9,
+      competition: 'League Shared',
+    });
+    const rest = ['w', 'x', 'y', 'z', 'v', 'u'].map((id, i) =>
+      makePick({
+        fixtureId: id,
+        canal: 'SAFE',
+        market: `MARKET_${id}`,
+        probability: 0.58,
+        calibratedHitRate: 0.58,
+        oddsSnapshot: 2.0,
+        signalScore: 0.85 - i * 0.01,
+        competition: `League ${id}`,
+      }),
+    );
+
+    const coupons = service.compose([shared, ...rest], DIVERSITY_TEST_PROFILE);
+    expect(coupons.length).toBeGreaterThan(1);
+    const withShared = coupons.filter((c) =>
+      c.legs.some((l) => l.fixtureId === 'shared'),
+    );
+    expect(withShared.length).toBeLessThanOrEqual(1);
+    for (let i = 0; i < coupons.length; i++) {
+      for (let j = i + 1; j < coupons.length; j++) {
+        const keysA = new Set(coupons[i].legs.map((l) => l.fixtureId));
+        const overlaps = coupons[j].legs.some((l) => keysA.has(l.fixtureId));
+        expect(overlaps).toBe(false);
+      }
+    }
+  });
+
+  // Regression 2026-08-16: VALUE and DOMINANT can both independently pick
+  // ONE_X_TWO/HOME on the same fixture — the same underlying bet under two
+  // different channel labels. Before the fix, sharesAnyLeg compared on a
+  // canal-inclusive key, so these two ScoredPicks registered as "different"
+  // legs and could ride into two separately-published coupons, both losing
+  // together on the same result — the exact correlation the 08-15 fix was
+  // meant to close, just entered from the cross-canal side.
+  it('never publishes two coupons that both carry the same (fixture, market, pick) under different canals', () => {
+    const valueHome = makePick({
+      fixtureId: 'crosscanal',
+      canal: 'VALUE',
+      market: 'ONE_X_TWO',
+      probability: 0.6,
+      calibratedHitRate: 0.6,
+      oddsSnapshot: 1.7,
+      signalScore: 0.9,
+      competition: 'Cross Canal League',
+    });
+    const dominantHome = makePick({
+      fixtureId: 'crosscanal',
+      canal: 'DOMINANT',
+      market: 'ONE_X_TWO',
+      probability: 0.6,
+      calibratedHitRate: 0.6,
+      oddsSnapshot: 1.7,
+      signalScore: 0.85,
+      competition: 'Cross Canal League',
+    });
+    const partners = ['q1', 'q2', 'q3', 'q4'].map((id, i) =>
+      makePick({
+        fixtureId: id,
+        canal: 'SAFE',
+        market: `MARKET_${id}`,
+        probability: 0.55,
+        calibratedHitRate: 0.55,
+        oddsSnapshot: 2.0,
+        signalScore: 0.8 - i * 0.01,
+        competition: `League ${id}`,
+      }),
+    );
+
+    const coupons = service.compose(
+      [valueHome, dominantHome, ...partners],
+      DIVERSITY_TEST_PROFILE,
+    );
+    const withCrossCanal = coupons.filter((c) =>
+      c.legs.some((l) => l.fixtureId === 'crosscanal'),
+    );
+    expect(withCrossCanal.length).toBeLessThanOrEqual(1);
+  });
 });
 
-describe('recommendedCouponStakePct', () => {
-  it('returns the flat default stake when Kelly is disabled', () => {
-    const stake = recommendedCouponStakePct(
-      { jointProbability: 0.5, combinedOdds: 3 },
-      false,
-    );
-    expect(stake).toBeCloseTo(0.01, 10); // DEFAULT_STAKE_PCT
+describe('clearsMaxLegEdge', () => {
+  const leg = (probability: number, oddsSnapshot: number | null) => ({
+    calibratedProbability: probability,
+    probability,
+    calibratedHitRate: probability,
+    oddsSnapshot,
   });
 
-  it('applies fractional Kelly when enabled, capped at the max stake', () => {
-    // P=0.5, O=3 → Kelly=(1.5−1)/(3−1)=0.25 → ×0.25=0.0625 → capped at 0.05.
-    const stake = recommendedCouponStakePct(
-      { jointProbability: 0.5, combinedOdds: 3 },
-      true,
-    );
-    expect(stake).toBeCloseTo(0.05, 10); // KELLY_MAX_STAKE_PCT cap
+  it('accepts a leg whose model↔market divergence stays inside the measured band', () => {
+    expect(clearsMaxLegEdge(leg(0.55, 2.0))).toBe(true); // edge 0.05
   });
 
-  it('returns the uncapped quarter-Kelly stake for a smaller edge', () => {
-    // P=0.4, O=3 → Kelly=(1.2−1)/(3−1)=0.1 → ×0.25=0.025 (below cap).
-    const stake = recommendedCouponStakePct(
-      { jointProbability: 0.4, combinedOdds: 3 },
-      true,
-    );
-    expect(stake).toBeCloseTo(0.025, 10);
+  it('rejects a leg claiming more edge than the model has been measured to have', () => {
+    // edge 0.30 — la tranche qui ne réalise que 0.537 de ce qu'elle annonce
+    expect(clearsMaxLegEdge(leg(0.7, 2.5))).toBe(false);
   });
 
-  it('returns 0 for a non-value coupon (negative Kelly)', () => {
-    // P=0.3, O=3 → P×O=0.9 < 1 → Kelly ≤ 0.
-    const stake = recommendedCouponStakePct(
-      { jointProbability: 0.3, combinedOdds: 3 },
-      true,
+  it('accepts a leg the model prices BELOW the market (negative edge)', () => {
+    // ratio 1.062 dans cette zone : le modèle y est sous-confiant
+    expect(clearsMaxLegEdge(leg(0.4, 2.0))).toBe(true);
+  });
+
+  it('rejects a leg with no real odds — edge is undefined without a price', () => {
+    expect(clearsMaxLegEdge(leg(0.6, null))).toBe(false);
+  });
+
+  // Le point critique du passage au meilleur prix : miser plus cher ne doit
+  // pas relâcher le plafond de divergence. Même jambe, prix de mise amélioré
+  // de 2.0 à 2.6 — l'edge mesuré ne bouge pas, parce qu'il se calcule sur la
+  // cote de référence.
+  it('measures the edge on the reference odds, not on the improved stake price', () => {
+    const improved = {
+      calibratedProbability: 0.55,
+      probability: 0.55,
+      calibratedHitRate: 0.55,
+      oddsSnapshot: 2.6, // meilleur prix : 0.55 - 1/2.6 = 0.165 > MAX_LEG_EDGE
+      referenceOdds: 2.0, // référence   : 0.55 - 1/2.0 = 0.05  <= MAX_LEG_EDGE
+    };
+    expect(clearsMaxLegEdge(improved)).toBe(true);
+
+    const genuinelyDivergent = { ...improved, referenceOdds: 2.6 };
+    expect(clearsMaxLegEdge(genuinelyDivergent)).toBe(false);
+  });
+});
+
+describe('clearsMinLegOdds', () => {
+  it('rejects a leg priced below the product floor', () => {
+    // Le cas réel du 2026-08-22 : une jambe à 1.04 dans un coupon à 1.30.
+    expect(clearsMinLegOdds({ oddsSnapshot: 1.04 })).toBe(false);
+    expect(clearsMinLegOdds({ oddsSnapshot: 1.19 })).toBe(false);
+  });
+
+  it('accepts a leg at or above the floor', () => {
+    expect(clearsMinLegOdds({ oddsSnapshot: 1.2 })).toBe(true);
+    expect(clearsMinLegOdds({ oddsSnapshot: 2.4 })).toBe(true);
+  });
+
+  it('rejects a leg with no real odds', () => {
+    expect(clearsMinLegOdds({ oddsSnapshot: null })).toBe(false);
+  });
+
+  // Ce qui différencie les classes : chacune n'admet que sa bande de cote, et
+  // les bandes sont disjointes — un même pick ne peut donc jamais apparaître
+  // dans deux classes.
+  it('confines a leg to its class band, exclusive at the upper bound', () => {
+    const safe = { minLegOdds: 1.2, maxLegOdds: 1.6 };
+    const balanced = { minLegOdds: 1.6, maxLegOdds: 2.3 };
+
+    expect(clearsMinLegOdds({ oddsSnapshot: 1.45 }, safe)).toBe(true);
+    expect(clearsMinLegOdds({ oddsSnapshot: 1.45 }, balanced)).toBe(false);
+
+    // 1.60 appartient à BALANCED, pas à SAFE — borne haute exclusive, sans
+    // quoi les bandes se chevaucheraient d'un pick.
+    expect(clearsMinLegOdds({ oddsSnapshot: 1.6 }, safe)).toBe(false);
+    expect(clearsMinLegOdds({ oddsSnapshot: 1.6 }, balanced)).toBe(true);
+  });
+});
+
+describe('COUPON_CLASSES', () => {
+  it('covers the odds range without gap or overlap', () => {
+    for (let i = 1; i < COUPON_CLASSES.length; i += 1) {
+      expect(COUPON_CLASSES[i].minLegOdds).toBe(
+        COUPON_CLASSES[i - 1].maxLegOdds,
+      );
+    }
+    expect(COUPON_CLASSES[0].minLegOdds).toBe(MIN_LEG_ODDS);
+  });
+
+  it('lands each class on a distinct persisted odds range', () => {
+    for (let i = 1; i < COUPON_CLASSES.length; i += 1) {
+      expect(COUPON_CLASSES[i].targetOddsMin).toBeGreaterThan(
+        COUPON_CLASSES[i - 1].targetOddsMax,
+      );
+    }
+  });
+});
+
+describe('CouponComposerService.compose — cible de cote par classe', () => {
+  const service = new CouponComposerService();
+  const legs = ['a', 'b', 'c', 'd', 'e', 'f'].map((id, i) =>
+    makeEdgePick({
+      fixtureId: id,
+      canal: 'DOMINANT',
+      market: `MARKET_${id}`,
+      oddsSnapshot: 1.5,
+      signalScore: 0.9 - i * 0.01,
+      competition: `League ${id}`,
+    }),
+  );
+
+  it('stops adding legs as soon as the class target is reached', () => {
+    // 1.5 × 1.5 = 2.25 ≥ 2.0 → deux jambes suffisent, on n'en prend pas trois.
+    const [coupon] = service.compose(legs, { targetCombinedOdds: 2.0 });
+    expect(coupon.legs).toHaveLength(2);
+    expect(coupon.combinedOdds).toBeGreaterThanOrEqual(2.0);
+  });
+
+  it('keeps adding legs when the target needs them', () => {
+    // 2.25 < 3.0 → il faut la troisième jambe (3.375).
+    const [coupon] = service.compose(legs, { targetCombinedOdds: 3.0 });
+    expect(coupon.legs).toHaveLength(3);
+    expect(coupon.combinedOdds).toBeGreaterThanOrEqual(3.0);
+  });
+
+  it('publishes nothing rather than a coupon below its target', () => {
+    // 1.5^3 = 3.375 < 50 : aucune construction ne peut atteindre la cible.
+    // Publier quand même était le bug du 2026-08-22 — 60% des coupons de la
+    // classe à cote courte sortaient sous 2.0, jusqu'à 1.44.
+    expect(service.compose(legs, { targetCombinedOdds: 50 })).toHaveLength(0);
+  });
+
+  it('reaches the target from deeper in the pool when the top legs cannot', () => {
+    // Deux jambes très courtes en tête (produit 1.32 < 2.0) et des jambes plus
+    // longues derrière : le glouton doit repartir plus bas dans le vivier
+    // plutôt que publier sous la cible.
+    const short = ['s1', 's2'].map((id, i) =>
+      makeEdgePick({
+        fixtureId: id,
+        canal: 'SAFE',
+        market: `SHORT_${id}`,
+        oddsSnapshot: 1.15,
+        signalScore: 0.99 - i * 0.01,
+        competition: `Short ${id}`,
+      }),
     );
-    expect(stake).toBe(0);
+    const longer = ['l1', 'l2'].map((id, i) =>
+      makeEdgePick({
+        fixtureId: id,
+        canal: 'DOMINANT',
+        market: `LONG_${id}`,
+        oddsSnapshot: 1.6,
+        signalScore: 0.5 - i * 0.01,
+        competition: `Long ${id}`,
+      }),
+    );
+
+    const [coupon] = service.compose([...short, ...longer], {
+      targetCombinedOdds: 2.0,
+      bounds: { ...COUPON_BOUNDS, maxLegs: 2 },
+    });
+
+    expect(coupon).toBeDefined();
+    expect(coupon.combinedOdds).toBeGreaterThanOrEqual(2.0);
   });
 });

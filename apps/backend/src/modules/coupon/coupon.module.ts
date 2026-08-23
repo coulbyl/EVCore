@@ -32,6 +32,7 @@ import { CouponController } from './coupon.controller';
     CouponSettlementService,
     SignalWindowService,
     CouponComposerService,
+    CouponRepository,
   ],
 })
 export class CouponModule {}

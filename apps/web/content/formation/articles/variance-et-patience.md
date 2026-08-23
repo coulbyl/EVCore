@@ -5,7 +5,7 @@ difficulty: intermediate
 order: 2
 slug: variance-et-patience
 summary: "Un edge positif n'empêche pas une série de défaites. Comprendre pourquoi, avec un exemple chiffré, est ce qui sépare une discipline tenue d'un abandon prématuré."
-updatedAt: "2026-07-16"
+updatedAt: "2026-08-22"
 related: ["unite-de-mise", "allocation-et-timing", "ev-probabilites-cotes"]
 ---
 
@@ -27,7 +27,7 @@ probabilité de 5 défaites d'affilée = (1 − 0.55)^5 ≈ 1.85%
 
 La page Portefeuille affiche un ROI net et un graphique d'évolution du solde. Ces deux indicateurs racontent ce qui s'est réellement passé, mais une baisse récente du solde ne veut pas dire que la stratégie a cessé de fonctionner. La bonne question n'est jamais "ai-je perdu les 5 derniers paris ?" — c'est "la méthode de sélection reste-t-elle celle qui a été testée et documentée ?".
 
-C'est le même principe que dans la leçon sur les canaux : DOMINANT reste rentable sur son top 5, même si certains jours ce top 5 perd. Juger une méthode sur une courte séquence, plutôt que sur son historique complet, reste une erreur de lecture statistique — pas un signal d'alarme.
+Et la question suivante est celle du volume. À nos cadences, l'écart entre un bon et un mauvais trimestre reste sous le seuil de ce qu'on peut distinguer du hasard : il faut des milliers de paris réglés pour trancher quelques points de ROI, pas quelques dizaines. Juger une méthode sur une courte séquence n'est donc pas seulement impatient — c'est mathématiquement impossible.
 
 ## Ce que la discipline veut dire, concrètement
 

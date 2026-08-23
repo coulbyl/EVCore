@@ -14,7 +14,10 @@ describe("shrinkOverUnderProbabilities", () => {
     expect(shrinkOverUnderProbabilities(probabilities, null)).toBe(
       probabilities,
     );
-    expect(getOverUnderShrinkageConfig("PL")).toBeNull();
+    // PL is stale as a "no config" example — it later shipped an ouHt
+    // block (2026-08-16, OVER_UNDER_HT_UNSHRUNK_BASE); GER2 never shipped
+    // any block for any market.
+    expect(getOverUnderShrinkageConfig("GER2")).toBeNull();
     expect(getOverUnderShrinkageConfig(null)).toBeNull();
   });
 
@@ -275,5 +278,110 @@ describe("shrinkOverUnderProbabilities", () => {
     expect(shrunk.cleanSheetAway).toBe(probabilities.cleanSheetAway);
     expect(shrunk.winEitherHalfHome).toBe(probabilities.winEitherHalfHome);
     expect(shrunk.winEitherHalfAway).toBe(probabilities.winEitherHalfAway);
+  });
+
+  it("shrinks WIN_TO_NIL_HOME/AWAY independently per side, home and away are not complements", () => {
+    const ARG1 = getOverUnderShrinkageConfig("ARG1")!;
+    expect(ARG1.winToNilHome).toBeDefined();
+    expect(ARG1.winToNilAway).toBeDefined();
+
+    const probabilities = computePoissonMarkets(1.4, 1.2);
+    const shrunk = shrinkOverUnderProbabilities(probabilities, ARG1);
+
+    const expectedHome = new Decimal(ARG1.winToNilHome!.base).plus(
+      new Decimal(ARG1.winToNilHome!.factor).times(
+        probabilities.winToNilHome.minus(ARG1.winToNilHome!.base),
+      ),
+    );
+    const expectedAway = new Decimal(ARG1.winToNilAway!.base).plus(
+      new Decimal(ARG1.winToNilAway!.factor).times(
+        probabilities.winToNilAway.minus(ARG1.winToNilAway!.base),
+      ),
+    );
+    expect(shrunk.winToNilHome.toNumber()).toBeCloseTo(
+      expectedHome.toNumber(),
+      12,
+    );
+    expect(shrunk.winToNilAway.toNumber()).toBeCloseTo(
+      expectedAway.toNumber(),
+      12,
+    );
+  });
+
+  it("does not touch winToNil when the config has no such block", () => {
+    const probabilities = computePoissonMarkets(1.4, 1.2);
+    const config = { factor: NOR2.factor, baseRates: NOR2.baseRates };
+    const shrunk = shrinkOverUnderProbabilities(probabilities, config);
+    expect(shrunk.winToNilHome).toBe(probabilities.winToNilHome);
+    expect(shrunk.winToNilAway).toBe(probabilities.winToNilAway);
+  });
+
+  it("shrinks DRAW_NO_BET as a complementary pair (dnbAway = 1 - dnbHome)", () => {
+    const ARG1 = getOverUnderShrinkageConfig("ARG1")!;
+    expect(ARG1.dnbHome).toBeDefined();
+
+    const probabilities = computePoissonMarkets(1.4, 1.2);
+    const shrunk = shrinkOverUnderProbabilities(probabilities, ARG1);
+
+    const expectedDnbHome = new Decimal(ARG1.dnbHome!.base).plus(
+      new Decimal(ARG1.dnbHome!.factor).times(
+        probabilities.dnbHome.minus(ARG1.dnbHome!.base),
+      ),
+    );
+    expect(shrunk.dnbHome.toNumber()).toBeCloseTo(
+      expectedDnbHome.toNumber(),
+      12,
+    );
+    expect(shrunk.dnbAway.toNumber()).toBeCloseTo(
+      new Decimal(1).minus(expectedDnbHome).toNumber(),
+      12,
+    );
+  });
+
+  it("does not touch dnbHome/dnbAway when the config has no dnbHome block", () => {
+    const probabilities = computePoissonMarkets(1.4, 1.2);
+    const config = { factor: NOR2.factor, baseRates: NOR2.baseRates };
+    const shrunk = shrinkOverUnderProbabilities(probabilities, config);
+    expect(shrunk.dnbHome).toBe(probabilities.dnbHome);
+    expect(shrunk.dnbAway).toBe(probabilities.dnbAway);
+  });
+
+  it("shrinks RESULT_BTTS by shrinking the YES joint probability, deriving NO from the side mass", () => {
+    const probabilities = computePoissonMarkets(1.4, 1.2);
+    const config = {
+      resultBtts: {
+        HOME: { factor: 0.4, base: 0.15 },
+      },
+    };
+    const shrunk = shrinkOverUnderProbabilities(probabilities, config);
+
+    const rawYes = probabilities.resultBtts.HOME_YES!;
+    const expectedYes = new Decimal(0.15).plus(
+      new Decimal(0.4).times(rawYes.minus(0.15)),
+    );
+    expect(shrunk.resultBtts.HOME_YES!.toNumber()).toBeCloseTo(
+      expectedYes.toNumber(),
+      12,
+    );
+
+    const expectedNo = probabilities.home.minus(expectedYes);
+    expect(shrunk.resultBtts.HOME_NO!.toNumber()).toBeCloseTo(
+      expectedNo.toNumber(),
+      12,
+    );
+    expect(
+      shrunk.resultBtts.HOME_YES!.plus(shrunk.resultBtts.HOME_NO!).toNumber(),
+    ).toBeCloseTo(probabilities.home.toNumber(), 12);
+
+    // DRAW/AWAY are untouched.
+    expect(shrunk.resultBtts.DRAW_YES).toBe(probabilities.resultBtts.DRAW_YES);
+    expect(shrunk.resultBtts.AWAY_YES).toBe(probabilities.resultBtts.AWAY_YES);
+  });
+
+  it("does not touch resultBtts when the config has no resultBtts block", () => {
+    const probabilities = computePoissonMarkets(1.4, 1.2);
+    const config = { factor: NOR2.factor, baseRates: NOR2.baseRates };
+    const shrunk = shrinkOverUnderProbabilities(probabilities, config);
+    expect(shrunk.resultBtts).toBe(probabilities.resultBtts);
   });
 });

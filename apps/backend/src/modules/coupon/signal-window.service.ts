@@ -1,15 +1,25 @@
 import { Injectable } from '@nestjs/common';
-import { Market, StrategyChannel } from '@evcore/db';
+import {
+  BetStatus,
+  ChannelDecisionStatus,
+  Market,
+  StrategyChannel,
+} from '@evcore/db';
 import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
 import { CalibrationService } from '@modules/adjustment/calibration.service';
+import type {
+  ChannelReliability,
+  ChannelReliabilityMap,
+} from '@modules/adjustment/channel-reliability';
 import { OddsSnapshotLoader } from '@modules/betting-engine/pricing/odds-snapshot.loader';
 import {
   bookmakerMargin as computeBookmakerMargin,
+  calculateEV,
   removeOverround,
 } from '@modules/betting-engine/betting-engine.utils';
 import { getPickOddsFromSnapshot } from '@modules/betting-engine/pricing/odds-mapping';
-import { AVOID_CONFIG } from '@modules/betting-engine/strategies/channel-strategy.config';
+import { AVOID_CONFIG } from '@evcore/analysis-core';
 import type { FullOddsSnapshot } from '@modules/betting-engine/betting-engine.types';
 import {
   computeDataCoverage,
@@ -17,15 +27,16 @@ import {
   extractModelRunFeatureDiagnostics,
   hasCalibrationAlert,
   readShadowConflict,
+  type EvaluatedPickSnapshot,
 } from '@utils/model-run.utils';
 import {
   MAX_VIRTUAL_COUPON_SELECTIONS,
   type CouponChannel,
   type VirtualCouponChannel,
-  BTTS_STAKED_LEAGUES,
   DRAW_STAKED_LEAGUES,
-  CANAL_BASE_WEIGHT,
+  POOL_ELIGIBLE_CHANNELS,
   COUPON_PARAMS,
+  EVALUATED_MARKET_CANAL,
   VIRTUAL_COUPON_RULES,
   VIRTUAL_COUPON_TOP_LIMITS,
   type VirtualCouponRule,
@@ -45,50 +56,43 @@ export function isExtremeDivergence(
   return probability - 1 / odds >= AVOID_CONFIG.maxEdge;
 }
 
-type ChannelSelectionCandidate = {
-  channel: StrategyChannel;
-  selections: Array<{
-    market: Market;
-    pick: string;
-    probability: Decimal;
-    odds: Decimal | null;
-  }>;
-};
-
-// Picks the rank-1 selection for a given channel out of the channelDecisions
-// relation loaded by getTodayPool (one decision per channel per ModelRun,
-// @@unique([modelRunId, channel])).
-function findChannelSelection(
-  channelDecisions: ChannelSelectionCandidate[],
-  channel: StrategyChannel,
-) {
-  return channelDecisions.find((cd) => cd.channel === channel)?.selections[0];
-}
-
-const DOW_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const;
-
 /**
  * Per-market mean signed calibration error, keyed by `Market` enum value.
  * `meanError = mean(probEstimated - outcome)` — positive = model overconfidence.
  * Only markets with ≥ MIN_BET_COUNT settled bets are present (others fall back to
  * the legacy blend at scoring time).
+ *
+ * A channel-aware, channel_decision/channel_selection-sourced version (per
+ * (channel, market) instead of market-pooled across every channel) was tried
+ * 2026-08-20 and reverted the same night — see calibrateLegProbability's doc
+ * (coupon-composer.service.ts) for the backtested result and why.
  */
 export type MarketCalibration = Record<
   string,
   { meanError: number; betCount: number }
 >;
 
-export type SignalWindow = {
-  calibratedCanalHitRates: Record<Canal, number>;
-  calibratedCanalLeagueHitRates: Record<Canal, Record<string, number>>;
-  canalDowFactors: Record<Canal, Record<string, number | null>>;
-  marketCalibration: MarketCalibration;
+/**
+ * Tout ce dont le scoring d'une jambe a besoin. Anciennement `SignalWindow`,
+ * qui portait aussi des taux de réussite glissants sur 38 jours — voir
+ * `computeLegCalibration` pour pourquoi ils ont été retirés.
+ */
+export type LegCalibration = {
+  /** Courbes de Platt par canal — cf. CalibrationService.computeChannelReliability. */
+  channelReliability: ChannelReliabilityMap;
+  /** Courbe de repli pour un canal sans historique propre. */
+  pooledReliability: ChannelReliability;
 };
 
 export type GetPoolOpts = {
+  /**
+   * Restrict DRAW legs to DRAW_STAKED_LEAGUES. DRAW is the only admitted
+   * channel with a per-league whitelist (see that constant). TEAM_TOTAL's and
+   * BTTS's equivalents went away with the 2026-08-22 pool switch: neither
+   * channel clears the calibration-ratio bar in POOL_ELIGIBLE_CHANNELS any
+   * more, so a flag scoping WHERE they stake would gate nothing.
+   */
   includeDraw?: boolean;
-  includeTeamTotal?: boolean;
-  includeBtts?: boolean;
   enforceAvoid?: boolean;
   /**
    * Stake the FADE regime's opposite pick instead of dropping it. Default
@@ -97,6 +101,15 @@ export type GetPoolOpts = {
    * settled data confirms it.
    */
   enableAvoidFade?: boolean;
+  /**
+   * Widen the real coupon pool with `ModelRun.features.evaluatedPicks`
+   * ('viable' entries not already staked as a Bet/promoted channelDecision)
+   * — see `EVALUATED_MARKET_CANAL` doc (coupon.constants.ts) for why this is
+   * a legitimate coupon candidate, not a reliability rejection. Default off
+   * — these legs have never appeared in a real coupon before; requires a
+   * dedicated backtest (STAKED vs EVALUATED ROI) before flipping to true.
+   */
+  includeEvaluatedMarkets?: boolean;
 };
 
 export type ScoredPick = {
@@ -160,6 +173,14 @@ export type ScoredPick = {
   priorAnalysisCount: number;
   isCorrect: boolean | null;
   signalScore: number;
+  /**
+   * `STAKED` = déjà matérialisé comme `Bet`/`channelDecision` promu (chemin
+   * historique). `EVALUATED` = trouvé dans `evaluatedPicks` (`status:
+   * 'viable'`) mais jamais officiellement retenu par son canal — n'a jamais
+   * existé en coupon avant `opts.includeEvaluatedMarkets` (2026-08-16),
+   * traçabilité pour un futur backtest dédié comparant les deux.
+   */
+  pickSource: 'STAKED' | 'EVALUATED';
   featureSnapshot: Record<string, unknown>;
   homeLogo: string | null;
   awayLogo: string | null;
@@ -168,7 +189,16 @@ export type ScoredPick = {
   homeHtScore: number | null;
   awayHtScore: number | null;
   /** ID du bet MODEL existant (SAFE/EV uniquement). */
-  betId: string | null;
+  /**
+   * Cote de RÉFÉRENCE : celle de la maison la mieux classée (`bookmakerRank`,
+   * Pinnacle d'abord). Sert à mesurer la divergence modèle↔marché
+   * (`clearsMaxLegEdge`), jamais à miser. `oddsSnapshot` porte le prix de
+   * mise, qui est le meilleur disponible et donc toujours >= celle-ci.
+   */
+  referenceOdds: number | null;
+  /** Provenance: the `channel_selection` row this leg came from (`null`
+   * for evaluatedPicks legs, which no channel selected). */
+  channelSelectionId: string | null;
   /** ID du ModelRun source (BTTS/DRAW/DOMINANT — pour création d'un bet USER). */
   modelRunId: string | null;
 };
@@ -185,7 +215,6 @@ function readNumber(features: unknown, key: string): number | null {
 }
 
 type PriorRun = {
-  bets: Array<{ market: Market; pick: string }>;
   channelDecisions: Array<{
     selections: Array<{ market: Market; pick: string }>;
   }>;
@@ -200,12 +229,15 @@ function countPriorAnalyses(
   market: Market,
   pick: string,
 ): number {
-  return priorRuns.filter(
-    (run) =>
-      run.bets.some((b) => b.market === market && b.pick === pick) ||
-      run.channelDecisions.some((cd) =>
-        cd.selections.some((s) => s.market === market && s.pick === pick),
-      ),
+  // Reads channelDecisions only since 2026-08-22 — the `bets` arm it used to
+  // OR against covered VALUE/SAFE, which now arrive through channelDecisions
+  // like every other eligible channel. Net coverage is wider, not narrower:
+  // prior runs used to expose 3 channels here, now they expose all of
+  // POOL_ELIGIBLE_CHANNELS.
+  return priorRuns.filter((run) =>
+    run.channelDecisions.some((cd) =>
+      cd.selections.some((s) => s.market === market && s.pick === pick),
+    ),
   ).length;
 }
 
@@ -309,52 +341,6 @@ function resolveVirtualPickCorrect(input: {
   return null;
 }
 
-type AggEntry = {
-  canal: Canal;
-  correct: boolean;
-  dow: number;
-  league: string;
-  count: number;
-  day: Date;
-};
-
-function decayWeight(
-  dayMs: number,
-  nowMs: number,
-  halfLifeDays: number,
-): number {
-  const daysAgo = (nowMs - dayMs) / 86400000;
-  return Math.pow(0.5, daysAgo / halfLifeDays);
-}
-
-// eslint-disable-next-line max-params
-function hitsForWeighted(
-  entries: AggEntry[],
-  filter: (e: AggEntry) => boolean,
-  nowMs: number,
-  halfLifeDays: number,
-): { correct: number; total: number } {
-  let correct = 0;
-  let total = 0;
-  for (const e of entries) {
-    if (!filter(e)) continue;
-    const w = decayWeight(e.day.getTime(), nowMs, halfLifeDays) * e.count;
-    total += w;
-    if (e.correct) correct += w;
-  }
-  return { correct, total };
-}
-
-function calibrate(
-  weightedCorrect: number,
-  weightedTotal: number,
-  prior: number,
-): number {
-  const { k, capMin, capMax } = COUPON_PARAMS;
-  const raw = (weightedCorrect + k * prior) / (weightedTotal + k);
-  return Math.min(capMax, Math.max(capMin, raw));
-}
-
 // Opposite pick of an OVER_UNDER(_HT) line — pairs OVER_x with UNDER_x to recover
 // the two mutually-exclusive outcomes needed to remove the overround. The 2.5
 // line uses the bare 'OVER' / 'UNDER' keys (cf. FullOddsSnapshot.overUnderOdds).
@@ -455,6 +441,47 @@ export function computeMarketFair(
   }
 }
 
+// Decides whether one ModelRun.features.evaluatedPicks entry becomes an
+// extra coupon-eligible candidate (opts.includeEvaluatedMarkets) — pulled out
+// as a pure function so the gating logic (dedup, canal mapping, AVOID) is
+// unit-testable without mocking the whole Prisma/odds-loader pipeline that
+// getPoolForRange runs inside. See EVALUATED_MARKET_CANAL doc
+// (coupon.constants.ts) for why 'viable'-but-not-staked is a legitimate
+// candidate, not a reliability rejection.
+export function resolveEvaluatedMarketLeg(
+  evaluated: Pick<
+    EvaluatedPickSnapshot,
+    'market' | 'pick' | 'status' | 'probability' | 'odds'
+  >,
+  opts: {
+    stakedKeys: ReadonlySet<string>;
+    enforceAvoid: boolean;
+    calibrationAlert: boolean;
+  },
+): { canal: Canal; probability: number; oddsSnapshot: number } | null {
+  if (evaluated.status !== 'viable') return null;
+  const canal = EVALUATED_MARKET_CANAL[evaluated.market];
+  if (!canal) return null; // CORRECT_SCORE and anything unmapped — excluded
+  if (opts.stakedKeys.has(`${evaluated.market}:${evaluated.pick}`)) return null;
+
+  const probability = readSnapshotNumber(evaluated.probability);
+  const oddsSnapshot = readSnapshotNumber(evaluated.odds);
+  if (probability === null || oddsSnapshot === null) return null;
+
+  if (opts.enforceAvoid) {
+    const regime = classifyAvoidSignal(
+      isExtremeDivergence(probability, oddsSnapshot),
+      opts.calibrationAlert,
+    );
+    // FADE has no dedicated opposite-leg construction here (unlike the Bet
+    // loop, which can look up the opposite pick's fresh odds from the live
+    // snapshot) — treated like DROP, same as pushChannelSelectionPick above.
+    if (regime === 'DROP' || regime === 'FADE') return null;
+  }
+
+  return { canal: canal, probability, oddsSnapshot };
+}
+
 @Injectable()
 export class SignalWindowService {
   constructor(
@@ -464,142 +491,47 @@ export class SignalWindowService {
   ) {}
 
   /**
-   * @param asOf point-in-time cutoff — only fixtures played strictly before this
-   *   instant feed the calibration. Defaults to "now" (live generation). Pass the
-   *   target day's start to make the signal reproducible and leak-free when
-   *   (re)generating for a past or specific date.
+   * Calibration des jambes — courbes de fiabilité par canal, point-in-time.
+   *
+   * Remplace `computeSignalWindow(windowDays, asOf)` et toute la notion de
+   * fenêtre glissante de 38 jours (supprimée le 2026-08-22).
+   *
+   * Ce que la fenêtre produisait :
+   *   - `calibratedCanalHitRates`, `canalDowFactors`,
+   *     `calibratedCanalLeagueHitRates` — des taux de réussite passés par
+   *     (canal), (canal×jour), (canal×ligue), agrégés en `signalScore` ;
+   *   - `marketCalibration` — un décalage moyen par marché.
+   *
+   * Pourquoi c'est parti :
+   *   - `signalScore` a été mesuré ANTI-PRÉDICTIF à probabilité constante :
+   *     0.681 (n=1120) contre 0.631 (n=1190) selon qu'il est bas ou haut,
+   *     -5.0 points ± 2.0, et dans le même sens sur les quatre bandes de
+   *     probabilité. Détail dans `CouponComposerService.scorePicks`.
+   *   - la décomposition de variance dit pourquoi : (canal×jour×ligue) est le
+   *     découpage où 88% de l'écart observé entre cases est du bruit.
+   *     Sélectionner sur un taux passé bruité, c'est sélectionner la
+   *     régression vers la moyenne.
+   *   - `marketCalibration` avait déjà été remplacé par les courbes par canal
+   *     (mauvaise forme — la courbe est plate, pas décalée — et mauvais
+   *     groupement).
+   *
+   * Ce qui RESTE du passé, et qui marche : la courbe de fiabilité par canal.
+   * La distinction est celle entre CALIBRER (transformer une probabilité
+   * annoncée en probabilité honnête — ratio passé de 0.819 à 1.05-1.10) et
+   * PRÉFÉRER (choisir une jambe plutôt qu'une autre sur son historique), qui
+   * est ce qui échouait.
+   *
+   * @param asOf borne point-in-time — seules les rencontres jouées strictement
+   *   avant cet instant alimentent la calibration. Défaut « maintenant »
+   *   (génération live) ; passer le début du jour cible pour une régénération
+   *   reproductible et sans fuite.
    */
-  async computeSignalWindow(
-    windowDays: number,
+  async computeLegCalibration(
     asOf: Date = new Date(),
-  ): Promise<SignalWindow> {
-    const nowMs = asOf.getTime();
-    const since = new Date(nowMs - windowDays * 24 * 60 * 60 * 1000);
-    const halfLifeDays = COUPON_PARAMS.decayHalfLifeDays;
-
-    type BetAggRow = {
-      day: Date;
-      channel: StrategyChannel;
-      is_won: boolean;
-      dow: number;
-      league: string;
-      cnt: bigint;
-    };
-    // Window + leak guard are on f."scheduledAt" (when the result became known),
-    // consistent with the recency decay which keys on the fixture day. The
-    // channel filter is intentionally absent: every canal is calibrated from its
-    // own settled MODEL bets, and canals with no sample fall back to their
-    // CANAL_BASE_WEIGHT prior via calibrate() (B6).
-    const betRows = await this.prisma.client.$queryRaw<BetAggRow[]>`
-      SELECT
-        DATE(f."scheduledAt")                                   AS day,
-        cd.channel                                              AS channel,
-        (b.status = 'WON')                                      AS is_won,
-        (EXTRACT(ISODOW FROM f."scheduledAt")::int - 1)         AS dow,
-        c.code                                                  AS league,
-        COUNT(*)                                                AS cnt
-      FROM bet b
-      JOIN channel_selection cs ON cs.id = b."channelSelectionId"
-      JOIN channel_decision  cd ON cd.id = cs."channelDecisionId"
-      JOIN fixture     f ON f.id = b."fixtureId"
-      JOIN season      s ON s.id = f."seasonId"
-      JOIN competition c ON c.id = s."competitionId"
-      WHERE b.status IN ('WON', 'LOST')
-        AND f."scheduledAt" >= ${since}
-        AND f."scheduledAt" < ${asOf}
-        AND b.source = 'MODEL'
-      GROUP BY DATE(f."scheduledAt"), cd.channel, b.status,
-               EXTRACT(ISODOW FROM f."scheduledAt"), c.code
-    `;
-
-    const entries: AggEntry[] = [];
-
-    for (const r of betRows) {
-      entries.push({
-        canal: r.channel as Canal,
-        correct: r.is_won,
-        dow: Number(r.dow),
-        league: r.league,
-        count: Number(r.cnt),
-        day: r.day,
-      });
-    }
-
-    const canals: Canal[] = [
-      'VALUE',
-      'SAFE',
-      'BTTS',
-      'DRAW',
-      'DOMINANT',
-      'TEAM_TOTAL',
-    ];
-
-    const calibratedCanalHitRates = Object.fromEntries(
-      canals.map((c) => {
-        const prior = CANAL_BASE_WEIGHT[c];
-        const { correct, total } = hitsForWeighted(
-          entries,
-          (e) => e.canal === c,
-          nowMs,
-          halfLifeDays,
-        );
-        return [c, calibrate(correct, total, prior)];
-      }),
-    ) as Record<Canal, number>;
-
-    const canalDowFactors = Object.fromEntries(
-      canals.map((c) => {
-        const dowMap = Object.fromEntries(
-          DOW_LABELS.map((label, i) => {
-            const { correct, total } = hitsForWeighted(
-              entries,
-              (e) => e.canal === c && e.dow === i,
-              nowMs,
-              halfLifeDays,
-            );
-            return [label, total > 0 ? correct / total : null];
-          }),
-        );
-        return [c, dowMap];
-      }),
-    ) as Record<Canal, Record<string, number | null>>;
-
-    const allLeagues = [...new Set(entries.map((e) => e.league))];
-    const calibratedCanalLeagueHitRates = Object.fromEntries(
-      canals.map((c) => {
-        const canalPrior = calibratedCanalHitRates[c];
-        const leagueMap = Object.fromEntries(
-          allLeagues.map((l) => {
-            const { correct, total } = hitsForWeighted(
-              entries,
-              (e) => e.canal === c && e.league === l,
-              nowMs,
-              halfLifeDays,
-            );
-            return [l, calibrate(correct, total, canalPrior)];
-          }),
-        );
-        return [c, leagueMap];
-      }),
-    ) as Record<Canal, Record<string, number>>;
-
-    const marketResults = await this.calibration.computeAllMarkets({ asOf });
-    const marketCalibration: MarketCalibration = {};
-    for (const [market, result] of Object.entries(marketResults)) {
-      if (result) {
-        marketCalibration[market] = {
-          meanError: result.meanError.toNumber(),
-          betCount: result.betCount,
-        };
-      }
-    }
-
-    return {
-      calibratedCanalHitRates,
-      calibratedCanalLeagueHitRates,
-      canalDowFactors,
-      marketCalibration,
-    };
+  ): Promise<LegCalibration> {
+    const { byChannel, pooled } =
+      await this.calibration.computeChannelReliability({ asOf });
+    return { channelReliability: byChannel, pooledReliability: pooled };
   }
 
   /**
@@ -669,50 +601,40 @@ export class SignalWindowService {
             finalScore: true,
             features: true,
             analyzedAt: true,
-            bets: {
-              where: { source: 'MODEL' },
-              select: {
-                id: true,
-                market: true,
-                pick: true,
-                ev: true,
-                qualityScore: true,
-                probEstimated: true,
-                oddsSnapshot: true,
-                status: true,
-                channelSelection: {
-                  select: { channelDecision: { select: { channel: true } } },
-                },
-              },
-            },
-            // DRAW/TEAM_TOTAL/BTTS are staking channels (B7 promotions) but
-            // aren't materialised as MODEL Bets — read their selection straight
-            // from channel_selection so they can enter the real pool. Each is
-            // gated by its own opts.include* flag (see findChannelSelection below).
+            // Single pool source (2026-08-22): every eligible channel's own
+            // rank-1 selection, read straight from channel_selection. This
+            // replaces a `bets` read (which `persistChannelBet` only ever
+            // writes for VALUE/SAFE, so 2 channels could ever reach the pool
+            // through it) plus a 3-channel DRAW/TEAM_TOTAL/BTTS special case.
+            // See POOL_ELIGIBLE_CHANNELS (coupon.constants.ts) for what is
+            // admitted and on what measured evidence.
+            //
+            // `odds: { not: null }` is a hard requirement, not a preference:
+            // EVCore is value-driven and compose() rejects any leg without a
+            // real odds snapshot anyway (no FALLBACK_ODDS since B2).
             channelDecisions: {
               where: {
-                channel: {
-                  in: [
-                    StrategyChannel.DRAW,
-                    StrategyChannel.TEAM_TOTAL,
-                    StrategyChannel.BTTS,
-                  ],
-                },
+                channel: { in: [...POOL_ELIGIBLE_CHANNELS] },
+                status: ChannelDecisionStatus.SELECTED,
               },
               select: {
                 channel: true,
                 selections: {
                   where: { rank: 1, odds: { not: null } },
                   select: {
+                    id: true,
                     market: true,
                     pick: true,
                     probability: true,
                     odds: true,
+                    ev: true,
+                    qualityScore: true,
+                    result: true,
                   },
                   take: 1,
                 },
               },
-              take: 3,
+              take: POOL_ELIGIBLE_CHANNELS.length,
             },
           },
           orderBy: { analyzedAt: 'desc' },
@@ -754,11 +676,16 @@ export class SignalWindowService {
     // One batched query for every fixture's odds instead of one per fixture
     // (findLatestOddsSnapshot alone runs ~34 sequential Prisma calls each) —
     // condition of viability once the pool spans more than a single day.
-    const oddsSnapshots = await this.oddsLoader.findLatestOddsSnapshotsBatch(
-      fixtures
-        .filter((f) => f.modelRuns[0])
-        .map((f) => ({ fixtureId: f.id, cutoff: f.scheduledAt })),
-    );
+    const oddsTargets = fixtures
+      .filter((f) => f.modelRuns[0])
+      .map((f) => ({ fixtureId: f.id, cutoff: f.scheduledAt }));
+    const [oddsSnapshots, bestPrices] = await Promise.all([
+      this.oddsLoader.findLatestOddsSnapshotsBatch(oddsTargets),
+      // Prix de MISE — la meilleure cote toutes maisons confondues, distincte
+      // de la cote de RÉFÉRENCE ci-dessus (maison la plus juste). Voir
+      // findBestPricesBatch pour pourquoi les deux doivent coexister.
+      this.oddsLoader.findBestPricesBatch(oddsTargets),
+    ]);
 
     const picks: ScoredPick[] = [];
 
@@ -841,64 +768,92 @@ export class SignalWindowService {
         // Full market odds (as-of kickoff) — needed to remove the overround and
         // compute each leg's fair market probability + bookmaker margin.
         const snapshot = oddsSnapshots.get(f.id) ?? null;
+        // Every (market, pick) already contributed by a channel for this
+        // fixture — dedupe against when expanding into evaluatedPicks below
+        // (opts.includeEvaluatedMarkets).
+        const stakedKeys = new Set<string>();
 
-        for (const bet of run.bets) {
-          const betOdds = bet.oddsSnapshot ? Number(bet.oddsSnapshot) : null;
-          const extremeDiv = isExtremeDivergence(
-            Number(bet.probEstimated),
-            betOdds,
-          );
+        // One loop over every eligible channel's rank-1 selection. Before
+        // 2026-08-22 this was two divergent paths (a `bets` loop that owned
+        // the AVOID FADE construction, and a pushChannelSelectionPick helper
+        // that could only DROP) — the split meant VALUE/SAFE got a fade leg
+        // while DRAW/TEAM_TOTAL/BTTS silently didn't. Now every channel goes
+        // through the same regime handling.
+        for (const decision of run.channelDecisions) {
+          const sel = decision.selections[0];
+          if (!sel || sel.odds === null) continue;
+
+          // Per-league staking whitelists survive the unification — they are
+          // backtested restrictions on WHERE a channel is trusted, not an
+          // artefact of the old two-path structure.
+          if (
+            decision.channel === StrategyChannel.DRAW &&
+            (!opts.includeDraw ||
+              !(DRAW_STAKED_LEAGUES as readonly string[]).includes(comp))
+          ) {
+            continue;
+          }
+          const selOdds = Number(sel.odds);
           const regime = opts.enforceAvoid
-            ? classifyAvoidSignal(extremeDiv, calibAlert)
+            ? classifyAvoidSignal(
+                isExtremeDivergence(Number(sel.probability), selOdds),
+                calibAlert,
+              )
             : 'CLEAN';
           if (regime === 'DROP') continue;
 
-          let market = bet.market;
-          let pick = bet.pick;
-          let probability = Number(bet.probEstimated);
-          let legOdds = betOdds;
-          // bet.status settles the ORIGINAL pick — for a faded leg the
+          const market = sel.market;
+          let pick = sel.pick;
+          let probability = Number(sel.probability);
+          let legOdds = selOdds;
+          // sel.result settles the ORIGINAL pick — for a faded leg the
           // opposite won exactly when the original lost.
           let isCorrect =
-            bet.status === 'WON' ? true : bet.status === 'LOST' ? false : null;
+            sel.result === BetStatus.WON
+              ? true
+              : sel.result === BetStatus.LOST
+                ? false
+                : null;
 
           if (regime === 'FADE') {
-            const opp = oppositePick(bet.pick);
+            const opp = oppositePick(sel.pick);
             const oppOdds =
               opp && snapshot
-                ? getPickOddsFromSnapshot(bet.market, opp, snapshot)
+                ? getPickOddsFromSnapshot(sel.market, opp, snapshot)
                 : null;
             if (!opts.enableAvoidFade || opp === null || oppOdds === null) {
               continue; // shadow-only for now — same net effect as DROP
             }
-            market = bet.market;
             pick = opp;
             probability = 1 - probability;
             legOdds = oppOdds.toNumber();
             isCorrect =
-              bet.status === 'LOST'
+              sel.result === BetStatus.LOST
                 ? true
-                : bet.status === 'WON'
+                : sel.result === BetStatus.WON
                   ? false
                   : null;
           }
 
-          const channel =
-            bet.channelSelection?.channelDecision.channel ??
-            StrategyChannel.VALUE;
-          const canal: Canal = channel as Canal;
           const fair = snapshot
             ? computeMarketFair(market, pick, snapshot)
             : null;
+          // On mise au meilleur prix disponible, on mesure la divergence sur
+          // la cote de référence — cf. findBestPricesBatch.
+          const bestOdds = bestPrices.get(`${f.id}:${market}:${pick}`);
+          const stakeOdds =
+            bestOdds !== undefined && bestOdds > legOdds ? bestOdds : legOdds;
+
           picks.push({
             ...base,
-            canal,
+            canal: decision.channel,
             market,
             pick,
             probability,
             calibratedHitRate: 0, // set in CouponComposerService.scorePicks()
             calibratedProbability: null, // set in CouponComposerService.scorePicks()
-            oddsSnapshot: legOdds,
+            oddsSnapshot: stakeOdds,
+            referenceOdds: legOdds,
             pMarketFair: fair?.pMarketFair ?? null,
             bookmakerMargin: fair?.bookmakerMargin ?? null,
             // A faded leg is a synthetic pick the model never actually
@@ -906,75 +861,68 @@ export class SignalWindowService {
             priorAnalysisCount:
               regime === 'FADE'
                 ? 0
-                : countPriorAnalyses(priorRuns, bet.market, bet.pick),
+                : countPriorAnalyses(priorRuns, sel.market, sel.pick),
             isCorrect,
             signalScore: 0,
-            betId: bet.id,
-            modelRunId: null,
-          });
-        }
-
-        // DRAW/TEAM_TOTAL/BTTS staking (B7 promotions) — these channels' selections
-        // live in channel_selection, not in MODEL bets, so read them here to make
-        // each a real, staking-eligible pool leg when its opts.include* flag is set.
-        const pushChannelSelectionPick = (channel: StrategyChannel) => {
-          const sel = findChannelSelection(run.channelDecisions, channel);
-          if (!sel || sel.odds === null) return;
-          // Same graduated AVOID routing as the bets loop above, applied to
-          // the promoted channels (DRAW/TEAM_TOTAL/BTTS) — FADE stays
-          // shadow-only here too (no dedicated opposite-leg construction for
-          // these channels yet, only DROP/KEEP/CLEAN are actionable).
-          const regime = opts.enforceAvoid
-            ? classifyAvoidSignal(
-                isExtremeDivergence(Number(sel.probability), Number(sel.odds)),
-                calibAlert,
-              )
-            : 'CLEAN';
-          if (regime === 'DROP' || regime === 'FADE') return;
-          const fair = snapshot
-            ? computeMarketFair(sel.market, sel.pick, snapshot)
-            : null;
-          picks.push({
-            ...base,
-            canal: channel as Canal,
-            market: sel.market,
-            pick: sel.pick,
-            probability: Number(sel.probability),
-            calibratedHitRate: 0,
-            calibratedProbability: null,
-            oddsSnapshot: Number(sel.odds),
-            pMarketFair: fair?.pMarketFair ?? null,
-            bookmakerMargin: fair?.bookmakerMargin ?? null,
-            priorAnalysisCount: countPriorAnalyses(
-              priorRuns,
-              sel.market,
-              sel.pick,
-            ),
-            isCorrect: null,
-            signalScore: 0,
-            betId: null,
+            channelSelectionId: sel.id,
             modelRunId: run.id,
+            pickSource: 'STAKED',
           });
-        };
+          stakedKeys.add(`${market}:${pick}`);
+        }
 
-        // Restricted to DRAW_STAKED_LEAGUES — see that constant's doc comment.
-        if (
-          opts.includeDraw &&
-          (DRAW_STAKED_LEAGUES as readonly string[]).includes(comp)
-        ) {
-          pushChannelSelectionPick(StrategyChannel.DRAW);
-        }
-        // +3.40% ROI (n=845), all leagues — no league has enough volume yet to
-        // segment (db:backtest:team-total-btts-competition, 2026-07-28).
-        if (opts.includeTeamTotal) {
-          pushChannelSelectionPick(StrategyChannel.TEAM_TOTAL);
-        }
-        // Restricted to BTTS_STAKED_LEAGUES — see that constant's doc comment.
-        if (
-          opts.includeBtts &&
-          (BTTS_STAKED_LEAGUES as readonly string[]).includes(comp)
-        ) {
-          pushChannelSelectionPick(StrategyChannel.BTTS);
+        // Widen the real pool with viable-but-not-officially-staked
+        // evaluatedPicks (opts.includeEvaluatedMarkets) — see
+        // EVALUATED_MARKET_CANAL doc (coupon.constants.ts) for why a
+        // 'viable' entry is a legitimate coupon candidate even though its own
+        // channel didn't select it as the winner among this fixture's markets.
+        if (opts.includeEvaluatedMarkets) {
+          const evaluatedPicks = extractModelRunFeatureDiagnostics(
+            run.features,
+          ).evaluatedPicks;
+          for (const evaluated of evaluatedPicks) {
+            const resolved = resolveEvaluatedMarketLeg(evaluated, {
+              stakedKeys,
+              enforceAvoid: opts.enforceAvoid ?? false,
+              calibrationAlert: calibAlert,
+            });
+            if (!resolved) continue;
+            const { canal, probability, oddsSnapshot: legOdds } = resolved;
+            const fair = snapshot
+              ? computeMarketFair(
+                  evaluated.market as Market,
+                  evaluated.pick,
+                  snapshot,
+                )
+              : null;
+            picks.push({
+              ...base,
+              canal,
+              market: evaluated.market,
+              pick: evaluated.pick,
+              probability,
+              calibratedHitRate: 0,
+              calibratedProbability: null,
+              oddsSnapshot: legOdds,
+              // Chemin evaluatedPicks : la cote vient du diagnostic du
+              // ModelRun, pas d'une sélection de canal — pas de meilleur prix
+              // à substituer, la référence est donc la même.
+              referenceOdds: legOdds,
+              legEV: calculateEV(probability, legOdds).toNumber(),
+              pMarketFair: fair?.pMarketFair ?? null,
+              bookmakerMargin: fair?.bookmakerMargin ?? null,
+              priorAnalysisCount: countPriorAnalyses(
+                priorRuns,
+                evaluated.market as Market,
+                evaluated.pick,
+              ),
+              isCorrect: null,
+              signalScore: 0,
+              channelSelectionId: null,
+              modelRunId: run.id,
+              pickSource: 'EVALUATED',
+            });
+          }
         }
       }
     }
@@ -1128,6 +1076,9 @@ export class SignalWindowService {
           calibratedHitRate,
           calibratedProbability: null,
           oddsSnapshot: odds,
+          // Pool virtuel (observation seule, jamais staké) : pas de
+          // substitution de prix, référence = cote observée.
+          referenceOdds: odds,
           isCorrect: resolveVirtualPickCorrect({
             market: evaluated.market,
             pick: evaluated.pick,
@@ -1137,8 +1088,9 @@ export class SignalWindowService {
             awayHtScore: f.awayHtScore ?? null,
           }),
           signalScore,
-          betId: null,
+          channelSelectionId: null,
           modelRunId: run.id,
+          pickSource: 'STAKED', // virtual pool — never gated by pickSource anyway
         });
       }
     }
@@ -1147,7 +1099,11 @@ export class SignalWindowService {
     const counts = new Map<VirtualCouponChannel, number>();
     const seenFixturesByCanal = new Set<string>();
 
-    for (const pick of picks.sort((a, b) => b.signalScore - a.signalScore)) {
+    // Trié par probabilité, plus par signalScore : celui-ci est mesuré
+    // anti-prédictif à probabilité constante (voir scorePicks,
+    // coupon-composer.service.ts). Ce pool est en observation seule, mais il
+    // ne sert à rien d'observer une sélection qu'on sait inversée.
+    for (const pick of picks.sort((a, b) => b.probability - a.probability)) {
       const count = counts.get(pick.canal) ?? 0;
       if (count >= MAX_VIRTUAL_COUPON_SELECTIONS[pick.canal]) continue;
 

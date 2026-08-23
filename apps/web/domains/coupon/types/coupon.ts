@@ -1,3 +1,5 @@
+export type CouponClassName = "SAFE" | "BALANCED" | "BOLD";
+
 export type CouponLegDto = {
   id: string;
   fixtureId: string;
@@ -37,6 +39,13 @@ export type CouponProposalDto = {
    * recommendation alongside the backtested default profile.
    */
   experimental: boolean;
+  /**
+   * Classe du coupon. Les trois se différencient par la bande de cote de leurs
+   * jambes, donc par un profil gain/fréquence réellement distinct — voir
+   * COUPON_CLASS_META pour les taux mesurés. `null` pour les propositions
+   * générées avant les classes.
+   */
+  couponClass: CouponClassName | null;
   combinedOdds: number;
   jointProbability: number;
   signalScore: number;

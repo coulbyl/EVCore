@@ -40,15 +40,21 @@ Exemple réel, coupon du 14 juillet : deux sélections. La première, Inter Club
 
 Remarquez que les deux sélections viennent de canaux différents — Valeur et Sécurité — sur des matchs sans lien entre eux. Ce n'est pas un hasard : le moteur choisit volontairement des sélections qui ne dépendent pas les unes des autres, pour éviter qu'un seul scénario fasse perdre tout le coupon d'un coup.
 
-## Investir : vos picks individuels, classés
+## Investir : trois vues, et une seule question par vue
 
-Cliquez sur **Investir** dans le menu. Contrairement à Combinés, ici vous ne recevez pas un coupon prêt à l'emploi — vous voyez des picks individuels, classés selon le critère que vous choisissez.
+Cliquez sur **Investir** dans le menu. Contrairement à Combinés, ici vous ne recevez pas un coupon prêt à l'emploi — vous voyez des pronostics individuels.
 
-En haut, un sélecteur de mode : **Probabilité** par défaut, ou un onglet par canal si vous voulez filtrer sur Valeur, Sécurité, Victoire, BB, Buts ou Nul. À côté, vous choisissez combien de picks afficher — Top 3, 5, 10, ou automatique.
+En haut, trois onglets, et il est important de comprendre ce qui les sépare.
 
-Un détail important à repérer : sur certains modes comme Victoire, BB ou Buts, un message d'avertissement apparaît sous le titre, qui rappelle explicitement le ROI historique négatif de ces canaux joués seuls. Ce n'est pas caché, c'est affiché directement dans l'interface.
+**Ce qu'on assume** : les canaux dont l'avantage résiste au bruit d'échantillonnage. Il y en a deux à ce jour. C'est la surface de mise.
 
-Chaque pick affiche un badge de fiabilité — **Très probable**, **Solide**, **Moyen** ou **Spéculatif** — la cote, la probabilité, et parfois une petite mention entre parenthèses "modèle : XX%" quand la probabilité affichée a été corrigée par rapport à l'estimation brute du modèle. C'est la seule page où cette correction est visible directement.
+**En observation** : tous les autres canaux, dans une seule liste que vous pouvez filtrer par canal. Chaque pronostic y porte le ROI mesuré de son canal, y compris quand il est mauvais. Un pronostic venant d'un canal perdant reste un choix possible — mais vous le prenez en connaissance de cause.
+
+**Écarté** : ce que les garde-fous ont retiré, et pourquoi. Cote trop courte, écart au marché trop élevé, pronostic qui contredit le modèle qui l'a produit. C'est la vue la plus inhabituelle du produit, et celle qui rend le filtre vérifiable — un filtre se juge à ce qu'il exclut.
+
+Sur chaque ligne : la cote, et **toujours** à côté d'elle la fréquence de réussite attendue. Une cote seule se lit comme une promesse. Quand la probabilité affichée a été corrigée par rapport à l'estimation brute du modèle, la valeur brute apparaît en dessous — c'est la seule page où cette correction est visible directement.
+
+Ce que vous ne verrez nulle part : un classement « top 5 », ou un tri par EV. Les deux existaient, les deux ont été retirés après mesure.
 
 ## Pour aller plus loin : la Formation
 
@@ -56,4 +62,4 @@ Enfin, dans le menu, la section **Formation** regroupe toutes les leçons — le
 
 ## Clôture
 
-Vous savez maintenant où trouver les picks, comment lire une fiche, où sont les coupons déjà composés, et comment classer vos propres sélections sur Investir. La prochaine leçon, "Comment lire une fiche EVCore", détaille chaque chiffre affiché sur un pick.
+Vous savez maintenant où trouver les pronostics, comment lire une fiche, où sont les coupons déjà composés, et comment Investir sépare ce qu'on assume, ce qu'on observe et ce qu'on écarte. La prochaine leçon, "Comment lire une fiche EVCore", détaille chaque chiffre affiché sur un pick.

@@ -1,40 +1,51 @@
 ---
-title: "Le canal DOMINANT (Victoire) : la preuve que le classement sauve un signal faible"
+title: "Le canal DOMINANT (Victoire) : là où le modèle cesse d'être fiable"
 category: channels
 difficulty: intermediate
 order: 4
 slug: dominant-channel
-summary: "Le canal DOMINANT brut perd de l'argent. Bien classé, il redevient rentable. C'est l'exemple le plus clair de pourquoi EVCore ne vend jamais un canal brut."
-updatedAt: "2026-07-16"
-related: ["channels-overview", "value-channel", "comment-lire-un-pick"]
+summary: "DOMINANT est le meilleur exemple de la régularité la plus utile du système : la fiabilité du modèle s'effondre à mesure que la cote monte. Comprendre ça vaut mieux que n'importe quel classement."
+updatedAt: "2026-08-22"
+related: ["channels-overview", "ev-probabilites-cotes", "comment-lire-un-pick"]
 ---
 
 ## Ce que le canal cherche
 
-DOMINANT affiche l'angle le plus affirmé du modèle sur l'issue d'un match — victoire, nul ou défaite. Contrairement à VALUE, il ne cherche pas un edge par rapport au marché : il montre simplement ce que le modèle juge le plus probable.
+DOMINANT affiche l'angle le plus affirmé du modèle sur l'issue d'un match — victoire, nul ou défaite. Contrairement à VALUE, il ne cherche pas un écart avec le marché : il montre simplement ce que le modèle juge le plus probable.
 
-## Un chiffre qui dérange, un autre qui rassure
+## La leçon que ce canal enseigne le mieux
 
-Pris dans son ensemble, DOMINANT est négatif : −23.27% de ROI sur l'historique testé. Si EVCore vendait l'accès brut à ce canal comme un produit fini, ce serait un mensonge par omission.
+Rangez les picks DOMINANT par tranche de cote, et comparez ce que chaque tranche annonce à ce qu'elle réalise :
 
-Mais ce chiffre global cache une réalité différente une fois qu'on applique un classement. Les 5 meilleurs picks DOMINANT du jour, sélectionnés par probabilité, affichent un ROI de +3.30% :
+| cote de la jambe | réalisé / annoncé |
+| ---------------- | ----------------- |
+| moins de 1.50    | **1.12**          |
+| 1.50 à 2.00      | 0.92              |
+| 2.00 à 2.50      | 0.77              |
+| 2.50 à 3.50      | 0.59              |
+| plus de 3.50     | **0.35**          |
 
-| Vue                                     | ROI mesuré  |
-| --------------------------------------- | ----------- |
-| Canal DOMINANT complet (tous les picks) | **−23.27%** |
-| Top 5 par probabilité, chaque jour      | **+3.30%**  |
+Sur les cotes très courtes, le modèle est même trop prudent — il réalise plus qu'il n'annonce. Au-delà de 3.50, il annonce environ 57% et en réalise 20.
 
-## La leçon la plus importante de toute la catégorie
+Ce n'est pas propre à DOMINANT. Le même effondrement se retrouve dans tous les canaux, à des degrés divers. Mais DOMINANT le montre sur toute l'amplitude, parce qu'il produit des picks sur toute la gamme de cotes.
 
-DOMINANT illustre le mieux ce qui a été annoncé dans la vue d'ensemble des canaux : la valeur n'est pas dans le signal brut, elle est dans le classement. Le modèle produit beaucoup de picks DOMINANT chaque jour. La majorité n'ont pas assez de conviction réelle pour être rentables. Un sous-ensemble, sélectionné par sa probabilité la plus élevée, capte en revanche une vraie information.
+## Pourquoi c'est la régularité la plus utile du système
 
-C'est exactement le mécanisme appliqué en continu par le Coupon Composer et la page Investir : jamais un flux brut, toujours une sélection testée. Un client qui verrait "tous les picks DOMINANT" sans curation verrait un canal perdant. Celui qui reçoit le top 5 quotidien voit, lui, un signal qui reste positif à ce jour.
+Elle se résume en une phrase : **le modèle est fiable là où le marché est d'accord avec lui, et mauvais là où il le contredit.**
 
-## Ce que ce résultat ne dit pas
+Une cote courte, c'est un marché qui dit « c'est probable ». Quand le modèle dit la même chose, deux sources indépendantes convergent. Une cote longue, c'est un marché qui dit « c'est peu probable » — et si le modèle annonce l'inverse, l'un des deux se trompe. La mesure dit lequel.
 
-+3.30% sur un top 5 quotidien reste modeste comparé à VALUE — DOMINANT n'est pas présenté comme le canal le plus solide d'EVCore, seulement comme celui qui illustre le mieux l'effet du classement. Et un canal qui redevient rentable une fois bien classé reste plus sensible à un changement de méthode ou de marché qu'un canal robuste sur toute sa distribution, comme VALUE.
+C'est de là que viennent deux garde-fous que vous voyez à l'œuvre dans l'app : le plafond sur l'écart revendiqué, et le fait que la probabilité calibrée soit devenue le seul critère de classement.
+
+## Ce que cette leçon remplace
+
+Cette page affirmait que le canal brut perdait de l'argent mais que ses 5 meilleurs picks quotidiens redevenaient rentables — et en tirait la conclusion que « la valeur est dans le classement ».
+
+Ce plafond a été retesté en comparant le top 5 à la liste entière **le même jour**. Le résultat est légèrement négatif, et statistiquement indiscernable de zéro. Il n'y avait pas de valeur dans le classement : il y avait cinq règles testées et une qui, par construction, avait l'air d'être la bonne.
 
 ## À retenir
 
-- Le canal DOMINANT brut est négatif (−23.27% ROI) — ne le traitez jamais comme un edge prouvé en soi.
-- Réduit à son top 5 quotidien, il redevient positif (+3.30% ROI) : la curation crée de la valeur là où le signal brut n'en a pas.
+- La fiabilité du modèle chute à mesure que la cote monte. C'est la régularité la plus exploitable du système.
+- Le modèle est bon là où le marché le confirme, mauvais là où il le contredit.
+- Le « top 5 quotidien » qui sauvait ce canal n'a pas résisté à un test correct — il a été supprimé.
+- Le chiffre à jour du canal est dans Track Record, pas ici.

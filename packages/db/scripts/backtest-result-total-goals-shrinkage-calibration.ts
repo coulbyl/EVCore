@@ -448,6 +448,15 @@ async function main() {
   const report = lines.join("\n");
   writeFileSync(outputPath, `${report}\n`, "utf8");
   console.log(`\nRapport écrit : reports/${outputPath.split("/").pop()}`);
+
+  const jsonPath = join(
+    reportsDir,
+    "result-total-goals-shrinkage-shipped.json",
+  );
+  writeFileSync(jsonPath, JSON.stringify(shipped, null, 2), "utf8");
+  console.log(
+    `Données structurées écrites : reports/${jsonPath.split("/").pop()}`,
+  );
 }
 
 main()

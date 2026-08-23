@@ -1,17 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import {
-  getBttsNoConfig,
   getChannelStrategyConfig,
   getTeamTotalLineConfigs,
   GOALS_CONFIG,
-} from '@modules/betting-engine/strategies/channel-strategy.config';
+} from '@evcore/analysis-core';
 import { parseIsoDate, startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 import {
   BacktestRepository,
   type ChannelTuningRow,
 } from './backtest.repository';
 import {
-  buildBttsNoSweep,
   buildChannelThresholdSweep,
   buildGoalsLineSweep,
   buildTeamTotalSweep,
@@ -24,7 +22,6 @@ import {
   TUNING_CHANNELS,
 } from './tuning.constants';
 import type {
-  BttsNoTuningReport,
   ChannelTuningReport,
   ChannelTuningResponse,
   GoalsTuningReport,
@@ -80,25 +77,9 @@ export class ChannelTuningService {
 
     const reports: ChannelTuningReport[] = [];
     const goalsReports: GoalsTuningReport[] = [];
-    const bttsNoReports: BttsNoTuningReport[] = [];
     const teamTotalReports: TeamTotalTuningReport[] = [];
     for (const [code, group] of byComp) {
       const competitionName = group[0]?.competitionName ?? code;
-      const bttsNoSweep = buildBttsNoSweep(group);
-      if (bttsNoSweep.candidates > 0) {
-        const noConfig = getBttsNoConfig(code);
-        bttsNoReports.push({
-          competitionCode: code,
-          competitionName,
-          candidates: bttsNoSweep.candidates,
-          current: {
-            enabled: noConfig.enabled,
-            threshold: noConfig.threshold,
-          },
-          points: bttsNoSweep.points,
-          recommended: bttsNoSweep.recommended,
-        });
-      }
       for (const channel of TUNING_CHANNELS) {
         const sweep = buildChannelThresholdSweep(channel, group);
         if (sweep.candidates === 0) continue;
@@ -183,9 +164,6 @@ export class ChannelTuningService {
         a.competitionCode.localeCompare(b.competitionCode) ||
         a.side.localeCompare(b.side),
     );
-    bttsNoReports.sort((a, b) =>
-      a.competitionCode.localeCompare(b.competitionCode),
-    );
     teamTotalReports.sort(
       (a, b) =>
         a.competitionCode.localeCompare(b.competitionCode) ||
@@ -198,7 +176,6 @@ export class ChannelTuningService {
       to: range.toIso,
       reports,
       goalsReports,
-      bttsNoReports,
       teamTotalReports,
       generatedAt: new Date().toISOString(),
     };

@@ -34,12 +34,20 @@ export type NormalizedCouponLeg = {
 
 export type CouponCardProps = {
   locale: string;
-  rank: number;
+  /**
+   * Classe du coupon — porte le libellé ET la fréquence de gain mesurée. Une
+   * cote de 12 sans « 1 gagnant sur 11 » à côté se lit comme « la même chose
+   * en mieux », ce que la mesure contredit.
+   */
+  couponClass?: {
+    label: string;
+    frequency: string;
+    badgeVariant: string;
+  } | null;
   combinedOdds: number;
   jointProbability: number;
   signalScore: number;
   reasoning?: string | null;
-  isTop?: boolean;
   /**
    * LONGSHOT_WEEKEND/MIDWEEK profile (cote cible 50-70) — no dedicated
    * backtest exists yet, generated purely to observe real settlement data.
@@ -58,11 +66,10 @@ function formatPct(n: number): string {
 
 export function CouponCard({
   locale,
-  rank,
+  couponClass = null,
   combinedOdds,
   jointProbability,
   reasoning,
-  isTop = false,
   isExperimental = false,
   betStatus,
   legs,
@@ -77,24 +84,24 @@ export function CouponCard({
         : "text-muted-foreground";
 
   return (
-    <Card
-      className={cn(
-        "gap-3 rounded-2xl py-3",
-        isTop
-          ? "border-primary/30 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.08),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent)] shadow-sm"
-          : "border-amber-500/30",
-      )}
-    >
+    <Card className={cn("gap-3 rounded-2xl py-3", "border-border/70")}>
       <CardHeader className="px-4">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
-              {isTop && (
+              {/* Plus de badge « Meilleur » : mesuré sur 5 passes, le coupon
+                  de rang 1 n'est pas meilleur que les suivants (en classe SÛRE
+                  il fait -7.5% quand le rang 2 fait +2.6%, tous les écarts
+                  dans le bruit). On affichait une hiérarchie qu'on est
+                  incapable de produire. */}
+              {couponClass && (
                 <Badge
-                  variant="accent"
-                  className="rounded-full px-2 py-0.5 text-[0.6rem] uppercase tracking-[0.14em]"
+                  variant={
+                    couponClass.badgeVariant as "success" | "accent" | "warning"
+                  }
+                  className="rounded-full px-2 py-0.5 text-[0.62rem] font-medium tracking-normal"
                 >
-                  Meilleur
+                  {couponClass.label}
                 </Badge>
               )}
               {isExperimental && (
@@ -105,9 +112,15 @@ export function CouponCard({
                   Expérimental
                 </Badge>
               )}
-              <span className="text-[0.68rem] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                Coupon {rank}
-              </span>
+              {/* Plus de « Coupon N » : le rang recommence à 1 dans chaque
+                  classe, donc l'écran affichait « Coupon 1 » plusieurs fois.
+                  Et il n'exprime aucune qualité — mesuré sur 5 passes, le rang
+                  1 ne vaut pas mieux que le rang 2. */}
+              {couponClass && (
+                <span className="text-[0.62rem] font-medium tracking-wide text-muted-foreground">
+                  {couponClass.frequency}
+                </span>
+              )}
               {betStatus === "WON" && (
                 <span className="text-[0.6rem] font-bold uppercase tracking-widest text-emerald-500">
                   ✓ Gagné

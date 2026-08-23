@@ -2,30 +2,40 @@
 
 Durée cible : `2 min 30 à 3 min`
 Public : vient de voir la vue d'ensemble des canaux.
-Note prod : afficher le tableau à deux lignes (top 5 par edge calibré vs top 5 par probabilité brute) avec les deux chiffres 2026 forward en évidence.
+Note prod : montrer côte à côte, dans Investir, un pick VALUE et le pick identique émis par un canal spécialisé — c'est le doublon qui rend la démonstration évidente. Puis la vue « Écarté » avec le motif « edge revendiqué trop élevé ».
 
 ## Ouverture
 
-VALUE, en français Valeur, c'est le canal de mise réelle principal d'EVCore. Et c'est aujourd'hui le seul canal démontré positif sur des données que le modèle n'a jamais vues — à condition d'être bien classé.
+VALUE, en français Valeur, a longtemps été présenté comme le canal le plus solide d'EVCore. La mesure a dit autre chose, et c'est une des corrections les plus utiles qu'on ait faites.
 
 ## Ce que le canal cherche
 
-VALUE identifie des cotes à valeur attendue positive : des matchs où la probabilité calibrée dépasse suffisamment la probabilité implicite. C'est la colonne vertébrale de toute la discipline EVCore.
+VALUE retient les picks où la probabilité calibrée dépasse nettement la probabilité implicite de la cote — un écart d'au moins 10 points.
 
-## Les chiffres
+Un point de vocabulaire : depuis août 2026, VALUE n'explore plus les marchés lui-même. C'est un filtre. Les canaux spécialisés décident d'abord, chacun sur son marché ; VALUE regarde leurs décisions et retient celles qui s'écartent le plus du marché.
 
-Deux classements testés. Top 5 par edge calibré : plus 14,98% sur tout l'historique, et plus 2,27% sur le seul 2026 en hors échantillon. Top 5 par probabilité brute, sur les mêmes données : moins 12,70%.
+## Ce que la mesure a trouvé
 
-C'est le seul classement, sur l'ensemble des canaux EVCore, qui reste positif hors échantillon à ce jour.
+Deux choses, qui vont ensemble.
 
-## Pourquoi cet écart est si important
+D'abord, VALUE produit très peu de choses qui lui soient propres. Quatre-vingt-douze pour cent de ses sélections reprennent exactement un pick déjà émis ailleurs — même match, même marché, même pick, même probabilité. Sous un second nom.
 
-Un edge élevé n'a de valeur que s'il reflète une vraie divergence d'analyse — pas juste une cote généreuse sur un match où le modèle se trompe. Le classement par probabilité brute favorise justement les cas où le modèle affiche une grande confiance, y compris mal placée. Le classement par edge calibré filtre mieux ces cas. C'est pour ça que le Coupon Composer et la page Investir appliquent toujours ce classement testé, jamais une intuition de tri.
+Ensuite, et c'est le résultat contre-intuitif : re-sélectionner **dégrade** la calibration. Sur le même vivier de picks, ceux que VALUE reprend réalisent une part nettement plus faible de ce qu'ils annoncent que ceux qu'il laisse. Le filtre ne rend pas les picks meilleurs, il les rend moins fiables.
 
-## Ce que ces chiffres ne disent pas
+Le mécanisme est visible : VALUE choisit les probabilités annoncées les plus hautes, et c'est exactement là que le modèle se trompe le plus.
 
-295 picks sur tout l'historique, ce n'est pas un échantillon massif. Et plus 2,27% sur 2026 reste une période courte à l'échelle d'une saison complète. Ces résultats sont mesurés et datés — jamais une garantie pour le prochain pari.
+## La nuance qui empêche de conclure
+
+Les huit pour cent de picks réellement propres à VALUE se comportent différemment : mieux calibrés, et rentables sur l'échantillon disponible. C'est le seul endroit du système où une couche de sélection ajoute quelque chose.
+
+Mais l'échantillon est mince, et tout ce système a été refondu justement parce qu'on avait pris trop de décisions sur des échantillons de cette taille. Rien n'a été changé. La piste est documentée, elle attend une vraie validation.
+
+## Pourquoi ses picks apparaissent dans « Écarté »
+
+VALUE sélectionne les picks dont l'écart dépasse 10 points. Le garde-fou d'Investir écarte les picks dont l'écart dépasse 10 points. Les deux règles sont exactement complémentaires, donc la plupart des picks VALUE atterrissent dans « Écarté ».
+
+C'est déroutant, et c'est assumé. Le garde-fou repose sur une mesure solide. Le canal repose sur une intuition que cette mesure contredit. Tant que ce n'est pas tranché, la contradiction reste visible plutôt que masquée.
 
 ## Clôture
 
-VALUE bien classé est aujourd'hui le seul canal EVCore démontré hors échantillon. Le classement compte autant que le signal — retenez ça avant la prochaine leçon.
+VALUE est un filtre qui reprend surtout les décisions des autres, et qui les dégrade en les reprenant. Le seul segment prometteur est celui de ses picks propres — trop mince pour décider aujourd'hui. Le chiffre à jour du canal est dans Track Record, pas dans cette vidéo.

@@ -23,11 +23,11 @@ export function MlModelMissingEmail({ segments }: MlModelMissingProps) {
         <Text style={label}>Segments concernés</Text>
         <Text style={insetBlock}>{segments.join("\n")}</Text>
         <Text style={note}>
-          Ces segments sont marqués isActive=true en base mais n&apos;apparaissent
-          pas dans les active_segments du ml-worker (/health) : fichier de
-          modèle manquant, chemin invalide, ou échec de chargement. Les paris
-          sur ces segments tournent sans correction ML tant que ce n&apos;est
-          pas résolu.
+          Ces segments sont marqués isActive=true en base mais
+          n&apos;apparaissent pas dans les active_segments du ml-worker
+          (/health) : fichier de modèle manquant, chemin invalide, ou échec de
+          chargement. Les paris sur ces segments tournent sans correction ML
+          tant que ce n&apos;est pas résolu.
         </Text>
       </Section>
     </EvCoreLayout>
@@ -38,7 +38,5 @@ export const renderMlModelMissing = (props: MlModelMissingProps) =>
   renderEmail(createElement(MlModelMissingEmail, props));
 
 export default function MlModelMissingEmailPreview() {
-  return (
-    <MlModelMissingEmail segments={["CONF:ONE_X_TWO", "SAFE:BTTS"]} />
-  );
+  return <MlModelMissingEmail segments={["CONF:ONE_X_TWO", "SAFE:BTTS"]} />;
 }

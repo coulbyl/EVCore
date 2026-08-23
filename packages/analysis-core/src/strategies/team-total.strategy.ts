@@ -8,7 +8,7 @@ import {
   type TeamTotalLineConfig,
   type TeamTotalSide,
   type TeamTotalTeam,
-} from "./config";
+} from "./team-total.config";
 import type {
   ChannelStrategy,
   StrategyContext,

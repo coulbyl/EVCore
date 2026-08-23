@@ -1,38 +1,45 @@
 ---
-title: "Le canal GOALS (Buts) : un signal d'exploration, pas un edge prouvé"
+title: "Le canal GOALS (Buts) : le plus gros échantillon, et le verdict le plus net"
 category: channels
 difficulty: intermediate
 order: 7
 slug: goals-channel
-summary: "Ce canal à fort volume n'est rentable sur aucun classement testé à ce jour — et l'audit du 2026-07-28, sur un échantillon bien plus large qu'avant, le confirme plus nettement encore."
-updatedAt: "2026-07-28"
+summary: "GOALS est négatif, et c'est la seule chose que cette formation ait annoncée qui soit restée vraie. Pourquoi ? Parce que c'est un résultat négatif, mesuré sur le plus gros échantillon du système."
+updatedAt: "2026-08-22"
 related: ["channels-overview", "btts-channel", "dominant-channel"]
 ---
 
 ## Ce que ce canal cherche
 
-GOALS identifie une direction sur le total de buts d'un match, plus ou moins une ligne donnée (1.5, 2.5, 3.5, 4.5). C'est un marché à très fort volume, calculé à chaque match analysé.
+GOALS identifie une direction sur le total de buts d'un match, au-dessus ou en dessous d'une ligne donnée (1.5, 2.5, 3.5, 4.5). Marché à très fort volume, calculé à chaque match analysé — c'est de loin le canal qui produit le plus de sélections réglées.
 
-## Le chiffre, sans détour
+## Le seul verdict qui n'a pas bougé
 
-L'audit du 2026-07-28, sur l'historique complet (15 685 sélections réglées — de loin le plus gros échantillon de tous les canaux d'EVCore), confirme un ROI négatif :
+Quand cette formation a été révisée en août 2026, chaque chiffre annoncé sur chaque canal a été remesuré. Presque tous avaient dérivé, et systématiquement dans le même sens : ce qui était annoncé positif s'était érodé ou inversé.
 
-| Canal | Volume (n) | ROI mesuré |
-| ----- | ---------- | ---------- |
-| GOALS | 15 685     | **−5.39%** |
+**Une seule affirmation a tenu : celle sur GOALS.** Le canal était annoncé négatif, il l'est resté, à quelques dixièmes de point près.
 
-Ce chiffre mérite une mise en garde particulière : sur une fenêtre plus courte et récente, GOALS peut apparaître ponctuellement positif (+1.5% a été observé sur une fenêtre de 90 jours, par exemple) — une série favorable, statistiquement possible même sur un canal négatif en moyenne. C'est exactement le piège que la leçon sur la variance décrit : juger un canal sur une fenêtre récente plutôt que sur son historique complet aurait conduit à l'activer à tort. L'audit complet, avec un échantillon quinze fois plus grand, tranche dans l'autre sens.
+Ce n'est pas une coïncidence, et c'est la leçon de cette page.
 
-## Pourquoi EVCore le garde quand même
+## Pourquoi les mauvaises nouvelles vieillissent mieux
 
-Un canal non rentable n'est pas forcément inutile. GOALS sert aujourd'hui à deux choses, toutes deux différentes de "vous recommander de miser dessus". D'abord comme signal d'exploration : il fait partie des données que le moteur continue de calibrer, et une future méthode de classement ou un découpage par championnat (comme cela a fonctionné pour BTTS) pourrait un jour en extraire un edge. Ensuite comme garde-fou pour d'autres canaux : la page Investir exclut certains picks GOALS qui contredisent l'estimation de buts du reste du moteur, le lambda Poisson utilisé pour modéliser le nombre de buts attendu. Un signal GOALS peut donc être utile pour écarter un pick ailleurs, même s'il n'est jamais recommandé pour lui-même.
+Deux raisons se combinent.
 
-## Ce qu'EVCore ne fera jamais avec ce canal
+**L'échantillon.** GOALS produit plus de sélections réglées que n'importe quel autre canal — un ordre de grandeur au-dessus de la plupart. Un chiffre mesuré sur un tel volume bouge peu, parce qu'il n'y a presque plus de hasard dedans.
 
-Vendre GOALS comme un "canal premium" ou un "signal à edge démontré" serait factuellement faux au regard de ces chiffres — une pratique commerciale trompeuse, pas un simple excès marketing. Tant qu'aucun classement ni aucun découpage ne le rend rentable sur des données hors échantillon et sur un volume suffisant, il restera présenté exactement comme dans cette leçon : un signal à fort volume, pas un canal à edge prouvé.
+**L'absence de sélection.** Les chiffres positifs des autres pages avaient été retenus _parce qu'ils étaient positifs_ — sur la période et la formule où ils l'étaient. Un chiffre choisi pour sa valeur revient toujours vers la moyenne quand on le remesure. Un chiffre qu'on n'avait aucune envie de mettre en avant, personne ne l'a optimisé : il n'a nulle part où revenir.
+
+Autrement dit : méfiez-vous d'un bon résultat, il a souvent été choisi. Un mauvais résultat, personne ne l'a cherché.
+
+## GOALS n'est pas inutile pour autant
+
+Le canal nourrit un garde-fou qui, lui, fonctionne. Le moteur estime combien de buts chaque équipe devrait marquer ; quand un pick GOALS contredit cette estimation — « moins de 2.5 buts » alors que le modèle en attend davantage — le pick est écarté. Cette incohérence coûte plusieurs points de taux de réussite, mesurés sur des milliers de cas.
+
+C'est le bon genre de signal : une **caractéristique du pick**, pas un historique de résultats découpé en tranches. Vous le retrouvez dans la vue « Écarté » d'Investir sous le motif « contredit le lambda du modèle ».
 
 ## À retenir
 
-- GOALS (−5.39% ROI sur 15 685 sélections réglées) n'est rentable sur aucun classement testé à ce jour — le plus gros échantillon d'EVCore, et le verdict le plus net.
-- Une bonne performance sur une fenêtre récente et courte ne suffit jamais à renverser ce constat — c'est l'historique complet qui fait foi.
-- Il reste utile en coulisse (exploration, exclusion de picks contradictoires), mais jamais vendu comme un produit de mise autonome. Si un classement ou un découpage le rend rentable un jour, comme pour BTTS, cette leçon sera mise à jour avec les chiffres — pas avant.
+- GOALS est négatif sur le plus gros échantillon du système, et c'est stable.
+- Un mauvais résultat mesuré sur beaucoup de données vieillit mieux qu'un bon résultat mesuré sur peu.
+- Un bon chiffre a souvent été choisi pour sa valeur ; c'est ce qui le fait dériver ensuite.
+- Le canal reste utile pour le garde-fou de cohérence qu'il alimente.

@@ -1,50 +1,47 @@
 ---
-title: "Le canal BTTS (BB) : rentable, mais seulement sur trois championnats"
+title: "Le canal BTTS (BB) : comment une liste de championnats se périme"
 category: channels
 difficulty: intermediate
 order: 6
 slug: btts-channel
-summary: "BTTS était un signal d'exploration jusqu'ici. L'audit du 2026-07-28 a montré que son ROI agrégé cachait un vrai clivage par championnat — le canal est désormais misé, mais seulement là où l'edge tient."
-updatedAt: "2026-07-28"
+summary: "BTTS a été misé sur les seuls championnats où son avantage tenait. Quelques mois plus tard, ces championnats-là étaient passés négatifs. C'est la leçon la plus utile de tout le catalogue sur la fragilité d'un découpage."
+updatedAt: "2026-08-22"
 related: ["channels-overview", "goals-channel", "team-total-channel"]
 ---
 
 ## Ce que ce canal cherche
 
-BTTS (Both Teams To Score) identifie les matchs où le modèle juge probable que les deux équipes marquent. C'est un marché à très fort volume dans le secteur des paris sportifs, calculé à chaque match analysé.
+BTTS (Both Teams To Score) identifie les matchs où le modèle juge probable que les deux équipes marquent. Marché à très fort volume, calculé à chaque match analysé.
 
-## Ce qui a changé le 2026-07-28
+## Le raisonnement d'origine, qui était bon
 
-Pendant longtemps, BTTS n'a été qu'un signal d'exploration : rentable sur aucune méthode testée. L'audit du 2026-07-28, portant sur l'historique complet (3 983 sélections réglées), a confirmé un ROI agrégé faible mais positif — **+0.76%**. Un chiffre trop fin pour en tirer une conclusion à lui seul.
+Le ROI agrégé de BTTS était proche de zéro — un chiffre trop fin pour en tirer quoi que ce soit. Mais en le découpant par championnat, un clivage net apparaissait : quelques ligues nettement positives, la plupart négatives.
 
-En le découpant par championnat, l'explication est apparue : ce n'est pas un edge diffus et faible partout, c'est un edge réel sur trois championnats précis, dilué par des pertes ailleurs.
+La démarche était sérieuse. Le découpage a été validé sur deux périodes distinctes — une moitié pour établir la règle, l'autre pour la vérifier — et seuls les championnats positifs **dans les deux moitiés** ont été retenus. Un championnat qui changeait de signe entre les deux a été écarté pour cette raison précise.
 
-| Championnat         | Volume (n) | ROI mesuré  |
-| ------------------- | ---------- | ----------- |
-| **Bundesliga**      | 241        | **+5.19%**  |
-| **Serie A**         | 209        | **+3.74%**  |
-| **Premier League**  | 768        | **+2.64%**  |
-| La Liga             | 788        | −0.77%      |
-| Championship        | 536        | −1.09%      |
-| League One          | 268        | −1.93%      |
-| League Two          | 259        | −2.34%      |
-| Coupe du Monde      | 115        | −1.29%      |
-| Brasileirão Série A | 100        | **−14.18%** |
+C'est plus rigoureux que ce qui se fait habituellement. Et ça n'a pas suffi.
 
-Chaque ligne de ce tableau représente au moins 100 sélections réglées — assez pour distinguer un vrai signal du bruit, pas un découpage arbitraire après coup pour faire dire aux chiffres ce qu'on veut.
+## Ce qui s'est passé ensuite
 
-## Ce que ça change concrètement
+Remesurés quelques mois plus tard, les deux championnats retenus étaient passés **négatifs** tous les deux. Celui qui avait été écarté pour instabilité l'était aussi.
 
-BTTS entre désormais dans le pool de mise réelle d'EVCore — mais **exclusivement sur Premier League, Bundesliga et Serie A**. Un pick BTTS sur n'importe quel autre championnat, y compris ceux listés ci-dessus, reste un signal d'observation : il peut apparaître ailleurs dans l'app (page Investir, par exemple), mais il n'entre jamais dans un coupon.
+Aucune erreur de calcul n'explique ça. Le découpage par championnat multiplie les cases, et chaque case est petite : quelques centaines de paris. À cette taille, l'écart entre les cases est majoritairement du bruit d'échantillonnage, pas une différence réelle entre les championnats. Retenir les meilleures cases revient à retenir les cases qui ont eu de la chance — et la chance ne se reconduit pas.
 
-Ce n'est pas une promesse que ces trois championnats resteront rentables indéfiniment, ni que les autres resteront négatifs pour toujours — c'est l'état mesuré aujourd'hui, sur un volume suffisant pour agir dessus. Comme pour DRAW, cette leçon sera mise à jour si l'audit change.
+## Ce que ça change pour la lecture
 
-## Pourquoi ce découpage compte au-delà de BTTS
+Un découpage fin donne une impression de précision. « Ce canal marche en Bundesliga » sonne plus scientifique que « ce canal marche ». C'est souvent l'inverse : plus le découpage est fin, plus la part de bruit augmente, et plus le résultat est fragile.
 
-Cette leçon illustre un principe déjà vu avec DOMINANT : un chiffre agrégé peut cacher un signal réel. Là où DOMINANT montrait qu'un bon classement sauve un canal globalement perdant, BTTS montre qu'un bon découpage géographique peut sauver un canal globalement marginal. Les deux mécanismes sont différents, mais la leçon de fond est la même : ne jamais juger un canal sur sa seule moyenne globale avant d'avoir vérifié s'il existe un sous-ensemble où l'edge est net.
+La règle qui en sort, valable bien au-delà de BTTS : **un résultat trouvé en découpant l'historique demande beaucoup plus de preuves qu'un résultat trouvé sur l'ensemble.** Un test sur deux périodes ne suffit pas si les cases sont petites.
+
+## Où en est le canal
+
+BTTS reste misé sur ces deux championnats à ce jour. La mesure qui vient d'être décrite lit l'historique au lieu de rejouer le pipeline complet — le même défaut que celle qui avait produit la liste. Retirer une règle de mise sur une mesure dont on connaît le défaut reproduirait l'erreur qu'on vient de décrire, donc rien n'a été changé en attendant un test propre.
+
+Le risque est assumé et écrit. Le chiffre à jour du canal est dans Track Record.
 
 ## À retenir
 
-- BTTS est rentable, mais seulement sur Premier League, Bundesliga et Serie A (+2.64% à +5.19% ROI, chacun sur 200+ sélections réglées) — ailleurs, le canal reste négatif ou non concluant.
-- Le canal est désormais misé en coupon, strictement limité à ces trois championnats — un pick BTTS ailleurs reste un signal, jamais une mise.
-- Cette segmentation vient d'un audit daté (2026-07-28), pas d'une règle figée : elle sera revue si les chiffres évoluent.
+- Le découpage par championnat semblait rigoureux — validé sur deux périodes — et s'est quand même périmé.
+- Plus un découpage est fin, plus les cases sont petites, et plus l'écart entre elles est du bruit.
+- Retenir les meilleures cases, c'est souvent retenir celles qui ont eu de la chance.
+- Un résultat obtenu en découpant exige plus de preuves qu'un résultat obtenu sur l'ensemble.

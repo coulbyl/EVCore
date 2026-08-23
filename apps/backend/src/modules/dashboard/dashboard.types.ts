@@ -1,3 +1,5 @@
+import type { StrategyChannel } from '@evcore/db';
+
 export type KpiDelta = string | { bet: number; noBet: number };
 
 export type KpiCard = {
@@ -86,18 +88,16 @@ export type ChannelStatus =
   | 'INACTIVE'
   | 'INSUFFICIENT_DATA';
 
+/**
+ * Canal suivi. Le type reprend l'enum Prisma au lieu d'énumérer les canaux à
+ * la main : une union écrite en dur ne se met pas à jour toute seule, et c'est
+ * exactement ce qui avait laissé 8 canaux hors du suivi (voir
+ * TRACKED_CHANNELS, dashboard.constants.ts).
+ */
+export type TrackedChannel = StrategyChannel;
+
 export type ChannelHealthItem = {
-  channel:
-    | 'VALUE'
-    | 'SAFE'
-    | 'DOMINANT'
-    | 'BTTS'
-    | 'DRAW'
-    | 'GOALS'
-    | 'CLEAN_SHEET'
-    | 'TEAM_TOTAL'
-    | 'WIN_EITHER_HALF'
-    | 'CORRECT_SCORE';
+  channel: TrackedChannel;
   status: ChannelStatus;
   primaryMetric: number;
   primaryMetricType: 'ROI' | 'HIT_RATE';
@@ -108,17 +108,7 @@ export type ChannelHealthItem = {
 };
 
 export type ChannelStatsItem = {
-  channel:
-    | 'VALUE'
-    | 'SAFE'
-    | 'DOMINANT'
-    | 'BTTS'
-    | 'DRAW'
-    | 'GOALS'
-    | 'CLEAN_SHEET'
-    | 'TEAM_TOTAL'
-    | 'WIN_EITHER_HALF'
-    | 'CORRECT_SCORE';
+  channel: TrackedChannel;
   hitRate: number | null;
   avgThreshold: number | null;
   vsThreshold: number | null;
