@@ -12,13 +12,13 @@ catalog:
   "@types/node": "^22.0.0"
 
   # React ecosystem
-  react: "^19.2.7"
-  react-dom: "^19.2.7"
+  react: "^19.2.8"
+  react-dom: "^19.2.8"
   lucide-react: "^0.577.0"
   "driver.js": "^1.8.0"
-  next: "16.2.9"
-  "@types/react": "19.2.17"
-  "@types/react-dom": "19.2.3"
+  next: "16.3.2"
+  "@types/react": "19.2.18"
+  "@types/react-dom": "19.2.4"
 
   # ESLint
   eslint: "^9.0.0"
