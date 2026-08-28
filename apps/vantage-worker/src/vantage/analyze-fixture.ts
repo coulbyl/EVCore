@@ -26,12 +26,26 @@ export async function analyzeFixture(
   logger: Logger,
 ): Promise<AnalyzeResult> {
   const context = await buildMatchContext(fixtureId);
-  if (!context) return { outcome: "no_context" };
+  if (!context) {
+    // The sweep only ever selects fixtures with a ModelRun already carrying
+    // non-VANTAGE decisions (see find-eligible-fixtures.ts), so this should
+    // not normally happen — logged as a warning, not silently, since a
+    // silent "no_context" here is exactly what let 206 fixtures sit stuck
+    // and unexplained in prod (see incident 2026-08-28).
+    logger.warn({ fixtureId }, "vantage: no match context available, skipping");
+    return { outcome: "no_context" };
+  }
 
   // Nothing for VANTAGE to read across implies nothing for it to say —
   // calling the model on an empty context would just invite it to invent a
   // reason where none exists.
-  if (context.readings.length === 0) return { outcome: "skipped_no_readings" };
+  if (context.readings.length === 0) {
+    logger.info(
+      { fixtureId },
+      "vantage: no channel readings on this fixture yet, skipping",
+    );
+    return { outcome: "skipped_no_readings" };
+  }
 
   // Situational research is a Groq-only feature (native `groq/compound` web
   // search — see research.ts) — it only ever runs when `config.llmProvider`
