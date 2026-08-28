@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { ScrollableTabs } from "@/components/scrollable-tabs";
 import type { ChannelDecisionChannelGroupDto } from "@/domains/channel-decision/types/channel-decision";
 import { groupByCompetition } from "@/lib/group-by-competition";
+import { groupByHour } from "@/lib/group-by-hour";
 import { translateCountry } from "@/lib/competition-i18n";
 import { GroupBySelect, type GroupByMode } from "@/components/group-by-select";
 import { FiltersPopover } from "@/components/filters-popover";
@@ -99,7 +100,7 @@ export function ChannelList({
   locale: string;
   groupBy: GroupByMode;
 }) {
-  if (activeGroup === null) {
+  if (activeGroup === null || activeGroup.decisions.length === 0) {
     return (
       <Empty className="rounded-[1.6rem] border-border bg-background/20">
         Aucune sélection retenue pour cette date.
@@ -107,15 +108,34 @@ export function ChannelList({
     );
   }
 
+  // Default view: grouped by kickoff time — see match-lens.tsx's MatchGrid
+  // for the same rationale (2026-08 UX audit).
   if (groupBy === "none") {
+    const hourGroups = groupByHour(activeGroup.decisions, (d) => d.kickoff);
     return (
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-        {activeGroup.decisions.map((decision) => (
-          <ChannelSelectionRow
-            key={decision.id}
-            decision={decision}
-            locale={locale}
-          />
+      <div className="flex flex-col gap-6">
+        {hourGroups.map((hourGroup) => (
+          <section key={hourGroup.key} className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <h3 className="text-[0.95rem] font-bold text-foreground">
+                {hourGroup.key}
+              </h3>
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-muted-foreground">
+                {hourGroup.items.length} match
+                {hourGroup.items.length > 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+              {hourGroup.items.map((decision) => (
+                <ChannelSelectionRow
+                  key={decision.id}
+                  decision={decision}
+                  locale={locale}
+                />
+              ))}
+            </div>
+          </section>
         ))}
       </div>
     );

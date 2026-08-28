@@ -207,8 +207,11 @@
       "all": "All",
       "label": "Filters",
       "noMatch": "No fixture matches the filters.",
-      "groupByNone": "No grouping",
-      "groupByLeague": "Group by league"
+      "groupByNone": "By kickoff time",
+      "groupByLeague": "Group by league",
+      "moreLeagues": "More",
+      "searchLeague": "Search a competition…",
+      "noLeagueResults": "No competition."
     },
     "helpLink": "How to read a pick"
   },

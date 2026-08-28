@@ -207,8 +207,11 @@
       "all": "Tous",
       "label": "Filtres",
       "noMatch": "Aucun match ne correspond aux filtres.",
-      "groupByNone": "Aucun groupement",
-      "groupByLeague": "Grouper par ligue"
+      "groupByNone": "Par heure",
+      "groupByLeague": "Grouper par ligue",
+      "moreLeagues": "Plus",
+      "searchLeague": "Rechercher un championnat…",
+      "noLeagueResults": "Aucun championnat."
     },
     "helpLink": "Comment lire une fiche"
   },

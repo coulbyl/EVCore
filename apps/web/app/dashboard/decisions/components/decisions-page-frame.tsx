@@ -32,6 +32,7 @@ export function DecisionsPageFrame({
   onViewChange,
   headerExtra,
   subHeader,
+  leagueFilter,
 }: {
   children: React.ReactNode;
   contentScroll?: "page" | "child";
@@ -51,12 +52,19 @@ export function DecisionsPageFrame({
   // Wider content (e.g. the channel tab strip) that needs its own row —
   // kept as a distinct boxed panel below the header.
   subHeader?: React.ReactNode;
+  // Championship chips, above everything else — shared by both lenses
+  // (Par match / Par canal), so it renders once here rather than inside
+  // either lens's own header slot.
+  leagueFilter?: React.ReactNode;
 }) {
   const t = useTranslations("decisions");
   const pageOwnsScroll = contentScroll === "page";
 
   return (
     <Page className="flex h-full flex-col">
+      {leagueFilter ? (
+        <div className="mb-3 shrink-0">{leagueFilter}</div>
+      ) : null}
       <PageHeader>
         <LensToggle view={view} onChange={onViewChange} />
         <PageHeaderActions className="w-full lg:w-auto">
