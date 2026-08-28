@@ -7,7 +7,7 @@ export const ANALYSIS_SHEET_CHANNEL_OPTIONS: {
   { value: "VALUE", label: "Valeur" },
   { value: "SAFE", label: "Sécurité" },
   { value: "DOMINANT", label: "Victoire" },
-  { value: "BTTS", label: "BB" },
+  { value: "BTTS", label: "BTTS" },
   { value: "DRAW", label: "Nul" },
   { value: "GOALS", label: "Buts" },
 ];

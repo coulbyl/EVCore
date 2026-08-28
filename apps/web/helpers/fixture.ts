@@ -194,8 +194,8 @@ export function formatPickForDisplay(pick: string, market: string): string {
     if (side && rest) {
       const sideLabel =
         side === "HOME" ? "Dom." : side === "AWAY" ? "Ext." : "Nul";
-      if (rest === "YES") return `${sideLabel} + BB Oui`;
-      if (rest === "NO") return `${sideLabel} + BB Non`;
+      if (rest === "YES") return `${sideLabel} + BTTS Oui`;
+      if (rest === "NO") return `${sideLabel} + BTTS Non`;
       const goalsLabel = formatGenericOverUnderPick(rest);
       if (goalsLabel) return `${sideLabel} + ${goalsLabel}`;
     }
@@ -215,8 +215,8 @@ export function formatDiagnosticPickForDisplay(
   }
 
   if (market === "BTTS") {
-    if (pick === "YES") return "BB OUI";
-    if (pick === "NO") return "BB NON";
+    if (pick === "YES") return "BTTS OUI";
+    if (pick === "NO") return "BTTS NON";
   }
 
   if (market === "FIRST_HALF_WINNER") {
@@ -289,8 +289,8 @@ export function formatDiagnosticPickForDisplay(
     const rest = sideMatch?.[2];
     if (side && rest) {
       const sideLabel = side === "HOME" ? "V1" : side === "AWAY" ? "V2" : "Nul";
-      if (rest === "YES") return `${sideLabel} + BB OUI`;
-      if (rest === "NO") return `${sideLabel} + BB NON`;
+      if (rest === "YES") return `${sideLabel} + BTTS OUI`;
+      if (rest === "NO") return `${sideLabel} + BTTS NON`;
       const goalsLabel = formatGenericOverUnderPick(rest);
       if (goalsLabel) return `${sideLabel} + ${goalsLabel}`;
     }

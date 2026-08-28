@@ -202,7 +202,7 @@ function CouponLegCard({
     >
       <div className="min-w-0">
         <div className="flex min-w-0 items-start justify-between gap-2">
-          <p className="line-clamp-2 min-w-0 text-xs font-semibold leading-snug">
+          <p className="line-clamp-2 min-w-0 text-sm font-semibold leading-snug text-foreground">
             {leg.pickLabel}
           </p>
           <ResultBadge result={leg.result} finished={leg.score !== null} />

@@ -7,12 +7,6 @@ import {
   PageHeader,
   PageHeaderTitle,
   StatCard,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
 } from "@evcore/ui";
 import { serverApiRequest } from "@/lib/api/server-api";
 import type {
@@ -21,13 +15,14 @@ import type {
   ChannelStatsItem,
 } from "@/domains/dashboard/types/dashboard";
 import { ChannelCompetitionSection } from "./components/channel-competition-section";
-import { ChannelStatusBadge } from "./components/channel-status-badge";
+import {
+  ChannelStatsTable,
+  type ChannelStatRow,
+} from "./components/channel-stats-table";
 import { PeriodTabs } from "./components/period-tabs";
 import {
   CHANNEL_LABELS,
   dateRangeForPeriod,
-  formatHitRate,
-  formatRoi,
   mergeChannelData,
   resolvePeriod,
   type PnlByCanalResponse,
@@ -83,6 +78,14 @@ export default async function TrackRecordPage({
     from,
     to,
   );
+  const channelStatRows: ChannelStatRow[] = rows.map((row) => ({
+    key: row.channel,
+    primaryLabel: CHANNEL_LABELS[row.channel],
+    status: row.status,
+    roi: row.roi,
+    hitRate: row.hitRate,
+    sampleSize: row.sampleSize,
+  }));
 
   return (
     <Page className="flex h-full flex-col">
@@ -132,42 +135,10 @@ export default async function TrackRecordPage({
             <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Par canal
             </h2>
-            <div className="overflow-x-auto rounded-2xl border border-border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Canal</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead className="text-right">ROI</TableHead>
-                    <TableHead className="text-right">
-                      Taux de réussite
-                    </TableHead>
-                    <TableHead className="text-right">Échantillon</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((row) => (
-                    <TableRow key={row.channel}>
-                      <TableCell className="font-medium text-foreground">
-                        {CHANNEL_LABELS[row.channel]}
-                      </TableCell>
-                      <TableCell>
-                        <ChannelStatusBadge status={row.status} />
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {formatRoi(row.roi)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {formatHitRate(row.hitRate)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums text-muted-foreground">
-                        n={row.sampleSize}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <ChannelStatsTable
+              primaryColumnLabel="Canal"
+              rows={channelStatRows}
+            />
             <p className="text-xs leading-5 text-muted-foreground">
               &quot;Échantillon insuffisant&quot; : moins de 30 paris réglés sur
               la période — pas assez de volume pour distinguer un vrai edge du

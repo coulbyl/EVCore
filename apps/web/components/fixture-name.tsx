@@ -66,14 +66,18 @@ export function FixtureName({
     <div className={`flex min-w-0 ${layout} ${className}`}>
       <span className="flex min-w-0 items-center gap-1.5">
         {logoPosition === "start" && <TeamLogo src={homeLogo} name={home} />}
-        <span className={nameClass}>{home}</span>
+        <span className={nameClass} title={wrap ? undefined : home}>
+          {home}
+        </span>
         {logoPosition === "end" && <TeamLogo src={homeLogo} name={home} />}
         {homeBadge}
       </span>
       <span className="flex min-w-0 items-center gap-1.5">
         <span className="shrink-0 font-normal text-muted-foreground">vs</span>
         {logoPosition === "start" && <TeamLogo src={awayLogo} name={away} />}
-        <span className={nameClass}>{away}</span>
+        <span className={nameClass} title={wrap ? undefined : away}>
+          {away}
+        </span>
         {logoPosition === "end" && <TeamLogo src={awayLogo} name={away} />}
         {awayBadge}
       </span>
