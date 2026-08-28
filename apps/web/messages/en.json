@@ -328,7 +328,7 @@
     },
     "evaFab": {
       "title": "Eva",
-      "description": "Your analysis assistant — ask about a match or a period and she answers using the engine's data. Long-press to hide it."
+      "description": "Generates and exports the sheet of retained picks over a period (txt/json) — handy for archiving or sharing it. Long-press to hide it."
     },
     "pageSearchFab": {
       "title": "Search this page",

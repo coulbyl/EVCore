@@ -328,7 +328,7 @@
     },
     "evaFab": {
       "title": "Eva",
-      "description": "Ton assistante d'analyse — pose-lui une question sur un match ou une période, elle répond avec les données du moteur. Appui long pour la masquer."
+      "description": "Génère et exporte la fiche des picks retenus sur une période (txt/json) — pratique pour l'archiver ou la partager. Appui long pour la masquer."
     },
     "pageSearchFab": {
       "title": "Recherche dans la page",

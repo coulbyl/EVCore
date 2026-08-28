@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@evcore/ui";
-import { CalendarIcon, Download, Sparkles } from "lucide-react";
+import { CalendarIcon, Download } from "lucide-react";
 import type { AnalysisSheetFilters } from "@/domains/analysis-sheet/types/analysis-sheet";
 import { isoToDate, toISODate } from "@/lib/date";
 import { ANALYSIS_SHEET_CHANNEL_OPTIONS } from "./eva-constants";
@@ -27,14 +27,10 @@ const CALENDAR_START_MONTH = new Date(new Date().getFullYear() - 5, 0);
 export function EvaFilterBar({
   filters,
   onFiltersChange,
-  onAnalyze,
-  isAnalyzing,
   onExport,
 }: {
   filters: AnalysisSheetFilters;
   onFiltersChange: (filters: AnalysisSheetFilters) => void;
-  onAnalyze: () => void;
-  isAnalyzing: boolean;
   onExport: (format: "txt" | "json") => void;
 }) {
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -87,24 +83,6 @@ export function EvaFilterBar({
         className="w-full sm:min-w-40 sm:flex-1"
       />
 
-      <Input
-        type="number"
-        inputMode="numeric"
-        min={1}
-        step={1000}
-        placeholder="Gain visé (FCFA)"
-        value={filters.targetWinAmount ?? ""}
-        onChange={(e) => {
-          const parsed = Number.parseInt(e.target.value, 10);
-          onFiltersChange({
-            ...filters,
-            targetWinAmount:
-              Number.isFinite(parsed) && parsed > 0 ? parsed : undefined,
-          });
-        }}
-        className="w-full sm:min-w-40 sm:flex-1"
-      />
-
       <Select
         value={filters.channel ?? "ALL"}
         onValueChange={(value) =>
@@ -131,11 +109,6 @@ export function EvaFilterBar({
           </SelectGroup>
         </SelectContent>
       </Select>
-
-      <Button onClick={onAnalyze} disabled={isAnalyzing} className="gap-2">
-        <Sparkles className="size-4" />
-        {isAnalyzing ? "Analyse en cours…" : "Analyser avec Eva"}
-      </Button>
 
       <div className="flex gap-2 sm:ml-auto">
         <Button
