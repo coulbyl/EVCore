@@ -86,6 +86,39 @@ services:
       redis:
         condition: service_healthy
 
+  # Opt-in (`docker compose --profile vantage up -d vantage-worker`), not
+  # started by a bare `docker compose up` — GROQ_API_KEY is required, and
+  # most dev work on this repo doesn't need VANTAGE running. See
+  # apps/vantage-worker/README.md; `pnpm --filter vantage-worker dev`
+  # remains the simpler local loop (connects to this compose's postgres/redis
+  # directly, no image build needed).
+  vantage-worker:
+    profiles: ["vantage"]
+    build:
+      context: .
+      dockerfile: apps/vantage-worker/Dockerfile
+    container_name: evcore-vantage-worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-evcore}"
+      PGBOUNCER_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@pgbouncer:5432/${POSTGRES_DB:-evcore}"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      # Soft default (not `:?required`) — a required var here would fail
+      # `docker compose up`/`config` for EVERY service in this file, not just
+      # this profile-gated one, since Compose interpolates all services'
+      # variables up front regardless of which profiles actually start. An
+      # unset key fails loudly instead, inside the container, only when
+      # someone actually runs `--profile vantage up`.
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
+      LOG_LEVEL: info
+    depends_on:
+      pgbouncer:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
   mailpit:
     image: axllent/mailpit:latest
     container_name: evcore-mailpit

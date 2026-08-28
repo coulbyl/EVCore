@@ -17,6 +17,7 @@ Status as of 2026-08-28. See [`docs/architecture.md`](docs/architecture.md) for 
 - [x] Situational research (`VANTAGE_ENABLE_RESEARCH`) — `groq/compound-mini` web search as a separate, best-effort call ahead of the verdict call; citations logged in `reasonDetails.researchCitations`; defaults OFF with its cost tradeoff documented (`docs/architecture.md` — Situational research).
 - [x] `VANTAGE_COMPETITION_CODES` (verdict scope) defaults to empty (all 68 active competitions) — the agreed rollout, not a curated subset.
 - [x] `VANTAGE_RESEARCH_COMPETITION_CODES` (research scope, independent from the above) defaults to "les grands championnats" — Premier League, La Liga, Bundesliga, Serie A, Ligue 1, Champions League, Europa League, Europa Conference League (`PL,LL,BL1,SA,L1,UCL,UEL,UECL`) — so turning `VANTAGE_ENABLE_RESEARCH` on is safe-by-default (~$1.50-2/month) rather than defaulting to full 68-league search cost.
+- [x] **CI/CD wired.** `pnpm --filter vantage-worker test` runs in `ci.yml`'s existing `validate` job (Node/TS, no separate job needed unlike `ml-worker`'s Python one). `deploy.yml` builds and pushes `ghcr.io/<owner>/evcore-vantage-worker` on the same trigger as the other images (full monorepo build context, like `backend`, not `ml-worker`'s self-contained one) and the `deploy` job waits on it. `docker-compose.prod.yml` runs it against the same Postgres/Redis as everything else. `docker-compose.yml` (dev) has it too, but opt-in only (`profiles: ["vantage"]`) — a required `GROQ_API_KEY` would otherwise fail `docker compose up` for every service in the file, not just this one, since Compose interpolates variables for all services up front regardless of profile.
 
 ## Disclosure
 
@@ -25,7 +26,7 @@ Running `@evcore/db build`/`generate` while verifying this work caused Prisma 7 
 ## Not done yet — before the pilot can start
 
 - [ ] **Get a Groq API key** and confirm `openai/gpt-oss-120b` (and, if enabled, `groq/compound-mini`) behave as expected on a handful of real fixtures — nothing here has been run against the live Groq API yet.
-- [ ] **Add `vantage-worker` to `docker-compose.yml`** alongside `ml-worker`, pointed at the same Postgres/Redis.
+- [ ] **Set `GROQ_API_KEY` (and the other `VANTAGE_*`/`GROQ_*` vars, if not using the defaults) in the server's `.env`** before the next deploy — `docker-compose.prod.yml`'s `vantage-worker` service will otherwise fail to start (`GROQ_API_KEY is required`, matching how `POSTGRES_PASSWORD`/`NEXT_PUBLIC_API_URL` already behave in that file).
 - [ ] **Decide on `VANTAGE_ENABLE_RESEARCH`** — off (default, ~$1/month total), on with the default grands-championnats scope (~$1.50-2/month more), or widened to all 68 leagues (~$10-20/month) — see `docs/architecture.md` — Situational research (cost) before flipping it.
 - [ ] **Manual read-through of the first batch of `reasonDetails`** on well-known leagues (La Liga, Premier League, Championship) before trusting any of it.
 

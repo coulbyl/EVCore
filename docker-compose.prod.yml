@@ -88,6 +88,44 @@ services:
       redis:
         condition: service_healthy
 
+  # ── VANTAGE Worker ──────────────────────────────────────────────────────────
+  # EVCore's 20th channel (apps/vantage-worker) — reads the other channels'
+  # decisions and proposes its own LLM-derived pick. Never on the backend/web
+  # request path; only needs Postgres + Redis. GROQ_API_KEY and the other
+  # VANTAGE_* / GROQ_* vars below go in the same server .env as the rest of
+  # this file's secrets — see apps/vantage-worker/README.md and
+  # apps/vantage-worker/docs/architecture.md for what each one does and costs.
+  vantage-worker:
+    container_name: evcore-vantage-worker
+    image: ghcr.io/${GHCR_OWNER}/evcore-vantage-worker:latest
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-evcore}
+      PGBOUNCER_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@pgbouncer:5432/${POSTGRES_DB:-evcore}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      GROQ_API_KEY: ${GROQ_API_KEY:?GROQ_API_KEY is required — https://console.groq.com/keys}
+      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
+      LOG_LEVEL: info
+      SWEEP_INTERVAL_MS: ${VANTAGE_SWEEP_INTERVAL_MS:-300000}
+      # Empty = every active competition (the agreed rollout — see
+      # docs/architecture.md, Cost: ~$1/month even at full volume).
+      VANTAGE_COMPETITION_CODES: ${VANTAGE_COMPETITION_CODES:-}
+      # OFF by default — turning this on changes the cost picture
+      # meaningfully (per-request search fee, not per-token). Read
+      # docs/architecture.md's Situational research section before
+      # setting this to true on the server.
+      VANTAGE_ENABLE_RESEARCH: ${VANTAGE_ENABLE_RESEARCH:-false}
+      GROQ_RESEARCH_MODEL: ${GROQ_RESEARCH_MODEL:-groq/compound-mini}
+      # Empty = the built-in "grands championnats" default (PL, LL, BL1, SA,
+      # L1, UCL, UEL, UECL) — never "every league", unlike the var above.
+      VANTAGE_RESEARCH_COMPETITION_CODES: ${VANTAGE_RESEARCH_COMPETITION_CODES:-}
+    depends_on:
+      pgbouncer:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
   # ── Backend ─────────────────────────────────────────────────────────────────
   # entrypoint.sh runs prisma migrate deploy then starts the NestJS app
   backend:

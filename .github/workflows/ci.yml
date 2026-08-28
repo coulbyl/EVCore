@@ -42,6 +42,9 @@ jobs:
       - name: Test (backend)
         run: pnpm --filter backend test
 
+      - name: Test (vantage-worker)
+        run: pnpm --filter vantage-worker test
+
   ml-worker:
     runs-on: ubuntu-latest
     timeout-minutes: 15

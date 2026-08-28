@@ -57,7 +57,13 @@ docker build -t vantage-worker -f apps/vantage-worker/Dockerfile .
 docker run --env-file apps/vantage-worker/.env vantage-worker
 ```
 
-Add it to `docker-compose.yml` alongside `ml-worker` and the backend, pointing at the same Postgres and Redis services — no new infrastructure needed.
+**Dev compose** — opt-in, not part of a bare `docker compose up` (avoids failing every service in the file over a missing `GROQ_API_KEY`):
+
+```bash
+GROQ_API_KEY=... docker compose --profile vantage up -d vantage-worker
+```
+
+**Prod** — already wired: `docker-compose.prod.yml` runs it against the same Postgres/Redis as `backend`, and `.github/workflows/deploy.yml` builds and pushes `ghcr.io/<owner>/evcore-vantage-worker` on every deploy alongside the other images. Set `GROQ_API_KEY` (and any `VANTAGE_*`/`GROQ_*` override) in the server's `.env` before the first deploy — it's a required var there, same treatment as `POSTGRES_PASSWORD`.
 
 ## Cost
 
