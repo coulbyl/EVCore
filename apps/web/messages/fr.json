@@ -147,6 +147,10 @@
       "HALF_TIME_FULL_TIME": {
         "label": "Mi-temps / Fin de match",
         "description": "Résultat à la mi-temps combiné au résultat final."
+      },
+      "VANTAGE": {
+        "label": "Vantage",
+        "description": "Lit les décisions des autres canaux et leur fiabilité mesurée sur cette compétition ; ne propose un pick que s'il identifie une tension ou un biais concret entre eux."
       }
     },
     "reasons": {

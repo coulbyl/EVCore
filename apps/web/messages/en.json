@@ -147,6 +147,10 @@
       "HALF_TIME_FULL_TIME": {
         "label": "HT/FT",
         "description": "Half-time result combined with the final result."
+      },
+      "VANTAGE": {
+        "label": "Vantage",
+        "description": "Reads every other channel's decision and its measured reliability on this competition; only proposes a pick when it spots a concrete tension or bias between them."
       }
     },
     "reasons": {

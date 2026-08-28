@@ -65,6 +65,7 @@ export const CHANNEL_LABELS: Record<ChannelStatsItem["channel"], string> = {
   RESULT_BTTS: "RESULT_BTTS (Issue + BTTS)",
   WIN_EITHER_HALF: "WIN_EITHER_HALF (Gagne une mi-temps)",
   CORRECT_SCORE: "CORRECT_SCORE (Score exact)",
+  VANTAGE: "VANTAGE (Lecture croisée)",
 };
 
 /**
@@ -96,6 +97,7 @@ export const CHANNEL_DISPLAY_ORDER: ChannelStatsItem["channel"][] = [
   "RESULT_BTTS",
   "HALF_TIME_FULL_TIME",
   "CORRECT_SCORE",
+  "VANTAGE",
 ];
 
 /** Canaux reçus, classés selon CHANNEL_DISPLAY_ORDER, inconnus à la fin. */
