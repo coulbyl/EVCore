@@ -10,7 +10,7 @@ vi.mock("./find-eligible-fixtures", () => ({
 }));
 
 const noopLogger = { info: vi.fn() } as unknown as Logger;
-const dummyConfig = {} as Config;
+const dummyConfig = { sweepIntervalMs: 300_000 } as Config;
 
 describe("runSweep", () => {
   it("enqueues one job per eligible fixture with a colon-free jobId", async () => {
@@ -35,6 +35,29 @@ describe("runSweep", () => {
       expect(opts.jobId).toBeDefined();
       expect(opts.jobId).not.toContain(":");
       expect(opts.jobId).toBe(`analyze-${data.fixtureId}`);
+    }
+  });
+
+  it("bounds completed/failed job retention by age, not just count — regression: a fixed jobId + count-only retention let BullMQ silently swallow every re-add for a fixture stuck on a non-persisting outcome (incident 2026-08-28)", async () => {
+    const add = vi.fn().mockResolvedValue(undefined);
+    const queue = { add } as unknown as Queue<AnalyzeJobData | SweepJobData>;
+
+    await runSweep(queue, dummyConfig, noopLogger);
+
+    for (const call of add.mock.calls) {
+      const [, , opts] = call as [
+        string,
+        AnalyzeJobData,
+        {
+          removeOnComplete?: { age?: number; count?: number };
+          removeOnFail?: { age?: number; count?: number };
+        },
+      ];
+      // Age bound must be roughly one sweep interval — long enough for
+      // dashboard visibility, short enough that the *next* sweep can
+      // actually retry a fixture whose jobId is still otherwise claimed.
+      expect(opts.removeOnComplete?.age).toBe(300);
+      expect(opts.removeOnFail?.age).toBe(300);
     }
   });
 });
