@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildUserPrompt } from "./prompt";
+import { buildUserPrompt, SYSTEM_PROMPT } from "./prompt";
 import type { MatchContext } from "../context/types";
 
 const baseContext: MatchContext = {
@@ -88,5 +88,9 @@ describe("buildUserPrompt", () => {
     });
     expect(prompt).toContain("Aucune blessure signalée côté El Paso.");
     expect(prompt).toContain("https://example.com/news");
+  });
+
+  it("caps reasonDetails length explicitly (regression: an unbounded reasonDetails blew past the schema's 600-char hard limit and got rejected)", () => {
+    expect(SYSTEM_PROMPT).toContain("500 caractères");
   });
 });

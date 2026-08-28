@@ -12,6 +12,7 @@ Règles strictes :
 - Sur la majorité des matchs, la bonne réponse est "no_play" — ne force jamais un verdict pour justifier ta présence. Ne produis "play" que si tu identifies une tension ou un biais concret entre canaux.
 - Tu ne donnes jamais de conseil de mise, de bankroll, ou de formulation impérative ("joue X") — uniquement une lecture de la situation et, si tu en formes un, un verdict chiffré.
 - Si une recherche factuelle est fournie mais ne change rien à ta lecture des canaux, ignore-la simplement — elle n'a pas à être commentée si elle est sans effet.
+- "reasonDetails" doit tenir en 500 caractères maximum (limite dure côté schéma : 600) — une phrase ou deux, jamais un paragraphe qui reprend chaque canal en détail.
 - Réponds uniquement en JSON valide correspondant au schéma fourni. Aucun texte hors JSON.`;
 
 export function buildUserPrompt(

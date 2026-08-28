@@ -23,6 +23,17 @@ async function main() {
       "vantage: job failed",
     );
   });
+  // BullMQ routes its own internal script failures (Redis script errors,
+  // stalled-check errors, a job's Redis key vanishing mid-flight — e.g. a
+  // manual `redis-cli DEL` racing an in-flight job, as happened during the
+  // 2026-08-28 incident cleanup) through `worker.emit('error', ...)`, not
+  // through "failed". Node's EventEmitter throws when an 'error' event has
+  // no listener — without this handler, any one of those internal errors
+  // could crash the whole process (raw, unformatted stack traces bypassing
+  // pino entirely is the signature of exactly this happening).
+  worker.on("error", (err) => {
+    logger.error({ err }, "vantage: worker error");
+  });
 
   // Self-scheduling: the worker owns its own repeatable "sweep" job rather
   // than depending on an external cron. `pnpm sweep` (run-sweep-once.ts)
