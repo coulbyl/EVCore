@@ -91,10 +91,11 @@ services:
   # ── VANTAGE Worker ──────────────────────────────────────────────────────────
   # EVCore's 20th channel (apps/vantage-worker) — reads the other channels'
   # decisions and proposes its own LLM-derived pick. Never on the backend/web
-  # request path; only needs Postgres + Redis. GROQ_API_KEY and the other
-  # VANTAGE_* / GROQ_* vars below go in the same server .env as the rest of
-  # this file's secrets — see apps/vantage-worker/README.md and
-  # apps/vantage-worker/docs/architecture.md for what each one does and costs.
+  # request path; only needs Postgres + Redis. LLM_PROVIDER, its matching
+  # *_API_KEY, and the other VANTAGE_* vars below go in the same server .env
+  # as the rest of this file's secrets — see apps/vantage-worker/README.md
+  # and apps/vantage-worker/docs/architecture.md for what each one does and
+  # costs.
   vantage-worker:
     container_name: evcore-vantage-worker
     image: ghcr.io/${GHCR_OWNER}/evcore-vantage-worker:latest
@@ -104,8 +105,23 @@ services:
       PGBOUNCER_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@pgbouncer:5432/${POSTGRES_DB:-evcore}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      GROQ_API_KEY: ${GROQ_API_KEY:?GROQ_API_KEY is required — https://console.groq.com/keys}
+      # Which provider serves the verdict call — all four are OpenAI-
+      # compatible, so this is the only line to change to switch (plus that
+      # provider's API key below). Compose can't make a key conditionally
+      # required on another var's value, so only the *selected* provider's
+      # key is actually enforced — by the app itself at startup (see
+      # apps/vantage-worker/src/config.ts) — not by this file. Cerebras is
+      # the recommended fallback when Groq's shared 8000 TPM on-demand tier
+      # is rate-limiting every sweep (see docs/architecture.md — Cost).
+      LLM_PROVIDER: ${LLM_PROVIDER:-groq}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
       GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
+      CEREBRAS_API_KEY: ${CEREBRAS_API_KEY:-}
+      CEREBRAS_MODEL: ${CEREBRAS_MODEL:-gpt-oss-120b}
+      TOGETHER_API_KEY: ${TOGETHER_API_KEY:-}
+      TOGETHER_MODEL: ${TOGETHER_MODEL:-openai/gpt-oss-120b}
+      FIREWORKS_API_KEY: ${FIREWORKS_API_KEY:-}
+      FIREWORKS_MODEL: ${FIREWORKS_MODEL:-accounts/fireworks/models/gpt-oss-120b}
       LOG_LEVEL: info
       SWEEP_INTERVAL_MS: ${VANTAGE_SWEEP_INTERVAL_MS:-300000}
       # Empty = every active competition (the agreed rollout — see
