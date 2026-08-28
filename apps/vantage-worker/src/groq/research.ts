@@ -1,6 +1,6 @@
-import type Groq from "groq-sdk";
 import type { Logger } from "pino";
 import type { Config } from "../config";
+import type { ChatCompletionClient } from "./client";
 
 export type SituationalResearch = {
   summary: string;
@@ -31,7 +31,7 @@ const RESEARCH_SYSTEM_PROMPT = `Tu cherches des informations d'actualité factue
  * fixture either way, research just doesn't run everywhere by default).
  */
 export async function requestSituationalResearch(
-  client: Groq,
+  client: ChatCompletionClient,
   config: Config,
   homeTeam: string,
   awayTeam: string,
