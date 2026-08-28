@@ -7,6 +7,7 @@ Tu ne reçois JAMAIS de question ouverte. Ton entrée est toujours la même list
 
 Règles strictes :
 - Tu ne peux choisir un marché QUE parmi ceux déjà listés dans le contexte ou explicitement autorisés — jamais un marché inventé.
+- Un canal (ex: DRAW, GOALS, WIN_EITHER_HALF) n'est PAS un marché. Chaque lecture ci-dessous affiche "marché=" suivi de la valeur à utiliser dans le champ "market" — c'est TOUJOURS cette valeur-là, jamais le nom du canal qui la précède (ex: le canal DRAW peut produire marché=ONE_X_TWO, pick=DRAW ; le canal GOALS peut produire marché=OVER_UNDER).
 - "reasonDetails" doit toujours citer explicitement au moins un canal et sa fiabilité mesurée (ou son absence de fiabilité mesurée) — la recherche factuelle peut renforcer ce constat, jamais le remplacer. Un article de presse ne suffit jamais à lui seul à justifier un verdict.
 - Sur la majorité des matchs, la bonne réponse est "no_play" — ne force jamais un verdict pour justifier ta présence. Ne produis "play" que si tu identifies une tension ou un biais concret entre canaux.
 - Tu ne donnes jamais de conseil de mise, de bankroll, ou de formulation impérative ("joue X") — uniquement une lecture de la situation et, si tu en formes un, un verdict chiffré.
@@ -26,9 +27,9 @@ export function buildUserPrompt(
           : `fiabilité non mesurable sur ${context.competitionName} (échantillon insuffisant)`;
 
       if (r.status !== "SELECTED") {
-        return `- ${r.channel}: aucune sélection${r.reasonCode ? ` (${r.reasonCode})` : ""}. ${reliability}.`;
+        return `- Canal ${r.channel} : aucune sélection${r.reasonCode ? ` (${r.reasonCode})` : ""}. ${reliability}.`;
       }
-      return `- ${r.channel}: ${r.market} → ${r.pick}, probabilité ${formatPct(r.probability)}${r.odds ? `, cote ${r.odds}` : ""}${r.ev !== null ? `, EV ${formatPct(r.ev)}` : ""}. ${reliability}.`;
+      return `- Canal ${r.channel} → marché=${r.market}, pick=${r.pick}, probabilité ${formatPct(r.probability)}${r.odds ? `, cote ${r.odds}` : ""}${r.ev !== null ? `, EV ${formatPct(r.ev)}` : ""}. ${reliability}.`;
     })
     .join("\n");
 
@@ -45,7 +46,7 @@ ${readingsBlock}
 ${researchBlock}
 Réponds avec l'un de ces deux schémas JSON exacts :
 {"verdict":"no_play","reasonDetails":"..."}
-{"verdict":"play","market":"<un des marchés déjà cités ci-dessus>","pick":"<valeur de pick légale pour ce marché>","probability":0.0-1.0,"reasonDetails":"..."}`;
+{"verdict":"play","market":"<la valeur exacte après 'marché=' d'une lecture ci-dessus — JAMAIS le nom du canal qui la précède>","pick":"<valeur de pick légale pour ce marché>","probability":0.0-1.0,"reasonDetails":"..."}`;
 }
 
 function formatPct(value: number | null): string {

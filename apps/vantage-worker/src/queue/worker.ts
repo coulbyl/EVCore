@@ -1,7 +1,7 @@
 import { Worker, type Job } from "bullmq";
-import type Groq from "groq-sdk";
 import type { Logger } from "pino";
 import type { Config } from "../config";
+import type { LlmClients } from "../groq/client";
 import { analyzeFixture } from "../vantage/analyze-fixture";
 import { runSweep } from "./scheduler";
 import {
@@ -13,7 +13,7 @@ import type { AnalyzeJobData, SweepJobData } from "./queue";
 
 export function createVantageWorker(
   config: Config,
-  groqClient: Groq,
+  llmClients: LlmClients,
   logger: Logger,
 ): Worker<AnalyzeJobData | SweepJobData> {
   // The worker enqueues its own follow-up analysis jobs from within the sweep
@@ -28,7 +28,7 @@ export function createVantageWorker(
       }
       if (job.name === "analyze") {
         const { fixtureId } = job.data as AnalyzeJobData;
-        return analyzeFixture(fixtureId, groqClient, config, logger);
+        return analyzeFixture(fixtureId, llmClients, config, logger);
       }
       logger.warn({ jobName: job.name }, "vantage: unknown job name, skipping");
       return undefined;
