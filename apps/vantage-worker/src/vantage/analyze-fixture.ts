@@ -1,5 +1,6 @@
 import type { Logger } from "pino";
 import type { Config } from "../config";
+import type { MatchContext } from "../context/types";
 import { buildMatchContext } from "../context/build-match-context";
 import { requestVantageCompletion, type LlmClients } from "../groq/client";
 import { requestSituationalResearch } from "../groq/research";
@@ -9,6 +10,36 @@ import { isValidPickForMarket } from "./known-picks";
 import { buildUserPrompt, SYSTEM_PROMPT } from "./prompt";
 
 const CONFIG_VERSION = "vantage-v2-research";
+
+/** Same empirically-justified floor used elsewhere in the system — see
+ * apps/backend/src/modules/coupon/coupon.constants.ts's MIN_LEG_ODDS and
+ * analysis-core's DOMINANT_MIN_ODDS: below 1.20, a leg's ROI turns sharply
+ * negative (measured: -5.17%±1.59 in the 1.10-1.20 band vs -3.06%±1.16 just
+ * above it) while adding almost no volume. Kept as VANTAGE's own constant
+ * rather than importing one of those — same number today, independently
+ * adjustable, not implicitly coupled to another channel's threshold.
+ *
+ * VANTAGE never computes odds itself (its response schema has no odds
+ * field), so this can only be enforced when its pick happens to match a
+ * reading's exact (market, pick) — see findKnownOdds below. The prompt also
+ * instructs the model directly not to propose anything it can see is under
+ * 1.20; this is the defense-in-depth backstop, same pattern as
+ * isValidPickForMarket. */
+const MIN_ODDS = 1.2;
+
+/** The odds VANTAGE's own pick would carry, if another channel's reading
+ * for this exact (market, pick) happens to have them. VANTAGE has no other
+ * source of odds — see MIN_ODDS above. */
+function findKnownOdds(
+  context: MatchContext,
+  market: string,
+  pick: string,
+): number | null {
+  const reading = context.readings.find(
+    (r) => r.market === market && r.pick === pick && r.odds !== null,
+  );
+  return reading?.odds ?? null;
+}
 
 export type AnalyzeResult =
   | { outcome: "no_context" }
@@ -36,12 +67,17 @@ export async function analyzeFixture(
     return { outcome: "no_context" };
   }
 
+  // Attached to every log line below — a bare fixtureId is meaningless
+  // without opening the DB, and this is on the hot path for reading prod
+  // logs (see the 2026-08-28 incident).
+  const fixtureName = `${context.homeTeam} vs ${context.awayTeam}`;
+
   // Nothing for VANTAGE to read across implies nothing for it to say —
   // calling the model on an empty context would just invite it to invent a
   // reason where none exists.
   if (context.readings.length === 0) {
     logger.info(
-      { fixtureId },
+      { fixtureId, fixtureName, scheduledAt: context.kickoff },
       "vantage: no channel readings on this fixture yet, skipping",
     );
     return { outcome: "skipped_no_readings" };
@@ -75,14 +111,17 @@ export async function analyzeFixture(
   try {
     parsedJson = JSON.parse(raw);
   } catch {
-    logger.warn({ fixtureId, raw }, "vantage: response was not valid JSON");
+    logger.warn(
+      { fixtureId, fixtureName, scheduledAt: context.kickoff, raw },
+      "vantage: response was not valid JSON",
+    );
     return { outcome: "invalid_response", raw, error: "not_json" };
   }
 
   const parsed = vantageResponseSchema.safeParse(parsedJson);
   if (!parsed.success) {
     logger.warn(
-      { fixtureId, raw, issues: parsed.error.issues },
+      { fixtureId, fixtureName, scheduledAt: context.kickoff, raw, issues: parsed.error.issues },
       "vantage: response failed schema validation",
     );
     return {
@@ -97,7 +136,13 @@ export async function analyzeFixture(
     !isValidPickForMarket(parsed.data.market, parsed.data.pick)
   ) {
     logger.warn(
-      { fixtureId, market: parsed.data.market, pick: parsed.data.pick },
+      {
+        fixtureId,
+        fixtureName,
+        scheduledAt: context.kickoff,
+        market: parsed.data.market,
+        pick: parsed.data.pick,
+      },
       "vantage: pick is not a legal value for its market — rejecting",
     );
     return {
@@ -107,6 +152,28 @@ export async function analyzeFixture(
     };
   }
 
+  if (parsed.data.verdict === "play") {
+    const knownOdds = findKnownOdds(context, parsed.data.market, parsed.data.pick);
+    if (knownOdds !== null && knownOdds < MIN_ODDS) {
+      logger.warn(
+        {
+          fixtureId,
+          fixtureName,
+          scheduledAt: context.kickoff,
+          market: parsed.data.market,
+          pick: parsed.data.pick,
+          odds: knownOdds,
+        },
+        "vantage: pick's known odds are below the 1.20 floor — rejecting",
+      );
+      return {
+        outcome: "invalid_response",
+        raw,
+        error: `odds ${knownOdds} for market "${parsed.data.market}" pick "${parsed.data.pick}" are below the ${MIN_ODDS} floor`,
+      };
+    }
+  }
+
   await persistVantageDecision(
     context.modelRunId,
     parsed.data,
@@ -114,7 +181,7 @@ export async function analyzeFixture(
     research,
   );
   logger.info(
-    { fixtureId, verdict: parsed.data.verdict },
+    { fixtureId, fixtureName, scheduledAt: context.kickoff, verdict: parsed.data.verdict },
     "vantage: decision persisted",
   );
   return { outcome: "persisted", verdict: parsed.data.verdict };

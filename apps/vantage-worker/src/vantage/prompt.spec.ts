@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildUserPrompt } from "./prompt";
+import { buildUserPrompt, SYSTEM_PROMPT } from "./prompt";
 import type { MatchContext } from "../context/types";
 
 const baseContext: MatchContext = {
@@ -33,8 +33,18 @@ const baseContext: MatchContext = {
     },
   ],
   calibration: [
-    { channel: "RESULT_BTTS", sampleSize: 40, hitRate: 0.28, roi: -0.07 },
-    { channel: "CLEAN_SHEET", sampleSize: 12, hitRate: null, roi: null },
+    {
+      channel: "RESULT_BTTS",
+      sampleSize: 40,
+      hitRate: 0.28,
+      calibrationRatio: 1.0,
+    },
+    {
+      channel: "CLEAN_SHEET",
+      sampleSize: 12,
+      hitRate: null,
+      calibrationRatio: null,
+    },
   ],
 };
 
@@ -48,9 +58,14 @@ describe("buildUserPrompt", () => {
     expect(prompt).toContain(
       "Canal CLEAN_SHEET → marché=CLEAN_SHEET_HOME, pick=YES",
     );
-    expect(prompt).toContain("fiabilité mesurée sur USL Championship");
+    expect(prompt).toContain(
+      "fiabilité mesurée sur USL Championship: calibration 1.00× (réel/annoncé)",
+    );
     // Sample size below 30 must read as unmeasurable, not as a fabricated number.
     expect(prompt).toContain("fiabilité non mesurable sur USL Championship");
+    // ROI must never appear — see feedback_admission_par_calibration:
+    // calibration ratio replaces it, not the other way around.
+    expect(prompt).not.toContain("ROI");
   });
 
   it("tells the model to judge on channels alone when no research is available", () => {
@@ -88,5 +103,17 @@ describe("buildUserPrompt", () => {
     });
     expect(prompt).toContain("Aucune blessure signalée côté El Paso.");
     expect(prompt).toContain("https://example.com/news");
+  });
+
+  it("caps reasonDetails length explicitly (regression: an unbounded reasonDetails blew past the schema's 600-char hard limit and got rejected)", () => {
+    expect(SYSTEM_PROMPT).toContain("500 caractères");
+  });
+
+  it("instructs a minimum odds of 1.20", () => {
+    expect(SYSTEM_PROMPT).toContain("1.20");
+  });
+
+  it("explicitly requires reasonDetails to be written in French, regardless of provider", () => {
+    expect(SYSTEM_PROMPT).toContain("TOUJOURS être rédigé en français");
   });
 });
