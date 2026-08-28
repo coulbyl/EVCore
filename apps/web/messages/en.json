@@ -222,12 +222,12 @@
     "description": "Reads every other channel's decision and its measured reliability on this competition — only proposes a pick when it spots a concrete tension or bias between them. On most matches, the right call is to play nothing.",
     "stats": {
       "readsToday": "reads today",
-      "plays": "tensions spotted (play)"
+      "plays": "tensions spotted"
     },
     "filters": {
       "all": "All",
-      "play": "Play",
-      "noPlay": "No play"
+      "play": "Recommended",
+      "noPlay": "Avoid"
     },
     "reasoningLabel": "Arbitrage read",
     "sourcesLabel": "Sources",

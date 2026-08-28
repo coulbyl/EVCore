@@ -17,6 +17,7 @@ import {
   Skeleton,
 } from "@evcore/ui";
 import { DateNav } from "@/components/date-nav";
+import { InfoTooltip } from "@/components/info-tooltip";
 import { ScrollableTabs } from "@/components/scrollable-tabs";
 import { todayIso } from "@/lib/date";
 import { deriveLeagueOptions, filterByLeague } from "@/lib/league-filter";
@@ -97,60 +98,43 @@ export function ArbitragePageClient() {
 
   return (
     <Page className="flex h-full flex-col">
-      <div className="mb-4 flex items-start gap-3 shrink-0">
+      <div className="mb-3 flex flex-wrap items-center gap-2 shrink-0">
         <div
-          className="flex size-11 shrink-0 items-center justify-center rounded-xl"
+          className="flex size-8 shrink-0 items-center justify-center rounded-lg"
           style={{ backgroundColor: "var(--canal-vantage-soft)" }}
         >
-          <Scale
-            className="size-[22px]"
-            style={{ color: "var(--canal-vantage)" }}
-          />
+          <Scale className="size-4" style={{ color: "var(--canal-vantage)" }} />
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
-              {t("title")}
-            </h1>
-            <span
-              className="rounded-md px-1.5 py-0.5 text-[0.62rem] font-bold uppercase tracking-wide"
-              style={{
-                backgroundColor: "var(--canal-vantage-soft)",
-                color: "var(--canal-vantage)",
-              }}
-            >
-              {t("badge")}
-            </span>
-          </div>
-          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            {t("description")}
-          </p>
-        </div>
-      </div>
-
-      {hasData && (
-        <div className="mb-4 grid shrink-0 grid-cols-2 gap-2 sm:max-w-sm">
-          <div className="flex flex-col gap-0.5 rounded-xl border border-border bg-panel px-3.5 py-2.5">
-            <span className="text-lg font-bold tabular-nums text-foreground">
+        <h1 className="text-base font-bold tracking-tight text-foreground">
+          {t("title")}
+        </h1>
+        <span
+          className="rounded-md px-1.5 py-0.5 text-[0.62rem] font-bold uppercase tracking-wide"
+          style={{
+            backgroundColor: "var(--canal-vantage-soft)",
+            color: "var(--canal-vantage)",
+          }}
+        >
+          {t("badge")}
+        </span>
+        <InfoTooltip label={t("title")} description={t("description")} />
+        {hasData && (
+          <span className="ml-auto text-xs text-muted-foreground">
+            <span className="font-semibold tabular-nums text-foreground">
               {allEntries.length}
-            </span>
-            <span className="text-[0.7rem] text-muted-foreground">
-              {t("stats.readsToday")}
-            </span>
-          </div>
-          <div className="flex flex-col gap-0.5 rounded-xl border border-border bg-panel px-3.5 py-2.5">
+            </span>{" "}
+            {t("stats.readsToday")}
+            <span className="mx-1.5 text-muted-foreground/40">·</span>
             <span
-              className="text-lg font-bold tabular-nums"
+              className="font-semibold tabular-nums"
               style={{ color: "var(--canal-vantage)" }}
             >
               {playCount}
-            </span>
-            <span className="text-[0.7rem] text-muted-foreground">
-              {t("stats.plays")}
-            </span>
-          </div>
-        </div>
-      )}
+            </span>{" "}
+            {t("stats.plays")}
+          </span>
+        )}
+      </div>
 
       {hasData && (
         <div className="mb-3 shrink-0">

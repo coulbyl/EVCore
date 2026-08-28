@@ -222,12 +222,12 @@
     "description": "Lit les décisions des autres canaux et leur fiabilité mesurée sur cette compétition — ne propose un pick que s'il identifie une tension ou un biais concret entre eux. Sur la majorité des matchs, la bonne réponse est de ne rien jouer.",
     "stats": {
       "readsToday": "lectures aujourd'hui",
-      "plays": "tensions repérées (play)"
+      "plays": "tensions repérées"
     },
     "filters": {
       "all": "Toutes",
-      "play": "Play",
-      "noPlay": "No play"
+      "play": "Recommandé",
+      "noPlay": "À éviter"
     },
     "reasoningLabel": "Lecture Arbitrage",
     "sourcesLabel": "Sources",
