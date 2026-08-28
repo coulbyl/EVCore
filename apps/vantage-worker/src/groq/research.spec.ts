@@ -8,8 +8,10 @@ const baseConfig: Config = {
   databaseUrl: "postgresql://x",
   redisHost: "localhost",
   redisPort: 6379,
-  groqApiKey: "test",
-  groqModel: "openai/gpt-oss-120b",
+  llmProvider: "groq",
+  llmApiKey: "test",
+  llmModel: "openai/gpt-oss-120b",
+  llmBaseUrl: undefined,
   logLevel: "info",
   sweepIntervalMs: 300_000,
   competitionCodes: [],
@@ -60,6 +62,20 @@ describe("requestSituationalResearch — gating", () => {
       "Away",
       null,
       null,
+      "2026-08-28T00:00:00.000Z",
+      noopLogger,
+    );
+    expect(result).toBeNull();
+  });
+
+  it("returns null on a non-Groq provider even if otherwise eligible", async () => {
+    const result = await requestSituationalResearch(
+      untouchedClient,
+      { ...baseConfig, llmProvider: "cerebras" },
+      "Home",
+      "Away",
+      "PL",
+      "Premier League",
       "2026-08-28T00:00:00.000Z",
       noopLogger,
     );

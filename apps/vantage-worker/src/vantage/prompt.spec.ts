@@ -42,8 +42,12 @@ describe("buildUserPrompt", () => {
   it("renders every channel reading with its calibration", () => {
     const prompt = buildUserPrompt(baseContext, null);
     expect(prompt).toContain("El Paso Locomotive vs Pittsburgh Riverhounds");
-    expect(prompt).toContain("RESULT_BTTS: RESULT_BTTS → AWAY_NO");
-    expect(prompt).toContain("CLEAN_SHEET: CLEAN_SHEET_HOME → YES");
+    expect(prompt).toContain(
+      "Canal RESULT_BTTS → marché=RESULT_BTTS, pick=AWAY_NO",
+    );
+    expect(prompt).toContain(
+      "Canal CLEAN_SHEET → marché=CLEAN_SHEET_HOME, pick=YES",
+    );
     expect(prompt).toContain("fiabilité mesurée sur USL Championship");
     // Sample size below 30 must read as unmeasurable, not as a fabricated number.
     expect(prompt).toContain("fiabilité non mesurable sur USL Championship");
@@ -52,6 +56,29 @@ describe("buildUserPrompt", () => {
   it("tells the model to judge on channels alone when no research is available", () => {
     const prompt = buildUserPrompt(baseContext, null);
     expect(prompt).toContain("Aucune recherche factuelle disponible");
+  });
+
+  it("labels channel vs. market explicitly when they diverge (regression: model must not echo the channel name as the market)", () => {
+    const prompt = buildUserPrompt(
+      {
+        ...baseContext,
+        readings: [
+          {
+            channel: "DRAW",
+            status: "SELECTED",
+            reasonCode: null,
+            market: "ONE_X_TWO",
+            pick: "DRAW",
+            probability: 0.279,
+            odds: null,
+            ev: null,
+          },
+        ],
+      },
+      null,
+    );
+    expect(prompt).toContain("Canal DRAW → marché=ONE_X_TWO, pick=DRAW");
+    expect(prompt).toContain("JAMAIS le nom du canal");
   });
 
   it("includes the research summary and its sources when provided", () => {

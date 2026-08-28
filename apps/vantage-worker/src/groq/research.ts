@@ -22,10 +22,13 @@ const RESEARCH_SYSTEM_PROMPT = `Tu cherches des informations d'actualité factue
  * Never throws: a failed or empty search degrades to "no research available"
  * rather than blocking the (cheap, always-on) verdict call.
  *
- * Gated on TWO levels, independently: `config.enableResearch` (the global
- * on/off switch) AND `config.researchCompetitionCodes` (which leagues get
- * the costed call — VANTAGE still writes a verdict on every fixture either
- * way, research just doesn't run everywhere by default).
+ * Gated on THREE levels, independently: `config.llmProvider` (compound web
+ * search is a Groq-only system — there is no equivalent on Cerebras/
+ * Together/Fireworks, so this degrades to "no research available" on any
+ * other provider regardless of the two flags below), `config.enableResearch`
+ * (the global on/off switch), and `config.researchCompetitionCodes` (which
+ * leagues get the costed call — VANTAGE still writes a verdict on every
+ * fixture either way, research just doesn't run everywhere by default).
  */
 export async function requestSituationalResearch(
   client: Groq,
@@ -37,6 +40,7 @@ export async function requestSituationalResearch(
   kickoff: string,
   logger: Logger,
 ): Promise<SituationalResearch | null> {
+  if (config.llmProvider !== "groq") return null;
   if (!config.enableResearch) return null;
   if (
     competitionCode === null ||

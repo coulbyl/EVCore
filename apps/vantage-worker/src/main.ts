@@ -1,13 +1,20 @@
 import { loadConfig } from "./config";
 import { createLogger } from "./logger";
-import { createGroqClient } from "./groq/client";
+import { createLlmClient } from "./groq/client";
 import { createVantageWorker } from "./queue/worker";
 import { createQueue } from "./queue/queue";
 
 async function main() {
   const config = loadConfig();
   const logger = createLogger("vantage-worker");
-  const groqClient = createGroqClient(config);
+  const groqClient = createLlmClient(config);
+
+  if (config.enableResearch && config.llmProvider !== "groq") {
+    logger.warn(
+      { llmProvider: config.llmProvider },
+      "vantage: VANTAGE_ENABLE_RESEARCH is set but situational research (groq/compound web search) has no equivalent on this provider — skipping it on every fixture",
+    );
+  }
 
   const worker = createVantageWorker(config, groqClient, logger);
   worker.on("failed", (job, err) => {
@@ -32,7 +39,11 @@ async function main() {
   );
 
   logger.info(
-    { sweepIntervalMs: config.sweepIntervalMs, model: config.groqModel },
+    {
+      sweepIntervalMs: config.sweepIntervalMs,
+      llmProvider: config.llmProvider,
+      model: config.llmModel,
+    },
     "vantage-worker started",
   );
 
