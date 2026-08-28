@@ -2,6 +2,7 @@ import { ArrowUpRight } from "lucide-react";
 import { Separator, cn } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import { FixtureCard } from "@/components/fixture-card";
+import { ResultBadge } from "@/components/result-badge";
 import {
   formatMarketForDisplay,
   formatPickForDisplay,
@@ -74,6 +75,13 @@ export function ArbitrageCard({
               {formatMarketForDisplay(selection.market, loc)} ·{" "}
               {formatPickForDisplay(selection.pick, selection.market)}
             </span>
+          )}
+          {isPlay && selection && (
+            <ResultBadge
+              result={selection.result}
+              market={selection.market}
+              finished={entry.fixtureStatus === "FINISHED"}
+            />
           )}
         </div>
         {isPlay && selection && (
