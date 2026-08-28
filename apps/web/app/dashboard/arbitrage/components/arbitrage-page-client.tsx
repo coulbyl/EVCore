@@ -39,8 +39,11 @@ export function ArbitragePageClient() {
   const t = useTranslations("arbitrage");
 
   const date = searchParams.get("date") ?? today;
+  // Default to "play" — most reads are "no_play" (VANTAGE's own majority
+  // outcome), so opening on "all" buries the handful of picks that actually
+  // matter under a long list of "nothing to add" cards.
   const filter =
-    (searchParams.get("filter") as ArbitrageFilter | null) ?? "all";
+    (searchParams.get("filter") as ArbitrageFilter | null) ?? "play";
   const selectedLeague = searchParams.get("league");
 
   // Unfiltered — every channel, not just VANTAGE — so flattenArbitrageEntries
@@ -198,8 +201,19 @@ export function ArbitragePageClient() {
                 <EmptyMedia variant="icon">
                   <Scale className="size-5" />
                 </EmptyMedia>
-                <EmptyTitle>{t("emptyTitle")}</EmptyTitle>
-                <EmptyDescription>{t("emptyDescription")}</EmptyDescription>
+                {/* Default filter is "play", and most reads are "no_play" by
+                    design — an empty filtered list here usually just means
+                    "nothing worth flagging today", not "nothing was
+                    analyzed". Distinct copy for the two cases so it doesn't
+                    read as a broken page on an ordinary day. */}
+                <EmptyTitle>
+                  {hasData ? t("emptyFilteredTitle") : t("emptyTitle")}
+                </EmptyTitle>
+                <EmptyDescription>
+                  {hasData
+                    ? t("emptyFilteredDescription")
+                    : t("emptyDescription")}
+                </EmptyDescription>
               </EmptyHeader>
             </Empty>
           )}

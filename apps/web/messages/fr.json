@@ -234,7 +234,9 @@
     "decidedAt": "Décidé à {time}",
     "noPlay": "Aucun pick — lecture seule.",
     "emptyTitle": "Aucune lecture",
-    "emptyDescription": "Le canal n'a encore rien analysé pour cette date."
+    "emptyDescription": "Le canal n'a encore rien analysé pour cette date.",
+    "emptyFilteredTitle": "Rien à signaler",
+    "emptyFilteredDescription": "Aucune tension identifiée aujourd'hui — essayez \"Toutes\" pour voir les lectures sans pick."
   },
   "notifications": {
     "title": "Notifications",
