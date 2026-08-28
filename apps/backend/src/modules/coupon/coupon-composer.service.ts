@@ -9,6 +9,7 @@ import {
   COUPON_BOUNDS,
   MAX_LEG_EDGE,
   MIN_LEG_ODDS,
+  TEAM_TOTAL_MAX_ODDS,
   type CouponBounds,
 } from './coupon.constants';
 import {
@@ -226,6 +227,19 @@ export function clearsMinLegOdds(
   );
 }
 
+// Plafond de cote — TEAM_TOTAL uniquement, voir TEAM_TOTAL_MAX_ODDS pour la
+// mesure. Contrairement à clearsValueEdgeFloor (canal entièrement retiré du
+// pool), TEAM_TOTAL reste admis : il est bien calibré sous ce plafond, mal
+// calibré au-dessus — une borne de cote, pas une exclusion de canal.
+export function clearsTeamTotalMaxOdds(leg: {
+  canal: string;
+  oddsSnapshot: number | null;
+}): boolean {
+  if (leg.canal !== 'TEAM_TOTAL') return true;
+  if (leg.oddsSnapshot === null) return false;
+  return leg.oddsSnapshot < TEAM_TOTAL_MAX_ODDS;
+}
+
 export function clearsMaxLegEdge(leg: {
   calibratedProbability: number | null;
   probability: number;
@@ -402,6 +416,7 @@ export class CouponComposerService {
     const pricedPicks = scoredPicks
       .filter((p) => p.oddsSnapshot !== null)
       .filter((p) => clearsValueEdgeFloor(p))
+      .filter((p) => clearsTeamTotalMaxOdds(p))
       .filter((p) => clearsMaxLegEdge(p))
       .filter((p) => clearsMinLegOdds(p, opts.legOddsBand));
 

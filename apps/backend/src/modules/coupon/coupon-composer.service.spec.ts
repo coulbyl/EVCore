@@ -5,6 +5,7 @@ import {
   calibratedLegProbability,
   calibrateLegProbability,
   clearsValueEdgeFloor,
+  clearsTeamTotalMaxOdds,
   clearsMaxLegEdge,
   clearsMinLegOdds,
   depthRank,
@@ -16,6 +17,7 @@ import {
   COUPON_PARAMS,
   MAX_POOL_PER_COMPETITION,
   MIN_LEG_ODDS,
+  TEAM_TOTAL_MAX_ODDS,
 } from './coupon.constants';
 import type { Canal, ScoredPick } from './signal-window.service';
 
@@ -246,6 +248,28 @@ describe('clearsValueEdgeFloor', () => {
   });
 });
 
+describe('clearsTeamTotalMaxOdds', () => {
+  it('never gates non-TEAM_TOTAL canals, however long the odds', () => {
+    const leg = { canal: 'SAFE', oddsSnapshot: 50.0 };
+    expect(clearsTeamTotalMaxOdds(leg)).toBe(true);
+  });
+
+  it('rejects a TEAM_TOTAL leg without odds', () => {
+    const leg = { canal: 'TEAM_TOTAL', oddsSnapshot: null };
+    expect(clearsTeamTotalMaxOdds(leg)).toBe(false);
+  });
+
+  it('rejects a TEAM_TOTAL leg at or above the odds ceiling (measured: 21.4% real vs 59.4% announced above it)', () => {
+    const leg = { canal: 'TEAM_TOTAL', oddsSnapshot: TEAM_TOTAL_MAX_ODDS };
+    expect(clearsTeamTotalMaxOdds(leg)).toBe(false);
+  });
+
+  it('accepts a TEAM_TOTAL leg below the odds ceiling', () => {
+    const leg = { canal: 'TEAM_TOTAL', oddsSnapshot: 1.8 };
+    expect(clearsTeamTotalMaxOdds(leg)).toBe(true);
+  });
+});
+
 describe('depthRank', () => {
   it('ranks BALANCED offensiveBalance above unknown above ASYMMETRIC above STRONGLY_ASYMMETRIC', () => {
     const base = { shadowConflict: null, priorAnalysisCount: 0 };
@@ -441,6 +465,32 @@ describe('CouponComposerService.compose', () => {
       withWeakLeg.some((c) => c.legs.some((l) => l.fixtureId === 'f4')),
     ).toBe(false);
     expect(withWeakLeg).toEqual(withoutWeakLeg);
+  });
+
+  it('excludes a TEAM_TOTAL leg at or above TEAM_TOTAL_MAX_ODDS from every composed coupon', () => {
+    const longTeamTotalPick = makePick({
+      fixtureId: 'f5',
+      canal: 'TEAM_TOTAL',
+      market: 'TEAM_TOTAL_HOME',
+      probability: 0.45,
+      calibratedHitRate: 0.45,
+      calibratedProbability: 0.45,
+      oddsSnapshot: TEAM_TOTAL_MAX_ODDS,
+      signalScore: 0.5,
+    });
+
+    const withoutLongLeg = service.compose([safePick, bttsStrong, bttsWeak]);
+    const withLongLeg = service.compose([
+      safePick,
+      bttsStrong,
+      bttsWeak,
+      longTeamTotalPick,
+    ]);
+
+    expect(
+      withLongLeg.some((c) => c.legs.some((l) => l.fixtureId === 'f5')),
+    ).toBe(false);
+    expect(withLongLeg).toEqual(withoutLongLeg);
   });
 
   it('computes pick-specific joint probabilities for the same canal mix', () => {
