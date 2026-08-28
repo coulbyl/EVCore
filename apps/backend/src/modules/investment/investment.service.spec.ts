@@ -62,6 +62,7 @@ function item(
     status: 'SELECTED',
     reasonCode: null,
     reasonDetails: null,
+    decidedAt: '2026-08-22T17:00:00.000Z',
     calibrationAlert: false,
     selections: [selection()],
     ...overrides,

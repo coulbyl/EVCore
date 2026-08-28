@@ -68,6 +68,18 @@ describe("buildUserPrompt", () => {
     expect(prompt).not.toContain("ROI");
   });
 
+  it("gives every reading a French market/pick label alongside the technical code, and drops EV entirely (regression: VANTAGE's prose was echoing raw codes like OVER_UNDER/UNDER and citing EV, an anti-predictive signal per CLAUDE.md)", () => {
+    const prompt = buildUserPrompt(baseContext, null);
+    // RESULT_BTTS/AWAY_NO → "Ext. + BTTS Non" per formatPickForDisplayFr.
+    expect(prompt).toContain(
+      "marché=RESULT_BTTS, pick=AWAY_NO (Résultat + BTTS, Ext. + BTTS Non)",
+    );
+    expect(prompt).toContain(
+      "marché=CLEAN_SHEET_HOME, pick=YES (Clean sheet domicile, Oui)",
+    );
+    expect(prompt).not.toContain("EV");
+  });
+
   it("tells the model to judge on channels alone when no research is available", () => {
     const prompt = buildUserPrompt(baseContext, null);
     expect(prompt).toContain("Aucune recherche factuelle disponible");

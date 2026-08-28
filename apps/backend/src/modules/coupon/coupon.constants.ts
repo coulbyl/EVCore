@@ -289,6 +289,29 @@ export const MAX_LEG_EDGE = 0.1;
 export const MIN_LEG_ODDS = 1.2;
 
 /**
+ * Plafond de cote pour une jambe TEAM_TOTAL — canal-spécifique, pas un
+ * MAX_LEG_EDGE générique.
+ *
+ * Mesuré en base le 2026-08-28 sur `coupon_proposal_leg` réglées (requête
+ * ad hoc, pas encore un backtest formalisé — à re-confirmer avec le harnais
+ * de backtest partagé quand il couvre les coupons) : TEAM_TOTAL est bien
+ * calibré à cote courte mais s'effondre à cote longue.
+ *
+ *   cote          n    réel    annoncé   ratio
+ *   < 1.60       12    50.0%    87.6%    0.57
+ *   1.60-2.29    18    55.6%    80.9%    0.69
+ *   >= 2.30      14    21.4%    59.4%    0.36   ← retirée
+ *
+ * Confirmé sur trois fenêtres qui se recoupent (14j, 45j, et la période
+ * post-exclusion VALUE du 25/08 seule) — pas un artefact d'un canal
+ * contaminant l'échantillon (voir POOL_EXCLUDED_CHANNELS pour ce cas-là).
+ * Contrairement à VALUE (dupliqué, exclu entièrement), TEAM_TOTAL reste
+ * admis — il fonctionne, juste pas à cette cote : régler par une borne,
+ * pas désactiver le canal (feedback_fix_not_disable).
+ */
+export const TEAM_TOTAL_MAX_ODDS = 2.3;
+
+/**
  * Plancher de probabilité calibrée par jambe — supprimé le 2026-08-22.
  *
  * Il existait comme constante unique à 0.55 (2026-08-15), après un coupon perdu

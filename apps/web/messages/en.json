@@ -44,7 +44,8 @@
     "coupons": "Combos",
     "investment": "Invest",
     "decisions": "Decisions",
-    "decisionsShort": "Decisions"
+    "decisionsShort": "Decisions",
+    "arbitrage": "Arbitrage"
   },
   "decisions": {
     "channels": {
@@ -149,7 +150,7 @@
         "description": "Half-time result combined with the final result."
       },
       "VANTAGE": {
-        "label": "Vantage",
+        "label": "Arbitrage",
         "description": "Reads every other channel's decision and its measured reliability on this competition; only proposes a pick when it spots a concrete tension or bias between them."
       }
     },
@@ -214,6 +215,26 @@
       "noLeagueResults": "No competition."
     },
     "helpLink": "How to read a pick"
+  },
+  "arbitrage": {
+    "title": "Arbitrage",
+    "badge": "AI read",
+    "description": "Reads every other channel's decision and its measured reliability on this competition — only proposes a pick when it spots a concrete tension or bias between them. On most matches, the right call is to play nothing.",
+    "stats": {
+      "readsToday": "reads today",
+      "plays": "tensions spotted"
+    },
+    "filters": {
+      "all": "All",
+      "play": "Recommended",
+      "noPlay": "Avoid"
+    },
+    "reasoningLabel": "Arbitrage read",
+    "sourcesLabel": "Sources",
+    "decidedAt": "Decided at {time}",
+    "noPlay": "No pick — read only.",
+    "emptyTitle": "No reads",
+    "emptyDescription": "The channel hasn't analyzed anything for this date yet."
   },
   "notifications": {
     "title": "Notifications",

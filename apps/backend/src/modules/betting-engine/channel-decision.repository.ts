@@ -58,6 +58,12 @@ export type ChannelDecisionReadRow = {
   modelRunId: string;
   phase: ModelRunPhase;
   analyzedAt: Date;
+  // When THIS ChannelDecision row was written — distinct from
+  // modelRun.analyzedAt (the deterministic engine's pass, shared by every
+  // channel on that run). VANTAGE attaches to an already-analyzed ModelRun
+  // as a later, separate pass, so its own createdAt is the only accurate
+  // "decided at" for it.
+  createdAt: Date;
   channel: StrategyChannel;
   status: ChannelDecisionStatus;
   reasonCode: string | null;
@@ -264,6 +270,7 @@ export class ChannelDecisionRepository {
         status: true,
         reasonCode: true,
         reasonDetails: true,
+        createdAt: true,
         modelRun: {
           select: {
             phase: true,
@@ -320,6 +327,7 @@ export class ChannelDecisionRepository {
       modelRunId: row.modelRunId,
       phase: row.modelRun.phase,
       analyzedAt: row.modelRun.analyzedAt,
+      createdAt: row.createdAt,
       channel: row.channel,
       status: row.status,
       reasonCode: row.reasonCode,

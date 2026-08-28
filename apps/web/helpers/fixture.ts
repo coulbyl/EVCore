@@ -1,3 +1,8 @@
+import {
+  formatGenericOverUnderPick,
+  formatMarketForDisplayFr,
+  formatPickForDisplayFr,
+} from "@evcore/analysis-core";
 import type { FixturePickSnapshot } from "@/domains/fixture/types/fixture";
 
 type Locale = "fr" | "en";
@@ -40,168 +45,47 @@ export function fixtureStatusBadgeClass(status: string): string {
 
 type LocalePickFormat = "fr" | "en";
 
-const MARKET_LABELS: Record<LocalePickFormat, Record<string, string>> = {
-  fr: {
-    ONE_X_TWO: "Résultat",
-    MATCH_WINNER: "Vainqueur",
-    BTTS: "Les deux marquent",
-    OVER_UNDER: "Plus/Moins",
-    OVER_UNDER_25: "Plus/Moins",
-    DOUBLE_CHANCE: "Double chance",
-    HALF_TIME_FULL_TIME: "Mi-temps / Fin de match",
-    OVER_UNDER_HT: "Plus/Moins MT",
-    FIRST_HALF_WINNER: "Résultat MT",
-    CORRECT_SCORE: "Score exact",
-    DRAW_NO_BET: "Sans le nul",
-    TEAM_TOTAL_HOME: "Buts domicile",
-    TEAM_TOTAL_AWAY: "Buts extérieur",
-    CLEAN_SHEET_HOME: "Clean sheet domicile",
-    CLEAN_SHEET_AWAY: "Clean sheet extérieur",
-    WIN_TO_NIL_HOME: "Gagne sans encaisser (dom.)",
-    WIN_TO_NIL_AWAY: "Gagne sans encaisser (ext.)",
-    TO_WIN_EITHER_HALF: "Gagne une mi-temps",
-    RESULT_TOTAL_GOALS: "Résultat + total buts",
-    RESULT_BTTS: "Résultat + BTTS",
-  },
-  en: {
-    ONE_X_TWO: "Result",
-    MATCH_WINNER: "Match Winner",
-    BTTS: "Both Teams Score",
-    OVER_UNDER: "Over/Under",
-    OVER_UNDER_25: "Over/Under",
-    DOUBLE_CHANCE: "Double Chance",
-    HALF_TIME_FULL_TIME: "Half Time / Full Time",
-    OVER_UNDER_HT: "Over/Under HT",
-    FIRST_HALF_WINNER: "HT Result",
-    CORRECT_SCORE: "Correct Score",
-    DRAW_NO_BET: "Draw No Bet",
-    TEAM_TOTAL_HOME: "Home Team Goals",
-    TEAM_TOTAL_AWAY: "Away Team Goals",
-    CLEAN_SHEET_HOME: "Home Clean Sheet",
-    CLEAN_SHEET_AWAY: "Away Clean Sheet",
-    WIN_TO_NIL_HOME: "Home Win to Nil",
-    WIN_TO_NIL_AWAY: "Away Win to Nil",
-    TO_WIN_EITHER_HALF: "To Win Either Half",
-    RESULT_TOTAL_GOALS: "Result & Total Goals",
-    RESULT_BTTS: "Result & BTTS",
-  },
+// French labels live in @evcore/analysis-core (packages/analysis-core/src/
+// display/market-labels-fr.ts) — shared with apps/vantage-worker, whose
+// VANTAGE prompt uses the exact same map so its own prose reads "moins de
+// 2.5 buts" instead of echoing the raw code it was fed. English stays local:
+// vantage-worker never needs it.
+const MARKET_LABELS_EN: Record<string, string> = {
+  ONE_X_TWO: "Result",
+  MATCH_WINNER: "Match Winner",
+  BTTS: "Both Teams Score",
+  OVER_UNDER: "Over/Under",
+  OVER_UNDER_25: "Over/Under",
+  DOUBLE_CHANCE: "Double Chance",
+  HALF_TIME_FULL_TIME: "Half Time / Full Time",
+  OVER_UNDER_HT: "Over/Under HT",
+  FIRST_HALF_WINNER: "HT Result",
+  CORRECT_SCORE: "Correct Score",
+  DRAW_NO_BET: "Draw No Bet",
+  TEAM_TOTAL_HOME: "Home Team Goals",
+  TEAM_TOTAL_AWAY: "Away Team Goals",
+  CLEAN_SHEET_HOME: "Home Clean Sheet",
+  CLEAN_SHEET_AWAY: "Away Clean Sheet",
+  WIN_TO_NIL_HOME: "Home Win to Nil",
+  WIN_TO_NIL_AWAY: "Away Win to Nil",
+  TO_WIN_EITHER_HALF: "To Win Either Half",
+  RESULT_TOTAL_GOALS: "Result & Total Goals",
+  RESULT_BTTS: "Result & BTTS",
 };
-
-// Parses a generic "OVER_X_Y" / "UNDER_X_Y" pick (used by TEAM_TOTAL_* and
-// other multi-line markets) into a French "Plus/Moins de X.Y" label. Returns
-// null when the pick doesn't match the pattern (caller falls back to raw).
-function formatGenericOverUnderPick(pick: string): string | null {
-  const match = /^(OVER|UNDER)_(\d+)_(\d+)$/.exec(pick);
-  if (!match) return null;
-  const [, side, whole, decimal] = match;
-  const label = side === "OVER" ? "Plus de" : "Moins de";
-  return `${label} ${whole}.${decimal}`;
-}
 
 export function formatMarketForDisplay(
   market: string,
   locale: LocalePickFormat = "fr",
 ): string {
+  if (locale === "fr") return formatMarketForDisplayFr(market);
   return (
-    MARKET_LABELS[locale][market] ??
+    MARKET_LABELS_EN[market] ??
     market.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
   );
 }
 
 export function formatPickForDisplay(pick: string, market: string): string {
-  // Normalise : retire le préfixe marché si concaténé (ex: "OVER_UNDER OVER_1_5" → "OVER_1_5")
-  const p = pick.includes(" ") ? pick.split(" ").slice(1).join("_") : pick;
-
-  if (market === "ONE_X_TWO" || market === "MATCH_WINNER") {
-    if (p === "HOME") return "Domicile";
-    if (p === "DRAW") return "Nul";
-    if (p === "AWAY") return "Extérieur";
-  }
-
-  if (market === "BTTS") {
-    if (p === "YES") return "Oui";
-    if (p === "NO") return "Non";
-  }
-
-  if (market === "DOUBLE_CHANCE") {
-    if (p === "1X") return "Dom. ou Nul";
-    if (p === "X2") return "Nul ou Ext.";
-    if (p === "12") return "Dom. ou Ext.";
-  }
-
-  if (market === "OVER_UNDER" || market === "OVER_UNDER_25") {
-    if (p === "OVER_1_5") return "Plus de 1.5";
-    if (p === "UNDER_1_5") return "Moins de 1.5";
-    if (p === "OVER") return "Plus de 2.5";
-    if (p === "UNDER") return "Moins de 2.5";
-    if (p === "OVER_3_5") return "Plus de 3.5";
-    if (p === "UNDER_3_5") return "Moins de 3.5";
-    if (p === "OVER_4_5") return "Plus de 4.5";
-    if (p === "UNDER_4_5") return "Moins de 4.5";
-  }
-
-  if (market === "OVER_UNDER_HT") {
-    if (p === "OVER_0_5") return "Plus de 0.5 MT";
-    if (p === "UNDER_0_5") return "Moins de 0.5 MT";
-    if (p === "OVER_1_5") return "Plus de 1.5 MT";
-    if (p === "UNDER_1_5") return "Moins de 1.5 MT";
-  }
-
-  if (market === "FIRST_HALF_WINNER") {
-    if (p === "HOME") return "Domicile MT";
-    if (p === "DRAW") return "Nul MT";
-    if (p === "AWAY") return "Extérieur MT";
-  }
-
-  if (market === "HALF_TIME_FULL_TIME") {
-    const htftLabels: Record<string, string> = {
-      HOME_HOME: "Dom. / Dom.",
-      HOME_DRAW: "Dom. / Nul",
-      HOME_AWAY: "Dom. / Ext.",
-      DRAW_HOME: "Nul / Dom.",
-      DRAW_DRAW: "Nul / Nul",
-      DRAW_AWAY: "Nul / Ext.",
-      AWAY_HOME: "Ext. / Dom.",
-      AWAY_DRAW: "Ext. / Nul",
-      AWAY_AWAY: "Ext. / Ext.",
-    };
-    return htftLabels[p] ?? p;
-  }
-
-  if (market === "DRAW_NO_BET" || market === "TO_WIN_EITHER_HALF") {
-    if (p === "HOME") return "Domicile";
-    if (p === "AWAY") return "Extérieur";
-  }
-
-  if (
-    market === "CLEAN_SHEET_HOME" ||
-    market === "CLEAN_SHEET_AWAY" ||
-    market === "WIN_TO_NIL_HOME" ||
-    market === "WIN_TO_NIL_AWAY"
-  ) {
-    if (p === "YES") return "Oui";
-    if (p === "NO") return "Non";
-  }
-
-  if (market === "TEAM_TOTAL_HOME" || market === "TEAM_TOTAL_AWAY") {
-    return formatGenericOverUnderPick(p) ?? p;
-  }
-
-  if (market === "RESULT_TOTAL_GOALS" || market === "RESULT_BTTS") {
-    const sideMatch = /^(HOME|DRAW|AWAY)_(.+)$/.exec(p);
-    const side = sideMatch?.[1];
-    const rest = sideMatch?.[2];
-    if (side && rest) {
-      const sideLabel =
-        side === "HOME" ? "Dom." : side === "AWAY" ? "Ext." : "Nul";
-      if (rest === "YES") return `${sideLabel} + BTTS Oui`;
-      if (rest === "NO") return `${sideLabel} + BTTS Non`;
-      const goalsLabel = formatGenericOverUnderPick(rest);
-      if (goalsLabel) return `${sideLabel} + ${goalsLabel}`;
-    }
-  }
-
-  return p;
+  return formatPickForDisplayFr(pick, market);
 }
 
 export function formatDiagnosticPickForDisplay(

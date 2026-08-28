@@ -105,6 +105,11 @@ export type ChannelDecisionDto = {
   status: ChannelDecisionStatus;
   reasonCode: string | null;
   reasonDetails: unknown;
+  // When this specific ChannelDecision was written — distinct from the
+  // underlying ModelRun's own analysis time, which every channel on that run
+  // shares. Matters for a channel that attaches to an already-analyzed
+  // ModelRun as a later, separate pass (VANTAGE/Arbitrage).
+  decidedAt: string;
   // Model↔market coherence gate flag on the underlying ModelRun — when true
   // the whole fixture is excluded from the staking pool.
   calibrationAlert: boolean;
@@ -120,6 +125,7 @@ export type ChannelDecisionMatchDecisionDto = Pick<
   | "status"
   | "reasonCode"
   | "reasonDetails"
+  | "decidedAt"
   | "calibrationAlert"
   | "selections"
 >;

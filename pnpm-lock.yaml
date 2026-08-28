@@ -493,6 +493,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@evcore/analysis-core':
+        specifier: workspace:*
+        version: link:../../packages/analysis-core
       '@evcore/ui':
         specifier: workspace:*
         version: link:../../packages/ui

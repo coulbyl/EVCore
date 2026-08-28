@@ -276,7 +276,17 @@ export const ETL_CRON_SCHEDULES = {
   // line-movement signal has points to compare. The 18:00 run stays ahead of
   // BETTING_ENGINE_ANALYSIS (20:00) so next-day fixtures analyze on fresh odds.
   ODDS_PREMATCH_SYNC: '0 6,18 * * *',
-  BETTING_ENGINE_ANALYSIS: '0 20 * * *', // 20:00 UTC daily — analyze next-day fixtures after prematch odds sync
+  // 20:00 UTC daily — analyze next-day fixtures after prematch odds sync.
+  // No job data is passed on the cron trigger, so BettingEngineAnalysisWorker
+  // defaults to `tomorrowUtc()` (see that file) — this run NEVER targets
+  // "today". Combined with ROLLING_HORIZON below (J+1..J+4, same gap): once
+  // this evening-before pass has run, NOTHING automatic re-analyzes a
+  // fixture again on its own match day before kickoff — official lineups
+  // (~1h out) and any late odds movement are never picked up. The only way
+  // to get a same-day pass is the manual POST /betting-engine/analyze/date/
+  // :date endpoint. Known gap, not yet addressed (flagged 2026-08-28) — a
+  // same-day cron close to kickoff would close it; deliberately deferred.
+  BETTING_ENGINE_ANALYSIS: '0 20 * * *',
   ROLLING_HORIZON: '0 17 * * *', // 17:00 UTC daily — warm preview for J+1..J+4 (J+1 gets overwritten by 18:00/20:00 authoritative runs)
   // 01:45 UTC daily, just before FIXTURES_SYNC (02:00) — re-derives each
   // competition's current season (activeSeasons()/apiSeasonOverride) and

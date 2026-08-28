@@ -72,6 +72,11 @@ export type ChannelDecisionItem = {
   status: ChannelDecisionStatus;
   reasonCode: string | null;
   reasonDetails: unknown;
+  // When this specific ChannelDecision was written — see
+  // ChannelDecisionReadRow.createdAt. Not surfaced on the primaries' cards
+  // today (their own ModelRun.phase already conveys "when"), but it's the
+  // only accurate "decided at" for a later, separate pass like VANTAGE's.
+  decidedAt: string;
   // Model↔market coherence gate flag on the underlying ModelRun — when true
   // the whole fixture is excluded from the staking pool.
   calibrationAlert: boolean;
@@ -87,6 +92,7 @@ export type ChannelDecisionMatchDecision = Pick<
   | 'status'
   | 'reasonCode'
   | 'reasonDetails'
+  | 'decidedAt'
   | 'calibrationAlert'
   | 'selections'
 >;
@@ -328,6 +334,7 @@ export class ChannelDecisionService {
       status: row.status,
       reasonCode: row.reasonCode,
       reasonDetails: row.reasonDetails,
+      decidedAt: row.createdAt.toISOString(),
       calibrationAlert: row.calibrationAlert,
       selections: row.selections.map(toSelectionItem),
     };
@@ -353,9 +360,17 @@ const READ_CHANNEL_ORDER: readonly StrategyChannel[] = [
   STRATEGY_CHANNEL.RESULT_BTTS,
   STRATEGY_CHANNEL.DRAW_NO_BET,
   STRATEGY_CHANNEL.WIN_TO_NIL,
-  // VANTAGE reads every channel above and proposes its own LLM-derived pick
-  // — listed after the deterministic primaries, before the meta-channels.
-  STRATEGY_CHANNEL.VANTAGE,
+  // VANTAGE is deliberately absent — it has its own dedicated view
+  // (GET /channel-decisions/by-match?channel=VANTAGE, apps/web's
+  // /dashboard/arbitrage) since 2026-08-28, showing its full LLM reasoning
+  // rather than a bare pick chip like the primaries above. It briefly lived
+  // here (see git history) purely to fix the same "silently missing from
+  // READ_CHANNEL_ORDER" bug this list has hit before (CORRECT_SCORE, then
+  // CLEAN_SHEET/TEAM_TOTAL/WIN_EITHER_HALF) — that fix is superseded by the
+  // dedicated page, not a regression of it. This exclusion only affects
+  // "Par canal" (channel-decision.service.spec.ts's listByChannel test
+  // matches); "Par match" excludes VANTAGE separately in the frontend, see
+  // apps/web's decision-helpers.ts.
   // AVOID gates the primaries above; CONSENSUS aggregates them last.
   STRATEGY_CHANNEL.AVOID,
   STRATEGY_CHANNEL.CONSENSUS,
@@ -372,6 +387,7 @@ function toMatchDecision(
     status: item.status,
     reasonCode: item.reasonCode,
     reasonDetails: item.reasonDetails,
+    decidedAt: item.decidedAt,
     calibrationAlert: item.calibrationAlert,
     selections: item.selections,
   };

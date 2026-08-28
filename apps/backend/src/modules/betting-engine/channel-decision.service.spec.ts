@@ -314,6 +314,7 @@ describe('ChannelDecisionService', () => {
           status: CHANNEL_DECISION_STATUS.SELECTED,
           reasonCode: null,
           fixtureId: 'f1',
+          createdAt: new Date('2026-01-18T13:00:00.000Z'),
           scheduledAt: new Date('2026-01-18T14:00:00.000Z'),
           homeTeam: 'Home',
           awayTeam: 'Away',
@@ -346,6 +347,7 @@ describe('ChannelDecisionService', () => {
           status: CHANNEL_DECISION_STATUS.REJECTED,
           reasonCode: 'no_safe_candidate',
           fixtureId: 'f1',
+          createdAt: new Date('2026-01-18T13:05:00.000Z'),
           scheduledAt: new Date('2026-01-18T14:00:00.000Z'),
           homeTeam: 'Home',
           awayTeam: 'Away',
@@ -409,8 +411,10 @@ describe('ChannelDecisionService', () => {
     // that groups.get(channel) is read against — a channel missing from it
     // is silently dropped from the "Par canal" web lens, not an error. This
     // already happened once for CORRECT_SCORE, then again for
-    // CLEAN_SHEET/TEAM_TOTAL/WIN_EITHER_HALF, then again for VANTAGE
-    // (2026-08-28) — added to the schema/frontend but never appended here.
+    // CLEAN_SHEET/TEAM_TOTAL/WIN_EITHER_HALF. VANTAGE is intentionally NOT
+    // in this list (nor in `channels` below) — it has its own dedicated page
+    // now (see READ_CHANNEL_ORDER's comment), this is a deliberate exclusion
+    // rather than a recurrence of the bug this test guards against.
     it('includes every primary and meta channel, not just the original six', async () => {
       const baseRow = {
         id: 'cd',
@@ -418,6 +422,7 @@ describe('ChannelDecisionService', () => {
         status: CHANNEL_DECISION_STATUS.SELECTED,
         reasonCode: null,
         fixtureId: 'f1',
+        createdAt: new Date('2026-01-18T13:00:00.000Z'),
         scheduledAt: new Date('2026-01-18T14:00:00.000Z'),
         homeTeam: 'Home',
         awayTeam: 'Away',
@@ -442,7 +447,6 @@ describe('ChannelDecisionService', () => {
         STRATEGY_CHANNEL.TEAM_TOTAL,
         STRATEGY_CHANNEL.WIN_EITHER_HALF,
         STRATEGY_CHANNEL.CORRECT_SCORE,
-        STRATEGY_CHANNEL.VANTAGE,
         STRATEGY_CHANNEL.AVOID,
         STRATEGY_CHANNEL.CONSENSUS,
       ];
@@ -463,6 +467,49 @@ describe('ChannelDecisionService', () => {
       const groups = await service.listByChannel({ date: '2026-01-18' });
 
       expect(groups.map((g) => g.channel).sort()).toEqual([...channels].sort());
+    });
+
+    // VANTAGE has its own dedicated page (apps/web's /dashboard/arbitrage) —
+    // it must never resurface on "Par canal" even when the raw rows contain
+    // it, so a future accidental re-add to READ_CHANNEL_ORDER is the only
+    // thing that could break this, not silence.
+    it('drops VANTAGE even when present in the raw rows', async () => {
+      const baseRow = {
+        id: 'cd',
+        modelRunId: 'run-1',
+        status: CHANNEL_DECISION_STATUS.SELECTED,
+        reasonCode: null,
+        fixtureId: 'f1',
+        createdAt: new Date('2026-01-18T13:00:00.000Z'),
+        scheduledAt: new Date('2026-01-18T14:00:00.000Z'),
+        homeTeam: 'Home',
+        awayTeam: 'Away',
+        homeLogo: null,
+        awayLogo: null,
+        competitionCode: 'BL1',
+        country: 'Germany',
+        homeScore: null,
+        awayScore: null,
+        homeHtScore: null,
+        awayHtScore: null,
+        selections: [],
+      };
+      const findByDate = vi.fn().mockResolvedValue([
+        { ...baseRow, id: 'cd-1', channel: STRATEGY_CHANNEL.DOMINANT },
+        { ...baseRow, id: 'cd-2', channel: STRATEGY_CHANNEL.VANTAGE },
+      ]);
+      const repo = {
+        findByDate,
+        findNewCoachTeams: vi.fn().mockResolvedValue(new Set()),
+      } as unknown as ChannelDecisionRepository;
+      const service = new ChannelDecisionService(repo);
+
+      const groups = await service.listByChannel({ date: '2026-01-18' });
+
+      expect(groups.map((g) => g.channel)).not.toContain(
+        STRATEGY_CHANNEL.VANTAGE,
+      );
+      expect(groups.map((g) => g.channel)).toContain(STRATEGY_CHANNEL.DOMINANT);
     });
   });
 });
