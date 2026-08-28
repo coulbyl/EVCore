@@ -1,33 +1,69 @@
 import Groq from "groq-sdk";
+import OpenAI from "openai";
 import type { Logger } from "pino";
-import type { Config } from "../config";
+import type { Config, LlmProvider } from "../config";
+
+/** The minimal chat-completions shape every provider's client is used
+ * through — lets requestVantageCompletion (and research.ts) stay
+ * provider-agnostic instead of depending on either SDK's concrete class. */
+export type ChatCompletionClient = {
+  chat: {
+    completions: {
+      create(params: {
+        model: string;
+        temperature?: number;
+        response_format?: { type: "json_object" };
+        messages: { role: "system" | "user"; content: string }[];
+      }): Promise<{
+        choices: { message?: { content?: string | null } | null }[];
+      }>;
+    };
+  };
+};
 
 type LlmClient = {
-  provider: string;
-  client: Groq;
+  provider: LlmProvider;
+  client: ChatCompletionClient;
   model: string;
 };
 
 /** Every configured provider, ready to call, in fallback order: the primary
- * first, then each `LLM_PROVIDER_FALLBACKS` entry. groq-sdk's client is used
- * for every provider, not just Groq itself — it accepts a `baseURL`
- * override and none of the request/response shape used below
- * (chat.completions.create, response_format json_object) is Groq-specific. */
+ * first, then each `LLM_PROVIDER_FALLBACKS` entry. */
 export type LlmClients = {
   primary: LlmClient;
   fallbacks: LlmClient[];
 };
 
+/** groq-sdk's client is Groq-specific, not a generic OpenAI-compatible one,
+ * despite exposing a `baseURL` override: it unconditionally posts to
+ * `/openai/v1/chat/completions` (see groq-sdk/resources/chat/completions.js)
+ * — that path segment is Groq's own routing, not a shared OpenAI-compat
+ * convention. Pointing it at Cerebras with `baseURL:
+ * "https://api.cerebras.ai/v1"` therefore hit
+ * `https://api.cerebras.ai/v1/openai/v1/chat/completions` and 404'd in prod
+ * (2026-08-28). Only Groq itself gets groq-sdk; every other provider gets
+ * the actual `openai` package, whose client posts to plain
+ * `/chat/completions` with no hardcoded prefix — the real generic
+ * OpenAI-compatible client. */
+function buildClient(
+  provider: LlmProvider,
+  apiKey: string,
+  baseUrl: string | undefined,
+): ChatCompletionClient {
+  if (provider === "groq") return new Groq({ apiKey });
+  return new OpenAI({ apiKey, baseURL: baseUrl });
+}
+
 export function createLlmClients(config: Config): LlmClients {
   return {
     primary: {
       provider: config.llmProvider,
-      client: new Groq({ apiKey: config.llmApiKey, baseURL: config.llmBaseUrl }),
+      client: buildClient(config.llmProvider, config.llmApiKey, config.llmBaseUrl),
       model: config.llmModel,
     },
     fallbacks: config.llmFallbackProviders.map((p) => ({
       provider: p.provider,
-      client: new Groq({ apiKey: p.apiKey, baseURL: p.baseUrl }),
+      client: buildClient(p.provider, p.apiKey, p.baseUrl),
       model: p.model,
     })),
   };
@@ -35,14 +71,22 @@ export function createLlmClients(config: Config): LlmClients {
 
 /** Whether this failure is worth retrying on the next configured provider —
  * capacity/availability problems, not a problem the next provider would
- * reproduce (a malformed prompt, an invalid API key). Covers: rate limits
- * (429 — the Groq TPM ceiling this fallback exists for), server-side errors
- * (5xx), and connection failures/timeouts (groq-sdk reports these as an
- * APIError with `status: undefined`). Excludes 4xx configuration errors
- * (401 bad key, 400 bad request) — those need a human, not a fallback. */
+ * reproduce (a malformed prompt, an invalid API key). Duck-typed on
+ * `.status` rather than `instanceof Groq.APIError`/`instanceof
+ * OpenAI.APIError` so it works the same regardless of which SDK actually
+ * threw — both are Stainless-generated API error classes that always set
+ * `.status` (undefined for a connection/timeout failure, the HTTP status
+ * otherwise). Covers: rate limits (429), server-side errors (5xx), and
+ * connection failures/timeouts (status undefined). Excludes 4xx
+ * configuration errors (401 bad key, 400 bad request, 404 bad route) —
+ * those need a human, not a fallback. */
 function isRetryableProviderError(err: unknown): boolean {
-  if (!(err instanceof Groq.APIError)) return false;
-  return err.status === undefined || err.status === 429 || err.status >= 500;
+  if (typeof err !== "object" || err === null || !("status" in err)) {
+    return false;
+  }
+  const status = (err as { status?: unknown }).status;
+  if (status === undefined) return true;
+  return typeof status === "number" && (status === 429 || status >= 500);
 }
 
 /** Raw completion call — the caller owns Zod validation of the result.

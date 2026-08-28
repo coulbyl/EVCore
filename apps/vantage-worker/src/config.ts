@@ -1,9 +1,11 @@
 import "dotenv/config";
 
 /** Every provider here speaks the same OpenAI-compatible chat-completions
- * shape (groq-sdk's client accepts a `baseURL` override, so one SDK class
- * drives all four — see groq/client.ts). Adding a fifth provider is a new
- * entry here, nothing else. */
+ * shape — groq.client.ts picks groq-sdk for "groq" (its own hardcoded
+ * `/openai/v1/...` route) and the real `openai` package for everything
+ * else (plain `/chat/completions`, the actual generic client — groq-sdk's
+ * `baseURL` override alone is NOT enough, see that file). Adding a fifth
+ * provider is a new entry here, nothing else. */
 export type LlmProvider = "groq" | "cerebras" | "together" | "fireworks";
 
 type ProviderDefaults = {

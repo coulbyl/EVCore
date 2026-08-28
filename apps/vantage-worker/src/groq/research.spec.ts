@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Logger } from "pino";
-import type Groq from "groq-sdk";
 import type { Config } from "../config";
+import type { ChatCompletionClient } from "./client";
 import { requestSituationalResearch } from "./research";
 
 const baseConfig: Config = {
@@ -24,7 +24,7 @@ const baseConfig: Config = {
 const noopLogger = { warn: vi.fn() } as unknown as Logger;
 // The client is never touched when the gate rejects — undefined stands in
 // for "must not be called".
-const untouchedClient = undefined as unknown as Groq;
+const untouchedClient = undefined as unknown as ChatCompletionClient;
 
 describe("requestSituationalResearch — gating", () => {
   it("returns null when research is globally disabled", async () => {

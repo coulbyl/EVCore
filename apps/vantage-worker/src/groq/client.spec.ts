@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Logger } from "pino";
 import Groq from "groq-sdk";
-import { requestVantageCompletion, type LlmClients } from "./client";
+import OpenAI from "openai";
+import type { Config } from "../config";
+import {
+  createLlmClients,
+  requestVantageCompletion,
+  type LlmClients,
+} from "./client";
 
 function stubClient(create: (...args: unknown[]) => unknown): Groq {
   return { chat: { completions: { create } } } as unknown as Groq;
@@ -141,5 +147,52 @@ describe("requestVantageCompletion — provider fallback", () => {
     await expect(
       requestVantageCompletion(clients, "sys", "user", noopLogger),
     ).rejects.toBe(rateLimit);
+  });
+});
+
+describe("createLlmClients — regression: only groq-sdk hits Groq's own /openai/v1 route", () => {
+  // groq-sdk hardcodes its chat-completions path as `/openai/v1/chat/
+  // completions`, unconditionally — pointing it at another provider's
+  // baseURL doesn't make it generic (it produced
+  // `<baseURL>/openai/v1/chat/completions`, a 404, against Cerebras in
+  // prod on 2026-08-28). Every provider other than "groq" must go through
+  // the real `openai` package instead, whose client posts to plain
+  // `/chat/completions`.
+  const baseConfig = {
+    llmApiKey: "primary-key",
+    llmModel: "m1",
+    llmBaseUrl: undefined,
+    llmFallbackProviders: [],
+  } as unknown as Config;
+
+  it("uses groq-sdk's Groq client when the primary provider is groq", () => {
+    const clients = createLlmClients({ ...baseConfig, llmProvider: "groq" });
+    expect(clients.primary.client).toBeInstanceOf(Groq);
+  });
+
+  it("uses the openai package's client for a non-groq primary provider", () => {
+    const clients = createLlmClients({
+      ...baseConfig,
+      llmProvider: "cerebras",
+      llmBaseUrl: "https://api.cerebras.ai/v1",
+    });
+    expect(clients.primary.client).toBeInstanceOf(OpenAI);
+    expect(clients.primary.client).not.toBeInstanceOf(Groq);
+  });
+
+  it("picks the right SDK per fallback provider too", () => {
+    const clients = createLlmClients({
+      ...baseConfig,
+      llmProvider: "groq",
+      llmFallbackProviders: [
+        {
+          provider: "cerebras",
+          apiKey: "fallback-key",
+          model: "gpt-oss-120b",
+          baseUrl: "https://api.cerebras.ai/v1",
+        },
+      ],
+    });
+    expect(clients.fallbacks[0]?.client).toBeInstanceOf(OpenAI);
   });
 });
