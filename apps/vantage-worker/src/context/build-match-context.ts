@@ -94,29 +94,25 @@ async function loadChannelCalibration(
     },
     select: {
       result: true,
-      odds: true,
+      probability: true,
       channelDecision: { select: { channel: true } },
     },
   });
 
   const byChannel = new Map<
     StrategyChannel,
-    { won: number; total: number; staked: number; returned: number }
+    { won: number; total: number; announcedProbabilitySum: number }
   >();
   for (const row of rows) {
     const channel = row.channelDecision.channel;
     const bucket = byChannel.get(channel) ?? {
       won: 0,
       total: 0,
-      staked: 0,
-      returned: 0,
+      announcedProbabilitySum: 0,
     };
     bucket.total += 1;
-    bucket.staked += 1; // flat 1-unit stake, matches dashboard's flatBetRoi convention
-    if (row.result === "WON") {
-      bucket.won += 1;
-      bucket.returned += row.odds ? Number(row.odds) : 1;
-    }
+    bucket.announcedProbabilitySum += Number(row.probability);
+    if (row.result === "WON") bucket.won += 1;
     byChannel.set(channel, bucket);
   }
 
@@ -127,14 +123,18 @@ async function loadChannelCalibration(
         channel,
         sampleSize: bucket?.total ?? 0,
         hitRate: null,
-        roi: null,
+        calibrationRatio: null,
       };
     }
+    const hitRate = bucket.won / bucket.total;
+    const avgAnnouncedProbability = bucket.announcedProbabilitySum / bucket.total;
     return {
       channel,
       sampleSize: bucket.total,
-      hitRate: bucket.won / bucket.total,
-      roi: (bucket.returned - bucket.staked) / bucket.staked,
+      hitRate,
+      // avgAnnouncedProbability is always > 0 here — probability is a
+      // required, non-nullable Decimal(5,4) column on ChannelSelection.
+      calibrationRatio: hitRate / avgAnnouncedProbability,
     };
   });
 }
