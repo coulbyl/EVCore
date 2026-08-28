@@ -28,8 +28,8 @@ function singlePickLabel(market: string, pick: string): string {
     if (pick === "UNDER_4_5") return "MOINS DE 4.5";
   }
   if (market === "BTTS") {
-    if (pick === "YES") return "BB OUI";
-    if (pick === "NO") return "BB NON";
+    if (pick === "YES") return "BTTS OUI";
+    if (pick === "NO") return "BTTS NON";
   }
   if (market === "OVER_UNDER_HT") {
     if (pick === "OVER_0_5") return "PLUS DE 0.5 MT";
@@ -610,16 +610,16 @@ async function main(): Promise<void> {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // BB — Les deux équipes marquent (BTTS)
+  // BTTS — Les deux équipes marquent
   // ─────────────────────────────────────────────────────────────────────────────
 
   w();
   w(
-    `━━━ BB — Les deux équipes marquent (${bttsSelections.length} picks, ${bttsFixtures.length} matchs) ━━━━━━━━━━━━`,
+    `━━━ BTTS — Les deux équipes marquent (${bttsSelections.length} picks, ${bttsFixtures.length} matchs) ━━━━━━━━━━━━`,
   );
 
   if (bttsFixtures.length === 0) {
-    w("  Aucun pronostic BB ce jour.");
+    w("  Aucun pronostic BTTS ce jour.");
   }
 
   idx = 0;
@@ -637,9 +637,9 @@ async function main(): Promise<void> {
 
     const pickLbl =
       selection.pick === "YES"
-        ? "BB OUI"
+        ? "BTTS OUI"
         : selection.pick === "NO"
-          ? "BB NON"
+          ? "BTTS NON"
           : selection.pick;
 
     // Validate result from actual score
