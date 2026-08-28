@@ -353,6 +353,9 @@ const READ_CHANNEL_ORDER: readonly StrategyChannel[] = [
   STRATEGY_CHANNEL.RESULT_BTTS,
   STRATEGY_CHANNEL.DRAW_NO_BET,
   STRATEGY_CHANNEL.WIN_TO_NIL,
+  // VANTAGE reads every channel above and proposes its own LLM-derived pick
+  // — listed after the deterministic primaries, before the meta-channels.
+  STRATEGY_CHANNEL.VANTAGE,
   // AVOID gates the primaries above; CONSENSUS aggregates them last.
   STRATEGY_CHANNEL.AVOID,
   STRATEGY_CHANNEL.CONSENSUS,

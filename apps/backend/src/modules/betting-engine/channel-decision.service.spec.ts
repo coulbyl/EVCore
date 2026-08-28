@@ -409,7 +409,8 @@ describe('ChannelDecisionService', () => {
     // that groups.get(channel) is read against — a channel missing from it
     // is silently dropped from the "Par canal" web lens, not an error. This
     // already happened once for CORRECT_SCORE, then again for
-    // CLEAN_SHEET/TEAM_TOTAL/WIN_EITHER_HALF.
+    // CLEAN_SHEET/TEAM_TOTAL/WIN_EITHER_HALF, then again for VANTAGE
+    // (2026-08-28) — added to the schema/frontend but never appended here.
     it('includes every primary and meta channel, not just the original six', async () => {
       const baseRow = {
         id: 'cd',
@@ -441,6 +442,7 @@ describe('ChannelDecisionService', () => {
         STRATEGY_CHANNEL.TEAM_TOTAL,
         STRATEGY_CHANNEL.WIN_EITHER_HALF,
         STRATEGY_CHANNEL.CORRECT_SCORE,
+        STRATEGY_CHANNEL.VANTAGE,
         STRATEGY_CHANNEL.AVOID,
         STRATEGY_CHANNEL.CONSENSUS,
       ];
