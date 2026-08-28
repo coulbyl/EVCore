@@ -234,7 +234,9 @@
     "decidedAt": "Decided at {time}",
     "noPlay": "No pick — read only.",
     "emptyTitle": "No reads",
-    "emptyDescription": "The channel hasn't analyzed anything for this date yet."
+    "emptyDescription": "The channel hasn't analyzed anything for this date yet.",
+    "emptyFilteredTitle": "Nothing to report",
+    "emptyFilteredDescription": "No tension identified today — try \"All\" to see the reads with no pick."
   },
   "notifications": {
     "title": "Notifications",

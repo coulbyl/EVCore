@@ -266,11 +266,14 @@ export function AppShell({
     [navGroups],
   );
 
+  // Coupons swapped for Arbitrage (2026-08-28, explicit product call) —
+  // Coupons stays reachable via the sidebar/hamburger menu on mobile, just
+  // no longer in the primary 5-slot bar.
   const MOBILE_NAV_ORDER = [
     "/dashboard",
     "/dashboard/decisions",
     "/dashboard/investment",
-    "/dashboard/coupons",
+    "/dashboard/arbitrage",
     "/dashboard/inbox",
   ];
 
