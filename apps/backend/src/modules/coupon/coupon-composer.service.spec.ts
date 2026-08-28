@@ -468,6 +468,26 @@ describe('CouponComposerService.compose', () => {
     expect(weakCoupons[0].jointProbability).toBeCloseTo(expectedWeak, 10);
   });
 
+  it("carries each leg's calibratedProbability into reasoning (regression: reasoning.legs[].calibratedCanalHitRate read a featureSnapshot key nothing has written since the 2026-08-22 sliding-window removal, so it was silently null on every coupon leg)", () => {
+    const coupons = service.compose([safePick, bttsStrong]);
+    expect(coupons).toHaveLength(1);
+
+    const reasoning = coupons[0].reasoning as {
+      legs: { calibratedProbability: number | null }[];
+    };
+    expect(reasoning.legs).toHaveLength(2);
+    for (const leg of reasoning.legs) {
+      expect(leg.calibratedProbability).not.toBeNull();
+    }
+    expect(reasoning.legs[0]?.calibratedProbability).toBeCloseTo(
+      safePick.calibratedProbability as number,
+      10,
+    );
+    expect(Object.keys(reasoning.legs[0] as object)).not.toContain(
+      'calibratedCanalHitRate',
+    );
+  });
+
   it('sets couponEV = P_coupon × Odd_coupon − 1 from real odds', () => {
     const coupons = service.compose([safePick, bttsStrong]);
     expect(coupons).toHaveLength(1);

@@ -559,9 +559,14 @@ export class CouponComposerService {
         legEV: l.legEV,
         edge: l.edge,
         pMarketFair: l.pMarketFair,
-        calibratedCanalHitRate:
-          (l.featureSnapshot['calibratedCanalHitRate'] as number | undefined) ??
-          null,
+        // Was reading `featureSnapshot['calibratedCanalHitRate']` — a key
+        // from the sliding-window calibration system removed 2026-08-22
+        // (see signal-window.service.ts's SignalWindowService doc comment)
+        // that nothing has written since, so this was silently `null` on
+        // every leg of every coupon for the last 6 days. The per-channel
+        // calibration curve that replaced it already sits right on the leg
+        // as `calibratedProbability` (scorePicks()) — no lookup needed.
+        calibratedProbability: l.calibratedProbability,
       })),
       combinedOdds,
       rawJointProbability,
