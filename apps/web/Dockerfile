@@ -19,6 +19,14 @@ COPY . .
 # Install all deps (dev included — needed for tailwind, typescript, etc.)
 RUN pnpm install --frozen-lockfile
 
+# @evcore/analysis-core ships compiled (main/exports point at dist/, see its
+# package.json) — apps/web now imports from it directly (helpers/fixture.ts's
+# French market/pick labels, shared with apps/vantage-worker) instead of only
+# depending on the workspace source, so it must be built before `next build`
+# can resolve it. Same step apps/backend's Dockerfile already runs for the
+# same reason.
+RUN pnpm --filter @evcore/analysis-core build
+
 # NEXT_PUBLIC_* vars must be available at build time (baked into the JS bundle)
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
