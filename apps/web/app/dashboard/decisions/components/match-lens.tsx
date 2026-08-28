@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { ChannelDecisionMatchDto } from "@/domains/channel-decision/types/channel-decision";
 import { groupByCompetition } from "@/lib/group-by-competition";
+import { groupByHour } from "@/lib/group-by-hour";
 import { translateCountry } from "@/lib/competition-i18n";
 import { GroupBySelect, type GroupByMode } from "@/components/group-by-select";
 import { MatchCard } from "./match-card";
@@ -68,11 +69,32 @@ export function MatchGrid({
     );
   }
 
+  // Default view: grouped by kickoff time rather than a flat list — the
+  // kickoff used to be buried in each card's muted metadata line (2026-08 UX
+  // audit finding). `kickoff` arrives pre-formatted "HH:mm", so a string sort
+  // is already chronological.
   if (groupBy === "none") {
+    const hourGroups = groupByHour(visible, (m) => m.kickoff);
     return (
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-        {visible.map((group) => (
-          <MatchCard key={group.fixtureId} group={group} locale={locale} />
+      <div className="flex flex-col gap-6">
+        {hourGroups.map((hourGroup) => (
+          <section key={hourGroup.key} className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <h3 className="text-[0.95rem] font-bold text-foreground">
+                {hourGroup.key}
+              </h3>
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-muted-foreground">
+                {hourGroup.items.length} match
+                {hourGroup.items.length > 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+              {hourGroup.items.map((group) => (
+                <MatchCard key={group.fixtureId} group={group} locale={locale} />
+              ))}
+            </div>
+          </section>
         ))}
       </div>
     );

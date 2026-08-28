@@ -229,7 +229,7 @@ export const SUBSCRIPTION_SOURCES: readonly SubscriptionSourceDef[] = [
   },
   {
     id: 'CHANNEL_BTTS',
-    label: 'BTTS (BB)',
+    label: 'BTTS (Les deux marquent)',
     kind: 'CHANNEL',
     channel: 'BTTS',
   },

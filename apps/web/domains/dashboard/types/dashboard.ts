@@ -97,7 +97,8 @@ export type TrackedChannel =
   | "WIN_TO_NIL"
   | "HALF_TIME_FULL_TIME"
   | "WIN_EITHER_HALF"
-  | "CORRECT_SCORE";
+  | "CORRECT_SCORE"
+  | "VANTAGE";
 
 export type ChannelHealthItem = {
   channel: TrackedChannel;

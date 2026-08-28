@@ -3,12 +3,12 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "EVCore — Arrêtez de parier. Commencez à investir.",
   description:
-    "EVCore alloue une mise sur chaque pick sélectionné par ses canaux SAFE, CONF et BB. Une position calculée, répétée sur la durée — comme un portefeuille.",
+    "EVCore alloue une mise sur chaque pick sélectionné par ses canaux SAFE, DOMINANT et BTTS. Une position calculée, répétée sur la durée — comme un portefeuille.",
   metadataBase: new URL("https://c-evcore.com"),
   openGraph: {
     title: "EVCore — Arrêtez de parier. Commencez à investir.",
     description:
-      "EVCore alloue une mise sur chaque pick sélectionné par ses canaux SAFE, CONF et BB. Une position calculée, répétée sur la durée — comme un portefeuille.",
+      "EVCore alloue une mise sur chaque pick sélectionné par ses canaux SAFE, DOMINANT et BTTS. Une position calculée, répétée sur la durée — comme un portefeuille.",
     url: "https://c-evcore.com",
     siteName: "EVCore",
     images: [
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "EVCore — Arrêtez de parier. Commencez à investir.",
     description:
-      "EVCore alloue une mise sur chaque pick sélectionné par ses canaux SAFE, CONF et BB. Une position calculée, répétée sur la durée — comme un portefeuille.",
+      "EVCore alloue une mise sur chaque pick sélectionné par ses canaux SAFE, DOMINANT et BTTS. Une position calculée, répétée sur la durée — comme un portefeuille.",
     images: ["/screenshots/desktop.png"],
   },
 };

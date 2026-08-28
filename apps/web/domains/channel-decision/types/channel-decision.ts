@@ -27,7 +27,8 @@ export type StrategyChannel =
   | "RESULT_BTTS"
   | "DRAW_NO_BET"
   | "WIN_TO_NIL"
-  | "HALF_TIME_FULL_TIME";
+  | "HALF_TIME_FULL_TIME"
+  | "VANTAGE";
 
 export type ChannelDecisionStatus =
   | "SELECTED"

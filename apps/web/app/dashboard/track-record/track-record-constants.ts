@@ -1,6 +1,7 @@
 import type {
   ChannelHealthItem,
   ChannelStatsItem,
+  ChannelStatus,
   PnlSummary,
 } from "@/domains/dashboard/types/dashboard";
 
@@ -50,7 +51,7 @@ export const CHANNEL_LABELS: Record<ChannelStatsItem["channel"], string> = {
   SAFE: "SAFE (Sécurité)",
   DOMINANT: "DOMINANT (Victoire)",
   DRAW: "DRAW (Nul)",
-  BTTS: "BTTS (BB)",
+  BTTS: "BTTS (Les deux marquent)",
   GOALS: "GOALS (Buts)",
   CLEAN_SHEET: "CLEAN_SHEET (Cage inviolée)",
   TEAM_TOTAL: "TEAM_TOTAL (Buts par équipe)",
@@ -61,9 +62,10 @@ export const CHANNEL_LABELS: Record<ChannelStatsItem["channel"], string> = {
   OVER_UNDER_HT: "OVER_UNDER_HT (Plus/moins mi-temps)",
   HALF_TIME_FULL_TIME: "HALF_TIME_FULL_TIME (Mi-temps/Fin)",
   RESULT_TOTAL_GOALS: "RESULT_TOTAL_GOALS (Issue + total)",
-  RESULT_BTTS: "RESULT_BTTS (Issue + BB)",
+  RESULT_BTTS: "RESULT_BTTS (Issue + BTTS)",
   WIN_EITHER_HALF: "WIN_EITHER_HALF (Gagne une mi-temps)",
   CORRECT_SCORE: "CORRECT_SCORE (Score exact)",
+  VANTAGE: "VANTAGE (Lecture croisée)",
 };
 
 /**
@@ -95,6 +97,7 @@ export const CHANNEL_DISPLAY_ORDER: ChannelStatsItem["channel"][] = [
   "RESULT_BTTS",
   "HALF_TIME_FULL_TIME",
   "CORRECT_SCORE",
+  "VANTAGE",
 ];
 
 /** Canaux reçus, classés selon CHANNEL_DISPLAY_ORDER, inconnus à la fin. */
@@ -146,4 +149,19 @@ export function formatRoi(value: number | null): string {
 export function formatHitRate(value: number | null): string {
   if (value === null) return "—";
   return `${(value * 100).toFixed(0)}%`;
+}
+
+// Same signal as ChannelStatusBadge, applied to the ROI figure itself so the
+// number reads as positive/negative/borderline before the reader parses the
+// sign — the badge alone left ROI as flat, uncolored text.
+const ROI_TONE_CLASS: Record<ChannelStatus, string> = {
+  GREEN: "text-success",
+  ORANGE: "text-warning",
+  RED: "text-danger",
+  INACTIVE: "text-muted-foreground",
+  INSUFFICIENT_DATA: "text-muted-foreground",
+};
+
+export function roiToneClass(status: ChannelStatus): string {
+  return ROI_TONE_CLASS[status];
 }

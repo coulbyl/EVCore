@@ -8,22 +8,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
 } from "@evcore/ui";
 import { translateCountry } from "@/lib/competition-i18n";
 import type { ChannelCompetitionStatItem } from "@/domains/dashboard/types/dashboard";
-import {
-  orderChannels,
-  CHANNEL_LABELS,
-  formatHitRate,
-  formatRoi,
-} from "../track-record-constants";
-import { ChannelStatusBadge } from "./channel-status-badge";
+import { orderChannels, CHANNEL_LABELS } from "../track-record-constants";
+import { ChannelStatsTable, type ChannelStatRow } from "./channel-stats-table";
 
 /** Independent from the "Par canal" summary above — same settled data, one
  * level finer (channel × compétition). A dropdown, not tabs: eighteen
@@ -58,6 +47,15 @@ export function ChannelCompetitionSection({
         .sort((a, b) => b.sampleSize - a.sampleSize),
     [rows, active],
   );
+  const filteredRows: ChannelStatRow[] = filtered.map((row) => ({
+    key: row.competitionCode,
+    primaryLabel: row.competitionName,
+    secondaryLabel: translateCountry(row.competitionCountry, locale),
+    status: row.status,
+    roi: row.roi,
+    hitRate: row.hitRate,
+    sampleSize: row.sampleSize,
+  }));
 
   if (channelsWithData.length === 0) return null;
 
@@ -86,43 +84,7 @@ export function ChannelCompetitionSection({
         </Select>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Compétition</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead className="text-right">ROI</TableHead>
-              <TableHead className="text-right">Taux de réussite</TableHead>
-              <TableHead className="text-right">Échantillon</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.map((row) => (
-              <TableRow key={row.competitionCode}>
-                <TableCell className="font-medium text-foreground">
-                  {row.competitionName}
-                  <span className="ml-1.5 font-normal text-muted-foreground">
-                    · {translateCountry(row.competitionCountry, locale)}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <ChannelStatusBadge status={row.status} />
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {formatRoi(row.roi)}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {formatHitRate(row.hitRate)}
-                </TableCell>
-                <TableCell className="text-right tabular-nums text-muted-foreground">
-                  n={row.sampleSize}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <ChannelStatsTable primaryColumnLabel="Compétition" rows={filteredRows} />
     </section>
   );
 }

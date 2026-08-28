@@ -30,6 +30,7 @@ export const CHANNEL_COLOR: Record<StrategyChannel, string> = {
   DRAW_NO_BET: "var(--canal-draw-no-bet)",
   WIN_TO_NIL: "var(--canal-win-to-nil)",
   HALF_TIME_FULL_TIME: "var(--canal-half-time-full-time)",
+  VANTAGE: "var(--canal-vantage)",
 };
 
 export const CHANNEL_COLOR_SOFT: Record<StrategyChannel, string> = {
@@ -58,6 +59,7 @@ export const CHANNEL_COLOR_SOFT: Record<StrategyChannel, string> = {
   DRAW_NO_BET: "var(--canal-draw-no-bet-soft)",
   WIN_TO_NIL: "var(--canal-win-to-nil-soft)",
   HALF_TIME_FULL_TIME: "var(--canal-half-time-full-time-soft)",
+  VANTAGE: "var(--canal-vantage-soft)",
 };
 
 const CHANNEL_LABEL_KEY: Record<StrategyChannel, string> = {
@@ -86,6 +88,7 @@ const CHANNEL_LABEL_KEY: Record<StrategyChannel, string> = {
   DRAW_NO_BET: "channels.DRAW_NO_BET.label",
   WIN_TO_NIL: "channels.WIN_TO_NIL.label",
   HALF_TIME_FULL_TIME: "channels.HALF_TIME_FULL_TIME.label",
+  VANTAGE: "channels.VANTAGE.label",
 };
 
 const CHANNEL_DESCRIPTION_KEY: Record<StrategyChannel, string> = {
@@ -114,6 +117,7 @@ const CHANNEL_DESCRIPTION_KEY: Record<StrategyChannel, string> = {
   DRAW_NO_BET: "channels.DRAW_NO_BET.description",
   WIN_TO_NIL: "channels.WIN_TO_NIL.description",
   HALF_TIME_FULL_TIME: "channels.HALF_TIME_FULL_TIME.description",
+  VANTAGE: "channels.VANTAGE.description",
 };
 
 // Display order across both lenses (primaries, then AVOID gate, then the
@@ -144,6 +148,7 @@ export const CHANNEL_ORDER: StrategyChannel[] = [
   "RESULT_TOTAL_GOALS",
   "RESULT_BTTS",
   "CORRECT_SCORE",
+  "VANTAGE",
   "AVOID",
   "CONSENSUS",
 ];

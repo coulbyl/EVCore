@@ -61,7 +61,7 @@
         "description": "Angle le plus affirmé du modèle sur le 1N2."
       },
       "BTTS": {
-        "label": "BB",
+        "label": "BTTS",
         "description": "Deux équipes marquent."
       },
       "DRAW": {
@@ -133,7 +133,7 @@
         "description": "Plus/moins de buts à la mi-temps."
       },
       "RESULT_BTTS": {
-        "label": "Résultat + BB",
+        "label": "Résultat + BTTS",
         "description": "Résultat du match combiné aux deux équipes qui marquent."
       },
       "DRAW_NO_BET": {
@@ -147,6 +147,10 @@
       "HALF_TIME_FULL_TIME": {
         "label": "Mi-temps / Fin de match",
         "description": "Résultat à la mi-temps combiné au résultat final."
+      },
+      "VANTAGE": {
+        "label": "Vantage",
+        "description": "Lit les décisions des autres canaux et leur fiabilité mesurée sur cette compétition ; ne propose un pick que s'il identifie une tension ou un biais concret entre eux."
       }
     },
     "reasons": {
@@ -203,8 +207,11 @@
       "all": "Tous",
       "label": "Filtres",
       "noMatch": "Aucun match ne correspond aux filtres.",
-      "groupByNone": "Aucun groupement",
-      "groupByLeague": "Grouper par ligue"
+      "groupByNone": "Par heure",
+      "groupByLeague": "Grouper par ligue",
+      "moreLeagues": "Plus",
+      "searchLeague": "Rechercher un championnat…",
+      "noLeagueResults": "Aucun championnat."
     },
     "helpLink": "Comment lire une fiche"
   },
@@ -504,7 +511,7 @@
     "confidence": "VICTOIRE",
     "matchNull": "NUL",
     "goals": "BUTS",
-    "btts": "BB",
+    "btts": "BTTS",
     "cleanSheet": "CS",
     "teamTotal": "BUTS ÉQ.",
     "winEitherHalf": "GAGNE MT",
@@ -512,13 +519,13 @@
     "doubleChance": "DC",
     "resultTotalGoals": "SCORE+BUTS",
     "overUnderHt": "O/U MT",
-    "resultBtts": "SCORE+BB",
+    "resultBtts": "SCORE+BTTS",
     "drawNoBet": "DNB",
     "winToNil": "GAGNE 0",
     "halfTimeFullTime": "MT/FIN",
-    "bttsLabel": "BB — Les deux équipes marquent",
-    "bttsYes": "BB OUI",
-    "bttsNo": "BB NON",
+    "bttsLabel": "BTTS — Les deux équipes marquent",
+    "bttsYes": "BTTS OUI",
+    "bttsNo": "BTTS NON",
     "loadError": "Impossible de charger les picks du jour.",
     "empty": "Aucun pick pour aujourd'hui."
   },
@@ -915,7 +922,7 @@
       "CHANNEL_SAFE": "SAFE (Sécurité)",
       "CHANNEL_DOMINANT": "DOMINANT (Victoire)",
       "CHANNEL_DRAW": "DRAW (Nul)",
-      "CHANNEL_BTTS": "BTTS (BB)",
+      "CHANNEL_BTTS": "BTTS (Les deux marquent)",
       "CHANNEL_DOUBLE_CHANCE": "DOUBLE_CHANCE (Double chance)",
       "CHANNEL_TEAM_TOTAL": "TEAM_TOTAL"
     },

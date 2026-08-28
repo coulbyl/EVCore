@@ -28,6 +28,14 @@ export const STRATEGY_CHANNEL = {
   DRAW_NO_BET: "DRAW_NO_BET",
   WIN_TO_NIL: "WIN_TO_NIL",
   HALF_TIME_FULL_TIME: "HALF_TIME_FULL_TIME",
+  // Reads every other channel's decision on a match (via `previousDecisions`)
+  // plus each channel's measured reliability on that competition, and forms
+  // its own independent pick — never a delta on someone else's score. Runs
+  // outside the pure core (apps/vantage-worker), after every Phase-1/2/3
+  // channel has decided, because its evaluation calls an LLM (I/O, non-
+  // deterministic) which this package must never do. See
+  // apps/vantage-worker/docs/architecture.md.
+  VANTAGE: "VANTAGE",
 } as const;
 
 export type StrategyChannel =
@@ -58,3 +66,9 @@ export const META_STRATEGY_CHANNELS = new Set<StrategyChannel>([
   STRATEGY_CHANNEL.CONTRARIAN,
   STRATEGY_CHANNEL.AVOID,
 ]);
+
+// VANTAGE deliberately does NOT belong to either set above: like a meta-
+// channel it reads every other channel's decision before running, but unlike
+// CONSENSUS/CONTRARIAN/AVOID it emits its own pick (market, probability,
+// odds) — it is a normal, independently auditable and slippable channel, not
+// a no-pick meta-channel. See STRATEGY_CHANNEL.VANTAGE above.

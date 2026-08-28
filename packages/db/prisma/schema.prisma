@@ -189,6 +189,7 @@ enum StrategyChannel {
   DRAW_NO_BET
   WIN_TO_NIL
   HALF_TIME_FULL_TIME
+  VANTAGE
 
   @@schema("public")
 }
