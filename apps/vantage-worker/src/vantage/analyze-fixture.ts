@@ -1,8 +1,7 @@
 import type { Logger } from "pino";
-import type Groq from "groq-sdk";
 import type { Config } from "../config";
 import { buildMatchContext } from "../context/build-match-context";
-import { requestVantageCompletion } from "../groq/client";
+import { requestVantageCompletion, type LlmClients } from "../groq/client";
 import { requestSituationalResearch } from "../groq/research";
 import { persistVantageDecision } from "./persist-decision";
 import { vantageResponseSchema } from "./response-schema";
@@ -22,7 +21,7 @@ export type AnalyzeResult =
  * response-schema.ts: malformed output is rejected, never half-written). */
 export async function analyzeFixture(
   fixtureId: string,
-  groqClient: Groq,
+  clients: LlmClients,
   config: Config,
   logger: Logger,
 ): Promise<AnalyzeResult> {
@@ -34,8 +33,13 @@ export async function analyzeFixture(
   // reason where none exists.
   if (context.readings.length === 0) return { outcome: "skipped_no_readings" };
 
+  // Situational research is a Groq-only feature (native `groq/compound` web
+  // search — see research.ts) — it only ever runs when `config.llmProvider`
+  // (the primary) is "groq", so `clients.primary.client` is always the
+  // right client for it regardless of whether the verdict call below ends
+  // up falling back to a different provider.
   const research = await requestSituationalResearch(
-    groqClient,
+    clients.primary.client,
     config,
     context.homeTeam,
     context.awayTeam,
@@ -47,10 +51,10 @@ export async function analyzeFixture(
 
   const userPrompt = buildUserPrompt(context, research);
   const raw = await requestVantageCompletion(
-    groqClient,
-    config,
+    clients,
     SYSTEM_PROMPT,
     userPrompt,
+    logger,
   );
 
   let parsedJson: unknown;

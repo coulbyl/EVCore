@@ -52,6 +52,15 @@ const PROVIDER_DEFAULTS: Record<LlmProvider, ProviderDefaults> = {
   },
 };
 
+/** A provider fully resolved to callable settings — used for both the
+ * primary provider and each configured fallback. */
+export type ResolvedLlmProvider = {
+  provider: LlmProvider;
+  apiKey: string;
+  model: string;
+  baseUrl: string | undefined;
+};
+
 export type Config = {
   databaseUrl: string;
   redisHost: string;
@@ -62,6 +71,15 @@ export type Config = {
   llmApiKey: string;
   llmModel: string;
   llmBaseUrl: string | undefined;
+  /** Ordered fallback providers, tried in sequence when the primary call
+   * fails with a transient error (429 rate limit, 5xx, connection/timeout —
+   * see groq/client.ts's isRetryableProviderError). Configured via
+   * LLM_PROVIDER_FALLBACKS, e.g. "cerebras,together". Empty by default — no
+   * fallback happens unless explicitly opted into. Each name listed here
+   * requires its own API key env var, same as the primary: a fallback that
+   * silently doesn't work is worse than no fallback, especially since it
+   * would only be discovered during the exact outage it exists for. */
+  llmFallbackProviders: ResolvedLlmProvider[];
   logLevel: string;
   /** How often the sweep looks for fixtures ready for analysis, in ms. */
   sweepIntervalMs: number;
@@ -129,6 +147,27 @@ export function loadConfig(): Config {
   }
   const providerDefaults = PROVIDER_DEFAULTS[requestedProvider];
 
+  const fallbackNames = (process.env["LLM_PROVIDER_FALLBACKS"] ?? "")
+    .split(",")
+    .map((name) => name.trim())
+    .filter(Boolean);
+  const llmFallbackProviders: ResolvedLlmProvider[] = [];
+  for (const name of fallbackNames) {
+    if (!isLlmProvider(name)) {
+      throw new Error(
+        `Unknown provider "${name}" in LLM_PROVIDER_FALLBACKS — expected one of: ${Object.keys(PROVIDER_DEFAULTS).join(", ")}`,
+      );
+    }
+    if (name === requestedProvider) continue; // falling back to itself is a no-op
+    const fallbackDefaults = PROVIDER_DEFAULTS[name];
+    llmFallbackProviders.push({
+      provider: name,
+      apiKey: required(fallbackDefaults.apiKeyEnv),
+      model: process.env[fallbackDefaults.modelEnv] ?? fallbackDefaults.model,
+      baseUrl: fallbackDefaults.baseURL,
+    });
+  }
+
   return {
     databaseUrl: required("DATABASE_URL"),
     redisHost: process.env["REDIS_HOST"] ?? "localhost",
@@ -137,6 +176,7 @@ export function loadConfig(): Config {
     llmApiKey: required(providerDefaults.apiKeyEnv),
     llmModel: process.env[providerDefaults.modelEnv] ?? providerDefaults.model,
     llmBaseUrl: providerDefaults.baseURL,
+    llmFallbackProviders,
     logLevel: process.env["LOG_LEVEL"] ?? "info",
     sweepIntervalMs: Number(process.env["SWEEP_INTERVAL_MS"] ?? "300000"),
     competitionCodes: (process.env["VANTAGE_COMPETITION_CODES"] ?? "")

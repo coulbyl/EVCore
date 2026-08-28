@@ -1,13 +1,13 @@
 import { loadConfig } from "./config";
 import { createLogger } from "./logger";
-import { createLlmClient } from "./groq/client";
+import { createLlmClients } from "./groq/client";
 import { createVantageWorker } from "./queue/worker";
 import { createQueue } from "./queue/queue";
 
 async function main() {
   const config = loadConfig();
   const logger = createLogger("vantage-worker");
-  const groqClient = createLlmClient(config);
+  const llmClients = createLlmClients(config);
 
   if (config.enableResearch && config.llmProvider !== "groq") {
     logger.warn(
@@ -16,7 +16,7 @@ async function main() {
     );
   }
 
-  const worker = createVantageWorker(config, groqClient, logger);
+  const worker = createVantageWorker(config, llmClients, logger);
   worker.on("failed", (job, err) => {
     logger.error(
       { jobId: job?.id, jobName: job?.name, err },
@@ -43,6 +43,7 @@ async function main() {
       sweepIntervalMs: config.sweepIntervalMs,
       llmProvider: config.llmProvider,
       model: config.llmModel,
+      llmFallbackProviders: llmClients.fallbacks.map((f) => f.provider),
     },
     "vantage-worker started",
   );

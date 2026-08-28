@@ -12,6 +12,7 @@ const baseConfig: Config = {
   llmApiKey: "test",
   llmModel: "openai/gpt-oss-120b",
   llmBaseUrl: undefined,
+  llmFallbackProviders: [],
   logLevel: "info",
   sweepIntervalMs: 300_000,
   competitionCodes: [],

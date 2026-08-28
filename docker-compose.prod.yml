@@ -122,6 +122,12 @@ services:
       TOGETHER_MODEL: ${TOGETHER_MODEL:-openai/gpt-oss-120b}
       FIREWORKS_API_KEY: ${FIREWORKS_API_KEY:-}
       FIREWORKS_MODEL: ${FIREWORKS_MODEL:-accounts/fireworks/models/gpt-oss-120b}
+      # Comma-separated automatic fallback chain (e.g. "cerebras,together"),
+      # tried in order on a transient failure (429/5xx/timeout) from the
+      # current provider — see apps/vantage-worker/.env.example. Empty by
+      # default: no fallback happens unless explicitly opted into, and each
+      # name listed here needs its own *_API_KEY above filled in.
+      LLM_PROVIDER_FALLBACKS: ${LLM_PROVIDER_FALLBACKS:-}
       LOG_LEVEL: info
       SWEEP_INTERVAL_MS: ${VANTAGE_SWEEP_INTERVAL_MS:-300000}
       # Empty = every active competition (the agreed rollout — see
