@@ -44,7 +44,8 @@
     "coupons": "Combinés",
     "investment": "Investir",
     "decisions": "Décisions",
-    "decisionsShort": "Décisions"
+    "decisionsShort": "Décisions",
+    "arbitrage": "Arbitrage"
   },
   "decisions": {
     "channels": {
@@ -149,7 +150,7 @@
         "description": "Résultat à la mi-temps combiné au résultat final."
       },
       "VANTAGE": {
-        "label": "Vantage",
+        "label": "Arbitrage",
         "description": "Lit les décisions des autres canaux et leur fiabilité mesurée sur cette compétition ; ne propose un pick que s'il identifie une tension ou un biais concret entre eux."
       }
     },
@@ -214,6 +215,26 @@
       "noLeagueResults": "Aucun championnat."
     },
     "helpLink": "Comment lire une fiche"
+  },
+  "arbitrage": {
+    "title": "Arbitrage",
+    "badge": "Lecture IA",
+    "description": "Lit les décisions des autres canaux et leur fiabilité mesurée sur cette compétition — ne propose un pick que s'il identifie une tension ou un biais concret entre eux. Sur la majorité des matchs, la bonne réponse est de ne rien jouer.",
+    "stats": {
+      "readsToday": "lectures aujourd'hui",
+      "plays": "tensions repérées (play)"
+    },
+    "filters": {
+      "all": "Toutes",
+      "play": "Play",
+      "noPlay": "No play"
+    },
+    "reasoningLabel": "Lecture Arbitrage",
+    "sourcesLabel": "Sources",
+    "decidedAt": "Décidé à {time}",
+    "noPlay": "Aucun pick — lecture seule.",
+    "emptyTitle": "Aucune lecture",
+    "emptyDescription": "Le canal n'a encore rien analysé pour cette date."
   },
   "notifications": {
     "title": "Notifications",

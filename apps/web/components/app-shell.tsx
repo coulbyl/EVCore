@@ -21,6 +21,7 @@ import {
   MessageCircle,
   Receipt,
   Repeat,
+  Scale,
   Settings,
   Ticket,
   TrendingUp,
@@ -165,6 +166,12 @@ export function AppShell({
             href: "/dashboard/decisions",
             active: pathname.startsWith("/dashboard/decisions"),
             icon: Layers,
+          },
+          {
+            label: tNav("arbitrage"),
+            href: "/dashboard/arbitrage",
+            active: pathname.startsWith("/dashboard/arbitrage"),
+            icon: Scale,
           },
           {
             label: tNav("investment"),

@@ -25,6 +25,17 @@ export function isMetaChannel(channel: StrategyChannel): boolean {
   return META_CHANNELS.has(channel);
 }
 
+/**
+ * VANTAGE has its own dedicated page (/dashboard/arbitrage, "Arbitrage" in
+ * the UI) since 2026-08-28 — excluded from both Decisions lenses so its full
+ * LLM reasoning isn't flattened into a bare pick chip here, duplicating a
+ * much richer read available one click away. Not a META_CHANNEL: unlike
+ * AVOID/CONSENSUS it does emit real picks, it's just not shown on this page.
+ */
+export function isExcludedFromDecisions(channel: StrategyChannel): boolean {
+  return channel === "VANTAGE";
+}
+
 export type AvoidFlag = {
   reasonCode: string | null;
   offenders: AvoidOffender[];
@@ -81,6 +92,7 @@ export function selectedPicks(
     .filter(
       (d) =>
         !isMetaChannel(d.channel) &&
+        !isExcludedFromDecisions(d.channel) &&
         d.status === "SELECTED" &&
         d.selections.length > 0,
     )
@@ -94,7 +106,10 @@ export function evaluatedRest(
 ): ChannelDecisionMatchDecisionDto[] {
   const picked = new Set(selectedPicks(group).map((d) => d.id));
   return group.decisions.filter(
-    (d) => !picked.has(d.id) && !isMetaChannel(d.channel),
+    (d) =>
+      !picked.has(d.id) &&
+      !isMetaChannel(d.channel) &&
+      !isExcludedFromDecisions(d.channel),
   );
 }
 
