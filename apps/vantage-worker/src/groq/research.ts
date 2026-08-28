@@ -87,7 +87,7 @@ export async function requestSituationalResearch(
     return { summary, citations };
   } catch (err) {
     logger.warn(
-      { err },
+      { fixtureName: `${homeTeam} vs ${awayTeam}`, err },
       "vantage: situational research failed, continuing without it",
     );
     return null;

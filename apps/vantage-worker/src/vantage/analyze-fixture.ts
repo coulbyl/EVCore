@@ -36,12 +36,17 @@ export async function analyzeFixture(
     return { outcome: "no_context" };
   }
 
+  // Attached to every log line below — a bare fixtureId is meaningless
+  // without opening the DB, and this is on the hot path for reading prod
+  // logs (see the 2026-08-28 incident).
+  const fixtureName = `${context.homeTeam} vs ${context.awayTeam}`;
+
   // Nothing for VANTAGE to read across implies nothing for it to say —
   // calling the model on an empty context would just invite it to invent a
   // reason where none exists.
   if (context.readings.length === 0) {
     logger.info(
-      { fixtureId },
+      { fixtureId, fixtureName },
       "vantage: no channel readings on this fixture yet, skipping",
     );
     return { outcome: "skipped_no_readings" };
@@ -75,14 +80,17 @@ export async function analyzeFixture(
   try {
     parsedJson = JSON.parse(raw);
   } catch {
-    logger.warn({ fixtureId, raw }, "vantage: response was not valid JSON");
+    logger.warn(
+      { fixtureId, fixtureName, raw },
+      "vantage: response was not valid JSON",
+    );
     return { outcome: "invalid_response", raw, error: "not_json" };
   }
 
   const parsed = vantageResponseSchema.safeParse(parsedJson);
   if (!parsed.success) {
     logger.warn(
-      { fixtureId, raw, issues: parsed.error.issues },
+      { fixtureId, fixtureName, raw, issues: parsed.error.issues },
       "vantage: response failed schema validation",
     );
     return {
@@ -97,7 +105,12 @@ export async function analyzeFixture(
     !isValidPickForMarket(parsed.data.market, parsed.data.pick)
   ) {
     logger.warn(
-      { fixtureId, market: parsed.data.market, pick: parsed.data.pick },
+      {
+        fixtureId,
+        fixtureName,
+        market: parsed.data.market,
+        pick: parsed.data.pick,
+      },
       "vantage: pick is not a legal value for its market — rejecting",
     );
     return {
@@ -114,7 +127,7 @@ export async function analyzeFixture(
     research,
   );
   logger.info(
-    { fixtureId, verdict: parsed.data.verdict },
+    { fixtureId, fixtureName, verdict: parsed.data.verdict },
     "vantage: decision persisted",
   );
   return { outcome: "persisted", verdict: parsed.data.verdict };
