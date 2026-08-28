@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { endOfUtcDay, parseIsoDate, startOfUtcDay } from '@utils/date.utils';
 import { ANALYSIS_SHEET_LIMITS } from './analysis-sheet.constants';
 import {
@@ -11,45 +11,17 @@ import {
   type AnalysisSheetJson,
   type SheetMeta,
 } from './analysis-sheet.render';
-import {
-  buildEvaAnalysisSystemPrompt,
-  buildEvaAnalysisUserPrompt,
-} from './analysis-sheet.prompt';
-import {
-  resolveEvaCoupons,
-  type DroppedEvaCoupon,
-  type EvaCoupon,
-} from './analysis-sheet.coupons';
-import { AnalysisSheetRateLimitService } from './analysis-sheet.rate-limit.service';
-import { LLM_CLIENT } from './groq/groq-llm.tokens';
-import type { LlmClient } from './groq/groq-llm.types';
 
 export type AnalysisSheetInput = {
   from: string;
   to: string;
   competitionCode?: string;
   channel?: string;
-  targetWinAmount?: number;
-};
-
-export type AnalyzeWithEvaResult = {
-  analysis: string;
-  coupons: EvaCoupon[];
-  droppedCoupons: DroppedEvaCoupon[];
-  targetWinAmount: number | null;
-  sheetSummary: AnalysisSheetJson['summary'];
-  model: string;
-  generatedAt: string;
-  truncated: boolean;
 };
 
 @Injectable()
 export class AnalysisSheetService {
-  constructor(
-    private readonly repository: AnalysisSheetRepository,
-    private readonly rateLimit: AnalysisSheetRateLimitService,
-    @Inject(LLM_CLIENT) private readonly llm: LlmClient,
-  ) {}
+  constructor(private readonly repository: AnalysisSheetRepository) {}
 
   private dateRange(input: { from: string; to: string }): {
     from: Date;
@@ -97,77 +69,5 @@ export class AnalysisSheetService {
   async exportTxt(input: AnalysisSheetInput): Promise<string> {
     const { fixtures, meta } = await this.fetchFixtures(input);
     return buildTxtSheet(fixtures, meta);
-  }
-
-  async assertDailyQuota(userId: string): Promise<void> {
-    const requests = await this.rateLimit.getUsageRequests({
-      userId,
-      day: startOfUtcDay(new Date()),
-    });
-    if (requests >= ANALYSIS_SHEET_LIMITS.defaultDailyLimit) {
-      throw new BadRequestException(
-        'Limite quotidienne Eva atteinte. Réessayez demain.',
-      );
-    }
-  }
-
-  async analyzeWithEva(
-    userId: string,
-    input: AnalysisSheetInput,
-  ): Promise<AnalyzeWithEvaResult> {
-    await this.assertDailyQuota(userId);
-
-    const { fixtures, meta } = await this.fetchFixtures(input);
-    const truncated =
-      fixtures.length > ANALYSIS_SHEET_LIMITS.maxFixturesForAnalysis;
-    const analyzedFixtures = truncated
-      ? fixtures.slice(0, ANALYSIS_SHEET_LIMITS.maxFixturesForAnalysis)
-      : fixtures;
-
-    let sheetText = buildTxtSheet(analyzedFixtures, meta);
-    if (truncated) {
-      const omitted = fixtures.length - analyzedFixtures.length;
-      sheetText += `\n\n... ${omitted} fixtures supplémentaires non incluses (limite atteinte).`;
-    }
-
-    const response = await this.llm.complete({
-      messages: [
-        { role: 'system', content: buildEvaAnalysisSystemPrompt() },
-        {
-          role: 'user',
-          content: buildEvaAnalysisUserPrompt({
-            sheet: sheetText,
-            targetWinAmount: input.targetWinAmount,
-          }),
-        },
-      ],
-    });
-
-    await this.rateLimit.incrementUsage({
-      userId,
-      day: startOfUtcDay(new Date()),
-      inputTokens: response.usage.inputTokens,
-      outputTokens: response.usage.outputTokens,
-    });
-
-    // The LLM only names legs (fixtureId + channel); odds, eligibility and
-    // all coupon arithmetic are resolved here against the backend's own sheet.
-    const sheetJson = buildJsonSheet(analyzedFixtures, meta);
-    const resolved = resolveEvaCoupons({
-      rawAnalysis: response.content,
-      sheet: sheetJson,
-      targetWinAmount: input.targetWinAmount,
-    });
-
-    return {
-      analysis: resolved.analysis,
-      coupons: resolved.coupons,
-      droppedCoupons: resolved.droppedCoupons,
-      targetWinAmount: input.targetWinAmount ?? null,
-      sheetSummary: sheetJson.summary,
-      model: response.model,
-      generatedAt: meta.generatedAt,
-      truncated,
-    };
   }
 }

@@ -1,17 +1,7 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Query,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
-import { CurrentSession } from '@modules/auth/current-session.decorator';
-import type { AuthSession } from '@modules/auth/auth.types';
 import { AnalysisSheetService } from './analysis-sheet.service';
 import { AnalysisSheetQueryDto } from './dto/analysis-sheet-query.dto';
 
@@ -46,22 +36,5 @@ export class AnalysisSheetController {
     }
 
     return this.service.exportJson(input);
-  }
-
-  @Post('analyze')
-  @ApiOperation({
-    summary: 'Build the sheet and analyze it with Eva (Groq), single-shot',
-  })
-  async analyze(
-    @CurrentSession() session: AuthSession,
-    @Body() body: AnalysisSheetQueryDto,
-  ) {
-    return this.service.analyzeWithEva(session.user.id, {
-      from: body.from,
-      to: body.to,
-      competitionCode: body.competitionCode,
-      channel: body.channel,
-      targetWinAmount: body.targetWinAmount,
-    });
   }
 }

@@ -148,7 +148,7 @@ export function SupportInboxClient({
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-hidden rounded-2xl border border-border md:grid-cols-[320px_1fr]">
         <div
           className={cn(
-            "min-w-0 w-full flex-col border-b border-border md:flex md:border-b-0 md:border-r",
+            "min-h-0 min-w-0 w-full flex-col border-b border-border md:flex md:border-b-0 md:border-r",
             activeConversationId ? "hidden" : "flex",
           )}
         >

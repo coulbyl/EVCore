@@ -19,7 +19,11 @@ export async function runSweep(
       "analyze",
       { fixtureId },
       {
-        jobId: `analyze:${fixtureId}`,
+        // BullMQ rejects a custom jobId containing ":" (it's the delimiter
+        // BullMQ's own Redis keys use internally) — this literally failed
+        // every sweep in prod since deploy, throwing on the first fixture
+        // and never reaching the rest of the loop below.
+        jobId: `analyze-${fixtureId}`,
         removeOnComplete: 500,
         removeOnFail: 1000,
       },

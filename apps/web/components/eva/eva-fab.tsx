@@ -11,11 +11,9 @@ import {
 } from "@evcore/ui";
 import { cn } from "@evcore/ui/cn";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useAnalyzeWithEva } from "@/domains/analysis-sheet/use-cases/use-analyze-with-eva";
 import { downloadAnalysisSheet } from "@/domains/analysis-sheet/use-cases/use-export-analysis-sheet";
 import type { AnalysisSheetFilters } from "@/domains/analysis-sheet/types/analysis-sheet";
 import { EvaFilterBar } from "./eva-filter-bar";
-import { EvaResultPanel } from "./eva-result-panel";
 import { daysAheadIso, todayIso } from "@/lib/date";
 
 // Discovery ping: shown only until the user opens Eva once.
@@ -168,7 +166,6 @@ export function EvaFab() {
     to: daysAheadIso(7),
   });
   const [exportError, setExportError] = useState<string | null>(null);
-  const analyze = useAnalyzeWithEva();
 
   async function handleExport(format: "txt" | "json") {
     setExportError(null);
@@ -336,8 +333,8 @@ export function EvaFab() {
               Eva
             </DrawerTitle>
             <DrawerDescription>
-              Génère une fiche des picks retenus sur une période, exportable en
-              txt/json, ou analysée directement par Eva.
+              Génère une fiche des picks retenus sur une période, exportable
+              en txt ou json.
             </DrawerDescription>
           </DrawerHeader>
 
@@ -345,22 +342,12 @@ export function EvaFab() {
             <EvaFilterBar
               filters={filters}
               onFiltersChange={setFilters}
-              onAnalyze={() => analyze.mutate(filters)}
-              isAnalyzing={analyze.isPending}
               onExport={handleExport}
             />
 
             {exportError && (
               <p className="text-sm text-danger">{exportError}</p>
             )}
-
-            <EvaResultPanel
-              result={analyze.data ?? null}
-              isPending={analyze.isPending}
-              error={
-                analyze.error instanceof Error ? analyze.error.message : null
-              }
-            />
           </div>
         </DrawerContent>
       </Drawer>
