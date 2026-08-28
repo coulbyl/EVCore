@@ -12,10 +12,7 @@ import {
 import { translateCountry } from "@/lib/competition-i18n";
 import type { ChannelCompetitionStatItem } from "@/domains/dashboard/types/dashboard";
 import { orderChannels, CHANNEL_LABELS } from "../track-record-constants";
-import {
-  ChannelStatsTable,
-  type ChannelStatRow,
-} from "./channel-stats-table";
+import { ChannelStatsTable, type ChannelStatRow } from "./channel-stats-table";
 
 /** Independent from the "Par canal" summary above — same settled data, one
  * level finer (channel × compétition). A dropdown, not tabs: eighteen
@@ -87,10 +84,7 @@ export function ChannelCompetitionSection({
         </Select>
       </div>
 
-      <ChannelStatsTable
-        primaryColumnLabel="Compétition"
-        rows={filteredRows}
-      />
+      <ChannelStatsTable primaryColumnLabel="Compétition" rows={filteredRows} />
     </section>
   );
 }
