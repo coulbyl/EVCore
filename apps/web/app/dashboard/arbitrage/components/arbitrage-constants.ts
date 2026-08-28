@@ -27,34 +27,68 @@ export type ArbitrageEntry = Pick<
   Pick<
     ChannelDecisionDto,
     "id" | "status" | "reasonDetails" | "decidedAt" | "selections"
-  >;
+  > & {
+    // VANTAGE never writes its own odds (its response schema has none — see
+    // apps/vantage-worker/src/vantage/response-schema.ts) — borrowed from a
+    // sibling channel's decision on the SAME ModelRun that landed on the
+    // exact same (market, pick), when one exists. Mirrors what VANTAGE
+    // itself checks at generation time (analyze-fixture.ts's
+    // findKnownOdds/MIN_ODDS floor) — the only odds it can honestly claim,
+    // never invented.
+    borrowedOdds: number | null;
+  };
 
+function findSiblingOdds(
+  decisions: ChannelDecisionMatchDto["decisions"],
+  market: string,
+  pick: string,
+): number | null {
+  for (const decision of decisions) {
+    if (decision.channel === "VANTAGE") continue;
+    const match = decision.selections.find(
+      (s) => s.market === market && s.pick === pick && s.odds !== null,
+    );
+    if (match) return match.odds;
+  }
+  return null;
+}
+
+// Requires the UNFILTERED /channel-decisions/by-match response (every
+// channel, not just VANTAGE) — findSiblingOdds needs the other channels'
+// selections to be present in `match.decisions` to borrow from.
 export function flattenArbitrageEntries(
   matches: ChannelDecisionMatchDto[],
 ): ArbitrageEntry[] {
   return matches.flatMap((match) =>
     match.decisions
       .filter((d) => d.channel === "VANTAGE")
-      .map((d) => ({
-        fixtureId: match.fixtureId,
-        fixtureStatus: match.fixtureStatus,
-        competition: match.competition,
-        competitionName: match.competitionName,
-        country: match.country,
-        homeTeam: match.homeTeam,
-        awayTeam: match.awayTeam,
-        homeLogo: match.homeLogo,
-        awayLogo: match.awayLogo,
-        kickoff: match.kickoff,
-        scheduledAt: match.scheduledAt,
-        score: match.score,
-        htScore: match.htScore,
-        id: d.id,
-        status: d.status,
-        reasonDetails: d.reasonDetails,
-        decidedAt: d.decidedAt,
-        selections: d.selections,
-      })),
+      .map((d) => {
+        const selection = d.selections[0];
+        const borrowedOdds = selection
+          ? findSiblingOdds(match.decisions, selection.market, selection.pick)
+          : null;
+        return {
+          fixtureId: match.fixtureId,
+          fixtureStatus: match.fixtureStatus,
+          competition: match.competition,
+          competitionName: match.competitionName,
+          country: match.country,
+          homeTeam: match.homeTeam,
+          awayTeam: match.awayTeam,
+          homeLogo: match.homeLogo,
+          awayLogo: match.awayLogo,
+          kickoff: match.kickoff,
+          scheduledAt: match.scheduledAt,
+          score: match.score,
+          htScore: match.htScore,
+          id: d.id,
+          status: d.status,
+          reasonDetails: d.reasonDetails,
+          decidedAt: d.decidedAt,
+          selections: d.selections,
+          borrowedOdds,
+        };
+      }),
   );
 }
 

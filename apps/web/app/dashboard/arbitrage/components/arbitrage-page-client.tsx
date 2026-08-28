@@ -43,7 +43,10 @@ export function ArbitragePageClient() {
     (searchParams.get("filter") as ArbitrageFilter | null) ?? "all";
   const selectedLeague = searchParams.get("league");
 
-  const matches = useChannelDecisionMatches(date, { channel: "VANTAGE" });
+  // Unfiltered — every channel, not just VANTAGE — so flattenArbitrageEntries
+  // can borrow a sibling channel's odds for the same (market, pick) when
+  // VANTAGE's own selection (which never carries odds) matches one exactly.
+  const matches = useChannelDecisionMatches(date, {});
   const isLoading = matches.isLoading || matches.isFetching;
 
   const allEntries = useMemo(

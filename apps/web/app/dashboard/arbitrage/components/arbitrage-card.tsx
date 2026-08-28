@@ -33,7 +33,7 @@ export function ArbitrageCard({
   const isPlay = verdict === "play";
   const selection = entry.selections[0];
   const details = parseArbitrageReasonDetails(entry.reasonDetails);
-  const odds = selection ? formatOdds(selection.odds) : null;
+  const odds = formatOdds(entry.borrowedOdds);
 
   return (
     <FixtureCard
