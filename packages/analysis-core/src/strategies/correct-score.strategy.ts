@@ -31,7 +31,6 @@ export function decideCorrectScore(context: StrategyContext): StrategyDecision {
   }
 
   const { lambdaHome, lambdaAway } = context;
-  const priced = context.odds?.correctScoreOdds;
   if (lambdaHome == null || lambdaAway == null) {
     return {
       channel: ch,
@@ -40,16 +39,43 @@ export function decideCorrectScore(context: StrategyContext): StrategyDecision {
       selections: [],
     };
   }
+
+  // Computed as soon as lambdas exist, independent of odds availability
+  // (moved ahead of the `no_odds` check on 2026-08-30) — 99.99% of
+  // CORRECT_SCORE's rejections were `no_odds`, and until this change none of
+  // them carried the model's own modal-scoreline opinion in reasonDetails,
+  // even though it never depended on pricing to begin with. Staking/
+  // selection still requires a real price (unchanged below); this only
+  // means a rejection for missing odds no longer also throws away the
+  // model's read.
+  const matrix = computeCorrectScoreMatrix(lambdaHome, lambdaAway);
+  const modal = Object.entries(matrix).reduce<{
+    scoreline: string;
+    probability: Decimal;
+  } | null>(
+    (best, [scoreline, probability]) =>
+      !best || probability.greaterThan(best.probability)
+        ? { scoreline, probability }
+        : best,
+    null,
+  );
+
+  const priced = context.odds?.correctScoreOdds;
   if (!priced || Object.keys(priced).length === 0) {
     return {
       channel: ch,
       status: CHANNEL_DECISION_STATUS.REJECTED,
       reasonCode: "no_odds",
+      reasonDetails: modal
+        ? {
+            bestScoreline: modal.scoreline,
+            bestProbability: modal.probability.toNumber(),
+          }
+        : {},
       selections: [],
     };
   }
 
-  const matrix = computeCorrectScoreMatrix(lambdaHome, lambdaAway);
   const candidates: ScoreCandidate[] = [];
   for (const [scoreline, odds] of Object.entries(priced)) {
     if (odds == null) continue;
@@ -69,6 +95,12 @@ export function decideCorrectScore(context: StrategyContext): StrategyDecision {
       channel: ch,
       status: CHANNEL_DECISION_STATUS.REJECTED,
       reasonCode: "no_modelable_scoreline",
+      reasonDetails: modal
+        ? {
+            bestScoreline: modal.scoreline,
+            bestProbability: modal.probability.toNumber(),
+          }
+        : {},
       selections: [],
     };
   }

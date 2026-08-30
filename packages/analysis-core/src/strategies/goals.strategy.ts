@@ -132,7 +132,17 @@ export function decideGoals(
       channel,
       status: CHANNEL_DECISION_STATUS.REJECTED,
       reasonCode: "no_priced_line",
-      reasonDetails: { candidateLines: candidates.map((c) => c.pick) },
+      // Each candidate already carries its computed probability — logging
+      // only the pick label here (pre-2026-08-30) discarded it, leaving
+      // nothing for a downstream reader (VANTAGE's near-miss context) to
+      // work with even though the model had a real opinion, just no book
+      // price to act on it.
+      reasonDetails: {
+        candidateLines: candidates.map((c) => ({
+          pick: c.pick,
+          probability: c.probability.toNumber(),
+        })),
+      },
       selections: [],
     };
   }

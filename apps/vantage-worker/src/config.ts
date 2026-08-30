@@ -96,10 +96,12 @@ export type Config = {
    * billed per-request ($5-8/1000) on top of tokens, so it does not stay
    * negligible at full 68-league volume the way the verdict-only pipeline
    * does — see docs/architecture.md — Situational research (cost).
-   * Only takes effect on `llmProvider: "groq"` — `groq/compound` (native
-   * Tavily web search) has no equivalent on the other providers, so
-   * research.ts degrades to "no research available" on a non-Groq provider
-   * regardless of this flag. */
+   * Only takes effect when a Groq client is configured somewhere — primary
+   * OR fallback (see client.ts's findProviderClient) — `groq/compound`
+   * (native Tavily web search) has no equivalent on Cerebras/Together/
+   * Fireworks, so research.ts degrades to "no research available" when no
+   * configured provider is Groq at all, regardless of this flag. Groq does
+   * NOT need to be the primary verdict provider for research to run. */
   enableResearch: boolean;
   groqResearchModel: string;
   /** Which competitions get the (costed) research call, independent from

@@ -128,4 +128,131 @@ describe("buildUserPrompt", () => {
   it("explicitly requires reasonDetails to be written in French, regardless of provider", () => {
     expect(SYSTEM_PROMPT).toContain("TOUJOURS être rédigé en français");
   });
+
+  it("gives an explicit, correctly-signed worked example for the calibration direction (regression: ~30% of real VANTAGE output inverted sur/sous-estimé — see project memory project_vantage_reasondetails_quality)", () => {
+    expect(SYSTEM_PROMPT).toContain("SURESTIMÉE");
+    expect(SYSTEM_PROMPT).toContain("SOUS-ESTIMÉE");
+    expect(SYSTEM_PROMPT).toContain("l'erreur la plus fréquente");
+  });
+
+  it("allows a play beyond inter-channel tension, but still requires a real basis", () => {
+    expect(SYSTEM_PROMPT).toContain("lecture proche du seuil");
+    expect(SYSTEM_PROMPT).toContain(
+      'Un simple consensus entre canaux SELECTED, sans aucune de ces quatre bases, reste un "no_play"',
+    );
+  });
+
+  it("frames raw market odds as context, never as a value/edge signal to compute", () => {
+    expect(SYSTEM_PROMPT).toContain("jamais un signal de valeur à exploiter");
+  });
+
+  it("renders a REJECTED reading's near-miss numbers when present", () => {
+    const prompt = buildUserPrompt(
+      {
+        ...baseContext,
+        readings: [
+          {
+            channel: "BTTS",
+            status: "REJECTED",
+            reasonCode: "below_threshold",
+            market: null,
+            pick: null,
+            probability: null,
+            odds: null,
+            ev: null,
+            nearMiss: {
+              values: [
+                { label: "Oui", probability: 0.31 },
+                { label: "Non", probability: 0.69 },
+              ],
+              threshold: 0.35,
+            },
+          },
+        ],
+      },
+      null,
+    );
+    expect(prompt).toContain("Lecture proche du seuil");
+    expect(prompt).toContain("Oui +31.0%");
+    expect(prompt).toContain("Non +69.0%");
+    expect(prompt).toContain("seuil +35.0%");
+  });
+
+  it("renders raw team stats when present, and an explicit 'non disponible' when a team has none", () => {
+    const prompt = buildUserPrompt(
+      {
+        ...baseContext,
+        homeTeamStats: {
+          recentForm: 0.6,
+          xgFor: 1.5,
+          xgAgainst: 1.1,
+          homeWinRate: 0.55,
+          awayWinRate: 0.3,
+          drawRate: 0.2,
+          leagueVolatility: 1.1,
+        },
+        awayTeamStats: null,
+      },
+      null,
+    );
+    expect(prompt).toContain("Statistiques brutes");
+    expect(prompt).toContain("forme récente +60.0%");
+    expect(prompt).toContain("non disponible");
+  });
+
+  it("labels the independent second opinion as external, distinct from the channels", () => {
+    const prompt = buildUserPrompt(
+      {
+        ...baseContext,
+        shadowPrediction: {
+          homePercent: 35,
+          drawPercent: 28,
+          awayPercent: 37,
+          poissonHome: 1.6,
+          poissonAway: 1.2,
+          winnerName: "El Paso Locomotive",
+          conflict: true,
+        },
+      },
+      null,
+    );
+    expect(prompt).toContain("Second avis indépendant");
+    expect(prompt).toContain("en désaccord avec notre propre lecture");
+  });
+
+  it("never emits ROI/EV language anywhere, even with every new context block populated", () => {
+    const prompt = buildUserPrompt(
+      {
+        ...baseContext,
+        homeTeamStats: {
+          recentForm: 0.6,
+          xgFor: 1.5,
+          xgAgainst: 1.1,
+          homeWinRate: 0.55,
+          awayWinRate: 0.3,
+          drawRate: 0.2,
+          leagueVolatility: 1.1,
+        },
+        awayTeamStats: null,
+        homeCoach: { matchesInCharge: 2 },
+        h2h: { scoreline: "1:1", confidence: 0.4, sampleSize: 4 },
+        shadowPrediction: {
+          homePercent: 35,
+          drawPercent: 28,
+          awayPercent: 37,
+          poissonHome: 1.6,
+          poissonAway: 1.2,
+          winnerName: null,
+          conflict: false,
+        },
+        shadowMl: [{ channel: "DOMINANT", correctedP: 0.5, edgeDelta: -0.05 }],
+        uncoveredMarketOdds: [
+          { market: "ONE_X_TWO", homeOdds: 2.1, drawOdds: 3.2, awayOdds: 3.4 },
+        ],
+      },
+      null,
+    );
+    expect(prompt).not.toContain("ROI");
+    expect(prompt).not.toContain("EV");
+  });
 });

@@ -1,6 +1,6 @@
 import { loadConfig } from "./config";
 import { createLogger } from "./logger";
-import { createLlmClients } from "./groq/client";
+import { createLlmClients, findProviderClient } from "./groq/client";
 import { createVantageWorker } from "./queue/worker";
 import { createQueue } from "./queue/queue";
 
@@ -9,10 +9,22 @@ async function main() {
   const logger = createLogger("vantage-worker");
   const llmClients = createLlmClients(config);
 
-  if (config.enableResearch && config.llmProvider !== "groq") {
+  // Groq can serve research from either slot (primary or fallback — see
+  // findProviderClient) — only warn when there's truly no Groq client
+  // configured anywhere, not just when it isn't primary (fixed 2026-08-30:
+  // the old check missed a real prod config running LLM_PROVIDER=cerebras
+  // with groq as a fallback, where research was silently disabled despite
+  // this warning never firing).
+  if (
+    config.enableResearch &&
+    findProviderClient(llmClients, "groq") === null
+  ) {
     logger.warn(
-      { llmProvider: config.llmProvider },
-      "vantage: VANTAGE_ENABLE_RESEARCH is set but situational research (groq/compound web search) has no equivalent on this provider — skipping it on every fixture",
+      {
+        llmProvider: config.llmProvider,
+        llmFallbackProviders: llmClients.fallbacks.map((f) => f.provider),
+      },
+      "vantage: VANTAGE_ENABLE_RESEARCH is set but no configured provider (primary or fallback) is groq — situational research (groq/compound web search) has no equivalent elsewhere, skipping it on every fixture",
     );
   }
 

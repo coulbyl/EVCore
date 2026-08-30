@@ -9,7 +9,14 @@ import { vantageResponseSchema } from "./response-schema";
 import { isValidPickForMarket } from "./known-picks";
 import { buildUserPrompt, SYSTEM_PROMPT } from "./prompt";
 
-const CONFIG_VERSION = "vantage-v2-research";
+// v3-context (2026-08-30): expanded context (near-miss reads, raw team_stats,
+// H2H scoreline, two independent second opinions, raw ONE_X_TWO market
+// price) + a broadened "when to play" rule — see docs/context-expansion-
+// proposal.md. Bumped deliberately so this cohort's calibration is tracked
+// separately from v2-research's, never blended (see project memory
+// project_vantage_channel: v2's near-perfect calibration came from playing
+// rarely — widening scope should be measured on its own, not assumed safe).
+const CONFIG_VERSION = "vantage-v3-context";
 
 /** Same empirically-justified floor used elsewhere in the system — see
  * apps/backend/src/modules/coupon/coupon.constants.ts's MIN_LEG_ODDS and
@@ -27,9 +34,10 @@ const CONFIG_VERSION = "vantage-v2-research";
  * isValidPickForMarket. */
 const MIN_ODDS = 1.2;
 
-/** The odds VANTAGE's own pick would carry, if another channel's reading
- * for this exact (market, pick) happens to have them. VANTAGE has no other
- * source of odds — see MIN_ODDS above. */
+/** The odds VANTAGE's own pick would carry, if another channel's reading for
+ * this exact (market, pick) happens to have them, or (since 2026-08-30) the
+ * raw ONE_X_TWO market-context block does. Checked in that order; VANTAGE
+ * has no other source of odds — see MIN_ODDS above. */
 function findKnownOdds(
   context: MatchContext,
   market: string,
@@ -38,7 +46,16 @@ function findKnownOdds(
   const reading = context.readings.find(
     (r) => r.market === market && r.pick === pick && r.odds !== null,
   );
-  return reading?.odds ?? null;
+  if (reading?.odds != null) return reading.odds;
+
+  const marketOdds = context.uncoveredMarketOdds?.find(
+    (m) => m.market === market,
+  );
+  if (!marketOdds) return null;
+  if (pick === "HOME") return marketOdds.homeOdds;
+  if (pick === "DRAW") return marketOdds.drawOdds;
+  if (pick === "AWAY") return marketOdds.awayOdds;
+  return null;
 }
 
 export type AnalyzeResult =
@@ -84,12 +101,15 @@ export async function analyzeFixture(
   }
 
   // Situational research is a Groq-only feature (native `groq/compound` web
-  // search — see research.ts) — it only ever runs when `config.llmProvider`
-  // (the primary) is "groq", so `clients.primary.client` is always the
-  // right client for it regardless of whether the verdict call below ends
-  // up falling back to a different provider.
+  // search — see research.ts) — it uses whichever configured client is
+  // actually Groq, primary or fallback (findProviderClient in client.ts;
+  // fixed 2026-08-30 after a real prod config — LLM_PROVIDER=cerebras with
+  // groq only as a fallback — showed the research call silently no-op'd
+  // despite VANTAGE_ENABLE_RESEARCH=true, because the old gate only ever
+  // checked the primary). Independent from whichever provider ends up
+  // serving the verdict call below.
   const research = await requestSituationalResearch(
-    clients.primary.client,
+    clients,
     config,
     context.homeTeam,
     context.awayTeam,
@@ -121,7 +141,13 @@ export async function analyzeFixture(
   const parsed = vantageResponseSchema.safeParse(parsedJson);
   if (!parsed.success) {
     logger.warn(
-      { fixtureId, fixtureName, scheduledAt: context.kickoff, raw, issues: parsed.error.issues },
+      {
+        fixtureId,
+        fixtureName,
+        scheduledAt: context.kickoff,
+        raw,
+        issues: parsed.error.issues,
+      },
       "vantage: response failed schema validation",
     );
     return {
@@ -153,7 +179,11 @@ export async function analyzeFixture(
   }
 
   if (parsed.data.verdict === "play") {
-    const knownOdds = findKnownOdds(context, parsed.data.market, parsed.data.pick);
+    const knownOdds = findKnownOdds(
+      context,
+      parsed.data.market,
+      parsed.data.pick,
+    );
     if (knownOdds !== null && knownOdds < MIN_ODDS) {
       logger.warn(
         {
@@ -181,7 +211,12 @@ export async function analyzeFixture(
     research,
   );
   logger.info(
-    { fixtureId, fixtureName, scheduledAt: context.kickoff, verdict: parsed.data.verdict },
+    {
+      fixtureId,
+      fixtureName,
+      scheduledAt: context.kickoff,
+      verdict: parsed.data.verdict,
+    },
     "vantage: decision persisted",
   );
   return { outcome: "persisted", verdict: parsed.data.verdict };
