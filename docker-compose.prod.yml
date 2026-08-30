@@ -138,7 +138,18 @@ services:
       # docs/architecture.md's Situational research section before
       # setting this to true on the server.
       VANTAGE_ENABLE_RESEARCH: ${VANTAGE_ENABLE_RESEARCH:-false}
+      # Which backend serves the search call above — "groq" (default,
+      # groq/compound-mini) or "tavily" (a direct Tavily /search call,
+      # independent of LLM_PROVIDER — see apps/vantage-worker/src/research/).
+      # Reach for tavily when Groq's Developer tier is closed for new
+      # signups or its shared 8000 TPM tier makes compound-mini unreliable;
+      # Tavily's free tier (1000 credits/month) covers VANTAGE's default
+      # volume for $0 — see docs/architecture.md, Situational research.
+      VANTAGE_RESEARCH_PROVIDER: ${VANTAGE_RESEARCH_PROVIDER:-groq}
       GROQ_RESEARCH_MODEL: ${GROQ_RESEARCH_MODEL:-groq/compound-mini}
+      # Required only when VANTAGE_RESEARCH_PROVIDER=tavily — get one at
+      # https://app.tavily.com (free tier, no credit card).
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
       # Empty = the built-in "grands championnats" default (PL, LL, BL1, SA,
       # L1, UCL, UEL, UECL) — never "every league", unlike the var above.
       VANTAGE_RESEARCH_COMPETITION_CODES: ${VANTAGE_RESEARCH_COMPETITION_CODES:-}
