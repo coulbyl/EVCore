@@ -108,8 +108,7 @@ export function DecisionsPageClient() {
       date: next.date ?? date,
       view: next.view ?? view,
     });
-    const nextLeague =
-      next.league !== undefined ? next.league : selectedLeague;
+    const nextLeague = next.league !== undefined ? next.league : selectedLeague;
     if (nextLeague) params.set("league", nextLeague);
     router.push(`/dashboard/decisions?${params.toString()}`);
   }

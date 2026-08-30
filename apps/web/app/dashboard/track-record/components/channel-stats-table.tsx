@@ -3,7 +3,11 @@
 import { useMemo } from "react";
 import { DataTable, type ColumnDef } from "@evcore/ui";
 import type { ChannelStatus } from "@/domains/dashboard/types/dashboard";
-import { formatHitRate, formatRoi, roiToneClass } from "../track-record-constants";
+import {
+  formatHitRate,
+  formatRoi,
+  roiToneClass,
+} from "../track-record-constants";
 import { ChannelStatusBadge } from "./channel-status-badge";
 
 export type ChannelStatRow = {

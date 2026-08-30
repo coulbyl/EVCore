@@ -21,7 +21,7 @@ export type ChatCompletionClient = {
   };
 };
 
-type LlmClient = {
+export type LlmClient = {
   provider: LlmProvider;
   client: ChatCompletionClient;
   model: string;
@@ -33,6 +33,24 @@ export type LlmClients = {
   primary: LlmClient;
   fallbacks: LlmClient[];
 };
+
+/** The client for a specific provider, wherever it's configured — primary
+ * or fallback. Used by research.ts: situational research is a Groq-only
+ * capability (native `groq/compound` web search), but that shouldn't
+ * require Groq to be the *primary* verdict provider — a real prod
+ * configuration (2026-08-30) runs `LLM_PROVIDER=cerebras` (the recommended
+ * workaround for Groq's 8000 TPM cap) with `LLM_PROVIDER_FALLBACKS=groq,
+ * together`. The pre-2026-08-30 gate (`config.llmProvider !== "groq"`)
+ * missed this entirely: it only ever checked the primary, so research
+ * silently no-op'd on every fixture despite `VANTAGE_ENABLE_RESEARCH=true`
+ * and a perfectly usable Groq client sitting in `clients.fallbacks`. */
+export function findProviderClient(
+  clients: LlmClients,
+  provider: LlmProvider,
+): LlmClient | null {
+  if (clients.primary.provider === provider) return clients.primary;
+  return clients.fallbacks.find((f) => f.provider === provider) ?? null;
+}
 
 /** groq-sdk's client is Groq-specific, not a generic OpenAI-compatible one,
  * despite exposing a `baseURL` override: it unconditionally posts to
@@ -58,7 +76,11 @@ export function createLlmClients(config: Config): LlmClients {
   return {
     primary: {
       provider: config.llmProvider,
-      client: buildClient(config.llmProvider, config.llmApiKey, config.llmBaseUrl),
+      client: buildClient(
+        config.llmProvider,
+        config.llmApiKey,
+        config.llmBaseUrl,
+      ),
       model: config.llmModel,
     },
     fallbacks: config.llmFallbackProviders.map((p) => ({
@@ -132,7 +154,11 @@ export async function requestVantageCompletion(
     } catch (err) {
       if (isLastAttempt || !isRetryableProviderError(err)) throw err;
       logger.warn(
-        { provider: attempt.provider, nextProvider: attempts[index + 1]?.provider, err },
+        {
+          provider: attempt.provider,
+          nextProvider: attempts[index + 1]?.provider,
+          err,
+        },
         "vantage: provider call failed, falling back to the next configured provider",
       );
     }

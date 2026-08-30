@@ -24,9 +24,17 @@ describe("requestVantageCompletion — provider fallback", () => {
     const primaryCreate = vi.fn().mockResolvedValue(okResponse("{}"));
     const fallbackCreate = vi.fn();
     const clients: LlmClients = {
-      primary: { provider: "groq", client: stubClient(primaryCreate), model: "m1" },
+      primary: {
+        provider: "groq",
+        client: stubClient(primaryCreate),
+        model: "m1",
+      },
       fallbacks: [
-        { provider: "cerebras", client: stubClient(fallbackCreate), model: "m2" },
+        {
+          provider: "cerebras",
+          client: stubClient(fallbackCreate),
+          model: "m2",
+        },
       ],
     };
 
@@ -52,9 +60,17 @@ describe("requestVantageCompletion — provider fallback", () => {
     const primaryCreate = vi.fn().mockRejectedValue(rateLimit);
     const fallbackCreate = vi.fn().mockResolvedValue(okResponse('{"ok":true}'));
     const clients: LlmClients = {
-      primary: { provider: "groq", client: stubClient(primaryCreate), model: "m1" },
+      primary: {
+        provider: "groq",
+        client: stubClient(primaryCreate),
+        model: "m1",
+      },
       fallbacks: [
-        { provider: "cerebras", client: stubClient(fallbackCreate), model: "m2" },
+        {
+          provider: "cerebras",
+          client: stubClient(fallbackCreate),
+          model: "m2",
+        },
       ],
     };
 
@@ -84,7 +100,11 @@ describe("requestVantageCompletion — provider fallback", () => {
           model: "m1",
         },
         fallbacks: [
-          { provider: "cerebras", client: stubClient(fallbackCreate), model: "m2" },
+          {
+            provider: "cerebras",
+            client: stubClient(fallbackCreate),
+            model: "m2",
+          },
         ],
       };
       await expect(
@@ -98,9 +118,17 @@ describe("requestVantageCompletion — provider fallback", () => {
     const primaryCreate = vi.fn().mockRejectedValue(authError);
     const fallbackCreate = vi.fn();
     const clients: LlmClients = {
-      primary: { provider: "groq", client: stubClient(primaryCreate), model: "m1" },
+      primary: {
+        provider: "groq",
+        client: stubClient(primaryCreate),
+        model: "m1",
+      },
       fallbacks: [
-        { provider: "cerebras", client: stubClient(fallbackCreate), model: "m2" },
+        {
+          provider: "cerebras",
+          client: stubClient(fallbackCreate),
+          model: "m2",
+        },
       ],
     };
 

@@ -333,8 +333,8 @@ export function EvaFab() {
               Eva
             </DrawerTitle>
             <DrawerDescription>
-              Génère une fiche des picks retenus sur une période, exportable
-              en txt ou json.
+              Génère une fiche des picks retenus sur une période, exportable en
+              txt ou json.
             </DrawerDescription>
           </DrawerHeader>
 

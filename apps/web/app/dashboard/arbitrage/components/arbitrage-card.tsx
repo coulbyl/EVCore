@@ -15,7 +15,7 @@ import {
 } from "../../decisions/components/channel-constants";
 import {
   citationDomain,
-  formatDecidedAtTime,
+  formatDecidedAt,
   parseArbitrageReasonDetails,
   verdictOf,
   type ArbitrageEntry,
@@ -140,7 +140,7 @@ export function ArbitrageCard({
         )}
 
       <p className="text-[0.66rem] text-muted-foreground/60">
-        {t("decidedAt", { time: formatDecidedAtTime(entry.decidedAt, locale) })}
+        {t("decidedAt", { date: formatDecidedAt(entry.decidedAt, locale) })}
       </p>
     </FixtureCard>
   );

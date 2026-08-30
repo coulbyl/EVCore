@@ -91,7 +91,11 @@ export function MatchGrid({
             </div>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
               {hourGroup.items.map((group) => (
-                <MatchCard key={group.fixtureId} group={group} locale={locale} />
+                <MatchCard
+                  key={group.fixtureId}
+                  group={group}
+                  locale={locale}
+                />
               ))}
             </div>
           </section>

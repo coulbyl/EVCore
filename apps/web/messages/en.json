@@ -231,7 +231,7 @@
     },
     "reasoningLabel": "Arbitrage read",
     "sourcesLabel": "Sources",
-    "decidedAt": "Decided at {time}",
+    "decidedAt": "Decided on {date}",
     "noPlay": "No pick — read only.",
     "emptyTitle": "No reads",
     "emptyDescription": "The channel hasn't analyzed anything for this date yet.",

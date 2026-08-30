@@ -8,6 +8,17 @@ import "dotenv/config";
  * provider is a new entry here, nothing else. */
 export type LlmProvider = "groq" | "cerebras" | "together" | "fireworks";
 
+/** Which backend serves situational research (see research/index.ts).
+ * "groq" = the original `groq/compound-mini` agentic web search — needs a
+ * Groq client configured somewhere (primary or fallback, see client.ts's
+ * findProviderClient). "tavily" = a direct call to Tavily's own /search
+ * API, independent of which LLM provider serves the verdict call — the
+ * option to reach for when Groq's Developer tier is closed for new
+ * signups (as of 2026-08) or its shared tier's 8000 TPM cap makes
+ * `compound-mini` itself unreliable, without abandoning the Groq path for
+ * deployments where it works fine. */
+export type ResearchProvider = "groq" | "tavily";
+
 type ProviderDefaults = {
   /** Env var carrying this provider's API key. */
   apiKeyEnv: string;
@@ -91,17 +102,29 @@ export type Config = {
    * Kept as an explicit opt-IN restriction, never a silent "all" default a
    * league could be missing from by omission. */
   competitionCodes: string[];
-  /** Whether to spend a `groqResearchModel` call on live web search before
-   * the verdict call. OFF by default: unlike the verdict call, search is
-   * billed per-request ($5-8/1000) on top of tokens, so it does not stay
-   * negligible at full 68-league volume the way the verdict-only pipeline
-   * does — see docs/architecture.md — Situational research (cost).
-   * Only takes effect on `llmProvider: "groq"` — `groq/compound` (native
-   * Tavily web search) has no equivalent on the other providers, so
-   * research.ts degrades to "no research available" on a non-Groq provider
-   * regardless of this flag. */
+  /** Whether to spend a research call on live web search before the verdict
+   * call. OFF by default: unlike the verdict call, search is billed
+   * per-request on top of tokens (Groq: $5-8/1000; Tavily: ~$0.008-0.016/
+   * request past its free 1000/month), so it does not stay negligible at
+   * full 68-league volume the way the verdict-only pipeline does — see
+   * docs/architecture.md — Situational research (cost). Availability
+   * depends on `researchProvider` below: "groq" needs a Groq client
+   * configured somewhere (primary or fallback, see client.ts's
+   * findProviderClient); "tavily" needs `tavilyApiKey`. Either way,
+   * research.ts degrades to "no research available" rather than failing
+   * the fixture when its provider isn't actually usable. */
   enableResearch: boolean;
+  /** Which backend serves research when `enableResearch` is on — switch
+   * with VANTAGE_RESEARCH_PROVIDER, defaults to "groq" (unchanged
+   * behavior for existing deployments). See ResearchProvider's own doc
+   * comment for when "tavily" is the better choice. */
+  researchProvider: ResearchProvider;
   groqResearchModel: string;
+  /** Required only when `researchProvider` is "tavily" — checked at the
+   * call site (research/tavily.ts), not at config load, so a deployment
+   * that never enables research (or uses the groq provider) never needs
+   * this set. */
+  tavilyApiKey: string | undefined;
   /** Which competitions get the (costed) research call, independent from
    * `competitionCodes` above — VANTAGE still writes a verdict everywhere,
    * research just doesn't run everywhere. Defaults to the "grands
@@ -140,6 +163,12 @@ function isLlmProvider(value: string): value is LlmProvider {
   return value in PROVIDER_DEFAULTS;
 }
 
+const RESEARCH_PROVIDERS: readonly ResearchProvider[] = ["groq", "tavily"];
+
+function isResearchProvider(value: string): value is ResearchProvider {
+  return (RESEARCH_PROVIDERS as readonly string[]).includes(value);
+}
+
 export function loadConfig(): Config {
   const requestedProvider = process.env["LLM_PROVIDER"] ?? "groq";
   if (!isLlmProvider(requestedProvider)) {
@@ -148,6 +177,14 @@ export function loadConfig(): Config {
     );
   }
   const providerDefaults = PROVIDER_DEFAULTS[requestedProvider];
+
+  const requestedResearchProvider =
+    process.env["VANTAGE_RESEARCH_PROVIDER"] ?? "groq";
+  if (!isResearchProvider(requestedResearchProvider)) {
+    throw new Error(
+      `Unknown VANTAGE_RESEARCH_PROVIDER "${requestedResearchProvider}" — expected one of: ${RESEARCH_PROVIDERS.join(", ")}`,
+    );
+  }
 
   const fallbackNames = (process.env["LLM_PROVIDER_FALLBACKS"] ?? "")
     .split(",")
@@ -188,8 +225,10 @@ export function loadConfig(): Config {
     enableResearch: ["1", "true", "yes", "on"].includes(
       (process.env["VANTAGE_ENABLE_RESEARCH"] ?? "").toLowerCase(),
     ),
+    researchProvider: requestedResearchProvider,
     groqResearchModel:
       process.env["GROQ_RESEARCH_MODEL"] ?? "groq/compound-mini",
+    tavilyApiKey: process.env["TAVILY_API_KEY"],
     researchCompetitionCodes: process.env["VANTAGE_RESEARCH_COMPETITION_CODES"]
       ? process.env["VANTAGE_RESEARCH_COMPETITION_CODES"]
           .split(",")

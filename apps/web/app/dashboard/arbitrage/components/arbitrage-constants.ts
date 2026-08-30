@@ -143,11 +143,17 @@ export function matchesFilter(
   return filter === "all" || verdictOf(entry) === filter;
 }
 
-// hh:mm in the viewer's locale, from an ISO instant — used for "Décidé à
-// {time}" under each card, never a full date (the card already carries the
-// fixture's own kickoff date via the header).
-export function formatDecidedAtTime(iso: string, locale: string): string {
-  return new Date(iso).toLocaleTimeString(locale === "en" ? "en-GB" : "fr-FR", {
+// Full date + time (viewer's locale), from an ISO instant — used for
+// "Décidé le {date}" under each card. Was time-only until 2026-08-30: the
+// fixture's own kickoff date in the header made a bare time seem sufficient,
+// but VANTAGE can decide up to 48h ahead of kickoff (see apps/vantage-worker's
+// sweep LOOKAHEAD_HOURS) — a bare time on a decision made the day before
+// kickoff silently misled the viewer about when it actually happened.
+export function formatDecidedAt(iso: string, locale: string): string {
+  return new Date(iso).toLocaleString(locale === "en" ? "en-GB" : "fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   });

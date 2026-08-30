@@ -17,7 +17,7 @@ vi.mock("../groq/client", () => ({
   requestVantageCompletion: (...args: unknown[]) =>
     requestVantageCompletion(...args),
 }));
-vi.mock("../groq/research", () => ({
+vi.mock("../research", () => ({
   requestSituationalResearch: (...args: unknown[]) =>
     requestSituationalResearch(...args),
 }));
@@ -130,7 +130,10 @@ describe("analyzeFixture — MIN_ODDS floor", () => {
   it("never checks odds for a no_play verdict", async () => {
     buildMatchContext.mockResolvedValue(baseContext);
     requestVantageCompletion.mockResolvedValue(
-      JSON.stringify({ verdict: "no_play", reasonDetails: "nothing stood out" }),
+      JSON.stringify({
+        verdict: "no_play",
+        reasonDetails: "nothing stood out",
+      }),
     );
 
     const result = await analyzeFixture(

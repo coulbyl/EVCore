@@ -1,6 +1,6 @@
 import { loadConfig } from "./config";
 import { createLogger } from "./logger";
-import { createLlmClients } from "./groq/client";
+import { createLlmClients, findProviderClient } from "./groq/client";
 import { createVantageWorker } from "./queue/worker";
 import { createQueue } from "./queue/queue";
 
@@ -9,11 +9,32 @@ async function main() {
   const logger = createLogger("vantage-worker");
   const llmClients = createLlmClients(config);
 
-  if (config.enableResearch && config.llmProvider !== "groq") {
-    logger.warn(
-      { llmProvider: config.llmProvider },
-      "vantage: VANTAGE_ENABLE_RESEARCH is set but situational research (groq/compound web search) has no equivalent on this provider — skipping it on every fixture",
-    );
+  // Catch a research provider that's armed (VANTAGE_ENABLE_RESEARCH=true)
+  // but can't actually run, at startup rather than as a per-fixture warning
+  // nobody's watching. Provider-specific: "groq" can serve from either slot
+  // (primary or fallback — see findProviderClient; fixed 2026-08-30 after a
+  // real prod config — LLM_PROVIDER=cerebras with groq as a fallback — had
+  // this silently broken because the old check only ever looked at the
+  // primary); "tavily" just needs its own API key set.
+  if (config.enableResearch) {
+    if (
+      config.researchProvider === "groq" &&
+      findProviderClient(llmClients, "groq") === null
+    ) {
+      logger.warn(
+        {
+          llmProvider: config.llmProvider,
+          llmFallbackProviders: llmClients.fallbacks.map((f) => f.provider),
+        },
+        "vantage: VANTAGE_ENABLE_RESEARCH is set with VANTAGE_RESEARCH_PROVIDER=groq, but no configured provider (primary or fallback) is groq — skipping research on every fixture",
+      );
+    }
+    if (config.researchProvider === "tavily" && !config.tavilyApiKey) {
+      logger.warn(
+        {},
+        "vantage: VANTAGE_ENABLE_RESEARCH is set with VANTAGE_RESEARCH_PROVIDER=tavily, but TAVILY_API_KEY is not set — skipping research on every fixture",
+      );
+    }
   }
 
   const worker = createVantageWorker(config, llmClients, logger);
