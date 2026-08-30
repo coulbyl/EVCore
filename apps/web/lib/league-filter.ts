@@ -27,9 +27,11 @@ export type LeagueOption = {
 // instant and the list never offers a league with zero matches today.
 export function deriveLeagueOptions<T>(
   items: readonly T[],
-  getCompetition: (
-    item: T,
-  ) => { code: string | null; name: string | null; country: string | null },
+  getCompetition: (item: T) => {
+    code: string | null;
+    name: string | null;
+    country: string | null;
+  },
 ): LeagueOption[] {
   const byCode = new Map<string, LeagueOption>();
   for (const item of items) {
