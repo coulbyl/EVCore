@@ -76,16 +76,23 @@ Running `@evcore/db build`/`generate` while verifying this work caused Prisma 7 
       (`client.ts`), which checks primary AND fallbacks — Groq no longer needs to be the primary
       verdict provider for research to run.
 
+## Done (2026-08-30, research provider abstraction)
+
+- [x] **Situational research decoupled from Groq entirely** — `VANTAGE_RESEARCH_PROVIDER` (`groq` default, or `tavily`) picks the search backend independently of `LLM_PROVIDER`, the verdict call's own provider switch. Motivated by two real prod constraints found this session: Groq's Developer tier is closed for new signups, and even a configured Groq client only helped research when it happened to sit in the right slot (see the `findProviderClient` fix above) — `tavily` sidesteps both by never depending on any LLM provider's availability at all.
+- [x] New `src/research/` module: `index.ts` (dispatch + the three-level gate), `groq-compound.ts` (the original provider, moved as-is), `tavily.ts` (new — direct call to Tavily's `/search` API). Both providers return the identical `{summary, citations}` shape.
+- [x] `TAVILY_API_KEY` added to `.env.example`/`turbo.json`; cost table in `docs/architecture.md` now compares both providers — Tavily's free tier (1000 credits/month) covers VANTAGE's default research volume for **$0**, vs Groq's ~$1.50-2/month for the same scope.
+
 ## Not done yet — before the pilot can start
 
-- [ ] **Get a Groq API key** and confirm `openai/gpt-oss-120b` (and, if enabled, `groq/compound-mini`) behave as expected on a handful of real fixtures — nothing here has been run against the live Groq API yet.
-- [ ] **Set `GROQ_API_KEY` (and the other `VANTAGE_*`/`GROQ_*` vars, if not using the defaults) in the server's `.env`** before the next deploy — `docker-compose.prod.yml`'s `vantage-worker` service will otherwise fail to start (`GROQ_API_KEY is required`, matching how `POSTGRES_PASSWORD`/`NEXT_PUBLIC_API_URL` already behave in that file).
-- [ ] **Decide on `VANTAGE_ENABLE_RESEARCH`** — off (default, ~$1/month total), on with the default grands-championnats scope (~$1.50-2/month more), or widened to all 68 leagues (~$10-20/month) — see `docs/architecture.md` — Situational research (cost) before flipping it.
+- [x] ~~Get a Groq API key and confirm gpt-oss-120b behaves as expected~~ — moot, VANTAGE has been running in prod since 2026-08-28 (`vantage-v2-research`/`vantage-v3-context` decisions in the `channel_decision` table).
+- [ ] **Confirm the `tavily` research provider against a real Tavily API key** on a handful of fixtures — like the Groq provider before it, `research/tavily.ts` has unit-test coverage (mocked `fetch`) but has never been called against Tavily's live endpoint.
+- [ ] **Set `GROQ_API_KEY` (and the other `VANTAGE_*`/`GROQ_*`/`TAVILY_API_KEY` vars, if not using the defaults) in the server's `.env`** before the next deploy — `docker-compose.prod.yml`'s `vantage-worker` service will otherwise fail to start (`GROQ_API_KEY is required`, matching how `POSTGRES_PASSWORD`/`NEXT_PUBLIC_API_URL` already behave in that file).
+- [ ] **Decide on `VANTAGE_ENABLE_RESEARCH`** and, if turning it on, which `VANTAGE_RESEARCH_PROVIDER` — `tavily` is free at the current default scope and doesn't depend on Groq's closed Developer tier; `groq` stays available for deployments where Groq access isn't a constraint. See `docs/architecture.md` — Situational research (cost) before flipping either.
 - [ ] **Manual read-through of the first batch of `reasonDetails`** on well-known leagues (La Liga, Premier League, Championship) before trusting any of it.
 
 ## Deliberately deferred — needs its own decision later, not a default
 
 - [ ] Enriching VANTAGE's context with live odds/EV on its _own_ selection (currently null — it commits to market/pick/probability only, no odds lookup yet).
-- [ ] Making research per-team (two searches) instead of one combined query, if a single `compound-mini` search proves too shallow for both sides of a match.
+- [ ] Making research per-team (two searches) instead of one combined query, if a single search proves too shallow for both sides of a match — applies to either provider.
 - [ ] Any integration with the deterministic scoring loop (`ModelRun.llmDelta`/`openclawRaw`) — out of scope for VANTAGE entirely; a separate, explicitly human-approved initiative if it ever happens.
 - [ ] Surfacing VANTAGE in the "Ce qu'on assume" / Investir Phase-2 filters — today it's visible on Decisions and Historique verifiable like any channel, but VALUE/SAFE's re-selection logic hasn't been reviewed for how it should treat VANTAGE's picks.

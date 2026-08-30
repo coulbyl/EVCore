@@ -1,7 +1,7 @@
 import { prisma } from "@evcore/db";
 import { STRATEGY_CHANNEL } from "@evcore/analysis-core";
 import type { VantageResponse } from "./response-schema";
-import type { SituationalResearch } from "../groq/research";
+import type { SituationalResearch } from "../research";
 
 /** Writes VANTAGE's decision as a normal ChannelDecision + ChannelSelection,
  * attached to the fixture's existing ModelRun — the exact same shape every
