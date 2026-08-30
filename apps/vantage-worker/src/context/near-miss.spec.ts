@@ -158,4 +158,40 @@ describe("extractNearMiss", () => {
     expect(extractNearMiss("VALUE", { somethingElse: 1 })).toBeNull();
     expect(extractNearMiss("BTTS", { bttsYes: "not a number" })).toBeNull();
   });
+
+  it("rejects an out-of-[0,1] probability (CLAUDE.md: probabilities must be asserted at ingestion) even though it's a finite number", () => {
+    expect(
+      extractNearMiss("DOMINANT", { probability: 1.4, threshold: 0.5 }),
+    ).toBeNull();
+    expect(
+      extractNearMiss("DOMINANT", { probability: -0.1, threshold: 0.5 }),
+    ).toBeNull();
+    expect(
+      extractNearMiss("BTTS", { bttsYes: 1.2, bttsNo: 0.69, threshold: 0.35 })
+        ?.values,
+    ).toEqual([{ label: "Non", probability: 0.69 }]);
+  });
+
+  it("extracts TEAM_TOTAL and RESULT_BTTS's below_threshold shape (regression: missed from the table despite identical shape to RESULT_TOTAL_GOALS/DOUBLE_CHANCE)", () => {
+    expect(
+      extractNearMiss("TEAM_TOTAL", { probability: 0.58, threshold: 0.6 }),
+    ).toEqual({
+      values: [{ label: "annoncée", probability: 0.58 }],
+      threshold: 0.6,
+    });
+    expect(
+      extractNearMiss("RESULT_BTTS", { probability: 0.2, threshold: 0.3 }),
+    ).toEqual({
+      values: [{ label: "annoncée", probability: 0.2 }],
+      threshold: 0.3,
+    });
+  });
+
+  it("does NOT bound DOMINANT's below_min_odds shape to [0,1] — it reports raw odds, not a probability", () => {
+    const result = extractNearMiss("DOMINANT", { odds: 1.1, minOdds: 1.2 });
+    expect(result).toEqual({
+      values: [{ label: "cote", probability: 1.1 }],
+      threshold: 1.2,
+    });
+  });
 });

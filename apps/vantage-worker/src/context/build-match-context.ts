@@ -1,3 +1,4 @@
+import type { Logger } from "pino";
 import { prisma } from "@evcore/db";
 import { Market } from "@evcore/analysis-core";
 import type { StrategyChannel } from "@evcore/analysis-core";
@@ -27,6 +28,7 @@ const MIN_CALIBRATION_SAMPLE = 30;
  * decisions — it reads the deterministic layer, it does not read itself. */
 export async function buildMatchContext(
   fixtureId: string,
+  logger: Logger,
 ): Promise<MatchContext | null> {
   const fixture = await prisma.fixture.findUnique({
     where: { id: fixtureId },
@@ -103,9 +105,19 @@ export async function buildMatchContext(
   // field, unchanged from before this expansion) and is allowed to
   // propagate a failure; every signal added 2026-08-30 is caught locally so
   // one flaky query (a transient DB error on, say, the H2H leg fetch)
-  // doesn't fail the whole context build and lose readings/calibration too —
-  // a 2026-08-30 code-review finding: this Promise.all previously had no
-  // per-query fallback at all.
+  // doesn't fail the whole context build and lose readings/calibration too.
+  // Each catch also logs (2026-08-30 code-review finding: the first version
+  // of this degradation caught silently, with no signal anywhere that a
+  // real bug — a bad migration, a Prisma schema drift — could be making one
+  // of these fail on every single fixture forever) — see logSignal below.
+  const logSignal = (signal: string) => (err: unknown) => {
+    logger.warn(
+      { fixtureId, signal, err },
+      "vantage: additive context signal failed, degrading to empty",
+    );
+    return null;
+  };
+
   const [
     calibration,
     homeTeamStats,
@@ -120,17 +132,22 @@ export async function buildMatchContext(
       readings.map((r) => r.channel),
     ),
     loadTeamSignal(fixture.homeTeamId, fixture.seasonId, kickoff).catch(
-      () => null,
+      logSignal("homeTeamStats"),
     ),
     loadTeamSignal(fixture.awayTeamId, fixture.seasonId, kickoff).catch(
-      () => null,
+      logSignal("awayTeamStats"),
     ),
-    loadCoachSignal(fixture.homeTeamId, kickoff).catch(() => null),
-    loadCoachSignal(fixture.awayTeamId, kickoff).catch(() => null),
+    loadCoachSignal(fixture.homeTeamId, kickoff).catch(logSignal("homeCoach")),
+    loadCoachSignal(fixture.awayTeamId, kickoff).catch(logSignal("awayCoach")),
     loadH2HSignal(fixture.homeTeamId, fixture.awayTeamId, kickoff).catch(
-      () => null,
+      logSignal("h2h"),
     ),
-    loadUncoveredMarketOdds(fixture.id, coveredMarkets).catch(() => []),
+    loadUncoveredMarketOdds(fixture.id, coveredMarkets).catch(
+      (err: unknown) => {
+        logSignal("uncoveredMarketOdds")(err);
+        return [];
+      },
+    ),
   ]);
 
   return {

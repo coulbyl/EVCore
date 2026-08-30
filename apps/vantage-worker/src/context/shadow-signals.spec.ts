@@ -73,4 +73,11 @@ describe("extractShadowMl", () => {
     });
     expect(result).toEqual([]);
   });
+
+  it("rejects an out-of-[0,1] correctedP (CLAUDE.md: probabilities must be asserted at ingestion) even though it's a finite number", () => {
+    const result = extractShadowMl({
+      shadow_ml_by_channel: { DOMINANT: { correctedP: 1.5, edgeDelta: 0.1 } },
+    });
+    expect(result).toEqual([]);
+  });
 });

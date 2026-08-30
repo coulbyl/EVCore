@@ -25,6 +25,17 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+/** CLAUDE.md: "Probability values must always be in [0, 1] — assert this at
+ * ingestion." A finiteness check alone (pre-2026-08-30) let a corrupted or
+ * miscomputed value in a persisted `reasonDetails` payload pass straight
+ * through to VANTAGE's prompt as if it were a real probability. This is the
+ * default guard for every field below — pass `isFiniteNumber` explicitly
+ * instead only for a field that isn't actually a probability (DOMINANT's
+ * raw odds — see `below_min_odds` below). */
+function isProbability(value: unknown): value is number {
+  return isFiniteNumber(value) && value >= 0 && value <= 1;
+}
+
 /** Channels that log one or more named probabilities plus one shared
  * threshold field — everything from a single `probability`/
  * `impliedProbability` (VALUE's score gate, DRAW, DOUBLE_CHANCE, ...) to two
@@ -34,20 +45,25 @@ function isFiniteNumber(value: unknown): value is number {
  * code-review finding: a dedicated "direct" extractor was pure duplication
  * of this one called with a 1-element field list). No single shared
  * field-name schema across channels (audited 2026-08-30), hence one small
- * mapping table per channel below rather than a generic key. */
+ * mapping table per channel below rather than a generic key.
+ *
+ * `guard` defaults to `isProbability` — pass `isFiniteNumber` for a field
+ * that's a genuine near-miss but isn't itself bounded to [0,1] (DOMINANT's
+ * `below_min_odds` reports a raw odds value, not a probability). */
 function fieldsExtractor(
   fields: readonly { key: string; label: string }[],
   thresholdKey: string,
+  guard: (value: unknown) => value is number = isProbability,
 ): NearMissExtractor {
   return (details) => {
     const values = fields
       .map(({ key, label }) => ({ label, probability: details[key] }))
       .filter((v): v is { label: string; probability: number } =>
-        isFiniteNumber(v.probability),
+        guard(v.probability),
       );
     if (values.length === 0) return null;
     const threshold = details[thresholdKey];
-    return { values, threshold: isFiniteNumber(threshold) ? threshold : null };
+    return { values, threshold: guard(threshold) ? threshold : null };
   };
 }
 
@@ -61,17 +77,24 @@ function candidateLinesExtractor(listKey: string): NearMissExtractor {
     const values = list
       .map((entry) => {
         if (
-          entry !== null &&
-          typeof entry === "object" &&
-          "pick" in entry &&
-          "probability" in entry &&
-          typeof (entry as Record<string, unknown>)["pick"] === "string" &&
-          isFiniteNumber((entry as Record<string, unknown>)["probability"])
+          entry === null ||
+          typeof entry !== "object" ||
+          !("pick" in entry) ||
+          !("probability" in entry)
         ) {
-          const record = entry as { pick: string; probability: number };
-          return { label: record.pick, probability: record.probability };
+          return null;
         }
-        return null;
+        const record = entry as Record<string, unknown>;
+        if (
+          typeof record["pick"] !== "string" ||
+          !isProbability(record["probability"])
+        ) {
+          return null;
+        }
+        return {
+          label: record["pick"] as string,
+          probability: record["probability"],
+        };
       })
       .filter((v): v is { label: string; probability: number } => v !== null);
     if (values.length === 0) return null;
@@ -92,7 +115,7 @@ function modalScorelineExtractor(
   return (details) => {
     const scoreline = details[scorelineKey];
     const probability = details[probabilityKey];
-    if (typeof scoreline !== "string" || !isFiniteNumber(probability))
+    if (typeof scoreline !== "string" || !isProbability(probability))
       return null;
     return { values: [{ label: scoreline, probability }], threshold: null };
   };
@@ -113,13 +136,25 @@ function modalScorelineExtractor(
 function bestCandidateExtractor(): NearMissExtractor {
   return (details) => {
     const probability = details["probability"];
-    if (!isFiniteNumber(probability)) return null;
+    if (!isProbability(probability)) return null;
     return {
       values: [{ label: "meilleur candidat retenu", probability }],
       threshold: null,
     };
   };
 }
+
+// VALUE/SAFE share the exact same two rejection shapes — both strategies
+// gate on the same `{score, threshold}` deterministic-score floor first,
+// then fall back to the same `bestQualityPickDetails` shape (pick-
+// evaluation.ts, shared by both). Named once rather than written out twice
+// identically (2026-08-30 code review) — if a future audit finds SAFE's
+// actual payload has diverged from VALUE's, split them back into two
+// distinct arrays instead of quietly editing this one in place.
+const VALUE_SAFE_EXTRACTORS: readonly NearMissExtractor[] = [
+  fieldsExtractor([{ key: "score", label: "score modèle" }], "threshold"),
+  bestCandidateExtractor(),
+];
 
 const NEAR_MISS_EXTRACTORS: Partial<
   Record<StrategyChannel, readonly NearMissExtractor[]>
@@ -132,26 +167,27 @@ const NEAR_MISS_EXTRACTORS: Partial<
   // A single `{probability, threshold}` field lookup alone (the pre-2026-08-30
   // version of this table) silently matched neither on the common path —
   // fixed after a code-review audit found the mismatch.
-  VALUE: [
-    fieldsExtractor([{ key: "score", label: "score modèle" }], "threshold"),
-    bestCandidateExtractor(),
-  ],
-  SAFE: [
-    fieldsExtractor([{ key: "score", label: "score modèle" }], "threshold"),
-    bestCandidateExtractor(),
-  ],
+  VALUE: VALUE_SAFE_EXTRACTORS,
+  SAFE: VALUE_SAFE_EXTRACTORS,
   // DOMINANT's `below_threshold` ({probability, threshold}) is the common
   // case; `insufficient_margin` ({margin, minMargin}) and `below_min_odds`
   // ({odds, minOdds}) are real rejection reasons too but aren't probability-
   // vs-threshold reads — reported as their own, correctly-labeled shapes
   // rather than forced into the same shape as the common case above.
+  // `below_min_odds` uses `isFiniteNumber`, not the default `isProbability`
+  // guard — `odds`/`minOdds` are genuine odds (e.g. 1.1, 1.5), never
+  // bounded to [0,1].
   DOMINANT: [
     fieldsExtractor([{ key: "probability", label: "annoncée" }], "threshold"),
     fieldsExtractor(
       [{ key: "margin", label: "écart favori/second" }],
       "minMargin",
     ),
-    fieldsExtractor([{ key: "odds", label: "cote" }], "minOdds"),
+    fieldsExtractor(
+      [{ key: "odds", label: "cote" }],
+      "minOdds",
+      isFiniteNumber,
+    ),
   ],
   DRAW: [
     fieldsExtractor(
@@ -163,6 +199,16 @@ const NEAR_MISS_EXTRACTORS: Partial<
     fieldsExtractor([{ key: "probability", label: "annoncée" }], "threshold"),
   ],
   RESULT_TOTAL_GOALS: [
+    fieldsExtractor([{ key: "probability", label: "annoncée" }], "threshold"),
+  ],
+  // TEAM_TOTAL and RESULT_BTTS both log the exact same {probability,
+  // threshold} bestBelow shape as RESULT_TOTAL_GOALS/DOUBLE_CHANCE — missed
+  // from this table on the first pass (found by a 2026-08-30 code-review
+  // retry) despite having no market_suspended-style exclusion reason.
+  TEAM_TOTAL: [
+    fieldsExtractor([{ key: "probability", label: "annoncée" }], "threshold"),
+  ],
+  RESULT_BTTS: [
     fieldsExtractor([{ key: "probability", label: "annoncée" }], "threshold"),
   ],
   // Field name confirmed against btts.strategy.ts 2026-08-30 — a single

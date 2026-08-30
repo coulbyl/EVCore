@@ -255,4 +255,20 @@ describe("buildUserPrompt", () => {
     expect(prompt).not.toContain("ROI");
     expect(prompt).not.toContain("EV");
   });
+
+  it("gives the raw market-odds block a 'marché=' tag and per-pick 'pick=' codes, not just the French label (regression: the block let VANTAGE propose a play with no technical code to copy, so isValidPickForMarket would reject any pick sourced from it)", () => {
+    const prompt = buildUserPrompt(
+      {
+        ...baseContext,
+        uncoveredMarketOdds: [
+          { market: "ONE_X_TWO", homeOdds: 2.1, drawOdds: 3.2, awayOdds: 3.4 },
+        ],
+      },
+      null,
+    );
+    expect(prompt).toContain("marché=ONE_X_TWO");
+    expect(prompt).toContain("pick=HOME");
+    expect(prompt).toContain("pick=DRAW");
+    expect(prompt).toContain("pick=AWAY");
+  });
 });

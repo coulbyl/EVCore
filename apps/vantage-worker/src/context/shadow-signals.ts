@@ -15,6 +15,15 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+/** CLAUDE.md: "Probability values must always be in [0, 1] — assert this at
+ * ingestion." Used only for `correctedP` below — `homePercent`/
+ * `drawPercent`/`awayPercent` are a 0-100 scale (API-Football's own
+ * `percent` shape), not a [0,1] probability, and `edgeDelta`/`poissonHome`/
+ * `poissonAway` aren't probabilities at all (a delta, and expected goals). */
+function isProbability(value: unknown): value is number {
+  return isFiniteNumber(value) && value >= 0 && value <= 1;
+}
+
 /** `ModelRun.features.shadow_predictions` — API-Football's own
  * `/predictions` endpoint, ingested as a genuinely independent second
  * forecaster. See ShadowPrediction's doc comment in types.ts. */
@@ -66,7 +75,7 @@ export function extractShadowMl(features: unknown): ShadowMlSignal[] {
     const entry = raw[channel];
     if (!isRecord(entry)) continue;
     const { correctedP, edgeDelta } = entry;
-    if (!isFiniteNumber(correctedP) || !isFiniteNumber(edgeDelta)) continue;
+    if (!isProbability(correctedP) || !isFiniteNumber(edgeDelta)) continue;
     results.push({ channel, correctedP, edgeDelta });
   }
   return results;

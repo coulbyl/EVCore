@@ -59,6 +59,15 @@ export function decideCorrectScore(context: StrategyContext): StrategyDecision {
         : best,
     null,
   );
+  // Shared by both rejections below that still want to report the model's
+  // modal-scoreline opinion — deduplicated 2026-08-30 (code review) after
+  // this exact object literal was found built twice, byte-for-byte identical.
+  const modalReasonDetails = modal
+    ? {
+        bestScoreline: modal.scoreline,
+        bestProbability: modal.probability.toNumber(),
+      }
+    : {};
 
   const priced = context.odds?.correctScoreOdds;
   if (!priced || Object.keys(priced).length === 0) {
@@ -66,12 +75,7 @@ export function decideCorrectScore(context: StrategyContext): StrategyDecision {
       channel: ch,
       status: CHANNEL_DECISION_STATUS.REJECTED,
       reasonCode: "no_odds",
-      reasonDetails: modal
-        ? {
-            bestScoreline: modal.scoreline,
-            bestProbability: modal.probability.toNumber(),
-          }
-        : {},
+      reasonDetails: modalReasonDetails,
       selections: [],
     };
   }
@@ -95,12 +99,7 @@ export function decideCorrectScore(context: StrategyContext): StrategyDecision {
       channel: ch,
       status: CHANNEL_DECISION_STATUS.REJECTED,
       reasonCode: "no_modelable_scoreline",
-      reasonDetails: modal
-        ? {
-            bestScoreline: modal.scoreline,
-            bestProbability: modal.probability.toNumber(),
-          }
-        : {},
+      reasonDetails: modalReasonDetails,
       selections: [],
     };
   }

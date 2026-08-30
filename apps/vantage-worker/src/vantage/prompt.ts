@@ -3,7 +3,7 @@ import {
   formatPickForDisplayFr,
 } from "@evcore/analysis-core";
 import type { MatchContext, ShadowMlSignal } from "../context/types";
-import type { SituationalResearch } from "../groq/research";
+import type { SituationalResearch } from "../research";
 
 const SYSTEM_PROMPT = `Tu es VANTAGE, un canal d'analyse au sein d'EVCore, un moteur de décision probabiliste pour le football.
 
@@ -151,6 +151,21 @@ function renderShadowMlBlock(context: MatchContext): string | null {
   return `Correction indépendante (modèle statistique, jamais utilisée par les canaux eux-mêmes) : ${lines.join(" ; ")}.`;
 }
 
+// market-odds.ts only ever populates ONE_X_TWO today (see its own
+// SUPPORTED_MARKETS comment) — HOME/DRAW/AWAY is that market's fixed pick
+// vocabulary (known-picks.ts's FIXED_PICKS). Hardcoded to this one market
+// deliberately, same scope assumption findKnownOdds (analyze-fixture.ts)
+// already makes for the MIN_ODDS floor on this same block.
+const ONE_X_TWO_PICKS: readonly {
+  key: "homeOdds" | "drawOdds" | "awayOdds";
+  label: string;
+  pick: string;
+}[] = [
+  { key: "homeOdds", label: "domicile", pick: "HOME" },
+  { key: "drawOdds", label: "nul", pick: "DRAW" },
+  { key: "awayOdds", label: "extérieur", pick: "AWAY" },
+];
+
 function renderMarketOddsBlock(context: MatchContext): string | null {
   if (
     context.uncoveredMarketOdds === undefined ||
@@ -158,12 +173,16 @@ function renderMarketOddsBlock(context: MatchContext): string | null {
   )
     return null;
   const lines = context.uncoveredMarketOdds.map((m) => {
-    const parts = [
-      m.homeOdds !== null ? `domicile ${m.homeOdds}` : null,
-      m.drawOdds !== null ? `nul ${m.drawOdds}` : null,
-      m.awayOdds !== null ? `extérieur ${m.awayOdds}` : null,
-    ].filter((p): p is string => p !== null);
-    return `${formatMarketForDisplayFr(m.market)} — ${parts.join(", ")}`;
+    // Regression (2026-08-30 code-review retry): this used to render only
+    // the French label ("Résultat — domicile 2.1, ...") with no "marché="/
+    // "pick=" tags anywhere near it — the one context block the system
+    // prompt explicitly allows as a JSON market/pick source, yet the only
+    // one that gave the model nothing to copy the technical codes from.
+    const parts = ONE_X_TWO_PICKS.map(({ key, label, pick }) => {
+      const odds = m[key];
+      return odds !== null ? `${label} (pick=${pick}) ${odds}` : null;
+    }).filter((p): p is string => p !== null);
+    return `marché=${m.market} (${formatMarketForDisplayFr(m.market)}) — ${parts.join(", ")}`;
   });
   return `Marché (prix brut du bookmaker, aucun canal n'a sélectionné ce marché — information de contexte, jamais un signal de valeur) : ${lines.join(" ; ")}.`;
 }
