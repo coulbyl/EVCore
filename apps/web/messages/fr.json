@@ -231,7 +231,7 @@
     },
     "reasoningLabel": "Lecture Arbitrage",
     "sourcesLabel": "Sources",
-    "decidedAt": "Décidé à {time}",
+    "decidedAt": "Décidé le {date}",
     "noPlay": "Aucun pick — lecture seule.",
     "emptyTitle": "Aucune lecture",
     "emptyDescription": "Le canal n'a encore rien analysé pour cette date.",
