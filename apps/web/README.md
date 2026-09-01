@@ -19,4 +19,4 @@ Next.js dashboard for the EVCore betting engine.
 pnpm --filter web dev
 ```
 
-The web app expects the backend running at `http://localhost:3001` by default (fallback in `lib/dashboard-api.ts`).
+The web app expects the backend running at `http://localhost:3001` by default (fallback in `lib/api/shared.ts`).
