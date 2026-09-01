@@ -17,6 +17,7 @@ import {
   History,
   Layers,
   LayoutDashboard,
+  Library,
   Megaphone,
   MessageCircle,
   Receipt,
@@ -141,6 +142,12 @@ export function AppShell({
             href: "/dashboard/glossaire",
             active: pathname === "/dashboard/glossaire",
             icon: BookOpen,
+          },
+          {
+            label: tNav("technicalDocs"),
+            href: "/dashboard/documentation-technique",
+            active: pathname.startsWith("/dashboard/documentation-technique"),
+            icon: Library,
           },
         ]
       : [];

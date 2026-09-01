@@ -24,6 +24,21 @@ function isProbability(value: unknown): value is number {
   return isFiniteNumber(value) && value >= 0 && value <= 1;
 }
 
+/** A 0-100 split with a leg at exactly 0 or 100 isn't a real assessment —
+ * no professional fixture has zero chance for one side. Confirmed as a
+ * systemic upstream data issue rather than a genuine independent opinion:
+ * API-Football's `/predictions` returns the exact degenerate pattern
+ * `home:50/draw:50/away:0` with `poisson:100/0` on 179 of 2 809 fixtures
+ * (2026-08-31 audit) — VANTAGE was citing it as justification for DRAW
+ * picks that lost 8 times out of 9 (Real Madrid 4-0 Malaga, Barcelona 5-2
+ * Rayo Vallecano among them), overriding its own, saner internal
+ * probability (13.7%/23.9% draw on those two) with a broken "second
+ * opinion". Reject rather than pass through — same fails-closed contract
+ * as a malformed payload. */
+function isPlausibleSplit(...values: number[]): boolean {
+  return values.every((v) => v > 0 && v < 100);
+}
+
 /** `ModelRun.features.shadow_predictions` — API-Football's own
  * `/predictions` endpoint, ingested as a genuinely independent second
  * forecaster. See ShadowPrediction's doc comment in types.ts. */
@@ -42,6 +57,12 @@ export function extractShadowPrediction(features: unknown): ShadowPrediction {
     !isFiniteNumber(awayPercent) ||
     !isFiniteNumber(poissonHome) ||
     !isFiniteNumber(poissonAway)
+  ) {
+    return null;
+  }
+  if (
+    !isPlausibleSplit(homePercent, drawPercent, awayPercent) ||
+    !isPlausibleSplit(poissonHome, poissonAway)
   ) {
     return null;
   }

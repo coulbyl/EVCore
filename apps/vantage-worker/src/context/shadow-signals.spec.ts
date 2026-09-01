@@ -45,6 +45,47 @@ describe("extractShadowPrediction", () => {
     expect(result?.conflict).toBe(false);
     expect(result?.winnerName).toBeNull();
   });
+
+  it("rejects the degenerate home:50/draw:50/away:0 pattern (real upstream bug, not a real opinion)", () => {
+    const result = extractShadowPrediction({
+      shadow_predictions: {
+        percent: { home: 50, draw: 50, away: 0 },
+        poisson: { home: 100, away: 0 },
+        winnerName: "Real Madrid",
+      },
+    });
+    expect(result).toBeNull();
+  });
+
+  it("rejects a percent split with a 100 leg even when poisson looks fine", () => {
+    const result = extractShadowPrediction({
+      shadow_predictions: {
+        percent: { home: 100, draw: 0, away: 0 },
+        poisson: { home: 60, away: 40 },
+      },
+    });
+    expect(result).toBeNull();
+  });
+
+  it("rejects a poisson split with a 0 leg even when percent looks fine", () => {
+    const result = extractShadowPrediction({
+      shadow_predictions: {
+        percent: { home: 45, draw: 30, away: 25 },
+        poisson: { home: 100, away: 0 },
+      },
+    });
+    expect(result).toBeNull();
+  });
+
+  it("accepts a lopsided but plausible split (no leg at exactly 0 or 100)", () => {
+    const result = extractShadowPrediction({
+      shadow_predictions: {
+        percent: { home: 85, draw: 10, away: 5 },
+        poisson: { home: 92, away: 8 },
+      },
+    });
+    expect(result).not.toBeNull();
+  });
 });
 
 describe("extractShadowMl", () => {

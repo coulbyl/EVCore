@@ -39,7 +39,8 @@ export async function proxy(request: NextRequest) {
   const isDashboardRoute = pathname.startsWith("/dashboard");
   const isAdminOnlyRoute =
     pathname.startsWith("/dashboard/audit") ||
-    pathname.startsWith("/dashboard/glossaire");
+    pathname.startsWith("/dashboard/glossaire") ||
+    pathname.startsWith("/dashboard/documentation-technique");
 
   if (isAuthRoute && session) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
