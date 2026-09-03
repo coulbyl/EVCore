@@ -844,3 +844,49 @@ toujours au vert.
 **Statut** : `apps/vantage-worker` peut maintenant interroger sa propre pool de candidats
 de bout en bout, sans aucune dépendance à `apps/backend`. Prochaine étape : Phase B —
 construire le prompt LLM à partir de ce pool (§9 points 1-3), pas commencée.
+
+## Phase B — le prompt LLM (démarrée 2026-09-03)
+
+**Recherche préalable** (à la demande de l'utilisateur, avant d'écrire le prompt) — trois
+conclusions actionnables qui cadrent tout ce qui suit :
+
+1. **Le LLM ne doit jamais générer/recalculer une cote, une probabilité ou un EV** — il
+   sélectionne des jambes par identifiant parmi celles qu'on lui donne, jamais par valeur
+   régénérée. La littérature sur le tool-calling est unanime : un LLM qui doit reproduire
+   une valeur plutôt que choisir dans une liste fournie hallucine sur la queue de
+   distribution (paramètres inventés/arrondis). Toute l'arithmétique (`combinedOdds`,
+   `jointProbability`, `couponEV`) reste 100% déterministe côté code, exactement comme
+   `buildCoupon()` le faisait — le LLM ne fait que le jugement qualitatif.
+2. **Structured output natif + revalidation Zod systématique**, jamais confiance aveugle
+   au schéma du provider — patron déjà en place dans `analyze-fixture.ts`
+   (`requestVantageCompletion`), à réutiliser tel quel.
+3. **Un appel LLM par classe (SAFE/BALANCED/BOLD), pas un appel unique pour les trois** —
+   la fiabilité de l'instruction-following se dégrade avec le nombre de contraintes
+   simultanées dans un prompt ; trois bandes de cote de jambe + trois profils de risque
+   dans un seul prompt est plus fragile que trois prompts à une contrainte de bande
+   chacun.
+
+**Étape 1 du plan §9 codée** — `apps/vantage-worker/src/coupon/score-candidates.ts` :
+transforme le pool brut (`pool-query.ts`) en la vue déjà scorée que le LLM verra.
+- `scoreCandidates` — applique la courbe de Platt du canal (`calibrateLegProbability`,
+  déjà dans analysis-core) à chaque candidat, recalcule `legEV`/`edge` sur la probabilité
+  CALIBRÉE (pas la brute, contrairement à `pool-query.ts` qui n'avait que la brute — voir
+  l'écart documenté dans l'entrée Phase A).
+- `admissibleCandidates` — repasse chaque candidat par les mêmes garde-fous que l'ancien
+  `compose()` (`clearsValueEdgeFloor`/`clearsTeamTotalMaxOdds`/`clearsMaxLegEdge`/
+  `clearsMinLegOdds`, tous déjà dans `guardrails.ts`) — un candidat qui ne les
+  franchit pas n'a rien à faire dans ce que voit le LLM. La Phase C revalidera quand
+  même après coup (ne jamais se fier à une seule passe de garde-fou).
+- `reduceToLlmPool` — fusionne les deux modes du template (Fiabilité : top N par
+  probabilité calibrée ; Valeur : top N par edge), dédupliqué par (fixture, marché,
+  pick), `depthRank` en tie-break. `reliabilityTopN=30`/`valueTopN=20` sont un point de
+  départ qualitatif (description du template), **pas backtestés pour ce pipeline** — même
+  réserve que `ANCHOR_MIN_PROBABILITY` dans l'ancien composeur.
+
+11 tests neufs. Vérifié : typecheck/lint propres, 103/103 vantage-worker (92 + 11, aucune
+régression).
+
+Reste à faire pour la Phase B : le schéma Zod de sortie (sélection par identifiant, jamais
+par valeur), la construction du prompt (les ~30-50 candidats + contexte VANTAGE déjà
+disponible sur ces fixtures — question ouverte depuis §9bis, pas encore tranchée), et
+l'appel `requestVantageCompletion` lui-même, une fois par classe.
