@@ -28,6 +28,22 @@
 
 ## Générateur de coupon
 
+- `[ ]` **Aucun coupon "aperçu" pour J+2..J+4** (relevé 2026-09-03) — le
+  pipeline LLM (`apps/vantage-worker/src/coupon/`) ne génère aujourd'hui
+  qu'une seule `CouponProposal.forDate` par jour : J+1 (batch du soir
+  20h30/21h15 UTC) et J+0 (batch intraday, fixtures proches du coup
+  d'envoi). Rien ne couvre J+2/J+3/J+4, contrairement à `ROLLING_HORIZON`
+  côté backend qui alimente déjà ces `ModelRun` en "aperçu chaud" (destiné
+  à être écrasé par la passe faisant autorité au fur et à mesure que la
+  date se rapproche — même principe que `persistCouponProposal`'s garde
+  PENDING-only, donc rien n'empêche techniquement un aperçu de coupon
+  J+2..J+4 d'être raffiné chaque jour jusqu'à devenir le batch officiel).
+  **Décision (2026-09-03) : reporté.** Prévoir un PR dédié après une étude
+  de cas — portée exacte (même horizon que `ROLLING_HORIZON_DEFAULTS`
+  J+1..J+4, ou plus court) et cadence (une passe/jour après ROLLING_HORIZON
+  vs. plusieurs comme le batch du soir) restent à trancher à ce moment-là,
+  pas figées ici.
+
 - `[ ]` **BTTS misé sur PL/BL1 alors que les deux ROI se sont inversés**
   (relevé 2026-08-22, décision : ne rien changer avant un backtest propre) —
   `BTTS_STAKED_LEAGUES = ['PL', 'BL1']` (coupon.constants.ts) mise réellement
