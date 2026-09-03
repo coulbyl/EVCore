@@ -245,7 +245,6 @@ describe("buildUserPrompt", () => {
           winnerName: null,
           conflict: false,
         },
-        shadowMl: [{ channel: "DOMINANT", correctedP: 0.5, edgeDelta: -0.05 }],
         uncoveredMarketOdds: [
           { market: "ONE_X_TWO", homeOdds: 2.1, drawOdds: 3.2, awayOdds: 3.4 },
         ],

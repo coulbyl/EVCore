@@ -106,20 +106,6 @@ export type ShadowPrediction = {
   conflict: boolean;
 } | null;
 
-/** A trained ML correction, per channel, never folded back into that
- * channel's own selected probability (`ModelRun.features.
- * shadow_ml_by_channel`, computed strictly after decisions are persisted —
- * betting-engine.service.ts). Restricted to DOMINANT/VALUE only: a
- * calibration audit (2026-08-30, Brier score vs settled results) found the
- * correction makes GOALS/TEAM_TOTAL/CLEAN_SHEET/WIN_EITHER_HALF/BTTS worse,
- * not better — only DOMINANT and VALUE showed a real improvement. Do not
- * widen this list without re-running that audit. */
-export type ShadowMlSignal = {
-  channel: "DOMINANT" | "VALUE";
-  correctedP: number;
-  edgeDelta: number;
-};
-
 /** The book's raw price for a market no channel selected on this fixture —
  * "what the market prices," never framed as edge/EV (CLAUDE.md: claimed
  * edge is anti-predictive, MAX_LEG_EDGE is a ceiling never a selection
@@ -153,6 +139,5 @@ export type MatchContext = {
   awayCoach?: CoachSignal;
   h2h?: H2HSignal;
   shadowPrediction?: ShadowPrediction;
-  shadowMl?: readonly ShadowMlSignal[];
   uncoveredMarketOdds?: readonly MarketOddsSnapshot[];
 };

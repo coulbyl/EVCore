@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractShadowPrediction, extractShadowMl } from "./shadow-signals";
+import { extractShadowPrediction } from "./shadow-signals";
 
 describe("extractShadowPrediction", () => {
   it("extracts a well-formed shadow_predictions payload", () => {
@@ -85,40 +85,5 @@ describe("extractShadowPrediction", () => {
       },
     });
     expect(result).not.toBeNull();
-  });
-});
-
-describe("extractShadowMl", () => {
-  it("keeps only DOMINANT/VALUE — the two channels a 2026-08-30 calibration audit confirmed the correction actually improves", () => {
-    const result = extractShadowMl({
-      shadow_ml_by_channel: {
-        DOMINANT: { correctedP: 0.55, edgeDelta: -0.05 },
-        VALUE: { correctedP: 0.3, edgeDelta: -0.12 },
-        CLEAN_SHEET: { correctedP: 0.9, edgeDelta: 0.6 },
-        GOALS: { correctedP: 0.4, edgeDelta: -0.1 },
-      },
-    });
-    expect(result).toEqual([
-      { channel: "DOMINANT", correctedP: 0.55, edgeDelta: -0.05 },
-      { channel: "VALUE", correctedP: 0.3, edgeDelta: -0.12 },
-    ]);
-  });
-
-  it("returns an empty array when the field is absent", () => {
-    expect(extractShadowMl({})).toEqual([]);
-  });
-
-  it("skips a channel entry with a malformed shape", () => {
-    const result = extractShadowMl({
-      shadow_ml_by_channel: { DOMINANT: { correctedP: "not a number" } },
-    });
-    expect(result).toEqual([]);
-  });
-
-  it("rejects an out-of-[0,1] correctedP (CLAUDE.md: probabilities must be asserted at ingestion) even though it's a finite number", () => {
-    const result = extractShadowMl({
-      shadow_ml_by_channel: { DOMINANT: { correctedP: 1.5, edgeDelta: 0.1 } },
-    });
-    expect(result).toEqual([]);
   });
 });

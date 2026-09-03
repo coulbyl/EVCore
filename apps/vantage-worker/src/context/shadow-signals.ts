@@ -1,4 +1,4 @@
-import type { ShadowPrediction, ShadowMlSignal } from "./types";
+import type { ShadowPrediction } from "./types";
 
 // Pure parsers over `ModelRun.features` (a Prisma `Json` column) — internal
 // DB data, not an external ETL boundary, so a light runtime type guard is
@@ -13,15 +13,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
-}
-
-/** CLAUDE.md: "Probability values must always be in [0, 1] — assert this at
- * ingestion." Used only for `correctedP` below — `homePercent`/
- * `drawPercent`/`awayPercent` are a 0-100 scale (API-Football's own
- * `percent` shape), not a [0,1] probability, and `edgeDelta`/`poissonHome`/
- * `poissonAway` aren't probabilities at all (a delta, and expected goals). */
-function isProbability(value: unknown): value is number {
-  return isFiniteNumber(value) && value >= 0 && value <= 1;
 }
 
 /** A 0-100 split with a leg at exactly 0 or 100 isn't a real assessment —
@@ -77,27 +68,4 @@ export function extractShadowPrediction(features: unknown): ShadowPrediction {
     winnerName: typeof winnerName === "string" ? winnerName : null,
     conflict: conflict === true,
   };
-}
-
-/** `ModelRun.features.shadow_ml_by_channel` — restricted to DOMINANT/VALUE
- * only. See ShadowMlSignal's doc comment in types.ts for why the other 5
- * segments (GOALS/TEAM_TOTAL/CLEAN_SHEET/WIN_EITHER_HALF/BTTS) are excluded:
- * a 2026-08-30 calibration audit found the correction makes them worse, not
- * better. */
-const CALIBRATION_SAFE_ML_CHANNELS = ["DOMINANT", "VALUE"] as const;
-
-export function extractShadowMl(features: unknown): ShadowMlSignal[] {
-  if (!isRecord(features)) return [];
-  const raw = features["shadow_ml_by_channel"];
-  if (!isRecord(raw)) return [];
-
-  const results: ShadowMlSignal[] = [];
-  for (const channel of CALIBRATION_SAFE_ML_CHANNELS) {
-    const entry = raw[channel];
-    if (!isRecord(entry)) continue;
-    const { correctedP, edgeDelta } = entry;
-    if (!isProbability(correctedP) || !isFiniteNumber(edgeDelta)) continue;
-    results.push({ channel, correctedP, edgeDelta });
-  }
-  return results;
 }

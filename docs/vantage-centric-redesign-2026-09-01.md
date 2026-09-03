@@ -310,6 +310,32 @@ révèle peu fiable — renforce (ne remplace pas) la nécessité du garde-fou d
 un ajustement de prompt seul serait plus faible qu'un vrai filtre sur un motif déjà mesuré
 et répété.
 
+### 5.9 Signal ML (`shadow_ml_by_channel`) retiré de VANTAGE (2026-09-03)
+
+Audit demandé : le signal ML (`ModelRun.features.shadow_ml_by_channel`, produit par le
+ml-worker, exposé à VANTAGE depuis le 08-30 mais restreint à DOMINANT/VALUE après un premier
+audit du même jour) **améliore-t-il ou dégrade-t-il les verdicts VANTAGE** quand il est
+effectivement suivi — question différente de l'audit du 30-08, qui mesurait la qualité du
+signal en lui-même, pas son usage par VANTAGE.
+
+**Résultat** : sur le canal DOMINANT (seul canal avec un n exploitable), quand VANTAGE
+**suit** la correction ML (probabilité jouée qui s'écarte de >2pts de celle du canal) :
+ratio réel/annoncé **0,43** (n=12, sévèrement surconfiant, 8/10 des cas identifiés perdants
+à la lecture des textes). Quand il **l'ignore** : ratio **1,13** (n=15, bon). Mécanisme
+confirmé par la lecture des `reasonDetails.text` (pas juste une corrélation) : 10/12 citent
+explicitement la correction comme base du pari. Sur VALUE, n=1 suivi — trop petit pour
+juger.
+
+**Décidé le 2026-09-03** : retrait complet du signal ML de VANTAGE plutôt qu'un ajustement
+ciblé (ex. retirer seulement DOMINANT de l'allowlist) — l'utilisateur ne maîtrise pas encore
+le fonctionnement du ml-worker lui-même, donc pas de base pour juger *pourquoi* le signal
+nuit ni pour le recalibrer en connaissance de cause. Supprimé : `extractShadowMl`,
+`ShadowMlSignal`, `CALIBRATION_SAFE_ML_CHANNELS`, `renderShadowMlBlock`, le champ
+`MatchContext.shadowMl` et toute mention dans `SYSTEM_PROMPT` (qui ne parle plus que d'un
+seul avis externe indépendant, `shadow_predictions` — inchangé, pas dans le périmètre de ce
+retrait). 92/92 tests passent (4 tests `extractShadowMl` retirés avec le code), typecheck et
+lint propres. Ne pas réintroduire sans ré-auditer le ml-worker en profondeur d'abord.
+
 ---
 
 ## 3. Ce que l'architecture actuelle permet facilement

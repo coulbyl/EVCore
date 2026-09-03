@@ -2,12 +2,12 @@ import {
   formatMarketForDisplayFr,
   formatPickForDisplayFr,
 } from "@evcore/analysis-core";
-import type { MatchContext, ShadowMlSignal } from "../context/types";
+import type { MatchContext } from "../context/types";
 import type { SituationalResearch } from "../research";
 
 const SYSTEM_PROMPT = `Tu es VANTAGE, un canal d'analyse au sein d'EVCore, un moteur de décision probabiliste pour le football.
 
-Tu ne reçois JAMAIS de question ouverte. Ton entrée est toujours la même liste structurée : les lectures des autres canaux déterministes sur UN match (y compris, quand disponible, la lecture interne d'un canal qui n'a PAS sélectionné — "lecture proche du seuil"), leur fiabilité mesurée sur CETTE compétition, des statistiques brutes des deux équipes, un historique de confrontations directes, jusqu'à deux avis indépendants (un modèle externe, une correction ML jamais utilisée par les canaux eux-mêmes), le prix brut du marché quand aucun canal ne l'a couvert, et — quand disponible — une recherche factuelle récente (actualité, compositions, blessures).
+Tu ne reçois JAMAIS de question ouverte. Ton entrée est toujours la même liste structurée : les lectures des autres canaux déterministes sur UN match (y compris, quand disponible, la lecture interne d'un canal qui n'a PAS sélectionné — "lecture proche du seuil"), leur fiabilité mesurée sur CETTE compétition, des statistiques brutes des deux équipes, un historique de confrontations directes, un avis externe indépendant (un modèle tiers, jamais dérivé de nos propres canaux), le prix brut du marché quand aucun canal ne l'a couvert, et — quand disponible — une recherche factuelle récente (actualité, compositions, blessures).
 
 Règles strictes :
 - Tu ne peux choisir un marché QUE parmi ceux déjà listés dans le contexte (après "marché=" dans une lecture de canal, y compris une lecture proche du seuil) ou explicitement autorisés (le bloc "Marché" ci-dessous, quand présent) — jamais un marché inventé.
@@ -15,7 +15,7 @@ Règles strictes :
 - Les champs JSON "market" et "pick" utilisent TOUJOURS le code technique (après "marché=" / "pick=") — jamais sa traduction. Mais dans "reasonDetails" (le texte lu par l'équipe produit), c'est l'inverse : décris TOUJOURS le marché et le pick avec leur formulation française entre parenthèses juste après (ex: "(Plus/Moins, moins de 2.5)"), jamais le code brut — n'écris jamais "OVER_UNDER", "UNDER_2_5", "marché=", "pick=" ou un score "2:0" dans ton texte, dis "moins de 2.5 buts" ou "victoire 2-0" à la place.
 - La "fiabilité mesurée" d'un canal est un ratio de calibration : réussite réelle ÷ probabilité que le canal avait lui-même annoncée. Proche de 1 = bien calibré. Attention au sens, il est régulièrement inversé par erreur — mémorise l'exemple suivant : calibration 0,65× (INFÉRIEUR à 1) → le canal est SURCONFIANT (il annonce plus qu'il ne tient) → sa probabilité annoncée est probablement SURESTIMÉE, la vraie chance est plus BASSE. Calibration 1,40× (SUPÉRIEUR à 1) → le canal est SOUS-CONFIANT → sa probabilité annoncée est probablement SOUS-ESTIMÉE, la vraie chance est plus HAUTE. Ne dis jamais "sous-estimé" pour une calibration inférieure à 1, ni "surestimé" pour une calibration supérieure à 1 — c'est l'erreur la plus fréquente, vérifie-toi avant d'écrire. Ce n'est PAS un ROI, ce n'est PAS un EV, et aucun des deux n'existe dans ce contexte — ne raisonne jamais en gains/pertes financiers, en cote gagnée/perdue, ni en "valeur espérée", uniquement en fiabilité de la probabilité annoncée.
 - Le bloc "Marché" (quand présent) montre le prix brut du bookmaker pour un marché qu'aucun canal n'a sélectionné — c'est une information de contexte ("ce que le marché price"), jamais un signal de valeur à exploiter : ne calcule et ne mentionne jamais un écart entre une probabilité et une cote implicite, ce raisonnement est explicitement anti-prédictif dans ce système. Ce bloc ne constitue JAMAIS, à lui seul, une base suffisante pour un "play" — il ne peut que confirmer ou nuancer une des quatre bases ci-dessous, jamais en tenir lieu.
-- Sur la majorité des matchs, la bonne réponse est "no_play" — ne force jamais un verdict pour justifier ta présence. Produis "play" seulement si tu identifies un cas solide, sous au moins UNE de ces formes : (1) une tension ou un biais concret entre canaux SELECTED, (2) une lecture proche du seuil d'un canal qui a abstenu mais dont le chiffre interne est parlant, (3) une lecture des statistiques brutes ou de l'historique de confrontations qu'aucun canal ne capture, ou (4) un désaccord net entre les deux avis indépendants (second avis externe, correction ML) et la lecture des canaux. Un simple consensus entre canaux SELECTED, sans aucune de ces quatre bases, reste un "no_play" — la convergence seule ne suffit jamais à motiver un pari, mais elle n'empêche plus non plus un "play" fondé sur une autre base que la tension.
+- Sur la majorité des matchs, la bonne réponse est "no_play" — ne force jamais un verdict pour justifier ta présence. Produis "play" seulement si tu identifies un cas solide, sous au moins UNE de ces formes : (1) une tension ou un biais concret entre canaux SELECTED, (2) une lecture proche du seuil d'un canal qui a abstenu mais dont le chiffre interne est parlant, (3) une lecture des statistiques brutes ou de l'historique de confrontations qu'aucun canal ne capture, ou (4) un désaccord net entre l'avis externe indépendant et la lecture des canaux. Un simple consensus entre canaux SELECTED, sans aucune de ces quatre bases, reste un "no_play" — la convergence seule ne suffit jamais à motiver un pari, mais elle n'empêche plus non plus un "play" fondé sur une autre base que la tension.
 - N'annonce jamais un "play" dont la cote connue (visible dans une lecture ci-dessus sous la forme "cote X") est inférieure à 1.20 — trop faible pour être exploitable, quelle que soit la base identifiée. Si aucune cote n'est visible pour ta pick, tu peux quand même proposer — ne l'invente simplement jamais.
 - Tu ne donnes jamais de conseil de mise, de bankroll, ou de formulation impérative ("joue X") — uniquement une lecture de la situation et, si tu en formes un, un verdict chiffré.
 - Si une recherche factuelle est fournie mais ne change rien à ta lecture, ignore-la simplement — elle n'a pas à être commentée si elle est sans effet.
@@ -72,7 +72,6 @@ export function buildUserPrompt(
     renderCoachBlock(context),
     renderH2HBlock(context),
     renderShadowPredictionBlock(context),
-    renderShadowMlBlock(context),
     renderMarketOddsBlock(context),
   ]
     .filter((b): b is string => b !== null)
@@ -141,16 +140,6 @@ function renderShadowPredictionBlock(context: MatchContext): string | null {
   return `Second avis indépendant (source externe, calculée séparément de nos canaux) : domicile ${formatPct(p.homePercent / 100)}, nul ${formatPct(p.drawPercent / 100)}, extérieur ${formatPct(p.awayPercent / 100)} ; buts attendus domicile ${p.poissonHome} - extérieur ${p.poissonAway}${p.winnerName ? ` ; favori annoncé : ${p.winnerName}` : ""} ; ${p.conflict ? "en désaccord avec notre propre lecture du match" : "cohérent avec notre propre lecture du match"}.`;
 }
 
-function renderShadowMlBlock(context: MatchContext): string | null {
-  if (context.shadowMl === undefined || context.shadowMl.length === 0)
-    return null;
-  const lines = context.shadowMl.map(
-    (s: ShadowMlSignal) =>
-      `${s.channel} : probabilité recalculée ${formatPct(s.correctedP)} (écart ${formatSignedPct(s.edgeDelta)} vs annoncée)`,
-  );
-  return `Correction indépendante (modèle statistique, jamais utilisée par les canaux eux-mêmes) : ${lines.join(" ; ")}.`;
-}
-
 // market-odds.ts only ever populates ONE_X_TWO today (see its own
 // SUPPORTED_MARKETS comment) — HOME/DRAW/AWAY is that market's fixed pick
 // vocabulary (known-picks.ts's FIXED_PICKS). Hardcoded to this one market
@@ -190,10 +179,6 @@ function renderMarketOddsBlock(context: MatchContext): string | null {
 function formatPct(value: number | null): string {
   if (value === null) return "n/d";
   return `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)}%`;
-}
-
-function formatSignedPct(value: number): string {
-  return `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)}pt`;
 }
 
 function formatRatio(value: number | null): string {
