@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Queue } from 'bullmq';
-import type { InvestmentService } from '@modules/investment/investment.service';
-import type { ChannelStatsMap } from '@modules/investment/investment-channel-stats.repository';
+import type { DashboardService } from '@modules/dashboard/dashboard.service';
+import type {
+  ChannelHealthItem,
+  ChannelStatus,
+} from '@modules/dashboard/dashboard.types';
 import type { SubscriptionsRepository } from './subscriptions.repository';
 import { SubscriptionsService } from './subscriptions.service';
 import { SUBSCRIPTION_SOURCES } from './subscription.constants';
@@ -20,37 +23,51 @@ function webSourceLabels(): Record<string, string> {
   ).subscriptions.sources;
 }
 
-function channelStats(roiByChannel: Record<string, number>): ChannelStatsMap {
-  return Object.fromEntries(
-    Object.entries(roiByChannel).map(([channel, roiShrunk]) => [
-      channel,
-      {
-        reliability: { a: 1, b: 0, n: 1000 },
-        roiRaw: roiShrunk,
-        roiShrunk,
-        roiWeight: 0.8,
-        hitRate: 0.5,
-        n: 1000,
-      },
-    ]),
-  );
+function channelHealth(
+  byChannel: Record<
+    string,
+    {
+      calibrationRatio: number | null;
+      sampleSize: number;
+      status: ChannelStatus;
+    }
+  >,
+): ChannelHealthItem[] {
+  return Object.entries(byChannel).map(([channel, v]) => ({
+    channel: channel as ChannelHealthItem['channel'],
+    status: v.status,
+    primaryMetric: 0,
+    primaryMetricType: 'HIT_RATE',
+    roi: null,
+    hitRate: null,
+    calibrationRatio: v.calibrationRatio,
+    vsThreshold: null,
+    sampleSize: v.sampleSize,
+  }));
 }
 
-function makeService(stats: ChannelStatsMap = {}) {
+function makeService(health: ChannelHealthItem[] = []) {
   const repository = {
     findActiveCompetitions: vi.fn().mockResolvedValue([]),
   } as unknown as SubscriptionsRepository;
-  const investments = {
-    listChannelStats: vi.fn().mockResolvedValue(stats),
-  } as unknown as InvestmentService;
+  const dashboard = {
+    getChannelHealth: vi.fn().mockResolvedValue(health),
+  } as unknown as DashboardService;
   const queue = { add: vi.fn() } as unknown as Queue;
-  return new SubscriptionsService(repository, investments, queue);
+  return new SubscriptionsService(repository, dashboard, queue);
 }
 
 describe('SubscriptionsService.getCatalog', () => {
-  it('classe une source canal selon son ROI shrinké mesuré', async () => {
+  it('classe une source canal selon sa calibration mesurée (réel/annoncé)', async () => {
     const service = makeService(
-      channelStats({ DOUBLE_CHANCE: 0.0163, BTTS: -0.0639 }),
+      channelHealth({
+        DOUBLE_CHANCE: {
+          calibrationRatio: 1.02,
+          sampleSize: 200,
+          status: 'GREEN',
+        },
+        BTTS: { calibrationRatio: 0.6, sampleSize: 200, status: 'RED' },
+      }),
     );
 
     const catalog = await service.getCatalog();
@@ -58,14 +75,22 @@ describe('SubscriptionsService.getCatalog', () => {
 
     expect(byId.get('CHANNEL_DOUBLE_CHANCE')?.tier).toBe('BACKED');
     expect(byId.get('CHANNEL_BTTS')?.tier).toBe('WATCH');
-    expect(byId.get('CHANNEL_BTTS')?.roiShrunk).toBeCloseTo(-0.0639, 6);
-    expect(byId.get('CHANNEL_BTTS')?.roiSampleSize).toBe(1000);
+    expect(byId.get('CHANNEL_BTTS')?.calibrationRatio).toBeCloseTo(0.6, 6);
+    expect(byId.get('CHANNEL_BTTS')?.calibrationSampleSize).toBe(200);
   });
 
-  it('bascule un canal en observation dès que sa mesure passe sous zéro', async () => {
+  it('bascule un canal en observation dès que son statut passe sous GREEN', async () => {
     // Le rang est calculé, pas figé : la même source change de groupe si la
     // mesure change, sans qu'aucune liste ne soit à mettre à jour.
-    const service = makeService(channelStats({ DOUBLE_CHANCE: -0.001 }));
+    const service = makeService(
+      channelHealth({
+        DOUBLE_CHANCE: {
+          calibrationRatio: 0.75,
+          sampleSize: 200,
+          status: 'ORANGE',
+        },
+      }),
+    );
 
     const catalog = await service.getCatalog();
 
@@ -81,7 +106,7 @@ describe('SubscriptionsService.getCatalog', () => {
     const draw = catalog.sources.find((s) => s.id === 'CHANNEL_DRAW');
 
     expect(draw?.tier).toBe('WATCH');
-    expect(draw?.roiShrunk).toBeNull();
+    expect(draw?.calibrationRatio).toBeNull();
   });
 
   it('ne propose pas les sources retirées', async () => {
@@ -97,14 +122,18 @@ describe('SubscriptionsService.getCatalog', () => {
     );
   });
 
-  it('ne met pas de ROI sur une source coupon', async () => {
-    const service = makeService(channelStats({ DRAW: 0.01 }));
+  it('ne met pas de calibration sur une source coupon', async () => {
+    const service = makeService(
+      channelHealth({
+        DRAW: { calibrationRatio: 1.05, sampleSize: 200, status: 'GREEN' },
+      }),
+    );
 
     const catalog = await service.getCatalog();
     const coupon = catalog.sources.find((s) => s.id === 'COUPON_BEST');
 
-    expect(coupon?.roiShrunk).toBeNull();
-    expect(coupon?.roiSampleSize).toBeNull();
+    expect(coupon?.calibrationRatio).toBeNull();
+    expect(coupon?.calibrationSampleSize).toBeNull();
   });
 });
 

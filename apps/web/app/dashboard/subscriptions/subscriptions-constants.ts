@@ -49,6 +49,16 @@ export function subscriptionHitRatePct(sub: Subscription): number | null {
   return (sub.wonEvents / sub.settledEvents) * 100;
 }
 
+// Ratio réel/annoncé — même mesure et même format que la page Historique
+// vérifiable (track-record-constants.ts's formatCalibrationRatio, dupliqué
+// ici plutôt qu'importé à travers une frontière de page — voir CLAUDE.md,
+// composants propres à une page). Proche de 1 = bien calibré, pas un
+// pourcentage.
+export function formatCalibrationRatio(value: number | null): string {
+  if (value === null) return "—";
+  return `${value.toFixed(2)}×`;
+}
+
 export function formatDayConditions(sub: Subscription, t: Translator): string {
   const parts: string[] = [];
   if (sub.daysOfWeek.length === 7) {

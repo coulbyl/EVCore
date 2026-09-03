@@ -14,11 +14,7 @@ import type {
   SubscriptionSourceDef,
   SubscriptionSourceType,
 } from "@/domains/subscriptions/types/subscriptions";
-import { sourceLabel } from "../subscriptions-constants";
-
-function formatRoi(roi: number): string {
-  return `${roi >= 0 ? "+" : "−"}${Math.abs(roi * 100).toFixed(1)}%`;
-}
+import { formatCalibrationRatio, sourceLabel } from "../subscriptions-constants";
 
 /**
  * Le choix de la source, groupé par ce qui est mesuré dessus.
@@ -26,8 +22,9 @@ function formatRoi(roi: number): string {
  * Le catalogue proposait ses sept canaux à égalité visuelle alors que cinq
  * sont mesurés perdants — le même défaut qu'Investir avait avec ses 18
  * onglets, et la même correction : on ne masque rien, on arrête de présenter
- * comme équivalent ce qui ne l'est pas. Le ROI accompagne chaque canal, parce
- * qu'un nom de canal seul ne dit rien de ce à quoi on s'engage.
+ * comme équivalent ce qui ne l'est pas. La calibration (réel/annoncé)
+ * accompagne chaque canal, parce qu'un nom de canal seul ne dit rien de ce à
+ * quoi on s'engage.
  *
  * Les groupes sont dérivés du `tier` renvoyé par le serveur, lui-même
  * recalculé à chaque appel : un canal qui repasse au-dessus de zéro remonte
@@ -57,15 +54,15 @@ export function SubscriptionSourceSelect({
       <SelectItem key={source.id} value={source.id}>
         <span className="flex w-full items-center gap-2">
           <span>{sourceLabel(source.id, t)}</span>
-          {source.roiShrunk !== null && (
+          {source.calibrationRatio !== null && (
             <span
               className={
-                source.roiShrunk >= 0
+                source.tier === "BACKED"
                   ? "text-[0.68rem] tabular-nums text-success"
                   : "text-[0.68rem] tabular-nums text-warning"
               }
             >
-              {formatRoi(source.roiShrunk)}
+              {formatCalibrationRatio(source.calibrationRatio)}
             </span>
           )}
         </span>

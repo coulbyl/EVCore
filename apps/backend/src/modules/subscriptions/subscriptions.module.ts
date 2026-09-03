@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { AuthModule } from '@modules/auth/auth.module';
-import { InvestmentModule } from '@modules/investment/investment.module';
+import { DashboardModule } from '@modules/dashboard/dashboard.module';
 import { BettingEngineModule } from '@modules/betting-engine/betting-engine.module';
 import { PushModule } from '@modules/push/push.module';
 import { NotificationModule } from '@modules/notification/notification.module';
@@ -16,7 +16,7 @@ import { SubscriptionNotifierService } from './subscription-notifier.service';
 @Module({
   imports: [
     AuthModule,
-    InvestmentModule,
+    DashboardModule,
     BettingEngineModule,
     PushModule,
     NotificationModule,

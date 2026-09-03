@@ -8,7 +8,7 @@ import { Queue } from 'bullmq';
 import Decimal from 'decimal.js';
 import { createLogger } from '@utils/logger';
 import { BULLMQ_QUEUES } from '@config/etl.constants';
-import { InvestmentService } from '@modules/investment/investment.service';
+import { DashboardService } from '@modules/dashboard/dashboard.service';
 import { SubscriptionsRepository } from './subscriptions.repository';
 import type { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import {
@@ -82,7 +82,7 @@ function serializeSubscription(sub: {
 export class SubscriptionsService {
   constructor(
     private readonly repository: SubscriptionsRepository,
-    private readonly investments: InvestmentService,
+    private readonly dashboard: DashboardService,
     @InjectQueue(BULLMQ_QUEUES.SUBSCRIPTION_MATCHING)
     private readonly subscriptionMatchingQueue: Queue<SubscriptionMatchingJobData>,
   ) {}
@@ -104,20 +104,31 @@ export class SubscriptionsService {
    */
   async getCatalog() {
     const competitions = await this.repository.findActiveCompetitions();
-    const today = new Date().toISOString().slice(0, 10);
-    const stats = await this.investments.listChannelStats(today);
+    // Même fenêtre par défaut que la page Historique vérifiable
+    // (resolvePeriod's fallback "90", track-record-constants.ts) — la
+    // fiabilité récente d'un canal, pas tout son historique.
+    const to = new Date().toISOString().slice(0, 10);
+    const from = new Date(Date.now() - 90 * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    const health = await this.dashboard.getChannelHealth(from, to);
+    const healthByChannel = new Map(health.map((h) => [h.channel, h]));
 
     const sources = SUBSCRIPTION_SOURCES.filter((s) => !s.retired).map(
       (source) => {
         const measured =
-          source.channel === undefined ? undefined : stats[source.channel];
+          source.channel === undefined
+            ? undefined
+            : healthByChannel.get(source.channel);
         return {
           ...source,
-          // `tier` est CALCULÉ, jamais figé : si un canal repasse au-dessus
-          // de zéro, il remonte tout seul — et l'inverse aussi.
-          tier: measured && measured.roiShrunk > 0 ? 'BACKED' : 'WATCH',
-          roiShrunk: measured?.roiShrunk ?? null,
-          roiSampleSize: measured?.n ?? null,
+          // `tier` est CALCULÉ, jamais figé : ratio/annoncé, jamais le ROI
+          // (feedback_admission_par_calibration) — réutilise directement le
+          // statut de getChannelHealth (GREEN = calibrationRatio >= 0.85),
+          // pas un second seuil dupliqué ici.
+          tier: measured?.status === 'GREEN' ? 'BACKED' : 'WATCH',
+          calibrationRatio: measured?.calibrationRatio ?? null,
+          calibrationSampleSize: measured?.sampleSize ?? null,
         };
       },
     );

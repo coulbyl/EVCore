@@ -1174,3 +1174,89 @@ du pipeline coupon).
 distinction visuelle frontend "soir vs intraday", et toute observation du comportement
 réel une fois que `SAME_DAY_ANALYSIS`/le batch intraday auront tourné en conditions
 réelles (aucun des deux n'a encore d'historique de production).
+
+## §0 point 3 — retraits/fusions UI (démarré 2026-09-03)
+
+**Écart trouvé** : plusieurs items du tableau §1/§2 étaient marqués comme livrés
+(datés "2026-09-02") alors que le code montrait le contraire — Investir toujours dans la
+nav, Notifications/Annonces toujours deux pages séparées, Abonnements toujours une page
+autonome avec cadre ROI/mise. Les dates dans les titres de section marquaient la décision
+de conception, pas le ship. Statut réel vérifié avant de reprendre :
+- Fait : bug P0 bet-slip, fusion "Par match"/"Par canal" (Decisions), retrait KPI
+  "lectures/tensions" (Arbitrage), tiroir de facettes (§2bis), décommissionnement
+  VALUE/SAFE (§5.1).
+- Pas fait : retrait Investir/fusion Notifications+Annonces de la nav (§0 point 3),
+  fusion Abonnements→Personnalisation (§0 point 4, §2ter), onboarding 3 étapes actif
+  (§0 point 6, distinct du tour passif existant `onboarding-steps.ts`).
+
+**Investir retiré de la nav** (`app-shell.tsx`) — nav seule, route `/dashboard/investment`
+intacte, même principe que les autres retraits "nav-only" du plan.
+
+## Fusion Notifications + Annonces (2026-09-03) — maquette vérifiée contre la réalité
+
+Maquette extraite du canvas (`Notifications.dc.html`, fichier `.dc.html` dédié dans
+l'artifact) : un seul item de nav "Notifications", 4 onglets (Toutes/Non lues/📣
+Annonces/🔔 Alertes) mutuellement exclusifs, liste unique groupée par date, badge de type
+par carte.
+
+**Trouvaille en comparant à la réalité avant de construire** : `ANNOUNCEMENT_PUBLISHED`
+(un des 13 vrais `NotificationType`) miroire déjà chaque annonce publiée dans la table
+`Notification` (`notification.service.ts:230-242`) — la fusion est donc surtout un
+travail frontend, pas une nouvelle mécanique backend. Effet de bord trouvé au passage :
+le badge de nav "Notifications" (`unreadCount`, inclut déjà `ANNOUNCEMENT_PUBLISHED` via
+`OPERATOR_TYPES`) et le badge séparé "Annonces" (`useAnnouncementsUnreadCount`, sa propre
+requête) comptent probablement en double aujourd'hui — se résout tout seul en retirant
+l'item de nav Annonces.
+
+**Contenu de la maquette à ne PAS recopier tel quel** — les types "Résultat"/"Résultat
+coupon" n'existent pas ; le vrai `SUBSCRIPTION_SETTLED` affiche un tally gagné/perdu/
+remboursé, délibérément SANS % ROI (`subscription-settlement.service.ts:29-35`).
+L'exemple de la maquette ("+11,2% ROI cette semaine") aurait réintroduit exactement le
+framing déjà retiré ailleurs (Historique vérifiable, calibration au lieu du ROI).
+**Décision utilisateur** : Annonces = `ANNOUNCEMENT_PUBLISHED`, Alertes = les 12 autres
+types sans sous-groupe. Pas encore implémenté (schéma de filtre confirmé, code pas
+encore écrit).
+
+## Nettoyage Abonnements → calibration (démarré 2026-09-03, Niveau 0 fait)
+
+Suite à la question "vu qu'on a plus de mécanisme de subscription on peut nettoyer tout
+ça, non ?" — vérifié d'abord : le mécanisme de matching/settlement (`SubscriptionMatchingWorker`,
+cron horaire, `SubscriptionsModule`) tourne toujours pleinement, avec des abonnements
+actifs réels en base. Ce que le doc (§3, §2ter) prévoit réellement : garder ce mécanisme
+(c'est la source de données de "canaux suivis"), retirer le cadre ROI/mise partout où il
+s'affiche, brancher sur la calibration déjà calculée ailleurs (Historique vérifiable),
+fusionner l'écran Abonnements dans l'onglet Personnalisation.
+
+**Décisions utilisateur** : le concept de mise disparaît entièrement (pas de mise
+personnelle configurée nulle part) ; la notification "abonnement réglé" passe en
+comptage seul (plus de montant PnL — même logique que le retrait du ROI ailleurs).
+
+**Plan en 5 niveaux de dépendance** :
+- **Niveau 0 (fait)** — remplacer la source de calibration : `subscriptions.service.ts::getCatalog()`
+  lisait `InvestmentService.listChannelStats` (ROI shrinké, module Investir en cours de
+  retrait) ; branché sur `DashboardService.getChannelHealth` (même `calibrationRatio` que
+  Historique vérifiable et le garde-fou VANTAGE). `DashboardModule` exporte maintenant
+  `DashboardService` (ne l'était pas). `tier` (BACKED/WATCH) dérivé du `status` déjà
+  calculé (`GREEN`), pas d'un second seuil dupliqué. Frontend :
+  `subscription-source-select.tsx`/`subscription-form.tsx` affichent la calibration
+  (`formatCalibrationRatio`, dupliqué depuis `track-record-constants.ts` — composants
+  propres à une page, pas d'import cross-page) au lieu du ROI. 5 tests réécrits dans
+  `subscriptions.service.spec.ts` (mock `DashboardService.getChannelHealth` au lieu
+  d'`InvestmentService`). Vérifié : typecheck/lint propres backend+web, 630/630 backend.
+- **Niveau 1 (pas fait)** — retirer l'affichage ROI/mise du front (`subscriptions-page-client.tsx`,
+  `subscription-card.tsx`, `subscription-detail-view.tsx`, `subscription-event-row.tsx`,
+  `subscriptions-shortcut-card.tsx`, `subscriptions-constants.ts::subscriptionRoiPct`).
+- **Niveau 2 (pas fait)** — section "Canaux suivis" dans Personnalisation, retrait de
+  l'écran/nav Abonnements autonome (`app-shell.tsx`, `account-button.tsx`,
+  `onboarding-steps.ts`).
+- **Niveau 3 (pas fait)** — nettoyage backend : `serializeSubscription` (retirer `roiPct`),
+  `getDetail` (retirer `pnl`), `SUBSCRIPTION_SETTLED` (comptage seul, retirer
+  `computePnl`/`formatSignedAmount`/`tallyMessage`'s montant), formulaire de création
+  (retirer le champ `stakePerEvent`).
+- **Niveau 4 (pas fait, migration séparée à confirmer à part)** — colonnes DB
+  `stakePerEvent`/`totalStaked`/`netPnl`/`stake`/`pnl` sur `Subscription`/
+  `SubscriptionEvent`, une fois confirmé qu'elles ne servent plus à rien après le
+  niveau 3.
+
+**Ce qui NE bouge jamais** : le mécanisme de matching/settlement lui-même — c'est la
+source de "canaux suivis", aucun rapport avec le cadre ROI.

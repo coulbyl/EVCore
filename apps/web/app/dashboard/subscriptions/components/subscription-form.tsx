@@ -24,6 +24,7 @@ import type {
   SubscriptionSourceType,
 } from "@/domains/subscriptions/types/subscriptions";
 import {
+  formatCalibrationRatio,
   leaguePresetLabel,
   pickModeLabel,
   weekdayFullLabel,
@@ -151,12 +152,12 @@ export function SubscriptionForm() {
           value={sourceType}
           onChange={(v) => setSourceType(v)}
         />
-        {selectedSource?.roiShrunk !== null &&
-          selectedSource?.roiShrunk !== undefined && (
+        {selectedSource?.calibrationRatio !== null &&
+          selectedSource?.calibrationRatio !== undefined && (
             <p className="text-[0.68rem] text-muted-foreground">
-              {t("form.sourceRoiHint", {
-                roi: `${selectedSource.roiShrunk >= 0 ? "+" : "−"}${Math.abs(selectedSource.roiShrunk * 100).toFixed(1)}%`,
-                n: selectedSource.roiSampleSize ?? 0,
+              {t("form.sourceCalibrationHint", {
+                ratio: formatCalibrationRatio(selectedSource.calibrationRatio),
+                n: selectedSource.calibrationSampleSize ?? 0,
               })}
             </p>
           )}

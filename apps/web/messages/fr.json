@@ -1011,7 +1011,7 @@
       "sourceGroupCoupon": "Coupons",
       "sourceGroupBacked": "Canaux assumés (ROI mesuré positif)",
       "sourceGroupWatch": "Canaux en observation (ROI mesuré négatif)",
-      "sourceRoiHint": "ROI mesuré de ce canal : {roi}, sur {n} sélections réglées, ramené vers la moyenne selon le volume qui le soutient. Ce n'est pas une prévision."
+      "sourceCalibrationHint": "Calibration mesurée de ce canal : {ratio} (réel/annoncé), sur {n} sélections réglées. Proche de 1 = bien calibré. Ce n'est pas une prévision."
     },
     "detail": {
       "notFoundTitle": "Détail de l'abonnement",

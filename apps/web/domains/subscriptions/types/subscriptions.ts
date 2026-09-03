@@ -16,8 +16,8 @@ export type SubscriptionChannelPickMode =
 
 export type SubscriptionStatus = "ACTIVE" | "ENDED" | "CANCELLED";
 
-// Rang mesuré d'une source canal, CALCULÉ à chaque appel du catalogue (ROI
-// shrinké > 0 ou non), jamais figé côté client.
+// Rang mesuré d'une source canal, CALCULÉ à chaque appel du catalogue
+// (calibration réel/annoncé au moins GREEN ou non), jamais figé côté client.
 export type SubscriptionSourceTier = "BACKED" | "WATCH";
 
 export type SubscriptionSourceDef = {
@@ -28,10 +28,11 @@ export type SubscriptionSourceDef = {
   // topN autorisés pour ce canal — absent sur une source COUPON.
   topNOptions?: number[];
   tier: SubscriptionSourceTier;
-  // ROI du canal ramené vers la moyenne selon le volume qui le soutient, et
-  // ce volume. `null` sur une source COUPON, ou sur un canal sans mesure.
-  roiShrunk: number | null;
-  roiSampleSize: number | null;
+  // Ratio réel/annoncé du canal (même mesure qu'Historique vérifiable et le
+  // garde-fou VANTAGE — feedback_admission_par_calibration : jamais le ROI).
+  // `null` sur une source COUPON, ou sur un canal sans mesure.
+  calibrationRatio: number | null;
+  calibrationSampleSize: number | null;
 };
 
 export type SubscriptionChannelPickModeDef = {

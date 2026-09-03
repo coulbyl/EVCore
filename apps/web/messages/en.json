@@ -1011,7 +1011,7 @@
       "sourceGroupCoupon": "Bet slips",
       "sourceGroupBacked": "Backed channels (measured ROI positive)",
       "sourceGroupWatch": "Channels under watch (measured ROI negative)",
-      "sourceRoiHint": "Measured ROI for this channel: {roi}, over {n} settled selections, shrunk toward the mean by the volume behind it. This is not a forecast."
+      "sourceCalibrationHint": "Measured calibration for this channel: {ratio} (actual/announced), over {n} settled selections. Close to 1 = well calibrated. This is not a forecast."
     },
     "detail": {
       "notFoundTitle": "Subscription detail",
