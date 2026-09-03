@@ -752,3 +752,39 @@ fiabilité, résolution des marchés évalués, tous les prédicats de garde-fou
 la couche NestJS de `apps/backend`. Reste non commencé : l'appel LLM lui-même côté
 vantage-worker (§9 points 2-3) et la question de donner au LLM le verdict VANTAGE déjà
 calculé (soulevée plus haut, pas encore construite).
+
+**Décision actée le 2026-09-03 (répond à « le LLM va remplacer compose() »)** :
+`CouponComposerService.compose()` n'est pas gardé en shadow ni en fallback permanent — le
+LLM devient l'unique voie de composition dès qu'il est prêt, et l'ancien composeur glouton
+est supprimé à ce moment-là (pas de double chemin à maintenir). Persistance
+`CouponProposal`/`CouponProposalLeg` : `apps/vantage-worker` écrit directement en DB via
+`@evcore/db`, même patron que `persistVantageDecision` (`persist-decision.ts`, un seul
+appel Prisma avec nested writes) — cohérent avec le principe déjà acté (backend
+LLM-agnostic) et avec comment VANTAGE tourne déjà aujourd'hui : sa propre queue BullMQ, son
+propre scheduler (`runSweep`, `apps/vantage-worker/src/queue/scheduler.ts`), zéro
+dépendance à la queue `AI_ENGINE` d'`apps/backend`. Le générateur de coupon suit le même
+patron — pas de couplage runtime entre les deux apps.
+
+**Phase A — pool de candidats côté vantage-worker (démarrée 2026-09-03)** : avant d'écrire
+la requête complète, deux fonctions pures que `CouponPoolService.getPoolForRange`
+(`coupon-pool.service.ts`) utilisait encore localement ont été déplacées à leur tour vers
+`packages/analysis-core/src/pricing/market-fair.ts` — `computeMarketFair`,
+`siblingOutcomeOdds`, `overUnderOpposite`, `oppositePick` (retrait de l'overround, fair
+probability). Elles ne dépendaient déjà que de types/fonctions partagés
+(`FullOddsSnapshot`, `getPickOddsFromSnapshot`, `removeOverround`, `bookmakerMargin` —
+tous déjà dans analysis-core), donc pas de refonte, juste un déplacement + 17 tests neufs
+(`market-fair.spec.ts`, cette logique n'avait jamais eu de test dédié côté backend).
+`coupon-pool.service.ts` importe maintenant les quatre depuis `@evcore/analysis-core`.
+Vérifié : 655/655 backend, build+lint analysis-core propres.
+
+Reste à faire pour boucler la Phase A (le job de lecture le plus gros, pas encore
+commencé) : reproduire `getPoolForRange` elle-même côté `vantage-worker` — Prisma direct
+(`@evcore/db`, pas de couche repository NestJS), avec ses trois dépendances restantes :
+`OddsSnapshotLoader.findLatestOddsSnapshotsBatch`/`findBestPricesBatch` (I/O pure — une
+requête + `assembleFullOddsSnapshot`, déjà dans analysis-core), `CalibrationService.
+computeChannelReliability` (I/O pure — une requête + `fitReliability`/`shrinkTowardPooled`,
+déjà dans analysis-core), et les lecteurs de `ModelRun.features`
+(`extractEvaContextFromFeatures`/`hasCalibrationAlert`/`readShadowConflict`/
+`computeDataCoverage`/`extractModelRunFeatureDiagnostics`, `apps/backend/src/utils/
+model-run.utils.ts` — purs mais pas encore déplacés, aussi utilisés par le dashboard/
+analysis-sheet côté backend, donc à déplacer vers analysis-core plutôt que dupliquer).

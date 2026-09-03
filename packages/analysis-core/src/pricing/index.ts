@@ -13,3 +13,9 @@ export {
   RESULT_BTTS_PICKS,
 } from "./odds-assembly";
 export type { RawOddsRow } from "./odds-assembly";
+export {
+  computeMarketFair,
+  siblingOutcomeOdds,
+  overUnderOpposite,
+  oppositePick,
+} from "./market-fair";
