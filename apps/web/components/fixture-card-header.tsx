@@ -7,7 +7,7 @@ import { formatScore } from "@/domains/fixture/helpers/fixture";
  * a consensus badge, pinned to the right), competition/country/kickoff/metaExtra
  * as a meta line underneath with the score pinned to its right — the score sits
  * there rather than crowding the team-name row. Used wherever a fixture heads up
- * a card (Investment, decisions). */
+ * a card. */
 export function FixtureCardHeader({
   fixture,
   homeLogo,

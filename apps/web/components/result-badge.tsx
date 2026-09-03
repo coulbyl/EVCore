@@ -17,9 +17,9 @@ const RESULT_META: Record<
 // made here from market context rather than the result value alone.
 const REFUND_MARKETS = new Set(["DRAW_NO_BET"]);
 
-/** Shared pick-result badge (decisions, investment): shows nothing while
- * pending, and — once a fixture is finished but the pick has no result yet —
- * an optional "Terminé" fallback. */
+/** Shared pick-result badge: shows nothing while pending, and — once a
+ * fixture is finished but the pick has no result yet — an optional
+ * "Terminé" fallback. */
 export function ResultBadge({
   result,
   finished = false,

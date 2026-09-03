@@ -9,7 +9,7 @@ import {
 } from "@/domains/bet-slip/types/bet-slip";
 
 /** Small circular add/remove toggle shared by every page that lets a user add
- * a pick to their coupon draft (decisions, investment, …). */
+ * a pick to their coupon draft. */
 export function AddToCouponButton({ item }: { item: BetSlipDraftItem }) {
   const { draft, addItem, removeItem, isInSlip, open } = useBetSlip();
 

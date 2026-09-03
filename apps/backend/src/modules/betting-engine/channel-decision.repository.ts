@@ -233,8 +233,7 @@ export class ChannelDecisionRepository {
     // A fixture is re-analyzed on a rolling horizon (ModelRun.phase: ADVANCE →
     // PRE_KICKOFF → LIVE), each pass writing its own ChannelDecision per
     // channel. Resolve the latest pass per (fixture, channel) in SQL
-    // (DISTINCT ON, same pattern as InvestmentCalibrationRepository) instead
-    // of fetching every pass and deduping in memory.
+    // (DISTINCT ON) instead of fetching every pass and deduping in memory.
     const idRows = await this.prisma.client.$queryRaw<{ id: string }[]>`
       SELECT DISTINCT ON (f.id, cd.channel) cd.id
       FROM channel_decision cd

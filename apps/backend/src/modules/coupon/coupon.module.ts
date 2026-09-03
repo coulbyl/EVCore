@@ -3,9 +3,7 @@ import { PrismaModule } from '@/prisma.module';
 import { CouponRepository } from './coupon.repository';
 import { CouponSettlementService } from './coupon-settlement.service';
 import { CouponService } from './coupon.service';
-import { CouponSummaryService } from './coupon-summary.service';
 import { CouponIndicesService } from './coupon-indices.service';
-import { CouponRoiService } from './coupon-roi.service';
 import { CouponController } from './coupon.controller';
 
 // CalibrationService/OddsSnapshotLoader/CouponPoolService/CouponComposerService
@@ -22,9 +20,7 @@ import { CouponController } from './coupon.controller';
     CouponRepository,
     CouponSettlementService,
     CouponService,
-    CouponSummaryService,
     CouponIndicesService,
-    CouponRoiService,
   ],
   exports: [CouponService, CouponSettlementService, CouponRepository],
 })

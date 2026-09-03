@@ -24,7 +24,6 @@
     "bankroll": "Portefeuille",
     "betSlips": "Mes coupons",
     "inbox": "Inbox",
-    "subscriptions": "Abonnements",
     "audit": "Audit",
     "users": "Utilisateurs",
     "announcements": "Annonces",
@@ -41,9 +40,7 @@
     "replayTour": "Revoir le guide",
     "help": "Aide",
     "summary": "Résumé sélections",
-    "investmentSummary": "Résumé investissement",
     "coupons": "Combinés",
-    "investment": "Investir",
     "decisions": "Décisions",
     "decisionsShort": "Décisions",
     "arbitrage": "Arbitrage"
@@ -298,17 +295,9 @@
       "title": "Classements",
       "description": "Le classement des ligues par performance du moteur, et celui des utilisateurs les plus disciplinés."
     },
-    "dashboardSubscriptions": {
-      "title": "Tes abonnements",
-      "description": "Un raccourci vers tes abonnements actifs — la mise virtuelle automatique dont on reparle plus loin dans ce tour."
-    },
     "decisions": {
       "title": "Décisions",
       "description": "Chaque match du jour, avec ce que les canaux en pensent. Le bouton « ? » ici t'explique comment lire une fiche à tout moment."
-    },
-    "investment": {
-      "title": "Investir",
-      "description": "Trois vues : ce qu'on assume (les canaux mesurés rentables), ce qu'on observe, et ce que les garde-fous ont écarté — avec la raison. Le « ? » détaille comment l'edge et l'EV sont calculés."
     },
     "fixtures": {
       "title": "Matchs",
@@ -320,15 +309,11 @@
     },
     "betSlipComposer": {
       "title": "Mon coupon",
-      "description": "Construis ton propre coupon en ajoutant des picks depuis Décisions ou Investir — ce bouton te suit partout dans l'app."
+      "description": "Construis ton propre coupon en ajoutant des picks depuis Décisions — ce bouton te suit partout dans l'app."
     },
     "betSlips": {
       "title": "Mes coupons",
       "description": "L'historique de tes coupons placés, réglés ou en attente, avec le récapitulatif de la période en tête."
-    },
-    "subscriptions": {
-      "title": "Abonnements",
-      "description": "Une discipline figée par abonnement — mise virtuelle automatique sur un canal ou un combiné, suivie sans que tu aies à y penser."
     },
     "bankroll": {
       "title": "Portefeuille",
@@ -864,178 +849,5 @@
     "loadError": "Impossible de charger les propositions de coupons.",
     "aiNote": "Ces propositions sont générées par notre moteur IA, qui s'améliore en continu grâce aux résultats passés. Il ne s'agit pas de conseils financiers.",
     "helpLink": "La carte des canaux"
-  },
-  "investment": {
-    "pageTitle": "Investir",
-    "views": {
-      "assumed": {
-        "label": "Ce qu'on assume",
-        "subtitle": "Les canaux dont le ROI reste positif une fois le bruit d'échantillonnage retiré — 2 sur 18 au dernier relevé. Classés par fréquence de réussite attendue. DRAW n'y figure que sur les ligues où il est mesuré.",
-        "empty": "Aucun pick assumé pour cette date."
-      },
-      "watch": {
-        "label": "En observation",
-        "subtitle": "Tous les autres canaux, dans une seule liste filtrable. Chaque pick porte le ROI de son canal, ramené vers la moyenne selon le volume qui le soutient : c'est un contexte, pas une recommandation.",
-        "empty": "Aucun pick en observation pour cette date."
-      },
-      "excluded": {
-        "label": "Écarté",
-        "subtitle": "Ce que les garde-fous ont retiré, et pourquoi. Un filtre se juge à ce qu'il exclut : cette vue existe pour que ce soit vérifiable.",
-        "empty": "Aucun pick écarté pour cette date."
-      }
-    },
-    "exclusion": {
-      "AVOID": "AVOID sur ce match",
-      "CALIBRATION_ALERT": "Modèle et marché incohérents",
-      "LAMBDA_INCOHERENT": "Contredit le lambda du modèle",
-      "EDGE_TOO_HIGH": "Edge revendiqué trop élevé",
-      "ODDS_TOO_SHORT": "Cote trop courte"
-    },
-    "expectedRate": "{rate} attendus",
-    "channelRoi": "canal {roi}",
-    "channelRoiHint": "ROI du canal {channel} ramené vers la moyenne, mesuré sur {n} sélections réglées.",
-    "channelFilterLabel": "Canal",
-    "channelFilterAll": "Tous les canaux",
-    "empty": "Aucun pick disponible pour cette date.",
-    "loadError": "Impossible de charger les picks.",
-    "addToSlip": "Ajouter au coupon",
-    "added": "Ajouté",
-    "modelProbability": "Modèle brut :",
-    "filtersLabel": "Filtres",
-    "groupByNone": "Aucun groupement",
-    "groupByLeague": "Grouper par ligue",
-    "helpLink": "L'edge et l'EV expliqués"
-  },
-  "subscriptions": {
-    "pageTitle": "Abonnements",
-    "subtitle": "Une discipline figée par abonnement, simulée automatiquement — indépendant du portefeuille réel.",
-    "newSubscription": "Nouvel abonnement",
-    "loading": "Chargement…",
-    "stats": {
-      "activeCount": "Abonnements actifs",
-      "totalStaked": "Total misé (simulé)",
-      "netPnl": "Gain/perte net",
-      "globalRoi": "ROI global"
-    },
-    "empty": {
-      "title": "Aucun abonnement",
-      "description": "Crée un abonnement pour suivre automatiquement une discipline de mise, sans y toucher jour après jour."
-    },
-    "card": {
-      "stakePerEvent": "Mise / événement",
-      "roiCumulative": "ROI cumulé",
-      "hitRate": "Taux de réussite",
-      "eventsSettled": "{settled}/{total} événement(s) réglé(s) · {staked} misé au total"
-    },
-    "deleteDialog": {
-      "title": "Supprimer cet abonnement ?",
-      "description": "Cette action est irréversible : l'abonnement et son historique d'événements simulés seront définitivement supprimés.",
-      "cancel": "Annuler",
-      "confirm": "Supprimer",
-      "confirming": "Suppression…"
-    },
-    "status": {
-      "ACTIVE": "Actif",
-      "ENDED": "Terminé",
-      "CANCELLED": "Annulé"
-    },
-    "sources": {
-      "COUPON_BEST": "Coupon (le plus probable du jour)",
-      "COUPON_ALL": "Coupons du jour (cote courte)",
-      "CHANNEL_VALUE": "VALUE (Valeur)",
-      "CHANNEL_SAFE": "SAFE (Sécurité)",
-      "CHANNEL_DOMINANT": "DOMINANT (Victoire)",
-      "CHANNEL_DRAW": "DRAW (Nul)",
-      "CHANNEL_BTTS": "BTTS (Les deux marquent)",
-      "CHANNEL_DOUBLE_CHANCE": "DOUBLE_CHANCE (Double chance)",
-      "CHANNEL_TEAM_TOTAL": "TEAM_TOTAL"
-    },
-    "pickModes": {
-      "INVESTIR": "Picks Investir (classés et calibrés)",
-      "DECISIONS_FIRST": "Premiers matchs du jour (Decisions, non classé)",
-      "DECISIONS_LAST": "Derniers matchs du jour (Decisions, non classé)"
-    },
-    "pickModeShort": {
-      "INVESTIR": "Investir",
-      "DECISIONS_FIRST": "Decisions (premiers)",
-      "DECISIONS_LAST": "Decisions (derniers)"
-    },
-    "topN": "Top {n}",
-    "weekdayFull": {
-      "0": "Dimanche",
-      "1": "Lundi",
-      "2": "Mardi",
-      "3": "Mercredi",
-      "4": "Jeudi",
-      "5": "Vendredi",
-      "6": "Samedi"
-    },
-    "weekdayShort": {
-      "0": "Dim",
-      "1": "Lun",
-      "2": "Mar",
-      "3": "Mer",
-      "4": "Jeu",
-      "5": "Ven",
-      "6": "Sam"
-    },
-    "leaguePresets": {
-      "TOP5_EUROPE": "Grands championnats européens",
-      "UEFA_CUPS": "Coupes européennes (UEFA)"
-    },
-    "dayConditions": {
-      "allDays": "Tous les jours",
-      "competitions": "{count} championnat(s)",
-      "none": "Aucune condition"
-    },
-    "form": {
-      "loadingCatalog": "Chargement du catalogue…",
-      "title": "Nouvel abonnement",
-      "description": "Une discipline figée : source, mise, jours, période. Suivi automatique, sans lien avec le portefeuille réel.",
-      "sourceLabel": "Source",
-      "pickModeLabel": "Sélection des picks quotidiens",
-      "topNLabel": "Nombre de picks / jour",
-      "stakeLabel": "Mise par événement",
-      "weekdaysLabel": "Jours de semaine",
-      "leaguesLabel": "Championnats (optionnel, en plus des jours cochés)",
-      "leaguesPlaceholder": "Choisir des championnats...",
-      "leaguesSearchPlaceholder": "Rechercher un championnat...",
-      "leaguesEmpty": "Aucun championnat trouvé.",
-      "dayConditionMissing": "Coche au moins un jour de semaine ou choisis au moins un championnat.",
-      "startDateLabel": "Date de début",
-      "endDateLabel": "Date de fin",
-      "endDateBeforeStart": "La date de fin doit être après la date de début.",
-      "createError": "Impossible de créer l'abonnement.",
-      "submitting": "Création…",
-      "submit": "Créer l'abonnement",
-      "sourceGroupCoupon": "Coupons",
-      "sourceGroupBacked": "Canaux assumés (ROI mesuré positif)",
-      "sourceGroupWatch": "Canaux en observation (ROI mesuré négatif)",
-      "sourceCalibrationHint": "Calibration mesurée de ce canal : {ratio} (réel/annoncé), sur {n} sélections réglées. Proche de 1 = bien calibré. Ce n'est pas une prévision."
-    },
-    "detail": {
-      "notFoundTitle": "Détail de l'abonnement",
-      "notFound": "Abonnement introuvable.",
-      "notFoundOrDeleted": "Abonnement introuvable ou déjà supprimé.",
-      "cancel": "Annuler l'abonnement",
-      "delete": "Supprimer",
-      "statLabels": {
-        "totalStaked": "Total misé",
-        "netPnl": "Gain/perte net",
-        "roi": "ROI"
-      },
-      "history": "Historique des événements",
-      "historyLimited": "{shown} plus récent(s) affiché(s)",
-      "historyEmpty": "Aucun événement pour le moment.",
-      "results": {
-        "WON": "Gagné",
-        "LOST": "Perdu",
-        "VOID": "Remboursé"
-      },
-      "pending": "En attente",
-      "odds": "cote {value}",
-      "couponLabel": "Coupon — cote combinée {value}",
-      "genericEvent": "Événement"
-    }
   }
 }

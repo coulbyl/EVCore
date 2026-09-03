@@ -66,13 +66,6 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     descriptionKey: "decisions.description",
   },
   {
-    id: "investment",
-    route: "/dashboard/investment",
-    selector: '[data-tour="investment-help"]',
-    titleKey: "investment.title",
-    descriptionKey: "investment.description",
-  },
-  {
     id: "fixtures",
     route: "/dashboard/fixtures",
     selector: '[data-tour="fixtures-indices"]',

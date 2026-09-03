@@ -1260,3 +1260,56 @@ comptage seul (plus de montant PnL — même logique que le retrait du ROI aille
 
 **Ce qui NE bouge jamais** : le mécanisme de matching/settlement lui-même — c'est la
 source de "canaux suivis", aucun rapport avec le cadre ROI.
+
+**Révision 2026-09-03 — le plan 5-niveaux est abandonné, suppression totale décidée à la
+place.** Pendant le Niveau 1 (retrait ROI sur `subscriptions-page-client.tsx`), question
+utilisateur : "pourquoi tu ne supprime pas cette page ? vu qu'elle ne sert plus ?" — la
+page allait de toute façon disparaître au Niveau 2 (fusion dans Personnalisation), retoucher
+son affichage ROI entretemps était un effort perdu. Confirmé ensuite explicitement,
+deux fois : "oui supprime tout, on a plus besoin d'une page de gestion d'abonnement,
+c'est mentionné dans le redesign, supprime tout, même au backend" — donc, contrairement
+à ce que ce document écrivait plus haut, le mécanisme de matching/settlement N'EST PAS
+gardé. Toute la fonctionnalité est supprimée :
+
+- **Backend** : module `subscriptions` entier (service, repository, controller,
+  matching/settlement/notifier services, DTO), `SubscriptionMatchingWorker` + son cron
+  horaire + sa queue BullMQ, retiré de `EtlModule`/`EtlController`/`app.module.ts`.
+  `pending-bets-settlement.worker.ts` n'appelle plus `settleReadyEvents()`.
+- **Frontend** : route `/dashboard/subscriptions` entière (liste/détail/création),
+  `apps/web/domains/subscriptions/` (types + use-cases), le shortcut card dashboard,
+  l'entrée nav (`app-shell.tsx`, `account-button.tsx`), l'entrée admin
+  "Abonnements"/`subscription-matching` dans `global-actions-section.tsx`, les 2 steps
+  onboarding tour associés (`dashboardSubscriptions`, `subscriptions`).
+- **Conservé volontairement** : les valeurs d'enum `NotificationType.SUBSCRIPTION_EVENTS_ADDED`/
+  `SUBSCRIPTION_SETTLED` (historique en base, le front doit encore pouvoir les afficher) et
+  le schéma DB (`Subscription`/`SubscriptionEvent` + leurs colonnes) — la suppression de
+  colonnes/tables reste une décision séparée, migration à confirmer explicitement à part,
+  non abordée ici.
+
+Vérifié après coup : typecheck + lint propres backend et web, 622/622 tests backend
+(630 − 8 tests `subscriptions.service.spec.ts` supprimés avec le service). Commit
+`a0f8d670`.
+
+## Suppression totale du module Investment (2026-09-03)
+
+Même traitement, demandé dans la foulée : "pareil pour investment, on supprime tout web
+et backend, plus besoin de garder du code mort". Le nav "Investir" avait déjà été retiré
+plus tôt dans le chantier (`app-shell.tsx`), laissant la page orpheline. Supprimé :
+
+- **Backend** : module `investment` entier (service, 2 repositories, controller, DTO,
+  constants), retiré de `app.module.ts`.
+- **Frontend** : route `/dashboard/investment` complète, `apps/web/domains/investment/`,
+  l'étape onboarding "investment", l'entrée `MOBILE_NAV_ORDER` correspondante
+  (`app-shell.tsx`, redescendue à 4 slots plutôt que remplacée par un autre choix — pas de
+  direction donnée sur quoi mettre à la place).
+- **Traductions** : blocs `nav.investment`/`investment.*` retirés de `fr.json`/`en.json` ;
+  au passage, les restes morts de la suppression Abonnements (`nav.subscriptions`,
+  `onboarding.steps.dashboardSubscriptions`/`subscriptions`, bloc `subscriptions.*`)
+  nettoyés dans la même passe — oubliés lors du commit `a0f8d670`.
+- **Conservé** : quelques commentaires de code référençant "Investment" comme contexte
+  historique (ex. `coupon.constants.ts` sur un backtest topN=3 invalidé) — c'est de
+  l'historique de décision, pas une dépendance fonctionnelle.
+
+Vérifié : typecheck + lint propres backend et web, 598/598 tests backend
+(622 − 24 tests `investment.service.spec.ts` + `investment-channel-stats.repository.spec.ts`
+supprimés avec le module). Pas encore committé — l'utilisateur committe lui-même.

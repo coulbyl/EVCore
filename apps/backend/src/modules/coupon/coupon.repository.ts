@@ -10,31 +10,6 @@ import {
 import { PrismaService } from '@/prisma.service';
 import { startOfUtcDay } from '@utils/date.utils';
 
-const FIXTURE_SELECT = {
-  id: true,
-  scheduledAt: true,
-  homeTeam: { select: { name: true, logoUrl: true } },
-  awayTeam: { select: { name: true, logoUrl: true } },
-  season: { select: { competition: { select: { name: true, code: true } } } },
-} as const;
-
-export type SummaryBetRow = {
-  id: string;
-  market: string;
-  pick: string;
-  oddsSnapshot: Prisma.Decimal | null;
-  qualityScore: Prisma.Decimal | null;
-  probEstimated: Prisma.Decimal;
-  status: string;
-  fixture: {
-    id: string;
-    scheduledAt: Date;
-    homeTeam: { name: string; logoUrl: string | null };
-    awayTeam: { name: string; logoUrl: string | null };
-    season: { competition: { name: string; code: string } };
-  };
-};
-
 export type CouponProposalWithLegs = Prisma.CouponProposalGetPayload<{
   include: {
     legs: {
@@ -158,25 +133,6 @@ export class CouponRepository {
     });
   }
 
-  async findResolvedCouponsInRange(
-    from: Date,
-    to: Date,
-  ): Promise<CouponProposalWithLegs[]> {
-    return this.prisma.client.couponProposal.findMany({
-      where: {
-        // VOID reste exclu (aucun gain, aucune perte) ; PARTIAL est inclus —
-        // son ROI se calcule sur `realizedOdds`, pas `combinedOdds` (voir
-        // CouponSettlementService).
-        result: {
-          in: [CouponResult.WON, CouponResult.LOST, CouponResult.PARTIAL],
-        },
-        forDate: { gte: from, lte: to },
-      },
-      include: WITH_LEGS,
-      orderBy: [{ forDate: 'asc' }, { rank: 'asc' }],
-    }) as unknown as Promise<CouponProposalWithLegs[]>;
-  }
-
   async findSettledBetsForIndices(opts: {
     channel: StrategyChannel;
     from: Date;
@@ -242,47 +198,6 @@ export class CouponRepository {
     >;
   }
 
-  /**
-   * Settled channel selections in a date window — the source for the rolling
-   * ROI-by-channel × EV-bin promotion view. Reads every channel (incl.
-   * DRAW/BTTS/DOMINANT) straight from `channel_selection`; no `Bet` needed.
-   */
-  async findSettledChannelSelections(opts: { from: Date; to: Date }): Promise<
-    {
-      channel: StrategyChannel;
-      ev: Prisma.Decimal | null;
-      odds: Prisma.Decimal | null;
-      result: BetStatus;
-    }[]
-  > {
-    const { from, to } = opts;
-    const rows = await this.prisma.client.channelSelection.findMany({
-      where: {
-        result: { in: [BetStatus.WON, BetStatus.LOST] },
-        odds: { not: null },
-        channelDecision: {
-          is: {
-            modelRun: {
-              is: { fixture: { is: { scheduledAt: { gte: from, lte: to } } } },
-            },
-          },
-        },
-      },
-      select: {
-        ev: true,
-        odds: true,
-        result: true,
-        channelDecision: { select: { channel: true } },
-      },
-    });
-    return rows.map((r) => ({
-      channel: r.channelDecision.channel,
-      ev: r.ev,
-      odds: r.odds,
-      result: r.result as BetStatus,
-    }));
-  }
-
   async updateResult(
     id: string,
     result: CouponResult,
@@ -307,34 +222,5 @@ export class CouponRepository {
       where: { id: legId },
       data: { isCorrect, settledAt: new Date() },
     });
-  }
-
-  findSettledBetsForSummary(opts: {
-    channel: StrategyChannel;
-    from: Date;
-    to: Date;
-  }): Promise<SummaryBetRow[]> {
-    const { channel, from, to } = opts;
-    return this.prisma.client.bet.findMany({
-      where: {
-        channelSelection: {
-          is: { channelDecision: { is: { channel } } },
-        },
-        source: BetSource.MODEL,
-        status: { in: [BetStatus.WON, BetStatus.LOST] },
-        fixture: { scheduledAt: { gte: from, lte: to } },
-      },
-      select: {
-        id: true,
-        market: true,
-        pick: true,
-        oddsSnapshot: true,
-        qualityScore: true,
-        probEstimated: true,
-        status: true,
-        fixture: { select: FIXTURE_SELECT },
-      },
-      orderBy: { fixture: { scheduledAt: 'asc' } },
-    }) as unknown as Promise<SummaryBetRow[]>;
   }
 }

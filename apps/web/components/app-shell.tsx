@@ -264,7 +264,6 @@ export function AppShell({
   const MOBILE_NAV_ORDER = [
     "/dashboard",
     "/dashboard/decisions",
-    "/dashboard/investment",
     "/dashboard/arbitrage",
     "/dashboard/inbox",
   ];

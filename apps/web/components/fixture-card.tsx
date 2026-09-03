@@ -4,8 +4,7 @@ import { FixtureCardHeader } from "@/components/fixture-card-header";
 import { FixtureStatusBadge } from "@/components/fixture-status-badge";
 
 /** Shared match card shell: bordered/rounded panel with a fixture header
- * band on top and arbitrary content below. Used by Investment and decisions
- * to keep both pages visually consistent. */
+ * band on top and arbitrary content below. */
 export function FixtureCard({
   fixture,
   homeLogo,

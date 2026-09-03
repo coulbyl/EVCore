@@ -24,7 +24,6 @@
  * révision.
  */
 
-import { StrategyChannel } from '@evcore/db';
 import {
   COUPON_BOUNDS,
   COUPON_CLASSES,
@@ -37,11 +36,6 @@ import {
   type CouponClassName,
 } from '@evcore/analysis-core';
 
-// Any channel can label a coupon leg: the pool admits every non-meta,
-// non-filter channel (POOL_ELIGIBLE_CHANNELS) and historical legs additionally
-// carry VALUE/SAFE/BTTS/TEAM_TOTAL labels from before the 2026-08-22 switch.
-export type CouponChannel = StrategyChannel;
-
 // DRAW_STAKED_LEAGUES/POOL_EXCLUDED_CHANNELS/POOL_ELIGIBLE_CHANNELS moved to
 // packages/analysis-core/src/coupon/pool-eligibility.ts 2026-09-03 —
 // apps/vantage-worker's own coupon pool query needs the exact same
@@ -51,40 +45,6 @@ export type CouponChannel = StrategyChannel;
 // comment. Re-exported here so existing imports against './coupon.constants'
 // keep resolving unchanged.
 export { DRAW_STAKED_LEAGUES, POOL_ELIGIBLE_CHANNELS, POOL_EXCLUDED_CHANNELS };
-
-// Plafond du nombre de sélections RETENUES par canal dans le POOL (par jour),
-// PAS le nombre de jambes d'un coupon — concept distinct des bornes de profil
-// (`COUPON_BOUNDS.maxLegs`). Levée d'ambiguïté B8 : un coupon est borné par
-// son profil ; ceci borne combien de candidats d'un canal entrent dans le pool.
-// Per-canal cap on legs contributed to one day's coupons. Partial on purpose:
-// a channel with no entry uses DEFAULT_MAX_COUPON_SELECTIONS. Caps are earned
-// on a channel's own coupon record, so a newly-admitted channel starts at the
-// conservative default rather than inheriting a cap another channel earned.
-export const DEFAULT_MAX_COUPON_SELECTIONS = 2;
-
-export const MAX_COUPON_SELECTIONS: Partial<Record<CouponChannel, number>> = {
-  SAFE: 5,
-  BTTS: 5,
-  DOMINANT: 5,
-  DRAW: 2,
-  VALUE: 2,
-  // Was aligned with a backtested topN=3 edge ranking in Investment
-  // (db:backtest:invest-ranking, 2026-07-28). That backtest was invalidated on
-  // 2026-08-22 — the paired test on TEAM_TOTAL's own cap came out at t=+0.70,
-  // indistinguable du hasard sur 31 jours — and MODE_RANKING was deleted with
-  // it. The cap survives here as a per-channel EXPOSURE bound in a coupon, not
-  // as a claim that the top 3 rank better than the rest.
-  TEAM_TOTAL: 3,
-  // Admitted to the pool 2026-08-22 (POOL_ELIGIBLE_CHANNELS). None has any
-  // coupon history yet, so all start at DRAW/VALUE's conservative cap of 2
-  // rather than inheriting a cap earned by a different channel's record.
-  DRAW_NO_BET: 2,
-  WIN_EITHER_HALF: 2,
-  HALF_TIME_FULL_TIME: 2,
-  DOUBLE_CHANCE: 2,
-  WIN_TO_NIL: 2,
-  FIRST_HALF: 2,
-} as const;
 
 export const COUPON_PARAMS = {
   capMin: 0.05,
