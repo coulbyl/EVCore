@@ -25,7 +25,6 @@ import {
   Scale,
   Settings,
   Ticket,
-  TrendingUp,
   Trophy,
   Users,
 } from "lucide-react";
@@ -179,13 +178,6 @@ export function AppShell({
             href: "/dashboard/arbitrage",
             active: pathname.startsWith("/dashboard/arbitrage"),
             icon: Scale,
-          },
-          {
-            label: tNav("investment"),
-            href: "/dashboard/investment",
-            active: pathname.startsWith("/dashboard/investment"),
-            icon: TrendingUp,
-            featured: true,
           },
           {
             label: tNav("coupons"),
