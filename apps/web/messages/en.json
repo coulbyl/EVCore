@@ -448,6 +448,8 @@
     "password": "Password",
     "changePassword": "Change password",
     "changePasswordHint": "Password change will be available soon.",
+    "groupAccount": "Account",
+    "groupPreferences": "Preferences",
     "tabProfile": "Profile",
     "tabPreferences": "Preferences",
     "tabSecurity": "Security",

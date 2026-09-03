@@ -448,6 +448,8 @@
     "password": "Mot de passe",
     "changePassword": "Modifier le mot de passe",
     "changePasswordHint": "La modification du mot de passe sera disponible prochainement.",
+    "groupAccount": "Compte",
+    "groupPreferences": "Préférences",
     "tabProfile": "Profil",
     "tabPreferences": "Préférences",
     "tabSecurity": "Sécurité",
