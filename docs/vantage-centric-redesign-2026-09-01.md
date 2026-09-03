@@ -934,13 +934,45 @@ d'être suivi en prod, jamais ajouté par défaut.
 `requestVantageCompletion` même patron que `analyze-fixture.spec.ts`). Vérifié :
 typecheck/lint propres, 110/110 vantage-worker, 491/491 analysis-core, 655/655 backend.
 
-**Ce qui reste pour boucler la Phase B** : rien côté schéma/prompt/appel — la boucle
-LLM elle-même est complète et testée. Ce qui reste pour que ça tourne en prod est la
-Phase C (docs/vantage-centric-redesign-2026-09-01.md §9 point 4) : revalider
-`SelectedLeg[]` avec les mêmes garde-fous (`guardrails.ts`) + l'anti-corrélation, calculer
-`combinedOdds`/`jointProbability`/`couponEV` déterministes, rejeter/relancer sur
-violation, puis persister `CouponProposal`/`CouponProposalLeg` directement via
-`@evcore/db` (§9bis, décision déjà actée) — et enfin le câblage (scheduler indépendant
-côté `vantage-worker`, suppression de `CouponComposerService`).
+## Phase C — validation déterministe post-génération (démarrée 2026-09-03)
 
-Pas encore committé — l'utilisateur relit avant.
+**`validate-coupon-selection.ts` écrit** (`apps/vantage-worker/src/coupon/`) — reprend
+telles quelles les mêmes vérifications que l'ancien `CouponComposerService` appliquait
+avant de publier un coupon, jamais une confiance aveugle dans le choix du LLM :
+- Cardinalité (déjà imposée par le schéma Zod, revérifiée quand même — "ne jamais se fier
+  à un seul garde-fou").
+- Au moins `MIN_DISTINCT_FIXTURES=2` matchs distincts.
+- Chaque jambe repasse par `clearsValueEdgeFloor`/`clearsTeamTotalMaxOdds`/
+  `clearsMaxLegEdge`/`clearsMinLegOdds` (bande de cote de la classe) — déjà garanti par
+  `admissibleCandidates` avant que le LLM ne voie le pool, donc une défense en profondeur,
+  pas la seule ligne de défense.
+- Anti-corrélation sur l'ENSEMBLE choisi (`createAntiCorrelationState`/
+  `violatesAntiCorrelation`, guardrails.ts) — c'est ici, pas dans le prompt, que ces règles
+  sont réellement appliquées : le prompt les explique pour réduire les tentatives ratées,
+  mais un prompt n'est jamais une contrainte dure.
+- `combinedOdds` recalculé sur les vraies cotes, doit rester dans `[bounds.minCombinedOdds,
+  bounds.maxCombinedOdds]` ET atteindre `couponClass.targetCombinedOdds` — même discipline
+  que l'ancien `buildOne()` : une cible est une porte de publication, jamais un objectif
+  souple ("mieux vaut pas de coupon qu'un coupon qui rate discrètement sa cible").
+- `jointProbability`/`couponEV` calculés sur les probabilités calibrées réelles — jamais
+  une valeur régénérée par le LLM.
+
+**Boucle relance-avec-retour écrite** (`compose-coupon-class.ts`) — un point important
+découvert en l'écrivant : `requestVantageCompletion` appelle à `temperature: 0`
+(EVCORE.md §14.3, garde-fou de reproductibilité), donc relancer avec un prompt IDENTIQUE
+après un rejet aurait juste reproduit la même sortie rejetée. `buildCouponSelectionUserPrompt`
+prend maintenant un `feedback` optionnel (la raison du rejet précédent), injecté dans le
+prompt de la tentative suivante — "corrige ce problème précis", jamais une relance
+aveugle. `composeCouponClass` boucle jusqu'à `maxAttempts` (3 par défaut), donne renoncement
+explicite (`gave_up`) au-delà — **aucun repli sur un composeur déterministe**, conforme à
+la décision déjà actée (§9bis : "le LLM est master, pas de shadow mode").
+
+14 tests neufs (9 `validate-coupon-selection` + 5 `compose-coupon-class`, dont un test qui
+vérifie EXPLICITEMENT que le feedback de rejet apparaît dans le prompt de la tentative
+suivante). Vérifié : typecheck/lint propres, 124/124 vantage-worker.
+
+**Ce qui reste** : persister `CouponProposal`/`CouponProposalLeg` directement via
+`@evcore/db` (§9bis, décision déjà actée — même patron que `persist-decision.ts`), puis
+le câblage (scheduler indépendant côté `vantage-worker`, suppression de
+`CouponComposerService`/`coupon-composer.service.ts` et du chemin `generate-coupons` de
+`apps/backend`).

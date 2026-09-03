@@ -40,6 +40,15 @@ function formatPct(probability: number): string {
 export function buildCouponSelectionUserPrompt(
   couponClass: CouponClass,
   pool: readonly ScoredCandidate[],
+  /**
+   * Rejection reason from a previous attempt on the SAME pool (Phase C's
+   * deterministic validation, or a schema-invalid response) — appended so a
+   * retry has something to correct. Without this, retrying at
+   * `temperature: 0` (requestVantageCompletion, EVCORE.md §14.3
+   * reproducibility guardrail) against an unchanged prompt would just
+   * reproduce the identical rejected output.
+   */
+  feedback: string | null = null,
 ): string {
   const poolBlock = pool
     .map((c, i) => {
@@ -51,9 +60,13 @@ export function buildCouponSelectionUserPrompt(
     })
     .join("\n");
 
+  const feedbackBlock = feedback
+    ? `\nTa tentative précédente sur ce même vivier a été rejetée par la vérification automatique du système : ${feedback}. Propose une combinaison différente qui corrige ce problème précis.\n`
+    : "";
+
   return `Vivier de candidats pour un coupon de classe ${couponClass.name} (cote de jambe ${couponClass.minLegOdds}-${couponClass.maxLegOdds}) :
 ${poolBlock}
-
+${feedbackBlock}
 Réponds avec l'un de ces deux schémas JSON exacts :
 {"verdict":"no_coupon","reasonDetails":"..."}
 {"verdict":"compose","reasonDetails":"...","legs":[{"index":<numéro exact de la liste ci-dessus>,"reasoning":"..."}, ...]}`;

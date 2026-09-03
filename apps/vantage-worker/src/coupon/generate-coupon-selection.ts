@@ -49,6 +49,10 @@ export async function generateCouponSelection(
   bounds: CouponBounds,
   clients: LlmClients,
   logger: Logger,
+  /** Rejection reason from a previous attempt — see
+   * buildCouponSelectionUserPrompt's doc comment for why this matters at
+   * `temperature: 0`. */
+  feedback: string | null = null,
 ): Promise<GenerateCouponSelectionResult> {
   const withinClassBand = admissibleCandidates(scoredPool).filter(
     (c) =>
@@ -73,7 +77,7 @@ export async function generateCouponSelection(
 
   const schema = buildCouponSelectionSchema(bounds);
   const systemPrompt = buildCouponSelectionSystemPrompt(couponClass, bounds);
-  const userPrompt = buildCouponSelectionUserPrompt(couponClass, pool);
+  const userPrompt = buildCouponSelectionUserPrompt(couponClass, pool, feedback);
 
   const raw = await requestVantageCompletion(
     clients,
