@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   classifyAvoidSignal,
   isExtremeDivergence,
-} from './signal-window.service';
+} from './coupon-pool.service';
 import { AVOID_CONFIG } from '@evcore/analysis-core';
 
 // AVOID enforcement at staking time — drops legs whose model edge over the

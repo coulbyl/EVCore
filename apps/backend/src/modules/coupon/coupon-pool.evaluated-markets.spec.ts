@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveEvaluatedMarketLeg } from './signal-window.service';
+import { resolveEvaluatedMarketLeg } from './coupon-pool.service';
 
 // resolveEvaluatedMarketLeg decides whether a ModelRun.features.evaluatedPicks
 // entry becomes an extra coupon candidate (opts.includeEvaluatedMarkets) —
@@ -16,6 +16,7 @@ function makeEvaluated(overrides: {
   status?: 'viable' | 'rejected';
   probability?: string;
   odds?: string;
+  rejectionReason?: string;
 }) {
   return {
     market: overrides.market,
@@ -23,6 +24,9 @@ function makeEvaluated(overrides: {
     status: overrides.status ?? 'viable',
     probability: overrides.probability ?? '0.7000',
     odds: overrides.odds ?? '1.80',
+    ...(overrides.rejectionReason !== undefined
+      ? { rejectionReason: overrides.rejectionReason }
+      : {}),
   };
 }
 
@@ -33,12 +37,86 @@ const baseOpts = {
 };
 
 describe('resolveEvaluatedMarketLeg', () => {
-  it('excludes rejected picks', () => {
+  it('excludes rejected picks by default (includeEvRejected off)', () => {
+    const evaluated = makeEvaluated({
+      market: 'ONE_X_TWO',
+      status: 'rejected',
+      rejectionReason: 'ev_below_threshold',
+    });
+    expect(resolveEvaluatedMarketLeg(evaluated, baseOpts)).toBeNull();
+  });
+
+  it('excludes a reliability-rejected pick even with includeEvRejected on', () => {
+    const evaluated = makeEvaluated({
+      market: 'ONE_X_TWO',
+      status: 'rejected',
+      rejectionReason: 'probability_too_low',
+    });
+    const opts = { ...baseOpts, includeEvRejected: true };
+    expect(resolveEvaluatedMarketLeg(evaluated, opts)).toBeNull();
+  });
+
+  it('excludes a rejected pick with no recorded reason even with includeEvRejected on (conservative default)', () => {
     const evaluated = makeEvaluated({
       market: 'ONE_X_TWO',
       status: 'rejected',
     });
-    expect(resolveEvaluatedMarketLeg(evaluated, baseOpts)).toBeNull();
+    const opts = { ...baseOpts, includeEvRejected: true };
+    expect(resolveEvaluatedMarketLeg(evaluated, opts)).toBeNull();
+  });
+
+  it('admits an EV/odds-rejected pick when includeEvRejected is on (COUPON_ANALYSIS_TEMPLATE.md Étape 0: not a reliability rejection)', () => {
+    const evaluated = makeEvaluated({
+      market: 'ONE_X_TWO',
+      status: 'rejected',
+      rejectionReason: 'ev_below_threshold',
+    });
+    const opts = { ...baseOpts, includeEvRejected: true };
+    const resolved = resolveEvaluatedMarketLeg(evaluated, opts);
+    expect(resolved).not.toBeNull();
+    expect(resolved?.wasViable).toBe(false);
+  });
+
+  for (const reason of [
+    'probability_too_low',
+    'quality_score_below_threshold',
+    'under_high_lambda',
+    'market_suspended',
+  ]) {
+    it(`still excludes a "${reason}" rejection with includeEvRejected on — reliability, not EV/odds`, () => {
+      const evaluated = makeEvaluated({
+        market: 'ONE_X_TWO',
+        status: 'rejected',
+        rejectionReason: reason,
+      });
+      const opts = { ...baseOpts, includeEvRejected: true };
+      expect(resolveEvaluatedMarketLeg(evaluated, opts)).toBeNull();
+    });
+  }
+
+  for (const reason of [
+    'ev_above_hard_cap',
+    'ev_above_soft_cap',
+    'ev_below_threshold',
+    'odds_below_floor',
+    'odds_above_cap',
+  ]) {
+    it(`admits an "${reason}" rejection with includeEvRejected on — EV/odds, not reliability`, () => {
+      const evaluated = makeEvaluated({
+        market: 'ONE_X_TWO',
+        status: 'rejected',
+        rejectionReason: reason,
+      });
+      const opts = { ...baseOpts, includeEvRejected: true };
+      expect(resolveEvaluatedMarketLeg(evaluated, opts)).not.toBeNull();
+    });
+  }
+
+  it('tags a viable pick as wasViable: true', () => {
+    const evaluated = makeEvaluated({ market: 'ONE_X_TWO' });
+    expect(resolveEvaluatedMarketLeg(evaluated, baseOpts)?.wasViable).toBe(
+      true,
+    );
   });
 
   it('excludes unmapped markets (e.g. CORRECT_SCORE — immature signal, see TODO.md)', () => {
@@ -58,6 +136,7 @@ describe('resolveEvaluatedMarketLeg', () => {
       canal: 'DOMINANT',
       probability: 0.7,
       oddsSnapshot: 1.8,
+      wasViable: true,
     });
   });
 
@@ -112,6 +191,7 @@ describe('resolveEvaluatedMarketLeg', () => {
       canal: 'DRAW_NO_BET',
       probability: 0.6234,
       oddsSnapshot: 2.1,
+      wasViable: true,
     });
   });
 

@@ -30,16 +30,10 @@ import {
   type EvaluatedPickSnapshot,
 } from '@utils/model-run.utils';
 import {
-  MAX_VIRTUAL_COUPON_SELECTIONS,
   type CouponChannel,
-  type VirtualCouponChannel,
   DRAW_STAKED_LEAGUES,
   POOL_ELIGIBLE_CHANNELS,
-  COUPON_PARAMS,
   EVALUATED_MARKET_CANAL,
-  VIRTUAL_COUPON_RULES,
-  VIRTUAL_COUPON_TOP_LIMITS,
-  type VirtualCouponRule,
 } from './coupon.constants';
 
 export type Canal = CouponChannel;
@@ -203,11 +197,6 @@ export type ScoredPick = {
   modelRunId: string | null;
 };
 
-export type VirtualScoredPick = Omit<ScoredPick, 'canal'> & {
-  canal: VirtualCouponChannel;
-  virtualLabel: string;
-};
-
 function readNumber(features: unknown, key: string): number | null {
   if (!features || typeof features !== 'object') return null;
   const v = (features as Record<string, unknown>)[key];
@@ -258,86 +247,6 @@ function readSnapshotNumber(value: unknown): number | null {
     const parsed = Number(value.replace('%', ''));
     return Number.isFinite(parsed) ? parsed : null;
   }
-  return null;
-}
-
-function getVirtualRule(input: {
-  market: string;
-  pick: string;
-  probability: number;
-  odds: number | null;
-}): VirtualCouponRule | null {
-  const { market, pick, probability, odds } = input;
-  return (
-    VIRTUAL_COUPON_RULES.find((rule) => {
-      if (rule.market !== market || rule.pick !== pick) return false;
-      if (probability < rule.minProbability) return false;
-      if (probability >= rule.maxProbability) return false;
-      if (!rule.allowMissingOdds && odds === null) return false;
-      if (odds !== null && rule.minOdds !== undefined && odds < rule.minOdds) {
-        return false;
-      }
-      if (odds !== null && rule.maxOdds !== undefined && odds >= rule.maxOdds) {
-        return false;
-      }
-      return true;
-    }) ?? null
-  );
-}
-
-function scoreVirtualPick(input: {
-  rule: VirtualCouponRule;
-  competitionCode: string;
-  probability: number;
-  odds: number | null;
-}): number {
-  const leagueBoost = input.rule.leagueBoosts?.[input.competitionCode] ?? 0;
-  const oddsPenalty =
-    input.odds === null ? 0 : Math.max(0, input.odds - 1.4) * 0.02;
-  return (
-    input.rule.prior + leagueBoost + input.probability * 0.08 - oddsPenalty
-  );
-}
-
-function resolveVirtualPickCorrect(input: {
-  market: string;
-  pick: string;
-  homeScore: number | null;
-  awayScore: number | null;
-  homeHtScore: number | null;
-  awayHtScore: number | null;
-}): boolean | null {
-  const { market, pick, homeScore, awayScore, homeHtScore, awayHtScore } =
-    input;
-
-  if (market === 'BTTS') {
-    if (homeScore === null || awayScore === null) return null;
-    if (pick === 'YES') return homeScore > 0 && awayScore > 0;
-    if (pick === 'NO') return homeScore === 0 || awayScore === 0;
-  }
-
-  if (market === 'OVER_UNDER') {
-    if (homeScore === null || awayScore === null) return null;
-    const total = homeScore + awayScore;
-    if (pick === 'OVER_1_5') return total > 1;
-    if (pick === 'UNDER_1_5') return total <= 1;
-    if (pick === 'OVER') return total > 2;
-    if (pick === 'UNDER') return total <= 2;
-    if (pick === 'OVER_3_5') return total > 3;
-    if (pick === 'UNDER_3_5') return total <= 3;
-    if (pick === 'OVER_4_5') return total > 4;
-    if (pick === 'UNDER_4_5') return total <= 4;
-  }
-
-  if (market === 'OVER_UNDER_HT') {
-    if (homeHtScore === null || awayHtScore === null) return null;
-    const total = homeHtScore + awayHtScore;
-    if (pick === 'OVER_0_5') return total > 0;
-    if (pick === 'UNDER_0_5') return total <= 0;
-    if (pick === 'OVER_1_5') return total > 1;
-    if (pick === 'UNDER_1_5') return total <= 1;
-  }
-
   return null;
 }
 
@@ -441,6 +350,22 @@ export function computeMarketFair(
   }
 }
 
+// Rejection reasons that mean the pick genuinely fails on reliability grounds
+// (model overconfidence, uncalibrated league, overdispersion risk, quality
+// floor) — never a legitimate candidate, even for a hand-built combo. Every
+// other rejectionReason (ev_above_hard_cap/ev_above_soft_cap/ev_below_threshold,
+// odds_below_floor/odds_above_cap) is about the single-bet auto-stake
+// threshold, which COUPON_ANALYSIS_TEMPLATE.md (Étape 0/5) is explicit is
+// "hors sujet" for judging a leg's reliability inside a combo — see
+// `getPickRejectionReason` (packages/analysis-core/selection/pick-validation.ts)
+// for where each reason is actually raised.
+export const RELIABILITY_REJECTION_REASONS: ReadonlySet<string> = new Set([
+  'probability_too_low',
+  'quality_score_below_threshold',
+  'under_high_lambda',
+  'market_suspended',
+]);
+
 // Decides whether one ModelRun.features.evaluatedPicks entry becomes an
 // extra coupon-eligible candidate (opts.includeEvaluatedMarkets) — pulled out
 // as a pure function so the gating logic (dedup, canal mapping, AVOID) is
@@ -451,15 +376,36 @@ export function computeMarketFair(
 export function resolveEvaluatedMarketLeg(
   evaluated: Pick<
     EvaluatedPickSnapshot,
-    'market' | 'pick' | 'status' | 'probability' | 'odds'
+    'market' | 'pick' | 'status' | 'probability' | 'odds' | 'rejectionReason'
   >,
   opts: {
     stakedKeys: ReadonlySet<string>;
     enforceAvoid: boolean;
     calibrationAlert: boolean;
+    /**
+     * Also admit a 'rejected' pick when its rejectionReason is EV/odds-only
+     * (see RELIABILITY_REJECTION_REASONS) — off by default so the existing
+     * real coupon pool (getPoolForRange's includeEvaluatedMarkets) keeps its
+     * current viable-only behaviour unchanged. Set by the LLM candidate pool
+     * (docs/vantage-centric-redesign-2026-09-01.md §9 point 1), which needs
+     * the full evaluatedPicks population, not just what already cleared the
+     * single-bet EV floor.
+     */
+    includeEvRejected?: boolean;
   },
-): { canal: Canal; probability: number; oddsSnapshot: number } | null {
-  if (evaluated.status !== 'viable') return null;
+): {
+  canal: Canal;
+  probability: number;
+  oddsSnapshot: number;
+  wasViable: boolean;
+} | null {
+  const wasViable = evaluated.status === 'viable';
+  if (!wasViable) {
+    const reason = evaluated.rejectionReason;
+    const isReliabilityRejection =
+      reason === undefined || RELIABILITY_REJECTION_REASONS.has(reason);
+    if (!opts.includeEvRejected || isReliabilityRejection) return null;
+  }
   const canal = EVALUATED_MARKET_CANAL[evaluated.market];
   if (!canal) return null; // CORRECT_SCORE and anything unmapped — excluded
   if (opts.stakedKeys.has(`${evaluated.market}:${evaluated.pick}`)) return null;
@@ -479,11 +425,23 @@ export function resolveEvaluatedMarketLeg(
     if (regime === 'DROP' || regime === 'FADE') return null;
   }
 
-  return { canal: canal, probability, oddsSnapshot };
+  return { canal: canal, probability, oddsSnapshot, wasViable };
 }
 
+// Renamed from `SignalWindowService` 2026-09-03. The old name was a fossil:
+// it dates from when this class computed a genuine rolling-window "signal
+// score" (`calibratedCanalHitRates`/`canalDowFactors`/`signalScore`, 38-day
+// window) — measured anti-predictive and removed entirely 2026-08-22 (see
+// `computeLegCalibration`'s doc). What's left is leg-pool construction
+// (`getPoolForRange`) plus a Platt-curve calibration window — no "signal",
+// no "window" concept survives. A stale name here risks misleading a reader
+// (or an LLM given this file as context) into assuming a live windowed
+// heuristic still drives selection. Also dropped in the same pass: the
+// unused `getTodayPool` wrapper and the entire virtual-coupon pool
+// (`getTodayVirtualPool`/`VIRTUAL_COUPON_RULES` and dependents) — dead code,
+// zero callers anywhere in the repo.
 @Injectable()
-export class SignalWindowService {
+export class CouponPoolService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly calibration: CalibrationService,
@@ -535,41 +493,23 @@ export class SignalWindowService {
   }
 
   /**
-   * REAL coupon pool (B7) — the staking-eligible source. It reads only `Bet`
-   * rows of source `MODEL`, which the engine materialises **for EV/SAFE** (the two
-   * channels measured +ROI, cf. DESIGN.md B-ROI). DOMINANT is NOT materialised
-   * as MODEL bets, so beyond EV/SAFE this pool only grows via explicit
-   * `channel_selection`-based promotions:
-   *
-   * - DOMINANT is a **prediction-only** channel (ROI −2.1%, EV anti-predictive)
-   *   → tracked via `channel_selection`, never staked.
-   * - DRAW (aggregate ROI hides a per-league spread of +41% to -45% — see
-   *   `DRAW_STAKED_LEAGUES`) is promoted **only for those leagues** when
-   *   `includeDraw` is set; other leagues stay observation-only.
-   * - TEAM_TOTAL (+3.40% ROI, n=845, all leagues — no league has enough volume
-   *   to segment yet) is promoted the same way when `includeTeamTotal` is set.
-   * - BTTS (aggregate ROI hides a per-league split too — see
-   *   `BTTS_STAKED_LEAGUES`) is promoted **only for those leagues** when
-   *   `includeBtts` is set; other leagues stay observation-only.
-   *
-   * The separate {@link getTodayVirtualPool} is a **prediction/observation** pool
-   * (virtual SAFE/BTTS rules), kept distinct on purpose — it never stakes.
-   */
-  async getTodayPool(
-    date: string,
-    opts: GetPoolOpts = {},
-  ): Promise<ScoredPick[]> {
-    return this.getPoolForRange(date, date, opts);
-  }
-
-  /**
-   * {@link getTodayPool}, extended to a `[fromDate, toDate]` window (inclusive,
-   * both in `date` form) — the weekend (Fri→Sun) / midweek European-nights
-   * (Tue→Thu) coupon windows read fixtures across several days here instead of
-   * one `getTodayPool` call per day. Every {@link ScoredPick} carries a
-   * `dayBucket` (the fixture's own scheduled day) so composition can still
-   * apply a per-day anti-correlation cap on top of the existing per-fixture/
+   * REAL coupon pool (B7) — the staking-eligible source, over a
+   * `[fromDate, toDate]` window (inclusive, both in `date` form; pass the
+   * same date twice for a single day) — the weekend (Fri→Sun) / midweek
+   * European-nights (Tue→Thu) coupon windows read fixtures across several
+   * days here in one call. Every {@link ScoredPick} carries a `dayBucket`
+   * (the fixture's own scheduled day) so composition can still apply a
+   * per-day anti-correlation cap on top of the existing per-fixture/
    * per-canal-market/per-competition ones.
+   *
+   * Reads every {@link POOL_ELIGIBLE_CHANNELS} channel's own rank-1
+   * `channel_selection`, plus (`opts.includeEvaluatedMarkets`) the wider raw
+   * `evaluatedPicks` population per fixture. DOMINANT is a
+   * **prediction-only** channel (ROI −2.1%, EV anti-predictive) — tracked
+   * here like any other pool channel, never specially staked. DRAW
+   * (aggregate ROI hides a per-league spread of +41% to -45% — see
+   * `DRAW_STAKED_LEAGUES`) is promoted **only for those leagues** when
+   * `includeDraw` is set; other leagues stay observation-only.
    */
   async getPoolForRange(
     fromDate: string,
@@ -928,193 +868,5 @@ export class SignalWindowService {
     }
 
     return picks;
-  }
-
-  /**
-   * VIRTUAL coupon pool (B7) — **prediction/observation only, never staked**.
-   * Built from the `VIRTUAL_COUPON_RULES` (heuristic SAFE/BTTS-style markets) over
-   * the day's fixtures, independent of any materialised `Bet`. Kept deliberately
-   * separate from the real {@link getTodayPool}: it exists to observe candidate
-   * strategies (e.g. BTTS, HT overs) before they ever justify real stakes. Promote
-   * a virtual channel to the real pool only after a green per-channel backtest.
-   */
-  async getTodayVirtualPool(date: string): Promise<VirtualScoredPick[]> {
-    const dayStart = new Date(`${date}T00:00:00.000Z`);
-    const dayEnd = new Date(`${date}T23:59:59.999Z`);
-
-    const fixtures = await this.prisma.client.fixture.findMany({
-      where: { scheduledAt: { gte: dayStart, lte: dayEnd } },
-      select: {
-        id: true,
-        scheduledAt: true,
-        homeScore: true,
-        awayScore: true,
-        homeHtScore: true,
-        awayHtScore: true,
-        homeTeam: { select: { name: true, logoUrl: true } },
-        awayTeam: { select: { name: true, logoUrl: true } },
-        season: {
-          select: {
-            competition: { select: { code: true, name: true, country: true } },
-          },
-        },
-        modelRuns: {
-          select: {
-            id: true,
-            finalScore: true,
-            features: true,
-            analyzedAt: true,
-          },
-          orderBy: { analyzedAt: 'desc' },
-          take: 1,
-        },
-      },
-      orderBy: { scheduledAt: 'asc' },
-    });
-
-    const picks: VirtualScoredPick[] = [];
-
-    for (const f of fixtures) {
-      const run = f.modelRuns[0];
-      if (!run) continue;
-
-      const comp = f.season.competition.code;
-      const competitionName = f.season.competition.name;
-      const country = f.season.competition.country;
-      const feat = run.features;
-      const lambdaHome = readNumber(feat, 'lambdaHome');
-      const lambdaAway = readNumber(feat, 'lambdaAway');
-      const xg =
-        lambdaHome !== null && lambdaAway !== null
-          ? lambdaHome + lambdaAway
-          : null;
-      const finalScore = run.finalScore ? Number(run.finalScore) : null;
-      const recentForm = readNumber(feat, 'recentForm');
-      const modelProbabilities = readModelProbabilities(feat);
-      const dataCoverage = computeDataCoverage(feat);
-      const shadowConflict = readShadowConflict(feat);
-      const offensiveBalance =
-        extractEvaContextFromFeatures(feat).offensiveBalance?.classification ??
-        null;
-      const evaluatedPicks = extractModelRunFeatureDiagnostics(
-        run.features,
-      ).evaluatedPicks;
-
-      for (const evaluated of evaluatedPicks) {
-        if (evaluated.status !== 'viable') continue;
-        const probability = readSnapshotNumber(evaluated.probability);
-        const odds = readSnapshotNumber(evaluated.odds);
-        if (probability === null) continue;
-
-        const rule = getVirtualRule({
-          market: evaluated.market,
-          pick: evaluated.pick,
-          probability,
-          odds,
-        });
-        if (!rule) continue;
-
-        const signalScore = scoreVirtualPick({
-          rule,
-          competitionCode: comp,
-          probability,
-          odds,
-        });
-        const calibratedHitRate = Math.min(
-          COUPON_PARAMS.capMax,
-          Math.max(
-            COUPON_PARAMS.capMin,
-            rule.prior + (rule.leagueBoosts?.[comp] ?? 0),
-          ),
-        );
-
-        picks.push({
-          fixtureId: f.id,
-          homeTeam: f.homeTeam.name,
-          awayTeam: f.awayTeam.name,
-          homeLogo: f.homeTeam.logoUrl ?? null,
-          awayLogo: f.awayTeam.logoUrl ?? null,
-          competition: competitionName,
-          country,
-          scheduledAt: f.scheduledAt,
-          dayBucket: f.scheduledAt.toISOString().slice(0, 10),
-          homeScore: f.homeScore ?? null,
-          awayScore: f.awayScore ?? null,
-          homeHtScore: f.homeHtScore ?? null,
-          awayHtScore: f.awayHtScore ?? null,
-          legEV: null, // set in CouponComposerService.scorePicks()
-          pMarketFair: null,
-          bookmakerMargin: null,
-          edge: null, // set in CouponComposerService.scorePicks()
-          lambdaHome,
-          lambdaAway,
-          xg,
-          finalScore,
-          modelThreshold: null,
-          recentForm,
-          modelProbabilities,
-          dataCoverage,
-          shadowConflict,
-          offensiveBalance,
-          // Not queried here (single-pass pool, prediction-only — never staked).
-          priorAnalysisCount: 0,
-          featureSnapshot: {
-            lambdaHome,
-            lambdaAway,
-            xg,
-            finalScore,
-            recentForm,
-            competitionCode: comp,
-            virtualRule: rule.canal,
-            virtualLabel: rule.label,
-          },
-          canal: rule.canal,
-          virtualLabel: rule.label,
-          market: evaluated.market,
-          pick: evaluated.pick,
-          probability,
-          calibratedHitRate,
-          calibratedProbability: null,
-          oddsSnapshot: odds,
-          // Pool virtuel (observation seule, jamais staké) : pas de
-          // substitution de prix, référence = cote observée.
-          referenceOdds: odds,
-          isCorrect: resolveVirtualPickCorrect({
-            market: evaluated.market,
-            pick: evaluated.pick,
-            homeScore: f.homeScore ?? null,
-            awayScore: f.awayScore ?? null,
-            homeHtScore: f.homeHtScore ?? null,
-            awayHtScore: f.awayHtScore ?? null,
-          }),
-          signalScore,
-          channelSelectionId: null,
-          modelRunId: run.id,
-          pickSource: 'STAKED', // virtual pool — never gated by pickSource anyway
-        });
-      }
-    }
-
-    const selected: VirtualScoredPick[] = [];
-    const counts = new Map<VirtualCouponChannel, number>();
-    const seenFixturesByCanal = new Set<string>();
-
-    // Trié par probabilité, plus par signalScore : celui-ci est mesuré
-    // anti-prédictif à probabilité constante (voir scorePicks,
-    // coupon-composer.service.ts). Ce pool est en observation seule, mais il
-    // ne sert à rien d'observer une sélection qu'on sait inversée.
-    for (const pick of picks.sort((a, b) => b.probability - a.probability)) {
-      const count = counts.get(pick.canal) ?? 0;
-      if (count >= MAX_VIRTUAL_COUPON_SELECTIONS[pick.canal]) continue;
-
-      const uniqueKey = `${pick.canal}:${pick.fixtureId}`;
-      if (seenFixturesByCanal.has(uniqueKey)) continue;
-
-      selected.push(pick);
-      counts.set(pick.canal, count + 1);
-      seenFixturesByCanal.add(uniqueKey);
-    }
-
-    return selected.slice(0, VIRTUAL_COUPON_TOP_LIMITS.top10 * 3);
   }
 }
