@@ -3,7 +3,7 @@ import { PrismaModule } from '@/prisma.module';
 import { CalibrationService } from '@modules/adjustment/calibration.service';
 import { OddsSnapshotLoader } from '@modules/betting-engine/pricing/odds-snapshot.loader';
 import { CouponRepository } from './coupon.repository';
-import { SignalWindowService } from './signal-window.service';
+import { CouponPoolService } from './coupon-pool.service';
 import { CouponComposerService } from './coupon-composer.service';
 import { CouponSettlementService } from './coupon-settlement.service';
 import { CouponService } from './coupon.service';
@@ -19,7 +19,7 @@ import { CouponController } from './coupon.controller';
     CalibrationService,
     OddsSnapshotLoader,
     CouponRepository,
-    SignalWindowService,
+    CouponPoolService,
     CouponComposerService,
     CouponSettlementService,
     CouponService,
@@ -30,7 +30,7 @@ import { CouponController } from './coupon.controller';
   exports: [
     CouponService,
     CouponSettlementService,
-    SignalWindowService,
+    CouponPoolService,
     CouponComposerService,
     CouponRepository,
   ],

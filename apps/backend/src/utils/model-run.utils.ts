@@ -73,7 +73,7 @@ export function extractEvaContextFromFeatures(
 // A ModelRun flagged by the model↔market coherence gate carries a non-null
 // features.calibration_alert (1X2) or features.calibration_alert_over_under
 // (OVER_UNDER, added 2026-08-15 — see betting-engine market-coherence.ts).
-// Single source of truth for the existence check — signal-window.service.ts
+// Single source of truth for the existence check — coupon-pool.service.ts
 // and analysis-sheet.render.ts (buildCalibrationAlert, for the full object)
 // both read the same underlying keys.
 export function hasCalibrationAlert(features: unknown): boolean {

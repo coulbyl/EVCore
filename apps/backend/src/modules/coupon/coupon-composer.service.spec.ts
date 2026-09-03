@@ -15,11 +15,10 @@ import {
   COUPON_BOUNDS,
   COUPON_CLASSES,
   COUPON_PARAMS,
-  MAX_POOL_PER_COMPETITION,
   MIN_LEG_ODDS,
   TEAM_TOTAL_MAX_ODDS,
 } from './coupon.constants';
-import type { Canal, ScoredPick } from './signal-window.service';
+import type { Canal, ScoredPick } from './coupon-pool.service';
 
 function makePick(overrides: {
   fixtureId: string;
@@ -365,15 +364,14 @@ describe('CouponComposerService.compose — anchor/value pool mix', () => {
     ).toBe(true);
   });
 
-  it('caps candidates per competition in the pool, and legs per competition inside a coupon', () => {
-    // 10 anchor-grade legs all in the SAME competition. Two distinct rules
-    // apply and are deliberately different: the POOL keeps at most
-    // MAX_POOL_PER_COMPETITION of them (candidate diversity), while any
-    // single published coupon carries at most 2 (anti-correlation, see
-    // violatesAntiCorrelation). The pool cap was lowered to the intra-coupon
-    // value of 2 for a long time, which starved the search 75% of days
-    // without protecting anything the intra-coupon rule did not already
-    // cover — see MAX_POOL_PER_COMPETITION.
+  it('caps legs per competition inside a single coupon (anti-correlation)', () => {
+    // 10 anchor-grade legs all in the SAME competition. The pool itself no
+    // longer caps candidates per competition (buildCandidatePool doc,
+    // coupon-composer.service.ts — removed 2026-08-22, it only ever
+    // throttled the search without protecting anything the intra-coupon
+    // rule below doesn't already cover). What's still enforced is inside a
+    // single published coupon: at most 2 legs from the same competition
+    // (violatesAntiCorrelation).
     const sameLeague = Array.from({ length: 10 }, (_, i) =>
       makePick({
         fixtureId: `same${i}`,
@@ -395,11 +393,6 @@ describe('CouponComposerService.compose — anchor/value pool mix', () => {
         maxCombinedOdds: 10.0,
       },
     });
-
-    const usedFixtures = new Set(
-      coupons.flatMap((c) => c.legs.map((l) => l.fixtureId)),
-    );
-    expect(usedFixtures.size).toBeLessThanOrEqual(MAX_POOL_PER_COMPETITION);
 
     for (const coupon of coupons) {
       const fromCrowded = coupon.legs.filter(

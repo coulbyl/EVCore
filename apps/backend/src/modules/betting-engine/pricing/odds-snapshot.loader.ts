@@ -483,8 +483,7 @@ export class OddsSnapshotLoader {
   // assembleFullOddsSnapshot() used nowhere else — kept deliberately
   // separate from findLatestOddsSnapshot so its existing, tested per-market
   // bookmaker-resolution behaviour above is untouched. Used by pool builders
-  // that score many fixtures at once (SignalWindowService.getTodayPool /
-  // getPoolForRange).
+  // that score many fixtures at once (CouponPoolService.getPoolForRange).
   async findLatestOddsSnapshotsBatch(
     requests: Array<{ fixtureId: string; cutoff: Date }>,
   ): Promise<Map<string, FullOddsSnapshot | null>> {

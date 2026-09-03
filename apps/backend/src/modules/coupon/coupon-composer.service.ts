@@ -17,7 +17,7 @@ import {
   type ChannelReliability,
   type ChannelReliabilityMap,
 } from '@modules/adjustment/channel-reliability';
-import type { LegCalibration, ScoredPick } from './signal-window.service';
+import type { LegCalibration, ScoredPick } from './coupon-pool.service';
 
 const MIN_DISTINCT_FIXTURES = 2;
 const MAX_POOL_SIZE = 25;
@@ -576,7 +576,7 @@ export class CouponComposerService {
         pMarketFair: l.pMarketFair,
         // Was reading `featureSnapshot['calibratedCanalHitRate']` — a key
         // from the sliding-window calibration system removed 2026-08-22
-        // (see signal-window.service.ts's SignalWindowService doc comment)
+        // (see coupon-pool.service.ts's CouponPoolService doc comment)
         // that nothing has written since, so this was silently `null` on
         // every leg of every coupon for the last 6 days. The per-channel
         // calibration curve that replaced it already sits right on the leg

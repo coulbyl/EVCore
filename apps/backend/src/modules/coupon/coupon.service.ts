@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CouponProposalStatus } from '@evcore/db';
 import { createLogger } from '@utils/logger';
 import { CouponRepository } from './coupon.repository';
-import { SignalWindowService } from './signal-window.service';
+import { CouponPoolService } from './coupon-pool.service';
 import { CouponComposerService } from './coupon-composer.service';
 import {
   COUPON_CLASSES,
@@ -13,7 +13,7 @@ import {
 } from './coupon.constants';
 import { DEFAULT_STAKE_PCT } from '@modules/betting-engine/ev.constants';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
-import type { ScoredPick } from './signal-window.service';
+import type { ScoredPick } from './coupon-pool.service';
 
 const logger = createLogger('coupon');
 
@@ -64,7 +64,7 @@ export class CouponService {
 
   constructor(
     private readonly repo: CouponRepository,
-    private readonly signalWindow: SignalWindowService,
+    private readonly couponPool: CouponPoolService,
     private readonly composer: CouponComposerService,
   ) {}
 
@@ -95,8 +95,8 @@ export class CouponService {
     }
 
     const [window, rawPicks] = await Promise.all([
-      this.signalWindow.computeLegCalibration(asOf),
-      this.signalWindow.getPoolForRange(date, to, {
+      this.couponPool.computeLegCalibration(asOf),
+      this.couponPool.getPoolForRange(date, to, {
         includeDraw: this.stakeDraw,
         enforceAvoid: this.enforceAvoid,
         enableAvoidFade: this.enableAvoidFade,

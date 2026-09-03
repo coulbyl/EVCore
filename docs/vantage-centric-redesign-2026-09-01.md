@@ -427,10 +427,15 @@ cette semaine ; la décision de principe ci-dessus reste valable, seul le calend
 
 ### 5.3 Périmètre d'Eva — résolu
 
-Assistant Groq single-shot existant (quota 50/j), implémenté aujourd'hui côté backend comme
-le module `analysis-sheet` (`apps/backend/src/modules/analysis-sheet/`) — pas de chat ni de
-présence en prod sur `main` à ce jour (aucune UI Eva déployée, seule une mention
-incidentelle dans `onboarding-tour-context.tsx`).
+Ex-assistant Groq single-shot (quota 50/j) — **déjà retiré** avant cette entrée (commit
+`da3d2370`, "remove the Eva LLM analyze surface, keep export") : client Groq, prompt,
+parseur de coupons LLM et rate-limiter de quota tous supprimés. Le module
+`analysis-sheet` (`apps/backend/src/modules/analysis-sheet/`) ne fait aujourd'hui **que**
+de l'export de données (`exportJson`/`exportTxt`, aucun appel LLM) — vérifié le 2026-09-03
+par un grep complet sur `apps/backend/src` : zéro trace de Groq/Anthropic/OpenAI dans tout
+le backend. Cohérent avec la règle actée le même jour : **le backend est LLM-agnostic,
+tout le LLM vit dans `apps/vantage-worker`** — cette règle est déjà satisfaite aujourd'hui,
+rien à corriger.
 
 **Décidé** (déjà tranché avant cette entrée, confirmé le 2026-09-03) : Eva **ne devient pas**
 une expérience personnalisée ou un chat élargi — elle reste strictement un **outil
@@ -625,6 +630,58 @@ code, pas un prompt.
    `loadChannelCalibration` actuel confond HOME/AWAY/DRAW dans la même moyenne, ce qui
    biaiserait le score du pool si réutilisé tel quel pour le générateur de coupon.
 
-**Statut** : idée et architecture actées dans ce doc, à date la plus solide dont on dispose
-avant de démarrer le chantier (§0 point 7, "le plus lourd, à ne démarrer qu'une fois 1-6
-stabilisés et le pool de canaux filtré"). Aucune implémentation commencée.
+**Statut** : idée et architecture actées dans ce doc. Implémentation démarrée le 2026-09-03
+(voir §9bis) — pas encore committé, l'utilisateur committe lui-même sur ce chantier.
+
+## 9bis. Premiers pas d'implémentation (2026-09-03, pas committé)
+
+**Découverte en explorant le code avant d'écrire quoi que ce soit** : l'essentiel du point 1
+(pool déterministe) existait déjà dans `apps/backend/src/modules/coupon/` — pas besoin d'un
+service parallèle. `getPoolForRange` (élargi via `resolveEvaluatedMarketLeg`,
+`opts.includeEvaluatedMarkets`) lit déjà `evaluatedPicks` bruts par fixture, mappe
+marché→canal, applique AVOID et une correction de fiabilité par canal (courbes de Platt,
+`calibrateLegProbability`) — plus rigoureuse que le système de tiers A/B/C/D du template
+(jamais codifié, prose seule). Le check `under_high_lambda` que le template signalait comme
+trou (ne couvrait que la ligne 2,5) est déjà corrigé dans `pick-validation.ts`.
+
+**Le vrai trou** : `resolveEvaluatedMarketLeg` n'admettait que les picks `'viable'` — jamais
+ceux rejetés pour raison EV/cote seule (`ev_below_threshold` etc.), alors que le template dit
+explicitement qu'un tel rejet n'est pas un rejet de fiabilité pour un combiné. **Fait** :
+paramètre `includeEvRejected` ajouté (off par défaut, zéro impact sur le pipeline réel), admet
+un pick EV/cote-rejeté tout en excluant toujours les rejets de fiabilité
+(`RELIABILITY_REJECTION_REASONS` : `probability_too_low`, `quality_score_below_threshold`,
+`under_high_lambda`, `market_suspended`). Chaque candidat porte `wasViable` pour tracer si le
+système l'a validé. 24 tests, typecheck/lint propres.
+
+**Renommage + nettoyage** (demandé par l'utilisateur en voyant `SignalWindowService`) : le nom
+était un fossile — la classe calculait à l'origine un vrai "signal sur fenêtre glissante de
+38 jours" (`signalScore`), mesuré anti-prédictif et entièrement retiré le 2026-08-22 ; il ne
+restait que l'assemblage de pool + une courbe de calibration, aucun "signal"/"fenêtre" ne
+survivait. Risque identifié : un nom trompeur peut faire raisonner un LLM (ou un humain) sur
+un mécanisme qui n'existe plus. **Renommé** `SignalWindowService` → `CouponPoolService`
+(`signal-window.service.ts` → `coupon-pool.service.ts`, 10 fichiers touchés). **Nettoyé** en
+même temps (audit préalable pour confirmer mort avant suppression) : `getTodayPool` (wrapper
+inutilisé), `getTodayVirtualPool` et toute la machinerie du pool virtuel
+(`VIRTUAL_COUPON_RULES`/`VIRTUAL_COUPON_TOP_LIMITS`/`VirtualCouponChannel`, zéro appelant nulle
+part), et des constantes mortes dans `coupon.constants.ts` (`BTTS_STAKED_LEAGUES`,
+`CANAL_BASE_WEIGHT`/`DEFAULT_CANAL_BASE_WEIGHT`, `LEGACY_MIN_LEG_PROBABILITY`,
+`MAX_POOL_PER_COMPETITION` — ce dernier avec un test qui vérifiait un comportement déjà retiré
+du composeur, corrigé). 727/727 tests backend, typecheck et lint propres.
+
+**Question soulevée, pas encore construite** : donner à l'étape LLM (point 2-3) accès au
+verdict VANTAGE déjà calculé par fixture (`ChannelDecision.channel='VANTAGE'`), pour éviter de
+lui faire ré-analyser chaque match à zéro — VANTAGE fait déjà la synthèse qualitative
+(tension entre canaux) que le LLM du coupon devrait faire. Pas un second avis vraiment
+indépendant (mêmes canaux déterministes en amont) : à traiter comme contexte informatif,
+jamais comme filtre d'inclusion/exclusion. Se branche au point 2, pas encore fait.
+
+**Principe d'architecture décidé le 2026-09-03 : le backend est LLM-agnostic, tout le LLM
+vit dans `apps/vantage-worker`.** Déjà satisfait aujourd'hui (voir §5.3 — le seul ex-appel
+LLM du backend, `analysis-sheet`/Eva, était déjà retiré). S'applique au générateur de
+coupon : l'appel LLM lui-même doit vivre dans `apps/vantage-worker` (réutilise son client
+Groq et ses patterns de prompt/garde-fous déjà rodés), jamais dans `apps/backend`. Ce que
+`apps/backend` expose reste déterministe : le pool candidat, les prédicats de garde-fou et
+l'application d'une courbe de calibration déjà calculée — la partie pure de tout ça devrait
+migrer vers `packages/analysis-core` (déjà importé par les deux apps aujourd'hui) pour être
+appelable depuis `vantage-worker` sans dupliquer la logique ni faire dépendre
+`vantage-worker` du NestJS de `apps/backend`. Extraction pas encore commencée.
