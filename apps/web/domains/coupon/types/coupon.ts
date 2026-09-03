@@ -33,13 +33,6 @@ export type CouponProposalDto = {
   targetOddsMin: number;
   targetOddsMax: number;
   /**
-   * True for LONGSHOT_WEEKEND/MIDWEEK proposals — no dedicated backtest
-   * exists yet, generated purely to observe real settlement data. Always
-   * render with a clearly distinguishing badge, never as an unlabeled
-   * recommendation alongside the backtested default profile.
-   */
-  experimental: boolean;
-  /**
    * Classe du coupon. Les trois se différencient par la bande de cote de leurs
    * jambes, donc par un profil gain/fréquence réellement distinct — voir
    * COUPON_CLASS_META pour les taux mesurés. `null` pour les propositions

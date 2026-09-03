@@ -296,10 +296,6 @@ export {
  * mesurée anti-prédictive.
  */
 
-/**
- * Borne basse de cote combinée des anciens profils LONGSHOT. Ils n'existent
- * plus, mais les `CouponProposal` générés avant le 2026-08-22 portent encore
- * ce `targetOddsMin` : c'est ce qui permet de continuer à les afficher comme
- * "Expérimental" dans l'historique.
- */
-export const LEGACY_LONGSHOT_MIN_ODDS = 50.0;
+// LEGACY_LONGSHOT_MIN_ODDS (badge "Expérimental" pour les anciens profils
+// LONGSHOT) retiré 2026-09-03 à la demande de l'utilisateur — plus besoin,
+// retiré aussi côté frontend.

@@ -6,7 +6,6 @@ import {
   ApiParam,
   ApiOkResponse,
   ApiNotFoundResponse,
-  ApiBadRequestResponse,
 } from '@nestjs/swagger';
 import {
   formatDateUtc,
@@ -62,36 +61,10 @@ export class CouponController {
     return this.coupon.getCoupons(date, undefined);
   }
 
-  @Post('generate')
-  @HttpCode(200)
-  @ApiOperation({
-    summary: 'Manually trigger coupon generation for a date',
-    description:
-      'Runs the full coupon-generation pipeline for the target date. Idempotent: existing proposals for that date are replaced. Defaults to tomorrow (UTC).',
-  })
-  @ApiQuery({ name: 'date', required: false, example: '2026-05-17' })
-  @ApiQuery({
-    name: 'to',
-    required: false,
-    description:
-      'Last day (inclusive) of a multi-day fixture window. Defaults to `date`.',
-    example: '2026-05-19',
-  })
-  @ApiOkResponse({
-    description: 'Generation completed successfully.',
-    schema: {
-      type: 'object',
-      properties: { generated: { type: 'boolean', example: true } },
-    },
-  })
-  @ApiBadRequestResponse({ description: 'Invalid query parameters.' })
-  async generate(
-    @Query() query: CouponQueryDto,
-  ): Promise<{ generated: boolean }> {
-    const date = query.date ?? formatDateUtc(tomorrowUtc());
-    await this.coupon.generateCoupons(date, { to: query.to });
-    return { generated: true };
-  }
+  // POST /coupons/generate retired 2026-09-03 alongside CouponComposerService
+  // — coupon composition is now apps/vantage-worker's own LLM pipeline,
+  // triggered by its own scheduler, not by an HTTP call into this app. See
+  // docs/vantage-centric-redesign-2026-09-01.md §9bis.
 
   @Post('settle')
   @HttpCode(200)

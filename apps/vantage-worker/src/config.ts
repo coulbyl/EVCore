@@ -135,6 +135,19 @@ export type Config = {
    * VANTAGE_RESEARCH_COMPETITION_CODES if the big-leagues default isn't
    * what you want. */
   researchCompetitionCodes: string[];
+  /** Cron pattern for the daily coupon-generation sweep (BullMQ repeatable
+   * job, see queue/coupon-scheduler.ts) — the LLM coupon pipeline
+   * (docs/vantage-centric-redesign-2026-09-01.md §9bis). Default `30 20 *
+   * * *` (20:30 UTC) is deliberately apps/backend's own
+   * ETL_BETTING_ENGINE_ANALYSIS_CRON default (20:00 UTC,
+   * apps/backend/src/config/etl.constants.ts) plus 30 minutes — enough
+   * margin for that cron's betting-engine analysis pass to finish writing
+   * the day's ModelRun/ChannelDecision rows before this pool query reads
+   * them. The two apps don't share config at runtime (backend
+   * LLM-agnostic, no cross-app coupling — see that doc's §9bis), so if
+   * ETL_BETTING_ENGINE_ANALYSIS_CRON is ever changed there,
+   * VANTAGE_COUPON_CRON needs a matching manual update here. */
+  couponCron: string;
 };
 
 // PL=Premier League(ENG), LL=La Liga(ESP), BL1=Bundesliga(GER),
@@ -235,5 +248,6 @@ export function loadConfig(): Config {
           .map((code) => code.trim())
           .filter(Boolean)
       : DEFAULT_RESEARCH_COMPETITION_CODES,
+    couponCron: process.env["VANTAGE_COUPON_CRON"] ?? "30 20 * * *",
   };
 }

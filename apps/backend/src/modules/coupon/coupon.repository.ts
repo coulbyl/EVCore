@@ -35,29 +35,6 @@ export type SummaryBetRow = {
   };
 };
 
-export type UpsertProposalInput = {
-  forDate: Date;
-  rank: number;
-  signalWindowDays: number;
-  targetOddsMin: number;
-  targetOddsMax: number;
-  combinedOdds: number;
-  jointProbability: number;
-  signalScore: number;
-  lastFixtureScheduledAt: Date;
-  reasoning: Record<string, unknown>;
-  legs: Array<{
-    fixtureId: string;
-    canal: StrategyChannel;
-    market: string;
-    pick: string;
-    probability: number;
-    oddsSnapshot: number | null;
-    signalScore: number;
-    featureSnapshot: Record<string, unknown>;
-  }>;
-};
-
 export type CouponProposalWithLegs = Prisma.CouponProposalGetPayload<{
   include: {
     legs: {
@@ -116,74 +93,11 @@ const WITH_LEGS = {
 export class CouponRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async upsertProposal(data: UpsertProposalInput): Promise<void> {
-    const toDecimal = (n: number) => new Prisma.Decimal(n);
-    const toJson = (v: unknown) => v as Prisma.InputJsonValue;
-
-    const where = {
-      forDate_signalWindowDays_targetOddsMin_targetOddsMax_rank: {
-        forDate: data.forDate,
-        signalWindowDays: data.signalWindowDays,
-        targetOddsMin: toDecimal(data.targetOddsMin),
-        targetOddsMax: toDecimal(data.targetOddsMax),
-        rank: data.rank,
-      },
-    };
-
-    const existing = await this.prisma.client.couponProposal.findUnique({
-      where,
-      select: { id: true, status: true },
-    });
-
-    if (existing && existing.status !== CouponProposalStatus.PENDING) {
-      return; // preserve ACCEPTED/REJECTED/EXPIRED
-    }
-
-    const legData = data.legs.map((leg) => ({
-      fixtureId: leg.fixtureId,
-      canal: leg.canal,
-      market: leg.market as Prisma.CouponProposalLegCreateInput['market'],
-      pick: leg.pick,
-      probability: leg.probability,
-      oddsSnapshot: leg.oddsSnapshot,
-      signalScore: leg.signalScore,
-      featureSnapshot: toJson(leg.featureSnapshot),
-    }));
-
-    if (existing) {
-      await this.prisma.client.couponProposalLeg.deleteMany({
-        where: { couponProposalId: existing.id },
-      });
-      await this.prisma.client.couponProposal.update({
-        where: { id: existing.id },
-        data: {
-          combinedOdds: toDecimal(data.combinedOdds),
-          jointProbability: toDecimal(data.jointProbability),
-          signalScore: toDecimal(data.signalScore),
-          lastFixtureScheduledAt: data.lastFixtureScheduledAt,
-          reasoning: toJson(data.reasoning),
-          generatedAt: new Date(),
-          legs: { create: legData },
-        },
-      });
-    } else {
-      await this.prisma.client.couponProposal.create({
-        data: {
-          forDate: data.forDate,
-          rank: data.rank,
-          signalWindowDays: data.signalWindowDays,
-          targetOddsMin: toDecimal(data.targetOddsMin),
-          targetOddsMax: toDecimal(data.targetOddsMax),
-          combinedOdds: toDecimal(data.combinedOdds),
-          jointProbability: toDecimal(data.jointProbability),
-          signalScore: toDecimal(data.signalScore),
-          lastFixtureScheduledAt: data.lastFixtureScheduledAt,
-          reasoning: toJson(data.reasoning),
-          legs: { create: legData },
-        },
-      });
-    }
-  }
+  // upsertProposal (CouponComposerService's write path) retired 2026-09-03
+  // alongside the composer itself — apps/vantage-worker's
+  // persist-coupon-proposal.ts now writes CouponProposal/CouponProposalLeg
+  // directly via @evcore/db, same unique key and PENDING-only overwrite
+  // guard preserved there. This repository is read/settlement-only now.
 
   // `forDate` equality — the coupon's own generation date, not an overlap
   // window. A prior version matched any batch whose [forDate,
@@ -232,69 +146,10 @@ export class CouponRepository {
     return proposals.map((p) => p.id);
   }
 
-  // Scoped to the profile about to be regenerated (targetOddsMin/Max, same
-  // fields as the upsert unique key) — NOT every pending proposal for the
-  // date. Generating a second profile for the same date (e.g. LONGSHOT after
-  // the default) must never wipe out the first profile's freshly-created
-  // PENDING proposals, which a date-only delete would do.
-  async deletePendingForDate(
-    forDate: Date,
-    targetOddsMin: number,
-    targetOddsMax: number,
-  ): Promise<void> {
-    const pending = await this.prisma.client.couponProposal.findMany({
-      where: {
-        forDate,
-        status: CouponProposalStatus.PENDING,
-        targetOddsMin: new Prisma.Decimal(targetOddsMin),
-        targetOddsMax: new Prisma.Decimal(targetOddsMax),
-      },
-      select: { id: true },
-    });
-    if (pending.length === 0) return;
-    const ids = pending.map((p) => p.id);
-    await this.prisma.client.couponProposalLeg.deleteMany({
-      where: { couponProposalId: { in: ids } },
-    });
-    await this.prisma.client.couponProposal.deleteMany({
-      where: { id: { in: ids } },
-    });
-  }
-
-  /**
-   * Dev/backtest only — wipes EXPIRED proposals (and their legs) in a
-   * `forDate` range, never ACCEPTED/REJECTED/PENDING. Needed because
-   * `upsertProposal` deliberately bails out on any non-PENDING status
-   * (including EXPIRED) to protect human decisions — but that same guard
-   * silently no-ops a backtest re-run against a date range that was already
-   * settled by a PRIOR run: `generateCoupons` would compute fresh legs under
-   * updated code, find an EXPIRED row already sitting at that (forDate,
-   * signalWindowDays, targetOddsMin, targetOddsMax, rank) key, and discard
-   * the fresh computation entirely, leaving the OLD legs in place forever
-   * (found 2026-08-20: several backtest iterations this session re-measured
-   * the exact same frozen dataset from one early run instead of the current
-   * code). Call this BEFORE regenerating a range that was previously
-   * regenerated+settled, so `upsertProposal` sees no `existing` row and
-   * actually persists the new computation.
-   */
-  async deleteExpiredInRange(from: Date, to: Date): Promise<number> {
-    const expired = await this.prisma.client.couponProposal.findMany({
-      where: {
-        forDate: { gte: from, lte: to },
-        status: CouponProposalStatus.EXPIRED,
-      },
-      select: { id: true },
-    });
-    if (expired.length === 0) return 0;
-    const ids = expired.map((p) => p.id);
-    await this.prisma.client.couponProposalLeg.deleteMany({
-      where: { couponProposalId: { in: ids } },
-    });
-    await this.prisma.client.couponProposal.deleteMany({
-      where: { id: { in: ids } },
-    });
-    return ids.length;
-  }
+  // deletePendingForDate/deleteExpiredInRange (upsertProposal's own
+  // pre-regeneration cleanup, and the dev-only regenerate-coupons.ts
+  // backtest script's cleanup) retired alongside upsertProposal and that
+  // script — both were single-caller helpers for the retired write path.
 
   async findByIdWithLegs(id: string): Promise<CouponProposalWithLegs | null> {
     return this.prisma.client.couponProposal.findUnique({

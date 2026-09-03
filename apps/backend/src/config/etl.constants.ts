@@ -246,7 +246,6 @@ export const BULLMQ_QUEUES = {
   // its role is an analytical rebuild post-purge, not an ML concern.
   BETTING_ENGINE_REBUILD: 'betting-engine-rebuild',
   ODDS_HISTORICAL_IMPORT: 'odds-historical-import',
-  AI_ENGINE: 'ai-engine',
   ROLLING_HORIZON: 'rolling-horizon',
   SEASON_ROLLOVER_SYNC: 'season-rollover-sync',
   SUBSCRIPTION_MATCHING: 'subscription-matching',

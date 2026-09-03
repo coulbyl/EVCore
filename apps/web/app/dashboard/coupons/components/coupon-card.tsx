@@ -52,7 +52,6 @@ export function CouponCard({
       jointProbability={coupon.jointProbability}
       signalScore={coupon.signalScore}
       couponClass={couponClassMeta(coupon.couponClass)}
-      isExperimental={coupon.experimental}
       betStatus={displayResult}
       legs={legs}
     />

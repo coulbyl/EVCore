@@ -985,13 +985,83 @@ figée, aucune raison de vivre dans analysis-core). Pas de spec dédiée — mê
 les autres fichiers I/O de cette app. Vérifié : typecheck/lint propres, 124/124
 vantage-worker (inchangé, aucun test nouveau attendu ici).
 
-**Ce qui reste, et qui n'a pas encore été touché délibérément** : le câblage — un
-scheduler indépendant côté `vantage-worker` (même patron que `runSweep`) qui appelle
-`pool-query.ts` → `score-candidates.ts` → `compose-coupon-class.ts` (une fois par classe)
-→ `persist-coupon-proposal.ts`, ET la suppression de `CouponComposerService`/
-`coupon-composer.service.ts` + du chemin `generate-coupons` d'`apps/backend`. Tout le
-code écrit jusqu'ici (Phases A/B/C) est inerte — rien n'est encore appelé depuis un
-scheduler ou un job, donc zéro risque de comportement en prod tant que ce câblage n'existe
-pas. C'est délibérément la dernière étape avant que quoi que ce soit tourne réellement, et
-implique une suppression de code de production (`CouponComposerService`) — à confirmer
-avant d'y toucher.
+## Câblage + suppression de l'ancien composeur (2026-09-03) — LE PIPELINE LLM TOURNE
+
+Après confirmation explicite de l'utilisateur, `CouponComposerService` a été supprimé
+**dans le même passage** que le câblage — pas de shadow mode, pas de fallback, pas de
+délai d'observation, conformément à la décision déjà actée. Deux points tranchés avant
+de coder :
+
+- **Timing** : `VANTAGE_COUPON_CRON`, défaut `30 20 * * *` (20:30 UTC) — 30 minutes après
+  le défaut d'`apps/backend`'s `ETL_BETTING_ENGINE_ANALYSIS_CRON` (20:00 UTC), marge pour
+  que l'analyse du jour finisse d'écrire les `ModelRun`/`ChannelDecision` avant que le
+  pool ne les lise. Pas de couplage runtime entre les deux crons (principe déjà acté) —
+  si `ETL_BETTING_ENGINE_ANALYSIS_CRON` change côté backend, `VANTAGE_COUPON_CRON` doit
+  être mis à jour manuellement côté vantage-worker, documenté dans `config.ts`.
+- **Suppression immédiate**, pas d'observation préalable.
+
+**Câblage écrit** (`apps/vantage-worker/`) :
+- `config.ts` — `couponCron` (env `VANTAGE_COUPON_CRON`).
+- `coupon/run-coupon-generation.ts` — l'orchestration complète : `computeChannelReliability`
+  + `getPoolForRange` (en parallèle) → `scoreCandidates` → une passe
+  `composeCouponClass`/`persistCouponProposal` par classe (`COUPON_CLASSES`). Inclut
+  `resolveGenerationWindow` (fenêtre Ven→Dim / Mar→Jeu élargie, sinon jour unique) — porté
+  depuis `coupon.worker.ts` (backend, supprimé) puisqu'aucune dépendance `date-fns`
+  n'existait déjà côté vantage-worker pour un simple +2 jours UTC. Flags
+  (`includeDraw`/`enforceAvoid`/`enableAvoidFade`/`includeEvaluatedMarkets`) tous à `true`
+  en dur, même choix que `CouponService` retiré (pas de flag dormant).
+- `queue/queue.ts`/`worker.ts`/`main.ts` — nouveau type `CouponJobData`, job
+  `generate-coupons` traité par le worker existant, cron BullMQ repeatable enregistré au
+  démarrage (`{ pattern: config.couponCron }`), même patron que le sweep VANTAGE. Toujours
+  zéro dépendance à la queue `AI_ENGINE` d'`apps/backend`.
+- 3 tests neufs pour `resolveGenerationWindow` (seule logique pure du fichier
+  d'orchestration — vérifié sur un vrai vendredi/mardi/mercredi/dimanche de 2026).
+
+**Suppression côté `apps/backend`** — cascade plus large que prévu, découverte en
+traçant les appelants avant de supprimer : une fois `CouponComposerService` retiré,
+`CouponService.generateCoupons` n'a plus rien à appeler, et une fois CE code retiré,
+`CouponPoolService` (~750 lignes) devient elle-même entièrement inutilisée dans
+`apps/backend` — son seul appelant était `generateCoupons` (`investment.service.ts`
+n'importe que la constante `DRAW_STAKED_LEAGUES`, jamais le service). Fichiers supprimés :
+- `coupon-composer.service.ts` + `.spec.ts`
+- `coupon-pool.service.ts` (aucun spec n'existait)
+- `etl/workers/coupon.worker.ts` + `.spec.ts` (le job `generate-coupons` sur la queue
+  `AI_ENGINE` — son appel à `settleReadyProposals()` était redondant, déjà couvert
+  indépendamment par `pending-bets-settlement.worker.ts`)
+- `scripts/regenerate-coupons.ts` (script de backtest dev dont toute la raison d'être
+  était "régénérer en masse avec le code du composeur actuel" — plus de composeur à
+  régénérer avec)
+
+Édits (retrait de méthodes/deps devenues mortes, pas de fichier entier) :
+- `coupon.service.ts` — retire `generateCoupons`/`generateForClass`, garde `getCoupons`
+  (lecture seule désormais).
+- `coupon.repository.ts` — retire `upsertProposal`/`deletePendingForDate`/
+  `deleteExpiredInRange` (chacune un seul appelant, tous supprimés).
+- `coupon.module.ts` — retire `CouponPoolService`/`CouponComposerService`/
+  `CalibrationService`/`OddsSnapshotLoader` (les deux derniers étaient déjà enregistrés
+  dans leurs vrais modules — `adjustment.module.ts`/`betting-engine.module.ts` — cet
+  enregistrement dupliqué n'existait que pour `CouponPoolService`).
+- `coupon.controller.ts` — retire `POST /coupons/generate`.
+- `betting-engine-analysis.worker.ts` — n'enfile plus `generate-coupons` sur `AI_ENGINE`
+  (l'analyse elle-même est intacte).
+- `betting-engine-rebuild.worker.ts` — retire `queueCouponGeneration` (aurait enfilé dans
+  une queue sans plus aucun consommateur).
+- Queue `AI_ENGINE` retirée entièrement (`etl.constants.ts`/`etl.module.ts`/
+  `etl.service.ts`, y compris de la carte de statut des queues) — plus aucun
+  producteur ni consommateur une fois tout ce qui précède fait.
+
+**Badge "Expérimental" retiré** (demande utilisateur en cours de route, plus besoin) —
+`experimental`/`LEGACY_LONGSHOT_MIN_ODDS` retirés de `coupon.service.ts`/
+`coupon.constants.ts`/`dto/coupon-proposal.dto.ts` côté backend, et de
+`domains/coupon/types/coupon.ts`/`components/coupon-card.tsx` (le composant partagé, prop
+`isExperimental`)/`app/dashboard/coupons/components/coupon-card.tsx` côté frontend.
+
+Vérifié : typecheck/lint propres sur les quatre workspaces touchés, 630/630 backend
+(-25 tests, les deux specs supprimées), 127/127 vantage-worker (+3), 491/491
+analysis-core (inchangé), typecheck+lint propres côté `apps/web` (mêmes 2 warnings
+pré-existants sur `page-shell.tsx`, aucun nouveau).
+
+**Statut** : le générateur de coupon LLM est le seul chemin de composition en production.
+Reste non commencé : le recheck J-J (reparqué le 09-03, deux gaps distincts documentés
+dans `project_no_same_day_reanalysis.md`) et toute observation/mesure du nouveau pipeline
+une fois qu'il aura tourné en conditions réelles.

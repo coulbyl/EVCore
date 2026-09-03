@@ -22,6 +22,7 @@ const baseConfig: Config = {
   groqResearchModel: "groq/compound-mini",
   tavilyApiKey: undefined,
   researchCompetitionCodes: ["PL", "LL"],
+  couponCron: "30 20 * * *",
 };
 
 const baseInput: ResearchInput = {

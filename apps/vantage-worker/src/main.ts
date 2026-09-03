@@ -70,9 +70,24 @@ async function main() {
     },
   );
 
+  // Daily coupon generation (docs/vantage-centric-redesign-2026-09-01.md
+  // §9bis) — its own independent cron, same self-scheduling principle as
+  // the sweep above, no dependency on apps/backend's queue. See
+  // config.ts's couponCron doc comment for how its default relates to
+  // apps/backend's own analysis cron.
+  await queue.add(
+    "generate-coupons",
+    {},
+    {
+      repeat: { pattern: config.couponCron },
+      jobId: "vantage-recurring-coupon-generation",
+    },
+  );
+
   logger.info(
     {
       sweepIntervalMs: config.sweepIntervalMs,
+      couponCron: config.couponCron,
       llmProvider: config.llmProvider,
       model: config.llmModel,
       llmFallbackProviders: llmClients.fallbacks.map((f) => f.provider),

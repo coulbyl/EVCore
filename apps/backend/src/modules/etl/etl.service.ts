@@ -152,8 +152,6 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly mlSchedulerQueue: Queue,
     @InjectQueue(BULLMQ_QUEUES.BETTING_ENGINE_REBUILD)
     private readonly bettingEngineRebuildQueue: Queue<BettingEngineRebuildJobData>,
-    @InjectQueue(BULLMQ_QUEUES.AI_ENGINE)
-    private readonly aiEngineQueue: Queue,
     @InjectQueue(BULLMQ_QUEUES.COACH_SYNC)
     private readonly coachSyncQueue: Queue<CoachSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.SEASON_ROLLOVER_SYNC)
@@ -785,7 +783,6 @@ export class EtlService implements OnApplicationBootstrap {
       [BULLMQ_QUEUES.BETTING_ENGINE]: this.bettingEngineQueue,
       [BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT]: this.oddsHistoricalImportQueue,
       [BULLMQ_QUEUES.ROLLING_HORIZON]: this.rollingHorizonQueue,
-      [BULLMQ_QUEUES.AI_ENGINE]: this.aiEngineQueue,
       [BULLMQ_QUEUES.ML_TRAINING]: this.mlTrainingQueue,
       [BULLMQ_QUEUES.ML_SCHEDULER]: this.mlSchedulerQueue,
       [BULLMQ_QUEUES.BETTING_ENGINE_REBUILD]: this.bettingEngineRebuildQueue,
