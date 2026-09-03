@@ -886,7 +886,61 @@ transforme le pool brut (`pool-query.ts`) en la vue déjà scorée que le LLM ve
 11 tests neufs. Vérifié : typecheck/lint propres, 103/103 vantage-worker (92 + 11, aucune
 régression).
 
-Reste à faire pour la Phase B : le schéma Zod de sortie (sélection par identifiant, jamais
-par valeur), la construction du prompt (les ~30-50 candidats + contexte VANTAGE déjà
-disponible sur ces fixtures — question ouverte depuis §9bis, pas encore tranchée), et
-l'appel `requestVantageCompletion` lui-même, une fois par classe.
+**`COUPON_BOUNDS`/`COUPON_CLASSES` déplacés** (2026-09-03) — vers
+`packages/analysis-core/src/coupon/coupon-classes.ts`, même patron que
+`pool-eligibility.ts` : la sélection LLM (un appel par classe) a besoin des mêmes
+définitions de classe que l'ancien composeur, `apps/backend` ré-exporte. 5 tests neufs.
+
+**Schéma Zod + prompt + appel LLM écrits** (2026-09-03, `apps/vantage-worker/src/coupon/`) —
+`selection-schema.ts` (`buildCouponSelectionSchema(bounds)`, union discriminée
+`compose`/`no_coupon` — même patron que `vantageResponseSchema`), `selection-prompt.ts`
+(prompt système + utilisateur en français, même voix que `vantage/prompt.ts`),
+`generate-coupon-selection.ts` (orchestration : filtre le pool à la bande de cote de la
+classe, réduit via `reduceToLlmPool`, appelle `requestVantageCompletion`, parse/valide,
+résout les index sélectionnés vers les vrais candidats).
+
+Décisions issues de la recherche de ce matin, appliquées concrètement :
+- **Sélection par index numérique, jamais par valeur** — le schéma n'a AUCUN champ
+  probabilité/cote/EV ; le prompt affiche ces chiffres pour le jugement du LLM mais son
+  JSON ne contient qu'un `index` (1-based, position dans la liste numérotée du prompt) et
+  un `reasoning` qualitatif. `resolveSelectedLegs` fait le mapping index→candidat réel,
+  rejette (`invalid_response`) un index hors plage ou dupliqué.
+- **Cardinalité imposée dans le schéma Zod** (`.min(bounds.minLegs).max(couponClass.maxLegs)`),
+  pas laissée à la Phase C — un coût nul qui élimine toute une classe de réponses
+  invalides avant même la validation métier.
+- **Un appel par classe** — `generateCouponSelection` prend une seule `CouponClass`,
+  filtre le pool à sa bande de cote AVANT de le montrer au LLM (le LLM n'a donc pas à
+  vérifier lui-même qu'une jambe respecte la bande).
+- **Pool vide → pas d'appel LLM** (`empty_pool`, même principe que le "no readings" de
+  `analyzeFixture`) — inviter le modèle à juger un vivier trop petit pour même atteindre
+  `minLegs` n'a aucun sens.
+
+**Question du contexte VANTAGE (§9bis) tranchée le 2026-09-03 : NON.** `selection-prompt.ts`
+ne montrera jamais le verdict VANTAGE déjà calculé sur une fixture du pool. Trois raisons :
+(1) ce serait un LLM lisant la sortie d'un autre LLM comme preuve — un biais ou une
+hallucination de VANTAGE se propagerait en se faisant passer pour une corroboration
+indépendante, alors que ce n'est que le même raisonnement sur les mêmes canaux en amont ;
+(2) précédent direct dans ce repo, deux fois : `shadow_ml_by_channel` retiré du contexte
+VANTAGE car il dégradait DOMINANT quand suivi (ratio 0.43 vs 1.13), et `shadow_predictions`
+identifié comme cause mécanique du surjeu de DRAW (74% des picks DRAW le citent) — les deux
+fois, un signal donné "en contexte informatif" a fini sur-pondéré, jamais traité
+proportionnellement à sa fiabilité réelle ; (3) VANTAGE est précisément mal calibré sur
+`ONE_X_TWO/DRAW` (ratio 0.77, 35% de son volume de "play") — l'endroit où le citer serait le
+plus tentant est celui où ça pousserait vers une zone dégradée. Si l'idée revient, la
+traiter comme `shadow_predictions`/`shadow_ml` : ajout isolé, mesuré en isolation avant
+d'être suivi en prod, jamais ajouté par défaut.
+
+18 tests neufs (11 `score-candidates` + 7 `generate-coupon-selection`, mock de
+`requestVantageCompletion` même patron que `analyze-fixture.spec.ts`). Vérifié :
+typecheck/lint propres, 110/110 vantage-worker, 491/491 analysis-core, 655/655 backend.
+
+**Ce qui reste pour boucler la Phase B** : rien côté schéma/prompt/appel — la boucle
+LLM elle-même est complète et testée. Ce qui reste pour que ça tourne en prod est la
+Phase C (docs/vantage-centric-redesign-2026-09-01.md §9 point 4) : revalider
+`SelectedLeg[]` avec les mêmes garde-fous (`guardrails.ts`) + l'anti-corrélation, calculer
+`combinedOdds`/`jointProbability`/`couponEV` déterministes, rejeter/relancer sur
+violation, puis persister `CouponProposal`/`CouponProposalLeg` directement via
+`@evcore/db` (§9bis, décision déjà actée) — et enfin le câblage (scheduler indépendant
+côté `vantage-worker`, suppression de `CouponComposerService`).
+
+Pas encore committé — l'utilisateur relit avant.

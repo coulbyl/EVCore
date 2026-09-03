@@ -26,9 +26,15 @@
 
 import { StrategyChannel } from '@evcore/db';
 import {
+  COUPON_BOUNDS,
+  COUPON_CLASSES,
   DRAW_STAKED_LEAGUES,
   POOL_ELIGIBLE_CHANNELS,
   POOL_EXCLUDED_CHANNELS,
+  classForTargetOddsMin,
+  type CouponBounds,
+  type CouponClass,
+  type CouponClassName,
 } from '@evcore/analysis-core';
 
 // Any channel can label a coupon leg: the pool admits every non-meta,
@@ -249,167 +255,23 @@ export const ANCHOR_MIN_PROBABILITY = 0.7;
 // selection logic, why CORRECT_SCORE stays out) preserved in that file's
 // doc comment.
 
-// ─────────────────────────────────────────────
-// Bornes de composition (profils supprimés — 2026-08-22)
-// ─────────────────────────────────────────────
-
-/**
- * Bornes de composition partagées par toutes les classes de coupon.
- * Remplace les cinq profils (SAFE/BALANCED/AGGRESSIVE/LONGSHOT_*) supprimés le
- * 2026-08-22 : trois d'entre eux ne tournaient jamais en production, LONGSHOT
- * tournait contre son propre commentaire, et leurs bornes se sur-déterminaient
- * (`couponEV = P × cote − 1` — fixer cote ET proba jointe ET EV décrit le même
- * plan à deux dimensions, sans qu'on sache laquelle mordait).
- *
- * Ce qui varie d'une classe à l'autre tient désormais en UN paramètre, la
- * cible de cote combinée (voir COUPON_CLASSES). Tout le reste est ici.
- */
-export const COUPON_BOUNDS = {
-  minLegs: 2,
-  /**
-   * Ramené de 5 à 3 le 2026-08-22.
-   *
-   * Le composeur remplit gloutonnement jusqu'à `maxLegs`, et chaque jambe
-   * ajoutée fait mécaniquement BAISSER la probabilité que le coupon tombe.
-   * À 5, le coupon de rang 1 — celui présenté comme le meilleur — était celui
-   * qui tombait le moins souvent :
-   *
-   *   rang 1 : 3.62 jambes · cote 3.16 · tombe 39.0%
-   *   rang 3 : 2.44 jambes · cote 2.67 · tombe 43.9%
-   *   rang 5 : 2.03 jambes · cote 1.71 · tombe 63.3%
-   *
-   * « Au maximum 5 jambes » ne disait pas QUAND s'arrêter et le glouton
-   * répondait « jamais ». La règle d'arrêt est maintenant explicite : on
-   * s'arrête dès que la cible de cote de la classe est atteinte.
-   */
-  maxLegs: 3,
-  minCombinedOdds: 1.0,
-  /** Garde-fou produit, pas un critère de sélection. */
-  maxCombinedOdds: 20.0,
-} as const;
-
-/**
- * Classes de coupon — un seul paramètre chacune : la cible de cote combinée.
- *
- * Le composeur ajoute des jambes par probabilité décroissante et S'ARRÊTE dès
- * que `targetCombinedOdds` est atteinte. C'est une règle d'ARRÊT, jamais un
- * filtre : un plancher qui rejette après coup coupe la journée entière, parce
- * que le glouton produit d'abord le coupon de cote la plus COURTE (bug commis
- * le 2026-08-22 avec `minCouponEV`, 3 coupons publiés sur 2 jours au lieu de
- * 136 sur 73).
- *
- * Prix mesuré de la cote, simulé sur ~1 000 jours (n≈2 600 coupons par
- * classe, SE ~3 points) :
- *
- *   cible   cote obtenue   jambes   hit     ROI
- *   2.0         2.86        2.20   0.346   -5.36%
- *   2.5         3.40        2.44   0.279   -8.86%
- *   3.0         4.08        2.64   0.234  -10.03%
- *   3.5         4.78        2.76   0.196  -12.15%
- *
- * Le ROI se dégrade de façon monotone quand la cible monte : ~1 point de ROI
- * pour 0.3 de cote combinée. Le mécanisme est mesuré — viser plus haut force
- * des jambes plus longues, et la calibration des jambes se dégrade avec leur
- * cote (ratio 1.054 entre 1.20 et 1.35, 0.928 au-delà de 1.60). La classe
- * BOLD n'est donc pas « plus risquée à espérance égale » : elle est
- * réellement moins bonne, et l'affichage doit le dire.
- *
- * `targetOddsMin`/`targetOddsMax` sont ce qui est écrit dans les colonnes du
- * même nom, composantes de la clé unique de `coupon_proposal` — c'est ce qui
- * permet aux trois classes de coexister sur une même date sans migration.
- */
-export type CouponClassName = 'SAFE' | 'BALANCED' | 'BOLD';
-
-export type CouponClass = {
-  name: CouponClassName;
-  /** Bande de cote des jambes admises — bornes disjointes entre classes. */
-  minLegOdds: number;
-  maxLegOdds: number;
-  maxLegs: number;
-  /** Cote combinée à partir de laquelle on cesse d'ajouter des jambes. */
-  targetCombinedOdds: number;
-  /** Écrits tels quels dans `coupon_proposal` — clé unique, pas de migration. */
-  targetOddsMin: number;
-  targetOddsMax: number;
+// COUPON_BOUNDS/COUPON_CLASSES/CouponClass/CouponClassName/
+// classForTargetOddsMin moved to
+// packages/analysis-core/src/coupon/coupon-classes.ts 2026-09-03 —
+// apps/vantage-worker's Phase B LLM selection (one call per class) needs the
+// exact same class definitions apps/backend's retired composer used (see
+// docs/vantage-centric-redesign-2026-09-01.md §9bis). Full history (why the
+// bounds/classes look the way they do, the measured ROI-by-target-odds
+// table) preserved in that file's doc comment. Re-exported here so existing
+// imports against './coupon.constants' keep resolving unchanged.
+export {
+  COUPON_BOUNDS,
+  COUPON_CLASSES,
+  classForTargetOddsMin,
+  type CouponBounds,
+  type CouponClass,
+  type CouponClassName,
 };
-
-/**
- * Les trois classes de coupon.
- *
- * Elles se différencient par la BANDE DE COTE DES JAMBES, pas par une cible de
- * cote combinée. Une première version ne variait que la cible (2.0 / 2.5 /
- * 3.0) : les trois classes puisaient dans le même vivier, atteignaient leur
- * cible avec les mêmes jambes, et livraient le même produit — mesuré en
- * production le 2026-08-22, cotes 2.54 / 2.80 / 2.85 et ROI −3.2% / −3.8% /
- * −3.3%. Avec `maxLegs = 3` et des jambes autour de 1.44, la plage atteignable
- * va de 1.44² = 2.07 à 1.44³ = 2.99 : les trois cibles tombaient dedans.
- *
- * Découper par bande de cote de jambe règle les deux problèmes d'un coup :
- * les produits deviennent réellement distincts, et les classes ne se disputent
- * plus les mêmes jambes — les bandes étant disjointes, un même pick ne peut
- * jamais apparaître dans deux classes.
- *
- * Simulé sur ~1 000 jours :
- *
- *   classe    jambes     jours  coupons   cote   legs   hit      ROI
- *   SAFE      1.20-1.60   668    1 392    2.00   2.00  0.479  -6.16% ± 2.67
- *   BALANCED  1.60-2.30   939    2 213    5.51   2.83  0.173  -8.84% ± 4.37
- *   BOLD      2.30+       807    1 763   17.67   2.71  0.074 +11.34% ± 10.35
- *
- * ⚠️ Les bandes sont choisies sur des critères PRODUIT (couverture en jours,
- * séparation des cotes, SAFE à exactement 2 jambes), PAS sur ces ROI. Un
- * découpage alternatif (1.20-1.50 / 1.50-2.00 / 2.00+) inverse le classement
- * — SAFE -3.74%, BOLD -7.59% — et les écarts entre les deux découpages sont
- * tous dans le bruit. Le +11.34% de BOLD porte une SE de 10.35 (t = 1.1) : ce
- * n'est pas un résultat, c'est une cellule parmi six testées.
- *
- * Ce qui EST robuste d'un découpage à l'autre, c'est la différenciation :
- * cote 2.0-2.2 / 4.5-5.5 / 11-17.7 et taux de réussite 45-48% / 17-20% /
- * 7-9%. C'est ça qu'on livre ; le ROI reste indistinguable de zéro partout.
- */
-export const COUPON_CLASSES: readonly CouponClass[] = [
-  {
-    name: 'SAFE',
-    minLegOdds: 1.2,
-    maxLegOdds: 1.6,
-    // 3 et non 2 : à deux jambes bornées à 1.60, la cote combinée plafonne à
-    // 2.56 et TOMBE à 1.44 dès que les deux meilleures jambes sont courtes.
-    // Mesuré le 2026-08-22 avec maxLegs=2 : 60% des coupons de cette classe
-    // sortaient sous 2.0. La troisième jambe est ce qui rend la cible
-    // atteignable, pas un choix esthétique.
-    maxLegs: 3,
-    targetCombinedOdds: 2.0,
-    targetOddsMin: 1.0,
-    targetOddsMax: 2.99,
-  },
-  {
-    name: 'BALANCED',
-    minLegOdds: 1.6,
-    maxLegOdds: 2.3,
-    maxLegs: 3,
-    targetCombinedOdds: 4.0,
-    targetOddsMin: 3.0,
-    targetOddsMax: 9.99,
-  },
-  {
-    name: 'BOLD',
-    minLegOdds: 2.3,
-    maxLegOdds: 99.0,
-    maxLegs: 3,
-    targetCombinedOdds: 10.0,
-    targetOddsMin: 10.0,
-    targetOddsMax: 999.0,
-  },
-] as const;
-
-/** Retrouve la classe d'une proposition persistée depuis son `targetOddsMin`. */
-export function classForTargetOddsMin(
-  targetOddsMin: number,
-): CouponClassName | null {
-  return (
-    COUPON_CLASSES.find((c) => c.targetOddsMin === targetOddsMin)?.name ?? null
-  );
-}
 
 /**
  * Il n'y a volontairement NI plancher de probabilité jointe NI plancher d'EV
@@ -434,8 +296,6 @@ export function classForTargetOddsMin(
  * mesurée anti-prédictive.
  */
 
-/** Forme des bornes — volontairement large (pas `typeof COUPON_BOUNDS`, dont
- * les types littéraux issus de `as const` interdiraient toute autre valeur). */
 /**
  * Borne basse de cote combinée des anciens profils LONGSHOT. Ils n'existent
  * plus, mais les `CouponProposal` générés avant le 2026-08-22 portent encore
@@ -443,10 +303,3 @@ export function classForTargetOddsMin(
  * "Expérimental" dans l'historique.
  */
 export const LEGACY_LONGSHOT_MIN_ODDS = 50.0;
-
-export type CouponBounds = {
-  minLegs: number;
-  maxLegs: number;
-  minCombinedOdds: number;
-  maxCombinedOdds: number;
-};
