@@ -241,7 +241,8 @@ un badge de calibration déjà calculé ailleurs. Rien à différer là-dessus.
 
 Ce qui doit attendre, c'est une **couche LLM personnalisée construite par-dessus** (une
 expérience VANTAGE qui commenterait/adapterait son discours selon les canaux suivis de
-chaque utilisateur — proche du "Cas D" et du périmètre d'Eva, §5.3). Ce cas est le seul du
+chaque utilisateur — le "Cas D" du chiffrage §6, désormais distinct d'Eva (§5.3 résolu :
+Eva reste un simple outil d'export, pas cette couche personnalisée). Ce cas est le seul du
 chiffrage §6 dont le **coût scale avec le nombre d'utilisateurs actifs** (de $13/mois à
 $129/mois selon l'adoption), sans qu'aucun gate de paiement n'existe aujourd'hui pour le
 financer — §5.5 acte que "tout reste gratuit pour l'instant". Construire cette
@@ -389,11 +390,24 @@ déterministe après génération (§4.1). **Mise à jour 2026-09-02** : le bout
 VANTAGE" et l'écran de révision (§2 écrans 5-6) passent en backlog (§0) — non implémentés
 cette semaine ; la décision de principe ci-dessus reste valable, seul le calendrier change.
 
-### 5.3 Périmètre d'Eva
+### 5.3 Périmètre d'Eva — résolu
 
-Assistant Groq single-shot existant (quota 50/j) — recoupement fonctionnel avec la
-personnalisation VANTAGE encore à clarifier. Traité comme un chantier séparé dans le
-chiffrage §6 par prudence.
+Assistant Groq single-shot existant (quota 50/j), implémenté aujourd'hui côté backend comme
+le module `analysis-sheet` (`apps/backend/src/modules/analysis-sheet/`) — pas de chat ni de
+présence en prod sur `main` à ce jour (aucune UI Eva déployée, seule une mention
+incidentelle dans `onboarding-tour-context.tsx`).
+
+**Décidé** (déjà tranché avant cette entrée, confirmé le 2026-09-03) : Eva **ne devient pas**
+une expérience personnalisée ou un chat élargi — elle reste strictement un **outil
+d'export de la fiche EVCore** (l'"export 'fiche EVCore'" que `COUPON_ANALYSIS_TEMPLATE.md`
+identifie déjà comme prérequis outillage à l'Étape 0 : avoir `evaluatedPicks` complet par
+fixture sans dépendre d'un accès DB live à chaque analyse). Ça règle du même coup le
+recoupement fonctionnel avec la personnalisation VANTAGE qui restait ouvert : il n'y a plus
+de recoupement puisqu'Eva n'est plus une expérience conversationnelle/personnalisée — elle
+nourrit en amont le pool déterministe du générateur de coupon (§9 point 1), pas une couche
+LLM séparée. Retiré du chantier "chantier séparé" du chiffrage §6 : ce n'est plus un
+chantier de personnalisation, juste un outil d'extraction, effort largement inférieur à ce
+qui était chiffré pour "Grande expérience VANTAGE personnalisée" (Cas D, §6.1).
 
 ### 5.4 Historique vérifiable — ROI vs calibration (nouveau, trouvé lors de l'audit du 01-09)
 
@@ -474,15 +488,15 @@ contractuel) :
 | **A. Verdict par fixture** (Arbitrage, inchangé) | 300 | ~5 000 | ~300 | $0,59 | **~$18** |
 | **B. Génération de 3 coupons/jour** (pool pré-filtré, §5.2 tranché) | 3 | ~15 000 | ~750 | $0,017 | **~$0,5** |
 | **C. Révision de coupon utilisateur** (déclenchée depuis le drawer, écran 5-6) | 50 / 300 / 1 500 (scénarios) | ~6 000 | ~500 | $0,0025/appel | **~$3,75 / $22,5 / $112,5** |
-| **D. "Grande expérience" VANTAGE personnalisée** (si distincte d'Eva, §5.3) | 300 / 3 000 (100 ou 1 000 users actifs × 3/j) | ~3 000 | ~500 | $0,0014/appel | **~$13 / $129** |
+| **D. "Grande expérience" VANTAGE personnalisée** (distincte d'Eva — §5.3 résolu, Eva reste un outil d'export ; D différé post-paiement, §2sexies) | 300 / 3 000 (100 ou 1 000 users actifs × 3/j) | ~3 000 | ~500 | $0,0014/appel | **~$13 / $129** |
 
 ### 6.2 Total indicatif mensuel
 
 | Scénario | A | B | C | D | **Total** |
 |---|---|---|---|---|---|
-| **Lancement** (adoption faible) | $18 | $0,5 | $3,75 | $13 | **~$35/mois** |
-| **Traction modérée** | $18 | $0,5 | $22,5 | — (fusionné à Eva) | **~$41/mois** |
-| **Adoption large** | $18 | $0,5 | $112,5 | $129 | **~$260/mois** |
+| **Lancement** (adoption faible) | $18 | $0,5 | $3,75 | $0 (différé, §2sexies) | **~$22/mois** |
+| **Traction modérée** | $18 | $0,5 | $22,5 | $0 (différé, §2sexies) | **~$41/mois** |
+| **Adoption large** | $18 | $0,5 | $112,5 | $129 (une fois le gate de paiement en place) | **~$260/mois** |
 
 **Lecture** : le coût fixe (verdicts + génération de coupon) reste marginal (<$20/mois)
 quel que soit le volume de matchs couverts. Le vrai poste variable dépend entièrement de
