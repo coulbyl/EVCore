@@ -1,20 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import Decimal from 'decimal.js';
 import {
-  VALUE_MIN_EDGE,
-  applyReliability,
-  type ChannelReliability,
-  type ChannelReliabilityMap,
+  calibrateLegProbability,
+  clearsMaxLegEdge,
+  clearsMinLegOdds,
+  clearsTeamTotalMaxOdds,
+  clearsValueEdgeFloor,
+  createAntiCorrelationState,
+  legProbability,
+  recordAntiCorrelation,
+  violatesAntiCorrelation,
 } from '@evcore/analysis-core';
 import { productDecimal } from '@utils/decimal.utils';
 import { calculateEV } from '@modules/betting-engine/betting-engine.utils';
-import { getValueMinEdge } from '@modules/betting-engine/ev.constants';
 import {
   COUPON_PARAMS,
   COUPON_BOUNDS,
-  MAX_LEG_EDGE,
-  MIN_LEG_ODDS,
-  TEAM_TOTAL_MAX_ODDS,
   type CouponBounds,
 } from './coupon.constants';
 import type { LegCalibration, ScoredPick } from './coupon-pool.service';
@@ -34,103 +34,6 @@ export type ComposedCoupon = {
   signalScore: number;
   reasoning: Record<string, unknown>;
 };
-
-// jointProbability was previously the product of canal-level calibrated hit
-// rates only — every coupon with the same canal mix stored the identical value
-// (audit 2026-06-11: six pending coupons all at 0.4743 = SAFE rate × BTTS rate),
-// making the viability filter and the jointProbability sort degenerate among
-// same-canal combos. Blending each pick's model probability with its canal
-// calibrated rate keeps the calibration tempering (raw model probabilities are
-// over-confident) while restoring pick-specific joint probabilities.
-export const LEG_PROBABILITY_MODEL_WEIGHT = 0.5;
-
-export function calibratedLegProbability(leg: {
-  probability: number;
-  calibratedHitRate: number;
-}): number {
-  return (
-    leg.probability * LEG_PROBABILITY_MODEL_WEIGHT +
-    leg.calibratedHitRate * (1 - LEG_PROBABILITY_MODEL_WEIGHT)
-  );
-}
-
-// Per-leg probability calibration — applies the leg's OWN channel reliability
-// curve (Platt on the logit scale, see @evcore/analysis-core's channel-reliability.ts).
-//
-// Replaces a per-market mean-error shift (`marketCalibration[market].meanError`,
-// subtracted from the raw probability) that was wrong in two ways, both
-// measured 2026-08-22:
-//
-//   1. Wrong SHAPE. The reliability curve is flatter than the diagonal, not
-//      offset from it: announced 0.46 -> 0.81 while realised moves only
-//      0.46 -> 0.59. A constant shift under-corrects the top of the range and
-//      over-corrects the bottom, whatever value it takes.
-//   2. Wrong GROUPING. The bias is channel-specific (realised/announced from
-//      1.016 for DRAW to 0.623 for RESULT_BTTS), and a market-pooled figure
-//      averages channels that need opposite corrections. Grouping by channel
-//      also subsumes the market grouping in practice, since a channel owns one
-//      or two markets.
-//
-// A channel with little settled history is shrunk toward the pooled curve in
-// proportion to its sample size rather than dropped to a fallback, so there is
-// no cliff and no "uncalibrated" branch left (see shrinkTowardPooled).
-export function calibrateLegProbability(
-  leg: { probability: number; canal: string },
-  window: {
-    channelReliability: ChannelReliabilityMap;
-    pooledReliability: ChannelReliability;
-  },
-): number {
-  const reliability =
-    window.channelReliability[leg.canal] ?? window.pooledReliability;
-  const calibrated = applyReliability(leg.probability, reliability);
-  return Math.min(
-    COUPON_PARAMS.capMax,
-    Math.max(COUPON_PARAMS.capMin, calibrated),
-  );
-}
-
-// Single source of truth for a leg's probability inside a coupon: the calibrated
-// value when scoring has run, otherwise the legacy blend (keeps `compose()`
-// correct even when called without a prior `scorePicks`, e.g. in unit tests).
-export function legProbability(leg: {
-  calibratedProbability?: number | null;
-  probability: number;
-  calibratedHitRate: number;
-}): number {
-  return leg.calibratedProbability ?? calibratedLegProbability(leg);
-}
-
-// Depth tie-break — NOT a probability/EV weight (db:backtest:coupon-quality-
-// signals still shows train n=0 on these three signals as of 2026-08-15, so
-// they can't be calibrated into signalScore yet). Used only to order
-// otherwise-similar picks — same "pure ordering policy, no backtest needed"
-// category as comparePicksBySignalThenProbability itself. Higher is better:
-// offensiveBalance BALANCED > unknown (null) > ASYMMETRIC > STRONGLY_ASYMMETRIC;
-// shadowConflict false (no conflict) > unknown (null) > true; more prior
-// analyses of this exact (market, pick) preferred, capped so it can't dominate
-// the other two components.
-export function depthRank(pick: {
-  offensiveBalance: 'BALANCED' | 'ASYMMETRIC' | 'STRONGLY_ASYMMETRIC' | null;
-  shadowConflict: boolean | null;
-  priorAnalysisCount: number;
-}): number {
-  const offensiveBalanceRank =
-    pick.offensiveBalance === 'BALANCED'
-      ? 2
-      : pick.offensiveBalance === null
-        ? 1
-        : pick.offensiveBalance === 'ASYMMETRIC'
-          ? 0
-          : -1; // STRONGLY_ASYMMETRIC
-  const shadowConflictRank =
-    pick.shadowConflict === false ? 1 : pick.shadowConflict === null ? 0 : -1;
-  return (
-    offensiveBalanceRank * 4 +
-    shadowConflictRank * 2 +
-    Math.min(pick.priorAnalysisCount, 5) * 0.1
-  );
-}
 
 // Candidate pool: the day's legs sorted by their own calibrated probability,
 // cut to `poolSize`.
@@ -154,162 +57,6 @@ function buildCandidatePool(
   return [...pricedPicks]
     .sort((a, b) => legProbability(b) - legProbability(a))
     .slice(0, poolSize);
-}
-
-// VALUE-only edge floor, mirroring the standalone VALUE channel's own gate
-// (`selectBestViablePick` in analysis-core: probability − 1/odds ≥
-// getValueMinEdge(league) ?? VALUE_MIN_EDGE=0.10). Before this, a VALUE leg
-// that would be REJECTED as a standalone VALUE pick could still ride into a
-// coupon whenever a partner leg's EV compensated for it at the combined-coupon
-// level — audit 2026-08-01 found COUPON_ALL subscriptions at 0/19 settled
-// wins. SAFE/BTTS/... legs are unaffected: VALUE_MIN_EDGE is deliberately
-// VALUE-only, same as in the channel strategy.
-// ⚠️ Inatteignable en production depuis le 2026-08-22, gardé pour la valeur
-// documentaire du constat : (1) VALUE ne fait plus partie du pool
-// (POOL_EXCLUDED_CHANNELS — c'est un filtre Phase 2, 89.5% de ses sélections
-// dupliquent un pick Phase 1) ; (2) même s'il y revenait, exiger `edge >=
-// VALUE_MIN_EDGE = 0.10` est le complémentaire exact de MAX_LEG_EDGE <= 0.10,
-// donc aucune jambe VALUE ne peut satisfaire les deux.
-//
-// Ce n'est pas une coïncidence de seuils, c'est le résultat central de la
-// mesure : la région que VALUE sélectionne (forte divergence modèle↔marché)
-// est précisément celle où le modèle réalise 0.694 de ce qu'il annonce, contre
-// 0.954 en dessous. La stratégie VALUE cherche la value là où le modèle n'a
-// pas d'information.
-export function clearsValueEdgeFloor(
-  leg: {
-    canal: string;
-    calibratedProbability: number | null;
-    oddsSnapshot: number | null;
-    featureSnapshot: Record<string, unknown>;
-  },
-  getMinEdge: (
-    competitionCode: string | null,
-  ) => Decimal | undefined = getValueMinEdge,
-): boolean {
-  if (leg.canal !== 'VALUE') return true;
-  if (leg.calibratedProbability === null || leg.oddsSnapshot === null) {
-    return false;
-  }
-  const competitionCode =
-    (leg.featureSnapshot['competitionCode'] as string | undefined) ?? null;
-  const minEdge = getMinEdge(competitionCode) ?? VALUE_MIN_EDGE;
-  const edge = new Decimal(leg.calibratedProbability).minus(
-    new Decimal(1).div(leg.oddsSnapshot),
-  );
-  return edge.greaterThanOrEqualTo(minEdge);
-}
-
-// Rejects a leg whose model↔market divergence is beyond the range where the
-// model has been measured reliable — see MAX_LEG_EDGE (coupon.constants.ts)
-// for the reliability-by-edge table and for why this replaces correcting the
-// probability. Uses the raw implied probability `1/odds`, not the
-// overround-free `pMarketFair`, because that is what the measurement used.
-//
-// Distinct from clearsValueEdgeFloor, which is a MINIMUM edge for VALUE legs
-// only: that one demands the model disagree with the market by at least
-// VALUE_MIN_EDGE=0.10, this one rejects it for disagreeing by more. The two
-// bracket a band — and the fact that they meet at the same 0.10 is exactly
-// the finding: the region VALUE selects for is the region the model gets
-// wrong (ratio 0.694 above 0.10, 0.954 below).
-// Plancher de cote — voir MIN_LEG_ODDS. Contrainte produit (un coupon bâti sur
-// des jambes à 1.04 n'en est pas un), sans coût mesuré en ROI.
-export function clearsMinLegOdds(
-  leg: { oddsSnapshot: number | null },
-  band: { minLegOdds: number; maxLegOdds: number } = {
-    minLegOdds: MIN_LEG_ODDS,
-    maxLegOdds: Number.POSITIVE_INFINITY,
-  },
-): boolean {
-  if (leg.oddsSnapshot === null) return false;
-  return (
-    leg.oddsSnapshot >= band.minLegOdds && leg.oddsSnapshot < band.maxLegOdds
-  );
-}
-
-// Plafond de cote — TEAM_TOTAL uniquement, voir TEAM_TOTAL_MAX_ODDS pour la
-// mesure. Contrairement à clearsValueEdgeFloor (canal entièrement retiré du
-// pool), TEAM_TOTAL reste admis : il est bien calibré sous ce plafond, mal
-// calibré au-dessus — une borne de cote, pas une exclusion de canal.
-export function clearsTeamTotalMaxOdds(leg: {
-  canal: string;
-  oddsSnapshot: number | null;
-}): boolean {
-  if (leg.canal !== 'TEAM_TOTAL') return true;
-  if (leg.oddsSnapshot === null) return false;
-  return leg.oddsSnapshot < TEAM_TOTAL_MAX_ODDS;
-}
-
-export function clearsMaxLegEdge(leg: {
-  calibratedProbability: number | null;
-  probability: number;
-  calibratedHitRate: number;
-  oddsSnapshot: number | null;
-  referenceOdds?: number | null;
-}): boolean {
-  // Mesuré sur la cote de RÉFÉRENCE (maison la mieux classée), jamais sur le
-  // prix de mise. Depuis qu'on mise au meilleur prix toutes maisons
-  // confondues (findBestPricesBatch), utiliser `oddsSnapshot` ferait monter
-  // tous les edges d'environ 2% et relâcherait ce plafond sans décision — on
-  // relâcherait un garde-fou en croyant améliorer un prix.
-  const reference = leg.referenceOdds ?? leg.oddsSnapshot;
-  if (reference === null || reference <= 1) return false;
-  return legProbability(leg) - 1 / reference <= MAX_LEG_EDGE;
-}
-
-// Shared anti-correlation bookkeeping — used identically by composeExhaustive
-// (DFS) and composeGreedy (longshot) so the two strategies can never drift
-// apart on what counts as "too correlated" (1/fixture, 1/canal+market,
-// 2/competition, and an optional per-day cap for multi-day pools).
-type AntiCorrelationState = {
-  canalMarketCounts: Map<string, number>;
-  compCounts: Map<string, number>;
-  dayCounts: Map<string, number>;
-};
-
-function createAntiCorrelationState(legs: ScoredPick[]): AntiCorrelationState {
-  const state: AntiCorrelationState = {
-    canalMarketCounts: new Map(),
-    compCounts: new Map(),
-    dayCounts: new Map(),
-  };
-  for (const leg of legs) recordAntiCorrelation(state, leg);
-  return state;
-}
-
-function recordAntiCorrelation(
-  state: AntiCorrelationState,
-  leg: ScoredPick,
-): void {
-  const cmKey = `${leg.canal}:${leg.market}`;
-  state.canalMarketCounts.set(
-    cmKey,
-    (state.canalMarketCounts.get(cmKey) ?? 0) + 1,
-  );
-  state.compCounts.set(
-    leg.competition,
-    (state.compCounts.get(leg.competition) ?? 0) + 1,
-  );
-  state.dayCounts.set(
-    leg.dayBucket,
-    (state.dayCounts.get(leg.dayBucket) ?? 0) + 1,
-  );
-}
-
-function violatesAntiCorrelation(
-  current: ScoredPick[],
-  next: ScoredPick,
-  ctx: { state: AntiCorrelationState; bounds: CouponBounds },
-): boolean {
-  const { state } = ctx;
-  if (current.some((p) => p.fixtureId === next.fixtureId)) return true;
-
-  const cmKey = `${next.canal}:${next.market}`;
-  if ((state.canalMarketCounts.get(cmKey) ?? 0) >= 1) return true;
-
-  if ((state.compCounts.get(next.competition) ?? 0) >= 2) return true;
-
-  return false;
 }
 
 @Injectable()
@@ -502,7 +249,7 @@ export class CouponComposerService {
         const candidate = pool[i];
         if (legs.length >= bounds.maxLegs) break;
         if (usedFixtures.has(candidate.fixtureId)) continue;
-        if (violatesAntiCorrelation(legs, candidate, { state, bounds })) {
+        if (violatesAntiCorrelation(legs, candidate, { state })) {
           continue;
         }
         const nextOdds = combinedOdds * (candidate.oddsSnapshot as number);
@@ -601,27 +348,4 @@ export class CouponComposerService {
       reasoning,
     };
   }
-}
-
-// Classement value-driven (DESIGN.md §5) : EV de coupon d'abord, proba jointe
-// en tie-break, puis le coupon le plus court à EV égale.
-//
-// Un tri signal-first (compareCouponsBySignalThenEV, canal×jour×ligue avant
-// couponEV) a été essayé le 2026-08-20 : signalScore est bien plus prédictif
-// que couponEV/jointProbability sur toute sa plage, mais reclasser sur ce
-// critère n'a PAS amélioré le ROI mesuré une fois réellement backtesté (après
-// correction d'un bug de non-régénération, voir deleteExpiredInRange,
-// coupon.repository.ts) — combiné aux autres changements du jour, le ROI est
-// tombé à -13.49% (n=106) contre +4.77% (n=478) sans lui. Revenu à l'EV-first
-// historique en attendant une piste qui améliore vraiment le ROI mesuré, pas
-// seulement la calibration d'un signal pris isolément.
-export function compareCouponsByEV(
-  a: ComposedCoupon,
-  b: ComposedCoupon,
-): number {
-  if (b.couponEV !== a.couponEV) return b.couponEV - a.couponEV;
-  if (b.jointProbability !== a.jointProbability) {
-    return b.jointProbability - a.jointProbability;
-  }
-  return a.legs.length - b.legs.length;
 }

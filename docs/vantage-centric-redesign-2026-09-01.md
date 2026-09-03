@@ -709,3 +709,46 @@ répertoire) :
   fonctions dès maintenant. 420/420 tests analysis-core (garde-fou d'architecture inclus),
   682/682 backend, 92/92 vantage-worker, build `analysis-core` propre, typecheck/lint
   propres partout. Pas encore committé.
+
+**Troisième et dernière pièce, `guardrails.ts`** — les prédicats de garde-fou de
+`coupon-composer.service.ts` déplacés à leur tour, couvrant maintenant aussi le point 4 du
+§9 (validation post-génération déterministe) :
+
+- `calibratedLegProbability`/`calibrateLegProbability`/`legProbability`/`depthRank` — le
+  calibrage de proba par jambe et le tie-break de profondeur.
+- `clearsValueEdgeFloor`/`clearsMinLegOdds`/`clearsTeamTotalMaxOdds`/`clearsMaxLegEdge` — les
+  quatre gates d'admission d'une jambe (plancher VALUE, plancher/plafond de cote,
+  plafond de divergence modèle↔marché).
+- `createAntiCorrelationState`/`recordAntiCorrelation`/`violatesAntiCorrelation` — l'anti-
+  corrélation intra-coupon (1/fixture, 1/canal+marché, 2/compétition). Simplifié au passage :
+  le paramètre `bounds` que `violatesAntiCorrelation` acceptait n'était en réalité jamais lu
+  (seul `state` l'était) — retiré du type de contexte plutôt que copié tel quel.
+- `compareCouponsByEV` — trouvé mort (exporté mais jamais appelé nulle part, y compris avant
+  cette extraction) ; déplacé quand même pour que `packages/analysis-core` reste la seule
+  source si un futur classement en a besoin.
+- Constantes qui gouvernent ces prédicats (`MIN_LEG_ODDS`, `TEAM_TOTAL_MAX_ODDS`,
+  `MAX_LEG_EDGE`, les bornes de `COUPON_PARAMS.capMin/capMax`, `getValueMinEdge`/
+  `LEAGUE_VALUE_MIN_EDGE_MAP`) dupliquées en copies locales privées dans `guardrails.ts` —
+  les originaux restent dans `apps/backend` (`coupon.constants.ts`, `ev.constants.ts`) parce
+  qu'ils ont d'autres lecteurs backend (`odds-snapshot.loader.ts`, `coupon.service.ts`,
+  `investment.constants.ts`) ; pas de suppression, juste plus une source unique des deux
+  côtés du package boundary.
+- `coupon-composer.service.ts` réduit à la colle backend : `buildCandidatePool` (utilise
+  `legProbability` importé), la classe `CouponComposerService` (`scorePicks`/`compose`/
+  `buildOne`/`computeCombinedOdds`/`buildCoupon`) — c'est elle, pas les prédicats, qui reste
+  backend puisque c'est exactement l'étape que le LLM (vantage-worker) doit à terme
+  remplacer, comme discuté plus haut.
+- `coupon-composer.service.spec.ts` : les 6 blocs `describe` déplacés vers
+  `guardrails.spec.ts` (27 tests portés à l'identique) retirés d'ici, gardés seulement les
+  tests d'intégration de `CouponComposerService.compose` et de `COUPON_CLASSES`.
+- Vérifié : 72 tests `src/coupon` côté analysis-core (12 channel-reliability + 24+9
+  evaluated-market-leg/avoid + 27 guardrails), 655/655 backend, 92/92 vantage-worker,
+  build `analysis-core` propre, typecheck/lint propres partout (backend, analysis-core,
+  vantage-worker). Pas encore committé.
+
+**Statut de l'extraction** : les trois pièces prévues sont faites. `apps/vantage-worker`
+peut maintenant construire son propre pool de candidats déterministe (courbes de
+fiabilité, résolution des marchés évalués, tous les prédicats de garde-fou) sans importer
+la couche NestJS de `apps/backend`. Reste non commencé : l'appel LLM lui-même côté
+vantage-worker (§9 points 2-3) et la question de donner au LLM le verdict VANTAGE déjà
+calculé (soulevée plus haut, pas encore construite).
