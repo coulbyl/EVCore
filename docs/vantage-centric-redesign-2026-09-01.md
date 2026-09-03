@@ -777,14 +777,28 @@ tous déjà dans analysis-core), donc pas de refonte, juste un déplacement + 17
 `coupon-pool.service.ts` importe maintenant les quatre depuis `@evcore/analysis-core`.
 Vérifié : 655/655 backend, build+lint analysis-core propres.
 
-Reste à faire pour boucler la Phase A (le job de lecture le plus gros, pas encore
-commencé) : reproduire `getPoolForRange` elle-même côté `vantage-worker` — Prisma direct
-(`@evcore/db`, pas de couche repository NestJS), avec ses trois dépendances restantes :
-`OddsSnapshotLoader.findLatestOddsSnapshotsBatch`/`findBestPricesBatch` (I/O pure — une
-requête + `assembleFullOddsSnapshot`, déjà dans analysis-core), `CalibrationService.
-computeChannelReliability` (I/O pure — une requête + `fitReliability`/`shrinkTowardPooled`,
-déjà dans analysis-core), et les lecteurs de `ModelRun.features`
-(`extractEvaContextFromFeatures`/`hasCalibrationAlert`/`readShadowConflict`/
-`computeDataCoverage`/`extractModelRunFeatureDiagnostics`, `apps/backend/src/utils/
-model-run.utils.ts` — purs mais pas encore déplacés, aussi utilisés par le dashboard/
-analysis-sheet côté backend, donc à déplacer vers analysis-core plutôt que dupliquer).
+**Lecteurs de `ModelRun.features` déplacés** (2026-09-03) — `extractEvaContextFromFeatures`,
+`hasCalibrationAlert`, `readShadowConflict`, `computeDataCoverage`,
+`extractModelRunFeatureDiagnostics` déplacés de `apps/backend/src/utils/model-run.utils.ts`
+vers `packages/analysis-core/src/model-run/model-run-features.ts` (nouveau répertoire —
+pas `coupon/`, puisque 8 modules backend différents les lisent : dashboard, analysis-sheet,
+audit, coupon-pool, bet-slip, investment-coherence, fixture-scoring). Le type
+`PredictionSource` (trivial, une union de strings) est venu avec — `betting-engine.types.ts`
+le ré-exporte maintenant depuis `@evcore/analysis-core` au lieu de le définir localement.
+`formatSigned` (un formateur d'un signe explicite sur un decimal, utilisé une fois pour
+l'EV d'un pick) a été dupliqué en helper privé plutôt qu'importé de
+`dashboard.utils.ts` — pour ne pas faire dépendre `analysis-core` d'un module backend pour
+un one-liner qui ne peut pas dériver silencieusement. `apps/backend/src/utils/
+model-run.utils.ts` devient un simple ré-export, même patron que `betting-engine.utils.ts`
+— zéro des 8 appelants backend n'a eu besoin d'un changement d'import. 20 tests neufs
+(`model-run-features.spec.ts`, cette logique n'avait jamais eu de test dédié non plus).
+Vérifié : 655/655 backend, 481/481 analysis-core, 92/92 vantage-worker, build+lint
+propres partout.
+
+Reste à faire pour boucler la Phase A : reproduire `getPoolForRange` elle-même côté
+`vantage-worker` — Prisma direct (`@evcore/db`, pas de couche repository NestJS), avec ses
+deux dernières dépendances : `OddsSnapshotLoader.findLatestOddsSnapshotsBatch`/
+`findBestPricesBatch` (I/O pure — une requête + `assembleFullOddsSnapshot`, déjà dans
+analysis-core) et `CalibrationService.computeChannelReliability` (I/O pure — une requête +
+`fitReliability`/`shrinkTowardPooled`, déjà dans analysis-core). Tout le reste dont
+`getPoolForRange` a besoin est maintenant dans `analysis-core`.

@@ -4,6 +4,7 @@ import type {
   FullOddsSnapshot,
   MatchProbabilities,
   MatchupFeatures,
+  PredictionSource,
   TeamStatsInput,
   ViablePick,
 } from '@evcore/analysis-core';
@@ -16,16 +17,10 @@ export type {
   FullOddsSnapshot,
   MatchProbabilities,
   MatchupFeatures,
+  PredictionSource,
   TeamStatsInput,
   ViablePick,
 };
-
-export type PredictionSource =
-  | 'POISSON_MAIN'
-  | 'FRI_ELO_REAL'
-  | 'FRI_ELO_POISSON'
-  | 'FRI_ELO_INTERNAL'
-  | 'ODDS_DEVIG';
 
 export type MatchComputation = {
   deterministicScore: Decimal;
