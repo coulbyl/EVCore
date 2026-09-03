@@ -27,7 +27,6 @@
     "audit": "Audit",
     "users": "Utilisateurs",
     "announcements": "Annonces",
-    "updates": "Annonces",
     "ml": "Moteur ML",
     "reports": "Rapports",
     "engine": "Moteur & ETL",
@@ -243,6 +242,8 @@
     "markAllRead": "Tout marquer comme lu",
     "unread": "Non lues",
     "all": "Toutes",
+    "announcements": "📣 Annonces",
+    "alerts": "🔔 Alertes",
     "viewAll": "Voir tout",
     "isRead": "Lu",
     "justNow": "À l'instant",
@@ -330,10 +331,6 @@
     "inbox": {
       "title": "Inbox",
       "description": "Une messagerie directe avec l'équipe EVCore, pour tes questions ou retours."
-    },
-    "updates": {
-      "title": "Annonces",
-      "description": "L'historique des annonces publiées par l'équipe — jamais perdu même si tu as fermé la bannière du dashboard."
     },
     "evaFab": {
       "title": "Eva",

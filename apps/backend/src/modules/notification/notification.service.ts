@@ -245,6 +245,7 @@ export class NotificationService {
     limit: number;
     offset: number;
     unread?: boolean;
+    category?: 'announcement' | 'alert';
     userId: string;
     role: UserRole;
   }): Promise<{
@@ -254,21 +255,38 @@ export class NotificationService {
     offset: number;
   }> {
     const types = this.allowedTypes(query.role);
+    // Écran Notifications fusionné (docs/vantage-centric-redesign-2026-09-01.md
+    // §0 point 3) — "announcement" est exactement ANNOUNCEMENT_PUBLISHED,
+    // "alert" tout le reste. AND-é sur le OR broadcast/personnel ci-dessous :
+    // les notifications personnelles ne sont jamais ANNOUNCEMENT_PUBLISHED
+    // (toujours broadcast, voir sendAnnouncementPublished), donc ce filtre
+    // les exclut naturellement en mode "announcement".
+    const categoryFilter: Prisma.NotificationWhereInput =
+      query.category === 'announcement'
+        ? { type: NotificationType.ANNOUNCEMENT_PUBLISHED }
+        : query.category === 'alert'
+          ? { type: { not: NotificationType.ANNOUNCEMENT_PUBLISHED } }
+          : {};
     // Deux régimes mergés (voir schema.prisma§Notification) : le broadcast
     // filtré par rôle + lu via UserNotificationRead, et le personnel
     // (userId = moi) où `read` sur la ligne elle-même fait foi.
     const where: Prisma.NotificationWhereInput = {
-      OR: [
+      AND: [
+        categoryFilter,
         {
-          userId: null,
-          type: { in: types },
-          ...(query.unread
-            ? { reads: { none: { userId: query.userId } } }
-            : {}),
-        },
-        {
-          userId: query.userId,
-          ...(query.unread ? { read: false } : {}),
+          OR: [
+            {
+              userId: null,
+              type: { in: types },
+              ...(query.unread
+                ? { reads: { none: { userId: query.userId } } }
+                : {}),
+            },
+            {
+              userId: query.userId,
+              ...(query.unread ? { read: false } : {}),
+            },
+          ],
         },
       ],
     };

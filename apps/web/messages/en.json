@@ -27,7 +27,6 @@
     "audit": "Audit",
     "users": "Users",
     "announcements": "Announcements",
-    "updates": "Announcements",
     "ml": "ML Engine",
     "reports": "Reports",
     "engine": "Engine & ETL",
@@ -243,6 +242,8 @@
     "markAllRead": "Mark all as read",
     "unread": "Unread",
     "all": "All",
+    "announcements": "📣 Announcements",
+    "alerts": "🔔 Alerts",
     "viewAll": "View all",
     "isRead": "Read",
     "justNow": "Just now",
@@ -330,10 +331,6 @@
     "inbox": {
       "title": "Inbox",
       "description": "A direct line to the EVCore team for your questions or feedback."
-    },
-    "updates": {
-      "title": "Announcements",
-      "description": "The history of announcements published by the team — never lost even after you close the dashboard banner."
     },
     "evaFab": {
       "title": "Eva",

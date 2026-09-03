@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { Button, Skeleton } from "@evcore/ui";
 import {
   useNotifications,
+  useUnreadCount,
   useMarkRead,
   useMarkAllRead,
 } from "@/domains/notification/use-cases/use-notifications";
@@ -16,7 +17,10 @@ import {
   NOTIFICATION_BODY_IS_HTML,
   type NotificationView,
   type NotificationSeverity,
+  type NotificationCategory,
 } from "@/domains/notification/types/notification";
+
+type Tab = "all" | "unread" | NotificationCategory;
 
 const SEVERITY_STYLES: Record<NotificationSeverity, string> = {
   high: "border-l-destructive bg-destructive/5",
@@ -113,13 +117,16 @@ function NotificationRow({
           {n.title}
         </p>
         {NOTIFICATION_BODY_IS_HTML.has(n.type) ? null : (
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
             {n.body}
           </p>
         )}
         {NOTIFICATION_LINKS[n.type] ? (
           <Link
             href={NOTIFICATION_LINKS[n.type]!}
+            onClick={() => {
+              if (!n.isRead) onMarkRead(n.id);
+            }}
             className="mt-1.5 inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
           >
             Voir
@@ -143,15 +150,17 @@ function NotificationRow({
 
 export function NotificationsPageClient() {
   const t = useTranslations("notifications");
-  const [showUnread, setShowUnread] = useState(false);
+  const [tab, setTab] = useState<Tab>("all");
   const [offset, setOffset] = useState(0);
   const limit = 20;
 
   const { data, isLoading } = useNotifications({
     limit,
     offset,
-    unread: showUnread || undefined,
+    unread: tab === "unread" ? true : undefined,
+    category: tab === "announcement" || tab === "alert" ? tab : undefined,
   });
+  const { data: unreadData } = useUnreadCount();
   const { mutate: markRead } = useMarkRead();
   const { mutate: markAllRead, isPending: markingAll } = useMarkAllRead();
 
@@ -165,39 +174,41 @@ export function NotificationsPageClient() {
   const total = data?.total ?? 0;
   const hasMore = offset + limit < total;
   const hasPrev = offset > 0;
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const unreadCount = unreadData?.count ?? 0;
   const groups = groupByDay(notifications);
+
+  function selectTab(next: Tab) {
+    setTab(next);
+    setOffset(0);
+  }
+
+  const TABS: { id: Tab; label: string }[] = [
+    { id: "all", label: t("all") },
+    { id: "unread", label: t("unread") },
+    { id: "announcement", label: t("announcements") },
+    { id: "alert", label: t("alerts") },
+  ];
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Header controls */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-1">
-          <button
-            type="button"
-            onClick={() => {
-              setShowUnread(false);
-              setOffset(0);
-            }}
-            className={`rounded-2xl px-4 py-2 text-sm font-medium transition-colors ${!showUnread ? "bg-accent/10 text-accent" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
-          >
-            {t("all")}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setShowUnread(true);
-              setOffset(0);
-            }}
-            className={`flex items-center gap-1.5 rounded-2xl px-4 py-2 text-sm font-medium transition-colors ${showUnread ? "bg-accent/10 text-accent" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
-          >
-            {t("unread")}
-            {unreadCount > 0 ? (
-              <span className="inline-flex size-4 items-center justify-center rounded-full bg-destructive text-[0.58rem] font-bold text-destructive-foreground tabular-nums">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            ) : null}
-          </button>
+      {/* Header controls — sticky so the tabs stay reachable while the list scrolls */}
+      <div className="sticky top-0 z-10 -mx-4 flex flex-wrap items-center justify-between gap-3 bg-panel-strong px-4 pb-3 pt-1 sm:-mx-5 sm:px-5">
+        <div className="flex flex-wrap gap-1">
+          {TABS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => selectTab(item.id)}
+              className={`flex items-center gap-1.5 rounded-2xl px-4 py-2 text-sm font-medium transition-colors ${tab === item.id ? "bg-accent/10 text-accent" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
+            >
+              {item.label}
+              {item.id === "unread" && unreadCount > 0 ? (
+                <span className="inline-flex size-4 items-center justify-center rounded-full bg-destructive text-[0.58rem] font-bold text-destructive-foreground tabular-nums">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              ) : null}
+            </button>
+          ))}
         </div>
 
         <Button

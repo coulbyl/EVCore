@@ -1217,6 +1217,30 @@ framing déjà retiré ailleurs (Historique vérifiable, calibration au lieu du 
 types sans sous-groupe. Pas encore implémenté (schéma de filtre confirmé, code pas
 encore écrit).
 
+**Implémenté (2026-09-03, suite)** : `NotificationQueryDto.category` (`'announcement' |
+'alert'`, déjà présent mais inutilisé) branché dans `notification.service.ts::list()` —
+`AND`-é sur le `OR` broadcast/personnel existant, jamais un remplacement (les notifs
+personnelles ne sont jamais `ANNOUNCEMENT_PUBLISHED`, donc le filtre les exclut tout seul
+en mode "announcement"). `NotificationsPageClient` passe de 2 pills (Toutes/Non lues) à 4
+(Toutes/Non lues/📣 Annonces/🔔 Alertes), single-select, exactement la maquette. Le badge
+"Non lues" utilise désormais `useUnreadCount()` (compteur global) plutôt qu'un compte sur
+la page courante — cohérent avec le badge de nav.
+
+Double comptage résolu comme prévu, en retirant l'item de nav Annonces (`app-shell.tsx`)
+et son raccourci dans le menu compte (`account-button.tsx`) : plus qu'un seul point d'entrée
+("Notifications", badge unique `useUnreadCount`), la route `/dashboard/updates` reste vivante
+comme cible de lien profond (les cartes `ANNOUNCEMENT_PUBLISHED` gardent leur "Voir →" vers
+elle) mais n'est plus dans la nav. Bug de fond aussi corrigé : cliquer "Voir →" sur une
+notification ne la marquait jamais lue côté `Notification` (seule l'ouverture sur
+`/dashboard/updates` marquait l'`AnnouncementRead` séparé) — le clic appelle maintenant
+`markRead` avant de naviguer. `GET /dashboard/announcements/unread-count`
+(`unreadCountForUser`) et son hook frontend (`useAnnouncementsUnreadCount`) supprimés :
+plus aucun appelant après le retrait du badge séparé. Étape onboarding "updates" (route
+`/dashboard/updates` en tour dédié) retirée, redondante avec le tour "notifications"
+(pointe déjà la cloche) une fois qu'il n'y a plus de nav dédiée à visiter. Vérifié :
+typecheck/lint propres backend+web, 597/597 tests backend. Pas de test manuel navigateur
+(pas d'outil de rendu disponible dans cette session) — à valider visuellement avant merge.
+
 ## Nettoyage Abonnements → calibration (démarré 2026-09-03, Niveau 0 fait)
 
 Suite à la question "vu qu'on a plus de mécanisme de subscription on peut nettoyer tout

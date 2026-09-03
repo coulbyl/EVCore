@@ -39,7 +39,6 @@ import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
 import { useUnreadCount } from "@/domains/notification/use-cases/use-notifications";
 import { useUnreadSupportCount } from "@/domains/support/use-cases/use-support-chat";
 import { useAdminUnreadSupportCount } from "@/domains/support/use-cases/use-admin-support";
-import { useAnnouncementsUnreadCount } from "@/domains/announcements/use-cases/get-announcements-unread-count";
 
 const ROLE_LABEL: Record<string, string> = {
   ADMIN: "Admin",
@@ -73,7 +72,6 @@ export function AppShell({
   const { data: badges } = useMyBadges();
   const { data: unreadData } = useUnreadCount();
   const unreadCount = unreadData?.count ?? 0;
-  const { data: updatesUnreadCount } = useAnnouncementsUnreadCount();
   const { data: operatorInboxUnread } = useUnreadSupportCount(!isAdmin);
   const { data: adminInboxUnread } = useAdminUnreadSupportCount(isAdmin);
   const inboxUnreadCount = isAdmin
@@ -242,15 +240,8 @@ export function AppShell({
         icon: Bell,
         badge: unreadCount,
       },
-      {
-        label: tNav("updates"),
-        href: "/dashboard/updates",
-        active: pathname.startsWith("/dashboard/updates"),
-        icon: Megaphone,
-        badge: updatesUnreadCount ?? 0,
-      },
     ],
-    [pathname, tNav, unreadCount, updatesUnreadCount],
+    [pathname, tNav, unreadCount],
   );
 
   const pageTitle = useMemo(

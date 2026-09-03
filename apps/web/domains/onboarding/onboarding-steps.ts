@@ -122,13 +122,6 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     descriptionKey: "inbox.description",
   },
   {
-    id: "updates",
-    route: "/dashboard/updates",
-    selector: '[data-tour="updates-title"]',
-    titleKey: "updates.title",
-    descriptionKey: "updates.description",
-  },
-  {
     id: "evaFab",
     route: null,
     selector: '[data-tour="eva-fab"]',

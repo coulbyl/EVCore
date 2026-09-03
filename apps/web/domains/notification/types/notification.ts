@@ -13,6 +13,8 @@ export type NotificationType =
   | "SUPPORT_MESSAGE"
   | "ANNOUNCEMENT_PUBLISHED";
 
+export type NotificationCategory = "announcement" | "alert";
+
 export type NotificationSeverity = "high" | "medium" | "low";
 
 export const NOTIFICATION_SEVERITY: Record<
