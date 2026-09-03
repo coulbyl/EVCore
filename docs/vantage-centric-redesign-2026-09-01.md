@@ -76,15 +76,15 @@ que **tout reste gratuit pour l'instant**, le gate viendra plus tard.
 
 ## 1. Résumé de la vision
 
-| Axe | Avant | Après |
-|---|---|---|
-| Navigation | Dashboard, Investir, Coupon Composer, Decisions, Arbitrage, Abonnements, Notifications, Annonces séparées | Dashboard épuré, **Decisions**, **Arbitrage** (rôle inchangé), **Coupons** (nouveau, sœur d'Arbitrage), **Notifications** fusionnée — Investir, Coupon Composer, **Abonnements** et Annonces supprimés de la nav |
-| Génération de coupon | Moteur déterministe (`coupon` module), `topN` sur canaux non filtrés par calibration | **VANTAGE génère les 3 coupons quotidiens** (Safe/Moyen/Agressif) sur un pool pré-filtré par calibration |
-| Coupon personnel | Aucun mécanisme dédié | L'utilisateur compose via le **drawer de bet slip existant** (rien de neuf) ; le bouton "Envoyer à VANTAGE" + l'écran de révision sont maquettés mais **en backlog** (§0, §5.2) |
-| VALUE / SAFE | Deux canaux de filtrage Phase 2 (edge / probabilité+EV) | **Déconnectés de la pipeline live** (§5.1 résolu, 2026-09-03) — continuent de tourner pour observation, plus d'effet côté utilisateur (bet interne, Decisions, abonnements) |
+| Axe                            | Avant                                                                                                                          | Après                                                                                                                                                                                                                                                                                      |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Navigation                     | Dashboard, Investir, Coupon Composer, Decisions, Arbitrage, Abonnements, Notifications, Annonces séparées                      | Dashboard épuré, **Decisions**, **Arbitrage** (rôle inchangé), **Coupons** (nouveau, sœur d'Arbitrage), **Notifications** fusionnée — Investir, Coupon Composer, **Abonnements** et Annonces supprimés de la nav                                                                           |
+| Génération de coupon           | Moteur déterministe (`coupon` module), `topN` sur canaux non filtrés par calibration                                           | **VANTAGE génère les 3 coupons quotidiens** (Safe/Moyen/Agressif) sur un pool pré-filtré par calibration                                                                                                                                                                                   |
+| Coupon personnel               | Aucun mécanisme dédié                                                                                                          | L'utilisateur compose via le **drawer de bet slip existant** (rien de neuf) ; le bouton "Envoyer à VANTAGE" + l'écran de révision sont maquettés mais **en backlog** (§0, §5.2)                                                                                                            |
+| VALUE / SAFE                   | Deux canaux de filtrage Phase 2 (edge / probabilité+EV)                                                                        | **Déconnectés de la pipeline live** (§5.1 résolu, 2026-09-03) — continuent de tourner pour observation, plus d'effet côté utilisateur (bet interne, Decisions, abonnements)                                                                                                                |
 | Personnalisation + Abonnements | Deux endroits séparés : gamification (Paramètres → Profil) et Abonnements (portefeuille simulé mise/ROI) en item de nav propre | **Fusionnés** (2026-09-02, §2bis) : un **6ᵉ onglet "Personnalisation"** dans Paramètres regroupe ligues, canaux suivis + calibration (ex-Abonnements, "Découvrir des canaux" inclus), profil de risque — plus d'item de nav séparé — + un **onboarding actif en 3 étapes** à l'inscription |
-| Paramètres — navigation | Onglets à plat (Profil/Préférences/Sécurité/Notifications/Bankroll/Personnalisation) | **Rail latéral groupé par thème** (2026-09-02, §2bis) : Compte (Profil, Sécurité) / Préférences (Préférences, Bankroll, Notifications) / Paris (Personnalisation) |
-| Bet slip | Un coupon = une transaction | Un coupon généré par VANTAGE est un **template partagé** : N utilisateurs l'ajoutent chacun à leur bet slip, chacun sa mise — déjà supporté par le schéma (`bet_slip`/`bet_slip_item`), sans écran dédié (pas de fausse preuve sociale, voir §5.4) |
+| Paramètres — navigation        | Onglets à plat (Profil/Préférences/Sécurité/Notifications/Bankroll/Personnalisation)                                           | **Rail latéral groupé par thème** (2026-09-02, §2bis) : Compte (Profil, Sécurité) / Préférences (Préférences, Bankroll, Notifications) / Paris (Personnalisation)                                                                                                                          |
+| Bet slip                       | Un coupon = une transaction                                                                                                    | Un coupon généré par VANTAGE est un **template partagé** : N utilisateurs l'ajoutent chacun à leur bet slip, chacun sa mise — déjà supporté par le schéma (`bet_slip`/`bet_slip_item`), sans écran dédié (pas de fausse preuve sociale, voir §5.4)                                         |
 
 ---
 
@@ -93,23 +93,23 @@ que **tout reste gratuit pour l'instant**, le gate viendra plus tard.
 Lien : https://claude.ai/code/artifact/6468e339-5d32-45b0-b14e-89df315730bb — chaque écran a
 désormais sa variante mobile (390px) juste à côté du desktop sur le canvas.
 
-| # | Écran | Ce qui change vs l'app réelle | Backend à toucher |
-|---|---|---|---|
-| 1 | Dashboard (Accueil) | Épuré, plus de lien Investir/Combinés dans le hero | Aucun |
-| 2 | Decisions | Structure de carte identique à `match-card.tsx`/`channel-row.tsx` réels (crests, connecteur, badge consensus, badge de résultat), mais ligne de pick **simplifiée** vs le composant réel actuel (2026-09-02) : badge de code canal retiré (nom de marché en clair seul), ratio×n/edge remplacés par un badge Fiable/À confirmer/Peu fiable (détail chiffré derrière un clic), carte plafonnée à 3-4 picks triés par confiance + "Voir N autres marchés" ; "Par match"/"Par canal" fusionnés en une rangée d'onglets avec les canaux à plat ; **filtre ligues/canaux remplacé par un tiroir de facettes** (§2bis, 2026-09-02) au lieu du "+ Plus" | Aucun (front only) |
-| 3 | Arbitrage | KPI "lectures/tensions" retirés de l'en-tête, rôle sinon inchangé ; **même tiroir de facettes** que Decisions pour le filtre ligues (§2bis), y compris sur mobile où la ligne de filtre était absente jusqu'ici | Aucun |
-| 4 | Coupons | Nouvelle page sœur d'Arbitrage — 3 coupons du jour générés par VANTAGE | §0 point 7 |
-| 5 | Drawer de bet slip | Un bouton "Envoyer à VANTAGE" ajouté à l'existant (`bet-slip-drawer.tsx`) | **Backlog** (§0) — maquetté, pas d'implémentation immédiate |
-| 6 | Révision VANTAGE | Refaite en liste unique (plus de doublon jambe×2), carte verdict en tête, comparaison avant/après | **Backlog** (§0) — maquetté, pas d'implémentation immédiate |
-| 7 | Notifications | Fusion Notifications + Annonces, filtrable par type | Fusion des deux modèles de données ou vue unifiée |
-| 7bis | ~~Abonnements~~ | **Supprimé en tant qu'écran/nav** (2026-09-02, §2bis) — fusionné dans l'onglet Personnalisation (8) comme section "Canaux suivis" (calibration par canal + "Découvrir des canaux") | — |
-| 8 | Personnalisation | Nouvel onglet dans Paramètres réel, pas un nouveau menu ; absorbe désormais le contenu d'Abonnements (7bis, §2bis) ; **Paramètres passe d'onglets à plat à un rail latéral groupé** (Compte / Préférences / Paris, §2bis) | Nouveaux champs `User` (ligues, canaux, profil de risque) |
-| 9 | Onboarding | 3 étapes actives (ligues/canaux/risque) avant le tour passif | Réutilise les endpoints de (8) |
+| #    | Écran               | Ce qui change vs l'app réelle                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Backend à toucher                                           |
+| ---- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| 1    | Dashboard (Accueil) | Épuré, plus de lien Investir/Combinés dans le hero                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Aucun                                                       |
+| 2    | Decisions           | Structure de carte identique à `match-card.tsx`/`channel-row.tsx` réels (crests, connecteur, badge consensus, badge de résultat), mais ligne de pick **simplifiée** vs le composant réel actuel (2026-09-02) : badge de code canal retiré (nom de marché en clair seul), ratio×n/edge remplacés par un badge Fiable/À confirmer/Peu fiable (détail chiffré derrière un clic), carte plafonnée à 3-4 picks triés par confiance + "Voir N autres marchés" ; "Par match"/"Par canal" fusionnés en une rangée d'onglets avec les canaux à plat ; **filtre ligues/canaux remplacé par un tiroir de facettes** (§2bis, 2026-09-02) au lieu du "+ Plus" | Aucun (front only)                                          |
+| 3    | Arbitrage           | KPI "lectures/tensions" retirés de l'en-tête, rôle sinon inchangé ; **même tiroir de facettes** que Decisions pour le filtre ligues (§2bis), y compris sur mobile où la ligne de filtre était absente jusqu'ici                                                                                                                                                                                                                                                                                                                                                                                                                                  | Aucun                                                       |
+| 4    | Coupons             | Nouvelle page sœur d'Arbitrage — 3 coupons du jour générés par VANTAGE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | §0 point 7                                                  |
+| 5    | Drawer de bet slip  | Un bouton "Envoyer à VANTAGE" ajouté à l'existant (`bet-slip-drawer.tsx`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | **Backlog** (§0) — maquetté, pas d'implémentation immédiate |
+| 6    | Révision VANTAGE    | Refaite en liste unique (plus de doublon jambe×2), carte verdict en tête, comparaison avant/après                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | **Backlog** (§0) — maquetté, pas d'implémentation immédiate |
+| 7    | Notifications       | Fusion Notifications + Annonces, filtrable par type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Fusion des deux modèles de données ou vue unifiée           |
+| 7bis | ~~Abonnements~~     | **Supprimé en tant qu'écran/nav** (2026-09-02, §2bis) — fusionné dans l'onglet Personnalisation (8) comme section "Canaux suivis" (calibration par canal + "Découvrir des canaux")                                                                                                                                                                                                                                                                                                                                                                                                                                                               | —                                                           |
+| 8    | Personnalisation    | Nouvel onglet dans Paramètres réel, pas un nouveau menu ; absorbe désormais le contenu d'Abonnements (7bis, §2bis) ; **Paramètres passe d'onglets à plat à un rail latéral groupé** (Compte / Préférences / Paris, §2bis)                                                                                                                                                                                                                                                                                                                                                                                                                        | Nouveaux champs `User` (ligues, canaux, profil de risque)   |
+| 9    | Onboarding          | 3 étapes actives (ligues/canaux/risque) avant le tour passif                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Réutilise les endpoints de (8)                              |
 
 **Écran retiré du périmètre** : un "Coupon partagé" en détail avec aperçu communautaire
 avait été maquetté puis retiré — il dupliquait le CTA déjà présent sur la carte Coupons et
-affichait une forme de preuve sociale fabriquée (contraire à business-model.md : *"un pitch
-qui s'appuierait sur nos utilisateurs serait fabriqué"*). Le mécanisme "un coupon, N
+affichait une forme de preuve sociale fabriquée (contraire à business-model.md : _"un pitch
+qui s'appuierait sur nos utilisateurs serait fabriqué"_). Le mécanisme "un coupon, N
 utilisateurs, chacun sa mise" reste entièrement fonctionnel sans écran dédié.
 
 ---
@@ -190,24 +190,23 @@ l'anglais technique partout côté backend/API/logs).
 **Mapping illustratif** (à valider contre la liste exhaustive des canaux avant
 implémentation — certains codes ci-dessous restent à confirmer dans le code) :
 
-| Code interne | Libellé UI proposé |
-|---|---|
-| `DOMINANT` | Résultat favori |
-| `GOALS` | Total de buts |
-| `BTTS` | Les deux équipes marquent |
-| `DOUBLE_CHANCE` | Double chance |
-| `TEAM_TOTAL` | Buts par équipe |
-| `CLEAN_SHEET` | Garde sa cage |
-| `FIRST_HALF` | Résultat 1ère mi-temps |
-| `OVER_UNDER_HT` | Buts en 1ère mi-temps |
-| `HALF_TIME_FULL_TIME` | Mi-temps / Fin de match |
-| `WIN_EITHER_HALF` | Gagne au moins une mi-temps |
-| `DRAW` | Match nul |
-| `CORRECT_SCORE` | Score exact |
+| Code interne          | Libellé UI proposé          |
+| --------------------- | --------------------------- |
+| `DOMINANT`            | Résultat favori             |
+| `GOALS`               | Total de buts               |
+| `BTTS`                | Les deux équipes marquent   |
+| `DOUBLE_CHANCE`       | Double chance               |
+| `TEAM_TOTAL`          | Buts par équipe             |
+| `CLEAN_SHEET`         | Garde sa cage               |
+| `FIRST_HALF`          | Résultat 1ère mi-temps      |
+| `OVER_UNDER_HT`       | Buts en 1ère mi-temps       |
+| `HALF_TIME_FULL_TIME` | Mi-temps / Fin de match     |
+| `WIN_EITHER_HALF`     | Gagne au moins une mi-temps |
+| `DRAW`                | Match nul                   |
+| `CORRECT_SCORE`       | Score exact                 |
 
 `VALUE`/`SAFE` (filtres Phase-2, en cours de retrait §5.1) et `CONSENSUS`/`CONTRARIAN`/
-`AVOID` (méta-canaux Phase-3 sans pick propre, déjà exclus du tiroir de filtres §2bis point
-5) ne sont de toute façon pas censés apparaître comme "canal à suivre" pour un utilisateur
+`AVOID` (méta-canaux Phase-3 sans pick propre, déjà exclus du tiroir de filtres §2bis point 5) ne sont de toute façon pas censés apparaître comme "canal à suivre" pour un utilisateur
 lambda. **Statut** : idée et principe actés dans ce doc ; le mapping ci-dessus n'a pas
 encore été répercuté dans la maquette ni vérifié exhaustivement contre le code — à faire
 avant l'implémentation réelle.
@@ -329,7 +328,7 @@ juger.
 
 **Décidé le 2026-09-03** : retrait complet du signal ML de VANTAGE plutôt qu'un ajustement
 ciblé (ex. retirer seulement DOMINANT de l'allowlist) — l'utilisateur ne maîtrise pas encore
-le fonctionnement du ml-worker lui-même, donc pas de base pour juger *pourquoi* le signal
+le fonctionnement du ml-worker lui-même, donc pas de base pour juger _pourquoi_ le signal
 nuit ni pour le recalibrer en connaissance de cause. Supprimé : `extractShadowMl`,
 `ShadowMlSignal`, `CALIBRATION_SAFE_ML_CHANNELS`, `renderShadowMlBlock`, le champ
 `MatchContext.shadowMl` et toute mention dans `SYSTEM_PROMPT` (qui ne parle plus que d'un
@@ -341,16 +340,16 @@ lint propres. Ne pas réintroduire sans ré-auditer le ml-worker en profondeur d
 
 ## 3. Ce que l'architecture actuelle permet facilement
 
-| Composant | Existe déjà | Effort |
-|---|---|---|
-| Drawer de bet slip | `components/bet-slip-drawer.tsx` — groupement par match, mode Simples/Combiné, mise, gains possibles, bouton "Parier" | **Très faible** — un bouton de plus, pas un nouvel écran |
-| Suivi par canal personnalisé | `apps/backend/src/modules/subscriptions/` — sources `CHANNEL_DRAW`, `CHANNEL_BTTS`, etc. déjà définies | **Faible** — retirer le cadre mise/ROI, brancher sur la calibration déjà calculée ailleurs ; exposé côté front comme section de l'onglet Personnalisation, plus d'écran Abonnements séparé (§2ter) |
-| Paramètres avec onglets | `/dashboard/params/account` — Profil (badges), Préférences (thème/langue), Sécurité, Notifications (push/email), Bankroll (devise/mise) déjà tous construits | **Faible** — ajouter un 6ᵉ onglet suit le patron existant ; nav interne à repasser d'onglets à plat à un rail latéral groupé (§2ter) |
-| Onboarding | Tour passif driver.js déjà là (`domains/onboarding/onboarding-steps.ts`, 24 étapes) mais **aucune ne collecte d'input** | **Moyen** — nouveau mécanisme (modal/étapes actives), distinct du tour, à insérer avant lui |
-| Coupon jouable par plusieurs utilisateurs | `bet_slip` par utilisateur, `bet_slip_item` référence un `betId` partagé — le modèle n'empêche pas N bet slips indépendants sur les mêmes jambes | **Faible**, hérite du bug P0 déjà ouvert (TODO.md) |
-| Raisonnement contextuel VANTAGE | `apps/vantage-worker/src/vantage/prompt.ts` + `context/build-match-context.ts` — détection de tension entre canaux déjà en place | **Moyen** — étendre d'un raisonnement mono-pick à un coupon multi-jambes soumis par un utilisateur |
-| Génération de coupon par LLM (3/jour) | N'existe pas — VANTAGE ne produit qu'un verdict par fixture | **Élevé** — nouveau prompt, nouvelle boucle, filtre de validation déterministe après coup (§4.1) |
-| Suppression de VALUE/SAFE | Code isolé (`ev.constants.ts`, `POOL_EXCLUDED_CHANNELS`) | **Faible** techniquement — le vrai travail est produit (§5.1) |
+| Composant                                 | Existe déjà                                                                                                                                                  | Effort                                                                                                                                                                                             |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Drawer de bet slip                        | `components/bet-slip-drawer.tsx` — groupement par match, mode Simples/Combiné, mise, gains possibles, bouton "Parier"                                        | **Très faible** — un bouton de plus, pas un nouvel écran                                                                                                                                           |
+| Suivi par canal personnalisé              | `apps/backend/src/modules/subscriptions/` — sources `CHANNEL_DRAW`, `CHANNEL_BTTS`, etc. déjà définies                                                       | **Faible** — retirer le cadre mise/ROI, brancher sur la calibration déjà calculée ailleurs ; exposé côté front comme section de l'onglet Personnalisation, plus d'écran Abonnements séparé (§2ter) |
+| Paramètres avec onglets                   | `/dashboard/params/account` — Profil (badges), Préférences (thème/langue), Sécurité, Notifications (push/email), Bankroll (devise/mise) déjà tous construits | **Faible** — ajouter un 6ᵉ onglet suit le patron existant ; nav interne à repasser d'onglets à plat à un rail latéral groupé (§2ter)                                                               |
+| Onboarding                                | Tour passif driver.js déjà là (`domains/onboarding/onboarding-steps.ts`, 24 étapes) mais **aucune ne collecte d'input**                                      | **Moyen** — nouveau mécanisme (modal/étapes actives), distinct du tour, à insérer avant lui                                                                                                        |
+| Coupon jouable par plusieurs utilisateurs | `bet_slip` par utilisateur, `bet_slip_item` référence un `betId` partagé — le modèle n'empêche pas N bet slips indépendants sur les mêmes jambes             | **Faible**, hérite du bug P0 déjà ouvert (TODO.md)                                                                                                                                                 |
+| Raisonnement contextuel VANTAGE           | `apps/vantage-worker/src/vantage/prompt.ts` + `context/build-match-context.ts` — détection de tension entre canaux déjà en place                             | **Moyen** — étendre d'un raisonnement mono-pick à un coupon multi-jambes soumis par un utilisateur                                                                                                 |
+| Génération de coupon par LLM (3/jour)     | N'existe pas — VANTAGE ne produit qu'un verdict par fixture                                                                                                  | **Élevé** — nouveau prompt, nouvelle boucle, filtre de validation déterministe après coup (§4.1)                                                                                                   |
+| Suppression de VALUE/SAFE                 | Code isolé (`ev.constants.ts`, `POOL_EXCLUDED_CHANNELS`)                                                                                                     | **Faible** techniquement — le vrai travail est produit (§5.1)                                                                                                                                      |
 
 ---
 
@@ -394,6 +393,7 @@ préserver ce signal) ni une suppression pure — **VALUE et SAFE sont déconnec
 pipeline live**, pas supprimés : ils continuent de produire des `channel_decision`/
 `channel_selection` (observation), mais n'ont plus aucun effet côté utilisateur/produit.
 Concrètement :
+
 - `persistChannelBet` (bookkeeping interne `bet`, déjà redondant avec `channel_selection`
   pour le calibrage — voir commentaire `dashboard.service.ts`) retiré pour VALUE et SAFE
   dans `betting-engine.service.ts`, aux deux points d'appel. Aucun impact réel : ces `bet`
@@ -523,20 +523,20 @@ contractuel) :
 
 ### 6.1 Par cas d'usage
 
-| Cas d'usage | Volume/jour | Tokens entrée | Tokens sortie | Coût/jour | Coût/mois |
-|---|---|---|---|---|---|
-| **A. Verdict par fixture** (Arbitrage, inchangé) | 300 | ~5 000 | ~300 | $0,59 | **~$18** |
-| **B. Génération de 3 coupons/jour** (pool pré-filtré, §5.2 tranché) | 3 | ~15 000 | ~750 | $0,017 | **~$0,5** |
-| **C. Révision de coupon utilisateur** (déclenchée depuis le drawer, écran 5-6) | 50 / 300 / 1 500 (scénarios) | ~6 000 | ~500 | $0,0025/appel | **~$3,75 / $22,5 / $112,5** |
-| **D. "Grande expérience" VANTAGE personnalisée** (distincte d'Eva — §5.3 résolu, Eva reste un outil d'export ; D différé post-paiement, §2sexies) | 300 / 3 000 (100 ou 1 000 users actifs × 3/j) | ~3 000 | ~500 | $0,0014/appel | **~$13 / $129** |
+| Cas d'usage                                                                                                                                       | Volume/jour                                   | Tokens entrée | Tokens sortie | Coût/jour     | Coût/mois                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ------------- | ------------- | ------------- | --------------------------- |
+| **A. Verdict par fixture** (Arbitrage, inchangé)                                                                                                  | 300                                           | ~5 000        | ~300          | $0,59         | **~$18**                    |
+| **B. Génération de 3 coupons/jour** (pool pré-filtré, §5.2 tranché)                                                                               | 3                                             | ~15 000       | ~750          | $0,017        | **~$0,5**                   |
+| **C. Révision de coupon utilisateur** (déclenchée depuis le drawer, écran 5-6)                                                                    | 50 / 300 / 1 500 (scénarios)                  | ~6 000        | ~500          | $0,0025/appel | **~$3,75 / $22,5 / $112,5** |
+| **D. "Grande expérience" VANTAGE personnalisée** (distincte d'Eva — §5.3 résolu, Eva reste un outil d'export ; D différé post-paiement, §2sexies) | 300 / 3 000 (100 ou 1 000 users actifs × 3/j) | ~3 000        | ~500          | $0,0014/appel | **~$13 / $129**             |
 
 ### 6.2 Total indicatif mensuel
 
-| Scénario | A | B | C | D | **Total** |
-|---|---|---|---|---|---|
-| **Lancement** (adoption faible) | $18 | $0,5 | $3,75 | $0 (différé, §2sexies) | **~$22/mois** |
-| **Traction modérée** | $18 | $0,5 | $22,5 | $0 (différé, §2sexies) | **~$41/mois** |
-| **Adoption large** | $18 | $0,5 | $112,5 | $129 (une fois le gate de paiement en place) | **~$260/mois** |
+| Scénario                        | A   | B    | C      | D                                            | **Total**      |
+| ------------------------------- | --- | ---- | ------ | -------------------------------------------- | -------------- |
+| **Lancement** (adoption faible) | $18 | $0,5 | $3,75  | $0 (différé, §2sexies)                       | **~$22/mois**  |
+| **Traction modérée**            | $18 | $0,5 | $22,5  | $0 (différé, §2sexies)                       | **~$41/mois**  |
+| **Adoption large**              | $18 | $0,5 | $112,5 | $129 (une fois le gate de paiement en place) | **~$260/mois** |
 
 **Lecture** : le coût fixe (verdicts + génération de coupon) reste marginal (<$20/mois)
 quel que soit le volume de matchs couverts. Le vrai poste variable dépend entièrement de
@@ -590,7 +590,7 @@ essai antérieur de la faire suivre telle quelle par un LLM en une seule passe n
 de bon résultat. Presque tous les bugs que le template documente sont des défauts que
 n'importe quel LLM reproduit par construction sur ce type de tâche : trier/filtrer des
 centaines de lignes chiffrées de façon fiable, appliquer une même règle arithmétique
-partout (`lambdaHome+lambdaAway < 2.3` sur *toutes* les lignes `UNDER_X_5`, pas juste 2,5),
+partout (`lambdaHome+lambdaAway < 2.3` sur _toutes_ les lignes `UNDER_X_5`, pas juste 2,5),
 ne pas se laisser aimanter par une cote cible, ne pas sur-pondérer une probabilité "trop
 belle" (confirmé en prod sur VANTAGE lui-même, §5.8).
 
@@ -684,4 +684,28 @@ Groq et ses patterns de prompt/garde-fous déjà rodés), jamais dans `apps/back
 l'application d'une courbe de calibration déjà calculée — la partie pure de tout ça devrait
 migrer vers `packages/analysis-core` (déjà importé par les deux apps aujourd'hui) pour être
 appelable depuis `vantage-worker` sans dupliquer la logique ni faire dépendre
-`vantage-worker` du NestJS de `apps/backend`. Extraction pas encore commencée.
+`vantage-worker` du NestJS de `apps/backend`.
+
+**Extraction démarrée le 2026-09-03** (`packages/analysis-core/src/coupon/`, nouveau
+répertoire) :
+
+- `channel-reliability.ts` — courbes de Platt (`fitReliability`, `applyReliability`,
+  `shrinkTowardPooled`) déplacées telles quelles depuis
+  `apps/backend/src/modules/adjustment/`, 5 appelants backend redirigés vers
+  `@evcore/analysis-core`. Collision de nom trouvée et résolue : `logit`/`sigmoid`
+  existaient déjà (version `Decimal`, autre calcul) — renommés `plattLogit`/`plattSigmoid`
+  ici.
+- `evaluated-market-leg.ts` — `resolveEvaluatedMarketLeg`, `EVALUATED_MARKET_CANAL`,
+  `RELIABILITY_REJECTION_REASONS`, `isExtremeDivergence`, `classifyAvoidSignal` déplacés
+  depuis `coupon-pool.service.ts`/`coupon.constants.ts`. Type d'entrée local
+  `EvaluatedMarketPick` (au lieu d'importer le type backend `EvaluatedPickSnapshot` —
+  compatibilité structurelle, pas de dépendance package→app).
+- Ce qui reste dans `apps/backend`, volontairement : `computeMarketFair`/
+  `siblingOutcomeOdds`/tout ce qui dépend de `FullOddsSnapshot`/`OddsSnapshotLoader` (trop
+  couplé à l'infra de cotes du backend pour ce premier passage) ; les prédicats de
+  `coupon-composer.service.ts` (`clearsMaxLegEdge`, `violatesAntiCorrelation`, etc. — pas
+  encore extraits, prochaine étape).
+- Vérifié : `apps/vantage-worker` importe déjà `@evcore/analysis-core` et peut appeler ces
+  fonctions dès maintenant. 420/420 tests analysis-core (garde-fou d'architecture inclus),
+  682/682 backend, 92/92 vantage-worker, build `analysis-core` propre, typecheck/lint
+  propres partout. Pas encore committé.

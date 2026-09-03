@@ -15,3 +15,4 @@ export * from "./selection";
 export * from "./strategies";
 export * from "./metrics";
 export * from "./pricing";
+export * from "./coupon";

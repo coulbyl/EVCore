@@ -6,7 +6,7 @@ import {
   IDENTITY_RELIABILITY,
   type ChannelReliability,
   type ReliabilityObservation,
-} from '@modules/adjustment/channel-reliability';
+} from '@evcore/analysis-core';
 import {
   INVESTMENT_CHANNELS,
   INVESTMENT_STATS_WINDOW_DAYS,

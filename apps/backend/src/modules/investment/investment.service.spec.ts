@@ -5,7 +5,7 @@ import type {
   ChannelDecisionService,
   ChannelSelectionItem,
 } from '@modules/betting-engine/channel-decision.service';
-import { IDENTITY_RELIABILITY } from '@modules/adjustment/channel-reliability';
+import { IDENTITY_RELIABILITY } from '@evcore/analysis-core';
 import type {
   ChannelStats,
   ChannelStatsMap,

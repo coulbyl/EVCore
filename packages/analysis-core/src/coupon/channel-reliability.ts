@@ -1,7 +1,20 @@
-import { CHANNEL_RELIABILITY_PRIOR_WEIGHT } from './adjustment.constants';
+/**
+ * Virtual sample size of the pooled prior in the per-channel reliability
+ * shrinkage (`shrinkTowardPooled` below): a channel needs this many settled
+ * selections of its own before its fit outweighs the pooled one. Fitted by
+ * walk-forward on the settled `channel_selection` history —
+ * `pnpm --filter @evcore/db db:backtest:channel-reliability-calibration`
+ * reports the out-of-sample Brier score for a grid of values; re-run it
+ * rather than nudging this by hand. Moved here from
+ * apps/backend/src/modules/adjustment/adjustment.constants.ts 2026-09-03
+ * (this file's own extraction into @evcore/analysis-core) — every other
+ * constant in that file stays backend-only (DB-triggered learning-loop
+ * thresholds), this was the one this module actually needs.
+ */
+const CHANNEL_RELIABILITY_PRIOR_WEIGHT = 300;
 
 /**
- * Per-channel probability recalibration — Platt scaling on the logit scale.
+ * Per-channel probability recalibration — Platt scaling on the plattLogit scale.
  *
  * Why a slope and not just a mean shift (which is what `CalibrationService
  * .computeForMarket`'s `meanError` gives): measured 2026-08-22 across every
@@ -15,15 +28,15 @@ import { CHANNEL_RELIABILITY_PRIOR_WEIGHT } from './adjustment.constants';
  * 1.016 (DRAW) to 0.623 (RESULT_BTTS) — so one pooled curve is not enough
  * either. Hence one (a, b) pair per channel:
  *
- *     p_calibrated = sigmoid(a * logit(p_raw) + b)
+ *     p_calibrated = plattSigmoid(a * plattLogit(p_raw) + b)
  *
  * a = 1, b = 0 is the identity. a < 1 flattens an over-confident channel
  * toward its base rate, which is the shape every channel here actually needs.
  */
 export type ChannelReliability = {
-  /** Slope on the logit scale. 1 = leave the channel's spread untouched. */
+  /** Slope on the plattLogit scale. 1 = leave the channel's spread untouched. */
   a: number;
-  /** Intercept on the logit scale. 0 = leave the channel's level untouched. */
+  /** Intercept on the plattLogit scale. 0 = leave the channel's level untouched. */
   b: number;
   /**
    * Settled selections in the channel's POPULATION sample (every rank-1
@@ -80,16 +93,16 @@ export const IDENTITY_RELIABILITY: ChannelReliability = { a: 1, b: 0, n: 0 };
 // d'abord la circularité — le résultat ci-dessus n'est pas un échec de
 // calibration, c'est un échec de la démarche.
 
-// Probabilities are clamped before logit so a degenerate 0 or 1 estimate
+// Probabilities are clamped before plattLogit so a degenerate 0 or 1 estimate
 // cannot produce an infinite feature and blow up the fit.
 const P_EPSILON = 1e-6;
 
-export function logit(p: number): number {
+export function plattLogit(p: number): number {
   const clamped = Math.min(1 - P_EPSILON, Math.max(P_EPSILON, p));
   return Math.log(clamped / (1 - clamped));
 }
 
-export function sigmoid(z: number): number {
+export function plattSigmoid(z: number): number {
   if (z >= 0) return 1 / (1 + Math.exp(-z));
   const e = Math.exp(z);
   return e / (1 + e);
@@ -119,7 +132,7 @@ export function fitReliability(
   if (observations.length === 0) return IDENTITY_RELIABILITY;
 
   const points = observations.map((o) => ({
-    x: logit(o.probability),
+    x: plattLogit(o.probability),
     y: o.won ? 1 : 0,
   }));
 
@@ -135,7 +148,7 @@ export function fitReliability(
     let g1 = 0;
 
     for (const { x, y } of points) {
-      const p = sigmoid(a * x + b);
+      const p = plattSigmoid(a * x + b);
       const w = Math.max(p * (1 - p), 1e-10);
       const residual = y - p;
       g0 += x * residual;
@@ -198,5 +211,5 @@ export function applyReliability(
   probability: number,
   reliability: ChannelReliability,
 ): number {
-  return sigmoid(reliability.a * logit(probability) + reliability.b);
+  return plattSigmoid(reliability.a * plattLogit(probability) + reliability.b);
 }

@@ -9,7 +9,7 @@ import {
   STRATEGY_CHANNEL,
   type StrategyChannel,
 } from '@modules/betting-engine/channel-strategy.types';
-import { applyReliability } from '@modules/adjustment/channel-reliability';
+import { applyReliability } from '@evcore/analysis-core';
 import { DRAW_STAKED_LEAGUES } from '@modules/coupon/coupon.constants';
 import {
   EXCLUSION_REASON,

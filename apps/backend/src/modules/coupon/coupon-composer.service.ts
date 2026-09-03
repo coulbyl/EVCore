@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
-import { VALUE_MIN_EDGE } from '@evcore/analysis-core';
+import {
+  VALUE_MIN_EDGE,
+  applyReliability,
+  type ChannelReliability,
+  type ChannelReliabilityMap,
+} from '@evcore/analysis-core';
 import { productDecimal } from '@utils/decimal.utils';
 import { calculateEV } from '@modules/betting-engine/betting-engine.utils';
 import { getValueMinEdge } from '@modules/betting-engine/ev.constants';
@@ -12,11 +17,6 @@ import {
   TEAM_TOTAL_MAX_ODDS,
   type CouponBounds,
 } from './coupon.constants';
-import {
-  applyReliability,
-  type ChannelReliability,
-  type ChannelReliabilityMap,
-} from '@modules/adjustment/channel-reliability';
 import type { LegCalibration, ScoredPick } from './coupon-pool.service';
 
 const MIN_DISTINCT_FIXTURES = 2;
@@ -55,7 +55,7 @@ export function calibratedLegProbability(leg: {
 }
 
 // Per-leg probability calibration — applies the leg's OWN channel reliability
-// curve (Platt on the logit scale, see channel-reliability.ts).
+// curve (Platt on the logit scale, see @evcore/analysis-core's channel-reliability.ts).
 //
 // Replaces a per-market mean-error shift (`marketCalibration[market].meanError`,
 // subtracted from the raw probability) that was wrong in two ways, both

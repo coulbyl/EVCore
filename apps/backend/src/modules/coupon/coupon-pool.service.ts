@@ -8,10 +8,6 @@ import {
 import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
 import { CalibrationService } from '@modules/adjustment/calibration.service';
-import type {
-  ChannelReliability,
-  ChannelReliabilityMap,
-} from '@modules/adjustment/channel-reliability';
 import { OddsSnapshotLoader } from '@modules/betting-engine/pricing/odds-snapshot.loader';
 import {
   bookmakerMargin as computeBookmakerMargin,
@@ -19,7 +15,13 @@ import {
   removeOverround,
 } from '@modules/betting-engine/betting-engine.utils';
 import { getPickOddsFromSnapshot } from '@modules/betting-engine/pricing/odds-mapping';
-import { AVOID_CONFIG } from '@evcore/analysis-core';
+import {
+  classifyAvoidSignal,
+  isExtremeDivergence,
+  resolveEvaluatedMarketLeg,
+  type ChannelReliability,
+  type ChannelReliabilityMap,
+} from '@evcore/analysis-core';
 import type { FullOddsSnapshot } from '@modules/betting-engine/betting-engine.types';
 import {
   computeDataCoverage,
@@ -27,28 +29,14 @@ import {
   extractModelRunFeatureDiagnostics,
   hasCalibrationAlert,
   readShadowConflict,
-  type EvaluatedPickSnapshot,
 } from '@utils/model-run.utils';
 import {
   type CouponChannel,
   DRAW_STAKED_LEAGUES,
   POOL_ELIGIBLE_CHANNELS,
-  EVALUATED_MARKET_CANAL,
 } from './coupon.constants';
 
 export type Canal = CouponChannel;
-
-// AVOID enforcement at staking time: a pick whose model probability exceeds its
-// implied probability (1/odds) by ≥ AVOID_CONFIG.maxEdge is an implausible
-// model↔market divergence — validated -20% ROI on those picks over 3 seasons
-// (see AVOID strategy). Drop it from the real, staking-eligible pool.
-export function isExtremeDivergence(
-  probability: number,
-  odds: number | null,
-): boolean {
-  if (odds === null || odds <= 1) return false;
-  return probability - 1 / odds >= AVOID_CONFIG.maxEdge;
-}
 
 /**
  * Per-market mean signed calibration error, keyed by `Market` enum value.
@@ -98,7 +86,7 @@ export type GetPoolOpts = {
   /**
    * Widen the real coupon pool with `ModelRun.features.evaluatedPicks`
    * ('viable' entries not already staked as a Bet/promoted channelDecision)
-   * — see `EVALUATED_MARKET_CANAL` doc (coupon.constants.ts) for why this is
+   * — see `EVALUATED_MARKET_CANAL` doc (analysis-core's evaluated-market-leg.ts) for why this is
    * a legitimate coupon candidate, not a reliability rejection. Default off
    * — these legs have never appeared in a real coupon before; requires a
    * dedicated backtest (STAKED vs EVALUATED ROI) before flipping to true.
@@ -241,15 +229,6 @@ function readModelProbabilities(features: unknown): Record<string, number> {
   return out;
 }
 
-function readSnapshotNumber(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string' && value.length > 0) {
-    const parsed = Number(value.replace('%', ''));
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
-
 // Opposite pick of an OVER_UNDER(_HT) line — pairs OVER_x with UNDER_x to recover
 // the two mutually-exclusive outcomes needed to remove the overround. The 2.5
 // line uses the bare 'OVER' / 'UNDER' keys (cf. FullOddsSnapshot.overUnderOdds).
@@ -259,24 +238,6 @@ function overUnderOpposite(pick: string): string | null {
   if (pick.startsWith('OVER_')) return `UNDER_${pick.slice('OVER_'.length)}`;
   if (pick.startsWith('UNDER_')) return `OVER_${pick.slice('UNDER_'.length)}`;
   return null;
-}
-
-// AVOID regime for a leg, from its two independent signals — validated on
-// settled MODEL bets (2026-08-09 plan): neither signal alone is a reliable
-// fade (extreme divergence alone: -16.7% ROI on the original pick but +19.3%
-// on its opposite over n=32; calibration alert alone: -14.2%/-19.9% on
-// either side, no edge, n=55) — but BOTH together flip back to the original
-// pick being excellent (+51% ROI, n=32). A plain OR (today's binary AVOID)
-// throws away that last case.
-export type AvoidRegime = 'CLEAN' | 'FADE' | 'DROP' | 'KEEP';
-
-export function classifyAvoidSignal(
-  extremeDivergence: boolean,
-  calibrationAlert: boolean,
-): AvoidRegime {
-  if (!extremeDivergence && !calibrationAlert) return 'CLEAN';
-  if (extremeDivergence && calibrationAlert) return 'KEEP';
-  return extremeDivergence ? 'FADE' : 'DROP';
 }
 
 // Two-outcome opposite of a pick, for markets where "fade the model" means
@@ -348,84 +309,6 @@ export function computeMarketFair(
     // Invalid decimal odds (≤ 1) — skip fair-prob rather than fail the pool.
     return null;
   }
-}
-
-// Rejection reasons that mean the pick genuinely fails on reliability grounds
-// (model overconfidence, uncalibrated league, overdispersion risk, quality
-// floor) — never a legitimate candidate, even for a hand-built combo. Every
-// other rejectionReason (ev_above_hard_cap/ev_above_soft_cap/ev_below_threshold,
-// odds_below_floor/odds_above_cap) is about the single-bet auto-stake
-// threshold, which COUPON_ANALYSIS_TEMPLATE.md (Étape 0/5) is explicit is
-// "hors sujet" for judging a leg's reliability inside a combo — see
-// `getPickRejectionReason` (packages/analysis-core/selection/pick-validation.ts)
-// for where each reason is actually raised.
-export const RELIABILITY_REJECTION_REASONS: ReadonlySet<string> = new Set([
-  'probability_too_low',
-  'quality_score_below_threshold',
-  'under_high_lambda',
-  'market_suspended',
-]);
-
-// Decides whether one ModelRun.features.evaluatedPicks entry becomes an
-// extra coupon-eligible candidate (opts.includeEvaluatedMarkets) — pulled out
-// as a pure function so the gating logic (dedup, canal mapping, AVOID) is
-// unit-testable without mocking the whole Prisma/odds-loader pipeline that
-// getPoolForRange runs inside. See EVALUATED_MARKET_CANAL doc
-// (coupon.constants.ts) for why 'viable'-but-not-staked is a legitimate
-// candidate, not a reliability rejection.
-export function resolveEvaluatedMarketLeg(
-  evaluated: Pick<
-    EvaluatedPickSnapshot,
-    'market' | 'pick' | 'status' | 'probability' | 'odds' | 'rejectionReason'
-  >,
-  opts: {
-    stakedKeys: ReadonlySet<string>;
-    enforceAvoid: boolean;
-    calibrationAlert: boolean;
-    /**
-     * Also admit a 'rejected' pick when its rejectionReason is EV/odds-only
-     * (see RELIABILITY_REJECTION_REASONS) — off by default so the existing
-     * real coupon pool (getPoolForRange's includeEvaluatedMarkets) keeps its
-     * current viable-only behaviour unchanged. Set by the LLM candidate pool
-     * (docs/vantage-centric-redesign-2026-09-01.md §9 point 1), which needs
-     * the full evaluatedPicks population, not just what already cleared the
-     * single-bet EV floor.
-     */
-    includeEvRejected?: boolean;
-  },
-): {
-  canal: Canal;
-  probability: number;
-  oddsSnapshot: number;
-  wasViable: boolean;
-} | null {
-  const wasViable = evaluated.status === 'viable';
-  if (!wasViable) {
-    const reason = evaluated.rejectionReason;
-    const isReliabilityRejection =
-      reason === undefined || RELIABILITY_REJECTION_REASONS.has(reason);
-    if (!opts.includeEvRejected || isReliabilityRejection) return null;
-  }
-  const canal = EVALUATED_MARKET_CANAL[evaluated.market];
-  if (!canal) return null; // CORRECT_SCORE and anything unmapped — excluded
-  if (opts.stakedKeys.has(`${evaluated.market}:${evaluated.pick}`)) return null;
-
-  const probability = readSnapshotNumber(evaluated.probability);
-  const oddsSnapshot = readSnapshotNumber(evaluated.odds);
-  if (probability === null || oddsSnapshot === null) return null;
-
-  if (opts.enforceAvoid) {
-    const regime = classifyAvoidSignal(
-      isExtremeDivergence(probability, oddsSnapshot),
-      opts.calibrationAlert,
-    );
-    // FADE has no dedicated opposite-leg construction here (unlike the Bet
-    // loop, which can look up the opposite pick's fresh odds from the live
-    // snapshot) — treated like DROP, same as pushChannelSelectionPick above.
-    if (regime === 'DROP' || regime === 'FADE') return null;
-  }
-
-  return { canal: canal, probability, oddsSnapshot, wasViable };
 }
 
 // Renamed from `SignalWindowService` 2026-09-03. The old name was a fossil:
@@ -813,7 +696,7 @@ export class CouponPoolService {
 
         // Widen the real pool with viable-but-not-officially-staked
         // evaluatedPicks (opts.includeEvaluatedMarkets) — see
-        // EVALUATED_MARKET_CANAL doc (coupon.constants.ts) for why a
+        // EVALUATED_MARKET_CANAL doc (analysis-core's evaluated-market-leg.ts) for why a
         // 'viable' entry is a legitimate coupon candidate even though its own
         // channel didn't select it as the winner among this fixture's markets.
         if (opts.includeEvaluatedMarkets) {

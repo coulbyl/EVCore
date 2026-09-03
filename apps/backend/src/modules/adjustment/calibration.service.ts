@@ -12,7 +12,7 @@ import {
   type ChannelReliability,
   type ChannelReliabilityMap,
   type ReliabilityObservation,
-} from './channel-reliability';
+} from '@evcore/analysis-core';
 
 const CALIBRATION_MARKETS = [
   Market.ONE_X_TWO,

@@ -285,81 +285,15 @@ export const TEAM_TOTAL_MAX_ODDS = 2.3;
  */
 export const ANCHOR_MIN_PROBABILITY = 0.7;
 
-/**
- * Marché évalué (`ModelRun.features.evaluatedPicks`, `status: 'viable'`) →
- * canal coupon — trouvé 2026-08-16 en creusant le biais suspecté dans
- * `CouponPoolService` (alors `SignalWindowService`) : `getPoolForRange` (le
- * vrai pool de coupon) ne lit que les `Bet`/`channelDecision` déjà
- * matérialisés, une seule jambe par canal par match — jamais les autres
- * marchés évalués sur le même match. Exactement le trou documenté par
- * `COUPON_ANALYSIS_TEMPLATE.md` (Étape 0) : "parcourir evaluatedPicks en
- * entier, pas juste selectedPicks". Élargi le 2026-09-03
- * (`resolveEvaluatedMarketLeg`'s `includeEvRejected`) pour aussi admettre un
- * pick rejeté pour une raison EV/cote seule (pas de fiabilité) — même
- * distinction que le template.
- *
- * Mapping délibérément simple — PAS une reproduction de la logique de
- * sélection de chacun des 6 canaux (VALUE/SAFE/DOMINANT/BTTS/DRAW/TEAM_TOTAL,
- * tous différents, certains inter-dépendants comme SAFE qui exclut le pick
- * de VALUE) contre le snapshot persistée (`EvaluatedPickSnapshot`, lossy —
- * `number` simple, pas de `Decimal`, pas de contexte ligue par jambe) :
- * `status: 'viable'` a déjà passé les gates du système (probabilité
- * plancher, cote dans la fourchette, marché non suspendu, EV dans une bande
- * acceptable, pas de pénalité longshot) — ce n'est pas un rejet de fiabilité
- * de ne pas avoir gagné l'arbitrage de son canal contre les autres marchés
- * du même match. `MIN_LEG_PROBABILITY`/`clearsValueEdgeFloor` (déjà en place)
- * suffisent en aval comme garde-fous coupon.
- *
- * - ONE_X_TWO → DOMINANT (son propre marché ; DOMINANT n'était jusqu'ici
- *   JAMAIS lu dans le pool réel — ni `Bet` ni `channelDecision` promu —
- *   confirmé : 0 jambe DOMINANT dans `coupon_proposal_leg` historiquement).
- * - TEAM_TOTAL_HOME/AWAY → TEAM_TOTAL, BTTS → BTTS (marchés dédiés).
- * - CORRECT_SCORE → exclu (absent de ce mapping) — signal immature confirmé
- *   par plusieurs pistes invalidées (AUC=0.51, quasi hasard ; voir TODO.md/
- *   mémoire `project_correct_score_immature`), jamais staké nulle part.
- * - Tout le reste (OVER_UNDER, OVER_UNDER_HT, DOUBLE_CHANCE,
- *   HALF_TIME_FULL_TIME, FIRST_HALF_WINNER, DRAW_NO_BET, CLEAN_SHEET_*,
- *   WIN_TO_NIL_*, TO_WIN_EITHER_HALF, RESULT_TOTAL_GOALS, RESULT_BTTS) →
- *   VALUE, le canal `ALL_MARKETS` déjà le plus large (value.strategy.ts).
- */
-// Rewritten 2026-08-22. Every market now maps to the channel that actually
-// specialises in it, instead of being dumped on VALUE.
-//
-// The old mapping sent 13 of 17 markets to 'VALUE' — not because VALUE had
-// any claim on them, but because VALUE was one of only four canals that could
-// carry a coupon leg at all (the pool read `bet`, which only VALUE and SAFE
-// ever populate). That fallback became a hole the moment pool admission moved
-// to POOL_ELIGIBLE_CHANNELS: an evaluated DRAW_NO_BET pick relabelled 'VALUE'
-// re-entered the pool wearing the label of the channel with the worst
-// calibration ratio in the system (0.729), and picked up VALUE's calibrated
-// hit rate in scorePicks on the way in — bypassing the admission list from
-// behind and mis-scoring itself twice over.
-//
-// Markets whose owning channel is NOT in POOL_ELIGIBLE_CHANNELS are simply
-// absent from this map: `resolveEvaluatedMarketLeg` drops any market it
-// cannot resolve, so exclusion here is the same decision as exclusion from
-// the pool, applied consistently to both entry paths.
-export const EVALUATED_MARKET_CANAL: Record<string, CouponChannel> = {
-  ONE_X_TWO: StrategyChannel.DOMINANT,
-  OVER_UNDER: StrategyChannel.GOALS,
-  OVER_UNDER_HT: StrategyChannel.OVER_UNDER_HT,
-  BTTS: StrategyChannel.BTTS,
-  TEAM_TOTAL_HOME: StrategyChannel.TEAM_TOTAL,
-  TEAM_TOTAL_AWAY: StrategyChannel.TEAM_TOTAL,
-  DOUBLE_CHANCE: StrategyChannel.DOUBLE_CHANCE,
-  DRAW_NO_BET: StrategyChannel.DRAW_NO_BET,
-  HALF_TIME_FULL_TIME: StrategyChannel.HALF_TIME_FULL_TIME,
-  FIRST_HALF_WINNER: StrategyChannel.FIRST_HALF,
-  TO_WIN_EITHER_HALF: StrategyChannel.WIN_EITHER_HALF,
-  CLEAN_SHEET_HOME: StrategyChannel.CLEAN_SHEET,
-  CLEAN_SHEET_AWAY: StrategyChannel.CLEAN_SHEET,
-  WIN_TO_NIL_HOME: StrategyChannel.WIN_TO_NIL,
-  WIN_TO_NIL_AWAY: StrategyChannel.WIN_TO_NIL,
-  RESULT_TOTAL_GOALS: StrategyChannel.RESULT_TOTAL_GOALS,
-  RESULT_BTTS: StrategyChannel.RESULT_BTTS,
-  // CORRECT_SCORE stays out: its scoreline signal is validated for
-  // reasonDetails only, never for staking (TODO.md, 2026-08-15).
-} as const;
+// EVALUATED_MARKET_CANAL moved to
+// packages/analysis-core/src/coupon/evaluated-market-leg.ts 2026-09-03,
+// alongside resolveEvaluatedMarketLeg (its only real reader) — part of
+// making the deterministic pool logic callable from apps/vantage-worker
+// without depending on this app's NestJS layer. See
+// docs/vantage-centric-redesign-2026-09-01.md §9bis. Full history (why the
+// mapping exists, why it isn't a reproduction of each channel's own
+// selection logic, why CORRECT_SCORE stays out) preserved in that file's
+// doc comment.
 
 // ─────────────────────────────────────────────
 // Bornes de composition (profils supprimés — 2026-08-22)
