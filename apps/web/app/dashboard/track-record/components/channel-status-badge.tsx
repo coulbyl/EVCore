@@ -1,10 +1,14 @@
 import { Badge } from "@evcore/ui";
 import type { ChannelStatus } from "@/domains/dashboard/types/dashboard";
 
+// Basé sur la calibration (réel/annoncé), jamais le ROI — voir
+// docs/vantage-centric-redesign-2026-09-01.md §5.4 : le ROI est trop bruyant
+// à ce volume pour juger un canal (CLAUDE.md), la calibration est le
+// standard déjà utilisé partout ailleurs dans le produit pour ce jugement.
 const STATUS_LABEL: Record<ChannelStatus, string> = {
-  GREEN: "Positif",
-  ORANGE: "Marge fine",
-  RED: "Négatif",
+  GREEN: "Fiable",
+  ORANGE: "À surveiller",
+  RED: "Peu fiable",
   INACTIVE: "Inactif",
   INSUFFICIENT_DATA: "Échantillon insuffisant",
 };

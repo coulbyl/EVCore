@@ -84,6 +84,7 @@ export default async function TrackRecordPage({
     status: row.status,
     roi: row.roi,
     hitRate: row.hitRate,
+    calibrationRatio: row.calibrationRatio,
     sampleSize: row.sampleSize,
   }));
 

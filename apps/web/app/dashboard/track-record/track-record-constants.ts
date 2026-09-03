@@ -113,6 +113,7 @@ export function orderChannels<
 
 export type MergedChannelRow = ChannelStatsItem & {
   status: ChannelHealthItem["status"];
+  calibrationRatio: ChannelHealthItem["calibrationRatio"];
 };
 
 /**
@@ -128,11 +129,13 @@ export function mergeChannelData(
   stats: ChannelStatsItem[],
   health: ChannelHealthItem[],
 ): MergedChannelRow[] {
-  const statusByChannel = new Map(health.map((h) => [h.channel, h.status]));
+  const healthByChannel = new Map(health.map((h) => [h.channel, h]));
   return orderChannels(
     stats.map((row) => ({
       ...row,
-      status: statusByChannel.get(row.channel) ?? "INSUFFICIENT_DATA",
+      status: healthByChannel.get(row.channel)?.status ?? "INSUFFICIENT_DATA",
+      calibrationRatio:
+        healthByChannel.get(row.channel)?.calibrationRatio ?? null,
     })),
   );
 }
@@ -151,10 +154,21 @@ export function formatHitRate(value: number | null): string {
   return `${(value * 100).toFixed(0)}%`;
 }
 
-// Same signal as ChannelStatusBadge, applied to the ROI figure itself so the
-// number reads as positive/negative/borderline before the reader parses the
-// sign — the badge alone left ROI as flat, uncolored text.
-const ROI_TONE_CLASS: Record<ChannelStatus, string> = {
+// Ratio réel/annoncé — proche de 1 = bien calibré (see backend
+// dashboard.service.ts's calibrationRatioOf). Not a percentage.
+export function formatCalibrationRatio(value: number | null): string {
+  if (value === null) return "—";
+  return `${value.toFixed(2)}×`;
+}
+
+// Same signal as ChannelStatusBadge, applied to the calibration-ratio figure
+// so the number reads as trustworthy/borderline/not before the reader parses
+// it — the badge alone left it as flat, uncolored text. NOT applied to the
+// ROI figure: `status` is calibration-based (see dashboard.service.ts's
+// calibrationStatus), so tinting ROI by it would color a number the status
+// no longer describes (a channel can show a negative ROI and still be
+// GREEN — see docs/vantage-centric-redesign-2026-09-01.md §5.4, DRAW).
+const STATUS_TONE_CLASS: Record<ChannelStatus, string> = {
   GREEN: "text-success",
   ORANGE: "text-warning",
   RED: "text-danger",
@@ -162,6 +176,6 @@ const ROI_TONE_CLASS: Record<ChannelStatus, string> = {
   INSUFFICIENT_DATA: "text-muted-foreground",
 };
 
-export function roiToneClass(status: ChannelStatus): string {
-  return ROI_TONE_CLASS[status];
+export function statusToneClass(status: ChannelStatus): string {
+  return STATUS_TONE_CLASS[status];
 }

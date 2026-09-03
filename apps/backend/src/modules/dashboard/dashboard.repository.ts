@@ -336,6 +336,7 @@ export class DashboardRepository {
       select: {
         result: true,
         odds: true,
+        probability: true,
         channelDecision: {
           select: {
             channel: true,

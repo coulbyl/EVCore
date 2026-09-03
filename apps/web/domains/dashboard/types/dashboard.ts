@@ -107,6 +107,8 @@ export type ChannelHealthItem = {
   primaryMetricType: "ROI" | "HIT_RATE";
   roi: number | null;
   hitRate: number | null;
+  /** Réel/annoncé — drives `status`, never `roi` (see backend dashboard.types.ts). */
+  calibrationRatio: number | null;
   vsThreshold: number | null;
   sampleSize: number;
 };
@@ -133,6 +135,7 @@ export type ChannelCompetitionStatItem = {
   competitionCountry: string;
   roi: number | null;
   hitRate: number | null;
+  calibrationRatio: number | null;
   sampleSize: number;
   status: ChannelStatus;
 };

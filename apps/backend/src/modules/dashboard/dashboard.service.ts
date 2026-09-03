@@ -613,16 +613,46 @@ function maxDrawdownFromBets(bets: FlatBet[]): number | null {
   return maxDD;
 }
 
-function evRoiStatus(
-  roi: number | null,
+// Same floor CLAUDE.md/VANTAGE's own guardrail use for "poorly calibrated"
+// (docs/vantage-centric-redesign-2026-09-01.md §4 point 3, §5.8) — ratio
+// réel/annoncé below this is measured overconfident enough to distrust.
+// Reused here for consistency: this page previously classified by ROI
+// (§5.4 of that doc) even though DRAW was flagged "Négatif" on ROI while
+// being one of only 2 channels with a genuinely positive calibration ratio
+// after shrinkage (2026-08-22 audit) — the classification basis was wrong,
+// not just this one channel's number.
+const CALIBRATION_GOOD_RATIO = 0.85;
+// A wider margin below GOOD before calling a channel outright unreliable
+// rather than borderline — same asymmetric shape (a narrow middle band,
+// no distinct tier above GOOD) as the ROI thresholds this replaces.
+const CALIBRATION_BAD_RATIO = 0.7;
+
+function calibrationStatus(
+  ratio: number | null,
   sampleSize: number,
   minSample: number,
 ): ChannelStatus {
   if (sampleSize < minSample) return 'INSUFFICIENT_DATA';
-  if (roi === null) return 'INACTIVE';
-  if (roi >= 0) return 'GREEN';
-  if (roi >= -5) return 'ORANGE';
+  if (ratio === null) return 'INACTIVE';
+  if (ratio >= CALIBRATION_GOOD_RATIO) return 'GREEN';
+  if (ratio >= CALIBRATION_BAD_RATIO) return 'ORANGE';
   return 'RED';
+}
+
+// hitRate ÷ average announced probability — same formula as VANTAGE's own
+// context calibration (apps/vantage-worker/src/context/build-match-
+// context.ts's loadChannelCalibration) and the admission philosophy
+// documented in project memory feedback_admission_par_calibration: ratio
+// réel/annoncé, never ROI.
+function calibrationRatioOf(selections: SettledSelection[]): number | null {
+  if (selections.length === 0) return null;
+  const hitRate = hitRateOf(selections);
+  if (hitRate === null) return null;
+  const avgProbability =
+    selections.reduce((acc, s) => acc + toNumber(s.probability), 0) /
+    selections.length;
+  if (avgProbability <= 0) return null;
+  return hitRate / avgProbability;
 }
 
 // DOMINANT/BTTS/DRAW/GOALS settle via ChannelSelection.result rather than a
@@ -633,6 +663,7 @@ type SettledSelection = {
   // Schema-nullable, but the repository query filters to WON/LOST only.
   result: BetStatus | null;
   odds: { toString(): string } | null;
+  probability: { toString(): string };
 };
 
 function asFlatBets(selections: SettledSelection[]): FlatBet[] {
@@ -655,13 +686,15 @@ function channelHealthFromSelections(
 ): ChannelHealthItem {
   const roi = flatBetRoi(asFlatBets(selections));
   const hitRate = hitRateOf(selections);
+  const calibrationRatio = calibrationRatioOf(selections);
   return {
     channel,
-    status: evRoiStatus(roi, selections.length, 30),
+    status: calibrationStatus(calibrationRatio, selections.length, 30),
     primaryMetric: (primaryMetricType === 'HIT_RATE' ? hitRate : roi) ?? 0,
     primaryMetricType,
     roi,
     hitRate,
+    calibrationRatio,
     vsThreshold: null,
     sampleSize: selections.length,
   };
@@ -702,6 +735,7 @@ function channelCompetitionStatsFromSelections(
   return Array.from(groups.entries()).map(
     ([competitionCode, { name, country, rows }]) => {
       const roi = flatBetRoi(asFlatBets(rows));
+      const calibrationRatio = calibrationRatioOf(rows);
       return {
         channel,
         competitionCode,
@@ -709,8 +743,9 @@ function channelCompetitionStatsFromSelections(
         competitionCountry: country,
         roi,
         hitRate: hitRateOf(rows),
+        calibrationRatio,
         sampleSize: rows.length,
-        status: evRoiStatus(roi, rows.length, 30),
+        status: calibrationStatus(calibrationRatio, rows.length, 30),
       };
     },
   );

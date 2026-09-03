@@ -401,8 +401,17 @@ La page `/dashboard/track-record` classe chaque canal "Négatif/Marge fine/Posit
 ROI**, pas par calibration — DRAW y est affiché "Négatif" (-8,05%) alors qu'il est un des
 2 seuls canaux positifs après shrinkage dans l'audit du 22-08. C'est la page de preuve
 publique du produit ; elle contredit aujourd'hui tout ce qu'on vient d'établir sur le ROI.
-**Pas dans le plan de cette semaine (§0)**, mais la correction la plus importante à
-planifier juste après.
+
+**Fait le 2026-09-03** : `dashboard.service.ts` (`calibrationStatus`/`calibrationRatioOf`,
+mêmes seuils que le garde-fou VANTAGE §4 point 3 : ≥0,85 Fiable, ≥0,70 À surveiller, sinon
+Peu fiable — `sampleSize<30` reste Échantillon insuffisant) remplace `evRoiStatus`. Le
+badge de statut (`ChannelStatusBadge`) est relabellé Fiable/À surveiller/Peu fiable — plus
+"Positif/Marge fine/Négatif", des libellés qui n'avaient plus de sens une fois la base de
+classement changée. Le chiffre ROI reste affiché (informatif) mais n'est plus teinté par le
+statut (il ne le décrit plus) — une nouvelle colonne "Calibration" (teintée) porte le
+ratio réel/annoncé qui pilote réellement le badge. 3 tests de régression ajoutés
+(dont le cas DRAW exact : ROI négatif + calibration ≥0,85 → Fiable), typecheck et lint
+propres des deux apps.
 
 ### 5.5 Gate du chat Business (Inbox)
 

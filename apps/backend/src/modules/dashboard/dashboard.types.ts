@@ -103,6 +103,11 @@ export type ChannelHealthItem = {
   primaryMetricType: 'ROI' | 'HIT_RATE';
   roi: number | null;
   hitRate: number | null;
+  /** Réel/annoncé (hitRate ÷ probabilité moyenne annoncée) — drives `status`,
+   * never `roi` (see CLAUDE.md: ROI is anti-predictive/noisy at this
+   * volume; calibration is the standard admission signal everywhere else
+   * in the product). */
+  calibrationRatio: number | null;
   vsThreshold: number | null;
   sampleSize: number;
 };
@@ -135,6 +140,8 @@ export type ChannelCompetitionStatItem = {
   competitionCountry: string;
   roi: number | null;
   hitRate: number | null;
+  /** See ChannelHealthItem.calibrationRatio — same formula, drives `status`. */
+  calibrationRatio: number | null;
   sampleSize: number;
   status: ChannelStatus;
 };
