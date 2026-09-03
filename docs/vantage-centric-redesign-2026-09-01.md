@@ -1065,3 +1065,45 @@ pré-existants sur `page-shell.tsx`, aucun nouveau).
 Reste non commencé : le recheck J-J (reparqué le 09-03, deux gaps distincts documentés
 dans `project_no_same_day_reanalysis.md`) et toute observation/mesure du nouveau pipeline
 une fois qu'il aura tourné en conditions réelles.
+
+## Revue de la branche + 3 correctifs (2026-09-03)
+
+Revue systématique de tout le chantier (24 commits) demandée par l'utilisateur avant de
+démarrer le recheck J-J. Aucun bug bloquant. Trois points réels corrigés avant de
+continuer, sur du code qui n'a jamais encore tourné en prod :
+
+1. **`persist-coupon-proposal.ts`** — le chemin de mise à jour (`deleteMany` des jambes
+   puis `update` du coupon) était deux appels Prisma séparés, pas dans une transaction :
+   un crash entre les deux aurait laissé un `CouponProposal` sans aucune jambe,
+   silencieusement. Enveloppé dans `prisma.$transaction([...])`. Gap préexistant dans
+   l'ancien `CouponRepository.upsertProposal` (vérifié : jamais de `$transaction` dans son
+   historique non plus) — corrigé ici plutôt que reporté dans du code neuf.
+2. **`compose-coupon-class.spec.ts`** — les deux tests de relance n'exerçaient la boucle
+   que via un rejet de *schéma* (index dupliqué), jamais via un rejet de la Phase C
+   (anti-corrélation, cote hors bande) — exactement le chemin que les commentaires du code
+   décrivent comme la raison d'être de la relance-avec-retour. Un test neuf construit un
+   vivier avec deux candidats du même match (canal/marché différents pour ne pas être
+   dédupliqués par `reduceToLlmPool`) pour forcer un rejet Phase C réel, puis vérifie que
+   le prompt de la deuxième tentative porte bien CETTE raison (pas "réponse invalide").
+3. **Robustesse du timing du cron** — le nouveau cron (20h30 UTC, `VANTAGE_COUPON_CRON`)
+   suppose que l'analyse de la veille finit en 30 minutes, alors que rien dans le repo ne
+   documente sa durée réelle (boucle strictement série par fixture, appels bloquants
+   API-Football + ml-worker, aucun timeout configuré) — contrairement à l'ancien système,
+   qui enchaînait la génération directement à la fin de l'analyse (garantie d'ordre par
+   construction, perdue avec le découplage des deux apps). Plutôt que de tenter de
+   détecter la fin de l'analyse (recoupage entre apps, contraire au principe déjà acté),
+   **deuxième passage auto-cicatrisant** : `VANTAGE_COUPON_RETRY_CRON` (défaut 21h15 UTC,
+   45 min après le premier) rejoue le même job — sûr par construction puisque
+   `persistCouponProposal` ne touche jamais un coupon déjà ACCEPTED/REJECTED (seulement
+   PENDING), donc un second passage avec un pool plus complet ne peut qu'améliorer une
+   proposition qu'un utilisateur n'a pas encore tranchée, jamais corrompre une décision
+   prise.
+
+Aussi noté par la revue, pas corrigé (opportunité, pas urgent) : `recentForm` est déjà
+calculé dans `pool-query.ts` mais jamais montré au LLM du coupon — pourrait aider à
+repérer une corrélation cachée entre jambes (ex. deux picks "domicile gagne" dont les deux
+équipes sont en méforme). Contrairement à H2H/coach tenure (bruit dans un prompt de 30-50
+candidats) ou `shadow_predictions` (répéterait l'erreur déjà évitée pour VANTAGE — un LLM
+qui lit la sortie d'un autre LLM comme preuve).
+
+Vérifié : typecheck/lint propres, 128/128 vantage-worker (+1 test).

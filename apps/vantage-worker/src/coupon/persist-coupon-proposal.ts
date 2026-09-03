@@ -114,21 +114,29 @@ export async function persistCouponProposal(
   });
 
   if (existing) {
-    await prisma.couponProposalLeg.deleteMany({
-      where: { couponProposalId: existing.id },
-    });
-    await prisma.couponProposal.update({
-      where: { id: existing.id },
-      data: {
-        combinedOdds: toDecimal(coupon.combinedOdds),
-        jointProbability: toDecimal(coupon.jointProbability),
-        signalScore: toDecimal(meanCalibratedProbability),
-        lastFixtureScheduledAt,
-        reasoning,
-        generatedAt: new Date(),
-        legs: { create: legData },
-      },
-    });
+    // $transaction: a crash between the deleteMany and the update would
+    // otherwise leave a CouponProposal with zero legs, silently — the
+    // original apps/backend upsertProposal this mirrors had the same two
+    // separate calls (verified: no $transaction anywhere in that history
+    // either), a pre-existing gap fixed here rather than carried forward
+    // into new code.
+    await prisma.$transaction([
+      prisma.couponProposalLeg.deleteMany({
+        where: { couponProposalId: existing.id },
+      }),
+      prisma.couponProposal.update({
+        where: { id: existing.id },
+        data: {
+          combinedOdds: toDecimal(coupon.combinedOdds),
+          jointProbability: toDecimal(coupon.jointProbability),
+          signalScore: toDecimal(meanCalibratedProbability),
+          lastFixtureScheduledAt,
+          reasoning,
+          generatedAt: new Date(),
+          legs: { create: legData },
+        },
+      }),
+    ]);
     return;
   }
 

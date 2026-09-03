@@ -83,11 +83,23 @@ async function main() {
       jobId: "vantage-recurring-coupon-generation",
     },
   );
+  // Self-healing second pass — see config.ts's couponRetryCron doc comment.
+  // Distinct jobId (same job name, "generate-coupons") so both repeatable
+  // registrations coexist instead of one overwriting the other.
+  await queue.add(
+    "generate-coupons",
+    {},
+    {
+      repeat: { pattern: config.couponRetryCron },
+      jobId: "vantage-recurring-coupon-generation-retry",
+    },
+  );
 
   logger.info(
     {
       sweepIntervalMs: config.sweepIntervalMs,
       couponCron: config.couponCron,
+      couponRetryCron: config.couponRetryCron,
       llmProvider: config.llmProvider,
       model: config.llmModel,
       llmFallbackProviders: llmClients.fallbacks.map((f) => f.provider),

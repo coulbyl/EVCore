@@ -93,6 +93,36 @@ function makePool(): ScoredCandidate[] {
   });
 }
 
+// Two candidates sharing the same fixture (different canal+market, so
+// reduceToLlmPool's key-based dedup doesn't merge them) plus one distinct
+// candidate — lets a test select two schema-valid, distinct indices that
+// still violate Phase C's anti-correlation check (validate-coupon-
+// selection.ts), rather than only ever exercising the schema-level
+// duplicate-index rejection.
+function makeSameFixturePool(): ScoredCandidate[] {
+  const candidates = [
+    makeCandidate({ fixtureId: "dup", competition: "Premier League" }),
+    makeCandidate({
+      fixtureId: "dup",
+      competition: "Premier League",
+      market: "BTTS",
+      pick: "YES",
+      canal: STRATEGY_CHANNEL.BTTS,
+    }),
+    makeCandidate({
+      fixtureId: "f2",
+      competition: "La Liga",
+      market: "GOALS",
+      pick: "OVER",
+      canal: STRATEGY_CHANNEL.GOALS,
+    }),
+  ];
+  return scoreCandidates(candidates, {
+    channelReliability: {},
+    pooledReliability: IDENTITY,
+  });
+}
+
 function composeResponse(legIndices: number[]) {
   return JSON.stringify({
     verdict: "compose",
@@ -172,6 +202,32 @@ describe("composeCouponClass", () => {
     expect(requestVantageCompletion).toHaveBeenCalledTimes(2);
     const secondCallUserPrompt = requestVantageCompletion.mock.calls[1]?.[2] as string;
     expect(secondCallUserPrompt).toContain("rejetée par la vérification automatique");
+  });
+
+  it("retries with the Phase C validation reason, not just a schema-level rejection", async () => {
+    // First attempt: schema-valid (2 distinct indices) but both legs share
+    // the same fixture — rejected by validateCouponSelection (Phase C),
+    // never by generateCouponSelection's own index resolution. Two of
+    // Phase C's checks could fire here (distinct-fixture count, then
+    // anti-correlation) — either is fine, the point is it's THIS layer's
+    // reason, not "invalid response"/"duplicate index".
+    requestVantageCompletion.mockResolvedValueOnce(composeResponse([1, 2]));
+    // Second attempt: swaps in the distinct-fixture candidate.
+    requestVantageCompletion.mockResolvedValueOnce(composeResponse([1, 3]));
+
+    const result = await composeCouponClass(
+      makeSameFixturePool(),
+      SAFE_CLASS,
+      COUPON_BOUNDS,
+      dummyClients,
+      noopLogger,
+    );
+
+    expect(result.outcome).toBe("composed");
+    expect(requestVantageCompletion).toHaveBeenCalledTimes(2);
+    const secondCallUserPrompt = requestVantageCompletion.mock.calls[1]?.[2] as string;
+    expect(secondCallUserPrompt).toContain("distinct fixture");
+    expect(secondCallUserPrompt).not.toContain("réponse précédente invalide");
   });
 
   it("gives up after maxAttempts, never falling back to a deterministic composer", async () => {
