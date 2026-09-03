@@ -430,6 +430,17 @@ confiance comme les autres picks (badge Fiable/À confirmer/Peu fiable, §2 poin
 `feedback_admission_par_calibration`) pour voir si CONSENSUS mérite d'être gardé du tout
 comme signal affiché à l'utilisateur. Pas de changement UI avant ce recalibrage.
 
+**Recalibré et fait le 2026-09-03** : ratio réel/annoncé **0,74** lifetime (n=412, déjà sous
+le seuil 0,85) ; **0,18** sur son dernier vrai lot avant que sa sélection ne devienne quasi
+nulle (n=30, réel 13,3% vs annoncé 72,6%) — cohérent avec une cause déjà connue et
+documentée dans le code (`decision-helpers.ts`) : sa probabilité annoncée, le maximum des
+canaux d'accord, était biaisée vers le haut par construction, raison pour laquelle CONSENSUS
+n'émet quasiment plus de sélection depuis le 2026-08-22 (29 `SELECTED` contre 3783
+`REJECTED` depuis). Aucun cas où le signal se défend. **Badge retiré**, pas neutralisé :
+`ConsensusBadge`, `hasConsensus`, `consensusChannels` supprimés de
+`apps/web/app/dashboard/decisions/components/` (match-card.tsx, decision-helpers.ts) —
+plus de trace du méta-canal CONSENSUS dans l'UI Decisions. Typecheck et lint propres.
+
 ### 5.7 Profil de risque et canaux suivis — usage personnalisé en backlog post-paiement
 
 Le profil de risque collecté à l'onboarding (§0 point 6, écran 9) et le suivi de canaux

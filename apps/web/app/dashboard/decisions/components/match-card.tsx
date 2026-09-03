@@ -1,4 +1,4 @@
-import { Ban, Sparkles, TriangleAlert } from "lucide-react";
+import { Ban, TriangleAlert } from "lucide-react";
 import { Separator, cn } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import { InfoTooltip } from "@/components/info-tooltip";
@@ -10,12 +10,7 @@ import type {
   StrategyChannel,
 } from "@/domains/channel-decision/types/channel-decision";
 import { channelLabel, reasonLabel } from "./channel-constants";
-import {
-  avoidFlag,
-  hasConsensus,
-  selectedPicks,
-  type AvoidFlag,
-} from "./decision-helpers";
+import { avoidFlag, selectedPicks, type AvoidFlag } from "./decision-helpers";
 import { ChannelRow, type SlipContext } from "./channel-row";
 
 export type MatchGroup = ChannelDecisionMatchDto;
@@ -30,7 +25,6 @@ export function MatchCard({
   const t = useTranslations("decisions");
   const avoid = avoidFlag(group);
   const picks = selectedPicks(group);
-  const consensus = hasConsensus(group);
   const calibrationAlert = group.decisions.some((d) => d.calibrationAlert);
 
   const avoidEdgeByChannel = new Map<StrategyChannel, number>(
@@ -126,7 +120,6 @@ export function MatchCard({
         avoid && "border-[color:var(--canal-avoid)]/40",
       )}
       beforeHeader={banners}
-      headerExtra={consensus ? <ConsensusBadge /> : undefined}
       bodyClassName="flex flex-col gap-2 py-3"
     >
       <Separator />
@@ -172,27 +165,4 @@ function AvoidOffenderLine({ avoid }: { avoid: AvoidFlag }) {
   return fallback ? (
     <span className="block leading-snug opacity-90">{fallback}</span>
   ) : null;
-}
-
-function ConsensusBadge() {
-  const t = useTranslations("decisions");
-  return (
-    <span className="flex shrink-0 items-center gap-1">
-      <span
-        className="inline-flex items-center gap-0.5 rounded-md px-1 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide"
-        style={{
-          color: "var(--canal-consensus)",
-          backgroundColor: "var(--canal-consensus-soft)",
-        }}
-      >
-        <Sparkles className="size-2.5" />
-        {t("channels.CONSENSUS.label")}
-      </span>
-      <InfoTooltip
-        label={t("consensus.tooltipLabel")}
-        description={t("consensus.tooltipDetail")}
-        side="left"
-      />
-    </span>
-  );
 }

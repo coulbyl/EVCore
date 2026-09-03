@@ -4,7 +4,6 @@ import type {
   StrategyChannel,
   AvoidOffender,
   AvoidReasonDetails,
-  ConsensusReasonDetails,
 } from "@/domains/channel-decision/types/channel-decision";
 
 /**
@@ -82,8 +81,12 @@ function bestProbability(decision: ChannelDecisionMatchDecisionDto): number {
  * Garder l'EV ici aurait mis en avant, sur la fiche de match, exactement ce
  * que la page de mise ne classe plus.
  *
- * Les méta-canaux restent des signaux au niveau du match : CONSENSUS dans
- * l'en-tête de la carte, AVOID en bandeau.
+ * AVOID reste un signal au niveau du match (bandeau) — CONSENSUS n'en est
+ * plus un depuis le 2026-09-03 (badge retiré : sa probabilité annoncée,
+ * maximum des canaux d'accord, était mesurée mal calibrée — ratio réel/
+ * annoncé 0,74 sur 412 réglés, 0,18 sur son dernier vrai lot avant que sa
+ * sélection ne devienne quasi nulle — voir docs/vantage-centric-redesign-
+ * 2026-09-01.md §5.6).
  */
 export function selectedPicks(
   group: ChannelDecisionMatchDto,
@@ -111,39 +114,4 @@ export function evaluatedRest(
       !isMetaChannel(d.channel) &&
       !isExcludedFromDecisions(d.channel),
   );
-}
-
-/**
- * Canaux indépendants qui convergent sur ce match, ou liste vide.
- *
- * Lit `reasonDetails`, PAS les sélections : depuis le 2026-08-22 CONSENSUS
- * n'émet plus de pick (ses 765 sélections étaient des doublons exacts, et sa
- * probabilité — le maximum des canaux d'accord — était biaisée vers le haut
- * par construction). Le niveau d'accord reste publié dans `reasonDetails`,
- * et c'est désormais la seule trace exploitable.
- *
- * Le test précédent exigeait `selections.length > 0`. Il passait encore
- * uniquement parce qu'aucun run n'avait tourné depuis le changement : au
- * premier run suivant, le badge et la liste des canaux convergents auraient
- * disparu de l'app sans que rien ne le signale.
- */
-export function consensusChannels(
-  group: ChannelDecisionMatchDto,
-): StrategyChannel[] {
-  const consensus = group.decisions.find(
-    (d) => d.channel === "CONSENSUS" && d.status === "SELECTED",
-  );
-  if (!consensus) return [];
-  const raw = consensus.reasonDetails;
-  if (!raw || typeof raw !== "object") return [];
-  const details = raw as Partial<ConsensusReasonDetails>;
-  return Array.isArray(details.channels)
-    ? details.channels.filter(
-        (c): c is StrategyChannel => typeof c === "string",
-      )
-    : [];
-}
-
-export function hasConsensus(group: ChannelDecisionMatchDto): boolean {
-  return consensusChannels(group).length > 0;
 }
