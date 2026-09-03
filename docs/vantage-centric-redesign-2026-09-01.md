@@ -795,10 +795,22 @@ model-run.utils.ts` devient un simple ré-export, même patron que `betting-engi
 Vérifié : 655/655 backend, 481/481 analysis-core, 92/92 vantage-worker, build+lint
 propres partout.
 
-Reste à faire pour boucler la Phase A : reproduire `getPoolForRange` elle-même côté
-`vantage-worker` — Prisma direct (`@evcore/db`, pas de couche repository NestJS), avec ses
-deux dernières dépendances : `OddsSnapshotLoader.findLatestOddsSnapshotsBatch`/
-`findBestPricesBatch` (I/O pure — une requête + `assembleFullOddsSnapshot`, déjà dans
-analysis-core) et `CalibrationService.computeChannelReliability` (I/O pure — une requête +
-`fitReliability`/`shrinkTowardPooled`, déjà dans analysis-core). Tout le reste dont
-`getPoolForRange` a besoin est maintenant dans `analysis-core`.
+**Requêtes I/O portées côté `vantage-worker`** (2026-09-03) —
+`apps/vantage-worker/src/coupon/odds-batch.ts` (`findLatestOddsSnapshotsBatch`/
+`findBestPricesBatch`, miroir de `OddsSnapshotLoader`) et `channel-reliability-query.ts`
+(`computeChannelReliability`, miroir de `CalibrationService.computeChannelReliability`) —
+même requête Prisma que côté backend, mais via `prisma` de `@evcore/db` directement (pas
+de `PrismaService`/couche NestJS), même patron que `context/market-odds.ts` et
+`persist-decision.ts` déjà en place dans cette app. Pas de spec dédiée — cohérent avec les
+autres fichiers I/O de `vantage-worker` (`find-eligible-fixtures.ts`, `market-odds.ts`,
+`persist-decision.ts`, ...), aucun n'a de test unitaire aujourd'hui (pas d'infra de DB de
+test dans cette app, contrairement à `apps/backend`). Vérifié : typecheck/lint propres,
+92/92 tests vantage-worker toujours au vert (aucun nouveau test, aucune régression).
+
+Reste à faire pour boucler la Phase A : écrire `pool-query.ts` lui-même côté
+`vantage-worker` — l'assemblage final, miroir de `getPoolForRange`, qui doit encore décider
+où vivent `POOL_ELIGIBLE_CHANNELS`/`POOL_EXCLUDED_CHANNELS`/`DRAW_STAKED_LEAGUES`
+(`coupon.constants.ts`, purs mais avec 3 autres lecteurs backend — investment.service.ts,
+coupon.service.ts — à trancher au moment d'écrire le fichier : déplacer vers analysis-core
+comme les lecteurs de features, ou dupliquer localement comme les constantes de
+`guardrails.ts`).
