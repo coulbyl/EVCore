@@ -6,8 +6,8 @@ export type NotificationType =
   | "ETL_FAILURE"
   | "WEIGHT_ADJUSTMENT"
   | "XG_UNAVAILABLE_REPORT"
-  // Personnelles (Notification.userId non-null côté backend) — voir
-  // subscription-notifier.service.ts.
+  // Personnelles (Notification.userId non-null côté backend) — types hérités
+  // du mécanisme d'abonnements retiré (2026-09-03), conservés pour l'historique.
   | "SUBSCRIPTION_EVENTS_ADDED"
   | "SUBSCRIPTION_SETTLED"
   | "SUPPORT_MESSAGE"

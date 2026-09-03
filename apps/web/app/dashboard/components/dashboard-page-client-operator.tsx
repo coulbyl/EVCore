@@ -14,7 +14,6 @@ import { WeeklyBrief } from "./weekly-brief";
 import { Announcements } from "@/components/announcements";
 import { CompetitionRanking } from "./competition-ranking";
 import { UserLeaderboard } from "./user-leaderboard";
-import { SubscriptionsShortcutCard } from "./subscriptions-shortcut-card";
 import { useCompetitionStats } from "@/domains/dashboard/use-cases/get-competition-stats";
 import { useLeaderboard } from "@/domains/dashboard/use-cases/get-leaderboard";
 import { useDashboardAnnouncements } from "@/domains/announcements/use-cases/get-dashboard-announcements";
@@ -124,13 +123,6 @@ export function DashboardPageClientOperator() {
               />
             </div>
 
-            {/* Row 3 : Raccourci Abonnements */}
-            <div
-              data-tour="dashboard-subscriptions-shortcut"
-              className="col-span-2 sm:col-span-3 lg:col-span-6"
-            >
-              <SubscriptionsShortcutCard />
-            </div>
           </div>
         </div>
       </PageContent>

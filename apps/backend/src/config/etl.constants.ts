@@ -252,7 +252,6 @@ export const BULLMQ_QUEUES = {
   ODDS_HISTORICAL_IMPORT: 'odds-historical-import',
   ROLLING_HORIZON: 'rolling-horizon',
   SEASON_ROLLOVER_SYNC: 'season-rollover-sync',
-  SUBSCRIPTION_MATCHING: 'subscription-matching',
 } as const;
 
 export const BULLMQ_DEFAULT_JOB_OPTIONS = {
@@ -308,11 +307,6 @@ export const ETL_CRON_SCHEDULES = {
   // skipped until the next redeploy. Found 2026-07-25: leagues whose new
   // season had already started weren't syncing.
   SEASON_ROLLOVER_SYNC: '45 1 * * *',
-  // Horaire, pas quotidien : les coupons/décisions de canal ne sont générés
-  // qu'une poignée de fois par jour, ce cron capte la génération du jour
-  // au fil de l'eau plutôt que de dépendre d'un timing exact (voir
-  // apps/backend/src/modules/subscriptions/DESIGN.md §Pipeline quotidien, 1).
-  SUBSCRIPTION_MATCHING: '0 * * * *',
 } as const;
 
 // Stable keys for upsertJobScheduler — one per queue (idempotent on restart)
@@ -328,7 +322,6 @@ export const ETL_SCHEDULER_KEYS = {
   SAME_DAY_ANALYSIS: 'cron:same-day-analysis',
   ROLLING_HORIZON: 'cron:rolling-horizon',
   SEASON_ROLLOVER_SYNC: 'cron:season-rollover-sync',
-  SUBSCRIPTION_MATCHING: 'cron:subscription-matching',
 } as const;
 
 export const ROLLING_HORIZON_DEFAULTS = {

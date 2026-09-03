@@ -10,7 +10,6 @@ import {
   LogOut,
   Megaphone,
   MessageCircle,
-  Repeat,
   Settings,
   Sprout,
   Wallet,
@@ -114,15 +113,6 @@ export function AccountButton({
             <Link href="/dashboard/inbox">
               <MessageCircle className="text-accent" />
               {tNav("inbox")}
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            asChild
-            className="rounded-xl focus:bg-accent/8 focus:text-foreground"
-          >
-            <Link href="/dashboard/subscriptions">
-              <Repeat className="text-accent" />
-              {tNav("subscriptions")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem

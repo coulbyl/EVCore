@@ -13,7 +13,6 @@ import { CompetitionRanking } from "./competition-ranking";
 import { UserLeaderboard } from "./user-leaderboard";
 import { PipelineStatus } from "./pipeline-status";
 import { ActiveAlerts } from "./active-alerts";
-import { SubscriptionsShortcutCard } from "./subscriptions-shortcut-card";
 import { useCompetitionStats } from "@/domains/dashboard/use-cases/get-competition-stats";
 import { useLeaderboard } from "@/domains/dashboard/use-cases/get-leaderboard";
 import { useDashboardSummary } from "@/domains/dashboard/use-cases/get-dashboard-summary";
@@ -115,10 +114,6 @@ export function DashboardPageClientAdmin() {
               />
             </div>
 
-            {/* Row 4 : Raccourci Abonnements */}
-            <div className="col-span-2 sm:col-span-3 lg:col-span-6">
-              <SubscriptionsShortcutCard />
-            </div>
           </div>
         </div>
       </PageContent>

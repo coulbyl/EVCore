@@ -25,11 +25,9 @@ import { BettingEngineRebuildWorker } from './workers/betting-engine-rebuild.wor
 import { SameDayAnalysisWorker } from './workers/same-day-analysis.worker';
 import { RollingHorizonWorker } from './workers/rolling-horizon.worker';
 import { SeasonRolloverSyncWorker } from './workers/season-rollover-sync.worker';
-import { SubscriptionMatchingWorker } from './workers/subscription-matching.worker';
 import { CouponModule } from '../coupon/coupon.module';
 import { AdjustmentModule } from '../adjustment/adjustment.module';
 import { AuthModule } from '../auth/auth.module';
-import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 
 @Module({
   imports: [
@@ -50,7 +48,6 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
       { name: BULLMQ_QUEUES.ML_TRAINING },
       { name: BULLMQ_QUEUES.ML_SCHEDULER },
       { name: BULLMQ_QUEUES.SEASON_ROLLOVER_SYNC },
-      { name: BULLMQ_QUEUES.SUBSCRIPTION_MATCHING },
     ),
     BullModule.registerFlowProducer({ name: 'rolling-horizon-flow' }),
     AuthModule,
@@ -60,7 +57,6 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
     FixtureModule,
     NotificationModule,
     RollingStatsModule,
-    SubscriptionsModule,
   ],
   controllers: [EtlController],
   providers: [
@@ -82,7 +78,6 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
     OddsHistoricalImportWorker,
     RollingHorizonWorker,
     SeasonRolloverSyncWorker,
-    SubscriptionMatchingWorker,
   ],
   exports: [EtlService, ApiFootballClient],
 })

@@ -36,7 +36,6 @@ import type { BettingEngineRebuildJobData } from './workers/betting-engine-rebui
 import type { SameDayAnalysisJobData } from './workers/same-day-analysis.worker';
 import type { RollingHorizonJobData } from './workers/rolling-horizon.worker';
 import type { SeasonRolloverSyncJobData } from './workers/season-rollover-sync.worker';
-import type { SubscriptionMatchingJobData } from './workers/subscription-matching.worker';
 import type {
   LeagueSyncJobData,
   LeagueSyncType,
@@ -159,8 +158,6 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly coachSyncQueue: Queue<CoachSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.SEASON_ROLLOVER_SYNC)
     private readonly seasonRolloverSyncQueue: Queue<SeasonRolloverSyncJobData>,
-    @InjectQueue(BULLMQ_QUEUES.SUBSCRIPTION_MATCHING)
-    private readonly subscriptionMatchingQueue: Queue<SubscriptionMatchingJobData>,
     config: ConfigService,
     private readonly prisma: PrismaService,
     private readonly rollingStatsService: RollingStatsService,
@@ -234,10 +231,6 @@ export class EtlService implements OnApplicationBootstrap {
       SEASON_ROLLOVER_SYNC: config.get<string>(
         'ETL_SEASON_ROLLOVER_SYNC_CRON',
         ETL_CRON_SCHEDULES.SEASON_ROLLOVER_SYNC,
-      ),
-      SUBSCRIPTION_MATCHING: config.get<string>(
-        'ETL_SUBSCRIPTION_MATCHING_CRON',
-        ETL_CRON_SCHEDULES.SUBSCRIPTION_MATCHING,
       ),
     };
     this.leagueSeasonSyncs = {
@@ -366,15 +359,6 @@ export class EtlService implements OnApplicationBootstrap {
       {
         name: 'season-rollover-sync',
         data: {} satisfies SeasonRolloverSyncJobData,
-      },
-    );
-
-    await this.subscriptionMatchingQueue.upsertJobScheduler(
-      ETL_SCHEDULER_KEYS.SUBSCRIPTION_MATCHING,
-      { pattern: this.cronSchedules.SUBSCRIPTION_MATCHING },
-      {
-        name: 'subscription-matching',
-        data: {} satisfies SubscriptionMatchingJobData,
       },
     );
 
@@ -547,16 +531,6 @@ export class EtlService implements OnApplicationBootstrap {
     await this.staleScheduledSyncQueue.add(
       'stale-scheduled-sync',
       { lookbackDays } satisfies StaleScheduledSyncJobData,
-      BULLMQ_DEFAULT_JOB_OPTIONS,
-    );
-  }
-
-  // Manuel escape hatch pour tester une souscription sans attendre le prochain
-  // tick horaire (ETL_SUBSCRIPTION_MATCHING_CRON, '0 * * * *').
-  async triggerSubscriptionMatching(): Promise<void> {
-    await this.subscriptionMatchingQueue.add(
-      'subscription-matching',
-      {} satisfies SubscriptionMatchingJobData,
       BULLMQ_DEFAULT_JOB_OPTIONS,
     );
   }
@@ -803,7 +777,6 @@ export class EtlService implements OnApplicationBootstrap {
       [BULLMQ_QUEUES.ML_SCHEDULER]: this.mlSchedulerQueue,
       [BULLMQ_QUEUES.BETTING_ENGINE_REBUILD]: this.bettingEngineRebuildQueue,
       [BULLMQ_QUEUES.SAME_DAY_ANALYSIS]: this.sameDayAnalysisQueue,
-      [BULLMQ_QUEUES.SUBSCRIPTION_MATCHING]: this.subscriptionMatchingQueue,
     };
   }
 

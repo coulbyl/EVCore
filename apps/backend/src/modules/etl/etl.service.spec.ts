@@ -23,7 +23,6 @@ import type { PendingBetsSettlementJobData } from './workers/pending-bets-settle
 import type { BettingEngineAnalysisJobData } from './workers/betting-engine-analysis.worker';
 import type { RollingHorizonJobData } from './workers/rolling-horizon.worker';
 import type { SeasonRolloverSyncJobData } from './workers/season-rollover-sync.worker';
-import type { SubscriptionMatchingJobData } from './workers/subscription-matching.worker';
 import type { RollingStatsService } from '../rolling-stats/rolling-stats.service';
 
 type MockQueue<T> = Pick<
@@ -97,7 +96,6 @@ describe('EtlService', () => {
   const sameDayAnalysisQueue = makeQueue();
   const coachSyncQueue = makeQueue<CoachSyncJobData>();
   const seasonRolloverSyncQueue = makeQueue<SeasonRolloverSyncJobData>();
-  const subscriptionMatchingQueue = makeQueue<SubscriptionMatchingJobData>();
   const prismaMockRaw = {
     client: {
       competition: {
@@ -144,7 +142,6 @@ describe('EtlService', () => {
     sameDayAnalysisQueue as Queue,
     coachSyncQueue as Queue<CoachSyncJobData>,
     seasonRolloverSyncQueue as Queue<SeasonRolloverSyncJobData>,
-    subscriptionMatchingQueue as Queue<SubscriptionMatchingJobData>,
     configMock,
     prismaMock,
     rollingStatsServiceMock,

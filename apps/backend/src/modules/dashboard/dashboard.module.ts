@@ -8,8 +8,6 @@ import { DashboardRepository } from './dashboard.repository';
   imports: [AuthModule],
   controllers: [DashboardController],
   providers: [DashboardService, DashboardRepository],
-  // DashboardService.getChannelHealth (calibrationRatio) is reused by
-  // SubscriptionsService.getCatalog — see subscriptions.module.ts.
   exports: [DashboardService],
 })
 export class DashboardModule {}

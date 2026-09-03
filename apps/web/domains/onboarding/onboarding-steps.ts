@@ -59,13 +59,6 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     descriptionKey: "dashboardRanking.description",
   },
   {
-    id: "dashboardSubscriptions",
-    route: null,
-    selector: '[data-tour="dashboard-subscriptions-shortcut"]',
-    titleKey: "dashboardSubscriptions.title",
-    descriptionKey: "dashboardSubscriptions.description",
-  },
-  {
     id: "decisions",
     route: "/dashboard/decisions",
     selector: '[data-tour="decisions-help"]',
@@ -106,13 +99,6 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     selector: '[data-tour="bet-slips-summary"]',
     titleKey: "betSlips.title",
     descriptionKey: "betSlips.description",
-  },
-  {
-    id: "subscriptions",
-    route: "/dashboard/subscriptions",
-    selector: '[data-tour="subscriptions-title"]',
-    titleKey: "subscriptions.title",
-    descriptionKey: "subscriptions.description",
   },
   {
     id: "bankroll",
