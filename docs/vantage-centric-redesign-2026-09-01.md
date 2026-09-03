@@ -971,8 +971,27 @@ la décision déjà actée (§9bis : "le LLM est master, pas de shadow mode").
 vérifie EXPLICITEMENT que le feedback de rejet apparaît dans le prompt de la tentative
 suivante). Vérifié : typecheck/lint propres, 124/124 vantage-worker.
 
-**Ce qui reste** : persister `CouponProposal`/`CouponProposalLeg` directement via
-`@evcore/db` (§9bis, décision déjà actée — même patron que `persist-decision.ts`), puis
-le câblage (scheduler indépendant côté `vantage-worker`, suppression de
-`CouponComposerService`/`coupon-composer.service.ts` et du chemin `generate-coupons` de
-`apps/backend`).
+**`persist-coupon-proposal.ts` écrit** (2026-09-03) — même patron que `persist-decision.ts` :
+`prisma` de `@evcore/db` directement, même clé unique et même garde-fou "ne jamais écraser
+une décision humaine (ACCEPTED/REJECTED) ni un `EXPIRED`" que `CouponRepository.upsertProposal`
+côté backend. Une seule proposition par classe par jour (`rank=1` par défaut, paramétrable)
+— le LLM produit un coupon par appel, pas un classement de plusieurs comme l'ancien
+composeur. `signalScore` (niveau coupon ET par jambe) reprend le même sens déjà acté :
+la probabilité calibrée, plus la métrique glissante d'origine. `reasoning`/`featureSnapshot`
+incluent maintenant le texte `reasoning`/`reasonDetails` du LLM (son jugement qualitatif
+par jambe et pour l'ensemble) — nouveau par rapport à l'ancien composeur, qui n'avait
+aucun texte à y mettre. `LEGACY_SIGNAL_WINDOW_DAYS=38` dupliqué localement (constante
+figée, aucune raison de vivre dans analysis-core). Pas de spec dédiée — même raison que
+les autres fichiers I/O de cette app. Vérifié : typecheck/lint propres, 124/124
+vantage-worker (inchangé, aucun test nouveau attendu ici).
+
+**Ce qui reste, et qui n'a pas encore été touché délibérément** : le câblage — un
+scheduler indépendant côté `vantage-worker` (même patron que `runSweep`) qui appelle
+`pool-query.ts` → `score-candidates.ts` → `compose-coupon-class.ts` (une fois par classe)
+→ `persist-coupon-proposal.ts`, ET la suppression de `CouponComposerService`/
+`coupon-composer.service.ts` + du chemin `generate-coupons` d'`apps/backend`. Tout le
+code écrit jusqu'ici (Phases A/B/C) est inerte — rien n'est encore appelé depuis un
+scheduler ou un job, donc zéro risque de comportement en prod tant que ce câblage n'existe
+pas. C'est délibérément la dernière étape avant que quoi que ce soit tourne réellement, et
+implique une suppression de code de production (`CouponComposerService`) — à confirmer
+avant d'y toucher.
