@@ -1,6 +1,6 @@
 import type { Logger } from "pino";
 import type { Config } from "../config";
-import type { MatchContext } from "../context/types";
+import type { ChannelCalibration, MatchContext } from "../context/types";
 import { buildMatchContext } from "../context/build-match-context";
 import { requestVantageCompletion, type LlmClients } from "../groq/client";
 import { requestSituationalResearch } from "../research";
@@ -56,6 +56,55 @@ function findKnownOdds(
   if (pick === "DRAW") return marketOdds.drawOdds;
   if (pick === "AWAY") return marketOdds.awayOdds;
   return null;
+}
+
+/** Same floor CLAUDE.md already names for these markets ("ratio réel/annoncé
+ * < 0.85"), and the same 30-sample floor the prompt itself uses before
+ * showing a channel's calibration as "mesurable" (see prompt.ts's
+ * readingsBlock) — below that, a ratio is too noisy to gate on either way. */
+const MIN_CALIBRATION_RATIO = 0.85;
+const MIN_CALIBRATION_SAMPLE = 30;
+
+/** (market, pick) → the channel whose measured calibration should gate it.
+ * Scoped to exactly the cases CLAUDE.md/docs/vantage-centric-redesign-2026-
+ * 09-01.md §4 point 3 and §5.8 name as measured bad (ONE_X_TWO/DRAW,
+ * CLEAN_SHEET, RESULT_BTTS) — not a general (market, pick) → channel map,
+ * which doesn't exist cleanly (a market like ONE_X_TWO/HOME can come from
+ * more than one channel's own read). Widen this list only after a
+ * calibration audit names another (market, pick) as measured bad, same
+ * discipline as shadow-ml's DOMINANT/VALUE-only allowlist (types.ts).
+ *
+ * Audit 2026-09-03 (docs/vantage-centric-redesign-2026-09-01.md §5.8):
+ * ONE_X_TWO/DRAW was VANTAGE's single most-played pick (35% of its
+ * "play" volume) despite ratio 0.77 — the prompt already surfaces the
+ * calibration number as context (prompt.ts), but a number in a prompt is
+ * not a filter: the model still played it. This is the actual filter,
+ * same defense-in-depth pattern as MIN_ODDS above. */
+const GATED_PICKS: readonly { market: string; pick: string; channel: string }[] = [
+  { market: "ONE_X_TWO", pick: "DRAW", channel: "DRAW" },
+  { market: "CLEAN_SHEET_HOME", pick: "YES", channel: "CLEAN_SHEET" },
+  { market: "CLEAN_SHEET_AWAY", pick: "YES", channel: "CLEAN_SHEET" },
+  { market: "RESULT_BTTS", pick: "*", channel: "RESULT_BTTS" },
+];
+
+/** Returns the poorly-calibrated channel backing this (market, pick), or
+ * `null` if it isn't gated or its calibration isn't measured badly enough
+ * (or isn't measured at all — see MIN_CALIBRATION_SAMPLE) to reject on. */
+function findPoorCalibration(
+  context: MatchContext,
+  market: string,
+  pick: string,
+): ChannelCalibration | null {
+  const gate = GATED_PICKS.find(
+    (g) => g.market === market && (g.pick === "*" || g.pick === pick),
+  );
+  if (!gate) return null;
+
+  const calib = context.calibration.find((c) => c.channel === gate.channel);
+  if (!calib || calib.calibrationRatio === null) return null;
+  if (calib.sampleSize < MIN_CALIBRATION_SAMPLE) return null;
+  if (calib.calibrationRatio >= MIN_CALIBRATION_RATIO) return null;
+  return calib;
 }
 
 export type AnalyzeResult =
@@ -204,6 +253,32 @@ export async function analyzeFixture(
         outcome: "invalid_response",
         raw,
         error: `odds ${knownOdds} for market "${parsed.data.market}" pick "${parsed.data.pick}" are below the ${MIN_ODDS} floor`,
+      };
+    }
+
+    const poorCalibration = findPoorCalibration(
+      context,
+      parsed.data.market,
+      parsed.data.pick,
+    );
+    if (poorCalibration) {
+      logger.warn(
+        {
+          fixtureId,
+          fixtureName,
+          scheduledAt: context.kickoff,
+          market: parsed.data.market,
+          pick: parsed.data.pick,
+          channel: poorCalibration.channel,
+          calibrationRatio: poorCalibration.calibrationRatio,
+          sampleSize: poorCalibration.sampleSize,
+        },
+        "vantage: pick's channel is measured poorly calibrated on this competition — rejecting",
+      );
+      return {
+        outcome: "invalid_response",
+        raw,
+        error: `channel "${poorCalibration.channel}" calibration ratio ${poorCalibration.calibrationRatio} (n=${poorCalibration.sampleSize}) is below the ${MIN_CALIBRATION_RATIO} floor for market "${parsed.data.market}" pick "${parsed.data.pick}"`,
       };
     }
   }
