@@ -30,9 +30,17 @@ export function isMetaChannel(channel: StrategyChannel): boolean {
  * LLM reasoning isn't flattened into a bare pick chip here, duplicating a
  * much richer read available one click away. Not a META_CHANNEL: unlike
  * AVOID/CONSENSUS it does emit real picks, it's just not shown on this page.
+ *
+ * VALUE/SAFE excluded since 2026-09-03: disconnected from the live pipeline
+ * (docs/vantage-centric-redesign-2026-09-01.md §5.1) — 92%/95% of their
+ * picks exactly duplicate a Phase-1 channel's pick, and their own "unique"
+ * picks don't hold up in calibration on a larger sample either (ratio 0.69,
+ * n≈1822, vs the small n=173/+14.1% ROI an earlier audit found — didn't
+ * replicate). They keep computing (`channel_decision`/`channel_selection`)
+ * for observation, just not shown here as an actionable pick anymore.
  */
 export function isExcludedFromDecisions(channel: StrategyChannel): boolean {
-  return channel === "VANTAGE";
+  return channel === "VANTAGE" || channel === "VALUE" || channel === "SAFE";
 }
 
 export type AvoidFlag = {

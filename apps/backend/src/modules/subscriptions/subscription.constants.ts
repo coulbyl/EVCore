@@ -102,12 +102,20 @@ export const SUBSCRIPTION_SOURCES: readonly SubscriptionSourceDef[] = [
     label: 'Coupons du jour (cote courte)',
     kind: 'COUPON',
   },
+  // Retiré (déconnecté de la pipeline) le 2026-09-03. 92% des sélections de
+  // VALUE dupliquent exactement un pick de Phase 1 (docs/audit-canaux-
+  // investir-2026-08-22.md §2.1) — et ses picks "propres", la seule nuance
+  // qui aurait justifié de le garder, ne tiennent pas sur un échantillon
+  // plus large (ratio de calibration 0.69 sur n≈1822, contre le 0.845/n=173
+  // trouvé initialement — l'effet ne se réplique pas). Voir
+  // docs/vantage-centric-redesign-2026-09-01.md §5.1.
   {
     id: 'CHANNEL_VALUE',
     label: 'VALUE (Valeur)',
     kind: 'CHANNEL',
     channel: 'VALUE',
     topNOptions: DEFAULT_CHANNEL_TOPN_OPTIONS,
+    retired: true,
   },
   // Retiré le 2026-08-22. Pas pour son ROI (−6.05% shrinké, d'autres sont
   // dans le même ordre de grandeur et restent proposés) mais parce que le

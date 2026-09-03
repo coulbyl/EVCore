@@ -81,7 +81,7 @@ que **tout reste gratuit pour l'instant**, le gate viendra plus tard.
 | Navigation | Dashboard, Investir, Coupon Composer, Decisions, Arbitrage, Abonnements, Notifications, Annonces séparées | Dashboard épuré, **Decisions**, **Arbitrage** (rôle inchangé), **Coupons** (nouveau, sœur d'Arbitrage), **Notifications** fusionnée — Investir, Coupon Composer, **Abonnements** et Annonces supprimés de la nav |
 | Génération de coupon | Moteur déterministe (`coupon` module), `topN` sur canaux non filtrés par calibration | **VANTAGE génère les 3 coupons quotidiens** (Safe/Moyen/Agressif) sur un pool pré-filtré par calibration |
 | Coupon personnel | Aucun mécanisme dédié | L'utilisateur compose via le **drawer de bet slip existant** (rien de neuf) ; le bouton "Envoyer à VANTAGE" + l'écran de révision sont maquettés mais **en backlog** (§0, §5.2) |
-| VALUE / SAFE | Deux canaux de filtrage Phase 2 (edge / probabilité+EV) | **Retirés en tant que canaux** — stratégie de remplacement encore ouverte (§5.1) |
+| VALUE / SAFE | Deux canaux de filtrage Phase 2 (edge / probabilité+EV) | **Déconnectés de la pipeline live** (§5.1 résolu, 2026-09-03) — continuent de tourner pour observation, plus d'effet côté utilisateur (bet interne, Decisions, abonnements) |
 | Personnalisation + Abonnements | Deux endroits séparés : gamification (Paramètres → Profil) et Abonnements (portefeuille simulé mise/ROI) en item de nav propre | **Fusionnés** (2026-09-02, §2bis) : un **6ᵉ onglet "Personnalisation"** dans Paramètres regroupe ligues, canaux suivis + calibration (ex-Abonnements, "Découvrir des canaux" inclus), profil de risque — plus d'item de nav séparé — + un **onboarding actif en 3 étapes** à l'inscription |
 | Paramètres — navigation | Onglets à plat (Profil/Préférences/Sécurité/Notifications/Bankroll/Personnalisation) | **Rail latéral groupé par thème** (2026-09-02, §2bis) : Compte (Profil, Sécurité) / Préférences (Préférences, Bankroll, Notifications) / Paris (Personnalisation) |
 | Bet slip | Un coupon = une transaction | Un coupon généré par VANTAGE est un **template partagé** : N utilisateurs l'ajoutent chacun à leur bet slip, chacun sa mise — déjà supporté par le schéma (`bet_slip`/`bet_slip_item`), sans écran dédié (pas de fausse preuve sociale, voir §5.4) |
@@ -373,12 +373,47 @@ lint propres. Ne pas réintroduire sans ré-auditer le ml-worker en profondeur d
 
 ## 5. Points ouverts à trancher avant/pendant l'implémentation
 
-### 5.1 Stratégie de remplacement de VALUE
+### 5.1 Stratégie de remplacement de VALUE — résolu
 
-Les picks **propres** à VALUE (8% de son volume, n=173) font **+14,1% ROI** contre -0,8%
-pour ses doublons — seul endroit du système où une sélection ajoute de la valeur. Avant
-de le retirer : soit VANTAGE reçoit la même vue "edge calibré" pour repérer ces picks
-propres, soit ce signal est perdu. Décision produit, pas blocage technique.
+Les picks **propres** à VALUE (8% de son volume, n=173) faisaient **+14,1% ROI** contre
+-0,8% pour ses doublons dans l'audit du 22-08 (`docs/audit-canaux-investir-2026-08-22.md`
+§2.3, ratio de calibration 0,845 vs 0,721) — seul endroit du système où une sélection
+semblait ajouter de la valeur. L'audit notait lui-même : "n=173 ne suffit pas, il faut un
+backtest dédié — à valider avant de shipper".
+
+**Recalibré le 2026-09-03** : sur un échantillon direct ~10x plus grand (n≈1822 réglés,
+même définition doublon/propre — marché+pick+probabilité à 4 décimales, vs canaux Phase 1),
+l'écart ne tient plus : ratio 0,69 pour les picks propres, quasi identique aux doublons
+(0,68). Pas une reproduction stricte de la méthode originale (l'audit venait de 5 passes de
+backtest replay, pas d'une lecture directe de `channel_selection`), mais un signal cohérent
+avec le motif déjà observé partout cette session : un effet à petit n qui ne survit pas à
+plus de données.
+
+**Décidé le 2026-09-03** : ni l'option A (donner à VANTAGE une vue "edge calibré" pour
+préserver ce signal) ni une suppression pure — **VALUE et SAFE sont déconnectés de la
+pipeline live**, pas supprimés : ils continuent de produire des `channel_decision`/
+`channel_selection` (observation), mais n'ont plus aucun effet côté utilisateur/produit.
+Concrètement :
+- `persistChannelBet` (bookkeeping interne `bet`, déjà redondant avec `channel_selection`
+  pour le calibrage — voir commentaire `dashboard.service.ts`) retiré pour VALUE et SAFE
+  dans `betting-engine.service.ts`, aux deux points d'appel. Aucun impact réel : ces `bet`
+  avaient `userId: null`, jamais de bankroll touché (confirmé avant modification).
+- VALUE/SAFE retirés de l'affichage Decisions (`isExcludedFromDecisions`, même mécanisme
+  déjà utilisé pour VANTAGE/Arbitrage).
+- `CHANNEL_VALUE` retiré des abonnements proposables (`retired: true`, même traitement que
+  `CHANNEL_SAFE` depuis le 22-08) — l'abonné existant garde son abonnement actif.
+- Restent visibles, volontairement : le pool de coupon les excluait déjà
+  (`POOL_EXCLUDED_CHANNELS`, depuis le 22-08) ; Track Record et le bandeau admin du
+  dashboard (`ChannelStatusStrip`, admin-only) continuent de les afficher — c'est
+  précisément l'outil d'observation demandé.
+
+**Trouvé au passage, noté pour plus tard (pas corrigé maintenant)** : le garde-fou de
+suspension automatique de marché que CLAUDE.md documente ("ROI < -15% sur 50+ paris")
+existe en code (`apps/backend/src/modules/risk/risk.service.ts`) mais n'est **jamais
+invoqué automatiquement** — aucun cron/worker ne l'appelle, seul un endpoint manuel existe.
+Même motif que le garde-fou de calibration VANTAGE trouvé décidé-mais-pas-câblé (§5.8). En
+plus, il est indexé par marché seul, pas par canal — même câblé, il ne pourrait pas isoler
+un canal précis. À reprendre séparément.
 
 ### 5.2 Composition de coupon multi-jambes — résolu
 
