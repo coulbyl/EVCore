@@ -807,10 +807,40 @@ autres fichiers I/O de `vantage-worker` (`find-eligible-fixtures.ts`, `market-od
 test dans cette app, contrairement à `apps/backend`). Vérifié : typecheck/lint propres,
 92/92 tests vantage-worker toujours au vert (aucun nouveau test, aucune régression).
 
-Reste à faire pour boucler la Phase A : écrire `pool-query.ts` lui-même côté
-`vantage-worker` — l'assemblage final, miroir de `getPoolForRange`, qui doit encore décider
-où vivent `POOL_ELIGIBLE_CHANNELS`/`POOL_EXCLUDED_CHANNELS`/`DRAW_STAKED_LEAGUES`
-(`coupon.constants.ts`, purs mais avec 3 autres lecteurs backend — investment.service.ts,
-coupon.service.ts — à trancher au moment d'écrire le fichier : déplacer vers analysis-core
-comme les lecteurs de features, ou dupliquer localement comme les constantes de
-`guardrails.ts`).
+**`POOL_ELIGIBLE_CHANNELS`/`POOL_EXCLUDED_CHANNELS`/`DRAW_STAKED_LEAGUES` déplacés**
+(2026-09-03) — vers `packages/analysis-core/src/coupon/pool-eligibility.ts`. Trouvaille en
+les regardant de près : `POOL_EXCLUDED_CHANNELS` (META ∪ FILTERS) était déjà exactement
+`META_STRATEGY_CHANNELS ∪ FILTER_STRATEGY_CHANNELS`, deux sets qui existaient déjà dans
+`analysis-core/types/strategy-channel.ts` sans être composés ainsi — pas une duplication,
+une vraie réutilisation. Comportement inchangé (garanti par le test de conformance qui lie
+`StrategyChannel` de `@evcore/db` à celui d'analysis-core) : `POOL_ELIGIBLE_CHANNELS`
+inclut toujours VANTAGE (canal à pick propre, ni filtre ni méta). `coupon.constants.ts`
+redevient un simple ré-export. 5 tests neufs. Vérifié : 655/655 backend, 486/486
+analysis-core, build+lint propres.
+
+**`pool-query.ts` écrit côté `vantage-worker`** (2026-09-03,
+`apps/vantage-worker/src/coupon/pool-query.ts`) — **la Phase A est complète.** Miroir de
+`getPoolForRange`, assemblant tout ce qui a été extrait : `computeMarketFair`/
+`oppositePick`/`getPickOddsFromSnapshot` (odds), `extractEvaContextFromFeatures`/
+`hasCalibrationAlert`/`readShadowConflict`/`computeDataCoverage`/
+`extractModelRunFeatureDiagnostics` (features), `classifyAvoidSignal`/
+`isExtremeDivergence`/`resolveEvaluatedMarketLeg` (AVOID + evaluatedPicks),
+`POOL_ELIGIBLE_CHANNELS`/`DRAW_STAKED_LEAGUES` (éligibilité), plus les deux requêtes de
+`odds-batch.ts`/`channel-reliability-query.ts` — tout via `@evcore/analysis-core` et
+`prisma` de `@evcore/db` directement, zéro import d'`apps/backend`. Deux écarts assumés par
+rapport à l'original, documentés dans le type `PoolCandidate` :
+- `modelThreshold`/`recentForm`/`modelProbabilities` volontairement absents — vérifié
+  qu'aucun consommateur du module coupon backend ne les LIT jamais (seulement posés pour
+  affichage/reasoning) ; à réintroduire si le prompt LLM (Phase B) en a besoin.
+- `legEV` calculé immédiatement sur la probabilité BRUTE (pas calibrée) — l'original le
+  laissait `null` jusqu'à `CouponComposerService.scorePicks()`, qui n'existe plus dans ce
+  pipeline ; la calibration (Platt, `channel-reliability-query.ts`) devient une étape
+  explicite de la Phase B (construction du prompt), pas de ce fichier.
+
+Pas de test dédié — même raison que `odds-batch.ts`/`channel-reliability-query.ts` (aucun
+fichier I/O de cette app n'en a). Vérifié : typecheck/lint propres, 92/92 vantage-worker
+toujours au vert.
+
+**Statut** : `apps/vantage-worker` peut maintenant interroger sa propre pool de candidats
+de bout en bout, sans aucune dépendance à `apps/backend`. Prochaine étape : Phase B —
+construire le prompt LLM à partir de ce pool (§9 points 1-3), pas commencée.
