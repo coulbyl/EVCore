@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Select,
   SelectContent,
@@ -11,7 +11,8 @@ import {
 } from "@evcore/ui";
 import { translateCountry } from "@/lib/competition-i18n";
 import type { ChannelCompetitionStatItem } from "@/domains/dashboard/types/dashboard";
-import { orderChannels, CHANNEL_LABELS } from "../track-record-constants";
+import { channelLabel } from "../../decisions/components/channel-constants";
+import { orderChannels } from "../track-record-constants";
 import { ChannelStatsTable, type ChannelStatRow } from "./channel-stats-table";
 
 /** Independent from the "Par canal" summary above — same settled data, one
@@ -25,6 +26,7 @@ export function ChannelCompetitionSection({
   rows: ChannelCompetitionStatItem[];
 }) {
   const locale = useLocale();
+  const t = useTranslations("decisions");
   // Les canaux viennent des données reçues, pas d'une liste locale : celle-ci
   // ne sert plus qu'à les ORDONNER (voir orderChannels).
   const channelsWithData = useMemo(() => {
@@ -78,7 +80,7 @@ export function ChannelCompetitionSection({
           <SelectContent>
             {channelsWithData.map((channel) => (
               <SelectItem key={channel} value={channel}>
-                {CHANNEL_LABELS[channel]}
+                {channelLabel(channel, t)}
               </SelectItem>
             ))}
           </SelectContent>

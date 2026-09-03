@@ -23,6 +23,7 @@ import type {
   LeagueSyncType,
 } from "@/domains/etl/types/etl";
 import { COMPETITIONS } from "@/constants/competitions";
+import { translateCompetition } from "@/lib/competition-i18n";
 
 type LeagueActionStatus = { ok: boolean; error?: string } | null;
 
@@ -330,7 +331,7 @@ export function LeagueOpsSection() {
                 <SelectGroup>
                   {COMPETITIONS.map((c) => (
                     <SelectItem key={c.code} value={c.code}>
-                      {c.nameFr}{" "}
+                      {translateCompetition(c.name, "fr")}{" "}
                       <span className="text-muted-foreground">({c.code})</span>
                     </SelectItem>
                   ))}

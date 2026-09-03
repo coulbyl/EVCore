@@ -38,7 +38,6 @@ const CHANNEL_ORDER = [
  * (ChannelAnalysisSection), which reads channel_selection directly and is the
  * source of truth for depth; duplicating it here caused scale/period bugs. */
 export function ChannelStatusStrip({ from, to }: { from: string; to: string }) {
-  const tPicks = useTranslations("picks");
   const tChannels = useTranslations("decisions");
   const { data: healthItems = [], isLoading } = useChannelHealth(from, to);
 
@@ -46,12 +45,12 @@ export function ChannelStatusStrip({ from, to }: { from: string; to: string }) {
 
   const CHANNEL_LABEL: Record<(typeof CHANNEL_ORDER)[number], string> = {
     DOUBLE_CHANCE: tChannels("channels.DOUBLE_CHANCE.label"),
-    DRAW: tPicks("matchNull"),
-    VALUE: tPicks("evChannel"),
-    DOMINANT: tPicks("confidence"),
+    DRAW: tChannels("channels.DRAW.label"),
+    VALUE: tChannels("channels.VALUE.label"),
+    DOMINANT: tChannels("channels.DOMINANT.label"),
     TEAM_TOTAL: tChannels("channels.TEAM_TOTAL.label"),
-    BTTS: tPicks("btts"),
-    GOALS: tPicks("goals"),
+    BTTS: tChannels("channels.BTTS.label"),
+    GOALS: tChannels("channels.GOALS.label"),
   };
 
   return (

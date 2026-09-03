@@ -1,3 +1,5 @@
+export type RiskProfile = "CONSERVATIVE" | "BALANCED" | "AGGRESSIVE";
+
 export type AuthSessionUser = {
   id: string;
   email: string;
@@ -15,6 +17,7 @@ export type AuthSessionUser = {
   unitMode: string | null;
   unitAmount: string | null;
   unitPercent: string | null;
+  riskProfile: RiskProfile;
   emailSupportNotificationsEnabled: boolean;
   hasSeenOnboarding: boolean;
 };

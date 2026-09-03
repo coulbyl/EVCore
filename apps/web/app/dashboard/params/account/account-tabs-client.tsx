@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Monitor,
   ShieldCheck,
+  Sparkles,
   User,
   Wallet,
 } from "lucide-react";
@@ -28,6 +29,7 @@ import { PushNotificationsSection } from "./components/push-notifications-sectio
 import { EmailNotificationsSection } from "./components/email-notifications-section";
 import { BankrollPreferencesSection } from "./components/bankroll-preferences-section";
 import { SecurityMasterDetail } from "./components/security-master-detail";
+import { PersonalizationSection } from "./components/personalization-section";
 import type { AccountTabValue } from "./account-tabs-constants";
 
 export function AccountTabsClient({
@@ -96,6 +98,16 @@ export function AccountTabsClient({
         { value: "preferences", label: t("tabPreferences"), icon: Monitor },
         { value: "bankroll", label: t("tabBankroll"), icon: Wallet },
         { value: "notifications", label: t("tabNotifications"), icon: Bell },
+      ],
+    },
+    {
+      label: t("groupBetting"),
+      tabs: [
+        {
+          value: "personnalisation",
+          label: t("tabPersonalization"),
+          icon: Sparkles,
+        },
       ],
     },
   ];
@@ -227,6 +239,10 @@ export function AccountTabsClient({
               >[0]["labels"]
             }
           />
+        </TabsContent>
+
+        <TabsContent value="personnalisation">
+          <PersonalizationSection />
         </TabsContent>
       </div>
     </Tabs>

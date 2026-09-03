@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import {
   Badge,
   Page,
@@ -14,6 +15,7 @@ import type {
   ChannelHealthItem,
   ChannelStatsItem,
 } from "@/domains/dashboard/types/dashboard";
+import { channelLabel } from "../decisions/components/channel-constants";
 import { ChannelCompetitionSection } from "./components/channel-competition-section";
 import {
   ChannelStatsTable,
@@ -21,7 +23,6 @@ import {
 } from "./components/channel-stats-table";
 import { PeriodTabs } from "./components/period-tabs";
 import {
-  CHANNEL_LABELS,
   dateRangeForPeriod,
   mergeChannelData,
   resolvePeriod,
@@ -74,13 +75,13 @@ export default async function TrackRecordPage({
   const { period: periodParam } = await searchParams;
   const period = resolvePeriod(periodParam);
   const { from, to } = dateRangeForPeriod(period);
-  const { pnl, rows, channelCompetitionStats } = await getTrackRecordData(
-    from,
-    to,
-  );
+  const [{ pnl, rows, channelCompetitionStats }, t] = await Promise.all([
+    getTrackRecordData(from, to),
+    getTranslations("decisions"),
+  ]);
   const channelStatRows: ChannelStatRow[] = rows.map((row) => ({
     key: row.channel,
-    primaryLabel: CHANNEL_LABELS[row.channel],
+    primaryLabel: channelLabel(row.channel, t),
     status: row.status,
     roi: row.roi,
     hitRate: row.hitRate,

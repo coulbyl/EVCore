@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import type { UnitMode } from '@evcore/db';
+import type { RiskProfile, UnitMode } from '@evcore/db';
 import {
   IsBoolean,
   IsIn,
@@ -50,6 +50,11 @@ export class UpdateMeDto {
   @Min(0)
   @Max(1)
   unitPercent?: number;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['CONSERVATIVE', 'BALANCED', 'AGGRESSIVE'])
+  riskProfile?: RiskProfile;
 
   @IsOptional()
   @IsBoolean()

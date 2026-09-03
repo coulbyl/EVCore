@@ -175,6 +175,28 @@ ne groupe rien logiquement et vieillit mal sur mobile.
 Appliqué sur la maquette (`ParamsPersonalisation`, `Main`, `Decisions`, `Arbitrage`,
 `Coupons`, `CouponReview`, `Notifications` pour le retrait du lien de nav Abonnements).
 
+**Implémenté le 2026-09-03** : migration `RiskProfile` (`CONSERVATIVE`/`BALANCED`/
+`AGGRESSIVE`, valeurs DB en anglais — convention CLAUDE.md) sur `User`, tables
+`UserFollowedChannel`/`UserFollowedLeague` (remplacent Subscription/SubscriptionEvent,
+supprimées le même jour avec accord explicite de perte des 3 lignes/153 events réels).
+Backend : module `personalization`
+(`GET /personalization`, `GET /personalization/leagues/catalog`,
+`POST`/`DELETE /personalization/leagues/:code`, `GET /personalization/channels/discover`,
+`POST`/`DELETE /personalization/channels/:channel`), `riskProfile` sur
+`PATCH /auth/me` (même pattern que `unitMode`/`theme`). Canaux éligibles au suivi =
+`POOL_ELIGIBLE_CHANNELS` (analysis-core) — exclut VALUE/SAFE et
+CONSENSUS/CONTRARIAN/AVOID/VANTAGE, conforme §2quater. Frontend : 3 cartes dans le
+nouvel onglet Personnalisation (groupe "Paris" du rail), libellés de canal réutilisant
+`decisions.channels.<code>.label` (déjà en place, satisfait §2quater sans nouveau
+mapping).
+
+**Point ouvert (2026-09-03, à trancher plus tard)** : le profil de risque doit-il être
+**inclusif** (un profil Offensif verrait aussi les coupons Prudent/Équilibré, comme un
+plafond plutôt qu'une catégorie exclusive) plutôt qu'une simple étiquette à 3 valeurs
+disjointes ? Noté ici pour discussion — **pas encore tranché, aucun comportement basé
+là-dessus n'existe encore** (le profil n'est pour l'instant qu'une préférence stockée,
+rien ne le consomme côté composition de coupon).
+
 ## 2quater. Libellés de canal — nom métier partout, jamais le code technique (2026-09-02)
 
 **Règle** : partout où un canal apparaît dans l'UI lambda (tiroir de filtres §2bis, section

@@ -45,29 +45,6 @@ export function dateRangeForPeriod(period: PeriodKey): {
   return { from, to };
 }
 
-// CODE (Français) — même convention que la formation (apps/web/content/formation).
-export const CHANNEL_LABELS: Record<ChannelStatsItem["channel"], string> = {
-  VALUE: "VALUE (Valeur)",
-  SAFE: "SAFE (Sécurité)",
-  DOMINANT: "DOMINANT (Victoire)",
-  DRAW: "DRAW (Nul)",
-  BTTS: "BTTS (Les deux marquent)",
-  GOALS: "GOALS (Buts)",
-  CLEAN_SHEET: "CLEAN_SHEET (Cage inviolée)",
-  TEAM_TOTAL: "TEAM_TOTAL (Buts par équipe)",
-  DOUBLE_CHANCE: "DOUBLE_CHANCE (Double chance)",
-  DRAW_NO_BET: "DRAW_NO_BET (Remboursé si nul)",
-  WIN_TO_NIL: "WIN_TO_NIL (Gagne sans encaisser)",
-  FIRST_HALF: "FIRST_HALF (1ʳᵉ mi-temps)",
-  OVER_UNDER_HT: "OVER_UNDER_HT (Plus/moins mi-temps)",
-  HALF_TIME_FULL_TIME: "HALF_TIME_FULL_TIME (Mi-temps/Fin)",
-  RESULT_TOTAL_GOALS: "RESULT_TOTAL_GOALS (Issue + total)",
-  RESULT_BTTS: "RESULT_BTTS (Issue + BTTS)",
-  WIN_EITHER_HALF: "WIN_EITHER_HALF (Gagne une mi-temps)",
-  CORRECT_SCORE: "CORRECT_SCORE (Score exact)",
-  VANTAGE: "VANTAGE (Lecture croisée)",
-};
-
 /**
  * Ordre d'affichage — purement cosmétique.
  *

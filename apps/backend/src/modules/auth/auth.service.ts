@@ -107,6 +107,7 @@ export class AuthService {
         unitMode: true,
         unitAmount: true,
         unitPercent: true,
+        riskProfile: true,
         emailSupportNotificationsEnabled: true,
         hasSeenOnboarding: true,
       },
@@ -145,6 +146,7 @@ export class AuthService {
         unitMode: true,
         unitAmount: true,
         unitPercent: true,
+        riskProfile: true,
         emailSupportNotificationsEnabled: true,
         hasSeenOnboarding: true,
         passwordHash: true,
@@ -184,6 +186,7 @@ export class AuthService {
           unitMode: user.unitMode,
           unitAmount: user.unitAmount?.toString() ?? null,
           unitPercent: user.unitPercent?.toString() ?? null,
+          riskProfile: user.riskProfile,
           emailSupportNotificationsEnabled:
             user.emailSupportNotificationsEnabled,
           hasSeenOnboarding: user.hasSeenOnboarding,
@@ -229,6 +232,7 @@ export class AuthService {
             unitMode: true,
             unitAmount: true,
             unitPercent: true,
+            riskProfile: true,
             emailSupportNotificationsEnabled: true,
             hasSeenOnboarding: true,
             suspended: true,
@@ -281,6 +285,9 @@ export class AuthService {
         ...(dto.unitPercent !== undefined && {
           unitPercent: new Prisma.Decimal(dto.unitPercent),
         }),
+        ...(dto.riskProfile !== undefined && {
+          riskProfile: dto.riskProfile,
+        }),
         ...(dto.emailSupportNotificationsEnabled !== undefined && {
           emailSupportNotificationsEnabled:
             dto.emailSupportNotificationsEnabled,
@@ -306,6 +313,7 @@ export class AuthService {
         unitMode: true,
         unitAmount: true,
         unitPercent: true,
+        riskProfile: true,
         emailSupportNotificationsEnabled: true,
         hasSeenOnboarding: true,
       },
@@ -630,6 +638,7 @@ export class AuthService {
         unitMode: true,
         unitAmount: true,
         unitPercent: true,
+        riskProfile: true,
         emailSupportNotificationsEnabled: true,
         hasSeenOnboarding: true,
       },
@@ -707,6 +716,7 @@ export class AuthService {
     unitMode: UnitMode | null;
     unitAmount: Prisma.Decimal | null;
     unitPercent: Prisma.Decimal | null;
+    riskProfile: AuthSessionUser['riskProfile'];
     emailSupportNotificationsEnabled: boolean;
     hasSeenOnboarding: boolean;
   }): AuthSessionUser {
