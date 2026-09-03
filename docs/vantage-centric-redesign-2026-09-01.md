@@ -1107,3 +1107,70 @@ candidats) ou `shadow_predictions` (répéterait l'erreur déjà évitée pour V
 qui lit la sortie d'un autre LLM comme preuve).
 
 Vérifié : typecheck/lint propres, 128/128 vantage-worker (+1 test).
+
+## Recheck J-J (2026-09-03) — les deux gaps historiques fermés, plus un batch intraday
+
+Trois choix de conception tranchés avec l'utilisateur avant de coder : portée ciblée
+(fenêtre proche du coup d'envoi, pas la journée entière), VANTAGE relit seulement dans
+cette même fenêtre, et le batch de coupon du soir reste figé — mais un second batch
+intraday est généré en plus, jamais à la place.
+
+**Recherche préalable (`BettingEngineService`)** avant de coder quoi que ce soit : `
+analyzeFixture` crée TOUJOURS un nouveau `ModelRun` (aucune contrainte d'unicité par
+fixture, `ChannelDecision.@@unique([modelRunId, channel])` scope au nouveau run — jamais
+de conflit), pas de cache entre appels (tout relu frais en DB à chaque fois), aucun verrou
+ni rate-limit qui rendrait un rappel rapproché dangereux. `analyzeByDate` filtre déjà
+`status: SCHEDULED`, donc un fixture qui a démarré est automatiquement exclu sans garde
+supplémentaire à écrire.
+
+**1. `apps/backend` — `BettingEngineService.analyzeUpcoming(windowHours)`** (nouvelle
+méthode, miroir d'`analyzeByDate` mais fenêtré sur `scheduledAt` plutôt que sur la
+journée entière). Nouveau cron `SAME_DAY_ANALYSIS` (`*/30 * * * *`, fenêtre par défaut 3h
+via `SAME_DAY_ANALYSIS_WINDOW_HOURS`/`SAME_DAY_ANALYSIS_DEFAULT_WINDOW_HOURS`), nouveau
+worker `same-day-analysis.worker.ts`, queue/scheduler-key/cron-schedule ajoutés à
+`etl.constants.ts`/`etl.service.ts`/`etl.module.ts`. Le commentaire historique de
+`BETTING_ENGINE_ANALYSIS` (qui documentait le gap comme "deliberately deferred") est mis
+à jour pour pointer vers ce nouveau cron.
+
+**2. `apps/vantage-worker` — fausse piste corrigée, aucun code nécessaire.** La première
+lecture de `find-eligible-fixtures.ts` (09-03 matin) affirmait que VANTAGE excluait un
+fixture pour toujours dès qu'il portait une `ChannelDecision` VANTAGE. Relecture attentive
+en préparant ce chantier : la requête ne regarde QUE le `ModelRun` le plus récent
+(`take: 1` dans le `select`, pas juste dans le filtre final) — un nouveau `ModelRun` créé
+par `SAME_DAY_ANALYSIS` devient automatiquement "le plus récent" et n'a par construction
+aucune décision VANTAGE dessus, donc le fixture redevient éligible tout seul.
+`build-match-context.ts` lit lui aussi systématiquement le run le plus récent. Mémoire
+`project_no_same_day_reanalysis.md` corrigée pour ne pas répéter cette fausse piste.
+Aucune ligne de code touchée dans `apps/vantage-worker` pour ce point.
+
+**3. Batch de coupon intraday** (`run-coupon-generation.ts`'s nouvelle
+`runIntradayCouponGeneration`) — reconstruit le pool sur la même fenêtre proche du coup
+d'envoi (`pool-query.ts`'s nouveau `opts.scheduledAtWindow`, remplace les bornes de
+journée par une plage `scheduledAt` précise), compose/persiste une passe par classe comme
+le batch du soir. **Ne collisionne jamais avec le batch du soir** :
+`persist-coupon-proposal.ts` porte maintenant `INTRADAY_SIGNAL_WINDOW_DAYS=39` distinct de
+`LEGACY_SIGNAL_WINDOW_DAYS=38` — la seule chose qui différenciait déjà les deux dans la clé
+unique `(forDate, signalWindowDays, targetOddsMin, targetOddsMax, rank)`. Nouveau job
+`generate-intraday-coupons`, cron `VANTAGE_COUPON_INTRADAY_CRON` (défaut horaire),
+fenêtre `VANTAGE_COUPON_INTRADAY_WINDOW_HOURS` (défaut 3h, aligné sur le cron backend —
+pas de couplage runtime, à resynchroniser manuellement si l'un des deux change). Point
+produit noté pour plus tard, pas encore traité : le frontend devra distinguer visuellement
+un coupon "généré la veille" d'un "généré en intraday" pour qu'un utilisateur ne soit pas
+surpris d'en voir deux le même jour.
+
+Refactor associé : la boucle compose+persist-par-classe (dupliquée entre le batch du soir
+et l'intraday) extraite dans `runComposePersistPass`, partagée par les deux entrées.
+`persistCouponProposal` passe de `rank` positionnel à un objet `opts: {rank?,
+signalWindowDays?}` (déjà 5 paramètres positionnels avant ce changement).
+
+Pas de test dédié pour `analyzeUpcoming`/`runIntradayCouponGeneration` — même convention
+déjà établie (`analyzeByDate`/`analyzeSeason` ne sont pas non plus unit-testés à ce
+niveau ; `runCouponGeneration` non plus). Vérifié : typecheck/lint propres sur les deux
+apps, 630/630 backend (inchangé, pas de nouveau test), 128/128 vantage-worker
+(inchangé — les fonctions neuves sont de l'orchestration I/O, même raison que le reste
+du pipeline coupon).
+
+**Statut** : les deux gaps historiques du recheck J-J sont fermés. Reste non fait : la
+distinction visuelle frontend "soir vs intraday", et toute observation du comportement
+réel une fois que `SAME_DAY_ANALYSIS`/le batch intraday auront tourné en conditions
+réelles (aucun des deux n'a encore d'historique de production).

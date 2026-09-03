@@ -22,6 +22,7 @@ import { StaleScheduledSyncWorker } from './workers/stale-scheduled-sync.worker'
 import { OddsHistoricalImportWorker } from './workers/odds-historical-import.worker';
 import { BettingEngineAnalysisWorker } from './workers/betting-engine-analysis.worker';
 import { BettingEngineRebuildWorker } from './workers/betting-engine-rebuild.worker';
+import { SameDayAnalysisWorker } from './workers/same-day-analysis.worker';
 import { RollingHorizonWorker } from './workers/rolling-horizon.worker';
 import { SeasonRolloverSyncWorker } from './workers/season-rollover-sync.worker';
 import { SubscriptionMatchingWorker } from './workers/subscription-matching.worker';
@@ -43,6 +44,7 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
       { name: BULLMQ_QUEUES.ODDS_PREMATCH_SYNC },
       { name: BULLMQ_QUEUES.BETTING_ENGINE },
       { name: BULLMQ_QUEUES.BETTING_ENGINE_REBUILD },
+      { name: BULLMQ_QUEUES.SAME_DAY_ANALYSIS },
       { name: BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT },
       { name: BULLMQ_QUEUES.ROLLING_HORIZON },
       { name: BULLMQ_QUEUES.ML_TRAINING },
@@ -76,6 +78,7 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
     OddsPrematchSyncWorker,
     BettingEngineAnalysisWorker,
     BettingEngineRebuildWorker,
+    SameDayAnalysisWorker,
     OddsHistoricalImportWorker,
     RollingHorizonWorker,
     SeasonRolloverSyncWorker,

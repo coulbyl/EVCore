@@ -3,7 +3,10 @@ import type { Logger } from "pino";
 import type { Config } from "../config";
 import type { LlmClients } from "../groq/client";
 import { analyzeFixture } from "../vantage/analyze-fixture";
-import { runCouponGeneration } from "../coupon/run-coupon-generation";
+import {
+  runCouponGeneration,
+  runIntradayCouponGeneration,
+} from "../coupon/run-coupon-generation";
 import { runSweep } from "./scheduler";
 import {
   createQueue,
@@ -41,6 +44,13 @@ export function createVantageWorker(
         const { date } = job.data as CouponJobData;
         return runCouponGeneration(
           date ?? tomorrowUtc(),
+          llmClients,
+          logger,
+        );
+      }
+      if (job.name === "generate-intraday-coupons") {
+        return runIntradayCouponGeneration(
+          config.couponIntradayWindowHours,
           llmClients,
           logger,
         );

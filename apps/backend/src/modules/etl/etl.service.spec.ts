@@ -94,6 +94,7 @@ describe('EtlService', () => {
   const mlTrainingQueue = makeQueue();
   const mlSchedulerQueue = makeQueue();
   const bettingEngineRebuildQueue = makeQueue();
+  const sameDayAnalysisQueue = makeQueue();
   const coachSyncQueue = makeQueue<CoachSyncJobData>();
   const seasonRolloverSyncQueue = makeQueue<SeasonRolloverSyncJobData>();
   const subscriptionMatchingQueue = makeQueue<SubscriptionMatchingJobData>();
@@ -140,6 +141,7 @@ describe('EtlService', () => {
     mlTrainingQueue as Queue,
     mlSchedulerQueue as Queue,
     bettingEngineRebuildQueue as Queue,
+    sameDayAnalysisQueue as Queue,
     coachSyncQueue as Queue<CoachSyncJobData>,
     seasonRolloverSyncQueue as Queue<SeasonRolloverSyncJobData>,
     subscriptionMatchingQueue as Queue<SubscriptionMatchingJobData>,

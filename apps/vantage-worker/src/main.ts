@@ -95,11 +95,25 @@ async function main() {
     },
   );
 
+  // Intraday batch (recheck J-J) — see config.ts's couponIntradayCron doc
+  // comment. Coexists with the evening batch above, never overwrites it
+  // (persist-coupon-proposal.ts's INTRADAY_SIGNAL_WINDOW_DAYS).
+  await queue.add(
+    "generate-intraday-coupons",
+    {},
+    {
+      repeat: { pattern: config.couponIntradayCron },
+      jobId: "vantage-recurring-intraday-coupon-generation",
+    },
+  );
+
   logger.info(
     {
       sweepIntervalMs: config.sweepIntervalMs,
       couponCron: config.couponCron,
       couponRetryCron: config.couponRetryCron,
+      couponIntradayCron: config.couponIntradayCron,
+      couponIntradayWindowHours: config.couponIntradayWindowHours,
       llmProvider: config.llmProvider,
       model: config.llmModel,
       llmFallbackProviders: llmClients.fallbacks.map((f) => f.provider),

@@ -1436,6 +1436,54 @@ export class BettingEngineService {
     return { date, analyzed, skipped };
   }
 
+  /**
+   * Same-day recheck (docs/vantage-centric-redesign-2026-09-01.md,
+   * project_no_same_day_reanalysis.md) — re-analyzes only fixtures kicking
+   * off within `windowHours` from now, never the whole day. `analyzeByDate`
+   * re-analyzing every SCHEDULED fixture for "today" regardless of kickoff
+   * time would re-score an 8pm fixture at 9am for no benefit, and multiply
+   * the cost of the optional shadow-predictions/ML-correction calls
+   * `analyzeFixture` makes per run for zero gain that far out.
+   *
+   * Safe to call repeatedly and close together: `analyzeFixture` always
+   * creates a fresh `ModelRun` row (no per-fixture uniqueness constraint,
+   * no dedup — same accumulation pattern the pool query already reads via
+   * `take: 6` ordered by `analyzedAt desc`) and re-reads odds/team-stats
+   * fresh from the DB every call, so a later call naturally picks up any
+   * odds movement or lineup update since the last one. The `status:
+   * SCHEDULED` filter (shared with `analyzeByDate`) means a fixture that
+   * has since kicked off is excluded automatically — no separate guard
+   * needed against re-analyzing a live/finished match.
+   */
+  async analyzeUpcoming(windowHours: number): Promise<{
+    windowHours: number;
+    analyzed: number;
+    skipped: number;
+  }> {
+    const now = new Date();
+    const to = new Date(now.getTime() + windowHours * 3_600_000);
+
+    const fixtures = await this.prisma.client.fixture.findMany({
+      where: {
+        scheduledAt: { gte: now, lte: to },
+        status: FixtureStatus.SCHEDULED,
+      },
+      select: { id: true },
+      orderBy: { scheduledAt: 'asc' },
+    });
+
+    let analyzed = 0;
+    let skipped = 0;
+
+    for (const fixture of fixtures) {
+      const result = await this.analyzeFixture(fixture.id);
+      if (result.status === 'analyzed') analyzed++;
+      else skipped++;
+    }
+
+    return { windowHours, analyzed, skipped };
+  }
+
   async analyzeSeason(seasonId: string): Promise<{
     seasonId: string;
     analyzed: number;

@@ -8,10 +8,17 @@ export type AnalyzeJobData = { fixtureId: string };
 export type SweepJobData = Record<string, never>;
 /** `date` optional, same convention as apps/backend's retired
  * BettingEngineAnalysisJobData — defaults to tomorrowUtc() when unset (see
- * coupon-scheduler.ts). */
+ * worker.ts). */
 export type CouponJobData = { date?: string };
+/** No job data — the intraday pass always targets "now" + `config.
+ * couponIntradayWindowHours" (see worker.ts), never a specific date. */
+export type IntradayCouponJobData = Record<string, never>;
 
-export type VantageJobData = AnalyzeJobData | SweepJobData | CouponJobData;
+export type VantageJobData =
+  | AnalyzeJobData
+  | SweepJobData
+  | CouponJobData
+  | IntradayCouponJobData;
 
 export function createRedisConnection(config: Config): ConnectionOptions {
   return { host: config.redisHost, port: config.redisPort };

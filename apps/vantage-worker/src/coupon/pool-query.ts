@@ -45,6 +45,15 @@ export type GetPoolOpts = {
    * `EVALUATED_MARKET_CANAL` doc (analysis-core's evaluated-market-leg.ts).
    */
   includeEvaluatedMarkets?: boolean;
+  /**
+   * Overrides `[fromDate, toDate]`'s day-boundary window with a precise
+   * `scheduledAt` range — the intraday coupon pass (run-coupon-generation.ts's
+   * `runIntradayCouponGeneration`) needs "kickoff in the next N hours", not
+   * whole calendar days. `fromDate`/`toDate` are still required (kept as the
+   * day the pool query otherwise scopes to) even when this is set, since
+   * nothing else about the query changes.
+   */
+  scheduledAtWindow?: { from: Date; to: Date };
 };
 
 export type PoolCandidate = {
@@ -137,8 +146,8 @@ export async function getPoolForRange(
   toDate: string,
   opts: GetPoolOpts = {},
 ): Promise<PoolCandidate[]> {
-  const dayStart = new Date(`${fromDate}T00:00:00.000Z`);
-  const dayEnd = new Date(`${toDate}T23:59:59.999Z`);
+  const dayStart = opts.scheduledAtWindow?.from ?? new Date(`${fromDate}T00:00:00.000Z`);
+  const dayEnd = opts.scheduledAtWindow?.to ?? new Date(`${toDate}T23:59:59.999Z`);
 
   const fixtures = await prisma.fixture.findMany({
     where: { scheduledAt: { gte: dayStart, lte: dayEnd } },

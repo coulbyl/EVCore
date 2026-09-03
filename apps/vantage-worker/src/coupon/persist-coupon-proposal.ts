@@ -22,29 +22,48 @@ import type { ComposedCoupon } from "./validate-coupon-selection";
  * n'a aucune raison de vivre dans analysis-core, et apps/vantage-worker ne
  * dépend pas d'apps/backend.
  */
-const LEGACY_SIGNAL_WINDOW_DAYS = 38;
+export const LEGACY_SIGNAL_WINDOW_DAYS = 38;
 
 /**
- * Une seule proposition par classe par jour dans ce pipeline — le LLM
- * produit un coupon par appel, pas un classement de plusieurs. `rank` reste
- * un paramètre (colonne NOT NULL, composante de la clé unique) plutôt qu'une
- * constante figée à 1 : si un futur besoin de plusieurs coupons par classe
- * apparaît, seul l'appelant change, pas ce fichier.
+ * Discriminant du batch intraday (`run-coupon-generation.ts`'s
+ * `runIntradayCouponGeneration`) — même colonne que ci-dessus, valeur
+ * distincte pour que le batch intraday coexiste avec celui du soir sur la
+ * même `forDate`/classe/`rank` au lieu de l'écraser. Exportée pour que le
+ * seul autre fichier qui en a besoin (`run-coupon-generation.ts`) n'ait pas
+ * à réinventer un nombre magique.
+ */
+export const INTRADAY_SIGNAL_WINDOW_DAYS = 39;
+
+/**
+ * Une seule proposition par classe par jour (par passage) dans ce pipeline —
+ * le LLM produit un coupon par appel, pas un classement de plusieurs.
+ * `rank` reste une donnée (colonne NOT NULL, composante de la clé unique)
+ * plutôt qu'une constante figée à 1 : si un futur besoin de plusieurs
+ * coupons par classe apparaît, seul l'appelant change, pas ce fichier.
+ *
+ * `signalWindowDays` — même colonne, même rôle de discriminant hérité sans
+ * signification propre (voir LEGACY_SIGNAL_WINDOW_DAYS) — sert aussi à
+ * distinguer le batch du soir (38, valeur historique) du batch intraday
+ * (39, `run-coupon-generation.ts`'s `runIntradayCouponGeneration`) sur la
+ * même `forDate`/classe/`rank` : sans ça, le batch intraday écraserait
+ * silencieusement le batch du soir au lieu de coexister avec lui.
  */
 export async function persistCouponProposal(
   forDate: Date,
   couponClass: CouponClass,
   coupon: ComposedCoupon,
   reasonDetails: string,
-  rank = 1,
+  opts: { rank?: number; signalWindowDays?: number } = {},
 ): Promise<void> {
+  const rank = opts.rank ?? 1;
+  const signalWindowDays = opts.signalWindowDays ?? LEGACY_SIGNAL_WINDOW_DAYS;
   const toDecimal = (n: number) => new Prisma.Decimal(n);
   const toJson = (v: unknown) => v as Prisma.InputJsonValue;
 
   const where = {
     forDate_signalWindowDays_targetOddsMin_targetOddsMax_rank: {
       forDate,
-      signalWindowDays: LEGACY_SIGNAL_WINDOW_DAYS,
+      signalWindowDays,
       targetOddsMin: toDecimal(couponClass.targetOddsMin),
       targetOddsMax: toDecimal(couponClass.targetOddsMax),
       rank,
@@ -144,7 +163,7 @@ export async function persistCouponProposal(
     data: {
       forDate,
       rank,
-      signalWindowDays: LEGACY_SIGNAL_WINDOW_DAYS,
+      signalWindowDays,
       targetOddsMin: toDecimal(couponClass.targetOddsMin),
       targetOddsMax: toDecimal(couponClass.targetOddsMax),
       combinedOdds: toDecimal(coupon.combinedOdds),

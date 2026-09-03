@@ -24,6 +24,8 @@ const baseConfig: Config = {
   researchCompetitionCodes: ["PL", "LL"],
   couponCron: "30 20 * * *",
   couponRetryCron: "15 21 * * *",
+  couponIntradayCron: "0 * * * *",
+  couponIntradayWindowHours: 3,
 };
 
 const baseInput: ResearchInput = {

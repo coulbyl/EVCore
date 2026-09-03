@@ -33,6 +33,7 @@ import type { OddsPrematchSyncJobData } from './workers/odds-prematch-sync.worke
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
 import type { BettingEngineAnalysisJobData } from './workers/betting-engine-analysis.worker';
 import type { BettingEngineRebuildJobData } from './workers/betting-engine-rebuild.worker';
+import type { SameDayAnalysisJobData } from './workers/same-day-analysis.worker';
 import type { RollingHorizonJobData } from './workers/rolling-horizon.worker';
 import type { SeasonRolloverSyncJobData } from './workers/season-rollover-sync.worker';
 import type { SubscriptionMatchingJobData } from './workers/subscription-matching.worker';
@@ -152,6 +153,8 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly mlSchedulerQueue: Queue,
     @InjectQueue(BULLMQ_QUEUES.BETTING_ENGINE_REBUILD)
     private readonly bettingEngineRebuildQueue: Queue<BettingEngineRebuildJobData>,
+    @InjectQueue(BULLMQ_QUEUES.SAME_DAY_ANALYSIS)
+    private readonly sameDayAnalysisQueue: Queue<SameDayAnalysisJobData>,
     @InjectQueue(BULLMQ_QUEUES.COACH_SYNC)
     private readonly coachSyncQueue: Queue<CoachSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.SEASON_ROLLOVER_SYNC)
@@ -220,6 +223,10 @@ export class EtlService implements OnApplicationBootstrap {
         'ETL_BETTING_ENGINE_ANALYSIS_CRON',
         ETL_CRON_SCHEDULES.BETTING_ENGINE_ANALYSIS,
       ),
+      SAME_DAY_ANALYSIS: config.get<string>(
+        'ETL_SAME_DAY_ANALYSIS_CRON',
+        ETL_CRON_SCHEDULES.SAME_DAY_ANALYSIS,
+      ),
       ROLLING_HORIZON: config.get<string>(
         'ETL_ROLLING_HORIZON_CRON',
         ETL_CRON_SCHEDULES.ROLLING_HORIZON,
@@ -287,6 +294,15 @@ export class EtlService implements OnApplicationBootstrap {
       {
         name: 'betting-engine-analysis',
         data: {} satisfies BettingEngineAnalysisJobData,
+      },
+    );
+
+    await this.sameDayAnalysisQueue.upsertJobScheduler(
+      ETL_SCHEDULER_KEYS.SAME_DAY_ANALYSIS,
+      { pattern: this.cronSchedules.SAME_DAY_ANALYSIS },
+      {
+        name: 'same-day-analysis',
+        data: {} satisfies SameDayAnalysisJobData,
       },
     );
 
@@ -786,6 +802,7 @@ export class EtlService implements OnApplicationBootstrap {
       [BULLMQ_QUEUES.ML_TRAINING]: this.mlTrainingQueue,
       [BULLMQ_QUEUES.ML_SCHEDULER]: this.mlSchedulerQueue,
       [BULLMQ_QUEUES.BETTING_ENGINE_REBUILD]: this.bettingEngineRebuildQueue,
+      [BULLMQ_QUEUES.SAME_DAY_ANALYSIS]: this.sameDayAnalysisQueue,
       [BULLMQ_QUEUES.SUBSCRIPTION_MATCHING]: this.subscriptionMatchingQueue,
     };
   }

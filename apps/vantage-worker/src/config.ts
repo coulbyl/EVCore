@@ -161,6 +161,23 @@ export type Config = {
    * user hasn't acted on yet, never corrupt one they have. Default `15 21
    * * * *` (21:15 UTC — 45 minutes after the first pass). */
   couponRetryCron: string;
+  /** Cron pattern for the intraday coupon batch (recheck J-J,
+   * run-coupon-generation.ts's `runIntradayCouponGeneration`) — a SECOND,
+   * coexisting coupon batch built on same-day-rechecked data
+   * (project_no_same_day_reanalysis memory), never touching the evening
+   * batch (couponCron/couponRetryCron above). Default `0 * * * *` (hourly)
+   * — matches apps/backend's `SAME_DAY_ANALYSIS` 30-minute cadence loosely
+   * (coupon generation itself doesn't need to run as often as the
+   * underlying data refresh; an empty/near-empty pool just skips a pass,
+   * see couponIntradayWindowHours). */
+  couponIntradayCron: string;
+  /** How far ahead (hours from "now") the intraday pass looks for
+   * fixtures — matches apps/backend's `SAME_DAY_ANALYSIS_WINDOW_HOURS`
+   * default (3h) on purpose: no point building a coupon pool from fixtures
+   * outside the window apps/backend is actually rechecking. The two apps
+   * don't share config at runtime, so keep them in sync manually if either
+   * changes. */
+  couponIntradayWindowHours: number;
 };
 
 // PL=Premier League(ENG), LL=La Liga(ESP), BL1=Bundesliga(GER),
@@ -263,5 +280,10 @@ export function loadConfig(): Config {
       : DEFAULT_RESEARCH_COMPETITION_CODES,
     couponCron: process.env["VANTAGE_COUPON_CRON"] ?? "30 20 * * *",
     couponRetryCron: process.env["VANTAGE_COUPON_RETRY_CRON"] ?? "15 21 * * *",
+    couponIntradayCron:
+      process.env["VANTAGE_COUPON_INTRADAY_CRON"] ?? "0 * * * *",
+    couponIntradayWindowHours: Number(
+      process.env["VANTAGE_COUPON_INTRADAY_WINDOW_HOURS"] ?? "3",
+    ),
   };
 }
