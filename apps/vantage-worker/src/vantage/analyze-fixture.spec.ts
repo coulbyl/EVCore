@@ -153,7 +153,12 @@ describe("analyzeFixture — calibration floor", () => {
     buildMatchContext.mockResolvedValue({
       ...baseContext,
       calibration: [
-        { channel: "DRAW", sampleSize: 67, hitRate: 0.269, calibrationRatio: 0.68 },
+        {
+          channel: "DRAW",
+          sampleSize: 67,
+          hitRate: 0.269,
+          calibrationRatio: 0.68,
+        },
       ],
     });
     requestVantageCompletion.mockResolvedValue(
@@ -179,7 +184,12 @@ describe("analyzeFixture — calibration floor", () => {
     buildMatchContext.mockResolvedValue({
       ...baseContext,
       calibration: [
-        { channel: "DRAW", sampleSize: 67, hitRate: 0.325, calibrationRatio: 0.85 },
+        {
+          channel: "DRAW",
+          sampleSize: 67,
+          hitRate: 0.325,
+          calibrationRatio: 0.85,
+        },
       ],
     });
     requestVantageCompletion.mockResolvedValue(
@@ -200,7 +210,12 @@ describe("analyzeFixture — calibration floor", () => {
     buildMatchContext.mockResolvedValue({
       ...baseContext,
       calibration: [
-        { channel: "DRAW", sampleSize: 12, hitRate: 0.2, calibrationRatio: 0.5 },
+        {
+          channel: "DRAW",
+          sampleSize: 12,
+          hitRate: 0.2,
+          calibrationRatio: 0.5,
+        },
       ],
     });
     requestVantageCompletion.mockResolvedValue(
@@ -222,7 +237,12 @@ describe("analyzeFixture — calibration floor", () => {
       ...baseContext,
       readings: [{ ...baseContext.readings[0]!, odds: 1.5 }],
       calibration: [
-        { channel: "DOMINANT", sampleSize: 500, hitRate: 0.1, calibrationRatio: 0.2 },
+        {
+          channel: "DOMINANT",
+          sampleSize: 500,
+          hitRate: 0.1,
+          calibrationRatio: 0.2,
+        },
       ],
     });
     requestVantageCompletion.mockResolvedValue(
@@ -243,11 +263,19 @@ describe("analyzeFixture — calibration floor", () => {
     buildMatchContext.mockResolvedValue({
       ...baseContext,
       calibration: [
-        { channel: "DRAW", sampleSize: 67, hitRate: 0.269, calibrationRatio: 0.68 },
+        {
+          channel: "DRAW",
+          sampleSize: 67,
+          hitRate: 0.269,
+          calibrationRatio: 0.68,
+        },
       ],
     });
     requestVantageCompletion.mockResolvedValue(
-      JSON.stringify({ verdict: "no_play", reasonDetails: "nothing stood out" }),
+      JSON.stringify({
+        verdict: "no_play",
+        reasonDetails: "nothing stood out",
+      }),
     );
 
     const result = await analyzeFixture(

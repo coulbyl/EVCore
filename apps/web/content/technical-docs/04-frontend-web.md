@@ -17,31 +17,31 @@ Documentation technique du dashboard EVCore : structure des routes, architecture
 
 Sections principales observées sous `app/dashboard/` :
 
-| Section | Rôle produit |
-| --- | --- |
-| `decisions` | Vue des décisions générées par les 19 canaux prédictifs sur les matchs du jour, match par match. |
-| `investment` | « Investir » — point de filtre unique sur les picks (vues `assumed` / `watch` / `excluded`) selon la mesure de calibration du canal, plus une revue exhaustive par onglets. |
-| `coupons` | « Propositions » — combinés générés automatiquement par le moteur, présentés comme suggestions non engageantes. |
-| `bet-slips` | « Mes coupons » — suivi des coupons que l'utilisateur a effectivement composés/suivis. |
-| `arbitrage` | Lecture IA qui confronte les décisions des différents canaux et leur fiabilité mesurée sur une compétition donnée — ne propose pas de pick propre. |
-| `fixtures` | Liste des matchs (calendrier), avec filtres par date et accès aux indices de canaux. |
-| `performance` | Suivi des gains/pertes, ROI, taux de réussite. |
-| `bankroll` | Portefeuille utilisateur (montants, historique). |
-| `track-record` | Historique vérifiable des performances par canal et par compétition, sur des périodes prédéfinies. |
-| `audit` | Console d'administration : volumes (paris, matchs, `ModelRun`), état de la boucle d'apprentissage, activation/désactivation de compétitions. Réservé aux `ADMIN` (accès et route protégés). |
-| `engine` | « Moteur & ETL » — supervision des workers ETL et du moteur de scoring. Réservé aux `ADMIN`. |
-| `ml` | « Moteur ML » — administration du module ML (corrections, shadow predictions). Réservé aux `ADMIN`. |
-| `reports` | Rapports générés côté admin. Réservé aux `ADMIN`. |
-| `users` | Gestion des utilisateurs. Réservé aux `ADMIN`. |
-| `subscriptions` | Gestion des abonnements (liste, création, détail). |
-| `formation` | Centre de formation : articles et vidéos pour comprendre chaque canal/pick, avec suivi de progression. |
-| `glossaire` | Documentation éditoriale des termes métier et techniques, servie depuis un fichier markdown. Réservé aux `ADMIN` (protégé par `proxy.ts`). |
-| `help` | Aide contextuelle (ex. couverture par ligue), même mécanisme markdown que le glossaire. |
-| `inbox` | Messagerie / conversations (avec route dynamique `[conversationId]`). |
-| `notifications` | Centre de notifications in-app. |
-| `announcements` | Annonces produit côté admin (création/édition). |
-| `updates` | Fil des annonces/nouveautés visible côté utilisateur. |
-| `params` | Paramètres du compte (`params/account`). |
+| Section         | Rôle produit                                                                                                                                                                                |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `decisions`     | Vue des décisions générées par les 19 canaux prédictifs sur les matchs du jour, match par match.                                                                                            |
+| `investment`    | « Investir » — point de filtre unique sur les picks (vues `assumed` / `watch` / `excluded`) selon la mesure de calibration du canal, plus une revue exhaustive par onglets.                 |
+| `coupons`       | « Propositions » — combinés générés automatiquement par le moteur, présentés comme suggestions non engageantes.                                                                             |
+| `bet-slips`     | « Mes coupons » — suivi des coupons que l'utilisateur a effectivement composés/suivis.                                                                                                      |
+| `arbitrage`     | Lecture IA qui confronte les décisions des différents canaux et leur fiabilité mesurée sur une compétition donnée — ne propose pas de pick propre.                                          |
+| `fixtures`      | Liste des matchs (calendrier), avec filtres par date et accès aux indices de canaux.                                                                                                        |
+| `performance`   | Suivi des gains/pertes, ROI, taux de réussite.                                                                                                                                              |
+| `bankroll`      | Portefeuille utilisateur (montants, historique).                                                                                                                                            |
+| `track-record`  | Historique vérifiable des performances par canal et par compétition, sur des périodes prédéfinies.                                                                                          |
+| `audit`         | Console d'administration : volumes (paris, matchs, `ModelRun`), état de la boucle d'apprentissage, activation/désactivation de compétitions. Réservé aux `ADMIN` (accès et route protégés). |
+| `engine`        | « Moteur & ETL » — supervision des workers ETL et du moteur de scoring. Réservé aux `ADMIN`.                                                                                                |
+| `ml`            | « Moteur ML » — administration du module ML (corrections, shadow predictions). Réservé aux `ADMIN`.                                                                                         |
+| `reports`       | Rapports générés côté admin. Réservé aux `ADMIN`.                                                                                                                                           |
+| `users`         | Gestion des utilisateurs. Réservé aux `ADMIN`.                                                                                                                                              |
+| `subscriptions` | Gestion des abonnements (liste, création, détail).                                                                                                                                          |
+| `formation`     | Centre de formation : articles et vidéos pour comprendre chaque canal/pick, avec suivi de progression.                                                                                      |
+| `glossaire`     | Documentation éditoriale des termes métier et techniques, servie depuis un fichier markdown. Réservé aux `ADMIN` (protégé par `proxy.ts`).                                                  |
+| `help`          | Aide contextuelle (ex. couverture par ligue), même mécanisme markdown que le glossaire.                                                                                                     |
+| `inbox`         | Messagerie / conversations (avec route dynamique `[conversationId]`).                                                                                                                       |
+| `notifications` | Centre de notifications in-app.                                                                                                                                                             |
+| `announcements` | Annonces produit côté admin (création/édition).                                                                                                                                             |
+| `updates`       | Fil des annonces/nouveautés visible côté utilisateur.                                                                                                                                       |
+| `params`        | Paramètres du compte (`params/account`).                                                                                                                                                    |
 
 ## Architecture par domaine (`domains/`)
 
@@ -77,7 +77,7 @@ Le glossaire, l'aide et la formation sont du contenu éditorial versionné en ma
 3. `getMarkdownToc(content)` (exporté par `components/markdown-article.tsx`) extrait la table des matières à partir des titres de niveau 2 (`##`) pour peupler la navigation latérale.
 4. `<MarkdownArticle content={content} />` fait le rendu final.
 
-`components/markdown-article.tsx` est un **parseur markdown maison**, pas `remark`/MDX : il supporte titres `#` à `####` (un seul niveau, sans imbrication), paragraphes, listes à puces ou numérotées à un seul niveau, tableaux `|...|`, blocs de code ```` ``` ````, citations `> ` et séparateurs `---`. En inline : `**gras**`, `` `code` `` et `[texte](lien)` — un lien externe (`http...`) est volontairement dégradé en texte brut, avec le commentaire dans le code : « External URLs rendered as plain text — LLM output is untrusted ». Le composant accepte une prop `variant` (`"article"` ou `"chat"`) qui change uniquement le style de rendu, pas le parsing.
+`components/markdown-article.tsx` est un **parseur markdown maison**, pas `remark`/MDX : il supporte titres `#` à `####` (un seul niveau, sans imbrication), paragraphes, listes à puces ou numérotées à un seul niveau, tableaux `|...|`, blocs de code ` ``` `, citations `> ` et séparateurs `---`. En inline : `**gras**`, `` `code` `` et `[texte](lien)` — un lien externe (`http...`) est volontairement dégradé en texte brut, avec le commentaire dans le code : « External URLs rendered as plain text — LLM output is untrusted ». Le composant accepte une prop `variant` (`"article"` ou `"chat"`) qui change uniquement le style de rendu, pas le parsing.
 
 Même mécanisme pour `app/dashboard/help/page.tsx` (lit `content/help-leagues.md`) et pour la formation, où `domains/formation/server/formation-content.ts` lit un dossier entier (`content/formation/`) avec un frontmatter maison parsé à la main (pas de librairie type `gray-matter`), et résout le chemin de contenu avec un fallback entre exécution locale et exécution monorepo (`DEFAULT_CONTENT_ROOT` vs `MONOREPO_CONTENT_ROOT`).
 

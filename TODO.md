@@ -7,8 +7,11 @@
 > Aucun nouveau canal n'est activé sans backtest séparé par ligue/marché/saison.
 >
 > ⚠️ Ce fichier couvre le chantier **canaux de stratégie / calibration
-> modèle** ET, depuis le 2026-08-09, le **générateur de coupon**. Le travail
-> EVA (chat, persona pro, filter bar) n'y est pas suivi.
+> modèle** ET, depuis le 2026-08-09, le **générateur de coupon**, ET depuis
+> le 2026-08-31 le **front web côté joueur** (onboarding, Investir, filtres,
+> perf pages) — issu d'un audit UX externe (Playwright, compte lambda), voir
+> section dédiée en fin de fichier. Le travail EVA (chat, persona pro, filter
+> bar) n'y est pas suivi.
 >
 > Révisé le 2026-08-15 : purge des items terminés (historique complet dans
 > [ROADMAP.md](ROADMAP.md), notamment Bloc 9-11) + correction de plusieurs
@@ -1614,3 +1617,161 @@ bookmaker, market, pick, snapshotAt])` posé, ancien `@@index` redondant
 hypothèse → `allowedMarkets` → critères `SELECTED` / codes de rejet → seuils
 par ligue → implémentation → tests → **backtest séparé** → shadow/observation
 → activation par segment validé → settlement + métriques → API/front.
+
+---
+
+## Investir / Combinés — audit calibration & garde-fous (2026-08-31)
+
+> Origine : audit UX externe (compte lambda, Playwright) qui a demandé
+> pourquoi Investir et le générateur de coupon "ne rapportent pas". Requêtes
+> directes en base (`docker exec evcore-postgres psql`, règle projet) sur
+> `channel_selection`/`coupon_proposal`, pas un ressenti. Rapport complet
+> (tableau par canal, captures) dans l'artifact publié en session — lien non
+> persisté ici, redemander si besoin.
+
+- `[ ]` **18 canaux sur 20 sont perdants en ROI tout-temps** — seuls
+  FIRST_HALF (+14.8%, n=259) et HALF_TIME_FULL_TIME (+2.0%, n=316) sont
+  positifs, tous deux petits marchés de niche encore en OBSERVATION (cf.
+  section "Couverture stratégie par marché" plus haut — pas encore
+  staking-grade, donc pas contradictoire avec ce chiffre). VALUE -3.1%
+  (n=3052), SAFE -5.4% (n=1789), DOMINANT -15.2% (n=9335), BTTS -20.5%
+  (n=11347), CLEAN_SHEET -18.0% (n=9020), WIN_TO_NIL -29.3% (n=2066). Ce
+  classement recoupe la bannière "2 sur 18" déjà affichée sur Investir — le
+  texte n'exagère pas, c'est la réalité mesurée. Reste à décider si Investir
+  doit continuer à afficher les 18 canaux perdants avec la même mise en
+  avant que les 2 gagnants (voir item front dédié plus bas).
+
+- `[ ]` **VANTAGE (canal LLM) à -48.2% ROI sur sa première semaine réglée**
+  (n=305, semaine du 08-24) — le pire score de tout le tableau, à des années
+  de la "calibration ~parfaite" notée le 08-29 en mémoire (Brier/calibration
+  de probabilité ≠ ROI/edge réel — les deux peuvent diverger : probas bien
+  estimées mais aucun edge face au marché). Échantillon encore petit, mais
+  l'écart est trop large pour l'ignorer avant le prochain relevé n≥500+.
+  Ne pas continuer à pousser VANTAGE comme argument produit (page Arbitrage)
+  tant que ce chiffre n'est pas éclairci.
+
+- `[ ]` **Combinés (coupon_proposal) : +14.8% ROI tout-temps (n=512
+  réglés, 26.4% hit-rate, cote moyenne ~4.3-5.0) mais -32.1% sur les 30
+  derniers jours** (n=123, hit-rate tombé à 15.5%) — contre +28.7%/+29.7%
+  sur 31-60j et 60j+. Chute nette, probablement pas du bruit pur vu l'écart
+  au taux de réussite attendu. À investiguer en priorité avant tout le reste
+  de cette section — coïncide dans le temps avec la dégradation VALUE/SAFE
+  ci-dessous, potentiellement une cause commune (recalibration du 08-27
+  insuffisante ? saisonnalité/rotation de ligues actives ?).
+
+- `[ ]` **VALUE et SAFE basculent positif→négatif sur les 30 derniers jours**
+  — VALUE : +8.8% (plus ancien) → -16.6% (30j, n=1439). SAFE : +1.5% → -10.6%
+  (30j, n=1024). DOMINANT/BTTS/GOALS restent négatifs mais stables en
+  tendance (déjà mauvais avant). Signal de dérive récente plus actionnable
+  dans l'immédiat qu'une refonte d'interface — rejoint la piste déjà ouverte
+  plus haut ("VALUE — hit-rate en dégradation dans les coupons").
+
+- `[ ]` **Le garde-fou de suspension automatique (`risk.service.ts`,
+  ROI < -15% sur 50+ paris, documenté CLAUDE.md) n'a jamais été déclenché**
+  — `calibration.market_suspension` est à **0 ligne**, alors que BTTS
+  (-20.5%, n=11347) et CLEAN_SHEET (-18.0%, n=9020) dépassent le seuil
+  depuis longtemps. Cause : `checkMarketRoi()` lit la table `bet` (mises
+  réellement placées par de vrais comptes, 3238 lignes au total réparties
+  sur ~20 marchés) et non les sorties du moteur (`channel_selection`) qui
+  alimentent Investir/Combinés — le garde-fou protège l'argent staké mais
+  rien de ce qui est affiché à un joueur qui n'a pas encore parié. Décision
+  à prendre : étendre `checkMarketRoi`/`isMarketSuspended` à une lecture sur
+  `channel_selection` par canal (pas seulement `bet` par marché), et
+  refléter l'état ("canal en pause depuis le JJ/MM — ROI -X% sur N
+  sélections") directement sur Investir plutôt que de le garder invisible
+  côté joueur.
+
+---
+
+## Front web côté joueur — audit UX externe (2026-08-31)
+
+> Compte lambda créé pour l'occasion + Playwright (navigation réelle,
+> requêtes réseau écoutées, capture d'écran par page). Détail complet avec
+> captures dans l'artifact publié en session (rapport "Audit EVCore — Œil
+> neuf"). Portée : bugs et frictions constatés en usage, pas de la
+> calibration modèle (voir section dédiée ci-dessus pour ça).
+
+- `[ ]` **P0 — tout coupon avec un pick ajouté depuis Investir est rejeté au
+  moment de payer** — `POST /bet-slips` renvoie 400 `"Chaque item doit
+avoir soit un betId, soit un modelRunId + market + pick"` dès qu'il y a du
+  solde. Cause : `investment-pick-row.tsx` construit l'item du coupon sans
+  `modelRunId` parce que l'API `/investments` (`investment.service.ts`)
+  n'expose que `channelSelectionId`, jamais un `modelRunId` exploitable.
+  Décisions, Combinés et le tiroir diagnostic construisent l'item
+  correctement (vrai `modelRunId`) — seul Investir est en cause. Reproduit à
+  100% avec un solde réel déposé (100 000 F test).
+
+- `[ ]` **P0 — le tour guidé ne démarre jamais à la vraie première visite**
+  — `register-form.tsx`/`login-form.tsx` enchaînent `router.push("/dashboard")`
+  puis `router.refresh()` non attendus, exactement au moment où
+  `OnboardingTourProvider` (`onboarding-tour-context.tsx`) lit une seule
+  fois `hasSeenOnboarding` au montage (`hasAutoStartedRef`). Reproduit 2/2
+  sur comptes neufs. Un simple rechargement complet déclenche le tour
+  ensuite — mais hors contexte (l'utilisateur est déjà en train de
+  naviguer), overlay bloquant à l'appui. Une fois lancé, le mécanisme lui-
+  même est solide (23/23 étapes desktop correctes, testé jusqu'au bout).
+
+- `[ ]` **P1 — les filtres de Décisions et Arbitrage ne changent aucune
+  donnée côté serveur** — les pastilles de ligue filtrent en mémoire sur des
+  données déjà chargées pour la journée (`decisions-page-client.tsx:41-49`,
+  `arbitrage-page-client.tsx:52`, filtres vides passés à la requête). Le
+  bouton "Filtres" de Décisions n'ouvre qu'un tri par heure, pas un filtre.
+  Seul Investir (`use-investment-picks.ts`) filtre vraiment côté serveur
+  (date/vue/canal) — à harmoniser ou à renommer pour ne pas laisser croire
+  le contraire sur Décisions/Arbitrage.
+
+- `[ ]` **P1 — bouton d'ajout au coupon absent sur Matchs sans aucune
+  indication du pourquoi** — `fixtures-table.tsx` (`AddToSlipButton`)
+  n'affiche le bouton que si `modelRunId` + `market` + `pick` + `betId` +
+  `isFixtureBettable` sont TOUS présents ; tout trou ETL/décision NO_BET
+  fait disparaître le bouton silencieusement, sans badge explicatif.
+
+- `[ ]` **P1 — lien "Déposer" manquant dans la bannière "Solde insuffisant"**
+  du tiroir "Mon coupon" (`bet-slip-drawer.tsx`) — le dépôt existe
+  (`deposit-dialog.tsx`, page Portefeuille) mais rien n'y renvoie depuis le
+  blocage, alors que c'est le tout premier mur qu'un compte neuf rencontre.
+
+- `[ ]` **P1 — Investir met en avant l'edge (documenté anti-prédictif dans
+  CLAUDE.md/l'audit du 08-22) plutôt que le ROI canal** sur l'onglet "Ce
+  qu'on assume" — l'onglet "En observation" affiche déjà le ROI canal
+  (`canal -5.5%` etc.), plus honnête ; à répliquer sur l'onglet "de
+  confiance". La bannière "2 sur 18 canaux" (`messages/fr.json:873`) est un
+  texte figé daté du 08-22, pas un calcul en direct — recoupe encore la
+  réalité mesurée aujourd'hui (voir section ci-dessus) mais peut devenir
+  fausse silencieusement.
+
+- `[ ]` **P2 — page Matchs 2 à 3× plus lente que le reste du produit** en
+  usage réel (mesuré ~3.6-3.8s contre 0.8-2.9s ailleurs, deux passages) —
+  172 lignes chargées d'un bloc, pas de pagination visible côté requête.
+  Historique vérifiable a aussi un pic de délai serveur au premier
+  chargement (TTFB ~1.9s) qui redescend une fois en cache — à surveiller si
+  le volume de paris augmente.
+
+- `[ ]` **P2 — badge de rôle incohérent** — "Membre" (pied de la barre
+  latérale) vs "OPÉRATEUR" (page Profil) pour le même compte non-admin.
+
+- `[ ]` **P2 — Notifications vs Annonces, contenu quasi identique** — deux
+  entrées de menu séparées pour un seul flux d'information en pratique, à
+  fusionner ou différencier clairement.
+
+- `[ ]` **P2 — avertissement d'accessibilité React sur le tiroir coupon** —
+  `Missing Description or aria-describedby for DialogContent` à chaque
+  ouverture de "Mon coupon" (`bet-slip-drawer.tsx`) ; titre `sr-only`
+  présent, description manquante.
+
+- `[ ]` **P2 — pas de numéro de téléphone collecté** — absent de
+  `RegisterDto`, du modèle `User` (Prisma) et de tous les onglets Profil.
+  Utile pour une prospection terrain (porte-à-porte) — à ajouter en champ
+  optionnel avec consentement explicite si le besoin est confirmé, pas à
+  l'inscription pour ne pas alourdir ce parcours (actuellement le
+  meilleur du produit en friction).
+
+- `[-]` **Cadrer (sans lancer) un chantier IA/ML sur le composeur de
+  Combinés** — signaux `shadow_predictions`/`shadow_ml_by_channel` déjà
+  calculés ailleurs (module ML) mais jamais branchés dans
+  `coupon-composer.service.ts` (seul `signal-window.service.ts` les lit,
+  comme départage d'ordre, jamais comme signal de score). Vrai chantier
+  d'intégration (arbitrage avec la calibration Platt existante, risque de
+  reproduire le biais anti-prédictif déjà retiré sur l'ancien
+  `signalScore`) — hors périmètre immédiat tant que la dérive à 30 jours
+  ci-dessus n'est pas comprise.

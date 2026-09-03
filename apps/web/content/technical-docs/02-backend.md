@@ -4,14 +4,14 @@
 
 Chaque module sous `apps/backend/src/modules/` suit le même enchaînement de couches, avec une responsabilité stricte par fichier :
 
-| Couche | Fichier | Responsabilité | Ne fait jamais |
-| --- | --- | --- | --- |
-| Module | `*.module.ts` | Câblage DI : imports, providers, exports | Contenir de la logique |
-| Controller | `*.controller.ts` | Routing HTTP + validation DTO (`class-validator`) | Logique métier |
-| Service | `*.service.ts` | Toute la logique métier, orchestration | Appeler Prisma directement |
-| Repository | `*.repository.ts` | Toutes les requêtes Prisma pour un modèle donné | Contenir de la logique métier |
-| `dto/` | DTO d'entrée/sortie HTTP | Validation `class-validator` | — |
-| `entities/` | Formes de données exposées | — | — |
+| Couche      | Fichier                    | Responsabilité                                    | Ne fait jamais                |
+| ----------- | -------------------------- | ------------------------------------------------- | ----------------------------- |
+| Module      | `*.module.ts`              | Câblage DI : imports, providers, exports          | Contenir de la logique        |
+| Controller  | `*.controller.ts`          | Routing HTTP + validation DTO (`class-validator`) | Logique métier                |
+| Service     | `*.service.ts`             | Toute la logique métier, orchestration            | Appeler Prisma directement    |
+| Repository  | `*.repository.ts`          | Toutes les requêtes Prisma pour un modèle donné   | Contenir de la logique métier |
+| `dto/`      | DTO d'entrée/sortie HTTP   | Validation `class-validator`                      | —                             |
+| `entities/` | Formes de données exposées | —                                                 | —                             |
 
 Le pattern est respecté de façon quasi systématique dans le code réel : par exemple `apps/backend/src/modules/fixture/fixture.module.ts` déclare `FixtureRepository`, `FixtureService`, `FixtureScoringService` comme providers distincts, avec un seul controller HTTP. Certains modules n'ont pas de repository dédié quand ils n'ont pas (ou peu) de requêtes Prisma propres — `bet/bet.service.ts` est un exemple extrême : une classe vide, commentée `placeholder conservé pour les futures opérations sur les bets`, la création des `Bet` utilisateur étant en réalité gérée par `bet-slip/bet-slip.service.ts`.
 
@@ -99,23 +99,23 @@ Il n'existe aucun endpoint de réactivation dans le code (`marketSuspension` n'e
 
 ## Constantes de configuration critiques
 
-| Constante | Valeur | Fichier |
-| --- | --- | --- |
-| `EV_THRESHOLD` | `0.08` | `apps/backend/src/modules/betting-engine/ev.constants.ts` |
-| `EV_MAX_SOFT_ALERT` | `0.60` | `apps/backend/src/modules/betting-engine/ev.constants.ts` (alerte de calibration, pas un filtre) |
-| `CALIBRATION_GATE.MAX_DIVERGENCE` | `0.30` | `apps/backend/src/modules/betting-engine/ev.constants.ts` |
-| `MAX_LEG_EDGE` | `0.10` | `apps/backend/src/modules/coupon/coupon.constants.ts` — plafond d'edge appliqué à toute jambe de coupon |
-| `INVESTMENT_GUARDRAILS.maxEdge` / `.minOdds` | `0.10` / `1.20` | `apps/backend/src/modules/investment/investment.constants.ts` — mêmes garde-fous remontés du coupon vers la surface Investir |
-| `MIN_BET_COUNT` | `50` | `apps/backend/src/modules/adjustment/adjustment.constants.ts` |
-| `MAX_WEIGHT_CHANGE` | `0.05` | `apps/backend/src/modules/adjustment/adjustment.constants.ts` |
-| `MIN_DAYS_BETWEEN_APPLICATIONS` | `7` | `apps/backend/src/modules/adjustment/adjustment.constants.ts` |
-| `CALIBRATION_TRIGGER_THRESHOLD` / `BRIER_TARGET` | `0.20` | `apps/backend/src/modules/adjustment/adjustment.constants.ts` |
-| `RISK_CONSTANTS.ROI_ALERT_THRESHOLD` / `ROI_ALERT_BET_COUNT` | `-0.10` / `30` | `apps/backend/src/modules/risk/risk.constants.ts` |
-| `RISK_CONSTANTS.ROI_SUSPENSION_THRESHOLD` / `ROI_SUSPENSION_BET_COUNT` | `-0.15` / `50` | `apps/backend/src/modules/risk/risk.constants.ts` |
-| `BANKROLL_LIMITS` (`MAX_DEPOSIT`, `MAX_BET_WIN`) | `2 000 000` / `10 000 000` | `apps/backend/src/config/bankroll.constants.ts` |
-| `SLIP_LIMITS` (`MAX_UNIT_STAKE`, `MAX_ITEMS`, `MAX_POTENTIAL_RETURN`) | `500 000` / `10` / `5 000 000` | `apps/backend/src/config/bankroll.constants.ts` |
-| `FEATURE_FLAGS.SCORING.*` | booléens (H2H, H2H_MARKET_SIGNALS, CONGESTION, ML_CORRECTION, …) | `apps/backend/src/config/feature-flags.constants.ts` |
-| `AUTH_LOGIN_RATE_LIMIT` | `5` tentatives / `60 000` ms | `apps/backend/src/config/rate-limit.constants.ts` |
+| Constante                                                              | Valeur                                                           | Fichier                                                                                                                      |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `EV_THRESHOLD`                                                         | `0.08`                                                           | `apps/backend/src/modules/betting-engine/ev.constants.ts`                                                                    |
+| `EV_MAX_SOFT_ALERT`                                                    | `0.60`                                                           | `apps/backend/src/modules/betting-engine/ev.constants.ts` (alerte de calibration, pas un filtre)                             |
+| `CALIBRATION_GATE.MAX_DIVERGENCE`                                      | `0.30`                                                           | `apps/backend/src/modules/betting-engine/ev.constants.ts`                                                                    |
+| `MAX_LEG_EDGE`                                                         | `0.10`                                                           | `apps/backend/src/modules/coupon/coupon.constants.ts` — plafond d'edge appliqué à toute jambe de coupon                      |
+| `INVESTMENT_GUARDRAILS.maxEdge` / `.minOdds`                           | `0.10` / `1.20`                                                  | `apps/backend/src/modules/investment/investment.constants.ts` — mêmes garde-fous remontés du coupon vers la surface Investir |
+| `MIN_BET_COUNT`                                                        | `50`                                                             | `apps/backend/src/modules/adjustment/adjustment.constants.ts`                                                                |
+| `MAX_WEIGHT_CHANGE`                                                    | `0.05`                                                           | `apps/backend/src/modules/adjustment/adjustment.constants.ts`                                                                |
+| `MIN_DAYS_BETWEEN_APPLICATIONS`                                        | `7`                                                              | `apps/backend/src/modules/adjustment/adjustment.constants.ts`                                                                |
+| `CALIBRATION_TRIGGER_THRESHOLD` / `BRIER_TARGET`                       | `0.20`                                                           | `apps/backend/src/modules/adjustment/adjustment.constants.ts`                                                                |
+| `RISK_CONSTANTS.ROI_ALERT_THRESHOLD` / `ROI_ALERT_BET_COUNT`           | `-0.10` / `30`                                                   | `apps/backend/src/modules/risk/risk.constants.ts`                                                                            |
+| `RISK_CONSTANTS.ROI_SUSPENSION_THRESHOLD` / `ROI_SUSPENSION_BET_COUNT` | `-0.15` / `50`                                                   | `apps/backend/src/modules/risk/risk.constants.ts`                                                                            |
+| `BANKROLL_LIMITS` (`MAX_DEPOSIT`, `MAX_BET_WIN`)                       | `2 000 000` / `10 000 000`                                       | `apps/backend/src/config/bankroll.constants.ts`                                                                              |
+| `SLIP_LIMITS` (`MAX_UNIT_STAKE`, `MAX_ITEMS`, `MAX_POTENTIAL_RETURN`)  | `500 000` / `10` / `5 000 000`                                   | `apps/backend/src/config/bankroll.constants.ts`                                                                              |
+| `FEATURE_FLAGS.SCORING.*`                                              | booléens (H2H, H2H_MARKET_SIGNALS, CONGESTION, ML_CORRECTION, …) | `apps/backend/src/config/feature-flags.constants.ts`                                                                         |
+| `AUTH_LOGIN_RATE_LIMIT`                                                | `5` tentatives / `60 000` ms                                     | `apps/backend/src/config/rate-limit.constants.ts`                                                                            |
 
 Écart avec `EVCORE.md`/`CLAUDE.md` à noter : le plafond de poids LLM/OpenClaw (`≤ 0.30`) est une règle produit documentée, mais aucun code du backend ne référence `OpenClaw`, un delta LLM (`llm_delta`) ou une constante de cap dédiée — le canal `VANTAGE` (LLM contextuel, en production depuis le 2026-08-28) reste un canal de scoring déterministe classique côté `ChannelStrategyOrchestrator`, sans injection de poids LLM dans le calcul EV. Cette règle est donc à ce jour une contrainte de garde-fou pour une intégration future, pas un mécanisme câblé et vérifiable dans `apps/backend/src/modules/betting-engine/`.
 

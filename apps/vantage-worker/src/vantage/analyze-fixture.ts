@@ -80,7 +80,11 @@ const MIN_CALIBRATION_SAMPLE = 30;
  * calibration number as context (prompt.ts), but a number in a prompt is
  * not a filter: the model still played it. This is the actual filter,
  * same defense-in-depth pattern as MIN_ODDS above. */
-const GATED_PICKS: readonly { market: string; pick: string; channel: string }[] = [
+const GATED_PICKS: readonly {
+  market: string;
+  pick: string;
+  channel: string;
+}[] = [
   { market: "ONE_X_TWO", pick: "DRAW", channel: "DRAW" },
   { market: "CLEAN_SHEET_HOME", pick: "YES", channel: "CLEAN_SHEET" },
   { market: "CLEAN_SHEET_AWAY", pick: "YES", channel: "CLEAN_SHEET" },

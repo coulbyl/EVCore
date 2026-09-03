@@ -14,26 +14,26 @@ EVCore est un monorepo pnpm/Turborepo. Le dossier `packages/` regroupe le code p
 
 Le schéma vit dans `packages/db/prisma/schema.prisma` et compte une quarantaine de modèles. Les plus structurants :
 
-| Modèle | Rôle |
-| --- | --- |
-| `Competition` | Une ligue/compétition suivie (code interne, `leagueId` API-Football, inclusion backtest) |
-| `Season` | Une saison d'une compétition (bornes de dates, regroupe les `Fixture`) |
-| `Team` | Une équipe, rattachée à une compétition |
-| `Fixture` | Un match : équipes, horodatage, score, xG, statut (`SCHEDULED`, `POSTPONED`...) |
-| `TeamStats` | Stats glissantes d'une équipe après un `Fixture` donné (forme, xG, taux de victoire...) — features du scoring déterministe |
-| `ModelRun` | Une exécution de l'Betting Engine sur un `Fixture` : score déterministe, delta LLM (Phase 2), score final, snapshot des features |
-| `ChannelDecision` | Une décision par canal (DOMINANT, VALUE, DRAW...) pour un `ModelRun` donné — immuable après création |
-| `ChannelSelection` | Le(s) pick(s) retenu(s) au sein d'une `ChannelDecision` (marché, pick, probabilité, cote, EV, résultat) |
-| `Bet` | Un pari par marché et par `ModelRun` — probabilité estimée, cote, EV, stake, statut de règlement |
-| `OddsSnapshot` | Un instantané de cotes pour un `Fixture`/marché/bookmaker — scaffolding Phase 2, `NO_BET` si absent en live |
-| `AdjustmentProposal` | Une proposition d'ajustement des poids du modèle, auto-appliquée par le backend quand la calibration le déclenche (schéma `calibration`) |
-| `MarketSuspension` | Suspension automatique d'un marché (ROI < -15 % sur 50+ paris) — schéma `calibration` |
-| `CouponProposal` / `CouponProposalLeg` | Un coupon proposé par le moteur (cote combinée, probabilité jointe, score de signal) et ses jambes |
-| `User` | Compte utilisateur (rôle, MFA, préférences) |
-| `Notification` | Notification in-app (broadcast admin/ops ou personnelle) |
-| `Subscription` / `SubscriptionEvent` | Suivi de la mise virtuelle automatique et de la discipline de suivi |
-| `MlModelVersion` | Versionning des modèles ML entraînés par `ml-worker` (Phase 3, shadow) |
-| `NationalTeamEloRating` | Notation Elo des équipes nationales (source eloratings.net) |
+| Modèle                                 | Rôle                                                                                                                                     |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `Competition`                          | Une ligue/compétition suivie (code interne, `leagueId` API-Football, inclusion backtest)                                                 |
+| `Season`                               | Une saison d'une compétition (bornes de dates, regroupe les `Fixture`)                                                                   |
+| `Team`                                 | Une équipe, rattachée à une compétition                                                                                                  |
+| `Fixture`                              | Un match : équipes, horodatage, score, xG, statut (`SCHEDULED`, `POSTPONED`...)                                                          |
+| `TeamStats`                            | Stats glissantes d'une équipe après un `Fixture` donné (forme, xG, taux de victoire...) — features du scoring déterministe               |
+| `ModelRun`                             | Une exécution de l'Betting Engine sur un `Fixture` : score déterministe, delta LLM (Phase 2), score final, snapshot des features         |
+| `ChannelDecision`                      | Une décision par canal (DOMINANT, VALUE, DRAW...) pour un `ModelRun` donné — immuable après création                                     |
+| `ChannelSelection`                     | Le(s) pick(s) retenu(s) au sein d'une `ChannelDecision` (marché, pick, probabilité, cote, EV, résultat)                                  |
+| `Bet`                                  | Un pari par marché et par `ModelRun` — probabilité estimée, cote, EV, stake, statut de règlement                                         |
+| `OddsSnapshot`                         | Un instantané de cotes pour un `Fixture`/marché/bookmaker — scaffolding Phase 2, `NO_BET` si absent en live                              |
+| `AdjustmentProposal`                   | Une proposition d'ajustement des poids du modèle, auto-appliquée par le backend quand la calibration le déclenche (schéma `calibration`) |
+| `MarketSuspension`                     | Suspension automatique d'un marché (ROI < -15 % sur 50+ paris) — schéma `calibration`                                                    |
+| `CouponProposal` / `CouponProposalLeg` | Un coupon proposé par le moteur (cote combinée, probabilité jointe, score de signal) et ses jambes                                       |
+| `User`                                 | Compte utilisateur (rôle, MFA, préférences)                                                                                              |
+| `Notification`                         | Notification in-app (broadcast admin/ops ou personnelle)                                                                                 |
+| `Subscription` / `SubscriptionEvent`   | Suivi de la mise virtuelle automatique et de la discipline de suivi                                                                      |
+| `MlModelVersion`                       | Versionning des modèles ML entraînés par `ml-worker` (Phase 3, shadow)                                                                   |
+| `NationalTeamEloRating`                | Notation Elo des équipes nationales (source eloratings.net)                                                                              |
 
 Le schéma Prisma est en `multiSchema` : la plupart des modèles vivent dans `public`, tandis que `AdjustmentProposal` et `MarketSuspension` (ainsi que les modèles de reporting de calibration) sont isolés dans un schéma Postgres dédié `calibration`, au sein de la même base de données — pas de base séparée.
 

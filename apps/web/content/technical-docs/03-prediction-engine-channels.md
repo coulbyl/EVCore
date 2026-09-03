@@ -36,12 +36,12 @@ la question « quel canal choisit une décision sur ce marché ». En football,
 sur les marchés déjà en scope (EVCORE.md §3.3), 3 familles alimentent les 19
 canaux de prédiction pure :
 
-| Famille | Processus générateur | Canaux nourris | Statut du moteur |
-| --- | --- | --- | --- |
-| A — Poisson plein-match | `lambda.home` / `lambda.away`, corrigé H2H | DOMINANT, GOALS, CLEAN_SHEET, TEAM_TOTAL, DOUBLE_CHANCE, DRAW_NO_BET, WIN_TO_NIL, RESULT_TOTAL_GOALS, RESULT_BTTS, BTTS | Existant, mature |
-| A-bis — matrice de score complète | Distribution complète de la famille A + signal H2H scoreline | CORRECT_SCORE | Existant, validé le 2026-08-15 (signal H2H, sans staking) |
-| A' — distribution 1ère mi-temps | Fraction fixe `FIRST_HALF_GOAL_FRACTION = 0.44` du λ plein-match | WIN_EITHER_HALF, OVER_UNDER_HT, FIRST_HALF, HALF_TIME_FULL_TIME | **Faux moteur** — pas de calibration ligue/équipe ; un backtest walk-forward existant montre la fraction déjà bien calibrée sur les ligues où `OverUnderHtStrategy` tourne, donc aucun chantier n'a été ouvert sans preuve d'un biais réel |
-| D — implicite marché | Lecture directe de la cote dévigée (`1/drawOdds`), aucun calcul interne | DRAW | Existant, correct — le Poisson plafonne structurellement autour de 0.32 de probabilité de nul, donc le marché fait mieux que le modèle sur ce point précis |
+| Famille                           | Processus générateur                                                    | Canaux nourris                                                                                                          | Statut du moteur                                                                                                                                                                                                                           |
+| --------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A — Poisson plein-match           | `lambda.home` / `lambda.away`, corrigé H2H                              | DOMINANT, GOALS, CLEAN_SHEET, TEAM_TOTAL, DOUBLE_CHANCE, DRAW_NO_BET, WIN_TO_NIL, RESULT_TOTAL_GOALS, RESULT_BTTS, BTTS | Existant, mature                                                                                                                                                                                                                           |
+| A-bis — matrice de score complète | Distribution complète de la famille A + signal H2H scoreline            | CORRECT_SCORE                                                                                                           | Existant, validé le 2026-08-15 (signal H2H, sans staking)                                                                                                                                                                                  |
+| A' — distribution 1ère mi-temps   | Fraction fixe `FIRST_HALF_GOAL_FRACTION = 0.44` du λ plein-match        | WIN_EITHER_HALF, OVER_UNDER_HT, FIRST_HALF, HALF_TIME_FULL_TIME                                                         | **Faux moteur** — pas de calibration ligue/équipe ; un backtest walk-forward existant montre la fraction déjà bien calibrée sur les ligues où `OverUnderHtStrategy` tourne, donc aucun chantier n'a été ouvert sans preuve d'un biais réel |
+| D — implicite marché              | Lecture directe de la cote dévigée (`1/drawOdds`), aucun calcul interne | DRAW                                                                                                                    | Existant, correct — le Poisson plafonne structurellement autour de 0.32 de probabilité de nul, donc le marché fait mieux que le modèle sur ce point précis                                                                                 |
 
 VALUE et SAFE ne sont **pas une famille** : ce sont des filtres transversaux
 qui relisent les décisions déjà prises par les 16 autres canaux de marché
@@ -128,30 +128,30 @@ Statut « staké » = présent dans le pool de coupon et/ou la vue « Ce qu'on
 assume » d'Investir ; « observation » = décisions produites et tracées, sans
 mise systématique.
 
-| Canal (code) | Marché(s) | Famille | Critère de sélection | Statut mesuré (audit 2026-08-22) |
-| --- | --- | --- | --- | --- |
-| `DOMINANT` | ONE_X_TWO (issue dominante) | A — Poisson plein-match | Argmax sur la distribution 1X2 | Observation — ROI shrinké −1,80 % |
-| `GOALS` | OVER_UNDER (buts, plusieurs lignes) | A | Argmax/seuil par ligne | Observation — ROI shrinké −4,63 %, plus gros volume (17 422 sélections) |
-| `BTTS` | BTTS (deux équipes marquent) | A | Seuil de probabilité | Observation — ROI shrinké −6,50 % ; staking historique par ligue (PL, BL1) hors canal, voir `BTTS_STAKED_LEAGUES` |
-| `CLEAN_SHEET` | CLEAN_SHEET_HOME / AWAY | A | Argmax entre les deux issues | Observation — ROI shrinké −7,30 % |
-| `TEAM_TOTAL` | Total buts par équipe | A | Argmax par marché candidat | Observation — ROI shrinké −2,69 % |
-| `DOUBLE_CHANCE` | DOUBLE_CHANCE | A | Argmax sur les 3 combinaisons | **Assumé — ROI shrinké +2,24 %**, l'un des 2 seuls canaux positifs |
-| `DRAW_NO_BET` | DRAW_NO_BET | A | Argmax | Observation — ROI shrinké −4,57 % |
-| `WIN_TO_NIL` | WIN_TO_NIL_HOME / AWAY | A | Argmax entre les deux issues | Observation — ROI shrinké −9,63 %, pire canal après HALF_TIME_FULL_TIME |
-| `RESULT_TOTAL_GOALS` | Résultat + total buts (composite) | A | Argmax sur le produit cartésien | Observation — ROI shrinké −5,62 %, volume faible (poids 0,29) |
-| `RESULT_BTTS` | Résultat + BTTS (composite) | A | Argmax sur le produit cartésien | Observation — ROI shrinké −6,60 %, volume faible (poids 0,27) |
-| `CORRECT_SCORE` | Score exact | A-bis — matrice complète | Argmax sur la matrice de scores + signal H2H scoreline | Observation — ROI shrinké −8,64 %, exclu d'Investir (volume réglé quasi nul) |
-| `WIN_EITHER_HALF` | TO_WIN_EITHER_HALF | A' — distribution 1ère MT | Seuil de probabilité | Observation — ROI shrinké −6,24 % ; moteur mi-temps non calibré par ligue |
-| `OVER_UNDER_HT` | OVER_UNDER_HT (0.5 / 1.5 uniquement) | A' | Seuil par ligne | Observation — ROI shrinké −4,73 % ; désactivé temporairement lors de la recalibration WC 2026-07-01 |
-| `FIRST_HALF` | FIRST_HALF_WINNER | A' | Argmax | Observation — ROI shrinké dans le groupe « FIRST_HALF » de l'audit (−4,77 %) |
-| `HALF_TIME_FULL_TIME` | HALF_TIME_FULL_TIME | A' | Argmax sur les 9 combinaisons MT/FT | Observation — pire ROI shrinké du système (−8,66 %) |
-| `DRAW` | ONE_X_TWO (nul) | D — implicite marché | `1/drawOdds` dévigée | **Assumé — ROI shrinké +0,74 %**, meilleur ratio réalisé/annoncé du système (1,016) ; staking restreint aux ligues `I2`, `POR`, `BL1`, `CSL` (`DRAW_STAKED_LEAGUES`) |
-| `VALUE` | Transversal (Phase 2) | Filtre, pas une famille | Edge (`p − 1/cote`) parmi les picks Phase 1 | Exclu du pool de coupon ; 92 % de doublons Phase 1 (ratio 0,721, ROI −0,80 %) ; ses 8 % de picks propres sont mieux calibrés (ratio 0,845, ROI +14,1 %, n=173 — non établi statistiquement) |
-| `SAFE` | Transversal (Phase 2) | Filtre | Probabilité/volatilité parmi les picks Phase 1 | Exclu du pool de coupon ; 95 % de doublons Phase 1, ses picks propres sont les pires du système (ROI −19,7 %, n=29) — recommandé à la suppression comme canal |
-| `CONSENSUS` | Aucun (méta) | Lit tout | Niveau d'accord entre canaux — n'émet plus de sélection depuis le 2026-08-22 | Exclu du pool de coupon, méta |
-| `CONTRARIAN` | Aucun (méta) | Lit tout | Non implémenté | N'existe pas en base de décisions |
-| `AVOID` | Aucun (garde-fou) | Lit tout | Divergence modèle↔marché implausible | Exclu du pool de coupon comme pick, mais son exclusion elle-même est le signal le plus fiable du système |
-| `VANTAGE` | Transversal, hors orchestrateur | Aucune (LLM, `apps/vantage-worker`) | Second avis indépendant, lit les décisions de tous les canaux + fiabilité mesurée par compétition | En production depuis le 2026-08-28 ; calibration globale proche de la cible (53,3 % vs 53,2 % annoncé, n=158) mais aucun marché n'a encore n≥50 |
+| Canal (code)          | Marché(s)                            | Famille                             | Critère de sélection                                                                              | Statut mesuré (audit 2026-08-22)                                                                                                                                                            |
+| --------------------- | ------------------------------------ | ----------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DOMINANT`            | ONE_X_TWO (issue dominante)          | A — Poisson plein-match             | Argmax sur la distribution 1X2                                                                    | Observation — ROI shrinké −1,80 %                                                                                                                                                           |
+| `GOALS`               | OVER_UNDER (buts, plusieurs lignes)  | A                                   | Argmax/seuil par ligne                                                                            | Observation — ROI shrinké −4,63 %, plus gros volume (17 422 sélections)                                                                                                                     |
+| `BTTS`                | BTTS (deux équipes marquent)         | A                                   | Seuil de probabilité                                                                              | Observation — ROI shrinké −6,50 % ; staking historique par ligue (PL, BL1) hors canal, voir `BTTS_STAKED_LEAGUES`                                                                           |
+| `CLEAN_SHEET`         | CLEAN_SHEET_HOME / AWAY              | A                                   | Argmax entre les deux issues                                                                      | Observation — ROI shrinké −7,30 %                                                                                                                                                           |
+| `TEAM_TOTAL`          | Total buts par équipe                | A                                   | Argmax par marché candidat                                                                        | Observation — ROI shrinké −2,69 %                                                                                                                                                           |
+| `DOUBLE_CHANCE`       | DOUBLE_CHANCE                        | A                                   | Argmax sur les 3 combinaisons                                                                     | **Assumé — ROI shrinké +2,24 %**, l'un des 2 seuls canaux positifs                                                                                                                          |
+| `DRAW_NO_BET`         | DRAW_NO_BET                          | A                                   | Argmax                                                                                            | Observation — ROI shrinké −4,57 %                                                                                                                                                           |
+| `WIN_TO_NIL`          | WIN_TO_NIL_HOME / AWAY               | A                                   | Argmax entre les deux issues                                                                      | Observation — ROI shrinké −9,63 %, pire canal après HALF_TIME_FULL_TIME                                                                                                                     |
+| `RESULT_TOTAL_GOALS`  | Résultat + total buts (composite)    | A                                   | Argmax sur le produit cartésien                                                                   | Observation — ROI shrinké −5,62 %, volume faible (poids 0,29)                                                                                                                               |
+| `RESULT_BTTS`         | Résultat + BTTS (composite)          | A                                   | Argmax sur le produit cartésien                                                                   | Observation — ROI shrinké −6,60 %, volume faible (poids 0,27)                                                                                                                               |
+| `CORRECT_SCORE`       | Score exact                          | A-bis — matrice complète            | Argmax sur la matrice de scores + signal H2H scoreline                                            | Observation — ROI shrinké −8,64 %, exclu d'Investir (volume réglé quasi nul)                                                                                                                |
+| `WIN_EITHER_HALF`     | TO_WIN_EITHER_HALF                   | A' — distribution 1ère MT           | Seuil de probabilité                                                                              | Observation — ROI shrinké −6,24 % ; moteur mi-temps non calibré par ligue                                                                                                                   |
+| `OVER_UNDER_HT`       | OVER_UNDER_HT (0.5 / 1.5 uniquement) | A'                                  | Seuil par ligne                                                                                   | Observation — ROI shrinké −4,73 % ; désactivé temporairement lors de la recalibration WC 2026-07-01                                                                                         |
+| `FIRST_HALF`          | FIRST_HALF_WINNER                    | A'                                  | Argmax                                                                                            | Observation — ROI shrinké dans le groupe « FIRST_HALF » de l'audit (−4,77 %)                                                                                                                |
+| `HALF_TIME_FULL_TIME` | HALF_TIME_FULL_TIME                  | A'                                  | Argmax sur les 9 combinaisons MT/FT                                                               | Observation — pire ROI shrinké du système (−8,66 %)                                                                                                                                         |
+| `DRAW`                | ONE_X_TWO (nul)                      | D — implicite marché                | `1/drawOdds` dévigée                                                                              | **Assumé — ROI shrinké +0,74 %**, meilleur ratio réalisé/annoncé du système (1,016) ; staking restreint aux ligues `I2`, `POR`, `BL1`, `CSL` (`DRAW_STAKED_LEAGUES`)                        |
+| `VALUE`               | Transversal (Phase 2)                | Filtre, pas une famille             | Edge (`p − 1/cote`) parmi les picks Phase 1                                                       | Exclu du pool de coupon ; 92 % de doublons Phase 1 (ratio 0,721, ROI −0,80 %) ; ses 8 % de picks propres sont mieux calibrés (ratio 0,845, ROI +14,1 %, n=173 — non établi statistiquement) |
+| `SAFE`                | Transversal (Phase 2)                | Filtre                              | Probabilité/volatilité parmi les picks Phase 1                                                    | Exclu du pool de coupon ; 95 % de doublons Phase 1, ses picks propres sont les pires du système (ROI −19,7 %, n=29) — recommandé à la suppression comme canal                               |
+| `CONSENSUS`           | Aucun (méta)                         | Lit tout                            | Niveau d'accord entre canaux — n'émet plus de sélection depuis le 2026-08-22                      | Exclu du pool de coupon, méta                                                                                                                                                               |
+| `CONTRARIAN`          | Aucun (méta)                         | Lit tout                            | Non implémenté                                                                                    | N'existe pas en base de décisions                                                                                                                                                           |
+| `AVOID`               | Aucun (garde-fou)                    | Lit tout                            | Divergence modèle↔marché implausible                                                              | Exclu du pool de coupon comme pick, mais son exclusion elle-même est le signal le plus fiable du système                                                                                    |
+| `VANTAGE`             | Transversal, hors orchestrateur      | Aucune (LLM, `apps/vantage-worker`) | Second avis indépendant, lit les décisions de tous les canaux + fiabilité mesurée par compétition | En production depuis le 2026-08-28 ; calibration globale proche de la cible (53,3 % vs 53,2 % annoncé, n=158) mais aucun marché n'a encore n≥50                                             |
 
 `UNDERDOG`, `FAVORITE`, `LIVE_VALUE`, `MARKET_MOVE` existent dans l'enum
 `StrategyChannel` (base de données) mais n'ont jamais été implémentés en
@@ -163,14 +163,14 @@ C'est le résultat le plus lourd de conséquence de l'audit du 2026-08-22.
 Sur 51 860 sélections réglées, classées par tranche d'edge revendiqué
 (`p − 1/cote`) :
 
-| edge revendiqué | n | taux annoncé | taux réel | ratio réalisé/annoncé |
-| --- | --- | --- | --- | --- |
-| < 0 | 18 750 | 0,481 | 0,511 | 1,062 |
-| 0,00–0,05 | 16 880 | 0,463 | 0,421 | 0,910 |
-| 0,05–0,10 | 8 162 | 0,550 | 0,447 | 0,814 |
-| 0,10–0,15 | 4 053 | 0,597 | 0,452 | 0,758 |
-| 0,15–0,25 | 2 776 | 0,637 | 0,435 | 0,683 |
-| > 0,25 | 1 239 | 0,699 | 0,375 | 0,537 |
+| edge revendiqué | n      | taux annoncé | taux réel | ratio réalisé/annoncé |
+| --------------- | ------ | ------------ | --------- | --------------------- |
+| < 0             | 18 750 | 0,481        | 0,511     | 1,062                 |
+| 0,00–0,05       | 16 880 | 0,463        | 0,421     | 0,910                 |
+| 0,05–0,10       | 8 162  | 0,550        | 0,447     | 0,814                 |
+| 0,10–0,15       | 4 053  | 0,597        | 0,452     | 0,758                 |
+| 0,15–0,25       | 2 776  | 0,637        | 0,435     | 0,683                 |
+| > 0,25          | 1 239  | 0,699        | 0,375     | 0,537                 |
 
 Le taux réel reste **plat** (0,511 → 0,375) pendant que le taux annoncé
 grimpe de 0,481 à 0,699. L'edge ne porte aucune information sur le résultat —
@@ -272,14 +272,14 @@ L'audit a aussi tranché contre le découpage plus fin. Décomposition de
 variance sur 51 860 sélections réglées, part réelle de l'écart entre cases
 une fois le bruit d'échantillonnage retiré :
 
-| découpage | cases | part réelle |
-| --- | --- | --- |
-| canal | 16 | 72 % |
-| marché | 18 | 68 % |
-| canal × tranche de cote | 37 | 59 % |
-| ligue | 53 | 46 % |
-| ligue × canal | 94 | 15 % |
-| ligue × canal × tranche | 161 | 12 % |
+| découpage               | cases | part réelle |
+| ----------------------- | ----- | ----------- |
+| canal                   | 16    | 72 %        |
+| marché                  | 18    | 68 %        |
+| canal × tranche de cote | 37    | 59 %        |
+| ligue                   | 53    | 46 %        |
+| ligue × canal           | 94    | 15 %        |
+| ligue × canal × tranche | 161   | 12 %        |
 
 À la granularité la plus fine, 88 % de l'écart observé est du bruit — testé
 hors échantillon, 0 case sur 117 fiablement positive, effet nul au niveau
