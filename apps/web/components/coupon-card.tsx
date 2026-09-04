@@ -1,11 +1,14 @@
 "use client";
 
-import { Check, Eye, ShoppingCart, Sun, Users } from "lucide-react";
+import { Check, Eye, MessageCircle, ShoppingCart, Sun, Users } from "lucide-react";
 import {
   Badge,
   Card,
   CardContent,
   CardHeader,
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
   ProgressBar,
   cn,
 } from "@evcore/ui";
@@ -184,9 +187,20 @@ export function CouponCard({
         </div>
 
         {reasoning && (
-          <p className="rounded-xl border border-dashed border-border/70 bg-background/20 px-3 py-2 text-xs leading-snug text-muted-foreground">
-            {reasoning}
-          </p>
+          <HoverCard openDelay={150}>
+            <HoverCardTrigger asChild>
+              <button
+                type="button"
+                className="flex w-fit items-center gap-1.5 rounded-full border border-dashed border-border/70 bg-background/20 px-2.5 py-1 text-[0.65rem] font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <MessageCircle size={11} />
+                Pourquoi ce coupon ?
+              </button>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-72 text-xs leading-snug text-foreground">
+              {reasoning}
+            </HoverCardContent>
+          </HoverCard>
         )}
 
         {actionSlot}
@@ -285,7 +299,7 @@ export function CouponSlipButton({
   if (playedByMe) {
     return (
       <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-success/20 bg-success/12 py-2 text-xs font-semibold text-success">
-        <Check size={12} /> Déjà joué par vous
+        <Check size={12} /> Déjà joué par toi
       </div>
     );
   }

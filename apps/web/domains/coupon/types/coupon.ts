@@ -61,7 +61,15 @@ export type CouponProposalDto = {
   playerCount: number;
   playedByMe: boolean;
   result: CouponResult | null;
-  reasoning: Record<string, unknown> | null;
+  /**
+   * Écrit par apps/vantage-worker (persist-coupon-proposal.ts) — un blob
+   * JSON dont `llmReasonDetails` est le texte de justification du LLM pour
+   * le coupon entier (distinct du raisonnement par jambe, `legs[].llmReasoning`,
+   * jamais exposé séparément côté API). Reste `Record<string, unknown>` pour
+   * le reste : ce blob n'a pas de contrat versionné, seul le champ qu'on
+   * affiche est typé explicitement.
+   */
+  reasoning: ({ llmReasonDetails?: unknown } & Record<string, unknown>) | null;
   lastFixtureScheduledAt: string;
   generatedAt: string;
   legs: CouponLegDto[];

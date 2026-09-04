@@ -55,6 +55,11 @@ export function CouponCard({
         ? "LOST"
         : null;
 
+  const reasonDetails =
+    typeof coupon.reasoning?.llmReasonDetails === "string"
+      ? coupon.reasoning.llmReasonDetails
+      : null;
+
   const legs: NormalizedCouponLeg[] = coupon.legs.map((leg) => ({
     key: leg.id,
     homeTeam: leg.homeTeam,
@@ -136,6 +141,7 @@ export function CouponCard({
       jointProbability={coupon.jointProbability}
       signalScore={coupon.signalScore}
       couponClass={couponClassMeta(coupon.couponClass)}
+      reasoning={reasonDetails}
       batch={coupon.batch}
       viewerCount={coupon.viewerCount}
       playerCount={coupon.playerCount}
