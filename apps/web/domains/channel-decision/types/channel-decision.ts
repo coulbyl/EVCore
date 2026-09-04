@@ -158,9 +158,23 @@ export type ChannelDecisionChannelGroupDto = {
 };
 
 export type ChannelDecisionFilters = {
-  competition?: string;
-  channel?: StrategyChannel;
+  competition?: string[];
+  channel?: StrategyChannel[];
   market?: string;
   status?: ChannelDecisionStatus;
   phase?: ModelRunPhase;
+};
+
+export type LeagueFacet = {
+  code: string;
+  name: string;
+  country: string;
+  count: number;
+};
+
+export type ChannelFacet = { channel: StrategyChannel; count: number };
+
+export type ChannelDecisionFacets = {
+  leagues: LeagueFacet[];
+  channels: ChannelFacet[];
 };

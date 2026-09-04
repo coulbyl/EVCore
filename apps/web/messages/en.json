@@ -47,107 +47,81 @@
   "decisions": {
     "channels": {
       "VALUE": {
-        "label": "Value",
         "description": "Positive expected value odds."
       },
       "SAFE": {
-        "label": "Safety",
         "description": "Prudent selections built for steadier returns."
       },
       "DOMINANT": {
-        "label": "Winner",
         "description": "The model's strongest 1X2 angle."
       },
       "BTTS": {
-        "label": "BTTS",
         "description": "Both teams to score."
       },
       "DRAW": {
-        "label": "Draw",
         "description": "Draw angle from market-implied probability."
       },
       "GOALS": {
-        "label": "Goals",
         "description": "Total goals over/under line."
       },
       "CLEAN_SHEET": {
-        "label": "Clean sheet",
         "description": "A team finishes the match without conceding."
       },
       "TEAM_TOTAL": {
-        "label": "Team goals",
         "description": "Over/under goals scored by a single team."
       },
       "WIN_EITHER_HALF": {
-        "label": "Wins a half",
         "description": "A team wins at least one of the two halves."
       },
       "FIRST_HALF": {
-        "label": "1st half",
         "description": "First-half winner."
       },
       "DOUBLE_CHANCE": {
-        "label": "Double chance",
         "description": "Double chance (1X, X2, or 12)."
       },
       "UNDERDOG": {
-        "label": "Underdog",
         "description": "Backs the market's underdog."
       },
       "FAVORITE": {
-        "label": "Favorite",
         "description": "Backs the market's favorite."
       },
       "LIVE_VALUE": {
-        "label": "Live value",
         "description": "Value detected live during the match."
       },
       "MARKET_MOVE": {
-        "label": "Line move",
         "description": "Significant pre-match odds movement detected."
       },
       "CONSENSUS": {
-        "label": "Consensus",
         "description": "Several independent strategies converge on the same pick."
       },
       "CONTRARIAN": {
-        "label": "Contrarian",
         "description": "Position against the market."
       },
       "AVOID": {
-        "label": "Caution",
         "description": "Fixture flagged: implausible model/market divergence."
       },
       "CORRECT_SCORE": {
-        "label": "Exact score",
         "description": "Most likely exact scoreline (observation only, never staked)."
       },
       "RESULT_TOTAL_GOALS": {
-        "label": "Result + Goals",
         "description": "Match result combined with total goals."
       },
       "OVER_UNDER_HT": {
-        "label": "HT goals",
         "description": "Over/under goals at half-time."
       },
       "RESULT_BTTS": {
-        "label": "Result + BTTS",
         "description": "Match result combined with both teams to score."
       },
       "DRAW_NO_BET": {
-        "label": "Draw no bet",
         "description": "Result excluding the draw — stake refunded on a draw."
       },
       "WIN_TO_NIL": {
-        "label": "Win to nil",
         "description": "A team wins the match without conceding."
       },
       "HALF_TIME_FULL_TIME": {
-        "label": "HT/FT",
         "description": "Half-time result combined with the final result."
       },
       "VANTAGE": {
-        "label": "Arbitrage",
         "description": "Reads every other channel's decision and its measured reliability on this competition; only proposes a pick when it spots a concrete tension or bias between them."
       }
     },
@@ -177,8 +151,7 @@
       "NOT_APPLICABLE": "Not applicable"
     },
     "lens": {
-      "matches": "By match",
-      "channels": "By channel"
+      "matches": "Match"
     },
     "avoid": {
       "banner": "Caution",
@@ -203,13 +176,14 @@
     "evaluatedCount": "{count, plural, one {# other channel evaluated} other {# other channels evaluated}}",
     "filters": {
       "all": "All",
-      "label": "Filters",
+      "displayLabel": "Display",
       "noMatch": "No fixture matches the filters.",
       "groupByNone": "By kickoff time",
       "groupByLeague": "Group by league",
-      "moreLeagues": "More",
       "searchLeague": "Search a competition…",
-      "noLeagueResults": "No competition."
+      "noLeagueResults": "No competition.",
+      "searchChannel": "Search a channel…",
+      "noChannelResults": "No channel."
     },
     "helpLink": "How to read a pick"
   },

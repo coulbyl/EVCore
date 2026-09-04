@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import {
   CHANNEL_COLOR,
   CHANNEL_COLOR_SOFT,
@@ -17,10 +17,10 @@ import type { StrategyChannel } from "@/domains/channel-decision/types/channel-d
 export type Canal = StrategyChannel;
 
 export function CanalBadge({ canal }: { canal: Canal }) {
-  const t = useTranslations("decisions");
+  const locale = useLocale();
   const color = CHANNEL_COLOR[canal];
   const soft = CHANNEL_COLOR_SOFT[canal];
-  const label = channelLabel(canal, t);
+  const label = channelLabel(canal, locale);
 
   return (
     <span

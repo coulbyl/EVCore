@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import { useChannelHealth } from "@/domains/dashboard/use-cases/get-channel-health";
+import { channelLabel } from "@/app/dashboard/decisions/components/channel-constants";
 import type {
   ChannelHealthItem,
   ChannelStatus,
@@ -38,20 +39,10 @@ const CHANNEL_ORDER = [
  * (ChannelAnalysisSection), which reads channel_selection directly and is the
  * source of truth for depth; duplicating it here caused scale/period bugs. */
 export function ChannelStatusStrip({ from, to }: { from: string; to: string }) {
-  const tChannels = useTranslations("decisions");
+  const locale = useLocale();
   const { data: healthItems = [], isLoading } = useChannelHealth(from, to);
 
   const byChannel = new Map(healthItems.map((h) => [h.channel, h]));
-
-  const CHANNEL_LABEL: Record<(typeof CHANNEL_ORDER)[number], string> = {
-    DOUBLE_CHANCE: tChannels("channels.DOUBLE_CHANCE.label"),
-    DRAW: tChannels("channels.DRAW.label"),
-    VALUE: tChannels("channels.VALUE.label"),
-    DOMINANT: tChannels("channels.DOMINANT.label"),
-    TEAM_TOTAL: tChannels("channels.TEAM_TOTAL.label"),
-    BTTS: tChannels("channels.BTTS.label"),
-    GOALS: tChannels("channels.GOALS.label"),
-  };
 
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-4">
@@ -80,7 +71,7 @@ export function ChannelStatusStrip({ from, to }: { from: string; to: string }) {
             >
               <span className={`size-2 shrink-0 rounded-full ${dotClass}`} />
               <span className="text-[0.65rem] font-semibold uppercase tracking-wide text-foreground">
-                {CHANNEL_LABEL[channel]}
+                {channelLabel(channel, locale)}
               </span>
             </span>
           );

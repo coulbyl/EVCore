@@ -30,14 +30,23 @@ export type PersistedChannelDecision = {
 };
 
 // Filters for the read API (doc §5). `market` matches decisions that selected
-// on that market.
+// on that market. `competition`/`channel` are multi-select (facet drawer,
+// §2bis) — a checked-off subset of leagues/channels, never a single value the
+// caller has to special-case.
 export type ChannelDecisionFilters = {
   range: { gte: Date; lte: Date };
-  competition?: string;
-  channel?: StrategyChannel;
+  competition?: string[];
+  channel?: StrategyChannel[];
   status?: ChannelDecisionStatus;
   market?: Market;
   phase?: ModelRunPhase;
+};
+
+export type FacetSourceRow = {
+  channel: StrategyChannel;
+  code: string;
+  name: string;
+  country: string;
 };
 
 export type ChannelSelectionReadRow = {
@@ -244,8 +253,16 @@ export class ChannelDecisionRepository {
       WHERE f."scheduledAt" >= ${range.gte}
         AND f."scheduledAt" <= ${range.lte}
         ${phase ? Prisma.sql`AND mr.phase = ${phase}::"ModelRunPhase"` : Prisma.empty}
-        ${competition ? Prisma.sql`AND comp.code = ${competition}` : Prisma.empty}
-        ${channel ? Prisma.sql`AND cd.channel = ${channel}::"StrategyChannel"` : Prisma.empty}
+        ${
+          competition && competition.length > 0
+            ? Prisma.sql`AND comp.code IN (${Prisma.join(competition)})`
+            : Prisma.empty
+        }
+        ${
+          channel && channel.length > 0
+            ? Prisma.sql`AND cd.channel::text IN (${Prisma.join(channel)})`
+            : Prisma.empty
+        }
         ${status ? Prisma.sql`AND cd.status = ${status}::"ChannelDecisionStatus"` : Prisma.empty}
         ${
           market
@@ -352,6 +369,31 @@ export class ChannelDecisionRepository {
     }));
 
     return mapped;
+  }
+
+  // Cheap facet query for the filter drawer (Decisions/Arbitrage, §2bis) —
+  // one row per (fixture, channel) resolved to its latest pass, no fixture/
+  // selection payload. The service aggregates this into per-league and
+  // per-channel counts. Was previously derived client-side from the full
+  // findByDate response (1876 decision rows for 19 fixtures on an ordinary
+  // day), which meant the filter couldn't render before the heaviest query on
+  // the page had already returned.
+  async findFacetRows(range: {
+    gte: Date;
+    lte: Date;
+  }): Promise<FacetSourceRow[]> {
+    return this.prisma.client.$queryRaw<FacetSourceRow[]>`
+      SELECT DISTINCT ON (f.id, cd.channel)
+        cd.channel, comp.code, comp.name, comp.country
+      FROM channel_decision cd
+      JOIN model_run mr ON mr.id = cd."modelRunId"
+      JOIN fixture f ON f.id = mr."fixtureId"
+      JOIN season s ON s.id = f."seasonId"
+      JOIN competition comp ON comp.id = s."competitionId"
+      WHERE f."scheduledAt" >= ${range.gte}
+        AND f."scheduledAt" <= ${range.lte}
+      ORDER BY f.id, cd.channel, mr."analyzedAt" DESC
+    `;
   }
 
   // Informational only (see coach-continuity.constants.ts) — teams whose

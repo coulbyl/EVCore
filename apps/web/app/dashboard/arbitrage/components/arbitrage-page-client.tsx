@@ -20,8 +20,10 @@ import { DateNav } from "@/components/date-nav";
 import { InfoTooltip } from "@/components/info-tooltip";
 import { ScrollableTabs } from "@/components/scrollable-tabs";
 import { todayIso } from "@/lib/date";
-import { deriveLeagueOptions, filterByLeague } from "@/lib/league-filter";
-import { useChannelDecisionMatches } from "@/domains/channel-decision/use-cases/use-channel-decisions";
+import {
+  useChannelDecisionFacets,
+  useChannelDecisionMatches,
+} from "@/domains/channel-decision/use-cases/use-channel-decisions";
 import { LeagueFilterBar } from "../../decisions/components/league-filter-bar";
 import { ArbitrageCard } from "./arbitrage-card";
 import {
@@ -46,40 +48,38 @@ export function ArbitragePageClient() {
     (searchParams.get("filter") as ArbitrageFilter | null) ?? "play";
   const selectedLeague = searchParams.get("league");
 
-  // Unfiltered — every channel, not just VANTAGE — so flattenArbitrageEntries
-  // can borrow a sibling channel's odds for the same (market, pick) when
-  // VANTAGE's own selection (which never carries odds) matches one exactly.
-  const matches = useChannelDecisionMatches(date, {});
+  // Channel-unfiltered on purpose — every channel, not just VANTAGE — so
+  // flattenArbitrageEntries can borrow a sibling channel's odds for the same
+  // (market, pick) when VANTAGE's own selection (which never carries odds)
+  // matches one exactly. `competition` IS pushed server-side though: it's
+  // orthogonal to that (siblings live on the same fixture either way), and
+  // asking the backend for just the selected league instead of fetching
+  // every fixture and filtering in memory is the whole point of this pass.
+  const matches = useChannelDecisionMatches(date, {
+    competition: selectedLeague ? [selectedLeague] : undefined,
+  });
   const isLoading = matches.isLoading || matches.isFetching;
+
+  // Cheap and independent of the matches fetch above — see Decisions'
+  // equivalent comment (decisions-page-client.tsx). Arbitrage only uses the
+  // league half of the facets response (single-select bar, unchanged scope).
+  const facets = useChannelDecisionFacets(date);
+  const leagueOptions = facets.data?.leagues ?? [];
+  const hasLeagueFacets = leagueOptions.length > 0;
 
   const allEntries = useMemo(
     () => flattenArbitrageEntries(matches.data ?? []),
     [matches.data],
   );
 
-  const leagueOptions = useMemo(
-    () =>
-      deriveLeagueOptions(allEntries, (e) => ({
-        code: e.competition,
-        name: e.competitionName,
-        country: e.country,
-      })),
-    [allEntries],
-  );
-
   const visibleEntries = useMemo(() => {
-    const byLeague = filterByLeague(
-      allEntries,
-      selectedLeague,
-      (e) => e.competition,
-    );
-    return byLeague
+    return allEntries
       .filter((e) => matchesFilter(e, filter))
       .sort(
         (a, b) =>
           new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
       );
-  }, [allEntries, selectedLeague, filter]);
+  }, [allEntries, filter]);
 
   const playCount = useMemo(
     () => allEntries.filter((e) => verdictOf(e) === "play").length,
@@ -142,7 +142,7 @@ export function ArbitragePageClient() {
         )}
       </div>
 
-      {hasData && (
+      {hasLeagueFacets && (
         <div className="mb-3 shrink-0">
           <LeagueFilterBar
             options={leagueOptions}

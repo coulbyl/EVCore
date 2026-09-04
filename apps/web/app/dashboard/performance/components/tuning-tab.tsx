@@ -11,7 +11,7 @@ import {
   type ColumnDef,
   type DateRange,
 } from "@evcore/ui";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   channelLabel,
   CHANNEL_COLOR,
@@ -38,7 +38,7 @@ function formatThreshold(value: number): string {
 
 export function TuningTab() {
   const t = useTranslations("performancePage");
-  const tc = useTranslations("decisions");
+  const locale = useLocale();
   const common = useTranslations("common");
   const [range, setRange] = useState<DateRange | undefined>(undefined);
   const mutation = useRunChannelTuning();
@@ -64,7 +64,7 @@ export function TuningTab() {
             color: CHANNEL_COLOR[row.original.channel],
           }}
         >
-          {channelLabel(row.original.channel, tc)}
+          {channelLabel(row.original.channel, locale)}
         </Badge>
       ),
     },
@@ -403,7 +403,7 @@ export function TuningTab() {
                           color: CHANNEL_COLOR[report.channel],
                         }}
                       >
-                        {channelLabel(report.channel, tc)}
+                        {channelLabel(report.channel, locale)}
                       </Badge>
                       <p className="mt-1 text-xs font-semibold text-foreground">
                         {report.competitionCode}

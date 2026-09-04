@@ -70,9 +70,12 @@ describe("buildUserPrompt", () => {
 
   it("gives every reading a French market/pick label alongside the technical code, and drops EV entirely (regression: VANTAGE's prose was echoing raw codes like OVER_UNDER/UNDER and citing EV, an anti-predictive signal per CLAUDE.md)", () => {
     const prompt = buildUserPrompt(baseContext, null);
-    // RESULT_BTTS/AWAY_NO → "Ext. + BTTS Non" per formatPickForDisplayFr.
+    // RESULT_BTTS/AWAY_NO → "Ext. + Non" per formatPickForDisplayFr — the
+    // pick never repeats "BTTS" since the market label right before it
+    // already says "Résultat + Les deux équipes marquent" (2quater: never leak a
+    // raw code into user/model-facing text).
     expect(prompt).toContain(
-      "marché=RESULT_BTTS, pick=AWAY_NO (Résultat + BTTS, Ext. + BTTS Non)",
+      "marché=RESULT_BTTS, pick=AWAY_NO (Résultat + Les deux équipes marquent, Ext. + Non)",
     );
     expect(prompt).toContain(
       "marché=CLEAN_SHEET_HOME, pick=YES (Clean sheet domicile, Oui)",

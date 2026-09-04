@@ -16,7 +16,6 @@ import {
 } from "@evcore/ui";
 import { DateNav } from "@/components/date-nav";
 import { FormationHelpLink } from "@/components/formation-help-link";
-import { LensToggle, type DecisionsView } from "./lens-toggle";
 
 export function DecisionsPageFrame({
   children,
@@ -28,11 +27,8 @@ export function DecisionsPageFrame({
   isError,
   isLoading,
   onDateChange,
-  view,
-  onViewChange,
+  filters,
   headerExtra,
-  subHeader,
-  leagueFilter,
 }: {
   children: React.ReactNode;
   contentScroll?: "page" | "child";
@@ -43,30 +39,24 @@ export function DecisionsPageFrame({
   isError: boolean;
   isLoading: boolean;
   onDateChange: (iso: string) => void;
-  view: DecisionsView;
-  onViewChange: (view: DecisionsView) => void;
+  // League switcher + channel/view switcher (LeagueFilterBar,
+  // ChannelFilterBar) — single-select, side by side on desktop, stacked in
+  // a column on mobile, inside the PageHeader bar itself.
+  filters: React.ReactNode;
   // A compact control (e.g. the FiltersPopover collapsing "only picks" +
   // group-by) inlined next to DateNav in the header row — same level as
   // Investir's filters, instead of a separate boxed row below.
   headerExtra?: React.ReactNode;
-  // Wider content (e.g. the channel tab strip) that needs its own row —
-  // kept as a distinct boxed panel below the header.
-  subHeader?: React.ReactNode;
-  // Championship chips, above everything else — shared by both lenses
-  // (Par match / Par canal), so it renders once here rather than inside
-  // either lens's own header slot.
-  leagueFilter?: React.ReactNode;
 }) {
   const t = useTranslations("decisions");
   const pageOwnsScroll = contentScroll === "page";
 
   return (
     <Page className="flex h-full flex-col">
-      {leagueFilter ? (
-        <div className="mb-3 shrink-0">{leagueFilter}</div>
-      ) : null}
       <PageHeader>
-        <LensToggle view={view} onChange={onViewChange} />
+        <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:items-center md:gap-3">
+          {filters}
+        </div>
         <PageHeaderActions className="w-full lg:w-auto">
           {headerExtra}
           <DateNav date={date} onChange={onDateChange} className="flex-1" />
@@ -77,12 +67,6 @@ export function DecisionsPageFrame({
           />
         </PageHeaderActions>
       </PageHeader>
-
-      {subHeader ? (
-        <div className="mb-4 shrink-0 border border-border bg-panel-strong p-4 sm:mb-5">
-          {subHeader}
-        </div>
-      ) : null}
 
       <PageContent
         className={`min-h-0 flex-1 p-4 sm:p-5 ev-shell-shadow ${

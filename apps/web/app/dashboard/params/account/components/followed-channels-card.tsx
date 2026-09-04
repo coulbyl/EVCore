@@ -21,6 +21,8 @@ import {
   usePersonalization,
   useUnfollowChannel,
 } from "@/domains/personalization/use-cases/use-personalization";
+import { channelLabel } from "@/app/dashboard/decisions/components/channel-constants";
+import type { StrategyChannel } from "@/domains/channel-decision/types/channel-decision";
 import { SettingsSectionCard } from "./settings-section-card";
 import { formatCalibrationRatio } from "./personalization-constants";
 
@@ -33,7 +35,6 @@ function formatSince(iso: string, locale: string): string {
 
 export function FollowedChannelsCard() {
   const t = useTranslations("account.personalization");
-  const tChannels = useTranslations("decisions.channels");
   const locale = useLocale();
   const [discoverOpen, setDiscoverOpen] = useState(false);
   const [discoverTab, setDiscoverTab] = useState<"proven" | "watch">(
@@ -45,14 +46,6 @@ export function FollowedChannelsCard() {
     useDiscoverChannels(discoverOpen);
   const { mutate: follow } = useFollowChannel();
   const { mutate: unfollow } = useUnfollowChannel();
-
-  function channelLabel(channel: string): string {
-    try {
-      return tChannels(`${channel}.label`);
-    } catch {
-      return channel;
-    }
-  }
 
   const proven = (discoverable ?? []).filter((c) => c.proven && !c.followed);
   const watch = (discoverable ?? []).filter((c) => !c.proven && !c.followed);
@@ -118,12 +111,12 @@ export function FollowedChannelsCard() {
                       {visible.map((item) => (
                         <CommandItem
                           key={item.channel}
-                          value={channelLabel(item.channel)}
+                          value={channelLabel(item.channel as StrategyChannel, locale)}
                           onSelect={() => follow(item.channel)}
                           className="flex items-center justify-between gap-2"
                         >
                           <span className="min-w-0 flex-1 truncate">
-                            {channelLabel(item.channel)}
+                            {channelLabel(item.channel as StrategyChannel, locale)}
                           </span>
                           <span className="shrink-0 text-xs text-muted-foreground">
                             {formatCalibrationRatio(item.calibrationRatio)} ·
@@ -162,7 +155,7 @@ export function FollowedChannelsCard() {
             >
               <div className="flex min-w-0 items-baseline gap-2">
                 <span className="truncate text-sm font-medium text-foreground">
-                  {channelLabel(item.channel)}
+                  {channelLabel(item.channel as StrategyChannel, locale)}
                 </span>
                 <span className="shrink-0 text-xs text-muted-foreground">
                   {t("since", { date: formatSince(item.since, locale) })}

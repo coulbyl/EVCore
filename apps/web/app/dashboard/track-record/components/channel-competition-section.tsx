@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import {
   Select,
   SelectContent,
@@ -26,7 +26,6 @@ export function ChannelCompetitionSection({
   rows: ChannelCompetitionStatItem[];
 }) {
   const locale = useLocale();
-  const t = useTranslations("decisions");
   // Les canaux viennent des données reçues, pas d'une liste locale : celle-ci
   // ne sert plus qu'à les ORDONNER (voir orderChannels).
   const channelsWithData = useMemo(() => {
@@ -80,7 +79,7 @@ export function ChannelCompetitionSection({
           <SelectContent>
             {channelsWithData.map((channel) => (
               <SelectItem key={channel} value={channel}>
-                {channelLabel(channel, t)}
+                {channelLabel(channel, locale)}
               </SelectItem>
             ))}
           </SelectContent>

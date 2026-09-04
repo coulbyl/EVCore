@@ -22,7 +22,7 @@ Chaque pick appartient à un canal, affiché en badge. Le canal indique quelle q
 | **Issue du match**                    | Qui gagne, ou le nul : victoire affirmée, double chance, remboursé si nul, gagne sans encaisser |
 | **Buts**                              | Plus ou moins de buts, les deux équipes marquent, buts d'une seule équipe, cage inviolée        |
 | **Mi-temps**                          | Les mêmes questions sur la première période seule, plus le couple mi-temps / fin de match       |
-| **Composites**                        | Deux conditions à la fois — issue et total de buts, issue et « les deux marquent »              |
+| **Composites**                        | Deux conditions à la fois — issue et total de buts, issue et « Les deux équipes marquent »              |
 | **Filtres** (Valeur, Sécurité)        | Ne cherchent rien eux-mêmes : ils re-sélectionnent parmi les décisions ci-dessus                |
 | **Garde-fous** (Attention, Consensus) | N'émettent pas de pick : ils qualifient ou écartent une décision                                |
 

@@ -139,7 +139,7 @@ function AvoidDetail({
               backgroundColor: CHANNEL_COLOR_SOFT[o.channel],
             }}
           >
-            {channelLabel(o.channel, t)}
+            {channelLabel(o.channel, locale)}
           </Badge>
           <span className="font-medium">
             {formatPickForDisplay(o.pick, o.market)}

@@ -1,7 +1,7 @@
 /// <reference types="node" />
 /**
  * Calibration walk-forward de RESULT_BTTS (ex. "HOME_YES" = P(home gagne ET
- * les deux marquent)) — même protocole que
+ * Les deux équipes marquent)) — même protocole que
  * backtest-result-total-goals-shrinkage-calibration.ts, dont ce marché
  * partage la structure : un prix joint réel, pas `1 − l'autre` mais
  * `oneXTwo[side] − YES` pour le complément NO (computeResultBttsProba,

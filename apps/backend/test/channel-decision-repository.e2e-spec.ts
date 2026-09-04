@@ -143,7 +143,7 @@ describe('ChannelDecisionRepository (e2e)', () => {
     // Channel filter narrows to a single decision.
     const onlyEv = await repo.findByDate({
       range,
-      channel: StrategyChannel.VALUE,
+      channel: [StrategyChannel.VALUE],
     });
     expect(onlyEv.every((d) => d.channel === StrategyChannel.VALUE)).toBe(true);
 

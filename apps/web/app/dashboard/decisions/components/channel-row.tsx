@@ -6,7 +6,7 @@ import {
   formatMarketForDisplay,
   formatPickForDisplay,
 } from "@/helpers/fixture";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type {
   ChannelDecisionMatchDecisionDto,
   ChannelSelectionDto,
@@ -81,6 +81,14 @@ export function ChannelRow({
     <div className={cn("py-2.5", avoidEdge !== undefined && "opacity-60")}>
       {selection ? (
         <div className="min-w-0">
+          {/* No channel badge here (2026-09-02 redesign §2, "badge de canal
+              retiré, nom de marché en clair seul") — most channels are named
+              after their own target market (BTTS canal ≈ BTTS marché,
+              CORRECT_SCORE ≈ Score exact), so the badge used to just repeat
+              the market name below in a different case. The market name
+              alone still disambiguates picks that read the same across
+              markets (e.g. "Domicile" for both WIN_EITHER_HALF and
+              DRAW_NO_BET on the same card) without the duplicate wording. */}
           <div className="flex min-w-0 items-start justify-between gap-2">
             <p className="line-clamp-2 min-w-0 text-sm font-semibold leading-snug text-foreground">
               {formatPickForDisplay(selection.pick, selection.market)}
@@ -102,7 +110,6 @@ export function ChannelRow({
             </div>
           </div>
           <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.68rem] leading-tight text-muted-foreground">
-            <ChannelTag channel={channel} />
             {selection.market !== "CORRECT_SCORE" && (
               <span className="max-w-full truncate">
                 {formatMarketForDisplay(selection.market, loc)}
@@ -125,21 +132,6 @@ export function ChannelRow({
         <RejectedLabel decision={decision} />
       )}
     </div>
-  );
-}
-
-function ChannelTag({ channel }: { channel: StrategyChannel }) {
-  const t = useTranslations("decisions");
-  return (
-    <span
-      className="shrink-0 rounded px-1 py-0.5 text-[0.58rem] font-semibold uppercase tracking-wide"
-      style={{
-        color: CHANNEL_COLOR[channel],
-        backgroundColor: CHANNEL_COLOR_SOFT[channel],
-      }}
-    >
-      {channelLabel(channel, t)}
-    </span>
   );
 }
 
@@ -170,6 +162,7 @@ function AvoidEdgeBadge({ edge }: { edge: number }) {
 /** CONSENSUS n'a pas de pick : il montre qui converge, et c'est tout. */
 function ConsensusRow({ channels }: { channels: StrategyChannel[] }) {
   const t = useTranslations("decisions");
+  const locale = useLocale();
   return (
     <div className="flex flex-wrap items-center gap-1">
       <span className="text-[0.68rem] text-muted-foreground">
@@ -184,7 +177,7 @@ function ConsensusRow({ channels }: { channels: StrategyChannel[] }) {
             backgroundColor: CHANNEL_COLOR_SOFT[ch],
           }}
         >
-          {channelLabel(ch, t)}
+          {channelLabel(ch, locale)}
         </Badge>
       ))}
     </div>

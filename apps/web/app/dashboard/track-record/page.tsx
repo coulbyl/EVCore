@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale } from "next-intl/server";
 import {
   Badge,
   Page,
@@ -75,13 +75,13 @@ export default async function TrackRecordPage({
   const { period: periodParam } = await searchParams;
   const period = resolvePeriod(periodParam);
   const { from, to } = dateRangeForPeriod(period);
-  const [{ pnl, rows, channelCompetitionStats }, t] = await Promise.all([
+  const [{ pnl, rows, channelCompetitionStats }, locale] = await Promise.all([
     getTrackRecordData(from, to),
-    getTranslations("decisions"),
+    getLocale(),
   ]);
   const channelStatRows: ChannelStatRow[] = rows.map((row) => ({
     key: row.channel,
-    primaryLabel: channelLabel(row.channel, t),
+    primaryLabel: channelLabel(row.channel, locale),
     status: row.status,
     roi: row.roi,
     hitRate: row.hitRate,

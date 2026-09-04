@@ -126,11 +126,25 @@ export type ChannelDecisionChannelGroup = {
 
 export type ChannelDecisionListQuery = {
   date: string;
-  competition?: string;
-  channel?: StrategyChannel;
+  competition?: string[];
+  channel?: StrategyChannel[];
   market?: Market;
   status?: ChannelDecisionStatus;
   phase?: ModelRunPhase;
+};
+
+export type LeagueFacet = {
+  code: string;
+  name: string;
+  country: string;
+  count: number;
+};
+
+export type ChannelFacet = { channel: StrategyChannel; count: number };
+
+export type ChannelDecisionFacets = {
+  leagues: LeagueFacet[];
+  channels: ChannelFacet[];
 };
 
 /**
@@ -293,6 +307,66 @@ export class ChannelDecisionService {
     });
   }
 
+  // Facet drawer (§2bis) — leagues + channels present that day, with counts,
+  // aggregated in memory from one cheap query (findFacetRows's own comment).
+  // Counts are per-dimension over the whole day, not cross-filtered by the
+  // other dimension's current selection — simpler and still cheap, and
+  // standard enough for a facet UI (it never hides a value the user could
+  // still reach by clearing the other section first).
+  async getFacets(date: string): Promise<ChannelDecisionFacets> {
+    const day = new Date(date);
+    const rows = await this.repository.findFacetRows({
+      gte: startOfUtcDay(day),
+      lte: endOfUtcDay(day),
+    });
+
+    const leagueByCode = new Map<string, LeagueFacet>();
+    const channelCounts = new Map<StrategyChannel, number>();
+
+    for (const row of rows) {
+      const league = leagueByCode.get(row.code);
+      if (league) league.count += 1;
+      else {
+        leagueByCode.set(row.code, {
+          code: row.code,
+          name: row.name,
+          country: row.country,
+          count: 1,
+        });
+      }
+
+      // Facet-drawer-only exclusion (§2bis point 5) — narrower than
+      // READ_CHANNEL_ORDER (which still lists AVOID/CONSENSUS as real "Par
+      // canal" tabs, gating/aggregating the primaries respectively): none of
+      // CONSENSUS/CONTRARIAN/AVOID emit a pick of their own, so filtering
+      // decisions BY one of them would never narrow anything. VANTAGE stays
+      // excluded too, same as everywhere else in this file — its own
+      // Arbitrage view, not a "Par canal" channel.
+      if (!FACET_EXCLUDED_CHANNELS.has(row.channel)) {
+        channelCounts.set(
+          row.channel,
+          (channelCounts.get(row.channel) ?? 0) + 1,
+        );
+      }
+    }
+
+    const facetChannelOrder = READ_CHANNEL_ORDER.filter(
+      (channel) => !FACET_EXCLUDED_CHANNELS.has(channel),
+    );
+
+    return {
+      leagues: [...leagueByCode.values()].sort((a, b) =>
+        a.name.localeCompare(b.name),
+      ),
+      channels: facetChannelOrder
+        .map((channel) => ({
+          channel,
+          count: channelCounts.get(channel) ?? 0,
+        }))
+        .filter((c) => c.count > 0),
+    };
+  }
+
   private findRows(
     query: ChannelDecisionListQuery,
   ): Promise<ChannelDecisionReadRow[]> {
@@ -375,6 +449,17 @@ const READ_CHANNEL_ORDER: readonly StrategyChannel[] = [
   STRATEGY_CHANNEL.AVOID,
   STRATEGY_CHANNEL.CONSENSUS,
 ];
+
+// Meta-channels with no pick of their own (§2bis point 5) — real "Par canal"
+// tabs (READ_CHANNEL_ORDER includes them, gating/aggregating the primaries),
+// but never a useful facet to filter BY, since none of them ever narrows a
+// selection. CONTRARIAN isn't in READ_CHANNEL_ORDER either (never wired into
+// "Par canal"), listed here anyway per the doc's own exclusion list.
+const FACET_EXCLUDED_CHANNELS = new Set<StrategyChannel>([
+  STRATEGY_CHANNEL.CONSENSUS,
+  STRATEGY_CHANNEL.CONTRARIAN,
+  STRATEGY_CHANNEL.AVOID,
+]);
 
 function toMatchDecision(
   item: ChannelDecisionItem,

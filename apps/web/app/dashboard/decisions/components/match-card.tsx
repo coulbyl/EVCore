@@ -1,6 +1,6 @@
 import { Ban, TriangleAlert } from "lucide-react";
 import { Separator, cn } from "@evcore/ui";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { InfoTooltip } from "@/components/info-tooltip";
 import { FixtureCard } from "@/components/fixture-card";
 import { NewCoachChip } from "@/components/new-coach-badge";
@@ -152,12 +152,13 @@ export function MatchCard({
 
 function AvoidOffenderLine({ avoid }: { avoid: AvoidFlag }) {
   const t = useTranslations("decisions");
+  const locale = useLocale();
   const first = avoid.offenders[0];
   if (first) {
     const edgePct = `+${Math.round(first.edge * 100)}%`;
     return (
       <span className="block leading-snug opacity-90">
-        {channelLabel(first.channel, t)} · {t("avoid.edge")} {edgePct}
+        {channelLabel(first.channel, locale)} · {t("avoid.edge")} {edgePct}
       </span>
     );
   }

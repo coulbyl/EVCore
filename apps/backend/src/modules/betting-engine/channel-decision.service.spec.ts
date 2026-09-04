@@ -371,14 +371,14 @@ describe('ChannelDecisionService', () => {
 
       const groups = await service.listByMatch({
         date: '2026-01-18',
-        competition: 'BL1',
-        channel: STRATEGY_CHANNEL.VALUE,
+        competition: ['BL1'],
+        channel: [STRATEGY_CHANNEL.VALUE],
       });
 
       // Day range + filters forwarded.
       const [filters] = findByDate.mock.calls[0];
-      expect(filters.competition).toBe('BL1');
-      expect(filters.channel).toBe(STRATEGY_CHANNEL.VALUE);
+      expect(filters.competition).toEqual(['BL1']);
+      expect(filters.channel).toEqual([STRATEGY_CHANNEL.VALUE]);
       expect(filters.range.gte.toISOString()).toBe('2026-01-18T00:00:00.000Z');
 
       // Both decisions belong to the same fixture → one match group.
@@ -510,6 +510,63 @@ describe('ChannelDecisionService', () => {
         STRATEGY_CHANNEL.VANTAGE,
       );
       expect(groups.map((g) => g.channel)).toContain(STRATEGY_CHANNEL.DOMINANT);
+    });
+  });
+
+  describe('getFacets', () => {
+    it('resolves the date into a UTC day range and aggregates leagues + channels with counts', async () => {
+      const findFacetRows = vi.fn().mockResolvedValue([
+        {
+          channel: STRATEGY_CHANNEL.DRAW,
+          code: 'PL',
+          name: 'Premier League',
+          country: 'England',
+        },
+        {
+          channel: STRATEGY_CHANNEL.BTTS,
+          code: 'PL',
+          name: 'Premier League',
+          country: 'England',
+        },
+        {
+          channel: STRATEGY_CHANNEL.DRAW,
+          code: 'BL1',
+          name: 'Bundesliga',
+          country: 'Germany',
+        },
+        // CONSENSUS is a meta-channel with no pick of its own (§2bis point 5)
+        // — never surfaced as a filterable channel, same exclusion
+        // listByChannel already applies via READ_CHANNEL_ORDER.
+        {
+          channel: STRATEGY_CHANNEL.CONSENSUS,
+          code: 'PL',
+          name: 'Premier League',
+          country: 'England',
+        },
+      ]);
+      const repo = { findFacetRows } as unknown as ChannelDecisionRepository;
+      const service = new ChannelDecisionService(repo);
+
+      const result = await service.getFacets('2026-01-18');
+
+      expect(findFacetRows).toHaveBeenCalledTimes(1);
+      const [range] = findFacetRows.mock.calls[0];
+      expect(range.gte.toISOString()).toBe('2026-01-18T00:00:00.000Z');
+      expect(range.lte.toISOString()).toBe('2026-01-18T23:59:59.999Z');
+
+      expect(result.leagues).toEqual([
+        { code: 'BL1', name: 'Bundesliga', country: 'Germany', count: 1 },
+        { code: 'PL', name: 'Premier League', country: 'England', count: 3 },
+      ]);
+      expect(result.channels).toEqual(
+        expect.arrayContaining([
+          { channel: STRATEGY_CHANNEL.DRAW, count: 2 },
+          { channel: STRATEGY_CHANNEL.BTTS, count: 1 },
+        ]),
+      );
+      expect(
+        result.channels.some((c) => c.channel === STRATEGY_CHANNEL.CONSENSUS),
+      ).toBe(false);
     });
   });
 });

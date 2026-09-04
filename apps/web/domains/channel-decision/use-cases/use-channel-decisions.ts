@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clientApiRequest } from "@/lib/api/client-api";
 import type {
   ChannelDecisionChannelGroupDto,
+  ChannelDecisionFacets,
   ChannelDecisionFilters,
   ChannelDecisionMatchDto,
 } from "../types/channel-decision";
@@ -14,8 +15,9 @@ function buildDecisionSearchParams(
 ) {
   const { competition, channel, market, status, phase } = filters;
   const params = new URLSearchParams({ date });
-  if (competition) params.set("competition", competition);
-  if (channel) params.set("channel", channel);
+  if (competition && competition.length > 0)
+    params.set("competition", competition.join(","));
+  if (channel && channel.length > 0) params.set("channel", channel.join(","));
   if (market) params.set("market", market);
   if (status) params.set("status", status);
   if (phase) params.set("phase", phase);
@@ -30,8 +32,8 @@ function decisionQueryKey(
   return [
     scope,
     date,
-    filters.competition,
-    filters.channel,
+    filters.competition?.join(",") ?? "",
+    filters.channel?.join(",") ?? "",
     filters.market,
     filters.status,
     filters.phase,
@@ -98,6 +100,22 @@ export function useChannelDecisionChannels(
       );
     },
     enabled: options.enabled ?? true,
+    staleTime: 120_000,
+  });
+}
+
+// Cheap facets (leagues + channels, with counts) for the filter drawer —
+// independent of the (much heavier) by-match/by-channel payload, so the
+// filter can render before/without waiting on it. See
+// ChannelDecisionRepository.findFacetRows.
+export function useChannelDecisionFacets(date: string) {
+  return useQuery({
+    queryKey: ["channel-decisions-facets", date],
+    queryFn: () =>
+      clientApiRequest<ChannelDecisionFacets>(
+        `/channel-decisions/facets?date=${date}`,
+        { fallbackErrorMessage: "Impossible de charger les filtres." },
+      ),
     staleTime: 120_000,
   });
 }
