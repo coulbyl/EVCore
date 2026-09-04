@@ -9,7 +9,6 @@ import {
   ProgressBar,
   cn,
 } from "@evcore/ui";
-import { CanalBadge } from "@/components/canal-badge";
 import { FixtureCard } from "@/components/fixture-card";
 import { ResultBadge, type ResultValue } from "@/components/result-badge";
 
@@ -24,7 +23,6 @@ export type NormalizedCouponLeg = {
   kickoff: string;
   score: string | null;
   htScore: string | null;
-  canal: "VALUE" | "SAFE" | "DOMINANT" | "DRAW" | "BTTS" | "GOALS";
   marketLabel: string;
   pickLabel: string;
   probability: number;
@@ -185,6 +183,11 @@ function CouponLegCard({
       bodyClassName="py-2"
     >
       <div className="min-w-0">
+        {/* No channel badge here (same reasoning as Decisions'
+            channel-row.tsx) — most channels are named after their own
+            target market (BTTS canal ≈ BTTS marché, DOUBLE_CHANCE ≈ Double
+            chance), so it only repeated the market name below in a
+            different case. */}
         <div className="flex min-w-0 items-start justify-between gap-2">
           <p className="line-clamp-2 min-w-0 text-sm font-semibold leading-snug text-foreground">
             {leg.pickLabel}
@@ -192,7 +195,6 @@ function CouponLegCard({
           <ResultBadge result={leg.result} finished={leg.score !== null} />
         </div>
         <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.68rem] leading-tight text-muted-foreground">
-          <CanalBadge canal={leg.canal} />
           <span className="max-w-full truncate">{leg.marketLabel}</span>
           <span className="tabular-nums">{formatPct(leg.probability)}</span>
         </p>

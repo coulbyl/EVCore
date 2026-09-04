@@ -149,22 +149,26 @@ describe('PersonalizationService', () => {
     const draw = result.find((r) => r.channel === 'DRAW');
     const btts = result.find((r) => r.channel === 'BTTS');
     expect(draw).toMatchObject({
-      proven: true,
+      status: 'GREEN',
       followed: true,
       sampleSize: 2400,
     });
     expect(btts).toMatchObject({
-      proven: false,
+      status: 'ORANGE',
       followed: false,
       sampleSize: 1119,
     });
-    // VALUE/SAFE (Phase-2 filters) and CONSENSUS/CONTRARIAN/AVOID/VANTAGE
-    // (Phase-3 meta) are never eligible to follow — §2quater.
+    // VALUE/SAFE (Phase-2 filters), CONSENSUS/CONTRARIAN/AVOID (Phase-3
+    // meta), VANTAGE (own dedicated page, Arbitrage) and the never-
+    // implemented channels (UNDERDOG/FAVORITE/LIVE_VALUE/MARKET_MOVE) are
+    // never eligible to follow — §2quater.
     expect(result.some((r) => r.channel === 'VALUE')).toBe(false);
     expect(result.some((r) => r.channel === 'CONSENSUS')).toBe(false);
+    expect(result.some((r) => r.channel === 'VANTAGE')).toBe(false);
+    expect(result.some((r) => r.channel === 'UNDERDOG')).toBe(false);
   });
 
-  it('defaults sampleSize to 0 and proven to false for a channel with no settled history', async () => {
+  it('defaults sampleSize to 0 and status to insufficient data for a channel with no settled history', async () => {
     const repo = makeRepo();
     const service = new PersonalizationService(repo, makeDashboard([]));
 
@@ -172,9 +176,8 @@ describe('PersonalizationService', () => {
 
     const anyChannel = result[0];
     expect(anyChannel).toMatchObject({
-      calibrationRatio: null,
+      status: 'INSUFFICIENT_DATA',
       sampleSize: 0,
-      proven: false,
       followed: false,
     });
   });

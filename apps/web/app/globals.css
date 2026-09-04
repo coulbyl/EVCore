@@ -77,7 +77,7 @@ body {
   opacity: 0.8;
 }
 
-/* driver.js (onboarding tour) — its CSS ships fixed class names, no custom
+/* driver.js (product tour) — its CSS ships fixed class names, no custom
    properties of its own, so we override them directly with the app's dark
    theme tokens instead of the library's light defaults. */
 .driver-popover {

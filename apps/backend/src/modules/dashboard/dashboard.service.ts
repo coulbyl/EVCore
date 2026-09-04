@@ -49,6 +49,15 @@ const MIN_SETTLED_MODEL = 10;
 // a large enough outlier — a floor does, by construction.
 const LEADERBOARD_MIN_SETTLED = 5;
 
+// The leaderboard query was unbounded (every settled coupon ever, no LIMIT,
+// full aggregation in JS) — a genuine "heavier every day" cost on a page
+// loaded on every visit. A rolling window keeps it light without changing
+// what it measures for an active player (whose settled history is recent
+// anyway); same 90-day default already used elsewhere for this kind of
+// "enough signal, still cheap" tradeoff (Decisions' calibration badge,
+// Track Record's default period).
+const LEADERBOARD_WINDOW_DAYS = 90;
+
 type SummaryData = Awaited<ReturnType<DashboardRepository['getSummaryData']>>;
 
 type UnreadNotification = SummaryData['unreadNotifications'][number];
@@ -507,7 +516,8 @@ export class DashboardService {
   }
 
   async getLeaderboard(): Promise<LeaderboardEntry[]> {
-    const betSlips = await this.repo.getLeaderboardData();
+    const since = new Date(Date.now() - LEADERBOARD_WINDOW_DAYS * 86_400_000);
+    const betSlips = await this.repo.getLeaderboardData(since);
 
     type UserAgg = {
       username: string;

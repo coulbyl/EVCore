@@ -362,9 +362,10 @@ export class DashboardRepository {
     });
   }
 
-  getLeaderboardData() {
+  getLeaderboardData(since: Date) {
     return this.prisma.client.betSlip.findMany({
       where: {
+        createdAt: { gte: since },
         items: {
           every: {
             bet: {

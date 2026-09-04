@@ -23,9 +23,9 @@ import {
   Receipt,
   Scale,
   Settings,
-  Ticket,
   Trophy,
   Users,
+  Wand2,
 } from "lucide-react";
 import { PageShell, type NavGroup } from "./page-shell";
 import { BetSlipButton } from "./bet-slip-button";
@@ -180,7 +180,14 @@ export function AppShell({
             label: tNav("coupons"),
             href: "/dashboard/coupons",
             active: pathname.startsWith("/dashboard/coupons"),
-            icon: Ticket,
+            // Wand2, not Receipt/Ticket — these are AI-generated proposals to
+            // consider, not the user's own placed bets (that's "Mes coupons"
+            // below, which already owns the Receipt/ticket-stub look).
+            icon: Wand2,
+            // Raised, accent-filled center button in the mobile bottom nav —
+            // Investir's old slot/styling (screenshot confirmed: elevated
+            // circular button, dead center of 5), not just a spot in the row.
+            featured: true,
           },
           {
             label: tNav("fixtures"),
@@ -249,12 +256,13 @@ export function AppShell({
     [navGroups],
   );
 
-  // Coupons swapped for Arbitrage (2026-08-28, explicit product call) —
-  // Coupons stays reachable via the sidebar/hamburger menu on mobile, just
-  // no longer in the primary 5-slot bar.
+  // Coupons takes Investir's old slot AND styling (module removed entirely,
+  // 2026-09-04) — the raised, accent-filled center button (`featured: true`
+  // above), dead center of the 5, not just a spot in the row.
   const MOBILE_NAV_ORDER = [
     "/dashboard",
     "/dashboard/decisions",
+    "/dashboard/coupons",
     "/dashboard/arbitrage",
     "/dashboard/inbox",
   ];

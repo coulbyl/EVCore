@@ -63,4 +63,8 @@ export class UpdateMeDto {
   @IsOptional()
   @IsBoolean()
   hasSeenOnboarding?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  hasCompletedOnboarding?: boolean;
 }

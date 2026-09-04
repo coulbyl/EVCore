@@ -2,6 +2,7 @@ import {
   FILTER_STRATEGY_CHANNELS,
   META_STRATEGY_CHANNELS,
   STRATEGY_CHANNEL,
+  UNIMPLEMENTED_STRATEGY_CHANNELS,
   type StrategyChannel,
 } from "../types/strategy-channel";
 
@@ -26,6 +27,11 @@ import {
 //     selections respectively duplicate a Phase-1 pick exactly. Admitting
 //     them would put the same underlying bet in the pool twice under two
 //     labels, and the label carries the worse calibration of the two.
+//   - UNIMPLEMENTED (UNDERDOG, FAVORITE, LIVE_VALUE, MARKET_MOVE —
+//     `UNIMPLEMENTED_STRATEGY_CHANNELS`). No file under strategies/ ever
+//     produces one — pure enum leftovers. Harmless to exclude here (they
+//     never contributed a leg anyway) and fixes every other list built from
+//     this one, e.g. Personnalisation's "Découvrir des canaux".
 //
 // Why NOT a quality bar. An earlier version of this list gated admission on
 // each channel's measured calibration ratio (>= 0.90), which excluded 11 of
@@ -39,6 +45,7 @@ import {
 export const POOL_EXCLUDED_CHANNELS: ReadonlySet<StrategyChannel> = new Set([
   ...META_STRATEGY_CHANNELS,
   ...FILTER_STRATEGY_CHANNELS,
+  ...UNIMPLEMENTED_STRATEGY_CHANNELS,
 ]);
 
 export const POOL_ELIGIBLE_CHANNELS: readonly StrategyChannel[] = (

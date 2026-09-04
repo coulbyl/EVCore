@@ -93,18 +93,18 @@ que **tout reste gratuit pour l'instant**, le gate viendra plus tard.
 Lien : https://claude.ai/code/artifact/6468e339-5d32-45b0-b14e-89df315730bb — chaque écran a
 désormais sa variante mobile (390px) juste à côté du desktop sur le canvas.
 
-| #    | Écran               | Ce qui change vs l'app réelle                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Backend à toucher                                           |
-| ---- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| 1    | Dashboard (Accueil) | Épuré, plus de lien Investir/Combinés dans le hero                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Aucun                                                       |
-| 2    | Decisions           | Structure de carte identique à `match-card.tsx`/`channel-row.tsx` réels (crests, connecteur, badge consensus, badge de résultat), mais ligne de pick **simplifiée** vs le composant réel actuel (2026-09-02) : badge de code canal retiré (nom de marché en clair seul), ratio×n/edge remplacés par un badge Fiable/À confirmer/Peu fiable (détail chiffré derrière un clic), carte plafonnée à 3-4 picks triés par confiance + "Voir N autres marchés" ; "Par match"/"Par canal" fusionnés en une rangée d'onglets avec les canaux à plat ; **filtre ligues/canaux remplacé par un tiroir de facettes** (§2bis, 2026-09-02) au lieu du "+ Plus" | Aucun (front only)                                          |
-| 3    | Arbitrage           | KPI "lectures/tensions" retirés de l'en-tête, rôle sinon inchangé ; **même tiroir de facettes** que Decisions pour le filtre ligues (§2bis), y compris sur mobile où la ligne de filtre était absente jusqu'ici                                                                                                                                                                                                                                                                                                                                                                                                                                  | Aucun                                                       |
-| 4    | Coupons             | Nouvelle page sœur d'Arbitrage — 3 coupons du jour générés par VANTAGE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | §0 point 7                                                  |
-| 5    | Drawer de bet slip  | Un bouton "Envoyer à VANTAGE" ajouté à l'existant (`bet-slip-drawer.tsx`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | **Backlog** (§0) — maquetté, pas d'implémentation immédiate |
-| 6    | Révision VANTAGE    | Refaite en liste unique (plus de doublon jambe×2), carte verdict en tête, comparaison avant/après                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | **Backlog** (§0) — maquetté, pas d'implémentation immédiate |
-| 7    | Notifications       | Fusion Notifications + Annonces, filtrable par type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Fusion des deux modèles de données ou vue unifiée           |
-| 7bis | ~~Abonnements~~     | **Supprimé en tant qu'écran/nav** (2026-09-02, §2bis) — fusionné dans l'onglet Personnalisation (8) comme section "Canaux suivis" (calibration par canal + "Découvrir des canaux")                                                                                                                                                                                                                                                                                                                                                                                                                                                               | —                                                           |
-| 8    | Personnalisation    | Nouvel onglet dans Paramètres réel, pas un nouveau menu ; absorbe désormais le contenu d'Abonnements (7bis, §2bis) ; **Paramètres passe d'onglets à plat à un rail latéral groupé** (Compte / Préférences / Paris, §2bis)                                                                                                                                                                                                                                                                                                                                                                                                                        | Nouveaux champs `User` (ligues, canaux, profil de risque)   |
-| 9    | Onboarding          | 3 étapes actives (ligues/canaux/risque) avant le tour passif                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Réutilise les endpoints de (8)                              |
+| #    | Écran               | Ce qui change vs l'app réelle                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Backend à toucher                                           |
+| ---- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 1    | Dashboard (Accueil) | Épuré, plus de lien Investir/Combinés dans le hero                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Aucun                                                       |
+| 2    | Decisions           | **Fait (2026-09-04)** : ligne de pick simplifiée — badge de code canal retiré (nom de marché en clair seul), edge/EV brut remplacé par un badge de fiabilité réel (Fiable/À surveiller/Peu fiable, calibration par canal×compétition, HoverCard tap-friendly, masqué si échantillon insuffisant plutôt que d'afficher un badge sans signal), carte plafonnée à 4 picks triés par probabilité + "Voir N autres marchés" (repliable). "Par match"/"Par canal" fusionnés en un sélecteur canal à sélection unique. **Filtre ligues/canaux** : pas un tiroir de facettes au final (idée abandonnée en cours de route, §2bis obsolète sur ce point) — deux boutons popover à sélection unique (Ligue/Canal), même pattern que le rail mobile Personnalisation, filtrage réellement poussé au backend (`GET /channel-decisions/facets`) | Aucun (front only)                                          |
+| 3    | Arbitrage           | **Fait (2026-09-04)** : KPI "lectures/tensions" retirés de l'en-tête ; mêmes boutons popover à sélection unique que Decisions pour Ligue et pour le verdict (Toutes/Recommandé/Sans avis, ex-"À éviter" — renommé, un no-play ne veut pas dire "évitez ce match") ; badge de fiabilité VANTAGE ajouté par compétition ; cotes VANTAGE désormais réelles (persistées à la génération, `persist-decision.ts`) au lieu d'un emprunt à un canal voisin qui échouait sur les picks où VANTAGE diverge (son cas d'usage principal)                                                                                                                                                                                                                                                                                                      | Aucun (front only, + vantage-worker)                        |
+| 4    | Coupons             | Page sœur d'Arbitrage, coupons du jour générés par VANTAGE (§9, pipeline LLM en prod depuis le 09-03) ; nav renommée "Combinés"→"Coupons" (2026-09-04) ; même retrait du badge de canal redondant sur chaque jambe (2026-09-04, `components/coupon-card.tsx`) ; bandeau "Envoyer à VANTAGE"/compteur "N joueurs ont ajouté" de la maquette délibérément pas construits — aucun mécanisme réel derrière (le premier reste backlog §0/ligne 5, le second n'a jamais existé)                                                                                                                                                                                                                                                                                                                                                         | §0 point 7 (fait, §9)                                       |
+| 5    | Drawer de bet slip  | Un bouton "Envoyer à VANTAGE" ajouté à l'existant (`bet-slip-drawer.tsx`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | **Backlog** (§0) — maquetté, pas d'implémentation immédiate |
+| 6    | Révision VANTAGE    | Refaite en liste unique (plus de doublon jambe×2), carte verdict en tête, comparaison avant/après                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | **Backlog** (§0) — maquetté, pas d'implémentation immédiate |
+| 7    | Notifications       | Fusion Notifications + Annonces, filtrable par type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Fusion des deux modèles de données ou vue unifiée           |
+| 7bis | ~~Abonnements~~     | **Supprimé en tant qu'écran/nav** (2026-09-02, §2bis) — fusionné dans l'onglet Personnalisation (8) comme section "Canaux suivis" (calibration par canal + "Découvrir des canaux")                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | —                                                           |
+| 8    | Personnalisation    | Nouvel onglet dans Paramètres réel, pas un nouveau menu ; absorbe désormais le contenu d'Abonnements (7bis, §2bis) ; **Paramètres passe d'onglets à plat à un rail latéral groupé** (Compte / Préférences / Paris, §2bis)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Nouveaux champs `User` (ligues, canaux, profil de risque)   |
+| 9    | Onboarding          | 3 étapes actives (ligues/canaux/risque) avant le tour passif                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Réutilise les endpoints de (8)                              |
 
 **Écran retiré du périmètre** : un "Coupon partagé" en détail avec aperçu communautaire
 avait été maquetté puis retiré — il dupliquait le CTA déjà présent sur la carte Coupons et
@@ -851,6 +851,7 @@ analysis-core, build+lint propres.
 `odds-batch.ts`/`channel-reliability-query.ts` — tout via `@evcore/analysis-core` et
 `prisma` de `@evcore/db` directement, zéro import d'`apps/backend`. Deux écarts assumés par
 rapport à l'original, documentés dans le type `PoolCandidate` :
+
 - `modelThreshold`/`recentForm`/`modelProbabilities` volontairement absents — vérifié
   qu'aucun consommateur du module coupon backend ne les LIT jamais (seulement posés pour
   affichage/reasoning) ; à réintroduire si le prompt LLM (Phase B) en a besoin.
@@ -890,6 +891,7 @@ conclusions actionnables qui cadrent tout ce qui suit :
 
 **Étape 1 du plan §9 codée** — `apps/vantage-worker/src/coupon/score-candidates.ts` :
 transforme le pool brut (`pool-query.ts`) en la vue déjà scorée que le LLM verra.
+
 - `scoreCandidates` — applique la courbe de Platt du canal (`calibrateLegProbability`,
   déjà dans analysis-core) à chaque candidat, recalcule `legEV`/`edge` sur la probabilité
   CALIBRÉE (pas la brute, contrairement à `pool-query.ts` qui n'avait que la brute — voir
@@ -922,6 +924,7 @@ classe, réduit via `reduceToLlmPool`, appelle `requestVantageCompletion`, parse
 résout les index sélectionnés vers les vrais candidats).
 
 Décisions issues de la recherche de ce matin, appliquées concrètement :
+
 - **Sélection par index numérique, jamais par valeur** — le schéma n'a AUCUN champ
   probabilité/cote/EV ; le prompt affiche ces chiffres pour le jugement du LLM mais son
   JSON ne contient qu'un `index` (1-based, position dans la liste numérotée du prompt) et
@@ -961,6 +964,7 @@ typecheck/lint propres, 110/110 vantage-worker, 491/491 analysis-core, 655/655 b
 **`validate-coupon-selection.ts` écrit** (`apps/vantage-worker/src/coupon/`) — reprend
 telles quelles les mêmes vérifications que l'ancien `CouponComposerService` appliquait
 avant de publier un coupon, jamais une confiance aveugle dans le choix du LLM :
+
 - Cardinalité (déjà imposée par le schéma Zod, revérifiée quand même — "ne jamais se fier
   à un seul garde-fou").
 - Au moins `MIN_DISTINCT_FIXTURES=2` matchs distincts.
@@ -973,7 +977,7 @@ avant de publier un coupon, jamais une confiance aveugle dans le choix du LLM :
   sont réellement appliquées : le prompt les explique pour réduire les tentatives ratées,
   mais un prompt n'est jamais une contrainte dure.
 - `combinedOdds` recalculé sur les vraies cotes, doit rester dans `[bounds.minCombinedOdds,
-  bounds.maxCombinedOdds]` ET atteindre `couponClass.targetCombinedOdds` — même discipline
+bounds.maxCombinedOdds]` ET atteindre `couponClass.targetCombinedOdds` — même discipline
   que l'ancien `buildOne()` : une cible est une porte de publication, jamais un objectif
   souple ("mieux vaut pas de coupon qu'un coupon qui rate discrètement sa cible").
 - `jointProbability`/`couponEV` calculés sur les probabilités calibrées réelles — jamais
@@ -1023,15 +1027,16 @@ de coder :
 - **Suppression immédiate**, pas d'observation préalable.
 
 **Câblage écrit** (`apps/vantage-worker/`) :
+
 - `config.ts` — `couponCron` (env `VANTAGE_COUPON_CRON`).
 - `coupon/run-coupon-generation.ts` — l'orchestration complète : `computeChannelReliability`
-  + `getPoolForRange` (en parallèle) → `scoreCandidates` → une passe
-  `composeCouponClass`/`persistCouponProposal` par classe (`COUPON_CLASSES`). Inclut
-  `resolveGenerationWindow` (fenêtre Ven→Dim / Mar→Jeu élargie, sinon jour unique) — porté
-  depuis `coupon.worker.ts` (backend, supprimé) puisqu'aucune dépendance `date-fns`
-  n'existait déjà côté vantage-worker pour un simple +2 jours UTC. Flags
-  (`includeDraw`/`enforceAvoid`/`enableAvoidFade`/`includeEvaluatedMarkets`) tous à `true`
-  en dur, même choix que `CouponService` retiré (pas de flag dormant).
+  - `getPoolForRange` (en parallèle) → `scoreCandidates` → une passe
+    `composeCouponClass`/`persistCouponProposal` par classe (`COUPON_CLASSES`). Inclut
+    `resolveGenerationWindow` (fenêtre Ven→Dim / Mar→Jeu élargie, sinon jour unique) — porté
+    depuis `coupon.worker.ts` (backend, supprimé) puisqu'aucune dépendance `date-fns`
+    n'existait déjà côté vantage-worker pour un simple +2 jours UTC. Flags
+    (`includeDraw`/`enforceAvoid`/`enableAvoidFade`/`includeEvaluatedMarkets`) tous à `true`
+    en dur, même choix que `CouponService` retiré (pas de flag dormant).
 - `queue/queue.ts`/`worker.ts`/`main.ts` — nouveau type `CouponJobData`, job
   `generate-coupons` traité par le worker existant, cron BullMQ repeatable enregistré au
   démarrage (`{ pattern: config.couponCron }`), même patron que le sweep VANTAGE. Toujours
@@ -1045,6 +1050,7 @@ traçant les appelants avant de supprimer : une fois `CouponComposerService` ret
 `CouponPoolService` (~750 lignes) devient elle-même entièrement inutilisée dans
 `apps/backend` — son seul appelant était `generateCoupons` (`investment.service.ts`
 n'importe que la constante `DRAW_STAKED_LEAGUES`, jamais le service). Fichiers supprimés :
+
 - `coupon-composer.service.ts` + `.spec.ts`
 - `coupon-pool.service.ts` (aucun spec n'existait)
 - `etl/workers/coupon.worker.ts` + `.spec.ts` (le job `generate-coupons` sur la queue
@@ -1055,6 +1061,7 @@ n'importe que la constante `DRAW_STAKED_LEAGUES`, jamais le service). Fichiers s
   régénérer avec)
 
 Édits (retrait de méthodes/deps devenues mortes, pas de fichier entier) :
+
 - `coupon.service.ts` — retire `generateCoupons`/`generateForClass`, garde `getCoupons`
   (lecture seule désormais).
 - `coupon.repository.ts` — retire `upsertProposal`/`deletePendingForDate`/
@@ -1101,7 +1108,7 @@ continuer, sur du code qui n'a jamais encore tourné en prod :
    l'ancien `CouponRepository.upsertProposal` (vérifié : jamais de `$transaction` dans son
    historique non plus) — corrigé ici plutôt que reporté dans du code neuf.
 2. **`compose-coupon-class.spec.ts`** — les deux tests de relance n'exerçaient la boucle
-   que via un rejet de *schéma* (index dupliqué), jamais via un rejet de la Phase C
+   que via un rejet de _schéma_ (index dupliqué), jamais via un rejet de la Phase C
    (anti-corrélation, cote hors bande) — exactement le chemin que les commentaires du code
    décrivent comme la raison d'être de la relance-avec-retour. Un test neuf construit un
    vivier avec deux candidats du même match (canal/marché différents pour ne pas être
@@ -1204,6 +1211,7 @@ réelles (aucun des deux n'a encore d'historique de production).
 nav, Notifications/Annonces toujours deux pages séparées, Abonnements toujours une page
 autonome avec cadre ROI/mise. Les dates dans les titres de section marquaient la décision
 de conception, pas le ship. Statut réel vérifié avant de reprendre :
+
 - Fait : bug P0 bet-slip, fusion "Par match"/"Par canal" (Decisions), retrait KPI
   "lectures/tensions" (Arbitrage), tiroir de facettes (§2bis), décommissionnement
   VALUE/SAFE (§5.1).
@@ -1278,6 +1286,7 @@ personnelle configurée nulle part) ; la notification "abonnement réglé" passe
 comptage seul (plus de montant PnL — même logique que le retrait du ROI ailleurs).
 
 **Plan en 5 niveaux de dépendance** :
+
 - **Niveau 0 (fait)** — remplacer la source de calibration : `subscriptions.service.ts::getCatalog()`
   lisait `InvestmentService.listChannelStats` (ROI shrinké, module Investir en cours de
   retrait) ; branché sur `DashboardService.getChannelHealth` (même `calibrationRatio` que
@@ -1359,3 +1368,285 @@ plus tôt dans le chantier (`app-shell.tsx`), laissant la page orpheline. Suppri
 Vérifié : typecheck + lint propres backend et web, 598/598 tests backend
 (622 − 24 tests `investment.service.spec.ts` + `investment-channel-stats.repository.spec.ts`
 supprimés avec le module). Pas encore committé — l'utilisateur committe lui-même.
+
+## Decisions/Arbitrage/Coupons — passe de finition (2026-09-04)
+
+Suite du chantier UI, sur Decisions puis Arbitrage puis Coupons. Contrairement aux
+chantiers précédents (backend/vantage-worker lourds), tout ceci est front-only sauf
+mention contraire.
+
+**Filtre ligues/canaux — le tiroir de facettes (§2bis) est abandonné.** Une première
+implémentation a suivi la maquette à la lettre (tiroir latéral/bottom-sheet, multi-
+sélection, comptages). Rediscuté avec l'utilisateur une fois construit et vu en
+capture : "on est pas encore bon... on doit traduire les picks aussi" a mené à
+reconsidérer la nature du filtre — ligue et canal sont chacun une sélection UNIQUE
+("quelle ligue je regarde", "quel canal je regarde"), jamais un vrai filtre
+multi-valeurs. Le tiroir a été entièrement retiré, remplacé par deux boutons popover
+à sélection unique (`league-filter-bar.tsx`/`channel-filter-bar.tsx` sur Decisions,
+`verdict-filter-bar.tsx` neuf sur Arbitrage pour Toutes/Recommandé/Sans avis) — même
+pattern que le rail mobile de Personnalisation (`account-tabs-client.tsx`), popover
+ouvert au clic (marche sur mobile, contrairement à un survol). Backend inchangé : la
+facette cheap (`GET /channel-decisions/facets`) alimente toujours les listes
+d'options, juste plus consommée par un tiroir. Les deux boutons portent un préfixe
+("Ligue ·", "Filtre ·", "Canal ·") — deux boutons à un mot voisins ("Tous"/"Toutes")
+étaient ambigus sans lui.
+
+**Redondance de wording sur la ligne de pick — trouvée en repartant d'un screenshot
+("le canal, le marché, ça fait trop de redondance").** La plupart des canaux portent
+le nom de leur propre marché (BTTS canal ≈ marché BTTS, CORRECT_SCORE ≈ Score exact) :
+le badge de canal à côté du pick ne faisait que répéter le nom de marché juste en
+dessous, dans une autre casse. Badge retiré de `channel-row.tsx` (partagé Decisions +
+Arbitrage) et de `components/coupon-card.tsx` (Coupons + bet-slip). Le nom de marché
+seul reste : il désambiguïse toujours deux picks identiques venant de marchés
+différents sur la même fiche (deux "Domicile" pour Gagne-une-mi-temps vs Sans-le-nul,
+par exemple), ce que le badge de canal n'apportait pas en plus.
+
+Fuite de code brut trouvée au passage : le pick des marchés composés
+(RESULT_BTTS/RESULT_TOTAL_GOALS) écrivait littéralement "BTTS" en dur
+("Dom. + BTTS Oui") au lieu d'une traduction — corrigé dans
+`market-labels-fr.ts` (`formatPickForDisplayFr`), partagé avec vantage-worker.
+
+**Libellés de canal consolidés dans `@evcore/analysis-core`** (nouveau
+`display/channel-labels-fr.ts`, miroir de `market-labels-fr.ts` pour les marchés) —
+single source of truth remplaçant trois copies dérivées (JSON next-intl,
+`channel-status-strip.tsx`, `followed-channels-card.tsx`, `eva-constants.ts`).
+`DRAW_NO_BET` renommé "Sans le nul"→"Remboursé si nul" (canal)/"Remboursé si match
+nul" (marché) — recherche web confirmant que "remboursé si match nul" est le terme
+reconnu, pas le jargon interne.
+
+**Badge de fiabilité réel remplace l'edge/EV brut** sur le pick de Decisions ET
+d'Arbitrage (`CalibrationBadge`, exporté depuis `channel-row.tsx`) — l'edge est
+exactement la métrique anti-prédictive documentée en tête de ce CLAUDE.md/l'audit du
+22-08 ; l'afficher à côté du pick suggérait qu'un edge élevé était un bon signal.
+Source : `GET /dashboard/channel-stats-by-competition` (même fenêtre 90 jours par
+défaut que Historique vérifiable), calibration par (canal, compétition), mêmes seuils
+0.85/0.70 que partout ailleurs. Tooltip en phrase qualitative, jamais de ratio/n= bruts
+("Ce canal a été peu fiable sur cette compétition — ..." plutôt que "0.58×, n=223") —
+même règle 2quater appliquée au-delà des seuls noms de canal. HoverCard (tap-friendly)
+plutôt que Tooltip pur (ne s'ouvre jamais au tap sur mobile). Masqué entièrement si
+échantillon insuffisant — VANTAGE est trop jeune/petit volume pour qu'un découpage par
+compétition franchisse le seuil de 30 la plupart du temps ; un badge presque toujours
+"insuffisant" ne porte aucun signal, mieux vaut ne rien afficher qu'un badge muet.
+
+**Carte de Decisions plafonnée à 4 picks** (déjà triés par probabilité décroissante),
+avec un bouton "Voir N autres marchés"/"Voir moins" repliable pour le reste — une
+carte à 9 picks lisait comme un dump de données, pas une lecture.
+
+**Cotes VANTAGE réelles au lieu d'un emprunt de canal voisin qui échouait sur son cas
+d'usage principal.** VANTAGE ne stockait jamais sa propre cote (son schéma LLM n'en a
+pas) — le frontend devinait en cherchant un canal voisin qui aurait choisi exactement
+le même (marché, pick), ce qui échoue précisément quand VANTAGE diverge du consensus
+(sa raison d'être). Trouvé en creusant en base (`odds_snapshot` avait bien la cote
+Résultat pour deux fixtures sans cote affichée, aucun canal voisin n'avait le même
+pick). Cause : `findKnownOdds` (déjà calculée pour le plancher MIN_ODDS à la
+génération) était résolue puis jetée, jamais transmise à la persistance. Corrigé :
+`analyze-fixture.ts` transmet la valeur déjà résolue à `persistVantageDecision`, qui
+l'écrit sur `ChannelSelection.odds` — même colonne que tous les autres canaux, zéro
+requête supplémentaire au moment de la lecture. Le frontend préfère maintenant la
+cote propre de VANTAGE, avec l'ancien emprunt en repli pour les décisions déjà
+persistées avant ce correctif ou les marchés hors Résultat (`findKnownOdds` ne couvre
+que ONE_X_TWO aujourd'hui, même limite que côté prompt).
+
+**Prompt VANTAGE (`prompt.ts`)** : ne doit plus restater "(marché, pick)" entre
+parenthèses dans `reasonDetails` — trouvé en relisant une lecture réelle qui répétait
+mot pour mot ce que le badge affichait déjà juste au-dessus ("... intéressant
+(Résultat, victoire extérieur)"). Nouvelle règle : toute statistique brute citée
+(forme récente, xG...) doit nommer l'équipe concernée — une lecture réelle disait
+"une forme récente de +87%" sans dire de qui.
+
+**Bandeau "À éviter" renommé "Sans avis"** (Arbitrage) — un no-play ne veut pas dire
+"n'y touchez pas", juste "VANTAGE n'a rien trouvé de solide ici" ; l'ancien libellé se
+lisait comme un avertissement actif sur le match. Description du hover card
+simplifiée dans la foulée (retrait de "biais concret", jargon-adjacent).
+
+**Nav "Combinés" renommée "Coupons"** — cohérence avec le contenu de la page
+(`pageTitle: "Propositions"`, wording déjà "coupon" partout ailleurs).
+
+**Article de formation "Comment lire une fiche" réécrit en profondeur** — l'article
+avait glissé vers un journal des changements (dates, "refonte de septembre 2026", "ça
+n'a pas toujours été le cas", justifications de pourquoi) au lieu de décrire l'état
+actuel : corrigé pour rester au présent, sans généalogie. Trois erreurs de fond aussi
+corrigées, pas seulement du style :
+
+- Section Investir/Decisions entièrement obsolète (Investir n'existe plus) —
+  remplacée par une explication de la seule probabilité affichée aujourd'hui, brute,
+  jamais retouchée.
+- "Deux canaux assumés, le reste en observation" était **l'inverse de la réalité
+  actuelle** : `pool-eligibility.ts` confirme que la quasi-totalité des canaux sont
+  admis et affichés (même mal calibrés), seuls VALUE/SAFE sont mis à l'écart.
+- CORRECT_SCORE classé à tort parmi les "labels qui ne sont pas des picks" (avec
+  Consensus/Attention) — il émet un vrai pick (score exact, probabilité, cote), il
+  n'est juste jamais misé. Restructuré en section à part.
+- Tous les codes bruts (CONSENSUS, AVOID, CORRECT_SCORE, BTTS...) remplacés par les
+  vrais libellés français affichés à l'écran.
+
+**Reste ouvert, pas traité aujourd'hui** :
+
+- La distinction visuelle "coupon soir / coupon intraday" sur la page Coupons (notée
+  plus haut dans ce doc, toujours pas construite).
+- L'extension du correctif de cote VANTAGE au-delà du marché Résultat (BTTS,
+  Plus/Moins... nécessite l'agrégation par pick que `market-odds.ts` documente déjà
+  comme non faite).
+- Le bandeau "Envoyer à VANTAGE" et le compteur "N joueurs ont ajouté ce coupon" de la
+  maquette Coupons, délibérément pas construits (aucun mécanisme réel derrière l'un ou
+  l'autre).
+
+Vérifié à chaque étape : typecheck/lint propres sur les workspaces touchés (web,
+vantage-worker, `@evcore/analysis-core`), 128/128 vantage-worker, 491/491
+analysis-core, 608/608 backend (inchangé, aucun fichier backend touché aujourd'hui).
+Commits `ec3a8b3a`/`a388601b`/`bd35e009`/`63dd7cbb`.
+
+## Onboarding actif + renommage tour + dashboard allégé (2026-09-04, nuit)
+
+Travail en autonomie ("je vais dormir, termine ces deux fonctionnalités"), **rien
+committé** — à revoir avant de committer soi-même. Migration Prisma écrite mais
+**jamais appliquée à la DB**, comme demandé.
+
+**Renommage de cohérence (préalable)** : le tour passif existant portait le nom
+"onboarding" partout dans le code (dossier, contexte, hook, namespace i18n) alors que
+ce n'est qu'une visite guidée (driver.js) — jamais rien collecté. Renommé en "product
+tour" pour libérer "onboarding" pour la vraie fonctionnalité :
+`domains/onboarding/` → `domains/product-tour/` (fichiers, composant
+`OnboardingTourProvider`→`ProductTourProvider`, hook `useOnboardingTour`→
+`useProductTour`, constante `ONBOARDING_STEPS`→`PRODUCT_TOUR_STEPS`, namespace i18n
+`onboarding`→`productTour`). Aucun texte utilisateur touché (déjà "Revoir le guide",
+jamais "onboarding" à l'écran). Renommage scopé au frontend uniquement — la colonne
+DB `User.hasSeenOnboarding` reste inchangée (décision explicite : pas de migration
+sur ce champ ce soir).
+
+**Onboarding actif (3 étapes)** — `apps/web/domains/onboarding/onboarding-wizard.tsx`,
+une Dialog plein-écran montée dans `dashboard/layout.tsx`, gardée par un nouveau champ
+`User.hasCompletedOnboarding` (distinct de `hasSeenOnboarding`, qui reste le flag du
+tour passif). Réutilise tel quel les composants Personnalisation existants
+(`FollowedLeaguesCard`/`FollowedChannelsCard`/`RiskProfileCard`) — mêmes hooks, mêmes
+endpoints, zéro nouvelle logique de fetch/mutation. Chaque étape est "skippable"
+(bouton Passer = même action que Suivant, aucune des trois n'est jamais obligatoire),
+et fermer la modale (X/Escape/clic overlay) termine l'onboarding plutôt que de
+réapparaître en boucle. Le tour passif ne démarre plus tant que
+`hasCompletedOnboarding` n'est pas vrai (effet de `ProductTourProvider` mis à jour
+pour dépendre de ce champ) — séquencement onboarding→tour garanti, jamais les deux en
+même temps.
+
+Pas de titre redondant par étape dans la modale : chaque carte Personnalisation porte
+déjà son propre eyebrow/sous-titre (`SettingsSectionCard`) — un titre de wizard
+au-dessus aurait répété la même chose, exactement la redondance déjà nettoyée ailleurs
+cette session (badge de canal, badge Coupons).
+
+**Migration DB** — `packages/db/prisma/migrations/20260904020000_add_has_completed_onboarding/migration.sql`,
+écrite à la main (pas de connexion DB dans cette session), **jamais exécutée** :
+
+```sql
+ALTER TABLE "users" ADD COLUMN     "hasCompletedOnboarding" BOOLEAN NOT NULL DEFAULT true;
+```
+
+Défaut `true` en base : les comptes existants sont considérés déjà "passés" ce stade
+(ils n'ont jamais eu ce choix, pas de raison de le leur imposer rétroactivement).
+`AuthService.register()` force explicitement `false` pour toute nouvelle inscription
+— le seul endroit où ce champ doit démarrer à `false`. `prisma generate` lancé (lecture
+seule du schéma, aucune connexion DB) pour que le typecheck backend/frontend voie le
+nouveau champ ; 608/608 backend, typecheck/lint propres partout.
+
+**Dashboard (Accueil) — un vrai problème de perf trouvé et corrigé, pas de refonte
+visuelle spéculative.** Sans maquette ni plainte précise pour cette page (contrairement
+à Decisions/Arbitrage où une capture disait exactement quoi corriger), le choix a été
+de ne pas réinventer l'agencement à l'aveugle pendant que personne ne peut confirmer —
+risque déjà vécu cette session (le premier tiroir de facettes Decisions, construit sur
+la mauvaise lecture, a dû être refait). À la place, audit concret de ce qui existe
+déjà :
+
+- `DashboardService.getLeaderboard()` chargeait **tous les coupons réglés depuis le
+  début des temps**, sans borne ni LIMIT, agrégeait tout en JS — un coût qui grossit
+  chaque jour, sur une page visitée à chaque connexion. Borné à une fenêtre glissante
+  de 90 jours (`LEADERBOARD_WINDOW_DAYS`, même ordre de grandeur que les autres
+  fenêtres par défaut de cette session) — `getLeaderboardData(since: Date)` filtre
+  maintenant sur `createdAt`. `getCompetitionStats` était déjà borné à 30 jours,
+  vérifié, rien à changer là.
+- Reste noté, pas corrigé ce soir (décision de fond, pas une question de perf) : ce
+  classement reste basé sur le **ROI**, la métrique que ce doc qualifie ailleurs
+  d'anti-prédictive et que Track Record/Investir ont abandonnée au profit de la
+  calibration. Le changer demanderait de redéfinir ce qu'un "bon joueur" veut dire sur
+  ce classement — à trancher avec l'utilisateur, pas cette nuit.
+- Rien de périmé trouvé (aucune trace Investir/Combinés dans l'arbre Dashboard,
+  vérifié). Pas de section admin qui fuiterait vers un joueur normal — le split
+  `role === 'ADMIN'` dans `page.tsx` est déjà une séparation complète d'arbre, pas des
+  sections conditionnelles dans un seul composant.
+
+**Non testé visuellement** (aucun outil de rendu dans cette session, comme toujours) —
+en particulier la modale d'onboarding (Dialog plein-écran + trois cartes
+Personnalisation imbriquées, popover de découverte de canaux compris) mérite un
+passage réel au navigateur avant de committer.
+
+Vérifié : typecheck/lint propres sur les quatre workspaces (web, backend,
+vantage-worker, analysis-core), 608/608 backend, 128/128 vantage-worker, 491/491
+analysis-core. Rien committé — migration écrite, jamais appliquée.
+
+## Corrections post-nuit + assainissement "Canaux suivis" (2026-09-04)
+
+Passage réel au navigateur le matin du 04-09, plusieurs corrections issues d'un
+retour direct de l'utilisateur sur ce que la nuit avait livré :
+
+- **Arbitrage manquait du tour produit** (`product-tour-steps.ts`) — étape ajoutée
+  entre "fixtures" et "coupons", ciblant `[data-tour="arbitrage-help"]`.
+- **Texte de l'étape Arbitrage inexact** — copié du libellé de Decisions ("Le « ? »
+  ici explique comment le lire") sans vérifier que le "?" d'Arbitrage fait la même
+  chose : c'est un `InfoTooltip` simple, pas un lien vers l'article de formation.
+  Reformulé en "détaille sa logique", qui décrit ce que ce tooltip fait réellement.
+- **Coupons manquait sa place dans la nav mobile** après le retrait complet
+  d'Investir — d'abord ajouté comme 4e slot ordinaire, puis corrigé une deuxième
+  fois sur capture d'écran : Investir avait un style dédié (bouton central surélevé,
+  fond plein) via `NavItem.featured`, déjà présent dans `page-shell.tsx` mais pas
+  réutilisé. Appliqué à Coupons, repositionné au centre des 5 slots.
+- **Icône Coupons** — `Ticket` remplacé par `Wand2` (canaux ≠ billets déjà posés
+  par l'utilisateur, qui gardent `Receipt`/"Mes coupons" ; `Wand2` marque la
+  génération assistée par VANTAGE).
+
+**Étape "Canaux suivis" de l'onboarding — trois problèmes composés, signalés en un
+message avec capture d'écran.** `FollowedChannelsCard`
+(`apps/web/app/dashboard/params/account/components/followed-channels-card.tsx`),
+réutilisé tel quel dans `OnboardingWizard`, portait trois défauts :
+
+1. **Sous-titre inexact.** Affichait "Les canaux suivis ici alimentent vos
+   notifications, Arbitrage et vos coupons" — vérifié par `grep` qu'aucun
+   consommateur de `UserFollowedChannel`/`listFollowedChannels` n'existe hors du
+   module `personalization` lui-même : suivre un canal aujourd'hui n'a **aucun**
+   effet fonctionnel en aval. Reformulé pour décrire ce que la fonctionnalité fait
+   réellement (retrouver la fiabilité mesurée d'un canal qu'on suit), sans
+   fabriquer d'intégration qui n'existe pas. Deuxième passe demandée par
+   l'utilisateur : retiré la clause pédagogique sur le ROI/la puissance
+   statistique ("jamais un ROI simulé, aucune puissance statistique à ce volume")
+   — jargon interne, sans valeur pour un user lambda ; gardé uniquement la
+   définition de la calibration (réel vs annoncé).
+2. **Notation brute "0.97× · n=2000"** dans le popover "Découvrir des canaux" —
+   remplacée par le même badge qualitatif (`ChannelStatusBadge`,
+   GREEN/ORANGE/RED, HoverCard tap-friendly) déjà utilisé pour ce même concept sur
+   Decisions/Arbitrage (`CalibrationBadge`, channel-row.tsx) et sur le
+   track-record. Masqué entièrement quand `INSUFFICIENT_DATA`, même règle que
+   partout ailleurs cette session.
+3. **Dichotomie "Prouvés"/"En observation" plus fidèle à rien** — il n'existe plus
+   de palier "en observation" dans le produit actuel (VALUE/SAFE sont des filtres
+   Phase 2, pas un vivier en attente). Les deux onglets sont retirés ; liste
+   unique triée par fiabilité (GREEN → ORANGE → RED → INSUFFICIENT_DATA →
+   INACTIVE).
+
+Bug de données trouvé au passage : **4 canaux fantômes** (`UNDERDOG`, `FAVORITE`,
+`LIVE_VALUE`, `MARKET_MOVE`) fuitaient dans la liste suivable avec `n=0`
+permanent — aucun fichier sous `strategies/` n'en produit jamais (grep confirmé,
+zéro référence). Ce sont des restes d'enum jamais implémentés, gardés uniquement
+pour ne pas planter si une valeur inattendue apparaît. Corrigé à la source :
+nouveau `UNIMPLEMENTED_STRATEGY_CHANNELS`
+(`packages/analysis-core/src/types/strategy-channel.ts`), ajouté à
+`POOL_EXCLUDED_CHANNELS` (`pool-eligibility.ts`) — sans changement de
+comportement pour le vrai pool de coupon (ces canaux n'y contribuaient déjà
+jamais), et ça corrige gratuitement toute autre liste construite sur
+`POOL_ELIGIBLE_CHANNELS`. VANTAGE, lui, reste éligible au pool réel mais exclu
+localement de la liste "à suivre" (`personalization.service.ts`,
+`FOLLOWABLE_CHANNELS`) — il a déjà sa propre page dédiée (Arbitrage), le suivre
+via ce mécanisme générique ne sert à rien.
+
+Vérifié : `pool-eligibility.spec.ts` (491/491 analysis-core) inchangé de
+comportement — aucun test n'attendait la présence des 4 canaux fantômes ; le test
+VANTAGE-inclus dans le pool reste vert. `personalization.service.spec.ts` mis à
+jour pour le nouveau shape (`status` remplace `calibrationRatio`/`proven`) plus
+deux assertions ajoutées (VANTAGE et UNDERDOG absents de la liste "à suivre").
+608/608 backend, typecheck/lint propres sur web/backend/analysis-core. Rien
+committé jusqu'à cette entrée — voir historique git pour le commit correspondant.

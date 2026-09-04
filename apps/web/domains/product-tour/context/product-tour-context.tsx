@@ -17,23 +17,29 @@ import {
   useCurrentUser,
   useSetCurrentUser,
 } from "@/domains/auth/context/current-user-context";
-import { ONBOARDING_STEPS } from "../onboarding-steps";
+import { PRODUCT_TOUR_STEPS } from "../product-tour-steps";
 
-type OnboardingTourContextValue = {
+type ProductTourContextValue = {
   startTour: () => void;
 };
 
-const OnboardingTourContext = createContext<OnboardingTourContextValue | null>(
+const ProductTourContext = createContext<ProductTourContextValue | null>(
   null,
 );
 
 // Mounted once in dashboard/layout.tsx, wrapping AppShell — a single
-// driver.js instance drives every step in ONBOARDING_STEPS. Most steps live
-// on their own route: onNextClick/onPrevClick push the route first, then
-// let driver.js's own `waitForElement` (per step) pick up the target once
-// the new page has mounted, instead of us hand-rolling a polling effect.
-export function OnboardingTourProvider({ children }: { children: ReactNode }) {
-  const t = useTranslations("onboarding");
+// driver.js instance drives every step in PRODUCT_TOUR_STEPS. Most steps
+// live on their own route: onNextClick/onPrevClick push the route first,
+// then let driver.js's own `waitForElement` (per step) pick up the target
+// once the new page has mounted, instead of us hand-rolling a polling
+// effect. Named "product tour", not "onboarding": this is the passive
+// guided tour ("Revoir le guide" in the account menu) — a real active
+// onboarding (data collection at signup) is a separate, not-yet-built
+// concept, and `currentUser.hasSeenOnboarding` below is its own DB field
+// deliberately left as-is (renaming it needs a migration, tracked
+// separately).
+export function ProductTourProvider({ children }: { children: ReactNode }) {
+  const t = useTranslations("productTour");
   const router = useRouter();
   const pathname = usePathname();
   const isMobile = useIsMobile();
@@ -42,11 +48,11 @@ export function OnboardingTourProvider({ children }: { children: ReactNode }) {
 
   const driverRef = useRef<Driver | null>(null);
   // Which steps startTour() is currently driving through — a filtered view
-  // of ONBOARDING_STEPS (mobile-only steps dropped on desktop). onNextClick/
+  // of PRODUCT_TOUR_STEPS (mobile-only steps dropped on desktop). onNextClick/
   // onPrevClick must index into THIS array, not the unfiltered constant,
   // since opts.index refers to a position in whatever `steps` was passed to
   // driver().
-  const activeStepsRef = useRef(ONBOARDING_STEPS);
+  const activeStepsRef = useRef(PRODUCT_TOUR_STEPS);
   const hasAutoStartedRef = useRef(false);
   const finishedRef = useRef(false);
   // Read inside driver.js hooks created once per startTour() call — a ref
@@ -83,7 +89,7 @@ export function OnboardingTourProvider({ children }: { children: ReactNode }) {
     driverRef.current?.destroy();
     finishedRef.current = false;
 
-    const activeSteps = ONBOARDING_STEPS.filter(
+    const activeSteps = PRODUCT_TOUR_STEPS.filter(
       (step) => !step.mobileOnly || isMobileRef.current,
     );
     activeStepsRef.current = activeSteps;
@@ -160,13 +166,22 @@ export function OnboardingTourProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (hasAutoStartedRef.current) return;
+    // Wait for the active onboarding wizard (domains/onboarding) to finish
+    // or be skipped before ever starting the passive tour — showing both at
+    // once would be confusing, and a brand-new user always has
+    // hasCompletedOnboarding=false on mount, so this effect legitimately
+    // re-fires once that flips true instead of missing its one chance.
+    if (!currentUser.hasCompletedOnboarding) return;
     if (currentUser.hasSeenOnboarding) return;
     hasAutoStartedRef.current = true;
     startTour();
-    // Auto-start only reacts to the initial hasSeenOnboarding value — a
-    // manual replay uses startTour() directly, not this effect.
+    // Only reacts to hasCompletedOnboarding flipping — a manual replay uses
+    // startTour() directly, not this effect, and hasSeenOnboarding is
+    // intentionally read via the ref-guarded check above rather than being
+    // a dependency (marking the tour "seen" mid-tour must never re-trigger
+    // this effect).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [currentUser.hasCompletedOnboarding]);
 
   useEffect(() => {
     return () => {
@@ -175,17 +190,17 @@ export function OnboardingTourProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <OnboardingTourContext.Provider value={{ startTour }}>
+    <ProductTourContext.Provider value={{ startTour }}>
       {children}
-    </OnboardingTourContext.Provider>
+    </ProductTourContext.Provider>
   );
 }
 
-export function useOnboardingTour(): OnboardingTourContextValue {
-  const ctx = useContext(OnboardingTourContext);
+export function useProductTour(): ProductTourContextValue {
+  const ctx = useContext(ProductTourContext);
   if (!ctx) {
     throw new Error(
-      "useOnboardingTour must be used within OnboardingTourProvider",
+      "useProductTour must be used within ProductTourProvider",
     );
   }
   return ctx;

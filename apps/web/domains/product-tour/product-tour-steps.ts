@@ -1,4 +1,4 @@
-export type OnboardingStep = {
+export type ProductTourStep = {
   id: string;
   // Route to navigate to before showing this step — null keeps the current
   // page (shell elements like the header bell/account menu are present on
@@ -21,7 +21,7 @@ export type OnboardingStep = {
 // target a stable, always-rendered anchor (title, header, summary section)
 // rather than a dynamic list item, so the tour never breaks on an empty
 // list/table for that day.
-export const ONBOARDING_STEPS: OnboardingStep[] = [
+export const PRODUCT_TOUR_STEPS: ProductTourStep[] = [
   {
     id: "welcome",
     route: null,
@@ -71,6 +71,13 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     selector: '[data-tour="fixtures-indices"]',
     titleKey: "fixtures.title",
     descriptionKey: "fixtures.description",
+  },
+  {
+    id: "arbitrage",
+    route: "/dashboard/arbitrage",
+    selector: '[data-tour="arbitrage-help"]',
+    titleKey: "arbitrage.title",
+    descriptionKey: "arbitrage.description",
   },
   {
     id: "coupons",

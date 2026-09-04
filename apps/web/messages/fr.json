@@ -39,7 +39,7 @@
     "replayTour": "Revoir le guide",
     "help": "Aide",
     "summary": "Résumé sélections",
-    "coupons": "Combinés",
+    "coupons": "Coupons",
     "decisions": "Décisions",
     "decisionsShort": "Décisions",
     "arbitrage": "Arbitrage"
@@ -248,7 +248,7 @@
     "close": "Fermer",
     "isRead": "Lu"
   },
-  "onboarding": {
+  "productTour": {
     "next": "Suivant",
     "prev": "Précédent",
     "done": "Terminé",
@@ -280,8 +280,12 @@
       "title": "Matchs",
       "description": "Tous les matchs du jour, filtrables par statut. L'indice de paris agrège les stats clés d'un coup d'œil."
     },
+    "arbitrage": {
+      "title": "Arbitrage",
+      "description": "VANTAGE, notre canal IA, ne propose un pari que s'il repère un vrai désaccord entre les autres canaux — jamais pour confirmer ce qu'ils disent déjà. Le « ? » ici détaille sa logique."
+    },
     "coupons": {
-      "title": "Combinés",
+      "title": "Coupons",
       "description": "Des combinés générés automatiquement à partir des meilleurs picks. Le « ? » ouvre la carte de fiabilité des canaux qu'on combine."
     },
     "betSlipComposer": {
@@ -496,13 +500,12 @@
       "leaguesSearchPlaceholder": "Rechercher un championnat ou un pays...",
       "leaguesNoResults": "Aucun championnat ne correspond.",
       "channelsTitle": "Canaux suivis",
-      "channelsHint": "Les canaux suivis ici alimentent vos notifications, Arbitrage et vos coupons — jugés sur leur calibration mesurée, jamais sur un ROI simulé (aucune puissance statistique à ce volume).",
+      "channelsHint": "Retrouvez ici la fiabilité mesurée des canaux qui vous intéressent — jugée sur leur calibration, c'est-à-dire leur résultat réel comparé à ce qu'ils annoncent.",
       "channelsEmpty": "Aucun canal suivi pour l'instant.",
       "discoverButton": "Découvrir des canaux",
       "discoverSearchPlaceholder": "Rechercher un canal...",
-      "discoverProven": "Prouvés",
-      "discoverWatch": "En observation",
       "discoverEmpty": "Aucun canal ne correspond.",
+      "discoverStatusTooltip": "{status, select, GREEN {Ce canal a été fiable sur les 90 derniers jours} ORANGE {Ce canal est à surveiller sur les 90 derniers jours — sa réussite s'écarte de ce qu'il annonce} RED {Ce canal a été peu fiable sur les 90 derniers jours — sa réussite réelle est nettement inférieure à ce qu'il annonce} other {Fiabilité non mesurable sur les 90 derniers jours}} ({n, plural, one {# pari réglé} other {# paris réglés}}).",
       "discoverTip": "3 à 5 canaux suffisent pour garder des recommandations lisibles.",
       "follow": "+ Suivre",
       "unfollow": "Retirer",
@@ -827,5 +830,12 @@
     "loadError": "Impossible de charger les propositions de coupons.",
     "aiNote": "Ces propositions sont générées par notre moteur IA, qui s'améliore en continu grâce aux résultats passés. Il ne s'agit pas de conseils financiers.",
     "helpLink": "La carte des canaux"
+  },
+  "onboarding": {
+    "title": "Configuration rapide",
+    "stepCounter": "Étape {step} sur {total}",
+    "skip": "Passer",
+    "next": "Suivant",
+    "finish": "Terminer"
   }
 }

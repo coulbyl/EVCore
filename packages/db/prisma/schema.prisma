@@ -508,6 +508,13 @@ model User {
   riskProfile                      RiskProfile             @default(BALANCED)
   emailSupportNotificationsEnabled Boolean                 @default(true)
   hasSeenOnboarding                Boolean                 @default(false)
+  // The passive product tour's own flag (above) is distinct from this one:
+  // hasSeenOnboarding tracks the driver.js guided tour, this tracks the
+  // active 3-step wizard (leagues/channels/risk profile). Defaults to
+  // `true` so the migration backfills existing users as already past it —
+  // AuthService.register() explicitly sets `false` for genuinely new
+  // signups, the only place this should ever start false.
+  hasCompletedOnboarding           Boolean                 @default(true)
   suspended                        Boolean                 @default(false)
   suspendedAt                      DateTime?
   sessions                         Session[]

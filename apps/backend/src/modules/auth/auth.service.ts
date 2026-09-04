@@ -89,6 +89,10 @@ export class AuthService {
         fullName: input.fullName.trim(),
         passwordHash: await hashPassword(input.password),
         bio: input.bio?.trim() || null,
+        // Schema default is `true` (existing users were already past the
+        // point of needing it) — a genuinely new signup must start `false`
+        // so the active onboarding wizard actually shows.
+        hasCompletedOnboarding: false,
       },
       select: {
         id: true,
@@ -110,6 +114,7 @@ export class AuthService {
         riskProfile: true,
         emailSupportNotificationsEnabled: true,
         hasSeenOnboarding: true,
+        hasCompletedOnboarding: true,
       },
     });
 
@@ -149,6 +154,7 @@ export class AuthService {
         riskProfile: true,
         emailSupportNotificationsEnabled: true,
         hasSeenOnboarding: true,
+        hasCompletedOnboarding: true,
         passwordHash: true,
         suspended: true,
       },
@@ -190,6 +196,7 @@ export class AuthService {
           emailSupportNotificationsEnabled:
             user.emailSupportNotificationsEnabled,
           hasSeenOnboarding: user.hasSeenOnboarding,
+          hasCompletedOnboarding: user.hasCompletedOnboarding,
         },
       },
     };
@@ -235,6 +242,7 @@ export class AuthService {
             riskProfile: true,
             emailSupportNotificationsEnabled: true,
             hasSeenOnboarding: true,
+            hasCompletedOnboarding: true,
             suspended: true,
           },
         },
@@ -295,6 +303,9 @@ export class AuthService {
         ...(dto.hasSeenOnboarding !== undefined && {
           hasSeenOnboarding: dto.hasSeenOnboarding,
         }),
+        ...(dto.hasCompletedOnboarding !== undefined && {
+          hasCompletedOnboarding: dto.hasCompletedOnboarding,
+        }),
       },
       select: {
         id: true,
@@ -316,6 +327,7 @@ export class AuthService {
         riskProfile: true,
         emailSupportNotificationsEnabled: true,
         hasSeenOnboarding: true,
+        hasCompletedOnboarding: true,
       },
     });
     return this.toSessionUser(user);
@@ -641,6 +653,7 @@ export class AuthService {
         riskProfile: true,
         emailSupportNotificationsEnabled: true,
         hasSeenOnboarding: true,
+        hasCompletedOnboarding: true,
       },
     });
 
@@ -719,6 +732,7 @@ export class AuthService {
     riskProfile: AuthSessionUser['riskProfile'];
     emailSupportNotificationsEnabled: boolean;
     hasSeenOnboarding: boolean;
+    hasCompletedOnboarding: boolean;
   }): AuthSessionUser {
     return {
       ...user,

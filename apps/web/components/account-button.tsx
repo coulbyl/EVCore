@@ -26,7 +26,7 @@ import { logout } from "@/domains/auth/use-cases/logout";
 import type { AuthSessionUser } from "@/domains/auth/types/auth";
 import { UserAvatar } from "@/components/user-avatar";
 import { useTranslations } from "next-intl";
-import { useOnboardingTour } from "@/domains/onboarding/context/onboarding-tour-context";
+import { useProductTour } from "@/domains/product-tour/context/product-tour-context";
 
 export function AccountButton({
   currentUser,
@@ -37,7 +37,7 @@ export function AccountButton({
   const queryClient = useQueryClient();
   const tNav = useTranslations("nav");
   const tAuth = useTranslations("auth");
-  const { startTour } = useOnboardingTour();
+  const { startTour } = useProductTour();
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 

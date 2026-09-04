@@ -114,7 +114,10 @@ export function ArbitragePageClient() {
 
   return (
     <Page className="flex h-full flex-col">
-      <div className="mb-3 flex flex-wrap items-center gap-2 shrink-0">
+      <div
+        data-tour="arbitrage-help"
+        className="mb-3 flex flex-wrap items-center gap-2 shrink-0"
+      >
         <div
           className="flex size-8 shrink-0 items-center justify-center rounded-lg"
           style={{ backgroundColor: "var(--canal-vantage-soft)" }}

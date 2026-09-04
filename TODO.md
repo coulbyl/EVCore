@@ -1707,34 +1707,23 @@ par ligue → implémentation → tests → **backtest séparé** → shadow/obs
 > neuf"). Portée : bugs et frictions constatés en usage, pas de la
 > calibration modèle (voir section dédiée ci-dessus pour ça).
 
-- `[ ]` **P0 — tout coupon avec un pick ajouté depuis Investir est rejeté au
-  moment de payer** — `POST /bet-slips` renvoie 400 `"Chaque item doit
-avoir soit un betId, soit un modelRunId + market + pick"` dès qu'il y a du
-  solde. Cause : `investment-pick-row.tsx` construit l'item du coupon sans
-  `modelRunId` parce que l'API `/investments` (`investment.service.ts`)
-  n'expose que `channelSelectionId`, jamais un `modelRunId` exploitable.
-  Décisions, Combinés et le tiroir diagnostic construisent l'item
-  correctement (vrai `modelRunId`) — seul Investir est en cause. Reproduit à
-  100% avec un solde réel déposé (100 000 F test).
-
-- `[ ]` **P0 — le tour guidé ne démarre jamais à la vraie première visite**
+- `[ ]` **P0 — le tour guidé ne démarre jamais à la vraie première visite —
+  probablement corrigé en creux le 2026-09-04, à reconfirmer au navigateur**
   — `register-form.tsx`/`login-form.tsx` enchaînent `router.push("/dashboard")`
-  puis `router.refresh()` non attendus, exactement au moment où
-  `OnboardingTourProvider` (`onboarding-tour-context.tsx`) lit une seule
-  fois `hasSeenOnboarding` au montage (`hasAutoStartedRef`). Reproduit 2/2
-  sur comptes neufs. Un simple rechargement complet déclenche le tour
-  ensuite — mais hors contexte (l'utilisateur est déjà en train de
-  naviguer), overlay bloquant à l'appui. Une fois lancé, le mécanisme lui-
-  même est solide (23/23 étapes desktop correctes, testé jusqu'au bout).
-
-- `[ ]` **P1 — les filtres de Décisions et Arbitrage ne changent aucune
-  donnée côté serveur** — les pastilles de ligue filtrent en mémoire sur des
-  données déjà chargées pour la journée (`decisions-page-client.tsx:41-49`,
-  `arbitrage-page-client.tsx:52`, filtres vides passés à la requête). Le
-  bouton "Filtres" de Décisions n'ouvre qu'un tri par heure, pas un filtre.
-  Seul Investir (`use-investment-picks.ts`) filtre vraiment côté serveur
-  (date/vue/canal) — à harmoniser ou à renommer pour ne pas laisser croire
-  le contraire sur Décisions/Arbitrage.
+  puis `router.refresh()` non attendus, exactement au moment où l'ancien
+  `OnboardingTourProvider` lisait une seule fois `hasSeenOnboarding` au
+  montage (`hasAutoStartedRef`, dépendances `[]`). Reproduit 2/2 sur comptes
+  neufs. Depuis le renommage tour passif → `domains/product-tour/` et
+  l'ajout de l'onboarding actif (§ ci-dessus, doc
+  `vantage-centric-redesign-2026-09-01.md`), l'effet de démarrage auto de
+  `ProductTourProvider` (`product-tour-context.tsx`) dépend maintenant de
+  `currentUser.hasCompletedOnboarding` plutôt que d'une lecture unique au
+  montage — il se redéclenche correctement quand ce champ bascule à `true`
+  (fin de l'onboarding actif), ce qui évite la course avec
+  `router.refresh()` décrite ici. Pas encore vérifié en vrai navigateur
+  (aucun outil de rendu disponible cette session) — à confirmer sur un
+  compte neuf avant de cocher. Une fois lancé, le mécanisme lui-même est
+  solide (23/23 étapes desktop correctes, testé jusqu'au bout).
 
 - `[ ]` **P1 — bouton d'ajout au coupon absent sur Matchs sans aucune
   indication du pourquoi** — `fixtures-table.tsx` (`AddToSlipButton`)
@@ -1747,15 +1736,6 @@ avoir soit un betId, soit un modelRunId + market + pick"` dès qu'il y a du
   (`deposit-dialog.tsx`, page Portefeuille) mais rien n'y renvoie depuis le
   blocage, alors que c'est le tout premier mur qu'un compte neuf rencontre.
 
-- `[ ]` **P1 — Investir met en avant l'edge (documenté anti-prédictif dans
-  CLAUDE.md/l'audit du 08-22) plutôt que le ROI canal** sur l'onglet "Ce
-  qu'on assume" — l'onglet "En observation" affiche déjà le ROI canal
-  (`canal -5.5%` etc.), plus honnête ; à répliquer sur l'onglet "de
-  confiance". La bannière "2 sur 18 canaux" (`messages/fr.json:873`) est un
-  texte figé daté du 08-22, pas un calcul en direct — recoupe encore la
-  réalité mesurée aujourd'hui (voir section ci-dessus) mais peut devenir
-  fausse silencieusement.
-
 - `[ ]` **P2 — page Matchs 2 à 3× plus lente que le reste du produit** en
   usage réel (mesuré ~3.6-3.8s contre 0.8-2.9s ailleurs, deux passages) —
   172 lignes chargées d'un bloc, pas de pagination visible côté requête.
@@ -1765,10 +1745,6 @@ avoir soit un betId, soit un modelRunId + market + pick"` dès qu'il y a du
 
 - `[ ]` **P2 — badge de rôle incohérent** — "Membre" (pied de la barre
   latérale) vs "OPÉRATEUR" (page Profil) pour le même compte non-admin.
-
-- `[ ]` **P2 — Notifications vs Annonces, contenu quasi identique** — deux
-  entrées de menu séparées pour un seul flux d'information en pratique, à
-  fusionner ou différencier clairement.
 
 - `[ ]` **P2 — avertissement d'accessibilité React sur le tiroir coupon** —
   `Missing Description or aria-describedby for DialogContent` à chaque
@@ -1781,13 +1757,3 @@ avoir soit un betId, soit un modelRunId + market + pick"` dès qu'il y a du
   optionnel avec consentement explicite si le besoin est confirmé, pas à
   l'inscription pour ne pas alourdir ce parcours (actuellement le
   meilleur du produit en friction).
-
-- `[-]` **Cadrer (sans lancer) un chantier IA/ML sur le composeur de
-  Combinés** — signaux `shadow_predictions`/`shadow_ml_by_channel` déjà
-  calculés ailleurs (module ML) mais jamais branchés dans
-  `coupon-composer.service.ts` (seul `signal-window.service.ts` les lit,
-  comme départage d'ordre, jamais comme signal de score). Vrai chantier
-  d'intégration (arbitrage avec la calibration Platt existante, risque de
-  reproduire le biais anti-prédictif déjà retiré sur l'ancien
-  `signalScore`) — hors périmètre immédiat tant que la dérive à 30 jours
-  ci-dessus n'est pas comprise.

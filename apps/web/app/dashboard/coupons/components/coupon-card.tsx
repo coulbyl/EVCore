@@ -36,7 +36,6 @@ export function CouponCard({
     kickoff: formatKickoff(leg.scheduledAt),
     score: leg.score,
     htScore: leg.htScore,
-    canal: leg.canal,
     marketLabel: formatMarketForDisplay(leg.market, loc),
     pickLabel: formatPickForDisplay(leg.pick, leg.market),
     probability: leg.probability,

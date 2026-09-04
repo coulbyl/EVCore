@@ -1,3 +1,5 @@
+import type { ChannelStatus } from "@/domains/dashboard/types/dashboard";
+
 export type FollowedChannel = {
   channel: string;
   since: string;
@@ -23,8 +25,7 @@ export type LeagueCatalogItem = {
 
 export type DiscoverableChannel = {
   channel: string;
-  calibrationRatio: number | null;
+  status: ChannelStatus;
   sampleSize: number;
-  proven: boolean;
   followed: boolean;
 };

@@ -21,6 +21,7 @@ export type AuthSessionUser = {
   riskProfile: RiskProfile;
   emailSupportNotificationsEnabled: boolean;
   hasSeenOnboarding: boolean;
+  hasCompletedOnboarding: boolean;
 };
 
 export type AuthSession = {
