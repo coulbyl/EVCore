@@ -605,6 +605,22 @@
       "toAvoid": "À éviter aujourd'hui",
       "emptyFollow": "Aucune sélection fiable aujourd'hui",
       "emptyAvoid": "Aucun canal à éviter aujourd'hui"
+    },
+    "engineHealth": {
+      "headline": "Santé moteur",
+      "title": "Vue d'ensemble",
+      "globalRatio": "Ratio calibration",
+      "redChannels": "Canaux peu fiables",
+      "activeSuspensions": "Marchés suspendus",
+      "trend": "Tendance",
+      "trendCaption": "7j vs 30j",
+      "calibrationCurve": "Courbe de calibration",
+      "announced": "Annoncée",
+      "actual": "Réelle",
+      "suspendedMarkets": "Marchés suspendus",
+      "recentAlerts": "Alertes récentes (7j)",
+      "channelsByDeviation": "Canaux triés par écart à la calibration",
+      "channel": "Canal"
     }
   },
   "betSlips": {

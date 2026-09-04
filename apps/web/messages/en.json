@@ -605,6 +605,22 @@
       "toAvoid": "To avoid today",
       "emptyFollow": "No reliable pick today",
       "emptyAvoid": "No channel to avoid today"
+    },
+    "engineHealth": {
+      "headline": "Engine health",
+      "title": "Overview",
+      "globalRatio": "Calibration ratio",
+      "redChannels": "Unreliable channels",
+      "activeSuspensions": "Suspended markets",
+      "trend": "Trend",
+      "trendCaption": "7d vs 30d",
+      "calibrationCurve": "Calibration curve",
+      "announced": "Announced",
+      "actual": "Actual",
+      "suspendedMarkets": "Suspended markets",
+      "recentAlerts": "Recent alerts (7d)",
+      "channelsByDeviation": "Channels sorted by calibration deviation",
+      "channel": "Channel"
     }
   },
   "betSlips": {

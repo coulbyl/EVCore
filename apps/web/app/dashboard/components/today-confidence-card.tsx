@@ -66,7 +66,7 @@ function todayIso() {
 
 // Cross-references today's SELECTED picks (channel-decisions/by-channel) with
 // each channel's calibration status (dashboard/channel-health, same GREEN/
-// ORANGE/RED already used by ChannelStatusStrip) — never a raw ratio shown
+// ORANGE/RED used by the admin EngineHealthCard) — never a raw ratio shown
 // here, only the derived confidence badge and the two plain-language lists,
 // per docs/dashboard-operator-admin-redesign-2026-09-04.md étape 1.
 export function TodayConfidenceCard({ from, to }: { from: string; to: string }) {

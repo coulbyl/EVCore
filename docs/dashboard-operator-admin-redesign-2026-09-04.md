@@ -35,20 +35,24 @@ En creusant l'implémentation, tout ce qu'il fallait existait déjà côté back
 
 Reste ouvert pour une itération suivante si besoin : résultat récent 7 jours en phrase, solde bankroll (déjà visible en permanence dans le header via `BankrollWidget` — décision de ne pas le dupliquer sur cette carte).
 
-### Étape 2 — Admin (V1) — après validation de l'étape 1
+### Étape 2 — Admin (V1) — livré 2026-09-04
 
-Livrable : nouvelle page de synthèse santé moteur pour `ADMIN`, en plus des pages existantes (`engine`, `performance`, `audit` restent pour le drill-down).
+Livrable : `EngineHealthCard` en tête du dashboard `ADMIN`, remplaçant `ChannelStatusStrip` (devenu un sous-ensemble strict de ce que la nouvelle carte montre). Pages existantes (`engine`, `performance`, `audit`) inchangées, toujours là pour le drill-down.
 
-1. Backend — service d'agrégat admin (`operator-health` ou nom équivalent), réutilise `calibrationRatioOf`, `isMarketSuspended`, `getCalibrationCurve()` déjà existants dans `risk.service.ts` / `dashboard.service.ts` — aucune nouvelle formule de calcul.
-2. Nouvel endpoint `GET /dashboard/health-overview` (protégé `AdminGuard`, comme les autres endpoints admin).
-3. Frontend — page `/dashboard/overview` (ou équivalent) :
-   - Statut global (agrégat calibration + suspensions actives).
-   - 4 KPI : ratio calibration global, canaux en RED, marchés suspendus actifs, tendance 7j vs 30j.
-   - Courbe de calibration (réutilise `getCalibrationCurve()`, jamais affichée actuellement malgré le calcul déjà fait).
-   - Tableau canaux triés par écart à 1.0 décroissant.
-   - Alertes risque (7 derniers jours) — filtrées sur risk uniquement, pas les notifications générales.
-4. Paralléliser les appels du service d'agrégat (`Promise.all`) pour éviter une latence cumulée sur 4 requêtes DB séquentielles.
-5. Tests Vitest + vérification manuelle dans le navigateur.
+Écart avec le plan initial : pas de nouveau "service d'agrégat" dédié ni d'endpoint `/dashboard/health-overview` — l'agrégation (statut global, ratio pondéré, tendance) se fait côté frontend à partir d'endpoints existants ou ajoutés un par un dans leur module naturel (`risk`), plus simple que de faire remonter cette logique dans le module `dashboard`.
+
+1. Backend (`apps/backend/src/modules/risk/`) — deux endpoints ajoutés, tous deux `AuthSessionGuard, AdminGuard` (les routes existantes du contrôleur `risk` restent sans garde — probablement des cibles cron internes, non touchées) :
+   - `GET /risk/suspensions/active` (`RiskService.listActiveSuspensions`) — liste détaillée (marché, raison, déclencheur), pas juste le compte déjà exposé par `audit/overview`.
+   - `GET /risk/alerts/recent?days=7` (`RiskService.getRecentAlerts`) — notifications `MARKET_SUSPENSION`/`ROI_ALERT`/`BRIER_ALERT`, sans la troncature à 3 ni le dédup par jour de `dashboard/summary`.
+   - `getCalibrationCurve()` existait déjà (jamais branché en frontend) — aucun changement backend.
+2. Frontend :
+   - Statut global : `ALERT` si un canal `RED` ou une suspension active, `WATCH` si `ORANGE` sans `RED`, sinon `GOOD`.
+   - 4 KPI (`StatCard`) : ratio de calibration global (moyenne pondérée par `sampleSize` des ratios par canal — `useChannelHealth` réutilisé, aucun nouveau calcul serveur), canaux `RED`, marchés suspendus actifs, tendance 7j vs 30j (différence entre deux appels `useChannelHealth` sur des fenêtres différentes).
+   - Courbe de calibration : `EvBarChart` existant (composant chart déjà dans `components/charts/`, jamais utilisé pour cette courbe) sur `useCalibrationCurve()`.
+   - Tableau canaux : réutilise tel quel `ChannelStatsTable` (déjà utilisé par track-record, TanStack Table), lignes pré-triées par `|calibrationRatio - 1|` décroissant.
+   - Marchés suspendus + alertes récentes : listes simples sur les deux nouveaux endpoints.
+3. Nettoyage : `ChannelStatusStrip` supprimé (remplacé). Le `FilterBar` de la page admin ne servait plus qu'à cette carte — comme rien d'autre sur la page ne consommait la plage de dates, il est retiré entièrement (état, définition de filtres, helpers de date) plutôt que laissé orphelin.
+4. Vérification : `pnpm typecheck`/`lint` (web + backend) et la suite Vitest backend (69 fichiers, 608 tests) passent. **Pas de vérification visuelle** — toujours pas de stack Docker démarrée dans cet environnement.
 
 ### Étape 3 — Gamification (discipline, pas variance) — après validation de l'étape 1
 
