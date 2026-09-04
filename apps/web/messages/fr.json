@@ -92,7 +92,7 @@
         "description": "Mouvement de cote significatif détecté avant le match."
       },
       "CONSENSUS": {
-        "description": "Plusieurs stratégies indépendantes convergent sur le même pick."
+        "description": "Plusieurs stratégies indépendantes convergent sur la même sélection."
       },
       "CONTRARIAN": {
         "description": "Position à contre-courant du marché."
@@ -122,19 +122,19 @@
         "description": "Résultat à la mi-temps combiné au résultat final."
       },
       "VANTAGE": {
-        "description": "Lit les décisions des autres canaux et leur fiabilité mesurée sur cette compétition ; ne propose un pick que s'il identifie une tension ou un biais concret entre eux."
+        "description": "Lit les décisions des autres canaux et leur fiabilité mesurée sur cette compétition ; ne propose une sélection que s'il identifie une tension ou un biais concret entre eux."
       }
     },
     "reasons": {
       "score_below_threshold": "Score modèle sous le seuil",
-      "no_viable_pick": "Aucun pick viable",
+      "no_viable_pick": "Aucune sélection viable",
       "line_movement": "Mouvement de cote défavorable",
       "no_safe_candidate": "Aucun candidat sûr",
       "below_threshold": "Probabilité sous le seuil",
       "insufficient_margin": "Marge insuffisante",
       "no_consensus": "Pas de consensus entre canaux",
       "consensus": "Convergence de canaux indépendants",
-      "no_avoid_signal": "Aucun signal d'évitement",
+      "no_avoid_signal": "Aucun signal de prudence détecté",
       "extreme_divergence": "Divergence modèle/marché extrême",
       "no_model": "Pas de probabilités modèle",
       "no_odds": "Aucun score coté",
@@ -156,14 +156,14 @@
     "avoid": {
       "banner": "Attention",
       "tooltipLabel": "Signal d'attention",
-      "tooltipDetail": "Un des picks ci-dessous a un écart trop important entre la probabilité du modèle et celle implicite du marché (≥ 30 points). Historiquement, le marché a raison dans ce cas — repérez le pick marqué ⚠ et évitez-le, les autres restent valides.",
+      "tooltipDetail": "Une des sélections ci-dessous a un écart trop important entre la probabilité du modèle et celle implicite du marché (≥ 30 points). Historiquement, le marché a raison dans ce cas — repère la sélection marquée ⚠ et évite-la, les autres restent valides.",
       "edge": "écart",
-      "edgeTooltip": "Divergence modèle/marché : {pct} — ce pick a déclenché le signal Attention"
+      "edgeTooltip": "Divergence modèle/marché : {pct} — cette sélection a déclenché le signal Attention"
     },
     "calibration": {
       "banner": "Données suspectes",
       "tooltipLabel": "Alerte calibration",
-      "tooltipDetail": "Le modèle et le marché sont en désaccord fort sur ce match (favori inversé ou écart extrême sur plusieurs bookmakers). Cela signale presque toujours des données d'entrée corrompues plutôt qu'une opportunité — le moteur exclut automatiquement tous les picks de ce match des paris réels.",
+      "tooltipDetail": "Le modèle et le marché sont en désaccord fort sur ce match (favori inversé ou écart extrême sur plusieurs bookmakers). Cela signale presque toujours des données d'entrée corrompues plutôt qu'une opportunité — le moteur exclut automatiquement toutes les sélections de ce match des paris réels.",
       "badgeTooltip": "{status, select, GREEN {Ce canal a été fiable sur cette compétition} ORANGE {Ce canal est à surveiller sur cette compétition — sa réussite s'écarte de ce qu'il annonce} RED {Ce canal a été peu fiable sur cette compétition — sa réussite réelle est nettement inférieure à ce qu'il annonce} other {Fiabilité non mesurable sur cette compétition}} ({n, plural, one {# pari réglé} other {# paris réglés}})."
     },
     "consensus": {
@@ -171,9 +171,9 @@
       "tooltipDetail": "Plusieurs canaux indépendants ont sélectionné le même outcome sans se concerter. C'est une convergence, pas une garantie : CONSENSUS n'émet plus de pronostic ni de probabilité propre — celle qu'il publiait était le maximum des canaux d'accord, donc optimiste par construction.",
       "rowLabel": "Convergence :"
     },
-    "noPick": "Aucun pick retenu sur ce match.",
-    "noPickShort": "aucun pick",
-    "pickCount": "{count, plural, one {# pick} other {# picks}}",
+    "noPick": "Aucune sélection retenue sur ce match.",
+    "noPickShort": "aucune sélection",
+    "pickCount": "{count, plural, one {# sélection} other {# sélections}}",
     "evaluatedCount": "{count, plural, one {# autre canal évalué} other {# autres canaux évalués}}",
     "showMorePicks": "{count, plural, one {Voir # autre marché} other {Voir # autres marchés}}",
     "showLessPicks": "Voir moins",
@@ -205,16 +205,16 @@
     "reasoningLabel": "Lecture Arbitrage",
     "sourcesLabel": "Sources",
     "decidedAt": "Décidé le {date}",
-    "noPlay": "Aucun pick — lecture seule.",
+    "noPlay": "Aucune sélection — lecture seule.",
     "emptyTitle": "Aucune lecture",
     "emptyDescription": "Le canal n'a encore rien analysé pour cette date.",
     "emptyFilteredTitle": "Rien à signaler",
-    "emptyFilteredDescription": "Aucun désaccord identifié aujourd'hui — essayez \"Toutes\" pour voir les matchs sans avis."
+    "emptyFilteredDescription": "Aucun désaccord identifié aujourd'hui — essaie \"Toutes\" pour voir les matchs sans avis."
   },
   "notifications": {
     "title": "Notifications",
     "empty": "Aucune notification",
-    "emptyDescription": "Vous êtes à jour.",
+    "emptyDescription": "Tu es à jour.",
     "markAllRead": "Tout marquer comme lu",
     "unread": "Non lues",
     "all": "Toutes",
@@ -286,11 +286,11 @@
     },
     "coupons": {
       "title": "Coupons",
-      "description": "Des combinés générés automatiquement à partir des meilleurs picks. Le « ? » ouvre la carte de fiabilité des canaux qu'on combine."
+      "description": "Des combinés générés automatiquement à partir des meilleures sélections. Le « ? » ouvre la carte de fiabilité des canaux qu'on combine."
     },
     "betSlipComposer": {
       "title": "Mon coupon",
-      "description": "Construis ton propre coupon en ajoutant des picks depuis Décisions — ce bouton te suit partout dans l'app."
+      "description": "Construis ton propre coupon en ajoutant des sélections depuis Décisions — ce bouton te suit partout dans l'app."
     },
     "betSlips": {
       "title": "Mes coupons",
@@ -314,7 +314,7 @@
     },
     "evaFab": {
       "title": "Eva",
-      "description": "Génère et exporte la fiche des picks retenus sur une période (txt/json) — pratique pour l'archiver ou la partager. Appui long pour la masquer."
+      "description": "Génère et exporte la fiche des sélections retenues sur une période (txt/json) — pratique pour l'archiver ou la partager. Appui long pour la masquer."
     },
     "pageSearchFab": {
       "title": "Recherche dans la page",
@@ -340,7 +340,7 @@
   "formation": {
     "label": "Formation",
     "title": "Centre de formation",
-    "subtitle": "Articles et vidéos pour comprendre chaque pick et progresser étape par étape.",
+    "subtitle": "Articles et vidéos pour comprendre chaque sélection et progresser étape par étape.",
     "progress": "Progression",
     "open": "Ouvrir",
     "browse": "Parcourir",
@@ -445,7 +445,7 @@
     "tabPersonalization": "Personnalisation",
     "requires": "Requiert :",
     "avatarSaveError": "Impossible de sauvegarder l'avatar.",
-    "genericError": "Une erreur est survenue.",
+    "genericError": "Une erreur est survenue. Réessaie dans quelques instants.",
     "badgeNames": {
       "vol_50": "50 paris réglés",
       "vol_150": "150 paris réglés",
@@ -454,34 +454,34 @@
     },
     "badgesEyebrow": "Progression",
     "badgesTitle": "Mes badges",
-    "badgesDescription": "Débloquez des badges en atteignant des jalons de performance.",
+    "badgesDescription": "Débloque des badges en atteignant des jalons de performance.",
     "securityTitle": "Authentification & vérification",
     "securitySetupHeading": "Vérification du compte",
     "accountVerified": "Compte vérifié",
     "accountNotVerified": "Compte non vérifié",
     "totpConfigured": "Application d'authentification (TOTP) configurée.",
     "emailVerifiedMessage": "Email vérifié — {email}",
-    "notVerifiedMessage": "Votre compte n'est pas encore vérifié. Certaines fonctionnalités sont inaccessibles.",
+    "notVerifiedMessage": "Ton compte n'est pas encore vérifié. Certaines fonctionnalités sont inaccessibles.",
     "verifyAction": "Vérifier →",
     "totpTitle": "Application d'authentification",
-    "totpDescription": "Non configurée. Ajoutez une app TOTP pour sécuriser davantage votre compte et récupérer l'accès sans email.",
+    "totpDescription": "Non configurée. Ajoute une app TOTP pour sécuriser davantage ton compte et récupérer l'accès sans email.",
     "configureAction": "Configurer →",
     "verificationCodeTitle": "Code de vérification",
     "resendCodeDescription": "Renvoyer un code à {email}.",
-    "codeSentMessage": "Code envoyé — vérifiez vos spams.",
+    "codeSentMessage": "Code envoyé — vérifie tes spams.",
     "codeSendError": "Impossible d'envoyer le code.",
     "sending": "Envoi…",
     "sent": "Envoyé",
     "resend": "Renvoyer",
     "pushNotifications": "Notifications push",
-    "pushNotificationsDescription": "Recevez une notification sur cet appareil pour les messages de l'équipe EVCore et les nouvelles annonces.",
+    "pushNotificationsDescription": "Reçois une notification sur cet appareil pour les messages de l'équipe EVCore et les nouvelles annonces.",
     "pushNotificationsToggle": "Activer les notifications push",
-    "pushNotificationsUnsupported": "Votre navigateur ne prend pas en charge les notifications push.",
-    "pushNotificationsDenied": "Notifications bloquées — autorisez-les dans les paramètres de votre navigateur.",
+    "pushNotificationsUnsupported": "Ton navigateur ne prend pas en charge les notifications push.",
+    "pushNotificationsDenied": "Notifications bloquées — autorise-les dans les paramètres de ton navigateur.",
     "emailNotifications": "Notifications par email",
-    "emailNotificationsDescription": "Recevez un email à chaque nouveau message de l'équipe EVCore.",
+    "emailNotificationsDescription": "Reçois un email à chaque nouveau message de l'équipe EVCore.",
     "emailNotificationsToggle": "Email à chaque nouveau message",
-    "bankrollDescription": "Choisissez la devise affichée dans l'application.",
+    "bankrollDescription": "Choisis la devise affichée dans l'application.",
     "displayCurrency": "Devise d'affichage",
     "unitStake": "Mise par unité",
     "unitModeFixed": "Montant fixe",
@@ -506,7 +506,7 @@
       "leaguesSearchPlaceholder": "Rechercher un championnat ou un pays...",
       "leaguesNoResults": "Aucun championnat ne correspond.",
       "channelsTitle": "Canaux suivis",
-      "channelsHint": "Retrouvez ici la fiabilité mesurée des canaux qui vous intéressent — jugée sur leur calibration, c'est-à-dire leur résultat réel comparé à ce qu'ils annoncent.",
+      "channelsHint": "Retrouve ici la fiabilité mesurée des canaux qui t'intéressent — jugée sur leur calibration, c'est-à-dire leur résultat réel comparé à ce qu'ils annoncent.",
       "channelsEmpty": "Aucun canal suivi pour l'instant.",
       "discoverButton": "Découvrir des canaux",
       "discoverSearchPlaceholder": "Rechercher un canal...",
@@ -563,18 +563,10 @@
       "read": "Lire",
       "markAsRead": "Marquer comme lu"
     },
-    "predictions": {
-      "title": "Prédictions du jour",
-      "empty": "Aucune prédiction pour aujourd'hui.",
-      "home": "Domicile",
-      "away": "Extérieur",
-      "draw": "Nul",
-      "yesterday": "hier"
-    },
     "leagueRanking": {
       "title": "Classement ligues",
       "period": "30j · fiabilité",
-      "empty": "Aucune donnée sur 30 jours."
+      "empty": "Pas encore assez de matchs analysés sur les 30 derniers jours."
     },
     "operatorCard": {
       "headline": "Mes performances",
@@ -625,7 +617,7 @@
   },
   "betSlips": {
     "emptyTitle": "Aucun coupon",
-    "emptyDescription": "Aucun coupon ne correspond à cette période et à ce filtre."
+    "emptyDescription": "Aucun coupon ne correspond à cette période. Essaie d'élargir le filtre."
   },
   "bankrollPage": {
     "filter": {
@@ -655,7 +647,7 @@
       "subtitle": "Le solde jour après jour, calculé à partir des mouvements récents.",
       "recent": "Évolution récente",
       "notEnoughData": "Pas assez de données",
-      "notEnoughDataDescription": "Effectuez des transactions pour voir la courbe d'évolution.",
+      "notEnoughDataDescription": "Effectue des transactions pour voir la courbe d'évolution.",
       "lowest": "Plus bas",
       "highest": "Plus haut",
       "displayedDays": "Jours affichés",
@@ -689,7 +681,7 @@
     "backtestHint": "Simulation du modèle sur l'historique pour estimer sa robustesse. Le dernier résultat est conservé dans ce navigateur.",
     "runBacktest": "Lancer le backtest",
     "backtestRunning": "Backtest en cours…",
-    "backtestIdle": "Lancez une simulation pour voir comment le modèle aurait performé sur les données passées.",
+    "backtestIdle": "Lance une simulation pour voir comment le modèle aurait performé sur les données passées.",
     "backtestFreshTitle": "Résultat du dernier lancement",
     "backtestStoredTitle": "Dernier résultat enregistré sur cet appareil",
     "backtestGeneratedAt": "Calculé le {date} à {time}.",
@@ -706,7 +698,7 @@
       "winRate": "Réussite",
       "netUnits": "Gain net",
       "settledBets": "Paris réglés",
-      "calibrationError": "Erreur calibration",
+      "calibrationError": "La calibration n'a pas pu être calculée.",
       "brierScore": "Précision du modèle",
       "analyzedBets": "Paris testés"
     },
@@ -737,7 +729,7 @@
     "reliabilityY": "Fréquence réelle",
     "backtestTabEv": "EV",
     "backtestTabSv": "Canal Sécurité",
-    "backtestSvIdle": "Lancez une simulation pour voir comment le Canal Sécurité aurait performé sur les données passées.",
+    "backtestSvIdle": "Lance une simulation pour voir comment le Canal Sécurité aurait performé sur les données passées.",
     "svAvgOdds": "Cote moyenne",
     "seasonBreakdown": "Détail par saison",
     "season": "Saison",
@@ -758,7 +750,7 @@
     "runAnalysis": "Lancer l'analyse",
     "analysisWindow": "Fenêtre {from} → {to}",
     "analysisWindowPicker": "Fenêtre (défaut : 1 an)",
-    "analysisIdle": "Lancez l'analyse pour afficher les résultats.",
+    "analysisIdle": "Lance l'analyse pour afficher les résultats.",
     "analysisEmpty": "Aucune donnée sur la fenêtre.",
     "colChannel": "Canal",
     "colCompetition": "Ligue",
@@ -812,7 +804,7 @@
     "actions": {
       "alreadyInSlip": "Déjà dans le coupon",
       "alreadyInTickets": "Déjà dans vos coupons",
-      "placePick": "Placer ce pick"
+      "placePick": "Placer cette sélection"
     },
     "table": {
       "market": "Marché",
@@ -823,7 +815,7 @@
       "viable": "Viable"
     },
     "empty": {
-      "title": "Aucun diagnostic",
+      "title": "Aucune analyse disponible",
       "description": "Pas de ModelRun disponible pour cette fixture."
     },
     "noBet": {
@@ -831,7 +823,7 @@
       "decision": "décision"
     },
     "sections": {
-      "whyThisPick": "Pourquoi ce pick ?",
+      "whyThisPick": "Pourquoi cette sélection ?",
       "modelPrediction": "Prédiction modèle",
       "analyzedMarkets": "Marchés analysés"
     },
@@ -865,7 +857,7 @@
   },
   "onboarding": {
     "title": "Configuration rapide",
-    "description": "Personnalisez votre expérience en trois étapes rapides — chacune est facultative.",
+    "description": "Personnalise ton expérience en trois étapes rapides — chacune est facultative.",
     "stepCounter": "Étape {step} sur {total}",
     "skip": "Passer",
     "next": "Suivant",

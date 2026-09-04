@@ -15,7 +15,7 @@ export async function depositBankroll(
   return clientApiRequest<BankrollBalance>("/bankroll/deposit", {
     method: "POST",
     body: input,
-    fallbackErrorMessage: "Impossible d'enregistrer le depot.",
+    fallbackErrorMessage: "Impossible d'enregistrer le dépôt.",
   });
 }
 

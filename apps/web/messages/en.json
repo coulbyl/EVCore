@@ -563,14 +563,6 @@
       "read": "Read",
       "markAsRead": "Mark as read"
     },
-    "predictions": {
-      "title": "Today's predictions",
-      "empty": "No predictions for today.",
-      "home": "Home",
-      "away": "Away",
-      "draw": "Draw",
-      "yesterday": "yesterday"
-    },
     "leagueRanking": {
       "title": "League ranking",
       "period": "30d · reliability",

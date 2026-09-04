@@ -11,7 +11,7 @@ export function useCoupons(date: string) {
       const params = new URLSearchParams({ date });
       return clientApiRequest<CouponProposalDto[]>(
         `/coupons?${params.toString()}`,
-        { fallbackErrorMessage: "Impossible de charger les coupons." },
+        { fallbackErrorMessage: "Impossible de charger les coupons proposés." },
       );
     },
     staleTime: 60_000,

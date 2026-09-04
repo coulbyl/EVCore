@@ -107,8 +107,8 @@ export class NotificationService {
     jobName: string,
     errorMessage: string,
   ): Promise<void> {
-    const title = `ETL Failure — ${queue}`;
-    const body = `Job "${jobName}" permanently failed: ${errorMessage}`;
+    const title = `Échec ETL — ${queue}`;
+    const body = `Le job "${jobName}" a échoué de façon définitive : ${errorMessage}`;
     await this.save({
       type: NotificationType.ETL_FAILURE,
       title,

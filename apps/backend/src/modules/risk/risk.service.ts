@@ -135,7 +135,7 @@ export class RiskService {
         await this.prisma.client.marketSuspension.create({
           data: {
             market,
-            reason: `ROI ${(roi.toNumber() * 100).toFixed(1)}% over ${bets.length} bets — auto-suspended`,
+            reason: `ROI ${(roi.toNumber() * 100).toFixed(1)}% sur ${bets.length} paris — suspension automatique`,
             triggeredBy: 'auto',
           },
         });
