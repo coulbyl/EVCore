@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import {
   Command,
@@ -13,22 +13,23 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-  cn,
 } from "@evcore/ui";
 import { translateCompetition, translateCountry } from "@/lib/competition-i18n";
-import { PINNED_LEAGUE_CODES, type LeagueOption } from "@/lib/league-filter";
+import type { LeagueFacet } from "@/domains/channel-decision/types/channel-decision";
 
-/** Championship chips above the Décisions tabs: "Tous" + the grands
- * championnats present today, plus a "Plus" search covering every other
- * league in the day's data — never a static 68-league list, so there's
- * never a dead-end result. Selection lives in the URL (`?league=CODE`) one
- * level up, so it survives switching between "Par match" and "Par canal". */
+/** Championship filter above the Décisions/Arbitrage lenses — single-select,
+ * one popover-picker button at every breakpoint (same pattern as the
+ * Personnalisation rail on /dashboard/params/account), instead of a
+ * scrollable chip strip fighting a separate "+Plus" button for space.
+ * Selection lives in the URL (`?league=CODE`) one level up. `options` comes
+ * from the cheap facets endpoint (ChannelDecisionRepository.findFacetRows),
+ * not derived from the full decisions payload. */
 export function LeagueFilterBar({
   options,
   selected,
   onSelect,
 }: {
-  options: LeagueOption[];
+  options: LeagueFacet[];
   selected: string | null;
   onSelect: (code: string | null) => void;
 }) {
@@ -36,118 +37,70 @@ export function LeagueFilterBar({
   const locale = useLocale();
   const t = useTranslations("decisions");
 
-  const pinned = PINNED_LEAGUE_CODES.map((code) =>
-    options.find((o) => o.code === code),
-  ).filter((o): o is LeagueOption => o !== undefined);
-  const pinnedCodes = new Set(pinned.map((o) => o.code));
+  const selectedOption = selected
+    ? options.find((o) => o.code === selected)
+    : undefined;
 
-  const selectedExtra =
-    selected && !pinnedCodes.has(selected)
-      ? options.find((o) => o.code === selected)
-      : undefined;
-
-  const rest = options
-    .filter((o) => !pinnedCodes.has(o.code))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const sortedAll = [...options].sort((a, b) => a.name.localeCompare(b.name));
 
   if (options.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <Chip active={selected === null} onClick={() => onSelect(null)}>
-          {t("filters.all")}
-        </Chip>
-        {pinned.map((option) => (
-          <Chip
-            key={option.code}
-            active={selected === option.code}
-            onClick={() => onSelect(option.code)}
-          >
-            {translateCompetition(option.name, locale)}
-          </Chip>
-        ))}
-        {selectedExtra && (
-          <Chip active onClick={() => onSelect(null)}>
-            {translateCompetition(selectedExtra.name, locale)}
-          </Chip>
-        )}
-      </div>
-
-      {rest.length > 0 && (
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              className={cn(
-                "flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-panel-strong px-3.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
-                open && "border-accent/40 bg-accent-soft text-accent",
-              )}
-            >
-              <Plus className="size-3.5" />
-              {t("filters.moreLeagues")}
-            </button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-72 p-0">
-            <Command>
-              <CommandInput placeholder={t("filters.searchLeague")} />
-              <CommandList>
-                <CommandEmpty>{t("filters.noLeagueResults")}</CommandEmpty>
-                <CommandGroup>
-                  {rest.map((option) => (
-                    <CommandItem
-                      key={option.code}
-                      value={`${translateCompetition(option.name, locale)} ${
-                        option.country
-                          ? translateCountry(option.country, locale)
-                          : ""
-                      }`}
-                      onSelect={() => {
-                        onSelect(option.code);
-                        setOpen(false);
-                      }}
-                    >
-                      <span className="min-w-0 flex-1 truncate">
-                        {translateCompetition(option.name, locale)}
-                      </span>
-                      {option.country && (
-                        <span className="shrink-0 text-xs text-muted-foreground">
-                          {translateCountry(option.country, locale)}
-                        </span>
-                      )}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-      )}
-    </div>
-  );
-}
-
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
-        active
-          ? "border-accent/40 bg-accent-soft text-accent font-semibold"
-          : "border-border bg-panel-strong text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {children}
-    </button>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex w-full items-center justify-between gap-2 rounded-2xl border border-border bg-panel-strong px-4 py-2.5 text-sm font-medium text-foreground md:w-auto"
+        >
+          <span className="flex min-w-0 items-baseline gap-1.5">
+            <span className="shrink-0 text-muted-foreground">
+              {t("filters.leagueLabel")}
+            </span>
+            <span className="min-w-0 truncate">
+              {selectedOption
+                ? translateCompetition(selectedOption.name, locale)
+                : t("filters.all")}
+            </span>
+          </span>
+          <ChevronDown size={16} className="shrink-0 text-muted-foreground" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[calc(100vw-2rem)] max-w-xs p-0">
+        <Command>
+          <CommandInput placeholder={t("filters.searchLeague")} />
+          <CommandList>
+            <CommandEmpty>{t("filters.noLeagueResults")}</CommandEmpty>
+            <CommandGroup>
+              <CommandItem
+                value={t("filters.all")}
+                onSelect={() => {
+                  onSelect(null);
+                  setOpen(false);
+                }}
+              >
+                {t("filters.all")}
+              </CommandItem>
+              {sortedAll.map((option) => (
+                <CommandItem
+                  key={option.code}
+                  value={`${translateCompetition(option.name, locale)} ${translateCountry(option.country, locale)}`}
+                  onSelect={() => {
+                    onSelect(option.code);
+                    setOpen(false);
+                  }}
+                >
+                  <span className="min-w-0 flex-1 truncate">
+                    {translateCompetition(option.name, locale)}
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {translateCountry(option.country, locale)}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }

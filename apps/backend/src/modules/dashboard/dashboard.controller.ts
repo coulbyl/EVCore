@@ -1,8 +1,6 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { IsDateString, IsOptional } from 'class-validator';
 import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
-import { CurrentSession } from '@modules/auth/current-session.decorator';
-import type { AuthSession } from '@modules/auth/auth.types';
 import { DashboardService } from './dashboard.service';
 import type {
   ChannelCompetitionStatItem,
@@ -47,16 +45,10 @@ export class DashboardController {
   }
 
   @Get('competition-stats')
-  getCompetitionStats(
-    @CurrentSession() session: AuthSession,
-    @Query('canal') canal?: string,
-  ) {
+  getCompetitionStats(@Query('canal') canal?: string) {
     const canalFilter =
       canal === 'VALUE' || canal === 'SAFE' ? canal : undefined;
-    return this.dashboardService.getCompetitionStats(
-      session.user.id,
-      canalFilter,
-    );
+    return this.dashboardService.getCompetitionStats(canalFilter);
   }
 
   @Get('leaderboard')

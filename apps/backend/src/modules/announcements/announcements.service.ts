@@ -151,18 +151,6 @@ export class AnnouncementsService {
     }));
   }
 
-  async unreadCountForUser(userId: string): Promise<{ count: number }> {
-    const now = new Date();
-    const count = await this.prisma.client.announcement.count({
-      where: {
-        published: true,
-        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-        reads: { none: { userId } },
-      },
-    });
-    return { count };
-  }
-
   async markRead(userId: string, announcementId: string): Promise<void> {
     const exists = await this.prisma.client.announcement.findUnique({
       where: { id: announcementId },

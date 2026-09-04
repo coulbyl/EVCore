@@ -12,6 +12,6 @@ export async function declareFixtureResult(
   await clientApiRequest<void>(`/adjustment/fixture/${fixtureId}/result`, {
     method: "PATCH",
     body,
-    fallbackErrorMessage: "Impossible de declarer le resultat du match.",
+    fallbackErrorMessage: "Impossible d'enregistrer le résultat du match.",
   });
 }

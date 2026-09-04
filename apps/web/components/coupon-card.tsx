@@ -1,15 +1,17 @@
 "use client";
 
-import { Check, ShoppingCart } from "lucide-react";
+import { Check, Eye, MessageCircle, ShoppingCart, Sun, Users } from "lucide-react";
 import {
   Badge,
   Card,
   CardContent,
   CardHeader,
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
   ProgressBar,
   cn,
 } from "@evcore/ui";
-import { CanalBadge } from "@/components/canal-badge";
 import { FixtureCard } from "@/components/fixture-card";
 import { ResultBadge, type ResultValue } from "@/components/result-badge";
 
@@ -24,7 +26,6 @@ export type NormalizedCouponLeg = {
   kickoff: string;
   score: string | null;
   htScore: string | null;
-  canal: "VALUE" | "SAFE" | "DOMINANT" | "DRAW" | "BTTS" | "GOALS";
   marketLabel: string;
   pickLabel: string;
   probability: number;
@@ -49,12 +50,21 @@ export type CouponCardProps = {
   signalScore: number;
   reasoning?: string | null;
   /**
-   * LONGSHOT_WEEKEND/MIDWEEK profile (cote cible 50-70) — no dedicated
-   * backtest exists yet, generated purely to observe real settlement data.
-   * Always shown with this badge, never as an unlabeled recommendation
-   * alongside the backtested default profile.
+   * "intraday" = régénéré dans la fenêtre proche du coup d'envoi, en plus du
+   * batch du soir déjà publié pour cette classe — un utilisateur peut donc
+   * voir deux coupons de la même classe le même jour. Pas de badge pour
+   * "evening" (le batch par défaut, sans rien de particulier à signaler),
+   * même convention que ResultBadge (rien tant qu'il n'y a rien à dire).
    */
-  isExperimental?: boolean;
+  batch?: "evening" | "intraday";
+  /**
+   * Engagement réel, jamais fabriqué (CLAUDE.md §4 point 6) — utilisateurs
+   * distincts ayant vu/joué ce coupon. Masqué à 0 (rien à dire), pas affiché
+   * comme "0 vue" qui lirait comme un coupon délaissé plutôt que "pas encore
+   * mesuré".
+   */
+  viewerCount?: number;
+  playerCount?: number;
   betStatus?: "WON" | "LOST" | null;
   legs: NormalizedCouponLeg[];
   actionSlot?: React.ReactNode;
@@ -70,7 +80,9 @@ export function CouponCard({
   combinedOdds,
   jointProbability,
   reasoning,
-  isExperimental = false,
+  batch,
+  viewerCount,
+  playerCount,
   betStatus,
   legs,
   actionSlot,
@@ -104,14 +116,6 @@ export function CouponCard({
                   {couponClass.label}
                 </Badge>
               )}
-              {isExperimental && (
-                <Badge
-                  variant="warning"
-                  className="rounded-full px-2 py-0.5 text-[0.6rem] uppercase tracking-[0.14em]"
-                >
-                  Expérimental
-                </Badge>
-              )}
               {/* Plus de « Coupon N » : le rang recommence à 1 dans chaque
                   classe, donc l'écran affichait « Coupon 1 » plusieurs fois.
                   Et il n'exprime aucune qualité — mesuré sur 5 passes, le rang
@@ -119,6 +123,14 @@ export function CouponCard({
               {couponClass && (
                 <span className="text-[0.62rem] font-medium tracking-wide text-muted-foreground">
                   {couponClass.frequency}
+                </span>
+              )}
+              {batch === "intraday" && (
+                <span
+                  title="Régénéré en journée, proche du coup d'envoi — s'ajoute au coupon du soir déjà publié pour cette classe."
+                  className="flex items-center gap-1 rounded-full border border-border/70 px-1.5 py-0.5 text-[0.6rem] font-medium text-muted-foreground"
+                >
+                  <Sun size={10} /> Intraday
                 </span>
               )}
               {betStatus === "WON" && (
@@ -132,6 +144,22 @@ export function CouponCard({
                 </span>
               )}
             </div>
+            {((viewerCount ?? 0) > 0 || (playerCount ?? 0) > 0) && (
+              <div className="mt-1 flex items-center gap-2.5 text-[0.62rem] text-muted-foreground">
+                {(viewerCount ?? 0) > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Eye size={10} /> {viewerCount} vue
+                    {(viewerCount ?? 0) > 1 ? "s" : ""}
+                  </span>
+                )}
+                {(playerCount ?? 0) > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Users size={10} /> {playerCount}{" "}
+                    {(playerCount ?? 0) > 1 ? "ont joué" : "a joué"}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <Metric label="Cote" value={`@${combinedOdds.toFixed(2)}`} />
@@ -159,9 +187,20 @@ export function CouponCard({
         </div>
 
         {reasoning && (
-          <p className="rounded-xl border border-dashed border-border/70 bg-background/20 px-3 py-2 text-xs leading-snug text-muted-foreground">
-            {reasoning}
-          </p>
+          <HoverCard openDelay={150}>
+            <HoverCardTrigger asChild>
+              <button
+                type="button"
+                className="flex w-fit items-center gap-1.5 rounded-full border border-dashed border-border/70 bg-background/20 px-2.5 py-1 text-[0.65rem] font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <MessageCircle size={11} />
+                Pourquoi ce coupon ?
+              </button>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-72 text-xs leading-snug text-foreground">
+              {reasoning}
+            </HoverCardContent>
+          </HoverCard>
         )}
 
         {actionSlot}
@@ -201,6 +240,11 @@ function CouponLegCard({
       bodyClassName="py-2"
     >
       <div className="min-w-0">
+        {/* No channel badge here (same reasoning as Decisions'
+            channel-row.tsx) — most channels are named after their own
+            target market (BTTS canal ≈ BTTS marché, DOUBLE_CHANCE ≈ Double
+            chance), so it only repeated the market name below in a
+            different case. */}
         <div className="flex min-w-0 items-start justify-between gap-2">
           <p className="line-clamp-2 min-w-0 text-sm font-semibold leading-snug text-foreground">
             {leg.pickLabel}
@@ -208,7 +252,6 @@ function CouponLegCard({
           <ResultBadge result={leg.result} finished={leg.score !== null} />
         </div>
         <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.68rem] leading-tight text-muted-foreground">
-          <CanalBadge canal={leg.canal} />
           <span className="max-w-full truncate">{leg.marketLabel}</span>
           <span className="tabular-nums">{formatPct(leg.probability)}</span>
         </p>
@@ -241,16 +284,32 @@ function Metric({
 export function CouponSlipButton({
   allInSlip,
   onPlay,
+  playedByMe = false,
 }: {
   allInSlip: boolean;
   onPlay: () => void;
+  /**
+   * A real bet slip was already submitted for this coupon by this user
+   * (`CouponProposalPlacement`, recorded server-side — never a client-side
+   * flag). Freezes the button into a readonly "Déjà joué par vous" — a user
+   * plays a given coupon proposal at most once.
+   */
+  playedByMe?: boolean;
 }) {
+  if (playedByMe) {
+    return (
+      <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-success/20 bg-success/12 py-2 text-xs font-semibold text-success">
+        <Check size={12} /> Déjà joué par toi
+      </div>
+    );
+  }
+
   return (
     <button
       type="button"
       onClick={onPlay}
       className={cn(
-        "flex w-full items-center justify-center gap-2 rounded-xl border py-2 text-xs font-semibold transition-colors",
+        "flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border py-2 text-xs font-semibold transition-colors",
         allInSlip
           ? "border-success/20 bg-success/12 text-success"
           : "border-border bg-secondary text-muted-foreground hover:text-foreground",

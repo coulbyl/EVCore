@@ -225,6 +225,52 @@ describe('NotificationService — list & mark read', () => {
     expect(result.data[0]?.isRead).toBe(false);
   });
 
+  it('filters to ANNOUNCEMENT_PUBLISHED only when category is "announcement"', async () => {
+    const prisma = makePrisma();
+
+    const service = new NotificationService(prisma, makeMail());
+    await service.list({
+      limit: 20,
+      offset: 0,
+      category: 'announcement',
+      userId: 'user-1',
+      role: UserRole.OPERATOR,
+    });
+
+    expect(prisma.client.notification.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          AND: expect.arrayContaining([
+            { type: NotificationType.ANNOUNCEMENT_PUBLISHED },
+          ]),
+        }),
+      }),
+    );
+  });
+
+  it('excludes ANNOUNCEMENT_PUBLISHED when category is "alert"', async () => {
+    const prisma = makePrisma();
+
+    const service = new NotificationService(prisma, makeMail());
+    await service.list({
+      limit: 20,
+      offset: 0,
+      category: 'alert',
+      userId: 'user-1',
+      role: UserRole.OPERATOR,
+    });
+
+    expect(prisma.client.notification.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          AND: expect.arrayContaining([
+            { type: { not: NotificationType.ANNOUNCEMENT_PUBLISHED } },
+          ]),
+        }),
+      }),
+    );
+  });
+
   it('marks a single notification as read via upsert', async () => {
     const prisma = makePrisma();
     const service = new NotificationService(prisma, makeMail());

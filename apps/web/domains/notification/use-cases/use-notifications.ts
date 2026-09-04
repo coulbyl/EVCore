@@ -2,17 +2,22 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clientApiRequest } from "@/lib/api/client-api";
-import type { PaginatedNotifications } from "../types/notification";
+import type {
+  NotificationCategory,
+  PaginatedNotifications,
+} from "../types/notification";
 
 export async function fetchNotifications(params: {
   limit?: number;
   offset?: number;
   unread?: boolean;
+  category?: NotificationCategory;
 }): Promise<PaginatedNotifications> {
   const search = new URLSearchParams();
   if (params.limit !== undefined) search.set("limit", String(params.limit));
   if (params.offset !== undefined) search.set("offset", String(params.offset));
   if (params.unread !== undefined) search.set("unread", String(params.unread));
+  if (params.category !== undefined) search.set("category", params.category);
   const qs = search.toString();
   return clientApiRequest<PaginatedNotifications>(
     `/notifications${qs ? `?${qs}` : ""}`,
@@ -31,6 +36,7 @@ export function useNotifications(
     limit?: number;
     offset?: number;
     unread?: boolean;
+    category?: NotificationCategory;
   } = {},
 ) {
   return useQuery({

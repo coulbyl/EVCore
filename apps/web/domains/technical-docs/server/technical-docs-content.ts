@@ -1,12 +1,11 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { TechnicalDoc, TechnicalDocSummary } from "../types/technical-docs";
+import type {
+  TechnicalDoc,
+  TechnicalDocSummary,
+} from "../types/technical-docs";
 
-const CONTENT_DIR = path.join(
-  process.cwd(),
-  "content",
-  "technical-docs",
-);
+const CONTENT_DIR = path.join(process.cwd(), "content", "technical-docs");
 
 // Ordre d'affichage explicite — le préfixe numérique du fichier ne sert qu'à
 // ça, il n'apparaît jamais dans l'URL (slug = nom de fichier sans préfixe).

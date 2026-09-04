@@ -10,11 +10,11 @@ import {
   type FilterState,
 } from "@evcore/ui";
 import { OperatorPerformanceCard } from "./operator-performance-card";
+import { TodayConfidenceCard } from "./today-confidence-card";
 import { WeeklyBrief } from "./weekly-brief";
 import { Announcements } from "@/components/announcements";
 import { CompetitionRanking } from "./competition-ranking";
 import { UserLeaderboard } from "./user-leaderboard";
-import { SubscriptionsShortcutCard } from "./subscriptions-shortcut-card";
 import { useCompetitionStats } from "@/domains/dashboard/use-cases/get-competition-stats";
 import { useLeaderboard } from "@/domains/dashboard/use-cases/get-leaderboard";
 import { useDashboardAnnouncements } from "@/domains/announcements/use-cases/get-dashboard-announcements";
@@ -97,7 +97,13 @@ export function DashboardPageClientOperator() {
 
           {/* ── Bento grid principal ── */}
           <div className="bento-grid">
-            {/* Row 1 : Performance pleine largeur */}
+            {/* Row 1 : Confiance du jour pleine largeur — "puis-je faire
+                confiance aux sélections d'aujourd'hui", avant tout le reste */}
+            <div className="col-span-2 sm:col-span-6 lg:col-span-12 flex flex-col">
+              <TodayConfidenceCard from={fromIso} to={toIso} />
+            </div>
+
+            {/* Row 2 : Performance pleine largeur */}
             <div
               data-tour="dashboard-performance"
               className="col-span-2 sm:col-span-6 lg:col-span-12 flex flex-col"
@@ -105,7 +111,7 @@ export function DashboardPageClientOperator() {
               <OperatorPerformanceCard from={fromIso} to={toIso} />
             </div>
 
-            {/* Row 2 : Classement ligues + Top joueurs */}
+            {/* Row 3 : Classement ligues + Top joueurs */}
             <div
               data-tour="dashboard-ranking"
               className="col-span-2 sm:col-span-3 lg:col-span-6"
@@ -122,14 +128,6 @@ export function DashboardPageClientOperator() {
                 isLoading={leaderboardLoading}
                 isError={leaderboardError}
               />
-            </div>
-
-            {/* Row 3 : Raccourci Abonnements */}
-            <div
-              data-tour="dashboard-subscriptions-shortcut"
-              className="col-span-2 sm:col-span-3 lg:col-span-6"
-            >
-              <SubscriptionsShortcutCard />
             </div>
           </div>
         </div>

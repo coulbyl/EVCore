@@ -125,7 +125,6 @@ exports[`BettingEngineService golden — analyzeFixture decision output > locks 
     "winToNilHome": 0.451878,
   },
   "status": "analyzed",
-  "valueBet": null,
 }
 `;
 
@@ -254,17 +253,5 @@ exports[`BettingEngineService golden — analyzeFixture decision output > locks 
     "winToNilHome": 0.451878,
   },
   "status": "analyzed",
-  "valueBet": {
-    "ev": "0.5455264976689285",
-    "fixtureId": "fixture-id",
-    "market": "ONE_X_TWO",
-    "modelRunId": "run-id",
-    "odds": "2.2",
-    "pick": "HOME",
-    "pickKey": "ONE_X_TWO|HOME",
-    "probability": "0.7025120443949675",
-    "qualityScore": "0.35202918950868656854",
-    "stakePct": "0.01",
-  },
 }
 `;

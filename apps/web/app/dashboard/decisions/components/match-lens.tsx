@@ -7,6 +7,7 @@ import { groupByCompetition } from "@/lib/group-by-competition";
 import { groupByHour } from "@/lib/group-by-hour";
 import { translateCountry } from "@/lib/competition-i18n";
 import { GroupBySelect, type GroupByMode } from "@/components/group-by-select";
+import type { ChannelCalibrationByKey } from "./channel-constants";
 import { MatchCard } from "./match-card";
 
 // Grouping state for the "Par match" lens. Lifted into a hook so the filter
@@ -54,10 +55,12 @@ export function MatchGrid({
   visible,
   locale,
   groupBy,
+  calibrationByKey,
 }: {
   visible: ChannelDecisionMatchDto[];
   locale: string;
   groupBy: GroupByMode;
+  calibrationByKey?: ChannelCalibrationByKey;
 }) {
   const t = useTranslations("decisions");
 
@@ -95,6 +98,7 @@ export function MatchGrid({
                   key={group.fixtureId}
                   group={group}
                   locale={locale}
+                  calibrationByKey={calibrationByKey}
                 />
               ))}
             </div>
@@ -126,7 +130,12 @@ export function MatchGrid({
           </h3>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
             {competitionGroup.items.map((group) => (
-              <MatchCard key={group.fixtureId} group={group} locale={locale} />
+              <MatchCard
+                key={group.fixtureId}
+                group={group}
+                locale={locale}
+                calibrationByKey={calibrationByKey}
+              />
             ))}
           </div>
         </section>

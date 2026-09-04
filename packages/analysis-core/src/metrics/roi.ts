@@ -10,7 +10,7 @@ export type EvBin = {
   roi: number;
 };
 
-// EV-bin edges (shared with the /coupons/roi promotion view).
+// EV-bin edges.
 const EV_BIN_EDGES: { label: string; from: number; to: number }[] = [
   { label: "< 0%", from: -Infinity, to: 0 },
   { label: "0–4%", from: 0, to: 0.04 },

@@ -6,7 +6,7 @@ import { clientApiRequest } from "@/lib/api/client-api";
 
 async function fetchAuditOverview(): Promise<AuditOverview> {
   return clientApiRequest<AuditOverview>("/audit/overview", {
-    fallbackErrorMessage: "Impossible de charger l'overview audit.",
+    fallbackErrorMessage: "Impossible de charger la vue d'ensemble de l'audit.",
   });
 }
 

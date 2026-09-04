@@ -6,6 +6,7 @@
 // enforced automatically by `architecture.guard.spec.ts`.
 export * from "./types";
 export * from "./display/market-labels-fr";
+export * from "./display/channel-labels-fr";
 export * from "./math";
 export * from "./ev";
 export * from "./probability";
@@ -15,3 +16,5 @@ export * from "./selection";
 export * from "./strategies";
 export * from "./metrics";
 export * from "./pricing";
+export * from "./coupon";
+export * from "./model-run";

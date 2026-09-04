@@ -24,11 +24,9 @@
     "bankroll": "Bankroll",
     "betSlips": "My bet slips",
     "inbox": "Inbox",
-    "subscriptions": "Subscriptions",
     "audit": "Audit",
     "users": "Users",
     "announcements": "Announcements",
-    "updates": "Announcements",
     "ml": "ML Engine",
     "reports": "Reports",
     "engine": "Engine & ETL",
@@ -41,9 +39,7 @@
     "replayTour": "Replay guide",
     "help": "Help",
     "summary": "Selections summary",
-    "investmentSummary": "Investment summary",
-    "coupons": "Combos",
-    "investment": "Invest",
+    "coupons": "Coupons",
     "decisions": "Decisions",
     "decisionsShort": "Decisions",
     "arbitrage": "Arbitrage"
@@ -51,107 +47,81 @@
   "decisions": {
     "channels": {
       "VALUE": {
-        "label": "Value",
         "description": "Positive expected value odds."
       },
       "SAFE": {
-        "label": "Safety",
         "description": "Prudent selections built for steadier returns."
       },
       "DOMINANT": {
-        "label": "Winner",
         "description": "The model's strongest 1X2 angle."
       },
       "BTTS": {
-        "label": "BTTS",
         "description": "Both teams to score."
       },
       "DRAW": {
-        "label": "Draw",
         "description": "Draw angle from market-implied probability."
       },
       "GOALS": {
-        "label": "Goals",
         "description": "Total goals over/under line."
       },
       "CLEAN_SHEET": {
-        "label": "Clean sheet",
         "description": "A team finishes the match without conceding."
       },
       "TEAM_TOTAL": {
-        "label": "Team goals",
         "description": "Over/under goals scored by a single team."
       },
       "WIN_EITHER_HALF": {
-        "label": "Wins a half",
         "description": "A team wins at least one of the two halves."
       },
       "FIRST_HALF": {
-        "label": "1st half",
         "description": "First-half winner."
       },
       "DOUBLE_CHANCE": {
-        "label": "Double chance",
         "description": "Double chance (1X, X2, or 12)."
       },
       "UNDERDOG": {
-        "label": "Underdog",
         "description": "Backs the market's underdog."
       },
       "FAVORITE": {
-        "label": "Favorite",
         "description": "Backs the market's favorite."
       },
       "LIVE_VALUE": {
-        "label": "Live value",
         "description": "Value detected live during the match."
       },
       "MARKET_MOVE": {
-        "label": "Line move",
         "description": "Significant pre-match odds movement detected."
       },
       "CONSENSUS": {
-        "label": "Consensus",
         "description": "Several independent strategies converge on the same pick."
       },
       "CONTRARIAN": {
-        "label": "Contrarian",
         "description": "Position against the market."
       },
       "AVOID": {
-        "label": "Caution",
         "description": "Fixture flagged: implausible model/market divergence."
       },
       "CORRECT_SCORE": {
-        "label": "Exact score",
         "description": "Most likely exact scoreline (observation only, never staked)."
       },
       "RESULT_TOTAL_GOALS": {
-        "label": "Result + Goals",
         "description": "Match result combined with total goals."
       },
       "OVER_UNDER_HT": {
-        "label": "HT goals",
         "description": "Over/under goals at half-time."
       },
       "RESULT_BTTS": {
-        "label": "Result + BTTS",
         "description": "Match result combined with both teams to score."
       },
       "DRAW_NO_BET": {
-        "label": "Draw no bet",
         "description": "Result excluding the draw — stake refunded on a draw."
       },
       "WIN_TO_NIL": {
-        "label": "Win to nil",
         "description": "A team wins the match without conceding."
       },
       "HALF_TIME_FULL_TIME": {
-        "label": "HT/FT",
         "description": "Half-time result combined with the final result."
       },
       "VANTAGE": {
-        "label": "Arbitrage",
         "description": "Reads every other channel's decision and its measured reliability on this competition; only proposes a pick when it spots a concrete tension or bias between them."
       }
     },
@@ -181,8 +151,7 @@
       "NOT_APPLICABLE": "Not applicable"
     },
     "lens": {
-      "matches": "By match",
-      "channels": "By channel"
+      "matches": "Match"
     },
     "avoid": {
       "banner": "Caution",
@@ -194,7 +163,8 @@
     "calibration": {
       "banner": "Suspect data",
       "tooltipLabel": "Calibration alert",
-      "tooltipDetail": "The model and the market strongly disagree on this match (flipped favorite or extreme gap across several bookmakers). This almost always signals corrupted input data rather than an opportunity — the engine automatically excludes every pick of this match from real bets."
+      "tooltipDetail": "The model and the market strongly disagree on this match (flipped favorite or extreme gap across several bookmakers). This almost always signals corrupted input data rather than an opportunity — the engine automatically excludes every pick of this match from real bets.",
+      "badgeTooltip": "{status, select, GREEN {This channel has been reliable in this competition} ORANGE {This channel needs watching in this competition — its actual hit rate drifts from what it announces} RED {This channel has been unreliable in this competition — its actual hit rate is well below what it announces} other {Reliability not measurable in this competition}} ({n, plural, one {# settled bet} other {# settled bets}})."
     },
     "consensus": {
       "tooltipLabel": "Consensus signal",
@@ -205,30 +175,32 @@
     "noPickShort": "no pick",
     "pickCount": "{count, plural, one {# pick} other {# picks}}",
     "evaluatedCount": "{count, plural, one {# other channel evaluated} other {# other channels evaluated}}",
+    "showMorePicks": "{count, plural, one {Show # more market} other {Show # more markets}}",
+    "showLessPicks": "Show less",
     "filters": {
       "all": "All",
-      "label": "Filters",
+      "leagueLabel": "League",
+      "channelLabel": "Channel",
+      "displayLabel": "Display",
       "noMatch": "No fixture matches the filters.",
       "groupByNone": "By kickoff time",
       "groupByLeague": "Group by league",
-      "moreLeagues": "More",
       "searchLeague": "Search a competition…",
-      "noLeagueResults": "No competition."
+      "noLeagueResults": "No competition.",
+      "searchChannel": "Search a channel…",
+      "noChannelResults": "No channel."
     },
     "helpLink": "How to read a pick"
   },
   "arbitrage": {
     "title": "Arbitrage",
     "badge": "AI read",
-    "description": "Reads every other channel's decision and its measured reliability on this competition — only proposes a pick when it spots a concrete tension or bias between them. On most matches, the right call is to play nothing.",
-    "stats": {
-      "readsToday": "reads today",
-      "plays": "tensions spotted"
-    },
+    "description": "Reads every other channel's decision and its measured reliability on this competition — only proposes a bet when it spots a real disagreement between them, never just to confirm what they already say. On most matches, the right call is to play nothing.",
     "filters": {
       "all": "All",
       "play": "Recommended",
-      "noPlay": "Avoid"
+      "noPlay": "No opinion",
+      "label": "Filter"
     },
     "reasoningLabel": "Arbitrage read",
     "sourcesLabel": "Sources",
@@ -237,7 +209,7 @@
     "emptyTitle": "No reads",
     "emptyDescription": "The channel hasn't analyzed anything for this date yet.",
     "emptyFilteredTitle": "Nothing to report",
-    "emptyFilteredDescription": "No tension identified today — try \"All\" to see the reads with no pick."
+    "emptyFilteredDescription": "No disagreement identified today — try \"All\" to see the matches with no opinion."
   },
   "notifications": {
     "title": "Notifications",
@@ -246,6 +218,8 @@
     "markAllRead": "Mark all as read",
     "unread": "Unread",
     "all": "All",
+    "announcements": "📣 Announcements",
+    "alerts": "🔔 Alerts",
     "viewAll": "View all",
     "isRead": "Read",
     "justNow": "Just now",
@@ -274,7 +248,7 @@
     "close": "Close",
     "isRead": "Read"
   },
-  "onboarding": {
+  "productTour": {
     "next": "Next",
     "prev": "Previous",
     "done": "Done",
@@ -298,37 +272,29 @@
       "title": "Rankings",
       "description": "League ranking by engine performance, and the leaderboard of the most disciplined users."
     },
-    "dashboardSubscriptions": {
-      "title": "Your subscriptions",
-      "description": "A shortcut to your active subscriptions — the automatic virtual staking covered later in this tour."
-    },
     "decisions": {
       "title": "Decisions",
       "description": "Every match of the day, with what each channel thinks. The \"?\" button here explains how to read a pick anytime."
-    },
-    "investment": {
-      "title": "Investment",
-      "description": "Three views: what we back (the channels measured profitable), what we watch, and what the guardrails filtered out — with the reason. The “?” explains how edge and EV are computed."
     },
     "fixtures": {
       "title": "Matches",
       "description": "Every match of the day, filterable by status. The betting index gives you the key stats at a glance."
     },
+    "arbitrage": {
+      "title": "Arbitrage",
+      "description": "VANTAGE, our AI channel, only proposes a bet when it spots a real disagreement between the other channels — never just to confirm what they already say. The \"?\" here details its logic."
+    },
     "coupons": {
-      "title": "Combos",
+      "title": "Coupons",
       "description": "Combos generated automatically from the best picks. The \"?\" opens the channel reliability map for what's being combined."
     },
     "betSlipComposer": {
       "title": "My bet slip",
-      "description": "Build your own bet slip by adding picks from Decisions or Investment — this button follows you everywhere in the app."
+      "description": "Build your own bet slip by adding picks from Decisions — this button follows you everywhere in the app."
     },
     "betSlips": {
       "title": "My bet slips",
       "description": "Your history of placed bet slips — settled or pending — with the period summary up top."
-    },
-    "subscriptions": {
-      "title": "Subscriptions",
-      "description": "A fixed discipline per subscription — automatic virtual staking on a channel or combo, tracked without you having to think about it."
     },
     "bankroll": {
       "title": "Bankroll",
@@ -345,10 +311,6 @@
     "inbox": {
       "title": "Inbox",
       "description": "A direct line to the EVCore team for your questions or feedback."
-    },
-    "updates": {
-      "title": "Announcements",
-      "description": "The history of announcements published by the team — never lost even after you close the dashboard banner."
     },
     "evaFab": {
       "title": "Eva",
@@ -458,6 +420,12 @@
     "email": "Email",
     "username": "Username",
     "bio": "Bio",
+    "phone": "Phone",
+    "phoneConsentLabel": "I agree to be contacted by phone as part of a field outreach effort. Never automated marketing calls.",
+    "phonePlaceholder": "+1 555 000 0000",
+    "phoneAdd": "Add my number",
+    "phoneRemove": "Turn off",
+    "phoneSaveError": "Couldn't save the phone number.",
     "avatar": "Avatar",
     "save": "Save",
     "cancel": "Cancel",
@@ -466,11 +434,15 @@
     "password": "Password",
     "changePassword": "Change password",
     "changePasswordHint": "Password change will be available soon.",
+    "groupAccount": "Account",
+    "groupPreferences": "Preferences",
+    "groupBetting": "Betting",
     "tabProfile": "Profile",
     "tabPreferences": "Preferences",
     "tabSecurity": "Security",
     "tabNotifications": "Notifications",
     "tabBankroll": "Bankroll",
+    "tabPersonalization": "Personalization",
     "requires": "Requires:",
     "avatarSaveError": "Couldn't save the avatar.",
     "genericError": "Something went wrong.",
@@ -526,32 +498,32 @@
     "roles": {
       "ADMIN": "Admin",
       "OPERATOR": "Operator"
+    },
+    "personalization": {
+      "leaguesTitle": "Followed leagues",
+      "leaguesSubtitle": "{count} selected",
+      "leaguesEmpty": "No league followed yet.",
+      "leaguesSearchPlaceholder": "Search a league or country...",
+      "leaguesNoResults": "No league matches.",
+      "channelsTitle": "Followed channels",
+      "channelsHint": "Track the measured reliability of the channels you care about — judged on their calibration, meaning their actual results compared to what they announce.",
+      "channelsEmpty": "No channel followed yet.",
+      "discoverButton": "Discover channels",
+      "discoverSearchPlaceholder": "Search a channel...",
+      "discoverEmpty": "No channel matches.",
+      "discoverStatusTooltip": "{status, select, GREEN {This channel has been reliable over the last 90 days} ORANGE {This channel is worth watching over the last 90 days — its results diverge from what it announces} RED {This channel has been unreliable over the last 90 days — its actual results are well below what it announces} other {Reliability not measurable over the last 90 days}} ({n, plural, one {# settled bet} other {# settled bets}}).",
+      "discoverTip": "3 to 5 channels are enough to keep recommendations readable.",
+      "follow": "+ Follow",
+      "unfollow": "Remove",
+      "since": "since {date}",
+      "riskProfileTitle": "Risk profile",
+      "riskProfileSubtitle": "Orients the Conservative / Balanced / Aggressive mix of coupons highlighted to you",
+      "riskProfile": {
+        "CONSERVATIVE": "Conservative",
+        "BALANCED": "Balanced",
+        "AGGRESSIVE": "Aggressive"
+      }
     }
-  },
-  "picks": {
-    "pageTitle": "Today's picks",
-    "evChannel": "EV Channel",
-    "safeValue": "Safe Value",
-    "confidence": "VICTOIRE",
-    "matchNull": "DRAW",
-    "goals": "GOALS",
-    "btts": "BTTS",
-    "cleanSheet": "CS",
-    "teamTotal": "TEAM GOALS",
-    "winEitherHalf": "WINS HALF",
-    "firstHalf": "1ST HALF",
-    "doubleChance": "DC",
-    "resultTotalGoals": "SCORE+GOALS",
-    "overUnderHt": "O/U HT",
-    "resultBtts": "SCORE+BTTS",
-    "drawNoBet": "DNB",
-    "winToNil": "WIN TO NIL",
-    "halfTimeFullTime": "HT/FT",
-    "bttsLabel": "BTTS — Both Teams To Score",
-    "bttsYes": "BTTS YES",
-    "bttsNo": "BTTS NO",
-    "loadError": "Unable to load today's picks.",
-    "empty": "No picks for today."
   },
   "performance": {
     "headline": "Overall performance",
@@ -591,20 +563,10 @@
       "read": "Read",
       "markAsRead": "Mark as read"
     },
-    "predictions": {
-      "title": "Today's predictions",
-      "empty": "No predictions for today.",
-      "home": "Home",
-      "away": "Away",
-      "draw": "Draw",
-      "yesterday": "yesterday"
-    },
     "leagueRanking": {
       "title": "League ranking",
-      "period": "30d · model ROI",
-      "empty": "No data over 30 days.",
-      "model": "Model",
-      "myBets": "My bets"
+      "period": "30d · reliability",
+      "empty": "No data over 30 days."
     },
     "operatorCard": {
       "headline": "My performance",
@@ -623,6 +585,34 @@
       "toWatch": "To watch",
       "pendingResult": "pending result",
       "pendingResults": "pending results"
+    },
+    "todayConfidence": {
+      "headline": "Today",
+      "title": "Engine confidence",
+      "confidenceHigh": "High confidence",
+      "confidenceModerate": "Moderate confidence",
+      "confidenceLow": "Low confidence",
+      "confidenceUnknown": "Not enough data",
+      "toFollow": "To follow today",
+      "toAvoid": "To avoid today",
+      "emptyFollow": "No reliable pick today",
+      "emptyAvoid": "No channel to avoid today"
+    },
+    "engineHealth": {
+      "headline": "Engine health",
+      "title": "Overview",
+      "globalRatio": "Calibration ratio",
+      "redChannels": "Unreliable channels",
+      "activeSuspensions": "Suspended markets",
+      "trend": "Trend",
+      "trendCaption": "7d vs 30d",
+      "calibrationCurve": "Calibration curve",
+      "announced": "Announced",
+      "actual": "Actual",
+      "suspendedMarkets": "Suspended markets",
+      "recentAlerts": "Recent alerts (7d)",
+      "channelsByDeviation": "Channels sorted by calibration deviation",
+      "channel": "Channel"
     }
   },
   "betSlips": {
@@ -865,177 +855,12 @@
     "aiNote": "These proposals are generated by our AI engine, which continuously improves based on past results. This is not financial advice.",
     "helpLink": "The channel map"
   },
-  "investment": {
-    "pageTitle": "Invest",
-    "views": {
-      "assumed": {
-        "label": "What we back",
-        "subtitle": "The channels whose ROI stays positive once sampling noise is removed — 2 out of 18 at the last measurement. Ranked by expected hit rate. DRAW appears only in the leagues where it is measured.",
-        "empty": "No backed pick for this date."
-      },
-      "watch": {
-        "label": "Under watch",
-        "subtitle": "Every other channel, in one filterable list. Each pick carries its channel's ROI, shrunk toward the mean by the volume behind it: context, not a recommendation.",
-        "empty": "No pick under watch for this date."
-      },
-      "excluded": {
-        "label": "Filtered out",
-        "subtitle": "What the guardrails removed, and why. A filter is judged on what it excludes: this view exists so that can be checked.",
-        "empty": "No pick filtered out for this date."
-      }
-    },
-    "exclusion": {
-      "AVOID": "AVOID on this fixture",
-      "CALIBRATION_ALERT": "Model and market disagree",
-      "LAMBDA_INCOHERENT": "Contradicts the model's lambda",
-      "EDGE_TOO_HIGH": "Claimed edge too high",
-      "ODDS_TOO_SHORT": "Odds too short"
-    },
-    "expectedRate": "{rate} expected",
-    "channelRoi": "channel {roi}",
-    "channelRoiHint": "{channel} channel ROI shrunk toward the mean, measured on {n} settled selections.",
-    "channelFilterLabel": "Channel",
-    "channelFilterAll": "All channels",
-    "empty": "No pick available for this date.",
-    "loadError": "Could not load picks.",
-    "addToSlip": "Add to slip",
-    "added": "Added",
-    "modelProbability": "Raw model:",
-    "filtersLabel": "Filters",
-    "groupByNone": "No grouping",
-    "groupByLeague": "Group by league",
-    "helpLink": "Edge and EV explained"
-  },
-  "subscriptions": {
-    "pageTitle": "Subscriptions",
-    "subtitle": "A discipline fixed per subscription, simulated automatically — independent from the real portfolio.",
-    "newSubscription": "New subscription",
-    "loading": "Loading…",
-    "stats": {
-      "activeCount": "Active subscriptions",
-      "totalStaked": "Total staked (simulated)",
-      "netPnl": "Net profit/loss",
-      "globalRoi": "Global ROI"
-    },
-    "empty": {
-      "title": "No subscriptions",
-      "description": "Create a subscription to automatically track a staking discipline, without touching it day after day."
-    },
-    "card": {
-      "stakePerEvent": "Stake / event",
-      "roiCumulative": "Cumulative ROI",
-      "hitRate": "Hit rate",
-      "eventsSettled": "{settled}/{total} event(s) settled · {staked} staked in total"
-    },
-    "deleteDialog": {
-      "title": "Delete this subscription?",
-      "description": "This action is irreversible: the subscription and its simulated event history will be permanently deleted.",
-      "cancel": "Cancel",
-      "confirm": "Delete",
-      "confirming": "Deleting…"
-    },
-    "status": {
-      "ACTIVE": "Active",
-      "ENDED": "Ended",
-      "CANCELLED": "Cancelled"
-    },
-    "sources": {
-      "COUPON_BEST": "Bet slip (most likely of the day)",
-      "COUPON_ALL": "Bet slips of the day (short odds)",
-      "CHANNEL_VALUE": "VALUE",
-      "CHANNEL_SAFE": "SAFE",
-      "CHANNEL_DOMINANT": "DOMINANT",
-      "CHANNEL_DRAW": "DRAW",
-      "CHANNEL_BTTS": "BTTS",
-      "CHANNEL_DOUBLE_CHANCE": "DOUBLE_CHANCE",
-      "CHANNEL_TEAM_TOTAL": "TEAM_TOTAL"
-    },
-    "pickModes": {
-      "INVESTIR": "Invest picks (ranked and calibrated)",
-      "DECISIONS_FIRST": "First matches of the day (Decisions, unranked)",
-      "DECISIONS_LAST": "Last matches of the day (Decisions, unranked)"
-    },
-    "pickModeShort": {
-      "INVESTIR": "Invest",
-      "DECISIONS_FIRST": "Decisions (first)",
-      "DECISIONS_LAST": "Decisions (last)"
-    },
-    "topN": "Top {n}",
-    "weekdayFull": {
-      "0": "Sunday",
-      "1": "Monday",
-      "2": "Tuesday",
-      "3": "Wednesday",
-      "4": "Thursday",
-      "5": "Friday",
-      "6": "Saturday"
-    },
-    "weekdayShort": {
-      "0": "Sun",
-      "1": "Mon",
-      "2": "Tue",
-      "3": "Wed",
-      "4": "Thu",
-      "5": "Fri",
-      "6": "Sat"
-    },
-    "leaguePresets": {
-      "TOP5_EUROPE": "Major European leagues",
-      "UEFA_CUPS": "European cups (UEFA)"
-    },
-    "dayConditions": {
-      "allDays": "Every day",
-      "competitions": "{count} competition(s)",
-      "none": "No condition"
-    },
-    "form": {
-      "loadingCatalog": "Loading catalog…",
-      "title": "New subscription",
-      "description": "A fixed discipline: source, stake, days, period. Automatic tracking, no link to the real portfolio.",
-      "sourceLabel": "Source",
-      "pickModeLabel": "Daily pick selection",
-      "topNLabel": "Picks per day",
-      "stakeLabel": "Stake per event",
-      "weekdaysLabel": "Days of week",
-      "leaguesLabel": "Leagues (optional, in addition to checked days)",
-      "leaguesPlaceholder": "Choose leagues...",
-      "leaguesSearchPlaceholder": "Search a league...",
-      "leaguesEmpty": "No league found.",
-      "dayConditionMissing": "Check at least one day of week or choose at least one league.",
-      "startDateLabel": "Start date",
-      "endDateLabel": "End date",
-      "endDateBeforeStart": "End date must be after start date.",
-      "createError": "Unable to create the subscription.",
-      "submitting": "Creating…",
-      "submit": "Create subscription",
-      "sourceGroupCoupon": "Bet slips",
-      "sourceGroupBacked": "Backed channels (measured ROI positive)",
-      "sourceGroupWatch": "Channels under watch (measured ROI negative)",
-      "sourceRoiHint": "Measured ROI for this channel: {roi}, over {n} settled selections, shrunk toward the mean by the volume behind it. This is not a forecast."
-    },
-    "detail": {
-      "notFoundTitle": "Subscription detail",
-      "notFound": "Subscription not found.",
-      "notFoundOrDeleted": "Subscription not found or already deleted.",
-      "cancel": "Cancel subscription",
-      "delete": "Delete",
-      "statLabels": {
-        "totalStaked": "Total staked",
-        "netPnl": "Net profit/loss",
-        "roi": "ROI"
-      },
-      "history": "Event history",
-      "historyLimited": "{shown} most recent shown",
-      "historyEmpty": "No event yet.",
-      "results": {
-        "WON": "Won",
-        "LOST": "Lost",
-        "VOID": "Refunded"
-      },
-      "pending": "Pending",
-      "odds": "odds {value}",
-      "couponLabel": "Bet slip — combined odds {value}",
-      "genericEvent": "Event"
-    }
+  "onboarding": {
+    "title": "Quick setup",
+    "description": "Personalize your experience in three quick steps — each one is optional.",
+    "stepCounter": "Step {step} of {total}",
+    "skip": "Skip",
+    "next": "Next",
+    "finish": "Finish"
   }
 }

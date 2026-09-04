@@ -97,3 +97,30 @@ describe('ChannelDecisionRepository.findNewCoachTeams', () => {
     expect(fixtureFindMany).not.toHaveBeenCalled();
   });
 });
+
+describe('ChannelDecisionRepository.findFacetRows', () => {
+  it('forwards the raw per-(fixture, channel) rows returned by the query', async () => {
+    const rows = [
+      {
+        channel: 'DRAW',
+        code: 'PL',
+        name: 'Premier League',
+        country: 'England',
+      },
+      { channel: 'BTTS', code: 'BL1', name: 'Bundesliga', country: 'Germany' },
+    ];
+    const queryRaw = vi.fn().mockResolvedValue(rows);
+    const prisma = {
+      client: { $queryRaw: queryRaw },
+    } as unknown as PrismaService;
+    const repo = new ChannelDecisionRepository(prisma);
+
+    const result = await repo.findFacetRows({
+      gte: new Date('2026-01-18T00:00:00Z'),
+      lte: new Date('2026-01-18T23:59:59.999Z'),
+    });
+
+    expect(result).toBe(rows);
+    expect(queryRaw).toHaveBeenCalledTimes(1);
+  });
+});

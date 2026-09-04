@@ -1,10 +1,11 @@
 import { Type } from 'class-transformer';
-import type { UnitMode } from '@evcore/db';
+import type { RiskProfile, UnitMode } from '@evcore/db';
 import {
   IsBoolean,
   IsIn,
   IsNumber,
   IsOptional,
+  IsPhoneNumber,
   IsString,
   IsUrl,
   Matches,
@@ -52,10 +53,30 @@ export class UpdateMeDto {
   unitPercent?: number;
 
   @IsOptional()
+  @IsString()
+  @IsIn(['CONSERVATIVE', 'BALANCED', 'AGGRESSIVE'])
+  riskProfile?: RiskProfile;
+
+  @IsOptional()
   @IsBoolean()
   emailSupportNotificationsEnabled?: boolean;
 
   @IsOptional()
   @IsBoolean()
   hasSeenOnboarding?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  hasCompletedOnboarding?: boolean;
+
+  // Format libre (pas de région imposée — IsPhoneNumber(undefined) accepte
+  // n'importe quel indicatif international valide, cf. décision produit
+  // 2026-09-04, TODO.md "pas de numéro de téléphone collecté").
+  @IsOptional()
+  @IsPhoneNumber(undefined)
+  phoneNumber?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  phoneNumberConsentGiven?: boolean;
 }

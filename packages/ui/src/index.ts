@@ -13,6 +13,7 @@ export * from "./components/data-table";
 export * from "./components/date-picker";
 export * from "./components/dialog";
 export * from "./components/dropdown-menu";
+export * from "./components/hover-card";
 export * from "./components/filter-bar";
 export * from "./components/empty";
 export * from "./components/feature-card";

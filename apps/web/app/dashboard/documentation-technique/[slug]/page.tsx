@@ -27,7 +27,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const doc = await getTechnicalDocBySlug(slug);
-  return { title: doc ? `Documentation technique · ${doc.title}` : "Documentation technique" };
+  return {
+    title: doc
+      ? `Documentation technique · ${doc.title}`
+      : "Documentation technique",
+  };
 }
 
 export default async function TechnicalDocPage({

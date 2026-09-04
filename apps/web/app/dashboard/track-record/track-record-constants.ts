@@ -45,29 +45,6 @@ export function dateRangeForPeriod(period: PeriodKey): {
   return { from, to };
 }
 
-// CODE (Français) — même convention que la formation (apps/web/content/formation).
-export const CHANNEL_LABELS: Record<ChannelStatsItem["channel"], string> = {
-  VALUE: "VALUE (Valeur)",
-  SAFE: "SAFE (Sécurité)",
-  DOMINANT: "DOMINANT (Victoire)",
-  DRAW: "DRAW (Nul)",
-  BTTS: "BTTS (Les deux marquent)",
-  GOALS: "GOALS (Buts)",
-  CLEAN_SHEET: "CLEAN_SHEET (Cage inviolée)",
-  TEAM_TOTAL: "TEAM_TOTAL (Buts par équipe)",
-  DOUBLE_CHANCE: "DOUBLE_CHANCE (Double chance)",
-  DRAW_NO_BET: "DRAW_NO_BET (Remboursé si nul)",
-  WIN_TO_NIL: "WIN_TO_NIL (Gagne sans encaisser)",
-  FIRST_HALF: "FIRST_HALF (1ʳᵉ mi-temps)",
-  OVER_UNDER_HT: "OVER_UNDER_HT (Plus/moins mi-temps)",
-  HALF_TIME_FULL_TIME: "HALF_TIME_FULL_TIME (Mi-temps/Fin)",
-  RESULT_TOTAL_GOALS: "RESULT_TOTAL_GOALS (Issue + total)",
-  RESULT_BTTS: "RESULT_BTTS (Issue + BTTS)",
-  WIN_EITHER_HALF: "WIN_EITHER_HALF (Gagne une mi-temps)",
-  CORRECT_SCORE: "CORRECT_SCORE (Score exact)",
-  VANTAGE: "VANTAGE (Lecture croisée)",
-};
-
 /**
  * Ordre d'affichage — purement cosmétique.
  *
@@ -113,6 +90,7 @@ export function orderChannels<
 
 export type MergedChannelRow = ChannelStatsItem & {
   status: ChannelHealthItem["status"];
+  calibrationRatio: ChannelHealthItem["calibrationRatio"];
 };
 
 /**
@@ -128,11 +106,13 @@ export function mergeChannelData(
   stats: ChannelStatsItem[],
   health: ChannelHealthItem[],
 ): MergedChannelRow[] {
-  const statusByChannel = new Map(health.map((h) => [h.channel, h.status]));
+  const healthByChannel = new Map(health.map((h) => [h.channel, h]));
   return orderChannels(
     stats.map((row) => ({
       ...row,
-      status: statusByChannel.get(row.channel) ?? "INSUFFICIENT_DATA",
+      status: healthByChannel.get(row.channel)?.status ?? "INSUFFICIENT_DATA",
+      calibrationRatio:
+        healthByChannel.get(row.channel)?.calibrationRatio ?? null,
     })),
   );
 }
@@ -151,10 +131,21 @@ export function formatHitRate(value: number | null): string {
   return `${(value * 100).toFixed(0)}%`;
 }
 
-// Same signal as ChannelStatusBadge, applied to the ROI figure itself so the
-// number reads as positive/negative/borderline before the reader parses the
-// sign — the badge alone left ROI as flat, uncolored text.
-const ROI_TONE_CLASS: Record<ChannelStatus, string> = {
+// Ratio réel/annoncé — proche de 1 = bien calibré (see backend
+// dashboard.service.ts's calibrationRatioOf). Not a percentage.
+export function formatCalibrationRatio(value: number | null): string {
+  if (value === null) return "—";
+  return `${value.toFixed(2)}×`;
+}
+
+// Same signal as ChannelStatusBadge, applied to the calibration-ratio figure
+// so the number reads as trustworthy/borderline/not before the reader parses
+// it — the badge alone left it as flat, uncolored text. NOT applied to the
+// ROI figure: `status` is calibration-based (see dashboard.service.ts's
+// calibrationStatus), so tinting ROI by it would color a number the status
+// no longer describes (a channel can show a negative ROI and still be
+// GREEN — see docs/vantage-centric-redesign-2026-09-01.md §5.4, DRAW).
+const STATUS_TONE_CLASS: Record<ChannelStatus, string> = {
   GREEN: "text-success",
   ORANGE: "text-warning",
   RED: "text-danger",
@@ -162,6 +153,6 @@ const ROI_TONE_CLASS: Record<ChannelStatus, string> = {
   INSUFFICIENT_DATA: "text-muted-foreground",
 };
 
-export function roiToneClass(status: ChannelStatus): string {
-  return ROI_TONE_CLASS[status];
+export function statusToneClass(status: ChannelStatus): string {
+  return STATUS_TONE_CLASS[status];
 }

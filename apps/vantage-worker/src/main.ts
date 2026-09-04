@@ -70,9 +70,50 @@ async function main() {
     },
   );
 
+  // Daily coupon generation (docs/vantage-centric-redesign-2026-09-01.md
+  // §9bis) — its own independent cron, same self-scheduling principle as
+  // the sweep above, no dependency on apps/backend's queue. See
+  // config.ts's couponCron doc comment for how its default relates to
+  // apps/backend's own analysis cron.
+  await queue.add(
+    "generate-coupons",
+    {},
+    {
+      repeat: { pattern: config.couponCron },
+      jobId: "vantage-recurring-coupon-generation",
+    },
+  );
+  // Self-healing second pass — see config.ts's couponRetryCron doc comment.
+  // Distinct jobId (same job name, "generate-coupons") so both repeatable
+  // registrations coexist instead of one overwriting the other.
+  await queue.add(
+    "generate-coupons",
+    {},
+    {
+      repeat: { pattern: config.couponRetryCron },
+      jobId: "vantage-recurring-coupon-generation-retry",
+    },
+  );
+
+  // Intraday batch (recheck J-J) — see config.ts's couponIntradayCron doc
+  // comment. Coexists with the evening batch above, never overwrites it
+  // (persist-coupon-proposal.ts's INTRADAY_SIGNAL_WINDOW_DAYS).
+  await queue.add(
+    "generate-intraday-coupons",
+    {},
+    {
+      repeat: { pattern: config.couponIntradayCron },
+      jobId: "vantage-recurring-intraday-coupon-generation",
+    },
+  );
+
   logger.info(
     {
       sweepIntervalMs: config.sweepIntervalMs,
+      couponCron: config.couponCron,
+      couponRetryCron: config.couponRetryCron,
+      couponIntradayCron: config.couponIntradayCron,
+      couponIntradayWindowHours: config.couponIntradayWindowHours,
       llmProvider: config.llmProvider,
       model: config.llmModel,
       llmFallbackProviders: llmClients.fallbacks.map((f) => f.provider),

@@ -245,11 +245,13 @@ export const BULLMQ_QUEUES = {
   // have no ModelRun yet (idempotent), per season. Renamed from ml-backfill —
   // its role is an analytical rebuild post-purge, not an ML concern.
   BETTING_ENGINE_REBUILD: 'betting-engine-rebuild',
+  // Same-day recheck (BettingEngineService.analyzeUpcoming) — closes the gap
+  // BETTING_ENGINE_ANALYSIS's own comment below used to flag as deliberately
+  // deferred. See ETL_CRON_SCHEDULES.SAME_DAY_ANALYSIS.
+  SAME_DAY_ANALYSIS: 'same-day-analysis',
   ODDS_HISTORICAL_IMPORT: 'odds-historical-import',
-  AI_ENGINE: 'ai-engine',
   ROLLING_HORIZON: 'rolling-horizon',
   SEASON_ROLLOVER_SYNC: 'season-rollover-sync',
-  SUBSCRIPTION_MATCHING: 'subscription-matching',
 } as const;
 
 export const BULLMQ_DEFAULT_JOB_OPTIONS = {
@@ -279,15 +281,22 @@ export const ETL_CRON_SCHEDULES = {
   // 20:00 UTC daily — analyze next-day fixtures after prematch odds sync.
   // No job data is passed on the cron trigger, so BettingEngineAnalysisWorker
   // defaults to `tomorrowUtc()` (see that file) — this run NEVER targets
-  // "today". Combined with ROLLING_HORIZON below (J+1..J+4, same gap): once
-  // this evening-before pass has run, NOTHING automatic re-analyzes a
+  // "today". Combined with ROLLING_HORIZON below (J+1..J+4, same gap): this
+  // evening-before pass alone would never automatically re-analyze a
   // fixture again on its own match day before kickoff — official lineups
-  // (~1h out) and any late odds movement are never picked up. The only way
-  // to get a same-day pass is the manual POST /betting-engine/analyze/date/
-  // :date endpoint. Known gap, not yet addressed (flagged 2026-08-28) — a
-  // same-day cron close to kickoff would close it; deliberately deferred.
+  // (~1h out) and any late odds movement would go unpicked-up. Closed by
+  // SAME_DAY_ANALYSIS below (flagged 2026-08-28, closed 2026-09-03).
   BETTING_ENGINE_ANALYSIS: '0 20 * * *',
   ROLLING_HORIZON: '0 17 * * *', // 17:00 UTC daily — warm preview for J+1..J+4 (J+1 gets overwritten by 18:00/20:00 authoritative runs)
+  // Every 30 minutes — re-analyzes only fixtures kicking off within
+  // SAME_DAY_ANALYSIS_WINDOW_HOURS (default 3h) from now
+  // (BettingEngineService.analyzeUpcoming), never the whole day. Closes the
+  // gap BETTING_ENGINE_ANALYSIS's own comment above used to flag: official
+  // lineups (~1h out) and late odds movement are now picked up close to
+  // kickoff instead of only from the evening-before pass. Cadence matches
+  // PENDING_BETS_SETTLEMENT below on purpose — both are "catch what changed
+  // recently" sweeps, not once-daily passes.
+  SAME_DAY_ANALYSIS: '*/30 * * * *',
   // 01:45 UTC daily, just before FIXTURES_SYNC (02:00) — re-derives each
   // competition's current season (activeSeasons()/apiSeasonOverride) and
   // re-upserts the league-sync job schedulers with it. Without this, a
@@ -298,11 +307,6 @@ export const ETL_CRON_SCHEDULES = {
   // skipped until the next redeploy. Found 2026-07-25: leagues whose new
   // season had already started weren't syncing.
   SEASON_ROLLOVER_SYNC: '45 1 * * *',
-  // Horaire, pas quotidien : les coupons/décisions de canal ne sont générés
-  // qu'une poignée de fois par jour, ce cron capte la génération du jour
-  // au fil de l'eau plutôt que de dépendre d'un timing exact (voir
-  // apps/backend/src/modules/subscriptions/DESIGN.md §Pipeline quotidien, 1).
-  SUBSCRIPTION_MATCHING: '0 * * * *',
 } as const;
 
 // Stable keys for upsertJobScheduler — one per queue (idempotent on restart)
@@ -315,12 +319,19 @@ export const ETL_SCHEDULER_KEYS = {
   COACH_SYNC: 'cron:coach-sync',
   ODDS_PREMATCH_SYNC: 'cron:odds-prematch-sync',
   BETTING_ENGINE_ANALYSIS: 'cron:betting-engine-analysis',
+  SAME_DAY_ANALYSIS: 'cron:same-day-analysis',
   ROLLING_HORIZON: 'cron:rolling-horizon',
   SEASON_ROLLOVER_SYNC: 'cron:season-rollover-sync',
-  SUBSCRIPTION_MATCHING: 'cron:subscription-matching',
 } as const;
 
 export const ROLLING_HORIZON_DEFAULTS = {
   START_OFFSET_DAYS: 1,
   HORIZON_DAYS: 4,
 } as const;
+
+// Default window for SAME_DAY_ANALYSIS (BettingEngineService.analyzeUpcoming)
+// — only fixtures kicking off within this many hours from "now" get
+// re-analyzed on each 30-minute pass. 3h covers the "official lineups ~1h
+// out" case with margin, without re-scoring fixtures still far enough away
+// that nothing meaningful (lineups, late odds) has actually changed yet.
+export const SAME_DAY_ANALYSIS_DEFAULT_WINDOW_HOURS = 3;

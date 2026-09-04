@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Market } from '@evcore/db';
+import { Market, NotificationType } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { createLogger } from '@utils/logger';
 import { PrismaService } from '@/prisma.service';
@@ -28,6 +28,28 @@ export type RoiCheckResult = {
 
 export type WeeklyReportResult = WeeklyReportPayload;
 
+export type ActiveMarketSuspension = {
+  market: Market;
+  reason: string;
+  triggeredBy: string;
+  createdAt: string;
+};
+
+export type RiskAlert = {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  createdAt: string;
+  read: boolean;
+};
+
+const RISK_ALERT_TYPES = [
+  NotificationType.MARKET_SUSPENSION,
+  NotificationType.ROI_ALERT,
+  NotificationType.BRIER_ALERT,
+] as const;
+
 @Injectable()
 export class RiskService {
   constructor(
@@ -40,6 +62,47 @@ export class RiskService {
       where: { market, active: true },
     });
     return suspension !== null;
+  }
+
+  // Every currently-active suspension, detail (not just isMarketSuspended's
+  // per-market boolean) — the admin health view needs to list which markets
+  // are suspended and why, not just count them (audit.service.ts's
+  // getOverview already exposes a bare count).
+  async listActiveSuspensions(): Promise<ActiveMarketSuspension[]> {
+    const rows = await this.prisma.client.marketSuspension.findMany({
+      where: { active: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return rows.map((row) => ({
+      market: row.market,
+      reason: row.reason,
+      triggeredBy: row.triggeredBy,
+      createdAt: row.createdAt.toISOString(),
+    }));
+  }
+
+  // MARKET_SUSPENSION/ROI_ALERT/BRIER_ALERT notifications from the last
+  // `days` days — narrower than dashboard.service.ts's buildActiveAlerts
+  // (which also includes ETL_FAILURE, dedups to one per type per day, and
+  // caps at 3): the admin health view wants the full, undeduped risk
+  // picture, not a "top 3 alerts of any kind" digest.
+  async getRecentAlerts(days: number): Promise<RiskAlert[]> {
+    const since = new Date(Date.now() - days * 86_400_000);
+    const rows = await this.prisma.client.notification.findMany({
+      where: {
+        type: { in: [...RISK_ALERT_TYPES] },
+        createdAt: { gte: since },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      type: row.type,
+      title: row.title,
+      body: row.body,
+      createdAt: row.createdAt.toISOString(),
+      read: row.read,
+    }));
   }
 
   async checkMarketRoi(market: Market): Promise<RoiCheckResult> {
@@ -72,7 +135,7 @@ export class RiskService {
         await this.prisma.client.marketSuspension.create({
           data: {
             market,
-            reason: `ROI ${(roi.toNumber() * 100).toFixed(1)}% over ${bets.length} bets — auto-suspended`,
+            reason: `ROI ${(roi.toNumber() * 100).toFixed(1)}% sur ${bets.length} paris — suspension automatique`,
             triggeredBy: 'auto',
           },
         });

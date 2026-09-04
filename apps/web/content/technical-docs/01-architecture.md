@@ -2,13 +2,13 @@
 
 ## Séparation stricte des responsabilités
 
-| Composant | Rôle | Ne fait jamais |
-| --- | --- | --- |
-| ETL (workers BullMQ) | Collecte et normalisation des données | Inférer ou combler des données manquantes |
-| PostgreSQL | Source de vérité historique | — |
-| Betting Engine (backend) | Scoring probabiliste + calcul d'EV | Appeler le LLM pour des données brutes |
-| Backend (NestJS) | Validation, contrôle de risque, auto-apply + rollback | Contourner Zod ou les règles de rate-limit |
-| VANTAGE / LLM | Delta contextuel uniquement | Être une source de données primaire |
+| Composant                | Rôle                                                  | Ne fait jamais                             |
+| ------------------------ | ----------------------------------------------------- | ------------------------------------------ |
+| ETL (workers BullMQ)     | Collecte et normalisation des données                 | Inférer ou combler des données manquantes  |
+| PostgreSQL               | Source de vérité historique                           | —                                          |
+| Betting Engine (backend) | Scoring probabiliste + calcul d'EV                    | Appeler le LLM pour des données brutes     |
+| Backend (NestJS)         | Validation, contrôle de risque, auto-apply + rollback | Contourner Zod ou les règles de rate-limit |
+| VANTAGE / LLM            | Delta contextuel uniquement                           | Être une source de données primaire        |
 
 ## Flux de données global
 
@@ -30,11 +30,11 @@ Chaque `ModelRun` doit logger `fixture_id`, `features`, `deterministic_score`, `
 
 ## Garde-fous sur les données manquantes
 
-| Cas | Comportement |
-| --- | --- |
-| Match reporté/annulé | Fixture marquée `POSTPONED` — aucun `ModelRun` généré |
-| Odds manquantes en phase live | `decision: NO_BET` automatique |
-| Source ETL indisponible | Job BullMQ retenté avec backoff, alerte si échec total |
+| Cas                           | Comportement                                           |
+| ----------------------------- | ------------------------------------------------------ |
+| Match reporté/annulé          | Fixture marquée `POSTPONED` — aucun `ModelRun` généré  |
+| Odds manquantes en phase live | `decision: NO_BET` automatique                         |
+| Source ETL indisponible       | Job BullMQ retenté avec backoff, alerte si échec total |
 
 ## Contraintes dures (backend uniquement, jamais côté client)
 

@@ -21,13 +21,11 @@ import {
   Megaphone,
   MessageCircle,
   Receipt,
-  Repeat,
   Scale,
   Settings,
-  Ticket,
-  TrendingUp,
   Trophy,
   Users,
+  Wand2,
 } from "lucide-react";
 import { PageShell, type NavGroup } from "./page-shell";
 import { BetSlipButton } from "./bet-slip-button";
@@ -41,12 +39,6 @@ import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
 import { useUnreadCount } from "@/domains/notification/use-cases/use-notifications";
 import { useUnreadSupportCount } from "@/domains/support/use-cases/use-support-chat";
 import { useAdminUnreadSupportCount } from "@/domains/support/use-cases/use-admin-support";
-import { useAnnouncementsUnreadCount } from "@/domains/announcements/use-cases/get-announcements-unread-count";
-
-const ROLE_LABEL: Record<string, string> = {
-  ADMIN: "Admin",
-  OPERATOR: "Membre",
-};
 
 const BADGE_EMOJI: Record<string, string> = {
   vol_50: "🏅",
@@ -70,12 +62,15 @@ export function AppShell({
   const currentUser = useCurrentUser();
   const pathname = usePathname();
   const tNav = useTranslations("nav");
+  // Same source as the Profil page's role badge (profile-hero-section.tsx)
+  // — was a separate hardcoded { OPERATOR: "Membre" } map here, "Opérateur"
+  // there, TODO.md's "badge de rôle incohérent" for the same account.
+  const tAccount = useTranslations("account");
   const isAdmin = currentUser.role === "ADMIN";
   const { data: leaderboard } = useLeaderboard();
   const { data: badges } = useMyBadges();
   const { data: unreadData } = useUnreadCount();
   const unreadCount = unreadData?.count ?? 0;
-  const { data: updatesUnreadCount } = useAnnouncementsUnreadCount();
   const { data: operatorInboxUnread } = useUnreadSupportCount(!isAdmin);
   const { data: adminInboxUnread } = useAdminUnreadSupportCount(isAdmin);
   const inboxUnreadCount = isAdmin
@@ -168,11 +163,17 @@ export function AppShell({
         label: tNav("navGroupToday"),
         items: [
           {
-            label: tNav("decisions"),
-            mobileLabel: tNav("decisionsShort"),
-            href: "/dashboard/decisions",
-            active: pathname.startsWith("/dashboard/decisions"),
-            icon: Layers,
+            label: tNav("coupons"),
+            href: "/dashboard/coupons",
+            active: pathname.startsWith("/dashboard/coupons"),
+            // Wand2, not Receipt/Ticket — these are AI-generated proposals to
+            // consider, not the user's own placed bets (that's "Mes coupons"
+            // below, which already owns the Receipt/ticket-stub look).
+            icon: Wand2,
+            // Raised, accent-filled center button in the mobile bottom nav —
+            // Investir's old slot/styling (screenshot confirmed: elevated
+            // circular button, dead center of 5), not just a spot in the row.
+            featured: true,
           },
           {
             label: tNav("arbitrage"),
@@ -181,17 +182,11 @@ export function AppShell({
             icon: Scale,
           },
           {
-            label: tNav("investment"),
-            href: "/dashboard/investment",
-            active: pathname.startsWith("/dashboard/investment"),
-            icon: TrendingUp,
-            featured: true,
-          },
-          {
-            label: tNav("coupons"),
-            href: "/dashboard/coupons",
-            active: pathname.startsWith("/dashboard/coupons"),
-            icon: Ticket,
+            label: tNav("decisions"),
+            mobileLabel: tNav("decisionsShort"),
+            href: "/dashboard/decisions",
+            active: pathname.startsWith("/dashboard/decisions"),
+            icon: Layers,
           },
           {
             label: tNav("fixtures"),
@@ -216,12 +211,6 @@ export function AppShell({
             active: pathname.startsWith("/dashboard/inbox"),
             icon: MessageCircle,
             badge: inboxUnreadCount,
-          },
-          {
-            label: tNav("subscriptions"),
-            href: "/dashboard/subscriptions",
-            active: pathname.startsWith("/dashboard/subscriptions"),
-            icon: Repeat,
           },
         ],
       },
@@ -257,15 +246,8 @@ export function AppShell({
         icon: Bell,
         badge: unreadCount,
       },
-      {
-        label: tNav("updates"),
-        href: "/dashboard/updates",
-        active: pathname.startsWith("/dashboard/updates"),
-        icon: Megaphone,
-        badge: updatesUnreadCount ?? 0,
-      },
     ],
-    [pathname, tNav, unreadCount, updatesUnreadCount],
+    [pathname, tNav, unreadCount],
   );
 
   const pageTitle = useMemo(
@@ -273,13 +255,13 @@ export function AppShell({
     [navGroups],
   );
 
-  // Coupons swapped for Arbitrage (2026-08-28, explicit product call) —
-  // Coupons stays reachable via the sidebar/hamburger menu on mobile, just
-  // no longer in the primary 5-slot bar.
+  // Coupons takes Investir's old slot AND styling (module removed entirely,
+  // 2026-09-04) — the raised, accent-filled center button (`featured: true`
+  // above), dead center of the 5, not just a spot in the row.
   const MOBILE_NAV_ORDER = [
     "/dashboard",
     "/dashboard/decisions",
-    "/dashboard/investment",
+    "/dashboard/coupons",
     "/dashboard/arbitrage",
     "/dashboard/inbox",
   ];
@@ -328,7 +310,9 @@ export function AppShell({
                   variant="neutral"
                   className="shrink-0 text-[0.62rem] text-sidebar-foreground/80"
                 >
-                  {ROLE_LABEL[currentUser.role] ?? currentUser.role}
+                  {tAccount.has(`roles.${currentUser.role}`)
+                    ? tAccount(`roles.${currentUser.role}`)
+                    : currentUser.role}
                 </Badge>
               </div>
               <p className="truncate text-xs text-sidebar-foreground/60">

@@ -11,9 +11,13 @@ import { endOfUtcDay, parseIsoDate } from '@utils/date.utils';
 import {
   ChannelDecisionService,
   type ChannelDecisionChannelGroup,
+  type ChannelDecisionFacets,
   type ChannelDecisionMatchItem,
 } from './channel-decision.service';
-import { ChannelDecisionListQueryDto } from './dto/channel-decision-query.dto';
+import {
+  ChannelDecisionFacetsQueryDto,
+  ChannelDecisionListQueryDto,
+} from './dto/channel-decision-query.dto';
 import { ChannelDecisionSettleRangeQueryDto } from './dto/channel-decision-settle-range-query.dto';
 
 @Controller('channel-decisions')
@@ -33,6 +37,16 @@ export class ChannelDecisionController {
     @Query() query: ChannelDecisionListQueryDto,
   ): Promise<ChannelDecisionChannelGroup[]> {
     return this.channelDecisions.listByChannel(this.toQuery(query));
+  }
+
+  // Facet drawer (§2bis) — leagues + channels present that day, with counts.
+  // See ChannelDecisionRepository.findFacetRows.
+  @Get('facets')
+  getFacets(
+    @Query() query: ChannelDecisionFacetsQueryDto,
+  ): Promise<ChannelDecisionFacets> {
+    const today = new Date().toISOString().slice(0, 10);
+    return this.channelDecisions.getFacets(query.date ?? today);
   }
 
   // Catch-up: force re-settlement of every ChannelSelection (the analytical

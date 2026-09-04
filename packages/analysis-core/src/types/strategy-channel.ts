@@ -52,6 +52,22 @@ export const FILTER_STRATEGY_CHANNELS = new Set<StrategyChannel>([
   STRATEGY_CHANNEL.SAFE,
 ]);
 
+// Never implemented as real strategies (no file under strategies/ ever
+// produces one) — pure enum leftovers, kept only so a StrategyChannel value
+// the frontend doesn't expect can't crash channelLabel/channelDescription if
+// it ever appears (see channel-constants.ts). Distinct from
+// META_STRATEGY_CHANNELS/FILTER_STRATEGY_CHANNELS below, which describe real,
+// running channels with a specific role — these four never run at all, so
+// they must be excluded everywhere a "real channel" list is built
+// (POOL_ELIGIBLE_CHANNELS, Personnalisation's "Découvrir des canaux"), not
+// just left to show up with a permanent n=0.
+export const UNIMPLEMENTED_STRATEGY_CHANNELS = new Set<StrategyChannel>([
+  STRATEGY_CHANNEL.UNDERDOG,
+  STRATEGY_CHANNEL.FAVORITE,
+  STRATEGY_CHANNEL.LIVE_VALUE,
+  STRATEGY_CHANNEL.MARKET_MOVE,
+]);
+
 // Meta-strategies run in Phase 3 (after Phase 1 market specialists AND Phase 2
 // filters have both decided). CONSENSUS and AVOID are implemented + enabled.
 // CONTRARIAN is intentionally NOT implemented: a 2026-06-23 read-only study (3

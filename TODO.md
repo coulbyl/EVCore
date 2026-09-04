@@ -7,8 +7,11 @@
 > Aucun nouveau canal n'est activé sans backtest séparé par ligue/marché/saison.
 >
 > ⚠️ Ce fichier couvre le chantier **canaux de stratégie / calibration
-> modèle** ET, depuis le 2026-08-09, le **générateur de coupon**. Le travail
-> EVA (chat, persona pro, filter bar) n'y est pas suivi.
+> modèle** ET, depuis le 2026-08-09, le **générateur de coupon**, ET depuis
+> le 2026-08-31 le **front web côté joueur** (onboarding, Investir, filtres,
+> perf pages) — issu d'un audit UX externe (Playwright, compte lambda), voir
+> section dédiée en fin de fichier. Le travail EVA (chat, persona pro, filter
+> bar) n'y est pas suivi.
 >
 > Révisé le 2026-08-15 : purge des items terminés (historique complet dans
 > [ROADMAP.md](ROADMAP.md), notamment Bloc 9-11) + correction de plusieurs
@@ -24,6 +27,22 @@
 ---
 
 ## Générateur de coupon
+
+- `[ ]` **Aucun coupon "aperçu" pour J+2..J+4** (relevé 2026-09-03) — le
+  pipeline LLM (`apps/vantage-worker/src/coupon/`) ne génère aujourd'hui
+  qu'une seule `CouponProposal.forDate` par jour : J+1 (batch du soir
+  20h30/21h15 UTC) et J+0 (batch intraday, fixtures proches du coup
+  d'envoi). Rien ne couvre J+2/J+3/J+4, contrairement à `ROLLING_HORIZON`
+  côté backend qui alimente déjà ces `ModelRun` en "aperçu chaud" (destiné
+  à être écrasé par la passe faisant autorité au fur et à mesure que la
+  date se rapproche — même principe que `persistCouponProposal`'s garde
+  PENDING-only, donc rien n'empêche techniquement un aperçu de coupon
+  J+2..J+4 d'être raffiné chaque jour jusqu'à devenir le batch officiel).
+  **Décision (2026-09-03) : reporté.** Prévoir un PR dédié après une étude
+  de cas — portée exacte (même horizon que `ROLLING_HORIZON_DEFAULTS`
+  J+1..J+4, ou plus court) et cadence (une passe/jour après ROLLING_HORIZON
+  vs. plusieurs comme le batch du soir) restent à trancher à ce moment-là,
+  pas figées ici.
 
 - `[ ]` **BTTS misé sur PL/BL1 alors que les deux ROI se sont inversés**
   (relevé 2026-08-22, décision : ne rien changer avant un backtest propre) —
@@ -1614,3 +1633,183 @@ bookmaker, market, pick, snapshotAt])` posé, ancien `@@index` redondant
 hypothèse → `allowedMarkets` → critères `SELECTED` / codes de rejet → seuils
 par ligue → implémentation → tests → **backtest séparé** → shadow/observation
 → activation par segment validé → settlement + métriques → API/front.
+
+---
+
+## Investir / Combinés — audit calibration & garde-fous (2026-08-31)
+
+> Origine : audit UX externe (compte lambda, Playwright) qui a demandé
+> pourquoi Investir et le générateur de coupon "ne rapportent pas". Requêtes
+> directes en base (`docker exec evcore-postgres psql`, règle projet) sur
+> `channel_selection`/`coupon_proposal`, pas un ressenti. Rapport complet
+> (tableau par canal, captures) dans l'artifact publié en session — lien non
+> persisté ici, redemander si besoin.
+
+- `[ ]` **18 canaux sur 20 sont perdants en ROI tout-temps** — seuls
+  FIRST_HALF (+14.8%, n=259) et HALF_TIME_FULL_TIME (+2.0%, n=316) sont
+  positifs, tous deux petits marchés de niche encore en OBSERVATION (cf.
+  section "Couverture stratégie par marché" plus haut — pas encore
+  staking-grade, donc pas contradictoire avec ce chiffre). VALUE -3.1%
+  (n=3052), SAFE -5.4% (n=1789), DOMINANT -15.2% (n=9335), BTTS -20.5%
+  (n=11347), CLEAN_SHEET -18.0% (n=9020), WIN_TO_NIL -29.3% (n=2066). Ce
+  classement recoupe la bannière "2 sur 18" déjà affichée sur Investir — le
+  texte n'exagère pas, c'est la réalité mesurée. Reste à décider si Investir
+  doit continuer à afficher les 18 canaux perdants avec la même mise en
+  avant que les 2 gagnants (voir item front dédié plus bas).
+
+- `[ ]` **VANTAGE (canal LLM) à -48.2% ROI sur sa première semaine réglée**
+  (n=305, semaine du 08-24) — le pire score de tout le tableau, à des années
+  de la "calibration ~parfaite" notée le 08-29 en mémoire (Brier/calibration
+  de probabilité ≠ ROI/edge réel — les deux peuvent diverger : probas bien
+  estimées mais aucun edge face au marché). Échantillon encore petit, mais
+  l'écart est trop large pour l'ignorer avant le prochain relevé n≥500+.
+  Ne pas continuer à pousser VANTAGE comme argument produit (page Arbitrage)
+  tant que ce chiffre n'est pas éclairci.
+
+- `[ ]` **Combinés (coupon_proposal) : +14.8% ROI tout-temps (n=512
+  réglés, 26.4% hit-rate, cote moyenne ~4.3-5.0) mais -32.1% sur les 30
+  derniers jours** (n=123, hit-rate tombé à 15.5%) — contre +28.7%/+29.7%
+  sur 31-60j et 60j+. Chute nette, probablement pas du bruit pur vu l'écart
+  au taux de réussite attendu. À investiguer en priorité avant tout le reste
+  de cette section — coïncide dans le temps avec la dégradation VALUE/SAFE
+  ci-dessous, potentiellement une cause commune (recalibration du 08-27
+  insuffisante ? saisonnalité/rotation de ligues actives ?).
+
+- `[ ]` **VALUE et SAFE basculent positif→négatif sur les 30 derniers jours**
+  — VALUE : +8.8% (plus ancien) → -16.6% (30j, n=1439). SAFE : +1.5% → -10.6%
+  (30j, n=1024). DOMINANT/BTTS/GOALS restent négatifs mais stables en
+  tendance (déjà mauvais avant). Signal de dérive récente plus actionnable
+  dans l'immédiat qu'une refonte d'interface — rejoint la piste déjà ouverte
+  plus haut ("VALUE — hit-rate en dégradation dans les coupons").
+
+- `[ ]` **Le garde-fou de suspension automatique (`risk.service.ts`,
+  ROI < -15% sur 50+ paris, documenté CLAUDE.md) n'a jamais été déclenché**
+  — `calibration.market_suspension` est à **0 ligne**, alors que BTTS
+  (-20.5%, n=11347) et CLEAN_SHEET (-18.0%, n=9020) dépassent le seuil
+  depuis longtemps. Cause : `checkMarketRoi()` lit la table `bet` (mises
+  réellement placées par de vrais comptes, 3238 lignes au total réparties
+  sur ~20 marchés) et non les sorties du moteur (`channel_selection`) qui
+  alimentent Investir/Combinés — le garde-fou protège l'argent staké mais
+  rien de ce qui est affiché à un joueur qui n'a pas encore parié. Décision
+  à prendre : étendre `checkMarketRoi`/`isMarketSuspended` à une lecture sur
+  `channel_selection` par canal (pas seulement `bet` par marché), et
+  refléter l'état ("canal en pause depuis le JJ/MM — ROI -X% sur N
+  sélections") directement sur Investir plutôt que de le garder invisible
+  côté joueur.
+
+---
+
+## Front web côté joueur — audit UX externe (2026-08-31)
+
+> Compte lambda créé pour l'occasion + Playwright (navigation réelle,
+> requêtes réseau écoutées, capture d'écran par page). Détail complet avec
+> captures dans l'artifact publié en session (rapport "Audit EVCore — Œil
+> neuf"). Portée : bugs et frictions constatés en usage, pas de la
+> calibration modèle (voir section dédiée ci-dessus pour ça).
+
+- `[x]` **P0 — le tour guidé ne démarrait jamais à la vraie première
+  visite — corrigé, confirmé au navigateur le 2026-09-04** —
+  `register-form.tsx`/`login-form.tsx` enchaînent `router.push("/dashboard")`
+  puis `router.refresh()` non attendus, exactement au moment où l'ancien
+  `OnboardingTourProvider` lisait une seule fois `hasSeenOnboarding` au
+  montage (`hasAutoStartedRef`, dépendances `[]`). Reproduit 2/2 sur comptes
+  neufs. Depuis le renommage tour passif → `domains/product-tour/` et
+  l'ajout de l'onboarding actif (§ ci-dessus, doc
+  `vantage-centric-redesign-2026-09-01.md`), l'effet de démarrage auto de
+  `ProductTourProvider` (`product-tour-context.tsx`) dépend maintenant de
+  `currentUser.hasCompletedOnboarding` plutôt que d'une lecture unique au
+  montage — il se redéclenche correctement quand ce champ bascule à `true`
+  (fin de l'onboarding actif), ce qui évite la course avec
+  `router.refresh()` décrite ici. Migration `hasCompletedOnboarding`
+  appliquée, onboarding actif + démarrage du tour vérifiés sur un compte
+  neuf en vrai navigateur — plus de gap à reconfirmer.
+
+- `[ ]` **P1 — bouton d'ajout au coupon absent sur Matchs sans aucune
+  indication du pourquoi** — `fixtures-table.tsx` (`AddToSlipButton`)
+  n'affiche le bouton que si `modelRunId` + `market` + `pick` + `betId` +
+  `isFixtureBettable` sont TOUS présents ; tout trou ETL/décision NO_BET
+  fait disparaître le bouton silencieusement, sans badge explicatif.
+
+- `[x]` **P1 — lien "Déposer" manquant dans la bannière "Solde insuffisant"
+  du tiroir "Mon coupon" — corrigé 2026-09-04** — `deposit-dialog.tsx`
+  déplacé de `app/dashboard/bankroll/components/` vers `components/`
+  (utilisé cross-page désormais) et son bouton par défaut rendu
+  remplaçable (`trigger` optionnel) sans dupliquer le formulaire de dépôt.
+  `bet-slip-drawer.tsx` ouvre ce même dialogue via un raccourci "Déposer"
+  directement dans la bannière `exceedsBalance` — le solde affiché se
+  rafraîchit tout seul après coup (`useDepositBankroll` invalide déjà
+  `bankroll-balance`, la même clé que le tiroir lit). Pas testé en
+  navigateur cette session.
+
+- `[x]` **P2 — page Matchs 2 à 3× plus lente que le reste du produit —
+  corrigé 2026-09-04** — la requête était déjà paginée côté backend
+  (`FIXTURE_SCORING_PAGINATION`, `limit` par défaut appliqué par le
+  `ValidationPipe` même quand le frontend ne l'envoie pas), contrairement à
+  ce que ce point supposait au départ. Le vrai coût : la sélection imbriquée
+  `fixture → modelRuns → bets → channelSelection → channelDecision` ne se
+  résout pas en un seul JOIN (Prisma émet plusieurs requêtes groupées par
+  page), et le défilement infini (`InfiniteScrollSentinel`,
+  `IntersectionObserver` sans `rootMargin`) attend que la sentinelle soit
+  réellement visible avant de déclencher la page suivante — une cascade
+  séquentielle de plusieurs aller-retours. `defaultLimit` remonté à
+  `maxLimit` (100, déjà le plafond autorisé — aucune donnée neuve exposée) :
+  ~4 pages → ~2 pour 172 fixtures. `rootMargin: "600px"` ajouté à
+  l'observer pour précharger la page suivante pendant le défilement plutôt
+  que d'attendre que la sentinelle apparaisse — cache l'aller-retour derrière
+  le temps de scroll. Pas re-mesuré en conditions réelles cette session.
+
+- `[x]` **P2 — badge de rôle incohérent — corrigé 2026-09-04** — deux
+  sources de libellé déconnectées pour le même `UserRole` : un objet
+  JS en dur dans `app-shell.tsx` (`{ OPERATOR: "Membre" }`) contre le
+  catalogue i18n `account.roles.OPERATOR` ("Opérateur") déjà utilisé par
+  `profile-hero-section.tsx`. `app-shell.tsx` lit désormais la même clé
+  i18n (`useTranslations("account")`, `roles.${role}`) — même mot affiché
+  aux deux endroits (reste en petites capitales sur Profil via CSS
+  `uppercase`, différence de casse seulement, pas de mot différent).
+
+- `[x]` **P2 — avertissement d'accessibilité React sur le tiroir coupon —
+  corrigé 2026-09-04** — `bet-slip-drawer.tsx` n'avait qu'un `DrawerTitle`
+  `sr-only`, aucune description ni `aria-describedby`. `@evcore/ui` exportait
+  déjà `DrawerDescription` (même pattern que `deposit-dialog.tsx`'s
+  `DialogDescription`, jamais réutilisé ici) — ajoutée en `sr-only` juste
+  après le titre.
+
+- `[x]` **P2 — numéro de téléphone — ajouté 2026-09-04** — deux champs
+  `User.phoneNumber`/`phoneNumberConsentGiven` (migration écrite, pas
+  appliquée), jamais à l'inscription (RegisterDto inchangé, pour ne pas
+  alourdir ce parcours). Onglet Profil (`phone-number-row.tsx`, nouveau) :
+  le champ numéro n'existe même pas tant que l'interrupteur de consentement
+  n'est pas activé — jamais une case cochée après coup pour justifier un
+  champ déjà rempli. Désactiver le consentement efface le numéro stocké
+  côté serveur (`AuthService.updateMe`), plutôt que de le garder sans
+  consentement actif. Format libre (`class-validator` `IsPhoneNumber`
+  sans région imposée) ; texte de consentement : "J'accepte d'être
+  contacté(e) par téléphone dans le cadre d'une démarche de prospection
+  terrain. Jamais de démarchage commercial automatisé." — usage confirmé
+  avec l'utilisateur avant implémentation. Pas testé en navigateur cette
+  session.
+
+- `[ ]` **P1 — signalement utilisateur : "des personnes n'arrivent pas à
+  s'inscrire" — investigué 2026-09-04, cause non identifiée, logging
+  ajouté.** Test réel en navigateur (Playwright, pas juste lecture de
+  code) du parcours complet : inscription happy-path, email/username déjà
+  utilisé, viewport mobile, onboarding actif jusqu'à "Terminer",
+  rechargement — **tout fonctionne sans erreur** (zéro échec réseau, zéro
+  exception JS, message d'erreur de doublon affiché correctement). Seul
+  bug trouvé au passage (mineur, corrigé) : même avertissement
+  d'accessibilité que le tiroir de bet slip sur la modale d'onboarding
+  (`DialogDescription` manquante) — profité de l'occasion pour ajouter un
+  vrai sous-titre utile ("chacune est facultative") plutôt qu'un simple
+  `sr-only`. Aucune reproduction locale du problème signalé — sans accès
+  aux logs prod ni à un message d'erreur précis rapporté par un
+  utilisateur touché, impossible de confirmer une cause. **En attendant**,
+  `AuthService.register` loggait auparavant zéro événement (ni succès ni
+  rejet) — ajouté : `register: account created` (info) et `register:
+  rejected — email or username already in use` (warn, avec le champ
+  précis en collision) pour que le prochain signalement soit exploitable.
+  Le message client reste volontairement générique ("email OU username")
+  pour ne pas permettre l'énumération de comptes par email. Pistes non
+  vérifiables sans accès prod : `CORS_ORIGINS` mal configuré pour le
+  domaine réel, rate-limiting en amont (proxy/CDN, hors code applicatif).
+  À rouvrir dès qu'un message d'erreur précis ou un accès aux logs est
+  disponible.

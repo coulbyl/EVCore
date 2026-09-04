@@ -7,8 +7,8 @@ import type { ChannelCalibration, ChannelReading, MatchContext } from "./types";
 import { extractNearMiss } from "./near-miss";
 import { loadTeamSignal, loadCoachSignal } from "./team-signals";
 import { loadH2HSignal } from "./h2h-signal";
-import { extractShadowPrediction, extractShadowMl } from "./shadow-signals";
-import { loadUncoveredMarketOdds } from "./market-odds";
+import { extractShadowPrediction } from "./shadow-signals";
+import { loadFullOddsSnapshot, buildUncoveredMarketOdds } from "./market-odds";
 
 // Minimum settled sample before a channel's calibration is reported to
 // VANTAGE as a number rather than "not yet measurable" — mirrors the 30-bet
@@ -22,10 +22,20 @@ const MIN_CALIBRATION_SAMPLE = 30;
  * since 2026-08-30 (docs/context-expansion-proposal.md) — additive raw
  * context no channel's own probability already carries: near-miss reads
  * from channels that abstained, both teams' raw team_stats/coach signals,
- * the H2H scoreline signal, two independent second opinions (shadow_
- * predictions, shadow_ml_by_channel), and the raw market price for
- * ONE_X_TWO when no channel selected it. Never includes VANTAGE's own past
- * decisions — it reads the deterministic layer, it does not read itself. */
+ * the H2H scoreline signal, an independent second opinion (shadow_
+ * predictions), and the raw market price for ONE_X_TWO/BTTS/OVER_UNDER
+ * (main 2.5 line) when no channel selected them (extended beyond ONE_X_TWO
+ * 2026-09-04 — see market-odds.ts). Never includes VANTAGE's own past
+ * decisions — it reads the deterministic layer, it does not read itself.
+ *
+ * `shadow_ml_by_channel` (a per-channel ML correction) was exposed here
+ * 2026-08-30–2026-09-03, restricted to DOMINANT/VALUE after a 2026-08-30
+ * audit found it degraded the other 5 channels' own Brier score. Removed
+ * entirely 2026-09-03: a follow-up audit found VANTAGE actively using the
+ * signal on DOMINANT produced worse verdicts, not better (ratio 0.43 vs
+ * 1.13 real/announced when the correction was followed vs ignored, n=27) —
+ * see docs/vantage-centric-redesign-2026-09-01.md §5.8/project memory
+ * project_vantage_context_expansion. Not re-added without a fresh audit. */
 export async function buildMatchContext(
   fixtureId: string,
   logger: Logger,
@@ -125,7 +135,7 @@ export async function buildMatchContext(
     homeCoach,
     awayCoach,
     h2h,
-    uncoveredMarketOdds,
+    fullOddsSnapshot,
   ] = await Promise.all([
     loadChannelCalibration(
       competitionCode,
@@ -142,12 +152,10 @@ export async function buildMatchContext(
     loadH2HSignal(fixture.homeTeamId, fixture.awayTeamId, kickoff).catch(
       logSignal("h2h"),
     ),
-    loadUncoveredMarketOdds(fixture.id, coveredMarkets).catch(
-      (err: unknown) => {
-        logSignal("uncoveredMarketOdds")(err);
-        return [];
-      },
-    ),
+    loadFullOddsSnapshot(fixture.id).catch((err: unknown) => {
+      logSignal("fullOddsSnapshot")(err);
+      return null;
+    }),
   ]);
 
   return {
@@ -166,8 +174,11 @@ export async function buildMatchContext(
     awayCoach,
     h2h,
     shadowPrediction: extractShadowPrediction(latestRun.features),
-    shadowMl: extractShadowMl(latestRun.features),
-    uncoveredMarketOdds,
+    uncoveredMarketOdds: buildUncoveredMarketOdds(
+      fullOddsSnapshot,
+      coveredMarkets,
+    ),
+    fullOddsSnapshot,
   };
 }
 

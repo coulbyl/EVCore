@@ -16,9 +16,16 @@ export function InfiniteScrollSentinel({
     const el = ref.current;
     if (!el) return;
 
-    const observer = new IntersectionObserver((entries) => {
-      if (entries.some((entry) => entry.isIntersecting)) onVisible();
-    });
+    // rootMargin prefetches the next page while it's still 600px below the
+    // viewport instead of waiting for the sentinel to actually scroll into
+    // view — hides the round-trip behind scroll time rather than blocking
+    // on it (TODO.md "page Matchs 2-3x plus lente").
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) onVisible();
+      },
+      { rootMargin: "600px" },
+    );
     observer.observe(el);
 
     return () => observer.disconnect();

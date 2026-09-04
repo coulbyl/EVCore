@@ -75,10 +75,27 @@ export class AuthService {
 
     const existing = await this.prisma.client.user.findFirst({
       where: { OR: [{ email }, { username }] },
-      select: { id: true },
+      select: { email: true, username: true },
     });
 
     if (existing) {
+      // The client-facing message stays deliberately generic ("email OR
+      // username") rather than naming which one collided — splitting it
+      // would let an attacker enumerate registered emails one probe at a
+      // time. Logged server-side instead (2026-09-04, investigating a
+      // report that some signups fail) so a real collision is at least
+      // traceable after the fact, without exposing it to the requester.
+      logger.warn(
+        {
+          collidedOn:
+            existing.email === email && existing.username === username
+              ? 'both'
+              : existing.email === email
+                ? 'email'
+                : 'username',
+        },
+        'register: rejected — email or username already in use',
+      );
       throw new ConflictException('Email ou username déjà utilisé');
     }
 
@@ -89,6 +106,10 @@ export class AuthService {
         fullName: input.fullName.trim(),
         passwordHash: await hashPassword(input.password),
         bio: input.bio?.trim() || null,
+        // Schema default is `true` (existing users were already past the
+        // point of needing it) — a genuinely new signup must start `false`
+        // so the active onboarding wizard actually shows.
+        hasCompletedOnboarding: false,
       },
       select: {
         id: true,
@@ -107,10 +128,16 @@ export class AuthService {
         unitMode: true,
         unitAmount: true,
         unitPercent: true,
+        riskProfile: true,
         emailSupportNotificationsEnabled: true,
         hasSeenOnboarding: true,
+        hasCompletedOnboarding: true,
+        phoneNumber: true,
+        phoneNumberConsentGiven: true,
       },
     });
+
+    logger.info({ userId: user.id }, 'register: account created');
 
     const { token, session } = await this.createSession(user.id);
     return {
@@ -145,8 +172,12 @@ export class AuthService {
         unitMode: true,
         unitAmount: true,
         unitPercent: true,
+        riskProfile: true,
         emailSupportNotificationsEnabled: true,
         hasSeenOnboarding: true,
+        hasCompletedOnboarding: true,
+        phoneNumber: true,
+        phoneNumberConsentGiven: true,
         passwordHash: true,
         suspended: true,
       },
@@ -184,9 +215,13 @@ export class AuthService {
           unitMode: user.unitMode,
           unitAmount: user.unitAmount?.toString() ?? null,
           unitPercent: user.unitPercent?.toString() ?? null,
+          riskProfile: user.riskProfile,
           emailSupportNotificationsEnabled:
             user.emailSupportNotificationsEnabled,
           hasSeenOnboarding: user.hasSeenOnboarding,
+          hasCompletedOnboarding: user.hasCompletedOnboarding,
+          phoneNumber: user.phoneNumber,
+          phoneNumberConsentGiven: user.phoneNumberConsentGiven,
         },
       },
     };
@@ -229,8 +264,12 @@ export class AuthService {
             unitMode: true,
             unitAmount: true,
             unitPercent: true,
+            riskProfile: true,
             emailSupportNotificationsEnabled: true,
             hasSeenOnboarding: true,
+            hasCompletedOnboarding: true,
+            phoneNumber: true,
+            phoneNumberConsentGiven: true,
             suspended: true,
           },
         },
@@ -281,6 +320,9 @@ export class AuthService {
         ...(dto.unitPercent !== undefined && {
           unitPercent: new Prisma.Decimal(dto.unitPercent),
         }),
+        ...(dto.riskProfile !== undefined && {
+          riskProfile: dto.riskProfile,
+        }),
         ...(dto.emailSupportNotificationsEnabled !== undefined && {
           emailSupportNotificationsEnabled:
             dto.emailSupportNotificationsEnabled,
@@ -288,6 +330,20 @@ export class AuthService {
         ...(dto.hasSeenOnboarding !== undefined && {
           hasSeenOnboarding: dto.hasSeenOnboarding,
         }),
+        ...(dto.hasCompletedOnboarding !== undefined && {
+          hasCompletedOnboarding: dto.hasCompletedOnboarding,
+        }),
+        // Revoking consent clears the stored number rather than keeping an
+        // unconsented phone number around — see schema.prisma's own comment
+        // on phoneNumberConsentGiven.
+        ...(dto.phoneNumberConsentGiven !== undefined && {
+          phoneNumberConsentGiven: dto.phoneNumberConsentGiven,
+          ...(dto.phoneNumberConsentGiven === false && { phoneNumber: null }),
+        }),
+        ...(dto.phoneNumber !== undefined &&
+          dto.phoneNumberConsentGiven !== false && {
+            phoneNumber: dto.phoneNumber,
+          }),
       },
       select: {
         id: true,
@@ -306,8 +362,12 @@ export class AuthService {
         unitMode: true,
         unitAmount: true,
         unitPercent: true,
+        riskProfile: true,
         emailSupportNotificationsEnabled: true,
         hasSeenOnboarding: true,
+        hasCompletedOnboarding: true,
+        phoneNumber: true,
+        phoneNumberConsentGiven: true,
       },
     });
     return this.toSessionUser(user);
@@ -630,8 +690,12 @@ export class AuthService {
         unitMode: true,
         unitAmount: true,
         unitPercent: true,
+        riskProfile: true,
         emailSupportNotificationsEnabled: true,
         hasSeenOnboarding: true,
+        hasCompletedOnboarding: true,
+        phoneNumber: true,
+        phoneNumberConsentGiven: true,
       },
     });
 
@@ -707,8 +771,12 @@ export class AuthService {
     unitMode: UnitMode | null;
     unitAmount: Prisma.Decimal | null;
     unitPercent: Prisma.Decimal | null;
+    riskProfile: AuthSessionUser['riskProfile'];
     emailSupportNotificationsEnabled: boolean;
     hasSeenOnboarding: boolean;
+    hasCompletedOnboarding: boolean;
+    phoneNumber: string | null;
+    phoneNumberConsentGiven: boolean;
   }): AuthSessionUser {
     return {
       ...user,

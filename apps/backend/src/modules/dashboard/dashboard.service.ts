@@ -49,6 +49,15 @@ const MIN_SETTLED_MODEL = 10;
 // a large enough outlier — a floor does, by construction.
 const LEADERBOARD_MIN_SETTLED = 5;
 
+// The leaderboard query was unbounded (every settled coupon ever, no LIMIT,
+// full aggregation in JS) — a genuine "heavier every day" cost on a page
+// loaded on every visit. A rolling window keeps it light without changing
+// what it measures for an active player (whose settled history is recent
+// anyway); same 90-day default already used elsewhere for this kind of
+// "enough signal, still cheap" tradeoff (Decisions' calibration badge,
+// Track Record's default period).
+const LEADERBOARD_WINDOW_DAYS = 90;
+
 type SummaryData = Awaited<ReturnType<DashboardRepository['getSummaryData']>>;
 
 type UnreadNotification = SummaryData['unreadNotifications'][number];
@@ -244,12 +253,13 @@ export class DashboardService {
   }
 
   async getCompetitionStats(
-    userId: string,
     canal?: 'VALUE' | 'SAFE',
   ): Promise<CompetitionStat[]> {
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const [analyzedRuns, modelBets, userBets] =
-      await this.repo.getCompetitionData(userId, since, canal);
+    const [analyzedRuns, modelBets] = await this.repo.getCompetitionData(
+      since,
+      canal,
+    );
 
     // Compter les fixtures analysées par compétition
     const activeByComp = new Map<string, number>();
@@ -263,8 +273,7 @@ export class DashboardService {
     type BetAgg = {
       won: number;
       total: number;
-      staked: Decimal;
-      returned: Decimal;
+      probSum: Decimal;
     };
     const modelAgg = new Map<
       CompKey,
@@ -276,82 +285,32 @@ export class DashboardService {
         comp,
         won: 0,
         total: 0,
-        staked: new Decimal(0),
-        returned: new Decimal(0),
+        probSum: new Decimal(0),
       };
-      const stake = new Decimal(bet.stakePct.toString());
       existing.total += 1;
-      existing.staked = existing.staked.plus(stake);
-      if (bet.status === 'WON') {
-        existing.won += 1;
-        existing.returned = existing.returned.plus(
-          stake.times(bet.oddsSnapshot!.toString()),
-        );
-      }
+      existing.probSum = existing.probSum.plus(
+        new Decimal(bet.probEstimated.toString()),
+      );
+      if (bet.status === 'WON') existing.won += 1;
       modelAgg.set(comp.id, existing);
-    }
-
-    // Agréger les picks USER par compétition
-    type UserAgg = {
-      won: number;
-      total: number;
-      staked: Decimal;
-      returned: Decimal;
-    };
-    const userAgg = new Map<CompKey, UserAgg>();
-    for (const bet of userBets) {
-      const compId = bet.fixture.season.competition.id;
-      const existing = userAgg.get(compId) ?? {
-        won: 0,
-        total: 0,
-        staked: new Decimal(0),
-        returned: new Decimal(0),
-      };
-      const stake = new Decimal(bet.stakePct.toString());
-      existing.total += 1;
-      existing.staked = existing.staked.plus(stake);
-      if (bet.status === 'WON') {
-        existing.won += 1;
-        existing.returned = existing.returned.plus(
-          stake.times(bet.oddsSnapshot!.toString()),
-        );
-      }
-      userAgg.set(compId, existing);
     }
 
     const stats: CompetitionStat[] = [];
 
     for (const [compId, model] of modelAgg) {
       const active = activeByComp.get(compId) ?? 0;
-      const userPicks = userAgg.get(compId) ?? null;
 
-      const modelRoi =
-        model.total >= MIN_SETTLED_MODEL && model.staked.gt(0)
-          ? formatSigned(
-              model.returned
-                .minus(model.staked)
-                .dividedBy(model.staked)
-                .times(100)
-                .toNumber(),
-              1,
-            ) + '%'
+      const avgProbability =
+        model.total > 0 ? model.probSum.dividedBy(model.total).toNumber() : 0;
+      const hitRate = model.won / model.total;
+      const calibrationRatio =
+        model.total >= MIN_SETTLED_MODEL && avgProbability > 0
+          ? hitRate / avgProbability
           : null;
 
       const modelWinRate =
         model.total >= MIN_SETTLED_MODEL
-          ? `${Math.round((model.won / model.total) * 100)}%`
-          : null;
-
-      const myPicksRoi =
-        userPicks && userPicks.total >= 1 && userPicks.staked.gt(0)
-          ? formatSigned(
-              userPicks.returned
-                .minus(userPicks.staked)
-                .dividedBy(userPicks.staked)
-                .times(100)
-                .toNumber(),
-              1,
-            ) + '%'
+          ? `${Math.round(hitRate * 100)}%`
           : null;
 
       stats.push({
@@ -362,22 +321,27 @@ export class DashboardService {
         model: {
           settled: model.total,
           won: model.won,
-          roi: modelRoi,
           winRate: modelWinRate,
+          calibrationRatio,
+          status: calibrationStatus(
+            calibrationRatio,
+            model.total,
+            MIN_SETTLED_MODEL,
+          ),
         },
-        myPicks: userPicks
-          ? { settled: userPicks.total, won: userPicks.won, roi: myPicksRoi }
-          : null,
       });
     }
 
-    // Tri : fixtures actives décroissant, puis ROI modèle
+    // Tri : fixtures actives décroissant, puis fiabilité (ratio de
+    // calibration) décroissante — plus le ROI, anti-prédictif à ce volume
+    // (voir CLAUDE.md et l'audit 2026-08-22). Une compétition sans donnée
+    // suffisante (ratio null) est classée après celles qui en ont.
     return stats.sort((a, b) => {
       if (b.activeFixtures !== a.activeFixtures)
         return b.activeFixtures - a.activeFixtures;
-      const roiA = a.model.roi ? parseFloat(a.model.roi) : -Infinity;
-      const roiB = b.model.roi ? parseFloat(b.model.roi) : -Infinity;
-      return roiB - roiA;
+      const ratioA = a.model.calibrationRatio ?? -Infinity;
+      const ratioB = b.model.calibrationRatio ?? -Infinity;
+      return ratioB - ratioA;
     });
   }
 
@@ -507,7 +471,8 @@ export class DashboardService {
   }
 
   async getLeaderboard(): Promise<LeaderboardEntry[]> {
-    const betSlips = await this.repo.getLeaderboardData();
+    const since = new Date(Date.now() - LEADERBOARD_WINDOW_DAYS * 86_400_000);
+    const betSlips = await this.repo.getLeaderboardData(since);
 
     type UserAgg = {
       username: string;
@@ -613,16 +578,46 @@ function maxDrawdownFromBets(bets: FlatBet[]): number | null {
   return maxDD;
 }
 
-function evRoiStatus(
-  roi: number | null,
+// Same floor CLAUDE.md/VANTAGE's own guardrail use for "poorly calibrated"
+// (docs/vantage-centric-redesign-2026-09-01.md §4 point 3, §5.8) — ratio
+// réel/annoncé below this is measured overconfident enough to distrust.
+// Reused here for consistency: this page previously classified by ROI
+// (§5.4 of that doc) even though DRAW was flagged "Négatif" on ROI while
+// being one of only 2 channels with a genuinely positive calibration ratio
+// after shrinkage (2026-08-22 audit) — the classification basis was wrong,
+// not just this one channel's number.
+const CALIBRATION_GOOD_RATIO = 0.85;
+// A wider margin below GOOD before calling a channel outright unreliable
+// rather than borderline — same asymmetric shape (a narrow middle band,
+// no distinct tier above GOOD) as the ROI thresholds this replaces.
+const CALIBRATION_BAD_RATIO = 0.7;
+
+function calibrationStatus(
+  ratio: number | null,
   sampleSize: number,
   minSample: number,
 ): ChannelStatus {
   if (sampleSize < minSample) return 'INSUFFICIENT_DATA';
-  if (roi === null) return 'INACTIVE';
-  if (roi >= 0) return 'GREEN';
-  if (roi >= -5) return 'ORANGE';
+  if (ratio === null) return 'INACTIVE';
+  if (ratio >= CALIBRATION_GOOD_RATIO) return 'GREEN';
+  if (ratio >= CALIBRATION_BAD_RATIO) return 'ORANGE';
   return 'RED';
+}
+
+// hitRate ÷ average announced probability — same formula as VANTAGE's own
+// context calibration (apps/vantage-worker/src/context/build-match-
+// context.ts's loadChannelCalibration) and the admission philosophy
+// documented in project memory feedback_admission_par_calibration: ratio
+// réel/annoncé, never ROI.
+function calibrationRatioOf(selections: SettledSelection[]): number | null {
+  if (selections.length === 0) return null;
+  const hitRate = hitRateOf(selections);
+  if (hitRate === null) return null;
+  const avgProbability =
+    selections.reduce((acc, s) => acc + toNumber(s.probability), 0) /
+    selections.length;
+  if (avgProbability <= 0) return null;
+  return hitRate / avgProbability;
 }
 
 // DOMINANT/BTTS/DRAW/GOALS settle via ChannelSelection.result rather than a
@@ -633,6 +628,7 @@ type SettledSelection = {
   // Schema-nullable, but the repository query filters to WON/LOST only.
   result: BetStatus | null;
   odds: { toString(): string } | null;
+  probability: { toString(): string };
 };
 
 function asFlatBets(selections: SettledSelection[]): FlatBet[] {
@@ -655,13 +651,15 @@ function channelHealthFromSelections(
 ): ChannelHealthItem {
   const roi = flatBetRoi(asFlatBets(selections));
   const hitRate = hitRateOf(selections);
+  const calibrationRatio = calibrationRatioOf(selections);
   return {
     channel,
-    status: evRoiStatus(roi, selections.length, 30),
+    status: calibrationStatus(calibrationRatio, selections.length, 30),
     primaryMetric: (primaryMetricType === 'HIT_RATE' ? hitRate : roi) ?? 0,
     primaryMetricType,
     roi,
     hitRate,
+    calibrationRatio,
     vsThreshold: null,
     sampleSize: selections.length,
   };
@@ -702,6 +700,7 @@ function channelCompetitionStatsFromSelections(
   return Array.from(groups.entries()).map(
     ([competitionCode, { name, country, rows }]) => {
       const roi = flatBetRoi(asFlatBets(rows));
+      const calibrationRatio = calibrationRatioOf(rows);
       return {
         channel,
         competitionCode,
@@ -709,8 +708,9 @@ function channelCompetitionStatsFromSelections(
         competitionCountry: country,
         roi,
         hitRate: hitRateOf(rows),
+        calibrationRatio,
         sampleSize: rows.length,
-        status: evRoiStatus(roi, rows.length, 30),
+        status: calibrationStatus(calibrationRatio, rows.length, 30),
       };
     },
   );

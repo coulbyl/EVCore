@@ -21,6 +21,7 @@ import {
 } from "@/domains/auth/context/current-user-context";
 import { clientApiRequest } from "@/lib/api/client-api";
 import { updateIdentity } from "@/domains/auth/use-cases/update-identity";
+import { PhoneNumberRow } from "./phone-number-row";
 
 type EditableField = "email" | "username" | null;
 
@@ -345,6 +346,16 @@ export function ProfileHeroSection() {
               })}
               saveLabel={t("save")}
               cancelLabel={t("cancel")}
+            />
+            <PhoneNumberRow
+              label={t("phone")}
+              consentLabel={t("phoneConsentLabel")}
+              placeholder={t("phonePlaceholder")}
+              addLabel={t("phoneAdd")}
+              removeLabel={t("phoneRemove")}
+              saveLabel={t("save")}
+              cancelLabel={t("cancel")}
+              saveError={t("phoneSaveError")}
             />
             {currentUser.bio && (
               <div className="flex items-center gap-3 px-4 py-3">

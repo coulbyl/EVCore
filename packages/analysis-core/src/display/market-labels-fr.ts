@@ -7,15 +7,15 @@
 const MARKET_LABELS_FR: Record<string, string> = {
   ONE_X_TWO: "Résultat",
   MATCH_WINNER: "Vainqueur",
-  BTTS: "Les deux marquent",
-  OVER_UNDER: "Plus/Moins",
-  OVER_UNDER_25: "Plus/Moins",
+  BTTS: "Les deux équipes marquent",
+  OVER_UNDER: "Plus/Moins de buts",
+  OVER_UNDER_25: "Plus/Moins de buts",
   DOUBLE_CHANCE: "Double chance",
   HALF_TIME_FULL_TIME: "Mi-temps / Fin de match",
   OVER_UNDER_HT: "Plus/Moins MT",
   FIRST_HALF_WINNER: "Résultat MT",
   CORRECT_SCORE: "Score exact",
-  DRAW_NO_BET: "Sans le nul",
+  DRAW_NO_BET: "Remboursé si match nul",
   TEAM_TOTAL_HOME: "Buts domicile",
   TEAM_TOTAL_AWAY: "Buts extérieur",
   CLEAN_SHEET_HOME: "Clean sheet domicile",
@@ -24,7 +24,7 @@ const MARKET_LABELS_FR: Record<string, string> = {
   WIN_TO_NIL_AWAY: "Gagne sans encaisser (ext.)",
   TO_WIN_EITHER_HALF: "Gagne une mi-temps",
   RESULT_TOTAL_GOALS: "Résultat + total buts",
-  RESULT_BTTS: "Résultat + BTTS",
+  RESULT_BTTS: "Résultat + Les deux équipes marquent",
 };
 
 // Parses a generic "OVER_X_Y" / "UNDER_X_Y" pick (used by TEAM_TOTAL_* and
@@ -131,8 +131,13 @@ export function formatPickForDisplayFr(pick: string, market: string): string {
     if (side && rest) {
       const sideLabel =
         side === "HOME" ? "Dom." : side === "AWAY" ? "Ext." : "Nul";
-      if (rest === "YES") return `${sideLabel} + BTTS Oui`;
-      if (rest === "NO") return `${sideLabel} + BTTS Non`;
+      // No "BTTS" here — formatMarketForDisplayFr(market) already says
+      // "Résultat + Les deux équipes marquent" wherever this pick is shown alongside
+      // its market, so the pick itself only needs the side + Oui/Non and
+      // never echoes the raw market code (2quater: never leak a technical
+      // code into user-facing text).
+      if (rest === "YES") return `${sideLabel} + Oui`;
+      if (rest === "NO") return `${sideLabel} + Non`;
       const goalsLabel = formatGenericOverUnderPick(rest);
       if (goalsLabel) return `${sideLabel} + ${goalsLabel}`;
     }

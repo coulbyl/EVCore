@@ -8,9 +8,7 @@ import {
   GraduationCap,
   HelpCircle,
   LogOut,
-  Megaphone,
   MessageCircle,
-  Repeat,
   Settings,
   Sprout,
   Wallet,
@@ -28,7 +26,7 @@ import { logout } from "@/domains/auth/use-cases/logout";
 import type { AuthSessionUser } from "@/domains/auth/types/auth";
 import { UserAvatar } from "@/components/user-avatar";
 import { useTranslations } from "next-intl";
-import { useOnboardingTour } from "@/domains/onboarding/context/onboarding-tour-context";
+import { useProductTour } from "@/domains/product-tour/context/product-tour-context";
 
 export function AccountButton({
   currentUser,
@@ -39,7 +37,7 @@ export function AccountButton({
   const queryClient = useQueryClient();
   const tNav = useTranslations("nav");
   const tAuth = useTranslations("auth");
-  const { startTour } = useOnboardingTour();
+  const { startTour } = useProductTour();
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -120,27 +118,9 @@ export function AccountButton({
             asChild
             className="rounded-xl focus:bg-accent/8 focus:text-foreground"
           >
-            <Link href="/dashboard/subscriptions">
-              <Repeat className="text-accent" />
-              {tNav("subscriptions")}
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            asChild
-            className="rounded-xl focus:bg-accent/8 focus:text-foreground"
-          >
             <Link href="/dashboard/formation">
               <GraduationCap className="text-accent" />
               {tNav("formation")}
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            asChild
-            className="rounded-xl focus:bg-accent/8 focus:text-foreground"
-          >
-            <Link href="/dashboard/updates">
-              <Megaphone className="text-accent" />
-              {tNav("updates")}
             </Link>
           </DropdownMenuItem>
           {currentUser.role === "ADMIN" ? (

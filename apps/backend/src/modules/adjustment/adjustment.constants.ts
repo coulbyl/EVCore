@@ -23,13 +23,7 @@ export const BRIER_TARGET = 0.2;
 /** Minimum number of days between two consecutive auto-apply cycles. */
 export const MIN_DAYS_BETWEEN_APPLICATIONS = 7;
 
-/**
- * Virtual sample size of the pooled prior in the per-channel reliability
- * shrinkage (`shrinkTowardPooled`, channel-reliability.ts): a channel needs
- * this many settled selections of its own before its fit outweighs the pooled
- * one. Fitted by walk-forward on the settled `channel_selection` history —
- * `pnpm --filter @evcore/db db:backtest:channel-reliability-calibration`
- * reports the out-of-sample Brier score for a grid of values; re-run it rather
- * than nudging this by hand.
- */
-export const CHANNEL_RELIABILITY_PRIOR_WEIGHT = 300;
+// CHANNEL_RELIABILITY_PRIOR_WEIGHT moved 2026-09-03 to
+// packages/analysis-core/src/coupon/channel-reliability.ts, alongside the
+// pure Platt-curve fitting code that's its only reader — see
+// docs/vantage-centric-redesign-2026-09-01.md §9bis.

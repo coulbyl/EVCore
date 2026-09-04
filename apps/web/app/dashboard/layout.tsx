@@ -10,7 +10,8 @@ import { CurrencyProvider } from "@/providers/currency-provider";
 import type { AppCurrency } from "@/helpers/number";
 import { redirect } from "next/navigation";
 import { CurrentUserProvider } from "@/domains/auth/context/current-user-context";
-import { OnboardingTourProvider } from "@/domains/onboarding/context/onboarding-tour-context";
+import { ProductTourProvider } from "@/domains/product-tour/context/product-tour-context";
+import { OnboardingWizard } from "@/domains/onboarding/onboarding-wizard";
 
 export default async function DashboardLayout({
   children,
@@ -30,7 +31,7 @@ export default async function DashboardLayout({
     <CurrencyProvider initialCurrency={initialCurrency}>
       <CurrentUserProvider initialUser={session.user}>
         <BetSlipProvider>
-          <OnboardingTourProvider>
+          <ProductTourProvider>
             <AppShell headerNotice={<NetworkStatusBanner />}>
               {children}
             </AppShell>
@@ -38,7 +39,8 @@ export default async function DashboardLayout({
             <EvaFab />
             <PageSearchFab />
             <PwaInstallBanner />
-          </OnboardingTourProvider>
+            <OnboardingWizard />
+          </ProductTourProvider>
         </BetSlipProvider>
       </CurrentUserProvider>
     </CurrencyProvider>

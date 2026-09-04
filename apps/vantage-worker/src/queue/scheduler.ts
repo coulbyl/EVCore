@@ -2,14 +2,14 @@ import type { Queue } from "bullmq";
 import type { Logger } from "pino";
 import type { Config } from "../config";
 import { findEligibleFixtureIds } from "./find-eligible-fixtures";
-import type { AnalyzeJobData, SweepJobData } from "./queue";
+import type { VantageJobData } from "./queue";
 
 /** Finds fixtures VANTAGE hasn't read yet and enqueues one analysis job each.
  * Idempotent: a fixture already carrying a VANTAGE decision is never
  * re-enqueued by the sweep (analyzeFixture itself would just upsert over it
  * if it somehow were). */
 export async function runSweep(
-  queue: Queue<AnalyzeJobData | SweepJobData>,
+  queue: Queue<VantageJobData>,
   config: Config,
   logger: Logger,
 ): Promise<number> {

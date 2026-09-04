@@ -1,7 +1,6 @@
 import { Injectable, Optional } from '@nestjs/common';
 import {
   AdjustmentStatus,
-  BetStatus,
   FixtureStatus,
   Market,
   ModelRunPhase,
@@ -39,7 +38,6 @@ import {
 import {
   CALIBRATION_GATE,
   OVER_UNDER_CALIBRATION_GATE,
-  DEFAULT_STAKE_PCT,
   EV_MAX_SOFT_ALERT,
   FEATURE_WEIGHTS,
   getModelScoreThreshold,
@@ -114,19 +112,6 @@ import { formatDateUtc } from '@utils/date.utils';
 const logger = createLogger('betting-engine-service');
 const MIN_LAMBDA = 0.05;
 
-export type BetCandidate = {
-  fixtureId: string;
-  modelRunId: string;
-  market: Market;
-  pick: string;
-  pickKey: string;
-  probability: Decimal;
-  odds: Decimal;
-  ev: Decimal;
-  stakePct: Decimal;
-  qualityScore: Decimal;
-};
-
 type AnalyzeFixtureResult =
   | {
       status: 'analyzed';
@@ -134,7 +119,6 @@ type AnalyzeFixtureResult =
       modelRunId: string;
       deterministicScore: number;
       probabilities: Record<string, number | Record<string, number>>;
-      valueBet: BetCandidate | null;
     }
   | {
       status: 'skipped';
@@ -1183,108 +1167,12 @@ export class BettingEngineService {
       }
     }
 
-    // Materialise real `bet` rows from what VALUE/SAFE actually SELECTED
-    // (persistedChannelDecisions) — never re-derive the pick from the raw
-    // evaluatedPicks pool. Before 2026-08-19 this block used
-    // candidatePicks[0]/selectSafeValuePick directly, so a staked `bet` could
-    // diverge from the Phase-2 decision the analysis sheet shows for the same
-    // fixture (see findChannelSelectionId's "live/backtest edge case" note,
-    // now moot: we key off the selection's own id, no re-matching by pick).
-    const betCandidate = await this.persistChannelBet(
-      persistedChannelDecisions,
-      STRATEGY_CHANNEL.VALUE,
-      { fixtureId, modelRunId: modelRun.id, pickKeyPrefix: '' },
-    );
-    await this.persistChannelBet(
-      persistedChannelDecisions,
-      STRATEGY_CHANNEL.SAFE,
-      {
-        fixtureId,
-        modelRunId: modelRun.id,
-        pickKeyPrefix: 'sv:',
-      },
-    );
-
     return {
       status: 'analyzed',
       fixtureId,
       modelRunId: modelRun.id,
       deterministicScore: deterministicScore.toNumber(),
       probabilities: mapProbabilitiesToNumber(probabilities),
-      valueBet: betCandidate,
-    };
-  }
-
-  // Materialises the real `bet` row for a staking channel (VALUE, SAFE) from
-  // its persisted Phase-2 selection — the single source of truth for what
-  // that channel picked. Every bet is staked at the flat DEFAULT_STAKE_PCT
-  // (no Kelly sizing: it would scale the stake with the model's stated
-  // edge, amplifying exactly the ~8pp overconfidence bias the VALUE edge
-  // floor already exists to contain).
-  private async persistChannelBet(
-    decisions: readonly PersistedChannelDecision[],
-    channel: StrategyChannel,
-    opts: { fixtureId: string; modelRunId: string; pickKeyPrefix: string },
-  ): Promise<BetCandidate | null> {
-    const selection =
-      decisions.find((d) => d.channel === channel)?.selections[0] ?? null;
-    if (
-      selection === null ||
-      selection.odds === undefined ||
-      selection.ev === undefined
-    ) {
-      return null;
-    }
-
-    const stakePct = DEFAULT_STAKE_PCT;
-    const qualityScore = selection.qualityScore ?? new Decimal(0);
-    const pickKey = `${opts.pickKeyPrefix}${buildBetPickKey({
-      market: selection.market,
-      pick: selection.pick,
-    })}`;
-
-    const persistData = {
-      modelRunId: opts.modelRunId,
-      channelSelectionId: selection.id,
-      probEstimated: toPrismaDecimal(selection.probability, 4),
-      oddsSnapshot: toPrismaDecimal(selection.odds, 3),
-      ev: toPrismaDecimal(selection.ev, 4),
-      qualityScore: toPrismaDecimal(qualityScore, 4),
-      stakePct: toPrismaDecimal(stakePct, 4),
-    };
-
-    const existingBet = await this.prisma.client.bet.findFirst({
-      where: { fixtureId: opts.fixtureId, pickKey, userId: null },
-      select: { id: true },
-    });
-    if (existingBet) {
-      await this.prisma.client.bet.update({
-        where: { id: existingBet.id },
-        data: { ...persistData, status: BetStatus.PENDING },
-      });
-    } else {
-      await this.prisma.client.bet.create({
-        data: {
-          ...persistData,
-          fixtureId: opts.fixtureId,
-          market: selection.market,
-          pick: selection.pick,
-          pickKey,
-        },
-      });
-    }
-
-    return {
-      fixtureId: opts.fixtureId,
-      modelRunId: opts.modelRunId,
-      market: selection.market,
-      pick: selection.pick,
-      pickKey,
-      probability: selection.probability,
-      odds: selection.odds,
-      ev: selection.ev,
-      stakePct,
-      qualityScore,
     };
   }
 
@@ -1471,7 +1359,6 @@ export class BettingEngineService {
 
     // Per-channel decisions (doc §5). Skipped when no probabilities were
     // derived (no Elo and no odds) — the strategy context requires them.
-    let persistedChannelDecisions: PersistedChannelDecision[] = [];
     if (probabilities !== null) {
       const friLambdaTotal =
         distHome.reduce((sum, p, k) => sum + k * p, 0) +
@@ -1488,34 +1375,27 @@ export class BettingEngineService {
         h2h: null,
         congestion: null,
       };
-      persistedChannelDecisions =
-        (await this.channelDecisionService?.recordRunDecisions(
-          modelRun.id,
-          buildStrategyContext({
-            fixture: {
-              id: fixture.id,
-              homeTeamId: fixture.homeTeamId,
-              awayTeamId: fixture.awayTeamId,
-              scheduledAt: fixture.scheduledAt,
-            },
-            competitionCode,
-            deterministicScore,
-            probabilities,
-            lambdaHome: lambda?.home,
-            lambdaAway: lambda?.away,
-            evaluatedPicks,
-            odds: marketOdds?.snapshot ?? null,
-            signals: channelSignals,
-            phase: modelRunPhase,
-          }),
-        )) ?? [];
+      await this.channelDecisionService?.recordRunDecisions(
+        modelRun.id,
+        buildStrategyContext({
+          fixture: {
+            id: fixture.id,
+            homeTeamId: fixture.homeTeamId,
+            awayTeamId: fixture.awayTeamId,
+            scheduledAt: fixture.scheduledAt,
+          },
+          competitionCode,
+          deterministicScore,
+          probabilities,
+          lambdaHome: lambda?.home,
+          lambdaAway: lambda?.away,
+          evaluatedPicks,
+          odds: marketOdds?.snapshot ?? null,
+          signals: channelSignals,
+          phase: modelRunPhase,
+        }),
+      );
     }
-
-    const betCandidate = await this.persistChannelBet(
-      persistedChannelDecisions,
-      STRATEGY_CHANNEL.VALUE,
-      { fixtureId, modelRunId: modelRun.id, pickKeyPrefix: '' },
-    );
 
     return {
       status: 'analyzed',
@@ -1524,7 +1404,6 @@ export class BettingEngineService {
       deterministicScore: deterministicScore.toNumber(),
       probabilities:
         probabilities !== null ? mapProbabilitiesToNumber(probabilities) : {},
-      valueBet: betCandidate,
     };
   }
 
@@ -1555,6 +1434,54 @@ export class BettingEngineService {
     }
 
     return { date, analyzed, skipped };
+  }
+
+  /**
+   * Same-day recheck (docs/vantage-centric-redesign-2026-09-01.md,
+   * project_no_same_day_reanalysis.md) — re-analyzes only fixtures kicking
+   * off within `windowHours` from now, never the whole day. `analyzeByDate`
+   * re-analyzing every SCHEDULED fixture for "today" regardless of kickoff
+   * time would re-score an 8pm fixture at 9am for no benefit, and multiply
+   * the cost of the optional shadow-predictions/ML-correction calls
+   * `analyzeFixture` makes per run for zero gain that far out.
+   *
+   * Safe to call repeatedly and close together: `analyzeFixture` always
+   * creates a fresh `ModelRun` row (no per-fixture uniqueness constraint,
+   * no dedup — same accumulation pattern the pool query already reads via
+   * `take: 6` ordered by `analyzedAt desc`) and re-reads odds/team-stats
+   * fresh from the DB every call, so a later call naturally picks up any
+   * odds movement or lineup update since the last one. The `status:
+   * SCHEDULED` filter (shared with `analyzeByDate`) means a fixture that
+   * has since kicked off is excluded automatically — no separate guard
+   * needed against re-analyzing a live/finished match.
+   */
+  async analyzeUpcoming(windowHours: number): Promise<{
+    windowHours: number;
+    analyzed: number;
+    skipped: number;
+  }> {
+    const now = new Date();
+    const to = new Date(now.getTime() + windowHours * 3_600_000);
+
+    const fixtures = await this.prisma.client.fixture.findMany({
+      where: {
+        scheduledAt: { gte: now, lte: to },
+        status: FixtureStatus.SCHEDULED,
+      },
+      select: { id: true },
+      orderBy: { scheduledAt: 'asc' },
+    });
+
+    let analyzed = 0;
+    let skipped = 0;
+
+    for (const fixture of fixtures) {
+      const result = await this.analyzeFixture(fixture.id);
+      if (result.status === 'analyzed') analyzed++;
+      else skipped++;
+    }
+
+    return { windowHours, analyzed, skipped };
   }
 
   async analyzeSeason(seasonId: string): Promise<{

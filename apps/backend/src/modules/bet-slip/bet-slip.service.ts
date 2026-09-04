@@ -126,6 +126,19 @@ export class BetSlipService {
       });
     }
 
+    // ── Coupon joué (si applicable) ──────────────────────────────────────
+    // Resolved before the transaction: a stale/unknown couponProposalId must
+    // never fail the whole bet slip submission over an engagement-tracking
+    // mismatch (see CreateBetSlipDto's own doc comment).
+    let placementCouponId: string | null = null;
+    if (input.couponProposalId) {
+      const coupon = await this.prisma.client.couponProposal.findUnique({
+        where: { id: input.couponProposalId },
+        select: { id: true },
+      });
+      placementCouponId = coupon?.id ?? null;
+    }
+
     // ── Plafond gain potentiel ───────────────────────────────────────────
     const totalOdds = resolvedUserPicks.reduce(
       (acc, r) => acc.times(r.oddsSnapshot),
@@ -227,6 +240,28 @@ export class BetSlipService {
       await tx.betSlipItem.createMany({
         data: betSlipItemsData,
       });
+
+      if (placementCouponId) {
+        // upsert with a no-op update: a user can only ever "play" a given
+        // coupon once (unique on [couponProposalId, userId]) — a repeat
+        // submission (shouldn't happen, the frontend freezes the button
+        // after the first play) leaves the ORIGINAL placement/betSlipId in
+        // place rather than reassigning it.
+        await tx.couponProposalPlacement.upsert({
+          where: {
+            couponProposalId_userId: {
+              couponProposalId: placementCouponId,
+              userId,
+            },
+          },
+          create: {
+            couponProposalId: placementCouponId,
+            userId,
+            betSlipId: betSlip.id,
+          },
+          update: {},
+        });
+      }
 
       if (slipType === BetSlipType.COMBO) {
         await this.bankroll.recordBetPlacedBatch(

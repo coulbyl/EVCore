@@ -28,14 +28,14 @@ export type ArbitrageEntry = Pick<
     ChannelDecisionDto,
     "id" | "status" | "reasonDetails" | "decidedAt" | "selections"
   > & {
-    // VANTAGE never writes its own odds (its response schema has none — see
-    // apps/vantage-worker/src/vantage/response-schema.ts) — borrowed from a
-    // sibling channel's decision on the SAME ModelRun that landed on the
-    // exact same (market, pick), when one exists. Mirrors what VANTAGE
-    // itself checks at generation time (analyze-fixture.ts's
-    // findKnownOdds/MIN_ODDS floor) — the only odds it can honestly claim,
-    // never invented.
-    borrowedOdds: number | null;
+    // VANTAGE's own selection.odds since 2026-09-04 (persist-decision.ts) —
+    // the same value already resolved at generation time for the MIN_ODDS
+    // floor check (analyze-fixture.ts's findKnownOdds), the only odds it can
+    // honestly claim, never invented. Falls back to a sibling channel's
+    // decision on the SAME ModelRun landing on the exact same (market,
+    // pick) for decisions persisted before that date, or for markets
+    // findKnownOdds doesn't cover yet (only ONE_X_TWO today).
+    displayOdds: number | null;
   };
 
 function findSiblingOdds(
@@ -64,9 +64,11 @@ export function flattenArbitrageEntries(
       .filter((d) => d.channel === "VANTAGE")
       .map((d) => {
         const selection = d.selections[0];
-        const borrowedOdds = selection
-          ? findSiblingOdds(match.decisions, selection.market, selection.pick)
-          : null;
+        const displayOdds =
+          selection?.odds ??
+          (selection
+            ? findSiblingOdds(match.decisions, selection.market, selection.pick)
+            : null);
         return {
           fixtureId: match.fixtureId,
           fixtureStatus: match.fixtureStatus,
@@ -86,7 +88,7 @@ export function flattenArbitrageEntries(
           reasonDetails: d.reasonDetails,
           decidedAt: d.decidedAt,
           selections: d.selections,
-          borrowedOdds,
+          displayOdds,
         };
       }),
   );

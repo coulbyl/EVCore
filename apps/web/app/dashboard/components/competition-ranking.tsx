@@ -2,27 +2,8 @@
 
 import { AlertCircle, Trophy } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { ChannelStatusBadge } from "@/components/channel-status-badge";
 import type { CompetitionStat } from "@/domains/dashboard/types/dashboard";
-
-function RoiChip({ roi }: { roi: string | null }) {
-  if (!roi) {
-    return (
-      <span className="text-[0.6rem] italic text-muted-foreground">
-        données insuff.
-      </span>
-    );
-  }
-  const positive = roi.startsWith("+");
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[0.65rem] font-bold tabular-nums ${
-        positive ? "bg-success/10 text-success" : "bg-danger/10 text-danger"
-      }`}
-    >
-      {roi}
-    </span>
-  );
-}
 
 function CompetitionRow({
   stat,
@@ -31,7 +12,6 @@ function CompetitionRow({
   stat: CompetitionStat;
   index: number;
 }) {
-  const t = useTranslations("dashboard.leagueRanking");
   const pos = String(index + 1).padStart(2, "0");
   return (
     <div className="group rounded-xl px-2.5 py-2.5 transition-colors hover:bg-panel">
@@ -45,37 +25,16 @@ function CompetitionRow({
         <span className="min-w-0 flex-1 truncate text-[0.78rem] font-semibold text-foreground transition-colors group-hover:text-foreground">
           {stat.competitionName}
         </span>
-        <span className="shrink-0 text-[0.6rem] text-muted-foreground">
+        <ChannelStatusBadge status={stat.model.status} className="shrink-0" />
+      </div>
+
+      <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-7 text-[0.6rem] text-muted-foreground">
+        <span>
           {stat.activeFixtures} match{stat.activeFixtures > 1 ? "s" : ""}
         </span>
+        {stat.model.winRate && <span>· {stat.model.winRate} victoires</span>}
+        <span>({stat.model.settled} joués)</span>
       </div>
-
-      <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-7">
-        <span className="text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-          {t("model")}
-        </span>
-        <RoiChip roi={stat.model.roi} />
-        {stat.model.winRate && (
-          <span className="text-[0.6rem] text-muted-foreground">
-            {stat.model.winRate} victoires
-          </span>
-        )}
-        <span className="text-[0.58rem] text-muted-foreground">
-          ({stat.model.settled} joués)
-        </span>
-      </div>
-
-      {stat.myPicks && (
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 pl-7">
-          <span className="text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-accent">
-            {t("myBets")}
-          </span>
-          <RoiChip roi={stat.myPicks.roi} />
-          <span className="text-[0.58rem] text-muted-foreground">
-            ({stat.myPicks.settled} joués)
-          </span>
-        </div>
-      )}
     </div>
   );
 }

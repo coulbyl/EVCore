@@ -147,3 +147,144 @@ describe("analyzeFixture — MIN_ODDS floor", () => {
     expect(persistVantageDecision).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("analyzeFixture — calibration floor", () => {
+  it("rejects ONE_X_TWO/DRAW when the DRAW channel is measured poorly calibrated (ratio < 0.85, n >= 30)", async () => {
+    buildMatchContext.mockResolvedValue({
+      ...baseContext,
+      calibration: [
+        {
+          channel: "DRAW",
+          sampleSize: 67,
+          hitRate: 0.269,
+          calibrationRatio: 0.68,
+        },
+      ],
+    });
+    requestVantageCompletion.mockResolvedValue(
+      playResponse({ market: "ONE_X_TWO", pick: "DRAW" }),
+    );
+
+    const result = await analyzeFixture(
+      "fixture-1",
+      dummyClients,
+      dummyConfig,
+      noopLogger,
+    );
+
+    expect(result.outcome).toBe("invalid_response");
+    expect(persistVantageDecision).not.toHaveBeenCalled();
+    expect(noopLogger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ channel: "DRAW", calibrationRatio: 0.68 }),
+      expect.stringContaining("poorly calibrated"),
+    );
+  });
+
+  it("accepts ONE_X_TWO/DRAW when the DRAW channel's calibration ratio is at or above 0.85", async () => {
+    buildMatchContext.mockResolvedValue({
+      ...baseContext,
+      calibration: [
+        {
+          channel: "DRAW",
+          sampleSize: 67,
+          hitRate: 0.325,
+          calibrationRatio: 0.85,
+        },
+      ],
+    });
+    requestVantageCompletion.mockResolvedValue(
+      playResponse({ market: "ONE_X_TWO", pick: "DRAW" }),
+    );
+
+    const result = await analyzeFixture(
+      "fixture-1",
+      dummyClients,
+      dummyConfig,
+      noopLogger,
+    );
+
+    expect(result.outcome).toBe("persisted");
+  });
+
+  it("accepts ONE_X_TWO/DRAW when the DRAW channel's sample size is below 30 — too noisy to gate on", async () => {
+    buildMatchContext.mockResolvedValue({
+      ...baseContext,
+      calibration: [
+        {
+          channel: "DRAW",
+          sampleSize: 12,
+          hitRate: 0.2,
+          calibrationRatio: 0.5,
+        },
+      ],
+    });
+    requestVantageCompletion.mockResolvedValue(
+      playResponse({ market: "ONE_X_TWO", pick: "DRAW" }),
+    );
+
+    const result = await analyzeFixture(
+      "fixture-1",
+      dummyClients,
+      dummyConfig,
+      noopLogger,
+    );
+
+    expect(result.outcome).toBe("persisted");
+  });
+
+  it("never gates a (market, pick) outside the named list, however bad its channel's calibration is", async () => {
+    buildMatchContext.mockResolvedValue({
+      ...baseContext,
+      readings: [{ ...baseContext.readings[0]!, odds: 1.5 }],
+      calibration: [
+        {
+          channel: "DOMINANT",
+          sampleSize: 500,
+          hitRate: 0.1,
+          calibrationRatio: 0.2,
+        },
+      ],
+    });
+    requestVantageCompletion.mockResolvedValue(
+      playResponse({ market: "ONE_X_TWO", pick: "HOME" }),
+    );
+
+    const result = await analyzeFixture(
+      "fixture-1",
+      dummyClients,
+      dummyConfig,
+      noopLogger,
+    );
+
+    expect(result.outcome).toBe("persisted");
+  });
+
+  it("never checks calibration for a no_play verdict", async () => {
+    buildMatchContext.mockResolvedValue({
+      ...baseContext,
+      calibration: [
+        {
+          channel: "DRAW",
+          sampleSize: 67,
+          hitRate: 0.269,
+          calibrationRatio: 0.68,
+        },
+      ],
+    });
+    requestVantageCompletion.mockResolvedValue(
+      JSON.stringify({
+        verdict: "no_play",
+        reasonDetails: "nothing stood out",
+      }),
+    );
+
+    const result = await analyzeFixture(
+      "fixture-1",
+      dummyClients,
+      dummyConfig,
+      noopLogger,
+    );
+
+    expect(result.outcome).toBe("persisted");
+  });
+});

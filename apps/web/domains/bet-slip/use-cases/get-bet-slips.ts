@@ -13,7 +13,7 @@ export async function getBetSlips(
   if (to) params.set("to", to);
   const qs = params.size > 0 ? `?${params.toString()}` : "";
   return clientApiRequest<BetSlipView[]>(`/bet-slips${qs}`, {
-    fallbackErrorMessage: "Impossible de charger les coupons.",
+    fallbackErrorMessage: "Impossible de charger tes coupons.",
   });
 }
 

@@ -8,5 +8,6 @@ import { DashboardRepository } from './dashboard.repository';
   imports: [AuthModule],
   controllers: [DashboardController],
   providers: [DashboardService, DashboardRepository],
+  exports: [DashboardService],
 })
 export class DashboardModule {}

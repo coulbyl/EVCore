@@ -42,16 +42,13 @@ export type CompetitionModelStats = {
   settled: number;
   won: number;
   /** null si settled < 10 (données insuffisantes) */
-  roi: string | null;
-  /** null si settled < 10 */
   winRate: string | null;
-};
-
-export type CompetitionMyPicks = {
-  settled: number;
-  won: number;
-  /** null si settled < 5 */
-  roi: string | null;
+  /** Réel/annoncé — même formule que ChannelHealthItem.calibrationRatio,
+   * pilote `status`. Remplace le ROI comme critère de classement/affichage :
+   * voir CLAUDE.md, le ROI est anti-prédictif/bruité à ce volume. null si
+   * settled < 10. */
+  calibrationRatio: number | null;
+  status: ChannelStatus;
 };
 
 export type CompetitionStat = {
@@ -60,8 +57,6 @@ export type CompetitionStat = {
   competitionCode: string;
   activeFixtures: number;
   model: CompetitionModelStats;
-  /** null si l'utilisateur n'a aucun pick settlé dans cette compétition */
-  myPicks: CompetitionMyPicks | null;
 };
 
 export type PnlByCanalResponse = {
@@ -103,6 +98,11 @@ export type ChannelHealthItem = {
   primaryMetricType: 'ROI' | 'HIT_RATE';
   roi: number | null;
   hitRate: number | null;
+  /** Réel/annoncé (hitRate ÷ probabilité moyenne annoncée) — drives `status`,
+   * never `roi` (see CLAUDE.md: ROI is anti-predictive/noisy at this
+   * volume; calibration is the standard admission signal everywhere else
+   * in the product). */
+  calibrationRatio: number | null;
   vsThreshold: number | null;
   sampleSize: number;
 };
@@ -135,6 +135,8 @@ export type ChannelCompetitionStatItem = {
   competitionCountry: string;
   roi: number | null;
   hitRate: number | null;
+  /** See ChannelHealthItem.calibrationRatio — same formula, drives `status`. */
+  calibrationRatio: number | null;
   sampleSize: number;
   status: ChannelStatus;
 };

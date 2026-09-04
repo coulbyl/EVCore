@@ -1,4 +1,8 @@
-import type { StrategyChannel, Market } from "@evcore/analysis-core";
+import type {
+  StrategyChannel,
+  Market,
+  FullOddsSnapshot,
+} from "@evcore/analysis-core";
 
 /** A channel's own near-threshold read, surfaced even when it abstained —
  * see docs/context-expansion-proposal.md ("C"). Raw values only, no
@@ -106,31 +110,18 @@ export type ShadowPrediction = {
   conflict: boolean;
 } | null;
 
-/** A trained ML correction, per channel, never folded back into that
- * channel's own selected probability (`ModelRun.features.
- * shadow_ml_by_channel`, computed strictly after decisions are persisted —
- * betting-engine.service.ts). Restricted to DOMINANT/VALUE only: a
- * calibration audit (2026-08-30, Brier score vs settled results) found the
- * correction makes GOALS/TEAM_TOTAL/CLEAN_SHEET/WIN_EITHER_HALF/BTTS worse,
- * not better — only DOMINANT and VALUE showed a real improvement. Do not
- * widen this list without re-running that audit. */
-export type ShadowMlSignal = {
-  channel: "DOMINANT" | "VALUE";
-  correctedP: number;
-  edgeDelta: number;
-};
-
 /** The book's raw price for a market no channel selected on this fixture —
  * "what the market prices," never framed as edge/EV (CLAUDE.md: claimed
  * edge is anti-predictive, MAX_LEG_EDGE is a ceiling never a selection
  * signal — that rule applies to VANTAGE's own reasoning exactly as much as
- * to any channel's). Capped to a handful of key markets by the caller, not
- * every market in `odds_snapshot`. */
+ * to any channel's). Capped to a handful of key markets by the caller
+ * (market-odds.ts's CONTEXT_MARKET_PICKS), not every market in
+ * `odds_snapshot`. Generic per-pick shape (since 2026-09-04) rather than a
+ * fixed home/draw/away triplet — BTTS (YES/NO) and OVER_UNDER (OVER/UNDER)
+ * don't fit that shape, and the fixed triplet was ONE_X_TWO-specific. */
 export type MarketOddsSnapshot = {
   market: Market;
-  homeOdds: number | null;
-  drawOdds: number | null;
-  awayOdds: number | null;
+  prices: readonly { pick: string; odds: number }[];
 };
 
 export type MatchContext = {
@@ -153,6 +144,12 @@ export type MatchContext = {
   awayCoach?: CoachSignal;
   h2h?: H2HSignal;
   shadowPrediction?: ShadowPrediction;
-  shadowMl?: readonly ShadowMlSignal[];
   uncoveredMarketOdds?: readonly MarketOddsSnapshot[];
+  /** Every market's resolved price for this fixture, generic per-pick
+   * resolution (`resolveSelectionOdds`) — not display context (that's
+   * `uncoveredMarketOdds`, capped to a short list), used only so
+   * `findKnownOdds` (analyze-fixture.ts) can look up VANTAGE's own picked
+   * (market, pick) regardless of which market it is, not just ONE_X_TWO.
+   * `null`/absent when the fixture has no odds at all. */
+  fullOddsSnapshot?: FullOddsSnapshot | null;
 };

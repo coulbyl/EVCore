@@ -11,10 +11,23 @@ export function useCoupons(date: string) {
       const params = new URLSearchParams({ date });
       return clientApiRequest<CouponProposalDto[]>(
         `/coupons?${params.toString()}`,
-        { fallbackErrorMessage: "Impossible de charger les coupons." },
+        { fallbackErrorMessage: "Impossible de charger les coupons proposés." },
       );
     },
     staleTime: 60_000,
+  });
+}
+
+// Records a real, verifiable "view" (CouponProposalView, idempotent —
+// upserted server-side) — never a fabricated counter. Fire-and-forget: a
+// failed call just means one view goes uncounted, not worth surfacing to
+// the user or retrying.
+export function useRecordCouponView() {
+  return useMutation({
+    mutationFn: (proposalId: string) =>
+      clientApiRequest<void>(`/coupons/${proposalId}/view`, {
+        method: "POST",
+      }),
   });
 }
 

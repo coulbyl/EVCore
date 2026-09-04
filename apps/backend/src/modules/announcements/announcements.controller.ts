@@ -22,11 +22,6 @@ export class AnnouncementsController {
     return this.service.listPublishedForUser(session.user.id);
   }
 
-  @Get('unread-count')
-  unreadCount(@CurrentSession() session: AuthSession) {
-    return this.service.unreadCountForUser(session.user.id);
-  }
-
   @Post(':id/read')
   @HttpCode(HttpStatus.OK)
   async markRead(

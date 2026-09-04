@@ -11,7 +11,8 @@ import {
 } from "@evcore/ui";
 import { translateCountry } from "@/lib/competition-i18n";
 import type { ChannelCompetitionStatItem } from "@/domains/dashboard/types/dashboard";
-import { orderChannels, CHANNEL_LABELS } from "../track-record-constants";
+import { channelLabel } from "../../decisions/components/channel-constants";
+import { orderChannels } from "../track-record-constants";
 import { ChannelStatsTable, type ChannelStatRow } from "./channel-stats-table";
 
 /** Independent from the "Par canal" summary above — same settled data, one
@@ -54,6 +55,7 @@ export function ChannelCompetitionSection({
     status: row.status,
     roi: row.roi,
     hitRate: row.hitRate,
+    calibrationRatio: row.calibrationRatio,
     sampleSize: row.sampleSize,
   }));
 
@@ -77,7 +79,7 @@ export function ChannelCompetitionSection({
           <SelectContent>
             {channelsWithData.map((channel) => (
               <SelectItem key={channel} value={channel}>
-                {CHANNEL_LABELS[channel]}
+                {channelLabel(channel, locale)}
               </SelectItem>
             ))}
           </SelectContent>

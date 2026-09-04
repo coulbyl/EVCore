@@ -1,15 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { StatCard, Skeleton } from "@evcore/ui";
 import { useOperatorSummary } from "@/domains/bet-slip/use-cases/get-operator-summary";
-
-const slotCls =
-  "min-w-0 rounded-[1.15rem] border border-border bg-panel px-2.5 py-2.5 sm:rounded-2xl sm:px-4 sm:py-3";
-const labelCls =
-  "text-[0.56rem] tracking-[0.16em] sm:text-[0.68rem] sm:tracking-[0.2em] font-semibold uppercase text-muted-foreground";
-const valueCls =
-  "mt-1 text-[0.95rem] leading-none sm:text-[1.45rem] lg:text-[1.6rem] font-semibold tabular-nums tracking-tight text-foreground";
-const subCls = "mt-1 text-[0.63rem] sm:mt-0.5 sm:text-xs text-muted-foreground";
 
 export function OperatorPerformanceCard({
   from,
@@ -22,73 +15,62 @@ export function OperatorPerformanceCard({
   const tPerf = useTranslations("performance");
   const { data, isLoading } = useOperatorSummary(from, to);
 
-  const skeleton = (
-    <div className="h-8 w-12 animate-pulse rounded-lg bg-secondary" />
-  );
-
   return (
     <section className="ev-shell-shadow rounded-[1.6rem] border border-border bg-panel-strong p-4 sm:p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-            {t("headline")}
-          </p>
-          <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-            {t("title")}
-          </h2>
-        </div>
+      <div className="min-w-0">
+        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+          {t("headline")}
+        </p>
+        <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+          {t("title")}
+        </h2>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2.5 sm:gap-3">
-        <div className={slotCls}>
-          <p className={labelCls}>{t("slips")}</p>
-          {isLoading ? (
-            skeleton
-          ) : (
-            <p className={valueCls}>{data?.slipCount ?? 0}</p>
-          )}
-          <p className={subCls}>{t("created")}</p>
+      {isLoading ? (
+        <div className="mt-4 grid grid-cols-3 gap-2.5 sm:gap-3">
+          <Skeleton className="h-20 rounded-2xl" />
+          <Skeleton className="h-20 rounded-2xl" />
+          <Skeleton className="h-20 rounded-2xl" />
         </div>
-
-        <div className={slotCls}>
-          <p className={labelCls}>{tPerf("settledShort")}</p>
-          {isLoading ? (
-            skeleton
-          ) : (
-            <p className={valueCls}>{data?.settledBets ?? 0}</p>
-          )}
-          <p className={subCls}>
-            <span className="sm:hidden">{t("settled")}</span>
-            <span className="hidden sm:inline">{t("settledLong")}</span>
-          </p>
-        </div>
-
-        <div className={slotCls}>
-          <p className={labelCls}>{t("winRate")}</p>
-          {isLoading ? (
-            skeleton
-          ) : (
-            <p className={valueCls}>{data?.winRate ?? "—"}</p>
-          )}
-          <p className={subCls}>
-            {data
+      ) : (
+        <div className="mt-4 grid grid-cols-3 gap-2.5 sm:gap-3">
+          <StatCard
+            label={t("slips")}
+            value={String(data?.slipCount ?? 0)}
+            delta={t("created")}
+            tone="accent"
+            compact
+          />
+          <StatCard
+            label={tPerf("settledShort")}
+            value={String(data?.settledBets ?? 0)}
+            delta={data && data.settledBets > 0
               ? `${data.wonBets} ${tPerf("won")} · ${data.lostBets} ${tPerf("lost")}`
-              : "—"}
-          </p>
+              : t("settledLong")}
+            tone="neutral"
+            compact
+          />
+          <StatCard
+            label={t("winRate")}
+            value={data?.winRate ?? "—"}
+            delta={
+              data && data.pendingBets > 0
+                ? `${data.pendingBets} en attente`
+                : undefined
+            }
+            tone={
+              data && data.settledBets > 0 && Number.parseFloat(data.winRate) >= 50
+                ? "success"
+                : "warning"
+            }
+            compact
+          />
         </div>
-      </div>
+      )}
 
       {data && data.settledBets > 0 && (
         <div className="mt-3">
-          <div className="mb-1.5 flex items-center justify-between gap-3">
-            <span className="text-xs font-semibold text-success">
-              {data.wonBets} {tPerf("won")}
-            </span>
-            <span className="text-xs font-semibold text-danger">
-              {data.lostBets} {tPerf("lost")}
-            </span>
-          </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
             <div
               className="h-full rounded-full bg-success transition-all duration-500"
               style={{
@@ -97,13 +79,6 @@ export function OperatorPerformanceCard({
             />
           </div>
         </div>
-      )}
-
-      {data && data.pendingBets > 0 && (
-        <p className="mt-3 text-xs text-muted-foreground">
-          {data.pendingBets} pari{data.pendingBets > 1 ? "s" : ""} en attente de
-          résultat
-        </p>
       )}
     </section>
   );

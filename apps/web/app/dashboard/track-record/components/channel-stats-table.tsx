@@ -4,11 +4,12 @@ import { useMemo } from "react";
 import { DataTable, type ColumnDef } from "@evcore/ui";
 import type { ChannelStatus } from "@/domains/dashboard/types/dashboard";
 import {
+  formatCalibrationRatio,
   formatHitRate,
   formatRoi,
-  roiToneClass,
+  statusToneClass,
 } from "../track-record-constants";
-import { ChannelStatusBadge } from "./channel-status-badge";
+import { ChannelStatusBadge } from "@/components/channel-status-badge";
 
 export type ChannelStatRow = {
   key: string;
@@ -17,6 +18,7 @@ export type ChannelStatRow = {
   status: ChannelStatus;
   roi: number | null;
   hitRate: number | null;
+  calibrationRatio: number | null;
   sampleSize: number;
 };
 
@@ -57,15 +59,27 @@ export function ChannelStatsTable({
         cell: ({ row }) => <ChannelStatusBadge status={row.original.status} />,
       },
       {
+        id: "calibration",
+        header: "Calibration",
+        accessorFn: (row) => row.calibrationRatio ?? Number.NEGATIVE_INFINITY,
+        enableSorting: true,
+        meta: { align: "right" },
+        cell: ({ row }) => (
+          <span
+            className={`font-medium tabular-nums ${statusToneClass(row.original.status)}`}
+          >
+            {formatCalibrationRatio(row.original.calibrationRatio)}
+          </span>
+        ),
+      },
+      {
         id: "roi",
         header: "ROI",
         accessorFn: (row) => row.roi ?? Number.NEGATIVE_INFINITY,
         enableSorting: true,
         meta: { align: "right" },
         cell: ({ row }) => (
-          <span
-            className={`font-medium tabular-nums ${roiToneClass(row.original.status)}`}
-          >
+          <span className="font-medium tabular-nums text-muted-foreground">
             {formatRoi(row.original.roi)}
           </span>
         ),
@@ -115,14 +129,22 @@ export function ChannelStatsTable({
             </p>
             <ChannelStatusBadge status={row.status} />
           </div>
-          <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border/60 pt-2.5">
+          <div className="mt-3 grid grid-cols-4 gap-2 border-t border-border/60 pt-2.5">
+            <div>
+              <p className="text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+                Calibration
+              </p>
+              <p
+                className={`mt-0.5 text-sm font-semibold tabular-nums ${statusToneClass(row.status)}`}
+              >
+                {formatCalibrationRatio(row.calibrationRatio)}
+              </p>
+            </div>
             <div>
               <p className="text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
                 ROI
               </p>
-              <p
-                className={`mt-0.5 text-sm font-semibold tabular-nums ${roiToneClass(row.status)}`}
-              >
+              <p className="mt-0.5 text-sm font-semibold tabular-nums text-muted-foreground">
                 {formatRoi(row.roi)}
               </p>
             </div>

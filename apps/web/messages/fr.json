@@ -24,11 +24,9 @@
     "bankroll": "Portefeuille",
     "betSlips": "Mes coupons",
     "inbox": "Inbox",
-    "subscriptions": "Abonnements",
     "audit": "Audit",
     "users": "Utilisateurs",
     "announcements": "Annonces",
-    "updates": "Annonces",
     "ml": "Moteur ML",
     "reports": "Rapports",
     "engine": "Moteur & ETL",
@@ -41,9 +39,7 @@
     "replayTour": "Revoir le guide",
     "help": "Aide",
     "summary": "Résumé sélections",
-    "investmentSummary": "Résumé investissement",
-    "coupons": "Combinés",
-    "investment": "Investir",
+    "coupons": "Coupons",
     "decisions": "Décisions",
     "decisionsShort": "Décisions",
     "arbitrage": "Arbitrage"
@@ -51,120 +47,94 @@
   "decisions": {
     "channels": {
       "VALUE": {
-        "label": "Valeur",
         "description": "Cotes à valeur attendue positive."
       },
       "SAFE": {
-        "label": "Sécurité",
         "description": "Sélections prudentes à rendement régulier."
       },
       "DOMINANT": {
-        "label": "Victoire",
         "description": "Angle le plus affirmé du modèle sur le 1N2."
       },
       "BTTS": {
-        "label": "BTTS",
         "description": "Deux équipes marquent."
       },
       "DRAW": {
-        "label": "Nul",
         "description": "Match nul via la probabilité implicite du marché."
       },
       "GOALS": {
-        "label": "Buts",
         "description": "Plus/moins de buts (Over/Under)."
       },
       "CLEAN_SHEET": {
-        "label": "Clean sheet",
         "description": "Une équipe termine le match sans encaisser de but."
       },
       "TEAM_TOTAL": {
-        "label": "Buts par équipe",
         "description": "Plus/moins de buts marqués par une seule équipe."
       },
       "WIN_EITHER_HALF": {
-        "label": "Gagne une mi-temps",
         "description": "Une équipe gagne au moins l'une des deux mi-temps."
       },
       "FIRST_HALF": {
-        "label": "1ère mi-temps",
         "description": "Vainqueur de la première mi-temps."
       },
       "DOUBLE_CHANCE": {
-        "label": "Double chance",
         "description": "Double chance (1N, N2 ou 12)."
       },
       "UNDERDOG": {
-        "label": "Outsider",
         "description": "Mise sur l'outsider face au favori du marché."
       },
       "FAVORITE": {
-        "label": "Favori",
         "description": "Mise sur le favori du marché."
       },
       "LIVE_VALUE": {
-        "label": "Valeur live",
         "description": "Valeur détectée en direct pendant le match."
       },
       "MARKET_MOVE": {
-        "label": "Mouvement de cote",
         "description": "Mouvement de cote significatif détecté avant le match."
       },
       "CONSENSUS": {
-        "label": "Consensus",
-        "description": "Plusieurs stratégies indépendantes convergent sur le même pick."
+        "description": "Plusieurs stratégies indépendantes convergent sur la même sélection."
       },
       "CONTRARIAN": {
-        "label": "Contrarian",
         "description": "Position à contre-courant du marché."
       },
       "AVOID": {
-        "label": "Attention",
         "description": "Match écarté : divergence modèle/marché implausible."
       },
       "CORRECT_SCORE": {
-        "label": "Score exact",
         "description": "Score exact le plus probable (observation seule, jamais misé)."
       },
       "RESULT_TOTAL_GOALS": {
-        "label": "Résultat + Buts",
         "description": "Résultat du match combiné au total de buts."
       },
       "OVER_UNDER_HT": {
-        "label": "Buts 1ère MT",
         "description": "Plus/moins de buts à la mi-temps."
       },
       "RESULT_BTTS": {
-        "label": "Résultat + BTTS",
         "description": "Résultat du match combiné aux deux équipes qui marquent."
       },
       "DRAW_NO_BET": {
-        "label": "Sans le nul",
         "description": "Résultat sans le nul — mise remboursée en cas de match nul."
       },
       "WIN_TO_NIL": {
-        "label": "Gagne sans encaisser",
         "description": "Une équipe gagne le match sans encaisser de but."
       },
       "HALF_TIME_FULL_TIME": {
-        "label": "Mi-temps / Fin de match",
         "description": "Résultat à la mi-temps combiné au résultat final."
       },
       "VANTAGE": {
-        "label": "Arbitrage",
-        "description": "Lit les décisions des autres canaux et leur fiabilité mesurée sur cette compétition ; ne propose un pick que s'il identifie une tension ou un biais concret entre eux."
+        "description": "Lit les décisions des autres canaux et leur fiabilité mesurée sur cette compétition ; ne propose une sélection que s'il identifie une tension ou un biais concret entre eux."
       }
     },
     "reasons": {
       "score_below_threshold": "Score modèle sous le seuil",
-      "no_viable_pick": "Aucun pick viable",
+      "no_viable_pick": "Aucune sélection viable",
       "line_movement": "Mouvement de cote défavorable",
       "no_safe_candidate": "Aucun candidat sûr",
       "below_threshold": "Probabilité sous le seuil",
       "insufficient_margin": "Marge insuffisante",
       "no_consensus": "Pas de consensus entre canaux",
       "consensus": "Convergence de canaux indépendants",
-      "no_avoid_signal": "Aucun signal d'évitement",
+      "no_avoid_signal": "Aucun signal de prudence détecté",
       "extreme_divergence": "Divergence modèle/marché extrême",
       "no_model": "Pas de probabilités modèle",
       "no_odds": "Aucun score coté",
@@ -181,71 +151,75 @@
       "NOT_APPLICABLE": "Non applicable"
     },
     "lens": {
-      "matches": "Par match",
-      "channels": "Par canal"
+      "matches": "Match"
     },
     "avoid": {
       "banner": "Attention",
       "tooltipLabel": "Signal d'attention",
-      "tooltipDetail": "Un des picks ci-dessous a un écart trop important entre la probabilité du modèle et celle implicite du marché (≥ 30 points). Historiquement, le marché a raison dans ce cas — repérez le pick marqué ⚠ et évitez-le, les autres restent valides.",
+      "tooltipDetail": "Une des sélections ci-dessous a un écart trop important entre la probabilité du modèle et celle implicite du marché (≥ 30 points). Historiquement, le marché a raison dans ce cas — repère la sélection marquée ⚠ et évite-la, les autres restent valides.",
       "edge": "écart",
-      "edgeTooltip": "Divergence modèle/marché : {pct} — ce pick a déclenché le signal Attention"
+      "edgeTooltip": "Divergence modèle/marché : {pct} — cette sélection a déclenché le signal Attention"
     },
     "calibration": {
       "banner": "Données suspectes",
       "tooltipLabel": "Alerte calibration",
-      "tooltipDetail": "Le modèle et le marché sont en désaccord fort sur ce match (favori inversé ou écart extrême sur plusieurs bookmakers). Cela signale presque toujours des données d'entrée corrompues plutôt qu'une opportunité — le moteur exclut automatiquement tous les picks de ce match des paris réels."
+      "tooltipDetail": "Le modèle et le marché sont en désaccord fort sur ce match (favori inversé ou écart extrême sur plusieurs bookmakers). Cela signale presque toujours des données d'entrée corrompues plutôt qu'une opportunité — le moteur exclut automatiquement toutes les sélections de ce match des paris réels.",
+      "badgeTooltip": "{status, select, GREEN {Ce canal a été fiable sur cette compétition} ORANGE {Ce canal est à surveiller sur cette compétition — sa réussite s'écarte de ce qu'il annonce} RED {Ce canal a été peu fiable sur cette compétition — sa réussite réelle est nettement inférieure à ce qu'il annonce} other {Fiabilité non mesurable sur cette compétition}} ({n, plural, one {# pari réglé} other {# paris réglés}})."
     },
     "consensus": {
       "tooltipLabel": "Signal consensus",
       "tooltipDetail": "Plusieurs canaux indépendants ont sélectionné le même outcome sans se concerter. C'est une convergence, pas une garantie : CONSENSUS n'émet plus de pronostic ni de probabilité propre — celle qu'il publiait était le maximum des canaux d'accord, donc optimiste par construction.",
       "rowLabel": "Convergence :"
     },
-    "noPick": "Aucun pick retenu sur ce match.",
-    "noPickShort": "aucun pick",
-    "pickCount": "{count, plural, one {# pick} other {# picks}}",
+    "noPick": "Aucune sélection retenue sur ce match.",
+    "noPickShort": "aucune sélection",
+    "pickCount": "{count, plural, one {# sélection} other {# sélections}}",
     "evaluatedCount": "{count, plural, one {# autre canal évalué} other {# autres canaux évalués}}",
+    "showMorePicks": "{count, plural, one {Voir # autre marché} other {Voir # autres marchés}}",
+    "showLessPicks": "Voir moins",
     "filters": {
       "all": "Tous",
-      "label": "Filtres",
+      "leagueLabel": "Ligue",
+      "channelLabel": "Canal",
+      "displayLabel": "Affichage",
       "noMatch": "Aucun match ne correspond aux filtres.",
       "groupByNone": "Par heure",
       "groupByLeague": "Grouper par ligue",
-      "moreLeagues": "Plus",
       "searchLeague": "Rechercher un championnat…",
-      "noLeagueResults": "Aucun championnat."
+      "noLeagueResults": "Aucun championnat.",
+      "searchChannel": "Rechercher un canal…",
+      "noChannelResults": "Aucun canal."
     },
     "helpLink": "Comment lire une fiche"
   },
   "arbitrage": {
     "title": "Arbitrage",
     "badge": "Lecture IA",
-    "description": "Lit les décisions des autres canaux et leur fiabilité mesurée sur cette compétition — ne propose un pick que s'il identifie une tension ou un biais concret entre eux. Sur la majorité des matchs, la bonne réponse est de ne rien jouer.",
-    "stats": {
-      "readsToday": "lectures aujourd'hui",
-      "plays": "tensions repérées"
-    },
+    "description": "Lit les décisions des autres canaux et leur fiabilité mesurée sur cette compétition — ne propose un pari que lorsqu'il repère un vrai désaccord entre eux, jamais pour confirmer ce qu'ils disent déjà. Sur la majorité des matchs, la bonne réponse est de ne rien jouer.",
     "filters": {
       "all": "Toutes",
       "play": "Recommandé",
-      "noPlay": "À éviter"
+      "noPlay": "Sans avis",
+      "label": "Filtre"
     },
     "reasoningLabel": "Lecture Arbitrage",
     "sourcesLabel": "Sources",
     "decidedAt": "Décidé le {date}",
-    "noPlay": "Aucun pick — lecture seule.",
+    "noPlay": "Aucune sélection — lecture seule.",
     "emptyTitle": "Aucune lecture",
     "emptyDescription": "Le canal n'a encore rien analysé pour cette date.",
     "emptyFilteredTitle": "Rien à signaler",
-    "emptyFilteredDescription": "Aucune tension identifiée aujourd'hui — essayez \"Toutes\" pour voir les lectures sans pick."
+    "emptyFilteredDescription": "Aucun désaccord identifié aujourd'hui — essaie \"Toutes\" pour voir les matchs sans avis."
   },
   "notifications": {
     "title": "Notifications",
     "empty": "Aucune notification",
-    "emptyDescription": "Vous êtes à jour.",
+    "emptyDescription": "Tu es à jour.",
     "markAllRead": "Tout marquer comme lu",
     "unread": "Non lues",
     "all": "Toutes",
+    "announcements": "📣 Annonces",
+    "alerts": "🔔 Alertes",
     "viewAll": "Voir tout",
     "isRead": "Lu",
     "justNow": "À l'instant",
@@ -274,7 +248,7 @@
     "close": "Fermer",
     "isRead": "Lu"
   },
-  "onboarding": {
+  "productTour": {
     "next": "Suivant",
     "prev": "Précédent",
     "done": "Terminé",
@@ -298,37 +272,29 @@
       "title": "Classements",
       "description": "Le classement des ligues par performance du moteur, et celui des utilisateurs les plus disciplinés."
     },
-    "dashboardSubscriptions": {
-      "title": "Tes abonnements",
-      "description": "Un raccourci vers tes abonnements actifs — la mise virtuelle automatique dont on reparle plus loin dans ce tour."
-    },
     "decisions": {
       "title": "Décisions",
       "description": "Chaque match du jour, avec ce que les canaux en pensent. Le bouton « ? » ici t'explique comment lire une fiche à tout moment."
-    },
-    "investment": {
-      "title": "Investir",
-      "description": "Trois vues : ce qu'on assume (les canaux mesurés rentables), ce qu'on observe, et ce que les garde-fous ont écarté — avec la raison. Le « ? » détaille comment l'edge et l'EV sont calculés."
     },
     "fixtures": {
       "title": "Matchs",
       "description": "Tous les matchs du jour, filtrables par statut. L'indice de paris agrège les stats clés d'un coup d'œil."
     },
+    "arbitrage": {
+      "title": "Arbitrage",
+      "description": "VANTAGE, notre canal IA, ne propose un pari que s'il repère un vrai désaccord entre les autres canaux — jamais pour confirmer ce qu'ils disent déjà. Le « ? » ici détaille sa logique."
+    },
     "coupons": {
-      "title": "Combinés",
-      "description": "Des combinés générés automatiquement à partir des meilleurs picks. Le « ? » ouvre la carte de fiabilité des canaux qu'on combine."
+      "title": "Coupons",
+      "description": "Des combinés générés automatiquement à partir des meilleures sélections. Le « ? » ouvre la carte de fiabilité des canaux qu'on combine."
     },
     "betSlipComposer": {
       "title": "Mon coupon",
-      "description": "Construis ton propre coupon en ajoutant des picks depuis Décisions ou Investir — ce bouton te suit partout dans l'app."
+      "description": "Construis ton propre coupon en ajoutant des sélections depuis Décisions — ce bouton te suit partout dans l'app."
     },
     "betSlips": {
       "title": "Mes coupons",
       "description": "L'historique de tes coupons placés, réglés ou en attente, avec le récapitulatif de la période en tête."
-    },
-    "subscriptions": {
-      "title": "Abonnements",
-      "description": "Une discipline figée par abonnement — mise virtuelle automatique sur un canal ou un combiné, suivie sans que tu aies à y penser."
     },
     "bankroll": {
       "title": "Portefeuille",
@@ -346,13 +312,9 @@
       "title": "Inbox",
       "description": "Une messagerie directe avec l'équipe EVCore, pour tes questions ou retours."
     },
-    "updates": {
-      "title": "Annonces",
-      "description": "L'historique des annonces publiées par l'équipe — jamais perdu même si tu as fermé la bannière du dashboard."
-    },
     "evaFab": {
       "title": "Eva",
-      "description": "Génère et exporte la fiche des picks retenus sur une période (txt/json) — pratique pour l'archiver ou la partager. Appui long pour la masquer."
+      "description": "Génère et exporte la fiche des sélections retenues sur une période (txt/json) — pratique pour l'archiver ou la partager. Appui long pour la masquer."
     },
     "pageSearchFab": {
       "title": "Recherche dans la page",
@@ -378,7 +340,7 @@
   "formation": {
     "label": "Formation",
     "title": "Centre de formation",
-    "subtitle": "Articles et vidéos pour comprendre chaque pick et progresser étape par étape.",
+    "subtitle": "Articles et vidéos pour comprendre chaque sélection et progresser étape par étape.",
     "progress": "Progression",
     "open": "Ouvrir",
     "browse": "Parcourir",
@@ -454,10 +416,16 @@
     "savedAutomatically": "Enregistré automatiquement.",
     "profile": "Profil",
     "profileDescription": "Vos informations de compte.",
-    "fullName": "Nom complet",
+    "fullName": "Nom & prénoms",
     "email": "Email",
     "username": "Identifiant",
     "bio": "Biographie",
+    "phone": "Téléphone",
+    "phoneConsentLabel": "J'accepte d'être contacté(e) par téléphone dans le cadre d'une démarche de prospection terrain. Jamais de démarchage commercial automatisé.",
+    "phonePlaceholder": "+225 07 00 00 00 00",
+    "phoneAdd": "Ajouter mon numéro",
+    "phoneRemove": "Désactiver",
+    "phoneSaveError": "Impossible d'enregistrer le numéro.",
     "avatar": "Avatar",
     "save": "Enregistrer",
     "cancel": "Annuler",
@@ -466,14 +434,18 @@
     "password": "Mot de passe",
     "changePassword": "Modifier le mot de passe",
     "changePasswordHint": "La modification du mot de passe sera disponible prochainement.",
+    "groupAccount": "Compte",
+    "groupPreferences": "Préférences",
+    "groupBetting": "Paris",
     "tabProfile": "Profil",
     "tabPreferences": "Préférences",
     "tabSecurity": "Sécurité",
     "tabNotifications": "Notifications",
     "tabBankroll": "Bankroll",
+    "tabPersonalization": "Personnalisation",
     "requires": "Requiert :",
     "avatarSaveError": "Impossible de sauvegarder l'avatar.",
-    "genericError": "Une erreur est survenue.",
+    "genericError": "Une erreur est survenue. Réessaie dans quelques instants.",
     "badgeNames": {
       "vol_50": "50 paris réglés",
       "vol_150": "150 paris réglés",
@@ -482,34 +454,34 @@
     },
     "badgesEyebrow": "Progression",
     "badgesTitle": "Mes badges",
-    "badgesDescription": "Débloquez des badges en atteignant des jalons de performance.",
+    "badgesDescription": "Débloque des badges en atteignant des jalons de performance.",
     "securityTitle": "Authentification & vérification",
     "securitySetupHeading": "Vérification du compte",
     "accountVerified": "Compte vérifié",
     "accountNotVerified": "Compte non vérifié",
     "totpConfigured": "Application d'authentification (TOTP) configurée.",
     "emailVerifiedMessage": "Email vérifié — {email}",
-    "notVerifiedMessage": "Votre compte n'est pas encore vérifié. Certaines fonctionnalités sont inaccessibles.",
+    "notVerifiedMessage": "Ton compte n'est pas encore vérifié. Certaines fonctionnalités sont inaccessibles.",
     "verifyAction": "Vérifier →",
     "totpTitle": "Application d'authentification",
-    "totpDescription": "Non configurée. Ajoutez une app TOTP pour sécuriser davantage votre compte et récupérer l'accès sans email.",
+    "totpDescription": "Non configurée. Ajoute une app TOTP pour sécuriser davantage ton compte et récupérer l'accès sans email.",
     "configureAction": "Configurer →",
     "verificationCodeTitle": "Code de vérification",
     "resendCodeDescription": "Renvoyer un code à {email}.",
-    "codeSentMessage": "Code envoyé — vérifiez vos spams.",
+    "codeSentMessage": "Code envoyé — vérifie tes spams.",
     "codeSendError": "Impossible d'envoyer le code.",
     "sending": "Envoi…",
     "sent": "Envoyé",
     "resend": "Renvoyer",
     "pushNotifications": "Notifications push",
-    "pushNotificationsDescription": "Recevez une notification sur cet appareil pour les messages de l'équipe EVCore et les nouvelles annonces.",
+    "pushNotificationsDescription": "Reçois une notification sur cet appareil pour les messages de l'équipe EVCore et les nouvelles annonces.",
     "pushNotificationsToggle": "Activer les notifications push",
-    "pushNotificationsUnsupported": "Votre navigateur ne prend pas en charge les notifications push.",
-    "pushNotificationsDenied": "Notifications bloquées — autorisez-les dans les paramètres de votre navigateur.",
+    "pushNotificationsUnsupported": "Ton navigateur ne prend pas en charge les notifications push.",
+    "pushNotificationsDenied": "Notifications bloquées — autorise-les dans les paramètres de ton navigateur.",
     "emailNotifications": "Notifications par email",
-    "emailNotificationsDescription": "Recevez un email à chaque nouveau message de l'équipe EVCore.",
+    "emailNotificationsDescription": "Reçois un email à chaque nouveau message de l'équipe EVCore.",
     "emailNotificationsToggle": "Email à chaque nouveau message",
-    "bankrollDescription": "Choisissez la devise affichée dans l'application.",
+    "bankrollDescription": "Choisis la devise affichée dans l'application.",
     "displayCurrency": "Devise d'affichage",
     "unitStake": "Mise par unité",
     "unitModeFixed": "Montant fixe",
@@ -526,32 +498,32 @@
     "roles": {
       "ADMIN": "Admin",
       "OPERATOR": "Opérateur"
+    },
+    "personalization": {
+      "leaguesTitle": "Ligues suivies",
+      "leaguesSubtitle": "{count} sélectionnée(s)",
+      "leaguesEmpty": "Aucun championnat suivi pour l'instant.",
+      "leaguesSearchPlaceholder": "Rechercher un championnat ou un pays...",
+      "leaguesNoResults": "Aucun championnat ne correspond.",
+      "channelsTitle": "Canaux suivis",
+      "channelsHint": "Retrouve ici la fiabilité mesurée des canaux qui t'intéressent — jugée sur leur calibration, c'est-à-dire leur résultat réel comparé à ce qu'ils annoncent.",
+      "channelsEmpty": "Aucun canal suivi pour l'instant.",
+      "discoverButton": "Découvrir des canaux",
+      "discoverSearchPlaceholder": "Rechercher un canal...",
+      "discoverEmpty": "Aucun canal ne correspond.",
+      "discoverStatusTooltip": "{status, select, GREEN {Ce canal a été fiable sur les 90 derniers jours} ORANGE {Ce canal est à surveiller sur les 90 derniers jours — sa réussite s'écarte de ce qu'il annonce} RED {Ce canal a été peu fiable sur les 90 derniers jours — sa réussite réelle est nettement inférieure à ce qu'il annonce} other {Fiabilité non mesurable sur les 90 derniers jours}} ({n, plural, one {# pari réglé} other {# paris réglés}}).",
+      "discoverTip": "3 à 5 canaux suffisent pour garder des recommandations lisibles.",
+      "follow": "+ Suivre",
+      "unfollow": "Retirer",
+      "since": "depuis le {date}",
+      "riskProfileTitle": "Profil de risque",
+      "riskProfileSubtitle": "Oriente le mélange Prudent / Équilibré / Offensif des coupons mis en avant",
+      "riskProfile": {
+        "CONSERVATIVE": "Prudent",
+        "BALANCED": "Équilibré",
+        "AGGRESSIVE": "Offensif"
+      }
     }
-  },
-  "picks": {
-    "pageTitle": "Picks du jour",
-    "evChannel": "Valeur",
-    "safeValue": "Safe",
-    "confidence": "VICTOIRE",
-    "matchNull": "NUL",
-    "goals": "BUTS",
-    "btts": "BTTS",
-    "cleanSheet": "CS",
-    "teamTotal": "BUTS ÉQ.",
-    "winEitherHalf": "GAGNE MT",
-    "firstHalf": "1ÈRE MT",
-    "doubleChance": "DC",
-    "resultTotalGoals": "SCORE+BUTS",
-    "overUnderHt": "O/U MT",
-    "resultBtts": "SCORE+BTTS",
-    "drawNoBet": "DNB",
-    "winToNil": "GAGNE 0",
-    "halfTimeFullTime": "MT/FIN",
-    "bttsLabel": "BTTS — Les deux équipes marquent",
-    "bttsYes": "BTTS OUI",
-    "bttsNo": "BTTS NON",
-    "loadError": "Impossible de charger les picks du jour.",
-    "empty": "Aucun pick pour aujourd'hui."
   },
   "performance": {
     "headline": "Performance globale",
@@ -591,20 +563,10 @@
       "read": "Lire",
       "markAsRead": "Marquer comme lu"
     },
-    "predictions": {
-      "title": "Prédictions du jour",
-      "empty": "Aucune prédiction pour aujourd'hui.",
-      "home": "Domicile",
-      "away": "Extérieur",
-      "draw": "Nul",
-      "yesterday": "hier"
-    },
     "leagueRanking": {
       "title": "Classement ligues",
-      "period": "30j · ROI moteur",
-      "empty": "Aucune donnée sur 30 jours.",
-      "model": "Moteur",
-      "myBets": "Mes paris"
+      "period": "30j · fiabilité",
+      "empty": "Pas encore assez de matchs analysés sur les 30 derniers jours."
     },
     "operatorCard": {
       "headline": "Mes performances",
@@ -623,11 +585,39 @@
       "toWatch": "À surveiller",
       "pendingResult": "en attente de résultat",
       "pendingResults": "en attente de résultats"
+    },
+    "todayConfidence": {
+      "headline": "Aujourd'hui",
+      "title": "Confiance du moteur",
+      "confidenceHigh": "Confiance élevée",
+      "confidenceModerate": "Confiance modérée",
+      "confidenceLow": "Confiance faible",
+      "confidenceUnknown": "Pas assez de données",
+      "toFollow": "À suivre aujourd'hui",
+      "toAvoid": "À éviter aujourd'hui",
+      "emptyFollow": "Aucune sélection fiable aujourd'hui",
+      "emptyAvoid": "Aucun canal à éviter aujourd'hui"
+    },
+    "engineHealth": {
+      "headline": "Santé moteur",
+      "title": "Vue d'ensemble",
+      "globalRatio": "Ratio calibration",
+      "redChannels": "Canaux peu fiables",
+      "activeSuspensions": "Marchés suspendus",
+      "trend": "Tendance",
+      "trendCaption": "7j vs 30j",
+      "calibrationCurve": "Courbe de calibration",
+      "announced": "Annoncée",
+      "actual": "Réelle",
+      "suspendedMarkets": "Marchés suspendus",
+      "recentAlerts": "Alertes récentes (7j)",
+      "channelsByDeviation": "Canaux triés par écart à la calibration",
+      "channel": "Canal"
     }
   },
   "betSlips": {
     "emptyTitle": "Aucun coupon",
-    "emptyDescription": "Aucun coupon ne correspond à cette période et à ce filtre."
+    "emptyDescription": "Aucun coupon ne correspond à cette période. Essaie d'élargir le filtre."
   },
   "bankrollPage": {
     "filter": {
@@ -657,7 +647,7 @@
       "subtitle": "Le solde jour après jour, calculé à partir des mouvements récents.",
       "recent": "Évolution récente",
       "notEnoughData": "Pas assez de données",
-      "notEnoughDataDescription": "Effectuez des transactions pour voir la courbe d'évolution.",
+      "notEnoughDataDescription": "Effectue des transactions pour voir la courbe d'évolution.",
       "lowest": "Plus bas",
       "highest": "Plus haut",
       "displayedDays": "Jours affichés",
@@ -691,7 +681,7 @@
     "backtestHint": "Simulation du modèle sur l'historique pour estimer sa robustesse. Le dernier résultat est conservé dans ce navigateur.",
     "runBacktest": "Lancer le backtest",
     "backtestRunning": "Backtest en cours…",
-    "backtestIdle": "Lancez une simulation pour voir comment le modèle aurait performé sur les données passées.",
+    "backtestIdle": "Lance une simulation pour voir comment le modèle aurait performé sur les données passées.",
     "backtestFreshTitle": "Résultat du dernier lancement",
     "backtestStoredTitle": "Dernier résultat enregistré sur cet appareil",
     "backtestGeneratedAt": "Calculé le {date} à {time}.",
@@ -708,7 +698,7 @@
       "winRate": "Réussite",
       "netUnits": "Gain net",
       "settledBets": "Paris réglés",
-      "calibrationError": "Erreur calibration",
+      "calibrationError": "La calibration n'a pas pu être calculée.",
       "brierScore": "Précision du modèle",
       "analyzedBets": "Paris testés"
     },
@@ -739,7 +729,7 @@
     "reliabilityY": "Fréquence réelle",
     "backtestTabEv": "EV",
     "backtestTabSv": "Canal Sécurité",
-    "backtestSvIdle": "Lancez une simulation pour voir comment le Canal Sécurité aurait performé sur les données passées.",
+    "backtestSvIdle": "Lance une simulation pour voir comment le Canal Sécurité aurait performé sur les données passées.",
     "svAvgOdds": "Cote moyenne",
     "seasonBreakdown": "Détail par saison",
     "season": "Saison",
@@ -760,7 +750,7 @@
     "runAnalysis": "Lancer l'analyse",
     "analysisWindow": "Fenêtre {from} → {to}",
     "analysisWindowPicker": "Fenêtre (défaut : 1 an)",
-    "analysisIdle": "Lancez l'analyse pour afficher les résultats.",
+    "analysisIdle": "Lance l'analyse pour afficher les résultats.",
     "analysisEmpty": "Aucune donnée sur la fenêtre.",
     "colChannel": "Canal",
     "colCompetition": "Ligue",
@@ -814,7 +804,7 @@
     "actions": {
       "alreadyInSlip": "Déjà dans le coupon",
       "alreadyInTickets": "Déjà dans vos coupons",
-      "placePick": "Placer ce pick"
+      "placePick": "Placer cette sélection"
     },
     "table": {
       "market": "Marché",
@@ -825,7 +815,7 @@
       "viable": "Viable"
     },
     "empty": {
-      "title": "Aucun diagnostic",
+      "title": "Aucune analyse disponible",
       "description": "Pas de ModelRun disponible pour cette fixture."
     },
     "noBet": {
@@ -833,7 +823,7 @@
       "decision": "décision"
     },
     "sections": {
-      "whyThisPick": "Pourquoi ce pick ?",
+      "whyThisPick": "Pourquoi cette sélection ?",
       "modelPrediction": "Prédiction modèle",
       "analyzedMarkets": "Marchés analysés"
     },
@@ -865,177 +855,12 @@
     "aiNote": "Ces propositions sont générées par notre moteur IA, qui s'améliore en continu grâce aux résultats passés. Il ne s'agit pas de conseils financiers.",
     "helpLink": "La carte des canaux"
   },
-  "investment": {
-    "pageTitle": "Investir",
-    "views": {
-      "assumed": {
-        "label": "Ce qu'on assume",
-        "subtitle": "Les canaux dont le ROI reste positif une fois le bruit d'échantillonnage retiré — 2 sur 18 au dernier relevé. Classés par fréquence de réussite attendue. DRAW n'y figure que sur les ligues où il est mesuré.",
-        "empty": "Aucun pick assumé pour cette date."
-      },
-      "watch": {
-        "label": "En observation",
-        "subtitle": "Tous les autres canaux, dans une seule liste filtrable. Chaque pick porte le ROI de son canal, ramené vers la moyenne selon le volume qui le soutient : c'est un contexte, pas une recommandation.",
-        "empty": "Aucun pick en observation pour cette date."
-      },
-      "excluded": {
-        "label": "Écarté",
-        "subtitle": "Ce que les garde-fous ont retiré, et pourquoi. Un filtre se juge à ce qu'il exclut : cette vue existe pour que ce soit vérifiable.",
-        "empty": "Aucun pick écarté pour cette date."
-      }
-    },
-    "exclusion": {
-      "AVOID": "AVOID sur ce match",
-      "CALIBRATION_ALERT": "Modèle et marché incohérents",
-      "LAMBDA_INCOHERENT": "Contredit le lambda du modèle",
-      "EDGE_TOO_HIGH": "Edge revendiqué trop élevé",
-      "ODDS_TOO_SHORT": "Cote trop courte"
-    },
-    "expectedRate": "{rate} attendus",
-    "channelRoi": "canal {roi}",
-    "channelRoiHint": "ROI du canal {channel} ramené vers la moyenne, mesuré sur {n} sélections réglées.",
-    "channelFilterLabel": "Canal",
-    "channelFilterAll": "Tous les canaux",
-    "empty": "Aucun pick disponible pour cette date.",
-    "loadError": "Impossible de charger les picks.",
-    "addToSlip": "Ajouter au coupon",
-    "added": "Ajouté",
-    "modelProbability": "Modèle brut :",
-    "filtersLabel": "Filtres",
-    "groupByNone": "Aucun groupement",
-    "groupByLeague": "Grouper par ligue",
-    "helpLink": "L'edge et l'EV expliqués"
-  },
-  "subscriptions": {
-    "pageTitle": "Abonnements",
-    "subtitle": "Une discipline figée par abonnement, simulée automatiquement — indépendant du portefeuille réel.",
-    "newSubscription": "Nouvel abonnement",
-    "loading": "Chargement…",
-    "stats": {
-      "activeCount": "Abonnements actifs",
-      "totalStaked": "Total misé (simulé)",
-      "netPnl": "Gain/perte net",
-      "globalRoi": "ROI global"
-    },
-    "empty": {
-      "title": "Aucun abonnement",
-      "description": "Crée un abonnement pour suivre automatiquement une discipline de mise, sans y toucher jour après jour."
-    },
-    "card": {
-      "stakePerEvent": "Mise / événement",
-      "roiCumulative": "ROI cumulé",
-      "hitRate": "Taux de réussite",
-      "eventsSettled": "{settled}/{total} événement(s) réglé(s) · {staked} misé au total"
-    },
-    "deleteDialog": {
-      "title": "Supprimer cet abonnement ?",
-      "description": "Cette action est irréversible : l'abonnement et son historique d'événements simulés seront définitivement supprimés.",
-      "cancel": "Annuler",
-      "confirm": "Supprimer",
-      "confirming": "Suppression…"
-    },
-    "status": {
-      "ACTIVE": "Actif",
-      "ENDED": "Terminé",
-      "CANCELLED": "Annulé"
-    },
-    "sources": {
-      "COUPON_BEST": "Coupon (le plus probable du jour)",
-      "COUPON_ALL": "Coupons du jour (cote courte)",
-      "CHANNEL_VALUE": "VALUE (Valeur)",
-      "CHANNEL_SAFE": "SAFE (Sécurité)",
-      "CHANNEL_DOMINANT": "DOMINANT (Victoire)",
-      "CHANNEL_DRAW": "DRAW (Nul)",
-      "CHANNEL_BTTS": "BTTS (Les deux marquent)",
-      "CHANNEL_DOUBLE_CHANCE": "DOUBLE_CHANCE (Double chance)",
-      "CHANNEL_TEAM_TOTAL": "TEAM_TOTAL"
-    },
-    "pickModes": {
-      "INVESTIR": "Picks Investir (classés et calibrés)",
-      "DECISIONS_FIRST": "Premiers matchs du jour (Decisions, non classé)",
-      "DECISIONS_LAST": "Derniers matchs du jour (Decisions, non classé)"
-    },
-    "pickModeShort": {
-      "INVESTIR": "Investir",
-      "DECISIONS_FIRST": "Decisions (premiers)",
-      "DECISIONS_LAST": "Decisions (derniers)"
-    },
-    "topN": "Top {n}",
-    "weekdayFull": {
-      "0": "Dimanche",
-      "1": "Lundi",
-      "2": "Mardi",
-      "3": "Mercredi",
-      "4": "Jeudi",
-      "5": "Vendredi",
-      "6": "Samedi"
-    },
-    "weekdayShort": {
-      "0": "Dim",
-      "1": "Lun",
-      "2": "Mar",
-      "3": "Mer",
-      "4": "Jeu",
-      "5": "Ven",
-      "6": "Sam"
-    },
-    "leaguePresets": {
-      "TOP5_EUROPE": "Grands championnats européens",
-      "UEFA_CUPS": "Coupes européennes (UEFA)"
-    },
-    "dayConditions": {
-      "allDays": "Tous les jours",
-      "competitions": "{count} championnat(s)",
-      "none": "Aucune condition"
-    },
-    "form": {
-      "loadingCatalog": "Chargement du catalogue…",
-      "title": "Nouvel abonnement",
-      "description": "Une discipline figée : source, mise, jours, période. Suivi automatique, sans lien avec le portefeuille réel.",
-      "sourceLabel": "Source",
-      "pickModeLabel": "Sélection des picks quotidiens",
-      "topNLabel": "Nombre de picks / jour",
-      "stakeLabel": "Mise par événement",
-      "weekdaysLabel": "Jours de semaine",
-      "leaguesLabel": "Championnats (optionnel, en plus des jours cochés)",
-      "leaguesPlaceholder": "Choisir des championnats...",
-      "leaguesSearchPlaceholder": "Rechercher un championnat...",
-      "leaguesEmpty": "Aucun championnat trouvé.",
-      "dayConditionMissing": "Coche au moins un jour de semaine ou choisis au moins un championnat.",
-      "startDateLabel": "Date de début",
-      "endDateLabel": "Date de fin",
-      "endDateBeforeStart": "La date de fin doit être après la date de début.",
-      "createError": "Impossible de créer l'abonnement.",
-      "submitting": "Création…",
-      "submit": "Créer l'abonnement",
-      "sourceGroupCoupon": "Coupons",
-      "sourceGroupBacked": "Canaux assumés (ROI mesuré positif)",
-      "sourceGroupWatch": "Canaux en observation (ROI mesuré négatif)",
-      "sourceRoiHint": "ROI mesuré de ce canal : {roi}, sur {n} sélections réglées, ramené vers la moyenne selon le volume qui le soutient. Ce n'est pas une prévision."
-    },
-    "detail": {
-      "notFoundTitle": "Détail de l'abonnement",
-      "notFound": "Abonnement introuvable.",
-      "notFoundOrDeleted": "Abonnement introuvable ou déjà supprimé.",
-      "cancel": "Annuler l'abonnement",
-      "delete": "Supprimer",
-      "statLabels": {
-        "totalStaked": "Total misé",
-        "netPnl": "Gain/perte net",
-        "roi": "ROI"
-      },
-      "history": "Historique des événements",
-      "historyLimited": "{shown} plus récent(s) affiché(s)",
-      "historyEmpty": "Aucun événement pour le moment.",
-      "results": {
-        "WON": "Gagné",
-        "LOST": "Perdu",
-        "VOID": "Remboursé"
-      },
-      "pending": "En attente",
-      "odds": "cote {value}",
-      "couponLabel": "Coupon — cote combinée {value}",
-      "genericEvent": "Événement"
-    }
+  "onboarding": {
+    "title": "Configuration rapide",
+    "description": "Personnalise ton expérience en trois étapes rapides — chacune est facultative.",
+    "stepCounter": "Étape {step} sur {total}",
+    "skip": "Passer",
+    "next": "Suivant",
+    "finish": "Terminer"
   }
 }

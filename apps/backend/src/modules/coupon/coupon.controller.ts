@@ -1,12 +1,20 @@
-import { Controller, Get, Post, Param, Query, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Query,
+  HttpCode,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiQuery,
   ApiParam,
   ApiOkResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
-  ApiBadRequestResponse,
 } from '@nestjs/swagger';
 import {
   formatDateUtc,
@@ -14,34 +22,29 @@ import {
   parseIsoDate,
   endOfUtcDay,
 } from '@utils/date.utils';
+import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
+import { CurrentSession } from '@modules/auth/current-session.decorator';
+import type { AuthSession } from '@modules/auth/auth.types';
 import { CouponService } from './coupon.service';
 import { CouponSettlementService } from './coupon-settlement.service';
-import { CouponSummaryService } from './coupon-summary.service';
 import { CouponIndicesService } from './coupon-indices.service';
-import { CouponRoiService } from './coupon-roi.service';
 import { CouponQueryDto } from './dto/coupon-query.dto';
-import { CouponSummaryQueryDto } from './dto/coupon-summary-query.dto';
 import { CouponIndicesQueryDto } from './dto/coupon-indices-query.dto';
-import { CouponRoiQueryDto } from './dto/coupon-roi-query.dto';
 import { CouponSettleRangeQueryDto } from './dto/coupon-settle-range-query.dto';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
-import type { CouponSummaryResponse } from './dto/coupon-summary.dto';
 import type { CouponIndicesResponse } from './dto/coupon-indices.dto';
-import type { CouponRoiResponse } from './dto/coupon-roi.dto';
 
 @ApiTags('coupons')
 @Controller('coupons')
 export class CouponController {
-  // eslint-disable-next-line max-params
   constructor(
     private readonly coupon: CouponService,
     private readonly settlement: CouponSettlementService,
-    private readonly summary: CouponSummaryService,
     private readonly indices: CouponIndicesService,
-    private readonly roi: CouponRoiService,
   ) {}
 
   @Get()
+  @UseGuards(AuthSessionGuard)
   @ApiOperation({
     summary: 'Get coupon proposals for a date',
     description:
@@ -56,42 +59,37 @@ export class CouponController {
   })
   @ApiOkResponse({ description: 'List of coupon proposals with their legs.' })
   async getCoupons(
+    @CurrentSession() session: AuthSession,
     @Query() query: CouponQueryDto,
   ): Promise<CouponProposalDto[]> {
     const date = query.date ?? formatDateUtc(tomorrowUtc());
-    return this.coupon.getCoupons(date, undefined);
+    return this.coupon.getCoupons(date, session.user.id, undefined);
   }
 
-  @Post('generate')
-  @HttpCode(200)
+  @Post(':id/view')
+  @UseGuards(AuthSessionGuard)
+  @HttpCode(204)
   @ApiOperation({
-    summary: 'Manually trigger coupon generation for a date',
+    summary: 'Record that the current user has seen this coupon',
     description:
-      'Runs the full coupon-generation pipeline for the target date. Idempotent: existing proposals for that date are replaced. Defaults to tomorrow (UTC).',
+      'Idempotent — a repeat view from the same user is a no-op. Backs the ' +
+      'real "N vues" count shown on the coupon card (never a fabricated ' +
+      'social-proof number).',
   })
-  @ApiQuery({ name: 'date', required: false, example: '2026-05-17' })
-  @ApiQuery({
-    name: 'to',
-    required: false,
-    description:
-      'Last day (inclusive) of a multi-day fixture window. Defaults to `date`.',
-    example: '2026-05-19',
-  })
-  @ApiOkResponse({
-    description: 'Generation completed successfully.',
-    schema: {
-      type: 'object',
-      properties: { generated: { type: 'boolean', example: true } },
-    },
-  })
-  @ApiBadRequestResponse({ description: 'Invalid query parameters.' })
-  async generate(
-    @Query() query: CouponQueryDto,
-  ): Promise<{ generated: boolean }> {
-    const date = query.date ?? formatDateUtc(tomorrowUtc());
-    await this.coupon.generateCoupons(date, { to: query.to });
-    return { generated: true };
+  @ApiParam({ name: 'id', description: 'UUID of the CouponProposal.' })
+  @ApiNoContentResponse({ description: 'View recorded (or already was).' })
+  @ApiNotFoundResponse({ description: 'No proposal found with the given ID.' })
+  async recordView(
+    @CurrentSession() session: AuthSession,
+    @Param('id') id: string,
+  ): Promise<void> {
+    await this.coupon.recordView(id, session.user.id);
   }
+
+  // POST /coupons/generate retired 2026-09-03 alongside CouponComposerService
+  // — coupon composition is now apps/vantage-worker's own LLM pipeline,
+  // triggered by its own scheduler, not by an HTTP call into this app. See
+  // docs/vantage-centric-redesign-2026-09-01.md §9bis.
 
   @Post('settle')
   @HttpCode(200)
@@ -111,21 +109,6 @@ export class CouponController {
     return { settled: true };
   }
 
-  @Get('summary')
-  @ApiOperation({
-    summary: 'Coupon summary — resolved picks or coupons over a date range',
-  })
-  @ApiOkResponse({ description: 'Summary data.' })
-  async getSummary(
-    @Query() query: CouponSummaryQueryDto,
-  ): Promise<CouponSummaryResponse> {
-    return this.summary.getCouponSummary({
-      canal: query.canal,
-      from: query.from,
-      to: query.to,
-    });
-  }
-
   @Get('indices')
   @ApiOperation({
     summary: 'Coupon probability indices — hit rate by probability bucket',
@@ -139,19 +122,6 @@ export class CouponController {
       from: query.from,
       to: query.to,
     });
-  }
-
-  @Get('roi')
-  @ApiOperation({
-    summary: 'Rolling ROI by channel × EV-bin (channel promotion tool)',
-    description:
-      'Flat-stake ROI over a date window, grouped by strategy channel and EV bin, read from settled channel_selection. A `promote` flag highlights +ROI bins with a large-enough sample. Defaults to the last 90 days.',
-  })
-  @ApiQuery({ name: 'from', required: false, example: '2026-03-01' })
-  @ApiQuery({ name: 'to', required: false, example: '2026-06-01' })
-  @ApiOkResponse({ description: 'ROI breakdown by channel and EV bin.' })
-  async getRoi(@Query() query: CouponRoiQueryDto): Promise<CouponRoiResponse> {
-    return this.roi.getRoiByChannel({ from: query.from, to: query.to });
   }
 
   @Post(':id/settle')

@@ -503,3 +503,19 @@ Règle produit à graver (reformulation EVCore de la conclusion ChatGPT) :
 - Calculer une EV sur une cote fallback inventée.
 - Activer un profil/canal sans backtest séparé vert.
 - `p1 × p2` pour deux marchés du même match.
+
+---
+
+## 7. Nettoyage 2026-09-03 — retrait des vues ROI mortes
+
+`GET /coupons/summary` (`CouponSummaryService`) et `GET /coupons/roi`
+(`CouponRoiService`, §"Vue ROI roulante par canal × EV-bin", suites 2026-06-21)
+supprimés : zéro appelant frontend, aucun test pour le premier, et le second est
+exactement l'outil de "promotion de canal par ROI" que l'admission par
+calibration a remplacé (ratio réel/annoncé, jamais le ROI). `MAX_COUPON_SELECTIONS`/
+`DEFAULT_MAX_COUPON_SELECTIONS`/`CouponChannel` (coupon.constants.ts) et 3
+méthodes du repository (`findResolvedCouponsInRange`,
+`findSettledChannelSelections`, `findSettledBetsForSummary`) supprimés avec eux
+— aucun autre appelant. `GET /coupons/indices` (calibration/hit-rate par
+probabilité, utilisé par le frontend) et `POST /coupons/settle` (filet manuel
+sans appelant frontend, gardé volontairement comme outil d'ops) ne bougent pas.

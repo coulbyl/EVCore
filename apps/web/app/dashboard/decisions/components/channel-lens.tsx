@@ -3,29 +3,30 @@
 import { useState } from "react";
 import { Empty } from "@evcore/ui";
 import { useTranslations } from "next-intl";
-import { ScrollableTabs } from "@/components/scrollable-tabs";
 import type { ChannelDecisionChannelGroupDto } from "@/domains/channel-decision/types/channel-decision";
 import { groupByCompetition } from "@/lib/group-by-competition";
 import { groupByHour } from "@/lib/group-by-hour";
 import { translateCountry } from "@/lib/competition-i18n";
 import { GroupBySelect, type GroupByMode } from "@/components/group-by-select";
 import { FiltersPopover } from "@/components/filters-popover";
-import { channelLabel } from "./channel-constants";
+import type { ChannelCalibrationByKey } from "./channel-constants";
 import { ChannelSelectionRow } from "./channel-selection-row";
 
-// Active-channel state for the "Par canal" lens, lifted into a hook so the tab
-// strip (pinned in the page sub-header) and the scrolling selection list (in the
-// page content) stay in sync from different DOM regions. Falls back to the first
-// channel, and re-anchors there if the selected channel disappears on a date change.
+// Active-channel state for the "Par canal" lens. The active channel itself is
+// now a URL-driven, page-level concern (ChannelFilterBar — no more a
+// separate "Par canal" sub-header) — this hook just resolves it against the
+// currently loaded channelGroups (falls back to the first one if the
+// requested channel disappeared, e.g. a date change) and keeps its own
+// grouping mode, unrelated to the URL.
 export function useChannelLens(
   channelGroups: ChannelDecisionChannelGroupDto[],
+  requestedChannel: string | null,
 ) {
-  const [selected, setSelected] = useState<string | null>(null);
   const [groupBy, setGroupBy] = useState<GroupByMode>("none");
 
   const activeChannel =
-    selected && channelGroups.some((g) => g.channel === selected)
-      ? selected
+    requestedChannel && channelGroups.some((g) => g.channel === requestedChannel)
+      ? requestedChannel
       : (channelGroups[0]?.channel ?? null);
 
   const activeGroup =
@@ -34,7 +35,6 @@ export function useChannelLens(
   return {
     channelGroups,
     activeChannel,
-    setSelected,
     activeGroup,
     groupBy,
     setGroupBy,
@@ -43,50 +43,27 @@ export function useChannelLens(
 
 export type ChannelLensState = ReturnType<typeof useChannelLens>;
 
-// The channel tab strip + grouping select. Lives in the pinned sub-header so
-// it stays visible while the selections scroll underneath.
-export function ChannelTabs({
-  channelGroups,
-  activeChannel,
-  setSelected,
+// Grouping control for the "Par canal" content — sits in the same headerExtra
+// slot MatchFilters uses for "Par match", now that switching channels itself
+// lives in ChannelFilterBar.
+export function ChannelGroupByControl({
   groupBy,
   setGroupBy,
-}: ChannelLensState) {
+}: Pick<ChannelLensState, "groupBy" | "setGroupBy">) {
   const t = useTranslations("decisions");
 
-  if (channelGroups.length === 0 || activeChannel === null) return null;
-
   return (
-    <div className="flex items-center gap-2">
-      <div className="min-w-0 flex-1">
-        <ScrollableTabs
-          value={activeChannel}
-          onValueChange={setSelected}
-          items={channelGroups.map(({ channel, decisions }) => ({
-            value: channel,
-            label: (
-              <>
-                {channelLabel(channel, t)}
-                <span className="ml-1 tabular-nums text-[0.65rem] opacity-60">
-                  {decisions.length}
-                </span>
-              </>
-            ),
-          }))}
-        />
-      </div>
-      <FiltersPopover label={t("filters.label")} active={groupBy !== "none"}>
-        <GroupBySelect
-          value={groupBy}
-          onChange={setGroupBy}
-          labels={{
-            none: t("filters.groupByNone"),
-            league: t("filters.groupByLeague"),
-          }}
-          className="w-full"
-        />
-      </FiltersPopover>
-    </div>
+    <FiltersPopover label={t("filters.displayLabel")} active={groupBy !== "none"}>
+      <GroupBySelect
+        value={groupBy}
+        onChange={setGroupBy}
+        labels={{
+          none: t("filters.groupByNone"),
+          league: t("filters.groupByLeague"),
+        }}
+        className="w-full"
+      />
+    </FiltersPopover>
   );
 }
 
@@ -95,10 +72,12 @@ export function ChannelList({
   activeGroup,
   locale,
   groupBy,
+  calibrationByKey,
 }: {
   activeGroup: ChannelLensState["activeGroup"];
   locale: string;
   groupBy: GroupByMode;
+  calibrationByKey?: ChannelCalibrationByKey;
 }) {
   if (activeGroup === null || activeGroup.decisions.length === 0) {
     return (
@@ -132,6 +111,7 @@ export function ChannelList({
                   key={decision.id}
                   decision={decision}
                   locale={locale}
+                  calibrationByKey={calibrationByKey}
                 />
               ))}
             </div>
@@ -167,6 +147,7 @@ export function ChannelList({
                 key={decision.id}
                 decision={decision}
                 locale={locale}
+                calibrationByKey={calibrationByKey}
               />
             ))}
           </div>

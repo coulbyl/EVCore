@@ -32,7 +32,7 @@ import { useCurrencyFormat } from "@/providers/currency-provider";
 import { CanalBadge } from "@/components/canal-badge";
 import { Amount } from "@/components/amount";
 import { EvAreaChart } from "@/components/charts/ev-area-chart";
-import { DepositDialog } from "./deposit-dialog";
+import { DepositDialog } from "@/components/deposit-dialog";
 
 type EnrichedTransaction = BankrollTransaction & {
   balanceAfter: number;

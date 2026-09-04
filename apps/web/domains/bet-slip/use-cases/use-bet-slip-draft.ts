@@ -15,7 +15,12 @@ const DEFAULT_UNIT_STAKE = 4000;
 const DEFAULT_TYPE: BetSlipDraft["type"] = "SIMPLE";
 
 function emptyDraft(unitStake = DEFAULT_UNIT_STAKE): BetSlipDraft {
-  return { items: [], unitStake, type: DEFAULT_TYPE };
+  return {
+    items: [],
+    unitStake,
+    type: DEFAULT_TYPE,
+    couponProposalId: null,
+  };
 }
 
 function isValidDraftItem(item: unknown): item is BetSlipDraftItem {
@@ -61,6 +66,10 @@ function normalizeDraft(
         ? (draft.unitStake as number)
         : fallbackUnitStake,
     type: draft.type === "COMBO" && items.length >= 2 ? "COMBO" : "SIMPLE",
+    couponProposalId:
+      typeof draft.couponProposalId === "string" && items.length > 0
+        ? draft.couponProposalId
+        : null,
   };
 }
 
@@ -187,6 +196,13 @@ export function useBetSlipDraft() {
     setDraft(() => emptyDraft(initialUnitStake));
   }, [initialUnitStake, setDraft]);
 
+  const setCouponProposalId = useCallback(
+    (couponProposalId: string | null) => {
+      setDraft((prev) => ({ ...prev, couponProposalId }));
+    },
+    [setDraft],
+  );
+
   /** Vérifie si la clé donnée correspond à un item dans le brouillon. */
   const isInSlip = useCallback(
     (key: string) => draft.items.some((i) => draftItemKey(i) === key),
@@ -200,6 +216,7 @@ export function useBetSlipDraft() {
     setStakeOverride,
     setUnitStake,
     setType,
+    setCouponProposalId,
     clearDraft,
     isInSlip,
   };

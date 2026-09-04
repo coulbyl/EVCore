@@ -1,7 +1,33 @@
+import { formatChannelForDisplayFr } from "@evcore/analysis-core";
 import type {
   ChannelDecisionStatus,
   StrategyChannel,
 } from "@/domains/channel-decision/types/channel-decision";
+import type { ChannelCompetitionStatItem } from "@/domains/dashboard/types/dashboard";
+
+// Lookup for the per-pick calibration badge (see channel-row.tsx) — keyed by
+// channel + competition, since a channel's real-world reliability varies a
+// lot by league (docs/audit-canaux-investir-2026-08-22.md). Built once from
+// GET /dashboard/channel-stats-by-competition and shared across every row on
+// the page, not refetched per card.
+export type ChannelCalibrationByKey = Map<string, ChannelCompetitionStatItem>;
+
+export function calibrationKey(
+  channel: StrategyChannel,
+  competitionCode: string,
+): string {
+  return `${channel}:${competitionCode}`;
+}
+
+export function buildCalibrationByKey(
+  items: ChannelCompetitionStatItem[],
+): ChannelCalibrationByKey {
+  const map: ChannelCalibrationByKey = new Map();
+  for (const item of items) {
+    map.set(calibrationKey(item.channel, item.competitionCode), item);
+  }
+  return map;
+}
 
 // StrategyChannel → design tokens (1:1 with the legacy --canal-* palette).
 export const CHANNEL_COLOR: Record<StrategyChannel, string> = {
@@ -62,33 +88,39 @@ export const CHANNEL_COLOR_SOFT: Record<StrategyChannel, string> = {
   VANTAGE: "var(--canal-vantage-soft)",
 };
 
-const CHANNEL_LABEL_KEY: Record<StrategyChannel, string> = {
-  VALUE: "channels.VALUE.label",
-  SAFE: "channels.SAFE.label",
-  DOMINANT: "channels.DOMINANT.label",
-  BTTS: "channels.BTTS.label",
-  DRAW: "channels.DRAW.label",
-  GOALS: "channels.GOALS.label",
-  CLEAN_SHEET: "channels.CLEAN_SHEET.label",
-  TEAM_TOTAL: "channels.TEAM_TOTAL.label",
-  WIN_EITHER_HALF: "channels.WIN_EITHER_HALF.label",
-  FIRST_HALF: "channels.FIRST_HALF.label",
-  DOUBLE_CHANCE: "channels.DOUBLE_CHANCE.label",
-  UNDERDOG: "channels.UNDERDOG.label",
-  FAVORITE: "channels.FAVORITE.label",
-  LIVE_VALUE: "channels.LIVE_VALUE.label",
-  MARKET_MOVE: "channels.MARKET_MOVE.label",
-  CONSENSUS: "channels.CONSENSUS.label",
-  CONTRARIAN: "channels.CONTRARIAN.label",
-  AVOID: "channels.AVOID.label",
-  CORRECT_SCORE: "channels.CORRECT_SCORE.label",
-  RESULT_TOTAL_GOALS: "channels.RESULT_TOTAL_GOALS.label",
-  OVER_UNDER_HT: "channels.OVER_UNDER_HT.label",
-  RESULT_BTTS: "channels.RESULT_BTTS.label",
-  DRAW_NO_BET: "channels.DRAW_NO_BET.label",
-  WIN_TO_NIL: "channels.WIN_TO_NIL.label",
-  HALF_TIME_FULL_TIME: "channels.HALF_TIME_FULL_TIME.label",
-  VANTAGE: "channels.VANTAGE.label",
+// English channel labels stay local to the frontend (no EN consumer exists
+// outside apps/web) — same asymmetry as MARKET_LABELS_EN in
+// apps/web/helpers/fixture.ts. French is the shared source of truth
+// (@evcore/analysis-core's CHANNEL_LABELS_FR, mirrored by
+// vantage-worker/backend if they ever need a canal name in prose) so it is
+// never duplicated here.
+const CHANNEL_LABEL_EN: Record<StrategyChannel, string> = {
+  VALUE: "Value",
+  SAFE: "Safety",
+  DOMINANT: "Winner",
+  BTTS: "BTTS",
+  DRAW: "Draw",
+  GOALS: "Goals",
+  CLEAN_SHEET: "Clean sheet",
+  TEAM_TOTAL: "Team goals",
+  WIN_EITHER_HALF: "Wins a half",
+  FIRST_HALF: "1st half",
+  DOUBLE_CHANCE: "Double chance",
+  UNDERDOG: "Underdog",
+  FAVORITE: "Favorite",
+  LIVE_VALUE: "Live value",
+  MARKET_MOVE: "Line move",
+  CONSENSUS: "Consensus",
+  CONTRARIAN: "Contrarian",
+  AVOID: "Caution",
+  CORRECT_SCORE: "Exact score",
+  RESULT_TOTAL_GOALS: "Result + Goals",
+  OVER_UNDER_HT: "HT goals",
+  RESULT_BTTS: "Result + BTTS",
+  DRAW_NO_BET: "Draw no bet",
+  WIN_TO_NIL: "Win to nil",
+  HALF_TIME_FULL_TIME: "HT/FT",
+  VANTAGE: "Arbitrage",
 };
 
 const CHANNEL_DESCRIPTION_KEY: Record<StrategyChannel, string> = {
@@ -173,8 +205,8 @@ const REASON_LABEL_KEY: Record<string, string> = {
 
 type Translator = (key: string) => string;
 
-export function channelLabel(channel: StrategyChannel, t: Translator): string {
-  return t(CHANNEL_LABEL_KEY[channel]);
+export function channelLabel(channel: StrategyChannel, locale: string): string {
+  return locale === "en" ? CHANNEL_LABEL_EN[channel] : formatChannelForDisplayFr(channel);
 }
 
 export function channelDescription(
@@ -215,8 +247,4 @@ export function formatPct(n: number): string {
 
 export function formatOdds(odds: number | null): string | null {
   return odds === null ? null : odds.toFixed(2);
-}
-
-export function formatEv(ev: number | null): string | null {
-  return ev === null ? null : `${ev >= 0 ? "+" : ""}${(ev * 100).toFixed(0)}%`;
 }

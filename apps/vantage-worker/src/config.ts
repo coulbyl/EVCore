@@ -135,6 +135,49 @@ export type Config = {
    * VANTAGE_RESEARCH_COMPETITION_CODES if the big-leagues default isn't
    * what you want. */
   researchCompetitionCodes: string[];
+  /** Cron pattern for the daily coupon-generation sweep (BullMQ repeatable
+   * job, see main.ts/queue/worker.ts) — the LLM coupon pipeline
+   * (docs/vantage-centric-redesign-2026-09-01.md §9bis). Default `30 20 *
+   * * *` (20:30 UTC) is deliberately apps/backend's own
+   * ETL_BETTING_ENGINE_ANALYSIS_CRON default (20:00 UTC,
+   * apps/backend/src/config/etl.constants.ts) plus 30 minutes — a guess at
+   * enough margin for that cron's betting-engine analysis pass (a strictly
+   * serial per-fixture loop with blocking API-Football/ml-worker calls, no
+   * measured/documented duration anywhere) to finish writing the day's
+   * ModelRun/ChannelDecision rows before this pool query reads them. The
+   * two apps don't share config at runtime (backend LLM-agnostic, no
+   * cross-app coupling — see that doc's §9bis), so if
+   * ETL_BETTING_ENGINE_ANALYSIS_CRON is ever changed there,
+   * VANTAGE_COUPON_CRON needs a matching manual update here. Since that
+   * margin is a guess, not a verified guarantee, `couponRetryCron` below
+   * exists specifically to self-heal a run that read an incomplete day. */
+  couponCron: string;
+  /** A second, later pass of the exact same coupon-generation job (see
+   * couponCron above) — self-healing insurance against the analysis pass
+   * running past the first cron's margin on a heavy day. Safe to re-run:
+   * persist-coupon-proposal.ts's upsert only ever touches a still-PENDING
+   * proposal (never overwrites a human ACCEPTED/REJECTED decision), so a
+   * later pass with a more complete pool can only improve a proposal a
+   * user hasn't acted on yet, never corrupt one they have. Default `15 21
+   * * * *` (21:15 UTC — 45 minutes after the first pass). */
+  couponRetryCron: string;
+  /** Cron pattern for the intraday coupon batch (recheck J-J,
+   * run-coupon-generation.ts's `runIntradayCouponGeneration`) — a SECOND,
+   * coexisting coupon batch built on same-day-rechecked data
+   * (project_no_same_day_reanalysis memory), never touching the evening
+   * batch (couponCron/couponRetryCron above). Default `0 * * * *` (hourly)
+   * — matches apps/backend's `SAME_DAY_ANALYSIS` 30-minute cadence loosely
+   * (coupon generation itself doesn't need to run as often as the
+   * underlying data refresh; an empty/near-empty pool just skips a pass,
+   * see couponIntradayWindowHours). */
+  couponIntradayCron: string;
+  /** How far ahead (hours from "now") the intraday pass looks for
+   * fixtures — matches apps/backend's `SAME_DAY_ANALYSIS_WINDOW_HOURS`
+   * default (3h) on purpose: no point building a coupon pool from fixtures
+   * outside the window apps/backend is actually rechecking. The two apps
+   * don't share config at runtime, so keep them in sync manually if either
+   * changes. */
+  couponIntradayWindowHours: number;
 };
 
 // PL=Premier League(ENG), LL=La Liga(ESP), BL1=Bundesliga(GER),
@@ -235,5 +278,12 @@ export function loadConfig(): Config {
           .map((code) => code.trim())
           .filter(Boolean)
       : DEFAULT_RESEARCH_COMPETITION_CODES,
+    couponCron: process.env["VANTAGE_COUPON_CRON"] ?? "30 20 * * *",
+    couponRetryCron: process.env["VANTAGE_COUPON_RETRY_CRON"] ?? "15 21 * * *",
+    couponIntradayCron:
+      process.env["VANTAGE_COUPON_INTRADAY_CRON"] ?? "0 * * * *",
+    couponIntradayWindowHours: Number(
+      process.env["VANTAGE_COUPON_INTRADAY_WINDOW_HOURS"] ?? "3",
+    ),
   };
 }

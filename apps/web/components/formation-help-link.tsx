@@ -15,7 +15,7 @@ export function FormationHelpLink({
 }: {
   slug: string;
   label: string;
-  // Optional anchor for the onboarding tour (driver.js targets it via
+  // Optional anchor for the product tour (driver.js targets it via
   // `[data-tour="..."]`) — always rendered regardless of page data state,
   // which makes it a more robust tour target than a dynamic list item.
   tourId?: string;

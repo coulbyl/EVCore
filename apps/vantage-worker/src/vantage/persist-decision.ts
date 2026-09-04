@@ -12,6 +12,14 @@ export async function persistVantageDecision(
   response: VantageResponse,
   configVersion: string,
   research: SituationalResearch | null,
+  // Same value the MIN_ODDS floor check already resolved (analyze-fixture.ts's
+  // findKnownOdds) — VANTAGE's LLM response never carries odds itself (its
+  // schema has none), but the odds it already checked against the floor are
+  // the honest price for this exact pick, not invented. Persisting it here
+  // means the frontend reads it like any other channel's selection, instead
+  // of guessing at a sibling channel's matching pick (which fails whenever
+  // VANTAGE disagrees with every other channel — its whole reason to play).
+  odds: number | null = null,
 ): Promise<void> {
   const status = response.verdict === "play" ? "SELECTED" : "REJECTED";
   const reasonCode =
@@ -32,6 +40,7 @@ export async function persistVantageDecision(
             market: response.market,
             pick: response.pick,
             probability: response.probability,
+            odds: odds ?? undefined,
             rank: 1,
           },
         ]
