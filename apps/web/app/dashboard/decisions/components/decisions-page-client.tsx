@@ -2,17 +2,21 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useMemo } from "react";
 import {
   useChannelDecisionChannels,
   useChannelDecisionFacets,
   useChannelDecisionMatches,
 } from "@/domains/channel-decision/use-cases/use-channel-decisions";
+import { useChannelCompetitionStats } from "@/domains/dashboard/use-cases/get-channel-health";
 import type { StrategyChannel } from "@/domains/channel-decision/types/channel-decision";
 import { todayIso } from "@/lib/date";
 import { FiltersPopover } from "@/components/filters-popover";
+import { dateRangeForPeriod } from "@/app/dashboard/track-record/track-record-constants";
 import { DecisionsPageFrame } from "./decisions-page-frame";
 import { LeagueFilterBar } from "./league-filter-bar";
 import { ChannelFilterBar } from "./channel-filter-bar";
+import { buildCalibrationByKey } from "./channel-constants";
 import {
   MatchFilters,
   MatchGrid,
@@ -72,6 +76,21 @@ export function DecisionsPageClient() {
   const facets = useChannelDecisionFacets(date);
   const facetsData = facets.data ?? { leagues: [], channels: [] };
   const hasFacets = facetsData.leagues.length > 0;
+
+  // Real calibration (ratio réel/annoncé), same 90-day window and same
+  // source as Track Record — feeds the per-pick reliability badge
+  // (channel-row.tsx's CalibrationBadge) instead of the raw claimed-edge
+  // figure it replaced. Independent of `date`: settled history doesn't
+  // depend on which day's decisions are being browsed.
+  const calibrationRange = dateRangeForPeriod("90");
+  const calibrationStats = useChannelCompetitionStats(
+    calibrationRange.from,
+    calibrationRange.to,
+  );
+  const calibrationByKey = useMemo(
+    () => buildCalibrationByKey(calibrationStats.data ?? []),
+    [calibrationStats.data],
+  );
 
   // Hooks stay unconditional (rules of hooks); the inactive lens just runs
   // over an empty list.
@@ -139,12 +158,14 @@ export function DecisionsPageClient() {
           visible={matchLens.visible}
           locale={locale}
           groupBy={matchLens.groupBy}
+          calibrationByKey={calibrationByKey}
         />
       ) : (
         <ChannelList
           activeGroup={channelLens.activeGroup}
           locale={locale}
           groupBy={channelLens.groupBy}
+          calibrationByKey={calibrationByKey}
         />
       )}
     </DecisionsPageFrame>

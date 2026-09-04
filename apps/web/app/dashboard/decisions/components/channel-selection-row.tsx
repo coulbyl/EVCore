@@ -14,6 +14,7 @@ import {
   CHANNEL_COLOR_SOFT,
   channelLabel,
   reasonLabel,
+  type ChannelCalibrationByKey,
 } from "./channel-constants";
 import { FixtureCard } from "@/components/fixture-card";
 import { NewCoachChip } from "@/components/new-coach-badge";
@@ -37,9 +38,11 @@ function parseAvoidOffenders(raw: unknown): AvoidOffender[] {
 export function ChannelSelectionRow({
   decision,
   locale,
+  calibrationByKey,
 }: {
   decision: ChannelDecisionDto;
   locale: string;
+  calibrationByKey?: ChannelCalibrationByKey;
 }) {
   const loc = locale === "en" ? "en" : "fr";
   const t = useTranslations("decisions");
@@ -102,6 +105,8 @@ export function ChannelSelectionRow({
           decision={decision}
           locale={locale}
           slipContext={slipContext}
+          competitionCode={decision.competition}
+          calibrationByKey={calibrationByKey}
         />
       )}
     </FixtureCard>

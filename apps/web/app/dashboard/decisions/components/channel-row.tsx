@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import * as HoverCard from "@radix-ui/react-hover-card";
 import { TriangleAlert } from "lucide-react";
 import { Badge, Tooltip, TooltipContent, TooltipTrigger, cn } from "@evcore/ui";
 import {
@@ -15,15 +17,18 @@ import type {
 } from "@/domains/channel-decision/types/channel-decision";
 import { AddToCouponButton } from "@/components/add-to-coupon-button";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
+import { ChannelStatusBadge } from "@/app/dashboard/track-record/components/channel-status-badge";
+import type { ChannelCompetitionStatItem } from "@/domains/dashboard/types/dashboard";
 import {
+  calibrationKey,
   CHANNEL_COLOR,
   CHANNEL_COLOR_SOFT,
   channelLabel,
-  formatEv,
   formatOdds,
   formatPct,
   reasonLabel,
   statusLabel,
+  type ChannelCalibrationByKey,
 } from "./channel-constants";
 import { ResultBadge } from "@/components/result-badge";
 // Un pick est ajoutable à un coupon sauf s'il vient d'un méta-canal. C'était
@@ -54,20 +59,28 @@ export function ChannelRow({
   locale,
   avoidEdge,
   slipContext,
+  competitionCode,
+  calibrationByKey,
 }: {
   channel: StrategyChannel;
   decision: ChannelDecisionMatchDecisionDto | undefined;
   locale: string;
   avoidEdge?: number;
   slipContext?: SlipContext;
+  // Which (channel, competition) calibration entry this pick maps to — see
+  // channel-constants.ts's ChannelCalibrationByKey. Both optional: some
+  // callers (e.g. ConsensusRow's own convergence chips) never render a pick
+  // at all, so there's nothing to look up.
+  competitionCode?: string | null;
+  calibrationByKey?: ChannelCalibrationByKey;
 }) {
   const loc = locale === "en" ? "en" : "fr";
   const selection =
     decision?.status === "SELECTED" ? decision.selections[0] : undefined;
   const odds = selection ? formatOdds(selection.odds) : null;
-  // DRAW selects on the bookmaker implied probability (1/odds): its EV is 0
-  // by construction — hide it rather than display a meaningless +0%.
-  const ev = selection && channel !== "DRAW" ? formatEv(selection.ev) : null;
+  const calibration = competitionCode
+    ? calibrationByKey?.get(calibrationKey(channel, competitionCode))
+    : undefined;
 
   // Lu depuis reasonDetails, pas depuis les sélections : CONSENSUS n'émet
   // plus de pick, et ces pastilles étaient rendues dans la branche « a une
@@ -123,7 +136,7 @@ export function ChannelRow({
                 {odds}
               </span>
             )}
-            {ev !== null && <span className="tabular-nums">{ev}</span>}
+            <CalibrationBadge item={calibration} />
           </p>
         </div>
       ) : convergingChannels.length > 0 ? (
@@ -132,6 +145,70 @@ export function ChannelRow({
         <RejectedLabel decision={decision} />
       )}
     </div>
+  );
+}
+
+/** Real calibration (ratio réel/annoncé, same 0.85/0.70 thresholds as the
+ * VANTAGE gate and the public track-record page — see dashboard.service.ts)
+ * replaces the raw probability×odds "edge" figure this row used to show:
+ * that edge is the exact anti-predictive metric CLAUDE.md's overview warns
+ * against ("claimed edge is anti-predictive... never a selection floor").
+ * `item` is undefined when this (channel, competition) pair never appears
+ * in the calibration lookup at all — treated the same as a measured-but-
+ * too-thin sample (INSUFFICIENT_DATA), never hidden (matches the project's
+ * "un canal négatif reste affiché comme tel" stance). */
+function CalibrationBadge({
+  item,
+}: {
+  item: ChannelCompetitionStatItem | undefined;
+}) {
+  const t = useTranslations("decisions");
+  const status = item?.status ?? "INSUFFICIENT_DATA";
+  // Plain-language verdict, no raw ratio/n= notation in the visible text —
+  // "0.58×" and "n=223" read as internal jargon to a lambda user (2quater).
+  const detail =
+    status === "INSUFFICIENT_DATA"
+      ? t("calibration.badgeTooltipEmpty", { n: item?.sampleSize ?? 0 })
+      : t("calibration.badgeTooltip", { status, n: item?.sampleSize ?? 0 });
+
+  // HoverCard (same pattern as InfoTooltip), not Tooltip — a plain hover-only
+  // Tooltip never opens on mobile, where there's no hover state at all.
+  // Controlling `open` explicitly and toggling it from the trigger's onClick
+  // makes tapping the badge work exactly like hovering it on desktop.
+  const [open, setOpen] = useState(false);
+
+  return (
+    <HoverCard.Root
+      open={open}
+      onOpenChange={setOpen}
+      openDelay={200}
+      closeDelay={100}
+    >
+      <HoverCard.Trigger asChild>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="inline-flex focus:outline-none"
+        >
+          <ChannelStatusBadge
+            status={status}
+            className="px-1.5 py-0 text-[0.62rem]"
+          />
+        </button>
+      </HoverCard.Trigger>
+      <HoverCard.Portal>
+        <HoverCard.Content
+          side="top"
+          sideOffset={8}
+          onEscapeKeyDown={() => setOpen(false)}
+          onPointerDownOutside={() => setOpen(false)}
+          className="z-50 w-64 rounded-2xl border border-border bg-panel p-3 text-xs text-foreground shadow-lg"
+        >
+          {detail}
+          <HoverCard.Arrow className="fill-panel" />
+        </HoverCard.Content>
+      </HoverCard.Portal>
+    </HoverCard.Root>
   );
 }
 

@@ -1,4 +1,5 @@
-import { Ban, TriangleAlert } from "lucide-react";
+import { useState } from "react";
+import { Ban, ChevronDown, ChevronUp, TriangleAlert } from "lucide-react";
 import { Separator, cn } from "@evcore/ui";
 import { useLocale, useTranslations } from "next-intl";
 import { InfoTooltip } from "@/components/info-tooltip";
@@ -9,22 +10,36 @@ import type {
   ChannelDecisionMatchDto,
   StrategyChannel,
 } from "@/domains/channel-decision/types/channel-decision";
-import { channelLabel, reasonLabel } from "./channel-constants";
+import {
+  channelLabel,
+  reasonLabel,
+  type ChannelCalibrationByKey,
+} from "./channel-constants";
 import { avoidFlag, selectedPicks, type AvoidFlag } from "./decision-helpers";
 import { ChannelRow, type SlipContext } from "./channel-row";
 
 export type MatchGroup = ChannelDecisionMatchDto;
 
+// Cards capped to a handful of picks, sorted by confidence (selectedPicks
+// already sorts by probability desc) — a 9-pick card reads as a data dump,
+// not a read (docs/vantage-centric-redesign-2026-09-01.md §2).
+const MAX_VISIBLE_PICKS = 4;
+
 export function MatchCard({
   group,
   locale,
+  calibrationByKey,
 }: {
   group: MatchGroup;
   locale: string;
+  calibrationByKey?: ChannelCalibrationByKey;
 }) {
   const t = useTranslations("decisions");
+  const [expanded, setExpanded] = useState(false);
   const avoid = avoidFlag(group);
   const picks = selectedPicks(group);
+  const visiblePicks = expanded ? picks : picks.slice(0, MAX_VISIBLE_PICKS);
+  const hiddenCount = picks.length - visiblePicks.length;
   const calibrationAlert = group.decisions.some((d) => d.calibrationAlert);
 
   const avoidEdgeByChannel = new Map<StrategyChannel, number>(
@@ -126,10 +141,10 @@ export function MatchCard({
 
       {picks.length > 0 ? (
         <div className="flex flex-col">
-          {picks.map((decision, idx) => (
+          {visiblePicks.map((decision, idx) => (
             <div key={decision.id} className="flex">
-              {picks.length > 1 && (
-                <LegConnector isLast={idx === picks.length - 1} />
+              {visiblePicks.length > 1 && (
+                <LegConnector isLast={idx === visiblePicks.length - 1} />
               )}
               <div className="min-w-0 flex-1 border-t border-border/50 first:border-t-0">
                 <ChannelRow
@@ -138,10 +153,31 @@ export function MatchCard({
                   locale={locale}
                   avoidEdge={avoidEdgeByChannel.get(decision.channel)}
                   slipContext={slipContext}
+                  competitionCode={group.competition}
+                  calibrationByKey={calibrationByKey}
                 />
               </div>
             </div>
           ))}
+          {picks.length > MAX_VISIBLE_PICKS && (
+            <button
+              type="button"
+              onClick={() => setExpanded((prev) => !prev)}
+              className="flex items-center justify-center gap-1 border-t border-border/50 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+            >
+              {expanded ? (
+                <>
+                  {t("showLessPicks")}
+                  <ChevronUp className="size-3.5" />
+                </>
+              ) : (
+                <>
+                  {t("showMorePicks", { count: hiddenCount })}
+                  <ChevronDown className="size-3.5" />
+                </>
+              )}
+            </button>
+          )}
         </div>
       ) : (
         <p className="py-1 text-xs text-muted-foreground/70">{t("noPick")}</p>

@@ -163,7 +163,9 @@
     "calibration": {
       "banner": "Données suspectes",
       "tooltipLabel": "Alerte calibration",
-      "tooltipDetail": "Le modèle et le marché sont en désaccord fort sur ce match (favori inversé ou écart extrême sur plusieurs bookmakers). Cela signale presque toujours des données d'entrée corrompues plutôt qu'une opportunité — le moteur exclut automatiquement tous les picks de ce match des paris réels."
+      "tooltipDetail": "Le modèle et le marché sont en désaccord fort sur ce match (favori inversé ou écart extrême sur plusieurs bookmakers). Cela signale presque toujours des données d'entrée corrompues plutôt qu'une opportunité — le moteur exclut automatiquement tous les picks de ce match des paris réels.",
+      "badgeTooltip": "{status, select, GREEN {Ce canal a été fiable sur cette compétition} ORANGE {Ce canal est à surveiller sur cette compétition — sa réussite s'écarte de ce qu'il annonce} RED {Ce canal a été peu fiable sur cette compétition — sa réussite réelle est nettement inférieure à ce qu'il annonce} other {Fiabilité non mesurable sur cette compétition}} ({n, plural, one {# pari réglé} other {# paris réglés}}).",
+      "badgeTooltipEmpty": "Historique insuffisant sur cette compétition pour mesurer la fiabilité ({n, plural, one {# pari réglé} other {# paris réglés}})."
     },
     "consensus": {
       "tooltipLabel": "Signal consensus",
@@ -174,6 +176,8 @@
     "noPickShort": "aucun pick",
     "pickCount": "{count, plural, one {# pick} other {# picks}}",
     "evaluatedCount": "{count, plural, one {# autre canal évalué} other {# autres canaux évalués}}",
+    "showMorePicks": "{count, plural, one {Voir # autre marché} other {Voir # autres marchés}}",
+    "showLessPicks": "Voir moins",
     "filters": {
       "all": "Tous",
       "displayLabel": "Affichage",

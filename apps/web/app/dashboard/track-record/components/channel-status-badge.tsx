@@ -24,6 +24,16 @@ const STATUS_VARIANT: Record<
   INSUFFICIENT_DATA: "outline",
 };
 
-export function ChannelStatusBadge({ status }: { status: ChannelStatus }) {
-  return <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>;
+export function ChannelStatusBadge({
+  status,
+  className,
+}: {
+  status: ChannelStatus;
+  className?: string;
+}) {
+  return (
+    <Badge variant={STATUS_VARIANT[status]} className={className}>
+      {STATUS_LABEL[status]}
+    </Badge>
+  );
 }

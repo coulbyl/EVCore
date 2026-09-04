@@ -3,6 +3,31 @@ import type {
   ChannelDecisionStatus,
   StrategyChannel,
 } from "@/domains/channel-decision/types/channel-decision";
+import type { ChannelCompetitionStatItem } from "@/domains/dashboard/types/dashboard";
+
+// Lookup for the per-pick calibration badge (see channel-row.tsx) — keyed by
+// channel + competition, since a channel's real-world reliability varies a
+// lot by league (docs/audit-canaux-investir-2026-08-22.md). Built once from
+// GET /dashboard/channel-stats-by-competition and shared across every row on
+// the page, not refetched per card.
+export type ChannelCalibrationByKey = Map<string, ChannelCompetitionStatItem>;
+
+export function calibrationKey(
+  channel: StrategyChannel,
+  competitionCode: string,
+): string {
+  return `${channel}:${competitionCode}`;
+}
+
+export function buildCalibrationByKey(
+  items: ChannelCompetitionStatItem[],
+): ChannelCalibrationByKey {
+  const map: ChannelCalibrationByKey = new Map();
+  for (const item of items) {
+    map.set(calibrationKey(item.channel, item.competitionCode), item);
+  }
+  return map;
+}
 
 // StrategyChannel → design tokens (1:1 with the legacy --canal-* palette).
 export const CHANNEL_COLOR: Record<StrategyChannel, string> = {
@@ -222,8 +247,4 @@ export function formatPct(n: number): string {
 
 export function formatOdds(odds: number | null): string | null {
   return odds === null ? null : odds.toFixed(2);
-}
-
-export function formatEv(ev: number | null): string | null {
-  return ev === null ? null : `${ev >= 0 ? "+" : ""}${(ev * 100).toFixed(0)}%`;
 }

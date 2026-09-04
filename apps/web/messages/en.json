@@ -163,7 +163,9 @@
     "calibration": {
       "banner": "Suspect data",
       "tooltipLabel": "Calibration alert",
-      "tooltipDetail": "The model and the market strongly disagree on this match (flipped favorite or extreme gap across several bookmakers). This almost always signals corrupted input data rather than an opportunity — the engine automatically excludes every pick of this match from real bets."
+      "tooltipDetail": "The model and the market strongly disagree on this match (flipped favorite or extreme gap across several bookmakers). This almost always signals corrupted input data rather than an opportunity — the engine automatically excludes every pick of this match from real bets.",
+      "badgeTooltip": "{status, select, GREEN {This channel has been reliable in this competition} ORANGE {This channel needs watching in this competition — its actual hit rate drifts from what it announces} RED {This channel has been unreliable in this competition — its actual hit rate is well below what it announces} other {Reliability not measurable in this competition}} ({n, plural, one {# settled bet} other {# settled bets}}).",
+      "badgeTooltipEmpty": "Not enough settled history in this competition to measure reliability ({n, plural, one {# settled bet} other {# settled bets}})."
     },
     "consensus": {
       "tooltipLabel": "Consensus signal",
@@ -174,6 +176,8 @@
     "noPickShort": "no pick",
     "pickCount": "{count, plural, one {# pick} other {# picks}}",
     "evaluatedCount": "{count, plural, one {# other channel evaluated} other {# other channels evaluated}}",
+    "showMorePicks": "{count, plural, one {Show # more market} other {Show # more markets}}",
+    "showLessPicks": "Show less",
     "filters": {
       "all": "All",
       "displayLabel": "Display",
