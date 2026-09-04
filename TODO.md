@@ -1741,24 +1741,75 @@ par ligue → implémentation → tests → **backtest séparé** → shadow/obs
   `bankroll-balance`, la même clé que le tiroir lit). Pas testé en
   navigateur cette session.
 
-- `[ ]` **P2 — page Matchs 2 à 3× plus lente que le reste du produit** en
-  usage réel (mesuré ~3.6-3.8s contre 0.8-2.9s ailleurs, deux passages) —
-  172 lignes chargées d'un bloc, pas de pagination visible côté requête.
-  Historique vérifiable a aussi un pic de délai serveur au premier
-  chargement (TTFB ~1.9s) qui redescend une fois en cache — à surveiller si
-  le volume de paris augmente.
+- `[x]` **P2 — page Matchs 2 à 3× plus lente que le reste du produit —
+  corrigé 2026-09-04** — la requête était déjà paginée côté backend
+  (`FIXTURE_SCORING_PAGINATION`, `limit` par défaut appliqué par le
+  `ValidationPipe` même quand le frontend ne l'envoie pas), contrairement à
+  ce que ce point supposait au départ. Le vrai coût : la sélection imbriquée
+  `fixture → modelRuns → bets → channelSelection → channelDecision` ne se
+  résout pas en un seul JOIN (Prisma émet plusieurs requêtes groupées par
+  page), et le défilement infini (`InfiniteScrollSentinel`,
+  `IntersectionObserver` sans `rootMargin`) attend que la sentinelle soit
+  réellement visible avant de déclencher la page suivante — une cascade
+  séquentielle de plusieurs aller-retours. `defaultLimit` remonté à
+  `maxLimit` (100, déjà le plafond autorisé — aucune donnée neuve exposée) :
+  ~4 pages → ~2 pour 172 fixtures. `rootMargin: "600px"` ajouté à
+  l'observer pour précharger la page suivante pendant le défilement plutôt
+  que d'attendre que la sentinelle apparaisse — cache l'aller-retour derrière
+  le temps de scroll. Pas re-mesuré en conditions réelles cette session.
 
-- `[ ]` **P2 — badge de rôle incohérent** — "Membre" (pied de la barre
-  latérale) vs "OPÉRATEUR" (page Profil) pour le même compte non-admin.
+- `[x]` **P2 — badge de rôle incohérent — corrigé 2026-09-04** — deux
+  sources de libellé déconnectées pour le même `UserRole` : un objet
+  JS en dur dans `app-shell.tsx` (`{ OPERATOR: "Membre" }`) contre le
+  catalogue i18n `account.roles.OPERATOR` ("Opérateur") déjà utilisé par
+  `profile-hero-section.tsx`. `app-shell.tsx` lit désormais la même clé
+  i18n (`useTranslations("account")`, `roles.${role}`) — même mot affiché
+  aux deux endroits (reste en petites capitales sur Profil via CSS
+  `uppercase`, différence de casse seulement, pas de mot différent).
 
-- `[ ]` **P2 — avertissement d'accessibilité React sur le tiroir coupon** —
-  `Missing Description or aria-describedby for DialogContent` à chaque
-  ouverture de "Mon coupon" (`bet-slip-drawer.tsx`) ; titre `sr-only`
-  présent, description manquante.
+- `[x]` **P2 — avertissement d'accessibilité React sur le tiroir coupon —
+  corrigé 2026-09-04** — `bet-slip-drawer.tsx` n'avait qu'un `DrawerTitle`
+  `sr-only`, aucune description ni `aria-describedby`. `@evcore/ui` exportait
+  déjà `DrawerDescription` (même pattern que `deposit-dialog.tsx`'s
+  `DialogDescription`, jamais réutilisé ici) — ajoutée en `sr-only` juste
+  après le titre.
 
-- `[ ]` **P2 — pas de numéro de téléphone collecté** — absent de
-  `RegisterDto`, du modèle `User` (Prisma) et de tous les onglets Profil.
-  Utile pour une prospection terrain (porte-à-porte) — à ajouter en champ
-  optionnel avec consentement explicite si le besoin est confirmé, pas à
-  l'inscription pour ne pas alourdir ce parcours (actuellement le
-  meilleur du produit en friction).
+- `[x]` **P2 — numéro de téléphone — ajouté 2026-09-04** — deux champs
+  `User.phoneNumber`/`phoneNumberConsentGiven` (migration écrite, pas
+  appliquée), jamais à l'inscription (RegisterDto inchangé, pour ne pas
+  alourdir ce parcours). Onglet Profil (`phone-number-row.tsx`, nouveau) :
+  le champ numéro n'existe même pas tant que l'interrupteur de consentement
+  n'est pas activé — jamais une case cochée après coup pour justifier un
+  champ déjà rempli. Désactiver le consentement efface le numéro stocké
+  côté serveur (`AuthService.updateMe`), plutôt que de le garder sans
+  consentement actif. Format libre (`class-validator` `IsPhoneNumber`
+  sans région imposée) ; texte de consentement : "J'accepte d'être
+  contacté(e) par téléphone dans le cadre d'une démarche de prospection
+  terrain. Jamais de démarchage commercial automatisé." — usage confirmé
+  avec l'utilisateur avant implémentation. Pas testé en navigateur cette
+  session.
+
+- `[ ]` **P1 — signalement utilisateur : "des personnes n'arrivent pas à
+  s'inscrire" — investigué 2026-09-04, cause non identifiée, logging
+  ajouté.** Test réel en navigateur (Playwright, pas juste lecture de
+  code) du parcours complet : inscription happy-path, email/username déjà
+  utilisé, viewport mobile, onboarding actif jusqu'à "Terminer",
+  rechargement — **tout fonctionne sans erreur** (zéro échec réseau, zéro
+  exception JS, message d'erreur de doublon affiché correctement). Seul
+  bug trouvé au passage (mineur, corrigé) : même avertissement
+  d'accessibilité que le tiroir de bet slip sur la modale d'onboarding
+  (`DialogDescription` manquante) — profité de l'occasion pour ajouter un
+  vrai sous-titre utile ("chacune est facultative") plutôt qu'un simple
+  `sr-only`. Aucune reproduction locale du problème signalé — sans accès
+  aux logs prod ni à un message d'erreur précis rapporté par un
+  utilisateur touché, impossible de confirmer une cause. **En attendant**,
+  `AuthService.register` loggait auparavant zéro événement (ni succès ni
+  rejet) — ajouté : `register: account created` (info) et `register:
+  rejected — email or username already in use` (warn, avec le champ
+  précis en collision) pour que le prochain signalement soit exploitable.
+  Le message client reste volontairement générique ("email OU username")
+  pour ne pas permettre l'énumération de comptes par email. Pistes non
+  vérifiables sans accès prod : `CORS_ORIGINS` mal configuré pour le
+  domaine réel, rate-limiting en amont (proxy/CDN, hors code applicatif).
+  À rouvrir dès qu'un message d'erreur précis ou un accès aux logs est
+  disponible.

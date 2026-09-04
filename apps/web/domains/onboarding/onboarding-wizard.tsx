@@ -6,6 +6,7 @@ import {
   Button,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -81,6 +82,10 @@ export function OnboardingWizard() {
               fixed elsewhere (Decisions' channel badge, Coupons' canal
               badge). */}
           <DialogTitle>{t("title")}</DialogTitle>
+          {/* Genuinely useful here (unlike the bet slip drawer's sr-only
+              fix, same underlying Radix warning) — a first-run wizard
+              benefits from stating up front that nothing is mandatory. */}
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 
         <div className="min-h-[16rem]">

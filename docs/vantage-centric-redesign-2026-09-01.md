@@ -78,7 +78,7 @@ que **tout reste gratuit pour l'instant**, le gate viendra plus tard.
 
 | Axe                            | Avant                                                                                                                          | Après                                                                                                                                                                                                                                                                                      |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Navigation                     | Dashboard, Investir, Coupon Composer, Decisions, Arbitrage, Abonnements, Notifications, Annonces séparées                      | Dashboard épuré, **Decisions**, **Arbitrage** (rôle inchangé), **Coupons** (nouveau, sœur d'Arbitrage), **Notifications** fusionnée — Investir, Coupon Composer, **Abonnements** et Annonces supprimés de la nav                                                                           |
+| Navigation                     | Dashboard, Investir, Coupon Composer, Decisions, Arbitrage, Abonnements, Notifications, Annonces séparées                      | Dashboard épuré, groupe "Aujourd'hui" réordonné **Coupons → Arbitrage → Decisions → Matchs** (2026-09-04, Coupons en tête + bouton central surélevé mobile), **Notifications** fusionnée — Investir, Coupon Composer, **Abonnements** et Annonces supprimés de la nav                     |
 | Génération de coupon           | Moteur déterministe (`coupon` module), `topN` sur canaux non filtrés par calibration                                           | **VANTAGE génère les 3 coupons quotidiens** (Safe/Moyen/Agressif) sur un pool pré-filtré par calibration                                                                                                                                                                                   |
 | Coupon personnel               | Aucun mécanisme dédié                                                                                                          | L'utilisateur compose via le **drawer de bet slip existant** (rien de neuf) ; le bouton "Envoyer à VANTAGE" + l'écran de révision sont maquettés mais **en backlog** (§0, §5.2)                                                                                                            |
 | VALUE / SAFE                   | Deux canaux de filtrage Phase 2 (edge / probabilité+EV)                                                                        | **Déconnectés de la pipeline live** (§5.1 résolu, 2026-09-03) — continuent de tourner pour observation, plus d'effet côté utilisateur (bet interne, Decisions, abonnements)                                                                                                                |
@@ -1794,5 +1794,49 @@ d'habitude, l'utilisateur lance ses migrations lui-même) :
 
 Vérifié : typecheck/lint propres sur les quatre workspaces, 608/608 backend,
 128/128 vantage-worker (inchangé), 491/491 analysis-core (inchangé). Pas
-testé en navigateur cette session. Pas encore committé — migration à
+testé en navigateur cette session. Committé (`fd117fe4`) — migration à
 appliquer avant de tester en vrai.
+
+## Divers post-chantier — perf Matchs, badge de rôle, accessibilité, téléphone, signup (2026-09-04)
+
+Hors chantier VANTAGE à proprement parler (repris ici pour garder une trace
+chronologique unique de la session) — détail complet dans TODO.md, section
+"Front web côté joueur — audit UX externe" :
+
+- **Page Matchs 2-3× plus lente** — la pagination existait déjà côté
+  backend (`FIXTURE_SCORING_PAGINATION`) ; le vrai coût est la sélection
+  imbriquée `fixture→modelRuns→bets→channelSelection→channelDecision`
+  (plusieurs requêtes groupées par page, pas un seul JOIN) combinée à un
+  défilement infini strictement séquentiel. `defaultLimit` remonté à
+  `maxLimit` (100, déjà le plafond) + `rootMargin: "600px"` sur
+  l'`IntersectionObserver` pour précharger pendant le scroll.
+- **Badge de rôle incohérent** ("Membre" vs "Opérateur" pour le même
+  compte) — `app-shell.tsx` avait son propre mapping en dur, déconnecté du
+  catalogue i18n `account.roles.*` déjà utilisé par la page Profil.
+  Unifié sur la même source.
+- **Accessibilité** — `DrawerDescription` ajoutée (sr-only) sur le tiroir
+  de bet slip, et `DialogDescription` (visible, utile) sur la modale
+  d'onboarding active — les deux émettaient le même avertissement Radix
+  "Missing Description".
+- **Numéro de téléphone** — `User.phoneNumber`/`phoneNumberConsentGiven`
+  (migration écrite, pas appliquée), collecté dans l'onglet Profil
+  (`phone-number-row.tsx`) seulement après consentement explicite activé
+  par un interrupteur — jamais à l'inscription. Révoquer le consentement
+  efface le numéro stocké. Format libre, texte de consentement confirmé
+  avec l'utilisateur : prospection terrain, jamais de démarchage
+  automatisé.
+- **Signalement "des personnes n'arrivent pas à s'inscrire"** — investigué
+  en conditions réelles (Playwright, pas juste lecture de code) : parcours
+  complet, doublon email, mobile, onboarding jusqu'au bout, rechargement —
+  tout fonctionne sans erreur, aucune reproduction locale. `AuthService.
+  register` ne loggait rien avant (ni succès ni rejet) — ajouté
+  `register: account created` / `register: rejected` (avec le champ
+  précis en collision) pour que le prochain signalement soit exploitable ;
+  message client inchangé (volontairement générique, anti-énumération de
+  comptes). Non résolu — en attente d'un accès aux logs prod ou d'un
+  message d'erreur précis rapporté par un utilisateur touché.
+
+Vérifié : typecheck/lint propres sur backend/web, 608/608 backend à chaque
+étape. Nav order + perf fix + badge de rôle + téléphone committés par
+l'utilisateur (`91334c4d`) ; le fix d'accessibilité de la modale
+d'onboarding et le logging de `register` restent à committer.

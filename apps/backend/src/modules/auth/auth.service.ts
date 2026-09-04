@@ -75,10 +75,27 @@ export class AuthService {
 
     const existing = await this.prisma.client.user.findFirst({
       where: { OR: [{ email }, { username }] },
-      select: { id: true },
+      select: { email: true, username: true },
     });
 
     if (existing) {
+      // The client-facing message stays deliberately generic ("email OR
+      // username") rather than naming which one collided — splitting it
+      // would let an attacker enumerate registered emails one probe at a
+      // time. Logged server-side instead (2026-09-04, investigating a
+      // report that some signups fail) so a real collision is at least
+      // traceable after the fact, without exposing it to the requester.
+      logger.warn(
+        {
+          collidedOn:
+            existing.email === email && existing.username === username
+              ? 'both'
+              : existing.email === email
+                ? 'email'
+                : 'username',
+        },
+        'register: rejected — email or username already in use',
+      );
       throw new ConflictException('Email ou username déjà utilisé');
     }
 
@@ -119,6 +136,8 @@ export class AuthService {
         phoneNumberConsentGiven: true,
       },
     });
+
+    logger.info({ userId: user.id }, 'register: account created');
 
     const { token, session } = await this.createSession(user.id);
     return {

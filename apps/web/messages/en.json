@@ -839,6 +839,7 @@
   },
   "onboarding": {
     "title": "Quick setup",
+    "description": "Personalize your experience in three quick steps — each one is optional.",
     "stepCounter": "Step {step} of {total}",
     "skip": "Skip",
     "next": "Next",

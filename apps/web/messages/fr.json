@@ -839,6 +839,7 @@
   },
   "onboarding": {
     "title": "Configuration rapide",
+    "description": "Personnalisez votre expérience en trois étapes rapides — chacune est facultative.",
     "stepCounter": "Étape {step} sur {total}",
     "skip": "Passer",
     "next": "Suivant",
