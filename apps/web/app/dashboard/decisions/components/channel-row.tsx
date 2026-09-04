@@ -17,7 +17,7 @@ import type {
 } from "@/domains/channel-decision/types/channel-decision";
 import { AddToCouponButton } from "@/components/add-to-coupon-button";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
-import { ChannelStatusBadge } from "@/app/dashboard/track-record/components/channel-status-badge";
+import { ChannelStatusBadge } from "@/components/channel-status-badge";
 import type { ChannelCompetitionStatItem } from "@/domains/dashboard/types/dashboard";
 import {
   calibrationKey,

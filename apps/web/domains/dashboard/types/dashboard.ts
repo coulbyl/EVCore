@@ -50,14 +50,11 @@ export type CompetitionStat = {
   model: {
     settled: number;
     won: number;
-    roi: string | null;
     winRate: string | null;
+    /** Réel/annoncé — même formule que ChannelHealthItem.calibrationRatio. */
+    calibrationRatio: number | null;
+    status: ChannelStatus;
   };
-  myPicks: {
-    settled: number;
-    won: number;
-    roi: string | null;
-  } | null;
 };
 
 export type LeaderboardEntry = {

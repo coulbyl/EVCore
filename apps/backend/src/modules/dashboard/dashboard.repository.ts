@@ -176,7 +176,7 @@ export class DashboardRepository {
     });
   }
 
-  getCompetitionData(userId: string, since: Date, canal?: 'VALUE' | 'SAFE') {
+  getCompetitionData(since: Date, canal?: 'VALUE' | 'SAFE') {
     const fixtureFilter = { scheduledAt: { gte: since } };
     const competitionSelect = {
       select: { id: true, name: true, code: true },
@@ -223,24 +223,7 @@ export class DashboardRepository {
         },
         select: {
           status: true,
-          stakePct: true,
-          oddsSnapshot: true,
-          fixture: { select: { season: seasonSelect } },
-        },
-      }),
-      // Picks USER settlés de l'utilisateur connecté
-      this.prisma.client.bet.findMany({
-        where: {
-          source: BetSource.USER,
-          userId,
-          status: { in: [BetStatus.WON, BetStatus.LOST] },
-          fixture: fixtureFilter,
-          oddsSnapshot: { not: null },
-        },
-        select: {
-          status: true,
-          stakePct: true,
-          oddsSnapshot: true,
+          probEstimated: true,
           fixture: { select: { season: seasonSelect } },
         },
       }),

@@ -573,10 +573,8 @@
     },
     "leagueRanking": {
       "title": "Classement ligues",
-      "period": "30j · ROI moteur",
-      "empty": "Aucune donnée sur 30 jours.",
-      "model": "Moteur",
-      "myBets": "Mes paris"
+      "period": "30j · fiabilité",
+      "empty": "Aucune donnée sur 30 jours."
     },
     "operatorCard": {
       "headline": "Mes performances",
@@ -595,6 +593,18 @@
       "toWatch": "À surveiller",
       "pendingResult": "en attente de résultat",
       "pendingResults": "en attente de résultats"
+    },
+    "todayConfidence": {
+      "headline": "Aujourd'hui",
+      "title": "Confiance du moteur",
+      "confidenceHigh": "Confiance élevée",
+      "confidenceModerate": "Confiance modérée",
+      "confidenceLow": "Confiance faible",
+      "confidenceUnknown": "Pas assez de données",
+      "toFollow": "À suivre aujourd'hui",
+      "toAvoid": "À éviter aujourd'hui",
+      "emptyFollow": "Aucune sélection fiable aujourd'hui",
+      "emptyAvoid": "Aucun canal à éviter aujourd'hui"
     }
   },
   "betSlips": {

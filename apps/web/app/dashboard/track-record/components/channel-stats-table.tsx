@@ -9,7 +9,7 @@ import {
   formatRoi,
   statusToneClass,
 } from "../track-record-constants";
-import { ChannelStatusBadge } from "./channel-status-badge";
+import { ChannelStatusBadge } from "@/components/channel-status-badge";
 
 export type ChannelStatRow = {
   key: string;

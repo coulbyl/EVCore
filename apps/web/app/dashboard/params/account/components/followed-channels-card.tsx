@@ -23,7 +23,7 @@ import {
   useUnfollowChannel,
 } from "@/domains/personalization/use-cases/use-personalization";
 import { channelLabel } from "@/app/dashboard/decisions/components/channel-constants";
-import { ChannelStatusBadge } from "@/app/dashboard/track-record/components/channel-status-badge";
+import { ChannelStatusBadge } from "@/components/channel-status-badge";
 import type { ChannelStatus } from "@/domains/dashboard/types/dashboard";
 import type { StrategyChannel } from "@/domains/channel-decision/types/channel-decision";
 import { SettingsSectionCard } from "./settings-section-card";

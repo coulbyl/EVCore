@@ -253,12 +253,13 @@ export class DashboardService {
   }
 
   async getCompetitionStats(
-    userId: string,
     canal?: 'VALUE' | 'SAFE',
   ): Promise<CompetitionStat[]> {
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const [analyzedRuns, modelBets, userBets] =
-      await this.repo.getCompetitionData(userId, since, canal);
+    const [analyzedRuns, modelBets] = await this.repo.getCompetitionData(
+      since,
+      canal,
+    );
 
     // Compter les fixtures analysées par compétition
     const activeByComp = new Map<string, number>();
@@ -272,8 +273,7 @@ export class DashboardService {
     type BetAgg = {
       won: number;
       total: number;
-      staked: Decimal;
-      returned: Decimal;
+      probSum: Decimal;
     };
     const modelAgg = new Map<
       CompKey,
@@ -285,82 +285,32 @@ export class DashboardService {
         comp,
         won: 0,
         total: 0,
-        staked: new Decimal(0),
-        returned: new Decimal(0),
+        probSum: new Decimal(0),
       };
-      const stake = new Decimal(bet.stakePct.toString());
       existing.total += 1;
-      existing.staked = existing.staked.plus(stake);
-      if (bet.status === 'WON') {
-        existing.won += 1;
-        existing.returned = existing.returned.plus(
-          stake.times(bet.oddsSnapshot!.toString()),
-        );
-      }
+      existing.probSum = existing.probSum.plus(
+        new Decimal(bet.probEstimated.toString()),
+      );
+      if (bet.status === 'WON') existing.won += 1;
       modelAgg.set(comp.id, existing);
-    }
-
-    // Agréger les picks USER par compétition
-    type UserAgg = {
-      won: number;
-      total: number;
-      staked: Decimal;
-      returned: Decimal;
-    };
-    const userAgg = new Map<CompKey, UserAgg>();
-    for (const bet of userBets) {
-      const compId = bet.fixture.season.competition.id;
-      const existing = userAgg.get(compId) ?? {
-        won: 0,
-        total: 0,
-        staked: new Decimal(0),
-        returned: new Decimal(0),
-      };
-      const stake = new Decimal(bet.stakePct.toString());
-      existing.total += 1;
-      existing.staked = existing.staked.plus(stake);
-      if (bet.status === 'WON') {
-        existing.won += 1;
-        existing.returned = existing.returned.plus(
-          stake.times(bet.oddsSnapshot!.toString()),
-        );
-      }
-      userAgg.set(compId, existing);
     }
 
     const stats: CompetitionStat[] = [];
 
     for (const [compId, model] of modelAgg) {
       const active = activeByComp.get(compId) ?? 0;
-      const userPicks = userAgg.get(compId) ?? null;
 
-      const modelRoi =
-        model.total >= MIN_SETTLED_MODEL && model.staked.gt(0)
-          ? formatSigned(
-              model.returned
-                .minus(model.staked)
-                .dividedBy(model.staked)
-                .times(100)
-                .toNumber(),
-              1,
-            ) + '%'
+      const avgProbability =
+        model.total > 0 ? model.probSum.dividedBy(model.total).toNumber() : 0;
+      const hitRate = model.won / model.total;
+      const calibrationRatio =
+        model.total >= MIN_SETTLED_MODEL && avgProbability > 0
+          ? hitRate / avgProbability
           : null;
 
       const modelWinRate =
         model.total >= MIN_SETTLED_MODEL
-          ? `${Math.round((model.won / model.total) * 100)}%`
-          : null;
-
-      const myPicksRoi =
-        userPicks && userPicks.total >= 1 && userPicks.staked.gt(0)
-          ? formatSigned(
-              userPicks.returned
-                .minus(userPicks.staked)
-                .dividedBy(userPicks.staked)
-                .times(100)
-                .toNumber(),
-              1,
-            ) + '%'
+          ? `${Math.round(hitRate * 100)}%`
           : null;
 
       stats.push({
@@ -371,22 +321,27 @@ export class DashboardService {
         model: {
           settled: model.total,
           won: model.won,
-          roi: modelRoi,
           winRate: modelWinRate,
+          calibrationRatio,
+          status: calibrationStatus(
+            calibrationRatio,
+            model.total,
+            MIN_SETTLED_MODEL,
+          ),
         },
-        myPicks: userPicks
-          ? { settled: userPicks.total, won: userPicks.won, roi: myPicksRoi }
-          : null,
       });
     }
 
-    // Tri : fixtures actives décroissant, puis ROI modèle
+    // Tri : fixtures actives décroissant, puis fiabilité (ratio de
+    // calibration) décroissante — plus le ROI, anti-prédictif à ce volume
+    // (voir CLAUDE.md et l'audit 2026-08-22). Une compétition sans donnée
+    // suffisante (ratio null) est classée après celles qui en ont.
     return stats.sort((a, b) => {
       if (b.activeFixtures !== a.activeFixtures)
         return b.activeFixtures - a.activeFixtures;
-      const roiA = a.model.roi ? parseFloat(a.model.roi) : -Infinity;
-      const roiB = b.model.roi ? parseFloat(b.model.roi) : -Infinity;
-      return roiB - roiA;
+      const ratioA = a.model.calibrationRatio ?? -Infinity;
+      const ratioB = b.model.calibrationRatio ?? -Infinity;
+      return ratioB - ratioA;
     });
   }
 

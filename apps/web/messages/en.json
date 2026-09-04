@@ -573,10 +573,8 @@
     },
     "leagueRanking": {
       "title": "League ranking",
-      "period": "30d · model ROI",
-      "empty": "No data over 30 days.",
-      "model": "Model",
-      "myBets": "My bets"
+      "period": "30d · reliability",
+      "empty": "No data over 30 days."
     },
     "operatorCard": {
       "headline": "My performance",
@@ -595,6 +593,18 @@
       "toWatch": "To watch",
       "pendingResult": "pending result",
       "pendingResults": "pending results"
+    },
+    "todayConfidence": {
+      "headline": "Today",
+      "title": "Engine confidence",
+      "confidenceHigh": "High confidence",
+      "confidenceModerate": "Moderate confidence",
+      "confidenceLow": "Low confidence",
+      "confidenceUnknown": "Not enough data",
+      "toFollow": "To follow today",
+      "toAvoid": "To avoid today",
+      "emptyFollow": "No reliable pick today",
+      "emptyAvoid": "No channel to avoid today"
     }
   },
   "betSlips": {
