@@ -507,6 +507,13 @@ model User {
   unitPercent                      Decimal?                @db.Decimal(5, 4)
   riskProfile                      RiskProfile             @default(BALANCED)
   emailSupportNotificationsEnabled Boolean                 @default(true)
+  // Optional, collected in the Profil settings tab — never at registration
+  // (TODO.md: keeping signup low-friction). phoneNumberConsentGiven gates
+  // collection: the frontend only shows the phone input once consent is
+  // toggled on, and revoking consent clears the stored number server-side
+  // (AuthService.updateMe) rather than keeping it around unconsented.
+  phoneNumber                      String?
+  phoneNumberConsentGiven          Boolean                 @default(false)
   hasSeenOnboarding                Boolean                 @default(false)
   // The passive product tour's own flag (above) is distinct from this one:
   // hasSeenOnboarding tracks the driver.js guided tour, this tracks the

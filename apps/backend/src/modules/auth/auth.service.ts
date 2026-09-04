@@ -115,6 +115,8 @@ export class AuthService {
         emailSupportNotificationsEnabled: true,
         hasSeenOnboarding: true,
         hasCompletedOnboarding: true,
+        phoneNumber: true,
+        phoneNumberConsentGiven: true,
       },
     });
 
@@ -155,6 +157,8 @@ export class AuthService {
         emailSupportNotificationsEnabled: true,
         hasSeenOnboarding: true,
         hasCompletedOnboarding: true,
+        phoneNumber: true,
+        phoneNumberConsentGiven: true,
         passwordHash: true,
         suspended: true,
       },
@@ -197,6 +201,8 @@ export class AuthService {
             user.emailSupportNotificationsEnabled,
           hasSeenOnboarding: user.hasSeenOnboarding,
           hasCompletedOnboarding: user.hasCompletedOnboarding,
+          phoneNumber: user.phoneNumber,
+          phoneNumberConsentGiven: user.phoneNumberConsentGiven,
         },
       },
     };
@@ -243,6 +249,8 @@ export class AuthService {
             emailSupportNotificationsEnabled: true,
             hasSeenOnboarding: true,
             hasCompletedOnboarding: true,
+            phoneNumber: true,
+            phoneNumberConsentGiven: true,
             suspended: true,
           },
         },
@@ -306,6 +314,17 @@ export class AuthService {
         ...(dto.hasCompletedOnboarding !== undefined && {
           hasCompletedOnboarding: dto.hasCompletedOnboarding,
         }),
+        // Revoking consent clears the stored number rather than keeping an
+        // unconsented phone number around — see schema.prisma's own comment
+        // on phoneNumberConsentGiven.
+        ...(dto.phoneNumberConsentGiven !== undefined && {
+          phoneNumberConsentGiven: dto.phoneNumberConsentGiven,
+          ...(dto.phoneNumberConsentGiven === false && { phoneNumber: null }),
+        }),
+        ...(dto.phoneNumber !== undefined &&
+          dto.phoneNumberConsentGiven !== false && {
+            phoneNumber: dto.phoneNumber,
+          }),
       },
       select: {
         id: true,
@@ -328,6 +347,8 @@ export class AuthService {
         emailSupportNotificationsEnabled: true,
         hasSeenOnboarding: true,
         hasCompletedOnboarding: true,
+        phoneNumber: true,
+        phoneNumberConsentGiven: true,
       },
     });
     return this.toSessionUser(user);
@@ -654,6 +675,8 @@ export class AuthService {
         emailSupportNotificationsEnabled: true,
         hasSeenOnboarding: true,
         hasCompletedOnboarding: true,
+        phoneNumber: true,
+        phoneNumberConsentGiven: true,
       },
     });
 
@@ -733,6 +756,8 @@ export class AuthService {
     emailSupportNotificationsEnabled: boolean;
     hasSeenOnboarding: boolean;
     hasCompletedOnboarding: boolean;
+    phoneNumber: string | null;
+    phoneNumberConsentGiven: boolean;
   }): AuthSessionUser {
     return {
       ...user,

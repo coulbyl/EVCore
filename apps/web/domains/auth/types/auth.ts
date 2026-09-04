@@ -21,6 +21,8 @@ export type AuthSessionUser = {
   emailSupportNotificationsEnabled: boolean;
   hasSeenOnboarding: boolean;
   hasCompletedOnboarding: boolean;
+  phoneNumber: string | null;
+  phoneNumberConsentGiven: boolean;
 };
 
 export function isAccountVerified(user: AuthSessionUser): boolean {

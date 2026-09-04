@@ -140,7 +140,7 @@ export function RegisterForm() {
             name="fullName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nom complet</FormLabel>
+                <FormLabel>Nom & prénoms</FormLabel>
                 <FormControl>
                   <Input autoComplete="name" className="h-11" {...field} />
                 </FormControl>

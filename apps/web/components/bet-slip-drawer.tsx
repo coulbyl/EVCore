@@ -9,7 +9,13 @@ import {
   CheckCircle,
   ChevronRight,
 } from "lucide-react";
-import { Drawer, DrawerContent, DrawerTitle, cn } from "@evcore/ui";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
+  DrawerDescription,
+  cn,
+} from "@evcore/ui";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentUser } from "@/domains/auth/context/current-user-context";
@@ -463,6 +469,9 @@ export function BetSlipDrawer() {
         }
       >
         <DrawerTitle className="sr-only">Mon coupon</DrawerTitle>
+        <DrawerDescription className="sr-only">
+          Vos sélections en cours, à confirmer avant de parier.
+        </DrawerDescription>
 
         {/* ── Header */}
         <div className="flex shrink-0 items-center justify-between px-5 py-4">

@@ -40,11 +40,6 @@ import { useUnreadCount } from "@/domains/notification/use-cases/use-notificatio
 import { useUnreadSupportCount } from "@/domains/support/use-cases/use-support-chat";
 import { useAdminUnreadSupportCount } from "@/domains/support/use-cases/use-admin-support";
 
-const ROLE_LABEL: Record<string, string> = {
-  ADMIN: "Admin",
-  OPERATOR: "Membre",
-};
-
 const BADGE_EMOJI: Record<string, string> = {
   vol_50: "🏅",
   vol_150: "🥈",
@@ -67,6 +62,10 @@ export function AppShell({
   const currentUser = useCurrentUser();
   const pathname = usePathname();
   const tNav = useTranslations("nav");
+  // Same source as the Profil page's role badge (profile-hero-section.tsx)
+  // — was a separate hardcoded { OPERATOR: "Membre" } map here, "Opérateur"
+  // there, TODO.md's "badge de rôle incohérent" for the same account.
+  const tAccount = useTranslations("account");
   const isAdmin = currentUser.role === "ADMIN";
   const { data: leaderboard } = useLeaderboard();
   const { data: badges } = useMyBadges();
@@ -311,7 +310,9 @@ export function AppShell({
                   variant="neutral"
                   className="shrink-0 text-[0.62rem] text-sidebar-foreground/80"
                 >
-                  {ROLE_LABEL[currentUser.role] ?? currentUser.role}
+                  {tAccount.has(`roles.${currentUser.role}`)
+                    ? tAccount(`roles.${currentUser.role}`)
+                    : currentUser.role}
                 </Badge>
               </div>
               <p className="truncate text-xs text-sidebar-foreground/60">
