@@ -10,9 +10,12 @@ import {
 import {
   CHANNEL_COLOR,
   CHANNEL_COLOR_SOFT,
+  calibrationKey,
   formatPct,
   formatOdds,
+  type ChannelCalibrationByKey,
 } from "../../decisions/components/channel-constants";
+import { CalibrationBadge } from "../../decisions/components/channel-row";
 import {
   citationDomain,
   formatDecidedAt,
@@ -24,9 +27,11 @@ import {
 export function ArbitrageCard({
   entry,
   locale,
+  calibrationByKey,
 }: {
   entry: ArbitrageEntry;
   locale: string;
+  calibrationByKey?: ChannelCalibrationByKey;
 }) {
   const t = useTranslations("arbitrage");
   const loc = locale === "en" ? "en" : "fr";
@@ -34,7 +39,10 @@ export function ArbitrageCard({
   const isPlay = verdict === "play";
   const selection = entry.selections[0];
   const details = parseArbitrageReasonDetails(entry.reasonDetails);
-  const odds = formatOdds(entry.borrowedOdds);
+  const odds = formatOdds(entry.displayOdds);
+  const calibration = entry.competition
+    ? calibrationByKey?.get(calibrationKey("VANTAGE", entry.competition))
+    : undefined;
 
   return (
     <FixtureCard
@@ -94,6 +102,7 @@ export function ArbitrageCard({
                 {odds}
               </span>
             )}
+            <CalibrationBadge item={calibration} />
           </div>
         )}
       </div>

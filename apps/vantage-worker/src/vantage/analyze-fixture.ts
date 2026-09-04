@@ -235,12 +235,18 @@ export async function analyzeFixture(
     };
   }
 
+  // Hoisted above the "play" block: still in scope at the persist call below
+  // so the same odds resolved here for the MIN_ODDS floor check gets written
+  // onto VANTAGE's own ChannelSelection too, instead of being discarded —
+  // VANTAGE's decision is otherwise the only channel whose pick never
+  // carries a cote, forcing the frontend to guess at one via a sibling
+  // channel's matching selection (arbitrage-constants.ts's findSiblingOdds),
+  // which fails whenever VANTAGE's pick doesn't match any other channel's —
+  // exactly the cases where VANTAGE is most likely to differ on purpose.
+  let knownOdds: number | null = null;
+
   if (parsed.data.verdict === "play") {
-    const knownOdds = findKnownOdds(
-      context,
-      parsed.data.market,
-      parsed.data.pick,
-    );
+    knownOdds = findKnownOdds(context, parsed.data.market, parsed.data.pick);
     if (knownOdds !== null && knownOdds < MIN_ODDS) {
       logger.warn(
         {
@@ -292,6 +298,7 @@ export async function analyzeFixture(
     parsed.data,
     CONFIG_VERSION,
     research,
+    knownOdds,
   );
   logger.info(
     {

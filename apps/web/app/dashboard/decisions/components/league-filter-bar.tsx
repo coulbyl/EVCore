@@ -52,10 +52,15 @@ export function LeagueFilterBar({
           type="button"
           className="flex w-full items-center justify-between gap-2 rounded-2xl border border-border bg-panel-strong px-4 py-2.5 text-sm font-medium text-foreground md:w-auto"
         >
-          <span className="min-w-0 truncate">
-            {selectedOption
-              ? translateCompetition(selectedOption.name, locale)
-              : t("filters.all")}
+          <span className="flex min-w-0 items-baseline gap-1.5">
+            <span className="shrink-0 text-muted-foreground">
+              {t("filters.leagueLabel")}
+            </span>
+            <span className="min-w-0 truncate">
+              {selectedOption
+                ? translateCompetition(selectedOption.name, locale)
+                : t("filters.all")}
+            </span>
           </span>
           <ChevronDown size={16} className="shrink-0 text-muted-foreground" />
         </button>

@@ -164,8 +164,7 @@
       "banner": "Suspect data",
       "tooltipLabel": "Calibration alert",
       "tooltipDetail": "The model and the market strongly disagree on this match (flipped favorite or extreme gap across several bookmakers). This almost always signals corrupted input data rather than an opportunity — the engine automatically excludes every pick of this match from real bets.",
-      "badgeTooltip": "{status, select, GREEN {This channel has been reliable in this competition} ORANGE {This channel needs watching in this competition — its actual hit rate drifts from what it announces} RED {This channel has been unreliable in this competition — its actual hit rate is well below what it announces} other {Reliability not measurable in this competition}} ({n, plural, one {# settled bet} other {# settled bets}}).",
-      "badgeTooltipEmpty": "Not enough settled history in this competition to measure reliability ({n, plural, one {# settled bet} other {# settled bets}})."
+      "badgeTooltip": "{status, select, GREEN {This channel has been reliable in this competition} ORANGE {This channel needs watching in this competition — its actual hit rate drifts from what it announces} RED {This channel has been unreliable in this competition — its actual hit rate is well below what it announces} other {Reliability not measurable in this competition}} ({n, plural, one {# settled bet} other {# settled bets}})."
     },
     "consensus": {
       "tooltipLabel": "Consensus signal",
@@ -180,6 +179,8 @@
     "showLessPicks": "Show less",
     "filters": {
       "all": "All",
+      "leagueLabel": "League",
+      "channelLabel": "Channel",
       "displayLabel": "Display",
       "noMatch": "No fixture matches the filters.",
       "groupByNone": "By kickoff time",
@@ -194,15 +195,12 @@
   "arbitrage": {
     "title": "Arbitrage",
     "badge": "AI read",
-    "description": "Reads every other channel's decision and its measured reliability on this competition — only proposes a pick when it spots a concrete tension or bias between them. On most matches, the right call is to play nothing.",
-    "stats": {
-      "readsToday": "reads today",
-      "plays": "tensions spotted"
-    },
+    "description": "Reads every other channel's decision and its measured reliability on this competition — only proposes a bet when it spots a real disagreement between them, never just to confirm what they already say. On most matches, the right call is to play nothing.",
     "filters": {
       "all": "All",
       "play": "Recommended",
-      "noPlay": "Avoid"
+      "noPlay": "No opinion",
+      "label": "Filter"
     },
     "reasoningLabel": "Arbitrage read",
     "sourcesLabel": "Sources",
@@ -211,7 +209,7 @@
     "emptyTitle": "No reads",
     "emptyDescription": "The channel hasn't analyzed anything for this date yet.",
     "emptyFilteredTitle": "Nothing to report",
-    "emptyFilteredDescription": "No tension identified today — try \"All\" to see the reads with no pick."
+    "emptyFilteredDescription": "No disagreement identified today — try \"All\" to see the matches with no opinion."
   },
   "notifications": {
     "title": "Notifications",

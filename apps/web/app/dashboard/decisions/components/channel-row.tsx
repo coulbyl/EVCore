@@ -155,27 +155,34 @@ export function ChannelRow({
  * against ("claimed edge is anti-predictive... never a selection floor").
  * `item` is undefined when this (channel, competition) pair never appears
  * in the calibration lookup at all — treated the same as a measured-but-
- * too-thin sample (INSUFFICIENT_DATA), never hidden (matches the project's
- * "un canal négatif reste affiché comme tel" stance). */
-function CalibrationBadge({
+ * too-thin sample (INSUFFICIENT_DATA). Unlike the rest of the app's "un
+ * canal négatif reste affiché comme tel" stance, INSUFFICIENT_DATA renders
+ * nothing here rather than a badge: per-competition samples are routinely
+ * too thin for a young/low-volume channel (VANTAGE) to ever clear the
+ * threshold, and a badge that almost always reads "insuffisant" carries no
+ * signal — silence says the same thing without the noise. */
+export function CalibrationBadge({
   item,
 }: {
   item: ChannelCompetitionStatItem | undefined;
 }) {
   const t = useTranslations("decisions");
   const status = item?.status ?? "INSUFFICIENT_DATA";
-  // Plain-language verdict, no raw ratio/n= notation in the visible text —
-  // "0.58×" and "n=223" read as internal jargon to a lambda user (2quater).
-  const detail =
-    status === "INSUFFICIENT_DATA"
-      ? t("calibration.badgeTooltipEmpty", { n: item?.sampleSize ?? 0 })
-      : t("calibration.badgeTooltip", { status, n: item?.sampleSize ?? 0 });
-
   // HoverCard (same pattern as InfoTooltip), not Tooltip — a plain hover-only
   // Tooltip never opens on mobile, where there's no hover state at all.
   // Controlling `open` explicitly and toggling it from the trigger's onClick
-  // makes tapping the badge work exactly like hovering it on desktop.
+  // makes tapping the badge work exactly like hovering it on desktop. Hooks
+  // stay unconditional (rules of hooks) — the early return comes after.
   const [open, setOpen] = useState(false);
+
+  if (status === "INSUFFICIENT_DATA") return null;
+
+  // Plain-language verdict, no raw ratio/n= notation in the visible text —
+  // "0.58×" and "n=223" read as internal jargon to a lambda user (2quater).
+  const detail = t("calibration.badgeTooltip", {
+    status,
+    n: item?.sampleSize ?? 0,
+  });
 
   return (
     <HoverCard.Root

@@ -18,18 +18,20 @@ import {
 } from "@evcore/ui";
 import { DateNav } from "@/components/date-nav";
 import { InfoTooltip } from "@/components/info-tooltip";
-import { ScrollableTabs } from "@/components/scrollable-tabs";
 import { todayIso } from "@/lib/date";
 import {
   useChannelDecisionFacets,
   useChannelDecisionMatches,
 } from "@/domains/channel-decision/use-cases/use-channel-decisions";
+import { useChannelCompetitionStats } from "@/domains/dashboard/use-cases/get-channel-health";
+import { dateRangeForPeriod } from "@/app/dashboard/track-record/track-record-constants";
 import { LeagueFilterBar } from "../../decisions/components/league-filter-bar";
+import { buildCalibrationByKey } from "../../decisions/components/channel-constants";
 import { ArbitrageCard } from "./arbitrage-card";
+import { VerdictFilterBar } from "./verdict-filter-bar";
 import {
   flattenArbitrageEntries,
   matchesFilter,
-  verdictOf,
   type ArbitrageFilter,
 } from "./arbitrage-constants";
 
@@ -67,6 +69,19 @@ export function ArbitragePageClient() {
   const leagueOptions = facets.data?.leagues ?? [];
   const hasLeagueFacets = leagueOptions.length > 0;
 
+  // Same calibration source as Decisions' per-pick badge (channel-row.tsx) —
+  // VANTAGE's own measured reliability on this competition, real ratio
+  // réel/annoncé, not the raw claimed-edge figure.
+  const calibrationRange = dateRangeForPeriod("90");
+  const calibrationStats = useChannelCompetitionStats(
+    calibrationRange.from,
+    calibrationRange.to,
+  );
+  const calibrationByKey = useMemo(
+    () => buildCalibrationByKey(calibrationStats.data ?? []),
+    [calibrationStats.data],
+  );
+
   const allEntries = useMemo(
     () => flattenArbitrageEntries(matches.data ?? []),
     [matches.data],
@@ -80,11 +95,6 @@ export function ArbitragePageClient() {
           new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
       );
   }, [allEntries, filter]);
-
-  const playCount = useMemo(
-    () => allEntries.filter((e) => verdictOf(e) === "play").length,
-    [allEntries],
-  );
 
   function navigate(next: {
     date?: string;
@@ -124,44 +134,28 @@ export function ArbitragePageClient() {
           {t("badge")}
         </span>
         <InfoTooltip label={t("title")} description={t("description")} />
-        {hasData && (
-          <span className="ml-auto text-xs text-muted-foreground">
-            <span className="font-semibold tabular-nums text-foreground">
-              {allEntries.length}
-            </span>{" "}
-            {t("stats.readsToday")}
-            <span className="mx-1.5 text-muted-foreground/40">·</span>
-            <span
-              className="font-semibold tabular-nums"
-              style={{ color: "var(--canal-vantage)" }}
-            >
-              {playCount}
-            </span>{" "}
-            {t("stats.plays")}
-          </span>
-        )}
       </div>
 
-      {hasLeagueFacets && (
-        <div className="mb-3 shrink-0">
-          <LeagueFilterBar
-            options={leagueOptions}
-            selected={selectedLeague}
-            onSelect={(code) => navigate({ league: code })}
+      <PageHeader>
+        <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:items-center md:gap-3">
+          {hasLeagueFacets && (
+            <LeagueFilterBar
+              options={leagueOptions}
+              selected={selectedLeague}
+              onSelect={(code) => navigate({ league: code })}
+            />
+          )}
+          <VerdictFilterBar
+            value={filter}
+            onSelect={(v) => navigate({ filter: v })}
+            label={t("filters.label")}
+            options={[
+              { value: "all", label: t("filters.all") },
+              { value: "play", label: t("filters.play") },
+              { value: "no_play", label: t("filters.noPlay") },
+            ]}
           />
         </div>
-      )}
-
-      <PageHeader>
-        <ScrollableTabs
-          value={filter}
-          onValueChange={(v) => navigate({ filter: v as ArbitrageFilter })}
-          items={[
-            { value: "all", label: t("filters.all") },
-            { value: "play", label: t("filters.play") },
-            { value: "no_play", label: t("filters.noPlay") },
-          ]}
-        />
         <PageHeaderActions className="w-full lg:w-auto">
           <DateNav
             date={date}
@@ -221,7 +215,12 @@ export function ArbitragePageClient() {
           {!isLoading && !matches.isError && visibleEntries.length > 0 && (
             <div className="mx-auto flex max-w-2xl flex-col gap-4">
               {visibleEntries.map((entry) => (
-                <ArbitrageCard key={entry.id} entry={entry} locale={locale} />
+                <ArbitrageCard
+                  key={entry.id}
+                  entry={entry}
+                  locale={locale}
+                  calibrationByKey={calibrationByKey}
+                />
               ))}
             </div>
           )}

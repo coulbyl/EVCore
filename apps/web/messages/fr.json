@@ -164,8 +164,7 @@
       "banner": "Données suspectes",
       "tooltipLabel": "Alerte calibration",
       "tooltipDetail": "Le modèle et le marché sont en désaccord fort sur ce match (favori inversé ou écart extrême sur plusieurs bookmakers). Cela signale presque toujours des données d'entrée corrompues plutôt qu'une opportunité — le moteur exclut automatiquement tous les picks de ce match des paris réels.",
-      "badgeTooltip": "{status, select, GREEN {Ce canal a été fiable sur cette compétition} ORANGE {Ce canal est à surveiller sur cette compétition — sa réussite s'écarte de ce qu'il annonce} RED {Ce canal a été peu fiable sur cette compétition — sa réussite réelle est nettement inférieure à ce qu'il annonce} other {Fiabilité non mesurable sur cette compétition}} ({n, plural, one {# pari réglé} other {# paris réglés}}).",
-      "badgeTooltipEmpty": "Historique insuffisant sur cette compétition pour mesurer la fiabilité ({n, plural, one {# pari réglé} other {# paris réglés}})."
+      "badgeTooltip": "{status, select, GREEN {Ce canal a été fiable sur cette compétition} ORANGE {Ce canal est à surveiller sur cette compétition — sa réussite s'écarte de ce qu'il annonce} RED {Ce canal a été peu fiable sur cette compétition — sa réussite réelle est nettement inférieure à ce qu'il annonce} other {Fiabilité non mesurable sur cette compétition}} ({n, plural, one {# pari réglé} other {# paris réglés}})."
     },
     "consensus": {
       "tooltipLabel": "Signal consensus",
@@ -180,6 +179,8 @@
     "showLessPicks": "Voir moins",
     "filters": {
       "all": "Tous",
+      "leagueLabel": "Ligue",
+      "channelLabel": "Canal",
       "displayLabel": "Affichage",
       "noMatch": "Aucun match ne correspond aux filtres.",
       "groupByNone": "Par heure",
@@ -194,15 +195,12 @@
   "arbitrage": {
     "title": "Arbitrage",
     "badge": "Lecture IA",
-    "description": "Lit les décisions des autres canaux et leur fiabilité mesurée sur cette compétition — ne propose un pick que s'il identifie une tension ou un biais concret entre eux. Sur la majorité des matchs, la bonne réponse est de ne rien jouer.",
-    "stats": {
-      "readsToday": "lectures aujourd'hui",
-      "plays": "tensions repérées"
-    },
+    "description": "Lit les décisions des autres canaux et leur fiabilité mesurée sur cette compétition — ne propose un pari que lorsqu'il repère un vrai désaccord entre eux, jamais pour confirmer ce qu'ils disent déjà. Sur la majorité des matchs, la bonne réponse est de ne rien jouer.",
     "filters": {
       "all": "Toutes",
       "play": "Recommandé",
-      "noPlay": "À éviter"
+      "noPlay": "Sans avis",
+      "label": "Filtre"
     },
     "reasoningLabel": "Lecture Arbitrage",
     "sourcesLabel": "Sources",
@@ -211,7 +209,7 @@
     "emptyTitle": "Aucune lecture",
     "emptyDescription": "Le canal n'a encore rien analysé pour cette date.",
     "emptyFilteredTitle": "Rien à signaler",
-    "emptyFilteredDescription": "Aucune tension identifiée aujourd'hui — essayez \"Toutes\" pour voir les lectures sans pick."
+    "emptyFilteredDescription": "Aucun désaccord identifié aujourd'hui — essayez \"Toutes\" pour voir les matchs sans avis."
   },
   "notifications": {
     "title": "Notifications",
