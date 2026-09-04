@@ -72,6 +72,22 @@ export const COUPON_PARAMS = {
 } as const;
 
 /**
+ * Discriminant du batch intraday sur `coupon_proposal.signalWindowDays` —
+ * même colonne/même rôle que `COUPON_PARAMS.legacySignalWindowDays` (38,
+ * batch du soir), valeur distincte pour que le batch intraday
+ * (`apps/vantage-worker`'s `runIntradayCouponGeneration`) coexiste avec celui
+ * du soir sur la même `forDate`/classe/`rank` au lieu de l'écraser. Copié
+ * depuis `apps/vantage-worker/src/coupon/persist-coupon-proposal.ts`'s
+ * `INTRADAY_SIGNAL_WINDOW_DAYS` plutôt qu'importé — même raison que
+ * `legacySignalWindowDays` y est dupliqué dans l'autre sens : ce discriminant
+ * n'a aucune raison de vivre dans analysis-core, et ni cette app ni
+ * vantage-worker ne dépendent l'une de l'autre. Utilisé uniquement pour
+ * distinguer les deux batches à l'affichage (`coupon.service.ts`) —
+ * `apps/backend` ne génère plus aucun coupon.
+ */
+export const INTRADAY_SIGNAL_WINDOW_DAYS = 39;
+
+/**
  * Plafond d'edge par jambe : `probabilité − 1/cote`. Une jambe au-dessus est
  * rejetée du pool de coupon.
  *

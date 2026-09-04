@@ -1,7 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CouponProposalStatus } from '@evcore/db';
 import { CouponRepository } from './coupon.repository';
-import { classForTargetOddsMin } from './coupon.constants';
+import {
+  classForTargetOddsMin,
+  INTRADAY_SIGNAL_WINDOW_DAYS,
+} from './coupon.constants';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
 
 // generateCoupons/generateForClass (CouponComposerService's glouton
@@ -18,10 +21,11 @@ export class CouponService {
 
   async getCoupons(
     date: string,
+    userId: string,
     status?: CouponProposalStatus,
   ): Promise<CouponProposalDto[]> {
     const forDate = new Date(`${date}T00:00:00.000Z`);
-    const proposals = await this.repo.findByDate(forDate, status);
+    const proposals = await this.repo.findByDate(forDate, userId, status);
 
     return proposals.map((p) => ({
       id: p.id,
@@ -31,10 +35,17 @@ export class CouponService {
       targetOddsMin: Number(p.targetOddsMin),
       targetOddsMax: Number(p.targetOddsMax),
       couponClass: classForTargetOddsMin(Number(p.targetOddsMin)),
+      batch:
+        p.signalWindowDays === INTRADAY_SIGNAL_WINDOW_DAYS
+          ? 'intraday'
+          : 'evening',
       combinedOdds: Number(p.combinedOdds),
       jointProbability: Number(p.jointProbability),
       signalScore: Number(p.signalScore),
       status: p.status,
+      viewerCount: p._count.views,
+      playerCount: p._count.placements,
+      playedByMe: p.placements.length > 0,
       result: p.result,
       reasoning: p.reasoning as Record<string, unknown> | null,
       lastFixtureScheduledAt: p.lastFixtureScheduledAt.toISOString(),
@@ -65,8 +76,16 @@ export class CouponService {
         oddsSnapshot: leg.oddsSnapshot ? Number(leg.oddsSnapshot) : null,
         signalScore: Number(leg.signalScore),
         isCorrect: leg.isCorrect,
+        modelRunId: leg.fixture.modelRuns[0]?.id ?? null,
       })),
     }));
+  }
+
+  async recordView(couponProposalId: string, userId: string): Promise<void> {
+    if (!(await this.repo.exists(couponProposalId))) {
+      throw new NotFoundException('Coupon introuvable');
+    }
+    await this.repo.recordView(couponProposalId, userId);
   }
 }
 

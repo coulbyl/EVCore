@@ -15,7 +15,14 @@ import { Loader2, Plus, Wallet, X } from "lucide-react";
 import { useDepositBankroll } from "@/domains/bankroll/use-cases/deposit-bankroll";
 import { InputAmount } from "@/components/input-amount";
 
-export function DepositDialog() {
+export function DepositDialog({
+  trigger,
+}: {
+  /** Overrides the default "Ajouter un dépôt" button — used to trigger the
+   * same dialog from a compact shortcut (e.g. the bet slip's "Solde
+   * insuffisant" banner) without duplicating the deposit form itself. */
+  trigger?: React.ReactNode;
+} = {}) {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState<number | undefined>();
   const [note, setNote] = useState("");
@@ -58,10 +65,12 @@ export function DepositDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus size={14} />
-          Ajouter un dépôt
-        </Button>
+        {trigger ?? (
+          <Button className="gap-2">
+            <Plus size={14} />
+            Ajouter un dépôt
+          </Button>
+        )}
       </DialogTrigger>
 
       <DialogContent

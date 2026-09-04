@@ -31,6 +31,18 @@ export type CouponProposalWithLegs = Prisma.CouponProposalGetPayload<{
                 };
               };
             };
+            // Latest ModelRun only — same "most recent run is the source of
+            // truth" convention as build-match-context.ts/find-eligible-
+            // fixtures.ts. Needed so the frontend "Jouer ce coupon" button
+            // can submit each leg to POST /bet-slips as a USER pick
+            // (modelRunId + market + pick, resolved server-side against
+            // that run's evaluatedPicks) — the same shape a coupon leg's
+            // pool candidate was itself resolved from at generation time.
+            modelRuns: {
+              orderBy: { analyzedAt: 'desc' };
+              take: 1;
+              select: { id: true };
+            };
           };
         };
       };
@@ -58,11 +70,40 @@ const WITH_LEGS = {
               },
             },
           },
+          modelRuns: {
+            orderBy: { analyzedAt: 'desc' },
+            take: 1,
+            select: { id: true },
+          },
         },
       },
     },
   },
 } as const;
+
+// Adds real, verifiable engagement counts (CouponProposalView/
+// CouponProposalPlacement — never a fabricated number, see their own doc
+// comments in schema.prisma) on top of WITH_LEGS — only for the listing
+// used by the Coupons page (findByDate), not settlement's findByIdWithLegs,
+// which has no per-viewer concept.
+function withEngagement(userId: string) {
+  return {
+    ...WITH_LEGS,
+    _count: { select: { views: true, placements: true } },
+    // Only the CURRENT user's own placement (0 or 1 row, unique per
+    // [couponProposalId, userId]) — drives "Déjà joué par vous"; the total
+    // player count comes from _count.placements above instead.
+    placements: {
+      where: { userId },
+      select: { id: true },
+      take: 1,
+    },
+  } satisfies Prisma.CouponProposalInclude;
+}
+
+export type CouponProposalWithEngagement = Prisma.CouponProposalGetPayload<{
+  include: ReturnType<typeof withEngagement>;
+}>;
 
 @Injectable()
 export class CouponRepository {
@@ -85,16 +126,35 @@ export class CouponRepository {
   // day shows exactly the batch generated that day, full stop.
   async findByDate(
     day: Date,
+    userId: string,
     status?: CouponProposalStatus,
-  ): Promise<CouponProposalWithLegs[]> {
+  ): Promise<CouponProposalWithEngagement[]> {
     const dayStart = startOfUtcDay(day);
     return this.prisma.client.couponProposal.findMany({
       where: {
         forDate: dayStart,
         ...(status ? { status } : {}),
       },
-      include: WITH_LEGS,
+      include: withEngagement(userId),
       orderBy: { rank: 'asc' },
+    });
+  }
+
+  async exists(id: string): Promise<boolean> {
+    const coupon = await this.prisma.client.couponProposal.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    return coupon !== null;
+  }
+
+  /** Idempotent — a repeat view from the same user is a no-op, never a
+   * second row (unique on [couponProposalId, userId]). */
+  async recordView(couponProposalId: string, userId: string): Promise<void> {
+    await this.prisma.client.couponProposalView.upsert({
+      where: { couponProposalId_userId: { couponProposalId, userId } },
+      create: { couponProposalId, userId },
+      update: {},
     });
   }
 

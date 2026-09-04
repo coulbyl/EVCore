@@ -1707,9 +1707,9 @@ par ligue → implémentation → tests → **backtest séparé** → shadow/obs
 > neuf"). Portée : bugs et frictions constatés en usage, pas de la
 > calibration modèle (voir section dédiée ci-dessus pour ça).
 
-- `[ ]` **P0 — le tour guidé ne démarre jamais à la vraie première visite —
-  probablement corrigé en creux le 2026-09-04, à reconfirmer au navigateur**
-  — `register-form.tsx`/`login-form.tsx` enchaînent `router.push("/dashboard")`
+- `[x]` **P0 — le tour guidé ne démarrait jamais à la vraie première
+  visite — corrigé, confirmé au navigateur le 2026-09-04** —
+  `register-form.tsx`/`login-form.tsx` enchaînent `router.push("/dashboard")`
   puis `router.refresh()` non attendus, exactement au moment où l'ancien
   `OnboardingTourProvider` lisait une seule fois `hasSeenOnboarding` au
   montage (`hasAutoStartedRef`, dépendances `[]`). Reproduit 2/2 sur comptes
@@ -1720,10 +1720,9 @@ par ligue → implémentation → tests → **backtest séparé** → shadow/obs
   `currentUser.hasCompletedOnboarding` plutôt que d'une lecture unique au
   montage — il se redéclenche correctement quand ce champ bascule à `true`
   (fin de l'onboarding actif), ce qui évite la course avec
-  `router.refresh()` décrite ici. Pas encore vérifié en vrai navigateur
-  (aucun outil de rendu disponible cette session) — à confirmer sur un
-  compte neuf avant de cocher. Une fois lancé, le mécanisme lui-même est
-  solide (23/23 étapes desktop correctes, testé jusqu'au bout).
+  `router.refresh()` décrite ici. Migration `hasCompletedOnboarding`
+  appliquée, onboarding actif + démarrage du tour vérifiés sur un compte
+  neuf en vrai navigateur — plus de gap à reconfirmer.
 
 - `[ ]` **P1 — bouton d'ajout au coupon absent sur Matchs sans aucune
   indication du pourquoi** — `fixtures-table.tsx` (`AddToSlipButton`)
@@ -1731,10 +1730,16 @@ par ligue → implémentation → tests → **backtest séparé** → shadow/obs
   `isFixtureBettable` sont TOUS présents ; tout trou ETL/décision NO_BET
   fait disparaître le bouton silencieusement, sans badge explicatif.
 
-- `[ ]` **P1 — lien "Déposer" manquant dans la bannière "Solde insuffisant"**
-  du tiroir "Mon coupon" (`bet-slip-drawer.tsx`) — le dépôt existe
-  (`deposit-dialog.tsx`, page Portefeuille) mais rien n'y renvoie depuis le
-  blocage, alors que c'est le tout premier mur qu'un compte neuf rencontre.
+- `[x]` **P1 — lien "Déposer" manquant dans la bannière "Solde insuffisant"
+  du tiroir "Mon coupon" — corrigé 2026-09-04** — `deposit-dialog.tsx`
+  déplacé de `app/dashboard/bankroll/components/` vers `components/`
+  (utilisé cross-page désormais) et son bouton par défaut rendu
+  remplaçable (`trigger` optionnel) sans dupliquer le formulaire de dépôt.
+  `bet-slip-drawer.tsx` ouvre ce même dialogue via un raccourci "Déposer"
+  directement dans la bannière `exceedsBalance` — le solde affiché se
+  rafraîchit tout seul après coup (`useDepositBankroll` invalide déjà
+  `bankroll-balance`, la même clé que le tiroir lit). Pas testé en
+  navigateur cette session.
 
 - `[ ]` **P2 — page Matchs 2 à 3× plus lente que le reste du produit** en
   usage réel (mesuré ~3.6-3.8s contre 0.8-2.9s ailleurs, deux passages) —

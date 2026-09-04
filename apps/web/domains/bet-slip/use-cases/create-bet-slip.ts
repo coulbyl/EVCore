@@ -7,6 +7,7 @@ export async function createBetSlip(draft: BetSlipDraft): Promise<BetSlipView> {
     body: {
       type: draft.type,
       unitStake: draft.unitStake,
+      couponProposalId: draft.couponProposalId ?? undefined,
       items: draft.items.map((item) => ({
         modelRunId: item.modelRunId,
         market: item.market,

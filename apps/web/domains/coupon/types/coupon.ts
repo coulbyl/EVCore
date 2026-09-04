@@ -20,6 +20,10 @@ export type CouponLegDto = {
   oddsSnapshot: number | null;
   signalScore: number;
   isCorrect: boolean | null;
+  /** Fixture's latest ModelRun id — lets "Jouer ce coupon" submit this leg to
+   * POST /bet-slips as a USER pick (modelRunId + market + pick). `null` on
+   * the rare fixture with no ModelRun at all. */
+  modelRunId: string | null;
 };
 
 export type CouponStatus = "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
@@ -39,10 +43,23 @@ export type CouponProposalDto = {
    * générées avant les classes.
    */
   couponClass: CouponClassName | null;
+  /**
+   * Batch qui a produit/mis à jour cette proposition — "evening" (défaut) ou
+   * "intraday" (régénération horaire proche du coup d'envoi). Les deux
+   * peuvent coexister le même jour pour la même classe.
+   */
+  batch: "evening" | "intraday";
   combinedOdds: number;
   jointProbability: number;
   signalScore: number;
   status: CouponStatus;
+  /** Engagement réel, jamais fabriqué (CLAUDE.md §4 point 6) — viewerCount :
+   * utilisateurs distincts ayant vu ce coupon ; playerCount : utilisateurs
+   * distincts l'ayant réellement joué (bet slip soumis) ; playedByMe :
+   * l'utilisateur courant en fait partie (gèle "Jouer ce coupon"). */
+  viewerCount: number;
+  playerCount: number;
+  playedByMe: boolean;
   result: CouponResult | null;
   reasoning: Record<string, unknown> | null;
   lastFixtureScheduledAt: string;

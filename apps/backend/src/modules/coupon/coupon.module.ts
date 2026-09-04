@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from '@modules/auth/auth.module';
 import { PrismaModule } from '@/prisma.module';
 import { CouponRepository } from './coupon.repository';
 import { CouponSettlementService } from './coupon-settlement.service';
@@ -14,7 +15,7 @@ import { CouponController } from './coupon.controller';
 // duplicate registration only CouponPoolService needed. See
 // docs/vantage-centric-redesign-2026-09-01.md §9bis.
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, AuthModule],
   controllers: [CouponController],
   providers: [
     CouponRepository,

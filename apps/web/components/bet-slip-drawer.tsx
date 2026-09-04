@@ -28,6 +28,7 @@ import {
 } from "@/helpers/fixture";
 import { useCurrencyFormat } from "@/providers/currency-provider";
 import { Amount } from "./amount";
+import { DepositDialog } from "./deposit-dialog";
 
 // ─── Stake input ────────────────────────────────────────────────────────────
 
@@ -546,15 +547,27 @@ export function BetSlipDrawer() {
               </div>
             )}
             {exceedsBalance && (
-              <div className="mb-2 flex items-center gap-2 rounded-2xl border border-warning/20 bg-warning/10 px-3 py-2.5 text-xs font-medium text-warning">
-                <AlertCircle size={13} className="shrink-0" />
-                <span>
-                  Solde insuffisant — mise totale{" "}
-                  <Amount
-                    value={totalStake}
-                    className="font-bold text-warning"
-                  />
+              <div className="mb-2 flex items-center justify-between gap-2 rounded-2xl border border-warning/20 bg-warning/10 px-3 py-2.5 text-xs font-medium text-warning">
+                <span className="flex items-center gap-2">
+                  <AlertCircle size={13} className="shrink-0" />
+                  <span>
+                    Solde insuffisant — mise totale{" "}
+                    <Amount
+                      value={totalStake}
+                      className="font-bold text-warning"
+                    />
+                  </span>
                 </span>
+                <DepositDialog
+                  trigger={
+                    <button
+                      type="button"
+                      className="shrink-0 cursor-pointer rounded-full border border-warning/30 px-2.5 py-1 text-[0.68rem] font-semibold text-warning transition-colors hover:bg-warning/15"
+                    >
+                      Déposer
+                    </button>
+                  }
+                />
               </div>
             )}
             {exceedsReturnCap && (

@@ -98,7 +98,7 @@ désormais sa variante mobile (390px) juste à côté du desktop sur le canvas.
 | 1    | Dashboard (Accueil) | Épuré, plus de lien Investir/Combinés dans le hero                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Aucun                                                       |
 | 2    | Decisions           | **Fait (2026-09-04)** : ligne de pick simplifiée — badge de code canal retiré (nom de marché en clair seul), edge/EV brut remplacé par un badge de fiabilité réel (Fiable/À surveiller/Peu fiable, calibration par canal×compétition, HoverCard tap-friendly, masqué si échantillon insuffisant plutôt que d'afficher un badge sans signal), carte plafonnée à 4 picks triés par probabilité + "Voir N autres marchés" (repliable). "Par match"/"Par canal" fusionnés en un sélecteur canal à sélection unique. **Filtre ligues/canaux** : pas un tiroir de facettes au final (idée abandonnée en cours de route, §2bis obsolète sur ce point) — deux boutons popover à sélection unique (Ligue/Canal), même pattern que le rail mobile Personnalisation, filtrage réellement poussé au backend (`GET /channel-decisions/facets`) | Aucun (front only)                                          |
 | 3    | Arbitrage           | **Fait (2026-09-04)** : KPI "lectures/tensions" retirés de l'en-tête ; mêmes boutons popover à sélection unique que Decisions pour Ligue et pour le verdict (Toutes/Recommandé/Sans avis, ex-"À éviter" — renommé, un no-play ne veut pas dire "évitez ce match") ; badge de fiabilité VANTAGE ajouté par compétition ; cotes VANTAGE désormais réelles (persistées à la génération, `persist-decision.ts`) au lieu d'un emprunt à un canal voisin qui échouait sur les picks où VANTAGE diverge (son cas d'usage principal)                                                                                                                                                                                                                                                                                                      | Aucun (front only, + vantage-worker)                        |
-| 4    | Coupons             | Page sœur d'Arbitrage, coupons du jour générés par VANTAGE (§9, pipeline LLM en prod depuis le 09-03) ; nav renommée "Combinés"→"Coupons" (2026-09-04) ; même retrait du badge de canal redondant sur chaque jambe (2026-09-04, `components/coupon-card.tsx`) ; bandeau "Envoyer à VANTAGE"/compteur "N joueurs ont ajouté" de la maquette délibérément pas construits — aucun mécanisme réel derrière (le premier reste backlog §0/ligne 5, le second n'a jamais existé)                                                                                                                                                                                                                                                                                                                                                         | §0 point 7 (fait, §9)                                       |
+| 4    | Coupons             | Page sœur d'Arbitrage, coupons du jour générés par VANTAGE (§9, pipeline LLM en prod depuis le 09-03) ; nav renommée "Combinés"→"Coupons" (2026-09-04) ; même retrait du badge de canal redondant sur chaque jambe (2026-09-04, `components/coupon-card.tsx`) ; bouton "Jouer ce coupon" câblé au bet slip (2026-09-04, voir section dédiée plus bas) ; bandeau "Envoyer à VANTAGE"/compteur "N joueurs ont ajouté" de la maquette délibérément pas construits — aucun mécanisme réel derrière (le premier reste backlog §0/ligne 5, le second n'a jamais existé)                                                                                                                                                                                                                                                                                                                                                         | §0 point 7 (fait, §9), `modelRunId` sur `CouponLegDto` (fait) |
 | 5    | Drawer de bet slip  | Un bouton "Envoyer à VANTAGE" ajouté à l'existant (`bet-slip-drawer.tsx`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | **Backlog** (§0) — maquetté, pas d'implémentation immédiate |
 | 6    | Révision VANTAGE    | Refaite en liste unique (plus de doublon jambe×2), carte verdict en tête, comparaison avant/après                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | **Backlog** (§0) — maquetté, pas d'implémentation immédiate |
 | 7    | Notifications       | Fusion Notifications + Annonces, filtrable par type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Fusion des deux modèles de données ou vue unifiée           |
@@ -1628,6 +1628,11 @@ réutilisé tel quel dans `OnboardingWizard`, portait trois défauts :
    unique triée par fiabilité (GREEN → ORANGE → RED → INSUFFICIENT_DATA →
    INACTIVE).
 
+**Confirmé le 2026-09-04** : migration `hasCompletedOnboarding` appliquée en
+base, et l'onboarding actif + le redémarrage du tour passif qui en dépend
+vérifiés en vrai navigateur sur un compte neuf — plus rien "à confirmer" sur
+ce chantier (TODO.md P0 correspondant coché).
+
 Bug de données trouvé au passage : **4 canaux fantômes** (`UNDERDOG`, `FAVORITE`,
 `LIVE_VALUE`, `MARKET_MOVE`) fuitaient dans la liste suivable avec `n=0`
 permanent — aucun fichier sous `strategies/` n'en produit jamais (grep confirmé,
@@ -1650,3 +1655,144 @@ jour pour le nouveau shape (`status` remplace `calibrationRatio`/`proven`) plus
 deux assertions ajoutées (VANTAGE et UNDERDOG absents de la liste "à suivre").
 608/608 backend, typecheck/lint propres sur web/backend/analysis-core. Rien
 committé jusqu'à cette entrée — voir historique git pour le commit correspondant.
+
+## Distinction soir/intraday + extension du correctif de cote VANTAGE (2026-09-04)
+
+Les deux derniers items "reste ouvert" listés plus haut dans ce doc.
+
+**Distinction visuelle coupon soir/intraday** — `coupon_proposal.signalWindowDays`
+portait déjà le discriminant (38 = soir, `LEGACY_SIGNAL_WINDOW_DAYS`, ;
+39 = intraday, `INTRADAY_SIGNAL_WINDOW_DAYS`, tous deux dans
+`apps/vantage-worker/src/coupon/persist-coupon-proposal.ts`), simplement
+jamais traduit en un champ lisible côté API/UI. `CouponProposalDto` porte
+maintenant `batch: 'evening' | 'intraday'` (`coupon.service.ts`, dérivé de
+`signalWindowDays` — `INTRADAY_SIGNAL_WINDOW_DAYS=39` copié dans
+`coupon.constants.ts` côté backend, même duplication assumée que
+`LEGACY_SIGNAL_WINDOW_DAYS` l'était déjà dans l'autre sens, ce discriminant
+n'ayant aucune raison de vivre dans analysis-core). Frontend : un badge
+"Intraday" (icône `Sun`, `components/coupon-card.tsx`) apparaît sur la carte
+quand `batch === "intraday"` — rien pour "evening" (le batch par défaut, sans
+rien de particulier à signaler), même convention que `ResultBadge` (rien tant
+qu'il n'y a rien à dire).
+
+**Extension du correctif de cote VANTAGE au-delà de Résultat** —
+`market-odds.ts` ne lisait que `odds_snapshot.homeOdds/drawOdds/awayOdds`
+(un seul home/draw/away par ligne), documentant lui-même que BTTS/OVER_UNDER
+"nécessiteraient une étape d'agrégation" non construite. Cette agrégation
+existe déjà ailleurs dans le repo : `assembleFullOddsSnapshot` +
+`resolveSelectionOdds` (`@evcore/analysis-core`), la résolution de cote
+générique par (marché, pick) que toutes les strategies de canal utilisent
+déjà pour se pricer elles-mêmes, et que `apps/vantage-worker/src/coupon/
+odds-batch.ts` réutilise déjà pour le pool de coupon — pas réinventée, juste
+pas encore branchée ici.
+
+- `loadFullOddsSnapshot(fixtureId)` (nouveau, `market-odds.ts`) remplace la
+  requête ONE_X_TWO-only par une requête de toutes les lignes de cote de la
+  fixture, assemblées en `FullOddsSnapshot` (cutoff = maintenant — VANTAGE
+  analyse toujours en direct, contrairement au pool de coupon qui a besoin
+  d'un cutoff figé pour le backtest).
+- `MatchContext.fullOddsSnapshot` (nouveau champ) porte ce snapshot complet.
+  `findKnownOdds` (`analyze-fixture.ts`, la fonction qui alimente à la fois
+  le plancher `MIN_ODDS` et la cote persistée sur `ChannelSelection` de
+  VANTAGE) résout maintenant via `resolveSelectionOdds(context.
+  fullOddsSnapshot, market, pick)` — générique à **tout** marché, pas
+  seulement les deux nommés dans le plan (BTTS, Plus/Moins) : le coût de
+  généraliser au lieu de ne traiter que ces deux cas est nul, et ça ferme le
+  vrai trou documenté plutôt que d'en fermer la moitié.
+- Le bloc de contexte "prix brut du marché" (affiché au LLM pour les marchés
+  qu'aucun canal n'a sélectionnés) reste volontairement plus restreint —
+  `CONTEXT_MARKET_PICKS` (ONE_X_TWO, BTTS, et la ligne principale 2,5 buts
+  d'OVER_UNDER seulement, pas ses 8 autres lignes) — pour ne pas ajouter de
+  bruit à un prompt qui pèse déjà plusieurs blocs de contexte, sans bénéfice
+  mesuré. `MarketOddsSnapshot` (`context/types.ts`) passe d'un triplet
+  home/draw/away fixe à une forme générique `{ pick, odds }[]` pour
+  accueillir BTTS (YES/NO) sans neuf champs ad hoc ; `prompt.ts`'s
+  `renderMarketOddsBlock` en tire les libellés via `formatPickForDisplayFr`
+  au lieu d'un tableau `ONE_X_TWO_PICKS` écrit à la main.
+
+2 tests `prompt.spec.ts` mis à jour pour la nouvelle forme (aucun test dédié
+pour `market-odds.ts` — même convention que les autres fichiers I/O de cette
+app). Vérifié : typecheck/lint propres sur les quatre workspaces, 128/128
+vantage-worker (inchangé), 491/491 analysis-core, 608/608 backend, typecheck
+web propre. Pas testé en conditions réelles (aucun fixture BTTS/OVER_UNDER
+non couvert observé cette session) — à confirmer sur les prochains verdicts
+VANTAGE en prod. Pas encore committé.
+
+## "Jouer ce coupon" sur les cartes Coupons (2026-09-04)
+
+Mécanisme déjà décrit au §1 ("Bet slip") : un coupon généré par VANTAGE est un
+**template partagé** — chaque utilisateur ajoute ses jambes à son propre bet
+slip via le drawer existant, chacun sa mise, aucun écran dédié. Le composant
+qui fait ça (`CouponSlipButton`, `components/coupon-card.tsx`, libellé "Jouer
+ce coupon"/"Dans le coupon") existait déjà (bâti avec le reste du composant
+partagé) mais n'était câblé nulle part — jamais branché à un vrai coupon.
+
+**Le vrai trou trouvé en creusant** : `BetSlipService.create` (backend)
+résout un pick "USER" via `modelRunId + market + pick` (recherche dans
+`ModelRun.features.evaluatedPicks`, même mécanisme que `AddToSlipButton` sur
+Matchs) — jamais via `fixtureId` seul. `CouponProposalLeg`
+(`packages/db/prisma/schema.prisma`) ne stocke pas de `modelRunId`, et
+`CouponLegDto` ne l'exposait donc pas non plus : rien ne permettait de
+construire un item de bet slip valide à partir d'une jambe de coupon.
+
+- `coupon.repository.ts` (`WITH_LEGS`) inclut maintenant le `ModelRun` le
+  plus récent de chaque fixture (`orderBy: analyzedAt desc, take: 1`) — même
+  convention "le run le plus récent fait foi" que `build-match-context.ts`/
+  `find-eligible-fixtures.ts`. `CouponLegDto.modelRunId` (nouveau,
+  `coupon.service.ts`) l'expose ; `null` sur le cas rare d'une fixture sans
+  aucun ModelRun.
+- Frontend (`apps/web/app/dashboard/coupons/components/coupon-card.tsx`,
+  passé en composant client) construit un `BetSlipDraftItem` par jambe
+  résolue (filtre les jambes sans `modelRunId`), et branche
+  `CouponSlipButton` sur `useBetSlip()` — `onPlay` ajoute toutes les jambes
+  (ou les retire si déjà toutes présentes, même bascule que
+  `AddToCouponButton`), ouvre le tiroir si c'était le premier ajout. Bouton
+  affiché seulement si `coupon.status === "PENDING"` (une fois
+  ACCEPTED/REJECTED/EXPIRED, les fixtures ont déjà démarré/fini — même
+  signal que celui qui arrête le worker de règlement).
+- Pas de nouveau plafond côté carte coupon : le tiroir de bet slip affiche
+  déjà l'avertissement `SLIP_LIMITS.MAX_ITEMS` si l'ajout dépasse 10
+  sélections au total (mécanisme existant, pas dupliqué ici).
+
+Vérifié : typecheck/lint propres sur les quatre workspaces (web, backend,
+vantage-worker, analysis-core — ces deux derniers non touchés), 608/608
+backend (inchangé, aucun test dédié — `coupon.service.ts` n'en a jamais eu).
+Pas testé en navigateur cette session. Pas encore committé.
+
+## Engagement réel sur les coupons — vues, joueurs, "déjà joué" (2026-09-04)
+
+Complète le mécanisme ci-dessus : compteurs de vues/joueurs réels (jamais
+fabriqués — garde-fou §4 point 6) et gel du bouton "Jouer ce coupon" une fois
+joué. Deux nouvelles tables, migration écrite mais **pas appliquée** (comme
+d'habitude, l'utilisateur lance ses migrations lui-même) :
+
+- `CouponProposalView` (unique `[couponProposalId, userId]`) — une vue par
+  utilisateur distinct, jamais par chargement de page. Enregistrée par le
+  nouvel endpoint `POST /coupons/:id/view` (idempotent, upsert), appelé une
+  fois au montage de chaque carte (`coupon-card.tsx`).
+- `CouponProposalPlacement` (unique `[couponProposalId, userId]`, et
+  `betSlipId` unique) — une ligne par utilisateur ayant réellement soumis un
+  bet slip via "Jouer ce coupon". Enregistrée **côté serveur**, dans la même
+  transaction que la création du bet slip (`BetSlipService.create`) — jamais
+  depuis un clic client seul, pour que "N joueurs" ne compte que des paris
+  réellement soumis. `CreateBetSlipDto.couponProposalId` (nouveau, optionnel)
+  porte l'id ; un id inconnu/périmé est ignoré silencieusement plutôt que de
+  faire échouer toute la soumission — placer un pari ne doit jamais casser
+  sur un souci de tracking d'engagement.
+- `GET /coupons` passe sous `AuthSessionGuard` (ne l'était pas — nécessaire
+  pour savoir qui demande, `playedByMe` en dépend) ; `CouponProposalDto`
+  porte désormais `viewerCount`/`playerCount`/`playedByMe`.
+- Frontend : `CouponSlipButton` a un troisième état, "Déjà joué par vous"
+  (readonly, plus de handler de clic) quand `coupon.playedByMe`. Le compteur
+  de vues/joueurs s'affiche sous les badges de la carte (icônes `Eye`/
+  `Users`), masqué à 0 plutôt que d'afficher "0 vue" (rien à dire, pas un
+  signal négatif). `BetSlipDraft.couponProposalId` (nouveau) porte l'id le
+  temps que l'utilisateur passe de "Jouer ce coupon" à la soumission réelle
+  dans le tiroir — posé par `handlePlay`, effacé en repassant en
+  "Dans le coupon" (toggle off) ou par `clearDraft()` (déjà remis à `null`
+  via `emptyDraft`).
+
+Vérifié : typecheck/lint propres sur les quatre workspaces, 608/608 backend,
+128/128 vantage-worker (inchangé), 491/491 analysis-core (inchangé). Pas
+testé en navigateur cette session. Pas encore committé — migration à
+appliquer avant de tester en vrai.

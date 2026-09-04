@@ -1,4 +1,6 @@
 import type { Logger } from "pino";
+import { resolveSelectionOdds } from "@evcore/analysis-core";
+import type { Market } from "@evcore/analysis-core";
 import type { Config } from "../config";
 import type { ChannelCalibration, MatchContext } from "../context/types";
 import { buildMatchContext } from "../context/build-match-context";
@@ -35,9 +37,13 @@ const CONFIG_VERSION = "vantage-v3-context";
 const MIN_ODDS = 1.2;
 
 /** The odds VANTAGE's own pick would carry, if another channel's reading for
- * this exact (market, pick) happens to have them, or (since 2026-08-30) the
- * raw ONE_X_TWO market-context block does. Checked in that order; VANTAGE
- * has no other source of odds — see MIN_ODDS above. */
+ * this exact (market, pick) happens to have them, or (since 2026-08-30,
+ * generalized beyond ONE_X_TWO 2026-09-04) the fixture's own odds snapshot
+ * does — `resolveSelectionOdds` already resolves any market's pick
+ * generically (BTTS, OVER_UNDER's many lines, everything else), the same
+ * function every channel strategy prices its own selections with. Checked
+ * in that order; VANTAGE has no other source of odds — see MIN_ODDS
+ * above. */
 function findKnownOdds(
   context: MatchContext,
   market: string,
@@ -48,14 +54,13 @@ function findKnownOdds(
   );
   if (reading?.odds != null) return reading.odds;
 
-  const marketOdds = context.uncoveredMarketOdds?.find(
-    (m) => m.market === market,
+  if (!context.fullOddsSnapshot) return null;
+  const odds = resolveSelectionOdds(
+    context.fullOddsSnapshot,
+    market as Market,
+    pick,
   );
-  if (!marketOdds) return null;
-  if (pick === "HOME") return marketOdds.homeOdds;
-  if (pick === "DRAW") return marketOdds.drawOdds;
-  if (pick === "AWAY") return marketOdds.awayOdds;
-  return null;
+  return odds !== null ? odds.toNumber() : null;
 }
 
 /** Same floor CLAUDE.md already names for these markets ("ratio réel/annoncé

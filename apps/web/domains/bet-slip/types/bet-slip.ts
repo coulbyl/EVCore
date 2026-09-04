@@ -32,6 +32,10 @@ export type BetSlipDraft = {
   items: BetSlipDraftItem[];
   unitStake: number;
   type: "SIMPLE" | "COMBO";
+  /** Set when the draft's items came from a coupon's "Jouer ce coupon" —
+   * submitted to POST /bet-slips so the backend can record a real
+   * CouponProposalPlacement. `null` for a manually composed slip. */
+  couponProposalId: string | null;
 };
 
 /**

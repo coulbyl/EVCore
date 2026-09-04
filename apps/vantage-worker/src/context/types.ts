@@ -1,4 +1,8 @@
-import type { StrategyChannel, Market } from "@evcore/analysis-core";
+import type {
+  StrategyChannel,
+  Market,
+  FullOddsSnapshot,
+} from "@evcore/analysis-core";
 
 /** A channel's own near-threshold read, surfaced even when it abstained —
  * see docs/context-expansion-proposal.md ("C"). Raw values only, no
@@ -110,13 +114,14 @@ export type ShadowPrediction = {
  * "what the market prices," never framed as edge/EV (CLAUDE.md: claimed
  * edge is anti-predictive, MAX_LEG_EDGE is a ceiling never a selection
  * signal — that rule applies to VANTAGE's own reasoning exactly as much as
- * to any channel's). Capped to a handful of key markets by the caller, not
- * every market in `odds_snapshot`. */
+ * to any channel's). Capped to a handful of key markets by the caller
+ * (market-odds.ts's CONTEXT_MARKET_PICKS), not every market in
+ * `odds_snapshot`. Generic per-pick shape (since 2026-09-04) rather than a
+ * fixed home/draw/away triplet — BTTS (YES/NO) and OVER_UNDER (OVER/UNDER)
+ * don't fit that shape, and the fixed triplet was ONE_X_TWO-specific. */
 export type MarketOddsSnapshot = {
   market: Market;
-  homeOdds: number | null;
-  drawOdds: number | null;
-  awayOdds: number | null;
+  prices: readonly { pick: string; odds: number }[];
 };
 
 export type MatchContext = {
@@ -140,4 +145,11 @@ export type MatchContext = {
   h2h?: H2HSignal;
   shadowPrediction?: ShadowPrediction;
   uncoveredMarketOdds?: readonly MarketOddsSnapshot[];
+  /** Every market's resolved price for this fixture, generic per-pick
+   * resolution (`resolveSelectionOdds`) — not display context (that's
+   * `uncoveredMarketOdds`, capped to a short list), used only so
+   * `findKnownOdds` (analyze-fixture.ts) can look up VANTAGE's own picked
+   * (market, pick) regardless of which market it is, not just ONE_X_TWO.
+   * `null`/absent when the fixture has no odds at all. */
+  fullOddsSnapshot?: FullOddsSnapshot | null;
 };

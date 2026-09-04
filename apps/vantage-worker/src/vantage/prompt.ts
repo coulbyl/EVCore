@@ -141,21 +141,6 @@ function renderShadowPredictionBlock(context: MatchContext): string | null {
   return `Second avis indépendant (source externe, calculée séparément de nos canaux) : domicile ${formatPct(p.homePercent / 100)}, nul ${formatPct(p.drawPercent / 100)}, extérieur ${formatPct(p.awayPercent / 100)} ; buts attendus domicile ${p.poissonHome} - extérieur ${p.poissonAway}${p.winnerName ? ` ; favori annoncé : ${p.winnerName}` : ""} ; ${p.conflict ? "en désaccord avec notre propre lecture du match" : "cohérent avec notre propre lecture du match"}.`;
 }
 
-// market-odds.ts only ever populates ONE_X_TWO today (see its own
-// SUPPORTED_MARKETS comment) — HOME/DRAW/AWAY is that market's fixed pick
-// vocabulary (known-picks.ts's FIXED_PICKS). Hardcoded to this one market
-// deliberately, same scope assumption findKnownOdds (analyze-fixture.ts)
-// already makes for the MIN_ODDS floor on this same block.
-const ONE_X_TWO_PICKS: readonly {
-  key: "homeOdds" | "drawOdds" | "awayOdds";
-  label: string;
-  pick: string;
-}[] = [
-  { key: "homeOdds", label: "domicile", pick: "HOME" },
-  { key: "drawOdds", label: "nul", pick: "DRAW" },
-  { key: "awayOdds", label: "extérieur", pick: "AWAY" },
-];
-
 function renderMarketOddsBlock(context: MatchContext): string | null {
   if (
     context.uncoveredMarketOdds === undefined ||
@@ -168,10 +153,12 @@ function renderMarketOddsBlock(context: MatchContext): string | null {
     // "pick=" tags anywhere near it — the one context block the system
     // prompt explicitly allows as a JSON market/pick source, yet the only
     // one that gave the model nothing to copy the technical codes from.
-    const parts = ONE_X_TWO_PICKS.map(({ key, label, pick }) => {
-      const odds = m[key];
-      return odds !== null ? `${label} (pick=${pick}) ${odds}` : null;
-    }).filter((p): p is string => p !== null);
+    // Generic per-pick shape since 2026-09-04 (ONE_X_TWO/BTTS/OVER_UNDER,
+    // not just ONE_X_TWO) — see market-odds.ts's CONTEXT_MARKET_PICKS.
+    const parts = m.prices.map(
+      ({ pick, odds }) =>
+        `${formatPickForDisplayFr(pick, m.market)} (pick=${pick}) ${odds}`,
+    );
     return `marché=${m.market} (${formatMarketForDisplayFr(m.market)}) — ${parts.join(", ")}`;
   });
   return `Marché (prix brut du bookmaker, aucun canal n'a sélectionné ce marché — information de contexte, jamais un signal de valeur) : ${lines.join(" ; ")}.`;

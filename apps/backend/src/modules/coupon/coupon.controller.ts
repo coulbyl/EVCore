@@ -1,10 +1,19 @@
-import { Controller, Get, Post, Param, Query, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Query,
+  HttpCode,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiQuery,
   ApiParam,
   ApiOkResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
 } from '@nestjs/swagger';
 import {
@@ -13,6 +22,9 @@ import {
   parseIsoDate,
   endOfUtcDay,
 } from '@utils/date.utils';
+import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
+import { CurrentSession } from '@modules/auth/current-session.decorator';
+import type { AuthSession } from '@modules/auth/auth.types';
 import { CouponService } from './coupon.service';
 import { CouponSettlementService } from './coupon-settlement.service';
 import { CouponIndicesService } from './coupon-indices.service';
@@ -32,6 +44,7 @@ export class CouponController {
   ) {}
 
   @Get()
+  @UseGuards(AuthSessionGuard)
   @ApiOperation({
     summary: 'Get coupon proposals for a date',
     description:
@@ -46,10 +59,31 @@ export class CouponController {
   })
   @ApiOkResponse({ description: 'List of coupon proposals with their legs.' })
   async getCoupons(
+    @CurrentSession() session: AuthSession,
     @Query() query: CouponQueryDto,
   ): Promise<CouponProposalDto[]> {
     const date = query.date ?? formatDateUtc(tomorrowUtc());
-    return this.coupon.getCoupons(date, undefined);
+    return this.coupon.getCoupons(date, session.user.id, undefined);
+  }
+
+  @Post(':id/view')
+  @UseGuards(AuthSessionGuard)
+  @HttpCode(204)
+  @ApiOperation({
+    summary: 'Record that the current user has seen this coupon',
+    description:
+      'Idempotent — a repeat view from the same user is a no-op. Backs the ' +
+      'real "N vues" count shown on the coupon card (never a fabricated ' +
+      'social-proof number).',
+  })
+  @ApiParam({ name: 'id', description: 'UUID of the CouponProposal.' })
+  @ApiNoContentResponse({ description: 'View recorded (or already was).' })
+  @ApiNotFoundResponse({ description: 'No proposal found with the given ID.' })
+  async recordView(
+    @CurrentSession() session: AuthSession,
+    @Param('id') id: string,
+  ): Promise<void> {
+    await this.coupon.recordView(id, session.user.id);
   }
 
   // POST /coupons/generate retired 2026-09-03 alongside CouponComposerService

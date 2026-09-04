@@ -18,6 +18,19 @@ export function useCoupons(date: string) {
   });
 }
 
+// Records a real, verifiable "view" (CouponProposalView, idempotent —
+// upserted server-side) — never a fabricated counter. Fire-and-forget: a
+// failed call just means one view goes uncounted, not worth surfacing to
+// the user or retrying.
+export function useRecordCouponView() {
+  return useMutation({
+    mutationFn: (proposalId: string) =>
+      clientApiRequest<void>(`/coupons/${proposalId}/view`, {
+        method: "POST",
+      }),
+  });
+}
+
 // Force re-settlement of a specific proposal — works even if it's already
 // EXPIRED with a stale result (settleProposal self-corrects against the
 // current fixture state).

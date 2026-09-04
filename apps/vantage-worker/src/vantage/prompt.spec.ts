@@ -249,7 +249,14 @@ describe("buildUserPrompt", () => {
           conflict: false,
         },
         uncoveredMarketOdds: [
-          { market: "ONE_X_TWO", homeOdds: 2.1, drawOdds: 3.2, awayOdds: 3.4 },
+          {
+            market: "ONE_X_TWO",
+            prices: [
+              { pick: "HOME", odds: 2.1 },
+              { pick: "DRAW", odds: 3.2 },
+              { pick: "AWAY", odds: 3.4 },
+            ],
+          },
         ],
       },
       null,
@@ -263,7 +270,14 @@ describe("buildUserPrompt", () => {
       {
         ...baseContext,
         uncoveredMarketOdds: [
-          { market: "ONE_X_TWO", homeOdds: 2.1, drawOdds: 3.2, awayOdds: 3.4 },
+          {
+            market: "ONE_X_TWO",
+            prices: [
+              { pick: "HOME", odds: 2.1 },
+              { pick: "DRAW", odds: 3.2 },
+              { pick: "AWAY", odds: 3.4 },
+            ],
+          },
         ],
       },
       null,

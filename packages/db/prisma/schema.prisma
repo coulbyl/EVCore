@@ -537,6 +537,8 @@ model User {
   pushSubscriptions                PushSubscription[]
   followedChannels                 UserFollowedChannel[]
   followedLeagues                  UserFollowedLeague[]
+  couponProposalViews              CouponProposalView[]
+  couponProposalPlacements         CouponProposalPlacement[]
   createdAt                        DateTime                @default(now())
   updatedAt                        DateTime                @updatedAt
 
@@ -677,6 +679,9 @@ model BetSlip {
   unitStake Decimal       @db.Decimal(12, 2)
   type      BetSlipType   @default(SIMPLE)
   items     BetSlipItem[]
+  // Set only when this bet slip was submitted via a coupon's "Jouer ce
+  // coupon" — see CouponProposalPlacement's own doc comment.
+  couponProposalPlacement CouponProposalPlacement?
   createdAt DateTime      @default(now())
 
   @@index([userId, createdAt])
@@ -944,6 +949,12 @@ model CouponProposal {
   rank                   Int                  @default(1) // 1 = meilleur coupon du jour, 2 = second, etc.
   lastFixtureScheduledAt DateTime
   legs                   CouponProposalLeg[]
+  // Real, verifiable engagement — never a fabricated count (CLAUDE.md/
+  // docs/vantage-centric-redesign-2026-09-01.md §4 point 6: no social proof
+  // without real data behind it). One row per distinct viewer/player, not
+  // one per page load/click — see CouponProposalView/CouponProposalPlacement.
+  views                  CouponProposalView[]
+  placements             CouponProposalPlacement[]
   generatedAt            DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
 
@@ -974,6 +985,47 @@ model CouponProposalLeg {
   @@index([couponProposalId])
   @@index([fixtureId])
   @@map("coupon_proposal_leg")
+  @@schema("public")
+}
+
+// One row per distinct viewer — "N vues" on a coupon card counts people who
+// have opened the Coupons page while it was showing, never raw page-load
+// events (a user refreshing 10 times doesn't inflate the count). Recorded by
+// POST /coupons/:id/view, upserted (skip on conflict) so a repeat view is a
+// no-op rather than an error.
+model CouponProposalView {
+  id               String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  couponProposalId String         @db.Uuid
+  couponProposal   CouponProposal @relation(fields: [couponProposalId], references: [id], onDelete: Cascade)
+  userId           String         @db.Uuid
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt        DateTime       @default(now())
+
+  @@unique([couponProposalId, userId])
+  @@index([couponProposalId])
+  @@map("coupon_proposal_view")
+  @@schema("public")
+}
+
+// One row per user who actually submitted a bet slip from "Jouer ce
+// coupon" — recorded server-side (BetSlipService.create) inside the same
+// transaction as the BetSlip itself, never from a client-side click alone,
+// so "N joueurs" only ever counts a real, settleable bet slip. Also what
+// freezes "Jouer ce coupon" into "Déjà joué par vous" for that user — a
+// user can play a given coupon proposal once.
+model CouponProposalPlacement {
+  id               String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  couponProposalId String         @db.Uuid
+  couponProposal   CouponProposal @relation(fields: [couponProposalId], references: [id], onDelete: Cascade)
+  userId           String         @db.Uuid
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  betSlipId        String         @unique @db.Uuid
+  betSlip          BetSlip        @relation(fields: [betSlipId], references: [id], onDelete: Cascade)
+  createdAt        DateTime       @default(now())
+
+  @@unique([couponProposalId, userId])
+  @@index([couponProposalId])
+  @@map("coupon_proposal_placement")
   @@schema("public")
 }
 

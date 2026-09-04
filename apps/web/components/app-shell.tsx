@@ -164,19 +164,6 @@ export function AppShell({
         label: tNav("navGroupToday"),
         items: [
           {
-            label: tNav("decisions"),
-            mobileLabel: tNav("decisionsShort"),
-            href: "/dashboard/decisions",
-            active: pathname.startsWith("/dashboard/decisions"),
-            icon: Layers,
-          },
-          {
-            label: tNav("arbitrage"),
-            href: "/dashboard/arbitrage",
-            active: pathname.startsWith("/dashboard/arbitrage"),
-            icon: Scale,
-          },
-          {
             label: tNav("coupons"),
             href: "/dashboard/coupons",
             active: pathname.startsWith("/dashboard/coupons"),
@@ -188,6 +175,19 @@ export function AppShell({
             // Investir's old slot/styling (screenshot confirmed: elevated
             // circular button, dead center of 5), not just a spot in the row.
             featured: true,
+          },
+          {
+            label: tNav("arbitrage"),
+            href: "/dashboard/arbitrage",
+            active: pathname.startsWith("/dashboard/arbitrage"),
+            icon: Scale,
+          },
+          {
+            label: tNav("decisions"),
+            mobileLabel: tNav("decisionsShort"),
+            href: "/dashboard/decisions",
+            active: pathname.startsWith("/dashboard/decisions"),
+            icon: Layers,
           },
           {
             label: tNav("fixtures"),

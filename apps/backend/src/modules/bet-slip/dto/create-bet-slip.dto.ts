@@ -47,6 +47,15 @@ export class CreateBetSlipDto {
   @IsEnum(BetSlipType)
   type?: BetSlipType;
 
+  /** Set when this slip was submitted via a coupon's "Jouer ce coupon" —
+   * records a CouponProposalPlacement (real "N joueurs" count + freezes the
+   * button into "Déjà joué par vous"), never a client-side-only counter. A
+   * stale/unknown id is ignored rather than failing the whole submission —
+   * placing a bet must never break over an engagement-tracking mismatch. */
+  @IsOptional()
+  @IsUUID()
+  couponProposalId?: string;
+
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(1)
