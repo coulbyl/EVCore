@@ -159,6 +159,36 @@ services:
       redis:
         condition: service_healthy
 
+  # ── RustFS (S3-compatible attachment storage) ────────────────────────────────
+  # Not reachable by the browser at this internal address — presigned URLs
+  # handed to clients are signed with RUSTFS_PUBLIC_ENDPOINT (server .env),
+  # which must point at a public HTTPS host that reverse-proxies here. That
+  # reverse proxy must forward the request unmodified (no path rewrite,
+  # query string intact) — any change to a request the signature covers
+  # breaks it.
+  rustfs:
+    container_name: evcore-rustfs
+    image: rustfs/rustfs:latest
+    restart: unless-stopped
+    environment:
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:?RUSTFS_ACCESS_KEY is required}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY:?RUSTFS_SECRET_KEY is required}
+      RUSTFS_ADDRESS: "0.0.0.0:9000"
+      RUSTFS_CONSOLE_ADDRESS: "0.0.0.0:9001"
+      RUSTFS_CONSOLE_ENABLE: "false"
+    ports:
+      # Exposed like backend/web (below) — a browser needs to reach this
+      # directly for presigned uploads/downloads, not just the backend.
+      - "${RUSTFS_S3_PORT:-9000}:9000"
+    volumes:
+      - rustfs_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   # ── Backend ─────────────────────────────────────────────────────────────────
   # entrypoint.sh runs prisma migrate deploy then starts the NestJS app
   backend:
@@ -177,10 +207,18 @@ services:
       PGBOUNCER_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@pgbouncer:5432/${POSTGRES_DB:-evcore}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      # Internal Docker-network address — used for the backend's own admin
+      # calls (bucket provisioning, HeadObject), never for the presigned
+      # URLs handed to browsers (see RUSTFS_PUBLIC_ENDPOINT in the server
+      # .env, loaded above via env_file).
+      RUSTFS_ENDPOINT: http://rustfs:9000
+      RUSTFS_BUCKET: ${RUSTFS_BUCKET:-evcore-support}
     depends_on:
       pgbouncer:
         condition: service_started
       redis:
+        condition: service_healthy
+      rustfs:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:3000/health || exit 1"]
@@ -214,3 +252,4 @@ volumes:
   postgres_data:
   redis_data:
   ml_models:
+  rustfs_data:

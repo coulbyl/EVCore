@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { UserAvatar } from "@/components/user-avatar";
 import {
+  useLoadOlderMessages,
   useMarkSupportRead,
   useOwnConversation,
   useSupportComposer,
@@ -17,6 +18,7 @@ export function InboxPageClient() {
   const { data, isLoading } = useOwnConversation();
   const conversationId = data?.conversation.id;
   const composer = useSupportComposer();
+  const loadOlder = useLoadOlderMessages();
   const markRead = useMarkSupportRead();
   const isConnected = useSupportConnectionStatus();
   const { notifyTyping, stopTyping, typingLabel } =
@@ -40,6 +42,12 @@ export function InboxPageClient() {
           onSend={composer.send}
           onRetryPending={composer.retry}
           onDiscardPending={composer.discard}
+          hasMore={data?.hasMore}
+          isLoadingOlder={loadOlder.isPending}
+          onLoadOlder={() => {
+            const oldestId = data?.messages[0]?.id;
+            if (oldestId) loadOlder.mutate(oldestId);
+          }}
           isConnected={isConnected}
           typingLabel={typingLabel}
           onDraftActivity={notifyTyping}

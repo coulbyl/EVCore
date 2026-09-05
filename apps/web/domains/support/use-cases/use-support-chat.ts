@@ -4,7 +4,12 @@ import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clientApiRequest } from "@/lib/api/client-api";
 import { getSupportSocket } from "@/lib/socket/support-socket";
-import type { OwnConversationResponse, SupportMessage } from "../types/support";
+import type {
+  AttachmentUploadUrlResponse,
+  OwnConversationResponse,
+  SupportMessage,
+  SupportMessagePage,
+} from "../types/support";
 import { useMessageComposer } from "./use-message-composer";
 import { useSocketConnectionStatus } from "./use-socket-connection-status";
 import { useTypingReceiver, useTypingSender } from "./use-typing-indicator";
@@ -24,6 +29,20 @@ function appendMessageOnce(
   return { ...prev, messages: [...prev.messages, message] };
 }
 
+function prependOlderMessages(
+  prev: OwnConversationResponse | undefined,
+  page: SupportMessagePage,
+): OwnConversationResponse | undefined {
+  if (!prev) return prev;
+  const existingIds = new Set(prev.messages.map((m) => m.id));
+  const older = page.messages.filter((m) => !existingIds.has(m.id));
+  return {
+    ...prev,
+    messages: [...older, ...prev.messages],
+    hasMore: page.hasMore,
+  };
+}
+
 export function useOwnConversation() {
   return useQuery({
     queryKey: QUERY_KEY,
@@ -35,18 +54,45 @@ export function useOwnConversation() {
   });
 }
 
-// Optimistic send: the message shows up immediately with a "sending" state,
-// flips to a retryable "failed" bubble on error (content preserved), and
-// disappears once the confirmed message lands in the cache — via this same
-// success handler, or the socket echo in useSupportSocket, whichever wins.
+// "Load older messages" — fetched on demand from the top of the thread, see
+// ChatThread's "Charger les messages précédents" control.
+export function useLoadOlderMessages() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (beforeMessageId: string) =>
+      clientApiRequest<SupportMessagePage>(
+        `/support/messages/before/${beforeMessageId}`,
+        {
+          fallbackErrorMessage:
+            "Impossible de charger les messages précédents.",
+        },
+      ),
+    onSuccess: (page) => {
+      qc.setQueryData<OwnConversationResponse>(QUERY_KEY, (prev) =>
+        prependOlderMessages(prev, page),
+      );
+    },
+  });
+}
+
+// Optimistic send: the message shows up immediately with a "sending" state
+// (and, for an attachment, an upload-progress bar), flips to a retryable
+// "failed" bubble on error (content + file preserved), and disappears once
+// the confirmed message lands in the cache — via this same success handler,
+// or the socket echo in useSupportSocket, whichever wins.
 export function useSupportComposer() {
   const qc = useQueryClient();
   return useMessageComposer({
     senderRole: "OPERATOR",
-    sendFn: (content) =>
+    requestUploadUrl: (meta) =>
+      clientApiRequest<AttachmentUploadUrlResponse>(
+        "/support/attachments/upload-url",
+        { method: "POST", body: meta },
+      ),
+    sendFn: (input) =>
       clientApiRequest<SupportMessage>("/support/messages", {
         method: "POST",
-        body: { content },
+        body: input,
       }),
     onSent: (message) => {
       qc.setQueryData<OwnConversationResponse>(QUERY_KEY, (prev) =>

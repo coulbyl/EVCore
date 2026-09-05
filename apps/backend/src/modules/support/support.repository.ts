@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { SupportConversationStatus } from '@evcore/db';
+import { SupportAttachmentKind, SupportConversationStatus } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
+import { SUPPORT_MESSAGES_PAGINATION } from '@/config/pagination.constants';
 
 const MESSAGE_SELECT = {
   id: true,
@@ -9,7 +10,35 @@ const MESSAGE_SELECT = {
   content: true,
   createdAt: true,
   sender: { select: { username: true, role: true } },
+  attachment: {
+    select: {
+      kind: true,
+      objectKey: true,
+      mimeType: true,
+      sizeBytes: true,
+      fileName: true,
+      durationMs: true,
+      width: true,
+      height: true,
+    },
+  },
 } as const;
+
+type CreateMessageInput = {
+  conversationId: string;
+  senderId: string;
+  content: string | null;
+  attachment?: {
+    kind: SupportAttachmentKind;
+    objectKey: string;
+    mimeType: string;
+    sizeBytes: number;
+    fileName?: string | null;
+    durationMs?: number | null;
+    width?: number | null;
+    height?: number | null;
+  };
+};
 
 @Injectable()
 export class SupportRepository {
@@ -59,22 +88,49 @@ export class SupportRepository {
     return this.createConversation(userId);
   }
 
-  listMessages(conversationId: string) {
-    return this.prisma.client.supportMessage.findMany({
+  // Most recent page, in display order (oldest→newest). `id` is a uuidv7
+  // (time-ordered by construction), so ordering/filtering by it is
+  // equivalent to createdAt but collision-free under concurrent sends —
+  // see the schema comment on SupportMessage.
+  async listRecentMessages(
+    conversationId: string,
+    limit: number = SUPPORT_MESSAGES_PAGINATION.defaultLimit,
+  ) {
+    const rows = await this.prisma.client.supportMessage.findMany({
       where: { conversationId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { id: 'desc' },
+      take: limit + 1,
       select: MESSAGE_SELECT,
     });
+    const hasMore = rows.length > limit;
+    return { messages: rows.slice(0, limit).reverse(), hasMore };
   }
 
-  async createMessage(input: {
-    conversationId: string;
-    senderId: string;
-    content: string;
-  }) {
+  // "Load older messages" — strictly before the given message, same page
+  // shape as listRecentMessages.
+  async listMessagesBefore(
+    conversationId: string,
+    beforeMessageId: string,
+    limit: number = SUPPORT_MESSAGES_PAGINATION.defaultLimit,
+  ) {
+    const rows = await this.prisma.client.supportMessage.findMany({
+      where: { conversationId, id: { lt: beforeMessageId } },
+      orderBy: { id: 'desc' },
+      take: limit + 1,
+      select: MESSAGE_SELECT,
+    });
+    const hasMore = rows.length > limit;
+    return { messages: rows.slice(0, limit).reverse(), hasMore };
+  }
+
+  async createMessage(input: CreateMessageInput) {
+    const { attachment, ...messageInput } = input;
     const [message] = await this.prisma.client.$transaction([
       this.prisma.client.supportMessage.create({
-        data: input,
+        data: {
+          ...messageInput,
+          ...(attachment ? { attachment: { create: attachment } } : {}),
+        },
         select: MESSAGE_SELECT,
       }),
       this.prisma.client.supportConversation.update({

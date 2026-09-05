@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import type { SupportMessage } from "../types/support";
+import type {
+  AttachmentUploadUrlResponse,
+  SupportAttachment,
+  SupportAttachmentKind,
+  SupportMessage,
+} from "../types/support";
 
 let localIdCounter = 0;
 
@@ -12,76 +17,216 @@ function nextLocalId(): string {
   return `pending:${Date.now()}:${localIdCounter}`;
 }
 
+export type ComposerAttachmentInput = {
+  file: File | Blob;
+  kind: SupportAttachmentKind;
+  mimeType: string;
+  sizeBytes: number;
+  fileName?: string;
+  durationMs?: number;
+  width?: number;
+  height?: number;
+};
+
+type AttachmentRefForSend = {
+  objectKey: string;
+  kind: SupportAttachmentKind;
+  fileName?: string;
+  durationMs?: number;
+  width?: number;
+  height?: number;
+};
+
+// PUT with upload progress — fetch() has no upload-progress event, so this
+// stays on XMLHttpRequest specifically for that.
+function putWithProgress(
+  url: string,
+  file: File | Blob,
+  contentType: string,
+  onProgress: (pct: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.setRequestHeader("Content-Type", contentType);
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        onProgress(Math.round((event.loaded / event.total) * 100));
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new Error(`Échec de l'envoi du fichier (${xhr.status})`));
+    };
+    xhr.onerror = () => reject(new Error("Échec de l'envoi du fichier"));
+    xhr.send(file);
+  });
+}
+
+type PendingEntry = {
+  message: SupportMessage;
+  // Kept for retry — re-uploads from scratch rather than trying to resume,
+  // simpler and attachments here are capped at 20MB (config/storage.constants.ts).
+  content?: string;
+  attachment?: ComposerAttachmentInput;
+  objectUrl?: string; // revoked on drop to avoid leaking memory
+};
+
 /**
  * Optimistic send for the support chat composer, shared by the operator and
- * admin inboxes: shows the message immediately with a "sending" bubble,
- * flips it to "failed" (content preserved, retryable) if the request
- * rejects, and drops it once the real message lands in the query cache
- * (appended by the caller's onSent, and/or echoed back over the socket).
+ * admin inboxes. Handles both plain text and attachments (voice notes,
+ * images, files): an attachment shows an immediate local preview
+ * (URL.createObjectURL) and an upload-progress bar, flips to "failed" with
+ * everything preserved (text + file) if either the upload or the message
+ * POST fails, and drops once the confirmed message lands in the cache (via
+ * `onSent`, and/or the socket echo the caller's onSent also handles).
  *
  * Does not touch the query cache itself — callers own their own cache shape
- * (own-conversation object vs. flat message array) and pass `onSent` to
- * write the confirmed message in.
+ * and pass `onSent` to write the confirmed message in.
  */
 export function useMessageComposer(options: {
   senderRole: "ADMIN" | "OPERATOR";
-  sendFn: (content: string) => Promise<SupportMessage>;
+  requestUploadUrl: (meta: {
+    kind: SupportAttachmentKind;
+    mimeType: string;
+    sizeBytes: number;
+    fileName?: string;
+  }) => Promise<AttachmentUploadUrlResponse>;
+  sendFn: (input: {
+    content?: string;
+    attachment?: AttachmentRefForSend;
+  }) => Promise<SupportMessage>;
   onSent: (message: SupportMessage) => void;
 }) {
   const { senderRole } = options;
   const [pending, setPending] = useState<SupportMessage[]>([]);
-  // sendFn/onSent are recreated every render (inline closures at call
-  // sites) — a ref keeps retry() and send() from going stale without
-  // forcing every caller to useCallback their arguments.
+  const entriesRef = useRef(new Map<string, PendingEntry>());
+  // sendFn/requestUploadUrl/onSent are recreated every render (inline
+  // closures at call sites) — a ref keeps attempt()/retry() from going
+  // stale without forcing every caller to useCallback their arguments.
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
-  const attempt = useCallback((localId: string, content: string) => {
-    setPending((prev) =>
-      prev.map((m) => (m.id === localId ? { ...m, status: "sending" } : m)),
-    );
-    optionsRef.current.sendFn(content).then(
-      (message) => {
+  const updatePending = useCallback(
+    (localId: string, patch: Partial<SupportMessage>) => {
+      setPending((prev) =>
+        prev.map((m) => (m.id === localId ? { ...m, ...patch } : m)),
+      );
+    },
+    [],
+  );
+
+  const attempt = useCallback(
+    async (localId: string) => {
+      const entry = entriesRef.current.get(localId);
+      if (!entry) return;
+      updatePending(localId, {
+        status: "sending",
+        uploadProgress: entry.attachment ? 0 : undefined,
+      });
+
+      try {
+        let attachmentRef: AttachmentRefForSend | undefined;
+        if (entry.attachment) {
+          const {
+            file,
+            kind,
+            mimeType,
+            sizeBytes,
+            fileName,
+            durationMs,
+            width,
+            height,
+          } = entry.attachment;
+          const uploadInfo = await optionsRef.current.requestUploadUrl({
+            kind,
+            mimeType,
+            sizeBytes,
+            fileName,
+          });
+          await putWithProgress(uploadInfo.uploadUrl, file, mimeType, (pct) =>
+            updatePending(localId, { uploadProgress: pct }),
+          );
+          attachmentRef = {
+            objectKey: uploadInfo.objectKey,
+            kind,
+            fileName,
+            durationMs,
+            width,
+            height,
+          };
+        }
+
+        const message = await optionsRef.current.sendFn({
+          content: entry.content,
+          attachment: attachmentRef,
+        });
+        if (entry.objectUrl) URL.revokeObjectURL(entry.objectUrl);
+        entriesRef.current.delete(localId);
         setPending((prev) => prev.filter((m) => m.id !== localId));
         optionsRef.current.onSent(message);
-      },
-      () => {
-        setPending((prev) =>
-          prev.map((m) => (m.id === localId ? { ...m, status: "failed" } : m)),
-        );
-      },
-    );
-  }, []);
+      } catch {
+        updatePending(localId, { status: "failed" });
+      }
+    },
+    [updatePending],
+  );
 
   const send = useCallback(
-    (content: string) => {
+    (content: string | undefined, attachment?: ComposerAttachmentInput) => {
       const localId = nextLocalId();
+      const objectUrl = attachment
+        ? URL.createObjectURL(attachment.file)
+        : undefined;
+      const previewAttachment: SupportAttachment | undefined = attachment
+        ? {
+            kind: attachment.kind,
+            url: objectUrl!,
+            mimeType: attachment.mimeType,
+            sizeBytes: attachment.sizeBytes,
+            fileName: attachment.fileName ?? null,
+            durationMs: attachment.durationMs ?? null,
+            width: attachment.width ?? null,
+            height: attachment.height ?? null,
+          }
+        : undefined;
+
       const optimistic: SupportMessage = {
         id: localId,
         conversationId: "",
         senderId: "",
         senderRole,
         senderUsername: "",
-        content,
+        content: content ?? null,
+        attachment: previewAttachment,
         createdAt: new Date().toISOString(),
         status: "sending",
+        uploadProgress: attachment ? 0 : undefined,
       };
+      entriesRef.current.set(localId, {
+        message: optimistic,
+        content,
+        attachment,
+        objectUrl,
+      });
       setPending((prev) => [...prev, optimistic]);
-      attempt(localId, content);
+      void attempt(localId);
     },
     [attempt, senderRole],
   );
 
   const retry = useCallback(
     (localId: string) => {
-      const message = pending.find((m) => m.id === localId);
-      if (!message) return;
-      attempt(localId, message.content);
+      if (!entriesRef.current.has(localId)) return;
+      void attempt(localId);
     },
-    [attempt, pending],
+    [attempt],
   );
 
   const discard = useCallback((localId: string) => {
+    const entry = entriesRef.current.get(localId);
+    if (entry?.objectUrl) URL.revokeObjectURL(entry.objectUrl);
+    entriesRef.current.delete(localId);
     setPending((prev) => prev.filter((m) => m.id !== localId));
   }, []);
 

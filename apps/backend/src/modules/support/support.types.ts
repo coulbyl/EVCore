@@ -1,4 +1,20 @@
-import type { SupportConversationStatus } from '@evcore/db';
+import type {
+  SupportAttachmentKind,
+  SupportConversationStatus,
+} from '@evcore/db';
+
+export type SupportAttachmentDto = {
+  kind: SupportAttachmentKind;
+  // Presigned GET, regenerated on every read/broadcast — never persisted,
+  // never a permanent public link (see StorageService).
+  url: string;
+  mimeType: string;
+  sizeBytes: number;
+  fileName: string | null;
+  durationMs: number | null;
+  width: number | null;
+  height: number | null;
+};
 
 export type SupportMessageDto = {
   id: string;
@@ -6,8 +22,24 @@ export type SupportMessageDto = {
   senderId: string;
   senderRole: 'ADMIN' | 'OPERATOR';
   senderUsername: string;
-  content: string;
+  content: string | null;
+  attachment: SupportAttachmentDto | null;
   createdAt: Date;
+};
+
+// Returned by "request an upload URL" — the client PUTs the file straight
+// to this URL, then references `objectKey` when sending the message.
+export type AttachmentUploadUrlDto = {
+  objectKey: string;
+  uploadUrl: string;
+  expiresInSeconds: number;
+};
+
+// "Load older messages" pagination — see support.repository.ts
+// listRecentMessages/listMessagesBefore.
+export type SupportMessagePageDto = {
+  messages: SupportMessageDto[];
+  hasMore: boolean;
 };
 
 export type SupportConversationDto = {

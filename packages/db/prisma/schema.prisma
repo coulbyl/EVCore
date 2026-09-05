@@ -487,42 +487,42 @@ model Bet {
 }
 
 model User {
-  id                               String                  @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  email                            String                  @unique
-  username                         String                  @unique
+  id                               String                    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  email                            String                    @unique
+  username                         String                    @unique
   passwordHash                     String
   fullName                         String
   bio                              String?
-  role                             UserRole                @default(OPERATOR)
-  emailVerified                    Boolean                 @default(false)
+  role                             UserRole                  @default(OPERATOR)
+  emailVerified                    Boolean                   @default(false)
   mfaMethod                        MfaMethod?
   totpSecret                       String?
-  totpVerified                     Boolean                 @default(false)
+  totpVerified                     Boolean                   @default(false)
   avatarUrl                        String?
   theme                            String?
   locale                           String?
   currency                         String?
   unitMode                         UnitMode?
-  unitAmount                       Decimal?                @db.Decimal(12, 2)
-  unitPercent                      Decimal?                @db.Decimal(5, 4)
-  riskProfile                      RiskProfile             @default(BALANCED)
-  emailSupportNotificationsEnabled Boolean                 @default(true)
+  unitAmount                       Decimal?                  @db.Decimal(12, 2)
+  unitPercent                      Decimal?                  @db.Decimal(5, 4)
+  riskProfile                      RiskProfile               @default(BALANCED)
+  emailSupportNotificationsEnabled Boolean                   @default(true)
   // Optional, collected in the Profil settings tab — never at registration
   // (TODO.md: keeping signup low-friction). phoneNumberConsentGiven gates
   // collection: the frontend only shows the phone input once consent is
   // toggled on, and revoking consent clears the stored number server-side
   // (AuthService.updateMe) rather than keeping it around unconsented.
   phoneNumber                      String?
-  phoneNumberConsentGiven          Boolean                 @default(false)
-  hasSeenOnboarding                Boolean                 @default(false)
+  phoneNumberConsentGiven          Boolean                   @default(false)
+  hasSeenOnboarding                Boolean                   @default(false)
   // The passive product tour's own flag (above) is distinct from this one:
   // hasSeenOnboarding tracks the driver.js guided tour, this tracks the
   // active 3-step wizard (leagues/channels/risk profile). Defaults to
   // `true` so the migration backfills existing users as already past it —
   // AuthService.register() explicitly sets `false` for genuinely new
   // signups, the only place this should ever start false.
-  hasCompletedOnboarding           Boolean                 @default(true)
-  suspended                        Boolean                 @default(false)
+  hasCompletedOnboarding           Boolean                   @default(true)
+  suspended                        Boolean                   @default(false)
   suspendedAt                      DateTime?
   sessions                         Session[]
   betSlips                         BetSlip[]
@@ -546,8 +546,8 @@ model User {
   followedLeagues                  UserFollowedLeague[]
   couponProposalViews              CouponProposalView[]
   couponProposalPlacements         CouponProposalPlacement[]
-  createdAt                        DateTime                @default(now())
-  updatedAt                        DateTime                @updatedAt
+  createdAt                        DateTime                  @default(now())
+  updatedAt                        DateTime                  @updatedAt
 
   @@map("users")
   @@schema("public")
@@ -680,16 +680,16 @@ model Session {
 }
 
 model BetSlip {
-  id        String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  userId    String        @db.Uuid
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  unitStake Decimal       @db.Decimal(12, 2)
-  type      BetSlipType   @default(SIMPLE)
-  items     BetSlipItem[]
+  id                      String                   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId                  String                   @db.Uuid
+  user                    User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unitStake               Decimal                  @db.Decimal(12, 2)
+  type                    BetSlipType              @default(SIMPLE)
+  items                   BetSlipItem[]
   // Set only when this bet slip was submitted via a coupon's "Jouer ce
   // coupon" — see CouponProposalPlacement's own doc comment.
   couponProposalPlacement CouponProposalPlacement?
-  createdAt DateTime      @default(now())
+  createdAt               DateTime                 @default(now())
 
   @@index([userId, createdAt])
   @@map("bet_slip")
@@ -936,24 +936,24 @@ model UserBadge {
 // ─────────────────────────────────────────────
 
 model CouponProposal {
-  id                     String               @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  forDate                DateTime             @db.Date
+  id                     String                    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  forDate                DateTime                  @db.Date
   signalWindowDays       Int
-  targetOddsMin          Decimal              @db.Decimal(6, 2)
-  targetOddsMax          Decimal              @db.Decimal(6, 2)
-  combinedOdds           Decimal              @db.Decimal(8, 3)
+  targetOddsMin          Decimal                   @db.Decimal(6, 2)
+  targetOddsMax          Decimal                   @db.Decimal(6, 2)
+  combinedOdds           Decimal                   @db.Decimal(8, 3)
   // Cote réellement payée au settlement, calculée sur les seules jambes NON
   // voidées. `null` tant que non réglé ; égale à `combinedOdds` sur un WON sans
   // void. Distincte de `combinedOdds` (cote proposée à l'origine, affichée
   // ailleurs) pour ne jamais perdre la valeur initialement annoncée. Voir
   // TODO.md "Agrégats ROI/summary ignorent silencieusement PARTIAL/VOID".
-  realizedOdds           Decimal?             @db.Decimal(8, 3)
-  jointProbability       Decimal              @db.Decimal(5, 4)
-  signalScore            Decimal              @db.Decimal(5, 4)
-  status                 CouponProposalStatus @default(PENDING)
+  realizedOdds           Decimal?                  @db.Decimal(8, 3)
+  jointProbability       Decimal                   @db.Decimal(5, 4)
+  signalScore            Decimal                   @db.Decimal(5, 4)
+  status                 CouponProposalStatus      @default(PENDING)
   result                 CouponResult?
   reasoning              Json?
-  rank                   Int                  @default(1) // 1 = meilleur coupon du jour, 2 = second, etc.
+  rank                   Int                       @default(1) // 1 = meilleur coupon du jour, 2 = second, etc.
   lastFixtureScheduledAt DateTime
   legs                   CouponProposalLeg[]
   // Real, verifiable engagement — never a fabricated count (CLAUDE.md/
@@ -962,8 +962,8 @@ model CouponProposal {
   // one per page load/click — see CouponProposalView/CouponProposalPlacement.
   views                  CouponProposalView[]
   placements             CouponProposalPlacement[]
-  generatedAt            DateTime             @default(now())
-  updatedAt              DateTime             @updatedAt
+  generatedAt            DateTime                  @default(now())
+  updatedAt              DateTime                  @updatedAt
 
   @@unique([forDate, signalWindowDays, targetOddsMin, targetOddsMax, rank])
   @@index([forDate, status])
@@ -1149,11 +1149,57 @@ model SupportMessage {
   conversation   SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   senderId       String              @db.Uuid
   sender         User                @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  content        String
+  // Nullable — a voice note or a file sent with no caption has an
+  // attachment and no text. The service layer rejects a message with
+  // neither (see SendMessageDto).
+  content        String?
+  attachment     SupportAttachment?
   createdAt      DateTime            @default(now())
 
+  // id is a uuidv7 (time-ordered by construction) — paginating "load older
+  // messages" by `id < cursor` is equivalent to ordering by createdAt, and
+  // avoids ties that a plain createdAt cursor could hit under concurrent
+  // sends. See support.repository.ts listMessagesBefore/listRecentMessages.
+  // Kept alongside the createdAt index below, still used by the unread-count
+  // queries (createdAt-watermark comparisons, not id-cursor pagination).
+  @@index([conversationId, id])
   @@index([conversationId, createdAt])
   @@map("support_message")
+  @@schema("public")
+}
+
+enum SupportAttachmentKind {
+  IMAGE
+  AUDIO
+  FILE
+
+  @@schema("public")
+}
+
+// One row per message with a file — voice note, photo, or generic document.
+// Never holds the file itself: `objectKey` points at the object in the
+// RustFS bucket (see modules/storage), and every URL handed to a client is a
+// short-lived presigned GET generated on read, never stored — the bucket
+// itself is private.
+model SupportAttachment {
+  id         String                @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  messageId  String                @unique @db.Uuid
+  message    SupportMessage        @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  kind       SupportAttachmentKind
+  objectKey  String
+  mimeType   String
+  sizeBytes  Int
+  // Original filename — FILE kind shows it since there's no preview to
+  // identify the document by otherwise.
+  fileName   String?
+  // AUDIO only — lets the player show a duration before the file loads.
+  durationMs Int?
+  // IMAGE only — optional, only used to reserve layout space if present.
+  width      Int?
+  height     Int?
+  createdAt  DateTime              @default(now())
+
+  @@map("support_attachment")
   @@schema("public")
 }
 

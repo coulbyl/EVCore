@@ -7,6 +7,7 @@ import {
   Bot,
   Check,
   CheckCheck,
+  ChevronUp,
   Loader2,
   RotateCw,
   Send,
@@ -35,8 +36,18 @@ import {
 import { cn } from "@evcore/ui/cn";
 import { formatDayLabel, formatTime } from "@/lib/date";
 import type { SupportMessage } from "@/domains/support/types/support";
+import type { ComposerAttachmentInput } from "@/domains/support/use-cases/use-message-composer";
+import { useVoiceRecorder } from "@/domains/support/use-cases/use-voice-recorder";
+import { AttachmentBubble } from "./attachment-bubble";
+import { AttachmentPickerButton } from "./attachment-picker-button";
+import {
+  attachmentKindForMimeType,
+  maxBytesForKind,
+} from "./attachment-constants";
+import { ComposerAttachmentPreview } from "./composer-attachment-preview";
 import { findFirstUnreadMessageId } from "./message-content-constants";
 import { MessageText } from "./message-text";
+import { MicButton, VoiceRecorderBar } from "./voice-recorder-bar";
 
 // Consecutive messages from the same sender within this window are visually
 // grouped (tight spacing, one bubble reads as a "burst") — WhatsApp-style.
@@ -114,7 +125,7 @@ function AutomatedMessageBubble({ message }: { message: SupportMessage }) {
         </span>
         <Bubble variant="muted" align="start">
           <BubbleContent className="text-center">
-            <MessageText content={message.content} />
+            {message.content && <MessageText content={message.content} />}
           </BubbleContent>
         </Bubble>
         <span className="text-[0.6rem] text-muted-foreground">
@@ -127,7 +138,8 @@ function AutomatedMessageBubble({ message }: { message: SupportMessage }) {
 
 // Shared message list + composer, used by both the operator's single-thread
 // inbox and the admin's per-conversation thread — keeps the chat experience
-// (bubble layout, day dividers, grouping, timestamps) identical everywhere.
+// (bubble layout, day dividers, grouping, timestamps, attachments) identical
+// everywhere.
 export function ChatThread({
   conversationId,
   messages,
@@ -137,6 +149,9 @@ export function ChatThread({
   onSend,
   onRetryPending,
   onDiscardPending,
+  hasMore,
+  isLoadingOlder,
+  onLoadOlder,
   placeholder,
   emptyMessage,
   header,
@@ -154,9 +169,16 @@ export function ChatThread({
   pendingMessages?: SupportMessage[];
   isLoading: boolean;
   currentRole: "ADMIN" | "OPERATOR";
-  onSend: (content: string) => void;
+  onSend: (
+    content: string | undefined,
+    attachment?: ComposerAttachmentInput,
+  ) => void;
   onRetryPending?: (localId: string) => void;
   onDiscardPending?: (localId: string) => void;
+  // "Load older messages" — omit hasMore/onLoadOlder to hide the control.
+  hasMore?: boolean;
+  isLoadingOlder?: boolean;
+  onLoadOlder?: () => void;
   placeholder: string;
   emptyMessage: string;
   header?: ReactNode;
@@ -176,7 +198,15 @@ export function ChatThread({
   onDraftIdle?: () => void;
 }) {
   const [draft, setDraft] = useState("");
+  const [stagedAttachment, setStagedAttachment] =
+    useState<ComposerAttachmentInput | null>(null);
+  const [stagedPreviewUrl, setStagedPreviewUrl] = useState<string | null>(null);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const stagedPreviewUrlRef = useRef<string | null>(null);
+  const dragCounterRef = useRef(0);
+  const recorder = useVoiceRecorder();
 
   // Auto-grow with content, capped so a long paste doesn't swallow the thread.
   useEffect(() => {
@@ -186,12 +216,87 @@ export function ChatThread({
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
   }, [draft]);
 
+  function stageAttachment(input: ComposerAttachmentInput) {
+    if (stagedPreviewUrlRef.current)
+      URL.revokeObjectURL(stagedPreviewUrlRef.current);
+    const url = URL.createObjectURL(input.file);
+    stagedPreviewUrlRef.current = url;
+    setStagedPreviewUrl(url);
+    setStagedAttachment(input);
+  }
+
+  function clearStaged() {
+    if (stagedPreviewUrlRef.current) {
+      URL.revokeObjectURL(stagedPreviewUrlRef.current);
+      stagedPreviewUrlRef.current = null;
+    }
+    setStagedPreviewUrl(null);
+    setStagedAttachment(null);
+  }
+
+  // Cleanup on unmount only — clearStaged() itself already revokes on every
+  // explicit removal (send/cancel/pick-another).
+  useEffect(() => {
+    return () => {
+      if (stagedPreviewUrlRef.current)
+        URL.revokeObjectURL(stagedPreviewUrlRef.current);
+    };
+  }, []);
+
+  function handleFile(file: File) {
+    const kind = attachmentKindForMimeType(
+      file.type || "application/octet-stream",
+    );
+    const maxBytes = maxBytesForKind(kind);
+    if (file.size > maxBytes) {
+      setAttachmentError(
+        `Fichier trop volumineux (max ${Math.round(maxBytes / (1024 * 1024))} Mo)`,
+      );
+      return;
+    }
+    setAttachmentError(null);
+    stageAttachment({
+      file,
+      kind,
+      mimeType: file.type || "application/octet-stream",
+      sizeBytes: file.size,
+      fileName: file.name,
+    });
+  }
+
+  // Voice recording reaching "preview" hands off to the same staged-preview
+  // UI as a picked file — one send/discard flow for both, instead of two.
+  useEffect(() => {
+    if (!recorder.previewBlob) return;
+    const blob = recorder.previewBlob;
+    stageAttachment({
+      file: blob,
+      kind: "AUDIO",
+      mimeType: blob.type.split(";")[0] || "audio/webm",
+      sizeBytes: blob.size,
+      durationMs: recorder.elapsedMs,
+    });
+    recorder.reset();
+    // stageAttachment/recorder.reset are stable-enough closures here; only
+    // previewBlob transitions should trigger this hand-off.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recorder.previewBlob]);
+
   function handleSend() {
     const content = draft.trim();
-    if (!content) return;
+    if (!content && !stagedAttachment) return;
     setDraft("");
     onDraftIdle?.();
-    onSend(content);
+    onSend(content || undefined, stagedAttachment ?? undefined);
+    clearStaged();
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    dragCounterRef.current = 0;
+    setIsDraggingFile(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFile(file);
   }
 
   const allMessages = useMemo(() => {
@@ -213,9 +318,31 @@ export function ChatThread({
   );
 
   const dayGroups = allMessages ? groupByDay(allMessages) : [];
+  const isRecording = recorder.state === "recording";
 
   return (
-    <div className="flex h-full w-full min-w-0 flex-col">
+    <div
+      className="relative flex h-full w-full min-w-0 flex-col"
+      onDragOver={(e) => {
+        e.preventDefault();
+      }}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        dragCounterRef.current += 1;
+        setIsDraggingFile(true);
+      }}
+      onDragLeave={() => {
+        dragCounterRef.current -= 1;
+        if (dragCounterRef.current <= 0) setIsDraggingFile(false);
+      }}
+      onDrop={handleDrop}
+    >
+      {isDraggingFile && (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-2xl border-2 border-dashed border-primary bg-primary/10 text-sm font-medium text-primary">
+          Déposez le fichier ici
+        </div>
+      )}
+
       {header}
 
       {!isConnected && (
@@ -242,6 +369,23 @@ export function ChatThread({
             <MessageScroller>
               <MessageScrollerViewport>
                 <MessageScrollerContent className="gap-3 px-4 py-3">
+                  {hasMore && (
+                    <div className="flex justify-center pb-2">
+                      <button
+                        type="button"
+                        onClick={onLoadOlder}
+                        disabled={isLoadingOlder}
+                        className="flex items-center gap-1 rounded-full border border-border bg-background/60 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary disabled:opacity-60"
+                      >
+                        {isLoadingOlder ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : (
+                          <ChevronUp size={12} />
+                        )}
+                        Charger les messages précédents
+                      </button>
+                    </div>
+                  )}
                   {dayGroups.map((group) => (
                     <div key={group.dayLabel} className="flex flex-col gap-2">
                       <Marker variant="separator" className="my-2">
@@ -266,7 +410,11 @@ export function ChatThread({
                                   <MessageContent>
                                     <Bubble align="start" variant="secondary">
                                       <BubbleContent className="rounded-bl-md">
-                                        <MessageText content={first.content} />
+                                        {first.content && (
+                                          <MessageText
+                                            content={first.content}
+                                          />
+                                        )}
                                       </BubbleContent>
                                     </Bubble>
                                     <MessageFooter className="gap-1 text-[0.6rem]">
@@ -322,9 +470,21 @@ export function ChatThread({
                                                 : "rounded-bl-md"
                                             }
                                           >
-                                            <MessageText
-                                              content={message.content}
-                                            />
+                                            {message.attachment && (
+                                              <AttachmentBubble
+                                                attachment={message.attachment}
+                                                uploadProgress={
+                                                  message.status === "sending"
+                                                    ? message.uploadProgress
+                                                    : undefined
+                                                }
+                                              />
+                                            )}
+                                            {message.content && (
+                                              <MessageText
+                                                content={message.content}
+                                              />
+                                            )}
                                           </BubbleContent>
                                         </Bubble>
                                         <MessageFooter className="gap-1 text-[0.6rem]">
@@ -392,49 +552,84 @@ export function ChatThread({
         )}
       </div>
 
-      {typingLabel && (
+      {typingLabel && !isRecording && (
         <div className="flex items-center gap-1.5 border-t border-border px-4 py-1.5 text-xs text-muted-foreground">
           {typingLabel} <TypingDots />
         </div>
       )}
 
+      {recorder.error && (
+        <div className="border-t border-border px-4 py-1.5 text-xs text-danger">
+          {recorder.error}
+        </div>
+      )}
+      {attachmentError && (
+        <div className="border-t border-border px-4 py-1.5 text-xs text-danger">
+          {attachmentError}
+        </div>
+      )}
+
+      {stagedAttachment && stagedPreviewUrl && !isRecording && (
+        <ComposerAttachmentPreview
+          attachment={stagedAttachment}
+          previewUrl={stagedPreviewUrl}
+          onRemove={clearStaged}
+        />
+      )}
+
       <div className="border-t border-border p-3">
-        <InputGroup>
-          <InputGroupTextarea
-            ref={textareaRef}
-            value={draft}
-            onChange={(e) => {
-              setDraft(e.target.value);
-              if (e.target.value.trim()) {
-                onDraftActivity?.();
-              } else {
-                onDraftIdle?.();
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            placeholder={placeholder}
-            rows={1}
-            className="max-h-40"
+        {isRecording ? (
+          <VoiceRecorderBar
+            elapsedMs={recorder.elapsedMs}
+            onStop={recorder.stop}
+            onCancel={recorder.cancel}
           />
-          <InputGroupAddon align="block-end">
-            <InputGroupButton
-              type="button"
-              variant="default"
-              size="icon-sm"
-              className="ml-auto"
-              onClick={handleSend}
-              disabled={!draft.trim()}
-            >
-              <Send />
-              <span className="sr-only">Envoyer</span>
-            </InputGroupButton>
-          </InputGroupAddon>
-        </InputGroup>
+        ) : (
+          <InputGroup>
+            <InputGroupTextarea
+              ref={textareaRef}
+              value={draft}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                if (e.target.value.trim()) {
+                  onDraftActivity?.();
+                } else {
+                  onDraftIdle?.();
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder={placeholder}
+              rows={1}
+              className="max-h-40"
+            />
+            <InputGroupAddon align="block-end">
+              <AttachmentPickerButton
+                onPick={handleFile}
+                disabled={!!stagedAttachment}
+              />
+              <MicButton
+                onClick={() => void recorder.start()}
+                disabled={!!stagedAttachment}
+              />
+              <InputGroupButton
+                type="button"
+                variant="default"
+                size="icon-sm"
+                className="ml-auto"
+                onClick={handleSend}
+                disabled={!draft.trim() && !stagedAttachment}
+              >
+                <Send />
+                <span className="sr-only">Envoyer</span>
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
+        )}
       </div>
     </div>
   );

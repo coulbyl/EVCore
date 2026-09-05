@@ -13,6 +13,7 @@ import {
   useAdminConversations,
   useAdminSupportSocket,
   useAdminTyping,
+  useLoadOlderAdminMessages,
   useMarkAdminRead,
 } from "@/domains/support/use-cases/use-admin-support";
 import type { SupportConversationSummary } from "@/domains/support/types/support";
@@ -92,10 +93,9 @@ function ThreadView({
   onStopTyping: () => void;
   onBack: () => void;
 }) {
-  const { data: messages, isLoading } = useAdminConversationMessages(
-    conversation.id,
-  );
+  const { data, isLoading } = useAdminConversationMessages(conversation.id);
   const composer = useAdminComposer(conversation.id);
+  const loadOlder = useLoadOlderAdminMessages(conversation.id);
   const markRead = useMarkAdminRead(conversation.id);
 
   useEffect(() => {
@@ -106,13 +106,19 @@ function ThreadView({
   return (
     <ChatThread
       conversationId={conversation.id}
-      messages={messages}
+      messages={data?.messages}
       pendingMessages={composer.pending}
       isLoading={isLoading}
       currentRole="ADMIN"
       onSend={composer.send}
       onRetryPending={composer.retry}
       onDiscardPending={composer.discard}
+      hasMore={data?.hasMore}
+      isLoadingOlder={loadOlder.isPending}
+      onLoadOlder={() => {
+        const oldestId = data?.messages[0]?.id;
+        if (oldestId) loadOlder.mutate(oldestId);
+      }}
       isConnected={isConnected}
       typingLabel={typingLabel}
       onDraftActivity={onNotifyTyping}

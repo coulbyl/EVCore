@@ -127,7 +127,37 @@ services:
       - "${MAILPIT_SMTP_PORT:-1025}:1025"
       - "${MAILPIT_UI_PORT:-8025}:8025"
 
+  # S3-compatible object storage for support chat attachments (voice notes,
+  # photos, files) — see apps/backend/src/modules/storage and
+  # docs/support-attachments-architecture.md. Backend and browser both reach
+  # it at RUSTFS_ENDPOINT (dev: same host-published port, no
+  # RUSTFS_PUBLIC_ENDPOINT override needed — see .env.example).
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: evcore-rustfs
+    restart: unless-stopped
+    environment:
+      # Dev-only defaults — never use these in production (see
+      # docker-compose.prod.yml, where they're required with no fallback).
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:-evcore_dev_access}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY:-evcore_dev_secret_change_me}
+      RUSTFS_ADDRESS: "0.0.0.0:9000"
+      RUSTFS_CONSOLE_ADDRESS: "0.0.0.0:9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
+    ports:
+      - "${RUSTFS_S3_PORT:-9000}:9000"
+      - "${RUSTFS_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - rustfs_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 volumes:
   postgres_data:
   redis_data:
   ml_models:
+  rustfs_data:
