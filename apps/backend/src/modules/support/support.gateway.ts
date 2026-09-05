@@ -1,6 +1,9 @@
 import {
+  ConnectedSocket,
+  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
@@ -10,7 +13,11 @@ import { AuthService } from '@modules/auth/auth.service';
 import type { AuthenticatedRequest } from '@modules/auth/auth.types';
 import { createLogger } from '@utils/logger';
 import { SupportRepository } from './support.repository';
-import type { SupportMessageDto } from './support.types';
+import type {
+  SupportMessageDto,
+  TypingBroadcastDto,
+  TypingClientPayload,
+} from './support.types';
 
 const logger = createLogger('support-gateway');
 
@@ -64,6 +71,7 @@ export class SupportGateway
 
     client.data.userId = session.user.id;
     client.data.role = session.user.role;
+    client.data.username = session.user.fullName || session.user.username;
 
     if (session.user.role === UserRole.ADMIN) {
       await client.join(ADMIN_ROOM);
@@ -77,9 +85,17 @@ export class SupportGateway
     await client.join(conversationRoom(conversation.id));
   }
 
-  handleDisconnect(): void {
-    // No per-connection cleanup needed — rooms are torn down by socket.io
-    // automatically on disconnect.
+  // A client that goes away mid-sentence (closed tab, dead connection)
+  // never gets to emit its own "stopped typing" — without this the other
+  // side's indicator would be stuck on until the receiver-side safety
+  // timeout (see use-typing-indicator.ts) finally clears it.
+  handleDisconnect(client: Socket): void {
+    const conversationId = client.data.typingConversationId as
+      | string
+      | undefined;
+    if (conversationId) {
+      this.broadcastTyping(client, conversationId, false);
+    }
   }
 
   // Called by SupportService right after a message is persisted.
@@ -88,6 +104,45 @@ export class SupportGateway
       .to(conversationRoom(conversationId))
       .to(ADMIN_ROOM)
       .emit('message', message);
+  }
+
+  // Relayed, never persisted — typing state is ephemeral by nature. Kept
+  // deliberately light: the client already debounces so this fires at most
+  // once per typing "burst" plus one on idle timeout, not per keystroke.
+  @SubscribeMessage('typing')
+  handleTyping(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: TypingClientPayload,
+  ): void {
+    const conversationId: string | undefined =
+      client.data.role === UserRole.ADMIN
+        ? payload.conversationId
+        : client.data.conversationId;
+    if (!conversationId) return;
+
+    client.data.typingConversationId = payload.isTyping
+      ? conversationId
+      : undefined;
+    this.broadcastTyping(client, conversationId, payload.isTyping);
+  }
+
+  private broadcastTyping(
+    client: Socket,
+    conversationId: string,
+    isTyping: boolean,
+  ): void {
+    const dto: TypingBroadcastDto = {
+      conversationId,
+      userId: client.data.userId,
+      username: client.data.username,
+      role: client.data.role,
+      isTyping,
+    };
+    // The sender never needs its own indicator back — broadcast excludes it.
+    client
+      .to(conversationRoom(conversationId))
+      .to(ADMIN_ROOM)
+      .emit('typing', dto);
   }
 
   private async authenticate(client: Socket) {

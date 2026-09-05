@@ -9,6 +9,9 @@ import type {
   SupportConversationSummary,
   SupportMessage,
 } from "../types/support";
+import { useMessageComposer } from "./use-message-composer";
+import { useSocketConnectionStatus } from "./use-socket-connection-status";
+import { useTypingReceiver, useTypingSender } from "./use-typing-indicator";
 
 const CONVERSATIONS_KEY = ["support", "admin", "conversations"];
 const UNREAD_COUNT_KEY = ["support", "admin", "unread-count"];
@@ -71,21 +74,47 @@ export function useAdminConversationMessages(conversationId: string | null) {
   });
 }
 
-export function useSendAdminMessage(conversationId: string) {
+// Optimistic send, same contract as the operator side (use-support-chat.ts):
+// immediate "sending" bubble, retryable "failed" state on error, dropped
+// once the confirmed message lands via onSent or the socket echo below.
+export function useAdminComposer(conversationId: string) {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (content: string) =>
+  return useMessageComposer({
+    senderRole: "ADMIN",
+    sendFn: (content) =>
       clientApiRequest<SupportMessage>(
         `/admin/support/conversations/${conversationId}/messages`,
         { method: "POST", body: { content } },
       ),
-    onSuccess: (message) => {
+    onSent: (message) => {
       qc.setQueryData<SupportMessage[]>(messagesKey(conversationId), (prev) =>
         appendMessageOnce(prev, message),
       );
       qc.invalidateQueries({ queryKey: CONVERSATIONS_KEY });
     },
   });
+}
+
+// Send side for whichever thread the admin currently has open — conversationId
+// changes as they navigate the inbox, useTypingSender handles telling the
+// thread being left that typing stopped. Also exposes the raw typing map
+// (conversationId → who's typing) so the conversation list can show a live
+// dot per row, not just for the open thread.
+export function useAdminTyping(conversationId: string | undefined) {
+  const { notify, stop } = useTypingSender(conversationId);
+  const typingState = useTypingReceiver();
+  const typingLabel =
+    conversationId && typingState.has(conversationId)
+      ? `${typingState.get(conversationId)?.username} est en train d'écrire…`
+      : null;
+  return { notifyTyping: notify, stopTyping: stop, typingLabel, typingState };
+}
+
+// Powers the "connexion perdue" banner and refreshes the inbox as soon as
+// the socket reconnects — a drop could mean a missed message anywhere.
+export function useAdminConnectionStatus(): boolean {
+  const qc = useQueryClient();
+  return useSocketConnectionStatus(qc, [CONVERSATIONS_KEY]);
 }
 
 export function useMarkAdminRead(conversationId: string) {

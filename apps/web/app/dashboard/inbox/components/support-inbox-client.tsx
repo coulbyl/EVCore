@@ -7,11 +7,13 @@ import { Badge, Skeleton } from "@evcore/ui";
 import { cn } from "@evcore/ui/cn";
 import { UserAvatar } from "@/components/user-avatar";
 import {
+  useAdminComposer,
+  useAdminConnectionStatus,
   useAdminConversationMessages,
   useAdminConversations,
   useAdminSupportSocket,
+  useAdminTyping,
   useMarkAdminRead,
-  useSendAdminMessage,
 } from "@/domains/support/use-cases/use-admin-support";
 import type { SupportConversationSummary } from "@/domains/support/types/support";
 import { formatRelativeTime } from "@/lib/date";
@@ -22,10 +24,12 @@ import { PushNotificationBanner } from "./push-notification-banner";
 function ConversationRow({
   conversation,
   isActive,
+  isTyping,
   onClick,
 }: {
   conversation: SupportConversationSummary;
   isActive: boolean;
+  isTyping: boolean;
   onClick: () => void;
 }) {
   return (
@@ -51,8 +55,17 @@ function ConversationRow({
             {formatRelativeTime(conversation.lastMessageAt)}
           </span>
         </div>
-        <p className="truncate text-xs text-muted-foreground">
-          {conversation.lastMessage?.content ?? "Aucun message"}
+        <p
+          className={cn(
+            "truncate text-xs",
+            isTyping
+              ? "font-medium text-accent italic"
+              : "text-muted-foreground",
+          )}
+        >
+          {isTyping
+            ? "en train d'écrire…"
+            : (conversation.lastMessage?.content ?? "Aucun message")}
         </p>
       </div>
       {conversation.unreadCount > 0 && (
@@ -66,15 +79,23 @@ function ConversationRow({
 
 function ThreadView({
   conversation,
+  isConnected,
+  typingLabel,
+  onNotifyTyping,
+  onStopTyping,
   onBack,
 }: {
   conversation: SupportConversationSummary;
+  isConnected: boolean;
+  typingLabel: string | null;
+  onNotifyTyping: () => void;
+  onStopTyping: () => void;
   onBack: () => void;
 }) {
   const { data: messages, isLoading } = useAdminConversationMessages(
     conversation.id,
   );
-  const sendMessage = useSendAdminMessage(conversation.id);
+  const composer = useAdminComposer(conversation.id);
   const markRead = useMarkAdminRead(conversation.id);
 
   useEffect(() => {
@@ -84,14 +105,20 @@ function ThreadView({
 
   return (
     <ChatThread
+      conversationId={conversation.id}
       messages={messages}
+      pendingMessages={composer.pending}
       isLoading={isLoading}
       currentRole="ADMIN"
-      onSend={async (content) => {
-        await sendMessage.mutateAsync(content);
-      }}
-      isSending={sendMessage.isPending}
+      onSend={composer.send}
+      onRetryPending={composer.retry}
+      onDiscardPending={composer.discard}
+      isConnected={isConnected}
+      typingLabel={typingLabel}
+      onDraftActivity={onNotifyTyping}
+      onDraftIdle={onStopTyping}
       otherReadAt={conversation.userReadAt}
+      myReadAt={conversation.adminReadAt}
       placeholder="Répondre…"
       emptyMessage="Aucun message pour l'instant."
       header={
@@ -139,6 +166,13 @@ export function SupportInboxClient({
   const router = useRouter();
   const { data: conversations, isLoading } = useAdminConversations();
   useAdminSupportSocket(activeConversationId);
+  const isConnected = useAdminConnectionStatus();
+  // Lifted to this level (rather than inside ThreadView) so the same typing
+  // map can also drive the live "en train d'écrire…" preview in the
+  // conversation list, not just the open thread.
+  const { notifyTyping, stopTyping, typingLabel, typingState } = useAdminTyping(
+    activeConversationId ?? undefined,
+  );
 
   const active =
     conversations?.find((c) => c.id === activeConversationId) ?? null;
@@ -173,6 +207,7 @@ export function SupportInboxClient({
                 key={conversation.id}
                 conversation={conversation}
                 isActive={conversation.id === activeConversationId}
+                isTyping={typingState.has(conversation.id)}
                 onClick={() =>
                   router.push(`/dashboard/inbox/${conversation.id}`)
                 }
@@ -190,6 +225,10 @@ export function SupportInboxClient({
           {active ? (
             <ThreadView
               conversation={active}
+              isConnected={isConnected}
+              typingLabel={typingLabel}
+              onNotifyTyping={notifyTyping}
+              onStopTyping={stopTyping}
               onBack={() => router.push("/dashboard/inbox")}
             />
           ) : (

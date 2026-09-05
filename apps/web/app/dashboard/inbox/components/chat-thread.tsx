@@ -1,8 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { Check, CheckCheck, Send } from "lucide-react";
+import {
+  AlertCircle,
+  Bot,
+  Check,
+  CheckCheck,
+  Loader2,
+  RotateCw,
+  Send,
+  WifiOff,
+} from "lucide-react";
 import {
   Bubble,
   BubbleContent,
@@ -23,8 +32,11 @@ import {
   MessageScrollerViewport,
   Skeleton,
 } from "@evcore/ui";
+import { cn } from "@evcore/ui/cn";
 import { formatDayLabel, formatTime } from "@/lib/date";
 import type { SupportMessage } from "@/domains/support/types/support";
+import { findFirstUnreadMessageId } from "./message-content-constants";
+import { MessageText } from "./message-text";
 
 // Consecutive messages from the same sender within this window are visually
 // grouped (tight spacing, one bubble reads as a "burst") — WhatsApp-style.
@@ -51,6 +63,8 @@ function groupByDay(messages: SupportMessage[]): DayGroup[] {
 
 // One burst = consecutive messages from the same sender within the group
 // window — rendered as one MessageGroup so they read as a single "turn".
+// An automated message never joins a burst — it always stands on its own,
+// centered, regardless of who sent the message before or after it.
 function groupIntoBursts(messages: SupportMessage[]): SupportMessage[][] {
   const bursts: SupportMessage[][] = [];
   for (const message of messages) {
@@ -58,6 +72,8 @@ function groupIntoBursts(messages: SupportMessage[]): SupportMessage[][] {
     const lastMessage = lastBurst?.[lastBurst.length - 1];
     const sameBurst =
       lastMessage &&
+      message.kind !== "AUTOMATED" &&
+      lastMessage.kind !== "AUTOMATED" &&
       lastMessage.senderRole === message.senderRole &&
       new Date(message.createdAt).getTime() -
         new Date(lastMessage.createdAt).getTime() <
@@ -71,25 +87,76 @@ function groupIntoBursts(messages: SupportMessage[]): SupportMessage[][] {
   return bursts;
 }
 
+function TypingDots() {
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="size-1 animate-bounce rounded-full bg-current"
+          style={{ animationDelay: `${i * 120}ms` }}
+        />
+      ))}
+    </span>
+  );
+}
+
+// Admin-only visual: an automated message (welcome, future reminders…)
+// stands out from a human reply so staff never mistake one for the other —
+// but this label is deliberately never shown on the operator's own side,
+// where it should read exactly like a message from the team.
+function AutomatedMessageBubble({ message }: { message: SupportMessage }) {
+  return (
+    <div className="flex w-full justify-center py-1">
+      <div className="flex max-w-[85%] flex-col items-center gap-1">
+        <span className="flex items-center gap-1 text-[0.65rem] font-medium text-muted-foreground">
+          <Bot size={12} /> Message automatique
+        </span>
+        <Bubble variant="muted" align="start">
+          <BubbleContent className="text-center">
+            <MessageText content={message.content} />
+          </BubbleContent>
+        </Bubble>
+        <span className="text-[0.6rem] text-muted-foreground">
+          {formatTime(message.createdAt)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // Shared message list + composer, used by both the operator's single-thread
 // inbox and the admin's per-conversation thread — keeps the chat experience
 // (bubble layout, day dividers, grouping, timestamps) identical everywhere.
 export function ChatThread({
+  conversationId,
   messages,
+  pendingMessages,
   isLoading,
   currentRole,
   onSend,
-  isSending,
+  onRetryPending,
+  onDiscardPending,
   placeholder,
   emptyMessage,
   header,
   otherReadAt,
+  myReadAt,
+  typingLabel,
+  isConnected = true,
+  onDraftActivity,
+  onDraftIdle,
 }: {
+  conversationId: string | undefined;
   messages: SupportMessage[] | undefined;
+  // Optimistic messages currently in flight or failed — merged into the
+  // thread visually, never part of the confirmed `messages` array.
+  pendingMessages?: SupportMessage[];
   isLoading: boolean;
   currentRole: "ADMIN" | "OPERATOR";
-  onSend: (content: string) => Promise<void>;
-  isSending: boolean;
+  onSend: (content: string) => void;
+  onRetryPending?: (localId: string) => void;
+  onDiscardPending?: (localId: string) => void;
   placeholder: string;
   emptyMessage: string;
   header?: ReactNode;
@@ -98,6 +165,15 @@ export function ChatThread({
   // watermark. No separate "delivered" state exists, so it's a 2-state
   // indicator: sent (grey single check) vs read (blue double check).
   otherReadAt?: string | null;
+  // My own last-read watermark, captured before this visit — powers the
+  // "Nouveaux messages" divider (see findFirstUnreadMessageId).
+  myReadAt?: string | null;
+  // e.g. "Léa est en train d'écrire…" — null/undefined hides the row
+  // entirely rather than reserving empty space for it.
+  typingLabel?: string | null;
+  isConnected?: boolean;
+  onDraftActivity?: () => void;
+  onDraftIdle?: () => void;
 }) {
   const [draft, setDraft] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -110,18 +186,44 @@ export function ChatThread({
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
   }, [draft]);
 
-  async function handleSend() {
+  function handleSend() {
     const content = draft.trim();
     if (!content) return;
     setDraft("");
-    await onSend(content);
+    onDraftIdle?.();
+    onSend(content);
   }
 
-  const dayGroups = messages ? groupByDay(messages) : [];
+  const allMessages = useMemo(() => {
+    if (!pendingMessages || pendingMessages.length === 0) return messages;
+    return [...(messages ?? []), ...pendingMessages].sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+  }, [messages, pendingMessages]);
+
+  // Locked in once per conversation — recomputed only when the thread
+  // itself changes, not on every new message or read-receipt update, so the
+  // marker doesn't jump or vanish mid-session (see helper for the exact
+  // rule: first message from the other side newer than my watermark).
+  const dividerMessageId = useMemo(
+    () => findFirstUnreadMessageId({ messages, myReadAt, currentRole }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [conversationId],
+  );
+
+  const dayGroups = allMessages ? groupByDay(allMessages) : [];
 
   return (
     <div className="flex h-full w-full min-w-0 flex-col">
       {header}
+
+      {!isConnected && (
+        <div className="flex items-center gap-2 border-b border-border bg-warning/10 px-4 py-1.5 text-xs text-warning">
+          <WifiOff size={13} className="shrink-0" />
+          Connexion perdue — reconnexion en cours…
+        </div>
+      )}
 
       <div className="min-h-0 min-w-0 flex-1 bg-background/40">
         {isLoading && (
@@ -130,12 +232,12 @@ export function ChatThread({
             <Skeleton className="h-14 w-1/2 self-end rounded-2xl" />
           </div>
         )}
-        {!isLoading && (messages?.length ?? 0) === 0 && (
+        {!isLoading && (allMessages?.length ?? 0) === 0 && (
           <p className="py-6 text-center text-sm text-muted-foreground">
             {emptyMessage}
           </p>
         )}
-        {!isLoading && (messages?.length ?? 0) > 0 && (
+        {!isLoading && (allMessages?.length ?? 0) > 0 && (
           <MessageScrollerProvider>
             <MessageScroller>
               <MessageScrollerViewport>
@@ -148,6 +250,35 @@ export function ChatThread({
                       {groupIntoBursts(group.messages).map((burst) => {
                         const first = burst[0];
                         if (!first) return null;
+
+                        if (first.kind === "AUTOMATED") {
+                          return (
+                            <MessageScrollerItem
+                              key={first.id}
+                              messageId={first.id}
+                            >
+                              {currentRole === "ADMIN" ? (
+                                <AutomatedMessageBubble message={first} />
+                              ) : (
+                                // Operator side: reads like any other reply
+                                // from the team, no "automatic" tell.
+                                <Message align="start">
+                                  <MessageContent>
+                                    <Bubble align="start" variant="secondary">
+                                      <BubbleContent className="rounded-bl-md">
+                                        <MessageText content={first.content} />
+                                      </BubbleContent>
+                                    </Bubble>
+                                    <MessageFooter className="gap-1 text-[0.6rem]">
+                                      {formatTime(first.createdAt)}
+                                    </MessageFooter>
+                                  </MessageContent>
+                                </Message>
+                              )}
+                            </MessageScrollerItem>
+                          );
+                        }
+
                         const isMine = first.senderRole === currentRole;
                         return (
                           <MessageScrollerItem
@@ -163,43 +294,88 @@ export function ChatThread({
                                   new Date(message.createdAt) <=
                                     new Date(otherReadAt);
                                 return (
-                                  <Message
-                                    key={message.id}
-                                    align={isMine ? "end" : "start"}
-                                  >
-                                    <MessageContent>
-                                      <Bubble
-                                        align={isMine ? "end" : "start"}
-                                        variant={
-                                          isMine ? "default" : "secondary"
-                                        }
+                                  <div key={message.id}>
+                                    {message.id === dividerMessageId && (
+                                      <Marker
+                                        variant="separator"
+                                        className="my-2"
                                       >
-                                        <BubbleContent
-                                          className={
-                                            isMine
-                                              ? "rounded-br-md"
-                                              : "rounded-bl-md"
+                                        Nouveaux messages
+                                      </Marker>
+                                    )}
+                                    <Message align={isMine ? "end" : "start"}>
+                                      <MessageContent>
+                                        <Bubble
+                                          align={isMine ? "end" : "start"}
+                                          variant={
+                                            isMine ? "default" : "secondary"
                                           }
+                                          className={cn(
+                                            message.status === "sending" &&
+                                              "opacity-70",
+                                          )}
                                         >
-                                          <p className="whitespace-pre-wrap break-words">
-                                            {message.content}
-                                          </p>
-                                        </BubbleContent>
-                                      </Bubble>
-                                      <MessageFooter className="gap-1 text-[0.6rem]">
-                                        {formatTime(message.createdAt)}
-                                        {isMine &&
-                                          (isRead ? (
-                                            <CheckCheck
-                                              size={12}
-                                              className="text-sky-300"
+                                          <BubbleContent
+                                            className={
+                                              isMine
+                                                ? "rounded-br-md"
+                                                : "rounded-bl-md"
+                                            }
+                                          >
+                                            <MessageText
+                                              content={message.content}
                                             />
+                                          </BubbleContent>
+                                        </Bubble>
+                                        <MessageFooter className="gap-1 text-[0.6rem]">
+                                          {message.status === "failed" ? (
+                                            <span className="flex items-center gap-1.5 text-danger">
+                                              <AlertCircle size={11} />
+                                              Échec
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  onRetryPending?.(message.id)
+                                                }
+                                                className="flex items-center gap-0.5 underline hover:opacity-80"
+                                              >
+                                                Réessayer
+                                                <RotateCw size={10} />
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  onDiscardPending?.(message.id)
+                                                }
+                                                className="underline hover:opacity-80"
+                                              >
+                                                Supprimer
+                                              </button>
+                                            </span>
                                           ) : (
-                                            <Check size={12} />
-                                          ))}
-                                      </MessageFooter>
-                                    </MessageContent>
-                                  </Message>
+                                            <>
+                                              {formatTime(message.createdAt)}
+                                              {isMine &&
+                                                (message.status ===
+                                                "sending" ? (
+                                                  <Loader2
+                                                    size={12}
+                                                    className="animate-spin"
+                                                  />
+                                                ) : isRead ? (
+                                                  <CheckCheck
+                                                    size={12}
+                                                    className="text-sky-300"
+                                                  />
+                                                ) : (
+                                                  <Check size={12} />
+                                                ))}
+                                            </>
+                                          )}
+                                        </MessageFooter>
+                                      </MessageContent>
+                                    </Message>
+                                  </div>
                                 );
                               })}
                             </MessageGroup>
@@ -216,16 +392,29 @@ export function ChatThread({
         )}
       </div>
 
+      {typingLabel && (
+        <div className="flex items-center gap-1.5 border-t border-border px-4 py-1.5 text-xs text-muted-foreground">
+          {typingLabel} <TypingDots />
+        </div>
+      )}
+
       <div className="border-t border-border p-3">
         <InputGroup>
           <InputGroupTextarea
             ref={textareaRef}
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              if (e.target.value.trim()) {
+                onDraftActivity?.();
+              } else {
+                onDraftIdle?.();
+              }
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                void handleSend();
+                handleSend();
               }
             }}
             placeholder={placeholder}
@@ -238,8 +427,8 @@ export function ChatThread({
               variant="default"
               size="icon-sm"
               className="ml-auto"
-              onClick={() => void handleSend()}
-              disabled={!draft.trim() || isSending}
+              onClick={handleSend}
+              disabled={!draft.trim()}
             >
               <Send />
               <span className="sr-only">Envoyer</span>

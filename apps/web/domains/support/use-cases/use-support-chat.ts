@@ -5,6 +5,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clientApiRequest } from "@/lib/api/client-api";
 import { getSupportSocket } from "@/lib/socket/support-socket";
 import type { OwnConversationResponse, SupportMessage } from "../types/support";
+import { useMessageComposer } from "./use-message-composer";
+import { useSocketConnectionStatus } from "./use-socket-connection-status";
+import { useTypingReceiver, useTypingSender } from "./use-typing-indicator";
 
 const QUERY_KEY = ["support", "own-conversation"];
 const UNREAD_COUNT_KEY = ["support", "unread-count"];
@@ -32,20 +35,46 @@ export function useOwnConversation() {
   });
 }
 
-export function useSendSupportMessage() {
+// Optimistic send: the message shows up immediately with a "sending" state,
+// flips to a retryable "failed" bubble on error (content preserved), and
+// disappears once the confirmed message lands in the cache — via this same
+// success handler, or the socket echo in useSupportSocket, whichever wins.
+export function useSupportComposer() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (content: string) =>
+  return useMessageComposer({
+    senderRole: "OPERATOR",
+    sendFn: (content) =>
       clientApiRequest<SupportMessage>("/support/messages", {
         method: "POST",
         body: { content },
       }),
-    onSuccess: (message) => {
+    onSent: (message) => {
       qc.setQueryData<OwnConversationResponse>(QUERY_KEY, (prev) =>
         appendMessageOnce(prev, message),
       );
     },
   });
+}
+
+// Send side: call notifyTyping() on every keystroke (self-debounced), and
+// stopTyping() right when a message actually goes out. Receive side: a
+// label for "the team is typing", derived from the same generic map used by
+// the admin inbox (which tracks per-conversation, this only ever has one).
+export function useSupportTyping(conversationId: string | undefined) {
+  const { notify, stop } = useTypingSender(conversationId);
+  const typingState = useTypingReceiver();
+  const typingLabel =
+    conversationId && typingState.has(conversationId)
+      ? "L'équipe EVCore est en train d'écrire…"
+      : null;
+  return { notifyTyping: notify, stopTyping: stop, typingLabel };
+}
+
+// Powers the "connexion perdue" banner and refreshes the conversation as
+// soon as the socket reconnects — a drop could mean a missed message.
+export function useSupportConnectionStatus(): boolean {
+  const qc = useQueryClient();
+  return useSocketConnectionStatus(qc, [QUERY_KEY]);
 }
 
 export function useMarkSupportRead() {

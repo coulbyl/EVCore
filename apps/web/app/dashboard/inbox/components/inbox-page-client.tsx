@@ -5,17 +5,23 @@ import { UserAvatar } from "@/components/user-avatar";
 import {
   useMarkSupportRead,
   useOwnConversation,
-  useSendSupportMessage,
+  useSupportComposer,
+  useSupportConnectionStatus,
   useSupportSocket,
+  useSupportTyping,
 } from "@/domains/support/use-cases/use-support-chat";
 import { ChatThread } from "./chat-thread";
 import { PushNotificationBanner } from "./push-notification-banner";
 
 export function InboxPageClient() {
   const { data, isLoading } = useOwnConversation();
-  const sendMessage = useSendSupportMessage();
+  const conversationId = data?.conversation.id;
+  const composer = useSupportComposer();
   const markRead = useMarkSupportRead();
-  useSupportSocket(data?.conversation.id);
+  const isConnected = useSupportConnectionStatus();
+  const { notifyTyping, stopTyping, typingLabel } =
+    useSupportTyping(conversationId);
+  useSupportSocket(conversationId);
 
   useEffect(() => {
     markRead.mutate();
@@ -26,14 +32,20 @@ export function InboxPageClient() {
     <div className="flex h-full flex-col gap-4">
       <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-border">
         <ChatThread
+          conversationId={conversationId}
           messages={data?.messages}
+          pendingMessages={composer.pending}
           isLoading={isLoading}
           currentRole="OPERATOR"
-          onSend={async (content) => {
-            await sendMessage.mutateAsync(content);
-          }}
-          isSending={sendMessage.isPending}
+          onSend={composer.send}
+          onRetryPending={composer.retry}
+          onDiscardPending={composer.discard}
+          isConnected={isConnected}
+          typingLabel={typingLabel}
+          onDraftActivity={notifyTyping}
+          onDraftIdle={stopTyping}
           otherReadAt={data?.conversation.adminReadAt}
+          myReadAt={data?.conversation.userReadAt}
           placeholder="Écrire au gestionnaire…"
           emptyMessage="Écrivez-nous — on répond généralement en quelques heures."
           header={
