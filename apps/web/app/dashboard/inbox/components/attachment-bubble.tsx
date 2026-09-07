@@ -1,6 +1,7 @@
 import { FileText } from "lucide-react";
 import type { SupportAttachment } from "@/domains/support/types/support";
-import { formatDuration, formatFileSize } from "./attachment-constants";
+import { AudioMessagePlayer } from "./audio-message-player";
+import { formatFileSize } from "./attachment-constants";
 
 // Renders whatever came back on a message — a real attachment (server URL)
 // or a locally-staged one mid-upload (blob: URL, see use-message-composer.ts)
@@ -43,21 +44,18 @@ export function AttachmentBubble({
   }
 
   if (attachment.kind === "AUDIO") {
+    if (isUploading) {
+      return (
+        <div className="flex min-w-[220px] items-center gap-2 text-[0.7rem] opacity-80">
+          Envoi du message vocal… {uploadProgress}%
+        </div>
+      );
+    }
     return (
-      <div className="flex min-w-[220px] flex-col gap-1">
-        <audio controls src={attachment.url} className="h-10 w-full" />
-        {isUploading ? (
-          <span className="text-[0.65rem] text-muted-foreground">
-            Envoi… {uploadProgress}%
-          </span>
-        ) : (
-          attachment.durationMs != null && (
-            <span className="text-[0.65rem] text-muted-foreground">
-              {formatDuration(attachment.durationMs)}
-            </span>
-          )
-        )}
-      </div>
+      <AudioMessagePlayer
+        src={attachment.url}
+        durationMs={attachment.durationMs}
+      />
     );
   }
 
@@ -66,14 +64,17 @@ export function AttachmentBubble({
       href={attachment.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex min-w-[180px] items-center gap-2 rounded-lg border border-border/60 bg-background/40 px-3 py-2 hover:bg-background/70"
+      // `current`-based tint instead of a fixed background — blends into
+      // whichever bubble variant wraps it (mine/other) instead of always
+      // rendering as the same dark card regardless of context.
+      className="flex min-w-[180px] items-center gap-2 rounded-lg bg-current/10 px-3 py-2 transition-colors hover:bg-current/15"
       onClick={(e) => isUploading && e.preventDefault()}
     >
-      <FileText size={18} className="shrink-0 text-muted-foreground" />
+      <FileText size={18} className="shrink-0 opacity-80" />
       <span className="min-w-0 flex-1 truncate text-xs font-medium">
         {attachment.fileName ?? "Fichier"}
       </span>
-      <span className="shrink-0 text-[0.6rem] text-muted-foreground">
+      <span className="shrink-0 text-[0.6rem] opacity-70">
         {isUploading
           ? `${uploadProgress}%`
           : formatFileSize(attachment.sizeBytes)}

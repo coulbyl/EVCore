@@ -455,8 +455,17 @@ export function ChatThread({
                                       <MessageContent>
                                         <Bubble
                                           align={isMine ? "end" : "start"}
+                                          // A solid, fully-saturated primary
+                                          // fill on every single outgoing
+                                          // bubble reads as loud rather than
+                                          // "chat" — real messengers use a
+                                          // soft tint instead, which also
+                                          // keeps nested content (links,
+                                          // attachments) at reasonable
+                                          // contrast against text-foreground
+                                          // instead of white-on-brand-color.
                                           variant={
-                                            isMine ? "default" : "secondary"
+                                            isMine ? "tinted" : "secondary"
                                           }
                                           className={cn(
                                             message.status === "sending" &&

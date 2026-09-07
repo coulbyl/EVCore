@@ -100,7 +100,18 @@ export class SupportService {
     if (!attachment) return null;
     return {
       kind: attachment.kind,
-      url: await this.storage.createDownloadUrl(attachment.objectKey),
+      url: await this.storage.createDownloadUrl({
+        objectKey: attachment.objectKey,
+        // FILE is the only kind that isn't rendered by a dedicated,
+        // format-locked element (<img>, <audio>) — force it to download
+        // instead of letting the browser render an attacker's declared
+        // Content-Type inline (see storage.service.ts).
+        disposition:
+          attachment.kind === SupportAttachmentKind.FILE
+            ? 'attachment'
+            : 'inline',
+        fileName: attachment.fileName,
+      }),
       mimeType: attachment.mimeType,
       sizeBytes: attachment.sizeBytes,
       fileName: attachment.fileName,

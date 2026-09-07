@@ -6,15 +6,29 @@ import {
   GetObjectCommand,
   HeadBucketCommand,
   HeadObjectCommand,
+  PutBucketCorsCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { createLogger } from '@utils/logger';
 import { SUPPORT_ATTACHMENT_LIMITS } from '@/config/storage.constants';
-import type { HeadObjectResult, UploadUrlRequest } from './storage.types';
+import type {
+  DownloadUrlRequest,
+  HeadObjectResult,
+  UploadUrlRequest,
+} from './storage.types';
 
 const logger = createLogger('storage-service');
+
+// Strips CR/LF/quotes (header-injection guard) and falls back to a plain
+// name — the RFC 5987 filename* form lets non-ASCII names survive too.
+function contentDispositionHeader(fileName: string | null | undefined): string {
+  const safeName = (fileName ?? 'fichier')
+    .replace(/[\r\n"]/g, '')
+    .slice(0, 200);
+  return `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(safeName)}`;
+}
 
 // S3-compatible object storage (RustFS in this repo — see docker-compose.yml
 // and docs/support-attachments-architecture.md) for support chat
@@ -122,6 +136,47 @@ export class StorageService implements OnModuleInit {
         }
       }
     }
+    await this.ensureCors();
+  }
+
+  // RustFS never emits Access-Control-Allow-Origin on its own — unlike the
+  // Nest app's own CORS_ORIGINS (main.ts), that setting only governs the API
+  // server. The browser PUTs/GETs presigned URLs directly against the bucket
+  // (a different origin/port), so CORS has to be set on the bucket itself via
+  // the S3 API, reusing the same allow-list. Idempotent — safe to re-run on
+  // every boot.
+  private async ensureCors(): Promise<void> {
+    if (!this.client) return;
+    const origins = this.config
+      .get<string>('CORS_ORIGINS', '')
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter((origin) => origin.length > 0);
+    if (origins.length === 0) return;
+
+    try {
+      await this.client.send(
+        new PutBucketCorsCommand({
+          Bucket: this.bucket,
+          CORSConfiguration: {
+            CORSRules: [
+              {
+                AllowedOrigins: origins,
+                AllowedMethods: ['GET', 'PUT', 'HEAD'],
+                AllowedHeaders: ['*'],
+                ExposeHeaders: ['ETag'],
+                MaxAgeSeconds: 3600,
+              },
+            ],
+          },
+        }),
+      );
+    } catch (error) {
+      logger.error(
+        { error, bucket: this.bucket, origins },
+        'Failed to set attachment bucket CORS policy',
+      );
+    }
   }
 
   // Presigned PUT — ContentType and ContentLength are signed parameters, so
@@ -143,13 +198,20 @@ export class StorageService implements OnModuleInit {
     );
   }
 
-  async createDownloadUrl(objectKey: string): Promise<string> {
+  async createDownloadUrl(input: DownloadUrlRequest): Promise<string> {
     if (!this.presignClient) {
       throw new Error('Attachment storage is not configured');
     }
     return getSignedUrl(
       this.presignClient,
-      new GetObjectCommand({ Bucket: this.bucket, Key: objectKey }),
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: input.objectKey,
+        ResponseContentDisposition:
+          input.disposition === 'attachment'
+            ? contentDispositionHeader(input.fileName)
+            : undefined,
+      }),
       { expiresIn: SUPPORT_ATTACHMENT_LIMITS.DOWNLOAD_URL_EXPIRY_SECONDS },
     );
   }
