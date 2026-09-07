@@ -1,5 +1,9 @@
-name: evcore-prod
-
+# No `name:` here — the compose project name must stay the directory-derived
+# default ("evcore", from /opt/apps/evcore) to match the containers already
+# running on the server. Setting it explicitly makes Compose treat every
+# existing container as belonging to a different project and refuse to
+# recreate them (name conflict on the fixed container_name).
+#
 # Image built and pushed to GHCR by GitHub Actions (workflows/deploy.yml).
 # The VPS only pulls and runs — no build step on the server.
 # GHCR_OWNER and every secret below go in the server's .env file.
