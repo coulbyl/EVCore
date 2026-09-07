@@ -104,6 +104,11 @@ type SyncFixtureStateInput = {
   awayHtScore: number | null;
 };
 
+export type SyncFixtureStateResult = {
+  affectsRollingStats: boolean;
+  seasonId: string | null;
+};
+
 type UpsertOneXTwoOddsSnapshotInput = {
   fixtureId: string;
   bookmaker: string;
@@ -363,17 +368,42 @@ export class FixtureRepository {
     });
   }
 
-  async syncFixtureState(input: SyncFixtureStateInput): Promise<void> {
-    await this.prisma.client.fixture.updateMany({
-      where: { externalId: input.externalId },
-      data: {
-        scheduledAt: input.scheduledAt,
-        status: input.status,
-        homeScore: input.homeScore,
-        awayScore: input.awayScore,
-        homeHtScore: input.homeHtScore,
-        awayHtScore: input.awayHtScore,
-      },
+  async syncFixtureState(
+    input: SyncFixtureStateInput,
+  ): Promise<SyncFixtureStateResult> {
+    return this.prisma.client.$transaction(async (tx) => {
+      const existing = await tx.fixture.findUnique({
+        where: { externalId: input.externalId },
+        select: {
+          seasonId: true,
+          scheduledAt: true,
+          status: true,
+          homeScore: true,
+          awayScore: true,
+          homeHtScore: true,
+          awayHtScore: true,
+        },
+      });
+      if (!existing) {
+        return { affectsRollingStats: false, seasonId: null };
+      }
+
+      await tx.fixture.update({
+        where: { externalId: input.externalId },
+        data: {
+          scheduledAt: input.scheduledAt,
+          status: input.status,
+          homeScore: input.homeScore,
+          awayScore: input.awayScore,
+          homeHtScore: input.homeHtScore,
+          awayHtScore: input.awayHtScore,
+        },
+      });
+
+      return {
+        affectsRollingStats: fixtureStateAffectsRollingStats(existing, input),
+        seasonId: existing.seasonId,
+      };
     });
   }
 
@@ -1284,16 +1314,18 @@ export class FixtureRepository {
   }
 }
 
+type FixtureStateSnapshot = {
+  scheduledAt: Date;
+  status: FixtureStatus;
+  homeScore?: number | null;
+  awayScore?: number | null;
+  homeHtScore?: number | null;
+  awayHtScore?: number | null;
+};
+
 function hasFixtureStateChanged(
-  existing: {
-    scheduledAt: Date;
-    status: FixtureStatus;
-    homeScore: number | null;
-    awayScore: number | null;
-    homeHtScore: number | null;
-    awayHtScore: number | null;
-  } | null,
-  next: UpsertFixtureInput,
+  existing: FixtureStateSnapshot | null,
+  next: FixtureStateSnapshot,
 ): boolean {
   if (!existing) {
     return true;
@@ -1310,15 +1342,8 @@ function hasFixtureStateChanged(
 }
 
 function fixtureStateAffectsRollingStats(
-  existing: {
-    scheduledAt: Date;
-    status: FixtureStatus;
-    homeScore: number | null;
-    awayScore: number | null;
-    homeHtScore: number | null;
-    awayHtScore: number | null;
-  } | null,
-  next: UpsertFixtureInput,
+  existing: FixtureStateSnapshot | null,
+  next: FixtureStateSnapshot,
 ): boolean {
   if (next.status !== 'FINISHED') {
     return false;

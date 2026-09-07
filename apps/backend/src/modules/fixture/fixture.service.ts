@@ -5,6 +5,7 @@ import {
   type UpsertFixtureResult,
   type UpsertOddsSnapshotInput,
   type UpsertSecondaryMarketOddsInput,
+  type SyncFixtureStateResult,
 } from './fixture.repository';
 import { MatchLegDetectionService } from './match-leg-detection.service';
 
@@ -181,7 +182,9 @@ export class FixtureService {
     return this.fixtureRepository.updateScores(input);
   }
 
-  async syncFixtureState(input: SyncFixtureStateInput): Promise<void> {
+  async syncFixtureState(
+    input: SyncFixtureStateInput,
+  ): Promise<SyncFixtureStateResult> {
     return this.fixtureRepository.syncFixtureState(input);
   }
 

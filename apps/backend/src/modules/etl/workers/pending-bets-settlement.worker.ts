@@ -15,6 +15,7 @@ import { BettingEngineService } from '../../betting-engine/betting-engine.servic
 import { CouponSettlementService } from '../../coupon/coupon-settlement.service';
 import { NotificationService } from '../../notification/notification.service';
 import { AdjustmentService } from '../../adjustment/adjustment.service';
+import { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 export type PendingBetsSettlementJobData = Record<string, never>;
@@ -33,10 +34,12 @@ export class PendingBetsSettlementWorker extends WorkerHost {
   @Inject(CouponSettlementService)
   private couponSettlement!: CouponSettlementService;
 
+  // eslint-disable-next-line max-params -- DI constructor, same convention as FixturesSyncWorker.
   constructor(
     private readonly fixtureService: FixtureService,
     private readonly bettingEngineService: BettingEngineService,
     private readonly adjustmentService: AdjustmentService,
+    private readonly rollingStatsService: RollingStatsService,
   ) {
     super();
   }
@@ -55,6 +58,13 @@ export class PendingBetsSettlementWorker extends WorkerHost {
     let settledBets = 0;
     let failedFixtures = 0;
     let skippedFixtures = 0;
+    // Same rationale as stale-scheduled-sync.worker.ts: this is the other
+    // fallback path that finalizes fixtures outside the routine
+    // fixtures-sync job, so it must trigger the same rolling-stats refresh
+    // that job's own `affectsRollingStats` aggregation does — otherwise
+    // team_stats silently freezes for whatever competition's finishes keep
+    // landing here (2026-09-07 ISL1 incident).
+    const seasonsToRefresh = new Set<string>();
 
     for (const fixture of fixtures) {
       try {
@@ -102,15 +112,19 @@ export class PendingBetsSettlementWorker extends WorkerHost {
         }
 
         const nextState = mapFixtureState(apiFixture);
-        await this.fixtureService.syncFixtureState({
-          externalId: fixture.externalId,
-          scheduledAt: nextState.scheduledAt,
-          status: nextState.status,
-          homeScore: nextState.homeScore,
-          awayScore: nextState.awayScore,
-          homeHtScore: nextState.homeHtScore,
-          awayHtScore: nextState.awayHtScore,
-        });
+        const { affectsRollingStats, seasonId } =
+          await this.fixtureService.syncFixtureState({
+            externalId: fixture.externalId,
+            scheduledAt: nextState.scheduledAt,
+            status: nextState.status,
+            homeScore: nextState.homeScore,
+            awayScore: nextState.awayScore,
+            homeHtScore: nextState.homeHtScore,
+            awayHtScore: nextState.awayHtScore,
+          });
+        if (affectsRollingStats && seasonId) {
+          seasonsToRefresh.add(seasonId);
+        }
 
         // Early settlement — resolve irrevocable outcomes (BTTS YES/NO, OVER/UNDER
         // thresholds, HT markets) without waiting for FINISHED.
@@ -145,6 +159,10 @@ export class PendingBetsSettlementWorker extends WorkerHost {
       }
     }
 
+    for (const seasonId of seasonsToRefresh) {
+      await this.rollingStatsService.refreshSeason(seasonId);
+    }
+
     logger.info(
       {
         fixtureCount: fixtures.length,
@@ -152,6 +170,7 @@ export class PendingBetsSettlementWorker extends WorkerHost {
         settledBets,
         failedFixtures,
         skippedFixtures,
+        seasonsRefreshed: seasonsToRefresh.size,
       },
       'Pending bets settlement sync complete',
     );

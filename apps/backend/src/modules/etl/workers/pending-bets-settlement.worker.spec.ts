@@ -9,6 +9,7 @@ import type { NotificationService } from '../../notification/notification.servic
 import type { AdjustmentService } from '../../adjustment/adjustment.service';
 import type { CouponSettlementService } from '../../coupon/coupon-settlement.service';
 import type { CacheService } from '@common/redis/cache.service';
+import type { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 import { PendingBetsSettlementWorker } from './pending-bets-settlement.worker';
 
 vi.mock('node:child_process', () => ({
@@ -123,7 +124,9 @@ function mockCurlErrorOnce(message: string, code?: number) {
 describe('PendingBetsSettlementWorker', () => {
   const fixtureService = {
     findPendingSettlementFixtures: vi.fn(),
-    syncFixtureState: vi.fn().mockResolvedValue(undefined),
+    syncFixtureState: vi
+      .fn()
+      .mockResolvedValue({ affectsRollingStats: true, seasonId: 'season-1' }),
   } satisfies Partial<FixtureService>;
   const bettingEngineService = {
     settleOpenBets: vi.fn().mockResolvedValue({ settled: 1 }),
@@ -152,10 +155,15 @@ describe('PendingBetsSettlementWorker', () => {
     invalidateTag: vi.fn().mockResolvedValue(undefined),
   } satisfies Partial<CacheService>;
 
+  const rollingStatsService = {
+    refreshSeason: vi.fn().mockResolvedValue(undefined),
+  } satisfies Partial<RollingStatsService>;
+
   const worker = new PendingBetsSettlementWorker(
     fixtureService as unknown as FixtureService,
     bettingEngineService as unknown as BettingEngineService,
     adjustmentService as unknown as AdjustmentService,
+    rollingStatsService as unknown as RollingStatsService,
   );
 
   beforeEach(() => {
@@ -166,7 +174,10 @@ describe('PendingBetsSettlementWorker', () => {
       couponSettlement: couponSettlement as unknown as CouponSettlementService,
       cache: cache as unknown as CacheService,
     });
-    fixtureService.syncFixtureState.mockResolvedValue(undefined);
+    fixtureService.syncFixtureState.mockResolvedValue({
+      affectsRollingStats: true,
+      seasonId: 'season-1',
+    });
     bettingEngineService.settleOpenBets.mockResolvedValue({ settled: 1 });
     config.getOrThrow.mockReturnValue('test-api-key');
     fixtureService.findPendingSettlementFixtures.mockResolvedValue([
@@ -201,6 +212,7 @@ describe('PendingBetsSettlementWorker', () => {
     expect(bettingEngineService.settleOpenBets).toHaveBeenCalledWith(
       'fixture-1',
     );
+    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-1');
   });
 
   it('settles on the 90-minute score, not the post-extra-time score (AET)', async () => {
