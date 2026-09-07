@@ -13,6 +13,7 @@ import { AuthService } from '@modules/auth/auth.service';
 import type { AuthenticatedRequest } from '@modules/auth/auth.types';
 import { createLogger } from '@utils/logger';
 import { SupportRepository } from './support.repository';
+import { SupportAutomationService } from './support-automation.service';
 import type {
   SupportMessageDto,
   TypingBroadcastDto,
@@ -60,6 +61,7 @@ export class SupportGateway
   constructor(
     private readonly authService: AuthService,
     private readonly repo: SupportRepository,
+    private readonly automation: SupportAutomationService,
   ) {}
 
   async handleConnection(client: Socket): Promise<void> {
@@ -78,11 +80,22 @@ export class SupportGateway
       return;
     }
 
-    const conversation = await this.repo.getOrCreateConversationForUser(
+    const { conversation, isNew } = await this.repo.resolveConversationForUser(
       session.user.id,
     );
     client.data.conversationId = conversation.id;
     await client.join(conversationRoom(conversation.id));
+
+    // Usually wins the "is this new" race against the REST fetch
+    // (SupportService.getOwnConversation) — the socket tends to connect
+    // first (see the global unread-badge hook, mounted app-wide). Whichever
+    // side actually wins, the other's attempt is a harmless no-op (DB
+    // unique constraint on conversationId+automationKey).
+    const welcomeMessage = await this.automation.triggerFirstContact({
+      conversationId: conversation.id,
+      isNewConversation: isNew,
+    });
+    if (welcomeMessage) this.emitMessage(conversation.id, welcomeMessage);
   }
 
   // A client that goes away mid-sentence (closed tab, dead connection)

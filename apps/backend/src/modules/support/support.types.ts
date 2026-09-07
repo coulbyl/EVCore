@@ -19,11 +19,15 @@ export type SupportAttachmentDto = {
 export type SupportMessageDto = {
   id: string;
   conversationId: string;
-  senderId: string;
+  // Null for an AUTOMATED message (welcome, future reminders…) — no human
+  // sender. senderRole/senderUsername still carry a display value ('ADMIN'
+  // / 'EVCore') so the frontend doesn't need a third role branch everywhere.
+  senderId: string | null;
   senderRole: 'ADMIN' | 'OPERATOR';
   senderUsername: string;
   content: string | null;
   attachment: SupportAttachmentDto | null;
+  kind: 'STANDARD' | 'AUTOMATED';
   createdAt: Date;
 };
 

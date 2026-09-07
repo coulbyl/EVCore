@@ -4,13 +4,18 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { SupportAttachmentKind, UserRole } from '@evcore/db';
+import {
+  SupportAttachmentKind,
+  SupportMessageKind,
+  UserRole,
+} from '@evcore/db';
 import { SUPPORT_MESSAGES_PAGINATION } from '@/config/pagination.constants';
 import { SUPPORT_ATTACHMENT_LIMITS } from '@/config/storage.constants';
 import { StorageService } from '@modules/storage/storage.service';
 import { SupportRepository } from './support.repository';
 import { SupportGateway } from './support.gateway';
 import { SupportNotifierService } from './support-notifier.service';
+import { SupportAutomationService } from './support-automation.service';
 import {
   assertValidAttachmentRequest,
   extensionForMimeType,
@@ -37,10 +42,12 @@ type RawAttachment = {
 type RawMessage = {
   id: string;
   conversationId: string;
-  senderId: string;
+  senderId: string | null;
+  kind: SupportMessageKind;
   content: string | null;
   createdAt: Date;
-  sender: { username: string; role: UserRole };
+  // Null for an AUTOMATED message — no human sender.
+  sender: { username: string; role: UserRole } | null;
   attachment: RawAttachment | null;
 };
 
@@ -64,6 +71,7 @@ export class SupportService {
     private readonly notifier: SupportNotifierService,
     private readonly gateway: SupportGateway,
     private readonly storage: StorageService,
+    private readonly automation: SupportAutomationService,
   ) {}
 
   private async toMessageDto(raw: RawMessage): Promise<SupportMessageDto> {
@@ -71,10 +79,17 @@ export class SupportService {
       id: raw.id,
       conversationId: raw.conversationId,
       senderId: raw.senderId,
-      senderRole: raw.sender.role === UserRole.ADMIN ? 'ADMIN' : 'OPERATOR',
-      senderUsername: raw.sender.username,
+      // AUTOMATED messages have no human sender — displayed as coming from
+      // the team, same as any other ADMIN reply.
+      senderRole:
+        !raw.sender || raw.sender.role === UserRole.ADMIN
+          ? 'ADMIN'
+          : 'OPERATOR',
+      senderUsername: raw.sender?.username ?? 'EVCore',
       content: raw.content,
       attachment: await this.toAttachmentDto(raw.attachment),
+      kind:
+        raw.kind === SupportMessageKind.AUTOMATED ? 'AUTOMATED' : 'STANDARD',
       createdAt: raw.createdAt,
     };
   }
@@ -117,7 +132,20 @@ export class SupportService {
   }
 
   async getOwnConversation(userId: string) {
-    const conversation = await this.repo.getOrCreateConversationForUser(userId);
+    const { conversation, isNew } =
+      await this.repo.resolveConversationForUser(userId);
+    // The frontend fetches this over REST on Inbox mount, but the socket
+    // (SupportGateway.handleConnection) usually connects first — whichever
+    // side actually wins the "is this new" race is the one that sends the
+    // welcome message; createAutomatedMessageIfAbsent's unique constraint
+    // makes the other a harmless no-op rather than a duplicate.
+    const welcomeMessage = await this.automation.triggerFirstContact({
+      conversationId: conversation.id,
+      isNewConversation: isNew,
+    });
+    if (welcomeMessage)
+      this.gateway.emitMessage(conversation.id, welcomeMessage);
+
     const page = await this.repo.listRecentMessages(
       conversation.id,
       SUPPORT_MESSAGES_PAGINATION.defaultLimit,

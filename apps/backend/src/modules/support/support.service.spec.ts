@@ -6,6 +6,7 @@ import type { SupportRepository } from './support.repository';
 import type { SupportGateway } from './support.gateway';
 import type { SupportNotifierService } from './support-notifier.service';
 import type { StorageService } from '@modules/storage/storage.service';
+import type { SupportAutomationService } from './support-automation.service';
 
 const CONVERSATION_ID = 'conversation-1';
 const USER_ID = 'user-1';
@@ -15,6 +16,7 @@ function makeRawMessage(overrides: Partial<Record<string, unknown>> = {}) {
     id: 'message-1',
     conversationId: CONVERSATION_ID,
     senderId: USER_ID,
+    kind: 'STANDARD',
     content: 'Salut',
     createdAt: new Date('2026-09-05T10:00:00Z'),
     sender: { username: 'op1', role: UserRole.OPERATOR },
@@ -30,6 +32,10 @@ function makeRepo(
     getOrCreateConversationForUser: vi
       .fn()
       .mockResolvedValue({ id: CONVERSATION_ID, userId: USER_ID }),
+    resolveConversationForUser: vi.fn().mockResolvedValue({
+      conversation: { id: CONVERSATION_ID, userId: USER_ID },
+      isNew: false,
+    }),
     findConversationById: vi
       .fn()
       .mockResolvedValue({ id: CONVERSATION_ID, userId: USER_ID }),
@@ -82,6 +88,15 @@ function makeStorage(overrides: Partial<StorageService> = {}): StorageService {
   } as unknown as StorageService;
 }
 
+function makeAutomation(): SupportAutomationService {
+  // Defaults to "nothing to do" — the sendAsUser/createAttachmentUploadUrl
+  // specs below don't go through the resolveConversationForUser path that
+  // would make isNewConversation true, so this never fires for them.
+  return {
+    triggerFirstContact: vi.fn().mockResolvedValue(null),
+  } as unknown as SupportAutomationService;
+}
+
 describe('SupportService — sendAsUser', () => {
   it('sends a text-only message', async () => {
     const repo = makeRepo();
@@ -90,6 +105,7 @@ describe('SupportService — sendAsUser', () => {
       makeNotifier(),
       makeGateway(),
       makeStorage(),
+      makeAutomation(),
     );
 
     const dto = await service.sendAsUser(USER_ID, { content: 'Bonjour' });
@@ -111,6 +127,7 @@ describe('SupportService — sendAsUser', () => {
       makeNotifier(),
       makeGateway(),
       makeStorage(),
+      makeAutomation(),
     );
 
     await expect(service.sendAsUser(USER_ID, {})).rejects.toThrow(
@@ -124,6 +141,7 @@ describe('SupportService — sendAsUser', () => {
       makeNotifier(),
       makeGateway(),
       makeStorage(),
+      makeAutomation(),
     );
 
     await expect(
@@ -139,6 +157,7 @@ describe('SupportService — sendAsUser', () => {
       makeNotifier(),
       makeGateway(),
       storage,
+      makeAutomation(),
     );
 
     await service.sendAsUser(USER_ID, {
@@ -171,6 +190,7 @@ describe('SupportService — sendAsUser', () => {
       makeNotifier(),
       makeGateway(),
       makeStorage(),
+      makeAutomation(),
     );
 
     await expect(
@@ -196,6 +216,7 @@ describe('SupportService — sendAsUser', () => {
       makeNotifier(),
       makeGateway(),
       storage,
+      makeAutomation(),
     );
 
     await expect(
@@ -216,6 +237,7 @@ describe('SupportService — createAttachmentUploadUrl', () => {
       makeNotifier(),
       makeGateway(),
       makeStorage({ isEnabled: vi.fn().mockReturnValue(false) }),
+      makeAutomation(),
     );
 
     await expect(
@@ -234,6 +256,7 @@ describe('SupportService — createAttachmentUploadUrl', () => {
       makeNotifier(),
       makeGateway(),
       makeStorage(),
+      makeAutomation(),
     );
 
     await expect(
@@ -253,6 +276,7 @@ describe('SupportService — createAttachmentUploadUrl', () => {
       makeNotifier(),
       makeGateway(),
       storage,
+      makeAutomation(),
     );
 
     const result = await service.createAttachmentUploadUrl({
@@ -284,6 +308,7 @@ describe('SupportService — pagination', () => {
       makeNotifier(),
       makeGateway(),
       makeStorage(),
+      makeAutomation(),
     );
 
     await service.loadOlderMessages(CONVERSATION_ID, 'message-50', 10_000);
@@ -306,6 +331,7 @@ describe('SupportService — pagination', () => {
       makeNotifier(),
       makeGateway(),
       makeStorage(),
+      makeAutomation(),
     );
 
     const { hasMore } = await service.getOwnConversation(USER_ID);

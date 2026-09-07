@@ -19,14 +19,14 @@ export type SupportAttachment = {
 export type SupportMessage = {
   id: string;
   conversationId: string;
-  senderId: string;
+  // Null for an AUTOMATED message (welcome, future reminders…) — no human
+  // sender.
+  senderId: string | null;
   senderRole: "ADMIN" | "OPERATOR";
   senderUsername: string;
   content: string | null;
   attachment?: SupportAttachment | null;
   createdAt: string;
-  // Set by the backend once automated messages ship (welcome, reminders…) —
-  // absent today, so every check below treats undefined as "STANDARD".
   kind?: "STANDARD" | "AUTOMATED";
   // Frontend-only: optimistic messages carry this while in flight, dropped
   // once the server confirms them. Never present on a message read from the

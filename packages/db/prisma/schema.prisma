@@ -1137,9 +1137,23 @@ model SupportConversation {
   createdAt     DateTime                  @default(now())
   updatedAt     DateTime                  @updatedAt
 
+  // One conversation per user — the whole app (gateway room join, the
+  // operator's single-thread inbox, the welcome-message idempotence check)
+  // assumes this; a plain index let a socket-reconnect race create a
+  // second row silently before this constraint existed.
+  @@unique([userId])
   @@index([status, lastMessageAt])
-  @@index([userId])
   @@map("support_conversation")
+  @@schema("public")
+}
+
+enum SupportMessageKind {
+  STANDARD
+  // Backend-generated, no human sender — welcome message today, future
+  // automations (inactivity nudge, feature announcement, …) reuse this
+  // same kind with their own `automationKey`.
+  AUTOMATED
+
   @@schema("public")
 }
 
@@ -1147,8 +1161,18 @@ model SupportMessage {
   id             String              @id @default(dbgenerated("uuidv7()")) @db.Uuid
   conversationId String              @db.Uuid
   conversation   SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  senderId       String              @db.Uuid
-  sender         User                @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  // Nullable — an AUTOMATED message has no human sender. onDelete: Cascade
+  // only fires for a real sender; never borrow an admin's account id for a
+  // system message, or deleting that admin would delete the message with it.
+  senderId       String?             @db.Uuid
+  sender         User?               @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  kind           SupportMessageKind  @default(STANDARD)
+  // Set only when kind = AUTOMATED, e.g. "WELCOME" — the idempotence key:
+  // the unique constraint below guarantees at most one instance of a given
+  // automation per conversation, safe under reconnects/retries/concurrent
+  // triggers. Postgres treats multiple NULLs as distinct, so this never
+  // constrains ordinary (kind = STANDARD) messages.
+  automationKey  String?
   // Nullable — a voice note or a file sent with no caption has an
   // attachment and no text. The service layer rejects a message with
   // neither (see SendMessageDto).
@@ -1162,6 +1186,7 @@ model SupportMessage {
   // sends. See support.repository.ts listMessagesBefore/listRecentMessages.
   // Kept alongside the createdAt index below, still used by the unread-count
   // queries (createdAt-watermark comparisons, not id-cursor pagination).
+  @@unique([conversationId, automationKey])
   @@index([conversationId, id])
   @@index([conversationId, createdAt])
   @@map("support_message")
