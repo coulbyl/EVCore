@@ -6,8 +6,19 @@ import type { SituationalResearch } from "../research";
 /** Writes VANTAGE's decision as a normal ChannelDecision + ChannelSelection,
  * attached to the fixture's existing ModelRun — the exact same shape every
  * other channel writes. Never touches ModelRun.finalScore/llmDelta: VANTAGE
- * proposes its own pick, it never adjusts anyone else's score. */
+ * proposes its own pick, it never adjusts anyone else's score.
+ *
+ * Also appends one row to VantageDecisionHistory, append-only, every single
+ * call — regardless of whether the upsert below creates or overwrites the
+ * live ChannelDecision. A new ModelRun per re-analysis (the common case as
+ * kickoff nears) already gives each attempt its own live row for free; this
+ * is for the one case that doesn't: two calls landing on the SAME modelRunId
+ * (e.g. a retry), where the upsert's `update` branch would otherwise replace
+ * the previous attempt with no trace (2026-09-07, user request — wants to be
+ * able to see whether VANTAGE's read changed for the better as a match
+ * approached, which needs every attempt kept, not just the last one). */
 export async function persistVantageDecision(
+  fixtureId: string,
   modelRunId: string,
   response: VantageResponse,
   configVersion: string,
@@ -46,30 +57,51 @@ export async function persistVantageDecision(
         ]
       : [];
 
-  // Re-running the same fixture (e.g. odds moved, decisions were
-  // re-evaluated) replaces the previous VANTAGE read rather than duplicating
-  // it — `deleteMany` on `update` clears a stale selection from a prior
-  // "play" run before a "no_play" (or a different pick) is written, since the
-  // upsert's `update` branch otherwise leaves old rows attached silently.
-  await prisma.channelDecision.upsert({
-    where: {
-      modelRunId_channel: { modelRunId, channel: STRATEGY_CHANNEL.VANTAGE },
-    },
-    create: {
-      modelRunId,
-      channel: STRATEGY_CHANNEL.VANTAGE,
-      status,
-      reasonCode,
-      reasonDetails,
-      configVersion,
-      selections: { create: newSelection },
-    },
-    update: {
-      status,
-      reasonCode,
-      reasonDetails,
-      configVersion,
-      selections: { deleteMany: {}, create: newSelection },
-    },
-  });
+  await prisma.$transaction([
+    // Re-running the same fixture (e.g. odds moved, decisions were
+    // re-evaluated) replaces the previous VANTAGE read rather than
+    // duplicating it — `deleteMany` on `update` clears a stale selection
+    // from a prior "play" run before a "no_play" (or a different pick) is
+    // written, since the upsert's `update` branch otherwise leaves old rows
+    // attached silently. This is the "live" read every other consumer
+    // (frontend, calibration, settlement) reads from.
+    prisma.channelDecision.upsert({
+      where: {
+        modelRunId_channel: { modelRunId, channel: STRATEGY_CHANNEL.VANTAGE },
+      },
+      create: {
+        modelRunId,
+        channel: STRATEGY_CHANNEL.VANTAGE,
+        status,
+        reasonCode,
+        reasonDetails,
+        configVersion,
+        selections: { create: newSelection },
+      },
+      update: {
+        status,
+        reasonCode,
+        reasonDetails,
+        configVersion,
+        selections: { deleteMany: {}, create: newSelection },
+      },
+    }),
+    // The append-only trail — never updated, never deleted, one row per call
+    // regardless of what the upsert above did to the live row.
+    prisma.vantageDecisionHistory.create({
+      data: {
+        fixtureId,
+        modelRunId,
+        status,
+        reasonCode,
+        reasonDetails,
+        configVersion,
+        market: response.verdict === "play" ? response.market : undefined,
+        pick: response.verdict === "play" ? response.pick : undefined,
+        probability:
+          response.verdict === "play" ? response.probability : undefined,
+        odds: response.verdict === "play" ? (odds ?? undefined) : undefined,
+      },
+    }),
+  ]);
 }

@@ -299,6 +299,7 @@ export async function analyzeFixture(
   }
 
   await persistVantageDecision(
+    context.fixtureId,
     context.modelRunId,
     parsed.data,
     CONFIG_VERSION,
