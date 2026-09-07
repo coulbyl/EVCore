@@ -11,7 +11,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
+import { AUTH_LOGIN_RATE_LIMIT } from '@config/rate-limit.constants';
 import { AuthService } from './auth.service';
 import { CurrentSession } from './current-session.decorator';
 import { AuthSessionGuard } from './auth-session.guard';
@@ -42,7 +43,16 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(ThrottlerGuard)
+  // Overrides the app-wide 'default' throttler (see app.module.ts) with a
+  // much stricter one just for this route — the global ThrottlerGuard
+  // (APP_GUARD) already covers every route, so no extra guard is needed
+  // here, only a tighter limit.
+  @Throttle({
+    default: {
+      limit: AUTH_LOGIN_RATE_LIMIT.limit,
+      ttl: AUTH_LOGIN_RATE_LIMIT.ttlMs,
+    },
+  })
   async login(
     @Body() body: LoginDto,
     @Res({ passthrough: true }) response: Response,
