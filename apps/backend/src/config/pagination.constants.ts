@@ -10,3 +10,11 @@ export const FIXTURE_SCORING_PAGINATION = {
   defaultLimit: 100,
   maxLimit: 100,
 } as const;
+
+// Support chat — "load older messages". A thread opens showing only the
+// most recent page; the rest loads on demand (see support.repository.ts
+// listRecentMessages/listMessagesBefore).
+export const SUPPORT_MESSAGES_PAGINATION = {
+  defaultLimit: 50,
+  maxLimit: 100,
+} as const;

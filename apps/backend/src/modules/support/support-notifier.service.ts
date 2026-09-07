@@ -5,6 +5,23 @@ import { PushService } from '@modules/push/push.service';
 import { NotificationService } from '@modules/notification/notification.service';
 import type { SupportMessageDto } from './support.types';
 
+// A voice note or a bare file has no text — every notification channel
+// still needs a one-line body, so fall back to a label describing what was
+// sent instead of the (absent) caption.
+function notificationBody(message: SupportMessageDto): string {
+  if (message.content) return message.content;
+  switch (message.attachment?.kind) {
+    case 'AUDIO':
+      return '🎙️ Message vocal';
+    case 'IMAGE':
+      return '📷 Photo';
+    case 'FILE':
+      return `📎 ${message.attachment.fileName ?? 'Fichier'}`;
+    default:
+      return 'Nouveau message';
+  }
+}
+
 // Groups the out-of-app / in-app notification channels for support messages
 // so SupportService only needs one collaborator here (keeps its constructor
 // at 3 params — see max-params rule). Push fires whenever a subscription
@@ -24,11 +41,11 @@ export class SupportNotifierService {
       this.mail.sendSupportMessage({
         recipientKind: 'ADMIN',
         fromUsername: message.senderUsername,
-        preview: message.content,
+        preview: notificationBody(message),
       }),
       this.push.sendToRole(UserRole.ADMIN, {
         title: `Support — ${message.senderUsername}`,
-        body: message.content,
+        body: notificationBody(message),
         url: `/dashboard/inbox/${message.conversationId}`,
       }),
     ]);
@@ -46,19 +63,19 @@ export class SupportNotifierService {
             recipientKind: 'USER',
             to: email,
             fromUsername: message.senderUsername,
-            preview: message.content,
+            preview: notificationBody(message),
           })
         : Promise.resolve(),
       this.push.sendToUser(userId, {
         title,
-        body: message.content,
+        body: notificationBody(message),
         url: '/dashboard/inbox',
       }),
       this.notification.notifyUser({
         userId,
         type: NotificationType.SUPPORT_MESSAGE,
         title,
-        body: message.content,
+        body: notificationBody(message),
         payload: { conversationId: message.conversationId },
       }),
     ]);

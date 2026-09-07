@@ -5,10 +5,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clientApiRequest } from "@/lib/api/client-api";
 import { getSupportSocket } from "@/lib/socket/support-socket";
 import type {
+  AttachmentUploadUrlResponse,
   SupportConversation,
   SupportConversationSummary,
   SupportMessage,
+  SupportMessagePage,
 } from "../types/support";
+import { useMessageComposer } from "./use-message-composer";
+import { useSocketConnectionStatus } from "./use-socket-connection-status";
+import { useTypingReceiver, useTypingSender } from "./use-typing-indicator";
 
 const CONVERSATIONS_KEY = ["support", "admin", "conversations"];
 const UNREAD_COUNT_KEY = ["support", "admin", "unread-count"];
@@ -23,12 +28,26 @@ const messagesKey = (conversationId: string) => [
 // it sends itself (see use-support-chat.ts for the same race on the operator
 // side) — append only if not already present, whichever path wins.
 function appendMessageOnce(
-  prev: SupportMessage[] | undefined,
+  prev: SupportMessagePage | undefined,
   message: SupportMessage,
-): SupportMessage[] {
-  if (!prev) return [message];
-  if (prev.some((m) => m.id === message.id)) return prev;
-  return [...prev, message];
+): SupportMessagePage | undefined {
+  if (!prev) return prev;
+  if (prev.messages.some((m) => m.id === message.id)) return prev;
+  return { ...prev, messages: [...prev.messages, message] };
+}
+
+function prependOlderMessages(
+  prev: SupportMessagePage | undefined,
+  page: SupportMessagePage,
+): SupportMessagePage | undefined {
+  if (!prev) return prev;
+  const existingIds = new Set(prev.messages.map((m) => m.id));
+  const older = page.messages.filter((m) => !existingIds.has(m.id));
+  return {
+    ...prev,
+    messages: [...older, ...prev.messages],
+    hasMore: page.hasMore,
+  };
 }
 
 export function useAdminConversations() {
@@ -63,7 +82,7 @@ export function useAdminConversationMessages(conversationId: string | null) {
       ? messagesKey(conversationId)
       : ["support", "admin", "messages", "none"],
     queryFn: () =>
-      clientApiRequest<SupportMessage[]>(
+      clientApiRequest<SupportMessagePage>(
         `/admin/support/conversations/${conversationId}/messages`,
         { fallbackErrorMessage: "Impossible de charger les messages." },
       ),
@@ -71,21 +90,73 @@ export function useAdminConversationMessages(conversationId: string | null) {
   });
 }
 
-export function useSendAdminMessage(conversationId: string) {
+// "Load older messages" for the currently open thread.
+export function useLoadOlderAdminMessages(conversationId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (content: string) =>
+    mutationFn: (beforeMessageId: string) =>
+      clientApiRequest<SupportMessagePage>(
+        `/admin/support/conversations/${conversationId}/messages/before/${beforeMessageId}`,
+        {
+          fallbackErrorMessage:
+            "Impossible de charger les messages précédents.",
+        },
+      ),
+    onSuccess: (page) => {
+      qc.setQueryData<SupportMessagePage>(messagesKey(conversationId), (prev) =>
+        prependOlderMessages(prev, page),
+      );
+    },
+  });
+}
+
+// Optimistic send, same contract as the operator side (use-support-chat.ts):
+// immediate "sending" bubble (with upload progress for an attachment),
+// retryable "failed" state on error, dropped once the confirmed message
+// lands via onSent or the socket echo below.
+export function useAdminComposer(conversationId: string) {
+  const qc = useQueryClient();
+  return useMessageComposer({
+    senderRole: "ADMIN",
+    requestUploadUrl: (meta) =>
+      clientApiRequest<AttachmentUploadUrlResponse>(
+        `/admin/support/conversations/${conversationId}/attachments/upload-url`,
+        { method: "POST", body: meta },
+      ),
+    sendFn: (input) =>
       clientApiRequest<SupportMessage>(
         `/admin/support/conversations/${conversationId}/messages`,
-        { method: "POST", body: { content } },
+        { method: "POST", body: input },
       ),
-    onSuccess: (message) => {
-      qc.setQueryData<SupportMessage[]>(messagesKey(conversationId), (prev) =>
+    onSent: (message) => {
+      qc.setQueryData<SupportMessagePage>(messagesKey(conversationId), (prev) =>
         appendMessageOnce(prev, message),
       );
       qc.invalidateQueries({ queryKey: CONVERSATIONS_KEY });
     },
   });
+}
+
+// Send side for whichever thread the admin currently has open — conversationId
+// changes as they navigate the inbox, useTypingSender handles telling the
+// thread being left that typing stopped. Also exposes the raw typing map
+// (conversationId → who's typing) so the conversation list can show a live
+// dot per row, not just for the open thread.
+export function useAdminTyping(conversationId: string | undefined) {
+  const { notify, stop } = useTypingSender(conversationId);
+  const typingState = useTypingReceiver();
+  const typingLabel =
+    conversationId && typingState.has(conversationId)
+      ? `${typingState.get(conversationId)?.username} est en train d'écrire…`
+      : null;
+  return { notifyTyping: notify, stopTyping: stop, typingLabel, typingState };
+}
+
+// Powers the "connexion perdue" banner and refreshes the inbox as soon as
+// the socket reconnects — a drop could mean a missed message anywhere.
+export function useAdminConnectionStatus(): boolean {
+  const qc = useQueryClient();
+  return useSocketConnectionStatus(qc, [CONVERSATIONS_KEY]);
 }
 
 export function useMarkAdminRead(conversationId: string) {
@@ -141,7 +212,7 @@ export function useAdminSupportSocket(openConversationId: string | null) {
 
     function handleMessage(message: SupportMessage) {
       if (message.conversationId === openConversationId) {
-        qc.setQueryData<SupportMessage[]>(
+        qc.setQueryData<SupportMessagePage>(
           messagesKey(message.conversationId),
           (prev) => appendMessageOnce(prev, message),
         );
