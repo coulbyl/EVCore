@@ -1,20 +1,10 @@
 name: evcore-prod
 
-# ── Usage ────────────────────────────────────────────────────────────────────
 # Image built and pushed to GHCR by GitHub Actions (workflows/deploy.yml).
 # The VPS only pulls and runs — no build step on the server.
-#
-# 1. Copy apps/backend/.env.example → .env and fill values
-# 2. Start all services (migrations run automatically on backend startup):
-#      docker compose -f docker-compose.prod.yml up -d
-# 3. After a new push to main: GitHub Actions handles pull + restart automatically
-# ─────────────────────────────────────────────────────────────────────────────
-#
-# GHCR_OWNER: GitHub username or org (e.g. "myuser")
-# Set it in the .env file on the server: GHCR_OWNER=myuser
+# GHCR_OWNER and every secret below go in the server's .env file.
 
 services:
-  # ── PostgreSQL ──────────────────────────────────────────────────────────────
   postgres:
     image: postgres:18-alpine
     container_name: evcore-postgres
@@ -26,7 +16,8 @@ services:
       PGDATA: /var/lib/postgresql/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/pgdata
-    # Not exposed to host — backend accesses via internal Docker network
+    networks:
+      - evcore_internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-evcore} -d ${POSTGRES_DB:-evcore}"]
       interval: 10s
@@ -34,15 +25,15 @@ services:
       retries: 5
       start_period: 10s
 
-  # ── Redis ───────────────────────────────────────────────────────────────────
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     container_name: evcore-redis
     restart: unless-stopped
     command: redis-server --save 60 1 --loglevel warning
     volumes:
       - redis_data:/data
-    # Not exposed to host — backend accesses via internal Docker network
+    networks:
+      - evcore_internal
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -50,7 +41,6 @@ services:
       retries: 5
       start_period: 5s
 
-  # ── PgBouncer ───────────────────────────────────────────────────────────────
   pgbouncer:
     image: edoburu/pgbouncer:v1.25.1-p0
     container_name: evcore-pgbouncer
@@ -64,12 +54,12 @@ services:
       MAX_PREPARED_STATEMENTS: "200"
       LOG_CONNECTIONS: "0"
       LOG_DISCONNECTIONS: "0"
-    # Not exposed to host — backend and ml-worker access via internal network
+    networks:
+      - evcore_internal
     depends_on:
       postgres:
         condition: service_healthy
 
-  # ── ML Worker ───────────────────────────────────────────────────────────────
   ml-worker:
     container_name: evcore-ml-worker
     image: ghcr.io/${GHCR_OWNER}/evcore-ml-worker:latest
@@ -82,20 +72,16 @@ services:
       LOG_LEVEL: info
     volumes:
       - ml_models:/app/models
+    networks:
+      - evcore_internal
     depends_on:
       pgbouncer:
         condition: service_started
       redis:
         condition: service_healthy
 
-  # ── VANTAGE Worker ──────────────────────────────────────────────────────────
-  # EVCore's 20th channel (apps/vantage-worker) — reads the other channels'
-  # decisions and proposes its own LLM-derived pick. Never on the backend/web
-  # request path; only needs Postgres + Redis. LLM_PROVIDER, its matching
-  # *_API_KEY, and the other VANTAGE_* vars below go in the same server .env
-  # as the rest of this file's secrets — see apps/vantage-worker/README.md
-  # and apps/vantage-worker/docs/architecture.md for what each one does and
-  # costs.
+  # apps/vantage-worker — 20th channel, LLM-derived pick. Postgres+Redis only,
+  # never on the backend/web request path. See apps/vantage-worker/README.md.
   vantage-worker:
     container_name: evcore-vantage-worker
     image: ghcr.io/${GHCR_OWNER}/evcore-vantage-worker:latest
@@ -105,14 +91,6 @@ services:
       PGBOUNCER_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@pgbouncer:5432/${POSTGRES_DB:-evcore}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      # Which provider serves the verdict call — all four are OpenAI-
-      # compatible, so this is the only line to change to switch (plus that
-      # provider's API key below). Compose can't make a key conditionally
-      # required on another var's value, so only the *selected* provider's
-      # key is actually enforced — by the app itself at startup (see
-      # apps/vantage-worker/src/config.ts) — not by this file. Cerebras is
-      # the recommended fallback when Groq's shared 8000 TPM on-demand tier
-      # is rate-limiting every sweep (see docs/architecture.md — Cost).
       LLM_PROVIDER: ${LLM_PROVIDER:-groq}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
@@ -122,50 +100,28 @@ services:
       TOGETHER_MODEL: ${TOGETHER_MODEL:-openai/gpt-oss-120b}
       FIREWORKS_API_KEY: ${FIREWORKS_API_KEY:-}
       FIREWORKS_MODEL: ${FIREWORKS_MODEL:-accounts/fireworks/models/gpt-oss-120b}
-      # Comma-separated automatic fallback chain (e.g. "cerebras,together"),
-      # tried in order on a transient failure (429/5xx/timeout) from the
-      # current provider — see apps/vantage-worker/.env.example. Empty by
-      # default: no fallback happens unless explicitly opted into, and each
-      # name listed here needs its own *_API_KEY above filled in.
       LLM_PROVIDER_FALLBACKS: ${LLM_PROVIDER_FALLBACKS:-}
       LOG_LEVEL: info
       SWEEP_INTERVAL_MS: ${VANTAGE_SWEEP_INTERVAL_MS:-300000}
-      # Empty = every active competition (the agreed rollout — see
-      # docs/architecture.md, Cost: ~$1/month even at full volume).
       VANTAGE_COMPETITION_CODES: ${VANTAGE_COMPETITION_CODES:-}
-      # OFF by default — turning this on changes the cost picture
-      # meaningfully (per-request search fee, not per-token). Read
-      # docs/architecture.md's Situational research section before
-      # setting this to true on the server.
       VANTAGE_ENABLE_RESEARCH: ${VANTAGE_ENABLE_RESEARCH:-false}
-      # Which backend serves the search call above — "groq" (default,
-      # groq/compound-mini) or "tavily" (a direct Tavily /search call,
-      # independent of LLM_PROVIDER — see apps/vantage-worker/src/research/).
-      # Reach for tavily when Groq's Developer tier is closed for new
-      # signups or its shared 8000 TPM tier makes compound-mini unreliable;
-      # Tavily's free tier (1000 credits/month) covers VANTAGE's default
-      # volume for $0 — see docs/architecture.md, Situational research.
       VANTAGE_RESEARCH_PROVIDER: ${VANTAGE_RESEARCH_PROVIDER:-groq}
       GROQ_RESEARCH_MODEL: ${GROQ_RESEARCH_MODEL:-groq/compound-mini}
-      # Required only when VANTAGE_RESEARCH_PROVIDER=tavily — get one at
-      # https://app.tavily.com (free tier, no credit card).
       TAVILY_API_KEY: ${TAVILY_API_KEY:-}
-      # Empty = the built-in "grands championnats" default (PL, LL, BL1, SA,
-      # L1, UCL, UEL, UECL) — never "every league", unlike the var above.
       VANTAGE_RESEARCH_COMPETITION_CODES: ${VANTAGE_RESEARCH_COMPETITION_CODES:-}
+    networks:
+      - evcore_internal
     depends_on:
       pgbouncer:
         condition: service_started
       redis:
         condition: service_healthy
 
-  # ── RustFS (S3-compatible attachment storage) ────────────────────────────────
-  # Not reachable by the browser at this internal address — presigned URLs
-  # handed to clients are signed with RUSTFS_PUBLIC_ENDPOINT (server .env),
-  # which must point at a public HTTPS host that reverse-proxies here. That
-  # reverse proxy must forward the request unmodified (no path rewrite,
-  # query string intact) — any change to a request the signature covers
-  # breaks it.
+  # S3-compatible attachment storage (support chat). Reachable internally at
+  # rustfs:9000 (backend's own admin calls); presigned URLs handed to
+  # browsers use RUSTFS_PUBLIC_ENDPOINT (server .env) — a public HTTPS host
+  # that coulby_studio_net's reverse proxy forwards here unmodified (no path
+  # rewrite, query string intact, or the signature breaks).
   rustfs:
     container_name: evcore-rustfs
     image: rustfs/rustfs:latest
@@ -176,12 +132,13 @@ services:
       RUSTFS_ADDRESS: "0.0.0.0:9000"
       RUSTFS_CONSOLE_ADDRESS: "0.0.0.0:9001"
       RUSTFS_CONSOLE_ENABLE: "false"
-    ports:
-      # Exposed like backend/web (below) — a browser needs to reach this
-      # directly for presigned uploads/downloads, not just the backend.
-      - "${RUSTFS_S3_PORT:-9000}:9000"
+    expose:
+      - "9000"
     volumes:
       - rustfs_data:/data
+    networks:
+      - evcore_internal
+      - coulby_studio_net
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:9000/health || exit 1"]
       interval: 10s
@@ -189,30 +146,25 @@ services:
       retries: 5
       start_period: 10s
 
-  # ── Backend ─────────────────────────────────────────────────────────────────
-  # entrypoint.sh runs prisma migrate deploy then starts the NestJS app
   backend:
     container_name: evcore-backend
     image: ghcr.io/${GHCR_OWNER}/evcore-backend:latest
     restart: unless-stopped
-    ports:
-      - "3001:3000"
     env_file:
       - .env
     environment:
       NODE_ENV: production
-      # Direct connection — Prisma migrations (DDL incompatible with PgBouncer transaction mode)
       DATABASE_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-evcore}
-      # PgBouncer — app runtime connection pooling
       PGBOUNCER_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@pgbouncer:5432/${POSTGRES_DB:-evcore}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      # Internal Docker-network address — used for the backend's own admin
-      # calls (bucket provisioning, HeadObject), never for the presigned
-      # URLs handed to browsers (see RUSTFS_PUBLIC_ENDPOINT in the server
-      # .env, loaded above via env_file).
       RUSTFS_ENDPOINT: http://rustfs:9000
       RUSTFS_BUCKET: ${RUSTFS_BUCKET:-evcore-support}
+    expose:
+      - "3000"
+    networks:
+      - evcore_internal
+      - coulby_studio_net
     depends_on:
       pgbouncer:
         condition: service_started
@@ -227,17 +179,18 @@ services:
       retries: 3
       start_period: 60s
 
-  # ── Web (Next.js dashboard) ─────────────────────────────────────────────────
   web:
     container_name: evcore-web
     image: ghcr.io/${GHCR_OWNER}/evcore-web:latest
     restart: unless-stopped
-    ports:
-      - "3000:3000"
     environment:
       NODE_ENV: production
-      # Backend API URL reachable from the browser (public-facing)
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
+    expose:
+      - "3000"
+    networks:
+      - evcore_internal
+      - coulby_studio_net
     depends_on:
       backend:
         condition: service_healthy
@@ -253,3 +206,11 @@ volumes:
   redis_data:
   ml_models:
   rustfs_data:
+
+networks:
+  evcore_internal:
+    name: evcore_internal
+    driver: bridge
+
+  coulby_studio_net:
+    external: true
