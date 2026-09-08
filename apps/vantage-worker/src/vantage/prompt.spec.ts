@@ -141,7 +141,7 @@ describe("buildUserPrompt", () => {
   it("allows a play beyond inter-channel tension, but still requires a real basis", () => {
     expect(SYSTEM_PROMPT).toContain("lecture proche du seuil");
     expect(SYSTEM_PROMPT).toContain(
-      'Un simple consensus entre canaux SELECTED, sans aucune de ces quatre bases, reste un "no_play"',
+      'Un simple consensus entre canaux SELECTED, sans aucune de ces trois bases, reste un "no_play"',
     );
   });
 
@@ -203,26 +203,6 @@ describe("buildUserPrompt", () => {
     expect(prompt).toContain("non disponible");
   });
 
-  it("labels the independent second opinion as external, distinct from the channels", () => {
-    const prompt = buildUserPrompt(
-      {
-        ...baseContext,
-        shadowPrediction: {
-          homePercent: 35,
-          drawPercent: 28,
-          awayPercent: 37,
-          poissonHome: 1.6,
-          poissonAway: 1.2,
-          winnerName: "El Paso Locomotive",
-          conflict: true,
-        },
-      },
-      null,
-    );
-    expect(prompt).toContain("Second avis indépendant");
-    expect(prompt).toContain("en désaccord avec notre propre lecture");
-  });
-
   it("never emits ROI/EV language anywhere, even with every new context block populated", () => {
     const prompt = buildUserPrompt(
       {
@@ -239,15 +219,6 @@ describe("buildUserPrompt", () => {
         awayTeamStats: null,
         homeCoach: { matchesInCharge: 2 },
         h2h: { scoreline: "1:1", confidence: 0.4, sampleSize: 4 },
-        shadowPrediction: {
-          homePercent: 35,
-          drawPercent: 28,
-          awayPercent: 37,
-          poissonHome: 1.6,
-          poissonAway: 1.2,
-          winnerName: null,
-          conflict: false,
-        },
         uncoveredMarketOdds: [
           {
             market: "ONE_X_TWO",

@@ -12,6 +12,7 @@ import {
 } from '../schemas/fixture.schema';
 import { FixtureService } from '../../fixture/fixture.service';
 import { NotificationService } from '../../notification/notification.service';
+import { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 export type StaleScheduledSyncJobData = {
@@ -29,7 +30,10 @@ export class StaleScheduledSyncWorker extends WorkerHost {
   @Inject(ConfigService)
   private config!: ConfigService;
 
-  constructor(private readonly fixtureService: FixtureService) {
+  constructor(
+    private readonly fixtureService: FixtureService,
+    private readonly rollingStatsService: RollingStatsService,
+  ) {
     super();
   }
 
@@ -58,6 +62,16 @@ export class StaleScheduledSyncWorker extends WorkerHost {
     );
 
     let updated = 0;
+    // A fixture caught here has fallen out of the routine fixtures-sync
+    // window — that worker is the only other place FINISHED-transition
+    // fixtures normally trigger a rolling-stats refresh, so this fallback
+    // path must do it too or team_stats silently freezes for whatever
+    // competition's fixtures keep landing here (see 2026-09-07 ISL1
+    // incident — RollingStatsService.refreshSeason was never called for any
+    // fixture finalized through this worker or pending-bets-settlement,
+    // and both raw `updateMany` calls made that invisible: no error, just a
+    // dead rolling-stats pipeline for that competition).
+    const seasonsToRefresh = new Set<string>();
 
     for (const fixture of fixtures) {
       const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?id=${fixture.externalId}`;
@@ -93,20 +107,33 @@ export class StaleScheduledSyncWorker extends WorkerHost {
       }
 
       const nextState = mapFixtureState(apiFixture);
-      await this.fixtureService.syncFixtureState({
-        externalId: fixture.externalId,
-        scheduledAt: nextState.scheduledAt,
-        status: nextState.status,
-        homeScore: nextState.homeScore,
-        awayScore: nextState.awayScore,
-        homeHtScore: nextState.homeHtScore,
-        awayHtScore: nextState.awayHtScore,
-      });
+      const { affectsRollingStats, seasonId } =
+        await this.fixtureService.syncFixtureState({
+          externalId: fixture.externalId,
+          scheduledAt: nextState.scheduledAt,
+          status: nextState.status,
+          homeScore: nextState.homeScore,
+          awayScore: nextState.awayScore,
+          homeHtScore: nextState.homeHtScore,
+          awayHtScore: nextState.awayHtScore,
+        });
+      if (affectsRollingStats && seasonId) {
+        seasonsToRefresh.add(seasonId);
+      }
       updated++;
     }
 
+    for (const seasonId of seasonsToRefresh) {
+      await this.rollingStatsService.refreshSeason(seasonId);
+    }
+
     logger.info(
-      { fixtureCount: fixtures.length, updated, lookbackDays },
+      {
+        fixtureCount: fixtures.length,
+        updated,
+        lookbackDays,
+        seasonsRefreshed: seasonsToRefresh.size,
+      },
       'Stale scheduled fixtures sync complete',
     );
   }

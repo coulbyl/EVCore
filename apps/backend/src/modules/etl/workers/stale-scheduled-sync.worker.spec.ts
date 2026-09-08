@@ -3,6 +3,7 @@ import type { Job } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
 import type { FixtureService } from '../../fixture/fixture.service';
 import type { NotificationService } from '../../notification/notification.service';
+import type { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 import { StaleScheduledSyncWorker } from './stale-scheduled-sync.worker';
 
 function buildFixtureResponse(status: 'NS' | 'FT') {
@@ -67,7 +68,9 @@ function buildFixtureResponse(status: 'NS' | 'FT') {
 describe('StaleScheduledSyncWorker', () => {
   const fixtureService = {
     findPastScheduledFixtures: vi.fn(),
-    syncFixtureState: vi.fn().mockResolvedValue(undefined),
+    syncFixtureState: vi
+      .fn()
+      .mockResolvedValue({ affectsRollingStats: true, seasonId: 'season-1' }),
   } satisfies Partial<FixtureService>;
   const notification = {
     sendEtlFailureAlert: vi.fn(),
@@ -76,9 +79,13 @@ describe('StaleScheduledSyncWorker', () => {
     getOrThrow: vi.fn().mockReturnValue('test-api-key'),
     get: vi.fn().mockReturnValue('14'),
   } satisfies Partial<ConfigService>;
+  const rollingStatsService = {
+    refreshSeason: vi.fn().mockResolvedValue(undefined),
+  } satisfies Partial<RollingStatsService>;
 
   const worker = new StaleScheduledSyncWorker(
     fixtureService as unknown as FixtureService,
+    rollingStatsService as unknown as RollingStatsService,
   );
 
   beforeEach(() => {
@@ -114,5 +121,6 @@ describe('StaleScheduledSyncWorker', () => {
       homeHtScore: 1,
       awayHtScore: 0,
     });
+    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-1');
   });
 });

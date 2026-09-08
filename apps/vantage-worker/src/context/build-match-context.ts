@@ -7,7 +7,6 @@ import type { ChannelCalibration, ChannelReading, MatchContext } from "./types";
 import { extractNearMiss } from "./near-miss";
 import { loadTeamSignal, loadCoachSignal } from "./team-signals";
 import { loadH2HSignal } from "./h2h-signal";
-import { extractShadowPrediction } from "./shadow-signals";
 import { loadFullOddsSnapshot, buildUncoveredMarketOdds } from "./market-odds";
 
 // Minimum settled sample before a channel's calibration is reported to
@@ -22,11 +21,11 @@ const MIN_CALIBRATION_SAMPLE = 30;
  * since 2026-08-30 (docs/context-expansion-proposal.md) — additive raw
  * context no channel's own probability already carries: near-miss reads
  * from channels that abstained, both teams' raw team_stats/coach signals,
- * the H2H scoreline signal, an independent second opinion (shadow_
- * predictions), and the raw market price for ONE_X_TWO/BTTS/OVER_UNDER
- * (main 2.5 line) when no channel selected them (extended beyond ONE_X_TWO
- * 2026-09-04 — see market-odds.ts). Never includes VANTAGE's own past
- * decisions — it reads the deterministic layer, it does not read itself.
+ * the H2H scoreline signal, and the raw market price for ONE_X_TWO/BTTS/
+ * OVER_UNDER (main 2.5 line) when no channel selected them (extended beyond
+ * ONE_X_TWO 2026-09-04 — see market-odds.ts). Never includes VANTAGE's own
+ * past decisions — it reads the deterministic layer, it does not read
+ * itself.
  *
  * `shadow_ml_by_channel` (a per-channel ML correction) was exposed here
  * 2026-08-30–2026-09-03, restricted to DOMINANT/VALUE after a 2026-08-30
@@ -35,7 +34,19 @@ const MIN_CALIBRATION_SAMPLE = 30;
  * signal on DOMINANT produced worse verdicts, not better (ratio 0.43 vs
  * 1.13 real/announced when the correction was followed vs ignored, n=27) —
  * see docs/vantage-centric-redesign-2026-09-01.md §5.8/project memory
- * project_vantage_context_expansion. Not re-added without a fresh audit. */
+ * project_vantage_context_expansion. Not re-added without a fresh audit.
+ *
+ * `shadow_predictions` (API-Football's own `/predictions`, an "independent
+ * second opinion") was exposed here 2026-08-30–2026-09-07. Removed: its
+ * draw% barely moves match to match (35-50%, stddev 3.4 over 4834 runs vs
+ * 17.5 for home/away on the same runs) — essentially a flat prior, not a
+ * real per-match read. VANTAGE treated every divergence from our own DRAW
+ * channel as an exploitable signal and cited it on ~70% of ONE_X_TWO/DRAW
+ * picks, which settled at ratio 0.68 (n=628) vs 1.0 for ONE_X_TWO picks that
+ * didn't cite it (n=175) — see project memory
+ * project_vantage_gate_wrong_signal. Confirmed by the pre-2026-08-30 record:
+ * VANTAGE's first calibration check (2026-08-29, before this field existed)
+ * was near-perfect (53.3% announced vs 53.2% realized, n=158). */
 export async function buildMatchContext(
   fixtureId: string,
   logger: Logger,
@@ -173,7 +184,6 @@ export async function buildMatchContext(
     homeCoach,
     awayCoach,
     h2h,
-    shadowPrediction: extractShadowPrediction(latestRun.features),
     uncoveredMarketOdds: buildUncoveredMarketOdds(
       fullOddsSnapshot,
       coveredMarkets,

@@ -352,36 +352,37 @@ model CoachTenure {
 }
 
 model Fixture {
-  id                 String              @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  externalId         Int                 @unique // football-data.org ID
-  seasonId           String              @db.Uuid
-  season             Season              @relation(fields: [seasonId], references: [id])
-  homeTeamId         String              @db.Uuid
-  homeTeam           Team                @relation("HomeTeam", fields: [homeTeamId], references: [id])
-  awayTeamId         String              @db.Uuid
-  awayTeam           Team                @relation("AwayTeam", fields: [awayTeamId], references: [id])
-  matchday           Int
-  round              String? // raw API round string (e.g. "Quarter-finals", "League Stage - 1")
-  leg                Int? // 1 = aller, 2 = retour — null for group/league stage
-  aggregateHomeGoals Int? // goals scored by home team's side in leg 1 (set on leg 2 only)
-  aggregateAwayGoals Int? // goals scored by away team's side in leg 1 (set on leg 2 only)
-  scheduledAt        DateTime
-  status             FixtureStatus       @default(SCHEDULED)
-  homeScore          Int?
-  awayScore          Int?
-  homeHtScore        Int?
-  awayHtScore        Int?
-  homeXg             Decimal?            @db.Decimal(5, 3) // from API-Football expected_goals
-  awayXg             Decimal?            @db.Decimal(5, 3) // from API-Football expected_goals
-  xgUnavailable      Boolean             @default(false) // true = API returned no stats, skip on retry
-  modelRuns          ModelRun[]
-  bets               Bet[]
-  betSlipItems       BetSlipItem[]
-  teamStats          TeamStats[]
-  oddsSnapshots      OddsSnapshot[]
-  couponLegs         CouponProposalLeg[]
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  id                     String                   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  externalId             Int                      @unique // football-data.org ID
+  seasonId               String                   @db.Uuid
+  season                 Season                   @relation(fields: [seasonId], references: [id])
+  homeTeamId             String                   @db.Uuid
+  homeTeam               Team                     @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeamId             String                   @db.Uuid
+  awayTeam               Team                     @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  matchday               Int
+  round                  String? // raw API round string (e.g. "Quarter-finals", "League Stage - 1")
+  leg                    Int? // 1 = aller, 2 = retour — null for group/league stage
+  aggregateHomeGoals     Int? // goals scored by home team's side in leg 1 (set on leg 2 only)
+  aggregateAwayGoals     Int? // goals scored by away team's side in leg 1 (set on leg 2 only)
+  scheduledAt            DateTime
+  status                 FixtureStatus            @default(SCHEDULED)
+  homeScore              Int?
+  awayScore              Int?
+  homeHtScore            Int?
+  awayHtScore            Int?
+  homeXg                 Decimal?                 @db.Decimal(5, 3) // from API-Football expected_goals
+  awayXg                 Decimal?                 @db.Decimal(5, 3) // from API-Football expected_goals
+  xgUnavailable          Boolean                  @default(false) // true = API returned no stats, skip on retry
+  modelRuns              ModelRun[]
+  bets                   Bet[]
+  betSlipItems           BetSlipItem[]
+  teamStats              TeamStats[]
+  oddsSnapshots          OddsSnapshot[]
+  couponLegs             CouponProposalLeg[]
+  vantageDecisionHistory VantageDecisionHistory[]
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
 
   @@index([seasonId, matchday])
   @@index([seasonId, round])
@@ -435,16 +436,51 @@ model ModelRun {
   features    Json // { recentForm, xg, performanceDomExt, volatiliteLigue }
   openclawRaw Json? // raw LLM output — null in MVP
 
-  validatedByBackend Boolean           @default(false)
-  bets               Bet[]
-  channelDecisions   ChannelDecision[]
-  createdAt          DateTime          @default(now())
+  validatedByBackend     Boolean                  @default(false)
+  bets                   Bet[]
+  channelDecisions       ChannelDecision[]
+  vantageDecisionHistory VantageDecisionHistory[]
+  createdAt              DateTime                 @default(now())
 
   @@index([fixtureId])
   @@index([fixtureId, analyzedAt])
   @@index([analyzedAt])
   @@index([phase, analyzedAt])
   @@map("model_run")
+  @@schema("public")
+}
+
+// Append-only log of every VANTAGE analysis attempt on a fixture, never
+// overwritten — unlike ChannelDecision/ChannelSelection (VANTAGE's "live"
+// read, upserted on (modelRunId, channel) by persist-decision.ts), this
+// table gets one new row per call to persistVantageDecision, whether that
+// call ends up creating or overwriting the live row. Exists specifically so
+// a re-analysis close to kickoff (a new ModelRun, the common case — already
+// preserved for free since each ModelRun is its own row) or a same-ModelRun
+// retry (the one real loss case: the upsert's `update` branch silently
+// replaces the previous attempt with no trace) can both be replayed later to
+// see whether VANTAGE's read changed as the match approached, and whether
+// that change was for the better (2026-09-07, user request after noticing
+// picks/reasoning "renew" as kickoff nears).
+model VantageDecisionHistory {
+  id            String                @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  fixtureId     String                @db.Uuid
+  fixture       Fixture               @relation(fields: [fixtureId], references: [id])
+  modelRunId    String                @db.Uuid
+  modelRun      ModelRun              @relation(fields: [modelRunId], references: [id])
+  status        ChannelDecisionStatus
+  reasonCode    String?
+  reasonDetails Json?
+  configVersion String?
+  market        Market?
+  pick          String?
+  probability   Decimal?              @db.Decimal(5, 4)
+  odds          Decimal?              @db.Decimal(6, 3)
+  createdAt     DateTime              @default(now())
+
+  @@index([fixtureId, createdAt])
+  @@index([modelRunId])
+  @@map("vantage_decision_history")
   @@schema("public")
 }
 

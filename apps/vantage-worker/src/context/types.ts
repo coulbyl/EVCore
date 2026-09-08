@@ -92,24 +92,6 @@ export type H2HSignal = {
   sampleSize: number;
 } | null;
 
-/** API-Football's own `/predictions` endpoint, ingested as a genuinely
- * independent second forecaster (`ModelRun.features.shadow_predictions`,
- * `FEATURE_FLAGS.SCORING.SHADOW_PREDICTIONS`) — not derived from this
- * system's λ/team_stats at all, unlike every channel VANTAGE otherwise
- * compares against each other. `conflict` is already precomputed upstream:
- * does this external pick disagree directionally with our λ. `null` when
- * absent on this ModelRun (~1% of runs, or the flag was off at analysis
- * time). */
-export type ShadowPrediction = {
-  homePercent: number;
-  drawPercent: number;
-  awayPercent: number;
-  poissonHome: number;
-  poissonAway: number;
-  winnerName: string | null;
-  conflict: boolean;
-} | null;
-
 /** The book's raw price for a market no channel selected on this fixture —
  * "what the market prices," never framed as edge/EV (CLAUDE.md: claimed
  * edge is anti-predictive, MAX_LEG_EDGE is a ceiling never a selection
@@ -143,7 +125,6 @@ export type MatchContext = {
   homeCoach?: CoachSignal;
   awayCoach?: CoachSignal;
   h2h?: H2HSignal;
-  shadowPrediction?: ShadowPrediction;
   uncoveredMarketOdds?: readonly MarketOddsSnapshot[];
   /** Every market's resolved price for this fixture, generic per-pick
    * resolution (`resolveSelectionOdds`) — not display context (that's
