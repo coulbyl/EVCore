@@ -37,6 +37,11 @@ export type AnalysisSheetFixture = {
   awayScore: number | null;
   homeTeam: string;
   awayTeam: string;
+  // Identifiants bruts — nécessaires au contexte v2 (forme, H2H, classement).
+  // Absents du JSON v1, qui n'expose que les libellés.
+  homeTeamId: string;
+  awayTeamId: string;
+  seasonId: string;
   competitionCode: string;
   competitionName: string;
   competitionCountry: string;
@@ -78,6 +83,9 @@ type AnalysisSheetRow = {
   away_score: number | null;
   home_team: string;
   away_team: string;
+  home_team_id: string;
+  away_team_id: string;
+  season_id: string;
   competition_code: string;
   competition_name: string;
   competition_country: string;
@@ -148,6 +156,9 @@ export class AnalysisSheetRepository {
         f."awayScore"                     AS away_score,
         ht.name                           AS home_team,
         at.name                           AS away_team,
+        ht.id                             AS home_team_id,
+        at.id                             AS away_team_id,
+        s.id                              AS season_id,
         c.code                            AS competition_code,
         c.name                            AS competition_name,
         c.country                         AS competition_country,
@@ -187,7 +198,7 @@ export class AnalysisSheetRepository {
       LEFT JOIN channel_decision cd  ON cd."modelRunId" = mr.id
       LEFT JOIN channel_selection cs ON cs."channelDecisionId" = cd.id
       GROUP BY f.id, f."scheduledAt", f.status, f."homeScore", f."awayScore",
-               ht.name, at.name, c.code, c.name, c.country,
+               ht.name, at.name, ht.id, at.id, s.id, c.code, c.name, c.country,
                mr.id, mr."analyzedAt", mr.phase, mr."deterministicScore", mr."finalScore", mr.features
       ORDER BY f."scheduledAt" ASC, mr."analyzedAt" ASC
     `;
@@ -228,6 +239,9 @@ function groupRowsByFixture(rows: AnalysisSheetRow[]): AnalysisSheetFixture[] {
       awayScore: latest.away_score,
       homeTeam: latest.home_team,
       awayTeam: latest.away_team,
+      homeTeamId: latest.home_team_id,
+      awayTeamId: latest.away_team_id,
+      seasonId: latest.season_id,
       competitionCode: latest.competition_code,
       competitionName: latest.competition_name,
       competitionCountry: latest.competition_country,

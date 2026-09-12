@@ -11,6 +11,18 @@ import {
   type AnalysisSheetJson,
   type SheetMeta,
 } from './analysis-sheet.render';
+import {
+  buildJsonSheetV2,
+  type AnalysisSheetJsonV2,
+} from './analysis-sheet-v2.render';
+import {
+  applyExportFilters,
+  NO_EXPORT_FILTERS,
+  type ExportFilters,
+} from './analysis-sheet-v2.filters';
+import { AnalysisSheetV2Service } from './analysis-sheet-v2.service';
+import { LEG_POOL_DEFAULTS } from './leg-pool/leg-pool.builder';
+import type { LegPoolFilters } from './analysis-sheet-v2.types';
 
 export type AnalysisSheetInput = {
   from: string;
@@ -19,9 +31,22 @@ export type AnalysisSheetInput = {
   channel?: string;
 };
 
+/** Options propres à la v2 — toutes optionnelles, toutes avec un défaut sûr. */
+export type AnalysisSheetV2Input = AnalysisSheetInput & {
+  filters?: ExportFilters;
+  compact?: boolean;
+  includeContext?: boolean;
+  includeCalibration?: boolean;
+  includeLegPool?: boolean;
+  legPool?: Partial<LegPoolFilters>;
+};
+
 @Injectable()
 export class AnalysisSheetService {
-  constructor(private readonly repository: AnalysisSheetRepository) {}
+  constructor(
+    private readonly repository: AnalysisSheetRepository,
+    private readonly v2: AnalysisSheetV2Service,
+  ) {}
 
   private dateRange(input: { from: string; to: string }): {
     from: Date;
@@ -64,6 +89,59 @@ export class AnalysisSheetService {
   async exportJson(input: AnalysisSheetInput): Promise<AnalysisSheetJson> {
     const { fixtures, meta } = await this.fetchFixtures(input);
     return buildJsonSheet(fixtures, meta);
+  }
+
+  /**
+   * Fiche v2 : la v1 enrichie, jamais amputée.
+   *
+   * `context` est coupé au-delà de `maxContextRangeDays` plutôt que de tirer
+   * l'historique de milliers d'équipes : la fiche reste servie, avec le motif
+   * dans `contextReason`. Le cas d'usage visé est une plage de 1 à 3 jours.
+   */
+  async exportJsonV2(
+    input: AnalysisSheetV2Input,
+  ): Promise<AnalysisSheetJsonV2> {
+    const range = this.dateRange(input);
+    const { fixtures, meta } = await this.fetchFixtures(input);
+
+    const filters = input.filters ?? NO_EXPORT_FILTERS;
+    const filtered = applyExportFilters(fixtures, filters);
+
+    const rangeDays = (range.to.getTime() - range.from.getTime()) / 86_400_000;
+    const contextRequested = input.includeContext ?? true;
+    const includeContext =
+      contextRequested &&
+      rangeDays <= ANALYSIS_SHEET_LIMITS.maxContextRangeDays;
+
+    const legPoolFilters: LegPoolFilters = {
+      ...LEG_POOL_DEFAULTS,
+      ...input.legPool,
+    };
+
+    const built = await this.v2.build(filtered, {
+      includeContext,
+      includeCalibration: input.includeCalibration ?? true,
+      includeLegPool: input.includeLegPool ?? true,
+      legPoolFilters,
+    });
+
+    const sheet = buildJsonSheet(filtered, meta);
+
+    return buildJsonSheetV2(sheet, {
+      extrasByFixture: built.extrasByFixture,
+      meta: built.meta,
+      calibration: built.calibration,
+      legPool: built.legPool,
+      exportOptions: {
+        statuses: filters.statuses,
+        markets: filters.markets,
+        excludeChannels: filters.excludeChannels,
+        compact: input.compact ?? false,
+        includeContext,
+        includeCalibration: input.includeCalibration ?? true,
+        includeLegPool: input.includeLegPool ?? true,
+      },
+    });
   }
 
   async exportTxt(input: AnalysisSheetInput): Promise<string> {

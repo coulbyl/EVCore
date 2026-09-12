@@ -30,6 +30,15 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "test/**/*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "test/**/*.ts",
+    // Seulement ce script : les autres fichiers de scripts/ utilisent
+    // `import.meta`, incompatible avec la sortie CommonJS de ce tsconfig, et
+    // n'ont jamais été typecheckés. Les corriger sort du périmètre ; ne pas
+    // élargir ce glob sans les traiter d'abord.
+    "scripts/generate-v2-example.ts"
+  ],
   "exclude": ["node_modules", "dist", "vitest.config.ts"]
 }
