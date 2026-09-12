@@ -1,0 +1,4947 @@
+{
+  "generatedAt": "2026-09-12T01:16:37.079Z",
+  "range": {
+    "from": "2026-09-11",
+    "to": "2026-09-13"
+  },
+  "filters": {
+    "competitionCode": null,
+    "channel": null
+  },
+  "summary": {
+    "fixtureCount": 3,
+    "avoidedFixtureCount": 13,
+    "calibrationAlertCount": 83,
+    "byCompetition": {
+      "Brasileirão Série A (Brazil)": 9,
+      "Liga Profesional Argentina (Argentina)": 10,
+      "Primera Nacional (Argentina)": 17,
+      "Liga MX (Mexico)": 6,
+      "USL Championship (USA)": 12,
+      "K League 2 (South-Korea)": 8,
+      "K League 1 (South-Korea)": 6,
+      "J1 League (Japan)": 8,
+      "Super League (China)": 2,
+      "League One (China)": 8,
+      "Premier League (Russia)": 7,
+      "Virsliga (Latvia)": 2,
+      "2. Bundesliga (Germany)": 7,
+      "League One (England)": 11,
+      "Championship (England)": 11,
+      "Meistriliiga (Estonia)": 5,
+      "League Two (England)": 12,
+      "Ykkösliiga (Finland)": 3,
+      "La Liga (Spain)": 8,
+      "Segunda Division (Spain)": 9,
+      "Ligue 2 (France)": 3,
+      "3. Liga (Germany)": 9,
+      "Ekstraklasa (Poland)": 6,
+      "Czech Liga (Czech Republic)": 8,
+      "Serie A (Italy)": 6,
+      "Serie B (Italy)": 7,
+      "Allsvenskan (Sweden)": 5,
+      "I Liga (Poland)": 6,
+      "Bundesliga (Germany)": 8,
+      "Premier League (England)": 9,
+      "Jupiler Pro League (Belgium)": 8,
+      "Eliteserien (Norway)": 8,
+      "1. Lig (Turkey)": 8,
+      "Süper Lig (Turkey)": 7,
+      "Veikkausliiga (Finland)": 5,
+      "Primeira Liga (Portugal)": 6,
+      "Eredivisie (Netherlands)": 8,
+      "Bundesliga (Austria)": 5,
+      "Ligue 1 (France)": 8,
+      "1. SNL (Slovenia)": 4,
+      "Primera División (Chile)": 7,
+      "Pro League (Saudi-Arabia)": 6,
+      "Super League (Switzerland)": 6,
+      "Super Liga (Serbia)": 6,
+      "Super League 1 (Greece)": 7,
+      "Challenge League (Switzerland)": 1,
+      "1. Division (Norway)": 8,
+      "Segunda División (Chile)": 5,
+      "Série B (Brazil)": 8,
+      "Major League Soccer (USA)": 14,
+      "Superliga (Denmark)": 4,
+      "Superettan (Sweden)": 2,
+      "Úrvalsdeild (Iceland)": 4
+    },
+    "byChannel": {
+      "CLEAN_SHEET": 320,
+      "GOALS": 340,
+      "TEAM_TOTAL": 373,
+      "RESULT_BTTS": 373,
+      "CORRECT_SCORE": 363,
+      "RESULT_TOTAL_GOALS": 223,
+      "DOUBLE_CHANCE": 233,
+      "BTTS": 164,
+      "DRAW_NO_BET": 304,
+      "WIN_EITHER_HALF": 320,
+      "WIN_TO_NIL": 334,
+      "DRAW": 110,
+      "VALUE": 63,
+      "SAFE": 44,
+      "DOMINANT": 54,
+      "HALF_TIME_FULL_TIME": 61,
+      "OVER_UNDER_HT": 61,
+      "FIRST_HALF": 43,
+      "VANTAGE": 89
+    },
+    "settledRecord": {
+      "playable": {
+        "won": 0,
+        "lost": 0,
+        "pending": 3384,
+        "void": 0
+      },
+      "observation": {
+        "won": 0,
+        "lost": 0,
+        "pending": 488,
+        "void": 0
+      }
+    }
+  },
+  "fixtures": [
+    {
+      "fixtureId": "01a083e4-f7d2-7d5b-a555-74c21167bbfd",
+      "match": "Coritiba - Atletico Paranaense",
+      "competition": "Brasileirão Série A (Brazil)",
+      "kickoff": "2026-09-12T00:00:00.000Z",
+      "status": "SCHEDULED",
+      "score": null,
+      "model": {
+        "deterministicScore": 0.4759,
+        "finalScore": 0.4759,
+        "scoreThreshold": 0.55,
+        "predictionSource": "POISSON_MAIN",
+        "lambda": {
+          "home": 1.0728200782155513,
+          "away": 1.211528333208255,
+          "total": 2.284348411423806
+        },
+        "offensiveBalance": {
+          "ratio": 0.8855096895461045,
+          "classification": "BALANCED"
+        },
+        "shadowSignals": {
+          "lineMovement": null,
+          "h2h": 0.3428184281842818,
+          "congestion": 0
+        },
+        "dataCoverage": 0.6666666666666666,
+        "shadowPredictions": {
+          "winnerName": "Coritiba",
+          "percent": {
+            "home": 45,
+            "draw": 45,
+            "away": 10
+          },
+          "poisson": {
+            "home": 48,
+            "away": 52
+          },
+          "conflict": false
+        }
+      },
+      "avoidFlag": null,
+      "calibrationAlert": null,
+      "calibrationAlertOverUnder": null,
+      "selectedPicks": [
+        {
+          "channel": "CLEAN_SHEET",
+          "market": "CLEAN_SHEET_HOME",
+          "pick": "YES",
+          "label": "CLEAN_SHEET_HOME/YES",
+          "probability": 0.3403,
+          "odds": 3.4,
+          "ev": 0.1569,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": null,
+          "evMarginToThreshold": 0.07690000000000001
+        },
+        {
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "OVER_1_5",
+          "label": "Plus de 1.5 but",
+          "probability": 0.7151,
+          "odds": 1.38,
+          "ev": -0.0132,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": 0.04804113647250052,
+          "evMarginToThreshold": -0.0932
+        },
+        {
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_1_5",
+          "label": "TEAM_TOTAL_HOME/UNDER_1_5",
+          "probability": 0.709,
+          "odds": 1.37,
+          "ev": -0.0287,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": null,
+          "evMarginToThreshold": -0.1087
+        },
+        {
+          "channel": "RESULT_BTTS",
+          "market": "RESULT_BTTS",
+          "pick": "AWAY_NO",
+          "label": "RESULT_BTTS/AWAY_NO",
+          "probability": 0.2402,
+          "odds": 3.75,
+          "ev": -0.0992,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": null,
+          "evMarginToThreshold": -0.1792
+        },
+        {
+          "channel": "CORRECT_SCORE",
+          "market": "CORRECT_SCORE",
+          "pick": "1:1",
+          "label": "1:1",
+          "probability": 0.1324,
+          "odds": 6,
+          "ev": -0.2055,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": true,
+          "history": [],
+          "adjustmentDelta": null,
+          "evMarginToThreshold": -0.2855
+        }
+      ],
+      "rejectionSummary": [
+        {
+          "channel": "DOUBLE_CHANCE",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "below_threshold"
+        },
+        {
+          "channel": "HALF_TIME_FULL_TIME",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "market_suspended"
+        },
+        {
+          "channel": "FIRST_HALF",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "market_suspended"
+        },
+        {
+          "channel": "OVER_UNDER_HT",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "market_suspended"
+        },
+        {
+          "channel": "RESULT_TOTAL_GOALS",
+          "status": "DISABLED",
+          "count": 1,
+          "topReasonCode": null
+        },
+        {
+          "channel": "WIN_EITHER_HALF",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "below_threshold"
+        },
+        {
+          "channel": "DRAW",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "below_threshold"
+        },
+        {
+          "channel": "BTTS",
+          "status": "DISABLED",
+          "count": 1,
+          "topReasonCode": null
+        },
+        {
+          "channel": "DOMINANT",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "below_threshold"
+        },
+        {
+          "channel": "CONSENSUS",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "no_consensus"
+        },
+        {
+          "channel": "AVOID",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "no_avoid_signal"
+        },
+        {
+          "channel": "SAFE",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "score_below_threshold"
+        },
+        {
+          "channel": "VALUE",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "score_below_threshold"
+        },
+        {
+          "channel": "WIN_TO_NIL",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "below_threshold"
+        },
+        {
+          "channel": "DRAW_NO_BET",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "below_threshold"
+        }
+      ],
+      "evaluatedPicks": [
+        {
+          "market": "ONE_X_TWO",
+          "pick": "HOME",
+          "label": "Victoire domicile",
+          "probability": 0.3236874911946136,
+          "odds": 3.21,
+          "ev": 0.039036846734709654,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "adjustmentDelta": 0.01688156975581151
+        },
+        {
+          "market": "OVER_UNDER",
+          "pick": "OVER_1_5",
+          "label": "Plus de 1.5 but",
+          "probability": 0.7150968557246744,
+          "odds": 1.38,
+          "ev": -0.013166339099949314,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "adjustmentDelta": 0.04803799219717497
+        },
+        {
+          "market": "OVER_UNDER",
+          "pick": "OVER",
+          "label": "Plus de 2.5 buts",
+          "probability": 0.4325469269588694,
+          "odds": 2.23,
+          "ev": -0.03542035288172124,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "adjustmentDelta": 0.030981057658623246
+        },
+        {
+          "market": "ONE_X_TWO",
+          "pick": "AWAY",
+          "label": "Victoire extérieur",
+          "probability": 0.3923503500519771,
+          "odds": 2.45,
+          "ev": -0.03874164237265611,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "adjustmentDelta": -0.01852135572407021
+        },
+        {
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "HOME",
+          "label": "TO_WIN_EITHER_HALF/HOME",
+          "probability": 0.45365002051922404,
+          "odds": 2.1,
+          "ev": -0.04733495690962956,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "adjustmentDelta": null
+        },
+        {
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "AWAY",
+          "label": "TO_WIN_EITHER_HALF/AWAY",
+          "probability": 0.5177663196301331,
+          "odds": 1.73,
+          "ev": -0.10426426703986971,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "adjustmentDelta": null
+        },
+        {
+          "market": "BTTS",
+          "pick": "YES",
+          "label": "Les deux équipes marquent : oui",
+          "probability": 0.4457018276864549,
+          "odds": 1.91,
+          "ev": -0.14870950911887112,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "adjustmentDelta": -0.015793497335168216
+        }
+      ],
+      "context": {
+        "home": {
+          "teamId": "019e4cbd-ae99-76ae-bb2e-735351e97d49",
+          "teamName": "Coritiba",
+          "form": {
+            "last5": {
+              "window": 5,
+              "sampleSize": 5,
+              "sequence": "LWWDW",
+              "wins": 3,
+              "draws": 1,
+              "losses": 1,
+              "points": 10,
+              "pointsPerMatch": 2,
+              "goalsFor": 9,
+              "goalsAgainst": 7,
+              "goalsForPerMatch": 1.8,
+              "goalsAgainstPerMatch": 1.4
+            },
+            "last10": {
+              "window": 10,
+              "sampleSize": 10,
+              "sequence": "LWWDWLDLLW",
+              "wins": 4,
+              "draws": 2,
+              "losses": 4,
+              "points": 14,
+              "pointsPerMatch": 1.4,
+              "goalsFor": 13,
+              "goalsAgainst": 16,
+              "goalsForPerMatch": 1.3,
+              "goalsAgainstPerMatch": 1.6
+            },
+            "last5SameVenue": {
+              "window": 5,
+              "sampleSize": 5,
+              "sequence": "LWWLL",
+              "wins": 2,
+              "draws": 0,
+              "losses": 3,
+              "points": 6,
+              "pointsPerMatch": 1.2,
+              "goalsFor": 6,
+              "goalsAgainst": 8,
+              "goalsForPerMatch": 1.2,
+              "goalsAgainstPerMatch": 1.6
+            },
+            "venue": "HOME"
+          },
+          "goals": {
+            "currentSeason": {
+              "seasonName": "2026",
+              "all": {
+                "sampleSize": 10,
+                "goalsForPerMatch": 1.3,
+                "goalsAgainstPerMatch": 1.6,
+                "over15Rate": 0.8,
+                "over25Rate": 0.7,
+                "bttsRate": 0.7,
+                "cleanSheetRate": 0.1,
+                "failedToScoreRate": 0.3,
+                "winEitherHalfRate": 0.5,
+                "halfTimeSampleSize": 10
+              },
+              "home": {
+                "sampleSize": 6,
+                "goalsForPerMatch": 1.5,
+                "goalsAgainstPerMatch": 1.6667,
+                "over15Rate": 0.8333,
+                "over25Rate": 0.8333,
+                "bttsRate": 0.8333,
+                "cleanSheetRate": 0,
+                "failedToScoreRate": 0.1667,
+                "winEitherHalfRate": 0.5,
+                "halfTimeSampleSize": 6
+              },
+              "away": {
+                "sampleSize": 4,
+                "goalsForPerMatch": 1,
+                "goalsAgainstPerMatch": 1.5,
+                "over15Rate": 0.75,
+                "over25Rate": 0.5,
+                "bttsRate": 0.5,
+                "cleanSheetRate": 0.25,
+                "failedToScoreRate": 0.5,
+                "winEitherHalfRate": 0.5,
+                "halfTimeSampleSize": 4
+              }
+            },
+            "previousSeason": {
+              "seasonName": "2025",
+              "all": {
+                "sampleSize": 38,
+                "goalsForPerMatch": 1.0263,
+                "goalsAgainstPerMatch": 0.6053,
+                "over15Rate": 0.4737,
+                "over25Rate": 0.2632,
+                "bttsRate": 0.2895,
+                "cleanSheetRate": 0.5526,
+                "failedToScoreRate": 0.3947,
+                "winEitherHalfRate": 0.5526,
+                "halfTimeSampleSize": 38
+              },
+              "home": {
+                "sampleSize": 19,
+                "goalsForPerMatch": 1.1053,
+                "goalsAgainstPerMatch": 0.5263,
+                "over15Rate": 0.5263,
+                "over25Rate": 0.2105,
+                "bttsRate": 0.2105,
+                "cleanSheetRate": 0.7368,
+                "failedToScoreRate": 0.4211,
+                "winEitherHalfRate": 0.5263,
+                "halfTimeSampleSize": 19
+              },
+              "away": {
+                "sampleSize": 19,
+                "goalsForPerMatch": 0.9474,
+                "goalsAgainstPerMatch": 0.6842,
+                "over15Rate": 0.4211,
+                "over25Rate": 0.3158,
+                "bttsRate": 0.3684,
+                "cleanSheetRate": 0.3684,
+                "failedToScoreRate": 0.3684,
+                "winEitherHalfRate": 0.5789,
+                "halfTimeSampleSize": 19
+              }
+            }
+          },
+          "xg": {
+            "window": 10,
+            "matchesWithXg": 10,
+            "xgForPerMatch": 1.111,
+            "xgAgainstPerMatch": 1.451,
+            "source": "unverifiable",
+            "reason": "provenance_not_recorded"
+          },
+          "standing": {
+            "source": "derived_from_fixtures",
+            "rank": 11,
+            "teamCount": 20,
+            "points": 14,
+            "played": 10,
+            "wins": 4,
+            "draws": 2,
+            "losses": 4,
+            "goalsFor": 13,
+            "goalsAgainst": 16,
+            "goalsDiff": -3
+          },
+          "schedule": {
+            "restDays": 5,
+            "lastMatchAt": "2026-09-06T14:00:00.000Z",
+            "lastMatchCompetitionCode": "BRA1",
+            "fixturesNext4Days": 0,
+            "fixturesPrev4Days": 0,
+            "otherCompetitionWithin4Days": null
+          },
+          "availability": {
+            "injuryCount": null,
+            "reason": "not_collected",
+            "players": null,
+            "playersReason": "not_collected"
+          }
+        },
+        "away": {
+          "teamId": "019e4cbd-ae76-78f9-b651-407be23bc592",
+          "teamName": "Atletico Paranaense",
+          "form": {
+            "last5": {
+              "window": 5,
+              "sampleSize": 5,
+              "sequence": "LDWDW",
+              "wins": 2,
+              "draws": 2,
+              "losses": 1,
+              "points": 8,
+              "pointsPerMatch": 1.6,
+              "goalsFor": 10,
+              "goalsAgainst": 9,
+              "goalsForPerMatch": 2,
+              "goalsAgainstPerMatch": 1.8
+            },
+            "last10": {
+              "window": 10,
+              "sampleSize": 10,
+              "sequence": "LDWDWDWWWW",
+              "wins": 6,
+              "draws": 3,
+              "losses": 1,
+              "points": 21,
+              "pointsPerMatch": 2.1,
+              "goalsFor": 17,
+              "goalsAgainst": 11,
+              "goalsForPerMatch": 1.7,
+              "goalsAgainstPerMatch": 1.1
+            },
+            "last5SameVenue": {
+              "window": 5,
+              "sampleSize": 5,
+              "sequence": "LWWDW",
+              "wins": 3,
+              "draws": 1,
+              "losses": 1,
+              "points": 10,
+              "pointsPerMatch": 2,
+              "goalsFor": 8,
+              "goalsAgainst": 6,
+              "goalsForPerMatch": 1.6,
+              "goalsAgainstPerMatch": 1.2
+            },
+            "venue": "AWAY"
+          },
+          "goals": {
+            "currentSeason": {
+              "seasonName": "2026",
+              "all": {
+                "sampleSize": 10,
+                "goalsForPerMatch": 1.7,
+                "goalsAgainstPerMatch": 1.1,
+                "over15Rate": 0.8,
+                "over25Rate": 0.5,
+                "bttsRate": 0.6,
+                "cleanSheetRate": 0.4,
+                "failedToScoreRate": 0.1,
+                "winEitherHalfRate": 0.6,
+                "halfTimeSampleSize": 10
+              },
+              "home": {
+                "sampleSize": 4,
+                "goalsForPerMatch": 1.75,
+                "goalsAgainstPerMatch": 1,
+                "over15Rate": 0.75,
+                "over25Rate": 0.25,
+                "bttsRate": 0.5,
+                "cleanSheetRate": 0.5,
+                "failedToScoreRate": 0,
+                "winEitherHalfRate": 0.5,
+                "halfTimeSampleSize": 4
+              },
+              "away": {
+                "sampleSize": 6,
+                "goalsForPerMatch": 1.6667,
+                "goalsAgainstPerMatch": 1.1667,
+                "over15Rate": 0.8333,
+                "over25Rate": 0.6667,
+                "bttsRate": 0.6667,
+                "cleanSheetRate": 0.3333,
+                "failedToScoreRate": 0.1667,
+                "winEitherHalfRate": 0.6667,
+                "halfTimeSampleSize": 6
+              }
+            },
+            "previousSeason": {
+              "seasonName": "2025",
+              "all": {
+                "sampleSize": 38,
+                "goalsForPerMatch": 1.3947,
+                "goalsAgainstPerMatch": 1.1316,
+                "over15Rate": 0.7368,
+                "over25Rate": 0.5,
+                "bttsRate": 0.5789,
+                "cleanSheetRate": 0.3158,
+                "failedToScoreRate": 0.1316,
+                "winEitherHalfRate": 0.6842,
+                "halfTimeSampleSize": 38
+              },
+              "home": {
+                "sampleSize": 19,
+                "goalsForPerMatch": 1.2105,
+                "goalsAgainstPerMatch": 0.7895,
+                "over15Rate": 0.6842,
+                "over25Rate": 0.2105,
+                "bttsRate": 0.4737,
+                "cleanSheetRate": 0.3684,
+                "failedToScoreRate": 0.1579,
+                "winEitherHalfRate": 0.5789,
+                "halfTimeSampleSize": 19
+              },
+              "away": {
+                "sampleSize": 19,
+                "goalsForPerMatch": 1.5789,
+                "goalsAgainstPerMatch": 1.4737,
+                "over15Rate": 0.7895,
+                "over25Rate": 0.7895,
+                "bttsRate": 0.6842,
+                "cleanSheetRate": 0.2632,
+                "failedToScoreRate": 0.1053,
+                "winEitherHalfRate": 0.7895,
+                "halfTimeSampleSize": 19
+              }
+            }
+          },
+          "xg": {
+            "window": 10,
+            "matchesWithXg": 10,
+            "xgForPerMatch": 1.616,
+            "xgAgainstPerMatch": 1.138,
+            "source": "unverifiable",
+            "reason": "provenance_not_recorded"
+          },
+          "standing": {
+            "source": "derived_from_fixtures",
+            "rank": 3,
+            "teamCount": 20,
+            "points": 21,
+            "played": 10,
+            "wins": 6,
+            "draws": 3,
+            "losses": 1,
+            "goalsFor": 17,
+            "goalsAgainst": 11,
+            "goalsDiff": 6
+          },
+          "schedule": {
+            "restDays": 5,
+            "lastMatchAt": "2026-09-06T19:00:00.000Z",
+            "lastMatchCompetitionCode": "BRA1",
+            "fixturesNext4Days": 0,
+            "fixturesPrev4Days": 0,
+            "otherCompetitionWithin4Days": null
+          },
+          "availability": {
+            "injuryCount": null,
+            "reason": "not_collected",
+            "players": null,
+            "playersReason": "not_collected"
+          }
+        },
+        "h2h": {
+          "meetings": [
+            {
+              "fixtureId": "019f304f-44d6-7364-820e-56ce5a058a72",
+              "date": "2025-10-19T21:30:00.000Z",
+              "competitionCode": "BRA2",
+              "competitionName": "Série B",
+              "venueForHomeTeam": "HOME",
+              "score": {
+                "homeTeam": 0,
+                "awayTeam": 0
+              },
+              "halfTimeScore": {
+                "homeTeam": 0,
+                "awayTeam": 0
+              }
+            },
+            {
+              "fixtureId": "019f304f-42d0-7822-b67f-6b08fa672bfb",
+              "date": "2025-06-28T21:30:00.000Z",
+              "competitionCode": "BRA2",
+              "competitionName": "Série B",
+              "venueForHomeTeam": "AWAY",
+              "score": {
+                "homeTeam": 1,
+                "awayTeam": 0
+              },
+              "halfTimeScore": {
+                "homeTeam": 0,
+                "awayTeam": 0
+              }
+            },
+            {
+              "fixtureId": "019e4cbd-b617-720d-922a-ebe53c378f28",
+              "date": "2023-10-01T19:00:00.000Z",
+              "competitionCode": "BRA1",
+              "competitionName": "Brasileirão Série A",
+              "venueForHomeTeam": "HOME",
+              "score": {
+                "homeTeam": 2,
+                "awayTeam": 0
+              },
+              "halfTimeScore": {
+                "homeTeam": 2,
+                "awayTeam": 0
+              }
+            },
+            {
+              "fixtureId": "019e4cbd-b057-78ec-ac77-caf6a9c93e39",
+              "date": "2023-05-14T21:30:00.000Z",
+              "competitionCode": "BRA1",
+              "competitionName": "Brasileirão Série A",
+              "venueForHomeTeam": "AWAY",
+              "score": {
+                "homeTeam": 2,
+                "awayTeam": 3
+              },
+              "halfTimeScore": {
+                "homeTeam": 1,
+                "awayTeam": 0
+              }
+            }
+          ],
+          "aggregates": {
+            "sampleSize": 4,
+            "homeTeamWins": 2,
+            "draws": 1,
+            "awayTeamWins": 1,
+            "goalsPerMatch": 2,
+            "over15Rate": 0.5,
+            "over25Rate": 0.25,
+            "bttsRate": 0.25
+          },
+          "score": {
+            "value": 0.3428184281842818,
+            "reason": null,
+            "favorite": "AWAY",
+            "sampleSize": 4,
+            "minSample": 3,
+            "decay": 0.8,
+            "drawScore": 0.5,
+            "formula": "h2h = Σ(0.8^i × outcome_i) / Σ(0.8^i), i = 0 pour la confrontation la plus récente ; outcome = 1 si le favori gagne, 0.5 si nul, 0 sinon. Calculé sur les 5 dernières confrontations, null en dessous de 3.",
+            "interpretation": "Taux de victoire du FAVORI dans cette confrontation, pondéré par la récence, les nuls comptant pour un demi. 0.5 = neutre ; > 0.5 = l’historique confirme le favori ; < 0.5 = il le contredit. Le favori est déterminé AVANT correction (probabilités 1X2 de base), donc sans circularité."
+          }
+        }
+      },
+      "contextReason": null,
+      "market": [
+        {
+          "key": "HOME",
+          "market": "ONE_X_TWO",
+          "pick": "HOME",
+          "label": "Victoire domicile",
+          "bestOdds": 3.21,
+          "bestBookmaker": "Pinnacle",
+          "medianOdds": 3.1,
+          "bookmakerCount": 3,
+          "snapshotAt": "2026-09-11T16:04:16.000Z",
+          "implied": {
+            "raw": 0.3226,
+            "deVigged": 0.3064,
+            "method": "proportional",
+            "overround": 1.0527,
+            "outcomes": [
+              "HOME",
+              "DRAW",
+              "AWAY"
+            ],
+            "reason": null
+          },
+          "lineMovement": {
+            "firstOdds": 3.09,
+            "firstSnapshotAt": "2026-09-07T04:02:16.000Z",
+            "baselineHoursBeforeKickoff": 115.9622,
+            "latestOdds": 3.21,
+            "latestSnapshotAt": "2026-09-11T16:04:16.000Z",
+            "movement": -0.0388,
+            "snapshotCount": 6,
+            "reason": null
+          },
+          "reason": null
+        },
+        {
+          "key": "AWAY",
+          "market": "ONE_X_TWO",
+          "pick": "AWAY",
+          "label": "Victoire extérieur",
+          "bestOdds": 2.45,
+          "bestBookmaker": "Pinnacle",
+          "medianOdds": 2.4,
+          "bookmakerCount": 3,
+          "snapshotAt": "2026-09-11T16:04:16.000Z",
+          "implied": {
+            "raw": 0.4167,
+            "deVigged": 0.3958,
+            "method": "proportional",
+            "overround": 1.0527,
+            "outcomes": [
+              "HOME",
+              "DRAW",
+              "AWAY"
+            ],
+            "reason": null
+          },
+          "lineMovement": {
+            "firstOdds": 2.7,
+            "firstSnapshotAt": "2026-09-07T04:02:16.000Z",
+            "baselineHoursBeforeKickoff": 115.9622,
+            "latestOdds": 2.45,
+            "latestSnapshotAt": "2026-09-11T16:04:16.000Z",
+            "movement": 0.0926,
+            "snapshotCount": 6,
+            "reason": null
+          },
+          "reason": null
+        },
+        {
+          "key": "WIN_EITHER_HALF_HOME",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "HOME",
+          "label": "TO_WIN_EITHER_HALF/HOME",
+          "bestOdds": 2.1,
+          "bestBookmaker": "Bet365",
+          "medianOdds": 2.1,
+          "bookmakerCount": 1,
+          "snapshotAt": "2026-09-11T16:04:16.000Z",
+          "implied": {
+            "raw": 0.4762,
+            "deVigged": null,
+            "method": null,
+            "overround": null,
+            "outcomes": null,
+            "reason": "no_complement_priced"
+          },
+          "lineMovement": {
+            "firstOdds": 1.91,
+            "firstSnapshotAt": "2026-09-07T04:02:16.000Z",
+            "baselineHoursBeforeKickoff": 115.9622,
+            "latestOdds": 2.1,
+            "latestSnapshotAt": "2026-09-11T16:04:16.000Z",
+            "movement": -0.0995,
+            "snapshotCount": 6,
+            "reason": null
+          },
+          "reason": null
+        },
+        {
+          "key": "WIN_EITHER_HALF_AWAY",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "AWAY",
+          "label": "TO_WIN_EITHER_HALF/AWAY",
+          "bestOdds": 1.73,
+          "bestBookmaker": "Bet365",
+          "medianOdds": 1.73,
+          "bookmakerCount": 1,
+          "snapshotAt": "2026-09-11T16:04:16.000Z",
+          "implied": {
+            "raw": 0.578,
+            "deVigged": null,
+            "method": null,
+            "overround": null,
+            "outcomes": null,
+            "reason": "no_complement_priced"
+          },
+          "lineMovement": {
+            "firstOdds": 1.91,
+            "firstSnapshotAt": "2026-09-07T04:02:16.000Z",
+            "baselineHoursBeforeKickoff": 115.9622,
+            "latestOdds": 1.73,
+            "latestSnapshotAt": "2026-09-11T16:04:16.000Z",
+            "movement": 0.0942,
+            "snapshotCount": 6,
+            "reason": null
+          },
+          "reason": null
+        },
+        {
+          "key": "BTTS_YES",
+          "market": "BTTS",
+          "pick": "YES",
+          "label": "Les deux équipes marquent : oui",
+          "bestOdds": 1.91,
+          "bestBookmaker": "Bet365",
+          "medianOdds": 1.875,
+          "bookmakerCount": 2,
+          "snapshotAt": "2026-09-11T16:04:16.000Z",
+          "implied": {
+            "raw": 0.5333,
+            "deVigged": 0.5,
+            "method": "proportional",
+            "overround": 1.0667,
+            "outcomes": [
+              "YES",
+              "NO"
+            ],
+            "reason": null
+          },
+          "lineMovement": {
+            "firstOdds": 2,
+            "firstSnapshotAt": "2026-09-07T04:02:16.000Z",
+            "baselineHoursBeforeKickoff": 115.9622,
+            "latestOdds": 1.91,
+            "latestSnapshotAt": "2026-09-11T16:04:16.000Z",
+            "movement": 0.045,
+            "snapshotCount": 6,
+            "reason": null
+          },
+          "reason": null
+        },
+        {
+          "key": "OVER_1_5",
+          "market": "OVER_UNDER",
+          "pick": "OVER_1_5",
+          "label": "Plus de 1.5 but",
+          "bestOdds": 1.4,
+          "bestBookmaker": "Bet365",
+          "medianOdds": 1.38,
+          "bookmakerCount": 3,
+          "snapshotAt": "2026-09-11T16:04:16.000Z",
+          "implied": {
+            "raw": 0.7246,
+            "deVigged": 0.6849,
+            "method": "proportional",
+            "overround": 1.058,
+            "outcomes": [
+              "OVER_1_5",
+              "UNDER_1_5"
+            ],
+            "reason": null
+          },
+          "lineMovement": {
+            "firstOdds": 1.44,
+            "firstSnapshotAt": "2026-09-07T04:02:16.000Z",
+            "baselineHoursBeforeKickoff": 115.9622,
+            "latestOdds": 1.4,
+            "latestSnapshotAt": "2026-09-11T16:04:16.000Z",
+            "movement": 0.0278,
+            "snapshotCount": 6,
+            "reason": null
+          },
+          "reason": null
+        },
+        {
+          "key": "OVER_2_5",
+          "market": "OVER_UNDER",
+          "pick": "OVER",
+          "label": "Plus de 2.5 buts",
+          "bestOdds": 2.23,
+          "bestBookmaker": "Pinnacle",
+          "medianOdds": 2.2,
+          "bookmakerCount": 3,
+          "snapshotAt": "2026-09-11T16:04:16.000Z",
+          "implied": {
+            "raw": 0.4545,
+            "deVigged": 0.4315,
+            "method": "proportional",
+            "overround": 1.0533,
+            "outcomes": [
+              "OVER",
+              "UNDER"
+            ],
+            "reason": null
+          },
+          "lineMovement": {
+            "firstOdds": 2.4,
+            "firstSnapshotAt": "2026-09-07T04:02:16.000Z",
+            "baselineHoursBeforeKickoff": 115.9622,
+            "latestOdds": 2.23,
+            "latestSnapshotAt": "2026-09-11T16:04:16.000Z",
+            "movement": 0.0708,
+            "snapshotCount": 6,
+            "reason": null
+          },
+          "reason": null
+        }
+      ],
+      "lambdaTrace": {
+        "base": {
+          "home": 1.0401,
+          "away": 1.2509
+        },
+        "inputs": {
+          "homeXgFor": null,
+          "homeXgAgainst": null,
+          "awayXgFor": null,
+          "awayXgAgainst": null,
+          "meanLambda": 1.4,
+          "homeAdvFactor": 1,
+          "awayDisadvFactor": 0.75,
+          "lambdaScale": 1,
+          "shrinkageFactor": 0.7
+        },
+        "formula": "leagueAvg = max(0.5, (xgF_home + xgF_away + xgA_home + xgA_away) / 4) ; raw_home = S × (xgF_home × xgA_away / leagueAvg) + (1 − S) × meanLambda ; raw_away = S × (xgF_away × xgA_home / leagueAvg) + (1 − S) × meanLambda ; λ_home = clamp(raw_home × homeAdvFactor × lambdaScale, 0.05, 5) ; λ_away = clamp(raw_away × awayDisadvFactor × lambdaScale, 0.05, 5). S = LAMBDA_SHRINKAGE_FACTOR.",
+        "steps": [
+          {
+            "name": "h2h_lambda_correction",
+            "target": "lambda",
+            "applied": true,
+            "lambdaDelta": {
+              "home": 0.0327,
+              "away": -0.0394
+            },
+            "input": 0.3428184281842818,
+            "reason": "Score H2H 0.3428184281842818 (neutre = 0.5), γ = 0.2. λ du favori × 0.9686, λ de l’outsider × 1.0314. Favori : extérieur."
+          },
+          {
+            "name": "three_way_empirical_blend",
+            "target": "probabilities",
+            "applied": true,
+            "lambdaDelta": null,
+            "input": null,
+            "reason": "Mélange des probabilités 1X2 Poisson vers les taux empiriques de victoire domicile/extérieur et de nul des deux équipes (poids par ligue, getLeagueThreeWayEmpiricalBlendWeight). N’affecte que le 1X2."
+          },
+          {
+            "name": "over_under_shrinkage",
+            "target": "probabilities",
+            "applied": true,
+            "lambdaDelta": null,
+            "input": null,
+            "reason": "Shrinkage des probabilités Over/Under vers le taux de base de la ligue, pour les ligues dont la pente de calibration mesurée est proche de zéro (getOverUnderShrinkageConfig). N’affecte que OVER_UNDER."
+          },
+          {
+            "name": "h2h_market_signal_shift",
+            "target": "probabilities",
+            "applied": true,
+            "lambdaDelta": null,
+            "input": 0.3428184281842818,
+            "reason": "Décalage logit par marché à partir des taux H2H (BTTS, Over 2.5, clean sheet, win-to-nil)."
+          },
+          {
+            "name": "congestion_signal_shift",
+            "target": "probabilities",
+            "applied": true,
+            "lambdaDelta": null,
+            "input": 0,
+            "reason": "Décalage logit sur Over 2.5 et BTTS à partir du score de congestion 0 (0 = calendrier normal)."
+          }
+        ],
+        "final": {
+          "home": 1.0728200782155513,
+          "away": 1.211528333208255,
+          "total": 2.2843
+        },
+        "floorHit": false,
+        "baseDerivation": "inverted_from_final",
+        "notes": [
+          "Favori H2H inféré des probabilités Poisson brutes : le moteur ne le persiste pas.",
+          "Les xG par équipe entrant dans deriveLambdas ne sont pas persistés dans ModelRun.features (seul un scalaire de matchup normalisé l’est) : ils sont donc null plutôt qu’estimés."
+        ],
+        "reason": null
+      },
+      "dataCoverageDetail": {
+        "ratio": 0.6667,
+        "level": 2,
+        "maxLevel": 3,
+        "components": [
+          {
+            "name": "lineMovement",
+            "present": false,
+            "weight": 0.3333333333333333,
+            "value": null,
+            "reason": "single_snapshot"
+          },
+          {
+            "name": "h2h",
+            "present": true,
+            "weight": 0.3333333333333333,
+            "value": 0.3428184281842818,
+            "reason": null
+          },
+          {
+            "name": "congestion",
+            "present": true,
+            "weight": 0.3333333333333333,
+            "value": 0,
+            "reason": null
+          }
+        ]
+      },
+      "targetMarkets": [
+        {
+          "key": "HOME",
+          "market": "ONE_X_TWO",
+          "pick": "HOME",
+          "label": "Victoire domicile",
+          "modelProbability": 0.3236874911946136,
+          "rawModelProbability": 0.3068059214388021,
+          "adjustmentDelta": 0.0169,
+          "marketProbability": {
+            "raw": 0.3226,
+            "deVigged": 0.3064,
+            "method": "proportional",
+            "overround": 1.0527,
+            "outcomes": [
+              "HOME",
+              "DRAW",
+              "AWAY"
+            ],
+            "reason": null
+          },
+          "edge": 0.0011,
+          "odds": 3.21,
+          "ev": 0.039036846734709654,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "gates": {
+            "evFloor": 0.99,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": true
+          },
+          "reason": null
+        },
+        {
+          "key": "AWAY",
+          "market": "ONE_X_TWO",
+          "pick": "AWAY",
+          "label": "Victoire extérieur",
+          "modelProbability": 0.3923503500519771,
+          "rawModelProbability": 0.4108717057760473,
+          "adjustmentDelta": -0.0185,
+          "marketProbability": {
+            "raw": 0.4167,
+            "deVigged": 0.3958,
+            "method": "proportional",
+            "overround": 1.0527,
+            "outcomes": [
+              "HOME",
+              "DRAW",
+              "AWAY"
+            ],
+            "reason": null
+          },
+          "edge": -0.0243,
+          "odds": 2.45,
+          "ev": -0.03874164237265611,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "gates": {
+            "evFloor": 2.99,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": true
+          },
+          "reason": null
+        },
+        {
+          "key": "WIN_EITHER_HALF_HOME",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "HOME",
+          "label": "TO_WIN_EITHER_HALF/HOME",
+          "modelProbability": 0.45365002051922404,
+          "rawModelProbability": null,
+          "adjustmentDelta": null,
+          "marketProbability": {
+            "raw": 0.4762,
+            "deVigged": null,
+            "method": null,
+            "overround": null,
+            "outcomes": null,
+            "reason": "no_complement_priced"
+          },
+          "edge": -0.0225,
+          "odds": 2.1,
+          "ev": -0.04733495690962956,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        },
+        {
+          "key": "WIN_EITHER_HALF_AWAY",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "AWAY",
+          "label": "TO_WIN_EITHER_HALF/AWAY",
+          "modelProbability": 0.5177663196301331,
+          "rawModelProbability": null,
+          "adjustmentDelta": null,
+          "marketProbability": {
+            "raw": 0.578,
+            "deVigged": null,
+            "method": null,
+            "overround": null,
+            "outcomes": null,
+            "reason": "no_complement_priced"
+          },
+          "edge": -0.0602,
+          "odds": 1.73,
+          "ev": -0.10426426703986971,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        },
+        {
+          "key": "BTTS_YES",
+          "market": "BTTS",
+          "pick": "YES",
+          "label": "Les deux équipes marquent : oui",
+          "modelProbability": 0.4457018276864549,
+          "rawModelProbability": 0.4614953250216231,
+          "adjustmentDelta": -0.0158,
+          "marketProbability": {
+            "raw": 0.5333,
+            "deVigged": 0.5,
+            "method": "proportional",
+            "overround": 1.0667,
+            "outcomes": [
+              "YES",
+              "NO"
+            ],
+            "reason": null
+          },
+          "edge": -0.0876,
+          "odds": 1.91,
+          "ev": -0.14870950911887112,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        },
+        {
+          "key": "OVER_1_5",
+          "market": "OVER_UNDER",
+          "pick": "OVER_1_5",
+          "label": "Plus de 1.5 but",
+          "modelProbability": 0.7150968557246744,
+          "rawModelProbability": 0.6670588635274994,
+          "adjustmentDelta": 0.048,
+          "marketProbability": {
+            "raw": 0.7246,
+            "deVigged": 0.6849,
+            "method": "proportional",
+            "overround": 1.058,
+            "outcomes": [
+              "OVER_1_5",
+              "UNDER_1_5"
+            ],
+            "reason": null
+          },
+          "edge": -0.0095,
+          "odds": 1.38,
+          "ev": -0.013166339099949314,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        },
+        {
+          "key": "OVER_2_5",
+          "market": "OVER_UNDER",
+          "pick": "OVER",
+          "label": "Plus de 2.5 buts",
+          "modelProbability": 0.4325469269588694,
+          "rawModelProbability": 0.4015658693002462,
+          "adjustmentDelta": 0.031,
+          "marketProbability": {
+            "raw": 0.4545,
+            "deVigged": 0.4315,
+            "method": "proportional",
+            "overround": 1.0533,
+            "outcomes": [
+              "OVER",
+              "UNDER"
+            ],
+            "reason": null
+          },
+          "edge": -0.022,
+          "odds": 2.23,
+          "ev": -0.03542035288172124,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        }
+      ]
+    },
+    {
+      "fixtureId": "019f304a-2446-7bd7-b91f-1cf1c1ebeaa8",
+      "match": "Boca Juniors - Central Cordoba de Santiago",
+      "competition": "Liga Profesional Argentina (Argentina)",
+      "kickoff": "2026-09-12T00:30:00.000Z",
+      "status": "SCHEDULED",
+      "score": null,
+      "model": {
+        "deterministicScore": 0.6007,
+        "finalScore": 0.6007,
+        "scoreThreshold": 0.6,
+        "predictionSource": "POISSON_MAIN",
+        "lambda": {
+          "home": 1.9801805095527247,
+          "away": 0.7394576684921551,
+          "total": 2.71963817804488
+        },
+        "offensiveBalance": {
+          "ratio": 0.3734294247039028,
+          "classification": "ASYMMETRIC"
+        },
+        "shadowSignals": {
+          "lineMovement": null,
+          "h2h": 0.8200856734888149,
+          "congestion": 0
+        },
+        "dataCoverage": 0.6666666666666666,
+        "shadowPredictions": {
+          "winnerName": "Boca Juniors",
+          "percent": {
+            "home": 45,
+            "draw": 45,
+            "away": 10
+          },
+          "poisson": {
+            "home": 85,
+            "away": 15
+          },
+          "conflict": false
+        }
+      },
+      "avoidFlag": null,
+      "calibrationAlert": null,
+      "calibrationAlertOverUnder": null,
+      "selectedPicks": [
+        {
+          "channel": "RESULT_BTTS",
+          "market": "RESULT_BTTS",
+          "pick": "AWAY_YES",
+          "label": "RESULT_BTTS/AWAY_YES",
+          "probability": 0.0887,
+          "odds": 17,
+          "ev": 0.5086,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": null,
+          "evMarginToThreshold": 0.42860000000000004
+        },
+        {
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "OVER_0_5",
+          "label": "TEAM_TOTAL_AWAY/OVER_0_5",
+          "probability": 0.5637,
+          "odds": 2.06,
+          "ev": 0.1613,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": null,
+          "evMarginToThreshold": 0.0813
+        },
+        {
+          "channel": "RESULT_TOTAL_GOALS",
+          "market": "RESULT_TOTAL_GOALS",
+          "pick": "AWAY_UNDER_1_5",
+          "label": "RESULT_TOTAL_GOALS/AWAY_UNDER_1_5",
+          "probability": 0.102,
+          "odds": 11.25,
+          "ev": 0.1475,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": null,
+          "evMarginToThreshold": 0.06749999999999999
+        },
+        {
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "OVER_1_5",
+          "label": "Plus de 1.5 but",
+          "probability": 0.744,
+          "odds": 1.4,
+          "ev": 0.0417,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": 0.001676775211497672,
+          "evMarginToThreshold": -0.0383
+        },
+        {
+          "channel": "DOUBLE_CHANCE",
+          "market": "DOUBLE_CHANCE",
+          "pick": "1X",
+          "label": "Domicile ou match nul",
+          "probability": 0.878,
+          "odds": 1.1,
+          "ev": -0.0342,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": 0.031189113023348813,
+          "evMarginToThreshold": -0.1142
+        },
+        {
+          "channel": "BTTS",
+          "market": "BTTS",
+          "pick": "NO",
+          "label": "Les deux équipes marquent : non",
+          "probability": 0.5585,
+          "odds": 1.53,
+          "ev": -0.1456,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": 0.019734743147875933,
+          "evMarginToThreshold": -0.22560000000000002
+        },
+        {
+          "channel": "DRAW_NO_BET",
+          "market": "DRAW_NO_BET",
+          "pick": "HOME",
+          "label": "DRAW_NO_BET/HOME",
+          "probability": 0.6685,
+          "odds": 1.12,
+          "ev": -0.2513,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": null,
+          "evMarginToThreshold": -0.33130000000000004
+        },
+        {
+          "channel": "WIN_EITHER_HALF",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "HOME",
+          "label": "TO_WIN_EITHER_HALF/HOME",
+          "probability": 0.5806,
+          "odds": 1.28,
+          "ev": -0.2568,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": null,
+          "evMarginToThreshold": -0.3368
+        },
+        {
+          "channel": "CORRECT_SCORE",
+          "market": "CORRECT_SCORE",
+          "pick": "1:0",
+          "label": "1:0",
+          "probability": 0.1311,
+          "odds": 5.5,
+          "ev": -0.2792,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": true,
+          "history": [],
+          "adjustmentDelta": null,
+          "evMarginToThreshold": -0.3592
+        },
+        {
+          "channel": "CLEAN_SHEET",
+          "market": "CLEAN_SHEET_HOME",
+          "pick": "YES",
+          "label": "CLEAN_SHEET_HOME/YES",
+          "probability": 0.4088,
+          "odds": 1.73,
+          "ev": -0.2928,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": null,
+          "evMarginToThreshold": -0.3728
+        },
+        {
+          "channel": "WIN_TO_NIL",
+          "market": "WIN_TO_NIL_HOME",
+          "pick": "YES",
+          "label": "WIN_TO_NIL_HOME/YES",
+          "probability": 0.2832,
+          "odds": 2.06,
+          "ev": -0.4167,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": null,
+          "evMarginToThreshold": -0.49670000000000003
+        }
+      ],
+      "rejectionSummary": [
+        {
+          "channel": "HALF_TIME_FULL_TIME",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "market_suspended"
+        },
+        {
+          "channel": "DRAW",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "below_threshold"
+        },
+        {
+          "channel": "OVER_UNDER_HT",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "market_suspended"
+        },
+        {
+          "channel": "FIRST_HALF",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "market_suspended"
+        },
+        {
+          "channel": "DOMINANT",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "below_threshold"
+        },
+        {
+          "channel": "VALUE",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "no_viable_pick"
+        },
+        {
+          "channel": "SAFE",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "no_safe_candidate"
+        },
+        {
+          "channel": "CONSENSUS",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "no_consensus"
+        },
+        {
+          "channel": "AVOID",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "no_avoid_signal"
+        }
+      ],
+      "evaluatedPicks": [
+        {
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "AWAY",
+          "label": "TO_WIN_EITHER_HALF/AWAY",
+          "probability": 0.3481663704726211,
+          "odds": 3.75,
+          "ev": 0.30562388927232914,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "adjustmentDelta": null
+        },
+        {
+          "market": "OVER_UNDER",
+          "pick": "OVER",
+          "label": "Plus de 2.5 buts",
+          "probability": 0.5370585446382162,
+          "odds": 2.2,
+          "ev": 0.1815287982040758,
+          "status": "viable",
+          "rejectionReason": null,
+          "adjustmentDelta": 0.042744989005429446
+        },
+        {
+          "market": "BTTS",
+          "pick": "YES",
+          "label": "Les deux équipes marquent : oui",
+          "probability": 0.44154717911533964,
+          "odds": 2.38,
+          "ev": 0.05088228629450831,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "adjustmentDelta": -0.019687564032536298
+        },
+        {
+          "market": "OVER_UNDER",
+          "pick": "OVER_1_5",
+          "label": "Plus de 1.5 but",
+          "probability": 0.7440376716327487,
+          "odds": 1.4,
+          "ev": 0.04165274028584817,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "adjustmentDelta": 0.0017144468442463756
+        },
+        {
+          "market": "ONE_X_TWO",
+          "pick": "AWAY",
+          "label": "Victoire extérieur",
+          "probability": 0.12196769645290369,
+          "odds": 8.05,
+          "ev": -0.018160043554125295,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "adjustmentDelta": -0.03122141657044515
+        },
+        {
+          "market": "ONE_X_TWO",
+          "pick": "HOME",
+          "label": "Victoire domicile",
+          "probability": 0.6179601745693337,
+          "odds": 1.47,
+          "ev": -0.09159854338307946,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "adjustmentDelta": -0.009528739763840943
+        },
+        {
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "HOME",
+          "label": "TO_WIN_EITHER_HALF/HOME",
+          "probability": 0.580632931143571,
+          "odds": 1.28,
+          "ev": -0.2567898481362291,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "adjustmentDelta": null
+        }
+      ],
+      "context": {
+        "home": {
+          "teamId": "019f3049-da4b-77ac-9e39-48688fd6ae29",
+          "teamName": "Boca Juniors",
+          "form": {
+            "last5": {
+              "window": 5,
+              "sampleSize": 5,
+              "sequence": "DWDDD",
+              "wins": 1,
+              "draws": 4,
+              "losses": 0,
+              "points": 7,
+              "pointsPerMatch": 1.4,
+              "goalsFor": 6,
+              "goalsAgainst": 5,
+              "goalsForPerMatch": 1.2,
+              "goalsAgainstPerMatch": 1
+            },
+            "last10": {
+              "window": 10,
+              "sampleSize": 10,
+              "sequence": "DWDDDWDLDW",
+              "wins": 3,
+              "draws": 6,
+              "losses": 1,
+              "points": 15,
+              "pointsPerMatch": 1.5,
+              "goalsFor": 12,
+              "goalsAgainst": 12,
+              "goalsForPerMatch": 1.2,
+              "goalsAgainstPerMatch": 1.2
+            },
+            "last5SameVenue": {
+              "window": 5,
+              "sampleSize": 5,
+              "sequence": "WDWDD",
+              "wins": 2,
+              "draws": 3,
+              "losses": 0,
+              "points": 9,
+              "pointsPerMatch": 1.8,
+              "goalsFor": 5,
+              "goalsAgainst": 3,
+              "goalsForPerMatch": 1,
+              "goalsAgainstPerMatch": 0.6
+            },
+            "venue": "HOME"
+          },
+          "goals": {
+            "currentSeason": {
+              "seasonName": "2026",
+              "all": {
+                "sampleSize": 25,
+                "goalsForPerMatch": 1.28,
+                "goalsAgainstPerMatch": 0.8,
+                "over15Rate": 0.72,
+                "over25Rate": 0.32,
+                "bttsRate": 0.52,
+                "cleanSheetRate": 0.44,
+                "failedToScoreRate": 0.12,
+                "winEitherHalfRate": 0.6,
+                "halfTimeSampleSize": 25
+              },
+              "home": {
+                "sampleSize": 12,
+                "goalsForPerMatch": 1,
+                "goalsAgainstPerMatch": 0.4167,
+                "over15Rate": 0.5833,
+                "over25Rate": 0,
+                "bttsRate": 0.4167,
+                "cleanSheetRate": 0.5833,
+                "failedToScoreRate": 0.1667,
+                "winEitherHalfRate": 0.5,
+                "halfTimeSampleSize": 12
+              },
+              "away": {
+                "sampleSize": 13,
+                "goalsForPerMatch": 1.5385,
+                "goalsAgainstPerMatch": 1.1538,
+                "over15Rate": 0.8462,
+                "over25Rate": 0.6154,
+                "bttsRate": 0.6154,
+                "cleanSheetRate": 0.3077,
+                "failedToScoreRate": 0.0769,
+                "winEitherHalfRate": 0.6923,
+                "halfTimeSampleSize": 13
+              }
+            },
+            "previousSeason": {
+              "seasonName": "2025-26",
+              "all": {
+                "sampleSize": 37,
+                "goalsForPerMatch": 1.4865,
+                "goalsAgainstPerMatch": 0.6757,
+                "over15Rate": 0.7297,
+                "over25Rate": 0.3514,
+                "bttsRate": 0.3784,
+                "cleanSheetRate": 0.4865,
+                "failedToScoreRate": 0.2162,
+                "winEitherHalfRate": 0.5946,
+                "halfTimeSampleSize": 37
+              },
+              "home": {
+                "sampleSize": 21,
+                "goalsForPerMatch": 1.5714,
+                "goalsAgainstPerMatch": 0.4762,
+                "over15Rate": 0.6667,
+                "over25Rate": 0.2857,
+                "bttsRate": 0.2857,
+                "cleanSheetRate": 0.619,
+                "failedToScoreRate": 0.1905,
+                "winEitherHalfRate": 0.6667,
+                "halfTimeSampleSize": 21
+              },
+              "away": {
+                "sampleSize": 16,
+                "goalsForPerMatch": 1.375,
+                "goalsAgainstPerMatch": 0.9375,
+                "over15Rate": 0.8125,
+                "over25Rate": 0.4375,
+                "bttsRate": 0.5,
+                "cleanSheetRate": 0.3125,
+                "failedToScoreRate": 0.25,
+                "winEitherHalfRate": 0.5,
+                "halfTimeSampleSize": 16
+              }
+            }
+          },
+          "xg": {
+            "window": 10,
+            "matchesWithXg": 10,
+            "xgForPerMatch": 1.783,
+            "xgAgainstPerMatch": 1.15,
+            "source": "unverifiable",
+            "reason": "provenance_not_recorded"
+          },
+          "standing": {
+            "source": "derived_from_fixtures",
+            "rank": 7,
+            "teamCount": 30,
+            "points": 42,
+            "played": 25,
+            "wins": 10,
+            "draws": 12,
+            "losses": 3,
+            "goalsFor": 32,
+            "goalsAgainst": 20,
+            "goalsDiff": 12
+          },
+          "schedule": {
+            "restDays": 6,
+            "lastMatchAt": "2026-09-05T19:30:00.000Z",
+            "lastMatchCompetitionCode": "ARG1",
+            "fixturesNext4Days": 0,
+            "fixturesPrev4Days": 0,
+            "otherCompetitionWithin4Days": null
+          },
+          "availability": {
+            "injuryCount": null,
+            "reason": "not_collected",
+            "players": null,
+            "playersReason": "not_collected"
+          }
+        },
+        "away": {
+          "teamId": "019f3049-da3e-7ed2-a8a1-b024b9a754ac",
+          "teamName": "Central Cordoba de Santiago",
+          "form": {
+            "last5": {
+              "window": 5,
+              "sampleSize": 5,
+              "sequence": "LDLLW",
+              "wins": 1,
+              "draws": 1,
+              "losses": 3,
+              "points": 4,
+              "pointsPerMatch": 0.8,
+              "goalsFor": 3,
+              "goalsAgainst": 5,
+              "goalsForPerMatch": 0.6,
+              "goalsAgainstPerMatch": 1
+            },
+            "last10": {
+              "window": 10,
+              "sampleSize": 10,
+              "sequence": "LDLLWWLLLD",
+              "wins": 2,
+              "draws": 2,
+              "losses": 6,
+              "points": 8,
+              "pointsPerMatch": 0.8,
+              "goalsFor": 5,
+              "goalsAgainst": 10,
+              "goalsForPerMatch": 0.5,
+              "goalsAgainstPerMatch": 1
+            },
+            "last5SameVenue": {
+              "window": 5,
+              "sampleSize": 5,
+              "sequence": "DLWLD",
+              "wins": 1,
+              "draws": 2,
+              "losses": 2,
+              "points": 5,
+              "pointsPerMatch": 1,
+              "goalsFor": 3,
+              "goalsAgainst": 4,
+              "goalsForPerMatch": 0.6,
+              "goalsAgainstPerMatch": 0.8
+            },
+            "venue": "AWAY"
+          },
+          "goals": {
+            "currentSeason": {
+              "seasonName": "2026",
+              "all": {
+                "sampleSize": 24,
+                "goalsForPerMatch": 0.625,
+                "goalsAgainstPerMatch": 1.2083,
+                "over15Rate": 0.4583,
+                "over25Rate": 0.25,
+                "bttsRate": 0.25,
+                "cleanSheetRate": 0.3333,
+                "failedToScoreRate": 0.5833,
+                "winEitherHalfRate": 0.3333,
+                "halfTimeSampleSize": 24
+              },
+              "home": {
+                "sampleSize": 12,
+                "goalsForPerMatch": 0.9167,
+                "goalsAgainstPerMatch": 1.0833,
+                "over15Rate": 0.4167,
+                "over25Rate": 0.25,
+                "bttsRate": 0.25,
+                "cleanSheetRate": 0.4167,
+                "failedToScoreRate": 0.4167,
+                "winEitherHalfRate": 0.5,
+                "halfTimeSampleSize": 12
+              },
+              "away": {
+                "sampleSize": 12,
+                "goalsForPerMatch": 0.3333,
+                "goalsAgainstPerMatch": 1.3333,
+                "over15Rate": 0.5,
+                "over25Rate": 0.25,
+                "bttsRate": 0.25,
+                "cleanSheetRate": 0.25,
+                "failedToScoreRate": 0.75,
+                "winEitherHalfRate": 0.1667,
+                "halfTimeSampleSize": 12
+              }
+            },
+            "previousSeason": {
+              "seasonName": "2025-26",
+              "all": {
+                "sampleSize": 34,
+                "goalsForPerMatch": 1.1765,
+                "goalsAgainstPerMatch": 1.0294,
+                "over15Rate": 0.6765,
+                "over25Rate": 0.4118,
+                "bttsRate": 0.4706,
+                "cleanSheetRate": 0.3529,
+                "failedToScoreRate": 0.3235,
+                "winEitherHalfRate": 0.4706,
+                "halfTimeSampleSize": 34
+              },
+              "home": {
+                "sampleSize": 18,
+                "goalsForPerMatch": 1.2778,
+                "goalsAgainstPerMatch": 0.8333,
+                "over15Rate": 0.7222,
+                "over25Rate": 0.3889,
+                "bttsRate": 0.4444,
+                "cleanSheetRate": 0.3889,
+                "failedToScoreRate": 0.2778,
+                "winEitherHalfRate": 0.5556,
+                "halfTimeSampleSize": 18
+              },
+              "away": {
+                "sampleSize": 16,
+                "goalsForPerMatch": 1.0625,
+                "goalsAgainstPerMatch": 1.25,
+                "over15Rate": 0.625,
+                "over25Rate": 0.4375,
+                "bttsRate": 0.5,
+                "cleanSheetRate": 0.3125,
+                "failedToScoreRate": 0.375,
+                "winEitherHalfRate": 0.375,
+                "halfTimeSampleSize": 16
+              }
+            }
+          },
+          "xg": {
+            "window": 10,
+            "matchesWithXg": 10,
+            "xgForPerMatch": 1.121,
+            "xgAgainstPerMatch": 1.645,
+            "source": "unverifiable",
+            "reason": "provenance_not_recorded"
+          },
+          "standing": {
+            "source": "derived_from_fixtures",
+            "rank": 27,
+            "teamCount": 30,
+            "points": 23,
+            "played": 24,
+            "wins": 6,
+            "draws": 5,
+            "losses": 13,
+            "goalsFor": 15,
+            "goalsAgainst": 29,
+            "goalsDiff": -14
+          },
+          "schedule": {
+            "restDays": 5,
+            "lastMatchAt": "2026-09-06T20:00:00.000Z",
+            "lastMatchCompetitionCode": "ARG1",
+            "fixturesNext4Days": 0,
+            "fixturesPrev4Days": 0,
+            "otherCompetitionWithin4Days": null
+          },
+          "availability": {
+            "injuryCount": null,
+            "reason": "not_collected",
+            "players": null,
+            "playersReason": "not_collected"
+          }
+        },
+        "h2h": {
+          "meetings": [
+            {
+              "fixtureId": "019f304a-225e-792a-812b-007da59a07cf",
+              "date": "2026-05-02T19:15:00.000Z",
+              "competitionCode": "ARG1",
+              "competitionName": "Liga Profesional Argentina",
+              "venueForHomeTeam": "AWAY",
+              "score": {
+                "homeTeam": 2,
+                "awayTeam": 1
+              },
+              "halfTimeScore": {
+                "homeTeam": 2,
+                "awayTeam": 0
+              }
+            },
+            {
+              "fixtureId": "019f304a-0da7-7cb0-a894-42aa900d08eb",
+              "date": "2025-09-22T00:15:00.000Z",
+              "competitionCode": "ARG1",
+              "competitionName": "Liga Profesional Argentina",
+              "venueForHomeTeam": "HOME",
+              "score": {
+                "homeTeam": 2,
+                "awayTeam": 2
+              },
+              "halfTimeScore": {
+                "homeTeam": 1,
+                "awayTeam": 0
+              }
+            },
+            {
+              "fixtureId": "019f304a-0aaf-702e-8ba9-d2049cf7b43d",
+              "date": "2025-03-08T00:15:00.000Z",
+              "competitionCode": "ARG1",
+              "competitionName": "Liga Profesional Argentina",
+              "venueForHomeTeam": "AWAY",
+              "score": {
+                "homeTeam": 3,
+                "awayTeam": 0
+              },
+              "halfTimeScore": {
+                "homeTeam": 2,
+                "awayTeam": 0
+              }
+            },
+            {
+              "fixtureId": "019f3049-f0ea-7109-a2d7-7ceefbbcba98",
+              "date": "2024-05-19T23:00:00.000Z",
+              "competitionCode": "ARG1",
+              "competitionName": "Liga Profesional Argentina",
+              "venueForHomeTeam": "AWAY",
+              "score": {
+                "homeTeam": 4,
+                "awayTeam": 2
+              },
+              "halfTimeScore": {
+                "homeTeam": 0,
+                "awayTeam": 2
+              }
+            },
+            {
+              "fixtureId": "019f3049-da8c-7421-9cec-ba0c76f81dd0",
+              "date": "2023-02-05T22:15:00.000Z",
+              "competitionCode": "ARG1",
+              "competitionName": "Liga Profesional Argentina",
+              "venueForHomeTeam": "HOME",
+              "score": {
+                "homeTeam": 0,
+                "awayTeam": 0
+              },
+              "halfTimeScore": {
+                "homeTeam": 0,
+                "awayTeam": 0
+              }
+            }
+          ],
+          "aggregates": {
+            "sampleSize": 5,
+            "homeTeamWins": 3,
+            "draws": 2,
+            "awayTeamWins": 0,
+            "goalsPerMatch": 3.2,
+            "over15Rate": 0.8,
+            "over25Rate": 0.8,
+            "bttsRate": 0.6
+          },
+          "score": {
+            "value": 0.8200856734888149,
+            "reason": null,
+            "favorite": "HOME",
+            "sampleSize": 5,
+            "minSample": 3,
+            "decay": 0.8,
+            "drawScore": 0.5,
+            "formula": "h2h = Σ(0.8^i × outcome_i) / Σ(0.8^i), i = 0 pour la confrontation la plus récente ; outcome = 1 si le favori gagne, 0.5 si nul, 0 sinon. Calculé sur les 5 dernières confrontations, null en dessous de 3.",
+            "interpretation": "Taux de victoire du FAVORI dans cette confrontation, pondéré par la récence, les nuls comptant pour un demi. 0.5 = neutre ; > 0.5 = l’historique confirme le favori ; < 0.5 = il le contredit. Le favori est déterminé AVANT correction (probabilités 1X2 de base), donc sans circularité."
+          }
+        }
+      },
+      "contextReason": null,
+      "market": [
+        {
+          "key": "HOME",
+          "market": "ONE_X_TWO",
+          "pick": "HOME",
+          "label": "Victoire domicile",
+          "bestOdds": 1.47,
+          "bestBookmaker": "Pinnacle",
+          "medianOdds": 1.45,
+          "bookmakerCount": 4,
+          "snapshotAt": "2026-09-11T16:03:44.000Z",
+          "implied": {
+            "raw": 0.6897,
+            "deVigged": 0.6549,
+            "method": "proportional",
+            "overround": 1.053,
+            "outcomes": [
+              "HOME",
+              "DRAW",
+              "AWAY"
+            ],
+            "reason": null
+          },
+          "lineMovement": {
+            "firstOdds": 1.4,
+            "firstSnapshotAt": "2026-09-09T02:04:23.000Z",
+            "baselineHoursBeforeKickoff": 70.4269,
+            "latestOdds": 1.47,
+            "latestSnapshotAt": "2026-09-11T16:03:44.000Z",
+            "movement": -0.05,
+            "snapshotCount": 6,
+            "reason": null
+          },
+          "reason": null
+        },
+        {
+          "key": "AWAY",
+          "market": "ONE_X_TWO",
+          "pick": "AWAY",
+          "label": "Victoire extérieur",
+          "bestOdds": 10,
+          "bestBookmaker": "Unibet",
+          "medianOdds": 7.775,
+          "bookmakerCount": 4,
+          "snapshotAt": "2026-09-09T02:04:23.000Z",
+          "implied": {
+            "raw": 0.1286,
+            "deVigged": 0.1221,
+            "method": "proportional",
+            "overround": 1.053,
+            "outcomes": [
+              "HOME",
+              "DRAW",
+              "AWAY"
+            ],
+            "reason": null
+          },
+          "lineMovement": {
+            "firstOdds": 10,
+            "firstSnapshotAt": "2026-09-09T02:04:23.000Z",
+            "baselineHoursBeforeKickoff": 70.4269,
+            "latestOdds": 10,
+            "latestSnapshotAt": "2026-09-09T02:04:23.000Z",
+            "movement": null,
+            "snapshotCount": 6,
+            "reason": "single_snapshot"
+          },
+          "reason": null
+        },
+        {
+          "key": "WIN_EITHER_HALF_HOME",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "HOME",
+          "label": "TO_WIN_EITHER_HALF/HOME",
+          "bestOdds": 1.28,
+          "bestBookmaker": "Bet365",
+          "medianOdds": 1.28,
+          "bookmakerCount": 1,
+          "snapshotAt": "2026-09-11T16:03:44.000Z",
+          "implied": {
+            "raw": 0.7813,
+            "deVigged": null,
+            "method": null,
+            "overround": null,
+            "outcomes": null,
+            "reason": "no_complement_priced"
+          },
+          "lineMovement": {
+            "firstOdds": 1.25,
+            "firstSnapshotAt": "2026-09-09T02:04:23.000Z",
+            "baselineHoursBeforeKickoff": 70.4269,
+            "latestOdds": 1.28,
+            "latestSnapshotAt": "2026-09-11T16:03:44.000Z",
+            "movement": -0.024,
+            "snapshotCount": 6,
+            "reason": null
+          },
+          "reason": null
+        },
+        {
+          "key": "WIN_EITHER_HALF_AWAY",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "AWAY",
+          "label": "TO_WIN_EITHER_HALF/AWAY",
+          "bestOdds": 3.75,
+          "bestBookmaker": "Bet365",
+          "medianOdds": 3.75,
+          "bookmakerCount": 1,
+          "snapshotAt": "2026-09-11T16:03:44.000Z",
+          "implied": {
+            "raw": 0.2667,
+            "deVigged": null,
+            "method": null,
+            "overround": null,
+            "outcomes": null,
+            "reason": "no_complement_priced"
+          },
+          "lineMovement": {
+            "firstOdds": 4.33,
+            "firstSnapshotAt": "2026-09-09T02:04:23.000Z",
+            "baselineHoursBeforeKickoff": 70.4269,
+            "latestOdds": 3.75,
+            "latestSnapshotAt": "2026-09-11T16:03:44.000Z",
+            "movement": 0.1339,
+            "snapshotCount": 6,
+            "reason": null
+          },
+          "reason": null
+        },
+        {
+          "key": "BTTS_YES",
+          "market": "BTTS",
+          "pick": "YES",
+          "label": "Les deux équipes marquent : oui",
+          "bestOdds": 2.45,
+          "bestBookmaker": "Unibet",
+          "medianOdds": 2.38,
+          "bookmakerCount": 3,
+          "snapshotAt": "2026-09-09T02:04:23.000Z",
+          "implied": {
+            "raw": 0.4202,
+            "deVigged": 0.3913,
+            "method": "proportional",
+            "overround": 1.0738,
+            "outcomes": [
+              "YES",
+              "NO"
+            ],
+            "reason": null
+          },
+          "lineMovement": {
+            "firstOdds": 2.5,
+            "firstSnapshotAt": "2026-09-09T02:04:23.000Z",
+            "baselineHoursBeforeKickoff": 70.4269,
+            "latestOdds": 2.45,
+            "latestSnapshotAt": "2026-09-09T02:04:23.000Z",
+            "movement": null,
+            "snapshotCount": 6,
+            "reason": "single_snapshot"
+          },
+          "reason": null
+        },
+        {
+          "key": "OVER_1_5",
+          "market": "OVER_UNDER",
+          "pick": "OVER_1_5",
+          "label": "Plus de 1.5 but",
+          "bestOdds": 1.4,
+          "bestBookmaker": "Pinnacle",
+          "medianOdds": 1.345,
+          "bookmakerCount": 4,
+          "snapshotAt": "2026-09-11T16:03:44.000Z",
+          "implied": {
+            "raw": 0.7435,
+            "deVigged": 0.6919,
+            "method": "proportional",
+            "overround": 1.0746,
+            "outcomes": [
+              "OVER_1_5",
+              "UNDER_1_5"
+            ],
+            "reason": null
+          },
+          "lineMovement": {
+            "firstOdds": 1.38,
+            "firstSnapshotAt": "2026-09-09T02:04:23.000Z",
+            "baselineHoursBeforeKickoff": 70.4269,
+            "latestOdds": 1.4,
+            "latestSnapshotAt": "2026-09-11T16:03:44.000Z",
+            "movement": -0.0145,
+            "snapshotCount": 6,
+            "reason": null
+          },
+          "reason": null
+        },
+        {
+          "key": "OVER_2_5",
+          "market": "OVER_UNDER",
+          "pick": "OVER",
+          "label": "Plus de 2.5 buts",
+          "bestOdds": 2.2,
+          "bestBookmaker": "Pinnacle",
+          "medianOdds": 2.13,
+          "bookmakerCount": 4,
+          "snapshotAt": "2026-09-11T16:03:44.000Z",
+          "implied": {
+            "raw": 0.4695,
+            "deVigged": 0.446,
+            "method": "proportional",
+            "overround": 1.0526,
+            "outcomes": [
+              "OVER",
+              "UNDER"
+            ],
+            "reason": null
+          },
+          "lineMovement": {
+            "firstOdds": 2.14,
+            "firstSnapshotAt": "2026-09-09T02:04:23.000Z",
+            "baselineHoursBeforeKickoff": 70.4269,
+            "latestOdds": 2.2,
+            "latestSnapshotAt": "2026-09-11T16:03:44.000Z",
+            "movement": -0.028,
+            "snapshotCount": 6,
+            "reason": null
+          },
+          "reason": null
+        }
+      ],
+      "lambdaTrace": {
+        "base": {
+          "home": 1.861,
+          "away": 0.79
+        },
+        "inputs": {
+          "homeXgFor": null,
+          "homeXgAgainst": null,
+          "awayXgFor": null,
+          "awayXgAgainst": null,
+          "meanLambda": 1.4,
+          "homeAdvFactor": 1,
+          "awayDisadvFactor": 0.75,
+          "lambdaScale": 1,
+          "shrinkageFactor": 0.7
+        },
+        "formula": "leagueAvg = max(0.5, (xgF_home + xgF_away + xgA_home + xgA_away) / 4) ; raw_home = S × (xgF_home × xgA_away / leagueAvg) + (1 − S) × meanLambda ; raw_away = S × (xgF_away × xgA_home / leagueAvg) + (1 − S) × meanLambda ; λ_home = clamp(raw_home × homeAdvFactor × lambdaScale, 0.05, 5) ; λ_away = clamp(raw_away × awayDisadvFactor × lambdaScale, 0.05, 5). S = LAMBDA_SHRINKAGE_FACTOR.",
+        "steps": [
+          {
+            "name": "h2h_lambda_correction",
+            "target": "lambda",
+            "applied": true,
+            "lambdaDelta": {
+              "home": 0.1192,
+              "away": -0.0505
+            },
+            "input": 0.8200856734888149,
+            "reason": "Score H2H 0.8200856734888149 (neutre = 0.5), γ = 0.2. λ du favori × 1.064, λ de l’outsider × 0.936. Favori : domicile."
+          },
+          {
+            "name": "three_way_empirical_blend",
+            "target": "probabilities",
+            "applied": true,
+            "lambdaDelta": null,
+            "input": null,
+            "reason": "Mélange des probabilités 1X2 Poisson vers les taux empiriques de victoire domicile/extérieur et de nul des deux équipes (poids par ligue, getLeagueThreeWayEmpiricalBlendWeight). N’affecte que le 1X2."
+          },
+          {
+            "name": "over_under_shrinkage",
+            "target": "probabilities",
+            "applied": true,
+            "lambdaDelta": null,
+            "input": null,
+            "reason": "Shrinkage des probabilités Over/Under vers le taux de base de la ligue, pour les ligues dont la pente de calibration mesurée est proche de zéro (getOverUnderShrinkageConfig). N’affecte que OVER_UNDER."
+          },
+          {
+            "name": "h2h_market_signal_shift",
+            "target": "probabilities",
+            "applied": true,
+            "lambdaDelta": null,
+            "input": 0.8200856734888149,
+            "reason": "Décalage logit par marché à partir des taux H2H (BTTS, Over 2.5, clean sheet, win-to-nil)."
+          },
+          {
+            "name": "congestion_signal_shift",
+            "target": "probabilities",
+            "applied": true,
+            "lambdaDelta": null,
+            "input": 0,
+            "reason": "Décalage logit sur Over 2.5 et BTTS à partir du score de congestion 0 (0 = calendrier normal)."
+          }
+        ],
+        "final": {
+          "home": 1.9801805095527247,
+          "away": 0.7394576684921551,
+          "total": 2.7196
+        },
+        "floorHit": false,
+        "baseDerivation": "inverted_from_final",
+        "notes": [
+          "Favori H2H inféré des probabilités Poisson brutes : le moteur ne le persiste pas.",
+          "Les xG par équipe entrant dans deriveLambdas ne sont pas persistés dans ModelRun.features (seul un scalaire de matchup normalisé l’est) : ils sont donc null plutôt qu’estimés."
+        ],
+        "reason": null
+      },
+      "dataCoverageDetail": {
+        "ratio": 0.6667,
+        "level": 2,
+        "maxLevel": 3,
+        "components": [
+          {
+            "name": "lineMovement",
+            "present": false,
+            "weight": 0.3333333333333333,
+            "value": null,
+            "reason": "single_snapshot"
+          },
+          {
+            "name": "h2h",
+            "present": true,
+            "weight": 0.3333333333333333,
+            "value": 0.8200856734888149,
+            "reason": null
+          },
+          {
+            "name": "congestion",
+            "present": true,
+            "weight": 0.3333333333333333,
+            "value": 0,
+            "reason": null
+          }
+        ]
+      },
+      "targetMarkets": [
+        {
+          "key": "HOME",
+          "market": "ONE_X_TWO",
+          "pick": "HOME",
+          "label": "Victoire domicile",
+          "modelProbability": 0.6179601745693337,
+          "rawModelProbability": 0.6274889143331747,
+          "adjustmentDelta": -0.0095,
+          "marketProbability": {
+            "raw": 0.6897,
+            "deVigged": 0.6549,
+            "method": "proportional",
+            "overround": 1.053,
+            "outcomes": [
+              "HOME",
+              "DRAW",
+              "AWAY"
+            ],
+            "reason": null
+          },
+          "edge": -0.0717,
+          "odds": 1.47,
+          "ev": -0.09159854338307946,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        },
+        {
+          "key": "AWAY",
+          "market": "ONE_X_TWO",
+          "pick": "AWAY",
+          "label": "Victoire extérieur",
+          "modelProbability": 0.12196769645290369,
+          "rawModelProbability": 0.15318911302334884,
+          "adjustmentDelta": -0.0312,
+          "marketProbability": {
+            "raw": 0.1286,
+            "deVigged": 0.1221,
+            "method": "proportional",
+            "overround": 1.053,
+            "outcomes": [
+              "HOME",
+              "DRAW",
+              "AWAY"
+            ],
+            "reason": null
+          },
+          "edge": -0.0066,
+          "odds": 8.05,
+          "ev": -0.018160043554125295,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        },
+        {
+          "key": "WIN_EITHER_HALF_HOME",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "HOME",
+          "label": "TO_WIN_EITHER_HALF/HOME",
+          "modelProbability": 0.580632931143571,
+          "rawModelProbability": null,
+          "adjustmentDelta": null,
+          "marketProbability": {
+            "raw": 0.7813,
+            "deVigged": null,
+            "method": null,
+            "overround": null,
+            "outcomes": null,
+            "reason": "no_complement_priced"
+          },
+          "edge": -0.2007,
+          "odds": 1.28,
+          "ev": -0.2567898481362291,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        },
+        {
+          "key": "WIN_EITHER_HALF_AWAY",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "AWAY",
+          "label": "TO_WIN_EITHER_HALF/AWAY",
+          "modelProbability": 0.3481663704726211,
+          "rawModelProbability": null,
+          "adjustmentDelta": null,
+          "marketProbability": {
+            "raw": 0.2667,
+            "deVigged": null,
+            "method": null,
+            "overround": null,
+            "outcomes": null,
+            "reason": "no_complement_priced"
+          },
+          "edge": 0.0815,
+          "odds": 3.75,
+          "ev": 0.30562388927232914,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        },
+        {
+          "key": "BTTS_YES",
+          "market": "BTTS",
+          "pick": "YES",
+          "label": "Les deux équipes marquent : oui",
+          "modelProbability": 0.44154717911533964,
+          "rawModelProbability": 0.46123474314787594,
+          "adjustmentDelta": -0.0197,
+          "marketProbability": {
+            "raw": 0.4202,
+            "deVigged": 0.3913,
+            "method": "proportional",
+            "overround": 1.0738,
+            "outcomes": [
+              "YES",
+              "NO"
+            ],
+            "reason": null
+          },
+          "edge": 0.0213,
+          "odds": 2.38,
+          "ev": 0.05088228629450831,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        },
+        {
+          "key": "OVER_1_5",
+          "market": "OVER_UNDER",
+          "pick": "OVER_1_5",
+          "label": "Plus de 1.5 but",
+          "modelProbability": 0.7440376716327487,
+          "rawModelProbability": 0.7423232247885023,
+          "adjustmentDelta": 0.0017,
+          "marketProbability": {
+            "raw": 0.7435,
+            "deVigged": 0.6919,
+            "method": "proportional",
+            "overround": 1.0746,
+            "outcomes": [
+              "OVER_1_5",
+              "UNDER_1_5"
+            ],
+            "reason": null
+          },
+          "edge": 0.0005,
+          "odds": 1.4,
+          "ev": 0.04165274028584817,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        },
+        {
+          "key": "OVER_2_5",
+          "market": "OVER_UNDER",
+          "pick": "OVER",
+          "label": "Plus de 2.5 buts",
+          "modelProbability": 0.5370585446382162,
+          "rawModelProbability": 0.4943135556327868,
+          "adjustmentDelta": 0.0427,
+          "marketProbability": {
+            "raw": 0.4695,
+            "deVigged": 0.446,
+            "method": "proportional",
+            "overround": 1.0526,
+            "outcomes": [
+              "OVER",
+              "UNDER"
+            ],
+            "reason": null
+          },
+          "edge": 0.0676,
+          "odds": 2.2,
+          "ev": 0.1815287982040758,
+          "status": "viable",
+          "rejectionReason": null,
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        }
+      ]
+    },
+    {
+      "fixtureId": "019f3050-fe44-7d74-9478-9b0b08d390a0",
+      "match": "Gimnasia Y Tiro - Tristan Suarez",
+      "competition": "Primera Nacional (Argentina)",
+      "kickoff": "2026-09-12T01:00:00.000Z",
+      "status": "SCHEDULED",
+      "score": null,
+      "model": {
+        "deterministicScore": 0.4859,
+        "finalScore": 0.4859,
+        "scoreThreshold": 0.6,
+        "predictionSource": "POISSON_MAIN",
+        "lambda": {
+          "home": 0.8521311475409836,
+          "away": 0.9019672131147539,
+          "total": 1.7540983606557377
+        },
+        "offensiveBalance": {
+          "ratio": 0.944747364594693,
+          "classification": "BALANCED"
+        },
+        "shadowSignals": {
+          "lineMovement": null,
+          "h2h": 0.13114754098360656,
+          "congestion": 0
+        },
+        "dataCoverage": 0.6666666666666666,
+        "shadowPredictions": {
+          "winnerName": "Tristan Suarez",
+          "percent": {
+            "home": 10,
+            "draw": 45,
+            "away": 45
+          },
+          "poisson": {
+            "home": 41,
+            "away": 59
+          },
+          "conflict": false
+        }
+      },
+      "avoidFlag": null,
+      "calibrationAlert": null,
+      "calibrationAlertOverUnder": null,
+      "selectedPicks": [
+        {
+          "channel": "RESULT_BTTS",
+          "market": "RESULT_BTTS",
+          "pick": "AWAY_NO",
+          "label": "RESULT_BTTS/AWAY_NO",
+          "probability": 0.2534,
+          "odds": 4.5,
+          "ev": 0.1405,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": null,
+          "evMarginToThreshold": 0.06050000000000001
+        },
+        {
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "UNDER_0_5",
+          "label": "TEAM_TOTAL_AWAY/UNDER_0_5",
+          "probability": 0.468,
+          "odds": 2.14,
+          "ev": 0.0014,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": null,
+          "evMarginToThreshold": -0.0786
+        },
+        {
+          "channel": "RESULT_TOTAL_GOALS",
+          "market": "RESULT_TOTAL_GOALS",
+          "pick": "AWAY_UNDER_3_5",
+          "label": "RESULT_TOTAL_GOALS/AWAY_UNDER_3_5",
+          "probability": 0.2541,
+          "odds": 3.94,
+          "ev": 0.0012,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": null,
+          "evMarginToThreshold": -0.0788
+        },
+        {
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER",
+          "label": "Moins de 2.5 buts",
+          "probability": 0.7441,
+          "odds": 1.33,
+          "ev": -0.0103,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": 0.0027930862915718224,
+          "evMarginToThreshold": -0.0903
+        },
+        {
+          "channel": "BTTS",
+          "market": "BTTS",
+          "pick": "NO",
+          "label": "Les deux équipes marquent : non",
+          "probability": 0.6288,
+          "odds": 1.5,
+          "ev": -0.0568,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": -0.029384702112130512,
+          "evMarginToThreshold": -0.1368
+        },
+        {
+          "channel": "WIN_EITHER_HALF",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "HOME",
+          "label": "TO_WIN_EITHER_HALF/HOME",
+          "probability": 0.5113,
+          "odds": 1.83,
+          "ev": -0.0644,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": null,
+          "evMarginToThreshold": -0.1444
+        },
+        {
+          "channel": "CORRECT_SCORE",
+          "market": "CORRECT_SCORE",
+          "pick": "0:0",
+          "label": "0:0",
+          "probability": 0.1731,
+          "odds": 4.75,
+          "ev": -0.1779,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": true,
+          "history": [],
+          "adjustmentDelta": null,
+          "evMarginToThreshold": -0.2579
+        },
+        {
+          "channel": "DRAW",
+          "market": "ONE_X_TWO",
+          "pick": "DRAW",
+          "label": "Match nul",
+          "probability": 0.3922,
+          "odds": 2.55,
+          "ev": 0,
+          "qualityScore": null,
+          "rank": 1,
+          "result": null,
+          "observationOnly": false,
+          "history": [],
+          "adjustmentDelta": 0.0591961429582899,
+          "evMarginToThreshold": -0.08
+        }
+      ],
+      "rejectionSummary": [
+        {
+          "channel": "HALF_TIME_FULL_TIME",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "market_suspended"
+        },
+        {
+          "channel": "FIRST_HALF",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "market_suspended"
+        },
+        {
+          "channel": "OVER_UNDER_HT",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "market_suspended"
+        },
+        {
+          "channel": "CLEAN_SHEET",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "below_threshold"
+        },
+        {
+          "channel": "AVOID",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "no_avoid_signal"
+        },
+        {
+          "channel": "DOMINANT",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "below_threshold"
+        },
+        {
+          "channel": "CONSENSUS",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "no_consensus"
+        },
+        {
+          "channel": "SAFE",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "score_below_threshold"
+        },
+        {
+          "channel": "VALUE",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "score_below_threshold"
+        },
+        {
+          "channel": "WIN_TO_NIL",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "below_threshold"
+        },
+        {
+          "channel": "DRAW_NO_BET",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "below_threshold"
+        },
+        {
+          "channel": "DOUBLE_CHANCE",
+          "status": "REJECTED",
+          "count": 1,
+          "topReasonCode": "below_threshold"
+        }
+      ],
+      "evaluatedPicks": [
+        {
+          "market": "ONE_X_TWO",
+          "pick": "AWAY",
+          "label": "Victoire extérieur",
+          "probability": 0.3391100968892151,
+          "odds": 3.77,
+          "ev": 0.2784450652723409,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "adjustmentDelta": 0.02766448063190935
+        },
+        {
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "HOME",
+          "label": "TO_WIN_EITHER_HALF/HOME",
+          "probability": 0.5112549243197225,
+          "odds": 1.83,
+          "ev": -0.06440348849490783,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "adjustmentDelta": null
+        },
+        {
+          "market": "BTTS",
+          "pick": "YES",
+          "label": "Les deux équipes marquent : oui",
+          "probability": 0.3712163265374199,
+          "odds": 2.5,
+          "ev": -0.0719591836564502,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "adjustmentDelta": 0.02940102864955041
+        },
+        {
+          "market": "OVER_UNDER",
+          "pick": "OVER_1_5",
+          "label": "Plus de 1.5 but",
+          "probability": 0.5233668873504133,
+          "odds": 1.71,
+          "ev": -0.10504262263079325,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "adjustmentDelta": -0.0017892856362043963
+        },
+        {
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "AWAY",
+          "label": "TO_WIN_EITHER_HALF/AWAY",
+          "probability": 0.38727748682489394,
+          "odds": 2.25,
+          "ev": -0.1286256546439886,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "adjustmentDelta": null
+        },
+        {
+          "market": "ONE_X_TWO",
+          "pick": "HOME",
+          "label": "Victoire domicile",
+          "probability": 0.33917580865288494,
+          "odds": 2.51,
+          "ev": -0.1486687202812588,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "adjustmentDelta": -0.0163747180480992
+        },
+        {
+          "market": "OVER_UNDER",
+          "pick": "OVER",
+          "label": "Plus de 2.5 buts",
+          "probability": 0.25587062856000115,
+          "odds": 3.27,
+          "ev": -0.16330304460879633,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "adjustmentDelta": -0.0028224577315706934
+        }
+      ],
+      "context": {
+        "home": {
+          "teamId": "019f3050-ca27-7722-b1c5-d3a1794b9447",
+          "teamName": "Gimnasia Y Tiro",
+          "form": {
+            "last5": {
+              "window": 5,
+              "sampleSize": 5,
+              "sequence": "WWLDW",
+              "wins": 3,
+              "draws": 1,
+              "losses": 1,
+              "points": 10,
+              "pointsPerMatch": 2,
+              "goalsFor": 7,
+              "goalsAgainst": 4,
+              "goalsForPerMatch": 1.4,
+              "goalsAgainstPerMatch": 0.8
+            },
+            "last10": {
+              "window": 10,
+              "sampleSize": 10,
+              "sequence": "WWLDWWWWDW",
+              "wins": 7,
+              "draws": 2,
+              "losses": 1,
+              "points": 23,
+              "pointsPerMatch": 2.3,
+              "goalsFor": 15,
+              "goalsAgainst": 7,
+              "goalsForPerMatch": 1.5,
+              "goalsAgainstPerMatch": 0.7
+            },
+            "last5SameVenue": {
+              "window": 5,
+              "sampleSize": 5,
+              "sequence": "WWWDW",
+              "wins": 4,
+              "draws": 1,
+              "losses": 0,
+              "points": 13,
+              "pointsPerMatch": 2.6,
+              "goalsFor": 6,
+              "goalsAgainst": 1,
+              "goalsForPerMatch": 1.2,
+              "goalsAgainstPerMatch": 0.2
+            },
+            "venue": "HOME"
+          },
+          "goals": {
+            "currentSeason": {
+              "seasonName": "2026",
+              "all": {
+                "sampleSize": 28,
+                "goalsForPerMatch": 1.1071,
+                "goalsAgainstPerMatch": 0.9286,
+                "over15Rate": 0.6429,
+                "over25Rate": 0.3214,
+                "bttsRate": 0.5,
+                "cleanSheetRate": 0.3571,
+                "failedToScoreRate": 0.25,
+                "winEitherHalfRate": 0.5357,
+                "halfTimeSampleSize": 28
+              },
+              "home": {
+                "sampleSize": 14,
+                "goalsForPerMatch": 1.1429,
+                "goalsAgainstPerMatch": 0.6429,
+                "over15Rate": 0.5714,
+                "over25Rate": 0.1429,
+                "bttsRate": 0.4286,
+                "cleanSheetRate": 0.5,
+                "failedToScoreRate": 0.1429,
+                "winEitherHalfRate": 0.7143,
+                "halfTimeSampleSize": 14
+              },
+              "away": {
+                "sampleSize": 14,
+                "goalsForPerMatch": 1.0714,
+                "goalsAgainstPerMatch": 1.2143,
+                "over15Rate": 0.7143,
+                "over25Rate": 0.5,
+                "bttsRate": 0.5714,
+                "cleanSheetRate": 0.2143,
+                "failedToScoreRate": 0.3571,
+                "winEitherHalfRate": 0.3571,
+                "halfTimeSampleSize": 14
+              }
+            },
+            "previousSeason": {
+              "seasonName": "2025-26",
+              "all": {
+                "sampleSize": 37,
+                "goalsForPerMatch": 0.973,
+                "goalsAgainstPerMatch": 0.6757,
+                "over15Rate": 0.5405,
+                "over25Rate": 0.2432,
+                "bttsRate": 0.2973,
+                "cleanSheetRate": 0.4865,
+                "failedToScoreRate": 0.4054,
+                "winEitherHalfRate": 0.4865,
+                "halfTimeSampleSize": 37
+              },
+              "home": {
+                "sampleSize": 19,
+                "goalsForPerMatch": 1.5263,
+                "goalsAgainstPerMatch": 0.4211,
+                "over15Rate": 0.6316,
+                "over25Rate": 0.3684,
+                "bttsRate": 0.3158,
+                "cleanSheetRate": 0.6842,
+                "failedToScoreRate": 0.1579,
+                "winEitherHalfRate": 0.7368,
+                "halfTimeSampleSize": 19
+              },
+              "away": {
+                "sampleSize": 18,
+                "goalsForPerMatch": 0.3889,
+                "goalsAgainstPerMatch": 0.9444,
+                "over15Rate": 0.4444,
+                "over25Rate": 0.1111,
+                "bttsRate": 0.2778,
+                "cleanSheetRate": 0.2778,
+                "failedToScoreRate": 0.6667,
+                "winEitherHalfRate": 0.2222,
+                "halfTimeSampleSize": 18
+              }
+            }
+          },
+          "xg": {
+            "window": 10,
+            "matchesWithXg": 0,
+            "xgForPerMatch": null,
+            "xgAgainstPerMatch": null,
+            "source": "unverifiable",
+            "reason": "no_data_in_sample"
+          },
+          "standing": {
+            "source": "derived_from_fixtures",
+            "rank": 11,
+            "teamCount": 36,
+            "points": 44,
+            "played": 28,
+            "wins": 12,
+            "draws": 8,
+            "losses": 8,
+            "goalsFor": 31,
+            "goalsAgainst": 26,
+            "goalsDiff": 5
+          },
+          "schedule": {
+            "restDays": 5,
+            "lastMatchAt": "2026-09-06T20:00:00.000Z",
+            "lastMatchCompetitionCode": "ARG2",
+            "fixturesNext4Days": 0,
+            "fixturesPrev4Days": 0,
+            "otherCompetitionWithin4Days": null
+          },
+          "availability": {
+            "injuryCount": null,
+            "reason": "not_collected",
+            "players": null,
+            "playersReason": "not_collected"
+          }
+        },
+        "away": {
+          "teamId": "019f3050-b230-7532-8e9b-6c635f360ff1",
+          "teamName": "Tristan Suarez",
+          "form": {
+            "last5": {
+              "window": 5,
+              "sampleSize": 5,
+              "sequence": "WLWWW",
+              "wins": 4,
+              "draws": 0,
+              "losses": 1,
+              "points": 12,
+              "pointsPerMatch": 2.4,
+              "goalsFor": 10,
+              "goalsAgainst": 3,
+              "goalsForPerMatch": 2,
+              "goalsAgainstPerMatch": 0.6
+            },
+            "last10": {
+              "window": 10,
+              "sampleSize": 10,
+              "sequence": "WLWWWWWWLD",
+              "wins": 7,
+              "draws": 1,
+              "losses": 2,
+              "points": 22,
+              "pointsPerMatch": 2.2,
+              "goalsFor": 15,
+              "goalsAgainst": 5,
+              "goalsForPerMatch": 1.5,
+              "goalsAgainstPerMatch": 0.5
+            },
+            "last5SameVenue": {
+              "window": 5,
+              "sampleSize": 5,
+              "sequence": "LWWLD",
+              "wins": 2,
+              "draws": 1,
+              "losses": 2,
+              "points": 7,
+              "pointsPerMatch": 1.4,
+              "goalsFor": 6,
+              "goalsAgainst": 4,
+              "goalsForPerMatch": 1.2,
+              "goalsAgainstPerMatch": 0.8
+            },
+            "venue": "AWAY"
+          },
+          "goals": {
+            "currentSeason": {
+              "seasonName": "2026",
+              "all": {
+                "sampleSize": 27,
+                "goalsForPerMatch": 1.1481,
+                "goalsAgainstPerMatch": 0.5556,
+                "over15Rate": 0.5185,
+                "over25Rate": 0.2963,
+                "bttsRate": 0.3333,
+                "cleanSheetRate": 0.6296,
+                "failedToScoreRate": 0.2963,
+                "winEitherHalfRate": 0.5926,
+                "halfTimeSampleSize": 27
+              },
+              "home": {
+                "sampleSize": 14,
+                "goalsForPerMatch": 1.2857,
+                "goalsAgainstPerMatch": 0.5,
+                "over15Rate": 0.5714,
+                "over25Rate": 0.3571,
+                "bttsRate": 0.3571,
+                "cleanSheetRate": 0.6429,
+                "failedToScoreRate": 0.2857,
+                "winEitherHalfRate": 0.6429,
+                "halfTimeSampleSize": 14
+              },
+              "away": {
+                "sampleSize": 13,
+                "goalsForPerMatch": 1,
+                "goalsAgainstPerMatch": 0.6154,
+                "over15Rate": 0.4615,
+                "over25Rate": 0.2308,
+                "bttsRate": 0.3077,
+                "cleanSheetRate": 0.6154,
+                "failedToScoreRate": 0.3077,
+                "winEitherHalfRate": 0.5385,
+                "halfTimeSampleSize": 13
+              }
+            },
+            "previousSeason": {
+              "seasonName": "2025-26",
+              "all": {
+                "sampleSize": 37,
+                "goalsForPerMatch": 0.9459,
+                "goalsAgainstPerMatch": 0.6757,
+                "over15Rate": 0.5135,
+                "over25Rate": 0.2432,
+                "bttsRate": 0.3784,
+                "cleanSheetRate": 0.4595,
+                "failedToScoreRate": 0.4324,
+                "winEitherHalfRate": 0.4324,
+                "halfTimeSampleSize": 37
+              },
+              "home": {
+                "sampleSize": 19,
+                "goalsForPerMatch": 1.3684,
+                "goalsAgainstPerMatch": 0.6316,
+                "over15Rate": 0.6316,
+                "over25Rate": 0.4211,
+                "bttsRate": 0.5263,
+                "cleanSheetRate": 0.4737,
+                "failedToScoreRate": 0.3158,
+                "winEitherHalfRate": 0.5789,
+                "halfTimeSampleSize": 19
+              },
+              "away": {
+                "sampleSize": 18,
+                "goalsForPerMatch": 0.5,
+                "goalsAgainstPerMatch": 0.7222,
+                "over15Rate": 0.3889,
+                "over25Rate": 0.0556,
+                "bttsRate": 0.2222,
+                "cleanSheetRate": 0.4444,
+                "failedToScoreRate": 0.5556,
+                "winEitherHalfRate": 0.2778,
+                "halfTimeSampleSize": 18
+              }
+            }
+          },
+          "xg": {
+            "window": 10,
+            "matchesWithXg": 0,
+            "xgForPerMatch": null,
+            "xgAgainstPerMatch": null,
+            "source": "unverifiable",
+            "reason": "no_data_in_sample"
+          },
+          "standing": {
+            "source": "derived_from_fixtures",
+            "rank": 3,
+            "teamCount": 36,
+            "points": 51,
+            "played": 27,
+            "wins": 14,
+            "draws": 9,
+            "losses": 4,
+            "goalsFor": 31,
+            "goalsAgainst": 15,
+            "goalsDiff": 16
+          },
+          "schedule": {
+            "restDays": 6,
+            "lastMatchAt": "2026-09-05T18:00:00.000Z",
+            "lastMatchCompetitionCode": "ARG2",
+            "fixturesNext4Days": 0,
+            "fixturesPrev4Days": 0,
+            "otherCompetitionWithin4Days": null
+          },
+          "availability": {
+            "injuryCount": null,
+            "reason": "not_collected",
+            "players": null,
+            "playersReason": "not_collected"
+          }
+        },
+        "h2h": {
+          "meetings": [
+            {
+              "fixtureId": "019f3050-fa37-7322-a548-1645eda70ca5",
+              "date": "2026-04-26T18:00:00.000Z",
+              "competitionCode": "ARG2",
+              "competitionName": "Primera Nacional",
+              "venueForHomeTeam": "AWAY",
+              "score": {
+                "homeTeam": 1,
+                "awayTeam": 2
+              },
+              "halfTimeScore": {
+                "homeTeam": 1,
+                "awayTeam": 1
+              }
+            },
+            {
+              "fixtureId": "019f3050-e5c5-7e64-9443-645191d9394d",
+              "date": "2025-08-02T18:00:00.000Z",
+              "competitionCode": "ARG2",
+              "competitionName": "Primera Nacional",
+              "venueForHomeTeam": "AWAY",
+              "score": {
+                "homeTeam": 0,
+                "awayTeam": 1
+              },
+              "halfTimeScore": {
+                "homeTeam": 0,
+                "awayTeam": 1
+              }
+            },
+            {
+              "fixtureId": "019f3050-e29f-7c01-9a5a-472b4583e54b",
+              "date": "2025-03-30T20:00:00.000Z",
+              "competitionCode": "ARG2",
+              "competitionName": "Primera Nacional",
+              "venueForHomeTeam": "HOME",
+              "score": {
+                "homeTeam": 1,
+                "awayTeam": 1
+              },
+              "halfTimeScore": {
+                "homeTeam": 0,
+                "awayTeam": 0
+              }
+            }
+          ],
+          "aggregates": {
+            "sampleSize": 3,
+            "homeTeamWins": 0,
+            "draws": 1,
+            "awayTeamWins": 2,
+            "goalsPerMatch": 2,
+            "over15Rate": 0.6667,
+            "over25Rate": 0.3333,
+            "bttsRate": 0.6667
+          },
+          "score": {
+            "value": 0.13114754098360656,
+            "reason": null,
+            "favorite": "HOME",
+            "sampleSize": 3,
+            "minSample": 3,
+            "decay": 0.8,
+            "drawScore": 0.5,
+            "formula": "h2h = Σ(0.8^i × outcome_i) / Σ(0.8^i), i = 0 pour la confrontation la plus récente ; outcome = 1 si le favori gagne, 0.5 si nul, 0 sinon. Calculé sur les 5 dernières confrontations, null en dessous de 3.",
+            "interpretation": "Taux de victoire du FAVORI dans cette confrontation, pondéré par la récence, les nuls comptant pour un demi. 0.5 = neutre ; > 0.5 = l’historique confirme le favori ; < 0.5 = il le contredit. Le favori est déterminé AVANT correction (probabilités 1X2 de base), donc sans circularité."
+          }
+        }
+      },
+      "contextReason": null,
+      "market": [
+        {
+          "key": "HOME",
+          "market": "ONE_X_TWO",
+          "pick": "HOME",
+          "label": "Victoire domicile",
+          "bestOdds": 2.51,
+          "bestBookmaker": "Pinnacle",
+          "medianOdds": 2.39,
+          "bookmakerCount": 4,
+          "snapshotAt": "2026-09-11T12:13:17.000Z",
+          "implied": {
+            "raw": 0.4184,
+            "deVigged": 0.3877,
+            "method": "proportional",
+            "overround": 1.0791,
+            "outcomes": [
+              "HOME",
+              "DRAW",
+              "AWAY"
+            ],
+            "reason": null
+          },
+          "lineMovement": {
+            "firstOdds": 2.3,
+            "firstSnapshotAt": "2026-09-08T02:19:14.000Z",
+            "baselineHoursBeforeKickoff": 94.6794,
+            "latestOdds": 2.51,
+            "latestSnapshotAt": "2026-09-11T12:13:17.000Z",
+            "movement": -0.0913,
+            "snapshotCount": 8,
+            "reason": null
+          },
+          "reason": null
+        },
+        {
+          "key": "AWAY",
+          "market": "ONE_X_TWO",
+          "pick": "AWAY",
+          "label": "Victoire extérieur",
+          "bestOdds": 3.77,
+          "bestBookmaker": "Pinnacle",
+          "medianOdds": 3.575,
+          "bookmakerCount": 4,
+          "snapshotAt": "2026-09-11T12:13:17.000Z",
+          "implied": {
+            "raw": 0.2797,
+            "deVigged": 0.2592,
+            "method": "proportional",
+            "overround": 1.0791,
+            "outcomes": [
+              "HOME",
+              "DRAW",
+              "AWAY"
+            ],
+            "reason": null
+          },
+          "lineMovement": {
+            "firstOdds": 3.67,
+            "firstSnapshotAt": "2026-09-08T02:19:14.000Z",
+            "baselineHoursBeforeKickoff": 94.6794,
+            "latestOdds": 3.77,
+            "latestSnapshotAt": "2026-09-11T12:13:17.000Z",
+            "movement": -0.0272,
+            "snapshotCount": 8,
+            "reason": null
+          },
+          "reason": null
+        },
+        {
+          "key": "WIN_EITHER_HALF_HOME",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "HOME",
+          "label": "TO_WIN_EITHER_HALF/HOME",
+          "bestOdds": 1.83,
+          "bestBookmaker": "Bet365",
+          "medianOdds": 1.83,
+          "bookmakerCount": 1,
+          "snapshotAt": "2026-09-11T12:13:17.000Z",
+          "implied": {
+            "raw": 0.5464,
+            "deVigged": null,
+            "method": null,
+            "overround": null,
+            "outcomes": null,
+            "reason": "no_complement_priced"
+          },
+          "lineMovement": {
+            "firstOdds": 1.8,
+            "firstSnapshotAt": "2026-09-08T02:19:14.000Z",
+            "baselineHoursBeforeKickoff": 94.6794,
+            "latestOdds": 1.83,
+            "latestSnapshotAt": "2026-09-11T12:13:17.000Z",
+            "movement": -0.0167,
+            "snapshotCount": 8,
+            "reason": null
+          },
+          "reason": null
+        },
+        {
+          "key": "WIN_EITHER_HALF_AWAY",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "AWAY",
+          "label": "TO_WIN_EITHER_HALF/AWAY",
+          "bestOdds": 2.25,
+          "bestBookmaker": "Bet365",
+          "medianOdds": 2.25,
+          "bookmakerCount": 1,
+          "snapshotAt": "2026-09-11T12:13:17.000Z",
+          "implied": {
+            "raw": 0.4444,
+            "deVigged": null,
+            "method": null,
+            "overround": null,
+            "outcomes": null,
+            "reason": "no_complement_priced"
+          },
+          "lineMovement": {
+            "firstOdds": 2.5,
+            "firstSnapshotAt": "2026-09-08T02:19:14.000Z",
+            "baselineHoursBeforeKickoff": 94.6794,
+            "latestOdds": 2.25,
+            "latestSnapshotAt": "2026-09-11T12:13:17.000Z",
+            "movement": 0.1,
+            "snapshotCount": 8,
+            "reason": null
+          },
+          "reason": null
+        },
+        {
+          "key": "BTTS_YES",
+          "market": "BTTS",
+          "pick": "YES",
+          "label": "Les deux équipes marquent : oui",
+          "bestOdds": 2.5,
+          "bestBookmaker": "Bet365",
+          "medianOdds": 2.4,
+          "bookmakerCount": 3,
+          "snapshotAt": "2026-09-11T12:13:17.000Z",
+          "implied": {
+            "raw": 0.4167,
+            "deVigged": 0.3846,
+            "method": "proportional",
+            "overround": 1.0833,
+            "outcomes": [
+              "YES",
+              "NO"
+            ],
+            "reason": null
+          },
+          "lineMovement": {
+            "firstOdds": 2.62,
+            "firstSnapshotAt": "2026-09-08T02:19:14.000Z",
+            "baselineHoursBeforeKickoff": 94.6794,
+            "latestOdds": 2.5,
+            "latestSnapshotAt": "2026-09-11T12:13:17.000Z",
+            "movement": 0.0458,
+            "snapshotCount": 8,
+            "reason": null
+          },
+          "reason": null
+        },
+        {
+          "key": "OVER_1_5",
+          "market": "OVER_UNDER",
+          "pick": "OVER_1_5",
+          "label": "Plus de 1.5 but",
+          "bestOdds": 1.71,
+          "bestBookmaker": "Pinnacle",
+          "medianOdds": 1.67,
+          "bookmakerCount": 4,
+          "snapshotAt": "2026-09-11T12:13:17.000Z",
+          "implied": {
+            "raw": 0.5988,
+            "deVigged": 0.5588,
+            "method": "proportional",
+            "overround": 1.0716,
+            "outcomes": [
+              "OVER_1_5",
+              "UNDER_1_5"
+            ],
+            "reason": null
+          },
+          "lineMovement": {
+            "firstOdds": 1.73,
+            "firstSnapshotAt": "2026-09-08T02:19:14.000Z",
+            "baselineHoursBeforeKickoff": 94.6794,
+            "latestOdds": 1.71,
+            "latestSnapshotAt": "2026-09-11T12:13:17.000Z",
+            "movement": 0.0116,
+            "snapshotCount": 8,
+            "reason": null
+          },
+          "reason": null
+        },
+        {
+          "key": "OVER_2_5",
+          "market": "OVER_UNDER",
+          "pick": "OVER",
+          "label": "Plus de 2.5 buts",
+          "bestOdds": 3.4,
+          "bestBookmaker": "Bet365",
+          "medianOdds": 3.16,
+          "bookmakerCount": 4,
+          "snapshotAt": "2026-09-11T12:13:17.000Z",
+          "implied": {
+            "raw": 0.3165,
+            "deVigged": 0.2962,
+            "method": "proportional",
+            "overround": 1.0683,
+            "outcomes": [
+              "OVER",
+              "UNDER"
+            ],
+            "reason": null
+          },
+          "lineMovement": {
+            "firstOdds": 3.4,
+            "firstSnapshotAt": "2026-09-08T02:19:14.000Z",
+            "baselineHoursBeforeKickoff": 94.6794,
+            "latestOdds": 3.4,
+            "latestSnapshotAt": "2026-09-11T12:13:17.000Z",
+            "movement": 0,
+            "snapshotCount": 8,
+            "reason": null
+          },
+          "reason": null
+        }
+      ],
+      "lambdaTrace": {
+        "base": {
+          "home": 0.92,
+          "away": 0.84
+        },
+        "inputs": {
+          "homeXgFor": null,
+          "homeXgAgainst": null,
+          "awayXgFor": null,
+          "awayXgAgainst": null,
+          "meanLambda": 1.4,
+          "homeAdvFactor": 1,
+          "awayDisadvFactor": 0.75,
+          "lambdaScale": 1,
+          "shrinkageFactor": 0.7
+        },
+        "formula": "leagueAvg = max(0.5, (xgF_home + xgF_away + xgA_home + xgA_away) / 4) ; raw_home = S × (xgF_home × xgA_away / leagueAvg) + (1 − S) × meanLambda ; raw_away = S × (xgF_away × xgA_home / leagueAvg) + (1 − S) × meanLambda ; λ_home = clamp(raw_home × homeAdvFactor × lambdaScale, 0.05, 5) ; λ_away = clamp(raw_away × awayDisadvFactor × lambdaScale, 0.05, 5). S = LAMBDA_SHRINKAGE_FACTOR.",
+        "steps": [
+          {
+            "name": "h2h_lambda_correction",
+            "target": "lambda",
+            "applied": true,
+            "lambdaDelta": {
+              "home": -0.0679,
+              "away": 0.062
+            },
+            "input": 0.13114754098360656,
+            "reason": "Score H2H 0.13114754098360656 (neutre = 0.5), γ = 0.2. λ du favori × 0.9262, λ de l’outsider × 1.0738. Favori : domicile."
+          },
+          {
+            "name": "three_way_empirical_blend",
+            "target": "probabilities",
+            "applied": true,
+            "lambdaDelta": null,
+            "input": null,
+            "reason": "Mélange des probabilités 1X2 Poisson vers les taux empiriques de victoire domicile/extérieur et de nul des deux équipes (poids par ligue, getLeagueThreeWayEmpiricalBlendWeight). N’affecte que le 1X2."
+          },
+          {
+            "name": "over_under_shrinkage",
+            "target": "probabilities",
+            "applied": true,
+            "lambdaDelta": null,
+            "input": null,
+            "reason": "Shrinkage des probabilités Over/Under vers le taux de base de la ligue, pour les ligues dont la pente de calibration mesurée est proche de zéro (getOverUnderShrinkageConfig). N’affecte que OVER_UNDER."
+          },
+          {
+            "name": "h2h_market_signal_shift",
+            "target": "probabilities",
+            "applied": true,
+            "lambdaDelta": null,
+            "input": 0.13114754098360656,
+            "reason": "Décalage logit par marché à partir des taux H2H (BTTS, Over 2.5, clean sheet, win-to-nil)."
+          },
+          {
+            "name": "congestion_signal_shift",
+            "target": "probabilities",
+            "applied": true,
+            "lambdaDelta": null,
+            "input": 0,
+            "reason": "Décalage logit sur Over 2.5 et BTTS à partir du score de congestion 0 (0 = calendrier normal)."
+          }
+        ],
+        "final": {
+          "home": 0.8521311475409836,
+          "away": 0.9019672131147539,
+          "total": 1.7541
+        },
+        "floorHit": false,
+        "baseDerivation": "inverted_from_final",
+        "notes": [
+          "Favori H2H inféré des probabilités Poisson brutes : le moteur ne le persiste pas.",
+          "Les xG par équipe entrant dans deriveLambdas ne sont pas persistés dans ModelRun.features (seul un scalaire de matchup normalisé l’est) : ils sont donc null plutôt qu’estimés."
+        ],
+        "reason": null
+      },
+      "dataCoverageDetail": {
+        "ratio": 0.6667,
+        "level": 2,
+        "maxLevel": 3,
+        "components": [
+          {
+            "name": "lineMovement",
+            "present": false,
+            "weight": 0.3333333333333333,
+            "value": null,
+            "reason": "single_snapshot"
+          },
+          {
+            "name": "h2h",
+            "present": true,
+            "weight": 0.3333333333333333,
+            "value": 0.13114754098360656,
+            "reason": null
+          },
+          {
+            "name": "congestion",
+            "present": true,
+            "weight": 0.3333333333333333,
+            "value": 0,
+            "reason": null
+          }
+        ]
+      },
+      "targetMarkets": [
+        {
+          "key": "HOME",
+          "market": "ONE_X_TWO",
+          "pick": "HOME",
+          "label": "Victoire domicile",
+          "modelProbability": 0.33917580865288494,
+          "rawModelProbability": 0.35555052670098414,
+          "adjustmentDelta": -0.0164,
+          "marketProbability": {
+            "raw": 0.4184,
+            "deVigged": 0.3877,
+            "method": "proportional",
+            "overround": 1.0791,
+            "outcomes": [
+              "HOME",
+              "DRAW",
+              "AWAY"
+            ],
+            "reason": null
+          },
+          "edge": -0.0792,
+          "odds": 2.51,
+          "ev": -0.1486687202812588,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        },
+        {
+          "key": "AWAY",
+          "market": "ONE_X_TWO",
+          "pick": "AWAY",
+          "label": "Victoire extérieur",
+          "modelProbability": 0.3391100968892151,
+          "rawModelProbability": 0.31144561625730577,
+          "adjustmentDelta": 0.0277,
+          "marketProbability": {
+            "raw": 0.2797,
+            "deVigged": 0.2592,
+            "method": "proportional",
+            "overround": 1.0791,
+            "outcomes": [
+              "HOME",
+              "DRAW",
+              "AWAY"
+            ],
+            "reason": null
+          },
+          "edge": 0.0594,
+          "odds": 3.77,
+          "ev": 0.2784450652723409,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        },
+        {
+          "key": "WIN_EITHER_HALF_HOME",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "HOME",
+          "label": "TO_WIN_EITHER_HALF/HOME",
+          "modelProbability": 0.5112549243197225,
+          "rawModelProbability": null,
+          "adjustmentDelta": null,
+          "marketProbability": {
+            "raw": 0.5464,
+            "deVigged": null,
+            "method": null,
+            "overround": null,
+            "outcomes": null,
+            "reason": "no_complement_priced"
+          },
+          "edge": -0.0351,
+          "odds": 1.83,
+          "ev": -0.06440348849490783,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        },
+        {
+          "key": "WIN_EITHER_HALF_AWAY",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "AWAY",
+          "label": "TO_WIN_EITHER_HALF/AWAY",
+          "modelProbability": 0.38727748682489394,
+          "rawModelProbability": null,
+          "adjustmentDelta": null,
+          "marketProbability": {
+            "raw": 0.4444,
+            "deVigged": null,
+            "method": null,
+            "overround": null,
+            "outcomes": null,
+            "reason": "no_complement_priced"
+          },
+          "edge": -0.0571,
+          "odds": 2.25,
+          "ev": -0.1286256546439886,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        },
+        {
+          "key": "BTTS_YES",
+          "market": "BTTS",
+          "pick": "YES",
+          "label": "Les deux équipes marquent : oui",
+          "modelProbability": 0.3712163265374199,
+          "rawModelProbability": 0.3418152978878695,
+          "adjustmentDelta": 0.0294,
+          "marketProbability": {
+            "raw": 0.4167,
+            "deVigged": 0.3846,
+            "method": "proportional",
+            "overround": 1.0833,
+            "outcomes": [
+              "YES",
+              "NO"
+            ],
+            "reason": null
+          },
+          "edge": -0.0455,
+          "odds": 2.5,
+          "ev": -0.0719591836564502,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        },
+        {
+          "key": "OVER_1_5",
+          "market": "OVER_UNDER",
+          "pick": "OVER_1_5",
+          "label": "Plus de 1.5 but",
+          "modelProbability": 0.5233668873504133,
+          "rawModelProbability": 0.5251561729866177,
+          "adjustmentDelta": -0.0018,
+          "marketProbability": {
+            "raw": 0.5988,
+            "deVigged": 0.5588,
+            "method": "proportional",
+            "overround": 1.0716,
+            "outcomes": [
+              "OVER_1_5",
+              "UNDER_1_5"
+            ],
+            "reason": null
+          },
+          "edge": -0.0754,
+          "odds": 1.71,
+          "ev": -0.10504262263079325,
+          "status": "rejected",
+          "rejectionReason": "ev_below_threshold",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        },
+        {
+          "key": "OVER_2_5",
+          "market": "OVER_UNDER",
+          "pick": "OVER",
+          "label": "Plus de 2.5 buts",
+          "modelProbability": 0.25587062856000115,
+          "rawModelProbability": 0.25869308629157184,
+          "adjustmentDelta": -0.0028,
+          "marketProbability": {
+            "raw": 0.3165,
+            "deVigged": 0.2962,
+            "method": "proportional",
+            "overround": 1.0683,
+            "outcomes": [
+              "OVER",
+              "UNDER"
+            ],
+            "reason": null
+          },
+          "edge": -0.0606,
+          "odds": 3.27,
+          "ev": -0.16330304460879633,
+          "status": "rejected",
+          "rejectionReason": "probability_too_low",
+          "gates": {
+            "evFloor": 0.08,
+            "minOdds": 2,
+            "maxOdds": null,
+            "minProbability": 0.45,
+            "segmentDisabled": false
+          },
+          "reason": null
+        }
+      ]
+    }
+  ],
+  "schemaVersion": "2.0",
+  "meta": {
+    "definitions": [
+      {
+        "path": "context.*.form.last5 / last10",
+        "unit": "matchs, points (3/1/0), buts",
+        "window": "5 et 10 derniers matchs terminés, toutes compétitions",
+        "description": "Série W/D/L du plus récent au plus ancien. `sampleSize` dit combien de matchs existent réellement — il peut être inférieur à la fenêtre."
+      },
+      {
+        "path": "context.*.form.last5SameVenue",
+        "unit": "matchs, points, buts",
+        "window": "5 derniers matchs dans le même rôle (domicile ou extérieur)",
+        "description": "Rôle pris dans le match décrit : domicile pour l'équipe qui reçoit, extérieur pour l'autre."
+      },
+      {
+        "path": "context.*.goals.*.over15Rate / over25Rate",
+        "unit": "probabilité [0,1]",
+        "window": "saison concernée",
+        "description": "Part des matchs de l’équipe à 2 buts ou plus (over15) et 3 buts ou plus (over25), tous buts du match confondus — pas seulement les siens."
+      },
+      {
+        "path": "context.*.goals.*.winEitherHalfRate",
+        "unit": "probabilité [0,1]",
+        "window": "saison concernée, matchs disposant d’un score à la mi-temps",
+        "description": "1re mi-temps = score à la pause ; 2e mi-temps = score final − score à la pause. Rapporté à `halfTimeSampleSize`, pas à `sampleSize` : un score de mi-temps manquant est une inconnue, pas un échec."
+      },
+      {
+        "path": "context.*.xg",
+        "unit": "buts attendus par match",
+        "window": "10 derniers matchs portant un xG",
+        "description": "⚠ `source` vaut \"unverifiable\" : la colonne fixture.homeXg contient soit le xG d’API-Football, soit un proxy tirs cadrés × 0.4, sans marqueur de provenance. Annoncer une source serait une affirmation non vérifiable."
+      },
+      {
+        "path": "context.*.standing",
+        "unit": "rang, points, buts",
+        "window": "saison en cours, arrêtée à la veille du coup d’envoi",
+        "description": "Dérivé des matchs terminés (la table standing n’est plus alimentée). Les retraits de points administratifs ne sont pas reflétés."
+      },
+      {
+        "path": "context.*.schedule.restDays",
+        "unit": "jours pleins",
+        "window": "depuis le dernier match terminé",
+        "description": "Différence entre le coup d’envoi et le dernier match joué, arrondie à l’entier inférieur."
+      },
+      {
+        "path": "context.h2h.meetings",
+        "unit": "buts",
+        "window": "10 dernières confrontations antérieures au coup d’envoi",
+        "description": "Scores orientés du point de vue de l’équipe qui reçoit DANS LE MATCH DÉCRIT, quel que soit le lieu de la rencontre passée. `venueForHomeTeam` dit qui recevait ce jour-là."
+      },
+      {
+        "path": "context.h2h.score",
+        "unit": "taux pondéré [0,1]",
+        "window": "5 dernières confrontations (minimum 3)",
+        "description": "Le scalaire model.shadowSignals.h2h. 0.5 = neutre. Formule et interprétation portées par l’objet lui-même."
+      },
+      {
+        "path": "market[].implied.raw",
+        "unit": "probabilité [0,1]",
+        "window": "dernier snapshot de cotes",
+        "description": "1/cote médiane, marge du bookmaker INCLUSE. C’est la convention du moteur (AVOID, market-coherence) — ce n’est pas une probabilité réelle."
+      },
+      {
+        "path": "market[].implied.deVigged",
+        "unit": "probabilité [0,1]",
+        "window": "dernier snapshot de cotes",
+        "description": "Marge retirée par normalisation proportionnelle sur les issues du marché. null pour TO_WIN_EITHER_HALF : HOME et AWAY n’y forment pas une partition et le complément n’est pas coté."
+      },
+      {
+        "path": "market[].lineMovement",
+        "unit": "variation relative",
+        "window": "du premier snapshot disponible au dernier",
+        "description": "(première − dernière) / première. Positif = la cote a raccourci. ⚠ Ce n’est pas une cote d’ouverture : la collecte commence à J+3, donc l’ancrage est à ~72 h du coup d’envoi — lire baselineHoursBeforeKickoff."
+      },
+      {
+        "path": "lambdaTrace",
+        "unit": "buts attendus (λ Poisson)",
+        "window": "match",
+        "description": "λ de base, puis chaque ajustement dans l’ordre. Seule la correction H2H agit sur λ ; les quatre autres étapes agissent sur les probabilités. λ de base reconstruit en inversant la correction H2H (baseDerivation)."
+      },
+      {
+        "path": "dataCoverageDetail.level",
+        "unit": "entier 0-3",
+        "window": "match",
+        "description": "Nombre de signaux présents. À utiliser pour filtrer plutôt que `ratio`, qui vaut 2/3 = 0.6666… et rend tout seuil ≥ 0.67 éliminatoire."
+      },
+      {
+        "path": "targetMarkets[].edge",
+        "unit": "points de probabilité",
+        "window": "match",
+        "description": "⚠ modelProbability − marketProbability.raw. Anti-prédictif sur nos données (audit 2026-08-22) : diagnostic uniquement, ne jamais trier dessus."
+      },
+      {
+        "path": "targetMarkets[].gates.minOdds",
+        "unit": "cote décimale",
+        "window": "—",
+        "description": "⚠ `odds_below_floor` n’est PAS un plancher absolu : c’est un plancher par (ligue × marché × pick) issu des backtests ROI, qui monte jusqu’à 5.00 (ex. CH|ONE_X_TWO|HOME). Une cote de 3.47 rejetée par ce motif est donc cohérente."
+      },
+      {
+        "path": "targetMarkets[].gates.segmentDisabled",
+        "unit": "booléen",
+        "window": "—",
+        "description": "true = ce couple (ligue × marché × pick) est volontairement coupé par un plancher d’EV sentinelle (0.99 ou 2.99), inatteignable puisque EV_HARD_CAP vaut 0.90. 104 segments sont dans ce cas. À lire avant de conclure qu’un marché « ne sort jamais » dans une ligue."
+      },
+      {
+        "path": "calibration.byMarketAndCompetition[].calibrationRatio",
+        "unit": "ratio",
+        "window": "tout l’historique réglé",
+        "description": "Fréquence observée ÷ probabilité moyenne annoncée. 1 = calibré, < 1 = le modèle sur-annonce. C’est la mesure de fiabilité de référence."
+      },
+      {
+        "path": "calibration.byMarketAndCompetition[].roi",
+        "unit": "mise unitaire",
+        "window": "tout l’historique réglé",
+        "description": "⚠ Exposé par complétude, sans puissance statistique à nos volumes (erreur-type 13-18 points). Ne pas en tirer de conclusion."
+      },
+      {
+        "path": "legPool.entries[].correlationGroup",
+        "unit": "identifiant",
+        "window": "—",
+        "description": "Le fixtureId. Deux sélections qui le partagent portent sur le même match : elles sont corrélées et ne doivent pas être combinées."
+      }
+    ],
+    "constants": {
+      "EV_THRESHOLD": 0.08,
+      "MIN_SELECTION_ODDS": 2,
+      "MAX_SELECTION_ODDS": 4,
+      "AVOID_MAX_EDGE": 0.3,
+      "H2H_GAMMA": 0.2,
+      "H2H_DECAY": 0.8,
+      "H2H_MIN_SAMPLE": 3,
+      "LAMBDA_SHRINKAGE_FACTOR": 0.7,
+      "CALIBRATION_GATE_MAX_DIVERGENCE": 0.3,
+      "CALIBRATION_GATE_FAVORITE_FLIP_MIN_GAP": 0.15,
+      "CALIBRATION_GATE_SCOPE": "ONE_X_TWO",
+      "OVER_UNDER_CALIBRATION_GATE_FAVORITE_FLIP_MIN_GAP": 0.1,
+      "OVER_UNDER_CALIBRATION_GATE_SCOPE": "OVER_UNDER (par ligne 1.5/2.5/3.5/4.5)"
+    },
+    "caveats": [
+      "La fiche est un instrument de diagnostic : elle expose, elle ne sélectionne pas. Aucun champ n’ordonne les marchés par qualité.",
+      "Toutes les statistiques de `context` sont calculées sur des matchs antérieurs au coup d’envoi — la borne est posée dans le SQL.",
+      "Une valeur absente est toujours `null` accompagnée d’un `reason` : aucune imputation silencieuse.",
+      "model.shadowSignals.lineMovement (v1) reste null sur ~99,5 % des matchs : il exige un snapshot antérieur à KO−7 jours alors que la collecte commence à J+3. Utiliser market[].lineMovement, qui est ancré sur le premier snapshot réellement disponible.",
+      "context.availability ne contient que des compteurs de blessés, présents sur ~19 % des analyses. Aucun détail joueur n’est stocké, et les suspensions ne sont pas fournies par le flux.",
+      "context.*.xg.source vaut \"unverifiable\" tant que la migration xgSource n’a pas tourné : xG réel et proxy tirs cadrés partagent la même colonne.",
+      "calibration.byMarketAndCompetition agrège des canaux de nature différente sur un même marché ; c’est une mesure de calibration du marché, pas d’un canal en particulier.",
+      "Le calcul du biais λ parcourt tout l’historique des ModelRun (~8 s) : utiliser `includeCalibration=false` quand seul le contexte est nécessaire.",
+      "Le bloc `context` est coupé au-delà de 7 jours de plage (ANALYSIS_SHEET_LIMITS.maxContextRangeDays) : la fiche reste servie, avec le motif dans `contextReason`."
+    ]
+  },
+  "exportOptions": {
+    "statuses": [
+      "SCHEDULED"
+    ],
+    "markets": null,
+    "excludeChannels": null,
+    "compact": true,
+    "includeContext": true,
+    "includeCalibration": true,
+    "includeLegPool": true
+  },
+  "calibration": {
+    "settledThrough": "2026-09-12T01:16:41.913Z",
+    "totalSettled": 139832,
+    "exclusions": {
+      "observationOnly": 16876,
+      "voided": 2061,
+      "withoutOdds": 38739
+    },
+    "byMarketAndCompetition": [
+      {
+        "market": "OVER_UNDER",
+        "competitionCode": "CH",
+        "competitionName": "Championship",
+        "n": 1771,
+        "wins": 849,
+        "losses": 922,
+        "hitRate": 0.4794,
+        "avgPredictedProbability": 0.5813,
+        "observedFrequency": 0.4794,
+        "calibrationRatio": 0.8247,
+        "brierScore": 0.2567,
+        "roi": -0.0982
+      },
+      {
+        "market": "OVER_UNDER",
+        "competitionCode": "EL1",
+        "competitionName": "League One",
+        "n": 1635,
+        "wins": 814,
+        "losses": 821,
+        "hitRate": 0.4979,
+        "avgPredictedProbability": 0.5833,
+        "observedFrequency": 0.4979,
+        "calibrationRatio": 0.8536,
+        "brierScore": 0.2526,
+        "roi": -0.1049
+      },
+      {
+        "market": "OVER_UNDER",
+        "competitionCode": "EL2",
+        "competitionName": "League Two",
+        "n": 1627,
+        "wins": 845,
+        "losses": 782,
+        "hitRate": 0.5194,
+        "avgPredictedProbability": 0.5762,
+        "observedFrequency": 0.5194,
+        "calibrationRatio": 0.9014,
+        "brierScore": 0.2491,
+        "roi": -0.0574
+      },
+      {
+        "market": "OVER_UNDER",
+        "competitionCode": "BRA1",
+        "competitionName": "Brasileirão Série A",
+        "n": 1268,
+        "wins": 649,
+        "losses": 619,
+        "hitRate": 0.5118,
+        "avgPredictedProbability": 0.5595,
+        "observedFrequency": 0.5118,
+        "calibrationRatio": 0.9147,
+        "brierScore": 0.2524,
+        "roi": -0.0128
+      },
+      {
+        "market": "OVER_UNDER",
+        "competitionCode": "SP2",
+        "competitionName": "Segunda Division",
+        "n": 1211,
+        "wins": 610,
+        "losses": 601,
+        "hitRate": 0.5037,
+        "avgPredictedProbability": 0.5805,
+        "observedFrequency": 0.5037,
+        "calibrationRatio": 0.8677,
+        "brierScore": 0.2444,
+        "roi": -0.0571
+      }
+    ],
+    "lambdaBiasByCompetition": [
+      {
+        "competitionCode": "CH",
+        "competitionName": "Championship",
+        "n": 1705,
+        "avgPredictedGoals": 2.5124,
+        "avgActualGoals": 2.5783,
+        "bias": -0.0659,
+        "ratio": 1.0262
+      },
+      {
+        "competitionCode": "EL1",
+        "competitionName": "League One",
+        "n": 1695,
+        "avgPredictedGoals": 2.6453,
+        "avgActualGoals": 2.6153,
+        "bias": 0.03,
+        "ratio": 0.9887
+      },
+      {
+        "competitionCode": "EL2",
+        "competitionName": "League Two",
+        "n": 1690,
+        "avgPredictedGoals": 2.7134,
+        "avgActualGoals": 2.6799,
+        "bias": 0.0335,
+        "ratio": 0.9877
+      },
+      {
+        "competitionCode": "SP2",
+        "competitionName": "Segunda Division",
+        "n": 1413,
+        "avgPredictedGoals": 2.6619,
+        "avgActualGoals": 2.4607,
+        "bias": 0.2012,
+        "ratio": 0.9244
+      },
+      {
+        "competitionCode": "UECL",
+        "competitionName": "UEFA Europa Conference League",
+        "n": 1364,
+        "avgPredictedGoals": 2.7947,
+        "avgActualGoals": 2.8805,
+        "bias": -0.0858,
+        "ratio": 1.0307
+      }
+    ]
+  },
+  "legPool": {
+    "filters": {
+      "minOdds": 1.25,
+      "markets": [
+        "HOME",
+        "AWAY",
+        "WIN_EITHER_HALF_HOME",
+        "WIN_EITHER_HALF_AWAY",
+        "BTTS_YES",
+        "OVER_1_5",
+        "OVER_2_5"
+      ],
+      "minCoverage": 0.66,
+      "excludeFlags": true,
+      "status": "SCHEDULED"
+    },
+    "entries": [
+      {
+        "fixtureId": "01a083e4-f7d2-7d5b-a555-74c21167bbfd",
+        "kickoff": "2026-09-12T00:00:00.000Z",
+        "match": "Coritiba - Atletico Paranaense",
+        "competitionCode": "BRA1",
+        "key": "HOME",
+        "market": "ONE_X_TWO",
+        "pick": "HOME",
+        "label": "Victoire domicile",
+        "modelProbability": 0.3236874911946136,
+        "marketProbability": 0.3064,
+        "odds": 3.21,
+        "ev": 0.039036846734709654,
+        "edge": 0.0011,
+        "correlationGroup": "01a083e4-f7d2-7d5b-a555-74c21167bbfd",
+        "reliability": {
+          "n": 357,
+          "calibrationRatio": 0.9688,
+          "brierScore": 0.2369,
+          "hitRate": 0.5798,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "01a083e4-f7d2-7d5b-a555-74c21167bbfd",
+        "kickoff": "2026-09-12T00:00:00.000Z",
+        "match": "Coritiba - Atletico Paranaense",
+        "competitionCode": "BRA1",
+        "key": "AWAY",
+        "market": "ONE_X_TWO",
+        "pick": "AWAY",
+        "label": "Victoire extérieur",
+        "modelProbability": 0.3923503500519771,
+        "marketProbability": 0.3958,
+        "odds": 2.45,
+        "ev": -0.03874164237265611,
+        "edge": -0.0243,
+        "correlationGroup": "01a083e4-f7d2-7d5b-a555-74c21167bbfd",
+        "reliability": {
+          "n": 357,
+          "calibrationRatio": 0.9688,
+          "brierScore": 0.2369,
+          "hitRate": 0.5798,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "01a083e4-f7d2-7d5b-a555-74c21167bbfd",
+        "kickoff": "2026-09-12T00:00:00.000Z",
+        "match": "Coritiba - Atletico Paranaense",
+        "competitionCode": "BRA1",
+        "key": "WIN_EITHER_HALF_HOME",
+        "market": "TO_WIN_EITHER_HALF",
+        "pick": "HOME",
+        "label": "TO_WIN_EITHER_HALF/HOME",
+        "modelProbability": 0.45365002051922404,
+        "marketProbability": 0.4762,
+        "odds": 2.1,
+        "ev": -0.04733495690962956,
+        "edge": -0.0225,
+        "correlationGroup": "01a083e4-f7d2-7d5b-a555-74c21167bbfd",
+        "reliability": {
+          "n": 112,
+          "calibrationRatio": 0.9787,
+          "brierScore": 0.2291,
+          "hitRate": 0.625,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "01a083e4-f7d2-7d5b-a555-74c21167bbfd",
+        "kickoff": "2026-09-12T00:00:00.000Z",
+        "match": "Coritiba - Atletico Paranaense",
+        "competitionCode": "BRA1",
+        "key": "WIN_EITHER_HALF_AWAY",
+        "market": "TO_WIN_EITHER_HALF",
+        "pick": "AWAY",
+        "label": "TO_WIN_EITHER_HALF/AWAY",
+        "modelProbability": 0.5177663196301331,
+        "marketProbability": 0.578,
+        "odds": 1.73,
+        "ev": -0.10426426703986971,
+        "edge": -0.0602,
+        "correlationGroup": "01a083e4-f7d2-7d5b-a555-74c21167bbfd",
+        "reliability": {
+          "n": 112,
+          "calibrationRatio": 0.9787,
+          "brierScore": 0.2291,
+          "hitRate": 0.625,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "01a083e4-f7d2-7d5b-a555-74c21167bbfd",
+        "kickoff": "2026-09-12T00:00:00.000Z",
+        "match": "Coritiba - Atletico Paranaense",
+        "competitionCode": "BRA1",
+        "key": "BTTS_YES",
+        "market": "BTTS",
+        "pick": "YES",
+        "label": "Les deux équipes marquent : oui",
+        "modelProbability": 0.4457018276864549,
+        "marketProbability": 0.5,
+        "odds": 1.91,
+        "ev": -0.14870950911887112,
+        "edge": -0.0876,
+        "correlationGroup": "01a083e4-f7d2-7d5b-a555-74c21167bbfd",
+        "reliability": {
+          "n": 134,
+          "calibrationRatio": 0.7355,
+          "brierScore": 0.2805,
+          "hitRate": 0.4478,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "01a083e4-f7d2-7d5b-a555-74c21167bbfd",
+        "kickoff": "2026-09-12T00:00:00.000Z",
+        "match": "Coritiba - Atletico Paranaense",
+        "competitionCode": "BRA1",
+        "key": "OVER_1_5",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "label": "Plus de 1.5 but",
+        "modelProbability": 0.7150968557246744,
+        "marketProbability": 0.6849,
+        "odds": 1.38,
+        "ev": -0.013166339099949314,
+        "edge": -0.0095,
+        "correlationGroup": "01a083e4-f7d2-7d5b-a555-74c21167bbfd",
+        "reliability": {
+          "n": 1268,
+          "calibrationRatio": 0.9147,
+          "brierScore": 0.2524,
+          "hitRate": 0.5118,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "01a083e4-f7d2-7d5b-a555-74c21167bbfd",
+        "kickoff": "2026-09-12T00:00:00.000Z",
+        "match": "Coritiba - Atletico Paranaense",
+        "competitionCode": "BRA1",
+        "key": "OVER_2_5",
+        "market": "OVER_UNDER",
+        "pick": "OVER",
+        "label": "Plus de 2.5 buts",
+        "modelProbability": 0.4325469269588694,
+        "marketProbability": 0.4315,
+        "odds": 2.23,
+        "ev": -0.03542035288172124,
+        "edge": -0.022,
+        "correlationGroup": "01a083e4-f7d2-7d5b-a555-74c21167bbfd",
+        "reliability": {
+          "n": 1268,
+          "calibrationRatio": 0.9147,
+          "brierScore": 0.2524,
+          "hitRate": 0.5118,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "019f304a-2446-7bd7-b91f-1cf1c1ebeaa8",
+        "kickoff": "2026-09-12T00:30:00.000Z",
+        "match": "Boca Juniors - Central Cordoba de Santiago",
+        "competitionCode": "ARG1",
+        "key": "HOME",
+        "market": "ONE_X_TWO",
+        "pick": "HOME",
+        "label": "Victoire domicile",
+        "modelProbability": 0.6179601745693337,
+        "marketProbability": 0.6549,
+        "odds": 1.47,
+        "ev": -0.09159854338307946,
+        "edge": -0.0717,
+        "correlationGroup": "019f304a-2446-7bd7-b91f-1cf1c1ebeaa8",
+        "reliability": {
+          "n": 620,
+          "calibrationRatio": 0.789,
+          "brierScore": 0.2081,
+          "hitRate": 0.2823,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "019f304a-2446-7bd7-b91f-1cf1c1ebeaa8",
+        "kickoff": "2026-09-12T00:30:00.000Z",
+        "match": "Boca Juniors - Central Cordoba de Santiago",
+        "competitionCode": "ARG1",
+        "key": "AWAY",
+        "market": "ONE_X_TWO",
+        "pick": "AWAY",
+        "label": "Victoire extérieur",
+        "modelProbability": 0.12196769645290369,
+        "marketProbability": 0.1221,
+        "odds": 8.05,
+        "ev": -0.018160043554125295,
+        "edge": -0.0066,
+        "correlationGroup": "019f304a-2446-7bd7-b91f-1cf1c1ebeaa8",
+        "reliability": {
+          "n": 620,
+          "calibrationRatio": 0.789,
+          "brierScore": 0.2081,
+          "hitRate": 0.2823,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "019f304a-2446-7bd7-b91f-1cf1c1ebeaa8",
+        "kickoff": "2026-09-12T00:30:00.000Z",
+        "match": "Boca Juniors - Central Cordoba de Santiago",
+        "competitionCode": "ARG1",
+        "key": "WIN_EITHER_HALF_HOME",
+        "market": "TO_WIN_EITHER_HALF",
+        "pick": "HOME",
+        "label": "TO_WIN_EITHER_HALF/HOME",
+        "modelProbability": 0.580632931143571,
+        "marketProbability": 0.7813,
+        "odds": 1.28,
+        "ev": -0.2567898481362291,
+        "edge": -0.2007,
+        "correlationGroup": "019f304a-2446-7bd7-b91f-1cf1c1ebeaa8",
+        "reliability": {
+          "n": 640,
+          "calibrationRatio": 1.0273,
+          "brierScore": 0.2389,
+          "hitRate": 0.5797,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "019f304a-2446-7bd7-b91f-1cf1c1ebeaa8",
+        "kickoff": "2026-09-12T00:30:00.000Z",
+        "match": "Boca Juniors - Central Cordoba de Santiago",
+        "competitionCode": "ARG1",
+        "key": "WIN_EITHER_HALF_AWAY",
+        "market": "TO_WIN_EITHER_HALF",
+        "pick": "AWAY",
+        "label": "TO_WIN_EITHER_HALF/AWAY",
+        "modelProbability": 0.3481663704726211,
+        "marketProbability": 0.2667,
+        "odds": 3.75,
+        "ev": 0.30562388927232914,
+        "edge": 0.0815,
+        "correlationGroup": "019f304a-2446-7bd7-b91f-1cf1c1ebeaa8",
+        "reliability": {
+          "n": 640,
+          "calibrationRatio": 1.0273,
+          "brierScore": 0.2389,
+          "hitRate": 0.5797,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "019f304a-2446-7bd7-b91f-1cf1c1ebeaa8",
+        "kickoff": "2026-09-12T00:30:00.000Z",
+        "match": "Boca Juniors - Central Cordoba de Santiago",
+        "competitionCode": "ARG1",
+        "key": "BTTS_YES",
+        "market": "BTTS",
+        "pick": "YES",
+        "label": "Les deux équipes marquent : oui",
+        "modelProbability": 0.44154717911533964,
+        "marketProbability": 0.3913,
+        "odds": 2.38,
+        "ev": 0.05088228629450831,
+        "edge": 0.0213,
+        "correlationGroup": "019f304a-2446-7bd7-b91f-1cf1c1ebeaa8",
+        "reliability": {
+          "n": 366,
+          "calibrationRatio": 0.8086,
+          "brierScore": 0.2642,
+          "hitRate": 0.4617,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "019f304a-2446-7bd7-b91f-1cf1c1ebeaa8",
+        "kickoff": "2026-09-12T00:30:00.000Z",
+        "match": "Boca Juniors - Central Cordoba de Santiago",
+        "competitionCode": "ARG1",
+        "key": "OVER_1_5",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "label": "Plus de 1.5 but",
+        "modelProbability": 0.7440376716327487,
+        "marketProbability": 0.6919,
+        "odds": 1.4,
+        "ev": 0.04165274028584817,
+        "edge": 0.0005,
+        "correlationGroup": "019f304a-2446-7bd7-b91f-1cf1c1ebeaa8",
+        "reliability": {
+          "n": 774,
+          "calibrationRatio": 0.8935,
+          "brierScore": 0.231,
+          "hitRate": 0.6253,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "019f304a-2446-7bd7-b91f-1cf1c1ebeaa8",
+        "kickoff": "2026-09-12T00:30:00.000Z",
+        "match": "Boca Juniors - Central Cordoba de Santiago",
+        "competitionCode": "ARG1",
+        "key": "OVER_2_5",
+        "market": "OVER_UNDER",
+        "pick": "OVER",
+        "label": "Plus de 2.5 buts",
+        "modelProbability": 0.5370585446382162,
+        "marketProbability": 0.446,
+        "odds": 2.2,
+        "ev": 0.1815287982040758,
+        "edge": 0.0676,
+        "correlationGroup": "019f304a-2446-7bd7-b91f-1cf1c1ebeaa8",
+        "reliability": {
+          "n": 774,
+          "calibrationRatio": 0.8935,
+          "brierScore": 0.231,
+          "hitRate": 0.6253,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "019f3050-fe44-7d74-9478-9b0b08d390a0",
+        "kickoff": "2026-09-12T01:00:00.000Z",
+        "match": "Gimnasia Y Tiro - Tristan Suarez",
+        "competitionCode": "ARG2",
+        "key": "HOME",
+        "market": "ONE_X_TWO",
+        "pick": "HOME",
+        "label": "Victoire domicile",
+        "modelProbability": 0.33917580865288494,
+        "marketProbability": 0.3877,
+        "odds": 2.51,
+        "ev": -0.1486687202812588,
+        "edge": -0.0792,
+        "correlationGroup": "019f3050-fe44-7d74-9478-9b0b08d390a0",
+        "reliability": {
+          "n": 1009,
+          "calibrationRatio": 0.741,
+          "brierScore": 0.2097,
+          "hitRate": 0.2735,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "019f3050-fe44-7d74-9478-9b0b08d390a0",
+        "kickoff": "2026-09-12T01:00:00.000Z",
+        "match": "Gimnasia Y Tiro - Tristan Suarez",
+        "competitionCode": "ARG2",
+        "key": "AWAY",
+        "market": "ONE_X_TWO",
+        "pick": "AWAY",
+        "label": "Victoire extérieur",
+        "modelProbability": 0.3391100968892151,
+        "marketProbability": 0.2592,
+        "odds": 3.77,
+        "ev": 0.2784450652723409,
+        "edge": 0.0594,
+        "correlationGroup": "019f3050-fe44-7d74-9478-9b0b08d390a0",
+        "reliability": {
+          "n": 1009,
+          "calibrationRatio": 0.741,
+          "brierScore": 0.2097,
+          "hitRate": 0.2735,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "019f3050-fe44-7d74-9478-9b0b08d390a0",
+        "kickoff": "2026-09-12T01:00:00.000Z",
+        "match": "Gimnasia Y Tiro - Tristan Suarez",
+        "competitionCode": "ARG2",
+        "key": "WIN_EITHER_HALF_HOME",
+        "market": "TO_WIN_EITHER_HALF",
+        "pick": "HOME",
+        "label": "TO_WIN_EITHER_HALF/HOME",
+        "modelProbability": 0.5112549243197225,
+        "marketProbability": 0.5464,
+        "odds": 1.83,
+        "ev": -0.06440348849490783,
+        "edge": -0.0351,
+        "correlationGroup": "019f3050-fe44-7d74-9478-9b0b08d390a0",
+        "reliability": {
+          "n": 442,
+          "calibrationRatio": 1.1891,
+          "brierScore": 0.2387,
+          "hitRate": 0.6697,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "019f3050-fe44-7d74-9478-9b0b08d390a0",
+        "kickoff": "2026-09-12T01:00:00.000Z",
+        "match": "Gimnasia Y Tiro - Tristan Suarez",
+        "competitionCode": "ARG2",
+        "key": "WIN_EITHER_HALF_AWAY",
+        "market": "TO_WIN_EITHER_HALF",
+        "pick": "AWAY",
+        "label": "TO_WIN_EITHER_HALF/AWAY",
+        "modelProbability": 0.38727748682489394,
+        "marketProbability": 0.4444,
+        "odds": 2.25,
+        "ev": -0.1286256546439886,
+        "edge": -0.0571,
+        "correlationGroup": "019f3050-fe44-7d74-9478-9b0b08d390a0",
+        "reliability": {
+          "n": 442,
+          "calibrationRatio": 1.1891,
+          "brierScore": 0.2387,
+          "hitRate": 0.6697,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "019f3050-fe44-7d74-9478-9b0b08d390a0",
+        "kickoff": "2026-09-12T01:00:00.000Z",
+        "match": "Gimnasia Y Tiro - Tristan Suarez",
+        "competitionCode": "ARG2",
+        "key": "BTTS_YES",
+        "market": "BTTS",
+        "pick": "YES",
+        "label": "Les deux équipes marquent : oui",
+        "modelProbability": 0.3712163265374199,
+        "marketProbability": 0.3846,
+        "odds": 2.5,
+        "ev": -0.0719591836564502,
+        "edge": -0.0455,
+        "correlationGroup": "019f3050-fe44-7d74-9478-9b0b08d390a0",
+        "reliability": {
+          "n": 299,
+          "calibrationRatio": 0.9335,
+          "brierScore": 0.2274,
+          "hitRate": 0.6054,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "019f3050-fe44-7d74-9478-9b0b08d390a0",
+        "kickoff": "2026-09-12T01:00:00.000Z",
+        "match": "Gimnasia Y Tiro - Tristan Suarez",
+        "competitionCode": "ARG2",
+        "key": "OVER_1_5",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "label": "Plus de 1.5 but",
+        "modelProbability": 0.5233668873504133,
+        "marketProbability": 0.5588,
+        "odds": 1.71,
+        "ev": -0.10504262263079325,
+        "edge": -0.0754,
+        "correlationGroup": "019f3050-fe44-7d74-9478-9b0b08d390a0",
+        "reliability": {
+          "n": 1018,
+          "calibrationRatio": 0.8905,
+          "brierScore": 0.2275,
+          "hitRate": 0.6621,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      },
+      {
+        "fixtureId": "019f3050-fe44-7d74-9478-9b0b08d390a0",
+        "kickoff": "2026-09-12T01:00:00.000Z",
+        "match": "Gimnasia Y Tiro - Tristan Suarez",
+        "competitionCode": "ARG2",
+        "key": "OVER_2_5",
+        "market": "OVER_UNDER",
+        "pick": "OVER",
+        "label": "Plus de 2.5 buts",
+        "modelProbability": 0.25587062856000115,
+        "marketProbability": 0.2962,
+        "odds": 3.27,
+        "ev": -0.16330304460879633,
+        "edge": -0.0606,
+        "correlationGroup": "019f3050-fe44-7d74-9478-9b0b08d390a0",
+        "reliability": {
+          "n": 1018,
+          "calibrationRatio": 0.8905,
+          "brierScore": 0.2275,
+          "hitRate": 0.6621,
+          "reason": null
+        },
+        "coverageLevel": 2,
+        "flags": {
+          "avoid": false,
+          "calibrationAlert": false,
+          "calibrationAlertOverUnder": false
+        }
+      }
+    ],
+    "excludedCounts": {
+      "below_min_odds": 96,
+      "min_coverage": 973,
+      "flags": 336,
+      "no_odds": 42
+    }
+  }
+}
