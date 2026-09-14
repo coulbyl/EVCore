@@ -9,3 +9,4 @@ export {
   type MlShadowPick,
   buildMlShadowFeatures,
 } from "./ml-features";
+export { BETTING_ENGINE_CONFIG_VERSION } from "./engine-version";

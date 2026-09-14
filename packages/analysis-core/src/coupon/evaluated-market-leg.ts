@@ -16,22 +16,14 @@ export function isExtremeDivergence(
   return probability - 1 / odds >= AVOID_CONFIG.maxEdge;
 }
 
-// AVOID regime for a leg, from its two independent signals — validated on
-// settled MODEL bets (2026-08-09 plan): neither signal alone is a reliable
-// fade (extreme divergence alone: -16.7% ROI on the original pick but +19.3%
-// on its opposite over n=32; calibration alert alone: -14.2%/-19.9% on
-// either side, no edge, n=55) — but BOTH together flip back to the original
-// pick being excellent (+51% ROI, n=32). A plain OR (today's binary AVOID)
-// throws away that last case.
+// Conservative admission until a prospective study validates another policy.
+// Historical labels remain in the type for archived callers and snapshots.
 export type AvoidRegime = "CLEAN" | "FADE" | "DROP" | "KEEP";
-
 export function classifyAvoidSignal(
   extremeDivergence: boolean,
   calibrationAlert: boolean,
 ): AvoidRegime {
-  if (!extremeDivergence && !calibrationAlert) return "CLEAN";
-  if (extremeDivergence && calibrationAlert) return "KEEP";
-  return extremeDivergence ? "FADE" : "DROP";
+  return extremeDivergence || calibrationAlert ? "DROP" : "CLEAN";
 }
 
 function readSnapshotNumber(value: unknown): number | null {

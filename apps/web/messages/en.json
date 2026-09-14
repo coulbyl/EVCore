@@ -12,6 +12,21 @@
     "back": "Back",
     "seeAll": "See all"
   },
+  "resultBadge": {
+    "won": "Won",
+    "lost": "Lost",
+    "void": "Cancelled",
+    "refunded": "Refunded",
+    "settlementPending": "Settlement pending"
+  },
+  "pwaInstall": {
+    "title": "Install EVCore",
+    "subtitle": "Quick access from your home screen",
+    "iosSafari": "Tap Share, then Add to Home Screen.",
+    "iosOther": "Open EVCore in Safari, tap Share, then Add to Home Screen.",
+    "install": "Install",
+    "close": "Close"
+  },
   "nav": {
     "eva": "EVA",
     "dashboard": "Dashboard",
@@ -42,7 +57,7 @@
     "coupons": "Coupons",
     "decisions": "Decisions",
     "decisionsShort": "Decisions",
-    "arbitrage": "Arbitrage"
+    "arbitrage": "AI opinion"
   },
   "decisions": {
     "channels": {
@@ -193,7 +208,7 @@
     "helpLink": "How to read a pick"
   },
   "arbitrage": {
-    "title": "Arbitrage",
+    "title": "AI opinion",
     "badge": "AI read",
     "description": "Reads every other channel's decision and its measured reliability on this competition — only proposes a bet when it spots a real disagreement between them, never just to confirm what they already say. On most matches, the right call is to play nothing.",
     "filters": {
@@ -202,7 +217,7 @@
       "noPlay": "No opinion",
       "label": "Filter"
     },
-    "reasoningLabel": "Arbitrage read",
+    "reasoningLabel": "AI analysis",
     "sourcesLabel": "Sources",
     "decidedAt": "Decided on {date}",
     "noPlay": "No pick — read only.",
@@ -281,7 +296,7 @@
       "description": "Every match of the day, filterable by status. The betting index gives you the key stats at a glance."
     },
     "arbitrage": {
-      "title": "Arbitrage",
+      "title": "AI opinion",
       "description": "VANTAGE, our AI channel, only proposes a bet when it spots a real disagreement between the other channels — never just to confirm what they already say. The \"?\" here details its logic."
     },
     "coupons": {

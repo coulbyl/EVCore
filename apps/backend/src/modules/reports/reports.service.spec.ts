@@ -14,12 +14,17 @@ function makeSelection(input: {
   odds: string;
   result: 'WON' | 'LOST';
   correctedP?: number;
+  modelId?: string;
   createdAt?: Date;
 }): SettledEvSelectionRow {
   const features: Record<string, Prisma.JsonValue> = {};
   if (input.correctedP !== undefined) {
     features['shadow_ml_by_channel'] = {
-      [input.channel]: { correctedP: input.correctedP, edgeDelta: 0 },
+      [input.channel]: {
+        correctedP: input.correctedP,
+        edgeDelta: 0,
+        modelId: input.modelId ?? `${input.channel}:${input.market}-model`,
+      },
     };
   }
   return {
@@ -36,9 +41,23 @@ function makeSelection(input: {
 }
 
 function makeRepo(selections: SettledEvSelectionRow[]): ReportsRepository {
+  const segments = new Set(
+    selections.map(
+      (selection) => `${selection.channelDecision.channel}:${selection.market}`,
+    ),
+  );
   return {
     findSettledEvSelections: vi.fn().mockResolvedValue(selections),
-    findActiveModels: vi.fn().mockResolvedValue([]),
+    findActiveModels: vi.fn().mockResolvedValue(
+      [...segments].map((segment) => ({
+        id: `${segment}-model`,
+        segment,
+        algorithm: 'xgboost',
+        activatedAt: null,
+        createdAt: new Date('2026-06-01T00:00:00.000Z'),
+        metrics: {},
+      })),
+    ),
   } as unknown as ReportsRepository;
 }
 

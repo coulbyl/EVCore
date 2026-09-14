@@ -1,7 +1,7 @@
-import { prisma } from "@evcore/db";
+import { prematchCohortSql, prisma } from "@evcore/db";
 import {
   BetStatus,
-  CHANNEL_DECISION_STATUS,
+  BETTING_ENGINE_CONFIG_VERSION,
   fitReliability,
   shrinkTowardPooled,
   type ChannelReliability,
@@ -22,17 +22,16 @@ import {
 export async function computeChannelReliability(
   options: { asOf?: Date } = {},
 ): Promise<{ byChannel: ChannelReliabilityMap; pooled: ChannelReliability }> {
+  const cohort = await prisma.$queryRaw<{ id: string }[]>(
+    prematchCohortSql({
+      asOf: options.asOf ?? new Date(),
+      configVersion: BETTING_ENGINE_CONFIG_VERSION,
+    }),
+  );
   const selections = await prisma.channelSelection.findMany({
     where: {
+      id: { in: cohort.map((row) => row.id) },
       result: { in: [BetStatus.WON, BetStatus.LOST] },
-      rank: 1,
-      odds: { not: null },
-      channelDecision: {
-        status: CHANNEL_DECISION_STATUS.SELECTED,
-        ...(options.asOf
-          ? { modelRun: { fixture: { scheduledAt: { lt: options.asOf } } } }
-          : {}),
-      },
     },
     select: {
       probability: true,

@@ -1,7 +1,10 @@
 import type { Logger } from "pino";
 import type { CouponBounds, CouponClass } from "@evcore/analysis-core";
 import type { LlmClients } from "../groq/client";
-import { generateCouponSelection } from "./generate-coupon-selection";
+import {
+  generateCouponSelection,
+  type CouponLlmProvenance,
+} from "./generate-coupon-selection";
 import type { ScoredCandidate } from "./score-candidates";
 import {
   validateCouponSelection,
@@ -39,7 +42,10 @@ export async function composeCouponClass(
   bounds: CouponBounds,
   clients: LlmClients,
   logger: Logger,
-  opts: { maxAttempts?: number } = {},
+  opts: {
+    maxAttempts?: number;
+    onCompletion?: (provenance: CouponLlmProvenance) => void;
+  } = {},
 ): Promise<ComposeCouponClassResult> {
   const maxAttempts = opts.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
   let feedback: string | null = null;
@@ -52,6 +58,7 @@ export async function composeCouponClass(
       clients,
       logger,
       feedback,
+      opts.onCompletion,
     );
 
     if (generated.outcome === "empty_pool") {

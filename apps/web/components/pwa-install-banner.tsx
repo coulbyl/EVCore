@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { X, Download } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { Button } from "@evcore/ui";
 
 const DISMISSED_KEY = "evcore-pwa-install-dismissed";
 
@@ -11,6 +13,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function PwaInstallBanner() {
+  const t = useTranslations("pwaInstall");
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isIOSSafari, setIsIOSSafari] = useState(false);
@@ -64,54 +67,51 @@ export function PwaInstallBanner() {
     <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom)+0.5rem)] left-1/2 z-30 w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2">
       <div className="flex items-center gap-3 rounded-2xl border border-border bg-panel/96 px-4 py-3 shadow-[0_8px_32px_rgba(15,23,42,0.14)] backdrop-blur">
         {/* Icône */}
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sidebar">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sidebar">
           <span className="text-sm font-bold text-accent">EV</span>
         </div>
 
         {/* Texte */}
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-foreground">
-            Installer EVCore
+            {t("title")}
           </p>
           {isIOS ? (
             isIOSSafari ? (
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Touchez Partager puis &nbsp;&laquo;&nbsp;Sur l&apos;&eacute;cran
-                d&apos;accueil&nbsp;&raquo;.
+                {t("iosSafari")}
               </p>
             ) : (
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Ouvrez EVCore dans Safari, puis touchez Partager et
-                &nbsp;&laquo;&nbsp;Sur l&apos;&eacute;cran
-                d&apos;accueil&nbsp;&raquo;.
+                {t("iosOther")}
               </p>
             )
           ) : (
             <p className="truncate text-xs text-muted-foreground">
-              Accès rapide depuis l&apos;écran d&apos;accueil
+              {t("subtitle")}
             </p>
           )}
         </div>
 
         {/* Bouton installer (Chrome / Android uniquement) */}
         {!isIOS && (
-          <button
-            onClick={handleInstall}
-            className="flex shrink-0 items-center gap-1.5 rounded-xl bg-accent px-3 py-2 text-xs font-semibold text-accent-foreground transition-opacity hover:opacity-90 active:opacity-80"
-          >
-            <Download size={13} />
-            Installer
-          </button>
+          <Button type="button" size="sm" onClick={handleInstall}>
+            <Download data-icon="inline-start" />
+            {t("install")}
+          </Button>
         )}
 
         {/* Fermer */}
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={handleDismiss}
-          aria-label="Fermer"
-          className="-mr-1 shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          aria-label={t("close")}
+          className="-mr-1 text-muted-foreground"
         >
-          <X size={15} />
-        </button>
+          <X />
+        </Button>
       </div>
     </div>
   );

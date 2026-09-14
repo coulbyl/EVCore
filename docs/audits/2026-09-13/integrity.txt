@@ -1,0 +1,65 @@
+Pager usage is off.
+BEGIN
+SET
+ selections | post_kickoff | selection_post_kickoff | no_odds | invalid_probability | invalid_odds
+------------+--------------+------------------------+---------+---------------------+--------------
+     249641 |        56209 |                  56275 |   41395 |                   0 |            0
+(1 row)
+
+ repeated_fixture_channel_pick_groups
+--------------------------------------
+                                30997
+(1 row)
+
+ stats  | recorded_after_match_plus_day
+--------+-------------------------------
+ 124728 |                        116172
+(1 row)
+
+  status   | result | count
+-----------+--------+-------
+ POSTPONED |        |  1181
+ CANCELLED | WON    |     3
+ CANCELLED |        |    65
+(3 rows)
+
+ finished_unsettled_over_one_day
+---------------------------------
+                              20
+(1 row)
+
+ selection_bet_result_disagreements
+------------------------------------
+                                  1
+(1 row)
+
+ missing_config
+----------------
+         738197
+(1 row)
+
+              min              |              max              | count
+-------------------------------+-------------------------------+-------
+ 2026-03-19 15:55:46.253478+00 | 2026-09-08 00:05:04.575859+00 |    84
+(1 row)
+
+              segment               | algorithm |                  id                  |        createdAt        |       activatedAt       |                                                                                   metrics
+------------------------------------+-----------+--------------------------------------+-------------------------+-------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ ALL                                | xgboost   | 11213e25-ea06-40f0-b2be-1f07f9d98b37 | 2026-08-10 03:00:15.127 | 2026-08-12 18:02:41.169 | {"testSize": 10569, "roiShadow": -0.03585063897763578, "trainSize": 24661, "brierScore": 0.22302297719192515, "sampleSize": 35230, "calibrationError": 0.08139306724781259}
+ BTTS:BTTS                          | xgboost   | 2bef60c8-5b50-4dbd-b73b-6f75f0d0967b | 2026-08-31 03:05:37.751 | 2026-08-31 04:00:00.133 | {"testSize": 1630, "roiShadow": -0.06963793103448276, "trainSize": 3800, "brierScore": 0.23422865578094126, "sampleSize": 5430, "calibrationError": 0.07925985806313514}
+ CLEAN_SHEET:CLEAN_SHEET_AWAY       | xgboost   | 631d058b-c38c-4a1f-b30b-987214783ae9 | 2026-08-17 03:04:19.318 | 2026-08-17 04:00:00.132 | {"testSize": 452, "roiShadow": 0.7816083916083917, "trainSize": 1054, "brierScore": 0.12142139032524595, "sampleSize": 1506, "calibrationError": 0.14475659869911556}
+ CLEAN_SHEET:CLEAN_SHEET_HOME       | xgboost   | 674df929-d666-4ade-8fb0-ad7cf7b84178 | 2026-07-27 03:01:50.4   | 2026-07-27 04:00:00.566 | {"testSize": 165, "roiShadow": 0.7202564102564103, "trainSize": 385, "brierScore": 0.16161780227582195, "sampleSize": 550, "calibrationError": 0.08726887902215677}
+ DOMINANT:ONE_X_TWO                 | xgboost   | ec2bb017-dfaa-4f94-aa0a-b09b092d22d5 | 2026-07-06 03:00:48.371 | 2026-07-06 04:00:00.235 | {"testSize": 1396, "roiShadow": 0.03891176470588237, "trainSize": 3256, "brierScore": 0.21756461115301678, "sampleSize": 4652, "calibrationError": 0.05247781853038199}
+ DRAW:ONE_X_TWO                     | xgboost   | 634d3dfa-4076-4c38-b3d9-72dc1e434c31 | 2026-08-10 03:02:30.776 | 2026-08-10 04:00:00.596 | {"testSize": 1524, "roiShadow": -0.0801460564751704, "trainSize": 3556, "brierScore": 0.1933100136065913, "sampleSize": 5080, "calibrationError": 0.07961309294744646}
+ GOALS:OVER_UNDER                   | xgboost   | 04a4ef36-0458-49d5-8cc9-6e9147b4c8f8 | 2026-07-27 03:01:41.194 | 2026-07-27 04:00:00.488 | {"testSize": 2492, "roiShadow": 0.013297045101088631, "trainSize": 5814, "brierScore": 0.23143540903713788, "sampleSize": 8306, "calibrationError": 0.10115731208938596}
+ SAFE:ONE_X_TWO                     | xgboost   | e023e4e9-970e-41b4-96b8-0a07892fc9a8 | 2026-07-27 03:00:55.119 | 2026-07-27 04:00:00.186 | {"testSize": 72, "roiShadow": 0.08594594594594594, "trainSize": 166, "brierScore": 0.20896196715110704, "sampleSize": 238, "calibrationError": 0.18289366023602832}
+ SAFE:OVER_UNDER                    | xgboost   | d0a9c26c-bcc1-412d-981c-b07c6f3da7a5 | 2026-08-10 03:01:45.929 | 2026-08-10 04:00:00.505 | {"testSize": 154, "roiShadow": 0.2205882352941176, "trainSize": 358, "brierScore": 0.15434186410418338, "sampleSize": 512, "calibrationError": 0.10966622031491638}
+ TEAM_TOTAL:TEAM_TOTAL_AWAY         | xgboost   | 336daa54-9b7b-4c76-b0f6-24d6271fc560 | 2026-08-17 03:04:58.66  | 2026-08-17 04:00:00.47  | {"testSize": 732, "roiShadow": 0.23376884422110555, "trainSize": 1707, "brierScore": 0.1653748232358287, "sampleSize": 2439, "calibrationError": 0.09916133913840885}
+ TEAM_TOTAL:TEAM_TOTAL_HOME         | xgboost   | 5b3460da-c535-4b99-ba72-dee985f011ec | 2026-07-27 03:02:08.359 | 2026-07-27 04:00:00.757 | {"testSize": 157, "roiShadow": 0.2950495049504951, "trainSize": 365, "brierScore": 0.1794498990442446, "sampleSize": 522, "calibrationError": 0.08169538517558553}
+ VALUE:BTTS                         | xgboost   | 86d9ed9e-ae09-48a9-ab5f-5439853c6ee4 | 2026-08-24 03:01:45.36  | 2026-08-24 04:00:00.496 | {"testSize": 66, "roiShadow": 0.2673015873015873, "trainSize": 151, "brierScore": 0.24438772453702373, "sampleSize": 217, "calibrationError": 0.20717068328152574}
+ VALUE:ONE_X_TWO                    | xgboost   | 1472021a-d401-4fb6-80ea-6a24f547d38e | 2026-08-10 03:00:30.444 | 2026-08-10 04:00:00.122 | {"testSize": 163, "roiShadow": 0.19118181818181815, "trainSize": 378, "brierScore": 0.2460905636055651, "sampleSize": 541, "calibrationError": 0.1150670917684127}
+ VALUE:OVER_UNDER                   | xgboost   | 3fe8f4c0-a751-4d7f-a9ad-17ea2f561104 | 2026-08-24 03:01:20.243 | 2026-08-24 04:00:00.169 | {"testSize": 63, "roiShadow": 0.1535714285714286, "trainSize": 144, "brierScore": 0.24623009676582916, "sampleSize": 207, "calibrationError": 0.21139708856490724}
+ WIN_EITHER_HALF:TO_WIN_EITHER_HALF | xgboost   | 5d691b03-01fc-46b1-beb0-ba92eeb80d18 | 2026-08-10 03:03:59.393 | 2026-08-10 04:00:00.706 | {"testSize": 579, "roiShadow": 0.2304332129963899, "trainSize": 1349, "brierScore": 0.18423560560726046, "sampleSize": 1928, "calibrationError": 0.1910336829226687}
+(15 rows)
+
+ROLLBACK

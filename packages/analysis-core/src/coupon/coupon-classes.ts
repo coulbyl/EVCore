@@ -87,7 +87,7 @@ export const COUPON_BOUNDS = {
  * robuste d'un découpage à l'autre, c'est la différenciation : cote
  * 2.0-2.2 / 4.5-5.5 / 11-17.7 et taux de réussite 45-48% / 17-20% / 7-9%.
  */
-export type CouponClassName = "SAFE" | "BALANCED" | "BOLD";
+export type CouponClassName = "SAFE" | "BALANCED" | "BOLD" | "UNIQUE";
 
 export type CouponClass = {
   name: CouponClassName;
@@ -138,12 +138,17 @@ export const COUPON_CLASSES: readonly CouponClass[] = [
   },
 ] as const;
 
+// COUPON_CLASSES only decodes archived proposals. Its historical simulations
+// were reused during parameter selection and are not prospective validation.
+
 /** Retrouve la classe d'une proposition persistée depuis son `targetOddsMin`. */
 export function classForTargetOddsMin(
   targetOddsMin: number,
 ): CouponClassName | null {
   return (
-    COUPON_CLASSES.find((c) => c.targetOddsMin === targetOddsMin)?.name ?? null
+    [UNIFIED_COUPON_CLASS, ...COUPON_CLASSES].find(
+      (c) => c.targetOddsMin === targetOddsMin,
+    )?.name ?? null
   );
 }
 
@@ -155,3 +160,21 @@ export type CouponBounds = {
   minCombinedOdds: number;
   maxCombinedOdds: number;
 };
+
+/** Prospective product policy; legacy classes remain readable in history. */
+export const UNIFIED_COUPON_CLASS: CouponClass = {
+  name: "UNIQUE",
+  minLegOdds: 1.2,
+  maxLegOdds: 15.01,
+  maxLegs: 5,
+  targetCombinedOdds: 5,
+  targetOddsMin: 5,
+  targetOddsMax: 15,
+};
+export const UNIFIED_COUPON_BOUNDS: CouponBounds = {
+  minLegs: 2,
+  maxLegs: 5,
+  minCombinedOdds: 5,
+  maxCombinedOdds: 15,
+};
+export const COUPON_POLICY_VERSION = "unified-5-15-v1";

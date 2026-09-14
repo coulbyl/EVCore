@@ -131,6 +131,7 @@ export class PointInTimeLoader {
       this.client.teamStats.findFirst({
         where: {
           teamId,
+          createdAt: { lt: asOf },
           afterFixture: { seasonId, scheduledAt: { lt: asOf } },
         },
         orderBy: { afterFixture: { scheduledAt: "desc" } },
@@ -138,6 +139,7 @@ export class PointInTimeLoader {
       this.client.teamStats.count({
         where: {
           teamId,
+          createdAt: { lt: asOf },
           afterFixture: { seasonId, scheduledAt: { lt: asOf } },
         },
       }),
@@ -155,6 +157,7 @@ export class PointInTimeLoader {
       ? await this.client.teamStats.findFirst({
           where: {
             teamId,
+            createdAt: { lt: asOf },
             afterFixture: {
               scheduledAt: { lt: asOf },
               seasonId: { not: seasonId },
@@ -173,7 +176,7 @@ export class PointInTimeLoader {
   }
 
   // Finished head-to-head legs strictly before `asOf`, newest first — point-
-  // in-time-safe by construction (`scheduledAt: { lt: asOf }`), same query
+  // bounded by kickoff; historical result revisions are not available. Same query
   // as H2HService.fetchLegs.
   async loadH2HLegs(input: {
     homeTeamId: string;
@@ -278,7 +281,8 @@ export class PointInTimeLoader {
       }),
       this.client.fixture.count({
         where: {
-          status: FixtureStatus.SCHEDULED,
+          createdAt: { lt: asOf },
+          status: { in: [FixtureStatus.SCHEDULED, FixtureStatus.FINISHED] },
           scheduledAt: {
             gt: asOf,
             lte: new Date(asOf.getTime() + CONGESTION_UPCOMING_WINDOW_MS),
@@ -303,13 +307,18 @@ export class PointInTimeLoader {
     context: PointInTimeContext,
   ): Promise<FullOddsSnapshot | null> {
     const rows = await this.client.oddsSnapshot.findMany({
-      where: { fixtureId },
+      where: {
+        fixtureId,
+        createdAt: { lt: context.asOf },
+        snapshotAt: { lt: context.asOf },
+      },
       select: {
         bookmaker: true,
         market: true,
         pick: true,
         odds: true,
         snapshotAt: true,
+        createdAt: true,
         homeOdds: true,
         drawOdds: true,
         awayOdds: true,
@@ -337,6 +346,7 @@ export class PointInTimeLoader {
         pick: true,
         odds: true,
         snapshotAt: true,
+        createdAt: true,
         homeOdds: true,
         drawOdds: true,
         awayOdds: true,
@@ -353,7 +363,12 @@ export class PointInTimeLoader {
     for (const { fixtureId, asOf } of requests) {
       result.set(
         fixtureId,
-        assembleFullOddsSnapshot(rowsByFixture.get(fixtureId) ?? [], asOf),
+        assembleFullOddsSnapshot(
+          (rowsByFixture.get(fixtureId) ?? []).filter(
+            (row) => row.createdAt < asOf,
+          ),
+          asOf,
+        ),
       );
     }
     return result;

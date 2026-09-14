@@ -36,25 +36,23 @@ describe("isExtremeDivergence", () => {
   });
 });
 
-// Graduated AVOID routing (plan 2026-08-09) — replaces the old plain OR of
-// the two signals. Validated on settled MODEL bets: extreme divergence alone
-// → fade (opposite pick +19.3% ROI, n=32); calibration alert alone → no edge
-// either side (n=55) → drop; both together → the ORIGINAL pick is excellent
-// (+51% ROI, n=32) → keep, where a plain OR would have dropped it.
+// Prospective policy: either warning excludes the candidate. The former
+// FADE/KEEP split came from small reused historical cells and is not treated
+// as validation by the 2026-09-13 audit.
 describe("classifyAvoidSignal", () => {
   it("is CLEAN when neither signal fires", () => {
     expect(classifyAvoidSignal(false, false)).toBe("CLEAN");
   });
 
-  it("is FADE when only extreme divergence fires", () => {
-    expect(classifyAvoidSignal(true, false)).toBe("FADE");
+  it("is DROP when only extreme divergence fires", () => {
+    expect(classifyAvoidSignal(true, false)).toBe("DROP");
   });
 
   it("is DROP when only the calibration alert fires", () => {
     expect(classifyAvoidSignal(false, true)).toBe("DROP");
   });
 
-  it("is KEEP when both fire together", () => {
-    expect(classifyAvoidSignal(true, true)).toBe("KEEP");
+  it("is DROP when both fire together", () => {
+    expect(classifyAvoidSignal(true, true)).toBe("DROP");
   });
 });

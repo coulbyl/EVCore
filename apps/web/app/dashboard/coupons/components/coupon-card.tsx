@@ -49,9 +49,9 @@ export function CouponCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [coupon.id]);
   const displayResult =
-    coupon.result === "WON"
+    coupon.result === "WON" || coupon.result === "PARTIAL"
       ? "WON"
-      : coupon.result === "LOST" || coupon.result === "PARTIAL"
+      : coupon.result === "LOST"
         ? "LOST"
         : null;
 

@@ -10,6 +10,7 @@ export type { MlShadowFeatures };
 export type MlShadowResult = {
   corrected_probability: number | null;
   model_found: boolean;
+  model_id?: string | null;
 };
 
 const ML_INFER_TIMEOUT_MS = 500;

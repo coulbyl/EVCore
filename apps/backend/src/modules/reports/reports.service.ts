@@ -53,6 +53,16 @@ function readChannelCorrectedP(json: unknown, channel: string): number | null {
     : null;
 }
 
+function readChannelModelId(json: unknown, channel: string): string | null {
+  if (json === null || typeof json !== 'object') return null;
+  const byChannel = (json as Record<string, unknown>)['shadow_ml_by_channel'];
+  if (byChannel === null || typeof byChannel !== 'object') return null;
+  const entry = (byChannel as Record<string, unknown>)[channel];
+  if (entry === null || typeof entry !== 'object') return null;
+  const modelId = (entry as Record<string, unknown>)['modelId'];
+  return typeof modelId === 'string' && modelId.length > 0 ? modelId : null;
+}
+
 @Injectable()
 export class ReportsService {
   constructor(private readonly repo: ReportsRepository) {}
@@ -87,6 +97,7 @@ export class ReportsService {
           channel: channel as StrategyChannel,
           market,
           from: segmentFrom,
+          modelId: active?.id ?? null,
         });
         const { verdict, brierImprovement } =
           comparison !== null
@@ -133,7 +144,8 @@ export class ReportsService {
 
   // Baseline vs corrected Brier + policy ROI over the comparable settled bets
   // of one (channel, market) segment. Returns null when no bet carries a
-  // shadow correction. ROI policy replay (correctedRoi) is only meaningful
+  // shadow correction made by the active model's exact persisted UUID. ROI
+  // policy replay (correctedRoi) is only meaningful
   // for VALUE (EV-threshold selection) — other channels select by a per-
   // league probability threshold (see reports.constants.ts comment), so
   // correctedRoi stays null for them and the verdict is capped at WATCH.
@@ -142,8 +154,10 @@ export class ReportsService {
     channel: StrategyChannel;
     market: string;
     from: Date;
+    modelId: string | null;
   }): SegmentComparison | null {
-    const { selections, channel, market, from } = input;
+    const { selections, channel, market, from, modelId } = input;
+    if (modelId === null) return null;
     let n = 0;
     let baselineBrierSum = new Decimal(0);
     let correctedBrierSum = new Decimal(0);
@@ -157,6 +171,14 @@ export class ReportsService {
       if (selection.market !== market) continue;
       if (selection.createdAt < from) continue;
       if (selection.odds === null) continue;
+      if (
+        readChannelModelId(
+          selection.channelDecision.modelRun.features,
+          channel,
+        ) !== modelId
+      ) {
+        continue;
+      }
       const correctedP = readChannelCorrectedP(
         selection.channelDecision.modelRun.features,
         channel,

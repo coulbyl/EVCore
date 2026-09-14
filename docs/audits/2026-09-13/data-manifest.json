@@ -1,0 +1,27 @@
+[
+  {
+    "file": "coupons.csv.gz",
+    "bytes": 70704,
+    "sha256": "5ce38ae025fa009c8706fdaba49487be2a4154bc84c2e56953df5685e68fc844"
+  },
+  {
+    "file": "daily.csv.gz",
+    "bytes": 1659477,
+    "sha256": "870abe32ed947d40e060868aed93318d6038262f17e65a3c60b427fdaa999d90"
+  },
+  {
+    "file": "models.csv.gz",
+    "bytes": 10223,
+    "sha256": "f91f4c29baaccd935b9643dd897a3cbf1cbcbdee829b9983deda1d29473490e5"
+  },
+  {
+    "file": "raw.csv.gz",
+    "bytes": 4245165,
+    "sha256": "92dd309b573a9674cebd02928597d44261f12516d5f28dfba8f4a1d891227e32"
+  },
+  {
+    "file": "selections.csv.gz",
+    "bytes": 1705634,
+    "sha256": "fdcb585bdc492345748e50c053a45a1efbea4a3daaafbd373966f7fe6e83fd08"
+  }
+]

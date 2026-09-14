@@ -218,7 +218,7 @@ describe("resolveEvaluatedMarketLeg", () => {
     expect(resolveEvaluatedMarketLeg(evaluated, opts)).toBeNull();
   });
 
-  it("keeps a KEEP-regime leg (both extreme divergence and calibration alert) even with AVOID enforced", () => {
+  it("excludes a leg when both warnings fire", () => {
     const evaluated = makeEvaluated({
       market: "DRAW_NO_BET",
       pick: "HOME",
@@ -226,6 +226,6 @@ describe("resolveEvaluatedMarketLeg", () => {
       odds: "2.50",
     });
     const opts = { ...baseOpts, enforceAvoid: true, calibrationAlert: true };
-    expect(resolveEvaluatedMarketLeg(evaluated, opts)).not.toBeNull();
+    expect(resolveEvaluatedMarketLeg(evaluated, opts)).toBeNull();
   });
 });

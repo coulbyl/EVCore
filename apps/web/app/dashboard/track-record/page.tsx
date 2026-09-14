@@ -32,7 +32,7 @@ import {
 export const metadata: Metadata = {
   title: "Historique vérifiable — EVCore",
   description:
-    "Le ROI et le taux de réussite réels de chaque canal EVCore, mesurés sur les paris effectivement réglés — historique daté, jamais une promesse.",
+    "Résultats analytiques des sélections EVCore enregistrées avant match ; rendement simulé, versions historiques parfois inconnues.",
 };
 
 async function getTrackRecordData(from: string, to: string) {
@@ -102,9 +102,9 @@ export default async function TrackRecordPage({
           Ce que le moteur EVCore a réellement produit
         </PageHeaderTitle>
         <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-          Ces chiffres viennent des mêmes tables que celles utilisées pour
-          calculer chaque pick — pas d&apos;échantillon trié, pas de canal
-          caché. Un canal négatif reste affiché comme tel.{" "}
+          Les tableaux de canaux décrivent les dernières sélections enregistrées
+          avant match, à mise fixe. Les versions historiques peuvent être
+          inconnues ; les avis IA modifiables sont exclus de cette cohorte.{" "}
           <strong className="text-foreground">
             Historique daté, jamais une promesse de gain futur.
           </strong>
@@ -117,7 +117,7 @@ export default async function TrackRecordPage({
 
           <section className="flex flex-col gap-3">
             <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Résumé — {from} → {to}
+              Paris matérialisés — {from} → {to}
             </h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <StatCard
@@ -154,9 +154,9 @@ export default async function TrackRecordPage({
           <section className="rounded-2xl border border-border bg-panel p-5">
             <p className="text-sm leading-6 text-muted-foreground">
               Aucun de ces chiffres ne garantit une performance future — ce sont
-              des résultats réels, mesurés sur des paris déjà réglés, à une date
-              donnée. Un canal marqué positif peut redevenir négatif, et
-              inversement.{" "}
+              des résultats analytiques et des règlements enregistrés dans
+              EVCore, sans preuve de mise ni de paiement chez un bookmaker. Un
+              canal marqué positif peut redevenir négatif, et inversement.{" "}
               <Link
                 href="/dashboard/formation/channels/channels-overview"
                 className="font-medium text-accent underline underline-offset-4 hover:text-accent/80"

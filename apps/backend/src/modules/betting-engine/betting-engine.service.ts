@@ -1,3 +1,7 @@
+import {
+  BETTING_ENGINE_CONFIG_VERSION,
+  computeMarketFair,
+} from '@evcore/analysis-core';
 import { Injectable, Optional } from '@nestjs/common';
 import {
   AdjustmentStatus,
@@ -774,8 +778,11 @@ export class BettingEngineService {
       distHome.reduce((sum, p, k) => sum + k * p, 0) +
       distAway.reduce((sum, p, k) => sum + k * p, 0);
 
+    const oddsCutoff = new Date(
+      Math.min(Date.now(), fixture.scheduledAt.getTime()),
+    );
     const [latestOdds, activeSuspensions] = await Promise.all([
-      this.oddsLoader.findLatestOddsSnapshot(fixtureId, fixture.scheduledAt),
+      this.oddsLoader.findLatestOddsSnapshot(fixtureId, oddsCutoff),
       this.prisma.client.marketSuspension.findMany({
         where: { active: true },
         select: { market: true },
@@ -845,7 +852,10 @@ export class BettingEngineService {
     let calibrationAlert: CalibrationAlert | null = null;
     if (CALIBRATION_GATE.ENABLED) {
       const oneXTwoBooks =
-        await this.oddsLoader.findLatestOneXTwoOddsPerBookmaker(fixtureId);
+        await this.oddsLoader.findLatestOneXTwoOddsPerBookmaker(
+          fixtureId,
+          oddsCutoff,
+        );
       calibrationAlert = assessMarketCoherence({
         modelProbabilities: {
           home: probabilities.home,
@@ -880,7 +890,10 @@ export class BettingEngineService {
     let calibrationAlertOverUnder: OverUnderCalibrationAlert[] | null = null;
     if (OVER_UNDER_CALIBRATION_GATE.ENABLED) {
       const overUnderBooks =
-        await this.oddsLoader.findLatestOverUnderOddsPerBookmaker(fixtureId);
+        await this.oddsLoader.findLatestOverUnderOddsPerBookmaker(
+          fixtureId,
+          oddsCutoff,
+        );
       const lineChecks: Array<{
         line: string;
         overPick: keyof FullOddsSnapshot['overUnderOdds'];
@@ -1029,6 +1042,7 @@ export class BettingEngineService {
     // the channel decisions exist (they need modelRun.id), then written back
     // via a single modelRun.update. Never read by decision logic.
     const modelRunFeatures: Record<string, unknown> = {
+      engineConfigVersion: BETTING_ENGINE_CONFIG_VERSION,
       predictionSource,
       recentForm: features.recentForm.toNumber(),
       xg: features.xg.toNumber(),
@@ -1149,6 +1163,7 @@ export class BettingEngineService {
     if (FEATURE_FLAGS.SCORING.ML_CORRECTION) {
       const shadowMlByChannel = await this.computeShadowMlByChannel({
         decisions: persistedChannelDecisions,
+        odds: latestOdds,
         deterministicScore,
         probabilities,
         features,
@@ -1192,14 +1207,14 @@ export class BettingEngineService {
       fixtureStatus: fixture.status,
       scheduledAt: fixture.scheduledAt,
     });
+    const oddsCutoff = new Date(
+      Math.min(Date.now(), fixture.scheduledAt.getTime()),
+    );
     const [marketOdds, pinnacleOdds, activeSuspensions] = await Promise.all([
-      this.oddsLoader.findLatestBestOneXTwoOddsSnapshot(
-        fixtureId,
-        fixture.scheduledAt,
-      ),
+      this.oddsLoader.findLatestBestOneXTwoOddsSnapshot(fixtureId, oddsCutoff),
       this.oddsLoader.findLatestOneXTwoOddsSnapshotByBookmaker(
         fixtureId,
-        fixture.scheduledAt,
+        oddsCutoff,
         'Pinnacle',
       ),
       this.prisma.client.marketSuspension.findMany({
@@ -1314,6 +1329,7 @@ export class BettingEngineService {
         llmDelta: null,
         finalScore: toPrismaDecimal(deterministicScore, 4),
         features: {
+          engineConfigVersion: BETTING_ENGINE_CONFIG_VERSION,
           predictionSource,
           fallbackReason,
           isSeniorNationalFixture: isSenior,
@@ -1547,6 +1563,7 @@ export class BettingEngineService {
   // here yet: see docs/ml-worker-sync.md for the volume rationale.
   private async computeShadowMlByChannel(opts: {
     decisions: readonly PersistedChannelDecision[];
+    odds: FullOddsSnapshot | null;
     deterministicScore: Decimal;
     probabilities: MatchProbabilities;
     features: DeterministicFeatures;
@@ -1575,6 +1592,10 @@ export class BettingEngineService {
       }
 
       const mlFeatures = buildMlShadowFeatures({
+        marketFairProbability: opts.odds
+          ? (computeMarketFair(selection.market, selection.pick, opts.odds)
+              ?.pMarketFair ?? null)
+          : null,
         pick: {
           market: selection.market,
           probability: selection.probability,
@@ -1594,6 +1615,7 @@ export class BettingEngineService {
       if (mlResult !== null && mlResult.corrected_probability !== null) {
         results[channel] = {
           correctedP: mlResult.corrected_probability,
+          modelId: mlResult.model_id ?? null,
           edgeDelta:
             mlResult.corrected_probability - selection.probability.toNumber(),
         };

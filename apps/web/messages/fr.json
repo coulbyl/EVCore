@@ -12,6 +12,21 @@
     "back": "Retour",
     "seeAll": "Voir tout"
   },
+  "resultBadge": {
+    "won": "Gagné",
+    "lost": "Perdu",
+    "void": "Annulé",
+    "refunded": "Remboursé",
+    "settlementPending": "Règlement en attente"
+  },
+  "pwaInstall": {
+    "title": "Installer EVCore",
+    "subtitle": "Accès rapide depuis l'écran d'accueil",
+    "iosSafari": "Touchez Partager, puis Sur l'écran d'accueil.",
+    "iosOther": "Ouvrez EVCore dans Safari, touchez Partager, puis Sur l'écran d'accueil.",
+    "install": "Installer",
+    "close": "Fermer"
+  },
   "nav": {
     "eva": "EVA",
     "dashboard": "Accueil",
@@ -42,7 +57,7 @@
     "coupons": "Coupons",
     "decisions": "Décisions",
     "decisionsShort": "Décisions",
-    "arbitrage": "Arbitrage"
+    "arbitrage": "Avis IA"
   },
   "decisions": {
     "channels": {
@@ -193,7 +208,7 @@
     "helpLink": "Comment lire une fiche"
   },
   "arbitrage": {
-    "title": "Arbitrage",
+    "title": "Avis IA",
     "badge": "Lecture IA",
     "description": "Lit les décisions des autres canaux et leur fiabilité mesurée sur cette compétition — ne propose un pari que lorsqu'il repère un vrai désaccord entre eux, jamais pour confirmer ce qu'ils disent déjà. Sur la majorité des matchs, la bonne réponse est de ne rien jouer.",
     "filters": {
@@ -202,7 +217,7 @@
       "noPlay": "Sans avis",
       "label": "Filtre"
     },
-    "reasoningLabel": "Lecture Arbitrage",
+    "reasoningLabel": "Analyse IA",
     "sourcesLabel": "Sources",
     "decidedAt": "Décidé le {date}",
     "noPlay": "Aucune sélection — lecture seule.",
@@ -281,7 +296,7 @@
       "description": "Tous les matchs du jour, filtrables par statut. L'indice de paris agrège les stats clés d'un coup d'œil."
     },
     "arbitrage": {
-      "title": "Arbitrage",
+      "title": "Avis IA",
       "description": "VANTAGE, notre canal IA, ne propose un pari que s'il repère un vrai désaccord entre les autres canaux — jamais pour confirmer ce qu'ils disent déjà. Le « ? » ici détaille sa logique."
     },
     "coupons": {

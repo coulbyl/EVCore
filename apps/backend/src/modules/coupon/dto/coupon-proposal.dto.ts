@@ -27,14 +27,14 @@ export type CouponLegDto = {
   signalScore: number;
   isCorrect: boolean | null;
   /**
-   * The fixture's latest ModelRun id — lets the frontend submit this leg to
+   * The exact ModelRun id captured when the leg was proposed — lets the
+   * frontend submit this leg to
    * `POST /bet-slips` as a USER pick (`modelRunId` + `market` + `pick`,
    * resolved server-side against that run's `evaluatedPicks`), the same
    * mechanism `AddToSlipButton` (Matchs) already uses. `null` on the rare
    * fixture with no ModelRun at all (shouldn't happen for a leg VANTAGE's
-   * pool itself was built from `evaluatedPicks`, but the read is best-effort
-   * against the CURRENT latest run, which can differ from the one the pool
-   * saw at generation time).
+   * pool itself was built from `evaluatedPicks`). Historical proposals without
+   * captured provenance fall back to the fixture's latest run.
    */
   modelRunId: string | null;
 };
@@ -53,12 +53,11 @@ export type CouponProposalDto = {
    */
   couponClass: CouponClassName | null;
   /**
-   * Quel passage a produit/mis à jour cette proposition — le batch du soir
+   * Quel passage a produit initialement cette proposition — le batch du soir
    * (défaut, `VANTAGE_COUPON_CRON`) ou le batch intraday horaire
    * (`VANTAGE_COUPON_INTRADAY_CRON`, fenêtré sur les coups d'envoi proches).
-   * Les deux peuvent coexister le même jour pour la même classe (clé unique
-   * distincte par `signalWindowDays`) — voir
-   * docs/vantage-centric-redesign-2026-09-01.md, "Recheck J-J".
+   * La politique unifiée conserve une seule proposition immuable par jour ;
+   * les passages suivants sont enregistrés dans CouponGenerationAttempt.
    */
   batch: 'evening' | 'intraday';
   combinedOdds: number;

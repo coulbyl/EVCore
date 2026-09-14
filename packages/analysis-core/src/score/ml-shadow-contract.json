@@ -1,4 +1,5 @@
 {
+  "engineConfigVersion": "betting-engine-2026-09-14.1",
   "topFiveCompetitions": ["PL", "SA", "LL", "BL1", "L1"],
   "internationalCompetitions": ["WC", "UCL", "UEL", "UECL", "FRI"],
   "liveShadowChannels": [

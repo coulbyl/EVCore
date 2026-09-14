@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Market, Prisma } from '@evcore/db';
+import { Market, OddsSnapshotSource, Prisma } from '@evcore/db';
 import Decimal from 'decimal.js';
 import {
   assembleFullOddsSnapshot,
@@ -38,6 +38,14 @@ const RAW_ODDS_ROW_SELECT = {
   awayOdds: true,
 } as const;
 
+function pointInTimeOddsWhere(cutoff: Date) {
+  return {
+    source: OddsSnapshotSource.PREMATCH,
+    createdAt: { lte: cutoff },
+    snapshotAt: { lte: cutoff },
+  } as const;
+}
+
 /**
  * Data-access for odds snapshots. Resolves the consolidated, as-of view of a
  * fixture's market odds (best bookmaker per market) used by the betting engine.
@@ -57,7 +65,7 @@ export class OddsSnapshotLoader {
         fixtureId,
         market,
         odds: { not: null },
-        snapshotAt: { lte: cutoff },
+        ...pointInTimeOddsWhere(cutoff),
       },
       select: { bookmaker: true, snapshotAt: true },
       orderBy: { snapshotAt: 'desc' },
@@ -91,7 +99,7 @@ export class OddsSnapshotLoader {
         fixtureId,
         market,
         odds: { not: null },
-        snapshotAt: { lte: cutoff },
+        ...pointInTimeOddsWhere(cutoff),
       },
       select: { bookmaker: true, pick: true, odds: true, snapshotAt: true },
     });
@@ -129,7 +137,7 @@ export class OddsSnapshotLoader {
       where: {
         fixtureId,
         market: Market.ONE_X_TWO,
-        snapshotAt: { lte: cutoff },
+        ...pointInTimeOddsWhere(cutoff),
         homeOdds: { not: null },
         drawOdds: { not: null },
         awayOdds: { not: null },
@@ -275,6 +283,7 @@ export class OddsSnapshotLoader {
               bookmaker: bttsBookmaker,
               market: Market.BTTS,
               pick: 'YES',
+              ...pointInTimeOddsWhere(cutoff),
             },
             select: { odds: true },
             orderBy: { snapshotAt: 'desc' },
@@ -287,6 +296,7 @@ export class OddsSnapshotLoader {
               bookmaker: bttsBookmaker,
               market: Market.BTTS,
               pick: 'NO',
+              ...pointInTimeOddsWhere(cutoff),
             },
             select: { odds: true },
             orderBy: { snapshotAt: 'desc' },
@@ -298,6 +308,7 @@ export class OddsSnapshotLoader {
               fixtureId,
               bookmaker: htftBookmaker,
               market: Market.HALF_TIME_FULL_TIME,
+              ...pointInTimeOddsWhere(cutoff),
             },
             select: { pick: true, odds: true },
             orderBy: { snapshotAt: 'desc' },
@@ -309,6 +320,7 @@ export class OddsSnapshotLoader {
               fixtureId,
               bookmaker: fhwBookmaker,
               market: Market.FIRST_HALF_WINNER,
+              ...pointInTimeOddsWhere(cutoff),
             },
             select: { pick: true, odds: true },
             orderBy: { snapshotAt: 'desc' },
@@ -320,6 +332,7 @@ export class OddsSnapshotLoader {
               fixtureId,
               bookmaker: dcBookmaker,
               market: Market.DOUBLE_CHANCE,
+              ...pointInTimeOddsWhere(cutoff),
             },
             select: { pick: true, odds: true },
             orderBy: { snapshotAt: 'desc' },
@@ -331,6 +344,7 @@ export class OddsSnapshotLoader {
               fixtureId,
               bookmaker: dnbBookmaker,
               market: Market.DRAW_NO_BET,
+              ...pointInTimeOddsWhere(cutoff),
             },
             select: { pick: true, odds: true },
             orderBy: { snapshotAt: 'desc' },
@@ -342,6 +356,7 @@ export class OddsSnapshotLoader {
               fixtureId,
               bookmaker: csHomeBookmaker,
               market: Market.CLEAN_SHEET_HOME,
+              ...pointInTimeOddsWhere(cutoff),
             },
             select: { pick: true, odds: true },
             orderBy: { snapshotAt: 'desc' },
@@ -353,6 +368,7 @@ export class OddsSnapshotLoader {
               fixtureId,
               bookmaker: csAwayBookmaker,
               market: Market.CLEAN_SHEET_AWAY,
+              ...pointInTimeOddsWhere(cutoff),
             },
             select: { pick: true, odds: true },
             orderBy: { snapshotAt: 'desc' },
@@ -364,6 +380,7 @@ export class OddsSnapshotLoader {
               fixtureId,
               bookmaker: wtnHomeBookmaker,
               market: Market.WIN_TO_NIL_HOME,
+              ...pointInTimeOddsWhere(cutoff),
             },
             select: { pick: true, odds: true },
             orderBy: { snapshotAt: 'desc' },
@@ -375,6 +392,7 @@ export class OddsSnapshotLoader {
               fixtureId,
               bookmaker: wtnAwayBookmaker,
               market: Market.WIN_TO_NIL_AWAY,
+              ...pointInTimeOddsWhere(cutoff),
             },
             select: { pick: true, odds: true },
             orderBy: { snapshotAt: 'desc' },
@@ -386,6 +404,7 @@ export class OddsSnapshotLoader {
               fixtureId,
               bookmaker: twhBookmaker,
               market: Market.TO_WIN_EITHER_HALF,
+              ...pointInTimeOddsWhere(cutoff),
             },
             select: { pick: true, odds: true },
             orderBy: { snapshotAt: 'desc' },
@@ -491,7 +510,12 @@ export class OddsSnapshotLoader {
     if (requests.length === 0) return result;
 
     const rows = await this.prisma.client.oddsSnapshot.findMany({
-      where: { fixtureId: { in: requests.map((r) => r.fixtureId) } },
+      where: {
+        OR: requests.map(({ fixtureId, cutoff }) => ({
+          fixtureId,
+          ...pointInTimeOddsWhere(cutoff),
+        })),
+      },
       select: RAW_ODDS_ROW_SELECT,
     });
 
@@ -521,7 +545,7 @@ export class OddsSnapshotLoader {
         fixtureId,
         market: Market.ONE_X_TWO,
         bookmaker,
-        snapshotAt: { lte: cutoff },
+        ...pointInTimeOddsWhere(cutoff),
         homeOdds: { not: null },
         drawOdds: { not: null },
         awayOdds: { not: null },
@@ -593,7 +617,7 @@ export class OddsSnapshotLoader {
       where: {
         fixtureId,
         market: Market.ONE_X_TWO,
-        snapshotAt: { lte: cutoff },
+        ...pointInTimeOddsWhere(cutoff),
         homeOdds: { not: null },
         drawOdds: { not: null },
         awayOdds: { not: null },
@@ -677,7 +701,10 @@ export class OddsSnapshotLoader {
 
   // Latest complete 1X2 line per bookmaker (excluding synthetic aggregates).
   // Feeds the model↔market coherence gate's median implied probability.
-  async findLatestOneXTwoOddsPerBookmaker(fixtureId: string): Promise<
+  async findLatestOneXTwoOddsPerBookmaker(
+    fixtureId: string,
+    cutoff: Date = new Date(),
+  ): Promise<
     {
       bookmaker: string;
       homeOdds: Decimal;
@@ -690,6 +717,7 @@ export class OddsSnapshotLoader {
         fixtureId,
         market: Market.ONE_X_TWO,
         bookmaker: { notIn: ['MarketAvg', 'MarketBest'] },
+        ...pointInTimeOddsWhere(cutoff),
         homeOdds: { not: null },
         drawOdds: { not: null },
         awayOdds: { not: null },
@@ -738,12 +766,14 @@ export class OddsSnapshotLoader {
   // market-coherence.ts).
   async findLatestOverUnderOddsPerBookmaker(
     fixtureId: string,
+    cutoff: Date = new Date(),
   ): Promise<{ bookmaker: string; odds: FullOddsSnapshot['overUnderOdds'] }[]> {
     const rows = await this.prisma.client.oddsSnapshot.findMany({
       where: {
         fixtureId,
         market: Market.OVER_UNDER,
         odds: { not: null },
+        ...pointInTimeOddsWhere(cutoff),
       },
       select: { bookmaker: true, pick: true, odds: true, snapshotAt: true },
     });
@@ -816,7 +846,7 @@ export class OddsSnapshotLoader {
       where: {
         OR: targets.map(({ fixtureId, cutoff }) => ({
           fixtureId,
-          snapshotAt: { lte: cutoff },
+          ...pointInTimeOddsWhere(cutoff),
         })),
         odds: { not: null },
         pick: { not: null },

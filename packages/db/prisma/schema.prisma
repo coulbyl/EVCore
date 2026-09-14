@@ -1031,6 +1031,26 @@ model CouponProposalLeg {
   @@schema("public")
 }
 
+// Append-only record of every unified-generator pass, including abstentions.
+// This separates a quality decision from a worker outage or missing schedule.
+model CouponGenerationAttempt {
+  id             String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  forDate        DateTime @db.Date
+  policyVersion  String
+  pass           String
+  outcome        String
+  candidateCount Int
+  reason         String?
+  metadata       Json?
+  proposalId     String?  @db.Uuid
+  generatedAt    DateTime @default(now())
+
+  @@index([forDate, policyVersion])
+  @@index([generatedAt])
+  @@map("coupon_generation_attempt")
+  @@schema("public")
+}
+
 // One row per distinct viewer — "N vues" on a coupon card counts people who
 // have opened the Coupons page while it was showing, never raw page-load
 // events (a user refreshing 10 times doesn't inflate the count). Recorded by

@@ -27,58 +27,67 @@ export class CouponService {
     const forDate = new Date(`${date}T00:00:00.000Z`);
     const proposals = await this.repo.findByDate(forDate, userId, status);
 
-    return proposals.map((p) => ({
-      id: p.id,
-      forDate: p.forDate.toISOString().slice(0, 10),
-      rank: p.rank,
-      signalWindowDays: p.signalWindowDays,
-      targetOddsMin: Number(p.targetOddsMin),
-      targetOddsMax: Number(p.targetOddsMax),
-      couponClass: classForTargetOddsMin(Number(p.targetOddsMin)),
-      batch:
-        p.signalWindowDays === INTRADAY_SIGNAL_WINDOW_DAYS
-          ? 'intraday'
-          : 'evening',
-      combinedOdds: Number(p.combinedOdds),
-      jointProbability: Number(p.jointProbability),
-      signalScore: Number(p.signalScore),
-      status: p.status,
-      viewerCount: p._count.views,
-      playerCount: p._count.placements,
-      playedByMe: p.placements.length > 0,
-      result: p.result,
-      reasoning: p.reasoning as Record<string, unknown> | null,
-      lastFixtureScheduledAt: p.lastFixtureScheduledAt.toISOString(),
-      generatedAt: p.generatedAt.toISOString(),
-      legs: p.legs.map((leg) => ({
-        id: leg.id,
-        fixtureId: leg.fixtureId,
-        homeTeam: leg.fixture.homeTeam.name,
-        homeLogo: leg.fixture.homeTeam.logoUrl ?? null,
-        awayTeam: leg.fixture.awayTeam.name,
-        awayLogo: leg.fixture.awayTeam.logoUrl ?? null,
-        competition: leg.fixture.season.competition.code,
-        competitionName: leg.fixture.season.competition.name,
-        country: leg.fixture.season.competition.country,
-        scheduledAt: leg.fixture.scheduledAt.toISOString(),
-        score: formatFixtureScore({
-          homeScore: leg.fixture.homeScore,
-          awayScore: leg.fixture.awayScore,
-        }),
-        htScore: formatFixtureScore({
-          homeScore: leg.fixture.homeHtScore,
-          awayScore: leg.fixture.awayHtScore,
-        }),
-        canal: leg.canal,
-        market: leg.market,
-        pick: leg.pick,
-        probability: Number(leg.probability),
-        oddsSnapshot: leg.oddsSnapshot ? Number(leg.oddsSnapshot) : null,
-        signalScore: Number(leg.signalScore),
-        isCorrect: leg.isCorrect,
-        modelRunId: leg.fixture.modelRuns[0]?.id ?? null,
-      })),
-    }));
+    return proposals.map((p) => {
+      const reasoning = p.reasoning as Record<string, unknown> | null;
+      const generationPass = reasoning?.generationPass;
+      return {
+        id: p.id,
+        forDate: p.forDate.toISOString().slice(0, 10),
+        rank: p.rank,
+        signalWindowDays: p.signalWindowDays,
+        targetOddsMin: Number(p.targetOddsMin),
+        targetOddsMax: Number(p.targetOddsMax),
+        couponClass: classForTargetOddsMin(Number(p.targetOddsMin)),
+        batch:
+          generationPass === 'INTRADAY' ||
+          (generationPass === undefined &&
+            p.signalWindowDays === INTRADAY_SIGNAL_WINDOW_DAYS)
+            ? 'intraday'
+            : 'evening',
+        combinedOdds: Number(p.combinedOdds),
+        jointProbability: Number(p.jointProbability),
+        signalScore: Number(p.signalScore),
+        status: p.status,
+        viewerCount: p._count.views,
+        playerCount: p._count.placements,
+        playedByMe: p.placements.length > 0,
+        result: p.result,
+        reasoning,
+        lastFixtureScheduledAt: p.lastFixtureScheduledAt.toISOString(),
+        generatedAt: p.generatedAt.toISOString(),
+        legs: p.legs.map((leg) => ({
+          id: leg.id,
+          fixtureId: leg.fixtureId,
+          homeTeam: leg.fixture.homeTeam.name,
+          homeLogo: leg.fixture.homeTeam.logoUrl ?? null,
+          awayTeam: leg.fixture.awayTeam.name,
+          awayLogo: leg.fixture.awayTeam.logoUrl ?? null,
+          competition: leg.fixture.season.competition.code,
+          competitionName: leg.fixture.season.competition.name,
+          country: leg.fixture.season.competition.country,
+          scheduledAt: leg.fixture.scheduledAt.toISOString(),
+          score: formatFixtureScore({
+            homeScore: leg.fixture.homeScore,
+            awayScore: leg.fixture.awayScore,
+          }),
+          htScore: formatFixtureScore({
+            homeScore: leg.fixture.homeHtScore,
+            awayScore: leg.fixture.awayHtScore,
+          }),
+          canal: leg.canal,
+          market: leg.market,
+          pick: leg.pick,
+          probability: Number(leg.probability),
+          oddsSnapshot: leg.oddsSnapshot ? Number(leg.oddsSnapshot) : null,
+          signalScore: Number(leg.signalScore),
+          isCorrect: leg.isCorrect,
+          modelRunId:
+            readSnapshotString(leg.featureSnapshot, 'modelRunId') ??
+            leg.fixture.modelRuns[0]?.id ??
+            null,
+        })),
+      };
+    });
   }
 
   async recordView(couponProposalId: string, userId: string): Promise<void> {
@@ -87,6 +96,12 @@ export class CouponService {
     }
     await this.repo.recordView(couponProposalId, userId);
   }
+}
+
+function readSnapshotString(value: unknown, key: string): string | null {
+  if (!value || typeof value !== 'object') return null;
+  const field = (value as Record<string, unknown>)[key];
+  return typeof field === 'string' && field.length > 0 ? field : null;
 }
 
 function formatFixtureScore(scores: {

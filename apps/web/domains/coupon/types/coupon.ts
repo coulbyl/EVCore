@@ -1,4 +1,4 @@
-export type CouponClassName = "SAFE" | "BALANCED" | "BOLD";
+export type CouponClassName = "SAFE" | "BALANCED" | "BOLD" | "UNIQUE";
 
 export type CouponLegDto = {
   id: string;

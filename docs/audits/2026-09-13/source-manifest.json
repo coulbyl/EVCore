@@ -1,0 +1,4931 @@
+{
+  "git_head": "05be3ec2428cecc2e74b05fe082f4c9840fd1d97",
+  "scope": "Inventory and structural scan; detailed reviewed functions are cited in AUDIT.md. Secrets, account/security material excluded.",
+  "files": [
+    {
+      "path": "apps/backend/src/app.controller.spec.ts",
+      "sha256": "afc0595a8b8b17ca8fd94dbc62ff92dfdb8f2ea65eef87a277acd61c79b9e04d",
+      "lines": 28
+    },
+    {
+      "path": "apps/backend/src/app.controller.ts",
+      "sha256": "6004f9513890543e8a4d8925cfbdeb1f45891b93d9d4cbb26c1cdbf4cd4407b4",
+      "lines": 17
+    },
+    {
+      "path": "apps/backend/src/app.module.ts",
+      "sha256": "82af77ee221e70ff452cd7c3610c94ad8400dbe465aa484956325fa432acf7d7",
+      "lines": 83
+    },
+    {
+      "path": "apps/backend/src/app.service.ts",
+      "sha256": "eaf8514ce110fa428a93a27408df4d06d133dbd9ed0a775c315ddfdd507853a9",
+      "lines": 8
+    },
+    {
+      "path": "apps/backend/src/common/guards/admin.guard.ts",
+      "sha256": "fa72bb6e30d2a277e32845fa5d3a8aa377cfe25ed9bf00429db5e3a98ad41a32",
+      "lines": 18
+    },
+    {
+      "path": "apps/backend/src/common/redis/cache.service.ts",
+      "sha256": "e8de2e750f29d16945a8fb458462322649498f9aee19b83a9882cedef5607bfc",
+      "lines": 69
+    },
+    {
+      "path": "apps/backend/src/common/redis/redis.module.ts",
+      "sha256": "927cd561547ccf5b0c4e6e5a8a28f8935d3d2204a0cce482a08225de2e824302",
+      "lines": 24
+    },
+    {
+      "path": "apps/backend/src/config/bankroll.constants.ts",
+      "sha256": "6ca0aa236910de292ed0759368bdebfaa1c42801d0a775586121cb438496e207",
+      "lines": 16
+    },
+    {
+      "path": "apps/backend/src/config/etl.constants.spec.ts",
+      "sha256": "80d4c6e4de218d2d4d1bc7243e8507489a41f219144d0144a3eecba2c33cdf3f",
+      "lines": 22
+    },
+    {
+      "path": "apps/backend/src/config/etl.constants.ts",
+      "sha256": "a9d0a0ac05004c2bb88960ff2c4b87cd2c8f39985ebe2d56cd33b7f7e1d95849",
+      "lines": 337
+    },
+    {
+      "path": "apps/backend/src/config/feature-flags.constants.ts",
+      "sha256": "9dffc1e205469faabe513d98f562f0c343f29a6b23b1bed7157dbb4d76ac00e3",
+      "lines": 21
+    },
+    {
+      "path": "apps/backend/src/config/pagination.constants.ts",
+      "sha256": "534d14949834fa33e2ef400389484701bf0c63e3d3510342771b4c3ba8495406",
+      "lines": 20
+    },
+    {
+      "path": "apps/backend/src/config/rate-limit.constants.ts",
+      "sha256": "657b7564882693c27007a619719862575d303a47e808698ce06499cf413c77a2",
+      "lines": 18
+    },
+    {
+      "path": "apps/backend/src/config/storage.constants.ts",
+      "sha256": "d0055241d181b7813d7b070ffc466f9b26e063460227c99b9c17e3cef4a28d6b",
+      "lines": 42
+    },
+    {
+      "path": "apps/backend/src/config/support.constants.ts",
+      "sha256": "cf89efddc4aecf1a3aa52889c30f066a623bba85ee99b83a40008cce7fd0d666",
+      "lines": 16
+    },
+    {
+      "path": "apps/backend/src/main.ts",
+      "sha256": "c35e08810f4fc2a9fe4ff49ca4e08fc35050753a818337c782c9aa765677cfbb",
+      "lines": 61
+    },
+    {
+      "path": "apps/backend/src/modules/adjustment/adjustment.constants.ts",
+      "sha256": "d346327a73f196582c711be280424f04e0e7d766a45265415b8dabac5548af36",
+      "lines": 29
+    },
+    {
+      "path": "apps/backend/src/modules/adjustment/adjustment.controller.ts",
+      "sha256": "3de0d013e49b2094fd9ef5e75e62489b7f32176168c03a2d0a423c290f30439e",
+      "lines": 90
+    },
+    {
+      "path": "apps/backend/src/modules/adjustment/adjustment.module.ts",
+      "sha256": "452dcbb1e818f20e552bdddf32a5a549b7aec9b6bfb711f80c7ad4b84e74514e",
+      "lines": 16
+    },
+    {
+      "path": "apps/backend/src/modules/adjustment/adjustment.service.spec.ts",
+      "sha256": "20e6c6a8261553f47952f6893d4972273df49c5791b81c55c6eae266361b0fad",
+      "lines": 321
+    },
+    {
+      "path": "apps/backend/src/modules/adjustment/adjustment.service.ts",
+      "sha256": "6267c69ecdba907d68e334c6e9cf687acd5340cf00467122f9c6bb6844f682dc",
+      "lines": 485
+    },
+    {
+      "path": "apps/backend/src/modules/adjustment/calibration.service.spec.ts",
+      "sha256": "491c2ead1b12df20d6c2e0992f94445565cab7d93e517a50d17ca90b8d42c228",
+      "lines": 209
+    },
+    {
+      "path": "apps/backend/src/modules/adjustment/calibration.service.ts",
+      "sha256": "0d6bc220ecf012cac942a659e13172313237572f38adaf6e49d0ab2661bbc313",
+      "lines": 260
+    },
+    {
+      "path": "apps/backend/src/modules/admin-users/admin-users.controller.ts",
+      "sha256": "c1ec135b515d92ca46000f529e6dae10631577a5edf96b7310905c83070404b8",
+      "lines": 57
+    },
+    {
+      "path": "apps/backend/src/modules/admin-users/admin-users.module.ts",
+      "sha256": "b5a86f6676b07081d8c2f1b261030a9f2f67bb5a9e9accff240b0f4c9ffe2719",
+      "lines": 12
+    },
+    {
+      "path": "apps/backend/src/modules/admin-users/admin-users.service.ts",
+      "sha256": "d61fe748eabfa984a675e9fcf40350d95f2206a61c0afcdeb9719ecfc1d82b3b",
+      "lines": 166
+    },
+    {
+      "path": "apps/backend/src/modules/admin-users/dto/list-users-query.dto.ts",
+      "sha256": "ba0c3340966f2d911d846dc716a79c5ed86195adb9b2e7441a60d099e23d976c",
+      "lines": 25
+    },
+    {
+      "path": "apps/backend/src/modules/admin-users/dto/update-user.dto.ts",
+      "sha256": "615797989af464e6fada9ae3506729953d86263d5ee24386bacc27adf645d213",
+      "lines": 15
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/analysis-sheet-v2.definitions.ts",
+      "sha256": "5a8ca296da97abe6a4468bb1004298d7cb737010da2d96e4b95c7dc682d861a3",
+      "lines": 248
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/analysis-sheet-v2.filters.ts",
+      "sha256": "1c32cef37e9d5d4f2c00762032d34f75757be3393570a0f850028f931f2dc5f7",
+      "lines": 99
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/analysis-sheet-v2.render.spec.ts",
+      "sha256": "df8f138ca01d48b568bc46e6577ffdbe0f44f05b63e27241cde1551041320af2",
+      "lines": 299
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/analysis-sheet-v2.render.ts",
+      "sha256": "a5c7e51379db7587327828d19ef52765f5c3a953e1aa4527f7e0de6d90936427",
+      "lines": 157
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/analysis-sheet-v2.repository.ts",
+      "sha256": "4cd0ed164f1ef98cb31e88229f8e37e583ff4b1b617bc55d5a8be29ca2b69707",
+      "lines": 597
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/analysis-sheet-v2.service.ts",
+      "sha256": "b86442fea832ec0c36305634924e2090a12e233c2f4dce4ffd64fbc56c9c183a",
+      "lines": 544
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/analysis-sheet-v2.types.ts",
+      "sha256": "e09d697184f34dbf575dc30f151dafece33e31938856ac677db7f2acbe8a041d",
+      "lines": 706
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/analysis-sheet.constants.ts",
+      "sha256": "db12113c1f81e290359c8f4a35bcaad2784b5907db623f6645c5011ffe18e0fb",
+      "lines": 33
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/analysis-sheet.controller.ts",
+      "sha256": "9eebc793536dbaf15bfa19372372d7774fc94603c10a3a9b158a730543bf5a21",
+      "lines": 83
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/analysis-sheet.module.ts",
+      "sha256": "9f1806d9a343a3f3595d22d1a5303556f1861f2b589f5502126a45223c302bb2",
+      "lines": 20
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/analysis-sheet.render.spec.ts",
+      "sha256": "cae258949f517cf01cb36b6bce89320654e448d391fd5469acc3f9bacc6da382",
+      "lines": 741
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/analysis-sheet.render.ts",
+      "sha256": "2b64cd6b0d2e9211d7569bc2c30b8ab04984094e0bdb027e6a7746606502fafc",
+      "lines": 952
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/analysis-sheet.repository.spec.ts",
+      "sha256": "a13ef97a241974a1f5e48846aab44cbf2e4b14bd22296051cfaba644a8906780",
+      "lines": 209
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/analysis-sheet.repository.ts",
+      "sha256": "e23058e6b67c2ffb0272a54f1078f432092c625d7a908b665ec4c3ef0fdcca0c",
+      "lines": 279
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/analysis-sheet.service.spec.ts",
+      "sha256": "26446584f248313142d719547a5d5bd8184a78340b2f658005f0fc2f9518c750",
+      "lines": 59
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/analysis-sheet.service.ts",
+      "sha256": "b5729416b8924ce60f1096a429be893c096886bd62bb7cd928c43b391db6bccf",
+      "lines": 151
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/calibration/calibration.builder.ts",
+      "sha256": "52632cf635bc2ab706cfc054ddd370cd473c4077d198922d3be5f15815e41b53",
+      "lines": 107
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/context/h2h-context.builder.spec.ts",
+      "sha256": "80fd16e4e1081ff8ed66b3c29bca4dc180fbc964e5a608184ec3f4a4e856b1fb",
+      "lines": 173
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/context/h2h-context.builder.ts",
+      "sha256": "0c871c77ff240ec15beae75539dd0086a925feea4c6edfb86f2f6744f7a855b3",
+      "lines": 195
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/context/standing.builder.spec.ts",
+      "sha256": "9f3ff9d54602eddccb88dac4d4be8945d50c73609aa58910e8742fa7835380fc",
+      "lines": 116
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/context/standing.builder.ts",
+      "sha256": "02ac7b625f91bb17833a7677b328fdc874f1c385d21153eeec8f248636ccbaf2",
+      "lines": 136
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/context/team-context.builder.spec.ts",
+      "sha256": "254556d2dc49f2d9ef4c32bbc44ef40afd3cf6b10154ef1ae80966c6e96aea70",
+      "lines": 350
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/context/team-context.builder.ts",
+      "sha256": "a4ccd30112217cb545e8c72b0e837d064cc6c0a0b9f6a39f716148db008cb32f",
+      "lines": 384
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/dto/analysis-sheet-query.dto.ts",
+      "sha256": "2a8180c501598301b1976d474c8c1f17c5092403e6ae3d8622854bc682858f26",
+      "lines": 152
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/leg-pool/leg-pool.builder.spec.ts",
+      "sha256": "2d7c6f8647f9e043fce10b8fd45bcbc9744485bc2f2ab54458924015215409e1",
+      "lines": 299
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/leg-pool/leg-pool.builder.ts",
+      "sha256": "5e053676c69beea707f3f115cab2bf1f6ebbc4a2b809b9e84d8afcb07b182658",
+      "lines": 182
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/market/market-block.builder.spec.ts",
+      "sha256": "cf1a4c169fe7be13da869248b4da6498fe68669c6ca080fffad99a2c58ba173d",
+      "lines": 221
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/market/market-block.builder.ts",
+      "sha256": "a39b2e1b99a17c40a341fc6047b90070012fb8fa1c9e864e42353479a1895d0d",
+      "lines": 326
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/model/lambda-trace.builder.spec.ts",
+      "sha256": "0a85ffb022a134a750cf01744c4da3d1c6deffeb982c7eb4f87669dadd455369",
+      "lines": 212
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/model/lambda-trace.builder.ts",
+      "sha256": "4188a5ffa9235ae09985a75e54bd31beb4173917a17e27d9450bbc1020fbe709",
+      "lines": 316
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/model/target-market.builder.spec.ts",
+      "sha256": "35cbd6dd7046cacabf9be9dc9d047ef4ff8e93bfbfeff388d92c45ad2ca92764",
+      "lines": 133
+    },
+    {
+      "path": "apps/backend/src/modules/analysis-sheet/model/target-market.builder.ts",
+      "sha256": "33c302c99e4693089fdf04483d70ab894af491b7eeb6ec4bfc29608d42eacc94",
+      "lines": 133
+    },
+    {
+      "path": "apps/backend/src/modules/announcements/admin-announcements.controller.ts",
+      "sha256": "8858d30a5cdd1d6522bad8de68fa62303fe3157ad41dbb3ca9f94cfef4592403",
+      "lines": 52
+    },
+    {
+      "path": "apps/backend/src/modules/announcements/announcements.controller.ts",
+      "sha256": "5fec41016aec1e799a85d2921a723e80fee6108178e3c48656971ad5bc1f4829",
+      "lines": 34
+    },
+    {
+      "path": "apps/backend/src/modules/announcements/announcements.module.ts",
+      "sha256": "18aea493e706824141c472b4caa50ff66adc6aa5cd67f8fef1ca57667fbf1005",
+      "lines": 15
+    },
+    {
+      "path": "apps/backend/src/modules/announcements/announcements.service.ts",
+      "sha256": "e27e825d8fe40f28e3716dea2433a25fee879aabfdd33d47caea81aa1cc9a9be",
+      "lines": 264
+    },
+    {
+      "path": "apps/backend/src/modules/announcements/dto/create-announcement.dto.ts",
+      "sha256": "ca2895015a414b40ae0600a317ffb43f43c8465afa2cb10c45d919cc84f85021",
+      "lines": 29
+    },
+    {
+      "path": "apps/backend/src/modules/announcements/dto/update-announcement.dto.ts",
+      "sha256": "005b207025c47fe329ce0690688828c9bff044f3c9cb8a2cceb9b921c25f63a2",
+      "lines": 31
+    },
+    {
+      "path": "apps/backend/src/modules/audit/audit.controller.ts",
+      "sha256": "b168ee6c1915c822f8eb3135f0b3100f0da5f1601101d1314e6bbeb1a5984dab",
+      "lines": 44
+    },
+    {
+      "path": "apps/backend/src/modules/audit/audit.module.ts",
+      "sha256": "e8ee377c16b24b82850d678ea558a7a2ebea22b6a3c9e001585dc4ef06194b50",
+      "lines": 12
+    },
+    {
+      "path": "apps/backend/src/modules/audit/audit.repository.ts",
+      "sha256": "7c60677bc0b191245c63dfc1670b93b5e3891c27acd169a52f5dfa765a95b09f",
+      "lines": 172
+    },
+    {
+      "path": "apps/backend/src/modules/audit/audit.service.ts",
+      "sha256": "c4b0c3fe46adaca6b974c815a3c32a1e979fa2e7caa11f2178f2678d773383cf",
+      "lines": 245
+    },
+    {
+      "path": "apps/backend/src/modules/audit/audit.types.ts",
+      "sha256": "1a1181baa7a5948b732d602b2f69fda489c74de04d8ddda233b507b2488ad8ee",
+      "lines": 79
+    },
+    {
+      "path": "apps/backend/src/modules/audit/dto/audit-fixtures-query.dto.ts",
+      "sha256": "27e5a0ff0a9603332349c80034b571eabed83f931854a1e8480303997b934b2c",
+      "lines": 20
+    },
+    {
+      "path": "apps/backend/src/modules/audit/dto/update-competition-active.dto.ts",
+      "sha256": "5f3e47915abafca671261d3bbd085bfc046d3eed57a337dac2c4878d63505704",
+      "lines": 6
+    },
+    {
+      "path": "apps/backend/src/modules/auth/auth.constants.ts",
+      "sha256": "c2a1c6b00da9b007300445a6ca5fb3264354517e1795b137b3667007dbb77a9f",
+      "lines": 12
+    },
+    {
+      "path": "apps/backend/src/modules/auth/auth.controller.ts",
+      "sha256": "cc76eb66bfa6c3cc6c693ea8f43ac7a185714b463eb80f17a67a2d891806385e",
+      "lines": 164
+    },
+    {
+      "path": "apps/backend/src/modules/auth/auth.module.ts",
+      "sha256": "c48d7cda66655f408c0247242413846bf8b53f53c5a15b86833d625a4f92e254",
+      "lines": 19
+    },
+    {
+      "path": "apps/backend/src/modules/auth/auth.service.ts",
+      "sha256": "e22e18ef4cea17049a48f139cb7c46cf3677833a3ccb95b68f2aed4dba694dfe",
+      "lines": 787
+    },
+    {
+      "path": "apps/backend/src/modules/auth/auth.types.ts",
+      "sha256": "5abd6c5daf7a9fcef7b0c375130e06430fa7abe92d050919821f2f788e02bddf",
+      "lines": 36
+    },
+    {
+      "path": "apps/backend/src/modules/auth/auth.utils.ts",
+      "sha256": "969b086d5778e1b3a1895cd0b716364b251ca8d47108a82ac0fb9526d72e21b7",
+      "lines": 209
+    },
+    {
+      "path": "apps/backend/src/modules/auth/dto/confirm-totp.dto.ts",
+      "sha256": "bf474614e8ac656141031536720e4e7be2fec62d9f9abecfdcb576bb0093ed86",
+      "lines": 7
+    },
+    {
+      "path": "apps/backend/src/modules/auth/dto/login.dto.ts",
+      "sha256": "34a23296f8ab1e4ba916e7eca6796622bae9c88c8e89a6eb6417e16e47d9ada0",
+      "lines": 13
+    },
+    {
+      "path": "apps/backend/src/modules/auth/dto/register.dto.ts",
+      "sha256": "4b231347b2030a3cb90991990198c31988f3069e347d66ba46dedb4e44b84b2b",
+      "lines": 34
+    },
+    {
+      "path": "apps/backend/src/modules/auth/dto/update-identity.dto.ts",
+      "sha256": "0801d321042089cd7a661580d3a323cf5eb200e3a1ec307eef812927454e25da",
+      "lines": 24
+    },
+    {
+      "path": "apps/backend/src/modules/auth/dto/update-me.dto.ts",
+      "sha256": "3b9bf40ba2d8c39175a83ae099cc47ec0fe9c09018164797f075d305c1adb306",
+      "lines": 82
+    },
+    {
+      "path": "apps/backend/src/modules/auth/dto/verify-email.dto.ts",
+      "sha256": "bead425bd53fe3ca3e5103c5b69e806d1f5a654a8b8ebfdf90ab69656db6da05",
+      "lines": 7
+    },
+    {
+      "path": "apps/backend/src/modules/backtest/backtest.constants.ts",
+      "sha256": "ce2ac1ea0f1f92fecdfa552cf1165334be01ea8c4f67acf96e9f708c4a0c145e",
+      "lines": 89
+    },
+    {
+      "path": "apps/backend/src/modules/backtest/backtest.controller.spec.ts",
+      "sha256": "807228dc199ca591c4f882cee1f8306cab003f221fb02f7143ef3435859b5a6d",
+      "lines": 76
+    },
+    {
+      "path": "apps/backend/src/modules/backtest/backtest.controller.ts",
+      "sha256": "d3c79f882d2d940da2c330f9250688506ecfb231f743b29599dfc3ca58988905",
+      "lines": 46
+    },
+    {
+      "path": "apps/backend/src/modules/backtest/backtest.metrics.ts",
+      "sha256": "44b7fd2541349de0f1648c82dc67e0b940fa8492c8f78647835c337d9f9944c1",
+      "lines": 9
+    },
+    {
+      "path": "apps/backend/src/modules/backtest/backtest.module.ts",
+      "sha256": "1af60e612f5a562f12511fbd848b661b4bdd6cf2eea6802148eaf61de766dedf",
+      "lines": 19
+    },
+    {
+      "path": "apps/backend/src/modules/backtest/backtest.report.spec.ts",
+      "sha256": "fdfb45ceeb5080b0ea89bca09a03a6436a5dc988cd4891cafc5a97ab95b28a5d",
+      "lines": 45
+    },
+    {
+      "path": "apps/backend/src/modules/backtest/backtest.report.ts",
+      "sha256": "ed76559fe93aff7c6236b881529cdf231b18f6407aab26c9208d1fce760e8a17",
+      "lines": 10
+    },
+    {
+      "path": "apps/backend/src/modules/backtest/backtest.repository.ts",
+      "sha256": "9dac12bc790afe1142e8403f61cdd53029d0413d7f4e2cee5c13a860c3170419",
+      "lines": 673
+    },
+    {
+      "path": "apps/backend/src/modules/backtest/channel-backtest.service.spec.ts",
+      "sha256": "eac6ca40847cbb55f914ebaf72f7f9a7f2472c56615336984098a7f4c7d0ccef",
+      "lines": 87
+    },
+    {
+      "path": "apps/backend/src/modules/backtest/channel-backtest.service.ts",
+      "sha256": "6129a8ab9815318e366aa839eb786e77db0df3ebd6f54570c50331d01a6b2b0f",
+      "lines": 136
+    },
+    {
+      "path": "apps/backend/src/modules/backtest/channel-tuning.service.ts",
+      "sha256": "c3ff2db4dd9e1a8a25d9dc45083db469aa2c2cf0934bbf5fa26cd833897b5b32",
+      "lines": 183
+    },
+    {
+      "path": "apps/backend/src/modules/backtest/dto/backtest-channels.dto.ts",
+      "sha256": "de06816d9c8902c46c46b929dc45586c7d844565f0293b9095ac8c67ae4cf633",
+      "lines": 56
+    },
+    {
+      "path": "apps/backend/src/modules/backtest/dto/backtest-tuning.dto.ts",
+      "sha256": "9eea2074ba322f2719e7aa05123344f9e8eb92cc92d2c31e0bb7a66cdebfd063",
+      "lines": 78
+    },
+    {
+      "path": "apps/backend/src/modules/backtest/model-calibration.service.ts",
+      "sha256": "dd436b4eeb5e0579c0db9514b1eb3125c94ad44bbfe4c2a68ecb1491e7964413",
+      "lines": 160
+    },
+    {
+      "path": "apps/backend/src/modules/backtest/tuning.constants.ts",
+      "sha256": "3369251da7e5f5730ffadc13e989c1959156a38bf93b3ba5a126756eb90afaf8",
+      "lines": 141
+    },
+    {
+      "path": "apps/backend/src/modules/backtest/tuning.metrics.spec.ts",
+      "sha256": "ceb7626c8a6d55948ca4406ef6f543ac5585acba705ddb1a09dbc3ab26aab76e",
+      "lines": 338
+    },
+    {
+      "path": "apps/backend/src/modules/backtest/tuning.metrics.ts",
+      "sha256": "ea86d81a0a47396d612273230886f66b772d199a0a30cd9fd4ed0a5806f6467b",
+      "lines": 394
+    },
+    {
+      "path": "apps/backend/src/modules/bankroll/bankroll.controller.ts",
+      "sha256": "fa49ea43e91e831e8e6b9fbbe7f442b8615ddebf922358018bd004adce4fd1be",
+      "lines": 49
+    },
+    {
+      "path": "apps/backend/src/modules/bankroll/bankroll.module.ts",
+      "sha256": "8ac13710471bb826e322013749fa3522e4a200290b7a0ae502571b60a9afbbe6",
+      "lines": 13
+    },
+    {
+      "path": "apps/backend/src/modules/bankroll/bankroll.repository.ts",
+      "sha256": "b0fa5cc1092c21f1797dc316e37640ddc2be9d4726496f2c7a7a3c44b80f8ac7",
+      "lines": 101
+    },
+    {
+      "path": "apps/backend/src/modules/bankroll/bankroll.service.spec.ts",
+      "sha256": "0488c52f9cf759b77e14f6838349819572ff07e09a7ee2968540337dc2fc2fff",
+      "lines": 213
+    },
+    {
+      "path": "apps/backend/src/modules/bankroll/bankroll.service.ts",
+      "sha256": "92ce50903d0fbd3f0703833c3241f096b4007840b2d9b5f877067690d64c802a",
+      "lines": 179
+    },
+    {
+      "path": "apps/backend/src/modules/bankroll/dto/deposit.dto.ts",
+      "sha256": "c7d97e7d938b2ed6f9c12e17d9bf2a2a99f3c04da064b8471e084aa660267f55",
+      "lines": 18
+    },
+    {
+      "path": "apps/backend/src/modules/bankroll/dto/get-transactions-query.dto.ts",
+      "sha256": "5a0dd671539c0c2768195588b7f170b78b1b104b29c72ff70378a1a1ce9f544c",
+      "lines": 27
+    },
+    {
+      "path": "apps/backend/src/modules/bet/bet.controller.ts",
+      "sha256": "d3d63cea5cac6165057a4588cd5de89cdc238f981d168ce0de40ffa7b5976715",
+      "lines": 11
+    },
+    {
+      "path": "apps/backend/src/modules/bet/bet.module.ts",
+      "sha256": "09850070ff01c843b7f8725faaadffc843456e37533e04da2bd7cf638fce7766",
+      "lines": 11
+    },
+    {
+      "path": "apps/backend/src/modules/bet/bet.service.ts",
+      "sha256": "b7a4e32f7eb4d22665770f7bbeb71ec1a4886a3163c72032ca8e8090a9ecfd59",
+      "lines": 8
+    },
+    {
+      "path": "apps/backend/src/modules/bet-slip/bet-slip.controller.ts",
+      "sha256": "70ad88b1a4904babcbc05d15456edc3797a7a05fb0db82a22726ff3b3af38719",
+      "lines": 55
+    },
+    {
+      "path": "apps/backend/src/modules/bet-slip/bet-slip.module.ts",
+      "sha256": "6620d9ec20ce4bfc7a44314baae79eebb6455eca845e2693eb92bf3c7a0f8337",
+      "lines": 13
+    },
+    {
+      "path": "apps/backend/src/modules/bet-slip/bet-slip.repository.ts",
+      "sha256": "2a93da6dd59c57740459080df0b699fefe44955febe8a623625775a84d4f7318",
+      "lines": 158
+    },
+    {
+      "path": "apps/backend/src/modules/bet-slip/bet-slip.service.ts",
+      "sha256": "20d98c67bf4119dccfda7211aea4d28e522d0c2f3fd793d4cf44580b7bc593e3",
+      "lines": 432
+    },
+    {
+      "path": "apps/backend/src/modules/bet-slip/bet-slip.types.ts",
+      "sha256": "79e972213d99d949bd5eab35dff0a02bf98bd3e330c873eb0286f9f32aa8a93f",
+      "lines": 40
+    },
+    {
+      "path": "apps/backend/src/modules/bet-slip/dto/create-bet-slip.dto.ts",
+      "sha256": "3839c71ca2e4fc115b8e7d04a081cc0af329aa461ac4a40db0a28a50dbdc2d38",
+      "lines": 77
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/betting-engine.controller.ts",
+      "sha256": "6a641ce4d5ff7e8cf3d14321d137ef1386837c75f2d315b9abed269485a7e057",
+      "lines": 29
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/betting-engine.golden.spec.ts",
+      "sha256": "0db57b2d6a301f416a1d62c91056de68590f9d60cf7ece696a6a26550f6502c5",
+      "lines": 249
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/betting-engine.module.ts",
+      "sha256": "ba9f22f315755d9190f497fea43ca568f7ad951b2939d94266c52d850cbd36da",
+      "lines": 46
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/betting-engine.service.spec.ts",
+      "sha256": "c549dca278a3d3729807309294e26d85e9a8c025edfcc27eadaec4dd30886f5a",
+      "lines": 2004
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/betting-engine.service.ts",
+      "sha256": "1cb3b8eaf2c9656c36f20bfd67608e9fc472008b266ccafe677e16ae7d6d42bc",
+      "lines": 1679
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/betting-engine.types.ts",
+      "sha256": "72970b0af178bb4b2747b14149da437fa4dce768c5d302e53376ede0499d2f85",
+      "lines": 37
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/betting-engine.utils.spec.ts",
+      "sha256": "edc7cc535daf0a76c6c8dfca3ab6d8a3232f2ad8be620a0ffe72afeb4511b0aa",
+      "lines": 73
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/betting-engine.utils.ts",
+      "sha256": "842f4180cc2c01a3e3eb8ecf3660b58fb6e9359d0526938ce17debe344d1d1bd",
+      "lines": 30
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/channel-decision.controller.ts",
+      "sha256": "86a3ba48577c28c52ea217dd33006064348b39c6390bf454f88147f6429d5dd9",
+      "lines": 76
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/channel-decision.repository.spec.ts",
+      "sha256": "e96649993315d8f6f5d2125ed0db1c3858234c3ee1c9278625305aa4b66f63da",
+      "lines": 126
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/channel-decision.repository.ts",
+      "sha256": "22f75d2c812d6d4483eaedcf75d0bed55b336e11a416d08e77d473b0ece69cbb",
+      "lines": 515
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/channel-decision.service.spec.ts",
+      "sha256": "3e7dae5d9b9d05011cb8ba0040c60ef4425041a28cffabfdd4a38fcf8c746c9f",
+      "lines": 572
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/channel-decision.service.ts",
+      "sha256": "b22eb94f1ce3407773fdee7595a438bdf621015023ebb657989ee95f43c66f61",
+      "lines": 558
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/channel-selection-link.spec.ts",
+      "sha256": "43a5d9bb59b5e2e641ad1d0fda19065ac1d7ab9e85e0ca5593696c9b3bc21451",
+      "lines": 72
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/channel-selection-settlement.spec.ts",
+      "sha256": "dcf89e931f55e97d86431814756633ec0d219ea078b5c6512b55e0038e4dfadf",
+      "lines": 93
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/channel-selection-settlement.ts",
+      "sha256": "e060dcab1671658d4e2616e0fcd5a7e213dc65ca9e16ec8da3f488af62364871",
+      "lines": 85
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/channel-strategy.types.ts",
+      "sha256": "271a2f62ab76223ffa90632ded3395732abb54cdcccb4217f0c2973bb6783532",
+      "lines": 23
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/coach-continuity.constants.ts",
+      "sha256": "52c408f2c97cf66b2cd2a69eff427c6b6c5bb74ca201e1f86f67e0de89b05cd4",
+      "lines": 10
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/congestion.service.spec.ts",
+      "sha256": "05022ce0d3baf57e3d057e111501f5680eecf080b6b16e93cc523b9784fdf1da",
+      "lines": 65
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/congestion.service.ts",
+      "sha256": "72b0d93d3132174fbc245bf9cf6b5dcbe17d761beae55f8a63f410f2d0c7d3d4",
+      "lines": 71
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/domain-enums.conformance.spec.ts",
+      "sha256": "19156b3d7d4b0042a326f32e05dab8e467713659560d907f2b55b0afbb520898",
+      "lines": 79
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/dto/channel-decision-query.dto.ts",
+      "sha256": "9675b1810d7a05c9a153b0203d52c2c45cdac0245adba855db4f6fc42965ca1f",
+      "lines": 54
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/dto/channel-decision-settle-range-query.dto.ts",
+      "sha256": "e4b1c8363fe4ddd4c884ef89156adf34db3165b9cd4fd8e765568f492d4a5692",
+      "lines": 9
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/ev.constants.spec.ts",
+      "sha256": "ece723692dcd9c397299ff8891454cacfdc9524a25e8edb083ada6e7469926ce",
+      "lines": 385
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/ev.constants.ts",
+      "sha256": "8946b96077a3d23467743960982d4b0f7dd388626fe3cc920b731cad116ecee9",
+      "lines": 1209
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/fri-elo.utils.ts",
+      "sha256": "ed9271a9279b60249418d69078bbd9d9aeacf96b3e549a07b0211e90747f6db1",
+      "lines": 117
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/fri-model/fri-model.constants.ts",
+      "sha256": "d27e49560f433829f6161435ff3b00ddef70b642c24b1e01d215377326bd100f",
+      "lines": 8
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/fri-model/fri-model.service.ts",
+      "sha256": "4f79b2e17089c6687d8b365f1b196b488f307198d8f0a689455b695c4f5d8278",
+      "lines": 225
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/fri-model/fri-model.types.ts",
+      "sha256": "cd40a293d6c4dcb7ec90210f99c852825fd72d1185f1922d164ba1a28857ada8",
+      "lines": 54
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/fri-model/fri-model.utils.spec.ts",
+      "sha256": "4a0ebaba5cf31750e56660b3a444a8092be081c68e0741e08163de3147e0dd66",
+      "lines": 131
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/fri-model/fri-model.utils.ts",
+      "sha256": "8c171b0f1d7ca14b7b9aa7112304cca206f6b0315dc0538148a3e534086650cf",
+      "lines": 213
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/h2h.service.spec.ts",
+      "sha256": "8ef833d01ffac7dc7544c4021aaeeb7e108f20240aa8bc5dbe8eb307a9216d91",
+      "lines": 275
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/h2h.service.ts",
+      "sha256": "d75cb19c9dc7d87806b6212c2c38c8f7403acba294a3cfdadd20ecac6f1d18ae",
+      "lines": 94
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/h2h.utils.spec.ts",
+      "sha256": "d1fb7ab23f511a0337997799906f720ecfb5adf782caf121ca06fa28352e0d15",
+      "lines": 72
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/h2h.utils.ts",
+      "sha256": "e6df36e18a30550f8002a4a76ca44bb4f7267d5331a64df171b60ee45bbe8767",
+      "lines": 47
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/market-coherence.spec.ts",
+      "sha256": "808cc54d7777a2a0043b4e6f29a03d230cd58f23c3db2c995099d02ec8a2c07a",
+      "lines": 196
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/market-coherence.ts",
+      "sha256": "827486817197472ebf6315d69a2ef55d90edbdbaba2a289f4555331f4d9337bf",
+      "lines": 258
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/math/probability.ts",
+      "sha256": "f75e9aeae259b6aa8643ec07ab6098225a5c71b3cbe1d1e621ff7ea545e1469f",
+      "lines": 46
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/ml-shadow-features.ts",
+      "sha256": "1bdebbc5e16559a396a8579384f991e92fcefa6d4cd968a1193143289fad54e9",
+      "lines": 5
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/pricing/odds-mapping.ts",
+      "sha256": "1530f6e7806cec6ec69dd8cb70219a1060c874ea9a5d76729ed9a69451da6074",
+      "lines": 7
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/pricing/odds-snapshot.loader.spec.ts",
+      "sha256": "63446e17f4af2e5b1ffb15e1c9d0912653c564d9da9a0f20f662da4f01a43634",
+      "lines": 541
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/pricing/odds-snapshot.loader.ts",
+      "sha256": "b80b73dd2509929be25ef7eeb16256f78649a4382ef02954579bd2689c7886e0",
+      "lines": 857
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/selection/pick-evaluation.ts",
+      "sha256": "8bb8aaebc3ca36cd1b634fd43a3e7d1a544a5fac64a6ab6dd4e2007383c82415",
+      "lines": 10
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/selection/pick-rejection-guards.spec.ts",
+      "sha256": "08e838838eab4c510d8837e227ef0a62ac726c8db922c92a561dff81d20ea3bc",
+      "lines": 268
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/selection/pick-validation.ts",
+      "sha256": "ee14cff2d5fcf614701bc7d4874438f1a5d6a4fd3d6df17f363ddd8493cfc216",
+      "lines": 56
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/selection/selection-config.ts",
+      "sha256": "74e5f0e9147d3a61a37ddba5a108e8c49b60080dde5bd62b5392c9f87d81415e",
+      "lines": 43
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/selection/value-min-edge.spec.ts",
+      "sha256": "b5228007d71ea3283d89d39c385a00bd5f020b34a59b0b4476d1a0ede6043d00",
+      "lines": 115
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/settlement/bet-settlement.service.ts",
+      "sha256": "8d1da875d112fccea89f14423cfc95c8be9cb465d68a1368150251a04bce43ff",
+      "lines": 303
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/shadow-predictions.service.spec.ts",
+      "sha256": "7dbf1ad35e6db5f1e7c569ff1e0c87dc4eda454e73e38e2f1e8eb0b26fe80fb0",
+      "lines": 86
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/shadow-predictions.service.ts",
+      "sha256": "808d97c412eb31b3e73fe6f257d94944bf6f50472963137f402bddf01afaa93d",
+      "lines": 88
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/strategies/strategy-context.builder.spec.ts",
+      "sha256": "fbe9021a60f02eb04a69bb2c11f7c53badb9081cb7ddb93367b5f399784d5d3a",
+      "lines": 110
+    },
+    {
+      "path": "apps/backend/src/modules/betting-engine/strategies/strategy-context.builder.ts",
+      "sha256": "a4a0e691112c38a769c7f76beed98b3c8b3d309cf073fa331ae3c0926d502c32",
+      "lines": 34
+    },
+    {
+      "path": "apps/backend/src/modules/coupon/DESIGN.md",
+      "sha256": "be0985e57d99d6884452b748094ae300e885458c7078097750d43750c3aa375c",
+      "lines": 521
+    },
+    {
+      "path": "apps/backend/src/modules/coupon/coupon-indices.service.ts",
+      "sha256": "8fa828272a4e5e72d0cdb407ce4f71305b8ce76608a972baac748a2b8ea24f0d",
+      "lines": 209
+    },
+    {
+      "path": "apps/backend/src/modules/coupon/coupon-settlement.service.spec.ts",
+      "sha256": "e219aa1c10dfcffb728b7287eb52e930c2cf424ea5ee782183b76faa0cc3758c",
+      "lines": 283
+    },
+    {
+      "path": "apps/backend/src/modules/coupon/coupon-settlement.service.ts",
+      "sha256": "26a2f8a546141403ddd424947d0ce79a3919c5662b31810e723b37d2762331e2",
+      "lines": 286
+    },
+    {
+      "path": "apps/backend/src/modules/coupon/coupon.constants.ts",
+      "sha256": "73ebc54002dab7566057a4e4c0441eea78812b998ba7a7fc689683f0ef5f2595",
+      "lines": 277
+    },
+    {
+      "path": "apps/backend/src/modules/coupon/coupon.controller.ts",
+      "sha256": "30c29b19ab14551a04e98a6a4c53ede744aba394236c63227f4fff8e3952c52d",
+      "lines": 167
+    },
+    {
+      "path": "apps/backend/src/modules/coupon/coupon.module.ts",
+      "sha256": "8c2b31ac2c0138a32b52e140e31469c9917f4aa5c884e65426d89bea8cdb837b",
+      "lines": 28
+    },
+    {
+      "path": "apps/backend/src/modules/coupon/coupon.repository.ts",
+      "sha256": "dc96976d375c8bbccf4a4555bc22e0bbc9de7b80ba4fdbf69036e000c1844101",
+      "lines": 286
+    },
+    {
+      "path": "apps/backend/src/modules/coupon/coupon.service.ts",
+      "sha256": "e98a8213c6fc1757c4b23ab99157f5c943860c0a3662303a0b5cf601e6fb2542",
+      "lines": 100
+    },
+    {
+      "path": "apps/backend/src/modules/coupon/dto/coupon-indices-query.dto.ts",
+      "sha256": "5729973f5d48edcd9ec1a854d9fa990217a2ec7c95cfaafc52bba3ab2f1fed0b",
+      "lines": 22
+    },
+    {
+      "path": "apps/backend/src/modules/coupon/dto/coupon-indices.dto.ts",
+      "sha256": "996e3b6c8e7f5e43fc7d9a017921101937ae191b45b515190b9c74a9c7e7ed33",
+      "lines": 43
+    },
+    {
+      "path": "apps/backend/src/modules/coupon/dto/coupon-proposal.dto.ts",
+      "sha256": "46a2aa1e68ea7774dfcdb1d434fe082fde44b9d5542798f27ca482465060fc37",
+      "lines": 87
+    },
+    {
+      "path": "apps/backend/src/modules/coupon/dto/coupon-query.dto.ts",
+      "sha256": "714dfa9497de8b0af2d5817345ec2188297c805eefed4e20ed11cfa276c00de5",
+      "lines": 16
+    },
+    {
+      "path": "apps/backend/src/modules/coupon/dto/coupon-settle-range-query.dto.ts",
+      "sha256": "3b2728fc7c5bad055796e433a766916cd7a8af31753c5b28067a018507c6f771",
+      "lines": 9
+    },
+    {
+      "path": "apps/backend/src/modules/coupon/recherche.md",
+      "sha256": "0a2ad2b20d3ffdb0a84529155d42921e0478f6cc62dfea5f7dba0f8c704241d9",
+      "lines": 849
+    },
+    {
+      "path": "apps/backend/src/modules/dashboard/dashboard.constants.ts",
+      "sha256": "6a469dbbf74adfe715a22cc73c3cd0ef5fbf5bcd89d62943c6d5a4556790e267",
+      "lines": 53
+    },
+    {
+      "path": "apps/backend/src/modules/dashboard/dashboard.controller.ts",
+      "sha256": "abb7f2ed6c29be818c51c1712789f9ae41420f2d1824a050b8dd04fe052d5eb3",
+      "lines": 86
+    },
+    {
+      "path": "apps/backend/src/modules/dashboard/dashboard.module.ts",
+      "sha256": "49e11d58d8f8b55065cf48feb8b668b2bf7cc4864de572f8c0b1be28abf6be3a",
+      "lines": 13
+    },
+    {
+      "path": "apps/backend/src/modules/dashboard/dashboard.repository.ts",
+      "sha256": "79627da8eebeec36abcc1e6b75d7d5e15f7e72145a13d149a226370dea978950",
+      "lines": 380
+    },
+    {
+      "path": "apps/backend/src/modules/dashboard/dashboard.service.spec.ts",
+      "sha256": "49a1421e36d392d9836739443132ad681f20b41030ea8eadc40d0b42369564dd",
+      "lines": 217
+    },
+    {
+      "path": "apps/backend/src/modules/dashboard/dashboard.service.ts",
+      "sha256": "e1fa1d0e52a7871dea77121d63ca1ae65535539cb90f151f43efda728070f8a0",
+      "lines": 766
+    },
+    {
+      "path": "apps/backend/src/modules/dashboard/dashboard.types.ts",
+      "sha256": "39d9d2a9dbe8ea57757662a49521a91ac0dd74d122c3b1dcd2c1f773899f7e49",
+      "lines": 142
+    },
+    {
+      "path": "apps/backend/src/modules/dashboard/dashboard.utils.ts",
+      "sha256": "8abf706ddb2166e8dfe310c4d443b3734a5dab4349a5f0da0ade458c6393bac3",
+      "lines": 97
+    },
+    {
+      "path": "apps/backend/src/modules/etl/api-football.client.spec.ts",
+      "sha256": "4e8d18329b59d95f202d09e4e24559194a9fc39e1151b0fd360ccffa9fcfad3f",
+      "lines": 73
+    },
+    {
+      "path": "apps/backend/src/modules/etl/api-football.client.ts",
+      "sha256": "e52ee3f1198145eb72573e0f1657764bda309488d466800ec043eb182ff4b378",
+      "lines": 195
+    },
+    {
+      "path": "apps/backend/src/modules/etl/dto/analysis-horizon-body.dto.ts",
+      "sha256": "6f1d099022100459ec618e08c918a5dce26cc830b096b0e443efc9ae4c93ac2e",
+      "lines": 29
+    },
+    {
+      "path": "apps/backend/src/modules/etl/dto/betting-engine-rebuild-body.dto.ts",
+      "sha256": "96e63cd2578ca88a8af824dcc3a5ff8e0ed148ca0688b2c570f2d0c2c1696376",
+      "lines": 24
+    },
+    {
+      "path": "apps/backend/src/modules/etl/dto/etl-error-response.dto.ts",
+      "sha256": "91baa24d807936fb7e368eacf4867571ef53c1860266fe50eb223b33fea675e7",
+      "lines": 14
+    },
+    {
+      "path": "apps/backend/src/modules/etl/dto/odds-prematch-sync-body.dto.ts",
+      "sha256": "f3f8f5b7c2a27813efafc5db537aa5ab8b84972be5b702e071e163293ba4b106",
+      "lines": 43
+    },
+    {
+      "path": "apps/backend/src/modules/etl/etl.controller.spec.ts",
+      "sha256": "3ce458a02930f15e200caa4059e3756639c9beeb1cd4d8881f976fac4167ccda",
+      "lines": 248
+    },
+    {
+      "path": "apps/backend/src/modules/etl/etl.controller.ts",
+      "sha256": "ed31bd81a80d50d4148fd88357282fc9911660bc3f74a1feb9b4cfdfe4371ffc",
+      "lines": 673
+    },
+    {
+      "path": "apps/backend/src/modules/etl/etl.module.ts",
+      "sha256": "7d2d17c06c7bcbc8b452bef8194a13fb580be42b3b1b3eb742a793e31e3f9984",
+      "lines": 84
+    },
+    {
+      "path": "apps/backend/src/modules/etl/etl.service.spec.ts",
+      "sha256": "3d4ac084184c7cd69239de30fe6a922d6441a7358dde4788c16ea23ef799d155",
+      "lines": 593
+    },
+    {
+      "path": "apps/backend/src/modules/etl/etl.service.ts",
+      "sha256": "48182b48d356335493784a3805e500a2c25b438808bb2823e4282ed26f598f06",
+      "lines": 1049
+    },
+    {
+      "path": "apps/backend/src/modules/etl/league-season-dates.spec.ts",
+      "sha256": "7f5c71889cc2c0e50e917e277aabb62289a248644f280eef68973537caee815c",
+      "lines": 63
+    },
+    {
+      "path": "apps/backend/src/modules/etl/league-season-dates.ts",
+      "sha256": "0ed03470112510d9392f0807f1c3e29afdf1f21512b8fd9fc3c9ef53661a98bf",
+      "lines": 69
+    },
+    {
+      "path": "apps/backend/src/modules/etl/schemas/coachs.schema.ts",
+      "sha256": "9e33a6949528c892ca1ae8e7955d4b5102bb10a4ff52397d4f33136d73598c13",
+      "lines": 49
+    },
+    {
+      "path": "apps/backend/src/modules/etl/schemas/fixture.schema.spec.ts",
+      "sha256": "2e1b07bec112adc110d0256fef48bc8cfbfd773801f62750acf3f8a3bd6780d1",
+      "lines": 285
+    },
+    {
+      "path": "apps/backend/src/modules/etl/schemas/fixture.schema.ts",
+      "sha256": "fe686b55f983a09cbfbc330a9043a95a379806e06ceee30cd3eab9025d73475c",
+      "lines": 110
+    },
+    {
+      "path": "apps/backend/src/modules/etl/schemas/injuries.schema.spec.ts",
+      "sha256": "6688f74f83ae4251c5c010f34ab10caecee2afbb6594324495859154b29115db",
+      "lines": 68
+    },
+    {
+      "path": "apps/backend/src/modules/etl/schemas/injuries.schema.ts",
+      "sha256": "aee7868aa3ee008fd2ae780c9907619d143137f85e5fe6398aa75fc28fcde2d9",
+      "lines": 41
+    },
+    {
+      "path": "apps/backend/src/modules/etl/schemas/leagues.schema.ts",
+      "sha256": "cbf27e973a9de194a575411d11ceee39709e47b5caf5b0c5f2bd58249008fae4",
+      "lines": 44
+    },
+    {
+      "path": "apps/backend/src/modules/etl/schemas/odds-csv.schema.spec.ts",
+      "sha256": "9c55dd1a402b039307d2d6af31eba2862883d34dd525050a401a6759ab19367e",
+      "lines": 120
+    },
+    {
+      "path": "apps/backend/src/modules/etl/schemas/odds-csv.schema.ts",
+      "sha256": "610ca9efdd56cb07ebb8be6ff9d263e0ed08b06a84a0c3e4aa792764d533ced1",
+      "lines": 53
+    },
+    {
+      "path": "apps/backend/src/modules/etl/schemas/odds.schema.spec.ts",
+      "sha256": "bc9dcab852462f459dbd5a33389fcb5749be18a260ef33537e6d8bfcaba785ba",
+      "lines": 232
+    },
+    {
+      "path": "apps/backend/src/modules/etl/schemas/odds.schema.ts",
+      "sha256": "f6954c841a8010b5d242b4bfbf095c5bc1e6c5809357d1ac1058cedfd6f094d4",
+      "lines": 46
+    },
+    {
+      "path": "apps/backend/src/modules/etl/schemas/predictions.schema.ts",
+      "sha256": "18309b0c97844c8e535b28721e96bb007f00050bc96c0df4ae5f120e90195897",
+      "lines": 43
+    },
+    {
+      "path": "apps/backend/src/modules/etl/schemas/stats.schema.spec.ts",
+      "sha256": "c39b606d81ff6491cc5a95a3aa259781a39c3d1ba79a9834903d0727400b080a",
+      "lines": 97
+    },
+    {
+      "path": "apps/backend/src/modules/etl/schemas/stats.schema.ts",
+      "sha256": "76c40e29346d922fdaa8aa413e2bb04484cd32ee4e8e5ec424b6e06ab30e895b",
+      "lines": 32
+    },
+    {
+      "path": "apps/backend/src/modules/etl/schemas/the-odds-api.schema.ts",
+      "sha256": "e75cc5e3bb01ea4fbeb7857db1bc58e481b29aa906ca879a19750b0b100310f8",
+      "lines": 60
+    },
+    {
+      "path": "apps/backend/src/modules/etl/team-name-matching.ts",
+      "sha256": "cd0d0f1844510b6c6b42837292764bc71beb9e6d4929ccc4f11609c33689c7e8",
+      "lines": 195
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/betting-engine-analysis.worker.ts",
+      "sha256": "b38efc35ef030236af93052b8776f45df4040e1c2af66560b0cd0c1a1a423418",
+      "lines": 53
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/betting-engine-rebuild.worker.ts",
+      "sha256": "6b3326c1275198191e52e93550b5e62f3b91fcd6a1b54f4c0ffdb1648724879b",
+      "lines": 188
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/coachs-sync.worker.spec.ts",
+      "sha256": "d99ac71aa6d51d47c071200e34a1c4c487dac6f5cc28d893040a4d3df5ce79b0",
+      "lines": 287
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/coachs-sync.worker.ts",
+      "sha256": "704ecb1901c0f1bc347219b6469b74bc539d3c1d9088f17bc772f7e208aeff7d",
+      "lines": 141
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/elo-sync.worker.spec.ts",
+      "sha256": "82357eaee99f7cb2c17c6c40798c905923765b3d4162b81d4f83afa8b6975088",
+      "lines": 162
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/elo-sync.worker.ts",
+      "sha256": "32cd7c8ab9d73a5b01db35c46fd2e2bfd4e93a3a2a562ec2e491370fdfecc81a",
+      "lines": 167
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/etl-worker.utils.spec.ts",
+      "sha256": "bae6af653a7dbf05e28848bbdc5a9db11717d3ff957e0982dfab38b3eb0dcbb5",
+      "lines": 34
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/etl-worker.utils.ts",
+      "sha256": "6cead7953313f21e457414bec2c883230a5f03961a606d55add04edab32b51c5",
+      "lines": 172
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/fixtures-sync.worker.spec.ts",
+      "sha256": "3896ecdee1752efb45a11a541b2c41698ccaf065226f9446f2204166fa71d00d",
+      "lines": 427
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/fixtures-sync.worker.ts",
+      "sha256": "37399f750241e997f172abf23dd8a1271974533689f8c62a1e77fb1ecc90ede3",
+      "lines": 328
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/injuries-sync.worker.spec.ts",
+      "sha256": "03e3183175ab9915227347170203e18b72eb38e1350b7076db744277230ae325",
+      "lines": 290
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/injuries-sync.worker.ts",
+      "sha256": "a78c3f6bb765a8f0bfc0de9923c8aed8c63131dee48c4d0d2d54b56783e09d78",
+      "lines": 238
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/league-sync.worker.spec.ts",
+      "sha256": "d59db6dd35f31d75d12dc11b0f4b5986d6ab63fe93ddd0c15fec383cb382df7f",
+      "lines": 89
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/league-sync.worker.ts",
+      "sha256": "bd1874081629e9b7a28acd3b97edbbf8808a9af309f460b0ff934f317f468a27",
+      "lines": 84
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/odds-csv-import.worker.spec.ts",
+      "sha256": "ca2f298d6556d756951eb6056113ae7b129ff876a1e4bd2cc0e269a78a71ad33",
+      "lines": 764
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/odds-csv-import.worker.ts",
+      "sha256": "61572d0b3468b7c649a304af2f20e14595251acea265f9332fc94f227fab6d43",
+      "lines": 515
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/odds-historical-import.worker.spec.ts",
+      "sha256": "45fe972eb96a4953125761d94cdb4ea50cc3e7d4dddc00ab2365563851e49e5d",
+      "lines": 50
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/odds-historical-import.worker.ts",
+      "sha256": "27b816bd990b9aa4d38573bf6806de665a28a698abee479f46ff7bfcaff31683",
+      "lines": 595
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/odds-prematch-sync.worker.spec.ts",
+      "sha256": "088160f777fba3602591608557ec1c73118038c88adcc6001280430984fcef77",
+      "lines": 717
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/odds-prematch-sync.worker.ts",
+      "sha256": "66a69749b9b2549d51521c046cdf85cae5ca3c26e8f4371ce75f2cefd319276b",
+      "lines": 813
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/pending-bets-settlement.worker.spec.ts",
+      "sha256": "fb9ecb63b18b4a8a5336cb576fbf81f3df929fb78810ec5fab27f70771eea8aa",
+      "lines": 301
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/pending-bets-settlement.worker.ts",
+      "sha256": "899b6d1c9c3be975d153fea39dc3c0b0534885312c095afe95a0ae6156fd8e86",
+      "lines": 253
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/rolling-horizon.worker.ts",
+      "sha256": "4cce6fef47f4d4e252171d11cf7ef7d9c087e6fe97b83206fc9675d4676c279f",
+      "lines": 85
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/same-day-analysis.worker.ts",
+      "sha256": "fe57b71db89db94aa8d5ac73e3d115effab8fb988280fa60b247c71671921f63",
+      "lines": 64
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/season-rollover-sync.worker.spec.ts",
+      "sha256": "32b6fe608474eed2a5bb57134e225e63412de5df4519da53736c1d0c7d07811f",
+      "lines": 52
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/season-rollover-sync.worker.ts",
+      "sha256": "c152997d9b2a3f489569d4fc402db4770604f33a0a0f4b0a997ae8bb42fb7ff7",
+      "lines": 49
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/stale-scheduled-sync.worker.spec.ts",
+      "sha256": "3490db5fb11a02cf2959ae4085cac22a2ee30f12e6489d73b2484c995d9497d5",
+      "lines": 126
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/stale-scheduled-sync.worker.ts",
+      "sha256": "741204bbcb3e73a2d42a5178ef36b1655690798bfb947dd5d75df7c8872f5456",
+      "lines": 202
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/stats-sync.worker.spec.ts",
+      "sha256": "7cad1da6aec82dc8afdc81c580b2d0db73eaa0f6aef0a9245e05d13a0c439bf4",
+      "lines": 366
+    },
+    {
+      "path": "apps/backend/src/modules/etl/workers/stats-sync.worker.ts",
+      "sha256": "3f1250fb542874a533f53bf8caceed4b57a3e1a0df1c0e0954236d58f3070b13",
+      "lines": 217
+    },
+    {
+      "path": "apps/backend/src/modules/fixture/dto/fixture-scoring-query.dto.ts",
+      "sha256": "05a16faf9de4daef211b7e03d51ff074e113462803fce1096a04a45a2b3a37c6",
+      "lines": 45
+    },
+    {
+      "path": "apps/backend/src/modules/fixture/fixture-scoring.controller.ts",
+      "sha256": "358f2570020bba0bd0bc42791243b3c55ca9e40647d77a35dbc3611ef582521b",
+      "lines": 32
+    },
+    {
+      "path": "apps/backend/src/modules/fixture/fixture-scoring.service.ts",
+      "sha256": "ac27314f319a3fb17ac3e751cbf7b40b50a53788418f0bd327043b9c0d449615",
+      "lines": 336
+    },
+    {
+      "path": "apps/backend/src/modules/fixture/fixture.module.ts",
+      "sha256": "df6dd371c0144be7c47a515dba0b0d3c541129e5e8c39f80c33201ce8bce9083",
+      "lines": 21
+    },
+    {
+      "path": "apps/backend/src/modules/fixture/fixture.repository.spec.ts",
+      "sha256": "8f4d6e0c73c18ad27b2cf4f7f567c1e92888ed1e7b470f9f4470e47a076eb2d6",
+      "lines": 614
+    },
+    {
+      "path": "apps/backend/src/modules/fixture/fixture.repository.ts",
+      "sha256": "fa43cf4438f0c048f53339eb867458591fb665d2ec6fffeb6e6dd605d2c68553",
+      "lines": 1395
+    },
+    {
+      "path": "apps/backend/src/modules/fixture/fixture.service.spec.ts",
+      "sha256": "d8f227162cc8acb2196f1d2e63a7cb91f5d0b5236fdf67b99e63f84ba6293f28",
+      "lines": 195
+    },
+    {
+      "path": "apps/backend/src/modules/fixture/fixture.service.ts",
+      "sha256": "e7a346be9d9bb386a65e74061563f39b934957c7058f0a3f3b87fa45392312bd",
+      "lines": 324
+    },
+    {
+      "path": "apps/backend/src/modules/fixture/match-leg-detection.service.spec.ts",
+      "sha256": "24dcdbf7ab180b5f522ee30d0a5e096884d557c6ccf5866047122ae5426a8398",
+      "lines": 205
+    },
+    {
+      "path": "apps/backend/src/modules/fixture/match-leg-detection.service.ts",
+      "sha256": "6af5c8ad3bb033055d9e6773cb68d7d219006ca94038bddaac3805e4a818172a",
+      "lines": 130
+    },
+    {
+      "path": "apps/backend/src/modules/formation-progress/dto/formation-progress.dto.ts",
+      "sha256": "d5e6f7e8cf047665a2eee5cf1abb5e44263255abc939bb51fcccb94b09561784",
+      "lines": 11
+    },
+    {
+      "path": "apps/backend/src/modules/formation-progress/formation-progress.controller.ts",
+      "sha256": "fa3335e84a5f45baa6ccfdb5c123ed080dc4fe22b27f9ff9e6aaacb52158185f",
+      "lines": 48
+    },
+    {
+      "path": "apps/backend/src/modules/formation-progress/formation-progress.module.ts",
+      "sha256": "74fb395b5c8f2f741fbdadea69881b9c96d2da23dbb8f1647fac41979e312008",
+      "lines": 13
+    },
+    {
+      "path": "apps/backend/src/modules/formation-progress/formation-progress.repository.spec.ts",
+      "sha256": "73c6b6e08870b7ccc1bb991e2dd6aca6d37890799296121c1efd7ed40ff3f6b8",
+      "lines": 84
+    },
+    {
+      "path": "apps/backend/src/modules/formation-progress/formation-progress.repository.ts",
+      "sha256": "88e14af60a27fa30e38835d0683a0c40e1b6a63b8fd9cee99903241c733fc0c8",
+      "lines": 45
+    },
+    {
+      "path": "apps/backend/src/modules/formation-progress/formation-progress.service.ts",
+      "sha256": "e625c5e9422170d4145a1f150b8da7e4701bedd5788b96bdd3ff7513954c3db3",
+      "lines": 34
+    },
+    {
+      "path": "apps/backend/src/modules/gamification/gamification.controller.ts",
+      "sha256": "cff265dddb7c35bf77fc09ca13f3911c3e7705829bc594c089a2bf63f7b25f16",
+      "lines": 18
+    },
+    {
+      "path": "apps/backend/src/modules/gamification/gamification.module.ts",
+      "sha256": "588d78917ffeb191e9a8369f63c9a0c3402b7d8ba68554dec9d2dbfc773e7b17",
+      "lines": 13
+    },
+    {
+      "path": "apps/backend/src/modules/gamification/gamification.service.ts",
+      "sha256": "36cc1025205021dd6617dde4d3d36138428826ddc0dac20d676cdda61a50e762",
+      "lines": 142
+    },
+    {
+      "path": "apps/backend/src/modules/mail/mail.module.ts",
+      "sha256": "49c0a5f5244a2c57d12fe9e953a8032475afd48ec190af11aa73a348b704a636",
+      "lines": 8
+    },
+    {
+      "path": "apps/backend/src/modules/mail/mail.service.ts",
+      "sha256": "a057513d438a402f2a83465f1ccb0d28f03d7f4ea84f12ad7ce70aaa4eb09640",
+      "lines": 196
+    },
+    {
+      "path": "apps/backend/src/modules/ml/dto/trigger-training.dto.ts",
+      "sha256": "d2d4e5db148a341bbb0e5c4d155ad7faf7276152021e17329844a8a7139fc4ce",
+      "lines": 8
+    },
+    {
+      "path": "apps/backend/src/modules/ml/ml.constants.spec.ts",
+      "sha256": "6b0954e92ac2d80a052f87d02d55716cf25f14321f4e2f068310a49534ea0a0f",
+      "lines": 37
+    },
+    {
+      "path": "apps/backend/src/modules/ml/ml.constants.ts",
+      "sha256": "248a2fdacd52186834842b34032283c97ce677aa48179a6d9870e3f196f31627",
+      "lines": 87
+    },
+    {
+      "path": "apps/backend/src/modules/ml/ml.controller.ts",
+      "sha256": "f131f764189fe07e7c6f6e0e1d4d2775af89ce7292090bc392d6443c06ed601d",
+      "lines": 81
+    },
+    {
+      "path": "apps/backend/src/modules/ml/ml.inference.module.ts",
+      "sha256": "e7fbcd9377bfdf0d6707a04d5ec96b66a898ceb98805915ed48f6df4b502aaf0",
+      "lines": 10
+    },
+    {
+      "path": "apps/backend/src/modules/ml/ml.inference.service.ts",
+      "sha256": "b1b2c5243ec8081accc8507a9a3368e8758ddd80c45b91629d72f39b71c98f9a",
+      "lines": 103
+    },
+    {
+      "path": "apps/backend/src/modules/ml/ml.module.ts",
+      "sha256": "02d93e8885cb0f03c552e86eb83ad26c8caff020e07961fa31203700bf79c6c2",
+      "lines": 62
+    },
+    {
+      "path": "apps/backend/src/modules/ml/ml.repository.ts",
+      "sha256": "53513e95b4a190ff47ce5999216917a4adac933c9e88eabf9171e947675d90d9",
+      "lines": 142
+    },
+    {
+      "path": "apps/backend/src/modules/ml/ml.scheduler.worker.ts",
+      "sha256": "e74b7704af90a82418fde17d0a39424ee0749aab195f4b1da3d2a61652ef3038",
+      "lines": 30
+    },
+    {
+      "path": "apps/backend/src/modules/ml/ml.service.spec.ts",
+      "sha256": "9468b6279c75b86276bd6e9be18b6919da7f942b2a4c2dbb2210a567fc11dad2",
+      "lines": 65
+    },
+    {
+      "path": "apps/backend/src/modules/ml/ml.service.ts",
+      "sha256": "f645ec82642fca2ac919f94d542eb6b53ef2cd939e67615e4866c06b6d49acda",
+      "lines": 252
+    },
+    {
+      "path": "apps/backend/src/modules/ml/ml.training-events.listener.ts",
+      "sha256": "395c26fe8a3dcb7aacd36c5f21241427185f325fc221e02da3acd032b6c57eda",
+      "lines": 74
+    },
+    {
+      "path": "apps/backend/src/modules/notification/dto/notification-query.dto.ts",
+      "sha256": "9f782f89ef53190120c5f56f22d3b5962052ab2442e6103a88482e7477706f75",
+      "lines": 33
+    },
+    {
+      "path": "apps/backend/src/modules/notification/notification.controller.ts",
+      "sha256": "96ab79d1a54840bb7121b9fe6690d835c84295bb5a61977fdaf1a536e5234801",
+      "lines": 73
+    },
+    {
+      "path": "apps/backend/src/modules/notification/notification.module.ts",
+      "sha256": "5c12ceabfd8c3acde6333630849d2f1fe21a574b88f0deee3e8dcbe23b3654cc",
+      "lines": 14
+    },
+    {
+      "path": "apps/backend/src/modules/notification/notification.service.spec.ts",
+      "sha256": "77887cbe0a8d9529857fc06469cb94aef1a79d1314bf12c5b8bcf5bbf9396ae4",
+      "lines": 349
+    },
+    {
+      "path": "apps/backend/src/modules/notification/notification.service.ts",
+      "sha256": "8ae707f637b1822b14f0c07e04dfca932eee1b83ef1b9c93dc3a1dae3284fd9c",
+      "lines": 426
+    },
+    {
+      "path": "apps/backend/src/modules/personalization/personalization.controller.ts",
+      "sha256": "869f3b3e1796adb31e55f9dbe480cd99ac240f26d5a176529461d78ffd9d05d2",
+      "lines": 74
+    },
+    {
+      "path": "apps/backend/src/modules/personalization/personalization.module.ts",
+      "sha256": "bc317b3ce6b5eec07c57f3aa94f9c21f42adec9ae4e10ff41faed5ad7cdadbd4",
+      "lines": 13
+    },
+    {
+      "path": "apps/backend/src/modules/personalization/personalization.repository.ts",
+      "sha256": "0f478997e6ede92159e9e4c9913750e7d25c73fa357851e7cba65771c6bbe046",
+      "lines": 96
+    },
+    {
+      "path": "apps/backend/src/modules/personalization/personalization.service.spec.ts",
+      "sha256": "6a7cb01458ce77a9933a2b59ada976824bbc17aad75f34dc35ce8530fe61fd1d",
+      "lines": 184
+    },
+    {
+      "path": "apps/backend/src/modules/personalization/personalization.service.ts",
+      "sha256": "b25b9f1e8435233d83576e1a1839336c23085a4d5e54b58c104026d0a69009f8",
+      "lines": 135
+    },
+    {
+      "path": "apps/backend/src/modules/push/dto/subscribe-push.dto.ts",
+      "sha256": "1730c60f72f290b23d5d2043ad997dcaa1c4a4d2d7315d4acd1ea39174b5e12a",
+      "lines": 31
+    },
+    {
+      "path": "apps/backend/src/modules/push/dto/unsubscribe-push.dto.ts",
+      "sha256": "6bf58b1fe4a8b73f879eb52d8418018afa63f9ee2c6d861c7327fcfb1d3b1ae3",
+      "lines": 6
+    },
+    {
+      "path": "apps/backend/src/modules/push/push.controller.ts",
+      "sha256": "b1b5ab427f13325be58567de8556811889d13cfff8f7ead5d8fe95fa4482bc48",
+      "lines": 43
+    },
+    {
+      "path": "apps/backend/src/modules/push/push.module.ts",
+      "sha256": "0d2009749102748fb62d283437cb3cda95eff2d1a4cb21121626d1c39cccc51e",
+      "lines": 14
+    },
+    {
+      "path": "apps/backend/src/modules/push/push.repository.ts",
+      "sha256": "d5068d7ea9d0222af1eabb346f88b461050ebffa59cc6f8dd58a82be70400251",
+      "lines": 53
+    },
+    {
+      "path": "apps/backend/src/modules/push/push.service.ts",
+      "sha256": "d37dcf797de58391ac56466520d8fdb1ac56488f12193236bf24c50a735e19dd",
+      "lines": 102
+    },
+    {
+      "path": "apps/backend/src/modules/reports/dto/ml-promotion-query.dto.ts",
+      "sha256": "aba83f083f57eceff5ab0c701ba389e310fc236171858ed3251b012f5240ad59",
+      "lines": 10
+    },
+    {
+      "path": "apps/backend/src/modules/reports/reports.constants.spec.ts",
+      "sha256": "81eae145cac76f6a8b0b0b7e551025d4b1ea3146e3bfe77683b785efb8be6afc",
+      "lines": 82
+    },
+    {
+      "path": "apps/backend/src/modules/reports/reports.constants.ts",
+      "sha256": "ecb7e16c8b8459c4b25d731866686299faf6a274ad595ac9ba24a4aa81b96cc6",
+      "lines": 77
+    },
+    {
+      "path": "apps/backend/src/modules/reports/reports.controller.ts",
+      "sha256": "f7b3792f52f0bd79f4eedad26815e14e55f2d02bcb6b01d94bed890f06ab41a6",
+      "lines": 21
+    },
+    {
+      "path": "apps/backend/src/modules/reports/reports.module.ts",
+      "sha256": "ce27205b2199c0e3606f0ce1bc52790c704f0adb26b2d6a08c404d8af61f2caf",
+      "lines": 14
+    },
+    {
+      "path": "apps/backend/src/modules/reports/reports.repository.ts",
+      "sha256": "146281e70f4888c4d46735c8009526c916862a7e5c07ec9fbb521a0736daeb94",
+      "lines": 86
+    },
+    {
+      "path": "apps/backend/src/modules/reports/reports.service.spec.ts",
+      "sha256": "46d6789fd0c5358e5cbbde007224b9dff29ef5ee79e5781a5cebc0c819b38b13",
+      "lines": 165
+    },
+    {
+      "path": "apps/backend/src/modules/reports/reports.service.ts",
+      "sha256": "ae6c6c5cc7e8dfcc5523d1d87cfab565f1571dd25413741036148b252e926361",
+      "lines": 217
+    },
+    {
+      "path": "apps/backend/src/modules/reports/reports.types.ts",
+      "sha256": "4797cc4783e48a90af66faf99dd13b780a229bc91d8b51aedfa3e110e63c7d6c",
+      "lines": 56
+    },
+    {
+      "path": "apps/backend/src/modules/risk/dto/market-param.dto.ts",
+      "sha256": "b6d7b4ffc8a669bc33d9a9830ceabd911d2df39ebeb8384de947b9971f17942b",
+      "lines": 9
+    },
+    {
+      "path": "apps/backend/src/modules/risk/dto/roi-check-response.dto.ts",
+      "sha256": "795a9043f0b474efa3a4dbac798782c3df077a0019caec88348fc3a919619dad",
+      "lines": 16
+    },
+    {
+      "path": "apps/backend/src/modules/risk/dto/suspension-response.dto.ts",
+      "sha256": "0bd3e83fc8c588d8f1ef7f228ae37b9c675274c960f284b2067e039765db21eb",
+      "lines": 10
+    },
+    {
+      "path": "apps/backend/src/modules/risk/dto/weekly-report-response.dto.ts",
+      "sha256": "8da58d48f989552a3873447f457a861c558043653225ca1b013c8ea54100fc2e",
+      "lines": 15
+    },
+    {
+      "path": "apps/backend/src/modules/risk/risk.constants.ts",
+      "sha256": "af45b87a2f4192e1cdff023bb64f9166e78820f0050f32f43f324801b2753dc6",
+      "lines": 12
+    },
+    {
+      "path": "apps/backend/src/modules/risk/risk.controller.ts",
+      "sha256": "ec0db9656659d020267b4d8e700a9f7179312a112b6c99251d6b64411c6966e1",
+      "lines": 93
+    },
+    {
+      "path": "apps/backend/src/modules/risk/risk.module.ts",
+      "sha256": "388bd826a71d381e701428e11f324bbcd78976f4e7294012a992a395a12d36f6",
+      "lines": 14
+    },
+    {
+      "path": "apps/backend/src/modules/risk/risk.service.spec.ts",
+      "sha256": "eace352ac9ccb6784e845f9fb5ac04acda6ab49bbb6e4ebc84ac0ad1f525994c",
+      "lines": 139
+    },
+    {
+      "path": "apps/backend/src/modules/risk/risk.service.ts",
+      "sha256": "bc04126e2c7d8610e3868c85e74b94c48f68e3467a6b1a2f7b9ce431009aa09b",
+      "lines": 295
+    },
+    {
+      "path": "apps/backend/src/modules/rolling-stats/rolling-stats.module.ts",
+      "sha256": "b6de947e2784a82fec0e36fc8ad72a62301e7d04da83d3c2b67584333f30aeb4",
+      "lines": 10
+    },
+    {
+      "path": "apps/backend/src/modules/rolling-stats/rolling-stats.service.spec.ts",
+      "sha256": "09865e2ec80a71aed00011d62b01cb8c612f1592a9f17c6dc611d722b0d19959",
+      "lines": 409
+    },
+    {
+      "path": "apps/backend/src/modules/rolling-stats/rolling-stats.service.ts",
+      "sha256": "93cb8a638f11cf00920b31797a488425463c6c9bde521d9b86c0a7102053034c",
+      "lines": 880
+    },
+    {
+      "path": "apps/backend/src/modules/rolling-stats/rolling-stats.utils.ts",
+      "sha256": "0225f4ea5b2e177e36cd6fd0507e92a5fc663312c192448809d6caa303afb663",
+      "lines": 183
+    },
+    {
+      "path": "apps/backend/src/modules/storage/storage.module.ts",
+      "sha256": "78945a95cea22c5b05714c3d481d0656097ab2f0d1b66c770b8177c5e5337d10",
+      "lines": 12
+    },
+    {
+      "path": "apps/backend/src/modules/storage/storage.service.ts",
+      "sha256": "1a512ad5504b5d559149f765f8409fc18803fed35255907ea8ec4a0d9ed17704",
+      "lines": 252
+    },
+    {
+      "path": "apps/backend/src/modules/storage/storage.types.ts",
+      "sha256": "46fe34509d70d53486a12753961b5fcfc70323b07c02088bf289bd7273430f6e",
+      "lines": 23
+    },
+    {
+      "path": "apps/backend/src/modules/support/admin-support.controller.ts",
+      "sha256": "838d6a7f7c2f1e1a64d6c0c111d9136da41b3e40d4f1a53994fdbc9839a55f7c",
+      "lines": 94
+    },
+    {
+      "path": "apps/backend/src/modules/support/dto/send-message.dto.ts",
+      "sha256": "30b2ff532327122acac9a7d27e5242a5a3ac54be6fd21b12d2c6661bc614d242",
+      "lines": 78
+    },
+    {
+      "path": "apps/backend/src/modules/support/dto/start-conversation.dto.ts",
+      "sha256": "01f3116c2ca47e2b8134974438a0d219d9314f158a6a179384cfa900716de8e1",
+      "lines": 6
+    },
+    {
+      "path": "apps/backend/src/modules/support/support-attachment.util.spec.ts",
+      "sha256": "6af82b65125e27cb91b85af29701a35421ac2f9b5e79bd9f5ba1a997fcaffda5",
+      "lines": 62
+    },
+    {
+      "path": "apps/backend/src/modules/support/support-attachment.util.ts",
+      "sha256": "4cfa88ecbc4c09a8d29149dab2ad9d683b4148c23f44f9cc56c2cce708f4cfca",
+      "lines": 70
+    },
+    {
+      "path": "apps/backend/src/modules/support/support-automation.service.spec.ts",
+      "sha256": "8bae91353871977a703aeb49edba5f4c86ab75eb56e6a0ac8e16f15c1481862e",
+      "lines": 78
+    },
+    {
+      "path": "apps/backend/src/modules/support/support-automation.service.ts",
+      "sha256": "03f073f9a9d761dd86c374b2f6a34a3d01d580a6659608acdb621670ad76118e",
+      "lines": 56
+    },
+    {
+      "path": "apps/backend/src/modules/support/support-notifier.service.ts",
+      "sha256": "f134015eef86e6c9f78b8fbd8612ad7758198ced7bb20288716c178ce57587c9",
+      "lines": 83
+    },
+    {
+      "path": "apps/backend/src/modules/support/support.controller.ts",
+      "sha256": "440a76c6baf49b1e28e454a42a3ee53b0a54ccbf5243301241db594d4e57c4a3",
+      "lines": 85
+    },
+    {
+      "path": "apps/backend/src/modules/support/support.gateway.ts",
+      "sha256": "2b9c180a44f56382cc15c1eba0a8de45b7f28f374c41c42bb4ebaaeb4758ef33",
+      "lines": 175
+    },
+    {
+      "path": "apps/backend/src/modules/support/support.module.ts",
+      "sha256": "6685ae33a11741c1525fdc2ec70030c9ae64f5bef5a3bd47d390477becf497e4",
+      "lines": 34
+    },
+    {
+      "path": "apps/backend/src/modules/support/support.repository.ts",
+      "sha256": "ec07f5f398f96fe3b49a7cfeb1ab403f47944d1898d018745705d656e39a4430",
+      "lines": 327
+    },
+    {
+      "path": "apps/backend/src/modules/support/support.service.spec.ts",
+      "sha256": "795a35cb203852453700e476f2fd418ef7673abf1b13864ad2e72da9d3d21966",
+      "lines": 341
+    },
+    {
+      "path": "apps/backend/src/modules/support/support.service.ts",
+      "sha256": "7f1e6b3ba82253f0de76347009b6010badb13150bf3d8cb0ff3f2b658424e9b6",
+      "lines": 382
+    },
+    {
+      "path": "apps/backend/src/modules/support/support.types.ts",
+      "sha256": "259d41df947956c7966d437376c4679d4bb88ba81afb94a97050c7d8ce9fba96",
+      "lines": 85
+    },
+    {
+      "path": "apps/backend/src/prisma.module.ts",
+      "sha256": "9223a0889abb0669020e94a9b8c1e68274cdc05533c1f79d84fe516450e94ebd",
+      "lines": 9
+    },
+    {
+      "path": "apps/backend/src/prisma.service.ts",
+      "sha256": "6f07665d87fb4609afb29c18ba887df8aaa3f7eea4d7cf213604ed3f06012a04",
+      "lines": 11
+    },
+    {
+      "path": "apps/backend/src/scripts/backfill-selection-odds.ts",
+      "sha256": "b7930f14deb308661b6077d8b9ec5f6350a20833932b683d0314b1c7ab48aea6",
+      "lines": 182
+    },
+    {
+      "path": "apps/backend/src/scripts/reanalyze-scope.ts",
+      "sha256": "586f01aa99af9892e83e3d995f01fd733f0ab5113d1db78efd2494e0ae21912d",
+      "lines": 220
+    },
+    {
+      "path": "apps/backend/src/utils/async.utils.ts",
+      "sha256": "a43deed52e9ff7194788a92ade5128aed64509ec35351d97d15c900f18274804",
+      "lines": 3
+    },
+    {
+      "path": "apps/backend/src/utils/date.utils.spec.ts",
+      "sha256": "3288f122ee5b579b87be3c1a88dfa7bb2c1e0e7a11a16814d3633680ebe640a4",
+      "lines": 79
+    },
+    {
+      "path": "apps/backend/src/utils/date.utils.ts",
+      "sha256": "ce8023030bd9720fd8464e43531ce340d8668bc66fc3e67c13bc261899723113",
+      "lines": 125
+    },
+    {
+      "path": "apps/backend/src/utils/decimal.utils.ts",
+      "sha256": "37f05c80f4556fc4f5845da1e3d3f6ea98547a68af7828dbfc952763f1f01e71",
+      "lines": 25
+    },
+    {
+      "path": "apps/backend/src/utils/logger.ts",
+      "sha256": "8a6b5ee37e667a89c0234784044cb75a71f36434cee4d5569de45ef648e01b2f",
+      "lines": 38
+    },
+    {
+      "path": "apps/backend/src/utils/model-run.utils.ts",
+      "sha256": "591d6595dbd71e4685c2740e8fe72a3e6cf34bdab3f3663fa728c0dd26f78d9d",
+      "lines": 20
+    },
+    {
+      "path": "apps/backend/src/utils/pick-labels.utils.ts",
+      "sha256": "1938e71c6882fa88d1a64363a62703e5751e5bcb3e28798678f5229823195b16",
+      "lines": 80
+    },
+    {
+      "path": "apps/backend/src/utils/prisma.utils.ts",
+      "sha256": "d53a5c7ec64e3e242d5b636fb8ee16ec2d507e00b35106725ef9b633df01fdff",
+      "lines": 24
+    },
+    {
+      "path": "apps/backend/src/utils/season.utils.spec.ts",
+      "sha256": "2287950b734f48119e79783378ccc2889d082a4842c4a0aadadd23e01c8c301f",
+      "lines": 31
+    },
+    {
+      "path": "apps/backend/src/utils/season.utils.ts",
+      "sha256": "4d80d2aada6189feaa779dd5e1b084bbb359078a78e21640a1ad597ecf5ae415",
+      "lines": 25
+    },
+    {
+      "path": "apps/ml-worker/src/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lines": 0
+    },
+    {
+      "path": "apps/ml-worker/src/data/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lines": 0
+    },
+    {
+      "path": "apps/ml-worker/src/data/extract.py",
+      "sha256": "719112169385c548c88c5d636c63024099d6014e0a393832fc1ef329ca7a325f",
+      "lines": 337
+    },
+    {
+      "path": "apps/ml-worker/src/inference/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lines": 0
+    },
+    {
+      "path": "apps/ml-worker/src/inference/registry.py",
+      "sha256": "1143128cd58fd976cda2a3ed6534cadaad34b6cb95380dfd1a0c872c357adeee",
+      "lines": 90
+    },
+    {
+      "path": "apps/ml-worker/src/inference/server.py",
+      "sha256": "671ee43f7860c0d1658725266371a25b2e6e577c86e152aa2148927b49e75070",
+      "lines": 53
+    },
+    {
+      "path": "apps/ml-worker/src/jobs/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lines": 0
+    },
+    {
+      "path": "apps/ml-worker/src/jobs/train.py",
+      "sha256": "cecf55f031c2a436b8f958e5701ca837c22428654529d079680127c34e876b89",
+      "lines": 128
+    },
+    {
+      "path": "apps/ml-worker/src/main.py",
+      "sha256": "7ed731a58438f95b7bc45d1184fef7870c3cd8cf8d50200edec0bef964d37afa",
+      "lines": 42
+    },
+    {
+      "path": "apps/ml-worker/src/models/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lines": 0
+    },
+    {
+      "path": "apps/ml-worker/src/models/correction.py",
+      "sha256": "47004b1841c66f74525abac50f1231435fdc3453022b30a34a83f6d04c872ab3",
+      "lines": 216
+    },
+    {
+      "path": "apps/ml-worker/src/models/persist.py",
+      "sha256": "4f9fb4ca4b97c77972054b78743d92cc86bac381a8cae4491498605628b54efc",
+      "lines": 88
+    },
+    {
+      "path": "apps/ml-worker/src/worker.py",
+      "sha256": "d880381a6dd4dbb17d127e60ff8656c471e191263f27d7ea545b0e3b79e38edc",
+      "lines": 47
+    },
+    {
+      "path": "apps/vantage-worker/src/config.ts",
+      "sha256": "97c0555926cbf30808014276da80972b80e0cd8d71a25e59eddb9e4edf4834c4",
+      "lines": 289
+    },
+    {
+      "path": "apps/vantage-worker/src/context/build-match-context.ts",
+      "sha256": "3cd3f46014a49f19658c3ed419c2a29e14444bc10ed048f1ba087c02243acf36",
+      "lines": 261
+    },
+    {
+      "path": "apps/vantage-worker/src/context/h2h-signal.ts",
+      "sha256": "b318bcb24a67197e6f35f78aa1a927875ca102ebf31bae526f640274747016e6",
+      "lines": 68
+    },
+    {
+      "path": "apps/vantage-worker/src/context/market-odds.ts",
+      "sha256": "b389b18d866e2acd8ac07b1c2ad3662c6362e4b0859fc7df447b003e1b127bbf",
+      "lines": 91
+    },
+    {
+      "path": "apps/vantage-worker/src/context/near-miss.spec.ts",
+      "sha256": "800b9094607b414ebe0c0cd0ca10f8f46dac3bfb9297c4a599be794b4f1ecf91",
+      "lines": 197
+    },
+    {
+      "path": "apps/vantage-worker/src/context/near-miss.ts",
+      "sha256": "c1e109a4f40fba122d9abfbb8304946559340fbccea213ac76127d8fa3e1de9b",
+      "lines": 297
+    },
+    {
+      "path": "apps/vantage-worker/src/context/team-signals.ts",
+      "sha256": "44e3a1deb47c553731f7dd9f51c76bbe6ff5c5ba80b04234ed42a29b637c9d68",
+      "lines": 68
+    },
+    {
+      "path": "apps/vantage-worker/src/context/types.ts",
+      "sha256": "5e8666c1d331e6ce04d9ce8cfcfbdadd0f6122480b8567456305cbe59bb73ba0",
+      "lines": 136
+    },
+    {
+      "path": "apps/vantage-worker/src/coupon/channel-reliability-query.ts",
+      "sha256": "16264d1da23917e014c43d7319697f7f06a45cb87b2bd565b756cf5875f15038",
+      "lines": 68
+    },
+    {
+      "path": "apps/vantage-worker/src/coupon/compose-coupon-class.spec.ts",
+      "sha256": "671cf5959cbff65bddd7cb054d088d63e0d065e772b335fdb9fea89f4d8da01d",
+      "lines": 251
+    },
+    {
+      "path": "apps/vantage-worker/src/coupon/compose-coupon-class.ts",
+      "sha256": "272bc87a4389d46f3cae71b3861e07342b278a29e5f175f20e56852337ac9f11",
+      "lines": 101
+    },
+    {
+      "path": "apps/vantage-worker/src/coupon/generate-coupon-selection.spec.ts",
+      "sha256": "1586cd823a454add47fa5b7171af2852d5c2757ad6be7a027284cac09524f1a5",
+      "lines": 208
+    },
+    {
+      "path": "apps/vantage-worker/src/coupon/generate-coupon-selection.ts",
+      "sha256": "fbd4571714fbe75c1ef5e49e7b0fec290a1a12b70c10eab0cf8e934b5a220a80",
+      "lines": 154
+    },
+    {
+      "path": "apps/vantage-worker/src/coupon/odds-batch.ts",
+      "sha256": "c275ca1145359c2774d761e5a8b79cdedf1b3e624b386b382d9334b29294f885",
+      "lines": 109
+    },
+    {
+      "path": "apps/vantage-worker/src/coupon/persist-coupon-proposal.ts",
+      "sha256": "b9c3e8364748c50d567a7c271c9d870f5c6965c624bdbfd0434b58381133ffa3",
+      "lines": 177
+    },
+    {
+      "path": "apps/vantage-worker/src/coupon/pool-query.ts",
+      "sha256": "46a750b365063075761af00fd64ba5b7c6d7aec6cc6372a931efe662160b84d2",
+      "lines": 404
+    },
+    {
+      "path": "apps/vantage-worker/src/coupon/run-coupon-generation.spec.ts",
+      "sha256": "0bbbc148e486c8b2dacd13e8a95eccabae835747475c203a705409d5c1a95c6b",
+      "lines": 29
+    },
+    {
+      "path": "apps/vantage-worker/src/coupon/run-coupon-generation.ts",
+      "sha256": "af77313417eff2036fd4410b75263dec850f1093de0075c3e427396823d8cc0b",
+      "lines": 190
+    },
+    {
+      "path": "apps/vantage-worker/src/coupon/score-candidates.spec.ts",
+      "sha256": "d4ad2e9f2b60845e0058fe8ce05abb80f59ce01b3418e083cb481d243198a466",
+      "lines": 165
+    },
+    {
+      "path": "apps/vantage-worker/src/coupon/score-candidates.ts",
+      "sha256": "bd9f7f90741ab290c3fd7ec7a222c9bfca4ee508c27a46286ab5794455389ba4",
+      "lines": 120
+    },
+    {
+      "path": "apps/vantage-worker/src/coupon/selection-prompt.ts",
+      "sha256": "99ea81faaa1f94e42fec8b9193614d8f3906786ff70e4a2bf76ea1d78286e782",
+      "lines": 75
+    },
+    {
+      "path": "apps/vantage-worker/src/coupon/selection-schema.ts",
+      "sha256": "2fde77133f8227297ffdf375e6d6d25ab83779fac604fff24b917546cf900e9d",
+      "lines": 70
+    },
+    {
+      "path": "apps/vantage-worker/src/coupon/validate-coupon-selection.spec.ts",
+      "sha256": "ff718db811250914d3a94f51e6c6eeb8397b419b9c6002e98c7a532195499af8",
+      "lines": 160
+    },
+    {
+      "path": "apps/vantage-worker/src/coupon/validate-coupon-selection.ts",
+      "sha256": "dec8377659f31bc140bbadc98c3f0d7d3576242126e8db65ae7f06412e6d194b",
+      "lines": 174
+    },
+    {
+      "path": "apps/vantage-worker/src/groq/client.spec.ts",
+      "sha256": "70cae7a8040b1c6ef165118943ef3509b7e93b5b62140b337728b09edea78bb6",
+      "lines": 226
+    },
+    {
+      "path": "apps/vantage-worker/src/groq/client.ts",
+      "sha256": "4e6288f0114060789c738f20213a6af00507e4dd8f5fd1975f8bedd8ca7d4afd",
+      "lines": 170
+    },
+    {
+      "path": "apps/vantage-worker/src/logger.ts",
+      "sha256": "5e3402aa1f1f7b99b42bfb6524c13fd9113051b379d2a3d5884a14adb1b8b400",
+      "lines": 28
+    },
+    {
+      "path": "apps/vantage-worker/src/main.ts",
+      "sha256": "f247b9b160fe9a9cd2c173218d709a2221b074e172a91caf4826afa5e922f056",
+      "lines": 137
+    },
+    {
+      "path": "apps/vantage-worker/src/queue/find-eligible-fixtures.ts",
+      "sha256": "0392e070b0fd009e1ef06b88355f6d897fb5df1bb51ecb91ba36a3c0cb90d0dc",
+      "lines": 59
+    },
+    {
+      "path": "apps/vantage-worker/src/queue/queue.ts",
+      "sha256": "94a9d6834b4b3768882c6ca937e406ccc9b016bea9c5d493c21bf014f690009f",
+      "lines": 31
+    },
+    {
+      "path": "apps/vantage-worker/src/queue/run-sweep-once.ts",
+      "sha256": "a384b7f837cd2575c3237786bc6eee7cef6a22e24aa876250ce8fbbc30a93c9e",
+      "lines": 26
+    },
+    {
+      "path": "apps/vantage-worker/src/queue/scheduler.spec.ts",
+      "sha256": "d391e1cefe71375d975ae20f8a466474646b69ce4a6132fa46c54ded6b142dfb",
+      "lines": 63
+    },
+    {
+      "path": "apps/vantage-worker/src/queue/scheduler.ts",
+      "sha256": "59fc1809fe3e4dbfd14d3117c7151109181ffaedd698382e191575a3628d5902",
+      "lines": 51
+    },
+    {
+      "path": "apps/vantage-worker/src/queue/worker.ts",
+      "sha256": "708a108482687a4ebbedb3a18849af0a56c76e026d2ad77dec8d7d9b7c3257ce",
+      "lines": 69
+    },
+    {
+      "path": "apps/vantage-worker/src/research/groq-compound.spec.ts",
+      "sha256": "73c1c2a04e9aa5b8ba150831c75cdf4ce01bfc599571d1c0180e48407de12f88",
+      "lines": 110
+    },
+    {
+      "path": "apps/vantage-worker/src/research/groq-compound.ts",
+      "sha256": "16e6846db94fad8946464b522009b70e378634265d66e5e640034492fcacba3c",
+      "lines": 64
+    },
+    {
+      "path": "apps/vantage-worker/src/research/index.spec.ts",
+      "sha256": "fc678c6a4573847b0be31595d8926395c3545745d22c5c6a1d42ac422182cb1d",
+      "lines": 165
+    },
+    {
+      "path": "apps/vantage-worker/src/research/index.ts",
+      "sha256": "9579d580a83d71d914c5677d851c43091894456458c44e4834c8b53e83289d0d",
+      "lines": 65
+    },
+    {
+      "path": "apps/vantage-worker/src/research/tavily.spec.ts",
+      "sha256": "2d5be079f5d245b26a85ae95ed5123689eef40ff34c45db730265f6ba4f1358a",
+      "lines": 97
+    },
+    {
+      "path": "apps/vantage-worker/src/research/tavily.ts",
+      "sha256": "769de5440d3c20c4428b5612a49708b1d8984069605a83fb662cfdccff9e8684",
+      "lines": 100
+    },
+    {
+      "path": "apps/vantage-worker/src/research/types.spec.ts",
+      "sha256": "1d29769d3df0b8526b294d8633dda7cf77c65c00f77ac938c204fb624c88ce3e",
+      "lines": 29
+    },
+    {
+      "path": "apps/vantage-worker/src/research/types.ts",
+      "sha256": "73a929387168880eacc8c975d5a9fd04d4e56f9d30921d41c19c9e25cdc6e528",
+      "lines": 43
+    },
+    {
+      "path": "apps/vantage-worker/src/vantage/analyze-fixture.spec.ts",
+      "sha256": "3c334cb723ff3b76354d1aa21a647fb98495a12f3ab866daaa7a7b51c93686a6",
+      "lines": 290
+    },
+    {
+      "path": "apps/vantage-worker/src/vantage/analyze-fixture.ts",
+      "sha256": "1829f0b8d3b782f8009c77324527fe592fd71a4d3ab875bd8f805faf17ca90b2",
+      "lines": 319
+    },
+    {
+      "path": "apps/vantage-worker/src/vantage/known-picks.spec.ts",
+      "sha256": "d9413e20b6d18c198860de95e4023e1117a5ff27052c14020d281f9f2ac28906",
+      "lines": 34
+    },
+    {
+      "path": "apps/vantage-worker/src/vantage/known-picks.ts",
+      "sha256": "36049d424c754e9009a0caa2087805f1f926155c149e263164547558e0c27a22",
+      "lines": 67
+    },
+    {
+      "path": "apps/vantage-worker/src/vantage/persist-decision.ts",
+      "sha256": "938c66c8ce7033f0f740397854c00cd5d22977819c46fd82c62f2f9c62652fbe",
+      "lines": 107
+    },
+    {
+      "path": "apps/vantage-worker/src/vantage/prompt.spec.ts",
+      "sha256": "0763fcd257a5a6036e861c75db8064cc38ceda4ff677ab2082d9eb59e4d57a01",
+      "lines": 261
+    },
+    {
+      "path": "apps/vantage-worker/src/vantage/prompt.ts",
+      "sha256": "80da7e6e0c77c710a4d9001f60042ef0e4c141b7cf79cbbdf131255f094e408f",
+      "lines": 168
+    },
+    {
+      "path": "apps/vantage-worker/src/vantage/response-schema.spec.ts",
+      "sha256": "abfbb072cb353c14de8bdea6ff4e9c9532a7a08210d27a1320e3215b7a368e7c",
+      "lines": 65
+    },
+    {
+      "path": "apps/vantage-worker/src/vantage/response-schema.ts",
+      "sha256": "52a7c8d189ebb6e306197b9d6826035da6f3f0849a6f10392e42dcab2542b431",
+      "lines": 47
+    },
+    {
+      "path": "apps/web/app/dashboard/announcements/components/announcements-admin-page-client.tsx",
+      "sha256": "77a84a801b3816f10b45970787f42041da52ee2b84e0ba043a348dcf0a46e3bd",
+      "lines": 444
+    },
+    {
+      "path": "apps/web/app/dashboard/announcements/page.tsx",
+      "sha256": "02c0ad2fb6d9f063ed3b71b07536ebf8da8b2f87a8f1aeed35146d6fc486b751",
+      "lines": 19
+    },
+    {
+      "path": "apps/web/app/dashboard/arbitrage/components/arbitrage-card.tsx",
+      "sha256": "d80e5ea36f7af69915676966871c070d67b4b67992004b246f66ea0a00840a9f",
+      "lines": 156
+    },
+    {
+      "path": "apps/web/app/dashboard/arbitrage/components/arbitrage-constants.ts",
+      "sha256": "da2d5d04fcb9de73e35bd37dfa4667444d6dff698a9931e3eccd376a26ae7f2f",
+      "lines": 173
+    },
+    {
+      "path": "apps/web/app/dashboard/arbitrage/components/arbitrage-page-client.tsx",
+      "sha256": "2f214190be91c6888cc60e7ecd8b5e9f4c0b812db39458eb767c9ad801d26299",
+      "lines": 234
+    },
+    {
+      "path": "apps/web/app/dashboard/arbitrage/components/verdict-filter-bar.tsx",
+      "sha256": "6aeff13c3729856718542ad90ca9a5f8683b483ed187066035442274a1abd821",
+      "lines": 65
+    },
+    {
+      "path": "apps/web/app/dashboard/arbitrage/page.tsx",
+      "sha256": "76041df651cfba3c076d848980b8f76ae595bb242c5d835884311481f7fe7c80",
+      "lines": 10
+    },
+    {
+      "path": "apps/web/app/dashboard/audit/components/audit-overview-section.tsx",
+      "sha256": "47bb5e28378509a4e5756daa5a65b37e9f7bb4d86fab5ffddde6725eced9b61a",
+      "lines": 35
+    },
+    {
+      "path": "apps/web/app/dashboard/audit/components/bets-breakdown.tsx",
+      "sha256": "2fe1395e0f436111abd2c9246e883cb4bccd70e147a6d1bd04efa7399cd225f7",
+      "lines": 80
+    },
+    {
+      "path": "apps/web/app/dashboard/audit/components/count-card.tsx",
+      "sha256": "392e7418b52c44575935d323be055398227e0be15eb50896e852955918918175",
+      "lines": 13
+    },
+    {
+      "path": "apps/web/app/dashboard/audit/components/league-breakdown.tsx",
+      "sha256": "30ae4be8db146020ea357eb34201920d67ff7e0c13e56c4326d079114be25791",
+      "lines": 161
+    },
+    {
+      "path": "apps/web/app/dashboard/audit/page.tsx",
+      "sha256": "3253f6eaa919bf89b8a05dbdf6ddabda26bcb2168b15624349f0eda269a42144",
+      "lines": 99
+    },
+    {
+      "path": "apps/web/app/dashboard/bankroll/components/bankroll-page-client.tsx",
+      "sha256": "2aba4a9052432fa1d76397f9756020b58029cce5c331a84387c21d389a4389d0",
+      "lines": 546
+    },
+    {
+      "path": "apps/web/app/dashboard/bankroll/page.tsx",
+      "sha256": "33018dd609f74ba6fc0e7567286cbf2de451cb33643de4cbe9b912e50be1aa15",
+      "lines": 5
+    },
+    {
+      "path": "apps/web/app/dashboard/bet-slips/components/bet-slip-detail-panel.tsx",
+      "sha256": "83edd2a642d356a227217573a135db8e6a2111bc34cf771da0a14bebbea63d8b",
+      "lines": 424
+    },
+    {
+      "path": "apps/web/app/dashboard/bet-slips/components/bet-slip-list-page-client.tsx",
+      "sha256": "18cca2ee35728508bece73c66f28899ced258f0c2bd48835f5f2e7e47b8df027",
+      "lines": 386
+    },
+    {
+      "path": "apps/web/app/dashboard/bet-slips/page.tsx",
+      "sha256": "64c07c8121edea3b5cc640161f4c308ca84baa297d6834cfc3a83ff756f1aeaa",
+      "lines": 5
+    },
+    {
+      "path": "apps/web/app/dashboard/components/active-alerts.tsx",
+      "sha256": "5689fe949bd40f981317f0cbe0180b31fc2607f9c04d337f9a1b80e0c70a26f7",
+      "lines": 96
+    },
+    {
+      "path": "apps/web/app/dashboard/components/competition-ranking.tsx",
+      "sha256": "383526c71ef8416e6cd4cdb176692b709b128254cd7ea41c70d79d28304c5dfe",
+      "lines": 114
+    },
+    {
+      "path": "apps/web/app/dashboard/components/dashboard-kpi-card.tsx",
+      "sha256": "b731956b6746a8037e3c3c0aa7ff395923c6fe60cb738cb40436112a8b24e65a",
+      "lines": 14
+    },
+    {
+      "path": "apps/web/app/dashboard/components/dashboard-page-client-admin.tsx",
+      "sha256": "b4c8bfbb1ed9e3b2d5e465677449fe78f7903f12d071eb1b38adfdd6f09a576c",
+      "lines": 85
+    },
+    {
+      "path": "apps/web/app/dashboard/components/dashboard-page-client-operator.tsx",
+      "sha256": "96425a86d70404b9cf1458d587d4f76734114db89b0901889bcd07702517ed74",
+      "lines": 137
+    },
+    {
+      "path": "apps/web/app/dashboard/components/engine-health-card.tsx",
+      "sha256": "63bd4fdd550689d54f4fc9b54aa31347534adc25c97d8b67faac205418dbe181",
+      "lines": 264
+    },
+    {
+      "path": "apps/web/app/dashboard/components/kpi-delta.tsx",
+      "sha256": "349225c0494c183c2018fbabc812e763fb99fd881dac1542afce8c67e21c7c10",
+      "lines": 115
+    },
+    {
+      "path": "apps/web/app/dashboard/components/operator-performance-card.tsx",
+      "sha256": "6b67e7bdeaf1aa03296c7ecf20e4ffd93ed6f3af081c020affce06e5e40b9c68",
+      "lines": 85
+    },
+    {
+      "path": "apps/web/app/dashboard/components/performance-card.tsx",
+      "sha256": "0d5266d9fc296158f581138107e6e1e9c1d4bbe9eb14cf7ab9f607e7e9ac3dd7",
+      "lines": 138
+    },
+    {
+      "path": "apps/web/app/dashboard/components/pipeline-status.tsx",
+      "sha256": "a8742c6a73b9077ccdb61aa03e1020d07eb0762c9d8183971c4198cb102e6af8",
+      "lines": 92
+    },
+    {
+      "path": "apps/web/app/dashboard/components/today-confidence-card.tsx",
+      "sha256": "113df9f6aec35fff72e045638c1f98d1c08d998d4f6d15dff2a17a7681c54106",
+      "lines": 242
+    },
+    {
+      "path": "apps/web/app/dashboard/components/user-leaderboard.tsx",
+      "sha256": "837a8c9f284351be313765c0a8f2f9bd361b4795aae87ac66d4e27ec22a63ec9",
+      "lines": 161
+    },
+    {
+      "path": "apps/web/app/dashboard/components/weekly-brief.tsx",
+      "sha256": "e414a7990ea72dd458aa714be767c7ebe5f563f6b187902d044564cfc3db54a9",
+      "lines": 49
+    },
+    {
+      "path": "apps/web/app/dashboard/coupons/components/coupon-card.tsx",
+      "sha256": "e5fc86429561e74db80b5b9d5b79ef2bbc873e63ced4b7f8eb4c6689c16c049c",
+      "lines": 159
+    },
+    {
+      "path": "apps/web/app/dashboard/coupons/components/coupons-page-client.tsx",
+      "sha256": "31f11be7b3324ab02cb9005c307b83879d913046c12352ad8e3261846bb98306",
+      "lines": 92
+    },
+    {
+      "path": "apps/web/app/dashboard/coupons/page.tsx",
+      "sha256": "ce5ca71f29ba35c4cd905ea6b8a0410e606b6f031e1ef58a02aaff9baca439f9",
+      "lines": 12
+    },
+    {
+      "path": "apps/web/app/dashboard/decisions/components/channel-constants.ts",
+      "sha256": "b9ab5006efc52233c20d214df30fd0656ed3e5dc0e2200a71833e642e83f2bf6",
+      "lines": 250
+    },
+    {
+      "path": "apps/web/app/dashboard/decisions/components/channel-filter-bar.tsx",
+      "sha256": "c956d544d549de63b016883de639240af05d231696ea788225ecb05f571c5c0b",
+      "lines": 103
+    },
+    {
+      "path": "apps/web/app/dashboard/decisions/components/channel-lens.tsx",
+      "sha256": "ab4e886e852c1f15ee67cf42bc684251f68cf2b94ebef500b682633d09bf58ee",
+      "lines": 158
+    },
+    {
+      "path": "apps/web/app/dashboard/decisions/components/channel-row.tsx",
+      "sha256": "3a87e55194d24f0e842be4e17030a3352349468a3b2d3fa4e8d7b3ba01a83ff1",
+      "lines": 329
+    },
+    {
+      "path": "apps/web/app/dashboard/decisions/components/channel-selection-row.tsx",
+      "sha256": "4abb8dc451b67ca56dac6ae288d465bb32f6602bf90e4d7cabf84a1d20bbf20a",
+      "lines": 168
+    },
+    {
+      "path": "apps/web/app/dashboard/decisions/components/decision-helpers.ts",
+      "sha256": "8a6de27b05ed338fe0d80da1b75c079d33aad9b384fd7ede6858cae2c0459389",
+      "lines": 125
+    },
+    {
+      "path": "apps/web/app/dashboard/decisions/components/decisions-page-client.tsx",
+      "sha256": "e39b64f6f45e8877641027a0c88a485b2c8e151da32982b751f5d656424f351f",
+      "lines": 173
+    },
+    {
+      "path": "apps/web/app/dashboard/decisions/components/decisions-page-frame.tsx",
+      "sha256": "1855943c5fda036271af49ed04d148831909b938ca0b7266ceffb6b6c973855b",
+      "lines": 120
+    },
+    {
+      "path": "apps/web/app/dashboard/decisions/components/league-filter-bar.tsx",
+      "sha256": "4faa18701076ff785e34f323426faace21999ad0c83b3c51af502227f9db5449",
+      "lines": 106
+    },
+    {
+      "path": "apps/web/app/dashboard/decisions/components/match-card.tsx",
+      "sha256": "add89f7c492dec973a11f85d372e1494bcfce0e6b4b04a1636a889a6fb60fd08",
+      "lines": 205
+    },
+    {
+      "path": "apps/web/app/dashboard/decisions/components/match-lens.tsx",
+      "sha256": "8f0794cbd4c5a37a7357918932917f5f852679bc9fa70dd04af76cd30754bd5c",
+      "lines": 145
+    },
+    {
+      "path": "apps/web/app/dashboard/decisions/page.tsx",
+      "sha256": "bf907db5674ded9120bc996304df70a26261d28d604e2f57153112cdd1d68e75",
+      "lines": 10
+    },
+    {
+      "path": "apps/web/app/dashboard/documentation-technique/[slug]/page.tsx",
+      "sha256": "e4024da9878efde79a036e3b4bc6982ad97fc9db76c7ddf9efcdd5e411ba4f8b",
+      "lines": 100
+    },
+    {
+      "path": "apps/web/app/dashboard/documentation-technique/components/technical-docs-nav.tsx",
+      "sha256": "43cc02e9e332d9d7f795575673cfd0cd1d6b99ffae5af769110ac0c2b5ff0c3b",
+      "lines": 32
+    },
+    {
+      "path": "apps/web/app/dashboard/documentation-technique/page.tsx",
+      "sha256": "e49f2f66e87b537f6b467e13a32517961f75a811cd70ecededf2260f77f3651d",
+      "lines": 8
+    },
+    {
+      "path": "apps/web/app/dashboard/engine/components/analysis-section.tsx",
+      "sha256": "5501b81d695383ecff70e15492fff1d420c9cb87aaddedd1032e96cc552b2ada",
+      "lines": 237
+    },
+    {
+      "path": "apps/web/app/dashboard/engine/components/channel-selection-settlement-section.tsx",
+      "sha256": "bdca8fa1fd6362107717628dbe87adb1d46b42d24a019643bdf329e25741be16",
+      "lines": 104
+    },
+    {
+      "path": "apps/web/app/dashboard/engine/components/coupon-settlement-section.tsx",
+      "sha256": "c02206f4924f386f90fda99e8d13fd678a4821ff5f2d836c9e33f251e5354aa7",
+      "lines": 173
+    },
+    {
+      "path": "apps/web/app/dashboard/engine/components/engine-page-client.tsx",
+      "sha256": "806421c2106aa10d4fe89b6251d7b4273ea6fd390676799968882fd27097209d",
+      "lines": 81
+    },
+    {
+      "path": "apps/web/app/dashboard/engine/components/global-actions-section.tsx",
+      "sha256": "c34f1f5545314ab11014707e2feedb18ef9749219e77fc1b6be27e9bc178bbcc",
+      "lines": 268
+    },
+    {
+      "path": "apps/web/app/dashboard/engine/components/global-backfill-section.tsx",
+      "sha256": "f88c22f680481d677c4db2cf4b50dd36a830a5cc685ccd8c75e701e4d5383eb1",
+      "lines": 98
+    },
+    {
+      "path": "apps/web/app/dashboard/engine/components/league-ops-section.tsx",
+      "sha256": "827ace5be4903f785299019eb533f0f85cad05961d3bf79d6632a417b1e21681",
+      "lines": 355
+    },
+    {
+      "path": "apps/web/app/dashboard/engine/components/queue-status-section.tsx",
+      "sha256": "8ca69daf6f112719192eef1ae0dd8094cd07a2ced438b043bf12feb4e7fdab5e",
+      "lines": 204
+    },
+    {
+      "path": "apps/web/app/dashboard/engine/page.tsx",
+      "sha256": "4245a97846cd37ad08e6798c77eee88e9d9aa5a9dc54f20bb28876517938fcab",
+      "lines": 19
+    },
+    {
+      "path": "apps/web/app/dashboard/fixtures/components/fixtures-filters.tsx",
+      "sha256": "4c4c8fb7c03bf433dcd36aaa9fe207714bbede54c311d6a152431386bef4ec55",
+      "lines": 32
+    },
+    {
+      "path": "apps/web/app/dashboard/fixtures/components/fixtures-table.tsx",
+      "sha256": "7b6cc523826088411edbcb048424c0a7803e2592f6829ada72a44374ed34fb7e",
+      "lines": 435
+    },
+    {
+      "path": "apps/web/app/dashboard/fixtures/components/infinite-scroll-sentinel.tsx",
+      "sha256": "f3b9d13a68fb4f2ce7a977421027b99261737f8ca5eee22825b3008551ca969a",
+      "lines": 35
+    },
+    {
+      "path": "apps/web/app/dashboard/fixtures/page.tsx",
+      "sha256": "f3b95ffef6fe037d80fd0e52f2efa2757a1869c96e30404fd247fc863b76c5d1",
+      "lines": 38
+    },
+    {
+      "path": "apps/web/app/dashboard/formation/[slug]/page.tsx",
+      "sha256": "cad346c056590894af8b02981228ed82478152fd58efefeec8e422735d6d344d",
+      "lines": 301
+    },
+    {
+      "path": "apps/web/app/dashboard/formation/components/formation-chapters.tsx",
+      "sha256": "25539b26dc94696926cc678b337f9ea60b87fd80ebe5cfb0a689e125f4155eec",
+      "lines": 54
+    },
+    {
+      "path": "apps/web/app/dashboard/formation/components/formation-completion-button.tsx",
+      "sha256": "751b5fdd0438f64cfa0be0b41e8ecf961194499c3b33ac8b5bbb3e8b7066becd",
+      "lines": 63
+    },
+    {
+      "path": "apps/web/app/dashboard/formation/components/formation-page-client.tsx",
+      "sha256": "020d2e15a562977ac27f70b71de5ba1a623acb6b63133052d6b26adf0cd879cd",
+      "lines": 341
+    },
+    {
+      "path": "apps/web/app/dashboard/formation/components/formation-progress-sync.tsx",
+      "sha256": "460452f39e94f35d6f8138a9470b78dcbc1da85d35a55ec1cf4c08f0d8f57e48",
+      "lines": 30
+    },
+    {
+      "path": "apps/web/app/dashboard/formation/components/formation-recent-tracker.tsx",
+      "sha256": "726790cf8dd07ec7cce98be4ed039495cfb6115ac1daecb9912bbd960389d017",
+      "lines": 26
+    },
+    {
+      "path": "apps/web/app/dashboard/formation/components/formation-video-player.tsx",
+      "sha256": "cd38609a307d8552d6446a5bfdc627f606a50111d0b47388ef3ef1e500d98d39",
+      "lines": 81
+    },
+    {
+      "path": "apps/web/app/dashboard/formation/layout.tsx",
+      "sha256": "7f3ec1e6c0cd06a847279a12fa42012554c1be273e5ff3f3fba317ff4fa91cb8",
+      "lines": 15
+    },
+    {
+      "path": "apps/web/app/dashboard/formation/page.tsx",
+      "sha256": "2b48fe92555aa1cb7ea0090a4635f776272f6f41c009cfd7202536f9d83385e9",
+      "lines": 14
+    },
+    {
+      "path": "apps/web/app/dashboard/formation/videos/[slug]/page.tsx",
+      "sha256": "d1da319f489fd6a5cbd01c5bedf5fa91cbd45907c0048189d3d8e66559a05186",
+      "lines": 33
+    },
+    {
+      "path": "apps/web/app/dashboard/glossaire/glossaire-mobile-select.tsx",
+      "sha256": "8faaa0e2145f897d81f1c3033634ae75ddd72df967ecb5a389a0fee0b09001d1",
+      "lines": 30
+    },
+    {
+      "path": "apps/web/app/dashboard/glossaire/glossaire-search.tsx",
+      "sha256": "f11629da38659471a6da073a08ddf1039bfc13cb0b9e4f86988fad1b69fb448c",
+      "lines": 68
+    },
+    {
+      "path": "apps/web/app/dashboard/glossaire/page.tsx",
+      "sha256": "ed51587e21b3397feed84b95a739479bd8d26fbaa22e6729be9f4b33426caa6e",
+      "lines": 92
+    },
+    {
+      "path": "apps/web/app/dashboard/help/page.tsx",
+      "sha256": "b3c642bca2e43e9a22b34bb87543c840650643ed2d8d451fd51ca34e9aaf256f",
+      "lines": 119
+    },
+    {
+      "path": "apps/web/app/dashboard/inbox/[conversationId]/page.tsx",
+      "sha256": "3325b106cd58c06aaea13f9f83fea5d3ec3837e9b0ef49c2cca33eff6a3fcc07",
+      "lines": 30
+    },
+    {
+      "path": "apps/web/app/dashboard/inbox/components/attachment-bubble.tsx",
+      "sha256": "013ab58226f92a117b232656c018977d275be6565e391470c818cff8cf9afbab",
+      "lines": 84
+    },
+    {
+      "path": "apps/web/app/dashboard/inbox/components/attachment-constants.ts",
+      "sha256": "d739dd85b34dd9ab5cf27494a651c1a3f21a3a839e62b5fcc6ab8da7b24f1009",
+      "lines": 43
+    },
+    {
+      "path": "apps/web/app/dashboard/inbox/components/attachment-picker-button.tsx",
+      "sha256": "18a84b81b00c8ad72a2bb9a02894303b322a718faa85615237f9b34aaeacac3a",
+      "lines": 43
+    },
+    {
+      "path": "apps/web/app/dashboard/inbox/components/audio-message-player.tsx",
+      "sha256": "b65813cd5d1514b09eac0ebf05a8ce181c7ec82bdcdbfbf11ea935f535221fcb",
+      "lines": 104
+    },
+    {
+      "path": "apps/web/app/dashboard/inbox/components/chat-thread.tsx",
+      "sha256": "94864ff821f84632a5c3709113f67288171babcb7cce9fda3cf074267b4e3fd0",
+      "lines": 645
+    },
+    {
+      "path": "apps/web/app/dashboard/inbox/components/composer-attachment-preview.tsx",
+      "sha256": "9e88137a5c8ce2a3c59767874cc02b56d4145c6f7937971439c5347db783acc1",
+      "lines": 54
+    },
+    {
+      "path": "apps/web/app/dashboard/inbox/components/inbox-page-client.tsx",
+      "sha256": "a50e0124623662af6889cfef05ed5b282f69c156464a3a9ded0f7d5ca9ae0e69",
+      "lines": 86
+    },
+    {
+      "path": "apps/web/app/dashboard/inbox/components/message-content-constants.ts",
+      "sha256": "8e495ae284cafc0e937e2f55a32318ccfc1c6325354c182a71549635f53749d9",
+      "lines": 55
+    },
+    {
+      "path": "apps/web/app/dashboard/inbox/components/message-text.tsx",
+      "sha256": "4f0de735203ae93ed9e06d63ea20625d0c1c17cfe08806e7827bba1908fe8ac3",
+      "lines": 59
+    },
+    {
+      "path": "apps/web/app/dashboard/inbox/components/new-conversation-dialog.tsx",
+      "sha256": "a4d15e00a4a42fdcf3055623234be3b5d5e40ce09315011075cc587c9a0c14c8",
+      "lines": 109
+    },
+    {
+      "path": "apps/web/app/dashboard/inbox/components/push-notification-banner.tsx",
+      "sha256": "1d742c5594fa066fde30c31f2f622b1bf0b1cd4fc206e5148a3e5e9c0688ecd0",
+      "lines": 35
+    },
+    {
+      "path": "apps/web/app/dashboard/inbox/components/support-inbox-client.tsx",
+      "sha256": "0ce0ca32ac4823c981d8ee97b169385cd6a7fe1379e27e823001efc133800877",
+      "lines": 249
+    },
+    {
+      "path": "apps/web/app/dashboard/inbox/components/voice-recorder-bar.tsx",
+      "sha256": "dfe2e5a24d33f0b5c18770118f2210a6586380fd6606d357f7db05f6bbe47bb1",
+      "lines": 67
+    },
+    {
+      "path": "apps/web/app/dashboard/inbox/page.tsx",
+      "sha256": "57d8f6f1eb3cf8a1cfd365cd361676dbe7abf5d489befc8a0dd1a95199ce235a",
+      "lines": 24
+    },
+    {
+      "path": "apps/web/app/dashboard/layout.tsx",
+      "sha256": "bf20e75c91bd063ea11043279dc852d31a3da8c5d9c274ba34fac7e6dd8f196b",
+      "lines": 48
+    },
+    {
+      "path": "apps/web/app/dashboard/ml/components/ml-page-client.tsx",
+      "sha256": "434d263edb9195fbd7633e55d1cf6c1177c2a6b043fab7383a53582f3cda116f",
+      "lines": 562
+    },
+    {
+      "path": "apps/web/app/dashboard/ml/components/ml-page-constants.ts",
+      "sha256": "9594af0e9ea3487958beaad1476b4dbbf006ed858aa85437c5e353e445385ce1",
+      "lines": 21
+    },
+    {
+      "path": "apps/web/app/dashboard/ml/page.tsx",
+      "sha256": "d096c2601029446c632fcd6bdf5348d1360725c8a8c38dfec89af640256bbd90",
+      "lines": 19
+    },
+    {
+      "path": "apps/web/app/dashboard/notifications/components/notifications-page-client.tsx",
+      "sha256": "686f92b0d285ac3278acee44bb4abb0f1769a3b2977ef7d7b4800c48b279fa60",
+      "lines": 298
+    },
+    {
+      "path": "apps/web/app/dashboard/notifications/page.tsx",
+      "sha256": "be7b80c7d90f7970851b79b8914c7df86fd171ee88bff3e91a24b52e4792417a",
+      "lines": 12
+    },
+    {
+      "path": "apps/web/app/dashboard/page.tsx",
+      "sha256": "c6deac12b1be458752b09b8d38dac931383a66ff6cd42057c3d21717fd491860",
+      "lines": 18
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/[tab]/page.tsx",
+      "sha256": "73c845eab7fd19ed19b705e3e8f92e1656ce8c357f7db9d0b5cb3d990f361ef4",
+      "lines": 16
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/account-page-shell.tsx",
+      "sha256": "44c10344f5eb0da331c46619c90f816b16ed1629aa5755d2213ac6830a825f86",
+      "lines": 63
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/account-tabs-client.tsx",
+      "sha256": "d479f92a192867713a4685d24d57d368ddeb50443dee7e5191716b9bfe2048d7",
+      "lines": 250
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/account-tabs-constants.ts",
+      "sha256": "bcada233b13d7a27b7b26ad293d6b324826e726ef3aeb5a48e45cd5ac0e506e6",
+      "lines": 14
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/components/appearance-section.tsx",
+      "sha256": "6cdcc7d2142effaa24e350363806948a36b05693a16d06c9542f884f7c1b2964",
+      "lines": 60
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/components/badges-section.tsx",
+      "sha256": "011576428b09d5584cf0c759999afe224cc3ed535e9fbbe18b5162e4464d5c46",
+      "lines": 81
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/components/bankroll-preferences-section.tsx",
+      "sha256": "6bac591676c62e0788f1aba10f40192b67277b418038f2a81ee634bdc3bccd6b",
+      "lines": 215
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/components/email-notifications-section.tsx",
+      "sha256": "cd743aae37630015d59d58b4b67031a241b960591b139b43b908a146a3e3a517",
+      "lines": 57
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/components/followed-channels-card.tsx",
+      "sha256": "26332b020c12727a4f7dfef27510a4a768e6b1e56c03156252a6cf8b48c1757b",
+      "lines": 225
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/components/followed-leagues-card.tsx",
+      "sha256": "76394fced4c5754ec6cf451953039ed58a0561880d275da8255bda5bf9ca9beb",
+      "lines": 153
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/components/language-section.tsx",
+      "sha256": "dc9f7ab3401570df3ae552a17edd02e87a4ccd6f513299eabad7f71e466a48da",
+      "lines": 52
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/components/personalization-constants.ts",
+      "sha256": "0c22133a35263873305900053901ad22b7199d8d06ff69e403a968b4fb63b675",
+      "lines": 7
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/components/personalization-section.tsx",
+      "sha256": "8648b737dc36bf3cd2a27c43bd50f2d7bddee4e86715bfdebc743d123c14f1b1",
+      "lines": 13
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/components/phone-number-row.tsx",
+      "sha256": "00c673e3cccd37155a51d707e619108948c62bddf813ea42c1275891d9f8981f",
+      "lines": 194
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/components/profile-hero-section.tsx",
+      "sha256": "051646a106fbd213ddcbbdc2a4f696a122b6c232f9931e62d0a09671efcda757",
+      "lines": 379
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/components/push-notifications-section.tsx",
+      "sha256": "6d6f05a1f2098b898f096e8647316aaf91432f92f17d6c1f21f4d3bc1108fcc6",
+      "lines": 51
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/components/risk-profile-card.tsx",
+      "sha256": "65a64d668707c1175fd656372956469934b415be3737cd536090e6c6a2233713",
+      "lines": 53
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/components/security-master-detail.tsx",
+      "sha256": "8bef18073f526e809bd92e8e5f614ea3aa3afb2c186db9b5cd8fc6a4c7e570cc",
+      "lines": 33
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/components/security-section.tsx",
+      "sha256": "28b7b5f4f7da100cefd72dbed8faa3dea038db4be9076cdf2686c660f9e16ded",
+      "lines": 114
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/components/security-setup-form.tsx",
+      "sha256": "132b288c21522dbaaba3a70c7ea8d8e6cf5b2681ee3c07a32e6bcaca8198d1f9",
+      "lines": 57
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/components/settings-section-card.tsx",
+      "sha256": "9214cbfc4d47990a68a46f9b9b18fcdfea8ced1b32b2dfa2476a61963d19b49d",
+      "lines": 38
+    },
+    {
+      "path": "apps/web/app/dashboard/params/account/securite/verification/page.tsx",
+      "sha256": "b96fe4b064436d637cba6b9b572b79f4f4314db18d04f1a2fbf1695aacd239fa",
+      "lines": 5
+    },
+    {
+      "path": "apps/web/app/dashboard/performance/components/analysis-constants.ts",
+      "sha256": "28140877d3d790982b5ef6c5ca23db30338bfd28893d8831e647d6ffac72c855",
+      "lines": 33
+    },
+    {
+      "path": "apps/web/app/dashboard/performance/components/analysis-run-bar.tsx",
+      "sha256": "2dfc931fa3c9e247517924998a44293710d3edcda56077fcf01d1e7f039922e4",
+      "lines": 69
+    },
+    {
+      "path": "apps/web/app/dashboard/performance/components/channel-analysis-section.tsx",
+      "sha256": "76bddf4d591e9c6097098a5003c5bff748ad6593b5d5135bce681e3bac753a86",
+      "lines": 46
+    },
+    {
+      "path": "apps/web/app/dashboard/performance/components/channel-backtest-tab.tsx",
+      "sha256": "e432c04e3769a6a11cda583c4e084e5fd7c7314b243f106afde595e4a1103a55",
+      "lines": 191
+    },
+    {
+      "path": "apps/web/app/dashboard/performance/components/date-range-utils.ts",
+      "sha256": "488c13b54a04874beb542191e6c2080cdd5363d0bd3d20360a085783b20ab334",
+      "lines": 21
+    },
+    {
+      "path": "apps/web/app/dashboard/performance/components/formatters.ts",
+      "sha256": "7d4913075d93f7fc4193466b8ebb7c30bec1004bdd19dd4704de6bee6b452060",
+      "lines": 48
+    },
+    {
+      "path": "apps/web/app/dashboard/performance/components/model-calibration-tab.tsx",
+      "sha256": "87332eb074d6cd695d23962434e7cced619f3e8fdb61d47d55b2401affceaa0c",
+      "lines": 139
+    },
+    {
+      "path": "apps/web/app/dashboard/performance/components/tuning-tab.tsx",
+      "sha256": "03e46dc6155352db1527fcfa3abd6b0ba6d9b7f66feb1a3b536395903d3a7b1a",
+      "lines": 561
+    },
+    {
+      "path": "apps/web/app/dashboard/performance/components/use-stored-result.ts",
+      "sha256": "d23ba99ca153a5566a83995d0a986d3b333abd50c7623675c0457ec3cd60313a",
+      "lines": 44
+    },
+    {
+      "path": "apps/web/app/dashboard/performance/components/verdict-badge.tsx",
+      "sha256": "5bacb42b55fa96ed8a199fc1cea634d43349e77a96f4e394d14c11033f140114",
+      "lines": 16
+    },
+    {
+      "path": "apps/web/app/dashboard/performance/page.tsx",
+      "sha256": "9c5465e6adc191a01ee0d3a5b541a7592a9898940eef4b8834ab462cb770507c",
+      "lines": 21
+    },
+    {
+      "path": "apps/web/app/dashboard/reports/components/reports-constants.ts",
+      "sha256": "c57c6a42b08e66ee71d60e3a5792310685723e73798a3d3e20ef3bea8cbdef15",
+      "lines": 68
+    },
+    {
+      "path": "apps/web/app/dashboard/reports/components/reports-page-client.tsx",
+      "sha256": "5bffe4c882a1a9e7ff8ebbad75059387ba52331406866f918cc085e501ad42ab",
+      "lines": 98
+    },
+    {
+      "path": "apps/web/app/dashboard/reports/components/segment-row.tsx",
+      "sha256": "e3785518cc9e4cc83157501eafca57d0baefaf1ec661ac5a3a02a6e2bef4d366",
+      "lines": 134
+    },
+    {
+      "path": "apps/web/app/dashboard/reports/page.tsx",
+      "sha256": "f03bc9fe6f0615583ab92316f0fd331b9ff757039c8cd94e04e811f1ca2be401",
+      "lines": 19
+    },
+    {
+      "path": "apps/web/app/dashboard/track-record/components/channel-competition-section.tsx",
+      "sha256": "7d1f0fef9dd591d787b3a9ae0ee584179aa1854aa7bd3e15ef8bff82413b8655",
+      "lines": 92
+    },
+    {
+      "path": "apps/web/app/dashboard/track-record/components/channel-stats-table.tsx",
+      "sha256": "19cf696659543760c12487ab65ff50c3a9b4e22b3b67cb2fb0ed0c13739c0543",
+      "lines": 172
+    },
+    {
+      "path": "apps/web/app/dashboard/track-record/components/period-tabs.tsx",
+      "sha256": "ec7abb9d9c3ef8dbff8a1709c83587b46a2be9fe693cacd37ff3ff86b2b6a516",
+      "lines": 27
+    },
+    {
+      "path": "apps/web/app/dashboard/track-record/page.tsx",
+      "sha256": "440d80a5e6bd45764da46f3a494072f4ff9095dd750edd511c5ed5a0d3784208",
+      "lines": 173
+    },
+    {
+      "path": "apps/web/app/dashboard/track-record/track-record-constants.ts",
+      "sha256": "2eec837768105e5233e5a706f2c4c36d1e3ca9073114a4a39b257e7eaeb6a475",
+      "lines": 158
+    },
+    {
+      "path": "apps/web/app/dashboard/updates/components/update-row.tsx",
+      "sha256": "07583899e89df925e7a0a68859f1b2e3e2ad750d529dfc0d587640d2fac7c53b",
+      "lines": 46
+    },
+    {
+      "path": "apps/web/app/dashboard/updates/components/updates-page-client.tsx",
+      "sha256": "af0950d47c06541e0d571da7b4c72ffc668b4e357fd5d2389f46bb07601ab6c0",
+      "lines": 125
+    },
+    {
+      "path": "apps/web/app/dashboard/updates/page.tsx",
+      "sha256": "251328d5cb45c7173e831b064592cbae30e22957c6e2d7dea6a961cd59f35811",
+      "lines": 12
+    },
+    {
+      "path": "apps/web/app/dashboard/users/page.tsx",
+      "sha256": "387f0381c28d3667de99139df123b9097e0430f3d6b231bf459e4bd8cdc6c0e8",
+      "lines": 19
+    },
+    {
+      "path": "apps/web/app/dashboard/users/users-page-client.tsx",
+      "sha256": "df37e606623a2a8457c2263f827fbe0b7b2852a5d57634f2e7bc39dcd3dc7c28",
+      "lines": 514
+    },
+    {
+      "path": "apps/web/components/account-button.tsx",
+      "sha256": "79892f92caaa6146f1b31eca7fee8aa21804ced279bb453343fe25ae868cfbfe",
+      "lines": 169
+    },
+    {
+      "path": "apps/web/components/add-to-coupon-button.tsx",
+      "sha256": "32f71e373cd06f9a96acfab6c94c98f58078a8b8e2c86638acde1730b699a388",
+      "lines": 45
+    },
+    {
+      "path": "apps/web/components/amount.tsx",
+      "sha256": "f10005a9829c40bed60dad3c92bc3ae7f2017f5471b3c0a957a78c20b0a3bec5",
+      "lines": 41
+    },
+    {
+      "path": "apps/web/components/announcements.tsx",
+      "sha256": "d08155831e120f656a8a11d45bc0294cf3a218796b8ebb9b9d640052f136b453",
+      "lines": 99
+    },
+    {
+      "path": "apps/web/components/app-shell.tsx",
+      "sha256": "4b547c8be84bab6842f8b167c28b968576175ba3863cbafae23a038510adcb16",
+      "lines": 368
+    },
+    {
+      "path": "apps/web/components/bankroll-widget.tsx",
+      "sha256": "20a0437b8db70d9f7ecefe8394f6153146ac0cbb273d0b46f414594950b39356",
+      "lines": 35
+    },
+    {
+      "path": "apps/web/components/bet-slip-button.tsx",
+      "sha256": "a2f2c23338578a1bb00aef85109cc3aa9f4849e8b8c5e08383e5ec648cda0a79",
+      "lines": 64
+    },
+    {
+      "path": "apps/web/components/bet-slip-drawer.tsx",
+      "sha256": "8f9839d11a6c0eedd0163f961e6f062690db65186e98be43e949b43fae4adb80",
+      "lines": 690
+    },
+    {
+      "path": "apps/web/components/canal-badge.tsx",
+      "sha256": "5c28d860723f5bd47dad0eaa9ae9d054211f34e13dd3207e74c0d537c81de119",
+      "lines": 37
+    },
+    {
+      "path": "apps/web/components/channel-status-badge.tsx",
+      "sha256": "d485197436665782f697a64a97d8f0e15358eda62dc50c4441b7747ec25693d4",
+      "lines": 39
+    },
+    {
+      "path": "apps/web/components/charts/chart-theme.ts",
+      "sha256": "1fc826c1a0a90e238fe6948e78ce4ef93e4709af543179a5f665f6cf380b6076",
+      "lines": 29
+    },
+    {
+      "path": "apps/web/components/charts/ev-area-chart.tsx",
+      "sha256": "451feff2efe031c60d5bc649c0eaa3f51365ad0fd9cb86540c17be72a1b2ad4e",
+      "lines": 105
+    },
+    {
+      "path": "apps/web/components/charts/ev-bar-chart.tsx",
+      "sha256": "661060f31a7627a6d11c819e258b07cf52b4b2d44e13c403e25759649bebe4e3",
+      "lines": 112
+    },
+    {
+      "path": "apps/web/components/charts/ev-line-chart.tsx",
+      "sha256": "4db2b5817b9a1db17b59f3ff54a3d56604ad5c45f7a089f696a756cd0ef8b118",
+      "lines": 93
+    },
+    {
+      "path": "apps/web/components/charts/ev-radial-bar.tsx",
+      "sha256": "434b9a236c73efcb09aae2712438119d66d26180ef04dcf166f439f11f6f11af",
+      "lines": 75
+    },
+    {
+      "path": "apps/web/components/charts/ev-scatter-chart.tsx",
+      "sha256": "98310155f6f2365f1ee7867da1918823d06770a422d3e3d0bb554023e47a6cf6",
+      "lines": 109
+    },
+    {
+      "path": "apps/web/components/charts/index.ts",
+      "sha256": "6b8eb7285358db38da8bfc57999480ac4a0e4873d041bd1a09edc5398743a060",
+      "lines": 6
+    },
+    {
+      "path": "apps/web/components/confirm-dialog.tsx",
+      "sha256": "d898f16b3ddcacc0508e959095cc2c3834d5f5ce16f53252c917aefe18ba70bc",
+      "lines": 62
+    },
+    {
+      "path": "apps/web/components/copy-block-node.tsx",
+      "sha256": "123755d5d0f19a65e966b0791315ac521845fe9d968844ff047dec5f439834cd",
+      "lines": 76
+    },
+    {
+      "path": "apps/web/components/coupon-card.tsx",
+      "sha256": "88b0bbdf89b299bf630c5a52f7cfa2ac4aacaf3891368e64fe72f8874029cc66",
+      "lines": 329
+    },
+    {
+      "path": "apps/web/components/coupon-indices-drawer.tsx",
+      "sha256": "c6b9844c613e5372ed4bb518e300bea12f28ec8e4b83201cf541a34d74096b7c",
+      "lines": 566
+    },
+    {
+      "path": "apps/web/components/date-nav.tsx",
+      "sha256": "87b2223b29cf0524eb3b1e6c22387123f866688ea5070bcad71622bc3fec8306",
+      "lines": 108
+    },
+    {
+      "path": "apps/web/components/deposit-dialog.tsx",
+      "sha256": "9c50cc02d552177306f99909e257562cbdbb41f81d36b2d5f17315eee0bf16ec",
+      "lines": 183
+    },
+    {
+      "path": "apps/web/components/eva/eva-constants.ts",
+      "sha256": "ce193bc49d7d3b8a54c58f8d006f3e0904a8b6418771ad3ea50f6d88a653368e",
+      "lines": 24
+    },
+    {
+      "path": "apps/web/components/eva/eva-fab.tsx",
+      "sha256": "8949b7d5de382e0b913427e45bd38762557d15b7e73616591b72e9673371f355",
+      "lines": 356
+    },
+    {
+      "path": "apps/web/components/eva/eva-filter-bar.tsx",
+      "sha256": "ee473cdd020d87e10f71da4f1b4c0aa9195045bf7ed48a8202b0a90b79222467",
+      "lines": 133
+    },
+    {
+      "path": "apps/web/components/filters-popover.tsx",
+      "sha256": "71abf0c34b7b8ee06e4a86577da412faaaaddc0a1c81059b07f1a94331b7e043",
+      "lines": 43
+    },
+    {
+      "path": "apps/web/components/fixture-card-header.tsx",
+      "sha256": "fea2c207b930260146104d60d4f9564906b32314c2abd318a6434fed1655a394",
+      "lines": 69
+    },
+    {
+      "path": "apps/web/components/fixture-card.tsx",
+      "sha256": "dfb4220155b7f0b551ae2c24b46a69fe50e76ef9b2bbfa5e2ee2e6625727162a",
+      "lines": 84
+    },
+    {
+      "path": "apps/web/components/fixture-diagnostics.tsx",
+      "sha256": "14a5fa1dde778a3add4fd4a8b385f55a8ba7962449b321a4da10680710eeb59c",
+      "lines": 468
+    },
+    {
+      "path": "apps/web/components/fixture-factor-bar.tsx",
+      "sha256": "6901c82832fd36c7731f7069c21acd0ce13fae6e921f4708a67262324e55ae49",
+      "lines": 128
+    },
+    {
+      "path": "apps/web/components/fixture-name.tsx",
+      "sha256": "5881e345a20bc8d828391674b37d20e42bbd66030daf095ca26e0f7636f017d5",
+      "lines": 86
+    },
+    {
+      "path": "apps/web/components/fixture-status-badge.tsx",
+      "sha256": "b23832b277a59e9b05720b9f202c9b4aedd1e57cbed95ef5f0a5f4c23717e179",
+      "lines": 26
+    },
+    {
+      "path": "apps/web/components/formation-help-link.tsx",
+      "sha256": "50ad3bfdd6200162820b605b78db920c4469c454963550e947fbed058bbbd754",
+      "lines": 40
+    },
+    {
+      "path": "apps/web/components/glossary-toc.tsx",
+      "sha256": "463aa8a91ccc39663d1bbbf41f200916739721c08b239ecee866dd63a1dbc616",
+      "lines": 94
+    },
+    {
+      "path": "apps/web/components/group-by-select.tsx",
+      "sha256": "51635957ab0d9692555ade7d75da5c802482861eb57f8c3c4f18cfb5b4e5802b",
+      "lines": 38
+    },
+    {
+      "path": "apps/web/components/indices-drawer-button.tsx",
+      "sha256": "56ad63846aa895fd908daae824159255193d44ddb9385beec61d9ca50bfa54b4",
+      "lines": 32
+    },
+    {
+      "path": "apps/web/components/info-tooltip.tsx",
+      "sha256": "eac2fa1af839244fc972195a8d271252f047965dc09102687fcb0ec215ec9d95",
+      "lines": 55
+    },
+    {
+      "path": "apps/web/components/input-amount.tsx",
+      "sha256": "0f97cf22e46889ac39a3a39b889acee1cc511098ceaa36cbfab0c4fc071cef21",
+      "lines": 61
+    },
+    {
+      "path": "apps/web/components/leg-connector.tsx",
+      "sha256": "3a2c32651cc80f6a454bacce98d80d778e9307cb52ab6fb735e1e0cdcf434c0c",
+      "lines": 23
+    },
+    {
+      "path": "apps/web/components/link-preview-card.tsx",
+      "sha256": "10ee685d98688a37655dcf01e0f5099caf2f711ef521ae1026a0412f5eeab59d",
+      "lines": 67
+    },
+    {
+      "path": "apps/web/components/markdown-article.tsx",
+      "sha256": "1f4ee96b3b9a08e0a65296cc14ca320cd36189c20f9f2bed65faa1e2590d3058",
+      "lines": 514
+    },
+    {
+      "path": "apps/web/components/network-status-banner.tsx",
+      "sha256": "bedf1212d8ed196e4fcb2260527a5f8379a299c899a039a9241c1c0aa8002292",
+      "lines": 108
+    },
+    {
+      "path": "apps/web/components/new-coach-badge.tsx",
+      "sha256": "882316aa7842b55205152789119872608d90ebfa5dbb8969af3373ad012ea845",
+      "lines": 23
+    },
+    {
+      "path": "apps/web/components/notification-bell.tsx",
+      "sha256": "f1317efbcd4f2651255382175346fc9a1d209149e603252932f5cc4ea3f2e500",
+      "lines": 27
+    },
+    {
+      "path": "apps/web/components/page-loading-bar.tsx",
+      "sha256": "21677aab7680c1344a94d9699e205859ef9ea86bd783f68d4b73446b5961034c",
+      "lines": 97
+    },
+    {
+      "path": "apps/web/components/page-search/page-search-fab.tsx",
+      "sha256": "6290b980385d09c58c88431ff585eba81fd5c59526284dfe9706376b8340189f",
+      "lines": 372
+    },
+    {
+      "path": "apps/web/components/page-search/use-page-text-search.ts",
+      "sha256": "447ca8509bfe81c577f24c23360150179de56021ce598032b83e203e4e355e84",
+      "lines": 146
+    },
+    {
+      "path": "apps/web/components/page-shell.tsx",
+      "sha256": "213b806878834bb9da76b2e7c61f9819d15d9f95b5268f6a27eb85be7a2152fd",
+      "lines": 327
+    },
+    {
+      "path": "apps/web/components/pick-card.tsx",
+      "sha256": "788e148deb49c54187b31a7ce70fe6de9608e06a6ad24258855708bdcb5210be",
+      "lines": 246
+    },
+    {
+      "path": "apps/web/components/pwa-install-banner.tsx",
+      "sha256": "aa7f2818d7d6573dc9d216be9c3a42fa78d5603c1ddb531d7981ba969d9af50d",
+      "lines": 118
+    },
+    {
+      "path": "apps/web/components/responsive-dialog.tsx",
+      "sha256": "e16915d76863aa5494bb348b80e943c46d6088a099538e470d1f0366e2371dd0",
+      "lines": 84
+    },
+    {
+      "path": "apps/web/components/result-badge.tsx",
+      "sha256": "7da01c835d65e3685dff8a6682231752194ebf208bcf72f06f82ce72775caa59",
+      "lines": 49
+    },
+    {
+      "path": "apps/web/components/rich-text-editor.tsx",
+      "sha256": "8a0bd50a40f6946d482009b2378f29e61bd9393d24b8bd6644460bdfa33e0f78",
+      "lines": 281
+    },
+    {
+      "path": "apps/web/components/rich-text-viewer.tsx",
+      "sha256": "763895569b3db6e5930253d3336916be061f81f20d1c4f8f056babaa81efb847",
+      "lines": 66
+    },
+    {
+      "path": "apps/web/components/settle-fixture-dialog.tsx",
+      "sha256": "7ebc16188fc858b83d974d9a90b4bf41a57f5987e9c8a852c37c976a7dc9da6a",
+      "lines": 223
+    },
+    {
+      "path": "apps/web/components/user-avatar.tsx",
+      "sha256": "64542bea165dae97f35eb29328ce7dea81614b1e383e5ec60ea668d615c6915b",
+      "lines": 62
+    },
+    {
+      "path": "docs/analysis-sheet-v2.md",
+      "sha256": "4f6c8b3d8594e81c01a389c65a1793c1156a38985e4cf6c6523a580e85104315",
+      "lines": 229
+    },
+    {
+      "path": "docs/audit-canaux-investir-2026-08-22.md",
+      "sha256": "bec73a6d5761aaa3053323fcbaa3492d47e7a46327f0bec515e9ec3a9b6ed295",
+      "lines": 413
+    },
+    {
+      "path": "docs/audit-fiche-v2-2026-09-12.md",
+      "sha256": "7a4926fce534f35f59c15c682e5fc58e9fd655fcba288f0e9481978962ec03bf",
+      "lines": 418
+    },
+    {
+      "path": "docs/backtest-harness-architecture.md",
+      "sha256": "a7713b2a824cc319b2580d6f666e042ea4503b78f38defc00210fd598064b70a",
+      "lines": 262
+    },
+    {
+      "path": "docs/bet-slip-analysis.md",
+      "sha256": "a869f904df086bf0e96103f8ec8fbb766d3d24263e61d7d598d45d5f982c3d20",
+      "lines": 501
+    },
+    {
+      "path": "docs/business-model.md",
+      "sha256": "10ec5647c9170f13cae602759d3c5b5f07c8957c31086336c386c51d9ab9573a",
+      "lines": 361
+    },
+    {
+      "path": "docs/channel-strategy-architecture.md",
+      "sha256": "0b2d6d765722247f96900b4c232083d6457f3c3703297315a1f53ff186054145",
+      "lines": 1171
+    },
+    {
+      "path": "docs/dashboard-operator-admin-redesign-2026-09-04.md",
+      "sha256": "a28e41b8f99adbc4108832b4d10748c4d92a607b81a869f88757250750b68b6f",
+      "lines": 78
+    },
+    {
+      "path": "docs/data-poor-leagues-calibration.md",
+      "sha256": "7bc02306ff2f6191f2f89b7ac2a6f451fa58450a4260a1826886f3be8588b6a8",
+      "lines": 97
+    },
+    {
+      "path": "docs/etl-renforcement-coherence.md",
+      "sha256": "d08fdf9a94de1fa437a817fbea8d15799851f21780459ca42ed4280ee4df9cfe",
+      "lines": 130
+    },
+    {
+      "path": "docs/examples/analysis-sheet-v2-example.json",
+      "sha256": "260d83977413d3a53b53139ee631e02b6f9a6bfe8563bbe2d370670fee193804",
+      "lines": 4947
+    },
+    {
+      "path": "docs/formation-content-maintenance.md",
+      "sha256": "d063fc642a41194d35b308589c5e213e0a307d6cb83f29d414b40bef5ef1d818",
+      "lines": 125
+    },
+    {
+      "path": "docs/formation-ux-content-redesign.md",
+      "sha256": "c01944abdb8acd144d03035c73c405b44d619216b0434766bb23cb40f586fee1",
+      "lines": 288
+    },
+    {
+      "path": "docs/fri-elo-backtest.md",
+      "sha256": "318dcbe9fd738d4e6e43ce8206b336cd65032e7f57698d6053d5e84c3fbae691",
+      "lines": 354
+    },
+    {
+      "path": "docs/h2h-integration-evaluation.md",
+      "sha256": "a5f5b811c6443836f32d7c392e111eda1c032701c9ed527b421330bac230a70d",
+      "lines": 264
+    },
+    {
+      "path": "docs/h2h-service-v2-plan.md",
+      "sha256": "27ca0b6aa3f2e356d9d26a42e0d58132a36aa27406fdcba22e52d70a5e6ba13d",
+      "lines": 339
+    },
+    {
+      "path": "docs/market-coverage-expansion.md",
+      "sha256": "cfd6ffb640a38a81a2f44cb0dbe64aaa1e205d9eeb6ff512953ac317a95e153a",
+      "lines": 147
+    },
+    {
+      "path": "docs/ml-worker-sync.md",
+      "sha256": "dadf85a5972c986bc143eac35c36ad5de33d66536b59bf7549b9a2c7c33d7472",
+      "lines": 274
+    },
+    {
+      "path": "docs/multi-sport-extension.md",
+      "sha256": "4b412993dd9accbfecdb780d64aaa0c8cd4c126d3a7abca76985a9f670b37963",
+      "lines": 204
+    },
+    {
+      "path": "docs/new-markets-calibration-backtest.md",
+      "sha256": "b6ffc66bd7b9dfd776b7733a07d80a411989932cfec3c4d6406667586bfee462",
+      "lines": 149
+    },
+    {
+      "path": "docs/new-markets-safe-value-backtest.md",
+      "sha256": "b46ccdb8e8e71b07bc52afb8e827e5ece021fd1deceafc7bb5e787f6aefc012f",
+      "lines": 161
+    },
+    {
+      "path": "docs/perf-ux-audit-decisions-investir-matchs-2026-08-09.md",
+      "sha256": "924168b3c6d903592add489d25a95246afe17f46fd295dfe8e7f4a5433f2d819",
+      "lines": 509
+    },
+    {
+      "path": "docs/phase3-go-watch-no-go.md",
+      "sha256": "9a8a925be0a79d7f7e5a7f8fae8e10c7fbf07c85d622344676ec255daefd41d3",
+      "lines": 155
+    },
+    {
+      "path": "docs/phase3-ml-correction-layer.md",
+      "sha256": "2f56bbfbc048ad75b34ff6aec25b7607b0626d76923898d596691071f149ffdd",
+      "lines": 267
+    },
+    {
+      "path": "docs/phase3-ml-todo.md",
+      "sha256": "8d4fbce6fbdfc54ced1e0f9c8bdd0617f799a57d2fe652a72750c8b057259c1c",
+      "lines": 210
+    },
+    {
+      "path": "docs/prediction-engine-families.md",
+      "sha256": "8fa56fa20081259197f062058717f610f8930c1a4fce46a583532845e53d459f",
+      "lines": 361
+    },
+    {
+      "path": "docs/support-attachments-architecture.md",
+      "sha256": "c36ee890da884942556c5d35ef5ee35e8119dae93838bfcb06312e47758c4d53",
+      "lines": 110
+    },
+    {
+      "path": "docs/ux-writing-audit-2026-09-04.md",
+      "sha256": "b9420b7746a10d6e136ba13a4db4da90284b02bb3462af1040205da4cb2b09fa",
+      "lines": 111
+    },
+    {
+      "path": "docs/vantage-centric-redesign-2026-09-01.md",
+      "sha256": "c37949745dceb120e1ab16abf7ee9ebb5b5d955ccca355d49adab26efea97d0b",
+      "lines": 1842
+    },
+    {
+      "path": "docs/wc2026-calibration.md",
+      "sha256": "8a085c06ddbfbb16a4707d82915f5cc4a4a615a1d8f0890af93b5ca35356c63b",
+      "lines": 211
+    },
+    {
+      "path": "packages/analysis-core/src/architecture.guard.spec.ts",
+      "sha256": "76a3dd5cdefb74b0af1ecd2bb3d95efca15af255c144cbbe09edd00b62e9dee5",
+      "lines": 51
+    },
+    {
+      "path": "packages/analysis-core/src/coupon/channel-reliability.spec.ts",
+      "sha256": "582d21f580ff0c18797a11de4f74fee2e971221a950f525bd029ab43642d7ffa",
+      "lines": 128
+    },
+    {
+      "path": "packages/analysis-core/src/coupon/channel-reliability.ts",
+      "sha256": "b0b0ca0888867a558abbdd5663b13ab694be9e52aed5cd5fec4bbe588b217fde",
+      "lines": 215
+    },
+    {
+      "path": "packages/analysis-core/src/coupon/coupon-classes.spec.ts",
+      "sha256": "9019e654487cb11541e3df3d70811f629fb21b84ff962cfddd2272ebcbf7bb9f",
+      "lines": 41
+    },
+    {
+      "path": "packages/analysis-core/src/coupon/coupon-classes.ts",
+      "sha256": "e71506d282ecd6fd26513e5288030245c8afb309522a25d4e41e53402dcd1f85",
+      "lines": 157
+    },
+    {
+      "path": "packages/analysis-core/src/coupon/evaluated-market-leg.avoid.spec.ts",
+      "sha256": "5fd038d1254c3f200c2603fb89328b7db5cac2fd01550253271b65d378c91654",
+      "lines": 60
+    },
+    {
+      "path": "packages/analysis-core/src/coupon/evaluated-market-leg.spec.ts",
+      "sha256": "f847ff0b59f5defa56c7ac85d1e19c00d8e0b1b16b7fc23cc01bc5672bc1a626",
+      "lines": 231
+    },
+    {
+      "path": "packages/analysis-core/src/coupon/evaluated-market-leg.ts",
+      "sha256": "725dbc342b8d2143e0121dc44e07b07c231f515708e9cb9dfb101daac304dcdc",
+      "lines": 188
+    },
+    {
+      "path": "packages/analysis-core/src/coupon/guardrails.spec.ts",
+      "sha256": "c7e60ed289fb1cc0cb626e127daf10f48327456e498e525bb53462e54ed0cc92",
+      "lines": 302
+    },
+    {
+      "path": "packages/analysis-core/src/coupon/guardrails.ts",
+      "sha256": "761a6bda82d1bedcf010231d817235cf8a70ec87495f65c0d1f02adfaa9864c2",
+      "lines": 322
+    },
+    {
+      "path": "packages/analysis-core/src/coupon/index.ts",
+      "sha256": "1181c900cd6535e8d06e6d37799198e9879cd1d09851c0d7e2f552ecfce1c668",
+      "lines": 5
+    },
+    {
+      "path": "packages/analysis-core/src/coupon/pool-eligibility.spec.ts",
+      "sha256": "6094e4b488ea29fb94d9a4ecbbb903d1d46173a8cd81c7ac5989a8ba853626ae",
+      "lines": 46
+    },
+    {
+      "path": "packages/analysis-core/src/coupon/pool-eligibility.ts",
+      "sha256": "eacf50bfd653cd6bad39e606909aa898ecb91506f06a4847c7f63495e5e67d5d",
+      "lines": 65
+    },
+    {
+      "path": "packages/analysis-core/src/display/channel-labels-fr.ts",
+      "sha256": "77cb534c76e1390064171326844e7fd4c3005426b49f02cd3034ed3904524c6c",
+      "lines": 41
+    },
+    {
+      "path": "packages/analysis-core/src/display/market-labels-fr.ts",
+      "sha256": "470236d568aa3bbda3426f827eb60533739cc40762393221fce44fcbdaf83a0b",
+      "lines": 147
+    },
+    {
+      "path": "packages/analysis-core/src/ev/ev-math.spec.ts",
+      "sha256": "faa29d5cc9ac268e35396350fb861865c570b8af42bb02d1bb1ca5def870a2d6",
+      "lines": 46
+    },
+    {
+      "path": "packages/analysis-core/src/ev/ev-math.ts",
+      "sha256": "16a719293532345ec844476b3146a4ac88e797ec0077d0de40faf8ddd13fe890",
+      "lines": 52
+    },
+    {
+      "path": "packages/analysis-core/src/ev/index.ts",
+      "sha256": "e81ad05ff39450403063861365d416b2bf9fbc3490490bfecacdd65719ac8fed",
+      "lines": 1
+    },
+    {
+      "path": "packages/analysis-core/src/index.ts",
+      "sha256": "cf78f1ffa09081c06a01223c91cb676c24ef2c33ce9a44cc3f1eb34773096c59",
+      "lines": 20
+    },
+    {
+      "path": "packages/analysis-core/src/math/index.ts",
+      "sha256": "81f4f23431ef873b4b56c1ae5e4f381799ea20cec5488448faf6659b827ee38e",
+      "lines": 1
+    },
+    {
+      "path": "packages/analysis-core/src/math/number.ts",
+      "sha256": "7beb54b84e369aa5cbb02ad7652c2ad5f6895bc7ac81897eb98288656d10fec8",
+      "lines": 8
+    },
+    {
+      "path": "packages/analysis-core/src/metrics/index.ts",
+      "sha256": "31219fe87b1fd34cf06cd1ecd9ce085dd8def1dc546ea8228fc2f2f257607d0b",
+      "lines": 9
+    },
+    {
+      "path": "packages/analysis-core/src/metrics/roi.ts",
+      "sha256": "600b9c030825cac677b2d7af5b00a1ff8e499afec58ed786ce413d5659cba144",
+      "lines": 80
+    },
+    {
+      "path": "packages/analysis-core/src/metrics/scoring.ts",
+      "sha256": "20e38833b1b97ab71539abf82a3bd1eb48c877b2072a4f17ddd2fd87a8f42c2b",
+      "lines": 69
+    },
+    {
+      "path": "packages/analysis-core/src/model-run/index.ts",
+      "sha256": "2e50479d19fa64625d5ce25522daecb1c2eff01292de3ca5aaf43428c1dddf3c",
+      "lines": 1
+    },
+    {
+      "path": "packages/analysis-core/src/model-run/model-run-features.spec.ts",
+      "sha256": "32b1068d44624288a1d8e4b65f126f530f732d573bdaec11844f610530049846",
+      "lines": 256
+    },
+    {
+      "path": "packages/analysis-core/src/model-run/model-run-features.ts",
+      "sha256": "60778f6745e5b70f603cc22ab39096ea3590d6c779a30cf76622add18e259f21",
+      "lines": 391
+    },
+    {
+      "path": "packages/analysis-core/src/pricing/index.ts",
+      "sha256": "7646e90237497560148fd45828f0c97c82287bd958cf145574cf46a71e3ae255",
+      "lines": 21
+    },
+    {
+      "path": "packages/analysis-core/src/pricing/market-fair.spec.ts",
+      "sha256": "1d5e074c7fcff231d5488029c115c873801d6df803cae43e944a6d4cec68ce08",
+      "lines": 111
+    },
+    {
+      "path": "packages/analysis-core/src/pricing/market-fair.ts",
+      "sha256": "362449d08be55528dfe01d8d01b3629598be8fb8b96f21abfa866bc65edc3b08",
+      "lines": 90
+    },
+    {
+      "path": "packages/analysis-core/src/pricing/odds-assembly.spec.ts",
+      "sha256": "c8ec9e3b2868b348af41be0c93b56f86f324a68e8cf0202346e4f5da53fd9ed2",
+      "lines": 134
+    },
+    {
+      "path": "packages/analysis-core/src/pricing/odds-assembly.ts",
+      "sha256": "e08c1bdf80e358713b2519520f5f34ad1dbc2d22faf53403bf281043e1ff1a51",
+      "lines": 395
+    },
+    {
+      "path": "packages/analysis-core/src/probability/combo.ts",
+      "sha256": "a262fa408a8a7cb39b10718d36e2b9f7b439a2cfce2693391c91601c85ae8de4",
+      "lines": 26
+    },
+    {
+      "path": "packages/analysis-core/src/probability/congestion-signal-correction.spec.ts",
+      "sha256": "2c235fa86aaa02bcfaee1b7f8df7d493d4329024fe15667ddd4b1239b2ab24bb",
+      "lines": 64
+    },
+    {
+      "path": "packages/analysis-core/src/probability/congestion-signal-correction.ts",
+      "sha256": "0a0af9d736dbe92564a9509ce80a45d48607426217c9af0ba6826db7356c8a0b",
+      "lines": 75
+    },
+    {
+      "path": "packages/analysis-core/src/probability/congestion.spec.ts",
+      "sha256": "6eae11e16a5f0dd5f03d801b04a49fc331be0052503ebd9608f1d118d5596cd7",
+      "lines": 66
+    },
+    {
+      "path": "packages/analysis-core/src/probability/congestion.ts",
+      "sha256": "44886ee3de39441f155edef5e79a18bae9167408a448e5a062c9427a4d4ea609",
+      "lines": 55
+    },
+    {
+      "path": "packages/analysis-core/src/probability/h2h-market-signal-correction.spec.ts",
+      "sha256": "15f3c29206d4c8ff95ac8abbd5a1eb25075564ff46408c2b8ec7c5ea0b8b4e31",
+      "lines": 151
+    },
+    {
+      "path": "packages/analysis-core/src/probability/h2h-market-signal-correction.ts",
+      "sha256": "70da548b493a179fe07a9efd04492ca24cf8a7abe4ff35ad716b42554185aef7",
+      "lines": 134
+    },
+    {
+      "path": "packages/analysis-core/src/probability/h2h.spec.ts",
+      "sha256": "afb9e71e37db640c569fd86319b549bc1c008fa64500b3b32579d024074f8fe2",
+      "lines": 111
+    },
+    {
+      "path": "packages/analysis-core/src/probability/h2h.ts",
+      "sha256": "ed9e7b94186e44d59f737657a1f14d56df58185ea4405ba9427a621ee6b9fb05",
+      "lines": 184
+    },
+    {
+      "path": "packages/analysis-core/src/probability/index.ts",
+      "sha256": "a0bcee8b4f944fdef85214ede96ffc5cd0dcb652e3a0ba08f3129edc41fcb947",
+      "lines": 93
+    },
+    {
+      "path": "packages/analysis-core/src/probability/league-lambda-config.spec.ts",
+      "sha256": "655689d9400cb7925155188964026dcc0e10b6cd01e20c9d34615a86189ffd44",
+      "lines": 44
+    },
+    {
+      "path": "packages/analysis-core/src/probability/league-lambda-config.ts",
+      "sha256": "4b0cc97dd8045e7c936ad522ae5d521a3106d596e2652a45ed06ba21a9295b13",
+      "lines": 183
+    },
+    {
+      "path": "packages/analysis-core/src/probability/markets.ts",
+      "sha256": "5111a83fd66d3f8eba1b1e361b713099255041417ffe6198b4490fcd62f8bd2f",
+      "lines": 121
+    },
+    {
+      "path": "packages/analysis-core/src/probability/match-stats.spec.ts",
+      "sha256": "b85243295cb41dee69a502e129b6c2779904a00610125dd3b5d9e843b821d029",
+      "lines": 99
+    },
+    {
+      "path": "packages/analysis-core/src/probability/match-stats.ts",
+      "sha256": "56217b30e21672ba63513f8f32ddfcd8af07f2369bc894685b05ecc84d47c7ee",
+      "lines": 456
+    },
+    {
+      "path": "packages/analysis-core/src/probability/ou-shrinkage.spec.ts",
+      "sha256": "3c51579bcad8915b5af07ea23781034b63b76df7aa1f82a2b403b2b6e1a342c0",
+      "lines": 387
+    },
+    {
+      "path": "packages/analysis-core/src/probability/ou-shrinkage.ts",
+      "sha256": "6f1227dd094849db400f328445155b2f90dcba856f4567a140164f16a3afebed",
+      "lines": 2032
+    },
+    {
+      "path": "packages/analysis-core/src/probability/poisson.spec.ts",
+      "sha256": "af62489abeb0a5b7da24fdacc19b361c0894667f7b0c357c25bbd84c2545b3f2",
+      "lines": 235
+    },
+    {
+      "path": "packages/analysis-core/src/probability/poisson.ts",
+      "sha256": "8bf43a1b25c8b845c0d874d23bfacee67d575f89a8ae108bf5ebe432e2a0abd5",
+      "lines": 537
+    },
+    {
+      "path": "packages/analysis-core/src/probability/team-stats-resolution.spec.ts",
+      "sha256": "4918308fee989eb21094f34d3e679eb2eea536ba516c121c55a5f0b777a44aad",
+      "lines": 116
+    },
+    {
+      "path": "packages/analysis-core/src/probability/team-stats-resolution.ts",
+      "sha256": "4b487cd71ba73c807f10f1105f2023d67c8f7e8bf1f5c79ddd21f0bddfca7b96",
+      "lines": 143
+    },
+    {
+      "path": "packages/analysis-core/src/score/deterministic-score.spec.ts",
+      "sha256": "cae39801b94bf26f76dc61ab1c8b7a31654b7dbf6776e01321aa1ad7fc56b69f",
+      "lines": 52
+    },
+    {
+      "path": "packages/analysis-core/src/score/deterministic-score.ts",
+      "sha256": "2b9668d6feab4b37f2385156d5e4bdd5e93ae63c9a98b572fdb8166679990183",
+      "lines": 36
+    },
+    {
+      "path": "packages/analysis-core/src/score/index.ts",
+      "sha256": "76806cd4bf80d037155c9b3c8d5b4d36d6699fc94ffe09b57e3672b13ccbcd05",
+      "lines": 11
+    },
+    {
+      "path": "packages/analysis-core/src/score/ml-features.spec.ts",
+      "sha256": "fe4371a296ec726c0dd16b90306214d5f4ba6f90b07c086576b2f87d202c39aa",
+      "lines": 69
+    },
+    {
+      "path": "packages/analysis-core/src/score/ml-features.ts",
+      "sha256": "2da1b1217cc05179f2dfb36fb9222d15c4615c08e1ab41d0f591d2cc50588825",
+      "lines": 85
+    },
+    {
+      "path": "packages/analysis-core/src/score/ml-shadow-contract.json",
+      "sha256": "09afb3eca7430475adc4d65a5440e22ca12c4d2f19c4d1213ab114eb414ade4c",
+      "lines": 32
+    },
+    {
+      "path": "packages/analysis-core/src/selection/combo-pricing.ts",
+      "sha256": "5fc077410bff8e9b025e3ae19af8e1676d4c1f2fdc69cf07f231b393229aa88d",
+      "lines": 212
+    },
+    {
+      "path": "packages/analysis-core/src/selection/config.ts",
+      "sha256": "2358541c0ef26e0351d3ecd61332d962baabb73a79731466da835d52cca55db3",
+      "lines": 58
+    },
+    {
+      "path": "packages/analysis-core/src/selection/constants.ts",
+      "sha256": "f1ae3542fcb774146f3a9118dac09b49394e47ca59ef2a32bb31e3aec719a79c",
+      "lines": 98
+    },
+    {
+      "path": "packages/analysis-core/src/selection/index.ts",
+      "sha256": "5d3f4c53d770046ac05629c3e9fdbf20544d46490cf0442a4623428edd25f369",
+      "lines": 44
+    },
+    {
+      "path": "packages/analysis-core/src/selection/odds.spec.ts",
+      "sha256": "2ff4c00c4290283b573bcbcf7285c10805f2b67e0b4959db8c8196d875a72658",
+      "lines": 176
+    },
+    {
+      "path": "packages/analysis-core/src/selection/odds.ts",
+      "sha256": "0068642fe96dfea7a49a693dced81451ff9794a50a192370f6f7760739c05595",
+      "lines": 133
+    },
+    {
+      "path": "packages/analysis-core/src/selection/pick-evaluation.spec.ts",
+      "sha256": "21904ff95dc2bbec79a04af51d63513b7e9c2fec47c25a4b92c4fb755bfffe44",
+      "lines": 55
+    },
+    {
+      "path": "packages/analysis-core/src/selection/pick-evaluation.ts",
+      "sha256": "940cc64b1debd055b407456f6ef702522a8ebdc2948540e48e3cdb3ffc4ccab9",
+      "lines": 810
+    },
+    {
+      "path": "packages/analysis-core/src/selection/pick-validation.ts",
+      "sha256": "2797388aa8ed98d91491e6d21d27181aef482654b8fd017c8a96807f4792bb06",
+      "lines": 220
+    },
+    {
+      "path": "packages/analysis-core/src/selection/types.ts",
+      "sha256": "bfab9929fa1fe803f8aac88c46573138ee6949cfee63e69fb20e1b1f6154c7ae",
+      "lines": 105
+    },
+    {
+      "path": "packages/analysis-core/src/settlement/bet-settlement.spec.ts",
+      "sha256": "9aeecb15d4a96bd878dac1513e79bb19cad362f1868180daf5bcb765e63c407d",
+      "lines": 273
+    },
+    {
+      "path": "packages/analysis-core/src/settlement/bet-settlement.ts",
+      "sha256": "1807ddddb0e68868537505601c84ea9e891b499b225a54534aa105a728fc29bc",
+      "lines": 275
+    },
+    {
+      "path": "packages/analysis-core/src/settlement/index.ts",
+      "sha256": "342b1beb89b4c509c38e93a767eab6a098d9e8b394cb1e0d0c61cbe1238bf527",
+      "lines": 7
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/avoid.config.ts",
+      "sha256": "5d2b32c32c783c9131d754287aec159270c0bfb724f657de9f2e1e662a07c6fb",
+      "lines": 19
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/avoid.strategy.spec.ts",
+      "sha256": "94876fbd216ced4c30cb16198191123f940611ae4edb8936ddbcffbdd559fc39",
+      "lines": 150
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/avoid.strategy.ts",
+      "sha256": "4eae969844fb3c942046f1b0eab0ede12f52f29b865a7d494b069c33e9bdc32e",
+      "lines": 85
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/btts.config.ts",
+      "sha256": "eb727420d4eab0553d26039e24a70896e9b8f097e717acd902fb4c56b909e046",
+      "lines": 189
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/btts.strategy.spec.ts",
+      "sha256": "ef750e0cdeb20e742089ea1faf81812ae0636d954cebc45fbe69a79b61faed19",
+      "lines": 165
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/btts.strategy.ts",
+      "sha256": "a67be4c6c84ec6027b9ba4900e151506e4d39b121bd2e3f8a1fa06a4a8ecd917",
+      "lines": 92
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/channel-strategy-config.types.ts",
+      "sha256": "a09b0a9069e3327bee66dc9ba24311a0372e1197c4012923e0ea2e66d21fb3f4",
+      "lines": 14
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/channel-strategy.config.spec.ts",
+      "sha256": "54a2dc4d0d8f09130510d0b6b05218ddf23a928f6cb5d12e0f398892ea344434",
+      "lines": 150
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/channel-strategy.config.ts",
+      "sha256": "22ecccfe793ac05e7cd97a329d621a5c975dff30f79d6c9958feab069f7ccc82",
+      "lines": 68
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/clean-sheet.config.ts",
+      "sha256": "03156c370601a9111d1b0a85d89cc58dab53f53e96552e69fd20a6bea8db25f7",
+      "lines": 95
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/clean-sheet.strategy.spec.ts",
+      "sha256": "7f6a425c6656481093e0849e8f7da7803d19250bfc2a726348ecfc2891789cde",
+      "lines": 171
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/clean-sheet.strategy.ts",
+      "sha256": "4aceb0857851a371a14bd0c390e57b108dabf32154455638bf7f324338c57272",
+      "lines": 92
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/consensus.config.ts",
+      "sha256": "6f1d06973bb21aaa3ae9c41af67e92ef55ed653c29e4e062b7cc127f312edddd",
+      "lines": 30
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/consensus.strategy.spec.ts",
+      "sha256": "42650d41ce35ae4676a0b523cf6ded6b65821e814885f94decb3c4841f2bb6cc",
+      "lines": 213
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/consensus.strategy.ts",
+      "sha256": "7e1065c1d088f6fc896c7e0a8fb223af65f4a03e64b93e206d52dda96dd0343b",
+      "lines": 137
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/context-builder.ts",
+      "sha256": "14d4f3b292dbfa88f82f4f90462dd8aadf255bba4f56c44a2c1725d5ca63d8ea",
+      "lines": 75
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/correct-score.config.ts",
+      "sha256": "089d7e13fb2b9ffef316262a8fc604647c1187cc83bdd27d6ef0a874f55e6863",
+      "lines": 23
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/correct-score.strategy.spec.ts",
+      "sha256": "5f5c90e1d7a2a7de50cf1a155f87f1c815dccb76b4a203a473d8ef01d133a6fa",
+      "lines": 201
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/correct-score.strategy.ts",
+      "sha256": "f4848ff5f70cc04e51a9406a5b77403297fb45fd0992b2c17b90093e08668364",
+      "lines": 171
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/dominant.config.ts",
+      "sha256": "4694fcc373c10df83a542b4939e4121fb9db790a9ad33ffecc43193f9abb03f0",
+      "lines": 219
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/dominant.strategy.spec.ts",
+      "sha256": "15d3d2bbf8f5a706cb82b232bff300cfe7c2ad67f1846fbec10ff90933f6f6f0",
+      "lines": 201
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/dominant.strategy.ts",
+      "sha256": "21ad1f9c2a4b31c7851d8807354dc221bede9586513232b1e4205caa8d3a4e2f",
+      "lines": 131
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/double-chance.config.ts",
+      "sha256": "9f8e109f7da0e2f07ade0a92edff0c06ff4aaf97d22701b5f74b8b3e88f6c811",
+      "lines": 18
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/double-chance.strategy.spec.ts",
+      "sha256": "569310d999ac0a00aeb07da499086bdc2f0eae8bb6e8fa795f44975f8129239e",
+      "lines": 185
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/double-chance.strategy.ts",
+      "sha256": "21c5d6e1bb6165a02213e2d6bd66843d6a8132d19aca6683b2a4a1ac5d76c927",
+      "lines": 136
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/draw-no-bet.config.ts",
+      "sha256": "60f58ed6df39c549be7f239b9bed56d8638c8fc27955bc4b99793283af4be550",
+      "lines": 104
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/draw-no-bet.strategy.spec.ts",
+      "sha256": "f50a6991b4dd7d385ac62e7fb547f2c146a4e2f8360814e559d4ea6dec5ffa61",
+      "lines": 165
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/draw-no-bet.strategy.ts",
+      "sha256": "9c5f0d07e062a7107908c13a209478dba423a5983f29cdb3d5f40dd52d8ed5ad",
+      "lines": 92
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/draw.config.ts",
+      "sha256": "324b02f5e74416c270ed1b4b347ab1fb4495a936cd93b8ccb49b18197ee219c7",
+      "lines": 150
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/draw.strategy.spec.ts",
+      "sha256": "816d2012ffaecc3c39d627515133ccdfaccad9407c9d1c577407ccb07be7838f",
+      "lines": 155
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/draw.strategy.ts",
+      "sha256": "c8fc34af2da39d0a76b0da5c98d073d6def9effdf3f4d6abd41000c89b395439",
+      "lines": 83
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/filter-candidates.ts",
+      "sha256": "7c87b72f7d890b0ddb91c691d2b9dda8cbac05b3d903b5e1aec5bfa9eb3e8b09",
+      "lines": 77
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/first-half-winner.config.ts",
+      "sha256": "aa04ceb727367fe3679beb29363b1d75910232685addc0c4924760abf281575f",
+      "lines": 38
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/first-half-winner.strategy.spec.ts",
+      "sha256": "ae1739e5fd00a4bb65491be72526763c4b81ea5bd898d8c31029d98f86d1317e",
+      "lines": 201
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/first-half-winner.strategy.ts",
+      "sha256": "cacb70f60b69c9beec871e7a36380d568f923712a88b041c46fcf44d557c6e01",
+      "lines": 122
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/goals.config.ts",
+      "sha256": "ee2146cceee80b9f76d0dc2584fe04b7fb23ba181117e9a05a694e8e0ab4866e",
+      "lines": 2223
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/goals.strategy.spec.ts",
+      "sha256": "f397d2a46e39b4f97d0d5c0807851902c5a3412dc4dbfc34ffda8b55946b4961",
+      "lines": 245
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/goals.strategy.ts",
+      "sha256": "2582705f730460fcac7190eac78dd98bd04a370c6d38cd6b910be56a6b306c5e",
+      "lines": 185
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/half-time-full-time.config.ts",
+      "sha256": "4d422c02e6793103b25fa33160b48bacc4dcbe7d3d3c1ae8eeb6dfccd2edab0c",
+      "lines": 17
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/half-time-full-time.strategy.spec.ts",
+      "sha256": "7a55ae469f9d93f1a427ee0b3b925398c3a379ddc7ed10b41cf72ff935f447d2",
+      "lines": 180
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/half-time-full-time.strategy.ts",
+      "sha256": "a76ed204d54b25240fec0b81571f164fe77801536b8316a980224c1307f37942",
+      "lines": 119
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/index.ts",
+      "sha256": "d2afc42624ad20464804a35d8c41e154eab970c857d3e9312348f4a0edcf7713",
+      "lines": 118
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/orchestrator.spec.ts",
+      "sha256": "f8422331d77749e46cec857cf10fc9199d0fce13de3bebbd0aa107cbfde5a876",
+      "lines": 230
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/orchestrator.ts",
+      "sha256": "dcb279c53fad8da1aeaf851d1e5957fe6bc0c49f26f4b2ab2b52c773a9630e85",
+      "lines": 93
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/over-under-ht.config.ts",
+      "sha256": "319313841a5553033f99e9b87eb62e4af4d89674ccc6576e5a8efaff5eba4564",
+      "lines": 75
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/over-under-ht.strategy.spec.ts",
+      "sha256": "59b5473b8a646317f9745756f4916eb660c1f6a247d2eab1eb4fc7096cbe596a",
+      "lines": 229
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/over-under-ht.strategy.ts",
+      "sha256": "b92a6953b16da48c8f462830804e05159f915a1db383645d99d56552b710c858",
+      "lines": 166
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/registry.ts",
+      "sha256": "b3a27748e1fe571e84c027deb304a89a8dbda2da7d1bb531049796d3c12e727e",
+      "lines": 49
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/result-btts.config.ts",
+      "sha256": "07e146383a21ed83d28c6d5849b0b25c4d571a21bfe6021dc016b2dcdf8ac10b",
+      "lines": 2986
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/result-btts.strategy.spec.ts",
+      "sha256": "236e534275e24dd643af9a36054f53b6edc8d5041678735f3947961ccabef42f",
+      "lines": 207
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/result-btts.strategy.ts",
+      "sha256": "c33b62b3c9ad30c69575710029101f7f7b422fe7541f0f67fd76e5a87e9b5d6b",
+      "lines": 156
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/result-total-goals.config.ts",
+      "sha256": "9a210bae71691e03e524a13f52e29704c1549b38318e2da73a62e9ba939c2554",
+      "lines": 84
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/result-total-goals.strategy.spec.ts",
+      "sha256": "5ddd8911f5bf6692fe0e7a6f6b5033c62c54b85686cc9c87f23f1b18d321f272",
+      "lines": 216
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/result-total-goals.strategy.ts",
+      "sha256": "79a75ea9a5301b9fe8e3f9057c22706c36393282f3853ff0a19509b72539eb99",
+      "lines": 157
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/safe.strategy.spec.ts",
+      "sha256": "a89251655d2e01a6fc4f1fc758222c481f8ba0cb467f782b081c6e09be9c2acf",
+      "lines": 243
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/safe.strategy.ts",
+      "sha256": "d4f5598c660237479b43f150596e50ec308867e050fe6eb14d16aee305587c72",
+      "lines": 193
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/team-total.config.ts",
+      "sha256": "87de9516e124ab5a892c07f45acefd7c461d5b1bcc1b6b1ff8eba36c1057a18e",
+      "lines": 3859
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/team-total.strategy.spec.ts",
+      "sha256": "14c1ec7aeade864a0757a15b1ca9b95d14633783876475743da63cc9c94d4d84",
+      "lines": 229
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/team-total.strategy.ts",
+      "sha256": "b97d4d6f6ba13de4a76662db79c930685c0cd791cb54074715cbb09eab5b4561",
+      "lines": 164
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/types.ts",
+      "sha256": "35e1228853b1a7f81dc62997e9a41b6aeeec4b017ac31cc39aef0b0cf48b72d2",
+      "lines": 103
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/value.strategy.spec.ts",
+      "sha256": "8c20a03a23d5080e35cc2caaf7325e4966260ce06c39b51ccc3a6c82abc001c0",
+      "lines": 330
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/value.strategy.ts",
+      "sha256": "8f422962fce74ab285ae8d29a505e7c2053d31c4884f812bdf1a172dbb434de0",
+      "lines": 152
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/win-either-half.config.ts",
+      "sha256": "98f8aefb96c6f52898f2f4c9e9f522d5f461cef7d0f6eb802d82f4565c4de535",
+      "lines": 80
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/win-either-half.strategy.spec.ts",
+      "sha256": "052c1495809badd67852f2300e9f5153fed060c4d45c9dfd8798fd3ee86955bf",
+      "lines": 175
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/win-either-half.strategy.ts",
+      "sha256": "ac232adc48573936125250b6120355a55c34dbff3f95b31943d53e16ba582a97",
+      "lines": 92
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/win-to-nil.config.ts",
+      "sha256": "479ce320fc6a61d02ce24f18494dccd198853910092dcdf3c8d7ca707a8f0efb",
+      "lines": 88
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/win-to-nil.strategy.spec.ts",
+      "sha256": "9c09bdd64f955ce883366f23f5a90ea0a71e38ff256167a437963071f64bd295",
+      "lines": 168
+    },
+    {
+      "path": "packages/analysis-core/src/strategies/win-to-nil.strategy.ts",
+      "sha256": "34af9aab619cc5c4e9e2fbc91b58f0c24901486cc55d46c11307f822a686ad71",
+      "lines": 93
+    },
+    {
+      "path": "packages/analysis-core/src/types/bet-status.ts",
+      "sha256": "9d6a12f5b0eb1a9476973d160e335e25e0c268328cc6652ad06402f18a07cf82",
+      "lines": 12
+    },
+    {
+      "path": "packages/analysis-core/src/types/channel-decision-status.ts",
+      "sha256": "c14ed50b4d41cc2e324aadf5d92f987599c14489229e7c5935bd3f0235240c5a",
+      "lines": 15
+    },
+    {
+      "path": "packages/analysis-core/src/types/index.ts",
+      "sha256": "d7a10423fedb0668963d45f754a4ca0d222eb89f3c31d30c7999e22a09578ae2",
+      "lines": 14
+    },
+    {
+      "path": "packages/analysis-core/src/types/market.ts",
+      "sha256": "cc3eb8e5f1dc4ff524d1dfc108d4ee49f913db35ba7ddc39edc4a3850fe44998",
+      "lines": 29
+    },
+    {
+      "path": "packages/analysis-core/src/types/model-run-phase.ts",
+      "sha256": "36ee96ad5255345d777a4f9125bea8aeeb90d0dec0bf3703a9e705b99ca245bd",
+      "lines": 12
+    },
+    {
+      "path": "packages/analysis-core/src/types/sport.ts",
+      "sha256": "a831bc96a72a7503f0a7e96d0d27bd01117672cc5a8159330f5a7b9310718699",
+      "lines": 11
+    },
+    {
+      "path": "packages/analysis-core/src/types/strategy-channel.ts",
+      "sha256": "1f334142b35d97f5710f617a23f009f657d9fd4d6388b09d8b4763966cdff0d1",
+      "lines": 90
+    },
+    {
+      "path": "packages/backtest-core/src/architecture.guard.spec.ts",
+      "sha256": "5685b2c255092364fcb612d02b606b55591cccc2a58a951d131728e691ebcfa4",
+      "lines": 77
+    },
+    {
+      "path": "packages/backtest-core/src/backtest-runner.spec.ts",
+      "sha256": "126d2f72a7d28828b375e950682e446aeec92c1a4773382e2044113c03712974",
+      "lines": 70
+    },
+    {
+      "path": "packages/backtest-core/src/backtest-runner.ts",
+      "sha256": "495a4f83ae17e892db377f4463636451ad0abc05e0bba9879d26d71114f24242",
+      "lines": 83
+    },
+    {
+      "path": "packages/backtest-core/src/index.ts",
+      "sha256": "f01564c01470b5a371fd0659d696e64a7f8d91c229afa8fbd282893fc6618dfe",
+      "lines": 9
+    },
+    {
+      "path": "packages/backtest-core/src/point-in-time-loader.spec.ts",
+      "sha256": "bb4a1478c50e744efedd9f168431dcb304043ea32ea1f392326f3250cca96fba",
+      "lines": 206
+    },
+    {
+      "path": "packages/backtest-core/src/point-in-time-loader.ts",
+      "sha256": "df77ad2e5f00b4b79439801692170d6be30e100ad4ea50e2e695dc0dd0fadf69",
+      "lines": 361
+    },
+    {
+      "path": "packages/backtest-core/src/replay-engine.spec.ts",
+      "sha256": "783965989be850a2bed6e68dc87f50e98ced5dada2b2bd0038485225dc2532f3",
+      "lines": 71
+    },
+    {
+      "path": "packages/backtest-core/src/replay-engine.ts",
+      "sha256": "7dc2a6b7934350fea9803ac53a78355938affef6ac366193f3401bd2aaf1e365",
+      "lines": 48
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260317230108_init/migration.sql",
+      "sha256": "5753fb87d6badbface977ef7731d145aaf4aa9f898848d6aa6be55e2f253e006",
+      "lines": 356
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260319155557_remove_active_seasons_count/migration.sql",
+      "sha256": "e6493f0006143446139d0991f62605a751e7bca9f59b8fa01ea408c940adc702",
+      "lines": 8
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260323012725_add_competition_api_season_override/migration.sql",
+      "sha256": "44d3a3cf832afaebc6b620d609000af5d67699ad9955a17af2b72e6f2e4b76b7",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260331103000_add_national_team_elo_rating/migration.sql",
+      "sha256": "512ce44f31b590a3db59a20060464b50c2065e5d1fd7591c3edd44c0b041e4a6",
+      "lines": 21
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260405223933_add_quality_score_and_coupon_tier/migration.sql",
+      "sha256": "05e2a7795208e3d72587c15671029ca8c9235a4540365ba36103df986975ec44",
+      "lines": 8
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260406225914_add_european_competitions_engine/migration.sql",
+      "sha256": "9a98e86f83c6fd1198c176cab2d7dfb7e198fb3141431c5634679c9ed33c619a",
+      "lines": 14
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260407115858_first_half_markets/migration.sql",
+      "sha256": "3764e1898049b80e7a854af695d3fcbdbf306ede3365973099beca8aa15e6efa",
+      "lines": 10
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260410164651_add_safe_value_bet/migration.sql",
+      "sha256": "5e05e8e4cc6e6dc556ed763a7ed7aafea97583db176ff8be7dcbd8751f98f96a",
+      "lines": 5
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260411233443_add_auth_and_bet_slip/migration.sql",
+      "sha256": "47559c6c6c4423a3a8729f5c9e8b70b3cde36981008356af287b4085b786d8a1",
+      "lines": 100
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260411235455_remove_coupon_domain/migration.sql",
+      "sha256": "8bba66798688738064686df29f4dce469b9c4e23b36f6613f3b2097d3e99a84d",
+      "lines": 47
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260413115636_add_user_bet/migration.sql",
+      "sha256": "5c91bbee93a488c6fe1e2655131f735b38083b13fbcdfb62b7463957dd7b4f63",
+      "lines": 24
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260418144506_add_bankroll/migration.sql",
+      "sha256": "0c64f6542198e5e9d65aa190b64383bbcd83800c947ee5135fbaa096020e7d24",
+      "lines": 21
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260419213322_add_prediction/migration.sql",
+      "sha256": "9f8d8d25ab1226fcc8c75757f596f4bc3a389881c297263f6ee565ab0e8c3760",
+      "lines": 27
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260425144901_add_combo_mode/migration.sql",
+      "sha256": "f01486135a3a3ae267756f6ab8121680e6bd56d5907f1b3a91e712392949433d",
+      "lines": 8
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260426195434_add_bet_bankroll_relation/migration.sql",
+      "sha256": "4e42ba77e5a528f0a941a19df7af5c5e29b03b7f858fadea70244feacca8b305",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260427225355_add_user_preferences/migration.sql",
+      "sha256": "2614a1269a077ec9b3ca1cf7f22e9050fb0504827b852e7b4c3b568f7ef347d6",
+      "lines": 4
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260429122637_add_user_badge/migration.sql",
+      "sha256": "60bda6d77208a621f6cf5af0a228a5e05685badc85b1876886acae59c29c9fd3",
+      "lines": 33
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260501140000_add_user_content_progress/migration.sql",
+      "sha256": "65b4c9352e23a3dd59453ebe212142d06145e64d593c9dba215b2383b089b2bb",
+      "lines": 28
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260502221358_add_user_notification_read/migration.sql",
+      "sha256": "e1df141f04df9a2f72f825f7ef3a5908703a3f61acf4acc6e870efa721f187c3",
+      "lines": 14
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260502230420_add_draw_and_btts_channel/migration.sql",
+      "sha256": "5cec18c92f90543038dfc62be0ce3839c61df7fae7472f0e3c8c357b674bbf4e",
+      "lines": 23
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260503052825_add_unit_staking/migration.sql",
+      "sha256": "ca6ea5e84f6a2941c03d51ced628e70211a1f14daa86833ba79a8b1af4f457d2",
+      "lines": 7
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260508160641_add_announcement/migration.sql",
+      "sha256": "ff094146c5558fd8fcac56ad168f1536c863f0a9d8df8499ced3a1b82f30ea28",
+      "lines": 26
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260509004554_update_announcement/migration.sql",
+      "sha256": "6c449e1925b58f3f77a7c6a89b0b1a79a407864f1d3c422ba05c742bca5c42ac",
+      "lines": 10
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260511020857_add_ai_engine_coupon_models/migration.sql",
+      "sha256": "375189e59a4714666e47559e796977f6b7eb35dced58a442f448ed3e533d8dae",
+      "lines": 69
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260516073558_add_standing/migration.sql",
+      "sha256": "f42be2299f69c111329e171bf77267fb0f56ea17d4795bff09c0c3d62c25a44f",
+      "lines": 33
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260520101550_add_mfa_verification/migration.sql",
+      "sha256": "92279a3a9fd4d116037c9b1d991648e8a81a0dd37bd2b43878d4d2d8ff4371a9",
+      "lines": 48
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260604174057_phase3_ml_model_version/migration.sql",
+      "sha256": "f594dd5cc46060d90ea2be53ad3d3d82f6b6d495519cdf196c0aa507f2cf5ba2",
+      "lines": 28
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260604220119_add_model_run_backfill_flag/migration.sql",
+      "sha256": "a7066a59b19ad6c2c4b57d9960574b7bc37167c9b0ecd0e75625fa64a32f4915",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260610150025_phase3_ml_model_activated_notification/migration.sql",
+      "sha256": "3f8562dc8575a40bb896f247587f555450ba0ed9dfe06179cbe3e64cec216db8",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260611164858_add_eva_tables/migration.sql",
+      "sha256": "474c719c2e54ee89841e96268f2b8c6df0d1c34df9ed4a72eaa7074bec7fe7e4",
+      "lines": 53
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260612122001_add_chat_message_picks/migration.sql",
+      "sha256": "b535320ab1dd5e3f768962aa6d1e52565c6c6274b62b82e028dfc71a98e57dbe",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260617000232_add_channel_decisions_and_sport/migration.sql",
+      "sha256": "234216c4037d5031b3de9e6b1d1c6a20f517aae3528287d722fd1894475f129f",
+      "lines": 73
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260617231723_add_model_run_phase/migration.sql",
+      "sha256": "dc6444a371d6579336c7a67eb9e92efe5f005b5590ddec11419ca383b2e2ae01",
+      "lines": 5
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260617232841_add_phase_index/migration.sql",
+      "sha256": "1340ef7aaa493f6f5e3718f22dd14694e85dc0fc6c844f1c95193ecb7b5e55f6",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260618005222_remove_legacy/migration.sql",
+      "sha256": "d18b0b1513645c70da3241cd081af968cf685612e363d168563c247e634dd259",
+      "lines": 29
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260618010535_remove_is_safe_value/migration.sql",
+      "sha256": "1f895f4b98fd28aa15bd866452c1a56844cb6dd9064bda00773cf2ebf6963081",
+      "lines": 8
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260618012121_remove_model_run_decision/migration.sql",
+      "sha256": "ebbb637d1464de2fc6b0ab4a98e13a03985187e1c32f6ae3f94cd2671472f092",
+      "lines": 11
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260621165029_rename_ev_to_value/migration.sql",
+      "sha256": "0557214e1c7784c9006498a11e76b37db90e8789afcd5fdea76ff80d9c890245",
+      "lines": 5
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260621230000_coupon_leg_combo/migration.sql",
+      "sha256": "8702f684c5f59142f225d01181e7f4431b9cbe742a6c549a74c0bb57d4d12325",
+      "lines": 6
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260622120000_rename_formation_canal_slugs/migration.sql",
+      "sha256": "1b16e1b33c99fc2359fd110aa4b25db93d447839b025a8cafc69c03ff5eda8b2",
+      "lines": 22
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260629191137_add_calibration_schema/migration.sql",
+      "sha256": "5e563c693647c2ebd5bb8f4e5fa2d0696bc995f2c5e181aa3c03d4357c2270c6",
+      "lines": 99
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260630003101_remove_unicity_on_market/migration.sql",
+      "sha256": "bf9adcc2cecd0656e76f109c75298703521dad867220e7e9f75a833927ed0eff",
+      "lines": 5
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260630115211_add_correct_score/migration.sql",
+      "sha256": "df9e050cf1bb2e5ac16545861c8a5c8d4ab0b7fe6d5135939fbeaba7b144fcd7",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260630123642_add_correct_score_market/migration.sql",
+      "sha256": "b3d93552d1345d248d126450189bf7604d43b7dbce499fc98f93bd002f5e6ec9",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260715123221_extends_odds_decimal/migration.sql",
+      "sha256": "912c8a6daef658cdda1f5a3240e4e64b4365ae08e8d0fe150022799267bd5f5b",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260715151119_add_suport_chat/migration.sql",
+      "sha256": "2d8575e984c62571856527a3f03e95091d52c67c6a559bd288d21a038f4cda34",
+      "lines": 45
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260715164052_add_push_subscription/migration.sql",
+      "sha256": "3a1cf767a8e796a5119c8df314be6f537caad7dc3158399cac5623886ceb2c77",
+      "lines": 21
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260715225540_add_email_support_notification_enabled/migration.sql",
+      "sha256": "5706ab3edaba2d2dd0cf22e6e5871dcd9ebc59df48c3afcff9d2415db1cf9b29",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260716001414_update_to_false/migration.sql",
+      "sha256": "0bcfa1bc9155ca90c1951c4d4e42d52967e3538cb8b567b88d6f5f1ce16be800",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260716005223_add_suspended/migration.sql",
+      "sha256": "2cd4dc39940e4ef9b304fdd183c20cf8d7cbb35bdbd0bf20c3a64a0a0c417d1b",
+      "lines": 9
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260716120000_rename_channels_overview_slug/migration.sql",
+      "sha256": "86f066c096fd493d7ea580b6a08e889e53c892cffa2fb1aa1b7fdb570af1db0c",
+      "lines": 13
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260718121923_add_dnb_team_total/migration.sql",
+      "sha256": "324b51c6eee102b35e9616f3eb72a561f0caae699a5f81137e504afe844d4799",
+      "lines": 4
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260718131500_add_clean_sheet_win_to_nil_either_half/migration.sql",
+      "sha256": "0ea1037bb78a6779b22b940154414771dd02fa9e1049db0120ee08b0819d7384",
+      "lines": 6
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260718140000_add_result_total_goals_result_btts/migration.sql",
+      "sha256": "a55a913cc31e2e3f5a28a8dae528c4d783bd454cbc4423c109fa895b1ffe473e",
+      "lines": 3
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260718150000_drop_synthetic_combo_columns/migration.sql",
+      "sha256": "e6e2e494001772c233094d443b1f42ea9d3f5c5ab4f524513c72e42060d54f4b",
+      "lines": 13
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260718160000_add_clean_sheet_team_total_win_either_half_channels/migration.sql",
+      "sha256": "3c2bd33facc5e852c6a4a556fd112b98adf0186d254d8e066ed639a438270e2c",
+      "lines": 4
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260723233659_add_coach/migration.sql",
+      "sha256": "4492c8810f77ae5db6092b5e9aa774464ba69af8ab6d8398b39b55379e997069",
+      "lines": 20
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260728133501_enable_email_sending_as_default/migration.sql",
+      "sha256": "14f985b444f9ee8743a8eec1aff84f21502c99e41a8374598c78e30588ac8107",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260728224938_add_subscriptions/migration.sql",
+      "sha256": "644a88eba997316102e77c799f0a8a8ff6ef77a3160160e7d467c7eeb379071c",
+      "lines": 78
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260729101500_add_decisions_first_and_last/migration.sql",
+      "sha256": "537e2d400b0381e9cb6ec545406435dab398d4636bf381753fb1e7a2d8d2ecd0",
+      "lines": 22
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260805124426_add_subscription_notification/migration.sql",
+      "sha256": "a3e36102871a58f0e636af614778b121cb4964b963716a654de9fd77b1070daa",
+      "lines": 19
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260809231607_add_support_message_notification_type/migration.sql",
+      "sha256": "e7e1ae3e6fb183b7d1db345a159fbb70242e808301cca236b2500175c6f5cf51",
+      "lines": 10
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260809234054_updates_annoucements/migration.sql",
+      "sha256": "14056ad65d31d33f1c05f3b5e7830249bcbb73cd937b5e52cf9bb33cc0dc666b",
+      "lines": 14
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260810015055_add_has_seen_on_boarding/migration.sql",
+      "sha256": "404c59766108a045362dfce0b4e15b8e421fb7fe1a637b7da963027d43e420bc",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260815120000_dedupe_and_add_unique_odds_snapshot/migration.sql",
+      "sha256": "28e6cb4e3800f30b7ea1a14137311ee6e6c41217b57d9062ad5169236fc7c451",
+      "lines": 34
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260815130000_odds_snapshot_unique_nulls_not_distinct/migration.sql",
+      "sha256": "835d2faf49e5ea39de759bf08435fbf1888eaff7b0dac70bbf4eefac50fbc679",
+      "lines": 14
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260815140000_add_ml_model_missing_notification_type/migration.sql",
+      "sha256": "eae295ecde044d16718e020ee343089134e6ebc3e9a4f8dfbcf13cf192666bfc",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260815150000_add_coupon_proposal_realized_odds/migration.sql",
+      "sha256": "9957c4cdb1a04b92ff5cb2ee4badac9f0ed5b9a8512aa3430bdf54163720115e",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260816120000_add_result_total_goals_channel/migration.sql",
+      "sha256": "70e0abe6b55a8b386f6c828bc20abc192ab8c9fb1120d061caef30c696935cab",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260816130000_add_over_under_ht_channel/migration.sql",
+      "sha256": "117042b9f9369667f3ca8f74f98d96a1c72495888aaa3d4b28767d9653d197d3",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260816140000_add_result_btts_channel/migration.sql",
+      "sha256": "fa02c67b3f75ff88d831022ae389ac6c2e76c6f7ab166eb238e4890d8353bbba",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260816150000_add_draw_no_bet_channel/migration.sql",
+      "sha256": "32eb382737c16277cead238106c1559087f3d987e99d8ad008b5e2faa897a58c",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260816160000_add_win_to_nil_channel/migration.sql",
+      "sha256": "c066e9a4687e1e31361a8e8046a616544a3e8cfb036180afcdd644a7627731c1",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260816170000_add_half_time_full_time_channel/migration.sql",
+      "sha256": "ec996edca7db6b338e4bb80376399b3ef1bf59131569acb834dde126e7ca03a7",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260818230444_remove_calibration_model/migration.sql",
+      "sha256": "9061e1b3dd3905ff2eadb8eb5cda0b1e74986e170845c41831efaa7732386056",
+      "lines": 12
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260822120000_add_double_chance_subscription_source/migration.sql",
+      "sha256": "3a4b536a0805bba173868b1fca334119fe04e51933679bb88c717d7243826c23",
+      "lines": 5
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260828030238_add_vantage_channel/migration.sql",
+      "sha256": "5498f8c9a3789277506de4882fb39e05d3b3d27f4f8d0a02dba059dfde724c76",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260903181058_remove_subscription_and_add_preferences/migration.sql",
+      "sha256": "3d627a961a56fedea4bb2adc94002b474774b3ba05e7e5f4ed3fe92225c53ad8",
+      "lines": 66
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260904020000_add_has_completed_onboarding/migration.sql",
+      "sha256": "4a2a670337fc00557eee1c4ddce743e63b22af214f80b2e2798a98c06a90d3db",
+      "lines": 2
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260904140000_add_coupon_engagement_tracking/migration.sql",
+      "sha256": "4883bff5ce61933097e80d33c4ac3a8a7696a0abf2de49049ae186360b17f59e",
+      "lines": 50
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260904160000_add_user_phone_number/migration.sql",
+      "sha256": "23949b257ca461e908d4b94efa0009ce3fab6cd0daac44dede70a1fac04c8331",
+      "lines": 3
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260905190000_add_support_attachments/migration.sql",
+      "sha256": "13e730945b35a6818584dfcf861e2f91f6b9c1fad8fa304130b1c066e70a4307",
+      "lines": 36
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260905220000_add_support_welcome_automation/migration.sql",
+      "sha256": "2199cae0a105a2337b632eaa8e4e2e78677c1bda1ddad52a5083aaab7e52eaa6",
+      "lines": 26
+    },
+    {
+      "path": "packages/db/prisma/migrations/20260907220000_add_vantage_decision_history/migration.sql",
+      "sha256": "128cc1f0864196017f6e3bc40f47f3cf8146a6c6b210d8eb93f8e54e4fce377f",
+      "lines": 63
+    },
+    {
+      "path": "packages/db/reports/audit-channel-market-league-calibration-2026-08-18.txt",
+      "sha256": "1658dfab89dcd2bfdbf64bcde5a4029e751d35a4d1dea78606270ee41f4f392f",
+      "lines": 518
+    },
+    {
+      "path": "packages/db/reports/backtest-btts-shrinkage-calibration-2026-08-19.txt",
+      "sha256": "a03298ab5dbfcad091928b24e56af13d129fc6f5e08468bf4a91bb00e3dd7a80",
+      "lines": 82
+    },
+    {
+      "path": "packages/db/reports/backtest-calibration-alert-over-under-2026-08-15.txt",
+      "sha256": "a27d8efcb8a6c56b79d72c8182061376bf2124dc4b45db57fca963111ff90363",
+      "lines": 27
+    },
+    {
+      "path": "packages/db/reports/backtest-channel-league-whitelist-2026-08-15.txt",
+      "sha256": "37733a189c59a6f6d41112097e310e8e3f3d3feae8f0a8b783620bf1a5e9911f",
+      "lines": 174
+    },
+    {
+      "path": "packages/db/reports/backtest-channel-league-whitelist-2026-08-16.txt",
+      "sha256": "0d00bf69123a7306c3a179c71e8c8e7d01efc696d1bf2c5866780e7de8b5a13d",
+      "lines": 187
+    },
+    {
+      "path": "packages/db/reports/backtest-clean-sheet-win-either-half-shrinkage-calibration-2026-08-15.txt",
+      "sha256": "7e9a9181b41234ff299e8dce2af07c3e2b103274d05f79d56d6aa8eb0d4afc52",
+      "lines": 475
+    },
+    {
+      "path": "packages/db/reports/backtest-clean-sheet-win-either-half-shrinkage-calibration-2026-08-18.txt",
+      "sha256": "00829c4bb2c1f57499e194ce67fc24246cd64af9c8d32507cc457ed16d1783ac",
+      "lines": 477
+    },
+    {
+      "path": "packages/db/reports/backtest-clean-sheet-win-either-half-shrinkage-calibration-2026-08-19.txt",
+      "sha256": "294bdc43710fbfa12b83504e1898dec6b626ccd158ba3dcb93708409abcc5f6b",
+      "lines": 477
+    },
+    {
+      "path": "packages/db/reports/backtest-congestion-signal-value-2026-08-19.txt",
+      "sha256": "37185e4ba0cdf7d18b21f95cae1e2b8f7025502e081bbf76115ffddfa6cab2b9",
+      "lines": 34
+    },
+    {
+      "path": "packages/db/reports/backtest-coupon-joint-probability-shrinkage-calibration-2026-08-19.txt",
+      "sha256": "17a0f84069d3252fb65ece52fe4c04e60399eb612aae0b3aec636268142b1a0b",
+      "lines": 12
+    },
+    {
+      "path": "packages/db/reports/backtest-coupon-joint-probability-shrinkage-calibration-2026-08-20.txt",
+      "sha256": "7d1ca97d081d82c77cbbdc1ef64d09493c2da715d1165d4ac5d724092d958a33",
+      "lines": 3
+    },
+    {
+      "path": "packages/db/reports/backtest-coupon-quality-signals-2026-08-15.txt",
+      "sha256": "5a5de9d0dbf87c9a5f05f987dada5dba8f750f8a7f358c3f0e31b78309f2dc79",
+      "lines": 73
+    },
+    {
+      "path": "packages/db/reports/backtest-coupon-value-leg-shrinkage-calibration-2026-08-19.txt",
+      "sha256": "5a67048f2b16e74956c723ed80ec343a166793ecd022574efbdfb58d2a4f139e",
+      "lines": 24
+    },
+    {
+      "path": "packages/db/reports/backtest-draw-no-bet-shrinkage-calibration-2026-08-19.txt",
+      "sha256": "614bdec8a7e982ab55092b01358539c3fd238a78a42557853c62a679f94148b9",
+      "lines": 117
+    },
+    {
+      "path": "packages/db/reports/backtest-goals-shrinkage-calibration-2026-08-19.txt",
+      "sha256": "921b9640ef3de56a08641456748a4ee7189adadf6bde51e4b6d950fb549a23e0",
+      "lines": 82
+    },
+    {
+      "path": "packages/db/reports/backtest-h2h-market-signals-combined-2026-08-19.txt",
+      "sha256": "0aac5f3a821deb9237d6ec252dd10c2e73caa5decc0bf0982df87e6321a6057a",
+      "lines": 78
+    },
+    {
+      "path": "packages/db/reports/backtest-h2h-scoreline-signal-2026-08-15.txt",
+      "sha256": "2d1fae9058d3d061ed11e4df22c48e3b15d1f5cd97997bb7f5b28efb92ba3747",
+      "lines": 24
+    },
+    {
+      "path": "packages/db/reports/backtest-h2h-venue-weighting-2026-08-15.txt",
+      "sha256": "11229a101096196fcb1426c88091eed23f1f12f193fbc9f4e3137defed34c393",
+      "lines": 35
+    },
+    {
+      "path": "packages/db/reports/backtest-home-advantage-calibration-2026-08-15.txt",
+      "sha256": "793e859e4b099d2621bf6b78b7dfbe8b68e3330b73262ad76e72bc2a0dcfbc79",
+      "lines": 57
+    },
+    {
+      "path": "packages/db/reports/backtest-joint-probability-calibration-2026-08-15.txt",
+      "sha256": "03b2a6d2b922656d0415b676531940812b1783b02f5778801902c5a896f3d9e0",
+      "lines": 58
+    },
+    {
+      "path": "packages/db/reports/backtest-longshot-penalty-odds-buckets-2026-08-15.txt",
+      "sha256": "99b3da299d142efe9d2b3055713a542e5d171c0547bd6db74e4356b614cef15c",
+      "lines": 67
+    },
+    {
+      "path": "packages/db/reports/backtest-market-trust-calibration-2026-08-19.txt",
+      "sha256": "5313881b0d2596bd0aa2faecb9aadedf35e4912935242fc5fe7ae71cde7ca003",
+      "lines": 94
+    },
+    {
+      "path": "packages/db/reports/backtest-market-trust-calibration-2026-08-20.txt",
+      "sha256": "174981b4cf0510f43f6334606ec488de6b717b5bd5f876b047ff28b00cf1514b",
+      "lines": 94
+    },
+    {
+      "path": "packages/db/reports/backtest-over-under-ht-shrinkage-calibration-2026-08-16.txt",
+      "sha256": "e869430e337ce1b5964d3966871042c9697caf0629476df6d204ca3d01a1e8e3",
+      "lines": 226
+    },
+    {
+      "path": "packages/db/reports/backtest-result-btts-away-threshold-calibration-2026-08-19.txt",
+      "sha256": "ddd1749dbf512ea33aa9ae74cc9ac7ebe4854b08f44841c0ca6e4fd20c30ff54",
+      "lines": 41
+    },
+    {
+      "path": "packages/db/reports/backtest-result-btts-shrinkage-calibration-2026-08-19.txt",
+      "sha256": "39ae1fd6484dc8dde60edcabc9b68146241ce7ab3d51c219a4f7c3ec2b5846c4",
+      "lines": 329
+    },
+    {
+      "path": "packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt",
+      "sha256": "1e48715615a97b23d1d5521aebf49f7799a0f05f78311ca1a8a1b292629cb3eb",
+      "lines": 1303
+    },
+    {
+      "path": "packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-19.txt",
+      "sha256": "ee8118097f9b15e9b6d1e41ede9557500a3543a052d3172bd1a51bf0682ad549",
+      "lines": 1302
+    },
+    {
+      "path": "packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt",
+      "sha256": "1e9c5921740d543f217f935f03b9caa0877fe50a0ef7ac010f23217b89799f8f",
+      "lines": 1106
+    },
+    {
+      "path": "packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-18.txt",
+      "sha256": "2ec6ecd4086cb52798ee4135b8ce11d9d5d7d119755ba8c69c8309d462706ec5",
+      "lines": 1110
+    },
+    {
+      "path": "packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-19.txt",
+      "sha256": "0bafb066fab953392a60c62cebc57d56d4d3e260fb039121d136cfac1b2773f8",
+      "lines": 1110
+    },
+    {
+      "path": "packages/db/reports/backtest-three-way-empirical-blend-calibration-2026-08-19.txt",
+      "sha256": "d433ea48f4d339e8e69b80483074059c10ccd0fcbc6cced2b373ca480e9e0859",
+      "lines": 82
+    },
+    {
+      "path": "packages/db/reports/backtest-value-edge-ceiling-calibration-2026-08-19.txt",
+      "sha256": "bddf62ae4c40663784b5c58ef956ee034db5791139c7e8fe427c696acaa2a14b",
+      "lines": 22
+    },
+    {
+      "path": "packages/db/reports/backtest-win-to-nil-shrinkage-calibration-2026-08-19.txt",
+      "sha256": "a89b3faca5996d68ebd7b16c5d3b6ba322cafc0944289240b89e8716e4de8fb6",
+      "lines": 230
+    },
+    {
+      "path": "packages/db/reports/btts-shrinkage-shipped.json",
+      "sha256": "17b07d96357f0fbfdd562c18eb5eed875251d30381f50cbb6ac809d682f628d3",
+      "lines": 352
+    },
+    {
+      "path": "packages/db/reports/clean-sheet-win-either-half-shrinkage-shipped.json",
+      "sha256": "708726ec102a15f8be4a65f554c3a09196d2c98b74a7f1febfc5f9176c8fda46",
+      "lines": 1274
+    },
+    {
+      "path": "packages/db/reports/draw-no-bet-shrinkage-shipped.json",
+      "sha256": "9c653dfc60062bd0fda0159446252693a71a2d89b09684e7812d9369ce8643e3",
+      "lines": 322
+    },
+    {
+      "path": "packages/db/reports/goals-shrinkage-shipped.json",
+      "sha256": "37f12470b06b620df468d2c8d757d1ff12a979ef6f4b8606ad90a96e69568579",
+      "lines": 114
+    },
+    {
+      "path": "packages/db/reports/result-btts-shrinkage-shipped.json",
+      "sha256": "58ee072cca015d14e5d09498b3578c8c196264c74271e86629c2c7771d272a92",
+      "lines": 387
+    },
+    {
+      "path": "packages/db/reports/result-total-goals-shrinkage-shipped.json",
+      "sha256": "458d3187f32dbad70588ec5ddc22bf52767c244b810e72e31022e53fc482d8e1",
+      "lines": 1850
+    },
+    {
+      "path": "packages/db/reports/team-total-shrinkage-shipped.json",
+      "sha256": "19b9ca60608a3ab8f7dd3c20306ca1f754e91e6a9e51757b2c40e5b74efb1c9a",
+      "lines": 2522
+    },
+    {
+      "path": "packages/db/reports/three-way-empirical-blend-shipped.json",
+      "sha256": "2bc6f238b583fa41241d0057784131e09df36059f34c762409ea7392a673479d",
+      "lines": 266
+    },
+    {
+      "path": "packages/db/reports/win-to-nil-shrinkage-shipped.json",
+      "sha256": "94c3bb25a28b4157f410f1a38518101de0b1fef40736e61d2232e3c3e1210436",
+      "lines": 508
+    },
+    {
+      "path": "packages/db/scripts/analyze-edge.ts",
+      "sha256": "1b93fb31424e096d9758c38eb35dabed5ec570b1bcce02642baa887fc3845a59",
+      "lines": 628
+    },
+    {
+      "path": "packages/db/scripts/analyze-signals.ts",
+      "sha256": "416d369631f1e05a797692d13b9dcb57843e45bd80ae496d5a541390821b9b55",
+      "lines": 1105
+    },
+    {
+      "path": "packages/db/scripts/audit-channel-market-league-calibration.ts",
+      "sha256": "aa8fa06e5108a3b7055b9d2a617c4cb2de8aafb445e34bf110b26f30c158bb93",
+      "lines": 193
+    },
+    {
+      "path": "packages/db/scripts/audit-fixtures.ts",
+      "sha256": "a5cbc3a6a4e4ddc8020604f40a830a48ab40b6ba079d5bd6eaf459eb703468e8",
+      "lines": 970
+    },
+    {
+      "path": "packages/db/scripts/backtest-btts-shrinkage-calibration.ts",
+      "sha256": "7574702bc48bbaee080df53171b3d8dc6336c491d92f680a26da7ecbee0bf0fa",
+      "lines": 440
+    },
+    {
+      "path": "packages/db/scripts/backtest-calibration-alert-over-under.ts",
+      "sha256": "a241763674fbfde1f1ec5d6eb4dd706f5fe559f67b5f75df632bba3211a6d331",
+      "lines": 325
+    },
+    {
+      "path": "packages/db/scripts/backtest-channel-league-whitelist.ts",
+      "sha256": "f3ef7f0fe96e605f087c098c9b7a086fc953e95812fc2268c8e1cbeb0aaf7b3c",
+      "lines": 282
+    },
+    {
+      "path": "packages/db/scripts/backtest-clean-sheet-win-either-half-shrinkage-calibration.ts",
+      "sha256": "6d9b0c94670307b1871f6c6d0ffe9468d414519d344afc0c0f4eb7e077d2be91",
+      "lines": 552
+    },
+    {
+      "path": "packages/db/scripts/backtest-congestion-signal-value.ts",
+      "sha256": "6f06e7e35d7cdb38013962766a838b2b037b4f7c58d7175b9ba5e9caefc6e656",
+      "lines": 443
+    },
+    {
+      "path": "packages/db/scripts/backtest-coupon-joint-probability-shrinkage-calibration.ts",
+      "sha256": "fafe807e625ad25a314014a546fc5691077b7b72e0a39f6e245297efc308cc04",
+      "lines": 206
+    },
+    {
+      "path": "packages/db/scripts/backtest-coupon-params-validation.ts",
+      "sha256": "c1c7854764952dc699d471d376f109215eab14458847b31dc3a8993b0c4e3570",
+      "lines": 212
+    },
+    {
+      "path": "packages/db/scripts/backtest-coupon-quality-signals.ts",
+      "sha256": "4182b1fd0011b457145e81cfdf262399c3cc184ac2883acb64b99a803de27673",
+      "lines": 387
+    },
+    {
+      "path": "packages/db/scripts/backtest-coupon-value-leg-shrinkage-calibration.ts",
+      "sha256": "ef177ee8b1aa3b0a24bb0d999afe21c6a25fe9b988b1684d96f0508b13b3de7e",
+      "lines": 200
+    },
+    {
+      "path": "packages/db/scripts/backtest-decisions-ranking.ts",
+      "sha256": "cd398bf42a0eea5f5ddc57f5e0af904b12333ca698ae5781417a1caad61d8217",
+      "lines": 231
+    },
+    {
+      "path": "packages/db/scripts/backtest-draw-no-bet-shrinkage-calibration.ts",
+      "sha256": "226a4099fd7e324e6b15df4d6beb4c13db0f7625664578b2f28c1371e30705bd",
+      "lines": 456
+    },
+    {
+      "path": "packages/db/scripts/backtest-ev-tiers.ts",
+      "sha256": "2842d9d87d44929a060caa0ba4d4c76fd114a3cb43128ac30d9811898ed2838b",
+      "lines": 154
+    },
+    {
+      "path": "packages/db/scripts/backtest-goals-shrinkage-calibration.ts",
+      "sha256": "f07981123e515ed7523155525dd460d289b2d1e86daee83603c9fc149b58199d",
+      "lines": 472
+    },
+    {
+      "path": "packages/db/scripts/backtest-h2h-brier-gain.ts",
+      "sha256": "049e77399dc77d1b1cd844f5b2f443c9a1df52a3cfc8e46ed6da8b5f030bd98c",
+      "lines": 555
+    },
+    {
+      "path": "packages/db/scripts/backtest-h2h-lambda-adjustment-all-markets.ts",
+      "sha256": "30c418b4e7c27f77ff1170de26f8c27524d642597323162d6e9d7c38a41c09e4",
+      "lines": 662
+    },
+    {
+      "path": "packages/db/scripts/backtest-h2h-market-signals-combined.ts",
+      "sha256": "6479e00850523b10184ebbfa78516de641999fda73ff75ed60f711953c3b3565",
+      "lines": 676
+    },
+    {
+      "path": "packages/db/scripts/backtest-h2h-market-signals.ts",
+      "sha256": "494729357cc20ca495df880b1c8be7314ad2929359dfe65ad108794e8079f72f",
+      "lines": 595
+    },
+    {
+      "path": "packages/db/scripts/backtest-h2h-scoreline-signal.ts",
+      "sha256": "3a2a106fe0ad2c0f760f5e25e8474e6e71551916e93e1ac2d94cdb93663498d8",
+      "lines": 552
+    },
+    {
+      "path": "packages/db/scripts/backtest-h2h-signal-value.ts",
+      "sha256": "ce37d36e88e175e9e736a972457ac32fb35f586a23b69cb7ef316bacce64f5d8",
+      "lines": 448
+    },
+    {
+      "path": "packages/db/scripts/backtest-h2h-venue-weighting.ts",
+      "sha256": "312fbf313554ae480bcbb34371fb02a31810677efc6775e5a48bf2c4e45b21a7",
+      "lines": 449
+    },
+    {
+      "path": "packages/db/scripts/backtest-home-advantage-calibration.ts",
+      "sha256": "9b2e679b2505b5ddc7f3906486527d41c5d4a2c9a7cfb1a5a3611b5b8e8025e0",
+      "lines": 510
+    },
+    {
+      "path": "packages/db/scripts/backtest-home-advantage-roi-impact.ts",
+      "sha256": "91734980800de4175851faef0dcbd021b8b267823f3d8d5b885fc5c88c11cdd4",
+      "lines": 395
+    },
+    {
+      "path": "packages/db/scripts/backtest-invest-ranking.ts",
+      "sha256": "ff00410c59ce51dbec8997ac02bd7b086ddfb7067473e28406c14d54958d7063",
+      "lines": 578
+    },
+    {
+      "path": "packages/db/scripts/backtest-joint-probability-calibration.ts",
+      "sha256": "6d24f0ca6c75ac185a5a63f87c9f471781f02aa25d8154e4a458aa5033b9a1c9",
+      "lines": 289
+    },
+    {
+      "path": "packages/db/scripts/backtest-lambda-scale-calibration.ts",
+      "sha256": "1dd186a4a3e1c11a6506361b7e570db7f777855d60c836611d39412dbf044e3a",
+      "lines": 342
+    },
+    {
+      "path": "packages/db/scripts/backtest-longshot-penalty-odds-buckets.ts",
+      "sha256": "1d564f134acdb826dcb757b878dfe0c3e6eaa2e6848f78c90f24b9f4384dd964",
+      "lines": 504
+    },
+    {
+      "path": "packages/db/scripts/backtest-market-trust-calibration.ts",
+      "sha256": "094070553207fd625df7bd82d6af22b97953be20a9edc3dc85c3035a9cc72a01",
+      "lines": 401
+    },
+    {
+      "path": "packages/db/scripts/backtest-ml-shadow-correction.ts",
+      "sha256": "4fad999918b669680f82bc6c59cd8ecabf5a54ca44974b025a01e75f55dd0c33",
+      "lines": 281
+    },
+    {
+      "path": "packages/db/scripts/backtest-new-markets-calibration.ts",
+      "sha256": "26422604444ed8e29390f747f6afd29e5e0c9c6da51a52ed4b8e35fec727c51a",
+      "lines": 479
+    },
+    {
+      "path": "packages/db/scripts/backtest-over-under-ht-shrinkage-calibration.ts",
+      "sha256": "22bb98120380dcdfda930aa57f1dc8ccd8e2b3b257e1eb9e809bb04d038cbf05",
+      "lines": 453
+    },
+    {
+      "path": "packages/db/scripts/backtest-result-btts-away-threshold-calibration.ts",
+      "sha256": "369d0cc1d2aced44ba47fdb4333bc42053f852555fdf40c77e77aa6544bfe19f",
+      "lines": 472
+    },
+    {
+      "path": "packages/db/scripts/backtest-result-btts-shrinkage-calibration.ts",
+      "sha256": "01c219fd61248f010a619c9ac638a952672da311ca8b82143710649f8d5565e8",
+      "lines": 551
+    },
+    {
+      "path": "packages/db/scripts/backtest-result-total-goals-shrinkage-calibration.ts",
+      "sha256": "128e531442f0f20b133171b75cfb71c482f5b07dcb91e7cc58e3d592980f2c52",
+      "lines": 469
+    },
+    {
+      "path": "packages/db/scripts/backtest-signal-window-calibration.ts",
+      "sha256": "6d7e9ef36afd5d5c98834ddb8e1163646172fef532f56d5e6e0fbfe7f368309f",
+      "lines": 398
+    },
+    {
+      "path": "packages/db/scripts/backtest-team-total-btts-competition.ts",
+      "sha256": "a03adff8325051a6b5cee1fe82fd4621774711648aa09396d851579a8677ff5e",
+      "lines": 196
+    },
+    {
+      "path": "packages/db/scripts/backtest-team-total-shrinkage-calibration.ts",
+      "sha256": "2c5d959c7c260d8b7cdfd8ea7536931cebe745e9ee3308ac07dd089c9058ae13",
+      "lines": 535
+    },
+    {
+      "path": "packages/db/scripts/backtest-three-way-empirical-blend-calibration.ts",
+      "sha256": "755663993a6be6f527d7208abfe9c02875bd687b36601b3ed838bdbb2da4d2ca",
+      "lines": 461
+    },
+    {
+      "path": "packages/db/scripts/backtest-value-edge-ceiling-calibration.ts",
+      "sha256": "4d35fd8e5f985a6f00c5501f6472bee520a9ab850e6c00906177d0c7a7b0ec15",
+      "lines": 321
+    },
+    {
+      "path": "packages/db/scripts/backtest-win-to-nil-shrinkage-calibration.ts",
+      "sha256": "073a1b2c82147012d84b10769fd8ba914e234602b4a2123afc995a56dd96153a",
+      "lines": 483
+    },
+    {
+      "path": "packages/db/scripts/cleanup-legacy-ml-models.ts",
+      "sha256": "208f19ca9600d68d82fe1d188f00da1ea8fef701f0d0e95e4ed6cfe2e3e9e14a",
+      "lines": 87
+    },
+    {
+      "path": "packages/db/scripts/db-stats.ts",
+      "sha256": "8f1ad69984b4b4597ca69fada828d83354f62c23771dc60a3ef0b64fe96557e1",
+      "lines": 316
+    },
+    {
+      "path": "packages/db/scripts/fri-elo-audit.ts",
+      "sha256": "6dbf578fae0569f857944ee46adcce9102b4235daf06db92c81adc5af653fe0a",
+      "lines": 523
+    },
+    {
+      "path": "packages/db/scripts/fri-goal-model-audit.ts",
+      "sha256": "ae2438a33eedb6aef14bbd12da2b7065de248181d128a870608fc6631b908c2e",
+      "lines": 381
+    },
+    {
+      "path": "packages/db/scripts/purge-analysis-data.ts",
+      "sha256": "c04a5cf9dffc31ad89808370b068c0a1758928a2a2dd9e994378bc17d27d1338",
+      "lines": 171
+    },
+    {
+      "path": "packages/db/scripts/purge-day-analysis.ts",
+      "sha256": "09051eb4376a8358e7ceedcf3addb9dd990fbc53684f3de917911e19a4d66374",
+      "lines": 80
+    },
+    {
+      "path": "packages/db/scripts/scheduled-fixtures-report.ts",
+      "sha256": "b288d91f01bb24e8618df8756e6ee06b5f3865dce3a1e5315aa7919e72b22089",
+      "lines": 99
+    },
+    {
+      "path": "scripts/audit-virtual-channel-losses.mjs",
+      "sha256": "b84ee58c9d82111fe1c0cb04b4b0f8fe02055383bfc49062caf8731cf87ea2c3",
+      "lines": 492
+    },
+    {
+      "path": "scripts/backtest-virtual-investment-channels.mjs",
+      "sha256": "7269db729895462dde4e96f27a86d21773ee832cf97016332dadfacc0c819552",
+      "lines": 533
+    },
+    {
+      "path": "scripts/ou-shrinkage-forward-backtest.py",
+      "sha256": "9094fc16478b73318e3f0f1862d2dd45066a2ff1fb2714f735855ad10682aa75",
+      "lines": 153
+    },
+    {
+      "path": "scripts/ou-shrinkage-picks-guard.py",
+      "sha256": "721dbb57a0a534fe74bf51adea4800e257cb8b10c1c1f89e04b7fdf21352c6af",
+      "lines": 112
+    }
+  ]
+}

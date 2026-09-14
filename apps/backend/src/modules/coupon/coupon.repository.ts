@@ -31,13 +31,8 @@ export type CouponProposalWithLegs = Prisma.CouponProposalGetPayload<{
                 };
               };
             };
-            // Latest ModelRun only — same "most recent run is the source of
-            // truth" convention as build-match-context.ts/find-eligible-
-            // fixtures.ts. Needed so the frontend "Jouer ce coupon" button
-            // can submit each leg to POST /bet-slips as a USER pick
-            // (modelRunId + market + pick, resolved server-side against
-            // that run's evaluatedPicks) — the same shape a coupon leg's
-            // pool candidate was itself resolved from at generation time.
+            // Legacy fallback only. New proposals read the exact modelRunId
+            // captured inside CouponProposalLeg.featureSnapshot.
             modelRuns: {
               orderBy: { analyzedAt: 'desc' };
               take: 1;

@@ -599,8 +599,10 @@ function calibrationStatus(
 ): ChannelStatus {
   if (sampleSize < minSample) return 'INSUFFICIENT_DATA';
   if (ratio === null) return 'INACTIVE';
-  if (ratio >= CALIBRATION_GOOD_RATIO) return 'GREEN';
-  if (ratio >= CALIBRATION_BAD_RATIO) return 'ORANGE';
+  if (ratio >= CALIBRATION_GOOD_RATIO && ratio <= 2 - CALIBRATION_GOOD_RATIO)
+    return 'GREEN';
+  if (ratio >= CALIBRATION_BAD_RATIO && ratio <= 2 - CALIBRATION_BAD_RATIO)
+    return 'ORANGE';
   return 'RED';
 }
 

@@ -1,13 +1,15 @@
 import type { Logger } from "pino";
-import { COUPON_BOUNDS, COUPON_CLASSES } from "@evcore/analysis-core";
+import {
+  UNIFIED_COUPON_BOUNDS,
+  UNIFIED_COUPON_CLASS,
+} from "@evcore/analysis-core";
 import type { LlmClients } from "../groq/client";
 import { computeChannelReliability } from "./channel-reliability-query";
 import { composeCouponClass } from "./compose-coupon-class";
+import type { CouponLlmProvenance } from "./generate-coupon-selection";
 import { getPoolForRange } from "./pool-query";
-import {
-  INTRADAY_SIGNAL_WINDOW_DAYS,
-  persistCouponProposal,
-} from "./persist-coupon-proposal";
+import { persistCouponProposal } from "./persist-coupon-proposal";
+import { recordGenerationAttempt } from "./record-generation-attempt";
 import { scoreCandidates, type ScoredCandidate } from "./score-candidates";
 
 // Weekend (Fri→Sun) and midweek European-nights (Tue→Thu) coupon windows —
@@ -33,34 +35,46 @@ export function resolveGenerationWindow(date: string): { to: string } {
   return { to: date };
 }
 
-// One compose+persist pass per class, shared by the evening and intraday
-// entry points below — the only thing that differs between them is which
-// pool feeds this and which signalWindowDays discriminant persists under.
+// One unified compose+persist pass, shared by evening and intraday. Both use
+// the same proposal key; every attempt and abstention is recorded separately.
 async function runComposePersistPass(
   scoredPool: readonly ScoredCandidate[],
   forDate: Date,
   clients: LlmClients,
   logger: Logger,
   logContext: Record<string, unknown>,
-  persistOpts: { signalWindowDays?: number } = {},
+  persistOpts: {
+    pass: "EVENING" | "INTRADAY";
+    signalWindowDays?: number;
+  },
 ): Promise<void> {
-  for (const couponClass of COUPON_CLASSES) {
+  for (const couponClass of [UNIFIED_COUPON_CLASS]) {
+    let llmProvenance: CouponLlmProvenance | null = null;
     const result = await composeCouponClass(
       scoredPool,
       couponClass,
-      COUPON_BOUNDS,
+      UNIFIED_COUPON_BOUNDS,
       clients,
       logger,
+      { onCompletion: (value) => (llmProvenance = value) },
     );
 
     if (result.outcome === "composed") {
-      await persistCouponProposal(
+      const persisted = await persistCouponProposal(
         forDate,
         couponClass,
         result.coupon,
         result.reasonDetails,
-        persistOpts,
+        { ...persistOpts, llmProvenance },
       );
+      await recordGenerationAttempt({
+        forDate,
+        pass: persistOpts.pass,
+        outcome: persisted.published ? "PUBLISHED" : "PRESERVED",
+        candidateCount: scoredPool.length,
+        llmProvenance,
+        proposalId: persisted.proposalId,
+      });
       logger.info(
         {
           ...logContext,
@@ -69,18 +83,37 @@ async function runComposePersistPass(
           combinedOdds: result.coupon.combinedOdds,
           couponEV: result.coupon.couponEV,
         },
-        "coupon: published",
+        persisted.published
+          ? "coupon: published"
+          : "coupon: existing proposal preserved",
       );
     } else {
+      await recordGenerationAttempt({
+        forDate,
+        pass: persistOpts.pass,
+        outcome: result.outcome === "gave_up" ? "INVALID" : "ABSTAINED",
+        candidateCount: scoredPool.length,
+        llmProvenance,
+        reason:
+          result.outcome === "no_coupon"
+            ? result.reasonDetails
+            : result.outcome === "gave_up"
+              ? result.lastReason
+              : "candidate_pool_too_small",
+      });
       logger.info(
-        { ...logContext, couponClass: couponClass.name, outcome: result.outcome },
+        {
+          ...logContext,
+          couponClass: couponClass.name,
+          outcome: result.outcome,
+        },
         "coupon: no proposal for this class",
       );
     }
   }
 }
 
-// The daily coupon-generation pipeline, one class at a time
+// The daily coupon-generation pipeline, with one 5–15 policy
 // (docs/vantage-centric-redesign-2026-09-01.md §9bis): pool query → score →
 // LLM-select-and-validate → persist. Replaces apps/backend's
 // CouponComposerService entirely (retired 2026-09-03) — this is the sole
@@ -101,11 +134,11 @@ export async function runCouponGeneration(
   logger.info({ date, to }, "coupon: generation started");
 
   const [calibration, rawPool] = await Promise.all([
-    computeChannelReliability({ asOf: forDate }),
+    computeChannelReliability({ asOf: new Date() }),
     getPoolForRange(date, to, {
       includeDraw: true,
       enforceAvoid: true,
-      enableAvoidFade: true,
+      enableAvoidFade: false,
       includeEvaluatedMarkets: true,
     }),
   ]);
@@ -121,22 +154,23 @@ export async function runCouponGeneration(
     pooledReliability: calibration.pooled,
   });
 
-  await runComposePersistPass(scoredPool, forDate, clients, logger, { date });
+  await runComposePersistPass(
+    scoredPool,
+    forDate,
+    clients,
+    logger,
+    { date },
+    { pass: "EVENING" },
+  );
 
   logger.info({ date }, "coupon: generation complete");
 }
 
 /**
- * Intraday pass (recheck J-J, docs/vantage-centric-redesign-2026-09-01.md
- * §9bis) — a SECOND, coexisting coupon batch for fixtures kicking off
- * within `windowHours` from now, built on data refreshed by
+ * Intraday pass for fixtures kicking off within `windowHours`, built on data refreshed by
  * `apps/backend`'s `SAME_DAY_ANALYSIS` cron (fresh `ModelRun` rows,
  * VANTAGE re-reading automatically — see project_no_same_day_reanalysis
- * memory). Never touches the evening batch: `persistCouponProposal`'s
- * `signalWindowDays: INTRADAY_SIGNAL_WINDOW_DAYS` keys this batch under a
- * different unique-key slot (same `forDate`/class/`rank`), and its own
- * PENDING-only overwrite guard means a later intraday pass can only refine
- * ITS OWN prior intraday proposal, never the evening one.
+ * memory). It uses the same immutable daily proposal key as the evening pass.
  *
  * `date`/`forDate` are always "today" (UTC) — the fixtures in the window
  * are, by construction, kicking off later today.
@@ -154,11 +188,11 @@ export async function runIntradayCouponGeneration(
   logger.info({ date, windowHours }, "coupon: intraday generation started");
 
   const [calibration, rawPool] = await Promise.all([
-    computeChannelReliability({ asOf: forDate }),
+    computeChannelReliability({ asOf: new Date() }),
     getPoolForRange(date, date, {
       includeDraw: true,
       enforceAvoid: true,
-      enableAvoidFade: true,
+      enableAvoidFade: false,
       includeEvaluatedMarkets: true,
       scheduledAtWindow: { from: now, to },
     }),
@@ -170,21 +204,19 @@ export async function runIntradayCouponGeneration(
     "coupon: intraday pool loaded",
   );
 
-  if (rawPool.length === 0) {
-    logger.info({ date, windowHours }, "coupon: intraday pool empty, skipping");
-    return;
-  }
-
   const scoredPool = scoreCandidates(rawPool, {
     channelReliability: calibration.byChannel,
     pooledReliability: calibration.pooled,
   });
 
-  await runComposePersistPass(scoredPool, forDate, clients, logger, {
-    date,
-    windowHours,
-    intraday: true,
-  }, { signalWindowDays: INTRADAY_SIGNAL_WINDOW_DAYS });
+  await runComposePersistPass(
+    scoredPool,
+    forDate,
+    clients,
+    logger,
+    { date, windowHours, intraday: true },
+    { pass: "INTRADAY" },
+  );
 
   logger.info({ date, windowHours }, "coupon: intraday generation complete");
 }

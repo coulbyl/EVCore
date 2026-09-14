@@ -41,7 +41,11 @@ export const ML_SHADOW_CHANNELS = [
 ] as const;
 export type MlShadowChannel = (typeof ML_SHADOW_CHANNELS)[number];
 
-export type MlShadowCorrection = { correctedP: number; edgeDelta: number };
+export type MlShadowCorrection = {
+  correctedP: number;
+  edgeDelta: number;
+  modelId?: string | null;
+};
 export type ShadowMlByChannel = Partial<
   Record<MlShadowChannel, MlShadowCorrection>
 >;

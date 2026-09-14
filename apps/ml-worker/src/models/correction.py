@@ -11,12 +11,14 @@ XGBoost is used automatically when segment volumes reach _MIN_XGBOOST_SAMPLES.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 import pandas as pd
-from sklearn.calibration import CalibratedClassifierCV, calibration_curve
+from ..data.extract import temporal_split
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.compose import ColumnTransformer
+from sklearn.frozen import FrozenEstimator
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import brier_score_loss
@@ -58,6 +60,7 @@ class TrainingResult:
     sample_size: int
     train_size: int
     test_size: int
+    manifest: dict = field(default_factory=dict)
 
 
 def _build_logreg_pipeline() -> Pipeline:
@@ -75,7 +78,7 @@ def _build_logreg_pipeline() -> Pipeline:
     ])
     return Pipeline([
         ("prep", preprocessor),
-        ("clf", LogisticRegression(max_iter=1000, C=1.0, class_weight="balanced")),
+        ("clf", LogisticRegression(max_iter=1000, C=1.0)),
     ])
 
 
@@ -105,7 +108,7 @@ def _build_xgboost_pipeline() -> Pipeline:
     )
     return Pipeline([
         ("prep", preprocessor),
-        ("clf", CalibratedClassifierCV(xgb, method="isotonic", cv=3)),
+        ("clf", xgb),
     ])
 
 
@@ -116,9 +119,11 @@ def _resolve_algorithm(algorithm: str, n_samples: int) -> str:
 
 
 def _calibration_error(y_true: np.ndarray, y_prob: np.ndarray, n_bins: int = 10) -> float:
-    """Mean absolute calibration error across probability bins."""
-    fraction_pos, mean_predicted = calibration_curve(y_true, y_prob, n_bins=n_bins)
-    return float(np.mean(np.abs(fraction_pos - mean_predicted)))
+    """Expected calibration error, weighted by bin population."""
+    bins = np.minimum((np.asarray(y_prob) * n_bins).astype(int), n_bins - 1)
+    return float(sum(np.sum(bins == i) / len(y_true) *
+                     abs(np.mean(y_true[bins == i]) - np.mean(y_prob[bins == i]))
+                     for i in range(n_bins) if np.any(bins == i)))
 
 
 def _roi_simulated(df_test: pd.DataFrame, y_prob: np.ndarray) -> float:
@@ -146,7 +151,7 @@ def train(df: pd.DataFrame, algorithm: str = "auto") -> TrainingResult:
     """
     Train the correction layer on rows that have Pinnacle odds (delta_p present).
 
-    Uses a 70/30 temporal split — older data trains, recent data evaluates.
+    Uses fixture-safe chronological 60/20/20 train/validation/test periods.
     algorithm: "auto" picks XGBoost if ≥200 Pinnacle samples, else LogReg.
     Raises ValueError if class balance is insufficient.
     """
@@ -157,9 +162,9 @@ def train(df: pd.DataFrame, algorithm: str = "auto") -> TrainingResult:
         extra={"count": len(df_pinnacle), "algorithm": resolved},
     )
 
-    cutoff = int(len(df_pinnacle) * 0.70)
-    df_train = df_pinnacle.iloc[:cutoff]
-    df_test = df_pinnacle.iloc[cutoff:]
+    df_development, df_test = temporal_split(df_pinnacle, 0.8)
+    df_train, df_validation = temporal_split(df_development, 0.75)
+    _assert_class_balance(df_validation, "validation")
 
     _assert_class_balance(df_train, "train")
     _assert_class_balance(df_test, "test")
@@ -176,6 +181,9 @@ def train(df: pd.DataFrame, algorithm: str = "auto") -> TrainingResult:
 
     pipeline.fit(X_train, y_train)
 
+    # Freeze preprocessing and estimator; only the later validation period fits calibration.
+    pipeline = CalibratedClassifierCV(FrozenEstimator(pipeline), method="sigmoid")
+    pipeline.fit(df_validation[ALL_FEATURES], df_validation["outcome_correct"].values)
     y_prob_test = pipeline.predict_proba(X_test)[:, 1]
 
     brier = float(brier_score_loss(y_test, y_prob_test))
@@ -203,6 +211,13 @@ def train(df: pd.DataFrame, algorithm: str = "auto") -> TrainingResult:
         sample_size=len(df_pinnacle),
         train_size=len(df_train),
         test_size=len(df_test),
+        manifest={"protocol": "fixture-chronological-60-20-20-v1",
+                  "validationSize": len(df_validation),
+                  "trainThrough": str(df_train["scheduled_at"].max()),
+                  "validationThrough": str(df_validation["scheduled_at"].max()),
+                  "testFrom": str(df_test["scheduled_at"].min()),
+                  "testThrough": str(df_test["scheduled_at"].max()),
+                  "configVersions": sorted(df_pinnacle["config_version"].unique().tolist())},
     )
 
 

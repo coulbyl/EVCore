@@ -1,3 +1,4 @@
+import { prematchCohortSql } from '@evcore/db';
 import { Injectable } from '@nestjs/common';
 import { StrategyChannel, type Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
@@ -46,11 +47,14 @@ export class ReportsRepository {
   // wired) with odds, in the window, joined to the ModelRun features (which
   // carry shadow_ml_by_channel).
   async findSettledEvSelections(from: Date): Promise<SettledEvSelectionRow[]> {
+    const cohort = await this.prisma.client.$queryRaw<{ id: string }[]>(
+      prematchCohortSql({ asOf: new Date(), since: from }),
+    );
     return this.prisma.client.channelSelection.findMany({
       where: {
         result: { in: ['WON', 'LOST'] },
         odds: { not: null },
-        createdAt: { gte: from },
+        id: { in: cohort.map((row) => row.id) },
         channelDecision: { channel: { in: [...REPORTED_CHANNELS] } },
       },
       select: {

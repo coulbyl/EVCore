@@ -1,0 +1,111 @@
+Inventaire des scripts et rapports — indicateurs statiques, pas des verdicts de validité.
+
+Outil ajouté après remédiation :
+
+- `prospective-observation.sql` : lecture seule ; calendrier complet des
+  publications et abstentions de `unified-5-15-v1`, ROI du coupon et des mêmes
+  jambes jouées en simples à mise totale égale, écart apparié et intervalle à
+  95 %. Syntaxe validée sur PostgreSQL 18 local le 14/09/2026 ; zéro journée
+  réglée à cette date.
+
+- packages/db/scripts/analyze-edge.ts: charge dotenv — non exécuté, client DB direct
+- packages/db/scripts/analyze-signals.ts: charge dotenv — non exécuté, client DB direct, utilise analyzedAt
+- packages/db/scripts/audit-channel-market-league-calibration.ts: charge dotenv — non exécuté, client DB direct
+- packages/db/scripts/audit-fixtures.ts: charge dotenv — non exécuté, client DB direct, utilise analyzedAt
+- packages/db/scripts/backtest-btts-shrinkage-calibration.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/backtest-calibration-alert-over-under.ts: charge dotenv — non exécuté, client DB direct
+- packages/db/scripts/backtest-channel-league-whitelist.ts: charge dotenv — non exécuté, client DB direct, déduplication SQL, utilise analyzedAt, train/validation à inspecter
+- packages/db/scripts/backtest-clean-sheet-win-either-half-shrinkage-calibration.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/backtest-congestion-signal-value.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/backtest-coupon-joint-probability-shrinkage-calibration.ts: charge dotenv — non exécuté, client DB direct, train/validation à inspecter
+- packages/db/scripts/backtest-coupon-params-validation.ts: charge dotenv — non exécuté, client DB direct, train/validation à inspecter
+- packages/db/scripts/backtest-coupon-quality-signals.ts: charge dotenv — non exécuté, client DB direct, utilise analyzedAt, train/validation à inspecter
+- packages/db/scripts/backtest-coupon-value-leg-shrinkage-calibration.ts: charge dotenv — non exécuté, client DB direct, train/validation à inspecter
+- packages/db/scripts/backtest-decisions-ranking.ts: charge dotenv — non exécuté, client DB direct, déduplication SQL, utilise analyzedAt, train/validation à inspecter
+- packages/db/scripts/backtest-draw-no-bet-shrinkage-calibration.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/backtest-ev-tiers.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, déduplication SQL, utilise analyzedAt
+- packages/db/scripts/backtest-goals-shrinkage-calibration.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/backtest-h2h-brier-gain.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/backtest-h2h-lambda-adjustment-all-markets.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/backtest-h2h-market-signals-combined.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/backtest-h2h-market-signals.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/backtest-h2h-scoreline-signal.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées
+- packages/db/scripts/backtest-h2h-signal-value.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées
+- packages/db/scripts/backtest-h2h-venue-weighting.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/backtest-home-advantage-calibration.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées
+- packages/db/scripts/backtest-home-advantage-roi-impact.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées
+- packages/db/scripts/backtest-invest-ranking.ts: charge dotenv — non exécuté, client DB direct, déduplication SQL, utilise analyzedAt, train/validation à inspecter
+- packages/db/scripts/backtest-joint-probability-calibration.ts: charge dotenv — non exécuté, client DB direct, train/validation à inspecter
+- packages/db/scripts/backtest-lambda-scale-calibration.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/backtest-longshot-penalty-odds-buckets.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées
+- packages/db/scripts/backtest-market-trust-calibration.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées
+- packages/db/scripts/backtest-ml-shadow-correction.ts: charge dotenv — non exécuté, client DB direct, utilise analyzedAt
+- packages/db/scripts/backtest-new-markets-calibration.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées
+- packages/db/scripts/backtest-over-under-ht-shrinkage-calibration.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/backtest-result-btts-away-threshold-calibration.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/backtest-result-btts-shrinkage-calibration.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/backtest-result-total-goals-shrinkage-calibration.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/backtest-signal-window-calibration.ts: charge dotenv — non exécuté, client DB direct, train/validation à inspecter
+- packages/db/scripts/backtest-team-total-btts-competition.ts: charge dotenv — non exécuté, client DB direct
+- packages/db/scripts/backtest-team-total-shrinkage-calibration.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/backtest-three-way-empirical-blend-calibration.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/backtest-value-edge-ceiling-calibration.ts: charge dotenv — non exécuté, client DB direct, train/validation à inspecter
+- packages/db/scripts/backtest-win-to-nil-shrinkage-calibration.ts: charge dotenv — non exécuté, client DB direct, mathématiques partagées, train/validation à inspecter
+- packages/db/scripts/cleanup-legacy-ml-models.ts: charge dotenv — non exécuté, client DB direct, mutation possible
+- packages/db/scripts/db-stats.ts: charge dotenv — non exécuté, client DB direct
+- packages/db/scripts/fri-elo-audit.ts: charge dotenv — non exécuté, client DB direct
+- packages/db/scripts/fri-goal-model-audit.ts: charge dotenv — non exécuté, client DB direct
+- packages/db/scripts/purge-analysis-data.ts: charge dotenv — non exécuté, client DB direct, mutation possible
+- packages/db/scripts/purge-day-analysis.ts: charge dotenv — non exécuté, client DB direct, mutation possible
+- packages/db/scripts/scheduled-fixtures-report.ts: charge dotenv — non exécuté, client DB direct
+
+Rapports présents :
+- packages/db/reports/audit-channel-market-league-calibration-2026-08-18.txt (62988 octets)
+- packages/db/reports/backtest-btts-shrinkage-calibration-2026-08-19.txt (7733 octets)
+- packages/db/reports/backtest-calibration-alert-over-under-2026-08-15.txt (1945 octets)
+- packages/db/reports/backtest-channel-league-whitelist-2026-08-15.txt (22655 octets)
+- packages/db/reports/backtest-channel-league-whitelist-2026-08-16.txt (16773 octets)
+- packages/db/reports/backtest-clean-sheet-win-either-half-shrinkage-calibration-2026-08-15.txt (29429 octets)
+- packages/db/reports/backtest-clean-sheet-win-either-half-shrinkage-calibration-2026-08-18.txt (36980 octets)
+- packages/db/reports/backtest-clean-sheet-win-either-half-shrinkage-calibration-2026-08-19.txt (36980 octets)
+- packages/db/reports/backtest-congestion-signal-value-2026-08-19.txt (1911 octets)
+- packages/db/reports/backtest-coupon-joint-probability-shrinkage-calibration-2026-08-19.txt (588 octets)
+- packages/db/reports/backtest-coupon-joint-probability-shrinkage-calibration-2026-08-20.txt (184 octets)
+- packages/db/reports/backtest-coupon-quality-signals-2026-08-15.txt (3173 octets)
+- packages/db/reports/backtest-coupon-value-leg-shrinkage-calibration-2026-08-19.txt (1302 octets)
+- packages/db/reports/backtest-draw-no-bet-shrinkage-calibration-2026-08-19.txt (9277 octets)
+- packages/db/reports/backtest-goals-shrinkage-calibration-2026-08-19.txt (6465 octets)
+- packages/db/reports/backtest-h2h-market-signals-combined-2026-08-19.txt (5259 octets)
+- packages/db/reports/backtest-h2h-scoreline-signal-2026-08-15.txt (1782 octets)
+- packages/db/reports/backtest-h2h-venue-weighting-2026-08-15.txt (1674 octets)
+- packages/db/reports/backtest-home-advantage-calibration-2026-08-15.txt (3786 octets)
+- packages/db/reports/backtest-joint-probability-calibration-2026-08-15.txt (4075 octets)
+- packages/db/reports/backtest-longshot-penalty-odds-buckets-2026-08-15.txt (5738 octets)
+- packages/db/reports/backtest-market-trust-calibration-2026-08-19.txt (5470 octets)
+- packages/db/reports/backtest-market-trust-calibration-2026-08-20.txt (5455 octets)
+- packages/db/reports/backtest-over-under-ht-shrinkage-calibration-2026-08-16.txt (12037 octets)
+- packages/db/reports/backtest-result-btts-away-threshold-calibration-2026-08-19.txt (1956 octets)
+- packages/db/reports/backtest-result-btts-shrinkage-calibration-2026-08-19.txt (22040 octets)
+- packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt (66759 octets)
+- packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-19.txt (66387 octets)
+- packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt (58204 octets)
+- packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-18.txt (79483 octets)
+- packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-19.txt (79483 octets)
+- packages/db/reports/backtest-three-way-empirical-blend-calibration-2026-08-19.txt (6670 octets)
+- packages/db/reports/backtest-value-edge-ceiling-calibration-2026-08-19.txt (695 octets)
+- packages/db/reports/backtest-win-to-nil-shrinkage-calibration-2026-08-19.txt (16977 octets)
+- packages/db/reports/btts-shrinkage-shipped.json (9266 octets)
+- packages/db/reports/clean-sheet-win-either-half-shrinkage-shipped.json (33534 octets)
+- packages/db/reports/draw-no-bet-shrinkage-shipped.json (8490 octets)
+- packages/db/reports/goals-shrinkage-shipped.json (2833 octets)
+- packages/db/reports/result-btts-shrinkage-shipped.json (9912 octets)
+- packages/db/reports/result-total-goals-shrinkage-shipped.json (45656 octets)
+- packages/db/reports/team-total-shrinkage-shipped.json (70989 octets)
+- packages/db/reports/three-way-empirical-blend-shipped.json (5664 octets)
+- packages/db/reports/win-to-nil-shrinkage-shipped.json (13147 octets)
+- apps/backend/reports/virtual-channel-loss-audit.calendar-2026.json (124557 octets)
+- apps/backend/reports/virtual-channel-loss-audit.calendar-2026.txt (16968 octets)
+- apps/backend/reports/virtual-investment-channels.calendar-2026.json (264595 octets)
+- apps/backend/reports/virtual-investment-channels.calendar-2026.txt (4360 octets)
+- apps/backend/reports/weekend-probe-2026.json (109827 octets)
+- apps/backend/reports/weekend-probe-2026.txt (1920 octets)

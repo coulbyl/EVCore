@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/app-shell";
 import { NetworkStatusBanner } from "@/components/network-status-banner";
-import { PwaInstallBanner } from "@/components/pwa-install-banner";
+import { DashboardPwaInstallBanner } from "@/components/dashboard-pwa-install-banner";
 import { BetSlipProvider } from "@/domains/bet-slip/context/bet-slip-provider";
 import { BetSlipDrawer } from "@/components/bet-slip-drawer";
 import { EvaFab } from "@/components/eva/eva-fab";
@@ -38,7 +38,7 @@ export default async function DashboardLayout({
             <BetSlipDrawer />
             <EvaFab />
             <PageSearchFab />
-            <PwaInstallBanner />
+            <DashboardPwaInstallBanner />
             <OnboardingWizard />
           </ProductTourProvider>
         </BetSlipProvider>

@@ -96,8 +96,8 @@ async function main() {
   );
 
   // Intraday batch (recheck J-J) — see config.ts's couponIntradayCron doc
-  // comment. Coexists with the evening batch above, never overwrites it
-  // (persist-coupon-proposal.ts's INTRADAY_SIGNAL_WINDOW_DAYS).
+  // comment. It may fill the daily slot after an evening abstention, but an
+  // existing proposal is immutable and every pass is recorded separately.
   await queue.add(
     "generate-intraday-coupons",
     {},

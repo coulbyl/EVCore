@@ -73,7 +73,15 @@ export function admissibleCandidates(
   scored: readonly ScoredCandidate[],
 ): ScoredCandidate[] {
   return scored
-    .filter((c) => c.oddsSnapshot !== null)
+    .filter(
+      (c) =>
+        c.oddsSnapshot !== null &&
+        Number.isFinite(c.oddsSnapshot) &&
+        Number.isFinite(c.calibratedProbability) &&
+        c.calibratedProbability > 0 &&
+        c.calibratedProbability < 1 &&
+        c.calibratedProbability * c.oddsSnapshot > 1,
+    )
     .filter((c) => clearsValueEdgeFloor(c))
     .filter((c) => clearsTeamTotalMaxOdds(c))
     .filter((c) => clearsMaxLegEdge(c))
@@ -101,7 +109,9 @@ export function reduceToLlmPool(
       depthRank(b) - depthRank(a),
   );
   const byValue = [...admissible].sort(
-    (a, b) => (b.edge ?? -Infinity) - (a.edge ?? -Infinity) || depthRank(b) - depthRank(a),
+    (a, b) =>
+      (b.edge ?? -Infinity) - (a.edge ?? -Infinity) ||
+      depthRank(b) - depthRank(a),
   );
 
   const key = (c: ScoredCandidate) => `${c.fixtureId}:${c.market}:${c.pick}`;
