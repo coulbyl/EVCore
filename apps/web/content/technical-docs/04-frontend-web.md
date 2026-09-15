@@ -27,7 +27,7 @@ Sections principales observées sous `app/dashboard/` :
 | `fixtures`      | Liste des matchs (calendrier), avec filtres par date et accès aux indices de canaux.                                                                                                        |
 | `performance`   | Suivi des gains/pertes, ROI, taux de réussite.                                                                                                                                              |
 | `bankroll`      | Portefeuille utilisateur (montants, historique).                                                                                                                                            |
-| `track-record`  | Historique vérifiable des performances par canal et par compétition, sur des périodes prédéfinies.                                                                                          |
+| `track-record`  | Mesures historiques par canal et par compétition, sur des périodes prédéfinies.                                                                                                             |
 | `audit`         | Console d'administration : volumes (paris, matchs, `ModelRun`), état de la boucle d'apprentissage, activation/désactivation de compétitions. Réservé aux `ADMIN` (accès et route protégés). |
 | `engine`        | « Moteur & ETL » — supervision des workers ETL et du moteur de scoring. Réservé aux `ADMIN`.                                                                                                |
 | `ml`            | « Moteur ML » — administration du module ML (corrections, shadow predictions). Réservé aux `ADMIN`.                                                                                         |

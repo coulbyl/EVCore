@@ -20,20 +20,20 @@ type GlobalStatus = "GOOD" | "WATCH" | "ALERT" | "UNKNOWN";
 
 const GLOBAL_STATUS_VARIANT: Record<
   GlobalStatus,
-  "success" | "warning" | "destructive" | "neutral"
+  "outline" | "warning" | "destructive" | "neutral"
 > = {
-  GOOD: "success",
+  GOOD: "outline",
   WATCH: "warning",
   ALERT: "destructive",
   UNKNOWN: "neutral",
 };
 
-const GLOBAL_STATUS_LABEL: Record<GlobalStatus, string> = {
-  GOOD: "Bon",
-  WATCH: "Surveillance",
-  ALERT: "Alerte",
-  UNKNOWN: "Données insuffisantes",
-};
+const GLOBAL_STATUS_LABEL_KEY = {
+  GOOD: "globalClose",
+  WATCH: "globalModerateGap",
+  ALERT: "globalLargeGap",
+  UNKNOWN: "globalUnknown",
+} as const satisfies Record<GlobalStatus, string>;
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -66,8 +66,10 @@ export function EngineHealthCard() {
   const locale = useLocale();
   const t = useTranslations("dashboard.engineHealth");
 
-  const { data: health30d = [], isLoading: health30Loading } =
-    useChannelHealth(daysAgoIso(30), todayIso());
+  const { data: health30d = [], isLoading: health30Loading } = useChannelHealth(
+    daysAgoIso(30),
+    todayIso(),
+  );
   const { data: health7d = [], isLoading: health7Loading } = useChannelHealth(
     daysAgoIso(7),
     todayIso(),
@@ -91,7 +93,8 @@ export function EngineHealthCard() {
     const reds = health30d.filter((h) => h.status === "RED").length;
     const oranges = health30d.filter((h) => h.status === "ORANGE").length;
     const hasData = health30d.some(
-      (h) => h.status === "GREEN" || h.status === "ORANGE" || h.status === "RED",
+      (h) =>
+        h.status === "GREEN" || h.status === "ORANGE" || h.status === "RED",
     );
 
     const status: GlobalStatus = !hasData
@@ -151,7 +154,7 @@ export function EngineHealthCard() {
           <div className="h-6 w-32 animate-pulse rounded-full bg-secondary" />
         ) : (
           <Badge variant={GLOBAL_STATUS_VARIANT[globalStatus]}>
-            {GLOBAL_STATUS_LABEL[globalStatus]}
+            {t(GLOBAL_STATUS_LABEL_KEY[globalStatus])}
           </Badge>
         )}
       </div>
@@ -206,7 +209,11 @@ export function EngineHealthCard() {
             data={curveData}
             xKey="bin"
             bars={[
-              { key: "annoncee", color: "var(--muted-foreground)", label: t("announced") },
+              {
+                key: "annoncee",
+                color: "var(--muted-foreground)",
+                label: t("announced"),
+              },
               { key: "reelle", color: "var(--accent)", label: t("actual") },
             ]}
             formatY={(v) => `${v}%`}
@@ -225,7 +232,10 @@ export function EngineHealthCard() {
             {suspensions.map((s) => (
               <li key={s.market} className="text-sm">
                 <span className="font-medium text-foreground">
-                  {formatMarketForDisplay(s.market, locale === "en" ? "en" : "fr")}
+                  {formatMarketForDisplay(
+                    s.market,
+                    locale === "en" ? "en" : "fr",
+                  )}
                 </span>
                 <span className="ml-1.5 text-xs text-muted-foreground">
                   {s.reason}

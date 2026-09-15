@@ -10,7 +10,7 @@ import {
   type FilterState,
 } from "@evcore/ui";
 import { OperatorPerformanceCard } from "./operator-performance-card";
-import { TodayConfidenceCard } from "./today-confidence-card";
+import { TodayCalibrationCard } from "./today-confidence-card";
 import { WeeklyBrief } from "./weekly-brief";
 import { Announcements } from "@/components/announcements";
 import { CompetitionRanking } from "./competition-ranking";
@@ -97,10 +97,9 @@ export function DashboardPageClientOperator() {
 
           {/* ── Bento grid principal ── */}
           <div className="bento-grid">
-            {/* Row 1 : Confiance du jour pleine largeur — "puis-je faire
-                confiance aux sélections d'aujourd'hui", avant tout le reste */}
+            {/* Calibration descriptive des canaux actifs aujourd'hui. */}
             <div className="col-span-2 sm:col-span-6 lg:col-span-12 flex flex-col">
-              <TodayConfidenceCard from={fromIso} to={toIso} />
+              <TodayCalibrationCard from={fromIso} to={toIso} />
             </div>
 
             {/* Row 2 : Performance pleine largeur */}

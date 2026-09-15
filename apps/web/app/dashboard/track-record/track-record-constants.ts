@@ -139,8 +139,8 @@ export function formatCalibrationRatio(value: number | null): string {
 }
 
 // Same signal as ChannelStatusBadge, applied to the calibration-ratio figure
-// so the number reads as trustworthy/borderline/not before the reader parses
-// it — the badge alone left it as flat, uncolored text. NOT applied to the
+// so the deviation band stays visible before the reader parses the number.
+// NOT applied to the
 // ROI figure: `status` is calibration-based (see dashboard.service.ts's
 // calibrationStatus), so tinting ROI by it would color a number the status
 // no longer describes (a channel can show a negative ROI and still be

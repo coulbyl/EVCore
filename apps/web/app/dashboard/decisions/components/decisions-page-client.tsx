@@ -23,7 +23,11 @@ import {
   hasActiveMatchFilters,
   useMatchLens,
 } from "./match-lens";
-import { ChannelList, ChannelGroupByControl, useChannelLens } from "./channel-lens";
+import {
+  ChannelList,
+  ChannelGroupByControl,
+  useChannelLens,
+} from "./channel-lens";
 
 // Single decisions surface: one route, two lenses (by match / by channel)
 // toggled in-page via the channel switcher — "Match" plus one entry per
@@ -78,7 +82,7 @@ export function DecisionsPageClient() {
   const hasFacets = facetsData.leagues.length > 0;
 
   // Real calibration (ratio réel/annoncé), same 90-day window and same
-  // source as Track Record — feeds the per-pick reliability badge
+  // source as Historical Measures — feeds the per-pick calibration-gap badge
   // (channel-row.tsx's CalibrationBadge) instead of the raw claimed-edge
   // figure it replaced. Independent of `date`: settled history doesn't
   // depend on which day's decisions are being browsed.

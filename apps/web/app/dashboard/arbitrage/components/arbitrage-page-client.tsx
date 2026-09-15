@@ -70,7 +70,7 @@ export function ArbitragePageClient() {
   const hasLeagueFacets = leagueOptions.length > 0;
 
   // Same calibration source as Decisions' per-pick badge (channel-row.tsx) —
-  // VANTAGE's own measured reliability on this competition, real ratio
+  // VANTAGE's observed calibration gap on this competition, real ratio
   // réel/annoncé, not the raw claimed-edge figure.
   const calibrationRange = dateRangeForPeriod("90");
   const calibrationStats = useChannelCompetitionStats(

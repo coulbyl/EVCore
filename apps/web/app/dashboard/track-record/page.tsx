@@ -30,7 +30,7 @@ import {
 } from "./track-record-constants";
 
 export const metadata: Metadata = {
-  title: "Historique vérifiable — EVCore",
+  title: "Mesures historiques — EVCore",
   description:
     "Résultats analytiques des sélections EVCore enregistrées avant match ; rendement simulé, versions historiques parfois inconnues.",
 };
@@ -96,7 +96,7 @@ export default async function TrackRecordPage({
         className="flex-col items-start gap-2"
       >
         <Badge variant="accent" className="w-fit">
-          Historique vérifiable
+          Mesures historiques
         </Badge>
         <PageHeaderTitle>
           Ce que le moteur EVCore a réellement produit
@@ -142,10 +142,9 @@ export default async function TrackRecordPage({
               rows={channelStatRows}
             />
             <p className="text-xs leading-5 text-muted-foreground">
-              &quot;Échantillon insuffisant&quot; : moins de 30 paris réglés sur
-              la période — pas assez de volume pour distinguer un vrai edge du
-              bruit statistique. Un canal marqué comme tel n&apos;est ni
-              recommandé, ni exclu — simplement pas encore mesurable.
+              &quot;Volume insuffisant&quot; : moins de 30 sélections réglées
+              sur la période. Ce volume ne permet pas encore d&apos;interpréter
+              l&apos;écart entre probabilité annoncée et réussite réelle.
             </p>
           </section>
 

@@ -39,8 +39,11 @@ Implémentation terminée le 14 septembre 2026 sur la branche
   point-in-time, séparation temporelle par match et test final non utilisé pour
   l'ajustement ;
 - promesse de validation historique retirée du README et libellés produit
-  corrigés ; le chargement de l'historique et les sollicitations onboarding,
-  tour et installation sont désormais ordonnés ;
+  corrigés ; les verdicts « fiable », « à surveiller », « peu fiable » et
+  « recommandé » ont été remplacés dans les parcours concernés par les bandes
+  d'écart de calibration, le volume observé ou une sélection proposée ; le
+  chargement de l'historique et les sollicitations onboarding, tour et
+  installation sont désormais ordonnés ;
 - [`prospective-observation.sql`](prospective-observation.sql) publie le
   calendrier complet, les abstentions et la comparaison appariée coupon contre
   simples à mise totale égale, avec intervalle à 95 %. Au jour de

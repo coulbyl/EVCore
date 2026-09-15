@@ -5,7 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger, cn } from "@evcore/ui";
 import type { ArbitrageFilter } from "./arbitrage-constants";
 
-/** Verdict filter (Toutes/Recommandé/À éviter) — single-select, one
+/** Verdict filter (Toutes/Sélection proposée/Aucune sélection) — single-select, one
  * popover-picker button at every breakpoint, same pattern as
  * LeagueFilterBar/ChannelFilterBar on Decisions. Only 3 fixed options, so no
  * search input (unlike those two, which list a variable, sometimes long set

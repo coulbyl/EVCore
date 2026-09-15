@@ -539,8 +539,9 @@ export function CouponIndicesDrawer({
                         })}
                       </div>
                       <p className="text-[0.68rem] leading-snug text-muted-foreground">
-                        Fiable quand le taux de réussite réel ≥ la probabilité
-                        annoncée par le modèle.
+                        Le marqueur compare uniquement le taux de réussite réel
+                        à la probabilité annoncée. Il ne mesure pas la
+                        rentabilité.
                       </p>
                     </>
                   )}

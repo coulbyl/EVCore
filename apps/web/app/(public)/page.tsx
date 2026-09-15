@@ -123,9 +123,9 @@ const FAMILIES = [
 // se périme pas : il décrit une discipline, pas un résultat.
 const DISCIPLINE = [
   {
-    stat: "19 → 2",
-    title: "Rien n'est mis sur le même plan.",
-    body: "Le moteur fait tourner dix-neuf canaux de prédiction. Deux seulement sont présentés comme assumés à ce jour — ceux dont l'avantage résiste au bruit d'échantillonnage. Les autres restent consultables, et chaque pronostic affiche le résultat mesuré de son canal, y compris quand il est mauvais. EVCore analyse et propose ; la décision et le pari vous appartiennent.",
+    stat: "19",
+    title: "Chaque canal garde sa propre mesure.",
+    body: "Le moteur fait tourner dix-neuf canaux de prédiction. Ils restent consultables avec leur volume, leur calibration observée et leur rendement simulé, sans badge de recommandation. EVCore analyse et propose ; la décision et le pari vous appartiennent.",
   },
   {
     stat: "Nommée",
@@ -135,7 +135,7 @@ const DISCIPLINE = [
   {
     stat: "AVOID",
     title: "Un canal dont le seul rôle est de dire non.",
-    body: "AVOID n'émet jamais de pronostic. Il compare la probabilité du modèle à celle du marché et, quand l'écart devient invraisemblable, il retire le match entier de la publication. C'est le seul signal de sélection du système qui ait tenu sur trois saisons.",
+    body: "AVOID n'émet jamais de pronostic. Il compare la probabilité du modèle à celle du marché et, quand l'écart devient invraisemblable, il retire le match entier de la publication. Son rôle est un garde-fou explicite, pas une promesse de performance.",
   },
 ];
 
@@ -148,7 +148,7 @@ const STEPS = [
   {
     n: "02",
     title: "Une unité de mise, la même partout",
-    body: "Le moteur raisonne à mise unitaire fixe, jamais dimensionnée à sa propre confiance : miser plus quand le modèle est sûr de lui, c'est amplifier ses erreurs les plus coûteuses. C'est la convention de son suivi — et celle qu'il vous recommande.",
+    body: "Le moteur raisonne à mise unitaire fixe, jamais dimensionnée à sa propre confiance : miser plus quand le modèle est sûr de lui, c'est amplifier ses erreurs les plus coûteuses. C'est uniquement la convention utilisée pour comparer ses résultats.",
   },
   {
     n: "03",

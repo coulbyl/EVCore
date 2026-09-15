@@ -19,6 +19,13 @@
     "refunded": "Remboursé",
     "settlementPending": "Règlement en attente"
   },
+  "channelCalibrationStatus": {
+    "within15": "Écart ≤ 15 %",
+    "between15And30": "Écart 15–30 %",
+    "above30": "Écart > 30 %",
+    "notMeasured": "Non mesuré",
+    "insufficientVolume": "Volume insuffisant"
+  },
   "pwaInstall": {
     "title": "Installer EVCore",
     "subtitle": "Accès rapide depuis l'écran d'accueil",
@@ -48,7 +55,7 @@
     "glossary": "Glossaire",
     "technicalDocs": "Documentation technique",
     "formation": "Formation",
-    "trackRecord": "Historique vérifiable",
+    "trackRecord": "Mesures historiques",
     "notifications": "Notifications",
     "settings": "Paramètres",
     "replayTour": "Revoir le guide",
@@ -137,7 +144,7 @@
         "description": "Résultat à la mi-temps combiné au résultat final."
       },
       "VANTAGE": {
-        "description": "Lit les décisions des autres canaux et leur fiabilité mesurée sur cette compétition ; ne propose une sélection que s'il identifie une tension ou un biais concret entre eux."
+        "description": "Lit les décisions des autres canaux et leur calibration observée sur cette compétition ; ne propose une sélection que s'il identifie une tension concrète entre eux."
       }
     },
     "reasons": {
@@ -179,7 +186,7 @@
       "banner": "Données suspectes",
       "tooltipLabel": "Alerte calibration",
       "tooltipDetail": "Le modèle et le marché sont en désaccord fort sur ce match (favori inversé ou écart extrême sur plusieurs bookmakers). Cela signale presque toujours des données d'entrée corrompues plutôt qu'une opportunité — le moteur exclut automatiquement toutes les sélections de ce match des paris réels.",
-      "badgeTooltip": "{status, select, GREEN {Ce canal a été fiable sur cette compétition} ORANGE {Ce canal est à surveiller sur cette compétition — sa réussite s'écarte de ce qu'il annonce} RED {Ce canal a été peu fiable sur cette compétition — sa réussite réelle est nettement inférieure à ce qu'il annonce} other {Fiabilité non mesurable sur cette compétition}} ({n, plural, one {# pari réglé} other {# paris réglés}})."
+      "badgeTooltip": "{status, select, GREEN {Le ratio réussite réelle / probabilité annoncée s'écarte de 15 % au plus de 1} ORANGE {Le ratio réussite réelle / probabilité annoncée s'écarte de 15 à 30 % de 1} RED {Le ratio réussite réelle / probabilité annoncée s'écarte de plus de 30 % de 1} other {Volume insuffisant pour calculer cet écart}} ({n, plural, one {# sélection réglée} other {# sélections réglées}})."
     },
     "consensus": {
       "tooltipLabel": "Signal consensus",
@@ -210,17 +217,17 @@
   "arbitrage": {
     "title": "Avis IA",
     "badge": "Lecture IA",
-    "description": "Lit les décisions des autres canaux et leur fiabilité mesurée sur cette compétition — ne propose un pari que lorsqu'il repère un vrai désaccord entre eux, jamais pour confirmer ce qu'ils disent déjà. Sur la majorité des matchs, la bonne réponse est de ne rien jouer.",
+    "description": "Lit les décisions des autres canaux et leur calibration observée sur cette compétition. Une sélection n'est conservée que lorsqu'un désaccord concret est identifié ; l'absence de sélection reste un résultat normal.",
     "filters": {
       "all": "Toutes",
-      "play": "Recommandé",
-      "noPlay": "Sans avis",
+      "play": "Sélection proposée",
+      "noPlay": "Aucune sélection",
       "label": "Filtre"
     },
     "reasoningLabel": "Analyse IA",
     "sourcesLabel": "Sources",
     "decidedAt": "Décidé le {date}",
-    "noPlay": "Aucune sélection — lecture seule.",
+    "noPlay": "Aucune sélection retenue.",
     "emptyTitle": "Aucune lecture",
     "emptyDescription": "Le canal n'a encore rien analysé pour cette date.",
     "emptyFilteredTitle": "Rien à signaler",
@@ -301,7 +308,7 @@
     },
     "coupons": {
       "title": "Coupons",
-      "description": "Des combinés générés automatiquement à partir des meilleures sélections. Le « ? » ouvre la carte de fiabilité des canaux qu'on combine."
+      "description": "Des combinés générés automatiquement à partir des sélections admissibles. Le « ? » ouvre les mesures de calibration des canaux combinés."
     },
     "betSlipComposer": {
       "title": "Mon coupon",
@@ -316,8 +323,8 @@
       "description": "Ton solde, tes dépôts et ton ROI net — le suivi financier réel, indépendant des abonnements simulés."
     },
     "trackRecord": {
-      "title": "Historique vérifiable",
-      "description": "Ce que le moteur a réellement produit, canal par canal — jamais un échantillon trié, un canal négatif reste affiché comme tel."
+      "title": "Mesures historiques",
+      "description": "Les sélections de la cohorte prématch, canal par canal, avec leur volume, leur calibration et leur rendement simulé."
     },
     "formation": {
       "title": "Formation",
@@ -366,7 +373,7 @@
     "previous": "Précédent",
     "next": "Suivant",
     "related": "À lire aussi",
-    "recommended": "Recommandé",
+    "recommended": "À découvrir",
     "library": "Bibliothèque",
     "allCategories": "Toutes les catégories",
     "allDifficulties": "Tous les niveaux",
@@ -521,13 +528,13 @@
       "leaguesSearchPlaceholder": "Rechercher un championnat ou un pays...",
       "leaguesNoResults": "Aucun championnat ne correspond.",
       "channelsTitle": "Canaux suivis",
-      "channelsHint": "Retrouve ici la fiabilité mesurée des canaux qui t'intéressent — jugée sur leur calibration, c'est-à-dire leur résultat réel comparé à ce qu'ils annoncent.",
+      "channelsHint": "Retrouve ici les mesures de calibration des canaux suivis : réussite réelle comparée à la probabilité annoncée, avec le volume observé.",
       "channelsEmpty": "Aucun canal suivi pour l'instant.",
       "discoverButton": "Découvrir des canaux",
       "discoverSearchPlaceholder": "Rechercher un canal...",
       "discoverEmpty": "Aucun canal ne correspond.",
-      "discoverStatusTooltip": "{status, select, GREEN {Ce canal a été fiable sur les 90 derniers jours} ORANGE {Ce canal est à surveiller sur les 90 derniers jours — sa réussite s'écarte de ce qu'il annonce} RED {Ce canal a été peu fiable sur les 90 derniers jours — sa réussite réelle est nettement inférieure à ce qu'il annonce} other {Fiabilité non mesurable sur les 90 derniers jours}} ({n, plural, one {# pari réglé} other {# paris réglés}}).",
-      "discoverTip": "3 à 5 canaux suffisent pour garder des recommandations lisibles.",
+      "discoverStatusTooltip": "{status, select, GREEN {Écart à la calibration de 15 % au plus sur 90 jours} ORANGE {Écart à la calibration de 15 à 30 % sur 90 jours} RED {Écart à la calibration supérieur à 30 % sur 90 jours} other {Volume insuffisant pour mesurer l'écart sur 90 jours}} ({n, plural, one {# sélection réglée} other {# sélections réglées}}).",
+      "discoverTip": "Suivre 3 à 5 canaux garde cette liste lisible.",
       "follow": "+ Suivre",
       "unfollow": "Retirer",
       "since": "depuis le {date}",
@@ -580,7 +587,7 @@
     },
     "leagueRanking": {
       "title": "Classement ligues",
-      "period": "30j · fiabilité",
+      "period": "30j · calibration",
       "empty": "Pas encore assez de matchs analysés sur les 30 derniers jours."
     },
     "operatorCard": {
@@ -597,27 +604,31 @@
       "notEnoughData": "Pas assez de données",
       "winForm": "En forme",
       "neutral": "Neutre",
-      "toWatch": "À surveiller",
+      "toWatch": "Écart à examiner",
       "pendingResult": "en attente de résultat",
       "pendingResults": "en attente de résultats"
     },
     "todayConfidence": {
       "headline": "Aujourd'hui",
-      "title": "Confiance du moteur",
-      "confidenceHigh": "Confiance élevée",
-      "confidenceModerate": "Confiance modérée",
-      "confidenceLow": "Confiance faible",
-      "confidenceUnknown": "Pas assez de données",
-      "toFollow": "À suivre aujourd'hui",
-      "toAvoid": "À éviter aujourd'hui",
-      "emptyFollow": "Aucune sélection fiable aujourd'hui",
-      "emptyAvoid": "Aucun canal à éviter aujourd'hui"
+      "title": "Calibration des canaux actifs",
+      "confidenceHigh": "Écart ≤ 15 %",
+      "confidenceModerate": "Écart jusqu'à 30 %",
+      "confidenceLow": "Écart > 30 % détecté",
+      "confidenceUnknown": "Volume insuffisant",
+      "toFollow": "Sélections issues de canaux avec un écart ≤ 15 %",
+      "toAvoid": "Canaux avec un écart > 30 %",
+      "emptyFollow": "Aucune sélection dans cette tranche aujourd'hui",
+      "emptyAvoid": "Aucun canal dans cette tranche aujourd'hui"
     },
     "engineHealth": {
       "headline": "Santé moteur",
       "title": "Vue d'ensemble",
+      "globalClose": "Écart global ≤ 15 %",
+      "globalModerateGap": "Écart global jusqu'à 30 %",
+      "globalLargeGap": "Écart fort ou marché suspendu",
+      "globalUnknown": "Volume insuffisant",
       "globalRatio": "Ratio calibration",
-      "redChannels": "Canaux peu fiables",
+      "redChannels": "Canaux avec écart > 30 %",
       "activeSuspensions": "Marchés suspendus",
       "trend": "Tendance",
       "trendCaption": "7j vs 30j",
@@ -761,7 +772,7 @@
     "tabCalibration": "Calibration modèle",
     "channelsHint": "ROI mise plate par canal × ligue sur les sélections réglées.",
     "calibrationModelHint": "Qualité du modèle 1X2 (Brier / ECE) par ligue — indépendant des canaux.",
-    "tuningHint": "Sweep de seuils hors-ligne → seuil recommandé par ligue. Consultatif : à reporter manuellement dans la config.",
+    "tuningHint": "Sweep de seuils hors-ligne → meilleur seuil observé par ligue. Résultat consultatif à confirmer hors échantillon.",
     "runAnalysis": "Lancer l'analyse",
     "analysisWindow": "Fenêtre {from} → {to}",
     "analysisWindowPicker": "Fenêtre (défaut : 1 an)",
@@ -778,7 +789,7 @@
     "colAnalyzed": "Analysés",
     "colEce": "ECE",
     "colCurrent": "Actuel",
-    "colRecommended": "Recommandé",
+    "colRecommended": "Meilleur seuil observé",
     "colRecRoi": "ROI reco",
     "colRecSample": "Échantillon",
     "colSegment": "Ligne",

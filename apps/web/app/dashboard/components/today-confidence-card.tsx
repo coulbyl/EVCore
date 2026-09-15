@@ -10,7 +10,10 @@ import {
   channelLabel,
   CHANNEL_COLOR,
 } from "@/app/dashboard/decisions/components/channel-constants";
-import { formatMarketForDisplay, formatPickForDisplay } from "@/helpers/fixture";
+import {
+  formatMarketForDisplay,
+  formatPickForDisplay,
+} from "@/helpers/fixture";
 import type { ChannelHealthItem } from "@/domains/dashboard/types/dashboard";
 import type {
   SelectionResult,
@@ -30,19 +33,19 @@ function toBetStatus(
     : null;
 }
 
-type Confidence = "HIGH" | "MODERATE" | "LOW" | "UNKNOWN";
+type CalibrationLevel = "CLOSE" | "MODERATE_GAP" | "LARGE_GAP" | "UNKNOWN";
 
-const CONFIDENCE_BADGE_VARIANT: Record<
-  Confidence,
-  "success" | "warning" | "destructive" | "neutral"
+const CALIBRATION_BADGE_VARIANT: Record<
+  CalibrationLevel,
+  "outline" | "warning" | "destructive" | "neutral"
 > = {
-  HIGH: "success",
-  MODERATE: "warning",
-  LOW: "destructive",
+  CLOSE: "outline",
+  MODERATE_GAP: "warning",
+  LARGE_GAP: "destructive",
   UNKNOWN: "neutral",
 };
 
-type FollowPick = {
+type CalibrationBandPick = {
   key: string;
   homeTeam: string;
   awayTeam: string;
@@ -65,11 +68,16 @@ function todayIso() {
 }
 
 // Cross-references today's SELECTED picks (channel-decisions/by-channel) with
-// each channel's calibration status (dashboard/channel-health, same GREEN/
-// ORANGE/RED used by the admin EngineHealthCard) — never a raw ratio shown
-// here, only the derived confidence badge and the two plain-language lists,
-// per docs/dashboard-operator-admin-redesign-2026-09-04.md étape 1.
-export function TodayConfidenceCard({ from, to }: { from: string; to: string }) {
+// each channel's calibration status (dashboard/channel-health). The visible
+// labels describe measured deviation bands and never turn them into a betting
+// recommendation.
+export function TodayCalibrationCard({
+  from,
+  to,
+}: {
+  from: string;
+  to: string;
+}) {
   const t = useTranslations("dashboard.todayConfidence");
   const locale = useLocale();
   const marketLocale = locale === "en" ? "en" : "fr";
@@ -85,13 +93,13 @@ export function TodayConfidenceCard({ from, to }: { from: string; to: string }) 
     [health],
   );
 
-  const { confidence, toFollow, toAvoid } = useMemo(() => {
+  const { calibrationLevel, lowGapPicks, highGapChannels } = useMemo(() => {
     let sawGreen = false;
     let sawRed = false;
     let sawAny = false;
-    const follow: FollowPick[] = [];
+    const picksWithin15: CalibrationBandPick[] = [];
     const seenFixtures = new Set<string>();
-    const avoidChannels: StrategyChannel[] = [];
+    const channelsAbove30: StrategyChannel[] = [];
 
     for (const group of channelGroups) {
       const status: ChannelHealthItem["status"] | undefined =
@@ -101,7 +109,7 @@ export function TodayConfidenceCard({ from, to }: { from: string; to: string }) 
       }
       if (status === "RED") {
         sawRed = true;
-        avoidChannels.push(group.channel);
+        channelsAbove30.push(group.channel);
       }
       if (status === "GREEN") {
         sawGreen = true;
@@ -110,7 +118,7 @@ export function TodayConfidenceCard({ from, to }: { from: string; to: string }) 
           const selection = decision.selections[0];
           if (!selection) continue;
           seenFixtures.add(decision.fixtureId);
-          follow.push({
+          picksWithin15.push({
             key: decision.fixtureId,
             homeTeam: decision.homeTeam,
             awayTeam: decision.awayTeam,
@@ -131,18 +139,18 @@ export function TodayConfidenceCard({ from, to }: { from: string; to: string }) 
       }
     }
 
-    const level: Confidence = !sawAny
+    const level: CalibrationLevel = !sawAny
       ? "UNKNOWN"
       : sawRed
-        ? "LOW"
+        ? "LARGE_GAP"
         : sawGreen
-          ? "HIGH"
-          : "MODERATE";
+          ? "CLOSE"
+          : "MODERATE_GAP";
 
     return {
-      confidence: level,
-      toFollow: follow.slice(0, MAX_PICKS_SHOWN),
-      toAvoid: avoidChannels,
+      calibrationLevel: level,
+      lowGapPicks: picksWithin15.slice(0, MAX_PICKS_SHOWN),
+      highGapChannels: channelsAbove30,
     };
   }, [channelGroups, healthByChannel, marketLocale]);
 
@@ -162,13 +170,13 @@ export function TodayConfidenceCard({ from, to }: { from: string; to: string }) 
         {isLoading ? (
           <div className="h-6 w-32 animate-pulse rounded-full bg-secondary" />
         ) : (
-          <Badge variant={CONFIDENCE_BADGE_VARIANT[confidence]}>
+          <Badge variant={CALIBRATION_BADGE_VARIANT[calibrationLevel]}>
             {t(
-              confidence === "HIGH"
+              calibrationLevel === "CLOSE"
                 ? "confidenceHigh"
-                : confidence === "MODERATE"
+                : calibrationLevel === "MODERATE_GAP"
                   ? "confidenceModerate"
-                  : confidence === "LOW"
+                  : calibrationLevel === "LARGE_GAP"
                     ? "confidenceLow"
                     : "confidenceUnknown",
             )}
@@ -185,13 +193,13 @@ export function TodayConfidenceCard({ from, to }: { from: string; to: string }) 
             <div className="h-20 animate-pulse rounded-xl bg-secondary" />
             <div className="h-20 animate-pulse rounded-xl bg-secondary" />
           </div>
-        ) : toFollow.length === 0 ? (
+        ) : lowGapPicks.length === 0 ? (
           <p className="mt-2 text-sm text-muted-foreground">
             {t("emptyFollow")}
           </p>
         ) : (
           <div className="mt-2 flex flex-col gap-2">
-            {toFollow.map((pick) => (
+            {lowGapPicks.map((pick) => (
               <PickCard
                 key={pick.key}
                 homeTeam={pick.homeTeam}
@@ -223,13 +231,13 @@ export function TodayConfidenceCard({ from, to }: { from: string; to: string }) 
         </p>
         {isLoading ? (
           <div className="mt-2 h-8 animate-pulse rounded-lg bg-secondary" />
-        ) : toAvoid.length === 0 ? (
+        ) : highGapChannels.length === 0 ? (
           <p className="mt-2 text-sm text-muted-foreground">
             {t("emptyAvoid")}
           </p>
         ) : (
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {toAvoid.map((channel) => (
+            {highGapChannels.map((channel) => (
               <Badge key={channel} variant="destructive">
                 {channelLabel(channel, locale)}
               </Badge>
