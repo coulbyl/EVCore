@@ -7,6 +7,10 @@ Outil ajouté après remédiation :
   jambes jouées en simples à mise totale égale, écart apparié et intervalle à
   95 %. Syntaxe validée sur PostgreSQL 18 local le 14/09/2026 ; zéro journée
   réglée à cette date.
+- `deterministic-shadow-scorecard.sql` : lecture seule ; détail et ROI des
+  tentatives shadow `deterministic-5-7-v1`, réglées par leurs identifiants de
+  `ChannelSelection`. Syntaxe validée sur PostgreSQL 18 local le 15/09/2026 ;
+  zéro tentative shadow à cette date.
 
 - packages/db/scripts/analyze-edge.ts: charge dotenv — non exécuté, client DB direct
 - packages/db/scripts/analyze-signals.ts: charge dotenv — non exécuté, client DB direct, utilise analyzedAt

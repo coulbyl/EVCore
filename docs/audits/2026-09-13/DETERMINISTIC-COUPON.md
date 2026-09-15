@@ -1,8 +1,8 @@
 # Expérience — composeur de coupon déterministe
 
-Statut : **candidat `deterministic-5-7-v1` figé avant évaluation finale**. Le
-générateur LLM existant et sa politique `unified-5-15-v1` restent actifs et
-inchangés.
+Statut : **candidat `deterministic-5-7-v1` non validé pour remplacer le LLM,
+placé en observation shadow prospective**. Le générateur LLM existant et sa
+politique `unified-5-15-v1` restent actifs et inchangés.
 
 ## Baseline déterministe
 
@@ -62,10 +62,37 @@ Version : `deterministic-5-7-v1`.
   pour le moins de jambes ;
 - abstention si aucune combinaison admissible n'existe.
 
-La période finale est fixée au **30 août–13 septembre 2026**. La baseline
-historique couvrait déjà ces dates, mais la configuration candidate n'a pas été
-exécutée sur ces 15 journées pendant sa sélection. Aucune règle ne sera
-modifiée à partir du résultat final.
+La période finale a été fixée au **30 août–13 septembre 2026**. La baseline
+historique couvrait déjà ces dates, mais la configuration candidate n'avait pas
+été exécutée sur ces 15 journées pendant sa sélection. Le candidat a été figé
+dans le commit `5fbbc17a` avant son unique exécution sur cette période.
+
+## Évaluation finale
+
+| Période finale | Coupons réglés | Gagnés | Perdus | Abstentions | Réussite | ROI |
+| -------------- | -------------: | -----: | -----: | ----------: | -------: | --: |
+| 30 août–13 septembre | 12 | 2 | 10 | 3 | 16,7 % | −6,9 % |
+
+La cote moyenne est 5,28. Les probabilités du composeur annonçaient environ
+3,05 coupons gagnants sur ces 12 essais ; deux ont gagné. L'intervalle à 95 %
+du ROI va de −130,6 % à +116,9 %. Cette fenêtre ne démontre ni une panne nette
+de la règle ni sa rentabilité, mais elle échoue au critère minimal d'un ROI
+final positif. Le candidat ne remplace donc pas le générateur LLM.
+
+## Observation prospective
+
+Le worker exécute désormais le candidat en parallèle sur le même vivier scoré,
+avant la composition LLM. Il inscrit une tentative append-only sous la version
+`deterministic-5-7-v1`, avec ses jambes, probabilités et cotes dans `metadata`.
+Il ne crée jamais de `CouponProposal` et ne change jamais le coupon présenté
+aux utilisateurs. Une erreur d'enregistrement shadow est journalisée sans
+bloquer la voie LLM.
+
+Le shadow exclut VANTAGE et les marchés évalués sans `ChannelSelection`, comme
+le backtest qui a servi à figer le candidat. Les résultats prospectifs sont
+reproductibles avec `deterministic-shadow-scorecard.sql`. Une nouvelle décision
+demande une fenêtre prospective suffisamment longue, étudiée sans retoucher
+`deterministic-5-7-v1`.
 
 ## Limites du rejeu
 
@@ -84,6 +111,8 @@ Rapports de développement :
 - `packages/backtest-core/reports/deterministic-coupon-sweep-2026-07-01-2026-08-29.json`
 - `packages/backtest-core/reports/deterministic-coupon-candidate-max3-odds7-edge075-2026-07-01-2026-08-29.md`
 - `packages/backtest-core/reports/deterministic-coupon-candidate-max3-odds7-edge075-2026-07-01-2026-08-29.json`
+- `packages/backtest-core/reports/deterministic-coupon-candidate-max3-odds7-edge075-2026-08-30-2026-09-13.md`
+- `packages/backtest-core/reports/deterministic-coupon-candidate-max3-odds7-edge075-2026-08-30-2026-09-13.json`
 
 Commandes reproductibles, avec `DATABASE_URL` fourni explicitement par
 l'environnement d'exécution :

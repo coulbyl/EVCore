@@ -6,6 +6,7 @@ import {
 import type { LlmClients } from "../groq/client";
 import { computeChannelReliability } from "./channel-reliability-query";
 import { composeCouponClass } from "./compose-coupon-class";
+import { buildDeterministicShadowAttempt } from "./compose-deterministic-shadow";
 import type { CouponLlmProvenance } from "./generate-coupon-selection";
 import { getPoolForRange } from "./pool-query";
 import { persistCouponProposal } from "./persist-coupon-proposal";
@@ -48,6 +49,29 @@ async function runComposePersistPass(
     signalWindowDays?: number;
   },
 ): Promise<void> {
+  const shadowAttempt = buildDeterministicShadowAttempt({
+    scoredPool,
+    forDate,
+    pass: persistOpts.pass,
+  });
+  try {
+    await recordGenerationAttempt(shadowAttempt);
+    logger.info(
+      {
+        ...logContext,
+        policyVersion: shadowAttempt.policyVersion,
+        outcome: shadowAttempt.outcome,
+        candidateCount: shadowAttempt.candidateCount,
+      },
+      "coupon: deterministic shadow recorded",
+    );
+  } catch (error) {
+    logger.warn(
+      { ...logContext, error },
+      "coupon: deterministic shadow could not be recorded",
+    );
+  }
+
   for (const couponClass of [UNIFIED_COUPON_CLASS]) {
     let llmProvenance: CouponLlmProvenance | null = null;
     const result = await composeCouponClass(

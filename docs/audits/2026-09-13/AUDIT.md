@@ -49,12 +49,14 @@ Implémentation terminée le 14 septembre 2026 sur la branche
   simples à mise totale égale, avec intervalle à 95 %. Au jour de
   l'implémentation, il retourne zéro journée réglée : aucune performance
   prospective n'est encore revendiquée ;
-- [`DETERMINISTIC-COUPON.md`](DETERMINISTIC-COUPON.md) conserve le premier
-  composeur sans IA comme expérience séparée. Son split chronologique donne
-  +8,7 % sur les 60 % premières journées, puis −20,1 % sur les 40 % de
-  validation : il ne remplace donc pas le générateur LLM actif.
+- [`DETERMINISTIC-COUPON.md`](DETERMINISTIC-COUPON.md) documente l'itération
+  sans IA. Le candidat `deterministic-5-7-v1`, figé sur 60 journées de
+  développement à +35,0 %, obtient −6,9 % sur les 15 journées finales. Il ne
+  remplace pas le générateur LLM actif et s'exécute désormais en shadow pour
+  accumuler une cohorte prospective traçable, exploitable avec
+  [`deterministic-shadow-scorecard.sql`](deterministic-shadow-scorecard.sql).
 
-Vérifications : 724 tests backend, 498 analysis-core, 122 vantage-worker, 19
+Vérifications : 724 tests backend, 499 analysis-core, 124 vantage-worker, 19
 backtest-core et 75 tests Python passent. Les typechecks backend, worker et web
 passent. Le lint monorepo passe avec les deux avertissements `<img>` frontend
 préexistants autorisés. Le schéma Prisma, la migration et le scorecard SQL ont

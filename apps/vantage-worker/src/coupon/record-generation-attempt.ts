@@ -5,10 +5,18 @@ import type { CouponLlmProvenance } from "./generate-coupon-selection";
 export type GenerationAttempt = {
   forDate: Date;
   pass: "EVENING" | "INTRADAY";
-  outcome: "PUBLISHED" | "PRESERVED" | "ABSTAINED" | "INVALID";
+  outcome:
+    | "PUBLISHED"
+    | "PRESERVED"
+    | "ABSTAINED"
+    | "INVALID"
+    | "SHADOW_COMPOSED"
+    | "SHADOW_ABSTAINED";
   candidateCount: number;
   reason?: string;
   llmProvenance?: CouponLlmProvenance | null;
+  metadata?: Record<string, unknown>;
+  policyVersion?: string;
   proposalId?: string;
 };
 
@@ -17,14 +25,15 @@ export type GenerationAttempt = {
 export async function recordGenerationAttempt(
   attempt: GenerationAttempt,
 ): Promise<void> {
+  const metadata = attempt.metadata ?? { llm: attempt.llmProvenance ?? null };
   await prisma.$executeRaw(Prisma.sql`
     INSERT INTO coupon_generation_attempt
       ("forDate", "policyVersion", pass, outcome, "candidateCount", reason,
        metadata, "proposalId")
     VALUES
-      (${attempt.forDate}, ${COUPON_POLICY_VERSION}, ${attempt.pass},
+      (${attempt.forDate}, ${attempt.policyVersion ?? COUPON_POLICY_VERSION}, ${attempt.pass},
        ${attempt.outcome}, ${attempt.candidateCount}, ${attempt.reason ?? null},
-       ${JSON.stringify({ llm: attempt.llmProvenance ?? null })}::jsonb,
+       ${JSON.stringify(metadata)}::jsonb,
        ${attempt.proposalId ?? null}::uuid)
   `);
 }
