@@ -2,6 +2,9 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   DETERMINISTIC_COUPON_POLICY_VERSION,
+  DETERMINISTIC_COUPON_BOUNDS,
+  DETERMINISTIC_COUPON_CLASS,
+  DETERMINISTIC_MAX_POSITIVE_EDGE,
   UNIFIED_COUPON_BOUNDS,
   UNIFIED_COUPON_CLASS,
   calibrateLegProbability,
@@ -24,6 +27,112 @@ type ReplayRow = {
   result: CouponReplaySelection["result"];
 };
 
+type ComposerConfig = {
+  name: string;
+  maxLegs: number;
+  maxCombinedOdds: number;
+  maxLegOdds: number;
+  minProbability: number;
+  maxPositiveEdge: number;
+};
+
+const BASELINE_CONFIG: ComposerConfig = {
+  name: "baseline",
+  maxLegs: 5,
+  maxCombinedOdds: 15,
+  maxLegOdds: 15.01,
+  minProbability: 0,
+  maxPositiveEdge: 0.1,
+};
+
+const BASELINE_POLICY_VERSION = "deterministic-5-15-v1";
+
+const CANDIDATE_CONFIG: ComposerConfig = {
+  name: "candidate-max3-odds7-edge075",
+  maxLegs: DETERMINISTIC_COUPON_BOUNDS.maxLegs,
+  maxCombinedOdds: DETERMINISTIC_COUPON_BOUNDS.maxCombinedOdds,
+  maxLegOdds: DETERMINISTIC_COUPON_CLASS.maxLegOdds,
+  minProbability: 0,
+  maxPositiveEdge: DETERMINISTIC_MAX_POSITIVE_EDGE,
+};
+
+const RESEARCH_CONFIGS: readonly ComposerConfig[] = [
+  BASELINE_CONFIG,
+  { ...BASELINE_CONFIG, name: "max-3-legs", maxLegs: 3 },
+  { ...BASELINE_CONFIG, name: "max-2-legs", maxLegs: 2 },
+  { ...BASELINE_CONFIG, name: "odds-max-7", maxCombinedOdds: 7 },
+  { ...BASELINE_CONFIG, name: "odds-max-6", maxCombinedOdds: 6 },
+  { ...BASELINE_CONFIG, name: "leg-odds-max-3", maxLegOdds: 3 },
+  { ...BASELINE_CONFIG, name: "leg-odds-max-2.5", maxLegOdds: 2.5 },
+  { ...BASELINE_CONFIG, name: "prob-min-40", minProbability: 0.4 },
+  { ...BASELINE_CONFIG, name: "prob-min-50", minProbability: 0.5 },
+  { ...BASELINE_CONFIG, name: "edge-max-075", maxPositiveEdge: 0.075 },
+  { ...BASELINE_CONFIG, name: "edge-max-050", maxPositiveEdge: 0.05 },
+  {
+    ...BASELINE_CONFIG,
+    name: "max3-odds7-edge075",
+    maxLegs: 3,
+    maxCombinedOdds: 7,
+    maxPositiveEdge: 0.075,
+  },
+  {
+    ...BASELINE_CONFIG,
+    name: "max3-odds7-edge050",
+    maxLegs: 3,
+    maxCombinedOdds: 7,
+    maxPositiveEdge: 0.05,
+  },
+  {
+    ...BASELINE_CONFIG,
+    name: "max3-odds7-prob40",
+    maxLegs: 3,
+    maxCombinedOdds: 7,
+    minProbability: 0.4,
+  },
+  {
+    ...BASELINE_CONFIG,
+    name: "max3-odds6.5-edge075",
+    maxLegs: 3,
+    maxCombinedOdds: 6.5,
+    maxPositiveEdge: 0.075,
+  },
+  {
+    ...BASELINE_CONFIG,
+    name: "max3-odds7.5-edge075",
+    maxLegs: 3,
+    maxCombinedOdds: 7.5,
+    maxPositiveEdge: 0.075,
+  },
+  {
+    ...BASELINE_CONFIG,
+    name: "max2-odds7-edge075",
+    maxLegs: 2,
+    maxCombinedOdds: 7,
+    maxPositiveEdge: 0.075,
+  },
+  {
+    ...BASELINE_CONFIG,
+    name: "max3-odds7-edge065",
+    maxLegs: 3,
+    maxCombinedOdds: 7,
+    maxPositiveEdge: 0.065,
+  },
+  {
+    ...BASELINE_CONFIG,
+    name: "max3-odds7-edge085",
+    maxLegs: 3,
+    maxCombinedOdds: 7,
+    maxPositiveEdge: 0.085,
+  },
+  {
+    ...BASELINE_CONFIG,
+    name: "max3-odds7-edge090",
+    maxLegs: 3,
+    maxCombinedOdds: 7,
+    maxPositiveEdge: 0.09,
+  },
+];
+
 type DailyResult = {
   day: string;
   outcome: "WON" | "LOST" | "VOID" | "ABSTAINED" | "UNRESOLVED";
@@ -31,6 +140,15 @@ type DailyResult = {
   legCount: number;
   combinedOdds: number | null;
   profit: number | null;
+  legs: Array<{
+    fixtureId: string;
+    channel: string;
+    market: string;
+    pick: string;
+    probability: number;
+    odds: number;
+    result: CouponReplaySelection["result"];
+  }>;
 };
 
 function option(name: string): string | undefined {
@@ -126,15 +244,33 @@ function candidateKey(candidate: CouponLeg): string {
   ].join(":");
 }
 
-function settle(day: string, rows: ReplayRow[]): DailyResult {
-  const candidates = rows.map((row) => row.candidate);
+function settle(
+  day: string,
+  rows: ReplayRow[],
+  config: ComposerConfig = BASELINE_CONFIG,
+): DailyResult {
+  const filteredRows = rows.filter((row) => {
+    const probability =
+      row.candidate.calibratedProbability ?? row.candidate.probability;
+    return probability >= config.minProbability;
+  });
+  const candidates = filteredRows.map((row) => row.candidate);
   const results = new Map(
-    rows.map((row) => [candidateKey(row.candidate), row.result]),
+    filteredRows.map((row) => [candidateKey(row.candidate), row.result]),
   );
   const composed = composeDeterministicCoupon(
     candidates,
-    UNIFIED_COUPON_CLASS,
-    UNIFIED_COUPON_BOUNDS,
+    {
+      ...UNIFIED_COUPON_CLASS,
+      maxLegs: config.maxLegs,
+      maxLegOdds: config.maxLegOdds,
+    },
+    {
+      ...UNIFIED_COUPON_BOUNDS,
+      maxLegs: config.maxLegs,
+      maxCombinedOdds: config.maxCombinedOdds,
+    },
+    { maxPositiveEdge: config.maxPositiveEdge },
   );
   if (composed.outcome !== "composed") {
     return {
@@ -144,11 +280,21 @@ function settle(day: string, rows: ReplayRow[]): DailyResult {
       legCount: 0,
       combinedOdds: null,
       profit: 0,
+      legs: [],
     };
   }
 
   const legs = composed.coupon.legs;
   const resultFor = (leg: CouponLeg) => results.get(candidateKey(leg)) ?? null;
+  const legReports = legs.map((leg) => ({
+    fixtureId: leg.fixtureId,
+    channel: leg.canal,
+    market: leg.market,
+    pick: leg.pick,
+    probability: leg.calibratedProbability ?? leg.probability,
+    odds: leg.oddsSnapshot as number,
+    result: resultFor(leg),
+  }));
   if (
     legs.some((leg) => resultFor(leg) === null || resultFor(leg) === "PENDING")
   ) {
@@ -159,6 +305,7 @@ function settle(day: string, rows: ReplayRow[]): DailyResult {
       legCount: legs.length,
       combinedOdds: composed.coupon.combinedOdds,
       profit: null,
+      legs: legReports,
     };
   }
   if (legs.some((leg) => resultFor(leg) === "LOST")) {
@@ -169,6 +316,7 @@ function settle(day: string, rows: ReplayRow[]): DailyResult {
       legCount: legs.length,
       combinedOdds: composed.coupon.combinedOdds,
       profit: -1,
+      legs: legReports,
     };
   }
   const surviving = legs.filter((leg) => resultFor(leg) === "WON");
@@ -180,6 +328,7 @@ function settle(day: string, rows: ReplayRow[]): DailyResult {
       legCount: legs.length,
       combinedOdds: composed.coupon.combinedOdds,
       profit: 0,
+      legs: legReports,
     };
   }
   const realizedOdds = surviving.reduce(
@@ -193,7 +342,12 @@ function settle(day: string, rows: ReplayRow[]): DailyResult {
     legCount: legs.length,
     combinedOdds: composed.coupon.combinedOdds,
     profit: realizedOdds - 1,
+    legs: legReports,
   };
+}
+
+function hasFlag(name: string): boolean {
+  return process.argv.includes(name);
 }
 
 function stats(rows: DailyResult[]) {
@@ -260,7 +414,7 @@ async function main(): Promise<void> {
   if (from > to) throw new Error("--from must be before --to");
 
   const loader = new PointInTimeLoader();
-  const rows: DailyResult[] = [];
+  const replayDays: Array<{ day: string; rows: ReplayRow[] }> = [];
   for (let day = from; day <= to; day = addDays(day, 1)) {
     const asOf = new Date(day);
     const [selections, observations] = await Promise.all([
@@ -272,20 +426,64 @@ async function main(): Promise<void> {
       loader.loadCouponCalibrationObservations(asOf),
     ]);
     const calibration = calibrationFor(observations);
-    rows.push(
-      settle(
-        formatDay(day),
-        selections.map((selection) => toCandidate(selection, calibration)),
-      ),
-    );
+    replayDays.push({
+      day: formatDay(day),
+      rows: selections.map((selection) => toCandidate(selection, calibration)),
+    });
   }
+
+  if (hasFlag("--sweep")) {
+    const sweep = RESEARCH_CONFIGS.map((config) => {
+      const rows = replayDays.map((entry) =>
+        settle(entry.day, entry.rows, config),
+      );
+      const foldSize = Math.ceil(rows.length / 3);
+      return {
+        config,
+        overall: stats(rows),
+        folds: [0, 1, 2].map((index) =>
+          stats(rows.slice(index * foldSize, (index + 1) * foldSize)),
+        ),
+      };
+    });
+    const reportsDir = join(process.cwd(), "reports");
+    mkdirSync(reportsDir, { recursive: true });
+    const stem = `deterministic-coupon-sweep-${formatDay(from)}-${formatDay(to)}`;
+    writeFileSync(
+      join(reportsDir, `${stem}.json`),
+      `${JSON.stringify({ period: { from: formatDay(from), to: formatDay(to) }, sweep }, null, 2)}\n`,
+    );
+    for (const row of sweep) {
+      console.log(
+        [
+          row.config.name.padEnd(24),
+          `n=${String(row.overall.coupons).padStart(2)}`,
+          `roi=${pct(row.overall.roi).padStart(7)}`,
+          `folds=${row.folds.map((fold) => pct(fold.roi)).join(",")}`,
+          `abst=${row.overall.abstained}`,
+        ].join("  "),
+      );
+    }
+    return;
+  }
+
+  const selectedConfig =
+    option("--config") === "candidate" ? CANDIDATE_CONFIG : BASELINE_CONFIG;
+  const rows = replayDays.map((entry) =>
+    settle(entry.day, entry.rows, selectedConfig),
+  );
+  const policyVersion =
+    selectedConfig === CANDIDATE_CONFIG
+      ? DETERMINISTIC_COUPON_POLICY_VERSION
+      : BASELINE_POLICY_VERSION;
 
   const splitIndex = Math.floor(rows.length * 0.6);
   const report = {
-    policyVersion: DETERMINISTIC_COUPON_POLICY_VERSION,
+    policyVersion,
     livePolicyUnchanged: "unified-5-15-v1",
     generatedAt: new Date().toISOString(),
     period: { from: formatDay(from), to: formatDay(to) },
+    composerConfig: selectedConfig,
     objective: "max_joint_probability_then_coupon_ev_then_fewer_legs",
     limitations: [
       "Historical stored channel decisions are replayed; the current engine is not recomputed.",
@@ -302,13 +500,13 @@ async function main(): Promise<void> {
 
   const reportsDir = join(process.cwd(), "reports");
   mkdirSync(reportsDir, { recursive: true });
-  const stem = `deterministic-coupon-${formatDay(from)}-${formatDay(to)}`;
+  const stem = `deterministic-coupon-${selectedConfig.name}-${formatDay(from)}-${formatDay(to)}`;
   writeFileSync(
     join(reportsDir, `${stem}.json`),
     `${JSON.stringify(report, null, 2)}\n`,
   );
   const markdown = [
-    `# Backtest ${DETERMINISTIC_COUPON_POLICY_VERSION}`,
+    `# Backtest ${policyVersion}`,
     "",
     `Période : ${report.period.from} → ${report.period.to}. Politique LLM active inchangée.`,
     "",

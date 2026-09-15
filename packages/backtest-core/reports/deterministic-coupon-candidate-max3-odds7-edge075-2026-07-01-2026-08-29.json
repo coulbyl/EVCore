@@ -1,0 +1,1811 @@
+{
+  "policyVersion": "deterministic-5-7-v1",
+  "livePolicyUnchanged": "unified-5-15-v1",
+  "generatedAt": "2026-09-15T15:11:06.705Z",
+  "period": {
+    "from": "2026-07-01",
+    "to": "2026-08-29"
+  },
+  "composerConfig": {
+    "name": "candidate-max3-odds7-edge075",
+    "maxLegs": 3,
+    "maxCombinedOdds": 7,
+    "maxLegOdds": 15.01,
+    "minProbability": 0,
+    "maxPositiveEdge": 0.075
+  },
+  "objective": "max_joint_probability_then_coupon_ev_then_fewer_legs",
+  "limitations": [
+    "Historical stored channel decisions are replayed; the current engine is not recomputed.",
+    "Stored selection odds are used because legacy selections have no immutable odds-snapshot link.",
+    "Evaluated-market candidates are excluded; only stored rank-one selections are eligible.",
+    "VANTAGE candidates are excluded, so neither composition nor candidate production uses AI.",
+    "Historical AVOID signals and past schedule revisions cannot be reconstructed."
+  ],
+  "overall": {
+    "days": 60,
+    "coupons": 50,
+    "won": 13,
+    "lost": 37,
+    "void": 0,
+    "abstained": 10,
+    "unresolved": 0,
+    "hitRate": 0.26,
+    "averageOdds": 5.28345434,
+    "averageLegs": 2.54,
+    "roi": 0.35019574000000003,
+    "roiCi95": [
+      -0.29247712554799804,
+      0.992868605547998
+    ]
+  },
+  "train": {
+    "days": 36,
+    "coupons": 28,
+    "won": 6,
+    "lost": 22,
+    "void": 0,
+    "abstained": 8,
+    "unresolved": 0,
+    "hitRate": 0.21428571428571427,
+    "averageOdds": 5.3234688214285715,
+    "averageLegs": 2.5357142857142856,
+    "roi": 0.15527692857142864,
+    "roiCi95": [
+      -0.6831745046842478,
+      0.993728361827105
+    ]
+  },
+  "validation": {
+    "days": 24,
+    "coupons": 22,
+    "won": 7,
+    "lost": 15,
+    "void": 0,
+    "abstained": 2,
+    "unresolved": 0,
+    "hitRate": 0.3181818181818182,
+    "averageOdds": 5.232526818181817,
+    "averageLegs": 2.5454545454545454,
+    "roi": 0.5982742272727273,
+    "roiCi95": [
+      -0.4115936871471664,
+      1.608142141692621
+    ]
+  },
+  "daily": [
+    {
+      "day": "2026-07-01",
+      "outcome": "ABSTAINED",
+      "candidateCount": 0,
+      "legCount": 0,
+      "combinedOdds": null,
+      "profit": 0,
+      "legs": []
+    },
+    {
+      "day": "2026-07-02",
+      "outcome": "ABSTAINED",
+      "candidateCount": 6,
+      "legCount": 0,
+      "combinedOdds": null,
+      "profit": 0,
+      "legs": []
+    },
+    {
+      "day": "2026-07-03",
+      "outcome": "ABSTAINED",
+      "candidateCount": 18,
+      "legCount": 0,
+      "combinedOdds": null,
+      "profit": 0,
+      "legs": []
+    },
+    {
+      "day": "2026-07-04",
+      "outcome": "LOST",
+      "candidateCount": 45,
+      "legCount": 3,
+      "combinedOdds": 5.02112,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f25b4-553a-725c-af70-4189ef1b5e2f",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER_3_5",
+          "probability": 0.7365,
+          "odds": 1.42,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f25b4-bb53-75e3-9286-40bc335fe670",
+          "channel": "BTTS",
+          "market": "BTTS",
+          "pick": "YES",
+          "probability": 0.6307,
+          "odds": 1.7,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "019f25b4-5547-7bc4-9cdb-bcfed1170bbc",
+          "channel": "DOMINANT",
+          "market": "ONE_X_TWO",
+          "pick": "AWAY",
+          "probability": 0.4999,
+          "odds": 2.08,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-05",
+      "outcome": "LOST",
+      "candidateCount": 20,
+      "legCount": 2,
+      "combinedOdds": 5.8561000000000005,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f2adb-2e46-72e8-989b-b05bcd6c363e",
+          "channel": "BTTS",
+          "market": "BTTS",
+          "pick": "YES",
+          "probability": 0.6907,
+          "odds": 1.57,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f2adb-2b44-7519-ab74-9eb5f4c217a7",
+          "channel": "DRAW",
+          "market": "ONE_X_TWO",
+          "pick": "DRAW",
+          "probability": 0.2681,
+          "odds": 3.73,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-06",
+      "outcome": "LOST",
+      "candidateCount": 13,
+      "legCount": 2,
+      "combinedOdds": 5.3999999999999995,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f3001-7821-7a5e-a78c-88b584d9d341",
+          "channel": "BTTS",
+          "market": "BTTS",
+          "pick": "YES",
+          "probability": 0.7429,
+          "odds": 1.44,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f3001-6f65-7769-ae9e-8e2ec2ff1e14",
+          "channel": "DRAW",
+          "market": "ONE_X_TWO",
+          "pick": "DRAW",
+          "probability": 0.2667,
+          "odds": 3.75,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-07",
+      "outcome": "ABSTAINED",
+      "candidateCount": 7,
+      "legCount": 0,
+      "combinedOdds": null,
+      "profit": 0,
+      "legs": []
+    },
+    {
+      "day": "2026-07-08",
+      "outcome": "ABSTAINED",
+      "candidateCount": 17,
+      "legCount": 0,
+      "combinedOdds": null,
+      "profit": 0,
+      "legs": []
+    },
+    {
+      "day": "2026-07-09",
+      "outcome": "LOST",
+      "candidateCount": 63,
+      "legCount": 3,
+      "combinedOdds": 5.231265,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f3c63-3ab2-7e5e-957f-36b67485f407",
+          "channel": "DOMINANT",
+          "market": "ONE_X_TWO",
+          "pick": "HOME",
+          "probability": 0.7859999999999999,
+          "odds": 1.39,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f3c62-bf94-7fd8-87da-71934517ff92",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "OVER",
+          "probability": 0.555,
+          "odds": 1.93,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f3f74-a2e8-7622-927b-905308ddcac4",
+          "channel": "BTTS",
+          "market": "BTTS",
+          "pick": "YES",
+          "probability": 0.543,
+          "odds": 1.95,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-10",
+      "outcome": "ABSTAINED",
+      "candidateCount": 18,
+      "legCount": 0,
+      "combinedOdds": null,
+      "profit": 0,
+      "legs": []
+    },
+    {
+      "day": "2026-07-11",
+      "outcome": "WON",
+      "candidateCount": 33,
+      "legCount": 2,
+      "combinedOdds": 5.7619,
+      "profit": 4.7619,
+      "legs": [
+        {
+          "fixtureId": "019f49c1-35ca-7936-9276-de7eeaa41b78",
+          "channel": "BTTS",
+          "market": "BTTS",
+          "pick": "YES",
+          "probability": 0.6495,
+          "odds": 1.57,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f49c1-3045-79be-be50-f1c025d51ad9",
+          "channel": "DRAW",
+          "market": "ONE_X_TWO",
+          "pick": "DRAW",
+          "probability": 0.2725,
+          "odds": 3.67,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-12",
+      "outcome": "LOST",
+      "candidateCount": 43,
+      "legCount": 3,
+      "combinedOdds": 5.047236,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f4ee7-c70d-7b7b-8e3c-8149778cb143",
+          "channel": "BTTS",
+          "market": "BTTS",
+          "pick": "YES",
+          "probability": 0.6944,
+          "odds": 1.57,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "019f4ee7-4c66-75f5-aabe-c06de7ed1304",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "OVER",
+          "probability": 0.6001,
+          "odds": 1.71,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f4ee7-c719-7c7f-9f60-2db35c4dd260",
+          "channel": "DOMINANT",
+          "market": "ONE_X_TWO",
+          "pick": "HOME",
+          "probability": 0.5799,
+          "odds": 1.88,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-13",
+      "outcome": "ABSTAINED",
+      "candidateCount": 10,
+      "legCount": 0,
+      "combinedOdds": null,
+      "profit": 0,
+      "legs": []
+    },
+    {
+      "day": "2026-07-14",
+      "outcome": "LOST",
+      "candidateCount": 101,
+      "legCount": 2,
+      "combinedOdds": 5.33,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f3c61-b738-7f0c-a59d-0ece851675c3",
+          "channel": "DOMINANT",
+          "market": "ONE_X_TWO",
+          "pick": "AWAY",
+          "probability": 0.6545,
+          "odds": 1.64,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f5934-3881-7beb-825e-93ac6f29fd94",
+          "channel": "DRAW",
+          "market": "ONE_X_TWO",
+          "pick": "DRAW",
+          "probability": 0.3077,
+          "odds": 3.25,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-15",
+      "outcome": "LOST",
+      "candidateCount": 13,
+      "legCount": 2,
+      "combinedOdds": 6.0065,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f3c62-bfb5-7b42-91ac-871e21a6515b",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "OVER",
+          "probability": 0.5338,
+          "odds": 2.05,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f5e5a-90d4-7398-9c26-d92d8b493090",
+          "channel": "DRAW",
+          "market": "ONE_X_TWO",
+          "pick": "DRAW",
+          "probability": 0.34129999999999994,
+          "odds": 2.93,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-16",
+      "outcome": "LOST",
+      "candidateCount": 73,
+      "legCount": 2,
+      "combinedOdds": 5.402699999999999,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f3c63-3acc-7e90-b8e1-ced34225e9f8",
+          "channel": "DOMINANT",
+          "market": "ONE_X_TWO",
+          "pick": "AWAY",
+          "probability": 0.5301,
+          "odds": 2.07,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "019f3c62-bfde-7cba-b3d7-5094ef71b175",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER",
+          "probability": 0.4511,
+          "odds": 2.61,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-17",
+      "outcome": "WON",
+      "candidateCount": 60,
+      "legCount": 2,
+      "combinedOdds": 5.0083,
+      "profit": 4.0083,
+      "legs": [
+        {
+          "fixtureId": "019f68a7-3f52-708b-9160-84066f20d8d6",
+          "channel": "BTTS",
+          "market": "BTTS",
+          "pick": "YES",
+          "probability": 0.6791,
+          "odds": 1.57,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f304f-5a6d-7417-a2bc-b2775c902feb",
+          "channel": "DRAW",
+          "market": "ONE_X_TWO",
+          "pick": "DRAW",
+          "probability": 0.3135,
+          "odds": 3.19,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-18",
+      "outcome": "WON",
+      "candidateCount": 68,
+      "legCount": 2,
+      "combinedOdds": 5.168,
+      "profit": 4.168,
+      "legs": [
+        {
+          "fixtureId": "019f304f-5a7e-7fda-8743-ea24b1e381a1",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER",
+          "probability": 0.6606,
+          "odds": 1.6,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f304f-5a77-7456-b468-9dddf2048fec",
+          "channel": "DRAW",
+          "market": "ONE_X_TWO",
+          "pick": "DRAW",
+          "probability": 0.30959999999999993,
+          "odds": 3.23,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-19",
+      "outcome": "LOST",
+      "candidateCount": 25,
+      "legCount": 3,
+      "combinedOdds": 5.451040000000001,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f72f4-1c50-7674-816b-dcbe3d1f9978",
+          "channel": "BTTS",
+          "market": "BTTS",
+          "pick": "YES",
+          "probability": 0.7012,
+          "odds": 1.57,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "019f72f4-1fbb-75d5-8e90-57c4b64cc8c8",
+          "channel": "DOMINANT",
+          "market": "ONE_X_TWO",
+          "pick": "HOME",
+          "probability": 0.6619,
+          "odds": 1.55,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f72f4-1c4d-7154-9815-6ab3b5cd37a4",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER",
+          "probability": 0.4589,
+          "odds": 2.24,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-20",
+      "outcome": "ABSTAINED",
+      "candidateCount": 30,
+      "legCount": 0,
+      "combinedOdds": null,
+      "profit": 0,
+      "legs": []
+    },
+    {
+      "day": "2026-07-21",
+      "outcome": "LOST",
+      "candidateCount": 178,
+      "legCount": 3,
+      "combinedOdds": 5.134842,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f3c63-3ad3-7983-9499-42409e05a266",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "OVER_0_5",
+          "probability": 0.7014,
+          "odds": 1.58,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f3c61-b762-7d80-b268-b7e446750205",
+          "channel": "BTTS",
+          "market": "BTTS",
+          "pick": "YES",
+          "probability": 0.6812,
+          "odds": 1.57,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f3c62-c019-7246-91c7-6a085dfd44cd",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "OVER",
+          "probability": 0.5465999999999999,
+          "odds": 2.07,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-22",
+      "outcome": "LOST",
+      "candidateCount": 118,
+      "legCount": 3,
+      "combinedOdds": 5.031809999999999,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f8267-3f99-7ae4-831e-baeda086d4e8",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "UNDER_2_5",
+          "probability": 0.6996819884939798,
+          "odds": 1.47,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "019f304f-5a86-7d9c-a754-ad511fac6bc6",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER",
+          "probability": 0.6633096667173534,
+          "odds": 1.63,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "019f304f-5a8b-7e09-8897-afe0d6473da1",
+          "channel": "WIN_EITHER_HALF",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "AWAY",
+          "probability": 0.5316176986905508,
+          "odds": 2.1,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-23",
+      "outcome": "WON",
+      "candidateCount": 276,
+      "legCount": 3,
+      "combinedOdds": 5.093834,
+      "profit": 4.093834,
+      "legs": [
+        {
+          "fixtureId": "019f304f-5a91-7563-a7bb-124f45f3d39d",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER",
+          "probability": 0.7359364753828115,
+          "odds": 1.51,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f878d-9d13-7820-bcc6-a4ecc0dae297",
+          "channel": "WIN_EITHER_HALF",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "HOME",
+          "probability": 0.650626810274477,
+          "odds": 1.67,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f878d-2919-7e06-92e9-5289172191f1",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_1_5",
+          "probability": 0.5573764487834245,
+          "odds": 2.02,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-24",
+      "outcome": "LOST",
+      "candidateCount": 148,
+      "legCount": 2,
+      "combinedOdds": 5.1339999999999995,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f304f-5a96-7b0c-8786-0c7cefaa2544",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER",
+          "probability": 0.6642703859691705,
+          "odds": 1.51,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "019f304c-2a50-700d-84f9-fac013ce8fbb",
+          "channel": "CLEAN_SHEET",
+          "market": "CLEAN_SHEET_AWAY",
+          "pick": "YES",
+          "probability": 0.31179358989408507,
+          "odds": 3.4,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-25",
+      "outcome": "LOST",
+      "candidateCount": 178,
+      "legCount": 2,
+      "combinedOdds": 5.7459999999999996,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f91d9-d8bf-7708-a255-21506cb170a6",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_1_5",
+          "probability": 0.5967855367305467,
+          "odds": 1.69,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f91da-0060-79da-8fef-1b106ce18f5e",
+          "channel": "CLEAN_SHEET",
+          "market": "CLEAN_SHEET_HOME",
+          "pick": "YES",
+          "probability": 0.3282527729400774,
+          "odds": 3.4,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-26",
+      "outcome": "WON",
+      "candidateCount": 284,
+      "legCount": 3,
+      "combinedOdds": 5.04322,
+      "profit": 4.04322,
+      "legs": [
+        {
+          "fixtureId": "019f9700-4012-75b6-8ab0-87d95fdfa84c",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "UNDER_2_5",
+          "probability": 0.6600577468228397,
+          "odds": 1.63,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f304f-5aa6-74af-9615-147adbb0f981",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER",
+          "probability": 0.64371858272485,
+          "odds": 1.7,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f9700-5a50-7d79-879c-c6c78b54a7d7",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_1_5",
+          "probability": 0.612414717672093,
+          "odds": 1.82,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-27",
+      "outcome": "WON",
+      "candidateCount": 57,
+      "legCount": 2,
+      "combinedOdds": 6.2725,
+      "profit": 5.2725,
+      "legs": [
+        {
+          "fixtureId": "019f304f-5aab-702a-8c8f-80831f873af5",
+          "channel": "DOMINANT",
+          "market": "ONE_X_TWO",
+          "pick": "HOME",
+          "probability": 0.5232627944502075,
+          "odds": 1.93,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f304e-f9bc-713c-8524-cb351d521b07",
+          "channel": "CLEAN_SHEET",
+          "market": "CLEAN_SHEET_HOME",
+          "pick": "YES",
+          "probability": 0.3496755881227718,
+          "odds": 3.25,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-28",
+      "outcome": "LOST",
+      "candidateCount": 169,
+      "legCount": 3,
+      "combinedOdds": 5.012413,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f304f-5aa3-7d5d-877f-37a9fbf1dfcc",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "UNDER_1_5",
+          "probability": 0.6909992817899662,
+          "odds": 1.61,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f304a-2325-75c6-a46e-dec2160d948c",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "OVER_1_5",
+          "probability": 0.677482193543555,
+          "odds": 1.63,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019fa178-d2b7-7819-a9ab-368e4f4eee21",
+          "channel": "BTTS",
+          "market": "BTTS",
+          "pick": "YES",
+          "probability": 0.5591851327158698,
+          "odds": 1.91,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-29",
+      "outcome": "LOST",
+      "candidateCount": 96,
+      "legCount": 3,
+      "combinedOdds": 5.001084,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f3c62-c05c-70d6-86bc-24a7824884f5",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "OVER_0_5",
+          "probability": 0.7221297796253657,
+          "odds": 1.46,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019fa673-4f35-70b7-b1fe-2035d9eeebd7",
+          "channel": "WIN_EITHER_HALF",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "HOME",
+          "probability": 0.6002289877634418,
+          "odds": 1.73,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019fa673-7d1d-796f-ba95-c3eeb4a507ec",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER_3_5",
+          "probability": 0.5761415653814274,
+          "odds": 1.98,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-30",
+      "outcome": "LOST",
+      "candidateCount": 231,
+      "legCount": 3,
+      "combinedOdds": 5.184200000000001,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f304a-2325-75c6-a46e-dec2160d948c",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "OVER_1_5",
+          "probability": 0.677482193543555,
+          "odds": 1.61,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019fab99-e5e5-78d7-9f33-f74b838200e8",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_1_5",
+          "probability": 0.6704309478551538,
+          "odds": 1.61,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "019f3c63-3ae8-7aed-9a19-1645dabf885b",
+          "channel": "WIN_EITHER_HALF",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "AWAY",
+          "probability": 0.5598816260529635,
+          "odds": 2,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-07-31",
+      "outcome": "LOST",
+      "candidateCount": 171,
+      "legCount": 3,
+      "combinedOdds": 5.2538800000000005,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f304c-003c-75eb-bc7b-7828acc772e2",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER_3_5",
+          "probability": 0.7066035871692038,
+          "odds": 1.55,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "019f304c-d37c-7428-936f-1f89d6b46d70",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "UNDER_1_5",
+          "probability": 0.6785501126156814,
+          "odds": 1.52,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f304e-f9dc-7489-ae9a-a40e5eb1dc29",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "OVER_1_5",
+          "probability": 0.49900493205063035,
+          "odds": 2.23,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-01",
+      "outcome": "LOST",
+      "candidateCount": 178,
+      "legCount": 3,
+      "combinedOdds": 5.222249999999999,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019fb5e6-a32b-734e-8fa3-cc04471f8ce8",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER_3_5",
+          "probability": 0.7196057168950649,
+          "odds": 1.5,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019fb5e6-9a7d-7f91-b3cc-f281317a649a",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_1_5",
+          "probability": 0.6769252884239592,
+          "odds": 1.65,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019fb5e6-d7c9-703d-b9ab-2a79f6c7229d",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "UNDER_1_5",
+          "probability": 0.5451804352219102,
+          "odds": 2.11,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-02",
+      "outcome": "LOST",
+      "candidateCount": 280,
+      "legCount": 3,
+      "combinedOdds": 5.0402249999999995,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019fbb0c-ba85-7ee6-80c7-9f709fe912d8",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER_3_5",
+          "probability": 0.8,
+          "odds": 1.31,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f304c-2a59-7a76-9e54-68506305404c",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "UNDER_1_5",
+          "probability": 0.6413970498423449,
+          "odds": 1.71,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019fbb0c-b631-7c3d-8d1f-f9d15e08d951",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_1_5",
+          "probability": 0.5100423390078227,
+          "odds": 2.25,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-03",
+      "outcome": "LOST",
+      "candidateCount": 67,
+      "legCount": 2,
+      "combinedOdds": 5.4233,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f304c-0040-78dc-90e2-fc5df1c6e5ff",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_1_5",
+          "probability": 0.5902427705222832,
+          "odds": 1.93,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019fc033-6cc1-7de4-a77b-4ecb9a01a5f3",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER",
+          "probability": 0.420365766895632,
+          "odds": 2.81,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-04",
+      "outcome": "LOST",
+      "candidateCount": 84,
+      "legCount": 2,
+      "combinedOdds": 5.184,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019fc559-99c4-788a-88fd-f1f00fd0553c",
+          "channel": "WIN_EITHER_HALF",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "AWAY",
+          "probability": 0.6172074914826831,
+          "odds": 1.8,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "019fc559-99da-72e4-93b8-5652251e7a68",
+          "channel": "DOMINANT",
+          "market": "ONE_X_TWO",
+          "pick": "AWAY",
+          "probability": 0.4159630551465207,
+          "odds": 2.88,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-05",
+      "outcome": "LOST",
+      "candidateCount": 34,
+      "legCount": 3,
+      "combinedOdds": 5.595408,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f304a-2312-77c4-9660-0dd2ffb28389",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "OVER_1_5",
+          "probability": 0.6516058417279369,
+          "odds": 1.56,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "019fca7f-e308-77c6-9568-14a42dd85b6a",
+          "channel": "BTTS",
+          "market": "BTTS",
+          "pick": "YES",
+          "probability": 0.547635260448007,
+          "odds": 1.83,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019fca7f-e860-7081-bcc5-44fda8371216",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_1_5",
+          "probability": 0.517438411241162,
+          "odds": 1.96,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-06",
+      "outcome": "WON",
+      "candidateCount": 176,
+      "legCount": 2,
+      "combinedOdds": 5.075,
+      "profit": 4.075,
+      "legs": [
+        {
+          "fixtureId": "019fcfa6-7dec-7932-9bd2-dbf5a430cb04",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "OVER_0_5",
+          "probability": 0.613416302906924,
+          "odds": 1.75,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019fcfa6-7ddb-74c0-bc7c-d04de1a1d50a",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER",
+          "probability": 0.4162536411224315,
+          "odds": 2.9,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-07",
+      "outcome": "LOST",
+      "candidateCount": 299,
+      "legCount": 3,
+      "combinedOdds": 5.039759999999999,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f304c-5418-761b-9866-5a8924dbd15a",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER_3_5",
+          "probability": 0.7656012384810311,
+          "odds": 1.38,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f304b-cec3-7f25-abb6-1d9a6064f996",
+          "channel": "DOMINANT",
+          "market": "ONE_X_TWO",
+          "pick": "AWAY",
+          "probability": 0.6578367386362928,
+          "odds": 1.66,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f304c-541d-7aea-8ce8-21c56e801869",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_1_5",
+          "probability": 0.5147310099732036,
+          "odds": 2.2,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-08",
+      "outcome": "LOST",
+      "candidateCount": 426,
+      "legCount": 3,
+      "combinedOdds": 5.048316,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f304a-236a-7189-b96a-ae38111bcdf3",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "OVER_1_5",
+          "probability": 0.6971717734629804,
+          "odds": 1.56,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019fd9f3-01c5-7a56-ac21-80f4dbb5a74b",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "UNDER_1_5",
+          "probability": 0.6887519042073019,
+          "odds": 1.61,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "019fd9f2-f880-732b-940d-91122a86bd54",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_1_5",
+          "probability": 0.5455135943287481,
+          "odds": 2.01,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-09",
+      "outcome": "WON",
+      "candidateCount": 508,
+      "legCount": 2,
+      "combinedOdds": 5.0625,
+      "profit": 4.0625,
+      "legs": [
+        {
+          "fixtureId": "019fdf19-68fd-75e6-b40c-de7ae0547d17",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER_3_5",
+          "probability": 0.8,
+          "odds": 1.35,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019fdf19-67d1-7d9f-a92d-1c57dbea8266",
+          "channel": "CLEAN_SHEET",
+          "market": "CLEAN_SHEET_AWAY",
+          "pick": "YES",
+          "probability": 0.3304390691585868,
+          "odds": 3.75,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-10",
+      "outcome": "LOST",
+      "candidateCount": 57,
+      "legCount": 2,
+      "combinedOdds": 6.0794999999999995,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019fe43f-f452-7edd-b8ca-680018693b20",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_1_5",
+          "probability": 0.5645141122021782,
+          "odds": 1.93,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019fe43f-f0bc-700b-ab00-920f3b64ff35",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER",
+          "probability": 0.38643181557920775,
+          "odds": 3.15,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-11",
+      "outcome": "WON",
+      "candidateCount": 91,
+      "legCount": 2,
+      "combinedOdds": 5.4144,
+      "profit": 4.4144,
+      "legs": [
+        {
+          "fixtureId": "019fe966-0898-7d30-94fc-6af96d7126e4",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "OVER_1_5",
+          "probability": 0.562352558134148,
+          "odds": 1.92,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019fe966-088d-7ec1-9092-611ae45bee48",
+          "channel": "DOMINANT",
+          "market": "ONE_X_TWO",
+          "pick": "AWAY",
+          "probability": 0.42675896142633785,
+          "odds": 2.82,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-12",
+      "outcome": "WON",
+      "candidateCount": 15,
+      "legCount": 2,
+      "combinedOdds": 5.7113000000000005,
+      "profit": 4.7113000000000005,
+      "legs": [
+        {
+          "fixtureId": "019fed02-92cf-7dd1-9d44-07db00876ea7",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "OVER_0_5",
+          "probability": 0.516041550496011,
+          "odds": 1.99,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019fed02-92d5-7a7d-9f5d-f588eafb9930",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER",
+          "probability": 0.41214523708150785,
+          "odds": 2.87,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-13",
+      "outcome": "LOST",
+      "candidateCount": 188,
+      "legCount": 2,
+      "combinedOdds": 5.066,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019fed02-92f0-71ca-ae11-bb692ce0d55d",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "OVER_0_5",
+          "probability": 0.714421382605175,
+          "odds": 1.49,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019fed02-92e3-707e-81a2-1f7570b216aa",
+          "channel": "CLEAN_SHEET",
+          "market": "CLEAN_SHEET_AWAY",
+          "pick": "YES",
+          "probability": 0.3680545602872707,
+          "odds": 3.4,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-14",
+      "outcome": "LOST",
+      "candidateCount": 1419,
+      "legCount": 2,
+      "combinedOdds": 5.12,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019ff8d9-467f-77bc-afab-b09908738686",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER_3_5",
+          "probability": 0.8,
+          "odds": 1.28,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "019ff8d9-3f64-744b-8c45-b4c2bbce0e24",
+          "channel": "CLEAN_SHEET",
+          "market": "CLEAN_SHEET_AWAY",
+          "pick": "YES",
+          "probability": 0.32222582907415537,
+          "odds": 4,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-15",
+      "outcome": "LOST",
+      "candidateCount": 673,
+      "legCount": 3,
+      "combinedOdds": 5.14368,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019ff3b2-f430-7648-b70c-923153945c63",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "UNDER_1_5",
+          "probability": 0.7036642412090172,
+          "odds": 1.52,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "019ff3b2-d5f7-7804-af15-ec1285451a0f",
+          "channel": "WIN_EITHER_HALF",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "HOME",
+          "probability": 0.6146951905116198,
+          "odds": 1.8,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019ff3b2-cc2a-7d86-aba7-2fbe4103e459",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER",
+          "probability": 0.5976028416757411,
+          "odds": 1.88,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-16",
+      "outcome": "LOST",
+      "candidateCount": 562,
+      "legCount": 3,
+      "combinedOdds": 5.109632,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019ff8d9-5b28-7ece-b9ad-63d2593e189a",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "UNDER_1_5",
+          "probability": 0.7019120160808442,
+          "odds": 1.52,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "019ff8d9-6d3a-7a0e-889d-a4fa77f1d633",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER",
+          "probability": 0.6427941955183282,
+          "odds": 1.76,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "019ff8d9-582c-77fb-8ad9-c19c07da1428",
+          "channel": "WIN_EITHER_HALF",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "AWAY",
+          "probability": 0.5850557575318257,
+          "odds": 1.91,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-17",
+      "outcome": "LOST",
+      "candidateCount": 99,
+      "legCount": 3,
+      "combinedOdds": 5.029109999999999,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019ffdff-b162-7441-82ff-fd1cdc70db40",
+          "channel": "WIN_EITHER_HALF",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "HOME",
+          "probability": 0.6515214776970663,
+          "odds": 1.73,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019ffdff-cb3c-74a0-81d6-ce4e925b5dda",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "OVER",
+          "probability": 0.631618885916745,
+          "odds": 1.7,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "019ffdff-b258-77dc-a44c-b1e5d8b76cc9",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "UNDER_1_5",
+          "probability": 0.6230468664560881,
+          "odds": 1.71,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-18",
+      "outcome": "LOST",
+      "candidateCount": 367,
+      "legCount": 2,
+      "combinedOdds": 5.14,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "01a00d72-c880-71f6-b4f6-81fe259b97b0",
+          "channel": "WIN_EITHER_HALF",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "AWAY",
+          "probability": 0.543721924012731,
+          "odds": 2,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "01a00325-f941-7996-8942-da3c1e2f8a21",
+          "channel": "DOMINANT",
+          "market": "ONE_X_TWO",
+          "pick": "AWAY",
+          "probability": 0.4593472559287229,
+          "odds": 2.57,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-19",
+      "outcome": "ABSTAINED",
+      "candidateCount": 102,
+      "legCount": 0,
+      "combinedOdds": null,
+      "profit": 0,
+      "legs": []
+    },
+    {
+      "day": "2026-08-20",
+      "outcome": "LOST",
+      "candidateCount": 232,
+      "legCount": 3,
+      "combinedOdds": 5.1128,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "01a00d72-ce34-7249-a96e-6954b1ba06e7",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_AWAY",
+          "pick": "UNDER_2_5",
+          "probability": 0.7024550280120048,
+          "odds": 1.54,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "01a00d72-842f-7a1d-99f5-4c9abc6845d8",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER_3_5",
+          "probability": 0.6438618589010427,
+          "odds": 1.66,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "01a00d72-ce74-7728-8f6d-ec80a0855807",
+          "channel": "DOMINANT",
+          "market": "ONE_X_TWO",
+          "pick": "HOME",
+          "probability": 0.5509905219602611,
+          "odds": 2,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-21",
+      "outcome": "WON",
+      "candidateCount": 1505,
+      "legCount": 3,
+      "combinedOdds": 5.083857999999999,
+      "profit": 4.083857999999999,
+      "legs": [
+        {
+          "fixtureId": "019f304b-cef0-79ea-8a06-757f064d8aaa",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_2_5",
+          "probability": 0.6625481500964433,
+          "odds": 1.69,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "01a01ce5-fed1-7029-a99e-6488cdbb6967",
+          "channel": "DOMINANT",
+          "market": "ONE_X_TWO",
+          "pick": "HOME",
+          "probability": 0.6565505350718137,
+          "odds": 1.69,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "019f3042-65b6-7842-9c79-981721916384",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER_3_5",
+          "probability": 0.6332957006401309,
+          "odds": 1.78,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-22",
+      "outcome": "LOST",
+      "candidateCount": 760,
+      "legCount": 3,
+      "combinedOdds": 5.042748,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f304b-cef0-79ea-8a06-757f064d8aaa",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_2_5",
+          "probability": 0.6655176610123962,
+          "odds": 1.66,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "01a017bf-8de8-758d-b99f-20082f556124",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER_3_5",
+          "probability": 0.6616248411904173,
+          "odds": 1.66,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "01a017bf-a26b-7e6a-8899-aac81aa1ee43",
+          "channel": "WIN_EITHER_HALF",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "AWAY",
+          "probability": 0.6151774405127807,
+          "odds": 1.83,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-23",
+      "outcome": "LOST",
+      "candidateCount": 587,
+      "legCount": 2,
+      "combinedOdds": 5.082000000000001,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "01a01ce5-ca1f-7aed-9e4d-2f14bc7dce08",
+          "channel": "WIN_EITHER_HALF",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "HOME",
+          "probability": 0.5182820686374761,
+          "odds": 2.2,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "01a01ce5-cdb6-7ff9-9761-bbcb2e0d018d",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER",
+          "probability": 0.5076048985996795,
+          "odds": 2.31,
+          "result": "LOST"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-24",
+      "outcome": "LOST",
+      "candidateCount": 252,
+      "legCount": 3,
+      "combinedOdds": 5.0715,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "019f3042-65d7-7ee1-a4eb-db2b66ff3362",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "UNDER_3_5",
+          "probability": 0.7213901576486712,
+          "odds": 1.5,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "01a0220c-556f-799c-801a-2515ff6fad1c",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_1_5",
+          "probability": 0.664298580659161,
+          "odds": 1.61,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "01a0220c-528d-7639-b50d-eb585328f9ab",
+          "channel": "WIN_EITHER_HALF",
+          "market": "TO_WIN_EITHER_HALF",
+          "pick": "AWAY",
+          "probability": 0.535732271834827,
+          "odds": 2.1,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-25",
+      "outcome": "WON",
+      "candidateCount": 647,
+      "legCount": 3,
+      "combinedOdds": 5.0054549999999995,
+      "profit": 2.7634999999999996,
+      "legs": [
+        {
+          "fixtureId": "01a02c59-71c2-757a-af80-4c11e592f0b2",
+          "channel": "DRAW_NO_BET",
+          "market": "DRAW_NO_BET",
+          "pick": "HOME",
+          "probability": 0.8,
+          "odds": 1.33,
+          "result": "VOID"
+        },
+        {
+          "fixtureId": "01a02c59-364d-7e33-a998-5e52f94c2a6b",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_1_5",
+          "probability": 0.584688973141172,
+          "odds": 1.93,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "01a0317f-47fb-70de-94a0-4c70a55d7408",
+          "channel": "BTTS",
+          "market": "BTTS",
+          "pick": "NO",
+          "probability": 0.5810594790744164,
+          "odds": 1.95,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-26",
+      "outcome": "LOST",
+      "candidateCount": 184,
+      "legCount": 3,
+      "combinedOdds": 5.011056,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "01a02c59-4371-78d4-95ad-4841f96cd4b7",
+          "channel": "DOUBLE_CHANCE",
+          "market": "DOUBLE_CHANCE",
+          "pick": "X2",
+          "probability": 0.7964759407593369,
+          "odds": 1.36,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "01a02c59-4375-7bf4-8f6f-ee3ae5c07446",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_1_5",
+          "probability": 0.6114456336597232,
+          "odds": 1.78,
+          "result": "LOST"
+        },
+        {
+          "fixtureId": "01a02c59-3655-75b8-9bae-89b30523efde",
+          "channel": "GOALS",
+          "market": "OVER_UNDER",
+          "pick": "OVER",
+          "probability": 0.5444799882294926,
+          "odds": 2.07,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-27",
+      "outcome": "WON",
+      "candidateCount": 354,
+      "legCount": 3,
+      "combinedOdds": 5.051475,
+      "profit": 4.051475,
+      "legs": [
+        {
+          "fixtureId": "01a0317f-5762-78fb-b437-16c5ca5e5bdb",
+          "channel": "DOUBLE_CHANCE",
+          "market": "DOUBLE_CHANCE",
+          "pick": "1X",
+          "probability": 0.6957432752483175,
+          "odds": 1.57,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "01a0317f-7f1d-7a54-b65b-bb1b5b49251a",
+          "channel": "TEAM_TOTAL",
+          "market": "TEAM_TOTAL_HOME",
+          "pick": "UNDER_1_5",
+          "probability": 0.6613974539329633,
+          "odds": 1.65,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "01a0317f-47fb-70de-94a0-4c70a55d7408",
+          "channel": "BTTS",
+          "market": "BTTS",
+          "pick": "NO",
+          "probability": 0.5830248910899243,
+          "odds": 1.95,
+          "result": "WON"
+        }
+      ]
+    },
+    {
+      "day": "2026-08-28",
+      "outcome": "ABSTAINED",
+      "candidateCount": 3301,
+      "legCount": 0,
+      "combinedOdds": null,
+      "profit": 0,
+      "legs": []
+    },
+    {
+      "day": "2026-08-29",
+      "outcome": "LOST",
+      "candidateCount": 1651,
+      "legCount": 2,
+      "combinedOdds": 6.6155,
+      "profit": -1,
+      "legs": [
+        {
+          "fixtureId": "01a03bcc-2c2a-708f-979c-1f3e4c07069e",
+          "channel": "DOUBLE_CHANCE",
+          "market": "DOUBLE_CHANCE",
+          "pick": "1X",
+          "probability": 0.8,
+          "odds": 1.31,
+          "result": "WON"
+        },
+        {
+          "fixtureId": "01a03bcc-0c5f-7ce9-9ad3-ccf09647962d",
+          "channel": "WIN_TO_NIL",
+          "market": "WIN_TO_NIL_HOME",
+          "pick": "YES",
+          "probability": 0.2606556278110292,
+          "odds": 5.05,
+          "result": "LOST"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1608 @@
+{
+  "period": {
+    "from": "2026-07-01",
+    "to": "2026-08-29"
+  },
+  "sweep": [
+    {
+      "config": {
+        "name": "baseline",
+        "maxLegs": 5,
+        "maxCombinedOdds": 15,
+        "maxLegOdds": 15.01,
+        "minProbability": 0,
+        "maxPositiveEdge": 0.1
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 54,
+        "won": 11,
+        "lost": 43,
+        "void": 0,
+        "abstained": 5,
+        "unresolved": 1,
+        "hitRate": 0.2037037037037037,
+        "averageOdds": 5.583016122222222,
+        "averageLegs": 2.5555555555555554,
+        "roi": 0.06603337037037041,
+        "roiCi95": [
+          -0.5032853766020338,
+          0.6353521173427745
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 15,
+          "won": 3,
+          "lost": 12,
+          "void": 0,
+          "abstained": 5,
+          "unresolved": 0,
+          "hitRate": 0.2,
+          "averageOdds": 6.3776376666666685,
+          "averageLegs": 2.2,
+          "roi": 0.017386666666666648,
+          "roiCi95": [
+            -1.0485830577070376,
+            1.083356391040371
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 19,
+          "won": 4,
+          "lost": 15,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 1,
+          "hitRate": 0.21052631578947367,
+          "averageOdds": 5.246856042105264,
+          "averageLegs": 2.5789473684210527,
+          "roi": 0.1283632631578948,
+          "roiCi95": [
+            -0.8872571056495671,
+            1.1439836319653567
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 20,
+          "won": 4,
+          "lost": 16,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 0,
+          "hitRate": 0.2,
+          "averageOdds": 5.306402039999999,
+          "averageLegs": 2.8,
+          "roi": 0.04330500000000006,
+          "roiCi95": [
+            -0.8967311242546155,
+            0.9833411242546156
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "max-3-legs",
+        "maxLegs": 3,
+        "maxCombinedOdds": 15,
+        "maxLegOdds": 15.01,
+        "minProbability": 0,
+        "maxPositiveEdge": 0.1
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 54,
+        "won": 12,
+        "lost": 42,
+        "void": 0,
+        "abstained": 5,
+        "unresolved": 1,
+        "hitRate": 0.2222222222222222,
+        "averageOdds": 5.693966907407407,
+        "averageLegs": 2.4444444444444446,
+        "roi": 0.1616417037037038,
+        "roiCi95": [
+          -0.4252693125785074,
+          0.748552719985915
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 15,
+          "won": 3,
+          "lost": 12,
+          "void": 0,
+          "abstained": 5,
+          "unresolved": 0,
+          "hitRate": 0.2,
+          "averageOdds": 6.3776376666666685,
+          "averageLegs": 2.2,
+          "roi": 0.017386666666666648,
+          "roiCi95": [
+            -1.0485830577070376,
+            1.083356391040371
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 19,
+          "won": 5,
+          "lost": 14,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 1,
+          "hitRate": 0.2631578947368421,
+          "averageOdds": 5.25077552631579,
+          "averageLegs": 2.526315789473684,
+          "roi": 0.40009221052631583,
+          "roiCi95": [
+            -0.6881454308962962,
+            1.4883298519489279
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 20,
+          "won": 4,
+          "lost": 16,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 0,
+          "hitRate": 0.2,
+          "averageOdds": 5.602245649999999,
+          "averageLegs": 2.55,
+          "roi": 0.04330500000000006,
+          "roiCi95": [
+            -0.8967311242546155,
+            0.9833411242546156
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "max-2-legs",
+        "maxLegs": 2,
+        "maxCombinedOdds": 15,
+        "maxLegOdds": 15.01,
+        "minProbability": 0,
+        "maxPositiveEdge": 0.1
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 54,
+        "won": 12,
+        "lost": 42,
+        "void": 0,
+        "abstained": 6,
+        "unresolved": 0,
+        "hitRate": 0.2222222222222222,
+        "averageOdds": 5.742774074074073,
+        "averageLegs": 2,
+        "roi": 0.16395555555555555,
+        "roiCi95": [
+          -0.4241013653001954,
+          0.7520124764113064
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 15,
+          "won": 3,
+          "lost": 12,
+          "void": 0,
+          "abstained": 5,
+          "unresolved": 0,
+          "hitRate": 0.2,
+          "averageOdds": 6.435800000000001,
+          "averageLegs": 2,
+          "roi": 0.017386666666666648,
+          "roiCi95": [
+            -1.0485830577070376,
+            1.083356391040371
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 19,
+          "won": 5,
+          "lost": 14,
+          "void": 0,
+          "abstained": 1,
+          "unresolved": 0,
+          "hitRate": 0.2631578947368421,
+          "averageOdds": 5.241178947368421,
+          "averageLegs": 2,
+          "roi": 0.39828947368421047,
+          "roiCi95": [
+            -0.6886644040045877,
+            1.4852433513730086
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 20,
+          "won": 4,
+          "lost": 16,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 0,
+          "hitRate": 0.2,
+          "averageOdds": 5.699519999999999,
+          "averageLegs": 2,
+          "roi": 0.051265000000000026,
+          "roiCi95": [
+            -0.8957604288163444,
+            0.9982904288163444
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "odds-max-7",
+        "maxLegs": 5,
+        "maxCombinedOdds": 7,
+        "maxLegOdds": 15.01,
+        "minProbability": 0,
+        "maxPositiveEdge": 0.1
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 50,
+        "won": 11,
+        "lost": 39,
+        "void": 0,
+        "abstained": 9,
+        "unresolved": 1,
+        "hitRate": 0.22,
+        "averageOdds": 5.260012812,
+        "averageLegs": 2.58,
+        "roi": 0.1513160400000001,
+        "roiCi95": [
+          -0.4577255624146992,
+          0.7603576424146994
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 12,
+          "won": 3,
+          "lost": 9,
+          "void": 0,
+          "abstained": 8,
+          "unresolved": 0,
+          "hitRate": 0.25,
+          "averageOdds": 5.370772083333333,
+          "averageLegs": 2.25,
+          "roi": 0.2717333333333333,
+          "roiCi95": [
+            -1.0301007623386695,
+            1.5735674290053363
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 19,
+          "won": 4,
+          "lost": 15,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 1,
+          "hitRate": 0.21052631578947367,
+          "averageOdds": 5.246856042105264,
+          "averageLegs": 2.5789473684210527,
+          "roi": 0.1283632631578948,
+          "roiCi95": [
+            -0.8872571056495671,
+            1.1439836319653567
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 19,
+          "won": 4,
+          "lost": 15,
+          "void": 0,
+          "abstained": 1,
+          "unresolved": 0,
+          "hitRate": 0.21052631578947367,
+          "averageOdds": 5.203216357894737,
+          "averageLegs": 2.789473684210526,
+          "roi": 0.09821578947368427,
+          "roiCi95": [
+            -0.8861535757984087,
+            1.0825851547457772
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "odds-max-6",
+        "maxLegs": 5,
+        "maxCombinedOdds": 6,
+        "maxLegOdds": 15.01,
+        "minProbability": 0,
+        "maxPositiveEdge": 0.1
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 48,
+        "won": 10,
+        "lost": 38,
+        "void": 0,
+        "abstained": 11,
+        "unresolved": 1,
+        "hitRate": 0.20833333333333334,
+        "averageOdds": 5.209107095833333,
+        "averageLegs": 2.6041666666666665,
+        "roi": 0.06861045833333339,
+        "roiCi95": [
+          -0.5275048162249388,
+          0.6647257328916055
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 11,
+          "won": 3,
+          "lost": 8,
+          "void": 0,
+          "abstained": 9,
+          "unresolved": 0,
+          "hitRate": 0.2727272727272727,
+          "averageOdds": 5.312978636363636,
+          "averageLegs": 2.272727272727273,
+          "roi": 0.3873454545454545,
+          "roiCi95": [
+            -1.0169726985184797,
+            1.7916636076093886
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 18,
+          "won": 3,
+          "lost": 15,
+          "void": 0,
+          "abstained": 1,
+          "unresolved": 1,
+          "hitRate": 0.16666666666666666,
+          "averageOdds": 5.1898758222222225,
+          "averageLegs": 2.611111111111111,
+          "roi": -0.15742211111111104,
+          "roiCi95": [
+            -1.053060054965571,
+            0.738215832743349
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 19,
+          "won": 4,
+          "lost": 15,
+          "void": 0,
+          "abstained": 1,
+          "unresolved": 0,
+          "hitRate": 0.21052631578947367,
+          "averageOdds": 5.167190042105263,
+          "averageLegs": 2.789473684210526,
+          "roi": 0.09821578947368427,
+          "roiCi95": [
+            -0.8861535757984087,
+            1.0825851547457772
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "leg-odds-max-3",
+        "maxLegs": 5,
+        "maxCombinedOdds": 15,
+        "maxLegOdds": 3,
+        "minProbability": 0,
+        "maxPositiveEdge": 0.1
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 46,
+        "won": 11,
+        "lost": 35,
+        "void": 0,
+        "abstained": 13,
+        "unresolved": 1,
+        "hitRate": 0.2391304347826087,
+        "averageOdds": 5.288528734782608,
+        "averageLegs": 2.6739130434782608,
+        "roi": 0.2562740652173914,
+        "roiCi95": [
+          -0.4002485478496153,
+          0.912796678284398
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 7,
+          "won": 1,
+          "lost": 6,
+          "void": 0,
+          "abstained": 13,
+          "unresolved": 0,
+          "hitRate": 0.14285714285714285,
+          "averageOdds": 5.394266428571428,
+          "averageLegs": 2.4285714285714284,
+          "roi": -0.2641142857142857,
+          "roiCi95": [
+            -1.7064502857142854,
+            1.1782217142857139
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 19,
+          "won": 5,
+          "lost": 14,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 1,
+          "hitRate": 0.2631578947368421,
+          "averageOdds": 5.232727410526317,
+          "averageLegs": 2.6315789473684212,
+          "roi": 0.38660305263157896,
+          "roiCi95": [
+            -0.6902597058779749,
+            1.4634658111411327
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 20,
+          "won": 5,
+          "lost": 15,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 0,
+          "hitRate": 0.25,
+          "averageOdds": 5.3045317999999995,
+          "averageLegs": 2.8,
+          "roi": 0.3145974500000001,
+          "roiCi95": [
+            -0.7106925173311274,
+            1.3398874173311277
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "leg-odds-max-2.5",
+        "maxLegs": 5,
+        "maxCombinedOdds": 15,
+        "maxLegOdds": 2.5,
+        "minProbability": 0,
+        "maxPositiveEdge": 0.1
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 42,
+        "won": 8,
+        "lost": 34,
+        "void": 0,
+        "abstained": 17,
+        "unresolved": 1,
+        "hitRate": 0.19047619047619047,
+        "averageOdds": 5.255920614285716,
+        "averageLegs": 2.857142857142857,
+        "roi": -0.011327642857142843,
+        "roiCi95": [
+          -0.6367262229345808,
+          0.6140709372202952
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 5,
+          "won": 0,
+          "lost": 5,
+          "void": 0,
+          "abstained": 15,
+          "unresolved": 0,
+          "hitRate": 0,
+          "averageOdds": 5.263402599999999,
+          "averageLegs": 2.8,
+          "roi": -1,
+          "roiCi95": [
+            -1,
+            -1
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 18,
+          "won": 5,
+          "lost": 13,
+          "void": 0,
+          "abstained": 1,
+          "unresolved": 1,
+          "hitRate": 0.2777777777777778,
+          "averageOdds": 5.241875377777777,
+          "averageLegs": 2.8333333333333335,
+          "roi": 0.45836611111111103,
+          "roiCi95": [
+            -0.6639301600157896,
+            1.5806623822380117
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 19,
+          "won": 3,
+          "lost": 16,
+          "void": 0,
+          "abstained": 1,
+          "unresolved": 0,
+          "hitRate": 0.15789473684210525,
+          "averageOdds": 5.267257684210527,
+          "averageLegs": 2.8947368421052633,
+          "roi": -0.19612373684210527,
+          "roiCi95": [
+            -1.0537853416529646,
+            0.6615378679687539
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "prob-min-40",
+        "maxLegs": 5,
+        "maxCombinedOdds": 15,
+        "maxLegOdds": 15.01,
+        "minProbability": 0.4,
+        "maxPositiveEdge": 0.1
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 44,
+        "won": 10,
+        "lost": 34,
+        "void": 0,
+        "abstained": 15,
+        "unresolved": 1,
+        "hitRate": 0.22727272727272727,
+        "averageOdds": 5.252850495454546,
+        "averageLegs": 2.7045454545454546,
+        "roi": 0.17382288636363644,
+        "roiCi95": [
+          -0.4737303419801706,
+          0.8213761147074434
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 6,
+          "won": 1,
+          "lost": 5,
+          "void": 0,
+          "abstained": 14,
+          "unresolved": 0,
+          "hitRate": 0.16666666666666666,
+          "averageOdds": 5.292227499999999,
+          "averageLegs": 2.5,
+          "roi": -0.14146666666666663,
+          "roiCi95": [
+            -1.824192,
+            1.5412586666666668
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 18,
+          "won": 4,
+          "lost": 14,
+          "void": 0,
+          "abstained": 1,
+          "unresolved": 1,
+          "hitRate": 0.2222222222222222,
+          "averageOdds": 5.182301155555557,
+          "averageLegs": 2.6666666666666665,
+          "roi": 0.12250322222222228,
+          "roiCi95": [
+            -0.8757908405940883,
+            1.1207972850385328
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 20,
+          "won": 5,
+          "lost": 15,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 0,
+          "hitRate": 0.25,
+          "averageOdds": 5.3045317999999995,
+          "averageLegs": 2.8,
+          "roi": 0.3145974500000001,
+          "roiCi95": [
+            -0.7106925173311274,
+            1.3398874173311277
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "prob-min-50",
+        "maxLegs": 5,
+        "maxCombinedOdds": 15,
+        "maxLegOdds": 15.01,
+        "minProbability": 0.5,
+        "maxPositiveEdge": 0.1
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 39,
+        "won": 7,
+        "lost": 32,
+        "void": 0,
+        "abstained": 20,
+        "unresolved": 1,
+        "hitRate": 0.1794871794871795,
+        "averageOdds": 5.273858841025643,
+        "averageLegs": 2.948717948717949,
+        "roi": -0.0644554102564103,
+        "roiCi95": [
+          -0.7021122945598808,
+          0.5732014740470601
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 2,
+          "won": 0,
+          "lost": 2,
+          "void": 0,
+          "abstained": 18,
+          "unresolved": 0,
+          "hitRate": 0,
+          "averageOdds": 5.1744065,
+          "averageLegs": 3,
+          "roi": -1,
+          "roiCi95": [
+            -1,
+            -1
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 18,
+          "won": 4,
+          "lost": 14,
+          "void": 0,
+          "abstained": 1,
+          "unresolved": 1,
+          "hitRate": 0.2222222222222222,
+          "averageOdds": 5.2907881,
+          "averageLegs": 3,
+          "roi": 0.1784772222222222,
+          "roiCi95": [
+            -0.8739864755546158,
+            1.2309409199990602
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 19,
+          "won": 3,
+          "lost": 16,
+          "void": 0,
+          "abstained": 1,
+          "unresolved": 0,
+          "hitRate": 0.15789473684210525,
+          "averageOdds": 5.268289263157895,
+          "averageLegs": 2.8947368421052633,
+          "roi": -0.19612373684210527,
+          "roiCi95": [
+            -1.0537853416529646,
+            0.6615378679687539
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "edge-max-075",
+        "maxLegs": 5,
+        "maxCombinedOdds": 15,
+        "maxLegOdds": 15.01,
+        "minProbability": 0,
+        "maxPositiveEdge": 0.075
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 55,
+        "won": 12,
+        "lost": 43,
+        "void": 0,
+        "abstained": 5,
+        "unresolved": 0,
+        "hitRate": 0.21818181818181817,
+        "averageOdds": 5.665365901090909,
+        "averageLegs": 2.6545454545454548,
+        "roi": 0.15902339999999998,
+        "roiCi95": [
+          -0.4281125900291389,
+          0.7461593900291388
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 15,
+          "won": 3,
+          "lost": 12,
+          "void": 0,
+          "abstained": 5,
+          "unresolved": 0,
+          "hitRate": 0.2,
+          "averageOdds": 6.719464066666668,
+          "averageLegs": 2.2666666666666666,
+          "roi": 0.06254666666666668,
+          "roiCi95": [
+            -1.0532336272035394,
+            1.178326960536873
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 20,
+          "won": 5,
+          "lost": 15,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 0,
+          "hitRate": 0.25,
+          "averageOdds": 5.223883,
+          "averageLegs": 2.7,
+          "roi": 0.3273527,
+          "roiCi95": [
+            -0.7120830664933988,
+            1.366788466493399
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 20,
+          "won": 4,
+          "lost": 16,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 0,
+          "hitRate": 0.2,
+          "averageOdds": 5.316275178,
+          "averageLegs": 2.9,
+          "roi": 0.06305164999999997,
+          "roiCi95": [
+            -0.8944920535268309,
+            1.0205953535268308
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "edge-max-050",
+        "maxLegs": 5,
+        "maxCombinedOdds": 15,
+        "maxLegOdds": 15.01,
+        "minProbability": 0,
+        "maxPositiveEdge": 0.05
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 51,
+        "won": 6,
+        "lost": 45,
+        "void": 0,
+        "abstained": 6,
+        "unresolved": 3,
+        "hitRate": 0.11764705882352941,
+        "averageOdds": 5.746281201050981,
+        "averageLegs": 2.5686274509803924,
+        "roi": -0.364432137254902,
+        "roiCi95": [
+          -0.8488943260723132,
+          0.12003005156250918
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 15,
+          "won": 4,
+          "lost": 11,
+          "void": 0,
+          "abstained": 5,
+          "unresolved": 0,
+          "hitRate": 0.26666666666666666,
+          "averageOdds": 6.795675066666667,
+          "averageLegs": 2.2,
+          "roi": 0.39902906666666665,
+          "roiCi95": [
+            -0.8190438658857289,
+            1.6171019992190623
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 18,
+          "won": 1,
+          "lost": 17,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 2,
+          "hitRate": 0.05555555555555555,
+          "averageOdds": 5.397954093333333,
+          "averageLegs": 2.5,
+          "roi": -0.6515277777777777,
+          "roiCi95": [
+            -1.3345333333333336,
+            0.03147777777777816
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 18,
+          "won": 1,
+          "lost": 17,
+          "void": 0,
+          "abstained": 1,
+          "unresolved": 1,
+          "hitRate": 0.05555555555555555,
+          "averageOdds": 5.220113420755556,
+          "averageLegs": 2.9444444444444446,
+          "roi": -0.7135541666666667,
+          "roiCi95": [
+            -1.274988,
+            -0.1521203333333334
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "max3-odds7-edge075",
+        "maxLegs": 3,
+        "maxCombinedOdds": 7,
+        "maxLegOdds": 15.01,
+        "minProbability": 0,
+        "maxPositiveEdge": 0.075
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 50,
+        "won": 13,
+        "lost": 37,
+        "void": 0,
+        "abstained": 10,
+        "unresolved": 0,
+        "hitRate": 0.26,
+        "averageOdds": 5.28345434,
+        "averageLegs": 2.54,
+        "roi": 0.35019574000000003,
+        "roiCi95": [
+          -0.29247712554799804,
+          0.992868605547998
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 12,
+          "won": 3,
+          "lost": 9,
+          "void": 0,
+          "abstained": 8,
+          "unresolved": 0,
+          "hitRate": 0.25,
+          "averageOdds": 5.39034675,
+          "averageLegs": 2.3333333333333335,
+          "roi": 0.3281833333333333,
+          "roiCi95": [
+            -1.034685569785986,
+            1.6910522364526526
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 20,
+          "won": 5,
+          "lost": 15,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 0,
+          "hitRate": 0.25,
+          "averageOdds": 5.229927099999999,
+          "averageLegs": 2.65,
+          "roi": 0.3273527,
+          "roiCi95": [
+            -0.7120830664933988,
+            1.366788466493399
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 18,
+          "won": 5,
+          "lost": 13,
+          "void": 0,
+          "abstained": 2,
+          "unresolved": 0,
+          "hitRate": 0.2777777777777778,
+          "averageOdds": 5.271667444444444,
+          "averageLegs": 2.5555555555555554,
+          "roi": 0.39025183333333324,
+          "roiCi95": [
+            -0.6883664797349686,
+            1.4688701464016352
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "max3-odds7-edge050",
+        "maxLegs": 3,
+        "maxCombinedOdds": 7,
+        "maxLegOdds": 15.01,
+        "minProbability": 0,
+        "maxPositiveEdge": 0.05
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 45,
+        "won": 8,
+        "lost": 37,
+        "void": 0,
+        "abstained": 13,
+        "unresolved": 2,
+        "hitRate": 0.17777777777777778,
+        "averageOdds": 5.286629822222222,
+        "averageLegs": 2.4444444444444446,
+        "roi": -0.04912415555555556,
+        "roiCi95": [
+          -0.6555421235575305,
+          0.5572938124464193
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 12,
+          "won": 4,
+          "lost": 8,
+          "void": 0,
+          "abstained": 8,
+          "unresolved": 0,
+          "hitRate": 0.3333333333333333,
+          "averageOdds": 5.485610499999999,
+          "averageLegs": 2.25,
+          "roi": 0.7487863333333333,
+          "roiCi95": [
+            -0.7164180201265373,
+            2.213990686793204
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 17,
+          "won": 2,
+          "lost": 15,
+          "void": 0,
+          "abstained": 1,
+          "unresolved": 2,
+          "hitRate": 0.11764705882352941,
+          "averageOdds": 5.304785176470588,
+          "averageLegs": 2.411764705882353,
+          "roi": -0.32249670588235296,
+          "roiCi95": [
+            -1.2357426924523225,
+            0.5907492806876165
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 16,
+          "won": 2,
+          "lost": 14,
+          "void": 0,
+          "abstained": 4,
+          "unresolved": 0,
+          "hitRate": 0.125,
+          "averageOdds": 5.11810425,
+          "averageLegs": 2.625,
+          "roi": -0.35709868749999996,
+          "roiCi95": [
+            -1.2179047456293475,
+            0.5037073706293475
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "max3-odds7-prob40",
+        "maxLegs": 3,
+        "maxCombinedOdds": 7,
+        "maxLegOdds": 15.01,
+        "minProbability": 0.4,
+        "maxPositiveEdge": 0.1
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 43,
+        "won": 11,
+        "lost": 32,
+        "void": 0,
+        "abstained": 16,
+        "unresolved": 1,
+        "hitRate": 0.2558139534883721,
+        "averageOdds": 5.206367139534884,
+        "averageLegs": 2.6511627906976742,
+        "roi": 0.3211873720930233,
+        "roiCi95": [
+          -0.36093621695625033,
+          1.0033109611422968
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 6,
+          "won": 1,
+          "lost": 5,
+          "void": 0,
+          "abstained": 14,
+          "unresolved": 0,
+          "hitRate": 0.16666666666666666,
+          "averageOdds": 5.292227499999999,
+          "averageLegs": 2.5,
+          "roi": -0.14146666666666663,
+          "roiCi95": [
+            -1.824192,
+            1.5412586666666668
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 18,
+          "won": 5,
+          "lost": 13,
+          "void": 0,
+          "abstained": 1,
+          "unresolved": 1,
+          "hitRate": 0.2777777777777778,
+          "averageOdds": 5.186438388888889,
+          "averageLegs": 2.611111111111111,
+          "roi": 0.4093282222222222,
+          "roiCi95": [
+            -0.6710061465455838,
+            1.489662590990028
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 19,
+          "won": 5,
+          "lost": 14,
+          "void": 0,
+          "abstained": 1,
+          "unresolved": 0,
+          "hitRate": 0.2631578947368421,
+          "averageOdds": 5.198133210526315,
+          "averageLegs": 2.736842105263158,
+          "roi": 0.38378678947368433,
+          "roiCi95": [
+            -0.6874685204888429,
+            1.4550420994362117
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "max3-odds6.5-edge075",
+        "maxLegs": 3,
+        "maxCombinedOdds": 6.5,
+        "maxLegOdds": 15.01,
+        "minProbability": 0,
+        "maxPositiveEdge": 0.075
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 50,
+        "won": 13,
+        "lost": 37,
+        "void": 0,
+        "abstained": 10,
+        "unresolved": 0,
+        "hitRate": 0.26,
+        "averageOdds": 5.28042434,
+        "averageLegs": 2.54,
+        "roi": 0.35019574000000003,
+        "roiCi95": [
+          -0.29247712554799804,
+          0.992868605547998
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 12,
+          "won": 3,
+          "lost": 9,
+          "void": 0,
+          "abstained": 8,
+          "unresolved": 0,
+          "hitRate": 0.25,
+          "averageOdds": 5.39034675,
+          "averageLegs": 2.3333333333333335,
+          "roi": 0.3281833333333333,
+          "roiCi95": [
+            -1.034685569785986,
+            1.6910522364526526
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 20,
+          "won": 5,
+          "lost": 15,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 0,
+          "hitRate": 0.25,
+          "averageOdds": 5.229927099999999,
+          "averageLegs": 2.65,
+          "roi": 0.3273527,
+          "roiCi95": [
+            -0.7120830664933988,
+            1.366788466493399
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 18,
+          "won": 5,
+          "lost": 13,
+          "void": 0,
+          "abstained": 2,
+          "unresolved": 0,
+          "hitRate": 0.2777777777777778,
+          "averageOdds": 5.2632507777777775,
+          "averageLegs": 2.5555555555555554,
+          "roi": 0.39025183333333324,
+          "roiCi95": [
+            -0.6883664797349686,
+            1.4688701464016352
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "max3-odds7.5-edge075",
+        "maxLegs": 3,
+        "maxCombinedOdds": 7.5,
+        "maxLegOdds": 15.01,
+        "minProbability": 0,
+        "maxPositiveEdge": 0.075
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 51,
+        "won": 13,
+        "lost": 38,
+        "void": 0,
+        "abstained": 9,
+        "unresolved": 0,
+        "hitRate": 0.2549019607843137,
+        "averageOdds": 5.323027784313725,
+        "averageLegs": 2.549019607843137,
+        "roi": 0.32372131372549023,
+        "roiCi95": [
+          -0.30835762015780804,
+          0.9558002476087886
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 12,
+          "won": 3,
+          "lost": 9,
+          "void": 0,
+          "abstained": 8,
+          "unresolved": 0,
+          "hitRate": 0.25,
+          "averageOdds": 5.39034675,
+          "averageLegs": 2.3333333333333335,
+          "roi": 0.3281833333333333,
+          "roiCi95": [
+            -1.034685569785986,
+            1.6910522364526526
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 20,
+          "won": 5,
+          "lost": 15,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 0,
+          "hitRate": 0.25,
+          "averageOdds": 5.229927099999999,
+          "averageLegs": 2.65,
+          "roi": 0.3273527,
+          "roiCi95": [
+            -0.7120830664933988,
+            1.366788466493399
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 19,
+          "won": 5,
+          "lost": 14,
+          "void": 0,
+          "abstained": 1,
+          "unresolved": 0,
+          "hitRate": 0.2631578947368421,
+          "averageOdds": 5.378511263157893,
+          "averageLegs": 2.5789473684210527,
+          "roi": 0.31708068421052626,
+          "roiCi95": [
+            -0.7132204663727681,
+            1.3473818347938207
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "max2-odds7-edge075",
+        "maxLegs": 2,
+        "maxCombinedOdds": 7,
+        "maxLegOdds": 15.01,
+        "minProbability": 0,
+        "maxPositiveEdge": 0.075
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 49,
+        "won": 12,
+        "lost": 37,
+        "void": 0,
+        "abstained": 11,
+        "unresolved": 0,
+        "hitRate": 0.24489795918367346,
+        "averageOdds": 5.359459183673468,
+        "averageLegs": 2,
+        "roi": 0.3017326530612245,
+        "roiCi95": [
+          -0.34715914239828555,
+          0.9506244485207345
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 12,
+          "won": 3,
+          "lost": 9,
+          "void": 0,
+          "abstained": 8,
+          "unresolved": 0,
+          "hitRate": 0.25,
+          "averageOdds": 5.475225000000001,
+          "averageLegs": 2,
+          "roi": 0.3281833333333333,
+          "roiCi95": [
+            -1.034685569785986,
+            1.6910522364526526
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 19,
+          "won": 4,
+          "lost": 15,
+          "void": 0,
+          "abstained": 1,
+          "unresolved": 0,
+          "hitRate": 0.21052631578947367,
+          "averageOdds": 5.248410526315788,
+          "averageLegs": 2,
+          "roi": 0.1268421052631579,
+          "roiCi95": [
+            -0.8875318718441221,
+            1.1412160823704378
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 18,
+          "won": 5,
+          "lost": 13,
+          "void": 0,
+          "abstained": 2,
+          "unresolved": 0,
+          "hitRate": 0.2777777777777778,
+          "averageOdds": 5.3995,
+          "averageLegs": 2,
+          "roi": 0.46870555555555565,
+          "roiCi95": [
+            -0.6588764341652702,
+            1.5962875452763816
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "max3-odds7-edge065",
+        "maxLegs": 3,
+        "maxCombinedOdds": 7,
+        "maxLegOdds": 15.01,
+        "minProbability": 0,
+        "maxPositiveEdge": 0.065
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 50,
+        "won": 10,
+        "lost": 40,
+        "void": 0,
+        "abstained": 10,
+        "unresolved": 0,
+        "hitRate": 0.2,
+        "averageOdds": 5.2954916800000005,
+        "averageLegs": 2.56,
+        "roi": 0.06836616,
+        "roiCi95": [
+          -0.5320783948113654,
+          0.6688107148113653
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 12,
+          "won": 3,
+          "lost": 9,
+          "void": 0,
+          "abstained": 8,
+          "unresolved": 0,
+          "hitRate": 0.25,
+          "averageOdds": 5.436155500000001,
+          "averageLegs": 2.3333333333333335,
+          "roi": 0.3281833333333333,
+          "roiCi95": [
+            -1.034685569785986,
+            1.6910522364526526
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 20,
+          "won": 6,
+          "lost": 14,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 0,
+          "hitRate": 0.3,
+          "averageOdds": 5.257740999999999,
+          "averageLegs": 2.65,
+          "roi": 0.5884404,
+          "roiCi95": [
+            -0.5080625644285633,
+            1.6849433644285634
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 18,
+          "won": 1,
+          "lost": 17,
+          "void": 0,
+          "abstained": 2,
+          "unresolved": 0,
+          "hitRate": 0.05555555555555555,
+          "averageOdds": 5.2436609999999995,
+          "averageLegs": 2.611111111111111,
+          "roi": -0.6827055555555555,
+          "roiCi95": [
+            -1.3046026666666668,
+            -0.06080844444444422
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "max3-odds7-edge085",
+        "maxLegs": 3,
+        "maxCombinedOdds": 7,
+        "maxLegOdds": 15.01,
+        "minProbability": 0,
+        "maxPositiveEdge": 0.085
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 48,
+        "won": 12,
+        "lost": 36,
+        "void": 0,
+        "abstained": 10,
+        "unresolved": 2,
+        "hitRate": 0.25,
+        "averageOdds": 5.248099375,
+        "averageLegs": 2.4166666666666665,
+        "roi": 0.28138012500000004,
+        "roiCi95": [
+          -0.35797695410916736,
+          0.9207372041091675
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 12,
+          "won": 2,
+          "lost": 10,
+          "void": 0,
+          "abstained": 8,
+          "unresolved": 0,
+          "hitRate": 0.16666666666666666,
+          "averageOdds": 5.354131083333333,
+          "averageLegs": 2.3333333333333335,
+          "roi": -0.1575333333333334,
+          "roiCi95": [
+            -1.2708520428520604,
+            0.9557853761853937
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 19,
+          "won": 4,
+          "lost": 15,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 1,
+          "hitRate": 0.21052631578947367,
+          "averageOdds": 5.200732421052632,
+          "averageLegs": 2.3684210526315788,
+          "roi": 0.1323744210526316,
+          "roiCi95": [
+            -0.8866126932545639,
+            1.1513615353598272
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 17,
+          "won": 6,
+          "lost": 11,
+          "void": 0,
+          "abstained": 2,
+          "unresolved": 1,
+          "hitRate": 0.35294117647058826,
+          "averageOdds": 5.226193,
+          "averageLegs": 2.5294117647058822,
+          "roi": 0.7577371764705882,
+          "roiCi95": [
+            -0.4213697213492247,
+            1.9368440742904012
+          ]
+        }
+      ]
+    },
+    {
+      "config": {
+        "name": "max3-odds7-edge090",
+        "maxLegs": 3,
+        "maxCombinedOdds": 7,
+        "maxLegOdds": 15.01,
+        "minProbability": 0,
+        "maxPositiveEdge": 0.09
+      },
+      "overall": {
+        "days": 60,
+        "coupons": 49,
+        "won": 13,
+        "lost": 36,
+        "void": 0,
+        "abstained": 10,
+        "unresolved": 1,
+        "hitRate": 0.2653061224489796,
+        "averageOdds": 5.264237551020408,
+        "averageLegs": 2.3877551020408165,
+        "roi": 0.36410769387755104,
+        "roiCi95": [
+          -0.2826458127275221,
+          1.010861200482624
+        ]
+      },
+      "folds": [
+        {
+          "days": 20,
+          "coupons": 12,
+          "won": 3,
+          "lost": 9,
+          "void": 0,
+          "abstained": 8,
+          "unresolved": 0,
+          "hitRate": 0.25,
+          "averageOdds": 5.372188749999999,
+          "averageLegs": 2.25,
+          "roi": 0.2717333333333333,
+          "roiCi95": [
+            -1.0301007623386695,
+            1.5735674290053363
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 20,
+          "won": 5,
+          "lost": 15,
+          "void": 0,
+          "abstained": 0,
+          "unresolved": 0,
+          "hitRate": 0.25,
+          "averageOdds": 5.211134450000001,
+          "averageLegs": 2.35,
+          "roi": 0.33782900000000005,
+          "roiCi95": [
+            -0.7092729531823464,
+            1.3849309531823466
+          ]
+        },
+        {
+          "days": 20,
+          "coupons": 17,
+          "won": 5,
+          "lost": 12,
+          "void": 0,
+          "abstained": 2,
+          "unresolved": 1,
+          "hitRate": 0.29411764705882354,
+          "averageOdds": 5.25051094117647,
+          "averageLegs": 2.5294117647058822,
+          "roi": 0.4602292352941178,
+          "roiCi95": [
+            -0.6617733662778738,
+            1.5822318368661092
+          ]
+        }
+      ]
+    }
+  ]
+}

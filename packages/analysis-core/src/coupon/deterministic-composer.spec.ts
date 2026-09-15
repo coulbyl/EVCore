@@ -33,7 +33,7 @@ function candidate(id: string, overrides: Partial<CouponLeg> = {}): CouponLeg {
 
 describe("composeDeterministicCoupon", () => {
   it("uses a distinct policy version while the LLM policy remains active", () => {
-    expect(DETERMINISTIC_COUPON_POLICY_VERSION).toBe("deterministic-5-15-v1");
+    expect(DETERMINISTIC_COUPON_POLICY_VERSION).toBe("deterministic-5-7-v1");
   });
 
   it("returns exactly the same coupon regardless of input order", () => {
@@ -117,5 +117,25 @@ describe("composeDeterministicCoupon", () => {
       UNIFIED_COUPON_CLASS,
     );
     expect(pool).toHaveLength(1);
+  });
+
+  it("supports a stricter positive-edge ceiling as part of the pure policy", () => {
+    const highEdge = candidate("high-edge", {
+      calibratedProbability: 0.55,
+      probability: 0.55,
+      calibratedHitRate: 0.55,
+      oddsSnapshot: 2.2,
+      referenceOdds: 2,
+    });
+    expect(
+      buildDeterministicCandidatePool([highEdge], UNIFIED_COUPON_CLASS, {
+        maxPositiveEdge: 0.075,
+      }),
+    ).toHaveLength(1);
+    expect(
+      buildDeterministicCandidatePool([highEdge], UNIFIED_COUPON_CLASS, {
+        maxPositiveEdge: 0.04,
+      }),
+    ).toHaveLength(0);
   });
 });

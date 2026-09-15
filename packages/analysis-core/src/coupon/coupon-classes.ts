@@ -178,4 +178,17 @@ export const UNIFIED_COUPON_BOUNDS: CouponBounds = {
   maxCombinedOdds: 15,
 };
 export const COUPON_POLICY_VERSION = "unified-5-15-v1";
-export const DETERMINISTIC_COUPON_POLICY_VERSION = "deterministic-5-15-v1";
+export const DETERMINISTIC_COUPON_POLICY_VERSION = "deterministic-5-7-v1";
+
+// Candidate frozen after development-window walk-forward comparison. It is
+// not the live policy: the final holdout must pass before any integration.
+export const DETERMINISTIC_COUPON_CLASS: CouponClass = {
+  ...UNIFIED_COUPON_CLASS,
+  maxLegs: 3,
+};
+export const DETERMINISTIC_COUPON_BOUNDS: CouponBounds = {
+  ...UNIFIED_COUPON_BOUNDS,
+  maxLegs: 3,
+  maxCombinedOdds: 7,
+};
+export const DETERMINISTIC_MAX_POSITIVE_EDGE = 0.075;

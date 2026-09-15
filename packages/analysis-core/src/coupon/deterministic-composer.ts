@@ -16,6 +16,12 @@ const DEFAULT_PROBABILITY_POOL_SIZE = 30;
 const DEFAULT_VALUE_POOL_SIZE = 20;
 const FLOAT_EPSILON = 1e-12;
 
+export type DeterministicComposerOptions = {
+  probabilityPoolSize?: number;
+  valuePoolSize?: number;
+  maxPositiveEdge?: number;
+};
+
 export type DeterministicCoupon<T extends CouponLeg> = {
   legs: readonly T[];
   combinedOdds: number;
@@ -71,9 +77,15 @@ function compareCandidatesByValue(a: CouponLeg, b: CouponLeg): number {
 export function isAdmissibleCouponCandidate<T extends CouponLeg>(
   candidate: T,
   couponClass: CouponClass,
+  options: Pick<DeterministicComposerOptions, "maxPositiveEdge"> = {},
 ): boolean {
   const probability = legProbability(candidate);
   const odds = candidate.oddsSnapshot;
+  const referenceOdds = candidate.referenceOdds ?? odds;
+  const positiveEdge =
+    referenceOdds === null
+      ? Number.POSITIVE_INFINITY
+      : probability - 1 / referenceOdds;
   return (
     odds !== null &&
     Number.isFinite(odds) &&
@@ -84,6 +96,7 @@ export function isAdmissibleCouponCandidate<T extends CouponLeg>(
     clearsValueEdgeFloor(candidate) &&
     clearsTeamTotalMaxOdds(candidate) &&
     clearsMaxLegEdge(candidate) &&
+    positiveEdge <= (options.maxPositiveEdge ?? 0.1) &&
     clearsMinLegOdds(candidate, couponClass)
   );
 }
@@ -96,10 +109,10 @@ export function isAdmissibleCouponCandidate<T extends CouponLeg>(
 export function buildDeterministicCandidatePool<T extends CouponLeg>(
   candidates: readonly T[],
   couponClass: CouponClass,
-  options: { probabilityPoolSize?: number; valuePoolSize?: number } = {},
+  options: DeterministicComposerOptions = {},
 ): T[] {
   const admissible = candidates.filter((candidate) =>
-    isAdmissibleCouponCandidate(candidate, couponClass),
+    isAdmissibleCouponCandidate(candidate, couponClass, options),
   );
   const probabilityPoolSize =
     options.probabilityPoolSize ?? DEFAULT_PROBABILITY_POOL_SIZE;
@@ -171,8 +184,13 @@ export function composeDeterministicCoupon<T extends CouponLeg>(
   candidates: readonly T[],
   couponClass: CouponClass,
   bounds: CouponBounds,
+  options: DeterministicComposerOptions = {},
 ): DeterministicCompositionResult<T> {
-  const pool = buildDeterministicCandidatePool(candidates, couponClass);
+  const pool = buildDeterministicCandidatePool(
+    candidates,
+    couponClass,
+    options,
+  );
   if (pool.length < bounds.minLegs) return { outcome: "empty_pool" };
 
   let best: DeterministicCoupon<T> | null = null;
