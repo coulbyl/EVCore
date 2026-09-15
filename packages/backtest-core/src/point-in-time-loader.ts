@@ -18,8 +18,15 @@ import {
   H2H_LIMIT_DEFAULT,
   computeCongestionScoreFromTeams,
   CONGESTION_UPCOMING_WINDOW_MS,
+  POOL_ELIGIBLE_CHANNELS,
 } from "@evcore/analysis-core";
-import { prisma, FixtureStatus, type PrismaClient } from "@evcore/db";
+import {
+  prisma,
+  BetStatus,
+  FixtureStatus,
+  prematchCohortSql,
+  type PrismaClient,
+} from "@evcore/db";
 
 // The structural fix behind docs/backtest-harness-architecture.md: instead
 // of trusting every backtest script to remember "don't read the future",
@@ -62,6 +69,26 @@ export type ListFixturesOptions = {
   // flag the rest of the codebase already uses to exclude thin/noisy
   // competitions from backtests).
   competitionCodes?: readonly string[];
+};
+
+export type CouponReplaySelection = {
+  fixtureId: string;
+  scheduledAt: Date;
+  competition: string;
+  competitionCode: string;
+  channel: string;
+  market: string;
+  pick: string;
+  probability: number;
+  odds: number;
+  result: "WON" | "LOST" | "VOID" | "PENDING" | null;
+  featureSnapshot: Record<string, unknown>;
+};
+
+export type CouponCalibrationObservation = {
+  channel: string;
+  probability: number;
+  won: boolean;
 };
 
 export class PointInTimeLoader {
@@ -109,6 +136,132 @@ export class PointInTimeLoader {
       // Non-null guaranteed by the where clause above.
       homeScore: row.homeScore!,
       awayScore: row.awayScore!,
+    }));
+  }
+
+  /** Candidate decisions that were already stored at `asOf`. The later
+   * result is returned only as settlement truth; callers must never feed it
+   * into composition. VANTAGE is excluded so this replay has no AI input. */
+  async loadCouponSelections(input: {
+    from: Date;
+    to: Date;
+    asOf: Date;
+  }): Promise<CouponReplaySelection[]> {
+    const eligibleChannels = POOL_ELIGIBLE_CHANNELS.filter(
+      (channel) => channel !== "VANTAGE",
+    );
+    const fixtures = await this.client.fixture.findMany({
+      where: {
+        scheduledAt: { gte: input.from, lte: input.to, gt: input.asOf },
+        status: {
+          in: [
+            FixtureStatus.FINISHED,
+            FixtureStatus.CANCELLED,
+            FixtureStatus.POSTPONED,
+          ],
+        },
+        season: { competition: { includeInBacktest: true } },
+      },
+      select: {
+        id: true,
+        scheduledAt: true,
+        season: {
+          select: {
+            competition: { select: { name: true, code: true } },
+          },
+        },
+        modelRuns: {
+          where: {
+            analyzedAt: { lte: input.asOf },
+            createdAt: { lte: input.asOf },
+          },
+          select: {
+            features: true,
+            channelDecisions: {
+              where: {
+                channel: { in: eligibleChannels },
+                status: "SELECTED",
+                createdAt: { lte: input.asOf },
+              },
+              select: {
+                channel: true,
+                selections: {
+                  where: {
+                    rank: 1,
+                    odds: { not: null },
+                    createdAt: { lte: input.asOf },
+                  },
+                  select: {
+                    market: true,
+                    pick: true,
+                    probability: true,
+                    odds: true,
+                    result: true,
+                  },
+                  take: 1,
+                },
+              },
+            },
+          },
+          orderBy: { analyzedAt: "desc" },
+          take: 1,
+        },
+      },
+      orderBy: [{ scheduledAt: "asc" }, { id: "asc" }],
+    });
+
+    return fixtures.flatMap((fixture) => {
+      const run = fixture.modelRuns[0];
+      if (!run) return [];
+      const featureSnapshot =
+        run.features && typeof run.features === "object"
+          ? (run.features as Record<string, unknown>)
+          : {};
+      return run.channelDecisions.flatMap((decision) => {
+        const selection = decision.selections[0];
+        if (!selection?.odds) return [];
+        return [
+          {
+            fixtureId: fixture.id,
+            scheduledAt: fixture.scheduledAt,
+            competition: fixture.season.competition.name,
+            competitionCode: fixture.season.competition.code,
+            channel: decision.channel,
+            market: selection.market,
+            pick: selection.pick,
+            probability: Number(selection.probability),
+            odds: Number(selection.odds),
+            result: selection.result,
+            featureSnapshot,
+          },
+        ];
+      });
+    });
+  }
+
+  /** Settled observations that were known before `asOf`, used to refit the
+   * same expanding-window channel calibration on every replay day. */
+  async loadCouponCalibrationObservations(
+    asOf: Date,
+  ): Promise<CouponCalibrationObservation[]> {
+    const cohort = await this.client.$queryRaw<{ id: string }[]>(
+      prematchCohortSql({ asOf }),
+    );
+    const selections = await this.client.channelSelection.findMany({
+      where: {
+        id: { in: cohort.map((row) => row.id) },
+        result: { in: [BetStatus.WON, BetStatus.LOST] },
+      },
+      select: {
+        probability: true,
+        result: true,
+        channelDecision: { select: { channel: true } },
+      },
+    });
+    return selections.map((selection) => ({
+      channel: selection.channelDecision.channel,
+      probability: Number(selection.probability),
+      won: selection.result === BetStatus.WON,
     }));
   }
 

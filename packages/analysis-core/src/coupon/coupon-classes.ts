@@ -178,3 +178,4 @@ export const UNIFIED_COUPON_BOUNDS: CouponBounds = {
   maxCombinedOdds: 15,
 };
 export const COUPON_POLICY_VERSION = "unified-5-15-v1";
+export const DETERMINISTIC_COUPON_POLICY_VERSION = "deterministic-5-15-v1";

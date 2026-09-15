@@ -1,0 +1,661 @@
+{
+  "policyVersion": "deterministic-5-15-v1",
+  "livePolicyUnchanged": "unified-5-15-v1",
+  "generatedAt": "2026-09-15T14:54:55.568Z",
+  "period": {
+    "from": "2026-07-01",
+    "to": "2026-09-13"
+  },
+  "objective": "max_joint_probability_then_coupon_ev_then_fewer_legs",
+  "limitations": [
+    "Historical stored channel decisions are replayed; the current engine is not recomputed.",
+    "Stored selection odds are used because legacy selections have no immutable odds-snapshot link.",
+    "Evaluated-market candidates are excluded; only stored rank-one selections are eligible.",
+    "VANTAGE candidates are excluded, so neither composition nor candidate production uses AI.",
+    "Historical AVOID signals and past schedule revisions cannot be reconstructed."
+  ],
+  "overall": {
+    "days": 75,
+    "coupons": 69,
+    "won": 13,
+    "lost": 56,
+    "void": 0,
+    "abstained": 5,
+    "unresolved": 1,
+    "hitRate": 0.18840579710144928,
+    "averageOdds": 5.518913787130435,
+    "averageLegs": 2.739130434782609,
+    "roi": -0.037818318840579686,
+    "roiCi95": [-0.515833544669283, 0.4401969069881236]
+  },
+  "train": {
+    "days": 45,
+    "coupons": 39,
+    "won": 8,
+    "lost": 31,
+    "void": 0,
+    "abstained": 5,
+    "unresolved": 1,
+    "hitRate": 0.20512820512820512,
+    "averageOdds": 5.712971764102564,
+    "averageLegs": 2.3846153846153846,
+    "roi": 0.08746158974358978,
+    "roiCi95": [-0.5959148089907458, 0.7708379884779253]
+  },
+  "validation": {
+    "days": 30,
+    "coupons": 30,
+    "won": 5,
+    "lost": 25,
+    "void": 0,
+    "abstained": 0,
+    "unresolved": 0,
+    "hitRate": 0.16666666666666666,
+    "averageOdds": 5.266638417066667,
+    "averageLegs": 3.2,
+    "roi": -0.20068219999999998,
+    "roiCi95": [-0.8568710817527432, 0.4555066817527433]
+  },
+  "daily": [
+    {
+      "day": "2026-07-01",
+      "outcome": "ABSTAINED",
+      "candidateCount": 0,
+      "legCount": 0,
+      "combinedOdds": null,
+      "profit": 0
+    },
+    {
+      "day": "2026-07-02",
+      "outcome": "ABSTAINED",
+      "candidateCount": 6,
+      "legCount": 0,
+      "combinedOdds": null,
+      "profit": 0
+    },
+    {
+      "day": "2026-07-03",
+      "outcome": "ABSTAINED",
+      "candidateCount": 18,
+      "legCount": 0,
+      "combinedOdds": null,
+      "profit": 0
+    },
+    {
+      "day": "2026-07-04",
+      "outcome": "LOST",
+      "candidateCount": 45,
+      "legCount": 3,
+      "combinedOdds": 5.20416,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-05",
+      "outcome": "LOST",
+      "candidateCount": 20,
+      "legCount": 2,
+      "combinedOdds": 5.8561000000000005,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-06",
+      "outcome": "LOST",
+      "candidateCount": 13,
+      "legCount": 2,
+      "combinedOdds": 5.3999999999999995,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-07",
+      "outcome": "ABSTAINED",
+      "candidateCount": 7,
+      "legCount": 0,
+      "combinedOdds": null,
+      "profit": 0
+    },
+    {
+      "day": "2026-07-08",
+      "outcome": "LOST",
+      "candidateCount": 17,
+      "legCount": 2,
+      "combinedOdds": 14.63,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-09",
+      "outcome": "LOST",
+      "candidateCount": 63,
+      "legCount": 3,
+      "combinedOdds": 5.231265,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-10",
+      "outcome": "ABSTAINED",
+      "candidateCount": 18,
+      "legCount": 0,
+      "combinedOdds": null,
+      "profit": 0
+    },
+    {
+      "day": "2026-07-11",
+      "outcome": "WON",
+      "candidateCount": 33,
+      "legCount": 2,
+      "combinedOdds": 5.101299999999999,
+      "profit": 4.101299999999999
+    },
+    {
+      "day": "2026-07-12",
+      "outcome": "WON",
+      "candidateCount": 43,
+      "legCount": 2,
+      "combinedOdds": 5.1512,
+      "profit": 4.1512
+    },
+    {
+      "day": "2026-07-13",
+      "outcome": "LOST",
+      "candidateCount": 10,
+      "legCount": 2,
+      "combinedOdds": 8.6075,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-14",
+      "outcome": "LOST",
+      "candidateCount": 101,
+      "legCount": 2,
+      "combinedOdds": 5.313,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-15",
+      "outcome": "LOST",
+      "candidateCount": 13,
+      "legCount": 2,
+      "combinedOdds": 6.0065,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-16",
+      "outcome": "LOST",
+      "candidateCount": 73,
+      "legCount": 2,
+      "combinedOdds": 5.402699999999999,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-17",
+      "outcome": "WON",
+      "candidateCount": 60,
+      "legCount": 2,
+      "combinedOdds": 5.0083,
+      "profit": 4.0083
+    },
+    {
+      "day": "2026-07-18",
+      "outcome": "LOST",
+      "candidateCount": 68,
+      "legCount": 2,
+      "combinedOdds": 5.3237,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-19",
+      "outcome": "LOST",
+      "candidateCount": 25,
+      "legCount": 3,
+      "combinedOdds": 5.451040000000001,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-20",
+      "outcome": "LOST",
+      "candidateCount": 30,
+      "legCount": 2,
+      "combinedOdds": 7.9777999999999984,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-21",
+      "outcome": "LOST",
+      "candidateCount": 178,
+      "legCount": 4,
+      "combinedOdds": 5.088379799999999,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-22",
+      "outcome": "LOST",
+      "candidateCount": 118,
+      "legCount": 3,
+      "combinedOdds": 5.235234,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-23",
+      "outcome": "WON",
+      "candidateCount": 276,
+      "legCount": 3,
+      "combinedOdds": 5.039172000000001,
+      "profit": 4.039172000000001
+    },
+    {
+      "day": "2026-07-24",
+      "outcome": "LOST",
+      "candidateCount": 148,
+      "legCount": 2,
+      "combinedOdds": 5.187,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-25",
+      "outcome": "UNRESOLVED",
+      "candidateCount": 178,
+      "legCount": 3,
+      "combinedOdds": 5.203164,
+      "profit": null
+    },
+    {
+      "day": "2026-07-26",
+      "outcome": "LOST",
+      "candidateCount": 284,
+      "legCount": 2,
+      "combinedOdds": 5.175,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-27",
+      "outcome": "WON",
+      "candidateCount": 57,
+      "legCount": 2,
+      "combinedOdds": 6.2725,
+      "profit": 5.2725
+    },
+    {
+      "day": "2026-07-28",
+      "outcome": "LOST",
+      "candidateCount": 169,
+      "legCount": 2,
+      "combinedOdds": 5.117,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-29",
+      "outcome": "LOST",
+      "candidateCount": 96,
+      "legCount": 2,
+      "combinedOdds": 5.259799999999999,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-30",
+      "outcome": "LOST",
+      "candidateCount": 231,
+      "legCount": 2,
+      "combinedOdds": 5.005,
+      "profit": -1
+    },
+    {
+      "day": "2026-07-31",
+      "outcome": "LOST",
+      "candidateCount": 171,
+      "legCount": 3,
+      "combinedOdds": 5.457256,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-01",
+      "outcome": "WON",
+      "candidateCount": 178,
+      "legCount": 2,
+      "combinedOdds": 5.038,
+      "profit": 4.038
+    },
+    {
+      "day": "2026-08-02",
+      "outcome": "LOST",
+      "candidateCount": 280,
+      "legCount": 3,
+      "combinedOdds": 5.106249,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-03",
+      "outcome": "LOST",
+      "candidateCount": 67,
+      "legCount": 2,
+      "combinedOdds": 5.4233,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-04",
+      "outcome": "LOST",
+      "candidateCount": 84,
+      "legCount": 2,
+      "combinedOdds": 5.25,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-05",
+      "outcome": "LOST",
+      "candidateCount": 34,
+      "legCount": 3,
+      "combinedOdds": 5.595408,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-06",
+      "outcome": "LOST",
+      "candidateCount": 176,
+      "legCount": 3,
+      "combinedOdds": 5.276447999999999,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-07",
+      "outcome": "LOST",
+      "candidateCount": 299,
+      "legCount": 3,
+      "combinedOdds": 5.0508,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-08",
+      "outcome": "LOST",
+      "candidateCount": 426,
+      "legCount": 3,
+      "combinedOdds": 5.024488,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-09",
+      "outcome": "WON",
+      "candidateCount": 508,
+      "legCount": 3,
+      "combinedOdds": 5.089230000000001,
+      "profit": 4.089230000000001
+    },
+    {
+      "day": "2026-08-10",
+      "outcome": "LOST",
+      "candidateCount": 57,
+      "legCount": 2,
+      "combinedOdds": 6.0794999999999995,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-11",
+      "outcome": "LOST",
+      "candidateCount": 91,
+      "legCount": 2,
+      "combinedOdds": 5.3824,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-12",
+      "outcome": "WON",
+      "candidateCount": 15,
+      "legCount": 2,
+      "combinedOdds": 5.7113000000000005,
+      "profit": 4.7113000000000005
+    },
+    {
+      "day": "2026-08-13",
+      "outcome": "LOST",
+      "candidateCount": 188,
+      "legCount": 2,
+      "combinedOdds": 5.25,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-14",
+      "outcome": "LOST",
+      "candidateCount": 1419,
+      "legCount": 3,
+      "combinedOdds": 5.027869,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-15",
+      "outcome": "LOST",
+      "candidateCount": 673,
+      "legCount": 2,
+      "combinedOdds": 5.0184,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-16",
+      "outcome": "LOST",
+      "candidateCount": 562,
+      "legCount": 2,
+      "combinedOdds": 5.01,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-17",
+      "outcome": "LOST",
+      "candidateCount": 99,
+      "legCount": 3,
+      "combinedOdds": 5.029109999999999,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-18",
+      "outcome": "LOST",
+      "candidateCount": 367,
+      "legCount": 3,
+      "combinedOdds": 5.01552,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-19",
+      "outcome": "LOST",
+      "candidateCount": 102,
+      "legCount": 3,
+      "combinedOdds": 7.2669299999999994,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-20",
+      "outcome": "LOST",
+      "candidateCount": 232,
+      "legCount": 3,
+      "combinedOdds": 5.3545799999999995,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-21",
+      "outcome": "WON",
+      "candidateCount": 1505,
+      "legCount": 3,
+      "combinedOdds": 5.00202,
+      "profit": 4.00202
+    },
+    {
+      "day": "2026-08-22",
+      "outcome": "LOST",
+      "candidateCount": 760,
+      "legCount": 3,
+      "combinedOdds": 5.1792,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-23",
+      "outcome": "LOST",
+      "candidateCount": 587,
+      "legCount": 3,
+      "combinedOdds": 5.2291039999999995,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-24",
+      "outcome": "LOST",
+      "candidateCount": 252,
+      "legCount": 2,
+      "combinedOdds": 5.084999999999999,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-25",
+      "outcome": "LOST",
+      "candidateCount": 647,
+      "legCount": 4,
+      "combinedOdds": 5.1116688,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-26",
+      "outcome": "WON",
+      "candidateCount": 184,
+      "legCount": 3,
+      "combinedOdds": 5.09838,
+      "profit": 4.09838
+    },
+    {
+      "day": "2026-08-27",
+      "outcome": "WON",
+      "candidateCount": 354,
+      "legCount": 3,
+      "combinedOdds": 5.054400000000001,
+      "profit": 4.054400000000001
+    },
+    {
+      "day": "2026-08-28",
+      "outcome": "LOST",
+      "candidateCount": 3301,
+      "legCount": 4,
+      "combinedOdds": 5.062275,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-29",
+      "outcome": "LOST",
+      "candidateCount": 1651,
+      "legCount": 4,
+      "combinedOdds": 5.1603840000000005,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-30",
+      "outcome": "LOST",
+      "candidateCount": 1311,
+      "legCount": 4,
+      "combinedOdds": 5.211359999999999,
+      "profit": -1
+    },
+    {
+      "day": "2026-08-31",
+      "outcome": "LOST",
+      "candidateCount": 338,
+      "legCount": 2,
+      "combinedOdds": 5.236,
+      "profit": -1
+    },
+    {
+      "day": "2026-09-01",
+      "outcome": "LOST",
+      "candidateCount": 879,
+      "legCount": 4,
+      "combinedOdds": 5.077799999999999,
+      "profit": -1
+    },
+    {
+      "day": "2026-09-02",
+      "outcome": "LOST",
+      "candidateCount": 393,
+      "legCount": 3,
+      "combinedOdds": 5.1156,
+      "profit": -1
+    },
+    {
+      "day": "2026-09-03",
+      "outcome": "LOST",
+      "candidateCount": 159,
+      "legCount": 2,
+      "combinedOdds": 5.0625,
+      "profit": -1
+    },
+    {
+      "day": "2026-09-04",
+      "outcome": "LOST",
+      "candidateCount": 3031,
+      "legCount": 2,
+      "combinedOdds": 7.699999999999999,
+      "profit": -1
+    },
+    {
+      "day": "2026-09-05",
+      "outcome": "WON",
+      "candidateCount": 1660,
+      "legCount": 4,
+      "combinedOdds": 5.1009588,
+      "profit": 2.643542
+    },
+    {
+      "day": "2026-09-06",
+      "outcome": "LOST",
+      "candidateCount": 1226,
+      "legCount": 4,
+      "combinedOdds": 5.060424000000001,
+      "profit": -1
+    },
+    {
+      "day": "2026-09-07",
+      "outcome": "LOST",
+      "candidateCount": 300,
+      "legCount": 3,
+      "combinedOdds": 5.018595,
+      "profit": -1
+    },
+    {
+      "day": "2026-09-08",
+      "outcome": "LOST",
+      "candidateCount": 812,
+      "legCount": 4,
+      "combinedOdds": 5.06934288,
+      "profit": -1
+    },
+    {
+      "day": "2026-09-09",
+      "outcome": "LOST",
+      "candidateCount": 341,
+      "legCount": 3,
+      "combinedOdds": 5.027376000000001,
+      "profit": -1
+    },
+    {
+      "day": "2026-09-10",
+      "outcome": "LOST",
+      "candidateCount": 243,
+      "legCount": 3,
+      "combinedOdds": 5.399676,
+      "profit": -1
+    },
+    {
+      "day": "2026-09-11",
+      "outcome": "LOST",
+      "candidateCount": 3260,
+      "legCount": 5,
+      "combinedOdds": 5.053612032,
+      "profit": -1
+    },
+    {
+      "day": "2026-09-12",
+      "outcome": "WON",
+      "candidateCount": 1679,
+      "legCount": 4,
+      "combinedOdds": 5.181191999999999,
+      "profit": 4.181191999999999
+    },
+    {
+      "day": "2026-09-13",
+      "outcome": "LOST",
+      "candidateCount": 1146,
+      "legCount": 4,
+      "combinedOdds": 5.007744000000001,
+      "profit": -1
+    }
+  ]
+}

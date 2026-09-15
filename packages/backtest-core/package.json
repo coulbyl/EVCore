@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
+    "backtest:deterministic-coupon": "tsx scripts/backtest-deterministic-coupon.ts",
     "backtest:coverage-check": "tsx scripts/coverage-check.ts"
   },
   "dependencies": {
