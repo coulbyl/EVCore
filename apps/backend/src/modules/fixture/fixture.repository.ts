@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { mapWithConcurrency } from '@utils/async.utils';
 import {
   Fixture,
   FixtureStatus,
@@ -22,6 +23,12 @@ export const KNOCKOUT_ROUNDS = [
 ] as const;
 import { PrismaService } from '@/prisma.service';
 import { oneDayWindow } from '@utils/date.utils';
+
+/**
+ * Écritures de cotes en vol simultanément. Tenu sous `DATABASE_POOL_MAX`
+ * (10 par défaut) pour qu'un marché à trente lignes ne sature pas le pool.
+ */
+const ODDS_WRITE_CONCURRENCY = 5;
 
 export type FixtureWithTeamNames = Fixture & {
   homeTeam: { name: string; shortName: string; logoUrl: string | null };
@@ -507,6 +514,33 @@ export class FixtureRepository {
     });
   }
 
+  /**
+   * Rencontres dont le coup d'envoi tombe dans une fenêtre exprimée en
+   * minutes à partir de maintenant.
+   *
+   * Sert au balayage de clôture : contrairement à `findScheduledForDate`, qui
+   * ratisse une journée entière, on ne veut ici que les rencontres sur le
+   * point de commencer, pour capturer un prix juste avant le coup d'envoi
+   * sans repayer tout le calendrier à chaque passage.
+   */
+  findScheduledWithinMinutes(
+    fromMinutes: number,
+    toMinutes: number,
+    now = new Date(),
+  ): Promise<{ id: string; externalId: number; scheduledAt: Date }[]> {
+    const start = new Date(now.getTime() + fromMinutes * 60_000);
+    const end = new Date(now.getTime() + toMinutes * 60_000);
+    return this.prisma.client.fixture.findMany({
+      where: {
+        status: 'SCHEDULED',
+        scheduledAt: { gte: start, lte: end },
+        season: { competition: { isActive: true } },
+      },
+      select: { id: true, externalId: true, scheduledAt: true },
+      orderBy: { scheduledAt: 'asc' },
+    });
+  }
+
   findScheduledInRange(
     startDate: Date,
     endDate: Date,
@@ -683,6 +717,102 @@ export class FixtureRepository {
     });
   }
 
+  /**
+   * Marchés dont la ligne fait partie de l'identité du prix (handicap
+   * asiatique). Chemin distinct de `upsertNonOneXTwo` : là-bas un couple
+   * (marché, pick) identifie un prix, ici il en existe un par ligne, et c'est
+   * la colonne `line` — présente dans la contrainte d'unicité depuis la
+   * migration 20260915220000 — qui les sépare.
+   */
+  async upsertLineMarketOdds(
+    context: {
+      fixtureId: string;
+      bookmaker: string;
+      snapshotAt: Date;
+      source?: OddsSnapshotSource;
+    },
+    market:
+      | 'ASIAN_HANDICAP'
+      | 'ASIAN_HANDICAP_HT'
+      | 'OVER_UNDER_2H'
+      | 'CORNERS'
+      | 'CORNERS_HT'
+      | 'CARDS',
+    legs: ReadonlyArray<{ pick: string; line: number; odds: number }>,
+  ): Promise<void> {
+    const source = context.source ?? OddsSnapshotSource.PREMATCH;
+    await mapWithConcurrency(legs, ODDS_WRITE_CONCURRENCY, async (leg) => {
+      const where = {
+        fixtureId: context.fixtureId,
+        bookmaker: context.bookmaker,
+        market,
+        pick: leg.pick,
+        line: leg.line,
+        snapshotAt: context.snapshotAt,
+      } as const;
+      // Même stratégie que upsertNonOneXTwo : findFirst-then-create laisse
+      // une fenêtre TOCTOU, que la contrainte d'unicité referme au niveau
+      // base — le P2002 est rattrapé en update plutôt que propagé.
+      const existing = await this.prisma.client.oddsSnapshot.findFirst({
+        where,
+        select: { id: true },
+      });
+      if (existing) {
+        await this.prisma.client.oddsSnapshot.update({
+          where: { id: existing.id },
+          data: { odds: leg.odds },
+        });
+        return;
+      }
+      try {
+        await this.prisma.client.oddsSnapshot.create({
+          data: { ...where, source, odds: leg.odds },
+        });
+      } catch (error) {
+        if (!isUniqueConstraintError(error)) throw error;
+        const raceWinner = await this.prisma.client.oddsSnapshot.findFirst({
+          where,
+          select: { id: true },
+        });
+        if (!raceWinner) throw error;
+        await this.prisma.client.oddsSnapshot.update({
+          where: { id: raceWinner.id },
+          data: { odds: leg.odds },
+        });
+      }
+    });
+  }
+
+  /**
+   * Marchés à issues fixes ajoutés le 2026-09-15 (pair/impair, mi-temps la
+   * plus prolifique, première équipe à marquer). Ils n'ont pas de ligne :
+   * le couple (marché, pick) suffit à identifier le prix, comme pour BTTS.
+   */
+  async upsertFixedOutcomeOdds(
+    context: {
+      fixtureId: string;
+      bookmaker: string;
+      snapshotAt: Date;
+      source?: OddsSnapshotSource;
+    },
+    market:
+      | 'ODD_EVEN'
+      | 'ODD_EVEN_HT'
+      | 'HIGHEST_SCORING_HALF'
+      | 'TEAM_TO_SCORE_FIRST',
+    legs: ReadonlyArray<{ pick: string; odds: number }>,
+  ): Promise<void> {
+    const ctx = {
+      fixtureId: context.fixtureId,
+      bookmaker: context.bookmaker,
+      snapshotAt: context.snapshotAt,
+      source: context.source ?? OddsSnapshotSource.PREMATCH,
+    };
+    await mapWithConcurrency(legs, ODDS_WRITE_CONCURRENCY, (leg) =>
+      this.upsertNonOneXTwo(ctx, market, leg.pick, leg.odds),
+    );
+  }
+
   // eslint-disable-next-line max-params -- Four domain parameters; no meaningful grouping possible.
   private async upsertNonOneXTwo(
     data: {
@@ -708,7 +838,11 @@ export class FixtureRepository {
       | 'WIN_TO_NIL_AWAY'
       | 'TO_WIN_EITHER_HALF'
       | 'RESULT_TOTAL_GOALS'
-      | 'RESULT_BTTS',
+      | 'RESULT_BTTS'
+      | 'ODD_EVEN'
+      | 'ODD_EVEN_HT'
+      | 'HIGHEST_SCORING_HALF'
+      | 'TEAM_TO_SCORE_FIRST',
     pick: string,
     odds: number | null,
   ): Promise<void> {

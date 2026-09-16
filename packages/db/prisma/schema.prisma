@@ -55,6 +55,19 @@ enum Market {
   TO_WIN_EITHER_HALF
   RESULT_TOTAL_GOALS
   RESULT_BTTS
+  // Ajoutés 2026-09-15 (plan de rentabilité, chantier A). Marge Pinnacle
+  // mesurée sur 40 rencontres : 4,11 % contre 4,52 % sur ONE_X_TWO — c'est le
+  // marché le moins taxé du carnet, et il n'était pas collecté.
+  ASIAN_HANDICAP
+  ASIAN_HANDICAP_HT
+  OVER_UNDER_2H
+  CORNERS
+  CORNERS_HT
+  CARDS
+  ODD_EVEN
+  ODD_EVEN_HT
+  HIGHEST_SCORING_HALF
+  TEAM_TO_SCORE_FIRST
 
   @@schema("public")
 }
@@ -874,6 +887,13 @@ model OddsSnapshot {
   drawOdds   Decimal?           @db.Decimal(6, 3)
   awayOdds   Decimal?           @db.Decimal(6, 3)
   pick       String? // for non-1X2 markets
+  // Ligne du marché quand il en a une (handicap asiatique, totaux). NULL
+  // partout ailleurs. Introduite 2026-09-15 pour ASIAN_HANDICAP : un même
+  // `pick` (HOME/AWAY) existe à plusieurs handicaps sur la même rencontre, la
+  // ligne fait donc partie de l'identité du prix et entre dans la contrainte
+  // d'unicité. Les marchés antérieurs encodent encore leur ligne dans `pick`
+  // (`OVER_1_5`) — migration de cet héritage suivie sous A-16.
+  line       Decimal?           @db.Decimal(5, 2)
   // Decimal(9,3): CORRECT_SCORE odds on obscure scorelines routinely exceed
   // 1000 (already seen up to 800 in prod) and can overflow Decimal(6,3) —
   // 1X2/other markets never come close to this range in practice.
@@ -888,7 +908,7 @@ model OddsSnapshot {
   // duplicates back in. Prisma's own model below doesn't express the NULLS
   // NOT DISTINCT clause — do not let `prisma migrate dev` regenerate this
   // constraint as a plain UNIQUE, it would reopen the ONE_X_TWO race.
-  @@unique([fixtureId, bookmaker, market, pick, snapshotAt])
+  @@unique([fixtureId, bookmaker, market, pick, line, snapshotAt])
   @@index([fixtureId, snapshotAt])
   @@index([snapshotAt])
   @@map("odds_snapshot")

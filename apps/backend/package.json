@@ -17,7 +17,8 @@
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest run --inspect-brk --no-file-parallelism",
-    "test:e2e": "vitest run --config vitest.config.e2e.ts"
+    "test:e2e": "vitest run --config vitest.config.e2e.ts",
+    "etl:dry-run-markets": "tsx --env-file=.env scripts/dry-run-extended-markets.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1127.0",

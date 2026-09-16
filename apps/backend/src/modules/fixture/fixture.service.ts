@@ -231,6 +231,16 @@ export class FixtureService {
     return this.fixtureRepository.findScheduledForDate(date);
   }
 
+  findScheduledWithinMinutes(
+    fromMinutes: number,
+    toMinutes: number,
+  ): Promise<{ id: string; externalId: number; scheduledAt: Date }[]> {
+    return this.fixtureRepository.findScheduledWithinMinutes(
+      fromMinutes,
+      toMinutes,
+    );
+  }
+
   findScheduledInRange(
     startDate: Date,
     endDate: Date,
@@ -291,6 +301,22 @@ export class FixtureService {
     data: UpsertSecondaryMarketOddsInput,
   ): Promise<void> {
     return this.fixtureRepository.upsertSecondaryMarketOdds(data);
+  }
+
+  async upsertLineMarketOdds(
+    context: Parameters<FixtureRepository['upsertLineMarketOdds']>[0],
+    market: Parameters<FixtureRepository['upsertLineMarketOdds']>[1],
+    legs: Parameters<FixtureRepository['upsertLineMarketOdds']>[2],
+  ): Promise<void> {
+    return this.fixtureRepository.upsertLineMarketOdds(context, market, legs);
+  }
+
+  async upsertFixedOutcomeOdds(
+    context: Parameters<FixtureRepository['upsertFixedOutcomeOdds']>[0],
+    market: Parameters<FixtureRepository['upsertFixedOutcomeOdds']>[1],
+    legs: Parameters<FixtureRepository['upsertFixedOutcomeOdds']>[2],
+  ): Promise<void> {
+    return this.fixtureRepository.upsertFixedOutcomeOdds(context, market, legs);
   }
 
   // Alias kept for backward compatibility with existing tests.
