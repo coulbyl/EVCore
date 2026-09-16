@@ -1,5 +1,7 @@
 export type CouponClassName = "SAFE" | "BALANCED" | "BOLD" | "UNIQUE";
 
+export type CouponSource = "LLM" | "PRICE_COMPOSER";
+
 export type CouponLegDto = {
   id: string;
   fixtureId: string;
@@ -13,7 +15,13 @@ export type CouponLegDto = {
   scheduledAt: string;
   score: string | null;
   htScore: string | null;
-  canal: "VALUE" | "SAFE" | "BTTS" | "DRAW" | "DOMINANT";
+  /**
+   * Code canal renvoyé par l'API — toujours passer par `channelLabel()` pour
+   * l'afficher. Volontairement `string` : l'union ne listait que cinq canaux
+   * alors que l'API en sert plus de vingt, et la moindre valeur non listée
+   * (VANTAGE, PRICE…) rendait le typage faux sans que rien ne le signale.
+   */
+  canal: string;
   market: string;
   pick: string;
   probability: number;
@@ -49,6 +57,18 @@ export type CouponProposalDto = {
    * peuvent coexister le même jour pour la même classe.
    */
   batch: "evening" | "intraday";
+  /**
+   * Générateur à l'origine de la proposition.
+   *
+   * `LLM` — sélection par le LLM (apps/vantage-worker).
+   * `PRICE_COMPOSER` — compositeur déterministe classant sur le coût mesuré du
+   * marché, sans aucune probabilité du moteur.
+   *
+   * Les deux tournent en parallèle sur la même cible de cote : l'affichage doit
+   * les distinguer, sinon l'utilisateur compare deux produits en croyant n'en
+   * voir qu'un.
+   */
+  source: CouponSource;
   combinedOdds: number;
   jointProbability: number;
   signalScore: number;

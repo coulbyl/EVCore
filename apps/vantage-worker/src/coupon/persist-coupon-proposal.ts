@@ -1,4 +1,4 @@
-import { prisma, Prisma } from "@evcore/db";
+import { CouponSource, prisma, Prisma } from "@evcore/db";
 import { COUPON_POLICY_VERSION, type Market } from "@evcore/analysis-core";
 import type { CouponClass } from "@evcore/analysis-core";
 import type { ComposedCoupon } from "./validate-coupon-selection";
@@ -38,9 +38,15 @@ export async function persistCouponProposal(
   const toDecimal = (n: number) => new Prisma.Decimal(n);
   const toJson = (v: unknown) => v as Prisma.InputJsonValue;
 
+  // `source` joined the unique key on 2026-09-16, when the deterministic price
+  // composer started proposing on the same date and the same odds target. It is
+  // pinned to LLM here: this file is the LLM pipeline's only write path, and
+  // leaving it implicit would let one generator's upsert silently claim the
+  // other's row.
   const where = {
-    forDate_signalWindowDays_targetOddsMin_targetOddsMax_rank: {
+    forDate_source_signalWindowDays_targetOddsMin_targetOddsMax_rank: {
       forDate,
+      source: CouponSource.LLM,
       signalWindowDays,
       targetOddsMin: toDecimal(couponClass.targetOddsMin),
       targetOddsMax: toDecimal(couponClass.targetOddsMax),

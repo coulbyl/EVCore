@@ -2,6 +2,7 @@ import type { CouponClassName } from '../coupon.constants';
 import type {
   CouponProposalStatus,
   CouponResult,
+  CouponSource,
   Market,
   StrategyChannel,
 } from '@evcore/db';
@@ -60,6 +61,17 @@ export type CouponProposalDto = {
    * les passages suivants sont enregistrés dans CouponGenerationAttempt.
    */
   batch: 'evening' | 'intraday';
+  /**
+   * Quel générateur a produit la proposition.
+   *
+   * `LLM` — apps/vantage-worker, sélection par LLM.
+   * `PRICE_COMPOSER` — compositeur déterministe qui classe sur le coût mesuré
+   * du marché et n'utilise aucune probabilité du moteur.
+   *
+   * Les deux tournent en parallèle sur la même cible de cote : l'affichage doit
+   * les distinguer, sinon on compare deux produits en croyant n'en voir qu'un.
+   */
+  source: CouponSource;
   combinedOdds: number;
   jointProbability: number;
   signalScore: number;

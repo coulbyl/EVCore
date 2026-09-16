@@ -44,6 +44,7 @@ export class CouponService {
             p.signalWindowDays === INTRADAY_SIGNAL_WINDOW_DAYS)
             ? 'intraday'
             : 'evening',
+        source: p.source,
         combinedOdds: Number(p.combinedOdds),
         jointProbability: Number(p.jointProbability),
         signalScore: Number(p.signalScore),

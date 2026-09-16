@@ -4,6 +4,7 @@ import { PrismaModule } from '@/prisma.module';
 import { CouponRepository } from './coupon.repository';
 import { CouponSettlementService } from './coupon-settlement.service';
 import { CouponService } from './coupon.service';
+import { CouponPriceGenerationService } from './coupon-price-generation.service';
 import { CouponIndicesService } from './coupon-indices.service';
 import { CouponController } from './coupon.controller';
 
@@ -22,7 +23,13 @@ import { CouponController } from './coupon.controller';
     CouponSettlementService,
     CouponService,
     CouponIndicesService,
+    CouponPriceGenerationService,
   ],
-  exports: [CouponService, CouponSettlementService, CouponRepository],
+  exports: [
+    CouponService,
+    CouponSettlementService,
+    CouponRepository,
+    CouponPriceGenerationService,
+  ],
 })
 export class CouponModule {}

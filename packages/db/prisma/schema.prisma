@@ -215,6 +215,10 @@ enum StrategyChannel {
   WIN_TO_NIL
   HALF_TIME_FULL_TIME
   VANTAGE
+  // Compositeur déterministe par le prix : il ne scanne aucun marché en
+  // propre, il classe sur le coût mesuré. Distinct pour que la calibration par
+  // jambe sépare ses picks de ceux du LLM sans jointure.
+  PRICE
 
   @@schema("public")
 }
@@ -237,6 +241,20 @@ enum CouponProposalStatus {
   EXPIRED
 
   @@map("coupon_proposal_status")
+  @@schema("public")
+}
+
+// Quel générateur a produit la proposition. Les deux tournent en parallèle et
+// doivent rester comparables jambe à jambe : sans cette colonne, deux semaines
+// de production donnent un mélange qu'on ne peut plus démêler.
+enum CouponSource {
+  // apps/vantage-worker, sélection par LLM sous la politique unifiée.
+  LLM
+  // Compositeur déterministe par le prix (composeByPrice), aucune probabilité
+  // de moteur dans son classement.
+  PRICE_COMPOSER
+
+  @@map("coupon_source")
   @@schema("public")
 }
 
@@ -1010,6 +1028,9 @@ model CouponProposal {
   result                 CouponResult?
   reasoning              Json?
   rank                   Int                       @default(1) // 1 = meilleur coupon du jour, 2 = second, etc.
+  // `LLM` par défaut : toutes les lignes antérieures au 2026-09-16 viennent du
+  // générateur LLM, aucune autre source n'existait.
+  source                 CouponSource              @default(LLM)
   lastFixtureScheduledAt DateTime
   legs                   CouponProposalLeg[]
   // Real, verifiable engagement — never a fabricated count (CLAUDE.md/
@@ -1021,7 +1042,9 @@ model CouponProposal {
   generatedAt            DateTime                  @default(now())
   updatedAt              DateTime                  @updatedAt
 
-  @@unique([forDate, signalWindowDays, targetOddsMin, targetOddsMax, rank])
+  // `source` entre dans la clé pour que les deux générateurs puissent proposer
+  // le même jour sur la même cible sans que l'un écrase l'autre par upsert.
+  @@unique([forDate, source, signalWindowDays, targetOddsMin, targetOddsMax, rank], map: "coupon_proposal_source_target_rank_key")
   @@index([forDate, status])
   @@index([status, lastFixtureScheduledAt])
   @@map("coupon_proposal")
