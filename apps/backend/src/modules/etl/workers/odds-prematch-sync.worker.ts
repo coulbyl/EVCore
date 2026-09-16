@@ -9,7 +9,12 @@ import { FixtureService } from '../../fixture/fixture.service';
 import {
   ETL_CONSTANTS,
   BULLMQ_QUEUES,
-  API_FOOTBALL_BOOKMAKERS,
+  CLOSING_MISS_ALERT_RATIO,
+  ODDS_CLOSING_RATE_LIMIT_MS,
+  ODDS_CLOSING_WINDOWS,
+  ODDS_INGESTION_BOOKMAKER_IDS,
+  REFERENCE_ONLY_MARKETS,
+  REFERENCE_BOOKMAKER,
   API_FOOTBALL_BET_IDS,
 } from '@config/etl.constants';
 import { NotificationService } from '../../notification/notification.service';
@@ -26,7 +31,16 @@ import {
 // with `date` the job syncs that single day; otherwise it covers tomorrow up
 // to J+`horizonDays` (default ODDS_PREMATCH_HORIZON_DAYS) so each fixture
 // accumulates multiple snapshots before kickoff (line-movement feed).
-export type OddsPrematchSyncJobData = { date?: string; horizonDays?: number };
+export type OddsPrematchSyncJobData = {
+  date?: string;
+  horizonDays?: number;
+  /**
+   * `horizon` (défaut) ratisse les journées J+1..J+horizon ; `closing` ne
+   * prend que les rencontres sur le point de commencer, pour capturer un prix
+   * juste avant le coup d'envoi. Voir ODDS_CLOSING_WINDOWS.
+   */
+  mode?: 'horizon' | 'closing';
+};
 
 const logger = createLogger('odds-prematch-sync-worker');
 const ODDS_FETCH_ATTEMPTS = 2;
@@ -44,16 +58,24 @@ export class OddsPrematchSyncWorker extends WorkerHost {
   }
 
   async process(job: Job<OddsPrematchSyncJobData>): Promise<void> {
-    const targetDates = resolveTargetDates(job.data);
-    const dateLabel = targetDates.map(formatDateUtc).join(',');
+    const closing = job.data.mode === 'closing';
+    const targetDates = closing ? [] : resolveTargetDates(job.data);
+    const dateLabel = closing
+      ? ODDS_CLOSING_WINDOWS.map((window) => window.name).join(',')
+      : targetDates.map(formatDateUtc).join(',');
 
-    logger.info({ dates: dateLabel }, 'Starting odds prematch sync');
+    logger.info(
+      { dates: dateLabel, mode: closing ? 'closing' : 'horizon' },
+      'Starting odds prematch sync',
+    );
 
-    const fixtures = (
-      await Promise.all(
-        targetDates.map((d) => this.fixtureService.findScheduledForDate(d)),
-      )
-    ).flat();
+    const fixtures = closing
+      ? await this.findClosingFixtures()
+      : (
+          await Promise.all(
+            targetDates.map((d) => this.fixtureService.findScheduledForDate(d)),
+          )
+        ).flat();
 
     if (fixtures.length === 0) {
       logger.info(
@@ -70,8 +92,24 @@ export class OddsPrematchSyncWorker extends WorkerHost {
 
     let synced = 0;
     let skipped = 0;
+    // Rencontres atteintes après leur coup d'envoi : l'indicateur direct que
+    // le balayage ne tient pas sa fenêtre (voir CLOSING_MISS_ALERT_RATIO).
+    let missedKickoff = 0;
+    // En mode clôture, l'espacement doit rester sous la durée de la fenêtre :
+    // voir ODDS_CLOSING_RATE_LIMIT_MS.
+    const rateLimitMs = closing
+      ? ODDS_CLOSING_RATE_LIMIT_MS
+      : ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS;
 
-    for (const { id: fixtureId, externalId } of fixtures) {
+    for (const { id: fixtureId, externalId, scheduledAt } of fixtures) {
+      // Filet de sécurité : si le lot a pris du retard, une rencontre déjà
+      // commencée n'a plus de cote d'avant match à offrir. La stocker
+      // polluerait la ligne de clôture avec un prix post-coup d'envoi.
+      if (closing && scheduledAt.getTime() <= Date.now()) {
+        skipped++;
+        missedKickoff++;
+        continue;
+      }
       const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/odds?fixture=${externalId}`;
       const fetchStartedAt = performance.now();
 
@@ -90,7 +128,7 @@ export class OddsPrematchSyncWorker extends WorkerHost {
           'Provider timeout persisted across retries — skipping fixture',
         );
         skipped++;
-        await sleep(ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS);
+        await sleep(rateLimitMs);
         continue;
       }
 
@@ -100,7 +138,7 @@ export class OddsPrematchSyncWorker extends WorkerHost {
           'API-FOOTBALL error — skipping fixture',
         );
         skipped++;
-        await sleep(ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS);
+        await sleep(rateLimitMs);
         continue;
       }
 
@@ -127,7 +165,7 @@ export class OddsPrematchSyncWorker extends WorkerHost {
           'Zod validation failed — skipping fixture',
         );
         skipped++;
-        await sleep(ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS);
+        await sleep(rateLimitMs);
         continue;
       }
 
@@ -136,7 +174,7 @@ export class OddsPrematchSyncWorker extends WorkerHost {
       if (!match) {
         logger.warn({ externalId }, 'No odds data returned — skipping fixture');
         skipped++;
-        await sleep(ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS);
+        await sleep(rateLimitMs);
         continue;
       }
 
@@ -149,7 +187,7 @@ export class OddsPrematchSyncWorker extends WorkerHost {
           'No priority bookmaker Match Winner odds — skipping fixture',
         );
         skipped++;
-        await sleep(ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS);
+        await sleep(rateLimitMs);
         continue;
       }
 
@@ -206,17 +244,17 @@ export class OddsPrematchSyncWorker extends WorkerHost {
           resultBttsOdds: additionalOdds.resultBttsOdds,
         });
 
-        // Store secondary market odds from all other priority bookmakers.
+        await this.persistExtendedMarkets({
+          fixtureId,
+          bookmaker: odds.bookmaker,
+          snapshotAt,
+          bookmakers: match.bookmakers,
+        });
+
+        // Store secondary market odds from every other ingested bookmaker.
         // Each bookmaker's OVER_UNDER/BTTS/HTFT/OU_HT/FHW data is stored
         // independently so the engine can pick the best available per market.
-        const SECONDARY_IDS = [
-          API_FOOTBALL_BOOKMAKERS.PINNACLE,
-          API_FOOTBALL_BOOKMAKERS.BET365,
-          API_FOOTBALL_BOOKMAKERS.UNIBET,
-          API_FOOTBALL_BOOKMAKERS.MARATHONBET,
-          API_FOOTBALL_BOOKMAKERS.BWIN,
-        ];
-        for (const id of SECONDARY_IDS) {
+        for (const id of ODDS_INGESTION_BOOKMAKER_IDS) {
           const bk = match.bookmakers.find((b) => b.id === id);
           if (!bk || bk.name === odds.bookmaker) continue;
           const secondary = extractAdditionalMarketOdds(
@@ -242,6 +280,12 @@ export class OddsPrematchSyncWorker extends WorkerHost {
             Object.keys(secondary.resultTotalGoalsOdds).length > 0 ||
             Object.keys(secondary.resultBttsOdds).length > 0;
           if (!hasData) continue;
+          await this.persistExtendedMarkets({
+            fixtureId,
+            bookmaker: bk.name,
+            snapshotAt,
+            bookmakers: match.bookmakers,
+          });
           await this.fixtureService.upsertSecondaryMarketOdds({
             fixtureId,
             bookmaker: bk.name,
@@ -275,20 +319,49 @@ export class OddsPrematchSyncWorker extends WorkerHost {
           'Failed to persist odds snapshot for fixture — skipping',
         );
         skipped++;
-        await sleep(ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS);
+        await sleep(rateLimitMs);
         continue;
       }
 
       synced++;
-      await sleep(ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS);
+      await sleep(rateLimitMs);
     }
 
     logger.info(
-      { synced, skipped, dates: dateLabel },
+      { synced, skipped, missedKickoff, dates: dateLabel },
       'Odds prematch sync complete',
     );
 
+    if (closing) this.reportClosingCoverage(synced, missedKickoff);
+
     await this.checkQuotaUsage();
+  }
+
+  /**
+   * Alerte quand le balayage de clôture rate trop de coups d'envoi
+   * (chantier B, tâche B-7).
+   *
+   * Une rencontre atteinte après son coup d'envoi n'a pas de ligne de
+   * clôture, donc pas de CLV. Au-delà du seuil, c'est que le lot ne tient plus
+   * dans sa fenêtre : trop de rencontres simultanées, file en retard ou
+   * cadence d'appel trop lente. Le signal doit remonter tout de suite, parce
+   * que l'absence de clôture ne se voit pas dans les données — elle se
+   * confond avec un relevé simplement plus ancien.
+   */
+  private reportClosingCoverage(synced: number, missedKickoff: number): void {
+    const attempted = synced + missedKickoff;
+    if (attempted === 0) return;
+    const missRatio = missedKickoff / attempted;
+    if (missRatio < CLOSING_MISS_ALERT_RATIO) return;
+    logger.warn(
+      {
+        synced,
+        missedKickoff,
+        missRatio: Number(missRatio.toFixed(3)),
+        threshold: CLOSING_MISS_ALERT_RATIO,
+      },
+      'Closing sweep missed too many kickoffs — closing lines are incomplete',
+    );
   }
 
   // Best-effort quota observability — the multi-day horizon and 2×/day cron
@@ -326,6 +399,102 @@ export class OddsPrematchSyncWorker extends WorkerHost {
       error,
       logger,
     });
+  }
+
+  /**
+   * Rencontres des fenêtres de clôture, dédoublonnées.
+   *
+   * Une même rencontre peut tomber dans deux fenêtres si le cron a pris du
+   * retard ; on ne la traite alors qu'une fois, la seconde capture n'apportant
+   * rien de plus que la première.
+   */
+  private async findClosingFixtures(): Promise<
+    { id: string; externalId: number; scheduledAt: Date }[]
+  > {
+    const batches = await Promise.all(
+      ODDS_CLOSING_WINDOWS.map((window) =>
+        this.fixtureService.findScheduledWithinMinutes(
+          window.fromMinutes,
+          window.toMinutes,
+        ),
+      ),
+    );
+    const seen = new Set<string>();
+    return batches.flat().filter((fixture) => {
+      if (seen.has(fixture.id)) return false;
+      seen.add(fixture.id);
+      return true;
+    });
+  }
+
+  /**
+   * Persiste les marchés ajoutés le 2026-09-15 pour un book : handicap
+   * asiatique (plein match et mi-temps), second-half over/under, corners,
+   * cartons, pair/impair, mi-temps la plus prolifique, première équipe à
+   * marquer.
+   *
+   * Un book qui n'en price aucun produit simplement zéro jambe : ces marchés
+   * sont absents chez beaucoup de books secondaires, ce n'est pas une
+   * anomalie et cela ne doit rien journaliser.
+   */
+  private async persistExtendedMarkets(input: {
+    fixtureId: string;
+    bookmaker: string;
+    snapshotAt: Date;
+    bookmakers: OddsBookmaker[];
+  }): Promise<void> {
+    const { fullTime, firstHalf } = extractAsianHandicapOdds(
+      input.bookmakers,
+      input.bookmaker,
+    );
+    const context = {
+      fixtureId: input.fixtureId,
+      bookmaker: input.bookmaker,
+      snapshotAt: input.snapshotAt,
+    };
+    if (fullTime.length > 0) {
+      await this.fixtureService.upsertLineMarketOdds(
+        context,
+        'ASIAN_HANDICAP',
+        fullTime,
+      );
+    }
+    if (firstHalf.length > 0) {
+      await this.fixtureService.upsertLineMarketOdds(
+        context,
+        'ASIAN_HANDICAP_HT',
+        firstHalf,
+      );
+    }
+
+    const extended = extractExtendedMarketOdds(
+      input.bookmakers,
+      input.bookmaker,
+    );
+    // Les marchés de REFERENCE_ONLY_MARKETS ne sont conservés que chez le
+    // book de référence : leur marge les exclut du pari, et les stocker chez
+    // onze books multiplierait le volume sans rien apporter.
+    const keep = (market: string): boolean =>
+      input.bookmaker === REFERENCE_BOOKMAKER ||
+      !(REFERENCE_ONLY_MARKETS as readonly string[]).includes(market);
+    for (const entry of extended.lineMarkets.filter((row) =>
+      keep(row.market),
+    )) {
+      await this.fixtureService.upsertLineMarketOdds(
+        context,
+        entry.market,
+        entry.legs,
+      );
+    }
+    for (const entry of extended.fixedMarkets.filter((row) =>
+      keep(row.market),
+    )) {
+      await this.fixtureService.upsertFixedOutcomeOdds(
+        context,
+        entry.market,
+        entry.legs,
+      );
+    }
   }
 }
 
@@ -685,23 +854,229 @@ function extractDoubleChanceOdds(
   return { '1X': homeDrawOdd, X2: drawAwayOdd, '12': homeAwayOdd };
 }
 
-// Extracts Match Winner odds from every priority bookmaker, in priority
-// order: Pinnacle → Bet365 → Unibet → Marathonbet → Bwin. The first entry is
-// the primary book (drives the full snapshot incl. secondary markets); the
-// rest feed the multi-book median used by the coherence gate.
+/** Marchés à ligne collectés depuis le 2026-09-15. */
+export type LineMarket =
+  | 'ASIAN_HANDICAP'
+  | 'ASIAN_HANDICAP_HT'
+  | 'OVER_UNDER_2H'
+  | 'CORNERS'
+  | 'CORNERS_HT'
+  | 'CARDS';
+
+/** Marchés à issues fixes collectés depuis le 2026-09-15. */
+export type FixedOutcomeMarket =
+  | 'ODD_EVEN'
+  | 'ODD_EVEN_HT'
+  | 'HIGHEST_SCORING_HALF'
+  | 'TEAM_TO_SCORE_FIRST';
+
+/** Une jambe de marché à ligne : un côté, une ligne, une cote. */
+export type LineMarketLeg = {
+  pick: string;
+  line: number;
+  odds: number;
+};
+
+/**
+ * Parse un marché « Over X / Under X » : second-half, corners, cartons.
+ *
+ * La ligne peut être entière (« Over 9 » sur les corners) autant que
+ * décimale (« Over 8.5 ») — c'est ce que l'encodage historique dans `pick`
+ * ne savait pas représenter, et la raison d'être de la colonne `line`.
+ */
+export function parseOverUnderValues(
+  bet: OddsBookmaker['bets'][number] | undefined,
+): LineMarketLeg[] {
+  if (!bet) return [];
+  const legs: LineMarketLeg[] = [];
+  for (const value of bet.values) {
+    const matched = /^(Over|Under)\s*([+-]?\d+(?:\.\d+)?)$/i.exec(
+      String(value.value).trim(),
+    );
+    if (!matched) continue;
+    const [, side, rawLine] = matched;
+    if (!side || rawLine === undefined) continue;
+    const line = Number(rawLine);
+    if (!Number.isFinite(line) || !Number.isFinite(value.odd)) continue;
+    if (value.odd <= 1) continue;
+    legs.push({ pick: side.toUpperCase(), line, odds: value.odd });
+  }
+  return legs;
+}
+
+/**
+ * Parse un marché à issues fixes, en traduisant les libellés de l'API vers
+ * le vocabulaire interne. Une issue non reconnue est ignorée plutôt que
+ * stockée telle quelle : un `pick` inconnu polluerait durablement la base.
+ */
+export function parseFixedOutcomeValues(
+  bet: OddsBookmaker['bets'][number] | undefined,
+  mapping: Readonly<Record<string, string>>,
+): Array<{ pick: string; odds: number }> {
+  if (!bet) return [];
+  const legs: Array<{ pick: string; odds: number }> = [];
+  for (const value of bet.values) {
+    const pick = mapping[String(value.value).trim().toLowerCase()];
+    if (!pick) continue;
+    if (!Number.isFinite(value.odd) || value.odd <= 1) continue;
+    legs.push({ pick, odds: value.odd });
+  }
+  return legs;
+}
+
+/** Libellés de l'API relevés le 2026-09-15, par marché à issues fixes. */
+export const FIXED_OUTCOME_MAPPINGS = {
+  ODD_EVEN: { odd: 'ODD', even: 'EVEN' },
+  HIGHEST_SCORING_HALF: {
+    '1st half': 'FIRST_HALF',
+    '2nd half': 'SECOND_HALF',
+    draw: 'DRAW',
+  },
+  TEAM_TO_SCORE_FIRST: {
+    home: 'HOME',
+    away: 'AWAY',
+    'no goal': 'NO_GOAL',
+  },
+} as const;
+
+/** Une jambe de handicap asiatique : un côté, une ligne, une cote. */
+export type AsianHandicapLeg = {
+  pick: 'HOME' | 'AWAY';
+  line: number;
+  odds: number;
+};
+
+/**
+ * Parse les valeurs d'un marché de handicap asiatique.
+ *
+ * L'API les libelle « Home -0.5 » / « Away -0.5 » : les deux côtés d'un même
+ * handicap portent le MÊME signe, la ligne étant exprimée du point de vue du
+ * domicile. Vérifié sur données réelles — apparier « Home -0.5 » avec
+ * « Away +0.5 » donne des marges négatives, donc impossibles.
+ *
+ * Les lignes en quart de but (-0.25, +0.75) sont conservées telles quelles :
+ * ce sont des marchés à part entière, pas des arrondis.
+ */
+export function parseAsianHandicapValues(
+  bet: OddsBookmaker['bets'][number] | undefined,
+): AsianHandicapLeg[] {
+  if (!bet) return [];
+  const legs: AsianHandicapLeg[] = [];
+  for (const value of bet.values) {
+    const matched = /^(Home|Away)\s*([+-]?\d+(?:\.\d+)?)$/i.exec(
+      String(value.value).trim(),
+    );
+    if (!matched) continue;
+    const [, side, rawLine] = matched;
+    if (!side || rawLine === undefined) continue;
+    const line = Number(rawLine);
+    if (!Number.isFinite(line) || !Number.isFinite(value.odd)) continue;
+    if (value.odd <= 1) continue;
+    legs.push({
+      pick: side.toUpperCase() === 'HOME' ? 'HOME' : 'AWAY',
+      line,
+      odds: value.odd,
+    });
+  }
+  return legs;
+}
+
+/**
+ * Les huit marchés ajoutés le 2026-09-15 pour un book donné : quatre à ligne,
+ * quatre à issues fixes. Un book qui n'en price aucun renvoie des listes
+ * vides — c'est le cas courant hors des grands books, pas une anomalie.
+ */
+export function extractExtendedMarketOdds(
+  bookmakers: OddsBookmaker[],
+  bookmakerName: string,
+): {
+  lineMarkets: Array<{ market: LineMarket; legs: LineMarketLeg[] }>;
+  fixedMarkets: Array<{
+    market: FixedOutcomeMarket;
+    legs: Array<{ pick: string; odds: number }>;
+  }>;
+} {
+  const book = bookmakers.find((b) => b.name === bookmakerName);
+  if (!book) return { lineMarkets: [], fixedMarkets: [] };
+  const betById = (id: number) => book.bets.find((b) => b.id === id);
+
+  const lineSpecs: ReadonlyArray<[LineMarket, number]> = [
+    ['OVER_UNDER_2H', API_FOOTBALL_BET_IDS.OVER_UNDER_2H],
+    ['CORNERS', API_FOOTBALL_BET_IDS.CORNERS],
+    ['CORNERS_HT', API_FOOTBALL_BET_IDS.CORNERS_HT],
+    ['CARDS', API_FOOTBALL_BET_IDS.CARDS],
+  ];
+  const fixedSpecs: ReadonlyArray<
+    [FixedOutcomeMarket, number, Readonly<Record<string, string>>]
+  > = [
+    [
+      'ODD_EVEN',
+      API_FOOTBALL_BET_IDS.ODD_EVEN,
+      FIXED_OUTCOME_MAPPINGS.ODD_EVEN,
+    ],
+    [
+      'ODD_EVEN_HT',
+      API_FOOTBALL_BET_IDS.ODD_EVEN_HT,
+      FIXED_OUTCOME_MAPPINGS.ODD_EVEN,
+    ],
+    [
+      'HIGHEST_SCORING_HALF',
+      API_FOOTBALL_BET_IDS.HIGHEST_SCORING_HALF,
+      FIXED_OUTCOME_MAPPINGS.HIGHEST_SCORING_HALF,
+    ],
+    [
+      'TEAM_TO_SCORE_FIRST',
+      API_FOOTBALL_BET_IDS.TEAM_TO_SCORE_FIRST,
+      FIXED_OUTCOME_MAPPINGS.TEAM_TO_SCORE_FIRST,
+    ],
+  ];
+
+  return {
+    lineMarkets: lineSpecs
+      .map(([market, id]) => ({
+        market,
+        legs: parseOverUnderValues(betById(id)),
+      }))
+      .filter((entry) => entry.legs.length > 0),
+    fixedMarkets: fixedSpecs
+      .map(([market, id, mapping]) => ({
+        market,
+        legs: parseFixedOutcomeValues(betById(id), mapping),
+      }))
+      .filter((entry) => entry.legs.length > 0),
+  };
+}
+
+/** Handicap asiatique plein match et mi-temps pour un book donné. */
+export function extractAsianHandicapOdds(
+  bookmakers: OddsBookmaker[],
+  bookmakerName: string,
+): { fullTime: AsianHandicapLeg[]; firstHalf: AsianHandicapLeg[] } {
+  const book = bookmakers.find((b) => b.name === bookmakerName);
+  if (!book) return { fullTime: [], firstHalf: [] };
+  return {
+    fullTime: parseAsianHandicapValues(
+      book.bets.find((b) => b.id === API_FOOTBALL_BET_IDS.ASIAN_HANDICAP),
+    ),
+    firstHalf: parseAsianHandicapValues(
+      book.bets.find((b) => b.id === API_FOOTBALL_BET_IDS.ASIAN_HANDICAP_HT),
+    ),
+  };
+}
+
+// Extracts Match Winner odds from every ingested bookmaker, in the order of
+// ODDS_INGESTION_BOOKMAKER_IDS (Pinnacle first). The first entry is the
+// primary book — it drives the full snapshot, secondary markets included.
+//
+// Les books ajoutés le 2026-09-15 élargissent ce qui est STOCKÉ. Le garde-fou
+// de cohérence, lui, reste calculé sur COHERENCE_BOOKMAKERS : sans ce
+// cloisonnement, collecter un book de plus déplacerait une médiane qui pilote
+// des décisions en production.
 export function extractAllOneXTwoOdds(
   bookmakers: OddsBookmaker[],
 ): OneXTwoOdds[] {
-  const PRIORITY_IDS = [
-    API_FOOTBALL_BOOKMAKERS.PINNACLE,
-    API_FOOTBALL_BOOKMAKERS.BET365,
-    API_FOOTBALL_BOOKMAKERS.UNIBET,
-    API_FOOTBALL_BOOKMAKERS.MARATHONBET,
-    API_FOOTBALL_BOOKMAKERS.BWIN,
-  ] as const;
-
   const result: OneXTwoOdds[] = [];
-  for (const bookmakerId of PRIORITY_IDS) {
+  for (const bookmakerId of ODDS_INGESTION_BOOKMAKER_IDS) {
     const bk = bookmakers.find((b) => b.id === bookmakerId);
     if (!bk) continue;
 

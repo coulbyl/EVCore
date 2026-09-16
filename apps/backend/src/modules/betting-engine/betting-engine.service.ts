@@ -41,6 +41,7 @@ import {
 } from './shadow-predictions.service';
 import {
   CALIBRATION_GATE,
+  COHERENCE_BOOKMAKERS,
   OVER_UNDER_CALIBRATION_GATE,
   EV_MAX_SOFT_ALERT,
   FEATURE_WEIGHTS,
@@ -851,11 +852,15 @@ export class BettingEngineService {
     // sheet, enforced at staking) — the analytical decisions are kept intact.
     let calibrationAlert: CalibrationAlert | null = null;
     if (CALIBRATION_GATE.ENABLED) {
-      const oneXTwoBooks =
+      // Filtré sur COHERENCE_BOOKMAKERS : depuis le 2026-09-15 l'ETL stocke
+      // onze books au lieu de cinq, et la médiane de ce garde-fou ne doit pas
+      // se déplacer parce qu'on a élargi la collecte.
+      const oneXTwoBooks = (
         await this.oddsLoader.findLatestOneXTwoOddsPerBookmaker(
           fixtureId,
           oddsCutoff,
-        );
+        )
+      ).filter((book) => COHERENCE_BOOKMAKERS.includes(book.bookmaker));
       calibrationAlert = assessMarketCoherence({
         modelProbabilities: {
           home: probabilities.home,

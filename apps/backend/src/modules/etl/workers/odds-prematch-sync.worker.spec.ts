@@ -3,11 +3,27 @@ import { execFile } from 'node:child_process';
 import {
   OddsPrematchSyncWorker,
   extractAdditionalMarketOdds,
+  extractAllOneXTwoOdds,
+  extractAsianHandicapOdds,
+  extractExtendedMarketOdds,
   extractOneXTwoOdds,
+  parseAsianHandicapValues,
+  parseFixedOutcomeValues,
+  parseOverUnderValues,
+  FIXED_OUTCOME_MAPPINGS,
   resolveTargetDates,
 } from './odds-prematch-sync.worker';
 import { ApiFootballClient } from '../api-football.client';
-import { API_FOOTBALL_BET_IDS } from '@config/etl.constants';
+import {
+  API_FOOTBALL_BET_IDS,
+  API_FOOTBALL_BOOKMAKERS,
+  ODDS_INGESTION_BOOKMAKER_IDS,
+  REFERENCE_ONLY_MARKETS,
+  REFERENCE_BOOKMAKER,
+  ODDS_CLOSING_WINDOWS,
+  ETL_CRON_SCHEDULES,
+} from '@config/etl.constants';
+import { COHERENCE_BOOKMAKERS } from '../../betting-engine/ev.constants';
 import type { FixtureService } from '../../fixture/fixture.service';
 import type { ConfigService } from '@nestjs/config';
 import type { NotificationService } from '../../notification/notification.service';
@@ -517,10 +533,13 @@ describe('extractOneXTwoOdds', () => {
     expect(extractOneXTwoOdds([])).toBeNull();
   });
 
-  it('returns null when no Pinnacle or Bet365 bookmaker', () => {
+  // Ladbrokes (10) est hors ODDS_INGESTION_BOOKMAKER_IDS. William Hill (7)
+  // jouait ce rôle jusqu'au 2026-09-15 ; il fait désormais partie des books
+  // collectés, d'où le changement de témoin.
+  it('returns null when no ingested bookmaker is present', () => {
     const bk = {
-      id: 7,
-      name: 'William Hill',
+      id: 10,
+      name: 'Ladbrokes',
       bets: [
         {
           id: 1,
@@ -713,5 +732,383 @@ describe('API_FOOTBALL_BET_IDS regression (Double Chance / DNB id fix)', () => {
   it('Niveau 2.b bet ids match the live API-Football reference (2026-07-18)', () => {
     expect(API_FOOTBALL_BET_IDS.RESULT_TOTAL_GOALS).toBe(25);
     expect(API_FOOTBALL_BET_IDS.RESULT_BTTS).toBe(24);
+  });
+});
+
+// Chantier A du plan de rentabilité (2026-09-15) : l'ingestion passe de 5 à
+// 11 books. Ces tests verrouillent les deux propriétés qui rendent
+// l'élargissement sans danger — Pinnacle reste le book primaire, et le
+// garde-fou de cohérence reste calculé sur son périmètre d'origine.
+describe('élargissement du vivier de books (2026-09-15)', () => {
+  it('collecte les onze books, Pinnacle en tête', () => {
+    expect(ODDS_INGESTION_BOOKMAKER_IDS[0]).toBe(
+      API_FOOTBALL_BOOKMAKERS.PINNACLE,
+    );
+    expect(ODDS_INGESTION_BOOKMAKER_IDS).toHaveLength(11);
+    for (const id of [
+      API_FOOTBALL_BOOKMAKERS.ONE_X_BET,
+      API_FOOTBALL_BOOKMAKERS.BETANO,
+      API_FOOTBALL_BOOKMAKERS.WILLIAM_HILL,
+      API_FOOTBALL_BOOKMAKERS.BETFAIR,
+      API_FOOTBALL_BOOKMAKERS.BETVICTOR,
+      API_FOOTBALL_BOOKMAKERS.SBO,
+    ]) {
+      expect(ODDS_INGESTION_BOOKMAKER_IDS).toContain(id);
+    }
+  });
+
+  it('les ids des books ajoutés correspondent au catalogue API-Football', () => {
+    expect(API_FOOTBALL_BOOKMAKERS.ONE_X_BET).toBe(11);
+    expect(API_FOOTBALL_BOOKMAKERS.BETANO).toBe(32);
+    expect(API_FOOTBALL_BOOKMAKERS.WILLIAM_HILL).toBe(7);
+    expect(API_FOOTBALL_BOOKMAKERS.BETFAIR).toBe(3);
+    expect(API_FOOTBALL_BOOKMAKERS.BETVICTOR).toBe(36);
+    expect(API_FOOTBALL_BOOKMAKERS.SBO).toBe(5);
+  });
+
+  it("le garde-fou de cohérence n'hérite pas des books ajoutés", () => {
+    expect([...COHERENCE_BOOKMAKERS]).toEqual([
+      'Pinnacle',
+      'Bet365',
+      'Unibet',
+      'Marathonbet',
+      'Bwin',
+    ]);
+    expect(COHERENCE_BOOKMAKERS).not.toContain('1xBet');
+    expect(COHERENCE_BOOKMAKERS).not.toContain('Betano');
+    expect(COHERENCE_BOOKMAKERS.length).toBeLessThan(
+      ODDS_INGESTION_BOOKMAKER_IDS.length,
+    );
+  });
+
+  it('extrait le 1X2 des books ajoutés, Pinnacle toujours en premier', () => {
+    // `odd` est déjà numérique ici : le schéma Zod le convertit à l'ingestion.
+    const oneXTwo = (home: number, draw: number, away: number) => ({
+      id: API_FOOTBALL_BET_IDS.MATCH_WINNER,
+      name: 'Match Winner',
+      values: [
+        { value: 'Home', odd: home },
+        { value: 'Draw', odd: draw },
+        { value: 'Away', odd: away },
+      ],
+    });
+    const result = extractAllOneXTwoOdds([
+      {
+        id: API_FOOTBALL_BOOKMAKERS.BETANO,
+        name: 'Betano',
+        bets: [oneXTwo(1.9, 3.4, 4.1)],
+      },
+      {
+        id: API_FOOTBALL_BOOKMAKERS.PINNACLE,
+        name: 'Pinnacle',
+        bets: [oneXTwo(1.95, 3.5, 4.0)],
+      },
+      {
+        id: API_FOOTBALL_BOOKMAKERS.ONE_X_BET,
+        name: '1xBet',
+        bets: [oneXTwo(1.98, 3.55, 4.2)],
+      },
+    ]);
+    expect(result.map((row) => row.bookmaker)).toEqual([
+      'Pinnacle',
+      '1xBet',
+      'Betano',
+    ]);
+  });
+});
+
+// Handicap asiatique (chantier A, tâches A-8/A-9). Le format de l'API a été
+// relevé sur données réelles le 2026-09-15 : « Home -0.25 », « Away +0 ».
+describe('handicap asiatique', () => {
+  const bet = (values: Array<{ value: string; odd: number }>) => ({
+    id: API_FOOTBALL_BET_IDS.ASIAN_HANDICAP,
+    name: 'Asian Handicap',
+    values,
+  });
+
+  it('parse le côté, la ligne signée et la cote', () => {
+    expect(
+      parseAsianHandicapValues(
+        bet([
+          { value: 'Home -0.25', odd: 4.04 },
+          { value: 'Away -0.25', odd: 1.25 },
+          { value: 'Home +0', odd: 5.23 },
+          { value: 'Away +0.5', odd: 1.43 },
+        ]),
+      ),
+    ).toEqual([
+      { pick: 'HOME', line: -0.25, odds: 4.04 },
+      { pick: 'AWAY', line: -0.25, odds: 1.25 },
+      { pick: 'HOME', line: 0, odds: 5.23 },
+      { pick: 'AWAY', line: 0.5, odds: 1.43 },
+    ]);
+  });
+
+  it('conserve les lignes en quart de but sans les arrondir', () => {
+    const legs = parseAsianHandicapValues(
+      bet([
+        { value: 'Home -0.75', odd: 7.0 },
+        { value: 'Home +1.25', odd: 1.55 },
+      ]),
+    );
+    expect(legs.map((leg) => leg.line)).toEqual([-0.75, 1.25]);
+  });
+
+  // Les deux côtés d'un même handicap portent le même signe : c'est ce qui
+  // rend la ligne discriminante et impose la colonne `line` dans la contrainte
+  // d'unicité. Apparier Home -L avec Away +L donnerait des marges négatives.
+  it('garde les deux côtés d’une même ligne comme deux jambes distinctes', () => {
+    const legs = parseAsianHandicapValues(
+      bet([
+        { value: 'Home -0.5', odd: 6.6 },
+        { value: 'Away -0.5', odd: 1.11 },
+      ]),
+    );
+    expect(legs).toHaveLength(2);
+    expect(new Set(legs.map((leg) => leg.line))).toEqual(new Set([-0.5]));
+    expect(legs.map((leg) => leg.pick)).toEqual(['HOME', 'AWAY']);
+  });
+
+  it('ignore les valeurs illisibles et les cotes non jouables', () => {
+    expect(
+      parseAsianHandicapValues(
+        bet([
+          { value: 'Draw', odd: 3.2 },
+          { value: 'Home', odd: 2.1 },
+          { value: 'Home -0.5', odd: 1 },
+          { value: 'Away -0.5', odd: 1.9 },
+        ]),
+      ),
+    ).toEqual([{ pick: 'AWAY', line: -0.5, odds: 1.9 }]);
+  });
+
+  it('renvoie des listes vides quand le book ne price pas le marché', () => {
+    expect(parseAsianHandicapValues(undefined)).toEqual([]);
+    expect(extractAsianHandicapOdds([], 'Pinnacle')).toEqual({
+      fullTime: [],
+      firstHalf: [],
+    });
+  });
+
+  it('sépare le plein match de la mi-temps', () => {
+    const result = extractAsianHandicapOdds(
+      [
+        {
+          id: API_FOOTBALL_BOOKMAKERS.PINNACLE,
+          name: 'Pinnacle',
+          bets: [
+            bet([{ value: 'Home -0.25', odd: 4.04 }]),
+            {
+              id: API_FOOTBALL_BET_IDS.ASIAN_HANDICAP_HT,
+              name: 'Asian Handicap First Half',
+              values: [{ value: 'Home +0.5', odd: 1.9 }],
+            },
+          ],
+        },
+      ],
+      'Pinnacle',
+    );
+    expect(result.fullTime).toEqual([
+      { pick: 'HOME', line: -0.25, odds: 4.04 },
+    ]);
+    expect(result.firstHalf).toEqual([{ pick: 'HOME', line: 0.5, odds: 1.9 }]);
+  });
+
+  it('les ids de pari correspondent au catalogue API-Football', () => {
+    expect(API_FOOTBALL_BET_IDS.ASIAN_HANDICAP).toBe(4);
+    expect(API_FOOTBALL_BET_IDS.ASIAN_HANDICAP_HT).toBe(19);
+  });
+});
+
+// Marchés ajoutés le 2026-09-15 (chantier A, A-10 à A-15). Formats relevés sur
+// l'API le même jour.
+describe('marchés à ligne et à issues fixes', () => {
+  it('parse une ligne décimale comme une ligne entière', () => {
+    // Les corners cotent « Over 9 » autant que « Over 8.5 » : c'est ce que
+    // l'encodage historique de la ligne dans `pick` ne savait pas représenter.
+    expect(
+      parseOverUnderValues({
+        id: API_FOOTBALL_BET_IDS.CORNERS,
+        name: 'Corners Over Under',
+        values: [
+          { value: 'Over 8.5', odd: 1.73 },
+          { value: 'Under 8.5', odd: 2.0 },
+          { value: 'Over 9', odd: 1.98 },
+          { value: 'Under 9', odd: 1.82 },
+        ],
+      }),
+    ).toEqual([
+      { pick: 'OVER', line: 8.5, odds: 1.73 },
+      { pick: 'UNDER', line: 8.5, odds: 2.0 },
+      { pick: 'OVER', line: 9, odds: 1.98 },
+      { pick: 'UNDER', line: 9, odds: 1.82 },
+    ]);
+  });
+
+  it('ignore les valeurs illisibles et les cotes non jouables', () => {
+    expect(
+      parseOverUnderValues({
+        id: API_FOOTBALL_BET_IDS.CARDS,
+        name: 'Cards Over/Under',
+        values: [
+          { value: 'Yes', odd: 1.9 },
+          { value: 'Over 2.5', odd: 1 },
+          { value: 'Under 2.5', odd: 4.25 },
+        ],
+      }),
+    ).toEqual([{ pick: 'UNDER', line: 2.5, odds: 4.25 }]);
+  });
+
+  it('traduit les libellés des marchés à issues fixes', () => {
+    expect(
+      parseFixedOutcomeValues(
+        {
+          id: API_FOOTBALL_BET_IDS.HIGHEST_SCORING_HALF,
+          name: 'Highest Scoring Half',
+          values: [
+            { value: 'Draw', odd: 3.5 },
+            { value: '1st Half', odd: 2.8 },
+            { value: '2nd Half', odd: 2.1 },
+          ],
+        },
+        FIXED_OUTCOME_MAPPINGS.HIGHEST_SCORING_HALF,
+      ),
+    ).toEqual([
+      { pick: 'DRAW', odds: 3.5 },
+      { pick: 'FIRST_HALF', odds: 2.8 },
+      { pick: 'SECOND_HALF', odds: 2.1 },
+    ]);
+  });
+
+  it("n'enregistre jamais une issue inconnue telle quelle", () => {
+    expect(
+      parseFixedOutcomeValues(
+        {
+          id: API_FOOTBALL_BET_IDS.TEAM_TO_SCORE_FIRST,
+          name: 'Team To Score First',
+          values: [
+            { value: 'No goal', odd: 12 },
+            { value: 'Neither', odd: 9 },
+          ],
+        },
+        FIXED_OUTCOME_MAPPINGS.TEAM_TO_SCORE_FIRST,
+      ),
+    ).toEqual([{ pick: 'NO_GOAL', odds: 12 }]);
+  });
+
+  it('regroupe les marchés servis par un book et omet les absents', () => {
+    const result = extractExtendedMarketOdds(
+      [
+        {
+          id: API_FOOTBALL_BOOKMAKERS.BET365,
+          name: 'Bet365',
+          bets: [
+            {
+              id: API_FOOTBALL_BET_IDS.CORNERS,
+              name: 'Corners Over Under',
+              values: [{ value: 'Over 9', odd: 1.98 }],
+            },
+            {
+              id: API_FOOTBALL_BET_IDS.ODD_EVEN,
+              name: 'Odd/Even',
+              values: [{ value: 'Odd', odd: 1.85 }],
+            },
+          ],
+        },
+      ],
+      'Bet365',
+    );
+    expect(result.lineMarkets).toEqual([
+      { market: 'CORNERS', legs: [{ pick: 'OVER', line: 9, odds: 1.98 }] },
+    ]);
+    expect(result.fixedMarkets).toEqual([
+      { market: 'ODD_EVEN', legs: [{ pick: 'ODD', odds: 1.85 }] },
+    ]);
+  });
+
+  it('renvoie des listes vides pour un book absent', () => {
+    expect(extractExtendedMarketOdds([], 'Pinnacle')).toEqual({
+      lineMarkets: [],
+      fixedMarkets: [],
+    });
+  });
+
+  it('les ids de pari correspondent au catalogue API-Football', () => {
+    expect(API_FOOTBALL_BET_IDS.OVER_UNDER_2H).toBe(26);
+    expect(API_FOOTBALL_BET_IDS.CORNERS).toBe(45);
+    expect(API_FOOTBALL_BET_IDS.CORNERS_HT).toBe(77);
+    expect(API_FOOTBALL_BET_IDS.CARDS).toBe(80);
+    expect(API_FOOTBALL_BET_IDS.ODD_EVEN).toBe(21);
+    expect(API_FOOTBALL_BET_IDS.ODD_EVEN_HT).toBe(22);
+    expect(API_FOOTBALL_BET_IDS.HIGHEST_SCORING_HALF).toBe(11);
+    expect(API_FOOTBALL_BET_IDS.TEAM_TO_SCORE_FIRST).toBe(14);
+  });
+});
+
+// Politique de collecte décidée le 2026-09-15 après mesure des marges : on
+// collecte large là où on pourrait parier, un seul book de référence là où on
+// ne fait qu'étudier. Sans ça, 44 % des 424 lignes par match partiraient dans
+// des marchés que la mesure a écartés.
+describe('politique de collecte par marché', () => {
+  it('ne réserve au book de référence que les marchés trop chers', () => {
+    expect([...REFERENCE_ONLY_MARKETS]).toEqual([
+      'OVER_UNDER_2H',
+      'CORNERS',
+      'CORNERS_HT',
+      'CARDS',
+      'ODD_EVEN',
+      'ODD_EVEN_HT',
+      'HIGHEST_SCORING_HALF',
+      'TEAM_TO_SCORE_FIRST',
+    ]);
+  });
+
+  it('laisse le handicap asiatique collecté chez tous les books', () => {
+    // C'est la cible : 4,26 % de marge, la plus basse du carnet. Le courtage
+    // multi-books n'a de sens que sur les marchés qu'on joue.
+    expect(REFERENCE_ONLY_MARKETS).not.toContain('ASIAN_HANDICAP');
+    expect(REFERENCE_ONLY_MARKETS).not.toContain('ASIAN_HANDICAP_HT');
+  });
+
+  it('le book de référence fait partie du vivier collecté', () => {
+    expect(REFERENCE_BOOKMAKER).toBe('Pinnacle');
+    expect(ODDS_INGESTION_BOOKMAKER_IDS[0]).toBe(
+      API_FOOTBALL_BOOKMAKERS.PINNACLE,
+    );
+  });
+});
+
+// Balayage de clôture (chantier B, tâches B-1 et B-2). Sans lui le dernier
+// relevé tombe en médiane 7,5 h avant le coup d'envoi, donc aucune ligne de
+// clôture, donc pas de CLV.
+describe('fenêtres de capture avant coup d’envoi', () => {
+  it('capture une heure avant, puis juste avant le coup d’envoi', () => {
+    expect(ODDS_CLOSING_WINDOWS.map((window) => window.name)).toEqual([
+      'T-60',
+      'T-10',
+    ]);
+  });
+
+  it('laisse les fenêtres plus larges que le pas du cron', () => {
+    // Le cron passe toutes les 10 minutes : une fenêtre plus étroite raterait
+    // des rencontres au moindre retard de file.
+    const stepMinutes = 10;
+    for (const window of ODDS_CLOSING_WINDOWS) {
+      expect(window.toMinutes - window.fromMinutes).toBeGreaterThanOrEqual(
+        stepMinutes,
+      );
+      expect(window.fromMinutes).toBeGreaterThan(0);
+      expect(window.toMinutes).toBeGreaterThan(window.fromMinutes);
+    }
+  });
+
+  it('ne laisse pas les deux fenêtres se chevaucher', () => {
+    const [first, second] = ODDS_CLOSING_WINDOWS;
+    expect(second.toMinutes).toBeLessThan(first.fromMinutes);
+  });
+
+  it('planifie le balayage plus souvent que la synchro d’horizon', () => {
+    expect(ETL_CRON_SCHEDULES.ODDS_CLOSING_SYNC).toBe('*/10 * * * *');
+    expect(ETL_CRON_SCHEDULES.ODDS_PREMATCH_SYNC).toBe('0 6,18 * * *');
   });
 });
