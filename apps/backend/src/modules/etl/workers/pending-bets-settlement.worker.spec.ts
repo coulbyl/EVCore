@@ -10,6 +10,7 @@ import type { AdjustmentService } from '../../adjustment/adjustment.service';
 import type { CouponSettlementService } from '../../coupon/coupon-settlement.service';
 import type { CacheService } from '@common/redis/cache.service';
 import type { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
+import type { RiskService } from '../../risk/risk.service';
 import { PendingBetsSettlementWorker } from './pending-bets-settlement.worker';
 
 vi.mock('node:child_process', () => ({
@@ -159,11 +160,16 @@ describe('PendingBetsSettlementWorker', () => {
     refreshSeason: vi.fn().mockResolvedValue(undefined),
   } satisfies Partial<RollingStatsService>;
 
+  const riskService = {
+    checkAllMarkets: vi.fn().mockResolvedValue([]),
+  } satisfies Partial<RiskService>;
+
   const worker = new PendingBetsSettlementWorker(
     fixtureService as unknown as FixtureService,
     bettingEngineService as unknown as BettingEngineService,
     adjustmentService as unknown as AdjustmentService,
     rollingStatsService as unknown as RollingStatsService,
+    riskService as unknown as RiskService,
   );
 
   beforeEach(() => {

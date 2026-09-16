@@ -176,6 +176,38 @@ export class RiskService {
     return { market, betCount: bets.length, roi, action: 'ok' };
   }
 
+  /**
+   * Balaye tous les marchés et applique le garde-fou de ROI.
+   *
+   * Le garde-fou existait depuis l'origine mais n'était atteignable que par
+   * un appel HTTP manuel : rien ne l'invoquait, donc aucun marché n'a jamais
+   * été suspendu automatiquement malgré la règle documentée
+   * (ROI < −15 % sur 50+ paris). Câblé le 2026-09-15, tâche `J-1` du plan de
+   * rentabilité.
+   *
+   * `checkMarketRoi` vérifie lui-même qu'un marché n'est pas déjà suspendu
+   * avant d'en créer une nouvelle : ce balayage est donc idempotent côté
+   * suspensions. Les alertes de ROI, en revanche, sont réémises à chaque
+   * passage — d'où une cadence quotidienne et non toutes les demi-heures.
+   */
+  async checkAllMarkets(): Promise<RoiCheckResult[]> {
+    const results: RoiCheckResult[] = [];
+    for (const market of Object.values(Market)) {
+      results.push(await this.checkMarketRoi(market));
+    }
+    const suspended = results.filter((row) => row.action === 'suspended');
+    const alerted = results.filter((row) => row.action === 'alerted');
+    logger.info(
+      {
+        markets: results.length,
+        suspended: suspended.map((row) => row.market),
+        alerted: alerted.map((row) => row.market),
+      },
+      'Market ROI sweep complete',
+    );
+    return results;
+  }
+
   async checkBrierScore(seasonId: string, brierScore: Decimal): Promise<void> {
     if (brierScore.greaterThan(RISK_CONSTANTS.BRIER_SCORE_ALERT_THRESHOLD)) {
       await this.notification.sendBrierScoreAlert(

@@ -5,6 +5,7 @@ import { BULLMQ_QUEUES } from '../../config/etl.constants';
 import { BettingEngineModule } from '../betting-engine/betting-engine.module';
 import { FixtureModule } from '../fixture/fixture.module';
 import { NotificationModule } from '../notification/notification.module';
+import { RiskModule } from '@modules/risk/risk.module';
 import { RollingStatsModule } from '../rolling-stats/rolling-stats.module';
 import { EtlService } from './etl.service';
 import { EtlController } from './etl.controller';
@@ -57,6 +58,11 @@ import { AuthModule } from '../auth/auth.module';
     FixtureModule,
     NotificationModule,
     RollingStatsModule,
+    // Requis par PendingBetsSettlementWorker pour le balayage quotidien du
+    // garde-fou de ROI (tâche J-1) : il exportait RiskService depuis toujours,
+    // mais rien ne l'importait ici, donc la suspension automatique
+    // n'était atteignable que par un appel HTTP manuel.
+    RiskModule,
   ],
   controllers: [EtlController],
   providers: [
