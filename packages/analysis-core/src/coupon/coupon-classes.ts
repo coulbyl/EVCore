@@ -161,11 +161,32 @@ export type CouponBounds = {
   maxCombinedOdds: number;
 };
 
-/** Prospective product policy; legacy classes remain readable in history. */
+/**
+ * Prospective product policy; legacy classes remain readable in history.
+ *
+ * `maxLegOdds` ramené de 15,01 à 1,80 le 2026-09-16. La calibration des jambes
+ * se dégrade par paliers nets avec leur cote — ratio réalisé/annoncé mesuré sur
+ * les 388 jambes réglées de la production LLM depuis le 2026-08-23 :
+ *
+ *   cote < 1,45    122 jambes   annoncé 83,0 %   réalisé 74,6 %   ratio 0,899
+ *   cote 1,45-1,80 119 jambes   annoncé 69,4 %   réalisé 58,0 %   ratio 0,836
+ *   cote 1,80+     147 jambes   annoncé 47,2 %   réalisé 29,3 %   ratio 0,619
+ *
+ * 1,80 est la frontière mesurée, pas un chiffre choisi : au-delà le modèle
+ * annonce 47 % et réalise 29 %. À l'intérieur d'une bande, aucun canal ne se
+ * détache (écarts de −9 à +18 points sur n = 20 à 41, tous dans le bruit) —
+ * c'est donc bien la cote qui porte l'effet, jamais le canal, et c'est là qu'il
+ * faut couper.
+ *
+ * CONSÉQUENCE ASSUMÉE. Atteindre la cote 5 avec des jambes plafonnées à 1,80
+ * demande au moins trois jambes (1,80³ = 5,83). Les jours au vivier trop mince
+ * produiront une abstention. C'est un résultat, pas une panne : le
+ * `CouponGenerationAttempt` l'enregistre explicitement.
+ */
 export const UNIFIED_COUPON_CLASS: CouponClass = {
   name: "UNIQUE",
   minLegOdds: 1.2,
-  maxLegOdds: 15.01,
+  maxLegOdds: 1.8,
   maxLegs: 5,
   targetCombinedOdds: 5,
   targetOddsMin: 5,
@@ -182,8 +203,15 @@ export const DETERMINISTIC_COUPON_POLICY_VERSION = "deterministic-5-7-v1";
 
 // Candidate frozen after development-window walk-forward comparison. It is
 // not the live policy: the final holdout must pass before any integration.
+//
+// `maxLegOdds` is pinned here rather than inherited from UNIFIED_COUPON_CLASS.
+// It used to spread that object, so tightening the live policy to 1,80 on
+// 2026-09-16 silently moved this candidate too — and a candidate whose
+// parameters change mid-validation has no holdout left to pass. The two
+// policies are deliberately allowed to differ until this one is judged.
 export const DETERMINISTIC_COUPON_CLASS: CouponClass = {
   ...UNIFIED_COUPON_CLASS,
+  maxLegOdds: 15.01,
   maxLegs: 3,
 };
 export const DETERMINISTIC_COUPON_BOUNDS: CouponBounds = {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   DETERMINISTIC_COUPON_POLICY_VERSION,
-  UNIFIED_COUPON_BOUNDS,
-  UNIFIED_COUPON_CLASS,
+  DETERMINISTIC_COUPON_BOUNDS,
+  DETERMINISTIC_COUPON_CLASS,
 } from "./coupon-classes";
 import {
   buildDeterministicCandidatePool,
@@ -63,13 +63,13 @@ describe("composeDeterministicCoupon", () => {
 
     const forward = composeDeterministicCoupon(
       candidates,
-      UNIFIED_COUPON_CLASS,
-      UNIFIED_COUPON_BOUNDS,
+      DETERMINISTIC_COUPON_CLASS,
+      DETERMINISTIC_COUPON_BOUNDS,
     );
     const reversed = composeDeterministicCoupon(
       [...candidates].reverse(),
-      UNIFIED_COUPON_CLASS,
-      UNIFIED_COUPON_BOUNDS,
+      DETERMINISTIC_COUPON_CLASS,
+      DETERMINISTIC_COUPON_BOUNDS,
     );
 
     expect(forward).toEqual(reversed);
@@ -85,8 +85,8 @@ describe("composeDeterministicCoupon", () => {
     expect(
       composeDeterministicCoupon(
         [candidate("only")],
-        UNIFIED_COUPON_CLASS,
-        UNIFIED_COUPON_BOUNDS,
+        DETERMINISTIC_COUPON_CLASS,
+        DETERMINISTIC_COUPON_BOUNDS,
       ),
     ).toEqual({ outcome: "empty_pool" });
   });
@@ -104,8 +104,8 @@ describe("composeDeterministicCoupon", () => {
     expect(
       composeDeterministicCoupon(
         candidates,
-        UNIFIED_COUPON_CLASS,
-        UNIFIED_COUPON_BOUNDS,
+        DETERMINISTIC_COUPON_CLASS,
+        DETERMINISTIC_COUPON_BOUNDS,
       ),
     ).toEqual({ outcome: "no_coupon", reason: "no_admissible_combination" });
   });
@@ -114,7 +114,7 @@ describe("composeDeterministicCoupon", () => {
     const duplicate = candidate("same");
     const pool = buildDeterministicCandidatePool(
       [duplicate, { ...duplicate }],
-      UNIFIED_COUPON_CLASS,
+      DETERMINISTIC_COUPON_CLASS,
     );
     expect(pool).toHaveLength(1);
   });
@@ -128,12 +128,12 @@ describe("composeDeterministicCoupon", () => {
       referenceOdds: 2,
     });
     expect(
-      buildDeterministicCandidatePool([highEdge], UNIFIED_COUPON_CLASS, {
+      buildDeterministicCandidatePool([highEdge], DETERMINISTIC_COUPON_CLASS, {
         maxPositiveEdge: 0.075,
       }),
     ).toHaveLength(1);
     expect(
-      buildDeterministicCandidatePool([highEdge], UNIFIED_COUPON_CLASS, {
+      buildDeterministicCandidatePool([highEdge], DETERMINISTIC_COUPON_CLASS, {
         maxPositiveEdge: 0.04,
       }),
     ).toHaveLength(0);

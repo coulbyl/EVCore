@@ -87,7 +87,9 @@ function validPair(): SelectedLeg[] {
 }
 
 function validUnifiedTriple(
-  oddsSnapshot = 1.8,
+  // 1,80 exactement est HORS bande depuis le 2026-09-16 : la borne haute est
+  // exclusive et la zone mesurée à 0,619 de calibration commence à 1,80.
+  oddsSnapshot = 1.75,
   probability = 0.65,
 ): SelectedLeg[] {
   const shared = {
@@ -117,6 +119,38 @@ function validUnifiedTriple(
   ];
 }
 
+/**
+ * Cinq jambes en bande — le seul moyen de dépasser la cote 15 depuis que les
+ * jambes sont plafonnées à 1,80 : trois jambes en bande culminent à 5,8.
+ */
+function validUnifiedFive(oddsSnapshot = 1.79): SelectedLeg[] {
+  const shared = {
+    probability: 0.62,
+    oddsSnapshot,
+    referenceOdds: oddsSnapshot,
+    pMarketFair: 1 / oddsSnapshot,
+  };
+  return [
+    ...validUnifiedTriple(oddsSnapshot, 0.62),
+    leg({
+      ...shared,
+      fixtureId: "f4",
+      competition: "Bundesliga",
+      market: "DOUBLE_CHANCE",
+      pick: "1X",
+      canal: STRATEGY_CHANNEL.DOUBLE_CHANCE,
+    }),
+    leg({
+      ...shared,
+      fixtureId: "f5",
+      competition: "Ligue 1",
+      market: "DRAW_NO_BET",
+      pick: "HOME",
+      canal: STRATEGY_CHANNEL.DRAW_NO_BET,
+    }),
+  ];
+}
+
 describe("validateCouponSelection", () => {
   it("accepts a positive-EV unified coupon inside the exact 5-15 band", () => {
     const result = validateCouponSelection(
@@ -126,13 +160,14 @@ describe("validateCouponSelection", () => {
     );
     expect(result.outcome).toBe("valid");
     if (result.outcome !== "valid") return;
-    expect(result.coupon.combinedOdds).toBeCloseTo(5.832, 10);
+    expect(result.coupon.combinedOdds).toBeCloseTo(5.359375, 10);
     expect(result.coupon.couponEV).toBeGreaterThan(0);
   });
 
   it("rejects a unified coupon above the advertised maximum of 15", () => {
+    // 1,79^5 = 18,4 : au-dessus du plafond produit, toutes jambes en bande.
     const result = validateCouponSelection(
-      validUnifiedTriple(2.5, 0.45),
+      validUnifiedFive(),
       UNIFIED_COUPON_CLASS,
       UNIFIED_COUPON_BOUNDS,
     );
