@@ -1,0 +1,4074 @@
+{
+  "warning": "Descriptive fixed policies, mixed unknown engine versions; stored odds lack snapshot linkage. Not a replay of current LLM and not OOS validation.",
+  "counters": {
+    "probability/1/eligible_days": 74,
+    "probability/2/eligible_days": 74,
+    "probability/3/eligible_days": 74,
+    "probability/4/eligible_days": 74,
+    "probability/5/eligible_days": 74,
+    "probability/5/no_coupon": 3,
+    "ev_positive/1/eligible_days": 74,
+    "ev_positive/2/eligible_days": 74,
+    "ev_positive/3/eligible_days": 74,
+    "ev_positive/4/eligible_days": 74,
+    "ev_positive/4/no_coupon": 2,
+    "ev_positive/4/unresolved": 1,
+    "ev_positive/5/eligible_days": 74,
+    "ev_positive/5/no_coupon": 5,
+    "ev_positive/5/unresolved": 1,
+    "edge_5pp/1/eligible_days": 74,
+    "edge_5pp/1/no_coupon": 1,
+    "edge_5pp/2/eligible_days": 74,
+    "edge_5pp/2/no_coupon": 4,
+    "edge_5pp/3/eligible_days": 74,
+    "edge_5pp/3/no_coupon": 6,
+    "edge_5pp/4/eligible_days": 74,
+    "edge_5pp/4/no_coupon": 7,
+    "edge_5pp/5/eligible_days": 74,
+    "edge_5pp/5/no_coupon": 8,
+    "edge_5pp_diversified/1/eligible_days": 74,
+    "edge_5pp_diversified/1/no_coupon": 1,
+    "edge_5pp_diversified/2/eligible_days": 74,
+    "edge_5pp_diversified/2/no_coupon": 5,
+    "edge_5pp_diversified/3/eligible_days": 74,
+    "edge_5pp_diversified/3/no_coupon": 8,
+    "edge_5pp_diversified/4/eligible_days": 74,
+    "edge_5pp_diversified/4/no_coupon": 14,
+    "edge_5pp_diversified/5/eligible_days": 74,
+    "edge_5pp_diversified/5/no_coupon": 20
+  },
+  "policies": {
+    "edge_5pp/1": {
+      "n": 73,
+      "binary_n": 72,
+      "profit_units": -11.959999999999999,
+      "roi": -0.16383561643835615,
+      "avg_odds": 4.86013698630137,
+      "avg_probability": 0.7284630136986301,
+      "avg_implied_probability": 0.3043712557395599,
+      "avg_announced_ev": 2.1905281369863014,
+      "max_drawdown_units": 17.119999999999997,
+      "worst_loss_streak": 10,
+      "active_days": 73,
+      "first_day": "2026-07-02",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 3,
+          "n": 1,
+          "p": 0.3801,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 5,
+          "p": 0.45515999999999995,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 6,
+          "p": 0.5727166666666667,
+          "observed": 0.0
+        },
+        {
+          "bin": 6,
+          "n": 14,
+          "p": 0.6586285714285715,
+          "observed": 0.2857142857142857
+        },
+        {
+          "bin": 7,
+          "n": 24,
+          "p": 0.7370083333333333,
+          "observed": 0.25
+        },
+        {
+          "bin": 8,
+          "n": 15,
+          "p": 0.8492266666666667,
+          "observed": 0.6666666666666666
+        },
+        {
+          "bin": 9,
+          "n": 7,
+          "p": 0.9582142857142857,
+          "observed": 0.2857142857142857
+        }
+      ],
+      "hit_rate": 0.3055555555555556,
+      "brier": 0.36605360875,
+      "ece": 0.4228763888888889,
+      "roi_day_bootstrap_95": [
+        -0.46301369863013697,
+        0.16767123287671232
+      ]
+    },
+    "edge_5pp/2": {
+      "n": 70,
+      "binary_n": 68,
+      "profit_units": -31.0184,
+      "roi": -0.44312,
+      "avg_odds": 22.205384285714285,
+      "avg_probability": 0.5139265962857144,
+      "avg_implied_probability": 0.10945143319728569,
+      "avg_announced_ev": 7.4067623300524,
+      "max_drawdown_units": 40.871199999999995,
+      "worst_loss_streak": 31,
+      "active_days": 70,
+      "first_day": "2026-07-03",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 1,
+          "n": 1,
+          "p": 0.1787238,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 3,
+          "p": 0.2544869066666667,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 10,
+          "p": 0.353557311,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 19,
+          "p": 0.46077004368421054,
+          "observed": 0.05263157894736842
+        },
+        {
+          "bin": 5,
+          "n": 14,
+          "p": 0.5417852678571429,
+          "observed": 0.21428571428571427
+        },
+        {
+          "bin": 6,
+          "n": 18,
+          "p": 0.6351596461111111,
+          "observed": 0.1111111111111111
+        },
+        {
+          "bin": 8,
+          "n": 2,
+          "p": 0.84163353,
+          "observed": 0.0
+        },
+        {
+          "bin": 9,
+          "n": 1,
+          "p": 0.9137371000000001,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.08823529411764706,
+      "brier": 0.2730540143380006,
+      "ece": 0.4242244117647059,
+      "roi_day_bootstrap_95": [
+        -0.8322628571428572,
+        0.02690285714285711
+      ]
+    },
+    "edge_5pp/3": {
+      "n": 68,
+      "binary_n": 65,
+      "profit_units": -30.050856,
+      "roi": -0.4419243529411765,
+      "avg_odds": 101.76804994117647,
+      "avg_probability": 0.35832346936936765,
+      "avg_implied_probability": 0.043482401954307026,
+      "avg_announced_ev": 19.92620242652465,
+      "max_drawdown_units": 52.407106,
+      "worst_loss_streak": 35,
+      "active_days": 68,
+      "first_day": "2026-07-03",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 1,
+          "n": 6,
+          "p": 0.165560677651,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 20,
+          "p": 0.25443046818965,
+          "observed": 0.05
+        },
+        {
+          "bin": 3,
+          "n": 15,
+          "p": 0.3638049896506,
+          "observed": 0.06666666666666667
+        },
+        {
+          "bin": 4,
+          "n": 15,
+          "p": 0.44221614909533336,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 7,
+          "p": 0.555530674397,
+          "observed": 0.0
+        },
+        {
+          "bin": 6,
+          "n": 1,
+          "p": 0.6649264876700001,
+          "observed": 0.0
+        },
+        {
+          "bin": 7,
+          "n": 1,
+          "p": 0.7700990267279999,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.03076923076923077,
+      "brier": 0.15979524610704024,
+      "ece": 0.33070816532407693,
+      "roi_day_bootstrap_95": [
+        -1.0,
+        0.5159422941176471
+      ]
+    },
+    "edge_5pp/4": {
+      "n": 67,
+      "binary_n": 62,
+      "profit_units": -6.840062499999995,
+      "roi": -0.10209048507462679,
+      "avg_odds": 259.19154772179104,
+      "avg_probability": 0.238582015367098,
+      "avg_implied_probability": 0.018484998165770233,
+      "avg_announced_ev": 40.40505423414418,
+      "max_drawdown_units": 65,
+      "worst_loss_streak": 65,
+      "active_days": 67,
+      "first_day": "2026-07-03",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 4,
+          "p": 0.06701540499963837,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 19,
+          "p": 0.15565169544221238,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 26,
+          "p": 0.25071819699678505,
+          "observed": 0.038461538461538464
+        },
+        {
+          "bin": 3,
+          "n": 10,
+          "p": 0.3381756190320527,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 2,
+          "p": 0.5069951800857683,
+          "observed": 0.0
+        },
+        {
+          "bin": 6,
+          "n": 1,
+          "p": 0.6143255819583131,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.016129032258064516,
+      "brier": 0.07452848592782885,
+      "ece": 0.22184175948011897,
+      "roi_day_bootstrap_95": [
+        -1.0,
+        1.6937285447761194
+      ]
+    },
+    "edge_5pp/5": {
+      "n": 66,
+      "binary_n": 56,
+      "profit_units": -5.840062499999995,
+      "roi": -0.08848579545454538,
+      "avg_odds": 859.4856433024818,
+      "avg_probability": 0.1652187708170947,
+      "avg_implied_probability": 0.00893985074233447,
+      "avg_announced_ev": 85.0067259997353,
+      "max_drawdown_units": 64,
+      "worst_loss_streak": 64,
+      "active_days": 66,
+      "first_day": "2026-07-03",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 12,
+          "p": 0.06349123056020665,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 32,
+          "p": 0.15161733817408232,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 8,
+          "p": 0.233239874937883,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 3,
+          "p": 0.32906674931975827,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 1,
+          "p": 0.573595795874477,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.034156907172634,
+      "ece": 0.1614350827076773,
+      "roi_day_bootstrap_95": [
+        -1.0,
+        1.7345426136363638
+      ]
+    },
+    "edge_5pp_diversified/1": {
+      "n": 73,
+      "binary_n": 72,
+      "profit_units": -11.959999999999999,
+      "roi": -0.16383561643835615,
+      "avg_odds": 4.86013698630137,
+      "avg_probability": 0.7284630136986301,
+      "avg_implied_probability": 0.3043712557395599,
+      "avg_announced_ev": 2.1905281369863014,
+      "max_drawdown_units": 17.119999999999997,
+      "worst_loss_streak": 10,
+      "active_days": 73,
+      "first_day": "2026-07-02",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 3,
+          "n": 1,
+          "p": 0.3801,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 5,
+          "p": 0.45515999999999995,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 6,
+          "p": 0.5727166666666667,
+          "observed": 0.0
+        },
+        {
+          "bin": 6,
+          "n": 14,
+          "p": 0.6586285714285715,
+          "observed": 0.2857142857142857
+        },
+        {
+          "bin": 7,
+          "n": 24,
+          "p": 0.7370083333333333,
+          "observed": 0.25
+        },
+        {
+          "bin": 8,
+          "n": 15,
+          "p": 0.8492266666666667,
+          "observed": 0.6666666666666666
+        },
+        {
+          "bin": 9,
+          "n": 7,
+          "p": 0.9582142857142857,
+          "observed": 0.2857142857142857
+        }
+      ],
+      "hit_rate": 0.3055555555555556,
+      "brier": 0.36605360875,
+      "ece": 0.4228763888888889,
+      "roi_day_bootstrap_95": [
+        -0.46301369863013697,
+        0.16767123287671232
+      ]
+    },
+    "edge_5pp_diversified/2": {
+      "n": 69,
+      "binary_n": 68,
+      "profit_units": -29.924400000000006,
+      "roi": -0.4336869565217392,
+      "avg_odds": 18.62405652173913,
+      "avg_probability": 0.4997176801449275,
+      "avg_implied_probability": 0.10665276157179636,
+      "avg_announced_ev": 6.592045256671362,
+      "max_drawdown_units": 38.7494,
+      "worst_loss_streak": 33,
+      "active_days": 69,
+      "first_day": "2026-07-03",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 2,
+          "n": 3,
+          "p": 0.2544869066666667,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 11,
+          "p": 0.35018571545454547,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 20,
+          "p": 0.45132727,
+          "observed": 0.05
+        },
+        {
+          "bin": 5,
+          "n": 17,
+          "p": 0.5400340894117647,
+          "observed": 0.17647058823529413
+        },
+        {
+          "bin": 6,
+          "n": 15,
+          "p": 0.6385202053333334,
+          "observed": 0.13333333333333333
+        },
+        {
+          "bin": 7,
+          "n": 1,
+          "p": 0.7196953,
+          "observed": 0.0
+        },
+        {
+          "bin": 8,
+          "n": 1,
+          "p": 0.84693015,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.08823529411764706,
+      "brier": 0.2535478553265382,
+      "ece": 0.4112802505882353,
+      "roi_day_bootstrap_95": [
+        -0.8576,
+        0.09093043478260865
+      ]
+    },
+    "edge_5pp_diversified/3": {
+      "n": 66,
+      "binary_n": 64,
+      "profit_units": -21.913134000000003,
+      "roi": -0.33201718181818185,
+      "avg_odds": 64.50100881818182,
+      "avg_probability": 0.3099182724892879,
+      "avg_implied_probability": 0.0380730362577,
+      "avg_announced_ev": 15.056492866369862,
+      "max_drawdown_units": 46.650884000000005,
+      "worst_loss_streak": 34,
+      "active_days": 66,
+      "first_day": "2026-07-03",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 2,
+          "p": 0.06679357587950001,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 8,
+          "p": 0.15569559749575,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 21,
+          "p": 0.25581162157614284,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 19,
+          "p": 0.3496046766053684,
+          "observed": 0.10526315789473684
+        },
+        {
+          "bin": 4,
+          "n": 10,
+          "p": 0.42786467138089995,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 4,
+          "p": 0.5469810342675,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.03125,
+      "brier": 0.11662444219485107,
+      "ece": 0.2790664951750781,
+      "roi_day_bootstrap_95": [
+        -1.0,
+        0.7410830606060607
+      ]
+    },
+    "edge_5pp_diversified/4": {
+      "n": 60,
+      "binary_n": 57,
+      "profit_units": -60,
+      "roi": -1.0,
+      "avg_odds": 217.83910059033332,
+      "avg_probability": 0.21174167020278434,
+      "avg_implied_probability": 0.01701342771025396,
+      "avg_announced_ev": 36.72280384569049,
+      "max_drawdown_units": 60,
+      "worst_loss_streak": 60,
+      "active_days": 60,
+      "first_day": "2026-07-11",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 2,
+          "p": 0.055941617425175005,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 27,
+          "p": 0.1620679747026522,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 20,
+          "p": 0.24527267433459127,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 6,
+          "p": 0.3283153942912161,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 1,
+          "p": 0.42499882188825,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 1,
+          "p": 0.5084973590272774,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.053495186094001924,
+      "ece": 0.21572913307327385,
+      "bootstrap_uninformative": "Constant observed returns; empirical bootstrap cannot estimate unobserved rare wins."
+    },
+    "edge_5pp_diversified/5": {
+      "n": 54,
+      "binary_n": 50,
+      "profit_units": -54,
+      "roi": -1.0,
+      "avg_odds": 644.6883891038518,
+      "avg_probability": 0.1447760669285199,
+      "avg_implied_probability": 0.007497888639261132,
+      "avg_announced_ev": 69.7469099818226,
+      "max_drawdown_units": 54,
+      "worst_loss_streak": 54,
+      "active_days": 54,
+      "first_day": "2026-07-20",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 14,
+          "p": 0.07490800013842595,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 27,
+          "p": 0.14574565714325174,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 7,
+          "p": 0.23754538676018783,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 2,
+          "p": 0.31636645538909336,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.02552494976559448,
+      "ece": 0.14558790725810525,
+      "bootstrap_uninformative": "Constant observed returns; empirical bootstrap cannot estimate unobserved rare wins."
+    },
+    "ev_positive/1": {
+      "n": 74,
+      "binary_n": 74,
+      "profit_units": -13.47,
+      "roi": -0.18202702702702703,
+      "avg_odds": 19.842702702702702,
+      "avg_probability": 0.4278527027027027,
+      "avg_implied_probability": 0.12386709617467345,
+      "avg_announced_ev": 3.823781945945946,
+      "max_drawdown_units": 18.86,
+      "worst_loss_streak": 17,
+      "active_days": 74,
+      "first_day": "2026-07-02",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 2,
+          "p": 0.055299999999999995,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 12,
+          "p": 0.14701666666666666,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 8,
+          "p": 0.2554125,
+          "observed": 0.125
+        },
+        {
+          "bin": 3,
+          "n": 7,
+          "p": 0.3434714285714286,
+          "observed": 0.14285714285714285
+        },
+        {
+          "bin": 4,
+          "n": 22,
+          "p": 0.4581090909090909,
+          "observed": 0.045454545454545456
+        },
+        {
+          "bin": 5,
+          "n": 6,
+          "p": 0.5609333333333334,
+          "observed": 0.16666666666666666
+        },
+        {
+          "bin": 6,
+          "n": 9,
+          "p": 0.6562888888888889,
+          "observed": 0.4444444444444444
+        },
+        {
+          "bin": 7,
+          "n": 7,
+          "p": 0.7324714285714286,
+          "observed": 0.14285714285714285
+        },
+        {
+          "bin": 8,
+          "n": 1,
+          "p": 0.8608,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.12162162162162163,
+      "brier": 0.20888563878378377,
+      "ece": 0.3062310810810811,
+      "roi_day_bootstrap_95": [
+        -0.7412162162162163,
+        0.5209459459459459
+      ]
+    },
+    "ev_positive/2": {
+      "n": 74,
+      "binary_n": 74,
+      "profit_units": -69.9722,
+      "roi": -0.9455702702702703,
+      "avg_odds": 1514.784404054054,
+      "avg_probability": 0.16533137567567566,
+      "avg_implied_probability": 0.026180537130598883,
+      "avg_announced_ev": 17.848862632198312,
+      "max_drawdown_units": 69.9722,
+      "worst_loss_streak": 68,
+      "active_days": 74,
+      "first_day": "2026-07-02",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 27,
+          "p": 0.061692774444444445,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 23,
+          "p": 0.14281274173913044,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 14,
+          "p": 0.245538915,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 7,
+          "p": 0.33962151,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 2,
+          "p": 0.467213185,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 1,
+          "p": 0.53480208,
+          "observed": 1.0
+        }
+      ],
+      "hit_rate": 0.013513513513513514,
+      "brier": 0.03971730170859296,
+      "ece": 0.16439077891891893,
+      "roi_day_bootstrap_95": [
+        -1.0,
+        -0.8367108108108109
+      ]
+    },
+    "ev_positive/3": {
+      "n": 74,
+      "binary_n": 74,
+      "profit_units": -74,
+      "roi": -1.0,
+      "avg_odds": 72074.65155781081,
+      "avg_probability": 0.06476299217312162,
+      "avg_implied_probability": 0.0096210100036093,
+      "avg_announced_ev": 67.22407360564087,
+      "max_drawdown_units": 74,
+      "worst_loss_streak": 74,
+      "active_days": 74,
+      "first_day": "2026-07-02",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 56,
+          "p": 0.03522682626582143,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 16,
+          "p": 0.1427982680210625,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 2,
+          "p": 0.267493430794,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.007977421099199774,
+      "ece": 0.06476299217312162,
+      "bootstrap_uninformative": "Constant observed returns; empirical bootstrap cannot estimate unobserved rare wins."
+    },
+    "ev_positive/4": {
+      "n": 71,
+      "binary_n": 71,
+      "profit_units": -71,
+      "roi": -1.0,
+      "avg_odds": 33805.79991294986,
+      "avg_probability": 0.024005372200481444,
+      "avg_implied_probability": 0.0026963991723797163,
+      "avg_announced_ev": 258.73766404975424,
+      "max_drawdown_units": 71,
+      "worst_loss_streak": 71,
+      "active_days": 71,
+      "first_day": "2026-07-03",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 70,
+          "p": 0.021954595544645322,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 1,
+          "p": 0.16755973810900998,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.0013400207899214778,
+      "ece": 0.024005372200481444,
+      "bootstrap_uninformative": "Constant observed returns; empirical bootstrap cannot estimate unobserved rare wins."
+    },
+    "ev_positive/5": {
+      "n": 68,
+      "binary_n": 68,
+      "profit_units": -68,
+      "roi": -1.0,
+      "avg_odds": 773824.3460270979,
+      "avg_probability": 0.010010636380878082,
+      "avg_implied_probability": 0.0007478232296768412,
+      "avg_announced_ev": 1085.7840772315344,
+      "max_drawdown_units": 68,
+      "worst_loss_streak": 68,
+      "active_days": 68,
+      "first_day": "2026-07-03",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 68,
+          "p": 0.010010636380878082,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.00021349511663024608,
+      "ece": 0.010010636380878082,
+      "bootstrap_uninformative": "Constant observed returns; empirical bootstrap cannot estimate unobserved rare wins."
+    },
+    "probability/1": {
+      "n": 74,
+      "binary_n": 74,
+      "profit_units": 3.5900000000000016,
+      "roi": 0.04851351351351354,
+      "avg_odds": 1.366081081081081,
+      "avg_probability": 0.9256162162162161,
+      "avg_implied_probability": 0.777801078949541,
+      "avg_announced_ev": 0.26222471621621624,
+      "max_drawdown_units": 3,
+      "worst_loss_streak": 3,
+      "active_days": 74,
+      "first_day": "2026-07-02",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 7,
+          "n": 5,
+          "p": 0.77024,
+          "observed": 0.8
+        },
+        {
+          "bin": 8,
+          "n": 11,
+          "p": 0.8549363636363636,
+          "observed": 0.6363636363636364
+        },
+        {
+          "bin": 9,
+          "n": 58,
+          "p": 0.9524155172413793,
+          "observed": 0.8620689655172413
+        }
+      ],
+      "hit_rate": 0.8243243243243243,
+      "brier": 0.15100183054054056,
+      "ece": 0.10531351351351353,
+      "roi_day_bootstrap_95": [
+        -0.07324324324324324,
+        0.16945945945945948
+      ]
+    },
+    "probability/2": {
+      "n": 74,
+      "binary_n": 74,
+      "profit_units": 12.493500000000003,
+      "roi": 0.1688310810810811,
+      "avg_odds": 2.074894594594595,
+      "avg_probability": 0.8233780283783784,
+      "avg_implied_probability": 0.5761164453660025,
+      "avg_announced_ev": 0.6734913054638919,
+      "max_drawdown_units": 3.7476999999999983,
+      "worst_loss_streak": 3,
+      "active_days": 74,
+      "first_day": "2026-07-02",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 3,
+          "n": 1,
+          "p": 0.34392196,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 1,
+          "p": 0.49118915999999996,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 5,
+          "p": 0.5596733439999999,
+          "observed": 1.0
+        },
+        {
+          "bin": 6,
+          "n": 3,
+          "p": 0.6441428633333334,
+          "observed": 0.0
+        },
+        {
+          "bin": 7,
+          "n": 12,
+          "p": 0.7580370125,
+          "observed": 0.5833333333333334
+        },
+        {
+          "bin": 8,
+          "n": 25,
+          "p": 0.8512885328,
+          "observed": 0.72
+        },
+        {
+          "bin": 9,
+          "n": 27,
+          "p": 0.9253855629629629,
+          "observed": 0.7037037037037037
+        }
+      ],
+      "hit_rate": 0.6621621621621622,
+      "brier": 0.24957240449293816,
+      "ece": 0.2207194683783784,
+      "roi_day_bootstrap_95": [
+        -0.05881486486486483,
+        0.4067851351351352
+      ]
+    },
+    "probability/3": {
+      "n": 74,
+      "binary_n": 74,
+      "profit_units": 16.077367000000002,
+      "roi": 0.21726171621621626,
+      "avg_odds": 2.8989745405405403,
+      "avg_probability": 0.7186679195935676,
+      "avg_implied_probability": 0.47071309907810205,
+      "avg_announced_ev": 0.9526589657737501,
+      "max_drawdown_units": 9.0,
+      "worst_loss_streak": 9,
+      "active_days": 74,
+      "first_day": "2026-07-02",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 1,
+          "n": 1,
+          "p": 0.14829914915200001,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 3,
+          "p": 0.28137412243800003,
+          "observed": 0.3333333333333333
+        },
+        {
+          "bin": 3,
+          "n": 1,
+          "p": 0.37498721867199997,
+          "observed": 1.0
+        },
+        {
+          "bin": 4,
+          "n": 5,
+          "p": 0.4496598889158,
+          "observed": 0.4
+        },
+        {
+          "bin": 5,
+          "n": 5,
+          "p": 0.5656870557714,
+          "observed": 0.6
+        },
+        {
+          "bin": 6,
+          "n": 13,
+          "p": 0.6609848867003846,
+          "observed": 0.5384615384615384
+        },
+        {
+          "bin": 7,
+          "n": 17,
+          "p": 0.7659541015811765,
+          "observed": 0.5294117647058824
+        },
+        {
+          "bin": 8,
+          "n": 23,
+          "p": 0.8534348736838695,
+          "observed": 0.6521739130434783
+        },
+        {
+          "bin": 9,
+          "n": 6,
+          "p": 0.9157095404393333,
+          "observed": 0.8333333333333334
+        }
+      ],
+      "hit_rate": 0.581081081081081,
+      "brier": 0.2622017732292488,
+      "ece": 0.16332886919240536,
+      "roi_day_bootstrap_95": [
+        -0.0797382972972973,
+        0.527306445945946
+      ]
+    },
+    "probability/4": {
+      "n": 74,
+      "binary_n": 74,
+      "profit_units": 7.574244110000007,
+      "roi": 0.10235465013513523,
+      "avg_odds": 6.18214083,
+      "avg_probability": 0.617415977658517,
+      "avg_implied_probability": 0.3572247301530339,
+      "avg_announced_ev": 1.8495810440091518,
+      "max_drawdown_units": 20.4319176,
+      "worst_loss_streak": 16,
+      "active_days": 74,
+      "first_day": "2026-07-02",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 3,
+          "p": 0.04673692692155481,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 1,
+          "p": 0.17342122432191479,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 4,
+          "p": 0.25676433695083745,
+          "observed": 0.5
+        },
+        {
+          "bin": 3,
+          "n": 4,
+          "p": 0.3465099624724246,
+          "observed": 0.25
+        },
+        {
+          "bin": 4,
+          "n": 4,
+          "p": 0.46725197763631504,
+          "observed": 0.25
+        },
+        {
+          "bin": 5,
+          "n": 12,
+          "p": 0.5349844036549544,
+          "observed": 0.25
+        },
+        {
+          "bin": 6,
+          "n": 15,
+          "p": 0.6604108814745078,
+          "observed": 0.3333333333333333
+        },
+        {
+          "bin": 7,
+          "n": 15,
+          "p": 0.7530450818439139,
+          "observed": 0.5333333333333333
+        },
+        {
+          "bin": 8,
+          "n": 16,
+          "p": 0.8419620587355994,
+          "observed": 0.75
+        }
+      ],
+      "hit_rate": 0.43243243243243246,
+      "brier": 0.25473276379949694,
+      "ece": 0.21127929258275077,
+      "roi_day_bootstrap_95": [
+        -0.2542956744594594,
+        0.5093676410810812
+      ]
+    },
+    "probability/5": {
+      "n": 71,
+      "binary_n": 71,
+      "profit_units": 28.387961261800008,
+      "roi": 0.39983044030704235,
+      "avg_odds": 11.065417406760563,
+      "avg_probability": 0.5497248481127688,
+      "avg_implied_probability": 0.3007971137178375,
+      "avg_announced_ev": 2.5535476225723017,
+      "max_drawdown_units": 16.827217448,
+      "worst_loss_streak": 16,
+      "active_days": 71,
+      "first_day": "2026-07-03",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 2,
+          "p": 0.04971847202968939,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 4,
+          "p": 0.14977097217698707,
+          "observed": 0.5
+        },
+        {
+          "bin": 2,
+          "n": 3,
+          "p": 0.24121951180074022,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 9,
+          "p": 0.376700509904847,
+          "observed": 0.2222222222222222
+        },
+        {
+          "bin": 4,
+          "n": 7,
+          "p": 0.4354346512072795,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 12,
+          "p": 0.5511761631343375,
+          "observed": 0.4166666666666667
+        },
+        {
+          "bin": 6,
+          "n": 13,
+          "p": 0.643739549008386,
+          "observed": 0.5384615384615384
+        },
+        {
+          "bin": 7,
+          "n": 15,
+          "p": 0.7472946680062119,
+          "observed": 0.5333333333333333
+        },
+        {
+          "bin": 8,
+          "n": 6,
+          "p": 0.8296315975713685,
+          "observed": 0.8333333333333334
+        }
+      ],
+      "hit_rate": 0.4084507042253521,
+      "brier": 0.22733621547773503,
+      "ece": 0.1813622150385108,
+      "roi_day_bootstrap_95": [
+        -0.1192830576507041,
+        0.9965019472422537
+      ]
+    }
+  },
+  "monthly": {
+    "edge_5pp/1/2026-07": {
+      "n": 29,
+      "binary_n": 29,
+      "profit_units": -10.84,
+      "roi": -0.3737931034482759,
+      "avg_odds": 5.011724137931035,
+      "avg_probability": 0.7359310344827585,
+      "avg_implied_probability": 0.3357800957597992,
+      "avg_announced_ev": 2.174311448275862,
+      "max_drawdown_units": 12.01,
+      "worst_loss_streak": 10,
+      "active_days": 29,
+      "first_day": "2026-07-02",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 3,
+          "n": 1,
+          "p": 0.3801,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 2,
+          "p": 0.42284999999999995,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 2,
+          "p": 0.5446,
+          "observed": 0.0
+        },
+        {
+          "bin": 6,
+          "n": 6,
+          "p": 0.6615,
+          "observed": 0.3333333333333333
+        },
+        {
+          "bin": 7,
+          "n": 7,
+          "p": 0.7405571428571428,
+          "observed": 0.0
+        },
+        {
+          "bin": 8,
+          "n": 6,
+          "p": 0.8471166666666666,
+          "observed": 0.6666666666666666
+        },
+        {
+          "bin": 9,
+          "n": 5,
+          "p": 0.95828,
+          "observed": 0.4
+        }
+      ],
+      "hit_rate": 0.27586206896551724,
+      "brier": 0.38871353586206897,
+      "ece": 0.46006896551724136
+    },
+    "edge_5pp/1/2026-08": {
+      "n": 31,
+      "binary_n": 31,
+      "profit_units": 3.669999999999999,
+      "roi": 0.11838709677419351,
+      "avg_odds": 4.088709677419355,
+      "avg_probability": 0.7405483870967742,
+      "avg_implied_probability": 0.2960720364669763,
+      "avg_announced_ev": 1.9219658709677419,
+      "max_drawdown_units": 9.0,
+      "worst_loss_streak": 9,
+      "active_days": 31,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 4,
+          "n": 1,
+          "p": 0.4697,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 4,
+          "p": 0.586775,
+          "observed": 0.0
+        },
+        {
+          "bin": 6,
+          "n": 4,
+          "p": 0.641425,
+          "observed": 0.25
+        },
+        {
+          "bin": 7,
+          "n": 12,
+          "p": 0.7373166666666666,
+          "observed": 0.4166666666666667
+        },
+        {
+          "bin": 8,
+          "n": 8,
+          "p": 0.851325,
+          "observed": 0.75
+        },
+        {
+          "bin": 9,
+          "n": 2,
+          "p": 0.9580500000000001,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.3870967741935484,
+      "brier": 0.33328170838709675,
+      "ece": 0.35345161290322585
+    },
+    "edge_5pp/1/2026-09": {
+      "n": 13,
+      "binary_n": 12,
+      "profit_units": -4.79,
+      "roi": -0.36846153846153845,
+      "avg_odds": 6.361538461538462,
+      "avg_probability": 0.6829846153846154,
+      "avg_implied_probability": 0.2540958278059563,
+      "avg_announced_ev": 2.8671215384615385,
+      "max_drawdown_units": 9,
+      "worst_loss_streak": 9,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 4,
+          "n": 2,
+          "p": 0.48019999999999996,
+          "observed": 0.0
+        },
+        {
+          "bin": 6,
+          "n": 4,
+          "p": 0.6715249999999999,
+          "observed": 0.25
+        },
+        {
+          "bin": 7,
+          "n": 5,
+          "p": 0.7313,
+          "observed": 0.2
+        },
+        {
+          "bin": 8,
+          "n": 1,
+          "p": 0.8451,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.16666666666666666,
+      "brier": 0.3959528608333333,
+      "ece": 0.5123416666666666
+    },
+    "edge_5pp/2/2026-07": {
+      "n": 26,
+      "binary_n": 26,
+      "profit_units": -21.9722,
+      "roi": -0.8450846153846154,
+      "avg_odds": 22.206611538461537,
+      "avg_probability": 0.5337681676923076,
+      "avg_implied_probability": 0.1257930324746346,
+      "avg_announced_ev": 7.094038574435885,
+      "max_drawdown_units": 23.0,
+      "worst_loss_streak": 23,
+      "active_days": 26,
+      "first_day": "2026-07-03",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 1,
+          "n": 1,
+          "p": 0.1787238,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 1,
+          "p": 0.25176744,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 2,
+          "p": 0.3369209,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 7,
+          "p": 0.46606799428571427,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 6,
+          "p": 0.5445918083333333,
+          "observed": 0.16666666666666666
+        },
+        {
+          "bin": 6,
+          "n": 7,
+          "p": 0.6404207514285715,
+          "observed": 0.0
+        },
+        {
+          "bin": 8,
+          "n": 1,
+          "p": 0.84693015,
+          "observed": 0.0
+        },
+        {
+          "bin": 9,
+          "n": 1,
+          "p": 0.9137371000000001,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.038461538461538464,
+      "brier": 0.30750628943481934,
+      "ece": 0.4953066292307692
+    },
+    "edge_5pp/2/2026-08": {
+      "n": 31,
+      "binary_n": 30,
+      "profit_units": -6.8712,
+      "roi": -0.2216516129032258,
+      "avg_odds": 14.008216129032258,
+      "avg_probability": 0.5175221780645162,
+      "avg_implied_probability": 0.1020345951341586,
+      "avg_announced_ev": 5.723843500700225,
+      "max_drawdown_units": 16.0,
+      "worst_loss_streak": 16,
+      "active_days": 31,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 2,
+          "n": 1,
+          "p": 0.28177303,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 6,
+          "p": 0.3650431033333333,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 8,
+          "p": 0.45386323500000003,
+          "observed": 0.125
+        },
+        {
+          "bin": 5,
+          "n": 5,
+          "p": 0.54934928,
+          "observed": 0.2
+        },
+        {
+          "bin": 6,
+          "n": 9,
+          "p": 0.6381142033333334,
+          "observed": 0.2222222222222222
+        },
+        {
+          "bin": 8,
+          "n": 1,
+          "p": 0.83633691,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.13333333333333333,
+      "brier": 0.2637477955020764,
+      "ece": 0.380968289
+    },
+    "edge_5pp/2/2026-09": {
+      "n": 13,
+      "binary_n": 12,
+      "profit_units": -2.1750000000000007,
+      "roi": -0.16730769230769235,
+      "avg_odds": 41.75002307692308,
+      "avg_probability": 0.4656693738461538,
+      "avg_implied_probability": 0.09445454079312167,
+      "avg_announced_ev": 12.045323972817538,
+      "max_drawdown_units": 11,
+      "worst_loss_streak": 11,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 2,
+          "n": 1,
+          "p": 0.22992025,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 2,
+          "p": 0.335736345,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 4,
+          "p": 0.4653122475,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 3,
+          "p": 0.5235655,
+          "observed": 0.3333333333333333
+        },
+        {
+          "bin": 6,
+          "n": 2,
+          "p": 0.60345027,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.08333333333333333,
+      "brier": 0.2216729653847036,
+      "ece": 0.3783532475
+    },
+    "edge_5pp/3/2026-07": {
+      "n": 24,
+      "binary_n": 24,
+      "profit_units": -24,
+      "roi": -1.0,
+      "avg_odds": 52.484044041666664,
+      "avg_probability": 0.36556461430129167,
+      "avg_implied_probability": 0.04716364983821094,
+      "avg_announced_ev": 15.218246868780923,
+      "max_drawdown_units": 24,
+      "worst_loss_streak": 24,
+      "active_days": 24,
+      "first_day": "2026-07-03",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 1,
+          "n": 2,
+          "p": 0.17067181463999997,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 8,
+          "p": 0.25390554793725,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 4,
+          "p": 0.355644063606,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 6,
+          "p": 0.4532202991946667,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 3,
+          "p": 0.5313793977303334,
+          "observed": 0.0
+        },
+        {
+          "bin": 6,
+          "n": 1,
+          "p": 0.6649264876700001,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.1507948475643044,
+      "ece": 0.36556461430129167
+    },
+    "edge_5pp/3/2026-08": {
+      "n": 31,
+      "binary_n": 29,
+      "profit_units": -17.407106,
+      "roi": -0.5615195483870967,
+      "avg_odds": 41.407726677419355,
+      "avg_probability": 0.374254995899871,
+      "avg_implied_probability": 0.04243479081826833,
+      "avg_announced_ev": 12.75978724833046,
+      "max_drawdown_units": 19.0,
+      "worst_loss_streak": 19,
+      "active_days": 31,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 1,
+          "n": 2,
+          "p": 0.1757247786415,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 8,
+          "p": 0.25331683082375,
+          "observed": 0.125
+        },
+        {
+          "bin": 3,
+          "n": 8,
+          "p": 0.357912142797,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 6,
+          "p": 0.4402044074611666,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 4,
+          "p": 0.573644131897,
+          "observed": 0.0
+        },
+        {
+          "bin": 7,
+          "n": 1,
+          "p": 0.7700990267279999,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.034482758620689655,
+      "brier": 0.18066495213650835,
+      "ece": 0.34300632225282757
+    },
+    "edge_5pp/3/2026-09": {
+      "n": 13,
+      "binary_n": 12,
+      "profit_units": 11.35625,
+      "roi": 0.8735576923076922,
+      "avg_odds": 336.69006246153845,
+      "avg_probability": 0.3069646385376923,
+      "avg_implied_probability": 0.03918440164688441,
+      "avg_announced_ev": 45.70695657343768,
+      "max_drawdown_units": 11,
+      "worst_loss_streak": 11,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 1,
+          "n": 2,
+          "p": 0.1502854396715,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 4,
+          "p": 0.25770758342625,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 3,
+          "p": 0.39040048265300004,
+          "observed": 0.3333333333333333
+        },
+        {
+          "bin": 4,
+          "n": 3,
+          "p": 0.424231332165,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.08333333333333333,
+      "brier": 0.12736092028796392,
+      "ece": 0.2312747214585
+    },
+    "edge_5pp/4/2026-07": {
+      "n": 24,
+      "binary_n": 24,
+      "profit_units": -24,
+      "roi": -1.0,
+      "avg_odds": 156.35537562333334,
+      "avg_probability": 0.2384383323098254,
+      "avg_implied_probability": 0.021031967324340702,
+      "avg_announced_ev": 31.604108018856024,
+      "max_drawdown_units": 24,
+      "worst_loss_streak": 24,
+      "active_days": 24,
+      "first_day": "2026-07-03",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 3,
+          "p": 0.05792252209248866,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 6,
+          "p": 0.1608575926782333,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 9,
+          "p": 0.24763900283617474,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 5,
+          "p": 0.3481060491210115,
+          "observed": 0.0
+        },
+        {
+          "bin": 6,
+          "n": 1,
+          "p": 0.6143255819583131,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.07147540580708353,
+      "ece": 0.23843833230982536
+    },
+    "edge_5pp/4/2026-08": {
+      "n": 30,
+      "binary_n": 27,
+      "profit_units": -30,
+      "roi": -1.0,
+      "avg_odds": 131.21928188066667,
+      "avg_probability": 0.25260449035380095,
+      "avg_implied_probability": 0.0166544128135903,
+      "avg_announced_ev": 28.36281640366673,
+      "max_drawdown_units": 30,
+      "worst_loss_streak": 30,
+      "active_days": 30,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 1,
+          "n": 8,
+          "p": 0.1510725377709789,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 14,
+          "p": 0.25261680701754885,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 3,
+          "p": 0.3418803321678003,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 2,
+          "p": 0.5069951800857683,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.07236330570220291,
+      "ece": 0.25129062804031305
+    },
+    "edge_5pp/4/2026-09": {
+      "n": 13,
+      "binary_n": 11,
+      "profit_units": 47.159937500000005,
+      "roi": 3.6276875000000004,
+      "avg_odds": 744.3635558446153,
+      "avg_probability": 0.20648771873428684,
+      "avg_implied_probability": 0.018007328993439986,
+      "avg_announced_ev": 84.44273454808567,
+      "max_drawdown_units": 11,
+      "worst_loss_streak": 11,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 1,
+          "p": 0.09429405372108748,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 5,
+          "p": 0.15673127103296083,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 3,
+          "p": 0.2510955993817185,
+          "observed": 0.3333333333333333
+        },
+        {
+          "bin": 3,
+          "n": 2,
+          "p": 0.307792474106034,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.09090909090909091,
+      "brier": 0.08650428492690042,
+      "ece": 0.1582044144502549
+    },
+    "edge_5pp/5/2026-07": {
+      "n": 23,
+      "binary_n": 23,
+      "profit_units": -23,
+      "roi": -1.0,
+      "avg_odds": 452.02191265177396,
+      "avg_probability": 0.16329345132723289,
+      "avg_implied_probability": 0.009940210912839455,
+      "avg_announced_ev": 58.78924216326741,
+      "max_drawdown_units": 23,
+      "worst_loss_streak": 23,
+      "active_days": 23,
+      "first_day": "2026-07-03",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 5,
+          "p": 0.043622007846362436,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 12,
+          "p": 0.14723397505679026,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 5,
+          "p": 0.2394471689477169,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 1,
+          "p": 0.573595795874477,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.039208757307848695,
+      "ece": 0.1632934513272329
+    },
+    "edge_5pp/5/2026-08": {
+      "n": 30,
+      "binary_n": 26,
+      "profit_units": -30,
+      "roi": -1.0,
+      "avg_odds": 478.15936515039334,
+      "avg_probability": 0.1754535294505391,
+      "avg_implied_probability": 0.007921768729269618,
+      "avg_announced_ev": 68.66523131579312,
+      "max_drawdown_units": 30,
+      "worst_loss_streak": 30,
+      "active_days": 30,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 4,
+          "p": 0.08208472215762659,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 16,
+          "p": 0.15967937006187302,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 3,
+          "p": 0.22289438492149324,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 3,
+          "p": 0.32906674931975827,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.03551185177895268,
+      "ece": 0.17458046970554728
+    },
+    "edge_5pp/5/2026-09": {
+      "n": 13,
+      "binary_n": 7,
+      "profit_units": 47.159937500000005,
+      "roi": 3.6276875000000004,
+      "avg_odds": 2460.3667317277846,
+      "avg_probability": 0.14500643152967088,
+      "avg_implied_probability": 0.00951940277851377,
+      "avg_announced_ev": 169.10264667335275,
+      "max_drawdown_units": 11,
+      "worst_loss_streak": 11,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 3,
+          "p": 0.07181527962005381,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 4,
+          "p": 0.13251929997479578,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.012525319619173487,
+      "ece": 0.10650329125133494
+    },
+    "edge_5pp_diversified/1/2026-07": {
+      "n": 29,
+      "binary_n": 29,
+      "profit_units": -10.84,
+      "roi": -0.3737931034482759,
+      "avg_odds": 5.011724137931035,
+      "avg_probability": 0.7359310344827585,
+      "avg_implied_probability": 0.3357800957597992,
+      "avg_announced_ev": 2.174311448275862,
+      "max_drawdown_units": 12.01,
+      "worst_loss_streak": 10,
+      "active_days": 29,
+      "first_day": "2026-07-02",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 3,
+          "n": 1,
+          "p": 0.3801,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 2,
+          "p": 0.42284999999999995,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 2,
+          "p": 0.5446,
+          "observed": 0.0
+        },
+        {
+          "bin": 6,
+          "n": 6,
+          "p": 0.6615,
+          "observed": 0.3333333333333333
+        },
+        {
+          "bin": 7,
+          "n": 7,
+          "p": 0.7405571428571428,
+          "observed": 0.0
+        },
+        {
+          "bin": 8,
+          "n": 6,
+          "p": 0.8471166666666666,
+          "observed": 0.6666666666666666
+        },
+        {
+          "bin": 9,
+          "n": 5,
+          "p": 0.95828,
+          "observed": 0.4
+        }
+      ],
+      "hit_rate": 0.27586206896551724,
+      "brier": 0.38871353586206897,
+      "ece": 0.46006896551724136
+    },
+    "edge_5pp_diversified/1/2026-08": {
+      "n": 31,
+      "binary_n": 31,
+      "profit_units": 3.669999999999999,
+      "roi": 0.11838709677419351,
+      "avg_odds": 4.088709677419355,
+      "avg_probability": 0.7405483870967742,
+      "avg_implied_probability": 0.2960720364669763,
+      "avg_announced_ev": 1.9219658709677419,
+      "max_drawdown_units": 9.0,
+      "worst_loss_streak": 9,
+      "active_days": 31,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 4,
+          "n": 1,
+          "p": 0.4697,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 4,
+          "p": 0.586775,
+          "observed": 0.0
+        },
+        {
+          "bin": 6,
+          "n": 4,
+          "p": 0.641425,
+          "observed": 0.25
+        },
+        {
+          "bin": 7,
+          "n": 12,
+          "p": 0.7373166666666666,
+          "observed": 0.4166666666666667
+        },
+        {
+          "bin": 8,
+          "n": 8,
+          "p": 0.851325,
+          "observed": 0.75
+        },
+        {
+          "bin": 9,
+          "n": 2,
+          "p": 0.9580500000000001,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.3870967741935484,
+      "brier": 0.33328170838709675,
+      "ece": 0.35345161290322585
+    },
+    "edge_5pp_diversified/1/2026-09": {
+      "n": 13,
+      "binary_n": 12,
+      "profit_units": -4.79,
+      "roi": -0.36846153846153845,
+      "avg_odds": 6.361538461538462,
+      "avg_probability": 0.6829846153846154,
+      "avg_implied_probability": 0.2540958278059563,
+      "avg_announced_ev": 2.8671215384615385,
+      "max_drawdown_units": 9,
+      "worst_loss_streak": 9,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 4,
+          "n": 2,
+          "p": 0.48019999999999996,
+          "observed": 0.0
+        },
+        {
+          "bin": 6,
+          "n": 4,
+          "p": 0.6715249999999999,
+          "observed": 0.25
+        },
+        {
+          "bin": 7,
+          "n": 5,
+          "p": 0.7313,
+          "observed": 0.2
+        },
+        {
+          "bin": 8,
+          "n": 1,
+          "p": 0.8451,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.16666666666666666,
+      "brier": 0.3959528608333333,
+      "ece": 0.5123416666666666
+    },
+    "edge_5pp_diversified/2/2026-07": {
+      "n": 25,
+      "binary_n": 25,
+      "profit_units": -25,
+      "roi": -1.0,
+      "avg_odds": 13.330312,
+      "avg_probability": 0.5106661016,
+      "avg_implied_probability": 0.12231680406940812,
+      "avg_announced_ev": 5.172256336009281,
+      "max_drawdown_units": 25,
+      "worst_loss_streak": 25,
+      "active_days": 25,
+      "first_day": "2026-07-03",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 2,
+          "n": 1,
+          "p": 0.25176744,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 4,
+          "p": 0.338850715,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 7,
+          "p": 0.45306078,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 6,
+          "p": 0.5282503116666667,
+          "observed": 0.0
+        },
+        {
+          "bin": 6,
+          "n": 5,
+          "p": 0.650385892,
+          "observed": 0.0
+        },
+        {
+          "bin": 7,
+          "n": 1,
+          "p": 0.7196953,
+          "observed": 0.0
+        },
+        {
+          "bin": 8,
+          "n": 1,
+          "p": 0.84693015,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.28017339616529174,
+      "ece": 0.5106661016
+    },
+    "edge_5pp_diversified/2/2026-08": {
+      "n": 31,
+      "binary_n": 31,
+      "profit_units": -2.749400000000001,
+      "roi": -0.08869032258064519,
+      "avg_odds": 14.167916129032259,
+      "avg_probability": 0.5045945512903226,
+      "avg_implied_probability": 0.09888656624641456,
+      "avg_announced_ev": 5.746441516264968,
+      "max_drawdown_units": 15.0,
+      "worst_loss_streak": 15,
+      "active_days": 31,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 2,
+          "n": 1,
+          "p": 0.28177303,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 6,
+          "p": 0.3650431033333333,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 7,
+          "p": 0.44342596142857144,
+          "observed": 0.14285714285714285
+        },
+        {
+          "bin": 5,
+          "n": 9,
+          "p": 0.5517279333333334,
+          "observed": 0.2222222222222222
+        },
+        {
+          "bin": 6,
+          "n": 8,
+          "p": 0.63760828875,
+          "observed": 0.25
+        }
+      ],
+      "hit_rate": 0.16129032258064516,
+      "brier": 0.2441165933789071,
+      "ece": 0.3433042287096774
+    },
+    "edge_5pp_diversified/2/2026-09": {
+      "n": 13,
+      "binary_n": 12,
+      "profit_units": -2.1750000000000007,
+      "roi": -0.16730769230769235,
+      "avg_odds": 39.43051538461538,
+      "avg_probability": 0.46703356153846154,
+      "avg_implied_probability": 0.09504899177537646,
+      "avg_announced_ev": 11.338848254298306,
+      "max_drawdown_units": 11,
+      "worst_loss_streak": 11,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 2,
+          "n": 1,
+          "p": 0.22992025,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 1,
+          "p": 0.30638139,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 6,
+          "p": 0.45852303499999997,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 2,
+          "p": 0.522763125,
+          "observed": 0.5
+        },
+        {
+          "bin": 6,
+          "n": 2,
+          "p": 0.612503655,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.08333333333333333,
+      "brier": 0.2224420719438485,
+      "ece": 0.3798311175
+    },
+    "edge_5pp_diversified/3/2026-07": {
+      "n": 23,
+      "binary_n": 23,
+      "profit_units": -23,
+      "roi": -1.0,
+      "avg_odds": 64.41708886956522,
+      "avg_probability": 0.26253423504613044,
+      "avg_implied_probability": 0.037191310347040304,
+      "avg_announced_ev": 11.776718391579982,
+      "max_drawdown_units": 23,
+      "worst_loss_streak": 23,
+      "active_days": 23,
+      "first_day": "2026-07-03",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 2,
+          "p": 0.06679357587950001,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 5,
+          "p": 0.1384743920552,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 8,
+          "p": 0.24627479988675,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 3,
+          "p": 0.34501509670333336,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 4,
+          "p": 0.420205593218,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 1,
+          "p": 0.52626223195,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.08472728810696886,
+      "ece": 0.26253423504613044
+    },
+    "edge_5pp_diversified/3/2026-08": {
+      "n": 30,
+      "binary_n": 29,
+      "profit_units": -12.650884000000001,
+      "roi": -0.4216961333333334,
+      "avg_odds": 48.1213486,
+      "avg_probability": 0.3461954927907666,
+      "avg_implied_probability": 0.03878022860359677,
+      "avg_announced_ev": 14.27534140840074,
+      "max_drawdown_units": 18.0,
+      "worst_loss_streak": 18,
+      "active_days": 30,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 1,
+          "n": 1,
+          "p": 0.16621791039699998,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 10,
+          "p": 0.2571325412685,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 10,
+          "p": 0.3415314733904,
+          "observed": 0.1
+        },
+        {
+          "bin": 4,
+          "n": 5,
+          "p": 0.43844763440339996,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 3,
+          "p": 0.5538873017066667,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.034482758620689655,
+      "brier": 0.1374206030697698,
+      "ece": 0.3105778666938966
+    },
+    "edge_5pp_diversified/3/2026-09": {
+      "n": 13,
+      "binary_n": 12,
+      "profit_units": 13.737750000000002,
+      "roi": 1.05675,
+      "avg_odds": 102.44869846153846,
+      "avg_probability": 0.31003490726992305,
+      "avg_implied_probability": 0.0380010305321823,
+      "avg_announced_ev": 22.66182799400378,
+      "max_drawdown_units": 11,
+      "worst_loss_streak": 11,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 1,
+          "n": 2,
+          "p": 0.19348745464649997,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 3,
+          "p": 0.27684008043999997,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 6,
+          "p": 0.365354805248,
+          "observed": 0.16666666666666666
+        },
+        {
+          "bin": 4,
+          "n": 1,
+          "p": 0.40558616892000005,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.08333333333333333,
+      "brier": 0.12750326541557175,
+      "ece": 0.23460084591841668
+    },
+    "edge_5pp_diversified/4/2026-07": {
+      "n": 17,
+      "binary_n": 17,
+      "profit_units": -17,
+      "roi": -1.0,
+      "avg_odds": 195.6046735882353,
+      "avg_probability": 0.18238079482332284,
+      "avg_implied_probability": 0.017134786539025684,
+      "avg_announced_ev": 33.966018238250214,
+      "max_drawdown_units": 17,
+      "worst_loss_streak": 17,
+      "active_days": 17,
+      "first_day": "2026-07-11",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 2,
+          "p": 0.055941617425175005,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 9,
+          "p": 0.15057597265052913,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 5,
+          "p": 0.25789883094241023,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 1,
+          "p": 0.343912368579325,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.039643923595817,
+      "ece": 0.18238079482332284
+    },
+    "edge_5pp_diversified/4/2026-08": {
+      "n": 30,
+      "binary_n": 29,
+      "profit_units": -30,
+      "roi": -1.0,
+      "avg_odds": 190.62102144399998,
+      "avg_probability": 0.2303798389111518,
+      "avg_implied_probability": 0.01659589612760658,
+      "avg_announced_ev": 35.28618580523536,
+      "max_drawdown_units": 30,
+      "worst_loss_streak": 30,
+      "active_days": 30,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 1,
+          "n": 13,
+          "p": 0.1727577482727482,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 11,
+          "p": 0.23768342461276698,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 3,
+          "p": 0.33679834965196775,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 1,
+          "p": 0.42499882188825,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 1,
+          "p": 0.5084973590272774,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.06224937561986788,
+      "ece": 0.23462964235026187
+    },
+    "edge_5pp_diversified/4/2026-09": {
+      "n": 13,
+      "binary_n": 11,
+      "profit_units": -13,
+      "roi": -1.0,
+      "avg_odds": 309.7258416230769,
+      "avg_probability": 0.2071255025258475,
+      "avg_implied_probability": 0.0178182621248926,
+      "avg_announced_ev": 43.643103579547336,
+      "max_drawdown_units": 13,
+      "worst_loss_streak": 13,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 1,
+          "n": 5,
+          "p": 0.15496016711422422,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 4,
+          "p": 0.2503604153098343,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 2,
+          "p": 0.307792474106034,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.05182245575027749,
+      "ece": 0.2174388586384115
+    },
+    "edge_5pp_diversified/5/2026-07": {
+      "n": 12,
+      "binary_n": 12,
+      "profit_units": -12,
+      "roi": -1.0,
+      "avg_odds": 905.0410075416667,
+      "avg_probability": 0.1348418784659689,
+      "avg_implied_probability": 0.008354696323539787,
+      "avg_announced_ev": 81.3667710988742,
+      "max_drawdown_units": 12,
+      "worst_loss_streak": 12,
+      "active_days": 12,
+      "first_day": "2026-07-20",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 3,
+          "p": 0.056365444380092555,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 8,
+          "p": 0.1483638240446307,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 1,
+          "p": 0.2620956160943036,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.022008804930256424,
+      "ece": 0.1348418784659689
+    },
+    "edge_5pp_diversified/5/2026-08": {
+      "n": 29,
+      "binary_n": 28,
+      "profit_units": -29,
+      "roi": -1.0,
+      "avg_odds": 494.53702851510343,
+      "avg_probability": 0.14680347965737095,
+      "avg_implied_probability": 0.006246457216891173,
+      "avg_announced_ev": 63.95541027535178,
+      "max_drawdown_units": 29,
+      "worst_loss_streak": 29,
+      "active_days": 29,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 8,
+          "p": 0.0818321578710911,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 14,
+          "p": 0.14177508606358263,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 4,
+          "p": 0.2300740244985532,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 2,
+          "p": 0.31636645538909336,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.02711233745232361,
+      "ece": 0.1497334813082602
+    },
+    "edge_5pp_diversified/5/2026-09": {
+      "n": 13,
+      "binary_n": 10,
+      "profit_units": -13,
+      "roi": -1.0,
+      "avg_odds": 739.3159303207692,
+      "avg_probability": 0.14942339711420696,
+      "avg_implied_probability": 0.009498643949829208,
+      "avg_announced_ev": 71.94038368051757,
+      "max_drawdown_units": 13,
+      "worst_loss_streak": 13,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 3,
+          "p": 0.07498613527631899,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 5,
+          "p": 0.15267418912411895,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 2,
+          "p": 0.24021299661639922,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.025299638045158574,
+      "ece": 0.14687553446823504
+    },
+    "ev_positive/1/2026-07": {
+      "n": 30,
+      "binary_n": 30,
+      "profit_units": 1.3899999999999997,
+      "roi": 0.046333333333333324,
+      "avg_odds": 28.631666666666668,
+      "avg_probability": 0.4467433333333333,
+      "avg_implied_probability": 0.14797574089588073,
+      "avg_announced_ev": 3.8328558999999998,
+      "max_drawdown_units": 14.49,
+      "worst_loss_streak": 13,
+      "active_days": 30,
+      "first_day": "2026-07-02",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 2,
+          "p": 0.055299999999999995,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 4,
+          "p": 0.14245,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 3,
+          "p": 0.23446666666666668,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 2,
+          "p": 0.34175,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 7,
+          "p": 0.4472714285714286,
+          "observed": 0.14285714285714285
+        },
+        {
+          "bin": 5,
+          "n": 2,
+          "p": 0.51775,
+          "observed": 0.5
+        },
+        {
+          "bin": 6,
+          "n": 5,
+          "p": 0.6704600000000001,
+          "observed": 0.4
+        },
+        {
+          "bin": 7,
+          "n": 4,
+          "p": 0.738875,
+          "observed": 0.25
+        },
+        {
+          "bin": 8,
+          "n": 1,
+          "p": 0.8608,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.16666666666666666,
+      "brier": 0.216800735,
+      "ece": 0.2800766666666667
+    },
+    "ev_positive/1/2026-08": {
+      "n": 31,
+      "binary_n": 31,
+      "profit_units": -1.8600000000000008,
+      "roi": -0.060000000000000026,
+      "avg_odds": 12.989032258064517,
+      "avg_probability": 0.4343258064516129,
+      "avg_implied_probability": 0.11803261257826464,
+      "avg_announced_ev": 3.725168935483871,
+      "max_drawdown_units": 12.71,
+      "worst_loss_streak": 8,
+      "active_days": 31,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 1,
+          "n": 5,
+          "p": 0.15646,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 2,
+          "p": 0.27885000000000004,
+          "observed": 0.5
+        },
+        {
+          "bin": 3,
+          "n": 3,
+          "p": 0.3343666666666667,
+          "observed": 0.3333333333333333
+        },
+        {
+          "bin": 4,
+          "n": 13,
+          "p": 0.4605461538461538,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 3,
+          "p": 0.5846333333333333,
+          "observed": 0.0
+        },
+        {
+          "bin": 6,
+          "n": 3,
+          "p": 0.6399333333333334,
+          "observed": 0.6666666666666666
+        },
+        {
+          "bin": 7,
+          "n": 2,
+          "p": 0.7301,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.12903225806451613,
+      "brier": 0.21700817,
+      "ece": 0.3390032258064516
+    },
+    "ev_positive/1/2026-09": {
+      "n": 13,
+      "binary_n": 13,
+      "profit_units": -13,
+      "roi": -1.0,
+      "avg_odds": 15.903846153846153,
+      "avg_probability": 0.3688230769230769,
+      "avg_implied_probability": 0.08214476154793922,
+      "avg_announced_ev": 4.037996153846153,
+      "max_drawdown_units": 13,
+      "worst_loss_streak": 13,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 1,
+          "n": 3,
+          "p": 0.13736666666666666,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 3,
+          "p": 0.2607333333333333,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 2,
+          "p": 0.35885,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 2,
+          "p": 0.48019999999999996,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 1,
+          "p": 0.5762,
+          "observed": 0.0
+        },
+        {
+          "bin": 6,
+          "n": 1,
+          "p": 0.6345,
+          "observed": 0.0
+        },
+        {
+          "bin": 7,
+          "n": 1,
+          "p": 0.7116,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.17125091923076924,
+      "ece": 0.3688230769230769
+    },
+    "ev_positive/2/2026-07": {
+      "n": 30,
+      "binary_n": 30,
+      "profit_units": -25.9722,
+      "roi": -0.8657400000000001,
+      "avg_odds": 3532.08631,
+      "avg_probability": 0.17496679433333331,
+      "avg_implied_probability": 0.04104904631920075,
+      "avg_announced_ev": 18.642859534137767,
+      "max_drawdown_units": 25.9722,
+      "worst_loss_streak": 24,
+      "active_days": 30,
+      "first_day": "2026-07-02",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 11,
+          "p": 0.054726817272727275,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 10,
+          "p": 0.14590555,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 4,
+          "p": 0.26013817,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 2,
+          "p": 0.339086105,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 2,
+          "p": 0.467213185,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 1,
+          "p": 0.53480208,
+          "observed": 1.0
+        }
+      ],
+      "hit_rate": 0.03333333333333333,
+      "brier": 0.04756532474152522,
+      "ece": 0.17264665566666665
+    },
+    "ev_positive/2/2026-08": {
+      "n": 31,
+      "binary_n": 31,
+      "profit_units": -31,
+      "roi": -1.0,
+      "avg_odds": 126.98795483870968,
+      "avg_probability": 0.1680357812903226,
+      "avg_implied_probability": 0.0193792883915316,
+      "avg_announced_ev": 16.845897803662645,
+      "max_drawdown_units": 31,
+      "worst_loss_streak": 31,
+      "active_days": 31,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 10,
+          "p": 0.067668761,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 9,
+          "p": 0.13547397111111112,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 8,
+          "p": 0.24508362875,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 4,
+          "p": 0.33812171,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.037636643798212084,
+      "ece": 0.1680357812903226
+    },
+    "ev_positive/2/2026-09": {
+      "n": 13,
+      "binary_n": 13,
+      "profit_units": -13,
+      "roi": -1.0,
+      "avg_odds": 168.83307692307693,
+      "avg_probability": 0.13664682692307692,
+      "avg_implied_probability": 0.008086955226985788,
+      "avg_announced_ev": 18.408247449615384,
+      "max_drawdown_units": 13,
+      "worst_loss_streak": 13,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 6,
+          "p": 0.06450371833333333,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 4,
+          "p": 0.151592955,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 2,
+          "p": 0.21816154999999998,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 1,
+          "p": 0.34669152000000003,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.026568048188119038,
+      "ece": 0.13664682692307692
+    },
+    "ev_positive/3/2026-07": {
+      "n": 30,
+      "binary_n": 30,
+      "profit_units": -30,
+      "roi": -1.0,
+      "avg_odds": 175584.69407846668,
+      "avg_probability": 0.06907243765293333,
+      "avg_implied_probability": 0.017841180085598148,
+      "avg_announced_ev": 72.82160536971392,
+      "max_drawdown_units": 30,
+      "worst_loss_streak": 30,
+      "active_days": 30,
+      "first_day": "2026-07-02",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 22,
+          "p": 0.03774841813545454,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 7,
+          "p": 0.1374218517942857,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 1,
+          "p": 0.279754968048,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.008866618936098716,
+      "ece": 0.06907243765293332
+    },
+    "ev_positive/3/2026-08": {
+      "n": 31,
+      "binary_n": 31,
+      "profit_units": -31,
+      "roi": -1.0,
+      "avg_odds": 1198.7429975483872,
+      "avg_probability": 0.07108546094861291,
+      "avg_implied_probability": 0.005345958603645483,
+      "avg_announced_ev": 58.62998986064193,
+      "max_drawdown_units": 31,
+      "worst_loss_streak": 31,
+      "active_days": 31,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 23,
+          "p": 0.03670373608543478,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 7,
+          "p": 0.15774735227171427,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 1,
+          "p": 0.25523189354,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.009291461701312963,
+      "ece": 0.07108546094861289
+    },
+    "ev_positive/3/2026-09": {
+      "n": 13,
+      "binary_n": 13,
+      "profit_units": -13,
+      "roi": -1.0,
+      "avg_odds": 2217.1046153846155,
+      "avg_probability": 0.039741461678153844,
+      "avg_implied_probability": 0.0008457400758564431,
+      "avg_announced_ev": 74.80027692662361,
+      "max_drawdown_units": 13,
+      "worst_loss_streak": 13,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 11,
+          "p": 0.02709555835827273,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 2,
+          "p": 0.1092939299375,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.002791944655163072,
+      "ece": 0.03974146167815385
+    },
+    "ev_positive/4/2026-07": {
+      "n": 28,
+      "binary_n": 28,
+      "profit_units": -28,
+      "roi": -1.0,
+      "avg_odds": 54402.964744445,
+      "avg_probability": 0.026882899244234894,
+      "avg_implied_probability": 0.005379391995036484,
+      "avg_announced_ev": 298.00193726072473,
+      "max_drawdown_units": 28,
+      "worst_loss_streak": 28,
+      "active_days": 28,
+      "first_day": "2026-07-03",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 28,
+          "p": 0.026882899244234894,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.0013566100806761902,
+      "ece": 0.026882899244234894
+    },
+    "ev_positive/4/2026-08": {
+      "n": 30,
+      "binary_n": 30,
+      "profit_units": -30,
+      "roi": -1.0,
+      "avg_odds": 13058.226365832666,
+      "avg_probability": 0.027662985823665186,
+      "avg_implied_probability": 0.001320620980586017,
+      "avg_announced_ev": 231.5110671406631,
+      "max_drawdown_units": 30,
+      "worst_loss_streak": 30,
+      "active_days": 30,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 29,
+          "p": 0.02283895988279123,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 1,
+          "p": 0.16755973810900998,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.001813029536346749,
+      "ece": 0.02766298582366519
+    },
+    "ev_positive/4/2026-09": {
+      "n": 13,
+      "binary_n": 13,
+      "profit_units": -13,
+      "roi": -1.0,
+      "avg_odds": 37321.691538461535,
+      "avg_probability": 0.009366974821973061,
+      "avg_implied_probability": 9.251815079675468e-05,
+      "avg_announced_ev": 236.99906846248976,
+      "max_drawdown_units": 13,
+      "worst_loss_streak": 13,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 13,
+          "p": 0.009366974821973061,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.00021273136423762644,
+      "ece": 0.009366974821973061
+    },
+    "ev_positive/5/2026-07": {
+      "n": 26,
+      "binary_n": 26,
+      "profit_units": -26,
+      "roi": -1.0,
+      "avg_odds": 1698024.20330623,
+      "avg_probability": 0.012085588182452615,
+      "avg_implied_probability": 0.0016334971120044114,
+      "avg_announced_ev": 1288.9942319477775,
+      "max_drawdown_units": 26,
+      "worst_loss_streak": 26,
+      "active_days": 26,
+      "first_day": "2026-07-03",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 26,
+          "p": 0.012085588182452615,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.00026966570429062066,
+      "ece": 0.012085588182452615
+    },
+    "ev_positive/5/2026-08": {
+      "n": 29,
+      "binary_n": 29,
+      "profit_units": -29,
+      "roi": -1.0,
+      "avg_odds": 148985.41582347173,
+      "avg_probability": 0.01119550832369731,
+      "avg_implied_probability": 0.00028321322229464183,
+      "avg_announced_ev": 1054.1556388336878,
+      "max_drawdown_units": 29,
+      "worst_loss_streak": 29,
+      "active_days": 29,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 29,
+          "p": 0.01119550832369731,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 0.00024558881184238914,
+      "ece": 0.01119550832369731
+    },
+    "ev_positive/5/2026-09": {
+      "n": 13,
+      "binary_n": 13,
+      "profit_units": -13,
+      "roi": -1.0,
+      "avg_odds": 319296.0911538462,
+      "avg_probability": 0.0032175569052861268,
+      "avg_implied_probability": 1.2913173797377128e-05,
+      "avg_announced_ev": 749.9195149942444,
+      "max_drawdown_units": 13,
+      "worst_loss_streak": 13,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 13,
+          "p": 0.0032175569052861268,
+          "observed": 0.0
+        }
+      ],
+      "hit_rate": 0.0,
+      "brier": 2.956031352856241e-05,
+      "ece": 0.0032175569052861268
+    },
+    "probability/1/2026-07": {
+      "n": 30,
+      "binary_n": 30,
+      "profit_units": 1.0600000000000003,
+      "roi": 0.03533333333333334,
+      "avg_odds": 1.5196666666666667,
+      "avg_probability": 0.8993366666666667,
+      "avg_implied_probability": 0.7088542693991303,
+      "avg_announced_ev": 0.3698227333333333,
+      "max_drawdown_units": 3,
+      "worst_loss_streak": 3,
+      "active_days": 30,
+      "first_day": "2026-07-02",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 7,
+          "n": 5,
+          "p": 0.77024,
+          "observed": 0.8
+        },
+        {
+          "bin": 8,
+          "n": 8,
+          "p": 0.85175,
+          "observed": 0.625
+        },
+        {
+          "bin": 9,
+          "n": 17,
+          "p": 0.9597000000000001,
+          "observed": 0.8235294117647058
+        }
+      ],
+      "hit_rate": 0.7666666666666667,
+      "brier": 0.19300305033333334,
+      "ece": 0.1425900000000001
+    },
+    "probability/1/2026-08": {
+      "n": 31,
+      "binary_n": 31,
+      "profit_units": 2.330000000000001,
+      "roi": 0.07516129032258068,
+      "avg_odds": 1.3151612903225807,
+      "avg_probability": 0.9401032258064517,
+      "avg_implied_probability": 0.7949347220838962,
+      "avg_announced_ev": 0.23614283870967745,
+      "max_drawdown_units": 2.709999999999999,
+      "worst_loss_streak": 1,
+      "active_days": 31,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 8,
+          "n": 3,
+          "p": 0.8634333333333334,
+          "observed": 0.6666666666666666
+        },
+        {
+          "bin": 9,
+          "n": 28,
+          "p": 0.9483178571428572,
+          "observed": 0.8571428571428571
+        }
+      ],
+      "hit_rate": 0.8387096774193549,
+      "brier": 0.14549415354838707,
+      "ece": 0.1013935483870969
+    },
+    "probability/1/2026-09": {
+      "n": 13,
+      "binary_n": 13,
+      "profit_units": 0.20000000000000018,
+      "roi": 0.015384615384615398,
+      "avg_odds": 1.133076923076923,
+      "avg_probability": 0.9517153846153845,
+      "avg_implied_probability": 0.8960519519762571,
+      "avg_announced_ev": 0.07611684615384617,
+      "max_drawdown_units": 1.0,
+      "worst_loss_streak": 1,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 9,
+          "n": 13,
+          "p": 0.9517153846153845,
+          "observed": 0.9230769230769231
+        }
+      ],
+      "hit_rate": 0.9230769230769231,
+      "brier": 0.06720962999999999,
+      "ece": 0.02863846153846139
+    },
+    "probability/2/2026-07": {
+      "n": 30,
+      "binary_n": 30,
+      "profit_units": 6.664,
+      "roi": 0.22213333333333332,
+      "avg_odds": 2.55124,
+      "avg_probability": 0.7573765203333332,
+      "avg_implied_probability": 0.451864923925725,
+      "avg_announced_ev": 0.9116797385521,
+      "max_drawdown_units": 3,
+      "worst_loss_streak": 3,
+      "active_days": 30,
+      "first_day": "2026-07-02",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 3,
+          "n": 1,
+          "p": 0.34392196,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 1,
+          "p": 0.49118915999999996,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 5,
+          "p": 0.5596733439999999,
+          "observed": 1.0
+        },
+        {
+          "bin": 6,
+          "n": 2,
+          "p": 0.655684025,
+          "observed": 0.0
+        },
+        {
+          "bin": 7,
+          "n": 7,
+          "p": 0.7538283157142857,
+          "observed": 0.5714285714285714
+        },
+        {
+          "bin": 8,
+          "n": 7,
+          "p": 0.8600370671428571,
+          "observed": 0.5714285714285714
+        },
+        {
+          "bin": 9,
+          "n": 7,
+          "p": 0.9256274342857143,
+          "observed": 0.5714285714285714
+        }
+      ],
+      "hit_rate": 0.5666666666666667,
+      "brier": 0.301721766857097,
+      "ece": 0.3374854056666667
+    },
+    "probability/2/2026-08": {
+      "n": 31,
+      "binary_n": 31,
+      "profit_units": 5.224600000000002,
+      "roi": 0.1685354838709678,
+      "avg_odds": 1.9402032258064517,
+      "avg_probability": 0.8587612816129032,
+      "avg_implied_probability": 0.605774246939479,
+      "avg_announced_ev": 0.6626200820415807,
+      "max_drawdown_units": 3.7477,
+      "worst_loss_streak": 2,
+      "active_days": 31,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 6,
+          "n": 1,
+          "p": 0.62106054,
+          "observed": 0.0
+        },
+        {
+          "bin": 7,
+          "n": 5,
+          "p": 0.763929188,
+          "observed": 0.6
+        },
+        {
+          "bin": 8,
+          "n": 12,
+          "p": 0.8473695916666667,
+          "observed": 0.75
+        },
+        {
+          "bin": 9,
+          "n": 13,
+          "p": 0.9240352423076922,
+          "observed": 0.6923076923076923
+        }
+      ],
+      "hit_rate": 0.6774193548387096,
+      "brier": 0.25149208315452765,
+      "ece": 0.1813419267741935
+    },
+    "probability/2/2026-09": {
+      "n": 13,
+      "binary_n": 13,
+      "profit_units": 0.6049000000000002,
+      "roi": 0.04653076923076925,
+      "avg_odds": 1.2968230769230769,
+      "avg_probability": 0.8913137507692308,
+      "avg_implied_probability": 0.7921282757068138,
+      "avg_announced_ev": 0.1497493772673846,
+      "max_drawdown_units": 1.0,
+      "worst_loss_streak": 1,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 8,
+          "n": 6,
+          "p": 0.8489197916666668,
+          "observed": 0.8333333333333334
+        },
+        {
+          "bin": 9,
+          "n": 7,
+          "p": 0.9276514299999999,
+          "observed": 0.8571428571428571
+        }
+      ],
+      "hit_rate": 0.8461538461538461,
+      "brier": 0.12465002684416594,
+      "ece": 0.04515990461538463
+    },
+    "probability/3/2026-07": {
+      "n": 30,
+      "binary_n": 30,
+      "profit_units": -0.3380869999999987,
+      "roi": -0.011269566666666623,
+      "avg_odds": 3.8572387333333333,
+      "avg_probability": 0.6218801661922334,
+      "avg_implied_probability": 0.3163779466309504,
+      "avg_announced_ev": 1.2905172299668968,
+      "max_drawdown_units": 9.0,
+      "worst_loss_streak": 9,
+      "active_days": 30,
+      "first_day": "2026-07-02",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 1,
+          "n": 1,
+          "p": 0.14829914915200001,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 3,
+          "p": 0.28137412243800003,
+          "observed": 0.3333333333333333
+        },
+        {
+          "bin": 3,
+          "n": 1,
+          "p": 0.37498721867199997,
+          "observed": 1.0
+        },
+        {
+          "bin": 4,
+          "n": 4,
+          "p": 0.44598311970525,
+          "observed": 0.5
+        },
+        {
+          "bin": 5,
+          "n": 3,
+          "p": 0.5701265245733333,
+          "observed": 0.3333333333333333
+        },
+        {
+          "bin": 6,
+          "n": 6,
+          "p": 0.6560433862086666,
+          "observed": 0.3333333333333333
+        },
+        {
+          "bin": 7,
+          "n": 5,
+          "p": 0.7660715134078,
+          "observed": 0.2
+        },
+        {
+          "bin": 8,
+          "n": 5,
+          "p": 0.8359007196266,
+          "observed": 0.4
+        },
+        {
+          "bin": 9,
+          "n": 2,
+          "p": 0.9242813578319999,
+          "observed": 0.5
+        }
+      ],
+      "hit_rate": 0.36666666666666664,
+      "brier": 0.35173524538364975,
+      "ece": 0.32167736187176665
+    },
+    "probability/3/2026-08": {
+      "n": 31,
+      "binary_n": 31,
+      "profit_units": 12.877862000000002,
+      "roi": 0.41541490322580654,
+      "avg_odds": 2.5355369677419355,
+      "avg_probability": 0.7663292232457096,
+      "avg_implied_probability": 0.5214649481490273,
+      "avg_announced_ev": 0.9157216001460033,
+      "max_drawdown_units": 3.350451999999999,
+      "worst_loss_streak": 2,
+      "active_days": 31,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 4,
+          "n": 1,
+          "p": 0.464366965758,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 2,
+          "p": 0.5590278525685,
+          "observed": 1.0
+        },
+        {
+          "bin": 6,
+          "n": 7,
+          "p": 0.6652204585504286,
+          "observed": 0.7142857142857143
+        },
+        {
+          "bin": 7,
+          "n": 7,
+          "p": 0.7755145020788571,
+          "observed": 0.5714285714285714
+        },
+        {
+          "bin": 8,
+          "n": 12,
+          "p": 0.8554260834516666,
+          "observed": 0.6666666666666666
+        },
+        {
+          "bin": 9,
+          "n": 2,
+          "p": 0.9117627619485,
+          "observed": 1.0
+        }
+      ],
+      "hit_rate": 0.6774193548387096,
+      "brier": 0.23564600725639376,
+      "ece": 0.17935345299493546
+    },
+    "probability/3/2026-09": {
+      "n": 13,
+      "binary_n": 13,
+      "profit_units": 3.537592,
+      "roi": 0.27212246153846154,
+      "avg_odds": 1.5542544615384615,
+      "avg_probability": 0.828370395656923,
+      "avg_implied_probability": 0.7058475030947073,
+      "avg_announced_ev": 0.26106745874803894,
+      "max_drawdown_units": 1.0,
+      "worst_loss_streak": 1,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 7,
+          "n": 5,
+          "p": 0.7524521290578,
+          "observed": 0.8
+        },
+        {
+          "bin": 8,
+          "n": 6,
+          "p": 0.8640642491959999,
+          "observed": 0.8333333333333334
+        },
+        {
+          "bin": 9,
+          "n": 2,
+          "p": 0.9110845015375,
+          "observed": 1.0
+        }
+      ],
+      "hit_rate": 0.8461538461538461,
+      "brier": 0.11891135634667037,
+      "ece": 0.04615044975476918
+    },
+    "probability/4/2026-07": {
+      "n": 30,
+      "binary_n": 30,
+      "profit_units": -17.24899872,
+      "roi": -0.574966624,
+      "avg_odds": 10.788611561,
+      "avg_probability": 0.4949533662295931,
+      "avg_implied_probability": 0.20459649173189193,
+      "avg_announced_ev": 3.035045382976976,
+      "max_drawdown_units": 20.4319176,
+      "worst_loss_streak": 16,
+      "active_days": 30,
+      "first_day": "2026-07-02",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 3,
+          "p": 0.04673692692155481,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 1,
+          "p": 0.17342122432191479,
+          "observed": 0.0
+        },
+        {
+          "bin": 2,
+          "n": 4,
+          "p": 0.25676433695083745,
+          "observed": 0.5
+        },
+        {
+          "bin": 3,
+          "n": 2,
+          "p": 0.350930659824585,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 3,
+          "p": 0.46821881838367535,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 5,
+          "p": 0.5349353532818565,
+          "observed": 0.0
+        },
+        {
+          "bin": 6,
+          "n": 6,
+          "p": 0.6484456942005878,
+          "observed": 0.0
+        },
+        {
+          "bin": 7,
+          "n": 3,
+          "p": 0.7545203053062265,
+          "observed": 0.0
+        },
+        {
+          "bin": 8,
+          "n": 3,
+          "p": 0.8574940038887258,
+          "observed": 0.3333333333333333
+        }
+      ],
+      "hit_rate": 0.1,
+      "brier": 0.3095953635779873,
+      "ece": 0.45981620970936976
+    },
+    "probability/4/2026-08": {
+      "n": 31,
+      "binary_n": 31,
+      "profit_units": 18.791554470000005,
+      "roi": 0.606179176451613,
+      "avg_odds": 3.564893536451613,
+      "avg_probability": 0.6742461869371399,
+      "avg_implied_probability": 0.3907459725873874,
+      "avg_announced_ev": 1.3416168975008869,
+      "max_drawdown_units": 3.0,
+      "worst_loss_streak": 3,
+      "active_days": 31,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 3,
+          "n": 2,
+          "p": 0.34208926512026416,
+          "observed": 0.5
+        },
+        {
+          "bin": 4,
+          "n": 1,
+          "p": 0.46435145539423406,
+          "observed": 1.0
+        },
+        {
+          "bin": 5,
+          "n": 7,
+          "p": 0.5350194396357386,
+          "observed": 0.42857142857142855
+        },
+        {
+          "bin": 6,
+          "n": 5,
+          "p": 0.6789573259441235,
+          "observed": 0.4
+        },
+        {
+          "bin": 7,
+          "n": 9,
+          "p": 0.7513401710532586,
+          "observed": 0.6666666666666666
+        },
+        {
+          "bin": 8,
+          "n": 7,
+          "p": 0.8358739375380654,
+          "observed": 0.7142857142857143
+        }
+      ],
+      "hit_rate": 0.5806451612903226,
+      "brier": 0.25720058971303744,
+      "ece": 0.14853457496070357
+    },
+    "probability/4/2026-09": {
+      "n": 13,
+      "binary_n": 13,
+      "profit_units": 6.03168836,
+      "roi": 0.4639760276923077,
+      "avg_odds": 1.7929519200000001,
+      "avg_probability": 0.7645038126762407,
+      "avg_implied_probability": 0.6295084714737496,
+      "avg_announced_ev": 0.32519322652618826,
+      "max_drawdown_units": 1.0,
+      "worst_loss_streak": 1,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 6,
+          "n": 4,
+          "p": 0.6551756067983678,
+          "observed": 0.75
+        },
+        {
+          "bin": 7,
+          "n": 3,
+          "p": 0.7566845907535676,
+          "observed": 0.6666666666666666
+        },
+        {
+          "bin": 8,
+          "n": 6,
+          "p": 0.8412988942228258,
+          "observed": 1.0
+        }
+      ],
+      "hit_rate": 0.8461538461538461,
+      "brier": 0.12224194867069174,
+      "ece": 0.12319676767155976
+    },
+    "probability/5/2026-07": {
+      "n": 28,
+      "binary_n": 28,
+      "profit_units": -5.243545791999999,
+      "roi": -0.18726949257142853,
+      "avg_odds": 21.457837956471426,
+      "avg_probability": 0.4272197355969518,
+      "avg_implied_probability": 0.15047845927662312,
+      "avg_announced_ev": 4.128399769351619,
+      "max_drawdown_units": 16.827217448,
+      "worst_loss_streak": 16,
+      "active_days": 28,
+      "first_day": "2026-07-03",
+      "last_day": "2026-07-31",
+      "calibration_curve": [
+        {
+          "bin": 0,
+          "n": 2,
+          "p": 0.04971847202968939,
+          "observed": 0.0
+        },
+        {
+          "bin": 1,
+          "n": 4,
+          "p": 0.14977097217698707,
+          "observed": 0.5
+        },
+        {
+          "bin": 2,
+          "n": 2,
+          "p": 0.23962078707158316,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 4,
+          "p": 0.3599755054541122,
+          "observed": 0.0
+        },
+        {
+          "bin": 4,
+          "n": 5,
+          "p": 0.4378576631535143,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 5,
+          "p": 0.5453108204199613,
+          "observed": 0.0
+        },
+        {
+          "bin": 6,
+          "n": 2,
+          "p": 0.65400862629803,
+          "observed": 0.0
+        },
+        {
+          "bin": 7,
+          "n": 2,
+          "p": 0.7295166256857464,
+          "observed": 0.0
+        },
+        {
+          "bin": 8,
+          "n": 2,
+          "p": 0.8307976230763896,
+          "observed": 0.5
+        }
+      ],
+      "hit_rate": 0.10714285714285714,
+      "brier": 0.2559349378297295,
+      "ece": 0.4201423149749556
+    },
+    "probability/5/2026-08": {
+      "n": 30,
+      "binary_n": 30,
+      "profit_units": 26.927888839400005,
+      "roi": 0.8975962946466668,
+      "avg_odds": 5.2754372293200005,
+      "avg_probability": 0.5999955950831508,
+      "avg_implied_probability": 0.32686146448265796,
+      "avg_announced_ev": 2.0365628723278557,
+      "max_drawdown_units": 4.0,
+      "worst_loss_streak": 4,
+      "active_days": 30,
+      "first_day": "2026-08-01",
+      "last_day": "2026-08-31",
+      "calibration_curve": [
+        {
+          "bin": 2,
+          "n": 1,
+          "p": 0.2444169612590544,
+          "observed": 0.0
+        },
+        {
+          "bin": 3,
+          "n": 5,
+          "p": 0.3900805134654348,
+          "observed": 0.4
+        },
+        {
+          "bin": 4,
+          "n": 2,
+          "p": 0.42937712134169254,
+          "observed": 0.0
+        },
+        {
+          "bin": 5,
+          "n": 4,
+          "p": 0.5591188147056134,
+          "observed": 0.75
+        },
+        {
+          "bin": 6,
+          "n": 9,
+          "p": 0.6453537467697132,
+          "observed": 0.6666666666666666
+        },
+        {
+          "bin": 7,
+          "n": 7,
+          "p": 0.7475157215944451,
+          "observed": 0.42857142857142855
+        },
+        {
+          "bin": 8,
+          "n": 2,
+          "p": 0.8345125251569607,
+          "observed": 1.0
+        }
+      ],
+      "hit_rate": 0.5333333333333333,
+      "brier": 0.23119341553979025,
+      "ece": 0.15572315525708624
+    },
+    "probability/5/2026-09": {
+      "n": 13,
+      "binary_n": 13,
+      "profit_units": 6.7036182144,
+      "roi": 0.5156629395692307,
+      "avg_odds": 2.0432350937846158,
+      "avg_probability": 0.6975725974459546,
+      "avg_implied_probability": 0.5644118676724058,
+      "avg_announced_ev": 0.35460011468864727,
+      "max_drawdown_units": 2.0,
+      "worst_loss_streak": 2,
+      "active_days": 13,
+      "first_day": "2026-09-01",
+      "last_day": "2026-09-13",
+      "calibration_curve": [
+        {
+          "bin": 5,
+          "n": 3,
+          "p": 0.5503615322299299,
+          "observed": 0.6666666666666666
+        },
+        {
+          "bin": 6,
+          "n": 2,
+          "p": 0.6262065817927699,
+          "observed": 0.5
+        },
+        {
+          "bin": 7,
+          "n": 6,
+          "p": 0.7529627862600949,
+          "observed": 0.8333333333333334
+        },
+        {
+          "bin": 8,
+          "n": 2,
+          "p": 0.8235846444807553,
+          "observed": 1.0
+        }
+      ],
+      "hit_rate": 0.7692307692307693,
+      "brier": 0.1568377364225426,
+      "ece": 0.11049096618259
+    }
+  },
+  "validated_channels_policy": "No channel currently proven on untouched versioned test; no betting, profit=0, ROI undefined (zero stakes)."
+}

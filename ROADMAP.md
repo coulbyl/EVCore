@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Phase 2 en production (argent réel) + Phase 3 ML en shadow — mise à jour le 2026-08-15 (Bloc 11)**
+**Statut actuel : Phase 2 en production (argent réel) + Phase 3 ML en shadow — mise à jour le 2026-09-16 (deux générateurs de coupon en parallèle)**
 
 > Révisé le 2026-08-15 : sections Mois 1-3 condensées (détail non-critique,
 > tout est `[x]` depuis mars 2026) ; plusieurs items marqués `[ ]`/`[~]`
@@ -1020,6 +1020,114 @@ evaluatedMarkets` n'est plus lu par aucun canal — candidat à
       (cotes, team stats, H2H, congestion) en la probabilité/λ que le
       moteur live aurait réellement produite — `BacktestRunner` fournit les
       inputs point-in-time, pas encore la prédiction finale
+
+---
+
+## Chantier rentabilité — ingestion, ligne de clôture, CLV (ouvert 2026-09-15)
+
+> Plan complet et suivi tâche par tâche : [docs/plan-rentabilite.md](docs/plan-rentabilite.md).
+> Pistes fermées par la mesure : [docs/journal-experiences.md](docs/journal-experiences.md).
+
+**Constat qui a ouvert le chantier.** L'audit du 2026-09-15 a fermé les trois
+pistes qu'on explorait : sélectionner par championnat (255 cellules, 6
+significatives pour 6,4 attendues par hasard), aller vers les marchés
+exotiques (2 à 10 fois plus taxés), exploiter l'edge annoncé du moteur
+(anti-prédictif, le réalisé suit l'implicite). Le blocage n'est pas dans le
+modèle mais dans **ce qu'on collecte et à quel prix on parie** : l'API sert 33
+books et 338 marchés, l'ETL en stockait 4 et ~18.
+
+### Livré
+
+- `[x]` **Ingestion élargie à 11 bookmakers.** 1xBet, Betano, William Hill,
+  Betfair, BetVictor, SBO rejoignent les cinq d'origine.
+  `COHERENCE_BOOKMAKERS` fige la médiane du garde-fou de cohérence sur les
+  cinq d'origine : élargir la collecte ne doit pas déplacer un seuil qui
+  pilote du staking en production.
+- `[x]` **Asian Handicap et 8 marchés supplémentaires.** L'AH est le marché le
+  moins taxé du carnet (4,26 % contre 4,52 % sur le Match Winner) et
+  n'était pas collecté. Colonne `OddsSnapshot.line` dans la contrainte
+  d'unicité. Corners, cartons et marchés à issues fixes sont collectés chez
+  Pinnacle seul : mesurés plus chers, ils ne sont pas des cibles de pari.
+- `[x]` **Capture de la ligne de clôture.** Balayage T−60 et T−10 sur cron 10
+  min, sélection par fenêtre avant coup d'envoi. Avant : 0 % des
+  rencontres avaient un prix dans le dernier quart d'heure, donc CLV
+  incalculable. Vues `odds_closing_line` et `odds_opening_line`.
+- `[x]` **Closing Line Value.** `closingLineValue` dans `analysis-core` — cote
+  obtenue × probabilité de clôture − 1, homogène à une espérance de gain.
+  Se mesure en semaines là où le ROI demande des années.
+- `[x]` **Vue `channel_selection_deduped`.** Le comptage brut surestimait le
+  volume d'un facteur 5 à 7 (182 744 sélections pour 33 197 paris réels) et
+  divisait les erreurs types par ~2,4.
+- `[x]` **Protocole de validation partagé.** `runValidationProtocol` : grille
+  et critère figés avant exécution, fenêtre de validation évaluée une seule
+  fois, faux positifs attendus affichés.
+- `[x]` **Garde-fou de ROI câblé.** La règle ROI < −15 % sur 50+ paris existait
+  mais n'était atteignable que par un appel HTTP manuel : aucun marché n'a
+  jamais été suspendu automatiquement. Balayage quotidien.
+- `[x]` **Trois rapports régénérables** : `report:league`,
+  `backtest:daily-coupon`, `backtest:generator`.
+
+### Livré le 2026-09-16 — compositeur par le prix
+
+**Ce que la mesure a imposé.** Le moteur est derrière le marché de 0,0395 ±
+0,0080 de Brier sur 3 633 rencontres, et son poids optimal dans un mélange avec
+le prix est **nul**. La règle d'EV est un détecteur de surestimation : à cote
+égale elle retient les picks que le modèle surestime le plus (−14,9 points de
+calibration) et rejette ceux qu'il sous-estime (+3,3). Et chercher plus fort
+n'aide pas : sur l'espace d'opportunités complet — 1,67 M de picks envisagés,
+17 marchés, toutes les rencontres — **aucun marché n'est positif** (−4,40 % à
+−12,17 %) et le couple championnat × marché **ne persiste pas** d'une période à
+l'autre (corrélation −0,022 sur 160 cellules). Ce qui persiste fortement
+(+0,696 sur 17 marchés), c'est le **coût** de chaque marché.
+
+- `[x]` **`composeByPrice`** (`analysis-core`). Classe sur le coût mesuré, jamais
+  sur une probabilité qu'on produit. Recherche par programmation dynamique de
+  la combinaison atteignant la cote cible au coût le plus faible, une jambe par
+  rencontre, plafond par championnat, et **refus typé** quand la journée ne
+  peut pas payer.
+- `[x]` **Backtest en fenêtre glissante** (`backtest:composer`). Deux résultats
+  indépendants du tirage : plafond de retour attendu **0,9616**, et le
+  compositeur prend toujours le **minimum de jambes** — chaque jambe ajoutée est
+  une multiplication de plus par un nombre < 1. **La combinaison n'invente aucun
+  avantage.** Sa colonne ROI ne conclut rien (quelques dizaines de coupons).
+- `[x]` **Bande de cote des jambes plafonnée à 1,80** sur la politique unifiée.
+  Ratio réalisé/annoncé mesuré : 0,899 sous 1,45, 0,836 de 1,45 à 1,80,
+  **0,619 au-delà**. À l'intérieur d'une bande aucun canal ne se détache :
+  l'effet est la cote, jamais le canal.
+- `[x]` **Passe intraday supprimée.** Sans écart mesurable (42,6 % contre
+  42,7 %), elle se réécrivait toutes les heures par upsert — la base ne gardait
+  donc jamais ce qui avait été proposé.
+- `[x]` **Deux générateurs en parallèle.** `coupon_proposal.source`
+  (`LLM` / `PRICE_COMPOSER`) dans la clé unique, canal `PRICE`, vue
+  `evaluated_pick`, génération enchaînée à la fin de l'analyse (et non sur un
+  cron, qui composerait sur un vivier à moitié écrit). Badge de source côté web.
+
+### Prochaines étapes
+
+- `[ ]` Vérifier sur données réelles que le balayage capture ≥ 70 % de lignes
+  de clôture (`report:freshness`), puis enregistrer le CLV par sélection.
+- `[ ]` Historiser blessures et compositions — aujourd'hui `/injuries` est
+  réduit à un compteur et `/fixtures/lineups` n'est jamais appelé, donc la
+  team news n'est pas backtestable.
+- `[ ]` Basculer la boucle d'apprentissage et les scripts existants sur la vue
+  dédupliquée et le protocole de validation.
+- `[ ]` **Relire l'Asian Handicap vers le 2026-10-10**, après ~300 rencontres
+  collectées en avant. C'est la seule piste non fermée : biais favori réel et
+  monotone, +1,41 % ± 2,83 par jambe au meilleur des huit books sur la tranche
+  1,22–1,40. Aucun backtest historique n'est possible — API-Football purge les
+  cotes à ~7 jours — donc l'horloge ne démarre qu'au déploiement.
+- `[ ]` Comparer les deux générateurs **par jambe** (jamais par ROI de coupon)
+  une fois ~150 jambes accumulées de chaque côté, sur le ratio réalisé/annoncé.
+- `[ ]` Remonter `PRICE_COMPOSER_POLICY.minExpectedReturn` au-dessus de 0 dès
+  qu'un marché assez peu taxé entre dans le vivier. Aujourd'hui le plafond
+  atteignable est 0,9616 : un plancher à 1 refuserait chaque jour.
+
+### Point de décision
+
+À l'issue de l'ingestion élargie, de la clôture et du CLV, si le CLV reste nul
+après intégration de la team news, la voie « battre le marché » sera fermée
+**avec preuve** — et il faudra décider ce que devient EVCore. Cette échéance
+est écrite dans le plan plutôt que laissée à l'usure.
 
 ---
 

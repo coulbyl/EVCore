@@ -36,6 +36,13 @@ export const STRATEGY_CHANNEL = {
   // deterministic) which this package must never do. See
   // apps/vantage-worker/docs/architecture.md.
   VANTAGE: "VANTAGE",
+  // Scans no market of its own and produces no probability: it ranks already
+  // priced legs by the MEASURED cost of their market, then searches for the
+  // combination reaching a target combined odds at the lowest such cost. It
+  // exists as a channel only so that its legs stay separable from the LLM's in
+  // `coupon_proposal_leg` — the two generators run in parallel and must remain
+  // comparable leg by leg. See packages/analysis-core/src/coupon/price-composer.ts.
+  PRICE: "PRICE",
 } as const;
 
 export type StrategyChannel =
@@ -88,3 +95,8 @@ export const META_STRATEGY_CHANNELS = new Set<StrategyChannel>([
 // CONSENSUS/CONTRARIAN/AVOID it emits its own pick (market, probability,
 // odds) — it is a normal, independently auditable and slippable channel, not
 // a no-pick meta-channel. See STRATEGY_CHANNEL.VANTAGE above.
+//
+// PRICE belongs to neither set either, for a different reason: it is not a
+// scanner at all. It never decides on a match, it only composes among legs
+// other channels already priced, so it has nothing to filter and nothing to
+// arbitrate. See STRATEGY_CHANNEL.PRICE above.

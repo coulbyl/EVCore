@@ -1,0 +1,19 @@
+{
+  "excluded": {
+    "no_complete_odds_recorded_before_analysis": 84,
+    "missing_probabilities": 11,
+    "not_finished_or_missing_score": 149
+  },
+  "groups": {
+    "POISSON_MAIN": {
+      "n": 3631,
+      "model_brier": 0.6388607068058048,
+      "market_brier": 0.5989707384316698,
+      "bookmaker_margin": 0.05780229153738267,
+      "bookmaker_favorite_roi": -0.056502340952905544,
+      "model_favorite_roi": -0.030492977141283392,
+      "probability_sum_error": 2.143393941785279e-17,
+      "odds_age_hours": 10.054080968894397
+    }
+  }
+}

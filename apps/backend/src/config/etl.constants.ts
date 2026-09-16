@@ -191,7 +191,72 @@ export const API_FOOTBALL_BOOKMAKERS = {
   UNIBET: 16,
   MARATHONBET: 2,
   BWIN: 6,
+  // Added 2026-09-15 (plan de rentabilité, chantier A). Mesure sur 12
+  // rencontres : 1xBet price le Match Winner à 2,77 % de marge et Betano à
+  // 3,45 %, contre 3,32 % pour Pinnacle et 5,31 % pour Marathonbet. On payait
+  // donc la marge la plus chère du carnet faute de les collecter.
+  ONE_X_BET: 11,
+  BETANO: 32,
+  WILLIAM_HILL: 7,
+  BETFAIR: 3,
+  BETVICTOR: 36,
+  SBO: 5,
 } as const;
+
+/**
+ * Books dont les cotes sont STOCKÉES, par ordre de priorité. Le premier
+ * présent sur une rencontre devient le book primaire : c'est lui qui porte le
+ * snapshot complet (marchés secondaires compris), d'où Pinnacle en tête.
+ *
+ * Volontairement distinct de COHERENCE_BOOKMAKERS (ev.constants.ts) : élargir
+ * la collecte ne doit pas déplacer la médiane du garde-fou de cohérence, qui
+ * pilote des décisions en production. On collecte large, on décide sur un
+ * périmètre stable, et on ne change le second qu'après mesure.
+ */
+/**
+ * Marchés collectés chez un SEUL book de référence (Pinnacle), au lieu des
+ * onze.
+ *
+ * Mesure du 2026-09-15 sur 100 rencontres : corners 6,58 %, cartons 6,44 %,
+ * second-half over/under 5,83 % — tous plus chers que ce qu'on joue déjà
+ * (Asian Handicap 4,26 %, Match Winner 4,84 %). Ils ne sont donc pas des
+ * cibles de pari, et le courtage multi-books n'y sert à rien.
+ *
+ * L'enjeu est le volume : ces marchés pèsent 44 % des 424 lignes par match
+ * que la collecte élargie produit, soit 62 M de lignes par an à cadence
+ * actuelle et 124 M une fois le balayage de clôture en place. Garder le seul
+ * prix Pinnacle préserve la capacité à les ré-étudier sans payer la
+ * démultiplication.
+ *
+ * Un marché sort de cette liste dès qu'une mesure le rend jouable.
+ */
+export const REFERENCE_ONLY_MARKETS = [
+  'OVER_UNDER_2H',
+  'CORNERS',
+  'CORNERS_HT',
+  'CARDS',
+  'ODD_EVEN',
+  'ODD_EVEN_HT',
+  'HIGHEST_SCORING_HALF',
+  'TEAM_TO_SCORE_FIRST',
+] as const;
+
+/** Book de référence pour les marchés étudiés mais non joués. */
+export const REFERENCE_BOOKMAKER = 'Pinnacle';
+
+export const ODDS_INGESTION_BOOKMAKER_IDS = [
+  API_FOOTBALL_BOOKMAKERS.PINNACLE,
+  API_FOOTBALL_BOOKMAKERS.BET365,
+  API_FOOTBALL_BOOKMAKERS.UNIBET,
+  API_FOOTBALL_BOOKMAKERS.MARATHONBET,
+  API_FOOTBALL_BOOKMAKERS.BWIN,
+  API_FOOTBALL_BOOKMAKERS.ONE_X_BET,
+  API_FOOTBALL_BOOKMAKERS.BETANO,
+  API_FOOTBALL_BOOKMAKERS.WILLIAM_HILL,
+  API_FOOTBALL_BOOKMAKERS.BETFAIR,
+  API_FOOTBALL_BOOKMAKERS.BETVICTOR,
+  API_FOOTBALL_BOOKMAKERS.SBO,
+] as const;
 
 // Bet type IDs in the API-Football odds endpoint
 export const API_FOOTBALL_BET_IDS = {
@@ -225,6 +290,26 @@ export const API_FOOTBALL_BET_IDS = {
   // real joint price, not a synthetic combo. Values like "Home/Over 2.5".
   RESULT_TOTAL_GOALS: 25,
   RESULT_BTTS: 24,
+  // Handicap asiatique, plein match (4) et mi-temps (19). Ajoutés le
+  // 2026-09-15 : marge Pinnacle mesurée entre 2,6 % et 3,7 % selon la ligne,
+  // 4,11 % en moyenne sur 40 rencontres, contre 4,52 % sur le Match Winner.
+  //
+  // Convention de l'API, vérifiée sur données réelles : les deux côtés d'un
+  // même handicap portent le MÊME signe ("Home -0.5" et "Away -0.5"), la
+  // ligne étant exprimée du point de vue du domicile. Apparier "Home -0.5"
+  // avec "Away +0.5" produit des marges négatives, donc impossibles.
+  ASIAN_HANDICAP: 4,
+  ASIAN_HANDICAP_HT: 19,
+  // Ids et formats relevés sur l'API le 2026-09-15. Les marchés de corners
+  // cotent aussi des lignes entières (« Over 9 »), d'où la colonne `line`.
+  OVER_UNDER_2H: 26,
+  CORNERS: 45,
+  CORNERS_HT: 77,
+  CARDS: 80,
+  ODD_EVEN: 21,
+  ODD_EVEN_HT: 22,
+  HIGHEST_SCORING_HALF: 11,
+  TEAM_TO_SCORE_FIRST: 14,
   // Halftime variant (id 51) deferred: 0 occurrences across every
   // bookmaker in the live sample checked 2026-07-18, not just the 5
   // priority ones — no data to build or test against.
@@ -254,6 +339,43 @@ export const BULLMQ_QUEUES = {
   SEASON_ROLLOVER_SYNC: 'season-rollover-sync',
 } as const;
 
+/**
+ * Fenêtres de capture avant coup d'envoi, en minutes.
+ *
+ * Deux passages par rencontre : un à une heure du coup d'envoi, un juste
+ * avant. Le second donne la ligne de clôture, référence du CLV ; le premier
+ * permet de mesurer la dérive ouverture → clôture (B-10).
+ *
+ * Les bornes sont plus larges que le pas du cron (10 min) pour absorber un
+ * passage manqué ou un retard de file.
+ */
+/**
+ * Espacement des appels dans le balayage de clôture, en millisecondes.
+ *
+ * Plus serré que API_FOOTBALL_RATE_LIMIT_MS (6 s) parce que la contrainte
+ * n'est pas la même : au pic, 50 rencontres démarrent dans la même heure. À
+ * 6 s par rencontre, la dernière du lot serait interrogée cinq minutes après
+ * la première — donc APRÈS son coup d'envoi pour la fenêtre T-10, et le prix
+ * récupéré ne serait pas une cote de clôture.
+ *
+ * Le volume reste négligeable : ~400 appels par jour pour ce balayage, sur un
+ * quota de 7 500.
+ */
+export const ODDS_CLOSING_RATE_LIMIT_MS = 1_500;
+
+/**
+ * Part de rencontres atteintes APRÈS leur coup d'envoi au-delà de laquelle le
+ * balayage de clôture est considéré défaillant. Une sur cinq suffit à rendre
+ * le CLV non représentatif, et l'absence de clôture ne se voit pas dans les
+ * données : elle se confond avec un relevé simplement plus ancien.
+ */
+export const CLOSING_MISS_ALERT_RATIO = 0.2;
+
+export const ODDS_CLOSING_WINDOWS = [
+  { name: 'T-60', fromMinutes: 50, toMinutes: 65 },
+  { name: 'T-10', fromMinutes: 4, toMinutes: 14 },
+] as const;
+
 export const BULLMQ_DEFAULT_JOB_OPTIONS = {
   attempts: 3,
   backoff: { type: 'exponential' as const, delay: 5_000 },
@@ -278,6 +400,24 @@ export const ETL_CRON_SCHEDULES = {
   // line-movement signal has points to compare. The 18:00 run stays ahead of
   // BETTING_ENGINE_ANALYSIS (20:00) so next-day fixtures analyze on fresh odds.
   ODDS_PREMATCH_SYNC: '0 6,18 * * *',
+  // Toutes les 10 minutes — balayage des cotes proche du coup d'envoi
+  // (chantier B du plan de rentabilité, tâches B-1 et B-2).
+  //
+  // Sans lui, le dernier relevé d'une rencontre tombe en médiane 7,5 h avant
+  // le coup d'envoi pour Pinnacle et 43 h pour Marathonbet : il n'existe donc
+  // aucune ligne de clôture, et le CLV — le seul indicateur qui dise à
+  // l'avance si un pari a de la valeur — est incalculable.
+  //
+  // Le worker ne prend que les rencontres tombant dans les fenêtres de
+  // ODDS_CLOSING_WINDOWS, pas la journée entière : chaque rencontre est
+  // touchée deux fois, pas trente.
+  ODDS_CLOSING_SYNC: '*/10 * * * *',
+  // 07:45 UTC quotidien — balayage du garde-fou de ROI par marché
+  // (chantier J, tâche J-1). Le garde-fou existait mais n'était atteignable
+  // que par un appel HTTP manuel : aucun marché n'a jamais été suspendu
+  // automatiquement malgré la règle documentée. Quotidien et non toutes les
+  // demi-heures, parce que les alertes de ROI sont réémises à chaque passage.
+  RISK_MARKET_SWEEP: '45 7 * * *',
   // 20:00 UTC daily — analyze next-day fixtures after prematch odds sync.
   // No job data is passed on the cron trigger, so BettingEngineAnalysisWorker
   // defaults to `tomorrowUtc()` (see that file) — this run NEVER targets
@@ -315,6 +455,8 @@ export const ETL_SCHEDULER_KEYS = {
   PENDING_BETS_SETTLEMENT: 'cron:pending-bets-settlement',
   STALE_SCHEDULED_SYNC: 'cron:stale-scheduled-sync',
   ODDS_CSV_IMPORT: 'cron:odds-csv-import',
+  ODDS_CLOSING_SYNC: 'cron:odds-closing-sync',
+  RISK_MARKET_SWEEP: 'cron:risk-market-sweep',
   ELO_SYNC: 'cron:elo-sync',
   COACH_SYNC: 'cron:coach-sync',
   ODDS_PREMATCH_SYNC: 'cron:odds-prematch-sync',

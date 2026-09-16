@@ -25,6 +25,7 @@ class InferResponse(BaseModel):
     segment: str
     corrected_probability: float | None
     model_found: bool
+    model_id: str | None = None
 
 
 def create_app(registry: ModelRegistry) -> FastAPI:
@@ -41,6 +42,7 @@ def create_app(registry: ModelRegistry) -> FastAPI:
             segment=req.segment,
             corrected_probability=prob,
             model_found=prob is not None,
+            model_id=registry.model_id(req.segment) if prob is not None else None,
         )
 
     @app.post("/reload")

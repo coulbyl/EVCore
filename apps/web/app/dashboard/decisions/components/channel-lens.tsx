@@ -25,7 +25,8 @@ export function useChannelLens(
   const [groupBy, setGroupBy] = useState<GroupByMode>("none");
 
   const activeChannel =
-    requestedChannel && channelGroups.some((g) => g.channel === requestedChannel)
+    requestedChannel &&
+    channelGroups.some((g) => g.channel === requestedChannel)
       ? requestedChannel
       : (channelGroups[0]?.channel ?? null);
 
@@ -53,7 +54,10 @@ export function ChannelGroupByControl({
   const t = useTranslations("decisions");
 
   return (
-    <FiltersPopover label={t("filters.displayLabel")} active={groupBy !== "none"}>
+    <FiltersPopover
+      label={t("filters.displayLabel")}
+      active={groupBy !== "none"}
+    >
       <GroupBySelect
         value={groupBy}
         onChange={setGroupBy}

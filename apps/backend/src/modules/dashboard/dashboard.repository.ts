@@ -1,3 +1,4 @@
+import { prematchCohortSql } from '@evcore/db';
 import { Injectable } from '@nestjs/common';
 import {
   BetSource,
@@ -295,12 +296,20 @@ export class DashboardRepository {
    * Le canal remonte dans le résultat pour que l'appelant regroupe en
    * mémoire — bien moins cher qu'un aller-retour par canal.
    */
-  findChannelSelectionsInRange(
+  async findChannelSelectionsInRange(
     channels: readonly StrategyChannel[],
     range: { since: Date; until: Date },
   ) {
+    const cohort = await this.prisma.client.$queryRaw<{ id: string }[]>(
+      prematchCohortSql({
+        asOf: new Date(),
+        since: range.since,
+        until: range.until,
+      }),
+    );
     return this.prisma.client.channelSelection.findMany({
       where: {
+        id: { in: cohort.map((row) => row.id) },
         result: { in: [BetStatus.WON, BetStatus.LOST] },
         odds: { not: null },
         channelDecision: {

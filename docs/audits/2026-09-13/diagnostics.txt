@@ -1,0 +1,40 @@
+Pager usage is off.
+BEGIN
+SET
+ eligible_by_fixture_date | selection_not_yet_recorded | result_not_yet_recorded
+--------------------------+----------------------------+-------------------------
+                    36644 |                          0 |                      10
+(1 row)
+
+  channel   |     market      |   pick   | result |  status   |                  id                  |             selection_id             |       analyzedAt        |     scheduledAt
+------------+-----------------+----------+--------+-----------+--------------------------------------+--------------------------------------+-------------------------+---------------------
+ TEAM_TOTAL | TEAM_TOTAL_AWAY | OVER_0_5 | WON    | CANCELLED | 019f304e-fa2b-7b12-ae5b-cfe82731377e | 01a053a9-d45d-7333-9f75-25aa06928c7c | 2026-08-30 17:13:53.988 | 2026-08-31 00:00:00
+ TEAM_TOTAL | TEAM_TOTAL_AWAY | OVER_0_5 | WON    | CANCELLED | 019f304e-fa2b-7b12-ae5b-cfe82731377e | 01a05478-d8a8-78ec-b938-6cbbd72ceee5 | 2026-08-30 21:00:01.02  | 2026-08-31 00:00:00
+ TEAM_TOTAL | TEAM_TOTAL_AWAY | OVER_0_5 | WON    | CANCELLED | 019f304e-fa2b-7b12-ae5b-cfe82731377e | 01a03f27-a5cb-709c-83df-85f0ee0a685d | 2026-08-26 17:39:18.078 | 2026-08-31 00:00:00
+(3 rows)
+
+                  id                  |      market      | pick | bet_status | selection_result |              fixtureId
+--------------------------------------+------------------+------+------------+------------------+--------------------------------------
+ 019f7b53-914b-7ca0-9544-94b6b6dd3142 | CLEAN_SHEET_HOME | YES  | WON        | LOST             | 019f781a-4a98-7b4f-83fe-57405027067b
+(1 row)
+
+                  id                  |   configVersion    |        createdAt        |     scheduledAt     |     market      |   pick    | probability | odds  | result |                                                                                                                                                                                            explanation
+--------------------------------------+--------------------+-------------------------+---------------------+-----------------+-----------+-------------+-------+--------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 01a0918f-2955-7381-9bc1-02e443bcffee | vantage-v3-context | 2026-09-11 17:41:13.684 | 2026-09-13 17:30:00 | DOUBLE_CHANCE   | 1X        |      0.7800 | 1.330 | WON    | Fortuna Köln concède beaucoup de buts (xG contre 2.13) alors que Hoffenheim II a une meilleure forme à domicile et un xG contre plus raisonnable. Le match devrait donc pencher en faveur du domicile, même avec peu de buts. Le double chance domicile ou nul offre une marge de sécurité adaptée à cette situation.
+ 01a0918f-2491-7642-a937-5c592833e117 | vantage-v3-context | 2026-09-11 17:41:12.464 | 2026-09-13 17:15:00 | BTTS            | YES       |      0.5830 | 1.570 | WON    | Les deux équipes affichent des xG similaires (1,38 pour Fredrikstad et 1,51 pour Sarpsborg) et leurs formes récentes sont respectivement +70 % et +22 %, ce qui montre qu’elles créent régulièrement des occasions. De plus, notre lecture interne indique une probabilité d’environ 58 % que les deux équipes marquent, proche du seuil de sélection, ce qui rend le pari BTTS (Oui) intéressant.
+ 01a0918f-2340-7965-b267-bdba6e27b91f | vantage-v3-context | 2026-09-11 17:41:12.127 | 2026-09-13 17:00:00 | OVER_UNDER      | UNDER     |      0.5800 | 2.150 | WON    | Les deux équipes affichent de faibles xG et la probabilité de clean sheet à domicile est très proche du seuil, ce qui indique peu de buts attendus. Le signal de moins de 1,5 but à domicile renforce l’idée d’un match sous les 2,5 buts.
+ 01a0918f-1e21-7f1e-a08e-7a8fc83d0bc6 | vantage-v3-context | 2026-09-11 17:41:10.817 | 2026-09-13 17:00:00 | TEAM_TOTAL_AWAY | UNDER_1_5 |      0.8780 | 1.300 | LOST   | L'équipe visiteuse peine à marquer (xG 1,20) et encaisse davantage (xG contre 1,60) avec une forme récente très basse, tandis que le domicile affiche une défense solide (xG contre 0,60) et un excellent bilan à domicile. Ces éléments indiquent qu'il est très probable que les buts à l'extérieur restent en dessous de 1,5.
+ 01a0918f-19a1-77e5-bf07-4261ce29041c | vantage-v3-context | 2026-09-11 17:41:09.664 | 2026-09-13 17:00:00 | BTTS            | NO        |      0.7300 | 1.530 | LOST   | les deux équipes ont peu de chances de marquer ensemble, les xG contre sont très bas (0,52 et 0,42) et les confrontations récentes se terminent le plus souvent par un score 2 : 1, ce qui indique généralement un seul but.
+(5 rows)
+
+ history_rows |          min           |           max
+--------------+------------------------+-------------------------
+         2609 | 2026-09-08 00:05:05.78 | 2026-09-11 17:41:13.686
+(1 row)
+
+ odds_snapshot_after_kickoff
+-----------------------------
+                        5546
+(1 row)
+
+ROLLBACK

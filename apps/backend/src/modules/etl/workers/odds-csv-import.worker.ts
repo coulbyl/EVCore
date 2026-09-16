@@ -165,7 +165,10 @@ export class OddsCsvImportWorker extends WorkerHost {
           continue;
         }
 
-        await this.fixtureService.upsertOneXTwoOddsSnapshot(snap);
+        await this.fixtureService.upsertOneXTwoOddsSnapshot({
+          ...snap,
+          source: 'HISTORICAL',
+        });
         imported++;
       }
     }

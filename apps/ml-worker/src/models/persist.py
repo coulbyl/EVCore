@@ -60,6 +60,7 @@ async def persist(opts: dict) -> str:
         "sampleSize": result.sample_size,
         "trainSize": result.train_size,
         "testSize": result.test_size,
+        "manifest": result.manifest,
     }
 
     async with await psycopg.AsyncConnection.connect(database_url) as conn:

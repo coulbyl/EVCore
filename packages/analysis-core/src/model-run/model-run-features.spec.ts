@@ -10,10 +10,10 @@ import {
 describe("extractEvaContextFromFeatures", () => {
   it("returns the empty context for missing/invalid features", () => {
     expect(extractEvaContextFromFeatures(null).predictionSource).toBeNull();
-    expect(extractEvaContextFromFeatures(undefined).evaluatedPicks).toEqual(
-      [],
-    );
-    expect(extractEvaContextFromFeatures("not an object").lambdaHome).toBeNull();
+    expect(extractEvaContextFromFeatures(undefined).evaluatedPicks).toEqual([]);
+    expect(
+      extractEvaContextFromFeatures("not an object").lambdaHome,
+    ).toBeNull();
   });
 
   it("reads the flat scalar fields", () => {
@@ -122,9 +122,9 @@ describe("readShadowConflict", () => {
   });
 
   it("reads the boolean conflict flag", () => {
-    expect(
-      readShadowConflict({ shadow_predictions: { conflict: true } }),
-    ).toBe(true);
+    expect(readShadowConflict({ shadow_predictions: { conflict: true } })).toBe(
+      true,
+    );
     expect(
       readShadowConflict({ shadow_predictions: { conflict: false } }),
     ).toBe(false);

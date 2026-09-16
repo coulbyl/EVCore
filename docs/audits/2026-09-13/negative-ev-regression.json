@@ -1,0 +1,4 @@
+{
+  "outcome": "rejected",
+  "reason": "leg audit-0/ONE_X_TWO/HOME has invalid numbers or non-positive EV"
+}

@@ -50,7 +50,7 @@ export function validateCouponSelection(
 ): ValidateCouponSelectionResult {
   if (
     selectedLegs.length < bounds.minLegs ||
-    selectedLegs.length > couponClass.maxLegs
+    selectedLegs.length > Math.min(bounds.maxLegs, couponClass.maxLegs)
   ) {
     return {
       outcome: "rejected",
@@ -74,6 +74,20 @@ export function validateCouponSelection(
       return {
         outcome: "rejected",
         reason: `leg ${legLabel(leg)} has no real odds`,
+      };
+    }
+    const probability = legProbability(candidate);
+    if (
+      !Number.isFinite(probability) ||
+      probability <= 0 ||
+      probability >= 1 ||
+      !Number.isFinite(candidate.oddsSnapshot) ||
+      candidate.oddsSnapshot <= 1 ||
+      probability * candidate.oddsSnapshot <= 1
+    ) {
+      return {
+        outcome: "rejected",
+        reason: `leg ${legLabel(leg)} has invalid numbers or non-positive EV`,
       };
     }
     if (!clearsValueEdgeFloor(candidate)) {
@@ -161,6 +175,9 @@ export function validateCouponSelection(
   const jointProbability = rawJointProbability;
   const couponEV = calculateEV(jointProbability, combinedOdds).toNumber();
 
+  if (!Number.isFinite(couponEV) || couponEV <= 0) {
+    return { outcome: "rejected", reason: "coupon has non-positive EV" };
+  }
   return {
     outcome: "valid",
     coupon: {

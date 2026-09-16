@@ -1,0 +1,734 @@
+{
+  "version": "generator-v2",
+  "selection": [
+    {
+      "band": {
+        "min": 1.1,
+        "max": 1.35
+      },
+      "stats": {
+        "days": 331,
+        "wins": 280,
+        "losses": 51,
+        "winRate": 0.8459214501510574,
+        "worstStreak": 3,
+        "streakHistogram": [
+          {
+            "length": 1,
+            "occurrences": 44
+          },
+          {
+            "length": 2,
+            "occurrences": 2
+          },
+          {
+            "length": 3,
+            "occurrences": 1
+          }
+        ],
+        "avgOdds": 1.2085196374622347,
+        "avgFair": 0.7961847447901407,
+        "edge": 0.04973670536091668,
+        "roi": 0.01879154078549848,
+        "roiMargin": 0.047422233501572805,
+        "consensusRoi": 0.016450151057401805
+      }
+    },
+    {
+      "band": {
+        "min": 1.15,
+        "max": 1.4
+      },
+      "stats": {
+        "days": 349,
+        "wins": 284,
+        "losses": 65,
+        "winRate": 0.8137535816618912,
+        "worstStreak": 3,
+        "streakHistogram": [
+          {
+            "length": 1,
+            "occurrences": 43
+          },
+          {
+            "length": 2,
+            "occurrences": 8
+          },
+          {
+            "length": 3,
+            "occurrences": 2
+          }
+        ],
+        "avgOdds": 1.247048710601719,
+        "avgFair": 0.7715582941000135,
+        "edge": 0.042195287561877626,
+        "roi": 0.012034383954154708,
+        "roiMargin": 0.05131291644991971,
+        "consensusRoi": 0.009656160458452717
+      }
+    },
+    {
+      "band": {
+        "min": 1.15,
+        "max": 1.45
+      },
+      "stats": {
+        "days": 393,
+        "wins": 314,
+        "losses": 79,
+        "winRate": 0.7989821882951654,
+        "worstStreak": 3,
+        "streakHistogram": [
+          {
+            "length": 1,
+            "occurrences": 51
+          },
+          {
+            "length": 2,
+            "occurrences": 11
+          },
+          {
+            "length": 3,
+            "occurrences": 2
+          }
+        ],
+        "avgOdds": 1.2678880407124682,
+        "avgFair": 0.7603186951056634,
+        "edge": 0.03866349318950202,
+        "roi": 0.008066157760814248,
+        "roiMargin": 0.050650800634778045,
+        "consensusRoi": 0.0056743002544529285
+      }
+    },
+    {
+      "band": {
+        "min": 1.2,
+        "max": 1.45
+      },
+      "stats": {
+        "days": 379,
+        "wins": 294,
+        "losses": 85,
+        "winRate": 0.7757255936675461,
+        "worstStreak": 3,
+        "streakHistogram": [
+          {
+            "length": 1,
+            "occurrences": 47
+          },
+          {
+            "length": 2,
+            "occurrences": 13
+          },
+          {
+            "length": 3,
+            "occurrences": 4
+          }
+        ],
+        "avgOdds": 1.291108179419524,
+        "avgFair": 0.7454240247042865,
+        "edge": 0.03030156896325964,
+        "roi": -0.0014775725593667583,
+        "roiMargin": 0.05452843036972525,
+        "consensusRoi": -0.003918205804749335
+      }
+    },
+    {
+      "band": {
+        "min": 1.2,
+        "max": 1.5
+      },
+      "stats": {
+        "days": 415,
+        "wins": 322,
+        "losses": 93,
+        "winRate": 0.7759036144578313,
+        "worstStreak": 3,
+        "streakHistogram": [
+          {
+            "length": 1,
+            "occurrences": 49
+          },
+          {
+            "length": 2,
+            "occurrences": 16
+          },
+          {
+            "length": 3,
+            "occurrences": 4
+          }
+        ],
+        "avgOdds": 1.3071807228915666,
+        "avgFair": 0.7373081237763053,
+        "edge": 0.03859549068152601,
+        "roi": 0.011445783132530108,
+        "roiMargin": 0.052901414987019356,
+        "consensusRoi": 0.009144578313253009
+      }
+    },
+    {
+      "band": {
+        "min": 1.25,
+        "max": 1.5
+      },
+      "stats": {
+        "days": 400,
+        "wins": 304,
+        "losses": 96,
+        "winRate": 0.76,
+        "worstStreak": 3,
+        "streakHistogram": [
+          {
+            "length": 1,
+            "occurrences": 58
+          },
+          {
+            "length": 2,
+            "occurrences": 13
+          },
+          {
+            "length": 3,
+            "occurrences": 4
+          }
+        ],
+        "avgOdds": 1.3348999999999995,
+        "avgFair": 0.7215961734961965,
+        "edge": 0.03840382650380347,
+        "roi": 0.012299999999999983,
+        "roiMargin": 0.056183571558978,
+        "consensusRoi": 0.009862500000000001
+      }
+    },
+    {
+      "band": {
+        "min": 1.15,
+        "max": 1.55
+      },
+      "stats": {
+        "days": 456,
+        "wins": 360,
+        "losses": 96,
+        "winRate": 0.7894736842105263,
+        "worstStreak": 3,
+        "streakHistogram": [
+          {
+            "length": 1,
+            "occurrences": 61
+          },
+          {
+            "length": 2,
+            "occurrences": 13
+          },
+          {
+            "length": 3,
+            "occurrences": 3
+          }
+        ],
+        "avgOdds": 1.2999342105263165,
+        "avgFair": 0.7438577455042614,
+        "edge": 0.0456159387062649,
+        "roi": 0.01984649122807016,
+        "roiMargin": 0.049276703873423935,
+        "consensusRoi": 0.017664473684210525
+      }
+    }
+  ],
+  "chosen": {
+    "min": 1.1,
+    "max": 1.35
+  },
+  "selectionStats": {
+    "days": 331,
+    "wins": 280,
+    "losses": 51,
+    "winRate": 0.8459214501510574,
+    "worstStreak": 3,
+    "streakHistogram": [
+      {
+        "length": 1,
+        "occurrences": 44
+      },
+      {
+        "length": 2,
+        "occurrences": 2
+      },
+      {
+        "length": 3,
+        "occurrences": 1
+      }
+    ],
+    "avgOdds": 1.2085196374622347,
+    "avgFair": 0.7961847447901407,
+    "edge": 0.04973670536091668,
+    "roi": 0.01879154078549848,
+    "roiMargin": 0.047422233501572805,
+    "consensusRoi": 0.016450151057401805
+  },
+  "validation": {
+    "days": 400,
+    "wins": 340,
+    "losses": 60,
+    "winRate": 0.85,
+    "worstStreak": 3,
+    "streakHistogram": [
+      {
+        "length": 1,
+        "occurrences": 41
+      },
+      {
+        "length": 2,
+        "occurrences": 5
+      },
+      {
+        "length": 3,
+        "occurrences": 3
+      }
+    ],
+    "avgOdds": 1.2041250000000014,
+    "avgFair": 0.7929425263931084,
+    "edge": 0.05705747360689162,
+    "roi": 0.020024999999999994,
+    "roiMargin": 0.0425089761536499,
+    "consensusRoi": 0.014314583333333328
+  },
+  "validationBands": [
+    {
+      "band": {
+        "min": 1.1,
+        "max": 1.35
+      },
+      "stats": {
+        "days": 400,
+        "wins": 340,
+        "losses": 60,
+        "winRate": 0.85,
+        "worstStreak": 3,
+        "streakHistogram": [
+          {
+            "length": 1,
+            "occurrences": 41
+          },
+          {
+            "length": 2,
+            "occurrences": 5
+          },
+          {
+            "length": 3,
+            "occurrences": 3
+          }
+        ],
+        "avgOdds": 1.2041250000000014,
+        "avgFair": 0.7929425263931084,
+        "edge": 0.05705747360689162,
+        "roi": 0.020024999999999994,
+        "roiMargin": 0.0425089761536499,
+        "consensusRoi": 0.014314583333333328
+      }
+    },
+    {
+      "band": {
+        "min": 1.15,
+        "max": 1.4
+      },
+      "stats": {
+        "days": 433,
+        "wins": 352,
+        "losses": 81,
+        "winRate": 0.812933025404157,
+        "worstStreak": 3,
+        "streakHistogram": [
+          {
+            "length": 1,
+            "occurrences": 54
+          },
+          {
+            "length": 2,
+            "occurrences": 9
+          },
+          {
+            "length": 3,
+            "occurrences": 3
+          }
+        ],
+        "avgOdds": 1.2447575057736724,
+        "avgFair": 0.7670369660651521,
+        "edge": 0.04589605933900487,
+        "roi": 0.0077367205542725,
+        "roiMargin": 0.0459519496996254,
+        "consensusRoi": 0.0020573518090838973
+      }
+    },
+    {
+      "band": {
+        "min": 1.15,
+        "max": 1.45
+      },
+      "stats": {
+        "days": 459,
+        "wins": 373,
+        "losses": 86,
+        "winRate": 0.8126361655773421,
+        "worstStreak": 3,
+        "streakHistogram": [
+          {
+            "length": 1,
+            "occurrences": 54
+          },
+          {
+            "length": 2,
+            "occurrences": 10
+          },
+          {
+            "length": 3,
+            "occurrences": 4
+          }
+        ],
+        "avgOdds": 1.2552069716775598,
+        "avgFair": 0.7613286075341639,
+        "edge": 0.051307558043178214,
+        "roi": 0.016122004357298457,
+        "roiMargin": 0.04516522098674863,
+        "consensusRoi": 0.010399419026870003
+      }
+    },
+    {
+      "band": {
+        "min": 1.2,
+        "max": 1.45
+      },
+      "stats": {
+        "days": 449,
+        "wins": 359,
+        "losses": 90,
+        "winRate": 0.799554565701559,
+        "worstStreak": 4,
+        "streakHistogram": [
+          {
+            "length": 1,
+            "occurrences": 55
+          },
+          {
+            "length": 2,
+            "occurrences": 11
+          },
+          {
+            "length": 3,
+            "occurrences": 3
+          },
+          {
+            "length": 4,
+            "occurrences": 1
+          }
+        ],
+        "avgOdds": 1.2829398663697122,
+        "avgFair": 0.7435253991225319,
+        "edge": 0.05602916657902712,
+        "roi": 0.023006681514476598,
+        "roiMargin": 0.04776317916291375,
+        "consensusRoi": 0.01734224201930215
+      }
+    },
+    {
+      "band": {
+        "min": 1.2,
+        "max": 1.5
+      },
+      "stats": {
+        "days": 471,
+        "wins": 372,
+        "losses": 99,
+        "winRate": 0.7898089171974523,
+        "worstStreak": 4,
+        "streakHistogram": [
+          {
+            "length": 1,
+            "occurrences": 54
+          },
+          {
+            "length": 2,
+            "occurrences": 16
+          },
+          {
+            "length": 3,
+            "occurrences": 3
+          },
+          {
+            "length": 4,
+            "occurrences": 1
+          }
+        ],
+        "avgOdds": 1.2923566878980906,
+        "avgFair": 0.7388152232321411,
+        "edge": 0.05099369396531117,
+        "roi": 0.016220806794055194,
+        "roiMargin": 0.047794458915250464,
+        "consensusRoi": 0.010651096956829444
+      }
+    },
+    {
+      "band": {
+        "min": 1.25,
+        "max": 1.5
+      },
+      "stats": {
+        "days": 455,
+        "wins": 340,
+        "losses": 115,
+        "winRate": 0.7472527472527473,
+        "worstStreak": 5,
+        "streakHistogram": [
+          {
+            "length": 1,
+            "occurrences": 52
+          },
+          {
+            "length": 2,
+            "occurrences": 20
+          },
+          {
+            "length": 3,
+            "occurrences": 6
+          },
+          {
+            "length": 5,
+            "occurrences": 1
+          }
+        ],
+        "avgOdds": 1.3267692307692287,
+        "avgFair": 0.7190865576295015,
+        "edge": 0.028166189623245796,
+        "roi": -0.009802197802197803,
+        "roiMargin": 0.05324570341568956,
+        "consensusRoi": -0.015417582417582407
+      }
+    },
+    {
+      "band": {
+        "min": 1.15,
+        "max": 1.55
+      },
+      "stats": {
+        "days": 501,
+        "wins": 398,
+        "losses": 103,
+        "winRate": 0.7944111776447106,
+        "worstStreak": 4,
+        "streakHistogram": [
+          {
+            "length": 1,
+            "occurrences": 61
+          },
+          {
+            "length": 2,
+            "occurrences": 13
+          },
+          {
+            "length": 3,
+            "occurrences": 4
+          },
+          {
+            "length": 4,
+            "occurrences": 1
+          }
+        ],
+        "avgOdds": 1.276187624750497,
+        "avgFair": 0.7505901376857376,
+        "edge": 0.04382103995897302,
+        "roi": 0.006087824351297387,
+        "roiMargin": 0.04552525738894611,
+        "consensusRoi": 0.00027611443779107536
+      }
+    }
+  ],
+  "validationYears": [
+    {
+      "year": "2025",
+      "days": 209,
+      "wins": 176,
+      "losses": 33,
+      "winRate": 0.8421052631578947,
+      "worstStreak": 3,
+      "streakHistogram": [
+        {
+          "length": 1,
+          "occurrences": 19
+        },
+        {
+          "length": 2,
+          "occurrences": 4
+        },
+        {
+          "length": 3,
+          "occurrences": 2
+        }
+      ],
+      "avgOdds": 1.2034449760765547,
+      "avgFair": 0.7975454954259354,
+      "edge": 0.04455976773195924,
+      "roi": 0.009043062200956919,
+      "roiMargin": 0.05993544284261285,
+      "consensusRoi": 0.005550239234449754
+    },
+    {
+      "year": "2026",
+      "days": 191,
+      "wins": 164,
+      "losses": 27,
+      "winRate": 0.8586387434554974,
+      "worstStreak": 3,
+      "streakHistogram": [
+        {
+          "length": 1,
+          "occurrences": 22
+        },
+        {
+          "length": 2,
+          "occurrences": 1
+        },
+        {
+          "length": 3,
+          "occurrences": 1
+        }
+      ],
+      "avgOdds": 1.2048691099476434,
+      "avgFair": 0.7879057697027371,
+      "edge": 0.07073297375276033,
+      "roi": 0.03204188481675394,
+      "roiMargin": 0.06031831729636474,
+      "consensusRoi": 0.023904886561954605
+    }
+  ],
+  "lifetime": {
+    "days": 731,
+    "wins": 620,
+    "losses": 111,
+    "winRate": 0.8481532147742818,
+    "worstStreak": 3,
+    "streakHistogram": [
+      {
+        "length": 1,
+        "occurrences": 85
+      },
+      {
+        "length": 2,
+        "occurrences": 7
+      },
+      {
+        "length": 3,
+        "occurrences": 4
+      }
+    ],
+    "avgOdds": 1.2061149110807108,
+    "avgFair": 0.7944106170763067,
+    "edge": 0.05374259769797518,
+    "roi": 0.019466484268125847,
+    "roiMargin": 0.03163504746932694,
+    "consensusRoi": 0.015281577747378013
+  },
+  "lifetimeYears": [
+    {
+      "year": "2023",
+      "days": 127,
+      "wins": 107,
+      "losses": 20,
+      "winRate": 0.84251968503937,
+      "worstStreak": 1,
+      "streakHistogram": [
+        {
+          "length": 1,
+          "occurrences": 20
+        }
+      ],
+      "avgOdds": 1.2142519685039366,
+      "avgFair": 0.7931259835384505,
+      "edge": 0.049393701500919485,
+      "roi": 0.022755905511811007,
+      "roiMargin": 0.07800050184258017,
+      "consensusRoi": 0.02118110236220471
+    },
+    {
+      "year": "2024",
+      "days": 204,
+      "wins": 173,
+      "losses": 31,
+      "winRate": 0.8480392156862745,
+      "worstStreak": 3,
+      "streakHistogram": [
+        {
+          "length": 1,
+          "occurrences": 24
+        },
+        {
+          "length": 2,
+          "occurrences": 2
+        },
+        {
+          "length": 3,
+          "occurrences": 1
+        }
+      ],
+      "avgOdds": 1.2049509803921565,
+      "avgFair": 0.798088973608596,
+      "edge": 0.04995024207767851,
+      "roi": 0.016323529411764688,
+      "roiMargin": 0.05983694618929538,
+      "consensusRoi": 0.013504901960784322
+    },
+    {
+      "year": "2025",
+      "days": 209,
+      "wins": 176,
+      "losses": 33,
+      "winRate": 0.8421052631578947,
+      "worstStreak": 3,
+      "streakHistogram": [
+        {
+          "length": 1,
+          "occurrences": 19
+        },
+        {
+          "length": 2,
+          "occurrences": 4
+        },
+        {
+          "length": 3,
+          "occurrences": 2
+        }
+      ],
+      "avgOdds": 1.2034449760765547,
+      "avgFair": 0.7975454954259354,
+      "edge": 0.04455976773195924,
+      "roi": 0.009043062200956919,
+      "roiMargin": 0.05993544284261285,
+      "consensusRoi": 0.005550239234449754
+    },
+    {
+      "year": "2026",
+      "days": 191,
+      "wins": 164,
+      "losses": 27,
+      "winRate": 0.8586387434554974,
+      "worstStreak": 3,
+      "streakHistogram": [
+        {
+          "length": 1,
+          "occurrences": 22
+        },
+        {
+          "length": 2,
+          "occurrences": 1
+        },
+        {
+          "length": 3,
+          "occurrences": 1
+        }
+      ],
+      "avgOdds": 1.2048691099476434,
+      "avgFair": 0.7879057697027371,
+      "edge": 0.07073297375276033,
+      "roi": 0.03204188481675394,
+      "roiMargin": 0.06031831729636474,
+      "consensusRoi": 0.023904886561954605
+    }
+  ]
+}

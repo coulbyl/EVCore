@@ -1,6 +1,11 @@
+import { createHash } from "node:crypto";
 import type { Logger } from "pino";
 import type { CouponBounds, CouponClass } from "@evcore/analysis-core";
-import { requestVantageCompletion, type LlmClients } from "../groq/client";
+import {
+  requestVantageCompletion,
+  type LlmClients,
+  type LlmCompletionMeta,
+} from "../groq/client";
 import {
   admissibleCandidates,
   reduceToLlmPool,
@@ -30,6 +35,15 @@ export type GenerateCouponSelectionResult =
   | { outcome: "invalid_response"; raw: string; error: string }
   | { outcome: "composed"; legs: SelectedLeg[]; reasonDetails: string };
 
+export type CouponLlmProvenance = LlmCompletionMeta & {
+  systemPromptSha256: string;
+  userPromptSha256: string;
+};
+
+function sha256(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
 /**
  * One coupon class, one LLM call, start to finish — mirrors analyzeFixture's
  * shape (vantage/analyze-fixture.ts): never throws on a bad LLM response, an
@@ -53,6 +67,7 @@ export async function generateCouponSelection(
    * buildCouponSelectionUserPrompt's doc comment for why this matters at
    * `temperature: 0`. */
   feedback: string | null = null,
+  onCompletion?: (provenance: CouponLlmProvenance) => void,
 ): Promise<GenerateCouponSelectionResult> {
   const withinClassBand = admissibleCandidates(scoredPool).filter(
     (c) =>
@@ -77,13 +92,23 @@ export async function generateCouponSelection(
 
   const schema = buildCouponSelectionSchema(bounds);
   const systemPrompt = buildCouponSelectionSystemPrompt(couponClass, bounds);
-  const userPrompt = buildCouponSelectionUserPrompt(couponClass, pool, feedback);
+  const userPrompt = buildCouponSelectionUserPrompt(
+    couponClass,
+    pool,
+    feedback,
+  );
 
   const raw = await requestVantageCompletion(
     clients,
     systemPrompt,
     userPrompt,
     logger,
+    (meta) =>
+      onCompletion?.({
+        ...meta,
+        systemPromptSha256: sha256(systemPrompt),
+        userPromptSha256: sha256(userPrompt),
+      }),
   );
 
   let parsedJson: unknown;

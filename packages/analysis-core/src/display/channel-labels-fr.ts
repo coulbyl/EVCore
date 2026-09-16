@@ -1,4 +1,7 @@
-import { STRATEGY_CHANNEL, type StrategyChannel } from "../types/strategy-channel";
+import {
+  STRATEGY_CHANNEL,
+  type StrategyChannel,
+} from "../types/strategy-channel";
 
 // French display labels for StrategyChannel codes — shared between apps/web
 // (channel-constants.ts, which wraps this for its fr/en multi-locale API)
@@ -34,6 +37,7 @@ export const CHANNEL_LABELS_FR: Record<StrategyChannel, string> = {
   [STRATEGY_CHANNEL.WIN_TO_NIL]: "Gagne sans encaisser",
   [STRATEGY_CHANNEL.HALF_TIME_FULL_TIME]: "Mi-temps / Fin de match",
   [STRATEGY_CHANNEL.VANTAGE]: "Arbitrage",
+  [STRATEGY_CHANNEL.PRICE]: "Prix du marché",
 };
 
 export function formatChannelForDisplayFr(channel: StrategyChannel): string {

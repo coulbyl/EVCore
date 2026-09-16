@@ -4,8 +4,8 @@ category: bases
 difficulty: beginner
 order: 4
 slug: comment-lire-un-pick
-summary: "Canal, cote, probabilité, badge de fiabilité : ce que chaque élément d'un pronostic veut dire, et pourquoi certains matchs n'ont volontairement aucun pick."
-updatedAt: "2026-09-04"
+summary: "Canal, cote, probabilité, écart de calibration : ce que chaque élément d'un pronostic veut dire, et pourquoi certains matchs n'ont volontairement aucun pick."
+updatedAt: "2026-09-15"
 related: ["cotes-probabilites-implicites", "ev-probabilites-cotes"]
 ---
 
@@ -28,9 +28,9 @@ Pour voir _quel_ canal a produit un pronostic précis, ou pour naviguer canal pa
 | **Filtres** (Valeur, Sécurité)        | Ne cherchent rien eux-mêmes : ils re-sélectionnent parmi les décisions ci-dessus                      |
 | **Garde-fous** (Attention, Consensus) | N'émettent pas de pick : ils qualifient ou écartent une décision                                      |
 
-Dix-neuf canaux de marché produisent une décision, répartis dans ces familles — un canal indépendant, Arbitrage, s'y ajoute sur sa propre page. Presque tous sont affichés normalement, y compris ceux dont les résultats mesurés sont mauvais : un canal qui perd n'est pas retiré, il est montré tel quel, avec son badge de fiabilité. Seuls Valeur et Sécurité ne s'affichent pas comme des picks actionnables.
+Dix-neuf canaux de marché produisent une décision, répartis dans ces familles — un canal indépendant, Arbitrage, s'y ajoute sur sa propre page. Presque tous sont affichés normalement, y compris ceux dont les résultats mesurés sont mauvais : un canal qui perd n'est pas retiré, il est montré tel quel, avec son écart de calibration. Seuls Valeur et Sécurité ne s'affichent pas comme des picks actionnables.
 
-La page Historique vérifiable affiche le résultat mesuré de chaque canal, y compris quand il est mauvais — c'est cette même mesure qui alimente le badge de fiabilité affiché sur chaque pick (voir plus bas).
+La page Mesures historiques affiche le résultat mesuré de chaque canal, y compris quand il est mauvais — c'est cette même mesure qui alimente la bande de calibration affichée sur chaque pick (voir plus bas).
 
 Une fiche affiche au plus quatre pronostics d'un coup, triés par probabilité décroissante — « Voir N autres marchés » déplie le reste. Au-delà, la fiche deviendrait une liste de données plutôt qu'une lecture.
 
@@ -56,9 +56,9 @@ Sur chaque pronostic figurent la cote et une probabilité — jamais l'une sans 
 
 - **La cote** : le prix affiché par le bookmaker.
 - **La probabilité** : ce que le moteur estime, indépendamment du marché. C'est la sortie brute du modèle, sans retouche, la même pour tous les canaux — y compris ceux qu'on ne joue pas.
-- **Le badge de fiabilité** (Fiable / À surveiller / Peu fiable) : la mesure historique de ce canal, sur cette compétition précise — sa réussite réelle comparée à ce qu'il annonçait, sur les paris déjà réglés. Un tap ou un survol du badge affiche le détail en une phrase.
+- **La bande de calibration** (écart ≤ 15 %, 15–30 % ou > 30 %) : l'écart historique entre la réussite réelle du canal et la probabilité qu'il annonçait, sur cette compétition précise et sur les sélections déjà réglées. Un tap ou un survol affiche la période et le volume observé.
 
-Un edge élevé (l'écart entre cote et probabilité) n'est pas un bon signe. Il indique surtout que le modèle et le bookmaker sont en désaccord, et le bookmaker a raison la plupart du temps. La fiabilité mesurée sur l'historique réel du canal est l'indicateur à retenir ; c'est la probabilité qui classe les pronostics dans toute l'app, jamais l'écart.
+Un edge élevé (l'écart entre cote et probabilité) indique surtout que le modèle et le bookmaker sont en désaccord. La calibration historique décrit seulement l'écart entre fréquence annoncée et fréquence observée ; elle ne démontre ni rentabilité future ni qualité d'une sélection isolée.
 
 ## Pourquoi certains matchs n'ont aucun pick
 
@@ -67,7 +67,7 @@ La majorité des matchs analysés ne produisent aucun pick misable, sur aucun ca
 - **Score sous le seuil** — le modèle n'a pas assez de conviction sur ce match
 - **Aucun pick viable** — aucune issue ne dépasse le seuil d'edge ou d'EV
 - **Mouvement de cote défavorable** — la cote a bougé contre le pick entre l'analyse et l'affichage
-- **Marge insuffisante** — l'écart existe mais reste trop fin pour être fiable
+- **Marge insuffisante** — l'écart existe mais reste sous le seuil d'admission
 - **Divergence extrême** — l'écart est si large qu'une erreur de données est jugée plus probable qu'une vraie opportunité (canal Attention)
 
 Un jour sans pick sur un match qui vous intéresse n'est pas un manque de service. C'est le filtre qui fonctionne. Le nombre de picks n'a jamais été l'objectif — leur qualité l'est.
@@ -76,6 +76,6 @@ Un jour sans pick sur un match qui vous intéresse n'est pas un manque de servic
 
 - Le canal dit quelle question a été posée au match, pas seulement la réponse trouvée ; son nom n'apparaît pas en badge sur chaque pronostic, le nom du marché suffit à les distinguer.
 - La cote ne se lit jamais sans sa probabilité : c'est la sortie brute du modèle, sans retouche.
-- Le badge de fiabilité (Fiable / À surveiller / Peu fiable) est la mesure réelle du canal sur cette compétition — pas une estimation.
+- La bande de calibration compare la réussite réelle à la probabilité annoncée sur cette compétition ; elle doit être lue avec sa période et son volume.
 - Consensus signale un accord et Attention protège — ni l'un ni l'autre n'émet de pari. Score exact, lui, émet un vrai pick ; il n'est simplement jamais misé.
 - L'absence de pick est un résultat normal du filtre, pas un défaut.

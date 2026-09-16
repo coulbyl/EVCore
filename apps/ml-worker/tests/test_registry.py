@@ -119,8 +119,8 @@ class TestRegistryPredict:
 
         reg._models["ALL"] = _Model()  # type: ignore[assignment]
         # Unknown segment → ALL fallback → returns the positive-class prob.
-        assert reg.predict("CONF:ONE_X_TWO", {"x": 1}) == pytest.approx(0.7)
+        assert reg.predict("CONF:ONE_X_TWO", {"x": 1, "delta_p": 0.1}) == pytest.approx(0.7)
 
     def test_returns_none_when_no_model(self) -> None:
         reg = ModelRegistry()
-        assert reg.predict("EV:ONE_X_TWO", {"x": 1}) is None
+        assert reg.predict("EV:ONE_X_TWO", {"x": 1, "delta_p": 0.1}) is None

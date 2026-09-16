@@ -2,9 +2,12 @@
 
 > Autonomous value-driven sports betting engine built around Expected Value (EV) mathematics.
 
-EVCore is a disciplined probabilistic decision system — not a tip generator. It targets long-term ROI through deterministic data scoring, calibrated over time, with the backend always acting as the final authority.
+EVCore is a probabilistic football-analysis system whose decisions, prices and
+outcomes are meant to be measured prospectively. The backend remains the final
+authority for numerical validation and publication.
 
-**Status:** Phase 2 — Pivot vers backtest par compétition et paris unitaires.
+**Status:** audit remediation and prospective observation. Historical backtests
+are research evidence; they are not proof of future profitability.
 
 ---
 
@@ -16,10 +19,15 @@ EVCore is a disciplined probabilistic decision system — not a tip generator. I
 - Applies fractional Kelly (0.25×) for stake sizing
 - Identifie les value bets unitaires filtrés par un score de qualité déterministe.
 - Filters picks with adverse line movement (> 10% odds drop over 7 days)
-- Tracks performance metrics (Brier Score, ROI, drawdown) and self-calibrates over time
+- Tracks calibration, ROI, drawdown, data lineage and explicit abstentions
 - Sends alerts via Email when opportunities, anomalies, or auto-calibrations are detected
+- Generates at most one immutable daily coupon with combined odds between 5 and
+  15, or records an abstention when the constraints cannot be satisfied
 
-**Validated on 3 EPL seasons:** Brier Score 0.592 (< 0.65 threshold), Calibration Error 2.5%, simulated ROI +2.28%.
+The earlier EPL reconstruction reported Brier 0.592 and simulated ROI +2.28%,
+but the September 2026 audit found that the old measurement pipeline could mix
+versions, retrospective analyses and repeated selections. Those figures remain
+historical research results and must not be presented as a validated live edge.
 
 ---
 
@@ -64,7 +72,7 @@ Run all quality checks:
 ```bash
 pnpm lint        # ESLint across all packages
 pnpm typecheck   # TypeScript (no emit)
-pnpm --filter backend test  # Vitest unit tests (231 tests)
+pnpm --filter backend test  # Vitest unit tests
 ```
 
 Useful maintenance commands:
@@ -180,25 +188,27 @@ CORS_ORIGIN=https://c-evcore.com
 
 ## Documentation
 
-| File                       | Purpose                                                       |
-| -------------------------- | ------------------------------------------------------------- |
-| [EVCORE.md](EVCORE.md)     | Full product specification — architecture, model, constraints |
-| [ROADMAP.md](ROADMAP.md)   | Implementation roadmap — phase-by-phase checklist             |
-| [TODO.md](TODO.md)         | Current work plan and upcoming blocs                          |
-| [OPENCLAW.md](OPENCLAW.md) | OpenClaw policy — stand-by post-prod + activation criteria    |
-| [GRAFANA.md](GRAFANA.md)   | Grafana policy — stand-by post-prod + activation criteria     |
-| [CLAUDE.md](CLAUDE.md)     | AI coding conventions (Claude Code)                           |
+| File                                                | Purpose                                                       |
+| --------------------------------------------------- | ------------------------------------------------------------- |
+| [EVCORE.md](EVCORE.md)                              | Full product specification — architecture, model, constraints |
+| [ROADMAP.md](ROADMAP.md)                            | Implementation roadmap — phase-by-phase checklist             |
+| [TODO.md](TODO.md)                                  | Current work plan and upcoming blocs                          |
+| [OPENCLAW.md](OPENCLAW.md)                          | OpenClaw policy — stand-by post-prod + activation criteria    |
+| [GRAFANA.md](GRAFANA.md)                            | Grafana policy — stand-by post-prod + activation criteria     |
+| [CLAUDE.md](CLAUDE.md)                              | AI coding conventions (Claude Code)                           |
+| [Audit 2026-09-13](docs/audits/2026-09-13/AUDIT.md) | Remediation plan and acceptance status                        |
 
 ---
 
 ## Phase status
 
-| Phase          | Status         | Key deliverable                                                          |
-| -------------- | -------------- | ------------------------------------------------------------------------ |
-| MVP Phase 1    | ✅ Complete    | Backtest validated — Brier 0.592, ROI +2.28%                             |
-| Phase 2 Bloc 1 | ✅ Complete    | Live odds pipeline, multi-league ETL                                     |
-| Phase 2 Bloc 2 | ✅ Complete    | ETL hardening, Kelly fractional                                          |
-| Phase 2 Bloc 3 | ✅ Complete    | Per-pick EV engine (204 tests)                                           |
-| Phase 2 Bloc 4 | 🚧 In progress | Shadow data collection, auto-activation loop                             |
-| Phase 2 Bloc 5 | ✅ Complete    | Pick settlement, result notifications                                    |
-| Phase 2 Bloc 6 | 🚧 In progress | HT/FT end-to-end livré, OpenClaw/Grafana stand-by post-prod, TimescaleDB |
+| Phase             | Status         | Key deliverable                                                             |
+| ----------------- | -------------- | --------------------------------------------------------------------------- |
+| MVP Phase 1       | ⚠️ Superseded  | Historical backtest; validation claims withdrawn after the 2026-09 audit    |
+| Phase 2 Bloc 1    | ✅ Complete    | Live odds pipeline, multi-league ETL                                        |
+| Phase 2 Bloc 2    | ✅ Complete    | ETL hardening, Kelly fractional                                             |
+| Phase 2 Bloc 3    | ✅ Complete    | Per-pick EV engine (204 tests)                                              |
+| Phase 2 Bloc 4    | 🚧 In progress | Shadow data collection, auto-activation loop                                |
+| Phase 2 Bloc 5    | ✅ Complete    | Pick settlement, result notifications                                       |
+| Phase 2 Bloc 6    | 🚧 In progress | HT/FT end-to-end livré, OpenClaw/Grafana stand-by post-prod, TimescaleDB    |
+| Audit remediation | 🚧 In progress | Unified immutable coupon, point-in-time cohorts and prospective measurement |

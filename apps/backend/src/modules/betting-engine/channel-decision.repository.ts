@@ -15,6 +15,7 @@ import type {
 } from './channel-strategy.types';
 import type { SettleableSelection } from './channel-selection-settlement';
 import { NEW_COACH_WINDOW_MATCHES } from './coach-continuity.constants';
+import { BETTING_ENGINE_CONFIG_VERSION } from '@evcore/analysis-core';
 
 export type SettleableSelectionRow = SettleableSelection & { id: string };
 
@@ -126,6 +127,7 @@ export class ChannelDecisionRepository {
         const created = await tx.channelDecision.create({
           data: {
             modelRunId,
+            configVersion: BETTING_ENGINE_CONFIG_VERSION,
             channel: decision.channel,
             status: decision.status,
             reasonCode: decision.reasonCode ?? null,

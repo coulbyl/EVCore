@@ -8,6 +8,7 @@ Each row is one settled selection (WON/LOST).
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any
 
 import pandas as pd
@@ -15,6 +16,8 @@ import psycopg
 import psycopg.rows
 
 logger = logging.getLogger(__name__)
+
+ENGINE_CONFIG_VERSION = "betting-engine-2026-09-14.1"
 
 # ── SQL ────────────────────────────────────────────────────────────────────────
 
@@ -54,6 +57,8 @@ LEFT JOIN LATERAL (
         WHERE "fixtureId" = f.id
           AND bookmaker IN ('Pinnacle', 'Bet365')
           AND market = cs.market
+          AND "snapshotAt" < mr."analyzedAt"
+          AND "createdAt" < mr."analyzedAt"
         ORDER BY COALESCE(pick, '__1x2__'), (bookmaker = 'Pinnacle') DESC, "snapshotAt" DESC
     ) latest
 ) os ON TRUE
@@ -71,6 +76,9 @@ LEFT JOIN LATERAL (
 # deferred, not a copy-paste extension.
 _BET_SQL = f"""
 SELECT
+    f.id AS fixture_id,
+    f."scheduledAt" AS scheduled_at,
+    cd."configVersion" AS config_version,
     mr."analyzedAt"                 AS analyzed_at,
     mr."deterministicScore"         AS deterministic_score,
     mr.features                     AS features,
@@ -94,8 +102,20 @@ JOIN season s      ON s.id            = f."seasonId"
 JOIN competition c ON c.id            = s."competitionId"
 {_ODDS_LATERAL_SQL}
 WHERE cs.result IN ('WON', 'LOST')
+  AND f.status = 'FINISHED' AND cs.rank = 1 AND cd.status = 'SELECTED'
+  AND mr."analyzedAt" < f."scheduledAt" AND mr."createdAt" < f."scheduledAt"
+  AND cd."createdAt" < f."scheduledAt" AND cs."createdAt" < f."scheduledAt"
+  AND NOT EXISTS (
+    SELECT 1 FROM channel_decision newer
+    JOIN model_run nr ON nr.id = newer."modelRunId"
+    WHERE nr."fixtureId" = f.id AND newer.channel = cd.channel
+      AND nr."analyzedAt" < f."scheduledAt" AND nr."createdAt" < f."scheduledAt"
+      AND newer."createdAt" < f."scheduledAt"
+      AND (nr."analyzedAt", newer."createdAt", newer.id) > (mr."analyzedAt", cd."createdAt", cd.id)
+  )
   AND cd.channel IN ('VALUE', 'SAFE', 'DOMINANT', 'BTTS', 'DRAW', 'GOALS',
                       'CLEAN_SHEET', 'TEAM_TOTAL', 'WIN_EITHER_HALF')
+  AND cd."configVersion" = '{ENGINE_CONFIG_VERSION}'
 ORDER BY mr."analyzedAt"
 """
 
@@ -138,7 +158,7 @@ def _complement_picks(market: str, pick: str) -> list[str]:
     }:
         return ["YES", "NO"]
     if market == "TO_WIN_EITHER_HALF":
-        return ["HOME", "AWAY"]
+        return []  # Either team can win a half; these are not complements.
     if market in {"OVER_UNDER", "OVER_UNDER_HT", "TEAM_TOTAL_HOME", "TEAM_TOTAL_AWAY"}:
         if pick in {"OVER", "UNDER"}:
             return ["OVER", "UNDER"]
@@ -146,27 +166,20 @@ def _complement_picks(market: str, pick: str) -> list[str]:
             return [pick, "UNDER_" + pick[len("OVER_") :]]
         if pick.startswith("UNDER_"):
             return ["OVER_" + pick[len("UNDER_") :], pick]
-        return [pick]
+        return []
     return []
 
 
 def _devig_pick(market: str, pick: str, picks_odds: dict[str, float]) -> float | None:
-    """De-vig the target pick against its competing legs. Returns None if the
-    target pick itself has no price. A single available leg (only the target)
-    is a known degenerate case — yields 1.0 rather than a real probability;
-    callers must have both sides present for a meaningful result (see tests).
-    """
-    target = picks_odds.get(pick)
-    if not target:
-        return None
+    """Require a complete, exclusive partition with valid prices."""
     group = _complement_picks(market, pick)
-    available = [picks_odds[p] for p in group if picks_odds.get(p)]
-    if not available:
+    if len(group) < 2 or pick not in group:
+        return None
+    available = [picks_odds.get(p) for p in group]
+    if any(o is None or not math.isfinite(o) or o <= 1 for o in available):
         return None
     overround = sum(1.0 / o for o in available)
-    if overround <= 0:
-        return None
-    return (1.0 / target) / overround
+    return (1.0 / picks_odds[pick]) / overround
 
 
 def _num(value: Any) -> float | None:
@@ -237,6 +250,9 @@ def _build_row(raw: dict[str, Any]) -> dict[str, Any]:
         ev = (prob_estimated * target_odds) - 1.0
 
     return {
+        "fixture_id": raw.get("fixture_id"),
+        "scheduled_at": raw.get("scheduled_at"),
+        "config_version": raw.get("config_version"),
         "analyzed_at": raw["analyzed_at"],
         "market": market,
         "pick": pick,
@@ -279,7 +295,7 @@ async def extract_dataset(
     """
     Extract and engineer the training dataset from PostgreSQL.
 
-    Returns a DataFrame sorted by analyzed_at (temporal order preserved).
+    Returns a DataFrame sorted by scheduled_at and fixture identity.
     Rows without Pinnacle/Bet365 odds have None in delta_p / p_pinnacle columns.
     """
     logger.info(
@@ -303,8 +319,12 @@ async def extract_dataset(
     records = [_build_row(dict(row)) for row in rows]
     df = pd.DataFrame(records)
 
+    if df.empty:
+        return df
     df = _apply_segment_filter(df, segment)
-    df = df.sort_values("analyzed_at").reset_index(drop=True)
+    if df.empty:
+        return df
+    df = df.sort_values(["scheduled_at", "fixture_id"]).reset_index(drop=True)
 
     logger.info(
         "dataset ready",
@@ -333,5 +353,18 @@ def temporal_split(df: pd.DataFrame, train_ratio: float = 0.8) -> tuple[pd.DataF
     Split by time order to avoid data leakage.
     Returns (train_df, test_df).
     """
-    cutoff = int(len(df) * train_ratio)
-    return df.iloc[:cutoff].copy(), df.iloc[cutoff:].copy()
+    if not 0 < train_ratio < 1:
+        raise ValueError("train_ratio must be between zero and one")
+    if df.empty:
+        return df.copy(), df.copy()
+    if "fixture_id" not in df or "scheduled_at" not in df or df["fixture_id"].isna().any():
+        raise ValueError("Fixture identity and kickoff are required for temporal splitting")
+    dates = sorted(df["scheduled_at"].dropna().unique())
+    if len(dates) < 2:
+        raise ValueError("At least two event timestamps are required")
+    cutoff = dates[max(1, min(len(dates) - 1, int(len(dates) * train_ratio)))]
+    before = df[df["scheduled_at"] < cutoff].copy()
+    after = df[df["scheduled_at"] >= cutoff].copy()
+    if set(before["fixture_id"]) & set(after["fixture_id"]):
+        raise ValueError("A fixture crosses temporal partitions")
+    return before, after

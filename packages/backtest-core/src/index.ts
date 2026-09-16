@@ -7,3 +7,5 @@
 export * from "./point-in-time-loader";
 export * from "./replay-engine";
 export * from "./backtest-runner";
+export * from "./validation-protocol";
+export * from "./iso-week";

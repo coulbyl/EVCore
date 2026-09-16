@@ -1,0 +1,2 @@
+-- RenameIndex
+ALTER INDEX "odds_snapshot_fixtureId_bookmaker_market_pick_line_snapshotAt_k" RENAME TO "odds_snapshot_fixtureId_bookmaker_market_pick_line_snapshot_key";

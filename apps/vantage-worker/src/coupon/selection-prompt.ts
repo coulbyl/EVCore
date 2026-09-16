@@ -14,7 +14,7 @@ import type { ScoredCandidate } from "./score-candidates";
 // whole system, not two prompt-writing conventions.
 export function buildCouponSelectionSystemPrompt(
   couponClass: CouponClass,
-  bounds: Pick<CouponBounds, "minLegs">,
+  bounds: CouponBounds,
 ): string {
   return `Tu composes un coupon EVCore de classe ${couponClass.name} — un ensemble de ${bounds.minLegs} à ${couponClass.maxLegs} paris combinés (un "coupon"), choisis parmi un vivier de candidats déjà validés et classés par le système.
 
@@ -26,7 +26,7 @@ Règles strictes :
 - Ne choisis jamais deux jambes du même match (même "Match : X vs Y").
 - Ne choisis jamais deux jambes du même canal sur le même marché (ex: deux jambes DOMINANT/ONE_X_TWO).
 - Au maximum 2 jambes de la même compétition.
-- Cible de cote combinée pour cette classe : environ ${couponClass.targetCombinedOdds} (indicatif — le calcul exact est refait et vérifié par le système après ton choix, tu n'as pas besoin d'une précision parfaite).
+- La cote combinée doit rester entre ${bounds.minCombinedOdds} et ${bounds.maxCombinedOdds}. Le calcul exact est refait et vérifié par le système après ton choix.
 - Mélange de préférence quelques jambes "ancres" (probabilité calibrée élevée, ≥70%) avec quelques jambes "valeur" (probabilité plus modérée mais cote nettement plus longue) — jamais uniquement l'un ou l'autre, sauf si le vivier ne permet pas ce mélange.
 - Si aucune combinaison cohérente n'émerge du vivier (candidats trop corrélés, aucune histoire qui se tient, ou vivier trop pauvre), réponds "no_coupon" avec une raison claire plutôt que de forcer un mélange arbitraire — comme pour un "no_play" VANTAGE, ne force jamais une réponse pour justifier ta présence.
 - "reasoning" (par jambe) et "reasonDetails" (global) doivent expliquer le POURQUOI de la combinaison en langage naturel, jamais recopier les chiffres déjà donnés (probabilité, cote) — ces chiffres sont pour TON jugement, pas pour ta réponse.

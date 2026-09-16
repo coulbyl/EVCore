@@ -46,11 +46,11 @@ export function FollowedChannelsCard() {
   const { mutate: follow } = useFollowChannel();
   const { mutate: unfollow } = useUnfollowChannel();
 
-  // One flat list, sorted by reliability — no "Prouvés"/"En observation"
+  // One flat list, sorted by calibration band — no verdict tiers
   // split (removed 2026-09-04): calibration is a spectrum (GREEN/ORANGE/RED/
   // INSUFFICIENT_DATA), not a two-tier admission gate, and at current volumes
-  // the "watch" bucket was catching nearly every channel, not a genuine
-  // in-between tier.
+  // the middle bucket was catching nearly every channel, so the band itself
+  // carries the useful information.
   const STATUS_RANK: Record<ChannelStatus, number> = {
     GREEN: 0,
     ORANGE: 1,
@@ -98,12 +98,18 @@ export function FollowedChannelsCard() {
                       {visible.map((item) => (
                         <CommandItem
                           key={item.channel}
-                          value={channelLabel(item.channel as StrategyChannel, locale)}
+                          value={channelLabel(
+                            item.channel as StrategyChannel,
+                            locale,
+                          )}
                           onSelect={() => follow(item.channel)}
                           className="flex items-center justify-between gap-2"
                         >
                           <span className="min-w-0 flex-1 truncate">
-                            {channelLabel(item.channel as StrategyChannel, locale)}
+                            {channelLabel(
+                              item.channel as StrategyChannel,
+                              locale,
+                            )}
                           </span>
                           <DiscoverStatusBadge
                             status={item.status}
@@ -131,9 +137,7 @@ export function FollowedChannelsCard() {
             <Skeleton key={i} className="h-12 rounded-xl" />
           ))
         ) : (personalization?.followedChannels.length ?? 0) === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {t("channelsEmpty")}
-          </p>
+          <p className="text-sm text-muted-foreground">{t("channelsEmpty")}</p>
         ) : (
           personalization!.followedChannels.map((item) => (
             <div
@@ -163,14 +167,12 @@ export function FollowedChannelsCard() {
   );
 }
 
-/** Same qualitative-verdict pattern as Decisions/Arbitrage's CalibrationBadge
+/** Same calibration-band pattern as Decisions/Arbitrage's CalibrationBadge
  * (channel-row.tsx) — plain-language HoverCard, no raw ratio/n= notation in
- * the visible text ("0.97× · n=2000" reads as internal jargon to a lambda
- * user). Distinct component (not a direct reuse) because it judges the
- * channel over the whole 90-day discover window rather than one
- * (channel, competition) pair, so the tooltip copy differs. INSUFFICIENT_DATA
- * renders nothing, same rationale as the pick-row badge: a badge that almost
- * always reads "insuffisant" carries no signal. */
+ * the visible text. This component covers the whole 90-day discovery window
+ * rather than one (channel, competition) pair, so the tooltip copy differs.
+ * INSUFFICIENT_DATA renders nothing because a nearly universal badge would
+ * not help users compare channels. */
 function DiscoverStatusBadge({
   status,
   sampleSize,

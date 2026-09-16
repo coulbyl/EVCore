@@ -23,9 +23,7 @@ type ProductTourContextValue = {
   startTour: () => void;
 };
 
-const ProductTourContext = createContext<ProductTourContextValue | null>(
-  null,
-);
+const ProductTourContext = createContext<ProductTourContextValue | null>(null);
 
 // Mounted once in dashboard/layout.tsx, wrapping AppShell — a single
 // driver.js instance drives every step in PRODUCT_TOUR_STEPS. Most steps
@@ -33,11 +31,9 @@ const ProductTourContext = createContext<ProductTourContextValue | null>(
 // then let driver.js's own `waitForElement` (per step) pick up the target
 // once the new page has mounted, instead of us hand-rolling a polling
 // effect. Named "product tour", not "onboarding": this is the passive
-// guided tour ("Revoir le guide" in the account menu) — a real active
-// onboarding (data collection at signup) is a separate, not-yet-built
-// concept, and `currentUser.hasSeenOnboarding` below is its own DB field
-// deliberately left as-is (renaming it needs a migration, tracked
-// separately).
+// guided tour ("Revoir le guide" in the account menu). The active onboarding
+// wizard is implemented separately in domains/onboarding; the historical
+// `hasSeenOnboarding` field still records completion of this passive tour.
 export function ProductTourProvider({ children }: { children: ReactNode }) {
   const t = useTranslations("productTour");
   const router = useRouter();
@@ -199,9 +195,7 @@ export function ProductTourProvider({ children }: { children: ReactNode }) {
 export function useProductTour(): ProductTourContextValue {
   const ctx = useContext(ProductTourContext);
   if (!ctx) {
-    throw new Error(
-      "useProductTour must be used within ProductTourProvider",
-    );
+    throw new Error("useProductTour must be used within ProductTourProvider");
   }
   return ctx;
 }

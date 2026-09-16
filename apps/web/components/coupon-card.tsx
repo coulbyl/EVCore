@@ -1,6 +1,14 @@
 "use client";
 
-import { Check, Eye, MessageCircle, ShoppingCart, Sun, Users } from "lucide-react";
+import {
+  Check,
+  Eye,
+  MessageCircle,
+  ShoppingCart,
+  Sun,
+  Tag,
+  Users,
+} from "lucide-react";
 import {
   Badge,
   Card,
@@ -58,6 +66,13 @@ export type CouponCardProps = {
    */
   batch?: "evening" | "intraday";
   /**
+   * Générateur à l'origine du coupon. Les deux sources visent la même cote, et
+   * un écran qui ne les distingue pas montre deux produits comme s'il n'y en
+   * avait qu'un. Toujours affiché, y compris pour l'analyse : un badge qui
+   * n'apparaît que sur l'une des deux se lit comme une mise en garde.
+   */
+  source?: { label: string; hint: string } | null;
+  /**
    * Engagement réel, jamais fabriqué (CLAUDE.md §4 point 6) — utilisateurs
    * distincts ayant vu/joué ce coupon. Masqué à 0 (rien à dire), pas affiché
    * comme "0 vue" qui lirait comme un coupon délaissé plutôt que "pas encore
@@ -77,6 +92,7 @@ function formatPct(n: number): string {
 export function CouponCard({
   locale,
   couponClass = null,
+  source = null,
   combinedOdds,
   jointProbability,
   reasoning,
@@ -123,6 +139,14 @@ export function CouponCard({
               {couponClass && (
                 <span className="text-[0.62rem] font-medium tracking-wide text-muted-foreground">
                   {couponClass.frequency}
+                </span>
+              )}
+              {source && (
+                <span
+                  title={source.hint}
+                  className="flex items-center gap-1 rounded-full border border-border/70 px-1.5 py-0.5 text-[0.6rem] font-medium text-muted-foreground"
+                >
+                  <Tag size={10} /> {source.label}
                 </span>
               )}
               {batch === "intraday" && (

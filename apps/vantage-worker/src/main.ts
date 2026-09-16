@@ -95,16 +95,26 @@ async function main() {
     },
   );
 
-  // Intraday batch (recheck J-J) — see config.ts's couponIntradayCron doc
-  // comment. Coexists with the evening batch above, never overwrites it
-  // (persist-coupon-proposal.ts's INTRADAY_SIGNAL_WINDOW_DAYS).
-  await queue.add(
-    "generate-intraday-coupons",
-    {},
-    {
-      repeat: { pattern: config.couponIntradayCron },
-      jobId: "vantage-recurring-intraday-coupon-generation",
-    },
+  // Intraday batch (recheck J-J) — NO LONGER SCHEDULED since 2026-09-16.
+  //
+  // Measured over 2026-09-04..09-11, evening pass versus intraday pass, legs
+  // settled: realised 42.7 % versus 42.6 % — identical, with overlapping
+  // intervals (ratio 0.681 ± 9.9 versus 0.810 ± 14.1). It bought nothing
+  // measurable while costing one LLM call per hour, and because
+  // persist-coupon-proposal upserts on
+  // (forDate, signalWindowDays, targetOddsMin, targetOddsMax, rank), each hourly
+  // pass overwrote the previous one: what the database held was the last state
+  // before kickoff, never what was actually proposed. A proposal that mutates
+  // through the day cannot be compared leg-by-leg against another generator,
+  // which is precisely what running two sources in parallel requires.
+  //
+  // `runIntradayCouponGeneration` and its "generate-intraday-coupons" handler
+  // stay callable for a manual pass; only the recurring registration is gone.
+  // A repeatable job already registered in Redis keeps firing until it is
+  // explicitly removed, so removing the `queue.add` above would not have been
+  // enough on a running deployment.
+  await queue.removeJobScheduler(
+    "vantage-recurring-intraday-coupon-generation",
   );
 
   logger.info(
@@ -112,7 +122,6 @@ async function main() {
       sweepIntervalMs: config.sweepIntervalMs,
       couponCron: config.couponCron,
       couponRetryCron: config.couponRetryCron,
-      couponIntradayCron: config.couponIntradayCron,
       couponIntradayWindowHours: config.couponIntradayWindowHours,
       llmProvider: config.llmProvider,
       model: config.llmModel,

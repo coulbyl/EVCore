@@ -120,7 +120,7 @@ const CHANNEL_LABEL_EN: Record<StrategyChannel, string> = {
   DRAW_NO_BET: "Draw no bet",
   WIN_TO_NIL: "Win to nil",
   HALF_TIME_FULL_TIME: "HT/FT",
-  VANTAGE: "Arbitrage",
+  VANTAGE: "Avis IA",
 };
 
 const CHANNEL_DESCRIPTION_KEY: Record<StrategyChannel, string> = {
@@ -206,7 +206,9 @@ const REASON_LABEL_KEY: Record<string, string> = {
 type Translator = (key: string) => string;
 
 export function channelLabel(channel: StrategyChannel, locale: string): string {
-  return locale === "en" ? CHANNEL_LABEL_EN[channel] : formatChannelForDisplayFr(channel);
+  return locale === "en"
+    ? CHANNEL_LABEL_EN[channel]
+    : formatChannelForDisplayFr(channel);
 }
 
 export function channelDescription(

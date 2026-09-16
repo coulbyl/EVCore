@@ -7,11 +7,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildMlShadowFeatures } from "./ml-features";
+import { BETTING_ENGINE_CONFIG_VERSION } from "./engine-version";
 import type { DeterministicFeatures } from "./deterministic-score";
 import Decimal from "decimal.js";
 import { computePoissonMarkets } from "../probability";
 
 type Contract = {
+  engineConfigVersion: string;
   topFiveCompetitions: string[];
   internationalCompetitions: string[];
   liveShadowChannels: string[];
@@ -49,6 +51,27 @@ function leagueTierOf(competitionCode: string): string {
 }
 
 describe("ml-features league_tier — drift guard vs extract.py", () => {
+  it("shares the engine version with the training contract", () => {
+    expect(BETTING_ENGINE_CONFIG_VERSION).toBe(contract.engineConfigVersion);
+  });
+  it("computes the live market delta from the same fair probability contract", () => {
+    const result = buildMlShadowFeatures({
+      pick: {
+        market: "ONE_X_TWO",
+        probability: new Decimal(0.6),
+        ev: new Decimal(0.1),
+        odds: new Decimal(2),
+      },
+      channel: "VALUE",
+      deterministicScore: new Decimal(0.5),
+      probabilities,
+      features,
+      competitionCode: "PL",
+      marketFairProbability: 0.52,
+    });
+    expect(result.delta_p).toBeCloseTo(0.08, 12);
+  });
+
   it.each(contract.topFiveCompetitions)(
     "%s classifies as top5 (matches extract.py _TOP5_COMPETITIONS)",
     (code) => {

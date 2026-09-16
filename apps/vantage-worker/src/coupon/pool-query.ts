@@ -1,8 +1,8 @@
 import { prisma } from "@evcore/db";
 import {
   BetStatus,
+  BETTING_ENGINE_CONFIG_VERSION,
   CHANNEL_DECISION_STATUS,
-  DRAW_STAKED_LEAGUES,
   Market,
   POOL_ELIGIBLE_CHANNELS,
   calculateEV,
@@ -21,7 +21,10 @@ import {
   type FullOddsSnapshot,
   type StrategyChannel,
 } from "@evcore/analysis-core";
-import { findBestPricesBatch, findLatestOddsSnapshotsBatch } from "./odds-batch";
+import {
+  findBestPricesBatch,
+  findLatestOddsSnapshotsBatch,
+} from "./odds-batch";
 
 // Mirrors apps/backend's CouponPoolService.getPoolForRange
 // (apps/backend/src/modules/coupon/coupon-pool.service.ts) — same query,
@@ -34,7 +37,7 @@ import { findBestPricesBatch, findLatestOddsSnapshotsBatch } from "./odds-batch"
 // into the LLM-facing prompt step (§9 point 1-2), not here.
 
 export type GetPoolOpts = {
-  /** Restrict DRAW legs to DRAW_STAKED_LEAGUES — see that constant. */
+  /** Include DRAW as an ordinary candidate after common calibration. */
   includeDraw?: boolean;
   enforceAvoid?: boolean;
   /** Stake the FADE regime's opposite pick instead of dropping it. */
@@ -146,11 +149,17 @@ export async function getPoolForRange(
   toDate: string,
   opts: GetPoolOpts = {},
 ): Promise<PoolCandidate[]> {
-  const dayStart = opts.scheduledAtWindow?.from ?? new Date(`${fromDate}T00:00:00.000Z`);
-  const dayEnd = opts.scheduledAtWindow?.to ?? new Date(`${toDate}T23:59:59.999Z`);
+  const asOf = new Date();
+  const dayStart =
+    opts.scheduledAtWindow?.from ?? new Date(`${fromDate}T00:00:00.000Z`);
+  const dayEnd =
+    opts.scheduledAtWindow?.to ?? new Date(`${toDate}T23:59:59.999Z`);
 
   const fixtures = await prisma.fixture.findMany({
-    where: { scheduledAt: { gte: dayStart, lte: dayEnd } },
+    where: {
+      status: "SCHEDULED",
+      scheduledAt: { gte: dayStart, gt: asOf, lte: dayEnd },
+    },
     select: {
       id: true,
       scheduledAt: true,
@@ -166,6 +175,13 @@ export async function getPoolForRange(
         },
       },
       modelRuns: {
+        where: {
+          analyzedAt: { lte: asOf },
+          createdAt: { lte: asOf },
+          channelDecisions: {
+            some: { configVersion: BETTING_ENGINE_CONFIG_VERSION },
+          },
+        },
         select: {
           id: true,
           finalScore: true,
@@ -174,6 +190,7 @@ export async function getPoolForRange(
           channelDecisions: {
             where: {
               channel: { in: [...POOL_ELIGIBLE_CHANNELS] },
+              configVersion: BETTING_ENGINE_CONFIG_VERSION,
               status: CHANNEL_DECISION_STATUS.SELECTED,
             },
             select: {
@@ -205,7 +222,7 @@ export async function getPoolForRange(
 
   const oddsTargets = fixtures
     .filter((f) => f.modelRuns[0])
-    .map((f) => ({ fixtureId: f.id, cutoff: f.scheduledAt }));
+    .map((f) => ({ fixtureId: f.id, cutoff: asOf }));
   const [oddsSnapshots, bestPrices] = await Promise.all([
     findLatestOddsSnapshotsBatch(oddsTargets),
     findBestPricesBatch(oddsTargets),
@@ -229,8 +246,7 @@ export async function getPoolForRange(
     const finalScore = run?.finalScore ? Number(run.finalScore) : null;
 
     const dataCoverage = feat !== undefined ? computeDataCoverage(feat) : null;
-    const shadowConflict =
-      feat !== undefined ? readShadowConflict(feat) : null;
+    const shadowConflict = feat !== undefined ? readShadowConflict(feat) : null;
     const offensiveBalance =
       feat !== undefined
         ? (extractEvaContextFromFeatures(feat).offensiveBalance
@@ -280,11 +296,7 @@ export async function getPoolForRange(
         const sel = decision.selections[0];
         if (!sel || sel.odds === null) continue;
 
-        if (
-          decision.channel === STRATEGY_CHANNEL.DRAW &&
-          (!opts.includeDraw ||
-            !(DRAW_STAKED_LEAGUES as readonly string[]).includes(comp))
-        ) {
+        if (decision.channel === STRATEGY_CHANNEL.DRAW && !opts.includeDraw) {
           continue;
         }
         const selOdds = Number(sel.odds);
@@ -327,13 +339,16 @@ export async function getPoolForRange(
                 : null;
         }
 
-        const fair = snapshot ? computeMarketFair(market, pick, snapshot) : null;
+        const fair = snapshot
+          ? computeMarketFair(market, pick, snapshot)
+          : null;
         const bestOdds = bestPrices.get(`${f.id}:${market}:${pick}`);
-        const stakeOdds =
-          bestOdds !== undefined && bestOdds > legOdds ? bestOdds : legOdds;
+        if (bestOdds === undefined) continue;
+        const stakeOdds = bestOdds.odds;
 
         picks.push({
           ...base,
+          featureSnapshot: { ...base.featureSnapshot, quote: bestOdds },
           canal: decision.channel,
           market,
           pick,
@@ -367,6 +382,10 @@ export async function getPoolForRange(
           });
           if (!resolved) continue;
           const { canal, probability, oddsSnapshot: legOdds } = resolved;
+          const quote = bestPrices.get(
+            `${f.id}:${evaluated.market}:${evaluated.pick}`,
+          );
+          if (!quote) continue;
           const fair = snapshot
             ? computeMarketFair(
                 evaluated.market as Market,
@@ -376,12 +395,13 @@ export async function getPoolForRange(
             : null;
           picks.push({
             ...base,
+            featureSnapshot: { ...base.featureSnapshot, quote },
             canal,
             market: evaluated.market,
             pick: evaluated.pick,
             probability,
-            legEV: calculateEV(probability, legOdds).toNumber(),
-            oddsSnapshot: legOdds,
+            legEV: calculateEV(probability, quote.odds).toNumber(),
+            oddsSnapshot: quote.odds,
             referenceOdds: legOdds,
             pMarketFair: fair?.pMarketFair ?? null,
             bookmakerMargin: fair?.bookmakerMargin ?? null,

@@ -110,6 +110,36 @@ describe("PointInTimeLoader.loadTeamStats", () => {
   });
 });
 
+describe("PointInTimeLoader.loadCouponSelections", () => {
+  it("bounds runs, decisions and selections by asOf and excludes VANTAGE", async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const loader = new PointInTimeLoader({
+      fixture: { findMany },
+    } as unknown as PrismaClient);
+
+    await loader.loadCouponSelections({
+      from: new Date("2026-08-09T00:00:00.000Z"),
+      to: new Date("2026-08-09T23:59:59.999Z"),
+      asOf: ASOF,
+    });
+
+    const query = findMany.mock.calls[0]?.[0];
+    expect(query.where.scheduledAt.gt).toEqual(ASOF);
+    expect(query.select.modelRuns.where.analyzedAt.lte).toEqual(ASOF);
+    expect(query.select.modelRuns.where.createdAt.lte).toEqual(ASOF);
+    expect(
+      query.select.modelRuns.select.channelDecisions.where.createdAt.lte,
+    ).toEqual(ASOF);
+    expect(
+      query.select.modelRuns.select.channelDecisions.where.channel.in,
+    ).not.toContain("VANTAGE");
+    expect(
+      query.select.modelRuns.select.channelDecisions.select.selections.where
+        .createdAt.lte,
+    ).toEqual(ASOF);
+  });
+});
+
 describe("PointInTimeLoader.loadH2HLegs / loadH2HScore", () => {
   function makeFixtureClient(rows: unknown[]): PrismaClient {
     const findMany = vi.fn().mockResolvedValue(rows);

@@ -8,6 +8,7 @@ import {
 import { formatKickoff } from "@/domains/fixture/helpers/fixture";
 import type { CouponProposalDto } from "@/domains/coupon/types/coupon";
 import { couponClassMeta } from "@/domains/coupon/helpers/coupon-class";
+import { couponSourceMeta } from "@/domains/coupon/helpers/coupon-source";
 import { useRecordCouponView } from "@/domains/coupon/use-cases/use-coupons";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import {
@@ -49,9 +50,9 @@ export function CouponCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [coupon.id]);
   const displayResult =
-    coupon.result === "WON"
+    coupon.result === "WON" || coupon.result === "PARTIAL"
       ? "WON"
-      : coupon.result === "LOST" || coupon.result === "PARTIAL"
+      : coupon.result === "LOST"
         ? "LOST"
         : null;
 
@@ -141,6 +142,7 @@ export function CouponCard({
       jointProbability={coupon.jointProbability}
       signalScore={coupon.signalScore}
       couponClass={couponClassMeta(coupon.couponClass)}
+      source={couponSourceMeta(coupon.source)}
       reasoning={reasonDetails}
       batch={coupon.batch}
       viewerCount={coupon.viewerCount}

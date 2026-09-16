@@ -1,5 +1,6 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
+import { RiskService } from '../../risk/risk.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { FixtureStatus } from '@evcore/db';
 import { createLogger } from '@utils/logger';
@@ -19,6 +20,13 @@ import { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 export type PendingBetsSettlementJobData = Record<string, never>;
+
+/**
+ * Nom du job déclenchant le balayage du garde-fou de ROI plutôt que le
+ * règlement des paris. Même file, deux cadences : le règlement passe toutes
+ * les demi-heures, le balayage une fois par jour.
+ */
+export const RISK_MARKET_SWEEP_JOB = 'risk-market-sweep';
 
 const logger = createLogger('pending-bets-settlement-worker');
 
@@ -40,11 +48,17 @@ export class PendingBetsSettlementWorker extends WorkerHost {
     private readonly bettingEngineService: BettingEngineService,
     private readonly adjustmentService: AdjustmentService,
     private readonly rollingStatsService: RollingStatsService,
+    private readonly riskService: RiskService,
   ) {
     super();
   }
 
-  async process(_job: Job<PendingBetsSettlementJobData>): Promise<void> {
+  async process(job: Job<PendingBetsSettlementJobData>): Promise<void> {
+    if (job.name === RISK_MARKET_SWEEP_JOB) {
+      await this.riskService.checkAllMarkets();
+      return;
+    }
+
     const fixtures = await this.fixtureService.findPendingSettlementFixtures(
       new Date(),
     );

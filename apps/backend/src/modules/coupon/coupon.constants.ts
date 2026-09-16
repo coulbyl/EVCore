@@ -72,18 +72,10 @@ export const COUPON_PARAMS = {
 } as const;
 
 /**
- * Discriminant du batch intraday sur `coupon_proposal.signalWindowDays` —
- * même colonne/même rôle que `COUPON_PARAMS.legacySignalWindowDays` (38,
- * batch du soir), valeur distincte pour que le batch intraday
- * (`apps/vantage-worker`'s `runIntradayCouponGeneration`) coexiste avec celui
- * du soir sur la même `forDate`/classe/`rank` au lieu de l'écraser. Copié
- * depuis `apps/vantage-worker/src/coupon/persist-coupon-proposal.ts`'s
- * `INTRADAY_SIGNAL_WINDOW_DAYS` plutôt qu'importé — même raison que
- * `legacySignalWindowDays` y est dupliqué dans l'autre sens : ce discriminant
- * n'a aucune raison de vivre dans analysis-core, et ni cette app ni
- * vantage-worker ne dépendent l'une de l'autre. Utilisé uniquement pour
- * distinguer les deux batches à l'affichage (`coupon.service.ts`) —
- * `apps/backend` ne génère plus aucun coupon.
+ * Ancien discriminant du batch intraday. Les propositions créées sous la
+ * politique unifiée enregistrent désormais leur passage initial dans
+ * `reasoning.generationPass`; cette valeur reste nécessaire pour décoder les
+ * lignes historiques qui précèdent cette provenance.
  */
 export const INTRADAY_SIGNAL_WINDOW_DAYS = 39;
 
@@ -275,3 +267,53 @@ export {
 // LEGACY_LONGSHOT_MIN_ODDS (badge "Expérimental" pour les anciens profils
 // LONGSHOT) retiré 2026-09-03 à la demande de l'utilisateur — plus besoin,
 // retiré aussi côté frontend.
+
+/**
+ * Politique du compositeur déterministe par le prix.
+ *
+ * Il vise la MÊME cote que la politique LLM (5–15, 5 jambes) : deux
+ * générateurs qui ne visent pas la même chose ne sont pas comparables, et les
+ * faire tourner en parallèle n'aurait alors aucun intérêt.
+ */
+/**
+ * Valeur écrite dans `coupon_proposal.signalWindowDays` par le compositeur.
+ *
+ * Zéro, parce que ce générateur n'a pas de fenêtre de signal — et parce que la
+ * colonne n'en décrit plus une depuis 2026-08-22 (38 = passe du soir du LLM,
+ * 39 = ancien lot intraday). Le vrai discriminant est désormais la colonne
+ * `source` ; ce 0 rend simplement les lignes reconnaissables à l'œil en SQL
+ * brut.
+ */
+export const PRICE_COMPOSER_SIGNAL_WINDOW_DAYS = 0;
+
+export const PRICE_COMPOSER_POLICY = {
+  version: 'price-composer-5-15-v1',
+  /**
+   * Jambes minimales dans une cellule (marché × tranche) avant de la juger,
+   * puis dans un marché entier. Calés sur le backtest du 2026-09-16 : à
+   * 300 jambes, la borne basse du marché Double Chance atteignait 1,0932 — le
+   * marché entier paraissait rentable sur son seul historique récent.
+   */
+  minCellLegs: 400,
+  minMarketLegs: 2_000,
+  /**
+   * Aucune jambe n'est créditée d'un retour attendu supérieur à 1.
+   *
+   * Résultat, pas précaution : sur 1,67 M de jambes réglées, les 17 marchés
+   * coûtent de 4,4 % à 12,2 % et aucun n'est positif. Une estimation au-dessus
+   * de 1 est un accident de fenêtre, et un compositeur qui maximise le retour
+   * attendu se rue exactement dessus.
+   */
+  maxCreditedReturn: 1,
+  /**
+   * Plancher de refus, sur le retour attendu du coupon entier.
+   *
+   * À 0, le compositeur propose dès que la cible est atteignable. C'est
+   * délibéré au démarrage : le plafond mesuré aujourd'hui est 0,9616, donc un
+   * plancher à 1 refuserait chaque jour et n'apprendrait rien. Il devient le
+   * bouton à remonter dès qu'un marché assez peu taxé entre dans le vivier —
+   * l'Asian Handicap est le seul candidat mesuré.
+   */
+  minExpectedReturn: 0,
+  maxPerCompetition: 3,
+} as const;

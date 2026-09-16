@@ -1,14 +1,18 @@
 import { Badge } from "@evcore/ui";
+import { useTranslations } from "next-intl";
 
 export type ResultValue = "PENDING" | "WON" | "LOST" | "VOID";
 
 const RESULT_META: Record<
   Exclude<ResultValue, "PENDING">,
-  { label: string; variant: "success" | "destructive" | "neutral" }
+  {
+    labelKey: "won" | "lost" | "void";
+    variant: "success" | "destructive" | "neutral";
+  }
 > = {
-  WON: { label: "Gagné", variant: "success" },
-  LOST: { label: "Perdu", variant: "destructive" },
-  VOID: { label: "Annulé", variant: "neutral" },
+  WON: { labelKey: "won", variant: "success" },
+  LOST: { labelKey: "lost", variant: "destructive" },
+  VOID: { labelKey: "void", variant: "neutral" },
 };
 
 // DRAW_NO_BET's VOID is a stake refund on a drawn match, not a genuine
@@ -29,18 +33,19 @@ export function ResultBadge({
   finished?: boolean;
   market?: string;
 }) {
+  const t = useTranslations("resultBadge");
   if (result === null || result === "PENDING") {
     return finished ? (
       <Badge variant="outline" className="text-[0.62rem]">
-        Terminé
+        {t("settlementPending")}
       </Badge>
     ) : null;
   }
   const meta = RESULT_META[result];
   const label =
     result === "VOID" && market !== undefined && REFUND_MARKETS.has(market)
-      ? "Remboursé"
-      : meta.label;
+      ? t("refunded")
+      : t(meta.labelKey);
   return (
     <Badge variant={meta.variant} className="text-[0.62rem]">
       {label}

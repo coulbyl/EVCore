@@ -36,21 +36,21 @@ GET /analysis-sheet?from=2026-09-11&to=2026-09-13&schemaVersion=2
 `schemaVersion=2` est **obligatoire** pour obtenir la v2 : sans lui, la réponse est la
 v1 à l'identique, pour qu'aucun script existant ne change de comportement.
 
-| Paramètre | Défaut | Effet |
-| --- | --- | --- |
-| `schemaVersion` | `1` | `2` pour la fiche enrichie |
-| `status` | tous | Statuts conservés, ex. `status=SCHEDULED` |
-| `markets` | tous | Marchés conservés dans les picks, ex. `markets=ONE_X_TWO,BTTS` |
-| `excludeChannels` | aucun | Canaux retirés, ex. `excludeChannels=CORRECT_SCORE` |
-| `compact` | `false` | Retire `history` et les picks évalués hors marchés cibles |
-| `includeContext` | `true` | Coupé automatiquement au-delà de 7 jours de plage |
-| `includeCalibration` | `true` | Bloc `calibration` (~8 s : parcourt tout l'historique) |
-| `includeLegPool` | `true` | Bloc `legPool` |
-| `legPoolMinOdds` | `1.25` | Cote minimale d'une sélection |
-| `legPoolMarkets` | les 7 | Sous-ensemble des marchés cibles |
-| `legPoolMinCoverage` | `0.66` | Couverture minimale des signaux |
-| `legPoolExcludeFlags` | `true` | Écarte les matchs drapeautés AVOID / alerte de calibration |
-| `legPoolStatus` | `SCHEDULED` | Statut des matchs retenus |
+| Paramètre             | Défaut      | Effet                                                          |
+| --------------------- | ----------- | -------------------------------------------------------------- |
+| `schemaVersion`       | `1`         | `2` pour la fiche enrichie                                     |
+| `status`              | tous        | Statuts conservés, ex. `status=SCHEDULED`                      |
+| `markets`             | tous        | Marchés conservés dans les picks, ex. `markets=ONE_X_TWO,BTTS` |
+| `excludeChannels`     | aucun       | Canaux retirés, ex. `excludeChannels=CORRECT_SCORE`            |
+| `compact`             | `false`     | Retire `history` et les picks évalués hors marchés cibles      |
+| `includeContext`      | `true`      | Coupé automatiquement au-delà de 7 jours de plage              |
+| `includeCalibration`  | `true`      | Bloc `calibration` (~8 s : parcourt tout l'historique)         |
+| `includeLegPool`      | `true`      | Bloc `legPool`                                                 |
+| `legPoolMinOdds`      | `1.25`      | Cote minimale d'une sélection                                  |
+| `legPoolMarkets`      | les 7       | Sous-ensemble des marchés cibles                               |
+| `legPoolMinCoverage`  | `0.66`      | Couverture minimale des signaux                                |
+| `legPoolExcludeFlags` | `true`      | Écarte les matchs drapeautés AVOID / alerte de calibration     |
+| `legPoolStatus`       | `SCHEDULED` | Statut des matchs retenus                                      |
 
 Exemple — le pool du jour, fiche allégée :
 
@@ -83,14 +83,14 @@ limites connues, énoncées plutôt que masquées).
 
 Données brutes d'avant-match, par équipe (`home`, `away`) :
 
-| Champ | Contenu |
-| --- | --- |
-| `form` | 5 et 10 derniers matchs toutes compétitions, plus les 5 derniers dans le même rôle. Série W/D/L, points, buts, `sampleSize` réel |
-| `goals` | Saison en cours et précédente, scindées domicile/extérieur : moyennes de buts, taux Over 1.5 / Over 2.5 / BTTS, clean sheet, failed to score, **victoire en au moins une mi-temps** |
-| `xg` | xG pour/contre sur 10 matchs, `matchesWithXg`, `source` |
-| `standing` | Classement **dérivé des matchs terminés**, arrêté à la veille du coup d'envoi |
-| `schedule` | Jours de repos, compétition du dernier match, densité ±4 jours, match d'une autre compétition dans la fenêtre |
-| `availability` | Compteur de blessés — **aucun détail joueur n'existe en base** |
+| Champ          | Contenu                                                                                                                                                                             |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `form`         | 5 et 10 derniers matchs toutes compétitions, plus les 5 derniers dans le même rôle. Série W/D/L, points, buts, `sampleSize` réel                                                    |
+| `goals`        | Saison en cours et précédente, scindées domicile/extérieur : moyennes de buts, taux Over 1.5 / Over 2.5 / BTTS, clean sheet, failed to score, **victoire en au moins une mi-temps** |
+| `xg`           | xG pour/contre sur 10 matchs, `matchesWithXg`, `source`                                                                                                                             |
+| `standing`     | Classement **dérivé des matchs terminés**, arrêté à la veille du coup d'envoi                                                                                                       |
+| `schedule`     | Jours de repos, compétition du dernier match, densité ±4 jours, match d'une autre compétition dans la fenêtre                                                                       |
+| `availability` | Compteur de blessés — **aucun détail joueur n'existe en base**                                                                                                                      |
 
 Au niveau du match, `context.h2h` : jusqu'à 10 confrontations (date, compétition, lieu,
 score final, score à la mi-temps), leurs agrégats, et l'explicitation complète du scalaire
@@ -107,6 +107,7 @@ Les 7 marchés cibles, toujours les 7 : meilleure cote et cote médiane avec le 
 bookmakers, horodatage du snapshot, probabilité implicite et mouvement de ligne.
 
 **Probabilité implicite** — deux formes distinctes :
+
 - `raw` = `1/cote`, **marge incluse**. C'est la convention du moteur (AVOID,
   market-coherence). Ce n'est pas une probabilité réelle.
 - `deVigged` = marge retirée par **normalisation proportionnelle** sur les issues du
@@ -131,13 +132,13 @@ date la référence — c'est ce champ qui rend le delta interprétable. Signe :
 Reconstruction complète de la chaîne λ. Cinq étapes nommées, dans l'ordre, dont **une
 seule agit sur λ** :
 
-| Étape | Agit sur | Condition |
-| --- | --- | --- |
-| `h2h_lambda_correction` | **λ** | score H2H disponible (n ≥ 3) |
-| `three_way_empirical_blend` | probabilités 1X2 | poids par ligue |
-| `over_under_shrinkage` | probabilités O/U | config par ligue |
-| `h2h_market_signal_shift` | probabilités | signaux H2H disponibles |
-| `congestion_signal_shift` | probabilités | correction active |
+| Étape                       | Agit sur         | Condition                    |
+| --------------------------- | ---------------- | ---------------------------- |
+| `h2h_lambda_correction`     | **λ**            | score H2H disponible (n ≥ 3) |
+| `three_way_empirical_blend` | probabilités 1X2 | poids par ligue              |
+| `over_under_shrinkage`      | probabilités O/U | config par ligue             |
+| `h2h_market_signal_shift`   | probabilités     | signaux H2H disponibles      |
+| `congestion_signal_shift`   | probabilités     | correction active            |
 
 Le moteur ne persiste que le λ **final** : `base` est reconstruit en inversant la
 correction H2H, exactement inversible hors saturation. `baseDerivation` dit comment

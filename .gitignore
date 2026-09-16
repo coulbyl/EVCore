@@ -44,6 +44,10 @@ apps/backend/logs/
 *.pem
 api-football-doc/
 packages/db/reports/
+# Détail brut du rapport par championnat : 3,5 Mo, soit soixante-dix fois le
+# plus gros rapport suivi, et entièrement régénérable par `report:league`.
+# Le markdown lisible, lui, est versionné dans docs/audits/.
+packages/backtest-core/reports/league-report-v1.json
 combo-labs.txt
 
 # Local API samples — for analysis only, never commit
@@ -61,3 +65,10 @@ model-calibration.json
 backups
 coupon-annonce-*.md
 fiche-evcore-*.json
+
+# Extraction volumineuse de l'espace d'opportunités, régénérable depuis la base
+# (scripts/market-cells/*.sql). Les données Asian Handicap voisines sont au
+# contraire versionnées : API-Football les purge à 7 jours, elles sont
+# irrécupérables une fois perdues.
+packages/backtest-core/reports/market-cells/
+

@@ -74,10 +74,10 @@ describe("scoreCandidates", () => {
   });
 
   it("leaves legEV null when there is no real odds", () => {
-    const [scored] = scoreCandidates(
-      [makeCandidate({ oddsSnapshot: null })],
-      { channelReliability: {}, pooledReliability: IDENTITY },
-    );
+    const [scored] = scoreCandidates([makeCandidate({ oddsSnapshot: null })], {
+      channelReliability: {},
+      pooledReliability: IDENTITY,
+    });
     expect(scored?.legEV).toBeNull();
   });
 

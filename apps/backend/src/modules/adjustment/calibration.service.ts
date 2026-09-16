@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { BetStatus, ChannelDecisionStatus, Market } from '@evcore/db';
+import {
+  BetStatus,
+  ChannelDecisionStatus,
+  Market,
+  prematchCohortSql,
+} from '@evcore/db';
 import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
 import {
@@ -8,6 +13,7 @@ import {
 } from './adjustment.constants';
 import {
   fitReliability,
+  BETTING_ENGINE_CONFIG_VERSION,
   shrinkTowardPooled,
   type ChannelReliability,
   type ChannelReliabilityMap,
@@ -176,17 +182,16 @@ export class CalibrationService {
   async computeChannelReliability(
     options: { asOf?: Date } = {},
   ): Promise<{ byChannel: ChannelReliabilityMap; pooled: ChannelReliability }> {
+    const cohort = await this.prisma.client.$queryRaw<{ id: string }[]>(
+      prematchCohortSql({
+        asOf: options.asOf ?? new Date(),
+        configVersion: BETTING_ENGINE_CONFIG_VERSION,
+      }),
+    );
     const selections = await this.prisma.client.channelSelection.findMany({
       where: {
+        id: { in: cohort.map((row) => row.id) },
         result: { in: [BetStatus.WON, BetStatus.LOST] },
-        rank: 1,
-        odds: { not: null },
-        channelDecision: {
-          status: ChannelDecisionStatus.SELECTED,
-          ...(options.asOf
-            ? { modelRun: { fixture: { scheduledAt: { lt: options.asOf } } } }
-            : {}),
-        },
       },
       select: {
         probability: true,

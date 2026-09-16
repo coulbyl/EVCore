@@ -5,6 +5,7 @@ import { formatDateUtc, tomorrowUtc } from '@utils/date.utils';
 import { BULLMQ_QUEUES } from '@config/etl.constants';
 import { BettingEngineService } from '../../betting-engine/betting-engine.service';
 import { NotificationService } from '../../notification/notification.service';
+import { CouponPriceGenerationService } from '../../coupon/coupon-price-generation.service';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 export type BettingEngineAnalysisJobData = { date?: string };
@@ -16,6 +17,7 @@ export class BettingEngineAnalysisWorker extends WorkerHost {
   constructor(
     private readonly bettingEngineService: BettingEngineService,
     private readonly notification: NotificationService,
+    private readonly couponPriceGeneration: CouponPriceGenerationService,
   ) {
     super();
   }
@@ -29,12 +31,27 @@ export class BettingEngineAnalysisWorker extends WorkerHost {
 
     logger.info(result, 'Betting engine daily analysis complete');
 
-    // Used to enqueue an AI_ENGINE 'generate-coupons' job here — retired
-    // 2026-09-03 alongside CouponComposerService. Coupon composition is now
-    // apps/vantage-worker's own LLM pipeline, on its own independent
-    // scheduler (VANTAGE_COUPON_CRON, default 30 minutes after this cron's
-    // default 20:00 UTC) rather than triggered from this job. See
-    // docs/vantage-centric-redesign-2026-09-01.md §9bis.
+    // The LLM coupon pipeline stays on its own scheduler in
+    // apps/vantage-worker (VANTAGE_COUPON_CRON, 30 minutes after this cron's
+    // 20:00 UTC default) — see docs/vantage-centric-redesign-2026-09-01.md
+    // §9bis.
+    //
+    // The price composer is CHAINED here instead of getting its own cron, and
+    // deliberately so: it reads the `evaluatedPicks` this very analysis just
+    // wrote. A second cron would have to guess how long the analysis takes on
+    // a heavy day, and would compose from an empty or half-written pool
+    // whenever it guessed wrong. Chaining makes that race impossible.
+    //
+    // Its failure must never fail the analysis: the analysis is what feeds
+    // every channel, the coupon is one consumer among them.
+    try {
+      const coupon = await this.couponPriceGeneration.generateForDate(
+        new Date(`${date}T00:00:00.000Z`),
+      );
+      logger.info({ date, ...coupon }, 'Price composer pass complete');
+    } catch (error) {
+      logger.error({ date, err: error }, 'Price composer pass failed');
+    }
   }
 
   @OnWorkerEvent('failed')

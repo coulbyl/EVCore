@@ -56,6 +56,7 @@ export function buildMlShadowFeatures(input: {
   probabilities: MatchProbabilities;
   features: DeterministicFeatures;
   competitionCode: string | null;
+  marketFairProbability?: number | null;
 }): MlShadowFeatures {
   const {
     pick,
@@ -69,7 +70,10 @@ export function buildMlShadowFeatures(input: {
     prob_estimated: pick.probability.toNumber(),
     deterministic_score: deterministicScore.toNumber(),
     ev: pick.ev.toNumber(),
-    delta_p: null,
+    delta_p:
+      input.marketFairProbability != null
+        ? pick.probability.toNumber() - input.marketFairProbability
+        : null,
     p_poisson_home: probabilities.home.toNumber(),
     p_poisson_draw: probabilities.draw.toNumber(),
     p_poisson_away: probabilities.away.toNumber(),

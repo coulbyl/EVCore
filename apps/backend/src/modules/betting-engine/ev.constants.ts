@@ -71,6 +71,25 @@ export const CALIBRATION_GATE = {
   MIN_BOOKMAKERS: 2,
 } as const;
 
+/**
+ * Books retenus pour la médiane du garde-fou de cohérence.
+ *
+ * Volontairement figée sur le périmètre d'avant le 2026-09-15, alors que
+ * l'ingestion en collecte désormais onze (ODDS_INGESTION_BOOKMAKER_IDS) : la
+ * médiane pilote `calibration_alert`, donc du staking en production. Élargir
+ * la collecte est sans risque ; élargir cette liste déplace un seuil calibré
+ * et doit être mesuré d'abord, puis décidé explicitement.
+ *
+ * Un book absent de cette liste est stocké mais ignoré par le garde-fou.
+ */
+export const COHERENCE_BOOKMAKERS: readonly string[] = [
+  'Pinnacle',
+  'Bet365',
+  'Unibet',
+  'Marathonbet',
+  'Bwin',
+] as const;
+
 // Same model↔market coherence gate, extended to OVER_UNDER (audit
 // 2026-08-13/15 — post-mortem found a +19pp rawPoisson-vs-calibrated swing
 // on an Under 3.5 leg with no equivalent gate to catch it).

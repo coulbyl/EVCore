@@ -3,6 +3,7 @@
   "ui": "tui",
   "globalEnv": [
     "NODE_ENV",
+    "API_FOOTBALL_KEY",
     "DATABASE_URL",
     "PGBOUNCER_URL",
     "DATABASE_POOL_MAX",

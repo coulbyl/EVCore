@@ -185,7 +185,10 @@ describe("generateCouponSelection", () => {
       dummyClients,
       noopLogger,
     );
-    expect(result).toMatchObject({ outcome: "invalid_response", error: "not_json" });
+    expect(result).toMatchObject({
+      outcome: "invalid_response",
+      error: "not_json",
+    });
   });
 
   it("rejects a compose response with fewer legs than minLegs", async () => {

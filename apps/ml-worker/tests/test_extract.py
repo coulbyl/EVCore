@@ -58,8 +58,8 @@ class TestComplementPicks:
         ]:
             assert extract._complement_picks(market, "YES") == ["YES", "NO"]
 
-    def test_win_either_half_is_home_away(self) -> None:
-        assert extract._complement_picks("TO_WIN_EITHER_HALF", "HOME") == ["HOME", "AWAY"]
+    def test_win_either_half_is_not_an_exclusive_partition(self) -> None:
+        assert extract._complement_picks("TO_WIN_EITHER_HALF", "HOME") == []
 
     def test_bare_over_under_pick(self) -> None:
         assert extract._complement_picks("OVER_UNDER", "OVER") == ["OVER", "UNDER"]
@@ -88,11 +88,13 @@ class TestDevigPick:
         assert 0.0 < p < 1.0
 
     def test_one_sided_market_does_not_invent_certainty(self) -> None:
-        # Only the target leg present → overround = 1/target, so de-vig = 1.0.
-        # Known degenerate case (audit 2026-06-11): callers should expect a
-        # meaningful result only when both legs of a two-way market are priced.
+        # A one-sided quote cannot define an overround-free probability.
         only_target = extract._devig_pick("BTTS", "YES", {"YES": 2.0})
-        assert only_target == pytest.approx(1.0)
+        assert only_target is None
+
+    def test_win_either_half_does_not_invent_complements(self) -> None:
+        odds = {"HOME": 1.6, "AWAY": 2.3}
+        assert extract._devig_pick("TO_WIN_EITHER_HALF", "HOME", odds) is None
 
     def test_missing_target_returns_none(self) -> None:
         assert extract._devig_pick("BTTS", "YES", {"NO": 2.0}) is None

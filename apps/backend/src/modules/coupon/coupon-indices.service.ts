@@ -185,7 +185,9 @@ export class CouponIndicesService {
         odds:
           c.realizedOdds !== null
             ? Number(c.realizedOdds)
-            : Number(c.combinedOdds),
+            : c.result === 'WON'
+              ? Number(c.combinedOdds)
+              : null,
       }));
     }
 

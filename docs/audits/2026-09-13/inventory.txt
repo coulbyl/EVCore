@@ -1,0 +1,170 @@
+Pager usage is off.
+BEGIN
+SET
+ database |          observed_at
+----------+-------------------------------
+ evcore   | 2026-09-13 22:41:29.291036+00
+(1 row)
+
+    phase    | runs  | analyzed_after_kickoff | recorded_after_kickoff |    first_fixture    |    last_fixture
+-------------+-------+------------------------+------------------------+---------------------+---------------------
+ ADVANCE     | 56355 |                  39055 |                  39055 | 2019-06-11 05:15:00 | 2026-10-29 03:00:00
+ PRE_KICKOFF |  6128 |                     35 |                     35 | 2026-06-30 01:00:00 | 2026-09-16 17:00:00
+(2 rows)
+
+     source      | runs  |           min           |           max
+-----------------+-------+-------------------------+-------------------------
+ POISSON_MAIN    | 62107 | 2026-06-30 13:26:17.183 | 2026-09-13 22:00:07.203
+ UNKNOWN         |   192 | 2026-06-30 14:10:48.42  | 2026-08-26 21:00:17.094
+ FRI_ELO_POISSON |   112 | 2026-06-30 14:10:48.467 | 2026-06-30 14:10:52.919
+ ODDS_DEVIG      |    72 | 2026-06-30 14:10:49.031 | 2026-06-30 14:10:52.873
+(4 rows)
+
+               key               | count
+---------------------------------+-------
+ lambdaAway                      | 62483
+ shadow_lineups                  | 62483
+ shadow_lineMovement             | 62483
+ candidatePicks                  | 62483
+ shadow_injuries                 | 62483
+ shadow_h2h                      | 62483
+ shadow_congestion               | 62483
+ probabilities                   | 62483
+ predictionSource                | 62483
+ lambdaHome                      | 62483
+ evaluatedPicks                  | 62483
+ lambdaFloorHit                  | 62483
+ xg                              | 62107
+ homeDrawRate                    | 62107
+ performanceDomExt               | 62107
+ recentForm                      | 62107
+ shadow_ml_corrected_p           | 62107
+ shadow_ml_edge_delta            | 62107
+ volatiliteLigue                 | 62107
+ awayDrawRate                    | 62107
+ shadow_ml_by_channel            | 23379
+ calibration_alert               | 23352
+ shadow_predictions              | 23352
+ rawPoissonProbability           | 22875
+ offensiveBalance                | 22061
+ h2h_correction_applied          | 21398
+ shadow_h2h_btts                 | 21398
+ shadow_h2h_clean_sheet_away     | 21398
+ shadow_h2h_clean_sheet_home     | 21398
+ shadow_h2h_over25               | 21398
+ shadow_h2h_sample_size          | 21398
+ shadow_h2h_win_to_nil_away      | 21398
+ shadow_h2h_win_to_nil_home      | 21398
+ shadow_h2h_scoreline            | 20702
+ shadow_h2h_scoreline_confidence | 20702
+ calibration_alert_over_under    | 16015
+ congestion_correction_applied   | 13933
+ fallbackReason                  |   376
+ eloDelta                        |   376
+ eloHome                         |   376
+ offeredBookmakers               |   376
+ eloAway                         |   376
+ devigBookmaker                  |   376
+ hasAwayElo                      |   376
+ hasMarketOdds                   |   376
+ hasHomeElo                      |   376
+ hasPinnacleOdds                 |   376
+ eloSnapshotAt                   |   376
+ isSeniorNationalFixture         |   376
+(49 rows)
+
+       channel       |    configVersion    | decisions |           min           |           max
+---------------------+---------------------+-----------+-------------------------+-------------------------
+ VALUE               |                     |     62291 | 2026-06-30 13:26:17.2   | 2026-09-13 22:00:07.242
+ SAFE                |                     |     62291 | 2026-06-30 13:26:17.213 | 2026-09-13 22:00:07.243
+ DOMINANT            |                     |     62291 | 2026-06-30 13:26:17.217 | 2026-09-13 22:00:07.209
+ BTTS                |                     |     62291 | 2026-06-30 13:26:17.225 | 2026-09-13 22:00:07.211
+ DRAW                |                     |     62291 | 2026-06-30 13:26:17.233 | 2026-09-13 22:00:07.213
+ GOALS               |                     |     62291 | 2026-06-30 13:26:17.239 | 2026-09-13 22:00:07.214
+ FIRST_HALF          |                     |     13933 | 2026-08-23 00:12:32.756 | 2026-09-13 22:00:07.232
+ DOUBLE_CHANCE       |                     |     13933 | 2026-08-23 00:12:32.761 | 2026-09-13 22:00:07.234
+ CONSENSUS           |                     |     62291 | 2026-06-30 13:26:17.249 | 2026-09-13 22:00:07.247
+ AVOID               |                     |     62291 | 2026-06-30 13:26:17.253 | 2026-09-13 22:00:07.25
+ CORRECT_SCORE       |                     |     62291 | 2026-06-30 13:26:17.246 | 2026-09-13 22:00:07.227
+ CLEAN_SHEET         |                     |     22038 | 2026-07-19 14:49:05.981 | 2026-09-13 22:00:07.216
+ TEAM_TOTAL          |                     |     22038 | 2026-07-19 14:49:05.984 | 2026-09-13 22:00:07.22
+ WIN_EITHER_HALF     |                     |     22038 | 2026-07-19 14:49:05.986 | 2026-09-13 22:00:07.224
+ RESULT_TOTAL_GOALS  |                     |     13933 | 2026-08-23 00:12:32.751 | 2026-09-13 22:00:07.229
+ OVER_UNDER_HT       |                     |     13933 | 2026-08-23 00:12:32.754 | 2026-09-13 22:00:07.23
+ RESULT_BTTS         |                     |     13933 | 2026-08-23 00:12:32.764 | 2026-09-13 22:00:07.236
+ DRAW_NO_BET         |                     |     13933 | 2026-08-23 00:12:32.767 | 2026-09-13 22:00:07.238
+ WIN_TO_NIL          |                     |     13933 | 2026-08-23 00:12:32.769 | 2026-09-13 22:00:07.24
+ HALF_TIME_FULL_TIME |                     |     13933 | 2026-08-23 00:12:32.758 | 2026-09-13 22:00:07.233
+ VANTAGE             | vantage-v2-research |       734 | 2026-08-28 06:12:33.564 | 2026-08-29 21:05:07.131
+ VANTAGE             | vantage-v3-context  |      6511 | 2026-08-30 03:23:23.488 | 2026-09-11 17:41:13.684
+(22 rows)
+
+      algorithm      |              segment               | isActive | count |           min           |           max
+---------------------+------------------------------------+----------+-------+-------------------------+-------------------------
+ logistic_regression | ALL                                | f        |     2 | 2026-06-05 00:57:46.676 | 2026-06-08 16:24:51.144
+ xgboost             | ALL                                | f        |    13 | 2026-06-11 12:20:19.449 | 2026-08-31 03:00:36.974
+ xgboost             | ALL                                | t        |     1 | 2026-08-10 03:00:15.127 | 2026-08-10 03:00:15.127
+ logistic_regression | BTTS:BTTS                          | f        |     1 | 2026-06-05 01:00:51.311 | 2026-06-05 01:00:51.311
+ xgboost             | BTTS:BTTS                          | f        |    11 | 2026-06-11 12:21:08.03  | 2026-08-24 03:03:51.907
+ xgboost             | BTTS:BTTS                          | t        |     1 | 2026-08-31 03:05:37.751 | 2026-08-31 03:05:37.751
+ xgboost             | CLEAN_SHEET:CLEAN_SHEET_AWAY       | f        |     5 | 2026-07-27 03:01:59.479 | 2026-08-31 03:08:03.653
+ xgboost             | CLEAN_SHEET:CLEAN_SHEET_AWAY       | t        |     1 | 2026-08-17 03:04:19.318 | 2026-08-17 03:04:19.318
+ xgboost             | CLEAN_SHEET:CLEAN_SHEET_HOME       | f        |     5 | 2026-08-03 03:02:09.328 | 2026-08-31 03:07:28.123
+ xgboost             | CLEAN_SHEET:CLEAN_SHEET_HOME       | t        |     1 | 2026-07-27 03:01:50.4   | 2026-07-27 03:01:50.4
+ xgboost             | DOMINANT:ONE_X_TWO                 | f        |     7 | 2026-07-13 03:00:46.689 | 2026-08-31 03:05:01.642
+ xgboost             | DOMINANT:ONE_X_TWO                 | t        |     1 | 2026-07-06 03:00:48.371 | 2026-07-06 03:00:48.371
+ logistic_regression | DRAW:ONE_X_TWO                     | f        |     1 | 2026-06-05 01:00:20.331 | 2026-06-05 01:00:20.331
+ xgboost             | DRAW:ONE_X_TWO                     | f        |    11 | 2026-06-11 12:20:58.415 | 2026-08-31 03:06:14.579
+ xgboost             | DRAW:ONE_X_TWO                     | t        |     1 | 2026-08-10 03:02:30.776 | 2026-08-10 03:02:30.776
+ xgboost             | GOALS:OVER_UNDER                   | f        |     7 | 2026-07-06 03:01:06.092 | 2026-08-31 03:06:50.845
+ xgboost             | GOALS:OVER_UNDER                   | t        |     1 | 2026-07-27 03:01:41.194 | 2026-07-27 03:01:41.194
+ xgboost             | SAFE:ONE_X_TWO                     | f        |     5 | 2026-08-03 03:01:05.08  | 2026-08-31 03:03:48.324
+ xgboost             | SAFE:ONE_X_TWO                     | t        |     1 | 2026-07-27 03:00:55.119 | 2026-07-27 03:00:55.119
+ xgboost             | SAFE:OVER_UNDER                    | f        |     5 | 2026-07-27 03:01:04.626 | 2026-08-31 03:04:24.782
+ xgboost             | SAFE:OVER_UNDER                    | t        |     1 | 2026-08-10 03:01:45.929 | 2026-08-10 03:01:45.929
+ xgboost             | TEAM_TOTAL:TEAM_TOTAL_AWAY         | f        |     5 | 2026-07-27 03:02:17.352 | 2026-08-31 03:09:14.53
+ xgboost             | TEAM_TOTAL:TEAM_TOTAL_AWAY         | t        |     1 | 2026-08-17 03:04:58.66  | 2026-08-17 03:04:58.66
+ xgboost             | TEAM_TOTAL:TEAM_TOTAL_HOME         | f        |     5 | 2026-08-03 03:02:29.659 | 2026-08-31 03:08:39.785
+ xgboost             | TEAM_TOTAL:TEAM_TOTAL_HOME         | t        |     1 | 2026-07-27 03:02:08.359 | 2026-07-27 03:02:08.359
+ logistic_regression | VALUE:BTTS                         | f        |     2 | 2026-07-27 03:00:37.033 | 2026-08-03 03:00:43.765
+ xgboost             | VALUE:BTTS                         | f        |     3 | 2026-08-10 03:01:01.041 | 2026-08-31 03:02:34.19
+ xgboost             | VALUE:BTTS                         | t        |     1 | 2026-08-24 03:01:45.36  | 2026-08-24 03:01:45.36
+ xgboost             | VALUE:ONE_X_TWO                    | f        |     7 | 2026-07-06 03:00:13.012 | 2026-08-31 03:01:18.513
+ xgboost             | VALUE:ONE_X_TWO                    | t        |     1 | 2026-08-10 03:00:30.444 | 2026-08-10 03:00:30.444
+ logistic_regression | VALUE:OVER_UNDER                   | f        |     2 | 2026-08-10 03:00:46.405 | 2026-08-17 03:01:00.842
+ xgboost             | VALUE:OVER_UNDER                   | f        |     1 | 2026-08-31 03:01:55.851 | 2026-08-31 03:01:55.851
+ xgboost             | VALUE:OVER_UNDER                   | t        |     1 | 2026-08-24 03:01:20.243 | 2026-08-24 03:01:20.243
+ xgboost             | WIN_EITHER_HALF:TO_WIN_EITHER_HALF | f        |     5 | 2026-07-27 03:02:26.356 | 2026-08-31 03:09:50.875
+ xgboost             | WIN_EITHER_HALF:TO_WIN_EITHER_HALF | t        |     1 | 2026-08-10 03:03:59.393 | 2026-08-10 03:03:59.393
+(35 rows)
+
+   source   |  count  |         min         |         max         | recorded_over_one_day_late
+------------+---------+---------------------+---------------------+----------------------------
+ PREMATCH   | 5459746 | 2023-01-27 12:00:00 | 2026-09-13 17:30:14 |                     152784
+ HISTORICAL |  111612 | 2022-03-04 16:19:40 | 2026-07-05 22:24:56 |                     111605
+(2 rows)
+
+ coupons | generated_after_first_kickoff | generated_after_last_kickoff
+---------+-------------------------------+------------------------------
+     619 |                           337 |                          333
+(1 row)
+
+ result | count
+--------+--------
+ WON    | 113582
+ LOST   | 125370
+ VOID   |   3220
+        |   7469
+(4 rows)
+
+ duplicate_fixture_groups
+--------------------------
+                        0
+(1 row)
+
+ duplicate_model_bet_groups
+----------------------------
+                          0
+(1 row)
+
+ROLLBACK

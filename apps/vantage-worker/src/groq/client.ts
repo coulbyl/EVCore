@@ -34,6 +34,8 @@ export type LlmClients = {
   fallbacks: LlmClient[];
 };
 
+export type LlmCompletionMeta = { provider: LlmProvider; model: string };
+
 /** The client for a specific provider, wherever it's configured — primary
  * or fallback. Used by research.ts: situational research is a Groq-only
  * capability (native `groq/compound` web search), but that shouldn't
@@ -124,6 +126,7 @@ export async function requestVantageCompletion(
   systemPrompt: string,
   userPrompt: string,
   logger: Logger,
+  onServed?: (meta: LlmCompletionMeta) => void,
 ): Promise<string> {
   const attempts = [clients.primary, ...clients.fallbacks];
 
@@ -150,6 +153,7 @@ export async function requestVantageCompletion(
           "vantage: verdict served by a fallback provider",
         );
       }
+      onServed?.({ provider: attempt.provider, model: attempt.model });
       return content;
     } catch (err) {
       if (isLastAttempt || !isRetryableProviderError(err)) throw err;

@@ -1,5 +1,8 @@
 import { prisma } from "@evcore/db";
-import { assembleFullOddsSnapshot, type RawOddsRow } from "@evcore/analysis-core";
+import {
+  assembleFullOddsSnapshot,
+  type RawOddsRow,
+} from "@evcore/analysis-core";
 import type { FullOddsSnapshot } from "@evcore/analysis-core";
 
 // Mirrors apps/backend's OddsSnapshotLoader.findLatestOddsSnapshotsBatch/
@@ -19,6 +22,7 @@ const RAW_ODDS_ROW_SELECT = {
   pick: true,
   odds: true,
   snapshotAt: true,
+  createdAt: true,
   homeOdds: true,
   drawOdds: true,
   awayOdds: true,
@@ -33,7 +37,17 @@ export async function findLatestOddsSnapshotsBatch(
   if (requests.length === 0) return result;
 
   const rows = await prisma.oddsSnapshot.findMany({
-    where: { fixtureId: { in: requests.map((r) => r.fixtureId) } },
+    where: {
+      OR: requests.map(({ fixtureId, cutoff }) => ({
+        fixtureId,
+        createdAt: { lte: cutoff },
+        snapshotAt: {
+          gte: new Date(cutoff.getTime() - 6 * 3_600_000),
+          lte: cutoff,
+        },
+        source: "PREMATCH",
+      })),
+    },
     select: RAW_ODDS_ROW_SELECT,
   });
 
@@ -53,8 +67,8 @@ export async function findLatestOddsSnapshotsBatch(
   return result;
 }
 
-// Best price available across every bookmaker for a (fixture, market, pick),
-// as of each fixture's own cutoff — the stake price, distinct from the
+// Best recent recorded price across every bookmaker for a (fixture, market,
+// pick), as of each fixture's own cutoff — distinct from the
 // reference price findLatestOddsSnapshotsBatch resolves (best-ranked single
 // bookmaker, used to measure model↔market divergence, never to stake). See
 // coupon-pool.service.ts's own findBestPricesBatch doc for the measured ROI
@@ -63,19 +77,27 @@ export async function findLatestOddsSnapshotsBatch(
 // Key of the returned map: `${fixtureId}:${market}:${pick}`.
 export async function findBestPricesBatch(
   targets: ReadonlyArray<{ fixtureId: string; cutoff: Date }>,
-): Promise<Map<string, number>> {
+): Promise<Map<string, RecordedQuote>> {
   if (targets.length === 0) return new Map();
 
   const rows = await prisma.oddsSnapshot.findMany({
     where: {
       OR: targets.map(({ fixtureId, cutoff }) => ({
         fixtureId,
-        snapshotAt: { lte: cutoff },
+        createdAt: { lte: cutoff },
+        source: "PREMATCH",
+        snapshotAt: {
+          lte: cutoff,
+          gte: new Date(cutoff.getTime() - 6 * 3_600_000),
+        },
       })),
       odds: { not: null },
       pick: { not: null },
     },
     select: {
+      id: true,
+      bookmaker: true,
+      createdAt: true,
       fixtureId: true,
       market: true,
       pick: true,
@@ -96,14 +118,34 @@ export async function findBestPricesBatch(
     if (seen === undefined || ts > seen) latestAt.set(key, ts);
   }
 
-  const best = new Map<string, number>();
+  const best = new Map<string, RecordedQuote>();
   for (const r of rows) {
     if (!r.pick || r.odds === null) continue;
     const key = `${r.fixtureId}:${r.market}:${r.pick}`;
     if (r.snapshotAt.getTime() !== latestAt.get(key)) continue;
     const odds = Number(r.odds);
     const current = best.get(key);
-    if (current === undefined || odds > current) best.set(key, odds);
+    if (
+      Number.isFinite(odds) &&
+      odds > 1 &&
+      (current === undefined || odds > current.odds)
+    ) {
+      best.set(key, {
+        id: r.id,
+        bookmaker: r.bookmaker,
+        odds,
+        snapshotAt: r.snapshotAt.toISOString(),
+        createdAt: r.createdAt.toISOString(),
+      });
+    }
   }
   return best;
 }
+
+export type RecordedQuote = {
+  id: string;
+  bookmaker: string;
+  odds: number;
+  snapshotAt: string;
+  createdAt: string;
+};

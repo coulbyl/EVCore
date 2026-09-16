@@ -48,3 +48,7 @@ class TestLeagueTierContract:
 class TestSegmentsContract:
     def test_valid_segments_match_contract(self) -> None:
         assert VALID_SEGMENTS == frozenset(_contract["trainingSegments"])
+
+
+def test_engine_config_version_matches_contract() -> None:
+    assert extract.ENGINE_CONFIG_VERSION == _contract["engineConfigVersion"]

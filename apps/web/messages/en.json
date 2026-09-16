@@ -12,6 +12,28 @@
     "back": "Back",
     "seeAll": "See all"
   },
+  "resultBadge": {
+    "won": "Won",
+    "lost": "Lost",
+    "void": "Cancelled",
+    "refunded": "Refunded",
+    "settlementPending": "Settlement pending"
+  },
+  "channelCalibrationStatus": {
+    "within15": "Gap ≤ 15%",
+    "between15And30": "Gap 15–30%",
+    "above30": "Gap > 30%",
+    "notMeasured": "Not measured",
+    "insufficientVolume": "Insufficient volume"
+  },
+  "pwaInstall": {
+    "title": "Install EVCore",
+    "subtitle": "Quick access from your home screen",
+    "iosSafari": "Tap Share, then Add to Home Screen.",
+    "iosOther": "Open EVCore in Safari, tap Share, then Add to Home Screen.",
+    "install": "Install",
+    "close": "Close"
+  },
   "nav": {
     "eva": "EVA",
     "dashboard": "Dashboard",
@@ -33,7 +55,7 @@
     "glossary": "Glossary",
     "technicalDocs": "Technical documentation",
     "formation": "Training",
-    "trackRecord": "Track record",
+    "trackRecord": "Historical measures",
     "notifications": "Notifications",
     "settings": "Settings",
     "replayTour": "Replay guide",
@@ -42,7 +64,7 @@
     "coupons": "Coupons",
     "decisions": "Decisions",
     "decisionsShort": "Decisions",
-    "arbitrage": "Arbitrage"
+    "arbitrage": "AI opinion"
   },
   "decisions": {
     "channels": {
@@ -122,7 +144,7 @@
         "description": "Half-time result combined with the final result."
       },
       "VANTAGE": {
-        "description": "Reads every other channel's decision and its measured reliability on this competition; only proposes a pick when it spots a concrete tension or bias between them."
+        "description": "Reads every other channel's decision and its observed calibration in this competition; only proposes a pick when it finds a concrete tension between them."
       }
     },
     "reasons": {
@@ -164,7 +186,7 @@
       "banner": "Suspect data",
       "tooltipLabel": "Calibration alert",
       "tooltipDetail": "The model and the market strongly disagree on this match (flipped favorite or extreme gap across several bookmakers). This almost always signals corrupted input data rather than an opportunity — the engine automatically excludes every pick of this match from real bets.",
-      "badgeTooltip": "{status, select, GREEN {This channel has been reliable in this competition} ORANGE {This channel needs watching in this competition — its actual hit rate drifts from what it announces} RED {This channel has been unreliable in this competition — its actual hit rate is well below what it announces} other {Reliability not measurable in this competition}} ({n, plural, one {# settled bet} other {# settled bets}})."
+      "badgeTooltip": "{status, select, GREEN {The actual hit rate / announced probability ratio is within 15% of 1} ORANGE {The actual hit rate / announced probability ratio is 15% to 30% away from 1} RED {The actual hit rate / announced probability ratio is more than 30% away from 1} other {Insufficient volume to calculate this gap}} ({n, plural, one {# settled pick} other {# settled picks}})."
     },
     "consensus": {
       "tooltipLabel": "Consensus signal",
@@ -193,19 +215,19 @@
     "helpLink": "How to read a pick"
   },
   "arbitrage": {
-    "title": "Arbitrage",
+    "title": "AI opinion",
     "badge": "AI read",
-    "description": "Reads every other channel's decision and its measured reliability on this competition — only proposes a bet when it spots a real disagreement between them, never just to confirm what they already say. On most matches, the right call is to play nothing.",
+    "description": "Reads every other channel's decision and its observed calibration in this competition. A pick is retained only when a concrete disagreement is found; no pick is a normal outcome.",
     "filters": {
       "all": "All",
-      "play": "Recommended",
-      "noPlay": "No opinion",
+      "play": "Proposed pick",
+      "noPlay": "No pick",
       "label": "Filter"
     },
-    "reasoningLabel": "Arbitrage read",
+    "reasoningLabel": "AI analysis",
     "sourcesLabel": "Sources",
     "decidedAt": "Decided on {date}",
-    "noPlay": "No pick — read only.",
+    "noPlay": "No pick retained.",
     "emptyTitle": "No reads",
     "emptyDescription": "The channel hasn't analyzed anything for this date yet.",
     "emptyFilteredTitle": "Nothing to report",
@@ -281,12 +303,12 @@
       "description": "Every match of the day, filterable by status. The betting index gives you the key stats at a glance."
     },
     "arbitrage": {
-      "title": "Arbitrage",
+      "title": "AI opinion",
       "description": "VANTAGE, our AI channel, only proposes a bet when it spots a real disagreement between the other channels — never just to confirm what they already say. The \"?\" here details its logic."
     },
     "coupons": {
       "title": "Coupons",
-      "description": "Combos generated automatically from the best picks. The \"?\" opens the channel reliability map for what's being combined."
+      "description": "Combos generated automatically from admissible picks. The \"?\" opens calibration measures for the channels being combined."
     },
     "betSlipComposer": {
       "title": "My bet slip",
@@ -301,8 +323,8 @@
       "description": "Your balance, deposits, and net ROI — real money tracking, independent from simulated subscriptions."
     },
     "trackRecord": {
-      "title": "Track record",
-      "description": "What the engine actually produced, channel by channel — never a cherry-picked sample, a negative channel stays shown as such."
+      "title": "Historical measures",
+      "description": "Prematch-cohort picks by channel, with their volume, calibration and simulated return."
     },
     "formation": {
       "title": "Training",
@@ -351,7 +373,7 @@
     "previous": "Previous",
     "next": "Next",
     "related": "Related",
-    "recommended": "Recommended",
+    "recommended": "Discover",
     "library": "Library",
     "allCategories": "All categories",
     "allDifficulties": "All levels",
@@ -506,13 +528,13 @@
       "leaguesSearchPlaceholder": "Search a league or country...",
       "leaguesNoResults": "No league matches.",
       "channelsTitle": "Followed channels",
-      "channelsHint": "Track the measured reliability of the channels you care about — judged on their calibration, meaning their actual results compared to what they announce.",
+      "channelsHint": "See calibration measures for followed channels: actual hit rate compared with announced probability, together with observed volume.",
       "channelsEmpty": "No channel followed yet.",
       "discoverButton": "Discover channels",
       "discoverSearchPlaceholder": "Search a channel...",
       "discoverEmpty": "No channel matches.",
-      "discoverStatusTooltip": "{status, select, GREEN {This channel has been reliable over the last 90 days} ORANGE {This channel is worth watching over the last 90 days — its results diverge from what it announces} RED {This channel has been unreliable over the last 90 days — its actual results are well below what it announces} other {Reliability not measurable over the last 90 days}} ({n, plural, one {# settled bet} other {# settled bets}}).",
-      "discoverTip": "3 to 5 channels are enough to keep recommendations readable.",
+      "discoverStatusTooltip": "{status, select, GREEN {Calibration gap within 15% over 90 days} ORANGE {Calibration gap between 15% and 30% over 90 days} RED {Calibration gap above 30% over 90 days} other {Insufficient volume to measure the gap over 90 days}} ({n, plural, one {# settled pick} other {# settled picks}}).",
+      "discoverTip": "Following 3 to 5 channels keeps this list readable.",
       "follow": "+ Follow",
       "unfollow": "Remove",
       "since": "since {date}",
@@ -565,7 +587,7 @@
     },
     "leagueRanking": {
       "title": "League ranking",
-      "period": "30d · reliability",
+      "period": "30d · calibration",
       "empty": "No data over 30 days."
     },
     "operatorCard": {
@@ -582,27 +604,31 @@
       "notEnoughData": "Not enough data",
       "winForm": "On form",
       "neutral": "Neutral",
-      "toWatch": "To watch",
+      "toWatch": "Gap to review",
       "pendingResult": "pending result",
       "pendingResults": "pending results"
     },
     "todayConfidence": {
       "headline": "Today",
-      "title": "Engine confidence",
-      "confidenceHigh": "High confidence",
-      "confidenceModerate": "Moderate confidence",
-      "confidenceLow": "Low confidence",
-      "confidenceUnknown": "Not enough data",
-      "toFollow": "To follow today",
-      "toAvoid": "To avoid today",
-      "emptyFollow": "No reliable pick today",
-      "emptyAvoid": "No channel to avoid today"
+      "title": "Calibration of active channels",
+      "confidenceHigh": "Gap ≤ 15%",
+      "confidenceModerate": "Gap up to 30%",
+      "confidenceLow": "Gap > 30% detected",
+      "confidenceUnknown": "Insufficient volume",
+      "toFollow": "Picks from channels with a gap ≤ 15%",
+      "toAvoid": "Channels with a gap > 30%",
+      "emptyFollow": "No pick in this band today",
+      "emptyAvoid": "No channel in this band today"
     },
     "engineHealth": {
       "headline": "Engine health",
       "title": "Overview",
+      "globalClose": "Global gap ≤ 15%",
+      "globalModerateGap": "Global gap up to 30%",
+      "globalLargeGap": "Large gap or suspended market",
+      "globalUnknown": "Insufficient volume",
       "globalRatio": "Calibration ratio",
-      "redChannels": "Unreliable channels",
+      "redChannels": "Channels with gap > 30%",
       "activeSuspensions": "Suspended markets",
       "trend": "Trend",
       "trendCaption": "7d vs 30d",
@@ -678,7 +704,7 @@
     "competitions": "ROI by competition",
     "competitionsPeriod": "Last 30 days",
     "backtest": "Backtest",
-    "backtestHint": "Historical simulation used to estimate how reliable the model is. The latest result is kept in this browser.",
+    "backtestHint": "Historical simulation used to measure the model. The latest result is kept in this browser.",
     "runBacktest": "Run backtest",
     "backtestRunning": "Backtest running…",
     "backtestIdle": "Run a simulation to see how the model would have performed on past data.",
@@ -746,7 +772,7 @@
     "tabCalibration": "Model calibration",
     "channelsHint": "Flat-stake ROI per channel × league over settled selections.",
     "calibrationModelHint": "1X2 model quality (Brier / ECE) per league — channel-agnostic.",
-    "tuningHint": "Offline threshold sweep → recommended threshold per league. Advisory: copy into the config manually.",
+    "tuningHint": "Offline threshold sweep → best observed threshold per league. Advisory result to confirm out of sample.",
     "runAnalysis": "Run analysis",
     "analysisWindow": "Window {from} → {to}",
     "analysisWindowPicker": "Window (default: 1 year)",
@@ -763,7 +789,7 @@
     "colAnalyzed": "Analyzed",
     "colEce": "ECE",
     "colCurrent": "Current",
-    "colRecommended": "Recommended",
+    "colRecommended": "Best observed threshold",
     "colRecRoi": "Rec. ROI",
     "colRecSample": "Sample",
     "colSegment": "Line",
