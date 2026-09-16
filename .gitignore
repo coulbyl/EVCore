@@ -44,6 +44,10 @@ apps/backend/logs/
 *.pem
 api-football-doc/
 packages/db/reports/
+# Détail brut du rapport par championnat : 3,5 Mo, soit soixante-dix fois le
+# plus gros rapport suivi, et entièrement régénérable par `report:league`.
+# Le markdown lisible, lui, est versionné dans docs/audits/.
+packages/backtest-core/reports/league-report-v1.json
 combo-labs.txt
 
 # Local API samples — for analysis only, never commit

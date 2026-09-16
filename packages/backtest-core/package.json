@@ -16,7 +16,14 @@
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
     "backtest:deterministic-coupon": "tsx scripts/backtest-deterministic-coupon.ts",
-    "backtest:coverage-check": "tsx scripts/coverage-check.ts"
+    "backtest:league-coupon": "tsx scripts/backtest-league-coupon.ts",
+    "report:league": "tsx scripts/league-report.ts",
+    "backtest:coverage-check": "tsx scripts/coverage-check.ts",
+    "backtest:daily-coupon": "tsx scripts/backtest-daily-coupon.ts",
+    "backtest:generator": "tsx scripts/backtest-generator.ts",
+    "probe:api-football": "tsx --env-file=../../apps/backend/.env scripts/probe-api-football.ts",
+    "probe:margins": "tsx --env-file=../../apps/backend/.env scripts/probe-market-margins.ts",
+    "report:freshness": "tsx scripts/report-odds-freshness.ts"
   },
   "dependencies": {
     "@evcore/analysis-core": "workspace:*",
