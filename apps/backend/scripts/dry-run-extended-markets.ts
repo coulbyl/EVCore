@@ -33,7 +33,12 @@ function sleep(ms: number): Promise<void> {
 
 type Tally = Map<string, { legs: number; books: Set<string> }>;
 
-function record(tally: Tally, market: string, legs: number, book: string): void {
+function record(
+  tally: Tally,
+  market: string,
+  legs: number,
+  book: string,
+): void {
   if (legs === 0) return;
   const entry = tally.get(market) ?? { legs: 0, books: new Set<string>() };
   entry.legs += legs;
@@ -49,7 +54,10 @@ async function main(): Promise<void> {
   }
   try {
     const fixtures = await prisma.fixture.findMany({
-      where: { status: 'FINISHED', scheduledAt: { gte: new Date('2026-09-01') } },
+      where: {
+        status: 'FINISHED',
+        scheduledAt: { gte: new Date('2026-09-01') },
+      },
       orderBy: { scheduledAt: 'desc' },
       take: FIXTURE_COUNT,
       select: { externalId: true },

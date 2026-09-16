@@ -80,7 +80,9 @@ export function runValidationProtocol<TConfig, TSummary>(
     return [{ config, summary, score: input.criterion(summary) }];
   });
 
-  const ranked = [...selection].sort((first, second) => second.score - first.score);
+  const ranked = [...selection].sort(
+    (first, second) => second.score - first.score,
+  );
   const winner = ranked[0] ?? null;
 
   return {

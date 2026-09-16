@@ -1,9 +1,6 @@
 import Decimal from "decimal.js";
 import { describe, expect, it } from "vitest";
-import {
-  closingLineValue,
-  fairProbabilities,
-} from "./closing-line-value";
+import { closingLineValue, fairProbabilities } from "./closing-line-value";
 
 const outcome = (pick: string, odds: string) => ({
   pick,
@@ -111,7 +108,10 @@ describe("closingLineValue", () => {
     const fairLarge = fairProbabilities(large)?.get("HOME");
     // Les deux books voient la même probabilité vraie à moins d'un point.
     expect(
-      fairSerré?.minus(fairLarge ?? 0).abs().toNumber(),
+      fairSerré
+        ?.minus(fairLarge ?? 0)
+        .abs()
+        .toNumber(),
     ).toBeLessThan(0.01);
   });
 

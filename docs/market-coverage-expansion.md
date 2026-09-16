@@ -38,8 +38,56 @@ Extraction dans `apps/backend/src/modules/etl/workers/odds-prematch-sync.worker.
 | Result/Total Goals                 | 25                    | `RESULT_TOTAL_GOALS` — vraie cote bookmaker, pick composé         |
 | Results/Both Teams Score           | 24                    | `RESULT_BTTS` — vraie cote bookmaker, pick composé                |
 
-Bookmakers priorisés : Pinnacle → Bet365 → Unibet → Marathonbet → Bwin
-(`API_FOOTBALL_BOOKMAKERS`).
+Ajoutés le 2026-09-15 (chantier A de [plan-rentabilite.md](plan-rentabilite.md)) :
+
+| Marché                         | `bet.id` | Market enum            | Collecté chez |
+| ------------------------------ | -------- | ---------------------- | ------------- |
+| Asian Handicap                 | 4        | `ASIAN_HANDICAP`       | les 11 books  |
+| Asian Handicap 1ère mi-temps   | 19       | `ASIAN_HANDICAP_HT`    | les 11 books  |
+| Goals Over/Under 2ème mi-temps | 26       | `OVER_UNDER_2H`        | Pinnacle seul |
+| Corners Over/Under             | 45       | `CORNERS`              | Pinnacle seul |
+| Total Corners 1ère mi-temps    | 77       | `CORNERS_HT`           | Pinnacle seul |
+| Cards Over/Under               | 80       | `CARDS`                | Pinnacle seul |
+| Odd/Even                       | 21       | `ODD_EVEN`             | Pinnacle seul |
+| Odd/Even 1ère mi-temps         | 22       | `ODD_EVEN_HT`          | Pinnacle seul |
+| Highest Scoring Half           | 11       | `HIGHEST_SCORING_HALF` | Pinnacle seul |
+| Team To Score First            | 14       | `TEAM_TO_SCORE_FIRST`  | Pinnacle seul |
+
+**Pourquoi cette asymétrie.** Mesure des marges sur 100 rencontres
+([MARKET-MARGINS.md](audits/2026-09-15/MARKET-MARGINS.md)) : l'Asian Handicap
+est à 4,26 % chez Pinnacle contre 4,52 % sur le Match Winner — le seul marché
+ajouté qui soit moins cher que l'existant, donc le seul où le courtage
+multi-books a du sens. Les corners (6,58 %), les cartons (6,44 %) et les
+marchés à issues fixes (jusqu'à 10,94 %) sont plus chers que ce qu'on jouait
+déjà : `REFERENCE_ONLY_MARKETS` les garde chez Pinnacle seul, ce qui les laisse
+ré-étudiables sans payer la démultiplication. À eux seuls ils représentaient
+44 % des 424 lignes par rencontre que la collecte élargie produit, soit 62 M de
+lignes par an.
+
+Un marché sort de `REFERENCE_ONLY_MARKETS` dès qu'une mesure le rend jouable.
+
+**Colonne `line`.** L'Asian Handicap est le premier marché dont la ligne fait
+partie de l'identité du prix : un même `pick` (HOME/AWAY) existe à dix
+handicaps sur la même rencontre. `OddsSnapshot.line` entre donc dans la
+contrainte d'unicité. Les marchés antérieurs gardent leur ligne encodée dans
+`pick` (`OVER_1_5`) et laissent la colonne à NULL — leur unicité est
+inchangée. Les corners tranchent la question : ils cotent des lignes
+**entières** (« Over 9 »), que le découpage historique `right(pick, 3)` ne sait
+pas représenter.
+
+**Convention de signe, vérifiée sur données réelles.** Les deux côtés d'un même
+handicap portent le MÊME signe (« Home -0.5 » / « Away -0.5 »). Les apparier
+en croisé donne des marges de −13 % à −47 %, donc impossibles. Un test fige la
+convention.
+
+Bookmakers collectés (`ODDS_INGESTION_BOOKMAKER_IDS`, Pinnacle en tête car il
+porte le snapshot complet) : Pinnacle → Bet365 → Unibet → Marathonbet → Bwin →
+1xBet → Betano → William Hill → Betfair → BetVictor → SBO.
+
+> ⚠️ `COHERENCE_BOOKMAKERS` (`ev.constants.ts`) reste figé sur les cinq books
+> d'origine. La médiane du garde-fou de cohérence pilote du staking en
+> production : élargir la collecte ne doit pas la déplacer. On collecte large,
+> on décide sur un périmètre stable.
 
 ## Niveau 1 — indispensables, à faire en premier
 

@@ -7,18 +7,18 @@
 > Ouvert le 2026-09-15 (chantier E, tâche `E-12` de
 > [plan-rentabilite.md](plan-rentabilite.md)).
 >
-> **Règle** : on n'inscrit ici que ce qui a été *mesuré*. Une intuition
+> **Règle** : on n'inscrit ici que ce qui a été _mesuré_. Une intuition
 > abandonnée sans mesure n'est pas une piste fermée, c'est une piste non
 > explorée — elle n'a rien à faire dans ce journal.
 
 ## Comment lire les verdicts
 
-| Verdict | Sens |
-| --- | --- |
-| **Fermée** | Mesuré, négatif, avec assez de volume pour trancher. Ne pas rouvrir sans données nouvelles. |
-| **Impossible** | Écarté par l'arithmétique, pas par les données. Aucune donnée future ne changera la conclusion. |
-| **Sans signal** | Mesuré, ni positif ni concluant. Rouvrable si le volume ou la qualité des données change. |
-| **Ouvert** | Effet réel mesuré, insuffisant seul. À combiner ou approfondir. |
+| Verdict         | Sens                                                                                            |
+| --------------- | ----------------------------------------------------------------------------------------------- |
+| **Fermée**      | Mesuré, négatif, avec assez de volume pour trancher. Ne pas rouvrir sans données nouvelles.     |
+| **Impossible**  | Écarté par l'arithmétique, pas par les données. Aucune donnée future ne changera la conclusion. |
+| **Sans signal** | Mesuré, ni positif ni concluant. Rouvrable si le volume ou la qualité des données change.       |
+| **Ouvert**      | Effet réel mesuré, insuffisant seul. À combiner ou approfondir.                                 |
 
 ---
 
@@ -57,7 +57,7 @@ Reproduit l'audit du 2026-08-22 sur données fraîches.
 
 ### Pouvoir discriminant du moteur à cote égale
 
-**Verdict : fermée.** Découpage en terciles d'edge annoncé *à l'intérieur* de
+**Verdict : fermée.** Découpage en terciles d'edge annoncé _à l'intérieur_ de
 chaque tranche de cote — le test correct, que le décile global ne faisait pas.
 Dans les cinq tranches, le tercile de plus fort edge annoncé n'est jamais
 meilleur, et souvent pire. La probabilité du moteur ne porte aucune information
@@ -88,14 +88,14 @@ seul favori le plus marqué. L'edge ne passe pas à l'échelle.
 ### Features point-in-time
 
 **Verdict : ouvert.** 15 features × 5 cibles sur 38 653 rencontres, testées
-contre le *résidu* (réalisé moins implicite), pas contre le résultat.
+contre le _résidu_ (réalisé moins implicite), pas contre le résultat.
 
 Deux répliquent sur les deux moitiés de l'historique :
 
-| Feature | Écart 2023-24 | Écart 2025-26 |
-| --- | --- | --- |
-| xG différentiel élevé → domicile | +2,01 pts | +1,76 pts |
-| Repos court à domicile → over 2,5 | −2,04 pts | −2,06 pts |
+| Feature                           | Écart 2023-24 | Écart 2025-26 |
+| --------------------------------- | ------------- | ------------- |
+| xG différentiel élevé → domicile  | +2,01 pts     | +1,76 pts     |
+| Repos court à domicile → over 2,5 | −2,04 pts     | −2,06 pts     |
 
 Aucune ne couvre seule la marge. Le cumul biais favori + xG atteint +3,30 pts
 en validation, pour un ROI de −0,4 % : à la porte, pas au-delà.
@@ -110,7 +110,7 @@ sans rien apporter.
 ### Plusieurs coupons par jour
 
 **Verdict : fermée** pour l'objectif de régularité. À cote courte, la journée
-n'est positive que si *tous* les tickets gagnent : passer de 1 à 2 tickets fait
+n'est positive que si _tous_ les tickets gagnent : passer de 1 à 2 tickets fait
 tomber les jours gagnants de 72 % à 51 %.
 
 ### Marchés exotiques comme cible de pari (corners, cartons, issues fixes)

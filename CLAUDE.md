@@ -32,6 +32,37 @@ docker exec evcore-postgres psql -U postgres -d evcore -c "YOUR SQL HERE"
 
 Column names in this project use camelCase in Postgres (Prisma default). Always quote them: `"scheduledAt"`, `"couponProposalId"`, `"isCorrect"`, etc.
 
+### Never count `channel_selection` raw
+
+A fixture is re-analysed 5 to 7 times before kickoff and **each run writes its
+own row**. Counting the table directly reports 182 744 selections where 33 197
+real bets exist: standard errors are divided by ~2.4 and fully correlated
+blocks pass for a sample. It has already produced a false result (a channel
+read +6.0% per leg over "1 559 selections"; deduplicated it is 216 bets with a
+confidence interval from −9.9% to +21.2%).
+
+Use the `channel_selection_deduped` view, or reproduce both of its filters:
+
+```sql
+SELECT DISTINCT ON (cd.channel, mr."fixtureId", cs.market, cs.pick) ...
+WHERE mr."analyzedAt" < f."scheduledAt"   -- exclut ~48 000 rétro-analyses
+ORDER BY cd.channel, mr."fixtureId", cs.market, cs.pick,
+         mr."analyzedAt" DESC, cs.id DESC
+```
+
+### Odds carry a line
+
+`odds_snapshot.line` holds the market line where it is part of the price
+identity (Asian Handicap: the same `pick` exists at ten handicaps on one
+fixture). It is in the unique constraint. Markets added before 2026-09-15 keep
+their line encoded in `pick` (`OVER_1_5`) and leave the column null — never
+parse a line out of `pick` for a market that has the column.
+
+`odds_closing_line` and `odds_opening_line` expose the last and first
+pre-kickoff price per fixture, bookmaker, market, pick and line. **Always
+filter on `hoursBeforeKickoff`**: a last snapshot 24 hours out is not a
+closing line.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # Next.js: ALWAYS read docs before coding

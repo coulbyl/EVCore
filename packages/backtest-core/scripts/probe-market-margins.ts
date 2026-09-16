@@ -104,7 +104,7 @@ async function fetchOdds(fixture: number): Promise<Bookmaker[]> {
  */
 function lineOf(value: string): string {
   const match = /(-?\d+(?:\.\d+)?)/.exec(value);
-  return match ? match[1] ?? "" : "";
+  return match ? (match[1] ?? "") : "";
 }
 
 function marginsOf(
@@ -125,9 +125,7 @@ function marginsOf(
   const margins: number[] = [];
   for (const implied of groups.values()) {
     if (implied.length !== outcomes) continue;
-    margins.push(
-      implied.reduce((sum, value) => sum + value, 0) / total - 1,
-    );
+    margins.push(implied.reduce((sum, value) => sum + value, 0) / total - 1);
   }
   return margins;
 }
@@ -141,7 +139,10 @@ async function main(): Promise<void> {
     return;
   }
   const fixtures = JSON.parse(
-    readFileSync(join(SCRIPT_DIR, "..", "reports", "probe-fixtures.json"), "utf8"),
+    readFileSync(
+      join(SCRIPT_DIR, "..", "reports", "probe-fixtures.json"),
+      "utf8",
+    ),
   ) as number[];
   const sample = fixtures.slice(0, SAMPLE_SIZE);
   console.log(`Marge par book et par marché, sur ${sample.length} rencontres.`);
@@ -172,7 +173,13 @@ async function main(): Promise<void> {
       const mean =
         cell.samples.reduce((sum, value) => sum + value, 0) /
         Math.max(cell.samples.length, 1);
-      return { book, market, mean, lines: cell.samples.length, fixtures: cell.fixtures.size };
+      return {
+        book,
+        market,
+        mean,
+        lines: cell.samples.length,
+        fixtures: cell.fixtures.size,
+      };
     })
     .filter((row) => row.lines >= 5)
     .sort((first, second) => first.mean - second.mean);
@@ -276,7 +283,15 @@ ${table(
   coverage.map(([book, markets]) => [book, String(markets.size)]),
 )}
 `;
-  const directory = join(SCRIPT_DIR, "..", "..", "..", "docs", "audits", "2026-09-15");
+  const directory = join(
+    SCRIPT_DIR,
+    "..",
+    "..",
+    "..",
+    "docs",
+    "audits",
+    "2026-09-15",
+  );
   mkdirSync(directory, { recursive: true });
   writeFileSync(join(directory, "MARKET-MARGINS.md"), markdown);
   console.log("\nRapport écrit : docs/audits/2026-09-15/MARKET-MARGINS.md");

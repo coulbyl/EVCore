@@ -147,18 +147,31 @@
   Tous morts ou **anti-prédictifs**.
 
   **Ce qui reste ouvert**, par ordre de valeur :
-  - `[ ]` **Mouvement des cotes** — 16 615 matchs ont des cotes suivies sur
-    ~15h et on ne les a jamais regardées. C'est le prédicteur le mieux établi
-    de la littérature (closing line value) et, surtout, une entrée CAUSALE et
-    non un historique de résultats découpé en tranches — donc d'une autre
-    nature que les six signaux qui ont échoué. Seule piste de découverte
-    encore crédible.
-  - `[ ]` **Déplacer la boucle d'apprentissage au niveau jambe.** Ce n'est pas
+  - `[~]` **Mouvement des cotes** — mesuré le 2026-09-15 sur les 5 735
+    rencontres à relevés multiples : **aucun signal exploitable**, la relation
+    entre dérive et résidu n'est pas monotone, et la cote de clôture reste le
+    meilleur estimateur.
+    Mais le test était biaisé et reste à refaire : on n'avait **aucune ligne de
+    clôture**. Sur 30 jours, le dernier relevé tombait 23,7 h à 26,3 h avant le
+    coup d'envoi chez tous les books, et 0 % des rencontres avaient un prix
+    dans le dernier quart d'heure. Comparer deux books relevés à des heures
+    différentes ne mesurait que du décalage temporel.
+    L'infrastructure manquante est livrée (balayage T−60 et T−10, vues
+    `odds_closing_line` / `odds_opening_line`, fonction `closingLineValue`,
+    rapport `report:freshness`) : **la piste se rouvre dès que le balayage a
+    tourné quelques semaines**. Voir chantier B de
+    [plan-rentabilite.md](docs/plan-rentabilite.md).
+  - `[~]` **Déplacer la boucle d'apprentissage au niveau jambe.** Ce n'est pas
     une piste, c'est une règle de méthode : à 3 coupons/jour (SD 1.821), il
     faut ~2,5 ans pour détecter 10 points de ROI, et 2 points ne le seront
     jamais. Au niveau jambe (SD 1.247, ~7000/mois), 2 points se détectent en
     ~4 mois. Toute décision prise sur un ROI de coupon est prise sur du bruit —
     c'est l'origine de la moitié des reverts de la session précédente.
+    Outillage posé le 2026-09-15 : vue `channel_selection_deduped` (le comptage
+    brut surestime le volume d'un facteur 5 à 7 et divise les erreurs types par
+    ~2,4) et `runValidationProtocol` (grille et critère figés avant exécution,
+    fenêtre de validation évaluée une seule fois). **Reste à basculer la
+    boucle elle-même dessus.**
   - `[ ]` **Meilleure cote multi-bookmaker, étendue au moteur.** Les jambes de
     coupon sont désormais misées au meilleur prix (gain mesuré +0.57%, bien
     moins que les +1.85-3.19% annoncés : cette estimation se comparait à la
@@ -1805,7 +1818,7 @@ par ligue → implémentation → tests → **backtest séparé** → shadow/obs
   utilisateur touché, impossible de confirmer une cause. **En attendant**,
   `AuthService.register` loggait auparavant zéro événement (ni succès ni
   rejet) — ajouté : `register: account created` (info) et `register:
-  rejected — email or username already in use` (warn, avec le champ
+rejected — email or username already in use` (warn, avec le champ
   précis en collision) pour que le prochain signalement soit exploitable.
   Le message client reste volontairement générique ("email OU username")
   pour ne pas permettre l'énumération de comptes par email. Pistes non

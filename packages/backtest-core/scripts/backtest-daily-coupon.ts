@@ -361,7 +361,10 @@ function buildMarginRules(
       coupons.reduce(
         (sum, coupon) =>
           sum +
-          coupon.legs.reduce((product, leg) => product * leg.fair * leg.odds, 1),
+          coupon.legs.reduce(
+            (product, leg) => product * leg.fair * leg.odds,
+            1,
+          ),
         0,
       ) / coupons.length;
     const legValue =
@@ -509,7 +512,9 @@ function buildWeekdays(
       const fixtures =
         rows.reduce(
           (sum, coupon) =>
-            sum + new Set((days.get(coupon.day) ?? []).map((leg) => leg.fixtureId)).size,
+            sum +
+            new Set((days.get(coupon.day) ?? []).map((leg) => leg.fixtureId))
+              .size,
           0,
         ) / n;
       return [
@@ -531,7 +536,9 @@ function buildWeekdays(
               0,
             ) / n,
           observedRatio: wins / expected,
-          firstHalfRatio: ratioOf(rows.filter((row) => row.day < HISTORY_SPLIT)),
+          firstHalfRatio: ratioOf(
+            rows.filter((row) => row.day < HISTORY_SPLIT),
+          ),
           secondHalfRatio: ratioOf(
             rows.filter((row) => row.day >= HISTORY_SPLIT),
           ),
@@ -552,7 +559,6 @@ type WeeklyRow = {
   worstWeekStreak: number;
   breakEvenShare: number;
 };
-
 
 /**
  * Part de semaines rentables. C'est la question que pose un parieur qui suit
@@ -601,8 +607,7 @@ function weeklyView(
     band: options.band.name,
     weeks: rows.length,
     profitable: rows.filter((profit) => profit > 0).length,
-    profitableShare:
-      rows.filter((profit) => profit > 0).length / rows.length,
+    profitableShare: rows.filter((profit) => profit > 0).length / rows.length,
     worstWeekStreak: streak,
     breakEvenShare: ceiling,
   };
@@ -885,10 +890,10 @@ calibrées en semaine que le week-end. Tout l'écart observé vient donc du
 résultat binaire d'un unique coupon par jour.
 
 ${
-    bestDay && worstDay
-      ? `Le meilleur jour est ${bestDay.weekday} (${pct(bestDay.roi)}, ${bestDay.fixturesPerDay.toFixed(0)} matchs par jour) et le pire ${worstDay.weekday} (${pct(worstDay.roi)}, ${worstDay.fixturesPerDay.toFixed(0)} matchs par jour). Les deux gardent le même sens sur les deux moitiés de l'historique — ${bestDay.weekday} ${bestDay.firstHalfRatio?.toFixed(2) ?? "n/a"} puis ${bestDay.secondHalfRatio?.toFixed(2) ?? "n/a"}, ${worstDay.weekday} ${worstDay.firstHalfRatio?.toFixed(2) ?? "n/a"} puis ${worstDay.secondHalfRatio?.toFixed(2) ?? "n/a"} — mais l'écart se réduit nettement sur la période récente.`
-      : ""
-  }
+  bestDay && worstDay
+    ? `Le meilleur jour est ${bestDay.weekday} (${pct(bestDay.roi)}, ${bestDay.fixturesPerDay.toFixed(0)} matchs par jour) et le pire ${worstDay.weekday} (${pct(worstDay.roi)}, ${worstDay.fixturesPerDay.toFixed(0)} matchs par jour). Les deux gardent le même sens sur les deux moitiés de l'historique — ${bestDay.weekday} ${bestDay.firstHalfRatio?.toFixed(2) ?? "n/a"} puis ${bestDay.secondHalfRatio?.toFixed(2) ?? "n/a"}, ${worstDay.weekday} ${worstDay.firstHalfRatio?.toFixed(2) ?? "n/a"} puis ${worstDay.secondHalfRatio?.toFixed(2) ?? "n/a"} — mais l'écart se réduit nettement sur la période récente.`
+    : ""
+}
 
 Trois raisons de ne pas en faire une règle. Sept jours testés produisent
 mécaniquement un meilleur et un pire. Les intervalles de confiance à ces

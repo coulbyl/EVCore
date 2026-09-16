@@ -151,7 +151,7 @@ function normalTail(z: number): number {
   const density = Math.exp(-(z * z) / 2) / Math.sqrt(2 * Math.PI);
   const poly =
     t *
-    (0.319381530 +
+    (0.31938153 +
       t *
         (-0.356563782 +
           t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
@@ -171,7 +171,9 @@ function heterogeneityPValue(cells: ReadonlyArray<[number, number]>): number {
     const expected = pooled * n;
     const rest = (1 - pooled) * n;
     if (expected === 0 || rest === 0) return sum;
-    return sum + (hits - expected) ** 2 / expected + (n - hits - rest) ** 2 / rest;
+    return (
+      sum + (hits - expected) ** 2 / expected + (n - hits - rest) ** 2 / rest
+    );
   }, 0);
   const df = cells.length - 1;
   const term = 2 / (9 * df);
@@ -348,10 +350,8 @@ function foldPeriod(rows: readonly ChannelRow[]): PeriodStat | null {
 }
 
 function buildChannelCells(rows: readonly ChannelRow[]): ChannelCell[] {
-  const groups = groupRows(
-    rows,
-    (row) =>
-      [row.competition, row.channel, row.market].join(KEY_SEPARATOR),
+  const groups = groupRows(rows, (row) =>
+    [row.competition, row.channel, row.market].join(KEY_SEPARATOR),
   );
   const cells: ChannelCell[] = [];
   for (const bucket of groups.values()) {
@@ -366,8 +366,12 @@ function buildChannelCells(rows: readonly ChannelRow[]): ChannelCell[] {
     const [low95, high95] = wilson(hits, n);
     const periodA = foldPeriod(bucket.filter((row) => row.period === "A"));
     const periodB = foldPeriod(bucket.filter((row) => row.period === "B"));
-    const ratioA = periodA ? ratioOf(periodA.realised, periodA.announced) : null;
-    const ratioB = periodB ? ratioOf(periodB.realised, periodB.announced) : null;
+    const ratioA = periodA
+      ? ratioOf(periodA.realised, periodA.announced)
+      : null;
+    const ratioB = periodB
+      ? ratioOf(periodB.realised, periodB.announced)
+      : null;
     cells.push({
       competition: head.competition,
       channel: head.channel,
@@ -402,7 +406,9 @@ type MarketEdgeCell = MarketEdgeRow & {
   beatsMarket: boolean;
 };
 
-function buildMarketEdgeCells(rows: readonly MarketEdgeRow[]): MarketEdgeCell[] {
+function buildMarketEdgeCells(
+  rows: readonly MarketEdgeRow[],
+): MarketEdgeCell[] {
   return rows
     .filter((row) => row.n > 0)
     .map((row) => {
@@ -594,9 +600,7 @@ type MarketEfficiency = {
   meanDelta: number;
 };
 
-function measureEfficiency(
-  cells: readonly MarketEdgeCell[],
-): MarketEfficiency {
+function measureEfficiency(cells: readonly MarketEdgeCell[]): MarketEfficiency {
   const eligible = cells.filter((cell) => cell.n >= MIN_EDGE_OBSERVATIONS);
   const observations = eligible.reduce((sum, cell) => sum + cell.n, 0);
   const hits = eligible.reduce((sum, cell) => sum + cell.hits, 0);
@@ -622,7 +626,10 @@ function offlineDir(): string | null {
 }
 
 function readQuery(name: QueryName): string {
-  return readFileSync(join(SCRIPT_DIR, "league-report", QUERY_FILES[name]), "utf8");
+  return readFileSync(
+    join(SCRIPT_DIR, "league-report", QUERY_FILES[name]),
+    "utf8",
+  );
 }
 
 function readOffline<T>(dir: string, name: QueryName): T[] {
@@ -644,14 +651,14 @@ async function loadFromDatabase(): Promise<RawData> {
       overround,
       exoticMarkets,
     ] = await Promise.all([
-        run<CoverageRow>("coverage"),
-        run<BaseRateRow>("baseRates"),
-        run<ChannelRow>("channels"),
-        run<MarketEdgeRow>("marketEdge"),
-        run<EdgeDecileRow>("edgeDeciles"),
-        run<OverroundRow>("overround"),
-        run<ExoticRow>("exoticMarkets"),
-      ]);
+      run<CoverageRow>("coverage"),
+      run<BaseRateRow>("baseRates"),
+      run<ChannelRow>("channels"),
+      run<MarketEdgeRow>("marketEdge"),
+      run<EdgeDecileRow>("edgeDeciles"),
+      run<OverroundRow>("overround"),
+      run<ExoticRow>("exoticMarkets"),
+    ]);
     return {
       coverage,
       baseRates,
@@ -724,7 +731,15 @@ function renderCoverage(data: RawData): string {
 
 function renderSignatures(signatures: readonly LeagueSignature[]): string {
   return table(
-    ["Ligue", "Issue", "Taux ligue", "Taux global", "Écart", "Écart max saison", "n"],
+    [
+      "Ligue",
+      "Issue",
+      "Taux ligue",
+      "Taux global",
+      "Écart",
+      "Écart max saison",
+      "n",
+    ],
     signatures
       .filter((row) => row.stable && row.significant && row.n >= 500)
       .slice(0, 45)
@@ -823,9 +838,7 @@ function renderRoiVerdict(
   rows: readonly ChannelRoi[],
   overround: number,
 ): string {
-  const measured = rows.filter(
-    (row) => row.roiA !== null && row.roiB !== null,
-  );
+  const measured = rows.filter((row) => row.roiA !== null && row.roiB !== null);
   const replicated = measured.filter((row) => row.replicated);
   const best = measured[0];
   if (!best) return "Aucun canal n'a ses deux périodes mesurées.";
@@ -856,7 +869,15 @@ pas d'espérance, elle multiplie celle des jambes.${watchlist}`;
 
 function renderDeciles(rows: readonly EdgeDecileRow[]): string {
   return table(
-    ["Décile", "n", "Edge annoncé", "Implicite", "Annoncé", "Réalisé", "ROI jambe"],
+    [
+      "Décile",
+      "n",
+      "Edge annoncé",
+      "Implicite",
+      "Annoncé",
+      "Réalisé",
+      "ROI jambe",
+    ],
     rows.map((row) => [
       String(row.decile),
       String(row.n),
@@ -891,7 +912,12 @@ function renderMargins(rows: readonly OverroundRow[]): string {
 
 function renderLegCost(overround: number): string {
   return table(
-    ["Jambes", "Cote par jambe", "Espérance sans edge", "Edge requis par jambe"],
+    [
+      "Jambes",
+      "Cote par jambe",
+      "Espérance sans edge",
+      "Edge requis par jambe",
+    ],
     Array.from({ length: MAX_COUPON_LEGS - 1 }, (_, index) => index + 2).map(
       (legs) => [
         String(legs),
@@ -1097,9 +1123,20 @@ async function main(): Promise<void> {
     join(reportsDir, `${REPORT_VERSION}.json`),
     `${JSON.stringify({ version: REPORT_VERSION, ...analysis }, null, 2)}\n`,
   );
-  const docsDir = join(SCRIPT_DIR, "..", "..", "..", "docs", "audits", "2026-09-15");
+  const docsDir = join(
+    SCRIPT_DIR,
+    "..",
+    "..",
+    "..",
+    "docs",
+    "audits",
+    "2026-09-15",
+  );
   mkdirSync(docsDir, { recursive: true });
-  writeFileSync(join(docsDir, "LEAGUE-REPORT.md"), renderMarkdown(data, analysis));
+  writeFileSync(
+    join(docsDir, "LEAGUE-REPORT.md"),
+    renderMarkdown(data, analysis),
+  );
   console.log(
     `${data.coverage.length} championnats, ${analysis.channelCells.length} cellules canal, ${analysis.marketEdgeCells.length} cellules marché.`,
   );

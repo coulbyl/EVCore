@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Phase 2 en production (argent réel) + Phase 3 ML en shadow — mise à jour le 2026-08-15 (Bloc 11)**
+**Statut actuel : Phase 2 en production (argent réel) + Phase 3 ML en shadow — mise à jour le 2026-09-15 (chantier rentabilité)**
 
 > Révisé le 2026-08-15 : sections Mois 1-3 condensées (détail non-critique,
 > tout est `[x]` depuis mars 2026) ; plusieurs items marqués `[ ]`/`[~]`
@@ -1020,6 +1020,69 @@ evaluatedMarkets` n'est plus lu par aucun canal — candidat à
       (cotes, team stats, H2H, congestion) en la probabilité/λ que le
       moteur live aurait réellement produite — `BacktestRunner` fournit les
       inputs point-in-time, pas encore la prédiction finale
+
+---
+
+## Chantier rentabilité — ingestion, ligne de clôture, CLV (ouvert 2026-09-15)
+
+> Plan complet et suivi tâche par tâche : [docs/plan-rentabilite.md](docs/plan-rentabilite.md).
+> Pistes fermées par la mesure : [docs/journal-experiences.md](docs/journal-experiences.md).
+
+**Constat qui a ouvert le chantier.** L'audit du 2026-09-15 a fermé les trois
+pistes qu'on explorait : sélectionner par championnat (255 cellules, 6
+significatives pour 6,4 attendues par hasard), aller vers les marchés
+exotiques (2 à 10 fois plus taxés), exploiter l'edge annoncé du moteur
+(anti-prédictif, le réalisé suit l'implicite). Le blocage n'est pas dans le
+modèle mais dans **ce qu'on collecte et à quel prix on parie** : l'API sert 33
+books et 338 marchés, l'ETL en stockait 4 et ~18.
+
+### Livré
+
+- `[x]` **Ingestion élargie à 11 bookmakers.** 1xBet, Betano, William Hill,
+  Betfair, BetVictor, SBO rejoignent les cinq d'origine.
+  `COHERENCE_BOOKMAKERS` fige la médiane du garde-fou de cohérence sur les
+  cinq d'origine : élargir la collecte ne doit pas déplacer un seuil qui
+  pilote du staking en production.
+- `[x]` **Asian Handicap et 8 marchés supplémentaires.** L'AH est le marché le
+  moins taxé du carnet (4,26 % contre 4,52 % sur le Match Winner) et
+  n'était pas collecté. Colonne `OddsSnapshot.line` dans la contrainte
+  d'unicité. Corners, cartons et marchés à issues fixes sont collectés chez
+  Pinnacle seul : mesurés plus chers, ils ne sont pas des cibles de pari.
+- `[x]` **Capture de la ligne de clôture.** Balayage T−60 et T−10 sur cron 10
+  min, sélection par fenêtre avant coup d'envoi. Avant : 0 % des
+  rencontres avaient un prix dans le dernier quart d'heure, donc CLV
+  incalculable. Vues `odds_closing_line` et `odds_opening_line`.
+- `[x]` **Closing Line Value.** `closingLineValue` dans `analysis-core` — cote
+  obtenue × probabilité de clôture − 1, homogène à une espérance de gain.
+  Se mesure en semaines là où le ROI demande des années.
+- `[x]` **Vue `channel_selection_deduped`.** Le comptage brut surestimait le
+  volume d'un facteur 5 à 7 (182 744 sélections pour 33 197 paris réels) et
+  divisait les erreurs types par ~2,4.
+- `[x]` **Protocole de validation partagé.** `runValidationProtocol` : grille
+  et critère figés avant exécution, fenêtre de validation évaluée une seule
+  fois, faux positifs attendus affichés.
+- `[x]` **Garde-fou de ROI câblé.** La règle ROI < −15 % sur 50+ paris existait
+  mais n'était atteignable que par un appel HTTP manuel : aucun marché n'a
+  jamais été suspendu automatiquement. Balayage quotidien.
+- `[x]` **Trois rapports régénérables** : `report:league`,
+  `backtest:daily-coupon`, `backtest:generator`.
+
+### Prochaines étapes
+
+- `[ ]` Vérifier sur données réelles que le balayage capture ≥ 70 % de lignes
+  de clôture (`report:freshness`), puis enregistrer le CLV par sélection.
+- `[ ]` Historiser blessures et compositions — aujourd'hui `/injuries` est
+  réduit à un compteur et `/fixtures/lineups` n'est jamais appelé, donc la
+  team news n'est pas backtestable.
+- `[ ]` Basculer la boucle d'apprentissage et les scripts existants sur la vue
+  dédupliquée et le protocole de validation.
+
+### Point de décision
+
+À l'issue de l'ingestion élargie, de la clôture et du CLV, si le CLV reste nul
+après intégration de la team news, la voie « battre le marché » sera fermée
+**avec preuve** — et il faudra décider ce que devient EVCore. Cette échéance
+est écrite dans le plan plutôt que laissée à l'usure.
 
 ---
 
