@@ -28,11 +28,46 @@
 
 ## Générateur de coupon
 
+> **État au 2026-09-16 — deux générateurs tournent en parallèle.**
+>
+> 1. **LLM** (`apps/vantage-worker/src/coupon/`) — une seule classe `UNIQUE`,
+>    cible 5–15, jambes plafonnées à **1,80** (au-delà le ratio réalisé/annoncé
+>    tombe à 0,619). Les trois classes SAFE/BALANCED/BOLD ne pilotent plus la
+>    génération : `COUPON_CLASSES` ne sert plus qu'à décoder l'archive.
+>    La passe intraday horaire est **supprimée**.
+> 2. **Compositeur par le prix** (`composeByPrice`, canal `PRICE`, source
+>    `PRICE_COMPOSER`) — classe sur le coût mesuré du marché, aucune
+>    probabilité du moteur. Enchaîné à la fin de `BettingEngineAnalysisWorker`.
+>
+> `coupon_proposal.source` les sépare, y compris dans la clé unique.
+> **Ne jamais conclure sur le ROI de coupon** (aucune puissance) : comparer les
+> deux sur le ratio réalisé/annoncé **par jambe**.
+
+- `[ ]` **Comparer les deux sources par jambe** — dès ~150 jambes réglées de
+  chaque côté (≈ deux semaines). Requête : `coupon_proposal_leg` joint à
+  `coupon_proposal.source`, ratio réalisé/annoncé par bande de cote. Seuils
+  d'admission déjà en usage ailleurs dans le projet : 0,85 (admissible) et
+  0,70 (toxique).
+- `[ ]` **Remonter `PRICE_COMPOSER_POLICY.minExpectedReturn` au-dessus de 0.**
+  Il est à 0 délibérément : le plafond de retour attendu mesuré est **0,9616**,
+  donc un plancher à 1 refuserait chaque jour et n'apprendrait rien. C'est le
+  bouton à remonter dès qu'un marché assez peu taxé entre dans le vivier — le
+  seul candidat mesuré est l'Asian Handicap.
+- `[ ]` **Relire l'Asian Handicap vers le 2026-10-10** (~300 rencontres
+  collectées en avant). Aucun backtest historique n'est possible : API-Football
+  purge les cotes à ~7 jours. Détail : `docs/audits/2026-09-16/ASIAN-HANDICAP.md`.
+- `[~]` **Abstention à surveiller.** Le plafond à 1,80 rend la cote 5
+  inatteignable en dessous de trois jambes : les jours au vivier mince
+  s'abstiendront. C'est un résultat, enregistré dans `CouponGenerationAttempt`
+  — vérifier que le taux d'abstention reste raisonnable, et que ce n'est pas un
+  worker tombé qu'on prend pour une abstention.
+
 - `[ ]` **Aucun coupon "aperçu" pour J+2..J+4** (relevé 2026-09-03) — le
   pipeline LLM (`apps/vantage-worker/src/coupon/`) ne génère aujourd'hui
   qu'une seule `CouponProposal.forDate` par jour : J+1 (batch du soir
-  20h30/21h15 UTC) et J+0 (batch intraday, fixtures proches du coup
-  d'envoi). Rien ne couvre J+2/J+3/J+4, contrairement à `ROLLING_HORIZON`
+  20h30/21h15 UTC). Le batch intraday J+0 mentionné ici a été supprimé le
+  2026-09-16 (sans écart mesurable, et il se réécrivait toutes les heures).
+  Rien ne couvre J+2/J+3/J+4, contrairement à `ROLLING_HORIZON`
   côté backend qui alimente déjà ces `ModelRun` en "aperçu chaud" (destiné
   à être écrasé par la passe faisant autorité au fur et à mesure que la
   date se rapproche — même principe que `persistCouponProposal`'s garde

@@ -16,6 +16,11 @@ It is a disciplined probabilistic decision system — not a tip generator or AI 
 
 - **Claimed edge (`p − 1/odds`) is anti-predictive.** Across 51 860 settled selections the realised rate is flat (0.511 → 0.375) while the announced rate climbs from 0.481 to 0.699. It is now used as a **ceiling** (`MAX_LEG_EDGE = 0.10`), never as a selection floor, and ranking is done on calibrated probability. Treat any `EV ≥ 8%` framing found elsewhere in the docs as historical.
 - **Coupon ROI has no statistical power** at current volumes (SE 13–18 points for 10-point differences). The learning loop runs at the **leg** level. Never conclude from a coupon-level ROI.
+- **The engine is behind the market** (audit 2026-09-16, `docs/journal-experiences.md`). Brier 0.63874 against the market's 0.59920 over 3 633 fixtures (+0.0395 ± 0.0080), and the optimal weight of the engine in a blend with the price is **0%**, degrading monotonically. `EV = p × odds − 1` assumes `p` beats the price; it does not. Any new feature is judged on the **residual** — the gap between realised and market-implied — never on absolute Brier.
+- **Searching more markets does not create edge.** Settling the engine's full opportunity space (1.67M evaluated picks, 17 markets, every fixture) shows every market negative, −4.40% to −12.17%. Competition × market does **not** persist across disjoint periods (correlation −0.022 over 160 cells); what persists strongly (+0.696) is how much each market **costs**. Rank legs on measured price, never on "most likely to land" — that is the EV rule, and it is an over-estimation detector.
+- **Leg calibration collapses above odds 1.80** (388 settled LLM legs): realised/announced 0.899 below 1.45, 0.836 from 1.45 to 1.80, **0.619 above**. Inside a band no channel stands out. Cut on odds, never on channel.
+
+Two coupon generators run in parallel since 2026-09-16, separated by `coupon_proposal.source`: the LLM pipeline (`apps/vantage-worker`, class `UNIQUE`) and the deterministic price composer (`composeByPrice`, channel `PRICE`). Compare them **per leg**, never by coupon ROI.
 
 Read [EVCORE.md](EVCORE.md) for the full product specification before making any architectural decision.
 Check [ROADMAP.md](ROADMAP.md) to know the current implementation state before adding or modifying any feature.

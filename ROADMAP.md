@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Phase 2 en production (argent réel) + Phase 3 ML en shadow — mise à jour le 2026-09-15 (chantier rentabilité)**
+**Statut actuel : Phase 2 en production (argent réel) + Phase 3 ML en shadow — mise à jour le 2026-09-16 (deux générateurs de coupon en parallèle)**
 
 > Révisé le 2026-08-15 : sections Mois 1-3 condensées (détail non-critique,
 > tout est `[x]` depuis mars 2026) ; plusieurs items marqués `[ ]`/`[~]`
@@ -1067,6 +1067,41 @@ books et 338 marchés, l'ETL en stockait 4 et ~18.
 - `[x]` **Trois rapports régénérables** : `report:league`,
   `backtest:daily-coupon`, `backtest:generator`.
 
+### Livré le 2026-09-16 — compositeur par le prix
+
+**Ce que la mesure a imposé.** Le moteur est derrière le marché de 0,0395 ±
+0,0080 de Brier sur 3 633 rencontres, et son poids optimal dans un mélange avec
+le prix est **nul**. La règle d'EV est un détecteur de surestimation : à cote
+égale elle retient les picks que le modèle surestime le plus (−14,9 points de
+calibration) et rejette ceux qu'il sous-estime (+3,3). Et chercher plus fort
+n'aide pas : sur l'espace d'opportunités complet — 1,67 M de picks envisagés,
+17 marchés, toutes les rencontres — **aucun marché n'est positif** (−4,40 % à
+−12,17 %) et le couple championnat × marché **ne persiste pas** d'une période à
+l'autre (corrélation −0,022 sur 160 cellules). Ce qui persiste fortement
+(+0,696 sur 17 marchés), c'est le **coût** de chaque marché.
+
+- `[x]` **`composeByPrice`** (`analysis-core`). Classe sur le coût mesuré, jamais
+  sur une probabilité qu'on produit. Recherche par programmation dynamique de
+  la combinaison atteignant la cote cible au coût le plus faible, une jambe par
+  rencontre, plafond par championnat, et **refus typé** quand la journée ne
+  peut pas payer.
+- `[x]` **Backtest en fenêtre glissante** (`backtest:composer`). Deux résultats
+  indépendants du tirage : plafond de retour attendu **0,9616**, et le
+  compositeur prend toujours le **minimum de jambes** — chaque jambe ajoutée est
+  une multiplication de plus par un nombre < 1. **La combinaison n'invente aucun
+  avantage.** Sa colonne ROI ne conclut rien (quelques dizaines de coupons).
+- `[x]` **Bande de cote des jambes plafonnée à 1,80** sur la politique unifiée.
+  Ratio réalisé/annoncé mesuré : 0,899 sous 1,45, 0,836 de 1,45 à 1,80,
+  **0,619 au-delà**. À l'intérieur d'une bande aucun canal ne se détache :
+  l'effet est la cote, jamais le canal.
+- `[x]` **Passe intraday supprimée.** Sans écart mesurable (42,6 % contre
+  42,7 %), elle se réécrivait toutes les heures par upsert — la base ne gardait
+  donc jamais ce qui avait été proposé.
+- `[x]` **Deux générateurs en parallèle.** `coupon_proposal.source`
+  (`LLM` / `PRICE_COMPOSER`) dans la clé unique, canal `PRICE`, vue
+  `evaluated_pick`, génération enchaînée à la fin de l'analyse (et non sur un
+  cron, qui composerait sur un vivier à moitié écrit). Badge de source côté web.
+
 ### Prochaines étapes
 
 - `[ ]` Vérifier sur données réelles que le balayage capture ≥ 70 % de lignes
@@ -1076,6 +1111,16 @@ books et 338 marchés, l'ETL en stockait 4 et ~18.
   team news n'est pas backtestable.
 - `[ ]` Basculer la boucle d'apprentissage et les scripts existants sur la vue
   dédupliquée et le protocole de validation.
+- `[ ]` **Relire l'Asian Handicap vers le 2026-10-10**, après ~300 rencontres
+  collectées en avant. C'est la seule piste non fermée : biais favori réel et
+  monotone, +1,41 % ± 2,83 par jambe au meilleur des huit books sur la tranche
+  1,22–1,40. Aucun backtest historique n'est possible — API-Football purge les
+  cotes à ~7 jours — donc l'horloge ne démarre qu'au déploiement.
+- `[ ]` Comparer les deux générateurs **par jambe** (jamais par ROI de coupon)
+  une fois ~150 jambes accumulées de chaque côté, sur le ratio réalisé/annoncé.
+- `[ ]` Remonter `PRICE_COMPOSER_POLICY.minExpectedReturn` au-dessus de 0 dès
+  qu'un marché assez peu taxé entre dans le vivier. Aujourd'hui le plafond
+  atteignable est 0,9616 : un plancher à 1 refuserait chaque jour.
 
 ### Point de décision
 

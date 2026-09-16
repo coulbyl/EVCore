@@ -15,11 +15,14 @@
 
 Rapports sources, tous régénérables :
 
-| Rapport                                                                | Commande                | Contenu                                                                 |
-| ---------------------------------------------------------------------- | ----------------------- | ----------------------------------------------------------------------- |
-| [LEAGUE-REPORT.md](audits/2026-09-15/LEAGUE-REPORT.md)                 | `report:league`         | 68 championnats, taux de base, calibration moteur, efficience du marché |
-| [DAILY-COUPON-BACKTEST.md](audits/2026-09-15/DAILY-COUPON-BACKTEST.md) | `backtest:daily-coupon` | 1 267 jours, coupons jour par jour, arithmétique de la marge            |
-| [GENERATOR.md](audits/2026-09-15/GENERATOR.md)                         | `backtest:generator`    | Générateur déterministe, sélection et validation                        |
+| Rapport                                                                | Commande                  | Contenu                                                                 |
+| ---------------------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------- |
+| [LEAGUE-REPORT.md](audits/2026-09-15/LEAGUE-REPORT.md)                 | `report:league`           | 68 championnats, taux de base, calibration moteur, efficience du marché |
+| [DAILY-COUPON-BACKTEST.md](audits/2026-09-15/DAILY-COUPON-BACKTEST.md) | `backtest:daily-coupon`   | 1 267 jours, coupons jour par jour, arithmétique de la marge            |
+| [GENERATOR.md](audits/2026-09-15/GENERATOR.md)                         | `backtest:generator`      | Générateur déterministe, sélection et validation                        |
+| [ASIAN-HANDICAP.md](audits/2026-09-16/ASIAN-HANDICAP.md)               | `backtest:asian-handicap` | Biais favori sur l'AH, intervalles groupés par rencontre                |
+| [ESPACE-OPPORTUNITES.md](audits/2026-09-16/ESPACE-OPPORTUNITES.md)     | SQL `market-cells/`       | 1,67 M de jambes, 17 marchés, test de persistance championnat × marché  |
+| [COMPOSITEUR.md](audits/2026-09-16/COMPOSITEUR.md)                     | `backtest:composer`       | Frontière cote visée / régularité, plafond de retour attendu            |
 
 ### 0.1 Ce qui est fermé par la mesure
 
@@ -42,7 +45,32 @@ Rapports sources, tous régénérables :
 | Features point-in-time    | xG différentiel +1,8 pt, repos domicile +2,0 pt, répliqués sur les deux moitiés                                                                                                                                                                             | **Réel, sous le seuil de marge**                                       |
 | Team news                 | Blessures réduites à un compteur, compositions jamais collectées                                                                                                                                                                                            | **Jamais testé, faute de données**                                     |
 
-### 0.3 Le diagnostic
+### 0.2.bis Révision du 2026-09-16 — la cause est unique
+
+Le diagnostic du 2026-09-15 (« le blocage est dans ce qu'on collecte ») était
+**incomplet**. Trois mesures nouvelles montrent une cause unique en amont.
+
+| Mesure                                                           | Résultat                                                                                                                                  | Conséquence                                                                                                                    |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Brier moteur vs marché** (3 633 rencontres)                    | 0,63874 contre **0,59920**, écart +0,0395 ± 0,0080. Poids optimal du moteur dans un mélange : **0 %**, dégradation monotone               | `EV = p × cote − 1` suppose que `p` batte le prix. Elle ne le bat pas : l'EV calculée est du bruit                             |
+| **`evaluatedPicks`** (1,64 M de picks, dont 97,5 % rejetés)      | Retenus : annoncé 57,9 %, réalisé **42,9 %**. Rejetés `ev_below_threshold` : annoncé 54,1 %, réalisé **57,4 %**                           | La règle d'EV est un **détecteur de surestimation**. Elle amplifie l'erreur au lieu de la filtrer                              |
+| **Espace d'opportunités complet** (1,67 M de jambes, 17 marchés) | Aucun marché positif (−4,40 % à −12,17 %). Championnat × marché : corrélation P1/P2 **−0,022** sur 160 cellules. Marché seul : **+0,696** | Chercher plus fort ne crée pas d'edge. Seul le **coût** du marché persiste — exploitable pour éviter, jamais pour sélectionner |
+
+**Ce que ça ferme.** L'idée qu'un compositeur « intelligent » puisse trouver les
+bonnes combinaisons est fermée : le backtest du compositeur établit que le
+retour attendu plafonne à **0,9616** et qu'atteindre une cote donnée coûte
+toujours moins cher avec **peu de jambes longues** qu'avec beaucoup de courtes.
+La combinaison n'invente aucun avantage, elle multiplie.
+
+**Ce que ça ouvre.** Un seul chemin mesuré : classer sur le **prix payé** et non
+sur une probabilité qu'on produit — et trouver un marché assez peu taxé pour que
+le produit des jambes dépasse 1. Le seul candidat est l'Asian Handicap
+(marge 3,98 %, biais favori réel, **+1,41 % ± 2,83** par jambe au meilleur des
+huit books sur la tranche 1,22–1,40). Il ne peut pas être tranché sur
+l'historique : **API-Football purge les cotes à ~7 jours**, donc la donnée ne
+s'obtient qu'en avant, à partir du déploiement.
+
+### 0.3 Le diagnostic (2026-09-15, révisé ci-dessus)
 
 Le blocage n'est pas dans le modèle, il est dans **ce qu'on collecte et à quel
 prix on parie**.
