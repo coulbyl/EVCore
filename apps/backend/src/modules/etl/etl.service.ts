@@ -30,6 +30,7 @@ import type { EloSyncJobData } from './workers/elo-sync.worker';
 import type { CoachSyncJobData } from './workers/coachs-sync.worker';
 import type { StaleScheduledSyncJobData } from './workers/stale-scheduled-sync.worker';
 import type { OddsPrematchSyncJobData } from './workers/odds-prematch-sync.worker';
+import { RISK_MARKET_SWEEP_JOB } from './workers/pending-bets-settlement.worker';
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
 import type { BettingEngineAnalysisJobData } from './workers/betting-engine-analysis.worker';
 import type { BettingEngineRebuildJobData } from './workers/betting-engine-rebuild.worker';
@@ -216,6 +217,14 @@ export class EtlService implements OnApplicationBootstrap {
         'ETL_ODDS_PREMATCH_SYNC_CRON',
         ETL_CRON_SCHEDULES.ODDS_PREMATCH_SYNC,
       ),
+      ODDS_CLOSING_SYNC: config.get<string>(
+        'ETL_ODDS_CLOSING_SYNC_CRON',
+        ETL_CRON_SCHEDULES.ODDS_CLOSING_SYNC,
+      ),
+      RISK_MARKET_SWEEP: config.get<string>(
+        'ETL_RISK_MARKET_SWEEP_CRON',
+        ETL_CRON_SCHEDULES.RISK_MARKET_SWEEP,
+      ),
       BETTING_ENGINE_ANALYSIS: config.get<string>(
         'ETL_BETTING_ENGINE_ANALYSIS_CRON',
         ETL_CRON_SCHEDULES.BETTING_ENGINE_ANALYSIS,
@@ -279,6 +288,27 @@ export class EtlService implements OnApplicationBootstrap {
         name: 'odds-prematch-sync',
         data: {} satisfies OddsPrematchSyncJobData,
       },
+    );
+
+    // Même file que la synchro d'horizon, mais en mode `closing` : seules les
+    // rencontres sur le point de commencer sont touchées, pour capturer la
+    // ligne de clôture sans repayer tout le calendrier.
+    await this.oddsPrematchQueue.upsertJobScheduler(
+      ETL_SCHEDULER_KEYS.ODDS_CLOSING_SYNC,
+      { pattern: this.cronSchedules.ODDS_CLOSING_SYNC },
+      {
+        name: 'odds-closing-sync',
+        data: { mode: 'closing' } satisfies OddsPrematchSyncJobData,
+      },
+    );
+
+    // Même file que le règlement des paris, job distinct : le garde-fou de ROI
+    // ne doit passer qu'une fois par jour, alors que le règlement tourne
+    // toutes les demi-heures.
+    await this.pendingBetsSettlementQueue.upsertJobScheduler(
+      ETL_SCHEDULER_KEYS.RISK_MARKET_SWEEP,
+      { pattern: this.cronSchedules.RISK_MARKET_SWEEP },
+      { name: RISK_MARKET_SWEEP_JOB, data: {} },
     );
 
     await this.bettingEngineQueue.upsertJobScheduler(
