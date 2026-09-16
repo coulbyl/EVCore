@@ -8,7 +8,9 @@ import {
 describe("COUPON_CLASSES", () => {
   it("covers the leg-odds range without gap or overlap", () => {
     for (let i = 1; i < COUPON_CLASSES.length; i += 1) {
-      expect(COUPON_CLASSES[i]?.minLegOdds).toBe(COUPON_CLASSES[i - 1]?.maxLegOdds);
+      expect(COUPON_CLASSES[i]?.minLegOdds).toBe(
+        COUPON_CLASSES[i - 1]?.maxLegOdds,
+      );
     }
     expect(COUPON_CLASSES[0]?.minLegOdds).toBe(1.2);
   });

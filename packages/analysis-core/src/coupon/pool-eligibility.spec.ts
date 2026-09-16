@@ -9,9 +9,7 @@ import {
 describe("POOL_EXCLUDED_CHANNELS", () => {
   it("excludes the meta and filter channels", () => {
     expect(POOL_EXCLUDED_CHANNELS.has(STRATEGY_CHANNEL.CONSENSUS)).toBe(true);
-    expect(POOL_EXCLUDED_CHANNELS.has(STRATEGY_CHANNEL.CONTRARIAN)).toBe(
-      true,
-    );
+    expect(POOL_EXCLUDED_CHANNELS.has(STRATEGY_CHANNEL.CONTRARIAN)).toBe(true);
     expect(POOL_EXCLUDED_CHANNELS.has(STRATEGY_CHANNEL.AVOID)).toBe(true);
     expect(POOL_EXCLUDED_CHANNELS.has(STRATEGY_CHANNEL.VALUE)).toBe(true);
     expect(POOL_EXCLUDED_CHANNELS.has(STRATEGY_CHANNEL.SAFE)).toBe(true);

@@ -42,11 +42,7 @@ export function createVantageWorker(
       }
       if (job.name === "generate-coupons") {
         const { date } = job.data as CouponJobData;
-        return runCouponGeneration(
-          date ?? tomorrowUtc(),
-          llmClients,
-          logger,
-        );
+        return runCouponGeneration(date ?? tomorrowUtc(), llmClients, logger);
       }
       if (job.name === "generate-intraday-coupons") {
         return runIntradayCouponGeneration(

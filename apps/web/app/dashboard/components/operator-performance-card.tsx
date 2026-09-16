@@ -44,9 +44,11 @@ export function OperatorPerformanceCard({
           <StatCard
             label={tPerf("settledShort")}
             value={String(data?.settledBets ?? 0)}
-            delta={data && data.settledBets > 0
-              ? `${data.wonBets} ${tPerf("won")} · ${data.lostBets} ${tPerf("lost")}`
-              : t("settledLong")}
+            delta={
+              data && data.settledBets > 0
+                ? `${data.wonBets} ${tPerf("won")} · ${data.lostBets} ${tPerf("lost")}`
+                : t("settledLong")
+            }
             tone="neutral"
             compact
           />
@@ -59,7 +61,9 @@ export function OperatorPerformanceCard({
                 : undefined
             }
             tone={
-              data && data.settledBets > 0 && Number.parseFloat(data.winRate) >= 50
+              data &&
+              data.settledBets > 0 &&
+              Number.parseFloat(data.winRate) >= 50
                 ? "success"
                 : "warning"
             }

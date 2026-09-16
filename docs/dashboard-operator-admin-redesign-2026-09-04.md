@@ -9,11 +9,11 @@ Audit du dashboard existant (`apps/web/app/dashboard/*`) : 13 pages fragmentées
 
 Décision produit : **deux dashboards distincts**, pas un seul dashboard avec toggle de complexité. Chaque métrique interne existante (ratio de calibration, statuts RED/ORANGE/GREEN, Brier score) est calculée une seule fois côté backend et **traduite différemment selon le public** — jamais un chiffre technique brut affiché à l'opérateur.
 
-| | Opérateur (V2) | Admin (V1) |
-|---|---|---|
-| Pages sources | `decisions`, `arbitrage`, `coupons`, `track-record`, `bankroll`, `bet-slips` | `engine`, `performance`, `audit`, `ml` (déjà `ADMIN` only) |
-| Langage | Badges texte (Fiable/À surveiller/Peu fiable), libellés via `channelLabel()` | Ratios, scores, statuts techniques |
-| Question répondue | "Que dois-je suivre aujourd'hui ?" | "Le moteur va-t-il bien ?" |
+|                   | Opérateur (V2)                                                               | Admin (V1)                                                 |
+| ----------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Pages sources     | `decisions`, `arbitrage`, `coupons`, `track-record`, `bankroll`, `bet-slips` | `engine`, `performance`, `audit`, `ml` (déjà `ADMIN` only) |
+| Langage           | Badges texte (Fiable/À surveiller/Peu fiable), libellés via `channelLabel()` | Ratios, scores, statuts techniques                         |
+| Question répondue | "Que dois-je suivre aujourd'hui ?"                                           | "Le moteur va-t-il bien ?"                                 |
 
 ## Progression
 

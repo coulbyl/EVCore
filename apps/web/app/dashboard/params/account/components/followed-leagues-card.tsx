@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Skeleton, InputGroup, InputGroupAddon, InputGroupInput } from "@evcore/ui";
-import { Search } from "lucide-react";
 import {
-  translateCompetition,
-  translateCountry,
-} from "@/lib/competition-i18n";
+  Skeleton,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@evcore/ui";
+import { Search } from "lucide-react";
+import { translateCompetition, translateCountry } from "@/lib/competition-i18n";
 import {
   useFollowLeague,
   useLeagueCatalog,

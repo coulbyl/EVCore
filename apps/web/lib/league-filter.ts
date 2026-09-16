@@ -14,4 +14,3 @@ export const PINNED_LEAGUE_CODES = [
   "UEL",
   "UECL",
 ] as const;
-

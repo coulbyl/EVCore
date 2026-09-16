@@ -144,8 +144,8 @@ des books non collectés descendent à 2,77 %. Coût quota négligeable (plan Pr
 
 - [~] `A-8` Ajouter **Asian Handicap** (bet id 4) au schéma `Market` et à
   l'ingestion. Marge Pinnacle mesurée : 4,11 % sur 40 rencontres, entre
-  2,6 % et 3,7 % selon la ligne, contre 4,52 % sur ONE_X_TWO.
-  _Code fait 2026-09-15_, migration en attente d'exécution :
+  2,6 % et 3,7 % selon la ligne, contre 4,52 % sur ONE*X_TWO.
+  \_Code fait 2026-09-15*, migration en attente d'exécution :
   enum `Market` (domaine + Prisma), extraction, persistance, 7 tests.
   Convention de l'API vérifiée sur données réelles : les deux côtés d'un
   même handicap portent le **même signe** (« Home -0.5 » / « Away -0.5 ») ;

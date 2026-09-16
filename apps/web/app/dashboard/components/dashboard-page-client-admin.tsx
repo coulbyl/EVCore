@@ -76,7 +76,6 @@ export function DashboardPageClientAdmin() {
                 isError={leaderboardError}
               />
             </div>
-
           </div>
         </div>
       </PageContent>

@@ -200,8 +200,11 @@ describe("composeCouponClass", () => {
 
     expect(result.outcome).toBe("composed");
     expect(requestVantageCompletion).toHaveBeenCalledTimes(2);
-    const secondCallUserPrompt = requestVantageCompletion.mock.calls[1]?.[2] as string;
-    expect(secondCallUserPrompt).toContain("rejetée par la vérification automatique");
+    const secondCallUserPrompt = requestVantageCompletion.mock
+      .calls[1]?.[2] as string;
+    expect(secondCallUserPrompt).toContain(
+      "rejetée par la vérification automatique",
+    );
   });
 
   it("retries with the Phase C validation reason, not just a schema-level rejection", async () => {
@@ -225,7 +228,8 @@ describe("composeCouponClass", () => {
 
     expect(result.outcome).toBe("composed");
     expect(requestVantageCompletion).toHaveBeenCalledTimes(2);
-    const secondCallUserPrompt = requestVantageCompletion.mock.calls[1]?.[2] as string;
+    const secondCallUserPrompt = requestVantageCompletion.mock
+      .calls[1]?.[2] as string;
     expect(secondCallUserPrompt).toContain("distinct fixture");
     expect(secondCallUserPrompt).not.toContain("réponse précédente invalide");
   });

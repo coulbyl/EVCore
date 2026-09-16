@@ -40,13 +40,18 @@ async function main(): Promise<void> {
   // On ne garde que les premiers matchs : l'exemple doit rester lisible.
   const trimmed = {
     ...sheet,
-    summary: { ...sheet.summary, fixtureCount: Math.min(limit, sheet.fixtures.length) },
+    summary: {
+      ...sheet.summary,
+      fixtureCount: Math.min(limit, sheet.fixtures.length),
+    },
     fixtures: sheet.fixtures.slice(0, limit),
     legPool: sheet.legPool
       ? {
           ...sheet.legPool,
           entries: sheet.legPool.entries.filter((entry) =>
-            sheet.fixtures.slice(0, limit).some((f) => f.fixtureId === entry.fixtureId),
+            sheet.fixtures
+              .slice(0, limit)
+              .some((f) => f.fixtureId === entry.fixtureId),
           ),
         }
       : null,
@@ -54,8 +59,10 @@ async function main(): Promise<void> {
       ? {
           ...sheet.calibration,
           // L'agrégat complet pèse des centaines de lignes : on montre la forme.
-          byMarketAndCompetition: sheet.calibration.byMarketAndCompetition.slice(0, 5),
-          lambdaBiasByCompetition: sheet.calibration.lambdaBiasByCompetition.slice(0, 5),
+          byMarketAndCompetition:
+            sheet.calibration.byMarketAndCompetition.slice(0, 5),
+          lambdaBiasByCompetition:
+            sheet.calibration.lambdaBiasByCompetition.slice(0, 5),
         }
       : null,
   };

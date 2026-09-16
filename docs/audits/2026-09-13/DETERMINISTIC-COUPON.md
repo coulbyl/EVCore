@@ -34,11 +34,11 @@ individuels à partir de petits sous-échantillons. Le candidat retenu n'est pas
 la configuration au ROI global maximal : il est choisi pour la stabilité de
 ses trois blocs et pour des contraintes plus conservatrices.
 
-| Configuration                  | Coupons | ROI global | Bloc 1 | Bloc 2 | Bloc 3 |
-| ------------------------------ | ------: | ----------: | -----: | -----: | -----: |
-| Baseline 2–5 jambes, cote 5–15 |      54 |      +6,6 % | +1,7 % | +12,8 % | +4,3 % |
-| **Candidat 2–3, cote 5–7**     |  **50** |  **+35,0 %** | **+32,8 %** | **+32,7 %** | **+39,0 %** |
-| Variante edge maximal 9 points |      49 |     +36,4 % | +27,2 % | +33,8 % | +46,0 % |
+| Configuration                  | Coupons |  ROI global |      Bloc 1 |      Bloc 2 |      Bloc 3 |
+| ------------------------------ | ------: | ----------: | ----------: | ----------: | ----------: |
+| Baseline 2–5 jambes, cote 5–15 |      54 |      +6,6 % |      +1,7 % |     +12,8 % |      +4,3 % |
+| **Candidat 2–3, cote 5–7**     |  **50** | **+35,0 %** | **+32,8 %** | **+32,7 %** | **+39,0 %** |
+| Variante edge maximal 9 points |      49 |     +36,4 % |     +27,2 % |     +33,8 % |     +46,0 % |
 
 Le rapport détaillé du candidat donne 13 coupons gagnés et 37 perdus, une cote
 moyenne de 5,28 et 2,54 jambes par coupon. Son intervalle à 95 % pour le ROI
@@ -69,9 +69,9 @@ dans le commit `5fbbc17a` avant son unique exécution sur cette période.
 
 ## Évaluation finale
 
-| Période finale | Coupons réglés | Gagnés | Perdus | Abstentions | Réussite | ROI |
-| -------------- | -------------: | -----: | -----: | ----------: | -------: | --: |
-| 30 août–13 septembre | 12 | 2 | 10 | 3 | 16,7 % | −6,9 % |
+| Période finale       | Coupons réglés | Gagnés | Perdus | Abstentions | Réussite |    ROI |
+| -------------------- | -------------: | -----: | -----: | ----------: | -------: | -----: |
+| 30 août–13 septembre |             12 |      2 |     10 |           3 |   16,7 % | −6,9 % |
 
 La cote moyenne est 5,28. Les probabilités du composeur annonçaient environ
 3,05 coupons gagnants sur ces 12 essais ; deux ont gagné. L'intervalle à 95 %

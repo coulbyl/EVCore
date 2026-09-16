@@ -64,6 +64,7 @@ Outil ajouté après remédiation :
 - packages/db/scripts/scheduled-fixtures-report.ts: charge dotenv — non exécuté, client DB direct
 
 Rapports présents :
+
 - packages/db/reports/audit-channel-market-league-calibration-2026-08-18.txt (62988 octets)
 - packages/db/reports/backtest-btts-shrinkage-calibration-2026-08-19.txt (7733 octets)
 - packages/db/reports/backtest-calibration-alert-over-under-2026-08-15.txt (1945 octets)

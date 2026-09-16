@@ -1,6 +1,13 @@
 "use client";
 
-import { Check, Eye, MessageCircle, ShoppingCart, Sun, Users } from "lucide-react";
+import {
+  Check,
+  Eye,
+  MessageCircle,
+  ShoppingCart,
+  Sun,
+  Users,
+} from "lucide-react";
 import {
   Badge,
   Card,

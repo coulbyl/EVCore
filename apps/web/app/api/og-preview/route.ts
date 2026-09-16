@@ -31,8 +31,7 @@ function isPrivateOrReservedIp(ip: string): boolean {
       const embedded = normalized.slice("::ffff:".length);
       if (net.isIP(embedded) === 4) return isPrivateOrReservedIp(embedded);
     }
-    if (normalized.startsWith("fc") || normalized.startsWith("fd"))
-      return true; // unique local
+    if (normalized.startsWith("fc") || normalized.startsWith("fd")) return true; // unique local
     if (normalized.startsWith("fe80")) return true; // link-local
     return false;
   }

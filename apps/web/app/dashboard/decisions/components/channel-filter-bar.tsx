@@ -56,13 +56,18 @@ export function ChannelFilterBar({
               {t("filters.channelLabel")}
             </span>
             <span className="min-w-0 truncate">
-              {selectedOption ? channelLabel(selectedOption.channel, locale) : t("lens.matches")}
+              {selectedOption
+                ? channelLabel(selectedOption.channel, locale)
+                : t("lens.matches")}
             </span>
           </span>
           <ChevronDown size={16} className="shrink-0 text-muted-foreground" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[calc(100vw-2rem)] max-w-xs p-0">
+      <PopoverContent
+        align="start"
+        className="w-[calc(100vw-2rem)] max-w-xs p-0"
+      >
         <Command>
           <CommandInput placeholder={t("filters.searchChannel")} />
           <CommandList>
