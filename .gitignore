@@ -65,3 +65,10 @@ model-calibration.json
 backups
 coupon-annonce-*.md
 fiche-evcore-*.json
+
+# Extraction volumineuse de l'espace d'opportunités, régénérable depuis la base
+# (scripts/market-cells/*.sql). Les données Asian Handicap voisines sont au
+# contraire versionnées : API-Football les purge à 7 jours, elles sont
+# irrécupérables une fois perdues.
+packages/backtest-core/reports/market-cells/
+

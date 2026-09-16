@@ -145,6 +145,124 @@ concluante.
 
 ---
 
+## 2026-09-16 — Le contrefactuel était en base
+
+### La règle de sélection retient les pires estimations du moteur
+
+**Verdict : ouvert — premier levier identifié qui ne dépende pas du marché.**
+
+`ModelRun.features.evaluatedPicks` enregistre **tout ce que le moteur a
+envisagé**, avec la raison de chaque rejet : 1,64 million de picks évalués,
+dont 2,5 % seulement retenus. L'audit du 2026-09-15 n'avait regardé que ces
+2,5 %.
+
+Réglés rétroactivement, sur la même tranche de cote (1,20–2,60) :
+
+| Statut | Picks | Annoncé | Réalisé | Écart |
+| --- | --- | --- | --- | --- |
+| **retenu** | 636 | 57,9 % | **42,9 %** | **−14,9 pts** |
+| rejeté `ev_below_threshold` | 4 321 | 54,1 % | **57,4 %** | **+3,3 pts** |
+| rejeté `probability_too_low` | 2 435 | 33,5 % | 45,2 % | **+11,7 pts** |
+| rejeté `odds_below_floor` | 438 | 68,3 % | 52,1 % | −16,3 pts |
+
+Le seuil d'EV sélectionne sur `probabilité × cote − 1 ≥ 0,08`, donc à cote
+donnée il retient les picks où le modèle surestime le plus. **C'est un
+détecteur de surestimation**, et l'explication du constat « l'edge annoncé est
+anti-prédictif » posé le 2026-08-22 sans mécanisme.
+
+Le ROI reste négatif partout (−3 à −8 %) : corriger la sélection ne rend pas le
+moteur rentable, cela récupère ~15 points de calibration. Toute modification
+d'une règle de rejet se teste sur `evaluatedPicks` sans rien déployer.
+
+### Le moteur est-il meilleur que le prix du marché ?
+
+**Verdict : fermé, et c'est le résultat central.** Sur 3 633 rencontres, score
+de Brier 1X2 du moteur **0,6387** contre **0,5992** pour le marché (implicite
+normalisée) : **+0,0395 ± 0,0080**, soit cinq erreurs types en défaveur du
+moteur. Reproduit tous les mois — juillet +0,065, août +0,037, septembre
++0,029.
+
+Mélange optimal, mesuré par balayage de poids :
+
+| Poids du moteur | Brier |
+| --- | --- |
+| **0 % (marché seul)** | **0,59876** |
+| 10 % | 0,59880 |
+| 30 % | 0,60152 |
+| 50 % | 0,60776 |
+| 100 % (moteur seul) | 0,63874 |
+
+Le poids optimal est **zéro**, et la dégradation est monotone. La probabilité
+du moteur n'apporte donc **aucune information** que le prix ne porte déjà.
+
+Ce résultat explique tous les précédents : l'edge annoncé anti-prédictif,
+aucun canal ne battant la marge, le réalisé qui suit l'implicite. Ce n'était
+pas plusieurs problèmes mais un seul.
+
+Conséquence d'architecture : `EV = p × cote − 1` avec `p` issu du modèle
+suppose que `p` batte le prix. Elle ne le bat pas, donc l'EV calculée est du
+bruit, et la couche de sélection entière repose sur une fondation qui ne tient
+pas. La voie n'est pas d'améliorer le modèle à la marge mais de **prédire le
+résidu** — l'écart au prix — plutôt que la probabilité absolue (`F-5` du plan).
+
+### Les corrections du moteur (H2H, congestion) aident-elles ?
+
+**Verdict : sans signal.** Gain de Brier du corrigé sur le brut, par situation :
+aucune correction +0,0080 ± 0,0063, congestion seule +0,0046 ± 0,0061, H2H +
+congestion +0,0040 ± 0,0050, **H2H seul −0,0008 ± 0,0047**.
+
+Aucune n'est démontrée nuisible, aucune n'est franchement utile. Le gain le
+plus net vient des corrections **non tracées** par ces deux drapeaux
+(shrinkage, lambda scale, mélange empirique). Sans objet tant que le modèle
+reste derrière le marché de 0,04.
+
+### Le biais favori existe-t-il sur le handicap asiatique ?
+
+**Verdict : ouvert — la seule piste non fermée.** 467 rencontres servant le
+marché sur 15 jours, 9 058 jambes Pinnacle, marge mesurée **3,98 %** (et non
+les 2,6–3,7 % annoncés sur une rencontre isolée : chiffre corrigé).
+
+Le biais **existe et il est monotone**, même sens que sur le 1X2. Intervalles
+groupés par rencontre — une rencontre sert une dizaine de jambes corrélées, les
+compter indépendantes divise l'intervalle par trois :
+
+| Cote | Jambes | Renc. | Écart | ROI |
+| --- | --- | --- | --- | --- |
+| < 1,50 | 2566 | 466 | **+2,74 pts** | −0,46 % ± 2,54 |
+| 1,50–1,75 | 1281 | 466 | +0,88 | −2,23 % ± 2,65 |
+| 1,75–1,95 | 700 | 454 | +1,27 | −0,85 % ± 3,52 |
+| 1,95–2,15 | 641 | 438 | −1,10 | −5,45 % ± 4,33 |
+| 2,15–2,50 | 863 | 453 | −1,10 | −6,20 % ± 3,80 |
+| 2,50+ | 3007 | 466 | **−2,09 pts** | −11,21 % ± 6,41 |
+
+Sur la tranche qui construit le coupon visé (cote 1,22–1,40, 1 780 jambes /
+465 rencontres) : ROI par jambe **+0,22 % ± 2,78** au prix Pinnacle,
+**+1,41 % ± 2,83** au meilleur des huit books. Huit jambes y donnent une cote
+combinée de **8,5 à 9,6** : la cible 5–15 en 8 jambes est atteignable *dans la
+tranche où le biais joue pour nous*, ce qui n'est vrai d'aucun autre marché
+mesuré. ROI projeté du coupon +1,8 % à +11,9 %, intervalle **[−11 % ; +39 %]**.
+Indéterminé, dans les deux sens.
+
+Le coupon gagne **~12 % du temps**. C'est l'arithmétique de la cote 9, pas un
+défaut de construction : aucune sélection ne rend une cote 9 fréquente.
+
+**Ce qui bloque, et ce n'est pas statistique.** API-Football **purge les cotes
+au bout de ~7 jours** : sur les mêmes appels, zéro handicap asiatique servi
+avant le 2026-09-09 et 100 % à partir du 09-09. **Aucun backtest historique de
+ce marché n'est possible**, ni maintenant ni plus tard. La seule donnée
+obtenable est celle collectée en avant. L'ingestion est câblée sur cette
+branche : chaque jour non mergé est un jour perdu définitivement.
+
+**Ce qui trancherait :** ~300 rencontres de plus, collectées en avant, puis
+relecture de la tranche 1,22–1,40 avec le même protocole groupé. Le résultat ne
+dépend d'aucune probabilité du moteur — il ne vient que du prix — donc il n'est
+pas atteint par l'écart de 0,04 au marché.
+
+Source : `docs/audits/2026-09-16/ASIAN-HANDICAP.md`, régénérable par
+`pnpm --filter @evcore/backtest-core backtest:asian-handicap`.
+
+---
+
 ## Modèle d'entrée
 
 ```markdown

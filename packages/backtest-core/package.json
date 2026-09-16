@@ -23,7 +23,10 @@
     "backtest:generator": "tsx scripts/backtest-generator.ts",
     "probe:api-football": "tsx --env-file=../../apps/backend/.env scripts/probe-api-football.ts",
     "probe:margins": "tsx --env-file=../../apps/backend/.env scripts/probe-market-margins.ts",
-    "report:freshness": "tsx scripts/report-odds-freshness.ts"
+    "report:freshness": "tsx scripts/report-odds-freshness.ts",
+    "collect:asian-handicap": "tsx --env-file=../../apps/backend/.env scripts/collect-asian-handicap-history.ts",
+    "backtest:asian-handicap": "tsx scripts/backtest-asian-handicap.ts",
+    "backtest:composer": "tsx scripts/backtest-composer.ts"
   },
   "dependencies": {
     "@evcore/analysis-core": "workspace:*",
