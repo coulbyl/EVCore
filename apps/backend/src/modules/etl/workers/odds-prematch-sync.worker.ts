@@ -45,6 +45,37 @@ export type OddsPrematchSyncJobData = {
 const logger = createLogger('odds-prematch-sync-worker');
 const ODDS_FETCH_ATTEMPTS = 2;
 
+const EXTENDED_MARKET_NAMES = [
+  'ASIAN_HANDICAP',
+  'ASIAN_HANDICAP_HT',
+  'OVER_UNDER_2H',
+  'CORNERS',
+  'CORNERS_HT',
+  'CARDS',
+  'ODD_EVEN',
+  'ODD_EVEN_HT',
+  'HIGHEST_SCORING_HALF',
+  'TEAM_TO_SCORE_FIRST',
+] as const;
+
+type ExtendedMarketName = (typeof EXTENDED_MARKET_NAMES)[number];
+type ExtendedMarketDiagnostic = {
+  market: ExtendedMarketName;
+  rawValues: number;
+  parsedValues: number;
+  rejectedLabels: string[];
+};
+
+type ExtendedMarketCoverage = Map<
+  ExtendedMarketName,
+  {
+    fixturesWithRaw: number;
+    rawValues: number;
+    parsedValues: number;
+    rejectedLabels: Set<string>;
+  }
+>;
+
 // lockDuration: 10 min — the job fetches odds per fixture with 6 s API delay between
 // each call, so 10+ fixtures easily exceeds the default 30 s lock timeout.
 @Processor(BULLMQ_QUEUES.ODDS_PREMATCH_SYNC, { lockDuration: 600_000 })
@@ -95,6 +126,7 @@ export class OddsPrematchSyncWorker extends WorkerHost {
     // Rencontres atteintes après leur coup d'envoi : l'indicateur direct que
     // le balayage ne tient pas sa fenêtre (voir CLOSING_MISS_ALERT_RATIO).
     let missedKickoff = 0;
+    const extendedCoverage: ExtendedMarketCoverage = new Map();
     // En mode clôture, l'espacement doit rester sous la durée de la fenêtre :
     // voir ODDS_CLOSING_RATE_LIMIT_MS.
     const rateLimitMs = closing
@@ -192,6 +224,10 @@ export class OddsPrematchSyncWorker extends WorkerHost {
       }
 
       const snapshotAt = new Date(match.update);
+      mergeExtendedMarketCoverage(
+        extendedCoverage,
+        inspectExtendedMarkets(match.bookmakers, REFERENCE_BOOKMAKER),
+      );
 
       // A DB write failure for one fixture (e.g. an out-of-range odds value —
       // CORRECT_SCORE on an obscure scoreline can spike well past three
@@ -331,6 +367,7 @@ export class OddsPrematchSyncWorker extends WorkerHost {
       { synced, skipped, missedKickoff, dates: dateLabel },
       'Odds prematch sync complete',
     );
+    reportExtendedMarketCoverage(extendedCoverage);
 
     if (closing) this.reportClosingCoverage(synced, missedKickoff);
 
@@ -938,6 +975,135 @@ export const FIXED_OUTCOME_MAPPINGS = {
     'no goal': 'NO_GOAL',
   },
 } as const;
+
+const EXTENDED_MARKET_BET_IDS: Readonly<Record<ExtendedMarketName, number>> = {
+  ASIAN_HANDICAP: API_FOOTBALL_BET_IDS.ASIAN_HANDICAP,
+  ASIAN_HANDICAP_HT: API_FOOTBALL_BET_IDS.ASIAN_HANDICAP_HT,
+  OVER_UNDER_2H: API_FOOTBALL_BET_IDS.OVER_UNDER_2H,
+  CORNERS: API_FOOTBALL_BET_IDS.CORNERS,
+  CORNERS_HT: API_FOOTBALL_BET_IDS.CORNERS_HT,
+  CARDS: API_FOOTBALL_BET_IDS.CARDS,
+  ODD_EVEN: API_FOOTBALL_BET_IDS.ODD_EVEN,
+  ODD_EVEN_HT: API_FOOTBALL_BET_IDS.ODD_EVEN_HT,
+  HIGHEST_SCORING_HALF: API_FOOTBALL_BET_IDS.HIGHEST_SCORING_HALF,
+  TEAM_TO_SCORE_FIRST: API_FOOTBALL_BET_IDS.TEAM_TO_SCORE_FIRST,
+};
+
+/**
+ * Structured observability for markets whose absence used to be silent. Raw
+ * values distinguish "provider did not send the bet id" from "our parser
+ * rejected the provider labels" without logging the complete API payload.
+ */
+export function inspectExtendedMarkets(
+  bookmakers: OddsBookmaker[],
+  bookmakerName: string,
+): ExtendedMarketDiagnostic[] {
+  const book = bookmakers.find((candidate) => candidate.name === bookmakerName);
+  const asian = extractAsianHandicapOdds(bookmakers, bookmakerName);
+  const extended = extractExtendedMarketOdds(bookmakers, bookmakerName);
+  const parsedCounts = new Map<ExtendedMarketName, number>([
+    ['ASIAN_HANDICAP', asian.fullTime.length],
+    ['ASIAN_HANDICAP_HT', asian.firstHalf.length],
+    ...extended.lineMarkets.map(
+      (entry) => [entry.market, entry.legs.length] as const,
+    ),
+    ...extended.fixedMarkets.map(
+      (entry) => [entry.market, entry.legs.length] as const,
+    ),
+  ]);
+
+  return EXTENDED_MARKET_NAMES.map((market) => {
+    const bet = book?.bets.find(
+      (candidate) => candidate.id === EXTENDED_MARKET_BET_IDS[market],
+    );
+    return {
+      market,
+      rawValues: bet?.values.length ?? 0,
+      parsedValues: parsedCounts.get(market) ?? 0,
+      rejectedLabels:
+        bet?.values
+          .filter((value) => !isExtendedValueParsable(market, value))
+          .map((value) => String(value.value)) ?? [],
+    };
+  });
+}
+
+function isExtendedValueParsable(
+  market: ExtendedMarketName,
+  value: { value: string; odd: number },
+): boolean {
+  const bet = {
+    id: EXTENDED_MARKET_BET_IDS[market],
+    name: market,
+    values: [value],
+  };
+  if (market === 'ASIAN_HANDICAP' || market === 'ASIAN_HANDICAP_HT') {
+    return parseAsianHandicapValues(bet).length === 1;
+  }
+  if (
+    market === 'OVER_UNDER_2H' ||
+    market === 'CORNERS' ||
+    market === 'CORNERS_HT' ||
+    market === 'CARDS'
+  ) {
+    return parseOverUnderValues(bet).length === 1;
+  }
+  const mapping =
+    market === 'ODD_EVEN' || market === 'ODD_EVEN_HT'
+      ? FIXED_OUTCOME_MAPPINGS.ODD_EVEN
+      : market === 'HIGHEST_SCORING_HALF'
+        ? FIXED_OUTCOME_MAPPINGS.HIGHEST_SCORING_HALF
+        : FIXED_OUTCOME_MAPPINGS.TEAM_TO_SCORE_FIRST;
+  return parseFixedOutcomeValues(bet, mapping).length === 1;
+}
+
+function mergeExtendedMarketCoverage(
+  coverage: ExtendedMarketCoverage,
+  diagnostics: readonly ExtendedMarketDiagnostic[],
+): void {
+  for (const diagnostic of diagnostics) {
+    const current = coverage.get(diagnostic.market) ?? {
+      fixturesWithRaw: 0,
+      rawValues: 0,
+      parsedValues: 0,
+      rejectedLabels: new Set<string>(),
+    };
+    if (diagnostic.rawValues > 0) current.fixturesWithRaw += 1;
+    current.rawValues += diagnostic.rawValues;
+    current.parsedValues += diagnostic.parsedValues;
+    for (const label of diagnostic.rejectedLabels) {
+      current.rejectedLabels.add(label);
+    }
+    coverage.set(diagnostic.market, current);
+  }
+}
+
+function reportExtendedMarketCoverage(coverage: ExtendedMarketCoverage): void {
+  const summary = EXTENDED_MARKET_NAMES.map((market) => {
+    const observed = coverage.get(market);
+    return {
+      market,
+      fixturesWithRaw: observed?.fixturesWithRaw ?? 0,
+      rawValues: observed?.rawValues ?? 0,
+      parsedValues: observed?.parsedValues ?? 0,
+      rejectedLabels: [...(observed?.rejectedLabels ?? [])].slice(0, 20),
+    };
+  });
+  logger.info(
+    { bookmaker: REFERENCE_BOOKMAKER, markets: summary },
+    'Extended market ingestion coverage',
+  );
+
+  const parserFailures = summary.filter(
+    (market) => market.rawValues > 0 && market.parsedValues === 0,
+  );
+  if (parserFailures.length > 0) {
+    logger.warn(
+      { bookmaker: REFERENCE_BOOKMAKER, markets: parserFailures },
+      'Extended markets received raw values but parsed none',
+    );
+  }
+}
 
 /** Une jambe de handicap asiatique : un côté, une ligne, une cote. */
 export type AsianHandicapLeg = {

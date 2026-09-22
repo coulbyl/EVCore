@@ -25,6 +25,16 @@ const MARKET_LABELS_FR: Record<string, string> = {
   TO_WIN_EITHER_HALF: "Gagne une mi-temps",
   RESULT_TOTAL_GOALS: "Résultat + total buts",
   RESULT_BTTS: "Résultat + Les deux équipes marquent",
+  ASIAN_HANDICAP: "Handicap asiatique",
+  ASIAN_HANDICAP_HT: "Handicap asiatique MT",
+  OVER_UNDER_2H: "Plus/Moins de buts en 2e mi-temps",
+  CORNERS: "Total corners",
+  CORNERS_HT: "Total corners MT",
+  CARDS: "Total cartons",
+  ODD_EVEN: "Total de buts pair/impair",
+  ODD_EVEN_HT: "Buts MT pair/impair",
+  HIGHEST_SCORING_HALF: "Mi-temps la plus prolifique",
+  TEAM_TO_SCORE_FIRST: "Première équipe à marquer",
 };
 
 // Parses a generic "OVER_X_Y" / "UNDER_X_Y" pick (used by TEAM_TOTAL_* and
@@ -88,6 +98,38 @@ export function formatPickForDisplayFr(pick: string, market: string): string {
     if (p === "HOME") return "Domicile MT";
     if (p === "DRAW") return "Nul MT";
     if (p === "AWAY") return "Extérieur MT";
+  }
+
+  if (market === "ASIAN_HANDICAP" || market === "ASIAN_HANDICAP_HT") {
+    if (p === "HOME") return "Domicile";
+    if (p === "AWAY") return "Extérieur";
+  }
+
+  if (
+    market === "OVER_UNDER_2H" ||
+    market === "CORNERS" ||
+    market === "CORNERS_HT" ||
+    market === "CARDS"
+  ) {
+    if (p === "OVER") return "Plus de";
+    if (p === "UNDER") return "Moins de";
+  }
+
+  if (market === "ODD_EVEN" || market === "ODD_EVEN_HT") {
+    if (p === "ODD") return "Impair";
+    if (p === "EVEN") return "Pair";
+  }
+
+  if (market === "HIGHEST_SCORING_HALF") {
+    if (p === "FIRST_HALF") return "Première mi-temps";
+    if (p === "SECOND_HALF") return "Deuxième mi-temps";
+    if (p === "DRAW") return "Égalité";
+  }
+
+  if (market === "TEAM_TO_SCORE_FIRST") {
+    if (p === "HOME") return "Domicile";
+    if (p === "AWAY") return "Extérieur";
+    if (p === "NO_GOAL") return "Aucun but";
   }
 
   if (market === "HALF_TIME_FULL_TIME") {

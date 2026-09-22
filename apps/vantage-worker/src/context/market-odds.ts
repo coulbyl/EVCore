@@ -39,6 +39,29 @@ const CONTEXT_MARKET_PICKS: ReadonlyMap<Market, readonly string[]> = new Map([
   [Market.OVER_UNDER, ["OVER", "UNDER"]],
 ]);
 
+const EXTENDED_CONTEXT_MARKETS: readonly Market[] = [
+  Market.ASIAN_HANDICAP,
+  Market.ASIAN_HANDICAP_HT,
+  Market.OVER_UNDER_2H,
+  Market.CORNERS,
+  Market.CORNERS_HT,
+  Market.CARDS,
+  Market.ODD_EVEN,
+  Market.ODD_EVEN_HT,
+  Market.HIGHEST_SCORING_HALF,
+  Market.TEAM_TO_SCORE_FIRST,
+];
+
+const REFERENCE_BOOKMAKER = "Pinnacle";
+
+type ExtendedOddsRow = {
+  market: Market;
+  pick: string | null;
+  line: { toNumber(): number } | null;
+  odds: { toNumber(): number } | null;
+  snapshotAt: Date;
+};
+
 const RAW_ODDS_ROW_SELECT = {
   bookmaker: true,
   market: true,
@@ -66,6 +89,105 @@ export async function loadFullOddsSnapshot(
     select: RAW_ODDS_ROW_SELECT,
   });
   return assembleFullOddsSnapshot(rows, new Date());
+}
+
+/** Reads the latest reference-book snapshot for every newly collected market.
+ * For line markets, only the most balanced two-sided line is retained: this
+ * approximates the bookmaker's main line while keeping the prompt compact.
+ * These prices are context-only; selection stays gated until the complete
+ * line-aware decision/settlement path and calibration exist. */
+export async function loadExtendedMarketOdds(
+  fixtureId: string,
+): Promise<MarketOddsSnapshot[]> {
+  const rows = await prisma.oddsSnapshot.findMany({
+    where: {
+      fixtureId,
+      bookmaker: REFERENCE_BOOKMAKER,
+      market: { in: [...EXTENDED_CONTEXT_MARKETS] },
+      odds: { not: null },
+    },
+    select: {
+      market: true,
+      pick: true,
+      line: true,
+      odds: true,
+      snapshotAt: true,
+    },
+    orderBy: { snapshotAt: "desc" },
+  });
+  return buildExtendedMarketOdds(rows);
+}
+
+export function buildExtendedMarketOdds(
+  rows: readonly ExtendedOddsRow[],
+): MarketOddsSnapshot[] {
+  const result: MarketOddsSnapshot[] = [];
+  for (const market of EXTENDED_CONTEXT_MARKETS) {
+    const marketRows = rows.filter((row) => row.market === market);
+    const snapshotTimes = [
+      ...new Set(marketRows.map((row) => row.snapshotAt.getTime())),
+    ].sort((left, right) => right - left);
+
+    for (const snapshotTime of snapshotTimes) {
+      const snapshotRows = marketRows.filter(
+        (row) => row.snapshotAt.getTime() === snapshotTime,
+      );
+      const prices = pricesForCompleteSnapshot(snapshotRows);
+      if (prices.length < 2) continue;
+      result.push({ market, prices });
+      break;
+    }
+  }
+  return result;
+}
+
+function pricesForCompleteSnapshot(
+  rows: readonly ExtendedOddsRow[],
+): Array<{ pick: string; odds: number; line?: number }> {
+  const fixedPrices = toPrices(rows.filter((row) => row.line === null));
+  if (fixedPrices.length >= 2) return fixedPrices;
+
+  const byLine = new Map<number, ExtendedOddsRow[]>();
+  for (const row of rows) {
+    if (row.line === null) continue;
+    const line = row.line.toNumber();
+    byLine.set(line, [...(byLine.get(line) ?? []), row]);
+  }
+  return (
+    [...byLine.entries()]
+      .map(([line, lineRows]) => ({
+        prices: toPrices(lineRows, line),
+      }))
+      .filter((candidate) => candidate.prices.length >= 2)
+      .sort(
+        (left, right) => balanceScore(left.prices) - balanceScore(right.prices),
+      )[0]?.prices ?? []
+  );
+}
+
+function toPrices(
+  rows: readonly ExtendedOddsRow[],
+  line?: number,
+): Array<{ pick: string; odds: number; line?: number }> {
+  const seen = new Set<string>();
+  const prices: Array<{ pick: string; odds: number; line?: number }> = [];
+  for (const row of rows) {
+    if (row.pick === null || row.odds === null || seen.has(row.pick)) continue;
+    seen.add(row.pick);
+    prices.push({
+      pick: row.pick,
+      odds: row.odds.toNumber(),
+      ...(line === undefined ? {} : { line }),
+    });
+  }
+  return prices;
+}
+
+function balanceScore(prices: readonly { odds: number }[]): number {
+  return prices.reduce(
+    (score, price) => score + Math.abs(1 / price.odds - 0.5),
+    0,
+  );
 }
 
 /** The raw-price context block (CONTEXT_MARKET_PICKS only) for whichever of

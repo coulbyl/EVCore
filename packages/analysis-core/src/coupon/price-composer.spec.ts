@@ -65,6 +65,24 @@ describe("composeByPrice", () => {
     expect(result.coupon.combinedOdds.toNumber()).toBeLessThanOrEqual(15);
   });
 
+  it("écarte les longues cotes impossibles avant de choisir une jambe par match", () => {
+    const candidates = [
+      leg("1", 50, 0.99, "C1", "LONGSHOT"),
+      leg("1", 2.3, 0.95, "C1", "SHORT"),
+      leg("2", 60, 0.99, "C2", "LONGSHOT"),
+      leg("2", 2.3, 0.95, "C2", "SHORT"),
+    ];
+
+    const result = composeByPrice(candidates, CONFIG);
+
+    expect(result.outcome).toBe("composed");
+    if (result.outcome !== "composed") return;
+    expect(result.coupon.legs.map((candidate) => candidate.odds)).toEqual([
+      2.3, 2.3,
+    ]);
+    expect(result.coupon.combinedOdds.toNumber()).toBeCloseTo(5.29, 10);
+  });
+
   it("refuse quand la cible est hors d'atteinte", () => {
     // Quatre jambes à 1,10 plafonnent à 1,46 : la cote 5 est inatteignable.
     const candidates = Array.from({ length: 4 }, (_, index) =>

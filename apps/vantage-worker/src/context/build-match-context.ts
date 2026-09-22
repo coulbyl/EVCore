@@ -7,7 +7,11 @@ import type { ChannelCalibration, ChannelReading, MatchContext } from "./types";
 import { extractNearMiss } from "./near-miss";
 import { loadTeamSignal, loadCoachSignal } from "./team-signals";
 import { loadH2HSignal } from "./h2h-signal";
-import { loadFullOddsSnapshot, buildUncoveredMarketOdds } from "./market-odds";
+import {
+  loadFullOddsSnapshot,
+  loadExtendedMarketOdds,
+  buildUncoveredMarketOdds,
+} from "./market-odds";
 
 // Minimum settled sample before a channel's calibration is reported to
 // VANTAGE as a number rather than "not yet measurable" — mirrors the 30-bet
@@ -147,6 +151,7 @@ export async function buildMatchContext(
     awayCoach,
     h2h,
     fullOddsSnapshot,
+    extendedMarketOdds,
   ] = await Promise.all([
     loadChannelCalibration(
       competitionCode,
@@ -166,6 +171,10 @@ export async function buildMatchContext(
     loadFullOddsSnapshot(fixture.id).catch((err: unknown) => {
       logSignal("fullOddsSnapshot")(err);
       return null;
+    }),
+    loadExtendedMarketOdds(fixture.id).catch((err: unknown) => {
+      logSignal("extendedMarketOdds")(err);
+      return [];
     }),
   ]);
 
@@ -188,6 +197,7 @@ export async function buildMatchContext(
       fullOddsSnapshot,
       coveredMarkets,
     ),
+    extendedMarketOdds,
     fullOddsSnapshot,
   };
 }

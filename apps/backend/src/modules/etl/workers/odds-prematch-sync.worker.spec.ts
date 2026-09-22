@@ -6,6 +6,7 @@ import {
   extractAllOneXTwoOdds,
   extractAsianHandicapOdds,
   extractExtendedMarketOdds,
+  inspectExtendedMarkets,
   extractOneXTwoOdds,
   parseAsianHandicapValues,
   parseFixedOutcomeValues,
@@ -923,6 +924,43 @@ describe('handicap asiatique', () => {
 // Marchés ajoutés le 2026-09-15 (chantier A, A-10 à A-15). Formats relevés sur
 // l'API le même jour.
 describe('marchés à ligne et à issues fixes', () => {
+  it('distingue une absence fournisseur d’un libellé rejeté par le parseur', () => {
+    const diagnostics = inspectExtendedMarkets(
+      [
+        {
+          id: API_FOOTBALL_BOOKMAKERS.PINNACLE,
+          name: 'Pinnacle',
+          bets: [
+            {
+              id: API_FOOTBALL_BET_IDS.OVER_UNDER_2H,
+              name: 'Second Half Goals',
+              values: [
+                { value: 'Over 1.5', odd: 1.8 },
+                { value: 'Moins de 1.5', odd: 2 },
+              ],
+            },
+          ],
+        },
+      ],
+      'Pinnacle',
+    );
+
+    expect(
+      diagnostics.find((entry) => entry.market === 'OVER_UNDER_2H'),
+    ).toEqual({
+      market: 'OVER_UNDER_2H',
+      rawValues: 2,
+      parsedValues: 1,
+      rejectedLabels: ['Moins de 1.5'],
+    });
+    expect(diagnostics.find((entry) => entry.market === 'CORNERS')).toEqual({
+      market: 'CORNERS',
+      rawValues: 0,
+      parsedValues: 0,
+      rejectedLabels: [],
+    });
+  });
+
   it('parse une ligne décimale comme une ligne entière', () => {
     // Les corners cotent « Over 9 » autant que « Over 8.5 » : c'est ce que
     // l'encodage historique de la ligne dans `pick` ne savait pas représenter.

@@ -73,6 +73,11 @@ export const ETL_CONSTANTS = {
   API_FOOTBALL_RATE_LIMIT_MS: 6_000,
   // Delay between /fixtures/statistics calls within a stats-sync job (per fixture)
   STATS_RATE_LIMIT_MS: 2_000,
+  // A newly deployed statistics schema can expose every active league as
+  // unsynchronised at once. Routine jobs drain slowly across leagues; an
+  // operator-triggered backfill may use a larger, still bounded batch.
+  STATS_ROUTINE_MAX_FIXTURES_PER_JOB: 10,
+  STATS_BACKFILL_MAX_FIXTURES_PER_JOB: 100,
   // Prematch odds are fetched for fixtures from J+1 up to J+horizon so each
   // fixture accumulates several snapshots before kickoff — this is what feeds
   // the line-movement shadow signal (one snapshot per fixture = no movement).

@@ -28,6 +28,19 @@ enum FixtureStatus {
   @@schema("public")
 }
 
+enum StatisticSource {
+  API_FOOTBALL
+
+  @@schema("public")
+}
+
+enum XgSource {
+  API_FOOTBALL
+  SHOTS_PROXY
+
+  @@schema("public")
+}
+
 enum ModelRunPhase {
   ADVANCE
   PRE_KICKOFF
@@ -345,18 +358,19 @@ model Standing {
 }
 
 model Team {
-  id            String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  externalId    Int           @unique // football-data.org ID
+  id            String             @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  externalId    Int                @unique // football-data.org ID
   name          String
   shortName     String
   logoUrl       String?
-  competitionId String        @db.Uuid
-  competition   Competition   @relation(fields: [competitionId], references: [id])
-  homeFixtures  Fixture[]     @relation("HomeTeam")
-  awayFixtures  Fixture[]     @relation("AwayTeam")
+  competitionId String             @db.Uuid
+  competition   Competition        @relation(fields: [competitionId], references: [id])
+  homeFixtures  Fixture[]          @relation("HomeTeam")
+  awayFixtures  Fixture[]          @relation("AwayTeam")
   stats         TeamStats[]
+  fixtureStats  FixtureStatistic[]
   coachTenures  CoachTenure[]
-  createdAt     DateTime      @default(now())
+  createdAt     DateTime           @default(now())
 
   @@map("team")
   @@schema("public")
@@ -404,11 +418,16 @@ model Fixture {
   awayHtScore            Int?
   homeXg                 Decimal?                 @db.Decimal(5, 3) // from API-Football expected_goals
   awayXg                 Decimal?                 @db.Decimal(5, 3) // from API-Football expected_goals
+  homeXgSource           XgSource?
+  awayXgSource           XgSource?
   xgUnavailable          Boolean                  @default(false) // true = API returned no stats, skip on retry
+  statisticsSyncedAt     DateTime?
+  statisticsUnavailable  Boolean                  @default(false)
   modelRuns              ModelRun[]
   bets                   Bet[]
   betSlipItems           BetSlipItem[]
   teamStats              TeamStats[]
+  fixtureStatistics      FixtureStatistic[]
   oddsSnapshots          OddsSnapshot[]
   couponLegs             CouponProposalLeg[]
   vantageDecisionHistory VantageDecisionHistory[]
@@ -420,9 +439,34 @@ model Fixture {
   @@index([scheduledAt])
   @@index([status, scheduledAt])
   @@index([seasonId, status, scheduledAt])
+  @@index([seasonId, status, statisticsSyncedAt])
   @@index([homeTeamId, status, scheduledAt])
   @@index([awayTeamId, status, scheduledAt])
   @@map("fixture")
+  @@schema("public")
+}
+
+// Final post-match statistics returned by API-Football. Values are stored in
+// provider-neutral snake_case names so rolling features can consume them
+// without retaining the raw API response. One final value per
+// fixture/team/type/source; a retry replaces the fixture atomically.
+model FixtureStatistic {
+  id         String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  fixtureId  String          @db.Uuid
+  fixture    Fixture         @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  teamId     String          @db.Uuid
+  team       Team            @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  type       String
+  value      Decimal         @db.Decimal(8, 3)
+  rawValue   String?
+  source     StatisticSource @default(API_FOOTBALL)
+  observedAt DateTime
+  createdAt  DateTime        @default(now())
+
+  @@unique([fixtureId, teamId, type, source])
+  @@index([fixtureId, type])
+  @@index([teamId, type, observedAt])
+  @@map("fixture_statistic")
   @@schema("public")
 }
 
@@ -443,6 +487,20 @@ model TeamStats {
   awayWinRate      Decimal @db.Decimal(5, 4) // season away win rate
   drawRate         Decimal @db.Decimal(5, 4) // season draw rate
   leagueVolatility Decimal @db.Decimal(5, 4) // std-dev of total goals in league
+
+  // Rolling point-in-time context over the latest 10 matches carrying the
+  // corresponding raw statistic. Nullable means "not observed", never zero.
+  shotsOnTargetFor     Decimal? @db.Decimal(7, 3)
+  shotsOnTargetAgainst Decimal? @db.Decimal(7, 3)
+  totalShotsFor        Decimal? @db.Decimal(7, 3)
+  totalShotsAgainst    Decimal? @db.Decimal(7, 3)
+  cornersFor           Decimal? @db.Decimal(7, 3)
+  cornersAgainst       Decimal? @db.Decimal(7, 3)
+  cardsFor             Decimal? @db.Decimal(7, 3)
+  cardsAgainst         Decimal? @db.Decimal(7, 3)
+  possessionFor        Decimal? @db.Decimal(7, 3)
+  possessionAgainst    Decimal? @db.Decimal(7, 3)
+  statisticsMatchCount Int      @default(0)
 
   createdAt DateTime @default(now())
 

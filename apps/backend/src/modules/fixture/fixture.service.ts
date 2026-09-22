@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { Fixture, FixtureStatus, Market, OddsSnapshotSource } from '@evcore/db';
+import {
+  Fixture,
+  FixtureStatus,
+  Market,
+  OddsSnapshotSource,
+  XgSource,
+} from '@evcore/db';
 import {
   FixtureRepository,
   type UpsertFixtureResult,
@@ -188,12 +194,14 @@ export class FixtureService {
     return this.fixtureRepository.syncFixtureState(input);
   }
 
-  async updateXg(
-    externalId: number,
-    homeXg: number,
-    awayXg: number,
-  ): Promise<void> {
-    return this.fixtureRepository.updateXg(externalId, homeXg, awayXg);
+  async updateXg(input: {
+    externalId: number;
+    homeXg: number;
+    awayXg: number;
+    homeXgSource: XgSource;
+    awayXgSource: XgSource;
+  }): Promise<void> {
+    return this.fixtureRepository.updateXg(input);
   }
 
   async findByExternalId(externalId: number): Promise<Fixture | null> {
@@ -250,6 +258,16 @@ export class FixtureService {
 
   findFinishedWithoutXg(seasonId: string): Promise<{ externalId: number }[]> {
     return this.fixtureRepository.findFinishedWithoutXg(seasonId);
+  }
+
+  findFinishedWithoutStatistics(seasonId: string): Promise<
+    Array<{
+      externalId: number;
+      homeTeam: { externalId: number };
+      awayTeam: { externalId: number };
+    }>
+  > {
+    return this.fixtureRepository.findFinishedWithoutStatistics(seasonId);
   }
 
   findScheduledBySeason(seasonId: string): Promise<
