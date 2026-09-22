@@ -3,6 +3,7 @@ import { createLogger } from "./logger";
 import { createLlmClients, findProviderClient } from "./groq/client";
 import { createVantageWorker } from "./queue/worker";
 import { createQueue } from "./queue/queue";
+import { removeObsoleteIntradaySchedulers } from "./queue/remove-obsolete-schedulers";
 
 async function main() {
   const config = loadConfig();
@@ -113,9 +114,8 @@ async function main() {
   // A repeatable job already registered in Redis keeps firing until it is
   // explicitly removed, so removing the `queue.add` above would not have been
   // enough on a running deployment.
-  await queue.removeJobScheduler(
-    "vantage-recurring-intraday-coupon-generation",
-  );
+  const removedIntradaySchedulers =
+    await removeObsoleteIntradaySchedulers(queue);
 
   logger.info(
     {
@@ -123,6 +123,7 @@ async function main() {
       couponCron: config.couponCron,
       couponRetryCron: config.couponRetryCron,
       couponIntradayWindowHours: config.couponIntradayWindowHours,
+      removedIntradaySchedulers,
       llmProvider: config.llmProvider,
       model: config.llmModel,
       llmFallbackProviders: llmClients.fallbacks.map((f) => f.provider),

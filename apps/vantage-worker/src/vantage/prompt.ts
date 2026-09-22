@@ -11,6 +11,7 @@ Tu ne reçois JAMAIS de question ouverte. Ton entrée est toujours la même list
 
 Règles strictes :
 - Tu ne peux choisir un marché QUE parmi ceux déjà listés dans le contexte (après "marché=" dans une lecture de canal, y compris une lecture proche du seuil) ou explicitement autorisés (le bloc "Marché" ci-dessous, quand présent) — jamais un marché inventé.
+- Le bloc « Marchés expérimentaux » est strictement observationnel : même s'il contient des balises marché=/pick=/ligne= pour être lisible, tu n'as JAMAIS le droit de choisir une de ses issues. Il peut seulement nuancer une lecture déjà autorisée. La ligne et le règlement de ces marchés ne sont pas encore activés de bout en bout.
 - Un canal (ex: DRAW, GOALS, WIN_EITHER_HALF) n'est PAS un marché. Chaque lecture ci-dessous affiche "marché=" suivi de la valeur à utiliser dans le champ "market" — c'est TOUJOURS cette valeur-là, jamais le nom du canal qui la précède (ex: le canal DRAW peut produire marché=ONE_X_TWO, pick=DRAW ; le canal GOALS peut produire marché=OVER_UNDER).
 - Les champs JSON "market" et "pick" utilisent TOUJOURS le code technique (après "marché=" / "pick=") — jamais sa traduction. Dans "reasonDetails" en revanche, n'écris JAMAIS un code technique brut, quel qu'il soit — pas seulement les deux exemples ci-dessous, absolument AUCUN nom de marché ou de canal en MAJUSCULES/underscore : ni "marché=", "pick=", ni un marché ("OVER_UNDER", "UNDER_2_5", "ONE_X_TWO", "BTTS", "CORRECT_SCORE", "DRAW_NO_BET", "TEAM_TOTAL", "CLEAN_SHEET", "WIN_EITHER_HALF", "HALF_TIME_FULL_TIME", "RESULT_BTTS", "RESULT_TOTAL_GOALS", "DOUBLE_CHANCE"...), ni un canal ("DOMINANT", "VALUE", "SAFE", "GOALS", "FIRST_HALF", "DRAW", "CONSENSUS", "CONTRARIAN", "AVOID", "UNDERDOG", "FAVORITE", "LIVE_VALUE", "MARKET_MOVE", "WIN_TO_NIL"...). Dis toujours "moins de 2.5 buts", "victoire 2-0", "les deux équipes marquent", "gagner au moins une mi-temps" en langage naturel — jamais le code qui les désigne en base. Ne restate PAS le marché et le pick entre parenthèses après ta phrase (ex: jamais "... intéressant (Plus/Moins de buts, moins de 2.5)") : l'interface affiche déjà le marché et le pick en clair juste au-dessus de ton texte, cette répétition n'apporte rien au joueur qui le lit.
 - La "fiabilité mesurée" d'un canal est un ratio de calibration : réussite réelle ÷ probabilité que le canal avait lui-même annoncée. Proche de 1 = bien calibré. Attention au sens, il est régulièrement inversé par erreur — mémorise l'exemple suivant : calibration 0,65× (INFÉRIEUR à 1) → le canal est SURCONFIANT (il annonce plus qu'il ne tient) → sa probabilité annoncée est probablement SURESTIMÉE, la vraie chance est plus BASSE. Calibration 1,40× (SUPÉRIEUR à 1) → le canal est SOUS-CONFIANT → sa probabilité annoncée est probablement SOUS-ESTIMÉE, la vraie chance est plus HAUTE. Ne dis jamais "sous-estimé" pour une calibration inférieure à 1, ni "surestimé" pour une calibration supérieure à 1 — c'est l'erreur la plus fréquente, vérifie-toi avant d'écrire. Ce n'est PAS un ROI, ce n'est PAS un EV, et aucun des deux n'existe dans ce contexte — ne raisonne jamais en gains/pertes financiers, en cote gagnée/perdue, ni en "valeur espérée", uniquement en fiabilité de la probabilité annoncée.
@@ -73,6 +74,7 @@ export function buildUserPrompt(
     renderCoachBlock(context),
     renderH2HBlock(context),
     renderMarketOddsBlock(context),
+    renderExtendedMarketOddsBlock(context),
   ]
     .filter((b): b is string => b !== null)
     .join("\n");
@@ -106,7 +108,55 @@ function renderTeamStatsBlock(context: MatchContext): string | null {
 
 function formatTeamSignal(stats: MatchContext["homeTeamStats"] | null): string {
   if (!stats) return "non disponible";
-  return `forme récente ${formatPct(stats.recentForm)}, xG pour ${stats.xgFor.toFixed(2)}, xG contre ${stats.xgAgainst.toFixed(2)}, victoires domicile ${formatPct(stats.homeWinRate)}, victoires extérieur ${formatPct(stats.awayWinRate)}, nuls ${formatPct(stats.drawRate)}, volatilité ligue ${stats.leagueVolatility.toFixed(2)}`;
+  const extended = formatExtendedTeamSignal(stats);
+  return `forme récente ${formatPct(stats.recentForm)}, xG pour ${stats.xgFor.toFixed(2)}, xG contre ${stats.xgAgainst.toFixed(2)}, victoires domicile ${formatPct(stats.homeWinRate)}, victoires extérieur ${formatPct(stats.awayWinRate)}, nuls ${formatPct(stats.drawRate)}, volatilité ligue ${stats.leagueVolatility.toFixed(2)}${extended}`;
+}
+
+function formatExtendedTeamSignal(
+  stats: NonNullable<MatchContext["homeTeamStats"]>,
+): string {
+  if (!stats.statisticsMatchCount) return "";
+  const metrics = [
+    formatOptionalMetric(
+      "tirs cadrés pour/contre",
+      stats.shotsOnTargetFor,
+      stats.shotsOnTargetAgainst,
+    ),
+    formatOptionalMetric(
+      "tirs pour/contre",
+      stats.totalShotsFor,
+      stats.totalShotsAgainst,
+    ),
+    formatOptionalMetric(
+      "corners pour/contre",
+      stats.cornersFor,
+      stats.cornersAgainst,
+    ),
+    formatOptionalMetric(
+      "cartons pour/contre",
+      stats.cardsFor,
+      stats.cardsAgainst,
+    ),
+    formatOptionalMetric(
+      "possession pour/contre",
+      stats.possessionFor,
+      stats.possessionAgainst,
+      "%",
+    ),
+  ].filter((metric): metric is string => metric !== null);
+  return metrics.length > 0
+    ? `, statistiques sur ${stats.statisticsMatchCount} match(s) : ${metrics.join(", ")}`
+    : "";
+}
+
+function formatOptionalMetric(
+  label: string,
+  valueFor: number | null | undefined,
+  valueAgainst: number | null | undefined,
+  suffix = "",
+): string | null {
+  if (valueFor == null || valueAgainst == null) return null;
+  return `${label} ${valueFor.toFixed(1)}${suffix}/${valueAgainst.toFixed(1)}${suffix}`;
 }
 
 function renderCoachBlock(context: MatchContext): string | null {
@@ -153,6 +203,18 @@ function renderMarketOddsBlock(context: MatchContext): string | null {
     return `marché=${m.market} (${formatMarketForDisplayFr(m.market)}) — ${parts.join(", ")}`;
   });
   return `Marché (prix brut du bookmaker, aucun canal n'a sélectionné ce marché — information de contexte, jamais un signal de valeur) : ${lines.join(" ; ")}.`;
+}
+
+function renderExtendedMarketOddsBlock(context: MatchContext): string | null {
+  if (!context.extendedMarketOdds?.length) return null;
+  const lines = context.extendedMarketOdds.map((market) => {
+    const prices = market.prices.map(({ pick, odds, line }) => {
+      const lineLabel = line === undefined ? "" : `, ligne=${line}`;
+      return `${formatPickForDisplayFr(pick, market.market)} (pick=${pick}${lineLabel}) ${odds}`;
+    });
+    return `marché=${market.market} (${formatMarketForDisplayFr(market.market)}) — ${prices.join(", ")}`;
+  });
+  return `Marchés expérimentaux du bookmaker de référence (observation seulement : interdiction de les choisir tant que la ligne, le règlement et la calibration walk-forward ne sont pas activés de bout en bout) : ${lines.join(" ; ")}.`;
 }
 
 function formatPct(value: number | null): string {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { StatsSyncWorker } from './stats-sync.worker';
+import { extractXg, StatsSyncWorker } from './stats-sync.worker';
 import type { FixtureService } from '../../fixture/fixture.service';
 import type { ConfigService } from '@nestjs/config';
 import { ApiFootballClient } from '../api-football.client';
@@ -7,6 +7,8 @@ import type { NotificationService } from '../../notification/notification.servic
 import type { PrismaService } from '@/prisma.service';
 import type { Job } from 'bullmq';
 import type { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
+import type { FixtureStatisticsService } from '../../fixture-statistics/fixture-statistics.service';
+import { XgSource } from '@evcore/db';
 import { execFile } from 'node:child_process';
 
 vi.mock('node:child_process', () => ({
@@ -52,12 +54,24 @@ const PL_COMPETITION_ROW = {
   updatedAt: new Date(),
 };
 
+function fixtureWithoutStatistics(
+  externalId: number,
+  homeExternalId = 33,
+  awayExternalId = 40,
+) {
+  return {
+    externalId,
+    homeTeam: { externalId: homeExternalId },
+    awayTeam: { externalId: awayExternalId },
+  };
+}
+
 describe('StatsSyncWorker', () => {
   const execFileMock = vi.mocked(execFile);
   const fixtureService = {
     upsertCompetition: vi.fn().mockResolvedValue({ id: 'competition-id' }),
     upsertSeason: vi.fn().mockResolvedValue({ id: 'season-id' }),
-    findFinishedWithoutXg: vi.fn(),
+    findFinishedWithoutStatistics: vi.fn(),
     updateXg: vi.fn().mockResolvedValue(undefined),
     markXgUnavailable: vi.fn().mockResolvedValue(undefined),
   } satisfies Partial<FixtureService>;
@@ -73,7 +87,7 @@ describe('StatsSyncWorker', () => {
   } satisfies Partial<NotificationService>;
 
   const rollingStatsService = {
-    refreshSeason: vi.fn().mockResolvedValue({
+    backfillSeason: vi.fn().mockResolvedValue({
       seasonId: 'season-id',
       fixtureCount: 1,
       upsertCount: 2,
@@ -83,6 +97,11 @@ describe('StatsSyncWorker', () => {
       durationMs: 1,
     }),
   } satisfies Partial<RollingStatsService>;
+
+  const fixtureStatistics = {
+    persistFinalStatistics: vi.fn().mockResolvedValue(4),
+    markUnavailable: vi.fn().mockResolvedValue(undefined),
+  } satisfies Partial<FixtureStatisticsService>;
 
   const prisma = {
     client: {
@@ -100,6 +119,7 @@ describe('StatsSyncWorker', () => {
     notification as unknown as NotificationService,
     prisma as unknown as PrismaService,
     rollingStatsService as unknown as RollingStatsService,
+    fixtureStatistics as unknown as FixtureStatisticsService,
   );
 
   beforeEach(() => {
@@ -110,7 +130,9 @@ describe('StatsSyncWorker', () => {
     fixtureService.upsertSeason.mockResolvedValue({ id: 'season-id' });
     fixtureService.updateXg.mockResolvedValue(undefined);
     fixtureService.markXgUnavailable.mockResolvedValue(undefined);
-    rollingStatsService.refreshSeason.mockResolvedValue({
+    fixtureStatistics.persistFinalStatistics.mockResolvedValue(4);
+    fixtureStatistics.markUnavailable.mockResolvedValue(undefined);
+    rollingStatsService.backfillSeason.mockResolvedValue({
       seasonId: 'season-id',
       fixtureCount: 1,
       upsertCount: 2,
@@ -126,8 +148,8 @@ describe('StatsSyncWorker', () => {
   });
 
   it('skips fixtures when API returns non-ok status', async () => {
-    fixtureService.findFinishedWithoutXg.mockResolvedValue([
-      { externalId: 12345 },
+    fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
+      fixtureWithoutStatistics(12345),
     ]);
 
     execFileMock.mockImplementation((...args) => {
@@ -144,12 +166,12 @@ describe('StatsSyncWorker', () => {
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
-    expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
+    expect(rollingStatsService.backfillSeason).not.toHaveBeenCalled();
   }, 15_000);
 
   it('extracts expected_goals from API response and calls updateXg', async () => {
-    fixtureService.findFinishedWithoutXg.mockResolvedValue([
-      { externalId: 99999 },
+    fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
+      fixtureWithoutStatistics(99999),
     ]);
 
     execFileMock.mockImplementation((...args) => {
@@ -169,13 +191,47 @@ describe('StatsSyncWorker', () => {
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
     expect(fixtureService.updateXg).toHaveBeenCalledOnce();
-    expect(fixtureService.updateXg).toHaveBeenCalledWith(99999, 0.76, 1.23);
-    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-id');
+    expect(fixtureService.updateXg).toHaveBeenCalledWith({
+      externalId: 99999,
+      homeXg: 0.76,
+      awayXg: 1.23,
+      homeXgSource: XgSource.API_FOOTBALL,
+      awayXgSource: XgSource.API_FOOTBALL,
+    });
+    expect(fixtureStatistics.persistFinalStatistics).toHaveBeenCalledOnce();
+    expect(rollingStatsService.backfillSeason).toHaveBeenCalledWith(
+      'season-id',
+    );
+  });
+
+  it('matches home and away xG by provider team id, not response order', async () => {
+    fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
+      fixtureWithoutStatistics(99998),
+    ]);
+    const response = buildStatisticsResponse('0.76', '1.23');
+    response.response.reverse();
+
+    execFileMock.mockImplementation((...args) => {
+      const callback = args[args.length - 1] as (
+        error: Error | null,
+        stdout: string,
+      ) => void;
+      callback(null, `${JSON.stringify(response)}\n__EVCORE_HTTP_CODE__:200`);
+      return {} as never;
+    });
+
+    await worker.process({
+      data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
+    } as Job<{ season: number; competitionCode: string; leagueId: number }>);
+
+    expect(fixtureService.updateXg).toHaveBeenCalledWith(
+      expect.objectContaining({ homeXg: 0.76, awayXg: 1.23 }),
+    );
   });
 
   it('falls back to shots proxy when expected_goals field is present but null', async () => {
-    fixtureService.findFinishedWithoutXg.mockResolvedValue([
-      { externalId: 11111 },
+    fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
+      fixtureWithoutStatistics(11111),
     ]);
 
     execFileMock.mockImplementation((...args) => {
@@ -195,18 +251,22 @@ describe('StatsSyncWorker', () => {
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
     // Proxy: shots_on_goal × 0.40 — home: 5×0.40=2.00, away: 3×0.40=1.20
-    expect(fixtureService.updateXg).toHaveBeenCalledWith(
-      11111,
-      expect.closeTo(2.0),
-      expect.closeTo(1.2),
-    );
+    expect(fixtureService.updateXg).toHaveBeenCalledWith({
+      externalId: 11111,
+      homeXg: expect.closeTo(2.0),
+      awayXg: expect.closeTo(1.2),
+      homeXgSource: XgSource.SHOTS_PROXY,
+      awayXgSource: XgSource.SHOTS_PROXY,
+    });
     expect(fixtureService.markXgUnavailable).not.toHaveBeenCalled();
-    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-id');
+    expect(rollingStatsService.backfillSeason).toHaveBeenCalledWith(
+      'season-id',
+    );
   });
 
   it('falls back to shots proxy when expected_goals field is absent', async () => {
-    fixtureService.findFinishedWithoutXg.mockResolvedValue([
-      { externalId: 44444 },
+    fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
+      fixtureWithoutStatistics(44444, 52, 42),
     ]);
 
     // Response without expected_goals field (2022-23 first half pattern)
@@ -243,12 +303,20 @@ describe('StatsSyncWorker', () => {
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
     // Proxy: shots_on_goal × 0.40 — home: 2×0.40=0.80, away: 5×0.40=2.00
-    expect(fixtureService.updateXg).toHaveBeenCalledWith(44444, 0.8, 2.0);
-    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-id');
+    expect(fixtureService.updateXg).toHaveBeenCalledWith({
+      externalId: 44444,
+      homeXg: 0.8,
+      awayXg: 2.0,
+      homeXgSource: XgSource.SHOTS_PROXY,
+      awayXgSource: XgSource.SHOTS_PROXY,
+    });
+    expect(rollingStatsService.backfillSeason).toHaveBeenCalledWith(
+      'season-id',
+    );
   });
 
   it('skips all fixtures when findFinishedWithoutXg returns empty list', async () => {
-    fixtureService.findFinishedWithoutXg.mockResolvedValue([]);
+    fixtureService.findFinishedWithoutStatistics.mockResolvedValue([]);
     // The worker still calls /leagues once to resolve the Season's date
     // range (fetchLeagueSeasonDates) before checking for xg-missing
     // fixtures — answer it with a harmless empty leagues response.
@@ -270,7 +338,7 @@ describe('StatsSyncWorker', () => {
 
     expect(execFileMock).toHaveBeenCalledTimes(1);
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
-    expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
+    expect(rollingStatsService.backfillSeason).not.toHaveBeenCalled();
   });
 
   it('skips the job when the competition is inactive', async () => {
@@ -284,14 +352,14 @@ describe('StatsSyncWorker', () => {
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
     expect(fixtureService.upsertCompetition).not.toHaveBeenCalled();
-    expect(fixtureService.findFinishedWithoutXg).not.toHaveBeenCalled();
+    expect(fixtureService.findFinishedWithoutStatistics).not.toHaveBeenCalled();
     expect(execFileMock).not.toHaveBeenCalled();
-    expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
+    expect(rollingStatsService.backfillSeason).not.toHaveBeenCalled();
   });
 
   it('marks xgUnavailable when statistics response has < 2 teams', async () => {
-    fixtureService.findFinishedWithoutXg.mockResolvedValue([
-      { externalId: 33333 },
+    fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
+      fixtureWithoutStatistics(33333),
     ]);
 
     const singleTeamResponse = {
@@ -323,13 +391,14 @@ describe('StatsSyncWorker', () => {
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
     expect(fixtureService.markXgUnavailable).toHaveBeenCalledWith(33333);
+    expect(fixtureStatistics.markUnavailable).toHaveBeenCalledWith(33333);
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
-    expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
+    expect(rollingStatsService.backfillSeason).not.toHaveBeenCalled();
   });
 
   it('skips fixture when statistics response has < 2 teams', async () => {
-    fixtureService.findFinishedWithoutXg.mockResolvedValue([
-      { externalId: 22222 },
+    fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
+      fixtureWithoutStatistics(22222),
     ]);
 
     const singleTeamResponse = {
@@ -361,6 +430,19 @@ describe('StatsSyncWorker', () => {
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
-    expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
+    expect(rollingStatsService.backfillSeason).not.toHaveBeenCalled();
+  });
+});
+
+describe('extractXg', () => {
+  it('ne transforme pas une absence de xG et de tirs cadrés en faux xG nul', () => {
+    expect(extractXg([{ type: 'Corner Kicks', value: 4 }])).toBeNull();
+  });
+
+  it('trace explicitement la provenance du proxy tirs cadrés', () => {
+    expect(extractXg([{ type: 'Shots on Goal', value: 5 }])).toEqual({
+      value: 2,
+      source: XgSource.SHOTS_PROXY,
+    });
   });
 });

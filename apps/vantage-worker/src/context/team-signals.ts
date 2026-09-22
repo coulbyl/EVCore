@@ -37,6 +37,17 @@ export async function loadTeamSignal(
     awayWinRate: row.awayWinRate.toNumber(),
     drawRate: row.drawRate.toNumber(),
     leagueVolatility: row.leagueVolatility.toNumber(),
+    shotsOnTargetFor: row.shotsOnTargetFor?.toNumber() ?? null,
+    shotsOnTargetAgainst: row.shotsOnTargetAgainst?.toNumber() ?? null,
+    totalShotsFor: row.totalShotsFor?.toNumber() ?? null,
+    totalShotsAgainst: row.totalShotsAgainst?.toNumber() ?? null,
+    cornersFor: row.cornersFor?.toNumber() ?? null,
+    cornersAgainst: row.cornersAgainst?.toNumber() ?? null,
+    cardsFor: row.cardsFor?.toNumber() ?? null,
+    cardsAgainst: row.cardsAgainst?.toNumber() ?? null,
+    possessionFor: row.possessionFor?.toNumber() ?? null,
+    possessionAgainst: row.possessionAgainst?.toNumber() ?? null,
+    statisticsMatchCount: row.statisticsMatchCount,
   };
 }
 

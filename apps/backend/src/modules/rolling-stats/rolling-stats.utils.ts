@@ -160,7 +160,10 @@ export function calculateLeagueVolatility(fixtures: Fixture[]): Decimal {
 }
 
 export function resultForTeam(
-  fixture: Fixture,
+  fixture: Pick<
+    Fixture,
+    'homeTeamId' | 'awayTeamId' | 'homeScore' | 'awayScore'
+  >,
   teamId: string,
 ): MatchResult | null {
   if (fixture.homeScore === null || fixture.awayScore === null) {

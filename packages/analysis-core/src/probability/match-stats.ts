@@ -10,6 +10,17 @@ export type TeamStatsInput = {
   awayWinRate: unknown;
   drawRate: unknown;
   leagueVolatility: unknown;
+  shotsOnTargetFor?: unknown;
+  shotsOnTargetAgainst?: unknown;
+  totalShotsFor?: unknown;
+  totalShotsAgainst?: unknown;
+  cornersFor?: unknown;
+  cornersAgainst?: unknown;
+  cardsFor?: unknown;
+  cardsAgainst?: unknown;
+  possessionFor?: unknown;
+  possessionAgainst?: unknown;
+  statisticsMatchCount?: number;
 };
 
 export type MatchupFeatures = {

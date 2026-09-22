@@ -6,6 +6,7 @@ import {
   Market,
   OddsSnapshotSource,
   Prisma,
+  XgSource,
 } from '@evcore/db';
 
 // API-Football round strings that follow a home-and-away (aller/retour) format.
@@ -441,14 +442,22 @@ export class FixtureRepository {
     return { id };
   }
 
-  async updateXg(
-    externalId: number,
-    homeXg: number,
-    awayXg: number,
-  ): Promise<void> {
+  async updateXg(input: {
+    externalId: number;
+    homeXg: number;
+    awayXg: number;
+    homeXgSource: XgSource;
+    awayXgSource: XgSource;
+  }): Promise<void> {
     await this.prisma.client.fixture.update({
-      where: { externalId },
-      data: { homeXg, awayXg },
+      where: { externalId: input.externalId },
+      data: {
+        homeXg: input.homeXg,
+        awayXg: input.awayXg,
+        homeXgSource: input.homeXgSource,
+        awayXgSource: input.awayXgSource,
+        xgUnavailable: false,
+      },
     });
   }
 
@@ -569,6 +578,29 @@ export class FixtureRepository {
         xgUnavailable: false,
       },
       select: { externalId: true },
+      orderBy: { scheduledAt: 'asc' },
+    });
+  }
+
+  findFinishedWithoutStatistics(seasonId: string): Promise<
+    Array<{
+      externalId: number;
+      homeTeam: { externalId: number };
+      awayTeam: { externalId: number };
+    }>
+  > {
+    return this.prisma.client.fixture.findMany({
+      where: {
+        seasonId,
+        status: 'FINISHED',
+        statisticsSyncedAt: null,
+        statisticsUnavailable: false,
+      },
+      select: {
+        externalId: true,
+        homeTeam: { select: { externalId: true } },
+        awayTeam: { select: { externalId: true } },
+      },
       orderBy: { scheduledAt: 'asc' },
     });
   }

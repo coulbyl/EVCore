@@ -17,6 +17,7 @@ function makeFixture(overrides: Record<string, unknown> = {}) {
     awayScore: 0,
     homeXg: decimal(1.2),
     awayXg: decimal(0.8),
+    fixtureStatistics: [],
     ...overrides,
   };
 }
@@ -251,6 +252,44 @@ describe('RollingStatsService', () => {
     expect(stats.recentForm.toNumber()).toBeGreaterThan(0);
     expect(stats.xgFor.toNumber()).toBeCloseTo(1.45, 6);
     expect(stats.xgAgainst.toNumber()).toBeCloseTo(0.65, 6);
+  });
+
+  it('builds point-in-time rolling shot, corner, card and possession features', async () => {
+    fixtureFindUnique.mockResolvedValue({
+      id: 'fixture-1',
+      seasonId: 'season-1',
+      scheduledAt: new Date('2024-08-01T12:00:00.000Z'),
+    });
+    fixtureFindMany.mockResolvedValue([
+      makeFixture({
+        fixtureStatistics: [
+          { teamId: 'team-a', type: 'shots_on_goal', value: decimal(6) },
+          { teamId: 'team-b', type: 'shots_on_goal', value: decimal(2) },
+          { teamId: 'team-a', type: 'total_shots', value: decimal(14) },
+          { teamId: 'team-b', type: 'total_shots', value: decimal(7) },
+          { teamId: 'team-a', type: 'corner_kicks', value: decimal(8) },
+          { teamId: 'team-b', type: 'corner_kicks', value: decimal(3) },
+          { teamId: 'team-a', type: 'yellow_cards', value: decimal(2) },
+          { teamId: 'team-b', type: 'yellow_cards', value: decimal(4) },
+          { teamId: 'team-a', type: 'red_cards', value: decimal(1) },
+          { teamId: 'team-b', type: 'red_cards', value: decimal(0) },
+          { teamId: 'team-a', type: 'ball_possession', value: decimal(61) },
+          { teamId: 'team-b', type: 'ball_possession', value: decimal(39) },
+        ],
+      }),
+    ]);
+
+    const service = new RollingStatsService(prismaService as never);
+    const stats = await service.computeStats('team-a', 'fixture-1');
+
+    expect(stats.shotsOnTargetFor?.toNumber()).toBe(6);
+    expect(stats.shotsOnTargetAgainst?.toNumber()).toBe(2);
+    expect(stats.totalShotsFor?.toNumber()).toBe(14);
+    expect(stats.cornersFor?.toNumber()).toBe(8);
+    expect(stats.cardsFor?.toNumber()).toBe(3);
+    expect(stats.cardsAgainst?.toNumber()).toBe(4);
+    expect(stats.possessionFor?.toNumber()).toBe(61);
+    expect(stats.statisticsMatchCount).toBe(1);
   });
 
   it('refreshSeason does nothing when every finished fixture already has both rows', async () => {

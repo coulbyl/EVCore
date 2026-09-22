@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { STRATEGY_CHANNEL } from "@evcore/analysis-core";
+import { STRATEGY_CHANNEL, UNIFIED_COUPON_CLASS } from "@evcore/analysis-core";
 import {
   admissibleCandidates,
+  candidatesForCouponClass,
   reduceToLlmPool,
   scoreCandidates,
   type ScoredCandidate,
@@ -118,6 +119,27 @@ describe("admissibleCandidates", () => {
 
   it("keeps a well-formed candidate", () => {
     expect(admissibleCandidates([score()])).toHaveLength(1);
+  });
+});
+
+describe("candidatesForCouponClass", () => {
+  it("counts only admissible candidates inside the class odds band", () => {
+    const candidates = [
+      score({
+        fixtureId: "inside",
+        oddsSnapshot: 1.5,
+        probability: 0.7,
+        pMarketFair: 0.68,
+        referenceOdds: 1.45,
+      }),
+      score({ fixtureId: "too-short", oddsSnapshot: 1.1 }),
+      score({ fixtureId: "upper-bound", oddsSnapshot: 1.8 }),
+      score({ fixtureId: "no-odds", oddsSnapshot: null }),
+    ];
+
+    expect(
+      candidatesForCouponClass(candidates, UNIFIED_COUPON_CLASS),
+    ).toHaveLength(1);
   });
 });
 

@@ -20,6 +20,17 @@ export type FeatureSnapshot = {
   awayWinRate: Decimal;
   drawRate: Decimal;
   leagueVolatility: Decimal;
+  shotsOnTargetFor: Decimal | null;
+  shotsOnTargetAgainst: Decimal | null;
+  totalShotsFor: Decimal | null;
+  totalShotsAgainst: Decimal | null;
+  cornersFor: Decimal | null;
+  cornersAgainst: Decimal | null;
+  cardsFor: Decimal | null;
+  cardsAgainst: Decimal | null;
+  possessionFor: Decimal | null;
+  possessionAgainst: Decimal | null;
+  statisticsMatchCount: number;
 };
 
 type RollingStatsRunResult = {
@@ -43,7 +54,13 @@ type SeasonFixture = Pick<
   | 'awayScore'
   | 'homeXg'
   | 'awayXg'
->;
+> & {
+  fixtureStatistics: Array<{
+    teamId: string;
+    type: string;
+    value: Prisma.Decimal;
+  }>;
+};
 
 type TeamStatsRow = {
   teamId: string;
@@ -61,6 +78,17 @@ type ExistingTeamStatsRow = {
   awayWinRate: Prisma.Decimal;
   drawRate: Prisma.Decimal;
   leagueVolatility: Prisma.Decimal;
+  shotsOnTargetFor: Prisma.Decimal | null;
+  shotsOnTargetAgainst: Prisma.Decimal | null;
+  totalShotsFor: Prisma.Decimal | null;
+  totalShotsAgainst: Prisma.Decimal | null;
+  cornersFor: Prisma.Decimal | null;
+  cornersAgainst: Prisma.Decimal | null;
+  cardsFor: Prisma.Decimal | null;
+  cardsAgainst: Prisma.Decimal | null;
+  possessionFor: Prisma.Decimal | null;
+  possessionAgainst: Prisma.Decimal | null;
+  statisticsMatchCount: number;
 };
 
 class RollingWindow {
@@ -100,10 +128,40 @@ class RollingWindow {
   }
 }
 
+function optionalAverage(
+  window: RollingWindow,
+): { for: Decimal; against: Decimal } | null {
+  return window.size > 0 ? window.average() : null;
+}
+
+function statisticValue(
+  fixture: SeasonFixture,
+  teamId: string,
+  type: string,
+): Decimal | null {
+  const row = fixture.fixtureStatistics.find(
+    (statistic) => statistic.teamId === teamId && statistic.type === type,
+  );
+  return row ? new Decimal(row.value) : null;
+}
+
+function cardsValue(fixture: SeasonFixture, teamId: string): Decimal | null {
+  const yellow = statisticValue(fixture, teamId, 'yellow_cards');
+  const red = statisticValue(fixture, teamId, 'red_cards');
+  if (yellow === null && red === null) return null;
+  return (yellow ?? new Decimal(0)).plus(red ?? new Decimal(0));
+}
+
 class TeamSeasonAccumulator {
   recentResults: Array<'W' | 'D' | 'L'> = [];
   readonly xgWindow = new RollingWindow(10);
   readonly goalWindow = new RollingWindow(10);
+  readonly shotsOnTargetWindow = new RollingWindow(10);
+  readonly totalShotsWindow = new RollingWindow(10);
+  readonly cornersWindow = new RollingWindow(10);
+  readonly cardsWindow = new RollingWindow(10);
+  readonly possessionWindow = new RollingWindow(10);
+  statisticsMatchCount = 0;
   homeMatches = 0;
   homeWins = 0;
   awayMatches = 0;
@@ -150,7 +208,7 @@ class TeamSeasonAccumulator {
   addFixture(fixture: SeasonFixture, teamId: string): void {
     this.advanceCoachAndResetOnChange(fixture.scheduledAt);
 
-    const result = resultForTeam(fixture as Fixture, teamId);
+    const result = resultForTeam(fixture, teamId);
     if (result) {
       this.recentResults.push(result);
       if (this.recentResults.length > 5) {
@@ -194,6 +252,61 @@ class TeamSeasonAccumulator {
         against: new Decimal(xgAgainst),
       });
     }
+
+    const opponentId = isHome ? fixture.awayTeamId : fixture.homeTeamId;
+    const statisticContext = { fixture, teamId, opponentId };
+    const trackedPairs = [
+      this.pushStatisticPair(
+        this.shotsOnTargetWindow,
+        'shots_on_goal',
+        statisticContext,
+      ),
+      this.pushStatisticPair(
+        this.totalShotsWindow,
+        'total_shots',
+        statisticContext,
+      ),
+      this.pushStatisticPair(
+        this.cornersWindow,
+        'corner_kicks',
+        statisticContext,
+      ),
+      this.pushCardsPair(fixture, teamId, opponentId),
+      this.pushStatisticPair(
+        this.possessionWindow,
+        'ball_possession',
+        statisticContext,
+      ),
+    ];
+    if (trackedPairs.some(Boolean)) this.statisticsMatchCount += 1;
+  }
+
+  private pushStatisticPair(
+    window: RollingWindow,
+    type: string,
+    context: {
+      fixture: SeasonFixture;
+      teamId: string;
+      opponentId: string;
+    },
+  ): boolean {
+    const own = statisticValue(context.fixture, context.teamId, type);
+    const opponent = statisticValue(context.fixture, context.opponentId, type);
+    if (own === null || opponent === null) return false;
+    window.push({ for: own, against: opponent });
+    return true;
+  }
+
+  private pushCardsPair(
+    fixture: SeasonFixture,
+    teamId: string,
+    opponentId: string,
+  ): boolean {
+    const own = cardsValue(fixture, teamId);
+    const opponent = cardsValue(fixture, opponentId);
+    if (own === null || opponent === null) return false;
+    this.cardsWindow.push({ for: own, against: opponent });
+    return true;
   }
 
   snapshot(leagueVolatility: Decimal): FeatureSnapshot {
@@ -201,6 +314,12 @@ class TeamSeasonAccumulator {
       this.xgWindow.size > 0
         ? this.xgWindow.average()
         : this.goalWindow.average();
+
+    const shotsOnTarget = optionalAverage(this.shotsOnTargetWindow);
+    const totalShots = optionalAverage(this.totalShotsWindow);
+    const corners = optionalAverage(this.cornersWindow);
+    const cards = optionalAverage(this.cardsWindow);
+    const possession = optionalAverage(this.possessionWindow);
 
     return {
       recentForm: calculateRecentForm(this.recentResults),
@@ -218,6 +337,17 @@ class TeamSeasonAccumulator {
         this.scoredMatches > 0
           ? new Decimal(this.draws).div(this.scoredMatches)
           : new Decimal(0),
+      shotsOnTargetFor: shotsOnTarget?.for ?? null,
+      shotsOnTargetAgainst: shotsOnTarget?.against ?? null,
+      totalShotsFor: totalShots?.for ?? null,
+      totalShotsAgainst: totalShots?.against ?? null,
+      cornersFor: corners?.for ?? null,
+      cornersAgainst: corners?.against ?? null,
+      cardsFor: cards?.for ?? null,
+      cardsAgainst: cards?.against ?? null,
+      possessionFor: possession?.for ?? null,
+      possessionAgainst: possession?.against ?? null,
+      statisticsMatchCount: this.statisticsMatchCount,
       leagueVolatility,
     };
   }
@@ -541,29 +671,16 @@ export class RollingStatsService {
 
   async computeAndStore(teamId: string, afterFixtureId: string): Promise<void> {
     const stats = await this.computeStats(teamId, afterFixtureId);
+    const data = this.serializeTeamStatsData(stats);
 
     await this.prisma.client.teamStats.upsert({
       where: { teamId_afterFixtureId: { teamId, afterFixtureId } },
       create: {
         teamId,
         afterFixtureId,
-        recentForm: toPrismaDecimal(stats.recentForm, 4),
-        xgFor: toPrismaDecimal(stats.xgFor, 3),
-        xgAgainst: toPrismaDecimal(stats.xgAgainst, 3),
-        homeWinRate: toPrismaDecimal(stats.homeWinRate, 4),
-        awayWinRate: toPrismaDecimal(stats.awayWinRate, 4),
-        drawRate: toPrismaDecimal(stats.drawRate, 4),
-        leagueVolatility: toPrismaDecimal(stats.leagueVolatility, 4),
+        ...data,
       },
-      update: {
-        recentForm: toPrismaDecimal(stats.recentForm, 4),
-        xgFor: toPrismaDecimal(stats.xgFor, 3),
-        xgAgainst: toPrismaDecimal(stats.xgAgainst, 3),
-        homeWinRate: toPrismaDecimal(stats.homeWinRate, 4),
-        awayWinRate: toPrismaDecimal(stats.awayWinRate, 4),
-        drawRate: toPrismaDecimal(stats.drawRate, 4),
-        leagueVolatility: toPrismaDecimal(stats.leagueVolatility, 4),
-      },
+      update: data,
     });
   }
 
@@ -628,6 +745,9 @@ export class RollingStatsService {
         awayScore: true,
         homeXg: true,
         awayXg: true,
+        fixtureStatistics: {
+          select: { teamId: true, type: true, value: true },
+        },
       },
       orderBy: [{ scheduledAt: 'asc' }, { id: 'asc' }],
     });
@@ -760,6 +880,17 @@ export class RollingStatsService {
         awayWinRate: true,
         drawRate: true,
         leagueVolatility: true,
+        shotsOnTargetFor: true,
+        shotsOnTargetAgainst: true,
+        totalShotsFor: true,
+        totalShotsAgainst: true,
+        cornersFor: true,
+        cornersAgainst: true,
+        cardsFor: true,
+        cardsAgainst: true,
+        possessionFor: true,
+        possessionAgainst: true,
+        statisticsMatchCount: true,
       },
     });
 
@@ -839,6 +970,17 @@ export class RollingStatsService {
     | 'awayWinRate'
     | 'drawRate'
     | 'leagueVolatility'
+    | 'shotsOnTargetFor'
+    | 'shotsOnTargetAgainst'
+    | 'totalShotsFor'
+    | 'totalShotsAgainst'
+    | 'cornersFor'
+    | 'cornersAgainst'
+    | 'cardsFor'
+    | 'cardsAgainst'
+    | 'possessionFor'
+    | 'possessionAgainst'
+    | 'statisticsMatchCount'
   > {
     return {
       recentForm: toPrismaDecimal(stats.recentForm, 4),
@@ -848,6 +990,17 @@ export class RollingStatsService {
       awayWinRate: toPrismaDecimal(stats.awayWinRate, 4),
       drawRate: toPrismaDecimal(stats.drawRate, 4),
       leagueVolatility: toPrismaDecimal(stats.leagueVolatility, 4),
+      shotsOnTargetFor: toNullablePrismaDecimal(stats.shotsOnTargetFor),
+      shotsOnTargetAgainst: toNullablePrismaDecimal(stats.shotsOnTargetAgainst),
+      totalShotsFor: toNullablePrismaDecimal(stats.totalShotsFor),
+      totalShotsAgainst: toNullablePrismaDecimal(stats.totalShotsAgainst),
+      cornersFor: toNullablePrismaDecimal(stats.cornersFor),
+      cornersAgainst: toNullablePrismaDecimal(stats.cornersAgainst),
+      cardsFor: toNullablePrismaDecimal(stats.cardsFor),
+      cardsAgainst: toNullablePrismaDecimal(stats.cardsAgainst),
+      possessionFor: toNullablePrismaDecimal(stats.possessionFor),
+      possessionAgainst: toNullablePrismaDecimal(stats.possessionAgainst),
+      statisticsMatchCount: stats.statisticsMatchCount,
     };
   }
 
@@ -862,7 +1015,30 @@ export class RollingStatsService {
       !new Decimal(existing.homeWinRate).equals(next.homeWinRate) ||
       !new Decimal(existing.awayWinRate).equals(next.awayWinRate) ||
       !new Decimal(existing.drawRate).equals(next.drawRate) ||
-      !new Decimal(existing.leagueVolatility).equals(next.leagueVolatility)
+      !new Decimal(existing.leagueVolatility).equals(next.leagueVolatility) ||
+      !nullableDecimalEquals(
+        existing.shotsOnTargetFor,
+        next.shotsOnTargetFor,
+      ) ||
+      !nullableDecimalEquals(
+        existing.shotsOnTargetAgainst,
+        next.shotsOnTargetAgainst,
+      ) ||
+      !nullableDecimalEquals(existing.totalShotsFor, next.totalShotsFor) ||
+      !nullableDecimalEquals(
+        existing.totalShotsAgainst,
+        next.totalShotsAgainst,
+      ) ||
+      !nullableDecimalEquals(existing.cornersFor, next.cornersFor) ||
+      !nullableDecimalEquals(existing.cornersAgainst, next.cornersAgainst) ||
+      !nullableDecimalEquals(existing.cardsFor, next.cardsFor) ||
+      !nullableDecimalEquals(existing.cardsAgainst, next.cardsAgainst) ||
+      !nullableDecimalEquals(existing.possessionFor, next.possessionFor) ||
+      !nullableDecimalEquals(
+        existing.possessionAgainst,
+        next.possessionAgainst,
+      ) ||
+      (existing.statisticsMatchCount ?? 0) !== next.statisticsMatchCount
     );
   }
 
@@ -877,4 +1053,17 @@ export class RollingStatsService {
     }
     return chunks;
   }
+}
+
+function toNullablePrismaDecimal(value: Decimal | null): Prisma.Decimal | null {
+  return value === null ? null : toPrismaDecimal(value, 3);
+}
+
+function nullableDecimalEquals(
+  existing: Prisma.Decimal | null | undefined,
+  next: Decimal | null,
+): boolean {
+  if (existing == null || next === null)
+    return existing == null && next === null;
+  return new Decimal(existing).equals(next);
 }

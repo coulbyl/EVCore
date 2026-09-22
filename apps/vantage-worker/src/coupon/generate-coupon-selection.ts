@@ -7,7 +7,7 @@ import {
   type LlmCompletionMeta,
 } from "../groq/client";
 import {
-  admissibleCandidates,
+  candidatesForCouponClass,
   reduceToLlmPool,
   type ScoredCandidate,
 } from "./score-candidates";
@@ -69,12 +69,7 @@ export async function generateCouponSelection(
   feedback: string | null = null,
   onCompletion?: (provenance: CouponLlmProvenance) => void,
 ): Promise<GenerateCouponSelectionResult> {
-  const withinClassBand = admissibleCandidates(scoredPool).filter(
-    (c) =>
-      c.oddsSnapshot !== null &&
-      c.oddsSnapshot >= couponClass.minLegOdds &&
-      c.oddsSnapshot < couponClass.maxLegOdds,
-  );
+  const withinClassBand = candidatesForCouponClass(scoredPool, couponClass);
 
   // Nothing for the LLM to choose from implies nothing for it to say —
   // calling the model on a pool too small to even reach minLegs would just

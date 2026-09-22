@@ -111,10 +111,11 @@ function byEfficiencyThenKey(a: PriceCandidate, b: PriceCandidate): number {
   return candidateKey(a) < candidateKey(b) ? -1 : 1;
 }
 
-function isUsable(candidate: PriceCandidate): boolean {
+function isUsable(candidate: PriceCandidate, maxCombinedOdds: number): boolean {
   return (
     Number.isFinite(candidate.odds) &&
     candidate.odds > 1 &&
+    candidate.odds <= maxCombinedOdds &&
     Number.isFinite(candidate.expectedReturn) &&
     candidate.expectedReturn > 0
   );
@@ -178,7 +179,12 @@ export function composeByPrice(
   config: PriceComposerConfig,
 ): PriceCompositionResult {
   const pool = decorrelate(
-    candidates.filter(isUsable),
+    // Une jambe qui dépasse à elle seule la cote maximale ne pourra jamais
+    // appartenir à une combinaison valide (toutes les autres cotes sont > 1).
+    // L'écarter AVANT la réduction à une jambe par rencontre est essentiel :
+    // sinon son efficacité apparente évince la jambe courte du même match,
+    // puis la programmation dynamique l'écarte trop tard comme hors cible.
+    candidates.filter((candidate) => isUsable(candidate, config.maxOdds)),
     config.maxPerCompetition,
   );
   if (pool.length === 0) {

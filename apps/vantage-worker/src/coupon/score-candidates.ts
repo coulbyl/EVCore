@@ -6,6 +6,7 @@ import {
   clearsTeamTotalMaxOdds,
   clearsValueEdgeFloor,
   depthRank,
+  type CouponClass,
   type ChannelReliability,
   type ChannelReliabilityMap,
 } from "@evcore/analysis-core";
@@ -86,6 +87,19 @@ export function admissibleCandidates(
     .filter((c) => clearsTeamTotalMaxOdds(c))
     .filter((c) => clearsMaxLegEdge(c))
     .filter((c) => clearsMinLegOdds(c));
+}
+
+/** Candidats qui peuvent réellement être proposés au LLM pour cette classe. */
+export function candidatesForCouponClass(
+  scored: readonly ScoredCandidate[],
+  couponClass: CouponClass,
+): ScoredCandidate[] {
+  return admissibleCandidates(scored).filter(
+    (candidate) =>
+      candidate.oddsSnapshot !== null &&
+      candidate.oddsSnapshot >= couponClass.minLegOdds &&
+      candidate.oddsSnapshot < couponClass.maxLegOdds,
+  );
 }
 
 // Reduces the admissible candidates to the LLM-facing pool — the "Fiabilité"

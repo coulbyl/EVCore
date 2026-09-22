@@ -29,6 +29,7 @@ import { SeasonRolloverSyncWorker } from './workers/season-rollover-sync.worker'
 import { CouponModule } from '../coupon/coupon.module';
 import { AdjustmentModule } from '../adjustment/adjustment.module';
 import { AuthModule } from '../auth/auth.module';
+import { FixtureStatisticsModule } from '../fixture-statistics/fixture-statistics.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { AuthModule } from '../auth/auth.module';
     CouponModule,
     BettingEngineModule,
     FixtureModule,
+    FixtureStatisticsModule,
     NotificationModule,
     RollingStatsModule,
     // Requis par PendingBetsSettlementWorker pour le balayage quotidien du

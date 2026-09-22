@@ -68,6 +68,17 @@ export type TeamSignal = {
   awayWinRate: number;
   drawRate: number;
   leagueVolatility: number;
+  shotsOnTargetFor?: number | null;
+  shotsOnTargetAgainst?: number | null;
+  totalShotsFor?: number | null;
+  totalShotsAgainst?: number | null;
+  cornersFor?: number | null;
+  cornersAgainst?: number | null;
+  cardsFor?: number | null;
+  cardsAgainst?: number | null;
+  possessionFor?: number | null;
+  possessionAgainst?: number | null;
+  statisticsMatchCount?: number;
 } | null;
 
 /** Set only when the team's current coach has been in charge for fewer than
@@ -103,7 +114,7 @@ export type H2HSignal = {
  * don't fit that shape, and the fixed triplet was ONE_X_TWO-specific. */
 export type MarketOddsSnapshot = {
   market: Market;
-  prices: readonly { pick: string; odds: number }[];
+  prices: readonly { pick: string; odds: number; line?: number }[];
 };
 
 export type MatchContext = {
@@ -126,6 +137,10 @@ export type MatchContext = {
   awayCoach?: CoachSignal;
   h2h?: H2HSignal;
   uncoveredMarketOdds?: readonly MarketOddsSnapshot[];
+  /** Latest balanced reference-book line for newly collected markets. These
+   * are context-only until decisions, coupon legs and settlement all carry
+   * an explicit line and the market has passed walk-forward calibration. */
+  extendedMarketOdds?: readonly MarketOddsSnapshot[];
   /** Every market's resolved price for this fixture, generic per-pick
    * resolution (`resolveSelectionOdds`) — not display context (that's
    * `uncoveredMarketOdds`, capped to a short list), used only so

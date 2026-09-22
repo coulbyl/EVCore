@@ -11,7 +11,11 @@ import type { CouponLlmProvenance } from "./generate-coupon-selection";
 import { getPoolForRange } from "./pool-query";
 import { persistCouponProposal } from "./persist-coupon-proposal";
 import { recordGenerationAttempt } from "./record-generation-attempt";
-import { scoreCandidates, type ScoredCandidate } from "./score-candidates";
+import {
+  candidatesForCouponClass,
+  scoreCandidates,
+  type ScoredCandidate,
+} from "./score-candidates";
 
 // Weekend (Fri→Sun) and midweek European-nights (Tue→Thu) coupon windows —
 // every other day stays single-day. `date` is the day this pipeline runs
@@ -73,6 +77,10 @@ async function runComposePersistPass(
   }
 
   for (const couponClass of [UNIFIED_COUPON_CLASS]) {
+    const candidateCount = candidatesForCouponClass(
+      scoredPool,
+      couponClass,
+    ).length;
     let llmProvenance: CouponLlmProvenance | null = null;
     const result = await composeCouponClass(
       scoredPool,
@@ -95,7 +103,7 @@ async function runComposePersistPass(
         forDate,
         pass: persistOpts.pass,
         outcome: persisted.published ? "PUBLISHED" : "PRESERVED",
-        candidateCount: scoredPool.length,
+        candidateCount,
         llmProvenance,
         proposalId: persisted.proposalId,
       });
@@ -116,7 +124,7 @@ async function runComposePersistPass(
         forDate,
         pass: persistOpts.pass,
         outcome: result.outcome === "gave_up" ? "INVALID" : "ABSTAINED",
-        candidateCount: scoredPool.length,
+        candidateCount,
         llmProvenance,
         reason:
           result.outcome === "no_coupon"

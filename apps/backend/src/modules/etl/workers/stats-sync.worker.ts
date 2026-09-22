@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { XgSource } from '@evcore/db';
 import { Job } from 'bullmq';
 import { createLogger } from '@utils/logger';
 import { ApiFootballClient } from '../api-football.client';
@@ -22,6 +23,7 @@ import {
 } from './etl-worker.utils';
 import { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 import { fetchLeagueSeasonDates } from '../league-season-dates';
+import { FixtureStatisticsService } from '../../fixture-statistics/fixture-statistics.service';
 
 export type StatsSyncJobData = {
   season: number;
@@ -34,13 +36,14 @@ const logger = createLogger('stats-sync-worker');
 
 @Injectable()
 export class StatsSyncWorker {
-  // eslint-disable-next-line max-params -- Prisma required to resolve competition from DB.
+  // eslint-disable-next-line max-params -- worker orchestrates focused feature services.
   constructor(
     private readonly fixtureService: FixtureService,
     private readonly apiFootball: ApiFootballClient,
     private readonly notification: NotificationService,
     private readonly prisma: PrismaService,
     private readonly rollingStatsService: RollingStatsService,
+    private readonly fixtureStatistics: FixtureStatisticsService,
   ) {}
 
   async process(job: Job<StatsSyncJobData>): Promise<void> {
@@ -97,20 +100,32 @@ export class StatsSyncWorker {
         seasonFallbackEndDate(season, seasonStartMonth),
     });
 
-    const fixtures = await this.fixtureService.findFinishedWithoutXg(
-      seasonRecord.id,
-    );
+    const pendingFixtures =
+      await this.fixtureService.findFinishedWithoutStatistics(seasonRecord.id);
+    const maxPerJob =
+      syncScope === 'backfill'
+        ? ETL_CONSTANTS.STATS_BACKFILL_MAX_FIXTURES_PER_JOB
+        : ETL_CONSTANTS.STATS_ROUTINE_MAX_FIXTURES_PER_JOB;
+    const fixtures = pendingFixtures.slice(0, maxPerJob);
 
     logger.info(
-      { season, count: fixtures.length },
-      'Fetching statistics for finished fixtures without xG',
+      {
+        season,
+        count: fixtures.length,
+        backlog: pendingFixtures.length,
+        remainingAfterJob: pendingFixtures.length - fixtures.length,
+        maxPerJob,
+        syncScope,
+      },
+      'Fetching unpersisted final statistics for finished fixtures',
     );
 
     let updated = 0;
     let skipped = 0;
+    let statisticRows = 0;
     const xgUnavailableIds: number[] = [];
 
-    for (const { externalId } of fixtures) {
+    for (const { externalId, homeTeam, awayTeam } of fixtures) {
       const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures/statistics?fixture=${externalId}`;
       const curlResult = await this.apiFootball.fetchJson(url);
 
@@ -143,13 +158,36 @@ export class StatsSyncWorker {
           'Zod validation failed — marking xgUnavailable',
         );
         await this.fixtureService.markXgUnavailable(externalId);
+        await this.fixtureStatistics.markUnavailable(externalId);
         xgUnavailableIds.push(externalId);
         skipped++;
         await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
         continue;
       }
 
-      const [homeStats, awayStats] = parsed.data.response;
+      const homeStats = parsed.data.response.find(
+        (team) => team.team.id === homeTeam.externalId,
+      );
+      const awayStats = parsed.data.response.find(
+        (team) => team.team.id === awayTeam.externalId,
+      );
+      if (!homeStats || !awayStats) {
+        logger.warn(
+          {
+            externalId,
+            expectedTeamIds: [homeTeam.externalId, awayTeam.externalId],
+            receivedTeamIds: parsed.data.response.map((team) => team.team.id),
+          },
+          'Statistics teams do not match fixture — marking unavailable',
+        );
+        await this.fixtureService.markXgUnavailable(externalId);
+        await this.fixtureStatistics.markUnavailable(externalId);
+        xgUnavailableIds.push(externalId);
+        skipped++;
+        await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
+        continue;
+      }
+
       const homeXg = extractXg(homeStats.statistics);
       const awayXg = extractXg(awayStats.statistics);
 
@@ -160,24 +198,39 @@ export class StatsSyncWorker {
         );
         await this.fixtureService.markXgUnavailable(externalId);
         xgUnavailableIds.push(externalId);
-        skipped++;
-        await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
-        continue;
+      } else {
+        await this.fixtureService.updateXg({
+          externalId,
+          homeXg: homeXg.value,
+          awayXg: awayXg.value,
+          homeXgSource: homeXg.source,
+          awayXgSource: awayXg.source,
+        });
       }
 
-      await this.fixtureService.updateXg(externalId, homeXg, awayXg);
+      statisticRows += await this.fixtureStatistics.persistFinalStatistics({
+        fixtureExternalId: externalId,
+        observedAt: new Date(),
+        teams: parsed.data.response.map((team) => ({
+          externalTeamId: team.team.id,
+          statistics: team.statistics,
+        })),
+      });
       updated++;
 
       await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
     }
 
     logger.info(
-      { season, seasonName, updated, skipped },
+      { season, seasonName, updated, skipped, statisticRows },
       'Stats sync complete',
     );
 
     if (updated > 0) {
-      await this.rollingStatsService.refreshSeason(seasonRecord.id);
+      // Existing team_stats rows predate the newly persisted raw statistics.
+      // A normal refresh only looks for missing rows and would therefore skip
+      // them; backfillSeason recomputes all snapshots but writes only changes.
+      await this.rollingStatsService.backfillSeason(seasonRecord.id);
     }
 
     if (xgUnavailableIds.length > 0) {
@@ -195,23 +248,31 @@ export class StatsSyncWorker {
 // Priority 1: native expected_goals field (API-Football, available from mid-2022-23 onwards).
 // Priority 2: shots proxy fallback (Shots on Goal × factor) for older fixtures
 //             where the API did not yet track expected_goals.
-function extractXg(
+export function extractXg(
   statistics: { type: string; value: number | string | null }[],
-): number | null {
+): { value: number; source: XgSource } | null {
   const xgEntry = statistics.find((s) => s.type === 'expected_goals');
   if (xgEntry !== undefined && xgEntry.value !== null) {
     const parsed = parseFloat(String(xgEntry.value));
-    return isNaN(parsed) ? null : parsed;
+    return isNaN(parsed)
+      ? null
+      : { value: parsed, source: XgSource.API_FOOTBALL };
   }
   // Field absent or null (e.g. lower divisions) → fall back to shots proxy
-  return extractShotsOnTarget(statistics) * ETL_CONSTANTS.XG_SHOTS_PROXY_FACTOR;
+  const shotsOnTarget = extractShotsOnTarget(statistics);
+  return shotsOnTarget === null
+    ? null
+    : {
+        value: shotsOnTarget * ETL_CONSTANTS.XG_SHOTS_PROXY_FACTOR,
+        source: XgSource.SHOTS_PROXY,
+      };
 }
 
 function extractShotsOnTarget(
   statistics: { type: string; value: number | string | null }[],
-): number {
+): number | null {
   const entry = statistics.find((s) => s.type === 'Shots on Goal');
-  if (!entry || entry.value === null) return 0;
+  if (!entry || entry.value === null) return null;
   const parsed = parseInt(String(entry.value), 10);
-  return isNaN(parsed) ? 0 : parsed;
+  return isNaN(parsed) ? null : parsed;
 }
