@@ -6,9 +6,45 @@ import {
   ChannelDecisionStatus,
   FixtureStatus,
   NotificationType,
+  type Prisma,
   StrategyChannel,
 } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
+
+// PostgreSQL rejects prepared statements with too many bind parameters. The
+// point-in-time cohort can contain tens of thousands of selections on the
+// all-history dashboard range, so never feed the complete id list to one
+// Prisma `in` filter. 10k leaves ample room for the other query parameters.
+const CHANNEL_SELECTION_QUERY_BATCH_SIZE = 10_000;
+const CHANNEL_SELECTION_DASHBOARD_SELECT = {
+  result: true,
+  odds: true,
+  probability: true,
+  channelDecision: {
+    select: {
+      channel: true,
+      modelRun: {
+        select: {
+          fixture: {
+            select: {
+              season: {
+                select: {
+                  competition: {
+                    select: { code: true, name: true, country: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+} satisfies Prisma.ChannelSelectionSelect;
+
+type DashboardChannelSelection = Prisma.ChannelSelectionGetPayload<{
+  select: typeof CHANNEL_SELECTION_DASHBOARD_SELECT;
+}>;
 
 @Injectable()
 export class DashboardRepository {
@@ -307,41 +343,34 @@ export class DashboardRepository {
         until: range.until,
       }),
     );
-    return this.prisma.client.channelSelection.findMany({
-      where: {
-        id: { in: cohort.map((row) => row.id) },
-        result: { in: [BetStatus.WON, BetStatus.LOST] },
-        odds: { not: null },
-        channelDecision: {
-          is: {
-            channel: { in: [...channels] },
-            modelRun: {
-              is: {
-                fixture: {
-                  is: { scheduledAt: { gte: range.since, lte: range.until } },
-                },
-              },
-            },
-          },
-        },
-      },
-      select: {
-        result: true,
-        odds: true,
-        probability: true,
-        channelDecision: {
-          select: {
-            channel: true,
-            modelRun: {
-              select: {
-                fixture: {
-                  select: {
-                    season: {
-                      select: {
-                        competition: {
-                          select: { code: true, name: true, country: true },
-                        },
-                      },
+    const selectionIds = cohort.map((row) => row.id);
+    const selections: DashboardChannelSelection[] = [];
+
+    // Sequential on purpose: this query used to exhaust PostgreSQL shared
+    // memory when many channel queries ran concurrently. Batching fixes the
+    // parameter ceiling without reintroducing that production failure mode.
+    for (
+      let offset = 0;
+      offset < selectionIds.length;
+      offset += CHANNEL_SELECTION_QUERY_BATCH_SIZE
+    ) {
+      const ids = selectionIds.slice(
+        offset,
+        offset + CHANNEL_SELECTION_QUERY_BATCH_SIZE,
+      );
+      const batch = await this.prisma.client.channelSelection.findMany({
+        where: {
+          id: { in: ids },
+          result: { in: [BetStatus.WON, BetStatus.LOST] },
+          odds: { not: null },
+          channelDecision: {
+            is: {
+              channel: { in: [...channels] },
+              modelRun: {
+                is: {
+                  fixture: {
+                    is: {
+                      scheduledAt: { gte: range.since, lte: range.until },
                     },
                   },
                 },
@@ -349,9 +378,13 @@ export class DashboardRepository {
             },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        select: CHANNEL_SELECTION_DASHBOARD_SELECT,
+        orderBy: { createdAt: 'desc' },
+      });
+      selections.push(...batch);
+    }
+
+    return selections;
   }
 
   getLeaderboardData(since: Date) {
