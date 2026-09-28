@@ -1,20 +1,17 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
-import { ConfigService } from '@nestjs/config';
 import type { Job } from 'bullmq';
 import { createLogger } from '@utils/logger';
 import { BULLMQ_QUEUES, STATS_BACKFILL } from '@config/etl.constants';
 import { NotificationService } from '@modules/notification/notification.service';
 import { FixtureService } from '../../fixture/fixture.service';
 import { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
-import { ApiFootballClient } from '../api-football.client';
 import {
   isStatsBackfillParked,
   rankStatsBackfillSeasons,
-  statsBackfillBudget,
-  statsBackfillDailyReserve,
   statsBackfillLotSize,
   type RankedStatsBackfillSeason,
 } from '../stats-backfill.plan';
+import { StatsBackfillService } from '../stats-backfill.service';
 import {
   StatsSyncWorker,
   type PendingStatisticsFixture,
@@ -24,7 +21,13 @@ import { notifyOnWorkerFailure } from './etl-worker.utils';
 export type StatsBackfillJobData = Record<string, never>;
 
 export type StatsBackfillTickResult =
-  | { status: 'quota-unknown' | 'budget-exhausted' | 'nothing-left' }
+  | {
+      status:
+        | 'routine-stats-sync'
+        | 'quota-unknown'
+        | 'budget-exhausted'
+        | 'nothing-left';
+    }
   | {
       status: 'lot-done' | 'lot-aborted';
       competitionCode: string;
@@ -41,7 +44,6 @@ const logger = createLogger('stats-backfill-worker');
 // default concurrency 1 — two lots never overlap.
 @Processor(BULLMQ_QUEUES.STATS_BACKFILL)
 export class StatsBackfillWorker extends WorkerHost {
-  private readonly dailyReserve: number;
   // Non-quota failures per fixture since process start. Past
   // MAX_FIXTURE_ATTEMPTS a fixture is left alone so a permanently failing id
   // neither blocks its season nor burns a call on every tick.
@@ -49,35 +51,34 @@ export class StatsBackfillWorker extends WorkerHost {
 
   // eslint-disable-next-line max-params -- worker orchestrates focused feature services.
   constructor(
-    config: ConfigService,
-    private readonly apiFootball: ApiFootballClient,
+    private readonly statsBackfill: StatsBackfillService,
     private readonly fixtureService: FixtureService,
     private readonly statsSync: StatsSyncWorker,
     private readonly rollingStatsService: RollingStatsService,
     private readonly notification: NotificationService,
   ) {
     super();
-    this.dailyReserve = statsBackfillDailyReserve(config);
   }
 
   async process(
     _: Job<StatsBackfillJobData>,
   ): Promise<StatsBackfillTickResult> {
+    if (await this.statsBackfill.isRoutineStatsSyncImminent()) {
+      logger.info('Routine stats sync running or due — skipping backfill tick');
+      return { status: 'routine-stats-sync' };
+    }
+
     // Never spend blind: without a readable counter, wait for the next tick.
-    const usage = await this.apiFootball.getQuotaUsage();
-    if (usage === null) {
+    const quota = await this.statsBackfill.readBudget();
+    if (quota === null) {
       logger.warn('API-Football quota unreadable — skipping backfill tick');
       return { status: 'quota-unknown' };
     }
 
-    const budget = statsBackfillBudget(usage, this.dailyReserve);
+    const { usage, budget, reserve } = quota;
     if (budget === 0) {
       logger.info(
-        {
-          current: usage.current,
-          limitDay: usage.limitDay,
-          reserve: this.dailyReserve,
-        },
+        { current: usage.current, limitDay: usage.limitDay, reserve },
         'Stats backfill budget exhausted — waiting for quota reset',
       );
       return { status: 'budget-exhausted' };

@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ConfigService } from '@nestjs/config';
-import type { Job } from 'bullmq';
+import type { Job, Queue } from 'bullmq';
+import { StatsBackfillService } from '../stats-backfill.service';
+import type { LeagueSyncJobData } from './league-sync.worker';
 import type { FixtureService } from '../../fixture/fixture.service';
 import type { StatsBackfillCandidateRow } from '../../fixture/fixture.repository';
 import type { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
@@ -65,10 +67,17 @@ describe('StatsBackfillWorker', () => {
   const rollingStats = { backfillSeason: vi.fn().mockResolvedValue({}) };
   const notification = { sendEtlFailureAlert: vi.fn() };
 
+  const leagueSyncQueue = { getJobs: vi.fn() };
+
   const makeWorker = () =>
     new StatsBackfillWorker(
-      config as unknown as ConfigService,
-      apiFootball as unknown as ApiFootballClient,
+      new StatsBackfillService(
+        {} as Queue<StatsBackfillJobData>,
+        leagueSyncQueue as unknown as Queue<LeagueSyncJobData>,
+        config as unknown as ConfigService,
+        fixtureService as unknown as FixtureService,
+        apiFootball as unknown as ApiFootballClient,
+      ),
       fixtureService as unknown as FixtureService,
       statsSync as unknown as StatsSyncWorker,
       rollingStats as unknown as RollingStatsService,
@@ -78,9 +87,52 @@ describe('StatsBackfillWorker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     config.get.mockReturnValue(undefined);
+    leagueSyncQueue.getJobs.mockResolvedValue([]);
     apiFootball.getQuotaUsage.mockResolvedValue({
       current: 1_000,
       limitDay: 7_500,
+    });
+  });
+
+  it('yields to a routine stats sync due before a lot could finish', async () => {
+    leagueSyncQueue.getJobs.mockImplementation((states: string[]) =>
+      Promise.resolve(
+        states.includes('delayed')
+          ? [
+              {
+                data: { syncType: 'stats' },
+                timestamp: Date.now(),
+                delay: 3 * 60_000,
+              },
+            ]
+          : [],
+      ),
+    );
+
+    await expect(makeWorker().process(JOB)).resolves.toEqual({
+      status: 'routine-stats-sync',
+    });
+    expect(apiFootball.getQuotaUsage).not.toHaveBeenCalled();
+  });
+
+  it('ignores routine stats jobs due later and other sync types', async () => {
+    leagueSyncQueue.getJobs.mockImplementation((states: string[]) =>
+      Promise.resolve(
+        states.includes('delayed')
+          ? [
+              {
+                data: { syncType: 'stats' },
+                timestamp: Date.now(),
+                delay: 60 * 60_000,
+              },
+            ]
+          : [{ data: { syncType: 'fixtures' }, timestamp: 0, delay: 0 }],
+      ),
+    );
+    fixtureService.findStatsBackfillCandidates.mockResolvedValue([]);
+
+    await expect(makeWorker().process(JOB)).resolves.toEqual({
+      status: 'nothing-left',
     });
   });
 

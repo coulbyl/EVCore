@@ -97,10 +97,12 @@ export function statsBackfillLotSize(
   season: Pick<StatsBackfillCandidateRow, 'synced' | 'unavailable'>,
   budget: number,
 ): number {
-  const neverProbed =
-    season.synced + season.unavailable < STATS_BACKFILL.PROBE_LOT_SIZE;
-  const cap = neverProbed
-    ? STATS_BACKFILL.PROBE_LOT_SIZE
-    : STATS_BACKFILL.MAX_FIXTURES_PER_LOT;
+  // The probe is a ceiling on total attempts, not per lot: a probe cut short
+  // (quota, restart) resumes with only what is left of it.
+  const attempted = season.synced + season.unavailable;
+  const cap =
+    attempted < STATS_BACKFILL.PROBE_LOT_SIZE
+      ? STATS_BACKFILL.PROBE_LOT_SIZE - attempted
+      : STATS_BACKFILL.MAX_FIXTURES_PER_LOT;
   return Math.max(0, Math.min(cap, budget));
 }

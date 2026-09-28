@@ -363,6 +363,11 @@ export const STATS_BACKFILL = {
   // Surchargeable par STATS_BACKFILL_DAILY_RESERVE.
   DEFAULT_DAILY_RESERVE: 2_500,
   MAX_FIXTURES_PER_LOT: 100,
+  // Aucun lot ne démarre si une synchro stats de routine (file league-sync)
+  // tourne, attend, ou est due dans ce délai : couvre la durée d'un lot de
+  // 100 (~3 min 30) avec marge. Évite appels en double et courses sur
+  // fixture_statistic.
+  ROUTINE_GUARD_MS: 10 * 60_000,
   // Premier lot d'une saison jamais tentée : petit, pour découvrir à bas coût
   // qu'API-Football ne couvre pas ses statistiques.
   PROBE_LOT_SIZE: 20,

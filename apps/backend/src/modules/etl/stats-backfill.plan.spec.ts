@@ -109,6 +109,10 @@ describe('statsBackfillLotSize', () => {
     expect(statsBackfillLotSize({ synced: 0, unavailable: 0 }, 4_000)).toBe(20);
   });
 
+  it('resumes an interrupted probe with only what is left of it', () => {
+    expect(statsBackfillLotSize({ synced: 6, unavailable: 4 }, 4_000)).toBe(10);
+  });
+
   it('uses a full lot once the season is probed', () => {
     expect(statsBackfillLotSize({ synced: 50, unavailable: 0 }, 4_000)).toBe(
       100,

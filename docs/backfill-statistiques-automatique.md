@@ -17,6 +17,10 @@ Un cron (`*/5 * * * *`, file BullMQ `stats-backfill`, concurrence 1) exécute
 
 À chaque passage :
 
+0. **Synchro de routine.** Si une synchro stats de routine (file
+   `league-sync`, 04:00 UTC par défaut) tourne, attend, ou est due dans les
+   10 minutes, le passage est sauté : les deux travaillent sur les mêmes
+   matchs de la saison courante (appels en double, écritures concurrentes).
 1. **Budget.** Lecture de `/status` (non décompté du quota). Si le compteur du
    jour dépasse `limit_day − réserve`, rien n'est lancé. Réserve par défaut :
    **2 500 appels**, laissés aux crons de production. Le quota se renouvelle à
@@ -30,7 +34,8 @@ Un cron (`*/5 * * * *`, file BullMQ `stats-backfill`, concurrence 1) exécute
    backtest). Dans une vague : toutes les saisons courantes, puis tous les
    N-1, puis N-2, N-3.
 3. **Lot.** Au plus 100 matchs, jamais plus que le budget restant. Une saison
-   jamais tentée reçoit d'abord un **lot-sonde de 20**.
+   jamais tentée reçoit d'abord un **lot-sonde** : 20 tentatives au total,
+   une sonde interrompue reprenant avec ce qu'il en reste.
 4. **Rolling stats.** Saison en cours : recalcul après chaque lot (elle nourrit
    les prochaines prédictions). Saison terminée : recalcul **une seule fois**,
    quand elle est entièrement traitée.
@@ -64,21 +69,27 @@ moins et la marge disponible augmente d'elle-même.
 
 ## 4. Commandes
 
-Toutes sur le serveur de production.
+Toutes sur le serveur de production. Les routes `/etl/stats-backfill/*` sont
+réservées aux administrateurs (`AuthSessionGuard` + `AdminGuard`) : passer le
+cookie de session `evcore_session` d'un compte admin, copié depuis le
+navigateur. Le backfill lui-même n'a besoin d'aucun appel pour tourner ; pour
+le couper sans session, `STATS_BACKFILL_ENABLED=false` puis redémarrage.
 
 ```bash
+EVCORE_SESSION='<cookie evcore_session d’un compte admin>'
+
 # État : budget, saisons suivantes, saisons écartées, totaux
-docker exec evcore-backend curl -fsS \
+docker exec evcore-backend curl -fsS -b "evcore_session=${EVCORE_SESSION}" \
   'http://127.0.0.1:3000/etl/stats-backfill/status'
 
 # Pause (persistée dans Redis, survit aux redémarrages) / reprise
-docker exec evcore-backend curl -fsS -X POST \
+docker exec evcore-backend curl -fsS -X POST -b "evcore_session=${EVCORE_SESSION}" \
   'http://127.0.0.1:3000/etl/stats-backfill/pause'
-docker exec evcore-backend curl -fsS -X POST \
+docker exec evcore-backend curl -fsS -X POST -b "evcore_session=${EVCORE_SESSION}" \
   'http://127.0.0.1:3000/etl/stats-backfill/resume'
 
 # Lancer un passage tout de suite (mêmes règles de budget)
-docker exec evcore-backend curl -fsS -X POST \
+docker exec evcore-backend curl -fsS -X POST -b "evcore_session=${EVCORE_SESSION}" \
   'http://127.0.0.1:3000/etl/stats-backfill/run'
 
 # Suivre les lots
@@ -88,7 +99,8 @@ docker logs --since 30m -f evcore-backend 2>&1 \
 
 Lignes de log utiles : `Stats backfill lot complete` (count, backlog,
 remainingAfterJob, updated, skipped, statisticRows, abortReason),
-`Stats backfill budget exhausted`, `Stats backfill season parked`.
+`Stats backfill budget exhausted`, `Stats backfill season parked`,
+`Routine stats sync running or due`.
 
 ## 5. Configuration
 

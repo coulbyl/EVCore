@@ -2,6 +2,7 @@ import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
+import type { Job } from 'bullmq';
 import { createLogger } from '@utils/logger';
 import {
   BULLMQ_DEFAULT_JOB_OPTIONS,
@@ -10,7 +11,11 @@ import {
   STATS_BACKFILL,
 } from '@config/etl.constants';
 import { FixtureService } from '../fixture/fixture.service';
-import { ApiFootballClient } from './api-football.client';
+import {
+  ApiFootballClient,
+  type ApiFootballQuotaUsage,
+} from './api-football.client';
+import type { LeagueSyncJobData } from './workers/league-sync.worker';
 import {
   rankStatsBackfillSeasons,
   statsBackfillBudget,
@@ -52,10 +57,12 @@ export class StatsBackfillService implements OnApplicationBootstrap {
   private readonly reserve: number;
   private readonly cronPattern: string;
 
-  // eslint-disable-next-line max-params -- queue + config + two read dependencies.
+  // eslint-disable-next-line max-params -- Explicit queue injection keeps queue wiring transparent (same as EtlService).
   constructor(
     @InjectQueue(BULLMQ_QUEUES.STATS_BACKFILL)
     private readonly queue: Queue<StatsBackfillJobData>,
+    @InjectQueue(BULLMQ_QUEUES.LEAGUE_SYNC)
+    private readonly leagueSyncQueue: Queue<LeagueSyncJobData>,
     config: ConfigService,
     private readonly fixtureService: FixtureService,
     private readonly apiFootball: ApiFootballClient,
@@ -89,6 +96,45 @@ export class StatsBackfillService implements OnApplicationBootstrap {
     logger.info(
       { pattern: this.cronPattern, reserve: this.reserve },
       'Automatic stats backfill scheduler registered',
+    );
+  }
+
+  // Calls the backfill may spend now, or null when the counter is unreadable
+  // (never spend blind).
+  async readBudget(): Promise<{
+    usage: ApiFootballQuotaUsage;
+    budget: number;
+    reserve: number;
+  } | null> {
+    const usage = await this.apiFootball.getQuotaUsage();
+    if (usage === null) return null;
+    return {
+      usage,
+      budget: statsBackfillBudget(usage, this.reserve),
+      reserve: this.reserve,
+    };
+  }
+
+  // The routine stats sync (league-sync queue, 04:00 UTC by default) works on
+  // the same current-season fixtures. Running both at once would spend
+  // duplicate calls and race the fixture_statistic replacement, so the
+  // backfill yields while a routine stats job runs, waits, or is due before
+  // a lot could finish.
+  async isRoutineStatsSyncImminent(now = new Date()): Promise<boolean> {
+    const isStats = (job: Job<LeagueSyncJobData> | undefined): boolean =>
+      job?.data.syncType === 'stats';
+
+    const pending = await this.leagueSyncQueue.getJobs([
+      'active',
+      'waiting',
+      'prioritized',
+    ]);
+    if (pending.some(isStats)) return true;
+
+    const horizon = now.getTime() + STATS_BACKFILL.ROUTINE_GUARD_MS;
+    const delayed = await this.leagueSyncQueue.getJobs(['delayed']);
+    return delayed.some(
+      (job) => isStats(job) && job.timestamp + job.delay <= horizon,
     );
   }
 
