@@ -169,6 +169,46 @@ describe('StatsSyncWorker', () => {
     expect(rollingStatsService.backfillSeason).not.toHaveBeenCalled();
   }, 15_000);
 
+  it('aborts on an exhausted daily quota without marking fixtures unavailable', async () => {
+    fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
+      fixtureWithoutStatistics(55501),
+      fixtureWithoutStatistics(55502),
+    ]);
+
+    // API-Football signals quota exhaustion with a 200 and an errors object.
+    execFileMock.mockImplementation((...args) => {
+      const callback = args[args.length - 1] as (
+        error: Error | null,
+        stdout: string,
+      ) => void;
+      callback(
+        null,
+        `${JSON.stringify({
+          get: 'fixtures/statistics',
+          parameters: { fixture: '55501' },
+          errors: { requests: 'You have reached the request limit' },
+          results: 0,
+          response: [],
+        })}\n__EVCORE_HTTP_CODE__:200`,
+      );
+      return {} as never;
+    });
+
+    const result = await worker.syncFixtures([
+      fixtureWithoutStatistics(55501),
+      fixtureWithoutStatistics(55502),
+    ]);
+
+    expect(result).toMatchObject({
+      abortReason: 'quota',
+      updated: 0,
+      statisticsUnavailable: 0,
+    });
+    expect(execFileMock).toHaveBeenCalledTimes(1);
+    expect(fixtureService.markXgUnavailable).not.toHaveBeenCalled();
+    expect(fixtureStatistics.markUnavailable).not.toHaveBeenCalled();
+  });
+
   it('extracts expected_goals from API response and calls updateXg', async () => {
     fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
       fixtureWithoutStatistics(99999),

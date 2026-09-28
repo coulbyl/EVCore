@@ -12,6 +12,7 @@ import {
   type UpsertOddsSnapshotInput,
   type UpsertSecondaryMarketOddsInput,
   type SyncFixtureStateResult,
+  type StatsBackfillCandidateRow,
 } from './fixture.repository';
 import { MatchLegDetectionService } from './match-leg-detection.service';
 
@@ -268,6 +269,12 @@ export class FixtureService {
     }>
   > {
     return this.fixtureRepository.findFinishedWithoutStatistics(seasonId);
+  }
+
+  findStatsBackfillCandidates(
+    minSeasonStart: Date,
+  ): Promise<StatsBackfillCandidateRow[]> {
+    return this.fixtureRepository.findStatsBackfillCandidates(minSeasonStart);
   }
 
   findScheduledBySeason(seasonId: string): Promise<

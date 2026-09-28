@@ -342,6 +342,74 @@ export const BULLMQ_QUEUES = {
   ODDS_HISTORICAL_IMPORT: 'odds-historical-import',
   ROLLING_HORIZON: 'rolling-horizon',
   SEASON_ROLLOVER_SYNC: 'season-rollover-sync',
+  STATS_BACKFILL: 'stats-backfill',
+} as const;
+
+/**
+ * Backfill automatique des statistiques finales (runbook
+ * BACKFILL-PROGRESSIF-STATISTIQUES, automatisé).
+ *
+ * Un passage = un lot sur une seule saison, jamais deux en parallèle (file
+ * dédiée, concurrence 1). Le budget se lit sur `/status` d'API-Football avant
+ * chaque lot : le backfill ne consomme que ce qui dépasse la réserve laissée
+ * aux crons de production, et s'arrête net au premier signe de quota épuisé.
+ */
+export const STATS_BACKFILL = {
+  // Toutes les 5 minutes — un lot de 100 dure ~3 min 30 ; la file dédiée
+  // (concurrence 1) empêche deux lots de se chevaucher. Le budget, pas la
+  // cadence, borne la consommation. Surchargeable par ETL_STATS_BACKFILL_CRON.
+  CRON: '*/5 * * * *',
+  // Appels API-Football toujours laissés libres pour la production.
+  // Surchargeable par STATS_BACKFILL_DAILY_RESERVE.
+  DEFAULT_DAILY_RESERVE: 2_500,
+  MAX_FIXTURES_PER_LOT: 100,
+  // Premier lot d'une saison jamais tentée : petit, pour découvrir à bas coût
+  // qu'API-Football ne couvre pas ses statistiques.
+  PROBE_LOT_SIZE: 20,
+  // Une saison dont moins de 20 % des matchs tentés ont des statistiques,
+  // après au moins PROBE_LOT_SIZE tentatives, est écartée : la drainer
+  // coûterait un appel par match pour ne rien récupérer.
+  MIN_COVERAGE_RATIO: 0.2,
+  // Un match qui échoue (hors quota) autant de fois est ignoré jusqu'au
+  // prochain redémarrage — il ne doit pas bloquer la file ni brûler un appel
+  // à chaque passage.
+  MAX_FIXTURE_ATTEMPTS: 3,
+  // Saisons plus anciennes hors périmètre (N-3 = 2023 au plus tôt).
+  MIN_SEASON_START: '2023-01-01',
+  // Vagues du runbook. Seules les compétitions actives et incluses dans le
+  // backtest sont éligibles ; celles qui ne figurent dans aucune liste forment
+  // la vague 4.
+  WAVES: [
+    ['PL', 'LL', 'SA', 'BL1', 'L1'],
+    [
+      'CH',
+      'EL1',
+      'EL2',
+      'D2',
+      'D3',
+      'F2',
+      'I2',
+      'SP2',
+      'ERD',
+      'POR',
+      'BEL1',
+      'AUT1',
+      'DEN1',
+      'SCO1',
+      'SUI1',
+      'SUI2',
+      'POL1',
+      'POL2',
+      'CZE1',
+      'GRE1',
+      'TUR1',
+      'TUR2',
+      'SRB1',
+      'SVN1',
+      'RUS1',
+    ],
+    ['UCL', 'UEL', 'UECL', 'UNL', 'WC'],
+  ],
 } as const;
 
 /**
@@ -469,6 +537,7 @@ export const ETL_SCHEDULER_KEYS = {
   SAME_DAY_ANALYSIS: 'cron:same-day-analysis',
   ROLLING_HORIZON: 'cron:rolling-horizon',
   SEASON_ROLLOVER_SYNC: 'cron:season-rollover-sync',
+  STATS_BACKFILL: 'cron:stats-backfill',
 } as const;
 
 export const ROLLING_HORIZON_DEFAULTS = {

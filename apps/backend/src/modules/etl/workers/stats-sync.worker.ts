@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { XgSource } from '@evcore/db';
 import { Job } from 'bullmq';
 import { createLogger } from '@utils/logger';
-import { ApiFootballClient } from '../api-football.client';
+import {
+  ApiFootballClient,
+  isQuotaExceededError,
+} from '../api-football.client';
 import { ApiFootballStatisticsResponseSchema } from '../schemas/stats.schema';
 import { FixtureService } from '../../fixture/fixture.service';
 import {
@@ -30,6 +33,24 @@ export type StatsSyncJobData = {
   competitionCode: string;
   leagueId: number;
   syncScope?: 'routine' | 'backfill';
+};
+
+export type PendingStatisticsFixture = {
+  externalId: number;
+  homeTeam: { externalId: number };
+  awayTeam: { externalId: number };
+};
+
+export type StatsSyncBatchResult = {
+  updated: number;
+  skipped: number;
+  statisticRows: number;
+  // Fixtures now flagged statisticsUnavailable (API returned nothing usable).
+  statisticsUnavailable: number;
+  xgUnavailableIds: number[];
+  // Skipped on a network or non-quota HTTP error — left pending, retryable.
+  failedExternalIds: number[];
+  abortReason: 'quota' | null;
 };
 
 const logger = createLogger('stats-sync-worker');
@@ -120,10 +141,60 @@ export class StatsSyncWorker {
       'Fetching unpersisted final statistics for finished fixtures',
     );
 
+    const { updated, skipped, statisticRows, xgUnavailableIds, abortReason } =
+      await this.syncFixtures(fixtures);
+
+    if (abortReason !== null) {
+      logger.warn(
+        { competitionCode, season, abortReason, updated },
+        'Stats sync aborted — API-Football refused further requests',
+      );
+    }
+
+    logger.info(
+      { season, seasonName, updated, skipped, statisticRows },
+      'Stats sync complete',
+    );
+
+    if (updated > 0) {
+      // Existing team_stats rows predate the newly persisted raw statistics.
+      // A normal refresh only looks for missing rows and would therefore skip
+      // them; backfillSeason recomputes all snapshots but writes only changes.
+      await this.rollingStatsService.backfillSeason(seasonRecord.id);
+    }
+
+    if (xgUnavailableIds.length > 0) {
+      await this.notification.sendXgUnavailableReport(
+        seasonNameFromYear(season, seasonStartMonth, competitionCode),
+        xgUnavailableIds,
+      );
+    }
+  }
+
+  // Fetches and persists final statistics for the given fixtures, one call
+  // each. Stops at the first quota/rate-limit signal: API-Football answers an
+  // exhausted daily quota with a 200 whose `errors` is an object and whose
+  // `response` is empty — left unchecked, that body failed Zod and the
+  // fixture was marked statisticsUnavailable for good. Nothing is marked on
+  // abort.
+  async syncFixtures(
+    fixtures: PendingStatisticsFixture[],
+  ): Promise<StatsSyncBatchResult> {
     let updated = 0;
     let skipped = 0;
     let statisticRows = 0;
+    let statisticsUnavailable = 0;
     const xgUnavailableIds: number[] = [];
+    const failedExternalIds: number[] = [];
+    const result = (abortReason: 'quota' | null): StatsSyncBatchResult => ({
+      updated,
+      skipped,
+      statisticRows,
+      statisticsUnavailable,
+      xgUnavailableIds,
+      failedExternalIds,
+      abortReason,
+    });
 
     for (const { externalId, homeTeam, awayTeam } of fixtures) {
       const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures/statistics?fixture=${externalId}`;
@@ -135,10 +206,19 @@ export class StatsSyncWorker {
           'Transient network error — skipping fixture',
         );
         skipped++;
+        failedExternalIds.push(externalId);
         await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
         continue;
       }
       const res = curlResult.response;
+
+      if (res.status === 429 || isQuotaExceededError(res.body)) {
+        logger.warn(
+          { externalId, status: res.status, body: res.body },
+          'API-FOOTBALL quota or rate limit reached — aborting batch',
+        );
+        return result('quota');
+      }
 
       if (res.status < 200 || res.status >= 300) {
         logger.warn(
@@ -146,6 +226,7 @@ export class StatsSyncWorker {
           'API-FOOTBALL error — skipping fixture',
         );
         skipped++;
+        failedExternalIds.push(externalId);
         await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
         continue;
       }
@@ -160,6 +241,7 @@ export class StatsSyncWorker {
         await this.fixtureService.markXgUnavailable(externalId);
         await this.fixtureStatistics.markUnavailable(externalId);
         xgUnavailableIds.push(externalId);
+        statisticsUnavailable++;
         skipped++;
         await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
         continue;
@@ -183,6 +265,7 @@ export class StatsSyncWorker {
         await this.fixtureService.markXgUnavailable(externalId);
         await this.fixtureStatistics.markUnavailable(externalId);
         xgUnavailableIds.push(externalId);
+        statisticsUnavailable++;
         skipped++;
         await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
         continue;
@@ -221,24 +304,7 @@ export class StatsSyncWorker {
       await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
     }
 
-    logger.info(
-      { season, seasonName, updated, skipped, statisticRows },
-      'Stats sync complete',
-    );
-
-    if (updated > 0) {
-      // Existing team_stats rows predate the newly persisted raw statistics.
-      // A normal refresh only looks for missing rows and would therefore skip
-      // them; backfillSeason recomputes all snapshots but writes only changes.
-      await this.rollingStatsService.backfillSeason(seasonRecord.id);
-    }
-
-    if (xgUnavailableIds.length > 0) {
-      await this.notification.sendXgUnavailableReport(
-        seasonNameFromYear(season, seasonStartMonth, competitionCode),
-        xgUnavailableIds,
-      );
-    }
+    return result(null);
   }
 }
 
