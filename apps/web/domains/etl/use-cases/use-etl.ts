@@ -15,6 +15,8 @@ import type {
   EtlSyncResult,
   GlobalSyncType,
   LeagueSyncType,
+  StatsBackfillAction,
+  StatsBackfillStatus,
 } from "../types/etl";
 
 export function useEtlQueueStatus() {
@@ -197,5 +199,29 @@ export function useTriggerBettingEngineDate() {
         { method: "POST" },
       ),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["etl-queue-status"] }),
+  });
+}
+
+// Automatic stats backfill (admin only). Each status read also reads the
+// API-Football /status counter on the backend — /status is not charged
+// against the daily quota, but there is no need to poll it every few seconds.
+export function useStatsBackfillStatus() {
+  return useQuery({
+    queryKey: ["stats-backfill-status"],
+    queryFn: () =>
+      clientApiRequest<StatsBackfillStatus>("/etl/stats-backfill/status"),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useStatsBackfillAction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (action: StatsBackfillAction) =>
+      clientApiRequest<{ status: string }>(`/etl/stats-backfill/${action}`, {
+        method: "POST",
+      }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["stats-backfill-status"] }),
   });
 }

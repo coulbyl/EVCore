@@ -73,3 +73,30 @@ export type GlobalSyncType =
   | "season-rollover";
 
 export type LeagueSyncType = "fixtures" | "stats" | "injuries";
+
+export type StatsBackfillSeason = {
+  competitionCode: string;
+  seasonName: string;
+  wave: number;
+  pending: number;
+  synced: number;
+  unavailable: number;
+};
+
+export type StatsBackfillStatus = {
+  scheduled: boolean;
+  paused: boolean;
+  reserve: number;
+  quota: { current: number; limitDay: number; budget: number } | null;
+  totals: {
+    seasons: number;
+    completedSeasons: number;
+    pending: number;
+    synced: number;
+    unavailable: number;
+  };
+  next: StatsBackfillSeason[];
+  parked: StatsBackfillSeason[];
+};
+
+export type StatsBackfillAction = "pause" | "resume" | "run";

@@ -69,7 +69,13 @@ moins et la marge disponible augmente d'elle-même.
 
 ## 4. Commandes
 
-Toutes sur le serveur de production. Les routes `/etl/stats-backfill/*` sont
+**Depuis le dashboard** (compte admin) : `Moteur & ETL` → onglet
+`Monitoring` → section « Backfill statistiques ». Elle affiche l'état, le
+quota du jour, le budget restant, la progression, les prochaines saisons et
+les saisons écartées, avec les boutons Pause / Reprendre / Lancer un passage.
+Rafraîchie toutes les 30 secondes.
+
+**En ligne de commande**, sur le serveur de production. Les routes `/etl/stats-backfill/*` sont
 réservées aux administrateurs (`AuthSessionGuard` + `AdminGuard`) : passer le
 cookie de session `evcore_session` d'un compte admin, copié depuis le
 navigateur. Le backfill lui-même n'a besoin d'aucun appel pour tourner ; pour
