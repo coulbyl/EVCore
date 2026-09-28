@@ -26,6 +26,9 @@ import { BettingEngineRebuildWorker } from './workers/betting-engine-rebuild.wor
 import { SameDayAnalysisWorker } from './workers/same-day-analysis.worker';
 import { RollingHorizonWorker } from './workers/rolling-horizon.worker';
 import { SeasonRolloverSyncWorker } from './workers/season-rollover-sync.worker';
+import { StatsBackfillWorker } from './workers/stats-backfill.worker';
+import { StatsBackfillService } from './stats-backfill.service';
+import { StatsBackfillController } from './stats-backfill.controller';
 import { CouponModule } from '../coupon/coupon.module';
 import { AdjustmentModule } from '../adjustment/adjustment.module';
 import { AuthModule } from '../auth/auth.module';
@@ -50,6 +53,7 @@ import { FixtureStatisticsModule } from '../fixture-statistics/fixture-statistic
       { name: BULLMQ_QUEUES.ML_TRAINING },
       { name: BULLMQ_QUEUES.ML_SCHEDULER },
       { name: BULLMQ_QUEUES.SEASON_ROLLOVER_SYNC },
+      { name: BULLMQ_QUEUES.STATS_BACKFILL },
     ),
     BullModule.registerFlowProducer({ name: 'rolling-horizon-flow' }),
     AuthModule,
@@ -66,7 +70,7 @@ import { FixtureStatisticsModule } from '../fixture-statistics/fixture-statistic
     // n'était atteignable que par un appel HTTP manuel.
     RiskModule,
   ],
-  controllers: [EtlController],
+  controllers: [EtlController, StatsBackfillController],
   providers: [
     EtlService,
     ApiFootballClient,
@@ -86,6 +90,8 @@ import { FixtureStatisticsModule } from '../fixture-statistics/fixture-statistic
     OddsHistoricalImportWorker,
     RollingHorizonWorker,
     SeasonRolloverSyncWorker,
+    StatsBackfillService,
+    StatsBackfillWorker,
   ],
   exports: [EtlService, ApiFootballClient],
 })

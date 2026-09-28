@@ -17,6 +17,7 @@ import { LeagueOpsSection } from "./league-ops-section";
 import { GlobalBackfillSection } from "./global-backfill-section";
 import { CouponSettlementSection } from "./coupon-settlement-section";
 import { ChannelSelectionSettlementSection } from "./channel-selection-settlement-section";
+import { StatsBackfillSection } from "./stats-backfill-section";
 
 export function EnginePageClient() {
   const { data: queueStatus, isLoading: isQueueLoading } = useEtlQueueStatus();
@@ -57,8 +58,9 @@ export function EnginePageClient() {
           </TabsList>
         </div>
 
-        <TabsContent value="monitoring" className="mt-6">
+        <TabsContent value="monitoring" className="mt-6 flex flex-col gap-8">
           <QueueStatusSection data={queueStatus} isLoading={isQueueLoading} />
+          <StatsBackfillSection />
         </TabsContent>
 
         <TabsContent value="actions" className="mt-6 flex flex-col gap-8">

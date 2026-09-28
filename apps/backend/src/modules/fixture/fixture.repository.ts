@@ -31,6 +31,17 @@ import { oneDayWindow } from '@utils/date.utils';
  */
 const ODDS_WRITE_CONCURRENCY = 5;
 
+export type StatsBackfillCandidateRow = {
+  seasonId: string;
+  seasonName: string;
+  competitionCode: string;
+  startDate: Date;
+  endDate: Date;
+  synced: number;
+  unavailable: number;
+  pending: number;
+};
+
 export type FixtureWithTeamNames = Fixture & {
   homeTeam: { name: string; shortName: string; logoUrl: string | null };
   awayTeam: { name: string; shortName: string; logoUrl: string | null };
@@ -603,6 +614,37 @@ export class FixtureRepository {
       },
       orderBy: { scheduledAt: 'asc' },
     });
+  }
+
+  // One row per season of an active backtest competition with finished
+  // fixtures, with its final-statistics coverage. Feeds the automatic stats
+  // backfill planner, which targets seasons by id — never by a name rebuilt
+  // from the year, which misses legacy calendar seasons stored as "2025-26".
+  findStatsBackfillCandidates(
+    minSeasonStart: Date,
+  ): Promise<StatsBackfillCandidateRow[]> {
+    return this.prisma.client.$queryRaw<StatsBackfillCandidateRow[]>`
+      SELECT s.id                   AS "seasonId",
+             s.name                 AS "seasonName",
+             c.code                 AS "competitionCode",
+             s."startDate",
+             s."endDate",
+             count(*) FILTER (WHERE f."statisticsSyncedAt" IS NOT NULL)::int
+                                    AS synced,
+             count(*) FILTER (WHERE f."statisticsUnavailable")::int
+                                    AS unavailable,
+             count(*) FILTER (WHERE f."statisticsSyncedAt" IS NULL
+                                AND NOT f."statisticsUnavailable")::int
+                                    AS pending
+      FROM public.season s
+      JOIN public.competition c ON c.id = s."competitionId"
+      JOIN public.fixture f     ON f."seasonId" = s.id
+      WHERE c."isActive"
+        AND c."includeInBacktest"
+        AND f.status = 'FINISHED'
+        AND s."startDate" >= ${minSeasonStart}
+      GROUP BY s.id, s.name, c.code, s."startDate", s."endDate"
+    `;
   }
 
   findScheduledBySeason(seasonId: string): Promise<
