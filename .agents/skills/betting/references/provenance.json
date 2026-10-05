@@ -1,0 +1,27 @@
+{
+  "repository": "https://github.com/machina-sports/sports-skills",
+  "commit": "a56f7fbb81b1516cb8466911934d7eda79fdccc2",
+  "license": "MIT",
+  "files": [
+    {
+      "source": "src/sports_skills/betting/_calcs.py",
+      "path": "scripts/_calcs.py",
+      "sha256": "99424cb3f3e55fdfe77eb8479eebaab2da8c79848f0eae0a386e1ac82d04a975"
+    },
+    {
+      "source": "skills/betting/references/api-reference.md",
+      "path": "references/upstream-api-reference.md",
+      "sha256": "4c5d80f484d42305ac27d3a612cd31479e0380576d1256333448db2936aefff3"
+    },
+    {
+      "source": "skills/betting/SKILL.md",
+      "path": "references/upstream-skill.md",
+      "sha256": "b03000178c99cd880c99a957391e6c9c4f3b481133f825ca640f6e9f402d994a"
+    },
+    {
+      "source": "LICENSE",
+      "path": "LICENSE",
+      "sha256": "790f3cf841e22f55a73c5d8ce665f30c2962547f3eec417da5798d74447f6450"
+    }
+  ]
+}
