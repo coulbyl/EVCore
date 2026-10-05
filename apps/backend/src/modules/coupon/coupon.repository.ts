@@ -361,9 +361,12 @@ export class CouponRepository {
    * vue : calibrer sur un espace et composer dans un autre donnerait des coûts
    * qui ne s'appliquent à rien.
    *
-   * `won IS NULL` couvre deux cas — rencontre non jouée et remboursement — d'où
-   * le filtre sur le statut plutôt que sur `won` seul : un Draw No Bet remboursé
-   * est une observation réglée qui rapporte exactement la mise.
+   * `won IS NULL` sur une rencontre terminée n'est un remboursement que pour
+   * un Draw No Bet sur match nul : il rapporte exactement la mise. Pour tout
+   * autre marché, NULL veut dire « non réglable » — score de mi-temps absent,
+   * ou marché sans règle de règlement dans la vue (handicap asiatique,
+   * corners, cartons, …). Les compter comme remboursés leur donnerait un coût
+   * nul et le compositeur les préférerait à tout le reste.
    */
   async findMarketCostCalibration(
     before: Date,
@@ -376,6 +379,7 @@ export class CouponRepository {
         FROM public.evaluated_pick
         WHERE "fixtureStatus" = 'FINISHED'
           AND "scheduledAt" < ${before}
+          AND (won IS NOT NULL OR market = 'DRAW_NO_BET')
       )
       SELECT market,
              band,
