@@ -5,6 +5,7 @@ import {
   CouponProposalStatus,
   CouponResult,
   CouponSource,
+  FixtureStatus,
   type Market,
   Prisma,
   StrategyChannel,
@@ -195,14 +196,45 @@ export class CouponRepository {
     });
   }
 
+  /**
+   * Proposals the settlement pass must (re)visit:
+   * - PENDING ones whose last fixture kicked off at least 90 min ago;
+   * - EXPIRED ones that early-failed (one leg lost before the others were
+   *   played) and still carry a leg never graded although its fixture is now
+   *   FINISHED, POSTPONED or CANCELLED. Without this second branch those
+   *   legs stayed `settledAt IS NULL` forever (128 of them measured
+   *   2026-10-05), and since they are systematically the late kick-offs of
+   *   losing days, every per-leg comparison between generators read high.
+   */
   async findPendingReadyToSettle(
     now: Date,
   ): Promise<Array<{ id: string; lastFixtureScheduledAt: Date }>> {
     const threshold = new Date(now.getTime() - 90 * 60 * 1000);
     return this.prisma.client.couponProposal.findMany({
       where: {
-        status: CouponProposalStatus.PENDING,
-        lastFixtureScheduledAt: { lte: threshold },
+        OR: [
+          {
+            status: CouponProposalStatus.PENDING,
+            lastFixtureScheduledAt: { lte: threshold },
+          },
+          {
+            status: CouponProposalStatus.EXPIRED,
+            legs: {
+              some: {
+                settledAt: null,
+                fixture: {
+                  status: {
+                    in: [
+                      FixtureStatus.FINISHED,
+                      FixtureStatus.POSTPONED,
+                      FixtureStatus.CANCELLED,
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        ],
       },
       select: { id: true, lastFixtureScheduledAt: true },
     });

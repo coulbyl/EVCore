@@ -220,6 +220,10 @@ export class CouponSettlementService {
 
     // Early-fail: a coupon is LOST as soon as any leg loses — no need to wait
     // for all legs to be resolved. Coupon combinatorics mean one loss = full loss.
+    // The legs not yet played are NOT dropped: `findPendingReadyToSettle`
+    // brings an EXPIRED proposal back as long as one of its legs is ungraded
+    // on a fixture that has since finished, so per-leg calibration keeps the
+    // late kick-offs of losing days.
     const anyLost = legResults.some((r) => !r);
     if (anyLost) {
       await this.repo.updateResult(proposalId, CouponResult.LOST);
@@ -228,6 +232,7 @@ export class CouponSettlementService {
           proposalId,
           result: CouponResult.LOST,
           resolvedLegs: legResults.length,
+          ungradedLegs: proposal.legs.length - legResults.length - voidedLegs,
         },
         'Proposal early-failed: at least one leg lost',
       );
