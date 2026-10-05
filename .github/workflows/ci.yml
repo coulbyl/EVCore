@@ -6,6 +6,19 @@ on:
   pull_request:
 
 jobs:
+  analysis-skills:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Validate analysis skills and offline calculations
+        run: python3 scripts/validate-analysis-skills.py
+
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 20

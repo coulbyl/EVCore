@@ -2,6 +2,17 @@
 
 Instructions pour les agents de code (Codex/assistants automatisés) dans ce repo.
 
+## Football analysis skills
+
+For forecast, ranking and calibration work, read
+`.agents/skills/evcore-forecast-audit/SKILL.md`. For coupon composition or
+settlement review, read `.agents/skills/evcore-coupon-review/SKILL.md`.
+For offline odds-math diagnostics, read `.agents/skills/betting/SKILL.md`.
+Keep `@evcore/analysis-core` as the production source of truth and respect
+point-in-time replay. These skills guide development/audit agents; the EVA
+and VANTAGE runtime does not automatically load them. See
+`docs/ai-analysis-skills.md` for scope, sources and validation.
+
 ## Secrets & fichiers `.env`
 
 - Ne jamais lire, parser, afficher, ni copier le contenu de fichiers secrets:
