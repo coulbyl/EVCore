@@ -42,7 +42,8 @@ export function resolveGenerationWindow(date: string): { to: string } {
 
 // One unified compose+persist pass, shared by evening and intraday. Both use
 // the same proposal key; every attempt and abstention is recorded separately.
-async function runComposePersistPass(
+// Exported for the spec only.
+export async function runComposePersistPass(
   scoredPool: readonly ScoredCandidate[],
   forDate: Date,
   clients: LlmClients,
@@ -82,14 +83,45 @@ async function runComposePersistPass(
       couponClass,
     ).length;
     let llmProvenance: CouponLlmProvenance | null = null;
-    const result = await composeCouponClass(
-      scoredPool,
-      couponClass,
-      UNIFIED_COUPON_BOUNDS,
-      clients,
-      logger,
-      { onCompletion: (value) => (llmProvenance = value) },
-    );
+    let result: Awaited<ReturnType<typeof composeCouponClass>>;
+    try {
+      result = await composeCouponClass(
+        scoredPool,
+        couponClass,
+        UNIFIED_COUPON_BOUNDS,
+        clients,
+        logger,
+        { onCompletion: (value) => (llmProvenance = value) },
+      );
+    } catch (error) {
+      // An LLM/provider failure used to escape straight to the BullMQ job:
+      // nothing was written, so a quality abstention and a worker outage were
+      // indistinguishable — the generator was down from 2026-09-21 for two
+      // weeks with zero rows in coupon_generation_attempt while the
+      // deterministic shadow kept logging 74-354 candidates a day. Record
+      // the failure first, then rethrow so the job still fails loudly.
+      const message = error instanceof Error ? error.message : String(error);
+      try {
+        await recordGenerationAttempt({
+          forDate,
+          pass: persistOpts.pass,
+          outcome: "ERROR",
+          candidateCount,
+          llmProvenance,
+          reason: message.slice(0, 500),
+        });
+      } catch (recordError) {
+        logger.warn(
+          { ...logContext, error: recordError },
+          "coupon: generation error could not be recorded",
+        );
+      }
+      logger.error(
+        { ...logContext, couponClass: couponClass.name, error },
+        "coupon: generation failed before any proposal",
+      );
+      throw error;
+    }
 
     if (result.outcome === "composed") {
       const persisted = await persistCouponProposal(
