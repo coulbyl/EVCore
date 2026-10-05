@@ -101,16 +101,25 @@ export function createLlmClients(config: Config): LlmClients {
  * threw — both are Stainless-generated API error classes that always set
  * `.status` (undefined for a connection/timeout failure, the HTTP status
  * otherwise). Covers: rate limits (429), server-side errors (5xx), and
- * connection failures/timeouts (status undefined). Excludes 4xx
+ * connection failures/timeouts (status undefined), and an exhausted
+ * billing quota (402 "Payment required", `param: "quota"` at Cerebras) —
+ * the next provider has its own credit. Excludes the other 4xx
  * configuration errors (401 bad key, 400 bad request, 404 bad route) —
- * those need a human, not a fallback. */
+ * those need a human, not a fallback.
+ *
+ * The 402 case is what took VANTAGE and the LLM coupon generator down from
+ * 2026-09-20 to 2026-10-05 in prod: the primary's credit ran out, every
+ * job failed with 402, and Groq sat unused in `clients.fallbacks`. */
 function isRetryableProviderError(err: unknown): boolean {
   if (typeof err !== "object" || err === null || !("status" in err)) {
     return false;
   }
   const status = (err as { status?: unknown }).status;
   if (status === undefined) return true;
-  return typeof status === "number" && (status === 429 || status >= 500);
+  return (
+    typeof status === "number" &&
+    (status === 402 || status === 429 || status >= 500)
+  );
 }
 
 /** Raw completion call — the caller owns Zod validation of the result.
