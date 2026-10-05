@@ -20,6 +20,16 @@ export type DeterministicComposerOptions = {
   probabilityPoolSize?: number;
   valuePoolSize?: number;
   maxPositiveEdge?: number;
+  /**
+   * Admit a leg only when `p × odds > 1` and a coupon only when its EV is
+   * positive (the historical policy). `false` removes both gates: the audit
+   * of 2026-08-22 measured the announced edge as anti-predictive, and the
+   * legs it admits are precisely those where the model over-estimates most
+   * (LLM legs settled since 2026-08-23: edge < 0 realises 1.00 of what it
+   * announces, [0; 0.05[ 0.53, >= 0.05 0.82). Default true so every existing
+   * caller keeps its behaviour; the probability-ranked shadow passes false.
+   */
+  requirePositiveEv?: boolean;
 };
 
 export type DeterministicCoupon<T extends CouponLeg> = {
@@ -77,7 +87,10 @@ function compareCandidatesByValue(a: CouponLeg, b: CouponLeg): number {
 export function isAdmissibleCouponCandidate<T extends CouponLeg>(
   candidate: T,
   couponClass: CouponClass,
-  options: Pick<DeterministicComposerOptions, "maxPositiveEdge"> = {},
+  options: Pick<
+    DeterministicComposerOptions,
+    "maxPositiveEdge" | "requirePositiveEv"
+  > = {},
 ): boolean {
   const probability = legProbability(candidate);
   const odds = candidate.oddsSnapshot;
@@ -86,13 +99,14 @@ export function isAdmissibleCouponCandidate<T extends CouponLeg>(
     referenceOdds === null
       ? Number.POSITIVE_INFINITY
       : probability - 1 / referenceOdds;
+  const requirePositiveEv = options.requirePositiveEv ?? true;
   return (
     odds !== null &&
     Number.isFinite(odds) &&
     Number.isFinite(probability) &&
     probability > 0 &&
     probability < 1 &&
-    probability * odds > 1 &&
+    (!requirePositiveEv || probability * odds > 1) &&
     clearsValueEdgeFloor(candidate) &&
     clearsTeamTotalMaxOdds(candidate) &&
     clearsMaxLegEdge(candidate) &&
@@ -154,6 +168,7 @@ export function compareDeterministicCoupons(
 
 function buildCoupon<T extends CouponLeg>(
   legs: readonly T[],
+  requirePositiveEv: boolean,
 ): DeterministicCoupon<T> | null {
   const combinedOdds = legs.reduce(
     (product, leg) => product * (leg.oddsSnapshot as number),
@@ -164,7 +179,8 @@ function buildCoupon<T extends CouponLeg>(
     1,
   );
   const couponEV = calculateEV(jointProbability, combinedOdds).toNumber();
-  if (!Number.isFinite(couponEV) || couponEV <= 0) return null;
+  if (!Number.isFinite(couponEV)) return null;
+  if (requirePositiveEv && couponEV <= 0) return null;
   return {
     legs: [...legs],
     combinedOdds,
@@ -192,6 +208,7 @@ export function composeDeterministicCoupon<T extends CouponLeg>(
     options,
   );
   if (pool.length < bounds.minLegs) return { outcome: "empty_pool" };
+  const requirePositiveEv = options.requirePositiveEv ?? true;
 
   let best: DeterministicCoupon<T> | null = null;
 
@@ -228,7 +245,7 @@ export function composeDeterministicCoupon<T extends CouponLeg>(
         nextOdds >=
           Math.max(bounds.minCombinedOdds, couponClass.targetCombinedOdds)
       ) {
-        const coupon = buildCoupon(nextSelected);
+        const coupon = buildCoupon(nextSelected, requirePositiveEv);
         if (
           coupon !== null &&
           (best === null || compareDeterministicCoupons(coupon, best) < 0)

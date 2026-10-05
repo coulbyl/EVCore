@@ -225,7 +225,7 @@ export function clearsTeamTotalMaxOdds(
 // model has been measured reliable. Moved alongside clearsMaxLegEdge (its
 // only reader) 2026-09-03 — was coupon.constants.ts's MAX_LEG_EDGE, complement
 // of VALUE_MIN_EDGE=0.10 above (not a coincidence — see clearsValueEdgeFloor).
-const MAX_LEG_EDGE = 0.1;
+export const MAX_LEG_EDGE = 0.1;
 
 export function clearsMaxLegEdge(
   leg: Pick<

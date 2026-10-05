@@ -6,7 +6,10 @@ import {
 import type { LlmClients } from "../groq/client";
 import { computeChannelReliability } from "./channel-reliability-query";
 import { composeCouponClass } from "./compose-coupon-class";
-import { buildDeterministicShadowAttempt } from "./compose-deterministic-shadow";
+import {
+  buildDeterministicShadowAttempt,
+  buildProbabilityRankedShadowAttempt,
+} from "./compose-deterministic-shadow";
 import type { CouponLlmProvenance } from "./generate-coupon-selection";
 import { getPoolForRange } from "./pool-query";
 import { persistCouponProposal } from "./persist-coupon-proposal";
@@ -54,27 +57,30 @@ export async function runComposePersistPass(
     signalWindowDays?: number;
   },
 ): Promise<void> {
-  const shadowAttempt = buildDeterministicShadowAttempt({
-    scoredPool,
-    forDate,
-    pass: persistOpts.pass,
-  });
-  try {
-    await recordGenerationAttempt(shadowAttempt);
-    logger.info(
-      {
-        ...logContext,
-        policyVersion: shadowAttempt.policyVersion,
-        outcome: shadowAttempt.outcome,
-        candidateCount: shadowAttempt.candidateCount,
-      },
-      "coupon: deterministic shadow recorded",
-    );
-  } catch (error) {
-    logger.warn(
-      { ...logContext, error },
-      "coupon: deterministic shadow could not be recorded",
-    );
+  // Two append-only shadows on the same pool: the frozen deterministic
+  // candidate and the probability-ranked v2 policy. Neither publishes.
+  const shadowInput = { scoredPool, forDate, pass: persistOpts.pass };
+  for (const shadowAttempt of [
+    buildDeterministicShadowAttempt(shadowInput),
+    buildProbabilityRankedShadowAttempt(shadowInput),
+  ]) {
+    try {
+      await recordGenerationAttempt(shadowAttempt);
+      logger.info(
+        {
+          ...logContext,
+          policyVersion: shadowAttempt.policyVersion,
+          outcome: shadowAttempt.outcome,
+          candidateCount: shadowAttempt.candidateCount,
+        },
+        "coupon: shadow recorded",
+      );
+    } catch (error) {
+      logger.warn(
+        { ...logContext, policyVersion: shadowAttempt.policyVersion, error },
+        "coupon: shadow could not be recorded",
+      );
+    }
   }
 
   for (const couponClass of [UNIFIED_COUPON_CLASS]) {

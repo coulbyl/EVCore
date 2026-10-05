@@ -7,15 +7,23 @@ import {
 vi.mock("./compose-coupon-class", () => ({
   composeCouponClass: vi.fn(),
 }));
-vi.mock("./compose-deterministic-shadow", () => ({
-  buildDeterministicShadowAttempt: vi.fn().mockReturnValue({
+vi.mock("./compose-deterministic-shadow", () => {
+  const abstained = (policyVersion: string) => ({
     forDate: new Date("2026-10-01T00:00:00.000Z"),
     pass: "EVENING",
     outcome: "SHADOW_ABSTAINED",
     candidateCount: 0,
-    policyVersion: "shadow",
-  }),
-}));
+    policyVersion,
+  });
+  return {
+    buildDeterministicShadowAttempt: vi
+      .fn()
+      .mockReturnValue(abstained("deterministic-5-7-v1")),
+    buildProbabilityRankedShadowAttempt: vi
+      .fn()
+      .mockReturnValue(abstained("unified-5-15-v2-shadow")),
+  };
+});
 vi.mock("./persist-coupon-proposal", () => ({
   persistCouponProposal: vi.fn(),
 }));
@@ -62,6 +70,10 @@ describe("runComposePersistPass — LLM failure", () => {
     const attempts = vi
       .mocked(recordGenerationAttempt)
       .mock.calls.map(([attempt]) => attempt);
+    // Both shadows are recorded before the LLM is called.
+    expect(attempts.map((a) => a.policyVersion)).toEqual(
+      expect.arrayContaining(["deterministic-5-7-v1", "unified-5-15-v2-shadow"]),
+    );
     const error = attempts.find((a) => a.outcome === "ERROR");
     expect(error).toMatchObject({
       forDate,
