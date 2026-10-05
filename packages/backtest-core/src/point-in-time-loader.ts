@@ -280,11 +280,20 @@ export class PointInTimeLoader {
   }): Promise<TeamStatsInput | null> {
     const { teamId, seasonId, competitionCode, asOf } = input;
 
+    // Point-in-time is carried by `afterFixture.scheduledAt`, not by
+    // `createdAt`: a rolling stat is by construction a function of the
+    // fixtures played before `afterFixture`, while `createdAt` is the date of
+    // the backfill that materialised the row (RollingStatsService refreshes
+    // whole seasons with createMany). Gating on `createdAt` hid 90 % of
+    // team_stats from every replay before March 2026 (measured 2026-10-05:
+    // 113 760 / 126 744 rows created more than a week after their fixture).
+    // The column content is not versioned either: a refreshed row carries
+    // today's recomputed values, so replayed features are "as recomputed",
+    // not "as seen at the time".
     const [primaryStats, gamesPlayedThisSeason] = await Promise.all([
       this.client.teamStats.findFirst({
         where: {
           teamId,
-          createdAt: { lt: asOf },
           afterFixture: { seasonId, scheduledAt: { lt: asOf } },
         },
         orderBy: { afterFixture: { scheduledAt: "desc" } },
@@ -292,7 +301,6 @@ export class PointInTimeLoader {
       this.client.teamStats.count({
         where: {
           teamId,
-          createdAt: { lt: asOf },
           afterFixture: { seasonId, scheduledAt: { lt: asOf } },
         },
       }),
@@ -310,7 +318,6 @@ export class PointInTimeLoader {
       ? await this.client.teamStats.findFirst({
           where: {
             teamId,
-            createdAt: { lt: asOf },
             afterFixture: {
               scheduledAt: { lt: asOf },
               seasonId: { not: seasonId },
