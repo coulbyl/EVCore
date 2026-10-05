@@ -268,8 +268,22 @@ export function resolvePickBetStatus(
     return resolveResultBttsPick(pick, homeScore, awayScore);
   }
 
-  // ONE_X_TWO, OVER_UNDER, BTTS, DOUBLE_CHANCE
+  // Only the markets whose picks PICK_CONDITIONS actually models may reach
+  // the generic lookup. Anything else (ASIAN_HANDICAP, OVER_UNDER_2H,
+  // CORNERS, CARDS, ODD_EVEN, … collected since 2026-09-15 without a
+  // settlement rule) is VOID rather than silently graded with 1X2/full-match
+  // semantics — an AH "HOME" at line -1.5 is not a match-winner bet, and a
+  // CORNERS "OVER_9_5" is not about goals.
+  if (!PICK_CONDITION_MARKETS.has(market)) return BetStatus.VOID;
   const condition = PICK_CONDITIONS[pick];
   if (!condition) return BetStatus.VOID;
   return condition(homeScore, awayScore) ? BetStatus.WON : BetStatus.LOST;
 }
+
+/** Markets whose pick vocabulary is the one PICK_CONDITIONS encodes. */
+const PICK_CONDITION_MARKETS: ReadonlySet<Market> = new Set<Market>([
+  Market.ONE_X_TWO,
+  Market.OVER_UNDER,
+  Market.BTTS,
+  Market.DOUBLE_CHANCE,
+]);

@@ -37,6 +37,23 @@ describe("resolvePickBetStatus", () => {
     );
   });
 
+  it("VOIDs markets that have no settlement rule instead of grading them as 1X2 / full-match totals", () => {
+    // Asian Handicap HOME -1.5 on a 1-0: a 1X2 reading would say WON.
+    expect(resolvePickBetStatus(Market.ASIAN_HANDICAP, "HOME", 1, 0)).toBe(
+      BetStatus.VOID,
+    );
+    // Second-half total on a 3-0: a full-match reading would say WON.
+    expect(resolvePickBetStatus(Market.OVER_UNDER_2H, "OVER", 3, 0)).toBe(
+      BetStatus.VOID,
+    );
+    expect(resolvePickBetStatus(Market.CORNERS, "OVER", 3, 0)).toBe(
+      BetStatus.VOID,
+    );
+    expect(resolvePickBetStatus(Market.ODD_EVEN, "ODD", 2, 1)).toBe(
+      BetStatus.VOID,
+    );
+  });
+
   it("settles CORRECT_SCORE picks 'H:A' by exact match", () => {
     expect(resolvePickBetStatus(Market.CORRECT_SCORE, "2:1", 2, 1)).toBe(
       BetStatus.WON,
