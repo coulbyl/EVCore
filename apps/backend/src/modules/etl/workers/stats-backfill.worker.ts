@@ -38,10 +38,10 @@ export type StatsBackfillTickResult =
 
 const logger = createLogger('stats-backfill-worker');
 
-// Automates docs runbook BACKFILL-PROGRESSIF-STATISTIQUES: one lot per tick,
-// on the highest-priority season still missing final statistics, within the
-// API-Football budget left above the production reserve. Dedicated queue,
-// default concurrency 1 — two lots never overlap.
+// Automates the stats backfill (docs/backfill-statistiques-automatique.md):
+// one lot per tick, on the highest-priority season still missing final
+// statistics, within the API-Football budget left above the production
+// reserve. Dedicated queue, default concurrency 1 — two lots never overlap.
 @Processor(BULLMQ_QUEUES.STATS_BACKFILL)
 export class StatsBackfillWorker extends WorkerHost {
   // Non-quota failures per fixture since process start. Past
