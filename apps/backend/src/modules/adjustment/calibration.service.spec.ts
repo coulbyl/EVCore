@@ -75,6 +75,7 @@ describe('CalibrationService.computeAllMarkets', () => {
   it('returns null for each market when fewer than MIN_BET_COUNT selections are settled', async () => {
     const prisma = {
       client: {
+        $queryRaw: vi.fn().mockResolvedValue([{ id: 'sel-1' }]),
         channelSelection: {
           findMany: vi.fn().mockResolvedValue([]),
         },
@@ -95,7 +96,10 @@ describe('CalibrationService.computeAllMarkets', () => {
   it('queries each market independently', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
     const prisma = {
-      client: { channelSelection: { findMany } },
+      client: {
+        $queryRaw: vi.fn().mockResolvedValue([{ id: 'sel-1' }]),
+        channelSelection: { findMany },
+      },
     } as unknown as PrismaService;
 
     const service = new CalibrationService(prisma);
@@ -118,7 +122,10 @@ describe('CalibrationService.computeForMarket with excludeLambdaFloorHit', () =>
   it('includes a NOT filter when excludeLambdaFloorHit is true', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
     const prisma = {
-      client: { channelSelection: { findMany } },
+      client: {
+        $queryRaw: vi.fn().mockResolvedValue([{ id: 'sel-1' }]),
+        channelSelection: { findMany },
+      },
     } as unknown as PrismaService;
 
     const service = new CalibrationService(prisma);
@@ -134,7 +141,10 @@ describe('CalibrationService.computeForMarket with excludeLambdaFloorHit', () =>
   it('does not include a NOT filter when excludeLambdaFloorHit is false', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
     const prisma = {
-      client: { channelSelection: { findMany } },
+      client: {
+        $queryRaw: vi.fn().mockResolvedValue([{ id: 'sel-1' }]),
+        channelSelection: { findMany },
+      },
     } as unknown as PrismaService;
 
     const service = new CalibrationService(prisma);
@@ -154,6 +164,7 @@ describe('CalibrationService.computeForMarket with excludeLambdaFloorHit', () =>
     }));
     const prisma = {
       client: {
+        $queryRaw: vi.fn().mockResolvedValue([{ id: 'sel-1' }]),
         channelSelection: {
           findMany: vi.fn().mockResolvedValue(mockSelections),
         },
@@ -172,7 +183,10 @@ describe('CalibrationService.computeForMarket source scoping', () => {
   it('reads rank-1 selections of SELECTED decisions only, across every channel', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
     const prisma = {
-      client: { channelSelection: { findMany } },
+      client: {
+        $queryRaw: vi.fn().mockResolvedValue([{ id: 'sel-1' }]),
+        channelSelection: { findMany },
+      },
     } as unknown as PrismaService;
 
     const service = new CalibrationService(prisma);
@@ -189,21 +203,45 @@ describe('CalibrationService.computeForMarket source scoping', () => {
     expect(where.channelDecision).not.toHaveProperty('channel');
   });
 
-  it('reaches the point-in-time guard through modelRun, not a direct fixture relation', async () => {
+  it('restricts the sample to the prematch cohort, with asOf as the cohort cutoff', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
+    const $queryRaw = vi
+      .fn()
+      .mockResolvedValue([{ id: 'sel-1' }, { id: 'sel-2' }]);
     const prisma = {
-      client: { channelSelection: { findMany } },
+      client: { $queryRaw, channelSelection: { findMany } },
     } as unknown as PrismaService;
 
     const service = new CalibrationService(prisma);
     const asOf = new Date('2026-08-01T00:00:00.000Z');
     await service.computeForMarket(Market.ONE_X_TWO, { asOf });
 
+    // The cohort SQL carries the cutoff: `scheduledAt < asOf`,
+    // `analyzedAt < scheduledAt`, `settledAt < asOf`, one decision per
+    // (fixture, channel).
+    expect($queryRaw).toHaveBeenCalledTimes(1);
+    const sql = ($queryRaw.mock.calls[0] as [{ values: unknown[] }])[0];
+    expect(sql.values).toContain(asOf);
+
     const where = (findMany.mock.calls[0] as [{ where: unknown }])[0].where as {
-      channelDecision: {
-        modelRun?: { fixture: { scheduledAt: { lt: Date } } };
-      };
+      id: { in: string[] };
     };
-    expect(where.channelDecision.modelRun?.fixture.scheduledAt.lt).toBe(asOf);
+    expect(where.id.in).toEqual(['sel-1', 'sel-2']);
+  });
+
+  it('returns null without querying selections when the cohort is empty', async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const prisma = {
+      client: {
+        $queryRaw: vi.fn().mockResolvedValue([]),
+        channelSelection: { findMany },
+      },
+    } as unknown as PrismaService;
+
+    const service = new CalibrationService(prisma);
+    const result = await service.computeForMarket(Market.ONE_X_TWO);
+
+    expect(result).toBeNull();
+    expect(findMany).not.toHaveBeenCalled();
   });
 });

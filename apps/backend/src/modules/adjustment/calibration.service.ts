@@ -84,24 +84,30 @@ export class CalibrationService {
     market: string,
     options: { excludeLambdaFloorHit?: boolean; asOf?: Date } = {},
   ): Promise<CalibrationResult | null> {
+    // Prematch cohort first: one decision per (fixture, channel) — the latest
+    // analysed BEFORE kickoff — rank 1 of a SELECTED decision, settled before
+    // `asOf`. Reading channel_selection raw counted 5-7 rows per real bet and
+    // ~40 % retro-analyses produced after the result (measured 2026-10-05 on
+    // ONE_X_TWO: 29 013 rows for 14 921 real keys, 11 574 post-kickoff), so
+    // MIN_BET_COUNT was crossed twice too early and the auto-applied weight
+    // reacted to a partly circular signal.
+    const cohort = await this.prisma.client.$queryRaw<{ id: string }[]>(
+      prematchCohortSql({ asOf: options.asOf ?? new Date() }),
+    );
+    if (cohort.length === 0) return null;
     const selections = await this.prisma.client.channelSelection.findMany({
       where: {
+        id: { in: cohort.map((row) => row.id) },
         market: market as never,
         result: { in: [BetStatus.WON, BetStatus.LOST] },
         // rank 1 only: a channel's own pick, mirroring what persistChannelBet
         // used to materialise (`selections[0]`). Lower ranks are alternates
         // the channel did NOT decide on — counting them would calibrate on
-        // picks the system never stood behind.
+        // picks the system never stood behind. (Already enforced by the
+        // cohort; kept explicit for readers and specs.)
         rank: 1,
         channelDecision: {
           status: ChannelDecisionStatus.SELECTED,
-          // Point-in-time guard: only fixtures whose result was known before
-          // the cutoff. Prevents look-ahead leakage when calibrating for a
-          // past date. Reached through modelRun (the selection has no direct
-          // fixture relation), unlike the `bet` version which had one.
-          ...(options.asOf
-            ? { modelRun: { fixture: { scheduledAt: { lt: options.asOf } } } }
-            : {}),
           ...(options.excludeLambdaFloorHit
             ? {
                 NOT: {
