@@ -6,7 +6,7 @@
 // environment to activate without a code change or redeploy.
 export const FEATURE_FLAGS = {
   SCORING: {
-    LINE_MOVEMENT: true, // filter picks with >10% adverse odds movement over 7 days
+    LINE_MOVEMENT: true, // shadow only since 2026-10-05: logs the 7-day movement, no exclusion (the T-7d comparator only existed on rescheduled fixtures — see BettingEngineService)
     INJURIES: false, // shadow collected by injuries-sync worker
     H2H: true, // lambda-adjustment applied in BettingEngineService (docs/h2h-service-v2-plan.md §4, activated 2026-07-23)
     H2H_MARKET_SIGNALS: true, // per-market logit-shift (BTTS/OVER25/CLEAN_SHEET/WIN_TO_NIL) applied in BettingEngineService — combined backtest confirmed gain on top of H2H lambda correction, 6/6 markets (packages/db/reports/backtest-h2h-market-signals-combined-2026-07-28.txt), activated 2026-07-28
