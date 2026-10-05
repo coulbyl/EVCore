@@ -42,8 +42,20 @@ export class BettingEngineAnalysisWorker extends WorkerHost {
     // a heavy day, and would compose from an empty or half-written pool
     // whenever it guessed wrong. Chaining makes that race impossible.
     //
+    // Only for tomorrow. The rolling-horizon pass (17:00 UTC, J+1..J+4)
+    // also lands here, and the proposal keeps its first composition: until
+    // 2026-10-05 the coupon was frozen by the J+4 run, 66.6 h before kickoff
+    // on average (max 100.7 h) on that run's analysis odds, and settled at
+    // prices nobody could take at kickoff (OVER 2.19 proposed, 1.73 at the
+    // close). The J+1 passes (17:00 then 20:00) are the ones with same-day
+    // and evening prices.
+    //
     // Its failure must never fail the analysis: the analysis is what feeds
     // every channel, the coupon is one consumer among them.
+    if (date !== formatDateUtc(tomorrowUtc())) {
+      logger.info({ date }, 'Price composer skipped: not tomorrow');
+      return;
+    }
     try {
       const coupon = await this.couponPriceGeneration.generateForDate(
         new Date(`${date}T00:00:00.000Z`),

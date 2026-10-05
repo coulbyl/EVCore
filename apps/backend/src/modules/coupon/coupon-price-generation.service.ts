@@ -113,11 +113,17 @@ export class CouponPriceGenerationService {
   /**
    * Prix chaque jambe du vivier avec le coût mesuré de sa cellule.
    *
-   * Une jambe dont la cellule ET le marché sont trop peu mesurés est écartée :
-   * on ne compose pas avec ce qu'on n'a pas mesuré. Le plafond à 1 est un
-   * résultat, pas une prudence — aucun des 17 marchés n'est positif, donc une
-   * estimation au-dessus de 1 est un accident de fenêtre, et un compositeur qui
-   * maximise le retour attendu se rue exactement dessus.
+   * Une jambe dont la cellule (marché × tranche) est trop peu mesurée est
+   * écartée : on ne compose pas avec ce qu'on n'a pas mesuré. Jusqu'au
+   * 2026-10-05 elle retombait sur le coût moyen du marché entier — l'inversion
+   * que le commentaire ci-dessous interdisait déjà : prêter à une jambe à
+   * cote 6 le coût d'un marché dominé par des favoris lui donne un prix
+   * qu'elle n'a pas, et c'est précisément là que le compositeur allait
+   * chercher ses jambes (34 jambes PRICE sur 34 à cote ≥ 1,80, maximum 6,01).
+   * Le plafond à 1 est un résultat, pas une prudence — aucun des 17 marchés
+   * n'est positif, donc une estimation au-dessus de 1 est un accident de
+   * fenêtre, et un compositeur qui maximise le retour attendu se rue
+   * exactement dessus.
    */
   private priceCandidates(
     cells: readonly MarketCostCell[],
@@ -142,16 +148,11 @@ export class CouponPriceGenerationService {
         continue;
       }
       const cell = byCell.get(`${row.market}|${row.band}`);
-      // La tranche de cote raffine le marché dès qu'elle est assez mesurée ;
-      // sinon le marché fait foi. Ne jamais l'inverser : prêter à une jambe à
-      // cote 2,5 le coût moyen d'un marché dominé par des favoris lui donnerait
-      // un prix qu'elle n'a pas.
-      const source =
-        cell && cell.legCount >= PRICE_COMPOSER_POLICY.minCellLegs
-          ? cell
-          : market;
+      if (!cell || cell.legCount < PRICE_COMPOSER_POLICY.minCellLegs) {
+        continue;
+      }
       const expectedReturn = Math.min(
-        lowerBound(source),
+        lowerBound(cell),
         PRICE_COMPOSER_POLICY.maxCreditedReturn,
       );
       if (expectedReturn <= 0) continue;
