@@ -158,12 +158,12 @@ dont 2,5 % seulement retenus. L'audit du 2026-09-15 n'avait regardé que ces
 
 Réglés rétroactivement, sur la même tranche de cote (1,20–2,60) :
 
-| Statut | Picks | Annoncé | Réalisé | Écart |
-| --- | --- | --- | --- | --- |
-| **retenu** | 636 | 57,9 % | **42,9 %** | **−14,9 pts** |
-| rejeté `ev_below_threshold` | 4 321 | 54,1 % | **57,4 %** | **+3,3 pts** |
-| rejeté `probability_too_low` | 2 435 | 33,5 % | 45,2 % | **+11,7 pts** |
-| rejeté `odds_below_floor` | 438 | 68,3 % | 52,1 % | −16,3 pts |
+| Statut                       | Picks | Annoncé | Réalisé    | Écart         |
+| ---------------------------- | ----- | ------- | ---------- | ------------- |
+| **retenu**                   | 636   | 57,9 %  | **42,9 %** | **−14,9 pts** |
+| rejeté `ev_below_threshold`  | 4 321 | 54,1 %  | **57,4 %** | **+3,3 pts**  |
+| rejeté `probability_too_low` | 2 435 | 33,5 %  | 45,2 %     | **+11,7 pts** |
+| rejeté `odds_below_floor`    | 438   | 68,3 %  | 52,1 %     | −16,3 pts     |
 
 Le seuil d'EV sélectionne sur `probabilité × cote − 1 ≥ 0,08`, donc à cote
 donnée il retient les picks où le modèle surestime le plus. **C'est un
@@ -184,13 +184,13 @@ moteur. Reproduit tous les mois — juillet +0,065, août +0,037, septembre
 
 Mélange optimal, mesuré par balayage de poids :
 
-| Poids du moteur | Brier |
-| --- | --- |
+| Poids du moteur       | Brier       |
+| --------------------- | ----------- |
 | **0 % (marché seul)** | **0,59876** |
-| 10 % | 0,59880 |
-| 30 % | 0,60152 |
-| 50 % | 0,60776 |
-| 100 % (moteur seul) | 0,63874 |
+| 10 %                  | 0,59880     |
+| 30 %                  | 0,60152     |
+| 50 %                  | 0,60776     |
+| 100 % (moteur seul)   | 0,63874     |
 
 Le poids optimal est **zéro**, et la dégradation est monotone. La probabilité
 du moteur n'apporte donc **aucune information** que le prix ne porte déjà.
@@ -226,20 +226,20 @@ Le biais **existe et il est monotone**, même sens que sur le 1X2. Intervalles
 groupés par rencontre — une rencontre sert une dizaine de jambes corrélées, les
 compter indépendantes divise l'intervalle par trois :
 
-| Cote | Jambes | Renc. | Écart | ROI |
-| --- | --- | --- | --- | --- |
-| < 1,50 | 2566 | 466 | **+2,74 pts** | −0,46 % ± 2,54 |
-| 1,50–1,75 | 1281 | 466 | +0,88 | −2,23 % ± 2,65 |
-| 1,75–1,95 | 700 | 454 | +1,27 | −0,85 % ± 3,52 |
-| 1,95–2,15 | 641 | 438 | −1,10 | −5,45 % ± 4,33 |
-| 2,15–2,50 | 863 | 453 | −1,10 | −6,20 % ± 3,80 |
-| 2,50+ | 3007 | 466 | **−2,09 pts** | −11,21 % ± 6,41 |
+| Cote      | Jambes | Renc. | Écart         | ROI             |
+| --------- | ------ | ----- | ------------- | --------------- |
+| < 1,50    | 2566   | 466   | **+2,74 pts** | −0,46 % ± 2,54  |
+| 1,50–1,75 | 1281   | 466   | +0,88         | −2,23 % ± 2,65  |
+| 1,75–1,95 | 700    | 454   | +1,27         | −0,85 % ± 3,52  |
+| 1,95–2,15 | 641    | 438   | −1,10         | −5,45 % ± 4,33  |
+| 2,15–2,50 | 863    | 453   | −1,10         | −6,20 % ± 3,80  |
+| 2,50+     | 3007   | 466   | **−2,09 pts** | −11,21 % ± 6,41 |
 
 Sur la tranche qui construit le coupon visé (cote 1,22–1,40, 1 780 jambes /
 465 rencontres) : ROI par jambe **+0,22 % ± 2,78** au prix Pinnacle,
 **+1,41 % ± 2,83** au meilleur des huit books. Huit jambes y donnent une cote
-combinée de **8,5 à 9,6** : la cible 5–15 en 8 jambes est atteignable *dans la
-tranche où le biais joue pour nous*, ce qui n'est vrai d'aucun autre marché
+combinée de **8,5 à 9,6** : la cible 5–15 en 8 jambes est atteignable _dans la
+tranche où le biais joue pour nous_, ce qui n'est vrai d'aucun autre marché
 mesuré. ROI projeté du coupon +1,8 % à +11,9 %, intervalle **[−11 % ; +39 %]**.
 Indéterminé, dans les deux sens.
 
@@ -260,6 +260,106 @@ pas atteint par l'écart de 0,04 au marché.
 
 Source : `docs/audits/2026-09-16/ASIAN-HANDICAP.md`, régénérable par
 `pnpm --filter @evcore/backtest-core backtest:asian-handicap`.
+
+---
+
+## 2026-10-05 — Première lecture sur la base restaurée du 5 octobre
+
+Base locale = dump de production du 2026-10-05 (72 798 runs, 45 782
+sélections dédupliquées, 36 102 matchs avec statistiques). Trois mesures
+sont des lectures de pistes ouvertes, la quatrième est née de la revue de
+code. Toutes sont en SQL ou en script rejouable, aucune ne lit une décision
+enregistrée comme preuve.
+
+### Le biais favori sur le handicap asiatique, relu sur les cotes collectées en avant
+
+**Verdict : sans signal, à la limite de l'insuffisant.** 151 rencontres
+terminées depuis le 15 septembre avec un prix AH capturé à moins de 2 h du
+coup d'envoi, une jambe par rencontre, favori à la ligne la plus courte dans
+la tranche 1,22–1,40, meilleur prix sur 8 books, règlement quart de ligne
+inclus : **−4,0 % ± 4,3 par jambe** (HOME n = 113 −3,0 % ± 4,8, AWAY n = 38
+−7,1 % ± 9,2). La tranche 1,10–1,22 (n = 55) donne +0,8 % ± 3,9, la tranche
+1,40–1,60 (n = 156) +1,6 % ± 4,9. L'intervalle exclut le +5 % qui rendrait
+un coupon de 8 jambes intéressant ; il n'exclut pas zéro. Le +1,41 % ± 2,83
+du 16 septembre ne se reproduit pas. Ce qui rouvrirait : rien de ce qui
+dépend du moteur. Seulement plus de rencontres au prix de clôture, qui ne
+s'accumulent qu'à ~10 par jour.
+
+Piège documenté au passage : `odds_snapshot.line` est exprimée **du point de
+vue du domicile pour les deux côtés** (« Away −3,5 » à 1,01 = l'extérieur
+reçoit 3,5 buts). Lue comme le handicap du côté joué, la même requête donne
+−53 % par jambe. Le règlement du moteur n'a aucune règle pour ce marché
+(`resolvePickBetStatus` retombait sur la sémantique 1X2) ; corrigé en VOID
+explicite le 2026-10-05.
+
+### Les tirs cadrés portent-ils un signal que le prix ignore ?
+
+**Verdict : sans signal.** 23 646 matchs des compétitions de backtest
+(2023-07 → 2026-10), xG et tirs cadrés point-in-time (dernière ligne
+`team_stats` avant le coup d'envoi, ≥ 5 matchs de statistiques), prix = moyenne
+dé-viggée des books au dernier relevé avant le coup d'envoi, cible = victoire
+domicile. Résidu (réalisé − implicite) par décile du différentiel de tirs
+cadrés : tous entre −0,7 et +0,8 pt sauf le dernier décile à **+1,9 ± 0,9
+pt**, que le différentiel d'xG reproduit à l'identique (+2,7 ± 0,9) : c'est
+le biais favori-outsider du marché, pas une information des tirs. L'écart
+« tirs cadrés moins xG » (finition) est plat partout. C'est la première
+passe du chantier D-10 sur une feature brute ; les features D-4 à D-8
+(fenêtres par terrain, finition sur 10 matchs) restent à construire, mais
+cette lecture ne les annonce pas prometteuses sur le 1X2.
+
+### Le facteur extérieur 0,75 retire des buts que les marchés « buts » paient
+
+**Verdict : ouvert, candidat à un re-fit coordonné.** Revue de code du
+2026-10-05 : `AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0,75` a été ajusté le
+2026-07-19 sur le Brier 1X2 seul ; le produit 1,00 × 0,75 retire ~12 % des
+buts attendus et n'a jamais été scoré sur Over/Under ni BTTS. Mesure en
+production (runs pré-coup d'envoi depuis le 20 juillet, n = 4 387) : Over 2.5
+annoncé 0,478 contre 0,534 réalisé, BTTS 0,502 contre 0,549, λ total 2,53
+contre 2,81 buts. Dans les ligues sans bloc `OU_SHRINKAGE_CONFIG` (n = 1 805)
+l'écart monte à 0,424 contre 0,526.
+
+Expérience rejouable (`scripts/lambda-factor-goal-conservation.py`, protocole
+simplifié du script de calibration du 07-19 étendu aux buts, 39 528 matchs,
+découpage chronologique 70/30, test intouché n = 11 859) :
+
+| Facteurs (dom / ext)                             | Brier 1X2 | Brier O2.5  | Brier BTTS  | P(over) vs réel | λ total vs buts |
+| ------------------------------------------------ | --------- | ----------- | ----------- | --------------- | --------------- |
+| 1,000 / 0,750 (prod)                             | 0,61964   | 0,25349     | 0,25119     | 0,458 vs 0,534  | 2,51 vs 2,77    |
+| 0,975 / 0,750 (meilleur 1X2 seul)                | 0,61945   | 0,25491     | 0,25195     | 0,449 vs 0,534  | 2,48 vs 2,77    |
+| 1,075 / 0,850 (meilleur somme, choisi sur train) | 0,61965   | **0,24808** | **0,24710** | 0,519 vs 0,534  | 2,77 vs 2,77    |
+| 1,000 / 1,000 (neutre)                           | 0,63013   | 0,24839     | 0,24695     | 0,545 vs 0,534  | 2,88 vs 2,77    |
+
+Le 1X2 est plat le long de l'axe « total de buts » (0,6194 → 0,6197), les
+marchés buts ne le sont pas : conserver le total à asymétrie égale rend 0,5
+pt de Brier sur Over 2.5 et 0,4 sur BTTS, hors échantillon. Ce n'est pas un
+changement à poser dans la config : les blocs `OU_SHRINKAGE_CONFIG` re-fittés
+le 08-15, `LEAGUE_MEAN_LAMBDA_MAP.BL1` et `LAMBDA_SCALE_MAP` ont absorbé ce
+biais ligue par ligue et devraient être re-fittés avec. Ce qui trancherait :
+le même protocole dans le harnais complet (`BacktestRunner`, config par
+ligue incluse), facteurs et blocs re-fittés ensemble sur la fenêtre de
+sélection, validation sur la suivante, et la mesure sur le résidu face au
+prix comme pour tout le reste.
+
+### Ce que la base dit de l'exploitation, en passant
+
+- **VANTAGE et le générateur de coupon LLM sont morts depuis le 20 septembre**
+  (845 décisions le 20/09, zéro ensuite ; 3 coupons LLM depuis le 16/09
+  contre 17 PRICE). Aucune ligne `coupon_generation_attempt` les jours où le
+  vivier avait 74 à 354 candidats : l'appel LLM levait sans être enregistré.
+  La comparaison par jambe prévue le 30 septembre est impossible (13 jambes
+  LLM). Corrigé côté code (tentative `ERROR` enregistrée puis relancée) ; la
+  cause en prod reste à lire dans les logs du worker.
+- **La ligne de clôture était capturée mais invisible** : `snapshotAt` est
+  l'heure de mise à jour du prix chez le book et fait partie de la clé
+  d'unicité, donc une capture T−10 d'un prix inchangé ne laisse aucune
+  trace. Sur `snapshotAt` : 0 rencontre à moins de 15 min ; sur l'heure de
+  capture : 217 sur 884. Colonne `observedAt` ajoutée, vues et rapport de
+  fraîcheur recalculés dessus.
+- **Calibration par tranche de cote, 30 derniers jours, 19 canaux
+  dédupliqués** : < 1,45 ratio 1,002 (n = 4 004, ROI −3,7 %), 1,45–1,80
+  0,887, 1,80–2,50 0,819, > 2,50 0,771 (n = 10 088, ROI −22,9 %). Le résultat
+  du 22 août tient : seule la tranche courte est calibrée, et elle rend la
+  marge.
 
 ---
 
