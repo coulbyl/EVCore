@@ -510,20 +510,20 @@ describe('resolveTargetDates', () => {
     expect(dates[0]?.toISOString().slice(0, 10)).toBe('2026-03-03');
   });
 
-  it('covers tomorrow through J+3 by default (multi-snapshot horizon)', () => {
+  it('covers today through J+3 by default (same-day prices for re-analyses)', () => {
     const dates = resolveTargetDates({});
-    expect(dates).toHaveLength(3);
+    expect(dates).toHaveLength(4);
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
     const dayMs = 24 * 60 * 60 * 1000;
     expect(dates.map((d) => (d.getTime() - today.getTime()) / dayMs)).toEqual([
-      1, 2, 3,
+      0, 1, 2, 3,
     ]);
   });
 
-  it('respects an explicit horizonDays and floors it at 1', () => {
-    expect(resolveTargetDates({ horizonDays: 2 })).toHaveLength(2);
-    expect(resolveTargetDates({ horizonDays: 0 })).toHaveLength(1);
+  it('respects an explicit horizonDays (plus today) and floors it at 1', () => {
+    expect(resolveTargetDates({ horizonDays: 2 })).toHaveLength(3);
+    expect(resolveTargetDates({ horizonDays: 0 })).toHaveLength(2);
   });
 });
 
