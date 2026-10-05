@@ -6,7 +6,7 @@
 // et impossible à contourner par erreur en aval.
 
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@evcore/db';
+import { Prisma, prematchCohortSql } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { round, type DecimalLike } from '@utils/decimal.utils';
 import type { BookmakerQuote } from './market/market-block.builder';
@@ -449,10 +449,15 @@ export class AnalysisSheetV2Repository {
   /**
    * Calibration par (marché × compétition) sur tout l'historique réglé.
    *
-   * Périmètre : uniquement les sélections RÉGLÉES (WON/LOST) issues d'une
-   * décision SELECTED, avec une cote. Sont exclus : CORRECT_SCORE et toute
-   * sélection sans cote (`observationOnly` — jamais jouable), et les VOID
-   * (remboursées : ni gagnées ni perdues).
+   * Périmètre : la cohorte prematch (`prematchCohortSql`) — une décision par
+   * (rencontre, canal), la dernière analysée AVANT le coup d'envoi, rang 1
+   * d'une décision SELECTED — restreinte aux sélections RÉGLÉES (WON/LOST)
+   * avec une cote. Sont exclus : CORRECT_SCORE et toute sélection sans cote
+   * (`observationOnly` — jamais jouable), et les VOID (remboursées : ni
+   * gagnées ni perdues). Avant le 2026-10-05 la requête lisait
+   * `channel_selection` brut : 5 à 7 lignes par pari réel (une par
+   * ré-analyse), alternates et décisions REJECTED comprises, et les `n`
+   * affichés étaient lus comme des tailles d'échantillon.
    *
    * Les sommes brutes sont rendues telles quelles ; les taux, le Brier et le
    * ROI sont dérivés côté calcul, pour que l'agrégat SQL reste vérifiable.
@@ -471,6 +476,7 @@ export class AnalysisSheetV2Repository {
         sum_return: DecimalLike;
       }[]
     >`
+      WITH cohort AS (${prematchCohortSql({ asOf: new Date() })})
       SELECT
         cs.market::text AS market,
         c.code          AS competition_code,
@@ -489,6 +495,7 @@ export class AnalysisSheetV2Repository {
           CASE WHEN cs.result = 'WON' THEN cs.odds - 1 ELSE -1 END
         )                                                           AS sum_return
       FROM channel_selection cs
+      JOIN cohort              ON cohort.id = cs.id
       JOIN channel_decision cd ON cd.id = cs."channelDecisionId"
       JOIN model_run mr        ON mr.id = cd."modelRunId"
       JOIN fixture f           ON f.id = mr."fixtureId"
