@@ -975,8 +975,20 @@ model OddsSnapshot {
   // 1X2/other markets never come close to this range in practice.
   odds       Decimal?           @db.Decimal(9, 3) // for non-1X2 markets
   source     OddsSnapshotSource @default(PREMATCH)
+  // Heure de dernière modification du prix chez le bookmaker (`update` chez
+  // API-Football, clôture pour une source HISTORICAL). Fait partie de
+  // l'identité du prix : deux relevés d'un prix inchangé tombent sur la même
+  // ligne.
   snapshotAt DateTime
   createdAt  DateTime           @default(now())
+  // Heure de notre dernière OBSERVATION du prix, mise à jour à chaque relevé
+  // qui retombe sur la ligne. Sans elle, un prix capturé à T-10 min mais que
+  // le bookmaker n'a pas bougé depuis T-3 h se présente comme un relevé à 3 h
+  // du coup d'envoi : la ligne de clôture devient invisible (mesuré le
+  // 2026-10-05 : 0 clôture à 15 min sur `snapshotAt`, 217 sur `createdAt`).
+  // NULL sur les lignes antérieures à son introduction : les vues
+  // `odds_closing_line`/`odds_opening_line` retombent alors sur `createdAt`.
+  observedAt DateTime?
 
   // DB-level constraint is UNIQUE NULLS NOT DISTINCT (hand-written in
   // migration 20260815130000): `pick` is NULL for ONE_X_TWO, and a plain

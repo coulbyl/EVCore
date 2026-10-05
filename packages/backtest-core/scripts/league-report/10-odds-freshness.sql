@@ -10,18 +10,27 @@
 -- Pinnacle à 7,5 h du coup d'envoi en médiane, Bet365 à 9,5 h, Marathonbet et
 -- Unibet à 43 h. `closingRate` donne la part des rencontres dont le dernier
 -- relevé tombe dans le dernier quart d'heure — la cible du chantier.
+--
+-- La distance se mesure sur l'heure d'OBSERVATION (`observedAt`, sinon
+-- `createdAt`), pas sur `snapshotAt` : ce dernier est l'heure de mise à jour
+-- du prix chez le bookmaker, et un prix inchangé depuis 3 h capturé à T-10
+-- se présenterait comme un relevé à 3 h du coup d'envoi (0 clôture mesurée
+-- le 2026-10-05 sur `snapshotAt`, 217 sur `createdAt`).
 WITH latest AS (
   SELECT DISTINCT ON (o."fixtureId", o.bookmaker)
     o.bookmaker,
     o."fixtureId",
-    EXTRACT(EPOCH FROM (f."scheduledAt" - o."snapshotAt")) / 3600
+    EXTRACT(EPOCH FROM (
+      f."scheduledAt" - COALESCE(o."observedAt", o."createdAt")
+    )) / 3600
       AS hours_before
   FROM odds_snapshot o
   JOIN fixture f ON f.id = o."fixtureId"
   WHERE f.status = 'FINISHED'
-    AND o."snapshotAt" < f."scheduledAt"
+    AND o.source = 'PREMATCH'
+    AND COALESCE(o."observedAt", o."createdAt") < f."scheduledAt"
     AND f."scheduledAt" >= now() - INTERVAL '30 days'
-  ORDER BY o."fixtureId", o.bookmaker, o."snapshotAt" DESC
+  ORDER BY o."fixtureId", o.bookmaker, COALESCE(o."observedAt", o."createdAt") DESC
 ),
 counted AS (
   SELECT
@@ -34,6 +43,7 @@ counted AS (
   FROM odds_snapshot o
   JOIN fixture f ON f.id = o."fixtureId"
   WHERE f.status = 'FINISHED'
+    AND o.source = 'PREMATCH'
     AND o."snapshotAt" < f."scheduledAt"
     AND f."scheduledAt" >= now() - INTERVAL '30 days'
   GROUP BY o."fixtureId", o.bookmaker
