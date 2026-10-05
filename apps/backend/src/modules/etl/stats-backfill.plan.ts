@@ -64,8 +64,16 @@ export function rankStatsBackfillSeasons(
       })),
   );
 
+  // Seasons still in progress come first, across every wave: their rolling
+  // stats feed the next predictions, while a finished N-1 of wave 1 only
+  // feeds calibration and backtests. Before this, an N-2 of the Premier
+  // League ranked ahead of the current MLS season, and the routine sync
+  // (10 fixtures per competition per day) left current-season fixtures
+  // without xG for a week in the calendar leagues (measured 2026-10-05:
+  // 165 of the last 356 played fixtures still without statistics, p90 8 days).
   return ranked.sort(
     (a, b) =>
+      Number(b.inProgress) - Number(a.inProgress) ||
       a.wave - b.wave ||
       a.seasonRank - b.seasonRank ||
       statsBackfillWave(a.competitionCode).position -
