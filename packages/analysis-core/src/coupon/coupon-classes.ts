@@ -220,3 +220,14 @@ export const DETERMINISTIC_COUPON_BOUNDS: CouponBounds = {
   maxCombinedOdds: 7,
 };
 export const DETERMINISTIC_MAX_POSITIVE_EDGE = 0.075;
+
+// Shadow of the policy proposed on 2026-10-05 from the coupon review: the
+// live LLM pool (unified-5-15-v1) offers twenty legs ranked by announced edge
+// and admits a leg only when p × odds > 1, so 87 % of published legs sit in
+// the edge >= 0.05 band (realised/announced 0.82) while the rare edge < 0
+// legs realise exactly what they announce. This candidate keeps every v1
+// guardrail (1.20-1.80 band, MAX_LEG_EDGE on the reference price, anti-
+// correlation, 5-15 bounds) and drops the two EV gates and the value
+// ranking. Recorded append-only beside the LLM attempt, never published;
+// judged per leg against v1 on the same pool and days.
+export const PROBABILITY_SHADOW_POLICY_VERSION = "unified-5-15-v2-shadow";

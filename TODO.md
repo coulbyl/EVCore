@@ -26,6 +26,60 @@
 
 ---
 
+## 2026-10-05 — Revue complète et base de prod restaurée
+
+> Quatre revues de code (moteur de probabilités, générateurs de coupon,
+> assemblage du modèle, règlement et harnais) sur le dump de production du
+> jour. Détail et mesures : `docs/journal-experiences.md`, entrée du
+> 2026-10-05. Branche `fix/review-2026-10-05`, 20 commits, non poussée (le
+> compte GitHub de la machine n'a pas les droits sur le dépôt).
+
+**Livré sur la branche** (tests verts : backend 800, analysis-core 533,
+vantage-worker 133, backtest-core 35) :
+
+- [x] Repli LLM sur 402 (quota épuisé) + tentative `ERROR` enregistrée —
+      cause de la panne VANTAGE/coupon LLM depuis le 20/09 (Cerebras 402).
+- [x] `odds_snapshot.observedAt` + vues de clôture/ouverture et
+      `report:freshness` sur l'heure de capture (0 → 217 clôtures à 15 min).
+      **Migration `20261005220000_add_odds_observed_at` à lancer.**
+- [x] Chargeur point-in-time borné sur la date du match, pas du backfill.
+- [x] Calibration auto-appliquée, backtest par canal et fiche sur la cohorte
+      prematch (plus de `channel_selection` brut).
+- [x] Règlement : jambes des coupons perdus tôt enfin notées ; marchés sans
+      règle → VOID ; `OVER_2_5` réglé ; remboursement réservé au DNB dans le
+      coût de marché.
+- [x] Backfill : saisons en cours de toutes les vagues d'abord. Balayage de
+      cotes : le jour J inclus. Repli de début de saison : même compétition.
+      Mouvement de cotes : ombre seulement (l'exclusion ne tirait que sur
+      des matchs reportés).
+- [x] Compositeur PRICE : tranches fermées au-dessus de 2,5, cellules
+      mesurées seulement, composé pour J+1 uniquement.
+- [x] Ombre `unified-5-15-v2-shadow` (classement proba, sans gate EV)
+      enregistrée à côté du LLM, jamais publiée.
+
+**Décisions à prendre** (non tranchées par le code) :
+
+- [ ] **Garde-fou de suspension** : câblé mais lit la table `bet`, morte
+      depuis le 04/09. Rebranché sur les jambes misées, la règle « ROI < −15 %
+      sur 50 » suspendrait dès le premier passage TEAM_TOTAL_HOME, FHW, 1X2,
+      O/U et WIN_EITHER_HALF — sur des ROI à 50 jambes sans puissance. À
+      décider : population, taille minimale, ou abandon de la règle au profit
+      de la calibration.
+- [ ] **Facteurs de λ** : `AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0,75` fitté sur
+      le 1X2 seul, Over 2.5 annoncé 0,458 vs 0,534 hors échantillon
+      (`scripts/lambda-factor-goal-conservation.py`). Re-fit coordonné avec
+      les blocs `OU_SHRINKAGE_CONFIG` dans le harnais complet.
+- [ ] **Six stratégies Phase 1 classent leur ligne par EV** (GOALS, DOUBLE*CHANCE,
+      OVER_UNDER_HT, TEAM_TOTAL, RESULT*\*) ; blend 1X2 non propagé aux
+      marchés joints ; H2H/congestion décalent over25 sans ses partitions.
+      Changements de probabilité : rejeu obligatoire avant.
+- [ ] **Fournisseur LLM** : réapprovisionner Cerebras ou passer Groq en
+      primaire ; vérifier `coupon_generation_attempt` dès la passe du soir.
+- [ ] Comparaison par jambe LLM vs PRICE : impossible avant que le LLM
+      ne tourne à nouveau (13 jambes LLM depuis le 16/09).
+
+---
+
 ## Générateur de coupon
 
 > **État au 2026-09-16 — deux générateurs tournent en parallèle.**

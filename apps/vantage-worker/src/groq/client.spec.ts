@@ -113,6 +113,34 @@ describe("requestVantageCompletion — provider fallback", () => {
     }
   });
 
+  it("falls back on a 402 exhausted billing quota (the 2026-09-20 outage)", async () => {
+    const quotaError = new Groq.APIError(
+      402,
+      { error: { param: "quota" } },
+      "Payment required to access this resource. Visit your billing tab.",
+      {},
+    );
+    const primaryCreate = vi.fn().mockRejectedValue(quotaError);
+    const fallbackCreate = vi.fn().mockResolvedValue({
+      choices: [{ message: { content: '{"served":"by-fallback"}' } }],
+    });
+    const clients: LlmClients = {
+      primary: {
+        provider: "cerebras",
+        client: stubClient(primaryCreate),
+        model: "m1",
+      },
+      fallbacks: [
+        { provider: "groq", client: stubClient(fallbackCreate), model: "m2" },
+      ],
+    };
+
+    await expect(
+      requestVantageCompletion(clients, "sys", "user", noopLogger),
+    ).resolves.toBe('{"served":"by-fallback"}');
+    expect(fallbackCreate).toHaveBeenCalledTimes(1);
+  });
+
   it("does not fall back on a non-retryable error (401) — fails fast", async () => {
     const authError = new Groq.APIError(401, {}, "bad key", {});
     const primaryCreate = vi.fn().mockRejectedValue(authError);

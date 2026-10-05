@@ -5,6 +5,7 @@ import {
   CouponProposalStatus,
   CouponResult,
   CouponSource,
+  FixtureStatus,
   type Market,
   Prisma,
   StrategyChannel,
@@ -24,6 +25,14 @@ import { startOfUtcDay } from '@utils/date.utils';
  * le compositeur appliquerait alors à une jambe le coût d'une autre tranche.
  * Les bornes suivent les paliers mesurés sur la calibration des jambes —
  * ratio 0,899 sous 1,45, 0,836 entre 1,45 et 1,80, 0,619 au-delà.
+ *
+ * Au-dessus de 2,5 les tranches sont FERMÉES. Une tranche ouverte « 2,5+ »
+ * créditait à une jambe à cote 12 le coût moyen d'une cellule faite à 3,5,
+ * alors que la queue coûte bien plus (mesuré le 2026-10-05, `evaluated_pick`
+ * réglé : ONE_X_TWO 2,5–3,5 → 0,926 ; 5–7 → 0,996 ; 7+ → 0,585 sur 588
+ * jambes ; OVER_UNDER 5–7 → 0,856 ; 7+ → 0,714). Le compositeur minimise le
+ * coût total, donc prend le moins de jambes possible : la plus longue d'une
+ * tranche ouverte gagnait à coût crédité égal.
  */
 const ODDS_BAND_SQL = `CASE
   WHEN odds < 1.3 THEN '<1.3'
@@ -31,7 +40,10 @@ const ODDS_BAND_SQL = `CASE
   WHEN odds < 1.6 THEN '1.45-1.6'
   WHEN odds < 1.8 THEN '1.6-1.8'
   WHEN odds < 2.5 THEN '1.8-2.5'
-  ELSE '2.5+'
+  WHEN odds < 3.5 THEN '2.5-3.5'
+  WHEN odds < 5 THEN '3.5-5'
+  WHEN odds < 7 THEN '5-7'
+  ELSE '7+'
 END`;
 
 export type MarketCostCell = {
@@ -195,14 +207,45 @@ export class CouponRepository {
     });
   }
 
+  /**
+   * Proposals the settlement pass must (re)visit:
+   * - PENDING ones whose last fixture kicked off at least 90 min ago;
+   * - EXPIRED ones that early-failed (one leg lost before the others were
+   *   played) and still carry a leg never graded although its fixture is now
+   *   FINISHED, POSTPONED or CANCELLED. Without this second branch those
+   *   legs stayed `settledAt IS NULL` forever (128 of them measured
+   *   2026-10-05), and since they are systematically the late kick-offs of
+   *   losing days, every per-leg comparison between generators read high.
+   */
   async findPendingReadyToSettle(
     now: Date,
   ): Promise<Array<{ id: string; lastFixtureScheduledAt: Date }>> {
     const threshold = new Date(now.getTime() - 90 * 60 * 1000);
     return this.prisma.client.couponProposal.findMany({
       where: {
-        status: CouponProposalStatus.PENDING,
-        lastFixtureScheduledAt: { lte: threshold },
+        OR: [
+          {
+            status: CouponProposalStatus.PENDING,
+            lastFixtureScheduledAt: { lte: threshold },
+          },
+          {
+            status: CouponProposalStatus.EXPIRED,
+            legs: {
+              some: {
+                settledAt: null,
+                fixture: {
+                  status: {
+                    in: [
+                      FixtureStatus.FINISHED,
+                      FixtureStatus.POSTPONED,
+                      FixtureStatus.CANCELLED,
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        ],
       },
       select: { id: true, lastFixtureScheduledAt: true },
     });
@@ -329,9 +372,12 @@ export class CouponRepository {
    * vue : calibrer sur un espace et composer dans un autre donnerait des coûts
    * qui ne s'appliquent à rien.
    *
-   * `won IS NULL` couvre deux cas — rencontre non jouée et remboursement — d'où
-   * le filtre sur le statut plutôt que sur `won` seul : un Draw No Bet remboursé
-   * est une observation réglée qui rapporte exactement la mise.
+   * `won IS NULL` sur une rencontre terminée n'est un remboursement que pour
+   * un Draw No Bet sur match nul : il rapporte exactement la mise. Pour tout
+   * autre marché, NULL veut dire « non réglable » — score de mi-temps absent,
+   * ou marché sans règle de règlement dans la vue (handicap asiatique,
+   * corners, cartons, …). Les compter comme remboursés leur donnerait un coût
+   * nul et le compositeur les préférerait à tout le reste.
    */
   async findMarketCostCalibration(
     before: Date,
@@ -344,6 +390,7 @@ export class CouponRepository {
         FROM public.evaluated_pick
         WHERE "fixtureStatus" = 'FINISHED'
           AND "scheduledAt" < ${before}
+          AND (won IS NOT NULL OR market = 'DRAW_NO_BET')
       )
       SELECT market,
              band,

@@ -815,6 +815,7 @@ export class FixtureRepository {
     legs: ReadonlyArray<{ pick: string; line: number; odds: number }>,
   ): Promise<void> {
     const source = context.source ?? OddsSnapshotSource.PREMATCH;
+    const observedAt = new Date();
     await mapWithConcurrency(legs, ODDS_WRITE_CONCURRENCY, async (leg) => {
       const where = {
         fixtureId: context.fixtureId,
@@ -834,13 +835,13 @@ export class FixtureRepository {
       if (existing) {
         await this.prisma.client.oddsSnapshot.update({
           where: { id: existing.id },
-          data: { odds: leg.odds },
+          data: { odds: leg.odds, observedAt },
         });
         return;
       }
       try {
         await this.prisma.client.oddsSnapshot.create({
-          data: { ...where, source, odds: leg.odds },
+          data: { ...where, source, odds: leg.odds, observedAt },
         });
       } catch (error) {
         if (!isUniqueConstraintError(error)) throw error;
@@ -851,7 +852,7 @@ export class FixtureRepository {
         if (!raceWinner) throw error;
         await this.prisma.client.oddsSnapshot.update({
           where: { id: raceWinner.id },
-          data: { odds: leg.odds },
+          data: { odds: leg.odds, observedAt },
         });
       }
     });
@@ -921,6 +922,7 @@ export class FixtureRepository {
     odds: number | null,
   ): Promise<void> {
     if (odds === null) return;
+    const observedAt = new Date();
     const where = {
       fixtureId: data.fixtureId,
       bookmaker: data.bookmaker,
@@ -941,7 +943,7 @@ export class FixtureRepository {
     if (existing) {
       await this.prisma.client.oddsSnapshot.update({
         where: { id: existing.id },
-        data: { odds },
+        data: { odds, observedAt },
       });
       return;
     }
@@ -955,6 +957,7 @@ export class FixtureRepository {
           snapshotAt: data.snapshotAt,
           source: data.source,
           odds,
+          observedAt,
         },
       });
     } catch (error) {
@@ -966,7 +969,7 @@ export class FixtureRepository {
       if (!raceWinner) throw error;
       await this.prisma.client.oddsSnapshot.update({
         where: { id: raceWinner.id },
-        data: { odds },
+        data: { odds, observedAt },
       });
     }
   }
@@ -1350,6 +1353,10 @@ export class FixtureRepository {
     data: UpsertOneXTwoOddsSnapshotInput,
   ): Promise<{ id: string }> {
     const source = data.source ?? OddsSnapshotSource.PREMATCH;
+    // Heure d'observation : un relevé qui retombe sur un prix inchangé chez
+    // le bookmaker (même `snapshotAt`) doit quand même laisser trace de sa
+    // capture, sinon la ligne de clôture T-10 est invisible.
+    const observedAt = new Date();
     const where = {
       fixtureId: data.fixtureId,
       bookmaker: data.bookmaker,
@@ -1374,6 +1381,7 @@ export class FixtureRepository {
           homeOdds: data.homeOdds,
           drawOdds: data.drawOdds,
           awayOdds: data.awayOdds,
+          observedAt,
         },
         select: { id: true },
       });
@@ -1390,6 +1398,7 @@ export class FixtureRepository {
           homeOdds: data.homeOdds,
           drawOdds: data.drawOdds,
           awayOdds: data.awayOdds,
+          observedAt,
         },
         select: { id: true },
       });
@@ -1409,6 +1418,7 @@ export class FixtureRepository {
           homeOdds: data.homeOdds,
           drawOdds: data.drawOdds,
           awayOdds: data.awayOdds,
+          observedAt,
         },
         select: { id: true },
       });

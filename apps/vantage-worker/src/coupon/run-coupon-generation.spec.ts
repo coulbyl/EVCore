@@ -1,5 +1,88 @@
-import { describe, expect, it } from "vitest";
-import { resolveGenerationWindow } from "./run-coupon-generation";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  resolveGenerationWindow,
+  runComposePersistPass,
+} from "./run-coupon-generation";
+
+vi.mock("./compose-coupon-class", () => ({
+  composeCouponClass: vi.fn(),
+}));
+vi.mock("./compose-deterministic-shadow", () => {
+  const abstained = (policyVersion: string) => ({
+    forDate: new Date("2026-10-01T00:00:00.000Z"),
+    pass: "EVENING",
+    outcome: "SHADOW_ABSTAINED",
+    candidateCount: 0,
+    policyVersion,
+  });
+  return {
+    buildDeterministicShadowAttempt: vi
+      .fn()
+      .mockReturnValue(abstained("deterministic-5-7-v1")),
+    buildProbabilityRankedShadowAttempt: vi
+      .fn()
+      .mockReturnValue(abstained("unified-5-15-v2-shadow")),
+  };
+});
+vi.mock("./persist-coupon-proposal", () => ({
+  persistCouponProposal: vi.fn(),
+}));
+vi.mock("./record-generation-attempt", () => ({
+  recordGenerationAttempt: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock("./score-candidates", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./score-candidates")>()),
+  candidatesForCouponClass: vi.fn().mockReturnValue([{}, {}, {}]),
+}));
+
+import { composeCouponClass } from "./compose-coupon-class";
+import { recordGenerationAttempt } from "./record-generation-attempt";
+
+const silentLogger = {
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  debug: vi.fn(),
+} as unknown as import("pino").Logger;
+
+describe("runComposePersistPass — LLM failure", () => {
+  beforeEach(() => {
+    vi.mocked(recordGenerationAttempt).mockClear();
+  });
+
+  it("records an ERROR attempt with the candidate count, then rethrows", async () => {
+    vi.mocked(composeCouponClass).mockRejectedValueOnce(
+      new Error("provider quota exhausted"),
+    );
+    const forDate = new Date("2026-10-01T00:00:00.000Z");
+
+    await expect(
+      runComposePersistPass(
+        [],
+        forDate,
+        {} as never,
+        silentLogger,
+        {},
+        { pass: "EVENING" },
+      ),
+    ).rejects.toThrow("provider quota exhausted");
+
+    const attempts = vi
+      .mocked(recordGenerationAttempt)
+      .mock.calls.map(([attempt]) => attempt);
+    // Both shadows are recorded before the LLM is called.
+    expect(attempts.map((a) => a.policyVersion)).toEqual(
+      expect.arrayContaining(["deterministic-5-7-v1", "unified-5-15-v2-shadow"]),
+    );
+    const error = attempts.find((a) => a.outcome === "ERROR");
+    expect(error).toMatchObject({
+      forDate,
+      pass: "EVENING",
+      candidateCount: 3,
+      reason: "provider quota exhausted",
+    });
+  });
+});
 
 describe("resolveGenerationWindow", () => {
   it("widens a Friday to the following Sunday (weekend window)", () => {

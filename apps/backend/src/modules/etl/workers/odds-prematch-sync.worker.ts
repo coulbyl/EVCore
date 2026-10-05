@@ -621,15 +621,22 @@ type TeamTotalOdds = Partial<
 >;
 
 // Resolves the days this run covers: an explicit `date` wins (backfill /
-// tests); otherwise tomorrow through J+horizonDays.
+// tests); otherwise today through J+horizonDays.
+//
+// Today is included since 2026-10-05. The 06:00/18:00 sweeps used to start
+// at J+1, so every same-day re-analysis (analyzeUpcoming, every 30 min over
+// a 3 h window) scored on the previous evening's prices: the last 1X2
+// snapshot used by PRE_KICKOFF runs was 21.7 h old at the median, 27.7 h at
+// p90, and the model↔market coherence gate and MAX_LEG_EDGE applied to a
+// stale price. The closing sweep (T-60 / T-10) only covers the last hour.
 export function resolveTargetDates(data: OddsPrematchSyncJobData): Date[] {
   if (data.date) return [new Date(data.date)];
 
   const horizon = data.horizonDays ?? ETL_CONSTANTS.ODDS_PREMATCH_HORIZON_DAYS;
   const days = Math.max(1, horizon);
   const today = new Date();
-  return Array.from({ length: days }, (_, i) => {
-    const d = addDays(today, i + 1);
+  return Array.from({ length: days + 1 }, (_, i) => {
+    const d = addDays(today, i);
     d.setUTCHours(0, 0, 0, 0);
     return d;
   });

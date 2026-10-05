@@ -346,8 +346,8 @@ export const BULLMQ_QUEUES = {
 } as const;
 
 /**
- * Backfill automatique des statistiques finales (runbook
- * BACKFILL-PROGRESSIF-STATISTIQUES, automatisé).
+ * Backfill automatique des statistiques finales
+ * (docs/backfill-statistiques-automatique.md).
  *
  * Un passage = un lot sur une seule saison, jamais deux en parallèle (file
  * dédiée, concurrence 1). Le budget se lit sur `/status` d'API-Football avant

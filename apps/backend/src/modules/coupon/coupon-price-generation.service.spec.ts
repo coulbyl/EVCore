@@ -103,6 +103,27 @@ describe('CouponPriceGenerationService', () => {
     expect(result.outcome).toBe('abstained');
   });
 
+  it('écarte une jambe dont la tranche de cote est trop peu mesurée, même si le marché l’est', async () => {
+    repository.findMarketCostCalibration.mockResolvedValue([
+      cell({ band: '1.3-1.45', legCount: 5_000 }),
+      // Marché bien mesuré dans l'ensemble, mais pas à cette cote-là : le
+      // coût moyen du marché ne doit pas être prêté à la jambe longue.
+      cell({ band: '7+', legCount: 50, meanPayout: 0.6 }),
+    ]);
+    repository.findPriceCandidates.mockResolvedValue([
+      row({ fixtureId: 'f-1', odds: 9, band: '7+' }),
+      row({ fixtureId: 'f-2', odds: 9.5, band: '7+' }),
+    ]);
+
+    const result = await service.generateForDate(FOR_DATE);
+
+    expect(result).toMatchObject({
+      outcome: 'abstained',
+      reason: 'no_priced_candidate',
+    });
+    expect(repository.upsertPriceComposerProposal).not.toHaveBeenCalled();
+  });
+
   it('s’abstient quand la cible de cote est hors d’atteinte', async () => {
     repository.findMarketCostCalibration.mockResolvedValue([cell()]);
     // Deux jambes à 1,40 plafonnent à 1,96 : la cote 5 est inatteignable.

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FixtureRepository } from './fixture.repository';
 import type { PrismaService } from '@/prisma.service';
 
@@ -228,6 +228,106 @@ describe('FixtureRepository.upsertFixture', () => {
       changed: false,
       affectsRollingStats: false,
     });
+  });
+});
+
+describe('FixtureRepository.upsertOddsSnapshot — observedAt', () => {
+  const create = vi.fn().mockResolvedValue({ id: 'snap-id' });
+  const update = vi.fn().mockResolvedValue({ id: 'snap-id' });
+  const findFirst = vi.fn().mockResolvedValue(null);
+  const prisma = {
+    client: { oddsSnapshot: { create, update, findFirst } },
+  } as unknown as PrismaService;
+  const repository = new FixtureRepository(prisma);
+  const snapshotAt = new Date('2026-07-18T10:00:00.000Z');
+  const emptyMarkets = {
+    overUnderOdds: {},
+    bttsYesOdds: null,
+    bttsNoOdds: null,
+    htftOdds: {},
+    ouHtOdds: {},
+    firstHalfWinnerOdds: null,
+    doubleChanceOdds: null,
+    correctScoreOdds: {},
+    drawNoBetOdds: null,
+    teamTotalHomeOdds: {},
+    teamTotalAwayOdds: {},
+    resultTotalGoalsOdds: {},
+    resultBttsOdds: {},
+    cleanSheetHomeOdds: null,
+    cleanSheetAwayOdds: null,
+    winToNilHomeOdds: null,
+    winToNilAwayOdds: null,
+    winEitherHalfOdds: null,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-18T13:50:00.000Z'));
+    create.mockResolvedValue({ id: 'snap-id' });
+    update.mockResolvedValue({ id: 'snap-id' });
+    findFirst.mockResolvedValue(null);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('stamps a new row with the capture time, distinct from the bookmaker snapshotAt', async () => {
+    await repository.upsertOddsSnapshot({
+      fixtureId: 'fixture-id',
+      bookmaker: 'Pinnacle',
+      snapshotAt,
+      homeOdds: 1.57,
+      drawOdds: 4.33,
+      awayOdds: 5.25,
+      ...emptyMarkets,
+      bttsYesOdds: 1.8,
+    });
+
+    const rows = create.mock.calls.map(([arg]) => arg.data);
+    expect(rows.length).toBeGreaterThanOrEqual(2);
+    for (const row of rows) {
+      expect(row.snapshotAt).toEqual(snapshotAt);
+      expect(row.observedAt).toEqual(new Date('2026-07-18T13:50:00.000Z'));
+    }
+  });
+
+  it('refreshes observedAt when the closing sweep lands on an unchanged bookmaker price', async () => {
+    // Same snapshotAt as an earlier sweep → the unique key matches → update
+    // path. Without observedAt the T-10 capture would leave no trace.
+    findFirst.mockResolvedValue({ id: 'existing-id' });
+
+    await repository.upsertOddsSnapshot({
+      fixtureId: 'fixture-id',
+      bookmaker: 'Pinnacle',
+      snapshotAt,
+      homeOdds: 1.57,
+      drawOdds: 4.33,
+      awayOdds: 5.25,
+      ...emptyMarkets,
+      bttsYesOdds: 1.8,
+    });
+
+    expect(create).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalled();
+    for (const [arg] of update.mock.calls) {
+      expect(arg.data.observedAt).toEqual(new Date('2026-07-18T13:50:00.000Z'));
+    }
+  });
+
+  it('stamps line-market rows (Asian Handicap) the same way', async () => {
+    findFirst.mockResolvedValue({ id: 'existing-id' });
+    await repository.upsertLineMarketOdds(
+      { fixtureId: 'fixture-id', bookmaker: 'Pinnacle', snapshotAt },
+      'ASIAN_HANDICAP',
+      [{ pick: 'HOME', line: -0.5, odds: 1.9 }],
+    );
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update.mock.calls[0]?.[0].data.observedAt).toEqual(
+      new Date('2026-07-18T13:50:00.000Z'),
+    );
   });
 });
 

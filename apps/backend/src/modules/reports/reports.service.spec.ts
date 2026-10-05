@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import Decimal from 'decimal.js';
 import { StrategyChannel, type Prisma } from '@evcore/db';
 import { ReportsService } from './reports.service';
@@ -6,6 +6,10 @@ import type {
   ReportsRepository,
   SettledEvSelectionRow,
 } from './reports.repository';
+
+// The service computes its window from `new Date()`; the fixtures below carry
+// fixed dates, so the clock is frozen to keep them inside every window.
+const FIXED_NOW = new Date('2026-07-15T00:00:00.000Z');
 
 function makeSelection(input: {
   channel: StrategyChannel;
@@ -62,6 +66,15 @@ function makeRepo(selections: SettledEvSelectionRow[]): ReportsRepository {
 }
 
 describe('ReportsService.getMlPromotionReport', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(FIXED_NOW);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('does not mix VALUE:OVER_UNDER and GOALS:OVER_UNDER selections sharing the same market', async () => {
     // 60 VALUE:OVER_UNDER, all WON, corrected == baseline (no Brier change).
     const valueSelections = Array.from({ length: 60 }, () =>

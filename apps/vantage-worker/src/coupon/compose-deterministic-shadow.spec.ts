@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { STRATEGY_CHANNEL } from "@evcore/analysis-core";
-import { buildDeterministicShadowAttempt } from "./compose-deterministic-shadow";
+import {
+  buildDeterministicShadowAttempt,
+  buildProbabilityRankedShadowAttempt,
+} from "./compose-deterministic-shadow";
 import type { ScoredCandidate } from "./score-candidates";
 
 function candidate(
@@ -92,3 +95,74 @@ describe("buildDeterministicShadowAttempt", () => {
     });
   });
 });
+
+describe("buildProbabilityRankedShadowAttempt", () => {
+  it("composes without the EV gates, in the live class band, under its own policy version", () => {
+    // Three legs at 1.60 with calibrated 0.60: p × odds = 0.96 < 1, which
+    // the v1 admission rejects. Combined odds 4.1 < 5, so a fourth leg is
+    // needed; the v2 shadow still composes from them.
+    // One leg per (canal, market): the anti-correlation rule admits a
+    // single leg per canal × market in a coupon.
+    const wagers = [
+      ["a", STRATEGY_CHANNEL.GOALS, "OVER_UNDER", "OVER_2_5"],
+      ["b", STRATEGY_CHANNEL.BTTS, "BTTS", "YES"],
+      ["c", STRATEGY_CHANNEL.DOUBLE_CHANCE, "DOUBLE_CHANCE", "1X"],
+      ["d", STRATEGY_CHANNEL.TEAM_TOTAL, "TEAM_TOTAL_HOME", "OVER_0_5"],
+    ] as const;
+    const legs = wagers.map(([id, canal, market, pick]) =>
+      candidate(id, {
+        canal,
+        market,
+        pick,
+        oddsSnapshot: 1.6,
+        referenceOdds: 1.6,
+        calibratedProbability: 0.6,
+        calibratedHitRate: 0.6,
+        probability: 0.6,
+        pMarketFair: 0.625,
+        edge: -0.025,
+        competition: `Competition ${id}`,
+      }),
+    );
+
+    const attempt = buildProbabilityRankedShadowAttempt({
+      ...inputBase,
+      scoredPool: legs,
+    });
+
+    expect(attempt.policyVersion).toBe("unified-5-15-v2-shadow");
+    expect(attempt.outcome).toBe("SHADOW_COMPOSED");
+    expect(attempt.metadata).toMatchObject({
+      mode: "SHADOW",
+      objective: "max_joint_probability_no_ev_gate",
+    });
+    const metadata = attempt.metadata as { couponEV: number; legs: unknown[] };
+    expect(metadata.couponEV).toBeLessThan(0);
+    expect(metadata.legs).toHaveLength(4);
+
+    // The frozen deterministic shadow, with its EV gate, abstains on the same pool.
+    const frozen = buildDeterministicShadowAttempt({
+      ...inputBase,
+      scoredPool: legs,
+    });
+    expect(frozen.outcome).toBe("SHADOW_ABSTAINED");
+  });
+
+  it("still enforces the live leg band and the edge ceiling", () => {
+    const legs = [
+      candidate("long", { oddsSnapshot: 2.2, referenceOdds: 2.2 }), // > 1.80
+      candidate("edge", {
+        oddsSnapshot: 1.5,
+        referenceOdds: 1.5,
+        calibratedProbability: 0.85, // edge 0.183 > MAX_LEG_EDGE
+        calibratedHitRate: 0.85,
+      }),
+    ];
+    const attempt = buildProbabilityRankedShadowAttempt({
+      ...inputBase,
+      scoredPool: legs,
+    });
+    expect(attempt.outcome).toBe("SHADOW_ABSTAINED");
+  });
+});
+

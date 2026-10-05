@@ -3,6 +3,7 @@ import {
   DETERMINISTIC_COUPON_POLICY_VERSION,
   DETERMINISTIC_COUPON_BOUNDS,
   DETERMINISTIC_COUPON_CLASS,
+  UNIFIED_COUPON_CLASS,
 } from "./coupon-classes";
 import {
   buildDeterministicCandidatePool,
@@ -117,6 +118,37 @@ describe("composeDeterministicCoupon", () => {
       DETERMINISTIC_COUPON_CLASS,
     );
     expect(pool).toHaveLength(1);
+  });
+
+  it("keeps the p × odds > 1 admission and the positive coupon EV by default, drops both with requirePositiveEv: false", () => {
+    const legs = ["a", "b", "c", "d"].map((id) =>
+      candidate(id, {
+        oddsSnapshot: 1.6,
+        referenceOdds: 1.6,
+        calibratedProbability: 0.6,
+      }),
+    );
+    const bounds = {
+      minLegs: 2,
+      maxLegs: 5,
+      minCombinedOdds: 5,
+      maxCombinedOdds: 15,
+    };
+    const couponClass = { ...UNIFIED_COUPON_CLASS, maxLegOdds: 1.8 };
+
+    expect(composeDeterministicCoupon(legs, couponClass, bounds)).toEqual({
+      outcome: "empty_pool",
+    });
+
+    const relaxed = composeDeterministicCoupon(legs, couponClass, bounds, {
+      requirePositiveEv: false,
+      valuePoolSize: 0,
+    });
+    expect(relaxed.outcome).toBe("composed");
+    if (relaxed.outcome === "composed") {
+      expect(relaxed.coupon.legs).toHaveLength(4);
+      expect(relaxed.coupon.couponEV).toBeLessThan(0);
+    }
   });
 
   it("supports a stricter positive-edge ceiling as part of the pure policy", () => {

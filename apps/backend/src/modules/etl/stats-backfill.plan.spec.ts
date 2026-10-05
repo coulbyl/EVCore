@@ -42,7 +42,9 @@ describe('statsBackfillWave', () => {
 });
 
 describe('rankStatsBackfillSeasons', () => {
-  it('finishes every current season of a wave before any N-1', () => {
+  it('finishes every current season of every wave before any N-1', () => {
+    // A current season feeds the next predictions, a finished one only the
+    // calibration: CH (wave 2) in progress outranks PL/LL 2025 (wave 1, done).
     const ranked = rankStatsBackfillSeasons(
       [
         season('LL', 2025),
@@ -57,12 +59,12 @@ describe('rankStatsBackfillSeasons', () => {
     expect(ranked.map((s) => s.seasonId)).toEqual([
       'PL-2026',
       'LL-2026',
+      'CH-2026',
       'PL-2025',
       'LL-2025',
-      'CH-2026',
     ]);
     expect(ranked[0]).toMatchObject({ seasonRank: 0, inProgress: true });
-    expect(ranked[2]).toMatchObject({ seasonRank: 1, inProgress: false });
+    expect(ranked[3]).toMatchObject({ seasonRank: 1, inProgress: false });
   });
 
   it('ranks seasons by start date, not by name', () => {

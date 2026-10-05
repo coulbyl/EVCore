@@ -471,16 +471,16 @@ export class BettingEngineService {
 
     if (isEuropeanCompetition(competitionCode)) {
       const [homeCross, awayCross] = await Promise.all([
-        this.findCrossCompStats(
-          fixture.homeTeamId,
-          fixture.scheduledAt,
-          fixture.seasonId,
-        ),
-        this.findCrossCompStats(
-          fixture.awayTeamId,
-          fixture.scheduledAt,
-          fixture.seasonId,
-        ),
+        this.findCrossCompStats({
+          teamId: fixture.homeTeamId,
+          beforeDate: fixture.scheduledAt,
+          excludeSeasonId: fixture.seasonId,
+        }),
+        this.findCrossCompStats({
+          teamId: fixture.awayTeamId,
+          beforeDate: fixture.scheduledAt,
+          excludeSeasonId: fixture.seasonId,
+        }),
       ]);
 
       if (homeCross) {
@@ -510,16 +510,16 @@ export class BettingEngineService {
     // start there are no in-tournament stats at all, so the fallback is mandatory.
     if (isNationalTeamCompetition(competitionCode)) {
       const [homeCross, awayCross] = await Promise.all([
-        this.findCrossCompStats(
-          fixture.homeTeamId,
-          fixture.scheduledAt,
-          fixture.seasonId,
-        ),
-        this.findCrossCompStats(
-          fixture.awayTeamId,
-          fixture.scheduledAt,
-          fixture.seasonId,
-        ),
+        this.findCrossCompStats({
+          teamId: fixture.homeTeamId,
+          beforeDate: fixture.scheduledAt,
+          excludeSeasonId: fixture.seasonId,
+        }),
+        this.findCrossCompStats({
+          teamId: fixture.awayTeamId,
+          beforeDate: fixture.scheduledAt,
+          excludeSeasonId: fixture.seasonId,
+        }),
       ]);
 
       if (homeCross) {
@@ -577,20 +577,24 @@ export class BettingEngineService {
       const awayThin = awayGamesPlayed < DOMESTIC_SEASON_ROLLOVER_MIN_GAMES;
 
       if (homeThin || awayThin) {
+        // Previous seasons of the SAME competition only: last season's
+        // Ligue 2 line, never a UECL qualifier played two weeks ago.
         const [homeCross, awayCross] = await Promise.all([
           homeThin
-            ? this.findCrossCompStats(
-                fixture.homeTeamId,
-                fixture.scheduledAt,
-                fixture.seasonId,
-              )
+            ? this.findCrossCompStats({
+                teamId: fixture.homeTeamId,
+                beforeDate: fixture.scheduledAt,
+                excludeSeasonId: fixture.seasonId,
+                competitionCode,
+              })
             : null,
           awayThin
-            ? this.findCrossCompStats(
-                fixture.awayTeamId,
-                fixture.scheduledAt,
-                fixture.seasonId,
-              )
+            ? this.findCrossCompStats({
+                teamId: fixture.awayTeamId,
+                beforeDate: fixture.scheduledAt,
+                excludeSeasonId: fixture.seasonId,
+                competitionCode,
+              })
             : null,
         ]);
 
@@ -809,10 +813,20 @@ export class BettingEngineService {
       (pick): pick is ViablePick => pick.rejectionReason === undefined,
     );
 
-    let valueBet: ViablePick | null = candidatePicks[0] ?? null;
+    const valueBet: ViablePick | null = candidatePicks[0] ?? null;
     const initialValueBet = valueBet;
 
-    // Line movement filter — exclude picks with >10% adverse odds drop over 7 days.
+    // Line movement, shadow only. The comparator is "latest snapshot at or
+    // before T-7 days", which the ingestion almost never has (odds are
+    // collected from J+3): over 60 days shadow_lineMovement was non-null on
+    // 323 of 29 863 runs (1.1 %), and those were rescheduled fixtures whose
+    // pre-postponement snapshots stayed under the same fixtureId — the
+    // "movement" compared a price before the postponement to one after.
+    // The exclusion it drove (valueBet = null when the drop exceeded
+    // LINE_MOVEMENT_THRESHOLD) therefore only ever removed picks on an
+    // artefact; it is no longer applied. Re-enabling needs a comparator the
+    // data supports (opening line, snapshots after the last schedule change)
+    // and a replay showing the filter helps.
     let shadowLineMovement: number | null = null;
     if (
       FEATURE_FLAGS.SCORING.LINE_MOVEMENT &&
@@ -838,9 +852,11 @@ export class BettingEngineService {
             .minus(latestPickOdds)
             .div(earliestPickOdds);
           shadowLineMovement = movement.toNumber();
-          // Adverse: odds shortened by more than threshold → exclude pick.
           if (movement.gt(LINE_MOVEMENT_THRESHOLD)) {
-            valueBet = null;
+            logger.debug(
+              { fixtureId, movement: shadowLineMovement },
+              'Adverse line movement observed (shadow, no exclusion)',
+            );
           }
         }
       }
@@ -1543,18 +1559,29 @@ export class BettingEngineService {
    * Fetch the most recent TeamStats for a team from any season other than the
    * specified one, before a given date. Used to supplement European stats with
    * the team's domestic form when the European sample is absent or thin.
+   *
+   * `competitionCode` restricts the search to that competition's earlier
+   * seasons. The domestic season-rollover fallback uses it: without the
+   * restriction, "most recent other-season row" was a European preliminary
+   * round for 10.7 % of early-season domestic fixtures (95 of 838 over 120
+   * days), sometimes a 2-match line whose win/draw rates (0, 0.5 or 1) then
+   * replaced the domestic ones at 100 % in blendTeamStats.
    */
-  private async findCrossCompStats(
-    teamId: string,
-    beforeDate: Date,
-    excludeSeasonId: string,
-  ): Promise<TeamStatsInput | null> {
+  private async findCrossCompStats(opts: {
+    teamId: string;
+    beforeDate: Date;
+    excludeSeasonId: string;
+    competitionCode?: string | null;
+  }): Promise<TeamStatsInput | null> {
     return this.prisma.client.teamStats.findFirst({
       where: {
-        teamId,
+        teamId: opts.teamId,
         afterFixture: {
-          scheduledAt: { lt: beforeDate },
-          seasonId: { not: excludeSeasonId },
+          scheduledAt: { lt: opts.beforeDate },
+          seasonId: { not: opts.excludeSeasonId },
+          ...(opts.competitionCode
+            ? { season: { competition: { code: opts.competitionCode } } }
+            : {}),
         },
       },
       orderBy: { afterFixture: { scheduledAt: 'desc' } },

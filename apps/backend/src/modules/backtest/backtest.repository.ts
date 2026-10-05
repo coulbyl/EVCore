@@ -5,6 +5,7 @@ import {
   Market,
   Prisma,
   StrategyChannel,
+  prematchCohortSql,
 } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
@@ -104,15 +105,29 @@ export type ChannelTuningRow = {
 export class BacktestRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Settled channel selections in a date window, optionally one competition. */
+  /**
+   * Settled channel selections in a date window, optionally one competition.
+   *
+   * Restricted to the prematch cohort (`prematchCohortSql`): one decision per
+   * (fixture, channel) — the latest analysed before kickoff — rank 1 of a
+   * SELECTED decision only. Reading `channel_selection` raw counts 5-7 rows
+   * per real bet (one per re-analysis) plus ~40 % retro-analyses produced
+   * after the result, which is exactly the false "+6 % over 1 559
+   * selections" documented in CLAUDE.md.
+   */
   async findSettledChannelRows(opts: {
     from: Date;
     to: Date;
     competitionCode?: string;
   }): Promise<SettledChannelRow[]> {
     const { from, to, competitionCode } = opts;
+    const cohort = await this.prisma.client.$queryRaw<{ id: string }[]>(
+      prematchCohortSql({ asOf: new Date(), since: from, until: to }),
+    );
+    if (cohort.length === 0) return [];
     const rows = await this.prisma.client.channelSelection.findMany({
       where: {
+        id: { in: cohort.map((row) => row.id) },
         result: { in: [BetStatus.WON, BetStatus.LOST] },
         channelDecision: {
           is: {

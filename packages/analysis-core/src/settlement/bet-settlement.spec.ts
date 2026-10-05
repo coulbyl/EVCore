@@ -22,6 +22,13 @@ describe("resolvePickBetStatus", () => {
     expect(resolvePickBetStatus(Market.OVER_UNDER, "UNDER", 1, 1)).toBe(
       BetStatus.WON,
     ); // 2 ≤ 2.5
+    // Explicit-line spellings settle like the bare OVER/UNDER (2.5 line).
+    expect(resolvePickBetStatus(Market.OVER_UNDER, "OVER_2_5", 2, 1)).toBe(
+      BetStatus.WON,
+    );
+    expect(resolvePickBetStatus(Market.OVER_UNDER, "UNDER_2_5", 2, 1)).toBe(
+      BetStatus.LOST,
+    );
     expect(resolvePickBetStatus(Market.BTTS, "YES", 1, 1)).toBe(BetStatus.WON);
     expect(resolvePickBetStatus(Market.DOUBLE_CHANCE, "1X", 1, 1)).toBe(
       BetStatus.WON,
@@ -33,6 +40,23 @@ describe("resolvePickBetStatus", () => {
       BetStatus.VOID,
     );
     expect(resolvePickBetStatus(Market.ONE_X_TWO, "NONSENSE", 1, 0)).toBe(
+      BetStatus.VOID,
+    );
+  });
+
+  it("VOIDs markets that have no settlement rule instead of grading them as 1X2 / full-match totals", () => {
+    // Asian Handicap HOME -1.5 on a 1-0: a 1X2 reading would say WON.
+    expect(resolvePickBetStatus(Market.ASIAN_HANDICAP, "HOME", 1, 0)).toBe(
+      BetStatus.VOID,
+    );
+    // Second-half total on a 3-0: a full-match reading would say WON.
+    expect(resolvePickBetStatus(Market.OVER_UNDER_2H, "OVER", 3, 0)).toBe(
+      BetStatus.VOID,
+    );
+    expect(resolvePickBetStatus(Market.CORNERS, "OVER", 3, 0)).toBe(
+      BetStatus.VOID,
+    );
+    expect(resolvePickBetStatus(Market.ODD_EVEN, "ODD", 2, 1)).toBe(
       BetStatus.VOID,
     );
   });

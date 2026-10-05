@@ -10,6 +10,7 @@ export type GenerationAttempt = {
     | "PRESERVED"
     | "ABSTAINED"
     | "INVALID"
+    | "ERROR"
     | "SHADOW_COMPOSED"
     | "SHADOW_ABSTAINED";
   candidateCount: number;
