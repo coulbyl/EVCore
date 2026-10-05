@@ -14,6 +14,11 @@ export const PICK_CONDITIONS: Record<
   UNDER_1_5: (h, a) => h + a <= 1,
   OVER: (h, a) => h + a > 2,
   UNDER: (h, a) => h + a <= 2,
+  // Explicit-line spellings of the 2.5 line. The LLM pick vocabulary
+  // (apps/vantage-worker known-picks) admits them; without these aliases the
+  // settlement resolved them VOID (two such selections already in prod).
+  OVER_2_5: (h, a) => h + a > 2,
+  UNDER_2_5: (h, a) => h + a <= 2,
   OVER_3_5: (h, a) => h + a > 3,
   UNDER_3_5: (h, a) => h + a <= 3,
   OVER_4_5: (h, a) => h + a > 4,

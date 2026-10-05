@@ -22,6 +22,13 @@ describe("resolvePickBetStatus", () => {
     expect(resolvePickBetStatus(Market.OVER_UNDER, "UNDER", 1, 1)).toBe(
       BetStatus.WON,
     ); // 2 ≤ 2.5
+    // Explicit-line spellings settle like the bare OVER/UNDER (2.5 line).
+    expect(resolvePickBetStatus(Market.OVER_UNDER, "OVER_2_5", 2, 1)).toBe(
+      BetStatus.WON,
+    );
+    expect(resolvePickBetStatus(Market.OVER_UNDER, "UNDER_2_5", 2, 1)).toBe(
+      BetStatus.LOST,
+    );
     expect(resolvePickBetStatus(Market.BTTS, "YES", 1, 1)).toBe(BetStatus.WON);
     expect(resolvePickBetStatus(Market.DOUBLE_CHANCE, "1X", 1, 1)).toBe(
       BetStatus.WON,
