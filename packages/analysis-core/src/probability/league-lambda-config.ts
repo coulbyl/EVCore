@@ -86,42 +86,40 @@ export function getLeagueMeanLambda(
 // safeguard, this factor alone doesn't fully close that gap.
 // No longer symmetric (1.00 × 0.75 = 0.75, not ≈1) — the prior symmetric
 // design assumption didn't hold up against the full historical distribution.
-export const HOME_ADVANTAGE_LAMBDA_FACTOR = 1.0;
-export const AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0.75;
+//
+// Re-fitted 2026-10-05 (packages/db/scripts/backtest-lambda-factors-goal-
+// conservation.ts, report in docs/audits/2026-10-06/lambda-factors-refit.txt).
+// The 07-19 fit scored the 3-way Brier ALONE: along the "total goals" axis
+// that objective is flat (0.6194 vs 0.6197 between 1.00/0.75 and 1.075/0.85),
+// so the pair drifted to a total ~12 % too low that every goals market paid
+// — in prod, Over 2.5 announced 0.478 vs 0.534 realised, BTTS 0.502 vs 0.549
+// (n = 4 387 pre-kickoff runs since 07-20). Re-fit on the full production
+// chain (per-league meanLambda / lambdaScale / 1X2 blend / O/U shrinkage
+// blocks included), frozen grid of 40 pairs, selection < 2026-01-01,
+// validation measured once on 2026 (n = 8 020, untouched):
+//   1.00 / 0.75 : brier3 0.62095  over25 0.25061  btts 0.24725  λ 2.54 vs 2.80 goals
+//   1.10 / 0.85 : brier3 0.62016  over25 0.24646  btts 0.24433  λ 2.81 vs 2.80 goals
+// Better on all three, 35 of 40 competitions improve; the 5 that worsen
+// (ARG1, SWE2, F2, AUT1, EL1) are leagues whose per-league corrections were
+// fitted at the old global and over-announced goals already — re-fit them
+// next (LAMBDA_SCALE_MAP, OU_SHRINKAGE_CONFIG), not this pair.
+// The home/away asymmetry is kept (1.10 / 0.85 = 1.294 vs 1.333 before); the
+// product goes from 0.75 to 0.935, which is the goal total being restored.
+export const HOME_ADVANTAGE_LAMBDA_FACTOR = 1.1;
+export const AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0.85;
 
 // Per-league home advantage overrides.
-// Most leagues use the global 1.05 / 0.95 factors. Balanced divisions with
-// more parity or lower tactical asymmetry require a smaller correction.
 //
-// I2 (Serie B): 22-team league with high promotion/relegation turnover and
-// narrow squad investment gaps. Empirical home win rate ~44% vs ~50-52% in
-// Serie A. Audit 2026-04-05: modeled P(home) averaged 56% on 26 bets placed
-// while actual win rate was 27% — gap of 29pp. Reducing HA factor from 1.05
-// to 1.02 (symmetric AWAY 0.98) closes this systematic bias.
-const LEAGUE_HOME_ADVANTAGE_MAP: Record<string, [number, number]> = {
-  // [homeAdvFactor, awayDisadvFactor]
-  // D2: 2. Bundesliga — per-season home win rates: S1=42.7%, S2=46.1%, S3=44.9%.
-  // 2026-04-18: HA 1.01/0.99 worsened Brier vs 1.02/0.98 — keep mild override.
-  // 2026-04-25: S2 calibration fix attempted via HA neutralization; the empirical
-  // blend (0.30) captures the inter-season variance more cleanly without HA change.
-  D2: [1.02, 0.98],
-  // I2 latest rerun still spreads too much probability to home/away tails despite
-  // the disabled 1X2 branches. Neutralize home advantage completely to lift draw
-  // probability in this very balanced league.
-  // 2026-04-24: HA 1.06/0.94 tested for Brier improvement (0.658→0.655) but
-  // shifted UNDER_1_5 EV calculations and generated 4 extra losing picks. The
-  // per-league Brier threshold (0.66) makes HA tuning unnecessary — revert to
-  // 1.00/1.00 to keep UNDER_1_5 volume clean.
-  I2: [1.0, 1.0],
-  // European competitions: home advantage is structurally lower than domestic
-  // leagues (Dixon-Coles meta-analyses; UEFA Champions League empirical studies).
-  // Teams that qualify are elite — talent gap is narrower and travel is managed.
-  // Estimate: ~3% home advantage vs 5% global default. Refine after backtest.
-  UCL: [1.03, 0.97],
-  LDC: [1.03, 0.97], // legacy alias for UCL
-  UEL: [1.04, 0.96],
-  UECL: [1.04, 0.96],
-};
+// Empty since 2026-10-05. The former entries (D2 1.02/0.98, I2 1.00/1.00,
+// UCL 1.03/0.97, UEL/UECL 1.04/0.96) dated from April, when the global was
+// 1.05/0.95; the 07-19 recalibration never re-evaluated them, so those five
+// competitions silently kept an away λ ~30 % above every other league. The
+// 2026-10-05 re-fit compared "keep the overrides" with "drop them" for every
+// grid pair: dropping wins on the selection window (1.11193 vs 1.11244 for
+// the chosen pair) and on validation (brier3 0.62016 vs 0.62098), and D2 / I2
+// improve on the 1X2 Brier once they follow the global (−0.016 / −0.010).
+// Re-add an entry only with the same protocol, scored on 1X2 AND goals.
+const LEAGUE_HOME_ADVANTAGE_MAP: Record<string, [number, number]> = {};
 
 export function getLeagueHomeAwayFactors(
   competitionCode: string | null | undefined,
