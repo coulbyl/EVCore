@@ -1,0 +1,158 @@
+Cohérence des marchés joints après blend 1X2 — 2026-10-06T23:26:28.518Z
+Ancien = marchés joints bruts (OVER = side' − UNDER brut) ; nouveau = scalés par side'/side.
+
+Chargement des fixtures terminées (compétitions de backtest)...
+  39528 échantillons.
+SÉLECTION (< 2026-01-01) — n=31508 (dont 17392 avec blend actif), HT/FT n=31503
+  HT/FT 9 cases       ancien 0.82150  nouveau 0.82097  Δ -0.00054
+  RESULT_BTTS 6 cases ancien 0.80185  nouveau 0.80146  Δ -0.00039
+  RESULT_TOTAL_GOALS  ancien 0.12699  nouveau 0.12683  Δ -0.00017  | picks UNDER > P(side) : 7013 → 0
+  WIN_TO_NIL          ancien 0.15119  nouveau 0.15108  Δ -0.00011
+
+VALIDATION (2026) — n=8020 (dont 4567 avec blend actif), HT/FT n=8019
+  HT/FT 9 cases       ancien 0.82105  nouveau 0.82025  Δ -0.00080
+  RESULT_BTTS 6 cases ancien 0.80252  nouveau 0.80170  Δ -0.00082
+  RESULT_TOTAL_GOALS  ancien 0.12681  nouveau 0.12666  Δ -0.00015  | picks UNDER > P(side) : 1843 → 0
+  WIN_TO_NIL          ancien 0.14548  nouveau 0.14540  Δ -0.00008
+
+== LIGUES À BLEND ACTIF (tout l'historique) ==
+ARG1 — n=1164 (dont 1164 avec blend actif), HT/FT n=1164
+  HT/FT 9 cases       ancien 0.83114  nouveau 0.82850  Δ -0.00264
+  RESULT_BTTS 6 cases ancien 0.82190  nouveau 0.81965  Δ -0.00225
+  RESULT_TOTAL_GOALS  ancien 0.12873  nouveau 0.12760  Δ -0.00113  | picks UNDER > P(side) : 1590 → 0
+  WIN_TO_NIL          ancien 0.16834  nouveau 0.16774  Δ -0.00060
+BEL1 — n=833 (dont 833 avec blend actif), HT/FT n=833
+  HT/FT 9 cases       ancien 0.80944  nouveau 0.81016  Δ 0.00072
+  RESULT_BTTS 6 cases ancien 0.79918  nouveau 0.79942  Δ 0.00024
+  RESULT_TOTAL_GOALS  ancien 0.12584  nouveau 0.12572  Δ -0.00012  | picks UNDER > P(side) : 248 → 0
+  WIN_TO_NIL          ancien 0.14953  nouveau 0.14950  Δ -0.00003
+BL1 — n=783 (dont 783 avec blend actif), HT/FT n=783
+  HT/FT 9 cases       ancien 0.80382  nouveau 0.80327  Δ -0.00055
+  RESULT_BTTS 6 cases ancien 0.79060  nouveau 0.79042  Δ -0.00019
+  RESULT_TOTAL_GOALS  ancien 0.12531  nouveau 0.12529  Δ -0.00002  | picks UNDER > P(side) : 0 → 0
+  WIN_TO_NIL          ancien 0.13574  nouveau 0.13545  Δ -0.00030
+CHI1 — n=663 (dont 663 avec blend actif), HT/FT n=663
+  HT/FT 9 cases       ancien 0.82961  nouveau 0.82996  Δ 0.00035
+  RESULT_BTTS 6 cases ancien 0.79998  nouveau 0.80024  Δ 0.00026
+  RESULT_TOTAL_GOALS  ancien 0.12679  nouveau 0.12679  Δ -0.00000  | picks UNDER > P(side) : 206 → 0
+  WIN_TO_NIL          ancien 0.16625  nouveau 0.16649  Δ 0.00024
+CSL — n=598 (dont 598 avec blend actif), HT/FT n=598
+  HT/FT 9 cases       ancien 0.78899  nouveau 0.78900  Δ 0.00002
+  RESULT_BTTS 6 cases ancien 0.76967  nouveau 0.77069  Δ 0.00102
+  RESULT_TOTAL_GOALS  ancien 0.12222  nouveau 0.12208  Δ -0.00014  | picks UNDER > P(side) : 8 → 0
+  WIN_TO_NIL          ancien 0.13011  nouveau 0.13004  Δ -0.00007
+D3 — n=1010 (dont 1010 avec blend actif), HT/FT n=1010
+  HT/FT 9 cases       ancien 0.82812  nouveau 0.82737  Δ -0.00075
+  RESULT_BTTS 6 cases ancien 0.80923  nouveau 0.80922  Δ -0.00001
+  RESULT_TOTAL_GOALS  ancien 0.12864  nouveau 0.12826  Δ -0.00038  | picks UNDER > P(side) : 333 → 0
+  WIN_TO_NIL          ancien 0.13954  nouveau 0.13933  Δ -0.00020
+EL1 — n=1517 (dont 1517 avec blend actif), HT/FT n=1517
+  HT/FT 9 cases       ancien 0.83388  nouveau 0.83354  Δ -0.00034
+  RESULT_BTTS 6 cases ancien 0.80924  nouveau 0.80897  Δ -0.00027
+  RESULT_TOTAL_GOALS  ancien 0.12808  nouveau 0.12807  Δ -0.00002  | picks UNDER > P(side) : 157 → 0
+  WIN_TO_NIL          ancien 0.15690  nouveau 0.15665  Δ -0.00024
+ERD — n=803 (dont 803 avec blend actif), HT/FT n=803
+  HT/FT 9 cases       ancien 0.80338  nouveau 0.80339  Δ 0.00001
+  RESULT_BTTS 6 cases ancien 0.77999  nouveau 0.78027  Δ 0.00028
+  RESULT_TOTAL_GOALS  ancien 0.12481  nouveau 0.12467  Δ -0.00014  | picks UNDER > P(side) : 33 → 0
+  WIN_TO_NIL          ancien 0.13890  nouveau 0.13883  Δ -0.00007
+GRE1 — n=605 (dont 605 avec blend actif), HT/FT n=604
+  HT/FT 9 cases       ancien 0.79302  nouveau 0.79189  Δ -0.00113
+  RESULT_BTTS 6 cases ancien 0.78868  nouveau 0.78746  Δ -0.00122
+  RESULT_TOTAL_GOALS  ancien 0.12311  nouveau 0.12298  Δ -0.00012  | picks UNDER > P(side) : 164 → 0
+  WIN_TO_NIL          ancien 0.15499  nouveau 0.15518  Δ 0.00019
+I2 — n=1015 (dont 1015 avec blend actif), HT/FT n=1014
+  HT/FT 9 cases       ancien 0.84107  nouveau 0.83754  Δ -0.00353
+  RESULT_BTTS 6 cases ancien 0.82109  nouveau 0.81742  Δ -0.00367
+  RESULT_TOTAL_GOALS  ancien 0.12989  nouveau 0.12908  Δ -0.00081  | picks UNDER > P(side) : 619 → 0
+  WIN_TO_NIL          ancien 0.14761  nouveau 0.14714  Δ -0.00048
+IRL1 — n=508 (dont 508 avec blend actif), HT/FT n=508
+  HT/FT 9 cases       ancien 0.82961  nouveau 0.82964  Δ 0.00003
+  RESULT_BTTS 6 cases ancien 0.80738  nouveau 0.80746  Δ 0.00008
+  RESULT_TOTAL_GOALS  ancien 0.12720  nouveau 0.12719  Δ -0.00002  | picks UNDER > P(side) : 191 → 0
+  WIN_TO_NIL          ancien 0.14501  nouveau 0.14534  Δ 0.00033
+J1 — n=979 (dont 979 avec blend actif), HT/FT n=979
+  HT/FT 9 cases       ancien 0.84122  nouveau 0.84074  Δ -0.00047
+  RESULT_BTTS 6 cases ancien 0.81673  nouveau 0.81555  Δ -0.00119
+  RESULT_TOTAL_GOALS  ancien 0.12953  nouveau 0.12919  Δ -0.00034  | picks UNDER > P(side) : 569 → 0
+  WIN_TO_NIL          ancien 0.16366  nouveau 0.16364  Δ -0.00003
+LL — n=1006 (dont 1006 avec blend actif), HT/FT n=1006
+  HT/FT 9 cases       ancien 0.81707  nouveau 0.81582  Δ -0.00125
+  RESULT_BTTS 6 cases ancien 0.78653  nouveau 0.78660  Δ 0.00008
+  RESULT_TOTAL_GOALS  ancien 0.12441  nouveau 0.12418  Δ -0.00023  | picks UNDER > P(side) : 817 → 0
+  WIN_TO_NIL          ancien 0.15299  nouveau 0.15332  Δ 0.00034
+MLS — n=1082 (dont 1082 avec blend actif), HT/FT n=1082
+  HT/FT 9 cases       ancien 0.83113  nouveau 0.82862  Δ -0.00251
+  RESULT_BTTS 6 cases ancien 0.81012  nouveau 0.80743  Δ -0.00269
+  RESULT_TOTAL_GOALS  ancien 0.12981  nouveau 0.12937  Δ -0.00044  | picks UNDER > P(side) : 416 → 0
+  WIN_TO_NIL          ancien 0.13141  nouveau 0.13089  Δ -0.00053
+MX1 — n=905 (dont 905 avec blend actif), HT/FT n=905
+  HT/FT 9 cases       ancien 0.81992  nouveau 0.81944  Δ -0.00048
+  RESULT_BTTS 6 cases ancien 0.79817  nouveau 0.79789  Δ -0.00028
+  RESULT_TOTAL_GOALS  ancien 0.12645  nouveau 0.12610  Δ -0.00035  | picks UNDER > P(side) : 334 → 0
+  WIN_TO_NIL          ancien 0.14377  nouveau 0.14355  Δ -0.00022
+NOR2 — n=643 (dont 643 avec blend actif), HT/FT n=642
+  HT/FT 9 cases       ancien 0.80889  nouveau 0.80860  Δ -0.00029
+  RESULT_BTTS 6 cases ancien 0.78861  nouveau 0.78816  Δ -0.00045
+  RESULT_TOTAL_GOALS  ancien 0.12580  nouveau 0.12580  Δ -0.00000  | picks UNDER > P(side) : 12 → 0
+  WIN_TO_NIL          ancien 0.13440  nouveau 0.13427  Δ -0.00013
+PL — n=989 (dont 989 avec blend actif), HT/FT n=989
+  HT/FT 9 cases       ancien 0.81290  nouveau 0.81377  Δ 0.00087
+  RESULT_BTTS 6 cases ancien 0.78477  nouveau 0.78524  Δ 0.00047
+  RESULT_TOTAL_GOALS  ancien 0.12449  nouveau 0.12439  Δ -0.00011  | picks UNDER > P(side) : 237 → 0
+  WIN_TO_NIL          ancien 0.14127  nouveau 0.14121  Δ -0.00006
+POL1 — n=800 (dont 800 avec blend actif), HT/FT n=800
+  HT/FT 9 cases       ancien 0.82697  nouveau 0.82420  Δ -0.00276
+  RESULT_BTTS 6 cases ancien 0.81587  nouveau 0.81443  Δ -0.00144
+  RESULT_TOTAL_GOALS  ancien 0.13063  nouveau 0.12942  Δ -0.00121  | picks UNDER > P(side) : 622 → 0
+  WIN_TO_NIL          ancien 0.14613  nouveau 0.14547  Δ -0.00065
+RUS1 — n=630 (dont 630 avec blend actif), HT/FT n=630
+  HT/FT 9 cases       ancien 0.82292  nouveau 0.82139  Δ -0.00153
+  RESULT_BTTS 6 cases ancien 0.79114  nouveau 0.79054  Δ -0.00060
+  RESULT_TOTAL_GOALS  ancien 0.12616  nouveau 0.12565  Δ -0.00052  | picks UNDER > P(side) : 225 → 0
+  WIN_TO_NIL          ancien 0.14835  nouveau 0.14799  Δ -0.00036
+SA — n=989 (dont 989 avec blend actif), HT/FT n=989
+  HT/FT 9 cases       ancien 0.81881  nouveau 0.81723  Δ -0.00158
+  RESULT_BTTS 6 cases ancien 0.78975  nouveau 0.78771  Δ -0.00205
+  RESULT_TOTAL_GOALS  ancien 0.12443  nouveau 0.12412  Δ -0.00031  | picks UNDER > P(side) : 542 → 0
+  WIN_TO_NIL          ancien 0.15499  nouveau 0.15434  Δ -0.00065
+SCO1 — n=605 (dont 605 avec blend actif), HT/FT n=605
+  HT/FT 9 cases       ancien 0.79741  nouveau 0.79778  Δ 0.00037
+  RESULT_BTTS 6 cases ancien 0.78419  nouveau 0.78497  Δ 0.00078
+  RESULT_TOTAL_GOALS  ancien 0.12375  nouveau 0.12388  Δ 0.00014  | picks UNDER > P(side) : 26 → 0
+  WIN_TO_NIL          ancien 0.15460  nouveau 0.15530  Δ 0.00071
+SRB1 — n=779 (dont 779 avec blend actif), HT/FT n=779
+  HT/FT 9 cases       ancien 0.80324  nouveau 0.80156  Δ -0.00168
+  RESULT_BTTS 6 cases ancien 0.79711  nouveau 0.79590  Δ -0.00121
+  RESULT_TOTAL_GOALS  ancien 0.12524  nouveau 0.12482  Δ -0.00042  | picks UNDER > P(side) : 202 → 0
+  WIN_TO_NIL          ancien 0.14657  nouveau 0.14593  Δ -0.00064
+SUI2 — n=478 (dont 478 avec blend actif), HT/FT n=478
+  HT/FT 9 cases       ancien 0.83518  nouveau 0.83059  Δ -0.00460
+  RESULT_BTTS 6 cases ancien 0.81410  nouveau 0.80970  Δ -0.00440
+  RESULT_TOTAL_GOALS  ancien 0.12918  nouveau 0.12875  Δ -0.00043  | picks UNDER > P(side) : 205 → 0
+  WIN_TO_NIL          ancien 0.14671  nouveau 0.14612  Δ -0.00059
+SVN1 — n=458 (dont 458 avec blend actif), HT/FT n=457
+  HT/FT 9 cases       ancien 0.80635  nouveau 0.80543  Δ -0.00092
+  RESULT_BTTS 6 cases ancien 0.79965  nouveau 0.79916  Δ -0.00049
+  RESULT_TOTAL_GOALS  ancien 0.12571  nouveau 0.12594  Δ 0.00023  | picks UNDER > P(side) : 110 → 0
+  WIN_TO_NIL          ancien 0.14046  nouveau 0.14067  Δ 0.00021
+SWE2 — n=648 (dont 648 avec blend actif), HT/FT n=648
+  HT/FT 9 cases       ancien 0.84520  nouveau 0.84364  Δ -0.00156
+  RESULT_BTTS 6 cases ancien 0.82229  nouveau 0.82120  Δ -0.00108
+  RESULT_TOTAL_GOALS  ancien 0.13104  nouveau 0.13098  Δ -0.00006  | picks UNDER > P(side) : 414 → 0
+  WIN_TO_NIL          ancien 0.14608  nouveau 0.14603  Δ -0.00005
+TUR2 — n=963 (dont 963 avec blend actif), HT/FT n=963
+  HT/FT 9 cases       ancien 0.78890  nouveau 0.78869  Δ -0.00021
+  RESULT_BTTS 6 cases ancien 0.78275  nouveau 0.78253  Δ -0.00022
+  RESULT_TOTAL_GOALS  ancien 0.12315  nouveau 0.12322  Δ 0.00007  | picks UNDER > P(side) : 195 → 0
+  WIN_TO_NIL          ancien 0.16528  nouveau 0.16531  Δ 0.00003
+UECL — n=251 (dont 251 avec blend actif), HT/FT n=251
+  HT/FT 9 cases       ancien 0.81881  nouveau 0.81672  Δ -0.00210
+  RESULT_BTTS 6 cases ancien 0.79739  nouveau 0.79523  Δ -0.00216
+  RESULT_TOTAL_GOALS  ancien 0.12640  nouveau 0.12614  Δ -0.00025  | picks UNDER > P(side) : 205 → 0
+  WIN_TO_NIL          ancien 0.17188  nouveau 0.17089  Δ -0.00099
+UEL — n=255 (dont 255 avec blend actif), HT/FT n=255
+  HT/FT 9 cases       ancien 0.79915  nouveau 0.79613  Δ -0.00302
+  RESULT_BTTS 6 cases ancien 0.79148  nouveau 0.78961  Δ -0.00186
+  RESULT_TOTAL_GOALS  ancien 0.12611  nouveau 0.12596  Δ -0.00015  | picks UNDER > P(side) : 176 → 0
+  WIN_TO_NIL          ancien 0.16797  nouveau 0.16835  Δ 0.00038

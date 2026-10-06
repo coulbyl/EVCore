@@ -222,27 +222,73 @@ export function rebalanceThreeWayProbabilities(input: {
 
   const nonDrawMass = home.plus(away);
 
-  // resultTotalGoals' UNDER picks are pure joint-distribution sums
-  // (unaffected by rebalancing); OVER = oneXTwo[side] - UNDER, so only OVER
-  // needs recomputing against the rebalanced home/draw/away to stay
-  // internally consistent (under+over must still equal that side's mass).
+  // Propagate the blend to every market that is a SUBSET of one 1X2 outcome.
+  //
+  // Reweighting the score matrix by home'/home, draw'/draw, away'/away on
+  // each cell's outcome is the one operation that keeps every derived market
+  // coherent with the blended 1X2. For an event E contained in "side wins"
+  // (HT/FT with that full-time result, RESULT_BTTS, RESULT_TOTAL_GOALS, win
+  // to nil) that reweighting is exactly P'(E) = P(E) × side'/side, so those
+  // markets can be scaled without rebuilding the matrix. Markets that span
+  // several outcomes (over/under, BTTS, team totals, clean sheet, win either
+  // half, first-half winner) are deliberately left as they are: the O/U
+  // shrinkage blocks were fitted on those unblended values.
+  //
+  // Until 2026-10-06 only the 1X2, double chance, DNB and the OVER side of
+  // RESULT_TOTAL_GOALS were recomputed: on a strong home favourite (POL1,
+  // weight 0.45, home 0.773 → 0.583) HOME_UNDER_4_5 stayed at 0.609 above
+  // P(HOME) = 0.583, HOME_OVER_4_5 collapsed to 0, and HT/FT and RESULT_BTTS
+  // kept summing to the unblended 0.773 while DOMINANT read 0.583.
   const sideProbability = { HOME: home, DRAW: draw, AWAY: away } as const;
+  const ratioOf = (side: keyof typeof sideProbability): Decimal => {
+    const before =
+      probabilities[side.toLowerCase() as "home" | "draw" | "away"];
+    return before.isZero() ? new Decimal(1) : sideProbability[side].div(before);
+  };
+  const ratio = {
+    HOME: ratioOf("HOME"),
+    DRAW: ratioOf("DRAW"),
+    AWAY: ratioOf("AWAY"),
+  } as const;
+  const sideOf = (pick: string): keyof typeof sideProbability =>
+    pick.split("_")[0] as keyof typeof sideProbability;
+  const scaled = (value: Decimal, side: keyof typeof sideProbability) =>
+    Decimal.min(1, Decimal.max(0, value.times(ratio[side])));
+
+  // UNDER is a joint-distribution sum inside the side's mass: scale it.
+  // OVER = side' − UNDER' so that under + over still equals the side's mass.
   const resultTotalGoals = Object.fromEntries(
-    Object.entries(probabilities.resultTotalGoals).map(([pick, under]) => {
-      if (!pick.includes("_OVER_") || under === undefined) {
-        return [pick, under];
-      }
-      const side = pick.split("_")[0] as keyof typeof sideProbability;
-      const line = pick.replace(`${side}_OVER_`, "");
-      const underPick = `${side}_UNDER_${line}`;
+    Object.entries(probabilities.resultTotalGoals).map(([pick, value]) => {
+      if (value === undefined) return [pick, value];
+      const side = sideOf(pick);
+      if (pick.includes("_UNDER_")) return [pick, scaled(value, side)];
+      const underPick = pick.replace("_OVER_", "_UNDER_");
       const underValue =
         probabilities.resultTotalGoals[
           underPick as keyof typeof probabilities.resultTotalGoals
         ];
-      if (underValue === undefined) return [pick, under];
-      return [pick, Decimal.max(0, sideProbability[side].minus(underValue))];
+      if (underValue === undefined) return [pick, scaled(value, side)];
+      return [
+        pick,
+        Decimal.max(0, sideProbability[side].minus(scaled(underValue, side))),
+      ];
     }),
   ) as MatchProbabilities["resultTotalGoals"];
+
+  const resultBtts = Object.fromEntries(
+    Object.entries(probabilities.resultBtts).map(([pick, value]) => [
+      pick,
+      value === undefined ? value : scaled(value, sideOf(pick)),
+    ]),
+  ) as MatchProbabilities["resultBtts"];
+
+  // HT/FT picks are `${HT}_${FT}`: the full-time result is the subset.
+  const htft = Object.fromEntries(
+    Object.entries(probabilities.htft).map(([pick, value]) => [
+      pick,
+      scaled(value, pick.split("_")[1] as keyof typeof sideProbability),
+    ]),
+  ) as MatchProbabilities["htft"];
 
   return {
     ...probabilities,
@@ -254,7 +300,11 @@ export function rebalanceThreeWayProbabilities(input: {
     dc12: home.plus(away),
     dnbHome: nonDrawMass.isZero() ? new Decimal(0.5) : home.div(nonDrawMass),
     dnbAway: nonDrawMass.isZero() ? new Decimal(0.5) : away.div(nonDrawMass),
+    winToNilHome: scaled(probabilities.winToNilHome, "HOME"),
+    winToNilAway: scaled(probabilities.winToNilAway, "AWAY"),
     resultTotalGoals,
+    resultBtts,
+    htft,
   };
 }
 
