@@ -86,6 +86,19 @@ vantage-worker 133, backtest-core 35) :
       centrage avec `db:backtest:congestion-signal-value` sur la chaîne
       actuelle, sélection/validation ; les lignes 1,5/3,5/4,5 ne reçoivent
       aucun décalage (pas de règle le long de l'échelle sans retoucher λ).
+- [x] Blend 1X2 propagé aux marchés joints (HT/FT, RESULT_BTTS,
+      RESULT_TOTAL_GOALS UNDER, WIN_TO_NIL) le 2026-10-06 ; 7 013
+      incohérences → 0, Brier meilleur sur les deux fenêtres (journal du
+      2026-10-06).
+- [ ] **Six stratégies Phase 1 classent leur ligne par EV** (GOALS,
+      DOUBLE_CHANCE, OVER_UNDER_HT, TEAM_TOTAL, RESULT_TOTAL_GOALS,
+      RESULT_BTTS). Classer par probabilité seule sélectionnerait toujours
+      la ligne la plus probable (UNDER 4.5 à 1,05) : la règle de remplacement
+      doit porter sur le prix (bande 1,20–1,80) et se rejouer par canal avant
+      tout changement.
+- [ ] H2H/congestion décalent over25 sans ses partitions (`*_OVER_2_5` de
+      RESULT_TOTAL_GOALS, over15/over35) ; congestion = intercept global
+      (`delta × (score − 0,5)` avec score 0 presque partout). Rejeu avant.
 - [ ] **Fournisseur LLM** : réapprovisionner Cerebras ou passer Groq en
       primaire ; vérifier `coupon_generation_attempt` dès la passe du soir.
 - [ ] Comparaison par jambe LLM vs PRICE : impossible avant que le LLM

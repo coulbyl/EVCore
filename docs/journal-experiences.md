@@ -263,6 +263,41 @@ Source : `docs/audits/2026-09-16/ASIAN-HANDICAP.md`, régénérable par
 
 ---
 
+## 2026-10-06 — Le blend 1X2 propagé aux marchés joints
+
+### P(HOME ∧ UNDER 4.5) dépassait P(HOME)
+
+**Verdict : corrigé, mesuré, appliqué.** `rebalanceThreeWayProbabilities` ne
+propageait le blend empirique 1X2 qu'au 1X2, à la double chance, au DNB et au
+côté OVER de RESULT_TOTAL_GOALS. HT/FT, RESULT_BTTS, le côté UNDER de
+RESULT_TOTAL_GOALS et WIN_TO_NIL restaient sur le 1X2 brut. Sur un fort
+favori à domicile en POL1 (blend 0,45, home 0,773 → 0,583), HOME_UNDER_4_5
+restait à 0,609 au-dessus de P(HOME), HOME_OVER_4_5 tombait à 0, et HT/FT
+comme RESULT_BTTS sommaient à l'ancien 0,773 pendant que DOMINANT lisait
+0,583.
+
+La correction scale chaque marché contenu dans une issue par side'/side,
+ce qui est exactement ce que donnerait une repondération de la matrice de
+scores pour ces événements. Les marchés qui couvrent plusieurs issues
+(over/under, BTTS, totaux par équipe, clean sheet, win either half, 1re
+mi-temps) ne bougent pas : les blocs de shrinkage ont été fittés dessus.
+
+Mesure (`packages/db/scripts/backtest-joint-markets-coherence.ts`, rapport
+`docs/audits/2026-10-06/joint-markets-coherence.txt`), chaîne de production,
+aucun paramètre choisi :
+
+| Fenêtre                    | HT/FT (9 cases) | RESULT_BTTS (6 cases) | RESULT_TOTAL_GOALS | WIN_TO_NIL | picks UNDER > P(side) |
+| -------------------------- | --------------- | --------------------- | ------------------ | ---------- | --------------------- |
+| Sélection, n = 31 508      | −0,00054        | −0,00039              | −0,00017           | −0,00011   | 7 013 → 0             |
+| Validation 2026, n = 8 020 | −0,00080        | −0,00082              | −0,00015           | −0,00008   | 1 843 → 0             |
+
+Petit, du même signe sur les deux fenêtres, et plus grand là où le blend
+est fort (I2 −0,0035 sur HT/FT, ARG1 −0,0026). Ce qui compte n'est pas le
+Brier mais la cohérence : un même match n'annonce plus deux P(HOME)
+différents selon le canal qui le lit.
+
+---
+
 ## 2026-10-06 — Re-fit par ligue après le changement de global
 
 ### Les corrections par ligue fittées à l'ancien global
