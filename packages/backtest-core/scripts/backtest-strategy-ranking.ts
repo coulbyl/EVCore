@@ -318,7 +318,7 @@ async function main() {
     `Rejeu des six canaux multi-lignes, deux règles de classement — ${generatedAt.toISOString()}`,
   );
   out(
-    `Fenêtres : sélection [${FROM_DATE.toISOString().slice(0, 10)} ; ${SPLIT_DATE.toISOString().slice(0, 10)}[, validation ensuite. Décision à coup d'envoi − 1 h.`,
+    `Fenêtres : sélection [${FROM_DATE.toISOString().slice(0, 10)} ; ${SPLIT_DATE.toISOString().slice(0, 10)}[, validation ensuite. Décision à coup d'envoi − 1 h. Cotes bornées sur snapshotAt (prix d'avant coup d'envoi importés après coup en 2025).`,
   );
   out();
 
@@ -347,11 +347,15 @@ async function main() {
   const BATCH = 200;
   for (let offset = 0; offset < fixtures.length; offset += BATCH) {
     const batch = fixtures.slice(offset, offset + BATCH);
+    // "snapshotAt" guard: the 2025 PREMATCH rows were imported after the
+    // fact (createdAt later than kickoff), so the capture-time guard would
+    // empty the selection window. The bookmaker-time bound still applies.
     const oddsByFixture = await loader.loadOddsBatch(
       batch.map((f) => ({
         fixtureId: f.id,
         asOf: new Date(f.scheduledAt.getTime() - DECISION_LEAD_MS),
       })),
+      { captureGuard: "snapshotAt" },
     );
     for (const fixture of batch) {
       const asOf = new Date(fixture.scheduledAt.getTime() - DECISION_LEAD_MS);

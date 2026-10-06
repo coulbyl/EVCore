@@ -499,11 +499,21 @@ export class PointInTimeLoader {
   // fixture, same shape as OddsSnapshotLoader.findLatestOddsSnapshotsBatch.
   // Each fixture keeps its own `asOf` (a replay walking forward through a
   // season needs a different cutoff per fixture, not one shared cutoff).
+  //
+  // `captureGuard` (default "createdAt") also requires the row to have been
+  // written before `asOf`, which blocks retro-imports. "snapshotAt" keeps only
+  // the bookmaker-time bound applied by assembleFullOddsSnapshot: use it for
+  // windows whose pre-kickoff prices were imported after the fact (the 2025
+  // PREMATCH rows carry a createdAt later than their kickoff — measured
+  // 2026-10-06: 6 983 fixtures with a snapshot before kickoff, 0 with a row
+  // created before it), and say so in the report.
   async loadOddsBatch(
     requests: ReadonlyArray<{ fixtureId: string; asOf: Date }>,
+    options: { captureGuard?: "createdAt" | "snapshotAt" } = {},
   ): Promise<Map<string, FullOddsSnapshot | null>> {
     const result = new Map<string, FullOddsSnapshot | null>();
     if (requests.length === 0) return result;
+    const captureGuard = options.captureGuard ?? "createdAt";
 
     const rows = await this.client.oddsSnapshot.findMany({
       where: { fixtureId: { in: requests.map((r) => r.fixtureId) } },
@@ -533,7 +543,7 @@ export class PointInTimeLoader {
         fixtureId,
         assembleFullOddsSnapshot(
           (rowsByFixture.get(fixtureId) ?? []).filter(
-            (row) => row.createdAt < asOf,
+            (row) => captureGuard === "snapshotAt" || row.createdAt < asOf,
           ),
           asOf,
         ),
