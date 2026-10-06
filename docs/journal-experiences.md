@@ -263,6 +263,51 @@ Source : `docs/audits/2026-09-16/ASIAN-HANDICAP.md`, régénérable par
 
 ---
 
+## 2026-10-06 — Re-fit des facteurs de λ dans la chaîne complète
+
+### Le facteur extérieur 0,75 retire des buts que les marchés « buts » paient (suite)
+
+**Verdict : validé et appliqué.** `HOME_ADVANTAGE_LAMBDA_FACTOR` 1,00 → 1,10,
+`AWAY_DISADVANTAGE_LAMBDA_FACTOR` 0,75 → 0,85, overrides par ligue (D2, I2,
+UCL, UEL, UECL) retirés. Script `packages/db/scripts/backtest-lambda-factors-goal-conservation.ts`,
+rapport `docs/audits/2026-10-06/lambda-factors-refit.txt`.
+
+Protocole : chaîne de production complète (meanLambda et lambdaScale par
+ligue, blend 1X2 empirique, blocs de shrinkage O/U tels quels), xG
+point-in-time, 39 528 matchs des compétitions de backtest. Grille figée de
+40 configurations (4 × 5 paires × overrides gardés ou retirés), critère figé
+= somme des Brier 1X2 + Over 2.5 + BTTS, choix sur la fenêtre de sélection
+[2023-07 ; 2026-01[ seule, mesure unique sur la validation [2026-01 ; 2026-10[.
+Faux positifs attendus par le balayage : 1.
+
+| Validation, n = 8 020                    | Brier 1X2 | Brier O2.5 | Brier BTTS | Somme   | λ total vs buts | P(over) vs réel |
+| ---------------------------------------- | --------- | ---------- | ---------- | ------- | --------------- | --------------- |
+| 1,00 / 0,75, overrides gardés (prod)     | 0,62095   | 0,25061    | 0,24725    | 1,11882 | 2,54 vs 2,80    | 0,476 vs 0,538  |
+| 1,10 / 0,85, overrides retirés (retenue) | 0,62016   | 0,24646    | 0,24433    | 1,11095 | 2,81 vs 2,80    | 0,523 vs 0,538  |
+
+Écart sur validation −0,00787, plus grand que sur sélection (−0,00381) :
+le biais est plus fort en 2026, là où la mesure n'a pas servi au choix. Les
+trois métriques s'améliorent, le 1X2 compris (−0,0008). 35 compétitions sur
+40 gagnent ; les 5 qui perdent (ARG1 +0,012, SWE2 +0,011, F2, AUT1, EL1)
+sont celles où le modèle sur-annonçait déjà les buts : leurs corrections par
+ligue (`LAMBDA_SCALE_MAP`, blocs `OU_SHRINKAGE_CONFIG`) ont été fittées à
+l'ancien global et sont le prochain re-fit, pas la paire. Avec la paire
+retenue, le shrinkage O/U apporte encore 0,0009 sur Over 2.5 et 0,0017 sur
+BTTS : les blocs restent utiles, ils compensent moins.
+
+Retirer les overrides gagne aussi seul : pour la paire retenue, 1X2 0,62016
+contre 0,62098 en les gardant, D2 −0,016 et I2 −0,010 de Brier 1X2.
+
+Ce que ça ne change pas : rien face au marché. Le gain est de l'ordre de 0,4
+point de Brier sur Over 2.5, l'écart au prix de clôture reste de 0,04. Il
+corrige une annonce fausse de 5 à 10 points sur la famille « buts », il ne
+crée pas d'avantage.
+
+Suite : re-fitter `LAMBDA_SCALE_MAP` et les blocs O/U du 08-15 avec le même
+protocole, puis mesurer sur le résidu face au prix.
+
+---
+
 ## 2026-10-05 — Première lecture sur la base restaurée du 5 octobre
 
 Base locale = dump de production du 2026-10-05 (72 798 runs, 45 782
