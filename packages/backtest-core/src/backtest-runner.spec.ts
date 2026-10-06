@@ -12,6 +12,8 @@ function fixture(): ReplayFixture {
     awayTeamId: "away",
     homeScore: 2,
     awayScore: 1,
+    homeHtScore: null,
+    awayHtScore: null,
   };
 }
 

@@ -1,3 +1,4 @@
+import { rankLineCandidates, type RankingOptions } from "./ranking";
 import type Decimal from "decimal.js";
 import { Market } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
@@ -47,28 +48,13 @@ type GoalsCandidate = {
   priced: ReturnType<typeof priceForSelection>;
 };
 
-// Rank priced candidates by EV (best value-driven ordering used for coupons).
-// Only called on candidates that already have a book price — an unpriced
-// candidate is never selected (see decideGoals): ranking price-less
-// candidates by raw probability always favours the highest-probability
-// enabled line (P(under) grows monotonically with the line), which floods
-// the feed with a single unactionable line instead of spreading forward
-// observation data across every configured line.
-function compareGoalsCandidates(a: GoalsCandidate, b: GoalsCandidate): number {
-  const aEv = a.priced.ev ?? null;
-  const bEv = b.priced.ev ?? null;
-  if (aEv !== null && bEv !== null) return bEv.comparedTo(aEv);
-  if (aEv !== null) return -1;
-  if (bEv !== null) return 1;
-  return b.probability.comparedTo(a.probability);
-}
-
 // Pure GOALS decision over an explicit set of (already enabled) line configs.
 // Kept separate from the class so it can be tested without the module-level
 // config (every prod GOALS segment starts disabled pending per-season tuning).
 export function decideGoals(
   context: StrategyContext,
   lineConfigs: readonly GoalsLineConfig[],
+  options: RankingOptions = {},
 ): StrategyDecision {
   const channel = STRATEGY_CHANNEL.GOALS;
   if (lineConfigs.length === 0) {
@@ -147,8 +133,8 @@ export function decideGoals(
     };
   }
 
-  priced.sort(compareGoalsCandidates);
-  const best = priced[0];
+  const ranked = rankLineCandidates(priced, options);
+  const best = ranked[0];
   if (!best)
     return {
       channel,

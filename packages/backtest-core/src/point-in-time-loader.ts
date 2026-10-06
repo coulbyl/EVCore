@@ -60,6 +60,10 @@ export type ReplayFixture = {
   awayTeamId: string;
   homeScore: number;
   awayScore: number;
+  // Half-time score when the provider served it; null otherwise. Needed to
+  // settle OVER_UNDER_HT / FIRST_HALF_WINNER / HT-FT in a replay.
+  homeHtScore: number | null;
+  awayHtScore: number | null;
 };
 
 export type ListFixturesOptions = {
@@ -121,6 +125,8 @@ export class PointInTimeLoader {
         awayTeamId: true,
         homeScore: true,
         awayScore: true,
+        homeHtScore: true,
+        awayHtScore: true,
         season: { select: { competition: { select: { code: true } } } },
       },
       orderBy: { scheduledAt: "asc" },
@@ -136,6 +142,8 @@ export class PointInTimeLoader {
       // Non-null guaranteed by the where clause above.
       homeScore: row.homeScore!,
       awayScore: row.awayScore!,
+      homeHtScore: row.homeHtScore,
+      awayHtScore: row.awayHtScore,
     }));
   }
 
