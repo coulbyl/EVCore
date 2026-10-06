@@ -77,8 +77,15 @@ vantage-worker 133, backtest-core 35) :
       attendre une saison de plus par ligue, ou un fit hiérarchique.
 - [ ] **Six stratégies Phase 1 classent leur ligne par EV** (GOALS, DOUBLE*CHANCE,
       OVER_UNDER_HT, TEAM_TOTAL, RESULT*\*) ; blend 1X2 non propagé aux
-      marchés joints ; H2H/congestion décalent over25 sans ses partitions.
-      Changements de probabilité : rejeu obligatoire avant.
+- [x] H2H/congestion : le décalage d'over25 et de bttsYes est répercuté sur
+      les partitions (`*_OVER_2_5`/`*_UNDER_2_5` de RESULT_TOTAL_GOALS,
+      RESULT_BTTS) et win-to-nil reste sous clean sheet (2026-10-06).
+- [ ] Congestion = intercept global (`delta × (score − 0,5)` avec score 0
+      presque partout, +0,6 pt sur over25/BTTS pour tout match reposé),
+      fitté sur la chaîne d'avant le re-fit des λ : re-fitter delta et
+      centrage avec `db:backtest:congestion-signal-value` sur la chaîne
+      actuelle, sélection/validation ; les lignes 1,5/3,5/4,5 ne reçoivent
+      aucun décalage (pas de règle le long de l'échelle sans retoucher λ).
 - [ ] **Fournisseur LLM** : réapprovisionner Cerebras ou passer Groq en
       primaire ; vérifier `coupon_generation_attempt` dès la passe du soir.
 - [ ] Comparaison par jambe LLM vs PRICE : impossible avant que le LLM
