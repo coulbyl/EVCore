@@ -65,10 +65,12 @@ vantage-worker 133, backtest-core 35) :
       O/U et WIN_EITHER_HALF — sur des ROI à 50 jambes sans puissance. À
       décider : population, taille minimale, ou abandon de la règle au profit
       de la calibration.
-- [ ] **Facteurs de λ** : `AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0,75` fitté sur
-      le 1X2 seul, Over 2.5 annoncé 0,458 vs 0,534 hors échantillon
-      (`scripts/lambda-factor-goal-conservation.py`). Re-fit coordonné avec
-      les blocs `OU_SHRINKAGE_CONFIG` dans le harnais complet.
+- [x] **Facteurs de λ** : re-fittés le 2026-10-06 dans la chaîne complète,
+      1,10 / 0,85, overrides par ligue retirés ; validation intouchée 2026
+      meilleure sur 1X2, Over 2.5 et BTTS (journal du 2026-10-06).
+- [ ] **Corrections par ligue fittées à l'ancien global** : `LAMBDA_SCALE_MAP`
+      et blocs `OU_SHRINKAGE_CONFIG` du 08-15 à re-fitter avec le même
+      protocole (ARG1, SWE2, F2, AUT1, EL1 perdent avec la nouvelle paire).
 - [ ] **Six stratégies Phase 1 classent leur ligne par EV** (GOALS, DOUBLE*CHANCE,
       OVER_UNDER_HT, TEAM_TOTAL, RESULT*\*) ; blend 1X2 non propagé aux
       marchés joints ; H2H/congestion décalent over25 sans ses partitions.

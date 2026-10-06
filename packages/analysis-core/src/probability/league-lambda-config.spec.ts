@@ -21,8 +21,18 @@ describe("getLeagueMeanLambda", () => {
 });
 
 describe("getLeagueHomeAwayFactors", () => {
-  it("returns the reduced home-advantage override for D2", () => {
-    expect(getLeagueHomeAwayFactors("D2")).toEqual([1.02, 0.98]);
+  it("applies the re-fitted global pair to every league, former overrides included", () => {
+    // 2026-10-05 re-fit: the April overrides (D2, I2, UCL, UEL, UECL) were
+    // never re-evaluated after the 07-19 global recalibration; dropping them
+    // wins on selection and validation (see league-lambda-config.ts).
+    expect(HOME_ADVANTAGE_LAMBDA_FACTOR).toBe(1.1);
+    expect(AWAY_DISADVANTAGE_LAMBDA_FACTOR).toBe(0.85);
+    for (const code of ["D2", "I2", "UCL", "UEL", "UECL"]) {
+      expect(getLeagueHomeAwayFactors(code)).toEqual([
+        HOME_ADVANTAGE_LAMBDA_FACTOR,
+        AWAY_DISADVANTAGE_LAMBDA_FACTOR,
+      ]);
+    }
   });
 
   it("returns the global default for an unmapped league", () => {

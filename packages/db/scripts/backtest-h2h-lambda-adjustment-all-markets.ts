@@ -43,8 +43,8 @@ import { prisma } from "../src/client";
 const MIN_PRIOR_TEAM_STATS = 5;
 const MEAN_LAMBDA = 1.4;
 const SHRINKAGE_FACTOR = 0.7;
-const HOME_FACTOR = 1.0; // recalibré 2026-07-19 (ev.constants.ts)
-const AWAY_FACTOR = 0.75;
+const HOME_FACTOR = 1.1; // HOME_ADVANTAGE_LAMBDA_FACTOR, re-fitted 2026-10-05 // recalibré 2026-07-19 (ev.constants.ts)
+const AWAY_FACTOR = 0.85; // AWAY_DISADVANTAGE_LAMBDA_FACTOR, re-fitted 2026-10-05
 const H2H_LIMIT = 5;
 const H2H_MIN_SAMPLE = 3;
 const H2H_DECAY = 0.8;
