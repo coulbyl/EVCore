@@ -2023,6 +2023,55 @@ function shrinkResultBtts(
   return result;
 }
 
+// Full-time O/U + BTTS blocks re-fitted 2026-10-06, after the global λ
+// factors moved from 1.00 / 0.75 to 1.10 / 0.85 (db:backtest:ou-shrinkage-
+// refit, docs/audits/2026-10-06/ou-shrinkage-refit.txt). Same protocol as
+// the factor re-fit: production chain, frozen per-league grid (lambdaScale ×
+// O/U factor × BTTS factor, base rates from the last 730 days of the
+// selection window), choice on selection < 2026-01-01, one measurement on
+// 2026. Only the four leagues named beforehand (the ones whose corrections
+// fitted at the old global over-announced goals) are shipped — see the
+// LAMBDA_SCALE_MAP comment for why the validation gate alone is not enough.
+// Overlay pattern: replaces factor / baseRates / btts, keeps every other
+// sub-block (ouHt, teamTotal*, resultTotalGoals, cleanSheet*, …) as is.
+const GOAL_BLOCKS_REFIT_2026_10_06: Record<
+  string,
+  Pick<OverUnderShrinkageConfig, "factor" | "baseRates" | "btts">
+> = {
+  // Validation Δsum −0.0158 (n=104): was factor 0.84 / btts 0 at scale 1.05.
+  SWE2: {
+    factor: 0,
+    baseRates: { over15: 0.77, over25: 0.55, over35: 0.34, over45: 0.15 },
+    btts: { factor: 0, baseYes: 0.55 },
+  },
+  // Validation Δsum −0.0153 (n=340): had no full-time block, P(over)
+  // announced 0.508 vs 0.382 realised.
+  ARG1: {
+    factor: 0.2,
+    baseRates: { over15: 0.59, over25: 0.31, over35: 0.14, over45: 0.06 },
+    btts: { factor: 0.4, baseYes: 0.4 },
+  },
+  // Validation Δsum −0.0055 (n=170): was factor 0.08 / btts 0.22.
+  F2: {
+    factor: 0,
+    baseRates: { over15: 0.71, over25: 0.48, over35: 0.27, over45: 0.12 },
+    btts: { factor: 0, baseYes: 0.51 },
+  },
+  // Validation Δsum −0.0036 (n=105): had no full-time block.
+  AUT1: {
+    factor: 0,
+    baseRates: { over15: 0.77, over25: 0.52, over35: 0.27, over45: 0.12 },
+    btts: { factor: 0.4, baseYes: 0.55 },
+  },
+};
+
+for (const [code, block] of Object.entries(GOAL_BLOCKS_REFIT_2026_10_06)) {
+  OU_SHRINKAGE_CONFIG[code] = {
+    ...(OU_SHRINKAGE_CONFIG[code] ?? {}),
+    ...block,
+  };
+}
+
 // p' = base + factor × (p − base), factor clamped to [0, 1] (1 = identity,
 // never amplify), result clamped to the probability invariant [0, 1].
 function shrinkWith(over: Decimal, base: number, factor: number): Decimal {
