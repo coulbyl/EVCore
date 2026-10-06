@@ -151,7 +151,6 @@ const LAMBDA_SCALE_MAP: Record<string, number> = {
   SUI2: 1.1, // -0.17/-0.10/-0.24
   CSL: 1.1, // -0.29/-0.35
   ISL1: 1.1, // -0.47/-0.64 (capped from fitted 1.20; low data)
-  SWE2: 1.05, // -0.14/-0.11/-0.18 (smaller bias)
   // FIN1: season-by-season gap +5.4%/+0.2%/+7.5%/+38.4% (2026 partial,
   // n=50) — stable, never negative, accelerating. No prior lambda
   // correction (OU_SHRINKAGE_CONFIG.FIN1.factor=1, a no-op on full-time
@@ -169,6 +168,21 @@ const LAMBDA_SCALE_MAP: Record<string, number> = {
   SP2: 0.95, // +0.70/+0.01/+0.33 (variable → gentle)
   MX1: 0.95, // +0.54/+0.53/+0.06
   J1: 0.95, // +0.43/+0.14/+0.19/+0.09
+  // Re-fit 2026-10-06 after the global factors moved to 1.10 / 0.85
+  // (db:backtest:ou-shrinkage-refit, docs/audits/2026-10-06/ou-shrinkage-
+  // refit.txt). These four leagues were named the day before as the ones
+  // whose per-league corrections, fitted at the old global, over-announced
+  // goals; they are the only ones shipped from that run. The other eight
+  // leagues the validation gate flagged are NOT shipped: applied to every
+  // league, the per-league candidate gives +0.00004 out of sample (15 win,
+  // 22 lose), so a gate alone is selection on the validation window.
+  // Validation Δ(brier3+over25+btts): SWE2 −0.0158 (was 1.05), ARG1 −0.0153,
+  // F2 −0.0055, AUT1 −0.0036; their O/U + BTTS blocks moved with them (see
+  // GOAL_BLOCKS_REFIT_2026_10_06 in ou-shrinkage.ts).
+  SWE2: 0.9,
+  ARG1: 0.9,
+  F2: 0.9,
+  AUT1: 0.9,
 };
 
 export function getLeagueLambdaScale(

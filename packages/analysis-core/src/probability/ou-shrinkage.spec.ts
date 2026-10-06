@@ -385,3 +385,21 @@ describe("shrinkOverUnderProbabilities", () => {
     expect(shrunk.resultBtts).toBe(probabilities.resultBtts);
   });
 });
+
+describe("GOAL_BLOCKS_REFIT_2026_10_06 overlay", () => {
+  it("replaces the full-time O/U and BTTS blocks of the four re-fitted leagues and keeps their other sub-blocks", () => {
+    const swe2 = getOverUnderShrinkageConfig("SWE2")!;
+    expect(swe2.factor).toBe(0);
+    expect(swe2.baseRates?.over25).toBe(0.55);
+    expect(swe2.btts).toEqual({ factor: 0, baseYes: 0.55 });
+    // Not re-fitted here: untouched.
+    expect(swe2.ouHt).toBeDefined();
+    expect(swe2.teamTotalHome).toBeDefined();
+
+    // ARG1 had no full-time block before the re-fit.
+    const arg1 = getOverUnderShrinkageConfig("ARG1")!;
+    expect(arg1.factor).toBe(0.2);
+    expect(arg1.baseRates?.over25).toBe(0.31);
+    expect(arg1.teamTotalAway).toBeDefined();
+  });
+});
