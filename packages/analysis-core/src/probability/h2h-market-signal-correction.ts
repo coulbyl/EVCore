@@ -1,5 +1,6 @@
 import Decimal from "decimal.js";
 import type { DerivedMarketsProba, ThreeWayProba } from "./markets";
+import { propagateGoalMarketShift } from "./joint-market-propagation";
 
 type H2HMarketSignalProbabilities = ThreeWayProba & DerivedMarketsProba;
 
@@ -64,10 +65,12 @@ function shiftedProb(
 // signal (H2HService's own n>=3 gate) leaves that market's baseline
 // probability untouched. BTTS/OVER25 complements (bttsNo/under25) are
 // recomputed to stay a two-way split; CLEAN_SHEET/WIN_TO_NIL have no
-// complement to maintain. Every other field on `probabilities` (1X2,
-// combo markets, HT/FT, ...) passes through unchanged — none of them are
-// derived from these 6 fields by formula (see markets.ts comments on
-// resultBtts/resultTotalGoals: priced independently from bookmaker odds).
+// complement to maintain. The shifts are then propagated to the joint
+// markets that partition them (RESULT_TOTAL_GOALS 2.5 line, RESULT_BTTS)
+// and win to nil is kept under clean sheet — see joint-market-propagation.ts
+// (until 2026-10-06 those stayed on the unshifted values: GOALS and
+// RESULT_TOTAL_GOALS announced two different P(over 2.5) for one match).
+// Every other field on `probabilities` passes through unchanged.
 export function applyH2HMarketSignalCorrection<
   T extends H2HMarketSignalProbabilities,
 >(probabilities: T, signals: H2HMarketSignalInputs): T {
@@ -120,7 +123,7 @@ export function applyH2HMarketSignalCorrection<
           H2H_MARKET_SIGNAL_DELTAS.winToNilAway,
         );
 
-  return {
+  return propagateGoalMarketShift(probabilities, {
     ...probabilities,
     bttsYes,
     bttsNo: ONE.minus(bttsYes),
@@ -130,5 +133,5 @@ export function applyH2HMarketSignalCorrection<
     cleanSheetAway,
     winToNilHome,
     winToNilAway,
-  };
+  });
 }

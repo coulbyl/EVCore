@@ -1,5 +1,6 @@
 import Decimal from "decimal.js";
 import type { DerivedMarketsProba, ThreeWayProba } from "./markets";
+import { propagateGoalMarketShift } from "./joint-market-propagation";
 
 type CongestionSignalProbabilities = ThreeWayProba & DerivedMarketsProba;
 
@@ -49,8 +50,9 @@ function shiftedProb(
 // n>=3 gate), congestion is a single combined score always computable
 // (falls back to 0 — "fully rested" — with no fixture history), so there's
 // no null branch to handle. Complements (under25/bttsNo) are recomputed to
-// stay a two-way split; every other field on `probabilities` passes
-// through unchanged.
+// stay a two-way split, and the shift is propagated to the joint markets
+// that partition OVER 2.5 and BTTS (see joint-market-propagation.ts); every
+// other field on `probabilities` passes through unchanged.
 export function applyCongestionSignalCorrection<
   T extends CongestionSignalProbabilities,
 >(probabilities: T, congestionScore: number): T {
@@ -65,11 +67,11 @@ export function applyCongestionSignalCorrection<
     CONGESTION_SIGNAL_DELTA,
   );
 
-  return {
+  return propagateGoalMarketShift(probabilities, {
     ...probabilities,
     over25,
     under25: ONE.minus(over25),
     bttsYes,
     bttsNo: ONE.minus(bttsYes),
-  };
+  });
 }
