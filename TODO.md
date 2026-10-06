@@ -68,9 +68,13 @@ vantage-worker 133, backtest-core 35) :
 - [x] **Facteurs de λ** : re-fittés le 2026-10-06 dans la chaîne complète,
       1,10 / 0,85, overrides par ligue retirés ; validation intouchée 2026
       meilleure sur 1X2, Over 2.5 et BTTS (journal du 2026-10-06).
-- [ ] **Corrections par ligue fittées à l'ancien global** : `LAMBDA_SCALE_MAP`
-      et blocs `OU_SHRINKAGE_CONFIG` du 08-15 à re-fitter avec le même
-      protocole (ARG1, SWE2, F2, AUT1, EL1 perdent avec la nouvelle paire).
+- [x] **Corrections par ligue fittées à l'ancien global** : re-fit par ligue
+      le 2026-10-06 ; sans porte le re-fit par ligue est sans signal
+      (+0,00004 agrégé, 15 gagnent / 22 perdent) ; seules les quatre ligues
+      nommées d'avance sont appliquées (SWE2, ARG1, F2, AUT1), EL1 inchangée.
+- [ ] Les sous-blocs totaux par équipe / clean sheet / win-to-nil / DNB /
+      HT, fittés eux aussi à l'ancien global, n'ont pas été re-fittés :
+      attendre une saison de plus par ligue, ou un fit hiérarchique.
 - [ ] **Six stratégies Phase 1 classent leur ligne par EV** (GOALS, DOUBLE*CHANCE,
       OVER_UNDER_HT, TEAM_TOTAL, RESULT*\*) ; blend 1X2 non propagé aux
       marchés joints ; H2H/congestion décalent over25 sans ses partitions.

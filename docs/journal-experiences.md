@@ -263,6 +263,55 @@ Source : `docs/audits/2026-09-16/ASIAN-HANDICAP.md`, régénérable par
 
 ---
 
+## 2026-10-06 — Re-fit par ligue après le changement de global
+
+### Les corrections par ligue fittées à l'ancien global
+
+**Verdict : quatre ligues appliquées, le re-fit par ligue en général est sans
+signal.** Script `packages/db/scripts/backtest-ou-shrinkage-refit.ts`,
+rapport `docs/audits/2026-10-06/ou-shrinkage-refit.txt`.
+
+Protocole : chaîne de production avec les facteurs globaux 1,10 / 0,85 ;
+par ligue, grille figée de 180 configurations (5 `lambdaScale` × 6 facteurs
+O/U × 6 facteurs BTTS, taux de base = fréquences des 730 derniers jours de la
+sélection) ; choix sur la sélection [2023-07 ; 2026-01[, mesure unique sur
+2026 ; 37 ligues avec ≥ 400 matchs de sélection et ≥ 100 de validation.
+
+Le résultat qui compte est celui **sans porte** : si chaque ligue prend la
+configuration retenue sur sa sélection, l'écart agrégé en validation est
+**+0,00004** (n = 6 935), 15 ligues gagnent, 22 perdent. À ces volumes, le
+re-fit par ligue n'apprend rien qui tienne hors échantillon. Une règle
+d'expédition « gain de validation ≥ 0,001 » retient 12 ligues, mais ce
+serait choisir sur la fenêtre de validation : les 12 contiennent la queue de
+la chance, et l'agrégat « après » (−0,0029) qui en sort est optimiste par
+construction.
+
+Ce qui reste défendable : les ligues dont l'hypothèse était écrite **avant**
+l'expérience. Le re-fit du global avait désigné ARG1, SWE2, F2, AUT1 et EL1
+comme celles dont les corrections par ligue sur-annonçaient déjà les buts.
+Quatre d'entre elles donnent les plus grands gains de la table ; EL1 ne bat
+pas sa configuration actuelle et reste telle quelle.
+
+| Ligue | Actuelle                    | Retenue                   | Δ somme Brier, validation | n   |
+| ----- | --------------------------- | ------------------------- | ------------------------- | --- |
+| SWE2  | scale 1,05, f 0,84, fb 0    | scale 0,90, f 0, fb 0     | −0,0158                   | 104 |
+| ARG1  | scale 1,00, sans bloc       | scale 0,90, f 0,2, fb 0,4 | −0,0153                   | 340 |
+| F2    | scale 1,00, f 0,08, fb 0,22 | scale 0,90, f 0, fb 0     | −0,0055                   | 170 |
+| AUT1  | scale 1,00, sans bloc       | scale 0,90, f 0, fb 0,4   | −0,0036                   | 105 |
+
+Appliqué : `LAMBDA_SCALE_MAP` (SWE2 1,05 → 0,90 ; ARG1, F2, AUT1 → 0,90) et
+un overlay `GOAL_BLOCKS_REFIT_2026_10_06` dans `ou-shrinkage.ts` qui remplace
+facteur, taux de base et BTTS de ces quatre ligues sans toucher aux autres
+sous-blocs. Ce que ça dit en creux : dans ces quatre ligues, le modèle n'a
+aucune information sur le total de buts au-delà du taux de base de la ligue
+(facteur 0), et il annonçait trop de buts.
+
+Ce qui rouvrirait le reste : pas plus de grille. Plus de matchs par ligue
+(une saison de plus), ou une structure hiérarchique qui partage l'information
+entre ligues au lieu de fitter chacune seule.
+
+---
+
 ## 2026-10-06 — Re-fit des facteurs de λ dans la chaîne complète
 
 ### Le facteur extérieur 0,75 retire des buts que les marchés « buts » paient (suite)
