@@ -222,7 +222,24 @@ describe("GoalsStrategy (class, prod config)", () => {
   it("evaluates enabled observation segments (BL1 OVER 2.5 @ 0.45)", () => {
     // GOALS is enabled in observation; over25 0.7 ≥ BL1 Over 2.5 gate 0.45
     // (retuned 2026-07-24, backtest-tuning sweep), and the other lines stay
-    // at 0 (below their gates) → SELECTED OVER once priced.
+    // at 0 (below their gates) → SELECTED OVER once priced inside the band.
+    const decision = strategy.evaluate(
+      makeContext(
+        { over25: 0.7 },
+        {
+          competitionCode: "BL1",
+          odds: {
+            ...BASE_ODDS,
+            overUnderOdds: { OVER: new Decimal("1.70") },
+          },
+        },
+      ),
+    );
+    expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
+    expect(decision.selections[0]!.pick).toBe("OVER");
+  });
+
+  it("does not play a line priced outside the 1.20-1.80 band (PRODUCTION_LINE_RANKING, 2026-10-06)", () => {
     const decision = strategy.evaluate(
       makeContext(
         { over25: 0.7 },
@@ -235,8 +252,8 @@ describe("GoalsStrategy (class, prod config)", () => {
         },
       ),
     );
-    expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
-    expect(decision.selections[0]!.pick).toBe("OVER");
+    expect(decision.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
+    expect(decision.reasonCode).toBe("no_priced_line_in_band");
   });
 
   it("allowedMarkets contains only OVER_UNDER", () => {

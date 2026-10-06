@@ -1,4 +1,9 @@
-import { rankLineCandidates, type RankingOptions } from "./ranking";
+import {
+  PRODUCTION_LINE_RANKING,
+  noCandidateReason,
+  rankLineCandidates,
+  type RankingOptions,
+} from "./ranking";
 import type Decimal from "decimal.js";
 import { Market } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
@@ -120,7 +125,7 @@ export function decideOverUnderHt(
     return {
       channel,
       status: CHANNEL_DECISION_STATUS.REJECTED,
-      reasonCode: "no_candidates",
+      reasonCode: noCandidateReason(options),
       selections: [],
     };
   const selection: StrategySelection = {
@@ -150,6 +155,7 @@ export class OverUnderHtStrategy implements ChannelStrategy {
     return decideOverUnderHt(
       context,
       getOverUnderHtLineConfigs(context.competitionCode),
+      PRODUCTION_LINE_RANKING.OVER_UNDER_HT,
     );
   }
 }

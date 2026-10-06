@@ -26,13 +26,13 @@ describe("rankLineCandidates", () => {
     ]);
   });
 
-  it("in band mode keeps only priced lines inside the band and ranks them by probability", () => {
+  it("in band mode drops priced lines outside the band, ranks the band by probability, keeps unpriced lines last", () => {
     const ranked = rankLineCandidates([unpriced, under45, under35, under25], {
       ranking: "probability_in_band",
     });
-    // 1.05 is below 1.20, 1.95 is above 1.80: only UNDER 3.5 at 1.30 remains.
-    expect(ranked).toHaveLength(1);
-    expect(ranked[0]?.probability.toNumber()).toBe(0.78);
+    // 1.05 is below 1.20, 1.95 is above 1.80: UNDER 3.5 at 1.30 leads, the
+    // unpriced observation line follows, the two out-of-band prices are gone.
+    expect(ranked.map((c) => c.probability.toNumber())).toEqual([0.78, 0.7]);
   });
 
   it("in band mode prefers the higher probability, not the higher EV", () => {
@@ -44,7 +44,7 @@ describe("rankLineCandidates", () => {
     expect(ranked[0]).toBe(a);
   });
 
-  it("returns an empty ranking when nothing is in the band", () => {
+  it("returns an empty ranking when every line is priced outside the band", () => {
     expect(
       rankLineCandidates([under45, under25], {
         ranking: "probability_in_band",

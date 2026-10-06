@@ -1,4 +1,9 @@
-import { rankLineCandidates, type RankingOptions } from "./ranking";
+import {
+  PRODUCTION_LINE_RANKING,
+  noCandidateReason,
+  rankLineCandidates,
+  type RankingOptions,
+} from "./ranking";
 import type Decimal from "decimal.js";
 import { Market } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
@@ -139,7 +144,7 @@ export function decideGoals(
     return {
       channel,
       status: CHANNEL_DECISION_STATUS.REJECTED,
-      reasonCode: "no_candidates",
+      reasonCode: noCandidateReason(options),
       selections: [],
     };
   const selection: StrategySelection = {
@@ -166,6 +171,10 @@ export class GoalsStrategy implements ChannelStrategy {
   readonly allowedMarkets: readonly Market[] = [Market.OVER_UNDER];
 
   evaluate(context: StrategyContext): StrategyDecision {
-    return decideGoals(context, getGoalsLineConfigs(context.competitionCode));
+    return decideGoals(
+      context,
+      getGoalsLineConfigs(context.competitionCode),
+      PRODUCTION_LINE_RANKING.GOALS,
+    );
   }
 }

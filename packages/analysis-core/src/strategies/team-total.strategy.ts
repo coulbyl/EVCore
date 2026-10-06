@@ -1,4 +1,9 @@
-import { rankLineCandidates, type RankingOptions } from "./ranking";
+import {
+  PRODUCTION_LINE_RANKING,
+  noCandidateReason,
+  rankLineCandidates,
+  type RankingOptions,
+} from "./ranking";
 import type Decimal from "decimal.js";
 import { Market } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
@@ -116,7 +121,7 @@ export function decideTeamTotal(
     return {
       channel,
       status: CHANNEL_DECISION_STATUS.REJECTED,
-      reasonCode: "no_candidates",
+      reasonCode: noCandidateReason(options),
       selections: [],
     };
   const selection: StrategySelection = {
@@ -148,6 +153,7 @@ export class TeamTotalStrategy implements ChannelStrategy {
     return decideTeamTotal(
       context,
       getTeamTotalLineConfigs(context.competitionCode),
+      PRODUCTION_LINE_RANKING.TEAM_TOTAL,
     );
   }
 }
