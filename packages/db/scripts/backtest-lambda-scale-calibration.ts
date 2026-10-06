@@ -34,8 +34,8 @@ import { prisma } from "../src/client";
 
 const MIN_PRIOR_TEAM_STATS = 5;
 const SHRINKAGE_FACTOR = 0.7; // LAMBDA_SHRINKAGE_FACTOR
-const HOME_FACTOR = 1.0; // HOME_ADVANTAGE_LAMBDA_FACTOR
-const AWAY_FACTOR = 0.75; // AWAY_DISADVANTAGE_LAMBDA_FACTOR
+const HOME_FACTOR = 1.1; // HOME_ADVANTAGE_LAMBDA_FACTOR, re-fitted 2026-10-05 // HOME_ADVANTAGE_LAMBDA_FACTOR
+const AWAY_FACTOR = 0.85; // AWAY_DISADVANTAGE_LAMBDA_FACTOR, re-fitted 2026-10-05 // AWAY_DISADVANTAGE_LAMBDA_FACTOR
 const LEAGUE_MEAN_LAMBDA_DEFAULT = 1.4;
 // Mirrors ev.constants.ts LEAGUE_MEAN_LAMBDA_MAP for the two target leagues
 // only — BL1 already has an anchor correction (1.7); FIN1 has none (1.4

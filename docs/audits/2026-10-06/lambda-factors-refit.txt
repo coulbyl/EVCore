@@ -1,0 +1,146 @@
+Re-fit des facteurs de λ — 2026-10-05T23:55:02.140Z
+Fenêtres : sélection [2023-07-01 ; 2026-01-01[, validation [2026-01-01 ; aujourd'hui[
+Grille figée : 40 configurations (4 × 5 paires × overrides keep/drop). Critère : −(brier3 + over25 + btts) de la chaîne de production.
+
+Chargement des fixtures terminées (compétitions de backtest)...
+  50185 fixtures.
+Chargement des team_stats point-in-time...
+  110710 lignes team_stats, 1308 équipes.
+  39528 échantillons retenus, 10657 écartés (moins de 5 lignes de saison ou xG absent).
+
+== SÉLECTION (classement sur la fenêtre de sélection seule) ==
+  1. h=1.100 a=0.850 overrides=drop | n=31508 | brier3=0.61865 over25=0.24655 btts=0.24673 sum=1.11193 | sans shrink: over25=0.24769 btts=0.24829 | λtot=2.839 buts=2.741 | P(over) 0.529 vs 0.520 | P(btts) 0.538 vs 0.538 | P(home) 0.451 vs 0.442 | P(away) 0.307 vs 0.301
+  2. h=1.050 a=0.850 overrides=drop | n=31508 | brier3=0.61868 over25=0.24652 btts=0.24682 sum=1.11202 | sans shrink: over25=0.24747 btts=0.24830 | λtot=2.767 buts=2.741 | P(over) 0.517 vs 0.520 | P(btts) 0.532 vs 0.538 | P(home) 0.437 vs 0.442 | P(away) 0.317 vs 0.301
+  3. h=1.050 a=0.800 overrides=drop | n=31508 | brier3=0.61843 over25=0.24682 btts=0.24714 sum=1.11239 | sans shrink: over25=0.24779 btts=0.24879 | λtot=2.693 buts=2.741 | P(over) 0.504 vs 0.520 | P(btts) 0.524 vs 0.538 | P(home) 0.450 vs 0.442 | P(away) 0.301 vs 0.301
+  4. h=1.100 a=0.850 overrides=keep | n=31508 | brier3=0.61907 over25=0.24665 btts=0.24672 sum=1.11244 | sans shrink: over25=0.24776 btts=0.24830 | λtot=2.844 buts=2.741 | P(over) 0.530 vs 0.520 | P(btts) 0.538 vs 0.538 | P(home) 0.448 vs 0.442 | P(away) 0.310 vs 0.301
+  5. h=1.100 a=0.800 overrides=drop | n=31508 | brier3=0.61912 over25=0.24650 btts=0.24693 sum=1.11255 | sans shrink: over25=0.24746 btts=0.24846 | λtot=2.766 buts=2.741 | P(over) 0.516 vs 0.520 | P(btts) 0.529 vs 0.538 | P(home) 0.464 vs 0.442 | P(away) 0.291 vs 0.301
+  6. h=1.050 a=0.850 overrides=keep | n=31508 | brier3=0.61909 over25=0.24666 btts=0.24680 sum=1.11255 | sans shrink: over25=0.24755 btts=0.24831 | λtot=2.776 buts=2.741 | P(over) 0.519 vs 0.520 | P(btts) 0.533 vs 0.538 | P(home) 0.434 vs 0.442 | P(away) 0.320 vs 0.301
+  7. h=1.100 a=0.900 overrides=drop | n=31508 | brier3=0.61906 over25=0.24699 btts=0.24675 sum=1.11280 | sans shrink: over25=0.24851 btts=0.24863 | λtot=2.912 buts=2.741 | P(over) 0.541 vs 0.520 | P(btts) 0.546 vs 0.538 | P(home) 0.438 vs 0.442 | P(away) 0.322 vs 0.301
+  8. h=1.050 a=0.800 overrides=keep | n=31508 | brier3=0.61887 over25=0.24698 btts=0.24711 sum=1.11296 | sans shrink: over25=0.24784 btts=0.24876 | λtot=2.708 buts=2.741 | P(over) 0.507 vs 0.520 | P(btts) 0.525 vs 0.538 | P(home) 0.446 vs 0.442 | P(away) 0.305 vs 0.301
+  9. h=1.150 a=0.850 overrides=drop | n=31508 | brier3=0.61931 over25=0.24694 btts=0.24674 sum=1.11299 | sans shrink: over25=0.24846 btts=0.24849 | λtot=2.911 buts=2.741 | P(over) 0.540 vs 0.520 | P(btts) 0.543 vs 0.538 | P(home) 0.465 vs 0.442 | P(away) 0.297 vs 0.301
+ 10. h=1.100 a=0.800 overrides=keep | n=31508 | brier3=0.61954 over25=0.24664 btts=0.24691 sum=1.11309 | sans shrink: over25=0.24754 btts=0.24845 | λtot=2.775 buts=2.741 | P(over) 0.518 vs 0.520 | P(btts) 0.530 vs 0.538 | P(home) 0.460 vs 0.442 | P(away) 0.296 vs 0.301
+ 11. h=1.050 a=0.900 overrides=drop | n=31508 | brier3=0.61982 over25=0.24662 btts=0.24670 sum=1.11314 | sans shrink: over25=0.24778 btts=0.24831 | λtot=2.840 buts=2.741 | P(over) 0.529 vs 0.520 | P(btts) 0.540 vs 0.538 | P(home) 0.424 vs 0.442 | P(away) 0.332 vs 0.301
+ 12. h=1.100 a=0.900 overrides=keep | n=31508 | brier3=0.61944 over25=0.24700 btts=0.24674 sum=1.11319 | sans shrink: over25=0.24853 btts=0.24863 | λtot=2.913 buts=2.741 | P(over) 0.541 vs 0.520 | P(btts) 0.546 vs 0.538 | P(home) 0.436 vs 0.442 | P(away) 0.324 vs 0.301
+ 13. h=1.000 a=0.850 overrides=drop | n=31508 | brier3=0.61947 over25=0.24687 btts=0.24701 sum=1.11335 | sans shrink: over25=0.24784 btts=0.24855 | λtot=2.694 buts=2.741 | P(over) 0.505 vs 0.520 | P(btts) 0.527 vs 0.538 | P(home) 0.422 vs 0.442 | P(away) 0.327 vs 0.301
+ 14. h=1.150 a=0.850 overrides=keep | n=31508 | brier3=0.61971 over25=0.24696 btts=0.24674 sum=1.11340 | sans shrink: over25=0.24849 btts=0.24849 | λtot=2.912 buts=2.741 | P(over) 0.540 vs 0.520 | P(btts) 0.543 vs 0.538 | P(home) 0.461 vs 0.442 | P(away) 0.301 vs 0.301
+ 15. h=1.000 a=0.800 overrides=drop | n=31508 | brier3=0.61848 over25=0.24754 btts=0.24746 sum=1.11348 | sans shrink: over25=0.24873 btts=0.24938 | λtot=2.621 buts=2.741 | P(over) 0.492 vs 0.520 | P(btts) 0.518 vs 0.538 | P(home) 0.434 vs 0.442 | P(away) 0.312 vs 0.301
+ 16. h=1.050 a=0.900 overrides=keep | n=31508 | brier3=0.62013 over25=0.24671 btts=0.24670 sum=1.11354 | sans shrink: over25=0.24784 btts=0.24833 | λtot=2.845 buts=2.741 | P(over) 0.530 vs 0.520 | P(btts) 0.540 vs 0.538 | P(home) 0.422 vs 0.442 | P(away) 0.334 vs 0.301
+ 17. h=1.150 a=0.900 overrides=drop | n=31508 | brier3=0.61903 over25=0.24768 btts=0.24688 sum=1.11359 | sans shrink: over25=0.24975 btts=0.24914 | λtot=2.985 buts=2.741 | P(over) 0.552 vs 0.520 | P(btts) 0.551 vs 0.538 | P(home) 0.453 vs 0.442 | P(away) 0.312 vs 0.301
+ 18. h=1.000 a=0.850 overrides=keep | n=31508 | brier3=0.61982 over25=0.24703 btts=0.24698 sum=1.11382 | sans shrink: over25=0.24788 btts=0.24855 | λtot=2.709 buts=2.741 | P(over) 0.507 vs 0.520 | P(btts) 0.527 vs 0.538 | P(home) 0.420 vs 0.442 | P(away) 0.330 vs 0.301
+ 19. h=1.150 a=0.800 overrides=drop | n=31508 | brier3=0.62048 over25=0.24655 btts=0.24681 sum=1.11384 | sans shrink: over25=0.24771 btts=0.24835 | λtot=2.838 buts=2.741 | P(over) 0.528 vs 0.520 | P(btts) 0.534 vs 0.538 | P(home) 0.479 vs 0.442 | P(away) 0.282 vs 0.301
+ 20. h=1.150 a=0.900 overrides=keep | n=31508 | brier3=0.61943 over25=0.24760 btts=0.24688 sum=1.11390 | sans shrink: over25=0.24970 btts=0.24911 | λtot=2.980 buts=2.741 | P(over) 0.551 vs 0.520 | P(btts) 0.551 vs 0.538 | P(home) 0.449 vs 0.442 | P(away) 0.315 vs 0.301
+ 21. h=1.000 a=0.800 overrides=keep | n=31508 | brier3=0.61890 over25=0.24769 btts=0.24742 sum=1.11401 | sans shrink: over25=0.24871 btts=0.24931 | λtot=2.640 buts=2.741 | P(over) 0.496 vs 0.520 | P(btts) 0.519 vs 0.538 | P(home) 0.432 vs 0.442 | P(away) 0.315 vs 0.301
+ 22. h=1.150 a=0.800 overrides=keep | n=31508 | brier3=0.62083 over25=0.24664 btts=0.24680 sum=1.11428 | sans shrink: over25=0.24778 btts=0.24835 | λtot=2.843 buts=2.741 | P(over) 0.529 vs 0.520 | P(btts) 0.535 vs 0.538 | P(home) 0.474 vs 0.442 | P(away) 0.287 vs 0.301
+ 23. h=1.050 a=0.750 overrides=drop | n=31508 | brier3=0.61913 over25=0.24754 btts=0.24772 sum=1.11439 | sans shrink: over25=0.24876 btts=0.24990 | λtot=2.620 buts=2.741 | P(over) 0.492 vs 0.520 | P(btts) 0.515 vs 0.538 | P(home) 0.463 vs 0.442 | P(away) 0.286 vs 0.301
+ 24. h=1.000 a=0.900 overrides=drop | n=31508 | brier3=0.62134 over25=0.24662 btts=0.24676 sum=1.11473 | sans shrink: over25=0.24759 btts=0.24824 | λtot=2.768 buts=2.741 | P(over) 0.517 vs 0.520 | P(btts) 0.534 vs 0.538 | P(home) 0.409 vs 0.442 | P(away) 0.343 vs 0.301
+ 25. h=1.100 a=0.750 overrides=drop | n=31508 | brier3=0.62054 over25=0.24685 btts=0.24739 sum=1.11477 | sans shrink: over25=0.24785 btts=0.24925 | λtot=2.692 buts=2.741 | P(over) 0.504 vs 0.520 | P(btts) 0.520 vs 0.538 | P(home) 0.478 vs 0.442 | P(away) 0.276 vs 0.301
+ 26. h=1.050 a=0.750 overrides=keep | n=31508 | brier3=0.61955 over25=0.24769 btts=0.24767 sum=1.11491 | sans shrink: over25=0.24875 btts=0.24979 | λtot=2.639 buts=2.741 | P(over) 0.495 vs 0.520 | P(btts) 0.516 vs 0.538 | P(home) 0.459 vs 0.442 | P(away) 0.290 vs 0.301
+ 27. h=1.100 a=0.950 overrides=drop | n=31508 | brier3=0.62031 over25=0.24777 btts=0.24693 sum=1.11501 | sans shrink: over25=0.24987 btts=0.24937 | λtot=2.986 buts=2.741 | P(over) 0.552 vs 0.520 | P(btts) 0.553 vs 0.538 | P(home) 0.426 vs 0.442 | P(away) 0.336 vs 0.301
+ 28. h=1.000 a=0.900 overrides=keep | n=31508 | brier3=0.62155 over25=0.24675 btts=0.24675 sum=1.11506 | sans shrink: over25=0.24766 btts=0.24826 | λtot=2.777 buts=2.741 | P(over) 0.519 vs 0.520 | P(btts) 0.535 vs 0.538 | P(home) 0.408 vs 0.442 | P(away) 0.344 vs 0.301
+ 29. h=1.100 a=0.950 overrides=keep | n=31508 | brier3=0.62060 over25=0.24768 btts=0.24693 sum=1.11521 | sans shrink: over25=0.24981 btts=0.24933 | λtot=2.981 buts=2.741 | P(over) 0.552 vs 0.520 | P(btts) 0.553 vs 0.538 | P(home) 0.424 vs 0.442 | P(away) 0.338 vs 0.301
+ 30. h=1.100 a=0.750 overrides=keep | n=31508 | brier3=0.62089 over25=0.24701 btts=0.24735 sum=1.11525 | sans shrink: over25=0.24790 btts=0.24918 | λtot=2.707 buts=2.741 | P(over) 0.507 vs 0.520 | P(btts) 0.521 vs 0.538 | P(home) 0.473 vs 0.442 | P(away) 0.281 vs 0.301
+ 31. h=1.000 a=0.750 overrides=drop | n=31508 | brier3=0.61842 over25=0.24866 btts=0.24817 sum=1.11526 | sans shrink: over25=0.25032 btts=0.25083 | λtot=2.548 buts=2.741 | P(over) 0.479 vs 0.520 | P(btts) 0.510 vs 0.538 | P(home) 0.448 vs 0.442 | P(away) 0.296 vs 0.301
+ 32. h=1.150 a=0.950 overrides=drop | n=31508 | brier3=0.61959 over25=0.24875 btts=0.24718 sum=1.11552 | sans shrink: over25=0.25155 btts=0.25018 | λtot=3.058 buts=2.741 | P(over) 0.564 vs 0.520 | P(btts) 0.558 vs 0.538 | P(home) 0.440 vs 0.442 | P(away) 0.326 vs 0.301
+ 33. h=1.050 a=0.950 overrides=drop | n=31508 | brier3=0.62177 over25=0.24710 btts=0.24676 sum=1.11563 | sans shrink: over25=0.24866 btts=0.24874 | λtot=2.914 buts=2.741 | P(over) 0.541 vs 0.520 | P(btts) 0.547 vs 0.538 | P(home) 0.412 vs 0.442 | P(away) 0.347 vs 0.301
+ 34. h=1.150 a=0.950 overrides=keep | n=31508 | brier3=0.61993 over25=0.24854 btts=0.24718 sum=1.11566 | sans shrink: over25=0.25139 btts=0.25009 | λtot=3.049 buts=2.741 | P(over) 0.562 vs 0.520 | P(btts) 0.558 vs 0.538 | P(home) 0.437 vs 0.442 | P(away) 0.328 vs 0.301
+ 35. h=1.000 a=0.750 overrides=keep | n=31508 | brier3=0.61887 over25=0.24876 btts=0.24811 sum=1.11575 | sans shrink: over25=0.25020 btts=0.25066 | λtot=2.571 buts=2.741 | P(over) 0.484 vs 0.520 | P(btts) 0.511 vs 0.538 | P(home) 0.445 vs 0.442 | P(away) 0.300 vs 0.301
+ 36. h=1.050 a=0.950 overrides=keep | n=31508 | brier3=0.62195 over25=0.24711 btts=0.24676 sum=1.11582 | sans shrink: over25=0.24866 btts=0.24874 | λtot=2.914 buts=2.741 | P(over) 0.541 vs 0.520 | P(btts) 0.547 vs 0.538 | P(home) 0.411 vs 0.442 | P(away) 0.348 vs 0.301
+ 37. h=1.150 a=0.750 overrides=drop | n=31508 | brier3=0.62260 over25=0.24654 btts=0.24714 sum=1.11629 | sans shrink: over25=0.24755 btts=0.24882 | λtot=2.765 buts=2.741 | P(over) 0.516 vs 0.520 | P(btts) 0.525 vs 0.538 | P(home) 0.492 vs 0.442 | P(away) 0.267 vs 0.301
+ 38. h=1.150 a=0.750 overrides=keep | n=31508 | brier3=0.62285 over25=0.24668 btts=0.24711 sum=1.11665 | sans shrink: over25=0.24763 btts=0.24878 | λtot=2.774 buts=2.741 | P(over) 0.518 vs 0.520 | P(btts) 0.526 vs 0.538 | P(home) 0.486 vs 0.442 | P(away) 0.273 vs 0.301
+ 39. h=1.000 a=0.950 overrides=drop | n=31508 | brier3=0.62402 over25=0.24676 btts=0.24670 sum=1.11748 | sans shrink: over25=0.24796 btts=0.24835 | λtot=2.841 buts=2.741 | P(over) 0.529 vs 0.520 | P(btts) 0.541 vs 0.538 | P(home) 0.397 vs 0.442 | P(away) 0.358 vs 0.301
+ 40. h=1.000 a=0.950 overrides=keep | n=31508 | brier3=0.62405 over25=0.24684 btts=0.24669 sum=1.11759 | sans shrink: over25=0.24800 btts=0.24837 | λtot=2.846 buts=2.741 | P(over) 0.530 vs 0.520 | P(btts) 0.541 vs 0.538 | P(home) 0.397 vs 0.442 | P(away) 0.358 vs 0.301
+
+Configurations comparées : 40 ; faux positifs attendus à 95 % par le seul balayage : 1.0.
+
+== VALIDATION (fenêtre intouchée, mesurée une fois) ==
+actuelle  h=1.000 a=0.750 overrides=keep
+          n=8020 | brier3=0.62095 over25=0.25061 btts=0.24725 sum=1.11882 | sans shrink: over25=0.25261 btts=0.25046 | λtot=2.544 buts=2.795 | P(over) 0.476 vs 0.538 | P(btts) 0.509 vs 0.556 | P(home) 0.444 vs 0.434 | P(away) 0.298 vs 0.306
+retenue   h=1.100 a=0.850 overrides=drop
+          n=8020 | brier3=0.62016 over25=0.24646 btts=0.24433 sum=1.11095 | sans shrink: over25=0.24734 btts=0.24605 | λtot=2.806 buts=2.795 | P(over) 0.523 vs 0.538 | P(btts) 0.537 vs 0.556 | P(home) 0.451 vs 0.434 | P(away) 0.305 vs 0.306
+écart retenue − actuelle sur validation : sum -0.00787 | brier3 -0.00080 | over25 -0.00415 | btts -0.00292 (négatif = mieux)
+écart sur sélection, pour comparaison : sum -0.00381
+
+== VALIDATION de toutes les configurations éligibles (diagnostic, pas sélection) ==
+h=1.100 a=0.850 overrides=drop | n=8020 | brier3=0.62016 over25=0.24646 btts=0.24433 sum=1.11095 | sans shrink: over25=0.24734 btts=0.24605 | λtot=2.806 buts=2.795 | P(over) 0.523 vs 0.538 | P(btts) 0.537 vs 0.556 | P(home) 0.451 vs 0.434 | P(away) 0.305 vs 0.306
+h=1.050 a=0.850 overrides=drop | n=8020 | brier3=0.61985 over25=0.24705 btts=0.24470 sum=1.11160 | sans shrink: over25=0.24796 btts=0.24652 | λtot=2.735 buts=2.795 | P(over) 0.511 vs 0.538 | P(btts) 0.531 vs 0.556 | P(home) 0.436 vs 0.434 | P(away) 0.315 vs 0.306
+h=1.050 a=0.800 overrides=drop | n=8020 | brier3=0.62005 over25=0.24801 btts=0.24545 sum=1.11352 | sans shrink: over25=0.24912 btts=0.24771 | λtot=2.662 buts=2.795 | P(over) 0.498 vs 0.538 | P(btts) 0.522 vs 0.556 | P(home) 0.449 vs 0.434 | P(away) 0.300 vs 0.306
+h=1.100 a=0.850 overrides=keep | n=8020 | brier3=0.62098 over25=0.24639 btts=0.24435 sum=1.11172 | sans shrink: over25=0.24728 btts=0.24601 | λtot=2.812 buts=2.795 | P(over) 0.524 vs 0.538 | P(btts) 0.537 vs 0.556 | P(home) 0.447 vs 0.434 | P(away) 0.309 vs 0.306
+h=1.100 a=0.800 overrides=drop | n=8020 | brier3=0.62108 over25=0.24703 btts=0.24495 sum=1.11306 | sans shrink: over25=0.24794 btts=0.24692 | λtot=2.734 buts=2.795 | P(over) 0.511 vs 0.538 | P(btts) 0.528 vs 0.556 | P(home) 0.464 vs 0.434 | P(away) 0.290 vs 0.306
+h=1.050 a=0.850 overrides=keep | n=8020 | brier3=0.62056 over25=0.24688 btts=0.24471 sum=1.11214 | sans shrink: over25=0.24778 btts=0.24642 | λtot=2.745 buts=2.795 | P(over) 0.513 vs 0.538 | P(btts) 0.532 vs 0.556 | P(home) 0.433 vs 0.434 | P(away) 0.318 vs 0.306
+h=1.100 a=0.900 overrides=drop | n=8020 | brier3=0.62013 over25=0.24630 btts=0.24397 sum=1.11040 | sans shrink: over25=0.24735 btts=0.24573 | λtot=2.879 buts=2.795 | P(over) 0.536 vs 0.538 | P(btts) 0.545 vs 0.556 | P(home) 0.438 vs 0.434 | P(away) 0.320 vs 0.306
+h=1.050 a=0.800 overrides=keep | n=8020 | brier3=0.62087 over25=0.24771 btts=0.24545 sum=1.11403 | sans shrink: over25=0.24878 btts=0.24749 | λtot=2.678 buts=2.795 | P(over) 0.501 vs 0.538 | P(btts) 0.523 vs 0.556 | P(home) 0.445 vs 0.434 | P(away) 0.304 vs 0.306
+h=1.150 a=0.850 overrides=drop | n=8020 | brier3=0.62114 over25=0.24626 btts=0.24408 sum=1.11149 | sans shrink: over25=0.24729 btts=0.24581 | λtot=2.878 buts=2.795 | P(over) 0.536 vs 0.538 | P(btts) 0.542 vs 0.556 | P(home) 0.465 vs 0.434 | P(away) 0.295 vs 0.306
+h=1.100 a=0.800 overrides=keep | n=8020 | brier3=0.62197 over25=0.24686 btts=0.24496 sum=1.11379 | sans shrink: over25=0.24776 btts=0.24679 | λtot=2.744 buts=2.795 | P(over) 0.512 vs 0.538 | P(btts) 0.529 vs 0.556 | P(home) 0.459 vs 0.434 | P(away) 0.295 vs 0.306
+h=1.050 a=0.900 overrides=drop | n=8020 | brier3=0.62053 over25=0.24652 btts=0.24421 sum=1.11126 | sans shrink: over25=0.24743 btts=0.24589 | λtot=2.807 buts=2.795 | P(over) 0.524 vs 0.538 | P(btts) 0.539 vs 0.556 | P(home) 0.424 vs 0.434 | P(away) 0.330 vs 0.306
+h=1.100 a=0.900 overrides=keep | n=8020 | brier3=0.62083 over25=0.24630 btts=0.24398 sum=1.11111 | sans shrink: over25=0.24735 btts=0.24575 | λtot=2.879 buts=2.795 | P(over) 0.536 vs 0.538 | P(btts) 0.545 vs 0.556 | P(home) 0.435 vs 0.434 | P(away) 0.322 vs 0.306
+h=1.000 a=0.850 overrides=drop | n=8020 | brier3=0.62028 over25=0.24806 btts=0.24520 sum=1.11354 | sans shrink: over25=0.24917 btts=0.24728 | λtot=2.663 buts=2.795 | P(over) 0.498 vs 0.538 | P(btts) 0.525 vs 0.556 | P(home) 0.421 vs 0.434 | P(away) 0.325 vs 0.306
+h=1.150 a=0.850 overrides=keep | n=8020 | brier3=0.62204 over25=0.24625 btts=0.24410 sum=1.11239 | sans shrink: over25=0.24730 btts=0.24582 | λtot=2.878 buts=2.795 | P(over) 0.536 vs 0.538 | P(btts) 0.543 vs 0.556 | P(home) 0.460 vs 0.434 | P(away) 0.300 vs 0.306
+h=1.000 a=0.800 overrides=drop | n=8020 | brier3=0.61975 over25=0.24943 btts=0.24609 sum=1.11526 | sans shrink: over25=0.25093 btts=0.24879 | λtot=2.591 buts=2.795 | P(over) 0.485 vs 0.538 | P(btts) 0.517 vs 0.556 | P(home) 0.434 vs 0.434 | P(away) 0.310 vs 0.306
+h=1.050 a=0.900 overrides=keep | n=8020 | brier3=0.62107 over25=0.24645 btts=0.24422 sum=1.11173 | sans shrink: over25=0.24736 btts=0.24586 | λtot=2.813 buts=2.795 | P(over) 0.524 vs 0.538 | P(btts) 0.540 vs 0.556 | P(home) 0.422 vs 0.434 | P(away) 0.332 vs 0.306
+h=1.150 a=0.900 overrides=drop | n=8020 | brier3=0.62042 over25=0.24644 btts=0.24385 sum=1.11072 | sans shrink: over25=0.24780 btts=0.24580 | λtot=2.950 buts=2.795 | P(over) 0.548 vs 0.538 | P(btts) 0.551 vs 0.556 | P(home) 0.452 vs 0.434 | P(away) 0.310 vs 0.306
+h=1.000 a=0.850 overrides=keep | n=8020 | brier3=0.62082 over25=0.24776 btts=0.24520 sum=1.11377 | sans shrink: over25=0.24884 btts=0.24709 | λtot=2.679 buts=2.795 | P(over) 0.501 vs 0.538 | P(btts) 0.526 vs 0.556 | P(home) 0.420 vs 0.434 | P(away) 0.328 vs 0.306
+h=1.150 a=0.800 overrides=drop | n=8020 | brier3=0.62276 over25=0.24647 btts=0.24457 sum=1.11379 | sans shrink: over25=0.24735 btts=0.24638 | λtot=2.805 buts=2.795 | P(over) 0.523 vs 0.538 | P(btts) 0.533 vs 0.556 | P(home) 0.478 vs 0.434 | P(away) 0.280 vs 0.306
+h=1.150 a=0.900 overrides=keep | n=8020 | brier3=0.62124 over25=0.24648 btts=0.24386 sum=1.11158 | sans shrink: over25=0.24783 btts=0.24584 | λtot=2.945 buts=2.795 | P(over) 0.547 vs 0.538 | P(btts) 0.551 vs 0.556 | P(home) 0.448 vs 0.434 | P(away) 0.313 vs 0.306
+h=1.000 a=0.800 overrides=keep | n=8020 | brier3=0.62044 over25=0.24897 btts=0.24607 sum=1.11548 | sans shrink: over25=0.25040 btts=0.24846 | λtot=2.611 buts=2.795 | P(over) 0.488 vs 0.538 | P(btts) 0.518 vs 0.556 | P(home) 0.432 vs 0.434 | P(away) 0.313 vs 0.306
+h=1.150 a=0.800 overrides=keep | n=8020 | brier3=0.62368 over25=0.24638 btts=0.24459 sum=1.11465 | sans shrink: over25=0.24728 btts=0.24632 | λtot=2.811 buts=2.795 | P(over) 0.524 vs 0.538 | P(btts) 0.534 vs 0.556 | P(home) 0.472 vs 0.434 | P(away) 0.286 vs 0.306
+h=1.050 a=0.750 overrides=drop | n=8020 | brier3=0.62120 over25=0.24943 btts=0.24652 sum=1.11715 | sans shrink: over25=0.25094 btts=0.24958 | λtot=2.590 buts=2.795 | P(over) 0.484 vs 0.538 | P(btts) 0.513 vs 0.556 | P(home) 0.462 vs 0.434 | P(away) 0.284 vs 0.306
+h=1.000 a=0.900 overrides=drop | n=8020 | brier3=0.62169 over25=0.24714 btts=0.24458 sum=1.11341 | sans shrink: over25=0.24808 btts=0.24634 | λtot=2.736 buts=2.795 | P(over) 0.511 vs 0.538 | P(btts) 0.533 vs 0.556 | P(home) 0.409 vs 0.434 | P(away) 0.341 vs 0.306
+h=1.100 a=0.750 overrides=drop | n=8020 | brier3=0.62294 over25=0.24804 btts=0.24589 sum=1.11687 | sans shrink: over25=0.24917 btts=0.24848 | λtot=2.661 buts=2.795 | P(over) 0.497 vs 0.538 | P(btts) 0.518 vs 0.556 | P(home) 0.477 vs 0.434 | P(away) 0.275 vs 0.306
+h=1.050 a=0.750 overrides=keep | n=8020 | brier3=0.62208 over25=0.24896 btts=0.24650 sum=1.11754 | sans shrink: over25=0.25041 btts=0.24919 | λtot=2.610 buts=2.795 | P(over) 0.488 vs 0.538 | P(btts) 0.514 vs 0.556 | P(home) 0.458 vs 0.434 | P(away) 0.289 vs 0.306
+h=1.100 a=0.950 overrides=drop | n=8020 | brier3=0.62093 over25=0.24652 btts=0.24383 sum=1.11128 | sans shrink: over25=0.24791 btts=0.24587 | λtot=2.951 buts=2.795 | P(over) 0.548 vs 0.538 | P(btts) 0.553 vs 0.556 | P(home) 0.426 vs 0.434 | P(away) 0.334 vs 0.306
+h=1.000 a=0.900 overrides=keep | n=8020 | brier3=0.62201 over25=0.24697 btts=0.24458 sum=1.11356 | sans shrink: over25=0.24790 btts=0.24624 | λtot=2.746 buts=2.795 | P(over) 0.513 vs 0.538 | P(btts) 0.534 vs 0.556 | P(home) 0.408 vs 0.434 | P(away) 0.342 vs 0.306
+h=1.100 a=0.950 overrides=keep | n=8020 | brier3=0.62146 over25=0.24656 btts=0.24383 sum=1.11185 | sans shrink: over25=0.24794 btts=0.24590 | λtot=2.946 buts=2.795 | P(over) 0.547 vs 0.538 | P(btts) 0.553 vs 0.556 | P(home) 0.424 vs 0.434 | P(away) 0.336 vs 0.306
+h=1.100 a=0.750 overrides=keep | n=8020 | brier3=0.62384 over25=0.24773 btts=0.24588 sum=1.11745 | sans shrink: over25=0.24882 btts=0.24820 | λtot=2.677 buts=2.795 | P(over) 0.500 vs 0.538 | P(btts) 0.519 vs 0.556 | P(home) 0.472 vs 0.434 | P(away) 0.280 vs 0.306
+h=1.000 a=0.750 overrides=drop | n=8020 | brier3=0.62015 over25=0.25127 btts=0.24729 sum=1.11871 | sans shrink: over25=0.25339 btts=0.25098 | λtot=2.518 buts=2.795 | P(over) 0.471 vs 0.538 | P(btts) 0.507 vs 0.556 | P(home) 0.447 vs 0.434 | P(away) 0.294 vs 0.306
+h=1.150 a=0.950 overrides=drop | n=8020 | brier3=0.62054 over25=0.24699 btts=0.24383 sum=1.11136 | sans shrink: over25=0.24882 btts=0.24624 | λtot=3.023 buts=2.795 | P(over) 0.560 vs 0.538 | P(btts) 0.559 vs 0.556 | P(home) 0.440 vs 0.434 | P(away) 0.324 vs 0.306
+h=1.050 a=0.950 overrides=drop | n=8020 | brier3=0.62204 over25=0.24640 btts=0.24394 sum=1.11237 | sans shrink: over25=0.24748 btts=0.24573 | λtot=2.880 buts=2.795 | P(over) 0.536 vs 0.538 | P(btts) 0.547 vs 0.556 | P(home) 0.412 vs 0.434 | P(away) 0.345 vs 0.306
+h=1.150 a=0.950 overrides=keep | n=8020 | brier3=0.62123 over25=0.24704 btts=0.24383 sum=1.11210 | sans shrink: over25=0.24885 btts=0.24627 | λtot=3.013 buts=2.795 | P(over) 0.558 vs 0.538 | P(btts) 0.558 vs 0.556 | P(home) 0.437 vs 0.434 | P(away) 0.327 vs 0.306
+h=1.000 a=0.750 overrides=keep | n=8020 | brier3=0.62095 over25=0.25061 btts=0.24725 sum=1.11882 | sans shrink: over25=0.25261 btts=0.25046 | λtot=2.544 buts=2.795 | P(over) 0.476 vs 0.538 | P(btts) 0.509 vs 0.556 | P(home) 0.444 vs 0.434 | P(away) 0.298 vs 0.306
+h=1.050 a=0.950 overrides=keep | n=8020 | brier3=0.62235 over25=0.24639 btts=0.24394 sum=1.11269 | sans shrink: over25=0.24748 btts=0.24574 | λtot=2.880 buts=2.795 | P(over) 0.536 vs 0.538 | P(btts) 0.547 vs 0.556 | P(home) 0.411 vs 0.434 | P(away) 0.346 vs 0.306
+h=1.150 a=0.750 overrides=drop | n=8020 | brier3=0.62531 over25=0.24708 btts=0.24538 sum=1.11777 | sans shrink: over25=0.24801 btts=0.24763 | λtot=2.733 buts=2.795 | P(over) 0.510 vs 0.538 | P(btts) 0.523 vs 0.556 | P(home) 0.491 vs 0.434 | P(away) 0.265 vs 0.306
+h=1.150 a=0.750 overrides=keep | n=8020 | brier3=0.62619 over25=0.24690 btts=0.24539 sum=1.11848 | sans shrink: over25=0.24782 btts=0.24744 | λtot=2.743 buts=2.795 | P(over) 0.512 vs 0.538 | P(btts) 0.524 vs 0.556 | P(home) 0.485 vs 0.434 | P(away) 0.272 vs 0.306
+h=1.000 a=0.950 overrides=drop | n=8020 | brier3=0.62392 over25=0.24664 btts=0.24418 sum=1.11474 | sans shrink: over25=0.24760 btts=0.24586 | λtot=2.808 buts=2.795 | P(over) 0.524 vs 0.538 | P(btts) 0.541 vs 0.556 | P(home) 0.397 vs 0.434 | P(away) 0.356 vs 0.306
+h=1.000 a=0.950 overrides=keep | n=8020 | brier3=0.62397 over25=0.24657 btts=0.24418 sum=1.11472 | sans shrink: over25=0.24752 btts=0.24582 | λtot=2.813 buts=2.795 | P(over) 0.525 vs 0.538 | P(btts) 0.541 vs 0.556 | P(home) 0.397 vs 0.434 | P(away) 0.356 vs 0.306
+
+== PAR COMPÉTITION, configuration retenue vs actuelle, validation ==
+code  n     Δsum      Δover25   Δbtts     Δbrier3   | actuelle P(over) vs réel → retenue P(over)
+D3      210  -0.03012  -0.02307  -0.00535  -0.00171 | 0.438 vs 0.643 → 0.508
+POL2    168  -0.02742  -0.01316  -0.01659   0.00233 | 0.432 vs 0.560 → 0.500
+LL      227  -0.02737  -0.01157  -0.01504  -0.00076 | 0.414 vs 0.533 → 0.483
+CH      306  -0.02580  -0.01343  -0.01168  -0.00069 | 0.378 vs 0.513 → 0.443
+POR     180  -0.02334  -0.01632  -0.00712   0.00010 | 0.403 vs 0.556 → 0.471
+SUI1    137  -0.02332  -0.01969  -0.00034  -0.00329 | 0.514 vs 0.686 → 0.586
+D2      162  -0.01562   0.00011   0.00023  -0.01597 | 0.578 vs 0.574 → 0.561
+TUR1    162  -0.01538  -0.01629   0.00000   0.00091 | 0.435 vs 0.586 → 0.505
+SP2     290  -0.01278  -0.00408  -0.00726  -0.00145 | 0.467 vs 0.531 → 0.532
+ERD     172  -0.01215  -0.00616  -0.00732   0.00133 | 0.527 vs 0.605 → 0.599
+BL1     171  -0.01165  -0.00557  -0.00677   0.00069 | 0.585 vs 0.661 → 0.656
+PL      194  -0.01134  -0.00651  -0.00718   0.00235 | 0.454 vs 0.536 → 0.524
+IRL1    135  -0.01074  -0.00174  -0.01022   0.00123 | 0.477 vs 0.526 → 0.548
+SA      213  -0.01072  -0.00772   0.00017  -0.00316 | 0.375 vs 0.469 → 0.440
+AUS1    104  -0.01040  -0.01011  -0.00684   0.00654 | 0.488 vs 0.596 → 0.559
+DEN1    106  -0.01026  -0.01108  -0.00160   0.00242 | 0.481 vs 0.594 → 0.552
+CZE1    127  -0.00966  -0.00729   0.00270  -0.00507 | 0.444 vs 0.535 → 0.515
+KSA1    225  -0.00948  -0.00848  -0.00035  -0.00064 | 0.462 vs 0.560 → 0.532
+SCO1    123  -0.00744  -0.00559  -0.00104  -0.00081 | 0.461 vs 0.537 → 0.531
+I2      210  -0.00729   0.00229   0.00000  -0.00958 | 0.458 vs 0.500 → 0.441
+CHI1    143  -0.00632  -0.00526   0.00063  -0.00169 | 0.501 vs 0.573 → 0.572
+BEL1    172  -0.00570  -0.00526   0.00136  -0.00180 | 0.455 vs 0.529 → 0.525
+RUS1    126  -0.00536   0.00135  -0.00751   0.00081 | 0.483 vs 0.508 → 0.554
+BRA2    260  -0.00529  -0.00292  -0.00094  -0.00142 | 0.375 vs 0.431 → 0.441
+TUR2    223  -0.00405  -0.00124   0.00003  -0.00284 | 0.483 vs 0.520 → 0.522
+SRB1    154  -0.00393  -0.00645  -0.00001   0.00253 | 0.450 vs 0.532 → 0.519
+L1      161  -0.00392  -0.00035  -0.00394   0.00038 | 0.524 vs 0.540 → 0.540
+J1      178  -0.00322  -0.00083  -0.00179  -0.00060 | 0.438 vs 0.466 → 0.469
+MLS     172  -0.00312  -0.00253  -0.00211   0.00152 | 0.582 vs 0.651 → 0.604
+NOR2    100  -0.00310  -0.00113  -0.00091  -0.00106 | 0.653 vs 0.700 → 0.669
+POL1    173  -0.00093  -0.00023  -0.00022  -0.00047 | 0.492 vs 0.509 → 0.517
+SUI2    103  -0.00059  -0.00053   0.00000  -0.00006 | 0.605 vs 0.680 → 0.608
+EL2     323  -0.00049  -0.00021   0.00069  -0.00097 | 0.464 vs 0.480 → 0.480
+GRE1    132  -0.00043  -0.00344  -0.00066   0.00366 | 0.442 vs 0.500 → 0.511
+MX1     197  -0.00036   0.00005  -0.00037  -0.00004 | 0.542 vs 0.543 → 0.551
+EL1     319   0.00012  -0.00058  -0.00105   0.00176 | 0.484 vs 0.508 → 0.512
+AUT1    105   0.00296  -0.00236   0.00000   0.00533 | 0.441 vs 0.495 → 0.511
+F2      170   0.00378   0.00002  -0.00066   0.00442 | 0.480 vs 0.482 → 0.486
+SWE2    104   0.01086   0.00902   0.00000   0.00184 | 0.572 vs 0.529 → 0.632
+ARG1    340   0.01212   0.01237  -0.00091   0.00066 | 0.443 vs 0.382 → 0.508
