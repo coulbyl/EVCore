@@ -145,7 +145,19 @@ describe("applyH2HMarketSignalCorrection", () => {
       probabilities.draw.toNumber(),
       12,
     );
-    expect(corrected.resultTotalGoals).toBe(probabilities.resultTotalGoals);
-    expect(corrected.resultBtts).toBe(probabilities.resultBtts);
+    // A BTTS-only signal: the RESULT_BTTS partition follows bttsYes (see
+    // joint-market-propagation.ts), RESULT_TOTAL_GOALS keeps its values
+    // since over25 did not move, and the markets outside both stay as they
+    // were.
+    expect(corrected.resultTotalGoals.HOME_OVER_2_5!.toNumber()).toBeCloseTo(
+      probabilities.resultTotalGoals.HOME_OVER_2_5!.toNumber(),
+      12,
+    );
+    expect(
+      corrected.resultBtts.HOME_YES!.gt(probabilities.resultBtts.HOME_YES!),
+    ).toBe(true);
+    expect(corrected.htft).toBe(probabilities.htft);
+    expect(corrected.teamTotalHome).toBe(probabilities.teamTotalHome);
+    expect(corrected.ouHT).toBe(probabilities.ouHT);
   });
 });
