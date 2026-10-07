@@ -1,7 +1,7 @@
 import Decimal from "decimal.js";
 import { Market } from "../types";
 import { calculateEV } from "../ev";
-import type { FullOddsSnapshot } from "./types";
+import { quoteKey, type FullOddsSnapshot, type QuoteSource } from "./types";
 
 /**
  * Shared pricing for channel selections.
@@ -102,19 +102,49 @@ function resolveYesNoOdds(
   return null;
 }
 
+// Provenance du prix d'un (marché, choix) : `sources` quand le relevé la
+// porte, sinon le triplet 1X2 lui-même — le seul marché dont le book de tête
+// du relevé est, par construction, celui du prix. Null pour tout autre marché
+// d'un relevé sans `sources` : mieux vaut aucune provenance qu'une fausse.
+export function quoteSourceFor(
+  odds: FullOddsSnapshot | null,
+  market: Market,
+  pick: string,
+): QuoteSource | null {
+  if (odds === null) return null;
+  const source = odds.sources?.[quoteKey(market, pick)];
+  if (source) return source;
+  if (market === Market.ONE_X_TWO && ["HOME", "DRAW", "AWAY"].includes(pick)) {
+    return { bookmaker: odds.bookmaker, snapshotAt: odds.snapshotAt };
+  }
+  return null;
+}
+
+export type PricedSelectionFields = {
+  odds?: Decimal;
+  impliedProbability?: Decimal;
+  ev?: Decimal;
+  oddsBookmaker?: string;
+  oddsSnapshotAt?: Date;
+};
+
 // EV/impliedProbability/odds enrichment to spread into a StrategySelection.
 // Returns an empty object (no fields) when the book has no usable price, so a
 // price-less selection stays valid for analytical settlement.
 export function priceSelection(input: {
   probability: Decimal;
   odds: Decimal | null;
-}): { odds?: Decimal; impliedProbability?: Decimal; ev?: Decimal } {
-  const { probability, odds } = input;
+  source?: QuoteSource | null;
+}): PricedSelectionFields {
+  const { probability, odds, source } = input;
   if (odds === null || odds.lessThanOrEqualTo(1)) return {};
   return {
     odds,
     impliedProbability: new Decimal(1).div(odds),
     ev: calculateEV(probability, odds),
+    ...(source
+      ? { oddsBookmaker: source.bookmaker, oddsSnapshotAt: source.snapshotAt }
+      : {}),
   };
 }
 
@@ -125,9 +155,10 @@ export function priceForSelection(input: {
   market: Market;
   pick: string;
   probability: Decimal;
-}): { odds?: Decimal; impliedProbability?: Decimal; ev?: Decimal } {
+}): PricedSelectionFields {
   return priceSelection({
     probability: input.probability,
     odds: resolveSelectionOdds(input.odds, input.market, input.pick),
+    source: quoteSourceFor(input.odds, input.market, input.pick),
   });
 }

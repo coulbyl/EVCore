@@ -9,6 +9,7 @@ import type {
   CouponIndicesOddsRow,
   CouponIndicesResponse,
 } from './dto/coupon-indices.dto';
+import type { CouponSource } from '@evcore/db';
 
 type IndicesItem = {
   prob: number;
@@ -148,6 +149,10 @@ export class CouponIndicesService {
     canal: CouponIndicesCanal;
     from?: string;
     to?: string;
+    // Canal COUPON seulement : LLM ou PRICE_COMPOSER. Sans filtre les deux
+    // générateurs se mélangent, et la probabilité du compositeur est un
+    // prix implicite, pas une estimation du moteur.
+    source?: CouponSource;
   }): Promise<CouponIndicesResponse> {
     const { canal } = query;
     const range = dateRange(query.from, query.to);
@@ -171,10 +176,11 @@ export class CouponIndicesService {
       items = [];
     } else {
       // COUPON: uses joint probability + combined odds
-      const coupons = await this.repo.findResolvedCouponsForIndices(
-        range.from,
-        range.to,
-      );
+      const coupons = await this.repo.findResolvedCouponsForIndices({
+        from: range.from,
+        to: range.to,
+        source: query.source,
+      });
       items = coupons.map((c) => ({
         prob: Number(c.jointProbability),
         // PARTIAL = tous les legs gradés gagnés (une jambe seulement a été
@@ -182,12 +188,14 @@ export class CouponIndicesService {
         // hitRate/ROI le compte comme un win, sur la cote réellement payée.
         won: c.result === 'WON' || c.result === 'PARTIAL',
         market: 'COUPON',
+        // Un coupon perdu rend la mise quelle que soit sa cote : lui laisser
+        // `null` le faisait sortir de `computeRoi` et des tranches de cote,
+        // qui ne comptaient alors que les gagnants (ROI toujours positif,
+        // taux de réussite ~100 % par tranche — constaté le 2026-10-07).
         odds:
           c.realizedOdds !== null
             ? Number(c.realizedOdds)
-            : c.result === 'WON'
-              ? Number(c.combinedOdds)
-              : null,
+            : Number(c.combinedOdds),
       }));
     }
 

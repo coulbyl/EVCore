@@ -17,7 +17,12 @@ import type { SettleableSelection } from './channel-selection-settlement';
 import { NEW_COACH_WINDOW_MATCHES } from './coach-continuity.constants';
 import { BETTING_ENGINE_CONFIG_VERSION } from '@evcore/analysis-core';
 
-export type SettleableSelectionRow = SettleableSelection & { id: string };
+export type SettleableSelectionRow = SettleableSelection & {
+  id: string;
+  odds: Prisma.Decimal | null;
+  oddsBookmaker: string | null;
+  closingOdds: Prisma.Decimal | null;
+};
 
 // A persisted selection carries its DB id so callers can link a materialised
 // Bet to the exact ChannelSelection it represents (Bet.channelSelectionId).
@@ -184,7 +189,37 @@ export class ChannelDecisionRepository {
         id: true,
         market: true,
         pick: true,
+        odds: true,
+        oddsBookmaker: true,
+        closingOdds: true,
       },
+    });
+  }
+
+  // Ligne de clôture et CLV d'une sélection (chantier E, E-2) — écrits une
+  // fois, au règlement final, par ChannelDecisionService.
+  async applySelectionClosingLines(
+    updates: readonly {
+      id: string;
+      closingOdds: number;
+      closingBookmaker: string;
+      closingObservedAt: Date;
+      closingLineValue: number;
+    }[],
+  ): Promise<void> {
+    if (updates.length === 0) return;
+    await this.prisma.client.$transaction(async (tx) => {
+      for (const update of updates) {
+        await tx.channelSelection.update({
+          where: { id: update.id },
+          data: {
+            closingOdds: new Prisma.Decimal(update.closingOdds),
+            closingBookmaker: update.closingBookmaker,
+            closingObservedAt: update.closingObservedAt,
+            closingLineValue: new Prisma.Decimal(update.closingLineValue),
+          },
+        });
+      }
     });
   }
 
@@ -509,6 +544,8 @@ function toSelectionData(
     pick: selection.pick,
     probability: selection.probability,
     odds: selection.odds ?? null,
+    oddsBookmaker: selection.oddsBookmaker ?? null,
+    oddsSnapshotAt: selection.oddsSnapshotAt ?? null,
     impliedProbability: selection.impliedProbability ?? null,
     ev: selection.ev ?? null,
     qualityScore: selection.qualityScore ?? null,

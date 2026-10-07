@@ -3,11 +3,10 @@ import { Market } from '@evcore/db';
 import { OddsSnapshotLoader } from './odds-snapshot.loader';
 import type { PrismaService } from '@/prisma.service';
 
-// findLatestOddsSnapshotsBatch is new, purely additive code (findLatestOddsSnapshot
-// itself is untouched — its existing per-market bookmaker-resolution behaviour is
-// already covered by betting-engine.service.spec.ts). These tests exercise the
-// batch path directly: bookmaker preference, the ONE_X_TWO-only cutoff filter,
-// and per-market OVER_UNDER odds parsing, across multiple fixtures at once.
+// findLatestOddsSnapshot delegates to findLatestOddsSnapshotsBatch since
+// 2026-10-08 (one query, shared pure assembly). These tests exercise that
+// path: bookmaker preference, the cutoff filter, per-pick sparse-market
+// parsing and the per-pick provenance, for one or several fixtures at once.
 
 function makeBatchLoader(rows: unknown[]): {
   loader: OddsSnapshotLoader;
@@ -318,49 +317,49 @@ describe('OddsSnapshotLoader.findLatestOddsSnapshot — TEAM_TOTAL_HOME per-line
   it('resolves TEAM_TOTAL_HOME per line instead of one bookmaker for the whole market', async () => {
     const earlier = new Date('2026-08-09T06:00:00.000Z');
     const latest = new Date('2026-08-09T08:00:00.000Z');
+    const { loader, findMany } = makeBatchLoader([
+      oneXTwoRow({
+        fixtureId: 'f1',
+        bookmaker: 'Bet365',
+        snapshotAt: latest,
+        homeOdds: 1.9,
+        drawOdds: 3.3,
+        awayOdds: 4.0,
+      }),
+      pickRow({
+        fixtureId: 'f1',
+        bookmaker: 'Bet365',
+        market: Market.TEAM_TOTAL_HOME,
+        pick: 'OVER_2_5',
+        odds: 2.2,
+        snapshotAt: latest,
+      }),
+      pickRow({
+        fixtureId: 'f1',
+        bookmaker: 'Unibet',
+        market: Market.TEAM_TOTAL_HOME,
+        pick: 'OVER_1_5',
+        odds: 1.5,
+        snapshotAt: earlier,
+      }),
+    ]);
 
-    const findMany = vi.fn((args: { where?: { market?: Market } }) => {
-      const market = args.where?.market;
-      if (market === Market.ONE_X_TWO) {
-        return [
-          {
-            bookmaker: 'Bet365',
-            snapshotAt: latest,
-            homeOdds: 1.9,
-            drawOdds: 3.3,
-            awayOdds: 4.0,
-          },
-        ];
-      }
-      if (market === Market.TEAM_TOTAL_HOME) {
-        return [
-          {
-            bookmaker: 'Bet365',
-            pick: 'OVER_2_5',
-            odds: 2.2,
-            snapshotAt: latest,
-          },
-          {
-            bookmaker: 'Unibet',
-            pick: 'OVER_1_5',
-            odds: 1.5,
-            snapshotAt: earlier,
-          },
-        ];
-      }
-      return [];
-    });
-    const prismaMock = {
-      client: {
-        oddsSnapshot: { findMany, findFirst: vi.fn().mockResolvedValue(null) },
-      },
-    } as unknown as PrismaService;
-
-    const loader = new OddsSnapshotLoader(prismaMock);
     const snapshot = await loader.findLatestOddsSnapshot('f1', CUTOFF);
 
+    // Un seul aller-retour : le chemin mono-rencontre passe par l'assemblage
+    // partagé, plus par ~34 requêtes par marché.
+    expect(findMany).toHaveBeenCalledTimes(1);
     expect(snapshot?.teamTotalHomeOdds.OVER_2_5?.toNumber()).toBe(2.2);
     expect(snapshot?.teamTotalHomeOdds.OVER_1_5?.toNumber()).toBe(1.5);
+    // La provenance par choix suit : chaque ligne connaît son book et son heure.
+    expect(snapshot?.sources?.['TEAM_TOTAL_HOME:OVER_1_5']).toEqual({
+      bookmaker: 'Unibet',
+      snapshotAt: earlier,
+    });
+    expect(snapshot?.sources?.['ONE_X_TWO:DRAW']).toEqual({
+      bookmaker: 'Bet365',
+      snapshotAt: latest,
+    });
   });
 });
 
@@ -426,62 +425,37 @@ describe('OddsSnapshotLoader.findLatestBestOneXTwoOddsSnapshot', () => {
 
 describe('OddsSnapshotLoader.findLatestOddsSnapshot — OVER_UNDER per-line resolution', () => {
   it('resolves each OVER_UNDER line independently instead of picking one bookmaker for the whole market (single-fixture path)', async () => {
-    // Same regression as the batch-path test above, but for the
-    // non-batched query path (findBestBookmakerForMarket used to be reused
-    // for OVER_UNDER too, reproducing the market-wide bug there as well).
     const earlier = new Date('2026-08-09T06:00:00.000Z');
     const latest = new Date('2026-08-09T08:00:00.000Z');
+    const ou = (line: {
+      bookmaker: string;
+      pick: string;
+      odds: number;
+      at: Date;
+    }) =>
+      pickRow({
+        fixtureId: 'f1',
+        bookmaker: line.bookmaker,
+        market: Market.OVER_UNDER,
+        pick: line.pick,
+        odds: line.odds,
+        snapshotAt: line.at,
+      });
+    const { loader } = makeBatchLoader([
+      oneXTwoRow({
+        fixtureId: 'f1',
+        bookmaker: 'Bet365',
+        snapshotAt: latest,
+        homeOdds: 1.9,
+        drawOdds: 3.3,
+        awayOdds: 4.0,
+      }),
+      ou({ bookmaker: 'Bet365', pick: 'OVER_3_5', odds: 2.5, at: latest }),
+      ou({ bookmaker: 'Bet365', pick: 'UNDER_3_5', odds: 1.55, at: latest }),
+      ou({ bookmaker: 'Unibet', pick: 'OVER', odds: 1.28, at: earlier }),
+      ou({ bookmaker: 'Unibet', pick: 'UNDER', odds: 3.4, at: earlier }),
+    ]);
 
-    const findMany = vi.fn((args: { where?: { market?: Market } }) => {
-      const market = args.where?.market;
-      if (market === Market.ONE_X_TWO) {
-        return [
-          {
-            bookmaker: 'Bet365',
-            snapshotAt: latest,
-            homeOdds: 1.9,
-            drawOdds: 3.3,
-            awayOdds: 4.0,
-          },
-        ];
-      }
-      if (market === Market.OVER_UNDER) {
-        return [
-          {
-            bookmaker: 'Bet365',
-            pick: 'OVER_3_5',
-            odds: 2.5,
-            snapshotAt: latest,
-          },
-          {
-            bookmaker: 'Bet365',
-            pick: 'UNDER_3_5',
-            odds: 1.55,
-            snapshotAt: latest,
-          },
-          {
-            bookmaker: 'Unibet',
-            pick: 'OVER',
-            odds: 1.28,
-            snapshotAt: earlier,
-          },
-          {
-            bookmaker: 'Unibet',
-            pick: 'UNDER',
-            odds: 3.4,
-            snapshotAt: earlier,
-          },
-        ];
-      }
-      return [];
-    });
-    const prismaMock = {
-      client: {
-        oddsSnapshot: { findMany, findFirst: vi.fn().mockResolvedValue(null) },
-      },
-    } as unknown as PrismaService;
-
-    const loader = new OddsSnapshotLoader(prismaMock);
     const snapshot = await loader.findLatestOddsSnapshot('f1', CUTOFF);
 
     expect(snapshot?.overUnderOdds.OVER_3_5?.toNumber()).toBe(2.5);

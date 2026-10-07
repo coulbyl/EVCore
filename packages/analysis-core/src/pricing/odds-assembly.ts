@@ -1,6 +1,10 @@
 import Decimal from "decimal.js";
 import { Market } from "../types";
-import type { FullOddsSnapshot } from "../selection/types";
+import {
+  quoteKey,
+  type FullOddsSnapshot,
+  type QuoteSource,
+} from "../selection/types";
 import {
   isHalfTimeFullTimePick,
   type HalfTimeFullTimePick,
@@ -128,11 +132,11 @@ export function parseHomeAwayRows(
 // bookmakers across those outcomes would recreate the fabricated-triplet risk
 // fixed 2026-08-15 in assembleFullOddsSnapshot's ONE_X_TWO leg (a combination
 // no single real bookmaker ever offered, with an artificially low overround).
-export function resolvePerPickOddsPerLine<T extends string>(
+export function resolvePerPickQuotesPerLine<T extends string>(
   rows: RawOddsRow[],
   market: Market,
   opts: { cutoff: Date; validKeys?: readonly T[] },
-): Partial<Record<T, Decimal>> {
+): Partial<Record<T, RawOddsRow>> {
   const { cutoff, validKeys } = opts;
   const byPick = new Map<string, RawOddsRow[]>();
   for (const row of rows) {
@@ -145,28 +149,66 @@ export function resolvePerPickOddsPerLine<T extends string>(
     if (list) list.push(row);
     else byPick.set(row.pick, [row]);
   }
-  const result: Partial<Record<T, Decimal>> = {};
+  const result: Partial<Record<T, RawOddsRow>> = {};
   for (const [pick, pickRows] of byPick) {
     const latestTs = Math.max(...pickRows.map((r) => r.snapshotAt.getTime()));
     const atLatest = pickRows.filter(
       (r) => r.snapshotAt.getTime() === latestTs,
     );
-    const best = atLatest.reduce((a, b) =>
+    result[pick as T] = atLatest.reduce((a, b) =>
       bookmakerRank(a.bookmaker) <= bookmakerRank(b.bookmaker) ? a : b,
     );
-    result[pick as T] = new Decimal(best.odds!.toString());
   }
   return result;
 }
 
-function resolveOverUnderOddsPerLine(
+export function resolvePerPickOddsPerLine<T extends string>(
   rows: RawOddsRow[],
-  cutoff: Date,
-): FullOddsSnapshot["overUnderOdds"] {
-  return resolvePerPickOddsPerLine(rows, Market.OVER_UNDER, {
-    cutoff,
-    validKeys: OVER_UNDER_PICKS,
-  });
+  market: Market,
+  opts: { cutoff: Date; validKeys?: readonly T[] },
+): Partial<Record<T, Decimal>> {
+  return quotesToOdds(resolvePerPickQuotesPerLine(rows, market, opts));
+}
+
+function quotesToOdds<T extends string>(
+  quotes: Partial<Record<T, RawOddsRow>>,
+): Partial<Record<T, Decimal>> {
+  const result: Partial<Record<T, Decimal>> = {};
+  for (const [pick, row] of Object.entries(quotes) as [T, RawOddsRow][]) {
+    result[pick] = new Decimal(row.odds!.toString());
+  }
+  return result;
+}
+
+// Provenance (book, heure) de chaque choix retenu, clé `quoteKey`. Pour les
+// marchés résolus book par book, la ligne retenue est la PREMIÈRE vue par
+// choix dans l'ordre « plus récent d'abord » — exactement ce que `.find()`
+// retient plus bas ; un choix déjà enregistré n'est jamais réécrit.
+function recordRowSources(
+  sources: Record<string, QuoteSource>,
+  market: Market,
+  rows: readonly RawOddsRow[],
+): void {
+  for (const row of rows) {
+    if (!row.pick || row.odds === null) continue;
+    const key = quoteKey(market, row.pick);
+    if (key in sources) continue;
+    sources[key] = { bookmaker: row.bookmaker, snapshotAt: row.snapshotAt };
+  }
+}
+
+function recordQuoteSources(
+  sources: Record<string, QuoteSource>,
+  market: Market,
+  quotes: Partial<Record<string, RawOddsRow>>,
+): void {
+  for (const [pick, row] of Object.entries(quotes)) {
+    if (!row) continue;
+    sources[quoteKey(market, pick)] = {
+      bookmaker: row.bookmaker,
+      snapshotAt: row.snapshotAt,
+    };
+  }
 }
 
 // Best bookmaker for a market as of `cutoff`: latest snapshotAt not after
@@ -208,7 +250,7 @@ export function pickBestBookmaker(
 export function rowsForMarketBookmaker(
   rows: RawOddsRow[],
   opts: { market: Market; bookmaker: string | null; cutoff: Date },
-): { pick: string | null; odds: DecimalLike | null }[] {
+): RawOddsRow[] {
   const { market, bookmaker, cutoff } = opts;
   if (bookmaker === null) return [];
   return rows
@@ -283,12 +325,38 @@ export function assembleFullOddsSnapshot(
   const bttsYesRow = bttsRows.find((r) => r.pick === "YES") ?? null;
   const bttsNoRow = bttsRows.find((r) => r.pick === "NO") ?? null;
 
+  const sources: Record<string, QuoteSource> = {};
+  const oneXTwoSource = {
+    bookmaker: best.bookmaker,
+    snapshotAt: best.snapshotAt,
+  };
+  for (const pick of ["HOME", "DRAW", "AWAY"]) {
+    sources[quoteKey(Market.ONE_X_TWO, pick)] = oneXTwoSource;
+  }
+  recordRowSources(sources, Market.HALF_TIME_FULL_TIME, htftRows);
+  recordRowSources(sources, Market.FIRST_HALF_WINNER, fhwRows);
+  recordRowSources(sources, Market.DOUBLE_CHANCE, dcRows);
+  recordRowSources(sources, Market.DRAW_NO_BET, dnbRows);
+  recordRowSources(sources, Market.CLEAN_SHEET_HOME, csHomeRows);
+  recordRowSources(sources, Market.CLEAN_SHEET_AWAY, csAwayRows);
+  recordRowSources(sources, Market.WIN_TO_NIL_HOME, wtnHomeRows);
+  recordRowSources(sources, Market.WIN_TO_NIL_AWAY, wtnAwayRows);
+  recordRowSources(sources, Market.TO_WIN_EITHER_HALF, twhRows);
+  recordRowSources(sources, Market.BTTS, bttsRows);
+
   const htftOdds = {} as Partial<Record<HalfTimeFullTimePick, Decimal>>;
-  const overUnderOdds = resolveOverUnderOddsPerLine(rows, cutoff);
-  const ouHtOdds = resolvePerPickOddsPerLine(rows, Market.OVER_UNDER_HT, {
+  const overUnderQuotes = resolvePerPickQuotesPerLine(rows, Market.OVER_UNDER, {
+    cutoff,
+    validKeys: OVER_UNDER_PICKS,
+  });
+  const overUnderOdds = quotesToOdds(overUnderQuotes);
+  recordQuoteSources(sources, Market.OVER_UNDER, overUnderQuotes);
+  const ouHtQuotes = resolvePerPickQuotesPerLine(rows, Market.OVER_UNDER_HT, {
     cutoff,
     validKeys: OU_HT_PICKS,
   });
+  const ouHtOdds = quotesToOdds(ouHtQuotes);
+  recordQuoteSources(sources, Market.OVER_UNDER_HT, ouHtQuotes);
   let firstHalfWinnerOdds: FullOddsSnapshot["firstHalfWinnerOdds"] = null;
   let doubleChanceOdds: FullOddsSnapshot["doubleChanceOdds"] = null;
 
@@ -335,39 +403,55 @@ export function assembleFullOddsSnapshot(
     }
   }
 
-  const teamTotalHomeOdds = resolvePerPickOddsPerLine(
+  const teamTotalHomeQuotes = resolvePerPickQuotesPerLine(
     rows,
     Market.TEAM_TOTAL_HOME,
     { cutoff, validKeys: TEAM_TOTAL_PICKS },
   );
-  const teamTotalAwayOdds = resolvePerPickOddsPerLine(
+  const teamTotalHomeOdds = quotesToOdds(teamTotalHomeQuotes);
+  recordQuoteSources(sources, Market.TEAM_TOTAL_HOME, teamTotalHomeQuotes);
+  const teamTotalAwayQuotes = resolvePerPickQuotesPerLine(
     rows,
     Market.TEAM_TOTAL_AWAY,
     { cutoff, validKeys: TEAM_TOTAL_PICKS },
   );
+  const teamTotalAwayOdds = quotesToOdds(teamTotalAwayQuotes);
+  recordQuoteSources(sources, Market.TEAM_TOTAL_AWAY, teamTotalAwayQuotes);
   const cleanSheetHomeOdds = parseYesNoRows(csHomeRows);
   const cleanSheetAwayOdds = parseYesNoRows(csAwayRows);
   const winToNilHomeOdds = parseYesNoRows(wtnHomeRows);
   const winToNilAwayOdds = parseYesNoRows(wtnAwayRows);
   const winEitherHalfOdds = parseHomeAwayRows(twhRows);
-  const resultTotalGoalsOdds = resolvePerPickOddsPerLine(
+  const resultTotalGoalsQuotes = resolvePerPickQuotesPerLine(
     rows,
     Market.RESULT_TOTAL_GOALS,
     { cutoff, validKeys: RESULT_TOTAL_GOALS_PICKS },
   );
-  const resultBttsOdds = resolvePerPickOddsPerLine(rows, Market.RESULT_BTTS, {
-    cutoff,
-    validKeys: RESULT_BTTS_PICKS,
-  });
-  const correctScoreOdds = resolvePerPickOddsPerLine<string>(
+  const resultTotalGoalsOdds = quotesToOdds(resultTotalGoalsQuotes);
+  recordQuoteSources(
+    sources,
+    Market.RESULT_TOTAL_GOALS,
+    resultTotalGoalsQuotes,
+  );
+  const resultBttsQuotes = resolvePerPickQuotesPerLine(
+    rows,
+    Market.RESULT_BTTS,
+    { cutoff, validKeys: RESULT_BTTS_PICKS },
+  );
+  const resultBttsOdds = quotesToOdds(resultBttsQuotes);
+  recordQuoteSources(sources, Market.RESULT_BTTS, resultBttsQuotes);
+  const correctScoreQuotes = resolvePerPickQuotesPerLine<string>(
     rows,
     Market.CORRECT_SCORE,
     { cutoff },
   );
+  const correctScoreOdds = quotesToOdds(correctScoreQuotes);
+  recordQuoteSources(sources, Market.CORRECT_SCORE, correctScoreQuotes);
 
   return {
     bookmaker: best.bookmaker,
     snapshotAt: best.snapshotAt,
+    sources,
     homeOdds: new Decimal(best.homeOdds.toString()),
     drawOdds: new Decimal(best.drawOdds.toString()),
     awayOdds: new Decimal(best.awayOdds.toString()),

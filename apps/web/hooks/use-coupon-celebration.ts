@@ -6,7 +6,11 @@ import type { CouponProposalDto } from "@/domains/coupon/types/coupon";
 function hasWinningMajority(coupons: CouponProposalDto[]): boolean {
   if (coupons.length === 0) return false;
 
-  const wonCount = coupons.filter((coupon) => coupon.result === "WON").length;
+  // PARTIAL = toutes les jambes gradées gagnées, une jambe remboursée en
+  // route : c'est un gain payé, pas un demi-résultat.
+  const wonCount = coupons.filter(
+    (coupon) => coupon.result === "WON" || coupon.result === "PARTIAL",
+  ).length;
   return wonCount >= Math.ceil(coupons.length / 2);
 }
 

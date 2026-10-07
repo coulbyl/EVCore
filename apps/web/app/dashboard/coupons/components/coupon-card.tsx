@@ -49,12 +49,10 @@ export function CouponCard({
     recordView.mutate(coupon.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [coupon.id]);
-  const displayResult =
-    coupon.result === "WON" || coupon.result === "PARTIAL"
-      ? "WON"
-      : coupon.result === "LOST"
-        ? "LOST"
-        : null;
+  // Les quatre issues sont distinctes à l'écran : un PARTIAL est un gain
+  // payé à une cote réduite, un VOID un remboursement — les lire comme
+  // « Gagné » ou ne rien lire trompait sur ce qui a été payé.
+  const displayResult = coupon.result;
 
   const reasonDetails =
     typeof coupon.reasoning?.llmReasonDetails === "string"
@@ -76,8 +74,25 @@ export function CouponCard({
     pickLabel: formatPickForDisplay(leg.pick, leg.market),
     probability: leg.probability,
     odds: leg.oddsSnapshot != null ? leg.oddsSnapshot.toFixed(2) : null,
+    market: leg.market,
+    // `isCorrect` null + `settledAt` posé = jambe remboursée (match reporté,
+    // Draw No Bet sur un nul) ; null sans `settledAt` = pas encore réglée.
     result:
-      leg.isCorrect === true ? "WON" : leg.isCorrect === false ? "LOST" : null,
+      leg.isCorrect === true
+        ? "WON"
+        : leg.isCorrect === false
+          ? "LOST"
+          : leg.settledAt !== null
+            ? "VOID"
+            : null,
+    closing:
+      leg.closingOdds !== null && leg.closingLineValue !== null
+        ? {
+            odds: leg.closingOdds.toFixed(2),
+            bookmaker: leg.closingBookmaker,
+            value: leg.closingLineValue,
+          }
+        : null,
   }));
 
   // "Jouer ce coupon" only makes sense while the proposal itself is still
@@ -139,6 +154,7 @@ export function CouponCard({
     <SharedCouponCard
       locale={locale}
       combinedOdds={coupon.combinedOdds}
+      realizedOdds={coupon.realizedOdds}
       jointProbability={coupon.jointProbability}
       signalScore={coupon.signalScore}
       couponClass={couponClassMeta(coupon.couponClass)}

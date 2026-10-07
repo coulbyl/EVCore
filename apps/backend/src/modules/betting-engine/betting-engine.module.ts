@@ -17,6 +17,7 @@ import { FriModelService } from './fri-model/fri-model.service';
 import { ChannelDecisionRepository } from './channel-decision.repository';
 import { ChannelDecisionService } from './channel-decision.service';
 import { OddsSnapshotLoader } from './pricing/odds-snapshot.loader';
+import { OddsClosingLineRepository } from './pricing/odds-closing-line.repository';
 import { BetSettlementService } from './settlement/bet-settlement.service';
 
 @Module({
@@ -39,8 +40,14 @@ import { BetSettlementService } from './settlement/bet-settlement.service';
     ChannelDecisionRepository,
     ChannelDecisionService,
     OddsSnapshotLoader,
+    OddsClosingLineRepository,
     BetSettlementService,
   ],
-  exports: [BettingEngineService, FriModelService, ChannelDecisionService],
+  exports: [
+    BettingEngineService,
+    FriModelService,
+    ChannelDecisionService,
+    OddsClosingLineRepository,
+  ],
 })
 export class BettingEngineModule {}

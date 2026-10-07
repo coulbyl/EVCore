@@ -105,6 +105,13 @@ export class ValueStrategy implements ChannelStrategy {
           odds: best.odds,
           ev: best.ev,
           qualityScore: best.qualityScore,
+          ...(best.oddsBookmaker !== undefined &&
+          best.oddsSnapshotAt !== undefined
+            ? {
+                oddsBookmaker: best.oddsBookmaker,
+                oddsSnapshotAt: best.oddsSnapshotAt,
+              }
+            : {}),
           rank: 1,
         },
       ],

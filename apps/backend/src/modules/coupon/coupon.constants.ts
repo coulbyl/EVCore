@@ -35,6 +35,7 @@ import {
   type CouponClass,
   type CouponClassName,
 } from '@evcore/analysis-core';
+import { CLOSING_LINE_POLICY } from '../betting-engine/pricing/closing-line.constants';
 
 // DRAW_STAKED_LEAGUES/POOL_EXCLUDED_CHANNELS/POOL_ELIGIBLE_CHANNELS moved to
 // packages/analysis-core/src/coupon/pool-eligibility.ts 2026-09-03 —
@@ -330,12 +331,7 @@ export const PRICE_COMPOSER_POLICY = {
  */
 export const COUPON_SETTLEMENT_POLICY = {
   postponedVoidDelayMs: 24 * 60 * 60 * 1_000,
-  // Fraîcheur exigée d'une ligne de clôture pour qu'elle serve au CLV d'une
-  // jambe (chantier E, E-2). Le balayage de clôture relève à T−60 et T−10 min
-  // (chantier B) : 90 min absorbe un retard de file sur le relevé T−60 et
-  // rejette les relevés de la veille (7 h et plus), qui ne sont pas des
-  // clôtures — comparer un prix pris à J−1 avec un « dernier relevé » lui
-  // aussi de J−1 ne mesure que du décalage temporel. Même seuil que la
-  // colonne « Relevé < 90 min » de `report:freshness`.
-  closingLineMaxHoursBeforeKickoff: 1.5,
+  // Fenêtre de fraîcheur de la ligne de clôture, partagée avec les
+  // sélections de canal : voir betting-engine/pricing/closing-line.constants.ts.
+  closingLineMaxHoursBeforeKickoff: CLOSING_LINE_POLICY.maxHoursBeforeKickoff,
 } as const;

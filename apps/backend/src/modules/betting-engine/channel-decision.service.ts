@@ -30,6 +30,10 @@ import {
   resolveSelectionFinalResult,
   type FixtureScores,
 } from './channel-selection-settlement';
+import { OddsClosingLineRepository } from './pricing/odds-closing-line.repository';
+import { resolveClosingLine } from './pricing/closing-line';
+import { CLOSING_LINE_POLICY } from './pricing/closing-line.constants';
+import type { SettleableSelectionRow } from './channel-decision.repository';
 
 export type ChannelSelectionItem = {
   id: string;
@@ -157,7 +161,10 @@ export type ChannelDecisionFacets = {
 export class ChannelDecisionService {
   private readonly orchestrator: ChannelStrategyOrchestrator;
 
-  constructor(private readonly repository: ChannelDecisionRepository) {
+  constructor(
+    private readonly repository: ChannelDecisionRepository,
+    private readonly closingLines: OddsClosingLineRepository,
+  ) {
     this.orchestrator = createChannelStrategyOrchestrator();
   }
 
@@ -198,7 +205,50 @@ export class ChannelDecisionService {
     }
 
     await this.repository.applySelectionResults(updates);
+    if (mode === 'final') {
+      await this.recordSelectionClosingLines(fixtureId, selections);
+    }
     return { settled: updates.length };
+  }
+
+  /**
+   * Ligne de clôture et CLV de chaque sélection cotée d'une rencontre
+   * terminée (chantier E, E-2), une seule fois par sélection : une sélection
+   * déjà renseignée n'est pas relue, donc `settleRange` remplit l'historique
+   * et reste idempotent. Même règle que les jambes de coupon : groupe d'issues
+   * complet chez un book, observation à moins de 90 min, book de la sélection
+   * de préférence (`oddsBookmaker`), sinon le mieux classé. Jamais bloquant.
+   */
+  private async recordSelectionClosingLines(
+    fixtureId: string,
+    selections: readonly SettleableSelectionRow[],
+  ): Promise<void> {
+    const pending = selections.filter(
+      (selection) => selection.odds !== null && selection.closingOdds === null,
+    );
+    if (pending.length === 0) return;
+    const rows = await this.closingLines.findClosingLines({
+      fixtureIds: [fixtureId],
+      markets: [...new Set(pending.map((selection) => selection.market))],
+      maxHoursBeforeKickoff: CLOSING_LINE_POLICY.maxHoursBeforeKickoff,
+    });
+    if (rows.length === 0) return;
+
+    const updates: Parameters<
+      ChannelDecisionRepository['applySelectionClosingLines']
+    >[0][number][] = [];
+    for (const selection of pending) {
+      if (selection.odds === null) continue;
+      const closing = resolveClosingLine({
+        market: selection.market,
+        pick: selection.pick,
+        takenOdds: selection.odds.toString(),
+        preferredBookmaker: selection.oddsBookmaker,
+        rows,
+      });
+      if (closing) updates.push({ id: selection.id, ...closing });
+    }
+    await this.repository.applySelectionClosingLines(updates);
   }
 
   /**

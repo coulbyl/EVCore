@@ -6,6 +6,7 @@ import {
   INTRADAY_SIGNAL_WINDOW_DAYS,
 } from './coupon.constants';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
+import { readQuotedBookmaker } from '../betting-engine/pricing/closing-line';
 
 // generateCoupons/generateForClass (CouponComposerService's glouton
 // deterministic composer) retired 2026-09-03 — coupon composition is now
@@ -46,6 +47,7 @@ export class CouponService {
             : 'evening',
         source: p.source,
         combinedOdds: Number(p.combinedOdds),
+        realizedOdds: p.realizedOdds !== null ? Number(p.realizedOdds) : null,
         jointProbability: Number(p.jointProbability),
         signalScore: Number(p.signalScore),
         status: p.status,
@@ -80,8 +82,16 @@ export class CouponService {
           pick: leg.pick,
           probability: Number(leg.probability),
           oddsSnapshot: leg.oddsSnapshot ? Number(leg.oddsSnapshot) : null,
+          bookmaker: readQuotedBookmaker(leg.featureSnapshot),
           signalScore: Number(leg.signalScore),
           isCorrect: leg.isCorrect,
+          settledAt: leg.settledAt?.toISOString() ?? null,
+          closingOdds:
+            leg.closingOdds !== null ? Number(leg.closingOdds) : null,
+          closingBookmaker: leg.closingBookmaker,
+          closingObservedAt: leg.closingObservedAt?.toISOString() ?? null,
+          closingLineValue:
+            leg.closingLineValue !== null ? Number(leg.closingLineValue) : null,
           modelRunId:
             readSnapshotString(leg.featureSnapshot, 'modelRunId') ??
             leg.fixture.modelRuns[0]?.id ??

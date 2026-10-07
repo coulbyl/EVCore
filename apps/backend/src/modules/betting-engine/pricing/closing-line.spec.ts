@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { Market } from '@evcore/db';
 import {
   readQuotedBookmaker,
-  resolveLegClosingLine,
+  resolveClosingLine,
   type ClosingLineRow,
-} from './coupon-leg-closing-line';
+} from './closing-line';
 
 function row(bookmaker: string, pick: string, odds: number): ClosingLineRow {
   return {
@@ -13,7 +13,7 @@ function row(bookmaker: string, pick: string, odds: number): ClosingLineRow {
     market: Market.ONE_X_TWO,
     pick,
     odds,
-    hoursBeforeKickoff: 0.2,
+    observedAt: new Date('2026-10-04T17:48:00.000Z'),
   };
 }
 
@@ -21,11 +21,14 @@ function totalRow(pick: string, odds: number): ClosingLineRow {
   return { ...row('Pinnacle', pick, odds), market: Market.OVER_UNDER };
 }
 
-describe('resolveLegClosingLine', () => {
+describe('resolveClosingLine', () => {
   const pinnacle = [
     row('Pinnacle', 'HOME', 1.9),
     row('Pinnacle', 'DRAW', 3.6),
-    { ...row('Pinnacle', 'AWAY', 4.2), hoursBeforeKickoff: 0.9 },
+    {
+      ...row('Pinnacle', 'AWAY', 4.2),
+      observedAt: new Date('2026-10-04T17:06:00.000Z'),
+    },
   ];
   const unibet = [
     row('Unibet', 'HOME', 2.0),
@@ -34,7 +37,7 @@ describe('resolveLegClosingLine', () => {
   ];
 
   it('retire la marge du groupe complet du book le mieux classé', () => {
-    const result = resolveLegClosingLine({
+    const result = resolveClosingLine({
       market: Market.ONE_X_TWO,
       pick: 'HOME',
       takenOdds: 2.1,
@@ -49,11 +52,13 @@ describe('resolveLegClosingLine', () => {
       10,
     );
     // L'observation la moins fraîche du groupe fait foi.
-    expect(result?.hoursBeforeKickoff).toBe(0.9);
+    expect(result?.closingObservedAt.toISOString()).toBe(
+      '2026-10-04T17:06:00.000Z',
+    );
   });
 
   it('préfère le book qui a servi le prix de la jambe quand il est complet', () => {
-    const result = resolveLegClosingLine({
+    const result = resolveClosingLine({
       market: Market.ONE_X_TWO,
       pick: 'HOME',
       takenOdds: 2.1,
@@ -65,7 +70,7 @@ describe('resolveLegClosingLine', () => {
   });
 
   it('ignore un book dont le groupe est incomplet, même préféré', () => {
-    const result = resolveLegClosingLine({
+    const result = resolveClosingLine({
       market: Market.ONE_X_TWO,
       pick: 'HOME',
       takenOdds: 2.1,
@@ -77,7 +82,7 @@ describe('resolveLegClosingLine', () => {
 
   it('rend null sans groupe complet ou sur un marché sans partition', () => {
     expect(
-      resolveLegClosingLine({
+      resolveClosingLine({
         market: Market.ONE_X_TWO,
         pick: 'HOME',
         takenOdds: 2.1,
@@ -86,7 +91,7 @@ describe('resolveLegClosingLine', () => {
       }),
     ).toBeNull();
     expect(
-      resolveLegClosingLine({
+      resolveClosingLine({
         market: Market.TO_WIN_EITHER_HALF,
         pick: 'HOME',
         takenOdds: 1.5,
@@ -106,7 +111,7 @@ describe('resolveLegClosingLine', () => {
   });
 
   it('apparie une ligne de total avec sa seule opposée', () => {
-    const result = resolveLegClosingLine({
+    const result = resolveClosingLine({
       market: Market.OVER_UNDER,
       pick: 'OVER_1_5',
       takenOdds: 1.3,

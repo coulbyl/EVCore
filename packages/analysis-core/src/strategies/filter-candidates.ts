@@ -61,6 +61,12 @@ export function viablePicksFromPreviousDecisions(
         probability: sel.probability,
         odds: sel.odds,
         ev: sel.ev,
+        ...(sel.oddsBookmaker !== undefined && sel.oddsSnapshotAt !== undefined
+          ? {
+              oddsBookmaker: sel.oddsBookmaker,
+              oddsSnapshotAt: sel.oddsSnapshotAt,
+            }
+          : {}),
         qualityScore:
           sel.qualityScore ??
           buildQualityScore(
