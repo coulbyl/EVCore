@@ -263,6 +263,36 @@ Source : `docs/audits/2026-09-16/ASIAN-HANDICAP.md`, régénérable par
 
 ---
 
+## 2026-10-07 — Le décalage de congestion est un intercept, pas un signal
+
+### Faut-il recentrer `delta × (score − 0,5)` ?
+
+**Verdict : sans signal, conservé tel quel.** Script
+`packages/backtest-core/scripts/backtest-congestion-centering.ts`, rapport
+`docs/audits/2026-10-06/congestion-centering.txt`. Chaîne de production
+jusqu'aux signaux H2H inclus, 34 823 matchs, grille figée delta ∈ {−0,15,
+−0,10, −0,05, −0,025, 0} × centre ∈ {0,5 ; 0,25 ; 0}, critère Brier Over 2.5
+
+- BTTS, sélection [2024-07 ; 2026-01[, validation 2026.
+
+Le score de congestion vaut 0 sur 25 838 matchs sur 34 823, entre 0 et 0,25
+sur 8 625, et au-dessus de 0,25 sur 360. Sur la sélection, les quinze
+configurations tiennent dans 0,0001 de Brier et la meilleure est delta = 0 :
+le signal n'explique rien. Sur 2026, la configuration actuelle (−0,05 /
+0,5) bat « sans correction » de 0,0003, et plus l'intercept est grand, mieux
+c'est (−0,10 / 0,5 : 0,49161 contre 0,49181), parce que le modèle y
+sous-annonce encore les buts de deux points (Over 2.5 0,518 annoncé contre
+0,539 réalisé, BTTS 0,535 contre 0,554) même après le re-fit des λ.
+
+Ce qu'il faut en retenir : la « correction de congestion » validée le
+19 août était déjà un intercept global sur la famille « buts », pas un
+signal ; le retirer sans rien mettre à la place dégraderait 2026, et
+l'ajuster serait fitter un intercept sur la fenêtre de validation. Le vrai
+sujet est la sous-annonce résiduelle de 2026, à lire au prochain re-fit du
+global avec une saison 2026 complète, pas ici.
+
+---
+
 ## 2026-10-06 — Classer les lignes d'un canal par probabilité dans la bande, pas par EV
 
 ### La règle d'EV retient-elle la ligne la plus surestimée ?

@@ -112,6 +112,7 @@ export class BetSettlementService {
         id: true,
         market: true,
         pick: true,
+        status: true,
         oddsSnapshot: true,
         betSlipItems: {
           select: {
@@ -200,7 +201,19 @@ export class BetSettlementService {
           data: { status },
         });
 
-        if (status === BetStatus.WON || status === BetStatus.VOID) {
+        // Bankroll writes only on a status TRANSITION. This method re-settles
+        // PENDING + WON + LOST bets on every pass (VAR self-correction) and
+        // is also replayed by the rebuild worker and the manual
+        // settleAndCheck: without this guard a bet already WON was credited
+        // again at each pass (bankroll_transaction has no (betId, type)
+        // uniqueness). A WON → LOST reversal is still not debited here —
+        // it never happened in the data, and reversing a credit is a
+        // bankroll decision, not a settlement one.
+        const transitioned = bet.status !== status;
+        if (
+          transitioned &&
+          (status === BetStatus.WON || status === BetStatus.VOID)
+        ) {
           for (const item of bet.betSlipItems) {
             if (item.betSlip.type === 'COMBO') {
               touchedComboSlipIds.add(item.betSlip.id);

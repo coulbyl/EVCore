@@ -80,6 +80,16 @@ vantage-worker 133, backtest-core 35) :
 - [x] **Corrections par ligue fittées à l'ancien global** : sans porte le
       re-fit par ligue est sans signal (+0,00004, 15 gagnent / 22 perdent) ;
       seules SWE2, ARG1, F2, AUT1, nommées d'avance, sont appliquées (PR #230).
+- [ ] **Six stratégies Phase 1 classent leur ligne par EV** (GOALS, DOUBLE*CHANCE,
+      OVER_UNDER_HT, TEAM_TOTAL, RESULT*\*) ; blend 1X2 non propagé aux
+- [x] H2H/congestion : le décalage d'over25 et de bttsYes est répercuté sur
+      les partitions (`*_OVER_2_5`/`*_UNDER_2_5` de RESULT_TOTAL_GOALS,
+      RESULT_BTTS) et win-to-nil reste sous clean sheet (2026-10-06).
+- [x] Congestion : rejoué le 2026-10-07 (`backtest:congestion-centering`),
+      le score ne porte aucune information (15 configurations à 1e-4 près
+      sur la sélection) ; l'intercept actuel aide encore sur 2026 où le
+      modèle sous-annonce les buts de 2 points : conservé tel quel, le sujet
+      est la sous-annonce résiduelle 2026 au prochain re-fit du global.
 - [x] Blend 1X2 propagé aux marchés joints (HT/FT, RESULT_BTTS,
       RESULT_TOTAL_GOALS UNDER, WIN_TO_NIL) : 7 013 incohérences → 0 (PR #231).
 - [x] Décalages H2H et congestion propagés aux partitions de over25 et

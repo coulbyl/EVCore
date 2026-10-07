@@ -1,0 +1,48 @@
+Re-fit du décalage de congestion, delta × centrage — 2026-10-07T00:05:41.450Z
+Sélection [2024-07-01 ; 2026-01-01[, validation ensuite. Décision à coup d'envoi − 1 h. Actuel : delta=-0.050 centre=0.50.
+
+35030 matchs terminés dans les compétitions de backtest.
+34823 matchs rejoués (sélection 24062, validation 10761).
+Distribution du score de congestion : 0: 25838, ]0;0.25[: 8625, [0.25;0.5[: 360.
+
+== SÉLECTION (classement sur la fenêtre de sélection seule) ==
+  1. delta=0.000 centre=0.50      n=24062 | over25=0.24765 btts=0.24724 sum=0.49488 | P(over) 0.524 vs 0.518 | P(btts) 0.534 vs 0.533
+  2. delta=0.000 centre=0.25      n=24062 | over25=0.24765 btts=0.24724 sum=0.49488 | P(over) 0.524 vs 0.518 | P(btts) 0.534 vs 0.533
+  3. delta=0.000 centre=0.00      n=24062 | over25=0.24765 btts=0.24724 sum=0.49488 | P(over) 0.524 vs 0.518 | P(btts) 0.534 vs 0.533
+  4. delta=-0.025 centre=0.00     n=24062 | over25=0.24765 btts=0.24724 sum=0.49488 | P(over) 0.524 vs 0.518 | P(btts) 0.533 vs 0.533
+  5. delta=-0.050 centre=0.00     n=24062 | over25=0.24765 btts=0.24724 sum=0.49489 | P(over) 0.524 vs 0.518 | P(btts) 0.533 vs 0.533
+  6. delta=-0.100 centre=0.00     n=24062 | over25=0.24765 btts=0.24724 sum=0.49489 | P(over) 0.524 vs 0.518 | P(btts) 0.533 vs 0.533
+  7. delta=-0.150 centre=0.00     n=24062 | over25=0.24765 btts=0.24724 sum=0.49489 | P(over) 0.524 vs 0.518 | P(btts) 0.533 vs 0.533
+  8. delta=-0.025 centre=0.25     n=24062 | over25=0.24767 btts=0.24724 sum=0.49491 | P(over) 0.525 vs 0.518 | P(btts) 0.535 vs 0.533
+  9. delta=-0.025 centre=0.50     n=24062 | over25=0.24770 btts=0.24725 sum=0.49494 | P(over) 0.527 vs 0.518 | P(btts) 0.537 vs 0.533
+ 10. delta=-0.050 centre=0.25     n=24062 | over25=0.24770 btts=0.24725 sum=0.49494 | P(over) 0.527 vs 0.518 | P(btts) 0.537 vs 0.533
+ 11. delta=-0.050 centre=0.50     n=24062 | over25=0.24776 btts=0.24728 sum=0.49504 | P(over) 0.530 vs 0.518 | P(btts) 0.540 vs 0.533
+ 12. delta=-0.100 centre=0.25     n=24062 | over25=0.24776 btts=0.24728 sum=0.49504 | P(over) 0.530 vs 0.518 | P(btts) 0.540 vs 0.533
+ 13. delta=-0.150 centre=0.25     n=24062 | over25=0.24785 btts=0.24733 sum=0.49518 | P(over) 0.533 vs 0.518 | P(btts) 0.543 vs 0.533
+ 14. delta=-0.100 centre=0.50     n=24062 | over25=0.24795 btts=0.24740 sum=0.49534 | P(over) 0.536 vs 0.518 | P(btts) 0.546 vs 0.533
+ 15. delta=-0.150 centre=0.50     n=24062 | over25=0.24820 btts=0.24758 sum=0.49578 | P(over) 0.542 vs 0.518 | P(btts) 0.552 vs 0.533
+Configurations comparées : 15 ; faux positifs attendus à 95 % par le balayage : 0.4.
+
+== VALIDATION (mesurée une fois) ==
+actuelle  delta=-0.050 centre=0.50     n=10761 | over25=0.24645 btts=0.24536 sum=0.49181 | P(over) 0.523 vs 0.539 | P(btts) 0.540 vs 0.554
+sans      delta=0.000 centre=0.50      n=10761 | over25=0.24660 btts=0.24551 sum=0.49211 | P(over) 0.518 vs 0.539 | P(btts) 0.535 vs 0.554
+retenue   delta=0.000 centre=0.50      n=10761 | over25=0.24660 btts=0.24551 sum=0.49211 | P(over) 0.518 vs 0.539 | P(btts) 0.535 vs 0.554
+écart retenue − actuelle sur validation : 0.00030 (négatif = mieux) ; sur sélection : -0.00016
+écart sans − actuelle sur validation : 0.00030
+
+== VALIDATION de toutes les configurations (diagnostic) ==
+delta=0.000 centre=0.50      n=10761 | over25=0.24660 btts=0.24551 sum=0.49211 | P(over) 0.518 vs 0.539 | P(btts) 0.535 vs 0.554
+delta=0.000 centre=0.25      n=10761 | over25=0.24660 btts=0.24551 sum=0.49211 | P(over) 0.518 vs 0.539 | P(btts) 0.535 vs 0.554
+delta=0.000 centre=0.00      n=10761 | over25=0.24660 btts=0.24551 sum=0.49211 | P(over) 0.518 vs 0.539 | P(btts) 0.535 vs 0.554
+delta=-0.025 centre=0.00     n=10761 | over25=0.24662 btts=0.24554 sum=0.49216 | P(over) 0.518 vs 0.539 | P(btts) 0.535 vs 0.554
+delta=-0.050 centre=0.00     n=10761 | over25=0.24665 btts=0.24556 sum=0.49221 | P(over) 0.517 vs 0.539 | P(btts) 0.534 vs 0.554
+delta=-0.100 centre=0.00     n=10761 | over25=0.24670 btts=0.24562 sum=0.49232 | P(over) 0.516 vs 0.539 | P(btts) 0.533 vs 0.554
+delta=-0.150 centre=0.00     n=10761 | over25=0.24676 btts=0.24567 sum=0.49243 | P(over) 0.515 vs 0.539 | P(btts) 0.532 vs 0.554
+delta=-0.025 centre=0.25     n=10761 | over25=0.24657 btts=0.24548 sum=0.49205 | P(over) 0.519 vs 0.539 | P(btts) 0.536 vs 0.554
+delta=-0.025 centre=0.50     n=10761 | over25=0.24652 btts=0.24543 sum=0.49195 | P(over) 0.521 vs 0.539 | P(btts) 0.538 vs 0.554
+delta=-0.050 centre=0.25     n=10761 | over25=0.24654 btts=0.24545 sum=0.49199 | P(over) 0.520 vs 0.539 | P(btts) 0.537 vs 0.554
+delta=-0.050 centre=0.50     n=10761 | over25=0.24645 btts=0.24536 sum=0.49181 | P(over) 0.523 vs 0.539 | P(btts) 0.540 vs 0.554
+delta=-0.100 centre=0.25     n=10761 | over25=0.24649 btts=0.24540 sum=0.49189 | P(over) 0.522 vs 0.539 | P(btts) 0.539 vs 0.554
+delta=-0.150 centre=0.25     n=10761 | over25=0.24645 btts=0.24537 sum=0.49181 | P(over) 0.524 vs 0.539 | P(btts) 0.541 vs 0.554
+delta=-0.100 centre=0.50     n=10761 | over25=0.24634 btts=0.24527 sum=0.49161 | P(over) 0.528 vs 0.539 | P(btts) 0.546 vs 0.554
+delta=-0.150 centre=0.50     n=10761 | over25=0.24629 btts=0.24523 sum=0.49152 | P(over) 0.533 vs 0.539 | P(btts) 0.551 vs 0.554

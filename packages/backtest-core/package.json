@@ -27,7 +27,8 @@
     "collect:asian-handicap": "tsx --env-file=../../apps/backend/.env scripts/collect-asian-handicap-history.ts",
     "backtest:asian-handicap": "tsx scripts/backtest-asian-handicap.ts",
     "backtest:composer": "tsx scripts/backtest-composer.ts",
-    "backtest:strategy-ranking": "tsx scripts/backtest-strategy-ranking.ts"
+    "backtest:strategy-ranking": "tsx scripts/backtest-strategy-ranking.ts",
+    "backtest:congestion-centering": "tsx scripts/backtest-congestion-centering.ts"
   },
   "dependencies": {
     "@evcore/analysis-core": "workspace:*",

@@ -317,3 +317,17 @@ export const PRICE_COMPOSER_POLICY = {
   minExpectedReturn: 0,
   maxPerCompetition: 3,
 } as const;
+
+/**
+ * Règlement des coupons.
+ *
+ * `postponedVoidDelayMs` : un match POSTPONED n'est remboursé qu'après ce
+ * délai écoulé depuis son coup d'envoi initial. Le statut passe parfois par
+ * POSTPONED de façon transitoire (cas réel du 2026-08-22 : réglé reporté à
+ * 01:00, finalement joué et FINISHED 5-2) ; voider au premier passage
+ * inventait un remboursement sur des jambes perdantes. CANCELLED reste
+ * remboursé immédiatement.
+ */
+export const COUPON_SETTLEMENT_POLICY = {
+  postponedVoidDelayMs: 24 * 60 * 60 * 1_000,
+} as const;
