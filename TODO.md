@@ -57,7 +57,7 @@ vantage-worker 133, backtest-core 35) :
 - [x] Ombre `unified-5-15-v2-shadow` (classement proba, sans gate EV)
       enregistrée à côté du LLM, jamais publiée.
 
-**Décisions à prendre** (non tranchées par le code) :
+**Décisions à prendre et suites** (état au 2026-10-07) :
 
 - [ ] **Garde-fou de suspension** : câblé mais lit la table `bet`, morte
       depuis le 04/09. Rebranché sur les jambes misées, la règle « ROI < −15 %
@@ -65,43 +65,34 @@ vantage-worker 133, backtest-core 35) :
       O/U et WIN_EITHER_HALF — sur des ROI à 50 jambes sans puissance. À
       décider : population, taille minimale, ou abandon de la règle au profit
       de la calibration.
-- [x] **Facteurs de λ** : re-fittés le 2026-10-06 dans la chaîne complète,
-      1,10 / 0,85, overrides par ligue retirés ; validation intouchée 2026
-      meilleure sur 1X2, Over 2.5 et BTTS (journal du 2026-10-06).
-- [x] **Corrections par ligue fittées à l'ancien global** : re-fit par ligue
-      le 2026-10-06 ; sans porte le re-fit par ligue est sans signal
-      (+0,00004 agrégé, 15 gagnent / 22 perdent) ; seules les quatre ligues
-      nommées d'avance sont appliquées (SWE2, ARG1, F2, AUT1), EL1 inchangée.
+- [ ] **Fournisseur LLM** : réapprovisionner Cerebras ou passer Groq en
+      primaire ; vérifier `coupon_generation_attempt` dès la passe du soir.
+- [ ] Comparaison par jambe LLM vs PRICE vs ombre v2 : impossible avant que
+      le LLM ne tourne à nouveau (13 jambes LLM depuis le 16/09).
 - [ ] Les sous-blocs totaux par équipe / clean sheet / win-to-nil / DNB /
       HT, fittés eux aussi à l'ancien global, n'ont pas été re-fittés :
       attendre une saison de plus par ligue, ou un fit hiérarchique.
-- [ ] **Six stratégies Phase 1 classent leur ligne par EV** (GOALS, DOUBLE*CHANCE,
-      OVER_UNDER_HT, TEAM_TOTAL, RESULT*\*) ; blend 1X2 non propagé aux
-- [x] H2H/congestion : le décalage d'over25 et de bttsYes est répercuté sur
-      les partitions (`*_OVER_2_5`/`*_UNDER_2_5` de RESULT_TOTAL_GOALS,
-      RESULT_BTTS) et win-to-nil reste sous clean sheet (2026-10-06).
-- [ ] Congestion = intercept global (`delta × (score − 0,5)` avec score 0
-      presque partout, +0,6 pt sur over25/BTTS pour tout match reposé),
-      fitté sur la chaîne d'avant le re-fit des λ : re-fitter delta et
-      centrage avec `db:backtest:congestion-signal-value` sur la chaîne
-      actuelle, sélection/validation ; les lignes 1,5/3,5/4,5 ne reçoivent
-      aucun décalage (pas de règle le long de l'échelle sans retoucher λ).
+- [ ] Sous-annonce résiduelle 2026 de la famille « buts » (Over 2.5 0,518
+      annoncé vs 0,539 réalisé après le re-fit) : à relire au prochain re-fit
+      du global avec une saison 2026 complète.
+- [x] **Facteurs de λ** : re-fittés le 2026-10-06 dans la chaîne complète,
+      1,10 / 0,85, overrides par ligue retirés (PR #229).
+- [x] **Corrections par ligue fittées à l'ancien global** : sans porte le
+      re-fit par ligue est sans signal (+0,00004, 15 gagnent / 22 perdent) ;
+      seules SWE2, ARG1, F2, AUT1, nommées d'avance, sont appliquées (PR #230).
 - [x] Blend 1X2 propagé aux marchés joints (HT/FT, RESULT_BTTS,
-      RESULT_TOTAL_GOALS UNDER, WIN_TO_NIL) le 2026-10-06 ; 7 013
-      incohérences → 0, Brier meilleur sur les deux fenêtres (journal du
-      2026-10-06).
-- [x] **Classement des lignes par EV** : rejoué le 2026-10-06
-      (`backtest:strategy-ranking`) ; GOALS, TEAM*TOTAL et OVER_UNDER_HT
-      passent en `probability_in_band` (1,20–1,80), ratio réalisé/annoncé
-      0,923 → 0,973, 0,873 → 0,920, 0,948 → 0,958 sur 2026 ; DOUBLE_CHANCE
-      sans gain et RESULT*\* sans ligne dans la bande restent en EV.
-- [ ] H2H/congestion décalent over25 sans ses partitions (`*_OVER_2_5` de
-      RESULT_TOTAL_GOALS, over15/over35) ; congestion = intercept global
-      (`delta × (score − 0,5)` avec score 0 presque partout). Rejeu avant.
-- [ ] **Fournisseur LLM** : réapprovisionner Cerebras ou passer Groq en
-      primaire ; vérifier `coupon_generation_attempt` dès la passe du soir.
-- [ ] Comparaison par jambe LLM vs PRICE : impossible avant que le LLM
-      ne tourne à nouveau (13 jambes LLM depuis le 16/09).
+      RESULT_TOTAL_GOALS UNDER, WIN_TO_NIL) : 7 013 incohérences → 0 (PR #231).
+- [x] Décalages H2H et congestion propagés aux partitions de over25 et
+      bttsYes, win-to-nil sous clean sheet (PR #232).
+- [x] **Classement des lignes par EV** : GOALS, TEAM*TOTAL et OVER_UNDER_HT
+      en `probability_in_band` 1,20–1,80, ratio réalisé/annoncé 0,923 → 0,973,
+      0,873 → 0,920, 0,948 → 0,958 sur 2026 ; DOUBLE_CHANCE et RESULT*\* en EV
+      (PR #233).
+- [x] Congestion : le score ne porte aucune information (15 configurations à
+      1e-4 près), l'intercept actuel aide encore sur 2026 : conservé (PR #234).
+- [x] Règlement : POSTPONED transitoire attend 24 h, jambe mi-temps sans
+      score remboursée sur FINISHED, crédit bankroll une seule fois (PR #235).
+- [x] Rolling stats : le rafraîchissement repart du match corrigé (PR #236).
 
 ---
 
