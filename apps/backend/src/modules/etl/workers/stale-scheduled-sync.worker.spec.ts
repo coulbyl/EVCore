@@ -68,9 +68,11 @@ function buildFixtureResponse(status: 'NS' | 'FT') {
 describe('StaleScheduledSyncWorker', () => {
   const fixtureService = {
     findPastScheduledFixtures: vi.fn(),
-    syncFixtureState: vi
-      .fn()
-      .mockResolvedValue({ affectsRollingStats: true, seasonId: 'season-1' }),
+    syncFixtureState: vi.fn().mockResolvedValue({
+      affectsRollingStats: true,
+      seasonId: 'season-1',
+      fixtureId: 'fixture-1',
+    }),
   } satisfies Partial<FixtureService>;
   const notification = {
     sendEtlFailureAlert: vi.fn(),
@@ -121,6 +123,9 @@ describe('StaleScheduledSyncWorker', () => {
       homeHtScore: 1,
       awayHtScore: 0,
     });
-    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-1');
+    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith(
+      'season-1',
+      expect.objectContaining({ changedFixtureIds: expect.any(Set) }),
+    );
   });
 });

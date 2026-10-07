@@ -358,6 +358,53 @@ describe('RollingStatsService', () => {
     expect(result.teamStatsWritten).toBe(0);
   });
 
+  it('refreshSeason restarts from a changed fixture even when every row already exists', async () => {
+    fixtureFindMany.mockResolvedValue([
+      makeFixture({
+        id: 'fixture-1',
+        scheduledAt: new Date('2024-08-01T12:00:00.000Z'),
+        homeTeamId: 'team-a',
+        awayTeamId: 'team-b',
+      }),
+      makeFixture({
+        id: 'fixture-2',
+        scheduledAt: new Date('2024-08-08T12:00:00.000Z'),
+        homeTeamId: 'team-a',
+        awayTeamId: 'team-b',
+        homeScore: 2,
+        awayScore: 1,
+      }),
+    ]);
+    const row = (teamId: string, afterFixtureId: string) => ({
+      teamId,
+      afterFixtureId,
+      recentForm: decimal(0),
+      xgFor: decimal(0),
+      xgAgainst: decimal(0),
+      homeWinRate: decimal(0),
+      awayWinRate: decimal(0),
+      drawRate: decimal(0),
+      leagueVolatility: decimal(0),
+    });
+    teamStatsFindMany.mockResolvedValue([
+      row('team-a', 'fixture-1'),
+      row('team-b', 'fixture-1'),
+      row('team-a', 'fixture-2'),
+      row('team-b', 'fixture-2'),
+    ]);
+
+    const service = new RollingStatsService(prismaService as never);
+    const untouched = await service.refreshSeason('season-1');
+    expect(untouched.teamStatsWritten).toBe(0);
+
+    // The provider corrected fixture-1's score: its rows and every later row
+    // must be recomputed although none is missing.
+    const result = await service.refreshSeason('season-1', {
+      changedFixtureIds: new Set(['fixture-1']),
+    });
+    expect(result.teamStatsWritten).toBeGreaterThan(0);
+  });
+
   it('refreshSeason recalculates only from the first incomplete fixture onward', async () => {
     fixtureFindMany.mockResolvedValue([
       makeFixture({

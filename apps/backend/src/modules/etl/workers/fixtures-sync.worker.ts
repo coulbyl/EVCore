@@ -180,7 +180,7 @@ export class FixturesSyncWorker {
       'Upserting fixtures',
     );
 
-    let rollingStatsRefreshNeeded = false;
+    const changedFixtureIds = new Set<string>();
 
     for (const item of data.response) {
       const fixture = mapApiFootballFixture(item);
@@ -191,9 +191,10 @@ export class FixturesSyncWorker {
       });
 
       if (result.affectsRollingStats) {
-        rollingStatsRefreshNeeded = true;
+        changedFixtureIds.add(result.id);
       }
     }
+    const rollingStatsRefreshNeeded = changedFixtureIds.size > 0;
 
     logger.info(
       { season, seasonName, fixtureCount: data.response.length },
@@ -214,7 +215,9 @@ export class FixturesSyncWorker {
     }
 
     if (rollingStatsRefreshNeeded) {
-      await this.rollingStatsService.refreshSeason(seasonRecord.id);
+      await this.rollingStatsService.refreshSeason(seasonRecord.id, {
+        changedFixtureIds,
+      });
     }
 
     await this.leagueSyncQueue.add(

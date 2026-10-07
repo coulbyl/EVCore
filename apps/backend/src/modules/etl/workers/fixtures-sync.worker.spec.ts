@@ -405,7 +405,10 @@ describe('FixturesSyncWorker', () => {
       data: { competitionCode: 'SA', season: 2024, leagueId: 135 },
     } as Job<{ competitionCode: string; season: number; leagueId: number }>);
 
-    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-id');
+    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith(
+      'season-id',
+      expect.objectContaining({ changedFixtureIds: expect.any(Set) }),
+    );
   });
 
   it('refreshes rolling-stats when a finished fixture score changes', async () => {
@@ -422,6 +425,9 @@ describe('FixturesSyncWorker', () => {
       data: { competitionCode: 'SA', season: 2024, leagueId: 135 },
     } as Job<{ competitionCode: string; season: number; leagueId: number }>);
 
-    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-id');
+    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith(
+      'season-id',
+      expect.objectContaining({ changedFixtureIds: expect.any(Set) }),
+    );
   });
 });

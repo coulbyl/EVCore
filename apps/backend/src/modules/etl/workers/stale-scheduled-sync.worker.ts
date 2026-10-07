@@ -71,7 +71,7 @@ export class StaleScheduledSyncWorker extends WorkerHost {
     // fixture finalized through this worker or pending-bets-settlement,
     // and both raw `updateMany` calls made that invisible: no error, just a
     // dead rolling-stats pipeline for that competition).
-    const seasonsToRefresh = new Set<string>();
+    const changedBySeason = new Map<string, Set<string>>();
 
     for (const fixture of fixtures) {
       const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?id=${fixture.externalId}`;
@@ -107,7 +107,7 @@ export class StaleScheduledSyncWorker extends WorkerHost {
       }
 
       const nextState = mapFixtureState(apiFixture);
-      const { affectsRollingStats, seasonId } =
+      const { affectsRollingStats, seasonId, fixtureId } =
         await this.fixtureService.syncFixtureState({
           externalId: fixture.externalId,
           scheduledAt: nextState.scheduledAt,
@@ -117,14 +117,18 @@ export class StaleScheduledSyncWorker extends WorkerHost {
           homeHtScore: nextState.homeHtScore,
           awayHtScore: nextState.awayHtScore,
         });
-      if (affectsRollingStats && seasonId) {
-        seasonsToRefresh.add(seasonId);
+      if (affectsRollingStats && seasonId && fixtureId) {
+        const changed = changedBySeason.get(seasonId) ?? new Set<string>();
+        changed.add(fixtureId);
+        changedBySeason.set(seasonId, changed);
       }
       updated++;
     }
 
-    for (const seasonId of seasonsToRefresh) {
-      await this.rollingStatsService.refreshSeason(seasonId);
+    for (const [seasonId, changedFixtureIds] of changedBySeason) {
+      await this.rollingStatsService.refreshSeason(seasonId, {
+        changedFixtureIds,
+      });
     }
 
     logger.info(
@@ -132,7 +136,7 @@ export class StaleScheduledSyncWorker extends WorkerHost {
         fixtureCount: fixtures.length,
         updated,
         lookbackDays,
-        seasonsRefreshed: seasonsToRefresh.size,
+        seasonsRefreshed: changedBySeason.size,
       },
       'Stale scheduled fixtures sync complete',
     );
