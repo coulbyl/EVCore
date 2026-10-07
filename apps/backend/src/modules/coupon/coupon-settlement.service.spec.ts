@@ -3,6 +3,7 @@ import { CouponResult, FixtureStatus, Market } from '@evcore/db';
 import { CouponSettlementService } from './coupon-settlement.service';
 import type { CouponRepository } from './coupon.repository';
 import type { PrismaService } from '@/prisma.service';
+import type { ClosingLineRow } from './coupon-leg-closing-line';
 
 function makeLeg(overrides: {
   id: string;
@@ -11,6 +12,8 @@ function makeLeg(overrides: {
   pick?: string;
   isCorrect?: boolean | null;
   oddsSnapshot?: number | null;
+  closingOdds?: number | null;
+  featureSnapshot?: Record<string, unknown>;
 }) {
   return {
     id: overrides.id,
@@ -19,6 +22,8 @@ function makeLeg(overrides: {
     pick: overrides.pick ?? 'OVER',
     isCorrect: overrides.isCorrect ?? null,
     oddsSnapshot: overrides.oddsSnapshot ?? 2.0,
+    closingOdds: overrides.closingOdds ?? null,
+    featureSnapshot: overrides.featureSnapshot ?? {},
   };
 }
 
@@ -47,9 +52,12 @@ function makeFixture(overrides: {
 function makeHarness(input: {
   legs: ReturnType<typeof makeLeg>[];
   fixtures: ReturnType<typeof makeFixture>[];
+  closingLines?: ClosingLineRow[];
 }) {
   const settleLeg = vi.fn().mockResolvedValue(undefined);
   const updateResult = vi.fn().mockResolvedValue(undefined);
+  const findClosingLines = vi.fn().mockResolvedValue(input.closingLines ?? []);
+  const updateLegClosingLine = vi.fn().mockResolvedValue(undefined);
   const findByIdWithLegs = vi
     .fn()
     .mockResolvedValue({ id: 'proposal-1', legs: input.legs });
@@ -58,6 +66,8 @@ function makeHarness(input: {
     findByIdWithLegs,
     settleLeg,
     updateResult,
+    findClosingLines,
+    updateLegClosingLine,
   } as unknown as CouponRepository;
 
   const prismaMock = {
@@ -70,6 +80,8 @@ function makeHarness(input: {
     service: new CouponSettlementService(prismaMock, repoMock),
     settleLeg,
     updateResult,
+    findClosingLines,
+    updateLegClosingLine,
   };
 }
 
@@ -353,6 +365,131 @@ describe('CouponSettlementService.settleProposal — transient POSTPONED and mis
       'proposal-1',
       CouponResult.PARTIAL,
       1.5,
+    );
+  });
+});
+
+describe('CouponSettlementService.settleProposal — ligne de clôture par jambe (E-2)', () => {
+  const kickoff = new Date('2026-10-04T18:00:00.000Z');
+  const closingRow = (pick: string, odds: number): ClosingLineRow => ({
+    fixtureId: 'f1',
+    bookmaker: 'Pinnacle',
+    market: Market.ONE_X_TWO,
+    pick,
+    odds,
+    hoursBeforeKickoff: 0.2,
+  });
+
+  it('écrit la clôture, le book, son heure d’observation et le CLV d’une jambe réglée', async () => {
+    const { service, updateLegClosingLine, findClosingLines } = makeHarness({
+      legs: [
+        makeLeg({
+          id: 'leg-1',
+          fixtureId: 'f1',
+          market: Market.ONE_X_TWO,
+          pick: 'HOME',
+          oddsSnapshot: 2.1,
+        }),
+      ],
+      fixtures: [
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.FINISHED,
+          scheduledAt: kickoff,
+          homeScore: 2,
+          awayScore: 0,
+        }),
+      ],
+      closingLines: [
+        closingRow('HOME', 1.9),
+        closingRow('DRAW', 3.6),
+        closingRow('AWAY', 4.2),
+      ],
+    });
+
+    await service.settleProposal('proposal-1');
+
+    expect(findClosingLines).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fixtureIds: ['f1'],
+        markets: [Market.ONE_X_TWO],
+      }),
+    );
+    const overround = 1 / 1.9 + 1 / 3.6 + 1 / 4.2;
+    expect(updateLegClosingLine).toHaveBeenCalledTimes(1);
+    const [legId, closing] = updateLegClosingLine.mock.calls[0] as [
+      string,
+      {
+        closingOdds: number;
+        closingBookmaker: string;
+        closingObservedAt: Date;
+        closingLineValue: number;
+      },
+    ];
+    expect(legId).toBe('leg-1');
+    expect(closing.closingOdds).toBe(1.9);
+    expect(closing.closingBookmaker).toBe('Pinnacle');
+    expect(closing.closingObservedAt.toISOString()).toBe(
+      '2026-10-04T17:48:00.000Z',
+    );
+    expect(closing.closingLineValue).toBeCloseTo(
+      2.1 * (1 / 1.9 / overround) - 1,
+      10,
+    );
+  });
+
+  it('ne relit pas une jambe déjà renseignée ni une rencontre non terminée', async () => {
+    const { service, findClosingLines, updateLegClosingLine } = makeHarness({
+      legs: [
+        makeLeg({ id: 'leg-1', fixtureId: 'f1', closingOdds: 1.9 }),
+        makeLeg({ id: 'leg-2', fixtureId: 'f2' }),
+      ],
+      fixtures: [
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.FINISHED,
+          homeScore: 1,
+          awayScore: 1,
+        }),
+        makeFixture({ id: 'f2', status: FixtureStatus.SCHEDULED }),
+      ],
+      closingLines: [closingRow('HOME', 1.9)],
+    });
+
+    await service.settleProposal('proposal-1');
+
+    expect(findClosingLines).not.toHaveBeenCalled();
+    expect(updateLegClosingLine).not.toHaveBeenCalled();
+  });
+
+  it('laisse la jambe à null sans groupe complet, sans retarder le règlement', async () => {
+    const { service, updateLegClosingLine, updateResult } = makeHarness({
+      legs: [
+        makeLeg({
+          id: 'leg-1',
+          fixtureId: 'f1',
+          market: Market.ONE_X_TWO,
+          pick: 'HOME',
+        }),
+      ],
+      fixtures: [
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.FINISHED,
+          homeScore: 2,
+          awayScore: 0,
+        }),
+      ],
+      closingLines: [closingRow('HOME', 1.9), closingRow('DRAW', 3.6)],
+    });
+
+    await service.settleProposal('proposal-1');
+
+    expect(updateLegClosingLine).not.toHaveBeenCalled();
+    expect(updateResult).toHaveBeenCalledWith(
+      'proposal-1',
+      CouponResult.WON,
+      2,
     );
   });
 });

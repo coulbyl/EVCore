@@ -19,3 +19,5 @@ export {
   overUnderOpposite,
   oppositePick,
 } from "./market-fair";
+export { outcomeGroup } from "./outcome-groups";
+export type { OutcomeGroup } from "./outcome-groups";

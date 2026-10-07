@@ -69,6 +69,27 @@ vantage-worker 133, backtest-core 35) :
       primaire ; vérifier `coupon_generation_attempt` dès la passe du soir.
 - [ ] Comparaison par jambe LLM vs PRICE vs ombre v2 : impossible avant que
       le LLM ne tourne à nouveau (13 jambes LLM depuis le 16/09).
+- [x] **CLV par jambe de coupon (plan, E-2)** : le règlement écrit sur chaque
+      jambe d'une rencontre terminée la cote de clôture du choix, le book,
+      l'heure d'observation et `closingLineValue` (cote prise × probabilité
+      de clôture sans marge − 1, `closingValue` d'analysis-core), depuis
+      `odds_closing_line` à moins de 90 min du coup d'envoi et chez un book
+      qui cote le groupe d'issues COMPLET (`outcomeGroup`). Book préféré :
+      celui de la citation LLM, sinon le mieux classé. Rapport
+      `report:coupon-clv` par source × marché (E-3). **Migration
+      `20261007120000_add_coupon_leg_closing_line` à lancer** ; un
+      `settleRange` remplit l'historique. Sur le dump du 05/10, 12,7 % des
+      jambes LLM ont un relevé à 90 min (71 % à 24 h) : la couverture dépend
+      de la migration `observedAt` et du balayage T−10, à relire au rapport
+      une semaine après déploiement (cible E-2 : 80 %).
+- [ ] CLV au niveau des sélections de canal (33 000 paris, pas 1 300
+      jambes) : `channel_selection` ne garde ni le book ni l'heure de son
+      prix, et `FullOddsSnapshot` n'a qu'un book pour tout le relevé alors
+      que le chargeur en résout un par marché. Demande de porter la
+      provenance par marché dans le relevé assemblé avant toute colonne.
+- [ ] E-4 (suspension d'un canal au CLV négatif sur 500 sélections) :
+      impossible avant la couverture ci-dessus ; à décider avec le garde-fou
+      de suspension.
 - [ ] Les sous-blocs totaux par équipe / clean sheet / win-to-nil / DNB /
       HT, fittés eux aussi à l'ancien global, n'ont pas été re-fittés :
       attendre une saison de plus par ligue, ou un fit hiérarchique.
@@ -80,8 +101,6 @@ vantage-worker 133, backtest-core 35) :
 - [x] **Corrections par ligue fittées à l'ancien global** : sans porte le
       re-fit par ligue est sans signal (+0,00004, 15 gagnent / 22 perdent) ;
       seules SWE2, ARG1, F2, AUT1, nommées d'avance, sont appliquées (PR #230).
-- [ ] **Six stratégies Phase 1 classent leur ligne par EV** (GOALS, DOUBLE*CHANCE,
-      OVER_UNDER_HT, TEAM_TOTAL, RESULT*\*) ; blend 1X2 non propagé aux
 - [x] H2H/congestion : le décalage d'over25 et de bttsYes est répercuté sur
       les partitions (`*_OVER_2_5`/`*_UNDER_2_5` de RESULT_TOTAL_GOALS,
       RESULT_BTTS) et win-to-nil reste sous clean sheet (2026-10-06).

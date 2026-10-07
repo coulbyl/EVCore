@@ -1122,21 +1122,34 @@ model CouponProposal {
 }
 
 model CouponProposalLeg {
-  id               String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  couponProposalId String          @db.Uuid
-  couponProposal   CouponProposal  @relation(fields: [couponProposalId], references: [id], onDelete: Cascade)
-  fixtureId        String          @db.Uuid
-  fixture          Fixture         @relation(fields: [fixtureId], references: [id])
-  canal            StrategyChannel
-  market           Market
-  pick             String
-  probability      Decimal         @db.Decimal(5, 4)
-  oddsSnapshot     Decimal?        @db.Decimal(6, 3)
-  signalScore      Decimal         @db.Decimal(5, 4)
-  featureSnapshot  Json
-  isCorrect        Boolean?
-  settledAt        DateTime?
-  createdAt        DateTime        @default(now())
+  id                String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  couponProposalId  String          @db.Uuid
+  couponProposal    CouponProposal  @relation(fields: [couponProposalId], references: [id], onDelete: Cascade)
+  fixtureId         String          @db.Uuid
+  fixture           Fixture         @relation(fields: [fixtureId], references: [id])
+  canal             StrategyChannel
+  market            Market
+  pick              String
+  probability       Decimal         @db.Decimal(5, 4)
+  oddsSnapshot      Decimal?        @db.Decimal(6, 3)
+  signalScore       Decimal         @db.Decimal(5, 4)
+  featureSnapshot   Json
+  isCorrect         Boolean?
+  settledAt         DateTime?
+  // Ligne de clôture de la jambe (plan de rentabilité, chantier E, E-2),
+  // écrite au règlement depuis la vue `odds_closing_line` : cote brute du
+  // choix chez le book retenu, book, heure d'OBSERVATION de ce prix, et
+  // `closingLineValue` = oddsSnapshot × probabilité de clôture sans marge − 1
+  // (`closingValue`, analysis-core). Null tant que la jambe n'est pas réglée,
+  // et définitivement null si aucun book n'offre le groupe d'issues complet à
+  // moins de COUPON_SETTLEMENT_POLICY.closingLineMaxHoursBeforeKickoff du coup
+  // d'envoi : un dernier relevé à 24 h n'est pas une clôture, et un CLV sur un
+  // groupe incomplet serait faux dans une direction inconnue.
+  closingOdds       Decimal?        @db.Decimal(6, 3)
+  closingBookmaker  String?
+  closingObservedAt DateTime?
+  closingLineValue  Decimal?        @db.Decimal(6, 4)
+  createdAt         DateTime        @default(now())
 
   @@index([couponProposalId])
   @@index([fixtureId])

@@ -17,6 +17,7 @@ import {
 } from './coupon.constants';
 import { PrismaService } from '@/prisma.service';
 import { startOfUtcDay } from '@utils/date.utils';
+import type { ClosingLineRow } from './coupon-leg-closing-line';
 
 /**
  * Découpage des cotes en tranches, partagé par la calibration et le vivier.
@@ -500,6 +501,73 @@ export class CouponRepository {
         candidateCount: input.candidateCount,
         reason: input.reason ?? null,
         proposalId: input.proposalId ?? null,
+      },
+    });
+  }
+
+  /**
+   * Lignes de clôture des rencontres et marchés demandés, assez fraîches pour
+   * servir au CLV (chantier E, E-2).
+   *
+   * Lit `odds_closing_line` — dernier prix observé AVANT le coup d'envoi par
+   * (rencontre, book, marché, choix) — et ne garde que les observations à
+   * moins de `maxHoursBeforeKickoff` : la vue expose cette distance
+   * précisément pour qu'aucun consommateur ne prenne un relevé de la veille
+   * pour une clôture. Le 1X2 est stocké en une ligne à trois colonnes : il
+   * est déplié ici en trois choix pour que le groupe d'issues se lise comme
+   * les autres marchés. Les marchés à `line` (handicap, corners) sont exclus :
+   * leur identité ne tient pas dans `pick`, et aucune jambe n'en vient.
+   */
+  async findClosingLines(opts: {
+    fixtureIds: readonly string[];
+    markets: readonly Market[];
+    maxHoursBeforeKickoff: number;
+  }): Promise<readonly ClosingLineRow[]> {
+    if (opts.fixtureIds.length === 0 || opts.markets.length === 0) return [];
+    return this.prisma.client.$queryRaw<ClosingLineRow[]>`
+      WITH closing AS (
+        SELECT c."fixtureId", c.bookmaker, c.market, c.pick, c.odds,
+               c."homeOdds", c."drawOdds", c."awayOdds", c."hoursBeforeKickoff"
+        FROM public.odds_closing_line c
+        WHERE c."fixtureId" = ANY(ARRAY[${Prisma.join([...opts.fixtureIds])}]::uuid[])
+          AND c.market::text = ANY(ARRAY[${Prisma.join([...opts.markets])}]::text[])
+          AND c.line IS NULL
+          AND c."hoursBeforeKickoff" <= ${opts.maxHoursBeforeKickoff}
+      )
+      SELECT "fixtureId"::text            AS "fixtureId",
+             bookmaker,
+             market::text                 AS market,
+             pick,
+             odds::float                  AS odds,
+             "hoursBeforeKickoff"::float  AS "hoursBeforeKickoff"
+      FROM closing
+      WHERE closing.pick IS NOT NULL AND closing.odds IS NOT NULL
+      UNION ALL
+      SELECT closing."fixtureId"::text, closing.bookmaker, closing.market::text,
+             side.pick, side.odds::float, closing."hoursBeforeKickoff"::float
+      FROM closing
+      CROSS JOIN LATERAL (VALUES ('HOME', closing."homeOdds"), ('DRAW', closing."drawOdds"), ('AWAY', closing."awayOdds"))
+        AS side(pick, odds)
+      WHERE closing.pick IS NULL AND side.odds IS NOT NULL
+    `;
+  }
+
+  async updateLegClosingLine(
+    legId: string,
+    closing: {
+      closingOdds: number;
+      closingBookmaker: string;
+      closingObservedAt: Date;
+      closingLineValue: number;
+    },
+  ): Promise<void> {
+    await this.prisma.client.couponProposalLeg.update({
+      where: { id: legId },
+      data: {
+        closingOdds: new Prisma.Decimal(closing.closingOdds),
+        closingBookmaker: closing.closingBookmaker,
+        closingObservedAt: closing.closingObservedAt,
+        closingLineValue: new Prisma.Decimal(closing.closingLineValue),
       },
     });
   }
