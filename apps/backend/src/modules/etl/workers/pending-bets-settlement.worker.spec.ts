@@ -125,9 +125,11 @@ function mockCurlErrorOnce(message: string, code?: number) {
 describe('PendingBetsSettlementWorker', () => {
   const fixtureService = {
     findPendingSettlementFixtures: vi.fn(),
-    syncFixtureState: vi
-      .fn()
-      .mockResolvedValue({ affectsRollingStats: true, seasonId: 'season-1' }),
+    syncFixtureState: vi.fn().mockResolvedValue({
+      affectsRollingStats: true,
+      seasonId: 'season-1',
+      fixtureId: 'fixture-1',
+    }),
   } satisfies Partial<FixtureService>;
   const bettingEngineService = {
     settleOpenBets: vi.fn().mockResolvedValue({ settled: 1 }),
@@ -183,6 +185,7 @@ describe('PendingBetsSettlementWorker', () => {
     fixtureService.syncFixtureState.mockResolvedValue({
       affectsRollingStats: true,
       seasonId: 'season-1',
+      fixtureId: 'fixture-1',
     });
     bettingEngineService.settleOpenBets.mockResolvedValue({ settled: 1 });
     config.getOrThrow.mockReturnValue('test-api-key');
@@ -218,7 +221,10 @@ describe('PendingBetsSettlementWorker', () => {
     expect(bettingEngineService.settleOpenBets).toHaveBeenCalledWith(
       'fixture-1',
     );
-    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-1');
+    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith(
+      'season-1',
+      expect.objectContaining({ changedFixtureIds: expect.any(Set) }),
+    );
   });
 
   it('settles on the 90-minute score, not the post-extra-time score (AET)', async () => {

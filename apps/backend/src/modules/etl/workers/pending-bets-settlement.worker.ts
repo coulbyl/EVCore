@@ -78,7 +78,7 @@ export class PendingBetsSettlementWorker extends WorkerHost {
     // that job's own `affectsRollingStats` aggregation does — otherwise
     // team_stats silently freezes for whatever competition's finishes keep
     // landing here (2026-09-07 ISL1 incident).
-    const seasonsToRefresh = new Set<string>();
+    const changedBySeason = new Map<string, Set<string>>();
 
     for (const fixture of fixtures) {
       try {
@@ -126,7 +126,7 @@ export class PendingBetsSettlementWorker extends WorkerHost {
         }
 
         const nextState = mapFixtureState(apiFixture);
-        const { affectsRollingStats, seasonId } =
+        const { affectsRollingStats, seasonId, fixtureId } =
           await this.fixtureService.syncFixtureState({
             externalId: fixture.externalId,
             scheduledAt: nextState.scheduledAt,
@@ -136,8 +136,10 @@ export class PendingBetsSettlementWorker extends WorkerHost {
             homeHtScore: nextState.homeHtScore,
             awayHtScore: nextState.awayHtScore,
           });
-        if (affectsRollingStats && seasonId) {
-          seasonsToRefresh.add(seasonId);
+        if (affectsRollingStats && seasonId && fixtureId) {
+          const changed = changedBySeason.get(seasonId) ?? new Set<string>();
+          changed.add(fixtureId);
+          changedBySeason.set(seasonId, changed);
         }
 
         // Early settlement — resolve irrevocable outcomes (BTTS YES/NO, OVER/UNDER
@@ -173,8 +175,10 @@ export class PendingBetsSettlementWorker extends WorkerHost {
       }
     }
 
-    for (const seasonId of seasonsToRefresh) {
-      await this.rollingStatsService.refreshSeason(seasonId);
+    for (const [seasonId, changedFixtureIds] of changedBySeason) {
+      await this.rollingStatsService.refreshSeason(seasonId, {
+        changedFixtureIds,
+      });
     }
 
     logger.info(
@@ -184,7 +188,7 @@ export class PendingBetsSettlementWorker extends WorkerHost {
         settledBets,
         failedFixtures,
         skippedFixtures,
-        seasonsRefreshed: seasonsToRefresh.size,
+        seasonsRefreshed: changedBySeason.size,
       },
       'Pending bets settlement sync complete',
     );

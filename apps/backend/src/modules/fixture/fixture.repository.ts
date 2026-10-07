@@ -126,6 +126,7 @@ type SyncFixtureStateInput = {
 export type SyncFixtureStateResult = {
   affectsRollingStats: boolean;
   seasonId: string | null;
+  fixtureId: string | null;
 };
 
 type UpsertOneXTwoOddsSnapshotInput = {
@@ -394,6 +395,7 @@ export class FixtureRepository {
       const existing = await tx.fixture.findUnique({
         where: { externalId: input.externalId },
         select: {
+          id: true,
           seasonId: true,
           scheduledAt: true,
           status: true,
@@ -404,7 +406,7 @@ export class FixtureRepository {
         },
       });
       if (!existing) {
-        return { affectsRollingStats: false, seasonId: null };
+        return { affectsRollingStats: false, seasonId: null, fixtureId: null };
       }
 
       await tx.fixture.update({
@@ -422,6 +424,7 @@ export class FixtureRepository {
       return {
         affectsRollingStats: fixtureStateAffectsRollingStats(existing, input),
         seasonId: existing.seasonId,
+        fixtureId: existing.id,
       };
     });
   }

@@ -594,15 +594,30 @@ export class RollingStatsService {
     };
   }
 
-  async refreshSeason(seasonId: string): Promise<RollingStatsRunResult> {
+  /**
+   * Recomputes the season's rolling stats from the earliest fixture whose
+   * rows are missing OR which the caller reports as changed.
+   *
+   * `changedFixtureIds`: fixtures whose score, status or kickoff was
+   * rewritten while already FINISHED (AWD, provider correction, FINISHED →
+   * CANCELLED). Until 2026-10-07 the refresh only restarted from the first
+   * fixture without a team_stats row, so a corrected score on a fixture that
+   * already had its rows never propagated to the rows after it until the
+   * next statistics sync happened to call backfillSeason.
+   */
+  async refreshSeason(
+    seasonId: string,
+    options: { changedFixtureIds?: ReadonlySet<string> } = {},
+  ): Promise<RollingStatsRunResult> {
     logger.info({ seasonId }, 'Starting rolling-stats refresh');
     const startedAt = Date.now();
 
     const fixtures = await this.loadFinishedSeasonFixtures(seasonId);
     const existingRows = await this.loadExistingTeamStats(seasonId);
-    const firstMissingFixtureIndex = this.findFirstIncompleteFixtureIndex(
+    const firstMissingFixtureIndex = this.findRefreshStartIndex(
       fixtures,
       existingRows,
+      options.changedFixtureIds,
     );
 
     if (firstMissingFixtureIndex === -1) {
@@ -793,6 +808,26 @@ export class RollingStatsService {
     }
 
     return rows;
+  }
+
+  private findRefreshStartIndex(
+    fixtures: SeasonFixture[],
+    existingRows: Map<string, ExistingTeamStatsRow>,
+    changedFixtureIds?: ReadonlySet<string>,
+  ): number {
+    const firstIncomplete = this.findFirstIncompleteFixtureIndex(
+      fixtures,
+      existingRows,
+    );
+    if (!changedFixtureIds || changedFixtureIds.size === 0) {
+      return firstIncomplete;
+    }
+    const firstChanged = fixtures.findIndex((fixture) =>
+      changedFixtureIds.has(fixture.id),
+    );
+    if (firstChanged === -1) return firstIncomplete;
+    if (firstIncomplete === -1) return firstChanged;
+    return Math.min(firstIncomplete, firstChanged);
   }
 
   private findFirstIncompleteFixtureIndex(
