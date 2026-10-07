@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BetStatus, CouponResult, FixtureStatus, Market } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
+import { COUPON_SETTLEMENT_POLICY } from './coupon.constants';
 import {
   resolveFirstHalfBetStatus,
   resolveHalfTimeFullTimeBetStatus,
@@ -114,6 +115,7 @@ export class CouponSettlementService {
       select: {
         id: true,
         status: true,
+        scheduledAt: true,
         homeScore: true,
         awayScore: true,
         homeHtScore: true,
@@ -122,6 +124,7 @@ export class CouponSettlementService {
     });
 
     const fixtureMap = new Map(fixtures.map((f) => [f.id, f]));
+    const now = Date.now();
 
     let allResolved = true;
     let voidedLegs = 0;
@@ -143,10 +146,18 @@ export class CouponSettlementService {
       // fixtures in this DB). Standard betting treatment: void this leg,
       // dropping it from the win/loss combinatorics instead of blocking the
       // whole coupon on a match that's never going to produce a score.
-      if (
-        fixture.status === FixtureStatus.POSTPONED ||
-        fixture.status === FixtureStatus.CANCELLED
-      ) {
+      // POSTPONED is sometimes transient (status flips back and the match is
+      // played): only void it once COUPON_SETTLEMENT_POLICY.postponedVoidDelayMs
+      // has elapsed since the original kickoff; before that, wait.
+      const postponedLongEnough =
+        fixture.status === FixtureStatus.POSTPONED &&
+        now - fixture.scheduledAt.getTime() >=
+          COUPON_SETTLEMENT_POLICY.postponedVoidDelayMs;
+      if (fixture.status === FixtureStatus.POSTPONED && !postponedLongEnough) {
+        allResolved = false;
+        continue;
+      }
+      if (fixture.status === FixtureStatus.CANCELLED || postponedLongEnough) {
         // Unlike the resolved-leg case below, `isCorrect === null` can't
         // distinguish "never settled" from "already voided" — always write
         // rather than skip, so a freshly-voided leg's settledAt actually gets set.
@@ -170,6 +181,14 @@ export class CouponSettlementService {
         fixture.awayScore !== null;
 
       if (isHtMarket && !hasHtScores) {
+        // A FINISHED fixture whose provider never served a half-time score
+        // will never get one: refund the leg, as HT/FT and WIN_EITHER_HALF
+        // already do (bet-settlement.ts). Otherwise wait for the score.
+        if (fixture.status === FixtureStatus.FINISHED) {
+          await this.repo.settleLeg(leg.id, null);
+          voidedLegs++;
+          continue;
+        }
         allResolved = false;
         continue;
       }

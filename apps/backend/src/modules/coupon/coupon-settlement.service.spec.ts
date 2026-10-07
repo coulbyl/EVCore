@@ -25,16 +25,22 @@ function makeLeg(overrides: {
 function makeFixture(overrides: {
   id: string;
   status: FixtureStatus;
+  scheduledAt?: Date;
   homeScore?: number | null;
   awayScore?: number | null;
+  homeHtScore?: number | null;
+  awayHtScore?: number | null;
 }) {
   return {
     id: overrides.id,
     status: overrides.status,
+    // Two days ago by default: a POSTPONED fixture this old is voided.
+    scheduledAt:
+      overrides.scheduledAt ?? new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
     homeScore: overrides.homeScore ?? null,
     awayScore: overrides.awayScore ?? null,
-    homeHtScore: null,
-    awayHtScore: null,
+    homeHtScore: overrides.homeHtScore ?? null,
+    awayHtScore: overrides.awayHtScore ?? null,
   };
 }
 
@@ -279,5 +285,74 @@ describe('CouponSettlementService.settleProposal — jambe remboursée (DNB nul)
     if (realized !== undefined && realized !== null) {
       expect(Number(realized)).toBeCloseTo(2.0, 6);
     }
+  });
+});
+
+describe('CouponSettlementService.settleProposal — transient POSTPONED and missing half-time scores', () => {
+  it('waits on a fixture postponed less than a day ago instead of voiding it', async () => {
+    const { service, settleLeg, updateResult } = makeHarness({
+      legs: [makeLeg({ id: 'leg-1', fixtureId: 'f1' })],
+      fixtures: [
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.POSTPONED,
+          scheduledAt: new Date(Date.now() - 60 * 60 * 1000),
+        }),
+      ],
+    });
+
+    await service.settleProposal('proposal-1');
+
+    expect(settleLeg).not.toHaveBeenCalled();
+    expect(updateResult).not.toHaveBeenCalled();
+  });
+
+  it('voids a fixture still postponed a day after its original kickoff', async () => {
+    const { service, settleLeg, updateResult } = makeHarness({
+      legs: [makeLeg({ id: 'leg-1', fixtureId: 'f1' })],
+      fixtures: [makeFixture({ id: 'f1', status: FixtureStatus.POSTPONED })],
+    });
+
+    await service.settleProposal('proposal-1');
+
+    expect(settleLeg).toHaveBeenCalledWith('leg-1', null);
+    expect(updateResult).toHaveBeenCalledWith('proposal-1', CouponResult.VOID);
+  });
+
+  it('refunds a half-time leg on a FINISHED fixture that never got a half-time score', async () => {
+    const { service, settleLeg, updateResult } = makeHarness({
+      legs: [
+        makeLeg({
+          id: 'leg-1',
+          fixtureId: 'f1',
+          market: Market.OVER_UNDER_HT,
+          pick: 'OVER_0_5',
+        }),
+        makeLeg({ id: 'leg-2', fixtureId: 'f2', oddsSnapshot: 1.5 }), // OVER, wins
+      ],
+      fixtures: [
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.FINISHED,
+          homeScore: 2,
+          awayScore: 0,
+        }),
+        makeFixture({
+          id: 'f2',
+          status: FixtureStatus.FINISHED,
+          homeScore: 2,
+          awayScore: 1,
+        }),
+      ],
+    });
+
+    await service.settleProposal('proposal-1');
+
+    expect(settleLeg).toHaveBeenCalledWith('leg-1', null);
+    expect(updateResult).toHaveBeenCalledWith(
+      'proposal-1',
+      CouponResult.PARTIAL,
+      1.5,
+    );
   });
 });
