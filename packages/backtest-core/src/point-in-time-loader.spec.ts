@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import Decimal from "decimal.js";
 import { PointInTimeLoader } from "./point-in-time-loader";
 import type { PrismaClient } from "@evcore/db";
 
@@ -232,5 +233,50 @@ describe("PointInTimeLoader.loadCongestionScore", () => {
 
     // home = 1 (max congestion), away = 0 → average 0.5.
     expect(score).toBeCloseTo(0.5, 10);
+  });
+});
+
+describe("PointInTimeLoader.loadOddsBatch captureGuard", () => {
+  const kickoff = new Date("2025-03-01T15:00:00.000Z");
+  const asOf = new Date(kickoff.getTime() - 60 * 60 * 1000);
+  const row = {
+    fixtureId: "f1",
+    bookmaker: "Pinnacle",
+    market: "ONE_X_TWO",
+    pick: null,
+    odds: null,
+    // Price updated before kickoff, row written a week later (retro-import).
+    snapshotAt: new Date(kickoff.getTime() - 3 * 60 * 60 * 1000),
+    createdAt: new Date(kickoff.getTime() + 7 * 24 * 60 * 60 * 1000),
+    homeOdds: new Decimal(2),
+    drawOdds: new Decimal(3.4),
+    awayOdds: new Decimal(3.6),
+  };
+  const client = {
+    oddsSnapshot: { findMany: vi.fn().mockResolvedValue([row]) },
+  } as unknown as PrismaClient;
+
+  it("drops retro-imported rows by default (capture-time guard)", async () => {
+    const loader = new PointInTimeLoader(client);
+    const result = await loader.loadOddsBatch([{ fixtureId: "f1", asOf }]);
+    expect(result.get("f1")).toBeNull();
+  });
+
+  it("keeps them under the snapshotAt guard, still bounded by bookmaker time", async () => {
+    const loader = new PointInTimeLoader(client);
+    const result = await loader.loadOddsBatch([{ fixtureId: "f1", asOf }], {
+      captureGuard: "snapshotAt",
+    });
+    expect(result.get("f1")?.homeOdds.toNumber()).toBe(2);
+    const tooEarly = await loader.loadOddsBatch(
+      [
+        {
+          fixtureId: "f1",
+          asOf: new Date(kickoff.getTime() - 4 * 60 * 60 * 1000),
+        },
+      ],
+      { captureGuard: "snapshotAt" },
+    );
+    expect(tooEarly.get("f1")).toBeNull();
   });
 });

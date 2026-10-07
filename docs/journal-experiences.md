@@ -263,6 +263,66 @@ Source : `docs/audits/2026-09-16/ASIAN-HANDICAP.md`, régénérable par
 
 ---
 
+## 2026-10-06 — Classer les lignes d'un canal par probabilité dans la bande, pas par EV
+
+### La règle d'EV retient-elle la ligne la plus surestimée ?
+
+**Verdict : oui, mesuré, et la règle de remplacement est appliquée à GOALS,
+TEAM_TOTAL et OVER_UNDER_HT.** Script
+`packages/backtest-core/scripts/backtest-strategy-ranking.ts`, rapport
+`docs/audits/2026-10-06/strategy-ranking.txt`.
+
+Six canaux évaluent plusieurs lignes au-dessus d'un seuil de probabilité et
+gardaient celle à l'EV maximale. Classer par probabilité seule choisirait
+toujours la ligne la plus probable (UNDER 4.5 à 1,05) — c'est la raison
+historique de la règle d'EV. La règle candidate `probability_in_band` ne
+garde que les lignes pricées dans la bande 1,20–1,80, celle où la
+calibration par jambe tient (0,899 / 0,836 / 0,619 au-delà), et prend la
+plus probable. Aucun paramètre n'a été choisi sur les données : la bande
+vient de l'audit du 22 août.
+
+Rejeu sur la chaîne de production (team_stats point-in-time, ajustement H2H
+de λ, signaux H2H, congestion, cotes assemblées à coup d'envoi − 1 h),
+20 246 matchs. Les cotes 2025 d'avant coup d'envoi ont été importées après
+coup : le rejeu borne sur l'heure du bookmaker, pas sur l'heure d'écriture
+(option `captureGuard` du chargeur). En 2025 seul GOALS est réellement pricé
+(les autres marchés n'étaient pas collectés) ; 2026 est la fenêtre complète
+et n'a servi à rien d'autre.
+
+Le Brier n'est pas comparable entre deux ensembles de picks différents (une
+ligne plus courte est plus facile) ; la mesure qui compare, c'est le ratio
+réalisé/annoncé.
+
+| Canal, 2026   | Règle | n     | Annoncé | Réalisé | Ratio     | Cote moy. | ROI    |
+| ------------- | ----- | ----- | ------- | ------- | --------- | --------- | ------ |
+| GOALS         | EV    | 6 061 | 0,631   | 0,583   | 0,923     | 1,75      | −2,2 % |
+| GOALS         | bande | 5 125 | 0,757   | 0,736   | **0,973** | 1,34      | −2,0 % |
+| TEAM_TOTAL    | EV    | 3 599 | 0,712   | 0,621   | 0,873     | 1,68      | −3,0 % |
+| TEAM_TOTAL    | bande | 3 456 | 0,795   | 0,731   | **0,920** | 1,32      | −4,3 % |
+| OVER_UNDER_HT | EV    | 924   | 0,699   | 0,663   | 0,948     | 1,45      | −4,6 % |
+| OVER_UNDER_HT | bande | 869   | 0,719   | 0,689   | **0,958** | 1,36      | −7,0 % |
+| DOUBLE_CHANCE | EV    | 2 862 | 0,805   | 0,753   | 0,935     | 1,34      | −2,0 % |
+| DOUBLE_CHANCE | bande | 2 087 | 0,795   | 0,738   | 0,928     | 1,30      | −4,2 % |
+
+GOALS en 2025 : EV ratio 0,944 (n = 4 262), bande 1,047 (n = 1 756). Le
+sens est le même sur les deux fenêtres. RESULT_TOTAL_GOALS et RESULT_BTTS :
+la bande ne trouve presque jamais de ligne (93 et 33 picks sur 9 483), leurs
+prix sont au-delà de 1,80 ; ils restent en EV, en observation. DOUBLE_CHANCE
+ne gagne rien : il reste en EV.
+
+Une ligne sans prix reste une observation : en mode bande elle vient
+après les lignes pricées de la bande, comme avant, et seule une ligne pricée
+hors bande n'est plus jouée (code de rejet `no_priced_line_in_band`).
+
+Ce que ça change et ne change pas. La sur-annonce des trois canaux de la
+famille « buts » tombe de 5 à 13 points à 3 à 8 points. Le ROI ne bouge pas,
+ou se dégrade dans le bruit (SE 1,5 à 3 points) : aucune règle de
+sélection ne bat le prix, celle-ci annonce seulement moins faux. Les cotes
+moyennes passent de 1,7 à 1,3 : le vivier coupon reçoit des jambes plus
+courtes, donc des coupons à plus de jambes pour la même cible.
+
+---
+
 ## 2026-10-06 — Le blend 1X2 propagé aux marchés joints
 
 ### P(HOME ∧ UNDER 4.5) dépassait P(HOME)

@@ -1,3 +1,8 @@
+import {
+  noCandidateReason,
+  rankLineCandidates,
+  type RankingOptions,
+} from "./ranking";
 import type Decimal from "decimal.js";
 import { Market } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
@@ -41,25 +46,13 @@ type ResultBttsCandidate = {
   priced: ReturnType<typeof priceForSelection>;
 };
 
-// Rank value-first (EV when priced), same tiebreak as ResultTotalGoalsStrategy.
-function compareResultBttsCandidates(
-  a: ResultBttsCandidate,
-  b: ResultBttsCandidate,
-): number {
-  const aEv = a.priced.ev ?? null;
-  const bEv = b.priced.ev ?? null;
-  if (aEv !== null && bEv !== null) return bEv.comparedTo(aEv);
-  if (aEv !== null) return -1;
-  if (bEv !== null) return 1;
-  return b.probability.comparedTo(a.probability);
-}
-
 // Pure RESULT_BTTS decision over an explicit set of (already enabled) pick
 // configs — mirrors decideResultTotalGoals, (side, outcome) dimension instead
 // of (side, line).
 export function decideResultBtts(
   context: StrategyContext,
   pickConfigs: readonly ResultBttsPickConfig[],
+  options: RankingOptions = {},
 ): StrategyDecision {
   const channel = STRATEGY_CHANNEL.RESULT_BTTS;
   if (pickConfigs.length === 0) {
@@ -115,13 +108,13 @@ export function decideResultBtts(
     };
   }
 
-  candidates.sort(compareResultBttsCandidates);
-  const best = candidates[0];
+  const ranked = rankLineCandidates(candidates, options);
+  const best = ranked[0];
   if (!best)
     return {
       channel,
       status: CHANNEL_DECISION_STATUS.REJECTED,
-      reasonCode: "no_candidates",
+      reasonCode: noCandidateReason(options),
       selections: [],
     };
   const selection: StrategySelection = {

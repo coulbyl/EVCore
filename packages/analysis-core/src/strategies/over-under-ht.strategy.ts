@@ -1,3 +1,9 @@
+import {
+  PRODUCTION_LINE_RANKING,
+  noCandidateReason,
+  rankLineCandidates,
+  type RankingOptions,
+} from "./ranking";
 import type Decimal from "decimal.js";
 import { Market } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
@@ -37,25 +43,13 @@ type OverUnderHtCandidate = {
   priced: ReturnType<typeof priceForSelection>;
 };
 
-// Rank value-first (EV when priced), same tiebreak as GoalsStrategy/TeamTotalStrategy.
-function compareOverUnderHtCandidates(
-  a: OverUnderHtCandidate,
-  b: OverUnderHtCandidate,
-): number {
-  const aEv = a.priced.ev ?? null;
-  const bEv = b.priced.ev ?? null;
-  if (aEv !== null && bEv !== null) return bEv.comparedTo(aEv);
-  if (aEv !== null) return -1;
-  if (bEv !== null) return 1;
-  return b.probability.comparedTo(a.probability);
-}
-
 // Pure OVER_UNDER_HT decision over an explicit set of (already enabled) line
 // configs — mirrors decideGoals/decideTeamTotal, single line dimension
 // (0.5/1.5), no team split.
 export function decideOverUnderHt(
   context: StrategyContext,
   lineConfigs: readonly OverUnderHtLineConfig[],
+  options: RankingOptions = {},
 ): StrategyDecision {
   const channel = STRATEGY_CHANNEL.OVER_UNDER_HT;
   // OVER_UNDER_HT is derived from the same half-time decomposition as
@@ -125,13 +119,13 @@ export function decideOverUnderHt(
     };
   }
 
-  candidates.sort(compareOverUnderHtCandidates);
-  const best = candidates[0];
+  const ranked = rankLineCandidates(candidates, options);
+  const best = ranked[0];
   if (!best)
     return {
       channel,
       status: CHANNEL_DECISION_STATUS.REJECTED,
-      reasonCode: "no_candidates",
+      reasonCode: noCandidateReason(options),
       selections: [],
     };
   const selection: StrategySelection = {
@@ -161,6 +155,7 @@ export class OverUnderHtStrategy implements ChannelStrategy {
     return decideOverUnderHt(
       context,
       getOverUnderHtLineConfigs(context.competitionCode),
+      PRODUCTION_LINE_RANKING.OVER_UNDER_HT,
     );
   }
 }

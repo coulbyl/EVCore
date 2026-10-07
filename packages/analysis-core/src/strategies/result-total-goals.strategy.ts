@@ -1,3 +1,8 @@
+import {
+  noCandidateReason,
+  rankLineCandidates,
+  type RankingOptions,
+} from "./ranking";
 import type Decimal from "decimal.js";
 import { Market } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
@@ -42,25 +47,13 @@ type ResultTotalGoalsCandidate = {
   priced: ReturnType<typeof priceForSelection>;
 };
 
-// Rank value-first (EV when priced), same tiebreak as TeamTotalStrategy.
-function compareResultTotalGoalsCandidates(
-  a: ResultTotalGoalsCandidate,
-  b: ResultTotalGoalsCandidate,
-): number {
-  const aEv = a.priced.ev ?? null;
-  const bEv = b.priced.ev ?? null;
-  if (aEv !== null && bEv !== null) return bEv.comparedTo(aEv);
-  if (aEv !== null) return -1;
-  if (bEv !== null) return 1;
-  return b.probability.comparedTo(a.probability);
-}
-
 // Pure RESULT_TOTAL_GOALS decision over an explicit set of (already enabled)
 // line configs — mirrors decideTeamTotal, single (side, line) dimension
 // instead of team-doubled.
 export function decideResultTotalGoals(
   context: StrategyContext,
   lineConfigs: readonly ResultTotalGoalsLineConfig[],
+  options: RankingOptions = {},
 ): StrategyDecision {
   const channel = STRATEGY_CHANNEL.RESULT_TOTAL_GOALS;
   if (lineConfigs.length === 0) {
@@ -116,13 +109,13 @@ export function decideResultTotalGoals(
     };
   }
 
-  candidates.sort(compareResultTotalGoalsCandidates);
-  const best = candidates[0];
+  const ranked = rankLineCandidates(candidates, options);
+  const best = ranked[0];
   if (!best)
     return {
       channel,
       status: CHANNEL_DECISION_STATUS.REJECTED,
-      reasonCode: "no_candidates",
+      reasonCode: noCandidateReason(options),
       selections: [],
     };
   const selection: StrategySelection = {

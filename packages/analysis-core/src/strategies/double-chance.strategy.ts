@@ -1,3 +1,8 @@
+import {
+  noCandidateReason,
+  rankLineCandidates,
+  type RankingOptions,
+} from "./ranking";
 import type Decimal from "decimal.js";
 import { Market } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
@@ -16,27 +21,16 @@ type DoubleChanceCandidate = {
   priced: ReturnType<typeof priceForSelection>;
 };
 
-// Rank value-first (EV when priced), same tiebreak as GoalsStrategy — a
-// price-less candidate is never selected (see decideDoubleChance).
-function compareDoubleChanceCandidates(
-  a: DoubleChanceCandidate,
-  b: DoubleChanceCandidate,
-): number {
-  const aEv = a.priced.ev ?? null;
-  const bEv = b.priced.ev ?? null;
-  if (aEv !== null && bEv !== null) return bEv.comparedTo(aEv);
-  if (aEv !== null) return -1;
-  if (bEv !== null) return 1;
-  return b.probability.comparedTo(a.probability);
-}
-
 // Pure DOUBLE_CHANCE decision. Unlike every other channel here, this reads no
 // per-league config: dc1X/dcX2/dc12 are pure linear derivations of the
 // already-calibrated 1X2 (dc1X = home+draw, etc — see probability/poisson.ts),
 // so there's no new signal to calibrate per league. Same shape as SAFE's
 // relationship to VALUE: same underlying probabilities, a safer point on the
 // risk/payout curve (cover 2 of 3 outcomes at shorter odds).
-export function decideDoubleChance(context: StrategyContext): StrategyDecision {
+export function decideDoubleChance(
+  context: StrategyContext,
+  options: RankingOptions = {},
+): StrategyDecision {
   const channel = STRATEGY_CHANNEL.DOUBLE_CHANCE;
   if (!DOUBLE_CHANCE_CONFIG.enabled) {
     return {
@@ -99,13 +93,13 @@ export function decideDoubleChance(context: StrategyContext): StrategyDecision {
     };
   }
 
-  priced.sort(compareDoubleChanceCandidates);
-  const best = priced[0];
+  const ranked = rankLineCandidates(priced, options);
+  const best = ranked[0];
   if (!best)
     return {
       channel,
       status: CHANNEL_DECISION_STATUS.REJECTED,
-      reasonCode: "no_candidates",
+      reasonCode: noCandidateReason(options),
       selections: [],
     };
   const selection: StrategySelection = {

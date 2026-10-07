@@ -1,0 +1,46 @@
+Rejeu des six canaux multi-lignes, deux règles de classement — 2026-10-06T23:50:03.637Z
+Fenêtres : sélection [2025-01-01 ; 2026-01-01[, validation ensuite. Décision à coup d'envoi − 1 h. Cotes bornées sur snapshotAt (prix d'avant coup d'envoi importés après coup en 2025).
+
+26682 matchs terminés dans les compétitions de backtest.
+20246 matchs rejoués, 6436 ignorés (team_stats ou cotes absents à asOf).
+
+== SÉLECTION ==
+GOALS
+  ev (prod)            sélections  4262 (réglées  4262 / 10763 matchs) | annoncé 0.551 réalisé 0.520 ratio 0.944 | brier 0.2512 | cote moy 1.89 | ROI -2.9 %
+  proba in 1.20-1.80   sélections  1756 (réglées  1756 / 10763 matchs) | annoncé 0.559 réalisé 0.585 ratio 1.047 | brier 0.2447 | cote moy 1.61 | ROI -6.0 %
+DOUBLE_CHANCE
+  ev (prod)            sélections     0 (réglées     0 / 10763 matchs) | annoncé 0.000 réalisé 0.000 ratio 0.000 | brier 0.0000 | cote moy 0.00 | ROI 0.0 %
+  proba in 1.20-1.80   sélections     0 (réglées     0 / 10763 matchs) | annoncé 0.000 réalisé 0.000 ratio 0.000 | brier 0.0000 | cote moy 0.00 | ROI 0.0 %
+OVER_UNDER_HT
+  ev (prod)            sélections  2629 (réglées    95 / 10763 matchs) | annoncé 0.612 réalisé 0.537 ratio 0.877 | brier 0.2548 | cote moy 1.88 | ROI 0.7 %
+  proba in 1.20-1.80   sélections    20 (réglées    20 / 10763 matchs) | annoncé 0.641 réalisé 0.600 ratio 0.936 | brier 0.2701 | cote moy 1.78 | ROI 7.0 %
+TEAM_TOTAL
+  ev (prod)            sélections 10763 (réglées     0 / 10763 matchs) | annoncé 0.000 réalisé 0.000 ratio 0.000 | brier 0.0000 | cote moy 0.00 | ROI 0.0 %
+  proba in 1.20-1.80   sélections     0 (réglées     0 / 10763 matchs) | annoncé 0.000 réalisé 0.000 ratio 0.000 | brier 0.0000 | cote moy 0.00 | ROI 0.0 %
+RESULT_TOTAL_GOALS
+  ev (prod)            sélections  5269 (réglées     0 / 10763 matchs) | annoncé 0.000 réalisé 0.000 ratio 0.000 | brier 0.0000 | cote moy 0.00 | ROI 0.0 %
+  proba in 1.20-1.80   sélections     0 (réglées     0 / 10763 matchs) | annoncé 0.000 réalisé 0.000 ratio 0.000 | brier 0.0000 | cote moy 0.00 | ROI 0.0 %
+RESULT_BTTS
+  ev (prod)            sélections 10763 (réglées     0 / 10763 matchs) | annoncé 0.000 réalisé 0.000 ratio 0.000 | brier 0.0000 | cote moy 0.00 | ROI 0.0 %
+  proba in 1.20-1.80   sélections     0 (réglées     0 / 10763 matchs) | annoncé 0.000 réalisé 0.000 ratio 0.000 | brier 0.0000 | cote moy 0.00 | ROI 0.0 %
+
+== VALIDATION ==
+GOALS
+  ev (prod)            sélections  6061 (réglées  6061 / 9483 matchs) | annoncé 0.631 réalisé 0.583 ratio 0.923 | brier 0.2331 | cote moy 1.75 | ROI -2.2 %
+  proba in 1.20-1.80   sélections  5125 (réglées  5125 / 9483 matchs) | annoncé 0.757 réalisé 0.736 ratio 0.973 | brier 0.1928 | cote moy 1.34 | ROI -2.0 %
+DOUBLE_CHANCE
+  ev (prod)            sélections  2862 (réglées  2862 / 9483 matchs) | annoncé 0.805 réalisé 0.753 ratio 0.935 | brier 0.1878 | cote moy 1.34 | ROI -2.0 %
+  proba in 1.20-1.80   sélections  2087 (réglées  2087 / 9483 matchs) | annoncé 0.795 réalisé 0.738 ratio 0.928 | brier 0.1964 | cote moy 1.30 | ROI -4.2 %
+OVER_UNDER_HT
+  ev (prod)            sélections  1884 (réglées   924 / 9483 matchs) | annoncé 0.699 réalisé 0.663 ratio 0.948 | brier 0.2203 | cote moy 1.45 | ROI -4.6 %
+  proba in 1.20-1.80   sélections   869 (réglées   869 / 9483 matchs) | annoncé 0.719 réalisé 0.689 ratio 0.958 | brier 0.2119 | cote moy 1.36 | ROI -7.0 %
+TEAM_TOTAL
+  ev (prod)            sélections  9483 (réglées  3599 / 9483 matchs) | annoncé 0.712 réalisé 0.621 ratio 0.873 | brier 0.2249 | cote moy 1.68 | ROI -3.0 %
+  proba in 1.20-1.80   sélections  3456 (réglées  3456 / 9483 matchs) | annoncé 0.795 réalisé 0.731 ratio 0.920 | brier 0.2035 | cote moy 1.32 | ROI -4.3 %
+RESULT_TOTAL_GOALS
+  ev (prod)            sélections  5200 (réglées  2116 / 9483 matchs) | annoncé 0.237 réalisé 0.225 ratio 0.950 | brier 0.1653 | cote moy 5.32 | ROI -8.7 %
+  proba in 1.20-1.80   sélections    93 (réglées    93 / 9483 matchs) | annoncé 0.434 réalisé 0.591 ratio 1.362 | brier 0.2606 | cote moy 1.66 | ROI -3.2 %
+RESULT_BTTS
+  ev (prod)            sélections  9446 (réglées  3508 / 9483 matchs) | annoncé 0.240 réalisé 0.160 ratio 0.666 | brier 0.1394 | cote moy 7.49 | ROI -14.2 %
+  proba in 1.20-1.80   sélections    33 (réglées    33 / 9483 matchs) | annoncé 0.379 réalisé 0.697 ratio 1.840 | brier 0.3478 | cote moy 1.61 | ROI 12.3 %
+

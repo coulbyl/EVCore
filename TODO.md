@@ -90,12 +90,11 @@ vantage-worker 133, backtest-core 35) :
       RESULT_TOTAL_GOALS UNDER, WIN_TO_NIL) le 2026-10-06 ; 7 013
       incohérences → 0, Brier meilleur sur les deux fenêtres (journal du
       2026-10-06).
-- [ ] **Six stratégies Phase 1 classent leur ligne par EV** (GOALS,
-      DOUBLE_CHANCE, OVER_UNDER_HT, TEAM_TOTAL, RESULT_TOTAL_GOALS,
-      RESULT_BTTS). Classer par probabilité seule sélectionnerait toujours
-      la ligne la plus probable (UNDER 4.5 à 1,05) : la règle de remplacement
-      doit porter sur le prix (bande 1,20–1,80) et se rejouer par canal avant
-      tout changement.
+- [x] **Classement des lignes par EV** : rejoué le 2026-10-06
+      (`backtest:strategy-ranking`) ; GOALS, TEAM*TOTAL et OVER_UNDER_HT
+      passent en `probability_in_band` (1,20–1,80), ratio réalisé/annoncé
+      0,923 → 0,973, 0,873 → 0,920, 0,948 → 0,958 sur 2026 ; DOUBLE_CHANCE
+      sans gain et RESULT*\* sans ligne dans la bande restent en EV.
 - [ ] H2H/congestion décalent over25 sans ses partitions (`*_OVER_2_5` de
       RESULT_TOTAL_GOALS, over15/over35) ; congestion = intercept global
       (`delta × (score − 0,5)` avec score 0 presque partout). Rejeu avant.
