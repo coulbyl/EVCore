@@ -8,7 +8,14 @@ import {
   resolvePickBetStatus,
   resolveWinEitherHalfBetStatus,
 } from '../betting-engine/betting-engine.utils';
-import { CouponRepository } from './coupon.repository';
+import {
+  CouponRepository,
+  type CouponProposalWithLegs,
+} from './coupon.repository';
+import {
+  readQuotedBookmaker,
+  resolveLegClosingLine,
+} from './coupon-leg-closing-line';
 import { createLogger } from '@utils/logger';
 import { productDecimal, type DecimalLike } from '@utils/decimal.utils';
 
@@ -124,6 +131,7 @@ export class CouponSettlementService {
     });
 
     const fixtureMap = new Map(fixtures.map((f) => [f.id, f]));
+    await this.recordClosingLines(proposal.legs, fixtureMap);
     const now = Date.now();
 
     let allResolved = true;
@@ -306,5 +314,62 @@ export class CouponSettlementService {
       },
       'Proposal settled',
     );
+  }
+
+  /**
+   * Ligne de clôture et CLV de chaque jambe sur une rencontre terminée
+   * (chantier E, E-2). Une seule fois par jambe : une jambe déjà renseignée
+   * n'est pas relue, ce qui rend le re-règlement (`settleRange`) idempotent
+   * et lui fait remplir l'historique là où une clôture existe.
+   *
+   * Indépendant de l'issue — le CLV ne dépend pas du résultat, c'est toute
+   * sa valeur —, donc calculé avant la combinatoire, et jamais bloquant : une
+   * jambe sans clôture assez fraîche reste à null, elle ne retarde pas le
+   * règlement.
+   */
+  private async recordClosingLines(
+    legs: CouponProposalWithLegs['legs'],
+    fixtureMap: Map<string, { status: FixtureStatus; scheduledAt: Date }>,
+  ): Promise<void> {
+    const pending = legs.filter(
+      (leg) =>
+        leg.closingOdds === null &&
+        leg.oddsSnapshot !== null &&
+        fixtureMap.get(leg.fixtureId)?.status === FixtureStatus.FINISHED,
+    );
+    if (pending.length === 0) return;
+
+    const rows = await this.repo.findClosingLines({
+      fixtureIds: [...new Set(pending.map((leg) => leg.fixtureId))],
+      markets: [...new Set(pending.map((leg) => leg.market))],
+      maxHoursBeforeKickoff:
+        COUPON_SETTLEMENT_POLICY.closingLineMaxHoursBeforeKickoff,
+    });
+    if (rows.length === 0) return;
+
+    for (const leg of pending) {
+      const fixture = fixtureMap.get(leg.fixtureId);
+      if (!fixture || leg.oddsSnapshot === null) continue;
+      const closing = resolveLegClosingLine({
+        market: leg.market,
+        pick: leg.pick,
+        takenOdds: leg.oddsSnapshot.toString(),
+        preferredBookmaker: readQuotedBookmaker(leg.featureSnapshot),
+        rows: rows.filter((row) => row.fixtureId === leg.fixtureId),
+      });
+      if (!closing) continue;
+      await this.repo.updateLegClosingLine(leg.id, {
+        closingOdds: closing.closingOdds,
+        closingBookmaker: closing.closingBookmaker,
+        // La vue mesure la distance au coup d'envoi sur l'heure d'observation
+        // (ou `snapshotAt` avant la migration `observedAt`) : la retrancher
+        // au coup d'envoi rend cette heure sans dépendre de la version de la vue.
+        closingObservedAt: new Date(
+          fixture.scheduledAt.getTime() -
+            closing.hoursBeforeKickoff * 3_600_000,
+        ),
+        closingLineValue: closing.closingLineValue,
+      });
+    }
   }
 }

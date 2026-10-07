@@ -504,10 +504,27 @@ Aujourd'hui inexistant.
       **retourne `null` plutôt qu'une valeur approchée** sur un groupe de choix
       incomplet — un CLV faux dans un indicateur de décision est pire qu'un
       silence.
-- [ ] `E-2` Enregistrer le CLV de chaque sélection à la clôture.
-      _Acceptation_ : colonne peuplée pour ≥ 80 % des sélections.
-- [ ] `E-3` Tableau de bord CLV par canal, marché, championnat, book.
-      _Acceptation_ : rapport régénérable.
+- [~] `E-2` Enregistrer le CLV de chaque sélection à la clôture.
+  _Acceptation_ : colonne peuplée pour ≥ 80 % des sélections.
+  _Code fait 2026-10-07_ pour les **jambes de coupon** (les deux
+  sources) : `coupon_proposal_leg.closingLineValue`, avec `closingOdds`,
+  `closingBookmaker`, `closingObservedAt`, écrits au règlement depuis
+  `odds_closing_line` — groupe d'issues complet chez un même book
+  (`outcomeGroup`, analysis-core), observation à moins de 90 min du coup
+  d'envoi (`COUPON_SETTLEMENT_POLICY.closingLineMaxHoursBeforeKickoff`),
+  book de la citation LLM sinon le mieux classé. Migration
+  `20261007120000_add_coupon_leg_closing_line` **à enregistrer par
+  `db:deploy`** ; un re-règlement remplit l'historique. Couverture à
+  vérifier une semaine après déploiement : sur le dump du 2026-10-05,
+  12,7 % des jambes avaient un relevé à 90 min sur `snapshotAt`, la
+  capture T−10 n'étant visible qu'avec `observedAt`. Les sélections de
+  canal attendent la provenance par marché du relevé assemblé.
+- [~] `E-3` Tableau de bord CLV par canal, marché, championnat, book.
+  _Acceptation_ : rapport régénérable.
+  _Code fait 2026-10-07_ : `report:coupon-clv` (backtest-core), source ×
+  marché avec couverture, CLV moyen ± erreur type, taux de réussite et
+  probabilité de clôture moyenne ; championnat et book restent à ajouter
+  quand la couverture le justifie.
 - [ ] `E-4` Seuil de décision : un canal dont le CLV est négatif sur 500
       sélections est suspendu.
       _Acceptation_ : règle écrite, constante en config, testée.

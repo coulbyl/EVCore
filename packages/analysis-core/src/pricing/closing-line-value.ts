@@ -81,6 +81,54 @@ export type ClosingLineValue = {
   probabilityDrift: Decimal;
 };
 
+export type ClosingValueInput = {
+  /** Cote effectivement obtenue au moment du pari. */
+  takenOdds: Decimal;
+  /** Choix pris, tel qu'il apparaît dans le groupe de clôture. */
+  pick: string;
+  /** Groupe de choix complet à la clôture, chez le book de référence. */
+  closingOutcomes: readonly PricedOutcome[];
+  /** Somme des probabilités vraies du groupe : 1, sauf double chance (2). */
+  outcomeTotal?: number;
+};
+
+export type ClosingValue = {
+  /** Cote brute du choix à la clôture, chez le book de référence. */
+  closingOdds: Decimal;
+  /** Probabilité vraie du choix à la clôture, marge retirée. */
+  closingFair: Decimal;
+  /** Cote obtenue × probabilité de clôture − 1 (cf. ClosingLineValue.value). */
+  value: Decimal;
+};
+
+/**
+ * Valeur prise sur la clôture quand seul le groupe de clôture est connu.
+ *
+ * C'est le cas d'une jambe de coupon réglée après coup : sa cote est
+ * enregistrée, mais pas les issues voisines au moment de la proposition.
+ * La valeur ne dépend que de la cote obtenue et de la probabilité de clôture
+ * sans marge ; la dérive de probabilité, elle, exige le groupe de prise et
+ * reste réservée à `closingLineValue`.
+ */
+export function closingValue(input: ClosingValueInput): ClosingValue | null {
+  if (input.takenOdds.lte(1)) return null;
+  const closing = fairProbabilities(
+    input.closingOutcomes,
+    input.outcomeTotal ?? 1,
+  );
+  if (!closing) return null;
+  const closingFair = closing.get(input.pick);
+  const closingOdds = input.closingOutcomes.find(
+    (outcome) => outcome.pick === input.pick,
+  )?.odds;
+  if (!closingFair || !closingOdds) return null;
+  return {
+    closingOdds,
+    closingFair,
+    value: input.takenOdds.times(closingFair).minus(1),
+  };
+}
+
 /**
  * CLV d'un pari, ou `null` si l'un des deux groupes de choix est inexploitable
  * (incomplet, cote non jouable, choix absent).
@@ -95,18 +143,16 @@ export function closingLineValue(
 ): ClosingLineValue | null {
   const total = input.outcomeTotal ?? 1;
   const taken = fairProbabilities(input.takenOutcomes, total);
-  const closing = fairProbabilities(input.closingOutcomes, total);
+  const closing = closingValue({ ...input, outcomeTotal: total });
   if (!taken || !closing) return null;
 
   const takenFair = taken.get(input.pick);
-  const closingFair = closing.get(input.pick);
-  if (!takenFair || !closingFair) return null;
-  if (input.takenOdds.lte(1)) return null;
+  if (!takenFair) return null;
 
   return {
     takenFair,
-    closingFair,
-    value: input.takenOdds.times(closingFair).minus(1),
-    probabilityDrift: closingFair.minus(takenFair),
+    closingFair: closing.closingFair,
+    value: closing.value,
+    probabilityDrift: closing.closingFair.minus(takenFair),
   };
 }

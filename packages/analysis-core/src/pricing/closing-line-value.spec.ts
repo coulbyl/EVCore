@@ -1,6 +1,10 @@
 import Decimal from "decimal.js";
 import { describe, expect, it } from "vitest";
-import { closingLineValue, fairProbabilities } from "./closing-line-value";
+import {
+  closingLineValue,
+  closingValue,
+  fairProbabilities,
+} from "./closing-line-value";
 
 const outcome = (pick: string, odds: string) => ({
   pick,
@@ -145,6 +149,76 @@ describe("closingLineValue", () => {
         pick: "OVER",
         takenOutcomes,
         closingOutcomes: takenOutcomes,
+      }),
+    ).toBeNull();
+  });
+});
+
+describe("closingValue", () => {
+  const closingOutcomes = [
+    outcome("HOME", "1.90"),
+    outcome("DRAW", "3.60"),
+    outcome("AWAY", "4.20"),
+  ];
+
+  it("vaut cote obtenue × probabilité de clôture sans marge − 1", () => {
+    const result = closingValue({
+      takenOdds: new Decimal("2.10"),
+      pick: "HOME",
+      closingOutcomes,
+    });
+    const fair = fairProbabilities(closingOutcomes)?.get("HOME");
+    expect(result?.closingOdds.toString()).toBe("1.9");
+    expect(result?.closingFair.toNumber()).toBeCloseTo(
+      fair?.toNumber() ?? NaN,
+      12,
+    );
+    expect(result?.value.toNumber()).toBeCloseTo(
+      2.1 * (fair?.toNumber() ?? NaN) - 1,
+      12,
+    );
+  });
+
+  it("coïncide avec closingLineValue sur le même groupe de clôture", () => {
+    const takenOutcomes = [
+      outcome("HOME", "2.10"),
+      outcome("DRAW", "3.50"),
+      outcome("AWAY", "3.80"),
+    ];
+    const full = closingLineValue({
+      takenOdds: new Decimal("2.10"),
+      pick: "HOME",
+      takenOutcomes,
+      closingOutcomes,
+    });
+    const partial = closingValue({
+      takenOdds: new Decimal("2.10"),
+      pick: "HOME",
+      closingOutcomes,
+    });
+    expect(partial?.value.toString()).toBe(full?.value.toString());
+  });
+
+  it("refuse un choix absent du groupe, un groupe incomplet, une cote non jouable", () => {
+    expect(
+      closingValue({
+        takenOdds: new Decimal("2.10"),
+        pick: "1X",
+        closingOutcomes,
+      }),
+    ).toBeNull();
+    expect(
+      closingValue({
+        takenOdds: new Decimal("2.10"),
+        pick: "HOME",
+        closingOutcomes: [outcome("HOME", "1.90")],
+      }),
+    ).toBeNull();
+    expect(
+      closingValue({
+        takenOdds: new Decimal("1.00"),
+        pick: "HOME",
+        closingOutcomes,
       }),
     ).toBeNull();
   });
