@@ -141,8 +141,36 @@ describe("requestVantageCompletion — provider fallback", () => {
     expect(fallbackCreate).toHaveBeenCalledTimes(1);
   });
 
-  it("does not fall back on a non-retryable error (401) — fails fast", async () => {
-    const authError = new Groq.APIError(401, {}, "bad key", {});
+  it("falls back on a 401 invalid key of the primary (the 2026-10-09 outage)", async () => {
+    const quotaError = new Groq.APIError(
+      401,
+      { error: { param: "quota" } },
+      "Payment required to access this resource. Visit your billing tab.",
+      {},
+    );
+    const primaryCreate = vi.fn().mockRejectedValue(quotaError);
+    const fallbackCreate = vi.fn().mockResolvedValue({
+      choices: [{ message: { content: '{"served":"by-fallback"}' } }],
+    });
+    const clients: LlmClients = {
+      primary: {
+        provider: "cerebras",
+        client: stubClient(primaryCreate),
+        model: "m1",
+      },
+      fallbacks: [
+        { provider: "groq", client: stubClient(fallbackCreate), model: "m2" },
+      ],
+    };
+
+    await expect(
+      requestVantageCompletion(clients, "sys", "user", noopLogger),
+    ).resolves.toBe('{"served":"by-fallback"}');
+    expect(fallbackCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not fall back on a non-retryable error (400, our request) — fails fast", async () => {
+    const authError = new Groq.APIError(400, {}, "bad request", {});
     const primaryCreate = vi.fn().mockRejectedValue(authError);
     const fallbackCreate = vi.fn();
     const clients: LlmClients = {

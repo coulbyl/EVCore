@@ -44,11 +44,26 @@ export type ChannelSelectionItem = {
   pick: string;
   probability: number;
   odds: number | null;
+  /** Book qui a servi `odds` (null avant le 2026-10-10). */
+  oddsBookmaker: string | null;
+  /** Marge payée sur le groupe d'issues de ce book, et meilleure marge du relevé (E-5/E-6). */
+  marginPaid: number | null;
+  marginBest: number | null;
   impliedProbability: number | null;
   ev: number | null;
   qualityScore: number | null;
   rank: number;
   result: BetStatus | null;
+  settledAt: string | null;
+  /**
+   * Ligne de clôture (E-2) : cote du choix chez `closingBookmaker` juste
+   * avant le coup d'envoi, et `closingLineValue` = odds × probabilité de
+   * clôture sans marge − 1. Null tant que la sélection n'est pas réglée ou
+   * qu'aucun book n'a coté le groupe complet à moins de 90 min.
+   */
+  closingOdds: number | null;
+  closingBookmaker: string | null;
+  closingLineValue: number | null;
 };
 
 // Normalised read shape (doc §5): one object per run × channel, REJECTED decisions
@@ -578,11 +593,18 @@ function toSelectionItem(
     pick: selection.pick,
     probability: Number(selection.probability),
     odds: toNumber(selection.odds),
+    oddsBookmaker: selection.oddsBookmaker,
+    marginPaid: toNumber(selection.marginPaid),
+    marginBest: toNumber(selection.marginBest),
     impliedProbability: toNumber(selection.impliedProbability),
     ev: toNumber(selection.ev),
     qualityScore: toNumber(selection.qualityScore),
     rank: selection.rank,
     result: selection.result,
+    settledAt: selection.settledAt?.toISOString() ?? null,
+    closingOdds: toNumber(selection.closingOdds),
+    closingBookmaker: selection.closingBookmaker,
+    closingLineValue: toNumber(selection.closingLineValue),
   };
 }
 

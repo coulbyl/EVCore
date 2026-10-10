@@ -352,11 +352,11 @@ describe('OddsSnapshotLoader.findLatestOddsSnapshot — TEAM_TOTAL_HOME per-line
     expect(snapshot?.teamTotalHomeOdds.OVER_2_5?.toNumber()).toBe(2.2);
     expect(snapshot?.teamTotalHomeOdds.OVER_1_5?.toNumber()).toBe(1.5);
     // La provenance par choix suit : chaque ligne connaît son book et son heure.
-    expect(snapshot?.sources?.['TEAM_TOTAL_HOME:OVER_1_5']).toEqual({
+    expect(snapshot?.sources?.['TEAM_TOTAL_HOME:OVER_1_5']).toMatchObject({
       bookmaker: 'Unibet',
       snapshotAt: earlier,
     });
-    expect(snapshot?.sources?.['ONE_X_TWO:DRAW']).toEqual({
+    expect(snapshot?.sources?.['ONE_X_TWO:DRAW']).toMatchObject({
       bookmaker: 'Bet365',
       snapshotAt: latest,
     });

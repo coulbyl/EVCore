@@ -130,13 +130,58 @@ export async function runComposePersistPass(
     }
 
     if (result.outcome === "composed") {
-      const persisted = await persistCouponProposal(
-        forDate,
-        couponClass,
-        result.coupon,
-        result.reasonDetails,
-        { ...persistOpts, llmProvenance },
-      );
+      // The selected legs travel with the attempt whatever happens next: a
+      // PRESERVED pass (the day's proposal was immutable) or a persistence
+      // failure used to lose the LLM's own selection, so the per-leg
+      // comparison with the shadows only saw published coupons.
+      const legs = result.coupon.legs.map((leg) => ({
+        channelSelectionId: leg.candidate.channelSelectionId,
+        modelRunId: leg.candidate.modelRunId,
+        fixtureId: leg.candidate.fixtureId,
+        scheduledAt: leg.candidate.scheduledAt.toISOString(),
+        canal: leg.candidate.canal,
+        market: leg.candidate.market,
+        pick: leg.candidate.pick,
+        probability: leg.candidate.calibratedProbability,
+        oddsSnapshot: leg.candidate.oddsSnapshot,
+      }));
+      const metadata = {
+        schemaVersion: 1,
+        llm: llmProvenance,
+        combinedOdds: result.coupon.combinedOdds,
+        jointProbability: result.coupon.jointProbability,
+        couponEV: result.coupon.couponEV,
+        legs,
+      };
+      let persisted: Awaited<ReturnType<typeof persistCouponProposal>>;
+      try {
+        persisted = await persistCouponProposal(
+          forDate,
+          couponClass,
+          result.coupon,
+          result.reasonDetails,
+          { ...persistOpts, llmProvenance },
+        );
+      } catch (error) {
+        // Same rule as the generation failure above: a persistence error
+        // (kickoff already passed, DB) left no row at all.
+        const message = error instanceof Error ? error.message : String(error);
+        await recordGenerationAttempt({
+          forDate,
+          pass: persistOpts.pass,
+          outcome: "ERROR",
+          candidateCount,
+          llmProvenance,
+          reason: `persist: ${message}`.slice(0, 500),
+          metadata,
+        }).catch((recordError: unknown) =>
+          logger.warn(
+            { ...logContext, error: recordError },
+            "coupon: persistence error could not be recorded",
+          ),
+        );
+        throw error;
+      }
       await recordGenerationAttempt({
         forDate,
         pass: persistOpts.pass,
@@ -144,6 +189,7 @@ export async function runComposePersistPass(
         candidateCount,
         llmProvenance,
         proposalId: persisted.proposalId,
+        metadata,
       });
       logger.info(
         {

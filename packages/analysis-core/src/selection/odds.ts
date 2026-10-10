@@ -126,6 +126,10 @@ export type PricedSelectionFields = {
   ev?: Decimal;
   oddsBookmaker?: string;
   oddsSnapshotAt?: Date;
+  /** Marge payée sur le groupe d'issues du book retenu (E-5), si connue. */
+  marginPaid?: Decimal;
+  /** Meilleure marge offerte sur ce groupe par un book du relevé (E-6). */
+  marginBest?: Decimal;
 };
 
 // EV/impliedProbability/odds enrichment to spread into a StrategySelection.
@@ -145,6 +149,8 @@ export function priceSelection(input: {
     ...(source
       ? { oddsBookmaker: source.bookmaker, oddsSnapshotAt: source.snapshotAt }
       : {}),
+    ...(source?.margin != null ? { marginPaid: source.margin } : {}),
+    ...(source?.bestMargin != null ? { marginBest: source.bestMargin } : {}),
   };
 }
 

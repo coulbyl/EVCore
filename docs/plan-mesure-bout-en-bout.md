@@ -141,10 +141,10 @@ affiche 2,39 proposé et 1,52 payé, la jambe Draw No Bet « Remboursé ».
    BTTS) sont exclus du vivier LLM sur leur coût à la clôture, politique
    `unified-5-15-v1.1`. La suspension automatique attend 500 sélections au
    book connu par canal.
-2. **E-5 — marge payée par pari** : avec `oddsBookmaker` et `oddsSnapshotAt`,
-   le groupe d'issues du book à la prise est retrouvable dans
-   `odds_snapshot` ; colonne `marginPaid` sur la sélection, rapport « marge
-   payée vs marge minimale disponible » (E-6).
+2. **E-5 / E-6 — marge payée par pari** (fait le 2026-10-11) : calculée à
+   l'assemblage du relevé depuis le groupe d'issues complet du book retenu,
+   écrite avec la sélection avec la meilleure marge disponible ;
+   `report:margin-paid`. Lecture une semaine après la migration.
 3. **Comparaison par jambe LLM / PRICE / ombre v2** sur le CLV, dès que le LLM
    produit à nouveau : c'est la mesure qui tranche entre les deux générateurs
    en semaines.
