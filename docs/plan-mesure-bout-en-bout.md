@@ -96,6 +96,16 @@ exclusif : aucun CLV, par construction. La couverture est encore celle de la
 période d'avant `observedAt` pour l'essentiel ; la lecture qui compte est
 celle de la semaine qui suit le déploiement.
 
+**Lecture du 2026-10-10 après le re-règlement en prod** (couverture 76–78 %,
+`docs/audits/2026-10-10/SELECTION-CLV.md`) : l'écart entre prix pris et prix de
+clôture est nul pour tous les canaux à deux erreurs types près (GOALS −0,08 ±
+0,08 pt, VANTAGE −0,06 ± 0,11, DRAW −0,45 ± 0,16), sauf RESULT_BTTS +1,13 ±
+0,15 et RESULT_TOTAL_GOALS +0,87 ± 0,18, que leur coût à la clôture de 12,8 et
+13,7 % annule, et VALUE +0,75 ± 0,38 sur 190 sélections. Le moteur ne prend pas
+ses prix avant que le marché ne bouge : il paie la marge, ni plus ni moins.
+Décisions : E-2 accepté ; aucune suspension ; marchés joints exclus du vivier
+LLM (`CLOSING_COST_EXCLUDED_MARKETS`).
+
 **Écran vérifié sur ces données** (`docs/audits/2026-10-10/coupons-*.png`) :
 le 9 octobre, Prix gagné à 5,78 = 2,38 × 2,43 avec ses clôtures, Analyse
 perdu à 6,52 = produit de ses cinq jambes ; le 9 septembre, un partiel
@@ -124,11 +134,13 @@ affiche 2,39 proposé et 1,52 payé, la jambe Draw No Bet « Remboursé ».
 
 ### 4.3 Prochaines PR, dans l'ordre
 
-1. **E-4 — règle de décision sur le CLV** : un canal au CLV négatif sur 500
-   sélections est suspendu ; constante en config, testée. Elle remplace le
-   garde-fou « ROI < −15 % sur 50 paris » qui lit une table morte et n'a
-   aucune puissance (TODO 2026-10-05). À écrire une fois la couverture
-   atteinte, pas avant.
+1. **E-4 — règle de décision sur le CLV** (reformulée le 2026-10-10, voir
+   plan-rentabilite) : l'écart à la clôture, pas le signe du CLV. Décidé le
+   2026-10-10 sur 13 180 sélections : aucun canal ne bat la clôture, aucune
+   suspension ; les trois marchés joints (HT/FT, résultat × total, résultat ×
+   BTTS) sont exclus du vivier LLM sur leur coût à la clôture, politique
+   `unified-5-15-v1.1`. La suspension automatique attend 500 sélections au
+   book connu par canal.
 2. **E-5 — marge payée par pari** : avec `oddsBookmaker` et `oddsSnapshotAt`,
    le groupe d'issues du book à la prise est retrouvable dans
    `odds_snapshot` ; colonne `marginPaid` sur la sélection, rapport « marge

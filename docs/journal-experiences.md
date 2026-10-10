@@ -616,6 +616,14 @@ capturée. **Relu le 2026-10-10 sur le dump du jour** (prod déjà sous `observe
 de lecture : un pari pris au prix de clôture vaut **moins la marge**, pas zéro ;
 les familles jointes ressortent 2 à 3 fois plus chères, en accord avec l'audit
 d'efficience du 15/09. Tableau dans `docs/plan-mesure-bout-en-bout.md` §3.
-**Verdict : ouvert — relire `report:selection-clv` une semaine après la
-migration restante et le re-règlement.** Ce qui le fermerait : une couverture
-≥ 80 % (E-2) et un canal dont le CLV bat la marge à plus de deux erreurs types.
+**Relu le soir même après le re-règlement en prod** (couverture 76–78 %) :
+l'écart entre prix pris et prix de clôture est nul pour tous les canaux à deux
+erreurs types près ; seuls RESULT_BTTS (+1,1 pt) et RESULT_TOTAL_GOALS (+0,9 pt)
+ressortent, sur des marchés qui coûtent 12,8 et 13,7 % à la clôture, et sans
+book connu (mélange de maisons possible). Le moteur paie la marge, ni plus ni
+moins. **Décisions** : E-2 accepté ; aucune suspension de canal ; les trois
+marchés joints exclus du vivier LLM sur leur coût mesuré
+(`CLOSING_COST_EXCLUDED_MARKETS`, politique `unified-5-15-v1.1`) ; E-4
+reformulé sur l'écart à la clôture. **Verdict : ouvert sur l'écart** — relire
+quand 500 sélections par canal porteront leur book (`oddsBookmaker`), ce qui
+lèvera le doute du mélange de maisons.

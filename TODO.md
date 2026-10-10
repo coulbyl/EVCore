@@ -96,9 +96,14 @@ vantage-worker 133, backtest-core 35) :
       jambe, scénario Playwright `coupons.spec.ts`. **Migration à lancer**,
       puis `settle-range` coupons (depuis 2023-04-15) et sélections (depuis
       2026-09-15). Plan complet : `docs/plan-mesure-bout-en-bout.md`.
-- [ ] E-4 (suspension d'un canal au CLV négatif sur 500 sélections) :
-      impossible avant la couverture ci-dessus ; à décider avec le garde-fou
-      de suspension.
+- [~] **E-4 reformulé** (2026-10-10) : le signe du CLV ne discrimine rien (un
+  pari pris à la clôture vaut moins la marge) ; critères = écart à la
+  clôture et coût du marché à la clôture, colonnes « À la clôture » et
+  « Écart » des rapports. Lecture : aucun canal ne bat la clôture, aucune
+  suspension ; HT/FT, RESULT_TOTAL_GOALS et RESULT_BTTS (12,8 à 16,5 % de
+  coût contre 3,7 à 7,0 %) exclus du vivier LLM, politique
+  `unified-5-15-v1.1`. Reste : suspension automatique à 500 sélections au
+  book connu par canal.
 - [ ] Les sous-blocs totaux par équipe / clean sheet / win-to-nil / DNB /
       HT, fittés eux aussi à l'ancien global, n'ont pas été re-fittés :
       attendre une saison de plus par ligue, ou un fit hiérarchique.

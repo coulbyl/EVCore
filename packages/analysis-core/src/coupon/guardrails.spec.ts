@@ -4,6 +4,7 @@ import {
   calibratedLegProbability,
   calibrateLegProbability,
   clearsMaxLegEdge,
+  clearsClosingCostExcludedMarkets,
   clearsMinLegOdds,
   clearsTeamTotalMaxOdds,
   clearsValueEdgeFloor,
@@ -298,5 +299,25 @@ describe("clearsMinLegOdds", () => {
     // quoi les bandes se chevaucheraient d'un pick.
     expect(clearsMinLegOdds({ oddsSnapshot: 1.6 }, safe)).toBe(false);
     expect(clearsMinLegOdds({ oddsSnapshot: 1.6 }, balanced)).toBe(true);
+  });
+});
+
+describe("clearsClosingCostExcludedMarkets", () => {
+  it("écarte les trois marchés joints mesurés deux à trois fois plus chers à la clôture", () => {
+    expect(clearsClosingCostExcludedMarkets({ market: "RESULT_BTTS" })).toBe(
+      false,
+    );
+    expect(
+      clearsClosingCostExcludedMarkets({ market: "RESULT_TOTAL_GOALS" }),
+    ).toBe(false);
+    expect(
+      clearsClosingCostExcludedMarkets({ market: "HALF_TIME_FULL_TIME" }),
+    ).toBe(false);
+  });
+
+  it("laisse passer les marchés principaux", () => {
+    for (const market of ["ONE_X_TWO", "OVER_UNDER", "BTTS", "DOUBLE_CHANCE"]) {
+      expect(clearsClosingCostExcludedMarkets({ market })).toBe(true);
+    }
   });
 });

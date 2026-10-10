@@ -227,6 +227,38 @@ export function clearsTeamTotalMaxOdds(
 // of VALUE_MIN_EDGE=0.10 above (not a coincidence — see clearsValueEdgeFloor).
 export const MAX_LEG_EDGE = 0.1;
 
+/**
+ * Marchés exclus du vivier de coupon sur leur coût mesuré à la clôture.
+ *
+ * Mesure du 2026-10-10 sur 13 180 sélections dédupliquées depuis le
+ * 2026-09-15 (`report:selection-clv`, `docs/plan-mesure-bout-en-bout.md` §3),
+ * valeur à la clôture d'un pari pris AU prix de clôture — c'est-à-dire la
+ * marge payée, groupe d'issues complet chez un même book :
+ *
+ *   HALF_TIME_FULL_TIME   −16,5 %   (127)
+ *   RESULT_TOTAL_GOALS    −13,7 %   (800)
+ *   RESULT_BTTS           −12,8 %   (1 263)
+ *   marchés principaux    −3,7 % à −7,0 %
+ *
+ * Les trois marchés joints coûtent deux à trois fois plus que tout le reste,
+ * et les 46 jambes LLM qui en venaient depuis août réalisent 30 % contre
+ * 51 % pour les autres. Aucune probabilité du moteur n'entre dans cette
+ * règle : c'est le prix mesuré qui exclut, comme CLAUDE.md le demande.
+ * Le compositeur PRICE les écarte déjà par ses cellules de coût ; ceci aligne
+ * le vivier LLM (et son ombre) sur la même mesure.
+ */
+export const CLOSING_COST_EXCLUDED_MARKETS: readonly string[] = [
+  "HALF_TIME_FULL_TIME",
+  "RESULT_TOTAL_GOALS",
+  "RESULT_BTTS",
+];
+
+export function clearsClosingCostExcludedMarkets(
+  leg: Pick<CouponLeg, "market">,
+): boolean {
+  return !CLOSING_COST_EXCLUDED_MARKETS.includes(leg.market);
+}
+
 export function clearsMaxLegEdge(
   leg: Pick<
     CouponLeg,

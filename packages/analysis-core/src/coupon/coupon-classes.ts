@@ -198,7 +198,11 @@ export const UNIFIED_COUPON_BOUNDS: CouponBounds = {
   minCombinedOdds: 5,
   maxCombinedOdds: 15,
 };
-export const COUPON_POLICY_VERSION = "unified-5-15-v1";
+// v1.1 (2026-10-10) : mêmes bornes et mêmes gates que v1, moins les trois
+// marchés joints exclus sur leur coût à la clôture
+// (CLOSING_COST_EXCLUDED_MARKETS, guardrails.ts). Versionné pour que les
+// coupons publiés avant et après restent distinguables par jambe.
+export const COUPON_POLICY_VERSION = "unified-5-15-v1.1";
 export const DETERMINISTIC_COUPON_POLICY_VERSION = "deterministic-5-7-v1";
 
 // Candidate frozen after development-window walk-forward comparison. It is
