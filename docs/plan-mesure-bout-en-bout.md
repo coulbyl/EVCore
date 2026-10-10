@@ -56,10 +56,50 @@
 10. **Rapports** : `report:selection-clv` (canal × marché, sélections
     dédupliquées) à côté de `report:coupon-clv`.
 
-## 3. Mesures sur la base restaurée du 2026-10-05
+## 3. Mesures sur la base de production restaurée le 2026-10-10
 
-_Remplies à la fin de la PR : voir la section « Evidence » de la PR et
-`docs/audits/2026-10-08/`._
+Migrations appliquées sur la copie locale, re-règlement de 641 propositions
+de coupon (depuis 2023-04-15) et de toutes les sélections depuis le
+2026-09-15, puis `report:coupon-clv` et `report:selection-clv`
+(`docs/audits/2026-10-10/`). La prod a déjà `observedAt` et la clôture par
+jambe : depuis le 7 octobre, **236 rencontres sur 262** ont un relevé à moins
+de 15 min du coup d'envoi, et le LLM produit à nouveau depuis le 9.
+
+**Comment lire un CLV ici.** `closingLineValue` = cote prise × probabilité
+de clôture sans marge − 1. Un pari pris exactement au prix de clôture vaut
+donc **moins la marge du book**, pas zéro : la barre est la marge, et un
+canal se juge contre elle et contre les autres canaux, jamais contre zéro.
+Les écarts entre familles de marchés sont le signal : les marchés joints
+(résultat × total, résultat × BTTS, mi-temps / fin de match) coûtent deux à
+trois fois plus que les marchés principaux, ce que l'audit d'efficience du
+2026-09-15 avait mesuré par la marge.
+
+| Population (sélections réglées depuis le 15/09, dédupliquées) | n     | Avec clôture | CLV moyen ± ET |
+| ------------------------------------------------------------- | ----- | ------------ | -------------- |
+| GOALS                                                         | 5 040 | 1 086 (22 %) | −4,27 ± 0,1 %  |
+| TEAM_TOTAL                                                    | 5 135 | 1 279 (25 %) | −4,56 ± 0,1 %  |
+| DOMINANT                                                      | 877   | 140 (16 %)   | −4,21 ± 0,2 %  |
+| SAFE                                                          | 821   | 158 (19 %)   | −4,76 ± 0,3 %  |
+| DRAW                                                          | 1 723 | 380 (22 %)   | −5,39 ± 0,2 %  |
+| VANTAGE (LLM)                                                 | 2 923 | 1 016 (35 %) | −5,77 ± 0,1 %  |
+| VALUE                                                         | 1 201 | 190 (16 %)   | −7,05 ± 0,4 %  |
+| BTTS                                                          | 1 707 | 476 (28 %)   | −7,02 ± 0,1 %  |
+| WIN_TO_NIL                                                    | 2 532 | 848 (33 %)   | −8,07 ± 0,1 %  |
+| RESULT_BTTS                                                   | 3 260 | 1 191 (37 %) | −11,63 ± 0,2 % |
+| RESULT_TOTAL_GOALS                                            | 2 207 | 797 (36 %)   | −12,87 ± 0,2 % |
+| HALF_TIME_FULL_TIME                                           | 416   | 121 (29 %)   | −16,37 ± 0,1 % |
+| Jambes de coupon LLM (tout l'historique)                      | 1 416 | 159 (11 %)   | −4,20 ± 0,1 %  |
+| Jambes de coupon PRICE                                        | 35    | 35 (100 %)   | −7,06 ± 1,2 %  |
+
+CORRECT_SCORE, WIN_EITHER_HALF et CONSENSUS n'ont pas de groupe d'issues
+exclusif : aucun CLV, par construction. La couverture est encore celle de la
+période d'avant `observedAt` pour l'essentiel ; la lecture qui compte est
+celle de la semaine qui suit le déploiement.
+
+**Écran vérifié sur ces données** (`docs/audits/2026-10-10/coupons-*.png`) :
+le 9 octobre, Prix gagné à 5,78 = 2,38 × 2,43 avec ses clôtures, Analyse
+perdu à 6,52 = produit de ses cinq jambes ; le 9 septembre, un partiel
+affiche 2,39 proposé et 1,52 payé, la jambe Draw No Bet « Remboursé ».
 
 ## 4. Suite ordonnée
 

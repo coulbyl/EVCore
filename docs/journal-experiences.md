@@ -610,6 +610,12 @@ honnête (cote payée, PARTIAL, VOID, jambe remboursée, clôture par jambe).
 `snapshotAt` ; 71 % et 96 % à 24 h. Les CLV lus sur ces échantillons (LLM
 −5,1 % ± 0,8 sur 14 jambes, PRICE −7,9 % ± 1,5 sur 26) ne sont pas une
 mesure : l'échantillon n'est pas la population tant que la clôture n'est pas
-capturée. **Verdict : ouvert — relire `report:selection-clv` une semaine après
-les trois migrations et le re-règlement.** Ce qui le fermerait : une couverture
-≥ 80 % (E-2) et un CLV par canal à plus de deux erreurs types de zéro.
+capturée. **Relu le 2026-10-10 sur le dump du jour** (prod déjà sous `observedAt`,
+236 rencontres sur 262 avec un relevé à 15 min depuis le 7/10) : couverture
+16 à 37 % par canal, CLV de −4,2 % (GOALS, DOMINANT) à −16,4 % (HT/FT). Point
+de lecture : un pari pris au prix de clôture vaut **moins la marge**, pas zéro ;
+les familles jointes ressortent 2 à 3 fois plus chères, en accord avec l'audit
+d'efficience du 15/09. Tableau dans `docs/plan-mesure-bout-en-bout.md` §3.
+**Verdict : ouvert — relire `report:selection-clv` une semaine après la
+migration restante et le re-règlement.** Ce qui le fermerait : une couverture
+≥ 80 % (E-2) et un canal dont le CLV bat la marge à plus de deux erreurs types.
