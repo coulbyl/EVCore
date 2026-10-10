@@ -67,7 +67,7 @@ catalog:
 
   # Testing (Vitest + SWC + Playwright)
   vitest: "^4.1.3"
-  "@playwright/test": "^1.51.1"
+  "@playwright/test": "^1.63.0"
   "@vitest/coverage-v8": "^4.1.3"
   unplugin-swc: "^1.5.7"
   "@swc/cli": "^0.7.9"
