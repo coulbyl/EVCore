@@ -49,8 +49,10 @@ test.describe("Coupons", () => {
     });
     await expect(card.getByTestId("coupon-combined-odds")).toHaveText("@6.91");
     await expect(card.getByTestId("coupon-realized-odds")).toHaveText("@4.32");
-    // Draw No Bet sur un nul : « Remboursé », pas « Annulé ».
-    await expect(card.getByText("Remboursé", { exact: true })).toBeVisible();
+    // Draw No Bet sur un nul : « Remboursé », pas « Annulé » — libellé
+    // traduit (la session de test peut être en anglais).
+    await expect(card.getByText(/^(Remboursé|Refunded)$/)).toBeVisible();
+    await expect(card.getByText(/^(Annulé|Void)$/)).toHaveCount(0);
   });
 
   test("un gain sans remboursement n'affiche pas de seconde cote", async ({
@@ -71,7 +73,9 @@ test.describe("Coupons", () => {
   }) => {
     await expect(page.getByText("Prix", { exact: true })).toHaveCount(1);
     await expect(page.getByText("Analyse", { exact: true })).toHaveCount(3);
-    const results = await page.getByTestId("coupon-result").allInnerTexts();
+    // `textContent`, pas `innerText` : le badge est mis en majuscules par le
+    // CSS, ce qui n'est pas le texte qu'on vérifie.
+    const results = await page.getByTestId("coupon-result").allTextContents();
     expect(results).toEqual(
       expect.arrayContaining([
         "✓ Gagné",

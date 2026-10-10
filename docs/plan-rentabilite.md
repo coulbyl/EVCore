@@ -506,25 +506,28 @@ Aujourd'hui inexistant.
       silence.
 - [~] `E-2` Enregistrer le CLV de chaque sélection à la clôture.
   _Acceptation_ : colonne peuplée pour ≥ 80 % des sélections.
-  _Code fait 2026-10-07_ pour les **jambes de coupon** (les deux
-  sources) : `coupon_proposal_leg.closingLineValue`, avec `closingOdds`,
-  `closingBookmaker`, `closingObservedAt`, écrits au règlement depuis
-  `odds_closing_line` — groupe d'issues complet chez un même book
-  (`outcomeGroup`, analysis-core), observation à moins de 90 min du coup
-  d'envoi (`COUPON_SETTLEMENT_POLICY.closingLineMaxHoursBeforeKickoff`),
-  book de la citation LLM sinon le mieux classé. Migration
-  `20261007120000_add_coupon_leg_closing_line` **à enregistrer par
-  `db:deploy`** ; un re-règlement remplit l'historique. Couverture à
-  vérifier une semaine après déploiement : sur le dump du 2026-10-05,
-  12,7 % des jambes avaient un relevé à 90 min sur `snapshotAt`, la
-  capture T−10 n'étant visible qu'avec `observedAt`. Les sélections de
-  canal attendent la provenance par marché du relevé assemblé.
+  _Code fait 2026-10-07_ pour les **jambes de coupon** (PR #237) et
+  _2026-10-08_ pour les **sélections de canal** : `closingLineValue`,
+  `closingOdds`, `closingBookmaker`, `closingObservedAt` sur
+  `coupon_proposal_leg` et `channel_selection`, écrits au règlement
+  (final pour les sélections) depuis `odds_closing_line` — groupe
+  d'issues complet chez un même book (`outcomeGroup`, analysis-core),
+  observation à moins de 90 min (`CLOSING_LINE_POLICY`), book du prix de
+  préférence. Le book du prix est désormais connu : `FullOddsSnapshot.sources`
+  porte la provenance par choix et le moteur écrit `oddsBookmaker` /
+  `oddsSnapshotAt` avec chaque sélection. Migrations
+  `20261007120000_add_coupon_leg_closing_line` et
+  `20261008000000_add_channel_selection_price_provenance_and_closing`
+  **à enregistrer par `db:deploy`** ; `settleRange` (coupons et
+  sélections) remplit l'historique. Couverture à vérifier une semaine
+  après déploiement : la capture T−10 n'est visible qu'avec `observedAt`.
+  Voir [plan-mesure-bout-en-bout.md](plan-mesure-bout-en-bout.md).
 - [~] `E-3` Tableau de bord CLV par canal, marché, championnat, book.
   _Acceptation_ : rapport régénérable.
   _Code fait 2026-10-07_ : `report:coupon-clv` (backtest-core), source ×
-  marché avec couverture, CLV moyen ± erreur type, taux de réussite et
-  probabilité de clôture moyenne ; championnat et book restent à ajouter
-  quand la couverture le justifie.
+  marché, et _2026-10-08_ `report:selection-clv`, canal × marché sur la vue
+  dédupliquée, avec couverture et part des sélections au book connu ;
+  championnat et book restent à ajouter quand la couverture le justifie.
 - [ ] `E-4` Seuil de décision : un canal dont le CLV est négatif sur 500
       sélections est suspendu.
       _Acceptation_ : règle écrite, constante en config, testée.

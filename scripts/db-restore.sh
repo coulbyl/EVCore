@@ -51,6 +51,16 @@ if head -c 5 "$DUMP" | grep -q 'PGDMP'; then
   docker exec "$CONTAINER" pg_restore -U "$PG_USER" -d "$PG_DB" \
     --no-owner --no-privileges --jobs 4 "$CONTAINER_DUMP"
 else
+  # A plain dump keeps `OWNER TO <role>` statements: on a fresh container the
+  # production role does not exist and the restore stops at the first one
+  # (seen 2026-10-10 with role `evcore`). Create every missing owner role
+  # first — local only, no password needed since the app connects as the
+  # compose user.
+  echo "→ Creating owner roles referenced by the dump, if missing..."
+  for role in $(grep -oE 'OWNER TO "?[A-Za-z_][A-Za-z0-9_]*"?' "$DUMP" | awk '{print $3}' | tr -d '"' | sort -u); do
+    docker exec "$CONTAINER" psql -U "$PG_USER" -d postgres -q -v ON_ERROR_STOP=1 \
+      -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '$role') THEN CREATE ROLE \"$role\"; END IF; END \$\$;"
+  done
   echo "→ Restoring plain SQL dump with psql..."
   docker exec "$CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -q \
     -v ON_ERROR_STOP=1 -f "$CONTAINER_DUMP" > /dev/null

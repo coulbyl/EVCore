@@ -590,3 +590,26 @@ prix comme pour tout le reste.
 **Verdict : fermée / impossible / sans signal / ouvert.** Mesure chiffrée,
 volume, et ce qui rouvrirait la question. Source vers le rapport régénérable.
 ```
+
+## 2026-10-08 — Provenance du prix et CLV de bout en bout (pas une expérience : une mesure rendue possible)
+
+**Constat.** Le chargeur de cotes résout un book par marché puis jetait son
+nom ; `channel_selection` ne savait pas d'où venait sa cote ; `closingLineValue`
+(E-1) n'avait aucun producteur. Trois défauts de mesure trouvés en chemin :
+101 coupons gagnés (2023 → juin 2026) sans `realizedOdds`, un LOST re-réglé
+gardant la cote payée d'un gain disparu, et l'indice COUPON qui excluait les
+perdus de son ROI (cote nulle hors dénominateur : ROI toujours positif).
+
+**Fait.** Provenance par choix dans `FullOddsSnapshot.sources`, chargeur unifié,
+clôture et CLV écrits au règlement des jambes et des sélections avec la même
+règle, rapports `report:coupon-clv` et `report:selection-clv`, écran coupons
+honnête (cote payée, PARTIAL, VOID, jambe remboursée, clôture par jambe).
+
+**Mesuré sur le dump du 2026-10-05, avant `observedAt`** : 12,7 % des jambes et
+8,9 % des sélections (depuis le 15/09) ont un relevé à moins de 90 min sur
+`snapshotAt` ; 71 % et 96 % à 24 h. Les CLV lus sur ces échantillons (LLM
+−5,1 % ± 0,8 sur 14 jambes, PRICE −7,9 % ± 1,5 sur 26) ne sont pas une
+mesure : l'échantillon n'est pas la population tant que la clôture n'est pas
+capturée. **Verdict : ouvert — relire `report:selection-clv` une semaine après
+les trois migrations et le re-règlement.** Ce qui le fermerait : une couverture
+≥ 80 % (E-2) et un CLV par canal à plus de deux erreurs types de zéro.
