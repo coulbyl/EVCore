@@ -9,7 +9,7 @@ import {
 
 /**
  * Une issue cotée à la clôture, telle que la vue `odds_closing_line` la
- * sert une fois le 1X2 déplié en trois lignes (cf. CouponRepository).
+ * sert une fois le 1X2 déplié en trois lignes (cf. OddsClosingLineRepository).
  */
 export type ClosingLineRow = {
   fixtureId: string;
@@ -17,39 +17,40 @@ export type ClosingLineRow = {
   market: Market;
   pick: string;
   odds: number;
-  /** Distance entre l'observation du prix et le coup d'envoi, en heures. */
-  hoursBeforeKickoff: number;
+  /** Heure d'observation du prix (capture, ou `snapshotAt` avant la migration `observedAt`). */
+  observedAt: Date;
 };
 
-export type LegClosingLine = {
+export type ResolvedClosingLine = {
   closingOdds: number;
   closingBookmaker: string;
-  /** Observation la moins fraîche du groupe retenu, en heures avant le coup d'envoi. */
-  hoursBeforeKickoff: number;
+  /** Observation la moins fraîche du groupe retenu. */
+  closingObservedAt: Date;
   closingLineValue: number;
 };
 
 /**
- * Ligne de clôture d'une jambe : le book retenu, sa cote et la valeur prise.
+ * Ligne de clôture d'un pari (jambe de coupon ou sélection de canal) : le
+ * book retenu, sa cote et la valeur prise.
  *
  * Le groupe d'issues doit être COMPLET chez un même book (E-1) : la marge
  * se retire à l'intérieur du groupe, et un book qui ne cote que le choix
  * joué ne dit rien de sa probabilité vraie. Parmi les books complets, on
- * prend celui qui a servi le prix de la jambe quand il est connu (citation
- * du vivier LLM), sinon le mieux classé (`bookmakerRank`, Pinnacle d'abord)
- * — la règle même du chargeur de cotes du moteur, dont vient le prix d'une
- * jambe du compositeur.
+ * prend celui qui a servi le prix quand il est connu (`oddsBookmaker` d'une
+ * sélection, citation du vivier LLM d'une jambe), sinon le mieux classé
+ * (`bookmakerRank`, Pinnacle d'abord) — la règle même du chargeur de cotes
+ * du moteur.
  *
  * `null` si aucun book n'offre le groupe complet, ou si le marché n'a pas de
  * partition exclusive et exhaustive (`outcomeGroup`).
  */
-export function resolveLegClosingLine(opts: {
+export function resolveClosingLine(opts: {
   market: Market;
   pick: string;
   takenOdds: Decimal.Value;
   preferredBookmaker: string | null;
   rows: readonly ClosingLineRow[];
-}): LegClosingLine | null {
+}): ResolvedClosingLine | null {
   const group = outcomeGroup(opts.market, opts.pick);
   if (!group) return null;
 
@@ -84,7 +85,9 @@ export function resolveLegClosingLine(opts: {
     return {
       closingOdds: value.closingOdds.toNumber(),
       closingBookmaker: bookmaker,
-      hoursBeforeKickoff: Math.max(...rows.map((r) => r.hoursBeforeKickoff)),
+      closingObservedAt: new Date(
+        Math.min(...rows.map((r) => r.observedAt.getTime())),
+      ),
       closingLineValue: value.value.toNumber(),
     };
   }

@@ -38,7 +38,16 @@ export type NormalizedCouponLeg = {
   pickLabel: string;
   probability: number;
   odds: string | null;
+  /** Code marché, pour que « Annulé » devienne « Remboursé » sur un Draw No Bet. */
+  market?: string;
   result: ResultValue | null;
+  /**
+   * Ligne de clôture de la jambe quand elle est connue : cote juste avant le
+   * coup d'envoi et valeur prise dessus (cote proposée × probabilité de
+   * clôture sans marge − 1). C'est la seule mesure qui dise, avant même le
+   * résultat, si le prix proposé avait de la valeur.
+   */
+  closing?: { odds: string; bookmaker: string | null; value: number } | null;
 };
 
 export type CouponCardProps = {
@@ -54,6 +63,12 @@ export type CouponCardProps = {
     badgeVariant: string;
   } | null;
   combinedOdds: number;
+  /**
+   * Cote réellement payée au règlement (jambes remboursées exclues). Affichée
+   * à côté de la cote proposée dès qu'elles diffèrent : un PARTIAL payé à 3,1
+   * sur un coupon annoncé à 4,3 ne doit pas se lire comme un gain à 4,3.
+   */
+  realizedOdds?: number | null;
   jointProbability: number;
   signalScore: number;
   reasoning?: string | null;
@@ -80,7 +95,7 @@ export type CouponCardProps = {
    */
   viewerCount?: number;
   playerCount?: number;
-  betStatus?: "WON" | "LOST" | null;
+  betStatus?: "WON" | "LOST" | "PARTIAL" | "VOID" | null;
   legs: NormalizedCouponLeg[];
   actionSlot?: React.ReactNode;
 };
@@ -89,11 +104,17 @@ function formatPct(n: number): string {
   return `${(n * 100).toFixed(0)}%`;
 }
 
+function formatSignedPct(n: number): string {
+  const pct = (n * 100).toFixed(1);
+  return `${n >= 0 ? "+" : ""}${pct}%`;
+}
+
 export function CouponCard({
   locale,
   couponClass = null,
   source = null,
   combinedOdds,
+  realizedOdds = null,
   jointProbability,
   reasoning,
   batch,
@@ -158,13 +179,37 @@ export function CouponCard({
                 </span>
               )}
               {betStatus === "WON" && (
-                <span className="text-[0.6rem] font-bold uppercase tracking-widest text-emerald-500">
+                <span
+                  data-testid="coupon-result"
+                  className="text-[0.6rem] font-bold uppercase tracking-widest text-emerald-500"
+                >
                   ✓ Gagné
                 </span>
               )}
+              {betStatus === "PARTIAL" && (
+                <span
+                  data-testid="coupon-result"
+                  title="Toutes les jambes jouées ont gagné ; une jambe au moins a été remboursée, la cote payée est réduite d'autant."
+                  className="text-[0.6rem] font-bold uppercase tracking-widest text-emerald-500"
+                >
+                  ✓ Gagné · jambe remboursée
+                </span>
+              )}
               {betStatus === "LOST" && (
-                <span className="text-[0.6rem] font-bold uppercase tracking-widest text-destructive">
+                <span
+                  data-testid="coupon-result"
+                  className="text-[0.6rem] font-bold uppercase tracking-widest text-destructive"
+                >
                   ✗ Perdu
+                </span>
+              )}
+              {betStatus === "VOID" && (
+                <span
+                  data-testid="coupon-result"
+                  title="Toutes les jambes ont été remboursées (matchs reportés ou annulés) : mise rendue."
+                  className="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground"
+                >
+                  Remboursé
                 </span>
               )}
             </div>
@@ -186,7 +231,20 @@ export function CouponCard({
             )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <Metric label="Cote" value={`@${combinedOdds.toFixed(2)}`} />
+            <Metric
+              label="Cote"
+              value={`@${combinedOdds.toFixed(2)}`}
+              testId="coupon-combined-odds"
+            />
+            {realizedOdds !== null &&
+              Math.abs(realizedOdds - combinedOdds) > 0.005 && (
+                <Metric
+                  label="Payé"
+                  value={`@${realizedOdds.toFixed(2)}`}
+                  valueClassName="text-emerald-500"
+                  testId="coupon-realized-odds"
+                />
+              )}
             <Metric
               label="Proba"
               value={formatPct(jointProbability)}
@@ -255,7 +313,10 @@ function CouponLegCard({
       headerExtra={
         <div className="flex shrink-0 items-center gap-2">
           {leg.odds && (
-            <span className="font-mono text-xs text-muted-foreground">
+            <span
+              data-testid="leg-odds"
+              className="font-mono text-xs text-muted-foreground"
+            >
               @{leg.odds}
             </span>
           )}
@@ -273,11 +334,27 @@ function CouponLegCard({
           <p className="line-clamp-2 min-w-0 text-sm font-semibold leading-snug text-foreground">
             {leg.pickLabel}
           </p>
-          <ResultBadge result={leg.result} finished={leg.score !== null} />
+          <ResultBadge
+            result={leg.result}
+            finished={leg.score !== null}
+            market={leg.market}
+          />
         </div>
         <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.68rem] leading-tight text-muted-foreground">
           <span className="max-w-full truncate">{leg.marketLabel}</span>
           <span className="tabular-nums">{formatPct(leg.probability)}</span>
+          {leg.closing && (
+            <span
+              data-testid="leg-closing"
+              title={`Cote de clôture${leg.closing.bookmaker ? ` chez ${leg.closing.bookmaker}` : ""} ; la valeur est ce que la cote proposée vaut face à la probabilité de clôture, marge retirée.`}
+              className={cn(
+                "tabular-nums",
+                leg.closing.value >= 0 ? "text-emerald-500" : "text-amber-500",
+              )}
+            >
+              Clôture @{leg.closing.odds} · {formatSignedPct(leg.closing.value)}
+            </span>
+          )}
         </p>
       </div>
     </FixtureCard>
@@ -288,17 +365,22 @@ function Metric({
   label,
   value,
   valueClassName,
+  testId,
 }: {
   label: string;
   value: string;
   valueClassName?: string;
+  testId?: string;
 }) {
   return (
     <div className="rounded-lg border border-border/70 bg-background/30 px-2.5 py-1.5 text-right">
       <p className="text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </p>
-      <p className={cn("text-xs font-semibold tabular-nums", valueClassName)}>
+      <p
+        data-testid={testId}
+        className={cn("text-xs font-semibold tabular-nums", valueClassName)}
+      >
         {value}
       </p>
     </div>

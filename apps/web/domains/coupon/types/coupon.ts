@@ -26,8 +26,27 @@ export type CouponLegDto = {
   pick: string;
   probability: number;
   oddsSnapshot: number | null;
+  /** Book qui a servi `oddsSnapshot` quand il est connu, sinon `null`. */
+  bookmaker: string | null;
   signalScore: number;
   isCorrect: boolean | null;
+  /**
+   * Heure de règlement. Avec `isCorrect === null`, distingue une jambe
+   * REMBOURSÉE (match reporté, Draw No Bet sur un nul) d'une jambe pas
+   * encore réglée — les deux se lisaient pareil avant.
+   */
+  settledAt: string | null;
+  /**
+   * Ligne de clôture (plan de rentabilité, E-2) : cote du choix chez
+   * `closingBookmaker` juste avant le coup d'envoi, et `closingLineValue` =
+   * cote prise × probabilité de clôture sans marge − 1. Positif : le prix
+   * proposé battait ce que le marché a fini par estimer. `null` tant que la
+   * clôture n'est pas connue.
+   */
+  closingOdds: number | null;
+  closingBookmaker: string | null;
+  closingObservedAt: string | null;
+  closingLineValue: number | null;
   /** Fixture's latest ModelRun id — lets "Jouer ce coupon" submit this leg to
    * POST /bet-slips as a USER pick (modelRunId + market + pick). `null` on
    * the rare fixture with no ModelRun at all. */
@@ -70,6 +89,12 @@ export type CouponProposalDto = {
    */
   source: CouponSource;
   combinedOdds: number;
+  /**
+   * Cote réellement payée au règlement : produit des seules jambes non
+   * remboursées. Égale à `combinedOdds` sur un gain sans remboursement,
+   * inférieure sur un PARTIAL, `null` tant que le coupon n'est pas gagné.
+   */
+  realizedOdds: number | null;
   jointProbability: number;
   signalScore: number;
   status: CouponStatus;

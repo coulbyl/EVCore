@@ -1,4 +1,5 @@
 import { IsDateString, IsIn, IsOptional } from 'class-validator';
+import type { CouponSource } from '@evcore/db';
 
 export type CouponIndicesCanal =
   | 'VALUE'
@@ -19,4 +20,9 @@ export class CouponIndicesQueryDto {
   @IsOptional()
   @IsDateString()
   to?: string;
+
+  /** Canal COUPON : restreint à un générateur. */
+  @IsOptional()
+  @IsIn(['LLM', 'PRICE_COMPOSER'])
+  source?: CouponSource;
 }

@@ -1067,7 +1067,11 @@ describe('BettingEngineService', () => {
         oddsSnapshot: {
           findMany: vi.fn().mockResolvedValue([
             {
+              fixtureId: 'fixture-id',
               bookmaker: 'Pinnacle',
+              market: Market.ONE_X_TWO,
+              pick: null,
+              odds: null,
               snapshotAt: new Date('2023-01-01T11:00:00.000Z'),
               homeOdds: new Decimal('2.20'),
               drawOdds: new Decimal('2.7'),
@@ -1760,31 +1764,32 @@ describe('BettingEngineService', () => {
     const createModelRun = vi.fn().mockResolvedValue({ id: 'run-id' });
     const snapshotAt = new Date('2023-01-01T11:00:00.000Z');
 
-    const oddsSnapshotFindMany = vi.fn().mockImplementation((args: unknown) => {
-      const market = (args as { where?: { market?: Market } }).where?.market;
-      if (market === Market.ONE_X_TWO) {
-        return Promise.resolve([
-          {
-            bookmaker: 'Pinnacle',
-            snapshotAt,
-            homeOdds: new Decimal('1.20'),
-            drawOdds: new Decimal('1.20'),
-            awayOdds: new Decimal('1.20'),
-          },
-        ]);
-      }
-      if (market === Market.HALF_TIME_FULL_TIME) {
-        return Promise.resolve([
-          {
-            bookmaker: 'Pinnacle',
-            snapshotAt,
-            pick: 'HOME_HOME',
-            odds: new Decimal('2.00'),
-          },
-        ]);
-      }
-      return Promise.resolve([]);
-    });
+    // Une seule requête depuis l'unification du chargeur (2026-10-08) : les
+    // lignes de tous les marchés arrivent ensemble, l'assemblage partagé trie.
+    const oddsSnapshotFindMany = vi.fn().mockResolvedValue([
+      {
+        fixtureId: 'fixture-id',
+        bookmaker: 'Pinnacle',
+        market: Market.ONE_X_TWO,
+        pick: null,
+        odds: null,
+        snapshotAt,
+        homeOdds: new Decimal('1.20'),
+        drawOdds: new Decimal('1.20'),
+        awayOdds: new Decimal('1.20'),
+      },
+      {
+        fixtureId: 'fixture-id',
+        bookmaker: 'Pinnacle',
+        market: Market.HALF_TIME_FULL_TIME,
+        pick: 'HOME_HOME',
+        odds: new Decimal('2.00'),
+        snapshotAt,
+        homeOdds: null,
+        drawOdds: null,
+        awayOdds: null,
+      },
+    ]);
 
     const prismaMock = {
       client: {

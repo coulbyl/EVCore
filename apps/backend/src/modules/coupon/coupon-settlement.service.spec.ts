@@ -3,7 +3,8 @@ import { CouponResult, FixtureStatus, Market } from '@evcore/db';
 import { CouponSettlementService } from './coupon-settlement.service';
 import type { CouponRepository } from './coupon.repository';
 import type { PrismaService } from '@/prisma.service';
-import type { ClosingLineRow } from './coupon-leg-closing-line';
+import type { ClosingLineRow } from '../betting-engine/pricing/closing-line';
+import type { OddsClosingLineRepository } from '../betting-engine/pricing/odds-closing-line.repository';
 
 function makeLeg(overrides: {
   id: string;
@@ -66,9 +67,11 @@ function makeHarness(input: {
     findByIdWithLegs,
     settleLeg,
     updateResult,
-    findClosingLines,
     updateLegClosingLine,
   } as unknown as CouponRepository;
+  const closingRepoMock = {
+    findClosingLines,
+  } as unknown as OddsClosingLineRepository;
 
   const prismaMock = {
     client: {
@@ -77,7 +80,7 @@ function makeHarness(input: {
   } as unknown as PrismaService;
 
   return {
-    service: new CouponSettlementService(prismaMock, repoMock),
+    service: new CouponSettlementService(prismaMock, repoMock, closingRepoMock),
     settleLeg,
     updateResult,
     findClosingLines,
@@ -377,7 +380,7 @@ describe('CouponSettlementService.settleProposal — ligne de clôture par jambe
     market: Market.ONE_X_TWO,
     pick,
     odds,
-    hoursBeforeKickoff: 0.2,
+    observedAt: new Date('2026-10-04T17:48:00.000Z'),
   });
 
   it('écrit la clôture, le book, son heure d’observation et le CLV d’une jambe réglée', async () => {

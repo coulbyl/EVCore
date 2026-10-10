@@ -23,6 +23,7 @@ import {
   endOfUtcDay,
 } from '@utils/date.utils';
 import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
+import { AdminGuard } from '@/common/guards/admin.guard';
 import { CurrentSession } from '@modules/auth/current-session.decorator';
 import type { AuthSession } from '@modules/auth/auth.types';
 import { CouponService } from './coupon.service';
@@ -93,6 +94,10 @@ export class CouponController {
 
   @Post('settle')
   @HttpCode(200)
+  // Déclenche une écriture sur toute la table : réservé à l'administration,
+  // comme les autres relances d'ETL. Était ouvert sans session jusqu'au
+  // 2026-10-08.
+  @UseGuards(AuthSessionGuard, AdminGuard)
   @ApiOperation({
     summary: 'Settle all ready proposals',
     description:
@@ -110,6 +115,7 @@ export class CouponController {
   }
 
   @Get('indices')
+  @UseGuards(AuthSessionGuard)
   @ApiOperation({
     summary: 'Coupon probability indices — hit rate by probability bucket',
   })
@@ -121,11 +127,16 @@ export class CouponController {
       canal: query.canal,
       from: query.from,
       to: query.to,
+      source: query.source,
     });
   }
 
   @Post(':id/settle')
   @HttpCode(200)
+  // Déclenche une écriture sur toute la table : réservé à l'administration,
+  // comme les autres relances d'ETL. Était ouvert sans session jusqu'au
+  // 2026-10-08.
+  @UseGuards(AuthSessionGuard, AdminGuard)
   @ApiOperation({ summary: 'Settle a specific proposal' })
   @ApiParam({ name: 'id', description: 'UUID of the CouponProposal.' })
   @ApiOkResponse({
@@ -142,6 +153,10 @@ export class CouponController {
 
   @Post('settle-range')
   @HttpCode(200)
+  // Déclenche une écriture sur toute la table : réservé à l'administration,
+  // comme les autres relances d'ETL. Était ouvert sans session jusqu'au
+  // 2026-10-08.
+  @UseGuards(AuthSessionGuard, AdminGuard)
   @ApiOperation({
     summary: 'Force re-settlement of every proposal in a forDate range',
     description:

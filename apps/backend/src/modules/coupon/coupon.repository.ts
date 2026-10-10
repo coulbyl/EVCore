@@ -17,7 +17,6 @@ import {
 } from './coupon.constants';
 import { PrismaService } from '@/prisma.service';
 import { startOfUtcDay } from '@utils/date.utils';
-import type { ClosingLineRow } from './coupon-leg-closing-line';
 
 /**
  * Découpage des cotes en tranches, partagé par la calibration et le vivier.
@@ -305,10 +304,11 @@ export class CouponRepository {
     });
   }
 
-  async findResolvedCouponsForIndices(
-    from: Date,
-    to: Date,
-  ): Promise<
+  async findResolvedCouponsForIndices(opts: {
+    from: Date;
+    to: Date;
+    source?: CouponSource;
+  }): Promise<
     {
       jointProbability: Prisma.Decimal;
       result: CouponResult;
@@ -321,7 +321,8 @@ export class CouponRepository {
         result: {
           in: [CouponResult.WON, CouponResult.LOST, CouponResult.PARTIAL],
         },
-        forDate: { gte: from, lte: to },
+        forDate: { gte: opts.from, lte: opts.to },
+        ...(opts.source ? { source: opts.source } : {}),
       },
       select: {
         jointProbability: true,
@@ -339,6 +340,9 @@ export class CouponRepository {
     >;
   }
 
+  // `realizedOdds` n'a de sens que sur un gain : un LOST ou un VOID l'efface,
+  // sinon un coupon re-réglé WON → LOST par `settleRange` gardait la cote
+  // payée d'un gain qui n'existe plus et comptait deux fois dans l'indice.
   async updateResult(
     id: string,
     result: CouponResult,
@@ -349,9 +353,8 @@ export class CouponRepository {
       data: {
         result,
         status: CouponProposalStatus.EXPIRED,
-        ...(realizedOdds !== undefined
-          ? { realizedOdds: new Prisma.Decimal(realizedOdds) }
-          : {}),
+        realizedOdds:
+          realizedOdds !== undefined ? new Prisma.Decimal(realizedOdds) : null,
       },
     });
   }
@@ -503,53 +506,6 @@ export class CouponRepository {
         proposalId: input.proposalId ?? null,
       },
     });
-  }
-
-  /**
-   * Lignes de clôture des rencontres et marchés demandés, assez fraîches pour
-   * servir au CLV (chantier E, E-2).
-   *
-   * Lit `odds_closing_line` — dernier prix observé AVANT le coup d'envoi par
-   * (rencontre, book, marché, choix) — et ne garde que les observations à
-   * moins de `maxHoursBeforeKickoff` : la vue expose cette distance
-   * précisément pour qu'aucun consommateur ne prenne un relevé de la veille
-   * pour une clôture. Le 1X2 est stocké en une ligne à trois colonnes : il
-   * est déplié ici en trois choix pour que le groupe d'issues se lise comme
-   * les autres marchés. Les marchés à `line` (handicap, corners) sont exclus :
-   * leur identité ne tient pas dans `pick`, et aucune jambe n'en vient.
-   */
-  async findClosingLines(opts: {
-    fixtureIds: readonly string[];
-    markets: readonly Market[];
-    maxHoursBeforeKickoff: number;
-  }): Promise<readonly ClosingLineRow[]> {
-    if (opts.fixtureIds.length === 0 || opts.markets.length === 0) return [];
-    return this.prisma.client.$queryRaw<ClosingLineRow[]>`
-      WITH closing AS (
-        SELECT c."fixtureId", c.bookmaker, c.market, c.pick, c.odds,
-               c."homeOdds", c."drawOdds", c."awayOdds", c."hoursBeforeKickoff"
-        FROM public.odds_closing_line c
-        WHERE c."fixtureId" = ANY(ARRAY[${Prisma.join([...opts.fixtureIds])}]::uuid[])
-          AND c.market::text = ANY(ARRAY[${Prisma.join([...opts.markets])}]::text[])
-          AND c.line IS NULL
-          AND c."hoursBeforeKickoff" <= ${opts.maxHoursBeforeKickoff}
-      )
-      SELECT "fixtureId"::text            AS "fixtureId",
-             bookmaker,
-             market::text                 AS market,
-             pick,
-             odds::float                  AS odds,
-             "hoursBeforeKickoff"::float  AS "hoursBeforeKickoff"
-      FROM closing
-      WHERE closing.pick IS NOT NULL AND closing.odds IS NOT NULL
-      UNION ALL
-      SELECT closing."fixtureId"::text, closing.bookmaker, closing.market::text,
-             side.pick, side.odds::float, closing."hoursBeforeKickoff"::float
-      FROM closing
-      CROSS JOIN LATERAL (VALUES ('HOME', closing."homeOdds"), ('DRAW', closing."drawOdds"), ('AWAY', closing."awayOdds"))
-        AS side(pick, odds)
-      WHERE closing.pick IS NULL AND side.odds IS NOT NULL
-    `;
   }
 
   async updateLegClosingLine(

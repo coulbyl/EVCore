@@ -14,8 +14,9 @@ import {
 } from './coupon.repository';
 import {
   readQuotedBookmaker,
-  resolveLegClosingLine,
-} from './coupon-leg-closing-line';
+  resolveClosingLine,
+} from '../betting-engine/pricing/closing-line';
+import { OddsClosingLineRepository } from '../betting-engine/pricing/odds-closing-line.repository';
 import { createLogger } from '@utils/logger';
 import { productDecimal, type DecimalLike } from '@utils/decimal.utils';
 
@@ -88,6 +89,7 @@ export class CouponSettlementService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly repo: CouponRepository,
+    private readonly closingLines: OddsClosingLineRepository,
   ) {}
 
   async settleReadyProposals(): Promise<void> {
@@ -329,7 +331,7 @@ export class CouponSettlementService {
    */
   private async recordClosingLines(
     legs: CouponProposalWithLegs['legs'],
-    fixtureMap: Map<string, { status: FixtureStatus; scheduledAt: Date }>,
+    fixtureMap: Map<string, { status: FixtureStatus }>,
   ): Promise<void> {
     const pending = legs.filter(
       (leg) =>
@@ -339,7 +341,7 @@ export class CouponSettlementService {
     );
     if (pending.length === 0) return;
 
-    const rows = await this.repo.findClosingLines({
+    const rows = await this.closingLines.findClosingLines({
       fixtureIds: [...new Set(pending.map((leg) => leg.fixtureId))],
       markets: [...new Set(pending.map((leg) => leg.market))],
       maxHoursBeforeKickoff:
@@ -348,9 +350,8 @@ export class CouponSettlementService {
     if (rows.length === 0) return;
 
     for (const leg of pending) {
-      const fixture = fixtureMap.get(leg.fixtureId);
-      if (!fixture || leg.oddsSnapshot === null) continue;
-      const closing = resolveLegClosingLine({
+      if (leg.oddsSnapshot === null) continue;
+      const closing = resolveClosingLine({
         market: leg.market,
         pick: leg.pick,
         takenOdds: leg.oddsSnapshot.toString(),
@@ -358,18 +359,7 @@ export class CouponSettlementService {
         rows: rows.filter((row) => row.fixtureId === leg.fixtureId),
       });
       if (!closing) continue;
-      await this.repo.updateLegClosingLine(leg.id, {
-        closingOdds: closing.closingOdds,
-        closingBookmaker: closing.closingBookmaker,
-        // La vue mesure la distance au coup d'envoi sur l'heure d'observation
-        // (ou `snapshotAt` avant la migration `observedAt`) : la retrancher
-        // au coup d'envoi rend cette heure sans dépendre de la version de la vue.
-        closingObservedAt: new Date(
-          fixture.scheduledAt.getTime() -
-            closing.hoursBeforeKickoff * 3_600_000,
-        ),
-        closingLineValue: closing.closingLineValue,
-      });
+      await this.repo.updateLegClosingLine(leg.id, closing);
     }
   }
 }

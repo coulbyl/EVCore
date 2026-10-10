@@ -83,6 +83,11 @@ export type StrategySelection = {
   impliedProbability?: Decimal;
   ev?: Decimal;
   qualityScore?: Decimal;
+  // Provenance de `odds` : book et heure de mise à jour du prix chez lui.
+  // Persistée avec la sélection pour que la clôture soit lue chez le MÊME
+  // book (CLV, chantier E). Absents quand le relevé ne la connaît pas.
+  oddsBookmaker?: string;
+  oddsSnapshotAt?: Date;
   rank: number;
 };
 

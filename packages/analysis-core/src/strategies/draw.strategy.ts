@@ -8,6 +8,7 @@ import type {
   StrategyContext,
   StrategyDecision,
 } from "./types";
+import { quoteSourceFor } from "../selection/odds";
 
 export class DrawStrategy implements ChannelStrategy {
   readonly channel = STRATEGY_CHANNEL.DRAW;
@@ -27,6 +28,11 @@ export class DrawStrategy implements ChannelStrategy {
     // The DRAW signal is the bookmaker implied probability (1/drawOdds), not the model draw probability.
     // All league thresholds were backtested on this selector.
     const drawOdds = context.odds?.drawOdds ?? null;
+    const drawSource = quoteSourceFor(
+      context.odds ?? null,
+      Market.ONE_X_TWO,
+      "DRAW",
+    );
     if (drawOdds === null) {
       return {
         channel: ch,
@@ -75,6 +81,12 @@ export class DrawStrategy implements ChannelStrategy {
           probability: impliedProb,
           odds: drawOdds,
           impliedProbability: impliedProb,
+          ...(drawSource
+            ? {
+                oddsBookmaker: drawSource.bookmaker,
+                oddsSnapshotAt: drawSource.snapshotAt,
+              }
+            : {}),
           rank: 1,
         },
       ],

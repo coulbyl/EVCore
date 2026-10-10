@@ -66,20 +66,25 @@ export default defineConfig({
     },
   ],
 
+  // Côté Node (sondes de disponibilité, appels serveur de Next vers le faux
+  // backend), toujours 127.0.0.1 : sur certains postes `localhost` résout
+  // d'abord en ::1 et chaque requête attend seize secondes avant de retomber
+  // en IPv4 — la sonde de 10 s expirait sans jamais voir le serveur prêt.
+  // Le navigateur, lui, garde `localhost` (domaine du cookie de session).
   webServer: [
     {
       command: "node e2e/support/mock-backend.mjs",
-      url: `http://localhost:${MOCK_PORT}/health`,
+      url: `http://127.0.0.1:${MOCK_PORT}/health`,
       reuseExistingServer: !process.env.CI,
       timeout: 10_000,
     },
     {
       command: "pnpm dev",
-      url: `http://localhost:${WEB_PORT}`,
+      url: `http://127.0.0.1:${WEB_PORT}`,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: {
-        NEXT_PUBLIC_API_URL: `http://localhost:${MOCK_PORT}`,
+        NEXT_PUBLIC_API_URL: `http://127.0.0.1:${MOCK_PORT}`,
       },
     },
   ],

@@ -25,8 +25,32 @@ export type CouponLegDto = {
   pick: string;
   probability: number;
   oddsSnapshot: number | null;
+  /**
+   * Book qui a servi `oddsSnapshot` quand il est connu (citation du vivier
+   * LLM) ; `null` pour une jambe du compositeur, dont le prix vient du book
+   * de référence du moteur sans que la jambe en garde le nom.
+   */
+  bookmaker: string | null;
   signalScore: number;
   isCorrect: boolean | null;
+  /**
+   * Heure de règlement de la jambe. Avec `isCorrect === null`, elle distingue
+   * une jambe REMBOURSÉE (match reporté, Draw No Bet sur un nul, score de
+   * mi-temps jamais servi) d'une jambe pas encore réglée : sans elle, l'écran
+   * montrait les deux de la même façon.
+   */
+  settledAt: string | null;
+  /**
+   * Ligne de clôture de la jambe (plan de rentabilité, E-2), écrite au
+   * règlement : cote du choix chez `closingBookmaker` à `closingObservedAt`,
+   * et `closingLineValue` = cote prise × probabilité de clôture sans marge − 1.
+   * `null` tant qu'aucun book n'a coté le groupe d'issues complet à moins de
+   * 90 min du coup d'envoi.
+   */
+  closingOdds: number | null;
+  closingBookmaker: string | null;
+  closingObservedAt: string | null;
+  closingLineValue: number | null;
   /**
    * The exact ModelRun id captured when the leg was proposed — lets the
    * frontend submit this leg to
@@ -73,6 +97,14 @@ export type CouponProposalDto = {
    */
   source: CouponSource;
   combinedOdds: number;
+  /**
+   * Cote réellement payée au règlement : produit des seules jambes non
+   * remboursées. Égale à `combinedOdds` sur un WON sans remboursement,
+   * inférieure sur un PARTIAL, `null` tant que le coupon n'est pas gagné.
+   * L'écran doit l'afficher à côté de la cote proposée dès qu'elles
+   * diffèrent, sinon un PARTIAL se lit comme un gain à la cote annoncée.
+   */
+  realizedOdds: number | null;
   jointProbability: number;
   signalScore: number;
   status: CouponProposalStatus;

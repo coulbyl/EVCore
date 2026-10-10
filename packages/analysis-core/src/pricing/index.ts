@@ -3,6 +3,7 @@ export {
   pickBestBookmaker,
   rowsForMarketBookmaker,
   resolvePerPickOddsPerLine,
+  resolvePerPickQuotesPerLine,
   assembleFullOddsSnapshot,
   parseYesNoRows,
   parseHomeAwayRows,

@@ -82,11 +82,20 @@ vantage-worker 133, backtest-core 35) :
       jambes LLM ont un relevé à 90 min (71 % à 24 h) : la couverture dépend
       de la migration `observedAt` et du balayage T−10, à relire au rapport
       une semaine après déploiement (cible E-2 : 80 %).
-- [ ] CLV au niveau des sélections de canal (33 000 paris, pas 1 300
-      jambes) : `channel_selection` ne garde ni le book ni l'heure de son
-      prix, et `FullOddsSnapshot` n'a qu'un book pour tout le relevé alors
-      que le chargeur en résout un par marché. Demande de porter la
-      provenance par marché dans le relevé assemblé avant toute colonne.
+- [x] **CLV au niveau des sélections de canal** (2026-10-08, branche
+      `feat/clv-end-to-end`) : provenance par choix dans le relevé assemblé
+      (`FullOddsSnapshot.sources`), chargeur de production unifié sur
+      l'assemblage partagé (une requête au lieu de ~34), `oddsBookmaker` /
+      `oddsSnapshotAt` écrits avec la sélection, clôture et CLV écrits au
+      règlement final par la même résolution que les jambes de coupon ;
+      `report:selection-clv`. Au passage : `realizedOdds` effacé sur
+      LOST/VOID (101 coupons gagnés de 2023 à juin 2026 n'en avaient pas),
+      l'indice COUPON comptait les perdus hors ROI (corrigé, filtre
+      `source`), routes de règlement réservées à l'admin, écran coupons
+      montrant cote payée, PARTIAL, VOID, jambe remboursée et clôture par
+      jambe, scénario Playwright `coupons.spec.ts`. **Migration à lancer**,
+      puis `settle-range` coupons (depuis 2023-04-15) et sélections (depuis
+      2026-09-15). Plan complet : `docs/plan-mesure-bout-en-bout.md`.
 - [ ] E-4 (suspension d'un canal au CLV négatif sur 500 sélections) :
       impossible avant la couverture ci-dessus ; à décider avec le garde-fou
       de suspension.

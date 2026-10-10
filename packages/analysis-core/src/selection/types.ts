@@ -29,9 +29,30 @@ export type TeamTotalOddsMap = Partial<
 >;
 
 // Full odds snapshot across all supported markets for a given bookmaker+fixture.
-export type FullOddsSnapshot = {
+/** Book et heure de mise à jour du prix retenu pour un (marché, choix). */
+export type QuoteSource = {
   bookmaker: string;
   snapshotAt: Date;
+};
+
+/** Clé de `FullOddsSnapshot.sources` : `${market}:${pick}`. */
+export function quoteKey(market: Market, pick: string): string {
+  return `${market}:${pick}`;
+}
+
+export type FullOddsSnapshot = {
+  // Book et heure du triplet 1X2 retenu. Les autres marchés sont résolus
+  // book par book, voire choix par choix : leur provenance est dans
+  // `sources`, jamais ici.
+  bookmaker: string;
+  snapshotAt: Date;
+  // Provenance par (marché, choix), clé `quoteKey(market, pick)`. Sans elle,
+  // une sélection ne peut pas être rapprochée de la clôture du MÊME book, et
+  // le CLV compare deux maisons relevées à deux heures (chantier E). Optionnel
+  // pour les relevés construits à la main (tests, triplets 1X2 seuls) :
+  // `quoteSourceFor` retombe alors sur le triplet pour le 1X2, et sur null
+  // ailleurs.
+  sources?: Readonly<Record<string, QuoteSource>>;
   homeOdds: Decimal;
   drawOdds: Decimal;
   awayOdds: Decimal;
@@ -88,6 +109,9 @@ export type ViablePick = {
   odds: Decimal;
   ev: Decimal;
   qualityScore: Decimal; // ev × deterministicScore
+  // Provenance du prix, quand le relevé la connaît (voir QuoteSource).
+  oddsBookmaker?: string;
+  oddsSnapshotAt?: Date;
 };
 
 export type EvaluatedPick = ViablePick & {

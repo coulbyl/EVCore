@@ -1033,12 +1033,26 @@ model ChannelSelection {
   pick               String
   probability        Decimal         @db.Decimal(5, 4)
   odds               Decimal?        @db.Decimal(6, 3)
+  // Provenance de `odds` : book et heure de mise à jour du prix chez lui
+  // (chantier E). Sans elle, la clôture ne peut pas être lue chez le même
+  // book et le CLV mesure l'écart entre deux maisons, pas la valeur.
+  oddsBookmaker      String?
+  oddsSnapshotAt     DateTime?
   impliedProbability Decimal?        @db.Decimal(5, 4)
   ev                 Decimal?        @db.Decimal(6, 4)
   qualityScore       Decimal?        @db.Decimal(6, 4)
   rank               Int             @default(1)
   result             BetStatus? // PENDING → WON/LOST/VOID after settlement; Bet.status is financial authority
   settledAt          DateTime?
+  // Ligne de clôture de la sélection (E-2), écrite au règlement final depuis
+  // `odds_closing_line` : même règle que CouponProposalLeg (groupe d'issues
+  // complet chez un book, observation à moins de 90 min, book de `odds` de
+  // préférence). `closingLineValue` = odds × probabilité de clôture sans
+  // marge − 1.
+  closingOdds        Decimal?        @db.Decimal(6, 3)
+  closingBookmaker   String?
+  closingObservedAt  DateTime?
+  closingLineValue   Decimal?        @db.Decimal(6, 4)
   bets               Bet[]
   createdAt          DateTime        @default(now())
 
