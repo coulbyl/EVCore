@@ -1038,6 +1038,11 @@ model ChannelSelection {
   // book et le CLV mesure l'écart entre deux maisons, pas la valeur.
   oddsBookmaker      String?
   oddsSnapshotAt     DateTime?
+  // Marge payée sur le groupe d'issues du book retenu, et meilleure marge
+  // offerte sur ce groupe dans le relevé au même instant (E-5/E-6). Écrites
+  // par le moteur avec la sélection ; null si le groupe est incomplet.
+  marginPaid         Decimal?        @db.Decimal(5, 4)
+  marginBest         Decimal?        @db.Decimal(5, 4)
   impliedProbability Decimal?        @db.Decimal(5, 4)
   ev                 Decimal?        @db.Decimal(6, 4)
   qualityScore       Decimal?        @db.Decimal(6, 4)

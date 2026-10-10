@@ -250,3 +250,9 @@ export function formatPct(n: number): string {
 export function formatOdds(odds: number | null): string | null {
   return odds === null ? null : odds.toFixed(2);
 }
+
+/** `+2.1%` / `-4.0%` — pour une valeur signée (CLV, écart à la clôture). */
+export function formatSignedPct(n: number, digits = 1): string {
+  const pct = (n * 100).toFixed(digits);
+  return `${n >= 0 ? "+" : ""}${pct}%`;
+}

@@ -545,11 +545,23 @@ Aujourd'hui inexistant.
   à 7,0 % ailleurs → exclus du vivier LLM (`CLOSING_COST_EXCLUDED_MARKETS`,
   politique `unified-5-15-v1.1`). Reste : la suspension automatique par (a), à
   écrire quand les sélections au book connu atteignent 500 par canal.
-- [ ] `E-5` Comptabilité de la marge : pour chaque pari, marge payée sur la
-      ligne effectivement prise.
-      _Acceptation_ : colonne `marginPaid` renseignée.
-- [ ] `E-6` Rapport « marge payée vs marge minimale disponible » par jour.
-      _Acceptation_ : écart quotidien mesuré, cible < 0,5 point.
+- [~] `E-5` Comptabilité de la marge : pour chaque pari, marge payée sur la
+  ligne effectivement prise.
+  _Acceptation_ : colonne `marginPaid` renseignée.
+  _Code fait 2026-10-11_ : la marge est calculée à l'assemblage du relevé
+  (`attachMargins`, analysis-core) — surcote du groupe d'issues complet
+  chez le book retenu, à l'instant du prix — et écrite par le moteur avec
+  la sélection (`channel_selection.marginPaid`), sans attendre la clôture.
+  Migration `20261011000000_add_channel_selection_margins` **à enregistrer
+  par `db:deploy`**. Acceptation à lire sur `report:margin-paid` une
+  semaine après : seules les sélections écrites après déploiement la
+  portent.
+- [~] `E-6` Rapport « marge payée vs marge minimale disponible » par jour.
+  _Acceptation_ : écart quotidien mesuré, cible < 0,5 point.
+  _Code fait 2026-10-11_ : `marginBest` (plus basse marge offerte sur le
+  groupe par un book du relevé au même instant) écrite avec la sélection ;
+  `report:margin-paid` par marché et par book retenu, écart ± erreur type
+  contre la cible.
 - [ ] `E-7` Attribution : décomposer le résultat en biais favori, signal
       modèle, courtage, chance.
       _Acceptation_ : décomposition qui somme au ROI observé, à 0,1 point près.

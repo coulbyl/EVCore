@@ -33,6 +33,15 @@ export type TeamTotalOddsMap = Partial<
 export type QuoteSource = {
   bookmaker: string;
   snapshotAt: Date;
+  /**
+   * Marge payée sur ce choix (chantier E, E-5) : surcote du groupe d'issues
+   * complet chez CE book, `Σ 1/cote / total − 1`, à l'instant du relevé.
+   * `null` quand le book ne cote pas le groupe complet, ou que le marché n'a
+   * pas de partition exclusive (`outcomeGroup`).
+   */
+  margin?: Decimal | null;
+  /** Plus petite marge offerte sur ce groupe par un book du relevé, même règle. */
+  bestMargin?: Decimal | null;
 };
 
 /** Clé de `FullOddsSnapshot.sources` : `${market}:${pick}`. */

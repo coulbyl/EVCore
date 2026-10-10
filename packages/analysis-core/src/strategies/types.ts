@@ -88,6 +88,10 @@ export type StrategySelection = {
   // book (CLV, chantier E). Absents quand le relevé ne la connaît pas.
   oddsBookmaker?: string;
   oddsSnapshotAt?: Date;
+  // Marge payée sur le groupe d'issues du book retenu, et meilleure marge
+  // disponible sur ce groupe dans le relevé (chantier E, E-5/E-6).
+  marginPaid?: Decimal;
+  marginBest?: Decimal;
   rank: number;
 };
 

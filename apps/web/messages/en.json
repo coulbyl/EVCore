@@ -188,6 +188,10 @@
       "tooltipDetail": "The model and the market strongly disagree on this match (flipped favorite or extreme gap across several bookmakers). This almost always signals corrupted input data rather than an opportunity — the engine automatically excludes every pick of this match from real bets.",
       "badgeTooltip": "{status, select, GREEN {The actual hit rate / announced probability ratio is within 15% of 1} ORANGE {The actual hit rate / announced probability ratio is 15% to 30% away from 1} RED {The actual hit rate / announced probability ratio is more than 30% away from 1} other {Insufficient volume to calculate this gap}} ({n, plural, one {# settled pick} other {# settled picks}})."
     },
+    "closing": {
+      "label": "Close @{odds}",
+      "tooltip": "Closing odds at {bookmaker}. The value is what the taken odds are worth against the margin-free closing probability: a bet taken at the closing price is worth {margin} (the margin paid), not zero. Green: the taken odds beat the close."
+    },
     "consensus": {
       "tooltipLabel": "Consensus signal",
       "tooltipDetail": "Several independent channels selected the same outcome without coordinating. It is an agreement, not a guarantee: CONSENSUS no longer emits a pick or a probability of its own — the one it used to publish was the maximum across the agreeing channels, and therefore optimistic by construction.",

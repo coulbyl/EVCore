@@ -188,6 +188,10 @@
       "tooltipDetail": "Le modèle et le marché sont en désaccord fort sur ce match (favori inversé ou écart extrême sur plusieurs bookmakers). Cela signale presque toujours des données d'entrée corrompues plutôt qu'une opportunité — le moteur exclut automatiquement toutes les sélections de ce match des paris réels.",
       "badgeTooltip": "{status, select, GREEN {Le ratio réussite réelle / probabilité annoncée s'écarte de 15 % au plus de 1} ORANGE {Le ratio réussite réelle / probabilité annoncée s'écarte de 15 à 30 % de 1} RED {Le ratio réussite réelle / probabilité annoncée s'écarte de plus de 30 % de 1} other {Volume insuffisant pour calculer cet écart}} ({n, plural, one {# sélection réglée} other {# sélections réglées}})."
     },
+    "closing": {
+      "label": "Clôture @{odds}",
+      "tooltip": "Cote de clôture chez {bookmaker}. La valeur est ce que la cote prise vaut face à la probabilité de clôture, marge retirée : un pari pris au prix de clôture vaut {margin} (la marge payée), pas zéro. Vert : la cote prise battait la clôture."
+    },
     "consensus": {
       "tooltipLabel": "Signal consensus",
       "tooltipDetail": "Plusieurs canaux indépendants ont sélectionné le même outcome sans se concerter. C'est une convergence, pas une garantie : CONSENSUS n'émet plus de pronostic ni de probabilité propre — celle qu'il publiait était le maximum des canaux d'accord, donc optimiste par construction.",
