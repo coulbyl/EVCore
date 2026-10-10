@@ -27,6 +27,17 @@ SELECT
     FILTER (WHERE l."isCorrect" IS NOT NULL)::float AS "hitRate",
   avg((l."closingLineValue" + 1) / l."oddsSnapshot")
     FILTER (WHERE l."closingLineValue" IS NOT NULL)::float AS "meanClosingFair",
+  -- Valeur du MÊME choix pris au prix de clôture : c'est la marge payée,
+  -- et la barre contre laquelle se lit le CLV (un pari pris à la clôture
+  -- vaut moins la marge, jamais zéro).
+  avg(l."closingOdds" * (l."closingLineValue" + 1) / l."oddsSnapshot" - 1)
+    FILTER (WHERE l."closingLineValue" IS NOT NULL)::float AS "clvAtClose",
+  -- Écart entre prix pris et prix de clôture, en probabilité de clôture :
+  -- positif, le prix pris battait la clôture.
+  avg((l."closingLineValue" + 1) / l."oddsSnapshot" * (l."oddsSnapshot" - l."closingOdds"))
+    FILTER (WHERE l."closingLineValue" IS NOT NULL)::float AS "excess",
+  (stddev_samp((l."closingLineValue" + 1) / l."oddsSnapshot" * (l."oddsSnapshot" - l."closingOdds"))
+     / sqrt(nullif(count(l."closingLineValue"), 0)))::float AS "excessSe",
   avg(l."oddsSnapshot")::float                     AS "meanOdds",
   avg(l."closingOdds")::float                      AS "meanClosingOdds"
 FROM coupon_proposal_leg l

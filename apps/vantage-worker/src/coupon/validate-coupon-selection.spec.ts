@@ -179,6 +179,31 @@ describe("validateCouponSelection", () => {
     });
   });
 
+  it("rejects a leg on a market excluded for its closing cost, even if the LLM picked it", () => {
+    const legs = validUnifiedTriple().map((item, index) =>
+      index === 0
+        ? {
+            ...item,
+            candidate: {
+              ...item.candidate,
+              market: "RESULT_BTTS",
+              pick: "HOME_YES",
+            },
+          }
+        : item,
+    );
+    expect(
+      validateCouponSelection(
+        legs,
+        UNIFIED_COUPON_CLASS,
+        UNIFIED_COUPON_BOUNDS,
+      ),
+    ).toEqual({
+      outcome: "rejected",
+      reason: expect.stringContaining("excluded for its closing cost"),
+    });
+  });
+
   it("rejects the audit's negative-EV reproduction on any channel", () => {
     const legs = validPair().map((item) => ({
       ...item,

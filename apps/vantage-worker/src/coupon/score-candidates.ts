@@ -2,6 +2,7 @@ import {
   calculateEV,
   calibrateLegProbability,
   clearsMaxLegEdge,
+  clearsClosingCostExcludedMarkets,
   clearsMinLegOdds,
   clearsTeamTotalMaxOdds,
   clearsValueEdgeFloor,
@@ -86,7 +87,8 @@ export function admissibleCandidates(
     .filter((c) => clearsValueEdgeFloor(c))
     .filter((c) => clearsTeamTotalMaxOdds(c))
     .filter((c) => clearsMaxLegEdge(c))
-    .filter((c) => clearsMinLegOdds(c));
+    .filter((c) => clearsMinLegOdds(c))
+    .filter((c) => clearsClosingCostExcludedMarkets(c));
 }
 
 /** Candidats qui peuvent réellement être proposés au LLM pour cette classe. */

@@ -23,6 +23,17 @@ SELECT
     FILTER (WHERE s.result IN ('WON', 'LOST'))::float AS "hitRate",
   avg((s."closingLineValue" + 1) / s.odds)
     FILTER (WHERE s."closingLineValue" IS NOT NULL)::float AS "meanClosingFair",
+  -- Valeur du MÊME choix pris au prix de clôture : c'est la marge payée,
+  -- et la barre contre laquelle se lit le CLV (un pari pris à la clôture
+  -- vaut moins la marge, jamais zéro).
+  avg(s."closingOdds" * (s."closingLineValue" + 1) / s.odds - 1)
+    FILTER (WHERE s."closingLineValue" IS NOT NULL)::float AS "clvAtClose",
+  -- Écart entre prix pris et prix de clôture, en probabilité de clôture :
+  -- positif, le prix pris battait la clôture.
+  avg((s."closingLineValue" + 1) / s.odds * (s.odds - s."closingOdds"))
+    FILTER (WHERE s."closingLineValue" IS NOT NULL)::float AS "excess",
+  (stddev_samp((s."closingLineValue" + 1) / s.odds * (s.odds - s."closingOdds"))
+     / sqrt(nullif(count(s."closingLineValue"), 0)))::float AS "excessSe",
   avg(s.odds)::float                               AS "meanOdds",
   avg(s."closingOdds")::float                      AS "meanClosingOdds"
 FROM channel_selection_deduped s

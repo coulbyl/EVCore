@@ -120,6 +120,16 @@ describe("admissibleCandidates", () => {
   it("keeps a well-formed candidate", () => {
     expect(admissibleCandidates([score()])).toHaveLength(1);
   });
+
+  it("drops the joint markets excluded for their closing cost (2026-10-10)", () => {
+    for (const market of [
+      "RESULT_BTTS",
+      "RESULT_TOTAL_GOALS",
+      "HALF_TIME_FULL_TIME",
+    ]) {
+      expect(admissibleCandidates([score({ market })])).toEqual([]);
+    }
+  });
 });
 
 describe("candidatesForCouponClass", () => {

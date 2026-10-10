@@ -1,6 +1,7 @@
 import {
   calculateEV,
   clearsMaxLegEdge,
+  clearsClosingCostExcludedMarkets,
   clearsMinLegOdds,
   clearsTeamTotalMaxOdds,
   clearsValueEdgeFloor,
@@ -106,6 +107,12 @@ export function validateCouponSelection(
       return {
         outcome: "rejected",
         reason: `leg ${legLabel(leg)} exceeds the max model-market edge`,
+      };
+    }
+    if (!clearsClosingCostExcludedMarkets(candidate)) {
+      return {
+        outcome: "rejected",
+        reason: `leg ${legLabel(leg)} is on a market excluded for its closing cost`,
       };
     }
     if (

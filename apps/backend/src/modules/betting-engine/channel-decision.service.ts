@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { createLogger } from '@utils/logger';
 import type {
   BetStatus,
   FixtureStatus,
@@ -34,6 +35,8 @@ import { OddsClosingLineRepository } from './pricing/odds-closing-line.repositor
 import { resolveClosingLine } from './pricing/closing-line';
 import { CLOSING_LINE_POLICY } from './pricing/closing-line.constants';
 import type { SettleableSelectionRow } from './channel-decision.repository';
+
+const logger = createLogger('channel-decision');
 
 export type ChannelSelectionItem = {
   id: string;
@@ -264,9 +267,21 @@ export class ChannelDecisionService {
   ): Promise<{ fixturesResettled: number; selectionsResettled: number }> {
     const fixtures =
       await this.repository.findFinishedFixturesWithSelectionsInRange(from, to);
+    logger.info(
+      { from, to, fixtures: fixtures.length },
+      'Force re-settling channel selections in range',
+    );
 
     let selectionsResettled = 0;
+    let processed = 0;
     for (const fixture of fixtures) {
+      processed++;
+      if (processed % 100 === 0) {
+        logger.info(
+          { processed, total: fixtures.length, selectionsResettled },
+          'Channel selections re-settlement in progress',
+        );
+      }
       if (fixture.homeScore === null || fixture.awayScore === null) continue;
       const { settled } = await this.settleFixtureSelections({
         fixtureId: fixture.id,
@@ -281,6 +296,10 @@ export class ChannelDecisionService {
       selectionsResettled += settled;
     }
 
+    logger.info(
+      { fixturesResettled: fixtures.length, selectionsResettled },
+      'Channel selections re-settlement done',
+    );
     return { fixturesResettled: fixtures.length, selectionsResettled };
   }
 

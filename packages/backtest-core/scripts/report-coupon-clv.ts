@@ -29,6 +29,9 @@ type Row = {
   seClv: number | null;
   hitRate: number | null;
   meanClosingFair: number | null;
+  clvAtClose: number | null;
+  excess: number | null;
+  excessSe: number | null;
   meanOdds: number | null;
   meanClosingOdds: number | null;
 };
@@ -71,6 +74,13 @@ function clv(row: Row): string {
   return `${(row.meanClv * 100).toFixed(2)}${se} %`;
 }
 
+function excess(row: Row): string {
+  if (row.excess === null) return "—";
+  const se =
+    row.excessSe === null ? "" : ` ± ${(row.excessSe * 100).toFixed(2)}`;
+  return `${(row.excess * 100).toFixed(2)}${se} pt`;
+}
+
 function render(rows: readonly Row[]): string {
   const header = [
     "Source",
@@ -78,6 +88,8 @@ function render(rows: readonly Row[]): string {
     "Jambes",
     "Avec clôture",
     "CLV moyen (± ET)",
+    "À la clôture",
+    "Écart (± ET)",
     "Taux de réussite",
     "P(clôture) moyenne",
     "Cote prise",
@@ -89,6 +101,8 @@ function render(rows: readonly Row[]): string {
     String(row.legs),
     `${row.withClosing} (${pct(row.withClosing / row.legs, 0)})`,
     clv(row),
+    pct(row.clvAtClose, 2),
+    excess(row),
     pct(row.hitRate),
     pct(row.meanClosingFair),
     num(row.meanOdds),
@@ -107,7 +121,9 @@ function render(rows: readonly Row[]): string {
 Régénérable : \`pnpm --filter @evcore/backtest-core report:coupon-clv\`.
 
 Le CLV d'une jambe est la cote prise × la probabilité de clôture sans marge
-− 1 : positif, le prix pris battait ce que le marché a fini par estimer. Il
+− 1. Un pari pris exactement au prix de clôture vaut **moins la marge**, pas
+zéro : la colonne « À la clôture » est cette barre, et « Écart » dit si le
+prix pris la battait (positif) ou non. Il
 ne dépend pas du résultat du match, donc son erreur type se compte en
 dixièmes de point là où un ROI en demande des dizaines. « Avec clôture » est
 la part des jambes qui ont trouvé un groupe d'issues complet à moins de
