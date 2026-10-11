@@ -1,4 +1,7 @@
 {
+  // Turbo ≥ 2.11 réécrit un bloc de consignes dans AGENTS.md quand il détecte
+  // un agent ; AGENTS.md est tenu à la main ici, on désactive.
+  "agentGuidance": false,
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
   "globalEnv": [
