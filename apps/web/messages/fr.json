@@ -186,11 +186,7 @@
       "banner": "Données suspectes",
       "tooltipLabel": "Alerte calibration",
       "tooltipDetail": "Le modèle et le marché sont en désaccord fort sur ce match (favori inversé ou écart extrême sur plusieurs bookmakers). Cela signale presque toujours des données d'entrée corrompues plutôt qu'une opportunité — le moteur exclut automatiquement toutes les sélections de ce match des paris réels.",
-      "badgeTooltip": "{status, select, GREEN {Le ratio réussite réelle / probabilité annoncée s'écarte de 15 % au plus de 1} ORANGE {Le ratio réussite réelle / probabilité annoncée s'écarte de 15 à 30 % de 1} RED {Le ratio réussite réelle / probabilité annoncée s'écarte de plus de 30 % de 1} other {Volume insuffisant pour calculer cet écart}} ({n, plural, one {# sélection réglée} other {# sélections réglées}})."
-    },
-    "closing": {
-      "label": "Clôture @{odds}",
-      "tooltip": "Cote de clôture chez {bookmaker}. La valeur est ce que la cote prise vaut face à la probabilité de clôture, marge retirée : un pari pris au prix de clôture vaut {margin} (la marge payée), pas zéro. Vert : la cote prise battait la clôture."
+      "badgeTooltip": "{status, select, GREEN {Sur cette compétition, ce canal réussit à peu près aussi souvent qu'il l'annonce} ORANGE {Sur cette compétition, ce canal réussit sensiblement moins souvent — ou plus souvent — qu'il ne l'annonce} RED {Sur cette compétition, la réussite réelle de ce canal est loin de ce qu'il annonce : à prendre avec prudence} other {Volume insuffisant sur cette compétition}} ({n, plural, one {# sélection réglée} other {# sélections réglées}} sur 90 jours)."
     },
     "consensus": {
       "tooltipLabel": "Signal consensus",
@@ -931,5 +927,14 @@
     "watch": "À surveiller",
     "unreliable": "Peu fiable",
     "hint": "Écart mesuré sur 90 jours entre la réussite réelle du canal et la probabilité qu'il annonce."
+  },
+  "closingLine": {
+    "label": "Clôture @{odds}",
+    "detail": "Cote juste avant le coup d'envoi chez {bookmaker}. La cote proposée valait {value} face à la probabilité de clôture, marge retirée.",
+    "verdict": {
+      "beatsClose": "Meilleure que le prix de clôture : prise à ce prix, elle aurait valu {margin} (la marge du bookmaker).",
+      "behindClose": "Moins bonne que le prix de clôture, qui vaut {margin} (la marge du bookmaker).",
+      "unknownMargin": "Marge du bookmaker inconnue pour cette sélection : la comparaison au prix de clôture n'est pas possible."
+    }
   }
 }

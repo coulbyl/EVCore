@@ -88,7 +88,7 @@ export function CouponCard({
     closing:
       leg.closingOdds !== null && leg.closingLineValue !== null
         ? {
-            odds: leg.closingOdds.toFixed(2),
+            odds: leg.closingOdds,
             bookmaker: leg.closingBookmaker,
             value: leg.closingLineValue,
           }

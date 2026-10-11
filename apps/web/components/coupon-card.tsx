@@ -22,7 +22,7 @@ import {
 } from "@evcore/ui";
 import { FixtureCard } from "@/components/fixture-card";
 import { ResultBadge, type ResultValue } from "@/components/result-badge";
-import { formatSignedPct } from "@/app/dashboard/decisions/components/channel-constants";
+import { ClosingLine } from "@/components/closing-line";
 
 export type NormalizedCouponLeg = {
   key: string;
@@ -48,7 +48,7 @@ export type NormalizedCouponLeg = {
    * clôture sans marge − 1). C'est la seule mesure qui dise, avant même le
    * résultat, si le prix proposé avait de la valeur.
    */
-  closing?: { odds: string; bookmaker: string | null; value: number } | null;
+  closing?: { odds: number; bookmaker: string | null; value: number } | null;
 };
 
 export type CouponCardProps = {
@@ -340,16 +340,13 @@ function CouponLegCard({
           <span className="max-w-full truncate">{leg.marketLabel}</span>
           <span className="tabular-nums">{formatPct(leg.probability)}</span>
           {leg.closing && (
-            <span
-              data-testid="leg-closing"
-              title={`Cote de clôture${leg.closing.bookmaker ? ` chez ${leg.closing.bookmaker}` : ""} ; la valeur est ce que la cote proposée vaut face à la probabilité de clôture, marge retirée.`}
-              className={cn(
-                "tabular-nums",
-                leg.closing.value >= 0 ? "text-emerald-500" : "text-amber-500",
-              )}
-            >
-              Clôture @{leg.closing.odds} · {formatSignedPct(leg.closing.value)}
-            </span>
+            <ClosingLine
+              testId="leg-closing"
+              closingOdds={leg.closing.odds}
+              closingLineValue={leg.closing.value}
+              closingBookmaker={leg.closing.bookmaker}
+              marginPaid={null}
+            />
           )}
         </p>
       </div>
