@@ -12,10 +12,17 @@ import { MailService } from '@modules/mail/mail.service';
 
 const logger = createLogger('notification-service');
 
+// Ce qu'un opérateur voit parmi les notifications diffusées (userId null).
+// Les notifications personnelles (abonnements, support) lui parviennent par
+// son userId, quel que soit leur type.
+//
+// ROI_ALERT, MARKET_SUSPENSION et WEEKLY_REPORT en sont sortis le
+// 2026-10-11 : ce sont des alertes d'ingénierie, rédigées en anglais avec des
+// codes bruts (« ROI Alert — RESULT_BTTS · ROI -16.17% over 30 bets »), sur
+// un indicateur que le projet ne retient plus comme mesure. Un nouvel inscrit
+// en recevait neuf avant d'avoir vu un coupon (revue UX du 2026-10-11, P0-2).
+// Elles restent visibles des administrateurs, qui voient tous les types.
 const OPERATOR_TYPES: NotificationType[] = [
-  NotificationType.ROI_ALERT,
-  NotificationType.MARKET_SUSPENSION,
-  NotificationType.WEEKLY_REPORT,
   NotificationType.ANNOUNCEMENT_PUBLISHED,
 ];
 

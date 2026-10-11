@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, BellOff, CheckCheck, Clock } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useCurrentUser } from "@/domains/auth/context/current-user-context";
 import { Button, Skeleton } from "@evcore/ui";
 import {
   useNotifications,
@@ -150,6 +151,7 @@ function NotificationRow({
 
 export function NotificationsPageClient() {
   const t = useTranslations("notifications");
+  const currentUser = useCurrentUser();
   const [tab, setTab] = useState<Tab>("all");
   const [offset, setOffset] = useState(0);
   const limit = 20;
@@ -182,11 +184,16 @@ export function NotificationsPageClient() {
     setOffset(0);
   }
 
+  // Les alertes d'ingénierie (ROI, suspension, rapport hebdomadaire) ne
+  // sont plus diffusées aux opérateurs depuis le 2026-10-11 : l'onglet
+  // serait toujours vide pour eux.
   const TABS: { id: Tab; label: string }[] = [
     { id: "all", label: t("all") },
     { id: "unread", label: t("unread") },
     { id: "announcement", label: t("announcements") },
-    { id: "alert", label: t("alerts") },
+    ...(currentUser.role === "ADMIN"
+      ? [{ id: "alert" as const, label: t("alerts") }]
+      : []),
   ];
 
   return (
