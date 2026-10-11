@@ -8,124 +8,20 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@evcore/ui";
-import { cn } from "@evcore/ui/cn";
 import { usePageTextSearch } from "./use-page-text-search";
 
-// Drag/position/hide behavior mirrors EvaFab (components/eva/eva-fab.tsx) —
-// same nub-on-edge pattern — except this Fab starts hidden by default: it's
-// a secondary tool, not the primary entry point Eva is.
-// v2: moved to the opposite corner from EvaFab's default resting spot (see
-// getDefaultFabPosition) — bumped so any already-saved v1 position, which
-// could overlap EvaFab, is discarded in favor of the new corner.
-const FAB_POSITION_KEY = "evcore-search-fab-position-v2";
-const HIDDEN_KEY = "evcore-search-fab-hidden";
-const DRAG_THRESHOLD_PX = 6;
-const LONG_PRESS_MS = 500;
-const NUB_WIDTH = 28;
-const NUB_HEIGHT = 48;
-
-type FabPosition = { x: number; y: number };
-
-type DragState = {
-  pointerId: number;
-  startX: number;
-  startY: number;
-  originX: number;
-  originY: number;
-  hasDragged: boolean;
-};
-
-function getFabBounds() {
-  const isDesktop = window.innerWidth >= 768;
-  const size = isDesktop ? 48 : 44;
-  const marginX = isDesktop ? 24 : 12;
-  const marginY = isDesktop ? 24 : 112;
-
-  return {
-    marginX,
-    marginY,
-    maxX: Math.max(marginX, window.innerWidth - size - marginX),
-    maxY: Math.max(marginY, window.innerHeight - size - marginY),
-  };
-}
-
-function clampFabPosition(position: FabPosition) {
-  const bounds = getFabBounds();
-  return {
-    x: Math.min(Math.max(position.x, bounds.marginX), bounds.maxX),
-    y: Math.min(Math.max(position.y, bounds.marginY), bounds.maxY),
-  };
-}
-
-// Opposite corner from EvaFab's default (bottom-right desktop / bottom-left
-// mobile) — stacking both on the same edge only offset vertically left them
-// close enough on some viewports to overlap and swallow each other's
-// long-press-to-hide gesture, so they get distinct corners instead.
-function getDefaultFabPosition() {
-  const bounds = getFabBounds();
-  const isDesktop = window.innerWidth >= 768;
-  return { x: isDesktop ? bounds.marginX : bounds.maxX, y: bounds.maxY };
-}
-
-function isNearLeftEdge(x: number): boolean {
-  return x < window.innerWidth / 2;
-}
-
-export function PageSearchFab() {
+/**
+ * Recherche dans la page. Était un second bouton flottant, déplaçable et
+ * mémorisé, qui dépassait du bord droit en mobile et se posait sur le menu
+ * en desktop (revue UX du 2026-10-11, P1-8). C'est désormais un bouton de
+ * l'en-tête, desktop seulement : en mobile la navigation basse et Eva
+ * occupent déjà l'écran, et le navigateur sait chercher dans la page.
+ */
+export function PageSearchButton() {
   const [open, setOpen] = useState(false);
-  const [position, setPosition] = useState<FabPosition | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  // Hidden by default — only a first "reveal" (long press on the nub isn't
-  // needed since there's nothing to reveal yet) or explicit show unhides it.
-  const [hidden, setHidden] = useState(true);
-  const dragStateRef = useRef<DragState | null>(null);
-  const suppressClickRef = useRef(false);
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const longPressFiredRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const search = usePageTextSearch(open);
-
-  useEffect(() => {
-    setHidden(localStorage.getItem(HIDDEN_KEY) !== "0");
-
-    const rawPosition = localStorage.getItem(FAB_POSITION_KEY);
-    if (!rawPosition) {
-      setPosition(getDefaultFabPosition());
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(rawPosition) as Partial<FabPosition>;
-      if (typeof parsed.x === "number" && typeof parsed.y === "number") {
-        setPosition(clampFabPosition({ x: parsed.x, y: parsed.y }));
-        return;
-      }
-    } catch {
-      // Ignore corrupted storage and restore the default placement.
-    }
-    setPosition(getDefaultFabPosition());
-  }, []);
-
-  useEffect(() => {
-    if (!position) return;
-    localStorage.setItem(FAB_POSITION_KEY, JSON.stringify(position));
-  }, [position]);
-
-  useEffect(() => {
-    if (!position) return;
-    function handleResize() {
-      setPosition((current) => (current ? clampFabPosition(current) : current));
-    }
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [position]);
-
-  useEffect(() => {
-    return () => {
-      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-    };
-  }, []);
 
   useEffect(() => {
     if (open) inputRef.current?.focus();
@@ -143,88 +39,6 @@ export function PageSearchFab() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open]);
 
-  function hideFab() {
-    setHidden(true);
-    setOpen(false);
-    localStorage.setItem(HIDDEN_KEY, "1");
-  }
-
-  function showFab() {
-    setHidden(false);
-    localStorage.setItem(HIDDEN_KEY, "0");
-  }
-
-  function handlePointerDown(event: React.PointerEvent<HTMLButtonElement>) {
-    if (!position) return;
-    dragStateRef.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      originX: position.x,
-      originY: position.y,
-      hasDragged: false,
-    };
-    longPressFiredRef.current = false;
-    longPressTimerRef.current = setTimeout(() => {
-      longPressFiredRef.current = true;
-      hideFab();
-    }, LONG_PRESS_MS);
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }
-
-  function handlePointerMove(event: React.PointerEvent<HTMLButtonElement>) {
-    const dragState = dragStateRef.current;
-    if (!dragState || dragState.pointerId !== event.pointerId) return;
-
-    const deltaX = event.clientX - dragState.startX;
-    const deltaY = event.clientY - dragState.startY;
-    const nextPosition = clampFabPosition({
-      x: dragState.originX + deltaX,
-      y: dragState.originY + deltaY,
-    });
-
-    if (
-      !dragState.hasDragged &&
-      Math.hypot(deltaX, deltaY) >= DRAG_THRESHOLD_PX
-    ) {
-      dragState.hasDragged = true;
-      setIsDragging(true);
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
-      }
-    }
-
-    setPosition(nextPosition);
-  }
-
-  function handlePointerEnd(event: React.PointerEvent<HTMLButtonElement>) {
-    const dragState = dragStateRef.current;
-    if (!dragState || dragState.pointerId !== event.pointerId) return;
-
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-
-    suppressClickRef.current =
-      dragState.hasDragged || longPressFiredRef.current;
-    longPressFiredRef.current = false;
-    dragStateRef.current = null;
-    setIsDragging(false);
-  }
-
-  function handleClick() {
-    if (suppressClickRef.current) {
-      suppressClickRef.current = false;
-      return;
-    }
-    setOpen((current) => !current);
-  }
-
   return (
     <>
       {/* Next's CSS pipeline (Lightning CSS) rejects ::highlight() as an
@@ -235,59 +49,16 @@ export function PageSearchFab() {
         ::highlight(page-search-match-active) { background-color: #f97316; color: #ffffff; }
       `}</style>
 
-      {hidden && position && (
-        <button
-          type="button"
-          onClick={showFab}
-          aria-label="Afficher la recherche"
-          title="Afficher la recherche"
-          data-tour="page-search-fab"
-          className={cn(
-            "fixed z-30 flex items-center justify-center",
-            "bg-panel-strong text-accent ring-2 ring-accent/40",
-            "shadow-[0_6px_24px_rgba(15,23,42,0.35)]",
-            "opacity-70 transition-opacity hover:opacity-100",
-            isNearLeftEdge(position.x)
-              ? "left-0 rounded-r-xl"
-              : "right-0 rounded-l-xl",
-          )}
-          style={{
-            top: `${position.y}px`,
-            width: NUB_WIDTH,
-            height: NUB_HEIGHT,
-          }}
-        >
-          <Search className="size-4" />
-        </button>
-      )}
-
-      {!hidden && (
-        <button
-          type="button"
-          onClick={handleClick}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerEnd}
-          onPointerCancel={handlePointerEnd}
-          title="Rechercher dans la page (appui long pour masquer)"
-          data-tour="page-search-fab"
-          className={cn(
-            "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12",
-            "bg-panel-strong text-accent ring-2 ring-accent/40",
-            "shadow-[0_6px_24px_rgba(15,23,42,0.35)]",
-            isDragging
-              ? "cursor-grabbing touch-none transition-none"
-              : "cursor-grab touch-none transition-transform hover:scale-105 active:scale-95",
-          )}
-          style={
-            position
-              ? { left: `${position.x}px`, top: `${position.y}px` }
-              : { visibility: "hidden" }
-          }
-        >
-          <Search className="size-5" />
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        title="Rechercher dans la page"
+        aria-label="Rechercher dans la page"
+        data-tour="page-search-fab"
+        className="hidden size-9 items-center justify-center rounded-xl border border-border bg-panel-strong text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:flex"
+      >
+        <Search className="size-4" />
+      </button>
 
       {open && (
         <div

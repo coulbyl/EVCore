@@ -1,7 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const WEB_PORT = 3000;
-const MOCK_PORT = 3099;
+// Overridable so a dev whose 3000 is taken can still run the suite
+// (`E2E_WEB_PORT=3010 E2E_MOCK_PORT=3109 pnpm exec playwright test`).
+const WEB_PORT = Number(process.env.E2E_WEB_PORT ?? 3000);
+const MOCK_PORT = Number(process.env.E2E_MOCK_PORT ?? 3099);
 
 export default defineConfig({
   testDir: "./e2e",
@@ -75,16 +77,18 @@ export default defineConfig({
     {
       command: "node e2e/support/mock-backend.mjs",
       url: `http://127.0.0.1:${MOCK_PORT}/health`,
+      env: { E2E_MOCK_PORT: String(MOCK_PORT) },
       reuseExistingServer: !process.env.CI,
       timeout: 10_000,
     },
     {
-      command: "pnpm dev",
+      command: `pnpm dev --port ${WEB_PORT}`,
       url: `http://127.0.0.1:${WEB_PORT}`,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: {
         NEXT_PUBLIC_API_URL: `http://127.0.0.1:${MOCK_PORT}`,
+        E2E_MOCK_PORT: String(MOCK_PORT),
       },
     },
   ],

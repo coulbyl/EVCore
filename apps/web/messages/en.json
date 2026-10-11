@@ -214,7 +214,8 @@
       "searchLeague": "Search a competition…",
       "noLeagueResults": "No competition.",
       "searchChannel": "Search a channel…",
-      "noChannelResults": "No channel."
+      "noChannelResults": "No channel.",
+      "allFilters": "Filters"
     },
     "helpLink": "How to read a pick"
   },

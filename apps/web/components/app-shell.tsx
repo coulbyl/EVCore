@@ -32,6 +32,7 @@ import { BetSlipButton } from "./bet-slip-button";
 import { AccountButton } from "./account-button";
 import { BankrollWidget } from "./bankroll-widget";
 import { NotificationBell } from "./notification-bell";
+import { PageSearchButton } from "./page-search/page-search-fab";
 import { UserAvatar } from "./user-avatar";
 import { useCurrentUser } from "@/domains/auth/context/current-user-context";
 import { useLeaderboard } from "@/domains/dashboard/use-cases/get-leaderboard";
@@ -286,6 +287,7 @@ export function AppShell({
       actions={
         <div className="relative flex items-center gap-2">
           <BankrollWidget />
+          <PageSearchButton />
           <NotificationBell />
           <BetSlipButton />
           <AccountButton currentUser={currentUser} />
