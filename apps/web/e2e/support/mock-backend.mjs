@@ -1,11 +1,11 @@
 /**
  * Minimal mock backend for Playwright viewport tests.
- * Runs on PORT 3099. Returns session for /auth/me and empty data elsewhere.
+ * Runs on PORT 3099 (override with E2E_MOCK_PORT). Returns session for /auth/me and empty data elsewhere.
  * Started via playwright.config.ts webServer.
  */
 import http from "node:http";
 
-const PORT = 3099;
+const PORT = Number(process.env.E2E_MOCK_PORT ?? 3099);
 
 const SESSION = {
   session: {
@@ -259,6 +259,7 @@ function route(method, url) {
   // Une requête React Query qui reçoit `{}` ou undefined fait planter la
   // page entière (overlay « Query data cannot be undefined ») : tout ce qui
   // est listé ou compté doit recevoir une liste vide.
+  if (path.startsWith("/gamification/badges/me")) return [200, { badges: [] }];
   if (path.startsWith("/gamification")) return [200, []];
   if (path.startsWith("/personalization")) return [200, []];
   if (path.startsWith("/announcements")) return [200, []];

@@ -214,7 +214,8 @@
       "searchLeague": "Rechercher un championnat…",
       "noLeagueResults": "Aucun championnat.",
       "searchChannel": "Rechercher un canal…",
-      "noChannelResults": "Aucun canal."
+      "noChannelResults": "Aucun canal.",
+      "allFilters": "Filtres"
     },
     "helpLink": "Comment lire une fiche"
   },

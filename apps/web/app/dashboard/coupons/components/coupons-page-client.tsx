@@ -41,11 +41,11 @@ export function CouponsPageClient() {
     <Page className="flex h-full flex-col">
       <PageHeader>
         <div />
-        <PageHeaderActions className="w-full lg:w-auto">
+        <PageHeaderActions className="w-full flex-nowrap lg:w-auto">
           <DateNav
             date={date}
             onChange={navigateTo}
-            className="w-full lg:w-auto"
+            className="min-w-0 flex-1 justify-center lg:w-auto lg:flex-none"
           />
           <FormationHelpLink
             slug="channels-overview"
@@ -77,8 +77,11 @@ export function CouponsPageClient() {
               </div>
             )}
 
+            {/* Deux colonnes jusqu'au très grand écran : trois cartes de
+                280 px à 1 280 px tronquaient les noms d'équipes
+                (revue UX du 2026-10-11, P1-6). */}
             {!isLoading && !isError && coupons.length > 0 && (
-              <div className="grid grid-cols-1 items-stretch gap-4 pb-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 items-stretch gap-4 pb-4 md:grid-cols-2 2xl:grid-cols-3">
                 {coupons.map((coupon) => (
                   <CouponCard key={coupon.id} coupon={coupon} locale={locale} />
                 ))}

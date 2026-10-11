@@ -22,10 +22,10 @@ export default async function FixturesPage({
     <Page className="flex h-full flex-col">
       <PageHeader>
         <div />
-        <PageHeaderActions>
+        <PageHeaderActions className="w-full flex-nowrap lg:w-auto">
           <IndicesDrawerButton />
           <Suspense fallback={null}>
-            <FixturesFilters date={date} />
+            <FixturesFilters date={date} className="min-w-0 flex-1" />
           </Suspense>
         </PageHeaderActions>
       </PageHeader>

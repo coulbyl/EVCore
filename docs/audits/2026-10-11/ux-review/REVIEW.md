@@ -70,6 +70,10 @@ tableau de bord ne promet jamais de gain, et le dit.
    dans le menu. Même remarque, en moins grave, pour Coupons (carte de date
    avec le bouton d'aide isolé dessous) et Matchs (date alignée à gauche,
    seule page à le faire).
+   _Corrigé le 2026-10-11 : une ligne sur les trois pages (bouton
+   « Filtres » avec compteur et tiroir bas sur Décisions). Captures :
+   `after/lot3__mobile__dashboard_decisions_date_2026-10-10.png`,
+   `after/lot3__mobile__decisions_filters_open.png`._
 
 6. **Desktop : les listes de Coupons et de Décisions n'utilisent que la
    moitié gauche de l'écran** ; à 1280 px, les cartes font 430 px et les noms
@@ -78,6 +82,11 @@ tableau de bord ne promet jamais de gain, et le dit.
    `desktop__dashboard_decisions_date_2026-10-10.png`._
    → Grille à deux ou trois colonnes, ou une colonne pleine largeur avec les
    jambes en ligne.
+   _Corrigé le 2026-10-11 : deux colonnes dès 768 px (Coupons) / 1024 px
+   (Décisions), trois à partir de 1536 px ; la vue « par heure » devient une
+   grille continue triée par coup d'envoi. Captures :
+   `after/lot3__desktop__dashboard_coupons_date_2026-10-09.png`,
+   `after/lot3__desktop__dashboard_decisions_date_2026-10-10.png`._
 
 7. **Le jargon de calibration est servi tel quel sur chaque pick** : badge
    « Écart ≤ 15 % » répété sous chaque sélection, « Écart > 30 % » en rouge,
@@ -101,6 +110,10 @@ tableau de bord ne promet jamais de gain, et le dit.
    `mobile__dashboard.png`._
    → Un seul bouton flottant, à droite, au-dessus de la barre basse, et une
    position par défaut qui ne chevauche jamais la navigation.
+   _Corrigé le 2026-10-11 : Eva ancré en bas à droite (au-dessus de la barre
+   basse en mobile), plus de glisser-déposer ; la recherche de page devient
+   un bouton d'en-tête desktop, la loupe flottante disparaît. Captures :
+   `after/lot3__desktop__dashboard.png`, `after/lot3__mobile__dashboard.png`._
 
 9. **Mes coupons, nouvel utilisateur : l'état vide parle de filtres.**
    « Aucun coupon ne correspond à cette période. Essaie d'élargir le

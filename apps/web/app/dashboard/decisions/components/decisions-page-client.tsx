@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import {
@@ -11,7 +11,6 @@ import {
 import { useChannelCompetitionStats } from "@/domains/dashboard/use-cases/get-channel-health";
 import type { StrategyChannel } from "@/domains/channel-decision/types/channel-decision";
 import { todayIso } from "@/lib/date";
-import { FiltersPopover } from "@/components/filters-popover";
 import { dateRangeForPeriod } from "@/app/dashboard/track-record/track-record-constants";
 import { DecisionsPageFrame } from "./decisions-page-frame";
 import { LeagueFilterBar } from "./league-filter-bar";
@@ -42,7 +41,6 @@ export function DecisionsPageClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const locale = useLocale();
-  const t = useTranslations("decisions");
 
   const date = searchParams.get("date") ?? today;
   // null (no "active" param) → "Match" view, i.e. grouped-by-match.
@@ -141,20 +139,22 @@ export function DecisionsPageClient() {
           </>
         )
       }
-      headerExtra={
-        !hasData ? null : view === "matches" ? (
-          <FiltersPopover
-            label={t("filters.displayLabel")}
-            active={hasActiveMatchFilters(matchLens)}
-          >
-            <MatchFilters {...matchLens} />
-          </FiltersPopover>
+      displayControls={
+        !hasData ? undefined : view === "matches" ? (
+          <MatchFilters {...matchLens} />
         ) : (
           <ChannelGroupByControl
             groupBy={channelLens.groupBy}
             setGroupBy={channelLens.setGroupBy}
           />
         )
+      }
+      activeFilterCount={
+        (selectedLeague !== null ? 1 : 0) +
+        (activeChannel !== null ? 1 : 0) +
+        (hasData && view === "matches" && hasActiveMatchFilters(matchLens)
+          ? 1
+          : 0)
       }
     >
       {view === "matches" ? (
