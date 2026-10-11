@@ -286,18 +286,6 @@
       "title": "The full menu",
       "description": "On mobile, this button opens the full navigation menu — every section is there, even the ones that don't fit the bottom bar."
     },
-    "dashboardFilter": {
-      "title": "Home — the period",
-      "description": "This filter changes the period shown on the performance and ranking cards below."
-    },
-    "dashboardPerformance": {
-      "title": "Your performance",
-      "description": "Your betting stats over the selected period — ROI, win rate, volume."
-    },
-    "dashboardRanking": {
-      "title": "Rankings",
-      "description": "League ranking by engine performance, and the leaderboard of the most disciplined users."
-    },
     "decisions": {
       "title": "Decisions",
       "description": "Every match of the day, with what each channel thinks. The \"?\" button here explains how to read a pick anytime."
@@ -361,6 +349,18 @@
     "accountSettings": {
       "title": "Settings",
       "description": "Appearance, language, notifications, bankroll preferences and security — all set from these tabs."
+    },
+    "homeCoupon": {
+      "title": "Today's coupon",
+      "description": "Everything starts here: today's proposed coupon, its legs and its odds. “Play this coupon” adds it to your slip."
+    },
+    "homePicks": {
+      "title": "Today's picks",
+      "description": "Five picks at most, taken from reliable channels within the odds band where the measure holds. The + adds them to your coupon."
+    },
+    "homeMySlips": {
+      "title": "Your coupons",
+      "description": "What you played: pending, won, hit rate. The My coupons page details every slip."
     }
   },
   "formation": {
@@ -643,11 +643,43 @@
       "recentAlerts": "Recent alerts (7d)",
       "channelsByDeviation": "Channels sorted by calibration deviation",
       "channel": "Channel"
+    },
+    "home": {
+      "couponTitle": "Today's coupon",
+      "couponsLink": "All coupons",
+      "couponError": "Today's coupon could not be loaded.",
+      "couponEmptyTitle": "No coupon today",
+      "couponEmptyBody": "Today's pool was too thin to compose a coupon without lowering the bar. Abstaining is a result, not a failure.",
+      "yesterdayTitle": "Yesterday",
+      "yesterdayLink": "See details",
+      "legs": "{count, plural, one {# leg} other {# legs}}",
+      "paid": "paid @{odds}",
+      "result": {
+        "won": "Won",
+        "partial": "Won",
+        "lost": "Lost",
+        "void": "Refunded",
+        "pending": "Pending"
+      },
+      "picksTitle": "Today's picks",
+      "picksSubtitle": "Reliable channels, odds between 1.20 and 1.80, one pick per match.",
+      "picksLink": "All decisions",
+      "picksEmpty": "No pick meets the conditions today.",
+      "mySlipsTitle": "My coupons",
+      "mySlipsLink": "My coupons",
+      "mySlipsEmptyTitle": "You have not played anything yet",
+      "mySlipsEmptyBody": "Today's coupon is at the top of this page. A played coupon shows up here with its result.",
+      "mySlipsEmptyLink": "See today's coupon",
+      "pending": "Pending",
+      "won": "Won",
+      "winRate": "Hit rate"
     }
   },
   "betSlips": {
     "emptyTitle": "No bet slips",
-    "emptyDescription": "No bet slip matches this period and filter."
+    "emptyDescription": "No bet slip matches this period and filter.",
+    "tabSlips": "My coupons",
+    "tabLeaderboard": "Players leaderboard"
   },
   "bankrollPage": {
     "filter": {
@@ -892,5 +924,11 @@
     "skip": "Skip",
     "next": "Next",
     "finish": "Finish"
+  },
+  "confidence": {
+    "reliable": "Reliable",
+    "watch": "Watch",
+    "unreliable": "Unreliable",
+    "hint": "Gap measured over 90 days between the channel's actual hit rate and the probability it announces."
   }
 }

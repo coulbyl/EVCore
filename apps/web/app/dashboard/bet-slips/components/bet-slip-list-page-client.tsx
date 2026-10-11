@@ -14,6 +14,10 @@ import {
   Page,
   PageContent,
   StatCard,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from "@evcore/ui";
 import type { FilterDef, FilterState } from "@evcore/ui";
 import { formatDateLong, todayIso, daysAgoIso } from "@/lib/date";
@@ -23,6 +27,8 @@ import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { BetSlipView } from "@/domains/bet-slip/types/bet-slip";
 import { BetSlipDetailPanel } from "./bet-slip-detail-panel";
+import { UserLeaderboard } from "@/app/dashboard/components/user-leaderboard";
+import { useLeaderboard } from "@/domains/dashboard/use-cases/get-leaderboard";
 
 type SlipTypeFilter = "ALL" | BetSlipView["type"];
 type BadgeTone = "accent" | "success" | "warning" | "danger" | "neutral";
@@ -230,6 +236,17 @@ function BetSlipCard({
   );
 }
 
+function LeaderboardTab() {
+  const { data, isLoading, isError } = useLeaderboard();
+  return (
+    <UserLeaderboard
+      entries={data ?? []}
+      isLoading={isLoading}
+      isError={isError}
+    />
+  );
+}
+
 export function BetSlipListPageClient() {
   const t = useTranslations("betSlips");
   const { formatAmount, formatSigned } = useCurrencyFormat();
@@ -341,28 +358,54 @@ export function BetSlipListPageClient() {
         data-tour="bet-slips-summary"
         className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 sm:p-5 ev-shell-shadow"
       >
-        <div className="hidden min-h-0 flex-1 lg:grid lg:grid-cols-[3fr_2fr] lg:grid-rows-1 lg:gap-5">
-          <div className="flex min-h-0 flex-col gap-4">
-            {filter}
-            <div className="min-h-0 flex-1 overflow-y-auto">{items}</div>
-          </div>
-          <div className="h-full min-h-0">
-            {selectedSlip ? (
-              <BetSlipDetailPanel data={selectedSlip} onClose={handleClose} />
-            ) : (
-              <div className="flex h-full items-center justify-center rounded-[1.35rem] border border-dashed border-border bg-secondary">
-                <p className="text-sm text-muted-foreground">
-                  Sélectionnez un coupon pour voir le détail
-                </p>
+        {/* Le classement des joueurs vivait sur l'accueil ; il parle à
+            quelqu'un qui joue, donc il vit ici, en second onglet
+            (revue UX du 2026-10-11). */}
+        <Tabs
+          defaultValue="slips"
+          className="flex min-h-0 flex-1 flex-col gap-4"
+        >
+          <TabsList className="w-max shrink-0">
+            <TabsTrigger value="slips">{t("tabSlips")}</TabsTrigger>
+            <TabsTrigger value="leaderboard">{t("tabLeaderboard")}</TabsTrigger>
+          </TabsList>
+          <TabsContent
+            value="slips"
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+          >
+            <div className="hidden min-h-0 flex-1 lg:grid lg:grid-cols-[3fr_2fr] lg:grid-rows-1 lg:gap-5">
+              <div className="flex min-h-0 flex-col gap-4">
+                {filter}
+                <div className="min-h-0 flex-1 overflow-y-auto">{items}</div>
               </div>
-            )}
-          </div>
-        </div>
+              <div className="h-full min-h-0">
+                {selectedSlip ? (
+                  <BetSlipDetailPanel
+                    data={selectedSlip}
+                    onClose={handleClose}
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center rounded-[1.35rem] border border-dashed border-border bg-secondary">
+                    <p className="text-sm text-muted-foreground">
+                      Sélectionnez un coupon pour voir le détail
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4 lg:hidden">
-          {filter}
-          <div className="min-h-0 flex-1 overflow-y-auto">{items}</div>
-        </div>
+            <div className="flex min-h-0 flex-1 flex-col gap-4 lg:hidden">
+              {filter}
+              <div className="min-h-0 flex-1 overflow-y-auto">{items}</div>
+            </div>
+          </TabsContent>
+          <TabsContent
+            value="leaderboard"
+            className="min-h-0 flex-1 overflow-y-auto"
+          >
+            <LeaderboardTab />
+          </TabsContent>
+        </Tabs>
       </PageContent>
 
       {isMobile && (
