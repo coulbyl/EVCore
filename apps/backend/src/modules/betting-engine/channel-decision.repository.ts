@@ -61,11 +61,18 @@ export type ChannelSelectionReadRow = {
   pick: string;
   probability: Prisma.Decimal;
   odds: Prisma.Decimal | null;
+  oddsBookmaker: string | null;
+  marginPaid: Prisma.Decimal | null;
+  marginBest: Prisma.Decimal | null;
   impliedProbability: Prisma.Decimal | null;
   ev: Prisma.Decimal | null;
   qualityScore: Prisma.Decimal | null;
   rank: number;
   result: BetStatus | null;
+  settledAt: Date | null;
+  closingOdds: Prisma.Decimal | null;
+  closingBookmaker: string | null;
+  closingLineValue: Prisma.Decimal | null;
 };
 
 export type ChannelDecisionReadRow = {
@@ -360,11 +367,18 @@ export class ChannelDecisionRepository {
             pick: true,
             probability: true,
             odds: true,
+            oddsBookmaker: true,
+            marginPaid: true,
+            marginBest: true,
             impliedProbability: true,
             ev: true,
             qualityScore: true,
             rank: true,
             result: true,
+            settledAt: true,
+            closingOdds: true,
+            closingBookmaker: true,
+            closingLineValue: true,
           },
           orderBy: { rank: 'asc' },
         },
@@ -546,6 +560,8 @@ function toSelectionData(
     odds: selection.odds ?? null,
     oddsBookmaker: selection.oddsBookmaker ?? null,
     oddsSnapshotAt: selection.oddsSnapshotAt ?? null,
+    marginPaid: selection.marginPaid ?? null,
+    marginBest: selection.marginBest ?? null,
     impliedProbability: selection.impliedProbability ?? null,
     ev: selection.ev ?? null,
     qualityScore: selection.qualityScore ?? null,

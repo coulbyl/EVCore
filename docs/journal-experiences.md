@@ -627,3 +627,36 @@ marchés joints exclus du vivier LLM sur leur coût mesuré
 reformulé sur l'écart à la clôture. **Verdict : ouvert sur l'écart** — relire
 quand 500 sélections par canal porteront leur book (`oddsBookmaker`), ce qui
 lèvera le doute du mélange de maisons.
+
+## 2026-10-11 — Comment Décisions et Coupons se comportent sur la base du 10 octobre
+
+**Décisions.** Sur les 1 009 rencontres analysées entre le 15/09 et le 10/10
+(dernière analyse avant coup d'envoi), six canaux sélectionnent sur presque
+chaque rencontre — TEAM_TOTAL et RESULT_BTTS 1 007 fois sur 1 009,
+CORRECT_SCORE 914, WIN_TO_NIL 881, CLEAN_SHEET 866, WIN_EITHER_HALF 820 — et
+ce sont des sorties, pas des décisions. La calibration fraîche par canal va de
+0,98 (WIN_EITHER_HALF) à 0,64 (VALUE) ; par bande de cote, elle redit la
+mesure du 22/08 : 1,00 sous 1,45, 0,92 de 1,45 à 1,80, 0,83 de 1,80 à 2,50 et
+0,59 au-dessus de 4 — la coupe reste la cote, jamais le canal. Décidé :
+l'écran Décisions montre désormais, sur une sélection réglée, sa clôture et sa
+valeur face à la marge payée (vert si la cote prise battait la clôture), et
+l'API expose book, marge payée, meilleure marge et clôture par sélection.
+
+**Coupons.** Le LLM a repris le 9/10 pour une seule publication, puis s'est
+arrêté sur « 401 Invalid API key » de Together.ai du 9 au 11 : la règle de
+repli ne considérait pas une clé invalide comme un motif de bascule vers Groq,
+alors que le repli existait. Décidé : 401/403 et complétion vide basculent sur
+le fournisseur suivant quand il y en a un ; les jambes choisies par le LLM
+sont enregistrées avec chaque tentative (y compris PRESERVED et échec de
+persistance, qui ne laissait aucune ligne). Le compositeur PRICE compose
+chaque jour deux jambes à ~2,4 sur FIRST_HALF_WINNER (le marché le moins
+taxé à la clôture, −3,7 %) : 3 gagnés sur 16 depuis le 25/09, soit 19 % pour
+une cote combinée de 5,8 — exactement ce que paie le prix, ni plus ni moins.
+Comparaison par jambe (`report:coupon-policies`) : 1 370 jambes LLM
+historiques à 51,6 % de réussite et −1,9 % par jambe, 46 jambes de l'ombre
+déterministe à 43,5 % et −20 %, 8 jambes de l'ombre v2 à 75 % — trop peu pour
+dire quoi que ce soit, et c'est le rapport qui tranchera avec le temps.
+
+**Marge payée (E-5/E-6).** Calculée à l'assemblage du relevé et écrite avec la
+sélection ; aucune sélection de la base ne la porte encore. **Verdict :
+ouvert** — `report:margin-paid` à J+7.

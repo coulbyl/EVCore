@@ -26,6 +26,8 @@
     "report:freshness": "tsx scripts/report-odds-freshness.ts",
     "report:coupon-clv": "tsx scripts/report-coupon-clv.ts",
     "report:selection-clv": "tsx scripts/report-selection-clv.ts",
+    "report:coupon-policies": "tsx scripts/report-coupon-policies.ts",
+    "report:margin-paid": "tsx scripts/report-margin-paid.ts",
     "collect:asian-handicap": "tsx --env-file=../../apps/backend/.env scripts/collect-asian-handicap-history.ts",
     "backtest:asian-handicap": "tsx scripts/backtest-asian-handicap.ts",
     "backtest:composer": "tsx scripts/backtest-composer.ts",

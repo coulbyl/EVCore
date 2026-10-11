@@ -22,6 +22,7 @@ import {
 } from "@evcore/ui";
 import { FixtureCard } from "@/components/fixture-card";
 import { ResultBadge, type ResultValue } from "@/components/result-badge";
+import { formatSignedPct } from "@/app/dashboard/decisions/components/channel-constants";
 
 export type NormalizedCouponLeg = {
   key: string;
@@ -102,11 +103,6 @@ export type CouponCardProps = {
 
 function formatPct(n: number): string {
   return `${(n * 100).toFixed(0)}%`;
-}
-
-function formatSignedPct(n: number): string {
-  const pct = (n * 100).toFixed(1);
-  return `${n >= 0 ? "+" : ""}${pct}%`;
 }
 
 export function CouponCard({

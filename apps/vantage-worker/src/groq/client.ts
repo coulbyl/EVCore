@@ -110,15 +110,25 @@ export function createLlmClients(config: Config): LlmClients {
  * The 402 case is what took VANTAGE and the LLM coupon generator down from
  * 2026-09-20 to 2026-10-05 in prod: the primary's credit ran out, every
  * job failed with 402, and Groq sat unused in `clients.fallbacks`. */
-function isRetryableProviderError(err: unknown): boolean {
-  if (typeof err !== "object" || err === null || !("status" in err)) {
-    return false;
-  }
+// Which failures justify trying the next configured provider. Everything
+// that is about THIS provider rather than about our request: no HTTP status
+// (connection, timeout, empty completion), 401/403 (its key — the primary
+// key went invalid on 2026-10-09 and the generator stopped for three days
+// with a working fallback configured), 402 (its quota, the 2026-09-20
+// outage), 429 and 5xx. A 400 (our prompt) still fails fast: no provider
+// would answer it better.
+export function isRetryableProviderError(err: unknown): boolean {
+  if (typeof err !== "object" || err === null) return false;
+  if (!("status" in err)) return true;
   const status = (err as { status?: unknown }).status;
   if (status === undefined) return true;
   return (
     typeof status === "number" &&
-    (status === 402 || status === 429 || status >= 500)
+    (status === 401 ||
+      status === 402 ||
+      status === 403 ||
+      status === 429 ||
+      status >= 500)
   );
 }
 
@@ -127,9 +137,9 @@ function isRetryableProviderError(err: unknown): boolean {
  * VANTAGE call must be replayable from its logged input.
  *
  * Tries `clients.primary` first, then each fallback in order, only moving
- * on when the failure looks transient (see isRetryableProviderError) — a
- * non-retryable error (bad prompt, bad key) fails fast instead of burning
- * through every configured provider for nothing. */
+ * on when the failure is about that provider (see isRetryableProviderError)
+ * — a non-retryable error (bad prompt) fails fast instead of burning through
+ * every configured provider for nothing. */
 export async function requestVantageCompletion(
   clients: LlmClients,
   systemPrompt: string,

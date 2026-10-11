@@ -5,6 +5,7 @@ import {
   type FullOddsSnapshot,
   type QuoteSource,
 } from "../selection/types";
+import { outcomeGroup } from "./outcome-groups";
 import {
   isHalfTimeFullTimePick,
   type HalfTimeFullTimePick,
@@ -208,6 +209,100 @@ function recordQuoteSources(
       bookmaker: row.bookmaker,
       snapshotAt: row.snapshotAt,
     };
+  }
+}
+
+// Dernière cote par (book, choix) d'un marché à l'instant `cutoff`, le 1X2
+// déplié depuis ses trois colonnes. Sert à la marge (E-5) : pour chaque book,
+// le groupe d'issues complet donne sa surcote.
+function latestOddsByBookmaker(
+  rows: readonly RawOddsRow[],
+  market: Market,
+  cutoff: Date,
+): Map<string, Map<string, { odds: Decimal; at: number }>> {
+  const byBook = new Map<string, Map<string, { odds: Decimal; at: number }>>();
+  const record = (
+    bookmaker: string,
+    pick: string,
+    odds: DecimalLike,
+    at: number,
+  ) => {
+    const picks = byBook.get(bookmaker) ?? new Map();
+    const current = picks.get(pick);
+    if (!current || current.at < at) {
+      picks.set(pick, { odds: new Decimal(odds.toString()), at });
+    }
+    byBook.set(bookmaker, picks);
+  };
+  for (const row of rows) {
+    if (row.market !== market || row.snapshotAt.getTime() > cutoff.getTime()) {
+      continue;
+    }
+    const at = row.snapshotAt.getTime();
+    if (market === Market.ONE_X_TWO && row.pick === null) {
+      if (row.homeOdds !== null)
+        record(row.bookmaker, "HOME", row.homeOdds, at);
+      if (row.drawOdds !== null)
+        record(row.bookmaker, "DRAW", row.drawOdds, at);
+      if (row.awayOdds !== null)
+        record(row.bookmaker, "AWAY", row.awayOdds, at);
+      continue;
+    }
+    if (row.pick && row.odds !== null) {
+      record(row.bookmaker, row.pick, row.odds, at);
+    }
+  }
+  return byBook;
+}
+
+// Marge payée et meilleure marge disponible de chaque choix retenu (E-5).
+// Un groupe incomplet chez un book ne donne aucune marge : une surcote
+// calculée sur deux issues d'un triplet serait fausse dans une direction
+// inconnue. Les objets de `sources` sont enrichis en place.
+function attachMargins(
+  sources: Record<string, QuoteSource>,
+  rows: readonly RawOddsRow[],
+  cutoff: Date,
+): void {
+  const cache = new Map<
+    string,
+    Map<string, Map<string, { odds: Decimal; at: number }>>
+  >();
+  for (const [key, source] of Object.entries(sources)) {
+    const separator = key.indexOf(":");
+    const market = key.slice(0, separator) as Market;
+    const pick = key.slice(separator + 1);
+    const group = outcomeGroup(market, pick);
+    if (!group) {
+      source.margin = null;
+      source.bestMargin = null;
+      continue;
+    }
+    let byBook = cache.get(market);
+    if (!byBook) {
+      byBook = latestOddsByBookmaker(rows, market, cutoff);
+      cache.set(market, byBook);
+    }
+    let paid: Decimal | null = null;
+    let best: Decimal | null = null;
+    for (const [bookmaker, picks] of byBook) {
+      let overround = new Decimal(0);
+      let complete = true;
+      for (const groupPick of group.picks) {
+        const quote = picks.get(groupPick);
+        if (!quote || quote.odds.lte(1)) {
+          complete = false;
+          break;
+        }
+        overround = overround.plus(new Decimal(1).div(quote.odds));
+      }
+      if (!complete) continue;
+      const margin = overround.div(group.outcomeTotal).minus(1);
+      if (bookmaker === source.bookmaker) paid = margin;
+      if (best === null || margin.lt(best)) best = margin;
+    }
+    source.margin = paid;
+    source.bestMargin = best;
   }
 }
 
@@ -447,6 +542,8 @@ export function assembleFullOddsSnapshot(
   );
   const correctScoreOdds = quotesToOdds(correctScoreQuotes);
   recordQuoteSources(sources, Market.CORRECT_SCORE, correctScoreQuotes);
+
+  attachMargins(sources, rows, cutoff);
 
   return {
     bookmaker: best.bookmaker,

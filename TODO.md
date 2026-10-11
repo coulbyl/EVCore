@@ -96,6 +96,15 @@ vantage-worker 133, backtest-core 35) :
       jambe, scénario Playwright `coupons.spec.ts`. **Migration à lancer**,
       puis `settle-range` coupons (depuis 2023-04-15) et sélections (depuis
       2026-09-15). Plan complet : `docs/plan-mesure-bout-en-bout.md`.
+- [x] **E-5 / E-6 marge payée** (2026-10-11, branche
+      `feat/decisions-coupons-improvements`) : marge du groupe complet du book
+      retenu et meilleure marge du relevé calculées à l'assemblage, écrites
+      avec la sélection, `report:margin-paid` ; **migration
+      `20261011000000_add_channel_selection_margins` à lancer.** Même PR :
+      écran Décisions avec clôture et valeur face à la marge par sélection
+      réglée ; repli LLM sur 401/403 et complétion vide (clé Together
+      invalide du 9 au 11/10, **à corriger côté fournisseur**) ; jambes LLM
+      enregistrées avec chaque tentative ; `report:coupon-policies` par jambe.
 - [~] **E-4 reformulé** (2026-10-10) : le signe du CLV ne discrimine rien (un
   pari pris à la clôture vaut moins la marge) ; critères = écart à la
   clôture et coût du marché à la clôture, colonnes « À la clôture » et

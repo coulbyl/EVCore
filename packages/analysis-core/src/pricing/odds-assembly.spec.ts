@@ -132,3 +132,68 @@ describe("assembleFullOddsSnapshot", () => {
     expect(snapshot?.overUnderOdds.OVER?.toNumber()).toBe(1.28);
   });
 });
+
+describe("assembleFullOddsSnapshot — marge payée et meilleure marge (E-5)", () => {
+  it("calcule la surcote du groupe complet chez le book retenu et la plus basse du relevé", () => {
+    const at = new Date("2026-08-09T11:00:00.000Z");
+    const rows = [
+      // Pinnacle : 2.00 / 3.50 / 4.00 → overround 1.0357 → marge 3,57 %
+      oneXTwoRow({
+        bookmaker: "Pinnacle",
+        snapshotAt: at,
+        homeOdds: 2.0,
+        drawOdds: 3.5,
+        awayOdds: 4.0,
+      }),
+      // Bet365 : 1.90 / 3.40 / 3.80 → overround 1.0836 → marge 8,36 %
+      oneXTwoRow({
+        bookmaker: "Bet365",
+        snapshotAt: at,
+        homeOdds: 1.9,
+        drawOdds: 3.4,
+        awayOdds: 3.8,
+      }),
+      // O/U 2.5 : Bet365 cote les deux côtés, Pinnacle un seul → groupe
+      // incomplet chez Pinnacle, meilleure marge = Bet365.
+      pickRow({
+        bookmaker: "Bet365",
+        market: Market.OVER_UNDER,
+        pick: "OVER",
+        odds: 1.9,
+        snapshotAt: at,
+      }),
+      pickRow({
+        bookmaker: "Bet365",
+        market: Market.OVER_UNDER,
+        pick: "UNDER",
+        odds: 1.9,
+        snapshotAt: at,
+      }),
+      pickRow({
+        bookmaker: "Pinnacle",
+        market: Market.OVER_UNDER,
+        pick: "OVER",
+        odds: 1.95,
+        snapshotAt: at,
+      }),
+    ];
+    const snapshot = assembleFullOddsSnapshot(rows, CUTOFF);
+    const home = snapshot?.sources?.["ONE_X_TWO:HOME"];
+    expect(home?.bookmaker).toBe("Pinnacle");
+    expect(home?.margin?.toNumber()).toBeCloseTo(
+      1 / 2 + 1 / 3.5 + 1 / 4 - 1,
+      10,
+    );
+    expect(home?.bestMargin?.toNumber()).toBeCloseTo(
+      1 / 2 + 1 / 3.5 + 1 / 4 - 1,
+      10,
+    );
+
+    // OVER à 1.95 vient de Pinnacle (mieux classé au même instant), qui ne
+    // cote pas UNDER : marge payée inconnue, meilleure marge = Bet365.
+    const over = snapshot?.sources?.["OVER_UNDER:OVER"];
+    expect(over?.bookmaker).toBe("Pinnacle");
+    expect(over?.margin).toBeNull();
+    expect(over?.bestMargin?.toNumber()).toBeCloseTo(2 / 1.9 - 1, 10);
+  });
+});

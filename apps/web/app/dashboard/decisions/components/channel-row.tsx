@@ -20,6 +20,7 @@ import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
 import { ChannelStatusBadge } from "@/components/channel-status-badge";
 import type { ChannelCompetitionStatItem } from "@/domains/dashboard/types/dashboard";
 import {
+  formatSignedPct,
   calibrationKey,
   CHANNEL_COLOR,
   CHANNEL_COLOR_SOFT,
@@ -136,6 +137,7 @@ export function ChannelRow({
                 {odds}
               </span>
             )}
+            <ClosingLine selection={selection} />
             <CalibrationBadge item={calibration} />
           </p>
         </div>
@@ -216,6 +218,49 @@ export function CalibrationBadge({
         </HoverCard.Content>
       </HoverCard.Portal>
     </HoverCard.Root>
+  );
+}
+
+/**
+ * Ligne de clôture d'une sélection réglée : cote juste avant le coup
+ * d'envoi et valeur de la cote prise face à la probabilité de clôture sans
+ * marge. Un pari pris au prix de clôture vaut MOINS LA MARGE, pas zéro : la
+ * couleur ne compare donc pas à zéro mais à la marge payée quand elle est
+ * connue (`marginPaid`), sinon à zéro faute de mieux. Rien tant que la
+ * clôture n'est pas connue — même convention que ResultBadge.
+ */
+function ClosingLine({ selection }: { selection: ChannelSelectionDto }) {
+  const t = useTranslations("decisions");
+  if (selection.closingOdds === null || selection.closingLineValue === null) {
+    return null;
+  }
+  const bar = selection.marginPaid !== null ? -selection.marginPaid : 0;
+  const beatsClose = selection.closingLineValue >= bar;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          data-testid="selection-closing"
+          className={cn(
+            "tabular-nums",
+            beatsClose ? "text-emerald-500" : "text-amber-500",
+          )}
+        >
+          {t("closing.label", { odds: selection.closingOdds.toFixed(2) })}
+          {" · "}
+          {formatSignedPct(selection.closingLineValue)}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-xs text-xs">
+        {t("closing.tooltip", {
+          bookmaker: selection.closingBookmaker ?? "—",
+          margin:
+            selection.marginPaid !== null
+              ? formatSignedPct(-selection.marginPaid)
+              : "—",
+        })}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

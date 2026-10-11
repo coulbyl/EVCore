@@ -69,15 +69,31 @@ export type ConsensusReasonDetails = {
 };
 
 export type ChannelSelectionDto = {
+  id: string;
   market: string;
   pick: string;
   probability: number;
   odds: number | null;
+  /** Book qui a servi `odds` (null pour les sélections d'avant le 2026-10-10). */
+  oddsBookmaker: string | null;
+  /** Marge payée sur le groupe d'issues de ce book, et meilleure marge du relevé. */
+  marginPaid: number | null;
+  marginBest: number | null;
   impliedProbability: number | null;
   ev: number | null;
   qualityScore: number | null;
   rank: number;
   result: SelectionResult | null;
+  settledAt: string | null;
+  /**
+   * Ligne de clôture : cote du choix chez `closingBookmaker` juste avant le
+   * coup d'envoi, et `closingLineValue` = cote prise × probabilité de clôture
+   * sans marge − 1. Un pari pris au prix de clôture vaut moins la marge, pas
+   * zéro : la valeur se lit contre la marge, jamais contre zéro.
+   */
+  closingOdds: number | null;
+  closingBookmaker: string | null;
+  closingLineValue: number | null;
 };
 
 export type ChannelDecisionDto = {
