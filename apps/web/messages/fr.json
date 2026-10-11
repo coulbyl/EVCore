@@ -286,18 +286,6 @@
       "title": "Le menu complet",
       "description": "Sur mobile, ce bouton ouvre le menu complet de navigation — toutes les sections y sont, même celles qui ne rentrent pas dans la barre du bas."
     },
-    "dashboardFilter": {
-      "title": "Accueil — la période",
-      "description": "Ce filtre change la période affichée sur les cartes de performance et de classement ci-dessous."
-    },
-    "dashboardPerformance": {
-      "title": "Ta performance",
-      "description": "Tes stats de paris sur la période choisie — ROI, taux de réussite, volume."
-    },
-    "dashboardRanking": {
-      "title": "Classements",
-      "description": "Le classement des ligues par performance du moteur, et celui des utilisateurs les plus disciplinés."
-    },
     "decisions": {
       "title": "Décisions",
       "description": "Chaque match du jour, avec ce que les canaux en pensent. Le bouton « ? » ici t'explique comment lire une fiche à tout moment."
@@ -361,6 +349,18 @@
     "accountSettings": {
       "title": "Paramètres",
       "description": "Apparence, langue, notifications, préférences de bankroll et sécurité — tout se règle depuis ces onglets."
+    },
+    "homeCoupon": {
+      "title": "Le coupon du jour",
+      "description": "C'est par là que tout commence : le coupon proposé aujourd'hui, ses jambes et sa cote. « Jouer ce coupon » l'ajoute à votre panier."
+    },
+    "homePicks": {
+      "title": "Les sélections du jour",
+      "description": "Cinq sélections au plus, prises sur des canaux fiables et dans la bande de cote où la mesure tient. Le + les ajoute au coupon."
+    },
+    "homeMySlips": {
+      "title": "Vos coupons",
+      "description": "Ce que vous avez joué : en attente, gagné, taux de réussite. La page Mes coupons détaille chaque ticket."
     }
   },
   "formation": {
@@ -643,11 +643,43 @@
       "recentAlerts": "Alertes récentes (7j)",
       "channelsByDeviation": "Canaux triés par écart à la calibration",
       "channel": "Canal"
+    },
+    "home": {
+      "couponTitle": "Le coupon du jour",
+      "couponsLink": "Tous les coupons",
+      "couponError": "Le coupon du jour n'a pas pu être chargé.",
+      "couponEmptyTitle": "Pas de coupon aujourd'hui",
+      "couponEmptyBody": "Le vivier du jour était trop mince pour composer un coupon sans baisser les exigences. L'abstention est un résultat, pas une panne.",
+      "yesterdayTitle": "Hier",
+      "yesterdayLink": "Voir le détail",
+      "legs": "{count, plural, one {# jambe} other {# jambes}}",
+      "paid": "payé @{odds}",
+      "result": {
+        "won": "Gagné",
+        "partial": "Gagné",
+        "lost": "Perdu",
+        "void": "Remboursé",
+        "pending": "En attente"
+      },
+      "picksTitle": "Les sélections du jour",
+      "picksSubtitle": "Canaux fiables, cote entre 1,20 et 1,80, une sélection par match.",
+      "picksLink": "Toutes les décisions",
+      "picksEmpty": "Aucune sélection ne remplit les conditions aujourd'hui.",
+      "mySlipsTitle": "Mes coupons",
+      "mySlipsLink": "Mes coupons",
+      "mySlipsEmptyTitle": "Vous n'avez encore rien joué",
+      "mySlipsEmptyBody": "Le coupon du jour est en haut de cette page. Un coupon joué apparaît ici avec son résultat.",
+      "mySlipsEmptyLink": "Voir le coupon du jour",
+      "pending": "En attente",
+      "won": "Gagnés",
+      "winRate": "Réussite"
     }
   },
   "betSlips": {
     "emptyTitle": "Aucun coupon",
-    "emptyDescription": "Aucun coupon ne correspond à cette période. Essaie d'élargir le filtre."
+    "emptyDescription": "Aucun coupon ne correspond à cette période. Essaie d'élargir le filtre.",
+    "tabSlips": "Mes coupons",
+    "tabLeaderboard": "Classement des joueurs"
   },
   "bankrollPage": {
     "filter": {
@@ -892,5 +924,11 @@
     "skip": "Passer",
     "next": "Suivant",
     "finish": "Terminer"
+  },
+  "confidence": {
+    "reliable": "Fiable",
+    "watch": "À surveiller",
+    "unreliable": "Peu fiable",
+    "hint": "Écart mesuré sur 90 jours entre la réussite réelle du canal et la probabilité qu'il annonce."
   }
 }

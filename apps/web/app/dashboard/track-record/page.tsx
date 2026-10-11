@@ -22,6 +22,8 @@ import {
   type ChannelStatRow,
 } from "./components/channel-stats-table";
 import { PeriodTabs } from "./components/period-tabs";
+import { CompetitionRankingSection } from "./components/competition-ranking-section";
+import { TodayCalibrationCard } from "@/app/dashboard/components/today-confidence-card";
 import {
   dateRangeForPeriod,
   mergeChannelData,
@@ -149,6 +151,14 @@ export default async function TrackRecordPage({
           </section>
 
           <ChannelCompetitionSection rows={channelCompetitionStats} />
+
+          {/* Déplacés de l'accueil le 2026-10-11 : la calibration des canaux
+              actifs du jour et le classement des ligues sont des mesures,
+              elles se lisent ici, à côté des autres. */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <TodayCalibrationCard from={from} to={to} />
+            <CompetitionRankingSection />
+          </div>
 
           <section className="rounded-2xl border border-border bg-panel p-5">
             <p className="text-sm leading-6 text-muted-foreground">
