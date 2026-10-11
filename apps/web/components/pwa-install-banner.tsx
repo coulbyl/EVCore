@@ -1,118 +1,121 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { X, Download } from "lucide-react";
+import { useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { Button } from "@evcore/ui";
+import { toast } from "sonner";
 
 const DISMISSED_KEY = "evcore-pwa-install-dismissed";
+const SHOWN_THIS_SESSION_KEY = "evcore-pwa-install-shown";
+const TOAST_ID = "pwa-install";
+/** Visible assez longtemps pour être lu, jamais assez pour gêner. */
+const TOAST_DURATION_MS = 12_000;
+/**
+ * Laisse la page se poser avant d'inviter. Nécessaire aussi techniquement :
+ * le conteneur de toasts est monté après les pages dans `Providers`, et un
+ * toast émis dans l'effet de montage d'une page part avant qu'il ne soit
+ * abonné — il n'apparaît jamais.
+ */
+const SHOW_DELAY_MS = 2_000;
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
   readonly userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+function readStorage(storage: Storage, key: string): string | null {
+  try {
+    return storage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(storage: Storage, key: string): void {
+  try {
+    storage.setItem(key, "1");
+  } catch {
+    // Navigation privée ou stockage bloqué : on affiche, sans mémoire.
+  }
+}
+
+/**
+ * Invitation à installer l'application.
+ *
+ * Un toast, pas une bannière fixe : la bannière recouvrait le bas de
+ * chaque page mobile — le bouton principal de l'accueil public, la dernière
+ * carte de chaque liste — et s'empilait avec la barre de navigation basse
+ * et le bouton flottant de l'assistant (revue UX du 2026-10-11, P0-1).
+ * Même convention que l'état réseau (`NetworkStatusBanner`) : transitoire,
+ * fermable, jamais au-dessus d'une action.
+ *
+ * Règles : une seule fois par session de navigation ; plus jamais après une
+ * fermeture ; jamais quand l'application est déjà installée.
+ */
 export function PwaInstallBanner() {
   const t = useTranslations("pwaInstall");
-  const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isIOSSafari, setIsIOSSafari] = useState(false);
-  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (localStorage.getItem(DISMISSED_KEY)) return;
-
-    // Already installed — don't show
+    if (readStorage(localStorage, DISMISSED_KEY)) return;
+    if (readStorage(sessionStorage, SHOWN_THIS_SESSION_KEY)) return;
     if (window.matchMedia("(display-mode: standalone)").matches) return;
+
+    const dismiss = () => writeStorage(localStorage, DISMISSED_KEY);
+    const show = (options: {
+      description: string;
+      action?: { label: string; onClick: () => void };
+    }) => {
+      writeStorage(sessionStorage, SHOWN_THIS_SESSION_KEY);
+      toast(t("title"), {
+        id: TOAST_ID,
+        description: options.description,
+        duration: TOAST_DURATION_MS,
+        action: options.action,
+        // La croix du toast vaut « plus jamais » ; l'expiration, elle, ne
+        // décide rien : le toast reviendra à la prochaine session.
+        onDismiss: dismiss,
+      });
+    };
 
     const isIOSDevice =
       /iPad|iPhone|iPod/.test(navigator.userAgent) &&
       !(window as Window & { MSStream?: unknown }).MSStream;
-    const isSafariBrowser = /^((?!crios|fxios|edgios|oprios).)*safari/i.test(
-      navigator.userAgent,
-    );
-
     if (isIOSDevice) {
-      setIsIOS(true);
-      setIsIOSSafari(isSafariBrowser);
-      setVisible(true);
-      return;
+      const isSafari = /^((?!crios|fxios|edgios|oprios).)*safari/i.test(
+        navigator.userAgent,
+      );
+      const timer = window.setTimeout(
+        () => show({ description: isSafari ? t("iosSafari") : t("iosOther") }),
+        SHOW_DELAY_MS,
+      );
+      return () => window.clearTimeout(timer);
     }
 
-    // Chrome / Android / Edge — listen for the native install prompt
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setPrompt(e as BeforeInstallPromptEvent);
-      setVisible(true);
+    // Chrome / Android / Edge — l'invite native n'existe qu'après cet
+    // événement ; le toast porte alors un vrai bouton « Installer ».
+    let timer: number | undefined;
+    const handler = (event: Event) => {
+      event.preventDefault();
+      const prompt = event as BeforeInstallPromptEvent;
+      timer = window.setTimeout(
+        () =>
+          show({
+            description: t("subtitle"),
+            action: {
+              label: t("install"),
+              onClick: () => {
+                void prompt.prompt().then(() => prompt.userChoice);
+              },
+            },
+          }),
+        SHOW_DELAY_MS,
+      );
     };
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [t]);
 
-  const handleInstall = async () => {
-    if (!prompt) return;
-    await prompt.prompt();
-    const { outcome } = await prompt.userChoice;
-    if (outcome === "accepted") setVisible(false);
-  };
-
-  const handleDismiss = () => {
-    localStorage.setItem(DISMISSED_KEY, "1");
-    setVisible(false);
-  };
-
-  if (!visible) return null;
-
-  return (
-    <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom)+0.5rem)] left-1/2 z-30 w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2">
-      <div className="flex items-center gap-3 rounded-2xl border border-border bg-panel/96 px-4 py-3 shadow-[0_8px_32px_rgba(15,23,42,0.14)] backdrop-blur">
-        {/* Icône */}
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sidebar">
-          <span className="text-sm font-bold text-accent">EV</span>
-        </div>
-
-        {/* Texte */}
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-foreground">
-            {t("title")}
-          </p>
-          {isIOS ? (
-            isIOSSafari ? (
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                {t("iosSafari")}
-              </p>
-            ) : (
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                {t("iosOther")}
-              </p>
-            )
-          ) : (
-            <p className="truncate text-xs text-muted-foreground">
-              {t("subtitle")}
-            </p>
-          )}
-        </div>
-
-        {/* Bouton installer (Chrome / Android uniquement) */}
-        {!isIOS && (
-          <Button type="button" size="sm" onClick={handleInstall}>
-            <Download data-icon="inline-start" />
-            {t("install")}
-          </Button>
-        )}
-
-        {/* Fermer */}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          onClick={handleDismiss}
-          aria-label={t("close")}
-          className="-mr-1 text-muted-foreground"
-        >
-          <X />
-        </Button>
-      </div>
-    </div>
-  );
+  return null;
 }

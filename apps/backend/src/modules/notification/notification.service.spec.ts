@@ -347,3 +347,33 @@ describe('NotificationService — list & mark read', () => {
     });
   });
 });
+
+describe('NotificationService — ce que chaque rôle voit des diffusions', () => {
+  function typesPassedToPrisma(prisma: PrismaService): NotificationType[] {
+    const count = (prisma.client.notification.count as ReturnType<typeof vi.fn>)
+      .mock.calls[0]?.[0] as {
+      where: { OR: [{ type: { in: NotificationType[] } }] };
+    };
+    return count.where.OR[0].type.in;
+  }
+
+  it("un opérateur ne reçoit que les annonces parmi les diffusions — jamais les alertes d'ingénierie", async () => {
+    const prisma = makePrisma();
+    const service = new NotificationService(prisma, makeMail());
+    await service.unreadCount('user-1', UserRole.OPERATOR);
+    const types = typesPassedToPrisma(prisma);
+    expect(types).toEqual([NotificationType.ANNOUNCEMENT_PUBLISHED]);
+    expect(types).not.toContain(NotificationType.ROI_ALERT);
+    expect(types).not.toContain(NotificationType.MARKET_SUSPENSION);
+    expect(types).not.toContain(NotificationType.WEEKLY_REPORT);
+  });
+
+  it('un administrateur voit tous les types', async () => {
+    const prisma = makePrisma();
+    const service = new NotificationService(prisma, makeMail());
+    await service.unreadCount('admin-1', UserRole.ADMIN);
+    expect(typesPassedToPrisma(prisma)).toEqual(
+      Object.values(NotificationType),
+    );
+  });
+});
