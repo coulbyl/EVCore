@@ -127,6 +127,63 @@ Non livré, à mesurer d'abord : un coupon à deux jambes 1,20–1,50 (73 % de
 jours gagnants, cote 1,5). Il n'a que 100 jours d'historique et une seule
 fenêtre ; le favori en a 731 plus 80 prospectifs.
 
+## 5. Un combiné sur « Notre sélection » (ajout du 2026-10-12, soir)
+
+Question posée après la mise en ligne de la sélection mise en avant : peut-on
+en faire des combinés qui rentrent le plus souvent possible ? Rejeu de la
+règle de l'écran (une sélection par match, canal calibré sur la compétition
+avec une calibration **glissante sur les 90 jours précédents**, cote sous
+1,50), puis combinaison des jambes, une par championnat, sur 101 jours
+(2026-07-01 → 10-10).
+
+Les jambes mises en avant sont calibrées : paliers « fiable et court » et
+« non peu fiable et court » réalisent 0,775 et 0,759 pour 0,78 annoncé
+(ratio 0,99 / 0,97, n = 3 572). Les paliers suivants (cote ≥ 1,50) retombent
+à 0,82–0,89 — la coupe à 1,50 est la bonne.
+
+Combinés de k jambes, une par championnat, les moins chères d'abord
+(colonne « floor » : cote minimale d'une jambe) :
+
+| Jambes | Plancher | Jours |   Jours gagnants | Cote | Retour / unité | Pire série |
+| -----: | -------: | ----: | ---------------: | ---: | -------------: | ---------: |
+|      2 |        — |    98 | **84,7 %** ± 3,6 | 1,23 |          1,032 |        2 j |
+|      3 |        — |    87 | **78,2 %** ± 4,4 | 1,39 |          1,048 |        3 j |
+|      4 |        — |    78 |           62,8 % | 1,65 |          0,900 |        6 j |
+|      2 |     1,15 |    98 |           77,6 % | 1,49 |          1,155 |        2 j |
+|      3 |     1,15 |    84 |           57,1 % | 1,81 |          1,011 |        6 j |
+|      3 |     1,20 |    82 |           50,0 % | 1,94 |          0,965 |        4 j |
+|      4 |     1,20 |    73 |           32,9 % | 2,46 |          0,779 |        9 j |
+
+Classées par probabilité du moteur plutôt que par cote, les mêmes trois
+jambes gagnent 66,7 % des jours avec une série de 8 : le prix classe mieux
+que le moteur, ici comme partout. Viser une cote combinée (2,0 / 2,5 / 3,0)
+avec les mêmes jambes donne 33 / 24 / 13 % de jours gagnants : chaque +0,2
+de cote coûte environ 15 points de jours gagnants, c'est l'arithmétique.
+
+Stabilité mois par mois de la règle retenue (3 jambes, sans plancher) :
+62 / 73 / 96 / 80 % de juillet à octobre, jambes réalisées 0,85 pour 0,83
+annoncé.
+
+### Pourquoi le coupon long gagne un jour sur sept, et ce qu'on en fait
+
+Ses 35 jambes réglées sont des nuls à la mi-temps à cote 2,4 (réalisé 0,56
+pour 0,39 annoncé — rien d'anormal) : deux jambes à une chance sur deux
+font une chance sur quatre au mieux, et la cible 5–15 en demande davantage.
+Aucun réglage ne le fait gagner souvent sans baisser sa cible, et à cible
+basse le compositeur par le prix fait moins bien que les sélections du
+moteur (16 % à cible 2–3 contre 78 % ici). Décision : il reste généré et
+visible sur la page Coupons avec « gagne environ 1 jour sur 7 » écrit
+dessus, mais il quitte la tête de l'accueil, où le pari sûr et le combiné
+prennent la place.
+
+### Décision
+
+Livré : **« Combiné du jour · 3 sélections »** (source `ENGINE`, classe
+`COMBO`), généré chaque soir dans la même passe que les deux autres, sur le
+vivier et la calibration de l'écran Décisions, affiché avec « Gagne environ
+3 jours sur 4 ». Il s'abstient quand moins de trois sélections calibrées et
+courtes existent (14 jours sur 101 dans le rejeu).
+
 ## 4. Critique UX, du point de vue d'un utilisateur lambda
 
 Ce qu'un nouvel utilisateur ne pouvait pas comprendre avant cette PR :

@@ -7,6 +7,7 @@ import { CouponService } from './coupon.service';
 import { CouponPriceGenerationService } from './coupon-price-generation.service';
 import { CouponFavouriteGenerationService } from './coupon-favourite-generation.service';
 import { CouponDailyGenerationService } from './coupon-daily-generation.service';
+import { CouponEngineComboGenerationService } from './coupon-engine-combo-generation.service';
 import { CouponIndicesService } from './coupon-indices.service';
 import { CouponController } from './coupon.controller';
 import { OddsClosingLineRepository } from '../betting-engine/pricing/odds-closing-line.repository';
@@ -32,6 +33,7 @@ import { OddsClosingLineRepository } from '../betting-engine/pricing/odds-closin
     CouponIndicesService,
     CouponPriceGenerationService,
     CouponFavouriteGenerationService,
+    CouponEngineComboGenerationService,
     CouponDailyGenerationService,
   ],
   exports: [

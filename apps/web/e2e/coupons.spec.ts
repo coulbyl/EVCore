@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Page Coupons sur le faux backend (e2e/support/mock-backend.mjs) : cinq
+ * Page Coupons sur le faux backend (e2e/support/mock-backend.mjs) : six
  * coupons du 2026-10-05 — le pari sûr du jour, puis un par issue — et les
  * deux générateurs.
  *
@@ -25,7 +25,7 @@ test.describe("Coupons", () => {
       has: page.getByTestId("coupon-combined-odds"),
     });
     const count = await cards.count();
-    expect(count).toBe(5);
+    expect(count).toBe(6);
     for (let i = 0; i < count; i += 1) {
       const card = cards.nth(i);
       const combined = Number(
@@ -77,6 +77,9 @@ test.describe("Coupons", () => {
       page.getByText("Choisi sur les cotes", { exact: true }),
     ).toHaveCount(2);
     await expect(page.getByText("Analyse IA", { exact: true })).toHaveCount(3);
+    await expect(
+      page.getByText("Sélections du moteur", { exact: true }),
+    ).toHaveCount(1);
     // `textContent`, pas `innerText` : le badge est mis en majuscules par le
     // CSS, ce qui n'est pas le texte qu'on vérifie.
     const results = await page.getByTestId("coupon-result").allTextContents();
@@ -105,5 +108,19 @@ test.describe("Coupons", () => {
     ).toBeVisible();
     await expect(first.getByTestId("leg-odds")).toHaveCount(1);
     await expect(first.getByTestId("coupon-combined-odds")).toHaveText("@1.22");
+  });
+
+  test("le combiné du jour suit le pari sûr, avec trois jambes courtes", async ({
+    page,
+  }) => {
+    const cards = page.locator("[data-slot=card]").filter({
+      has: page.getByTestId("coupon-combined-odds"),
+    });
+    const second = cards.nth(1);
+    await expect(second.getByText(/Combiné du jour/)).toBeVisible();
+    await expect(
+      second.getByText(/3 jours sur 4|3 days out of 4/),
+    ).toBeVisible();
+    await expect(second.getByTestId("leg-odds")).toHaveCount(3);
   });
 });

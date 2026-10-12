@@ -54,6 +54,24 @@ export type MarketCostCell = {
   payoutVariance: number;
 };
 
+export type EngineComboCandidateRow = {
+  fixtureId: string;
+  competition: string;
+  channel: string;
+  market: string;
+  pick: string;
+  odds: number;
+  probability: number;
+  scheduledAt: Date;
+};
+
+export type ChannelCompetitionCalibrationRow = {
+  channel: string;
+  competition: string;
+  sampleSize: number;
+  ratio: number | null;
+};
+
 export type PriceCandidateRow = {
   fixtureId: string;
   competition: string;
@@ -423,6 +441,8 @@ export class CouponRepository {
       pick: string;
       odds: number;
       expectedReturn: number;
+      /** Canal d'origine de la jambe (combiné du moteur) ; PRICE sinon. */
+      canal?: StrategyChannel;
     }[];
     /**
      * Profil écrit dans la clé unique et dans `reasoning.policyVersion`. Par
@@ -433,6 +453,10 @@ export class CouponRepository {
       targetOddsMin: number;
       targetOddsMax: number;
       policyVersion: string;
+      /** PRICE_COMPOSER par défaut ; ENGINE pour le combiné du moteur. */
+      source?: CouponSource;
+      /** Canal écrit sur chaque jambe ; PRICE par défaut. */
+      legCanal?: StrategyChannel;
     };
   }): Promise<string> {
     const profile = input.profile ?? {
@@ -442,7 +466,7 @@ export class CouponRepository {
     };
     const key = {
       forDate: startOfUtcDay(input.forDate),
-      source: CouponSource.PRICE_COMPOSER,
+      source: profile.source ?? CouponSource.PRICE_COMPOSER,
       signalWindowDays: PRICE_COMPOSER_SIGNAL_WINDOW_DAYS,
       targetOddsMin: new Prisma.Decimal(profile.targetOddsMin),
       targetOddsMax: new Prisma.Decimal(profile.targetOddsMax),
@@ -484,7 +508,7 @@ export class CouponRepository {
         legs: {
           create: input.legs.map((leg) => ({
             fixtureId: leg.fixtureId,
-            canal: StrategyChannel.PRICE,
+            canal: leg.canal ?? profile.legCanal ?? StrategyChannel.PRICE,
             market: leg.market,
             pick: leg.pick,
             probability: new Prisma.Decimal(
@@ -552,6 +576,68 @@ export class CouponRepository {
    * Le coup d'envoi est comparé à `now` et non à la date seule — un vivier qui
    * garde les rencontres déjà commencées propose des paris impossibles à poser.
    */
+  /**
+   * Vivier du combiné du moteur : les sélections retenues (SELECTED) des
+   * canaux affichés sur Décisions, dernière analyse d'avant coup d'envoi,
+   * sur les rencontres pas encore jouées de la journée. C'est exactement ce
+   * que l'écran montre — la vue dédupliquée porte déjà le filtre
+   * `analyzedAt < scheduledAt` et le DISTINCT ON par (canal, match, marché,
+   * pick).
+   */
+  async findEngineComboCandidates(opts: {
+    from: Date;
+    to: Date;
+    excludedChannels: readonly string[];
+  }): Promise<readonly EngineComboCandidateRow[]> {
+    return this.prisma.client.$queryRaw<EngineComboCandidateRow[]>`
+      SELECT s."fixtureId",
+             c.code                 AS competition,
+             s.channel::text        AS channel,
+             s.market::text         AS market,
+             s.pick,
+             s.odds::float          AS odds,
+             s.probability::float   AS probability,
+             s."scheduledAt"
+      FROM public.channel_selection_deduped s
+      JOIN public.channel_decision cd ON cd.id = s."channelDecisionId"
+      JOIN public.fixture f ON f.id = s."fixtureId"
+      JOIN public.season se ON se.id = f."seasonId"
+      JOIN public.competition c ON c.id = se."competitionId"
+      WHERE cd.status = 'SELECTED'
+        AND f.status = 'SCHEDULED'
+        AND s.odds IS NOT NULL
+        AND s."scheduledAt" >= ${opts.from}
+        AND s."scheduledAt" < ${opts.to}
+        AND s."scheduledAt" > now()
+        AND NOT (s.channel::text = ANY(${[...opts.excludedChannels]}::text[]))
+    `;
+  }
+
+  /**
+   * Calibration canal × compétition sur une fenêtre glissante : réel /
+   * annoncé et volume, sur les sélections réglées (WON/LOST) d'avant coup
+   * d'envoi. Même matière que la pastille de confiance de l'écran.
+   */
+  async findChannelCompetitionCalibration(
+    since: Date,
+  ): Promise<readonly ChannelCompetitionCalibrationRow[]> {
+    return this.prisma.client.$queryRaw<ChannelCompetitionCalibrationRow[]>`
+      SELECT s.channel::text AS channel,
+             c.code          AS competition,
+             count(*)::int   AS "sampleSize",
+             CASE WHEN sum(s.probability) > 0
+                  THEN (sum((s.result = 'WON')::int) / sum(s.probability))::float
+                  ELSE NULL END AS ratio
+      FROM public.channel_selection_deduped s
+      JOIN public.fixture f ON f.id = s."fixtureId"
+      JOIN public.season se ON se.id = f."seasonId"
+      JOIN public.competition c ON c.id = se."competitionId"
+      WHERE s.result IN ('WON', 'LOST')
+        AND s."scheduledAt" >= ${since}
+      GROUP BY s.channel, c.code
+    `;
+  }
+
   async findPriceCandidates(opts: {
     from: Date;
     to: Date;

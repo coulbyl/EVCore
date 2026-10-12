@@ -17,6 +17,10 @@ export const COUPON_SOURCE_META: Record<CouponSource, CouponSourceMeta> = {
     label: "Analyse IA",
     hint: "Sélection par analyse contextuelle : le moteur estime une probabilité par match, puis la confronte à la cote.",
   },
+  ENGINE: {
+    label: "Sélections du moteur",
+    hint: "Les sélections mises en avant sur l'écran Décisions (canal fiable sur la compétition, cote courte), combinées une par championnat, les moins chères d'abord.",
+  },
   PRICE_COMPOSER: {
     label: "Choisi sur les cotes",
     hint: "Sélection par le prix : aucune prédiction de match. Les jambes sont classées sur le coût réellement mesuré de chaque marché.",

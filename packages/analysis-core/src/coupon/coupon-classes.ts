@@ -92,7 +92,8 @@ export type CouponClassName =
   | "BALANCED"
   | "BOLD"
   | "UNIQUE"
-  | "FAVOURITE";
+  | "FAVOURITE"
+  | "COMBO";
 
 export type CouponClass = {
   name: CouponClassName;
@@ -182,14 +183,48 @@ export const FAVOURITE_COUPON_CLASS: CouponClass = {
   targetOddsMax: 1.35,
 };
 
+/**
+ * Le combiné du jour : TROIS sélections du moteur, prises telles que l'écran
+ * Décisions les met en avant (« Notre sélection » : canal calibré sur la
+ * compétition — ratio réel/annoncé ≥ 0,70 sur 90 jours — et cote sous 1,50),
+ * une par championnat, les moins chères d'abord. Abstention sous trois.
+ *
+ * Mesuré le 2026-10-12 sur 87 jours (2026-07-01 → 10-10, calibration
+ * glissante sur les 90 jours précédents, `docs/audits/2026-10-12/
+ * MESURES-DECISIONS-COUPONS.md` §5) : 78,2 % ± 4,4 de jours gagnants, cote
+ * 1,39, pire série 3 jours, retour 1,048 par unité (dans le bruit : « ne
+ * coûte pas plus que la marge »). Jambes réalisées 0,85 pour 0,83 annoncé.
+ *
+ * Pourquoi trois et pas plus : la quatrième jambe fait tomber les jours
+ * gagnants à 63 % et la série à 6 ; viser une cote 2,5 avec les mêmes jambes
+ * ne gagne plus qu'un jour sur quatre. Pourquoi les moins chères : classées
+ * par probabilité du moteur, les mêmes trois jambes gagnent 67 % des jours
+ * avec une série de 8 — le prix classe mieux que le moteur, comme partout.
+ *
+ * `targetOddsMin`/`targetOddsMax` composent la clé unique de
+ * `coupon_proposal` avec la source ENGINE : disjoints des autres classes.
+ */
+export const COMBO_COUPON_CLASS: CouponClass = {
+  name: "COMBO",
+  minLegOdds: 1.05,
+  maxLegOdds: 1.5,
+  maxLegs: 3,
+  targetCombinedOdds: 1.2,
+  targetOddsMin: 1.2,
+  targetOddsMax: 3.4,
+};
+
 /** Retrouve la classe d'une proposition persistée depuis son `targetOddsMin`. */
 export function classForTargetOddsMin(
   targetOddsMin: number,
 ): CouponClassName | null {
   return (
-    [UNIFIED_COUPON_CLASS, FAVOURITE_COUPON_CLASS, ...COUPON_CLASSES].find(
-      (c) => c.targetOddsMin === targetOddsMin,
-    )?.name ?? null
+    [
+      UNIFIED_COUPON_CLASS,
+      FAVOURITE_COUPON_CLASS,
+      COMBO_COUPON_CLASS,
+      ...COUPON_CLASSES,
+    ].find((c) => c.targetOddsMin === targetOddsMin)?.name ?? null
   );
 }
 

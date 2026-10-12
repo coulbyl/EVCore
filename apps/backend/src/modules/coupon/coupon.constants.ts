@@ -303,6 +303,31 @@ export const FAVOURITE_POLICY = {
   pass: 'favourite',
 } as const;
 
+/**
+ * Politique du combiné du jour sur les sélections du moteur (règle et
+ * mesure dans COMBO_COUPON_CLASS / composeEngineCombo, @evcore/analysis-core).
+ *
+ * Le vivier est celui de l'écran Décisions (sélections retenues des canaux
+ * affichés, dernière analyse d'avant coup d'envoi), la calibration canal ×
+ * compétition est celle de la pastille de confiance : 90 jours glissants,
+ * mêmes seuils que le tableau de bord.
+ */
+export const ENGINE_COMBO_POLICY = {
+  version: 'engine-combo-v1',
+  pass: 'engine-combo',
+  calibrationWindowDays: 90,
+  /** Canaux jamais mis en avant sur Décisions (méta-canaux, VALUE/SAFE,
+   * VANTAGE) — même liste que `isExcludedFromDecisions` côté web. */
+  excludedChannels: [
+    'VALUE',
+    'SAFE',
+    'VANTAGE',
+    'AVOID',
+    'CONSENSUS',
+    'CONTRARIAN',
+  ],
+} as const;
+
 export const PRICE_COMPOSER_POLICY = {
   version: 'price-composer-5-15-v1',
   /**
