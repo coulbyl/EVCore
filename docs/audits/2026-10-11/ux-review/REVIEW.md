@@ -212,4 +212,3 @@ Mesures Décisions / Coupons et critique du point de vue d'un utilisateur
 lambda : `docs/audits/2026-10-12/MESURES-DECISIONS-COUPONS.md` (une
 sélection mise en avant par match, « Pari sûr du jour » en premier, coupon
 5–15 renommé « Coupon long » avec sa fréquence de gain en clair).
-

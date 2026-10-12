@@ -11,24 +11,24 @@ comptent ; aucune conclusion n'est tirée d'un ROI de coupon (CLAUDE.md).
 Volume quotidien, 2026-09-10 → 2026-10-10, canaux affichés (hors VALUE, SAFE,
 VANTAGE et méta-canaux) :
 
-| Mesure | Valeur |
-| --- | --- |
-| Matchs par jour | 54,7 |
-| Sélections par jour | 592 |
-| Sélections par match (médiane) | 11 |
-| Part des sélections à cote > 1,80 | 61 % |
-| Part à cote < 1,50 | 25 % |
+| Mesure                            | Valeur |
+| --------------------------------- | ------ |
+| Matchs par jour                   | 54,7   |
+| Sélections par jour               | 592    |
+| Sélections par match (médiane)    | 11     |
+| Part des sélections à cote > 1,80 | 61 %   |
+| Part à cote < 1,50                | 25 %   |
 
 Calibration par tranche de cote, 90 jours, tous canaux affichés :
 
-| Cote | n | Annoncé | Réalisé | Ratio | Retour par jambe |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| < 1,20 | 2 038 | 0,831 | 0,883 | 1,06 | −1,8 % |
-| 1,20–1,35 | 3 581 | 0,760 | 0,761 | 1,00 | −3,5 % |
-| 1,35–1,50 | 3 195 | 0,707 | 0,683 | 0,97 | −3,4 % |
-| 1,50–1,80 | 5 813 | 0,649 | 0,582 | 0,90 | −5,6 % |
-| 1,80–2,20 | 4 564 | 0,573 | 0,484 | 0,84 | −5,8 % |
-| > 2,20 | 20 302 | 0,277 | 0,217 | 0,78 | −13,1 % |
+| Cote      |      n | Annoncé | Réalisé | Ratio | Retour par jambe |
+| --------- | -----: | ------: | ------: | ----: | ---------------: |
+| < 1,20    |  2 038 |   0,831 |   0,883 |  1,06 |           −1,8 % |
+| 1,20–1,35 |  3 581 |   0,760 |   0,761 |  1,00 |           −3,5 % |
+| 1,35–1,50 |  3 195 |   0,707 |   0,683 |  0,97 |           −3,4 % |
+| 1,50–1,80 |  5 813 |   0,649 |   0,582 |  0,90 |           −5,6 % |
+| 1,80–2,20 |  4 564 |   0,573 |   0,484 |  0,84 |           −5,8 % |
+| > 2,20    | 20 302 |   0,277 |   0,217 |  0,78 |          −13,1 % |
 
 Lecture : sous 1,50 le moteur annonce juste et paie à peu près la marge.
 Au-delà, il surestime de plus en plus, et la moitié de ce que l'écran affiche
@@ -67,16 +67,16 @@ Simulation sur le vivier réel des canaux affichés (une sélection par match,
 classées par cote croissante, du 2026-07-01 au 2026-10-10, ~100 jours), par
 bande de cote des jambes et nombre de jambes :
 
-| Jambes | Bande | Jours | Jours gagnants | Cote moy. | Retour / unité | Pire série |
-| ---: | --- | ---: | ---: | ---: | ---: | ---: |
-| 1 | 1,15–1,35 | 98 | **85,7 %** ± 3,5 | 1,19 | 1,017 | 2 j |
-| 1 | 1,20–1,50 | 100 | **90,0 %** ± 3,0 | 1,22 | 1,098 | 2 j |
-| 2 | 1,20–1,50 | 98 | 73,5 % ± 4,5 | 1,51 | 1,116 | 3 j |
-| 3 | 1,20–1,50 | 95 | 63,2 % ± 4,9 | 1,89 | 1,208 | 4 j |
-| 2 | 1,35–1,60 | 97 | 55,7 % | 1,88 | 1,055 | — |
-| 2 | 1,50–1,80 | 98 | 40,8 % | 2,29 | 0,921 | — |
-| 2 | 1,80–2,30 | 98 | 29,6 % | 3,17 | 0,915 | — |
-| 3 | 1,80–2,30 | 95 | 17,9 % | 5,72 | 0,980 | — |
+| Jambes | Bande     | Jours |   Jours gagnants | Cote moy. | Retour / unité | Pire série |
+| -----: | --------- | ----: | ---------------: | --------: | -------------: | ---------: |
+|      1 | 1,15–1,35 |    98 | **85,7 %** ± 3,5 |      1,19 |          1,017 |        2 j |
+|      1 | 1,20–1,50 |   100 | **90,0 %** ± 3,0 |      1,22 |          1,098 |        2 j |
+|      2 | 1,20–1,50 |    98 |     73,5 % ± 4,5 |      1,51 |          1,116 |        3 j |
+|      3 | 1,20–1,50 |    95 |     63,2 % ± 4,9 |      1,89 |          1,208 |        4 j |
+|      2 | 1,35–1,60 |    97 |           55,7 % |      1,88 |          1,055 |          — |
+|      2 | 1,50–1,80 |    98 |           40,8 % |      2,29 |          0,921 |          — |
+|      2 | 1,80–2,30 |    98 |           29,6 % |      3,17 |          0,915 |          — |
+|      3 | 1,80–2,30 |    95 |           17,9 % |      5,72 |          0,980 |          — |
 
 Les retours au-dessus de 1 sur 100 jours sont dans le bruit (erreur type
 0,07 à 0,09) : on retient « ne coûte pas plus que la marge », pas « gagne ».
@@ -94,11 +94,11 @@ cote 1,10–1,35, `docs/audits/2026-09-15/GENERATOR.md`) avait été validée su
 « une fenêtre prospective reste nécessaire ». Rejouée ici sur les cotes
 d'analyse de `evaluated_pick` (celles que la production verrait) :
 
-| Fenêtre | Jours | Jours gagnants | Cote moy. | ROI | Pire série |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| 2026-07-01 → 10-10 | 80 | **80,0 %** | 1,19 | −5,3 % | 2 j |
-| Prospectif, ≥ 2026-09-16 | 16 | **81,3 %** | 1,18 | −4,3 % | — |
-| Juillet / août / sept. / oct. | 25 / 27 / 22 / 6 | 84 / 74 / 82 / 83 % | | | |
+| Fenêtre                       |            Jours |      Jours gagnants | Cote moy. |    ROI | Pire série |
+| ----------------------------- | ---------------: | ------------------: | --------: | -----: | ---------: |
+| 2026-07-01 → 10-10            |               80 |          **80,0 %** |      1,19 | −5,3 % |        2 j |
+| Prospectif, ≥ 2026-09-16      |               16 |          **81,3 %** |      1,18 | −4,3 % |          — |
+| Juillet / août / sept. / oct. | 25 / 27 / 22 / 6 | 84 / 74 / 82 / 83 % |           |        |            |
 
 Le ROI aux cotes d'analyse vaut la marge (−5 %) ; au meilleur prix il était
 positif (+2 % sur 400 jours hors échantillon). La fréquence de gain, elle,
