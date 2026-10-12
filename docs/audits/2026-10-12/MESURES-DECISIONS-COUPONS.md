@@ -207,3 +207,16 @@ Ce qu'un nouvel utilisateur ne pouvait pas comprendre avant cette PR :
 Reste à faire, hors de cette PR : la liste des ligues à l'onboarding (ordre
 par volume, pas alphabétique), les finitions P2 de la revue du 2026-10-11, et
 la bande 1,50–1,80 des sélections du jour à réexaminer dans un mois.
+
+## 6. Historique vivant par produit, et bande des sélections du jour (ajout du 2026-10-12, nuit)
+
+- Chaque carte de coupon porte désormais ce que le produit a **réellement**
+  fait sur les 30 derniers jours (« 5 jours gagnés sur 6 ») à la place de la
+  fréquence annoncée, dès cinq jours réglés ; en dessous, l'annonce reste.
+  Endpoint `GET /coupons/track-record?days=30`, une ligne par produit
+  (classe + source — le coupon long existe sous les deux générateurs).
+  Jours gagnés et jours réglés seulement : à ces volumes un ROI n'a aucune
+  puissance, une fréquence se lit.
+- Les sélections du jour de l'accueil passent de 1,20–1,80 à 1,20–1,65 :
+  sur 90 jours, les canaux fiables réalisent 1,02 / 0,93 / 0,95 de l'annoncé
+  sous 1,35 / 1,50 / 1,65, puis 0,83 entre 1,65 et 1,80 (n = 107).

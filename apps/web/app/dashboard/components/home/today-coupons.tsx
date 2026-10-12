@@ -5,6 +5,10 @@ import { ArrowRight, Trophy } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Skeleton } from "@evcore/ui";
 import { useCoupons } from "@/domains/coupon/use-cases/use-coupons";
+import {
+  trackRecordFor,
+  useCouponTrackRecord,
+} from "@/domains/coupon/use-cases/use-coupon-track-record";
 import { couponClassMeta } from "@/domains/coupon/helpers/coupon-class";
 import { useCouponCelebration } from "@/hooks/use-coupon-celebration";
 import { todayIso } from "@/lib/date";
@@ -21,6 +25,7 @@ export function TodayCoupons() {
   const locale = useLocale();
   const date = todayIso();
   const { data, isLoading, isError } = useCoupons(date);
+  const { data: trackRecords } = useCouponTrackRecord();
 
   // Le coupon long (cote 5–15, un jour gagnant sur sept) reste sur la page
   // Coupons avec sa fréquence écrite dessus, mais pas en tête de l'accueil :
@@ -82,7 +87,12 @@ export function TodayCoupons() {
               principale, les noms d'équipes et la tuile « Chances » étaient
               tronqués à 1 280 px. */}
           {coupons.map((coupon) => (
-            <CouponCard key={coupon.id} coupon={coupon} locale={locale} />
+            <CouponCard
+              key={coupon.id}
+              coupon={coupon}
+              locale={locale}
+              trackRecord={trackRecordFor(trackRecords, coupon)}
+            />
           ))}
         </div>
       )}

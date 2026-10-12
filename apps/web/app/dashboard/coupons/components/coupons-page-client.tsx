@@ -5,6 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Page, PageHeader, PageHeaderActions, PageContent } from "@evcore/ui";
 import { useTranslations, useLocale } from "next-intl";
 import { useCoupons } from "@/domains/coupon/use-cases/use-coupons";
+import {
+  trackRecordFor,
+  useCouponTrackRecord,
+} from "@/domains/coupon/use-cases/use-coupon-track-record";
 import { useCouponCelebration } from "@/hooks/use-coupon-celebration";
 import { todayIso } from "@/lib/date";
 import { DateNav } from "@/components/date-nav";
@@ -20,6 +24,7 @@ export function CouponsPageClient() {
 
   const date = searchParams.get("date") ?? todayIso();
   const { data, isLoading, isError } = useCoupons(date);
+  const { data: trackRecords } = useCouponTrackRecord();
 
   // Tri par CLASSE (du plus fréquent au plus rare), puis par rang à
   // l'intérieur d'une classe. Le rang n'exprime plus une qualité — mesuré sur
@@ -83,7 +88,12 @@ export function CouponsPageClient() {
             {!isLoading && !isError && coupons.length > 0 && (
               <div className="grid grid-cols-1 items-stretch gap-4 pb-4 md:grid-cols-2 2xl:grid-cols-3">
                 {coupons.map((coupon) => (
-                  <CouponCard key={coupon.id} coupon={coupon} locale={locale} />
+                  <CouponCard
+                    key={coupon.id}
+                    coupon={coupon}
+                    locale={locale}
+                    trackRecord={trackRecordFor(trackRecords, coupon)}
+                  />
                 ))}
               </div>
             )}

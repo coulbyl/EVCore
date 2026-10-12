@@ -24,9 +24,11 @@ import {
 export function CouponCard({
   coupon,
   locale,
+  trackRecord = null,
 }: {
   coupon: CouponProposalDto;
   locale: string;
+  trackRecord?: { won: number; settled: number; days: number } | null;
 }) {
   const {
     draft,
@@ -158,6 +160,7 @@ export function CouponCard({
       jointProbability={coupon.jointProbability}
       signalScore={coupon.signalScore}
       couponClass={couponClassMeta(coupon.couponClass)}
+      trackRecord={trackRecord}
       source={couponSourceMeta(coupon.source)}
       reasoning={reasonDetails}
       batch={coupon.batch}

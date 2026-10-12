@@ -1,11 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CouponProposalStatus } from '@evcore/db';
 import { CouponRepository } from './coupon.repository';
+import { startOfUtcDay } from '@utils/date.utils';
 import {
   classForTargetOddsMin,
   INTRADAY_SIGNAL_WINDOW_DAYS,
 } from './coupon.constants';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
+import type { CouponClassTrackRecord } from './dto/coupon-track-record.dto';
+import type { CouponSource } from '@evcore/db';
 import { readQuotedBookmaker } from '../betting-engine/pricing/closing-line';
 
 // generateCoupons/generateForClass (CouponComposerService's glouton
@@ -106,6 +109,21 @@ export class CouponService {
       throw new NotFoundException('Coupon introuvable');
     }
     await this.repo.recordView(couponProposalId, userId);
+  }
+
+  /** Historique réel par produit de coupon sur les `days` derniers jours. */
+  async getTrackRecord(days = 30): Promise<CouponClassTrackRecord[]> {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1_000);
+    const rows = await this.repo.findClassTrackRecord(startOfUtcDay(since));
+    return rows.map((row) => ({
+      couponClass: classForTargetOddsMin(row.targetOddsMin),
+      source: row.source as CouponSource,
+      days,
+      settled: row.settled,
+      won: row.won,
+      avgOdds: row.avgOdds,
+      returnPerUnit: row.returnPerUnit,
+    }));
   }
 }
 

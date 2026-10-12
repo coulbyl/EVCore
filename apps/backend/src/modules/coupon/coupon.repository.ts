@@ -72,6 +72,15 @@ export type ChannelCompetitionCalibrationRow = {
   ratio: number | null;
 };
 
+export type ClassTrackRecordRow = {
+  source: string;
+  targetOddsMin: number;
+  settled: number;
+  won: number;
+  avgOdds: number;
+  returnPerUnit: number;
+};
+
 export type PriceCandidateRow = {
   fixtureId: string;
   competition: string;
@@ -635,6 +644,33 @@ export class CouponRepository {
       WHERE s.result IN ('WON', 'LOST')
         AND s."scheduledAt" >= ${since}
       GROUP BY s.channel, c.code
+    `;
+  }
+
+  /**
+   * Historique par produit de coupon : une ligne par (source, bande cible),
+   * sur les propositions réglées dont `forDate` est dans la fenêtre. Gagné =
+   * WON ou PARTIAL (toutes les jambes jouées ont gagné) ; le retour d'une
+   * mise de 1 utilise la cote payée quand elle existe, remboursement = 1.
+   */
+  async findClassTrackRecord(
+    since: Date,
+  ): Promise<readonly ClassTrackRecordRow[]> {
+    return this.prisma.client.$queryRaw<ClassTrackRecordRow[]>`
+      SELECT source::text                       AS source,
+             "targetOddsMin"::float             AS "targetOddsMin",
+             count(*)::int                      AS settled,
+             count(*) FILTER (WHERE result IN ('WON', 'PARTIAL'))::int AS won,
+             avg("combinedOdds")::float         AS "avgOdds",
+             avg(CASE result
+                   WHEN 'WON' THEN coalesce("realizedOdds", "combinedOdds")
+                   WHEN 'PARTIAL' THEN coalesce("realizedOdds", "combinedOdds")
+                   WHEN 'VOID' THEN 1
+                   ELSE 0 END)::float           AS "returnPerUnit"
+      FROM public.coupon_proposal
+      WHERE result IS NOT NULL
+        AND "forDate" >= ${since}
+      GROUP BY source, "targetOddsMin"
     `;
   }
 

@@ -63,6 +63,12 @@ export type CouponCardProps = {
     frequency: string;
     badgeVariant: string;
   } | null;
+  /**
+   * Historique mesuré du produit (jours gagnés / jours réglés sur la
+   * fenêtre). Quand il existe, il remplace la fréquence annoncée de la
+   * classe : ce que le produit a fait vaut plus que ce qu'on en attend.
+   */
+  trackRecord?: { won: number; settled: number; days: number } | null;
   combinedOdds: number;
   /**
    * Cote réellement payée au règlement (jambes remboursées exclues). Affichée
@@ -108,6 +114,7 @@ function formatPct(n: number): string {
 export function CouponCard({
   locale,
   couponClass = null,
+  trackRecord = null,
   source = null,
   combinedOdds,
   realizedOdds = null,
@@ -151,8 +158,13 @@ export function CouponCard({
                   Et il n'exprime aucune qualité — mesuré sur 5 passes, le rang
                   1 ne vaut pas mieux que le rang 2. */}
               {couponClass && (
-                <span className="text-[0.62rem] font-medium tracking-wide text-muted-foreground">
-                  {couponClass.frequency}
+                <span
+                  data-testid="coupon-track-record"
+                  className="text-[0.62rem] font-medium tracking-wide text-muted-foreground"
+                >
+                  {trackRecord
+                    ? `${trackRecord.won} jour${trackRecord.won > 1 ? "s" : ""} gagné${trackRecord.won > 1 ? "s" : ""} sur ${trackRecord.settled} (${trackRecord.days} derniers jours)`
+                    : couponClass.frequency}
                 </span>
               )}
               {source && (
