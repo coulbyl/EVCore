@@ -17,10 +17,10 @@ import type {
 } from "@/domains/channel-decision/types/channel-decision";
 import { AddToCouponButton } from "@/components/add-to-coupon-button";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
-import { ChannelStatusBadge } from "@/components/channel-status-badge";
+import { ConfidenceBadge } from "@/components/confidence-badge";
+import { ClosingLine } from "@/components/closing-line";
 import type { ChannelCompetitionStatItem } from "@/domains/dashboard/types/dashboard";
 import {
-  formatSignedPct,
   calibrationKey,
   CHANNEL_COLOR,
   CHANNEL_COLOR_SOFT,
@@ -137,7 +137,12 @@ export function ChannelRow({
                 {odds}
               </span>
             )}
-            <ClosingLine selection={selection} />
+            <ClosingLine
+              closingOdds={selection.closingOdds}
+              closingLineValue={selection.closingLineValue}
+              closingBookmaker={selection.closingBookmaker}
+              marginPaid={selection.marginPaid}
+            />
             <CalibrationBadge item={calibration} />
           </p>
         </div>
@@ -153,6 +158,9 @@ export function ChannelRow({
 /** Real calibration (ratio réel/annoncé, same 0.85/0.70 thresholds as the
  * VANTAGE gate and the public track-record page — see dashboard.service.ts)
  * replaces the raw probability×odds "edge" figure this row used to show:
+ * Rendered as the one-word ConfidenceBadge (« fiable » / « à surveiller » /
+ * « peu fiable ») rather than the « Écart ≤ 15 % » measurement band, which
+ * repeated calibration jargon under every pick (UX review 2026-10-11, P1-7).
  * that edge is the exact anti-predictive metric CLAUDE.md's overview warns
  * against ("claimed edge is anti-predictive... never a selection floor").
  * `item` is undefined when this (channel, competition) pair never appears
@@ -199,10 +207,7 @@ export function CalibrationBadge({
           onClick={() => setOpen((v) => !v)}
           className="inline-flex focus:outline-none"
         >
-          <ChannelStatusBadge
-            status={status}
-            className="px-1.5 py-0 text-[0.62rem]"
-          />
+          <ConfidenceBadge status={status} className="py-0" />
         </button>
       </HoverCard.Trigger>
       <HoverCard.Portal>
@@ -218,49 +223,6 @@ export function CalibrationBadge({
         </HoverCard.Content>
       </HoverCard.Portal>
     </HoverCard.Root>
-  );
-}
-
-/**
- * Ligne de clôture d'une sélection réglée : cote juste avant le coup
- * d'envoi et valeur de la cote prise face à la probabilité de clôture sans
- * marge. Un pari pris au prix de clôture vaut MOINS LA MARGE, pas zéro : la
- * couleur ne compare donc pas à zéro mais à la marge payée quand elle est
- * connue (`marginPaid`), sinon à zéro faute de mieux. Rien tant que la
- * clôture n'est pas connue — même convention que ResultBadge.
- */
-function ClosingLine({ selection }: { selection: ChannelSelectionDto }) {
-  const t = useTranslations("decisions");
-  if (selection.closingOdds === null || selection.closingLineValue === null) {
-    return null;
-  }
-  const bar = selection.marginPaid !== null ? -selection.marginPaid : 0;
-  const beatsClose = selection.closingLineValue >= bar;
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span
-          data-testid="selection-closing"
-          className={cn(
-            "tabular-nums",
-            beatsClose ? "text-emerald-500" : "text-amber-500",
-          )}
-        >
-          {t("closing.label", { odds: selection.closingOdds.toFixed(2) })}
-          {" · "}
-          {formatSignedPct(selection.closingLineValue)}
-        </span>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-xs text-xs">
-        {t("closing.tooltip", {
-          bookmaker: selection.closingBookmaker ?? "—",
-          margin:
-            selection.marginPaid !== null
-              ? formatSignedPct(-selection.marginPaid)
-              : "—",
-        })}
-      </TooltipContent>
-    </Tooltip>
   );
 }
 

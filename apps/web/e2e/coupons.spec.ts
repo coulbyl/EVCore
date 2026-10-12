@@ -62,10 +62,11 @@ test.describe("Coupons", () => {
       has: page.getByText("✓ Gagné", { exact: true }),
     });
     await expect(card.getByTestId("coupon-realized-odds")).toHaveCount(0);
-    // Ligne de clôture d'une jambe : cote et valeur signée.
-    await expect(card.getByTestId("leg-closing").first()).toHaveText(
-      "Clôture @1.90 · +5.2%",
-    );
+    // Ligne de clôture d'une jambe : la cote seule, en couleur neutre ; la
+    // valeur signée vit dans le détail (revue UX 2026-10-11, P1-7).
+    const closing = card.getByTestId("leg-closing").first();
+    await expect(closing).toHaveText(/^(Clôture|Close) @1\.90$/);
+    await expect(closing).toHaveAttribute("data-verdict", "unknownMargin");
   });
 
   test("les deux générateurs et le coupon remboursé sont identifiés", async ({

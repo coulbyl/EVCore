@@ -100,6 +100,14 @@ tableau de bord ne promet jamais de gain, et le dit.
    clôture dans une infobulle ou un détail, en couleur neutre quand la marge
    payée est inconnue. _Code concerné : `channel-row.tsx` (ClosingLine),
    livré le 2026-10-11, à corriger dans la foulée._
+   _Corrigé le 2026-10-11 : une seule pastille « Fiable / À surveiller /
+   Peu fiable » par pick (Décisions et Arbitrage), détail en langage clair au
+   clic ; « Clôture @1.27 » seule, en gris, la valeur signée et la
+   comparaison à la marge dans le détail, vert uniquement quand la marge
+   payée est connue et battue (Décisions et jambes de coupon). Captures :
+   `after/lot4__desktop__dashboard_decisions_date_2026-10-10.png`,
+   `after/lot4__desktop__dashboard_decisions_date_2026-10-10__closing_open.png`,
+   `after/lot4__desktop__dashboard_decisions_date_2026-10-10__confidence_open.png`._
 
 8. **Le bouton flottant de l'assistant Eva recouvre le menu.** En desktop il
    se superpose à l'entrée « Accueil » de la barre latérale (le texte devient
