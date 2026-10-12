@@ -197,7 +197,7 @@
     "noPickShort": "aucune sélection",
     "pickCount": "{count, plural, one {# sélection} other {# sélections}}",
     "evaluatedCount": "{count, plural, one {# autre canal évalué} other {# autres canaux évalués}}",
-    "showMorePicks": "{count, plural, one {Voir # autre marché} other {Voir # autres marchés}}",
+    "showMorePicks": "{count, plural, one {Voir # autre marché analysé} other {Voir les # autres marchés analysés}}",
     "showLessPicks": "Voir moins",
     "filters": {
       "all": "Tous",
@@ -213,7 +213,10 @@
       "noChannelResults": "Aucun canal.",
       "allFilters": "Filtres"
     },
-    "helpLink": "Comment lire une fiche"
+    "helpLink": "Comment lire une fiche",
+    "primaryPick": "Notre sélection",
+    "otherMarketsTitle": "Autres marchés analysés",
+    "chances": "{pct} de chances"
   },
   "arbitrage": {
     "title": "Avis IA",
@@ -526,7 +529,7 @@
       "leaguesTitle": "Ligues suivies",
       "leaguesSubtitle": "{count} sélectionnée(s)",
       "leaguesEmpty": "Aucun championnat suivi pour l'instant.",
-      "leaguesSearchPlaceholder": "Rechercher un championnat ou un pays...",
+      "leaguesSearchPlaceholder": "Championnat ou pays…",
       "leaguesNoResults": "Aucun championnat ne correspond.",
       "channelsTitle": "Canaux suivis",
       "channelsHint": "Retrouve ici les mesures de calibration des canaux suivis : réussite réelle comparée à la probabilité annoncée, avec le volume observé.",
@@ -545,7 +548,8 @@
         "CONSERVATIVE": "Prudent",
         "BALANCED": "Équilibré",
         "AGGRESSIVE": "Offensif"
-      }
+      },
+      "popularLeagues": "Populaires"
     }
   },
   "performance": {
@@ -673,10 +677,15 @@
     }
   },
   "betSlips": {
-    "emptyTitle": "Aucun coupon",
-    "emptyDescription": "Aucun coupon ne correspond à cette période. Essaie d'élargir le filtre.",
+    "emptyTitle": "Aucun coupon sur cette période",
+    "emptyDescription": "Vos coupons existent mais pas entre ces dates.",
     "tabSlips": "Mes coupons",
-    "tabLeaderboard": "Classement des joueurs"
+    "tabLeaderboard": "Classement des joueurs",
+    "neverPlayedTitle": "Vous n'avez pas encore joué de coupon",
+    "neverPlayedBody": "Le pari sûr du jour et le coupon long sont sur l'accueil. Un coupon joué apparaît ici avec son résultat.",
+    "neverPlayedLink": "Voir le coupon du jour",
+    "widenPeriod": "Afficher les 90 derniers jours",
+    "emptyTypeDescription": "Aucun coupon de ce type sur la période."
   },
   "bankrollPage": {
     "filter": {

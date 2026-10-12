@@ -17,7 +17,11 @@ import {
   formatKickoff,
   isFixtureBettable,
 } from "@/domains/fixture/helpers/fixture";
-import { fixtureStatusBadgeClass, fixtureStatusLabel } from "@/helpers/fixture";
+import {
+  fixtureStatusBadgeClass,
+  fixtureStatusIsNotable,
+  fixtureStatusLabel,
+} from "@/helpers/fixture";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import type { FixtureRow } from "@/domains/fixture/types/fixture";
 import {
@@ -214,11 +218,13 @@ function FixtureMobileCard({
                 {row.fixture}
               </p>
             </div>
-            <span
-              className={`inline-flex shrink-0 items-center rounded-full border px-2 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${fixtureStatusBadgeClass(row.status)}`}
-            >
-              {fixtureStatusLabel(row.status)}
-            </span>
+            {fixtureStatusIsNotable(row.status) && (
+              <span
+                className={`inline-flex shrink-0 items-center rounded-full border px-2 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${fixtureStatusBadgeClass(row.status)}`}
+              >
+                {fixtureStatusLabel(row.status)}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center justify-between gap-2">

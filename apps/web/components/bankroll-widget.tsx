@@ -14,6 +14,12 @@ export function BankrollWidget() {
   const { data, isLoading } = useBankrollBalance(currentUser.id);
   const { formatAmount } = useCurrencyFormat();
   const isActive = pathname.startsWith("/dashboard/bankroll");
+  // Un portefeuille à zéro n'a rien à dire : « 0 F » en tête d'écran mobile
+  // prenait la place la plus visible pour un montant que l'utilisateur n'a
+  // jamais choisi (revue UX du 2026-10-11, P1-10). L'icône reste : c'est
+  // l'entrée vers la page Portefeuille.
+  const balance = Number(data?.balance ?? 0);
+  const showAmount = !isLoading && Number.isFinite(balance) && balance !== 0;
 
   return (
     <Link
@@ -27,9 +33,11 @@ export function BankrollWidget() {
       )}
     >
       <Wallet size={16} />
-      <span className="tabular-nums">
-        {isLoading ? "…" : formatAmount(data?.balance ?? "0")}
-      </span>
+      {showAmount && (
+        <span className="tabular-nums">
+          {formatAmount(data?.balance ?? "0")}
+        </span>
+      )}
     </Link>
   );
 }

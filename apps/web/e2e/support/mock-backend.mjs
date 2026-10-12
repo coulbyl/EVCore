@@ -98,9 +98,9 @@ function coupon(overrides) {
     forDate: "2026-10-05",
     rank: 1,
     signalWindowDays: 0,
-    targetOddsMin: 5,
-    targetOddsMax: 15,
-    couponClass: "UNIQUE",
+    targetOddsMin: overrides.targetOddsMin ?? 5,
+    targetOddsMax: overrides.targetOddsMax ?? 15,
+    couponClass: overrides.couponClass ?? "UNIQUE",
     batch: "evening",
     source: overrides.source ?? "LLM",
     combinedOdds: Number(combinedOdds.toFixed(3)),
@@ -120,6 +120,26 @@ function coupon(overrides) {
 }
 
 const COUPONS = [
+  // Le pari sûr du jour : une jambe, favori à domicile, bande 1,10–1,35.
+  coupon({
+    id: "favourite",
+    source: "PRICE_COMPOSER",
+    couponClass: "FAVOURITE",
+    targetOddsMin: 1.1,
+    targetOddsMax: 1.35,
+    result: "WON",
+    legs: [
+      couponLeg({
+        id: "fav1",
+        odds: 1.22,
+        isCorrect: true,
+        settledAt: "2026-10-05T21:00:00.000Z",
+        score: "2-0",
+        market: "ONE_X_TWO",
+        pick: "HOME",
+      }),
+    ],
+  }),
   coupon({
     id: "won",
     result: "WON",

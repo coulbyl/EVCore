@@ -132,6 +132,9 @@ tableau de bord ne promet jamais de gain, et le dit.
    → État vide guidé : « Vous n'avez pas encore joué de coupon. Voir le
    coupon du jour → ». Les tuiles n'apparaissent qu'à partir du premier
    coupon.
+   _Corrigé le 2026-10-12 : état vide guidé (jamais joué), « Aucun coupon
+   sur cette période » avec un bouton « Afficher les 90 derniers jours »
+   sinon, tuiles seulement quand la période contient un coupon._
 
 10. **La devise « F » apparaît partout** (« 0 F » dans l'en-tête, les tuiles)
     sans que l'utilisateur ait choisi de devise ni déposé quoi que ce soit ;
@@ -139,6 +142,8 @@ tableau de bord ne promet jamais de gain, et le dit.
     place la plus visible de l'écran.
     → Masquer le portefeuille tant qu'il est vide, ou l'afficher dans la
     devise choisie à l'inscription.
+    _Corrigé le 2026-10-12 : icône seule tant que le solde est à zéro (elle
+    reste l'entrée vers la page Portefeuille), montant dès qu'il y en a un._
 
 11. **Onboarding en trois étapes** : correct, mais le champ de recherche a
     un placeholder tronqué (« Rechercher un championnat ou un ») et la liste
@@ -147,21 +152,34 @@ tableau de bord ne promet jamais de gain, et le dit.
     _Capture : `mobile__onboarding.png`._
     → Ligues populaires d'abord (par volume de matchs analysés), puis la
     recherche.
+    _Corrigé le 2026-10-12 : groupe « Populaires » en tête (Ligue 1, Premier
+    League, La Liga, Serie A, Bundesliga, coupes d'Europe, Ligue 2, 2.
+    Bundesliga, Coupe du monde), placeholder raccourci. Le volume analysé
+    classait l'Argentine et le Brésil en tête : ce n'est pas ce qu'un nouvel
+    arrivant cherche, la liste est donc éditoriale._
 
 ## P2 — finitions
 
 12. Formation, mobile : le cercle d'icône recouvre le badge « À découvrir »
     sur chaque carte. _Capture : `mobile__dashboard_formation.png`._
+    _Corrigé le 2026-10-12 : la carte mise en avant réserve la hauteur des
+    badges (padding haut), le contenu ne remonte plus dessous._
 13. Mesures historiques : « PARIS MATÉRIALISÉS — 2026-07-13 → 2026-10-11 »
     en dates ISO et flèche ASCII dans un titre ; les trois tuiles sont
     empilées une par ligne en mobile (deux par ligne suffisent). Le texte
     d'introduction de six lignes se lit avant tout chiffre.
+    _Corrigé le 2026-10-12 : « du 13 juillet 2026 au 11 octobre 2026 »,
+    tuiles sur deux colonnes en mobile. L'introduction reste._
 14. Notifications : les onglets passent sur deux lignes en mobile
     (« Toutes · Non lues · Annonces » puis « Alertes »), et chaque carte
     porte une étiquette « MOYENNE » dont le sens n'est pas donné.
+    _Corrigé le 2026-10-12 : onglets sur une ligne défilante, étiquette de
+    gravité masquée quand elle vaut la valeur par défaut._
 15. Matchs, mobile : un badge « PLANIFIÉ » sur chacune des 173 cartes ne
     distingue rien ; « Indice de paris » est un bouton dont le libellé ne
     dit pas ce qu'il ouvre.
+    _Corrigé le 2026-10-12 : badge seulement pour terminé / en cours /
+    reporté / annulé ; le bouton s'appelle « Réussite par marché »._
 16. Profil : la ligne « Téléphone » est un consentement de six lignes à côté
     d'un interrupteur, sans champ de numéro. La bande d'avatars défile
     horizontalement sans indice qu'elle continue.
@@ -170,6 +188,8 @@ tableau de bord ne promet jamais de gain, et le dit.
     adresse à vérifier sans le dire avant l'envoi.
 18. Les confettis sur un coupon gagné sont rejoués à chaque visite de la
     page du jour, même pour un gain qui n'est pas le sien.
+    _Déjà corrigé par la PR #250 : une fois par jour, et seulement pour un
+    coupon que l'utilisateur a joué._
 
 ## Mesures (dev, sans cache : les temps de chargement ne sont pas
 
@@ -200,3 +220,10 @@ d'avatars).
 4. Indicateur de confiance unique par pick, clôture reléguée (P1-7) et
    boutons flottants (P1-8).
 5. États vides guidés et devise (P1-9, P1-10), puis les finitions.
+
+## Suite (2026-10-12)
+
+Mesures Décisions / Coupons et critique du point de vue d'un utilisateur
+lambda : `docs/audits/2026-10-12/MESURES-DECISIONS-COUPONS.md` (une
+sélection mise en avant par match, « Pari sûr du jour » en premier, coupon
+5–15 renommé « Coupon long » avec sa fréquence de gain en clair).

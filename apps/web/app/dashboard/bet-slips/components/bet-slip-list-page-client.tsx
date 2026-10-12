@@ -1,8 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
+import { ArrowRight, Receipt } from "lucide-react";
 import {
   Badge,
+  Button,
   Drawer,
   DrawerContent,
   DrawerTitle,
@@ -23,6 +26,7 @@ import type { FilterDef, FilterState } from "@evcore/ui";
 import { formatDateLong, todayIso, daysAgoIso } from "@/lib/date";
 import { useCurrencyFormat } from "@/providers/currency-provider";
 import { useBetSlips } from "@/domains/bet-slip/use-cases/get-bet-slips";
+import { useOperatorSummary } from "@/domains/bet-slip/use-cases/get-operator-summary";
 import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { BetSlipView } from "@/domains/bet-slip/types/bet-slip";
@@ -263,6 +267,11 @@ export function BetSlipListPageClient() {
 
   const { data } = useBetSlips(from, to);
   const betSlips = useMemo(() => data ?? [], [data]);
+  // Toutes périodes confondues : distingue « jamais joué » de « rien entre
+  // ces dates ». Un nouvel arrivant n'a rien à filtrer (revue UX du
+  // 2026-10-11, P1-9).
+  const { data: lifetime } = useOperatorSummary();
+  const neverPlayed = lifetime !== undefined && lifetime.slipCount === 0;
   const isMobile = useIsMobile();
 
   const selectedSlip = betSlips.find((s) => s.id === selectedId) ?? null;
@@ -298,28 +307,32 @@ export function BetSlipListPageClient() {
     setSelectedId(null);
   }
 
+  // Les tuiles n'apparaissent qu'à partir du premier coupon de la période :
+  // trois zéros remplissaient l'écran d'un nouvel arrivant.
   const filter = (
     <div className="shrink-0 flex flex-col gap-4 rounded-[1.1rem] border border-border bg-panel p-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <StatCard
-          tone="neutral"
-          label="Misé"
-          value={formatAmount(periodSummary.stake)}
-          compact
-        />
-        <StatCard
-          tone={periodSummary.net >= 0 ? "success" : "danger"}
-          label="Net réglé"
-          value={formatSigned(periodSummary.net)}
-          compact
-        />
-        <StatCard
-          tone="warning"
-          label="En attente"
-          value={String(periodSummary.pending)}
-          compact
-        />
-      </div>
+      {betSlips.length > 0 && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <StatCard
+            tone="neutral"
+            label="Misé"
+            value={formatAmount(periodSummary.stake)}
+            compact
+          />
+          <StatCard
+            tone={periodSummary.net >= 0 ? "success" : "danger"}
+            label="Net réglé"
+            value={formatSigned(periodSummary.net)}
+            compact
+          />
+          <StatCard
+            tone="warning"
+            label="En attente"
+            value={String(periodSummary.pending)}
+            compact
+          />
+        </div>
+      )}
       <FilterBar
         filters={SLIP_FILTERS}
         value={filterState}
@@ -333,12 +346,50 @@ export function BetSlipListPageClient() {
 
   const items =
     filteredBetSlips.length === 0 ? (
-      <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
-        <EmptyHeader>
-          <EmptyTitle>{t("emptyTitle")}</EmptyTitle>
-          <EmptyDescription>{t("emptyDescription")}</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+      neverPlayed ? (
+        <Empty
+          data-testid="bet-slips-never-played"
+          className="rounded-3xl border border-dashed border-border bg-panel/70 p-8"
+        >
+          <EmptyHeader>
+            <Receipt size={28} className="mx-auto text-muted-foreground/40" />
+            <EmptyTitle>{t("neverPlayedTitle")}</EmptyTitle>
+            <EmptyDescription>{t("neverPlayedBody")}</EmptyDescription>
+          </EmptyHeader>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:text-accent/80"
+          >
+            {t("neverPlayedLink")} <ArrowRight size={14} />
+          </Link>
+        </Empty>
+      ) : (
+        <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
+          <EmptyHeader>
+            <EmptyTitle>{t("emptyTitle")}</EmptyTitle>
+            <EmptyDescription>
+              {betSlips.length > 0
+                ? t("emptyTypeDescription")
+                : t("emptyDescription")}
+            </EmptyDescription>
+          </EmptyHeader>
+          {betSlips.length === 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setFilterState({
+                  type: "ALL",
+                  from: daysAgoIso(90),
+                  to: todayIso(),
+                })
+              }
+            >
+              {t("widenPeriod")}
+            </Button>
+          )}
+        </Empty>
+      )
     ) : (
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
         {filteredBetSlips.map((betSlip) => (
@@ -375,7 +426,7 @@ export function BetSlipListPageClient() {
           >
             <div className="hidden min-h-0 flex-1 lg:grid lg:grid-cols-[3fr_2fr] lg:grid-rows-1 lg:gap-5">
               <div className="flex min-h-0 flex-col gap-4">
-                {filter}
+                {!neverPlayed && filter}
                 <div className="min-h-0 flex-1 overflow-y-auto">{items}</div>
               </div>
               <div className="h-full min-h-0">
@@ -395,7 +446,7 @@ export function BetSlipListPageClient() {
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col gap-4 lg:hidden">
-              {filter}
+              {!neverPlayed && filter}
               <div className="min-h-0 flex-1 overflow-y-auto">{items}</div>
             </div>
           </TabsContent>

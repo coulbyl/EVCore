@@ -101,11 +101,17 @@ function NotificationRow({
     >
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span
-            className={`rounded-full px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-wide ${SEVERITY_BADGE[severity]}`}
-          >
-            {severityLabel[severity]}
-          </span>
+          {/* « Faible » / « Moyenne » sont les gravités ordinaires : une
+              étiquette sur chaque carte ne distingue rien (revue UX du
+              2026-10-11, P2-14). Seules les gravités qui demandent une
+              attention sont étiquetées. */}
+          {severity !== "medium" && severity !== "low" && (
+            <span
+              className={`rounded-full px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-wide ${SEVERITY_BADGE[severity]}`}
+            >
+              {severityLabel[severity]}
+            </span>
+          )}
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Clock size={11} />
             {formatAge(n.createdAt)}
@@ -200,13 +206,13 @@ export function NotificationsPageClient() {
     <div className="flex flex-col gap-5">
       {/* Header controls — sticky so the tabs stay reachable while the list scrolls */}
       <div className="sticky top-0 z-10 -mx-4 flex flex-wrap items-center justify-between gap-3 bg-panel-strong px-4 pb-3 pt-1 sm:-mx-5 sm:px-5">
-        <div className="flex flex-wrap gap-1">
+        <div className="flex max-w-full flex-nowrap gap-1 overflow-x-auto">
           {TABS.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => selectTab(item.id)}
-              className={`flex items-center gap-1.5 rounded-2xl px-4 py-2 text-sm font-medium transition-colors ${tab === item.id ? "bg-accent/10 text-accent" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
+              className={`flex shrink-0 items-center gap-1.5 rounded-2xl px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${tab === item.id ? "bg-accent/10 text-accent" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
             >
               {item.label}
               {item.id === "unread" && unreadCount > 0 ? (

@@ -14,11 +14,11 @@ export type CouponSourceMeta = {
  */
 export const COUPON_SOURCE_META: Record<CouponSource, CouponSourceMeta> = {
   LLM: {
-    label: "Analyse",
+    label: "Analyse IA",
     hint: "Sélection par analyse contextuelle : le moteur estime une probabilité par match, puis la confronte à la cote.",
   },
   PRICE_COMPOSER: {
-    label: "Prix",
+    label: "Choisi sur les cotes",
     hint: "Sélection par le prix : aucune prédiction de match. Les jambes sont classées sur le coût réellement mesuré de chaque marché.",
   },
 };

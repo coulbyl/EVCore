@@ -5,6 +5,59 @@ import type {
   AvoidOffender,
   AvoidReasonDetails,
 } from "@/domains/channel-decision/types/channel-decision";
+import type { ChannelStatus } from "@/domains/dashboard/types/dashboard";
+import {
+  calibrationKey,
+  type ChannelCalibrationByKey,
+} from "./channel-constants";
+
+/**
+ * Au-delà de cette cote, la calibration des jambes ne tient plus (réalisé /
+ * annoncé 0,94–1,10 sous 1,50, 0,78–0,89 entre 1,50 et 1,80, 0,53–0,79
+ * au-delà sur 90 jours — docs/audits/2026-10-12/MESURES-DECISIONS-COUPONS.md).
+ * La sélection mise en avant sur une carte est donc cherchée d'abord sous ce
+ * seuil.
+ */
+export const PRIMARY_MAX_ODDS = 1.5;
+
+/**
+ * LA sélection qu'un utilisateur lambda doit regarder sur un match : d'abord
+ * un canal fiable sur cette compétition à cote courte, sinon un canal qui
+ * n'est pas « peu fiable » à cote courte, puis les mêmes sans contrainte de
+ * cote. À égalité, la plus probable. Jamais un canal peu fiable tant qu'il
+ * existe autre chose.
+ */
+export function primaryPick(
+  picks: readonly ChannelDecisionMatchDecisionDto[],
+  lookup: {
+    calibrationByKey?: ChannelCalibrationByKey;
+    competitionCode?: string | null;
+  },
+): ChannelDecisionMatchDecisionDto | undefined {
+  const status = (
+    d: ChannelDecisionMatchDecisionDto,
+  ): ChannelStatus | undefined =>
+    lookup.competitionCode
+      ? lookup.calibrationByKey?.get(
+          calibrationKey(d.channel, lookup.competitionCode),
+        )?.status
+      : undefined;
+  const tier = (d: ChannelDecisionMatchDecisionDto): number => {
+    const s = status(d);
+    const odds = d.selections[0]?.odds ?? null;
+    const cheap = odds !== null && odds < PRIMARY_MAX_ODDS;
+    if (s === "GREEN" && cheap) return 0;
+    if (s !== "RED" && cheap) return 1;
+    if (s === "GREEN") return 2;
+    if (s !== "RED") return 3;
+    return 4;
+  };
+  return picks
+    .slice()
+    .sort(
+      (a, b) => tier(a) - tier(b) || bestProbability(b) - bestProbability(a),
+    )[0];
+}
 
 /**
  * Méta-canaux : ils lisent les décisions des autres au lieu de prendre une

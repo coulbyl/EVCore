@@ -15,15 +15,21 @@ import {
   reasonLabel,
   type ChannelCalibrationByKey,
 } from "./channel-constants";
-import { avoidFlag, selectedPicks, type AvoidFlag } from "./decision-helpers";
+import {
+  avoidFlag,
+  primaryPick,
+  selectedPicks,
+  type AvoidFlag,
+} from "./decision-helpers";
 import { ChannelRow, type SlipContext } from "./channel-row";
 
 export type MatchGroup = ChannelDecisionMatchDto;
 
-// Cards capped to a handful of picks, sorted by confidence (selectedPicks
-// already sorts by probability desc) — a 9-pick card reads as a data dump,
-// not a read (docs/vantage-centric-redesign-2026-09-01.md §2).
-const MAX_VISIBLE_PICKS = 4;
+// Une carte montre UNE sélection (primaryPick), les autres marchés analysés
+// restent repliés : à quatre picks visibles plus « Voir 6 autres marchés »,
+// un utilisateur lambda ne savait pas lequel jouer — et 61 % des picks
+// affichés sont à cote > 1,80, là où la calibration ne tient plus (revue UX
+// et mesures du 2026-10-12).
 
 export function MatchCard({
   group,
@@ -37,8 +43,16 @@ export function MatchCard({
   const t = useTranslations("decisions");
   const [expanded, setExpanded] = useState(false);
   const avoid = avoidFlag(group);
-  const picks = selectedPicks(group);
-  const visiblePicks = expanded ? picks : picks.slice(0, MAX_VISIBLE_PICKS);
+  const allPicks = selectedPicks(group);
+  const primary = primaryPick(allPicks, {
+    calibrationByKey,
+    competitionCode: group.competition,
+  });
+  // La sélection mise en avant d'abord, puis les autres dans l'ordre existant.
+  const picks = primary
+    ? [primary, ...allPicks.filter((d) => d.id !== primary.id)]
+    : allPicks;
+  const visiblePicks = expanded ? picks : picks.slice(0, 1);
   const hiddenCount = picks.length - visiblePicks.length;
   const calibrationAlert = group.decisions.some((d) => d.calibrationAlert);
 
@@ -147,6 +161,16 @@ export function MatchCard({
                 <LegConnector isLast={idx === visiblePicks.length - 1} />
               )}
               <div className="min-w-0 flex-1 border-t border-border/50 first:border-t-0">
+                {idx === 0 && picks.length > 1 && (
+                  <p className="pt-2 text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-accent">
+                    {t("primaryPick")}
+                  </p>
+                )}
+                {idx === 1 && (
+                  <p className="pt-2 text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    {t("otherMarketsTitle")}
+                  </p>
+                )}
                 <ChannelRow
                   channel={decision.channel}
                   decision={decision}
@@ -159,7 +183,7 @@ export function MatchCard({
               </div>
             </div>
           ))}
-          {picks.length > MAX_VISIBLE_PICKS && (
+          {picks.length > 1 && (
             <button
               type="button"
               onClick={() => setExpanded((prev) => !prev)}

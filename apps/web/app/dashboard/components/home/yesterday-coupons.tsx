@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn, Skeleton } from "@evcore/ui";
 import { useCoupons } from "@/domains/coupon/use-cases/use-coupons";
+import { couponClassMeta } from "@/domains/coupon/helpers/coupon-class";
 import { couponSourceMeta } from "@/domains/coupon/helpers/coupon-source";
 import { daysAgoIso } from "@/lib/date";
 import type { CouponProposalDto } from "@/domains/coupon/types/coupon";
@@ -66,7 +67,12 @@ export function YesterdayCoupons() {
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground">
-                    {couponSourceMeta(coupon.source).label}
+                    {/* La classe (« Pari sûr du jour », « Coupon long »)
+                        dit ce que c'était ; la source ne sert que s'il n'y
+                        a pas de classe. */}
+                    {couponClassMeta(coupon.couponClass)?.label.split(
+                      " · ",
+                    )[0] ?? couponSourceMeta(coupon.source).label}
                     <span className="text-muted-foreground">
                       {" · "}
                       {t("legs", { count: coupon.legs.length })}

@@ -22,6 +22,7 @@ import {
   type ChannelStatRow,
 } from "./components/channel-stats-table";
 import { PeriodTabs } from "./components/period-tabs";
+import { formatDateLong } from "@/lib/date";
 import { CompetitionRankingSection } from "./components/competition-ranking-section";
 import { TodayCalibrationCard } from "@/app/dashboard/components/today-confidence-card";
 import {
@@ -119,9 +120,10 @@ export default async function TrackRecordPage({
 
           <section className="flex flex-col gap-3">
             <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Paris matérialisés — {from} → {to}
+              Paris matérialisés · du {formatDateLong(from)} au{" "}
+              {formatDateLong(to)}
             </h2>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <StatCard
                 label="Paris réglés"
                 value={String(pnl.global.settledBets)}

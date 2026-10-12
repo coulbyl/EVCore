@@ -197,7 +197,7 @@
     "noPickShort": "no pick",
     "pickCount": "{count, plural, one {# pick} other {# picks}}",
     "evaluatedCount": "{count, plural, one {# other channel evaluated} other {# other channels evaluated}}",
-    "showMorePicks": "{count, plural, one {Show # more market} other {Show # more markets}}",
+    "showMorePicks": "{count, plural, one {See # other market analysed} other {See the # other markets analysed}}",
     "showLessPicks": "Show less",
     "filters": {
       "all": "All",
@@ -213,7 +213,10 @@
       "noChannelResults": "No channel.",
       "allFilters": "Filters"
     },
-    "helpLink": "How to read a pick"
+    "helpLink": "How to read a pick",
+    "primaryPick": "Our pick",
+    "otherMarketsTitle": "Other markets analysed",
+    "chances": "{pct} chance"
   },
   "arbitrage": {
     "title": "AI opinion",
@@ -526,7 +529,7 @@
       "leaguesTitle": "Followed leagues",
       "leaguesSubtitle": "{count} selected",
       "leaguesEmpty": "No league followed yet.",
-      "leaguesSearchPlaceholder": "Search a league or country...",
+      "leaguesSearchPlaceholder": "League or country…",
       "leaguesNoResults": "No league matches.",
       "channelsTitle": "Followed channels",
       "channelsHint": "See calibration measures for followed channels: actual hit rate compared with announced probability, together with observed volume.",
@@ -545,7 +548,8 @@
         "CONSERVATIVE": "Conservative",
         "BALANCED": "Balanced",
         "AGGRESSIVE": "Aggressive"
-      }
+      },
+      "popularLeagues": "Popular"
     }
   },
   "performance": {
@@ -673,10 +677,15 @@
     }
   },
   "betSlips": {
-    "emptyTitle": "No bet slips",
-    "emptyDescription": "No bet slip matches this period and filter.",
+    "emptyTitle": "No coupon in this period",
+    "emptyDescription": "Your coupons exist, just not between these dates.",
     "tabSlips": "My coupons",
-    "tabLeaderboard": "Players leaderboard"
+    "tabLeaderboard": "Players leaderboard",
+    "neverPlayedTitle": "You have not played a coupon yet",
+    "neverPlayedBody": "Today's safe bet and long coupon are on the home page. A played coupon shows up here with its result.",
+    "neverPlayedLink": "See today's coupon",
+    "widenPeriod": "Show the last 90 days",
+    "emptyTypeDescription": "No coupon of this type in the period."
   },
   "bankrollPage": {
     "filter": {

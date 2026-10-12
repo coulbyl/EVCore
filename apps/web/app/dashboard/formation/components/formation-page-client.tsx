@@ -161,7 +161,7 @@ export function FormationPageClient({
               <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
                 <Link
                   href={`/dashboard/formation/${featuredItem.slug}`}
-                  className="group relative flex min-h-[13rem] flex-col justify-end overflow-hidden bg-secondary p-5 sm:min-h-[16rem] sm:p-6"
+                  className="group relative flex min-h-[13rem] flex-col justify-end overflow-hidden bg-secondary px-5 pb-5 pt-16 sm:min-h-[16rem] sm:px-6 sm:pb-6"
                   data-testid="formation-featured-link"
                 >
                   <div className="absolute inset-0 border-b border-border bg-background/20" />
