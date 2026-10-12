@@ -183,9 +183,17 @@ tableau de bord ne promet jamais de gain, et le dit.
 16. Profil : la ligne « Téléphone » est un consentement de six lignes à côté
     d'un interrupteur, sans champ de numéro. La bande d'avatars défile
     horizontalement sans indice qu'elle continue.
+    _Corrigé le 2026-10-12 : la ligne dit « Non renseigné · Ajouter mon
+    numéro » ; le consentement et l'interrupteur n'apparaissent qu'après le
+    clic, le champ juste après. Le bord droit de la bande d'avatars
+    s'estompe pour dire qu'elle continue._
 17. Formulaire d'inscription : « Nom & prénoms » ; aucune règle de mot de
     passe au-delà de « 8 caractères minimum » ; l'inscription mène à une
     adresse à vérifier sans le dire avant l'envoi.
+    _Corrigé le 2026-10-12 : « Nom complet », règle de mot de passe dite
+    telle qu'elle est (8 caractères, la seule règle serveur) avec le conseil
+    utile, et « un code à 6 chiffres vous sera envoyé à cette adresse » sous
+    le champ email._
 18. Les confettis sur un coupon gagné sont rejoués à chaque visite de la
     page du jour, même pour un gain qui n'est pas le sien.
     _Déjà corrigé par la PR #250 : une fois par jour, et seulement pour un
