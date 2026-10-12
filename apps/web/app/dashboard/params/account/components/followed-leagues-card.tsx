@@ -25,6 +25,24 @@ type CountryGroup = {
   leagues: (LeagueCatalogItem & { label: string })[];
 };
 
+/**
+ * Les championnats qu'un nouvel arrivant cherche d'abord, en tête de liste
+ * avant l'ordre alphabétique des pays (revue UX du 2026-10-11, P1-11 : la
+ * liste commençait par l'Allemagne). Ordre d'affichage = ordre ci-dessous.
+ */
+const POPULAR_LEAGUE_CODES = [
+  "L1",
+  "PL",
+  "LL",
+  "SA",
+  "BL1",
+  "UCL",
+  "UEL",
+  "F2",
+  "D2",
+  "WC",
+] as const;
+
 function groupByCountry(
   catalog: LeagueCatalogItem[],
   locale: string,
@@ -51,6 +69,23 @@ function groupByCountry(
   return groups;
 }
 
+function popularGroup(
+  catalog: LeagueCatalogItem[],
+  locale: string,
+  label: string,
+): CountryGroup | null {
+  const byCode = new Map(catalog.map((league) => [league.code, league]));
+  const leagues = POPULAR_LEAGUE_CODES.flatMap((code) => {
+    const league = byCode.get(code);
+    return league
+      ? [{ ...league, label: translateCompetition(league.name, locale) }]
+      : [];
+  });
+  return leagues.length > 0
+    ? { country: "__popular__", countryLabel: label, leagues }
+    : null;
+}
+
 export function FollowedLeaguesCard() {
   const t = useTranslations("account.personalization");
   const locale = useLocale();
@@ -66,7 +101,11 @@ export function FollowedLeaguesCard() {
   );
 
   const groups = useMemo(() => {
-    const all = groupByCountry(catalog ?? [], locale);
+    const popular = popularGroup(catalog ?? [], locale, t("popularLeagues"));
+    const all = [
+      ...(popular ? [popular] : []),
+      ...groupByCountry(catalog ?? [], locale),
+    ];
     const query = search.trim().toLowerCase();
     if (!query) return all;
     return all
@@ -79,7 +118,7 @@ export function FollowedLeaguesCard() {
         ),
       }))
       .filter((group) => group.leagues.length > 0);
-  }, [catalog, locale, search]);
+  }, [catalog, locale, search, t]);
 
   const isLoading = loadingPersonalization || loadingCatalog;
 

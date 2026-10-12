@@ -20,7 +20,8 @@ export function IndicesDrawerButton() {
         data-tour="fixtures-indices"
       >
         <BarChart2 size={12} />
-        Indice de paris
+        <span className="sm:hidden">Réussite</span>
+        <span className="hidden sm:inline">Réussite par marché</span>
       </Button>
       <CouponIndicesDrawer
         open={open}

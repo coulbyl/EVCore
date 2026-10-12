@@ -529,7 +529,7 @@
       "leaguesTitle": "Ligues suivies",
       "leaguesSubtitle": "{count} sélectionnée(s)",
       "leaguesEmpty": "Aucun championnat suivi pour l'instant.",
-      "leaguesSearchPlaceholder": "Rechercher un championnat ou un pays...",
+      "leaguesSearchPlaceholder": "Championnat ou pays…",
       "leaguesNoResults": "Aucun championnat ne correspond.",
       "channelsTitle": "Canaux suivis",
       "channelsHint": "Retrouve ici les mesures de calibration des canaux suivis : réussite réelle comparée à la probabilité annoncée, avec le volume observé.",
@@ -548,7 +548,8 @@
         "CONSERVATIVE": "Prudent",
         "BALANCED": "Équilibré",
         "AGGRESSIVE": "Offensif"
-      }
+      },
+      "popularLeagues": "Populaires"
     }
   },
   "performance": {

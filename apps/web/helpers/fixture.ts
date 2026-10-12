@@ -33,6 +33,19 @@ export function fixtureStatusLabel(
   return labels[s] ?? labels["default"] ?? s;
 }
 
+/** Un badge « Planifié » sur chaque carte ne distingue rien : seuls les
+ * statuts qui changent la lecture du match (terminé, en cours, reporté,
+ * annulé) méritent un badge (revue UX du 2026-10-11, P2-15). */
+export function fixtureStatusIsNotable(status: string): boolean {
+  const s = status.toLowerCase();
+  return (
+    s === "finished" ||
+    s === "in_progress" ||
+    s === "postponed" ||
+    s === "cancelled"
+  );
+}
+
 export function fixtureStatusBadgeClass(status: string): string {
   const s = status.toLowerCase();
   if (s === "finished")

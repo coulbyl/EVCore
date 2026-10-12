@@ -152,21 +152,34 @@ tableau de bord ne promet jamais de gain, et le dit.
     _Capture : `mobile__onboarding.png`._
     → Ligues populaires d'abord (par volume de matchs analysés), puis la
     recherche.
+    _Corrigé le 2026-10-12 : groupe « Populaires » en tête (Ligue 1, Premier
+    League, La Liga, Serie A, Bundesliga, coupes d'Europe, Ligue 2, 2.
+    Bundesliga, Coupe du monde), placeholder raccourci. Le volume analysé
+    classait l'Argentine et le Brésil en tête : ce n'est pas ce qu'un nouvel
+    arrivant cherche, la liste est donc éditoriale._
 
 ## P2 — finitions
 
 12. Formation, mobile : le cercle d'icône recouvre le badge « À découvrir »
     sur chaque carte. _Capture : `mobile__dashboard_formation.png`._
+    _Corrigé le 2026-10-12 : la carte mise en avant réserve la hauteur des
+    badges (padding haut), le contenu ne remonte plus dessous._
 13. Mesures historiques : « PARIS MATÉRIALISÉS — 2026-07-13 → 2026-10-11 »
     en dates ISO et flèche ASCII dans un titre ; les trois tuiles sont
     empilées une par ligne en mobile (deux par ligne suffisent). Le texte
     d'introduction de six lignes se lit avant tout chiffre.
+    _Corrigé le 2026-10-12 : « du 13 juillet 2026 au 11 octobre 2026 »,
+    tuiles sur deux colonnes en mobile. L'introduction reste._
 14. Notifications : les onglets passent sur deux lignes en mobile
     (« Toutes · Non lues · Annonces » puis « Alertes »), et chaque carte
     porte une étiquette « MOYENNE » dont le sens n'est pas donné.
+    _Corrigé le 2026-10-12 : onglets sur une ligne défilante, étiquette de
+    gravité masquée quand elle vaut la valeur par défaut._
 15. Matchs, mobile : un badge « PLANIFIÉ » sur chacune des 173 cartes ne
     distingue rien ; « Indice de paris » est un bouton dont le libellé ne
     dit pas ce qu'il ouvre.
+    _Corrigé le 2026-10-12 : badge seulement pour terminé / en cours /
+    reporté / annulé ; le bouton s'appelle « Réussite par marché »._
 16. Profil : la ligne « Téléphone » est un consentement de six lignes à côté
     d'un interrupteur, sans champ de numéro. La bande d'avatars défile
     horizontalement sans indice qu'elle continue.
@@ -175,6 +188,8 @@ tableau de bord ne promet jamais de gain, et le dit.
     adresse à vérifier sans le dire avant l'envoi.
 18. Les confettis sur un coupon gagné sont rejoués à chaque visite de la
     page du jour, même pour un gain qui n'est pas le sien.
+    _Déjà corrigé par la PR #250 : une fois par jour, et seulement pour un
+    coupon que l'utilisateur a joué._
 
 ## Mesures (dev, sans cache : les temps de chargement ne sont pas
 

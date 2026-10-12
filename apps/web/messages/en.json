@@ -529,7 +529,7 @@
       "leaguesTitle": "Followed leagues",
       "leaguesSubtitle": "{count} selected",
       "leaguesEmpty": "No league followed yet.",
-      "leaguesSearchPlaceholder": "Search a league or country...",
+      "leaguesSearchPlaceholder": "League or country…",
       "leaguesNoResults": "No league matches.",
       "channelsTitle": "Followed channels",
       "channelsHint": "See calibration measures for followed channels: actual hit rate compared with announced probability, together with observed volume.",
@@ -548,7 +548,8 @@
         "CONSERVATIVE": "Conservative",
         "BALANCED": "Balanced",
         "AGGRESSIVE": "Aggressive"
-      }
+      },
+      "popularLeagues": "Popular"
     }
   },
   "performance": {
