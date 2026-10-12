@@ -114,6 +114,13 @@ export function RegisterForm() {
                     {...field}
                   />
                 </FormControl>
+                {/* Dit avant l'envoi ce qui va se passer : l'inscription
+                    mène à la vérification de cette adresse (revue UX du
+                    2026-10-11, P2-17). */}
+                <p className="text-[0.72rem] leading-snug text-muted-foreground">
+                  Un code à 6 chiffres vous sera envoyé à cette adresse pour la
+                  vérifier.
+                </p>
                 <FormMessage />
               </FormItem>
             )}
@@ -140,7 +147,7 @@ export function RegisterForm() {
             name="fullName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nom & prénoms</FormLabel>
+                <FormLabel>Nom complet</FormLabel>
                 <FormControl>
                   <Input autoComplete="name" className="h-11" {...field} />
                 </FormControl>
@@ -157,11 +164,18 @@ export function RegisterForm() {
                 <FormControl>
                   <PasswordInput
                     autoComplete="new-password"
-                    placeholder="8 caractères minimum"
+                    placeholder="Au moins 8 caractères"
                     className="h-11"
                     {...field}
                   />
                 </FormControl>
+                {/* La seule règle est la longueur (8 à 128, même règle côté
+                    serveur) : on le dit, et on conseille ce qui protège
+                    vraiment — la longueur, pas la complexité. */}
+                <p className="text-[0.72rem] leading-snug text-muted-foreground">
+                  Au moins 8 caractères. Une phrase longue et facile à retenir
+                  protège mieux qu&apos;un mot compliqué.
+                </p>
                 <FormMessage />
               </FormItem>
             )}

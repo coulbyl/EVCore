@@ -19,6 +19,7 @@ import {
 export function PhoneNumberRow({
   label,
   consentLabel,
+  noneLabel,
   placeholder,
   addLabel,
   removeLabel,
@@ -28,6 +29,7 @@ export function PhoneNumberRow({
 }: {
   label: string;
   consentLabel: string;
+  noneLabel: string;
   placeholder: string;
   addLabel: string;
   removeLabel: string;
@@ -41,6 +43,10 @@ export function PhoneNumberRow({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // Le consentement (six lignes) ne s'affiche qu'à la demande : au repos, la
+  // ligne dit « Non renseigné · Ajouter mon numéro » (revue UX du
+  // 2026-10-11, P2-16).
+  const [askingConsent, setAskingConsent] = useState(false);
 
   const hasNumber = currentUser.phoneNumber !== null;
 
@@ -106,19 +112,35 @@ export function PhoneNumberRow({
       </span>
 
       {!currentUser.phoneNumberConsentGiven ? (
-        <div className="flex flex-1 items-center justify-between gap-3 min-w-0">
-          <span className="min-w-0 text-xs text-muted-foreground">
-            {consentLabel}
-          </span>
-          <Switch
-            checked={false}
-            onCheckedChange={(checked) => {
-              void setConsent(checked);
-              if (checked) startEdit();
-            }}
-            disabled={busy}
-          />
-        </div>
+        askingConsent ? (
+          <div className="flex flex-1 items-center justify-between gap-3 min-w-0">
+            <span className="min-w-0 text-xs text-muted-foreground">
+              {consentLabel}
+            </span>
+            <Switch
+              checked={false}
+              onCheckedChange={(checked) => {
+                setAskingConsent(false);
+                void setConsent(checked);
+                if (checked) startEdit();
+              }}
+              disabled={busy}
+            />
+          </div>
+        ) : (
+          <div className="flex flex-1 items-center justify-between gap-3 min-w-0">
+            <span className="hidden truncate text-sm text-muted-foreground sm:inline">
+              {noneLabel}
+            </span>
+            <button
+              type="button"
+              onClick={() => setAskingConsent(true)}
+              className="shrink-0 text-xs font-semibold text-accent hover:underline"
+            >
+              {addLabel}
+            </button>
+          </div>
+        )
       ) : editing ? (
         <div className="flex flex-1 items-center gap-1.5 min-w-0">
           <input

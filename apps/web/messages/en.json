@@ -550,7 +550,8 @@
         "AGGRESSIVE": "Aggressive"
       },
       "popularLeagues": "Popular"
-    }
+    },
+    "phoneNone": "Not set"
   },
   "performance": {
     "headline": "Overall performance",

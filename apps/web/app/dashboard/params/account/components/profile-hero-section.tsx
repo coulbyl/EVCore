@@ -215,7 +215,10 @@ export function ProfileHeroSection() {
             <p className="text-center text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground sm:text-left">
               {t("avatar")}
             </p>
-            <div className="flex gap-1.5 overflow-x-auto pb-1">
+            {/* Le bord droit s'estompe : la bande continue au-delà de
+                l'écran, et rien ne le disait (revue UX du 2026-10-11,
+                P2-16). */}
+            <div className="flex gap-1.5 overflow-x-auto pb-1 pr-6 [mask-image:linear-gradient(to_right,black_calc(100%_-_2.5rem),transparent)]">
               {FREE_AVATARS.map((avatar) => (
                 <button
                   key={avatar.url}
@@ -350,6 +353,7 @@ export function ProfileHeroSection() {
             <PhoneNumberRow
               label={t("phone")}
               consentLabel={t("phoneConsentLabel")}
+              noneLabel={t("phoneNone")}
               placeholder={t("phonePlaceholder")}
               addLabel={t("phoneAdd")}
               removeLabel={t("phoneRemove")}

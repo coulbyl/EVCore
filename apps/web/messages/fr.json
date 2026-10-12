@@ -550,7 +550,8 @@
         "AGGRESSIVE": "Offensif"
       },
       "popularLeagues": "Populaires"
-    }
+    },
+    "phoneNone": "Non renseigné"
   },
   "performance": {
     "headline": "Performance globale",
