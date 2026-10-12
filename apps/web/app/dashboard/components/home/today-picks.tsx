@@ -36,7 +36,11 @@ const MAX_PICKS = 5;
  * 2026-08-22, CLAUDE.md) : en dessous de 1,20 il n'y a rien à jouer, au-dessus
  * de 1,80 le modèle annonce 54 % et réalise 45 %.
  */
-const ODDS_BAND = { min: 1.2, max: 1.8 } as const;
+// Plafond ramené de 1,80 à 1,65 le 2026-10-12 : sur 90 jours, les sélections
+// des canaux fiables réalisent 1,02 / 0,93 / 0,95 de l'annoncé sous 1,35 /
+// 1,50 / 1,65, puis 0,83 entre 1,65 et 1,80
+// (docs/audits/2026-10-12/MESURES-DECISIONS-COUPONS.md §1).
+const ODDS_BAND = { min: 1.2, max: 1.65 } as const;
 /** Fenêtre de mesure de la confiance des canaux, la même que Décisions. */
 const HEALTH_WINDOW_DAYS = 90;
 

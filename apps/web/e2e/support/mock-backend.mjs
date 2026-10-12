@@ -298,6 +298,31 @@ function route(method, url) {
   if (path === "/auth/me") return [200, SESSION];
   if (path === "/auth/login") return [200, SESSION, true];
   if (path.startsWith("/fixture")) return [200, { rows: [], total: 0 }];
+  if (path.startsWith("/coupons/track-record")) {
+    return [
+      200,
+      [
+        {
+          couponClass: "FAVOURITE",
+          source: "PRICE_COMPOSER",
+          days: 30,
+          settled: 24,
+          won: 19,
+          avgOdds: 1.19,
+          returnPerUnit: 0.97,
+        },
+        {
+          couponClass: "COMBO",
+          source: "ENGINE",
+          days: 30,
+          settled: 3,
+          won: 2,
+          avgOdds: 1.4,
+          returnPerUnit: 1.02,
+        },
+      ],
+    ];
+  }
   if (path === "/coupons" && method === "GET") return [200, COUPONS];
   if (path.startsWith("/coupons/") && path.endsWith("/view")) return [204, {}];
   if (path.startsWith("/coupons")) return [200, []];

@@ -32,6 +32,10 @@ import { CouponIndicesService } from './coupon-indices.service';
 import { CouponQueryDto } from './dto/coupon-query.dto';
 import { CouponIndicesQueryDto } from './dto/coupon-indices-query.dto';
 import { CouponSettleRangeQueryDto } from './dto/coupon-settle-range-query.dto';
+import {
+  CouponTrackRecordQueryDto,
+  type CouponClassTrackRecord,
+} from './dto/coupon-track-record.dto';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
 import type { CouponIndicesResponse } from './dto/coupon-indices.dto';
 
@@ -112,6 +116,19 @@ export class CouponController {
   async settle(): Promise<{ settled: boolean }> {
     await this.settlement.settleReadyProposals();
     return { settled: true };
+  }
+
+  @Get('track-record')
+  @UseGuards(AuthSessionGuard)
+  @ApiOperation({
+    summary:
+      'Measured track record per coupon product (source + target band) over the last N days',
+  })
+  @ApiOkResponse({ description: 'One row per coupon class.' })
+  async getTrackRecord(
+    @Query() query: CouponTrackRecordQueryDto,
+  ): Promise<CouponClassTrackRecord[]> {
+    return this.coupon.getTrackRecord(query.days ?? 30);
   }
 
   @Get('indices')

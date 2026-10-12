@@ -103,9 +103,11 @@ test.describe("Coupons", () => {
     await expect(
       first.getByText(/Pari sûr du jour|Safe bet of the day/),
     ).toBeVisible();
-    await expect(
-      first.getByText(/4 jours sur 5|4 days out of 5/),
-    ).toBeVisible();
+    // Historique mesuré à la place de la fréquence annoncée dès qu'il y a
+    // assez de jours réglés (24 ici) ; le combiné (3 jours) garde l'annonce.
+    await expect(first.getByTestId("coupon-track-record")).toHaveText(
+      "19 jours gagnés sur 24 (30 derniers jours)",
+    );
     await expect(first.getByTestId("leg-odds")).toHaveCount(1);
     await expect(first.getByTestId("coupon-combined-odds")).toHaveText("@1.22");
   });
