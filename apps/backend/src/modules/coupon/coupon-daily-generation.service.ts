@@ -7,12 +7,17 @@ import {
   CouponFavouriteGenerationService,
   type FavouriteGenerationOutcome,
 } from './coupon-favourite-generation.service';
+import {
+  CouponEngineComboGenerationService,
+  type EngineComboGenerationOutcome,
+} from './coupon-engine-combo-generation.service';
 
 type Failed = { outcome: 'failed'; error: string };
 
 export type DailyGenerationOutcome = {
   price: PriceGenerationOutcome | Failed;
   favourite: FavouriteGenerationOutcome | Failed;
+  combo: EngineComboGenerationOutcome | Failed;
 };
 
 /**
@@ -27,6 +32,7 @@ export class CouponDailyGenerationService {
   constructor(
     private readonly price: CouponPriceGenerationService,
     private readonly favourite: CouponFavouriteGenerationService,
+    private readonly combo: CouponEngineComboGenerationService,
   ) {}
 
   async generateForDate(forDate: Date): Promise<DailyGenerationOutcome> {
@@ -36,6 +42,9 @@ export class CouponDailyGenerationService {
       ),
       favourite: await this.guard('favourite', () =>
         this.favourite.generateForDate(forDate),
+      ),
+      combo: await this.guard('engine combo', () =>
+        this.combo.generateForDate(forDate),
       ),
     };
   }

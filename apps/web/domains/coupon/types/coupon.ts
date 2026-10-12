@@ -3,9 +3,10 @@ export type CouponClassName =
   | "BALANCED"
   | "BOLD"
   | "UNIQUE"
-  | "FAVOURITE";
+  | "FAVOURITE"
+  | "COMBO";
 
-export type CouponSource = "LLM" | "PRICE_COMPOSER";
+export type CouponSource = "LLM" | "PRICE_COMPOSER" | "ENGINE";
 
 export type CouponLegDto = {
   id: string;

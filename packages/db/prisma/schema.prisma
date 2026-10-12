@@ -266,6 +266,10 @@ enum CouponSource {
   // Compositeur déterministe par le prix (composeByPrice), aucune probabilité
   // de moteur dans son classement.
   PRICE_COMPOSER
+  // Combiné du jour composé sur les sélections du moteur (« Notre sélection »
+  // de l'écran Décisions) : canaux calibrés sur la compétition, cote courte,
+  // classées par le prix (2026-10-12).
+  ENGINE
 
   @@map("coupon_source")
   @@schema("public")

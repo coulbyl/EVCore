@@ -22,11 +22,17 @@ export function TodayCoupons() {
   const date = todayIso();
   const { data, isLoading, isError } = useCoupons(date);
 
-  const coupons = (data ?? []).slice().sort((a, b) => {
-    const oa = couponClassMeta(a.couponClass)?.order ?? 99;
-    const ob = couponClassMeta(b.couponClass)?.order ?? 99;
-    return oa !== ob ? oa - ob : a.rank - b.rank;
-  });
+  // Le coupon long (cote 5–15, un jour gagnant sur sept) reste sur la page
+  // Coupons avec sa fréquence écrite dessus, mais pas en tête de l'accueil :
+  // onze « Perdu » sur quatorze jours n'y disent rien d'utile (2026-10-12).
+  const coupons = (data ?? [])
+    .filter((c) => c.couponClass !== "UNIQUE")
+    .slice()
+    .sort((a, b) => {
+      const oa = couponClassMeta(a.couponClass)?.order ?? 99;
+      const ob = couponClassMeta(b.couponClass)?.order ?? 99;
+      return oa !== ob ? oa - ob : a.rank - b.rank;
+    });
   useCouponCelebration(coupons);
 
   return (

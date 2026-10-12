@@ -22,6 +22,16 @@ export const COUPON_CLASS_META: Record<CouponClassName, CouponClassMeta> = {
     order: -2,
     badgeVariant: "success",
   },
+  // Le combiné du jour : trois « Notre sélection » de Décisions, une par
+  // championnat, les moins chères d'abord. 78 % de jours gagnants sur 87
+  // jours, cote 1,4, pire série 3 (docs/audits/2026-10-12/
+  // MESURES-DECISIONS-COUPONS.md §5).
+  COMBO: {
+    label: "Combiné du jour · 3 sélections",
+    frequency: "Gagne environ 3 jours sur 4",
+    order: -1.5,
+    badgeVariant: "accent",
+  },
   // Le coupon long : à cote 5–15, gagner plus d'un jour sur cinq est
   // arithmétiquement impossible (P ≤ 1 / cote). Mesuré : 13 à 20 % de jours
   // gagnants. Le dire sur la carte évite de le lire comme « le même produit

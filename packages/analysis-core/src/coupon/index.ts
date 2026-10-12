@@ -5,3 +5,4 @@ export * from "./evaluated-market-leg";
 export * from "./guardrails";
 export * from "./pool-eligibility";
 export * from "./favourite-generator";
+export * from "./combo-generator";
