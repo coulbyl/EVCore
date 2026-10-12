@@ -5,7 +5,7 @@ import { formatDateUtc, tomorrowUtc } from '@utils/date.utils';
 import { BULLMQ_QUEUES } from '@config/etl.constants';
 import { BettingEngineService } from '../../betting-engine/betting-engine.service';
 import { NotificationService } from '../../notification/notification.service';
-import { CouponPriceGenerationService } from '../../coupon/coupon-price-generation.service';
+import { CouponDailyGenerationService } from '../../coupon/coupon-daily-generation.service';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 export type BettingEngineAnalysisJobData = { date?: string };
@@ -17,7 +17,7 @@ export class BettingEngineAnalysisWorker extends WorkerHost {
   constructor(
     private readonly bettingEngineService: BettingEngineService,
     private readonly notification: NotificationService,
-    private readonly couponPriceGeneration: CouponPriceGenerationService,
+    private readonly couponGeneration: CouponDailyGenerationService,
   ) {
     super();
   }
@@ -56,13 +56,16 @@ export class BettingEngineAnalysisWorker extends WorkerHost {
       logger.info({ date }, 'Price composer skipped: not tomorrow');
       return;
     }
+    // Le pari sûr du jour (favori à domicile 1,10–1,35, une jambe) lit le
+    // même vivier dans la même passe, pour la même raison ; la façade isole
+    // chaque générateur de l'autre.
     try {
-      const coupon = await this.couponPriceGeneration.generateForDate(
+      const coupons = await this.couponGeneration.generateForDate(
         new Date(`${date}T00:00:00.000Z`),
       );
-      logger.info({ date, ...coupon }, 'Price composer pass complete');
+      logger.info({ date, ...coupons }, 'Daily coupon passes complete');
     } catch (error) {
-      logger.error({ date, err: error }, 'Price composer pass failed');
+      logger.error({ date, err: error }, 'Daily coupon passes failed');
     }
   }
 

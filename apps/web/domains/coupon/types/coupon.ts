@@ -1,4 +1,9 @@
-export type CouponClassName = "SAFE" | "BALANCED" | "BOLD" | "UNIQUE";
+export type CouponClassName =
+  | "SAFE"
+  | "BALANCED"
+  | "BOLD"
+  | "UNIQUE"
+  | "FAVOURITE";
 
 export type CouponSource = "LLM" | "PRICE_COMPOSER";
 

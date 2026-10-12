@@ -121,12 +121,9 @@ export function CouponCard({
   actionSlot,
 }: CouponCardProps) {
   const probPct = jointProbability * 100;
-  const probColor =
-    probPct >= 40
-      ? "text-emerald-500"
-      : probPct >= 30
-        ? "text-amber-500"
-        : "text-muted-foreground";
+  // Plus de couleur ni de seuils sur les chances : « 15 % » en rouge se lisait
+  // comme une alerte, alors que c'est l'arithmétique d'une cote 6. La classe
+  // porte déjà la fréquence de gain en clair (« 1 jour sur 7 »).
 
   return (
     <Card className={cn("gap-3 rounded-2xl py-3", "border-border/70")}>
@@ -241,22 +238,13 @@ export function CouponCard({
                   testId="coupon-realized-odds"
                 />
               )}
-            <Metric
-              label="Proba"
-              value={formatPct(jointProbability)}
-              valueClassName={probColor}
-            />
+            <Metric label="Chances" value={formatPct(jointProbability)} />
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="flex flex-col gap-2.5 px-4">
-        <ProgressBar
-          value={Math.round(probPct)}
-          max={100}
-          thresholds={{ success: 40, warning: 25 }}
-          showValue={false}
-        />
+        <ProgressBar value={Math.round(probPct)} max={100} showValue={false} />
 
         <div className="flex flex-col gap-2">
           {legs.map((leg) => (
@@ -338,7 +326,9 @@ function CouponLegCard({
         </div>
         <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.68rem] leading-tight text-muted-foreground">
           <span className="max-w-full truncate">{leg.marketLabel}</span>
-          <span className="tabular-nums">{formatPct(leg.probability)}</span>
+          <span className="tabular-nums">
+            {formatPct(leg.probability)} de chances
+          </span>
           {leg.closing && (
             <ClosingLine
               testId="leg-closing"

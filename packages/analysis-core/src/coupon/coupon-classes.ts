@@ -87,7 +87,12 @@ export const COUPON_BOUNDS = {
  * robuste d'un découpage à l'autre, c'est la différenciation : cote
  * 2.0-2.2 / 4.5-5.5 / 11-17.7 et taux de réussite 45-48% / 17-20% / 7-9%.
  */
-export type CouponClassName = "SAFE" | "BALANCED" | "BOLD" | "UNIQUE";
+export type CouponClassName =
+  | "SAFE"
+  | "BALANCED"
+  | "BOLD"
+  | "UNIQUE"
+  | "FAVOURITE";
 
 export type CouponClass = {
   name: CouponClassName;
@@ -141,12 +146,48 @@ export const COUPON_CLASSES: readonly CouponClass[] = [
 // COUPON_CLASSES only decodes archived proposals. Its historical simulations
 // were reused during parameter selection and are not prospective validation.
 
+/**
+ * Le pari sûr du jour : UNE jambe, le plus gros favori à domicile (1X2) dont
+ * la cote d'analyse tombe dans 1,10–1,35. Abstention sinon.
+ *
+ * C'est la règle « generator-v2 » validée le 2026-09-15 sur 731 jours
+ * (2023-01 → 2026-09, `docs/audits/2026-09-15/GENERATOR.md`) : 84,8 % de
+ * jours gagnants, pire série 3 jours, ROI positif chaque année (+0,9 à
+ * +3,2 %), validation hors échantillon 85,0 % sur 400 jours. Re-vérifiée en
+ * prospectif sur les cotes d'analyse du 2026-07-01 au 2026-10-10 (80 jours,
+ * `docs/audits/2026-10-12/MESURES-DECISIONS-COUPONS.md`) : 80,0 % de jours
+ * gagnants, 81,3 % depuis le 16 septembre, pire série 2 jours.
+ *
+ * Pourquoi elle marche : le biais favori/outsider, mesuré à part sur 285 758
+ * jambes et strictement monotone — le réalisé dépasse l'implicite de 2,4
+ * points sous la cote 1,25. Aucune sortie du moteur ni du LLM n'intervient.
+ *
+ * Pourquoi une jambe et pas deux : plusieurs tickets par jour font tomber les
+ * jours gagnants de 72 % à 51 % (la journée n'est positive que si tous
+ * gagnent), et P(journée gagnante) ≤ 1 / cote combinée — à cote 5 il est
+ * arithmétiquement impossible de gagner plus d'un jour sur cinq.
+ *
+ * `targetOddsMin`/`targetOddsMax` sont la bande de cote de la jambe elle-même
+ * (une seule jambe : cote du coupon = cote de la jambe) ; ils composent la clé
+ * unique de `coupon_proposal`, donc la classe coexiste avec le coupon long
+ * 5–15 du même jour sans migration.
+ */
+export const FAVOURITE_COUPON_CLASS: CouponClass = {
+  name: "FAVOURITE",
+  minLegOdds: 1.1,
+  maxLegOdds: 1.35,
+  maxLegs: 1,
+  targetCombinedOdds: 1.1,
+  targetOddsMin: 1.1,
+  targetOddsMax: 1.35,
+};
+
 /** Retrouve la classe d'une proposition persistée depuis son `targetOddsMin`. */
 export function classForTargetOddsMin(
   targetOddsMin: number,
 ): CouponClassName | null {
   return (
-    [UNIFIED_COUPON_CLASS, ...COUPON_CLASSES].find(
+    [UNIFIED_COUPON_CLASS, FAVOURITE_COUPON_CLASS, ...COUPON_CLASSES].find(
       (c) => c.targetOddsMin === targetOddsMin,
     )?.name ?? null
   );

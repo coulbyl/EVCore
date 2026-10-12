@@ -132,6 +132,9 @@ tableau de bord ne promet jamais de gain, et le dit.
    → État vide guidé : « Vous n'avez pas encore joué de coupon. Voir le
    coupon du jour → ». Les tuiles n'apparaissent qu'à partir du premier
    coupon.
+   _Corrigé le 2026-10-12 : état vide guidé (jamais joué), « Aucun coupon
+   sur cette période » avec un bouton « Afficher les 90 derniers jours »
+   sinon, tuiles seulement quand la période contient un coupon._
 
 10. **La devise « F » apparaît partout** (« 0 F » dans l'en-tête, les tuiles)
     sans que l'utilisateur ait choisi de devise ni déposé quoi que ce soit ;
@@ -139,6 +142,8 @@ tableau de bord ne promet jamais de gain, et le dit.
     place la plus visible de l'écran.
     → Masquer le portefeuille tant qu'il est vide, ou l'afficher dans la
     devise choisie à l'inscription.
+    _Corrigé le 2026-10-12 : icône seule tant que le solde est à zéro (elle
+    reste l'entrée vers la page Portefeuille), montant dès qu'il y en a un._
 
 11. **Onboarding en trois étapes** : correct, mais le champ de recherche a
     un placeholder tronqué (« Rechercher un championnat ou un ») et la liste
@@ -200,3 +205,11 @@ d'avatars).
 4. Indicateur de confiance unique par pick, clôture reléguée (P1-7) et
    boutons flottants (P1-8).
 5. États vides guidés et devise (P1-9, P1-10), puis les finitions.
+
+## Suite (2026-10-12)
+
+Mesures Décisions / Coupons et critique du point de vue d'un utilisateur
+lambda : `docs/audits/2026-10-12/MESURES-DECISIONS-COUPONS.md` (une
+sélection mise en avant par match, « Pari sûr du jour » en premier, coupon
+5–15 renommé « Coupon long » avec sa fréquence de gain en clair).
+

@@ -3,6 +3,24 @@
 import { BookOpen } from "lucide-react";
 import { useWeeklyBrief } from "@/domains/dashboard/use-cases/get-weekly-brief";
 
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function firstSentence(text: string): string {
+  const match = /^(.{20,}?[.!?])(\s|$)/.exec(text);
+  return match?.[1] ?? text;
+}
+
 function isMonday(): boolean {
   return new Date().getDay() === 1;
 }
@@ -13,10 +31,16 @@ export function WeeklyBrief() {
   if (!isMonday()) return null;
   if (isLoading || !brief) return null;
 
-  const narrative =
-    (brief.payload?.narrative as string | undefined) ??
-    brief.body.split("\n")[0] ??
-    brief.title;
+  // Le corps d'une annonce est du HTML rédigé dans l'éditeur admin : affiché
+  // tel quel, un utilisateur lisait « <p>Vous connaissez déjà… <strong> ».
+  // On n'en garde que le texte, et la première phrase.
+  const narrative = firstSentence(
+    stripHtml(
+      (brief.payload?.narrative as string | undefined) ??
+        brief.body.split("\n")[0] ??
+        brief.title,
+    ),
+  );
 
   const roiOneXTwo = brief.payload?.roiOneXTwo;
   const positive = roiOneXTwo !== undefined ? roiOneXTwo >= 0 : false;

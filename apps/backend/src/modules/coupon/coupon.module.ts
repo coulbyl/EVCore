@@ -5,6 +5,8 @@ import { CouponRepository } from './coupon.repository';
 import { CouponSettlementService } from './coupon-settlement.service';
 import { CouponService } from './coupon.service';
 import { CouponPriceGenerationService } from './coupon-price-generation.service';
+import { CouponFavouriteGenerationService } from './coupon-favourite-generation.service';
+import { CouponDailyGenerationService } from './coupon-daily-generation.service';
 import { CouponIndicesService } from './coupon-indices.service';
 import { CouponController } from './coupon.controller';
 import { OddsClosingLineRepository } from '../betting-engine/pricing/odds-closing-line.repository';
@@ -29,12 +31,16 @@ import { OddsClosingLineRepository } from '../betting-engine/pricing/odds-closin
     CouponService,
     CouponIndicesService,
     CouponPriceGenerationService,
+    CouponFavouriteGenerationService,
+    CouponDailyGenerationService,
   ],
   exports: [
     CouponService,
     CouponSettlementService,
     CouponRepository,
     CouponPriceGenerationService,
+    CouponFavouriteGenerationService,
+    CouponDailyGenerationService,
   ],
 })
 export class CouponModule {}

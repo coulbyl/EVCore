@@ -59,6 +59,12 @@ const MIN_MARKET_LEGS = 2_000;
 const MAX_CREDITED_RETURN = 1;
 
 const TARGETS = [
+  // Cibles courtes ajoutées le 2026-10-12 : un utilisateur lambda juge un
+  // coupon sur la fréquence des jours gagnants, et la calibration des jambes
+  // ne tient qu'en dessous de 1,50 (CLAUDE.md). Elles mesurent ce que coûte
+  // un coupon qui gagne la plupart des jours.
+  { label: "1.3 - 1.6", min: 1.3, max: 1.6 },
+  { label: "1.5 - 2", min: 1.5, max: 2 },
   { label: "2 - 3", min: 2, max: 3 },
   { label: "3 - 5", min: 3, max: 5 },
   { label: "5 - 8", min: 5, max: 8 },
@@ -482,7 +488,9 @@ candidat mesuré est l'Asian Handicap
     "..",
     "docs",
     "audits",
-    "2026-09-16",
+    // Un dossier par jour d'exécution : relancé le 2026-10-12 sur un dump
+    // frais, le rapport écrasait l'audit du 2026-09-16.
+    new Date().toISOString().slice(0, 10),
   );
   mkdirSync(directory, { recursive: true });
   writeFileSync(join(directory, "COMPOSITEUR.md"), markdown);

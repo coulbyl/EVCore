@@ -287,6 +287,22 @@ export {
  */
 export const PRICE_COMPOSER_SIGNAL_WINDOW_DAYS = 0;
 
+/**
+ * Politique du pari sûr du jour (règle « generator-v2 », une jambe : le plus
+ * gros favori à domicile dont la cote d'analyse tombe dans 1,10–1,35 — voir
+ * FAVOURITE_COUPON_CLASS dans @evcore/analysis-core pour la mesure).
+ *
+ * Il tourne dans la même passe que le compositeur par le prix, sur le même
+ * vivier (`evaluated_pick` du lendemain), et s'enregistre comme proposition
+ * PRICE_COMPOSER avec sa propre bande cible : la clé unique de
+ * `coupon_proposal` porte `targetOddsMin`/`targetOddsMax`, donc il coexiste
+ * avec le coupon long 5–15 sans migration.
+ */
+export const FAVOURITE_POLICY = {
+  version: 'favourite-v2',
+  pass: 'favourite',
+} as const;
+
 export const PRICE_COMPOSER_POLICY = {
   version: 'price-composer-5-15-v1',
   /**

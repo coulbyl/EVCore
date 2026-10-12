@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Page Coupons sur le faux backend (e2e/support/mock-backend.mjs) : quatre
- * coupons du 2026-10-05, un par issue, et les deux générateurs.
+ * Page Coupons sur le faux backend (e2e/support/mock-backend.mjs) : cinq
+ * coupons du 2026-10-05 — le pari sûr du jour, puis un par issue — et les
+ * deux générateurs.
  *
  * Ce que l'écran doit dire, et qu'il ne disait pas avant le 2026-10-08 :
  * la cote payée quand elle diffère de la cote proposée (PARTIAL), le
@@ -24,7 +25,7 @@ test.describe("Coupons", () => {
       has: page.getByTestId("coupon-combined-odds"),
     });
     const count = await cards.count();
-    expect(count).toBe(4);
+    expect(count).toBe(5);
     for (let i = 0; i < count; i += 1) {
       const card = cards.nth(i);
       const combined = Number(
@@ -72,8 +73,10 @@ test.describe("Coupons", () => {
   test("les deux générateurs et le coupon remboursé sont identifiés", async ({
     page,
   }) => {
-    await expect(page.getByText("Prix", { exact: true })).toHaveCount(1);
-    await expect(page.getByText("Analyse", { exact: true })).toHaveCount(3);
+    await expect(
+      page.getByText("Choisi sur les cotes", { exact: true }),
+    ).toHaveCount(2);
+    await expect(page.getByText("Analyse IA", { exact: true })).toHaveCount(3);
     // `textContent`, pas `innerText` : le badge est mis en majuscules par le
     // CSS, ce qui n'est pas le texte qu'on vérifie.
     const results = await page.getByTestId("coupon-result").allTextContents();
@@ -85,5 +88,22 @@ test.describe("Coupons", () => {
         "Remboursé",
       ]),
     );
+  });
+
+  test("le pari sûr du jour est affiché en premier, avec une seule jambe", async ({
+    page,
+  }) => {
+    const cards = page.locator("[data-slot=card]").filter({
+      has: page.getByTestId("coupon-combined-odds"),
+    });
+    const first = cards.first();
+    await expect(
+      first.getByText(/Pari sûr du jour|Safe bet of the day/),
+    ).toBeVisible();
+    await expect(
+      first.getByText(/4 jours sur 5|4 days out of 5/),
+    ).toBeVisible();
+    await expect(first.getByTestId("leg-odds")).toHaveCount(1);
+    await expect(first.getByTestId("coupon-combined-odds")).toHaveText("@1.22");
   });
 });

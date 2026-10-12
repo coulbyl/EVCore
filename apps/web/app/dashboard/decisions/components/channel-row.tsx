@@ -75,6 +75,7 @@ export function ChannelRow({
   competitionCode?: string | null;
   calibrationByKey?: ChannelCalibrationByKey;
 }) {
+  const t = useTranslations("decisions");
   const loc = locale === "en" ? "en" : "fr";
   const selection =
     decision?.status === "SELECTED" ? decision.selections[0] : undefined;
@@ -130,11 +131,11 @@ export function ChannelRow({
               </span>
             )}
             <span className="tabular-nums">
-              {formatPct(selection.probability)}
+              {t("chances", { pct: formatPct(selection.probability) })}
             </span>
             {odds !== null && (
               <span className="font-semibold tabular-nums text-foreground">
-                {odds}
+                @{odds}
               </span>
             )}
             <ClosingLine

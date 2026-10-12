@@ -71,13 +71,10 @@ export function TodayCoupons() {
       )}
 
       {!isLoading && !isError && coupons.length > 0 && (
-        <div
-          className={
-            coupons.length > 1
-              ? "grid grid-cols-1 gap-4 xl:grid-cols-2"
-              : "grid grid-cols-1 gap-4"
-          }
-        >
+        <div className="grid grid-cols-1 gap-4">
+          {/* Toujours une colonne : à deux cartes côte à côte dans la colonne
+              principale, les noms d'équipes et la tuile « Chances » étaient
+              tronqués à 1 280 px. */}
           {coupons.map((coupon) => (
             <CouponCard key={coupon.id} coupon={coupon} locale={locale} />
           ))}

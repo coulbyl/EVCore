@@ -424,13 +424,28 @@ export class CouponRepository {
       odds: number;
       expectedReturn: number;
     }[];
+    /**
+     * Profil écrit dans la clé unique et dans `reasoning.policyVersion`. Par
+     * défaut le coupon long 5–15 du compositeur ; le pari sûr du jour passe
+     * sa propre bande (FAVOURITE_COUPON_CLASS) et sa propre version.
+     */
+    profile?: {
+      targetOddsMin: number;
+      targetOddsMax: number;
+      policyVersion: string;
+    };
   }): Promise<string> {
+    const profile = input.profile ?? {
+      targetOddsMin: UNIFIED_COUPON_CLASS.targetOddsMin,
+      targetOddsMax: UNIFIED_COUPON_CLASS.targetOddsMax,
+      policyVersion: PRICE_COMPOSER_POLICY.version,
+    };
     const key = {
       forDate: startOfUtcDay(input.forDate),
       source: CouponSource.PRICE_COMPOSER,
       signalWindowDays: PRICE_COMPOSER_SIGNAL_WINDOW_DAYS,
-      targetOddsMin: new Prisma.Decimal(UNIFIED_COUPON_CLASS.targetOddsMin),
-      targetOddsMax: new Prisma.Decimal(UNIFIED_COUPON_CLASS.targetOddsMax),
+      targetOddsMin: new Prisma.Decimal(profile.targetOddsMin),
+      targetOddsMax: new Prisma.Decimal(profile.targetOddsMax),
       rank: 1,
     };
     // Probabilité de gain implicite du coupon : retour attendu rapporté à la
@@ -448,7 +463,7 @@ export class CouponRepository {
       signalScore: new Prisma.Decimal(0),
       lastFixtureScheduledAt: input.lastFixtureScheduledAt,
       reasoning: {
-        policyVersion: PRICE_COMPOSER_POLICY.version,
+        policyVersion: profile.policyVersion,
         expectedReturn: input.expectedReturn,
         legs: input.legs.map((leg) => ({
           market: leg.market,
@@ -494,12 +509,15 @@ export class CouponRepository {
     candidateCount: number;
     reason?: string;
     proposalId?: string;
+    /** Par défaut la passe du compositeur 5–15 ; le pari sûr passe la sienne. */
+    pass?: { name: string; policyVersion: string };
   }): Promise<void> {
     await this.prisma.client.couponGenerationAttempt.create({
       data: {
         forDate: startOfUtcDay(input.forDate),
-        policyVersion: PRICE_COMPOSER_POLICY.version,
-        pass: 'price-composer',
+        policyVersion:
+          input.pass?.policyVersion ?? PRICE_COMPOSER_POLICY.version,
+        pass: input.pass?.name ?? 'price-composer',
         outcome: input.outcome,
         candidateCount: input.candidateCount,
         reason: input.reason ?? null,
