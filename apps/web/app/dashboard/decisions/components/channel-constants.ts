@@ -201,6 +201,8 @@ const REASON_LABEL_KEY: Record<string, string> = {
   no_modelable_scoreline: "reasons.no_modelable_scoreline",
   below_conviction: "reasons.below_conviction",
   BACKFILL: "reasons.BACKFILL",
+  VANTAGE_GATED_ODDS: "reasons.VANTAGE_GATED_ODDS",
+  VANTAGE_GATED_MARKET: "reasons.VANTAGE_GATED_MARKET",
 };
 
 type Translator = (key: string) => string;

@@ -9,6 +9,7 @@ const buildMatchContext = vi.fn();
 const requestVantageCompletion = vi.fn();
 const requestSituationalResearch = vi.fn().mockResolvedValue(null);
 const persistVantageDecision = vi.fn().mockResolvedValue(undefined);
+const persistVantageGateRejection = vi.fn().mockResolvedValue(undefined);
 
 vi.mock("../context/build-match-context", () => ({
   buildMatchContext: (...args: unknown[]) => buildMatchContext(...args),
@@ -24,6 +25,8 @@ vi.mock("../research", () => ({
 vi.mock("./persist-decision", () => ({
   persistVantageDecision: (...args: unknown[]) =>
     persistVantageDecision(...args),
+  persistVantageGateRejection: (...args: unknown[]) =>
+    persistVantageGateRejection(...args),
 }));
 
 const noopLogger = { warn: vi.fn(), info: vi.fn() } as unknown as Logger;
@@ -70,6 +73,115 @@ beforeEach(() => {
   vi.clearAllMocks();
   requestSituationalResearch.mockResolvedValue(null);
   persistVantageDecision.mockResolvedValue(undefined);
+  persistVantageGateRejection.mockResolvedValue(undefined);
+});
+
+describe("analyzeFixture — MAX_ODDS cap and self-calibration gate (v4, 2026-10-13)", () => {
+  it("gates a play whose known odds are above 1.80 and persists the refusal as a REJECTED decision", async () => {
+    buildMatchContext.mockResolvedValue({
+      ...baseContext,
+      readings: [{ ...baseContext.readings[0]!, odds: 2.4 }],
+    });
+    requestVantageCompletion.mockResolvedValue(playResponse());
+
+    const result = await analyzeFixture(
+      "fixture-1",
+      dummyClients,
+      dummyConfig,
+      noopLogger,
+    );
+
+    expect(result).toEqual({ outcome: "gated", reason: "odds_cap" });
+    expect(persistVantageDecision).not.toHaveBeenCalled();
+    expect(persistVantageGateRejection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reasonCode: "VANTAGE_GATED_ODDS",
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        odds: 2.4,
+        text: expect.stringContaining("dépasse 1.80"),
+      }),
+    );
+  });
+
+  it("gates a play on a market VANTAGE has measured itself unreliable on (ratio < 0.70, n >= 100)", async () => {
+    buildMatchContext.mockResolvedValue({
+      ...baseContext,
+      readings: [{ ...baseContext.readings[0]!, odds: 1.5 }],
+      vantageMarketCalibration: [
+        { market: "ONE_X_TWO", sampleSize: 140, calibrationRatio: 0.62 },
+      ],
+    });
+    requestVantageCompletion.mockResolvedValue(playResponse());
+
+    const result = await analyzeFixture(
+      "fixture-1",
+      dummyClients,
+      dummyConfig,
+      noopLogger,
+    );
+
+    expect(result).toEqual({ outcome: "gated", reason: "self_calibration" });
+    expect(persistVantageGateRejection).toHaveBeenCalledWith(
+      expect.objectContaining({ reasonCode: "VANTAGE_GATED_MARKET" }),
+    );
+    // The closed market is announced to the model up front.
+    const userPrompt = requestVantageCompletion.mock.calls[0]?.[2] as string;
+    expect(userPrompt).toContain("marchés fermés");
+    expect(userPrompt).toContain("ONE_X_TWO (");
+  });
+
+  it("keeps a market open while its sample is below 100 or its ratio at or above 0.70", async () => {
+    buildMatchContext.mockResolvedValue({
+      ...baseContext,
+      readings: [{ ...baseContext.readings[0]!, odds: 1.5 }],
+      vantageMarketCalibration: [
+        { market: "ONE_X_TWO", sampleSize: 60, calibrationRatio: 0.5 },
+        { market: "BTTS", sampleSize: 400, calibrationRatio: 0.84 },
+      ],
+    });
+    requestVantageCompletion.mockResolvedValue(playResponse());
+
+    const result = await analyzeFixture(
+      "fixture-1",
+      dummyClients,
+      dummyConfig,
+      noopLogger,
+    );
+
+    expect(result.outcome).toBe("persisted");
+    expect(persistVantageGateRejection).not.toHaveBeenCalled();
+  });
+
+  it("sanitises the player-facing text before persisting, play or no_play", async () => {
+    buildMatchContext.mockResolvedValue({
+      ...baseContext,
+      readings: [{ ...baseContext.readings[0]!, odds: 1.5 }],
+    });
+    requestVantageCompletion.mockResolvedValue(
+      JSON.stringify({
+        verdict: "play",
+        basis: "raw_stats",
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        probability: 0.6,
+        reasonDetails:
+          "Le canal DOMINANT (calibration 0,9×) soutient le pick ONE_X_TWO HOME.",
+      }),
+    );
+
+    await analyzeFixture("fixture-1", dummyClients, dummyConfig, noopLogger);
+
+    const persisted = persistVantageDecision.mock.calls[0]?.[2] as {
+      reasonDetails: string;
+      basis?: string;
+    };
+    expect(persisted.reasonDetails).not.toMatch(
+      /ONE_X_TWO|DOMINANT|calibration 0/,
+    );
+    expect(persisted.reasonDetails).toContain("nos données internes");
+    expect(persisted.basis).toBe("raw_stats");
+  });
 });
 
 describe("analyzeFixture — MIN_ODDS floor", () => {

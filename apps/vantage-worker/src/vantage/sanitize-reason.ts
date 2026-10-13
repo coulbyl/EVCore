@@ -1,0 +1,143 @@
+import { formatMarketForDisplayFr, Market } from "@evcore/analysis-core";
+
+/**
+ * Nettoyage déterministe du texte lu par le joueur.
+ *
+ * Le prompt interdit les codes techniques et le jargon de calibration dans
+ * "reasonDetails", et le modèle les laisse quand même passer : mesuré le
+ * 2026-10-13 sur 8 189 verdicts « play », 36 % des textes contenaient un
+ * code de marché, le mot « canal » ou un ratio de calibration brut (24 %
+ * sur les 173 plus récents, après le durcissement du prompt du 09-07).
+ * Rejeter la réponse ferait perdre le verdict pour un défaut de forme ;
+ * on corrige la forme, déterministiquement, et on laisse le verdict.
+ *
+ * Trois familles de remplacement, dans cet ordre :
+ *  1. les codes de pick connus (« UNDER_2_5 », « OVER_1_5 »…) → leur libellé
+ *     français ;
+ *  2. les codes de marché (« OVER_UNDER », « BTTS »…) → leur libellé ;
+ *  3. le jargon interne : « le canal X », « calibration 0,65× », « n=42 »,
+ *     « marché= », « pick= » → langage courant ou suppression.
+ * Les espaces sont ensuite normalisés. Rien d'autre n'est touché : le
+ * sens de la phrase reste celui du modèle.
+ */
+
+const MARKET_CODES = Object.values(Market) as string[];
+
+/** Codes de pick dont le libellé ne dépend pas du marché. */
+const PICK_LABELS: Record<string, string> = {
+  OVER_0_5: "plus de 0,5 but",
+  UNDER_0_5: "moins de 0,5 but",
+  OVER_1_5: "plus de 1,5 but",
+  UNDER_1_5: "moins de 1,5 but",
+  OVER_2_5: "plus de 2,5 buts",
+  UNDER_2_5: "moins de 2,5 buts",
+  OVER_3_5: "plus de 3,5 buts",
+  UNDER_3_5: "moins de 3,5 buts",
+  OVER_4_5: "plus de 4,5 buts",
+  UNDER_4_5: "moins de 4,5 buts",
+};
+
+const CHANNEL_WORDS = [
+  "DOMINANT",
+  "VALUE",
+  "SAFE",
+  "GOALS",
+  "FIRST_HALF",
+  "DRAW_NO_BET",
+  "DRAW",
+  "BTTS",
+  "CONSENSUS",
+  "CONTRARIAN",
+  "AVOID",
+  "UNDERDOG",
+  "FAVORITE",
+  "LIVE_VALUE",
+  "MARKET_MOVE",
+  "WIN_TO_NIL",
+  "CLEAN_SHEET",
+  "TEAM_TOTAL",
+  "WIN_EITHER_HALF",
+  "DOUBLE_CHANCE",
+  "CORRECT_SCORE",
+  "OVER_UNDER_HT",
+  "HALF_TIME_FULL_TIME",
+  "RESULT_TOTAL_GOALS",
+  "RESULT_BTTS",
+  "VANTAGE",
+];
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Code brut → libellé, avec un libellé de marché si le code en est un. */
+function marketLabel(code: string): string {
+  return formatMarketForDisplayFr(code as Market).toLowerCase();
+}
+
+export function sanitizeReasonText(text: string): string {
+  let out = text;
+
+  // « marché=X », « pick=Y », « ligne=Z » : balises de contexte recopiées.
+  out = out.replace(/\b(marché|pick|ligne)\s*=\s*/gi, "");
+
+  // « le canal DRAW », « canal BTTS (calibration 0,65×) » → nos données.
+  const channelAlternation = CHANNEL_WORDS.map(escapeRegExp).join("|");
+  out = out.replace(
+    new RegExp(
+      `\\b(?:le |du |un |notre )?canal\\s+(?:${channelAlternation})\\b(?:\\s*\\((?:calibration|fiabilité)[^)]*\\))?`,
+      "gi",
+    ),
+    "nos données internes",
+  );
+  // Picks à ligne (OVER_2_5…), avant les marchés pour que « OVER_UNDER »
+  // ne mange pas « OVER_2_5 ».
+  for (const [code, label] of Object.entries(PICK_LABELS)) {
+    out = out.replace(new RegExp(`\\b${escapeRegExp(code)}\\b`, "g"), label);
+  }
+
+  // Codes de marché, du plus long au plus court (CLEAN_SHEET_HOME avant
+  // CLEAN_SHEET).
+  for (const code of [...MARKET_CODES].sort((a, b) => b.length - a.length)) {
+    out = out.replace(
+      new RegExp(`\\b${escapeRegExp(code)}\\b`, "g"),
+      marketLabel(code),
+    );
+  }
+
+  // Picks de résultat quand ils restent collés à un marché déjà traduit.
+  out = out
+    .replace(/\bHOME\b/g, "domicile")
+    .replace(/\bAWAY\b/g, "extérieur")
+    .replace(/\bYES\b/g, "oui")
+    .replace(/\bNO\b/g, "non");
+
+  // Un code de canal resté seul.
+  out = out.replace(
+    new RegExp(`\\b(?:${channelAlternation})\\b`, "g"),
+    "nos données internes",
+  );
+  // Le mot « canal » lui-même, quand il reste.
+  out = out
+    .replace(/\bles canaux\b/gi, "nos lectures")
+    .replace(/\bdes canaux\b/gi, "de nos lectures")
+    .replace(/\baux canaux\b/gi, "à nos lectures")
+    .replace(/\bcanaux\b/gi, "lectures")
+    .replace(/\b(?:le |un |ce |du )?canal\b/gi, "notre lecture");
+
+  // « (calibration 0,65×, n=42) », « calibration 1,2x », « n=38 ».
+  out = out
+    .replace(/\(\s*(?:calibration|fiabilité)[^)]*\)/gi, "")
+    .replace(
+      /\bcalibration\s+(?:de\s+)?\d+(?:[.,]\d+)?\s*[×x]?/gi,
+      "fiabilité mesurée",
+    )
+    .replace(/\(?\bn\s*=\s*\d+\)?/g, "");
+
+  return out
+    .replace(/\s+([,.;:!?])/g, "$1")
+    .replace(/\(\s*\)/g, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\s+\n/g, "\n")
+    .trim();
+}

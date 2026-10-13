@@ -3,7 +3,12 @@ import { prisma } from "@evcore/db";
 import { Market } from "@evcore/analysis-core";
 import type { StrategyChannel } from "@evcore/analysis-core";
 import { STRATEGY_CHANNEL } from "@evcore/analysis-core";
-import type { ChannelCalibration, ChannelReading, MatchContext } from "./types";
+import type {
+  ChannelCalibration,
+  ChannelReading,
+  MatchContext,
+  VantageMarketCalibration,
+} from "./types";
 import { extractNearMiss } from "./near-miss";
 import { loadTeamSignal, loadCoachSignal } from "./team-signals";
 import { loadH2HSignal } from "./h2h-signal";
@@ -18,6 +23,14 @@ import {
 // floor used for `channels_n30` reporting elsewhere (see track-record page).
 // Below this, ROI/hit-rate swing too much on noise to cite as a reason.
 const MIN_CALIBRATION_SAMPLE = 30;
+
+/** Window and odds cap of VANTAGE's own per-market calibration — the same
+ * cap analyze-fixture.ts enforces (MAX_ODDS), so the population measured is
+ * the population that can still be played. */
+export const VANTAGE_SELF_CALIBRATION = {
+  windowDays: 90,
+  maxOdds: 1.8,
+} as const;
 
 /** Assembles everything VANTAGE is allowed to see for one fixture: what every
  * other channel picked (or rejected) on THIS match, how reliable each of
@@ -145,6 +158,7 @@ export async function buildMatchContext(
 
   const [
     calibration,
+    vantageMarketCalibration,
     homeTeamStats,
     awayTeamStats,
     homeCoach,
@@ -157,6 +171,10 @@ export async function buildMatchContext(
       competitionCode,
       readings.map((r) => r.channel),
     ),
+    loadVantageMarketCalibration(kickoff).catch((err: unknown) => {
+      logSignal("vantageMarketCalibration")(err);
+      return [] as VantageMarketCalibration[];
+    }),
     loadTeamSignal(fixture.homeTeamId, fixture.seasonId, kickoff).catch(
       logSignal("homeTeamStats"),
     ),
@@ -199,7 +217,56 @@ export async function buildMatchContext(
     ),
     extendedMarketOdds,
     fullOddsSnapshot,
+    vantageMarketCalibration,
   };
+}
+
+/**
+ * VANTAGE measured against itself, market by market, on the trailing window
+ * and inside the odds cap. Measured 2026-10-13 on 2 894 settled picks: the
+ * odds cap alone brings every market back near calibration (BTTS 1.02,
+ * ONE_X_TWO 1.02, OVER_UNDER 0.90, TO_WIN_EITHER_HALF 0.94) except the team
+ * totals (0.79–0.82) and DOUBLE_CHANCE (0.84) — this is the safety net that
+ * closes a market automatically if it drifts, without a code change.
+ */
+async function loadVantageMarketCalibration(
+  before: Date,
+): Promise<VantageMarketCalibration[]> {
+  const since = new Date(
+    before.getTime() - VANTAGE_SELF_CALIBRATION.windowDays * 86_400_000,
+  );
+  const rows = await prisma.channelSelection.findMany({
+    where: {
+      result: { in: ["WON", "LOST"] },
+      odds: { lte: VANTAGE_SELF_CALIBRATION.maxOdds },
+      channelDecision: {
+        channel: STRATEGY_CHANNEL.VANTAGE,
+        modelRun: { fixture: { scheduledAt: { gte: since, lt: before } } },
+      },
+    },
+    select: { market: true, result: true, probability: true },
+  });
+  const byMarket = new Map<
+    Market,
+    { won: number; total: number; announced: number }
+  >();
+  for (const row of rows) {
+    const bucket = byMarket.get(row.market) ?? {
+      won: 0,
+      total: 0,
+      announced: 0,
+    };
+    bucket.total += 1;
+    bucket.announced += Number(row.probability);
+    if (row.result === "WON") bucket.won += 1;
+    byMarket.set(row.market, bucket);
+  }
+  return [...byMarket.entries()].map(([market, bucket]) => ({
+    market,
+    sampleSize: bucket.total,
+    calibrationRatio:
+      bucket.announced > 0 ? bucket.won / bucket.announced : null,
+  }));
 }
 
 /** Ratio réel/annoncé per channel, scoped to one competition — same

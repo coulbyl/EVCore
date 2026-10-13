@@ -141,7 +141,32 @@ describe("buildUserPrompt", () => {
   it("allows a play beyond inter-channel tension, but still requires a real basis", () => {
     expect(SYSTEM_PROMPT).toContain("lecture proche du seuil");
     expect(SYSTEM_PROMPT).toContain(
-      'Un simple consensus entre canaux SELECTED, sans aucune de ces trois bases, reste un "no_play"',
+      'Un simple consensus entre canaux, sans l\'une de ces bases, reste un "no_play"',
+    );
+  });
+
+  it("asks for the basis of a play and states the play budget (2026-10-13: v3 played 70 % of fixtures against a prompt saying no_play is the norm)", () => {
+    expect(SYSTEM_PROMPT).toContain('"basis"');
+    expect(SYSTEM_PROMPT).toContain(
+      "sur dix matchs, tu en joues au plus trois",
+    );
+    expect(buildUserPrompt(baseContext, null)).toContain(
+      '"basis":"tension|near_threshold|raw_stats"',
+    );
+  });
+
+  it("states the hard constraints before the numbers: odds cap and closed markets", () => {
+    const prompt = buildUserPrompt(baseContext, null, {
+      maxOdds: 1.8,
+      closedMarkets: ["TEAM_TOTAL_HOME"],
+    });
+    expect(prompt).toContain(
+      'Contraintes : cote visible d\'un "play" entre 1.20 et 1.80 inclus',
+    );
+    expect(prompt).toContain("marchés fermés");
+    expect(prompt).toContain("TEAM_TOTAL_HOME (");
+    expect(buildUserPrompt(baseContext, null)).toContain(
+      "aucun marché fermé aujourd'hui",
     );
   });
 

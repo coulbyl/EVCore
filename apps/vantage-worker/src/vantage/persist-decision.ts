@@ -42,6 +42,9 @@ export async function persistVantageDecision(
   // on every ModelRun.
   const reasonDetails = {
     text: response.reasonDetails,
+    ...(response.verdict === "play" && response.basis
+      ? { basis: response.basis }
+      : {}),
     ...(research ? { researchCitations: research.citations } : {}),
   };
   const newSelection =
@@ -101,6 +104,65 @@ export async function persistVantageDecision(
         probability:
           response.verdict === "play" ? response.probability : undefined,
         odds: response.verdict === "play" ? (odds ?? undefined) : undefined,
+      },
+    }),
+  ]);
+}
+
+/**
+ * A "play" the deterministic gates refused (odds cap, self-calibration),
+ * written as a REJECTED decision with its own reason code — so the fixture
+ * is not re-read on every sweep (find-eligible-fixtures.ts only looks for a
+ * missing VANTAGE row, and until 2026-10-13 a gated play left none, which
+ * meant a new LLM call every five minutes on the same fixture until kickoff)
+ * and so the refusal is visible in the timeline like any other verdict.
+ */
+export async function persistVantageGateRejection(input: {
+  fixtureId: string;
+  modelRunId: string;
+  configVersion: string;
+  reasonCode: "VANTAGE_GATED_ODDS" | "VANTAGE_GATED_MARKET";
+  text: string;
+  market: string;
+  pick: string;
+  odds: number | null;
+}): Promise<void> {
+  const reasonDetails = {
+    text: input.text,
+    gated: { market: input.market, pick: input.pick, odds: input.odds },
+  };
+  await prisma.$transaction([
+    prisma.channelDecision.upsert({
+      where: {
+        modelRunId_channel: {
+          modelRunId: input.modelRunId,
+          channel: STRATEGY_CHANNEL.VANTAGE,
+        },
+      },
+      create: {
+        modelRunId: input.modelRunId,
+        channel: STRATEGY_CHANNEL.VANTAGE,
+        status: "REJECTED",
+        reasonCode: input.reasonCode,
+        reasonDetails,
+        configVersion: input.configVersion,
+      },
+      update: {
+        status: "REJECTED",
+        reasonCode: input.reasonCode,
+        reasonDetails,
+        configVersion: input.configVersion,
+        selections: { deleteMany: {} },
+      },
+    }),
+    prisma.vantageDecisionHistory.create({
+      data: {
+        fixtureId: input.fixtureId,
+        modelRunId: input.modelRunId,
+        status: "REJECTED",
+        reasonCode: input.reasonCode,
+        reasonDetails,
+        configVersion: input.configVersion,
       },
     }),
   ]);

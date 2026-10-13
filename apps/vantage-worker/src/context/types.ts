@@ -53,6 +53,15 @@ export type ChannelCalibration = {
   calibrationRatio: number | null;
 };
 
+/** VANTAGE's own measured calibration on one market (trailing window,
+ * settled picks inside the odds cap) — what it has actually delivered
+ * against what it announced, market by market. */
+export type VantageMarketCalibration = {
+  market: Market;
+  sampleSize: number;
+  calibrationRatio: number | null;
+};
+
 /** Raw features for one team, straight from `team_stats` — the same table
  * the deterministic engine itself reads (`betting-engine.service.ts`'s
  * `teamStats.findFirst`). Gives VANTAGE a basis to form a view independent
@@ -148,4 +157,5 @@ export type MatchContext = {
    * (market, pick) regardless of which market it is, not just ONE_X_TWO.
    * `null`/absent when the fixture has no odds at all. */
   fullOddsSnapshot?: FullOddsSnapshot | null;
+  vantageMarketCalibration?: readonly VantageMarketCalibration[];
 };
