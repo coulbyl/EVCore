@@ -77,11 +77,21 @@ function tier(status: Status, odds: number, config: ComboConfig): number {
   return 4;
 }
 
-export function composeEngineCombo(
+/**
+ * Les jambes éligibles à un combiné, dans l'ordre où le compositeur les
+ * prend : la sélection mise en avant de chaque match (palier, puis
+ * probabilité, puis cote — l'ordre de l'écran Décisions), gardée seulement
+ * si elle est calibrée et courte (palier 0 ou 1), classée par cote
+ * croissante. Partagée entre le combiné du moteur (qui en prend trois, une
+ * par championnat) et le combiné LLM (qui en reçoit la liste et en choisit
+ * trois) : les deux partent du même vivier, c'est ce qui rend leurs jambes
+ * comparables.
+ */
+export function eligibleComboLegs(
   candidates: readonly ComboCandidate[],
   calibration: readonly CalibrationCell[],
   config: ComboConfig = COMBO_CONFIG,
-): ComboSelection {
+): ComboCandidate[] {
   const cells = new Map(
     calibration.map((c) => [`${c.channel}:${c.competition}`, c]),
   );
@@ -97,8 +107,6 @@ export function composeEngineCombo(
       ),
     }));
 
-  // La sélection mise en avant de chaque match : palier, puis probabilité,
-  // puis cote — l'ordre de l'écran.
   const primaryByFixture = new Map<string, Scored>();
   for (const c of scored) {
     const held = primaryByFixture.get(c.fixtureId);
@@ -113,23 +121,15 @@ export function composeEngineCombo(
     }
   }
 
-  // Seules les sélections calibrées et courtes entrent dans un combiné.
-  const eligible = [...primaryByFixture.values()]
+  return [...primaryByFixture.values()]
     .filter((c) => c.tier <= 1)
     .sort(
       (a, b) =>
         a.odds - b.odds ||
         b.probability - a.probability ||
         a.fixtureId.localeCompare(b.fixtureId),
-    );
-
-  // Une par championnat, les moins chères d'abord.
-  const legs: ComboCandidate[] = [];
-  const competitions = new Set<string>();
-  for (const c of eligible) {
-    if (competitions.has(c.competition)) continue;
-    competitions.add(c.competition);
-    legs.push({
+    )
+    .map((c) => ({
       fixtureId: c.fixtureId,
       competition: c.competition,
       channel: c.channel,
@@ -137,7 +137,23 @@ export function composeEngineCombo(
       pick: c.pick,
       odds: c.odds,
       probability: c.probability,
-    });
+    }));
+}
+
+export function composeEngineCombo(
+  candidates: readonly ComboCandidate[],
+  calibration: readonly CalibrationCell[],
+  config: ComboConfig = COMBO_CONFIG,
+): ComboSelection {
+  const eligible = eligibleComboLegs(candidates, calibration, config);
+
+  // Une par championnat, les moins chères d'abord.
+  const legs: ComboCandidate[] = [];
+  const competitions = new Set<string>();
+  for (const c of eligible) {
+    if (competitions.has(c.competition)) continue;
+    competitions.add(c.competition);
+    legs.push(c);
     if (legs.length === config.legs) break;
   }
 

@@ -4,8 +4,8 @@ import {
   runComposePersistPass,
 } from "./run-coupon-generation";
 
-vi.mock("./compose-coupon-class", () => ({
-  composeCouponClass: vi.fn(),
+vi.mock("./compose-llm-combo", () => ({
+  composeLlmCombo: vi.fn(),
 }));
 vi.mock("./compose-deterministic-shadow", () => {
   const abstained = (policyVersion: string) => ({
@@ -30,12 +30,7 @@ vi.mock("./persist-coupon-proposal", () => ({
 vi.mock("./record-generation-attempt", () => ({
   recordGenerationAttempt: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("./score-candidates", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("./score-candidates")>()),
-  candidatesForCouponClass: vi.fn().mockReturnValue([{}, {}, {}]),
-}));
-
-import { composeCouponClass } from "./compose-coupon-class";
+import { composeLlmCombo } from "./compose-llm-combo";
 import { recordGenerationAttempt } from "./record-generation-attempt";
 
 const silentLogger = {
@@ -51,7 +46,7 @@ describe("runComposePersistPass — LLM failure", () => {
   });
 
   it("records an ERROR attempt with the candidate count, then rethrows", async () => {
-    vi.mocked(composeCouponClass).mockRejectedValueOnce(
+    vi.mocked(composeLlmCombo).mockRejectedValueOnce(
       new Error("provider quota exhausted"),
     );
     const forDate = new Date("2026-10-01T00:00:00.000Z");
@@ -63,7 +58,7 @@ describe("runComposePersistPass — LLM failure", () => {
         {} as never,
         silentLogger,
         {},
-        { pass: "EVENING" },
+        { pass: "EVENING", calibration: [] },
       ),
     ).rejects.toThrow("provider quota exhausted");
 
@@ -72,13 +67,18 @@ describe("runComposePersistPass — LLM failure", () => {
       .mock.calls.map(([attempt]) => attempt);
     // Both shadows are recorded before the LLM is called.
     expect(attempts.map((a) => a.policyVersion)).toEqual(
-      expect.arrayContaining(["deterministic-5-7-v1", "unified-5-15-v2-shadow"]),
+      expect.arrayContaining([
+        "deterministic-5-7-v1",
+        "unified-5-15-v2-shadow",
+      ]),
     );
     const error = attempts.find((a) => a.outcome === "ERROR");
     expect(error).toMatchObject({
       forDate,
       pass: "EVENING",
-      candidateCount: 3,
+      // Le vivier éligible n'est connu qu'après l'appel : un échec avant
+      // la réponse n'en a pas.
+      candidateCount: 0,
       reason: "provider quota exhausted",
     });
   });

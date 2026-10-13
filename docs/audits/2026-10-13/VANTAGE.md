@@ -108,3 +108,39 @@ pastille de confiance la juge), les lectures de contexte.
   et par `basis`.
 - Part de textes contenant encore un code ou le mot « canal » après
   nettoyage (cible : 0).
+
+## 7. Le générateur de coupon LLM, recentré (ajout du 2026-10-13)
+
+Jambes réglées du coupon LLM (source `LLM`, cible 5–15, depuis le 01-09) :
+
+| Cote de jambe |   n | Annoncé |  Réel | Ratio |
+| ------------- | --: | ------: | ----: | ----: |
+| < 1,30        |  91 |   0,861 | 0,736 |  0,86 |
+| 1,30–1,50     | 221 |   0,805 | 0,670 |  0,83 |
+| 1,50–1,80     | 305 |   0,732 | 0,620 |  0,85 |
+| > 1,80        | 769 |   0,561 | 0,406 |  0,72 |
+
+Même en cote courte, le LLM choisit des jambes qui réalisent 0,83–0,86 de
+l'annoncé, là où les sélections mises en avant par Décisions, dans la même
+bande, font 0,97–0,99 (§5 du rapport Décisions / Coupons). Par canal, ses
+jambes venaient d'abord de VALUE (504, ratio 0,78) et SAFE (371, 0,78),
+deux canaux retirés de l'écran depuis le 3 septembre ; la consigne
+« mélanger des ancres et des jambes de valeur » le poussait vers les picks
+les plus surestimés — l'EV est un détecteur de surestimation (CLAUDE.md),
+et le prompt lui demandait d'en chercher.
+
+Décision : le coupon 5–15 du LLM n'est plus produit. Le pipeline LLM
+compose désormais un **combiné du jour « Analyse IA »** (classe `COMBO`,
+source `LLM`) sur **le même vivier et les mêmes règles d'éligibilité que le
+combiné du moteur** (sélection mise en avant de chaque match, canal calibré
+sur la compétition, cote sous 1,50, une par match, hors VANTAGE et score
+exact), dans lequel le modèle choisit trois jambes sur trois championnats
+différents, **sans voir ni cote ni probabilité**. La validation reste
+déterministe (trois numéros valides, trois matchs, trois championnats,
+cote combinée dans la bande). Les jambes annoncent la probabilité du canal,
+comme celles du moteur : les deux combinés se comparent jambe à jambe,
+LLM contre « les moins chères d'abord ». Il reste sur la page Coupons,
+pas sur l'accueil (un pari sûr et un combiné, pas deux).
+
+Si dans un mois les jambes choisies par le LLM ne font pas mieux que les
+moins chères, le pipeline LLM de coupon n'a plus de raison d'exister.
