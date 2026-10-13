@@ -24,6 +24,10 @@ export async function persistCouponProposal(
     signalWindowDays?: number;
     llmProvenance?: CouponLlmProvenance | null;
     pass?: "EVENING" | "INTRADAY";
+    /** Ce que chaque jambe annonce : la courbe de Platt du canal (défaut,
+     * politique 5–15 historique) ou la probabilité brute du canal (combiné
+     * du jour, comparable jambe à jambe avec le combiné du moteur). */
+    legProbability?: "calibrated" | "raw";
   } = {},
 ): Promise<PersistCouponProposalResult> {
   const generatedAt = new Date();
@@ -80,12 +84,17 @@ export async function persistCouponProposal(
     coupon.legs.reduce((sum, l) => sum + l.candidate.calibratedProbability, 0) /
     coupon.legs.length;
 
+  const announce = (leg: ComposedCoupon["legs"][number]) =>
+    opts.legProbability === "raw"
+      ? leg.candidate.probability
+      : leg.candidate.calibratedProbability;
+
   const legData = coupon.legs.map((leg) => ({
     fixtureId: leg.candidate.fixtureId,
     canal: leg.candidate.canal,
     market: leg.candidate.market as Market,
     pick: leg.candidate.pick,
-    probability: leg.candidate.calibratedProbability,
+    probability: announce(leg),
     oddsSnapshot: leg.candidate.oddsSnapshot,
     signalScore: leg.candidate.calibratedProbability,
     featureSnapshot: toJson({

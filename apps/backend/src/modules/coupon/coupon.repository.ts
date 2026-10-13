@@ -452,6 +452,9 @@ export class CouponRepository {
       expectedReturn: number;
       /** Canal d'origine de la jambe (combiné du moteur) ; PRICE sinon. */
       canal?: StrategyChannel;
+      /** Probabilité annoncée par le canal (combiné du moteur) ; sinon
+       * retour attendu / cote, l'estimation du prix. */
+      probability?: number;
     }[];
     /**
      * Profil écrit dans la clé unique et dans `reasoning.policyVersion`. Par
@@ -521,7 +524,10 @@ export class CouponRepository {
             market: leg.market,
             pick: leg.pick,
             probability: new Prisma.Decimal(
-              Math.min(leg.expectedReturn / leg.odds, 0.9999).toFixed(4),
+              Math.min(
+                leg.probability ?? leg.expectedReturn / leg.odds,
+                0.9999,
+              ).toFixed(4),
             ),
             oddsSnapshot: new Prisma.Decimal(leg.odds),
             signalScore: new Prisma.Decimal(0),

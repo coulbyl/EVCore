@@ -85,6 +85,10 @@ export class CouponEngineComboGenerationService {
         pick: leg.pick,
         odds: leg.odds,
         expectedReturn: 1,
+        // La jambe annonce ce que son canal annonce sur Décisions : c'est
+        // cette probabilité que le règlement compare au réel, et celle du
+        // combiné LLM construit sur le même vivier.
+        probability: leg.probability,
         canal: leg.channel as StrategyChannel,
       })),
       profile: {

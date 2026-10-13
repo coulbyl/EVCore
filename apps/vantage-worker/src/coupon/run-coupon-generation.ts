@@ -1,11 +1,12 @@
 import type { Logger } from "pino";
 import {
-  UNIFIED_COUPON_BOUNDS,
-  UNIFIED_COUPON_CLASS,
+  COMBO_COUPON_CLASS,
+  type CalibrationCell,
 } from "@evcore/analysis-core";
 import type { LlmClients } from "../groq/client";
 import { computeChannelReliability } from "./channel-reliability-query";
-import { composeCouponClass } from "./compose-coupon-class";
+import { loadChannelCompetitionCalibration } from "./combo-calibration-query";
+import { composeLlmCombo } from "./compose-llm-combo";
 import {
   buildDeterministicShadowAttempt,
   buildProbabilityRankedShadowAttempt,
@@ -14,11 +15,7 @@ import type { CouponLlmProvenance } from "./generate-coupon-selection";
 import { getPoolForRange } from "./pool-query";
 import { persistCouponProposal } from "./persist-coupon-proposal";
 import { recordGenerationAttempt } from "./record-generation-attempt";
-import {
-  candidatesForCouponClass,
-  scoreCandidates,
-  type ScoredCandidate,
-} from "./score-candidates";
+import { scoreCandidates, type ScoredCandidate } from "./score-candidates";
 
 // Weekend (Fri→Sun) and midweek European-nights (Tue→Thu) coupon windows —
 // every other day stays single-day. `date` is the day this pipeline runs
@@ -46,6 +43,11 @@ export function resolveGenerationWindow(date: string): { to: string } {
 // One unified compose+persist pass, shared by evening and intraday. Both use
 // the same proposal key; every attempt and abstention is recorded separately.
 // Exported for the spec only.
+/** Fenêtre de la calibration canal × compétition qui juge l'éligibilité
+ * d'une jambe — la même que la pastille de confiance et que le combiné du
+ * moteur (apps/backend ENGINE_COMBO_POLICY.calibrationWindowDays). */
+export const COMBO_CALIBRATION_WINDOW_DAYS = 90;
+
 export async function runComposePersistPass(
   scoredPool: readonly ScoredCandidate[],
   forDate: Date,
@@ -55,10 +57,10 @@ export async function runComposePersistPass(
   persistOpts: {
     pass: "EVENING" | "INTRADAY";
     signalWindowDays?: number;
+    /** Calibration canal × compétition (90 jours) pour l'éligibilité. */
+    calibration: readonly CalibrationCell[];
   },
 ): Promise<void> {
-  // Two append-only shadows on the same pool: the frozen deterministic
-  // candidate and the probability-ranked v2 policy. Neither publishes.
   const shadowInput = { scoredPool, forDate, pass: persistOpts.pass };
   for (const shadowAttempt of [
     buildDeterministicShadowAttempt(shadowInput),
@@ -83,162 +85,136 @@ export async function runComposePersistPass(
     }
   }
 
-  for (const couponClass of [UNIFIED_COUPON_CLASS]) {
-    const candidateCount = candidatesForCouponClass(
+  // Le combiné « Analyse IA » (2026-10-13) remplace le coupon 5–15 du LLM :
+  // même vivier et mêmes règles d'éligibilité que le combiné du moteur, le
+  // modèle choisit trois jambes, la validation reste déterministe. Le coupon
+  // 5–15 gagnait un jour sur sept par arithmétique, et les jambes que le LLM
+  // y choisissait réalisaient 0,83 de l'annoncé même en cote courte
+  // (docs/audits/2026-10-13/VANTAGE.md §7).
+  const couponClass = COMBO_COUPON_CLASS;
+  let llmProvenance: CouponLlmProvenance | null = null;
+  let result: Awaited<ReturnType<typeof composeLlmCombo>>;
+  try {
+    result = await composeLlmCombo(
       scoredPool,
-      couponClass,
-    ).length;
-    let llmProvenance: CouponLlmProvenance | null = null;
-    let result: Awaited<ReturnType<typeof composeCouponClass>>;
+      persistOpts.calibration,
+      clients,
+      logger,
+      { onCompletion: (value) => (llmProvenance = value) },
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     try {
-      result = await composeCouponClass(
-        scoredPool,
+      await recordGenerationAttempt({
+        forDate,
+        pass: persistOpts.pass,
+        outcome: "ERROR",
+        candidateCount: 0,
+        llmProvenance,
+        reason: message.slice(0, 500),
+      });
+    } catch (recordError) {
+      logger.warn(
+        { ...logContext, error: recordError },
+        "coupon: generation error could not be recorded",
+      );
+    }
+    logger.error(
+      { ...logContext, couponClass: couponClass.name, error },
+      "coupon: generation failed before any proposal",
+    );
+    throw error;
+  }
+  const candidateCount = result.eligibleCount;
+
+  if (result.outcome === "composed") {
+    const legs = result.coupon.legs.map((leg) => ({
+      channelSelectionId: leg.candidate.channelSelectionId,
+      modelRunId: leg.candidate.modelRunId,
+      fixtureId: leg.candidate.fixtureId,
+      scheduledAt: leg.candidate.scheduledAt.toISOString(),
+      canal: leg.candidate.canal,
+      market: leg.candidate.market,
+      pick: leg.candidate.pick,
+      probability: leg.candidate.probability,
+      oddsSnapshot: leg.candidate.oddsSnapshot,
+    }));
+    const metadata = {
+      schemaVersion: 2,
+      llm: llmProvenance,
+      combinedOdds: result.coupon.combinedOdds,
+      jointProbability: result.coupon.jointProbability,
+      couponEV: result.coupon.couponEV,
+      legs,
+    };
+    let persisted: Awaited<ReturnType<typeof persistCouponProposal>>;
+    try {
+      persisted = await persistCouponProposal(
+        forDate,
         couponClass,
-        UNIFIED_COUPON_BOUNDS,
-        clients,
-        logger,
-        { onCompletion: (value) => (llmProvenance = value) },
+        result.coupon,
+        result.reasonDetails,
+        { ...persistOpts, llmProvenance, legProbability: "raw" },
       );
     } catch (error) {
-      // An LLM/provider failure used to escape straight to the BullMQ job:
-      // nothing was written, so a quality abstention and a worker outage were
-      // indistinguishable — the generator was down from 2026-09-21 for two
-      // weeks with zero rows in coupon_generation_attempt while the
-      // deterministic shadow kept logging 74-354 candidates a day. Record
-      // the failure first, then rethrow so the job still fails loudly.
       const message = error instanceof Error ? error.message : String(error);
-      try {
-        await recordGenerationAttempt({
-          forDate,
-          pass: persistOpts.pass,
-          outcome: "ERROR",
-          candidateCount,
-          llmProvenance,
-          reason: message.slice(0, 500),
-        });
-      } catch (recordError) {
+      await recordGenerationAttempt({
+        forDate,
+        pass: persistOpts.pass,
+        outcome: "ERROR",
+        candidateCount,
+        llmProvenance,
+        reason: `persist: ${message}`.slice(0, 500),
+        metadata,
+      }).catch((recordError: unknown) =>
         logger.warn(
           { ...logContext, error: recordError },
-          "coupon: generation error could not be recorded",
-        );
-      }
-      logger.error(
-        { ...logContext, couponClass: couponClass.name, error },
-        "coupon: generation failed before any proposal",
+          "coupon: persistence error could not be recorded",
+        ),
       );
       throw error;
     }
-
-    if (result.outcome === "composed") {
-      // The selected legs travel with the attempt whatever happens next: a
-      // PRESERVED pass (the day's proposal was immutable) or a persistence
-      // failure used to lose the LLM's own selection, so the per-leg
-      // comparison with the shadows only saw published coupons.
-      const legs = result.coupon.legs.map((leg) => ({
-        channelSelectionId: leg.candidate.channelSelectionId,
-        modelRunId: leg.candidate.modelRunId,
-        fixtureId: leg.candidate.fixtureId,
-        scheduledAt: leg.candidate.scheduledAt.toISOString(),
-        canal: leg.candidate.canal,
-        market: leg.candidate.market,
-        pick: leg.candidate.pick,
-        probability: leg.candidate.calibratedProbability,
-        oddsSnapshot: leg.candidate.oddsSnapshot,
-      }));
-      const metadata = {
-        schemaVersion: 1,
-        llm: llmProvenance,
+    await recordGenerationAttempt({
+      forDate,
+      pass: persistOpts.pass,
+      outcome: persisted.published ? "PUBLISHED" : "PRESERVED",
+      candidateCount,
+      llmProvenance,
+      proposalId: persisted.proposalId,
+      metadata,
+    });
+    logger.info(
+      {
+        ...logContext,
+        couponClass: couponClass.name,
+        legs: result.coupon.legs.length,
         combinedOdds: result.coupon.combinedOdds,
-        jointProbability: result.coupon.jointProbability,
-        couponEV: result.coupon.couponEV,
-        legs,
-      };
-      let persisted: Awaited<ReturnType<typeof persistCouponProposal>>;
-      try {
-        persisted = await persistCouponProposal(
-          forDate,
-          couponClass,
-          result.coupon,
-          result.reasonDetails,
-          { ...persistOpts, llmProvenance },
-        );
-      } catch (error) {
-        // Same rule as the generation failure above: a persistence error
-        // (kickoff already passed, DB) left no row at all.
-        const message = error instanceof Error ? error.message : String(error);
-        await recordGenerationAttempt({
-          forDate,
-          pass: persistOpts.pass,
-          outcome: "ERROR",
-          candidateCount,
-          llmProvenance,
-          reason: `persist: ${message}`.slice(0, 500),
-          metadata,
-        }).catch((recordError: unknown) =>
-          logger.warn(
-            { ...logContext, error: recordError },
-            "coupon: persistence error could not be recorded",
-          ),
-        );
-        throw error;
-      }
-      await recordGenerationAttempt({
-        forDate,
-        pass: persistOpts.pass,
-        outcome: persisted.published ? "PUBLISHED" : "PRESERVED",
-        candidateCount,
-        llmProvenance,
-        proposalId: persisted.proposalId,
-        metadata,
-      });
-      logger.info(
-        {
-          ...logContext,
-          couponClass: couponClass.name,
-          legs: result.coupon.legs.length,
-          combinedOdds: result.coupon.combinedOdds,
-          couponEV: result.coupon.couponEV,
-        },
-        persisted.published
-          ? "coupon: published"
-          : "coupon: existing proposal preserved",
-      );
-    } else {
-      await recordGenerationAttempt({
-        forDate,
-        pass: persistOpts.pass,
-        outcome: result.outcome === "gave_up" ? "INVALID" : "ABSTAINED",
-        candidateCount,
-        llmProvenance,
-        reason:
-          result.outcome === "no_coupon"
-            ? result.reasonDetails
-            : result.outcome === "gave_up"
-              ? result.lastReason
-              : "candidate_pool_too_small",
-      });
-      logger.info(
-        {
-          ...logContext,
-          couponClass: couponClass.name,
-          outcome: result.outcome,
-        },
-        "coupon: no proposal for this class",
-      );
-    }
+      },
+      persisted.published
+        ? "coupon: published"
+        : "coupon: existing proposal preserved",
+    );
+  } else {
+    await recordGenerationAttempt({
+      forDate,
+      pass: persistOpts.pass,
+      outcome: result.outcome === "gave_up" ? "INVALID" : "ABSTAINED",
+      candidateCount,
+      llmProvenance,
+      reason:
+        result.outcome === "no_coupon"
+          ? result.reasonDetails
+          : result.outcome === "gave_up"
+            ? result.lastReason
+            : "candidate_pool_too_small",
+    });
+    logger.info(
+      { ...logContext, couponClass: couponClass.name, outcome: result.outcome },
+      "coupon: no proposal",
+    );
   }
 }
 
-// The daily coupon-generation pipeline, with one 5–15 policy
-// (docs/vantage-centric-redesign-2026-09-01.md §9bis): pool query → score →
-// LLM-select-and-validate → persist. Replaces apps/backend's
-// CouponComposerService entirely (retired 2026-09-03) — this is the sole
-// composition path now, no fallback.
-//
-// Flags mirror apps/backend's retired CouponService — all default-on, no
-// env kill-switch (DRAW/AVOID/evaluated-markets widening are all
-// backtested/product-approved, see that service's own retired doc
-// comment for the numbers).
 export async function runCouponGeneration(
   date: string,
   clients: LlmClients,
@@ -249,8 +225,11 @@ export async function runCouponGeneration(
 
   logger.info({ date, to }, "coupon: generation started");
 
-  const [calibration, rawPool] = await Promise.all([
+  const [calibration, cells, rawPool] = await Promise.all([
     computeChannelReliability({ asOf: new Date() }),
+    loadChannelCompetitionCalibration(
+      new Date(Date.now() - COMBO_CALIBRATION_WINDOW_DAYS * 86_400_000),
+    ),
     getPoolForRange(date, to, {
       includeDraw: true,
       enforceAvoid: true,
@@ -276,7 +255,7 @@ export async function runCouponGeneration(
     clients,
     logger,
     { date },
-    { pass: "EVENING" },
+    { pass: "EVENING", calibration: cells },
   );
 
   logger.info({ date }, "coupon: generation complete");
@@ -303,8 +282,11 @@ export async function runIntradayCouponGeneration(
 
   logger.info({ date, windowHours }, "coupon: intraday generation started");
 
-  const [calibration, rawPool] = await Promise.all([
+  const [calibration, cells, rawPool] = await Promise.all([
     computeChannelReliability({ asOf: new Date() }),
+    loadChannelCompetitionCalibration(
+      new Date(Date.now() - COMBO_CALIBRATION_WINDOW_DAYS * 86_400_000),
+    ),
     getPoolForRange(date, date, {
       includeDraw: true,
       enforceAvoid: true,
@@ -331,7 +313,7 @@ export async function runIntradayCouponGeneration(
     clients,
     logger,
     { date, windowHours, intraday: true },
-    { pass: "INTRADAY" },
+    { pass: "INTRADAY", calibration: cells },
   );
 
   logger.info({ date, windowHours }, "coupon: intraday generation complete");

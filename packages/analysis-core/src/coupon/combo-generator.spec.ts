@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   composeEngineCombo,
+  eligibleComboLegs,
   type CalibrationCell,
   type ComboCandidate,
 } from "./combo-generator";
@@ -94,5 +95,21 @@ describe("composeEngineCombo", () => {
       [green],
     );
     expect(result.outcome).toBe("abstained");
+  });
+
+  it("lists the eligible legs cheapest-first, one per fixture, without a competition cap", () => {
+    const legs = eligibleComboLegs(
+      [
+        cand({ fixtureId: "a", odds: 1.3 }),
+        cand({ fixtureId: "a", odds: 1.1, probability: 0.9 }),
+        cand({ fixtureId: "b", odds: 1.15 }),
+        cand({ fixtureId: "c", odds: 1.7 }),
+      ],
+      [green],
+    );
+    expect(legs.map((l) => `${l.fixtureId}@${l.odds}`)).toEqual([
+      "a@1.1",
+      "b@1.15",
+    ]);
   });
 });

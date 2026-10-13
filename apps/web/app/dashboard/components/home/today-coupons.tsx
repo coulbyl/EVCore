@@ -30,8 +30,16 @@ export function TodayCoupons() {
   // Le coupon long (cote 5–15, un jour gagnant sur sept) reste sur la page
   // Coupons avec sa fréquence écrite dessus, mais pas en tête de l'accueil :
   // onze « Perdu » sur quatorze jours n'y disent rien d'utile (2026-10-12).
+  // Le coupon long (cote 5–15, un jour sur sept) et le combiné « Analyse IA »
+  // (même vivier que celui du moteur, mesuré jambe à jambe sur la page
+  // Coupons) restent sur la page Coupons : l'accueil montre un pari sûr et
+  // un combiné, pas deux combinés.
   const coupons = (data ?? [])
-    .filter((c) => c.couponClass !== "UNIQUE")
+    .filter(
+      (c) =>
+        c.couponClass !== "UNIQUE" &&
+        !(c.couponClass === "COMBO" && c.source === "LLM"),
+    )
     .slice()
     .sort((a, b) => {
       const oa = couponClassMeta(a.couponClass)?.order ?? 99;
