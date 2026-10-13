@@ -162,7 +162,9 @@
       "no_odds": "No priced scoreline",
       "no_modelable_scoreline": "No modelable scoreline priced",
       "below_conviction": "No scoreline confident enough to predict",
-      "BACKFILL": "Backfilled"
+      "BACKFILL": "Backfilled",
+      "VANTAGE_GATED_ODDS": "Read kept but not proposed: odds above 1.80",
+      "VANTAGE_GATED_MARKET": "Read kept but not proposed: recently unreliable bet type"
     },
     "statuses": {
       "SELECTED": "Selected",

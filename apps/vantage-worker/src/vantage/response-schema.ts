@@ -21,8 +21,15 @@ const noPlaySchema = z.object({
     ),
 });
 
+/** The one basis the prompt allows a "play" to rest on. Optional in the
+ * schema (an older model output without it is still a valid verdict) but
+ * asked for by the prompt and persisted, so each basis can be measured on
+ * its own — the first step to learning which of the three actually holds. */
+export const PLAY_BASES = ["tension", "near_threshold", "raw_stats"] as const;
+
 const playSchema = z.object({
   verdict: z.literal("play"),
+  basis: z.enum(PLAY_BASES).optional(),
   market: z.enum(MARKET_VALUES),
   // Free text, but must be one of the pick strings the chosen market already
   // uses elsewhere in the system (checked separately against

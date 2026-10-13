@@ -6,10 +6,14 @@ import type { ChannelCalibration, MatchContext } from "../context/types";
 import { buildMatchContext } from "../context/build-match-context";
 import { requestVantageCompletion, type LlmClients } from "../groq/client";
 import { requestSituationalResearch } from "../research";
-import { persistVantageDecision } from "./persist-decision";
+import {
+  persistVantageDecision,
+  persistVantageGateRejection,
+} from "./persist-decision";
 import { vantageResponseSchema } from "./response-schema";
 import { isValidPickForMarket } from "./known-picks";
 import { buildUserPrompt, SYSTEM_PROMPT } from "./prompt";
+import { sanitizeReasonText } from "./sanitize-reason";
 
 // v3-context (2026-08-30): expanded context (near-miss reads, raw team_stats,
 // H2H scoreline, two independent second opinions, raw ONE_X_TWO market
@@ -18,7 +22,14 @@ import { buildUserPrompt, SYSTEM_PROMPT } from "./prompt";
 // separately from v2-research's, never blended (see project memory
 // project_vantage_channel: v2's near-perfect calibration came from playing
 // rarely — widening scope should be measured on its own, not assumed safe).
-const CONFIG_VERSION = "vantage-v3-context";
+// v4-gated (2026-10-13): odds cap at 1.80, self-calibration gate per
+// market, gate rejections persisted, reason text sanitised, `basis` asked
+// for and persisted, numbered system prompt. Measured on v3's 2 894 settled
+// picks: inside the cap VANTAGE realises 0.956 of what it announces, above
+// it 0.790 — the cap alone removes the whole measured miscalibration
+// (docs/audits/2026-10-13/VANTAGE.md). Bumped so v4's calibration is read
+// on its own, never blended with v3's.
+const CONFIG_VERSION = "vantage-v4-gated";
 
 /** Same empirically-justified floor used elsewhere in the system — see
  * apps/backend/src/modules/coupon/coupon.constants.ts's MIN_LEG_ODDS and
@@ -35,6 +46,41 @@ const CONFIG_VERSION = "vantage-v3-context";
  * 1.20; this is the defense-in-depth backstop, same pattern as
  * isValidPickForMarket. */
 const MIN_ODDS = 1.2;
+
+/** Odds cap. The same cut every surface of this repo applies (CLAUDE.md:
+ * "leg calibration collapses above odds 1.80"), measured on VANTAGE itself
+ * on 2026-10-13: 1 555 settled picks at or under 1.80 realise 0.956 of the
+ * announced probability, the 1 339 above realise 0.790 (0.68 above 3.00).
+ * Every market that looked badly calibrated (ONE_X_TWO 0.79, CORRECT_SCORE
+ * 0.73, CLEAN_SHEET_AWAY 0.75) is a long-odds market: inside the cap
+ * ONE_X_TWO reads 1.02. Cut on odds, never on market. */
+export const MAX_ODDS = 1.8;
+
+/** Self-calibration gate: a market on which VANTAGE's own settled picks
+ * (inside the cap, trailing 90 days) realise less than this share of what
+ * it announced is closed to it until the measure recovers. The floor is the
+ * "unreliable" threshold of the whole app (0.70 = RED on the confidence
+ * badge) rather than the 0.85 "watch" one: a borderline market (DOUBLE_
+ * CHANCE 0.84, n = 131 today) keeps its data flowing, a measured-bad one
+ * does not. Sample floor at 100: a ratio on fewer picks moves by ±0.1 on
+ * noise alone. */
+export const SELF_CALIBRATION_GATE = {
+  minSample: 100,
+  minRatio: 0.7,
+} as const;
+
+/** Markets closed to VANTAGE by its own measure — what the prompt tells the
+ * model up front, and what the gate below refuses regardless. */
+export function closedMarkets(context: MatchContext): string[] {
+  return (context.vantageMarketCalibration ?? [])
+    .filter(
+      (c) =>
+        c.sampleSize >= SELF_CALIBRATION_GATE.minSample &&
+        c.calibrationRatio !== null &&
+        c.calibrationRatio < SELF_CALIBRATION_GATE.minRatio,
+    )
+    .map((c) => c.market);
+}
 
 /** The odds VANTAGE's own pick would carry, if another channel's reading for
  * this exact (market, pick) happens to have them, or (since 2026-08-30,
@@ -120,6 +166,7 @@ export type AnalyzeResult =
   | { outcome: "no_context" }
   | { outcome: "skipped_no_readings" }
   | { outcome: "invalid_response"; raw: string; error: string }
+  | { outcome: "gated"; reason: "odds_cap" | "self_calibration" }
   | { outcome: "persisted"; verdict: "play" | "no_play" };
 
 /** One fixture, one VANTAGE read, start to finish. Never throws on a bad LLM
@@ -181,7 +228,11 @@ export async function analyzeFixture(
     logger,
   });
 
-  const userPrompt = buildUserPrompt(context, research);
+  const closed = closedMarkets(context);
+  const userPrompt = buildUserPrompt(context, research, {
+    maxOdds: MAX_ODDS,
+    closedMarkets: closed,
+  });
   const raw = await requestVantageCompletion(
     clients,
     SYSTEM_PROMPT,
@@ -250,8 +301,60 @@ export async function analyzeFixture(
   // exactly the cases where VANTAGE is most likely to differ on purpose.
   let knownOdds: number | null = null;
 
+  // Le texte lu par le joueur, nettoyé des codes et du jargon que le modèle
+  // laisse passer malgré le prompt (sanitize-reason.ts). Le verdict et les
+  // champs techniques ne sont jamais touchés.
+  parsed.data.reasonDetails = sanitizeReasonText(parsed.data.reasonDetails);
+
   if (parsed.data.verdict === "play") {
     knownOdds = findKnownOdds(context, parsed.data.market, parsed.data.pick);
+    if (knownOdds !== null && knownOdds > MAX_ODDS) {
+      logger.info(
+        {
+          fixtureId,
+          fixtureName,
+          scheduledAt: context.kickoff,
+          market: parsed.data.market,
+          pick: parsed.data.pick,
+          odds: knownOdds,
+        },
+        "vantage: pick's known odds are above the 1.80 cap — gated",
+      );
+      await persistVantageGateRejection({
+        fixtureId: context.fixtureId,
+        modelRunId: context.modelRunId,
+        configVersion: CONFIG_VERSION,
+        reasonCode: "VANTAGE_GATED_ODDS",
+        text: `Lecture retenue mais non proposée : la cote (${knownOdds.toFixed(2)}) dépasse ${MAX_ODDS.toFixed(2)}, au-delà de laquelle nos avis ne tiennent pas leurs promesses. ${parsed.data.reasonDetails}`,
+        market: parsed.data.market,
+        pick: parsed.data.pick,
+        odds: knownOdds,
+      });
+      return { outcome: "gated", reason: "odds_cap" };
+    }
+    if (closed.includes(parsed.data.market)) {
+      logger.info(
+        {
+          fixtureId,
+          fixtureName,
+          scheduledAt: context.kickoff,
+          market: parsed.data.market,
+          pick: parsed.data.pick,
+        },
+        "vantage: market is closed by VANTAGE's own calibration — gated",
+      );
+      await persistVantageGateRejection({
+        fixtureId: context.fixtureId,
+        modelRunId: context.modelRunId,
+        configVersion: CONFIG_VERSION,
+        reasonCode: "VANTAGE_GATED_MARKET",
+        text: `Lecture retenue mais non proposée : sur ce type de pari, nos avis récents ont été nettement moins fiables qu'annoncé. ${parsed.data.reasonDetails}`,
+        market: parsed.data.market,
+        pick: parsed.data.pick,
+        odds: knownOdds,
+      });
+      return { outcome: "gated", reason: "self_calibration" };
+    }
     if (knownOdds !== null && knownOdds < MIN_ODDS) {
       logger.warn(
         {
