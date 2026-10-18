@@ -1,10 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { BetSource, BetStatus, StrategyChannel } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
+import {
+  PlayableOddsRepository,
+  type PlayableQuote,
+  type PlayableQuoteKey,
+} from '../betting-engine/pricing/playable-odds.repository';
 
 @Injectable()
 export class BetSlipRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly playableOdds: PlayableOddsRepository,
+  ) {}
+
+  /** Prix chez le book de l'utilisateur (1xBet) pour chaque choix d'un
+   * ticket — voir BetSlipService.create. */
+  findPlayableQuotes(
+    keys: readonly PlayableQuoteKey[],
+  ): Promise<Map<string, PlayableQuote>> {
+    return this.playableOdds.findPlayableQuotes(keys);
+  }
 
   findUserBetSlips(userId: string, from?: Date, to?: Date) {
     return this.prisma.client.betSlip.findMany({

@@ -5,7 +5,10 @@ import {
 } from "@evcore/analysis-core";
 import type { LlmClients } from "../groq/client";
 import { computeChannelReliability } from "./channel-reliability-query";
-import { loadChannelCompetitionCalibration } from "./combo-calibration-query";
+import {
+  loadChannelCompetitionCalibration,
+  loadOperatorQuotes,
+} from "./combo-calibration-query";
 import { composeLlmCombo } from "./compose-llm-combo";
 import {
   buildDeterministicShadowAttempt,
@@ -95,12 +98,28 @@ export async function runComposePersistPass(
   let llmProvenance: CouponLlmProvenance | null = null;
   let result: Awaited<ReturnType<typeof composeLlmCombo>>;
   try {
+    // Garde « jouable chez l'opérateur » (1xBet < 1,10) : jamais bloquante.
+    const operatorQuotes = await loadOperatorQuotes(
+      scoredPool
+        .filter((c) => c.oddsSnapshot !== null)
+        .map((c) => ({
+          fixtureId: c.fixtureId,
+          market: c.market,
+          pick: c.pick,
+        })),
+    ).catch((error: unknown) => {
+      logger.warn(
+        { ...logContext, error },
+        "coupon: operator quotes unavailable",
+      );
+      return new Map<string, number>();
+    });
     result = await composeLlmCombo(
       scoredPool,
       persistOpts.calibration,
       clients,
       logger,
-      { onCompletion: (value) => (llmProvenance = value) },
+      { onCompletion: (value) => (llmProvenance = value), operatorQuotes },
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

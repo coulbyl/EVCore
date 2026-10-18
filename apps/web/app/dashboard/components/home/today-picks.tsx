@@ -79,7 +79,12 @@ function toDraftItem(pick: TodayPick): BetSlipDraftItem {
     scheduledAt: decision.scheduledAt,
     market: selection.market,
     pick: selection.pick,
-    odds: selection.odds !== null ? String(selection.odds) : null,
+    odds:
+      selection.playableOdds !== null
+        ? String(selection.playableOdds)
+        : selection.odds !== null
+          ? String(selection.odds)
+          : null,
     ev: null,
     canal: pick.channel,
     stakeOverride: null,

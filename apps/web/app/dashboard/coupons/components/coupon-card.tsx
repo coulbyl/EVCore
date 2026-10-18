@@ -126,7 +126,13 @@ export function CouponCard({
       scheduledAt: leg.scheduledAt,
       market: leg.market,
       pick: leg.pick,
-      odds: leg.oddsSnapshot != null ? leg.oddsSnapshot.toFixed(2) : null,
+      // Le prix 1xBet quand il est connu : c'est celui que le ticket paiera.
+      odds:
+        leg.playableOdds !== null
+          ? leg.playableOdds.toFixed(2)
+          : leg.oddsSnapshot != null
+            ? leg.oddsSnapshot.toFixed(2)
+            : null,
       ev: null,
       canal: leg.canal,
       stakeOverride: null,
