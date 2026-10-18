@@ -5,6 +5,8 @@ import {
   type Market,
 } from '@evcore/analysis-core';
 import { CouponRepository } from './coupon.repository';
+import { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
+import { playableAtOperator } from '../betting-engine/pricing/playable-odds.filter';
 import { FAVOURITE_POLICY } from './coupon.constants';
 import { startOfUtcDay } from '@utils/date.utils';
 
@@ -26,15 +28,27 @@ export type FavouriteGenerationOutcome =
 export class CouponFavouriteGenerationService {
   private readonly logger = new Logger(CouponFavouriteGenerationService.name);
 
-  constructor(private readonly repository: CouponRepository) {}
+  constructor(
+    private readonly repository: CouponRepository,
+    private readonly playableOdds: PlayableOddsRepository,
+  ) {}
 
   async generateForDate(forDate: Date): Promise<FavouriteGenerationOutcome> {
     const dayStart = startOfUtcDay(forDate);
     const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1_000);
-    const rows = await this.repository.findPriceCandidates({
+    const allRows = await this.repository.findPriceCandidates({
       from: dayStart,
       to: dayEnd,
     });
+    // Jouable chez l'opérateur, ou pas proposé (playable-odds.filter.ts).
+    const quotes = await this.playableOdds.findPlayableQuotes(
+      allRows.map((r) => ({
+        fixtureId: r.fixtureId,
+        market: r.market,
+        pick: r.pick,
+      })),
+    );
+    const rows = allRows.filter((r) => playableAtOperator(r, quotes));
 
     const selection = pickHomeFavourite(rows);
     if (selection.outcome === 'abstained') {

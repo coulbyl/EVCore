@@ -1,4 +1,4 @@
-import { COMBO_COUPON_CLASS } from "./coupon-classes";
+import { COMBO_COUPON_CLASS, LONG_COUPON_CLASS } from "./coupon-classes";
 
 /**
  * Combiné du jour sur les sélections du moteur (voir COMBO_COUPON_CLASS pour
@@ -161,6 +161,127 @@ export function composeEngineCombo(
     return {
       outcome: "abstained",
       reason: "not_enough_calibrated_short_legs",
+      candidateCount: eligible.length,
+    };
+  }
+  return { outcome: "picked", legs, candidateCount: eligible.length };
+}
+
+export type LongConfig = {
+  minLegOdds: number;
+  maxLegOdds: number;
+  maxLegs: number;
+  targetOdds: number;
+  maxOdds: number;
+  minSample: number;
+  goodRatio: number;
+  badRatio: number;
+};
+
+export const LONG_CONFIG: LongConfig = {
+  minLegOdds: LONG_COUPON_CLASS.minLegOdds,
+  maxLegOdds: LONG_COUPON_CLASS.maxLegOdds,
+  maxLegs: LONG_COUPON_CLASS.maxLegs,
+  targetOdds: LONG_COUPON_CLASS.targetCombinedOdds,
+  maxOdds: LONG_COUPON_CLASS.targetOddsMax,
+  minSample: COMBO_CONFIG.minSample,
+  goodRatio: COMBO_CONFIG.goodRatio,
+  badRatio: COMBO_CONFIG.badRatio,
+};
+
+export type LongSelection =
+  | { outcome: "picked"; legs: ComboCandidate[]; candidateCount: number }
+  | {
+      outcome: "abstained";
+      reason: "target_unreachable";
+      candidateCount: number;
+    };
+
+/**
+ * Le coupon long (voir LONG_COUPON_CLASS) : la sélection mise en avant de
+ * chaque match quand son canal n'est pas « peu fiable » sur la compétition
+ * et que sa cote est entre 1,20 et 1,80, une par championnat, les plus
+ * longues d'abord, ajoutées jusqu'à atteindre la cible. Abstention si la
+ * cible n'est pas atteinte en `maxLegs` jambes ou dépasse le plafond.
+ */
+export function composeEngineLong(
+  candidates: readonly ComboCandidate[],
+  calibration: readonly CalibrationCell[],
+  config: LongConfig = LONG_CONFIG,
+): LongSelection {
+  const cells = new Map(
+    calibration.map((c) => [`${c.channel}:${c.competition}`, c]),
+  );
+  const comboConfig: ComboConfig = {
+    legs: config.maxLegs,
+    minLegOdds: config.minLegOdds,
+    maxLegOdds: config.maxLegOdds,
+    minSample: config.minSample,
+    goodRatio: config.goodRatio,
+    badRatio: config.badRatio,
+  };
+  type Scored = ComboCandidate & { tier: number };
+  const scored: Scored[] = candidates
+    .filter(
+      (c) =>
+        Number.isFinite(c.odds) &&
+        c.odds >= config.minLegOdds &&
+        c.odds <= config.maxLegOdds,
+    )
+    .map((c) => ({
+      ...c,
+      tier: tier(
+        statusOf(cells.get(`${c.channel}:${c.competition}`), comboConfig),
+        c.odds,
+        comboConfig,
+      ),
+    }));
+  const primaryByFixture = new Map<string, Scored>();
+  for (const c of scored) {
+    const held = primaryByFixture.get(c.fixtureId);
+    if (
+      !held ||
+      c.tier < held.tier ||
+      (c.tier === held.tier &&
+        (c.probability > held.probability ||
+          (c.probability === held.probability && c.odds < held.odds)))
+    ) {
+      primaryByFixture.set(c.fixtureId, c);
+    }
+  }
+  // Canal « peu fiable » exclu (palier 4) ; les plus longues d'abord.
+  const eligible = [...primaryByFixture.values()]
+    .filter((c) => c.tier <= 3)
+    .sort(
+      (a, b) =>
+        b.odds - a.odds ||
+        b.probability - a.probability ||
+        a.fixtureId.localeCompare(b.fixtureId),
+    );
+
+  const legs: ComboCandidate[] = [];
+  const competitions = new Set<string>();
+  let combined = 1;
+  for (const c of eligible) {
+    if (competitions.has(c.competition)) continue;
+    if (combined * c.odds > config.maxOdds) continue;
+    competitions.add(c.competition);
+    legs.push({
+      fixtureId: c.fixtureId,
+      competition: c.competition,
+      channel: c.channel,
+      market: c.market,
+      pick: c.pick,
+      odds: c.odds,
+      probability: c.probability,
+    });
+    combined *= c.odds;
+    if (combined >= config.targetOdds || legs.length === config.maxLegs) break;
+  }
+  if (combined < config.targetOdds) {
+    return {
+      outcome: "abstained",
+      reason: "target_unreachable",
       candidateCount: eligible.length,
     };
   }

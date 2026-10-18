@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { CouponService } from './coupon.service';
+import type { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
 import type { CouponRepository } from './coupon.repository';
 
 function proposal(overrides: Record<string, unknown> = {}) {
@@ -59,7 +60,10 @@ function serviceWith(rows: unknown[]) {
   const repo = {
     findByDate: vi.fn().mockResolvedValue(rows),
   } as unknown as CouponRepository;
-  return new CouponService(repo);
+  const playable = {
+    findPlayableQuotes: vi.fn().mockResolvedValue(new Map()),
+  } as unknown as PlayableOddsRepository;
+  return new CouponService(repo, playable);
 }
 
 describe('CouponService.getCoupons', () => {

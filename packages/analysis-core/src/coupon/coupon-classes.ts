@@ -93,7 +93,8 @@ export type CouponClassName =
   | "BOLD"
   | "UNIQUE"
   | "FAVOURITE"
-  | "COMBO";
+  | "COMBO"
+  | "LONG";
 
 export type CouponClass = {
   name: CouponClassName;
@@ -175,10 +176,18 @@ export const COUPON_CLASSES: readonly CouponClass[] = [
  */
 export const FAVOURITE_COUPON_CLASS: CouponClass = {
   name: "FAVOURITE",
-  minLegOdds: 1.1,
+  // Plancher relevé de 1,10 à 1,20 le 2026-10-18 : notre prix de référence
+  // (Bet365, Pinnacle) est le plus généreux du relevé, et sous 1,15 chez
+  // Bet365 trois choix sur quatre passent sous 1,10 chez 1xBet, minimum des
+  // books des utilisateurs. Mesuré sur 86 jours : la bande 1,20–1,35 garde
+  // 84 % de jours gagnants (80 % avant) à cote 1,26, pire série 2
+  // (docs/audits/2026-10-18/COTES-JOUABLES.md).
+  minLegOdds: 1.2,
   maxLegOdds: 1.35,
   maxLegs: 1,
-  targetCombinedOdds: 1.1,
+  targetCombinedOdds: 1.2,
+  // Clé unique de `coupon_proposal` (avec la source) : inchangée pour que
+  // l'historique du produit reste une seule série.
   targetOddsMin: 1.1,
   targetOddsMax: 1.35,
 };
@@ -206,12 +215,41 @@ export const FAVOURITE_COUPON_CLASS: CouponClass = {
  */
 export const COMBO_COUPON_CLASS: CouponClass = {
   name: "COMBO",
-  minLegOdds: 1.05,
+  // 2026-10-18 : plancher 1,20 (voir FAVOURITE_COUPON_CLASS) et DEUX jambes
+  // au lieu de trois. Avec le plancher, trois jambes tombent à 48 % de jours
+  // gagnants ; deux en gardent 71 % à cote 1,55, pire série 3, toutes les
+  // jambes jouables chez l'opérateur (docs/audits/2026-10-18/
+  // COTES-JOUABLES.md §3). Sans plancher, 10 jambes sur 12 des combinés
+  // publiés étaient sous 1,10 chez le moins bon des books relevés.
+  minLegOdds: 1.2,
   maxLegOdds: 1.5,
-  maxLegs: 3,
-  targetCombinedOdds: 1.2,
+  maxLegs: 2,
+  targetCombinedOdds: 1.4,
   targetOddsMin: 1.2,
   targetOddsMax: 3.4,
+};
+
+/**
+ * Le coupon long : cote combinée visée 2,5 (plafond 5), sur les mêmes
+ * sélections calibrées que le combiné, mais prises parmi les jambes de 1,20
+ * à 1,80 **les plus longues d'abord**, une par championnat, jusqu'à quatre.
+ *
+ * Mesuré le 2026-10-18 sur 96 jours (calibration glissante 90 j,
+ * `docs/audits/2026-10-18/COTES-JOUABLES.md` §6) : 34 % ± 4,8 de jours
+ * gagnants à cote 3,0 (2,3 jambes), pire série 8 jours, retour 1,01 par
+ * unité (bruit : « ne coûte pas plus que la marge »). C'est l'arithmétique
+ * des jambes calibrées (1 / 3,0 = 33 %). Empiler des jambes courtes pour
+ * atteindre la même cible fait moins bien (23 % à 4,8 jambes), et le coupon
+ * 5–15 du compositeur par le prix gagnait un jour sur sept.
+ */
+export const LONG_COUPON_CLASS: CouponClass = {
+  name: "LONG",
+  minLegOdds: 1.2,
+  maxLegOdds: 1.8,
+  maxLegs: 4,
+  targetCombinedOdds: 2.5,
+  targetOddsMin: 2.5,
+  targetOddsMax: 5,
 };
 
 /** Retrouve la classe d'une proposition persistée depuis son `targetOddsMin`. */
@@ -223,6 +261,7 @@ export function classForTargetOddsMin(
       UNIFIED_COUPON_CLASS,
       FAVOURITE_COUPON_CLASS,
       COMBO_COUPON_CLASS,
+      LONG_COUPON_CLASS,
       ...COUPON_CLASSES,
     ].find((c) => c.targetOddsMin === targetOddsMin)?.name ?? null
   );

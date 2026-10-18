@@ -11,6 +11,7 @@ import { CouponEngineComboGenerationService } from './coupon-engine-combo-genera
 import { CouponIndicesService } from './coupon-indices.service';
 import { CouponController } from './coupon.controller';
 import { OddsClosingLineRepository } from '../betting-engine/pricing/odds-closing-line.repository';
+import { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
 
 // CalibrationService/OddsSnapshotLoader/CouponPoolService/CouponComposerService
 // removed 2026-09-03 — they existed here only for the retired write path
@@ -28,6 +29,7 @@ import { OddsClosingLineRepository } from '../betting-engine/pricing/odds-closin
     // dans betting-engine.module.ts plutôt que d'importer tout le moteur
     // pour une seule requête.
     OddsClosingLineRepository,
+    PlayableOddsRepository,
     CouponSettlementService,
     CouponService,
     CouponIndicesService,

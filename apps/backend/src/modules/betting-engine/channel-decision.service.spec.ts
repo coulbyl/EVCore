@@ -4,6 +4,7 @@ import { BetStatus, Market } from '@evcore/db';
 import { ChannelDecisionService } from './channel-decision.service';
 import type { ChannelDecisionRepository } from './channel-decision.repository';
 import type { OddsClosingLineRepository } from './pricing/odds-closing-line.repository';
+import type { PlayableOddsRepository } from './pricing/playable-odds.repository';
 import type { ClosingLineRow } from './pricing/closing-line';
 import { buildStrategyContext } from './strategies/strategy-context.builder';
 import {
@@ -148,6 +149,12 @@ function closingLinesWith(rows: ClosingLineRow[]): OddsClosingLineRepository {
   } as unknown as OddsClosingLineRepository;
 }
 
+function noPlayableOdds(): PlayableOddsRepository {
+  return {
+    findPlayableQuotes: vi.fn().mockResolvedValue(new Map()),
+  } as unknown as PlayableOddsRepository;
+}
+
 function noClosingLines(): OddsClosingLineRepository {
   return closingLinesWith([]);
 }
@@ -157,7 +164,11 @@ describe('ChannelDecisionService', () => {
     const persistedResult = [{ id: 'cd-ev' }];
     const saveRunDecisions = vi.fn().mockResolvedValue(persistedResult);
     const repo = { saveRunDecisions } as unknown as ChannelDecisionRepository;
-    const service = new ChannelDecisionService(repo, noClosingLines());
+    const service = new ChannelDecisionService(
+      repo,
+      noClosingLines(),
+      noPlayableOdds(),
+    );
 
     const returned = await service.recordRunDecisions('run-1', richContext());
 
@@ -222,7 +233,11 @@ describe('ChannelDecisionService', () => {
     const repo = {
       saveRunDecisions: vi.fn().mockRejectedValue(new Error('db down')),
     } as unknown as ChannelDecisionRepository;
-    const service = new ChannelDecisionService(repo, noClosingLines());
+    const service = new ChannelDecisionService(
+      repo,
+      noClosingLines(),
+      noPlayableOdds(),
+    );
 
     await expect(
       service.recordRunDecisions('run-1', richContext()),
@@ -255,7 +270,11 @@ describe('ChannelDecisionService', () => {
         findSelectionsForFixture,
         applySelectionResults,
       } as unknown as ChannelDecisionRepository;
-      const service = new ChannelDecisionService(repo, noClosingLines());
+      const service = new ChannelDecisionService(
+        repo,
+        noClosingLines(),
+        noPlayableOdds(),
+      );
 
       const { settled } = await service.settleFixtureSelections({
         fixtureId: 'f1',
@@ -307,7 +326,11 @@ describe('ChannelDecisionService', () => {
         row('Unibet', 'DRAW', 3.5),
         row('Unibet', 'AWAY', 4.0),
       ]);
-      const service = new ChannelDecisionService(repo, closingLines);
+      const service = new ChannelDecisionService(
+        repo,
+        closingLines,
+        noPlayableOdds(),
+      );
 
       await service.settleFixtureSelections({
         fixtureId: 'f1',
@@ -364,7 +387,11 @@ describe('ChannelDecisionService', () => {
         findSelectionsForFixture,
         applySelectionResults,
       } as unknown as ChannelDecisionRepository;
-      const service = new ChannelDecisionService(repo, noClosingLines());
+      const service = new ChannelDecisionService(
+        repo,
+        noClosingLines(),
+        noPlayableOdds(),
+      );
 
       const { settled } = await service.settleFixtureSelections({
         fixtureId: 'f1',
@@ -450,7 +477,11 @@ describe('ChannelDecisionService', () => {
         findByDate,
         findNewCoachTeams,
       } as unknown as ChannelDecisionRepository;
-      const service = new ChannelDecisionService(repo, noClosingLines());
+      const service = new ChannelDecisionService(
+        repo,
+        noClosingLines(),
+        noPlayableOdds(),
+      );
 
       const groups = await service.listByMatch({
         date: '2026-01-18',
@@ -545,7 +576,11 @@ describe('ChannelDecisionService', () => {
         findByDate,
         findNewCoachTeams,
       } as unknown as ChannelDecisionRepository;
-      const service = new ChannelDecisionService(repo, noClosingLines());
+      const service = new ChannelDecisionService(
+        repo,
+        noClosingLines(),
+        noPlayableOdds(),
+      );
 
       const groups = await service.listByChannel({ date: '2026-01-18' });
 
@@ -585,7 +620,11 @@ describe('ChannelDecisionService', () => {
         findByDate,
         findNewCoachTeams: vi.fn().mockResolvedValue(new Set()),
       } as unknown as ChannelDecisionRepository;
-      const service = new ChannelDecisionService(repo, noClosingLines());
+      const service = new ChannelDecisionService(
+        repo,
+        noClosingLines(),
+        noPlayableOdds(),
+      );
 
       const groups = await service.listByChannel({ date: '2026-01-18' });
 
@@ -628,7 +667,11 @@ describe('ChannelDecisionService', () => {
         },
       ]);
       const repo = { findFacetRows } as unknown as ChannelDecisionRepository;
-      const service = new ChannelDecisionService(repo, noClosingLines());
+      const service = new ChannelDecisionService(
+        repo,
+        noClosingLines(),
+        noPlayableOdds(),
+      );
 
       const result = await service.getFacets('2026-01-18');
 

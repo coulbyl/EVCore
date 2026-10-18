@@ -17,7 +17,7 @@ export const COUPON_CLASS_META: Record<CouponClassName, CouponClassMeta> = {
   // (docs/audits/2026-10-12/MESURES-DECISIONS-COUPONS.md). Premier à l'écran :
   // c'est celui qu'un utilisateur lambda peut suivre sans se décourager.
   FAVOURITE: {
-    label: "Pari sûr du jour · cote 1,10–1,35",
+    label: "Pari sûr du jour · cote 1,20–1,35",
     frequency: "Gagne environ 4 jours sur 5",
     order: -2,
     badgeVariant: "success",
@@ -26,20 +26,35 @@ export const COUPON_CLASS_META: Record<CouponClassName, CouponClassMeta> = {
   // championnat, les moins chères d'abord. 78 % de jours gagnants sur 87
   // jours, cote 1,4, pire série 3 (docs/audits/2026-10-12/
   // MESURES-DECISIONS-COUPONS.md §5).
+  // 2026-10-18 : deux jambes à cote 1,20 ou plus (71 % de jours gagnants
+  // mesurés, cote 1,55), pour que chaque jambe existe chez 1xBet au-dessus
+  // de son minimum de 1,10 (docs/audits/2026-10-18/COTES-JOUABLES.md).
   COMBO: {
-    label: "Combiné du jour · 3 sélections",
-    frequency: "Gagne environ 3 jours sur 4",
+    label: "Combiné du jour · 2 sélections",
+    frequency: "Gagne environ 7 jours sur 10",
     order: -1.5,
     badgeVariant: "accent",
   },
+  // Le coupon long (2026-10-18) : cible 2,5, plafond 5, jambes de 1,20 à 1,80
+  // les plus longues d'abord, sur les mêmes sélections calibrées. 34 % de
+  // jours gagnants mesurés à cote 3,0, pire série 8 jours
+  // (docs/audits/2026-10-18/COTES-JOUABLES.md §6).
+  LONG: {
+    label: "Coupon long · cote 2,5–5",
+    frequency: "Gagne environ 1 jour sur 3",
+    order: -1,
+    badgeVariant: "warning",
+  },
+  // L'ancien coupon 5–15 du compositeur par le prix : toujours généré et
+  // mesuré, plus affiché depuis le 2026-10-18 (un jour sur sept).
   // Le coupon long : à cote 5–15, gagner plus d'un jour sur cinq est
   // arithmétiquement impossible (P ≤ 1 / cote). Mesuré : 13 à 20 % de jours
   // gagnants. Le dire sur la carte évite de le lire comme « le même produit
   // en mieux ».
   UNIQUE: {
-    label: "Coupon long · cote 5–15",
+    label: "Coupon prix · cote 5–15",
     frequency: "Gagne environ 1 jour sur 7",
-    order: -1,
+    order: 0,
     badgeVariant: "warning",
   },
   SAFE: {

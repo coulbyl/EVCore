@@ -948,5 +948,10 @@
       "behindClose": "Moins bonne que le prix de clôture, qui vaut {margin} (la marge du bookmaker).",
       "unknownMargin": "Marge du bookmaker inconnue pour cette sélection : la comparaison au prix de clôture n'est pas possible."
     }
+  },
+  "playableOdds": {
+    "label": "{bookmaker} {odds}",
+    "hint": "Cote chez le bookmaker des utilisateurs. La nôtre vient des books les plus généreux du relevé.",
+    "belowMinimum": "Sous le minimum de {min} accepté par ce bookmaker : cette sélection n'y est pas jouable."
   }
 }

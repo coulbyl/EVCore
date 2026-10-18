@@ -52,6 +52,13 @@ export type CouponLegDto = {
   closingObservedAt: string | null;
   closingLineValue: number | null;
   /**
+   * Cote jouable : prix du choix chez le book de l'utilisateur (1xBet) quand
+   * il le cote, sinon le plus bas des books relevés — ce que l'utilisateur
+   * trouvera réellement, contre notre prix de référence (Bet365, Pinnacle).
+   */
+  playableOdds: number | null;
+  playableBookmaker: string | null;
+  /**
    * The exact ModelRun id captured when the leg was proposed — lets the
    * frontend submit this leg to
    * `POST /bet-slips` as a USER pick (`modelRunId` + `market` + `pick`,

@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CouponEngineComboGenerationService } from './coupon-engine-combo-generation.service';
+import type { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
+import {
+  CouponEngineComboGenerationService,
+  ENGINE_LONG_PROFILE,
+} from './coupon-engine-combo-generation.service';
 import type {
   ChannelCompetitionCalibrationRow,
   CouponRepository,
@@ -56,16 +60,19 @@ describe('CouponEngineComboGenerationService', () => {
     repository.recordPriceComposerAttempt.mockResolvedValue();
     service = new CouponEngineComboGenerationService(
       repository as unknown as CouponRepository,
+      {
+        findPlayableQuotes: vi.fn().mockResolvedValue(new Map()),
+      } as unknown as PlayableOddsRepository,
     );
   });
 
-  it('writes an ENGINE proposal with three legs, each carrying its channel', async () => {
+  it('writes an ENGINE proposal with two legs at 1.20 or more, each carrying its channel', async () => {
     repository.findEngineComboCandidates.mockResolvedValue([
       row({ fixtureId: 'a', odds: 1.3 }),
-      row({ fixtureId: 'b', odds: 1.1, competition: 'PL' }),
+      row({ fixtureId: 'b', odds: 1.21, competition: 'PL' }),
       row({
         fixtureId: 'c',
-        odds: 1.15,
+        odds: 1.25,
         competition: 'SA',
         channel: 'DOUBLE_CHANCE',
       }),
@@ -84,9 +91,9 @@ describe('CouponEngineComboGenerationService', () => {
       proposalId: 'proposal-1',
     });
     const input = repository.upsertPriceComposerProposal.mock.calls[0]?.[0];
-    expect(input?.legs.map((l) => l.fixtureId)).toEqual(['b', 'c', 'a']);
+    expect(input?.legs.map((l) => l.fixtureId)).toEqual(['b', 'c']);
     expect(input?.legs[1]?.canal).toBe('DOUBLE_CHANCE');
-    expect(input?.combinedOdds).toBeCloseTo(1.1 * 1.15 * 1.3, 6);
+    expect(input?.combinedOdds).toBeCloseTo(1.21 * 1.25, 6);
     expect(input?.profile).toMatchObject({
       source: 'ENGINE',
       targetOddsMin: 1.2,
@@ -97,16 +104,17 @@ describe('CouponEngineComboGenerationService', () => {
     );
   });
 
-  it('abstains and records it when fewer than three calibrated short legs exist', async () => {
+  it('abstains and records it when fewer than two calibrated legs at 1.20 or more exist', async () => {
     repository.findEngineComboCandidates.mockResolvedValue([
       row({ fixtureId: 'a' }),
-      row({ fixtureId: 'b', competition: 'PL' }),
+      // Sous le plancher de 1,20 : jamais éligible.
+      row({ fixtureId: 'b', odds: 1.1, competition: 'PL' }),
     ]);
     repository.findChannelCompetitionCalibration.mockResolvedValue([cell()]);
 
     const result = await service.generateForDate(FOR_DATE);
 
-    expect(result).toMatchObject({ outcome: 'abstained', candidateCount: 2 });
+    expect(result).toMatchObject({ outcome: 'abstained', candidateCount: 1 });
     expect(repository.upsertPriceComposerProposal).not.toHaveBeenCalled();
     expect(repository.recordPriceComposerAttempt).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -114,5 +122,31 @@ describe('CouponEngineComboGenerationService', () => {
         pass: { name: 'engine-combo', policyVersion: 'engine-combo-v1' },
       }),
     );
+  });
+
+  it('composes the long coupon longest-first to the 2.5 target under the LONG class', async () => {
+    repository.findEngineComboCandidates.mockResolvedValue([
+      row({ fixtureId: 'a', odds: 1.7 }),
+      row({ fixtureId: 'b', odds: 1.75, competition: 'PL' }),
+      row({ fixtureId: 'c', odds: 1.3, competition: 'SA' }),
+    ]);
+    repository.findChannelCompetitionCalibration.mockResolvedValue([
+      cell(),
+      cell({ competition: 'PL' }),
+      cell({ competition: 'SA' }),
+    ]);
+
+    const result = await service.generateForDate(FOR_DATE, ENGINE_LONG_PROFILE);
+
+    expect(result).toMatchObject({ outcome: 'composed' });
+    const input = repository.upsertPriceComposerProposal.mock.calls[0]?.[0];
+    expect(input?.legs.map((l) => l.fixtureId)).toEqual(['b', 'a']);
+    expect(input?.combinedOdds).toBeCloseTo(1.75 * 1.7, 6);
+    expect(input?.profile).toMatchObject({
+      source: 'ENGINE',
+      targetOddsMin: 2.5,
+      targetOddsMax: 5,
+      policyVersion: 'engine-long-v1',
+    });
   });
 });

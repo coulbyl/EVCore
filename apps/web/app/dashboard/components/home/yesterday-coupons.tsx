@@ -29,7 +29,9 @@ export function YesterdayCoupons() {
   const t = useTranslations("dashboard.home");
   const date = daysAgoIso(1);
   const { data, isLoading } = useCoupons(date);
-  const coupons = data ?? [];
+  // Le coupon 5–15 du compositeur par le prix n'est plus affiché nulle part
+  // depuis le 2026-10-18 (toujours généré et mesuré).
+  const coupons = (data ?? []).filter((c) => c.couponClass !== "UNIQUE");
 
   if (!isLoading && coupons.length === 0) return null;
 

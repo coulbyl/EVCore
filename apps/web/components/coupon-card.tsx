@@ -39,6 +39,8 @@ export type NormalizedCouponLeg = {
   pickLabel: string;
   probability: number;
   odds: string | null;
+  /** Cote chez le book de l'utilisateur (1xBet), sinon la plus basse relevée. */
+  playable?: { odds: number; bookmaker: string } | null;
   /** Code marché, pour que « Annulé » devienne « Remboursé » sur un Draw No Bet. */
   market?: string;
   result: ResultValue | null;
@@ -250,6 +252,7 @@ export function CouponCard({
                   testId="coupon-realized-odds"
                 />
               )}
+            <PlayableCombinedMetric legs={legs} combinedOdds={combinedOdds} />
             <Metric label="Chances" value={formatPct(jointProbability)} />
           </div>
         </div>
@@ -316,6 +319,22 @@ function CouponLegCard({
               @{leg.odds}
             </span>
           )}
+          {leg.playable &&
+            leg.odds !== null &&
+            Math.abs(leg.playable.odds - Number(leg.odds)) >= 0.005 && (
+              <span
+                data-testid="leg-playable-odds"
+                title={`Cote chez ${leg.playable.bookmaker}, le bookmaker des utilisateurs. La nôtre vient des books les plus généreux du relevé.`}
+                className={cn(
+                  "font-mono text-[0.68rem]",
+                  leg.playable.odds < 1.1
+                    ? "font-semibold text-destructive"
+                    : "text-muted-foreground/80",
+                )}
+              >
+                {leg.playable.bookmaker} {leg.playable.odds.toFixed(2)}
+              </span>
+            )}
         </div>
       }
       bodyClassName="py-2"
@@ -426,5 +445,31 @@ export function CouponSlipButton({
         </>
       )}
     </button>
+  );
+}
+
+/**
+ * La cote combinée chez le bookmaker des utilisateurs, quand toutes les
+ * jambes y sont cotées et qu'elle diffère de la nôtre : c'est ce que le
+ * coupon paiera réellement.
+ */
+function PlayableCombinedMetric({
+  legs,
+  combinedOdds,
+}: {
+  legs: NormalizedCouponLeg[];
+  combinedOdds: number;
+}) {
+  if (legs.length === 0 || legs.some((leg) => !leg.playable)) return null;
+  const bookmakers = new Set(legs.map((leg) => leg.playable!.bookmaker));
+  if (bookmakers.size !== 1) return null;
+  const playable = legs.reduce((acc, leg) => acc * leg.playable!.odds, 1);
+  if (Math.abs(playable - combinedOdds) < 0.005) return null;
+  return (
+    <Metric
+      label={[...bookmakers][0] ?? "Jouable"}
+      value={`@${playable.toFixed(2)}`}
+      testId="coupon-playable-odds"
+    />
   );
 }

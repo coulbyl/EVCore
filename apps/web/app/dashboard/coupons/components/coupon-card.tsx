@@ -76,6 +76,10 @@ export function CouponCard({
     pickLabel: formatPickForDisplay(leg.pick, leg.market),
     probability: leg.probability,
     odds: leg.oddsSnapshot != null ? leg.oddsSnapshot.toFixed(2) : null,
+    playable:
+      leg.playableOdds !== null && leg.playableBookmaker !== null
+        ? { odds: leg.playableOdds, bookmaker: leg.playableBookmaker }
+        : null,
     market: leg.market,
     // `isCorrect` null + `settledAt` posé = jambe remboursée (match reporté,
     // Draw No Bet sur un nul) ; null sans `settledAt` = pas encore réglée.
