@@ -330,7 +330,14 @@ function SlipButton({
     scheduledAt: slipContext.scheduledAt,
     market: selection.market,
     pick: selection.pick,
-    odds: selection.odds !== null ? String(selection.odds) : null,
+    // Le prix que l'utilisateur trouvera chez 1xBet quand il est connu ; le
+    // serveur enregistre le même au moment de jouer (BetSlipService.create).
+    odds:
+      selection.playableOdds !== null
+        ? String(selection.playableOdds)
+        : selection.odds !== null
+          ? String(selection.odds)
+          : null,
     ev:
       selection.ev !== null
         ? `${selection.ev >= 0 ? "+" : ""}${(selection.ev * 100).toFixed(0)}%`

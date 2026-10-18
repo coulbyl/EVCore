@@ -18,6 +18,10 @@ import { DEFAULT_STAKE_PCT } from '@modules/betting-engine/ev.constants';
 import { BankrollService } from '@modules/bankroll/bankroll.service';
 import { SLIP_LIMITS } from '@/config/bankroll.constants';
 import { BetSlipRepository } from './bet-slip.repository';
+import {
+  playableQuoteKey,
+  type PlayableQuote,
+} from '../betting-engine/pricing/playable-odds.repository';
 import type { CreateBetSlipDto } from './dto/create-bet-slip.dto';
 import type { BetSlipSummaryView, BetSlipView } from './bet-slip.types';
 
@@ -130,6 +134,33 @@ export class BetSlipService {
     // Resolved before the transaction: a stale/unknown couponProposalId must
     // never fail the whole bet slip submission over an engagement-tracking
     // mismatch (see CreateBetSlipDto's own doc comment).
+    // Le ticket est joué chez le book de l'utilisateur (1xBet), pas chez
+    // notre book de référence : quand 1xBet cote le choix, c'est SON prix
+    // qui est enregistré, et c'est lui que le règlement paie. Sans relevé
+    // 1xBet, le prix de référence reste (docs/audits/2026-10-18/
+    // COTES-JOUABLES.md). Jamais une cote fournie par le client.
+    const playable = await this.repository
+      .findPlayableQuotes(
+        resolvedUserPicks.map((r) => ({
+          fixtureId: r.fixtureId,
+          market: r.market as string,
+          pick: r.item.pick!,
+        })),
+      )
+      .catch(() => new Map<string, PlayableQuote>());
+    for (const resolved of resolvedUserPicks) {
+      const quote = playable.get(
+        playableQuoteKey({
+          fixtureId: resolved.fixtureId,
+          market: resolved.market as string,
+          pick: resolved.item.pick!,
+        }),
+      );
+      if (quote?.operatorOdds != null) {
+        resolved.oddsSnapshot = new Decimal(quote.operatorOdds);
+      }
+    }
+
     let placementCouponId: string | null = null;
     if (input.couponProposalId) {
       const coupon = await this.prisma.client.couponProposal.findUnique({

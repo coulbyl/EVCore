@@ -153,3 +153,29 @@ sur la compétition, une par championnat, les plus longues d'abord, jusqu'à
 quatre, cible 2,5, plafond 5. Même passe, même vivier, même garde « jouable
 chez 1xBet » que les autres produits. Le coupon 5–15 du compositeur par le
 prix reste généré et mesuré (endpoint `track-record`), plus affiché.
+
+## 7. Le ticket enregistre le prix 1xBet (ajout du 2026-10-18, nuit)
+
+Trois trous restaient entre « cote affichée » et « cote jouée » :
+
+- **« Mes coupons » notait notre cote de référence**, pas celle que
+  l'utilisateur a réellement obtenue. Un pari sûr joué à 1,22 chez nous et
+  payé 1,16 chez 1xBet remontait 1,22 dans le suivi de bankroll, et sa
+  cote combinée surévaluait le gain. Désormais `BetSlipService.create`
+  ré-résout chaque choix côté serveur et enregistre le dernier prix 1xBet
+  d'avant coup d'envoi quand il existe (`oddsSnapshot` du pari) ; sinon
+  notre référence, comme avant. Le client n'envoie jamais le prix retenu.
+- **Le brouillon du ticket** (Décisions, accueil, carte de coupon) affichait
+  la cote de référence pendant que la ligne montrait « 1xBet 1,16 » à côté.
+  Le brouillon porte maintenant la cote jouable quand elle est connue ; le
+  serveur reste seul à décider du prix enregistré.
+- **Le combiné Analyse IA** (vantage-worker) composait sur le même vivier
+  que le moteur mais sans sa garde « jouable chez 1xBet » : il pouvait
+  proposer une jambe à 1,20 chez Bet365 et 1,07 chez 1xBet. La garde est
+  portée dans le worker (`loadOperatorQuotes`, même requête que le
+  backend : dernier relevé 1xBet d'avant coup d'envoi, 1X2 en triplet),
+  jamais bloquante : sans relevé, la jambe passe.
+
+Couverture sur le dump du 16 octobre, deux jours de rencontres : 239
+rencontres cotées par 1xBet, 39 184 prix à choix unique plus 239 triplets
+1X2 — le même périmètre que `PlayableOddsRepository` côté backend.

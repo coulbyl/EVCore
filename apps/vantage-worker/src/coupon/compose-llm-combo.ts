@@ -8,6 +8,7 @@ import {
   type ComboCandidate,
 } from "@evcore/analysis-core";
 import { requestVantageCompletion, type LlmClients } from "../groq/client";
+import { OPERATOR_MIN_ODDS, operatorQuoteKey } from "./combo-calibration-query";
 import { sanitizeReasonText } from "../vantage/sanitize-reason";
 import type {
   CouponLlmProvenance,
@@ -68,12 +69,23 @@ function candidateKey(c: {
 export function eligibleLlmComboLegs(
   scoredPool: readonly ScoredCandidate[],
   calibration: readonly CalibrationCell[],
+  /** Prix chez le book de l'utilisateur par choix ; une jambe sous son
+   * minimum n'est jamais proposée (même garde que le moteur). */
+  operatorQuotes: ReadonlyMap<string, number> = new Map(),
 ): ScoredCandidate[] {
   const byKey = new Map<string, ScoredCandidate>();
   const candidates: ComboCandidate[] = [];
   for (const c of scoredPool) {
     if (c.pickSource !== "STAKED" || c.channelSelectionId === null) continue;
     if (c.oddsSnapshot === null || EXCLUDED_CHANNELS.has(c.canal)) continue;
+    const operator = operatorQuotes.get(
+      operatorQuoteKey({
+        fixtureId: c.fixtureId,
+        market: c.market,
+        pick: c.pick,
+      }),
+    );
+    if (operator !== undefined && operator < OPERATOR_MIN_ODDS) continue;
     const candidate: ComboCandidate = {
       fixtureId: c.fixtureId,
       competition: c.competition,
@@ -138,10 +150,15 @@ export async function composeLlmCombo(
   logger: Logger,
   opts: {
     maxAttempts?: number;
+    operatorQuotes?: ReadonlyMap<string, number>;
     onCompletion?: (provenance: CouponLlmProvenance) => void;
   } = {},
 ): Promise<ComposeLlmComboResult> {
-  const eligible = eligibleLlmComboLegs(scoredPool, calibration);
+  const eligible = eligibleLlmComboLegs(
+    scoredPool,
+    calibration,
+    opts.operatorQuotes,
+  );
   const eligibleCount = eligible.length;
   if (eligibleCount < COMBO_LLM_LEGS) {
     logger.info(

@@ -80,6 +80,12 @@ describe("eligibleLlmComboLegs", () => {
     const legs = eligibleLlmComboLegs(pool, cells);
     expect(legs.map((l) => l.fixtureId)).toEqual(["b", "c", "d", "a"]);
   });
+
+  it("drops a leg priced under 1.10 at the operator and keeps unquoted ones", () => {
+    const quotes = new Map([["b|OVER_UNDER|OVER_1_5", 1.07]]);
+    const legs = eligibleLlmComboLegs(pool, cells, quotes);
+    expect(legs.map((l) => l.fixtureId)).toEqual(["c", "d", "a"]);
+  });
 });
 
 describe("composeLlmCombo", () => {
