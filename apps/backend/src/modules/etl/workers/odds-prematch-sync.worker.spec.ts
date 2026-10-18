@@ -230,6 +230,10 @@ function buildCurlStdout(body: unknown, status = 200) {
   return `${JSON.stringify(body)}\n__EVCORE_HTTP_CODE__:${status}`;
 }
 
+// Toute rencontre mockée est à venir : le worker ne relève jamais une
+// rencontre déjà commencée, en mode horizon comme en mode clôture.
+const FUTURE_KICKOFF = new Date(Date.now() + 86_400_000);
+
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
 const fixtureService = {
@@ -313,9 +317,32 @@ describe('OddsPrematchSyncWorker.process', () => {
     expect(fixtureService.upsertOddsSnapshot).not.toHaveBeenCalled();
   });
 
+  it('never re-fetches a fixture that has already kicked off, in horizon mode too', async () => {
+    fixtureService.findScheduledForDate.mockResolvedValue([
+      {
+        id: 'started',
+        externalId: 1,
+        scheduledAt: new Date(Date.now() - 8 * 60_000),
+      },
+      { id: 'upcoming', externalId: 2, scheduledAt: FUTURE_KICKOFF },
+    ]);
+    mockCurlStdoutOnce(
+      buildCurlStdout(
+        buildOddsApiResponse(2, [pinnacleBookmaker('2.10', '3.40', '4.20')]),
+      ),
+    );
+
+    await worker.process(makeJob({ date: '2026-03-03' }));
+
+    expect(fixtureService.upsertOddsSnapshot).toHaveBeenCalledOnce();
+    expect(fixtureService.upsertOddsSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({ fixtureId: 'upcoming' }),
+    );
+  });
+
   it('upserts a Pinnacle snapshot when Pinnacle is available', async () => {
     fixtureService.findScheduledForDate.mockResolvedValue([
-      { id: 'fixture-uuid', externalId: 1379250 },
+      { id: 'fixture-uuid', externalId: 1379250, scheduledAt: FUTURE_KICKOFF },
     ]);
 
     mockCurlStdoutOnce(
@@ -343,7 +370,7 @@ describe('OddsPrematchSyncWorker.process', () => {
 
   it('falls back to Bet365 when Pinnacle is absent', async () => {
     fixtureService.findScheduledForDate.mockResolvedValue([
-      { id: 'fixture-uuid', externalId: 1379250 },
+      { id: 'fixture-uuid', externalId: 1379250, scheduledAt: FUTURE_KICKOFF },
     ]);
 
     mockCurlStdoutOnce(
@@ -363,7 +390,7 @@ describe('OddsPrematchSyncWorker.process', () => {
 
   it('prefers Pinnacle over Bet365 when both are present', async () => {
     fixtureService.findScheduledForDate.mockResolvedValue([
-      { id: 'fixture-uuid', externalId: 1379250 },
+      { id: 'fixture-uuid', externalId: 1379250, scheduledAt: FUTURE_KICKOFF },
     ]);
 
     mockCurlStdoutOnce(
@@ -394,7 +421,7 @@ describe('OddsPrematchSyncWorker.process', () => {
 
   it('skips fixture when API returns non-ok status', async () => {
     fixtureService.findScheduledForDate.mockResolvedValue([
-      { id: 'fixture-uuid', externalId: 99999 },
+      { id: 'fixture-uuid', externalId: 99999, scheduledAt: FUTURE_KICKOFF },
     ]);
 
     mockCurlStdoutOnce(buildCurlStdout({ errors: [] }, 429));
@@ -406,7 +433,7 @@ describe('OddsPrematchSyncWorker.process', () => {
 
   it('retries once immediately when a transient network error occurs, then succeeds', async () => {
     fixtureService.findScheduledForDate.mockResolvedValue([
-      { id: 'fixture-uuid', externalId: 1389367 },
+      { id: 'fixture-uuid', externalId: 1389367, scheduledAt: FUTURE_KICKOFF },
     ]);
 
     mockCurlErrorOnce('Operation timed out', 28);
@@ -427,7 +454,7 @@ describe('OddsPrematchSyncWorker.process', () => {
 
   it('skips fixture after two transient network timeouts', async () => {
     fixtureService.findScheduledForDate.mockResolvedValue([
-      { id: 'fixture-uuid', externalId: 1389367 },
+      { id: 'fixture-uuid', externalId: 1389367, scheduledAt: FUTURE_KICKOFF },
     ]);
 
     mockCurlErrorOnce('Operation timed out', 28);
@@ -442,7 +469,7 @@ describe('OddsPrematchSyncWorker.process', () => {
 
   it('skips fixture when Zod validation fails', async () => {
     fixtureService.findScheduledForDate.mockResolvedValue([
-      { id: 'fixture-uuid', externalId: 12345 },
+      { id: 'fixture-uuid', externalId: 12345, scheduledAt: FUTURE_KICKOFF },
     ]);
 
     mockCurlStdoutOnce(buildCurlStdout({ response: [{ bad: 'data' }] }));
@@ -454,7 +481,7 @@ describe('OddsPrematchSyncWorker.process', () => {
 
   it('skips fixture when no odds data in response', async () => {
     fixtureService.findScheduledForDate.mockResolvedValue([
-      { id: 'fixture-uuid', externalId: 12345 },
+      { id: 'fixture-uuid', externalId: 12345, scheduledAt: FUTURE_KICKOFF },
     ]);
 
     mockCurlStdoutOnce(buildCurlStdout({ response: [] }));
@@ -466,7 +493,7 @@ describe('OddsPrematchSyncWorker.process', () => {
 
   it('skips fixture when neither Pinnacle nor Bet365 has Match Winner data', async () => {
     fixtureService.findScheduledForDate.mockResolvedValue([
-      { id: 'fixture-uuid', externalId: 12345 },
+      { id: 'fixture-uuid', externalId: 12345, scheduledAt: FUTURE_KICKOFF },
     ]);
 
     mockCurlStdoutOnce(
@@ -484,8 +511,8 @@ describe('OddsPrematchSyncWorker.process', () => {
 
   it('processes multiple fixtures and counts synced/skipped correctly', async () => {
     fixtureService.findScheduledForDate.mockResolvedValue([
-      { id: 'uuid-1', externalId: 111 },
-      { id: 'uuid-2', externalId: 222 },
+      { id: 'uuid-1', externalId: 111, scheduledAt: FUTURE_KICKOFF },
+      { id: 'uuid-2', externalId: 222, scheduledAt: FUTURE_KICKOFF },
     ]);
 
     mockCurlStdoutOnce(

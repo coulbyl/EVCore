@@ -126,6 +126,8 @@ export class OddsPrematchSyncWorker extends WorkerHost {
     // Rencontres atteintes après leur coup d'envoi : l'indicateur direct que
     // le balayage ne tient pas sa fenêtre (voir CLOSING_MISS_ALERT_RATIO).
     let missedKickoff = 0;
+    // Rencontres déjà commencées rencontrées en mode horizon (voir ci-dessous).
+    let alreadyStarted = 0;
     const extendedCoverage: ExtendedMarketCoverage = new Map();
     // En mode clôture, l'espacement doit rester sous la durée de la fenêtre :
     // voir ODDS_CLOSING_RATE_LIMIT_MS.
@@ -134,12 +136,21 @@ export class OddsPrematchSyncWorker extends WorkerHost {
       : ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS;
 
     for (const { id: fixtureId, externalId, scheduledAt } of fixtures) {
-      // Filet de sécurité : si le lot a pris du retard, une rencontre déjà
-      // commencée n'a plus de cote d'avant match à offrir. La stocker
-      // polluerait la ligne de clôture avec un prix post-coup d'envoi.
-      if (closing && scheduledAt.getTime() <= Date.now()) {
+      // Filet de sécurité : une rencontre déjà commencée n'a plus de cote
+      // d'avant match à offrir, quel que soit le mode. En mode clôture c'est
+      // un coup d'envoi raté (l'indicateur du balayage). En mode horizon,
+      // « aujourd'hui » est dans la fenêtre depuis le 2026-10-05 et la passe
+      // du soir re-relevait les rencontres de 19:00 UTC huit minutes après
+      // leur coup d'envoi : un prix inchangé partage sa clé (`snapshotAt`)
+      // avec le relevé T−10, dont l'`observedAt` était écrasé par une heure
+      // post-coup d'envoi — la vue de clôture l'excluait et la preuve
+      // d'avant-match disparaissait. 16 % des rencontres analysées du 9 au
+      // 16 octobre ont perdu leur clôture ainsi, 0 % de clôture sur les
+      // coups d'envoi de 19:00 (docs/audits/2026-10-18/CLOTURE-ECRASEE.md).
+      if (scheduledAt.getTime() <= Date.now()) {
         skipped++;
-        missedKickoff++;
+        if (closing) missedKickoff++;
+        else alreadyStarted++;
         continue;
       }
       const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/odds?fixture=${externalId}`;
@@ -364,7 +375,7 @@ export class OddsPrematchSyncWorker extends WorkerHost {
     }
 
     logger.info(
-      { synced, skipped, missedKickoff, dates: dateLabel },
+      { synced, skipped, missedKickoff, alreadyStarted, dates: dateLabel },
       'Odds prematch sync complete',
     );
     reportExtendedMarketCoverage(extendedCoverage);
