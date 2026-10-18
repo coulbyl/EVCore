@@ -22,10 +22,10 @@ export function buildComboSystemPrompt(): string {
 
 Règles :
 1. Tu choisis uniquement par numéro dans la liste. Exactement ${COMBO_LLM_LEGS} numéros, tous différents.
-2. Trois matchs différents, trois championnats différents. Préfère des matchs dont les issues ne dépendent pas les unes des autres (championnats, horaires, types de pari variés).
+2. ${COMBO_LLM_LEGS} matchs différents, ${COMBO_LLM_LEGS} championnats différents. Préfère des matchs dont les issues ne dépendent pas les unes des autres (championnats, horaires, types de pari variés).
 3. Tu ne vois ni cote ni probabilité, et tu n'en inventes pas : elles sont déjà jugées. Ne raisonne jamais en gains, en valeur ou en risque financier.
 4. Si moins de ${COMBO_LLM_LEGS} matchs te paraissent indépendants et cohérents, réponds "no_coupon" avec la raison, sans forcer.
-5. "reasoning" (par jambe, une phrase) et "reasonDetails" (global, deux phrases maximum) s'adressent à un joueur : pourquoi ces trois matchs ensemble. En français. Aucun code technique (ni nom de marché ni nom de canal en majuscules ou avec un underscore), aucun chiffre de cote ni de probabilité.
+5. "reasoning" (par jambe, une phrase) et "reasonDetails" (global, deux phrases maximum) s'adressent à un joueur : pourquoi ces matchs ensemble. En français. Aucun code technique (ni nom de marché ni nom de canal en majuscules ou avec un underscore), aucun chiffre de cote ni de probabilité.
 6. Réponds uniquement en JSON valide correspondant au schéma fourni. Aucun texte hors JSON.`;
 }
 
@@ -49,5 +49,5 @@ ${list}
 ${feedbackBlock}
 Réponds avec l'un de ces deux schémas JSON exacts :
 {"verdict":"no_coupon","reasonDetails":"..."}
-{"verdict":"compose","reasonDetails":"...","legs":[{"index":<numéro>,"reasoning":"..."},{"index":<numéro>,"reasoning":"..."},{"index":<numéro>,"reasoning":"..."}]}`;
+{"verdict":"compose","reasonDetails":"...","legs":[${Array.from({ length: COMBO_LLM_LEGS }, () => '{"index":<numéro>,"reasoning":"..."}').join(",")}]}`;
 }

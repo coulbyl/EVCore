@@ -19,6 +19,13 @@ import {
  * seuil.
  */
 export const PRIMARY_MAX_ODDS = 1.5;
+/**
+ * Plancher : sous 1,20 chez notre book de référence, un choix passe sous le
+ * minimum de 1,10 des books des utilisateurs dans trois cas sur quatre
+ * (docs/audits/2026-10-18/COTES-JOUABLES.md). Une sélection moins chère
+ * reste visible dans « autres marchés », jamais mise en avant.
+ */
+export const PRIMARY_MIN_ODDS = 1.2;
 
 /**
  * LA sélection qu'un utilisateur lambda doit regarder sur un match : d'abord
@@ -45,11 +52,14 @@ export function primaryPick(
   const tier = (d: ChannelDecisionMatchDecisionDto): number => {
     const s = status(d);
     const odds = d.selections[0]?.odds ?? null;
-    const cheap = odds !== null && odds < PRIMARY_MAX_ODDS;
+    // Jouable : 1,20 ou plus chez notre book de référence ; court : sous 1,50.
+    const playable = odds !== null && odds >= PRIMARY_MIN_ODDS;
+    const cheap = playable && odds < PRIMARY_MAX_ODDS;
     if (s === "GREEN" && cheap) return 0;
     if (s !== "RED" && cheap) return 1;
-    if (s === "GREEN") return 2;
-    if (s !== "RED") return 3;
+    if (s === "GREEN" && playable) return 2;
+    if (s !== "RED" && playable) return 3;
+    // Sous 1,20 (injouable chez l'opérateur) ou canal peu fiable : en dernier.
     return 4;
   };
   return picks

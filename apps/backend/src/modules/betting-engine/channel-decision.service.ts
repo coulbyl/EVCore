@@ -34,6 +34,11 @@ import {
 import { OddsClosingLineRepository } from './pricing/odds-closing-line.repository';
 import { resolveClosingLine } from './pricing/closing-line';
 import { CLOSING_LINE_POLICY } from './pricing/closing-line.constants';
+import {
+  playableQuoteKey,
+  PlayableOddsRepository,
+  type PlayableQuote,
+} from './pricing/playable-odds.repository';
 import type { SettleableSelectionRow } from './channel-decision.repository';
 
 const logger = createLogger('channel-decision');
@@ -64,6 +69,14 @@ export type ChannelSelectionItem = {
   closingOdds: number | null;
   closingBookmaker: string | null;
   closingLineValue: number | null;
+  /**
+   * Cote jouable : prix du choix chez le book de l'utilisateur
+   * (`playableBookmaker`, 1xBet) quand il le cote, sinon le plus bas des
+   * books relevés. Notre prix de référence (Bet365, Pinnacle) est le plus
+   * généreux du relevé ; c'est celui-ci que l'utilisateur trouvera.
+   */
+  playableOdds: number | null;
+  playableBookmaker: string | null;
 };
 
 // Normalised read shape (doc §5): one object per run × channel, REJECTED decisions
@@ -182,6 +195,7 @@ export class ChannelDecisionService {
   constructor(
     private readonly repository: ChannelDecisionRepository,
     private readonly closingLines: OddsClosingLineRepository,
+    private readonly playableOdds: PlayableOddsRepository,
   ) {
     this.orchestrator = createChannelStrategyOrchestrator();
   }
@@ -325,13 +339,15 @@ export class ChannelDecisionService {
   ): Promise<ChannelDecisionMatchItem[]> {
     const rows = await this.findRows(query);
     const resultMap = buildResultMap(rows);
-    const newCoachTeams = await this.repository.findNewCoachTeams(
-      teamAsOfFromRows(rows),
-    );
+    const [newCoachTeams, quotes] = await Promise.all([
+      this.repository.findNewCoachTeams(teamAsOfFromRows(rows)),
+      this.findPlayableQuotesFor(rows),
+    ]);
     const groups = new Map<string, ChannelDecisionMatchItem>();
 
     for (const row of rows) {
       const item = enrichAvoidItem(this.toItem(row, newCoachTeams), resultMap);
+      attachPlayableOdds(item, quotes);
       let group = groups.get(item.fixtureId);
       if (group === undefined) {
         group = {
@@ -373,13 +389,15 @@ export class ChannelDecisionService {
       status: query.status ?? CHANNEL_DECISION_STATUS.SELECTED,
     });
     const resultMap = buildResultMap(rows);
-    const newCoachTeams = await this.repository.findNewCoachTeams(
-      teamAsOfFromRows(rows),
-    );
+    const [newCoachTeams, quotes] = await Promise.all([
+      this.repository.findNewCoachTeams(teamAsOfFromRows(rows)),
+      this.findPlayableQuotesFor(rows),
+    ]);
     const groups = new Map<StrategyChannel, ChannelDecisionItem[]>();
 
     for (const row of rows) {
       const item = enrichAvoidItem(this.toItem(row, newCoachTeams), resultMap);
+      attachPlayableOdds(item, quotes);
       const group = groups.get(item.channel) ?? [];
       group.push(item);
       groups.set(item.channel, group);
@@ -397,6 +415,26 @@ export class ChannelDecisionService {
   // other dimension's current selection — simpler and still cheap, and
   // standard enough for a facet UI (it never hides a value the user could
   // still reach by clearing the other section first).
+  /** Cotes jouables de toutes les sélections des lignes lues, en une requête. */
+  private async findPlayableQuotesFor(
+    rows: readonly ChannelDecisionReadRow[],
+  ): Promise<Map<string, PlayableQuote>> {
+    const keys = rows.flatMap((row) =>
+      row.selections.map((s) => ({
+        fixtureId: row.fixtureId,
+        market: s.market as string,
+        pick: s.pick,
+      })),
+    );
+    try {
+      return await this.playableOdds.findPlayableQuotes(keys);
+    } catch (error) {
+      // Un affichage de confort : jamais bloquant pour la page.
+      logger.warn({ err: error }, 'playable odds lookup failed, skipping');
+      return new Map();
+    }
+  }
+
   async getFacets(date: string): Promise<ChannelDecisionFacets> {
     const day = new Date(date);
     const rows = await this.repository.findFacetRows({
@@ -605,7 +643,28 @@ function toSelectionItem(
     closingOdds: toNumber(selection.closingOdds),
     closingBookmaker: selection.closingBookmaker,
     closingLineValue: toNumber(selection.closingLineValue),
+    playableOdds: null,
+    playableBookmaker: null,
   };
+}
+
+function attachPlayableOdds(
+  item: { fixtureId: string; selections: ChannelSelectionItem[] },
+  quotes: Map<string, PlayableQuote>,
+): void {
+  for (const selection of item.selections) {
+    const quote = quotes.get(
+      playableQuoteKey({
+        fixtureId: item.fixtureId,
+        market: selection.market,
+        pick: selection.pick,
+      }),
+    );
+    if (!quote) continue;
+    selection.playableOdds = quote.operatorOdds ?? quote.lowestOdds;
+    selection.playableBookmaker =
+      quote.operatorBookmaker ?? quote.lowestBookmaker;
+  }
 }
 
 // Keyed by "modelRunId:channel:market:pick" — used to enrich AVOID offenders.

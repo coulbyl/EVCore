@@ -96,3 +96,60 @@ Ce que ça ne règle pas : un bookmaker local peut être plus cher que le pire
 de nos neuf. Si l'utilisateur nomme le sien et qu'il est dans la liste
 d'API-Football (33 books servis, 9 relevés), on le relève et on l'affiche
 nommément — c'est la vraie réponse, le plancher n'est que le filet.
+
+## 5. Fait (2026-10-18, même jour)
+
+- **Plancher 1,20** sur la cote de référence : pari sûr en 1,20–1,35
+  (clé d'historique inchangée), combinés du moteur et Analyse IA à **deux
+  jambes** de 1,20 à 1,50 (`COMBO_COUPON_CLASS`), « Notre sélection »
+  cherchée d'abord entre 1,20 et 1,50 (`PRIMARY_MIN_ODDS`). Les sélections
+  moins chères restent visibles, jamais mises en avant.
+- **Garde à la génération** : une jambe dont le prix chez 1xBet (sinon le
+  plus bas relevé) est sous 1,10 n'entre ni dans le pari sûr ni dans le
+  combiné du moteur, même si notre référence la met à 1,20 — le 16 octobre,
+  une jambe à 1,20 chez Bet365 valait 1,07 chez 1xBet. Un choix sans relevé
+  passe : on ne refuse que ce qu'on a mesuré.
+- **Cote jouable affichée** à côté de la nôtre, sur chaque sélection de
+  Décisions et chaque jambe de coupon : le prix chez 1xBet quand il cote le
+  choix, sinon le plus bas des neuf books relevés ; en rouge sous 1,10. Sur
+  un coupon, la cote combinée chez 1xBet est une tuile à part quand elle
+  diffère. Calcul au moment de la lecture (`PlayableOddsRepository`, dernier
+  relevé d'avant coup d'envoi de chaque book), jamais bloquant.
+- **Betclic** : absent des books servis par API-Football dans notre relevé
+  (14 books vus sur 100 rencontres) ; non relevable aujourd'hui. 1xBet couvre
+  95 % des rencontres et 88 % des choix cotés par Bet365.
+
+L'historique des cartes (jours gagnés / réglés) continue sans rupture : la
+clé des produits ne change pas, seule la règle de sélection se resserre. La
+nouvelle règle se lit à part, par jambe, à partir du 2026-10-19.
+
+## 6. Le coupon long, rebâti à cote 2,5–5 (ajout du 2026-10-18, soir)
+
+Question de l'utilisateur : on a assez de marchés pour faire mieux qu'un
+coupon 5–15 à deux jambes qui gagne un jour sur sept — un coupon à cote 2 à
+5, avec autant de jambes qu'il faut. Mesuré sur les mêmes sélections
+calibrées (une par championnat, plancher 1,20), ajoutées jusqu'à une cible
+de cote combinée :
+
+| Jambes admises, ordre                                   |   Cible | Jours | Jambes |   Jours gagnants | Cote moy. | Pire série |
+| ------------------------------------------------------- | ------: | ----: | -----: | ---------------: | --------: | ---------: |
+| 1,20–1,50 fiables, les moins chères d'abord             |     2,0 |    87 |    3,7 |           36,8 % |      2,24 |          6 |
+| idem                                                    |     2,5 |    78 |    4,8 |           23,1 % |      2,85 |         15 |
+| 1,20–1,80 non « peu fiables », les plus longues d'abord |     2,0 |   101 |    2,0 |           39,6 % |      2,71 |          8 |
+| **idem**                                                | **2,5** |    96 |    2,3 | **34,4 % ± 4,8** |  **2,99** |          8 |
+| idem                                                    |     3,0 |    95 |    2,8 |           27,4 % |      3,64 |          8 |
+| idem                                                    |     4,0 |    84 |    3,4 |           26,2 % |      4,95 |          8 |
+| Compositeur par le prix 5–15 (prod)                     |    5–15 |     — |      2 |          13–17 % |       6,2 |          — |
+
+Deux enseignements. Empiler des jambes courtes pour monter la cote coûte
+cher (une jambe de plus à 0,80 fait perdre 20 points) ; prendre des jambes
+un peu plus longues mais encore calibrées (jusqu'à 1,80) fait la même cote
+en moins de jambes et gagne plus souvent. Et le résultat suit l'arithmétique
+des jambes calibrées : à cote 3, un jour sur trois.
+
+Décision : **« Coupon long · cote 2,5–5 »** (classe `LONG`, source
+`ENGINE`) — jambes de 1,20 à 1,80 dont le canal n'est pas « peu fiable »
+sur la compétition, une par championnat, les plus longues d'abord, jusqu'à
+quatre, cible 2,5, plafond 5. Même passe, même vivier, même garde « jouable
+chez 1xBet » que les autres produits. Le coupon 5–15 du compositeur par le
+prix reste généré et mesuré (endpoint `track-record`), plus affiché.

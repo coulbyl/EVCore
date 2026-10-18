@@ -9,6 +9,8 @@ import {
 } from './coupon-favourite-generation.service';
 import {
   CouponEngineComboGenerationService,
+  ENGINE_COMBO_PROFILE,
+  ENGINE_LONG_PROFILE,
   type EngineComboGenerationOutcome,
 } from './coupon-engine-combo-generation.service';
 
@@ -18,6 +20,7 @@ export type DailyGenerationOutcome = {
   price: PriceGenerationOutcome | Failed;
   favourite: FavouriteGenerationOutcome | Failed;
   combo: EngineComboGenerationOutcome | Failed;
+  long: EngineComboGenerationOutcome | Failed;
 };
 
 /**
@@ -44,7 +47,10 @@ export class CouponDailyGenerationService {
         this.favourite.generateForDate(forDate),
       ),
       combo: await this.guard('engine combo', () =>
-        this.combo.generateForDate(forDate),
+        this.combo.generateForDate(forDate, ENGINE_COMBO_PROFILE),
+      ),
+      long: await this.guard('engine long', () =>
+        this.combo.generateForDate(forDate, ENGINE_LONG_PROFILE),
       ),
     };
   }

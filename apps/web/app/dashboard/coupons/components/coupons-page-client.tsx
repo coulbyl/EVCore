@@ -30,11 +30,17 @@ export function CouponsPageClient() {
   // l'intérieur d'une classe. Le rang n'exprime plus une qualité — mesuré sur
   // 5 passes, le rang 1 n'est pas meilleur que le rang 2 — c'est juste un
   // ordre stable d'affichage.
-  const coupons = (data ?? []).slice().sort((a, b) => {
-    const oa = couponClassMeta(a.couponClass)?.order ?? 99;
-    const ob = couponClassMeta(b.couponClass)?.order ?? 99;
-    return oa !== ob ? oa - ob : a.rank - b.rank;
-  });
+  // Le coupon 5–15 du compositeur par le prix reste généré et mesuré (son
+  // historique est dans l'endpoint track-record) mais n'est plus affiché
+  // depuis le 2026-10-18 : un jour sur sept, remplacé par le coupon long à
+  // cote 2,5–5 sur les sélections calibrées.
+  const coupons = (data ?? [])
+    .filter((c) => c.couponClass !== "UNIQUE")
+    .sort((a, b) => {
+      const oa = couponClassMeta(a.couponClass)?.order ?? 99;
+      const ob = couponClassMeta(b.couponClass)?.order ?? 99;
+      return oa !== ob ? oa - ob : a.rank - b.rank;
+    });
   useCouponCelebration(coupons);
 
   function navigateTo(iso: string) {

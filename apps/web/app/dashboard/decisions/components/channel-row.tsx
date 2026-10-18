@@ -19,6 +19,7 @@ import { AddToCouponButton } from "@/components/add-to-coupon-button";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
 import { ConfidenceBadge } from "@/components/confidence-badge";
 import { ClosingLine } from "@/components/closing-line";
+import { PlayableOdds } from "@/components/playable-odds";
 import type { ChannelCompetitionStatItem } from "@/domains/dashboard/types/dashboard";
 import {
   calibrationKey,
@@ -138,6 +139,11 @@ export function ChannelRow({
                 @{odds}
               </span>
             )}
+            <PlayableOdds
+              odds={selection.odds}
+              playableOdds={selection.playableOdds}
+              playableBookmaker={selection.playableBookmaker}
+            />
             <ClosingLine
               closingOdds={selection.closingOdds}
               closingLineValue={selection.closingLineValue}

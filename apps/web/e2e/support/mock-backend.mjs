@@ -86,6 +86,8 @@ function couponLeg(overrides) {
       ? "2026-10-05T18:50:00.000Z"
       : null,
     closingLineValue: overrides.closingLineValue ?? null,
+    playableOdds: overrides.playableOdds ?? null,
+    playableBookmaker: overrides.playableOdds ? "1xBet" : null,
     modelRunId: `run-${overrides.id}`,
   };
 }
@@ -98,9 +100,11 @@ function coupon(overrides) {
     forDate: "2026-10-05",
     rank: 1,
     signalWindowDays: 0,
-    targetOddsMin: overrides.targetOddsMin ?? 5,
-    targetOddsMax: overrides.targetOddsMax ?? 15,
-    couponClass: overrides.couponClass ?? "UNIQUE",
+    // Classe par défaut des jeux de données : le coupon long à cote 2,5–5
+    // (le 5–15 n'est plus affiché depuis le 2026-10-18).
+    targetOddsMin: overrides.targetOddsMin ?? 2.5,
+    targetOddsMax: overrides.targetOddsMax ?? 5,
+    couponClass: overrides.couponClass ?? "LONG",
     batch: "evening",
     source: overrides.source ?? "LLM",
     combinedOdds: Number(combinedOdds.toFixed(3)),
@@ -140,7 +144,8 @@ const COUPONS = [
       }),
     ],
   }),
-  // Le combiné du jour : trois sélections du moteur, source ENGINE.
+  // Le combiné du jour : deux sélections du moteur, source ENGINE, avec la
+  // cote 1xBet à côté de la nôtre.
   coupon({
     id: "combo",
     source: "ENGINE",
@@ -151,7 +156,8 @@ const COUPONS = [
     legs: [
       couponLeg({
         id: "cb1",
-        odds: 1.12,
+        odds: 1.22,
+        playableOdds: 1.18,
         isCorrect: true,
         settledAt: "2026-10-05T21:00:00.000Z",
         score: "2-0",
@@ -160,21 +166,13 @@ const COUPONS = [
       }),
       couponLeg({
         id: "cb2",
-        odds: 1.15,
+        odds: 1.25,
+        playableOdds: 1.2,
         isCorrect: true,
         settledAt: "2026-10-05T21:00:00.000Z",
         score: "1-1",
         market: "DOUBLE_CHANCE",
         pick: "1X",
-      }),
-      couponLeg({
-        id: "cb3",
-        odds: 1.2,
-        isCorrect: true,
-        settledAt: "2026-10-05T21:00:00.000Z",
-        score: "3-1",
-        market: "TEAM_TOTAL_HOME",
-        pick: "OVER_0_5",
       }),
     ],
   }),

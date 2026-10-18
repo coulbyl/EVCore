@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CouponFavouriteGenerationService } from './coupon-favourite-generation.service';
+import type { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
 import type { CouponRepository, PriceCandidateRow } from './coupon.repository';
 
 const FOR_DATE = new Date('2026-10-13T00:00:00.000Z');
@@ -37,6 +38,9 @@ describe('CouponFavouriteGenerationService', () => {
     repository.recordPriceComposerAttempt.mockResolvedValue();
     service = new CouponFavouriteGenerationService(
       repository as unknown as CouponRepository,
+      {
+        findPlayableQuotes: vi.fn().mockResolvedValue(new Map()),
+      } as unknown as PlayableOddsRepository,
     );
   });
 

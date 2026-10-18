@@ -948,5 +948,10 @@
       "behindClose": "Worse than the closing price, which is worth {margin} (the bookmaker's margin).",
       "unknownMargin": "The bookmaker's margin is unknown for this selection, so no comparison with the closing price is possible."
     }
+  },
+  "playableOdds": {
+    "label": "{bookmaker} {odds}",
+    "hint": "Odds at the users' bookmaker. Ours come from the most generous books we record.",
+    "belowMinimum": "Under the {min} minimum this bookmaker accepts: this pick cannot be played there."
   }
 }

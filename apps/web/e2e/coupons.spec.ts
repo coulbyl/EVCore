@@ -26,6 +26,11 @@ test.describe("Coupons", () => {
     });
     const count = await cards.count();
     expect(count).toBe(6);
+    // Le coupon prix 5–15 n'est plus affiché ; le coupon long 2,5–5 l'est.
+    await expect(page.getByText(/cote 5–15/)).toHaveCount(0);
+    await expect(
+      page.getByText(/Coupon long · cote 2,5–5/).first(),
+    ).toBeVisible();
     for (let i = 0; i < count; i += 1) {
       const card = cards.nth(i);
       const combined = Number(
@@ -121,8 +126,13 @@ test.describe("Coupons", () => {
     const second = cards.nth(1);
     await expect(second.getByText(/Combiné du jour/)).toBeVisible();
     await expect(
-      second.getByText(/3 jours sur 4|3 days out of 4/),
+      second.getByText(/7 jours sur 10|7 days out of 10/),
     ).toBeVisible();
-    await expect(second.getByTestId("leg-odds")).toHaveCount(3);
+    await expect(second.getByTestId("leg-odds")).toHaveCount(2);
+    // La cote chez 1xBet à côté de la nôtre, par jambe et combinée.
+    await expect(second.getByTestId("leg-playable-odds")).toHaveCount(2);
+    await expect(second.getByTestId("coupon-playable-odds")).toHaveText(
+      "@1.42",
+    );
   });
 });

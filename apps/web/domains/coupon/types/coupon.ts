@@ -4,7 +4,8 @@ export type CouponClassName =
   | "BOLD"
   | "UNIQUE"
   | "FAVOURITE"
-  | "COMBO";
+  | "COMBO"
+  | "LONG";
 
 export type CouponSource = "LLM" | "PRICE_COMPOSER" | "ENGINE";
 
@@ -53,6 +54,10 @@ export type CouponLegDto = {
   closingBookmaker: string | null;
   closingObservedAt: string | null;
   closingLineValue: number | null;
+  /** Cote jouable chez le book de l'utilisateur (1xBet), sinon la plus basse
+   * des books relevés ; `null` quand aucun relevé ne couvre le choix. */
+  playableOdds: number | null;
+  playableBookmaker: string | null;
   /** Fixture's latest ModelRun id — lets "Jouer ce coupon" submit this leg to
    * POST /bet-slips as a USER pick (modelRunId + market + pick). `null` on
    * the rare fixture with no ModelRun at all. */

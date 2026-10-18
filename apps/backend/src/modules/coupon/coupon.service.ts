@@ -1,6 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CouponProposalStatus } from '@evcore/db';
 import { CouponRepository } from './coupon.repository';
+import {
+  playableQuoteKey,
+  PlayableOddsRepository,
+  type PlayableQuote,
+} from '../betting-engine/pricing/playable-odds.repository';
 import { startOfUtcDay } from '@utils/date.utils';
 import {
   classForTargetOddsMin,
@@ -21,7 +26,10 @@ import { readQuotedBookmaker } from '../betting-engine/pricing/closing-line';
 // §9bis. CouponService now only reads.
 @Injectable()
 export class CouponService {
-  constructor(private readonly repo: CouponRepository) {}
+  constructor(
+    private readonly repo: CouponRepository,
+    private readonly playableOdds: PlayableOddsRepository,
+  ) {}
 
   async getCoupons(
     date: string,
@@ -30,6 +38,18 @@ export class CouponService {
   ): Promise<CouponProposalDto[]> {
     const forDate = new Date(`${date}T00:00:00.000Z`);
     const proposals = await this.repo.findByDate(forDate, userId, status);
+    const quotes = await this.playableOdds
+      .findPlayableQuotes(
+        proposals.flatMap((p) =>
+          p.legs.map((leg) => ({
+            fixtureId: leg.fixtureId,
+            market: leg.market as string,
+            pick: leg.pick,
+          })),
+        ),
+      )
+      // Un affichage de confort : jamais bloquant pour la page.
+      .catch(() => new Map<string, PlayableQuote>());
 
     return proposals.map((p) => {
       const reasoning = p.reasoning as Record<string, unknown> | null;
@@ -95,6 +115,14 @@ export class CouponService {
           closingObservedAt: leg.closingObservedAt?.toISOString() ?? null,
           closingLineValue:
             leg.closingLineValue !== null ? Number(leg.closingLineValue) : null,
+          playableOdds:
+            playableFor(quotes, leg)?.operatorOdds ??
+            playableFor(quotes, leg)?.lowestOdds ??
+            null,
+          playableBookmaker:
+            playableFor(quotes, leg)?.operatorBookmaker ??
+            playableFor(quotes, leg)?.lowestBookmaker ??
+            null,
           modelRunId:
             readSnapshotString(leg.featureSnapshot, 'modelRunId') ??
             leg.fixture.modelRuns[0]?.id ??
@@ -141,4 +169,17 @@ function formatFixtureScore(scores: {
   return homeScore === null || awayScore === null
     ? null
     : `${homeScore}-${awayScore}`;
+}
+
+function playableFor(
+  quotes: Map<string, PlayableQuote>,
+  leg: { fixtureId: string; market: string; pick: string },
+): PlayableQuote | undefined {
+  return quotes.get(
+    playableQuoteKey({
+      fixtureId: leg.fixtureId,
+      market: leg.market,
+      pick: leg.pick,
+    }),
+  );
 }

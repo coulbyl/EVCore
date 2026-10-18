@@ -312,6 +312,11 @@ export const FAVOURITE_POLICY = {
  * compétition est celle de la pastille de confiance : 90 jours glissants,
  * mêmes seuils que le tableau de bord.
  */
+export const ENGINE_LONG_POLICY = {
+  version: 'engine-long-v1',
+  pass: 'engine-long',
+} as const;
+
 export const ENGINE_COMBO_POLICY = {
   version: 'engine-combo-v1',
   pass: 'engine-combo',

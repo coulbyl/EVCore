@@ -94,6 +94,14 @@ export type ChannelSelectionDto = {
   closingOdds: number | null;
   closingBookmaker: string | null;
   closingLineValue: number | null;
+  /**
+   * Cote jouable : prix du choix chez le book de l'utilisateur (1xBet) quand
+   * il le cote, sinon le plus bas des books relevés. Notre prix de référence
+   * (Bet365, Pinnacle) est le plus généreux du relevé : c'est celui-ci que
+   * l'utilisateur trouvera.
+   */
+  playableOdds: number | null;
+  playableBookmaker: string | null;
 };
 
 export type ChannelDecisionDto = {
