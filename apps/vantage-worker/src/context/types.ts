@@ -158,4 +158,8 @@ export type MatchContext = {
    * `null`/absent when the fixture has no odds at all. */
   fullOddsSnapshot?: FullOddsSnapshot | null;
   vantageMarketCalibration?: readonly VantageMarketCalibration[];
+  /** Markets the backend guard-rail has suspended (ROI < −15 % established
+   * on 50+ settled legs over 90 days). Closed to VANTAGE like a market
+   * failing its own calibration; absent when the lookup failed. */
+  suspendedMarkets?: readonly string[];
 };

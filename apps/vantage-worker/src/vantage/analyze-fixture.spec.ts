@@ -131,6 +131,27 @@ describe("analyzeFixture — MAX_ODDS cap and self-calibration gate (v4, 2026-10
     expect(userPrompt).toContain("ONE_X_TWO (");
   });
 
+  it("gates a play on a market the backend guard-rail has suspended", async () => {
+    buildMatchContext.mockResolvedValue({
+      ...baseContext,
+      readings: [{ ...baseContext.readings[0]!, odds: 1.5 }],
+      suspendedMarkets: ["ONE_X_TWO"],
+    });
+    requestVantageCompletion.mockResolvedValue(playResponse());
+
+    const result = await analyzeFixture(
+      "fixture-1",
+      dummyClients,
+      dummyConfig,
+      noopLogger,
+    );
+
+    expect(result).toEqual({ outcome: "gated", reason: "self_calibration" });
+    expect(persistVantageGateRejection).toHaveBeenCalledWith(
+      expect.objectContaining({ reasonCode: "VANTAGE_GATED_MARKET" }),
+    );
+  });
+
   it("keeps a market open while its sample is below 100 or its ratio at or above 0.70", async () => {
     buildMatchContext.mockResolvedValue({
       ...baseContext,
