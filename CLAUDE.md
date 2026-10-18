@@ -317,7 +317,7 @@ These rules reflect the product specification in EVCORE.md and must never be byp
 - EV threshold: `≥ 0.08` — defined in config, never hardcoded inline. Still gates the VALUE channel, but **it is no longer a quality signal**: see the anti-predictive edge result in the overview. Every surface that stakes now applies `MAX_LEG_EDGE = 0.10` as a ceiling on top of it, which is the exact complement — most VALUE picks therefore land in Investir's "Écarté" view. Do not add new selection logic keyed on EV or edge.
 - OpenClaw weight cap: `≤ 0.30` — enforced server-side, never trust frontend or LLM output
 - Weight adjustment: minimum 50 bets on market, maximum 5% change per week
-- Market suspension: automatic at ROI < -15% over 50+ bets — never manual shortcut
+- Market suspension: automatic at ROI < -15% over 50+ settled legs — measured on `channel_selection_deduped` over a trailing 90 days (never the `bet` table), with the loss established (95 % upper bound of the ROI below zero) so a bad week alone suspends nothing — never manual shortcut
 - `AdjustmentProposal` is **auto-applied** by the backend when calibration triggers; humans see the applied proposal and can rollback via `POST /adjustment/:id/rollback`
 - Rollback rate-limit: one auto-apply per 7 days per market (enforced server-side)
 

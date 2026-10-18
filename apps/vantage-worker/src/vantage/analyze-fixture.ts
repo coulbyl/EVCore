@@ -72,7 +72,7 @@ export const SELF_CALIBRATION_GATE = {
 /** Markets closed to VANTAGE by its own measure — what the prompt tells the
  * model up front, and what the gate below refuses regardless. */
 export function closedMarkets(context: MatchContext): string[] {
-  return (context.vantageMarketCalibration ?? [])
+  const byOwnMeasure = (context.vantageMarketCalibration ?? [])
     .filter(
       (c) =>
         c.sampleSize >= SELF_CALIBRATION_GATE.minSample &&
@@ -80,6 +80,9 @@ export function closedMarkets(context: MatchContext): string[] {
         c.calibrationRatio < SELF_CALIBRATION_GATE.minRatio,
     )
     .map((c) => c.market);
+  // Plus the markets the backend guard-rail suspended (ROI established
+  // under −15 % on the engine's own legs): closed to every channel.
+  return [...new Set([...byOwnMeasure, ...(context.suspendedMarkets ?? [])])];
 }
 
 /** The odds VANTAGE's own pick would carry, if another channel's reading for

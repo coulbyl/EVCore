@@ -8,6 +8,7 @@ import {
   type WeeklyReportPayload,
 } from '@modules/notification/notification.service';
 import { RISK_CONSTANTS } from './risk.constants';
+import { RiskRepository, type SettledLegRow } from './risk.repository';
 
 const logger = createLogger('risk-service');
 
@@ -23,6 +24,8 @@ export type RoiCheckResult = {
   market: Market;
   betCount: number;
   roi: Decimal;
+  /** Standard error of the ROI per leg; zero when the sample is empty. */
+  standardError: Decimal;
   action: 'suspended' | 'alerted' | 'ok' | 'insufficient_data';
 };
 
@@ -55,6 +58,7 @@ export class RiskService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notification: NotificationService,
+    private readonly repository: RiskRepository,
   ) {}
 
   async isMarketSuspended(market: Market): Promise<boolean> {
@@ -105,75 +109,85 @@ export class RiskService {
     }));
   }
 
+  /**
+   * Garde-fou de ROI par marché (CLAUDE.md : suspension automatique à
+   * ROI < −15 % sur 50+ paris).
+   *
+   * Lit l'échantillon réel du moteur — ses jambes réglées, dédoublonnées,
+   * sur une fenêtre glissante — et non plus la table `bet` (derniers paris
+   * du moteur le 2026-09-04 : le balayage évaluait un échantillon mort).
+   * La suspension exige en plus que la perte soit établie (borne haute à
+   * 95 % du ROI sous zéro) : sur 50 jambes l'erreur-type vaut 10 points,
+   * une mauvaise semaine ne suspend rien. Ce que la mesure du 2026-10-18
+   * suspend sont les marchés dont le coût persiste (docs/audits/2026-10-18/
+   * SUSPENSION-MARCHES.md), pas une ligue ni un canal.
+   */
   async checkMarketRoi(market: Market): Promise<RoiCheckResult> {
-    const bets = await this.prisma.client.bet.findMany({
-      where: { market, status: { not: 'VOID' } },
-      select: { status: true, oddsSnapshot: true },
-      orderBy: { createdAt: 'desc' },
-      take: RISK_CONSTANTS.ROI_SUSPENSION_BET_COUNT,
-    });
+    const since = daysAgo(RISK_CONSTANTS.ROI_WINDOW_DAYS);
+    const legs = await this.repository.findSettledLegs(market, since);
+    const roi = computeRoi(legs);
+    const standardError = computeStandardError(legs, roi);
+    const base = { market, betCount: legs.length, roi, standardError };
 
-    if (bets.length < RISK_CONSTANTS.ROI_ALERT_BET_COUNT) {
-      return {
-        market,
-        betCount: bets.length,
-        roi: new Decimal(0),
-        action: 'insufficient_data',
-      };
+    if (legs.length < RISK_CONSTANTS.ROI_ALERT_BET_COUNT) {
+      return { ...base, action: 'insufficient_data' };
     }
 
-    // ROI on up to last ROI_SUSPENSION_BET_COUNT bets
-    const roi = computeRoi(bets);
-
-    // Auto-suspension: 50+ bets AND ROI < -15%
+    const upperBound = roi.plus(
+      standardError.times(RISK_CONSTANTS.ROI_SUSPENSION_Z),
+    );
     if (
-      bets.length >= RISK_CONSTANTS.ROI_SUSPENSION_BET_COUNT &&
-      roi.lessThan(RISK_CONSTANTS.ROI_SUSPENSION_THRESHOLD)
+      legs.length >= RISK_CONSTANTS.ROI_SUSPENSION_BET_COUNT &&
+      roi.lessThan(RISK_CONSTANTS.ROI_SUSPENSION_THRESHOLD) &&
+      upperBound.lessThan(0)
     ) {
       const alreadySuspended = await this.isMarketSuspended(market);
       if (!alreadySuspended) {
         await this.prisma.client.marketSuspension.create({
           data: {
             market,
-            reason: `ROI ${(roi.toNumber() * 100).toFixed(1)}% sur ${bets.length} paris — suspension automatique`,
+            reason: `ROI ${(roi.toNumber() * 100).toFixed(1)} % ± ${(standardError.toNumber() * 100).toFixed(1)} sur ${legs.length} jambes réglées en ${RISK_CONSTANTS.ROI_WINDOW_DAYS} jours — suspension automatique`,
             triggeredBy: 'auto',
           },
         });
         await this.notification.sendMarketSuspensionAlert(
           market,
           roi.toNumber(),
-          bets.length,
+          legs.length,
         );
         logger.warn(
-          { market, roi: roi.toNumber(), betCount: bets.length },
+          {
+            market,
+            roi: roi.toNumber(),
+            standardError: standardError.toNumber(),
+            betCount: legs.length,
+          },
           'Market auto-suspended',
         );
       }
-      return { market, betCount: bets.length, roi, action: 'suspended' };
+      return { ...base, action: 'suspended' };
     }
 
-    // ROI alert: 30+ bets AND ROI < -10% (recomputed on last 30 bets)
-    const alertBets = bets.slice(0, RISK_CONSTANTS.ROI_ALERT_BET_COUNT);
-    const alertRoi = computeRoi(alertBets);
-    if (alertRoi.lessThan(RISK_CONSTANTS.ROI_ALERT_THRESHOLD)) {
-      await this.notification.sendRoiAlert(
+    if (roi.lessThan(RISK_CONSTANTS.ROI_ALERT_THRESHOLD)) {
+      const alreadyAlerted = await this.repository.hasRoiAlertSince(
         market,
-        alertRoi.toNumber(),
-        alertBets.length,
+        daysAgo(RISK_CONSTANTS.ROI_ALERT_COOLDOWN_DAYS),
       );
-      logger.warn(
-        { market, roi: alertRoi.toNumber(), betCount: alertBets.length },
-        'ROI alert sent',
-      );
-      return {
-        market,
-        betCount: alertBets.length,
-        roi: alertRoi,
-        action: 'alerted',
-      };
+      if (!alreadyAlerted) {
+        await this.notification.sendRoiAlert(
+          market,
+          roi.toNumber(),
+          legs.length,
+        );
+        logger.warn(
+          { market, roi: roi.toNumber(), betCount: legs.length },
+          'ROI alert sent',
+        );
+      }
+      return { ...base, action: 'alerted' };
     }
 
-    return { market, betCount: bets.length, roi, action: 'ok' };
+    return { ...base, action: 'ok' };
   }
 
   /**
@@ -269,10 +283,21 @@ export class RiskService {
       select: { status: true, oddsSnapshot: true, probEstimated: true },
     });
 
-    const roiOneXTwo = bets.length > 0 ? computeRoi(bets).toNumber() : 0;
     const settledBets = bets.filter(
       (bet) => bet.status === 'WON' || bet.status === 'LOST',
     );
+    // Le rapport hebdomadaire lit encore la table `bet` (paris USER
+    // uniquement depuis le 2026-09-04) ; un gain sans cote compte zéro.
+    const roiOneXTwo =
+      settledBets.length > 0
+        ? computeRoi(
+            settledBets.map((bet) => ({
+              result:
+                bet.status === 'WON' ? ('WON' as const) : ('LOST' as const),
+              odds: bet.oddsSnapshot !== null ? Number(bet.oddsSnapshot) : 1,
+            })),
+          ).toNumber()
+        : 0;
     const brierScore =
       settledBets.length > 0 ? computeBrierScore(settledBets) : 0;
 
@@ -291,22 +316,39 @@ export class RiskService {
   }
 }
 
-type BetRow = {
-  status: string;
-  oddsSnapshot: { toString(): string } | null;
-};
+function daysAgo(days: number): Date {
+  return new Date(Date.now() - days * 86_400_000);
+}
 
-function computeRoi(bets: BetRow[]): Decimal {
-  if (bets.length === 0) return new Decimal(0);
-  let profit = new Decimal(0);
-  for (const bet of bets) {
-    if (bet.status === 'WON' && bet.oddsSnapshot !== null) {
-      profit = profit.plus(new Decimal(bet.oddsSnapshot.toString()).minus(1));
-    } else if (bet.status === 'LOST') {
-      profit = profit.minus(1);
-    }
-  }
-  return profit.div(bets.length);
+/** Profit of one leg at one unit: odds − 1 when won, −1 when lost. */
+function legProfit(leg: SettledLegRow): Decimal {
+  return leg.result === 'WON'
+    ? new Decimal(leg.odds).minus(1)
+    : new Decimal(-1);
+}
+
+function computeRoi(legs: readonly SettledLegRow[]): Decimal {
+  if (legs.length === 0) return new Decimal(0);
+  return legs
+    .reduce((sum, leg) => sum.plus(legProfit(leg)), new Decimal(0))
+    .div(legs.length);
+}
+
+/** Standard error of the mean profit per leg (sample standard deviation
+ * over √n); zero under two legs. */
+function computeStandardError(
+  legs: readonly SettledLegRow[],
+  roi: Decimal,
+): Decimal {
+  if (legs.length < 2) return new Decimal(0);
+  const sumSquares = legs.reduce(
+    (sum, leg) => sum.plus(legProfit(leg).minus(roi).pow(2)),
+    new Decimal(0),
+  );
+  return sumSquares
+    .div(legs.length - 1)
+    .sqrt()
+    .div(new Decimal(legs.length).sqrt());
 }
 
 type SettledBetRow = {

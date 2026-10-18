@@ -159,6 +159,7 @@ export async function buildMatchContext(
   const [
     calibration,
     vantageMarketCalibration,
+    suspendedMarkets,
     homeTeamStats,
     awayTeamStats,
     homeCoach,
@@ -174,6 +175,10 @@ export async function buildMatchContext(
     loadVantageMarketCalibration(kickoff).catch((err: unknown) => {
       logSignal("vantageMarketCalibration")(err);
       return [] as VantageMarketCalibration[];
+    }),
+    loadSuspendedMarkets().catch((err: unknown) => {
+      logSignal("suspendedMarkets")(err);
+      return [] as string[];
     }),
     loadTeamSignal(fixture.homeTeamId, fixture.seasonId, kickoff).catch(
       logSignal("homeTeamStats"),
@@ -218,7 +223,19 @@ export async function buildMatchContext(
     extendedMarketOdds,
     fullOddsSnapshot,
     vantageMarketCalibration,
+    suspendedMarkets,
   };
+}
+
+/** Markets suspended by the backend's ROI guard-rail (`market_suspension`,
+ * active rows). The engine's strategies already refuse them; VANTAGE picks
+ * its own markets, so it has to be told. */
+async function loadSuspendedMarkets(): Promise<string[]> {
+  const rows = await prisma.marketSuspension.findMany({
+    where: { active: true },
+    select: { market: true },
+  });
+  return rows.map((row) => row.market);
 }
 
 /**
