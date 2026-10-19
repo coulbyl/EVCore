@@ -14,8 +14,9 @@ import { usePageTextSearch } from "./use-page-text-search";
  * Recherche dans la page. Était un second bouton flottant, déplaçable et
  * mémorisé, qui dépassait du bord droit en mobile et se posait sur le menu
  * en desktop (revue UX du 2026-10-11, P1-8). C'est désormais un bouton de
- * l'en-tête, desktop seulement : en mobile la navigation basse et Eva
- * occupent déjà l'écran, et le navigateur sait chercher dans la page.
+ * l'en-tête, à toutes les largeurs : il a d'abord été caché en mobile, ce
+ * qui a fait disparaître la recherche au lieu de la déplacer (remarqué le
+ * 2026-10-19). Sur téléphone il prend place entre la bankroll et la cloche.
  */
 export function PageSearchButton() {
   const [open, setOpen] = useState(false);
@@ -55,7 +56,7 @@ export function PageSearchButton() {
         title="Rechercher dans la page"
         aria-label="Rechercher dans la page"
         data-tour="page-search-fab"
-        className="hidden size-9 items-center justify-center rounded-xl border border-border bg-panel-strong text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:flex"
+        className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border bg-panel-strong text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
       >
         <Search className="size-4" />
       </button>

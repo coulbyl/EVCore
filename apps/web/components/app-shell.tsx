@@ -285,7 +285,7 @@ export function AppShell({
       topBanner={topBanner}
       headerNotice={headerNotice}
       actions={
-        <div className="relative flex items-center gap-2">
+        <div className="relative flex items-center gap-1.5 sm:gap-2">
           <BankrollWidget />
           <PageSearchButton />
           <NotificationBell />

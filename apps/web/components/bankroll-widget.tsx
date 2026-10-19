@@ -33,8 +33,11 @@ export function BankrollWidget() {
       )}
     >
       <Wallet size={16} />
+      {/* Sous 400 px l'en-tête ne peut pas porter un montant à neuf chiffres
+          (« 500 760 000 F ») à côté des cinq autres commandes : l'icône
+          reste, le montant se lit sur la page Portefeuille. */}
       {showAmount && (
-        <span className="tabular-nums">
+        <span className="tabular-nums max-[399px]:hidden">
           {formatAmount(data?.balance ?? "0")}
         </span>
       )}
