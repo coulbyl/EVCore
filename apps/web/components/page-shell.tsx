@@ -206,7 +206,12 @@ export function PageShell({
           className="sticky top-0 z-30 border-b border-border/70 bg-panel-strong/90 pt-[env(safe-area-inset-top)] backdrop-blur supports-backdrop-filter:bg-panel-strong/75"
         >
           {topBanner}
-          <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-5">
+          {/* Sur téléphone l'en-tête porte six commandes (menu, bankroll,
+              recherche, notifications, ticket, compte) : le logo se cache
+              sous `sm` — le bouton de menu suffit à situer l'app — et les
+              écarts se resserrent. Sans cela, le logo passait sous la
+              bankroll dès 375 px et le rang débordait (2026-10-19). */}
+          <div className="flex items-center justify-between gap-2 px-4 py-3 sm:gap-3 lg:px-5">
             <div className="flex min-w-0 items-center gap-2">
               <SidebarTrigger
                 data-tour="mobile-nav-trigger"
@@ -214,7 +219,7 @@ export function PageShell({
               />
               <Link
                 href="/dashboard"
-                className="flex min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 lg:hidden"
+                className="hidden min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 sm:flex lg:hidden"
               >
                 <div className="relative shrink-0">
                   <img
@@ -227,7 +232,9 @@ export function PageShell({
               </Link>
             </div>
             {actions ? (
-              <div className="flex items-center gap-2">{actions}</div>
+              <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                {actions}
+              </div>
             ) : null}
           </div>
           {headerNotice}

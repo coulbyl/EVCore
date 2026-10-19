@@ -137,7 +137,11 @@ export function CouponCard({
   return (
     <Card className={cn("gap-3 rounded-2xl py-3", "border-border/70")}>
       <CardHeader className="px-4">
-        <div className="flex items-center justify-between gap-3">
+        {/* Sur téléphone les tuiles (cote, payé, 1xBet, chances) passent
+            sous le titre et se replient : en ligne avec `shrink-0`, quatre
+            tuiles dépassaient 360 px et la carte débordait de l'écran
+            (constaté le 2026-10-19 sur le combiné du jour). */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
               {/* Plus de badge « Meilleur » : mesuré sur 5 passes, le coupon
@@ -237,7 +241,7 @@ export function CouponCard({
               </div>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:justify-end">
             <Metric
               label="Cote"
               value={`@${combinedOdds.toFixed(2)}`}

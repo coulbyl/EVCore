@@ -47,6 +47,49 @@ test.describe("Coupons", () => {
     }
   });
 
+  test("aucune carte ne déborde de l'écran, tuiles comprises", async ({
+    page,
+  }) => {
+    // Le 2026-10-19, sur téléphone, le combiné du jour (cote, 1xBet,
+    // chances) débordait : la rangée de tuiles était en `shrink-0` et la
+    // carte dépassait de l'écran des deux côtés. Le test « pas de scroll
+    // horizontal » ne le voyait pas : le conteneur de la page défile en
+    // interne. On mesure donc chaque carte contre la fenêtre.
+    // Largeur d'un téléphone courant, plus étroite que le projet mobile-375.
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.reload();
+    await expect(
+      page.getByTestId("coupon-combined-odds").first(),
+    ).toBeVisible();
+    const width = await page.evaluate(() => window.innerWidth);
+    const cards = page.locator("[data-slot=card]").filter({
+      has: page.getByTestId("coupon-combined-odds"),
+    });
+    const count = await cards.count();
+    for (let i = 0; i < count; i += 1) {
+      const card = cards.nth(i);
+      await card.scrollIntoViewIfNeeded();
+      const box = await card.boundingBox();
+      expect(box, `carte ${i}`).not.toBeNull();
+      expect(box!.x, `carte ${i} bord gauche`).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width, `carte ${i} bord droit`).toBeLessThanOrEqual(
+        width + 0.5,
+      );
+      const tiles = card.locator("[data-testid=coupon-combined-odds]");
+      const tile = await tiles.first().boundingBox();
+      expect(tile!.x + tile!.width).toBeLessThanOrEqual(width + 0.5);
+    }
+    // Le conteneur qui défile verticalement ne doit rien avoir à faire
+    // défiler horizontalement.
+    const overflow = await page.evaluate(() =>
+      [...document.querySelectorAll("div")]
+        .filter((el) => getComputedStyle(el).overflowY === "auto")
+        .map((el) => el.scrollWidth - el.clientWidth)
+        .reduce((max, value) => Math.max(max, value), 0),
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+
   test("un gain partiel montre la cote payée et la jambe remboursée", async ({
     page,
   }) => {

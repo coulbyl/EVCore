@@ -25,6 +25,12 @@ const SESSION = {
       unitMode: null,
       unitAmount: null,
       unitPercent: null,
+      // Sans ce drapeau l'assistant de démarrage s'ouvre sur chaque page et
+      // son voile intercepte les clics (bouton de recherche de l'en-tête).
+      hasCompletedOnboarding: true,
+      // Idem pour la visite guidée (driver.js), qui démarre une fois
+      // l'assistant terminé et pose elle aussi un voile sur la page.
+      hasSeenOnboarding: true,
     },
   },
 };
@@ -328,7 +334,9 @@ function route(method, url) {
   if (path.startsWith("/dashboard/competition-stats")) return [200, []];
   if (path.startsWith("/dashboard/leaderboard")) return [200, []];
   if (path.startsWith("/bankroll/balance"))
-    return [200, { balance: "1000.00" }];
+    // Un solde à neuf chiffres, comme en production : l'en-tête mobile
+    // doit le porter sans déborder.
+    return [200, { balance: "500760000.00" }];
   if (path.startsWith("/bankroll/transactions")) return [200, []];
   if (path.startsWith("/bankroll")) return [200, []];
   if (path.startsWith("/bet-slips")) return [200, []];
@@ -342,7 +350,9 @@ function route(method, url) {
   // est listé ou compté doit recevoir une liste vide.
   if (path.startsWith("/gamification/badges/me")) return [200, { badges: [] }];
   if (path.startsWith("/gamification")) return [200, []];
-  if (path.startsWith("/personalization")) return [200, []];
+  // Un objet, pas une liste : les cartes lisent `followedChannels.length`.
+  if (path.startsWith("/personalization"))
+    return [200, { followedChannels: [], followedLeagues: [] }];
   if (path.startsWith("/announcements")) return [200, []];
 
   return [200, {}];
