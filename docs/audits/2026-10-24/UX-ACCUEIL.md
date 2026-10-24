@@ -97,7 +97,7 @@ La page sait déjà dire la vérité, elle ne la met pas en avant. Elle montre q
 ### [P2] 6. Deux mots pour « jouer », deux registres pour « vous »
 
 - **Constat** : « Jouer ce coupon » / « Déjà joué par toi » (`components/coupon-card.tsx`) contre « Vous n'avez encore rien joué » (`fr.json`). Le produit ne place aucun pari.
-- **Correction** : « Suivre ce coupon » / « Suivi », vouvoiement partout ; sortir les chaînes codées en dur de la carte (« Pourquoi ce coupon ? », « Dans le coupon », « Intraday », textes des `title`) vers `fr.json`.
+- **Correction** : « Suivre ce coupon » / « Suivi », tutoiement partout (registre confirmé le 24/10, `apps/web/PRODUCT.md`) ; sortir les chaînes codées en dur de la carte (« Pourquoi ce coupon ? », « Dans le coupon », « Intraday », textes des `title`) vers `fr.json`.
 
 ### [P2] 7. Mentions et vocabulaire
 
