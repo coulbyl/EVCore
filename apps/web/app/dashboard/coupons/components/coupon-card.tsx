@@ -9,6 +9,7 @@ import { formatKickoff } from "@/domains/fixture/helpers/fixture";
 import type { CouponProposalDto } from "@/domains/coupon/types/coupon";
 import { couponClassMeta } from "@/domains/coupon/helpers/coupon-class";
 import { couponSourceMeta } from "@/domains/coupon/helpers/coupon-source";
+import type { CouponClassTrackRecord } from "@/domains/coupon/use-cases/use-coupon-track-record";
 import { useRecordCouponView } from "@/domains/coupon/use-cases/use-coupons";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import {
@@ -28,7 +29,7 @@ export function CouponCard({
 }: {
   coupon: CouponProposalDto;
   locale: string;
-  trackRecord?: { won: number; settled: number; days: number } | null;
+  trackRecord?: CouponClassTrackRecord | null;
 }) {
   const {
     draft,

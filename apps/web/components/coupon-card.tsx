@@ -66,11 +66,19 @@ export type CouponCardProps = {
     badgeVariant: string;
   } | null;
   /**
-   * Historique mesuré du produit (jours gagnés / jours réglés sur la
-   * fenêtre). Quand il existe, il remplace la fréquence annoncée de la
-   * classe : ce que le produit a fait vaut plus que ce qu'on en attend.
+   * Relevé réel du produit sur la fenêtre : jours gagnés, jours réglés,
+   * retour d'une mise de 1 et dates exactes. Seule source de la ligne de
+   * relevé : plus de fréquence simulée affichée (règles de rédaction,
+   * apps/web/PRODUCT.md), et un taux de gain ne s'affiche jamais sans le
+   * résultat à mise fixe qui va avec.
    */
-  trackRecord?: { won: number; settled: number; days: number } | null;
+  trackRecord?: {
+    won: number;
+    settled: number;
+    returnPerUnit: number;
+    firstDay: string;
+    lastDay: string;
+  } | null;
   combinedOdds: number;
   /**
    * Cote réellement payée au règlement (jambes remboursées exclues). Affichée
@@ -111,6 +119,36 @@ export type CouponCardProps = {
 
 function formatPct(n: number): string {
   return `${(n * 100).toFixed(0)}%`;
+}
+
+/** Sous ce nombre de jours réglés, pas de taux : « relevé en cours ». */
+const MIN_SETTLED_FOR_RECORD = 5;
+
+/** « 2026-10-16 » → « 16/10 ». */
+function shortDay(iso: string): string {
+  const [, month, day] = iso.split("-");
+  return `${day}/${month}`;
+}
+
+/** Retour d'une mise de 1 → résultat signé : 0,97 → « −3 % », 1,02 → « +2 % ». */
+function fixedStakeLabel(returnPerUnit: number): string {
+  const pct = Math.round((returnPerUnit - 1) * 100);
+  if (pct === 0) return "0\u00a0%";
+  return `${pct > 0 ? "+" : "\u2212"}${Math.abs(pct)}\u00a0%`;
+}
+
+/**
+ * La ligne de relevé d'un produit : toujours ses dates, son effectif et son
+ * résultat à mise fixe ; rien de plus qu'un « relevé en cours » tant qu'il
+ * a trop peu de jours réglés.
+ */
+function trackRecordLine(record: CouponCardProps["trackRecord"]): string {
+  if (!record || record.settled === 0) return "Pas encore de relevé";
+  if (record.settled < MIN_SETTLED_FOR_RECORD) {
+    return `Relevé en cours · ${record.settled} jour${record.settled > 1 ? "s" : ""} réglé${record.settled > 1 ? "s" : ""}`;
+  }
+  const won = `${record.won} jour${record.won > 1 ? "s" : ""} gagné${record.won > 1 ? "s" : ""}`;
+  return `${won} sur ${record.settled} · à mise fixe ${fixedStakeLabel(record.returnPerUnit)} · du ${shortDay(record.firstDay)} au ${shortDay(record.lastDay)}`;
 }
 
 export function CouponCard({
@@ -168,9 +206,7 @@ export function CouponCard({
                   data-testid="coupon-track-record"
                   className="text-[0.62rem] font-medium tracking-wide text-muted-foreground"
                 >
-                  {trackRecord
-                    ? `${trackRecord.won} jour${trackRecord.won > 1 ? "s" : ""} gagné${trackRecord.won > 1 ? "s" : ""} sur ${trackRecord.settled} (${trackRecord.days} derniers jours)`
-                    : couponClass.frequency}
+                  {trackRecordLine(trackRecord)}
                 </span>
               )}
               {source && (

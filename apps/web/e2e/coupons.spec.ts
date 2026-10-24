@@ -141,7 +141,7 @@ test.describe("Coupons", () => {
     );
   });
 
-  test("le pari sûr du jour est affiché en premier, avec une seule jambe", async ({
+  test("le favori du jour est affiché en premier, avec une seule jambe", async ({
     page,
   }) => {
     const cards = page.locator("[data-slot=card]").filter({
@@ -149,16 +149,16 @@ test.describe("Coupons", () => {
     });
     const first = cards.first();
     await expect(first.getByText(/Favori du jour/)).toBeVisible();
-    // Historique mesuré à la place de la fréquence annoncée dès qu'il y a
-    // assez de jours réglés (24 ici) ; le combiné (3 jours) garde l'annonce.
+    // Relevé réel avec son résultat à mise fixe et ses dates exactes dès 5
+    // jours réglés (24 ici) ; le combiné (3 jours) dit « relevé en cours ».
     await expect(first.getByTestId("coupon-track-record")).toHaveText(
-      "19 jours gagnés sur 24 (30 derniers jours)",
+      "19 jours gagnés sur 24 · à mise fixe \u22123\u00a0% · du 25/09 au 23/10",
     );
     await expect(first.getByTestId("leg-odds")).toHaveCount(1);
     await expect(first.getByTestId("coupon-combined-odds")).toHaveText("@1.22");
   });
 
-  test("le combiné du jour suit le pari sûr, avec trois jambes courtes", async ({
+  test("le combiné du jour suit le favori, avec deux jambes courtes", async ({
     page,
   }) => {
     const cards = page.locator("[data-slot=card]").filter({
@@ -166,9 +166,10 @@ test.describe("Coupons", () => {
     });
     const second = cards.nth(1);
     await expect(second.getByText(/Combiné du jour/)).toBeVisible();
-    await expect(
-      second.getByText(/7 jours sur 10|7 days out of 10/),
-    ).toBeVisible();
+    // Trois jours réglés : pas de taux, et plus de fréquence simulée.
+    await expect(second.getByTestId("coupon-track-record")).toHaveText(
+      "Relevé en cours · 3 jours réglés",
+    );
     await expect(second.getByTestId("leg-odds")).toHaveCount(2);
     // La cote chez 1xBet à côté de la nôtre, par jambe et combinée.
     await expect(second.getByTestId("leg-playable-odds")).toHaveCount(2);
