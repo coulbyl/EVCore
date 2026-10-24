@@ -51,11 +51,23 @@ export function FixtureCardHeader({
         className="min-w-0 text-xs font-semibold text-foreground"
         stacked
       />
+      {/* L'heure d'abord, jamais tronquée : c'est la seule contrainte d'un
+          pari (« avant quelle heure ? »). Seuls compétition et pays se
+          tronquent quand la place manque (revue UX du 2026-10-24, P1 n°4 :
+          à 375 px l'heure disparaissait sur toutes les jambes). */}
       <div className="mt-0.5 flex items-baseline justify-between gap-2">
-        <p className="min-w-0 truncate text-[0.7rem] text-muted-foreground">
-          {competition ? translateCompetition(competition, loc) : null}
-          {country ? ` · ${translateCountry(country, loc)}` : null}
-          {` · ${kickoff}`}
+        <p className="flex min-w-0 items-baseline gap-1 text-[0.7rem] text-muted-foreground">
+          <span className="shrink-0 tabular-nums text-foreground/80">
+            {kickoff}
+          </span>
+          {competition || country ? (
+            <span className="min-w-0 truncate">
+              {" · "}
+              {competition ? translateCompetition(competition, loc) : null}
+              {competition && country ? " · " : null}
+              {country ? translateCountry(country, loc) : null}
+            </span>
+          ) : null}
           {metaExtra}
         </p>
         {scoreLabel && (

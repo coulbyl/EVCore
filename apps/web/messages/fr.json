@@ -649,7 +649,7 @@
       "channel": "Canal"
     },
     "home": {
-      "couponTitle": "Le coupon du jour",
+      "couponTitle": "Les coupons du jour · {date}",
       "couponsLink": "Tous les coupons",
       "couponError": "Le coupon du jour n'a pas pu être chargé.",
       "couponEmptyTitle": "Pas de coupon aujourd'hui",

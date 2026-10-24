@@ -649,7 +649,7 @@
       "channel": "Channel"
     },
     "home": {
-      "couponTitle": "Today's coupon",
+      "couponTitle": "Today's coupons · {date}",
       "couponsLink": "All coupons",
       "couponError": "Today's coupon could not be loaded.",
       "couponEmptyTitle": "No coupon today",

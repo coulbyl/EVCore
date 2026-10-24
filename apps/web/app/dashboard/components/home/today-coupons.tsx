@@ -55,7 +55,7 @@ export function TodayCoupons() {
           id="home-coupon-title"
           className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground"
         >
-          {t("couponTitle")}
+          {t("couponTitle", { date: formatDayLabel(date, locale) })}
         </h2>
         <Link
           href={`/dashboard/coupons?date=${date}`}
@@ -117,6 +117,20 @@ export function TodayCoupons() {
       )}
     </section>
   );
+}
+
+/**
+ * « 2026-10-24 » → « ven. 24 oct. » : le titre dit de quel jour il s'agit
+ * (revue UX du 2026-10-24, P1 n°4 : aucune date sur la page).
+ */
+function formatDayLabel(isoDate: string, locale: string): string {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "fr-FR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year ?? 1970, (month ?? 1) - 1, day ?? 1)));
 }
 
 /** Classes affichées en tête de l'accueil, dans cet ordre. */
