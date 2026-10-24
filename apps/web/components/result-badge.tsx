@@ -36,7 +36,7 @@ export function ResultBadge({
   const t = useTranslations("resultBadge");
   if (result === null || result === "PENDING") {
     return finished ? (
-      <Badge variant="outline" className="text-[0.62rem]">
+      <Badge variant="outline" className="text-xs">
         {t("settlementPending")}
       </Badge>
     ) : null;
@@ -47,7 +47,7 @@ export function ResultBadge({
       ? t("refunded")
       : t(meta.labelKey);
   return (
-    <Badge variant={meta.variant} className="text-[0.62rem]">
+    <Badge variant={meta.variant} className="text-xs">
       {label}
     </Badge>
   );

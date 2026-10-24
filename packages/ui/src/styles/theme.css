@@ -17,9 +17,11 @@
   --muted: #5f7088;
   --accent: #0f766e;
   --accent-soft: rgba(15, 118, 110, 0.12);
-  --success: #15803d;
+  /* Assombris le 2026-10-24 : #15803d et #a16207 tombaient à 4,0–4,2:1 sur
+     leurs propres fonds teintés (badges, résultats) en mode clair. */
+  --success: #166534;
   --danger: var(--destructive);
-  --warning: #a16207;
+  --warning: #854d0e;
   --pending: #c08b18;
   --shadow: 0 24px 60px rgba(15, 23, 42, 0.1);
 
@@ -142,8 +144,11 @@
   --skeleton: #223246;
   --muted-foreground: #8ca0b8;
   --accent-foreground: #0d1520;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
+  /* Éclairci le 2026-10-24 : #ef4444 faisait 4,3:1 en texte sur les cartes
+     sombres et 3,8:1 sous un texte blanc ; le rouge clair passe en texte et
+     prend un texte sombre quand il sert de fond. */
+  --destructive: #f87171;
+  --destructive-foreground: #2a0a0a;
   --input: rgba(226, 232, 240, 0.1);
   --ring: rgba(20, 184, 166, 0.4);
 

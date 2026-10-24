@@ -76,7 +76,7 @@ export function YesterdayCoupons() {
         </h2>
         <Link
           href={`/dashboard/coupons?date=${date}`}
-          className="flex items-center gap-1 text-xs font-medium text-accent hover:text-accent/80"
+          className="-my-3 flex min-h-11 items-center gap-1 text-xs font-medium text-accent hover:text-accent/80"
         >
           {t("yesterdayLink")} <ArrowRight size={12} />
         </Link>
@@ -135,10 +135,10 @@ export function YesterdayCoupons() {
                 </div>
                 <span
                   className={cn(
-                    "shrink-0 rounded-full px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-wide",
+                    "shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide",
                     won
-                      ? "bg-emerald-500/15 text-emerald-500"
-                      : "bg-secondary text-muted-foreground",
+                      ? "bg-success/12 text-success"
+                      : "bg-secondary text-foreground",
                   )}
                 >
                   {t(`result.${key}`)}

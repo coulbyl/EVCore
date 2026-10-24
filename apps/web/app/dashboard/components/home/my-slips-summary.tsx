@@ -62,7 +62,7 @@ export function MySlipsSummary() {
         </h2>
         <Link
           href="/dashboard/bet-slips"
-          className="flex items-center gap-1 text-xs font-medium text-accent hover:text-accent/80"
+          className="-my-3 flex min-h-11 items-center gap-1 text-xs font-medium text-accent hover:text-accent/80"
         >
           {t("mySlipsLink")} <ArrowRight size={12} />
         </Link>

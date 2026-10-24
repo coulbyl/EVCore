@@ -62,9 +62,10 @@ export function ClosingLine({
           onClick={() => setOpen((v) => !v)}
           data-testid={testId}
           data-verdict={verdict}
+          // Zone de tap de 44 px de haut sans changer la hauteur de la ligne.
           className={cn(
-            "tabular-nums focus:outline-none",
-            beatsClose ? "text-emerald-500" : "text-muted-foreground",
+            "-my-3 inline-flex min-h-11 items-center tabular-nums focus:outline-none",
+            beatsClose ? "text-success" : "text-muted-foreground",
           )}
         >
           {t("label", { odds: closingOdds.toFixed(2) })}

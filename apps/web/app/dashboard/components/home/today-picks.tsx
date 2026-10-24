@@ -164,7 +164,7 @@ export function TodayPicks() {
         </div>
         <Link
           href={`/dashboard/decisions?date=${today}`}
-          className="flex shrink-0 items-center gap-1 text-xs font-medium text-accent hover:text-accent/80"
+          className="-my-3 flex min-h-11 shrink-0 items-center gap-1 text-xs font-medium text-accent hover:text-accent/80"
         >
           {t("picksLink")} <ArrowRight size={12} />
         </Link>

@@ -32,14 +32,20 @@ export function AddToCouponButton({ item }: { item: BetSlipDraftItem }) {
       type="button"
       onClick={handleClick}
       aria-label={inSlip ? "Retirer du coupon" : "Ajouter au coupon"}
-      className={cn(
-        "flex size-5 items-center justify-center rounded-full border transition-all",
-        inSlip
-          ? "border-accent bg-accent text-accent-foreground"
-          : "border-border bg-background text-muted-foreground hover:border-accent hover:text-accent",
-      )}
+      // Zone de tap de 44 px (size-11) autour d'un rond visuel de 24 px ; la
+      // marge négative garde l'encombrement d'origine dans les cartes.
+      className="group -m-2.5 flex size-11 shrink-0 items-center justify-center"
     >
-      {inSlip ? <Check size={10} strokeWidth={3} /> : <Plus size={11} />}
+      <span
+        className={cn(
+          "flex size-6 items-center justify-center rounded-full border transition-all",
+          inSlip
+            ? "border-accent bg-accent text-accent-foreground"
+            : "border-border bg-background text-muted-foreground group-hover:border-accent group-hover:text-accent",
+        )}
+      >
+        {inSlip ? <Check size={12} strokeWidth={3} /> : <Plus size={13} />}
+      </span>
     </button>
   );
 }

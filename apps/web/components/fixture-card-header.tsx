@@ -56,7 +56,7 @@ export function FixtureCardHeader({
           tronquent quand la place manque (revue UX du 2026-10-24, P1 n°4 :
           à 375 px l'heure disparaissait sur toutes les jambes). */}
       <div className="mt-0.5 flex items-baseline justify-between gap-2">
-        <p className="flex min-w-0 items-baseline gap-1 text-[0.7rem] text-muted-foreground">
+        <p className="flex min-w-0 items-baseline gap-1 text-xs text-muted-foreground">
           <span className="shrink-0 tabular-nums text-foreground/80">
             {kickoff}
           </span>
@@ -71,7 +71,7 @@ export function FixtureCardHeader({
           {metaExtra}
         </p>
         {scoreLabel && (
-          <span className="shrink-0 font-mono text-[0.7rem] font-medium text-foreground">
+          <span className="shrink-0 font-mono text-xs font-medium text-foreground">
             {scoreLabel}
           </span>
         )}

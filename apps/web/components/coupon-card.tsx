@@ -190,7 +190,7 @@ export function CouponCard({
                   variant={
                     couponClass.badgeVariant as "success" | "accent" | "warning"
                   }
-                  className="rounded-full px-2 py-0.5 text-[0.62rem] font-medium tracking-normal"
+                  className="rounded-full px-2 py-0.5 text-xs font-medium tracking-normal"
                 >
                   {couponClass.label}
                 </Badge>
@@ -202,7 +202,7 @@ export function CouponCard({
               {couponClass && (
                 <span
                   data-testid="coupon-track-record"
-                  className="text-[0.62rem] font-medium tracking-wide text-muted-foreground"
+                  className="text-xs font-medium text-muted-foreground"
                 >
                   {trackRecordLine(trackRecord)}
                 </span>
@@ -210,7 +210,7 @@ export function CouponCard({
               {source && (
                 <span
                   title={source.hint}
-                  className="flex items-center gap-1 rounded-full border border-border/70 px-1.5 py-0.5 text-[0.6rem] font-medium text-muted-foreground"
+                  className="flex items-center gap-1 rounded-full border border-border/70 px-2 py-0.5 text-xs font-medium text-muted-foreground"
                 >
                   <Tag size={10} /> {source.label}
                 </span>
@@ -218,7 +218,7 @@ export function CouponCard({
               {batch === "intraday" && (
                 <span
                   title="Régénéré en journée, proche du coup d'envoi — s'ajoute au coupon du soir déjà publié pour cette classe."
-                  className="flex items-center gap-1 rounded-full border border-border/70 px-1.5 py-0.5 text-[0.6rem] font-medium text-muted-foreground"
+                  className="flex items-center gap-1 rounded-full border border-border/70 px-2 py-0.5 text-xs font-medium text-muted-foreground"
                 >
                   <Sun size={10} /> Intraday
                 </span>
@@ -226,7 +226,7 @@ export function CouponCard({
               {betStatus === "WON" && (
                 <span
                   data-testid="coupon-result"
-                  className="text-[0.6rem] font-bold uppercase tracking-widest text-emerald-500"
+                  className="text-xs font-bold uppercase tracking-wide text-success"
                 >
                   ✓ Gagné
                 </span>
@@ -235,7 +235,7 @@ export function CouponCard({
                 <span
                   data-testid="coupon-result"
                   title="Toutes les jambes jouées ont gagné ; une jambe au moins a été remboursée, la cote payée est réduite d'autant."
-                  className="text-[0.6rem] font-bold uppercase tracking-widest text-emerald-500"
+                  className="text-xs font-bold uppercase tracking-wide text-success"
                 >
                   ✓ Gagné · jambe remboursée
                 </span>
@@ -243,7 +243,7 @@ export function CouponCard({
               {betStatus === "LOST" && (
                 <span
                   data-testid="coupon-result"
-                  className="text-[0.6rem] font-bold uppercase tracking-widest text-destructive"
+                  className="text-xs font-bold uppercase tracking-wide text-destructive"
                 >
                   ✗ Perdu
                 </span>
@@ -252,14 +252,14 @@ export function CouponCard({
                 <span
                   data-testid="coupon-result"
                   title="Toutes les jambes ont été remboursées (matchs reportés ou annulés) : mise rendue."
-                  className="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground"
+                  className="text-xs font-bold uppercase tracking-wide text-muted-foreground"
                 >
                   Remboursé
                 </span>
               )}
             </div>
             {((viewerCount ?? 0) > 0 || (playerCount ?? 0) > 0) && (
-              <div className="mt-1 flex items-center gap-2.5 text-[0.62rem] text-muted-foreground">
+              <div className="mt-1 flex items-center gap-2.5 text-xs text-muted-foreground">
                 {(viewerCount ?? 0) > 0 && (
                   <span className="flex items-center gap-1">
                     <Eye size={10} /> {viewerCount} vue
@@ -286,7 +286,7 @@ export function CouponCard({
                 <Metric
                   label="Payé"
                   value={`@${realizedOdds.toFixed(2)}`}
-                  valueClassName="text-emerald-500"
+                  valueClassName="text-success"
                   testId="coupon-realized-odds"
                 />
               )}
@@ -311,7 +311,7 @@ export function CouponCard({
             <HoverCardTrigger asChild>
               <button
                 type="button"
-                className="flex w-fit items-center gap-1.5 rounded-full border border-dashed border-border/70 bg-background/20 px-2.5 py-1 text-[0.65rem] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="flex min-h-11 w-fit items-center gap-1.5 rounded-full border border-dashed border-border/70 bg-background/20 px-3 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
                 <MessageCircle size={11} />
                 Pourquoi ce coupon ?
@@ -365,10 +365,10 @@ function CouponLegCard({
                 data-testid="leg-playable-odds"
                 title={`Cote chez ${leg.playable.bookmaker}, le bookmaker des utilisateurs. La nôtre vient des books les plus généreux du relevé.`}
                 className={cn(
-                  "font-mono text-[0.68rem]",
+                  "font-mono text-xs",
                   leg.playable.odds < 1.1
                     ? "font-semibold text-destructive"
-                    : "text-muted-foreground/80",
+                    : "text-muted-foreground",
                 )}
               >
                 {leg.playable.bookmaker} {leg.playable.odds.toFixed(2)}
@@ -394,7 +394,7 @@ function CouponLegCard({
             market={leg.market}
           />
         </div>
-        <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.68rem] leading-tight text-muted-foreground">
+        <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-tight text-muted-foreground">
           <span className="max-w-full truncate">{leg.marketLabel}</span>
           <span className="tabular-nums">
             {formatPct(leg.probability)} de chances
@@ -427,12 +427,12 @@ function Metric({
 }) {
   return (
     <div className="rounded-lg border border-border/70 bg-background/30 px-2.5 py-1.5 text-right">
-      <p className="text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground">
+      <p className="text-[0.6875rem] uppercase tracking-[0.1em] text-muted-foreground">
         {label}
       </p>
       <p
         data-testid={testId}
-        className={cn("text-xs font-semibold tabular-nums", valueClassName)}
+        className={cn("text-sm font-semibold tabular-nums", valueClassName)}
       >
         {value}
       </p>
@@ -457,7 +457,7 @@ export function CouponSlipButton({
 }) {
   if (playedByMe) {
     return (
-      <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-success/20 bg-success/12 py-2 text-xs font-semibold text-success">
+      <div className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-success/20 bg-success/12 text-xs font-semibold text-success">
         <Check size={12} /> Déjà joué par toi
       </div>
     );
@@ -468,7 +468,7 @@ export function CouponSlipButton({
       type="button"
       onClick={onPlay}
       className={cn(
-        "flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border py-2 text-xs font-semibold transition-colors",
+        "flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border text-xs font-semibold transition-colors",
         allInSlip
           ? "border-success/20 bg-success/12 text-success"
           : "border-border bg-secondary text-muted-foreground hover:text-foreground",

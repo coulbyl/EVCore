@@ -59,7 +59,7 @@ export function TodayCoupons() {
         </h2>
         <Link
           href={`/dashboard/coupons?date=${date}`}
-          className="flex items-center gap-1 text-xs font-medium text-accent hover:text-accent/80"
+          className="-my-3 flex min-h-11 items-center gap-1 text-xs font-medium text-accent hover:text-accent/80"
         >
           {t("couponsLink")} <ArrowRight size={12} />
         </Link>
