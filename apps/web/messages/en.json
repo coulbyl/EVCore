@@ -961,5 +961,32 @@
     "label": "{bookmaker} {odds}",
     "hint": "Odds at the users' bookmaker. Ours come from the most generous books we record.",
     "belowMinimum": "Under the {min} minimum this bookmaker accepts: this pick cannot be played there."
+  },
+  "couponCard": {
+    "noRecord": "No record yet",
+    "recordInProgress": "Record in progress · {count, plural, one {# day settled} other {# days settled}}",
+    "record": "{won, plural, one {# day won} other {# days won}} out of {settled} · fixed stake {result} · {from} to {to}",
+    "intraday": "Intraday",
+    "intradayHint": "Regenerated during the day, close to kickoff: added to the evening coupon already published for this class.",
+    "resultWon": "✓ Won",
+    "resultPartial": "✓ Won · leg refunded",
+    "resultPartialHint": "Every played leg won; at least one leg was refunded, so the paid odds are reduced accordingly.",
+    "resultLost": "✗ Lost",
+    "resultVoid": "Refunded",
+    "resultVoidHint": "Every leg was refunded (postponed or cancelled matches): stake returned.",
+    "viewers": "{count, plural, one {# view} other {# views}}",
+    "players": "{count, plural, one {# played} other {# played}}",
+    "odds": "Odds",
+    "paid": "Paid",
+    "chances": "Chances",
+    "playable": "Playable",
+    "why": "Why this coupon?",
+    "legChances": "{pct} chance",
+    "legPlayableHint": "Odds at {bookmaker}, the players' bookmaker. Ours come from the most generous books in the snapshot.",
+    "playedByMe": "Already played by you",
+    "inSlip": "In the coupon",
+    "play": "Play this coupon",
+    "addToCoupon": "Add to coupon",
+    "removeFromCoupon": "Remove from coupon"
   }
 }

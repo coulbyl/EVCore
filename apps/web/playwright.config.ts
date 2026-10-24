@@ -19,6 +19,10 @@ export default defineConfig({
 
   use: {
     baseURL: `http://localhost:${WEB_PORT}`,
+    // Le produit est français d'abord et la langue suit Accept-Language
+    // (proxy.ts) : sans cela les tests tournaient en anglais et ne
+    // vérifiaient le français que là où il était écrit en dur.
+    locale: "fr-FR",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     actionTimeout: 15_000,

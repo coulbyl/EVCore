@@ -19,6 +19,7 @@ import {
   HoverCardTrigger,
   cn,
 } from "@evcore/ui";
+import { useTranslations } from "next-intl";
 import { FixtureCardHeader } from "@/components/fixture-card-header";
 import { ResultBadge, type ResultValue } from "@/components/result-badge";
 import { ClosingLine } from "@/components/closing-line";
@@ -136,18 +137,28 @@ function fixedStakeLabel(returnPerUnit: number): string {
   return `${pct > 0 ? "+" : "\u2212"}${Math.abs(pct)}\u00a0%`;
 }
 
+type CardT = ReturnType<typeof useTranslations>;
+
 /**
  * La ligne de relevé d'un produit : toujours ses dates, son effectif et son
  * résultat à mise fixe ; rien de plus qu'un « relevé en cours » tant qu'il
  * a trop peu de jours réglés.
  */
-function trackRecordLine(record: CouponCardProps["trackRecord"]): string {
-  if (!record || record.settled === 0) return "Pas encore de relevé";
+function trackRecordLine(
+  record: CouponCardProps["trackRecord"],
+  t: CardT,
+): string {
+  if (!record || record.settled === 0) return t("noRecord");
   if (record.settled < MIN_SETTLED_FOR_RECORD) {
-    return `Relevé en cours · ${record.settled} jour${record.settled > 1 ? "s" : ""} réglé${record.settled > 1 ? "s" : ""}`;
+    return t("recordInProgress", { count: record.settled });
   }
-  const won = `${record.won} jour${record.won > 1 ? "s" : ""} gagné${record.won > 1 ? "s" : ""}`;
-  return `${won} sur ${record.settled} · à mise fixe ${fixedStakeLabel(record.returnPerUnit)} · du ${shortDay(record.firstDay)} au ${shortDay(record.lastDay)}`;
+  return t("record", {
+    won: record.won,
+    settled: record.settled,
+    result: fixedStakeLabel(record.returnPerUnit),
+    from: shortDay(record.firstDay),
+    to: shortDay(record.lastDay),
+  });
 }
 
 export function CouponCard({
@@ -166,6 +177,7 @@ export function CouponCard({
   legs,
   actionSlot,
 }: CouponCardProps) {
+  const t = useTranslations("couponCard");
   // Plus de couleur ni de seuils sur les chances : « 15 % » en rouge se lisait
   // comme une alerte, alors que c'est l'arithmétique d'une cote 6. La classe
   // porte déjà la fréquence de gain en clair (« 1 jour sur 7 »).
@@ -204,7 +216,7 @@ export function CouponCard({
                   data-testid="coupon-track-record"
                   className="text-xs font-medium text-muted-foreground"
                 >
-                  {trackRecordLine(trackRecord)}
+                  {trackRecordLine(trackRecord, t)}
                 </span>
               )}
               {source && (
@@ -217,10 +229,10 @@ export function CouponCard({
               )}
               {batch === "intraday" && (
                 <span
-                  title="Régénéré en journée, proche du coup d'envoi — s'ajoute au coupon du soir déjà publié pour cette classe."
+                  title={t("intradayHint")}
                   className="flex items-center gap-1 rounded-full border border-border/70 px-2 py-0.5 text-xs font-medium text-muted-foreground"
                 >
-                  <Sun size={10} /> Intraday
+                  <Sun size={10} /> {t("intraday")}
                 </span>
               )}
               {betStatus === "WON" && (
@@ -228,16 +240,16 @@ export function CouponCard({
                   data-testid="coupon-result"
                   className="text-xs font-bold uppercase tracking-wide text-success"
                 >
-                  ✓ Gagné
+                  {t("resultWon")}
                 </span>
               )}
               {betStatus === "PARTIAL" && (
                 <span
                   data-testid="coupon-result"
-                  title="Toutes les jambes jouées ont gagné ; une jambe au moins a été remboursée, la cote payée est réduite d'autant."
+                  title={t("resultPartialHint")}
                   className="text-xs font-bold uppercase tracking-wide text-success"
                 >
-                  ✓ Gagné · jambe remboursée
+                  {t("resultPartial")}
                 </span>
               )}
               {betStatus === "LOST" && (
@@ -245,16 +257,16 @@ export function CouponCard({
                   data-testid="coupon-result"
                   className="text-xs font-bold uppercase tracking-wide text-destructive"
                 >
-                  ✗ Perdu
+                  {t("resultLost")}
                 </span>
               )}
               {betStatus === "VOID" && (
                 <span
                   data-testid="coupon-result"
-                  title="Toutes les jambes ont été remboursées (matchs reportés ou annulés) : mise rendue."
+                  title={t("resultVoidHint")}
                   className="text-xs font-bold uppercase tracking-wide text-muted-foreground"
                 >
-                  Remboursé
+                  {t("resultVoid")}
                 </span>
               )}
             </div>
@@ -262,14 +274,14 @@ export function CouponCard({
               <div className="mt-1 flex items-center gap-2.5 text-xs text-muted-foreground">
                 {(viewerCount ?? 0) > 0 && (
                   <span className="flex items-center gap-1">
-                    <Eye size={10} /> {viewerCount} vue
-                    {(viewerCount ?? 0) > 1 ? "s" : ""}
+                    <Eye size={10} />{" "}
+                    {t("viewers", { count: viewerCount ?? 0 })}
                   </span>
                 )}
                 {(playerCount ?? 0) > 0 && (
                   <span className="flex items-center gap-1">
-                    <Users size={10} /> {playerCount}{" "}
-                    {(playerCount ?? 0) > 1 ? "ont joué" : "a joué"}
+                    <Users size={10} />{" "}
+                    {t("players", { count: playerCount ?? 0 })}
                   </span>
                 )}
               </div>
@@ -277,21 +289,21 @@ export function CouponCard({
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:justify-end">
             <Metric
-              label="Cote"
+              label={t("odds")}
               value={`@${combinedOdds.toFixed(2)}`}
               testId="coupon-combined-odds"
             />
             {realizedOdds !== null &&
               Math.abs(realizedOdds - combinedOdds) > 0.005 && (
                 <Metric
-                  label="Payé"
+                  label={t("paid")}
                   value={`@${realizedOdds.toFixed(2)}`}
                   valueClassName="text-success"
                   testId="coupon-realized-odds"
                 />
               )}
             <PlayableCombinedMetric legs={legs} combinedOdds={combinedOdds} />
-            <Metric label="Chances" value={formatPct(jointProbability)} />
+            <Metric label={t("chances")} value={formatPct(jointProbability)} />
           </div>
         </div>
       </CardHeader>
@@ -317,7 +329,7 @@ export function CouponCard({
                 className="flex min-h-11 w-fit items-center gap-1.5 rounded-full border border-dashed border-border/70 bg-background/20 px-3 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
                 <MessageCircle size={11} />
-                Pourquoi ce coupon ?
+                {t("why")}
               </button>
             </HoverCardTrigger>
             <HoverCardContent className="w-72 text-xs leading-snug text-foreground">
@@ -339,6 +351,7 @@ function CouponLegRow({
   leg: NormalizedCouponLeg;
   locale: string;
 }) {
+  const t = useTranslations("couponCard");
   return (
     <div data-testid="coupon-leg" className="py-3">
       <div className="flex min-w-0 items-start justify-between gap-3">
@@ -367,7 +380,9 @@ function CouponLegRow({
             Math.abs(leg.playable.odds - Number(leg.odds)) >= 0.005 && (
               <span
                 data-testid="leg-playable-odds"
-                title={`Cote chez ${leg.playable.bookmaker}, le bookmaker des utilisateurs. La nôtre vient des books les plus généreux du relevé.`}
+                title={t("legPlayableHint", {
+                  bookmaker: leg.playable.bookmaker,
+                })}
                 className={cn(
                   "font-mono text-xs",
                   leg.playable.odds < 1.1
@@ -399,7 +414,7 @@ function CouponLegRow({
         <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-tight text-muted-foreground">
           <span className="max-w-full truncate">{leg.marketLabel}</span>
           <span className="tabular-nums">
-            {formatPct(leg.probability)} de chances
+            {t("legChances", { pct: formatPct(leg.probability) })}
           </span>
           {leg.closing && (
             <ClosingLine
@@ -454,15 +469,16 @@ export function CouponSlipButton({
   /**
    * A real bet slip was already submitted for this coupon by this user
    * (`CouponProposalPlacement`, recorded server-side — never a client-side
-   * flag). Freezes the button into a readonly "Déjà joué par vous" — a user
+   * flag). Freezes the button into a readonly "Déjà joué par toi" — a user
    * plays a given coupon proposal at most once.
    */
   playedByMe?: boolean;
 }) {
+  const t = useTranslations("couponCard");
   if (playedByMe) {
     return (
       <div className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-success/20 bg-success/12 text-xs font-semibold text-success">
-        <Check size={12} /> Déjà joué par toi
+        <Check size={12} /> {t("playedByMe")}
       </div>
     );
   }
@@ -480,11 +496,11 @@ export function CouponSlipButton({
     >
       {allInSlip ? (
         <>
-          <Check size={12} /> Dans le coupon
+          <Check size={12} /> {t("inSlip")}
         </>
       ) : (
         <>
-          <ShoppingCart size={12} /> Jouer ce coupon
+          <ShoppingCart size={12} /> {t("play")}
         </>
       )}
     </button>
@@ -503,6 +519,7 @@ function PlayableCombinedMetric({
   legs: NormalizedCouponLeg[];
   combinedOdds: number;
 }) {
+  const t = useTranslations("couponCard");
   if (legs.length === 0 || legs.some((leg) => !leg.playable)) return null;
   const bookmakers = new Set(legs.map((leg) => leg.playable!.bookmaker));
   if (bookmakers.size !== 1) return null;
@@ -510,7 +527,7 @@ function PlayableCombinedMetric({
   if (Math.abs(playable - combinedOdds) < 0.005) return null;
   return (
     <Metric
-      label={[...bookmakers][0] ?? "Jouable"}
+      label={[...bookmakers][0] ?? t("playable")}
       value={`@${playable.toFixed(2)}`}
       testId="coupon-playable-odds"
     />

@@ -961,5 +961,32 @@
     "label": "{bookmaker} {odds}",
     "hint": "Cote chez le bookmaker des utilisateurs. La nôtre vient des books les plus généreux du relevé.",
     "belowMinimum": "Sous le minimum de {min} accepté par ce bookmaker : cette sélection n'y est pas jouable."
+  },
+  "couponCard": {
+    "noRecord": "Pas encore de relevé",
+    "recordInProgress": "Relevé en cours · {count, plural, one {# jour réglé} other {# jours réglés}}",
+    "record": "{won, plural, one {# jour gagné} other {# jours gagnés}} sur {settled} · à mise fixe {result} · du {from} au {to}",
+    "intraday": "Intraday",
+    "intradayHint": "Régénéré en journée, proche du coup d'envoi : s'ajoute au coupon du soir déjà publié pour cette classe.",
+    "resultWon": "✓ Gagné",
+    "resultPartial": "✓ Gagné · jambe remboursée",
+    "resultPartialHint": "Toutes les jambes jouées ont gagné ; une jambe au moins a été remboursée, la cote payée est réduite d'autant.",
+    "resultLost": "✗ Perdu",
+    "resultVoid": "Remboursé",
+    "resultVoidHint": "Toutes les jambes ont été remboursées (matchs reportés ou annulés) : mise rendue.",
+    "viewers": "{count, plural, one {# vue} other {# vues}}",
+    "players": "{count, plural, one {# a joué} other {# ont joué}}",
+    "odds": "Cote",
+    "paid": "Payé",
+    "chances": "Chances",
+    "playable": "Jouable",
+    "why": "Pourquoi ce coupon ?",
+    "legChances": "{pct} de chances",
+    "legPlayableHint": "Cote chez {bookmaker}, le bookmaker des joueurs. La nôtre vient des books les plus généreux du relevé.",
+    "playedByMe": "Déjà joué par toi",
+    "inSlip": "Dans le coupon",
+    "play": "Jouer ce coupon",
+    "addToCoupon": "Ajouter au coupon",
+    "removeFromCoupon": "Retirer du coupon"
   }
 }
