@@ -19,7 +19,7 @@ import {
   HoverCardTrigger,
   cn,
 } from "@evcore/ui";
-import { FixtureCard } from "@/components/fixture-card";
+import { FixtureCardHeader } from "@/components/fixture-card-header";
 import { ResultBadge, type ResultValue } from "@/components/result-badge";
 import { ClosingLine } from "@/components/closing-line";
 
@@ -300,9 +300,12 @@ export function CouponCard({
         {/* Plus de barre de progression : elle répétait la tuile « Chances »
             sans légende et se lisait comme un chargement (revue UX du
             2026-10-24, P2 n°5). */}
-        <div className="flex flex-col gap-2">
+        {/* Les jambes sont des rangées séparées par un filet, plus des cartes
+            dans la carte (détecteur impeccable, `nested-cards` : 20 par page
+            sur l'accueil, revue UX du 2026-10-24). */}
+        <div className="flex flex-col divide-y divide-border/60 border-t border-border/60">
           {legs.map((leg) => (
-            <CouponLegCard key={leg.key} leg={leg} locale={locale} />
+            <CouponLegRow key={leg.key} leg={leg} locale={locale} />
           ))}
         </div>
 
@@ -329,7 +332,7 @@ export function CouponCard({
   );
 }
 
-function CouponLegCard({
+function CouponLegRow({
   leg,
   locale,
 }: {
@@ -337,18 +340,19 @@ function CouponLegCard({
   locale: string;
 }) {
   return (
-    <FixtureCard
-      fixture={`${leg.homeTeam} vs ${leg.awayTeam}`}
-      homeLogo={leg.homeLogo}
-      awayLogo={leg.awayLogo}
-      competition={leg.competition}
-      country={leg.country}
-      kickoff={leg.kickoff}
-      score={leg.score}
-      htScore={leg.htScore}
-      locale={locale}
-      className="rounded-xl border-border/70 bg-background/20 shadow-none"
-      headerExtra={
+    <div data-testid="coupon-leg" className="py-3">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <FixtureCardHeader
+          fixture={`${leg.homeTeam} vs ${leg.awayTeam}`}
+          homeLogo={leg.homeLogo}
+          awayLogo={leg.awayLogo}
+          competition={leg.competition}
+          country={leg.country}
+          kickoff={leg.kickoff}
+          score={leg.score}
+          htScore={leg.htScore}
+          locale={locale}
+        />
         <div className="flex shrink-0 items-center gap-2">
           {leg.odds && (
             <span
@@ -375,10 +379,8 @@ function CouponLegCard({
               </span>
             )}
         </div>
-      }
-      bodyClassName="py-2"
-    >
-      <div className="min-w-0">
+      </div>
+      <div className="mt-2 min-w-0">
         {/* No channel badge here (same reasoning as Decisions'
             channel-row.tsx) — most channels are named after their own
             target market (BTTS canal ≈ BTTS marché, DOUBLE_CHANCE ≈ Double
@@ -410,7 +412,7 @@ function CouponLegCard({
           )}
         </p>
       </div>
-    </FixtureCard>
+    </div>
   );
 }
 
@@ -426,7 +428,9 @@ function Metric({
   testId?: string;
 }) {
   return (
-    <div className="rounded-lg border border-border/70 bg-background/30 px-2.5 py-1.5 text-right">
+    // Plus d'encadré : une tuile bordée dans la carte faisait une carte dans
+    // la carte (détecteur impeccable). Libellé et valeur suffisent.
+    <div className="min-w-14 text-right">
       <p className="text-[0.6875rem] uppercase tracking-[0.1em] text-muted-foreground">
         {label}
       </p>
