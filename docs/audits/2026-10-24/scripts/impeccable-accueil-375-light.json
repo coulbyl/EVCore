@@ -1,0 +1,2574 @@
+{
+ "route": "/dashboard",
+ "width": 375,
+ "theme": "light",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 147 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 2.8:1 (need 4.5:1) — text #ffffff on #f97316 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.2:1 (need 4.5:1) — text #15803d on #dfeee8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Choisi sur les cotes\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.4:1 (need 4.5:1) — text #00bc7d on #fbfdff color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"✓ Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Cote\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #15803d on #daeae5 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Résultat\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Sélections du moteur\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"✓ Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Cote\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"1xBet\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.1:1 (need 4.5:1) — text #7b8a9e on #edf3f8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"1xBet 1.18\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Plus/Moins de buts\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"1xBet 1.20\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Double chance\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.1:1 (need 4.5:1) — text #a16207 on #f0eae1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Analyse IA\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"✓ Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Cote\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Résultat\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Clôture @1.90\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Plus/Moins de buts\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Clôture @2.00\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 10.88px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Analyse IA\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Cote\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Payé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.3:1 (need 4.5:1) — text #00bc7d on #f3f6fb color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Résultat\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Remboursé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 10.88px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Résultat\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Choisi sur les cotes\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"✗ Perdu\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Cote\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Perdu\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Résultat\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Clôture @3.10\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Résultat\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Analyse IA\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Remboursé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Cote\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Annulé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Résultat\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Annulé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Résultat\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.1:1 (need 4.5:1) — text #059669 on #d9efea color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"82%\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Fiable\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"79%\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Fiable\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"77%\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Fiable\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"74%\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Italie · Série A\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Fiable\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.1:1 (need 4.5:1) — text #0891b2 on #d9eef4 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"71%\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Fiable\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 1.9:1 (need 4.5:1) — text #00bc7d on #caebe6 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #5f7088 on #d6e1ec color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Perdu\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #5f7088 on #d6e1ec color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Remboursé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"En attente\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Gagnés\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Réussite\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.08px functional text \"Accueil\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.08px functional text \"Décisions\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.08px functional text \"Coupons\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.08px functional text \"Avis IA\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.08px functional text \"Inbox\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 147 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 2.8:1 (need 4.5:1) — text #ffffff on #f97316 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.2:1 (need 4.5:1) — text #15803d on #dfeee8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Choisi sur les cotes\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.4:1 (need 4.5:1) — text #00bc7d on #fbfdff color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"✓ Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Cote\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #15803d on #daeae5 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Résultat\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Sélections du moteur\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"✓ Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Cote\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"1xBet\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.1:1 (need 4.5:1) — text #7b8a9e on #edf3f8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"1xBet 1.18\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Plus/Moins de buts\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"1xBet 1.20\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Double chance\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.1:1 (need 4.5:1) — text #a16207 on #f0eae1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Analyse IA\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"✓ Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Cote\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Résultat\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Clôture @1.90\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Plus/Moins de buts\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Clôture @2.00\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 10.88px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Analyse IA\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Cote\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Payé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.3:1 (need 4.5:1) — text #00bc7d on #f3f6fb color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Résultat\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Remboursé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 10.88px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Résultat\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Choisi sur les cotes\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"✗ Perdu\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Cote\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Perdu\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Résultat\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Clôture @3.10\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Résultat\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.92px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Analyse IA\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Remboursé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Cote\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Annulé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Résultat\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Annulé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Résultat\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"62% de chances\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.1:1 (need 4.5:1) — text #059669 on #d9efea color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"82%\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Fiable\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"79%\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Fiable\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"77%\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Fiable\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"74%\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Italie · Série A\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Fiable\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.1:1 (need 4.5:1) — text #0891b2 on #d9eef4 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"71%\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Fiable\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 1.9:1 (need 4.5:1) — text #00bc7d on #caebe6 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Gagné\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #5f7088 on #d6e1ec color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Perdu\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #5f7088 on #d6e1ec color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Remboursé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"En attente\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Gagnés\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Réussite\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.08px functional text \"Accueil\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.08px functional text \"Décisions\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.08px functional text \"Coupons\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.08px functional text \"Avis IA\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.08px functional text \"Inbox\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "div",
+    "cls": "flex shrink-0 items-center justify-center rounded-full font-bold text-white ring",
+    "text": "E2",
+    "w": 32,
+    "h": 32
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.8:1 (need 4.5:1) — text #ffffff on #f97316"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center border whitespace-nowrap [&_svg]:pointer",
+    "text": "Pari sûr du jour · cote 1,20–1,35",
+    "w": 160,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.2:1 (need 4.5:1) — text #15803d on #dfeee8",
+     "severity": "advisory"
+    },
+    {
+     "type": "tiny-text",
+     "detail": "9.92px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "text-[0.62rem] font-medium tracking-wide text-muted-foreground",
+    "text": "19 jours gagnés sur 24 (30 derniers jours)",
+    "w": 194,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "9.92px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "flex items-center gap-1 rounded-full border border-border/70 px-1.5 py-0.5 text-",
+    "text": "Choisi sur les cotes",
+    "w": 111,
+    "h": 20
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"Choisi sur les cotes\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "text-[0.6rem] font-bold uppercase tracking-widest text-emerald-500",
+    "text": "✓ GAGNÉ",
+    "w": 53,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.4:1 (need 4.5:1) — text #00bc7d on #fbfdff"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"✓ Gagné\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "COTE",
+    "w": 35,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Cote\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "CHANCES",
+    "w": 54,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "min-w-0 truncate text-[0.7rem] text-muted-foreground",
+    "text": "Premier League · Angleterre · 19:00",
+    "w": 172,
+    "h": 17
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "11.2px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-mediu",
+    "text": "Gagné",
+    "w": 48,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.0:1 (need 4.5:1) — text #15803d on #daeae5"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Gagné\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full truncate",
+    "text": "Résultat",
+    "w": 40,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"Résultat\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "tabular-nums",
+    "text": "62% de chances",
+    "w": 80,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"62% de chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center border whitespace-nowrap [&_svg]:pointer",
+    "text": "Combiné du jour · 2 sélections",
+    "w": 152,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "9.92px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "text-[0.62rem] font-medium tracking-wide text-muted-foreground",
+    "text": "Gagne environ 7 jours sur 10",
+    "w": 135,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "9.92px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "flex items-center gap-1 rounded-full border border-border/70 px-1.5 py-0.5 text-",
+    "text": "Sélections du moteur",
+    "w": 118,
+    "h": 20
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"Sélections du moteur\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "text-[0.6rem] font-bold uppercase tracking-widest text-emerald-500",
+    "text": "✓ GAGNÉ",
+    "w": 53,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"✓ Gagné\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "COTE",
+    "w": 35,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Cote\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "1XBET",
+    "w": 36,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"1xBet\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "CHANCES",
+    "w": 54,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "min-w-0 truncate text-[0.7rem] text-muted-foreground",
+    "text": "Premier League · Angleterre · 19:00",
+    "w": 96,
+    "h": 17
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "11.2px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "font-mono text-[0.68rem] text-muted-foreground/80",
+    "text": "1xBet 1.18",
+    "w": 68,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.1:1 (need 4.5:1) — text #7b8a9e on #edf3f8"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"1xBet 1.18\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-mediu",
+    "text": "Gagné",
+    "w": 48,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Gagné\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full truncate",
+    "text": "Plus/Moins de buts",
+    "w": 92,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"Plus/Moins de buts\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "tabular-nums",
+    "text": "62% de chances",
+    "w": 80,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"62% de chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "min-w-0 truncate text-[0.7rem] text-muted-foreground",
+    "text": "Premier League · Angleterre · 19:00",
+    "w": 96,
+    "h": 17
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "11.2px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "font-mono text-[0.68rem] text-muted-foreground/80",
+    "text": "1xBet 1.20",
+    "w": 68,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"1xBet 1.20\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-mediu",
+    "text": "Gagné",
+    "w": 48,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Gagné\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full truncate",
+    "text": "Double chance",
+    "w": 73,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"Double chance\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "tabular-nums",
+    "text": "62% de chances",
+    "w": 80,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"62% de chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center border whitespace-nowrap [&_svg]:pointer",
+    "text": "Coupon long · cote 2,5–5",
+    "w": 129,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.1:1 (need 4.5:1) — text #a16207 on #f0eae1"
+    },
+    {
+     "type": "tiny-text",
+     "detail": "9.92px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "text-[0.62rem] font-medium tracking-wide text-muted-foreground",
+    "text": "Gagne environ 1 jour sur 3",
+    "w": 124,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "9.92px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "flex items-center gap-1 rounded-full border border-border/70 px-1.5 py-0.5 text-",
+    "text": "Analyse IA",
+    "w": 74,
+    "h": 20
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"Analyse IA\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "text-[0.6rem] font-bold uppercase tracking-widest text-emerald-500",
+    "text": "✓ GAGNÉ",
+    "w": 53,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"✓ Gagné\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "COTE",
+    "w": 35,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Cote\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "CHANCES",
+    "w": 54,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "min-w-0 truncate text-[0.7rem] text-muted-foreground",
+    "text": "Premier League · Angleterre · 19:00",
+    "w": 172,
+    "h": 17
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "11.2px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-mediu",
+    "text": "Gagné",
+    "w": 48,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Gagné\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full truncate",
+    "text": "Résultat",
+    "w": 40,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"Résultat\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "tabular-nums",
+    "text": "62% de chances",
+    "w": 80,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"62% de chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "tabular-nums focus:outline-none text-muted-foreground",
+    "text": "Clôture @1.90",
+    "w": 70,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"Clôture @1.90\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "min-w-0 truncate text-[0.7rem] text-muted-foreground",
+    "text": "Premier League · Angleterre · 19:00",
+    "w": 172,
+    "h": 17
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "11.2px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-mediu",
+    "text": "Gagné",
+    "w": 48,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Gagné\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full truncate",
+    "text": "Plus/Moins de buts",
+    "w": 92,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"Plus/Moins de buts\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "tabular-nums",
+    "text": "62% de chances",
+    "w": 80,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"62% de chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "tabular-nums focus:outline-none text-muted-foreground",
+    "text": "Clôture @2.00",
+    "w": 70,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"Clôture @2.00\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "min-w-0 truncate text-[0.7rem] text-muted-foreground",
+    "text": "Premier League · Angleterre · 19:00",
+    "w": 172,
+    "h": 17
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "11.2px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-mediu",
+    "text": "Gagné",
+    "w": 48,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Gagné\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full truncate",
+    "text": "Les deux équipes marquent",
+    "w": 134,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "10.88px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "tabular-nums",
+    "text": "62% de chances",
+    "w": 80,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"62% de chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center border whitespace-nowrap [&_svg]:pointer",
+    "text": "Coupon long · cote 2,5–5",
+    "w": 129,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "9.92px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "text-[0.62rem] font-medium tracking-wide text-muted-foreground",
+    "text": "Gagne environ 1 jour sur 3",
+    "w": 124,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "9.92px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "flex items-center gap-1 rounded-full border border-border/70 px-1.5 py-0.5 text-",
+    "text": "Analyse IA",
+    "w": 74,
+    "h": 20
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"Analyse IA\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "COTE",
+    "w": 35,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Cote\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "PAYÉ",
+    "w": 35,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Payé\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-xs font-semibold tabular-nums text-emerald-500",
+    "text": "@4.32",
+    "w": 35,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.3:1 (need 4.5:1) — text #00bc7d on #f3f6fb"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "CHANCES",
+    "w": 54,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "min-w-0 truncate text-[0.7rem] text-muted-foreground",
+    "text": "Premier League · Angleterre · 19:00",
+    "w": 172,
+    "h": 17
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "11.2px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-mediu",
+    "text": "Gagné",
+    "w": 48,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Gagné\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full truncate",
+    "text": "Résultat",
+    "w": 40,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"Résultat\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "tabular-nums",
+    "text": "62% de chances",
+    "w": 80,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"62% de chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "min-w-0 truncate text-[0.7rem] text-muted-foreground",
+    "text": "Premier League · Angleterre · 19:00",
+    "w": 172,
+    "h": 17
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "11.2px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-mediu",
+    "text": "Remboursé",
+    "w": 69,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Remboursé\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full truncate",
+    "text": "Remboursé si match nul",
+    "w": 117,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "10.88px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "tabular-nums",
+    "text": "62% de chances",
+    "w": 80,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"62% de chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "min-w-0 truncate text-[0.7rem] text-muted-foreground",
+    "text": "Premier League · Angleterre · 19:00",
+    "w": 172,
+    "h": 17
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "11.2px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-mediu",
+    "text": "Gagné",
+    "w": 48,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Gagné\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full truncate",
+    "text": "Résultat",
+    "w": 40,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"Résultat\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "tabular-nums",
+    "text": "62% de chances",
+    "w": 80,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"62% de chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center border whitespace-nowrap [&_svg]:pointer",
+    "text": "Coupon long · cote 2,5–5",
+    "w": 129,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "9.92px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "text-[0.62rem] font-medium tracking-wide text-muted-foreground",
+    "text": "Gagne environ 1 jour sur 3",
+    "w": 124,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "9.92px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "flex items-center gap-1 rounded-full border border-border/70 px-1.5 py-0.5 text-",
+    "text": "Choisi sur les cotes",
+    "w": 111,
+    "h": 20
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"Choisi sur les cotes\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "text-[0.6rem] font-bold uppercase tracking-widest text-destructive",
+    "text": "✗ PERDU",
+    "w": 51,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"✗ Perdu\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "COTE",
+    "w": 35,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Cote\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "CHANCES",
+    "w": 54,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "min-w-0 truncate text-[0.7rem] text-muted-foreground",
+    "text": "Premier League · Angleterre · 19:00",
+    "w": 172,
+    "h": 17
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "11.2px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-mediu",
+    "text": "Perdu",
+    "w": 44,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Perdu\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full truncate",
+    "text": "Résultat",
+    "w": 40,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"Résultat\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "tabular-nums",
+    "text": "62% de chances",
+    "w": 80,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"62% de chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "tabular-nums focus:outline-none text-muted-foreground",
+    "text": "Clôture @3.10",
+    "w": 70,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"Clôture @3.10\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "min-w-0 truncate text-[0.7rem] text-muted-foreground",
+    "text": "Premier League · Angleterre · 19:00",
+    "w": 172,
+    "h": 17
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "11.2px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-mediu",
+    "text": "Gagné",
+    "w": 48,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Gagné\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full truncate",
+    "text": "Résultat",
+    "w": 40,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"Résultat\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "tabular-nums",
+    "text": "62% de chances",
+    "w": 80,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"62% de chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center border whitespace-nowrap [&_svg]:pointer",
+    "text": "Coupon long · cote 2,5–5",
+    "w": 129,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "9.92px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "text-[0.62rem] font-medium tracking-wide text-muted-foreground",
+    "text": "Gagne environ 1 jour sur 3",
+    "w": 124,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "9.92px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "flex items-center gap-1 rounded-full border border-border/70 px-1.5 py-0.5 text-",
+    "text": "Analyse IA",
+    "w": 74,
+    "h": 20
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"Analyse IA\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground",
+    "text": "REMBOURSÉ",
+    "w": 71,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"Remboursé\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "COTE",
+    "w": 35,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Cote\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "CHANCES",
+    "w": 54,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "min-w-0 truncate text-[0.7rem] text-muted-foreground",
+    "text": "Premier League · Angleterre · 19:00",
+    "w": 179,
+    "h": 17
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "11.2px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-mediu",
+    "text": "Annulé",
+    "w": 49,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Annulé\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full truncate",
+    "text": "Résultat",
+    "w": 40,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"Résultat\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "tabular-nums",
+    "text": "62% de chances",
+    "w": 80,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"62% de chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "min-w-0 truncate text-[0.7rem] text-muted-foreground",
+    "text": "Premier League · Angleterre · 19:00",
+    "w": 179,
+    "h": 17
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "11.2px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-mediu",
+    "text": "Annulé",
+    "w": 49,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Annulé\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full truncate",
+    "text": "Résultat",
+    "w": 40,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"Résultat\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "tabular-nums",
+    "text": "62% de chances",
+    "w": 80,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"62% de chances\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 112
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "rounded-full px-2 py-0.5 text-[0.6rem] font-bold tabular-nums",
+    "text": "82%",
+    "w": 35,
+    "h": 18
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.1:1 (need 4.5:1) — text #059669 on #d9efea"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"82%\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center gap-1.5 rounded-full border border-border/70 px-2 py-0.",
+    "text": "Fiable",
+    "w": 57,
+    "h": 19
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Fiable\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 112
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "rounded-full px-2 py-0.5 text-[0.6rem] font-bold tabular-nums",
+    "text": "79%",
+    "w": 35,
+    "h": 18
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"79%\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center gap-1.5 rounded-full border border-border/70 px-2 py-0.",
+    "text": "Fiable",
+    "w": 57,
+    "h": 19
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Fiable\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 112
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "rounded-full px-2 py-0.5 text-[0.6rem] font-bold tabular-nums",
+    "text": "77%",
+    "w": 35,
+    "h": 18
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"77%\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center gap-1.5 rounded-full border border-border/70 px-2 py-0.",
+    "text": "Fiable",
+    "w": 57,
+    "h": 19
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Fiable\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 112
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "rounded-full px-2 py-0.5 text-[0.6rem] font-bold tabular-nums",
+    "text": "74%",
+    "w": 35,
+    "h": 18
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"74%\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "whitespace-nowrap uppercase tracking-widest text-[0.6rem]",
+    "text": "ITALIE · SÉRIE A",
+    "w": 90,
+    "h": 13
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"Italie · Série A\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center gap-1.5 rounded-full border border-border/70 px-2 py-0.",
+    "text": "Fiable",
+    "w": 57,
+    "h": 19
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Fiable\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 112
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "rounded-full px-2 py-0.5 text-[0.6rem] font-bold tabular-nums",
+    "text": "71%",
+    "w": 35,
+    "h": 18
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.1:1 (need 4.5:1) — text #0891b2 on #d9eef4"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"71%\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center gap-1.5 rounded-full border border-border/70 px-2 py-0.",
+    "text": "Fiable",
+    "w": 57,
+    "h": 19
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Fiable\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "shrink-0 rounded-full px-2.5 py-1 text-[0.65rem] font-semibold uppercase trackin",
+    "text": "GAGNÉ",
+    "w": 59,
+    "h": 24
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "1.9:1 (need 4.5:1) — text #00bc7d on #caebe6"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Gagné\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "shrink-0 rounded-full px-2.5 py-1 text-[0.65rem] font-semibold uppercase trackin",
+    "text": "GAGNÉ",
+    "w": 59,
+    "h": 24
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Gagné\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "shrink-0 rounded-full px-2.5 py-1 text-[0.65rem] font-semibold uppercase trackin",
+    "text": "GAGNÉ",
+    "w": 59,
+    "h": 24
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Gagné\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "shrink-0 rounded-full px-2.5 py-1 text-[0.65rem] font-semibold uppercase trackin",
+    "text": "GAGNÉ",
+    "w": 59,
+    "h": 24
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Gagné\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "shrink-0 rounded-full px-2.5 py-1 text-[0.65rem] font-semibold uppercase trackin",
+    "text": "PERDU",
+    "w": 58,
+    "h": 24
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.8:1 (need 4.5:1) — text #5f7088 on #d6e1ec"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Perdu\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "shrink-0 rounded-full px-2.5 py-1 text-[0.65rem] font-semibold uppercase trackin",
+    "text": "REMBOURSÉ",
+    "w": 90,
+    "h": 24
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.8:1 (need 4.5:1) — text #5f7088 on #d6e1ec"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Remboursé\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "flex items-center gap-1.5 text-[0.58rem] font-semibold uppercase tracking-[0.18e",
+    "text": "EN ATTENTE",
+    "w": 74,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"En attente\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "flex items-center gap-1.5 text-[0.58rem] font-semibold uppercase tracking-[0.18e",
+    "text": "GAGNÉS",
+    "w": 74,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Gagnés\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "flex items-center gap-1.5 text-[0.58rem] font-semibold uppercase tracking-[0.18e",
+    "text": "RÉUSSITE",
+    "w": 74,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Réussite\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full text-[0.63rem] font-semibold leading-tight whitespace-nowrap text-acc",
+    "text": "Accueil",
+    "w": 36,
+    "h": 13
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.08px functional text \"Accueil\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full text-[0.63rem] font-semibold leading-tight whitespace-nowrap",
+    "text": "Décisions",
+    "w": 48,
+    "h": 13
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.08px functional text \"Décisions\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full text-[0.63rem] font-semibold leading-tight whitespace-nowrap text-mut",
+    "text": "Coupons",
+    "w": 44,
+    "h": 13
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.08px functional text \"Coupons\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full text-[0.63rem] font-semibold leading-tight whitespace-nowrap",
+    "text": "Avis IA",
+    "w": 34,
+    "h": 13
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.08px functional text \"Avis IA\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "max-w-full text-[0.63rem] font-semibold leading-tight whitespace-nowrap",
+    "text": "Inbox",
+    "w": 27,
+    "h": 13
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.08px functional text \"Inbox\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12 righ",
+    "text": "",
+    "w": 44,
+    "h": 44
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden border rounded-xl border-border/70 bg-background/20 shadow-none",
+    "text": "Alpha FC vs Beta United Premier League · Angleterre · 19:00 ",
+    "w": 283,
+    "h": 130
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden border rounded-xl border-border/70 bg-background/20 shadow-none",
+    "text": "Alpha FC vs Beta United Premier League · Angleterre · 19:00 ",
+    "w": 283,
+    "h": 130
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden border rounded-xl border-border/70 bg-background/20 shadow-none",
+    "text": "Alpha FC vs Beta United Premier League · Angleterre · 19:00 ",
+    "w": 283,
+    "h": 130
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden border rounded-xl border-border/70 bg-background/20 shadow-none",
+    "text": "Alpha FC vs Beta United Premier League · Angleterre · 19:00 ",
+    "w": 283,
+    "h": 130
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden border rounded-xl border-border/70 bg-background/20 shadow-none",
+    "text": "Alpha FC vs Beta United Premier League · Angleterre · 19:00 ",
+    "w": 283,
+    "h": 146
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden border rounded-xl border-border/70 bg-background/20 shadow-none",
+    "text": "Alpha FC vs Beta United Premier League · Angleterre · 19:00 ",
+    "w": 283,
+    "h": 130
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden border rounded-xl border-border/70 bg-background/20 shadow-none",
+    "text": "Alpha FC vs Beta United Premier League · Angleterre · 19:00 ",
+    "w": 283,
+    "h": 130
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden border rounded-xl border-border/70 bg-background/20 shadow-none",
+    "text": "Alpha FC vs Beta United Premier League · Angleterre · 19:00 ",
+    "w": 283,
+    "h": 130
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden border rounded-xl border-border/70 bg-background/20 shadow-none",
+    "text": "Alpha FC vs Beta United Premier League · Angleterre · 19:00 ",
+    "w": 283,
+    "h": 130
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden border rounded-xl border-border/70 bg-background/20 shadow-none",
+    "text": "Alpha FC vs Beta United Premier League · Angleterre · 19:00 ",
+    "w": 283,
+    "h": 130
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden border rounded-xl border-border/70 bg-background/20 shadow-none",
+    "text": "Alpha FC vs Beta United Premier League · Angleterre · 19:00 ",
+    "w": 283,
+    "h": 130
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden border rounded-xl border-border/70 bg-background/20 shadow-none",
+    "text": "Alpha FC vs Beta United Premier League · Angleterre · 19:00 ",
+    "w": 283,
+    "h": 130
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden border rounded-xl border-border/70 bg-background/20 shadow-none",
+    "text": "Alpha FC vs Beta United Premier League · Angleterre · 19:00 ",
+    "w": 283,
+    "h": 130
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Ajax – PSV 82% Plus/Moins de buts · Plus de 1.5 PAYS-BAS · E",
+    "w": 317,
+    "h": 114
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Arsenal – Burnley 79% Résultat · Domicile ANGLETERRE · PREMI",
+    "w": 317,
+    "h": 114
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Bayern München – FC Augsburg 77% Résultat · Domicile ALLEMAG",
+    "w": 317,
+    "h": 114
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Atalanta – Lecce 74% Plus/Moins de buts · Plus de 1.5 ITALIE",
+    "w": 317,
+    "h": 114
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "ASEC Mimosas – Africa Sports 71% Double chance · Dom. ou Nul",
+    "w": 317,
+    "h": 114
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.15rem] border border-border bg-panel-strong px-3 py-2.5 shadow-sm",
+    "text": "EN ATTENTE 1",
+    "w": 100,
+    "h": 64
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.15rem] border border-border bg-panel-strong px-3 py-2.5 shadow-sm",
+    "text": "RÉUSSITE 66.7%",
+    "w": 100,
+    "h": 64
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  }
+ ]
+}
