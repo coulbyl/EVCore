@@ -17,7 +17,6 @@ import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-  ProgressBar,
   cn,
 } from "@evcore/ui";
 import { FixtureCard } from "@/components/fixture-card";
@@ -167,7 +166,6 @@ export function CouponCard({
   legs,
   actionSlot,
 }: CouponCardProps) {
-  const probPct = jointProbability * 100;
   // Plus de couleur ni de seuils sur les chances : « 15 % » en rouge se lisait
   // comme une alerte, alors que c'est l'arithmétique d'une cote 6. La classe
   // porte déjà la fréquence de gain en clair (« 1 jour sur 7 »).
@@ -299,8 +297,9 @@ export function CouponCard({
       </CardHeader>
 
       <CardContent className="flex flex-col gap-2.5 px-4">
-        <ProgressBar value={Math.round(probPct)} max={100} showValue={false} />
-
+        {/* Plus de barre de progression : elle répétait la tuile « Chances »
+            sans légende et se lisait comme un chargement (revue UX du
+            2026-10-24, P2 n°5). */}
         <div className="flex flex-col gap-2">
           {legs.map((leg) => (
             <CouponLegCard key={leg.key} leg={leg} locale={locale} />

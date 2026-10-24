@@ -7,7 +7,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { Skeleton } from "@evcore/ui";
 import { PickCard } from "@/components/pick-card";
 import { AddToCouponButton } from "@/components/add-to-coupon-button";
-import { ConfidenceBadge } from "@/components/confidence-badge";
 import { useChannelHealth } from "@/domains/dashboard/use-cases/get-channel-health";
 import { useChannelDecisionChannels } from "@/domains/channel-decision/use-cases/use-channel-decisions";
 import {
@@ -207,16 +206,25 @@ export function TodayPicks() {
               probabilityPct={`${Math.round(pick.selection.probability * 100)}%`}
               signalScore={null}
               odds={formatOdds(pick.selection.odds)}
+              playable={
+                pick.selection.playableOdds !== null &&
+                pick.selection.playableBookmaker !== null
+                  ? {
+                      odds: pick.selection.playableOdds,
+                      bookmaker: pick.selection.playableBookmaker,
+                    }
+                  : null
+              }
               score={pick.decision.score}
               htScore={pick.decision.htScore}
               betStatus={toBetStatus(pick.selection.result)}
               actionSlot={
-                <div className="flex items-center gap-2">
-                  <ConfidenceBadge status={pick.status} />
-                  {isUpcoming(pick.decision) && (
-                    <AddToCouponButton item={toDraftItem(pick)} />
-                  )}
-                </div>
+                // Plus de badge « Fiable » : le bloc ne garde que des canaux
+                // fiables, il valait « Fiable » cinq fois sur cinq (revue UX
+                // du 2026-10-24, P2 n°5) ; la règle est dans le sous-titre.
+                isUpcoming(pick.decision) ? (
+                  <AddToCouponButton item={toDraftItem(pick)} />
+                ) : null
               }
             />
           ))}

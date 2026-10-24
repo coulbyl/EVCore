@@ -30,6 +30,11 @@ export type PickCardProps = (InlineTeams | SingleFixture) & {
   probabilityPct: string | null;
   signalScore: string | null;
   odds: string | null;
+  /**
+   * Cote chez le bookmaker du joueur quand elle diffère de la nôtre — même
+   * présentation que sur les jambes d'un coupon (`components/coupon-card.tsx`).
+   */
+  playable?: { odds: number; bookmaker: string } | null;
   score: string | null;
   htScore: string | null;
   betStatus: "WON" | "LOST" | "PENDING" | null;
@@ -142,6 +147,7 @@ export function PickCard(props: PickCardProps) {
     probabilityPct,
     signalScore,
     odds,
+    playable,
     score,
     htScore,
     betStatus,
@@ -223,6 +229,14 @@ export function PickCard(props: PickCardProps) {
             <span className="whitespace-nowrap font-mono text-foreground">
               @{odds}
             </span>
+            {playable && Math.abs(playable.odds - Number(odds)) >= 0.005 && (
+              <span
+                data-testid="pick-playable-odds"
+                className="whitespace-nowrap font-mono text-muted-foreground"
+              >
+                {playable.bookmaker} {playable.odds.toFixed(2)}
+              </span>
+            )}
           </>
         )}
         <div className="ml-auto flex shrink-0 items-center gap-2">
