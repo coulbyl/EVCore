@@ -16,7 +16,8 @@ const SESSION = {
       username: "e2e_tester",
       fullName: "E2E Tester",
       bio: null,
-      role: "ADMIN",
+      // E2E_ROLE=OPERATOR pour voir ce qu'un joueur voit (captures UX).
+      role: process.env.E2E_ROLE ?? "ADMIN",
       emailVerified: true,
       avatarUrl: null,
       theme: "system",
@@ -294,6 +295,190 @@ const COUPONS = [
   }),
 ];
 
+// Sélections du jour (accueil, « Les sélections du jour ») : cinq décisions
+// SELECTED sur des canaux fiables, cote 1,20–1,65, coup d'envoi dans quelques
+// heures pour que l'ajout au coupon soit proposé. Les dates sont calculées à
+// l'exécution : l'accueil ne regarde que la journée courante.
+function todayAt(hoursFromNow) {
+  return new Date(Date.now() + hoursFromNow * 3_600_000).toISOString();
+}
+
+function decision(overrides) {
+  return {
+    id: `dec-${overrides.id}`,
+    fixtureId: `fx-${overrides.id}`,
+    fixtureStatus: "SCHEDULED",
+    modelRunId: `run-${overrides.id}`,
+    competition: overrides.competition ?? "PL",
+    competitionName: overrides.competitionName ?? "Premier League",
+    country: overrides.country ?? "England",
+    homeTeam: overrides.homeTeam,
+    awayTeam: overrides.awayTeam,
+    homeLogo: null,
+    awayLogo: null,
+    homeNewCoach: false,
+    awayNewCoach: false,
+    kickoff: todayAt(overrides.hours ?? 4),
+    scheduledAt: todayAt(overrides.hours ?? 4),
+    score: null,
+    htScore: null,
+    phase: "PREMATCH",
+    channel: overrides.channel,
+    status: "SELECTED",
+    reasonCode: null,
+    reasonDetails: null,
+    decidedAt: todayAt(-6),
+    calibrationAlert: overrides.calibrationAlert ?? false,
+    selections: [
+      {
+        id: `sel-${overrides.id}`,
+        market: overrides.market,
+        pick: overrides.pick,
+        probability: overrides.probability,
+        odds: overrides.odds,
+        oddsBookmaker: "Bet365",
+        marginPaid: 0.05,
+        marginBest: 0.03,
+        impliedProbability: Number((1 / overrides.odds).toFixed(4)),
+        ev: null,
+        qualityScore: null,
+        rank: 1,
+        result: null,
+        settledAt: null,
+        closingOdds: null,
+        closingBookmaker: null,
+        closingLineValue: null,
+        playableOdds: overrides.playableOdds ?? null,
+        playableBookmaker: overrides.playableOdds ? "1xBet" : null,
+      },
+    ],
+  };
+}
+
+const CHANNEL_DECISIONS = [
+  {
+    channel: "DOMINANT",
+    decisions: [
+      decision({
+        id: "d1",
+        channel: "DOMINANT",
+        homeTeam: "Arsenal",
+        awayTeam: "Burnley",
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        probability: 0.79,
+        odds: 1.28,
+        playableOdds: 1.24,
+        hours: 3,
+      }),
+      decision({
+        id: "d2",
+        channel: "DOMINANT",
+        homeTeam: "Bayern München",
+        awayTeam: "FC Augsburg",
+        competition: "BL1",
+        competitionName: "Bundesliga",
+        country: "Germany",
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        probability: 0.77,
+        odds: 1.3,
+        playableOdds: 1.27,
+        hours: 5,
+      }),
+    ],
+  },
+  {
+    channel: "GOALS",
+    decisions: [
+      decision({
+        id: "g1",
+        channel: "GOALS",
+        homeTeam: "Ajax",
+        awayTeam: "PSV",
+        competition: "ERD",
+        competitionName: "Eredivisie",
+        country: "Netherlands",
+        market: "OVER_UNDER",
+        pick: "OVER_1_5",
+        probability: 0.82,
+        odds: 1.25,
+        playableOdds: 1.22,
+        hours: 2,
+      }),
+      decision({
+        id: "g2",
+        channel: "GOALS",
+        homeTeam: "Atalanta",
+        awayTeam: "Lecce",
+        competition: "SA",
+        competitionName: "Serie A",
+        country: "Italy",
+        market: "OVER_UNDER",
+        pick: "OVER_1_5",
+        probability: 0.74,
+        odds: 1.33,
+        playableOdds: 1.3,
+        hours: 6,
+      }),
+    ],
+  },
+  {
+    channel: "DOUBLE_CHANCE",
+    decisions: [
+      decision({
+        id: "c1",
+        channel: "DOUBLE_CHANCE",
+        homeTeam: "ASEC Mimosas",
+        awayTeam: "Africa Sports",
+        competition: "CIV1",
+        competitionName: "Ligue 1 Côte d'Ivoire",
+        country: "Côte d'Ivoire",
+        market: "DOUBLE_CHANCE",
+        pick: "1X",
+        probability: 0.71,
+        odds: 1.4,
+        playableOdds: 1.36,
+        hours: 4,
+      }),
+      decision({
+        id: "c2",
+        channel: "DOUBLE_CHANCE",
+        homeTeam: "Radnički Niš",
+        awayTeam: "Novi Pazar",
+        competition: "SRB1",
+        competitionName: "Super Liga",
+        country: "Serbia",
+        market: "DOUBLE_CHANCE",
+        pick: "1X",
+        probability: 0.69,
+        odds: 1.45,
+        playableOdds: 1.4,
+        hours: 7,
+        calibrationAlert: true,
+      }),
+    ],
+  },
+];
+
+const CHANNEL_HEALTH = [
+  "DOMINANT",
+  "GOALS",
+  "DOUBLE_CHANCE",
+  "BTTS",
+  "DRAW",
+].map((channel, i) => ({
+  channel,
+  status: i < 3 ? "GREEN" : "AMBER",
+  primaryMetric: 0.96 - i * 0.03,
+  primaryMetricType: "HIT_RATE",
+  roi: -0.03,
+  hitRate: 0.74,
+  calibrationRatio: 0.96 - i * 0.03,
+  vsThreshold: 0.11,
+  sampleSize: 420,
+}));
+
 function route(method, url) {
   const path = url.split("?")[0];
 
@@ -330,6 +515,28 @@ function route(method, url) {
   if (path === "/coupons" && method === "GET") return [200, COUPONS];
   if (path.startsWith("/coupons/") && path.endsWith("/view")) return [204, {}];
   if (path.startsWith("/coupons")) return [200, []];
+  if (path.startsWith("/channel-decisions/by-channel"))
+    return [200, CHANNEL_DECISIONS];
+  if (path.startsWith("/channel-decisions")) return [200, []];
+  if (path.startsWith("/dashboard/channel-health"))
+    return [200, CHANNEL_HEALTH];
+  // Accueil opérateur : une liste (pas `{}`) et un résumé « Mes coupons » avec
+  // trois coupons joués, pour que le bloc ne soit pas vide sur les captures.
+  if (path.startsWith("/dashboard/announcements")) return [200, []];
+  if (path.startsWith("/bet-slips/summary"))
+    return [
+      200,
+      {
+        slipCount: 3,
+        wonBets: 2,
+        lostBets: 1,
+        pendingBets: 1,
+        settledBets: 3,
+        winRate: "66.7%",
+        globalRoi: "-4.1%",
+        globalRoiBetCount: 3,
+      },
+    ];
   if (path.startsWith("/dashboard/summary")) return [200, EMPTY_DASHBOARD];
   if (path.startsWith("/dashboard/competition-stats")) return [200, []];
   if (path.startsWith("/dashboard/leaderboard")) return [200, []];

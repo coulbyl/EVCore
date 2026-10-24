@@ -1,0 +1,190 @@
+{
+ "url": "http://localhost:3000/dashboard",
+ "title": "Console EVCore",
+ "lang": "fr",
+ "headings": [
+  "h2: LE COUPON DU JOUR",
+  "h2: LES SÉLECTIONS DU JOUR",
+  "h2: HIER",
+  "h2: MES COUPONS"
+ ],
+ "overflowX": false,
+ "textElements": 274,
+ "smallText": {
+  "count": 135,
+  "samples": [
+   {
+    "text": "Pari sûr du jour · cote 1,20–1,35",
+    "px": 9.9
+   },
+   {
+    "text": "19 jours gagnés sur 24 (30 derniers jours)",
+    "px": 9.9
+   },
+   {
+    "text": "Choisi sur les cotes",
+    "px": 9.6
+   },
+   {
+    "text": "✓ GAGNÉ",
+    "px": 9.6
+   },
+   {
+    "text": "COTE",
+    "px": 9.3
+   },
+   {
+    "text": "CHANCES",
+    "px": 9.3
+   },
+   {
+    "text": "Premier League · Angleterre · 19:00",
+    "px": 11.2
+   },
+   {
+    "text": "2–0",
+    "px": 11.2
+   },
+   {
+    "text": "Gagné",
+    "px": 9.9
+   },
+   {
+    "text": "Résultat",
+    "px": 10.9
+   },
+   {
+    "text": "62% de chances",
+    "px": 10.9
+   },
+   {
+    "text": "Combiné du jour · 2 sélections",
+    "px": 9.9
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 3,
+  "samples": [
+   {
+    "text": "E2",
+    "px": 12.2,
+    "ratio": 2.8,
+    "min": 4.5
+   },
+   {
+    "text": "Perdu",
+    "px": 9.9,
+    "ratio": 3.76,
+    "min": 4.5
+   },
+   {
+    "text": "✗ PERDU",
+    "px": 9.6,
+    "ratio": 4.33,
+    "min": 4.5
+   }
+  ]
+ },
+ "interactive": 24,
+ "smallTapTargets": {
+  "count": 18,
+  "samples": [
+   {
+    "text": "Toggle Sidebar",
+    "w": 36,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "Portefeuille",
+    "w": 42,
+    "h": 44,
+    "tag": "a"
+   },
+   {
+    "text": "Rechercher dans la page",
+    "w": 36,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "Notifications",
+    "w": 36,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mon coupon",
+    "w": 36,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "E2",
+    "w": 38,
+    "h": 38,
+    "tag": "button"
+   },
+   {
+    "text": "Tous les coupons",
+    "w": 109,
+    "h": 16,
+    "tag": "a"
+   },
+   {
+    "text": "Clôture @1.90",
+    "w": 70,
+    "h": 14,
+    "tag": "button"
+   },
+   {
+    "text": "Clôture @2.00",
+    "w": 70,
+    "h": 14,
+    "tag": "button"
+   },
+   {
+    "text": "Clôture @3.10",
+    "w": 70,
+    "h": 14,
+    "tag": "button"
+   },
+   {
+    "text": "Toutes les décisions",
+    "w": 123,
+    "h": 16,
+    "tag": "a"
+   },
+   {
+    "text": "Ajouter au coupon",
+    "w": 20,
+    "h": 20,
+    "tag": "button"
+   },
+   {
+    "text": "Voir le détail",
+    "w": 81,
+    "h": 16,
+    "tag": "a"
+   },
+   {
+    "text": "Mes coupons",
+    "w": 87,
+    "h": 16,
+    "tag": "a"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": [
+  {
+   "word": "sûr",
+   "count": 2
+  }
+ ]
+}
