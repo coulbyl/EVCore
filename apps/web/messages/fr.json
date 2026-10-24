@@ -43,7 +43,7 @@
     "navGroupAnalysis": "Analyse",
     "navGroupAdmin": "Admin",
     "performance": "Performance",
-    "bankroll": "Portefeuille",
+    "bankroll": "Suivi de mise",
     "betSlips": "Mes coupons",
     "inbox": "Inbox",
     "audit": "Audit",
@@ -685,7 +685,9 @@
       "fixedStake": "Ton résultat à mise fixe",
       "fixedStakeSample": "{count, plural, one {sur # pari réglé} other {sur # paris réglés}}",
       "fixedStakeNone": "Aucun pari réglé pour l'instant",
-      "weeklyBriefTitle": "Brief de la semaine"
+      "weeklyBriefTitle": "Brief de la semaine",
+      "pageTitle": "Accueil",
+      "riskLine": "18+ · Parier comporte des risques de perte. Ne mise que ce que tu peux perdre."
     }
   },
   "betSlips": {

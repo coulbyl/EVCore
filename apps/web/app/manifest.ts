@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Console EVCore",
+    name: "EVCore",
     short_name: "EVCore",
     description:
-      "Console opérateur pour les analyses EVCore, les fixtures et les flux d'audit.",
+      "Analyses de football : probabilités, raisonnement et résultats réglés, pertes comprises. 18+.",
     start_url: "/",
     display: "standalone",
     orientation: "portrait",

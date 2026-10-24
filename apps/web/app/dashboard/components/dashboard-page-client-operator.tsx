@@ -8,6 +8,7 @@ import { TodayPicks } from "./home/today-picks";
 import { YesterdayCoupons } from "./home/yesterday-coupons";
 import { MySlipsSummary } from "./home/my-slips-summary";
 import { WeeklyBrief } from "./weekly-brief";
+import { useTranslations } from "next-intl";
 
 /**
  * Accueil d'un opérateur : trois questions, dans l'ordre où le joueur se les
@@ -20,6 +21,7 @@ import { WeeklyBrief } from "./weekly-brief";
  * coupons (revue UX du 2026-10-11, P0-3).
  */
 export function DashboardPageClientOperator() {
+  const t = useTranslations("dashboard.home");
   const announcementsQuery = useDashboardAnnouncements();
 
   return (
@@ -28,6 +30,9 @@ export function DashboardPageClientOperator() {
           ne doit plus couvrir la dernière tuile une fois la page déroulée. */}
       <PageContent className="min-h-0 flex-1 overflow-y-auto p-4 pb-20 sm:p-5 sm:pb-20 ev-shell-shadow">
         <div className="flex flex-col gap-5">
+          {/* Un titre de page pour les lecteurs d'écran : la page n'avait que
+              des h2 (détecteur, revue UX du 2026-10-24). */}
+          <h1 className="sr-only">{t("pageTitle")}</h1>
           {announcementsQuery.isLoading ? (
             <Skeleton className="h-14 rounded-2xl" />
           ) : (
@@ -68,6 +73,15 @@ export function DashboardPageClientOperator() {
               </div>
             </div>
           </div>
+
+          {/* Mention de risque, sobre et toujours présente en bas de l'accueil
+              (règles de rédaction, apps/web/PRODUCT.md). */}
+          <p
+            data-testid="home-risk-line"
+            className="text-center text-xs text-muted-foreground"
+          >
+            {t("riskLine")}
+          </p>
         </div>
       </PageContent>
     </Page>
