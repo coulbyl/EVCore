@@ -78,32 +78,40 @@ export function MySlipsSummary() {
           pending: data.plays.pending,
         })}
       </p>
-      <StatCard
-        compact
-        tone="neutral"
-        label={t("fixedStake")}
-        value={
-          data.plays.returnRate === null
+      {/* Le chiffre d'abord, en grand ; l'effectif dessous. Un StatCard
+          compact mettait le pourcentage en 12 px et l'effectif en 16 px. */}
+      <div
+        data-testid="home-my-slips-fixed-stake"
+        className="rounded-2xl border border-border bg-panel px-4 py-3"
+      >
+        <p className="text-xs font-medium text-muted-foreground">
+          {t("fixedStake")}
+        </p>
+        <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+          {data.plays.returnRate === null
             ? "—"
-            : formatSignedPercent(Number(data.plays.returnRate), locale)
-        }
-        delta={
-          <span data-testid="home-my-slips-sample">
-            {data.plays.settled > 0
-              ? t("fixedStakeSample", { count: data.plays.settled })
-              : t("fixedStakeNone")}
-          </span>
-        }
-      />
+            : formatSignedPercent(Number(data.plays.returnRate), locale)}
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {data.plays.settled > 0
+            ? t("fixedStakeSample", { count: data.plays.settled })
+            : t("fixedStakeNone")}
+        </p>
+      </div>
     </section>
   );
 }
 
-/** −0,041 → « −4,1 % » ; le signe toujours écrit, sauf à zéro. */
+/**
+ * −0,041 → « −4,1 % » ; le signe toujours écrit, sauf à zéro, et un vrai
+ * signe moins (U+2212) plutôt que le trait d'union que rend Intl.
+ */
 function formatSignedPercent(rate: number, locale: string): string {
   return new Intl.NumberFormat(locale === "en" ? "en-GB" : "fr-FR", {
     style: "percent",
     maximumFractionDigits: 1,
     signDisplay: "exceptZero",
-  }).format(rate);
+  })
+    .format(rate)
+    .replace("-", "\u2212");
 }
