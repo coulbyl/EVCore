@@ -29,8 +29,8 @@
   "pwaInstall": {
     "title": "Installer EVCore",
     "subtitle": "Accès rapide depuis l'écran d'accueil",
-    "iosSafari": "Touchez Partager, puis Sur l'écran d'accueil.",
-    "iosOther": "Ouvrez EVCore dans Safari, touchez Partager, puis Sur l'écran d'accueil.",
+    "iosSafari": "Touche Partager, puis Sur l'écran d'accueil.",
+    "iosOther": "Ouvre EVCore dans Safari, touche Partager, puis Sur l'écran d'accueil.",
     "install": "Installer",
     "close": "Fermer"
   },
@@ -354,15 +354,15 @@
     },
     "homeCoupon": {
       "title": "Le coupon du jour",
-      "description": "C'est par là que tout commence : le coupon proposé aujourd'hui, ses jambes et sa cote. « Jouer ce coupon » l'ajoute à votre panier."
+      "description": "C'est par là que tout commence : les coupons proposés aujourd'hui, leurs jambes et leur cote. « Jouer ce coupon » l'ajoute à ton panier."
     },
     "homePicks": {
       "title": "Les sélections du jour",
       "description": "Cinq sélections au plus, prises sur des canaux fiables et dans la bande de cote où la mesure tient. Le + les ajoute au coupon."
     },
     "homeMySlips": {
-      "title": "Vos coupons",
-      "description": "Ce que vous avez joué : en attente, gagné, taux de réussite. La page Mes coupons détaille chaque ticket."
+      "title": "Tes coupons",
+      "description": "Ce que tu as joué : gagnés, perdus, en attente, et ton résultat à mise fixe. La page Mes coupons détaille chaque ticket."
     }
   },
   "formation": {
@@ -443,7 +443,7 @@
     "savePreferences": "Enregistrer",
     "savedAutomatically": "Enregistré automatiquement.",
     "profile": "Profil",
-    "profileDescription": "Vos informations de compte.",
+    "profileDescription": "Tes informations de compte.",
     "fullName": "Nom & prénoms",
     "email": "Email",
     "username": "Identifiant",
@@ -678,7 +678,7 @@
       "picksEmpty": "Aucune sélection ne remplit les conditions aujourd'hui.",
       "mySlipsTitle": "Mes coupons",
       "mySlipsLink": "Mes coupons",
-      "mySlipsEmptyTitle": "Vous n'avez encore rien joué",
+      "mySlipsEmptyTitle": "Tu n'as encore rien joué",
       "mySlipsEmptyBody": "Le coupon du jour est en haut de cette page. Un coupon joué apparaît ici avec son résultat.",
       "mySlipsEmptyLink": "Voir le coupon du jour",
       "mySlipsTally": "{won, plural, one {# gagné} other {# gagnés}} · {lost, plural, one {# perdu} other {# perdus}} · {pending} en attente",
@@ -689,10 +689,10 @@
   },
   "betSlips": {
     "emptyTitle": "Aucun coupon sur cette période",
-    "emptyDescription": "Vos coupons existent mais pas entre ces dates.",
+    "emptyDescription": "Tes coupons existent, mais pas entre ces dates.",
     "tabSlips": "Mes coupons",
     "tabLeaderboard": "Classement des joueurs",
-    "neverPlayedTitle": "Vous n'avez pas encore joué de coupon",
+    "neverPlayedTitle": "Tu n'as pas encore joué de coupon",
     "neverPlayedBody": "Le pari sûr du jour et le coupon long sont sur l'accueil. Un coupon joué apparaît ici avec son résultat.",
     "neverPlayedLink": "Voir le coupon du jour",
     "widenPeriod": "Afficher les 90 derniers jours",
@@ -882,7 +882,7 @@
     },
     "actions": {
       "alreadyInSlip": "Déjà dans le coupon",
-      "alreadyInTickets": "Déjà dans vos coupons",
+      "alreadyInTickets": "Déjà dans tes coupons",
       "placePick": "Placer cette sélection"
     },
     "table": {
