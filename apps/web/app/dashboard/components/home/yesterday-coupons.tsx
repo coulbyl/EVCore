@@ -69,12 +69,11 @@ export function YesterdayCoupons() {
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground">
-                    {/* La classe (« Pari sûr du jour », « Coupon long »)
-                        dit ce que c'était ; la source ne sert que s'il n'y
-                        a pas de classe. */}
-                    {couponClassMeta(coupon.couponClass)?.label.split(
-                      " · ",
-                    )[0] ?? couponSourceMeta(coupon.source).label}
+                    {/* Nom court de la classe (« Favori », « Coupon long ») :
+                        « du jour » n'a pas sa place sous « Hier ». La source
+                        ne sert que s'il n'y a pas de classe. */}
+                    {couponClassMeta(coupon.couponClass)?.shortLabel ??
+                      couponSourceMeta(coupon.source).label}
                     <span className="text-muted-foreground">
                       {" · "}
                       {t("legs", { count: coupon.legs.length })}
