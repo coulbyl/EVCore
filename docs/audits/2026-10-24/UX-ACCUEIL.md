@@ -138,3 +138,47 @@ La page sait déjà dire la vérité, elle ne la met pas en avant. Elle montre q
 ## Notes d'exécution
 
 Cible : `/dashboard` (rôle Opérateur). Liste d'exclusions : aucune. Indépendance des évaluations : A dans un sous-agent séparé, B dans le contexte principal, synthèse après les deux. Détecteur `impeccable detect` : scan de source vide ; détecteur de page injecté via `live-server` (port 8400) et Playwright, 4 configurations, 147–150 éléments. Superposition visuelle : injectée en navigateur sans tête, pas d'onglet humain. Serveurs : faux backend, Next et `impeccable live-server` lancés à la main pour les détecteurs, arrêtés après (`live-server stop --keep-inject`, aucun fichier du projet modifié). Fichiers temporaires : sorties JSON copiées dans `scripts/`, le reste dans le scratchpad de session.
+
+## Après corrections (24/10, branche `feat/produit-ux`)
+
+Seize commits, de `bdb1f272` à `70eb7f3a`. Captures dans `captures/apres/`, sorties des détecteurs dans `scripts/apres-*.json`. Même faux backend, même rôle Opérateur.
+
+**Ce qui a changé pour le joueur**
+
+- L'accueil montre deux cartes (Favori du jour, Combiné du jour) ; le coupon long tient sur une ligne qui renvoie à la page Coupons.
+- « Pari sûr du jour » s'appelle « Favori du jour ».
+- La ligne de relevé dit « 19 jours gagnés sur 24 · à mise fixe −3 % · du 25/09 au 23/10 », et « Relevé en cours · 3 jours réglés » sous cinq jours ; plus aucune fréquence simulée.
+- « Mes coupons » répond à « suis-je en gain ou en perte ? » : « 2 gagnés · 1 perdu · 1 en attente » et « Ton résultat à mise fixe −15 % sur 3 paris réglés ». Le chiffre vient d'un nouveau calcul backend sur les paris du joueur ; l'ancien `globalRoi` mesurait les paris internes VALUE de tous les utilisateurs.
+- « Hier » s'ouvre sur un bilan d'une ligne et passe en tête sur téléphone ; deux coupons de même classe se distinguent par leur source.
+- L'heure du match ne se tronque plus ; le titre porte la date.
+- Plus de badge « Fiable » tautologique ni de barre de progression ; la cote jouable apparaît sur les sélections du jour.
+- Jambes en rangées, plus de cartes dans la carte ; textes à 12 px (11 px pour les libellés de tuile) ; cibles de 44 px ; contrastes AA.
+- Tutoiement partout ; les textes de la carte coupon passent par les fichiers de traduction.
+- Titre d'onglet et nom d'installation « EVCore » ; mention « 18+ · Parier comporte des risques de perte » en bas de l'accueil ; « Suivi de mise » à la place de « Portefeuille ».
+
+**Détecteurs, avant → après**
+
+| Mesure (impeccable, dans la page) | Mobile sombre | Mobile clair | Desktop sombre | Desktop clair |
+| --------------------------------- | ------------: | -----------: | -------------: | ------------: |
+| Total des signalements            |      151 → 16 |     157 → 15 |       154 → 18 |      163 → 19 |
+| Texte fonctionnel sous 11 px      |        92 → 0 |       92 → 0 |         91 → 1 |        91 → 1 |
+| Texte courant sous 12 px          |        27 → 0 |       27 → 0 |         27 → 0 |        27 → 0 |
+| Contraste insuffisant             |         5 → 1 |       12 → 1 |          9 → 2 |        18 → 3 |
+| Cartes imbriquées                 |        20 → 8 |       20 → 8 |         20 → 8 |        20 → 8 |
+
+| Mesure (détecteur maison)  | Mobile                          | Desktop         |
+| -------------------------- | ------------------------------- | --------------- |
+| Cibles tactiles sous 44 px | 18 → 6                          | 27 → 15         |
+| Mots interdits             | « sûr » × 2 → 0                 | « sûr » × 2 → 0 |
+| `h1`                       | aucun → « Accueil »             | idem            |
+| Titre d'onglet             | « Console EVCore » → « EVCore » | idem            |
+
+**Ce qui reste, et pourquoi**
+
+- **Coquille partagée, pas l'Accueil** : avatar en initiales blanches sur orange (2,8:1), nom d'utilisateur de la barre latérale en clair (3,8:1), icônes d'en-tête à 36 px (réglées le 19/10 pour tenir un solde à neuf chiffres à 360 px), libellés de la navigation latérale à 36 px de haut. À traiter dans une passe dédiée à la coquille.
+- **Cartes imbriquées restantes (8)** : ce sont les cartes posées dans le panneau de page commun à tout le tableau de bord (sélections du jour, tuile de résultat). Les retirer change la coquille de toutes les pages.
+- **Bande colorée de canal, dégradé cyan, halo du bouton flottant** : signatures visuelles actuelles, à trancher avec `DESIGN.md` plutôt qu'à la pièce.
+- **Desktop** : la colonne principale dépasse le premier écran (`first-viewport-column-overflow`).
+- **Différé volontairement** : « Jouer ce coupon » → « Suivre ce coupon » (c'est une fonctionnalité, suivi sans mise et notification) ; nom du bookmaker à l'écran (décision ouverte dans `apps/web/PRODUCT.md`).
+
+**Score Nielsen re-noté : 26/40 (contre 21/40).** Note posée par l'auteur des corrections, à confirmer par une revue indépendante lors de la prochaine passe : visibilité de l'état 3 (date et heure visibles, mais une jambe non réglée n'a toujours pas d'état), correspondance au réel 3, contrôle 3, cohérence 3 (« Annulé » reste sur les jambes remboursées), prévention des erreurs 3, reconnaissance 2 (explications encore au survol), flexibilité 2, minimalisme 3, récupération d'erreur 2, aide 2.

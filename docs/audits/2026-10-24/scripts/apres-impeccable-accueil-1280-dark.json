@@ -1,0 +1,320 @@
+{
+ "route": "/dashboard",
+ "width": 1280,
+ "theme": "dark",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 18 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 2.8:1 (need 4.5:1) — text #ffffff on #f97316 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Opérateur\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.8:1 (need 4.5:1) — text #ffffff on #f97316 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cfirst-viewport-column-overflow%c div.grid.grid-cols-1.gap-6.lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] opens the page with one column running 158% of the viewport tall while a sibling fits in 88% — the fold falls deep inside the section color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 18 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 2.8:1 (need 4.5:1) — text #ffffff on #f97316 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Opérateur\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.8:1 (need 4.5:1) — text #ffffff on #f97316 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cfirst-viewport-column-overflow%c div.grid.grid-cols-1.gap-6.lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] opens the page with one column running 158% of the viewport tall while a sibling fits in 88% — the fold falls deep inside the section color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "div",
+    "cls": "flex shrink-0 items-center justify-center rounded-full font-bold text-white ring",
+    "text": "E2",
+    "w": 32,
+    "h": 32
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.8:1 (need 4.5:1) — text #ffffff on #f97316"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-mediu",
+    "text": "Opérateur",
+    "w": 63,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Opérateur\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "flex shrink-0 items-center justify-center rounded-full font-bold text-white ring",
+    "text": "E2",
+    "w": 32,
+    "h": 32
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.8:1 (need 4.5:1) — text #ffffff on #f97316"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 98
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 98
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 98
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 98
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 98
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12 righ",
+    "text": "",
+    "w": 48,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "bg-card text-card-foreground flex flex-col border shadow-xs gap-3 rounded-2xl py",
+    "text": "Favori du jour · cote 1,20–1,35 19 jours gagnés sur 24 · à m",
+    "w": 509,
+    "h": 224
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "bg-card text-card-foreground flex flex-col border shadow-xs gap-3 rounded-2xl py",
+    "text": "Combiné du jour · 2 sélections Relevé en cours · 3 jours rég",
+    "w": 509,
+    "h": 332
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Ajax – PSV 82% Plus/Moins de buts · Plus de 1.5 PAYS-BAS · E",
+    "w": 509,
+    "h": 100
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Arsenal – Burnley 79% Résultat · Domicile ANGLETERRE · PREMI",
+    "w": 509,
+    "h": 100
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Bayern München – FC Augsburg 77% Résultat · Domicile ALLEMAG",
+    "w": 509,
+    "h": 100
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Atalanta – Lecce 74% Plus/Moins de buts · Plus de 1.5 ITALIE",
+    "w": 509,
+    "h": 100
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "ASEC Mimosas – Africa Sports 71% Double chance · Dom. ou Nul",
+    "w": 509,
+    "h": 100
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-2xl border border-border bg-panel px-4 py-3",
+    "text": "Ton résultat à mise fixe −15 % sur 3 paris réglés",
+    "w": 339,
+    "h": 96
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]",
+    "text": "LES COUPONS DU JOUR · SAM. 24 OCT. Tous les coupons Favori d",
+    "w": 872,
+    "h": 1266
+   },
+   "findings": [
+    {
+     "type": "first-viewport-column-overflow",
+     "detail": "div.grid.grid-cols-1.gap-6.lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] opens the page with one column running 158% of the viewport tall while a sibling fits in 88% — the fold falls deep inside the section"
+    }
+   ]
+  }
+ ]
+}
