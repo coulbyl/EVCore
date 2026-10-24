@@ -75,6 +75,22 @@ Avec B, publier seulement si la probabilité de la paire ≥ 0,55 divise le nomb
 - **Jours** : publication de préférence vendredi à dimanche ; l'effet jour riche se teste en ombre, règle figée à l'avance (vivier ≥ 40 rencontres, paire B ≥ 0,52), 6 à 8 semaines, jugée par jambe. Si août se reproduit, on publie tous les jours.
 - **Le plancher du compositeur par le prix** (`PRICE_COMPOSER_POLICY.minExpectedReturn`, aujourd'hui 0) est le bouton d'abstention qui existe déjà : « le refus est un résultat ».
 
+## 4. Ce que dit la littérature
+
+Recherche web du 24/10 (harnais de recherche : 5 angles, 103 agents, 13 affirmations vérifiées par trois relecteurs adverses ; la synthèse automatique n'a pas abouti, les affirmations sont reprises ici telles que vérifiées).
+
+**Les cotes courtes sont presque justes, mais toujours négatives.** Sur 84 230 matchs européens (2011–2022, cotes de clôture moyennes), les paris du décile de probabilité le plus élevé perdent environ 2 % en moyenne, ceux du décile le plus bas 17 % ([Hegarty & Whelan, MPRA 116924](https://mpra.ub.uni-muenchen.de/116924) ; [VoxEU](https://cepr.org/voxeu/columns/forecasting-soccer-matches-betting-odds-tale-two-markets)). Parier contre ce biais favori-outsider, c'est-à-dire sur les favoris courts, est au mieux marginalement rentable ([Manchester](https://research.manchester.ac.uk/en/publications/biases-in-the-football-betting-market/)). C'est exactement notre bande 1,20–1,65 : la plus proche du prix juste, pas un avantage.
+
+**La marge affichée sous-estime la perte réelle.** Sur les mêmes matchs, la surcote implique 6,5 % de perte attendue et la perte réalisée est 7,8 %, parce que les bookmakers chargent davantage les issues peu probables ([MPRA 116924](https://mpra.ub.uni-muenchen.de/116924)). Notre `marginPaid` par groupe d'issues est donc un plancher, pas la perte attendue de la jambe.
+
+**Le marché Asian Handicap n'a pas de biais favori-outsider** et ses probabilités sont des prédicteurs non biaisés, même sur la plage de probabilités où le 1X2 reste biaisé ([VoxEU](https://cepr.org/voxeu/columns/forecasting-soccer-matches-betting-odds-tale-two-markets)). Cela recoupe la mesure du dépôt (AH = marché le moins taxé, 4,1 %) et justifie de l'inclure dans le vivier du coupon cote 2.
+
+**Choisir « le meilleur » parmi N fabrique la déception.** Même avec des estimations individuellement non biaisées, l'alternative choisie pour sa valeur estimée la plus haute réalise en moyenne moins que son estimation ; le biais vient de la sélection, pas des estimations ([Smith & Winkler, « The Optimizer's Curse »](https://jimsmith.host.dartmouth.edu/wp-content/uploads/2022/04/The_Optimizers_Curse.pdf)). La déception attendue croît avec le nombre de candidats, à rythme décroissant : 0,56 écart-type pour 2 alternatives, 0,85 pour 3, 1,03 pour 4, 1,54 pour 10. **Un jour riche rend donc la paire « la plus probable » plus surestimée, pas moins**, si le classement se fait sur les estimations brutes. Le même mécanisme est documenté comme malédiction du vainqueur en inférence post-sélection ([Andrews, Kitagawa & McCloskey, QJE 2024](https://academic.oup.com/qje/article/139/1/305/7276491)) : l'estimateur naïf du gagnant surestime dans environ 85 % des sélections simulées.
+
+**Filtrer sur un seuil d'EV sélectionne les erreurs du modèle.** Sur un modèle de Premier League, relever le seuil d'EV augmente le ROI rapporté jusqu'à un point puis le fait chuter, les auteurs l'attribuant à la malédiction du vainqueur : le filtre le plus strict retient les paris où la probabilité du modèle est la plus fausse ([arXiv 2605.16066](https://arxiv.org/pdf/2605.16066)). Les mêmes auteurs refusent de lire un écart de 0,4 point d'exactitude face à Betfair comme un avantage. C'est le résultat du dépôt du 22/08 (l'edge est anti-prédictif), retrouvé indépendamment.
+
+**Ce que la littérature ne dit pas** : rien de vérifié sur un effet du nombre de matchs du jour sur la qualité des prix. L'effet « jour riche » mesuré en §2 n'a pas de support externe ; il reste une hypothèse d'ombre.
+
 ## Limites
 
 - La cellule de B est marché × 3 tranches de cote sur l'historique complet antérieur au jour composé (≥ 50 jambes), pas la courbe canal × compétition sur 90 jours du produit. Elle est plus grossière et un peu plus stable.
