@@ -499,6 +499,8 @@ function route(method, url) {
           won: 19,
           avgOdds: 1.19,
           returnPerUnit: 0.97,
+          firstDay: "2026-09-25",
+          lastDay: "2026-10-23",
         },
         {
           couponClass: "COMBO",
@@ -508,6 +510,8 @@ function route(method, url) {
           won: 2,
           avgOdds: 1.4,
           returnPerUnit: 1.02,
+          firstDay: "2026-10-20",
+          lastDay: "2026-10-23",
         },
       ],
     ];

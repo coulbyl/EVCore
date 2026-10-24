@@ -151,8 +151,15 @@ export class CouponService {
       won: row.won,
       avgOdds: row.avgOdds,
       returnPerUnit: row.returnPerUnit,
+      firstDay: isoDay(row.firstDay),
+      lastDay: isoDay(row.lastDay),
     }));
   }
+}
+
+/** Colonne `@db.Date` lue par `$queryRaw` : minuit UTC, on garde AAAA-MM-JJ. */
+function isoDay(day: Date): string {
+  return day.toISOString().slice(0, 10);
 }
 
 function readSnapshotString(value: unknown, key: string): string | null {

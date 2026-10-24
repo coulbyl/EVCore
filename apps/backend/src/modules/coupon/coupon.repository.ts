@@ -79,6 +79,9 @@ export type ClassTrackRecordRow = {
   won: number;
   avgOdds: number;
   returnPerUnit: number;
+  /** Premier et dernier `forDate` réglés de la classe dans la fenêtre. */
+  firstDay: Date;
+  lastDay: Date;
 };
 
 export type PriceCandidateRow = {
@@ -672,7 +675,9 @@ export class CouponRepository {
                    WHEN 'WON' THEN coalesce("realizedOdds", "combinedOdds")
                    WHEN 'PARTIAL' THEN coalesce("realizedOdds", "combinedOdds")
                    WHEN 'VOID' THEN 1
-                   ELSE 0 END)::float           AS "returnPerUnit"
+                   ELSE 0 END)::float           AS "returnPerUnit",
+             min("forDate")                     AS "firstDay",
+             max("forDate")                     AS "lastDay"
       FROM public.coupon_proposal
       WHERE result IS NOT NULL
         AND "forDate" >= ${since}
