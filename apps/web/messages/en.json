@@ -675,9 +675,10 @@
       "mySlipsEmptyTitle": "You have not played anything yet",
       "mySlipsEmptyBody": "Today's coupon is at the top of this page. A played coupon shows up here with its result.",
       "mySlipsEmptyLink": "See today's coupon",
-      "pending": "Pending",
-      "won": "Won",
-      "winRate": "Hit rate"
+      "mySlipsTally": "{won} won · {lost} lost · {pending} pending",
+      "fixedStake": "Your fixed-stake result",
+      "fixedStakeSample": "{count, plural, one {over # settled bet} other {over # settled bets}}",
+      "fixedStakeNone": "No settled bet yet"
     }
   },
   "betSlips": {

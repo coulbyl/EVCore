@@ -536,9 +536,17 @@ function route(method, url) {
         lostBets: 1,
         pendingBets: 1,
         settledBets: 3,
-        winRate: "66.7%",
-        globalRoi: "-4.1%",
-        globalRoiBetCount: 3,
+        winRate: "67%",
+        // Deux simples gagnés à 1,25 et 1,30, un perdu : −0,45 sur 3.
+        plays: {
+          won: 2,
+          lost: 1,
+          void: 0,
+          pending: 1,
+          settled: 3,
+          profitUnits: "-0.45",
+          returnRate: "-0.1500",
+        },
       },
     ];
   if (path.startsWith("/dashboard/summary")) return [200, EMPTY_DASHBOARD];

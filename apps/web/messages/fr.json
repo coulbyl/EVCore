@@ -675,9 +675,10 @@
       "mySlipsEmptyTitle": "Vous n'avez encore rien joué",
       "mySlipsEmptyBody": "Le coupon du jour est en haut de cette page. Un coupon joué apparaît ici avec son résultat.",
       "mySlipsEmptyLink": "Voir le coupon du jour",
-      "pending": "En attente",
-      "won": "Gagnés",
-      "winRate": "Réussite"
+      "mySlipsTally": "{won, plural, one {# gagné} other {# gagnés}} · {lost, plural, one {# perdu} other {# perdus}} · {pending} en attente",
+      "fixedStake": "Ton résultat à mise fixe",
+      "fixedStakeSample": "{count, plural, one {sur # pari réglé} other {sur # paris réglés}}",
+      "fixedStakeNone": "Aucun pari réglé pour l'instant"
     }
   },
   "betSlips": {
