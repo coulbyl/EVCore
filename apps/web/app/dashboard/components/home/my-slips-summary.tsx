@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, Receipt } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { Skeleton, StatCard } from "@evcore/ui";
+import { Skeleton } from "@evcore/ui";
 import { useOperatorSummary } from "@/domains/bet-slip/use-cases/get-operator-summary";
 
 /**
