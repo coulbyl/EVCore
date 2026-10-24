@@ -657,6 +657,12 @@
       "longCouponLink": "Today's long coupon (@{odds}): on the Coupons page",
       "yesterdayTitle": "Yesterday",
       "yesterdayLink": "See details",
+      "yesterdayTally": {
+        "won": "{count} won",
+        "lost": "{count} lost",
+        "void": "{count} refunded",
+        "pending": "{count} pending"
+      },
       "legs": "{count, plural, one {# leg} other {# legs}}",
       "paid": "paid @{odds}",
       "result": {

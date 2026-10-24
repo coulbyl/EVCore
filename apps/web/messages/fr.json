@@ -657,6 +657,12 @@
       "longCouponLink": "Coupon long du jour (@{odds}) : sur la page Coupons",
       "yesterdayTitle": "Hier",
       "yesterdayLink": "Voir le détail",
+      "yesterdayTally": {
+        "won": "{count, plural, one {# gagné} other {# gagnés}}",
+        "lost": "{count, plural, one {# perdu} other {# perdus}}",
+        "void": "{count, plural, one {# remboursé} other {# remboursés}}",
+        "pending": "{count} en attente"
+      },
       "legs": "{count, plural, one {# jambe} other {# jambes}}",
       "paid": "payé @{odds}",
       "result": {
