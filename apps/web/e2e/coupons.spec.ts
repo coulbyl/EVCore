@@ -148,9 +148,7 @@ test.describe("Coupons", () => {
       has: page.getByTestId("coupon-combined-odds"),
     });
     const first = cards.first();
-    await expect(
-      first.getByText(/Favori du jour/),
-    ).toBeVisible();
+    await expect(first.getByText(/Favori du jour/)).toBeVisible();
     // Historique mesuré à la place de la fréquence annoncée dès qu'il y a
     // assez de jours réglés (24 ici) ; le combiné (3 jours) garde l'annonce.
     await expect(first.getByTestId("coupon-track-record")).toHaveText(
