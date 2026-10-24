@@ -11,6 +11,7 @@ import {
   StrategyChannel,
 } from '@evcore/db';
 import Decimal from 'decimal.js';
+import { fixedStakeOutcome } from './bet-slip-outcome';
 import { PrismaService } from '@/prisma.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
 import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
@@ -339,34 +340,28 @@ export class BetSlipService {
     from?: Date,
     to?: Date,
   ): Promise<BetSlipSummaryView> {
-    const [{ slipCount, wonBets, lostBets, pendingBets }, globalBets] =
+    const [{ slipCount, wonBets, lostBets, pendingBets }, slips] =
       await Promise.all([
         this.repository.getUserSummary(userId, from, to),
-        this.repository.getGlobalModelBets(from, to),
+        this.repository.getUserPlayedSlips(userId, from, to),
       ]);
 
     const settledBets = wonBets + lostBets;
     const winRate =
       settledBets > 0 ? `${Math.round((wonBets / settledBets) * 100)}%` : '—';
 
-    let totalStaked = new Decimal(0);
-    let totalReturned = new Decimal(0);
-    const roiBetCount = globalBets.length;
-
-    for (const bet of globalBets) {
-      const stake = new Decimal(bet.stakePct.toString());
-      totalStaked = totalStaked.plus(stake);
-      if (bet.status === 'WON') {
-        totalReturned = totalReturned.plus(
-          stake.times(bet.oddsSnapshot!.toString()),
-        );
-      }
-    }
-
-    const globalRoi =
-      roiBetCount > 0 && totalStaked.gt(0)
-        ? `${totalReturned.minus(totalStaked).dividedBy(totalStaked).times(100).toFixed(1)}%`
-        : null;
+    const outcome = fixedStakeOutcome(
+      slips.map((slip) => ({
+        type: slip.type,
+        items: slip.items.map((item) => ({
+          status: item.bet.status,
+          odds:
+            item.bet.oddsSnapshot !== null
+              ? new Decimal(item.bet.oddsSnapshot.toString())
+              : null,
+        })),
+      })),
+    );
 
     return {
       slipCount,
@@ -375,8 +370,15 @@ export class BetSlipService {
       pendingBets,
       settledBets,
       winRate,
-      globalRoi,
-      globalRoiBetCount: roiBetCount,
+      plays: {
+        won: outcome.wonPlays,
+        lost: outcome.lostPlays,
+        void: outcome.voidPlays,
+        pending: outcome.pendingPlays,
+        settled: outcome.settledPlays,
+        profitUnits: outcome.profitUnits.toFixed(2),
+        returnRate: outcome.returnRate?.toFixed(4) ?? null,
+      },
     };
   }
 

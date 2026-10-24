@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BetSource, BetStatus, StrategyChannel } from '@evcore/db';
+import { BetStatus } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import {
   PlayableOddsRepository,
@@ -100,7 +100,13 @@ export class BetSlipRepository {
     return { slipCount, wonBets, lostBets, pendingBets };
   }
 
-  getGlobalModelBets(from?: Date, to?: Date) {
+  /**
+   * Les coupons de l'utilisateur avec le statut et la cote de chaque jambe :
+   * de quoi calculer son résultat à mise fixe (`fixedStakeOutcome`). Même
+   * filtre de dates que `getUserSummary` (date des matchs), au niveau du
+   * coupon : un coupon dont une jambe tombe dans la fenêtre y entre.
+   */
+  getUserPlayedSlips(userId: string, from?: Date, to?: Date) {
     const fixtureFilter =
       from || to
         ? {
@@ -110,22 +116,18 @@ export class BetSlipRepository {
             },
           }
         : undefined;
-    return this.prisma.client.bet.findMany({
+    return this.prisma.client.betSlip.findMany({
       where: {
-        source: BetSource.MODEL,
-        channelSelection: {
-          is: {
-            channelDecision: { is: { channel: StrategyChannel.VALUE } },
-          },
-        },
-        status: { in: ['WON', 'LOST'] },
-        oddsSnapshot: { not: null },
-        ...(fixtureFilter ? { fixture: fixtureFilter } : {}),
+        userId,
+        ...(fixtureFilter
+          ? { items: { some: { fixture: fixtureFilter } } }
+          : {}),
       },
       select: {
-        status: true,
-        oddsSnapshot: true,
-        stakePct: true,
+        type: true,
+        items: {
+          select: { bet: { select: { status: true, oddsSnapshot: true } } },
+        },
       },
     });
   }

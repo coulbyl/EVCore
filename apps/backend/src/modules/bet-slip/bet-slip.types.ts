@@ -35,6 +35,21 @@ export type BetSlipSummaryView = {
   pendingBets: number;
   settledBets: number;
   winRate: string;
-  globalRoi: string | null;
-  globalRoiBetCount: number;
+  /**
+   * Résultat du joueur à mise fixe, une unité par pari joué (une jambe d'un
+   * coupon simple, un coupon combiné entier). Remplace `globalRoi`, qui
+   * lisait le ROI des paris internes VALUE de tous les utilisateurs dans la
+   * table `bet` (plus alimentée depuis le 2026-09-04), pas celui du joueur.
+   */
+  plays: {
+    won: number;
+    lost: number;
+    void: number;
+    pending: number;
+    settled: number;
+    /** Gain net en unités, signé, deux décimales (« -0.42 »). */
+    profitUnits: string;
+    /** Gain net / paris réglés (« -0.0410 »), null sans pari réglé. */
+    returnRate: string | null;
+  };
 };
