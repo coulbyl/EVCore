@@ -684,7 +684,8 @@
       "mySlipsTally": "{won} won · {lost} lost · {pending} pending",
       "fixedStake": "Your fixed-stake result",
       "fixedStakeSample": "{count, plural, one {over # settled bet} other {over # settled bets}}",
-      "fixedStakeNone": "No settled bet yet"
+      "fixedStakeNone": "No settled bet yet",
+      "weeklyBriefTitle": "Weekly brief"
     }
   },
   "betSlips": {

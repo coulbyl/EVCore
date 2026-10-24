@@ -1,6 +1,7 @@
 "use client";
 
 import { BookOpen } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useWeeklyBrief } from "@/domains/dashboard/use-cases/get-weekly-brief";
 
 function stripHtml(html: string): string {
@@ -26,6 +27,7 @@ function isMonday(): boolean {
 }
 
 export function WeeklyBrief() {
+  const t = useTranslations("dashboard.home");
   const { data: brief, isLoading } = useWeeklyBrief();
 
   if (!isMonday()) return null;
@@ -42,8 +44,9 @@ export function WeeklyBrief() {
     ),
   );
 
-  const roiOneXTwo = brief.payload?.roiOneXTwo;
-  const positive = roiOneXTwo !== undefined ? roiOneXTwo >= 0 : false;
+  // Plus de ligne « ROI 1X2 » : un ROI sans période ni effectif, coloré en
+  // vert ou rouge, contredisait les règles de rédaction (apps/web/PRODUCT.md)
+  // et le dépôt lui-même (aucune puissance à ces volumes).
 
   return (
     <div className="flex items-start gap-3 rounded-[1.35rem] border border-accent/20 bg-accent/5 p-4 ev-shell-shadow sm:p-5">
@@ -51,22 +54,12 @@ export function WeeklyBrief() {
         <BookOpen size={16} className="text-accent" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="mb-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent">
-          Brief de la semaine
+        <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-accent">
+          {t("weeklyBriefTitle")}
         </p>
         <p className="text-sm font-medium leading-snug text-foreground">
           {narrative}
         </p>
-        {roiOneXTwo !== undefined && (
-          <p
-            className={`mt-1 text-[0.72rem] font-bold tabular-nums ${
-              positive ? "text-success" : "text-danger"
-            }`}
-          >
-            ROI 1X2 : {roiOneXTwo >= 0 ? "+" : ""}
-            {(roiOneXTwo * 100).toFixed(1)} %
-          </p>
-        )}
       </div>
     </div>
   );

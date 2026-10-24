@@ -684,7 +684,8 @@
       "mySlipsTally": "{won, plural, one {# gagné} other {# gagnés}} · {lost, plural, one {# perdu} other {# perdus}} · {pending} en attente",
       "fixedStake": "Ton résultat à mise fixe",
       "fixedStakeSample": "{count, plural, one {sur # pari réglé} other {sur # paris réglés}}",
-      "fixedStakeNone": "Aucun pari réglé pour l'instant"
+      "fixedStakeNone": "Aucun pari réglé pour l'instant",
+      "weeklyBriefTitle": "Brief de la semaine"
     }
   },
   "betSlips": {
