@@ -22,23 +22,21 @@ const RETIRED_BADGES: ReadonlySet<string> = new Set([
   'streak_5',
 ]);
 
+/**
+ * Les cinq fiches de la Formation (apps/web/content/formation/articles) :
+ * « Diplômé » quand elles sont toutes lues. Avant le 2026-10-27 la liste
+ * exigeait dix articles et une vidéo jamais tournée, cachée de l'écran : le
+ * badge était impossible à obtenir.
+ */
 const FORMATION_GRADUATE_ARTICLES = [
-  'channels-overview',
-  'draw-channel',
-  'erreurs-frequentes',
-  'dominant-channel',
-  'cotes-probabilites-implicites',
-  'btts-channel',
-  'safe-channel',
-  'value-channel',
-  'comment-lire-un-pick',
-  'ev-probabilites-cotes',
+  'lire-un-pronostic',
+  'cote-et-chances',
+  'coupons-et-avis-ia',
+  'series-perdantes',
+  'erreurs-a-eviter',
 ] as const;
 
-const FORMATION_GRADUATE_VIDEOS = ['intro-formation'] as const;
-
-const FORMATION_GRADUATE_TOTAL =
-  FORMATION_GRADUATE_ARTICLES.length + FORMATION_GRADUATE_VIDEOS.length;
+const FORMATION_GRADUATE_TOTAL = FORMATION_GRADUATE_ARTICLES.length;
 
 export type UserBadgeDto = {
   code: string;
@@ -81,16 +79,8 @@ export class GamificationService {
       await this.prisma.client.userContentProgress.findMany({
         where: {
           userId,
-          OR: [
-            {
-              contentType: FormationContentType.ARTICLE,
-              slug: { in: [...FORMATION_GRADUATE_ARTICLES] },
-            },
-            {
-              contentType: FormationContentType.VIDEO,
-              slug: { in: [...FORMATION_GRADUATE_VIDEOS] },
-            },
-          ],
+          contentType: FormationContentType.ARTICLE,
+          slug: { in: [...FORMATION_GRADUATE_ARTICLES] },
         },
         select: { contentType: true, slug: true },
       });

@@ -71,24 +71,16 @@ describe('GamificationService', () => {
     expect(upsert).not.toHaveBeenCalled();
   });
 
-  it('awards the graduate badge once every core lesson is done', async () => {
-    const articles = [
-      'channels-overview',
-      'draw-channel',
-      'erreurs-frequentes',
-      'dominant-channel',
-      'cotes-probabilites-implicites',
-      'btts-channel',
-      'safe-channel',
-      'value-channel',
-      'comment-lire-un-pick',
-      'ev-probabilites-cotes',
+  it('awards the graduate badge once the five sheets are read', async () => {
+    const sheets = [
+      'lire-un-pronostic',
+      'cote-et-chances',
+      'coupons-et-avis-ia',
+      'series-perdantes',
+      'erreurs-a-eviter',
     ];
     const { service, upsert } = makeService({
-      progress: [
-        ...articles.map((slug) => ({ contentType: 'ARTICLE', slug })),
-        { contentType: 'VIDEO', slug: 'intro-formation' },
-      ],
+      progress: sheets.map((slug) => ({ contentType: 'ARTICLE', slug })),
     });
 
     await service.checkAndAwardBadges('u1');
