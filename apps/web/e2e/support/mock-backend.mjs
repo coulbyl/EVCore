@@ -525,6 +525,179 @@ const FIXTURE_ROWS = [
   }),
 ];
 
+// Mes coupons, Suivi de mise, Notifications : de quoi lire ces pages comme
+// un joueur qui a déjà joué (un combiné gagné, un simple perdu, un en cours).
+function slipItem({
+  id,
+  fixture,
+  market,
+  pick,
+  odds,
+  stake,
+  status,
+  score,
+  pnl,
+}) {
+  return {
+    betId: `bet-${id}`,
+    fixtureId: `fx-${id}`,
+    fixture,
+    market,
+    pick,
+    odds,
+    ev: "0",
+    stake,
+    stakeOverride: null,
+    createdAt: todayAt(-30),
+    betStatus: status,
+    homeScore: score ? score[0] : null,
+    awayScore: score ? score[1] : null,
+    pnl,
+    canal: "VALUE",
+  };
+}
+
+const BET_SLIPS = [
+  {
+    id: "bs1",
+    userId: "u-e2e",
+    username: "e2e_tester",
+    unitStake: "1000",
+    type: "COMBO",
+    itemCount: 2,
+    createdAt: todayAt(-30),
+    items: [
+      slipItem({
+        id: "b1",
+        fixture: "Arsenal vs Burnley",
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        odds: "1.24",
+        stake: "1000",
+        status: "WON",
+        score: [2, 0],
+        pnl: "540",
+      }),
+      slipItem({
+        id: "b2",
+        fixture: "Ajax vs PSV",
+        market: "OVER_UNDER",
+        pick: "OVER_1_5",
+        odds: "1.24",
+        stake: "1000",
+        status: "WON",
+        score: [3, 1],
+        pnl: "540",
+      }),
+    ],
+  },
+  {
+    id: "bs2",
+    userId: "u-e2e",
+    username: "e2e_tester",
+    unitStake: "1000",
+    type: "SIMPLE",
+    itemCount: 1,
+    createdAt: todayAt(-50),
+    items: [
+      slipItem({
+        id: "b3",
+        fixture: "ASEC Mimosas vs Africa Sports",
+        market: "DOUBLE_CHANCE",
+        pick: "1X",
+        odds: "1.32",
+        stake: "1000",
+        status: "LOST",
+        score: [0, 1],
+        pnl: "-1000",
+      }),
+    ],
+  },
+  {
+    id: "bs3",
+    userId: "u-e2e",
+    username: "e2e_tester",
+    unitStake: "1000",
+    type: "SIMPLE",
+    itemCount: 1,
+    createdAt: todayAt(-2),
+    items: [
+      slipItem({
+        id: "b4",
+        fixture: "Bayern München vs FC Augsburg",
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        odds: "1.27",
+        stake: "1000",
+        status: "PENDING",
+        score: null,
+        pnl: null,
+      }),
+    ],
+  },
+];
+
+const BANKROLL_TRANSACTIONS = [
+  ["t1", "DEPOSIT", "50000", null, -200],
+  ["t2", "BET_PLACED", "-1000", "Ajax vs PSV", -30],
+  ["t3", "BET_WON", "1540", "Ajax vs PSV", -20],
+  ["t4", "BET_PLACED", "-1000", "ASEC Mimosas vs Africa Sports", -50],
+  ["t5", "BET_PLACED", "-1000", "Bayern München vs FC Augsburg", -2],
+].map(([id, type, amount, fixture, hours]) => ({
+  id,
+  type,
+  amount,
+  betId: fixture ? `bet-${id}` : null,
+  note: null,
+  createdAt: todayAt(hours),
+  canal: null,
+  fixture,
+  market: fixture ? "ONE_X_TWO" : null,
+}));
+
+const NOTIFICATIONS = [
+  [
+    "n1",
+    "ANNOUNCEMENT_PUBLISHED",
+    "Nouvelles fiches de formation",
+    "Cinq fiches d'une minute pour lire nos pronostics.",
+    -3,
+    false,
+  ],
+  [
+    "n2",
+    "MARKET_SUSPENSION",
+    "Type de pari suspendu",
+    "Le pari « Mi-temps / fin de match » est suspendu : il a trop perdu ces 90 derniers jours.",
+    -26,
+    false,
+  ],
+  [
+    "n3",
+    "WEEKLY_REPORT",
+    "Ta semaine",
+    "3 coupons joués, 2 gagnés, 1 perdu.",
+    -70,
+    true,
+  ],
+  [
+    "n4",
+    "SUPPORT_MESSAGE",
+    "Réponse de l'équipe",
+    "Merci pour ton message, on regarde ça.",
+    -120,
+    true,
+  ],
+].map(([id, type, title, body, hours, isRead]) => ({
+  id,
+  type,
+  title,
+  body,
+  payload: null,
+  createdAt: todayAt(hours),
+  isRead,
+}));
+
 const MATCH_DECISIONS = [
   matchGroup({
     id: "m1",
@@ -1020,12 +1193,29 @@ function route(method, url) {
     // Un solde à neuf chiffres, comme en production : l'en-tête mobile
     // doit le porter sans déborder.
     return [200, { balance: "500760000.00" }];
-  if (path.startsWith("/bankroll/transactions")) return [200, []];
+  if (path.startsWith("/bankroll/transactions"))
+    return [200, BANKROLL_TRANSACTIONS];
   if (path.startsWith("/bankroll")) return [200, []];
+  if (path === "/bet-slips" && method === "GET") return [200, BET_SLIPS];
+  if (path.startsWith("/bet-slips/") && method === "GET") {
+    const slip = BET_SLIPS.find((b) => path.endsWith(b.id));
+    return slip ? [200, slip] : [404, {}];
+  }
   if (path.startsWith("/bet-slips")) return [200, []];
   if (path.startsWith("/audit")) return [200, EMPTY_AUDIT];
   if (path.startsWith("/predictions")) return [200, []];
-  if (path.startsWith("/notifications")) return [200, { items: [], total: 0 }];
+  if (path.startsWith("/notifications/unread-count"))
+    return [200, { count: NOTIFICATIONS.filter((n) => !n.isRead).length }];
+  if (path.startsWith("/notifications"))
+    return [
+      200,
+      {
+        data: NOTIFICATIONS,
+        total: NOTIFICATIONS.length,
+        limit: 20,
+        offset: 0,
+      },
+    ];
   if (path.startsWith("/risk")) return [200, {}];
   if (path.startsWith("/adjustment")) return [200, []];
   // Une requête React Query qui reçoit `{}` ou undefined fait planter la
