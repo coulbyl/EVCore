@@ -1,0 +1,99 @@
+{
+ "route": "/dashboard/decisions",
+ "width": 1280,
+ "theme": "light",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 5 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 5 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "p",
+    "cls": "truncate text-xs text-sidebar-foreground/60",
+    "text": "@e2e_tester",
+    "w": 138,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12 righ",
+    "text": "",
+    "w": 48,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba",
+    "text": "Arsenal vs Burnley 14:22 · Premier League · Angleterre NOTRE",
+    "w": 428,
+    "h": 223
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba",
+    "text": "ASEC Mimosas vs Africa Sports 15:22 · Ligue 1 · Côte d'Ivoir",
+    "w": 428,
+    "h": 223
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba",
+    "text": "Données suspectes Ajax vs PSV 16:22 · Eredivisie · Pays-Bas ",
+    "w": 428,
+    "h": 269
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  }
+ ]
+}
