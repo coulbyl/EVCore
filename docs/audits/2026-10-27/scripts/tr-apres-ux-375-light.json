@@ -1,0 +1,120 @@
+{
+ "url": "http://localhost:3010/dashboard/track-record",
+ "title": "Mesures historiques — EVCore",
+ "lang": "fr",
+ "headings": [
+  "h1: Ce que nos pronostics ont vraiment donné",
+  "h2: ANNONCÉ ET RÉALISÉ · DU 29 JUILLET 2026 AU 27 OCTO",
+  "h2: PAR COTE",
+  "h2: PAR CANAL",
+  "h2: PAR COMPÉTITION"
+ ],
+ "overflowX": false,
+ "textElements": 91,
+ "smallText": {
+  "count": 9,
+  "samples": [
+   {
+    "text": "PRONOSTICS RÉGLÉS",
+    "px": 11
+   },
+   {
+    "text": "ANNONCÉ",
+    "px": 11
+   },
+   {
+    "text": "RÉALISÉ",
+    "px": 11
+   },
+   {
+    "text": "À MISE FIXE",
+    "px": 11
+   },
+   {
+    "text": "Accueil",
+    "px": 11
+   },
+   {
+    "text": "Décisions",
+    "px": 11
+   },
+   {
+    "text": "Coupons",
+    "px": 11
+   },
+   {
+    "text": "Avis IA",
+    "px": 11
+   },
+   {
+    "text": "Inbox",
+    "px": 11
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 1,
+  "samples": [
+   {
+    "text": "E2",
+    "px": 12.2,
+    "ratio": 2.8,
+    "min": 4.5
+   }
+  ]
+ },
+ "interactive": 17,
+ "smallTapTargets": {
+  "count": 7,
+  "samples": [
+   {
+    "text": "Toggle Sidebar",
+    "w": 36,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "Portefeuille",
+    "w": 42,
+    "h": 44,
+    "tag": "a"
+   },
+   {
+    "text": "Rechercher dans la page",
+    "w": 36,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "Notifications",
+    "w": 36,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mon coupon",
+    "w": 36,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "E2",
+    "w": 38,
+    "h": 38,
+    "tag": "button"
+   },
+   {
+    "text": "Comprendre les canaux",
+    "w": 149,
+    "h": 16,
+    "tag": "a"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

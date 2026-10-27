@@ -1,0 +1,541 @@
+{
+ "route": "/dashboard/track-record",
+ "width": 375,
+ "theme": "dark",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 31 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 2.8:1 (need 4.5:1) — text #ffffff on #f97316 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Pronostics réglés\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Annoncé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Réalisé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"À mise fixe\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Calibration\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"ROI\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Réussite\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Échantillon\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Calibration\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"ROI\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Réussite\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Échantillon\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"30j · calibration\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cdark-glow%c Colored box-shadow glow (#14b8a6) on dark background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 31 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 2.8:1 (need 4.5:1) — text #ffffff on #f97316 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Pronostics réglés\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Annoncé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Réalisé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"À mise fixe\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Calibration\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"ROI\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Réussite\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Échantillon\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Calibration\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"ROI\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Réussite\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Échantillon\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"30j · calibration\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cdark-glow%c Colored box-shadow glow (#14b8a6) on dark background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "div",
+    "cls": "flex shrink-0 items-center justify-center rounded-full font-bold text-white ring",
+    "text": "E2",
+    "w": 32,
+    "h": 32
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.8:1 (need 4.5:1) — text #ffffff on #f97316"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "flex items-center gap-1.5 text-[0.58rem] font-semibold uppercase tracking-[0.18e",
+    "text": "PRONOSTICS RÉGLÉS",
+    "w": 127,
+    "h": 28
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Pronostics réglés\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "flex items-center gap-1.5 text-[0.58rem] font-semibold uppercase tracking-[0.18e",
+    "text": "ANNONCÉ",
+    "w": 127,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Annoncé\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "flex items-center gap-1.5 text-[0.58rem] font-semibold uppercase tracking-[0.18e",
+    "text": "RÉALISÉ",
+    "w": 127,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Réalisé\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "flex items-center gap-1.5 text-[0.58rem] font-semibold uppercase tracking-[0.18e",
+    "text": "À MISE FIXE",
+    "w": 127,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"À mise fixe\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "CALIBRATION",
+    "w": 67,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Calibration\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "ROI",
+    "w": 67,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"ROI\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "RÉUSSITE",
+    "w": 67,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Réussite\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "ÉCHANTILLON",
+    "w": 67,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Échantillon\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "CALIBRATION",
+    "w": 67,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Calibration\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "ROI",
+    "w": 67,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"ROI\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "RÉUSSITE",
+    "w": 67,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Réussite\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "ÉCHANTILLON",
+    "w": 67,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Échantillon\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 90
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 90
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 90
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "ml-auto text-[0.6rem] font-medium uppercase tracking-wide text-muted-foreground",
+    "text": "30J · CALIBRATION",
+    "w": 91,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"30j · calibration\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "flex size-14 items-center justify-center rounded-full shadow-lg shadow-accent/30",
+    "text": "",
+    "w": 56,
+    "h": 56
+   },
+   "findings": [
+    {
+     "type": "dark-glow",
+     "detail": "Colored box-shadow glow (#14b8a6) on dark background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12 righ",
+    "text": "",
+    "w": 44,
+    "h": 44
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.15rem] border border-border bg-panel-strong px-3 py-2.5 shadow-sm sm:",
+    "text": "PRONOSTICS RÉGLÉS 14 966",
+    "w": 153,
+    "h": 78
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.15rem] border border-border bg-panel-strong px-3 py-2.5 shadow-sm sm:",
+    "text": "ANNONCÉ 48 %",
+    "w": 153,
+    "h": 78
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.15rem] border border-border bg-panel-strong px-3 py-2.5 shadow-sm sm:",
+    "text": "RÉALISÉ 45,9 %",
+    "w": 153,
+    "h": 64
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.15rem] border border-border bg-panel-strong px-3 py-2.5 shadow-sm sm:",
+    "text": "À MISE FIXE −9,4 %",
+    "w": 153,
+    "h": 64
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-2xl border border-border bg-panel p-3",
+    "text": "Nul Écart 15–30 % CALIBRATION 0.84× ROI -4.80% RÉUSSITE 29% ",
+    "w": 317,
+    "h": 108
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-2xl border border-border bg-panel p-3",
+    "text": "Victoire Écart ≤ 15 % CALIBRATION 0.96× ROI -3.10% RÉUSSITE ",
+    "w": 317,
+    "h": 108
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Arsenal – Burnley 79% Résultat · Domicile ANGLETERRE · PREMI",
+    "w": 283,
+    "h": 92
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Bayern München – FC Augsburg 77% Résultat · Domicile ALLEMAG",
+    "w": 283,
+    "h": 92
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Ajax – PSV 82% Plus/Moins de buts · Plus de 1.5 PAYS-BAS · E",
+    "w": 283,
+    "h": 92
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "mt-4 rounded-2xl border border-border bg-panel p-3",
+    "text": "CANAUX AVEC UN ÉCART > 30 % Aucun canal dans cette tranche a",
+    "w": 283,
+    "h": 90
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "flex flex-col rounded-[1.35rem] border border-border bg-panel-strong p-4 sm:p-5 ",
+    "text": "Classement ligues 30J · CALIBRATION Pas encore assez de matc",
+    "w": 317,
+    "h": 210
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "section",
+    "cls": "rounded-2xl border border-border bg-panel p-5",
+    "text": "Aucun de ces chiffres ne garantit une performance future — c",
+    "w": 317,
+    "h": 234
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  }
+ ]
+}
