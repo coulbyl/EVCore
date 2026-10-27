@@ -488,11 +488,11 @@
     "avatarSaveError": "Impossible de sauvegarder l'avatar.",
     "genericError": "Une erreur est survenue. Réessaie dans quelques instants.",
     "badgeNames": {
-      "calibre": "Brier Score < 0.20"
+      "graduate": "Les 5 fiches de la formation lues"
     },
     "badgesEyebrow": "Progression",
     "badgesTitle": "Mes badges",
-    "badgesDescription": "Débloque des badges en apprenant à lire les probabilités.",
+    "badgesDescription": "Lis les cinq fiches de la formation pour obtenir le badge Diplômé et l'avatar Oracle.",
     "securityTitle": "Authentification & vérification",
     "securitySetupHeading": "Vérification du compte",
     "accountVerified": "Compte vérifié",

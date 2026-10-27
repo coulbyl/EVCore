@@ -40,8 +40,6 @@ import { useUnreadSupportCount } from "@/domains/support/use-cases/use-support-c
 import { useAdminUnreadSupportCount } from "@/domains/support/use-cases/use-admin-support";
 
 const BADGE_EMOJI: Record<string, string> = {
-  patience: "🧘",
-  calibre: "🎯",
   graduate: "🎓",
 };
 

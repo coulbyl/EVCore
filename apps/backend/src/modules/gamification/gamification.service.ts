@@ -5,7 +5,7 @@ import { createLogger } from '@utils/logger';
 
 const logger = createLogger('gamification-service');
 
-type BadgeCode = 'patience' | 'calibre' | 'graduate';
+type BadgeCode = 'graduate';
 
 /**
  * Badges retirés le 2026-10-27 : « Vétéran », « Expert », « Maître »
@@ -13,13 +13,18 @@ type BadgeCode = 'patience' | 'calibre' | 'graduate';
  * Ils poussaient à jouer plus, à l'inverse du jeu responsable et du discours
  * du produit (audit du 2026-10-23, P2-9 ; apps/web/PRODUCT.md, principe 5).
  * Plus attribués, plus affichés ; les lignes déjà gagnées restent en base.
- * Restent les badges d'apprentissage : Diplômé, Calibré, Patience.
+ * « Calibré » (Brier < 0,20 sur 50 prédictions) et « Patience » (traverser
+ * un drawdown sans override) suivent le 2026-10-27 : aucun code ne les
+ * attribuait, ils restaient verrouillés à vie sur le profil. Reste
+ * « Diplômé », les cinq fiches de la Formation lues.
  */
 const RETIRED_BADGES: ReadonlySet<string> = new Set([
   'vol_50',
   'vol_150',
   'vol_300',
   'streak_5',
+  'calibre',
+  'patience',
 ]);
 
 /**
@@ -92,20 +97,6 @@ export class GamificationService {
     if (completedFormation.size >= FORMATION_GRADUATE_TOTAL) {
       await this.awardBadge(userId, 'graduate');
     }
-  }
-
-  async checkBrierBadge(
-    userId: string,
-    brierScore: number,
-    predCount: number,
-  ): Promise<void> {
-    if (predCount >= 50 && brierScore < 0.2) {
-      await this.awardBadge(userId, 'calibre');
-    }
-  }
-
-  async checkPatienceBadge(userId: string): Promise<void> {
-    await this.awardBadge(userId, 'patience');
   }
 
   async checkFormationGraduateBadge(userId: string): Promise<void> {

@@ -23,11 +23,13 @@ export const FREE_AVATARS: AvatarOption[] = [
   },
 ];
 
+// Débloqué en lisant les cinq fiches de la Formation (badge « Diplômé ») ;
+// il dépendait de « Calibré », qu'aucun code n'attribuait.
 export const LOCKED_AVATARS: AvatarOption[] = [
   {
     url: `${BASE}?seed=Oracle&backgroundColor=c1f4c5`,
     label: "Oracle",
-    requiredBadge: "calibre",
+    requiredBadge: "graduate",
   },
 ];
 

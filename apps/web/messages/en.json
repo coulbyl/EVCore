@@ -488,11 +488,11 @@
     "avatarSaveError": "Couldn't save the avatar.",
     "genericError": "Something went wrong.",
     "badgeNames": {
-      "calibre": "Brier score < 0.20"
+      "graduate": "The 5 training sheets read"
     },
     "badgesEyebrow": "Progress",
     "badgesTitle": "My badges",
-    "badgesDescription": "Unlock badges by learning to read probabilities.",
+    "badgesDescription": "Read the five training sheets to earn the Graduate badge and the Oracle avatar.",
     "securityTitle": "Authentication & verification",
     "securitySetupHeading": "Account verification",
     "accountVerified": "Account verified",

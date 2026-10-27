@@ -33,7 +33,7 @@ function makeService(opts: {
 }
 
 describe('GamificationService', () => {
-  it('hides volume and streak badges, even when the player already earned them', async () => {
+  it('shows only the graduate badge, even when the player earned a retired one', async () => {
     const unlockedAt = new Date('2026-09-01T00:00:00Z');
     const { service } = makeService({
       badges: [
@@ -53,11 +53,7 @@ describe('GamificationService', () => {
 
     const result = await service.getBadgesForUser('u1');
 
-    expect(result.map((b) => b.code)).toEqual([
-      'patience',
-      'calibre',
-      'graduate',
-    ]);
+    expect(result.map((b) => b.code)).toEqual(['graduate']);
     expect(result.find((b) => b.code === 'graduate')?.unlockedAt).toEqual(
       unlockedAt,
     );
