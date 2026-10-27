@@ -297,6 +297,36 @@ describe("analyzeFixture — MIN_ODDS floor", () => {
     expect(persistVantageDecision).toHaveBeenCalledTimes(1);
   });
 
+  it("persists the price with its provenance and margins, taken from the matching reading (2026-10-27)", async () => {
+    const snapshotAt = new Date("2026-10-27T09:00:00Z");
+    buildMatchContext.mockResolvedValue({
+      ...baseContext,
+      readings: [
+        {
+          ...baseContext.readings[0]!,
+          odds: 1.5,
+          oddsBookmaker: "Pinnacle",
+          oddsSnapshotAt: snapshotAt,
+          marginPaid: 0.031,
+          marginBest: 0.024,
+        },
+      ],
+    });
+    requestVantageCompletion.mockResolvedValue(
+      playResponse({ basis: "raw_stats" }),
+    );
+
+    await analyzeFixture("fixture-1", dummyClients, dummyConfig, noopLogger);
+
+    expect(persistVantageDecision.mock.calls[0]?.[5]).toEqual({
+      odds: 1.5,
+      bookmaker: "Pinnacle",
+      snapshotAt,
+      marginPaid: 0.031,
+      marginBest: 0.024,
+    });
+  });
+
   it("accepts a play whose odds are unknown — VANTAGE has no other source of odds to check against", async () => {
     buildMatchContext.mockResolvedValue({
       ...baseContext,

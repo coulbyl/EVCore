@@ -1,5 +1,5 @@
 import type { Logger } from "pino";
-import { resolveSelectionOdds } from "@evcore/analysis-core";
+import { quoteSourceFor, resolveSelectionOdds } from "@evcore/analysis-core";
 import type { Market } from "@evcore/analysis-core";
 import type { Config } from "../config";
 import type { ChannelCalibration, MatchContext } from "../context/types";
@@ -108,15 +108,40 @@ export function closedMarkets(context: MatchContext): string[] {
  * function every channel strategy prices its own selections with. Checked
  * in that order; VANTAGE has no other source of odds — see MIN_ODDS
  * above. */
-function findKnownOdds(
+/**
+ * La cote d'un (marché, choix) et sa provenance : celle d'une lecture d'un
+ * autre canal sur la même analyse quand elle existe (même prix que celui
+ * qu'il a enregistré), sinon le relevé complet du match. La marge payée et
+ * la meilleure marge viennent avec : sans elles, impossible de classer les
+ * avis IA sur le coût du marché, la seule mesure qui persiste d'une période
+ * à l'autre (CLAUDE.md). Avant le 2026-10-27, l'avis IA n'enregistrait que la
+ * cote : marge nulle sur ses 300 avis réglés de v4.
+ */
+export type KnownQuote = {
+  odds: number;
+  bookmaker: string | null;
+  snapshotAt: Date | null;
+  marginPaid: number | null;
+  marginBest: number | null;
+};
+
+function findKnownQuote(
   context: MatchContext,
   market: string,
   pick: string,
-): number | null {
+): KnownQuote | null {
   const reading = context.readings.find(
     (r) => r.market === market && r.pick === pick && r.odds !== null,
   );
-  if (reading?.odds != null) return reading.odds;
+  if (reading?.odds != null) {
+    return {
+      odds: reading.odds,
+      bookmaker: reading.oddsBookmaker ?? null,
+      snapshotAt: reading.oddsSnapshotAt ?? null,
+      marginPaid: reading.marginPaid ?? null,
+      marginBest: reading.marginBest ?? null,
+    };
+  }
 
   if (!context.fullOddsSnapshot) return null;
   const odds = resolveSelectionOdds(
@@ -124,7 +149,20 @@ function findKnownOdds(
     market as Market,
     pick,
   );
-  return odds !== null ? odds.toNumber() : null;
+  if (odds === null) return null;
+  const source = quoteSourceFor(
+    context.fullOddsSnapshot,
+    market as Market,
+    pick,
+  );
+  return {
+    odds: odds.toNumber(),
+    bookmaker: source?.bookmaker ?? null,
+    snapshotAt: source?.snapshotAt ?? null,
+    marginPaid: source?.margin != null ? source.margin.toNumber() : null,
+    marginBest:
+      source?.bestMargin != null ? source.bestMargin.toNumber() : null,
+  };
 }
 
 /** Same floor CLAUDE.md already names for these markets ("ratio réel/annoncé
@@ -320,6 +358,7 @@ export async function analyzeFixture(
   // channel's matching selection (arbitrage-constants.ts's findSiblingOdds),
   // which fails whenever VANTAGE's pick doesn't match any other channel's —
   // exactly the cases where VANTAGE is most likely to differ on purpose.
+  let knownQuote: KnownQuote | null = null;
   let knownOdds: number | null = null;
 
   // Le texte lu par le joueur, nettoyé des codes et du jargon que le modèle
@@ -328,7 +367,8 @@ export async function analyzeFixture(
   parsed.data.reasonDetails = sanitizeReasonText(parsed.data.reasonDetails);
 
   if (parsed.data.verdict === "play") {
-    knownOdds = findKnownOdds(context, parsed.data.market, parsed.data.pick);
+    knownQuote = findKnownQuote(context, parsed.data.market, parsed.data.pick);
+    knownOdds = knownQuote?.odds ?? null;
     // v5 : une contradiction entre deux de nos lectures n'est plus une base
     // de pari. Le prompt ne la propose plus ; si le modèle la déclare quand
     // même, le refus est enregistré, comme pour le plafond de cote.
@@ -455,7 +495,7 @@ export async function analyzeFixture(
     parsed.data,
     CONFIG_VERSION,
     research,
-    knownOdds,
+    knownQuote,
   );
   logger.info(
     {
