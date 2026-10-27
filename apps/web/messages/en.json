@@ -322,12 +322,12 @@
       "description": "Your history of placed bet slips — settled or pending — with the period summary up top."
     },
     "bankroll": {
-      "title": "Bankroll",
-      "description": "Your balance, deposits, and net ROI — real money tracking, independent from simulated subscriptions."
+      "title": "Stake tracking",
+      "description": "Your balance, deposits and withdrawals as you enter them: the real record of what you stake."
     },
     "trackRecord": {
       "title": "Historical measures",
-      "description": "Prematch-cohort picks by channel, with their volume, calibration and simulated return."
+      "description": "What our predictions actually delivered: announced and realised, by odds and by channel, losses included."
     },
     "formation": {
       "title": "Training",
@@ -351,11 +351,11 @@
     },
     "accountMenu": {
       "title": "Your profile menu",
-      "description": "Bankroll, Inbox, Subscriptions, Training, Announcements and Settings — everything we just covered is also reachable from here."
+      "description": "Stake tracking, Inbox, Training and Settings: everything we just covered is also reachable from here."
     },
     "profileBadges": {
       "title": "Profile and badges",
-      "description": "Your profile and the badges you've unlocked along the way — consistency, discipline, betting volume."
+      "description": "Your profile and the badges you unlock by learning: training completed, reading probabilities."
     },
     "accountSettings": {
       "title": "Settings",

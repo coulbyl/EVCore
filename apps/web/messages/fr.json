@@ -322,12 +322,12 @@
       "description": "L'historique de tes coupons placés, réglés ou en attente, avec le récapitulatif de la période en tête."
     },
     "bankroll": {
-      "title": "Portefeuille",
-      "description": "Ton solde, tes dépôts et ton ROI net — le suivi financier réel, indépendant des abonnements simulés."
+      "title": "Suivi de mise",
+      "description": "Ton solde, tes dépôts et tes retraits, tels que tu les saisis : le suivi réel de ce que tu mises."
     },
     "trackRecord": {
       "title": "Mesures historiques",
-      "description": "Les sélections de la cohorte prématch, canal par canal, avec leur volume, leur calibration et leur rendement simulé."
+      "description": "Ce que nos pronostics ont vraiment donné : annoncé et réalisé, par cote et par canal, pertes comprises."
     },
     "formation": {
       "title": "Formation",
@@ -351,11 +351,11 @@
     },
     "accountMenu": {
       "title": "Ton menu de profil",
-      "description": "Portefeuille, Inbox, Abonnements, Formation, Annonces et Paramètres — tout ce qu'on vient de voir est aussi accessible d'ici."
+      "description": "Suivi de mise, Inbox, Formation et Paramètres : tout ce qu'on vient de voir est aussi accessible d'ici."
     },
     "profileBadges": {
       "title": "Profil et badges",
-      "description": "Ton profil et les badges débloqués en cours de route — assiduité, discipline, volume de paris."
+      "description": "Ton profil et les badges débloqués en apprenant : la formation terminée, la lecture des probabilités."
     },
     "accountSettings": {
       "title": "Paramètres",
