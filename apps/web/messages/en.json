@@ -595,7 +595,7 @@
     },
     "leagueRanking": {
       "title": "League ranking",
-      "period": "30d · calibration",
+      "period": "Last 30 days · calibration",
       "empty": "No data over 30 days."
     },
     "operatorCard": {

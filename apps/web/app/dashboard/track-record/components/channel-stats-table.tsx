@@ -129,11 +129,11 @@ export function ChannelStatsTable({
             </p>
             <ChannelStatusBadge status={row.status} />
           </div>
-          <div className="mt-3 grid grid-cols-4 gap-2 border-t border-border/60 pt-2.5">
+          {/* 2 × 2 sur téléphone : en 4 colonnes, les libellés en capitales
+              se chevauchaient à 375 px (« CALIBRATIONROI »). */}
+          <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border/60 pt-2.5">
             <div>
-              <p className="text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-                Calibration
-              </p>
+              <p className="text-xs text-muted-foreground">Calibration</p>
               <p
                 className={`mt-0.5 text-sm font-semibold tabular-nums ${statusToneClass(row.status)}`}
               >
@@ -141,25 +141,19 @@ export function ChannelStatsTable({
               </p>
             </div>
             <div>
-              <p className="text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-                ROI
-              </p>
+              <p className="text-xs text-muted-foreground">ROI</p>
               <p className="mt-0.5 text-sm font-semibold tabular-nums text-muted-foreground">
                 {formatRoi(row.roi)}
               </p>
             </div>
             <div>
-              <p className="text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-                Réussite
-              </p>
+              <p className="text-xs text-muted-foreground">Réussite</p>
               <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
                 {formatHitRate(row.hitRate)}
               </p>
             </div>
             <div>
-              <p className="text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-                Échantillon
-              </p>
+              <p className="text-xs text-muted-foreground">Échantillon</p>
               <p className="mt-0.5 text-sm font-semibold tabular-nums text-muted-foreground">
                 n={row.sampleSize}
               </p>

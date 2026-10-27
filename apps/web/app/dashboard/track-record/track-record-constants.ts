@@ -13,9 +13,12 @@ export const PERIODS: { key: PeriodKey; label: string; days: number | null }[] =
     { key: "all", label: "Tout l'historique", days: null },
   ];
 
-// Earliest settled data currently in the DB (verified 2026-07-18) — used as
-// the "from" bound for the "all" period instead of an arbitrary far-past date.
-const EARLIEST_DATA_DATE = "2023-01-01";
+// Premier pronostic réel émis avant le coup d'envoi : le 2026-07-01 (relevé
+// sur le dump de production du 2026-10-24). « Tout l'historique » affichait
+// « du 1er janvier 2023 », alors que tout ce qui précède juillet 2026 est de
+// la ré-analyse après coup, exclue de la cohorte : le titre promettait trois
+// ans et demi d'historique qui n'existent pas.
+const EARLIEST_DATA_DATE = "2026-07-01";
 
 export function resolvePeriod(value: string | undefined): PeriodKey {
   return value === "30" || value === "90" || value === "all" ? value : "90";

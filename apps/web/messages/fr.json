@@ -595,7 +595,7 @@
     },
     "leagueRanking": {
       "title": "Classement ligues",
-      "period": "30j · calibration",
+      "period": "30 derniers jours · calibration",
       "empty": "Pas encore assez de matchs analysés sur les 30 derniers jours."
     },
     "operatorCard": {

@@ -16,19 +16,19 @@ function CompetitionRow({
   return (
     <div className="group rounded-xl px-2.5 py-2.5 transition-colors hover:bg-panel">
       <div className="flex items-center gap-2.5">
-        <span className="w-5 shrink-0 text-center text-[0.6rem] font-bold tabular-nums text-muted-foreground">
+        <span className="w-5 shrink-0 text-center text-xs font-bold tabular-nums text-muted-foreground">
           {pos}
         </span>
-        <span className="shrink-0 rounded bg-secondary px-1.5 py-0.5 text-[0.53rem] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">
+        <span className="shrink-0 rounded bg-secondary px-1.5 py-0.5 text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
           {stat.competitionCode}
         </span>
-        <span className="min-w-0 flex-1 truncate text-[0.78rem] font-semibold text-foreground transition-colors group-hover:text-foreground">
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground transition-colors group-hover:text-foreground">
           {stat.competitionName}
         </span>
         <ChannelStatusBadge status={stat.model.status} className="shrink-0" />
       </div>
 
-      <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-7 text-[0.6rem] text-muted-foreground">
+      <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-7 text-xs text-muted-foreground">
         <span>
           {stat.activeFixtures} match{stat.activeFixtures > 1 ? "s" : ""}
         </span>
@@ -68,7 +68,7 @@ export function CompetitionRanking({
         <h2 className="text-sm font-bold tracking-tight text-foreground">
           {t("title")}
         </h2>
-        <span className="ml-auto text-[0.6rem] font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="ml-auto text-xs font-medium text-muted-foreground">
           {t("period")}
         </span>
       </div>

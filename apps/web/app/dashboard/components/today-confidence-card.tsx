@@ -160,7 +160,7 @@ export function TodayCalibrationCard({
     <section className="ev-shell-shadow rounded-[1.6rem] border border-border bg-panel-strong p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             {t("headline")}
           </p>
           <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
@@ -185,7 +185,7 @@ export function TodayCalibrationCard({
       </div>
 
       <div className="mt-4">
-        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
           {t("toFollow")}
         </p>
         {isLoading ? (
@@ -226,7 +226,7 @@ export function TodayCalibrationCard({
       </div>
 
       <div className="mt-4 rounded-2xl border border-border bg-panel p-3">
-        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
           {t("toAvoid")}
         </p>
         {isLoading ? (
