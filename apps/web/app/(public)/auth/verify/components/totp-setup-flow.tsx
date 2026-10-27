@@ -94,7 +94,7 @@ export function TotpSetupFlow({ onBack }: { onBack: () => void }) {
         ) : qrDataUrl ? (
           <div className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">
-              Scannez ce QR code avec Google Authenticator, Authy ou une
+              Scanne ce QR code avec Google Authenticator, Authy ou une
               application compatible TOTP.
             </p>
             <div className="flex justify-center">

@@ -19,7 +19,7 @@ export function VerifyChoiceForm() {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-muted-foreground">
-        Choisissez votre méthode de vérification :
+        Choisis ta méthode de vérification :
       </p>
 
       <button
@@ -35,7 +35,7 @@ export function VerifyChoiceForm() {
             Vérification par email
           </p>
           <p className="mt-0.5 text-[0.8rem] leading-5 text-muted-foreground">
-            Recevez un code à 6 chiffres sur votre adresse email.
+            Reçois un code à 6 chiffres sur ton adresse e-mail.
           </p>
         </div>
       </button>
@@ -53,7 +53,7 @@ export function VerifyChoiceForm() {
             Application d&apos;authentification
           </p>
           <p className="mt-0.5 text-[0.8rem] leading-5 text-muted-foreground">
-            Scannez un QR code avec Google Authenticator, Authy, etc.
+            Scanne un QR code avec Google Authenticator, Authy, etc.
           </p>
         </div>
       </button>

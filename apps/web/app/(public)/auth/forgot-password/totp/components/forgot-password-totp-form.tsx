@@ -23,7 +23,7 @@ const schema = z
   .object({
     identifier: z
       .string()
-      .min(3, "Renseignez votre email ou nom d'utilisateur."),
+      .min(3, "Indique ton e-mail ou ton nom d'utilisateur."),
     newPassword: z
       .string()
       .min(8, "8 caractères minimum.")
@@ -145,7 +145,7 @@ export function ForgotPasswordTotpForm() {
           name="totpCode"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Code de votre application (6 chiffres)</FormLabel>
+              <FormLabel>Code de ton application (6 chiffres)</FormLabel>
               <FormControl>
                 <Input
                   inputMode="numeric"
