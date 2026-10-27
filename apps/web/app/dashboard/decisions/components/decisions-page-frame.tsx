@@ -113,7 +113,7 @@ export function DecisionsPageFrame({
             className="min-w-0 flex-1 justify-center"
           />
           <FormationHelpLink
-            slug="comment-lire-un-pick"
+            slug="lire-un-pronostic"
             label={t("helpLink")}
             tourId="decisions-help"
           />

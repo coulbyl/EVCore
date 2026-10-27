@@ -72,7 +72,7 @@ export function CouponsPageClient() {
             className="min-w-0 flex-1 justify-center lg:w-auto lg:flex-none"
           />
           <FormationHelpLink
-            slug="comment-lire-un-pick"
+            slug="coupons-et-avis-ia"
             label={t("helpLink")}
             tourId="coupons-help"
           />

@@ -262,10 +262,10 @@ export default async function TrackRecordPage({
             de mise ni de paiement chez un bookmaker. Ils décrivent le passé,
             pas la suite.{" "}
             <Link
-              href="/dashboard/formation/channels-overview"
+              href="/dashboard/formation/series-perdantes"
               className="font-medium text-accent underline underline-offset-4"
             >
-              Comprendre les canaux
+              Pourquoi on perd des jours de suite
             </Link>
           </p>
         </div>

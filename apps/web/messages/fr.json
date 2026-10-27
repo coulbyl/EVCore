@@ -227,7 +227,7 @@
       "noChannelResults": "Aucun type de pari.",
       "allFilters": "Filtres"
     },
-    "helpLink": "Comment lire une fiche",
+    "helpLink": "Comment lire un pronostic",
     "primaryPick": "Notre sélection",
     "otherMarketsTitle": "Les autres lectures du match",
     "contradictionNote": "« {first} » et « {second} » ne peuvent pas passer ensemble : chaque lecture est une estimation à part, seule Notre sélection est mise en avant.",
@@ -363,7 +363,7 @@
     },
     "formation": {
       "title": "Formation",
-      "description": "Des articles courts sur la stratégie de paris : probabilités implicites, unité de mise, variance, types de pari. À consulter à ton rythme."
+      "description": "Cinq fiches d'une minute : lire un pronostic, les cotes, les coupons, les séries perdantes et les erreurs à éviter."
     },
     "inbox": {
       "title": "Inbox",
@@ -408,42 +408,15 @@
   },
   "formation": {
     "label": "Formation",
-    "title": "Centre de formation",
-    "subtitle": "Articles et vidéos pour comprendre chaque sélection et progresser étape par étape.",
-    "progress": "Progression",
-    "open": "Ouvrir",
-    "browse": "Parcourir",
-    "otherItems": "Autres contenus",
-    "upNext": "À suivre",
-    "lastRead": "Dernier lu",
-    "continue": "Continuer",
-    "previous": "Précédent",
-    "next": "Suivant",
-    "related": "À lire aussi",
-    "recommended": "À découvrir",
-    "library": "Bibliothèque",
-    "allCategories": "Toutes les catégories",
-    "allDifficulties": "Tous les niveaux",
-    "noResults": "Aucun résultat pour ces filtres.",
-    "itemsCount": "{count} contenus",
-    "toc": "Navigation",
-    "videos": "Vidéos",
-    "video": "Vidéo",
-    "article": "Article",
-    "markCompleted": "Marquer comme terminé",
-    "completed": "Terminé",
-    "categories": {
-      "bases": "Les bases",
-      "channels": "Les types de pari",
-      "bankroll": "Bankroll & discipline",
-      "leagues": "Guide par ligue",
-      "app": "Comment utiliser l'app"
-    },
-    "difficulty": {
-      "beginner": "Débutant",
-      "intermediate": "Intermédiaire",
-      "advanced": "Avancé"
-    }
+    "title": "Formation",
+    "subtitle": "Cinq fiches d'une minute pour lire nos pronostics sans te tromper.",
+    "progress": "{done, plural, =0 {Aucune fiche lue} one {# fiche lue} other {# fiches lues}} sur {total}",
+    "minutes": "{count} min",
+    "position": "Fiche {n} sur {total} · {minutes} min",
+    "markCompleted": "J'ai lu cette fiche",
+    "completed": "Lue",
+    "next": "Fiche suivante",
+    "backToList": "Retour aux fiches"
   },
   "filters": {
     "label": "Filtres",
@@ -963,7 +936,7 @@
     "loadError": "Les coupons n'ont pas chargé.",
     "retry": "Réessayer",
     "aiNote": "Ces propositions sont générées par notre moteur IA, qui s'améliore en continu grâce aux résultats passés. Il ne s'agit pas de conseils financiers.",
-    "helpLink": "Lire un pronostic"
+    "helpLink": "Quelle différence entre les coupons ?"
   },
   "onboarding": {
     "title": "Configuration rapide",
