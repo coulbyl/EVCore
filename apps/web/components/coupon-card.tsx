@@ -177,7 +177,12 @@ function TapHint({
         <button
           type="button"
           onClick={() => setOpen((value) => !value)}
-          className={cn("cursor-help text-left", className)}
+          // Zone de toucher étendue de 12 px en haut et en bas sans changer
+          // le dessin de la puce : 44 px au doigt pour une puce de 22 px.
+          className={cn(
+            "relative cursor-help text-left after:absolute after:inset-x-0 after:-inset-y-3 after:content-['']",
+            className,
+          )}
         >
           {children}
         </button>
@@ -414,7 +419,9 @@ export function CouponCard({
         {reasoning && (
           <TapHint
             hint={reasoning}
-            className="flex min-h-11 w-fit items-center gap-1.5 rounded-full border border-dashed border-border/70 bg-background/20 px-3 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            // Déjà 44 px : pas de zone étendue, elle mordrait sur le bouton
+            // « Jouer ce coupon » juste en dessous.
+            className="flex min-h-11 w-fit items-center gap-1.5 rounded-full border border-dashed border-border/70 bg-background/20 px-3 text-xs font-medium text-muted-foreground transition-colors after:hidden hover:text-foreground"
           >
             <MessageCircle size={11} />
             {t("why")}

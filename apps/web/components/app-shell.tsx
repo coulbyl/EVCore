@@ -294,7 +294,7 @@ export function AppShell({
                 </p>
                 <Badge
                   variant="neutral"
-                  className="shrink-0 text-[0.62rem] text-sidebar-foreground/80"
+                  className="shrink-0 text-xs text-sidebar-foreground/80"
                 >
                   {tAccount.has(`roles.${currentUser.role}`)
                     ? tAccount(`roles.${currentUser.role}`)

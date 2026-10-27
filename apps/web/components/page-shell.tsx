@@ -118,7 +118,7 @@ export function PageShell({
             ) : null,
             <SidebarGroup key={i} className="p-0">
               {group.label && (
-                <SidebarGroupLabel className="px-3.5 pb-1 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-sidebar-foreground/70">
+                <SidebarGroupLabel className="px-3.5 pb-1 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-sidebar-foreground/85">
                   {group.label}
                 </SidebarGroupLabel>
               )}
