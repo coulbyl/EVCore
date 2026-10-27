@@ -79,7 +79,7 @@ Le glossaire, l'aide et la formation sont du contenu éditorial versionné en ma
 
 `components/markdown-article.tsx` est un **parseur markdown maison**, pas `remark`/MDX : il supporte titres `#` à `####` (un seul niveau, sans imbrication), paragraphes, listes à puces ou numérotées à un seul niveau, tableaux `|...|`, blocs de code ` ``` `, citations `> ` et séparateurs `---`. En inline : `**gras**`, `` `code` `` et `[texte](lien)` — un lien externe (`http...`) est volontairement dégradé en texte brut, avec le commentaire dans le code : « External URLs rendered as plain text — LLM output is untrusted ». Le composant accepte une prop `variant` (`"article"` ou `"chat"`) qui change uniquement le style de rendu, pas le parsing.
 
-Même mécanisme pour `app/dashboard/help/page.tsx` (lit `content/help-leagues.md`) et pour la formation, où `domains/formation/server/formation-content.ts` lit un dossier entier (`content/formation/`) avec un frontmatter maison parsé à la main (pas de librairie type `gray-matter`), et résout le chemin de contenu avec un fallback entre exécution locale et exécution monorepo (`DEFAULT_CONTENT_ROOT` vs `MONOREPO_CONTENT_ROOT`).
+Même mécanisme pour la formation, où `domains/formation/server/formation-content.ts` lit un dossier entier (`content/formation/articles`, cinq fiches depuis le 2026-10-27) avec un frontmatter maison parsé à la main (pas de librairie type `gray-matter`), et résout le chemin de contenu avec un fallback entre exécution locale et exécution monorepo (`DEFAULT_CONTENT_ROOT` vs `MONOREPO_CONTENT_ROOT`).
 
 ## Internationalisation
 

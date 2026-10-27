@@ -25,7 +25,6 @@ const ALL_ROUTES: readonly { name: string; path: string }[] = [
   { name: "mes-coupons", path: "/dashboard/bet-slips" },
   { name: "formation", path: "/dashboard/formation" },
   { name: "glossaire", path: "/dashboard/glossaire" },
-  { name: "aide", path: "/dashboard/help" },
   { name: "notifications", path: "/dashboard/notifications" },
   { name: "compte", path: "/dashboard/params/account/profil" },
 ];
