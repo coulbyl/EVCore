@@ -318,7 +318,8 @@ function decision(overrides) {
     awayLogo: null,
     homeNewCoach: false,
     awayNewCoach: false,
-    kickoff: todayAt(overrides.hours ?? 4),
+    // Le vrai backend renvoie « HH:MM » (formatTimeUtc), pas un ISO.
+    kickoff: todayAt(overrides.hours ?? 4).slice(11, 16),
     scheduledAt: todayAt(overrides.hours ?? 4),
     score: null,
     htScore: null,
@@ -354,6 +355,205 @@ function decision(overrides) {
     ],
   };
 }
+
+// Décisions, vue par match : un match à venir avec plusieurs lectures, dont
+// deux qui ne peuvent pas passer ensemble (« les deux équipes marquent » et
+// « Arsenal n'encaisse pas »), un match « Données suspectes » où Victoire et
+// Nul se contredisent, et un match terminé.
+function matchGroup({ id, homeTeam, awayTeam, hours, score, picks, ...rest }) {
+  const decisions = picks.map((pick, i) => {
+    const full = decision({
+      id: `${id}-${i}`,
+      homeTeam,
+      awayTeam,
+      hours,
+      ...rest,
+      ...pick,
+    });
+    if (pick.result) {
+      full.selections[0].result = pick.result;
+      full.selections[0].settledAt = todayAt(-1);
+    }
+    return {
+      id: full.id,
+      modelRunId: `run-${id}`,
+      phase: full.phase,
+      channel: full.channel,
+      status: full.status,
+      reasonCode: null,
+      reasonDetails: null,
+      decidedAt: full.decidedAt,
+      calibrationAlert: rest.calibrationAlert ?? false,
+      selections: full.selections,
+    };
+  });
+  const first = decision({
+    id,
+    homeTeam,
+    awayTeam,
+    hours,
+    ...rest,
+    ...picks[0],
+  });
+  return {
+    fixtureId: `fx-${id}`,
+    fixtureStatus: score ? "FINISHED" : "SCHEDULED",
+    competition: first.competition,
+    competitionName: first.competitionName,
+    country: first.country,
+    homeTeam,
+    awayTeam,
+    homeLogo: null,
+    awayLogo: null,
+    homeNewCoach: false,
+    awayNewCoach: false,
+    kickoff: first.kickoff,
+    scheduledAt: first.scheduledAt,
+    score: score ?? null,
+    htScore: null,
+    selectedCount: decisions.length,
+    decisions,
+  };
+}
+
+const MATCH_DECISIONS = [
+  matchGroup({
+    id: "m1",
+    homeTeam: "Arsenal",
+    awayTeam: "Burnley",
+    hours: 3,
+    picks: [
+      {
+        channel: "DOMINANT",
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        probability: 0.79,
+        odds: 1.28,
+        playableOdds: 1.24,
+      },
+      {
+        channel: "GOALS",
+        market: "OVER_UNDER",
+        pick: "OVER_1_5",
+        probability: 0.83,
+        odds: 1.22,
+        playableOdds: 1.2,
+      },
+      {
+        channel: "TEAM_TOTAL",
+        market: "TEAM_TOTAL_HOME",
+        pick: "OVER_1_5",
+        probability: 0.66,
+        odds: 1.55,
+        playableOdds: 1.5,
+      },
+      {
+        channel: "BTTS",
+        market: "BTTS",
+        pick: "YES",
+        probability: 0.55,
+        odds: 1.85,
+        playableOdds: 1.8,
+      },
+      {
+        channel: "CLEAN_SHEET",
+        market: "CLEAN_SHEET_HOME",
+        pick: "YES",
+        probability: 0.48,
+        odds: 2.1,
+        playableOdds: 2.0,
+      },
+      {
+        channel: "CORRECT_SCORE",
+        market: "CORRECT_SCORE",
+        pick: "2-0",
+        probability: 0.15,
+        odds: 7.5,
+      },
+    ],
+  }),
+  matchGroup({
+    id: "m2",
+    homeTeam: "Ajax",
+    awayTeam: "PSV",
+    competition: "ERD",
+    competitionName: "Eredivisie",
+    country: "Netherlands",
+    hours: 5,
+    calibrationAlert: true,
+    picks: [
+      {
+        channel: "GOALS",
+        market: "OVER_UNDER",
+        pick: "OVER",
+        probability: 0.67,
+        odds: 1.5,
+        playableOdds: 1.46,
+      },
+      {
+        channel: "DOMINANT",
+        market: "ONE_X_TWO",
+        pick: "AWAY",
+        probability: 0.47,
+        odds: 2.3,
+        playableOdds: 2.2,
+      },
+      {
+        channel: "DRAW",
+        market: "ONE_X_TWO",
+        pick: "DRAW",
+        probability: 0.33,
+        odds: 3.4,
+        playableOdds: 3.3,
+      },
+    ],
+  }),
+  matchGroup({
+    id: "m3",
+    homeTeam: "ASEC Mimosas",
+    awayTeam: "Africa Sports",
+    competition: "CI1",
+    competitionName: "Ligue 1",
+    country: "Côte d'Ivoire",
+    hours: -20,
+    score: "2-1",
+    picks: [
+      {
+        channel: "DOUBLE_CHANCE",
+        market: "DOUBLE_CHANCE",
+        pick: "1X",
+        probability: 0.76,
+        odds: 1.36,
+        playableOdds: 1.32,
+        result: "WON",
+      },
+      {
+        channel: "BTTS",
+        market: "BTTS",
+        pick: "YES",
+        probability: 0.52,
+        odds: 1.9,
+        playableOdds: 1.85,
+        result: "WON",
+      },
+    ],
+  }),
+];
+
+const DECISION_FACETS = {
+  leagues: [
+    { code: "PL", name: "Premier League", country: "England", count: 1 },
+    { code: "ERD", name: "Eredivisie", country: "Netherlands", count: 1 },
+    { code: "CI1", name: "Ligue 1", country: "Côte d'Ivoire", count: 1 },
+  ],
+  channels: [
+    { channel: "DOMINANT", count: 2 },
+    { channel: "GOALS", count: 2 },
+    { channel: "BTTS", count: 2 },
+    { channel: "DOUBLE_CHANCE", count: 1 },
+    { channel: "DRAW", count: 1 },
+  ],
+};
 
 const CHANNEL_DECISIONS = [
   {
@@ -517,7 +717,7 @@ const CHANNEL_COMPETITION_STATS = [
   ["FR1", "Ligue 1", "France", 410, 0.78, 0.74],
   ["CSL", "Chinese Super League", "China", 12, 0.79, 0.67],
 ].map(([code, name, country, n, announced, hitRate]) => ({
-  channel: "DOUBLE_CHANCE",
+  channel: code === "PL" ? "DOMINANT" : "DOUBLE_CHANCE",
   competitionCode: code,
   competitionName: name,
   competitionCountry: country,
@@ -599,6 +799,10 @@ function route(method, url) {
   if (path.startsWith("/coupons")) return [200, []];
   if (path.startsWith("/channel-decisions/by-channel"))
     return [200, CHANNEL_DECISIONS];
+  if (path.startsWith("/channel-decisions/by-match"))
+    return [200, MATCH_DECISIONS];
+  if (path.startsWith("/channel-decisions/facets"))
+    return [200, DECISION_FACETS];
   if (path.startsWith("/channel-decisions")) return [200, []];
   if (path.startsWith("/dashboard/channel-stats-by-competition"))
     return [200, CHANNEL_COMPETITION_STATS];

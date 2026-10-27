@@ -19,6 +19,9 @@
     "refunded": "Remboursé",
     "settlementPending": "Règlement en attente"
   },
+  "oddsBandNote": {
+    "optimistic": "{band} : sur 100 annoncés à {announced} %, {realised} passent (90 jours)"
+  },
   "calibrationVerdict": {
     "conform": "Conforme",
     "slightlyOptimistic": "Un peu optimiste",
@@ -207,27 +210,33 @@
     "noPick": "Aucune sélection retenue sur ce match.",
     "noPickShort": "aucune sélection",
     "pickCount": "{count, plural, one {# sélection} other {# sélections}}",
-    "evaluatedCount": "{count, plural, one {# autre canal évalué} other {# autres canaux évalués}}",
-    "showMorePicks": "{count, plural, one {Voir # autre marché analysé} other {Voir les # autres marchés analysés}}",
+    "evaluatedCount": "{count, plural, one {# autre type de pari évalué} other {# autres types de pari évalués}}",
+    "showMorePicks": "{count, plural, one {Voir l'autre lecture du match} other {Voir les # autres lectures du match}}",
     "showLessPicks": "Voir moins",
     "filters": {
       "all": "Tous",
       "leagueLabel": "Ligue",
-      "channelLabel": "Canal",
+      "channelLabel": "Type de pari",
       "displayLabel": "Affichage",
       "noMatch": "Aucun match ne correspond aux filtres.",
       "groupByNone": "Par heure",
       "groupByLeague": "Grouper par ligue",
       "searchLeague": "Rechercher un championnat…",
       "noLeagueResults": "Aucun championnat.",
-      "searchChannel": "Rechercher un canal…",
-      "noChannelResults": "Aucun canal.",
+      "searchChannel": "Rechercher un type de pari…",
+      "noChannelResults": "Aucun type de pari.",
       "allFilters": "Filtres"
     },
     "helpLink": "Comment lire une fiche",
     "primaryPick": "Notre sélection",
-    "otherMarketsTitle": "Autres marchés analysés",
-    "chances": "{pct} de chances"
+    "otherMarketsTitle": "Les autres lectures du match",
+    "contradictionNote": "« {first} » et « {second} » ne peuvent pas passer ensemble : chaque lecture est une estimation à part, seule Notre sélection est mise en avant.",
+    "pageTitle": "Décisions du jour",
+    "chances": "environ {count} fois sur {total}",
+    "playableLabel": "{bookmaker} {odds}",
+    "referenceOdds": "réf. {odds}",
+    "oddsLabel": "Cote {odds}",
+    "belowMinimum": "sous le minimum de {bookmaker} ({min})"
   },
   "arbitrage": {
     "title": "Avis IA",
@@ -953,11 +962,6 @@
       "behindClose": "Moins bonne que le prix de clôture, qui vaut {margin} (la marge du bookmaker).",
       "unknownMargin": "Marge du bookmaker inconnue pour cette sélection : la comparaison au prix de clôture n'est pas possible."
     }
-  },
-  "playableOdds": {
-    "label": "{bookmaker} {odds}",
-    "hint": "Cote chez le bookmaker des utilisateurs. La nôtre vient des books les plus généreux du relevé.",
-    "belowMinimum": "Sous le minimum de {min} accepté par ce bookmaker : cette sélection n'y est pas jouable."
   },
   "couponCard": {
     "noRecord": "Pas encore de relevé",

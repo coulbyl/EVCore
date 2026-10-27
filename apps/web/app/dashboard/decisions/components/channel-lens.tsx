@@ -9,7 +9,6 @@ import { groupByHour } from "@/lib/group-by-hour";
 import { translateCountry } from "@/lib/competition-i18n";
 import { GroupBySelect, type GroupByMode } from "@/components/group-by-select";
 import { FiltersPopover } from "@/components/filters-popover";
-import type { ChannelCalibrationByKey } from "./channel-constants";
 import { ChannelSelectionRow } from "./channel-selection-row";
 
 // Active-channel state for the "Par canal" lens. The active channel itself is
@@ -76,12 +75,10 @@ export function ChannelList({
   activeGroup,
   locale,
   groupBy,
-  calibrationByKey,
 }: {
   activeGroup: ChannelLensState["activeGroup"];
   locale: string;
   groupBy: GroupByMode;
-  calibrationByKey?: ChannelCalibrationByKey;
 }) {
   if (activeGroup === null || activeGroup.decisions.length === 0) {
     return (
@@ -115,7 +112,6 @@ export function ChannelList({
                   key={decision.id}
                   decision={decision}
                   locale={locale}
-                  calibrationByKey={calibrationByKey}
                 />
               ))}
             </div>
@@ -151,7 +147,6 @@ export function ChannelList({
                 key={decision.id}
                 decision={decision}
                 locale={locale}
-                calibrationByKey={calibrationByKey}
               />
             ))}
           </div>

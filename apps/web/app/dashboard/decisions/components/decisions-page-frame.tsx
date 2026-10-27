@@ -72,6 +72,9 @@ export function DecisionsPageFrame({
           n'arrivait qu'au second (revue UX du 2026-10-11, P1-5). En desktop
           les sélecteurs restent en ligne. */}
       <PageHeader>
+        {/* Titre pour les lecteurs d'écran : la barre reste sur une ligne en
+            mobile, le premier match doit rester dans le premier écran. */}
+        <h1 className="sr-only">{t("pageTitle")}</h1>
         <div className="hidden min-w-0 flex-1 md:flex md:items-center md:gap-3">
           {filters}
         </div>
@@ -82,13 +85,13 @@ export function DecisionsPageFrame({
               variant="outline"
               size="sm"
               onClick={() => setMobileFiltersOpen(true)}
-              className="relative h-9 shrink-0 gap-1.5 text-xs md:hidden"
+              className="relative h-11 shrink-0 gap-1.5 text-xs md:hidden"
               data-testid="decisions-filters-button"
             >
               <SlidersHorizontal size={13} />
               {t("filters.allFilters")}
               {activeFilterCount ? (
-                <span className="rounded-full bg-accent/15 px-1.5 text-[0.62rem] font-semibold tabular-nums text-accent">
+                <span className="rounded-full bg-accent/15 px-1.5 text-xs font-semibold tabular-nums text-accent">
                   {activeFilterCount}
                 </span>
               ) : null}

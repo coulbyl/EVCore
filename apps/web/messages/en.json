@@ -19,6 +19,9 @@
     "refunded": "Refunded",
     "settlementPending": "Settlement pending"
   },
+  "oddsBandNote": {
+    "optimistic": "{band}: out of 100 announced at {announced}%, {realised} came in (90 days)"
+  },
   "calibrationVerdict": {
     "conform": "On target",
     "slightlyOptimistic": "Slightly optimistic",
@@ -207,27 +210,33 @@
     "noPick": "No pick retained on this fixture.",
     "noPickShort": "no pick",
     "pickCount": "{count, plural, one {# pick} other {# picks}}",
-    "evaluatedCount": "{count, plural, one {# other channel evaluated} other {# other channels evaluated}}",
-    "showMorePicks": "{count, plural, one {See # other market analysed} other {See the # other markets analysed}}",
+    "evaluatedCount": "{count, plural, one {# other bet type evaluated} other {# other bet types evaluated}}",
+    "showMorePicks": "{count, plural, one {See the other reading of the match} other {See the # other readings of the match}}",
     "showLessPicks": "Show less",
     "filters": {
       "all": "All",
       "leagueLabel": "League",
-      "channelLabel": "Channel",
+      "channelLabel": "Bet type",
       "displayLabel": "Display",
       "noMatch": "No fixture matches the filters.",
       "groupByNone": "By kickoff time",
       "groupByLeague": "Group by league",
       "searchLeague": "Search a competition…",
       "noLeagueResults": "No competition.",
-      "searchChannel": "Search a channel…",
-      "noChannelResults": "No channel.",
+      "searchChannel": "Search a bet type…",
+      "noChannelResults": "No bet type.",
       "allFilters": "Filters"
     },
     "helpLink": "How to read a pick",
     "primaryPick": "Our pick",
-    "otherMarketsTitle": "Other markets analysed",
-    "chances": "{pct} chance"
+    "otherMarketsTitle": "Other readings of the match",
+    "contradictionNote": "“{first}” and “{second}” cannot both come in: each reading is a separate estimate, only Our pick is put forward.",
+    "pageTitle": "Today's decisions",
+    "chances": "about {count} times in {total}",
+    "playableLabel": "{bookmaker} {odds}",
+    "referenceOdds": "ref. {odds}",
+    "oddsLabel": "Odds {odds}",
+    "belowMinimum": "below {bookmaker}'s minimum ({min})"
   },
   "arbitrage": {
     "title": "AI opinion",
@@ -953,11 +962,6 @@
       "behindClose": "Worse than the closing price, which is worth {margin} (the bookmaker's margin).",
       "unknownMargin": "The bookmaker's margin is unknown for this selection, so no comparison with the closing price is possible."
     }
-  },
-  "playableOdds": {
-    "label": "{bookmaker} {odds}",
-    "hint": "Odds at the users' bookmaker. Ours come from the most generous books we record.",
-    "belowMinimum": "Under the {min} minimum this bookmaker accepts: this pick cannot be played there."
   },
   "couponCard": {
     "noRecord": "No record yet",

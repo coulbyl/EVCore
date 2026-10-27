@@ -4,10 +4,9 @@ import { useState } from "react";
 import * as HoverCard from "@radix-ui/react-hover-card";
 import { TriangleAlert } from "lucide-react";
 import { Badge, Tooltip, TooltipContent, TooltipTrigger, cn } from "@evcore/ui";
-import {
-  formatMarketForDisplay,
-  formatPickForDisplay,
-} from "@/helpers/fixture";
+import { formatMarketForDisplay, formatPickWithTeams } from "@/helpers/fixture";
+import { formatOddsValue, frequencyOf } from "@/lib/frequency";
+import { OddsBandNote } from "@/components/odds-band-note";
 import { useLocale, useTranslations } from "next-intl";
 import type {
   ChannelDecisionMatchDecisionDto,
@@ -19,18 +18,13 @@ import { AddToCouponButton } from "@/components/add-to-coupon-button";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
 import { ConfidenceBadge } from "@/components/confidence-badge";
 import { ClosingLine } from "@/components/closing-line";
-import { PlayableOdds } from "@/components/playable-odds";
 import type { ChannelCompetitionStatItem } from "@/domains/dashboard/types/dashboard";
 import {
-  calibrationKey,
   CHANNEL_COLOR,
   CHANNEL_COLOR_SOFT,
   channelLabel,
-  formatOdds,
-  formatPct,
   reasonLabel,
   statusLabel,
-  type ChannelCalibrationByKey,
 } from "./channel-constants";
 import { ResultBadge } from "@/components/result-badge";
 // Un pick est ajoutable à un coupon sauf s'il vient d'un méta-canal. C'était
@@ -61,29 +55,20 @@ export function ChannelRow({
   locale,
   avoidEdge,
   slipContext,
-  competitionCode,
-  calibrationByKey,
+  teams = null,
 }: {
   channel: StrategyChannel;
   decision: ChannelDecisionMatchDecisionDto | undefined;
   locale: string;
   avoidEdge?: number;
   slipContext?: SlipContext;
-  // Which (channel, competition) calibration entry this pick maps to — see
-  // channel-constants.ts's ChannelCalibrationByKey. Both optional: some
-  // callers (e.g. ConsensusRow's own convergence chips) never render a pick
-  // at all, so there's nothing to look up.
-  competitionCode?: string | null;
-  calibrationByKey?: ChannelCalibrationByKey;
+  /** Pour écrire le pari avec le nom des équipes (« Victoire Arsenal »). */
+  teams?: { home: string; away: string } | null;
 }) {
   const t = useTranslations("decisions");
   const loc = locale === "en" ? "en" : "fr";
   const selection =
     decision?.status === "SELECTED" ? decision.selections[0] : undefined;
-  const odds = selection ? formatOdds(selection.odds) : null;
-  const calibration = competitionCode
-    ? calibrationByKey?.get(calibrationKey(channel, competitionCode))
-    : undefined;
 
   // Lu depuis reasonDetails, pas depuis les sélections : CONSENSUS n'émet
   // plus de pick, et ces pastilles étaient rendues dans la branche « a une
@@ -107,7 +92,7 @@ export function ChannelRow({
               DRAW_NO_BET on the same card) without the duplicate wording. */}
           <div className="flex min-w-0 items-start justify-between gap-2">
             <p className="line-clamp-2 min-w-0 text-sm font-semibold leading-snug text-foreground">
-              {formatPickForDisplay(selection.pick, selection.market)}
+              {formatPickWithTeams(selection.pick, selection.market, teams)}
             </p>
             <div className="flex shrink-0 items-center gap-1.5">
               {avoidEdge !== undefined && <AvoidEdgeBadge edge={avoidEdge} />}
@@ -122,32 +107,27 @@ export function ChannelRow({
               )}
             </div>
           </div>
-          <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.68rem] leading-tight text-muted-foreground">
+          {/* Type de pari, fréquence, cote jouable d'abord : la même lecture
+              que la carte coupon. Plus de badge « Fiable » par canal et par
+              championnat : la note par cote ne s'affiche que quand nos
+              pourcentages ont été optimistes à cette cote. */}
+          <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-snug text-muted-foreground">
             {selection.market !== "CORRECT_SCORE" && (
               <span className="max-w-full truncate">
                 {formatMarketForDisplay(selection.market, loc)}
               </span>
             )}
             <span className="tabular-nums">
-              {t("chances", { pct: formatPct(selection.probability) })}
+              {t("chances", frequencyOf(selection.probability))}
             </span>
-            {odds !== null && (
-              <span className="font-semibold tabular-nums text-foreground">
-                @{odds}
-              </span>
-            )}
-            <PlayableOdds
-              odds={selection.odds}
-              playableOdds={selection.playableOdds}
-              playableBookmaker={selection.playableBookmaker}
-            />
+            <OddsPair selection={selection} locale={locale} />
             <ClosingLine
               closingOdds={selection.closingOdds}
               closingLineValue={selection.closingLineValue}
               closingBookmaker={selection.closingBookmaker}
               marginPaid={selection.marginPaid}
             />
-            <CalibrationBadge item={calibration} />
+            <OddsBandNote odds={selection.odds} />
           </p>
         </div>
       ) : convergingChannels.length > 0 ? (
@@ -156,6 +136,71 @@ export function ChannelRow({
         <RejectedLabel decision={decision} />
       )}
     </div>
+  );
+}
+
+/** Minimum de cote accepté par le bookmaker des joueurs (1xBet). */
+const OPERATOR_MIN_ODDS = 1.1;
+
+/**
+ * La cote que le joueur trouvera chez son bookmaker d'abord, la nôtre (books
+ * les plus généreux du relevé) en référence ; la nôtre seule quand la cote
+ * jouable est inconnue ou identique. Sous le minimum de l'opérateur, la cote
+ * jouable le dit en clair au lieu d'un rouge sans explication.
+ */
+function OddsPair({
+  selection,
+  locale,
+}: {
+  selection: ChannelSelectionDto;
+  locale: string;
+}) {
+  const t = useTranslations("decisions");
+  const { odds, playableOdds, playableBookmaker } = selection;
+  if (odds === null) return null;
+  const differs =
+    playableOdds !== null &&
+    playableBookmaker !== null &&
+    Math.abs(playableOdds - odds) >= 0.005;
+  if (!differs || playableOdds === null || playableBookmaker === null) {
+    return (
+      <span className="font-semibold tabular-nums text-foreground">
+        {playableBookmaker
+          ? t("playableLabel", {
+              bookmaker: playableBookmaker,
+              odds: formatOddsValue(odds, locale),
+            })
+          : t("oddsLabel", { odds: formatOddsValue(odds, locale) })}
+      </span>
+    );
+  }
+  const belowMinimum = playableOdds < OPERATOR_MIN_ODDS;
+  return (
+    <>
+      <span
+        data-testid="playable-odds"
+        className={cn(
+          "font-semibold tabular-nums",
+          belowMinimum ? "text-destructive" : "text-foreground",
+        )}
+      >
+        {t("playableLabel", {
+          bookmaker: playableBookmaker,
+          odds: formatOddsValue(playableOdds, locale),
+        })}
+      </span>
+      <span className="tabular-nums">
+        {t("referenceOdds", { odds: formatOddsValue(odds, locale) })}
+      </span>
+      {belowMinimum && (
+        <span className="text-destructive">
+          {t("belowMinimum", {
+            bookmaker: playableBookmaker,
+            min: formatOddsValue(OPERATOR_MIN_ODDS, locale),
+          })}
+        </span>
+      )}
+    </>
   );
 }
 

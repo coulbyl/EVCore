@@ -17,6 +17,7 @@ import {
 } from "./channel-constants";
 import {
   avoidFlag,
+  firstContradiction,
   primaryPick,
   selectedPicks,
   type AvoidFlag,
@@ -55,6 +56,8 @@ export function MatchCard({
   const visiblePicks = expanded ? picks : picks.slice(0, 1);
   const hiddenCount = picks.length - visiblePicks.length;
   const calibrationAlert = group.decisions.some((d) => d.calibrationAlert);
+  const teams = { home: group.homeTeam, away: group.awayTeam };
+  const contradiction = firstContradiction(picks, teams);
 
   const avoidEdgeByChannel = new Map<StrategyChannel, number>(
     avoid?.offenders.map((o) => [o.channel, o.edge]) ?? [],
@@ -162,14 +165,27 @@ export function MatchCard({
               )}
               <div className="min-w-0 flex-1 border-t border-border/50 first:border-t-0">
                 {idx === 0 && picks.length > 1 && (
-                  <p className="pt-2 text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-accent">
+                  <p className="pt-2 text-xs font-semibold uppercase tracking-[0.12em] text-accent">
                     {t("primaryPick")}
                   </p>
                 )}
                 {idx === 1 && (
-                  <p className="pt-2 text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    {t("otherMarketsTitle")}
-                  </p>
+                  <div className="flex flex-col gap-1 pt-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      {t("otherMarketsTitle")}
+                    </p>
+                    {/* Dans un match sur quatre, deux lectures ne peuvent pas
+                        passer ensemble (mesuré sur 30 jours : 562 matchs sur
+                        2 046). Le dire là où elles apparaissent. */}
+                    {contradiction && (
+                      <p
+                        data-testid="contradiction-note"
+                        className="text-xs leading-snug text-muted-foreground"
+                      >
+                        {t("contradictionNote", contradiction)}
+                      </p>
+                    )}
+                  </div>
                 )}
                 <ChannelRow
                   channel={decision.channel}
@@ -177,8 +193,7 @@ export function MatchCard({
                   locale={locale}
                   avoidEdge={avoidEdgeByChannel.get(decision.channel)}
                   slipContext={slipContext}
-                  competitionCode={group.competition}
-                  calibrationByKey={calibrationByKey}
+                  teams={teams}
                 />
               </div>
             </div>
@@ -187,7 +202,7 @@ export function MatchCard({
             <button
               type="button"
               onClick={() => setExpanded((prev) => !prev)}
-              className="flex items-center justify-center gap-1 border-t border-border/50 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+              className="flex min-h-11 items-center justify-center gap-1 border-t border-border/50 text-xs font-medium text-muted-foreground hover:text-foreground"
             >
               {expanded ? (
                 <>

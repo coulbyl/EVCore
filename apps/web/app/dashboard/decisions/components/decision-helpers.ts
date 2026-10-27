@@ -1,3 +1,4 @@
+import { formatPickWithTeams } from "@/helpers/fixture";
 import type {
   ChannelDecisionMatchDto,
   ChannelDecisionMatchDecisionDto,
@@ -185,4 +186,46 @@ export function evaluatedRest(
       !isMetaChannel(d.channel) &&
       !isExcludedFromDecisions(d.channel),
   );
+}
+
+/**
+ * Deux lectures d'un même match qui ne peuvent pas passer ensemble, la
+ * première trouvée : deux issues 1X2 différentes (Victoire et Nul), ou « les
+ * deux équipes marquent » à côté d'une équipe qui n'encaisse pas. Chaque
+ * canal estime son marché seul ; à l'écran, sans explication, ces paires se
+ * lisaient comme une erreur (562 matchs sur 2 046 en 30 jours, mesuré le
+ * 2026-10-27). Renvoie les deux libellés à citer, ou null.
+ */
+export function firstContradiction(
+  picks: readonly ChannelDecisionMatchDecisionDto[],
+  teams: { home: string; away: string },
+): { first: string; second: string } | null {
+  const selections = picks
+    .map((d) => d.selections[0])
+    .filter((s): s is NonNullable<typeof s> => s !== undefined);
+  const label = (s: (typeof selections)[number]) =>
+    formatPickWithTeams(s.pick, s.market, teams);
+
+  const results = selections.filter((s) => s.market === "ONE_X_TWO");
+  const [a, b] = results;
+  if (a && b && results.some((s) => s.pick !== a.pick)) {
+    const other = results.find((s) => s.pick !== a.pick) ?? b;
+    return { first: label(a), second: label(other) };
+  }
+
+  const bothScore = selections.find(
+    (s) => s.market === "BTTS" && s.pick === "YES",
+  );
+  const shutout = selections.find(
+    (s) =>
+      s.pick === "YES" &&
+      (s.market === "CLEAN_SHEET_HOME" ||
+        s.market === "CLEAN_SHEET_AWAY" ||
+        s.market === "WIN_TO_NIL_HOME" ||
+        s.market === "WIN_TO_NIL_AWAY"),
+  );
+  if (bothScore && shutout) {
+    return { first: label(bothScore), second: label(shutout) };
+  }
+  return null;
 }

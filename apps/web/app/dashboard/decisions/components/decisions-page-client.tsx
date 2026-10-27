@@ -169,7 +169,6 @@ export function DecisionsPageClient() {
           activeGroup={channelLens.activeGroup}
           locale={locale}
           groupBy={channelLens.groupBy}
-          calibrationByKey={calibrationByKey}
         />
       )}
     </DecisionsPageFrame>
