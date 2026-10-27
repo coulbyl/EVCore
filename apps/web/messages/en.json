@@ -196,7 +196,7 @@
     "calibration": {
       "banner": "Suspect data",
       "tooltipLabel": "Calibration alert",
-      "tooltipDetail": "The model and the market strongly disagree on this match (flipped favorite or extreme gap across several bookmakers). This almost always signals corrupted input data rather than an opportunity — the engine automatically excludes every pick of this match from real bets.",
+      "tooltipDetail": "The model and the market strongly disagree on this match (flipped favorite or extreme gap across several bookmakers). This almost always signals corrupted input data, not an opportunity: the match is removed from all our coupons and from the home picks. Predictions stay visible for reading; on these matches, above 1.45, our percentages are clearly too optimistic.",
       "badgeTooltip": "{status, select, GREEN {In this competition, this channel wins about as often as it announces} ORANGE {In this competition, this channel wins noticeably less — or more — often than it announces} RED {In this competition, this channel's actual hit rate is far from what it announces: handle with care} other {Not enough volume in this competition}} ({n, plural, one {# settled pick} other {# settled picks}} over 90 days)."
     },
     "consensus": {

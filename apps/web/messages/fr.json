@@ -196,7 +196,7 @@
     "calibration": {
       "banner": "Données suspectes",
       "tooltipLabel": "Alerte calibration",
-      "tooltipDetail": "Le modèle et le marché sont en désaccord fort sur ce match (favori inversé ou écart extrême sur plusieurs bookmakers). Cela signale presque toujours des données d'entrée corrompues plutôt qu'une opportunité — le moteur exclut automatiquement toutes les sélections de ce match des paris réels.",
+      "tooltipDetail": "Le modèle et le marché sont en désaccord fort sur ce match (favori inversé ou écart extrême sur plusieurs bookmakers). C'est presque toujours le signe de données d'entrée faussées, pas une occasion : ce match est retiré de tous nos coupons et des sélections de l'accueil. Les pronostics restent affichés pour la lecture ; sur ces matchs, au-dessus de 1,45, nos pourcentages sont nettement trop optimistes.",
       "badgeTooltip": "{status, select, GREEN {Sur cette compétition, ce canal réussit à peu près aussi souvent qu'il l'annonce} ORANGE {Sur cette compétition, ce canal réussit sensiblement moins souvent — ou plus souvent — qu'il ne l'annonce} RED {Sur cette compétition, la réussite réelle de ce canal est loin de ce qu'il annonce : à prendre avec prudence} other {Volume insuffisant sur cette compétition}} ({n, plural, one {# sélection réglée} other {# sélections réglées}} sur 90 jours)."
     },
     "consensus": {

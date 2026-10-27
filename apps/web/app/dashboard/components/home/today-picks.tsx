@@ -119,6 +119,9 @@ export function TodayPicks() {
       const status = statusByChannel.get(group.channel);
       if (status !== "GREEN") continue;
       for (const decision of group.decisions) {
+        // « Données suspectes » : retiré des coupons, donc de l'accueil aussi
+        // (audit du 2026-10-23, P1-8).
+        if (decision.calibrationAlert) continue;
         const selection = decision.selections[0];
         if (!selection || selection.odds === null) continue;
         if (selection.odds < ODDS_BAND.min || selection.odds >= ODDS_BAND.max) {
