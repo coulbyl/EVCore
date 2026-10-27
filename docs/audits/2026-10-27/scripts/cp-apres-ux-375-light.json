@@ -1,0 +1,72 @@
+{
+ "url": "http://localhost:3010/dashboard/coupons",
+ "title": "Coupons",
+ "lang": "fr",
+ "headings": [
+  "h1: Coupons du jour"
+ ],
+ "overflowX": false,
+ "textElements": 232,
+ "smallText": {
+  "count": 0,
+  "samples": []
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 29,
+ "smallTapTargets": {
+  "count": 10,
+  "samples": [
+   {
+    "text": "Choisi sur les cotes",
+    "w": 136,
+    "h": 22,
+    "tag": "button"
+   },
+   {
+    "text": "Sélections du moteur",
+    "w": 145,
+    "h": 22,
+    "tag": "button"
+   },
+   {
+    "text": "1xBet 1,18",
+    "w": 59,
+    "h": 16,
+    "tag": "button"
+   },
+   {
+    "text": "1xBet 1,20",
+    "w": 59,
+    "h": 16,
+    "tag": "button"
+   },
+   {
+    "text": "Analyse IA",
+    "w": 89,
+    "h": 22,
+    "tag": "button"
+   },
+   {
+    "text": "✓ GAGNÉ · JAMBE REMBOURSÉE",
+    "w": 207,
+    "h": 16,
+    "tag": "button"
+   },
+   {
+    "text": "REMBOURSÉ",
+    "w": 81,
+    "h": 16,
+    "tag": "button"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}
