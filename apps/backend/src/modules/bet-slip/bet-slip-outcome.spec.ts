@@ -1,6 +1,10 @@
 import Decimal from 'decimal.js';
 import { describe, expect, it } from 'vitest';
-import { fixedStakeOutcome, type PlayedSlip } from './bet-slip-outcome';
+import {
+  fixedStakeOutcome,
+  slipMoney,
+  type PlayedSlip,
+} from './bet-slip-outcome';
 
 const d = (n: number) => new Decimal(n);
 
@@ -79,5 +83,70 @@ describe('fixedStakeOutcome', () => {
     ]);
     expect(out).toMatchObject({ voidPlays: 1, settledPlays: 0 });
     expect(out.returnRate).toBeNull();
+  });
+});
+
+describe('slipMoney', () => {
+  const dec = (v: string | number) => new Decimal(v);
+
+  it('pays a combo with a refunded leg at the odds of its won legs', () => {
+    const money = slipMoney({
+      type: 'COMBO',
+      unitStake: dec(400000),
+      items: [
+        { status: 'WON', odds: dec('1.33'), stake: dec(400000) },
+        { status: 'VOID', odds: dec('1.57'), stake: dec(400000) },
+      ],
+    });
+    expect(money.status).toBe('WON');
+    expect(money.returned.toFixed(2)).toBe('532000.00');
+    expect(money.net.toFixed(2)).toBe('132000.00');
+  });
+
+  it('returns the stake of a fully refunded combo, at zero result', () => {
+    const money = slipMoney({
+      type: 'COMBO',
+      unitStake: dec(1000),
+      items: [
+        { status: 'VOID', odds: dec('1.5'), stake: dec(1000) },
+        { status: 'VOID', odds: dec('2'), stake: dec(1000) },
+      ],
+    });
+    expect(money.status).toBe('VOID');
+    expect(money.returned.toFixed(2)).toBe('1000.00');
+    expect(money.net.toFixed(2)).toBe('0.00');
+  });
+
+  it('keeps a combo pending with its potential return, refunds at 1', () => {
+    const money = slipMoney({
+      type: 'COMBO',
+      unitStake: dec(1000),
+      items: [
+        { status: 'WON', odds: dec('1.5'), stake: dec(1000) },
+        { status: 'VOID', odds: dec('3'), stake: dec(1000) },
+        { status: 'PENDING', odds: dec('2'), stake: dec(1000) },
+      ],
+    });
+    expect(money.status).toBe('PENDING');
+    expect(money.pendingStake.toFixed(2)).toBe('1000.00');
+    expect(money.potentialReturn.toFixed(2)).toBe('3000.00');
+    expect(money.net.toFixed(2)).toBe('0.00');
+  });
+
+  it('settles a refunded single instead of leaving it pending', () => {
+    const money = slipMoney({
+      type: 'SIMPLE',
+      unitStake: dec(1000),
+      items: [
+        { status: 'WON', odds: dec('1.54'), stake: dec(1000) },
+        { status: 'VOID', odds: dec('1.8'), stake: dec(1000) },
+        { status: 'LOST', odds: dec('2'), stake: dec(500) },
+      ],
+    });
+    expect(money.status).toBe('WON');
+    expect(money.settledStake.toFixed(2)).toBe('2500.00');
+    expect(money.returned.toFixed(2)).toBe('2540.00');
+    expect(money.net.toFixed(2)).toBe('40.00');
+    expect(money.pendingStake.toFixed(2)).toBe('0.00');
   });
 });

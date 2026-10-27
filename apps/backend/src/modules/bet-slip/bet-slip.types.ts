@@ -15,6 +15,19 @@ export type BetSlipItemView = {
   /** Gain net réel (>0) ou perte (<0) en unités de mise. null si le pari est encore en attente. */
   pnl: string | null;
   canal: 'VALUE' | 'SAFE';
+  homeTeam: string;
+  awayTeam: string;
+};
+
+/** Résultat en francs du coupon, calculé une fois (`slipMoney`). */
+export type BetSlipResultView = {
+  status: 'WON' | 'LOST' | 'VOID' | 'PENDING';
+  staked: string;
+  settledStake: string;
+  returned: string;
+  net: string;
+  pendingStake: string;
+  potentialReturn: string;
 };
 
 export type BetSlipView = {
@@ -26,6 +39,9 @@ export type BetSlipView = {
   itemCount: number;
   createdAt: string;
   items: BetSlipItemView[];
+  /** Cote d'un combiné au moment du jeu (produit des jambes), sinon null. */
+  totalOdds: string | null;
+  result: BetSlipResultView;
 };
 
 export type BetSlipSummaryView = {
@@ -51,5 +67,17 @@ export type BetSlipSummaryView = {
     profitUnits: string;
     /** Gain net / paris réglés (« -0.0410 »), null sans pari réglé. */
     returnRate: string | null;
+  };
+  /**
+   * Résultat en francs, mises déclarées, même règle que le solde : misé et
+   * rendu sur les coupons réglés, mises encore en jeu, date du premier coupon.
+   */
+  money: {
+    settledSlips: number;
+    settledStake: string;
+    returned: string;
+    net: string;
+    pendingStake: string;
+    firstSlipAt: string | null;
   };
 };

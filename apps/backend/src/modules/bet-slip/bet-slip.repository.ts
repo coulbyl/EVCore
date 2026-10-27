@@ -125,10 +125,16 @@ export class BetSlipRepository {
       },
       select: {
         type: true,
+        unitStake: true,
+        createdAt: true,
         items: {
-          select: { bet: { select: { status: true, oddsSnapshot: true } } },
+          select: {
+            stakeOverride: true,
+            bet: { select: { status: true, oddsSnapshot: true } },
+          },
         },
       },
+      orderBy: { createdAt: 'asc' },
     });
   }
 
