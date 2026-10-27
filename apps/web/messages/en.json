@@ -980,6 +980,10 @@
     "playedByMe": "Already played by you",
     "inSlip": "In the coupon",
     "play": "Play this coupon",
+    "replaceTitle": "Replace your slip?",
+    "replaceDescription": "Your slip already holds {count, plural, one {# other pick} other {# other picks}}. A coupon is played on its own: its legs will replace those in the slip.",
+    "replaceConfirm": "Replace",
+    "replaceCancel": "Keep my slip",
     "addToCoupon": "Add to coupon",
     "removeFromCoupon": "Remove from coupon"
   }

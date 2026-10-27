@@ -980,6 +980,10 @@
     "playedByMe": "Déjà joué par toi",
     "inSlip": "Dans le coupon",
     "play": "Jouer ce coupon",
+    "replaceTitle": "Remplacer ton ticket ?",
+    "replaceDescription": "Ton ticket contient déjà {count, plural, one {# autre sélection} other {# autres sélections}}. Un coupon se joue seul : ses jambes remplaceront celles du ticket.",
+    "replaceConfirm": "Remplacer",
+    "replaceCancel": "Garder mon ticket",
     "addToCoupon": "Ajouter au coupon",
     "removeFromCoupon": "Retirer du coupon"
   }

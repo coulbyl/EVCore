@@ -192,6 +192,24 @@ export function useBetSlipDraft() {
     [setDraft],
   );
 
+  /**
+   * Remplace le contenu du ticket par les jambes d'un coupon, mise unitaire
+   * conservée. Un coupon se joue seul : ajouter ses jambes à la suite d'un
+   * autre coupon fabriquait sans le dire un combiné de 5 ou 6 jambes (revue
+   * UX du 2026-10-27, Coupons P1-1).
+   */
+  const replaceWithCoupon = useCallback(
+    (opts: { items: BetSlipDraftItem[]; couponProposalId: string }) => {
+      setDraft((prev) => ({
+        ...prev,
+        items: opts.items,
+        type: opts.items.length >= 2 ? "COMBO" : "SIMPLE",
+        couponProposalId: opts.couponProposalId,
+      }));
+    },
+    [setDraft],
+  );
+
   const clearDraft = useCallback(() => {
     setDraft(() => emptyDraft(initialUnitStake));
   }, [initialUnitStake, setDraft]);
@@ -217,6 +235,7 @@ export function useBetSlipDraft() {
     setUnitStake,
     setType,
     setCouponProposalId,
+    replaceWithCoupon,
     clearDraft,
     isInSlip,
   };
