@@ -14,7 +14,7 @@ import {
   Clock,
   CheckCircle2,
 } from "lucide-react";
-import { PwaInstallBanner } from "@/components/pwa-install-banner";
+import { LEGAL_LINKS } from "./(legal)/components/legal-page";
 
 /* ─── Data ─────────────────────────────────────────────────── */
 
@@ -318,16 +318,16 @@ export default function LandingPage() {
 
         {/* Left: copy */}
         <div className="relative z-10 w-full max-w-xl text-center lg:text-left">
-          <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-accent/35 bg-accent/8 px-3.5 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.22em] text-accent">
-            Analyses de football
-          </span>
+          {/* Le test des cinq secondes (audit du 2026-10-23, P2-2) : football,
+              gratuit, 18+ et la promesse se lisent avant tout défilement. */}
+          <p className="mb-5 text-sm font-semibold text-accent">
+            Analyses de football gratuites · 18+
+          </p>
 
           <h1 className="text-4xl font-black leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.4rem]">
-            Un avis sur chaque match.
+            Avant de parier,
             <br />
-            <span className="text-accent">
-              Une conviction sur presque aucun.
-            </span>
+            <span className="text-accent">lis le match.</span>
           </h1>
 
           <p className="mx-auto mt-6 max-w-lg text-base leading-relaxed text-muted-foreground lg:mx-0 lg:text-[1.05rem]">
@@ -341,7 +341,7 @@ export default function LandingPage() {
             {[
               "6 000+ matchs analysés",
               "60+ championnats",
-              "Gratuit · 18+",
+              "Résultats réglés, pertes comprises",
             ].map((s) => (
               <span key={s} className="flex items-center gap-1.5">
                 <CheckCircle2 size={13} className="text-accent/60" />
@@ -677,6 +677,25 @@ export default function LandingPage() {
 
       {/* ── Footer ── */}
       <footer className="border-t border-border px-6 py-8 sm:px-10">
+        <nav
+          aria-label="Pages légales"
+          className="mx-auto mb-6 flex max-w-6xl flex-wrap gap-x-6 gap-y-1 text-sm"
+        >
+          {LEGAL_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="inline-flex min-h-11 items-center text-muted-foreground hover:text-foreground hover:underline"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+        <p className="mx-auto mb-6 max-w-6xl text-sm text-muted-foreground">
+          18+ (21+ au Cameroun) · Parier comporte des risques de perte. Ne mise
+          que ce que tu peux perdre. EVCore ne prend aucune mise et ne vend pas
+          de coupons.
+        </p>
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <span className="flex items-center gap-1">
             <Image
@@ -694,7 +713,9 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      <PwaInstallBanner />
+      {/* Plus de bannière d'installation ici : sur téléphone elle couvrait
+          le second bouton d'appel à l'action dès la première visite (audit
+          du 2026-10-23, P2-4). Elle s'affiche dans le tableau de bord. */}
     </main>
   );
 }
