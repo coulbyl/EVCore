@@ -922,11 +922,14 @@
     }
   },
   "coupons": {
-    "pageTitle": "Propositions",
-    "empty": "Aucun coupon généré pour cette date.",
-    "loadError": "Impossible de charger les propositions de coupons.",
+    "pageTitle": "Coupons",
+    "title": "Coupons du jour",
+    "intro": "Un coupon se joue seul. Chaque carte dit combien de jours il a gagné, sa pire série et la cote que ton ticket paiera.",
+    "empty": "Pas de coupon pour cette date. Quand il n'y a pas assez de matchs dans les bonnes cotes, on s'abstient plutôt que de forcer un coupon.",
+    "loadError": "Les coupons n'ont pas chargé.",
+    "retry": "Réessayer",
     "aiNote": "Ces propositions sont générées par notre moteur IA, qui s'améliore en continu grâce aux résultats passés. Il ne s'agit pas de conseils financiers.",
-    "helpLink": "La carte des canaux"
+    "helpLink": "Lire un pronostic"
   },
   "onboarding": {
     "title": "Configuration rapide",

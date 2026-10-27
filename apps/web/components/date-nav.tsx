@@ -60,11 +60,14 @@ export function DateNav({ date, onChange, className }: DateNavProps) {
 
   return (
     <div className={`flex items-center gap-1 ${className ?? ""}`}>
+      {/* 44 px au doigt, avec un nom : deux flèches de 28 px sans libellé
+          (revue UX du 2026-10-27, Coupons P2-8). */}
       <Button
         variant="ghost"
         size="icon"
-        className="size-7"
+        className="size-11"
         onClick={handlePrev}
+        aria-label="Jour précédent"
       >
         <ChevronLeft className="size-4" />
       </Button>
@@ -72,7 +75,7 @@ export function DateNav({ date, onChange, className }: DateNavProps) {
         <PopoverTrigger asChild>
           <Button
             variant="ghost"
-            className="h-7 min-w-28 flex-1 px-2 text-sm font-medium"
+            className="h-11 min-w-28 flex-1 px-2 text-sm font-medium"
           >
             {formatDateLabel(date)}
           </Button>
@@ -98,8 +101,9 @@ export function DateNav({ date, onChange, className }: DateNavProps) {
       <Button
         variant="ghost"
         size="icon"
-        className="size-7"
+        className="size-11"
         onClick={handleNext}
+        aria-label="Jour suivant"
       >
         <ChevronRight className="size-4" />
       </Button>
