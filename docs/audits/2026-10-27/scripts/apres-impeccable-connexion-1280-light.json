@@ -1,0 +1,65 @@
+{
+ "route": "/auth/login",
+ "width": 1280,
+ "theme": "light",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 3 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cstraggler%c \"produits.\" alone on the last of 3 lines (18% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"joués.\" alone on the last of 3 lines (12% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"mise.\" alone on the last of 2 lines (10% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 3 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cstraggler%c \"produits.\" alone on the last of 3 lines (18% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"joués.\" alone on the last of 3 lines (12% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"mise.\" alone on the last of 2 lines (10% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-0.5 text-sm leading-5 text-sidebar-foreground/75",
+    "text": "Chaque jour, quelques coupons et sélections, avec leur proba",
+    "w": 308,
+    "h": 60
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"produits.\" alone on the last of 3 lines (18% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-0.5 text-sm leading-5 text-sidebar-foreground/75",
+    "text": "Pour chaque marché, ce que le moteur annonce et ce qui arriv",
+    "w": 308,
+    "h": 60
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"joués.\" alone on the last of 3 lines (12% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-2 text-sm leading-6 text-muted-foreground",
+    "text": "Retrouve tes coupons du jour, tes matchs et ton suivi de mis",
+    "w": 369,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"mise.\" alone on the last of 2 lines (10% of the measure)"
+    }
+   ]
+  }
+ ]
+}

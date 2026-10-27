@@ -1,0 +1,93 @@
+{
+ "url": "http://localhost:3000/auth/register",
+ "title": "Créer un compte — EVCore",
+ "lang": "fr",
+ "headings": [
+  "h1: Créer un compte"
+ ],
+ "overflowX": false,
+ "textElements": 18,
+ "smallText": {
+  "count": 0,
+  "samples": []
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 14,
+ "smallTapTargets": {
+  "count": 8,
+  "samples": [
+   {
+    "text": "Afficher le mot de passe",
+    "w": 32,
+    "h": 32,
+    "tag": "button"
+   },
+   {
+    "text": "",
+    "w": 16,
+    "h": 16,
+    "tag": "button"
+   },
+   {
+    "text": "conditions d'utilisation",
+    "w": 136,
+    "h": 16,
+    "tag": "a"
+   },
+   {
+    "text": "politique de confidentialité",
+    "w": 307,
+    "h": 35,
+    "tag": "a"
+   },
+   {
+    "text": "Se connecter",
+    "w": 83,
+    "h": 16,
+    "tag": "a"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 8,
+  "samples": [
+   {
+    "tag": "input",
+    "cls": "w-full min-w-0 rounded-md border border-input bg-transparent"
+   },
+   {
+    "tag": "input",
+    "cls": "w-full min-w-0 rounded-md border border-input bg-transparent"
+   },
+   {
+    "tag": "input",
+    "cls": "w-full min-w-0 rounded-md border border-input bg-transparent"
+   },
+   {
+    "tag": "input",
+    "cls": "w-full min-w-0 rounded-md border border-input bg-transparent"
+   },
+   {
+    "tag": "button",
+    "cls": "peer size-4 shrink-0 rounded-[4px] border border-input shado"
+   },
+   {
+    "tag": "input",
+    "cls": ""
+   },
+   {
+    "tag": "button",
+    "cls": "peer size-4 shrink-0 rounded-[4px] border border-input shado"
+   },
+   {
+    "tag": "input",
+    "cls": ""
+   }
+  ]
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

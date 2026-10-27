@@ -1,0 +1,31 @@
+{
+ "route": "/cgu",
+ "width": 1280,
+ "theme": "dark",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 1 anti-pattern found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cstraggler%c \"d'EVCore.\" alone on the last of 2 lines (15% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 1 anti-pattern found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cstraggler%c \"d'EVCore.\" alone on the last of 2 lines (15% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "li",
+    "cls": "",
+    "text": "Revendre, republier ou redistribuer commercialement les anal",
+    "w": 501,
+    "h": 52
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"d'EVCore.\" alone on the last of 2 lines (15% of the measure)"
+    }
+   ]
+  }
+ ]
+}

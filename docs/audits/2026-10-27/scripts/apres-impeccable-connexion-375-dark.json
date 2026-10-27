@@ -1,0 +1,11 @@
+{
+ "route": "/auth/login",
+ "width": 375,
+ "theme": "dark",
+ "title": "impeccable-preflight",
+ "logs": [
+  "log: %c[impeccable] No anti-patterns found. color: #22c55e; font-weight: bold",
+  "log: %c[impeccable] No anti-patterns found. color: #22c55e; font-weight: bold"
+ ],
+ "scan": []
+}

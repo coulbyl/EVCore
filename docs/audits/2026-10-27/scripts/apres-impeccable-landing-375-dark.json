@@ -1,0 +1,162 @@
+{
+ "route": "/",
+ "width": 375,
+ "theme": "dark",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 8 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"rythme.\" alone on the last of 2 lines (23% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"modèle.\" alone on the last of 2 lines (24% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cicon-tile-stack%c 40x40px icon tile above h3 \"Une mise. Répétée.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cicon-tile-stack%c 40x40px icon tile above h3 \"Un garde-fou sur les marchés perdants\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cunbalanced-heading%c last of 2 lines is 30% as wide as the line above color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cicon-tile-stack%c 40x40px icon tile above h3 \"Décisions lisibles\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cicon-tile-stack%c 40x40px icon tile above h3 \"Une méthode, pas des tuyaux.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cunbalanced-heading%c last of 2 lines is 33% as wide as the line above color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"canal.\" alone on the last of 7 lines (14% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 8 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"rythme.\" alone on the last of 2 lines (23% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"modèle.\" alone on the last of 2 lines (24% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cicon-tile-stack%c 40x40px icon tile above h3 \"Une mise. Répétée.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cicon-tile-stack%c 40x40px icon tile above h3 \"Un garde-fou sur les marchés perdants\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cunbalanced-heading%c last of 2 lines is 30% as wide as the line above color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cicon-tile-stack%c 40x40px icon tile above h3 \"Décisions lisibles\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cicon-tile-stack%c 40x40px icon tile above h3 \"Une méthode, pas des tuyaux.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cunbalanced-heading%c last of 2 lines is 33% as wide as the line above color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"canal.\" alone on the last of 7 lines (14% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "div",
+    "cls": "pointer-events-none absolute -inset-6 rounded-3xl bg-[radial-gradient(ellipse_80",
+    "text": "",
+    "w": 375,
+    "h": 423
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-base font-semibold text-foreground",
+    "text": "La première période a son propre rythme.",
+    "w": 277,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"rythme.\" alone on the last of 2 lines (23% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-base font-semibold text-foreground",
+    "text": "Parfois, la cote sait mieux que le modèle.",
+    "w": 277,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"modèle.\" alone on the last of 2 lines (24% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "h3",
+    "cls": "mt-2 text-xl font-bold text-foreground lg:text-2xl",
+    "text": "Une mise. Répétée.",
+    "w": 277,
+    "h": 28
+   },
+   "findings": [
+    {
+     "type": "icon-tile-stack",
+     "detail": "40x40px icon tile above h3 \"Une mise. Répétée.\""
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "h3",
+    "cls": "mt-2 text-lg font-bold text-foreground",
+    "text": "Un garde-fou sur les marchés perdants",
+    "w": 277,
+    "h": 56
+   },
+   "findings": [
+    {
+     "type": "icon-tile-stack",
+     "detail": "40x40px icon tile above h3 \"Un garde-fou sur les marchés perdants\""
+    },
+    {
+     "type": "unbalanced-heading",
+     "detail": "last of 2 lines is 30% as wide as the line above"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "h3",
+    "cls": "mt-2 text-lg font-bold text-foreground",
+    "text": "Décisions lisibles",
+    "w": 277,
+    "h": 28
+   },
+   "findings": [
+    {
+     "type": "icon-tile-stack",
+     "detail": "40x40px icon tile above h3 \"Décisions lisibles\""
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "h3",
+    "cls": "mt-2 text-xl font-bold text-foreground lg:text-2xl",
+    "text": "Une méthode, pas des tuyaux.",
+    "w": 277,
+    "h": 56
+   },
+   "findings": [
+    {
+     "type": "icon-tile-stack",
+     "detail": "40x40px icon tile above h3 \"Une méthode, pas des tuyaux.\""
+    },
+    {
+     "type": "unbalanced-heading",
+     "detail": "last of 2 lines is 33% as wide as the line above"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-sm leading-relaxed text-muted-foreground",
+    "text": "Aucun taux de réussite n'est affiché ici. À nos volumes, l'é",
+    "w": 277,
+    "h": 159
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"canal.\" alone on the last of 7 lines (14% of the measure)"
+    }
+   ]
+  }
+ ]
+}

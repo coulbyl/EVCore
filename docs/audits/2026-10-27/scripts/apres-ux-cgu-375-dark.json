@@ -1,0 +1,62 @@
+{
+ "url": "http://localhost:3000/cgu",
+ "title": "Conditions d'utilisation — EVCore",
+ "lang": "fr",
+ "headings": [
+  "h1: Conditions d'utilisation",
+  "h2: 1. Ce qu'est EVCore",
+  "h2: 2. Ce qu'EVCore n'est pas",
+  "h2: 3. Qui peut utiliser EVCore",
+  "h2: 4. Aucune garantie de gain",
+  "h2: 5. Gratuité",
+  "h2: 6. Ce qui est interdit",
+  "h2: 7. Propriété intellectuelle",
+  "h2: 8. Suspension et suppression du compte",
+  "h2: 9. Responsabilité",
+  "h2: 10. Modification des conditions",
+  "h2: 11. Droit applicable et contact"
+ ],
+ "overflowX": false,
+ "textElements": 44,
+ "smallText": {
+  "count": 0,
+  "samples": []
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 8,
+ "smallTapTargets": {
+  "count": 3,
+  "samples": [
+   {
+    "text": "Jeu responsable",
+    "w": 117,
+    "h": 17,
+    "tag": "a"
+   },
+   {
+    "text": "support@evcore.io",
+    "w": 135,
+    "h": 17,
+    "tag": "a"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 1,
+ "bannedWords": [
+  {
+   "word": "garanti",
+   "count": 3
+  },
+  {
+   "word": "VIP",
+   "count": 1
+  }
+ ]
+}
