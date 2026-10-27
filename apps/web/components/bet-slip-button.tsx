@@ -25,7 +25,7 @@ export function BetSlipButton() {
         title="Mon coupon"
         data-tour="bet-slip-composer"
         className={cn(
-          "relative flex size-9 items-center justify-center rounded-xl border text-sm font-semibold transition-colors md:size-auto md:min-h-11 md:gap-2 md:px-3",
+          "relative flex size-11 items-center justify-center rounded-xl border text-sm font-semibold transition-colors md:size-auto md:min-h-11 md:gap-2 md:px-3",
           hasItems
             ? "border-accent/30 bg-accent/8 text-accent hover:bg-accent/12"
             : "border-border bg-panel-strong text-muted-foreground hover:bg-secondary hover:text-foreground",

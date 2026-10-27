@@ -17,16 +17,16 @@ export function BankrollWidget() {
   // Un portefeuille à zéro n'a rien à dire : « 0 F » en tête d'écran mobile
   // prenait la place la plus visible pour un montant que l'utilisateur n'a
   // jamais choisi (revue UX du 2026-10-11, P1-10). L'icône reste : c'est
-  // l'entrée vers la page Portefeuille.
+  // l'entrée vers la page Suivi de mise.
   const balance = Number(data?.balance ?? 0);
   const showAmount = !isLoading && Number.isFinite(balance) && balance !== 0;
 
   return (
     <Link
       href="/dashboard/bankroll"
-      title="Portefeuille"
+      title="Suivi de mise"
       className={cn(
-        "inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition-colors",
+        "inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-semibold transition-colors",
         isActive
           ? "border-accent bg-accent/8 text-accent"
           : "border-border bg-panel-strong text-foreground hover:bg-secondary",
@@ -35,7 +35,7 @@ export function BankrollWidget() {
       <Wallet size={16} />
       {/* Sous 400 px l'en-tête ne peut pas porter un montant à neuf chiffres
           (« 500 760 000 F ») à côté des cinq autres commandes : l'icône
-          reste, le montant se lit sur la page Portefeuille. */}
+          reste, le montant se lit sur la page Suivi de mise. */}
       {showAmount && (
         <span className="tabular-nums max-[399px]:hidden">
           {formatAmount(data?.balance ?? "0")}

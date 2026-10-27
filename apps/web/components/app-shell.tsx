@@ -308,7 +308,7 @@ export function AppShell({
             <Link
               href="/dashboard/params/account"
               title="Paramètres du compte"
-              className="shrink-0 rounded-lg p-1.5 text-sidebar-foreground/50 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
             >
               <Settings size={15} />
             </Link>

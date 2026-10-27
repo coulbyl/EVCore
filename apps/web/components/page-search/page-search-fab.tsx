@@ -56,7 +56,7 @@ export function PageSearchButton() {
         title="Rechercher dans la page"
         aria-label="Rechercher dans la page"
         data-tour="page-search-fab"
-        className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border bg-panel-strong text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+        className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-border bg-panel-strong text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
       >
         <Search className="size-4" />
       </button>
