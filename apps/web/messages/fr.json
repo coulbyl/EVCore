@@ -851,6 +851,48 @@
       "INSUFFICIENT_DATA": "Insuffisant"
     }
   },
+  "matchSheet": {
+    "back": "Décisions",
+    "expectedTitle": "Ce que notre modèle attend",
+    "expected": "{home} environ {homeGoals} {homeUnit}, {away} environ {awayGoals} {awayUnit} : {total} buts en moyenne.",
+    "expectedNote": "Une moyenne, pas un score annoncé.",
+    "factorsTitle": "Ce qui pèse dans la lecture",
+    "factor": {
+      "recentForm": "Forme récente",
+      "xg": "Occasions créées",
+      "performanceDomExt": "Domicile et extérieur",
+      "volatiliteLigue": "Championnat"
+    },
+    "lean": {
+      "side": "avantage {team}",
+      "even": "équilibré"
+    },
+    "league": {
+      "high": "plutôt imprévisible",
+      "low": "plutôt régulier",
+      "mid": "dans la moyenne"
+    },
+    "rejectedTitle": "Ce qu'on a écarté, et pourquoi",
+    "rejectedIntro": "{evaluated, plural, one {# lecture évaluée} other {# lectures évaluées}} sur ce match. Celles qu'on retient sont sur la carte Décisions ; {rejected, plural, one {voici celle qu'on a écartée, avec son motif} other {voici les # écartées, avec leur motif}}.",
+    "rejectedNone": "Aucune lecture écartée sur ce match.",
+    "line": "environ {count} fois sur {total} · cote {odds} · {motive}",
+    "motive": {
+      "odds_below_floor": "cote trop basse pour être jouée",
+      "odds_above_cap": "cote trop haute : nos pourcentages n'y tiennent pas",
+      "ev_below_threshold": "notre estimation est trop proche de la cote",
+      "ev_above_hard_cap": "notre estimation s'écarte trop de la cote : probablement une erreur du modèle",
+      "ev_above_soft_cap": "notre estimation s'écarte trop de la cote : probablement une erreur du modèle",
+      "filtered_longshot": "cote trop haute",
+      "market_suspended": "type de pari suspendu : il a trop perdu ces derniers mois",
+      "probability_too_low": "chances trop faibles",
+      "quality_score_below_threshold": "données du match trop fragiles",
+      "under_high_lambda": "beaucoup de buts attendus : le « moins de » est écarté",
+      "other": "écartée par le moteur"
+    },
+    "noAnalysis": "Ce match n'a pas encore été analysé.",
+    "seeDecisions": "Voir les lectures retenues sur Décisions",
+    "openSheet": "Pourquoi ? Voir la fiche du match"
+  },
   "fixtureDiagnostics": {
     "rejection": {
       "odds_below_floor": "Cote trop basse",

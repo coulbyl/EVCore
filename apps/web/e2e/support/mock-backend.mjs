@@ -437,15 +437,8 @@ function fixtureRow({
     status,
     score,
     htScore: null,
-    safeValueBet: null,
     modelRun: {
       modelRunId: `run-${id}`,
-      betId: null,
-      market: null,
-      pick: null,
-      betStatus: null,
-      probEstimated: null,
-      ev: null,
       lambdaHome: "1.62",
       lambdaAway: "0.94",
       expectedTotalGoals: "2.56",
@@ -920,6 +913,28 @@ function route(method, url) {
   if (path === "/health") return [200, { ok: true }];
   if (path === "/auth/me") return [200, SESSION];
   if (path === "/auth/login") return [200, SESSION, true];
+  // Fiche de match : les équipes du match de Décisions, les lectures
+  // évaluées de la première rencontre de FIXTURE_ROWS.
+  const sheetMatch = path.match(/^\/fixture\/([^/]+)\/sheet$/);
+  if (sheetMatch) {
+    const group = MATCH_DECISIONS.find((m) => m.fixtureId === sheetMatch[1]);
+    if (!group) return [404, { message: "Match introuvable" }];
+    const base = FIXTURE_ROWS[0];
+    return [
+      200,
+      {
+        ...base,
+        fixtureId: group.fixtureId,
+        fixture: `${group.homeTeam} vs ${group.awayTeam}`,
+        homeTeam: group.homeTeam,
+        awayTeam: group.awayTeam,
+        competition: group.competitionName,
+        country: group.country,
+        scheduledAt: group.scheduledAt,
+        score: group.score ? group.score.replace("-", " - ") : null,
+      },
+    ];
+  }
   if (path.startsWith("/fixture"))
     return [
       200,

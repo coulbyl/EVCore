@@ -851,6 +851,48 @@
       "INSUFFICIENT_DATA": "Insufficient"
     }
   },
+  "matchSheet": {
+    "back": "Decisions",
+    "expectedTitle": "What our model expects",
+    "expected": "{home} about {homeGoals} goals, {away} about {awayGoals} goals: {total} goals on average.",
+    "expectedNote": "An average, not a predicted score.",
+    "factorsTitle": "What weighs in the reading",
+    "factor": {
+      "recentForm": "Recent form",
+      "xg": "Chances created",
+      "performanceDomExt": "Home and away",
+      "volatiliteLigue": "League"
+    },
+    "lean": {
+      "side": "edge {team}",
+      "even": "balanced"
+    },
+    "league": {
+      "high": "rather unpredictable",
+      "low": "rather steady",
+      "mid": "average"
+    },
+    "rejectedTitle": "What we set aside, and why",
+    "rejectedIntro": "{evaluated, plural, one {# reading evaluated} other {# readings evaluated}} on this match. The ones we keep are on the Decisions card; {rejected, plural, one {here is the one set aside, with its reason} other {here are the # set aside, with their reason}}.",
+    "rejectedNone": "No reading set aside on this match.",
+    "line": "about {count} times in {total} · odds {odds} · {motive}",
+    "motive": {
+      "odds_below_floor": "odds too short to play",
+      "odds_above_cap": "odds too long: our percentages do not hold there",
+      "ev_below_threshold": "our estimate is too close to the odds",
+      "ev_above_hard_cap": "our estimate is too far from the odds: probably a model error",
+      "ev_above_soft_cap": "our estimate is too far from the odds: probably a model error",
+      "filtered_longshot": "odds too long",
+      "market_suspended": "bet type suspended: it lost too much recently",
+      "probability_too_low": "chances too low",
+      "quality_score_below_threshold": "match data too thin",
+      "under_high_lambda": "many goals expected: the under is set aside",
+      "other": "set aside by the engine"
+    },
+    "noAnalysis": "This match has not been analysed yet.",
+    "seeDecisions": "See the readings we keep on Decisions",
+    "openSheet": "Why? See the match sheet"
+  },
   "fixtureDiagnostics": {
     "rejection": {
       "odds_below_floor": "Odds too low",

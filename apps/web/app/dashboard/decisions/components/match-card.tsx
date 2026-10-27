@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Link from "next/link";
 import { Ban, ChevronDown, ChevronUp, TriangleAlert } from "lucide-react";
 import { Separator, cn } from "@evcore/ui";
 import { useLocale, useTranslations } from "next-intl";
@@ -42,6 +43,7 @@ export function MatchCard({
   calibrationByKey?: ChannelCalibrationByKey;
 }) {
   const t = useTranslations("decisions");
+  const tSheet = useTranslations("matchSheet");
   const [expanded, setExpanded] = useState(false);
   const avoid = avoidFlag(group);
   const allPicks = selectedPicks(group);
@@ -221,6 +223,17 @@ export function MatchCard({
       ) : (
         <p className="py-1 text-xs text-muted-foreground/70">{t("noPick")}</p>
       )}
+
+      {/* La fiche du match : buts attendus, facteurs et lectures écartées
+          avec leur motif (elle remplace l'écran Matchs côté joueur, décision
+          du 2026-10-27). */}
+      <Link
+        href={`/dashboard/decisions/match/${group.fixtureId}`}
+        data-testid="open-match-sheet"
+        className="flex min-h-11 items-center justify-center border-t border-border/50 text-xs font-medium text-accent hover:underline"
+      >
+        {tSheet("openSheet")}
+      </Link>
     </FixtureCard>
   );
 }
