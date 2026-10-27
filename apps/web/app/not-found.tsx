@@ -23,9 +23,18 @@ export default function NotFound() {
         </p>
       </div>
 
-      <div style={{ animation: "fade-slide-up 0.5s ease-out 0.15s both" }}>
-        <Button variant="outline" asChild>
-          <Link href="/dashboard">Retour au dashboard</Link>
+      {/* Deux sorties : l'accueil pour un visiteur, le tableau de bord pour
+          un joueur connecté. « Retour au dashboard » seul renvoyait un
+          visiteur vers la connexion (audit du 2026-10-23, P2-6). */}
+      <div
+        className="flex flex-col items-center gap-3 sm:flex-row"
+        style={{ animation: "fade-slide-up 0.5s ease-out 0.15s both" }}
+      >
+        <Button asChild className="min-h-11">
+          <Link href="/">Retour à l&apos;accueil</Link>
+        </Button>
+        <Button variant="outline" asChild className="min-h-11">
+          <Link href="/dashboard">Mon tableau de bord</Link>
         </Button>
       </div>
     </div>
