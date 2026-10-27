@@ -1,5 +1,5 @@
 export const CHART_AXIS_TICK = {
-  fontSize: 10,
+  fontSize: 12,
   fill: "var(--muted-foreground)",
   fontFamily: "inherit",
   letterSpacing: "0.04em",

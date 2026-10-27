@@ -125,7 +125,7 @@ function FilterControl({
   if (def.type === "select") {
     return (
       <div className="flex flex-col gap-1">
-        <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
           {def.label}
         </span>
         <Select value={value as string} onValueChange={onChange}>
@@ -147,7 +147,7 @@ function FilterControl({
   if (def.type === "multiselect") {
     return (
       <div className="flex flex-col gap-1">
-        <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
           {def.label}
         </span>
         <Combobox
@@ -163,7 +163,7 @@ function FilterControl({
   if (def.type === "date") {
     return (
       <div className="flex flex-col gap-1">
-        <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
           {def.label}
         </span>
         <DatePicker
@@ -179,7 +179,7 @@ function FilterControl({
   if (def.type === "daterange") {
     return (
       <div className="flex flex-col gap-1">
-        <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
           {def.label}
         </span>
         <DateRangePicker
@@ -252,10 +252,11 @@ function FilterBar({
     <>
       {/* Mobile: bouton "Filtres (N)" → Sheet */}
       <div className="flex items-center gap-2 sm:hidden">
+        {/* 44 px au doigt : à 32 et 16 px, « Filtres » et « Réinitialiser »
+            se rataient (revue UX du 2026-10-27). */}
         <Button
           variant="outline"
-          size="sm"
-          className="gap-2"
+          className="h-11 gap-2"
           onClick={() => setMobileOpen(true)}
         >
           <SlidersHorizontalIcon className="size-3.5" />
@@ -266,7 +267,7 @@ function FilterBar({
           <button
             type="button"
             onClick={handleResetAll}
-            className="text-xs text-muted-foreground hover:text-foreground"
+            className="min-h-11 px-2 text-sm text-muted-foreground hover:text-foreground"
           >
             Réinitialiser
           </button>

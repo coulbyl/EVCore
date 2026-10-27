@@ -40,10 +40,10 @@ export function StatCard({
       >
         <p
           className={cn(
-            // 11 px minimum : à 9,3 px les libellés passaient sous le
-            // plancher de lisibilité (détecteur impeccable, 2026-10-27).
-            "flex items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground",
-            !compact && "sm:text-xs sm:tracking-[0.12em]",
+            // 12 px, le plancher de PRODUCT.md : à 9,3 puis 11 px les
+            // libellés passaient sous la limite (détecteurs, 2026-10-27).
+            "flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground",
+            !compact && "sm:tracking-[0.12em]",
           )}
         >
           {icon}

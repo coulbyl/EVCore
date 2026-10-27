@@ -409,6 +409,7 @@ function DataTable<TData>({
                 <PaginationPrevious
                   href="#"
                   text="Précédent"
+                  aria-label="Page précédente"
                   className={cn(
                     !table.getCanPreviousPage() &&
                       "pointer-events-none opacity-50",
@@ -448,6 +449,7 @@ function DataTable<TData>({
                 <PaginationNext
                   href="#"
                   text="Suivant"
+                  aria-label="Page suivante"
                   className={cn(
                     !table.getCanNextPage() && "pointer-events-none opacity-50",
                   )}
