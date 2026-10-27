@@ -14,10 +14,8 @@ import {
   formatOdds,
 } from "@/app/dashboard/decisions/components/channel-constants";
 import { isExcludedFromDecisions } from "@/app/dashboard/decisions/components/decision-helpers";
-import {
-  formatMarketForDisplay,
-  formatPickForDisplay,
-} from "@/helpers/fixture";
+import { formatMarketForDisplay, formatPickWithTeams } from "@/helpers/fixture";
+import { frequencyOf } from "@/lib/frequency";
 import { daysAgoIso, todayIso } from "@/lib/date";
 import type { ChannelHealthItem } from "@/domains/dashboard/types/dashboard";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
@@ -202,11 +200,19 @@ export function TodayPicks() {
                 pick.selection.market,
                 marketLocale,
               )}
-              pickLabel={formatPickForDisplay(
+              pickLabel={formatPickWithTeams(
                 pick.selection.pick,
                 pick.selection.market,
+                {
+                  home: pick.decision.homeTeam,
+                  away: pick.decision.awayTeam,
+                },
               )}
-              probabilityPct={`${Math.round(pick.selection.probability * 100)}%`}
+              // En fréquence, comme partout ailleurs (PRODUCT.md).
+              probabilityPct={t(
+                "pickFrequency",
+                frequencyOf(pick.selection.probability),
+              )}
               signalScore={null}
               odds={formatOdds(pick.selection.odds)}
               playable={

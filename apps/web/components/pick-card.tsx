@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { formatTime } from "@/lib/date";
+import { formatOddsValue } from "@/lib/frequency";
 import { translateCountry, translateCompetition } from "@/lib/competition-i18n";
 import { formatScore } from "@/domains/fixture/helpers/fixture";
 
@@ -224,18 +225,27 @@ export function PickCard(props: PickCardProps) {
         </span>
         <span className="opacity-40">·</span>
         <span className="whitespace-nowrap">{formatTime(scheduledAt)}</span>
+        {/* La cote que le ticket paiera d'abord, la nôtre en référence :
+            même lecture que la carte coupon et Décisions. */}
         {odds && (
           <>
             <span className="opacity-40">·</span>
-            <span className="whitespace-nowrap font-mono text-foreground">
-              @{odds}
-            </span>
-            {playable && Math.abs(playable.odds - Number(odds)) >= 0.005 && (
-              <span
-                data-testid="pick-playable-odds"
-                className="whitespace-nowrap font-mono text-muted-foreground"
-              >
-                {playable.bookmaker} {playable.odds.toFixed(2)}
+            {playable && Math.abs(playable.odds - Number(odds)) >= 0.005 ? (
+              <>
+                <span
+                  data-testid="pick-playable-odds"
+                  className="whitespace-nowrap font-semibold tabular-nums text-foreground"
+                >
+                  {playable.bookmaker} {formatOddsValue(playable.odds, locale)}
+                </span>
+                <span className="whitespace-nowrap tabular-nums">
+                  réf. {formatOddsValue(Number(odds), locale)}
+                </span>
+              </>
+            ) : (
+              <span className="whitespace-nowrap font-semibold tabular-nums text-foreground">
+                {playable ? playable.bookmaker : "Cote"}{" "}
+                {formatOddsValue(Number(odds), locale)}
               </span>
             )}
           </>

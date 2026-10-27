@@ -17,6 +17,7 @@ import { FixtureCardHeader } from "@/components/fixture-card-header";
 import { formatOddsValue as formatOdds, frequencyOf } from "@/lib/frequency";
 import { ResultBadge, type ResultValue } from "@/components/result-badge";
 import { ClosingLine } from "@/components/closing-line";
+import { OddsBandNote } from "@/components/odds-band-note";
 
 export type NormalizedCouponLeg = {
   key: string;
@@ -104,13 +105,6 @@ export type CouponCardProps = {
   legs: NormalizedCouponLeg[];
   actionSlot?: React.ReactNode;
 };
-
-/**
- * Au-dessus de 1,80, la probabilité annoncée surestime nettement la réalité
- * (réalisé ÷ annoncé 0,81 sur 90 jours, Mesures historiques) : la jambe le
- * dit au lieu de présenter son pourcentage comme fiable (PRODUCT.md).
- */
-const OVER_OPTIMISTIC_ODDS = 1.8;
 
 /**
  * Cote combinée chez le bookmaker des joueurs, quand toutes les jambes y sont
@@ -426,8 +420,6 @@ function CouponLegRow({
     referenceOdds !== null &&
     Math.abs(leg.playable.odds - referenceOdds) >= 0.005;
   const chances = frequencyOf(leg.probability);
-  const overOptimistic =
-    referenceOdds !== null && referenceOdds >= OVER_OPTIMISTIC_ODDS;
   return (
     <div data-testid="coupon-leg" className="py-3">
       <div className="flex min-w-0 items-start justify-between gap-3">
@@ -491,9 +483,11 @@ function CouponLegRow({
         <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-tight text-muted-foreground">
           <span className="max-w-full truncate">{leg.marketLabel}</span>
           <span className="tabular-nums">{t("legChances", chances)}</span>
-          {overOptimistic && (
-            <span className="text-warning">{t("legOverOptimistic")}</span>
-          )}
+          {/* Même note qu'en Décisions, lue sur le relevé par cote : au-dessus
+              de 1,80 la probabilité annoncée surestime la réalité, la jambe
+              le dit au lieu de présenter son pourcentage comme fiable
+              (PRODUCT.md). Rien quand la tranche est conforme. */}
+          <OddsBandNote odds={referenceOdds} />
           {leg.closing && (
             <ClosingLine
               testId="leg-closing"

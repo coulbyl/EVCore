@@ -12,10 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@evcore/ui";
-import {
-  formatMarketForDisplay,
-  formatPickForDisplay,
-} from "@/helpers/fixture";
+import { formatMarketForDisplay, formatPickWithTeams } from "@/helpers/fixture";
 import { formatKickoff } from "@/domains/fixture/helpers/fixture";
 import type { CouponProposalDto } from "@/domains/coupon/types/coupon";
 import { couponClassMeta } from "@/domains/coupon/helpers/coupon-class";
@@ -86,7 +83,10 @@ export function CouponCard({
     score: leg.score,
     htScore: leg.htScore,
     marketLabel: formatMarketForDisplay(leg.market, loc),
-    pickLabel: formatPickForDisplay(leg.pick, leg.market),
+    pickLabel: formatPickWithTeams(leg.pick, leg.market, {
+      home: leg.homeTeam,
+      away: leg.awayTeam,
+    }),
     probability: leg.probability,
     odds: leg.oddsSnapshot != null ? leg.oddsSnapshot.toFixed(2) : null,
     playable:
