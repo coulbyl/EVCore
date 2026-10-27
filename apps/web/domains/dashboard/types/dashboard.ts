@@ -40,9 +40,7 @@ export type PnlSummary = {
  * sélections d'avant-match dédupliquées de la période, hors filtres VALUE et
  * SAFE et hors avis IA.
  */
-export type TrackRecordSummary = {
-  from: string;
-  to: string;
+export type TrackRecordRates = {
   settled: number;
   won: number;
   /** Probabilité moyenne annoncée, 0–1. */
@@ -52,6 +50,21 @@ export type TrackRecordSummary = {
   /** Retour d'une mise de 1 à la cote d'analyse (0,91 = −9 %). */
   returnPerUnit: number | null;
   sufficient: boolean;
+};
+
+/** Même cohorte que l'en-tête, restreinte à une tranche de cote. */
+export type TrackRecordOddsBand = TrackRecordRates & {
+  /** Borne basse incluse ; null = pas de borne. */
+  minOdds: number | null;
+  /** Borne haute exclue ; null = pas de borne. */
+  maxOdds: number | null;
+  status: ChannelStatus;
+};
+
+export type TrackRecordSummary = TrackRecordRates & {
+  from: string;
+  to: string;
+  byOdds: TrackRecordOddsBand[];
 };
 
 export type DashboardSummary = {
@@ -140,6 +153,8 @@ export type ChannelStatsItem = {
   sampleSize: number;
   oddsAvailabilityRate: number;
   trend: "UP" | "FLAT" | "DOWN";
+  /** Probabilité moyenne annoncée, 0–1 ; à lire face à `hitRate`. */
+  announced: number | null;
 };
 
 /** One (channel × competition) row — see backend dashboard.types.ts for the
@@ -151,6 +166,8 @@ export type ChannelCompetitionStatItem = {
   competitionCountry: string;
   roi: number | null;
   hitRate: number | null;
+  /** Probabilité moyenne annoncée, 0–1 ; à lire face à `hitRate`. */
+  announced: number | null;
   calibrationRatio: number | null;
   sampleSize: number;
   status: ChannelStatus;

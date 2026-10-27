@@ -461,23 +461,99 @@ const CHANNEL_DECISIONS = [
   },
 ];
 
-const CHANNEL_HEALTH = [
-  "DOMINANT",
-  "GOALS",
-  "DOUBLE_CHANCE",
-  "BTTS",
-  "DRAW",
-].map((channel, i) => ({
-  channel,
-  status: i < 3 ? "GREEN" : "ORANGE",
-  primaryMetric: 0.96 - i * 0.03,
-  primaryMetricType: "HIT_RATE",
-  roi: -0.03,
-  hitRate: 0.74,
-  calibrationRatio: 0.96 - i * 0.03,
-  vsThreshold: 0.11,
-  sampleSize: 420,
+// Mesures historiques : quatre canaux de la cohorte (dont un sous le seuil de
+// 30 réglées) et VALUE, que la page n'affiche plus. Le total d'en-tête égale
+// la somme des canaux affichés, comme en production.
+const TRACK_RECORD_CHANNELS = [
+  {
+    channel: "DOUBLE_CHANCE",
+    n: 5200,
+    announced: 0.78,
+    hitRate: 0.77,
+    roi: -2.9,
+  },
+  { channel: "DOMINANT", n: 3100, announced: 0.62, hitRate: 0.52, roi: -9.4 },
+  { channel: "DRAW", n: 1400, announced: 0.3, hitRate: 0.29, roi: -4.8 },
+  { channel: "CORRECT_SCORE", n: 20, announced: 0.11, hitRate: 0.05, roi: -41 },
+  { channel: "VALUE", n: 900, announced: 0.55, hitRate: 0.41, roi: -11.2 },
+];
+
+function calibrationStatus({ n, announced, hitRate }) {
+  if (n < 30) return "INSUFFICIENT_DATA";
+  const ratio = hitRate / announced;
+  if (ratio >= 0.85 && ratio <= 1.15) return "GREEN";
+  if (ratio >= 0.7 && ratio <= 1.3) return "ORANGE";
+  return "RED";
+}
+
+const CHANNEL_STATS = TRACK_RECORD_CHANNELS.map((c) => ({
+  channel: c.channel,
+  hitRate: c.hitRate,
+  announced: c.announced,
+  avgThreshold: null,
+  vsThreshold: null,
+  roi: c.roi,
+  netUnits: (c.roi * c.n) / 100,
+  maxDrawdown: null,
+  sampleSize: c.n,
+  oddsAvailabilityRate: 1,
+  trend: "FLAT",
 }));
+
+const CHANNEL_HEALTH = TRACK_RECORD_CHANNELS.map((c) => ({
+  channel: c.channel,
+  status: calibrationStatus(c),
+  primaryMetric: c.hitRate,
+  primaryMetricType: "HIT_RATE",
+  roi: c.roi,
+  hitRate: c.hitRate,
+  calibrationRatio: c.hitRate / c.announced,
+  vsThreshold: null,
+  sampleSize: c.n,
+}));
+
+const CHANNEL_COMPETITION_STATS = [
+  ["PL", "Premier League", "England", 640, 0.77, 0.79],
+  ["FR1", "Ligue 1", "France", 410, 0.78, 0.74],
+  ["CSL", "Chinese Super League", "China", 12, 0.79, 0.67],
+].map(([code, name, country, n, announced, hitRate]) => ({
+  channel: "DOUBLE_CHANCE",
+  competitionCode: code,
+  competitionName: name,
+  competitionCountry: country,
+  roi: -2.1,
+  hitRate,
+  announced,
+  calibrationRatio: hitRate / announced,
+  sampleSize: n,
+  status: calibrationStatus({ n, announced, hitRate }),
+}));
+
+const TRACK_RECORD_SUMMARY = {
+  from: "2026-09-24",
+  to: "2026-10-24",
+  settled: 9720,
+  won: 6855,
+  announced: 0.636,
+  realised: 0.605,
+  returnPerUnit: 0.94,
+  sufficient: true,
+  byOdds: [
+    [null, 1.45, 5600, 0.76, 0.769, 0.969],
+    [1.45, 1.8, 2100, 0.653, 0.594, 0.951],
+    [1.8, null, 1700, 0.317, 0.258, 0.873],
+  ].map(([minOdds, maxOdds, settled, announced, realised, returnPerUnit]) => ({
+    minOdds,
+    maxOdds,
+    settled,
+    won: Math.round(settled * realised),
+    announced,
+    realised,
+    returnPerUnit,
+    sufficient: true,
+    status: calibrationStatus({ n: settled, announced, hitRate: realised }),
+  })),
+};
 
 function route(method, url) {
   const path = url.split("?")[0];
@@ -522,40 +598,11 @@ function route(method, url) {
   if (path.startsWith("/channel-decisions/by-channel"))
     return [200, CHANNEL_DECISIONS];
   if (path.startsWith("/channel-decisions")) return [200, []];
-  // Mesures historiques : des listes (la page fait `.map` dessus) ; deux
-  // canaux pour que le tableau ne soit pas vide sur les captures.
   if (path.startsWith("/dashboard/channel-stats-by-competition"))
-    return [200, []];
-  if (path.startsWith("/dashboard/channel-stats"))
-    return [
-      200,
-      ["DOMINANT", "DRAW"].map((channel, i) => ({
-        channel,
-        hitRate: i === 0 ? 0.74 : 0.29,
-        avgThreshold: null,
-        vsThreshold: null,
-        roi: i === 0 ? -3.1 : -4.8,
-        netUnits: i === 0 ? -12.4 : -18.9,
-        maxDrawdown: null,
-        sampleSize: i === 0 ? 400 : 390,
-        oddsAvailabilityRate: 1,
-        trend: "FLAT",
-      })),
-    ];
+    return [200, CHANNEL_COMPETITION_STATS];
+  if (path.startsWith("/dashboard/channel-stats")) return [200, CHANNEL_STATS];
   if (path.startsWith("/dashboard/track-record-summary"))
-    return [
-      200,
-      {
-        from: "2026-09-24",
-        to: "2026-10-24",
-        settled: 14966,
-        won: 6869,
-        announced: 0.48,
-        realised: 0.459,
-        returnPerUnit: 0.906,
-        sufficient: true,
-      },
-    ];
+    return [200, TRACK_RECORD_SUMMARY];
   if (path.startsWith("/dashboard/channel-health"))
     return [200, CHANNEL_HEALTH];
   // Accueil opérateur : une liste (pas `{}`) et un résumé « Mes coupons » avec

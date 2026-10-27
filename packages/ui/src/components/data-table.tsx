@@ -78,6 +78,9 @@ type DataTableProps<TData> = {
   };
   /** Rendered at the bottom of the scroll container — use for infinite-scroll sentinels. */
   afterContent?: React.ReactNode;
+  /** Pied de tableau sans pagination : « 4 canaux » plutôt que « 4 résultats »,
+   * qui se lit comme « 4 paris gagnés » sur une page de paris. */
+  countLabel?: (count: number) => string;
 };
 
 // ── DataTable ──────────────────────────────────────────────────────────────
@@ -148,6 +151,7 @@ function DataTable<TData>({
   className,
   pagination,
   afterContent,
+  countLabel,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>(initialSorting);
   const [expanded, setExpanded] = React.useState<ExpandedState>({});
@@ -362,7 +366,9 @@ function DataTable<TData>({
   const totalCountEl =
     !pagination && !isLoading && data.length > 0 ? (
       <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground sm:px-5 sm:text-sm">
-        {data.length} résultat{data.length > 1 ? "s" : ""}
+        {countLabel
+          ? countLabel(data.length)
+          : `${data.length} résultat${data.length > 1 ? "s" : ""}`}
       </div>
     ) : null;
 

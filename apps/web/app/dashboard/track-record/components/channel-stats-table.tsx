@@ -1,41 +1,58 @@
 "use client";
 
 import { useMemo } from "react";
+import { useLocale } from "next-intl";
 import { DataTable, type ColumnDef } from "@evcore/ui";
 import type { ChannelStatus } from "@/domains/dashboard/types/dashboard";
 import {
-  formatCalibrationRatio,
-  formatHitRate,
-  formatRoi,
-  statusToneClass,
+  formatCount,
+  formatRate,
+  formatSignedRate,
 } from "../track-record-constants";
-import { ChannelStatusBadge } from "@/components/channel-status-badge";
+import { CalibrationVerdict } from "./calibration-verdict";
 
 export type ChannelStatRow = {
   key: string;
   primaryLabel: string;
   secondaryLabel?: string;
   status: ChannelStatus;
-  roi: number | null;
-  hitRate: number | null;
+  /** Probabilité moyenne annoncée, 0–1. */
+  announced: number | null;
+  /** Taux réellement passé, 0–1. */
+  realised: number | null;
+  /** Réalisé ÷ annoncé, porte le sens du verdict. */
   calibrationRatio: number | null;
+  /** En points, comme le renvoie le backend (−4,8 pour −4,8 %). */
+  roi: number | null;
   sampleSize: number;
 };
 
 /** One shared TanStack column model drives both the desktop table and the
  * mobile card list via DataTable's `mobileCard` prop — see CLAUDE.md
  * (TanStack Table): "Do not hardcode mobile/desktop table variants
- * separately when one shared table model can drive both." A prior version
- * of this component hand-rolled its own `hidden sm:block` table /
- * `sm:hidden` card split instead of reusing DataTable, duplicating a pattern
- * already used by 7+ other pages. */
+ * separately when one shared table model can drive both."
+ *
+ * Annoncé et réalisé côte à côte, comme l'en-tête de la page : l'ancien
+ * ratio « 0.84× » se lisait comme une cote sur téléphone. Le résultat à mise
+ * fixe reste affiché en gris mais n'est pas triable : trié, il redevenait un
+ * classement des canaux par gain (audit UX du 2026-10-27). */
 export function ChannelStatsTable({
   primaryColumnLabel,
   rows,
+  countNoun,
+  keepRowOrder = false,
 }: {
   primaryColumnLabel: string;
   rows: ChannelStatRow[];
+  /** Pied du tableau : « 4 canaux » plutôt que « 4 résultats ». Des chaînes,
+   * pas une fonction : la page serveur ne peut pas passer de fonction à ce
+   * composant client. */
+  countNoun?: { one: string; other: string };
+  /** Garder l'ordre reçu (Santé moteur trie par écart) au lieu de trier par
+   * nombre de réglés. */
+  keepRowOrder?: boolean;
 }) {
+  const locale = useLocale();
   const columns: ColumnDef<ChannelStatRow>[] = useMemo(
     () => [
       {
@@ -54,68 +71,78 @@ export function ChannelStatsTable({
         ),
       },
       {
-        id: "status",
-        header: "Statut",
-        cell: ({ row }) => <ChannelStatusBadge status={row.original.status} />,
-      },
-      {
-        id: "calibration",
-        header: "Calibration",
-        accessorFn: (row) => row.calibrationRatio ?? Number.NEGATIVE_INFINITY,
+        id: "announced",
+        header: "Annoncé",
+        accessorFn: (row) => row.announced ?? Number.NEGATIVE_INFINITY,
         enableSorting: true,
         meta: { align: "right" },
         cell: ({ row }) => (
-          <span
-            className={`font-medium tabular-nums ${statusToneClass(row.original.status)}`}
-          >
-            {formatCalibrationRatio(row.original.calibrationRatio)}
+          <span className="tabular-nums text-muted-foreground">
+            {formatRate(row.original.announced, locale)}
           </span>
         ),
       },
       {
-        id: "roi",
-        header: "ROI",
-        accessorFn: (row) => row.roi ?? Number.NEGATIVE_INFINITY,
+        id: "realised",
+        header: "Réalisé",
+        accessorFn: (row) => row.realised ?? Number.NEGATIVE_INFINITY,
         enableSorting: true,
         meta: { align: "right" },
         cell: ({ row }) => (
-          <span className="font-medium tabular-nums text-muted-foreground">
-            {formatRoi(row.original.roi)}
+          <span className="font-semibold tabular-nums text-foreground">
+            {formatRate(row.original.realised, locale)}
           </span>
         ),
       },
       {
-        id: "hitRate",
-        header: "Taux de réussite",
-        accessorFn: (row) => row.hitRate ?? Number.NEGATIVE_INFINITY,
-        enableSorting: true,
-        meta: { align: "right" },
+        id: "verdict",
+        header: "Lecture",
         cell: ({ row }) => (
-          <span className="tabular-nums">
-            {formatHitRate(row.original.hitRate)}
-          </span>
+          <CalibrationVerdict
+            status={row.original.status}
+            ratio={row.original.calibrationRatio}
+          />
         ),
       },
       {
         id: "sampleSize",
-        header: "Échantillon",
+        header: "Réglés",
         accessorFn: (row) => row.sampleSize,
         enableSorting: true,
         meta: { align: "right" },
         cell: ({ row }) => (
           <span className="tabular-nums text-muted-foreground">
-            n={row.original.sampleSize}
+            {formatCount(row.original.sampleSize, locale)}
+          </span>
+        ),
+      },
+      {
+        id: "roi",
+        header: "À mise fixe",
+        meta: { align: "right" },
+        cell: ({ row }) => (
+          <span className="tabular-nums text-muted-foreground">
+            {formatSignedRate(
+              row.original.roi === null ? null : row.original.roi / 100,
+              locale,
+            )}
           </span>
         ),
       },
     ],
-    [primaryColumnLabel],
+    [primaryColumnLabel, locale],
   );
 
   return (
     <DataTable
       columns={columns}
       data={rows}
+      initialSorting={keepRowOrder ? [] : [{ id: "sampleSize", desc: true }]}
+      countLabel={
+        countNoun
+          ? (count) => `${count} ${count > 1 ? countNoun.other : countNoun.one}`
+          : undefined
+      }
       mobileCard={(row) => (
         <div className="rounded-2xl border border-border bg-panel p-3">
           <div className="flex items-start justify-between gap-3">
@@ -127,38 +154,22 @@ export function ChannelStatsTable({
                 </span>
               ) : null}
             </p>
-            <ChannelStatusBadge status={row.status} />
+            <CalibrationVerdict
+              status={row.status}
+              ratio={row.calibrationRatio}
+              className="shrink-0"
+            />
           </div>
-          {/* 2 × 2 sur téléphone : en 4 colonnes, les libellés en capitales
-              se chevauchaient à 375 px (« CALIBRATIONROI »). */}
-          <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border/60 pt-2.5">
-            <div>
-              <p className="text-xs text-muted-foreground">Calibration</p>
-              <p
-                className={`mt-0.5 text-sm font-semibold tabular-nums ${statusToneClass(row.status)}`}
-              >
-                {formatCalibrationRatio(row.calibrationRatio)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">ROI</p>
-              <p className="mt-0.5 text-sm font-semibold tabular-nums text-muted-foreground">
-                {formatRoi(row.roi)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Réussite</p>
-              <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
-                {formatHitRate(row.hitRate)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Échantillon</p>
-              <p className="mt-0.5 text-sm font-semibold tabular-nums text-muted-foreground">
-                n={row.sampleSize}
-              </p>
-            </div>
-          </div>
+          <p className="mt-2.5 text-sm tabular-nums text-muted-foreground">
+            Annoncé {formatRate(row.announced, locale)} · réalisé{" "}
+            <span className="font-semibold text-foreground">
+              {formatRate(row.realised, locale)}
+            </span>
+          </p>
+          <p className="mt-1 text-xs tabular-nums text-muted-foreground">
+            {formatCount(row.sampleSize, locale)} réglés · à mise fixe{" "}
+            {formatSignedRate(row.roi === null ? null : row.roi / 100, locale)}
+          </p>
         </div>
       )}
     />

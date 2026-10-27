@@ -19,6 +19,15 @@
     "refunded": "Refunded",
     "settlementPending": "Settlement pending"
   },
+  "calibrationVerdict": {
+    "conform": "On target",
+    "slightlyOptimistic": "Slightly optimistic",
+    "optimistic": "Too optimistic",
+    "slightlyCautious": "Slightly cautious",
+    "cautious": "Too cautious",
+    "insufficient": "Too few to read",
+    "inactive": "None settled"
+  },
   "channelCalibrationStatus": {
     "within15": "Gap ≤ 15%",
     "between15And30": "Gap 15–30%",
@@ -612,18 +621,6 @@
       "toWatch": "Gap to review",
       "pendingResult": "pending result",
       "pendingResults": "pending results"
-    },
-    "todayConfidence": {
-      "headline": "Today",
-      "title": "Calibration of active channels",
-      "confidenceHigh": "Gap ≤ 15%",
-      "confidenceModerate": "Gap up to 30%",
-      "confidenceLow": "Gap > 30% detected",
-      "confidenceUnknown": "Insufficient volume",
-      "toFollow": "Picks from channels with a gap ≤ 15%",
-      "toAvoid": "Channels with a gap > 30%",
-      "emptyFollow": "No pick in this band today",
-      "emptyAvoid": "No channel in this band today"
     },
     "engineHealth": {
       "headline": "Engine health",

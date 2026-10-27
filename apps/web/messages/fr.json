@@ -19,6 +19,15 @@
     "refunded": "Remboursé",
     "settlementPending": "Règlement en attente"
   },
+  "calibrationVerdict": {
+    "conform": "Conforme",
+    "slightlyOptimistic": "Un peu optimiste",
+    "optimistic": "Trop optimiste",
+    "slightlyCautious": "Un peu prudent",
+    "cautious": "Trop prudent",
+    "insufficient": "Pas assez de recul",
+    "inactive": "Aucun réglé"
+  },
   "channelCalibrationStatus": {
     "within15": "Écart ≤ 15 %",
     "between15And30": "Écart 15–30 %",
@@ -612,18 +621,6 @@
       "toWatch": "Écart à examiner",
       "pendingResult": "en attente de résultat",
       "pendingResults": "en attente de résultats"
-    },
-    "todayConfidence": {
-      "headline": "Aujourd'hui",
-      "title": "Calibration des canaux actifs",
-      "confidenceHigh": "Écart ≤ 15 %",
-      "confidenceModerate": "Écart jusqu'à 30 %",
-      "confidenceLow": "Écart > 30 % détecté",
-      "confidenceUnknown": "Volume insuffisant",
-      "toFollow": "Sélections issues de canaux avec un écart ≤ 15 %",
-      "toAvoid": "Canaux avec un écart > 30 %",
-      "emptyFollow": "Aucune sélection dans cette tranche aujourd'hui",
-      "emptyAvoid": "Aucun canal dans cette tranche aujourd'hui"
     },
     "engineHealth": {
       "headline": "Santé moteur",
