@@ -282,28 +282,38 @@
   "notifications": {
     "title": "Notifications",
     "empty": "Aucune notification",
-    "emptyDescription": "Tu es à jour.",
+    "emptyDescription": "Les annonces et les réponses de l'équipe apparaîtront ici.",
     "markAllRead": "Tout marquer comme lu",
     "unread": "Non lues",
     "all": "Toutes",
-    "announcements": "📣 Annonces",
-    "alerts": "🔔 Alertes",
-    "viewAll": "Voir tout",
-    "isRead": "Lu",
-    "justNow": "À l'instant",
-    "types": {
-      "ROI_ALERT": "Alerte performance",
-      "MARKET_SUSPENSION": "Marché suspendu",
-      "BRIER_ALERT": "Alerte calibration",
-      "WEEKLY_REPORT": "Rapport hebdomadaire",
-      "ETL_FAILURE": "Erreur pipeline",
-      "WEIGHT_ADJUSTMENT": "Ajustement des poids",
-      "XG_UNAVAILABLE_REPORT": "Données xG manquantes"
-    },
+    "announcements": "Annonces",
+    "alerts": "Alertes",
     "severity": {
-      "high": "Critique",
-      "medium": "Moyenne",
-      "low": "Faible"
+      "high": "Critique"
+    },
+    "intro": "Les annonces d'EVCore et les réponses de l'équipe à tes messages.",
+    "emptyUnread": "Tout est lu.",
+    "loadError": "Impossible de charger tes notifications.",
+    "retry": "Réessayer",
+    "markRead": "Marquer comme lu",
+    "read": "lu",
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "newer": "Plus récentes",
+    "older": "Plus anciennes",
+    "age": {
+      "justNow": "À l'instant",
+      "minutes": "il y a {count} min",
+      "hours": "il y a {count} h",
+      "days": "il y a {count} j"
+    },
+    "kind": {
+      "ANNOUNCEMENT_PUBLISHED": "Annonce",
+      "SUPPORT_MESSAGE": "Équipe EVCore"
+    },
+    "open": {
+      "ANNOUNCEMENT_PUBLISHED": "Lire l'annonce",
+      "SUPPORT_MESSAGE": "Ouvrir la conversation"
     }
   },
   "updates": {
@@ -442,18 +452,14 @@
     "logoutLoading": "Déconnexion..."
   },
   "account": {
-    "title": "Mes paramètres",
+    "title": "Mon compte",
     "appearance": "Apparence",
     "language": "Langue",
     "notifications": "Notifications",
     "account": "Compte",
-    "bankroll": "Devise",
+    "bankroll": "Devise et mise",
     "theme": "Thème",
-    "savePreferences": "Enregistrer",
     "savedAutomatically": "Enregistré automatiquement.",
-    "profile": "Profil",
-    "profileDescription": "Tes informations de compte.",
-    "fullName": "Nom & prénoms",
     "email": "Email",
     "username": "Identifiant",
     "bio": "Biographie",
@@ -467,19 +473,13 @@
     "save": "Enregistrer",
     "cancel": "Annuler",
     "editField": "Modifier {field}",
-    "role": "Rôle",
-    "password": "Mot de passe",
-    "changePassword": "Modifier le mot de passe",
-    "changePasswordHint": "La modification du mot de passe sera disponible prochainement.",
     "groupAccount": "Compte",
     "groupPreferences": "Préférences",
-    "groupBetting": "Paris",
     "tabProfile": "Profil",
-    "tabPreferences": "Préférences",
+    "tabPreferences": "Affichage",
     "tabSecurity": "Sécurité",
     "tabNotifications": "Notifications",
-    "tabBankroll": "Bankroll",
-    "tabPersonalization": "Personnalisation",
+    "tabBankroll": "Devise et mise",
     "requires": "Requiert :",
     "avatarSaveError": "Impossible de sauvegarder l'avatar.",
     "genericError": "Une erreur est survenue. Réessaie dans quelques instants.",
@@ -500,13 +500,6 @@
     "totpTitle": "Application d'authentification",
     "totpDescription": "Non configurée. Ajoute une app TOTP pour sécuriser davantage ton compte et récupérer l'accès sans email.",
     "configureAction": "Configurer →",
-    "verificationCodeTitle": "Code de vérification",
-    "resendCodeDescription": "Renvoyer un code à {email}.",
-    "codeSentMessage": "Code envoyé — vérifie tes spams.",
-    "codeSendError": "Impossible d'envoyer le code.",
-    "sending": "Envoi…",
-    "sent": "Envoyé",
-    "resend": "Renvoyer",
     "pushNotifications": "Notifications push",
     "pushNotificationsDescription": "Reçois une notification sur cet appareil pour les messages de l'équipe EVCore et les nouvelles annonces.",
     "pushNotificationsToggle": "Activer les notifications push",
@@ -530,36 +523,17 @@
       "eur": "Euro (€)"
     },
     "roles": {
-      "ADMIN": "Admin",
-      "OPERATOR": "Opérateur"
+      "ADMIN": "Admin"
     },
-    "personalization": {
-      "leaguesTitle": "Ligues suivies",
-      "leaguesSubtitle": "{count} sélectionnée(s)",
-      "leaguesEmpty": "Aucun championnat suivi pour l'instant.",
-      "leaguesSearchPlaceholder": "Championnat ou pays…",
-      "leaguesNoResults": "Aucun championnat ne correspond.",
-      "channelsTitle": "Types de pari suivis",
-      "channelsHint": "Retrouve ici ce que les types de pari suivis ont donné : réussite réelle comparée à la probabilité annoncée, avec le volume observé.",
-      "channelsEmpty": "Aucun type de pari suivi pour l'instant.",
-      "discoverButton": "Choisir des types de pari",
-      "discoverSearchPlaceholder": "Rechercher un type de pari...",
-      "discoverEmpty": "Aucun type de pari ne correspond.",
-      "discoverStatusTooltip": "{status, select, GREEN {Écart à la calibration de 15 % au plus sur 90 jours} ORANGE {Écart à la calibration de 15 à 30 % sur 90 jours} RED {Écart à la calibration supérieur à 30 % sur 90 jours} other {Volume insuffisant pour mesurer l'écart sur 90 jours}} ({n, plural, one {# sélection réglée} other {# sélections réglées}}).",
-      "discoverTip": "En suivre 3 à 5 garde cette liste lisible.",
-      "follow": "+ Suivre",
-      "unfollow": "Retirer",
-      "since": "depuis le {date}",
-      "riskProfileTitle": "Profil de risque",
-      "riskProfileSubtitle": "Oriente le mélange Prudent / Équilibré / Offensif des coupons mis en avant",
-      "riskProfile": {
-        "CONSERVATIVE": "Prudent",
-        "BALANCED": "Équilibré",
-        "AGGRESSIVE": "Offensif"
-      },
-      "popularLeagues": "Populaires"
-    },
-    "phoneNone": "Non renseigné"
+    "phoneNone": "Non renseigné",
+    "emailChangeHint": "Pour changer d'adresse, écris à l'équipe depuis l'Inbox.",
+    "responsible": {
+      "title": "Jeu responsable",
+      "body": "Parier comporte des risques de perte. Ne mise que ce que tu peux perdre, et jamais pour te refaire.",
+      "deletion": "Pour supprimer ton compte, écris à l'équipe : elle s'en occupe.",
+      "readPage": "Lire la page Jeu responsable",
+      "writeTeam": "Écrire à l'équipe"
+    }
   },
   "performance": {
     "headline": "Performance globale",
@@ -1006,14 +980,6 @@
     "retry": "Réessayer",
     "aiNote": "Ces propositions sont générées par notre moteur IA, qui s'améliore en continu grâce aux résultats passés. Il ne s'agit pas de conseils financiers.",
     "helpLink": "Quelle différence entre les coupons ?"
-  },
-  "onboarding": {
-    "title": "Configuration rapide",
-    "description": "Personnalise ton expérience en trois étapes rapides — chacune est facultative.",
-    "stepCounter": "Étape {step} sur {total}",
-    "skip": "Passer",
-    "next": "Suivant",
-    "finish": "Terminer"
   },
   "closingLine": {
     "label": "Clôture @{odds}",

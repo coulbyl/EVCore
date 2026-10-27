@@ -4,7 +4,6 @@ export const ACCOUNT_TABS = [
   "securite",
   "notifications",
   "bankroll",
-  "personnalisation",
 ] as const;
 
 export type AccountTabValue = (typeof ACCOUNT_TABS)[number];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { BellOff } from "lucide-react";
 import {
@@ -18,7 +18,11 @@ import type { UserAnnouncement } from "@/domains/announcements/types/announcemen
 import { RichTextViewer } from "@/components/rich-text-viewer";
 import { UpdateRow } from "./update-row";
 
-export function UpdatesPageClient() {
+export function UpdatesPageClient({
+  initialId = null,
+}: {
+  initialId?: string | null;
+}) {
   const t = useTranslations("updates");
   const { data, isLoading } = useDashboardAnnouncements();
   const markRead = useMarkAnnouncementRead();
@@ -36,6 +40,18 @@ export function UpdatesPageClient() {
     setSelected(announcement);
     if (!announcement.isRead) markRead.mutate(announcement.id);
   }
+
+  // Ouvre une seule fois l'annonce demandée, dès que la liste est là.
+  const openedInitial = useRef(false);
+  useEffect(() => {
+    if (openedInitial.current || !initialId) return;
+    const target = items.find((item) => item.id === initialId);
+    if (!target) return;
+    openedInitial.current = true;
+    openAnnouncement(target);
+    // openAnnouncement ne change qu'avec markRead, stable entre rendus.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialId, items]);
 
   return (
     <div className="flex flex-col gap-5">

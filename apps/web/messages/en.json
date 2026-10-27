@@ -282,28 +282,38 @@
   "notifications": {
     "title": "Notifications",
     "empty": "No notifications",
-    "emptyDescription": "You're all caught up.",
+    "emptyDescription": "Announcements and the team's replies will show up here.",
     "markAllRead": "Mark all as read",
     "unread": "Unread",
     "all": "All",
-    "announcements": "📣 Announcements",
-    "alerts": "🔔 Alerts",
-    "viewAll": "View all",
-    "isRead": "Read",
-    "justNow": "Just now",
-    "types": {
-      "ROI_ALERT": "Performance alert",
-      "MARKET_SUSPENSION": "Market suspension",
-      "BRIER_ALERT": "Calibration alert",
-      "WEEKLY_REPORT": "Weekly report",
-      "ETL_FAILURE": "Pipeline error",
-      "WEIGHT_ADJUSTMENT": "Weight adjustment",
-      "XG_UNAVAILABLE_REPORT": "Missing xG data"
-    },
+    "announcements": "Announcements",
+    "alerts": "Alerts",
     "severity": {
-      "high": "Critical",
-      "medium": "Medium",
-      "low": "Low"
+      "high": "Critical"
+    },
+    "intro": "EVCore announcements and the team's replies to your messages.",
+    "emptyUnread": "Everything is read.",
+    "loadError": "Your notifications could not be loaded.",
+    "retry": "Try again",
+    "markRead": "Mark as read",
+    "read": "read",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "newer": "Newer",
+    "older": "Older",
+    "age": {
+      "justNow": "Just now",
+      "minutes": "{count} min ago",
+      "hours": "{count} h ago",
+      "days": "{count} d ago"
+    },
+    "kind": {
+      "ANNOUNCEMENT_PUBLISHED": "Announcement",
+      "SUPPORT_MESSAGE": "EVCore team"
+    },
+    "open": {
+      "ANNOUNCEMENT_PUBLISHED": "Read the announcement",
+      "SUPPORT_MESSAGE": "Open the conversation"
     }
   },
   "updates": {
@@ -442,18 +452,14 @@
     "logoutLoading": "Signing out..."
   },
   "account": {
-    "title": "My settings",
+    "title": "My account",
     "appearance": "Appearance",
     "language": "Language",
     "notifications": "Notifications",
     "account": "Account",
-    "bankroll": "Currency",
+    "bankroll": "Currency and stake",
     "theme": "Theme",
-    "savePreferences": "Save",
     "savedAutomatically": "Saved automatically.",
-    "profile": "Profile",
-    "profileDescription": "Your account information.",
-    "fullName": "Full name",
     "email": "Email",
     "username": "Username",
     "bio": "Bio",
@@ -467,19 +473,13 @@
     "save": "Save",
     "cancel": "Cancel",
     "editField": "Edit {field}",
-    "role": "Role",
-    "password": "Password",
-    "changePassword": "Change password",
-    "changePasswordHint": "Password change will be available soon.",
     "groupAccount": "Account",
     "groupPreferences": "Preferences",
-    "groupBetting": "Betting",
     "tabProfile": "Profile",
-    "tabPreferences": "Preferences",
+    "tabPreferences": "Display",
     "tabSecurity": "Security",
     "tabNotifications": "Notifications",
-    "tabBankroll": "Bankroll",
-    "tabPersonalization": "Personalization",
+    "tabBankroll": "Currency and stake",
     "requires": "Requires:",
     "avatarSaveError": "Couldn't save the avatar.",
     "genericError": "Something went wrong.",
@@ -500,13 +500,6 @@
     "totpTitle": "Authenticator app",
     "totpDescription": "Not configured. Add a TOTP app to further secure your account and recover access without email.",
     "configureAction": "Configure →",
-    "verificationCodeTitle": "Verification code",
-    "resendCodeDescription": "Resend a code to {email}.",
-    "codeSentMessage": "Code sent — check your spam folder.",
-    "codeSendError": "Couldn't send the code.",
-    "sending": "Sending…",
-    "sent": "Sent",
-    "resend": "Resend",
     "pushNotifications": "Push notifications",
     "pushNotificationsDescription": "Get notified on this device for messages from the EVCore team and new announcements.",
     "pushNotificationsToggle": "Enable push notifications",
@@ -530,36 +523,17 @@
       "eur": "Euro (€)"
     },
     "roles": {
-      "ADMIN": "Admin",
-      "OPERATOR": "Operator"
+      "ADMIN": "Admin"
     },
-    "personalization": {
-      "leaguesTitle": "Followed leagues",
-      "leaguesSubtitle": "{count} selected",
-      "leaguesEmpty": "No league followed yet.",
-      "leaguesSearchPlaceholder": "League or country…",
-      "leaguesNoResults": "No league matches.",
-      "channelsTitle": "Followed bet types",
-      "channelsHint": "What your followed bet types delivered: actual hit rate against announced probability, with the observed volume.",
-      "channelsEmpty": "No bet type followed yet.",
-      "discoverButton": "Choose bet types",
-      "discoverSearchPlaceholder": "Search a bet type...",
-      "discoverEmpty": "No bet type matches.",
-      "discoverStatusTooltip": "{status, select, GREEN {Calibration gap within 15% over 90 days} ORANGE {Calibration gap between 15% and 30% over 90 days} RED {Calibration gap above 30% over 90 days} other {Insufficient volume to measure the gap over 90 days}} ({n, plural, one {# settled pick} other {# settled picks}}).",
-      "discoverTip": "Following 3 to 5 keeps this list readable.",
-      "follow": "+ Follow",
-      "unfollow": "Remove",
-      "since": "since {date}",
-      "riskProfileTitle": "Risk profile",
-      "riskProfileSubtitle": "Orients the Conservative / Balanced / Aggressive mix of coupons highlighted to you",
-      "riskProfile": {
-        "CONSERVATIVE": "Conservative",
-        "BALANCED": "Balanced",
-        "AGGRESSIVE": "Aggressive"
-      },
-      "popularLeagues": "Popular"
-    },
-    "phoneNone": "Not set"
+    "phoneNone": "Not set",
+    "emailChangeHint": "To change your address, write to the team from the Inbox.",
+    "responsible": {
+      "title": "Responsible gambling",
+      "body": "Betting carries a risk of loss. Only stake what you can afford to lose, and never to chase losses.",
+      "deletion": "To delete your account, write to the team: they will take care of it.",
+      "readPage": "Read the responsible gambling page",
+      "writeTeam": "Write to the team"
+    }
   },
   "performance": {
     "headline": "Overall performance",
@@ -1006,14 +980,6 @@
     "retry": "Try again",
     "aiNote": "These proposals are generated by our AI engine, which continuously improves based on past results. This is not financial advice.",
     "helpLink": "What sets the coupons apart?"
-  },
-  "onboarding": {
-    "title": "Quick setup",
-    "description": "Personalize your experience in three quick steps — each one is optional.",
-    "stepCounter": "Step {step} of {total}",
-    "skip": "Skip",
-    "next": "Next",
-    "finish": "Finish"
   },
   "closingLine": {
     "label": "Close @{odds}",

@@ -18,7 +18,7 @@ export function SettingsSectionCard({
       className={`rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow ${className ?? ""}`}
     >
       {eyebrow ? (
-        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
           {eyebrow}
         </p>
       ) : null}

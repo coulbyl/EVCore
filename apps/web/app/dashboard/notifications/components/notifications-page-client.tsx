@@ -1,169 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { ArrowRight, BellOff, CheckCheck, Clock } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { BellOff, CheckCheck } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { Button, Skeleton, cn } from "@evcore/ui";
 import { useCurrentUser } from "@/domains/auth/context/current-user-context";
-import { Button, Skeleton } from "@evcore/ui";
 import {
   useNotifications,
   useUnreadCount,
   useMarkRead,
   useMarkAllRead,
 } from "@/domains/notification/use-cases/use-notifications";
-import {
-  NOTIFICATION_SEVERITY,
-  NOTIFICATION_LINKS,
-  NOTIFICATION_BODY_IS_HTML,
-  type NotificationView,
-  type NotificationSeverity,
-  type NotificationCategory,
-} from "@/domains/notification/types/notification";
+import type { NotificationCategory } from "@/domains/notification/types/notification";
+import { groupByDay } from "./notification-constants";
+import { NotificationRow } from "./notification-row";
 
 type Tab = "all" | "unread" | NotificationCategory;
 
-const SEVERITY_STYLES: Record<NotificationSeverity, string> = {
-  high: "border-l-destructive bg-destructive/5",
-  medium: "border-l-warning bg-warning/5",
-  low: "border-l-border bg-background/30",
-};
-
-const SEVERITY_BADGE: Record<NotificationSeverity, string> = {
-  high: "bg-destructive/15 text-destructive",
-  medium: "bg-warning/15 text-warning",
-  low: "bg-secondary text-muted-foreground",
-};
-
-function formatAge(createdAt: string): string {
-  const diff = Date.now() - new Date(createdAt).getTime();
-  const minutes = Math.floor(diff / 60_000);
-  if (minutes < 1) return "À l'instant";
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} h`;
-  const days = Math.floor(hours / 24);
-  return `${days} j`;
-}
-
-function formatDayLabel(createdAt: string): string {
-  const date = new Date(createdAt);
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
-
-  if (date.toDateString() === today.toDateString()) return "Aujourd'hui";
-  if (date.toDateString() === yesterday.toDateString()) return "Hier";
-  return date.toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-}
-
-function dayKey(createdAt: string): string {
-  return new Date(createdAt).toDateString();
-}
-
-function groupByDay(
-  notifications: NotificationView[],
-): Array<{ day: string; label: string; items: NotificationView[] }> {
-  const groups: Array<{
-    day: string;
-    label: string;
-    items: NotificationView[];
-  }> = [];
-  for (const n of notifications) {
-    const key = dayKey(n.createdAt);
-    const existing = groups.find((g) => g.day === key);
-    if (existing) {
-      existing.items.push(n);
-    } else {
-      groups.push({ day: key, label: formatDayLabel(n.createdAt), items: [n] });
-    }
-  }
-  return groups;
-}
-
-function NotificationRow({
-  n,
-  onMarkRead,
-  severityLabel,
-}: {
-  n: NotificationView;
-  onMarkRead: (id: string) => void;
-  severityLabel: Record<NotificationSeverity, string>;
-}) {
-  const severity = NOTIFICATION_SEVERITY[n.type];
-  return (
-    <div
-      className={`flex min-h-[56px] items-start gap-4 rounded-[1.2rem] border border-border border-l-4 p-4 transition-colors ${SEVERITY_STYLES[severity]} ${n.isRead ? "opacity-60" : ""}`}
-    >
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* « Faible » / « Moyenne » sont les gravités ordinaires : une
-              étiquette sur chaque carte ne distingue rien (revue UX du
-              2026-10-11, P2-14). Seules les gravités qui demandent une
-              attention sont étiquetées. */}
-          {severity !== "medium" && severity !== "low" && (
-            <span
-              className={`rounded-full px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-wide ${SEVERITY_BADGE[severity]}`}
-            >
-              {severityLabel[severity]}
-            </span>
-          )}
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock size={11} />
-            {formatAge(n.createdAt)}
-          </span>
-          {n.isRead ? (
-            <span className="text-xs text-muted-foreground/60">· lu</span>
-          ) : null}
-        </div>
-        <p className="mt-1.5 text-sm font-semibold leading-snug text-foreground">
-          {n.title}
-        </p>
-        {NOTIFICATION_BODY_IS_HTML.has(n.type) ? null : (
-          <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-            {n.body}
-          </p>
-        )}
-        {NOTIFICATION_LINKS[n.type] ? (
-          <Link
-            href={NOTIFICATION_LINKS[n.type]!}
-            onClick={() => {
-              if (!n.isRead) onMarkRead(n.id);
-            }}
-            className="mt-1.5 inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
-          >
-            Voir
-            <ArrowRight size={13} />
-          </Link>
-        ) : null}
-      </div>
-      {!n.isRead ? (
-        <button
-          type="button"
-          title="Marquer comme lu"
-          onClick={() => onMarkRead(n.id)}
-          className="mt-1 shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-        >
-          <CheckCheck size={15} />
-        </button>
-      ) : null}
-    </div>
-  );
-}
+const PAGE_SIZE = 20;
 
 export function NotificationsPageClient() {
   const t = useTranslations("notifications");
+  const locale = useLocale();
   const currentUser = useCurrentUser();
+  const isAdmin = currentUser.role === "ADMIN";
   const [tab, setTab] = useState<Tab>("all");
   const [offset, setOffset] = useState(0);
-  const limit = 20;
 
-  const { data, isLoading } = useNotifications({
-    limit,
+  const { data, isLoading, isError, refetch } = useNotifications({
+    limit: PAGE_SIZE,
     offset,
     unread: tab === "unread" ? true : undefined,
     category: tab === "announcement" || tab === "alert" ? tab : undefined,
@@ -172,51 +37,71 @@ export function NotificationsPageClient() {
   const { mutate: markRead } = useMarkRead();
   const { mutate: markAllRead, isPending: markingAll } = useMarkAllRead();
 
-  const severityLabel: Record<NotificationSeverity, string> = {
-    high: t("severity.high"),
-    medium: t("severity.medium"),
-    low: t("severity.low"),
-  };
-
   const notifications = data?.data ?? [];
   const total = data?.total ?? 0;
-  const hasMore = offset + limit < total;
+  const hasMore = offset + PAGE_SIZE < total;
   const hasPrev = offset > 0;
   const unreadCount = unreadData?.count ?? 0;
-  const groups = groupByDay(notifications);
 
   function selectTab(next: Tab) {
     setTab(next);
     setOffset(0);
   }
 
-  // Les alertes d'ingénierie (ROI, suspension, rapport hebdomadaire) ne
-  // sont plus diffusées aux opérateurs depuis le 2026-10-11 : l'onglet
-  // serait toujours vide pour eux.
-  const TABS: { id: Tab; label: string }[] = [
+  function dayLabel(day: string): string {
+    const date = new Date(day);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    if (date.toDateString() === today.toDateString()) return t("today");
+    if (date.toDateString() === yesterday.toDateString()) return t("yesterday");
+    return date.toLocaleDateString(locale === "en" ? "en-GB" : "fr-FR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+  }
+
+  // Le joueur ne reçoit que des annonces et des réponses de l'équipe :
+  // « Annonces » doublait « Toutes », « Alertes » restait vide (revue UX du
+  // 2026-10-27). Les admins gardent les deux filtres.
+  const tabs: { id: Tab; label: string }[] = [
     { id: "all", label: t("all") },
     { id: "unread", label: t("unread") },
-    { id: "announcement", label: t("announcements") },
-    ...(currentUser.role === "ADMIN"
-      ? [{ id: "alert" as const, label: t("alerts") }]
+    ...(isAdmin
+      ? [
+          { id: "announcement" as const, label: t("announcements") },
+          { id: "alert" as const, label: t("alerts") },
+        ]
       : []),
   ];
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* Header controls — sticky so the tabs stay reachable while the list scrolls */}
+    <div className="flex flex-col gap-5 pb-20">
+      <div>
+        <h1 className="text-lg font-semibold text-foreground">{t("title")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t("intro")}</p>
+      </div>
+
+      {/* Onglets collants : ils restent à portée pendant le défilement. */}
       <div className="sticky top-0 z-10 -mx-4 flex flex-wrap items-center justify-between gap-3 bg-panel-strong px-4 pb-3 pt-1 sm:-mx-5 sm:px-5">
         <div className="flex max-w-full flex-nowrap gap-1 overflow-x-auto">
-          {TABS.map((item) => (
+          {tabs.map((item) => (
             <button
               key={item.id}
               type="button"
+              aria-pressed={tab === item.id}
               onClick={() => selectTab(item.id)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-2xl px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${tab === item.id ? "bg-accent/10 text-accent" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
+              className={cn(
+                "flex min-h-11 shrink-0 items-center gap-1.5 rounded-2xl px-4 text-sm font-medium transition-colors",
+                tab === item.id
+                  ? "bg-accent/10 text-accent"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+              )}
             >
               {item.label}
               {item.id === "unread" && unreadCount > 0 ? (
-                <span className="inline-flex size-4 items-center justify-center rounded-full bg-destructive text-[0.58rem] font-bold text-destructive-foreground tabular-nums">
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold text-destructive-foreground tabular-nums">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               ) : null}
@@ -226,8 +111,7 @@ export function NotificationsPageClient() {
 
         <Button
           variant="outline"
-          size="sm"
-          className="rounded-2xl"
+          className="h-11 rounded-2xl"
           onClick={() => markAllRead()}
           disabled={markingAll || unreadCount === 0}
         >
@@ -236,72 +120,79 @@ export function NotificationsPageClient() {
         </Button>
       </div>
 
-      {/* List */}
       {isLoading ? (
         <div className="flex flex-col gap-3">
-          {Array.from({ length: 5 }).map((_, i) => (
+          {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-[72px] rounded-[1.2rem]" />
           ))}
         </div>
+      ) : isError ? (
+        // Un échec de chargement affichait « Tout est à jour ».
+        <div className="flex flex-col items-center gap-3 py-16 text-center">
+          <p className="font-semibold text-foreground">{t("loadError")}</p>
+          <Button
+            variant="outline"
+            className="h-11"
+            onClick={() => void refetch()}
+          >
+            {t("retry")}
+          </Button>
+        </div>
       ) : notifications.length === 0 ? (
-        <div className="flex flex-col items-center gap-4 py-20 text-muted-foreground">
+        <div className="flex flex-col items-center gap-4 py-16 text-muted-foreground">
           <span className="inline-flex size-14 items-center justify-center rounded-[1.2rem] border border-border bg-panel-strong">
             <BellOff size={28} className="opacity-40" />
           </span>
           <div className="text-center">
-            <p className="font-semibold text-foreground">Tout est à jour</p>
-            <p className="mt-1 text-sm">{t("emptyDescription")}</p>
+            <p className="font-semibold text-foreground">
+              {tab === "unread" ? t("emptyUnread") : t("empty")}
+            </p>
+            {tab === "unread" ? null : (
+              <p className="mt-1 text-sm">{t("emptyDescription")}</p>
+            )}
           </div>
         </div>
       ) : (
         <div className="flex flex-col gap-6">
-          {groups.map(({ day, label, items }) => (
-            <div key={day} className="flex flex-col gap-2">
-              {/* Day separator */}
-              <div className="flex items-center gap-3">
-                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                  {label}
-                </p>
-                <div className="flex-1 border-t border-border" />
-              </div>
-
-              {/* Items */}
-              <div className="flex flex-col gap-2">
+          {groupByDay(notifications).map(({ day, items }) => (
+            <section key={day} className="flex flex-col gap-2">
+              <h2 className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                {dayLabel(day)}
+                <span aria-hidden className="flex-1 border-t border-border" />
+              </h2>
+              <ul className="flex flex-col gap-2">
                 {items.map((n) => (
                   <NotificationRow
                     key={n.id}
                     n={n}
+                    isAdmin={isAdmin}
                     onMarkRead={(id) => markRead(id)}
-                    severityLabel={severityLabel}
                   />
                 ))}
-              </div>
-            </div>
+              </ul>
+            </section>
           ))}
         </div>
       )}
 
-      {/* Pagination */}
       {hasPrev || hasMore ? (
         <div className="flex justify-center gap-3">
           {hasPrev ? (
             <Button
               variant="outline"
-              size="sm"
-              className="rounded-2xl"
-              onClick={() => setOffset(Math.max(0, offset - limit))}
+              className="h-11 rounded-2xl"
+              onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
             >
-              Précédent
+              {t("newer")}
             </Button>
           ) : null}
           {hasMore ? (
             <Button
               variant="outline"
-              size="sm"
-              className="rounded-2xl"
-              onClick={() => setOffset(offset + limit)}
+              className="h-11 rounded-2xl"
+              onClick={() => setOffset(offset + PAGE_SIZE)}
             >
-              Suivant
+              {t("older")}
             </Button>
           ) : null}
         </div>

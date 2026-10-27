@@ -162,22 +162,17 @@ export function ProductTourProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (hasAutoStartedRef.current) return;
-    // Wait for the active onboarding wizard (domains/onboarding) to finish
-    // or be skipped before ever starting the passive tour — showing both at
-    // once would be confusing, and a brand-new user always has
-    // hasCompletedOnboarding=false on mount, so this effect legitimately
-    // re-fires once that flips true instead of missing its one chance.
-    if (!currentUser.hasCompletedOnboarding) return;
+    // L'assistant d'accueil (ligues, types de pari, profil de risque) est
+    // retiré depuis le 2026-10-27 : ses réglages ne pilotaient rien. Le
+    // guide démarre donc dès la première visite.
     if (currentUser.hasSeenOnboarding) return;
     hasAutoStartedRef.current = true;
     startTour();
-    // Only reacts to hasCompletedOnboarding flipping — a manual replay uses
-    // startTour() directly, not this effect, and hasSeenOnboarding is
-    // intentionally read via the ref-guarded check above rather than being
-    // a dependency (marking the tour "seen" mid-tour must never re-trigger
-    // this effect).
+    // Une seule fois au montage — une relecture manuelle passe par
+    // startTour(), et hasSeenOnboarding n'est volontairement pas une
+    // dépendance (marquer le guide « vu » en cours ne doit pas le relancer).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser.hasCompletedOnboarding]);
+  }, []);
 
   useEffect(() => {
     return () => {

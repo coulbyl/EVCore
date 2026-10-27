@@ -15,7 +15,6 @@ import {
   ChevronDown,
   Monitor,
   ShieldCheck,
-  Sparkles,
   User,
   Wallet,
 } from "lucide-react";
@@ -23,13 +22,13 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { ProfileHeroSection } from "./components/profile-hero-section";
 import { BadgesSection } from "./components/badges-section";
+import { ResponsibleGamblingCard } from "./components/responsible-gambling-card";
 import { AppearanceSection } from "./components/appearance-section";
 import { LanguageSection } from "./components/language-section";
 import { PushNotificationsSection } from "./components/push-notifications-section";
 import { EmailNotificationsSection } from "./components/email-notifications-section";
 import { BankrollPreferencesSection } from "./components/bankroll-preferences-section";
 import { SecurityMasterDetail } from "./components/security-master-detail";
-import { PersonalizationSection } from "./components/personalization-section";
 import type { AccountTabValue } from "./account-tabs-constants";
 
 export function AccountTabsClient({
@@ -100,16 +99,6 @@ export function AccountTabsClient({
         { value: "notifications", label: t("tabNotifications"), icon: Bell },
       ],
     },
-    {
-      label: t("groupBetting"),
-      tabs: [
-        {
-          value: "personnalisation",
-          label: t("tabPersonalization"),
-          icon: Sparkles,
-        },
-      ],
-    },
   ];
 
   const activeTabInfo = groups
@@ -137,7 +126,7 @@ export function AccountTabsClient({
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="flex w-full items-center justify-between gap-2 rounded-2xl border border-border bg-panel-strong px-4 py-2.5 text-sm font-medium text-foreground md:hidden"
+              className="flex min-h-11 w-full items-center justify-between gap-2 rounded-2xl border border-border bg-panel-strong px-4 text-sm font-medium text-foreground md:hidden"
             >
               <span className="flex items-center gap-2">
                 {activeTabInfo ? <activeTabInfo.icon size={16} /> : null}
@@ -153,7 +142,7 @@ export function AccountTabsClient({
             <div className="flex flex-col gap-3">
               {groups.map((group) => (
                 <div key={group.label} className="flex flex-col gap-1">
-                  <span className="px-2 pb-1 text-[0.65rem] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                  <span className="px-2 pb-1 text-xs font-semibold tracking-[0.12em] text-muted-foreground uppercase">
                     {group.label}
                   </span>
                   {group.tabs.map(({ value, label, icon: Icon }) => (
@@ -161,7 +150,7 @@ export function AccountTabsClient({
                       key={value}
                       type="button"
                       onClick={() => navigate(value)}
-                      className={`flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm ${
+                      className={`flex min-h-11 w-full items-center gap-1.5 rounded-lg px-3 text-left text-sm ${
                         activeTab === value
                           ? "bg-accent-soft text-accent"
                           : "text-foreground hover:bg-secondary"
@@ -184,7 +173,7 @@ export function AccountTabsClient({
               key={group.label}
               className="flex md:flex-col md:items-stretch md:gap-1"
             >
-              <span className="px-2 pb-1 text-[0.65rem] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+              <span className="px-2 pb-1 text-xs font-semibold tracking-[0.12em] text-muted-foreground uppercase">
                 {group.label}
               </span>
               {group.tabs.map(({ value, label, icon: Icon }) => (
@@ -209,6 +198,7 @@ export function AccountTabsClient({
             className="flex flex-col gap-4"
           >
             {hasSession ? <ProfileHeroSection /> : null}
+            <ResponsibleGamblingCard />
             <BadgesSection />
           </div>
         </TabsContent>
@@ -239,10 +229,6 @@ export function AccountTabsClient({
               >[0]["labels"]
             }
           />
-        </TabsContent>
-
-        <TabsContent value="personnalisation">
-          <PersonalizationSection />
         </TabsContent>
       </div>
     </Tabs>

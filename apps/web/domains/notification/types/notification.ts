@@ -6,10 +6,11 @@ export type NotificationType =
   | "ETL_FAILURE"
   | "WEIGHT_ADJUSTMENT"
   | "XG_UNAVAILABLE_REPORT"
-  // Personnelles (Notification.userId non-null côté backend) — types hérités
-  // du mécanisme d'abonnements retiré (2026-09-03), conservés pour l'historique.
-  | "SUBSCRIPTION_EVENTS_ADDED"
-  | "SUBSCRIPTION_SETTLED"
+  | "ML_MODEL_ACTIVATED"
+  | "ML_MODEL_MISSING"
+  // Personnelle (Notification.userId non-null côté backend). Les messages de
+  // l'abonnement retiré (SUBSCRIPTION_*) ne sont plus servis depuis le
+  // 2026-10-27.
   | "SUPPORT_MESSAGE"
   | "ANNOUNCEMENT_PUBLISHED";
 
@@ -28,20 +29,12 @@ export const NOTIFICATION_SEVERITY: Record<
   WEIGHT_ADJUSTMENT: "low",
   WEEKLY_REPORT: "low",
   XG_UNAVAILABLE_REPORT: "low",
-  // Informationnelles, jamais critiques — même palette que WEEKLY_REPORT.
-  SUBSCRIPTION_EVENTS_ADDED: "low",
-  SUBSCRIPTION_SETTLED: "low",
+  // Alertes admin du ml-worker : un type connu du backend mais absent ici
+  // s'affichait avec une gravité indéfinie et un badge vide.
+  ML_MODEL_ACTIVATED: "low",
+  ML_MODEL_MISSING: "medium",
   SUPPORT_MESSAGE: "low",
   ANNOUNCEMENT_PUBLISHED: "low",
-};
-
-// Where "voir plus" should navigate to for types whose full content lives on
-// another page — `ANNOUNCEMENT_PUBLISHED`'s body is rich-text HTML (the
-// admin editor's output), never meant to be dumped as raw markup in the
-// notification list, so it's hidden there in favor of this link.
-export const NOTIFICATION_LINKS: Partial<Record<NotificationType, string>> = {
-  SUPPORT_MESSAGE: "/dashboard/inbox",
-  ANNOUNCEMENT_PUBLISHED: "/dashboard/updates",
 };
 
 // Types whose `body` is not plain text and must never be rendered directly.

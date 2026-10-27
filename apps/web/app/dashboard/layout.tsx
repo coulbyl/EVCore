@@ -10,7 +10,6 @@ import type { AppCurrency } from "@/helpers/number";
 import { redirect } from "next/navigation";
 import { CurrentUserProvider } from "@/domains/auth/context/current-user-context";
 import { ProductTourProvider } from "@/domains/product-tour/context/product-tour-context";
-import { OnboardingWizard } from "@/domains/onboarding/onboarding-wizard";
 
 export default async function DashboardLayout({
   children,
@@ -37,7 +36,6 @@ export default async function DashboardLayout({
             <BetSlipDrawer />
             <EvaFab />
             <DashboardPwaInstallBanner />
-            <OnboardingWizard />
           </ProductTourProvider>
         </BetSlipProvider>
       </CurrentUserProvider>

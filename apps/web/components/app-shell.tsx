@@ -294,14 +294,16 @@ export function AppShell({
                 <p className="truncate text-sm font-semibold text-sidebar-foreground">
                   {currentUser.fullName}
                 </p>
-                <Badge
-                  variant="neutral"
-                  className="shrink-0 text-xs text-sidebar-foreground/80"
-                >
-                  {tAccount.has(`roles.${currentUser.role}`)
-                    ? tAccount(`roles.${currentUser.role}`)
-                    : currentUser.role}
-                </Badge>
+                {/* Rôle affiché aux seuls admins : « Opérateur » se lit
+                    « bookmaker » chez un parieur (revue UX du 2026-10-27). */}
+                {isAdmin ? (
+                  <Badge
+                    variant="neutral"
+                    className="shrink-0 text-xs text-sidebar-foreground/80"
+                  >
+                    {tAccount("roles.ADMIN")}
+                  </Badge>
+                ) : null}
               </div>
               <p className="truncate text-xs text-sidebar-foreground/60">
                 @{currentUser.username}

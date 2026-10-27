@@ -751,15 +751,48 @@ const BANKROLL_TRANSACTIONS = [
   market: bet ? (bet[2] === "1X" ? "DOUBLE_CHANCE" : "ONE_X_TWO") : null,
 }));
 
-const NOTIFICATIONS = [
+// Ce qu'un joueur reçoit en production : des annonces (corps HTML de
+// l'éditeur admin, avec l'id de l'annonce) et des réponses du support. Les
+// alertes d'ingénierie ne vont qu'aux admins (notification.service.ts).
+const ANNOUNCEMENTS = [
+  {
+    id: "ann-1",
+    title: "Nouvelles fiches de formation",
+    description:
+      "<p>Cinq fiches d&apos;une minute pour <strong>lire nos pronostics</strong>.</p><p>Commence par la première.</p>",
+    href: null,
+    published: true,
+    publishedAt: todayAt(-3),
+    expiresAt: null,
+    createdAt: todayAt(-3),
+    updatedAt: todayAt(-3),
+    createdBy: null,
+    isRead: false,
+  },
+];
+
+const PLAYER_NOTIFICATIONS = [
   [
     "n1",
     "ANNOUNCEMENT_PUBLISHED",
     "Nouvelles fiches de formation",
-    "Cinq fiches d'une minute pour lire nos pronostics.",
+    ANNOUNCEMENTS[0].description,
     -3,
     false,
+    { announcementId: "ann-1", href: null },
   ],
+  [
+    "n4",
+    "SUPPORT_MESSAGE",
+    "Réponse de l'équipe",
+    "Merci pour ton message, on regarde ça.",
+    -26,
+    true,
+    { conversationId: "conv-1" },
+  ],
+];
+
+const ADMIN_NOTIFICATIONS = [
   [
     "n2",
     "MARKET_SUSPENSION",
@@ -767,29 +800,19 @@ const NOTIFICATIONS = [
     "Le pari « Mi-temps / fin de match » est suspendu : il a trop perdu ces 90 derniers jours.",
     -26,
     false,
+    null,
   ],
-  [
-    "n3",
-    "WEEKLY_REPORT",
-    "Ta semaine",
-    "3 coupons joués, 2 gagnés, 1 perdu.",
-    -70,
-    true,
-  ],
-  [
-    "n4",
-    "SUPPORT_MESSAGE",
-    "Réponse de l'équipe",
-    "Merci pour ton message, on regarde ça.",
-    -120,
-    true,
-  ],
-].map(([id, type, title, body, hours, isRead]) => ({
+];
+
+const NOTIFICATIONS = [
+  ...PLAYER_NOTIFICATIONS,
+  ...((process.env.E2E_ROLE ?? "ADMIN") === "ADMIN" ? ADMIN_NOTIFICATIONS : []),
+].map(([id, type, title, body, hours, isRead, payload]) => ({
   id,
   type,
   title,
   body,
-  payload: null,
+  payload,
   createdAt: todayAt(hours),
   isRead,
 }));
@@ -1259,7 +1282,11 @@ function route(method, url) {
     return [200, CHANNEL_HEALTH];
   // Accueil opérateur : une liste (pas `{}`) et un résumé « Mes coupons » avec
   // trois coupons joués, pour que le bloc ne soit pas vide sur les captures.
-  if (path.startsWith("/dashboard/announcements")) return [200, []];
+  if (path.startsWith("/dashboard/announcements/unread-count"))
+    return [200, { count: ANNOUNCEMENTS.filter((a) => !a.isRead).length }];
+  if (path.startsWith("/dashboard/announcements") && method === "GET")
+    return [200, ANNOUNCEMENTS];
+  if (path.startsWith("/dashboard/announcements")) return [200, {}];
   if (path.startsWith("/bet-slips/summary"))
     return [
       200,

@@ -128,7 +128,13 @@ export function useMarkSupportRead() {
   return useMutation({
     mutationFn: () =>
       clientApiRequest<{ ok: true }>("/support/read", { method: "POST" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: UNREAD_COUNT_KEY }),
+    // Le serveur marque aussi les notifications de réponse : la cloche suit.
+    onSuccess: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: UNREAD_COUNT_KEY }),
+        qc.invalidateQueries({ queryKey: ["notifications"] }),
+        qc.invalidateQueries({ queryKey: ["notifications-unread-count"] }),
+      ]),
   });
 }
 
