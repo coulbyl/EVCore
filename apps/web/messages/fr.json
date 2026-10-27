@@ -241,22 +241,45 @@
   },
   "arbitrage": {
     "title": "Avis IA",
-    "badge": "Lecture IA",
-    "description": "Lit les décisions des autres canaux et leur calibration observée sur cette compétition. Une sélection n'est conservée que lorsqu'un désaccord concret est identifié ; l'absence de sélection reste un résultat normal.",
+    "intro": "Une deuxième lecture de chaque match, par notre IA, à côté de Notre sélection. Elle propose souvent un pari : son bilan est juste en dessous, pertes comprises.",
+    "description": "L'IA relit nos lectures du match et les statistiques des deux équipes, puis propose un pari ou s'abstient. Ses pourcentages passent à peu près aussi souvent qu'annoncé, mais comme le reste du moteur elle ne bat pas la cote du bookmaker : c'est une deuxième lecture, pas un tuyau.",
     "filters": {
       "all": "Toutes",
-      "play": "Sélection proposée",
-      "noPlay": "Aucune sélection",
+      "play": "Avis proposés",
+      "noPlay": "Sans avis",
       "label": "Filtre"
     },
-    "reasoningLabel": "Analyse IA",
+    "verdict": {
+      "play": "Avis proposé",
+      "noPlay": "Sans avis"
+    },
+    "ourPick": {
+      "label": "Notre sélection sur ce match :",
+      "same": "même pari",
+      "different": "pari différent",
+      "none": "Notre sélection ne propose rien sur ce match."
+    },
+    "track": {
+      "title": "Bilan de l'IA",
+      "line": "Du {from} au {to}, sur {settled} avis réglés : {realised} passés pour {announced} annoncés · à mise fixe {result}.",
+      "insufficient": "Pas encore assez d'avis réglés sur 30 jours pour un bilan.",
+      "market": "Comme le reste du moteur, l'IA ne bat pas la cote du bookmaker sur la durée : c'est une deuxième lecture, pas un tuyau.",
+      "link": "Détail dans Mesures historiques"
+    },
+    "todayLabel": "Aujourd'hui",
+    "today": "{day} : {plays, plural, =0 {aucun avis proposé} one {# avis proposé} other {# avis proposés}} sur {reads} matchs lus, {abstentions, plural, =0 {aucun sans avis} one {# sans avis} other {# sans avis}}.",
+    "finished": "{count, plural, one {Match terminé (#)} other {Matchs terminés (#)}}",
+    "reasoningLabel": "Pourquoi",
     "sourcesLabel": "Sources",
     "decidedAt": "Décidé le {date}",
-    "noPlay": "Aucune sélection retenue.",
+    "noPlay": "Aucune lecture retenue.",
+    "loadError": "Les avis n'ont pas chargé.",
+    "retry": "Réessayer",
+    "showAll": "Voir tous les matchs lus",
     "emptyTitle": "Aucune lecture",
     "emptyDescription": "L'avis IA n'a encore rien analysé pour cette date.",
     "emptyFilteredTitle": "Rien à signaler",
-    "emptyFilteredDescription": "Aucun désaccord identifié aujourd'hui — essaie \"Toutes\" pour voir les matchs sans avis."
+    "emptyFilteredDescription": "Aucun avis proposé pour cette date."
   },
   "notifications": {
     "title": "Notifications",
@@ -317,7 +340,7 @@
     },
     "arbitrage": {
       "title": "Avis IA",
-      "description": "Notre avis IA ne propose un pari que s'il repère un vrai désaccord entre nos lectures du match, jamais pour confirmer ce qu'elles disent déjà. Le « ? » ici détaille sa logique."
+      "description": "Une deuxième lecture de chaque match par notre IA, à côté de Notre sélection, avec son bilan pertes comprises. Le « ? » ici détaille ce qu'elle fait."
     },
     "coupons": {
       "title": "Coupons",

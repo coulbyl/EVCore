@@ -241,22 +241,45 @@
   },
   "arbitrage": {
     "title": "AI opinion",
-    "badge": "AI read",
-    "description": "Reads every other channel's decision and its observed calibration in this competition. A pick is retained only when a concrete disagreement is found; no pick is a normal outcome.",
+    "intro": "A second reading of each match by our AI, next to Our pick. It often suggests a bet: its track record is right below, losses included.",
+    "description": "The AI rereads our readings of the match and both teams' stats, then suggests a bet or abstains. Its percentages come in about as often as announced, but like the rest of the engine it does not beat the bookmaker's odds: a second reading, not a tip.",
     "filters": {
       "all": "All",
-      "play": "Proposed pick",
-      "noPlay": "No pick",
+      "play": "Suggested",
+      "noPlay": "No opinion",
       "label": "Filter"
     },
-    "reasoningLabel": "AI analysis",
+    "verdict": {
+      "play": "Suggested bet",
+      "noPlay": "No opinion"
+    },
+    "ourPick": {
+      "label": "Our pick on this match:",
+      "same": "same bet",
+      "different": "different bet",
+      "none": "Our pick suggests nothing on this match."
+    },
+    "track": {
+      "title": "AI track record",
+      "line": "From {from} to {to}, out of {settled} settled opinions: {realised} came in for {announced} announced · fixed stake {result}.",
+      "insufficient": "Not enough settled opinions over 30 days for a track record yet.",
+      "market": "Like the rest of the engine, the AI does not beat the bookmaker's odds over time: a second reading, not a tip.",
+      "link": "Details in Historical measures"
+    },
+    "todayLabel": "Today",
+    "today": "{day}: {plays, plural, =0 {no suggested bet} one {# suggested bet} other {# suggested bets}} out of {reads} matches read, {abstentions, plural, =0 {none without opinion} one {# without opinion} other {# without opinion}}.",
+    "finished": "{count, plural, one {Finished match (#)} other {Finished matches (#)}}",
+    "reasoningLabel": "Why",
     "sourcesLabel": "Sources",
     "decidedAt": "Decided on {date}",
-    "noPlay": "No pick retained.",
-    "emptyTitle": "No reads",
+    "noPlay": "No reading kept.",
+    "loadError": "The opinions did not load.",
+    "retry": "Try again",
+    "showAll": "See every match read",
+    "emptyTitle": "No reading",
     "emptyDescription": "The AI opinion has not analysed anything for this date yet.",
-    "emptyFilteredTitle": "Nothing to report",
-    "emptyFilteredDescription": "No disagreement identified today — try \"All\" to see the matches with no opinion."
+    "emptyFilteredTitle": "Nothing to flag",
+    "emptyFilteredDescription": "No suggested bet for this date."
   },
   "notifications": {
     "title": "Notifications",
@@ -317,7 +340,7 @@
     },
     "arbitrage": {
       "title": "AI opinion",
-      "description": "Our AI opinion only suggests a bet when it spots a real disagreement between our readings of the match, never to confirm what they already say. The \"?\" here details its logic."
+      "description": "A second reading of each match by our AI, next to Our pick, with its track record, losses included. The \"?\" here details what it does."
     },
     "coupons": {
       "title": "Coupons",

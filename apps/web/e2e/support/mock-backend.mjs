@@ -379,12 +379,13 @@ function matchGroup({ id, homeTeam, awayTeam, hours, score, picks, ...rest }) {
       modelRunId: `run-${id}`,
       phase: full.phase,
       channel: full.channel,
-      status: full.status,
-      reasonCode: null,
-      reasonDetails: null,
+      status: pick.status ?? full.status,
+      reasonCode: pick.reasonCode ?? null,
+      reasonDetails: pick.reasonDetails ?? null,
       decidedAt: full.decidedAt,
       calibrationAlert: rest.calibrationAlert ?? false,
-      selections: full.selections,
+      // Un avis IA « pas de pari » n'a pas de sélection.
+      selections: pick.status === "REJECTED" ? [] : full.selections,
     };
   });
   const first = decision({
@@ -423,6 +424,19 @@ const MATCH_DECISIONS = [
     awayTeam: "Burnley",
     hours: 3,
     picks: [
+      {
+        channel: "VANTAGE",
+        market: "OVER_UNDER",
+        pick: "OVER_1_5",
+        probability: 0.8,
+        odds: 1.22,
+        playableOdds: 1.2,
+        reasonCode: "VANTAGE_PLAY",
+        reasonDetails: {
+          text: "Arsenal marque en moyenne 2,1 buts à domicile sur ses dix derniers matchs et Burnley en encaisse 1,8 à l'extérieur : deux buts dans la rencontre restent le scénario le plus fréquent.",
+          basis: "raw_stats",
+        },
+      },
       {
         channel: "DOMINANT",
         market: "ONE_X_TWO",
@@ -483,6 +497,19 @@ const MATCH_DECISIONS = [
     calibrationAlert: true,
     picks: [
       {
+        channel: "VANTAGE",
+        market: "ONE_X_TWO",
+        pick: "AWAY",
+        probability: 0.47,
+        odds: 2.3,
+        status: "REJECTED",
+        reasonCode: "VANTAGE_GATED_ODDS",
+        reasonDetails: {
+          text: "Lecture retenue mais non proposée : la cote (2.30) dépasse 1.80, au-delà de laquelle nos avis ne tiennent pas leurs promesses. PSV a gagné ses quatre derniers déplacements.",
+          gated: { odds: 2.3, pick: "AWAY", market: "ONE_X_TWO" },
+        },
+      },
+      {
         channel: "GOALS",
         market: "OVER_UNDER",
         pick: "OVER",
@@ -518,6 +545,20 @@ const MATCH_DECISIONS = [
     hours: -20,
     score: "2-1",
     picks: [
+      {
+        channel: "VANTAGE",
+        market: "DOUBLE_CHANCE",
+        pick: "1X",
+        probability: 0.74,
+        odds: 1.36,
+        playableOdds: 1.32,
+        result: "WON",
+        reasonCode: "VANTAGE_PLAY",
+        reasonDetails: {
+          text: "Nos données internes sont en désaccord : l'une prévoit une victoire de l'ASEC, une autre un match serré. Cette tension rend la double chance intéressante.",
+          basis: "tension",
+        },
+      },
       {
         channel: "DOUBLE_CHANCE",
         market: "DOUBLE_CHANCE",
@@ -676,6 +717,8 @@ const TRACK_RECORD_CHANNELS = [
   { channel: "DRAW", n: 1400, announced: 0.3, hitRate: 0.29, roi: -4.8 },
   { channel: "CORRECT_SCORE", n: 20, announced: 0.11, hitRate: 0.05, roi: -41 },
   { channel: "VALUE", n: 900, announced: 0.55, hitRate: 0.41, roi: -11.2 },
+  // Avis IA : hors total sur Mesures historiques, bilan en tête d'Avis IA.
+  { channel: "VANTAGE", n: 300, announced: 0.639, hitRate: 0.647, roi: -2.3 },
 ];
 
 function calibrationStatus({ n, announced, hitRate }) {

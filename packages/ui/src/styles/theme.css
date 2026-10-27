@@ -70,8 +70,10 @@
      propre fond en clair avec le rouge 600 (détecteur, 2026-10-27). */
   --canal-avoid: #b91c1c;
   --canal-avoid-soft: rgba(185, 28, 28, 0.1);
-  --canal-vantage: #db2777;
-  --canal-vantage-soft: rgba(219, 39, 119, 0.11);
+  /* Rose 700 : le rose 600 passait à 3,7–4,4:1 en clair sur le texte des
+     avis IA (revue UX du 2026-10-27). */
+  --canal-vantage: #be185d;
+  --canal-vantage-soft: rgba(190, 24, 93, 0.1);
   --canal-correct-score: #7c3aed;
   --canal-correct-score-soft: rgba(124, 58, 237, 0.11);
   --canal-first-half: #2563eb;

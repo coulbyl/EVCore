@@ -1,7 +1,13 @@
 import type {
   ChannelDecisionDto,
   ChannelDecisionMatchDto,
+  ChannelSelectionDto,
 } from "@/domains/channel-decision/types/channel-decision";
+import type { ChannelCalibrationByKey } from "../../decisions/components/channel-constants";
+import {
+  primaryPick,
+  selectedPicks,
+} from "../../decisions/components/decision-helpers";
 
 // One VANTAGE ("Arbitrage") read, with its fixture context flattened in —
 // `useChannelDecisionMatches(date, { channel: "VANTAGE" })` returns fixtures
@@ -26,8 +32,20 @@ export type ArbitrageEntry = Pick<
 > &
   Pick<
     ChannelDecisionDto,
-    "id" | "status" | "reasonDetails" | "decidedAt" | "selections"
+    | "id"
+    | "status"
+    | "reasonCode"
+    | "reasonDetails"
+    | "decidedAt"
+    | "selections"
   > & {
+    /**
+     * « Notre sélection » de Décisions sur le même match, par la même règle
+     * (primaryPick) : la question du joueur sur cet écran est « est-ce que
+     * l'avis IA dit autre chose que Notre sélection ? » (revue UX du
+     * 2026-10-27, P1-4). null quand Décisions ne propose rien.
+     */
+    ourPick: ChannelSelectionDto | null;
     // VANTAGE's own selection.odds since 2026-09-04 (persist-decision.ts) —
     // the same value already resolved at generation time for the MIN_ODDS
     // floor check (analyze-fixture.ts's findKnownOdds), the only odds it can
@@ -58,9 +76,15 @@ function findSiblingOdds(
 // selections to be present in `match.decisions` to borrow from.
 export function flattenArbitrageEntries(
   matches: ChannelDecisionMatchDto[],
+  calibrationByKey?: ChannelCalibrationByKey,
 ): ArbitrageEntry[] {
-  return matches.flatMap((match) =>
-    match.decisions
+  return matches.flatMap((match) => {
+    const ours =
+      primaryPick(selectedPicks(match), {
+        calibrationByKey,
+        competitionCode: match.competition,
+      })?.selections[0] ?? null;
+    return match.decisions
       .filter((d) => d.channel === "VANTAGE")
       .map((d) => {
         const selection = d.selections[0];
@@ -85,13 +109,15 @@ export function flattenArbitrageEntries(
           htScore: match.htScore,
           id: d.id,
           status: d.status,
+          reasonCode: d.reasonCode,
           reasonDetails: d.reasonDetails,
           decidedAt: d.decidedAt,
           selections: d.selections,
           displayOdds,
+          ourPick: ours,
         };
-      }),
-  );
+      });
+  });
 }
 
 export type ArbitrageCitation = { title: string; url: string };
@@ -125,6 +151,29 @@ export function parseArbitrageReasonDetails(
 }
 
 export type ArbitrageVerdict = "play" | "no_play";
+
+/** Refus déterministes du worker (plafond de cote, marché fermé, base
+ * retirée) : à montrer comme « Écarté » avec leur raison, pas comme une
+ * simple abstention (revue UX du 2026-10-27, P2-5). */
+export const GATED_REASON_CODES: ReadonlySet<string> = new Set([
+  "VANTAGE_GATED_ODDS",
+  "VANTAGE_GATED_MARKET",
+  "VANTAGE_GATED_BASIS",
+]);
+
+export function isGated(entry: Pick<ArbitrageEntry, "reasonCode">): boolean {
+  return entry.reasonCode !== null && GATED_REASON_CODES.has(entry.reasonCode);
+}
+
+/** Le texte de refus commence par la raison technique (« Lecture retenue
+ * mais non proposée : la cote… ») : le badge la dit déjà, la carte garde
+ * l'analyse qui suit. */
+export function stripGateLead(text: string): string {
+  return text.replace(
+    /^Lecture (?:retenue mais )?non proposée\s*:.*?(?:promesses|à part|qu'annoncé)\.\s*/,
+    "",
+  );
+}
 
 // VANTAGE writes SELECTED for a "play" verdict, REJECTED for "no_play" (see
 // persist-decision.ts) — the same status field every other channel uses,
