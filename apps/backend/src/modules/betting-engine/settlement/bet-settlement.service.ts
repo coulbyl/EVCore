@@ -3,6 +3,7 @@ import { BetStatus, FixtureStatus, Market } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
 import { BankrollService } from '@modules/bankroll/bankroll.service';
+import { combineLegs } from '@modules/bet-slip/bet-slip-outcome';
 import { ChannelDecisionService } from '../channel-decision.service';
 import {
   resolveEarlyBetStatus,
@@ -280,30 +281,41 @@ export class BetSettlementService {
         });
 
         for (const slip of comboSlips) {
-          if (
-            slip.items.some((item) => item.bet.status === BetStatus.PENDING)
-          ) {
-            continue;
-          }
+          // Même règle que l'écran et le résultat à mise fixe : une jambe
+          // remboursée compte pour une cote de 1, le combiné entièrement
+          // remboursé rend la mise.
+          const combo = combineLegs(
+            slip.items.map((item) => ({
+              status: item.bet.status,
+              odds:
+                item.bet.oddsSnapshot === null
+                  ? null
+                  : new Decimal(item.bet.oddsSnapshot.toString()),
+            })),
+          );
+          const firstBetId = slip.items[0]?.betId;
+          if (firstBetId === undefined) continue;
+          const stake = new Decimal(slip.unitStake.toString());
 
-          if (slip.items.every((item) => item.bet.status === BetStatus.WON)) {
-            const totalOdds = slip.items.reduce((product, item) => {
-              if (item.bet.oddsSnapshot === null) {
-                throw new Error(
-                  `Impossible de créditer le coupon combiné ${slip.id} sans oddsSnapshot`,
-                );
-              }
-              return product.times(item.bet.oddsSnapshot.toString());
-            }, new Decimal(1));
-
+          if (combo.status === BetStatus.WON) {
+            if (combo.odds === null) {
+              throw new Error(
+                `Impossible de créditer le coupon combiné ${slip.id} sans oddsSnapshot`,
+              );
+            }
             await this.bankroll?.recordBetWon(
               {
                 userId: slip.userId,
-                betId: slip.items[0].betId,
-                stake: new Decimal(slip.unitStake.toString()),
-                odds: totalOdds,
+                betId: firstBetId,
+                stake,
+                odds: combo.odds,
                 currency: currencyByUser.get(slip.userId),
               },
+              { tx },
+            );
+          } else if (combo.status === BetStatus.VOID) {
+            await this.bankroll?.recordBetVoid(
+              { userId: slip.userId, betId: firstBetId, stake },
               { tx },
             );
           }

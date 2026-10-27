@@ -5,11 +5,33 @@ import { BetSettlementService } from './bet-settlement.service';
 import type { PrismaService } from '@/prisma.service';
 import type { BankrollService } from '@modules/bankroll/bankroll.service';
 
-function makeHarness(betStatus: BetStatus) {
+type ComboLeg = { status: BetStatus; odds: string | null };
+
+function makeHarness(
+  betStatus: BetStatus,
+  opts: { comboLegs?: ComboLeg[] } = {},
+) {
   const update = vi.fn().mockResolvedValue(undefined);
+  const slipType = opts.comboLegs ? 'COMBO' : 'SINGLE';
+  const comboSlips = opts.comboLegs
+    ? [
+        {
+          id: 'slip-1',
+          userId: 'user-1',
+          unitStake: 400,
+          items: opts.comboLegs.map((leg, index) => ({
+            betId: `bet-${index + 1}`,
+            bet: {
+              status: leg.status,
+              oddsSnapshot: leg.odds === null ? null : new Decimal(leg.odds),
+            },
+          })),
+        },
+      ]
+    : [];
   const tx = {
     bet: { update },
-    betSlip: { findMany: vi.fn().mockResolvedValue([]) },
+    betSlip: { findMany: vi.fn().mockResolvedValue(comboSlips) },
   };
   const prisma = {
     client: {
@@ -34,7 +56,7 @@ function makeHarness(betStatus: BetStatus) {
               {
                 userId: 'user-1',
                 stakeOverride: null,
-                betSlip: { id: 'slip-1', type: 'SINGLE', unitStake: 10 },
+                betSlip: { id: 'slip-1', type: slipType, unitStake: 10 },
               },
             ],
           },
@@ -74,5 +96,66 @@ describe('BetSettlementService.settleOpenBets — bankroll credits only on a sta
     expect(bankroll.recordBetWon).not.toHaveBeenCalled();
     // The status itself is still rewritten (VAR self-correction path).
     expect(update).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('BetSettlementService.settleOpenBets — combo crediting', () => {
+  it('credits a won combo at the product of its legs', async () => {
+    const { service, bankroll } = makeHarness(BetStatus.PENDING, {
+      comboLegs: [
+        { status: BetStatus.WON, odds: '2.0' },
+        { status: BetStatus.WON, odds: '1.5' },
+      ],
+    });
+    await service.settleOpenBets('fixture-1');
+    expect(bankroll.recordBetWon).toHaveBeenCalledWith(
+      expect.objectContaining({ odds: new Decimal('3'), betId: 'bet-1' }),
+      expect.anything(),
+    );
+  });
+
+  it('counts a refunded leg at odds 1 instead of losing the stake', async () => {
+    // Prod case of 2026-09-04: 1.33 won + 1.57 refunded, never credited.
+    const { service, bankroll } = makeHarness(BetStatus.PENDING, {
+      comboLegs: [
+        { status: BetStatus.WON, odds: '1.33' },
+        { status: BetStatus.VOID, odds: '1.57' },
+      ],
+    });
+    await service.settleOpenBets('fixture-1');
+    expect(bankroll.recordBetWon).toHaveBeenCalledWith(
+      expect.objectContaining({ odds: new Decimal('1.33') }),
+      expect.anything(),
+    );
+    expect(bankroll.recordBetVoid).not.toHaveBeenCalled();
+  });
+
+  it('returns the stake when every leg is refunded', async () => {
+    const { service, bankroll } = makeHarness(BetStatus.PENDING, {
+      comboLegs: [
+        { status: BetStatus.VOID, odds: '1.33' },
+        { status: BetStatus.VOID, odds: '1.57' },
+      ],
+    });
+    await service.settleOpenBets('fixture-1');
+    expect(bankroll.recordBetVoid).toHaveBeenCalledWith(
+      expect.objectContaining({ stake: new Decimal(400) }),
+      expect.anything(),
+    );
+    expect(bankroll.recordBetWon).not.toHaveBeenCalled();
+  });
+
+  it('credits nothing while a leg is lost or still pending', async () => {
+    for (const other of [BetStatus.LOST, BetStatus.PENDING]) {
+      const { service, bankroll } = makeHarness(BetStatus.PENDING, {
+        comboLegs: [
+          { status: BetStatus.WON, odds: '2.0' },
+          { status: other, odds: '1.5' },
+        ],
+      });
+      await service.settleOpenBets('fixture-1');
+      expect(bankroll.recordBetWon).not.toHaveBeenCalled();
+      expect(bankroll.recordBetVoid).not.toHaveBeenCalled();
+    }
   });
 });

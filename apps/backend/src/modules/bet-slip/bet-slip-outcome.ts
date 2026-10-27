@@ -32,9 +32,15 @@ export type FixedStakeOutcome = {
   returnRate: Decimal | null;
 };
 
-type Play = { status: BetStatus; odds: Decimal | null };
+export type Play = { status: BetStatus; odds: Decimal | null };
 
-function combine(items: PlayedSlip['items']): Play {
+/**
+ * Issue d'un combiné, selon les règles ci-dessus. Une seule règle pour
+ * l'écran, le résultat à mise fixe et le crédit du solde : avant le
+ * 2026-10-27, le règlement ne créditait que les combinés entièrement
+ * gagnés, et une jambe remboursée faisait perdre la mise.
+ */
+export function combineLegs(items: PlayedSlip['items']): Play {
   if (items.some((i) => i.status === 'LOST')) {
     return { status: 'LOST', odds: null };
   }
@@ -58,7 +64,7 @@ export function fixedStakeOutcome(
 ): FixedStakeOutcome {
   const plays: Play[] = slips.flatMap((slip) =>
     slip.type === 'COMBO' && slip.items.length >= 2
-      ? [combine(slip.items)]
+      ? [combineLegs(slip.items)]
       : slip.items.map((i) => ({ status: i.status, odds: i.odds })),
   );
 
