@@ -167,10 +167,10 @@ export function FollowedChannelsCard() {
   );
 }
 
-/** Same calibration-band pattern as Decisions/Arbitrage's CalibrationBadge
- * (channel-row.tsx) — plain-language HoverCard, no raw ratio/n= notation in
- * the visible text. This component covers the whole 90-day discovery window
- * rather than one (channel, competition) pair, so the tooltip copy differs.
+/** Plain-language calibration band over the whole 90-day window (all
+ * competitions), in a HoverCard — no raw ratio/n= notation in the visible
+ * text. The per-competition badge it was modelled on left Décisions and
+ * Avis IA on 2026-10-27: per-league calibration does not persist.
  * INSUFFICIENT_DATA renders nothing because a nearly universal badge would
  * not help users compare channels. */
 function DiscoverStatusBadge({

@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import * as HoverCard from "@radix-ui/react-hover-card";
 import { TriangleAlert } from "lucide-react";
 import { Badge, Tooltip, TooltipContent, TooltipTrigger, cn } from "@evcore/ui";
 import { formatMarketForDisplay, formatPickWithTeams } from "@/helpers/fixture";
@@ -17,9 +15,7 @@ import type {
 } from "@/domains/channel-decision/types/channel-decision";
 import { AddToCouponButton } from "@/components/add-to-coupon-button";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
-import { ConfidenceBadge } from "@/components/confidence-badge";
 import { ClosingLine } from "@/components/closing-line";
-import type { ChannelCompetitionStatItem } from "@/domains/dashboard/types/dashboard";
 import {
   CHANNEL_COLOR,
   CHANNEL_COLOR_SOFT,
@@ -137,77 +133,6 @@ export function ChannelRow({
         <RejectedLabel decision={decision} />
       )}
     </div>
-  );
-}
-
-/** Real calibration (ratio réel/annoncé, same 0.85/0.70 thresholds as the
- * VANTAGE gate and the public track-record page — see dashboard.service.ts)
- * replaces the raw probability×odds "edge" figure this row used to show:
- * Rendered as the one-word ConfidenceBadge (« fiable » / « à surveiller » /
- * « peu fiable ») rather than the « Écart ≤ 15 % » measurement band, which
- * repeated calibration jargon under every pick (UX review 2026-10-11, P1-7).
- * that edge is the exact anti-predictive metric CLAUDE.md's overview warns
- * against ("claimed edge is anti-predictive... never a selection floor").
- * `item` is undefined when this (channel, competition) pair never appears
- * in the calibration lookup at all — treated the same as a measured-but-
- * too-thin sample (INSUFFICIENT_DATA). Unlike the rest of the app's "un
- * canal négatif reste affiché comme tel" stance, INSUFFICIENT_DATA renders
- * nothing here rather than a badge: per-competition samples are routinely
- * too thin for a young/low-volume channel (VANTAGE) to ever clear the
- * threshold, and a badge that almost always reads "insuffisant" carries no
- * signal — silence says the same thing without the noise. */
-export function CalibrationBadge({
-  item,
-}: {
-  item: ChannelCompetitionStatItem | undefined;
-}) {
-  const t = useTranslations("decisions");
-  const status = item?.status ?? "INSUFFICIENT_DATA";
-  // HoverCard (same pattern as InfoTooltip), not Tooltip — a plain hover-only
-  // Tooltip never opens on mobile, where there's no hover state at all.
-  // Controlling `open` explicitly and toggling it from the trigger's onClick
-  // makes tapping the badge work exactly like hovering it on desktop. Hooks
-  // stay unconditional (rules of hooks) — the early return comes after.
-  const [open, setOpen] = useState(false);
-
-  if (status === "INSUFFICIENT_DATA") return null;
-
-  // Plain-language verdict, no raw ratio/n= notation in the visible text —
-  // "0.58×" and "n=223" read as internal jargon to a lambda user (2quater).
-  const detail = t("calibration.badgeTooltip", {
-    status,
-    n: item?.sampleSize ?? 0,
-  });
-
-  return (
-    <HoverCard.Root
-      open={open}
-      onOpenChange={setOpen}
-      openDelay={200}
-      closeDelay={100}
-    >
-      <HoverCard.Trigger asChild>
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="inline-flex focus:outline-none"
-        >
-          <ConfidenceBadge status={status} className="py-0" />
-        </button>
-      </HoverCard.Trigger>
-      <HoverCard.Portal>
-        <HoverCard.Content
-          side="top"
-          sideOffset={8}
-          onEscapeKeyDown={() => setOpen(false)}
-          onPointerDownOutside={() => setOpen(false)}
-          className="z-50 w-64 rounded-2xl border border-border bg-panel p-3 text-xs text-foreground shadow-lg"
-        >
-          {detail}
-          <HoverCard.Arrow className="fill-panel" />
-        </HoverCard.Content>
-      </HoverCard.Portal>
-    </HoverCard.Root>
   );
 }
 
