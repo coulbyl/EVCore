@@ -87,7 +87,6 @@ export function ArbitrageCard({
           {isPlay && selection && (
             <ResultBadge
               result={selection.result}
-              market={selection.market}
               finished={entry.fixtureStatus === "FINISHED"}
             />
           )}

@@ -15,23 +15,15 @@ const RESULT_META: Record<
   VOID: { labelKey: "void", variant: "neutral" },
 };
 
-// DRAW_NO_BET's VOID is a stake refund on a drawn match, not a genuine
-// cancellation (postponed fixture, etc.) — same BetStatus.VOID value in the
-// data model (no distinct "refunded" status), so the distinction has to be
-// made here from market context rather than the result value alone.
-const REFUND_MARKETS = new Set(["DRAW_NO_BET"]);
-
 /** Shared pick-result badge: shows nothing while pending, and — once a
  * fixture is finished but the pick has no result yet — an optional
  * "Terminé" fallback. */
 export function ResultBadge({
   result,
   finished = false,
-  market,
 }: {
   result: ResultValue | null;
   finished?: boolean;
-  market?: string;
 }) {
   const t = useTranslations("resultBadge");
   if (result === null || result === "PENDING") {
@@ -42,10 +34,11 @@ export function ResultBadge({
     ) : null;
   }
   const meta = RESULT_META[result];
-  const label =
-    result === "VOID" && market !== undefined && REFUND_MARKETS.has(market)
-      ? t("refunded")
-      : t(meta.labelKey);
+  // Toute jambe rendue se lit « Remboursé », match reporté comme nul sur un
+  // Draw No Bet : pour le joueur, la mise revient dans les deux cas
+  // (PRODUCT.md, vocabulaire ; « Annulé » sous un coupon « Remboursé »
+  // relevé par la revue UX du 2026-10-27).
+  const label = result === "VOID" ? t("refunded") : t(meta.labelKey);
   return (
     <Badge variant={meta.variant} className="text-xs">
       {label}

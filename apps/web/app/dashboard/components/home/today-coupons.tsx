@@ -13,7 +13,6 @@ import type {
   CouponClassName,
   CouponProposalDto,
 } from "@/domains/coupon/types/coupon";
-import { useCouponCelebration } from "@/hooks/use-coupon-celebration";
 import { todayIso } from "@/lib/date";
 import { CouponCard } from "@/app/dashboard/coupons/components/coupon-card";
 
@@ -42,7 +41,6 @@ export function TodayCoupons() {
     all.find((c) => c.couponClass === "LONG" && c.source !== "LLM") ??
     all.find((c) => c.couponClass === "LONG") ??
     null;
-  useCouponCelebration(coupons);
 
   return (
     <section

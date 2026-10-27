@@ -577,6 +577,7 @@ function route(method, url) {
           returnPerUnit: 0.97,
           firstDay: "2026-09-25",
           lastDay: "2026-10-23",
+          worstLosingStreak: 2,
         },
         {
           couponClass: "COMBO",
@@ -588,6 +589,7 @@ function route(method, url) {
           returnPerUnit: 1.02,
           firstDay: "2026-10-20",
           lastDay: "2026-10-23",
+          worstLosingStreak: 1,
         },
       ],
     ];

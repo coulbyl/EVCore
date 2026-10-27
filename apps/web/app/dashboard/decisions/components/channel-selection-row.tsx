@@ -158,9 +158,7 @@ function AvoidDetail({
           >
             {t("avoid.edge")} +{Math.round(o.edge * 100)}%
           </span>
-          {o.result !== undefined && (
-            <ResultBadge result={o.result} market={o.market} />
-          )}
+          {o.result !== undefined && <ResultBadge result={o.result} />}
         </div>
       ))}
     </div>

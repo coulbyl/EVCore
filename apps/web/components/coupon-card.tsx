@@ -1,14 +1,7 @@
 "use client";
 
-import {
-  Check,
-  Eye,
-  MessageCircle,
-  ShoppingCart,
-  Sun,
-  Tag,
-  Users,
-} from "lucide-react";
+import { useState } from "react";
+import { Check, MessageCircle, ShoppingCart, Sun, Tag } from "lucide-react";
 import {
   Badge,
   Card,
@@ -41,8 +34,6 @@ export type NormalizedCouponLeg = {
   odds: string | null;
   /** Cote chez le book de l'utilisateur (1xBet), sinon la plus basse relevée. */
   playable?: { odds: number; bookmaker: string } | null;
-  /** Code marché, pour que « Annulé » devienne « Remboursé » sur un Draw No Bet. */
-  market?: string;
   result: ResultValue | null;
   /**
    * Ligne de clôture de la jambe quand elle est connue : cote juste avant le
@@ -78,6 +69,8 @@ export type CouponCardProps = {
     returnPerUnit: number;
     firstDay: string;
     lastDay: string;
+    /** Plus longue suite de coupons perdus d'affilée (principe 2). */
+    worstLosingStreak: number;
   } | null;
   combinedOdds: number;
   /**
@@ -104,21 +97,96 @@ export type CouponCardProps = {
    * n'apparaît que sur l'une des deux se lit comme une mise en garde.
    */
   source?: { label: string; hint: string } | null;
-  /**
-   * Engagement réel, jamais fabriqué (CLAUDE.md §4 point 6) — utilisateurs
-   * distincts ayant vu/joué ce coupon. Masqué à 0 (rien à dire), pas affiché
-   * comme "0 vue" qui lirait comme un coupon délaissé plutôt que "pas encore
-   * mesuré".
-   */
-  viewerCount?: number;
-  playerCount?: number;
+  // Plus de compteurs « N vues · N ont joué » : une preuve sociale pousse à
+  // jouer (PRODUCT.md, principe 5 ; revue UX du 2026-10-27, Coupons P2-7).
   betStatus?: "WON" | "LOST" | "PARTIAL" | "VOID" | null;
   legs: NormalizedCouponLeg[];
   actionSlot?: React.ReactNode;
 };
 
-function formatPct(n: number): string {
-  return `${(n * 100).toFixed(0)}%`;
+/** 1,52 au format de la langue : virgule en français. */
+function formatOdds(odds: number, locale: string): string {
+  return odds.toLocaleString(locale === "en" ? "en-GB" : "fr-FR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+/**
+ * Une probabilité en fréquence (PRODUCT.md : « une fois sur N ») : sous 50 %,
+ * « 1 sur N » ; au-dessus, « k sur 10 », plafonné à 9 pour ne jamais écrire
+ * « 10 sur 10 ».
+ */
+function frequencyOf(probability: number): { count: number; total: number } {
+  if (probability < 0.5) {
+    return {
+      count: 1,
+      total: Math.max(2, Math.round(1 / Math.max(probability, 0.01))),
+    };
+  }
+  return { count: Math.min(9, Math.round(probability * 10)), total: 10 };
+}
+
+/**
+ * Au-dessus de 1,80, la probabilité annoncée surestime nettement la réalité
+ * (réalisé ÷ annoncé 0,81 sur 90 jours, Mesures historiques) : la jambe le
+ * dit au lieu de présenter son pourcentage comme fiable (PRODUCT.md).
+ */
+const OVER_OPTIMISTIC_ODDS = 1.8;
+
+/**
+ * Cote combinée chez le bookmaker des joueurs, quand toutes les jambes y sont
+ * cotées chez le même : c'est ce que le ticket paiera.
+ */
+function playableCombined(
+  legs: NormalizedCouponLeg[],
+): { odds: number; bookmaker: string } | null {
+  if (legs.length === 0 || legs.some((leg) => !leg.playable)) return null;
+  const bookmakers = new Set(legs.map((leg) => leg.playable!.bookmaker));
+  const [bookmaker] = [...bookmakers];
+  if (bookmakers.size !== 1 || bookmaker === undefined) return null;
+  return {
+    odds: legs.reduce((acc, leg) => acc * leg.playable!.odds, 1),
+    bookmaker,
+  };
+}
+
+/**
+ * Une explication ouvrable au doigt : HoverCard contrôlée, même motif que
+ * ClosingLine. Un `title=` ou une HoverCard au survol ne s'ouvrent jamais sur
+ * téléphone (PRODUCT.md, accessibilité).
+ */
+function TapHint({
+  hint,
+  className,
+  children,
+}: {
+  hint: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <HoverCard
+      open={open}
+      onOpenChange={setOpen}
+      openDelay={150}
+      closeDelay={100}
+    >
+      <HoverCardTrigger asChild>
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          className={cn("cursor-help text-left", className)}
+        >
+          {children}
+        </button>
+      </HoverCardTrigger>
+      <HoverCardContent className="w-72 text-xs leading-snug text-foreground">
+        {hint}
+      </HoverCardContent>
+    </HoverCard>
+  );
 }
 
 /** Sous ce nombre de jours réglés, pas de taux : « relevé en cours ». */
@@ -144,21 +212,31 @@ type CardT = ReturnType<typeof useTranslations>;
  * résultat à mise fixe ; rien de plus qu'un « relevé en cours » tant qu'il
  * a trop peu de jours réglés.
  */
-function trackRecordLine(
+function trackRecordLines(
   record: CouponCardProps["trackRecord"],
   t: CardT,
-): string {
-  if (!record || record.settled === 0) return t("noRecord");
-  if (record.settled < MIN_SETTLED_FOR_RECORD) {
-    return t("recordInProgress", { count: record.settled });
+): { line: string; detail: string | null } {
+  if (!record || record.settled === 0) {
+    return { line: t("noRecord"), detail: null };
   }
-  return t("record", {
-    won: record.won,
-    settled: record.settled,
-    result: fixedStakeLabel(record.returnPerUnit),
-    from: shortDay(record.firstDay),
-    to: shortDay(record.lastDay),
-  });
+  if (record.settled < MIN_SETTLED_FOR_RECORD) {
+    return {
+      line: t("recordInProgress", { count: record.settled }),
+      detail: null,
+    };
+  }
+  return {
+    line: t("record", {
+      won: record.won,
+      settled: record.settled,
+      from: shortDay(record.firstDay),
+      to: shortDay(record.lastDay),
+    }),
+    detail: t("recordDetail", {
+      streak: record.worstLosingStreak,
+      result: fixedStakeLabel(record.returnPerUnit),
+    }),
+  };
 }
 
 export function CouponCard({
@@ -171,13 +249,16 @@ export function CouponCard({
   jointProbability,
   reasoning,
   batch,
-  viewerCount,
-  playerCount,
   betStatus,
   legs,
   actionSlot,
 }: CouponCardProps) {
   const t = useTranslations("couponCard");
+  const record = couponClass ? trackRecordLines(trackRecord, t) : null;
+  const playable = playableCombined(legs);
+  const playableDiffers =
+    playable !== null && Math.abs(playable.odds - combinedOdds) >= 0.005;
+  const chances = frequencyOf(jointProbability);
   // Plus de couleur ni de seuils sur les chances : « 15 % » en rouge se lisait
   // comme une alerte, alors que c'est l'arithmétique d'une cote 6. La classe
   // porte déjà la fréquence de gain en clair (« 1 jour sur 7 »).
@@ -211,29 +292,21 @@ export function CouponCard({
                   classe, donc l'écran affichait « Coupon 1 » plusieurs fois.
                   Et il n'exprime aucune qualité — mesuré sur 5 passes, le rang
                   1 ne vaut pas mieux que le rang 2. */}
-              {couponClass && (
-                <span
-                  data-testid="coupon-track-record"
-                  className="text-xs font-medium text-muted-foreground"
-                >
-                  {trackRecordLine(trackRecord, t)}
-                </span>
-              )}
               {source && (
-                <span
-                  title={source.hint}
+                <TapHint
+                  hint={source.hint}
                   className="flex items-center gap-1 rounded-full border border-border/70 px-2 py-0.5 text-xs font-medium text-muted-foreground"
                 >
                   <Tag size={10} /> {source.label}
-                </span>
+                </TapHint>
               )}
               {batch === "intraday" && (
-                <span
-                  title={t("intradayHint")}
+                <TapHint
+                  hint={t("intradayHint")}
                   className="flex items-center gap-1 rounded-full border border-border/70 px-2 py-0.5 text-xs font-medium text-muted-foreground"
                 >
                   <Sun size={10} /> {t("intraday")}
-                </span>
+                </TapHint>
               )}
               {betStatus === "WON" && (
                 <span
@@ -244,13 +317,12 @@ export function CouponCard({
                 </span>
               )}
               {betStatus === "PARTIAL" && (
-                <span
-                  data-testid="coupon-result"
-                  title={t("resultPartialHint")}
+                <TapHint
+                  hint={t("resultPartialHint")}
                   className="text-xs font-bold uppercase tracking-wide text-success"
                 >
-                  {t("resultPartial")}
-                </span>
+                  <span data-testid="coupon-result">{t("resultPartial")}</span>
+                </TapHint>
               )}
               {betStatus === "LOST" && (
                 <span
@@ -261,49 +333,67 @@ export function CouponCard({
                 </span>
               )}
               {betStatus === "VOID" && (
-                <span
-                  data-testid="coupon-result"
-                  title={t("resultVoidHint")}
+                <TapHint
+                  hint={t("resultVoidHint")}
                   className="text-xs font-bold uppercase tracking-wide text-muted-foreground"
                 >
-                  {t("resultVoid")}
-                </span>
+                  <span data-testid="coupon-result">{t("resultVoid")}</span>
+                </TapHint>
               )}
             </div>
-            {((viewerCount ?? 0) > 0 || (playerCount ?? 0) > 0) && (
-              <div className="mt-1 flex items-center gap-2.5 text-xs text-muted-foreground">
-                {(viewerCount ?? 0) > 0 && (
-                  <span className="flex items-center gap-1">
-                    <Eye size={10} />{" "}
-                    {t("viewers", { count: viewerCount ?? 0 })}
-                  </span>
-                )}
-                {(playerCount ?? 0) > 0 && (
-                  <span className="flex items-center gap-1">
-                    <Users size={10} />{" "}
-                    {t("players", { count: playerCount ?? 0 })}
-                  </span>
+            {/* Le relevé sur sa propre ligne : jours gagnés et dates, puis la
+                pire série et le résultat à mise fixe (PRODUCT.md, principe
+                2 : chaque produit dit à quelle fréquence il perd). */}
+            {record && (
+              <div className="mt-1.5 text-xs leading-5 text-muted-foreground">
+                <p data-testid="coupon-track-record">{record.line}</p>
+                {record.detail && (
+                  <p data-testid="coupon-track-record-detail">
+                    {record.detail}
+                  </p>
                 )}
               </div>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:justify-end">
-            <Metric
-              label={t("odds")}
-              value={`@${combinedOdds.toFixed(2)}`}
-              testId="coupon-combined-odds"
-            />
+          {/* La cote que le ticket paiera d'abord ; la nôtre, prise chez les
+              books les plus généreux, en second et en gris (revue UX du
+              2026-10-27, Coupons P1-3). */}
+          <div className="flex flex-wrap items-center gap-3 sm:shrink-0 sm:justify-end">
+            {playableDiffers && playable ? (
+              <>
+                <Metric
+                  label={playable.bookmaker}
+                  value={formatOdds(playable.odds, locale)}
+                  testId="coupon-playable-odds"
+                />
+                <Metric
+                  label={t("reference")}
+                  value={formatOdds(combinedOdds, locale)}
+                  valueClassName="font-normal text-muted-foreground"
+                  testId="coupon-combined-odds"
+                />
+              </>
+            ) : (
+              <Metric
+                label={playable ? playable.bookmaker : t("odds")}
+                value={formatOdds(combinedOdds, locale)}
+                testId="coupon-combined-odds"
+              />
+            )}
             {realizedOdds !== null &&
               Math.abs(realizedOdds - combinedOdds) > 0.005 && (
                 <Metric
                   label={t("paid")}
-                  value={`@${realizedOdds.toFixed(2)}`}
+                  value={formatOdds(realizedOdds, locale)}
                   valueClassName="text-success"
                   testId="coupon-realized-odds"
                 />
               )}
-            <PlayableCombinedMetric legs={legs} combinedOdds={combinedOdds} />
-            <Metric label={t("chances")} value={formatPct(jointProbability)} />
+            <Metric
+              label={t("chances")}
+              value={t("chancesValue", chances)}
+              testId="coupon-chances"
+            />
           </div>
         </div>
       </CardHeader>
@@ -322,20 +412,13 @@ export function CouponCard({
         </div>
 
         {reasoning && (
-          <HoverCard openDelay={150}>
-            <HoverCardTrigger asChild>
-              <button
-                type="button"
-                className="flex min-h-11 w-fit items-center gap-1.5 rounded-full border border-dashed border-border/70 bg-background/20 px-3 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <MessageCircle size={11} />
-                {t("why")}
-              </button>
-            </HoverCardTrigger>
-            <HoverCardContent className="w-72 text-xs leading-snug text-foreground">
-              {reasoning}
-            </HoverCardContent>
-          </HoverCard>
+          <TapHint
+            hint={reasoning}
+            className="flex min-h-11 w-fit items-center gap-1.5 rounded-full border border-dashed border-border/70 bg-background/20 px-3 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <MessageCircle size={11} />
+            {t("why")}
+          </TapHint>
         )}
 
         {actionSlot}
@@ -352,6 +435,14 @@ function CouponLegRow({
   locale: string;
 }) {
   const t = useTranslations("couponCard");
+  const referenceOdds = leg.odds !== null ? Number(leg.odds) : null;
+  const playableDiffers =
+    leg.playable != null &&
+    referenceOdds !== null &&
+    Math.abs(leg.playable.odds - referenceOdds) >= 0.005;
+  const chances = frequencyOf(leg.probability);
+  const overOptimistic =
+    referenceOdds !== null && referenceOdds >= OVER_OPTIMISTIC_ODDS;
   return (
     <div data-testid="coupon-leg" className="py-3">
       <div className="flex min-w-0 items-start justify-between gap-3">
@@ -366,33 +457,38 @@ function CouponLegRow({
           htScore={leg.htScore}
           locale={locale}
         />
-        <div className="flex shrink-0 items-center gap-2">
-          {leg.odds && (
-            <span
-              data-testid="leg-odds"
-              className="font-mono text-xs text-muted-foreground"
-            >
-              @{leg.odds}
-            </span>
-          )}
-          {leg.playable &&
-            leg.odds !== null &&
-            Math.abs(leg.playable.odds - Number(leg.odds)) >= 0.005 && (
-              <span
-                data-testid="leg-playable-odds"
-                title={t("legPlayableHint", {
+        {/* Cote jouable d'abord, référence ensuite ; sans cote jouable, la
+            nôtre seule. Les chiffres restent dans leur propre élément pour
+            que la cote combinée se vérifie (e2e/coupons.spec.ts). */}
+        <div className="flex shrink-0 flex-col items-end text-xs tabular-nums">
+          {leg.playable && referenceOdds !== null && playableDiffers ? (
+            <>
+              <TapHint
+                hint={t("legPlayableHint", {
                   bookmaker: leg.playable.bookmaker,
                 })}
-                className={cn(
-                  "font-mono text-xs",
-                  leg.playable.odds < 1.1
-                    ? "font-semibold text-destructive"
-                    : "text-muted-foreground",
-                )}
+                className="font-semibold text-foreground"
               >
-                {leg.playable.bookmaker} {leg.playable.odds.toFixed(2)}
+                {leg.playable.bookmaker}{" "}
+                <span data-testid="leg-playable-odds">
+                  {formatOdds(leg.playable.odds, locale)}
+                </span>
+              </TapHint>
+              <span className="text-muted-foreground">
+                {t("legReferencePrefix")}{" "}
+                <span data-testid="leg-odds">
+                  {formatOdds(referenceOdds, locale)}
+                </span>
               </span>
-            )}
+            </>
+          ) : referenceOdds !== null ? (
+            <span className="font-semibold text-foreground">
+              {leg.playable ? leg.playable.bookmaker : t("odds")}{" "}
+              <span data-testid="leg-odds">
+                {formatOdds(referenceOdds, locale)}
+              </span>
+            </span>
+          ) : null}
         </div>
       </div>
       <div className="mt-2 min-w-0">
@@ -405,17 +501,14 @@ function CouponLegRow({
           <p className="line-clamp-2 min-w-0 text-sm font-semibold leading-snug text-foreground">
             {leg.pickLabel}
           </p>
-          <ResultBadge
-            result={leg.result}
-            finished={leg.score !== null}
-            market={leg.market}
-          />
+          <ResultBadge result={leg.result} finished={leg.score !== null} />
         </div>
         <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-tight text-muted-foreground">
           <span className="max-w-full truncate">{leg.marketLabel}</span>
-          <span className="tabular-nums">
-            {t("legChances", { pct: formatPct(leg.probability) })}
-          </span>
+          <span className="tabular-nums">{t("legChances", chances)}</span>
+          {overOptimistic && (
+            <span className="text-warning">{t("legOverOptimistic")}</span>
+          )}
           {leg.closing && (
             <ClosingLine
               testId="leg-closing"
@@ -446,7 +539,7 @@ function Metric({
     // Plus d'encadré : une tuile bordée dans la carte faisait une carte dans
     // la carte (détecteur impeccable). Libellé et valeur suffisent.
     <div className="min-w-14 text-right">
-      <p className="text-[0.6875rem] uppercase tracking-[0.1em] text-muted-foreground">
+      <p className="text-xs uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </p>
       <p
@@ -504,32 +597,5 @@ export function CouponSlipButton({
         </>
       )}
     </button>
-  );
-}
-
-/**
- * La cote combinée chez le bookmaker des utilisateurs, quand toutes les
- * jambes y sont cotées et qu'elle diffère de la nôtre : c'est ce que le
- * coupon paiera réellement.
- */
-function PlayableCombinedMetric({
-  legs,
-  combinedOdds,
-}: {
-  legs: NormalizedCouponLeg[];
-  combinedOdds: number;
-}) {
-  const t = useTranslations("couponCard");
-  if (legs.length === 0 || legs.some((leg) => !leg.playable)) return null;
-  const bookmakers = new Set(legs.map((leg) => leg.playable!.bookmaker));
-  if (bookmakers.size !== 1) return null;
-  const playable = legs.reduce((acc, leg) => acc * leg.playable!.odds, 1);
-  if (Math.abs(playable - combinedOdds) < 0.005) return null;
-  return (
-    <Metric
-      label={[...bookmakers][0] ?? t("playable")}
-      value={`@${playable.toFixed(2)}`}
-      testId="coupon-playable-odds"
-    />
   );
 }

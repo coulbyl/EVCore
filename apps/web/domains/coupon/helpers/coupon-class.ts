@@ -36,7 +36,9 @@ export const COUPON_CLASS_META: Record<CouponClassName, CouponClassMeta> = {
   // mesurés, cote 1,55), pour que chaque jambe existe chez 1xBet au-dessus
   // de son minimum de 1,10 (docs/audits/2026-10-18/COTES-JOUABLES.md).
   COMBO: {
-    label: "Combiné du jour · 2 sélections",
+    // Sans nombre de jambes : la carte les montre, et un libellé figé à
+    // « 2 sélections » deviendrait faux au premier combiné à 3.
+    label: "Combiné du jour",
     shortLabel: "Combiné",
     frequency: "Gagne environ 7 jours sur 10",
     order: -1.5,

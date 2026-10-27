@@ -93,7 +93,6 @@ export function CouponCard({
       leg.playableOdds !== null && leg.playableBookmaker !== null
         ? { odds: leg.playableOdds, bookmaker: leg.playableBookmaker }
         : null,
-    market: leg.market,
     // `isCorrect` null + `settledAt` posé = jambe remboursée (match reporté,
     // Draw No Bet sur un nul) ; null sans `settledAt` = pas encore réglée.
     result:
@@ -212,8 +211,6 @@ export function CouponCard({
         source={couponSourceMeta(coupon.source)}
         reasoning={reasonDetails}
         batch={coupon.batch}
-        viewerCount={coupon.viewerCount}
-        playerCount={coupon.playerCount}
         betStatus={displayResult}
         legs={legs}
         actionSlot={

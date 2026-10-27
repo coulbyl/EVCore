@@ -9,7 +9,6 @@ import {
   trackRecordFor,
   useCouponTrackRecord,
 } from "@/domains/coupon/use-cases/use-coupon-track-record";
-import { useCouponCelebration } from "@/hooks/use-coupon-celebration";
 import { todayIso } from "@/lib/date";
 import { DateNav } from "@/components/date-nav";
 import { FormationHelpLink } from "@/components/formation-help-link";
@@ -41,7 +40,6 @@ export function CouponsPageClient() {
       const ob = couponClassMeta(b.couponClass)?.order ?? 99;
       return oa !== ob ? oa - ob : a.rank - b.rank;
     });
-  useCouponCelebration(coupons);
 
   function navigateTo(iso: string) {
     const params = new URLSearchParams({ date: iso });

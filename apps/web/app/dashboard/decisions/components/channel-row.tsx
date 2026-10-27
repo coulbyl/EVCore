@@ -111,10 +111,7 @@ export function ChannelRow({
             </p>
             <div className="flex shrink-0 items-center gap-1.5">
               {avoidEdge !== undefined && <AvoidEdgeBadge edge={avoidEdge} />}
-              <ResultBadge
-                result={selection.result}
-                market={selection.market}
-              />
+              <ResultBadge result={selection.result} />
               {slipContext && !isMetaChannel(channel) && decision && (
                 <SlipButton
                   channel={channel}

@@ -16,6 +16,8 @@ export type CouponClassTrackRecord = {
   /** Premier et dernier jour réglés dans la fenêtre (AAAA-MM-JJ). */
   firstDay: string;
   lastDay: string;
+  /** Plus longue suite de coupons perdus d'affilée dans la fenêtre. */
+  worstLosingStreak: number;
 };
 
 export const TRACK_RECORD_DAYS = 30;
