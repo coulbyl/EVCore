@@ -14,9 +14,13 @@
   --sidebar-border: rgba(24, 33, 47, 0.12);
   --sidebar-ring: var(--ring);
   --border: rgba(24, 33, 47, 0.12);
-  --muted: #5f7088;
-  --accent: #0f766e;
-  --accent-soft: rgba(15, 118, 110, 0.12);
+  /* Assombris le 2026-10-27 : #5f7088 et #0f766e tombaient à 4,0 et 4,4:1
+     sur le fond bleuté (#dfe7f1) et à 3,8 et 4,1:1 sur --secondary. Les
+     nouvelles valeurs passent 4,5:1 sur tous les fonds clairs, et le blanc
+     sur l'accent monte de 5,5 à 6,3:1. */
+  --muted: #53637a;
+  --accent: #0d6c65;
+  --accent-soft: rgba(13, 108, 101, 0.12);
   /* Assombris le 2026-10-24 : #15803d et #a16207 tombaient à 4,0–4,2:1 sur
      leurs propres fonds teintés (badges, résultats) en mode clair. */
   --success: #166534;
@@ -39,7 +43,7 @@
   --destructive: #be123c;
   --destructive-foreground: #ffffff;
   --input: rgba(24, 33, 47, 0.16);
-  --ring: rgba(15, 118, 110, 0.3);
+  --ring: rgba(13, 108, 101, 0.3);
 
   /* ── Canal identities ── */
   --canal-value: #d97706;
