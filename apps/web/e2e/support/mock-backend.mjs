@@ -554,6 +554,22 @@ function slipItem({
     awayScore: score ? score[1] : null,
     pnl,
     canal: "VALUE",
+    homeTeam: fixture.split(" vs ")[0],
+    awayTeam: fixture.split(" vs ")[1],
+  };
+}
+
+/** Résultat en francs tel que le backend le calcule (`slipMoney`). */
+function slipResult(result) {
+  return {
+    status: "PENDING",
+    staked: "0.00",
+    settledStake: "0.00",
+    returned: "0.00",
+    net: "0.00",
+    pendingStake: "0.00",
+    potentialReturn: "0.00",
+    ...result,
   };
 }
 
@@ -590,6 +606,14 @@ const BET_SLIPS = [
         pnl: "540",
       }),
     ],
+    totalOdds: "1.54",
+    result: slipResult({
+      status: "WON",
+      staked: "1000.00",
+      settledStake: "1000.00",
+      returned: "1537.60",
+      net: "537.60",
+    }),
   },
   {
     id: "bs2",
@@ -612,6 +636,13 @@ const BET_SLIPS = [
         pnl: "-1000",
       }),
     ],
+    totalOdds: null,
+    result: slipResult({
+      status: "LOST",
+      staked: "1000.00",
+      settledStake: "1000.00",
+      net: "-1000.00",
+    }),
   },
   {
     id: "bs3",
@@ -634,25 +665,90 @@ const BET_SLIPS = [
         pnl: null,
       }),
     ],
+    totalOdds: null,
+    result: slipResult({
+      staked: "1000.00",
+      pendingStake: "1000.00",
+      potentialReturn: "1270.00",
+    }),
+  },
+  {
+    // Combiné à jambe remboursée : payé à la cote de la jambe gagnée.
+    id: "bs4",
+    userId: "u-e2e",
+    username: "e2e_tester",
+    unitStake: "2000",
+    type: "COMBO",
+    itemCount: 2,
+    createdAt: todayAt(-75),
+    items: [
+      slipItem({
+        id: "b5",
+        fixture: "Real Madrid vs Getafe",
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        odds: "1.33",
+        stake: "2000",
+        status: "WON",
+        score: [2, 1],
+        pnl: "660",
+      }),
+      slipItem({
+        id: "b6",
+        fixture: "Lyon vs Nantes",
+        market: "DRAW_NO_BET",
+        pick: "HOME",
+        odds: "1.57",
+        stake: "2000",
+        status: "VOID",
+        score: [1, 1],
+        pnl: null,
+      }),
+    ],
+    totalOdds: "2.09",
+    result: slipResult({
+      status: "WON",
+      staked: "2000.00",
+      settledStake: "2000.00",
+      returned: "2660.00",
+      net: "660.00",
+    }),
   },
 ];
 
 const BANKROLL_TRANSACTIONS = [
-  ["t1", "DEPOSIT", "50000", null, -200],
-  ["t2", "BET_PLACED", "-1000", "Ajax vs PSV", -30],
-  ["t3", "BET_WON", "1540", "Ajax vs PSV", -20],
-  ["t4", "BET_PLACED", "-1000", "ASEC Mimosas vs Africa Sports", -50],
-  ["t5", "BET_PLACED", "-1000", "Bayern München vs FC Augsburg", -2],
-].map(([id, type, amount, fixture, hours]) => ({
+  [
+    "t5",
+    "BET_PLACED",
+    "-1000",
+    ["Bayern München", "FC Augsburg", "HOME"],
+    null,
+    -2,
+  ],
+  ["t3", "BET_WON", "1537.60", ["Arsenal", "Burnley", "HOME"], 2, -20],
+  ["t2", "BET_PLACED", "-1000", ["Arsenal", "Burnley", "HOME"], 2, -30],
+  [
+    "t4",
+    "BET_PLACED",
+    "-1000",
+    ["ASEC Mimosas", "Africa Sports", "1X"],
+    null,
+    -50,
+  ],
+  ["t1", "DEPOSIT", "50000", null, null, -200],
+].map(([id, type, amount, bet, comboLegs, hours]) => ({
   id,
   type,
   amount,
-  betId: fixture ? `bet-${id}` : null,
+  betId: bet ? `bet-${id}` : null,
   note: null,
   createdAt: todayAt(hours),
-  canal: null,
-  fixture,
-  market: fixture ? "ONE_X_TWO" : null,
+  fixture: bet ? `${bet[0]} vs ${bet[1]}` : null,
+  homeTeam: bet ? bet[0] : null,
+  awayTeam: bet ? bet[1] : null,
+  pick: bet ? bet[2] : null,
+  comboLegs,
+  market: bet ? (bet[2] === "1X" ? "DOUBLE_CHANCE" : "ONE_X_TWO") : null,
 }));
 
 const NOTIFICATIONS = [
@@ -1184,6 +1280,14 @@ function route(method, url) {
           profitUnits: "-0.45",
           returnRate: "-0.1500",
         },
+        money: {
+          settledSlips: 3,
+          settledStake: "4000.00",
+          returned: "4197.60",
+          net: "197.60",
+          pendingStake: "1000.00",
+          firstSlipAt: todayAt(-75),
+        },
       },
     ];
   if (path.startsWith("/dashboard/summary")) return [200, EMPTY_DASHBOARD];
@@ -1193,6 +1297,8 @@ function route(method, url) {
     // Un solde à neuf chiffres, comme en production : l'en-tête mobile
     // doit le porter sans déborder.
     return [200, { balance: "500760000.00" }];
+  if (path.startsWith("/bankroll/summary"))
+    return [200, { balance: "500760000.00", deposited: "500000000.00" }];
   if (path.startsWith("/bankroll/transactions"))
     return [200, BANKROLL_TRANSACTIONS];
   if (path.startsWith("/bankroll")) return [200, []];

@@ -8,6 +8,12 @@ export type BankrollBalance = {
   balance: string;
 };
 
+/** Solde et dépôts déclarés, sur tout l'historique (pas 200 mouvements). */
+export type BankrollSummary = {
+  balance: string;
+  deposited: string;
+};
+
 export type BankrollTransaction = {
   id: string;
   type: BankrollTransactionType;
@@ -15,7 +21,11 @@ export type BankrollTransaction = {
   betId: string | null;
   note: string | null;
   createdAt: string;
-  canal: "VALUE" | "SAFE" | null;
   fixture: string | null;
+  homeTeam: string | null;
+  awayTeam: string | null;
+  pick: string | null;
+  /** Nombre de sélections quand le mouvement porte sur un combiné. */
+  comboLegs: number | null;
   market: string | null;
 };

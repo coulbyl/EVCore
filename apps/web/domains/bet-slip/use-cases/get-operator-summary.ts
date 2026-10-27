@@ -25,6 +25,18 @@ export type OperatorSummary = {
     /** Gain net / paris réglés (« -0.0410 »), null sans pari réglé. */
     returnRate: string | null;
   };
+  /**
+   * Résultat en francs, mises déclarées, même règle que le solde (une jambe
+   * remboursée rend sa mise) — calculé côté backend.
+   */
+  money: {
+    settledSlips: number;
+    settledStake: string;
+    returned: string;
+    net: string;
+    pendingStake: string;
+    firstSlipAt: string | null;
+  };
 };
 
 async function fetchOperatorSummary(

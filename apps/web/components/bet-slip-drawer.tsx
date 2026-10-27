@@ -65,33 +65,6 @@ function StakeInput({
   );
 }
 
-// ─── Canal dot ──────────────────────────────────────────────────────────────
-
-const CANAL_COLOR: Record<string, string> = {
-  VALUE: "var(--canal-value)",
-  SAFE: "var(--canal-safe)",
-  DOMINANT: "var(--canal-dominant)",
-  BTTS: "var(--canal-btts)",
-  DRAW: "var(--canal-draw)",
-  GOALS: "var(--canal-goals)",
-  CONSENSUS: "var(--canal-consensus)",
-};
-
-function CanalDot({ canal }: { canal?: string }) {
-  if (!canal) return null;
-  const color = CANAL_COLOR[canal];
-  if (!color) return null;
-  return (
-    <span
-      className="inline-block size-1.5 shrink-0 rounded-full"
-      style={{
-        backgroundColor: color,
-        boxShadow: `0 0 0 3px color-mix(in srgb, ${color} 16%, transparent)`,
-      }}
-    />
-  );
-}
-
 // ─── Single draft item row ───────────────────────────────────────────────────
 
 // ─── Grouping : un match = une carte, ses picks = des branches ───────────────
@@ -125,22 +98,18 @@ function groupItemsByFixture(items: BetSlipDraftItem[]): MatchGroup[] {
   return order.map((id) => map.get(id)!);
 }
 
-/** Étiquette d'un pick, sans cote ni cadre. */
+/**
+ * Étiquette d'un pick, sans cote ni cadre. Ni EV en vert ni pastille de
+ * canal : l'EV est anti-prédictif et le joueur ne voit plus les canaux
+ * (revue UX du 2026-10-27).
+ */
 function PickLabel({ item }: { item: BetSlipDraftItem }) {
   return (
     <div>
-      <div className="flex items-center gap-1.5">
-        <CanalDot canal={item.canal} />
-        <span className="text-sm font-bold text-foreground">
-          {formatPickForDisplay(item.pick, item.market)}
-        </span>
-        {item.ev && (
-          <span className="text-[0.6rem] font-semibold text-success">
-            {item.ev}
-          </span>
-        )}
-      </div>
-      <p className="mt-0.5 text-[0.66rem] text-muted-foreground">
+      <span className="text-sm font-bold text-foreground">
+        {formatPickForDisplay(item.pick, item.market)}
+      </span>
+      <p className="mt-0.5 text-xs text-muted-foreground">
         {formatMarketForDisplay(item.market)}
       </p>
     </div>

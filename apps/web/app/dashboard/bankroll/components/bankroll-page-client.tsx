@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  Button,
   DataTable,
   Empty,
   EmptyDescription,
@@ -10,127 +11,33 @@ import {
   FilterBar,
   Page,
   PageContent,
-  ProgressBar,
+  PageHeader,
+  PageHeaderTitle,
   StatCard,
-  StatList,
   TableCard,
 } from "@evcore/ui";
 import type { FilterDef, FilterState } from "@evcore/ui";
-import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowDownLeft, ArrowUpRight, LineChart, Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCurrentUser } from "@/domains/auth/context/current-user-context";
-import { useBankrollBalance } from "@/domains/bankroll/use-cases/get-bankroll-balance";
+import { useBankrollSummary } from "@/domains/bankroll/use-cases/get-bankroll-summary";
 import { useBankrollTransactionsForUser } from "@/domains/bankroll/use-cases/get-bankroll-transactions";
-import type {
-  BankrollTransaction,
-  BankrollTransactionType,
-} from "@/domains/bankroll/types/bankroll";
-import { formatDateShort, todayIso } from "@/lib/date";
-import { formatMarketForDisplay } from "@/helpers/fixture";
+import { useOperatorSummary } from "@/domains/bet-slip/use-cases/get-operator-summary";
+import { formatDateLong, formatDateShort, todayIso } from "@/lib/date";
 import { useCurrencyFormat } from "@/providers/currency-provider";
-import { CanalBadge } from "@/components/canal-badge";
 import { Amount } from "@/components/amount";
-import { EvAreaChart } from "@/components/charts/ev-area-chart";
 import { DepositDialog } from "@/components/deposit-dialog";
-
-type EnrichedTransaction = BankrollTransaction & {
-  balanceAfter: number;
-  detailLabel: string;
-};
-
-type Translator = ReturnType<typeof useTranslations>;
-
-type TrendPoint = {
-  day: string;
-  label: string;
-  balance: number;
-};
-
-type ChartPoint = Record<string, unknown>;
-
-function transactionTypeLabel(type: BankrollTransactionType, t: Translator) {
-  switch (type) {
-    case "DEPOSIT":
-      return t("filter.deposit");
-    case "BET_PLACED":
-      return t("filter.stake");
-    case "BET_WON":
-      return t("filter.win");
-    case "BET_VOID":
-      return t("filter.refund");
-    default:
-      return type;
-  }
-}
-
-function transactionTone(
-  type: BankrollTransactionType,
-): "positive" | "negative" | "neutral" {
-  switch (type) {
-    case "DEPOSIT":
-    case "BET_WON":
-    case "BET_VOID":
-      return "positive";
-    case "BET_PLACED":
-      return "negative";
-    default:
-      return "neutral";
-  }
-}
-
-function parseAmount(value: string) {
-  return Number.parseFloat(value);
-}
-
-function toIsoDay(value: string) {
-  return value.slice(0, 10);
-}
-
-function buildTrendPoints(rows: EnrichedTransaction[]): TrendPoint[] {
-  if (rows.length === 0) return [];
-  const byDay = new Map<string, TrendPoint>();
-  for (const row of [...rows].reverse()) {
-    const day = toIsoDay(row.createdAt);
-    byDay.set(day, {
-      day,
-      label: formatDateShort(day),
-      balance: row.balanceAfter,
-    });
-  }
-  return Array.from(byDay.values()).sort((a, b) => a.day.localeCompare(b.day));
-}
-
-/**
- * Points du graphique : le solde réel, jour par jour, et rien d'autre.
- *
- * Plus de « Projection 30j » : une extrapolation linéaire des mouvements
- * récents, dépôts compris, qui traçait une courbe montante jusqu'à cinq
- * milliards de francs. Visuellement, c'était une promesse de gain, et elle
- * confondait dépôts et résultats (audit du 2026-10-23, P1-9).
- */
-function buildChartData(trendPoints: TrendPoint[]): ChartPoint[] {
-  return trendPoints.map((p) => ({ ...p }));
-}
-
-function formatPercent(value: number | null) {
-  if (value === null || Number.isNaN(value)) return "--";
-  return `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
-}
-
-function buildTypeOptions(t: Translator) {
-  return [
-    { value: "ALL", label: t("filter.allTypes") },
-    { value: "DEPOSIT", label: t("filter.deposit") },
-    { value: "BET_PLACED", label: t("filter.stake") },
-    { value: "BET_WON", label: t("filter.win") },
-    { value: "BET_VOID", label: t("filter.refund") },
-  ] as const;
-}
+import {
+  type Translator,
+  buildTrendPoints,
+  enrichTransactions,
+  parseAmount,
+  toIsoDay,
+  transactionTypeLabel,
+} from "./bankroll-constants";
+import { buildHistoryColumns } from "./bankroll-history-columns";
+import { BankrollTrendChart } from "./bankroll-trend-chart";
 
 function buildBankrollFilters(t: Translator): FilterDef[] {
-  const typeOptions = buildTypeOptions(t);
-
   return [
     { key: "from", type: "date", label: t("filter.from") },
     { key: "to", type: "date", label: t("filter.to") },
@@ -138,149 +45,25 @@ function buildBankrollFilters(t: Translator): FilterDef[] {
       key: "type",
       type: "select",
       label: t("filter.type"),
-      options: typeOptions.map((option) => ({
-        value: option.value,
-        label: option.label,
-      })),
+      options: [
+        { value: "ALL", label: t("filter.allTypes") },
+        { value: "DEPOSIT", label: t("filter.deposit") },
+        { value: "BET_PLACED", label: t("filter.stake") },
+        { value: "BET_WON", label: t("filter.return") },
+        { value: "BET_VOID", label: t("filter.refund") },
+      ],
     },
   ];
 }
 
-type AmountFormatter = (v: string | number, compact?: boolean) => string;
-
-function buildColumns(
-  t: Translator,
-  formatAmount: AmountFormatter,
-  formatSigned: AmountFormatter,
-): ColumnDef<EnrichedTransaction>[] {
-  return [
-    {
-      id: "date",
-      header: t("table.date"),
-      accessorFn: (row) => formatDateShort(row.createdAt),
-      cell: ({ getValue }) => (
-        <span className="text-muted-foreground">{getValue<string>()}</span>
-      ),
-    },
-    {
-      id: "type",
-      header: t("table.type"),
-      accessorFn: (row) => transactionTypeLabel(row.type, t),
-    },
-    {
-      id: "amount",
-      header: t("table.amount"),
-      accessorFn: (row) => parseAmount(row.amount),
-      cell: ({ row }) => {
-        const tone = transactionTone(row.original.type);
-        const cls =
-          tone === "positive"
-            ? "text-success"
-            : tone === "negative"
-              ? "text-danger"
-              : "";
-        return (
-          <div className="flex items-center justify-end gap-2">
-            {row.original.canal && <CanalBadge canal={row.original.canal} />}
-            <span className={`tabular-nums font-semibold ${cls}`}>
-              {formatSigned(parseAmount(row.original.amount))}
-            </span>
-          </div>
-        );
-      },
-      meta: { align: "right" },
-    },
-    {
-      id: "detail",
-      header: t("table.detail"),
-      accessorFn: (row) => row.detailLabel,
-      cell: ({ getValue }) => (
-        <span className="text-muted-foreground">{getValue<string>()}</span>
-      ),
-    },
-    {
-      id: "balance",
-      header: t("table.balanceAfter"),
-      accessorFn: (row) => row.balanceAfter,
-      cell: ({ getValue }) => (
-        <span className="tabular-nums font-semibold">
-          {formatAmount(getValue<number>())}
-        </span>
-      ),
-      meta: { align: "right" },
-    },
-  ];
-}
-
-function BankrollTrendChart({
-  points,
-  t,
-}: {
-  points: TrendPoint[];
-  t: Translator;
-}) {
-  const { formatAmount } = useCurrencyFormat();
-  if (points.length === 0) {
-    return (
-      <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
-        <EmptyHeader>
-          <EmptyTitle>{t("trend.notEnoughData")}</EmptyTitle>
-          <EmptyDescription>
-            {t("trend.notEnoughDataDescription")}
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    );
-  }
-
-  const minY = Math.min(...points.map((p) => p.balance));
-  const maxY = Math.max(...points.map((p) => p.balance));
-  const chartData = buildChartData(points);
-
-  return (
-    <div className="p-4 sm:p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            {t("trend.recent")}
-          </p>
-          <p className="mt-2 text-lg font-semibold text-foreground">
-            {formatAmount(points[points.length - 1]?.balance ?? 0)}
-          </p>
-        </div>
-        <div className="flex items-center gap-3 text-right text-xs text-muted-foreground">
-          <div>
-            <p>{points[0]?.label}</p>
-            <p className="mt-1">{points[points.length - 1]?.label}</p>
-          </div>
-        </div>
-      </div>
-
-      <EvAreaChart
-        data={chartData}
-        xKey="label"
-        yKey="balance"
-        color="#2563eb"
-        height={140}
-        className="mt-4"
-        formatY={(v) => formatAmount(v, true)}
-      />
-
-      <div className="mt-3 grid gap-3 sm:grid-cols-3">
-        <StatList
-          items={[
-            { label: t("trend.lowest"), value: formatAmount(minY) },
-            { label: t("trend.highest"), value: formatAmount(maxY) },
-            { label: t("trend.displayedDays"), value: String(points.length) },
-          ]}
-        />
-      </div>
-    </div>
-  );
-}
-
+/**
+ * Suivi de mise : un solde déclaré, pas un portefeuille. Plus de « ROI net »
+ * (solde − dépôts) ÷ dépôts, sans période, calculé sur les 200 derniers
+ * mouvements ; plus de « ROI sur la période » qui comptait les mises en
+ * attente comme perdues (revue UX du 2026-10-27, P1-2 et P1-3). Le résultat
+ * des paris vient du même calcul que Mes coupons, daté et compté.
+ */
 export function BankrollPageClient() {
-  const tCommon = useTranslations("common");
   const t = useTranslations("bankrollPage");
   const currentUser = useCurrentUser();
   const { formatAmount, formatSigned } = useCurrencyFormat();
@@ -292,167 +75,128 @@ export function BankrollPageClient() {
 
   const bankrollFilters = useMemo(() => buildBankrollFilters(t), [t]);
   const columns = useMemo(
-    () => buildColumns(t, formatAmount, formatSigned),
+    () => buildHistoryColumns(t, formatAmount, formatSigned),
     [t, formatAmount, formatSigned],
   );
-  const balanceQuery = useBankrollBalance(currentUser.id);
+  const summaryQuery = useBankrollSummary(currentUser.id);
   const transactionsQuery = useBankrollTransactionsForUser(currentUser.id);
+  const { data: slips } = useOperatorSummary();
+  const money = slips?.money;
 
-  const currentBalance = Number.parseFloat(balanceQuery.data?.balance ?? "0");
+  const currentBalance = Number.parseFloat(summaryQuery.data?.balance ?? "0");
 
-  const enrichedTransactions = useMemo<EnrichedTransaction[]>(() => {
-    let runningBalance = currentBalance;
-    return (transactionsQuery.data ?? []).map((transaction) => {
-      const amount = parseAmount(transaction.amount);
-      const detailLabel =
-        transaction.type === "DEPOSIT"
-          ? transaction.note || t("fallback.deposit")
-          : transaction.fixture && transaction.market
-            ? `${transaction.fixture} (${formatMarketForDisplay(
-                transaction.market,
-              )})`
-            : transaction.note || t("fallback.bet");
-      const row = { ...transaction, balanceAfter: runningBalance, detailLabel };
-      runningBalance -= amount;
-      return row;
-    });
-  }, [currentBalance, t, transactionsQuery.data]);
+  const enrichedTransactions = useMemo(
+    () => enrichTransactions(transactionsQuery.data ?? [], currentBalance, t),
+    [currentBalance, t, transactionsQuery.data],
+  );
 
   const filteredTransactions = useMemo(() => {
     const from = (filterState.from as string) || "";
     const to = (filterState.to as string) || "";
     const type = (filterState.type as string) || "ALL";
-
-    return enrichedTransactions.filter((t) => {
-      const day = toIsoDay(t.createdAt);
+    return enrichedTransactions.filter((row) => {
+      const day = toIsoDay(row.createdAt);
       if (from && day < from) return false;
       if (to && day > to) return false;
-      if (type !== "ALL" && t.type !== type) return false;
+      if (type !== "ALL" && row.type !== type) return false;
       return true;
     });
   }, [enrichedTransactions, filterState]);
-
-  const totalDeposited = useMemo(
-    () =>
-      enrichedTransactions
-        .filter((t) => t.type === "DEPOSIT")
-        .reduce((sum, t) => sum + parseAmount(t.amount), 0),
-    [enrichedTransactions],
-  );
-
-  const roi =
-    totalDeposited > 0
-      ? ((currentBalance - totalDeposited) / totalDeposited) * 100
-      : null;
 
   const trendPoints = useMemo(
     () => buildTrendPoints(filteredTransactions),
     [filteredTransactions],
   );
 
-  const periodRoi = useMemo(() => {
-    const staked = filteredTransactions
-      .filter((tx) => tx.type === "BET_PLACED")
-      .reduce((sum, tx) => sum + Math.abs(parseAmount(tx.amount)), 0);
-    if (staked === 0) return null;
-    const netPnL = filteredTransactions
-      .filter((tx) => tx.type === "BET_WON" || tx.type === "BET_PLACED")
-      .reduce((sum, tx) => sum + parseAmount(tx.amount), 0);
-    return (netPnL / staked) * 100;
-  }, [filteredTransactions]);
-
-  const isLoading = balanceQuery.isLoading || transactionsQuery.isLoading;
-  const hasError = balanceQuery.error || transactionsQuery.error;
+  const isLoading = summaryQuery.isLoading || transactionsQuery.isLoading;
+  const hasError = summaryQuery.isError || transactionsQuery.isError;
+  const retry = () => {
+    void summaryQuery.refetch();
+    void transactionsQuery.refetch();
+  };
 
   return (
     <Page className="flex h-full flex-col">
+      <PageHeader className="flex-col items-start gap-1 lg:flex-col lg:items-start lg:justify-start">
+        <PageHeaderTitle>{t("title")}</PageHeaderTitle>
+        <p className="max-w-xl text-sm leading-6 text-muted-foreground">
+          {t("intro")}
+        </p>
+      </PageHeader>
       <PageContent className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5 ev-shell-shadow">
-        <div className="flex flex-col gap-5">
-          <section
-            data-tour="bankroll-summary"
-            className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4"
-          >
-            <StatCard
-              icon={<Wallet size={14} />}
-              label={t("stats.currentBalance")}
-              value={formatAmount(currentBalance)}
-              tone="accent"
-            />
-            <StatCard
-              icon={<ArrowDownLeft size={14} />}
-              label={t("stats.totalDeposited")}
-              value={formatAmount(totalDeposited)}
-              tone="neutral"
-            />
-            <StatCard
-              icon={<ArrowUpRight size={14} />}
-              label={t("stats.netRoi")}
-              value={formatPercent(roi)}
-              tone={(roi ?? 0) >= 0 ? "success" : "danger"}
-            />
+        <div className="flex flex-col gap-5 pb-20">
+          <section data-tour="bankroll-summary" className="flex flex-col gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+              <StatCard
+                tone="neutral"
+                label={t("stats.currentBalance")}
+                value={summaryQuery.data ? formatAmount(currentBalance) : "—"}
+              />
+              <StatCard
+                tone="neutral"
+                label={t("stats.totalDeposited")}
+                value={
+                  summaryQuery.data
+                    ? formatAmount(summaryQuery.data.deposited)
+                    : "—"
+                }
+              />
+              <StatCard
+                tone="neutral"
+                label={t("stats.betsResult")}
+                value={
+                  money && money.settledSlips > 0
+                    ? formatSigned(money.net)
+                    : "—"
+                }
+              />
+            </div>
+            <p
+              data-testid="bankroll-result"
+              className="text-sm leading-6 text-muted-foreground"
+            >
+              {money?.firstSlipAt && money.settledSlips > 0
+                ? t("resultLine", {
+                    date: formatDateLong(money.firstSlipAt),
+                    settled: money.settledSlips,
+                    staked: formatAmount(money.settledStake),
+                    returned: formatAmount(money.returned),
+                  })
+                : t("resultEmpty")}{" "}
+              {t("declarative")}
+            </p>
+            <div className="flex justify-stretch sm:justify-start">
+              <div className="w-full sm:w-auto">
+                <DepositDialog />
+              </div>
+            </div>
           </section>
 
-          <div className="flex justify-stretch sm:justify-end">
-            <div className="w-full sm:w-auto">
-              <DepositDialog />
-            </div>
-          </div>
-
-          <div>
-            <FilterBar
-              filters={bankrollFilters}
-              value={filterState}
-              onChange={setFilterState}
-              onReset={() =>
-                setFilterState({ from: "", to: todayIso(), type: "ALL" })
-              }
-            />
-            {periodRoi !== null && (
-              <p className="mt-2 text-xs text-muted-foreground">
-                {t("trend.periodRoi")}{" "}
-                <span
-                  className={`font-semibold ${periodRoi >= 0 ? "text-success" : "text-danger"}`}
-                >
-                  {formatPercent(periodRoi)}
-                </span>
-              </p>
-            )}
-          </div>
-
-          <TableCard
-            title={t("trend.title")}
-            subtitle={t("trend.subtitle")}
-            action={
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <LineChart size={14} />
-                {trendPoints.length}{" "}
-                {trendPoints.length > 1 ? t("trend.points") : t("trend.point")}
-              </div>
+          <FilterBar
+            filters={bankrollFilters}
+            value={filterState}
+            onChange={setFilterState}
+            onReset={() =>
+              setFilterState({ from: "", to: todayIso(), type: "ALL" })
             }
-          >
+          />
+
+          <TableCard title={t("trend.title")} subtitle={t("trend.subtitle")}>
             {hasError ? (
               <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
                 <EmptyHeader>
-                  <EmptyTitle>{tCommon("error")}</EmptyTitle>
-                  <EmptyDescription>
-                    {hasError instanceof Error
-                      ? hasError.message
-                      : t("trend.portfolioLoadError")}
-                  </EmptyDescription>
+                  <EmptyTitle>{t("loadError")}</EmptyTitle>
                 </EmptyHeader>
+                <Button variant="outline" onClick={retry}>
+                  {t("retry")}
+                </Button>
               </Empty>
             ) : isLoading ? (
-              <div className="flex h-44 items-center justify-center">
-                <ProgressBar
-                  value={0}
-                  max={100}
-                  tone="accent"
-                  showValue={false}
-                  className="w-24"
-                />
-              </div>
+              <p className="p-5 text-sm text-muted-foreground" role="status">
+                {t("loading")}
+              </p>
             ) : (
-              <BankrollTrendChart points={trendPoints} t={t} />
+              <BankrollTrendChart points={trendPoints} />
             )}
           </TableCard>
 
@@ -476,9 +220,9 @@ export function BankrollPageClient() {
                 </Empty>
               }
               mobileCard={(row) => (
-                <div className="flex flex-col gap-3 px-4 py-4">
+                <div className="flex flex-col gap-2 px-4 py-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold text-foreground">
                         {row.detailLabel}
                       </p>
@@ -487,14 +231,11 @@ export function BankrollPageClient() {
                         {transactionTypeLabel(row.type, t)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {row.canal && <CanalBadge canal={row.canal} />}
-                      <Amount
-                        value={parseAmount(row.amount)}
-                        signed
-                        className={`text-sm font-semibold ${transactionTone(row.type) === "positive" ? "text-success" : "text-danger"}`}
-                      />
-                    </div>
+                    <Amount
+                      value={parseAmount(row.amount)}
+                      signed
+                      className="shrink-0 text-sm font-semibold text-foreground"
+                    />
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>{t("table.balanceAfter")}</span>

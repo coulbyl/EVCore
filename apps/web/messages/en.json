@@ -350,7 +350,7 @@
     },
     "bankroll": {
       "title": "Stake tracking",
-      "description": "Your balance, deposits and withdrawals as you enter them: the real record of what you stake."
+      "description": "Your balance and deposits, as you declare them, with the result of your bets."
     },
     "trackRecord": {
       "title": "Historical measures",
@@ -690,57 +690,116 @@
     "emptyTitle": "No coupon in this period",
     "emptyDescription": "Your coupons exist, just not between these dates.",
     "neverPlayedTitle": "You have not played a coupon yet",
-    "neverPlayedBody": "Today's safe bet and long coupon are on the home page. A played coupon shows up here with its result.",
+    "neverPlayedBody": "The daily favourite and the combo are on the home page. A coupon you play shows up here with its result.",
     "neverPlayedLink": "See today's coupon",
     "widenPeriod": "Show the last 90 days",
-    "emptyTypeDescription": "No coupon of this type in the period."
+    "emptyTypeDescription": "No coupon of this type in the period.",
+    "title": "My coupons",
+    "intro": "The coupons you declared, settled with the real result. Amounts are the ones you entered.",
+    "loading": "Loading your coupons…",
+    "loadError": "Your coupons could not be loaded.",
+    "retry": "Try again",
+    "periodLine": "From {from} to {to}: {settled, plural, =0 {no settled coupon} one {# settled coupon} other {# settled coupons}}{pending, plural, =0 {} other {, # in play}}.",
+    "periodMoney": "Staked {staked}, returned {returned}: {net}.",
+    "inPlay": "{amount} still in play.",
+    "lifetimeLine": "Since your first coupon, on {date}: {settled, plural, one {# settled coupon} other {# settled coupons}}, result {net}.",
+    "kindCombo": "Combo · {count, plural, one {# selection} other {# selections}}",
+    "kindSingle": "{count, plural, one {Single bet} other {# single bets}}",
+    "status": {
+      "WON": "Won",
+      "LOST": "Lost",
+      "VOID": "Refunded",
+      "PENDING": "In play"
+    },
+    "playedOn": "Played on {date}",
+    "staked": "Staked",
+    "odds": "Odds",
+    "returned": "Returned",
+    "net": "Net gain",
+    "partialNet": "Partial result",
+    "potential": "Possible return {amount}, of which {gain} gain, if everything lands.",
+    "moreLegs": "+ {count, plural, one {# other selection} other {# other selections}}",
+    "selectHint": "Select a coupon to see the details",
+    "detailTitle": "Coupon details",
+    "close": "Close",
+    "legStake": "Stake {amount}",
+    "legRefunded": "stake returned",
+    "legPotential": "possible return {amount}",
+    "refundRule": "A refunded selection counts at odds of 1: the combo is paid on the others.",
+    "filter": {
+      "type": "Type",
+      "all": "All",
+      "single": "Singles",
+      "combo": "Combos",
+      "from": "From",
+      "to": "To"
+    }
   },
   "bankrollPage": {
     "filter": {
       "allTypes": "All types",
       "deposit": "Deposit",
       "stake": "Stake",
-      "win": "Win",
       "refund": "Refund",
       "from": "From",
       "to": "To",
-      "type": "Type"
+      "type": "Type",
+      "return": "Return"
     },
     "table": {
       "date": "Date",
       "type": "Type",
       "amount": "Amount",
-      "detail": "Match / note",
+      "detail": "Bet / note",
       "balanceAfter": "Balance after"
     },
     "stats": {
-      "currentBalance": "Current balance",
-      "totalDeposited": "Total deposited",
-      "netRoi": "Net ROI"
+      "currentBalance": "Declared balance",
+      "totalDeposited": "Declared deposits",
+      "betsResult": "Result of your bets"
     },
     "trend": {
-      "title": "Balance trend",
-      "subtitle": "Balance day by day, calculated from recent movements.",
-      "recent": "Recent trend",
+      "title": "Declared balance, day by day",
+      "subtitle": "A deposit raises the curve: it is not a gain.",
       "notEnoughData": "Not enough data",
-      "notEnoughDataDescription": "Create transactions to display the trend curve.",
-      "lowest": "Lowest",
-      "highest": "Highest",
-      "displayedDays": "Days shown",
-      "point": "point",
-      "points": "points",
-      "portfolioLoadError": "Unable to load wallet data.",
-      "periodRoi": "Period ROI:"
+      "notEnoughDataDescription": "Declare a deposit or play a coupon to see the curve.",
+      "valueLabel": "Balance",
+      "range": "From {from} to {to}, over the movements shown."
     },
     "history": {
       "title": "Movement history",
-      "subtitle": "The latest 200 movements, with the balance after each operation.",
+      "subtitle": "The last 200 movements, with the balance after each.",
       "emptyTitle": "No transactions",
       "emptyDescription": "No transactions match the current filters."
     },
     "fallback": {
       "deposit": "Deposit",
       "bet": "Bet"
+    },
+    "title": "Stake tracking",
+    "intro": "Your balance as you declare it: deposits made at your bookmaker, your stakes and what they return. EVCore does not hold your money.",
+    "loading": "Loading your tracking…",
+    "loadError": "Your tracking could not be loaded.",
+    "retry": "Try again",
+    "resultLine": "Result of your bets since your first coupon, on {date}: {settled, plural, one {# settled coupon} other {# settled coupons}}, staked {staked}, returned {returned}.",
+    "resultEmpty": "No settled coupon yet.",
+    "declarative": "Everything is declared by you: a deposit raises the balance, it is not a gain.",
+    "deposit": {
+      "trigger": "Declare a deposit",
+      "title": "Declare a deposit",
+      "description": "Record a deposit made at your bookmaker, so your balance here follows yours.",
+      "close": "Close",
+      "amount": "Amount",
+      "amountInvalid": "Enter an amount of at least 1.",
+      "note": "Note",
+      "notePlaceholder": "Initial deposit",
+      "error": "The deposit could not be saved.",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "confirming": "Saving…"
+    },
+    "detail": {
+      "combo": "Combo · {count, plural, one {# selection} other {# selections}}"
     }
   },
   "performancePage": {

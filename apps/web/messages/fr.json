@@ -350,7 +350,7 @@
     },
     "bankroll": {
       "title": "Suivi de mise",
-      "description": "Ton solde, tes dépôts et tes retraits, tels que tu les saisis : le suivi réel de ce que tu mises."
+      "description": "Ton solde et tes dépôts, tels que tu les déclares, avec le résultat de tes paris."
     },
     "trackRecord": {
       "title": "Mesures historiques",
@@ -690,57 +690,116 @@
     "emptyTitle": "Aucun coupon sur cette période",
     "emptyDescription": "Tes coupons existent, mais pas entre ces dates.",
     "neverPlayedTitle": "Tu n'as pas encore joué de coupon",
-    "neverPlayedBody": "Le pari sûr du jour et le coupon long sont sur l'accueil. Un coupon joué apparaît ici avec son résultat.",
+    "neverPlayedBody": "Le favori du jour et le combiné sont sur l'accueil. Un coupon joué apparaît ici avec son résultat.",
     "neverPlayedLink": "Voir le coupon du jour",
     "widenPeriod": "Afficher les 90 derniers jours",
-    "emptyTypeDescription": "Aucun coupon de ce type sur la période."
+    "emptyTypeDescription": "Aucun coupon de ce type sur la période.",
+    "title": "Mes coupons",
+    "intro": "Les coupons que tu as déclarés, réglés avec le vrai résultat. Les montants sont ceux que tu as saisis.",
+    "loading": "Chargement de tes coupons…",
+    "loadError": "Impossible de charger tes coupons.",
+    "retry": "Réessayer",
+    "periodLine": "Du {from} au {to} : {settled, plural, =0 {aucun coupon réglé} one {# coupon réglé} other {# coupons réglés}}{pending, plural, =0 {} other {, # en cours}}.",
+    "periodMoney": "Misé {staked}, rendu {returned} : {net}.",
+    "inPlay": "{amount} encore en jeu.",
+    "lifetimeLine": "Depuis ton premier coupon, le {date} : {settled, plural, one {# coupon réglé} other {# coupons réglés}}, résultat {net}.",
+    "kindCombo": "Combiné · {count, plural, one {# sélection} other {# sélections}}",
+    "kindSingle": "{count, plural, one {Pari simple} other {# paris simples}}",
+    "status": {
+      "WON": "Gagné",
+      "LOST": "Perdu",
+      "VOID": "Remboursé",
+      "PENDING": "En cours"
+    },
+    "playedOn": "Joué le {date}",
+    "staked": "Misé",
+    "odds": "Cote",
+    "returned": "Rendu",
+    "net": "Gain net",
+    "partialNet": "Résultat partiel",
+    "potential": "Retour possible {amount}, dont {gain} de gain, si tout passe.",
+    "moreLegs": "+ {count, plural, one {# autre sélection} other {# autres sélections}}",
+    "selectHint": "Sélectionne un coupon pour voir le détail",
+    "detailTitle": "Détail du coupon",
+    "close": "Fermer",
+    "legStake": "Mise {amount}",
+    "legRefunded": "mise rendue",
+    "legPotential": "retour possible {amount}",
+    "refundRule": "Une sélection remboursée compte pour une cote de 1 : le combiné est payé sur les autres.",
+    "filter": {
+      "type": "Type",
+      "all": "Tous",
+      "single": "Simples",
+      "combo": "Combinés",
+      "from": "Du",
+      "to": "Au"
+    }
   },
   "bankrollPage": {
     "filter": {
       "allTypes": "Tous les types",
       "deposit": "Dépôt",
       "stake": "Mise",
-      "win": "Gain",
       "refund": "Remboursement",
       "from": "Du",
       "to": "Au",
-      "type": "Type"
+      "type": "Type",
+      "return": "Retour"
     },
     "table": {
       "date": "Date",
       "type": "Type",
       "amount": "Montant",
-      "detail": "Match / note",
+      "detail": "Pari / note",
       "balanceAfter": "Solde après"
     },
     "stats": {
-      "currentBalance": "Solde actuel",
-      "totalDeposited": "Total déposé",
-      "netRoi": "ROI net"
+      "currentBalance": "Solde déclaré",
+      "totalDeposited": "Dépôts déclarés",
+      "betsResult": "Résultat de tes paris"
     },
     "trend": {
-      "title": "Évolution du solde",
-      "subtitle": "Le solde jour après jour, calculé à partir des mouvements récents.",
-      "recent": "Évolution récente",
+      "title": "Solde déclaré, jour par jour",
+      "subtitle": "Un dépôt fait monter la courbe : ce n'est pas un gain.",
       "notEnoughData": "Pas assez de données",
-      "notEnoughDataDescription": "Effectue des transactions pour voir la courbe d'évolution.",
-      "lowest": "Plus bas",
-      "highest": "Plus haut",
-      "displayedDays": "Jours affichés",
-      "point": "point",
-      "points": "points",
-      "portfolioLoadError": "Impossible de charger les données du portefeuille.",
-      "periodRoi": "ROI sur la période :"
+      "notEnoughDataDescription": "Déclare un dépôt ou joue un coupon pour voir la courbe.",
+      "valueLabel": "Solde",
+      "range": "Du {from} au {to}, sur les mouvements affichés."
     },
     "history": {
       "title": "Historique des mouvements",
-      "subtitle": "Les 200 derniers mouvements, avec le solde après chaque opération.",
+      "subtitle": "Les 200 derniers mouvements, avec le solde après chacun.",
       "emptyTitle": "Aucune transaction",
       "emptyDescription": "Aucune transaction ne correspond aux filtres courants."
     },
     "fallback": {
       "deposit": "Dépôt",
       "bet": "Pari"
+    },
+    "title": "Suivi de mise",
+    "intro": "Ton solde tel que tu le déclares : les dépôts faits chez ton bookmaker, tes mises et ce qu'elles rendent. EVCore ne détient pas ton argent.",
+    "loading": "Chargement de ton suivi…",
+    "loadError": "Impossible de charger ton suivi.",
+    "retry": "Réessayer",
+    "resultLine": "Résultat de tes paris depuis ton premier coupon, le {date} : {settled, plural, one {# coupon réglé} other {# coupons réglés}}, misé {staked}, rendu {returned}.",
+    "resultEmpty": "Aucun coupon réglé pour l'instant.",
+    "declarative": "Tout est déclaratif : un dépôt fait monter le solde, ce n'est pas un gain.",
+    "deposit": {
+      "trigger": "Déclarer un dépôt",
+      "title": "Déclarer un dépôt",
+      "description": "Note un dépôt fait chez ton bookmaker, pour que ton solde ici suive le tien.",
+      "close": "Fermer",
+      "amount": "Montant",
+      "amountInvalid": "Saisis un montant d'au moins 1.",
+      "note": "Note",
+      "notePlaceholder": "Dépôt initial",
+      "error": "Impossible d'enregistrer le dépôt.",
+      "cancel": "Annuler",
+      "confirm": "Confirmer",
+      "confirming": "Enregistrement…"
+    },
+    "detail": {
+      "combo": "Combiné · {count, plural, one {# sélection} other {# sélections}}"
     }
   },
   "performancePage": {
