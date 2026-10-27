@@ -28,7 +28,9 @@ export function InfoTooltip({
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center text-muted-foreground hover:text-foreground focus:outline-none"
+          // Icône de 12 px, zone de toucher de 36 px par un pseudo-élément :
+          // ouvrable au doigt sans grossir le bandeau qui la porte.
+          className="relative flex items-center text-muted-foreground after:absolute after:-inset-3 after:content-[''] hover:text-foreground focus:outline-none"
           aria-label={`En savoir plus sur ${label}`}
         >
           <Info size={12} strokeWidth={2} />
@@ -43,7 +45,7 @@ export function InfoTooltip({
           onPointerDownOutside={() => setOpen(false)}
           className="z-50 w-64 rounded-2xl border border-border bg-panel p-4 shadow-lg"
         >
-          <p className="mb-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             {label}
           </p>
           <p className="text-sm text-foreground">{description}</p>

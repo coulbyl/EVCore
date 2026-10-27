@@ -66,8 +66,10 @@
   --canal-win-either-half-soft: rgba(147, 51, 234, 0.11);
   --canal-consensus: #0d9488;
   --canal-consensus-soft: rgba(13, 148, 136, 0.11);
-  --canal-avoid: #dc2626;
-  --canal-avoid-soft: rgba(220, 38, 38, 0.11);
+  /* Rouge 700 : le bandeau « Données suspectes » passait à 3,7:1 sur son
+     propre fond en clair avec le rouge 600 (détecteur, 2026-10-27). */
+  --canal-avoid: #b91c1c;
+  --canal-avoid-soft: rgba(185, 28, 28, 0.1);
   --canal-vantage: #db2777;
   --canal-vantage-soft: rgba(219, 39, 119, 0.11);
   --canal-correct-score: #7c3aed;
