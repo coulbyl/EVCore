@@ -21,6 +21,12 @@ function makePrisma(): PrismaService {
         upsert: vi.fn().mockResolvedValue({}),
         createMany: vi.fn().mockResolvedValue({ count: 0 }),
       },
+      announcement: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      announcementRead: {
+        createMany: vi.fn().mockResolvedValue({ count: 0 }),
+      },
     },
   } as unknown as PrismaService;
 }
@@ -375,5 +381,72 @@ describe('NotificationService — ce que chaque rôle voit des diffusions', () =
     expect(typesPassedToPrisma(prisma)).toEqual(
       Object.values(NotificationType),
     );
+  });
+});
+
+describe('NotificationService — messages retirés et un seul état « lu »', () => {
+  it("ne compte plus les messages de l'abonnement retiré dans la cloche", async () => {
+    const prisma = makePrisma();
+    const service = new NotificationService(prisma, makeMail());
+    await service.unreadCount('user-1', UserRole.OPERATOR);
+    const where = (prisma.client.notification.count as ReturnType<typeof vi.fn>)
+      .mock.calls[0]?.[0] as {
+      where: { OR: [unknown, { type: { notIn: NotificationType[] } }] };
+    };
+    expect(where.where.OR[1].type.notIn).toEqual([
+      NotificationType.SUBSCRIPTION_EVENTS_ADDED,
+      NotificationType.SUBSCRIPTION_SETTLED,
+    ]);
+  });
+
+  it("lire la notification d'une annonce marque l'annonce lue", async () => {
+    const prisma = makePrisma();
+    vi.mocked(prisma.client.notification.findUnique).mockResolvedValue({
+      userId: null,
+      type: NotificationType.ANNOUNCEMENT_PUBLISHED,
+      payload: { announcementId: 'ann-1', href: null },
+    } as never);
+    vi.mocked(prisma.client.announcement.findMany).mockResolvedValue([
+      { id: 'ann-1' } as never,
+    ]);
+    const service = new NotificationService(prisma, makeMail());
+
+    await service.markRead('notif-1', 'user-1');
+
+    expect(prisma.client.announcementRead.createMany).toHaveBeenCalledWith({
+      data: [{ userId: 'user-1', announcementId: 'ann-1' }],
+      skipDuplicates: true,
+    });
+  });
+
+  it("ouvrir l'annonce marque sa notification lue", async () => {
+    const prisma = makePrisma();
+    vi.mocked(prisma.client.notification.findMany).mockResolvedValue([
+      { id: 'notif-1' } as never,
+    ]);
+    const service = new NotificationService(prisma, makeMail());
+
+    await service.markAnnouncementRead('user-1', 'ann-1');
+
+    expect(prisma.client.userNotificationRead.createMany).toHaveBeenCalledWith({
+      data: [{ userId: 'user-1', notificationId: 'notif-1' }],
+      skipDuplicates: true,
+    });
+  });
+
+  it('ouvrir la conversation marque les réponses du support lues', async () => {
+    const prisma = makePrisma();
+    const service = new NotificationService(prisma, makeMail());
+
+    await service.markSupportMessagesRead('user-1');
+
+    expect(prisma.client.notification.updateMany).toHaveBeenCalledWith({
+      where: {
+        userId: 'user-1',
+        type: NotificationType.SUPPORT_MESSAGE,
+        read: false,
+      },
+      data: { read: true, readAt: expect.any(Date) },
+    });
   });
 });

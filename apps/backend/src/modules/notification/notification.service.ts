@@ -26,6 +26,24 @@ const OPERATOR_TYPES: NotificationType[] = [
   NotificationType.ANNOUNCEMENT_PUBLISHED,
 ];
 
+// Messages personnels du mécanisme d'abonnements retiré le 2026-09-03
+// (« Abonnement — VALUE (Valeur) », « 1 perdu(s) · -5 000 F »). Les lignes
+// restent en base jusqu'à la purge lancée par l'utilisateur, mais ne
+// s'affichent plus et ne comptent plus dans la cloche (revue UX du
+// 2026-10-27, Notifications P1-1).
+const RETIRED_PERSONAL_TYPES: NotificationType[] = [
+  NotificationType.SUBSCRIPTION_EVENTS_ADDED,
+  NotificationType.SUBSCRIPTION_SETTLED,
+];
+
+function announcementIdOf(payload: Prisma.JsonValue | null): string | null {
+  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+    const id = payload.announcementId;
+    return typeof id === 'string' ? id : null;
+  }
+  return null;
+}
+
 export type NotificationView = Omit<Notification, 'read' | 'readAt'> & {
   isRead: boolean;
 };
@@ -291,6 +309,7 @@ export class NotificationService {
             },
             {
               userId: query.userId,
+              type: { notIn: RETIRED_PERSONAL_TYPES },
               ...(query.unread ? { read: false } : {}),
             },
           ],
@@ -327,7 +346,7 @@ export class NotificationService {
       where: {
         OR: [
           { userId: null, type: { in: types }, reads: { none: { userId } } },
-          { userId, read: false },
+          { userId, read: false, type: { notIn: RETIRED_PERSONAL_TYPES } },
         ],
       },
     });
@@ -337,7 +356,7 @@ export class NotificationService {
   async markRead(notificationId: string, userId: string): Promise<void> {
     const notification = await this.prisma.client.notification.findUnique({
       where: { id: notificationId },
-      select: { userId: true },
+      select: { userId: true, type: true, payload: true },
     });
     if (!notification) return;
     if (notification.userId) {
@@ -354,6 +373,66 @@ export class NotificationService {
       create: { userId, notificationId },
       update: {},
     });
+    const announcementId =
+      notification.type === NotificationType.ANNOUNCEMENT_PUBLISHED
+        ? announcementIdOf(notification.payload)
+        : null;
+    if (announcementId)
+      await this.syncAnnouncementReads(userId, [announcementId]);
+  }
+
+  /**
+   * Une annonce n'a qu'un état « lu » : la lire dans la cloche la marque lue
+   * dans Annonces, et inversement (`markAnnouncementRead`). Il y en avait
+   * deux, indépendants (revue UX du 2026-10-27, Notifications P2-6). Une
+   * annonce supprimée depuis est ignorée.
+   */
+  private async syncAnnouncementReads(
+    userId: string,
+    announcementIds: string[],
+  ): Promise<void> {
+    if (announcementIds.length === 0) return;
+    const existing = await this.prisma.client.announcement.findMany({
+      where: { id: { in: announcementIds } },
+      select: { id: true },
+    });
+    if (existing.length === 0) return;
+    await this.prisma.client.announcementRead.createMany({
+      data: existing.map((a) => ({ userId, announcementId: a.id })),
+      skipDuplicates: true,
+    });
+  }
+
+  /** L'annonce a été ouverte dans Annonces : sa notification devient lue. */
+  async markAnnouncementRead(
+    userId: string,
+    announcementId: string,
+  ): Promise<void> {
+    const notifications = await this.prisma.client.notification.findMany({
+      where: {
+        userId: null,
+        type: NotificationType.ANNOUNCEMENT_PUBLISHED,
+        payload: { path: ['announcementId'], equals: announcementId },
+      },
+      select: { id: true },
+    });
+    if (notifications.length === 0) return;
+    await this.prisma.client.userNotificationRead.createMany({
+      data: notifications.map((n) => ({ userId, notificationId: n.id })),
+      skipDuplicates: true,
+    });
+  }
+
+  /**
+   * La conversation a été ouverte : ses réponses ne restent plus non lues
+   * dans la cloche. 115 sur 119 l'étaient en base, et la cloche comme l'Inbox
+   * comptaient chacune le même message (revue UX du 2026-10-27, P2-5).
+   */
+  async markSupportMessagesRead(userId: string): Promise<void> {
+    await this.prisma.client.notification.updateMany({
+      where: { userId, type: NotificationType.SUPPORT_MESSAGE, read: false },
+      data: { read: true, readAt: new Date() },
+    });
   }
 
   async markAllRead(userId: string, role: UserRole): Promise<void> {
@@ -365,7 +444,7 @@ export class NotificationService {
           type: { in: types },
           reads: { none: { userId } },
         },
-        select: { id: true },
+        select: { id: true, type: true, payload: true },
       }),
     ]);
     await Promise.all([
@@ -382,6 +461,13 @@ export class NotificationService {
         where: { userId, read: false },
         data: { read: true, readAt: new Date() },
       }),
+      this.syncAnnouncementReads(
+        userId,
+        unreadBroadcast
+          .filter((n) => n.type === NotificationType.ANNOUNCEMENT_PUBLISHED)
+          .map((n) => announcementIdOf(n.payload))
+          .filter((id): id is string => id !== null),
+      ),
     ]);
   }
 

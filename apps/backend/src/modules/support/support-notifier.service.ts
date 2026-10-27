@@ -36,6 +36,11 @@ export class SupportNotifierService {
     private readonly notification: NotificationService,
   ) {}
 
+  /** Le joueur a ouvert sa conversation : ses notifications de réponse sont lues. */
+  clearUserNotifications(userId: string): Promise<void> {
+    return this.notification.markSupportMessagesRead(userId);
+  }
+
   async notifyAdmin(message: SupportMessageDto): Promise<void> {
     await Promise.all([
       this.mail.sendSupportMessage({

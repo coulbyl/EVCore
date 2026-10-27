@@ -333,7 +333,10 @@ export class SupportService {
   async markReadByUser(userId: string): Promise<void> {
     const conversation = await this.repo.findConversationByUserId(userId);
     if (!conversation) return;
-    await this.repo.markReadByUser(conversation.id);
+    await Promise.all([
+      this.repo.markReadByUser(conversation.id),
+      this.notifier.clearUserNotifications(userId),
+    ]);
   }
 
   async markReadByAdmin(conversationId: string) {
