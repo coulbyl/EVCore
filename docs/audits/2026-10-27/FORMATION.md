@@ -50,4 +50,4 @@ Sur téléphone, la liste tient en un écran. Ce qui reste sur grand écran vien
 ## Restes
 
 - Le glossaire (`/dashboard/glossaire`, 3 900 mots) n'est visible que des admins : non touché.
-- Les badges « Calibré » et « Patience » existent en base mais ne sont attribués nulle part dans le code (`checkBrierBadge`, `checkPatienceBadge` sans appelant). À brancher ou à retirer.
+- Les badges « Calibré » et « Patience », que rien n'attribuait, sont retirés (`d3a31853`). L'avatar « Oracle » se débloque désormais avec « Diplômé ».
