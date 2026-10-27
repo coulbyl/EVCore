@@ -1,0 +1,201 @@
+{
+ "route": "/dashboard/bankroll",
+ "width": 1280,
+ "theme": "light",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 11 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Du\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Au\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Type\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.2:1 (need 4.5:1) — text #898f99 on #fbfdff color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 11 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Du\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Au\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Type\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.2:1 (need 4.5:1) — text #898f99 on #fbfdff color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "p",
+    "cls": "truncate text-xs text-sidebar-foreground/60",
+    "text": "@e2e_tester",
+    "w": 138,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "DU",
+    "w": 155,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Du\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "AU",
+    "w": 155,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Au\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground",
+    "text": "TYPE",
+    "w": 155,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Type\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "hidden sm:block",
+    "text": "Précédent",
+    "w": 64,
+    "h": 20
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.2:1 (need 4.5:1) — text #898f99 on #fbfdff"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12 righ",
+    "text": "",
+    "w": 48,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.15rem] border border-border bg-panel-strong px-3 py-2.5 shadow-sm sm:",
+    "text": "SOLDE ACTUEL 500 760 000 F",
+    "w": 280,
+    "h": 111
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.15rem] border border-border bg-panel-strong px-3 py-2.5 shadow-sm sm:",
+    "text": "TOTAL DÉPOSÉ 50 000 F",
+    "w": 280,
+    "h": 111
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.15rem] border border-border bg-panel-strong px-3 py-2.5 shadow-sm sm:",
+    "text": "ROI NET +1001420.00%",
+    "w": 280,
+    "h": 111
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "mt-5 overflow-hidden rounded-[1.3rem] border border-border",
+    "text": "ÉVOLUTION RÉCENTE 500 710 460 F 19/10/26 27/10/26 19/10/26 2",
+    "w": 822,
+    "h": 334
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "mt-5 overflow-hidden rounded-[1.3rem] border border-border",
+    "text": "DATE TYPE MONTANT MATCH / NOTE SOLDE APRÈS 19/10/26 Dépôt +5",
+    "w": 822,
+    "h": 290
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  }
+ ]
+}

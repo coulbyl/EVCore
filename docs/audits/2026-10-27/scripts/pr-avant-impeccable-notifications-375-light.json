@@ -1,0 +1,250 @@
+{
+ "route": "/dashboard/notifications",
+ "width": 375,
+ "theme": "light",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 13 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cside-tab%c border-left: 4px + border-radius: 19.2px color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #be123c on #efd0d9 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Critique\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.5:1 (need 4.5:1) — text #96a1af on #f6f9fc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 1.7:1 (need 4.5:1) — text #bdc4ce on #f6f9fc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.2:1 (need 4.5:1) — text #727885 on #f6f9fc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.5:1 (need 4.5:1) — text #96a1af on #f6f9fc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.2:1 (need 4.5:1) — text #727885 on #f6f9fc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.5:1 (need 4.5:1) — text #96a1af on #f6f9fc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.6:1 (need 4.5:1) — text #6ca6a3 on #f6f9fc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 13 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cside-tab%c border-left: 4px + border-radius: 19.2px color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #be123c on #efd0d9 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Critique\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.5:1 (need 4.5:1) — text #96a1af on #f6f9fc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 1.7:1 (need 4.5:1) — text #bdc4ce on #f6f9fc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.2:1 (need 4.5:1) — text #727885 on #f6f9fc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.5:1 (need 4.5:1) — text #96a1af on #f6f9fc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.2:1 (need 4.5:1) — text #727885 on #f6f9fc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.5:1 (need 4.5:1) — text #96a1af on #f6f9fc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.6:1 (need 4.5:1) — text #6ca6a3 on #f6f9fc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "div",
+    "cls": "flex min-h-[56px] items-start gap-4 rounded-[1.2rem] border border-border border",
+    "text": "CRITIQUE 1 j Type de pari suspendu Le pari « Mi-temps / fin ",
+    "w": 317,
+    "h": 128
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "border-left: 4px + border-radius: 19.2px"
+    },
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "rounded-full px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-wide bg",
+    "text": "CRITIQUE",
+    "w": 65,
+    "h": 19
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.4:1 (need 4.5:1) — text #be123c on #efd0d9",
+     "severity": "advisory"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Critique\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "flex items-center gap-1 text-xs text-muted-foreground",
+    "text": "2 j",
+    "w": 28,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.5:1 (need 4.5:1) — text #96a1af on #f6f9fc"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "text-xs text-muted-foreground/60",
+    "text": "· lu",
+    "w": 17,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "1.7:1 (need 4.5:1) — text #bdc4ce on #f6f9fc"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-1.5 text-sm font-semibold leading-snug text-foreground",
+    "text": "Ta semaine",
+    "w": 280,
+    "h": 19
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.2:1 (need 4.5:1) — text #727885 on #f6f9fc",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground",
+    "text": "3 coupons joués, 2 gagnés, 1 perdu.",
+    "w": 280,
+    "h": 23
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.5:1 (need 4.5:1) — text #96a1af on #f6f9fc"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-1.5 text-sm font-semibold leading-snug text-foreground",
+    "text": "Réponse de l'équipe",
+    "w": 280,
+    "h": 19
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.2:1 (need 4.5:1) — text #727885 on #f6f9fc",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground",
+    "text": "Merci pour ton message, on regarde ça.",
+    "w": 280,
+    "h": 23
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.5:1 (need 4.5:1) — text #96a1af on #f6f9fc"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "a",
+    "cls": "mt-1.5 inline-flex items-center gap-1 text-sm font-medium text-accent hover:unde",
+    "text": "Voir",
+    "w": 41,
+    "h": 20
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.6:1 (need 4.5:1) — text #6ca6a3 on #f6f9fc"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12 righ",
+    "text": "",
+    "w": 44,
+    "h": 44
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "flex min-h-[56px] items-start gap-4 rounded-[1.2rem] border border-border border",
+    "text": "3 h Nouvelles fiches de formation Voir",
+    "w": 317,
+    "h": 103
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "flex min-h-[56px] items-start gap-4 rounded-[1.2rem] border border-border border",
+    "text": "2 j · lu Ta semaine 3 coupons joués, 2 gagnés, 1 perdu.",
+    "w": 317,
+    "h": 102
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "flex min-h-[56px] items-start gap-4 rounded-[1.2rem] border border-border border",
+    "text": "5 j · lu Réponse de l'équipe Merci pour ton message, on rega",
+    "w": 317,
+    "h": 130
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,151 @@
+{
+ "url": "http://localhost:3010/dashboard/notifications",
+ "title": "EVCore",
+ "lang": "fr",
+ "headings": [],
+ "overflowX": false,
+ "textElements": 43,
+ "smallText": {
+  "count": 8,
+  "samples": [
+   {
+    "text": "AUJOURD'HUI",
+    "px": 11
+   },
+   {
+    "text": "SUIVI",
+    "px": 11
+   },
+   {
+    "text": "ANALYSE",
+    "px": 11
+   },
+   {
+    "text": "AUJOURD'HUI",
+    "px": 11.5
+   },
+   {
+    "text": "HIER",
+    "px": 11.5
+   },
+   {
+    "text": "CRITIQUE",
+    "px": 9.9
+   },
+   {
+    "text": "SAMEDI 24 OCTOBRE",
+    "px": 11.5
+   },
+   {
+    "text": "JEUDI 22 OCTOBRE",
+    "px": 11.5
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 25,
+ "smallTapTargets": {
+  "count": 20,
+  "samples": [
+   {
+    "text": "Accueil",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Coupons",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Avis IA",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Décisions",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mes coupons",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Inbox",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Formation",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mesures historiques",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Notifications 2",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Paramètres du compte",
+    "w": 36,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "2",
+    "w": 42,
+    "h": 44,
+    "tag": "a"
+   },
+   {
+    "text": "Mon coupon",
+    "w": 42,
+    "h": 44,
+    "tag": "button"
+   },
+   {
+    "text": "Toutes",
+    "w": 73,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "Non lues 2",
+    "w": 109,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "📣 Annonces",
+    "w": 114,
+    "h": 36,
+    "tag": "button"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

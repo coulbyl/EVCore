@@ -1,0 +1,33 @@
+{
+ "url": "http://localhost:3010/dashboard/bet-slips",
+ "title": "EVCore",
+ "lang": "fr",
+ "headings": [
+  "h1: Mes coupons",
+  "h2: Combiné · 2 sélections",
+  "h2: Pari simple",
+  "h2: Pari simple",
+  "h2: Combiné · 2 sélections"
+ ],
+ "overflowX": false,
+ "textElements": 63,
+ "smallText": {
+  "count": 0,
+  "samples": []
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 17,
+ "smallTapTargets": {
+  "count": 0,
+  "samples": []
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}
