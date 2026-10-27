@@ -121,6 +121,8 @@ export type ClassTrackRecordRow = {
   /** Premier et dernier `forDate` réglés de la classe dans la fenêtre. */
   firstDay: Date;
   lastDay: Date;
+  /** Plus longue suite de coupons perdus d'affilée, remboursés ignorés. */
+  worstLosingStreak: number;
 };
 
 export type PriceCandidateRow = {
@@ -705,23 +707,53 @@ export class CouponRepository {
   async findClassTrackRecord(
     since: Date,
   ): Promise<readonly ClassTrackRecordRow[]> {
+    // La pire série se compte sur la suite des coupons réglés de la classe,
+    // dans l'ordre des jours : chaque coupon non perdu ouvre un nouveau
+    // groupe, la plus longue suite de « perdu » dans un groupe est la série.
+    // Un remboursement ne compte ni pour ni contre. Chaque produit doit dire
+    // sa pire série (apps/web/PRODUCT.md, principe 2).
     return this.prisma.client.$queryRaw<ClassTrackRecordRow[]>`
-      SELECT source::text                       AS source,
-             "targetOddsMin"::float             AS "targetOddsMin",
-             count(*)::int                      AS settled,
-             count(*) FILTER (WHERE result IN ('WON', 'PARTIAL'))::int AS won,
-             avg("combinedOdds")::float         AS "avgOdds",
-             avg(CASE result
-                   WHEN 'WON' THEN coalesce("realizedOdds", "combinedOdds")
-                   WHEN 'PARTIAL' THEN coalesce("realizedOdds", "combinedOdds")
+      WITH settled AS (
+        SELECT id, source, "targetOddsMin", "forDate", result,
+               "combinedOdds", "realizedOdds"
+        FROM public.coupon_proposal
+        WHERE result IS NOT NULL
+          AND "forDate" >= ${since}
+      ), streaks AS (
+        SELECT source, "targetOddsMin", max(run)::int AS "worstLosingStreak"
+        FROM (
+          SELECT source, "targetOddsMin", grp, count(*) AS run
+          FROM (
+            SELECT source, "targetOddsMin", result,
+                   count(*) FILTER (WHERE result <> 'LOST') OVER (
+                     PARTITION BY source, "targetOddsMin"
+                     ORDER BY "forDate", id
+                   ) AS grp
+            FROM settled
+            WHERE result <> 'VOID'
+          ) grouped
+          WHERE result = 'LOST'
+          GROUP BY source, "targetOddsMin", grp
+        ) runs
+        GROUP BY source, "targetOddsMin"
+      )
+      SELECT s.source::text                       AS source,
+             s."targetOddsMin"::float             AS "targetOddsMin",
+             count(*)::int                        AS settled,
+             count(*) FILTER (WHERE s.result IN ('WON', 'PARTIAL'))::int AS won,
+             avg(s."combinedOdds")::float         AS "avgOdds",
+             avg(CASE s.result
+                   WHEN 'WON' THEN coalesce(s."realizedOdds", s."combinedOdds")
+                   WHEN 'PARTIAL' THEN coalesce(s."realizedOdds", s."combinedOdds")
                    WHEN 'VOID' THEN 1
-                   ELSE 0 END)::float           AS "returnPerUnit",
-             min("forDate")                     AS "firstDay",
-             max("forDate")                     AS "lastDay"
-      FROM public.coupon_proposal
-      WHERE result IS NOT NULL
-        AND "forDate" >= ${since}
-      GROUP BY source, "targetOddsMin"
+                   ELSE 0 END)::float             AS "returnPerUnit",
+             min(s."forDate")                     AS "firstDay",
+             max(s."forDate")                     AS "lastDay",
+             coalesce(k."worstLosingStreak", 0)   AS "worstLosingStreak"
+      FROM settled s
+      LEFT JOIN streaks k
+        ON k.source = s.source AND k."targetOddsMin" = s."targetOddsMin"
+      GROUP BY s.source, s."targetOddsMin", k."worstLosingStreak"
     `;
   }
 

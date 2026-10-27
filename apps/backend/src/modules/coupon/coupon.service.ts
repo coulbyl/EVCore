@@ -153,6 +153,7 @@ export class CouponService {
       returnPerUnit: row.returnPerUnit,
       firstDay: isoDay(row.firstDay),
       lastDay: isoDay(row.lastDay),
+      worstLosingStreak: row.worstLosingStreak,
     }));
   }
 }

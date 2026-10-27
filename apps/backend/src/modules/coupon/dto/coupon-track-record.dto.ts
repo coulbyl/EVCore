@@ -34,4 +34,6 @@ export type CouponClassTrackRecord = {
    */
   firstDay: string;
   lastDay: string;
+  /** Plus longue suite de coupons perdus d'affilée dans la fenêtre. */
+  worstLosingStreak: number;
 };

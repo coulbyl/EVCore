@@ -110,6 +110,7 @@ describe('CouponService.getTrackRecord', () => {
         returnPerUnit: 0.97,
         firstDay: new Date('2026-10-16T00:00:00.000Z'),
         lastDay: new Date('2026-10-22T00:00:00.000Z'),
+        worstLosingStreak: 1,
       },
     ]);
     const repo = { findClassTrackRecord } as unknown as CouponRepository;
@@ -123,6 +124,7 @@ describe('CouponService.getTrackRecord', () => {
       returnPerUnit: 0.97,
       firstDay: '2026-10-16',
       lastDay: '2026-10-22',
+      worstLosingStreak: 1,
       days: 30,
     });
   });
