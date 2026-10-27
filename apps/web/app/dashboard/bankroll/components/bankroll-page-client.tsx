@@ -101,39 +101,16 @@ function buildTrendPoints(rows: EnrichedTransaction[]): TrendPoint[] {
   return Array.from(byDay.values()).sort((a, b) => a.day.localeCompare(b.day));
 }
 
-function buildChartData(
-  trendPoints: TrendPoint[],
-  projectionDays = 30,
-): ChartPoint[] {
-  if (trendPoints.length === 0) return [];
-
-  const n = Math.min(trendPoints.length, 14);
-  const recent = trendPoints.slice(-n);
-  const slope =
-    n > 1
-      ? (recent[recent.length - 1]!.balance - recent[0]!.balance) / (n - 1)
-      : 0;
-  const last = trendPoints[trendPoints.length - 1]!;
-
-  const result: ChartPoint[] = trendPoints.map((p, i) => ({
-    ...p,
-    projection: i === trendPoints.length - 1 ? p.balance : null,
-  }));
-
-  const lastDate = new Date(`${last.day}T00:00:00`);
-  for (let i = 1; i <= projectionDays; i++) {
-    const d = new Date(lastDate);
-    d.setDate(d.getDate() + i);
-    const day = d.toISOString().slice(0, 10);
-    result.push({
-      day,
-      label: formatDateShort(day),
-      balance: null,
-      projection: Math.max(0, last.balance + slope * i),
-    });
-  }
-
-  return result;
+/**
+ * Points du graphique : le solde réel, jour par jour, et rien d'autre.
+ *
+ * Plus de « Projection 30j » : une extrapolation linéaire des mouvements
+ * récents, dépôts compris, qui traçait une courbe montante jusqu'à cinq
+ * milliards de francs. Visuellement, c'était une promesse de gain, et elle
+ * confondait dépôts et résultats (audit du 2026-10-23, P1-9).
+ */
+function buildChartData(trendPoints: TrendPoint[]): ChartPoint[] {
+  return trendPoints.map((p) => ({ ...p }));
 }
 
 function formatPercent(value: number | null) {
@@ -264,7 +241,7 @@ function BankrollTrendChart({
     <div className="p-4 sm:p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             {t("trend.recent")}
           </p>
           <p className="mt-2 text-lg font-semibold text-foreground">
@@ -275,13 +252,6 @@ function BankrollTrendChart({
           <div>
             <p>{points[0]?.label}</p>
             <p className="mt-1">{points[points.length - 1]?.label}</p>
-          </div>
-          <div className="flex items-center gap-1 rounded-md border border-border/50 px-2 py-1">
-            <span
-              className="inline-block h-px w-4 border-t border-dashed"
-              style={{ borderColor: "#2563eb" }}
-            />
-            <span>{t("trend.projection")}</span>
           </div>
         </div>
       </div>
@@ -294,8 +264,6 @@ function BankrollTrendChart({
         height={140}
         className="mt-4"
         formatY={(v) => formatAmount(v, true)}
-        projectionKey="projection"
-        projectionColor="#2563eb"
       />
 
       <div className="mt-3 grid gap-3 sm:grid-cols-3">

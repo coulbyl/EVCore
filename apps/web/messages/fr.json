@@ -736,8 +736,7 @@
       "point": "point",
       "points": "points",
       "portfolioLoadError": "Impossible de charger les données du portefeuille.",
-      "periodRoi": "ROI sur la période :",
-      "projection": "Projection 30j"
+      "periodRoi": "ROI sur la période :"
     },
     "history": {
       "title": "Historique des mouvements",

@@ -736,8 +736,7 @@
       "point": "point",
       "points": "points",
       "portfolioLoadError": "Unable to load wallet data.",
-      "periodRoi": "Period ROI:",
-      "projection": "30d projection"
+      "periodRoi": "Period ROI:"
     },
     "history": {
       "title": "Movement history",
