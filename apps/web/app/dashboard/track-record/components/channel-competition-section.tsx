@@ -92,7 +92,7 @@ export function ChannelCompetitionSection({
             setSelected(v as ChannelCompetitionStatItem["channel"])
           }
         >
-          <SelectTrigger className="w-[220px]">
+          <SelectTrigger className="w-[220px] data-[size=default]:h-11">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

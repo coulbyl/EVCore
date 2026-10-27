@@ -112,7 +112,7 @@ export default async function TrackRecordPage({
         <Badge variant="accent" className="w-fit">
           Mesures historiques
         </Badge>
-        <PageHeaderTitle>
+        <PageHeaderTitle className="text-balance">
           Ce que nos pronostics ont vraiment donné
         </PageHeaderTitle>
         <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
@@ -257,10 +257,10 @@ export default async function TrackRecordPage({
             </section>
           )}
 
-          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+          <p className="max-w-2xl text-pretty text-sm leading-6 text-muted-foreground">
             Ces chiffres sont des résultats enregistrés dans EVCore, sans preuve
-            de mise ni de paiement chez un bookmaker. Ils décrivent le passé et
-            ne garantissent rien pour la suite.{" "}
+            de mise ni de paiement chez un bookmaker. Ils décrivent le passé,
+            pas la suite.{" "}
             <Link
               href="/dashboard/formation/channels/channels-overview"
               className="font-medium text-accent underline underline-offset-4"

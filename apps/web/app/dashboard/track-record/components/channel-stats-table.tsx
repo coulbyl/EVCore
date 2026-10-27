@@ -144,7 +144,9 @@ export function ChannelStatsTable({
           : undefined
       }
       mobileCard={(row) => (
-        <div className="rounded-2xl border border-border bg-panel p-3">
+        // Rangée séparée, pas une carte : la page est déjà un panneau, des
+        // cartes dedans s'empilaient (détecteur impeccable, nested-cards).
+        <div className="border-b border-border pb-3 pt-1 last:border-b-0">
           <div className="flex items-start justify-between gap-3">
             <p className="text-sm font-medium text-foreground">
               {row.primaryLabel}
