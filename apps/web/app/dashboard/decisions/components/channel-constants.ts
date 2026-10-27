@@ -203,6 +203,7 @@ const REASON_LABEL_KEY: Record<string, string> = {
   BACKFILL: "reasons.BACKFILL",
   VANTAGE_GATED_ODDS: "reasons.VANTAGE_GATED_ODDS",
   VANTAGE_GATED_MARKET: "reasons.VANTAGE_GATED_MARKET",
+  VANTAGE_GATED_BASIS: "reasons.VANTAGE_GATED_BASIS",
 };
 
 type Translator = (key: string) => string;

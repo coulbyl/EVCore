@@ -176,7 +176,8 @@
       "below_conviction": "No scoreline confident enough to predict",
       "BACKFILL": "Backfilled",
       "VANTAGE_GATED_ODDS": "Read kept but not proposed: odds above 1.80",
-      "VANTAGE_GATED_MARKET": "Read kept but not proposed: recently unreliable bet type"
+      "VANTAGE_GATED_MARKET": "Read kept but not proposed: recently unreliable bet type",
+      "VANTAGE_GATED_BASIS": "Not proposed: it rested on a disagreement between our own readings"
     },
     "statuses": {
       "SELECTED": "Selected",

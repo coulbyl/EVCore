@@ -121,7 +121,10 @@ export async function persistVantageGateRejection(input: {
   fixtureId: string;
   modelRunId: string;
   configVersion: string;
-  reasonCode: "VANTAGE_GATED_ODDS" | "VANTAGE_GATED_MARKET";
+  reasonCode:
+    | "VANTAGE_GATED_ODDS"
+    | "VANTAGE_GATED_MARKET"
+    | "VANTAGE_GATED_BASIS";
   text: string;
   market: string;
   pick: string;

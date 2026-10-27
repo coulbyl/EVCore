@@ -176,7 +176,8 @@
       "below_conviction": "Aucun score assez probable à prédire",
       "BACKFILL": "Rétro-rempli",
       "VANTAGE_GATED_ODDS": "Avis retenu mais non proposé : cote au-dessus de 1,80",
-      "VANTAGE_GATED_MARKET": "Avis retenu mais non proposé : type de pari peu fiable récemment"
+      "VANTAGE_GATED_MARKET": "Avis retenu mais non proposé : type de pari peu fiable récemment",
+      "VANTAGE_GATED_BASIS": "Avis non proposé : il reposait sur un désaccord entre nos propres lectures"
     },
     "statuses": {
       "SELECTED": "Sélectionné",

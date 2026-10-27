@@ -59,9 +59,12 @@ const baseContext: MatchContext = {
   calibration: [],
 };
 
-function playResponse(overrides: { market?: string; pick?: string } = {}) {
+function playResponse(
+  overrides: { market?: string; pick?: string; basis?: string } = {},
+) {
   return JSON.stringify({
     verdict: "play",
+    ...(overrides.basis ? { basis: overrides.basis } : {}),
     market: overrides.market ?? "ONE_X_TWO",
     pick: overrides.pick ?? "HOME",
     probability: 0.6,
@@ -102,6 +105,55 @@ describe("analyzeFixture — MAX_ODDS cap and self-calibration gate (v4, 2026-10
         text: expect.stringContaining("dépasse 1,80"),
       }),
     );
+  });
+
+  it("gates a play resting on a contradiction between our own readings (v5, 2026-10-27)", async () => {
+    buildMatchContext.mockResolvedValue({
+      ...baseContext,
+      readings: [{ ...baseContext.readings[0]!, odds: 1.5 }],
+    });
+    requestVantageCompletion.mockResolvedValue(
+      playResponse({ basis: "tension" }),
+    );
+
+    const result = await analyzeFixture(
+      "fixture-1",
+      dummyClients,
+      dummyConfig,
+      noopLogger,
+    );
+
+    expect(result).toEqual({ outcome: "gated", reason: "basis" });
+    expect(persistVantageDecision).not.toHaveBeenCalled();
+    expect(persistVantageGateRejection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reasonCode: "VANTAGE_GATED_BASIS",
+        configVersion: "vantage-v5-no-tension",
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        text: expect.stringContaining("désaccord entre nos propres lectures"),
+      }),
+    );
+  });
+
+  it("still persists a play on raw statistics", async () => {
+    buildMatchContext.mockResolvedValue({
+      ...baseContext,
+      readings: [{ ...baseContext.readings[0]!, odds: 1.5 }],
+    });
+    requestVantageCompletion.mockResolvedValue(
+      playResponse({ basis: "raw_stats" }),
+    );
+
+    const result = await analyzeFixture(
+      "fixture-1",
+      dummyClients,
+      dummyConfig,
+      noopLogger,
+    );
+
+    expect(result).toEqual({ outcome: "persisted", verdict: "play" });
+    expect(persistVantageGateRejection).not.toHaveBeenCalled();
   });
 
   it("gates a play on a market VANTAGE has measured itself unreliable on (ratio < 0.70, n >= 100)", async () => {

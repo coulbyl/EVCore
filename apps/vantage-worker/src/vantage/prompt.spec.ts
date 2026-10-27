@@ -138,8 +138,12 @@ describe("buildUserPrompt", () => {
     expect(SYSTEM_PROMPT).toContain("l'erreur la plus fréquente");
   });
 
-  it("allows a play beyond inter-channel tension, but still requires a real basis", () => {
+  it("requires a real basis and no longer offers a contradiction between our readings as one (v5, 2026-10-27)", () => {
     expect(SYSTEM_PROMPT).toContain("lecture proche du seuil");
+    expect(SYSTEM_PROMPT).toContain(
+      "Une contradiction entre canaux SELECTED n'est pas une base non plus",
+    );
+    expect(SYSTEM_PROMPT).not.toContain('"tension" :');
     expect(SYSTEM_PROMPT).toContain(
       'Un simple consensus entre canaux, sans l\'une de ces bases, reste un "no_play"',
     );
@@ -151,7 +155,7 @@ describe("buildUserPrompt", () => {
       "sur dix matchs, tu en joues au plus trois",
     );
     expect(buildUserPrompt(baseContext, null)).toContain(
-      '"basis":"tension|near_threshold|raw_stats"',
+      '"basis":"near_threshold|raw_stats"',
     );
   });
 

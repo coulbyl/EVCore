@@ -29,7 +29,17 @@ import { sanitizeReasonText } from "./sanitize-reason";
 // it 0.790 — the cap alone removes the whole measured miscalibration
 // (docs/audits/2026-10-13/VANTAGE.md). Bumped so v4's calibration is read
 // on its own, never blended with v3's.
-const CONFIG_VERSION = "vantage-v4-gated";
+// v5-no-tension (2026-10-27): "tension" (a contradiction between two of our
+// own SELECTED readings) is no longer a basis for a play. Measured on v4's
+// 300 settled plays (13/10–24/10): VANTAGE played 80 % of the fixtures it
+// read against a prompt budget of 3 in 10; tension plays realised 63.3 % for
+// 65.9 % announced, −9.1 % at fixed stake, the other bases 65.4 % for
+// 62.7 %, +1.6 % (gap within noise, ~1 SE); 99 % of tension texts justified
+// the pick with "nos données internes sont en désaccord" and only 40 % named
+// a team. Décisions now tells the player such pairs are separate estimates,
+// not a reason to bet (docs/audits/2026-10-27/AVIS-IA.md). Bumped so the
+// v5 cohort is read on its own.
+const CONFIG_VERSION = "vantage-v5-no-tension";
 
 /** Same empirically-justified floor used elsewhere in the system — see
  * apps/backend/src/modules/coupon/coupon.constants.ts's MIN_LEG_ODDS and
@@ -174,7 +184,10 @@ export type AnalyzeResult =
   | { outcome: "no_context" }
   | { outcome: "skipped_no_readings" }
   | { outcome: "invalid_response"; raw: string; error: string }
-  | { outcome: "gated"; reason: "odds_cap" | "self_calibration" }
+  | {
+      outcome: "gated";
+      reason: "odds_cap" | "self_calibration" | "basis";
+    }
   | { outcome: "persisted"; verdict: "play" | "no_play" };
 
 /** One fixture, one VANTAGE read, start to finish. Never throws on a bad LLM
@@ -316,6 +329,32 @@ export async function analyzeFixture(
 
   if (parsed.data.verdict === "play") {
     knownOdds = findKnownOdds(context, parsed.data.market, parsed.data.pick);
+    // v5 : une contradiction entre deux de nos lectures n'est plus une base
+    // de pari. Le prompt ne la propose plus ; si le modèle la déclare quand
+    // même, le refus est enregistré, comme pour le plafond de cote.
+    if (parsed.data.basis === "tension") {
+      logger.info(
+        {
+          fixtureId,
+          fixtureName,
+          scheduledAt: context.kickoff,
+          market: parsed.data.market,
+          pick: parsed.data.pick,
+        },
+        "vantage: play rests on a contradiction between our own readings — gated",
+      );
+      await persistVantageGateRejection({
+        fixtureId: context.fixtureId,
+        modelRunId: context.modelRunId,
+        configVersion: CONFIG_VERSION,
+        reasonCode: "VANTAGE_GATED_BASIS",
+        text: `Lecture non proposée : elle reposait sur un désaccord entre nos propres lectures, et chacune est une estimation à part. ${parsed.data.reasonDetails}`,
+        market: parsed.data.market,
+        pick: parsed.data.pick,
+        odds: knownOdds,
+      });
+      return { outcome: "gated", reason: "basis" };
+    }
     if (knownOdds !== null && knownOdds > MAX_ODDS) {
       logger.info(
         {
