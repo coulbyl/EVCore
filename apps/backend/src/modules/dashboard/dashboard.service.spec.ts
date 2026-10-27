@@ -338,5 +338,6 @@ describe('DashboardService.getTrackRecordSummary', () => {
     expect(byOdds[2]?.announced).toBeCloseTo(0.4, 10);
     expect(byOdds[2]?.realised).toBe(0);
     expect(byOdds.every((b) => !b.sufficient)).toBe(true);
+    expect(byOdds.every((b) => b.status === 'INSUFFICIENT_DATA')).toBe(true);
   });
 });

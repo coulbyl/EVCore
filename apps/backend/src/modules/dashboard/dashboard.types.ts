@@ -86,6 +86,8 @@ export type TrackRecordOddsBand = TrackRecordRates & {
   minOdds: number | null;
   /** Borne haute exclue ; null = pas de borne. */
   maxOdds: number | null;
+  /** Même règle que les canaux (écart réalisé/annoncé, seuil de 30). */
+  status: ChannelStatus;
 };
 
 export type TrackRecordSummary = TrackRecordRates & {

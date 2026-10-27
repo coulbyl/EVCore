@@ -273,7 +273,16 @@ export class DashboardService {
           (maxOdds === null || odds < maxOdds)
         );
       });
-      return { minOdds, maxOdds, ...trackRecordRates(inBand) };
+      return {
+        minOdds,
+        maxOdds,
+        ...trackRecordRates(inBand),
+        status: calibrationStatus(
+          calibrationRatioOf(inBand),
+          inBand.length,
+          TRACK_RECORD_MIN_SAMPLE,
+        ),
+      };
     });
 
     return { from, to, ...trackRecordRates(selections), byOdds };
