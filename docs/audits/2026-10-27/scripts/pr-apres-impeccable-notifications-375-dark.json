@@ -1,0 +1,48 @@
+{
+ "route": "/dashboard/notifications",
+ "width": 375,
+ "theme": "dark",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 2 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cdark-glow%c Colored box-shadow glow (#14b8a6) on dark background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 2 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cdark-glow%c Colored box-shadow glow (#14b8a6) on dark background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "span",
+    "cls": "flex size-14 items-center justify-center rounded-full shadow-lg shadow-accent/30",
+    "text": "",
+    "w": 56,
+    "h": 56
+   },
+   "findings": [
+    {
+     "type": "dark-glow",
+     "detail": "Colored box-shadow glow (#14b8a6) on dark background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12 righ",
+    "text": "",
+    "w": 44,
+    "h": 44
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  }
+ ]
+}

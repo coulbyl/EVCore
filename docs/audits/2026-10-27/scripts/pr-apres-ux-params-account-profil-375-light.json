@@ -1,0 +1,32 @@
+{
+ "url": "http://localhost:3010/dashboard/params/account/profil",
+ "title": "EVCore",
+ "lang": "fr",
+ "headings": [
+  "h1: Mon compte",
+  "h2: E2E Tester",
+  "h3: Jeu responsable",
+  "h3: Mes badges"
+ ],
+ "overflowX": false,
+ "textElements": 28,
+ "smallText": {
+  "count": 0,
+  "samples": []
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 27,
+ "smallTapTargets": {
+  "count": 0,
+  "samples": []
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

@@ -1,0 +1,100 @@
+{
+ "route": "/dashboard/params/account/profil",
+ "width": 375,
+ "theme": "light",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 5 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cflat-type-hierarchy%c Role sizes: body 14px, h2 16px, h3 16px, h1 18px (largest adjacent step 1.14:1; target 1.25:1; weight separates headings from body text) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 5 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cflat-type-hierarchy%c Role sizes: body 14px, h2 16px, h3 16px, h1 18px (largest adjacent step 1.14:1; target 1.25:1; weight separates headings from body text) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "button",
+    "cls": "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12 righ",
+    "text": "",
+    "w": 44,
+    "h": 44
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "body",
+    "cls": "geistsans_d025f23b-module__btTCTG__variable geistmono_df95d851-module__CWPfka__v",
+    "text": "Toggle Sidebar 1 E2 Mon compte Profil E2 AVATAR E2E Tester @",
+    "w": 375,
+    "h": 667
+   },
+   "findings": [
+    {
+     "type": "flat-type-hierarchy",
+     "detail": "Role sizes: body 14px, h2 16px, h3 16px, h1 18px (largest adjacent step 1.14:1; target 1.25:1; weight separates headings from body text)",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "group divide-y divide-border overflow-hidden rounded-2xl border border-border bg",
+    "text": "EMAIL e2e@evcore.test Pour changer d'adresse, écris à l'équi",
+    "w": 275,
+    "h": 248
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "section",
+    "cls": "rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow ",
+    "text": "Jeu responsable Parier comporte des risques de perte. Ne mis",
+    "w": 317,
+    "h": 314
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "section",
+    "cls": "rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow ",
+    "text": "PROGRESSION Mes badges Lis les cinq fiches de la formation p",
+    "w": 317,
+    "h": 154
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  }
+ ]
+}
