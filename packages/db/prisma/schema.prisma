@@ -643,6 +643,12 @@ model User {
   // (AuthService.updateMe) rather than keeping it around unconsented.
   phoneNumber                      String?
   phoneNumberConsentGiven          Boolean                   @default(false)
+  // Consentement donné à l'inscription : âge confirmé (18+, 21+ au Cameroun)
+  // et conditions d'utilisation + confidentialité acceptées, avec la version
+  // des conditions acceptée. Null pour les comptes créés avant le
+  // 2026-10-27, où rien n'était demandé.
+  termsAcceptedAt                  DateTime?
+  termsVersion                     String?
   hasSeenOnboarding                Boolean                   @default(false)
   // The passive product tour's own flag (above) is distinct from this one:
   // hasSeenOnboarding tracks the driver.js guided tour, this tracks the
