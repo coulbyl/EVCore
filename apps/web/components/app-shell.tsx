@@ -115,6 +115,16 @@ export function AppShell({
             active: pathname.startsWith("/dashboard/engine"),
             icon: Cpu,
           },
+          // Matchs n'est plus dans la navigation du joueur depuis le
+          // 2026-10-27 : Décisions montre déjà presque tous les matchs, et la
+          // fiche de match s'ouvre depuis ses cartes. Le diagnostic brut
+          // (EV, motifs de rejet, λ) reste ici, pour les admins.
+          {
+            label: tNav("fixtures"),
+            href: "/dashboard/fixtures",
+            active: pathname.startsWith("/dashboard/fixtures"),
+            icon: CalendarDays,
+          },
           {
             label: tNav("glossary"),
             href: "/dashboard/glossaire",
@@ -170,12 +180,6 @@ export function AppShell({
             href: "/dashboard/decisions",
             active: pathname.startsWith("/dashboard/decisions"),
             icon: Layers,
-          },
-          {
-            label: tNav("fixtures"),
-            href: "/dashboard/fixtures",
-            active: pathname.startsWith("/dashboard/fixtures"),
-            icon: CalendarDays,
           },
         ],
       },

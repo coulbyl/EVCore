@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ShoppingCart, Check, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import {
   DataTable,
   Drawer,
@@ -12,22 +12,13 @@ import {
   type ColumnDef,
 } from "@evcore/ui";
 import { SettleFixtureDialog } from "@/components/settle-fixture-dialog";
-import {
-  formatScore,
-  formatKickoff,
-  isFixtureBettable,
-} from "@/domains/fixture/helpers/fixture";
+import { formatScore, formatKickoff } from "@/domains/fixture/helpers/fixture";
 import {
   fixtureStatusBadgeClass,
   fixtureStatusIsNotable,
   fixtureStatusLabel,
 } from "@/helpers/fixture";
-import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import type { FixtureRow } from "@/domains/fixture/types/fixture";
-import {
-  draftItemKey,
-  type BetSlipDraftItem,
-} from "@/domains/bet-slip/types/bet-slip";
 import { FixtureDiagnostics } from "@/components/fixture-diagnostics";
 import { useFixtures } from "@/domains/fixture/use-cases/use-fixtures";
 import { InfiniteScrollSentinel } from "./infinite-scroll-sentinel";
@@ -35,11 +26,6 @@ import { InfiniteScrollSentinel } from "./infinite-scroll-sentinel";
 // ---------------------------------------------------------------------------
 // Cell badge helpers
 // ---------------------------------------------------------------------------
-
-function hasEvPick(row: FixtureRow): boolean {
-  const mr = row.modelRun;
-  return Boolean(mr?.betId && mr.market && mr.pick);
-}
 
 function FixtureTeamLogos({
   homeLogo,
@@ -66,105 +52,11 @@ function FixtureTeamLogos({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Add to slip button
-// ---------------------------------------------------------------------------
-
-function AddToSlipButton({
-  row,
-  variant = "icon",
-}: {
-  row: FixtureRow;
-  variant?: "icon" | "full";
-}) {
-  const { draft, addItem, removeItem, isInSlip, open } = useBetSlip();
-  const mr = row.modelRun;
-
-  if (
-    !mr ||
-    !hasEvPick(row) ||
-    !mr.modelRunId ||
-    !mr.market ||
-    !mr.pick ||
-    !isFixtureBettable(row)
-  ) {
-    return null;
-  }
-
-  const { modelRunId, market, pick, ev, evaluatedPicks } = mr;
-  const itemKey = draftItemKey({
-    fixtureId: row.fixtureId,
-    market,
-    pick,
-  });
-  const inSlip = isInSlip(itemKey);
-
-  function handleClick(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (inSlip) {
-      removeItem(itemKey);
-    } else {
-      const shouldOpenCoupon = draft.items.length === 0;
-      const odds =
-        evaluatedPicks.find((p) => p.market === market && p.pick === pick)
-          ?.odds ?? null;
-      const item: BetSlipDraftItem = {
-        modelRunId,
-        fixtureId: row.fixtureId,
-        fixture: row.fixture,
-        homeLogo: row.homeLogo,
-        awayLogo: row.awayLogo,
-        competition: row.competition,
-        scheduledAt: row.scheduledAt,
-        market,
-        pick,
-        odds,
-        ev,
-        stakeOverride: null,
-      };
-      addItem(item);
-      if (shouldOpenCoupon) open();
-    }
-  }
-
-  if (variant === "full") {
-    return (
-      <button
-        type="button"
-        onClick={handleClick}
-        className={`flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-colors ${
-          inSlip
-            ? "border-success/20 bg-success/12 text-success"
-            : "border-border bg-panel-strong text-foreground hover:border-accent hover:text-accent"
-        }`}
-      >
-        {inSlip ? <Check size={15} /> : <ShoppingCart size={15} />}
-        {inSlip ? "Déjà dans le coupon" : "Placer"}
-      </button>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={handleClick}
-      title={inSlip ? "Retirer du coupon" : "Placer"}
-      className={`flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-xl border transition-colors ${
-        inSlip
-          ? "border-success/20 bg-success/12 text-success"
-          : "border-border bg-panel-strong text-muted-foreground hover:border-accent hover:text-accent"
-      }`}
-    >
-      {inSlip ? <Check size={15} /> : <ShoppingCart size={15} />}
-    </button>
-  );
-}
-
+// Saisie manuelle du résultat, pour les admins, tant que le match n'est pas
+// terminé. Elle dépendait d'un pari interne VALUE/SAFE (table `bet`, vide
+// depuis le 2026-09-04) et n'apparaissait donc plus jamais.
 function ResultAction({ row, isAdmin }: { row: FixtureRow; isAdmin: boolean }) {
-  const isBet = hasEvPick(row);
-  const settled =
-    row.modelRun?.betStatus === "WON" || row.modelRun?.betStatus === "LOST";
-  if (!isAdmin || !isBet || settled) return null;
+  if (!isAdmin || row.status === "FINISHED") return null;
   return (
     <SettleFixtureDialog
       fixtureId={row.fixtureId}
@@ -220,7 +112,7 @@ function FixtureMobileCard({
             </div>
             {fixtureStatusIsNotable(row.status) && (
               <span
-                className={`inline-flex shrink-0 items-center rounded-full border px-2 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${fixtureStatusBadgeClass(row.status)}`}
+                className={`inline-flex shrink-0 items-center rounded-full border px-2 py-1 text-xs font-semibold uppercase tracking-[0.08em] ${fixtureStatusBadgeClass(row.status)}`}
               >
                 {fixtureStatusLabel(row.status)}
               </span>
@@ -251,10 +143,9 @@ function FixtureMobileCard({
         </div>
       </div>
 
-      {hasEvPick(row) && (
+      {isAdmin && row.status !== "FINISHED" && (
         <div className="mt-3 flex gap-2 border-t border-border pt-3">
           <ResultAction row={row} isAdmin={isAdmin} />
-          <AddToSlipButton row={row} variant="full" />
         </div>
       )}
     </div>
@@ -324,8 +215,7 @@ function makeColumns(isAdmin: boolean): ColumnDef<FixtureRow>[] {
           className="flex items-center justify-end gap-2"
           onClick={(e) => e.stopPropagation()}
         >
-          {isAdmin && <ResultAction row={row.original} isAdmin={isAdmin} />}
-          <AddToSlipButton row={row.original} />
+          <ResultAction row={row.original} isAdmin={isAdmin} />
         </div>
       ),
     },
@@ -368,9 +258,11 @@ export function FixturesTable({
   if (isError) {
     return (
       <div className="rounded-[1.3rem] border border-destructive/20 bg-destructive/10 p-6 text-center">
-        <p className="font-semibold text-destructive">Backend indisponible</p>
-        <p className="mt-1 text-sm text-danger">
-          Vérifiez que le serveur est démarré.
+        <p className="font-semibold text-destructive">
+          Les matchs n&apos;ont pas chargé.
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Recharge la page dans un instant.
         </p>
       </div>
     );
@@ -385,11 +277,8 @@ export function FixturesTable({
         onRowClick={handleRowClick}
         emptyState={
           <div className="flex flex-col items-center gap-3 py-12 text-center">
-            <p className="text-2xl">🎯</p>
             <p className="font-semibold text-foreground">{t("noResults")}</p>
-            <p className="text-sm text-muted-foreground">
-              Ajustez les filtres ou changez de date.
-            </p>
+            <p className="text-sm text-muted-foreground">Change de date.</p>
           </div>
         }
         mobileCard={(row) => (
@@ -422,14 +311,14 @@ export function FixturesTable({
               : "z-50 inset-y-3 right-3 flex h-[calc(100dvh-1.5rem)] w-[min(760px,calc(100vw-1.5rem))] flex-col rounded-[1.6rem] border border-border bg-panel-strong shadow-[0_24px_80px_rgba(15,23,42,0.18)] focus:outline-none"
           }
         >
-          <DrawerTitle className="sr-only">Diagnostic fixture</DrawerTitle>
+          <DrawerTitle className="sr-only">Diagnostic du match</DrawerTitle>
           <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-10 sm:p-5">
             {selectedRow ? (
               <FixtureDiagnostics row={selectedRow} />
             ) : (
               <div className="flex min-h-80 items-center justify-center rounded-[1.7rem] border border-border bg-panel p-6 text-center">
                 <p className="text-sm text-muted-foreground">
-                  Sélectionnez un match pour voir le diagnostic.
+                  Sélectionne un match pour voir son diagnostic.
                 </p>
               </div>
             )}

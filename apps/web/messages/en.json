@@ -332,10 +332,6 @@
       "title": "Decisions",
       "description": "Every match of the day with our readings, one of them put forward: Our pick. The \"?\" button here explains how to read a sheet at any time."
     },
-    "fixtures": {
-      "title": "Matches",
-      "description": "Every match of the day, filterable by status. The betting index gives you the key stats at a glance."
-    },
     "arbitrage": {
       "title": "AI opinion",
       "description": "A second reading of each match by our AI, next to Our pick, with its track record, losses included. The \"?\" here details what it does."
@@ -880,11 +876,6 @@
       "performanceDomExt": "Home vs away edge. 50% = balanced. <50% favors away, >50% favors home.",
       "volatiliteLigue": "League unpredictability: higher = more random (not a home/away edge)."
     },
-    "actions": {
-      "alreadyInSlip": "Already in slip",
-      "alreadyInTickets": "Already in your slips",
-      "placePick": "Place this pick"
-    },
     "table": {
       "market": "Market",
       "probability": "Prob.",
@@ -894,37 +885,15 @@
       "viable": "Viable"
     },
     "empty": {
-      "title": "No diagnostics",
-      "description": "No ModelRun available for this fixture."
-    },
-    "noBet": {
-      "message": "No market meets the criteria",
-      "decision": "decision"
+      "title": "No analysis available",
+      "description": "This match has not been analysed yet."
     },
     "sections": {
-      "whyThisPick": "Why this pick?",
-      "modelPrediction": "Model prediction",
-      "analyzedMarkets": "Analyzed markets"
-    },
-    "stats": {
-      "estimatedProbability": "Estimated prob.",
-      "evValue": "Value (EV)",
-      "lambdaHome": "λ Home",
-      "lambdaAway": "λ Away"
+      "factors": "Factors",
+      "analyzedMarkets": "Evaluated readings"
     },
     "predictionSummary": {
-      "modelPredicts": "The model predicts",
-      "homeGoals": "home goals",
-      "awayGoals": "away goals",
-      "expectedGoals": "expected"
-    },
-    "marketsSummary": {
-      "market": "market",
-      "markets": "markets",
-      "viable": "viable",
-      "viables": "viable",
-      "rejected": "rejected",
-      "rejectedPlural": "rejected"
+      "expectedGoals": "expected goals"
     }
   },
   "coupons": {

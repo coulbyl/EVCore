@@ -53,25 +53,17 @@ const CANAL_COLOR: Record<CouponIndicesCanal, string> = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+// ROI en ton neutre, flèche comprise : coloré en vert, il se lisait comme
+// « mise ici » (revue UX du 2026-10-27, Matchs P2-7).
 function RoiIndicator({ roi }: { roi: number | null }) {
   if (roi === null)
-    return <span className="text-xs text-muted-foreground/50">—</span>;
+    return <span className="text-xs text-muted-foreground">—</span>;
   const pct = (roi * 100).toFixed(1);
-  if (roi > 0.03)
-    return (
-      <span className="flex items-center gap-0.5 text-xs font-bold tabular-nums text-success">
-        +{pct}% <TrendingUp size={11} />
-      </span>
-    );
-  if (roi < -0.03)
-    return (
-      <span className="flex items-center gap-0.5 text-xs font-bold tabular-nums text-destructive">
-        {pct}% <TrendingDown size={11} />
-      </span>
-    );
+  const Icon = roi > 0.03 ? TrendingUp : roi < -0.03 ? TrendingDown : Minus;
   return (
-    <span className="flex items-center gap-0.5 text-xs font-bold tabular-nums text-muted-foreground">
-      {pct}% <Minus size={11} />
+    <span className="flex items-center gap-0.5 text-xs font-semibold tabular-nums text-foreground">
+      {roi > 0 ? "+" : ""}
+      {pct}% <Icon size={11} className="text-muted-foreground" />
     </span>
   );
 }
@@ -253,9 +245,10 @@ export function CouponIndicesDrawer({
               <span className="text-sm font-semibold">Indice de paris</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Concentre ta mise là où le modèle crée de la valeur — identifie
-              les marchés et cotes où le ROI est positif pour arbitrer entre tes
-              sélections du jour.
+              Réussite et résultat à mise fixe par marché et tranche de cote,
+              sur les sélections réglées. Un résultat passé ne se reproduit pas
+              d&apos;une période à l&apos;autre : c&apos;est une mesure, pas un
+              conseil de mise.
             </p>
           </div>
           <button
@@ -382,14 +375,9 @@ export function CouponIndicesDrawer({
                         data.summary.roi !== null
                           ? `${data.summary.roi >= 0 ? "+" : ""}${(data.summary.roi * 100).toFixed(1)}%`
                           : "—",
-                      highlight:
-                        data.summary.roi !== null
-                          ? data.summary.roi > 0
-                            ? "success"
-                            : data.summary.roi < 0
-                              ? "destructive"
-                              : null
-                          : null,
+                      // Ton neutre : un ROI coloré se lisait comme un signal
+                      // de mise (revue UX du 2026-10-27, Matchs P2-7).
+                      highlight: null,
                     },
                   ] as {
                     label: string;
@@ -549,14 +537,14 @@ export function CouponIndicesDrawer({
               )}
 
               {/* Legend */}
-              <p className="text-[0.68rem] leading-snug text-muted-foreground">
+              <p className="text-xs leading-snug text-muted-foreground">
                 <span className="font-semibold text-foreground/60">
                   Taux de réussite
                 </span>{" "}
                 — % de picks gagnés sur la période.{" "}
                 <span className="font-semibold text-foreground/60">ROI</span> —
-                gain net moyen par unité misée à mise égale : +10% signifie
-                +0,10€ gagné pour chaque 1€ joué.
+                résultat moyen par unité misée à mise égale : −5 % veut dire 95
+                F rendus pour 100 F joués.
               </p>
             </>
           )}

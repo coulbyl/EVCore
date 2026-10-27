@@ -9,14 +9,11 @@ export type FixtureModelFactors = {
   volatiliteLigue: number | null;
 };
 
+// Les champs du pari interne VALUE/SAFE (betId, market, pick, betStatus,
+// probEstimated, ev) et safeValueBet sont retirés le 2026-10-27 : la table
+// `bet` n'est plus écrite depuis le 04/09, ils étaient toujours nuls.
 export type FixtureModelRun = {
   modelRunId: string;
-  betId: string | null;
-  market: string | null;
-  pick: string | null;
-  betStatus: "WON" | "LOST" | "PENDING" | null;
-  probEstimated: string | null;
-  ev: string | null;
   lambdaHome: string | null;
   lambdaAway: string | null;
   expectedTotalGoals: string | null;
@@ -38,21 +35,6 @@ export type FixtureEvaluatedPickSnapshot = FixturePickSnapshot & {
   rejectionReason?: string;
 };
 
-export type FixturePrediction = {
-  channel: "DOMINANT" | "DRAW" | "BTTS";
-  market: string;
-  pick: string;
-  probability: string;
-  correct: boolean | null;
-  odds: string | null;
-};
-
-export type FixtureSvBet = {
-  betId: string;
-  market: string;
-  pick: string;
-};
-
 export type FixtureRow = {
   fixtureId: string;
   fixture: string;
@@ -64,7 +46,13 @@ export type FixtureRow = {
   score: string | null;
   htScore: string | null;
   modelRun: FixtureModelRun | null;
-  safeValueBet: FixtureSvBet | null;
+};
+
+/** Fiche d'un match (GET /fixture/:id/sheet), ouverte depuis Décisions. */
+export type FixtureSheet = FixtureRow & {
+  homeTeam: string;
+  awayTeam: string;
+  country: string | null;
 };
 
 // ---------------------------------------------------------------------------

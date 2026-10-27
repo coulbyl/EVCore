@@ -66,13 +66,6 @@ export const PRODUCT_TOUR_STEPS: ProductTourStep[] = [
     descriptionKey: "decisions.description",
   },
   {
-    id: "fixtures",
-    route: "/dashboard/fixtures",
-    selector: '[data-tour="fixtures-indices"]',
-    titleKey: "fixtures.title",
-    descriptionKey: "fixtures.description",
-  },
-  {
     id: "arbitrage",
     route: "/dashboard/arbitrage",
     selector: '[data-tour="arbitrage-help"]',

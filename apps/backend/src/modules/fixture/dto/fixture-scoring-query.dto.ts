@@ -29,10 +29,6 @@ export class FixtureScoringQueryDto {
   timeSlot?: 'morning' | 'noon' | 'afternoon' | 'evening' | 'night';
 
   @IsOptional()
-  @IsIn(['WON', 'LOST', 'PENDING'])
-  betStatus?: 'WON' | 'LOST' | 'PENDING';
-
-  @IsOptional()
   @IsString()
   cursor?: string;
 

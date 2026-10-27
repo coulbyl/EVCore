@@ -332,10 +332,6 @@
       "title": "Décisions",
       "description": "Chaque match du jour avec nos lectures, dont une mise en avant : Notre sélection. Le bouton « ? » ici t'explique comment lire une fiche à tout moment."
     },
-    "fixtures": {
-      "title": "Matchs",
-      "description": "Tous les matchs du jour, filtrables par statut. L'indice de paris agrège les stats clés d'un coup d'œil."
-    },
     "arbitrage": {
       "title": "Avis IA",
       "description": "Une deuxième lecture de chaque match par notre IA, à côté de Notre sélection, avec son bilan pertes comprises. Le « ? » ici détaille ce qu'elle fait."
@@ -880,11 +876,6 @@
       "performanceDomExt": "Avantage à domicile vs à l’extérieur. 50% = équilibre. <50% avantage extérieur, >50% avantage domicile.",
       "volatiliteLigue": "Imprévisibilité de la ligue : plus c’est haut, plus c’est aléatoire (pas un avantage dom./ext.)."
     },
-    "actions": {
-      "alreadyInSlip": "Déjà dans le coupon",
-      "alreadyInTickets": "Déjà dans tes coupons",
-      "placePick": "Placer cette sélection"
-    },
     "table": {
       "market": "Marché",
       "probability": "Prob.",
@@ -895,36 +886,14 @@
     },
     "empty": {
       "title": "Aucune analyse disponible",
-      "description": "Pas de ModelRun disponible pour cette fixture."
-    },
-    "noBet": {
-      "message": "Aucun marché ne répond aux critères",
-      "decision": "décision"
+      "description": "Ce match n'a pas encore été analysé."
     },
     "sections": {
-      "whyThisPick": "Pourquoi cette sélection ?",
-      "modelPrediction": "Prédiction modèle",
-      "analyzedMarkets": "Marchés analysés"
-    },
-    "stats": {
-      "estimatedProbability": "Prob. estimée",
-      "evValue": "Valeur (EV)",
-      "lambdaHome": "λ Dom.",
-      "lambdaAway": "λ Ext."
+      "factors": "Facteurs",
+      "analyzedMarkets": "Lectures évaluées"
     },
     "predictionSummary": {
-      "modelPredicts": "Le modèle prédit",
-      "homeGoals": "buts dom.",
-      "awayGoals": "buts ext.",
-      "expectedGoals": "attendus"
-    },
-    "marketsSummary": {
-      "market": "marché",
-      "markets": "marchés",
-      "viable": "viable",
-      "viables": "viables",
-      "rejected": "écarté",
-      "rejectedPlural": "écartés"
+      "expectedGoals": "buts attendus"
     }
   },
   "coupons": {
