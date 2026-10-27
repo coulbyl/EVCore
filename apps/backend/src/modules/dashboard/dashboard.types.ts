@@ -59,12 +59,27 @@ export type CompetitionStat = {
   model: CompetitionModelStats;
 };
 
-export type PnlByCanalResponse = {
+/**
+ * En-tête de la page Mesures historiques : ce que les canaux ont annoncé et
+ * ce qui est arrivé, sur les sélections d'avant-match dédupliquées de la
+ * période (même source que le tableau par canal). Remplace le résumé lu dans
+ * la table `bet`, plus alimentée depuis le 2026-09-04, qui affichait
+ * « 1 pari réglé, 100 %, +64 % » sur 30 jours (audit du 2026-10-23, P1-5).
+ */
+export type TrackRecordSummary = {
   from: string;
   to: string;
-  global: PnlSummary;
-  value: PnlSummary;
-  safe: PnlSummary;
+  /** Sélections réglées (gagnées ou perdues) de la période. */
+  settled: number;
+  won: number;
+  /** Probabilité moyenne annoncée, 0–1 ; null sans sélection. */
+  announced: number | null;
+  /** Taux de réussite réel, 0–1 ; null sans sélection. */
+  realised: number | null;
+  /** Retour d'une mise de 1 à la cote d'analyse (0,97 = −3 %). */
+  returnPerUnit: number | null;
+  /** Assez de sélections pour lire les taux (seuil de la page). */
+  sufficient: boolean;
 };
 
 export type LeaderboardEntry = {

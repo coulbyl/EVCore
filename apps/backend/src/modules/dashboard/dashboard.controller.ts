@@ -6,6 +6,7 @@ import type {
   ChannelCompetitionStatItem,
   ChannelHealthItem,
   ChannelStatsItem,
+  TrackRecordSummary,
 } from './dashboard.types';
 
 class DashboardSummaryQueryDto {
@@ -38,10 +39,12 @@ export class DashboardController {
     return this.dashboardService.getSummary(query.pnlDate);
   }
 
-  @Get('pnl')
-  getPnlByCanal(@Query() query: PnlQueryDto) {
+  @Get('track-record-summary')
+  getTrackRecordSummary(
+    @Query() query: PnlQueryDto,
+  ): Promise<TrackRecordSummary> {
     const { from, to } = this.defaultRange(query);
-    return this.dashboardService.getPnlByCanal(from, to);
+    return this.dashboardService.getTrackRecordSummary(from, to);
   }
 
   @Get('competition-stats')

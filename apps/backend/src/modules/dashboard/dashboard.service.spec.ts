@@ -215,3 +215,78 @@ describe('DashboardService.getChannelHealth — calibration-based classification
     expect(draw?.status).toBe('INSUFFICIENT_DATA');
   });
 });
+
+describe('DashboardService.getTrackRecordSummary', () => {
+  function rowFor(
+    channel: StrategyChannel,
+    opts: { won: boolean; odds: number; probability: number },
+  ): ChannelSelectionRow {
+    const row = selectionRow(opts);
+    return {
+      ...row,
+      channelDecision: { ...row.channelDecision, channel },
+    } as ChannelSelectionRow;
+  }
+
+  it('summarises announced vs realised on the deduplicated cohort, without the filter channels', async () => {
+    // DRAW : 30 sélections annoncées à 0,30, 9 gagnées à cote 3,2.
+    // VALUE et SAFE re-sélectionnent des paris déjà comptés : exclus.
+    const selections = [
+      ...Array.from({ length: 9 }, () =>
+        rowFor(StrategyChannel.DRAW, {
+          won: true,
+          odds: 3.2,
+          probability: 0.3,
+        }),
+      ),
+      ...Array.from({ length: 21 }, () =>
+        rowFor(StrategyChannel.DRAW, {
+          won: false,
+          odds: 3.2,
+          probability: 0.3,
+        }),
+      ),
+      rowFor(StrategyChannel.VALUE, { won: true, odds: 2, probability: 0.6 }),
+      rowFor(StrategyChannel.SAFE, { won: true, odds: 1.3, probability: 0.8 }),
+    ];
+    const repo = {
+      findChannelSelectionsInRange: vi.fn().mockResolvedValue(selections),
+    } satisfies Partial<DashboardRepository>;
+    const service = new DashboardService(
+      repo as unknown as DashboardRepository,
+    );
+
+    const summary = await service.getTrackRecordSummary(
+      '2026-09-01',
+      '2026-09-30',
+    );
+
+    expect(summary.settled).toBe(30);
+    expect(summary.won).toBe(9);
+    expect(summary.announced).toBeCloseTo(0.3, 10);
+    expect(summary.realised).toBeCloseTo(0.3, 10);
+    // (9 × 3,2 − 30) / 30 = −4 % → 0,96 par unité misée
+    expect(summary.returnPerUnit).toBeCloseTo(0.96, 10);
+    expect(summary.sufficient).toBe(true);
+  });
+
+  it('flags a period under 30 settled selections as insufficient', async () => {
+    const selections = [
+      rowFor(StrategyChannel.DRAW, { won: true, odds: 3.2, probability: 0.3 }),
+    ];
+    const repo = {
+      findChannelSelectionsInRange: vi.fn().mockResolvedValue(selections),
+    } satisfies Partial<DashboardRepository>;
+    const service = new DashboardService(
+      repo as unknown as DashboardRepository,
+    );
+
+    const summary = await service.getTrackRecordSummary(
+      '2026-10-01',
+      '2026-10-02',
+    );
+
+    expect(summary.settled).toBe(1);
+    expect(summary.sufficient).toBe(false);
+  });
+});

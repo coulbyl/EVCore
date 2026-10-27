@@ -33,12 +33,22 @@ import type {
   CompetitionStat,
   DashboardSummary,
   LeaderboardEntry,
-  PnlByCanalResponse,
   PnlSummary,
+  TrackRecordSummary,
   WorkerStatus,
 } from './dashboard.types';
 
 const MIN_SETTLED_MODEL = 10;
+
+/** Canaux exclus de l'en-tête de Mesures historiques (voir getTrackRecordSummary). */
+const SUMMARY_EXCLUDED_CHANNELS: ReadonlySet<StrategyChannel> = new Set([
+  StrategyChannel.VALUE,
+  StrategyChannel.SAFE,
+  StrategyChannel.VANTAGE,
+]);
+
+/** Même seuil que le tableau par canal (« Volume insuffisant » sous 30). */
+const TRACK_RECORD_MIN_SAMPLE = 30;
 // Minimum settled coupons before a user is ranked on the leaderboard at all.
 // Below this, a single lucky longshot coupon (e.g. +900% ROI on one bet)
 // could otherwise permanently outrank consistent, high-volume players —
@@ -229,26 +239,43 @@ export class DashboardService {
     return `${normalized.slice(0, 177)}...`;
   }
 
-  async getPnlByCanal(from: string, to: string): Promise<PnlByCanalResponse> {
-    const since = startOfUtcDay(parseIsoDate(from));
-    const until = endOfUtcDay(parseIsoDate(to));
-    const bets = await this.repo.getSettledBetsForPnl({ since, until });
+  /**
+   * En-tête de Mesures historiques, sur la même cohorte que le tableau par
+   * canal (sélections d'avant-match dédupliquées, réglées, avec cote).
+   *
+   * VALUE et SAFE sont des filtres qui re-sélectionnent des décisions d'autres
+   * canaux, et VANTAGE est l'avis IA : les compter dédoublerait des paris déjà
+   * présents. Même exclusion que l'écran Décisions.
+   */
+  async getTrackRecordSummary(
+    from: string,
+    to: string,
+  ): Promise<TrackRecordSummary> {
+    const range = {
+      since: startOfUtcDay(parseIsoDate(from)),
+      until: endOfUtcDay(parseIsoDate(to)),
+    };
+    const byChannel = await this.settledByChannel(range);
+    const selections = [...byChannel]
+      .filter(([channel]) => !SUMMARY_EXCLUDED_CHANNELS.has(channel))
+      .flatMap(([, rows]) => rows);
 
-    const valueBets = bets.filter(
-      (b) =>
-        b.channelSelection?.channelDecision.channel === StrategyChannel.VALUE,
-    );
-    const safeBets = bets.filter(
-      (b) =>
-        b.channelSelection?.channelDecision.channel === StrategyChannel.SAFE,
-    );
-
+    const settled = selections.length;
+    const won = selections.filter((s) => s.result === BetStatus.WON).length;
+    const roi = flatBetRoi(asFlatBets(selections));
     return {
       from,
       to,
-      global: this.buildPnlSummary(bets),
-      value: this.buildPnlSummary(valueBets),
-      safe: this.buildPnlSummary(safeBets),
+      settled,
+      won,
+      announced:
+        settled > 0
+          ? selections.reduce((acc, s) => acc + toNumber(s.probability), 0) /
+            settled
+          : null,
+      realised: hitRateOf(selections),
+      returnPerUnit: roi === null ? null : 1 + roi / 100,
+      sufficient: settled >= TRACK_RECORD_MIN_SAMPLE,
     };
   }
 
