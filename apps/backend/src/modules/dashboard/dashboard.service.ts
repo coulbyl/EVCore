@@ -17,6 +17,7 @@ import {
 import {
   PRIMARY_METRIC_BY_CHANNEL,
   TRACKED_CHANNELS,
+  TRACK_RECORD_ODDS_BREAKS,
 } from './dashboard.constants';
 import { DashboardRepository } from './dashboard.repository';
 
@@ -34,6 +35,7 @@ import type {
   DashboardSummary,
   LeaderboardEntry,
   PnlSummary,
+  TrackRecordRates,
   TrackRecordSummary,
   WorkerStatus,
 } from './dashboard.types';
@@ -260,23 +262,21 @@ export class DashboardService {
       .filter(([channel]) => !SUMMARY_EXCLUDED_CHANNELS.has(channel))
       .flatMap(([, rows]) => rows);
 
-    const settled = selections.length;
-    const won = selections.filter((s) => s.result === BetStatus.WON).length;
-    const roi = flatBetRoi(asFlatBets(selections));
-    return {
-      from,
-      to,
-      settled,
-      won,
-      announced:
-        settled > 0
-          ? selections.reduce((acc, s) => acc + toNumber(s.probability), 0) /
-            settled
-          : null,
-      realised: hitRateOf(selections),
-      returnPerUnit: roi === null ? null : 1 + roi / 100,
-      sufficient: settled >= TRACK_RECORD_MIN_SAMPLE,
-    };
+    const bounds = [null, ...TRACK_RECORD_ODDS_BREAKS, null];
+    const byOdds = bounds.slice(0, -1).map((minOdds, i) => {
+      const maxOdds = bounds[i + 1] ?? null;
+      const inBand = selections.filter((s) => {
+        if (s.odds === null) return false;
+        const odds = toNumber(s.odds);
+        return (
+          (minOdds === null || odds >= minOdds) &&
+          (maxOdds === null || odds < maxOdds)
+        );
+      });
+      return { minOdds, maxOdds, ...trackRecordRates(inBand) };
+    });
+
+    return { from, to, ...trackRecordRates(selections), byOdds };
   }
 
   async getCompetitionStats(
@@ -639,14 +639,32 @@ function calibrationStatus(
 // documented in project memory feedback_admission_par_calibration: ratio
 // réel/annoncé, never ROI.
 function calibrationRatioOf(selections: SettledSelection[]): number | null {
-  if (selections.length === 0) return null;
   const hitRate = hitRateOf(selections);
-  if (hitRate === null) return null;
-  const avgProbability =
-    selections.reduce((acc, s) => acc + toNumber(s.probability), 0) /
-    selections.length;
-  if (avgProbability <= 0) return null;
+  const avgProbability = announcedOf(selections);
+  if (hitRate === null || avgProbability === null || avgProbability <= 0)
+    return null;
   return hitRate / avgProbability;
+}
+
+/** Probabilité moyenne annoncée, 0–1 ; null sans sélection. */
+function announcedOf(selections: SettledSelection[]): number | null {
+  if (selections.length === 0) return null;
+  return (
+    selections.reduce((acc, s) => acc + toNumber(s.probability), 0) /
+    selections.length
+  );
+}
+
+function trackRecordRates(selections: SettledSelection[]): TrackRecordRates {
+  const roi = flatBetRoi(asFlatBets(selections));
+  return {
+    settled: selections.length,
+    won: selections.filter((s) => s.result === BetStatus.WON).length,
+    announced: announcedOf(selections),
+    realised: hitRateOf(selections),
+    returnPerUnit: roi === null ? null : 1 + roi / 100,
+    sufficient: selections.length >= TRACK_RECORD_MIN_SAMPLE,
+  };
 }
 
 // DOMINANT/BTTS/DRAW/GOALS settle via ChannelSelection.result rather than a
@@ -737,6 +755,7 @@ function channelCompetitionStatsFromSelections(
         competitionCountry: country,
         roi,
         hitRate: hitRateOf(rows),
+        announced: announcedOf(rows),
         calibrationRatio,
         sampleSize: rows.length,
         status: calibrationStatus(calibrationRatio, rows.length, 30),
@@ -761,6 +780,7 @@ function channelStatsFromSelections(
     sampleSize: selections.length,
     oddsAvailabilityRate: 1,
     trend: 'FLAT' as const,
+    announced: announcedOf(selections),
   };
 }
 

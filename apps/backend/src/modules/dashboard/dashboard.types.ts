@@ -66,10 +66,8 @@ export type CompetitionStat = {
  * la table `bet`, plus alimentée depuis le 2026-09-04, qui affichait
  * « 1 pari réglé, 100 %, +64 % » sur 30 jours (audit du 2026-10-23, P1-5).
  */
-export type TrackRecordSummary = {
-  from: string;
-  to: string;
-  /** Sélections réglées (gagnées ou perdues) de la période. */
+export type TrackRecordRates = {
+  /** Sélections réglées (gagnées ou perdues). */
   settled: number;
   won: number;
   /** Probabilité moyenne annoncée, 0–1 ; null sans sélection. */
@@ -80,6 +78,21 @@ export type TrackRecordSummary = {
   returnPerUnit: number | null;
   /** Assez de sélections pour lire les taux (seuil de la page). */
   sufficient: boolean;
+};
+
+/** Même cohorte que l'en-tête, restreinte à une tranche de cote. */
+export type TrackRecordOddsBand = TrackRecordRates & {
+  /** Borne basse incluse ; null = pas de borne. */
+  minOdds: number | null;
+  /** Borne haute exclue ; null = pas de borne. */
+  maxOdds: number | null;
+};
+
+export type TrackRecordSummary = TrackRecordRates & {
+  from: string;
+  to: string;
+  /** Tranches de TRACK_RECORD_ODDS_BREAKS, dans l'ordre des cotes. */
+  byOdds: TrackRecordOddsBand[];
 };
 
 export type LeaderboardEntry = {
@@ -133,6 +146,8 @@ export type ChannelStatsItem = {
   sampleSize: number;
   oddsAvailabilityRate: number;
   trend: 'UP' | 'FLAT' | 'DOWN';
+  /** Probabilité moyenne annoncée, 0–1 ; à lire face à `hitRate`. */
+  announced: number | null;
 };
 
 /**
@@ -150,6 +165,8 @@ export type ChannelCompetitionStatItem = {
   competitionCountry: string;
   roi: number | null;
   hitRate: number | null;
+  /** Probabilité moyenne annoncée, 0–1 ; à lire face à `hitRate`. */
+  announced: number | null;
   /** See ChannelHealthItem.calibrationRatio — same formula, drives `status`. */
   calibrationRatio: number | null;
   sampleSize: number;

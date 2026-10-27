@@ -289,4 +289,54 @@ describe('DashboardService.getTrackRecordSummary', () => {
     expect(summary.settled).toBe(1);
     expect(summary.sufficient).toBe(false);
   });
+
+  it('splits the same cohort into odds bands, lower bound included', async () => {
+    const selections = [
+      // sous 1,45 : 2 réglées, annoncées à 0,80, une gagnée
+      rowFor(StrategyChannel.DOUBLE_CHANCE, {
+        won: true,
+        odds: 1.3,
+        probability: 0.8,
+      }),
+      rowFor(StrategyChannel.DOUBLE_CHANCE, {
+        won: false,
+        odds: 1.3,
+        probability: 0.8,
+      }),
+      // 1,45 tombe dans la tranche 1,45–1,80
+      rowFor(StrategyChannel.GOALS, {
+        won: true,
+        odds: 1.45,
+        probability: 0.6,
+      }),
+      // 1,80 tombe dans la tranche au-dessus
+      rowFor(StrategyChannel.DRAW, { won: false, odds: 1.8, probability: 0.5 }),
+      rowFor(StrategyChannel.DRAW, { won: false, odds: 3.4, probability: 0.3 }),
+      // VALUE reste hors cohorte, y compris dans les tranches
+      rowFor(StrategyChannel.VALUE, { won: true, odds: 1.3, probability: 0.8 }),
+    ];
+    const repo = {
+      findChannelSelectionsInRange: vi.fn().mockResolvedValue(selections),
+    } satisfies Partial<DashboardRepository>;
+    const service = new DashboardService(
+      repo as unknown as DashboardRepository,
+    );
+
+    const { byOdds, settled } = await service.getTrackRecordSummary(
+      '2026-09-01',
+      '2026-09-30',
+    );
+
+    expect(settled).toBe(5);
+    expect(byOdds.map((b) => [b.minOdds, b.maxOdds, b.settled])).toEqual([
+      [null, 1.45, 2],
+      [1.45, 1.8, 1],
+      [1.8, null, 2],
+    ]);
+    expect(byOdds[0]?.announced).toBeCloseTo(0.8, 10);
+    expect(byOdds[0]?.realised).toBeCloseTo(0.5, 10);
+    expect(byOdds[2]?.announced).toBeCloseTo(0.4, 10);
+    expect(byOdds[2]?.realised).toBe(0);
+    expect(byOdds.every((b) => !b.sufficient)).toBe(true);
+  });
 });
