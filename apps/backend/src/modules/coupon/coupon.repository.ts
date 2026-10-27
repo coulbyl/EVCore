@@ -46,6 +46,45 @@ const ODDS_BAND_SQL = `CASE
   ELSE '7+'
 END`;
 
+/**
+ * Matchs du créneau dont la dernière analyse d'avant-match porte l'alerte de
+ * cohérence modèle↔marché : « Données suspectes » sur Décisions, dont
+ * l'info-bulle promet que le match est retiré des paris réels.
+ *
+ * Seul le vivier du combiné IA appliquait cette règle (vantage-worker,
+ * `classifyAvoidSignal`). Le Favori, le coupon long et le combiné moteur ne
+ * la lisaient pas : sur la copie de production, du 24/09 au 24/10, 22 des 72
+ * jambes PRICE et 9 des 41 jambes ENGINE tombaient sur un match signalé
+ * (audit du 2026-10-23, P1-8). Même définition que `hasCalibrationAlert` :
+ * alerte 1X2 non nulle, ou au moins une alerte Plus/Moins.
+ *
+ * Mesuré avant de l'appliquer (sélections réglées depuis le 01/07, hors
+ * VALUE/SAFE/VANTAGE) : sous 1,45 les matchs signalés passent comme les
+ * autres (réalisé ÷ annoncé 1,04 contre 1,01) ; de 1,45 à 1,80, 0,85 contre
+ * 0,92 ; au-dessus de 1,80, 0,63–0,73 contre 0,86. L'exclusion ne coûte rien
+ * aux produits à cote courte et retire les estimations les plus fausses.
+ */
+function calibrationAlertedFixtureIds(from: Date, to: Date): Prisma.Sql {
+  return Prisma.sql`
+    SELECT lr."fixtureId"
+    FROM (
+      SELECT DISTINCT ON (mr."fixtureId") mr."fixtureId", mr.features
+      FROM public.model_run mr
+      JOIN public.fixture fx ON fx.id = mr."fixtureId"
+      WHERE fx."scheduledAt" >= ${from}
+        AND fx."scheduledAt" < ${to}
+        AND mr."analyzedAt" < fx."scheduledAt"
+      ORDER BY mr."fixtureId", mr."analyzedAt" DESC
+    ) lr
+    WHERE jsonb_typeof(lr.features -> 'calibration_alert') = 'object'
+       OR CASE
+            WHEN jsonb_typeof(lr.features -> 'calibration_alert_over_under') = 'array'
+            THEN jsonb_array_length(lr.features -> 'calibration_alert_over_under') > 0
+            ELSE false
+          END
+  `;
+}
+
 export type MarketCostCell = {
   market: string;
   band: string;
@@ -628,6 +667,7 @@ export class CouponRepository {
         AND s."scheduledAt" < ${opts.to}
         AND s."scheduledAt" > now()
         AND NOT (s.channel::text = ANY(${[...opts.excludedChannels]}::text[]))
+        AND s."fixtureId" NOT IN (${calibrationAlertedFixtureIds(opts.from, opts.to)})
     `;
   }
 
@@ -701,6 +741,7 @@ export class CouponRepository {
       WHERE "fixtureStatus" NOT IN ('FINISHED', 'POSTPONED', 'CANCELLED')
         AND "scheduledAt" >= ${opts.from}
         AND "scheduledAt" < ${opts.to}
+        AND "fixtureId" NOT IN (${calibrationAlertedFixtureIds(opts.from, opts.to)})
     `;
   }
 }
