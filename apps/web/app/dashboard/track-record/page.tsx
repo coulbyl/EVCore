@@ -39,7 +39,7 @@ import {
 export const metadata: Metadata = {
   title: "Mesures historiques — EVCore",
   description:
-    "Ce que nos pronostics de football ont vraiment donné : annoncé et réalisé, par cote et par canal, pertes comprises.",
+    "Ce que nos pronostics de football ont vraiment donné : annoncé et réalisé, par cote et par type de pari, pertes comprises.",
 };
 
 /**
@@ -202,14 +202,14 @@ export default async function TrackRecordPage({
 
           <section className="flex flex-col gap-3">
             <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Par canal
+              Par type de pari
             </h2>
             {rows ? (
               <>
                 <ChannelStatsTable
-                  primaryColumnLabel="Canal"
+                  primaryColumnLabel="Type de pari"
                   rows={channelStatRows}
-                  countNoun={{ one: "canal", other: "canaux" }}
+                  countNoun={{ one: "type de pari", other: "types de pari" }}
                 />
                 <p className="text-xs leading-5 text-muted-foreground">
                   <strong className="font-medium text-foreground">

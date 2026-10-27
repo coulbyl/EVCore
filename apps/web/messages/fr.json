@@ -253,7 +253,7 @@
     "decidedAt": "Décidé le {date}",
     "noPlay": "Aucune sélection retenue.",
     "emptyTitle": "Aucune lecture",
-    "emptyDescription": "Le canal n'a encore rien analysé pour cette date.",
+    "emptyDescription": "L'avis IA n'a encore rien analysé pour cette date.",
     "emptyFilteredTitle": "Rien à signaler",
     "emptyFilteredDescription": "Aucun désaccord identifié aujourd'hui — essaie \"Toutes\" pour voir les matchs sans avis."
   },
@@ -308,7 +308,7 @@
     },
     "decisions": {
       "title": "Décisions",
-      "description": "Chaque match du jour, avec ce que les canaux en pensent. Le bouton « ? » ici t'explique comment lire une fiche à tout moment."
+      "description": "Chaque match du jour avec nos lectures, dont une mise en avant : Notre sélection. Le bouton « ? » ici t'explique comment lire une fiche à tout moment."
     },
     "fixtures": {
       "title": "Matchs",
@@ -316,11 +316,11 @@
     },
     "arbitrage": {
       "title": "Avis IA",
-      "description": "VANTAGE, notre canal IA, ne propose un pari que s'il repère un vrai désaccord entre les autres canaux — jamais pour confirmer ce qu'ils disent déjà. Le « ? » ici détaille sa logique."
+      "description": "Notre avis IA ne propose un pari que s'il repère un vrai désaccord entre nos lectures du match, jamais pour confirmer ce qu'elles disent déjà. Le « ? » ici détaille sa logique."
     },
     "coupons": {
       "title": "Coupons",
-      "description": "Des combinés générés automatiquement à partir des sélections admissibles. Le « ? » ouvre les mesures de calibration des canaux combinés."
+      "description": "Les coupons du jour, composés automatiquement. Chaque carte dit combien de jours le coupon a gagné, sa pire série et la cote que ton ticket paiera."
     },
     "betSlipComposer": {
       "title": "Mon coupon",
@@ -336,11 +336,11 @@
     },
     "trackRecord": {
       "title": "Mesures historiques",
-      "description": "Ce que nos pronostics ont vraiment donné : annoncé et réalisé, par cote et par canal, pertes comprises."
+      "description": "Ce que nos pronostics ont vraiment donné : annoncé et réalisé, par cote et par type de pari, pertes comprises."
     },
     "formation": {
       "title": "Formation",
-      "description": "Des articles courts sur la stratégie de paris — probabilités implicites, unité de mise, variance, canaux. À consulter à ton rythme."
+      "description": "Des articles courts sur la stratégie de paris : probabilités implicites, unité de mise, variance, types de pari. À consulter à ton rythme."
     },
     "inbox": {
       "title": "Inbox",
@@ -376,7 +376,7 @@
     },
     "homePicks": {
       "title": "Les sélections du jour",
-      "description": "Cinq sélections au plus, prises sur des canaux fiables et dans la bande de cote où la mesure tient. Le + les ajoute au coupon."
+      "description": "Cinq sélections au plus, dans la bande de cote où nos pourcentages tiennent. Le + les ajoute au coupon."
     },
     "homeMySlips": {
       "title": "Tes coupons",
@@ -411,7 +411,7 @@
     "completed": "Terminé",
     "categories": {
       "bases": "Les bases",
-      "channels": "Les canaux EVCore",
+      "channels": "Les types de pari",
       "bankroll": "Bankroll & discipline",
       "leagues": "Guide par ligue",
       "app": "Comment utiliser l'app"
@@ -548,14 +548,14 @@
       "leaguesEmpty": "Aucun championnat suivi pour l'instant.",
       "leaguesSearchPlaceholder": "Championnat ou pays…",
       "leaguesNoResults": "Aucun championnat ne correspond.",
-      "channelsTitle": "Canaux suivis",
-      "channelsHint": "Retrouve ici les mesures de calibration des canaux suivis : réussite réelle comparée à la probabilité annoncée, avec le volume observé.",
-      "channelsEmpty": "Aucun canal suivi pour l'instant.",
-      "discoverButton": "Découvrir des canaux",
-      "discoverSearchPlaceholder": "Rechercher un canal...",
-      "discoverEmpty": "Aucun canal ne correspond.",
+      "channelsTitle": "Types de pari suivis",
+      "channelsHint": "Retrouve ici ce que les types de pari suivis ont donné : réussite réelle comparée à la probabilité annoncée, avec le volume observé.",
+      "channelsEmpty": "Aucun type de pari suivi pour l'instant.",
+      "discoverButton": "Choisir des types de pari",
+      "discoverSearchPlaceholder": "Rechercher un type de pari...",
+      "discoverEmpty": "Aucun type de pari ne correspond.",
       "discoverStatusTooltip": "{status, select, GREEN {Écart à la calibration de 15 % au plus sur 90 jours} ORANGE {Écart à la calibration de 15 à 30 % sur 90 jours} RED {Écart à la calibration supérieur à 30 % sur 90 jours} other {Volume insuffisant pour mesurer l'écart sur 90 jours}} ({n, plural, one {# sélection réglée} other {# sélections réglées}}).",
-      "discoverTip": "Suivre 3 à 5 canaux garde cette liste lisible.",
+      "discoverTip": "En suivre 3 à 5 garde cette liste lisible.",
       "follow": "+ Suivre",
       "unfollow": "Retirer",
       "since": "depuis le {date}",
@@ -676,7 +676,8 @@
         "pending": "En attente"
       },
       "picksTitle": "Les sélections du jour",
-      "picksSubtitle": "Canaux fiables, cote entre 1,20 et 1,65, une sélection par match.",
+      "picksSubtitle": "Cote entre 1,20 et 1,65, là où nos pourcentages tiennent ; une sélection par match.",
+      "pickFrequency": "{count} sur {total}",
       "picksLink": "Toutes les décisions",
       "picksEmpty": "Aucune sélection ne remplit les conditions aujourd'hui.",
       "mySlipsTitle": "Mes coupons",
@@ -952,7 +953,7 @@
     "reliable": "Fiable",
     "watch": "À surveiller",
     "unreliable": "Peu fiable",
-    "hint": "Écart mesuré sur 90 jours entre la réussite réelle du canal et la probabilité qu'il annonce."
+    "hint": "Écart mesuré sur 90 jours entre la réussite réelle et la probabilité annoncée."
   },
   "closingLine": {
     "label": "Clôture @{odds}",
@@ -984,7 +985,6 @@
     "playable": "Jouable",
     "why": "Pourquoi ce coupon ?",
     "legChances": "environ {count} fois sur {total}",
-    "legOverOptimistic": "au-dessus de 1,80, ce pourcentage est trop optimiste",
     "legReferencePrefix": "réf.",
     "legPlayableHint": "Cote chez {bookmaker}, le bookmaker des joueurs. La nôtre vient des books les plus généreux du relevé.",
     "playedByMe": "Déjà joué par toi",

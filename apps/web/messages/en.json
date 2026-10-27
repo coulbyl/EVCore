@@ -253,7 +253,7 @@
     "decidedAt": "Decided on {date}",
     "noPlay": "No pick retained.",
     "emptyTitle": "No reads",
-    "emptyDescription": "The channel hasn't analyzed anything for this date yet.",
+    "emptyDescription": "The AI opinion has not analysed anything for this date yet.",
     "emptyFilteredTitle": "Nothing to report",
     "emptyFilteredDescription": "No disagreement identified today — try \"All\" to see the matches with no opinion."
   },
@@ -308,7 +308,7 @@
     },
     "decisions": {
       "title": "Decisions",
-      "description": "Every match of the day, with what each channel thinks. The \"?\" button here explains how to read a pick anytime."
+      "description": "Every match of the day with our readings, one of them put forward: Our pick. The \"?\" button here explains how to read a sheet at any time."
     },
     "fixtures": {
       "title": "Matches",
@@ -316,11 +316,11 @@
     },
     "arbitrage": {
       "title": "AI opinion",
-      "description": "VANTAGE, our AI channel, only proposes a bet when it spots a real disagreement between the other channels — never just to confirm what they already say. The \"?\" here details its logic."
+      "description": "Our AI opinion only suggests a bet when it spots a real disagreement between our readings of the match, never to confirm what they already say. The \"?\" here details its logic."
     },
     "coupons": {
       "title": "Coupons",
-      "description": "Combos generated automatically from admissible picks. The \"?\" opens calibration measures for the channels being combined."
+      "description": "Today's coupons, built automatically. Each card says how many days the coupon won, its worst run and the odds your slip will pay."
     },
     "betSlipComposer": {
       "title": "My bet slip",
@@ -336,11 +336,11 @@
     },
     "trackRecord": {
       "title": "Historical measures",
-      "description": "What our predictions actually delivered: announced and realised, by odds and by channel, losses included."
+      "description": "What our predictions actually delivered: announced and realised, by odds and by bet type, losses included."
     },
     "formation": {
       "title": "Training",
-      "description": "Short articles on betting strategy — implied probabilities, unit staking, variance, channels. Browse at your own pace."
+      "description": "Short articles on betting strategy: implied probabilities, stake unit, variance, bet types. Read at your own pace."
     },
     "inbox": {
       "title": "Inbox",
@@ -376,7 +376,7 @@
     },
     "homePicks": {
       "title": "Today's picks",
-      "description": "Five picks at most, taken from reliable channels within the odds band where the measure holds. The + adds them to your coupon."
+      "description": "Five picks at most, in the odds band where our percentages hold. The + adds them to the coupon."
     },
     "homeMySlips": {
       "title": "Your coupons",
@@ -411,7 +411,7 @@
     "completed": "Completed",
     "categories": {
       "bases": "Basics",
-      "channels": "The EVCore channels",
+      "channels": "Bet types",
       "bankroll": "Bankroll & discipline",
       "leagues": "League guide",
       "app": "Using the app"
@@ -548,14 +548,14 @@
       "leaguesEmpty": "No league followed yet.",
       "leaguesSearchPlaceholder": "League or country…",
       "leaguesNoResults": "No league matches.",
-      "channelsTitle": "Followed channels",
-      "channelsHint": "See calibration measures for followed channels: actual hit rate compared with announced probability, together with observed volume.",
-      "channelsEmpty": "No channel followed yet.",
-      "discoverButton": "Discover channels",
-      "discoverSearchPlaceholder": "Search a channel...",
-      "discoverEmpty": "No channel matches.",
+      "channelsTitle": "Followed bet types",
+      "channelsHint": "What your followed bet types delivered: actual hit rate against announced probability, with the observed volume.",
+      "channelsEmpty": "No bet type followed yet.",
+      "discoverButton": "Choose bet types",
+      "discoverSearchPlaceholder": "Search a bet type...",
+      "discoverEmpty": "No bet type matches.",
       "discoverStatusTooltip": "{status, select, GREEN {Calibration gap within 15% over 90 days} ORANGE {Calibration gap between 15% and 30% over 90 days} RED {Calibration gap above 30% over 90 days} other {Insufficient volume to measure the gap over 90 days}} ({n, plural, one {# settled pick} other {# settled picks}}).",
-      "discoverTip": "Following 3 to 5 channels keeps this list readable.",
+      "discoverTip": "Following 3 to 5 keeps this list readable.",
       "follow": "+ Follow",
       "unfollow": "Remove",
       "since": "since {date}",
@@ -676,7 +676,8 @@
         "pending": "Pending"
       },
       "picksTitle": "Today's picks",
-      "picksSubtitle": "Reliable channels, odds between 1.20 and 1.65, one pick per match.",
+      "picksSubtitle": "Odds between 1.20 and 1.65, where our percentages hold; one pick per match.",
+      "pickFrequency": "{count} in {total}",
       "picksLink": "All decisions",
       "picksEmpty": "No pick meets the conditions today.",
       "mySlipsTitle": "My coupons",
@@ -952,7 +953,7 @@
     "reliable": "Reliable",
     "watch": "Watch",
     "unreliable": "Unreliable",
-    "hint": "Gap measured over 90 days between the channel's actual hit rate and the probability it announces."
+    "hint": "Gap measured over 90 days between the actual hit rate and the announced probability."
   },
   "closingLine": {
     "label": "Close @{odds}",
@@ -984,7 +985,6 @@
     "playable": "Playable",
     "why": "Why this coupon?",
     "legChances": "about {count} times in {total}",
-    "legOverOptimistic": "above 1.80, this percentage runs too optimistic",
     "legReferencePrefix": "ref.",
     "legPlayableHint": "Odds at {bookmaker}, the players' bookmaker. Ours come from the most generous books in the snapshot.",
     "playedByMe": "Already played by you",
