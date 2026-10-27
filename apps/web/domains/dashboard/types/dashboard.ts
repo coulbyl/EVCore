@@ -35,6 +35,25 @@ export type PnlSummary = {
   roi: string;
 };
 
+/**
+ * En-tête de Mesures historiques (GET /dashboard/track-record-summary) :
+ * sélections d'avant-match dédupliquées de la période, hors filtres VALUE et
+ * SAFE et hors avis IA.
+ */
+export type TrackRecordSummary = {
+  from: string;
+  to: string;
+  settled: number;
+  won: number;
+  /** Probabilité moyenne annoncée, 0–1. */
+  announced: number | null;
+  /** Taux de réussite réel, 0–1. */
+  realised: number | null;
+  /** Retour d'une mise de 1 à la cote d'analyse (0,91 = −9 %). */
+  returnPerUnit: number | null;
+  sufficient: boolean;
+};
+
 export type DashboardSummary = {
   dashboardKpis: KpiCard[];
   workerStatuses: WorkerStatus[];

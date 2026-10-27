@@ -14,6 +14,7 @@ import type {
   ChannelCompetitionStatItem,
   ChannelHealthItem,
   ChannelStatsItem,
+  TrackRecordSummary,
 } from "@/domains/dashboard/types/dashboard";
 import { channelLabel } from "../decisions/components/channel-constants";
 import { ChannelCompetitionSection } from "./components/channel-competition-section";
@@ -29,7 +30,6 @@ import {
   dateRangeForPeriod,
   mergeChannelData,
   resolvePeriod,
-  type PnlByCanalResponse,
 } from "./track-record-constants";
 
 export const metadata: Metadata = {
@@ -39,10 +39,10 @@ export const metadata: Metadata = {
 };
 
 async function getTrackRecordData(from: string, to: string) {
-  const [pnl, channelStats, channelHealth, channelCompetitionStats] =
+  const [summary, channelStats, channelHealth, channelCompetitionStats] =
     await Promise.all([
-      serverApiRequest<PnlByCanalResponse>(
-        `/dashboard/pnl?from=${from}&to=${to}`,
+      serverApiRequest<TrackRecordSummary>(
+        `/dashboard/track-record-summary?from=${from}&to=${to}`,
         { fallbackErrorMessage: "Impossible de charger le résumé." },
       ),
       serverApiRequest<ChannelStatsItem[]>(
@@ -64,7 +64,7 @@ async function getTrackRecordData(from: string, to: string) {
       ),
     ]);
   return {
-    pnl,
+    summary,
     rows: mergeChannelData(channelStats, channelHealth),
     channelCompetitionStats,
   };
@@ -78,10 +78,8 @@ export default async function TrackRecordPage({
   const { period: periodParam } = await searchParams;
   const period = resolvePeriod(periodParam);
   const { from, to } = dateRangeForPeriod(period);
-  const [{ pnl, rows, channelCompetitionStats }, locale] = await Promise.all([
-    getTrackRecordData(from, to),
-    getLocale(),
-  ]);
+  const [{ summary, rows, channelCompetitionStats }, locale] =
+    await Promise.all([getTrackRecordData(from, to), getLocale()]);
   const channelStatRows: ChannelStatRow[] = rows.map((row) => ({
     key: row.channel,
     primaryLabel: channelLabel(row.channel, locale),
@@ -118,23 +116,51 @@ export default async function TrackRecordPage({
         <div className="flex flex-col gap-6">
           <PeriodTabs active={period} />
 
+          {/* Même source que le tableau par canal : sélections d'avant-match
+              dédupliquées. L'ancien en-tête lisait la table `bet`, plus
+              alimentée depuis le 2026-09-04 (« 1 pari, 100 %, +64 % » sur
+              30 jours ; audit du 2026-10-23, P1-5). */}
           <section className="flex flex-col gap-3">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Paris matérialisés · du {formatDateLong(from)} au{" "}
+            <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              Annoncé et réalisé · du {formatDateLong(from)} au{" "}
               {formatDateLong(to)}
             </h2>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <StatCard
-                label="Paris réglés"
-                value={String(pnl.global.settledBets)}
+                label="Pronostics réglés"
+                value={summary.settled.toLocaleString(locale)}
               />
-              <StatCard label="Taux de réussite" value={pnl.global.winRate} />
               <StatCard
-                label="ROI"
-                value={pnl.global.roi}
-                tone={pnl.global.roi.startsWith("-") ? "danger" : "success"}
+                label="Annoncé"
+                value={
+                  summary.sufficient
+                    ? formatRate(summary.announced, locale)
+                    : "—"
+                }
+              />
+              <StatCard
+                label="Réalisé"
+                value={
+                  summary.sufficient
+                    ? formatRate(summary.realised, locale)
+                    : "—"
+                }
+              />
+              <StatCard
+                label="À mise fixe"
+                tone="neutral"
+                value={
+                  summary.sufficient
+                    ? formatSignedReturn(summary.returnPerUnit, locale)
+                    : "—"
+                }
               />
             </div>
+            <p className="text-xs leading-5 text-muted-foreground">
+              {summary.sufficient
+                ? "Tous les canaux, hors filtres et avis IA, une ligne par pari réel, analyses faites avant le coup d'envoi, à la cote d'analyse. Chez ton bookmaker, la cote est en général un peu plus basse."
+                : "Volume insuffisant : moins de 30 pronostics réglés sur la période, les taux ne se lisent pas encore."}
+            </p>
           </section>
 
           <section className="flex flex-col gap-3">
@@ -181,4 +207,25 @@ export default async function TrackRecordPage({
       </PageContent>
     </Page>
   );
+}
+
+/** 0,459 → « 45,9 % ». */
+function formatRate(rate: number | null, locale: string): string {
+  if (rate === null) return "—";
+  return new Intl.NumberFormat(locale === "en" ? "en-GB" : "fr-FR", {
+    style: "percent",
+    maximumFractionDigits: 1,
+  }).format(rate);
+}
+
+/** Retour par unité → résultat signé : 0,91 → « −9 % ». */
+function formatSignedReturn(perUnit: number | null, locale: string): string {
+  if (perUnit === null) return "—";
+  return new Intl.NumberFormat(locale === "en" ? "en-GB" : "fr-FR", {
+    style: "percent",
+    maximumFractionDigits: 1,
+    signDisplay: "exceptZero",
+  })
+    .format(perUnit - 1)
+    .replace("-", "\u2212");
 }

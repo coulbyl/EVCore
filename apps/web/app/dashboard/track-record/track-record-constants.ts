@@ -2,16 +2,7 @@ import type {
   ChannelHealthItem,
   ChannelStatsItem,
   ChannelStatus,
-  PnlSummary,
 } from "@/domains/dashboard/types/dashboard";
-
-export type PnlByCanalResponse = {
-  from: string;
-  to: string;
-  global: PnlSummary;
-  value: PnlSummary;
-  safe: PnlSummary;
-};
 
 export type PeriodKey = "30" | "90" | "all";
 

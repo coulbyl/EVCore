@@ -469,7 +469,7 @@ const CHANNEL_HEALTH = [
   "DRAW",
 ].map((channel, i) => ({
   channel,
-  status: i < 3 ? "GREEN" : "AMBER",
+  status: i < 3 ? "GREEN" : "ORANGE",
   primaryMetric: 0.96 - i * 0.03,
   primaryMetricType: "HIT_RATE",
   roi: -0.03,
@@ -522,6 +522,40 @@ function route(method, url) {
   if (path.startsWith("/channel-decisions/by-channel"))
     return [200, CHANNEL_DECISIONS];
   if (path.startsWith("/channel-decisions")) return [200, []];
+  // Mesures historiques : des listes (la page fait `.map` dessus) ; deux
+  // canaux pour que le tableau ne soit pas vide sur les captures.
+  if (path.startsWith("/dashboard/channel-stats-by-competition"))
+    return [200, []];
+  if (path.startsWith("/dashboard/channel-stats"))
+    return [
+      200,
+      ["DOMINANT", "DRAW"].map((channel, i) => ({
+        channel,
+        hitRate: i === 0 ? 0.74 : 0.29,
+        avgThreshold: null,
+        vsThreshold: null,
+        roi: i === 0 ? -3.1 : -4.8,
+        netUnits: i === 0 ? -12.4 : -18.9,
+        maxDrawdown: null,
+        sampleSize: i === 0 ? 400 : 390,
+        oddsAvailabilityRate: 1,
+        trend: "FLAT",
+      })),
+    ];
+  if (path.startsWith("/dashboard/track-record-summary"))
+    return [
+      200,
+      {
+        from: "2026-09-24",
+        to: "2026-10-24",
+        settled: 14966,
+        won: 6869,
+        announced: 0.48,
+        realised: 0.459,
+        returnPerUnit: 0.906,
+        sufficient: true,
+      },
+    ];
   if (path.startsWith("/dashboard/channel-health"))
     return [200, CHANNEL_HEALTH];
   // Accueil opérateur : une liste (pas `{}`) et un résumé « Mes coupons » avec
