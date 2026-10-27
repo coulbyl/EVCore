@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, Trophy } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { formatOddsValue } from "@/lib/frequency";
 import { Skeleton } from "@evcore/ui";
 import { useCoupons } from "@/domains/coupon/use-cases/use-coupons";
 import {
@@ -107,7 +108,7 @@ export function TodayCoupons() {
         >
           <span>
             {t("longCouponLink", {
-              odds: longCoupon.combinedOdds.toFixed(2),
+              odds: formatOddsValue(longCoupon.combinedOdds, locale),
             })}
           </span>
           <ArrowRight size={14} className="shrink-0" />

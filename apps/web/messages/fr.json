@@ -657,7 +657,7 @@
       "couponError": "Le coupon du jour n'a pas pu être chargé.",
       "couponEmptyTitle": "Pas de coupon aujourd'hui",
       "couponEmptyBody": "Le vivier du jour était trop mince pour composer un coupon sans baisser les exigences. L'abstention est un résultat, pas une panne.",
-      "longCouponLink": "Coupon long du jour (@{odds}) : sur la page Coupons",
+      "longCouponLink": "Coupon long du jour (cote {odds}) : sur la page Coupons",
       "yesterdayTitle": "Hier",
       "yesterdayLink": "Voir le détail",
       "yesterdayTally": {
@@ -667,7 +667,8 @@
         "pending": "{count} en attente"
       },
       "legs": "{count, plural, one {# jambe} other {# jambes}}",
-      "paid": "payé @{odds}",
+      "odds": "cote {odds}",
+      "paid": "payé {odds}",
       "result": {
         "won": "Gagné",
         "partial": "Gagné",

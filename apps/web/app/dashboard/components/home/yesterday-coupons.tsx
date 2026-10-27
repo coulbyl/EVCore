@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { cn, Skeleton } from "@evcore/ui";
 import { useCoupons } from "@/domains/coupon/use-cases/use-coupons";
 import { couponClassMeta } from "@/domains/coupon/helpers/coupon-class";
 import { couponSourceMeta } from "@/domains/coupon/helpers/coupon-source";
 import { daysAgoIso } from "@/lib/date";
+import { formatOddsValue } from "@/lib/frequency";
 import type { CouponProposalDto } from "@/domains/coupon/types/coupon";
 
 function resultKey(
@@ -27,6 +28,7 @@ function resultKey(
  */
 export function YesterdayCoupons() {
   const t = useTranslations("dashboard.home");
+  const locale = useLocale();
   const date = daysAgoIso(1);
   const { data, isLoading } = useCoupons(date);
   // Le coupon 5–15 du compositeur par le prix n'est plus affiché nulle part
@@ -122,12 +124,14 @@ export function YesterdayCoupons() {
                     </span>
                   </p>
                   <p className="text-xs tabular-nums text-muted-foreground">
-                    @{coupon.combinedOdds.toFixed(2)}
+                    {t("odds", {
+                      odds: formatOddsValue(coupon.combinedOdds, locale),
+                    })}
                     {paid && coupon.realizedOdds !== null && (
                       <>
                         {" · "}
                         {t("paid", {
-                          odds: coupon.realizedOdds.toFixed(2),
+                          odds: formatOddsValue(coupon.realizedOdds, locale),
                         })}
                       </>
                     )}

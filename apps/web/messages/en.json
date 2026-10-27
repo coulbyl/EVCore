@@ -657,7 +657,7 @@
       "couponError": "Today's coupon could not be loaded.",
       "couponEmptyTitle": "No coupon today",
       "couponEmptyBody": "Today's pool was too thin to compose a coupon without lowering the bar. Abstaining is a result, not a failure.",
-      "longCouponLink": "Today's long coupon (@{odds}): on the Coupons page",
+      "longCouponLink": "Today's long coupon (odds {odds}): on the Coupons page",
       "yesterdayTitle": "Yesterday",
       "yesterdayLink": "See details",
       "yesterdayTally": {
@@ -667,7 +667,8 @@
         "pending": "{count} pending"
       },
       "legs": "{count, plural, one {# leg} other {# legs}}",
-      "paid": "paid @{odds}",
+      "odds": "odds {odds}",
+      "paid": "paid {odds}",
       "result": {
         "won": "Won",
         "partial": "Won",
