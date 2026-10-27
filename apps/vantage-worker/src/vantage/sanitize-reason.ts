@@ -66,6 +66,50 @@ const CHANNEL_WORDS = [
   "VANTAGE",
 ];
 
+/**
+ * Verbes au présent que le modèle (ou le remplacement du mot « canal »)
+ * met au singulier après « nos données internes » : « nos données internes
+ * montre » est la faute la plus fréquente des textes v4 (relevé du
+ * 2026-10-27). Singulier → pluriel, liste fermée pour ne jamais toucher un
+ * mot qui n'est pas un verbe.
+ */
+const PLURAL_VERBS: Record<string, string> = {
+  est: "sont",
+  a: "ont",
+  montre: "montrent",
+  indique: "indiquent",
+  prévoit: "prévoient",
+  suggère: "suggèrent",
+  affiche: "affichent",
+  annonce: "annoncent",
+  estime: "estiment",
+  donne: "donnent",
+  place: "placent",
+  voit: "voient",
+  signale: "signalent",
+  penche: "penchent",
+  privilégie: "privilégient",
+  anticipe: "anticipent",
+  évalue: "évaluent",
+  reste: "restent",
+  tient: "tiennent",
+  soutient: "soutiennent",
+  pense: "pensent",
+  juge: "jugent",
+  considère: "considèrent",
+  repère: "repèrent",
+  relève: "relèvent",
+  laisse: "laissent",
+  fait: "font",
+  va: "vont",
+  dit: "disent",
+  pointe: "pointent",
+  accorde: "accordent",
+  attribue: "attribuent",
+  calcule: "calculent",
+  projette: "projettent",
+};
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -80,6 +124,43 @@ export function sanitizeReasonText(text: string): string {
 
   // « marché=X », « pick=Y », « ligne=Z » : balises de contexte recopiées.
   out = out.replace(/\b(marché|pick|ligne)\s*=\s*/gi, "");
+
+  // « les lectures des canaux » devenait « les lectures de nos lectures ».
+  out = out.replace(
+    /\b(?:les |des )?lectures (?:des|de nos) canaux\b/gi,
+    "nos lectures",
+  );
+
+  // « respectant les contraintes de cote », « conforme aux contraintes » :
+  // une consigne du prompt recopiée, qui n'a rien à faire devant un joueur
+  // (52 textes depuis le 13/10).
+  out = out.replace(
+    /,?\s*(?:qui |et )?(?:respectant|respecte|respectent|conformes? aux|dans le respect des|dans les|dans le cadre des)\s+(?:nos |les |des )?contraintes(?:\s+de\s+cote)?/gi,
+    "",
+  );
+  out = out.replace(
+    /,?\s*(?:dans|hors)\s+(?:les|des)\s+limites\s+autorisées/gi,
+    "",
+  );
+  // Quand la contrainte EST la raison de l'abstention, la phrase en a besoin :
+  // on la dit en clair au lieu de la supprimer.
+  out = out
+    .replace(
+      /\b(?:les|la|des|aux) contraintes? de cote\b/gi,
+      "notre fourchette de cote",
+    )
+    .replace(/\bcontraintes? de cote\b/gi, "fourchette de cote");
+
+  // « le signal DOMINANT », « le signal BTTS » → « un de nos signaux » : le
+  // remplacement générique plus bas donnait « le signal nos données
+  // internes est ».
+  out = out.replace(
+    new RegExp(
+      `\\b(?:le |un |du )?signal\\s+(?:${CHANNEL_WORDS.map(escapeRegExp).join("|")})\\b`,
+      "gi",
+    ),
+    "un de nos signaux",
+  );
 
   // « le canal DRAW », « canal BTTS (calibration 0,65×) » → nos données.
   const channelAlternation = CHANNEL_WORDS.map(escapeRegExp).join("|");
@@ -134,10 +215,31 @@ export function sanitizeReasonText(text: string): string {
     )
     .replace(/\(?\bn\s*=\s*\d+\)?/g, "");
 
-  return out
-    .replace(/\s+([,.;:!?])/g, "$1")
-    .replace(/\(\s*\)/g, "")
-    .replace(/[ \t]{2,}/g, " ")
-    .replace(/\s+\n/g, "\n")
-    .trim();
+  // Accord du verbe qui suit « nos données internes ».
+  out = out.replace(
+    /(?<!signal )\b(nos données internes)\s+(\p{L}+)/giu,
+    (match, subject: string, verb: string) => {
+      const plural = PLURAL_VERBS[verb.toLowerCase()];
+      return plural ? `${subject} ${plural}` : match;
+    },
+  );
+  out = out.replace(
+    /\b(?:les |des )?lectures de nos lectures\b/gi,
+    "nos lectures",
+  );
+
+  return (
+    out
+      .replace(/\s+([,.;:!?])/g, "$1")
+      .replace(/\(\s*\)/g, "")
+      .replace(/[ \t]{2,}/g, " ")
+      .replace(/\s+\n/g, "\n")
+      .trim()
+      // Un remplacement en tête de phrase laissait une minuscule (« nos
+      // données internes sont… » en début de texte).
+      .replace(
+        /(^|[.!?]\s+)(\p{Ll})/gu,
+        (_m, lead: string, letter: string) => `${lead}${letter.toUpperCase()}`,
+      )
+  );
 }

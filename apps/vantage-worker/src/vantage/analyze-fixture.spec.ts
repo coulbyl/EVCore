@@ -99,7 +99,7 @@ describe("analyzeFixture — MAX_ODDS cap and self-calibration gate (v4, 2026-10
         market: "ONE_X_TWO",
         pick: "HOME",
         odds: 2.4,
-        text: expect.stringContaining("dépasse 1.80"),
+        text: expect.stringContaining("dépasse 1,80"),
       }),
     );
   });
@@ -200,7 +200,9 @@ describe("analyzeFixture — MAX_ODDS cap and self-calibration gate (v4, 2026-10
     expect(persisted.reasonDetails).not.toMatch(
       /ONE_X_TWO|DOMINANT|calibration 0/,
     );
-    expect(persisted.reasonDetails).toContain("nos données internes");
+    expect(persisted.reasonDetails).toContain(
+      "Nos données internes soutiennent",
+    );
     expect(persisted.basis).toBe("raw_stats");
   });
 });

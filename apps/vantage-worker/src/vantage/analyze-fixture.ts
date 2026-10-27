@@ -47,6 +47,11 @@ const CONFIG_VERSION = "vantage-v4-gated";
  * isValidPickForMarket. */
 const MIN_ODDS = 1.2;
 
+/** 2,76 plutôt que 2.76 dans un texte lu par le joueur. */
+function frOdds(odds: number): string {
+  return odds.toFixed(2).replace(".", ",");
+}
+
 /** Odds cap. The same cut every surface of this repo applies (CLAUDE.md:
  * "leg calibration collapses above odds 1.80"), measured on VANTAGE itself
  * on 2026-10-13: 1 555 settled picks at or under 1.80 realise 0.956 of the
@@ -328,7 +333,8 @@ export async function analyzeFixture(
         modelRunId: context.modelRunId,
         configVersion: CONFIG_VERSION,
         reasonCode: "VANTAGE_GATED_ODDS",
-        text: `Lecture retenue mais non proposée : la cote (${knownOdds.toFixed(2)}) dépasse ${MAX_ODDS.toFixed(2)}, au-delà de laquelle nos avis ne tiennent pas leurs promesses. ${parsed.data.reasonDetails}`,
+        // Cotes à la française : ce texte est lu tel quel sur Avis IA.
+        text: `Lecture retenue mais non proposée : la cote (${frOdds(knownOdds)}) dépasse ${frOdds(MAX_ODDS)}, au-delà de laquelle nos avis ne tiennent pas leurs promesses. ${parsed.data.reasonDetails}`,
         market: parsed.data.market,
         pick: parsed.data.pick,
         odds: knownOdds,
