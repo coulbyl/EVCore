@@ -417,6 +417,121 @@ function matchGroup({ id, homeTeam, awayTeam, hours, score, picks, ...rest }) {
   };
 }
 
+// Matchs : trois rencontres telles que le backend les renvoie depuis la fin
+// des paris internes (betId toujours null), avec leurs lectures évaluées.
+function fixtureRow({
+  id,
+  fixture,
+  hours,
+  score = null,
+  status = "SCHEDULED",
+  picks,
+}) {
+  return {
+    fixtureId: `fx-${id}`,
+    fixture,
+    homeLogo: null,
+    awayLogo: null,
+    competition: "Premier League",
+    scheduledAt: todayAt(hours),
+    status,
+    score,
+    htScore: null,
+    safeValueBet: null,
+    modelRun: {
+      modelRunId: `run-${id}`,
+      betId: null,
+      market: null,
+      pick: null,
+      betStatus: null,
+      probEstimated: null,
+      ev: null,
+      lambdaHome: "1.62",
+      lambdaAway: "0.94",
+      expectedTotalGoals: "2.56",
+      factors: {
+        recentForm: 0.64,
+        xg: 0.58,
+        performanceDomExt: 0.61,
+        volatiliteLigue: 0.42,
+      },
+      evaluatedPicks: picks,
+    },
+  };
+}
+
+const FIXTURE_ROWS = [
+  fixtureRow({
+    id: "f1",
+    fixture: "Arsenal vs Burnley",
+    hours: 3,
+    picks: [
+      {
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        probability: "0.79",
+        odds: "1.28",
+        ev: "0.011",
+        qualityScore: "0.62",
+        status: "viable",
+      },
+      {
+        market: "OVER_UNDER",
+        pick: "OVER_1_5",
+        probability: "0.83",
+        odds: "1.22",
+        ev: "0.013",
+        qualityScore: "0.58",
+        status: "viable",
+      },
+      {
+        market: "BTTS",
+        pick: "YES",
+        probability: "0.55",
+        odds: "1.85",
+        ev: "0.018",
+        qualityScore: "0.31",
+        status: "rejected",
+        rejectionReason: "ev_below_threshold",
+      },
+    ],
+  }),
+  fixtureRow({
+    id: "f2",
+    fixture: "Ajax vs PSV",
+    hours: 5,
+    picks: [
+      {
+        market: "OVER_UNDER",
+        pick: "OVER",
+        probability: "0.67",
+        odds: "1.50",
+        ev: "0.005",
+        qualityScore: "0.44",
+        status: "viable",
+      },
+    ],
+  }),
+  fixtureRow({
+    id: "f3",
+    fixture: "ASEC Mimosas vs Africa Sports",
+    hours: -20,
+    score: "2-1",
+    status: "FINISHED",
+    picks: [
+      {
+        market: "DOUBLE_CHANCE",
+        pick: "1X",
+        probability: "0.76",
+        odds: "1.36",
+        ev: "0.034",
+        qualityScore: "0.66",
+        status: "viable",
+      },
+    ],
+  }),
+];
+
 const MATCH_DECISIONS = [
   matchGroup({
     id: "m1",
@@ -805,7 +920,11 @@ function route(method, url) {
   if (path === "/health") return [200, { ok: true }];
   if (path === "/auth/me") return [200, SESSION];
   if (path === "/auth/login") return [200, SESSION, true];
-  if (path.startsWith("/fixture")) return [200, { rows: [], total: 0 }];
+  if (path.startsWith("/fixture"))
+    return [
+      200,
+      { rows: FIXTURE_ROWS, total: FIXTURE_ROWS.length, nextCursor: null },
+    ];
   if (path.startsWith("/coupons/track-record")) {
     return [
       200,
