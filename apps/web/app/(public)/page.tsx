@@ -103,7 +103,7 @@ const FAMILIES = [
     colorCls: "text-emerald-600 dark:text-emerald-400",
     bgCls: "bg-emerald-500/[0.07] border-emerald-500/20",
     tagCls:
-      "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+      "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/20",
     glowCls: "bg-emerald-500/10",
   },
   {
@@ -118,7 +118,7 @@ const FAMILIES = [
     colorCls: "text-cyan-600 dark:text-cyan-400",
     bgCls: "bg-cyan-500/[0.07] border-cyan-500/20",
     tagCls:
-      "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/20",
+      "bg-cyan-500/15 text-cyan-800 dark:text-cyan-300 border-cyan-500/20",
     glowCls: "bg-cyan-500/10",
   },
   {
@@ -129,7 +129,7 @@ const FAMILIES = [
     colorCls: "text-violet-600 dark:text-violet-400",
     bgCls: "bg-violet-500/[0.07] border-violet-500/20",
     tagCls:
-      "bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/20",
+      "bg-violet-500/15 text-violet-800 dark:text-violet-300 border-violet-500/20",
     glowCls: "bg-violet-500/10",
   },
 ];
@@ -203,7 +203,7 @@ function HeroPreview() {
       <div className="relative overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_32px_80px_rgba(0,0,0,0.25)] backdrop-blur-sm">
         {/* En-tête : la distribution de buts, d'où tout le reste dérive */}
         <div className="border-b border-border px-5 py-4">
-          <p className="text-[0.58rem] font-bold uppercase tracking-[0.28em] text-accent">
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-accent">
             Lecture du match
           </p>
           <div className="mt-2 flex items-baseline gap-2">
@@ -214,7 +214,7 @@ function HeroPreview() {
             <span className="text-2xl font-bold tabular-nums text-foreground">
               1.14
             </span>
-            <span className="ml-1 text-[0.68rem] text-muted-foreground">
+            <span className="ml-1 text-xs text-muted-foreground">
               buts attendus
             </span>
           </div>
@@ -231,7 +231,7 @@ function HeroPreview() {
                 <p className="truncate text-xs font-bold text-foreground">
                   {p.pick}
                 </p>
-                <p className="truncate text-[0.65rem] text-muted-foreground">
+                <p className="truncate text-xs text-muted-foreground">
                   {p.market}
                 </p>
               </div>
@@ -240,7 +240,7 @@ function HeroPreview() {
                   {p.odds}
                 </p>
                 {/* La fréquence attendue, jamais la cote toute seule. */}
-                <p className="text-[0.65rem] font-semibold tabular-nums text-accent">
+                <p className="text-xs font-semibold tabular-nums text-accent">
                   {p.rate} attendus
                 </p>
               </div>
@@ -248,16 +248,16 @@ function HeroPreview() {
           ))}
 
           {/* Ce qui est écarté fait partie de la lecture, avec son motif */}
-          <div className="flex items-center justify-between rounded-xl border border-dashed border-border px-3 py-2.5 opacity-55">
+          <div className="flex items-center justify-between rounded-xl border border-dashed border-border px-3 py-2.5">
             <div className="min-w-0">
               <p className="truncate text-xs font-bold text-foreground line-through decoration-1">
                 2-1
               </p>
-              <p className="truncate text-[0.65rem] text-muted-foreground">
+              <p className="truncate text-xs text-muted-foreground">
                 Score exact
               </p>
             </div>
-            <span className="shrink-0 rounded-md border border-border px-1.5 py-0.5 text-[0.6rem] text-muted-foreground">
+            <span className="shrink-0 rounded-md border border-border px-1.5 py-0.5 text-xs text-muted-foreground">
               Écarté : trop loin de la cote
             </span>
           </div>
@@ -337,14 +337,14 @@ export default function LandingPage() {
             coupons, et avec eux tout le raisonnement qui les a produits.
           </p>
 
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground/60 lg:justify-start">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground lg:justify-start">
             {[
               "6 000+ matchs analysés",
               "60+ championnats",
               "Résultats réglés, pertes comprises",
             ].map((s) => (
               <span key={s} className="flex items-center gap-1.5">
-                <CheckCircle2 size={13} className="text-accent/60" />
+                <CheckCircle2 size={13} className="text-accent" />
                 {s}
               </span>
             ))}
@@ -376,10 +376,7 @@ export default function LandingPage() {
       <section className="border-t border-border bg-panel/50 px-6 py-24 sm:px-10">
         <div className="mx-auto max-w-6xl">
           <div className="mb-14 text-center">
-            <p className="text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent">
-              Le moteur
-            </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
               Trois familles. Pas trente pronostics.
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
@@ -401,16 +398,16 @@ export default function LandingPage() {
                 />
 
                 <span
-                  className={`w-fit rounded-lg border px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-widest ${f.tagCls}`}
+                  className={`w-fit rounded-lg border px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${f.tagCls}`}
                 >
                   {f.tag}
                 </span>
 
                 <div>
-                  <p className="text-[0.9rem] font-semibold text-foreground">
+                  <p className="text-base font-semibold text-foreground">
                     {f.headline}
                   </p>
-                  <p className="mt-2 text-[0.8rem] leading-6 text-muted-foreground">
+                  <p className="mt-2 text-sm leading-6 text-pretty text-muted-foreground">
                     {f.body}
                   </p>
                 </div>
@@ -419,7 +416,7 @@ export default function LandingPage() {
                   {f.markets.map((m) => (
                     <li
                       key={m}
-                      className="flex items-center gap-2 text-[0.75rem] text-muted-foreground"
+                      className="flex items-center gap-2 text-sm text-muted-foreground"
                     >
                       <CheckCircle2 size={11} className={f.colorCls} />
                       {m}
@@ -437,7 +434,7 @@ export default function LandingPage() {
                 <p className="text-2xl font-black tabular-nums text-foreground">
                   {s.v}
                 </p>
-                <p className="mt-0.5 text-[0.7rem] leading-snug text-muted-foreground">
+                <p className="mt-0.5 text-sm leading-snug text-muted-foreground">
                   {s.l}
                 </p>
               </div>
@@ -450,10 +447,7 @@ export default function LandingPage() {
       <section className="px-6 py-24 sm:px-10">
         <div className="mx-auto max-w-6xl">
           <div className="mb-14 text-center">
-            <p className="text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent">
-              La discipline
-            </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
               Ce qu&apos;on refuse de te proposer.
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
@@ -469,13 +463,13 @@ export default function LandingPage() {
                 key={d.title}
                 className="flex flex-col gap-4 rounded-2xl border border-warning/25 bg-warning/[0.05] p-6"
               >
-                <span className="w-fit rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-1 text-[0.7rem] font-black uppercase tracking-widest tabular-nums text-warning">
+                <span className="w-fit rounded-lg border border-warning/30 px-2.5 py-1 text-xs font-bold uppercase tracking-wide tabular-nums text-warning">
                   {d.stat}
                 </span>
-                <p className="text-[0.9rem] font-semibold text-foreground">
+                <p className="text-base font-semibold text-foreground">
                   {d.title}
                 </p>
-                <p className="text-[0.8rem] leading-6 text-muted-foreground">
+                <p className="text-sm leading-6 text-pretty text-muted-foreground">
                   {d.body}
                 </p>
               </div>
@@ -488,10 +482,7 @@ export default function LandingPage() {
       <section className="px-6 py-24 sm:px-10">
         <div className="mx-auto max-w-6xl">
           <div className="mb-14 text-center">
-            <p className="text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent">
-              Fonctionnalités
-            </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
               Conçu pour le parieur qui veut de la méthode.
             </h2>
           </div>
@@ -504,13 +495,10 @@ export default function LandingPage() {
                 <Layers size={18} />
               </div>
               <div className="mt-8 lg:mt-12">
-                <p className="text-[0.6rem] font-bold uppercase tracking-widest text-accent/70">
-                  Discipline
-                </p>
                 <h3 className="mt-2 text-xl font-bold text-foreground lg:text-2xl">
                   Une mise. Répétée.
                 </h3>
-                <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                <p className="mt-2 max-w-sm text-sm leading-relaxed text-foreground/85">
                   Pas de jackpot, pas d&apos;improvisation. Le moteur raisonne à
                   mise fixe et te propose de faire pareil. La régularité est la
                   méthode, pas l&apos;exception.
@@ -534,9 +522,6 @@ export default function LandingPage() {
                 <Shield size={18} />
               </div>
               <div className="mt-6">
-                <p className="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/50">
-                  Risque
-                </p>
                 <h3 className="mt-2 text-lg font-bold text-foreground">
                   Un garde-fou sur les marchés perdants
                 </h3>
@@ -553,9 +538,6 @@ export default function LandingPage() {
                 <Clock size={18} />
               </div>
               <div className="mt-6">
-                <p className="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/50">
-                  Transparence
-                </p>
                 <h3 className="mt-2 text-lg font-bold text-foreground">
                   Décisions lisibles
                 </h3>
@@ -572,9 +554,6 @@ export default function LandingPage() {
                 <TrendingUp size={18} />
               </div>
               <div className="mt-8 lg:mt-10">
-                <p className="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/50">
-                  Philosophie
-                </p>
                 <h3 className="mt-2 text-xl font-bold text-foreground lg:text-2xl">
                   Une méthode, pas des tuyaux.
                 </h3>
@@ -605,10 +584,7 @@ export default function LandingPage() {
       <section className="border-t border-border bg-panel/50 px-6 py-24 sm:px-10">
         <div className="mx-auto max-w-6xl">
           <div className="mb-14 text-center">
-            <p className="text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent">
-              Comment ça fonctionne
-            </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
               Un pronostic. Une mise fixe. Un suivi.
             </h2>
           </div>
@@ -644,11 +620,7 @@ export default function LandingPage() {
       <section className="border-t border-border px-6 py-28 text-center sm:px-10">
         <div className="relative mx-auto max-w-2xl">
           <div className="pointer-events-none absolute -inset-12 -z-10 bg-[radial-gradient(ellipse_80%_70%_at_50%_50%,rgba(15,118,110,0.14),transparent_70%)]" />
-
-          <p className="text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent">
-            Prêt à lire le match ?
-          </p>
-          <h2 className="mt-4 text-4xl font-black leading-tight tracking-tight sm:text-5xl">
+          <h2 className="text-4xl font-black leading-tight tracking-tight text-balance sm:text-5xl">
             Notre analyse.
             <br />
             <span className="text-accent">Ta décision.</span>
