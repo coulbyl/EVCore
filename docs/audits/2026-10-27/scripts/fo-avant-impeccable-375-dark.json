@@ -1,0 +1,168 @@
+{
+ "route": "/dashboard/formation",
+ "width": 375,
+ "theme": "dark",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 9 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 4.46:1 (need 4.5:1) — text #14b8a6 on #1d404c color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"calibrée\" alone on the last of 2 lines (21% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"fait.\" alone on the last of 6 lines (8% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"catalogue\" alone on the last of 2 lines (25% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"précédentes.\" alone on the last of 5 lines (29% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"privilégier.\" alone on the last of 5 lines (27% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cdark-glow%c Colored box-shadow glow (#14b8a6) on dark background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 9 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 4.46:1 (need 4.5:1) — text #14b8a6 on #1d404c color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"calibrée\" alone on the last of 2 lines (21% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"fait.\" alone on the last of 6 lines (8% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"catalogue\" alone on the last of 2 lines (25% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"précédentes.\" alone on the last of 5 lines (29% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"privilégier.\" alone on the last of 5 lines (27% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cdark-glow%c Colored box-shadow glow (#14b8a6) on dark background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs fo",
+    "text": "À découvrir",
+    "w": 95,
+    "h": 22
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.46:1 (need 4.5:1) — text #14b8a6 on #1d404c",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "line-clamp-2 text-base font-semibold tracking-tight text-foreground",
+    "text": "Cote, probabilité implicite, probabilité calibrée",
+    "w": 283,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"calibrée\" alone on the last of 2 lines (21% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground",
+    "text": "L'edge et l'EV mesurent l'avantage que le modèle croit avoir",
+    "w": 283,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"fait.\" alone on the last of 6 lines (8% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "line-clamp-2 text-base font-semibold tracking-tight text-foreground",
+    "text": "Les canaux EVCore : une carte, pas un catalogue",
+    "w": 283,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"catalogue\" alone on the last of 2 lines (25% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground",
+    "text": "Comprendre les canaux ne suffit pas si on les exploite mal. ",
+    "w": 283,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"précédentes.\" alone on the last of 5 lines (29% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground",
+    "text": "L'unité de mise règle le combien. Cette leçon règle le où et",
+    "w": 283,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"privilégier.\" alone on the last of 5 lines (27% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "flex size-14 items-center justify-center rounded-full shadow-lg shadow-accent/30",
+    "text": "",
+    "w": 56,
+    "h": 56
+   },
+   "findings": [
+    {
+     "type": "dark-glow",
+     "detail": "Colored box-shadow glow (#14b8a6) on dark background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12 righ",
+    "text": "",
+    "w": 44,
+    "h": 44
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "section",
+    "cls": "overflow-hidden rounded-[1.6rem] border border-border bg-panel-strong ev-shell-s",
+    "text": "À découvrir 3 min Cote, probabilité implicite, probabilité c",
+    "w": 317,
+    "h": 429
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  }
+ ]
+}

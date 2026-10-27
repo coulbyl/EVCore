@@ -1,0 +1,167 @@
+{
+ "route": "/dashboard/formation",
+ "width": 1280,
+ "theme": "light",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 9 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #0d6c65 on #bed3dc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"modèle.\" alone on the last of 6 lines (20% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"rapporte\" alone on the last of 3 lines (26% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"tout.\" alone on the last of 5 lines (12% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"jours\" alone on the last of 3 lines (16% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"perdre\" alone on the last of 3 lines (20% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 9 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #0d6c65 on #bed3dc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"modèle.\" alone on the last of 6 lines (20% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"rapporte\" alone on the last of 3 lines (26% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"tout.\" alone on the last of 5 lines (12% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"jours\" alone on the last of 3 lines (16% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"perdre\" alone on the last of 3 lines (20% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "p",
+    "cls": "truncate text-xs text-sidebar-foreground/60",
+    "text": "@e2e_tester",
+    "w": 138,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs fo",
+    "text": "À découvrir",
+    "w": 95,
+    "h": 22
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.0:1 (need 4.5:1) — text #0d6c65 on #bed3dc"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground",
+    "text": "La distinction qui change tout : ce que le bookmaker affiche",
+    "w": 249,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"modèle.\" alone on the last of 6 lines (20% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "line-clamp-2 text-base font-semibold tracking-tight text-foreground",
+    "text": "Le canal VALUE (Valeur) : quand le filtre coûte plus qu'il n",
+    "w": 249,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"rapporte\" alone on the last of 3 lines (26% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground",
+    "text": "DRAW est le canal le mieux calibré d'EVCore : il annonce à p",
+    "w": 249,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"tout.\" alone on the last of 5 lines (12% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "line-clamp-2 text-base font-semibold tracking-tight text-foreground",
+    "text": "Le canal TEAM_TOTAL : ce qu'a coûté une promotion sur neuf j",
+    "w": 249,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"jours\" alone on the last of 3 lines (16% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "line-clamp-2 text-base font-semibold tracking-tight text-foreground",
+    "text": "Variance et discipline : pourquoi un edge réel peut quand mê",
+    "w": 249,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"perdre\" alone on the last of 3 lines (20% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12 righ",
+    "text": "",
+    "w": 48,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "section",
+    "cls": "overflow-hidden rounded-[1.6rem] border border-border bg-panel-strong ev-shell-s",
+    "text": "À découvrir 3 min Cote, probabilité implicite, probabilité c",
+    "w": 872,
+    "h": 290
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  }
+ ]
+}

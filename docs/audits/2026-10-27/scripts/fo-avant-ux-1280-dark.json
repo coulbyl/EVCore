@@ -1,0 +1,145 @@
+{
+ "url": "http://localhost:3010/dashboard/formation",
+ "title": "Centre de formation",
+ "lang": "fr",
+ "headings": [
+  "h1: Centre de formation",
+  "h2: Cote, probabilité implicite, probabilité calibrée"
+ ],
+ "overflowX": false,
+ "textElements": 95,
+ "smallText": {
+  "count": 4,
+  "samples": [
+   {
+    "text": "AUJOURD'HUI",
+    "px": 11
+   },
+   {
+    "text": "SUIVI",
+    "px": 11
+   },
+   {
+    "text": "ANALYSE",
+    "px": 11
+   },
+   {
+    "text": "PROGRESSION",
+    "px": 11.5
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 1,
+  "samples": [
+   {
+    "text": "À découvrir",
+    "px": 12,
+    "ratio": 4.44,
+    "min": 4.5
+   }
+  ]
+ },
+ "interactive": 39,
+ "smallTapTargets": {
+  "count": 18,
+  "samples": [
+   {
+    "text": "Accueil",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Coupons",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Avis IA",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Décisions",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Matchs",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mes coupons",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Inbox",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Formation",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mesures historiques",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Notifications",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Paramètres du compte",
+    "w": 36,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Notifications",
+    "w": 42,
+    "h": 44,
+    "tag": "a"
+   },
+   {
+    "text": "Mon coupon",
+    "w": 42,
+    "h": 44,
+    "tag": "button"
+   },
+   {
+    "text": "Ouvrir",
+    "w": 86,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Toutes les catégories",
+    "w": 162,
+    "h": 34,
+    "tag": "button"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

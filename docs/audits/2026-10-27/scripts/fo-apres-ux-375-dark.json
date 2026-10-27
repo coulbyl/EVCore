@@ -1,0 +1,29 @@
+{
+ "url": "http://localhost:3010/dashboard/formation",
+ "title": "Formation",
+ "lang": "fr",
+ "headings": [
+  "h1: Formation"
+ ],
+ "overflowX": false,
+ "textElements": 25,
+ "smallText": {
+  "count": 0,
+  "samples": []
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 17,
+ "smallTapTargets": {
+  "count": 0,
+  "samples": []
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}
