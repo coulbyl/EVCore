@@ -1,44 +1,20 @@
-export type FormationCategory =
-  | "bases"
-  | "channels"
-  | "bankroll"
-  | "leagues"
-  | "app";
+/** Une seule catégorie depuis le 2026-10-27 (cinq fiches) ; le type reste
+ * pour la progression enregistrée côté navigateur, qui la stocke. */
+export type FormationCategory = "bases";
 
-export const FORMATION_CATEGORIES: FormationCategory[] = [
-  "bases",
-  "channels",
-  "bankroll",
-  "leagues",
-  "app",
-];
-
-export type FormationDifficulty = "beginner" | "intermediate" | "advanced";
-
+/** « video » reste connu de l'API de progression (enum backend), mais aucune
+ * vidéo n'est publiée : la seule prévue n'a jamais été tournée. */
 export type FormationContentType = "article" | "video";
-
-export type FormationChapter = {
-  label: string;
-  start: number;
-};
 
 export type FormationContentMeta = {
   type: FormationContentType;
   slug: string;
   title: string;
   category: FormationCategory;
-  difficulty: FormationDifficulty;
   order?: number;
   readTime: number;
   summary?: string;
   updatedAt?: string;
-  videoUrl?: string;
-  videoProvider?: "youtube" | "vimeo" | "html5";
-  videoDuration?: string;
-  chapters?: FormationChapter[];
-  transcriptUrl?: string;
-  thumbnail?: string;
-  related?: string[];
 };
 
 export type FormationContentItem = FormationContentMeta & {
