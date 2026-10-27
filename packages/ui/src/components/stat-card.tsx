@@ -40,8 +40,10 @@ export function StatCard({
       >
         <p
           className={cn(
-            "flex items-center gap-1.5 text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground",
-            !compact && "sm:text-[0.68rem] sm:tracking-[0.2em]",
+            // 11 px minimum : à 9,3 px les libellés passaient sous le
+            // plancher de lisibilité (détecteur impeccable, 2026-10-27).
+            "flex items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground",
+            !compact && "sm:text-xs sm:tracking-[0.12em]",
           )}
         >
           {icon}
@@ -49,7 +51,9 @@ export function StatCard({
         </p>
         <p
           className={cn(
-            "mt-1 break-words text-xs font-medium text-foreground",
+            // La valeur est ce qu'on vient lire : 16 px sur téléphone, plus
+            // en grand écran, jamais plus petite que son libellé.
+            "mt-1 break-words text-base font-semibold tabular-nums text-foreground",
             !compact && "sm:mt-3 sm:text-lg",
           )}
         >

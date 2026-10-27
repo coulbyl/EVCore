@@ -240,7 +240,7 @@ function DataTable<TData>({
                   key={header.id}
                   colSpan={header.colSpan}
                   className={cn(
-                    "text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground",
+                    "text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground",
                     meta?.align === "center" && "text-center",
                     meta?.align === "right" && "text-right",
                     canSort &&
