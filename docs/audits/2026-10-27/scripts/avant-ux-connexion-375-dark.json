@@ -1,0 +1,68 @@
+{
+ "url": "http://localhost:3000/auth/login",
+ "title": "EVCore — Arrêtez de parier. Commencez à investir.",
+ "lang": "fr",
+ "headings": [
+  "h2: Connexion"
+ ],
+ "overflowX": false,
+ "textElements": 10,
+ "smallText": {
+  "count": 1,
+  "samples": [
+   {
+    "text": "Core",
+    "px": 9.6
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 7,
+ "smallTapTargets": {
+  "count": 4,
+  "samples": [
+   {
+    "text": "Mot de passe oublié ?",
+    "w": 117,
+    "h": 16,
+    "tag": "a"
+   },
+   {
+    "text": "Afficher le mot de passe",
+    "w": 32,
+    "h": 32,
+    "tag": "button"
+   },
+   {
+    "text": "Créer un compte",
+    "w": 104,
+    "h": 16,
+    "tag": "a"
+   },
+   {
+    "text": "← Retour à l'accueil",
+    "w": 107,
+    "h": 14,
+    "tag": "a"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 2,
+  "samples": [
+   {
+    "tag": "input",
+    "cls": "w-full min-w-0 rounded-md border border-input bg-transparent"
+   },
+   {
+    "tag": "input",
+    "cls": "w-full min-w-0 rounded-md border border-input bg-transparent"
+   }
+  ]
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

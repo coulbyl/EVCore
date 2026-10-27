@@ -1,0 +1,37 @@
+{
+ "route": "/auth/login",
+ "width": 375,
+ "theme": "dark",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 1 anti-pattern found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 3.2:1 (need 4.5:1) — text #59687b on #0d1520 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Core\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 1 anti-pattern found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 3.2:1 (need 4.5:1) — text #59687b on #0d1520 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Core\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.6rem] font-bold text-muted-foreground/60",
+    "text": "Core",
+    "w": 22,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.2:1 (need 4.5:1) — text #59687b on #0d1520"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"Core\" (below 11px floor)"
+    }
+   ]
+  }
+ ]
+}

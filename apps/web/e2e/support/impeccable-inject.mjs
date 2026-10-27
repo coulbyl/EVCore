@@ -8,14 +8,18 @@ const ctx = await browser.newContext({
   locale: "fr-FR",
   colorScheme: theme,
 });
-await ctx.addCookies([
-  {
-    name: "evcore_session",
-    value: "e2e-session",
-    domain: "localhost",
-    path: "/",
-  },
-]);
+// ANONYMOUS=1 : visiteur sans session (pages publiques ; sinon la landing
+// redirige vers le tableau de bord).
+if (!process.env.ANONYMOUS) {
+  await ctx.addCookies([
+    {
+      name: "evcore_session",
+      value: "e2e-session",
+      domain: "localhost",
+      path: "/",
+    },
+  ]);
+}
 const page = await ctx.newPage();
 const logs = [];
 let injected = false;

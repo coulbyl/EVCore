@@ -1,0 +1,182 @@
+{
+ "route": "/auth/register",
+ "width": 375,
+ "theme": "light",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 8 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 2.1:1 (need 4.5:1) — text #92a0b2 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Core\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"moteur.\" alone on the last of 2 lines (15% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.52px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"vérifier.\" alone on the last of 2 lines (12% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c placeholder \"Au moins 8 caractères\" 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.52px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c placeholder \"Quelques mots sur vous\" 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 8 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 2.1:1 (need 4.5:1) — text #92a0b2 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Core\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"moteur.\" alone on the last of 2 lines (15% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.52px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"vérifier.\" alone on the last of 2 lines (12% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c placeholder \"Au moins 8 caractères\" 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.52px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c placeholder \"Quelques mots sur vous\" 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.6rem] font-bold text-muted-foreground/60",
+    "text": "Core",
+    "w": 22,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.1:1 (need 4.5:1) — text #92a0b2 on #dfe7f1"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"Core\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-2 text-sm leading-6 text-muted-foreground",
+    "text": "Créez votre accès pour exploiter les sélections du moteur.",
+    "w": 343,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1"
+    },
+    {
+     "type": "straggler",
+     "detail": "\"moteur.\" alone on the last of 2 lines (15% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.72rem] leading-snug text-muted-foreground",
+    "text": "Un code à 6 chiffres vous sera envoyé à cette adresse pour l",
+    "w": 343,
+    "h": 32
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1"
+    },
+    {
+     "type": "tiny-text",
+     "detail": "11.52px body text"
+    },
+    {
+     "type": "straggler",
+     "detail": "\"vérifier.\" alone on the last of 2 lines (12% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "input",
+    "cls": "w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base",
+    "text": "",
+    "w": 343,
+    "h": 44
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "placeholder \"Au moins 8 caractères\" 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.72rem] leading-snug text-muted-foreground",
+    "text": "Au moins 8 caractères. Une phrase longue et facile à retenir",
+    "w": 343,
+    "h": 32
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1"
+    },
+    {
+     "type": "tiny-text",
+     "detail": "11.52px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "text-[0.72rem] font-normal text-muted-foreground",
+    "text": "— optionnel",
+    "w": 61,
+    "h": 12
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "textarea",
+    "cls": "flex field-sizing-content min-h-16 w-full rounded-md border border-input bg-tran",
+    "text": "",
+    "w": 343,
+    "h": 64
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "placeholder \"Quelques mots sur vous\" 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-center text-sm text-muted-foreground",
+    "text": "Déjà inscrit ? Se connecter",
+    "w": 343,
+    "h": 20
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1"
+    }
+   ]
+  }
+ ]
+}

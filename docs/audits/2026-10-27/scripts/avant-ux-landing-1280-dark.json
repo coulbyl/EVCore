@@ -1,0 +1,119 @@
+{
+ "url": "http://localhost:3000/",
+ "title": "EVCore — Arrêtez de parier. Commencez à investir.",
+ "lang": "fr",
+ "headings": [
+  "h1: Un avis sur chaque match. Une conviction sur presq",
+  "h2: Trois familles. Pas trente pronostics.",
+  "h2: Ce qu'on refuse de vous proposer.",
+  "h2: Conçu pour l'investisseur.",
+  "h3: Une mise. Répétée.",
+  "h3: Drawdown contrôlé",
+  "h3: Décisions lisibles",
+  "h3: Investir, pas parier.",
+  "h2: Une position. Une mise. Un suivi.",
+  "h3: Estimation, puis filtre",
+  "h3: Une unité de mise, la même partout",
+  "h3: Tout est réglé, tout est visible",
+  "h2: Notre analyse. Votre décision. C'est ça, investir."
+ ],
+ "overflowX": false,
+ "textElements": 104,
+ "smallText": {
+  "count": 30,
+  "samples": [
+   {
+    "text": "STRATÉGIE D'INVESTISSEMENT SPORTIF",
+    "px": 10.9
+   },
+   {
+    "text": "LECTURE DU MATCH",
+    "px": 9.3
+   },
+   {
+    "text": "buts attendus",
+    "px": 10.9
+   },
+   {
+    "text": "Double chance",
+    "px": 10.4
+   },
+   {
+    "text": "74% attendus",
+    "px": 10.4
+   },
+   {
+    "text": "Plus / moins de buts",
+    "px": 10.4
+   },
+   {
+    "text": "49% attendus",
+    "px": 10.4
+   },
+   {
+    "text": "Les deux équipes marquent",
+    "px": 10.4
+   },
+   {
+    "text": "54% attendus",
+    "px": 10.4
+   },
+   {
+    "text": "Score exact",
+    "px": 10.4
+   },
+   {
+    "text": "Écarté — edge trop élevé",
+    "px": 9.6
+   },
+   {
+    "text": "LE MOTEUR",
+    "px": 10.4
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 2,
+  "samples": [
+   {
+    "text": "Rejoindre la stratégie",
+    "px": 14,
+    "ratio": 2.02,
+    "min": 4.5
+   }
+  ]
+ },
+ "interactive": 6,
+ "smallTapTargets": {
+  "count": 2,
+  "samples": [
+   {
+    "text": "Mode clair",
+    "w": 36,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "Connexion",
+    "w": 67,
+    "h": 20,
+    "tag": "a"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": [
+  {
+   "word": "sûr",
+   "count": 1
+  },
+  {
+   "word": "investir",
+   "count": 4
+  }
+ ]
+}
