@@ -60,15 +60,27 @@ import { PwaInstallBanner } from "@/components/pwa-install-banner";
 //      Ce qui distingue EVCore n'est pas de s'abstenir, c'est de livrer le
 //      raisonnement avec le pronostic, refus compris.
 //
-// Relevé du 2026-08-22 : 52 926 matchs analysés, 302 763 sélections réglées,
-// 68 championnats, historique depuis 2019-06-11. Réviser les planchers quand
-// ils deviennent ridicules, pas avant.
+// Relevé du 2026-10-24 (dump de production), compté comme CLAUDE.md
+// l'exige : seules les analyses faites AVANT le coup d'envoi, une ligne par
+// pari réel (vue `channel_selection_deduped`).
+//   - 6 440 matchs analysés avant le coup d'envoi, tous depuis le
+//     2026-07-01 ;
+//   - 58 656 pronostics réglés (gagnés ou perdus) ;
+//   - 62 championnats ;
+//   - données de matchs en base depuis le 2019-06-06 (historique servant au
+//     modèle, pas des pronostics).
+// Le relevé du 2026-08-22 (« 50 000+ matchs », « 300 000+ prédictions »,
+// « 7 saisons ») comptait la table brute : chaque match y est ré-analysé
+// 5 à 7 fois, et 45 500 matchs incluaient des ré-analyses après coup de
+// matchs historiques. Il gonflait les volumes d'un facteur 8 (audit du
+// 2026-10-23, P1-6). Réviser les planchers quand ils deviennent
+// ridicules, pas avant, et toujours avec ce même comptage.
 // ─────────────────────────────────────────────────────────────
 const SCALE = [
-  { v: "50 000+", l: "matchs analysés" },
-  { v: "300 000+", l: "prédictions confrontées au résultat" },
-  { v: "68", l: "championnats couverts" },
-  { v: "7", l: "saisons d'historique" },
+  { v: "6 000+", l: "matchs analysés avant le coup d'envoi" },
+  { v: "50 000+", l: "pronostics confrontés au résultat" },
+  { v: "60+", l: "championnats couverts" },
+  { v: "2019", l: "données de matchs depuis" },
 ];
 
 // Les familles de moteurs, pas les canaux. Un canal est une déclinaison de
@@ -325,8 +337,8 @@ export default function LandingPage() {
 
           <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground/60 lg:justify-start">
             {[
-              "50 000+ matchs analysés",
-              "68 championnats · 7 saisons",
+              "6 000+ matchs analysés",
+              "60+ championnats",
               "Accès sur invitation",
             ].map((s) => (
               <span key={s} className="flex items-center gap-1.5">
