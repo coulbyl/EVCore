@@ -475,14 +475,11 @@
     "avatarSaveError": "Impossible de sauvegarder l'avatar.",
     "genericError": "Une erreur est survenue. Réessaie dans quelques instants.",
     "badgeNames": {
-      "vol_50": "50 paris réglés",
-      "vol_150": "150 paris réglés",
-      "streak_5": "Série × 5",
       "calibre": "Brier Score < 0.20"
     },
     "badgesEyebrow": "Progression",
     "badgesTitle": "Mes badges",
-    "badgesDescription": "Débloque des badges en atteignant des jalons de performance.",
+    "badgesDescription": "Débloque des badges en apprenant à lire les probabilités.",
     "securityTitle": "Authentification & vérification",
     "securitySetupHeading": "Vérification du compte",
     "accountVerified": "Compte vérifié",
@@ -693,8 +690,6 @@
   "betSlips": {
     "emptyTitle": "Aucun coupon sur cette période",
     "emptyDescription": "Tes coupons existent, mais pas entre ces dates.",
-    "tabSlips": "Mes coupons",
-    "tabLeaderboard": "Classement des joueurs",
     "neverPlayedTitle": "Tu n'as pas encore joué de coupon",
     "neverPlayedBody": "Le pari sûr du jour et le coupon long sont sur l'accueil. Un coupon joué apparaît ici avec son résultat.",
     "neverPlayedLink": "Voir le coupon du jour",

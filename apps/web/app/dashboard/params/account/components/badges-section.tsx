@@ -6,10 +6,6 @@ import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
 import { SettingsSectionCard } from "./settings-section-card";
 
 const BADGE_EMOJI: Record<string, string> = {
-  vol_50: "🏅",
-  vol_150: "🥈",
-  vol_300: "🥇",
-  streak_5: "⚡",
   patience: "🧘",
   calibre: "🎯",
   graduate: "🎓",

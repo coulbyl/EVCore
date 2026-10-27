@@ -475,14 +475,11 @@
     "avatarSaveError": "Couldn't save the avatar.",
     "genericError": "Something went wrong.",
     "badgeNames": {
-      "vol_50": "50 settled bets",
-      "vol_150": "150 settled bets",
-      "streak_5": "Streak × 5",
       "calibre": "Brier score < 0.20"
     },
     "badgesEyebrow": "Progress",
     "badgesTitle": "My badges",
-    "badgesDescription": "Unlock badges by reaching performance milestones.",
+    "badgesDescription": "Unlock badges by learning to read probabilities.",
     "securityTitle": "Authentication & verification",
     "securitySetupHeading": "Account verification",
     "accountVerified": "Account verified",
@@ -693,8 +690,6 @@
   "betSlips": {
     "emptyTitle": "No coupon in this period",
     "emptyDescription": "Your coupons exist, just not between these dates.",
-    "tabSlips": "My coupons",
-    "tabLeaderboard": "Players leaderboard",
     "neverPlayedTitle": "You have not played a coupon yet",
     "neverPlayedBody": "Today's safe bet and long coupon are on the home page. A played coupon shows up here with its result.",
     "neverPlayedLink": "See today's coupon",

@@ -5,14 +5,22 @@ import { createLogger } from '@utils/logger';
 
 const logger = createLogger('gamification-service');
 
-type BadgeCode =
-  | 'vol_50'
-  | 'vol_150'
-  | 'vol_300'
-  | 'streak_5'
-  | 'patience'
-  | 'calibre'
-  | 'graduate';
+type BadgeCode = 'patience' | 'calibre' | 'graduate';
+
+/**
+ * Badges retirés le 2026-10-27 : « Vétéran », « Expert », « Maître »
+ * récompensaient le nombre de paris joués, « En feu » une série de gains.
+ * Ils poussaient à jouer plus, à l'inverse du jeu responsable et du discours
+ * du produit (audit du 2026-10-23, P2-9 ; apps/web/PRODUCT.md, principe 5).
+ * Plus attribués, plus affichés ; les lignes déjà gagnées restent en base.
+ * Restent les badges d'apprentissage : Diplômé, Calibré, Patience.
+ */
+const RETIRED_BADGES: ReadonlySet<string> = new Set([
+  'vol_50',
+  'vol_150',
+  'vol_300',
+  'streak_5',
+]);
 
 const FORMATION_GRADUATE_ARTICLES = [
   'channels-overview',
@@ -57,21 +65,20 @@ export class GamificationService {
       userBadges.map((ub) => [ub.badgeCode, ub.unlockedAt]),
     );
 
-    return allBadges.map((b) => ({
-      code: b.code,
-      name: b.name,
-      description: b.description,
-      iconUrl: b.iconUrl,
-      unlockedAt: unlockedMap.get(b.code) ?? null,
-    }));
+    return allBadges
+      .filter((b) => !RETIRED_BADGES.has(b.code))
+      .map((b) => ({
+        code: b.code,
+        name: b.name,
+        description: b.description,
+        iconUrl: b.iconUrl,
+        unlockedAt: unlockedMap.get(b.code) ?? null,
+      }));
   }
 
   async checkAndAwardBadges(userId: string): Promise<void> {
-    const [settledBets, formationProgress] = await Promise.all([
-      this.prisma.client.betSlipItem.count({
-        where: { userId, bet: { status: { in: ['WON', 'LOST'] } } },
-      }),
-      this.prisma.client.userContentProgress.findMany({
+    const formationProgress =
+      await this.prisma.client.userContentProgress.findMany({
         where: {
           userId,
           OR: [
@@ -86,25 +93,15 @@ export class GamificationService {
           ],
         },
         select: { contentType: true, slug: true },
-      }),
-    ]);
+      });
 
     const completedFormation = new Set(
       formationProgress.map((item) => `${item.contentType}:${item.slug}`),
     );
 
-    const checks: Array<[BadgeCode, boolean]> = [
-      ['vol_50', settledBets >= 50],
-      ['vol_150', settledBets >= 150],
-      ['vol_300', settledBets >= 300],
-      ['graduate', completedFormation.size >= FORMATION_GRADUATE_TOTAL],
-    ];
-
-    await Promise.all(
-      checks
-        .filter(([, condition]) => condition)
-        .map(([code]) => this.awardBadge(userId, code)),
-    );
+    if (completedFormation.size >= FORMATION_GRADUATE_TOTAL) {
+      await this.awardBadge(userId, 'graduate');
+    }
   }
 
   async checkBrierBadge(
