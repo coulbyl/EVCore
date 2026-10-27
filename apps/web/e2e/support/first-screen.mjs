@@ -12,7 +12,10 @@ const ctx = await browser.newContext({
 });
 const page = await ctx.newPage();
 await page.addInitScript((t) => localStorage.setItem("theme", t), theme);
-await page.goto(`http://localhost:3000${route}`, { waitUntil: "networkidle" });
+await page.goto(
+  `http://localhost:${process.env.E2E_WEB_PORT ?? 3000}${route}`,
+  { waitUntil: "networkidle" },
+);
 await page.waitForTimeout(1000);
 await page.screenshot({ path: out });
 await browser.close();

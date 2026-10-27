@@ -28,7 +28,10 @@ page.on("console", (m) => {
   if (injected || /impeccable/i.test(t)) logs.push(`${m.type()}: ${t}`);
 });
 await page.addInitScript((t) => localStorage.setItem("theme", t), theme);
-await page.goto("http://localhost:3000" + route, { waitUntil: "networkidle" });
+await page.goto(
+  `http://localhost:${process.env.E2E_WEB_PORT ?? 3000}` + route,
+  { waitUntil: "networkidle" },
+);
 await page.waitForTimeout(1200);
 // preflight mutation
 await page.evaluate(() => {
