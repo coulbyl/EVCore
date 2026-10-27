@@ -95,7 +95,7 @@ Chiffres réels, utilisables avec leur période et leur effectif :
 
 - Calibration de « Notre sélection », du 9 au 22/10/2026, 1 133 sélections réglées : 76,9 % réalisées pour 78,6 % annoncées (`docs/audits/2026-10-23/04-DIAGNOSTIC-JOUEUR.md`).
 - Bande de cotes 1,20–1,65, du 11 au 16/10/2026, 1 499 sélections réglées : 73,6 % réalisées pour 73,0 % annoncées (`docs/audits/2026-10-17/PREMIERE-LECTURE.md`).
-- Avis IA depuis le 13/10/2026, 201 sélections : 63,7 % réalisées pour 63,1 % annoncées.
+- Avis IA du 13 au 24/10/2026, 300 sélections réglées : 64,7 % réalisées pour 63,9 % annoncées ; écart au marché sans marge +1,0 point ± 2,7 (pas mieux que la cote), à mise fixe −2,3 % ; l'IA jouait 80 % des matchs lus (`docs/audits/2026-10-27/AVIS-IA.md`).
 - Coupon cote 2 sur 120 jours : composé par cellule, 55 % de jours gagnés pour 55 % annoncés ; composé par la probabilité du moteur, 50 % pour 72 % (`docs/audits/2026-10-24/COUPON-COTE-2-JOURS.md`).
 - Contenus de formation : 15 articles et vidéos (`apps/web/app/dashboard/formation`).
 

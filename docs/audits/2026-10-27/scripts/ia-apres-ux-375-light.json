@@ -1,0 +1,43 @@
+{
+ "url": "http://localhost:3010/dashboard/arbitrage?filter=all",
+ "title": "Avis IA — EVCore",
+ "lang": "fr",
+ "headings": [
+  "h1: Avis IA",
+  "h2: BILAN DE L'IA"
+ ],
+ "overflowX": false,
+ "textElements": 46,
+ "smallText": {
+  "count": 0,
+  "samples": []
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 20,
+ "smallTapTargets": {
+  "count": 2,
+  "samples": [
+   {
+    "text": "En savoir plus sur Avis IA",
+    "w": 12,
+    "h": 12,
+    "tag": "button"
+   },
+   {
+    "text": "Détail dans Mesures historiques",
+    "w": 272,
+    "h": 40,
+    "tag": "a"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

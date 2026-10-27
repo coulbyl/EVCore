@@ -1,0 +1,117 @@
+{
+ "route": "/dashboard/arbitrage?filter=all",
+ "width": 1280,
+ "theme": "light",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 6 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cflat-type-hierarchy%c Role sizes: h2 12px, body 14px, h1 16px (largest adjacent step 1.17:1; target 1.25:1; weight separates headings from body text) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 6 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cflat-type-hierarchy%c Role sizes: h2 12px, body 14px, h1 16px (largest adjacent step 1.17:1; target 1.25:1; weight separates headings from body text) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "p",
+    "cls": "truncate text-xs text-sidebar-foreground/60",
+    "text": "@e2e_tester",
+    "w": 138,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12 righ",
+    "text": "",
+    "w": 48,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "body",
+    "cls": "geistsans_d025f23b-module__btTCTG__variable geistmono_df95d851-module__CWPfka__v",
+    "text": "EVCore Accueil AUJOURD'HUI Coupons Avis IA Décisions Matchs ",
+    "w": 1280,
+    "h": 800
+   },
+   "findings": [
+    {
+     "type": "flat-type-hierarchy",
+     "detail": "Role sizes: h2 12px, body 14px, h1 16px (largest adjacent step 1.17:1; target 1.25:1; weight separates headings from body text)",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "section",
+    "cls": "flex flex-col gap-1 rounded-2xl border border-border bg-panel px-4 py-3 text-sm ",
+    "text": "BILAN DE L'IA Du 27 septembre 2026 au 27 octobre 2026, sur 3",
+    "w": 672,
+    "h": 146
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden rounded-2xl border bg-panel shadow-[0_1px_2px_rgba(0,0,0,0.04)] ",
+    "text": "Arsenal vs Burnley 15:59 · Premier League · Angleterre AVIS ",
+    "w": 672,
+    "h": 318
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba",
+    "text": "Ajax vs PSV 17:59 · Eredivisie · Pays-Bas AVIS RETENU MAIS N",
+    "w": 672,
+    "h": 199
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  }
+ ]
+}
