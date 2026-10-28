@@ -1,271 +1,125 @@
 "use client";
 
 import { X } from "lucide-react";
-import { Badge, cn } from "@evcore/ui";
-import {
-  formatMarketForDisplay,
-  formatPickForDisplay,
-} from "@/helpers/fixture";
+import { Badge } from "@evcore/ui";
+import { useLocale, useTranslations } from "next-intl";
+import { formatMarketForDisplay } from "@/helpers/fixture";
 import { formatDateLong } from "@/lib/date";
+import { formatOddsValue } from "@/lib/frequency";
 import { useCurrencyFormat } from "@/providers/currency-provider";
-import { CanalBadge } from "@/components/canal-badge";
+import { ResultBadge } from "@/components/result-badge";
 import type {
-  BetSlipView,
   BetSlipItemView,
+  BetSlipView,
 } from "@/domains/bet-slip/types/bet-slip";
+import {
+  SLIP_STATUS_VARIANT,
+  legMatchLabel,
+  legPickLabel,
+} from "./bet-slip-constants";
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-3 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium text-foreground">{value}</span>
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="font-semibold tabular-nums text-foreground">{value}</dd>
     </div>
   );
 }
 
-function totalOdds(data: BetSlipView) {
-  return data.items.reduce((product, item) => {
-    const odds = Number(item.odds ?? 1);
-    return Number.isFinite(odds) && odds > 0 ? product * odds : product;
-  }, 1);
-}
+type MatchGroup = { fixtureId: string; items: BetSlipItemView[] };
 
-type ItemStatus = "WON" | "LOST" | "PENDING" | "VOID";
-
-const STATUS_PILL: Record<ItemStatus, string> = {
-  WON: "bg-success/12 text-success",
-  LOST: "bg-destructive/10 text-destructive",
-  PENDING: "bg-warning/12 text-warning",
-  VOID: "bg-secondary text-muted-foreground",
-};
-
-const STATUS_LABEL: Record<ItemStatus, string> = {
-  WON: "Gagné",
-  LOST: "Perdu",
-  PENDING: "En attente",
-  VOID: "Annulé",
-};
-
-// DRAW_NO_BET's VOID is a stake refund on a drawn match, not a genuine
-// cancellation — same ItemStatus.VOID value (no distinct "refunded" status
-// in the data model), so the distinction has to be made here from the
-// item's market rather than the status alone.
-const REFUND_MARKETS = new Set(["DRAW_NO_BET"]);
-
-function ResultPill({
-  status,
-  market,
-}: {
-  status: ItemStatus;
-  market?: string;
-}) {
-  const label =
-    status === "VOID" && market !== undefined && REFUND_MARKETS.has(market)
-      ? "Remboursé"
-      : STATUS_LABEL[status];
-  return (
-    <span
-      className={cn(
-        "rounded-md px-1.5 py-0.5 text-[0.58rem] font-bold uppercase tracking-wide",
-        STATUS_PILL[status],
-      )}
-    >
-      {label}
-    </span>
-  );
-}
-
-function PnlDisplay({
-  item,
-  slipType,
-}: {
-  item: BetSlipItemView;
-  slipType: BetSlipView["type"];
-}) {
-  const { formatAmount, formatSigned } = useCurrencyFormat();
-  if (slipType === "COMBO") return null;
-  if (item.pnl !== null) {
-    const raw = Number(item.pnl);
-    const isPos = raw >= 0;
-    return (
-      <p
-        className={cn(
-          "text-sm font-bold tabular-nums",
-          isPos ? "text-success" : "text-danger",
-        )}
-      >
-        {formatSigned(raw)}
-      </p>
-    );
-  }
-  if (item.betStatus === "VOID") return null;
-  if (item.odds !== null) {
-    const potential = Number(item.stake) * (Number(item.odds) - 1);
-    return (
-      <p className="text-xs tabular-nums text-muted-foreground">
-        +{formatAmount(potential)} pot.
-      </p>
-    );
-  }
-  return null;
-}
-
-// ─── Grouping : un match = une carte, ses picks = des branches ───────────────
-
-type SlipMatchGroup = {
-  fixtureId: string;
-  fixture: string;
-  homeScore: number | null;
-  awayScore: number | null;
-  items: BetSlipItemView[];
-};
-
-function groupItemsByFixture(items: BetSlipItemView[]): SlipMatchGroup[] {
-  const map = new Map<string, SlipMatchGroup>();
-  const order: string[] = [];
+function groupByFixture(items: BetSlipItemView[]): MatchGroup[] {
+  const groups = new Map<string, MatchGroup>();
   for (const item of items) {
-    let group = map.get(item.fixtureId);
-    if (!group) {
-      group = {
-        fixtureId: item.fixtureId,
-        fixture: item.fixture,
-        homeScore: item.homeScore,
-        awayScore: item.awayScore,
-        items: [],
-      };
-      map.set(item.fixtureId, group);
-      order.push(item.fixtureId);
-    }
+    const group = groups.get(item.fixtureId) ?? {
+      fixtureId: item.fixtureId,
+      items: [],
+    };
     group.items.push(item);
+    groups.set(item.fixtureId, group);
   }
-  return order.map((id) => map.get(id)!);
+  return [...groups.values()];
 }
 
-function PickContent({ item }: { item: BetSlipItemView }) {
+/** Ce qu'une jambe d'un pari simple a rendu ou peut rendre. */
+function LegMoney({ item }: { item: BetSlipItemView }) {
+  const t = useTranslations("betSlips");
+  const { formatAmount, formatSigned } = useCurrencyFormat();
+  const stake = Number(item.stake);
+  const odds = item.odds === null ? null : Number(item.odds);
+  let outcome: string | null = null;
+  if (item.betStatus === "WON" && odds !== null) {
+    outcome = formatSigned(stake * (odds - 1));
+  } else if (item.betStatus === "LOST") {
+    outcome = formatSigned(-stake);
+  } else if (item.betStatus === "VOID") {
+    outcome = t("legRefunded");
+  } else if (odds !== null) {
+    outcome = t("legPotential", { amount: formatAmount(stake * odds) });
+  }
   return (
-    <div>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-sm font-bold text-foreground">
-          {formatPickForDisplay(item.pick, item.market)}
+    <p className="mt-1 text-xs text-muted-foreground">
+      {t("legStake", { amount: formatAmount(stake) })}
+      {outcome ? (
+        <span className="font-semibold tabular-nums text-foreground">
+          {" "}
+          · {outcome}
         </span>
-        <CanalBadge canal={item.canal} />
-      </div>
-      <p className="mt-0.5 text-[0.66rem] text-muted-foreground">
-        {formatMarketForDisplay(item.market)}
-      </p>
-    </div>
+      ) : null}
+    </p>
   );
 }
 
-function LegConnector({ isLast }: { isLast: boolean }) {
-  return (
-    <div className="relative w-4 shrink-0" aria-hidden>
-      <span className="absolute left-1 top-0 h-[1.05rem] w-2.5 rounded-bl-[0.5rem] border-b border-l border-border/60" />
-      {!isLast && (
-        <span className="absolute bottom-0 left-1 top-[1.05rem] w-px bg-border/60" />
-      )}
-    </div>
-  );
-}
-
-function SlipLeg({
-  item,
-  slipType,
-  connector,
-  isLast,
-}: {
-  item: BetSlipItemView;
-  slipType: BetSlipView["type"];
-  connector: boolean;
-  isLast: boolean;
-}) {
-  const { formatAmount } = useCurrencyFormat();
-  const status = item.betStatus as ItemStatus;
-
-  return (
-    <div className="flex">
-      {connector && <LegConnector isLast={isLast} />}
-      <div className="min-w-0 flex-1 py-1.5">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <PickContent item={item} />
-          </div>
-          <div className="flex shrink-0 flex-col items-end gap-1">
-            {item.odds && (
-              <span className="text-sm font-bold italic tabular-nums text-foreground">
-                {item.odds}
-              </span>
-            )}
-            <PnlDisplay item={item} slipType={slipType} />
-            <ResultPill status={status} market={item.market} />
-          </div>
-        </div>
-
-        {/* Méta : EV + mise */}
-        <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[0.62rem] text-muted-foreground">
-          <span>
-            EV{" "}
-            <span className="font-semibold text-success">
-              {item.ev.startsWith("+") ? item.ev : `+${item.ev}`}
-            </span>
-          </span>
-          {slipType === "COMBO" ? (
-            <span>Leg combiné</span>
-          ) : (
-            <span>
-              Mise{" "}
-              <span className="font-semibold text-foreground">
-                {formatAmount(item.stake)}
-              </span>
-            </span>
-          )}
-          {slipType === "SIMPLE" && item.stakeOverride ? (
-            <Badge variant="warning" className="py-0 text-[0.6rem]">
-              Perso {formatAmount(item.stakeOverride)}
-            </Badge>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SlipMatchCard({
+function MatchGroupCard({
   group,
   slipType,
 }: {
-  group: SlipMatchGroup;
+  group: MatchGroup;
   slipType: BetSlipView["type"];
 }) {
-  const multi = group.items.length > 1;
+  const locale = useLocale();
+  const first = group.items[0];
+  if (!first) return null;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/60 bg-background shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-      {/* Match header */}
-      <div className="flex items-center justify-between gap-2 border-b border-border/40 bg-secondary/25 px-3.5 py-2">
-        <p className="min-w-0 truncate text-[0.72rem] font-semibold text-foreground">
-          {group.fixture}
+    <li className="py-3 first:pt-0 last:pb-0">
+      <div className="flex items-center justify-between gap-2">
+        <p className="min-w-0 truncate text-xs font-semibold text-muted-foreground">
+          {legMatchLabel(first)}
         </p>
-        {group.homeScore !== null && group.awayScore !== null ? (
-          <span className="shrink-0 rounded-md bg-secondary px-2 py-0.5 text-[0.7rem] font-bold tabular-nums text-secondary-foreground">
-            {group.homeScore} – {group.awayScore}
+        {first.homeScore !== null && first.awayScore !== null ? (
+          <span className="shrink-0 text-xs font-semibold tabular-nums text-foreground">
+            {first.homeScore} – {first.awayScore}
           </span>
         ) : null}
       </div>
-
-      {/* Picks du match */}
-      <div className="px-3.5 py-1.5">
-        {group.items.map((item, idx) => (
-          <SlipLeg
-            key={item.betId}
-            item={item}
-            slipType={slipType}
-            connector={multi}
-            isLast={idx === group.items.length - 1}
-          />
+      <ul className="mt-1.5 flex flex-col gap-2">
+        {group.items.map((item) => (
+          <li key={item.betId}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">
+                  {legPickLabel(item)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {formatMarketForDisplay(item.market)}
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                {item.odds ? (
+                  <span className="text-sm font-semibold tabular-nums text-foreground">
+                    {formatOddsValue(Number(item.odds), locale)}
+                  </span>
+                ) : null}
+                <ResultBadge result={item.betStatus} />
+              </div>
+            </div>
+            {slipType === "SIMPLE" ? <LegMoney item={item} /> : null}
+          </li>
         ))}
-      </div>
-    </div>
+      </ul>
+    </li>
   );
 }
 
@@ -276,148 +130,99 @@ export function BetSlipDetailPanel({
   data: BetSlipView;
   onClose: () => void;
 }) {
+  const t = useTranslations("betSlips");
+  const locale = useLocale();
   const { formatAmount, formatSigned } = useCurrencyFormat();
-  const totalStake =
-    data.type === "COMBO"
-      ? Number(data.unitStake)
-      : data.items.reduce((sum, item) => sum + Number(item.stake), 0);
-  const settledItems = data.items.filter(
-    (i) => i.betStatus === "WON" || i.betStatus === "LOST",
-  );
-  const pendingCount =
-    data.type === "COMBO"
-      ? data.items.some((i) => i.betStatus === "PENDING")
-        ? 1
-        : 0
-      : data.items.length - settledItems.length;
-  const comboAllWon = data.items.every((i) => i.betStatus === "WON");
-  const comboTotalOdds = totalOdds(data);
-  const pendingSelections = data.items.filter(
-    (i) => i.betStatus === "PENDING",
-  ).length;
-  const realPnl =
-    data.type === "COMBO"
-      ? pendingCount === 0
-        ? comboAllWon
-          ? totalStake * comboTotalOdds - totalStake
-          : -totalStake
-        : 0
-      : settledItems.reduce((sum, item) => {
-          if (item.pnl === null) return sum;
-          return sum + Number(item.pnl);
-        }, 0);
-  const retourTotal =
-    data.type === "COMBO"
-      ? pendingCount === 0 && comboAllWon
-        ? totalStake * comboTotalOdds
-        : 0
-      : settledItems
-          .filter((i) => i.betStatus === "WON" && i.pnl !== null)
-          .reduce((sum, i) => sum + Number(i.stake) + Number(i.pnl), 0);
-  const hasPnl =
-    data.type === "COMBO" ? pendingCount === 0 : settledItems.length > 0;
-  const status =
-    pendingCount > 0 ? "En attente" : realPnl >= 0 ? "Gagné" : "Perdu";
-  const statusTone =
-    pendingCount > 0 ? "warning" : realPnl >= 0 ? "success" : "danger";
-  const potentialReturn =
-    data.type === "COMBO"
-      ? totalStake * comboTotalOdds
-      : data.items.reduce((sum, item) => {
-          const odds = Number(item.odds ?? 0);
-          return Number.isFinite(odds) ? sum + Number(item.stake) * odds : sum;
-        }, 0);
+  const { result } = data;
+  const pending = result.status === "PENDING";
+  const comboWithRefund =
+    data.type === "COMBO" && data.items.some((i) => i.betStatus === "VOID");
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-border bg-panel-strong ev-shell-shadow">
-      {/* Header */}
-      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
-        <div>
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Coupon
-          </p>
-          <p className="text-base font-semibold text-foreground">
-            #{data.id.slice(0, 8)}
-          </p>
-          <p className="text-xs font-semibold text-foreground">
-            {data.type === "COMBO" ? "Combiné" : "Simples"}
-          </p>
+    <div
+      data-testid="bet-slip-detail"
+      className="flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-border bg-panel-strong ev-shell-shadow"
+    >
+      <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-4 py-3">
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold text-foreground">
+            {data.type === "COMBO"
+              ? t("kindCombo", { count: data.itemCount })
+              : t("kindSingle", { count: data.itemCount })}
+          </h2>
           <p className="text-xs text-muted-foreground">
-            {formatDateLong(data.createdAt)}
+            {t("playedOn", { date: formatDateLong(data.createdAt) })}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant={statusTone === "danger" ? "destructive" : statusTone}>
-            {status}
-          </Badge>
-          <Badge variant="accent">
-            {data.itemCount} sélection{data.itemCount > 1 ? "s" : ""}
+        <div className="flex shrink-0 items-center gap-2">
+          <Badge
+            variant={SLIP_STATUS_VARIANT[result.status]}
+            className="text-xs"
+          >
+            {t(`status.${result.status}`)}
           </Badge>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-panel text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            aria-label={t("close")}
+            className="flex size-11 items-center justify-center rounded-xl border border-border bg-panel text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           >
-            <X size={14} />
+            <X size={16} />
           </button>
         </div>
       </div>
 
-      {/* Body */}
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {/* Summary */}
-        <div className="flex flex-col gap-2.5 border-b border-border px-4 py-4">
-          <DetailRow label="Utilisateur" value={`@${data.username}`} />
-          {data.type === "COMBO" && (
-            <DetailRow label="Cote totale" value={comboTotalOdds.toFixed(2)} />
-          )}
-          <DetailRow label="Total misé" value={formatAmount(totalStake)} />
-          {hasPnl && (
-            <>
-              <div
-                className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-semibold ${
-                  realPnl >= 0
-                    ? "bg-success/12 text-success"
-                    : "bg-destructive/10 text-destructive"
-                }`}
-              >
-                <span>
-                  {pendingCount > 0 ? "Gain net partiel" : "Gain net"}
-                </span>
-                <span className="tabular-nums">{formatSigned(realPnl)}</span>
-              </div>
-              {retourTotal > 0 && (
-                <DetailRow
-                  label="Retour total"
-                  value={formatAmount(retourTotal)}
-                />
-              )}
-            </>
-          )}
-          {pendingCount > 0 && (
+        <dl className="flex flex-col gap-2.5 border-b border-border px-4 py-4">
+          <DetailRow label={t("staked")} value={formatAmount(result.staked)} />
+          {data.totalOdds ? (
+            <DetailRow
+              label={t("odds")}
+              value={formatOddsValue(Number(data.totalOdds), locale)}
+            />
+          ) : null}
+          {Number(result.settledStake) > 0 ? (
             <>
               <DetailRow
-                label="Gain potentiel"
-                value={formatAmount(potentialReturn)}
+                label={t("returned")}
+                value={formatAmount(result.returned)}
               />
-              <p className="text-xs text-muted-foreground">
-                {pendingSelections} sélection
-                {pendingSelections > 1 ? "s" : ""} en attente de résultat
-              </p>
+              <DetailRow
+                label={pending ? t("partialNet") : t("net")}
+                value={formatSigned(result.net)}
+              />
             </>
-          )}
-        </div>
+          ) : null}
+          {pending ? (
+            <p className="text-xs leading-5 text-muted-foreground">
+              {t("potential", {
+                amount: formatAmount(result.potentialReturn),
+                gain: formatAmount(
+                  Math.max(
+                    0,
+                    Number(result.potentialReturn) -
+                      Number(result.pendingStake),
+                  ),
+                ),
+              })}
+            </p>
+          ) : null}
+          {comboWithRefund ? (
+            <p className="text-xs leading-5 text-muted-foreground">
+              {t("refundRule")}
+            </p>
+          ) : null}
+        </dl>
 
-        {/* Items groupés par match */}
-        <div className="flex flex-col gap-2.5 p-4">
-          {groupItemsByFixture(data.items).map((group) => (
-            <SlipMatchCard
+        <ul className="flex flex-col divide-y divide-border px-4 py-4">
+          {groupByFixture(data.items).map((group) => (
+            <MatchGroupCard
               key={group.fixtureId}
               group={group}
               slipType={data.type}
             />
           ))}
-        </div>
+        </ul>
       </div>
     </div>
   );

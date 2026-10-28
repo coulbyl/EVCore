@@ -1,11 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { BetSource, BetStatus, StrategyChannel } from '@evcore/db';
+import { type BetSlipType, BetStatus, type Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import {
   PlayableOddsRepository,
   type PlayableQuote,
   type PlayableQuoteKey,
 } from '../betting-engine/pricing/playable-odds.repository';
+
+export type PlayedSlipRow = {
+  type: BetSlipType;
+  unitStake: Prisma.Decimal;
+  createdAt: Date;
+  items: {
+    stakeOverride: Prisma.Decimal | null;
+    bet: { status: BetStatus; oddsSnapshot: Prisma.Decimal | null };
+  }[];
+};
 
 @Injectable()
 export class BetSlipRepository {
@@ -100,7 +110,17 @@ export class BetSlipRepository {
     return { slipCount, wonBets, lostBets, pendingBets };
   }
 
-  getGlobalModelBets(from?: Date, to?: Date) {
+  /**
+   * Les coupons de l'utilisateur avec le statut et la cote de chaque jambe :
+   * de quoi calculer son résultat à mise fixe (`fixedStakeOutcome`). Même
+   * filtre de dates que `getUserSummary` (date des matchs), au niveau du
+   * coupon : un coupon dont une jambe tombe dans la fenêtre y entre.
+   */
+  getUserPlayedSlips(
+    userId: string,
+    from?: Date,
+    to?: Date,
+  ): Promise<PlayedSlipRow[]> {
     const fixtureFilter =
       from || to
         ? {
@@ -110,23 +130,25 @@ export class BetSlipRepository {
             },
           }
         : undefined;
-    return this.prisma.client.bet.findMany({
+    return this.prisma.client.betSlip.findMany({
       where: {
-        source: BetSource.MODEL,
-        channelSelection: {
-          is: {
-            channelDecision: { is: { channel: StrategyChannel.VALUE } },
-          },
-        },
-        status: { in: ['WON', 'LOST'] },
-        oddsSnapshot: { not: null },
-        ...(fixtureFilter ? { fixture: fixtureFilter } : {}),
+        userId,
+        ...(fixtureFilter
+          ? { items: { some: { fixture: fixtureFilter } } }
+          : {}),
       },
       select: {
-        status: true,
-        oddsSnapshot: true,
-        stakePct: true,
+        type: true,
+        unitStake: true,
+        createdAt: true,
+        items: {
+          select: {
+            stakeOverride: true,
+            bet: { select: { status: true, oddsSnapshot: true } },
+          },
+        },
       },
+      orderBy: { createdAt: 'asc' },
     });
   }
 

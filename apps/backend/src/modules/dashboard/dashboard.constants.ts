@@ -31,6 +31,18 @@ const UNTRACKED_CHANNELS: ReadonlySet<StrategyChannel> = new Set([
   StrategyChannel.MARKET_MOVE,
 ]);
 
+/**
+ * Coupures de cote de la lecture « par cote » de Mesures historiques :
+ * sous 1,45, de 1,45 à 1,80, au-dessus de 1,80.
+ *
+ * Ce sont les tranches où la calibration change de régime (388 jambes LLM
+ * réglées, CLAUDE.md) : réalisé/annoncé 0,899 sous 1,45, 0,836 de 1,45 à
+ * 1,80, 0,619 au-dessus. Une moyenne toutes cotes confondues mélange un score
+ * exact à 10 % et un favori à 85 % ; le joueur ne peut pas savoir si la
+ * probabilité de son pronostic tient (audit UX du 2026-10-27).
+ */
+export const TRACK_RECORD_ODDS_BREAKS = [1.45, 1.8] as const;
+
 /** Tout canal qui prend une position propre — la seule source de la liste. */
 export const TRACKED_CHANNELS: readonly StrategyChannel[] = (
   Object.values(StrategyChannel) as StrategyChannel[]

@@ -1,0 +1,57 @@
+{
+ "url": "http://localhost:3000/auth/login",
+ "title": "Connexion — EVCore",
+ "lang": "fr",
+ "headings": [
+  "h1: Connexion"
+ ],
+ "overflowX": false,
+ "textElements": 19,
+ "smallText": {
+  "count": 0,
+  "samples": []
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 7,
+ "smallTapTargets": {
+  "count": 3,
+  "samples": [
+   {
+    "text": "Mot de passe oublié ?",
+    "w": 117,
+    "h": 16,
+    "tag": "a"
+   },
+   {
+    "text": "Afficher le mot de passe",
+    "w": 32,
+    "h": 32,
+    "tag": "button"
+   },
+   {
+    "text": "Créer un compte",
+    "w": 104,
+    "h": 16,
+    "tag": "a"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 2,
+  "samples": [
+   {
+    "tag": "input",
+    "cls": "w-full min-w-0 rounded-md border border-input bg-transparent"
+   },
+   {
+    "tag": "input",
+    "cls": "w-full min-w-0 rounded-md border border-input bg-transparent"
+   }
+  ]
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

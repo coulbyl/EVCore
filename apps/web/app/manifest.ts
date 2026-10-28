@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Console EVCore",
+    name: "EVCore",
     short_name: "EVCore",
     description:
-      "Console opérateur pour les analyses EVCore, les fixtures et les flux d'audit.",
+      "Analyses de football : probabilités, raisonnement et résultats réglés, pertes comprises. 18+.",
     start_url: "/",
     display: "standalone",
     orientation: "portrait",
@@ -32,19 +32,10 @@ export default function manifest(): MetadataRoute.Manifest {
       },
       // SVG retiré : non supporté de façon fiable par Chrome dans le manifest
     ],
-    screenshots: [
-      {
-        src: "/screenshots/mobile.png",
-        sizes: "390x844",
-        type: "image/png",
-        // form_factor absent = mobile (requis pour le Richer Install UI mobile)
-      },
-      {
-        src: "/screenshots/desktop.png",
-        sizes: "1280x800",
-        type: "image/png",
-        form_factor: "wide",
-      },
-    ],
+    // Plus de captures d'écran : celles de juillet montraient le nom et la
+    // photo du fondateur, un solde de 500 millions de francs, des « +63 % »
+    // et le menu « Investir » (audit du 2026-10-23, P1-4). Le manifeste est
+    // valide sans ; de nouvelles captures sans donnée de compte pourront
+    // revenir avec la passe sur la coquille.
   };
 }

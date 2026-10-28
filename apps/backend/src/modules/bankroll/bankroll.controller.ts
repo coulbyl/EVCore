@@ -25,6 +25,11 @@ export class BankrollController {
     return this.bankrollService.getBalance(session.user.id);
   }
 
+  @Get('summary')
+  getSummary(@CurrentSession() session: AuthSession) {
+    return this.bankrollService.getSummary(session.user.id);
+  }
+
   @Get('transactions')
   getTransactions(
     @CurrentSession() session: AuthSession,

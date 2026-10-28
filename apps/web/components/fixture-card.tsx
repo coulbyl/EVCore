@@ -50,6 +50,7 @@ export function FixtureCard({
 }) {
   return (
     <div
+      data-slot="fixture-card"
       className={cn(
         "overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_1px_2px_rgba(0,0,0,0.04)]",
         className,

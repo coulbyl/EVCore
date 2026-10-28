@@ -107,9 +107,6 @@ export function PageShell({
             </div>
             <div className="min-w-0">
               <p className="text-base font-bold tracking-tight">EVCore</p>
-              <p className="text-xs text-sidebar-foreground/60">
-                Console de pilotage
-              </p>
             </div>
           </Link>
         </SidebarHeader>
@@ -121,7 +118,7 @@ export function PageShell({
             ) : null,
             <SidebarGroup key={i} className="p-0">
               {group.label && (
-                <SidebarGroupLabel className="px-3.5 pb-1 text-[0.6rem] font-bold uppercase tracking-[0.18em] text-sidebar-foreground/40">
+                <SidebarGroupLabel className="px-3.5 pb-1 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-sidebar-foreground/85">
                   {group.label}
                 </SidebarGroupLabel>
               )}
@@ -215,7 +212,7 @@ export function PageShell({
             <div className="flex min-w-0 items-center gap-2">
               <SidebarTrigger
                 data-tour="mobile-nav-trigger"
-                className="lg:hidden size-9 rounded-xl border border-border bg-panel-strong text-muted-foreground hover:bg-secondary hover:text-foreground"
+                className="lg:hidden size-11 rounded-xl border border-border bg-panel-strong text-muted-foreground hover:bg-secondary hover:text-foreground"
               />
               <Link
                 href="/dashboard"
@@ -274,7 +271,7 @@ export function PageShell({
                   </span>
                   <span
                     className={cn(
-                      "max-w-full text-[0.63rem] font-semibold leading-tight whitespace-nowrap",
+                      "max-w-full text-xs font-semibold leading-tight whitespace-nowrap",
                       item.active ? "text-accent" : "text-muted-foreground",
                     )}
                   >
@@ -317,7 +314,7 @@ export function PageShell({
                   </span>
                   <span
                     className={cn(
-                      "max-w-full text-[0.63rem] font-semibold leading-tight whitespace-nowrap",
+                      "max-w-full text-xs font-semibold leading-tight whitespace-nowrap",
                       item.active ? "text-accent" : "",
                     )}
                   >

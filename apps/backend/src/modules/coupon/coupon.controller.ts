@@ -38,6 +38,7 @@ import {
 } from './dto/coupon-track-record.dto';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
 import type { CouponIndicesResponse } from './dto/coupon-indices.dto';
+import { PausedGuard } from '@/common/guards/paused.guard';
 
 @ApiTags('coupons')
 @Controller('coupons')
@@ -49,7 +50,7 @@ export class CouponController {
   ) {}
 
   @Get()
-  @UseGuards(AuthSessionGuard)
+  @UseGuards(AuthSessionGuard, PausedGuard)
   @ApiOperation({
     summary: 'Get coupon proposals for a date',
     description:

@@ -1,17 +1,7 @@
 import type {
   ChannelHealthItem,
   ChannelStatsItem,
-  ChannelStatus,
-  PnlSummary,
 } from "@/domains/dashboard/types/dashboard";
-
-export type PnlByCanalResponse = {
-  from: string;
-  to: string;
-  global: PnlSummary;
-  value: PnlSummary;
-  safe: PnlSummary;
-};
 
 export type PeriodKey = "30" | "90" | "all";
 
@@ -19,12 +9,15 @@ export const PERIODS: { key: PeriodKey; label: string; days: number | null }[] =
   [
     { key: "30", label: "30 jours", days: 30 },
     { key: "90", label: "90 jours", days: 90 },
-    { key: "all", label: "Tout l'historique", days: null },
+    { key: "all", label: "Depuis juillet 2026", days: null },
   ];
 
-// Earliest settled data currently in the DB (verified 2026-07-18) — used as
-// the "from" bound for the "all" period instead of an arbitrary far-past date.
-const EARLIEST_DATA_DATE = "2023-01-01";
+// Premier pronostic réel émis avant le coup d'envoi : le 2026-07-01 (relevé
+// sur le dump de production du 2026-10-24). « Tout l'historique » affichait
+// « du 1er janvier 2023 », alors que tout ce qui précède juillet 2026 est de
+// la ré-analyse après coup, exclue de la cohorte : le titre promettait trois
+// ans et demi d'historique qui n'existent pas.
+const EARLIEST_DATA_DATE = "2026-07-01";
 
 export function resolvePeriod(value: string | undefined): PeriodKey {
   return value === "30" || value === "90" || value === "all" ? value : "90";
@@ -58,8 +51,6 @@ export function dateRangeForPeriod(period: PeriodKey): {
 export const CHANNEL_DISPLAY_ORDER: ChannelStatsItem["channel"][] = [
   "DOUBLE_CHANCE",
   "DRAW",
-  "VALUE",
-  "SAFE",
   "DOMINANT",
   "TEAM_TOTAL",
   "DRAW_NO_BET",
@@ -74,7 +65,6 @@ export const CHANNEL_DISPLAY_ORDER: ChannelStatsItem["channel"][] = [
   "RESULT_BTTS",
   "HALF_TIME_FULL_TIME",
   "CORRECT_SCORE",
-  "VANTAGE",
 ];
 
 /** Canaux reçus, classés selon CHANNEL_DISPLAY_ORDER, inconnus à la fin. */
@@ -117,42 +107,70 @@ export function mergeChannelData(
   );
 }
 
-// `roi`/`netUnits` come back from the backend already in percentage-number
-// scale (e.g. 14.98 means +14.98%), NOT as a 0-1 fraction — see
-// dashboard.service.ts `flatBetRoi`. Do not multiply by 100 here.
-export function formatRoi(value: number | null): string {
-  if (value === null) return "—";
-  return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
+function numberLocale(locale: string): string {
+  return locale === "en" ? "en-GB" : "fr-FR";
 }
 
-// `hitRate` IS a 0-1 fraction (`won / total`) — see `hitRateOf`.
-export function formatHitRate(value: number | null): string {
-  if (value === null) return "—";
-  return `${(value * 100).toFixed(0)}%`;
+/** 0,459 → « 45,9 % » : toujours une décimale, pour que « 48,0 % » et
+ * « 45,9 % » s'alignent et se comparent d'un coup d'œil. */
+export function formatRate(rate: number | null, locale: string): string {
+  if (rate === null) return "—";
+  return new Intl.NumberFormat(numberLocale(locale), {
+    style: "percent",
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(rate);
 }
 
-// Ratio réel/annoncé — proche de 1 = bien calibré (see backend
-// dashboard.service.ts's calibrationRatioOf). Not a percentage.
-export function formatCalibrationRatio(value: number | null): string {
-  if (value === null) return "—";
-  return `${value.toFixed(2)}×`;
+/** −0,094 → « −9,4 % », avec le vrai signe moins. Les ROI du backend sont en
+ * points (−9,4 pour −9,4 %, voir `flatBetRoi`) : diviser par 100 avant. */
+export function formatSignedRate(
+  fraction: number | null,
+  locale: string,
+): string {
+  if (fraction === null) return "—";
+  return new Intl.NumberFormat(numberLocale(locale), {
+    style: "percent",
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+    signDisplay: "exceptZero",
+  })
+    .format(fraction)
+    .replace("-", "\u2212");
 }
 
-// Same signal as ChannelStatusBadge, applied to the calibration-ratio figure
-// so the deviation band stays visible before the reader parses the number.
-// NOT applied to the
-// ROI figure: `status` is calibration-based (see dashboard.service.ts's
-// calibrationStatus), so tinting ROI by it would color a number the status
-// no longer describes (a channel can show a negative ROI and still be
-// GREEN — see docs/vantage-centric-redesign-2026-09-01.md §5.4, DRAW).
-const STATUS_TONE_CLASS: Record<ChannelStatus, string> = {
-  GREEN: "text-success",
-  ORANGE: "text-warning",
-  RED: "text-danger",
-  INACTIVE: "text-muted-foreground",
-  INSUFFICIENT_DATA: "text-muted-foreground",
-};
-
-export function statusToneClass(status: ChannelStatus): string {
-  return STATUS_TONE_CLASS[status];
+export function formatCount(value: number, locale: string): string {
+  return value.toLocaleString(numberLocale(locale));
 }
+
+/** Bornes d'une tranche de cote → « Cote sous 1,45 », « Cote de 1,45 à
+ * 1,80 », « Cote de 1,80 et plus ». */
+export function formatOddsBand(
+  band: { minOdds: number | null; maxOdds: number | null },
+  locale: string,
+): string {
+  const odds = (value: number) =>
+    value.toLocaleString(numberLocale(locale), {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  if (band.minOdds === null && band.maxOdds !== null)
+    return `Cote sous ${odds(band.maxOdds)}`;
+  if (band.minOdds !== null && band.maxOdds === null)
+    return `Cote de ${odds(band.minOdds)} et plus`;
+  if (band.minOdds !== null && band.maxOdds !== null)
+    return `Cote de ${odds(band.minOdds)} à ${odds(band.maxOdds)}`;
+  return "Toutes cotes";
+}
+
+/**
+ * Canaux hors de la page, mêmes exclusions que l'en-tête côté backend
+ * (SUMMARY_EXCLUDED_CHANNELS, dashboard.service.ts) : la somme des réglés du
+ * tableau égale ainsi le total affiché en haut.
+ * - VALUE et SAFE re-sélectionnent des pronostics d'autres canaux, et ne sont
+ *   plus montrés nulle part ailleurs depuis le 2026-09-03.
+ * - VANTAGE (avis IA) reprend des matchs déjà comptés : une ligne à part,
+ *   sous le tableau, hors total.
+ */
+export const OUT_OF_TOTAL_CHANNELS: ReadonlySet<ChannelStatsItem["channel"]> =
+  new Set(["VALUE", "SAFE", "VANTAGE"]);

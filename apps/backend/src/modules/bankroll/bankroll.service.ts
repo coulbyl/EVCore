@@ -1,8 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { BankrollTransactionType, Prisma, StrategyChannel } from '@evcore/db';
+import { BankrollTransactionType, Prisma } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { BANKROLL_LIMITS } from '@/config/bankroll.constants';
 import { BankrollRepository } from './bankroll.repository';
+
+function comboLegsOf(
+  slip: { type: string; _count: { items: number } } | undefined,
+): number | null {
+  return slip?.type === 'COMBO' ? slip._count.items : null;
+}
 
 function formatAmount(amount: Decimal, currency?: string | null): string {
   const value = amount.toNumber();
@@ -41,6 +47,17 @@ export class BankrollService {
     return { balance: balance.toFixed(2) };
   }
 
+  /** Solde et dépôts déclarés, sur tout l'historique. */
+  async getSummary(
+    userId: string,
+  ): Promise<{ balance: string; deposited: string }> {
+    const [balance, deposited] = await Promise.all([
+      this.bankrollRepository.getBalance(userId),
+      this.bankrollRepository.getDepositedTotal(userId),
+    ]);
+    return { balance: balance.toFixed(2), deposited: deposited.toFixed(2) };
+  }
+
   async getTransactions(input: GetTransactionsInput) {
     const rows = await this.bankrollRepository.getTransactions(input);
     return rows.map((r) => ({
@@ -50,15 +67,13 @@ export class BankrollService {
       betId: r.betId,
       note: r.note,
       createdAt: r.createdAt.toISOString(),
-      canal: r.bet
-        ? r.bet.channelSelection?.channelDecision.channel ===
-          StrategyChannel.SAFE
-          ? 'SAFE'
-          : 'VALUE'
-        : null,
       fixture: r.bet
         ? `${r.bet.fixture.homeTeam.name} vs ${r.bet.fixture.awayTeam.name}`
         : null,
+      homeTeam: r.bet?.fixture.homeTeam.name ?? null,
+      awayTeam: r.bet?.fixture.awayTeam.name ?? null,
+      pick: r.bet?.pick ?? null,
+      comboLegs: comboLegsOf(r.bet?.betSlipItems[0]?.betSlip),
       market: r.bet?.market ?? null,
     }));
   }

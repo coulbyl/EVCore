@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
-import { Scale, Target } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronDown, ChevronUp, Scale, Target } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  Button,
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -18,7 +19,7 @@ import {
 } from "@evcore/ui";
 import { DateNav } from "@/components/date-nav";
 import { InfoTooltip } from "@/components/info-tooltip";
-import { todayIso } from "@/lib/date";
+import { formatDateLong, todayIso } from "@/lib/date";
 import {
   useChannelDecisionFacets,
   useChannelDecisionMatches,
@@ -28,6 +29,7 @@ import { dateRangeForPeriod } from "@/app/dashboard/track-record/track-record-co
 import { LeagueFilterBar } from "../../decisions/components/league-filter-bar";
 import { buildCalibrationByKey } from "../../decisions/components/channel-constants";
 import { ArbitrageCard } from "./arbitrage-card";
+import { AiTrackRecordStrip } from "./ai-track-record-strip";
 import { VerdictFilterBar } from "./verdict-filter-bar";
 import {
   flattenArbitrageEntries,
@@ -43,9 +45,8 @@ export function ArbitragePageClient() {
   const t = useTranslations("arbitrage");
 
   const date = searchParams.get("date") ?? today;
-  // Default to "play" — most reads are "no_play" (VANTAGE's own majority
-  // outcome), so opening on "all" buries the handful of picks that actually
-  // matter under a long list of "nothing to add" cards.
+  // Ouvre sur les avis proposés : ce sont eux que le joueur vient lire. Le
+  // compte du jour en tête dit combien de matchs ont été lus sans avis.
   const filter =
     (searchParams.get("filter") as ArbitrageFilter | null) ?? "play";
   const selectedLeague = searchParams.get("league");
@@ -69,9 +70,9 @@ export function ArbitragePageClient() {
   const leagueOptions = facets.data?.leagues ?? [];
   const hasLeagueFacets = leagueOptions.length > 0;
 
-  // Same calibration source as Decisions' per-pick badge (channel-row.tsx) —
-  // VANTAGE's observed calibration gap on this competition, real ratio
-  // réel/annoncé, not the raw claimed-edge figure.
+  // Plus de badge de fiabilité sur les cartes : cette calibration ne sert
+  // qu'à retrouver « Notre sélection » du match par la même règle que
+  // Décisions (primaryPick).
   const calibrationRange = dateRangeForPeriod("90");
   const calibrationStats = useChannelCompetitionStats(
     calibrationRange.from,
@@ -83,18 +84,28 @@ export function ArbitragePageClient() {
   );
 
   const allEntries = useMemo(
-    () => flattenArbitrageEntries(matches.data ?? []),
-    [matches.data],
+    () => flattenArbitrageEntries(matches.data ?? [], calibrationByKey),
+    [matches.data, calibrationByKey],
   );
 
-  const visibleEntries = useMemo(() => {
-    return allEntries
+  // À venir d'abord ; les matchs terminés à part, repliés : un match fini en
+  // tête de liste passait avant ceux qu'on peut encore jouer (revue UX du
+  // 2026-10-27, P2-6).
+  const { upcoming, finished } = useMemo(() => {
+    const sorted = allEntries
       .filter((e) => matchesFilter(e, filter))
       .sort(
         (a, b) =>
           new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
       );
+    return {
+      upcoming: sorted.filter((e) => e.fixtureStatus !== "FINISHED"),
+      finished: sorted.filter((e) => e.fixtureStatus === "FINISHED"),
+    };
   }, [allEntries, filter]);
+  const [showFinished, setShowFinished] = useState(false);
+  const visibleCount = upcoming.length + finished.length;
+  const plays = allEntries.filter((e) => e.status === "SELECTED").length;
 
   function navigate(next: {
     date?: string;
@@ -114,29 +125,23 @@ export function ArbitragePageClient() {
 
   return (
     <Page className="flex h-full flex-col">
+      {/* Titre et une phrase qui dit ce que fait vraiment l'IA : l'écran
+          promettait la rareté (« ne propose un pari que s'il repère un vrai
+          désaccord ») alors qu'elle proposait un pari sur 8 matchs lus sur 10
+          (revue UX du 2026-10-27, P1-1). */}
       <div
         data-tour="arbitrage-help"
-        className="mb-3 flex flex-wrap items-center gap-2 shrink-0"
+        className="mb-3 flex shrink-0 flex-col gap-1"
       >
-        <div
-          className="flex size-8 shrink-0 items-center justify-center rounded-lg"
-          style={{ backgroundColor: "var(--canal-vantage-soft)" }}
-        >
-          <Scale className="size-4" style={{ color: "var(--canal-vantage)" }} />
+        <div className="flex items-center gap-2">
+          <h1 className="text-base font-bold tracking-tight text-foreground">
+            {t("title")}
+          </h1>
+          <InfoTooltip label={t("title")} description={t("description")} />
         </div>
-        <h1 className="text-base font-bold tracking-tight text-foreground">
-          {t("title")}
-        </h1>
-        <span
-          className="rounded-md px-1.5 py-0.5 text-[0.62rem] font-bold uppercase tracking-wide"
-          style={{
-            backgroundColor: "var(--canal-vantage-soft)",
-            color: "var(--canal-vantage)",
-          }}
-        >
-          {t("badge")}
-        </span>
-        <InfoTooltip label={t("title")} description={t("description")} />
+        <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+          {t("intro")}
+        </p>
       </div>
 
       <PageHeader>
@@ -169,10 +174,26 @@ export function ArbitragePageClient() {
       </PageHeader>
 
       <PageContent className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5 ev-shell-shadow">
-        <div className="min-h-full">
+        <div className="mx-auto flex min-h-full max-w-2xl flex-col gap-4 pb-20">
+          <AiTrackRecordStrip />
+
+          {!isLoading && !matches.isError && hasData && (
+            <p
+              data-testid="ai-today-count"
+              className="text-sm text-muted-foreground"
+            >
+              {t("today", {
+                day: date === today ? t("todayLabel") : formatDateLong(date),
+                plays,
+                reads: allEntries.length,
+                abstentions: allEntries.length - plays,
+              })}
+            </p>
+          )}
+
           {isLoading && (
             <div className="flex flex-col gap-4">
-              {Array.from({ length: 4 }).map((_, i) => (
+              {Array.from({ length: 3 }).map((_, i) => (
                 <Skeleton key={i} className="h-56 rounded-2xl" />
               ))}
             </div>
@@ -184,25 +205,25 @@ export function ArbitragePageClient() {
                 <EmptyMedia variant="icon">
                   <Target className="size-5" />
                 </EmptyMedia>
-                <EmptyTitle>Chargement impossible</EmptyTitle>
+                <EmptyTitle>{t("loadError")}</EmptyTitle>
                 <EmptyDescription>
-                  Erreur de chargement. Réessayez plus tard.
+                  <Button
+                    variant="outline"
+                    onClick={() => void matches.refetch()}
+                  >
+                    {t("retry")}
+                  </Button>
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>
           )}
 
-          {!isLoading && !matches.isError && visibleEntries.length === 0 && (
+          {!isLoading && !matches.isError && visibleCount === 0 && (
             <Empty className="rounded-[1.6rem] border-border bg-background/20">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <Scale className="size-5" />
                 </EmptyMedia>
-                {/* Default filter is "play", and most reads are "no_play" by
-                    design — an empty filtered list here usually just means
-                    "nothing worth flagging today", not "nothing was
-                    analyzed". Distinct copy for the two cases so it doesn't
-                    read as a broken page on an ordinary day. */}
                 <EmptyTitle>
                   {hasData ? t("emptyFilteredTitle") : t("emptyTitle")}
                 </EmptyTitle>
@@ -211,21 +232,45 @@ export function ArbitragePageClient() {
                     ? t("emptyFilteredDescription")
                     : t("emptyDescription")}
                 </EmptyDescription>
+                {hasData && filter !== "all" && (
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate({ filter: "all" })}
+                  >
+                    {t("showAll")}
+                  </Button>
+                )}
               </EmptyHeader>
             </Empty>
           )}
 
-          {!isLoading && !matches.isError && visibleEntries.length > 0 && (
-            <div className="mx-auto flex max-w-2xl flex-col gap-4">
-              {visibleEntries.map((entry) => (
-                <ArbitrageCard
-                  key={entry.id}
-                  entry={entry}
-                  locale={locale}
-                  calibrationByKey={calibrationByKey}
-                />
+          {!isLoading && !matches.isError && upcoming.length > 0 && (
+            <div className="flex flex-col gap-4">
+              {upcoming.map((entry) => (
+                <ArbitrageCard key={entry.id} entry={entry} locale={locale} />
               ))}
             </div>
+          )}
+
+          {!isLoading && !matches.isError && finished.length > 0 && (
+            <section className="flex flex-col gap-4">
+              <button
+                type="button"
+                onClick={() => setShowFinished((v) => !v)}
+                className="flex min-h-11 items-center justify-between gap-2 rounded-2xl border border-border bg-panel px-4 text-sm font-medium text-foreground"
+              >
+                {t("finished", { count: finished.length })}
+                {showFinished ? (
+                  <ChevronUp className="size-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="size-4 text-muted-foreground" />
+                )}
+              </button>
+              {showFinished &&
+                finished.map((entry) => (
+                  <ArbitrageCard key={entry.id} entry={entry} locale={locale} />
+                ))}
+            </section>
           )}
         </div>
       </PageContent>

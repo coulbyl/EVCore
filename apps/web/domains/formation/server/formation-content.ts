@@ -113,12 +113,6 @@ function basenameSlug(filename: string): string {
   return filename.replace(/\.(md|mdx)$/i, "");
 }
 
-function toArrayOfStrings(value: unknown): string[] | undefined {
-  if (!Array.isArray(value)) return undefined;
-  const strings = value.filter((item) => typeof item === "string");
-  return strings.length === value.length ? strings : undefined;
-}
-
 async function readDirSafe(dir: string): Promise<string[]> {
   try {
     return await fs.readdir(dir);
@@ -165,18 +159,6 @@ function parseMeta(
   data: Record<string, unknown>,
   content: string,
 ): FormationContentMeta {
-  const title = typeof data.title === "string" ? data.title : slugFromFilename;
-
-  const category =
-    typeof data.category === "string"
-      ? (data.category as FormationContentMeta["category"])
-      : "bases";
-
-  const difficulty =
-    typeof data.difficulty === "string"
-      ? (data.difficulty as FormationContentMeta["difficulty"])
-      : "beginner";
-
   const readTime =
     typeof data.readTime === "number" && Number.isFinite(data.readTime)
       ? Math.max(1, Math.round(data.readTime))
@@ -190,27 +172,12 @@ function parseMeta(
   return {
     type,
     slug: typeof data.slug === "string" ? data.slug : slugFromFilename,
-    title,
-    category,
-    difficulty,
+    title: typeof data.title === "string" ? data.title : slugFromFilename,
+    category: "bases",
     order,
     readTime,
     summary: typeof data.summary === "string" ? data.summary : undefined,
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : undefined,
-    videoUrl: typeof data.videoUrl === "string" ? data.videoUrl : undefined,
-    videoProvider:
-      typeof data.videoProvider === "string"
-        ? (data.videoProvider as FormationContentMeta["videoProvider"])
-        : undefined,
-    videoDuration:
-      typeof data.videoDuration === "string" ? data.videoDuration : undefined,
-    chapters: Array.isArray(data.chapters)
-      ? (data.chapters as FormationContentMeta["chapters"])
-      : undefined,
-    transcriptUrl:
-      typeof data.transcriptUrl === "string" ? data.transcriptUrl : undefined,
-    thumbnail: typeof data.thumbnail === "string" ? data.thumbnail : undefined,
-    related: toArrayOfStrings(data.related),
   };
 }
 
@@ -225,8 +192,9 @@ async function readContentFile(
   return { ...meta, content };
 }
 
-const CONTENT_TYPE_DIRS: Record<FormationContentType, string> = {
-  video: "videos",
+// Les fiches seulement : le dossier des vidéos a été retiré le 2026-10-27
+// (la seule prévue n'a jamais été tournée).
+const CONTENT_TYPE_DIRS: Partial<Record<FormationContentType, string>> = {
   article: "articles",
 };
 
@@ -246,17 +214,11 @@ export async function getFormationIndex(): Promise<FormationContentMeta[]> {
     ),
   );
 
-  const metas: FormationContentMeta[] = items
-    .flat()
-    // A video without `videoUrl` hasn't been filmed yet — keep the markdown
-    // (script, production notes) in the repo but hide it from every listing
-    // until `videoUrl` is added.
-    .filter((item) => item.type !== "video" || Boolean(item.videoUrl))
-    .map((item) => {
-      const { content, ...meta } = item;
-      void content;
-      return meta;
-    });
+  const metas: FormationContentMeta[] = items.flat().map((item) => {
+    const { content, ...meta } = item;
+    void content;
+    return meta;
+  });
 
   metas.sort((a, b) => a.title.localeCompare(b.title));
   return metas;
@@ -277,10 +239,6 @@ export async function getFormationContentBySlug(
     for (const fullPath of paths) {
       const item = await readContentFile(type, fullPath);
       if (item.slug !== slug) continue;
-      // Not filmed yet — same visibility rule as getFormationIndex, applied
-      // here too so the lesson page 404s instead of showing a bare "coming
-      // soon" placeholder for a direct/bookmarked link.
-      if (item.type === "video" && !item.videoUrl) return null;
       return item;
     }
   }

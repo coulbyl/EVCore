@@ -16,6 +16,7 @@ import {
 import {
   ChannelStrategyOrchestrator,
   createChannelStrategyOrchestrator,
+  marketProbability,
 } from '@evcore/analysis-core';
 import type {
   ChannelDecisionStatus,
@@ -55,6 +56,12 @@ export type ChannelSelectionItem = {
   marginPaid: number | null;
   marginBest: number | null;
   impliedProbability: number | null;
+  /**
+   * Fréquence affichée au joueur : probabilité du marché, marge payée
+   * retirée (sinon la marge typique du marché). Remplace la probabilité du
+   * moteur à l'écran, optimiste de 4 à 8 points (2026-10-28). Null sans cote.
+   */
+  marketProbability: number | null;
   ev: number | null;
   qualityScore: number | null;
   rank: number;
@@ -635,6 +642,11 @@ function toSelectionItem(
     marginPaid: toNumber(selection.marginPaid),
     marginBest: toNumber(selection.marginBest),
     impliedProbability: toNumber(selection.impliedProbability),
+    marketProbability: marketProbability({
+      odds: toNumber(selection.odds),
+      market: selection.market,
+      marginPaid: toNumber(selection.marginPaid),
+    }),
     ev: toNumber(selection.ev),
     qualityScore: toNumber(selection.qualityScore),
     rank: selection.rank,

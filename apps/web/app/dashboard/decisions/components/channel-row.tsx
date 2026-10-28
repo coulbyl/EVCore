@@ -1,13 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import * as HoverCard from "@radix-ui/react-hover-card";
 import { TriangleAlert } from "lucide-react";
 import { Badge, Tooltip, TooltipContent, TooltipTrigger, cn } from "@evcore/ui";
-import {
-  formatMarketForDisplay,
-  formatPickForDisplay,
-} from "@/helpers/fixture";
+import { formatMarketForDisplay, formatPickWithTeams } from "@/helpers/fixture";
+import { frequencyOf } from "@/lib/frequency";
+import { OddsPair } from "@/components/odds-pair";
 import { useLocale, useTranslations } from "next-intl";
 import type {
   ChannelDecisionMatchDecisionDto,
@@ -17,20 +14,13 @@ import type {
 } from "@/domains/channel-decision/types/channel-decision";
 import { AddToCouponButton } from "@/components/add-to-coupon-button";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
-import { ConfidenceBadge } from "@/components/confidence-badge";
 import { ClosingLine } from "@/components/closing-line";
-import { PlayableOdds } from "@/components/playable-odds";
-import type { ChannelCompetitionStatItem } from "@/domains/dashboard/types/dashboard";
 import {
-  calibrationKey,
   CHANNEL_COLOR,
   CHANNEL_COLOR_SOFT,
   channelLabel,
-  formatOdds,
-  formatPct,
   reasonLabel,
   statusLabel,
-  type ChannelCalibrationByKey,
 } from "./channel-constants";
 import { ResultBadge } from "@/components/result-badge";
 // Un pick est ajoutable à un coupon sauf s'il vient d'un méta-canal. C'était
@@ -61,29 +51,20 @@ export function ChannelRow({
   locale,
   avoidEdge,
   slipContext,
-  competitionCode,
-  calibrationByKey,
+  teams = null,
 }: {
   channel: StrategyChannel;
   decision: ChannelDecisionMatchDecisionDto | undefined;
   locale: string;
   avoidEdge?: number;
   slipContext?: SlipContext;
-  // Which (channel, competition) calibration entry this pick maps to — see
-  // channel-constants.ts's ChannelCalibrationByKey. Both optional: some
-  // callers (e.g. ConsensusRow's own convergence chips) never render a pick
-  // at all, so there's nothing to look up.
-  competitionCode?: string | null;
-  calibrationByKey?: ChannelCalibrationByKey;
+  /** Pour écrire le pari avec le nom des équipes (« Victoire Arsenal »). */
+  teams?: { home: string; away: string } | null;
 }) {
   const t = useTranslations("decisions");
   const loc = locale === "en" ? "en" : "fr";
   const selection =
     decision?.status === "SELECTED" ? decision.selections[0] : undefined;
-  const odds = selection ? formatOdds(selection.odds) : null;
-  const calibration = competitionCode
-    ? calibrationByKey?.get(calibrationKey(channel, competitionCode))
-    : undefined;
 
   // Lu depuis reasonDetails, pas depuis les sélections : CONSENSUS n'émet
   // plus de pick, et ces pastilles étaient rendues dans la branche « a une
@@ -107,14 +88,11 @@ export function ChannelRow({
               DRAW_NO_BET on the same card) without the duplicate wording. */}
           <div className="flex min-w-0 items-start justify-between gap-2">
             <p className="line-clamp-2 min-w-0 text-sm font-semibold leading-snug text-foreground">
-              {formatPickForDisplay(selection.pick, selection.market)}
+              {formatPickWithTeams(selection.pick, selection.market, teams)}
             </p>
             <div className="flex shrink-0 items-center gap-1.5">
               {avoidEdge !== undefined && <AvoidEdgeBadge edge={avoidEdge} />}
-              <ResultBadge
-                result={selection.result}
-                market={selection.market}
-              />
+              <ResultBadge result={selection.result} />
               {slipContext && !isMetaChannel(channel) && decision && (
                 <SlipButton
                   channel={channel}
@@ -125,32 +103,28 @@ export function ChannelRow({
               )}
             </div>
           </div>
-          <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.68rem] leading-tight text-muted-foreground">
+          {/* Type de pari, fréquence, cote jouable d'abord : la même lecture
+              que la carte coupon. La fréquence est celle du marché, marge
+              retirée (2026-10-28) : celle du moteur était optimiste de 4 à 8
+              points, d'où la note par cote, retirée avec elle. */}
+          <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-snug text-muted-foreground">
             {selection.market !== "CORRECT_SCORE" && (
               <span className="max-w-full truncate">
                 {formatMarketForDisplay(selection.market, loc)}
               </span>
             )}
-            <span className="tabular-nums">
-              {t("chances", { pct: formatPct(selection.probability) })}
-            </span>
-            {odds !== null && (
-              <span className="font-semibold tabular-nums text-foreground">
-                @{odds}
+            {selection.marketProbability !== null ? (
+              <span className="tabular-nums">
+                {t("chances", frequencyOf(selection.marketProbability))}
               </span>
-            )}
-            <PlayableOdds
-              odds={selection.odds}
-              playableOdds={selection.playableOdds}
-              playableBookmaker={selection.playableBookmaker}
-            />
+            ) : null}
+            <OddsPair selection={selection} locale={locale} />
             <ClosingLine
               closingOdds={selection.closingOdds}
               closingLineValue={selection.closingLineValue}
               closingBookmaker={selection.closingBookmaker}
               marginPaid={selection.marginPaid}
             />
-            <CalibrationBadge item={calibration} />
           </p>
         </div>
       ) : convergingChannels.length > 0 ? (
@@ -159,77 +133,6 @@ export function ChannelRow({
         <RejectedLabel decision={decision} />
       )}
     </div>
-  );
-}
-
-/** Real calibration (ratio réel/annoncé, same 0.85/0.70 thresholds as the
- * VANTAGE gate and the public track-record page — see dashboard.service.ts)
- * replaces the raw probability×odds "edge" figure this row used to show:
- * Rendered as the one-word ConfidenceBadge (« fiable » / « à surveiller » /
- * « peu fiable ») rather than the « Écart ≤ 15 % » measurement band, which
- * repeated calibration jargon under every pick (UX review 2026-10-11, P1-7).
- * that edge is the exact anti-predictive metric CLAUDE.md's overview warns
- * against ("claimed edge is anti-predictive... never a selection floor").
- * `item` is undefined when this (channel, competition) pair never appears
- * in the calibration lookup at all — treated the same as a measured-but-
- * too-thin sample (INSUFFICIENT_DATA). Unlike the rest of the app's "un
- * canal négatif reste affiché comme tel" stance, INSUFFICIENT_DATA renders
- * nothing here rather than a badge: per-competition samples are routinely
- * too thin for a young/low-volume channel (VANTAGE) to ever clear the
- * threshold, and a badge that almost always reads "insuffisant" carries no
- * signal — silence says the same thing without the noise. */
-export function CalibrationBadge({
-  item,
-}: {
-  item: ChannelCompetitionStatItem | undefined;
-}) {
-  const t = useTranslations("decisions");
-  const status = item?.status ?? "INSUFFICIENT_DATA";
-  // HoverCard (same pattern as InfoTooltip), not Tooltip — a plain hover-only
-  // Tooltip never opens on mobile, where there's no hover state at all.
-  // Controlling `open` explicitly and toggling it from the trigger's onClick
-  // makes tapping the badge work exactly like hovering it on desktop. Hooks
-  // stay unconditional (rules of hooks) — the early return comes after.
-  const [open, setOpen] = useState(false);
-
-  if (status === "INSUFFICIENT_DATA") return null;
-
-  // Plain-language verdict, no raw ratio/n= notation in the visible text —
-  // "0.58×" and "n=223" read as internal jargon to a lambda user (2quater).
-  const detail = t("calibration.badgeTooltip", {
-    status,
-    n: item?.sampleSize ?? 0,
-  });
-
-  return (
-    <HoverCard.Root
-      open={open}
-      onOpenChange={setOpen}
-      openDelay={200}
-      closeDelay={100}
-    >
-      <HoverCard.Trigger asChild>
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="inline-flex focus:outline-none"
-        >
-          <ConfidenceBadge status={status} className="py-0" />
-        </button>
-      </HoverCard.Trigger>
-      <HoverCard.Portal>
-        <HoverCard.Content
-          side="top"
-          sideOffset={8}
-          onEscapeKeyDown={() => setOpen(false)}
-          onPointerDownOutside={() => setOpen(false)}
-          className="z-50 w-64 rounded-2xl border border-border bg-panel p-3 text-xs text-foreground shadow-lg"
-        >
-          {detail}
-          <HoverCard.Arrow className="fill-panel" />
-        </HoverCard.Content>
-      </HoverCard.Portal>
-    </HoverCard.Root>
   );
 }
 

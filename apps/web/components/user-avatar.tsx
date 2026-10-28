@@ -5,15 +5,17 @@ type UserAvatarProps = {
   className?: string;
 };
 
+// Teintes 700 : les initiales blanches y passent 4,5:1. Les teintes 500
+// d'avant descendaient à 2,2:1 (ambre) et 2,8:1 (orange).
 const AVATAR_COLORS = [
-  "#3b82f6",
-  "#6366f1",
-  "#8b5cf6",
-  "#0ea5e9",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#f97316",
+  "#1d4ed8",
+  "#4338ca",
+  "#6d28d9",
+  "#0369a1",
+  "#047857",
+  "#b45309",
+  "#b91c1c",
+  "#c2410c",
 ];
 
 function getInitialsColor(username: string): string {

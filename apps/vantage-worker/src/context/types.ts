@@ -28,6 +28,16 @@ export type ChannelReading = {
   pick: string | null;
   probability: number | null;
   odds: number | null;
+  /**
+   * Provenance du prix ci-dessus, recopiée de la sélection du canal : book,
+   * heure du relevé, marge payée sur le groupe d'issues chez ce book et
+   * meilleure marge du relevé. Quand l'avis IA reprend cette cote, il
+   * enregistre la même provenance (analyze-fixture.ts, findKnownQuote).
+   */
+  oddsBookmaker?: string | null;
+  oddsSnapshotAt?: Date | null;
+  marginPaid?: number | null;
+  marginBest?: number | null;
   ev: number | null;
   /** Only ever set when `status !== "SELECTED"` — see NearMissReading. */
   nearMiss?: NearMissReading | null;

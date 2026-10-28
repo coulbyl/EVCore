@@ -1,0 +1,151 @@
+{
+ "route": "/dashboard/bankroll",
+ "width": 1280,
+ "theme": "light",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 8 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.2:1 (need 4.5:1) — text #898f99 on #fbfdff color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cflat-type-hierarchy%c Role sizes: body 14px, h2 16px, h1 17.6px (largest adjacent step 1.14:1; target 1.25:1; weight separates headings from body text) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 8 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.2:1 (need 4.5:1) — text #898f99 on #fbfdff color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cflat-type-hierarchy%c Role sizes: body 14px, h2 16px, h1 17.6px (largest adjacent step 1.14:1; target 1.25:1; weight separates headings from body text) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "p",
+    "cls": "truncate text-xs text-sidebar-foreground/60",
+    "text": "@e2e_tester",
+    "w": 138,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "hidden sm:block",
+    "text": "Précédent",
+    "w": 64,
+    "h": 20
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.2:1 (need 4.5:1) — text #898f99 on #fbfdff"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12 righ",
+    "text": "",
+    "w": 48,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "body",
+    "cls": "geistsans_d025f23b-module__btTCTG__variable geistmono_df95d851-module__CWPfka__v",
+    "text": "EVCore Accueil AUJOURD'HUI Coupons Avis IA Décisions SUIVI M",
+    "w": 1280,
+    "h": 800
+   },
+   "findings": [
+    {
+     "type": "flat-type-hierarchy",
+     "detail": "Role sizes: body 14px, h2 16px, h1 17.6px (largest adjacent step 1.14:1; target 1.25:1; weight separates headings from body text)",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.15rem] border border-border bg-panel-strong px-3 py-2.5 shadow-sm sm:",
+    "text": "SOLDE DÉCLARÉ 500 760 000 F",
+    "w": 280,
+    "h": 111
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.15rem] border border-border bg-panel-strong px-3 py-2.5 shadow-sm sm:",
+    "text": "DÉPÔTS DÉCLARÉS 500 000 000 F",
+    "w": 280,
+    "h": 111
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.15rem] border border-border bg-panel-strong px-3 py-2.5 shadow-sm sm:",
+    "text": "RÉSULTAT DE TES PARIS +198 F",
+    "w": 280,
+    "h": 111
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "mt-5 overflow-hidden rounded-[1.3rem] border border-border",
+    "text": "DATE TYPE PARI / NOTE MONTANT SOLDE APRÈS 27/10/26 Mise Vict",
+    "w": 822,
+    "h": 290
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  }
+ ]
+}

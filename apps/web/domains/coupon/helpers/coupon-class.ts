@@ -3,6 +3,8 @@ import type { CouponClassName } from "@/domains/coupon/types/coupon";
 // Historical categories remain readable. Regenerated historical win rates are not prospective evidence.
 export type CouponClassMeta = {
   label: string;
+  /** Nom court, sans « du jour » ni bande de cote : pour « Hier », les listes. */
+  shortLabel: string;
   /** Fréquence de gain mesurée, formulée en « 1 sur N » — lisible sans stats. */
   frequency: string;
   /** Ordre d'affichage : du plus fréquent au plus rare. */
@@ -11,13 +13,17 @@ export type CouponClassMeta = {
 };
 
 export const COUPON_CLASS_META: Record<CouponClassName, CouponClassMeta> = {
-  // Le pari sûr du jour : une jambe, favori à domicile à cote 1,10–1,35.
+  // Le favori du jour : une jambe, favori à domicile à cote 1,20–1,35.
+  // Renommé le 2026-10-24 (« Pari sûr du jour ») : « sûr » est une promesse
+  // que la mesure ne tient pas (une perte sur cinq) et que les règles de
+  // rédaction interdisent (apps/web/PRODUCT.md).
   // 84,8 % de jours gagnants sur 731 jours (docs/audits/2026-09-15/
   // GENERATOR.md), 80 % en prospectif sur 80 jours aux cotes d'analyse
   // (docs/audits/2026-10-12/MESURES-DECISIONS-COUPONS.md). Premier à l'écran :
   // c'est celui qu'un utilisateur lambda peut suivre sans se décourager.
   FAVOURITE: {
-    label: "Pari sûr du jour · cote 1,20–1,35",
+    label: "Favori du jour · cote 1,20–1,35",
+    shortLabel: "Favori",
     frequency: "Gagne environ 4 jours sur 5",
     order: -2,
     badgeVariant: "success",
@@ -30,9 +36,24 @@ export const COUPON_CLASS_META: Record<CouponClassName, CouponClassMeta> = {
   // mesurés, cote 1,55), pour que chaque jambe existe chez 1xBet au-dessus
   // de son minimum de 1,10 (docs/audits/2026-10-18/COTES-JOUABLES.md).
   COMBO: {
-    label: "Combiné du jour · 2 sélections",
+    // Sans nombre de jambes : la carte les montre, et un libellé figé à
+    // « 2 sélections » deviendrait faux au premier combiné à 3.
+    label: "Combiné du jour",
+    shortLabel: "Combiné",
     frequency: "Gagne environ 7 jours sur 10",
     order: -1.5,
+    badgeVariant: "accent",
+  },
+  // Le coupon cote 2 (2026-10-28) : deux jambes de cote combinée 2 à 3 chez
+  // 1xBet, prises parmi tout ce qui est coté et classées par la probabilité
+  // du marché sans marge. Rejoué sur 115 jours : un coupon 114 jours, 44 %
+  // annoncés, 48 % ± 9 réalisés (docs/audits/2026-10-28/
+  // SELECTIONS-LAISSEES.md). « Environ 1 jour sur 2 », jamais le 48 %.
+  DOUBLE: {
+    label: "Coupon cote 2",
+    shortLabel: "Cote 2",
+    frequency: "Gagne environ 1 jour sur 2",
+    order: -1.25,
     badgeVariant: "accent",
   },
   // Le coupon long (2026-10-18) : cible 2,5, plafond 5, jambes de 1,20 à 1,80
@@ -41,6 +62,7 @@ export const COUPON_CLASS_META: Record<CouponClassName, CouponClassMeta> = {
   // (docs/audits/2026-10-18/COTES-JOUABLES.md §6).
   LONG: {
     label: "Coupon long · cote 2,5–5",
+    shortLabel: "Coupon long",
     frequency: "Gagne environ 1 jour sur 3",
     order: -1,
     badgeVariant: "warning",
@@ -53,24 +75,28 @@ export const COUPON_CLASS_META: Record<CouponClassName, CouponClassMeta> = {
   // en mieux ».
   UNIQUE: {
     label: "Coupon prix · cote 5–15",
+    shortLabel: "Coupon prix",
     frequency: "Gagne environ 1 jour sur 7",
     order: 0,
     badgeVariant: "warning",
   },
   SAFE: {
     label: "Cote courte",
+    shortLabel: "Cote courte",
     frequency: "Historique ancien",
     order: 0,
     badgeVariant: "success",
   },
   BALANCED: {
     label: "Cote moyenne",
+    shortLabel: "Cote moyenne",
     frequency: "Historique ancien",
     order: 1,
     badgeVariant: "accent",
   },
   BOLD: {
     label: "Cote longue",
+    shortLabel: "Cote longue",
     frequency: "Historique ancien",
     order: 2,
     badgeVariant: "warning",

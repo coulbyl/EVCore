@@ -190,29 +190,6 @@ export class DashboardRepository {
     };
   }
 
-  getSettledBetsForPnl(opts: { since: Date | null; until: Date | null }) {
-    const scheduledAt = {
-      ...(opts.since ? { gte: opts.since } : {}),
-      ...(opts.until ? { lte: opts.until } : {}),
-    };
-    const hasRange = opts.since !== null || opts.until !== null;
-    return this.prisma.client.bet.findMany({
-      where: {
-        source: BetSource.MODEL,
-        status: { in: [BetStatus.WON, BetStatus.LOST] },
-        ...(hasRange ? { modelRun: { fixture: { scheduledAt } } } : {}),
-      },
-      select: {
-        status: true,
-        stakePct: true,
-        oddsSnapshot: true,
-        channelSelection: {
-          select: { channelDecision: { select: { channel: true } } },
-        },
-      },
-    });
-  }
-
   getCompetitionData(since: Date, canal?: 'VALUE' | 'SAFE') {
     const fixtureFilter = { scheduledAt: { gte: since } };
     const competitionSelect = {
@@ -267,10 +244,8 @@ export class DashboardRepository {
     ]);
   }
 
-  // Scoped to the dashboard's period filter (fixture.scheduledAt), matching
-  // getSettledBetsForPnl — so channel-health/channel-stats stay consistent
-  // with the SAFE/VALUE PnL cards on the same page instead of always
-  // reflecting an unrelated "last 200 ever" window.
+  // Scoped to the dashboard's period filter (fixture.scheduledAt) instead of
+  // an unrelated "last 200 ever" window.
   findModelBetsInRange(
     channel: StrategyChannel,
     range: { since: Date; until: Date },

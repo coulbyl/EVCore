@@ -49,7 +49,7 @@ export function EmailVerifyFlow({ onBack }: { onBack: () => void }) {
         await sendVerificationEmail();
         setSent(true);
       } catch {
-        setError("Impossible d'envoyer le code. Réessayez.");
+        setError("Impossible d'envoyer le code. Réessaie.");
       } finally {
         setSending(false);
       }
@@ -64,7 +64,7 @@ export function EmailVerifyFlow({ onBack }: { onBack: () => void }) {
       await sendVerificationEmail();
       setSent(true);
     } catch {
-      setError("Impossible d'envoyer le code. Réessayez.");
+      setError("Impossible d'envoyer le code. Réessaie.");
     } finally {
       setSending(false);
     }
@@ -102,8 +102,8 @@ export function EmailVerifyFlow({ onBack }: { onBack: () => void }) {
           </p>
         ) : sent ? (
           <p className="rounded-xl border border-border bg-panel px-4 py-3 text-sm text-muted-foreground">
-            Un code à 6 chiffres a été envoyé à votre adresse email. Vérifiez
-            aussi vos spams.
+            Un code à 6 chiffres a été envoyé à ton adresse e-mail. Regarde
+            aussi dans tes spams.
           </p>
         ) : null}
 

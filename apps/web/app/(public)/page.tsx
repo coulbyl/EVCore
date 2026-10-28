@@ -14,7 +14,7 @@ import {
   Clock,
   CheckCircle2,
 } from "lucide-react";
-import { PwaInstallBanner } from "@/components/pwa-install-banner";
+import { LEGAL_LINKS } from "./(legal)/components/legal-page";
 
 /* ─── Data ─────────────────────────────────────────────────── */
 
@@ -48,9 +48,12 @@ import { PwaInstallBanner } from "@/components/pwa-install-banner";
 //      que le moteur écrit portent `userId: null` — c'est le track record du
 //      système, pas des positions prises pour un tiers, et la mise unitaire
 //      fixe est la convention de ce suivi, pas un ordre passé. Proscrire
-//      « misé en votre nom », « le moteur applique une mise », « chaque
+//      « misé en ton nom », « le moteur applique une mise », « chaque
 //      position reçoit une mise » : préférer « le moteur raisonne à », « il
-//      vous propose », « la décision reste la vôtre ».
+//      te propose », « la décision reste la tienne ».
+//   5. (2026-10-27) Tutoiement, et aucun vocabulaire de l'investissement
+//      (« investir », « portefeuille », « allocation de capital ») : les
+//      règles de rédaction de apps/web/PRODUCT.md s'appliquent ici aussi.
 //   4. NE JAMAIS nier une fonctionnalité réelle pour faire une formule.
 //      « Vous ne recevez pas des pronostics » sonnait bien et était faux : le
 //      produit livre des pronostics ET des coupons. De même, « presque rien
@@ -60,15 +63,27 @@ import { PwaInstallBanner } from "@/components/pwa-install-banner";
 //      Ce qui distingue EVCore n'est pas de s'abstenir, c'est de livrer le
 //      raisonnement avec le pronostic, refus compris.
 //
-// Relevé du 2026-08-22 : 52 926 matchs analysés, 302 763 sélections réglées,
-// 68 championnats, historique depuis 2019-06-11. Réviser les planchers quand
-// ils deviennent ridicules, pas avant.
+// Relevé du 2026-10-24 (dump de production), compté comme CLAUDE.md
+// l'exige : seules les analyses faites AVANT le coup d'envoi, une ligne par
+// pari réel (vue `channel_selection_deduped`).
+//   - 6 440 matchs analysés avant le coup d'envoi, tous depuis le
+//     2026-07-01 ;
+//   - 58 656 pronostics réglés (gagnés ou perdus) ;
+//   - 62 championnats ;
+//   - données de matchs en base depuis le 2019-06-06 (historique servant au
+//     modèle, pas des pronostics).
+// Le relevé du 2026-08-22 (« 50 000+ matchs », « 300 000+ prédictions »,
+// « 7 saisons ») comptait la table brute : chaque match y est ré-analysé
+// 5 à 7 fois, et 45 500 matchs incluaient des ré-analyses après coup de
+// matchs historiques. Il gonflait les volumes d'un facteur 8 (audit du
+// 2026-10-23, P1-6). Réviser les planchers quand ils deviennent
+// ridicules, pas avant, et toujours avec ce même comptage.
 // ─────────────────────────────────────────────────────────────
 const SCALE = [
-  { v: "50 000+", l: "matchs analysés" },
-  { v: "300 000+", l: "prédictions confrontées au résultat" },
-  { v: "68", l: "championnats couverts" },
-  { v: "7", l: "saisons d'historique" },
+  { v: "6 000+", l: "matchs analysés avant le coup d'envoi" },
+  { v: "50 000+", l: "pronostics confrontés au résultat" },
+  { v: "60+", l: "championnats couverts" },
+  { v: "2019", l: "données de matchs depuis" },
 ];
 
 // Les familles de moteurs, pas les canaux. Un canal est une déclinaison de
@@ -88,7 +103,7 @@ const FAMILIES = [
     colorCls: "text-emerald-600 dark:text-emerald-400",
     bgCls: "bg-emerald-500/[0.07] border-emerald-500/20",
     tagCls:
-      "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+      "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/20",
     glowCls: "bg-emerald-500/10",
   },
   {
@@ -103,7 +118,7 @@ const FAMILIES = [
     colorCls: "text-cyan-600 dark:text-cyan-400",
     bgCls: "bg-cyan-500/[0.07] border-cyan-500/20",
     tagCls:
-      "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/20",
+      "bg-cyan-500/15 text-cyan-800 dark:text-cyan-300 border-cyan-500/20",
     glowCls: "bg-cyan-500/10",
   },
   {
@@ -114,7 +129,7 @@ const FAMILIES = [
     colorCls: "text-violet-600 dark:text-violet-400",
     bgCls: "bg-violet-500/[0.07] border-violet-500/20",
     tagCls:
-      "bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/20",
+      "bg-violet-500/15 text-violet-800 dark:text-violet-300 border-violet-500/20",
     glowCls: "bg-violet-500/10",
   },
 ];
@@ -125,17 +140,17 @@ const DISCIPLINE = [
   {
     stat: "19",
     title: "Chaque canal garde sa propre mesure.",
-    body: "Le moteur fait tourner dix-neuf canaux de prédiction. Ils restent consultables avec leur volume, leur calibration observée et leur rendement simulé, sans badge de recommandation. EVCore analyse et propose ; la décision et le pari vous appartiennent.",
+    body: "Le moteur fait tourner dix-neuf canaux de prédiction. Chacun reste consultable avec son volume et sa calibration observée : ce qu'il annonce, et ce qui arrive vraiment. EVCore analyse et propose ; la décision et le pari t'appartiennent.",
   },
   {
     stat: "Nommée",
     title: "Chaque pronostic écarté l'est pour une raison lisible.",
-    body: "Cote trop courte, divergence modèle-marché implausible, pronostic qui contredit le modèle qui l'a produit. Rien n'est écarté en silence : la raison est affichée à côté, et vous pouvez la contester.",
+    body: "Cote trop courte, écart invraisemblable entre le modèle et le marché, pronostic qui contredit le modèle qui l'a produit. Rien n'est écarté en silence : la raison est affichée à côté, et tu peux la contester.",
   },
   {
-    stat: "AVOID",
+    stat: "Garde-fou",
     title: "Un canal dont le seul rôle est de dire non.",
-    body: "AVOID n'émet jamais de pronostic. Il compare la probabilité du modèle à celle du marché et, quand l'écart devient invraisemblable, il retire le match entier de la publication. Son rôle est un garde-fou explicite, pas une promesse de performance.",
+    body: "Ce canal n'émet jamais de pronostic. Il compare la probabilité du modèle à celle du marché et, quand l'écart devient invraisemblable, il retire le match entier de la publication. C'est un garde-fou explicite, pas une promesse de performance.",
   },
 ];
 
@@ -148,12 +163,12 @@ const STEPS = [
   {
     n: "02",
     title: "Une unité de mise, la même partout",
-    body: "Le moteur raisonne à mise unitaire fixe, jamais dimensionnée à sa propre confiance : miser plus quand le modèle est sûr de lui, c'est amplifier ses erreurs les plus coûteuses. C'est uniquement la convention utilisée pour comparer ses résultats.",
+    body: "Le moteur raisonne à mise fixe, jamais ajustée à sa propre confiance : miser plus quand le modèle se croit en avance, c'est amplifier ses erreurs les plus coûteuses. C'est la convention utilisée pour mesurer ses résultats, et celle qu'on te conseille.",
   },
   {
     n: "03",
     title: "Tout est réglé, tout est visible",
-    body: "Les positions retenues comme celles écartées sont confrontées au résultat réel, qu'elles aient été jouées ou non. Vous suivez la performance par canal, par période, avec un historique complet et auditable.",
+    body: "Les pronostics retenus comme ceux écartés sont confrontés au résultat réel, qu'ils aient été joués ou non. Tu suis les résultats par canal et par période, pertes comprises, avec un historique complet.",
   },
 ];
 
@@ -188,7 +203,7 @@ function HeroPreview() {
       <div className="relative overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_32px_80px_rgba(0,0,0,0.25)] backdrop-blur-sm">
         {/* En-tête : la distribution de buts, d'où tout le reste dérive */}
         <div className="border-b border-border px-5 py-4">
-          <p className="text-[0.58rem] font-bold uppercase tracking-[0.28em] text-accent">
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-accent">
             Lecture du match
           </p>
           <div className="mt-2 flex items-baseline gap-2">
@@ -199,7 +214,7 @@ function HeroPreview() {
             <span className="text-2xl font-bold tabular-nums text-foreground">
               1.14
             </span>
-            <span className="ml-1 text-[0.68rem] text-muted-foreground">
+            <span className="ml-1 text-xs text-muted-foreground">
               buts attendus
             </span>
           </div>
@@ -216,7 +231,7 @@ function HeroPreview() {
                 <p className="truncate text-xs font-bold text-foreground">
                   {p.pick}
                 </p>
-                <p className="truncate text-[0.65rem] text-muted-foreground">
+                <p className="truncate text-xs text-muted-foreground">
                   {p.market}
                 </p>
               </div>
@@ -225,7 +240,7 @@ function HeroPreview() {
                   {p.odds}
                 </p>
                 {/* La fréquence attendue, jamais la cote toute seule. */}
-                <p className="text-[0.65rem] font-semibold tabular-nums text-accent">
+                <p className="text-xs font-semibold tabular-nums text-accent">
                   {p.rate} attendus
                 </p>
               </div>
@@ -233,17 +248,17 @@ function HeroPreview() {
           ))}
 
           {/* Ce qui est écarté fait partie de la lecture, avec son motif */}
-          <div className="flex items-center justify-between rounded-xl border border-dashed border-border px-3 py-2.5 opacity-55">
+          <div className="flex items-center justify-between rounded-xl border border-dashed border-border px-3 py-2.5">
             <div className="min-w-0">
               <p className="truncate text-xs font-bold text-foreground line-through decoration-1">
                 2-1
               </p>
-              <p className="truncate text-[0.65rem] text-muted-foreground">
+              <p className="truncate text-xs text-muted-foreground">
                 Score exact
               </p>
             </div>
-            <span className="shrink-0 rounded-md border border-border px-1.5 py-0.5 text-[0.6rem] text-muted-foreground">
-              Écarté — edge trop élevé
+            <span className="shrink-0 rounded-md border border-border px-1.5 py-0.5 text-xs text-muted-foreground">
+              Écarté : trop loin de la cote
             </span>
           </div>
         </div>
@@ -303,34 +318,33 @@ export default function LandingPage() {
 
         {/* Left: copy */}
         <div className="relative z-10 w-full max-w-xl text-center lg:text-left">
-          <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-accent/35 bg-accent/8 px-3.5 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.22em] text-accent">
-            Stratégie d&apos;investissement sportif
-          </span>
+          {/* Le test des cinq secondes (audit du 2026-10-23, P2-2) : football,
+              gratuit, 18+ et la promesse se lisent avant tout défilement. */}
+          <p className="mb-5 text-sm font-semibold text-accent">
+            Analyses de football gratuites · 18+
+          </p>
 
           <h1 className="text-4xl font-black leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.4rem]">
-            Un avis sur chaque match.
+            Avant de parier,
             <br />
-            <span className="text-accent">
-              Une conviction sur presque aucun.
-            </span>
+            <span className="text-accent">lis le match.</span>
           </h1>
 
           <p className="mx-auto mt-6 max-w-lg text-base leading-relaxed text-muted-foreground lg:mx-0 lg:text-[1.05rem]">
             Sur chaque match, le moteur pose une lecture complète : combien de
-            buts attendus et pour qui, quelle probabilité calibrée sur chaque
-            marché, et pourquoi il retient ou écarte. Vous recevez des
-            pronostics et des coupons — et, avec eux, tout le raisonnement qui
-            les a produits.
+            buts attendus et pour qui, quelle probabilité sur chaque marché, et
+            pourquoi il retient ou écarte. Tu reçois des pronostics et des
+            coupons, et avec eux tout le raisonnement qui les a produits.
           </p>
 
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground/60 lg:justify-start">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground lg:justify-start">
             {[
-              "50 000+ matchs analysés",
-              "68 championnats · 7 saisons",
-              "Accès sur invitation",
+              "6 000+ matchs analysés",
+              "60+ championnats",
+              "Résultats réglés, pertes comprises",
             ].map((s) => (
               <span key={s} className="flex items-center gap-1.5">
-                <CheckCircle2 size={13} className="text-accent/60" />
+                <CheckCircle2 size={13} className="text-accent" />
                 {s}
               </span>
             ))}
@@ -341,7 +355,7 @@ export default function LandingPage() {
               href="/auth/register"
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-7 py-3.5 text-sm font-bold text-accent-foreground shadow-[0_8px_32px_rgba(15,118,110,0.35)] transition-all hover:opacity-90 hover:shadow-[0_12px_40px_rgba(15,118,110,0.4)] sm:w-auto"
             >
-              Rejoindre la stratégie <ArrowRight size={15} />
+              Créer mon compte gratuit <ArrowRight size={15} />
             </Link>
             <Link
               href="/auth/login"
@@ -362,10 +376,7 @@ export default function LandingPage() {
       <section className="border-t border-border bg-panel/50 px-6 py-24 sm:px-10">
         <div className="mx-auto max-w-6xl">
           <div className="mb-14 text-center">
-            <p className="text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent">
-              Le moteur
-            </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
               Trois familles. Pas trente pronostics.
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
@@ -387,16 +398,16 @@ export default function LandingPage() {
                 />
 
                 <span
-                  className={`w-fit rounded-lg border px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-widest ${f.tagCls}`}
+                  className={`w-fit rounded-lg border px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${f.tagCls}`}
                 >
                   {f.tag}
                 </span>
 
                 <div>
-                  <p className="text-[0.9rem] font-semibold text-foreground">
+                  <p className="text-base font-semibold text-foreground">
                     {f.headline}
                   </p>
-                  <p className="mt-2 text-[0.8rem] leading-6 text-muted-foreground">
+                  <p className="mt-2 text-sm leading-6 text-pretty text-muted-foreground">
                     {f.body}
                   </p>
                 </div>
@@ -405,7 +416,7 @@ export default function LandingPage() {
                   {f.markets.map((m) => (
                     <li
                       key={m}
-                      className="flex items-center gap-2 text-[0.75rem] text-muted-foreground"
+                      className="flex items-center gap-2 text-sm text-muted-foreground"
                     >
                       <CheckCircle2 size={11} className={f.colorCls} />
                       {m}
@@ -423,7 +434,7 @@ export default function LandingPage() {
                 <p className="text-2xl font-black tabular-nums text-foreground">
                   {s.v}
                 </p>
-                <p className="mt-0.5 text-[0.7rem] leading-snug text-muted-foreground">
+                <p className="mt-0.5 text-sm leading-snug text-muted-foreground">
                   {s.l}
                 </p>
               </div>
@@ -436,11 +447,8 @@ export default function LandingPage() {
       <section className="px-6 py-24 sm:px-10">
         <div className="mx-auto max-w-6xl">
           <div className="mb-14 text-center">
-            <p className="text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent">
-              La discipline
-            </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-              Ce qu&apos;on refuse de vous proposer.
+            <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+              Ce qu&apos;on refuse de te proposer.
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
               Un moteur de prédiction se juge à ce qu&apos;il écarte, pas à ce
@@ -455,13 +463,13 @@ export default function LandingPage() {
                 key={d.title}
                 className="flex flex-col gap-4 rounded-2xl border border-warning/25 bg-warning/[0.05] p-6"
               >
-                <span className="w-fit rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-1 text-[0.7rem] font-black uppercase tracking-widest tabular-nums text-warning">
+                <span className="w-fit rounded-lg border border-warning/30 px-2.5 py-1 text-xs font-bold uppercase tracking-wide tabular-nums text-warning">
                   {d.stat}
                 </span>
-                <p className="text-[0.9rem] font-semibold text-foreground">
+                <p className="text-base font-semibold text-foreground">
                   {d.title}
                 </p>
-                <p className="text-[0.8rem] leading-6 text-muted-foreground">
+                <p className="text-sm leading-6 text-pretty text-muted-foreground">
                   {d.body}
                 </p>
               </div>
@@ -474,11 +482,8 @@ export default function LandingPage() {
       <section className="px-6 py-24 sm:px-10">
         <div className="mx-auto max-w-6xl">
           <div className="mb-14 text-center">
-            <p className="text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent">
-              Fonctionnalités
-            </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-              Conçu pour l&apos;investisseur.
+            <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+              Conçu pour le parieur qui veut de la méthode.
             </h2>
           </div>
 
@@ -490,16 +495,13 @@ export default function LandingPage() {
                 <Layers size={18} />
               </div>
               <div className="mt-8 lg:mt-12">
-                <p className="text-[0.6rem] font-bold uppercase tracking-widest text-accent/70">
-                  Discipline
-                </p>
                 <h3 className="mt-2 text-xl font-bold text-foreground lg:text-2xl">
                   Une mise. Répétée.
                 </h3>
-                <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                <p className="mt-2 max-w-sm text-sm leading-relaxed text-foreground/85">
                   Pas de jackpot, pas d&apos;improvisation. Le moteur raisonne à
-                  mise unitaire fixe et vous propose de faire pareil. La
-                  régularité est la stratégie — pas l&apos;exception.
+                  mise fixe et te propose de faire pareil. La régularité est la
+                  méthode, pas l&apos;exception.
                 </p>
               </div>
               {/* Visual bar */}
@@ -520,16 +522,12 @@ export default function LandingPage() {
                 <Shield size={18} />
               </div>
               <div className="mt-6">
-                <p className="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/50">
-                  Risque
-                </p>
                 <h3 className="mt-2 text-lg font-bold text-foreground">
-                  Drawdown contrôlé
+                  Un garde-fou sur les marchés perdants
                 </h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Mise unitaire fixe, jamais dimensionnée à la confiance du
-                  modèle. Un marché qui décroche durablement est suspendu par le
-                  moteur, pas par une décision au cas par cas.
+                  Un marché qui perd durablement est suspendu automatiquement
+                  par le moteur, pas par une décision au cas par cas.
                 </p>
               </div>
             </div>
@@ -540,15 +538,12 @@ export default function LandingPage() {
                 <Clock size={18} />
               </div>
               <div className="mt-6">
-                <p className="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/50">
-                  Transparence
-                </p>
                 <h3 className="mt-2 text-lg font-bold text-foreground">
                   Décisions lisibles
                 </h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Vous comprenez pourquoi chaque position a été prise ou
-                  refusée. Pas de boîte noire.
+                  Tu comprends pourquoi chaque pronostic a été retenu ou écarté.
+                  Pas de boîte noire.
                 </p>
               </div>
             </div>
@@ -559,17 +554,13 @@ export default function LandingPage() {
                 <TrendingUp size={18} />
               </div>
               <div className="mt-8 lg:mt-10">
-                <p className="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/50">
-                  Philosophie
-                </p>
                 <h3 className="mt-2 text-xl font-bold text-foreground lg:text-2xl">
-                  Investir, pas parier.
+                  Une méthode, pas des tuyaux.
                 </h3>
                 <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-                  EVCore présente chaque position comme une décision
-                  d&apos;allocation de capital — logique reproductible, critères
-                  fixes, suivi complet. C&apos;est vous qui décidez de la
-                  prendre.
+                  Chaque pronostic arrive avec sa probabilité, son raisonnement
+                  et des critères toujours identiques, puis il est réglé en
+                  public. C&apos;est toi qui décides de le jouer.
                 </p>
               </div>
               {/* Pas de taux de réussite ici : voir la règle de maintenance en
@@ -579,7 +570,7 @@ export default function LandingPage() {
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   Aucun taux de réussite n&apos;est affiché ici. À nos volumes,
                   l&apos;écart entre un bon et un mauvais trimestre reste sous
-                  le seuil de ce qu&apos;on peut distinguer du hasard — le
+                  le seuil de ce qu&apos;on peut distinguer du hasard : le
                   brandir serait vendre du bruit. Les résultats complets, eux,
                   sont dans l&apos;app, canal par canal.
                 </p>
@@ -593,11 +584,8 @@ export default function LandingPage() {
       <section className="border-t border-border bg-panel/50 px-6 py-24 sm:px-10">
         <div className="mx-auto max-w-6xl">
           <div className="mb-14 text-center">
-            <p className="text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent">
-              Comment ça fonctionne
-            </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-              Une position. Une mise. Un suivi.
+            <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+              Un pronostic. Une mise fixe. Un suivi.
             </h2>
           </div>
 
@@ -632,18 +620,14 @@ export default function LandingPage() {
       <section className="border-t border-border px-6 py-28 text-center sm:px-10">
         <div className="relative mx-auto max-w-2xl">
           <div className="pointer-events-none absolute -inset-12 -z-10 bg-[radial-gradient(ellipse_80%_70%_at_50%_50%,rgba(15,118,110,0.14),transparent_70%)]" />
-
-          <p className="text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent">
-            Prêt à investir ?
-          </p>
-          <h2 className="mt-4 text-4xl font-black leading-tight tracking-tight sm:text-5xl">
-            Notre analyse. Votre décision.
+          <h2 className="text-4xl font-black leading-tight tracking-tight text-balance sm:text-5xl">
+            Notre analyse.
             <br />
-            <span className="text-accent">C&apos;est ça, investir.</span>
+            <span className="text-accent">Ta décision.</span>
           </h2>
           <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-muted-foreground">
-            Accès sur invitation. L&apos;objectif n&apos;est pas de multiplier
-            les paris — c&apos;est de construire un portefeuille avec méthode.
+            Gratuit, réservé aux 18+. L&apos;objectif n&apos;est pas de parier
+            plus, c&apos;est de parier en sachant ce que tu fais.
           </p>
 
           <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
@@ -651,7 +635,7 @@ export default function LandingPage() {
               href="/auth/register"
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-8 py-4 text-sm font-bold text-accent-foreground shadow-[0_8px_40px_rgba(15,118,110,0.3)] transition-all hover:opacity-90 hover:shadow-[0_12px_48px_rgba(15,118,110,0.4)] sm:w-auto"
             >
-              Rejoindre la stratégie <ArrowRight size={15} />
+              Créer mon compte gratuit <ArrowRight size={15} />
             </Link>
             <Link
               href="/auth/login"
@@ -665,6 +649,25 @@ export default function LandingPage() {
 
       {/* ── Footer ── */}
       <footer className="border-t border-border px-6 py-8 sm:px-10">
+        <nav
+          aria-label="Pages légales"
+          className="mx-auto mb-6 flex max-w-6xl flex-wrap gap-x-6 gap-y-1 text-sm"
+        >
+          {LEGAL_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="inline-flex min-h-11 items-center text-muted-foreground hover:text-foreground hover:underline"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+        <p className="mx-auto mb-6 max-w-6xl text-sm text-muted-foreground">
+          18+ (21+ au Cameroun) · Parier comporte des risques de perte. Ne mise
+          que ce que tu peux perdre. EVCore ne prend aucune mise et ne vend pas
+          de coupons.
+        </p>
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <span className="flex items-center gap-1">
             <Image
@@ -677,13 +680,14 @@ export default function LandingPage() {
             <span className="text-xs font-black text-accent">Core</span>
           </span>
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} — Investir sur la valeur, pas sur
-            l&apos;émotion
+            © {new Date().getFullYear()} EVCore · Analyses de football
           </p>
         </div>
       </footer>
 
-      <PwaInstallBanner />
+      {/* Plus de bannière d'installation ici : sur téléphone elle couvrait
+          le second bouton d'appel à l'action dès la première visite (audit
+          du 2026-10-23, P2-4). Elle s'affiche dans le tableau de bord. */}
     </main>
   );
 }

@@ -10,6 +10,9 @@ export type RegisterInput = {
   fullName: string;
   password: string;
   bio?: string;
+  /** Âge légal confirmé et conditions acceptées : exigés par l'API. */
+  confirmAge: true;
+  acceptTerms: true;
 };
 
 export async function register(input: RegisterInput): Promise<AuthSession> {

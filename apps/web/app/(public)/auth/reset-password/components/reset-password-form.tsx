@@ -74,7 +74,7 @@ export function ResetPasswordForm() {
       setError(
         err instanceof Error
           ? err.message
-          : "Lien invalide ou expiré. Demandez un nouveau lien.",
+          : "Lien invalide ou expiré. Demande un nouveau lien.",
       );
     } finally {
       setIsSubmitting(false);

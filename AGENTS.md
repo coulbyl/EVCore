@@ -165,3 +165,7 @@ node_modules/next/dist/docs/
 ├── 02-pages/
 ├── 03-architecture/
 └── index.mdx
+
+## Review expectations
+
+Before touching settlement, the bankroll, slip results or a scheduled job, and before any PR to main, read `docs/review-expectations.md`: rules drawn from real review findings (replay-safe money writes, counts and amounts over the same set, unknown is not zero, late arrivals in dated jobs, Decimal products, repository rule in touched services).

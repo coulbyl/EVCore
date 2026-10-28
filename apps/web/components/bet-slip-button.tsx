@@ -4,14 +4,17 @@ import { ReceiptText } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@evcore/ui/cn";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
+import { useActivePause } from "@/domains/auth/use-cases/use-active-pause";
 
 export function BetSlipButton() {
   const { draft, open } = useBetSlip();
   const pathname = usePathname();
   const count = draft.items.length;
   const hiddenOnPage = pathname.startsWith("/dashboard/bet-slips");
+  // Pendant la pause, on ne compose ni ne joue de coupon.
+  const pauseEnd = useActivePause();
 
-  if (hiddenOnPage) return null;
+  if (hiddenOnPage || pauseEnd) return null;
 
   const hasItems = count > 0;
   const displayCount = count > 9 ? "9+" : count;
@@ -25,7 +28,7 @@ export function BetSlipButton() {
         title="Mon coupon"
         data-tour="bet-slip-composer"
         className={cn(
-          "relative flex size-9 items-center justify-center rounded-xl border text-sm font-semibold transition-colors md:size-auto md:min-h-11 md:gap-2 md:px-3",
+          "relative flex size-11 items-center justify-center rounded-xl border text-sm font-semibold transition-colors md:size-auto md:min-h-11 md:gap-2 md:px-3",
           hasItems
             ? "border-accent/30 bg-accent/8 text-accent hover:bg-accent/12"
             : "border-border bg-panel-strong text-muted-foreground hover:bg-secondary hover:text-foreground",

@@ -1,0 +1,73 @@
+{
+ "url": "http://localhost:3010/dashboard/bet-slips",
+ "title": "EVCore",
+ "lang": "fr",
+ "headings": [
+  "h2: #bs1",
+  "h2: #bs2",
+  "h2: #bs3"
+ ],
+ "overflowX": false,
+ "textElements": 52,
+ "smallText": {
+  "count": 9,
+  "samples": [
+   {
+    "text": "MISÉ",
+    "px": 11
+   },
+   {
+    "text": "NET RÉGLÉ",
+    "px": 11
+   },
+   {
+    "text": "EN ATTENTE",
+    "px": 11
+   },
+   {
+    "text": "COUPON",
+    "px": 10.9
+   },
+   {
+    "text": "Gagné",
+    "px": 9.9
+   },
+   {
+    "text": "Perdu",
+    "px": 9.9
+   },
+   {
+    "text": "En attente",
+    "px": 9.9
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 16,
+ "smallTapTargets": {
+  "count": 2,
+  "samples": [
+   {
+    "text": "Filtres 2",
+    "w": 115,
+    "h": 32,
+    "tag": "button"
+   },
+   {
+    "text": "Réinitialiser",
+    "w": 62,
+    "h": 16,
+    "tag": "button"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

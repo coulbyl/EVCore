@@ -97,3 +97,35 @@ describe('CouponService.getCoupons', () => {
     expect(coupon?.legs[0]?.modelRunId).toBe('latest-run');
   });
 });
+
+describe('CouponService.getTrackRecord', () => {
+  it('returns each class with the exact settled date range', async () => {
+    const findClassTrackRecord = vi.fn().mockResolvedValue([
+      {
+        source: 'PRICE_COMPOSER',
+        targetOddsMin: 1.2,
+        settled: 7,
+        won: 6,
+        avgOdds: 1.19,
+        returnPerUnit: 0.97,
+        firstDay: new Date('2026-10-16T00:00:00.000Z'),
+        lastDay: new Date('2026-10-22T00:00:00.000Z'),
+        worstLosingStreak: 1,
+      },
+    ]);
+    const repo = { findClassTrackRecord } as unknown as CouponRepository;
+    const playable = {} as unknown as PlayableOddsRepository;
+
+    const [row] = await new CouponService(repo, playable).getTrackRecord(30);
+
+    expect(row).toMatchObject({
+      settled: 7,
+      won: 6,
+      returnPerUnit: 0.97,
+      firstDay: '2026-10-16',
+      lastDay: '2026-10-22',
+      worstLosingStreak: 1,
+      days: 30,
+    });
+  });
+});

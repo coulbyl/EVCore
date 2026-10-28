@@ -5,6 +5,7 @@ import {
   CHANNEL_DECISION_STATUS,
   Market,
   POOL_ELIGIBLE_CHANNELS,
+  POOL_EXCLUDED_MARKETS,
   calculateEV,
   classifyAvoidSignal,
   computeDataCoverage,
@@ -196,7 +197,13 @@ export async function getPoolForRange(
             select: {
               channel: true,
               selections: {
-                where: { rank: 1, odds: { not: null } },
+                // Jamais de « remboursé si match nul » dans un coupon
+                // (POOL_EXCLUDED_MARKETS, décision du 2026-10-28).
+                where: {
+                  rank: 1,
+                  odds: { not: null },
+                  market: { notIn: [...POOL_EXCLUDED_MARKETS] as Market[] },
+                },
                 select: {
                   id: true,
                   market: true,

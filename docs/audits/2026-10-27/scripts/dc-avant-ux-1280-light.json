@@ -1,0 +1,174 @@
+{
+ "url": "http://localhost:3010/dashboard/decisions",
+ "title": "Décisions — EVCore",
+ "lang": "fr",
+ "headings": [],
+ "overflowX": false,
+ "textElements": 66,
+ "smallText": {
+  "count": 19,
+  "samples": [
+   {
+    "text": "AUJOURD'HUI",
+    "px": 11
+   },
+   {
+    "text": "SUIVI",
+    "px": 11
+   },
+   {
+    "text": "ANALYSE",
+    "px": 11
+   },
+   {
+    "text": "NOTRE SÉLECTION",
+    "px": 9.9
+   },
+   {
+    "text": "Résultat",
+    "px": 10.9
+   },
+   {
+    "text": "79% de chances",
+    "px": 10.9
+   },
+   {
+    "text": "@1.28",
+    "px": 10.9
+   },
+   {
+    "text": "1xBet 1.24",
+    "px": 10.9
+   },
+   {
+    "text": "Fiable",
+    "px": 9.9
+   },
+   {
+    "text": "Double chance",
+    "px": 10.9
+   },
+   {
+    "text": "76% de chances",
+    "px": 10.9
+   },
+   {
+    "text": "@1.36",
+    "px": 10.9
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 1,
+  "samples": [
+   {
+    "text": "Données suspectes",
+    "px": 12,
+    "ratio": 3.67,
+    "min": 4.5
+   }
+  ]
+ },
+ "interactive": 32,
+ "smallTapTargets": {
+  "count": 21,
+  "samples": [
+   {
+    "text": "Accueil",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Coupons",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Avis IA",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Décisions",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Matchs",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mes coupons",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Inbox",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Formation",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mesures historiques",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Notifications",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Paramètres du compte",
+    "w": 36,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Notifications",
+    "w": 42,
+    "h": 44,
+    "tag": "a"
+   },
+   {
+    "text": "Mon coupon",
+    "w": 42,
+    "h": 44,
+    "tag": "button"
+   },
+   {
+    "text": "Ligue Tous",
+    "w": 128,
+    "h": 42,
+    "tag": "button"
+   },
+   {
+    "text": "Canal Match",
+    "w": 139,
+    "h": 42,
+    "tag": "button"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

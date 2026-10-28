@@ -1,0 +1,7 @@
+                                               variante   jours  jambes_moy  cote_moy annonce   realise cout_attendu marge_moy mise_fixe_realisee
+       A. Vivier actuel, cellule, 2 ou 3 (proposé hier)  89/115        2.03      2.19  50.4 % 48.3 ± 10       -9.5 %    10.4 %             +4.3 %
+                    B. Vivier actuel, cellule, 2 puis 3  89/115        2.00      2.19  50.3 % 49.4 ± 10       -9.4 %    10.2 %             +6.7 %
+                    C. Vivier élargi, cellule, 2 puis 3 105/115        2.00      2.16  53.2 % 45.7 ± 10      -13.2 %    14.5 %             -2.1 %
+       D. Élargi + Données suspectes, cellule, 2 puis 3 106/115        2.00      2.15  53.0 %  34.9 ± 9      -13.5 %    14.8 %            -25.2 %
+             E. Vivier élargi, prix du marché, 2 puis 3 114/115        2.00      2.11  43.6 %  48.2 ± 9       -7.9 %     8.4 %             +1.8 %
+F. Élargi + Données suspectes, prix du marché, 2 puis 3 114/115        2.00      2.11  43.8 %  48.2 ± 9       -7.7 %     8.2 %             +1.8 %

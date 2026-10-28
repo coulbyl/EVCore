@@ -23,7 +23,6 @@ import {
   Receipt,
   Scale,
   Settings,
-  Trophy,
   Users,
   Wand2,
 } from "lucide-react";
@@ -35,19 +34,12 @@ import { NotificationBell } from "./notification-bell";
 import { PageSearchButton } from "./page-search/page-search-fab";
 import { UserAvatar } from "./user-avatar";
 import { useCurrentUser } from "@/domains/auth/context/current-user-context";
-import { useLeaderboard } from "@/domains/dashboard/use-cases/get-leaderboard";
 import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
 import { useUnreadCount } from "@/domains/notification/use-cases/use-notifications";
 import { useUnreadSupportCount } from "@/domains/support/use-cases/use-support-chat";
 import { useAdminUnreadSupportCount } from "@/domains/support/use-cases/use-admin-support";
 
 const BADGE_EMOJI: Record<string, string> = {
-  vol_50: "🏅",
-  vol_150: "🥈",
-  vol_300: "🥇",
-  streak_5: "⚡",
-  patience: "🧘",
-  calibre: "🎯",
   graduate: "🎓",
 };
 
@@ -68,7 +60,6 @@ export function AppShell({
   // there, TODO.md's "badge de rôle incohérent" for the same account.
   const tAccount = useTranslations("account");
   const isAdmin = currentUser.role === "ADMIN";
-  const { data: leaderboard } = useLeaderboard();
   const { data: badges } = useMyBadges();
   const { data: unreadData } = useUnreadCount();
   const unreadCount = unreadData?.count ?? 0;
@@ -77,15 +68,6 @@ export function AppShell({
   const inboxUnreadCount = isAdmin
     ? (adminInboxUnread?.count ?? 0)
     : (operatorInboxUnread?.count ?? 0);
-
-  const myLeaderboardEntry = useMemo(
-    () =>
-      (leaderboard ?? []).find(
-        (entry) =>
-          entry.username.toLowerCase() === currentUser.username.toLowerCase(),
-      ) ?? null,
-    [currentUser.username, leaderboard],
-  );
 
   const unlockedBadges = useMemo(
     () => (badges ?? []).filter((badge) => badge.unlockedAt !== null),
@@ -132,6 +114,16 @@ export function AppShell({
             href: "/dashboard/engine",
             active: pathname.startsWith("/dashboard/engine"),
             icon: Cpu,
+          },
+          // Matchs n'est plus dans la navigation du joueur depuis le
+          // 2026-10-27 : Décisions montre déjà presque tous les matchs, et la
+          // fiche de match s'ouvre depuis ses cartes. Le diagnostic brut
+          // (EV, motifs de rejet, λ) reste ici, pour les admins.
+          {
+            label: tNav("fixtures"),
+            href: "/dashboard/fixtures",
+            active: pathname.startsWith("/dashboard/fixtures"),
+            icon: CalendarDays,
           },
           {
             label: tNav("glossary"),
@@ -188,12 +180,6 @@ export function AppShell({
             href: "/dashboard/decisions",
             active: pathname.startsWith("/dashboard/decisions"),
             icon: Layers,
-          },
-          {
-            label: tNav("fixtures"),
-            href: "/dashboard/fixtures",
-            active: pathname.startsWith("/dashboard/fixtures"),
-            icon: CalendarDays,
           },
         ],
       },
@@ -308,14 +294,16 @@ export function AppShell({
                 <p className="truncate text-sm font-semibold text-sidebar-foreground">
                   {currentUser.fullName}
                 </p>
-                <Badge
-                  variant="neutral"
-                  className="shrink-0 text-[0.62rem] text-sidebar-foreground/80"
-                >
-                  {tAccount.has(`roles.${currentUser.role}`)
-                    ? tAccount(`roles.${currentUser.role}`)
-                    : currentUser.role}
-                </Badge>
+                {/* Rôle affiché aux seuls admins : « Opérateur » se lit
+                    « bookmaker » chez un parieur (revue UX du 2026-10-27). */}
+                {isAdmin ? (
+                  <Badge
+                    variant="neutral"
+                    className="shrink-0 text-xs text-sidebar-foreground/80"
+                  >
+                    {tAccount("roles.ADMIN")}
+                  </Badge>
+                ) : null}
               </div>
               <p className="truncate text-xs text-sidebar-foreground/60">
                 @{currentUser.username}
@@ -324,41 +312,28 @@ export function AppShell({
             <Link
               href="/dashboard/params/account"
               title="Paramètres du compte"
-              className="shrink-0 rounded-lg p-1.5 text-sidebar-foreground/50 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
             >
               <Settings size={15} />
             </Link>
           </div>
 
-          {/* Stats row: rank + badges */}
-          {(myLeaderboardEntry || highlightedBadges.length > 0) && (
-            <div className="flex items-center gap-3 px-1">
-              {myLeaderboardEntry && (
-                <div className="flex items-center gap-1.5 text-xs text-sidebar-foreground/65">
-                  <Trophy size={12} className="shrink-0 text-warning" />
-                  <span className="font-semibold tabular-nums">
-                    #{myLeaderboardEntry.rank}
-                  </span>
-                  <span className="text-sidebar-foreground/35">·</span>
-                  <span>{myLeaderboardEntry.roi}</span>
-                </div>
-              )}
-              {highlightedBadges.length > 0 && (
-                <div className="ml-auto flex items-center gap-1">
-                  {highlightedBadges.map((badge) => (
-                    <Tooltip key={badge.code}>
-                      <TooltipTrigger asChild>
-                        <span className="cursor-default text-sm">
-                          {BADGE_EMOJI[badge.code] ?? "🏆"}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="text-xs">
-                        {badge.name}
-                      </TooltipContent>
-                    </Tooltip>
-                  ))}
-                </div>
-              )}
+          {/* Badges d'apprentissage seulement : plus de rang ni de ROI au
+              classement des joueurs (audit du 2026-10-23, P2-9). */}
+          {highlightedBadges.length > 0 && (
+            <div className="flex items-center justify-end gap-1 px-1">
+              {highlightedBadges.map((badge) => (
+                <Tooltip key={badge.code}>
+                  <TooltipTrigger asChild>
+                    <span className="cursor-default text-sm">
+                      {BADGE_EMOJI[badge.code] ?? "🏆"}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    {badge.name}
+                  </TooltipContent>
+                </Tooltip>
+              ))}
             </div>
           )}
         </div>

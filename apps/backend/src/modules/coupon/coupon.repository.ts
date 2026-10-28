@@ -10,7 +10,10 @@ import {
   Prisma,
   StrategyChannel,
 } from '@evcore/db';
-import { UNIFIED_COUPON_CLASS } from '@evcore/analysis-core';
+import {
+  POOL_EXCLUDED_MARKETS,
+  UNIFIED_COUPON_CLASS,
+} from '@evcore/analysis-core';
 import {
   PRICE_COMPOSER_POLICY,
   PRICE_COMPOSER_SIGNAL_WINDOW_DAYS,
@@ -46,6 +49,45 @@ const ODDS_BAND_SQL = `CASE
   ELSE '7+'
 END`;
 
+/**
+ * Matchs du créneau dont la dernière analyse d'avant-match porte l'alerte de
+ * cohérence modèle↔marché : « Données suspectes » sur Décisions, dont
+ * l'info-bulle promet que le match est retiré des paris réels.
+ *
+ * Seul le vivier du combiné IA appliquait cette règle (vantage-worker,
+ * `classifyAvoidSignal`). Le Favori, le coupon long et le combiné moteur ne
+ * la lisaient pas : sur la copie de production, du 24/09 au 24/10, 22 des 72
+ * jambes PRICE et 9 des 41 jambes ENGINE tombaient sur un match signalé
+ * (audit du 2026-10-23, P1-8). Même définition que `hasCalibrationAlert` :
+ * alerte 1X2 non nulle, ou au moins une alerte Plus/Moins.
+ *
+ * Mesuré avant de l'appliquer (sélections réglées depuis le 01/07, hors
+ * VALUE/SAFE/VANTAGE) : sous 1,45 les matchs signalés passent comme les
+ * autres (réalisé ÷ annoncé 1,04 contre 1,01) ; de 1,45 à 1,80, 0,85 contre
+ * 0,92 ; au-dessus de 1,80, 0,63–0,73 contre 0,86. L'exclusion ne coûte rien
+ * aux produits à cote courte et retire les estimations les plus fausses.
+ */
+function calibrationAlertedFixtureIds(from: Date, to: Date): Prisma.Sql {
+  return Prisma.sql`
+    SELECT lr."fixtureId"
+    FROM (
+      SELECT DISTINCT ON (mr."fixtureId") mr."fixtureId", mr.features
+      FROM public.model_run mr
+      JOIN public.fixture fx ON fx.id = mr."fixtureId"
+      WHERE fx."scheduledAt" >= ${from}
+        AND fx."scheduledAt" < ${to}
+        AND mr."analyzedAt" < fx."scheduledAt"
+      ORDER BY mr."fixtureId", mr."analyzedAt" DESC
+    ) lr
+    WHERE jsonb_typeof(lr.features -> 'calibration_alert') = 'object'
+       OR CASE
+            WHEN jsonb_typeof(lr.features -> 'calibration_alert_over_under') = 'array'
+            THEN jsonb_array_length(lr.features -> 'calibration_alert_over_under') > 0
+            ELSE false
+          END
+  `;
+}
+
 export type MarketCostCell = {
   market: string;
   band: string;
@@ -79,6 +121,11 @@ export type ClassTrackRecordRow = {
   won: number;
   avgOdds: number;
   returnPerUnit: number;
+  /** Premier et dernier `forDate` réglés de la classe dans la fenêtre. */
+  firstDay: Date;
+  lastDay: Date;
+  /** Plus longue suite de coupons perdus d'affilée, remboursés ignorés. */
+  worstLosingStreak: number;
 };
 
 export type PriceCandidateRow = {
@@ -625,6 +672,8 @@ export class CouponRepository {
         AND s."scheduledAt" < ${opts.to}
         AND s."scheduledAt" > now()
         AND NOT (s.channel::text = ANY(${[...opts.excludedChannels]}::text[]))
+        AND s.market::text <> ALL(${[...POOL_EXCLUDED_MARKETS]}::text[])
+        AND s."fixtureId" NOT IN (${calibrationAlertedFixtureIds(opts.from, opts.to)})
     `;
   }
 
@@ -662,21 +711,82 @@ export class CouponRepository {
   async findClassTrackRecord(
     since: Date,
   ): Promise<readonly ClassTrackRecordRow[]> {
+    // La pire série se compte sur la suite des coupons réglés de la classe,
+    // dans l'ordre des jours : chaque coupon non perdu ouvre un nouveau
+    // groupe, la plus longue suite de « perdu » dans un groupe est la série.
+    // Un remboursement ne compte ni pour ni contre. Chaque produit doit dire
+    // sa pire série (apps/web/PRODUCT.md, principe 2).
     return this.prisma.client.$queryRaw<ClassTrackRecordRow[]>`
-      SELECT source::text                       AS source,
-             "targetOddsMin"::float             AS "targetOddsMin",
-             count(*)::int                      AS settled,
-             count(*) FILTER (WHERE result IN ('WON', 'PARTIAL'))::int AS won,
-             avg("combinedOdds")::float         AS "avgOdds",
-             avg(CASE result
-                   WHEN 'WON' THEN coalesce("realizedOdds", "combinedOdds")
-                   WHEN 'PARTIAL' THEN coalesce("realizedOdds", "combinedOdds")
+      WITH settled AS (
+        SELECT id, source, "targetOddsMin", "forDate", result,
+               "combinedOdds", "realizedOdds"
+        FROM public.coupon_proposal
+        WHERE result IS NOT NULL
+          AND "forDate" >= ${since}
+      ), streaks AS (
+        SELECT source, "targetOddsMin", max(run)::int AS "worstLosingStreak"
+        FROM (
+          SELECT source, "targetOddsMin", grp, count(*) AS run
+          FROM (
+            SELECT source, "targetOddsMin", result,
+                   count(*) FILTER (WHERE result <> 'LOST') OVER (
+                     PARTITION BY source, "targetOddsMin"
+                     ORDER BY "forDate", id
+                   ) AS grp
+            FROM settled
+            WHERE result <> 'VOID'
+          ) grouped
+          WHERE result = 'LOST'
+          GROUP BY source, "targetOddsMin", grp
+        ) runs
+        GROUP BY source, "targetOddsMin"
+      )
+      SELECT s.source::text                       AS source,
+             s."targetOddsMin"::float             AS "targetOddsMin",
+             count(*)::int                        AS settled,
+             count(*) FILTER (WHERE s.result IN ('WON', 'PARTIAL'))::int AS won,
+             avg(s."combinedOdds")::float         AS "avgOdds",
+             avg(CASE s.result
+                   WHEN 'WON' THEN coalesce(s."realizedOdds", s."combinedOdds")
+                   WHEN 'PARTIAL' THEN coalesce(s."realizedOdds", s."combinedOdds")
                    WHEN 'VOID' THEN 1
-                   ELSE 0 END)::float           AS "returnPerUnit"
-      FROM public.coupon_proposal
-      WHERE result IS NOT NULL
-        AND "forDate" >= ${since}
-      GROUP BY source, "targetOddsMin"
+                   ELSE 0 END)::float             AS "returnPerUnit",
+             min(s."forDate")                     AS "firstDay",
+             max(s."forDate")                     AS "lastDay",
+             coalesce(k."worstLosingStreak", 0)   AS "worstLosingStreak"
+      FROM settled s
+      LEFT JOIN streaks k
+        ON k.source = s.source AND k."targetOddsMin" = s."targetOddsMin"
+      GROUP BY s.source, s."targetOddsMin", k."worstLosingStreak"
+    `;
+  }
+
+  /**
+   * Vivier du coupon cote 2 : tout ce que le moteur a envisagé et qui est
+   * coté, retenu ou rejeté, hors types de pari suspendus (cohérence avec
+   * Décisions) et hors matchs « Données suspectes ». Le groupe d'issues
+   * complet est nécessaire pour retirer la marge : on garde toutes les
+   * issues, le compositeur filtre lui-même la bande de cote.
+   */
+  async findDoubleCandidates(opts: {
+    from: Date;
+    to: Date;
+  }): Promise<readonly PriceCandidateRow[]> {
+    return this.prisma.client.$queryRaw<PriceCandidateRow[]>`
+      SELECT "fixtureId",
+             competition,
+             market,
+             pick,
+             odds::float                AS odds,
+             ${Prisma.raw(ODDS_BAND_SQL)} AS band,
+             "scheduledAt"
+      FROM public.evaluated_pick
+      WHERE "fixtureStatus" NOT IN ('FINISHED', 'POSTPONED', 'CANCELLED')
+        AND "scheduledAt" >= ${opts.from}
+        AND "scheduledAt" < ${opts.to}
+        AND coalesce(rejection_reason, '') <> 'market_suspended'
+        AND market <> ALL(${[...POOL_EXCLUDED_MARKETS]}::text[])
+        AND "fixtureId" NOT IN (${calibrationAlertedFixtureIds(opts.from, opts.to)})
     `;
   }
 
@@ -696,6 +806,8 @@ export class CouponRepository {
       WHERE "fixtureStatus" NOT IN ('FINISHED', 'POSTPONED', 'CANCELLED')
         AND "scheduledAt" >= ${opts.from}
         AND "scheduledAt" < ${opts.to}
+        AND market <> ALL(${[...POOL_EXCLUDED_MARKETS]}::text[])
+        AND "fixtureId" NOT IN (${calibrationAlertedFixtureIds(opts.from, opts.to)})
     `;
   }
 }

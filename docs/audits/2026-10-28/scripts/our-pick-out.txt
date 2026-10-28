@@ -1,0 +1,48 @@
+=== 1. Notre sélection telle qu'affichée, un pari par match ===
+                                  groupe    n  cote_med moteur marche realise ecart_moteur ecart_marche mise_fixe
+                                  Toutes 5881      1.36   73.4   66.8    69.7   -3.7 ± 1.2   +2.7 ± 1.2      -2.0
+           palier 0 : calibré, 1,20–1,50 2456      1.30   76.3   72.5    75.1   -1.2 ± 1.7   +2.5 ± 1.8      -1.8
+palier 1 : non « peu fiable », 1,20–1,50 1854      1.31   75.8   71.5    73.4   -2.4 ± 2.0   +2.2 ± 2.1      -3.3
+         palier 2 : calibré, cote ≥ 1,50  686      1.76   61.4   52.0    52.8   -8.7 ± 3.7   +2.8 ± 3.8      -2.6
+   palier 3 : non « peu fiable », ≥ 1,50  736      1.75   65.4   51.2    54.5  -11.0 ± 3.5   +4.7 ± 3.6      +1.5
+         palier 4 : < 1,20 ou peu fiable  149      1.03   91.7   93.6    88.6   -3.1 ± 5.1   +6.4 ± 0.0      +3.0
+                              période P1 2654      1.44   71.2   62.7    66.4   -4.9 ± 1.8   +3.2 ± 1.9      -1.3
+                              période P2 3227      1.30   75.2   70.0    72.5   -2.7 ± 1.5   +2.3 ± 1.6      -2.5
+                 paliers 0–1, période P1 1585      1.34   74.6   70.3    72.9   -1.8 ± 2.2   +2.6 ± 2.4      -2.6
+                 paliers 0–1, période P2 2725      1.28   76.9   73.0    75.2   -1.7 ± 1.6   +2.2 ± 1.7      -2.4
+
+=== 2. D'où viendrait l'indice ? Toutes nos sélections retenues, cote 1,20–1,50 ===
+                                     groupe     n  cote_med moteur marche realise ecart_moteur ecart_marche mise_fixe
+                               statut GREEN  4029      1.32   73.9   72.1    73.8   -0.1 ± 1.5   +1.7 ± 1.6      -2.7
+                                   GREEN P1   435      1.39   72.6   69.2    71.7   -0.8 ± 4.4   +2.2 ± 4.8      -1.9
+                                   GREEN P2  3594      1.30   74.1   72.5    74.1   +0.0 ± 1.6   +1.6 ± 1.7      -2.8
+                              statut ORANGE  1283      1.30   76.1   72.7    73.4   -2.7 ± 2.5   +0.2 ± 2.7      -4.0
+                                  ORANGE P1   112      1.33   75.0   69.7    71.4   -3.6 ± 8.2  +0.4 ± 10.4      -5.2
+                                  ORANGE P2  1171      1.30   76.2   73.0    73.6   -2.6 ± 2.7   +0.2 ± 2.7      -3.9
+                                  statut NA  3150      1.33   73.6   71.1    72.3   -1.3 ± 1.8   +1.4 ± 1.8      -4.1
+                                      NA P1  1708      1.34   73.3   70.4    72.4   -1.0 ± 2.4   +2.2 ± 2.5      -3.2
+                                      NA P2  1442      1.30   73.9   71.8    72.2   -1.7 ± 2.6   +0.6 ± 2.6      -5.1
+                                 statut RED   121      1.33   74.0   71.8    80.2   +6.1 ± 7.1   +8.4 ± 7.4      +6.2
+                                     RED P1    31      1.40   71.7   69.5    77.4  +5.8 ± 15.0  +7.9 ± 15.0      +5.0
+                                     RED P2    90      1.32   74.9   72.7    81.1   +6.2 ± 7.9   +8.6 ± 8.5      +6.6
+              sélection principale du match  3600      1.30   76.2   72.3    74.6   -1.7 ± 1.4   +2.4 ± 1.5      -2.4
+                 autres sélections du match  4983      1.33   72.6   71.5    72.4   -0.2 ± 1.4   +0.8 ± 1.4      -3.9
+référence : tout ce qui est coté, 1,20–1,50 36777      1.31   71.7   71.6    72.5   +0.8 ± 0.5   +0.9 ± 0.5      -4.7
+
+   Désaccord moteur − marché, paliers 0–1 (Notre sélection) :
+                       groupe   n  cote_med moteur marche realise ecart_moteur ecart_marche mise_fixe
+Q1 moteur ≪ marché (-33 à +2) 951      1.26   70.5   73.6    76.2   +5.7 ± 2.7   +2.7 ± 2.7      -1.9
+                 Q2 (+2 à +5) 951      1.28   76.2   72.8    76.1   -0.1 ± 2.7   +3.3 ± 2.7      -1.1
+                 Q3 (+5 à +9) 950      1.32   78.8   71.9    73.9   -5.0 ± 2.8   +2.0 ± 2.8      -2.6
+Q4 moteur ≫ marché (+9 à +34) 951      1.36   83.5   70.0    71.4  -12.1 ± 2.9   +1.4 ± 2.9      -3.8
+
+=== 3. Trois façons de choisir le pari d'un match (mêmes matchs, cote 1,20–1,50) ===
+                                               groupe    n cote_med moteur    marche realise ecart_moteur ecart_marche                mise_fixe
+           Actuel : palier puis probabilité du moteur 4310      1.3   76.0      72.0    74.3   -1.7 ± 1.3   +2.4 ± 1.4                     -2.4
+        Nos sélections du match, classées par le prix 3390     1.27   77.1      73.5    75.2   -1.9 ± 1.5   +1.7 ± 1.4                     -3.2
+Tout ce qui est coté sur le match, classé par le prix 4339     1.22   76.6      77.1    77.9   +1.4 ± 1.3   +0.8 ± 1.2                     -4.6
+                                 coût attendu, Actuel 3834                 marge 5.9                                   -5.4 (au prix d'analyse)
+             coût attendu, Nos sélections par le prix 3462                 marge 5.9                                   -5.4 (au prix d'analyse)
+               coût attendu, Tout le coté par le prix 4339                 marge 5.9                                   -5.6 (au prix d'analyse)
+
+Matchs dont Notre sélection est en palier 0–1 : 4570 sur 6156 (74 %)

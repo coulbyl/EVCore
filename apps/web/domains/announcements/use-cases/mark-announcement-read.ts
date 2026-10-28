@@ -25,6 +25,11 @@ export function useMarkAnnouncementRead() {
         queryClient.invalidateQueries({
           queryKey: ["dashboard-announcements-unread-count"],
         }),
+        // Le serveur marque aussi la notification de l'annonce : la cloche suit.
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["notifications-unread-count"],
+        }),
       ]);
     },
   });

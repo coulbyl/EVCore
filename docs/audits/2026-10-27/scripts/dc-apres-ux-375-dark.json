@@ -1,0 +1,36 @@
+{
+ "url": "http://localhost:3010/dashboard/decisions",
+ "title": "Décisions — EVCore",
+ "lang": "fr",
+ "headings": [
+  "h1: Décisions du jour"
+ ],
+ "overflowX": false,
+ "textElements": 49,
+ "smallText": {
+  "count": 0,
+  "samples": []
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 23,
+ "smallTapTargets": {
+  "count": 1,
+  "samples": [
+   {
+    "text": "En savoir plus sur Alerte calibration",
+    "w": 12,
+    "h": 12,
+    "tag": "button"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

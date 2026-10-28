@@ -79,11 +79,9 @@ export function DecisionsPageClient() {
   const facetsData = facets.data ?? { leagues: [], channels: [] };
   const hasFacets = facetsData.leagues.length > 0;
 
-  // Real calibration (ratio réel/annoncé), same 90-day window and same
-  // source as Historical Measures — feeds the per-pick calibration-gap badge
-  // (channel-row.tsx's CalibrationBadge) instead of the raw claimed-edge
-  // figure it replaced. Independent of `date`: settled history doesn't
-  // depend on which day's decisions are being browsed.
+  // Calibration canal × championnat sur 90 jours : ne sert plus qu'au choix
+  // de « Notre sélection » (primaryPick) ; plus aucun badge ne l'affiche
+  // (décision du 2026-10-27, docs/audits/2026-10-27/DECISIONS.md).
   const calibrationRange = dateRangeForPeriod("90");
   const calibrationStats = useChannelCompetitionStats(
     calibrationRange.from,
@@ -169,7 +167,6 @@ export function DecisionsPageClient() {
           activeGroup={channelLens.activeGroup}
           locale={locale}
           groupBy={channelLens.groupBy}
-          calibrationByKey={calibrationByKey}
         />
       )}
     </DecisionsPageFrame>

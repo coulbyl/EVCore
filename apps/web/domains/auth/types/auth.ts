@@ -23,7 +23,22 @@ export type AuthSessionUser = {
   hasCompletedOnboarding: boolean;
   phoneNumber: string | null;
   phoneNumberConsentGiven: boolean;
+  /** Fin de la pause choisie par le joueur (ISO), null hors pause. */
+  pausedUntil: string | null;
 };
+
+/**
+ * Date de fin si la pause est en cours, sinon null. Le serveur bloque déjà
+ * ce qui propose un pari ; l'écran l'annonce au lieu d'afficher une erreur.
+ */
+export function activePauseEnd(
+  pausedUntil: string | null,
+  now: number = Date.now(),
+): string | null {
+  return pausedUntil && new Date(pausedUntil).getTime() > now
+    ? pausedUntil
+    : null;
+}
 
 export function isAccountVerified(user: AuthSessionUser): boolean {
   return user.emailVerified || user.totpVerified;

@@ -44,10 +44,17 @@ export class PushRepository {
   }
 
   // Broadcast audience (announcements) — every subscribed device, optionally
-  // excluding the admin who published it.
+  // excluding the admin who published it, never a paused player (responsible
+  // gambling, 2026-10-28). Support replies, sent to one player, still reach
+  // them.
   findAll(excludeUserId?: string) {
     return this.prisma.client.pushSubscription.findMany({
-      where: excludeUserId ? { userId: { not: excludeUserId } } : undefined,
+      where: {
+        ...(excludeUserId ? { userId: { not: excludeUserId } } : {}),
+        user: {
+          OR: [{ pausedUntil: null }, { pausedUntil: { lte: new Date() } }],
+        },
+      },
     });
   }
 }

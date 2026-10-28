@@ -62,10 +62,11 @@ export function AccountButton({
           className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-border/80 bg-panel-strong p-0.5 text-left transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           aria-label="Ouvrir le menu du compte"
         >
+          {/* 38 px + bordure + marge intérieure = 44 px au doigt. */}
           <UserAvatar
             avatarUrl={currentUser.avatarUrl}
             username={currentUser.fullName}
-            size={32}
+            size={38}
             className="ring-1 ring-border"
           />
         </button>

@@ -12,11 +12,10 @@ Tu ne reçois jamais de question ouverte. Ton entrée est toujours la même list
 
 A. QUAND JOUER
 1. Sur la majorité des matchs, la bonne réponse est "no_play". Repère : sur dix matchs, tu en joues au plus trois. Ne force jamais un verdict pour justifier ta présence.
-2. "play" seulement sur UNE de ces trois bases, que tu déclares dans le champ "basis" :
-   - "tension" : un biais ou une contradiction concrète entre canaux SELECTED ;
+2. "play" seulement sur UNE de ces deux bases, que tu déclares dans le champ "basis" :
    - "near_threshold" : une lecture proche du seuil d'un canal qui a abstenu, dont le chiffre interne est parlant ;
    - "raw_stats" : une lecture des statistiques brutes ou des confrontations directes qu'aucun canal ne capture.
-   Un simple consensus entre canaux, sans l'une de ces bases, reste un "no_play". Un article de presse seul ne suffit jamais.
+   Un simple consensus entre canaux, sans l'une de ces bases, reste un "no_play". Une contradiction entre canaux SELECTED n'est pas une base non plus : chaque canal estime son marché seul, et choisir un camp entre deux de nos lectures n'apprend rien au joueur — réponds "no_play". Un article de presse seul ne suffit jamais.
 3. Contraintes dures (le bloc "Contraintes" du match les répète) : jamais un "play" dont la cote visible est inférieure à 1.20 ni supérieure au plafond indiqué ; jamais un marché listé comme fermé. Un "play" qui les ignore est rejeté sans être lu : choisis une autre issue ou réponds "no_play".
 4. Tu ne choisis un marché QUE parmi ceux listés dans le contexte (la valeur après "marché=" dans une lecture de canal, y compris une lecture proche du seuil, ou le bloc "Marché"). Le bloc "Marchés expérimentaux" est en observation seulement : interdiction d'y choisir une issue.
 5. Un canal (ex : DRAW, GOALS) n'est PAS un marché : le champ "market" prend TOUJOURS la valeur après "marché=", JAMAIS le nom du canal qui la précède (le canal DRAW produit marché=ONE_X_TWO, pick=DRAW).
@@ -106,7 +105,7 @@ ${readingsBlock}
 ${blocks ? `\n${blocks}\n` : ""}${researchBlock}
 Réponds avec l'un de ces deux schémas JSON exacts :
 {"verdict":"no_play","reasonDetails":"..."}
-{"verdict":"play","basis":"tension|near_threshold|raw_stats","market":"<la valeur exacte après 'marché=' d'une lecture ci-dessus, ou celle du bloc Marché — JAMAIS le nom du canal qui la précède>","pick":"<valeur de pick légale pour ce marché>","probability":0.0-1.0,"reasonDetails":"..."}`;
+{"verdict":"play","basis":"near_threshold|raw_stats","market":"<la valeur exacte après 'marché=' d'une lecture ci-dessus, ou celle du bloc Marché — JAMAIS le nom du canal qui la précède>","pick":"<valeur de pick légale pour ce marché>","probability":0.0-1.0,"reasonDetails":"..."}`;
 }
 
 /** Les contraintes dures du jour, dites avant les chiffres : un "play" qui

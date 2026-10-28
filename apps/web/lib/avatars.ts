@@ -13,28 +13,23 @@ export const FREE_AVATARS: AvatarOption[] = [
   { url: `${BASE}?seed=Captain&backgroundColor=ffd5dc`, label: "Capitaine" },
   { url: `${BASE}?seed=Rookie&backgroundColor=ffdfbf`, label: "Rookie" },
   { url: `${BASE}?seed=Phantom&backgroundColor=c1f4c5`, label: "Fantôme" },
-];
-
-export const LOCKED_AVATARS: AvatarOption[] = [
-  {
-    url: `${BASE}?seed=Analyst&backgroundColor=b6e3f4`,
-    label: "Analyste",
-    requiredBadge: "vol_50",
-  },
-  {
-    url: `${BASE}?seed=Strategist&backgroundColor=c0aede`,
-    label: "Stratège",
-    requiredBadge: "vol_150",
-  },
+  // Débloqués par les badges de volume et de série jusqu'au 2026-10-27 ;
+  // ces badges ne sont plus attribués (audit du 2026-10-23, P2-9).
+  { url: `${BASE}?seed=Analyst&backgroundColor=b6e3f4`, label: "Analyste" },
+  { url: `${BASE}?seed=Strategist&backgroundColor=c0aede`, label: "Stratège" },
   {
     url: `${BASE}?seed=StrikerX&backgroundColor=ffdfbf`,
     label: "Buteur Élite",
-    requiredBadge: "streak_5",
   },
+];
+
+// Débloqué en lisant les cinq fiches de la Formation (badge « Diplômé ») ;
+// il dépendait de « Calibré », qu'aucun code n'attribuait.
+export const LOCKED_AVATARS: AvatarOption[] = [
   {
     url: `${BASE}?seed=Oracle&backgroundColor=c1f4c5`,
     label: "Oracle",
-    requiredBadge: "calibre",
+    requiredBadge: "graduate",
   },
 ];
 

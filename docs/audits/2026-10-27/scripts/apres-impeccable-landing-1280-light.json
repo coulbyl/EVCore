@@ -1,0 +1,99 @@
+{
+ "route": "/",
+ "width": 1280,
+ "theme": "light",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 5 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cline-length%c ~91 chars on 2 of 3 rendered lines (aim for <80) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cicon-tile-stack%c 40x40px icon tile above h3 \"Une mise. Répétée.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cicon-tile-stack%c 40x40px icon tile above h3 \"Une méthode, pas des tuyaux.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cline-length%c ~97 chars on 2 of 3 rendered lines (aim for <80) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 5 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cline-length%c ~91 chars on 2 of 3 rendered lines (aim for <80) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cicon-tile-stack%c 40x40px icon tile above h3 \"Une mise. Répétée.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cicon-tile-stack%c 40x40px icon tile above h3 \"Une méthode, pas des tuyaux.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cline-length%c ~97 chars on 2 of 3 rendered lines (aim for <80) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "div",
+    "cls": "pointer-events-none absolute -inset-6 rounded-3xl bg-[radial-gradient(ellipse_80",
+    "text": "",
+    "w": 333,
+    "h": 423
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground",
+    "text": "EVCore n'empile pas un modèle par marché. Il porte trois faç",
+    "w": 576,
+    "h": 68
+   },
+   "findings": [
+    {
+     "type": "line-length",
+     "detail": "~91 chars on 2 of 3 rendered lines (aim for <80)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "h3",
+    "cls": "mt-2 text-xl font-bold text-foreground lg:text-2xl",
+    "text": "Une mise. Répétée.",
+    "w": 599,
+    "h": 32
+   },
+   "findings": [
+    {
+     "type": "icon-tile-stack",
+     "detail": "40x40px icon tile above h3 \"Une mise. Répétée.\""
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "h3",
+    "cls": "mt-2 text-xl font-bold text-foreground lg:text-2xl",
+    "text": "Une méthode, pas des tuyaux.",
+    "w": 599,
+    "h": 32
+   },
+   "findings": [
+    {
+     "type": "icon-tile-stack",
+     "detail": "40x40px icon tile above h3 \"Une méthode, pas des tuyaux.\""
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-sm leading-relaxed text-muted-foreground",
+    "text": "Aucun taux de réussite n'est affiché ici. À nos volumes, l'é",
+    "w": 599,
+    "h": 68
+   },
+   "findings": [
+    {
+     "type": "line-length",
+     "detail": "~97 chars on 2 of 3 rendered lines (aim for <80)"
+    }
+   ]
+  }
+ ]
+}

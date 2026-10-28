@@ -1,14 +1,23 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
-  formatMarketForDisplay,
-  formatPickForDisplay,
-} from "@/helpers/fixture";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@evcore/ui";
+import { formatMarketForDisplay, formatPickWithTeams } from "@/helpers/fixture";
 import { formatKickoff } from "@/domains/fixture/helpers/fixture";
 import type { CouponProposalDto } from "@/domains/coupon/types/coupon";
 import { couponClassMeta } from "@/domains/coupon/helpers/coupon-class";
 import { couponSourceMeta } from "@/domains/coupon/helpers/coupon-source";
+import type { CouponClassTrackRecord } from "@/domains/coupon/use-cases/use-coupon-track-record";
 import { useRecordCouponView } from "@/domains/coupon/use-cases/use-coupons";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import {
@@ -28,17 +37,18 @@ export function CouponCard({
 }: {
   coupon: CouponProposalDto;
   locale: string;
-  trackRecord?: { won: number; settled: number; days: number } | null;
+  trackRecord?: CouponClassTrackRecord | null;
 }) {
   const {
     draft,
-    addItem,
     removeItem,
     isInSlip,
     open,
-    setType,
     setCouponProposalId,
+    replaceWithCoupon,
   } = useBetSlip();
+  const t = useTranslations("couponCard");
+  const [confirmReplace, setConfirmReplace] = useState(false);
   const loc = locale === "en" ? "en" : "fr";
 
   // Real, verifiable "view" (CouponProposalView, upserted server-side) —
@@ -73,14 +83,17 @@ export function CouponCard({
     score: leg.score,
     htScore: leg.htScore,
     marketLabel: formatMarketForDisplay(leg.market, loc),
-    pickLabel: formatPickForDisplay(leg.pick, leg.market),
+    pickLabel: formatPickWithTeams(leg.pick, leg.market, {
+      home: leg.homeTeam,
+      away: leg.awayTeam,
+    }),
     probability: leg.probability,
+    marketProbability: leg.marketProbability,
     odds: leg.oddsSnapshot != null ? leg.oddsSnapshot.toFixed(2) : null,
     playable:
       leg.playableOdds !== null && leg.playableBookmaker !== null
         ? { odds: leg.playableOdds, bookmaker: leg.playableBookmaker }
         : null,
-    market: leg.market,
     // `isCorrect` null + `settledAt` posé = jambe remboursée (match reporté,
     // Draw No Bet sur un nul) ; null sans `settledAt` = pas encore réglée.
     result:
@@ -142,49 +155,73 @@ export function CouponCard({
     slipItems.length > 0 &&
     slipItems.every((item) => isInSlip(draftItemKey(item)));
 
+  // Sélections du ticket qui ne viennent pas de ce coupon : les écraser sans
+  // prévenir ferait perdre au joueur ce qu'il était en train de composer.
+  const couponKeys = new Set(slipItems.map(draftItemKey));
+  const otherItems = draft.items.filter(
+    (item) => !couponKeys.has(draftItemKey(item)),
+  ).length;
+
+  function playCoupon() {
+    // Le ticket ne contient que ce coupon, en combiné dès 2 jambes ; l'id
+    // part avec le ticket (POST /bet-slips) pour que le backend enregistre
+    // un vrai CouponProposalPlacement (BetSlipService.create).
+    replaceWithCoupon({ items: slipItems, couponProposalId: coupon.id });
+    open();
+  }
+
   function handlePlay() {
     if (allInSlip) {
       for (const item of slipItems) removeItem(draftItemKey(item));
       setCouponProposalId(null);
       return;
     }
-    const shouldOpen = draft.items.length === 0;
-    for (const item of slipItems) addItem(item);
-    // A coupon's legs are meant to be played together — default the slip to
-    // COMBO rather than leaving it on SIMPLE (its default), same rule
-    // AddToSlipButton's flow doesn't need since it only ever adds one leg
-    // at a time. normalizeDraft (use-bet-slip-draft.ts) falls back to SIMPLE
-    // on its own if fewer than 2 items end up in the slip.
-    if (slipItems.length >= 2) setType("COMBO");
-    // Submitted along with the draft (POST /bet-slips) so the backend can
-    // record a real CouponProposalPlacement — see BetSlipService.create.
-    setCouponProposalId(coupon.id);
-    if (shouldOpen) open();
+    if (otherItems > 0) {
+      setConfirmReplace(true);
+      return;
+    }
+    playCoupon();
   }
 
   return (
-    <SharedCouponCard
-      locale={locale}
-      combinedOdds={coupon.combinedOdds}
-      realizedOdds={coupon.realizedOdds}
-      jointProbability={coupon.jointProbability}
-      signalScore={coupon.signalScore}
-      couponClass={couponClassMeta(coupon.couponClass)}
-      trackRecord={trackRecord}
-      source={couponSourceMeta(coupon.source)}
-      reasoning={reasonDetails}
-      batch={coupon.batch}
-      viewerCount={coupon.viewerCount}
-      playerCount={coupon.playerCount}
-      betStatus={displayResult}
-      legs={legs}
-      actionSlot={
-        coupon.playedByMe ? (
-          <CouponSlipButton allInSlip onPlay={handlePlay} playedByMe />
-        ) : isPending && slipItems.length > 0 ? (
-          <CouponSlipButton allInSlip={allInSlip} onPlay={handlePlay} />
-        ) : null
-      }
-    />
+    <>
+      <AlertDialog open={confirmReplace} onOpenChange={setConfirmReplace}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("replaceTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("replaceDescription", { count: otherItems })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("replaceCancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={playCoupon}>
+              {t("replaceConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <SharedCouponCard
+        locale={locale}
+        combinedOdds={coupon.combinedOdds}
+        realizedOdds={coupon.realizedOdds}
+        jointProbability={coupon.marketJointProbability}
+        signalScore={coupon.signalScore}
+        couponClass={couponClassMeta(coupon.couponClass)}
+        trackRecord={trackRecord}
+        source={couponSourceMeta(coupon.source)}
+        reasoning={reasonDetails}
+        batch={coupon.batch}
+        betStatus={displayResult}
+        legs={legs}
+        actionSlot={
+          coupon.playedByMe ? (
+            <CouponSlipButton allInSlip onPlay={handlePlay} playedByMe />
+          ) : isPending && slipItems.length > 0 ? (
+            <CouponSlipButton allInSlip={allInSlip} onPlay={handlePlay} />
+          ) : null
+        }
+      />
+    </>
   );
 }

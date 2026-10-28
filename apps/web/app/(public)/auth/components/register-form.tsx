@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import {
   Button,
+  Checkbox,
   Form,
   FormControl,
   FormField,
@@ -16,7 +17,6 @@ import {
   FormMessage,
   Input,
   PasswordInput,
-  Textarea,
 } from "@evcore/ui";
 import { register } from "@/domains/auth/use-cases/register";
 
@@ -31,18 +31,23 @@ const registerSchema = z.object({
   fullName: z
     .string()
     .trim()
-    .min(2, "Renseignez votre nom complet.")
+    .min(2, "Indique ton nom complet.")
     .max(80, "80 caractères max."),
   password: z
     .string()
     .min(8, "8 caractères minimum.")
     .max(128, "Mot de passe trop long."),
-  bio: z
-    .string()
-    .trim()
-    .max(280, "280 caractères max.")
-    .optional()
-    .or(z.literal("")),
+  // Les deux consentements sont exigés aussi côté serveur (RegisterDto),
+  // qui garde leur date et la version des conditions acceptée.
+  confirmAge: z
+    .boolean()
+    .refine((v) => v, "Tu dois confirmer avoir l'âge légal pour parier."),
+  acceptTerms: z
+    .boolean()
+    .refine(
+      (v) => v,
+      "Tu dois accepter les conditions d'utilisation et la politique de confidentialité.",
+    ),
 });
 
 type RegisterValues = z.infer<typeof registerSchema>;
@@ -59,7 +64,8 @@ export function RegisterForm() {
       username: "",
       fullName: "",
       password: "",
-      bio: "",
+      confirmAge: false,
+      acceptTerms: false,
     },
     mode: "onTouched",
   });
@@ -73,9 +79,15 @@ export function RegisterForm() {
         username: values.username,
         fullName: values.fullName,
         password: values.password,
-        bio: values.bio?.trim() ? values.bio.trim() : undefined,
+        // Validés par le schéma : on n'arrive ici que les deux cochés.
+        confirmAge: true,
+        acceptTerms: true,
       });
-      router.push("/dashboard");
+      // La vérification du compte (code par e-mail ou application
+      // d'authentification) suit l'inscription, comme le formulaire
+      // l'annonce : l'inscription menait jusqu'ici droit au tableau de bord
+      // et le code promis n'arrivait jamais (audit du 2026-10-23, P2-3).
+      router.push("/auth/verify");
       router.refresh();
     } catch (err) {
       setError(
@@ -115,11 +127,12 @@ export function RegisterForm() {
                   />
                 </FormControl>
                 {/* Dit avant l'envoi ce qui va se passer : l'inscription
-                    mène à la vérification de cette adresse (revue UX du
-                    2026-10-11, P2-17). */}
-                <p className="text-[0.72rem] leading-snug text-muted-foreground">
-                  Un code à 6 chiffres vous sera envoyé à cette adresse pour la
-                  vérifier.
+                    mène à la vérification du compte (revue UX du 2026-10-11,
+                    P2-17), désormais vraiment (audit du 2026-10-23, P2-3). */}
+                <p className="text-xs leading-snug text-muted-foreground">
+                  Juste après l&apos;inscription, tu sécurises ton compte : un
+                  code à 6 chiffres envoyé à cette adresse, ou une application
+                  d&apos;authentification.
                 </p>
                 <FormMessage />
               </FormItem>
@@ -172,7 +185,7 @@ export function RegisterForm() {
                 {/* La seule règle est la longueur (8 à 128, même règle côté
                     serveur) : on le dit, et on conseille ce qui protège
                     vraiment — la longueur, pas la complexité. */}
-                <p className="text-[0.72rem] leading-snug text-muted-foreground">
+                <p className="text-xs leading-snug text-muted-foreground">
                   Au moins 8 caractères. Une phrase longue et facile à retenir
                   protège mieux qu&apos;un mot compliqué.
                 </p>
@@ -182,30 +195,79 @@ export function RegisterForm() {
           />
         </div>
 
-        {/* Bio — full width, optional */}
+        {/* Consentements : âge légal, conditions et confidentialité (audit
+            du 2026-10-23, P1-1). La bio, inutile au premier accès, reste
+            modifiable dans le profil. */}
         <FormField
           control={form.control}
-          name="bio"
+          name="confirmAge"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>
-                Bio{" "}
-                <span className="text-[0.72rem] font-normal text-muted-foreground">
-                  — optionnel
-                </span>
-              </FormLabel>
-              <FormControl>
-                <Textarea
-                  rows={2}
-                  placeholder="Quelques mots sur vous"
-                  className="resize-none"
-                  {...field}
-                />
-              </FormControl>
+              <div className="flex items-start gap-3">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={(checked) =>
+                      field.onChange(checked === true)
+                    }
+                    className="mt-0.5"
+                  />
+                </FormControl>
+                <FormLabel className="text-sm font-normal leading-snug">
+                  J&apos;ai 18 ans ou plus (21 ans ou plus si je réside au
+                  Cameroun), ou l&apos;âge légal pour parier dans mon pays.
+                </FormLabel>
+              </div>
               <FormMessage />
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="acceptTerms"
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex items-start gap-3">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={(checked) =>
+                      field.onChange(checked === true)
+                    }
+                    className="mt-0.5"
+                  />
+                </FormControl>
+                <FormLabel className="text-sm font-normal leading-snug">
+                  <span>
+                    J&apos;accepte les{" "}
+                    <Link
+                      href="/cgu"
+                      target="_blank"
+                      className="text-accent underline"
+                    >
+                      conditions d&apos;utilisation
+                    </Link>{" "}
+                    et la{" "}
+                    <Link
+                      href="/confidentialite"
+                      target="_blank"
+                      className="text-accent underline"
+                    >
+                      politique de confidentialité
+                    </Link>
+                    .
+                  </span>
+                </FormLabel>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <p className="text-xs leading-snug text-muted-foreground">
+          Parier comporte des risques de perte. EVCore ne prend aucune mise et
+          ne vend pas de coupons.
+        </p>
 
         <Button type="submit" className="h-11 w-full" disabled={isSubmitting}>
           {isSubmitting ? "Création…" : "Créer un compte"}

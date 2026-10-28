@@ -20,6 +20,9 @@ export async function AccountPageShell({
   return (
     <Page className="flex h-full flex-col">
       <PageContent className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5 ev-shell-shadow">
+        <h1 className="mb-4 text-lg font-semibold text-foreground">
+          {t("title")}
+        </h1>
         <AccountTabsClient
           hasSession={session !== null}
           locale={(locale as "fr" | "en") ?? "fr"}

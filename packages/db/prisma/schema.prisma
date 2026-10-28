@@ -181,6 +181,9 @@ enum NotificationType {
   SUBSCRIPTION_EVENTS_ADDED
   SUBSCRIPTION_SETTLED
   SUPPORT_MESSAGE
+  // Résumé du matin des coupons déclarés réglés la veille, pertes comprises
+  // (2026-10-28). Jamais « les coupons du jour sont publiés ».
+  SLIPS_SETTLED_DIGEST
   // Broadcast (Notification.userId null) — voir OPERATOR_TYPES dans
   // notification.service.ts.
   ANNOUNCEMENT_PUBLISHED
@@ -643,6 +646,12 @@ model User {
   // (AuthService.updateMe) rather than keeping it around unconsented.
   phoneNumber                      String?
   phoneNumberConsentGiven          Boolean                   @default(false)
+  // Consentement donné à l'inscription : âge confirmé (18+, 21+ au Cameroun)
+  // et conditions d'utilisation + confidentialité acceptées, avec la version
+  // des conditions acceptée. Null pour les comptes créés avant le
+  // 2026-10-27, où rien n'était demandé.
+  termsAcceptedAt                  DateTime?
+  termsVersion                     String?
   hasSeenOnboarding                Boolean                   @default(false)
   // The passive product tour's own flag (above) is distinct from this one:
   // hasSeenOnboarding tracks the driver.js guided tour, this tracks the
@@ -653,6 +662,11 @@ model User {
   hasCompletedOnboarding           Boolean                   @default(true)
   suspended                        Boolean                   @default(false)
   suspendedAt                      DateTime?
+  // Pause choisie par le joueur (jeu responsable, 2026-10-28) : jusqu'à
+  // cette date, coupons, Décisions, Avis IA et saisie de coupon sont bloqués
+  // côté serveur et les notifications poussées coupées. Pas de retour
+  // anticipé : la pause ne peut qu'être prolongée.
+  pausedUntil                      DateTime?
   sessions                         Session[]
   betSlips                         BetSlip[]
   betSlipItems                     BetSlipItem[]

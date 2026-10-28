@@ -1,0 +1,13 @@
+                                                     composition   jours  cote_moy annonce_marche annonce_moteur  realise  pire_serie cout_attendu marge_moy mise_fixe_realisee jambes_reel_vs_marche
+A. Règle actuelle (nos sélections calibrées, cote la plus basse) 106/116      1.53         63.4 %         65.3 % 70.8 ± 9           5       -3.7 %    10.7 %             +7.3 %           83.5 / 76.6
+                     B. Tout ce qui est coté, classé par le prix 114/116      1.46         62.0 %              — 64.9 ± 9           3       -9.4 %    10.2 %             -4.8 %           81.1 / 78.8
+               C. Nos sélections calibrées, classées par le prix 106/116      1.55         59.1 %         63.8 % 69.8 ± 9           3       -9.0 %    11.7 %             +7.6 %           84.4 / 76.8
+
+A — marchés : {'OVER_UNDER': 55, 'TEAM_TOTAL_HOME': 43, 'TEAM_TOTAL_AWAY': 36, 'DOUBLE_CHANCE': 36, 'TO_WIN_EITHER_HALF': 25, 'ONE_X_TWO': 12} | cote médiane 1.21
+   par mois : {'2026-07': '15/26', '2026-08': '24/30', '2026-09': '20/28', '2026-10': '16/23'}
+
+B — marchés : {'OVER_UNDER': 137, 'TEAM_TOTAL_HOME': 23, 'TEAM_TOTAL_AWAY': 22, 'DOUBLE_CHANCE': 19, 'ONE_X_TWO': 10, 'CLEAN_SHEET_HOME': 8} | cote médiane 1.2
+   par mois : {'2026-07': '21/30', '2026-08': '18/31', '2026-09': '20/29', '2026-10': '15/24'}
+
+C — marchés : {'OVER_UNDER': 82, 'TEAM_TOTAL_HOME': 43, 'TEAM_TOTAL_AWAY': 36, 'DOUBLE_CHANCE': 28, 'ONE_X_TWO': 14, 'BTTS': 8} | cote médiane 1.22
+   par mois : {'2026-07': '16/25', '2026-08': '20/30', '2026-09': '19/28', '2026-10': '19/23'}

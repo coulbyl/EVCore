@@ -78,6 +78,11 @@ export type ChannelSelectionDto = {
   oddsBookmaker: string | null;
   /** Marge payée sur le groupe d'issues de ce book, et meilleure marge du relevé. */
   marginPaid: number | null;
+  /**
+   * Fréquence affichée au joueur : probabilité du marché, marge retirée
+   * (2026-10-28). Null sans cote.
+   */
+  marketProbability: number | null;
   marginBest: number | null;
   impliedProbability: number | null;
   ev: number | null;

@@ -24,6 +24,11 @@ export type AuthSessionUser = {
   hasCompletedOnboarding: boolean;
   phoneNumber: string | null;
   phoneNumberConsentGiven: boolean;
+  /**
+   * Fin de la pause choisie par le joueur (ISO), null hors pause. Pendant la
+   * pause, tout ce qui propose un pari est bloqué côté serveur (PausedGuard).
+   */
+  pausedUntil: string | null;
 };
 
 export type AuthSession = {

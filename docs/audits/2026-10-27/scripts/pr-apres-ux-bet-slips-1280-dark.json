@@ -1,0 +1,137 @@
+{
+ "url": "http://localhost:3010/dashboard/bet-slips",
+ "title": "EVCore",
+ "lang": "fr",
+ "headings": [
+  "h1: Mes coupons",
+  "h2: Combiné · 2 sélections",
+  "h2: Pari simple",
+  "h2: Pari simple",
+  "h2: Combiné · 2 sélections"
+ ],
+ "overflowX": false,
+ "textElements": 81,
+ "smallText": {
+  "count": 3,
+  "samples": [
+   {
+    "text": "AUJOURD'HUI",
+    "px": 11
+   },
+   {
+    "text": "SUIVI",
+    "px": 11
+   },
+   {
+    "text": "ANALYSE",
+    "px": 11
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 24,
+ "smallTapTargets": {
+  "count": 15,
+  "samples": [
+   {
+    "text": "Accueil",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Coupons",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Avis IA",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Décisions",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mes coupons",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Inbox",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Formation",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mesures historiques",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Notifications 2",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Paramètres du compte",
+    "w": 36,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "2",
+    "w": 42,
+    "h": 44,
+    "tag": "a"
+   },
+   {
+    "text": "Tous",
+    "w": 155,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "20 oct. 2026",
+    "w": 155,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "27 oct. 2026",
+    "w": 155,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "Réinitialiser",
+    "w": 114,
+    "h": 32,
+    "tag": "button"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

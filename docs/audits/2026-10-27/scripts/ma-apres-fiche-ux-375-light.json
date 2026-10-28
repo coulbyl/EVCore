@@ -1,0 +1,32 @@
+{
+ "url": "http://localhost:3010/dashboard/decisions/match/fx-m1",
+ "title": "Fiche du match — EVCore",
+ "lang": "fr",
+ "headings": [
+  "h1: Arsenal – Burnley",
+  "h2: CE QUE NOTRE MODÈLE ATTEND",
+  "h2: CE QUI PÈSE DANS LA LECTURE",
+  "h2: CE QU'ON A ÉCARTÉ, ET POURQUOI"
+ ],
+ "overflowX": false,
+ "textElements": 28,
+ "smallText": {
+  "count": 0,
+  "samples": []
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 14,
+ "smallTapTargets": {
+  "count": 0,
+  "samples": []
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

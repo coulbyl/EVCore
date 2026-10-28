@@ -1,0 +1,185 @@
+{
+ "url": "http://localhost:3000/dashboard/track-record",
+ "title": "Mesures historiques — EVCore",
+ "lang": "fr",
+ "headings": [
+  "h1: Ce que le moteur EVCore a réellement produit",
+  "h2: ANNONCÉ ET RÉALISÉ · DU 29 JUILLET 2026 AU 27 OCTO",
+  "h2: PAR CANAL",
+  "h2: Calibration des canaux actifs",
+  "h2: Classement ligues"
+ ],
+ "overflowX": false,
+ "textElements": 90,
+ "smallText": {
+  "count": 21,
+  "samples": [
+   {
+    "text": "AUJOURD'HUI",
+    "px": 11
+   },
+   {
+    "text": "SUIVI",
+    "px": 11
+   },
+   {
+    "text": "ANALYSE",
+    "px": 11
+   },
+   {
+    "text": "Opérateur",
+    "px": 9.9
+   },
+   {
+    "text": "PRONOSTICS RÉGLÉS",
+    "px": 10.9
+   },
+   {
+    "text": "ANNONCÉ",
+    "px": 10.9
+   },
+   {
+    "text": "RÉALISÉ",
+    "px": 10.9
+   },
+   {
+    "text": "À MISE FIXE",
+    "px": 10.9
+   },
+   {
+    "text": "CANAL",
+    "px": 10.4
+   },
+   {
+    "text": "STATUT",
+    "px": 10.4
+   },
+   {
+    "text": "CALIBRATION",
+    "px": 10.4
+   },
+   {
+    "text": "ROI",
+    "px": 10.4
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 2,
+  "samples": [
+   {
+    "text": "E2",
+    "px": 12.2,
+    "ratio": 2.8,
+    "min": 4.5
+   }
+  ]
+ },
+ "interactive": 22,
+ "smallTapTargets": {
+  "count": 19,
+  "samples": [
+   {
+    "text": "Accueil",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Coupons",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Avis IA",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Décisions",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Matchs",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mes coupons",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Inbox",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Formation",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mesures historiques",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Notifications",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Paramètres du compte",
+    "w": 27,
+    "h": 27,
+    "tag": "a"
+   },
+   {
+    "text": "Rechercher dans la page",
+    "w": 36,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "Notifications",
+    "w": 42,
+    "h": 44,
+    "tag": "a"
+   },
+   {
+    "text": "Mon coupon",
+    "w": 42,
+    "h": 44,
+    "tag": "button"
+   },
+   {
+    "text": "E2",
+    "w": 38,
+    "h": 38,
+    "tag": "button"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": [
+  {
+   "word": "garanti",
+   "count": 1
+  }
+ ]
+}

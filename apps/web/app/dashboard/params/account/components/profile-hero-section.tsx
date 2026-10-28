@@ -9,6 +9,7 @@ import {
   FingerprintPattern,
   Pencil,
   Check,
+  Lock,
   X,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -23,7 +24,34 @@ import { clientApiRequest } from "@/lib/api/client-api";
 import { updateIdentity } from "@/domains/auth/use-cases/update-identity";
 import { PhoneNumberRow } from "./phone-number-row";
 
-type EditableField = "email" | "username" | null;
+type EditableField = "username" | null;
+
+function ReadOnlyInfoRow({
+  icon: Icon,
+  label,
+  value,
+  hint,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  hint?: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3">
+      <Icon size={13} className="shrink-0 text-muted-foreground" />
+      <span className="w-24 shrink-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+        {label}
+      </span>
+      <div className="min-w-0 flex-1">
+        <span className="block truncate text-sm text-foreground">{value}</span>
+        {hint ? (
+          <span className="block text-xs text-muted-foreground">{hint}</span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 function EditableInfoRow({
   icon: Icon,
@@ -41,7 +69,6 @@ function EditableInfoRow({
 }: {
   icon: React.ElementType;
   label: string;
-  field: EditableField;
   value: string;
   editing: boolean;
   onStartEdit: () => void;
@@ -71,7 +98,7 @@ function EditableInfoRow({
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <Icon size={13} className="shrink-0 text-muted-foreground" />
-      <span className="w-20 shrink-0 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+      <span className="w-24 shrink-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </span>
 
@@ -89,36 +116,34 @@ function EditableInfoRow({
             type="button"
             onClick={() => onSave(draft)}
             disabled={saving || draft.trim() === ""}
-            className="shrink-0 rounded-md p-1 text-accent hover:bg-accent/10 disabled:opacity-40"
-            title={saveLabel}
+            aria-label={saveLabel}
+            className="flex size-11 shrink-0 items-center justify-center rounded-lg text-accent hover:bg-accent/10 disabled:opacity-40"
           >
-            <Check size={14} />
+            <Check size={16} />
           </button>
           <button
             type="button"
             onClick={onCancel}
             disabled={saving}
-            className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted/40"
-            title={cancelLabel}
+            aria-label={cancelLabel}
+            className="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/40"
           >
-            <X size={14} />
+            <X size={16} />
           </button>
-          {error && (
-            <span className="text-[0.68rem] text-destructive whitespace-nowrap">
-              {error}
-            </span>
-          )}
+          {error && <span className="text-xs text-destructive">{error}</span>}
         </div>
       ) : (
         <div className="flex flex-1 items-center gap-2 min-w-0">
           <span className="truncate text-sm text-foreground">{value}</span>
+          {/* Toujours visible : au toucher, un crayon qui n'apparaît qu'au
+              survol n'existe pas (revue UX du 2026-10-27, P2-8). */}
           <button
             type="button"
             onClick={onStartEdit}
-            className="ml-auto shrink-0 rounded-md p-1 text-muted-foreground opacity-0 hover:opacity-100 group-hover:opacity-60 hover:text-foreground transition-opacity"
-            title={editLabel}
+            aria-label={editLabel}
+            className="ml-auto flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           >
-            <Pencil size={11} />
+            <Pencil size={14} />
           </button>
         </div>
       )}
@@ -135,6 +160,7 @@ export function ProfileHeroSection() {
     currentUser.avatarUrl,
   );
   const [avatarSaving, setAvatarSaving] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
 
   const [editingField, setEditingField] = useState<EditableField>(null);
   const [fieldSaving, setFieldSaving] = useState(false);
@@ -151,8 +177,10 @@ export function ProfileHeroSection() {
 
   async function handleSelectAvatar(avatarUrl: string) {
     if (avatarUrl === selected || avatarSaving) return;
+    const previous = selected;
     setSelected(avatarUrl);
     setAvatarSaving(true);
+    setAvatarError(null);
     try {
       await clientApiRequest("/auth/me", {
         method: "PATCH",
@@ -160,12 +188,17 @@ export function ProfileHeroSection() {
         fallbackErrorMessage: t("avatarSaveError"),
       });
       setCurrentUser({ ...currentUser, avatarUrl });
+    } catch {
+      // L'échec était silencieux : l'avatar changeait à l'écran sans être
+      // enregistré (revue UX du 2026-10-27, P2-7).
+      setSelected(previous);
+      setAvatarError(t("avatarSaveError"));
     } finally {
       setAvatarSaving(false);
     }
   }
 
-  async function handleSaveField(field: "email" | "username", value: string) {
+  async function handleSaveField(field: "username", value: string) {
     const trimmed = value.trim();
     if (!trimmed) return;
     setFieldSaving(true);
@@ -194,12 +227,11 @@ export function ProfileHeroSection() {
 
   return (
     <section className="lg:col-span-2 overflow-hidden rounded-[1.6rem] border border-border bg-panel-strong ev-shell-shadow">
-      {/* Accent band */}
-      <div className="h-1 w-full bg-gradient-to-r from-accent/30 via-accent/70 to-accent/30" />
-
-      <div className="grid gap-6 p-5 sm:grid-cols-[auto_1fr] sm:gap-8 sm:p-7">
+      {/* Colonnes bornées (minmax 0) : sans elles, la bande d'avatars
+          élargissait la colonne et rognait les cartes sur téléphone. */}
+      <div className="grid grid-cols-1 gap-6 p-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-8 sm:p-7">
         {/* ── Left: avatar + picker ── */}
-        <div className="flex flex-col items-center gap-4 sm:items-start">
+        <div className="flex min-w-0 flex-col items-center gap-4 sm:items-start">
           <div
             className={`transition-opacity ${avatarSaving ? "opacity-60" : "opacity-100"}`}
           >
@@ -212,20 +244,24 @@ export function ProfileHeroSection() {
 
           {/* Compact horizontal picker */}
           <div className="flex flex-col gap-2 w-full sm:w-auto">
-            <p className="text-center text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground sm:text-left">
+            <p className="text-center text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground sm:text-left">
               {t("avatar")}
             </p>
             {/* Le bord droit s'estompe : la bande continue au-delà de
                 l'écran, et rien ne le disait (revue UX du 2026-10-11,
                 P2-16). */}
-            <div className="flex gap-1.5 overflow-x-auto pb-1 pr-6 [mask-image:linear-gradient(to_right,black_calc(100%_-_2.5rem),transparent)]">
+            {/* Sur grand écran, les avatars passent à la ligne : la bande
+                n'en montrait que 7 sur 10 à côté d'un grand vide. */}
+            <div className="flex gap-1 overflow-x-auto pb-1 pr-6 [mask-image:linear-gradient(to_right,black_calc(100%_-_2.5rem),transparent)] sm:max-w-sm sm:flex-wrap sm:overflow-visible sm:pr-0 sm:[mask-image:none]">
               {FREE_AVATARS.map((avatar) => (
                 <button
                   key={avatar.url}
                   type="button"
                   disabled={avatarSaving}
                   onClick={() => handleSelectAvatar(avatar.url)}
-                  className={`shrink-0 rounded-full transition-all ${
+                  aria-label={avatar.label}
+                  aria-pressed={selected === avatar.url}
+                  className={`flex size-11 shrink-0 items-center justify-center rounded-full transition-all ${
                     selected === avatar.url
                       ? "ring-2 ring-accent ring-offset-2 ring-offset-panel-strong"
                       : "opacity-70 hover:opacity-100"
@@ -235,7 +271,7 @@ export function ProfileHeroSection() {
                   <UserAvatar
                     avatarUrl={avatar.url}
                     username={avatar.label}
-                    size={30}
+                    size={34}
                   />
                 </button>
               ))}
@@ -253,7 +289,8 @@ export function ProfileHeroSection() {
                     type="button"
                     disabled={isLocked || avatarSaving}
                     onClick={() => !isLocked && handleSelectAvatar(avatar.url)}
-                    className={`relative shrink-0 rounded-full transition-all ${
+                    aria-label={avatar.label}
+                    className={`relative flex size-11 shrink-0 items-center justify-center rounded-full transition-all ${
                       isLocked
                         ? "cursor-not-allowed grayscale opacity-40"
                         : selected === avatar.url
@@ -265,11 +302,11 @@ export function ProfileHeroSection() {
                     <UserAvatar
                       avatarUrl={avatar.url}
                       username={avatar.label}
-                      size={30}
+                      size={34}
                     />
                     {isLocked && (
-                      <span className="absolute -right-0.5 -top-0.5 text-[0.5rem] leading-none">
-                        🔒
+                      <span className="absolute right-0 top-0 inline-flex size-4 items-center justify-center rounded-full bg-panel-strong text-muted-foreground">
+                        <Lock size={10} aria-hidden />
                       </span>
                     )}
                   </button>
@@ -291,6 +328,11 @@ export function ProfileHeroSection() {
                 return btn;
               })}
             </div>
+            {avatarError ? (
+              <p role="alert" className="text-xs text-destructive">
+                {avatarError}
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -298,43 +340,38 @@ export function ProfileHeroSection() {
         <div className="flex flex-col justify-between gap-5">
           {/* Identity */}
           <div>
-            <h2 className="text-xl font-bold tracking-tight text-foreground">
+            <h2 className="text-base font-bold tracking-tight text-foreground">
               {currentUser.fullName}
             </h2>
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
               <span className="text-sm text-muted-foreground">
                 @{currentUser.username}
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-accent/12 px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wider text-accent">
-                <ShieldCheck size={10} />
-                {t.has(`roles.${currentUser.role}`)
-                  ? t(`roles.${currentUser.role}`)
-                  : currentUser.role}
-              </span>
+              {/* « Opérateur » se lit « bookmaker » chez un parieur : le
+                  rôle ne s'affiche qu'aux admins (revue UX du 2026-10-27). */}
+              {currentUser.role === "ADMIN" ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent/12 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-accent">
+                  <ShieldCheck size={12} />
+                  {t("roles.ADMIN")}
+                </span>
+              ) : null}
             </div>
           </div>
 
           {/* Info rows */}
           <div className="group divide-y divide-border overflow-hidden rounded-2xl border border-border bg-background">
-            <EditableInfoRow
+            {/* L'adresse ne se change plus en ligne : sans mot de passe ni
+                code envoyé à la nouvelle adresse, le changement retirait la
+                vérification sans prévenir (revue UX du 2026-10-27, P2-8). */}
+            <ReadOnlyInfoRow
               icon={Mail}
               label={t("email")}
-              field="email"
               value={currentUser.email}
-              editing={editingField === "email"}
-              onStartEdit={() => startEdit("email")}
-              onSave={(val) => handleSaveField("email", val)}
-              onCancel={cancelEdit}
-              saving={fieldSaving}
-              error={editingField === "email" ? fieldError : null}
-              editLabel={t("editField", { field: t("email").toLowerCase() })}
-              saveLabel={t("save")}
-              cancelLabel={t("cancel")}
+              hint={t("emailChangeHint")}
             />
             <EditableInfoRow
               icon={AtSign}
               label={t("username")}
-              field="username"
               value={`@${currentUser.username}`}
               editing={editingField === "username"}
               onStartEdit={() => startEdit("username")}
@@ -359,22 +396,16 @@ export function ProfileHeroSection() {
               removeLabel={t("phoneRemove")}
               saveLabel={t("save")}
               cancelLabel={t("cancel")}
+              editLabel={t("editField", { field: t("phone").toLowerCase() })}
               saveError={t("phoneSaveError")}
             />
-            {currentUser.bio && (
-              <div className="flex items-center gap-3 px-4 py-3">
-                <FingerprintPattern
-                  size={13}
-                  className="shrink-0 text-muted-foreground"
-                />
-                <span className="w-20 shrink-0 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  {t("bio")}
-                </span>
-                <span className="truncate text-sm text-foreground">
-                  {currentUser.bio}
-                </span>
-              </div>
-            )}
+            {currentUser.bio ? (
+              <ReadOnlyInfoRow
+                icon={FingerprintPattern}
+                label={t("bio")}
+                value={currentUser.bio}
+              />
+            ) : null}
           </div>
         </div>
       </div>

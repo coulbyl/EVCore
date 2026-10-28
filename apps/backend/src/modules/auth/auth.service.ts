@@ -25,6 +25,7 @@ import {
   PASSWORD_RESET_RATE_LIMIT_MAX,
   PASSWORD_RESET_RATE_LIMIT_WINDOW_MS,
   PASSWORD_RESET_TTL_MS,
+  TERMS_VERSION,
 } from './auth.constants';
 import type {
   AuthSession,
@@ -106,6 +107,10 @@ export class AuthService {
         fullName: input.fullName.trim(),
         passwordHash: await hashPassword(input.password),
         bio: input.bio?.trim() || null,
+        // Preuve du consentement : le DTO refuse l'inscription sans les deux
+        // cases cochées, on garde la date et la version acceptée.
+        termsAcceptedAt: new Date(),
+        termsVersion: TERMS_VERSION,
         // Schema default is `true` (existing users were already past the
         // point of needing it) — a genuinely new signup must start `false`
         // so the active onboarding wizard actually shows.
@@ -134,6 +139,7 @@ export class AuthService {
         hasCompletedOnboarding: true,
         phoneNumber: true,
         phoneNumberConsentGiven: true,
+        pausedUntil: true,
       },
     });
 
@@ -178,6 +184,7 @@ export class AuthService {
         hasCompletedOnboarding: true,
         phoneNumber: true,
         phoneNumberConsentGiven: true,
+        pausedUntil: true,
         passwordHash: true,
         suspended: true,
       },
@@ -222,6 +229,7 @@ export class AuthService {
           hasCompletedOnboarding: user.hasCompletedOnboarding,
           phoneNumber: user.phoneNumber,
           phoneNumberConsentGiven: user.phoneNumberConsentGiven,
+          pausedUntil: user.pausedUntil?.toISOString() ?? null,
         },
       },
     };
@@ -270,6 +278,7 @@ export class AuthService {
             hasCompletedOnboarding: true,
             phoneNumber: true,
             phoneNumberConsentGiven: true,
+            pausedUntil: true,
             suspended: true,
           },
         },
@@ -368,6 +377,7 @@ export class AuthService {
         hasCompletedOnboarding: true,
         phoneNumber: true,
         phoneNumberConsentGiven: true,
+        pausedUntil: true,
       },
     });
     return this.toSessionUser(user);
@@ -696,6 +706,7 @@ export class AuthService {
         hasCompletedOnboarding: true,
         phoneNumber: true,
         phoneNumberConsentGiven: true,
+        pausedUntil: true,
       },
     });
 
@@ -777,11 +788,13 @@ export class AuthService {
     hasCompletedOnboarding: boolean;
     phoneNumber: string | null;
     phoneNumberConsentGiven: boolean;
+    pausedUntil: Date | null;
   }): AuthSessionUser {
     return {
       ...user,
       unitAmount: user.unitAmount?.toString() ?? null,
       unitPercent: user.unitPercent?.toString() ?? null,
+      pausedUntil: user.pausedUntil?.toISOString() ?? null,
     };
   }
 }

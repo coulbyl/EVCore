@@ -1,0 +1,144 @@
+{
+ "url": "http://localhost:3010/dashboard/params/account/profil",
+ "title": "EVCore",
+ "lang": "fr",
+ "headings": [
+  "h2: E2E Tester",
+  "h3: Mes badges"
+ ],
+ "overflowX": false,
+ "textElements": 23,
+ "smallText": {
+  "count": 7,
+  "samples": [
+   {
+    "text": "AVATAR",
+    "px": 9.9
+   },
+   {
+    "text": "🔒",
+    "px": 8
+   },
+   {
+    "text": "OPÉRATEUR",
+    "px": 10.4
+   },
+   {
+    "text": "EMAIL",
+    "px": 11.2
+   },
+   {
+    "text": "IDENTIFIANT",
+    "px": 11.2
+   },
+   {
+    "text": "TÉLÉPHONE",
+    "px": 11.2
+   },
+   {
+    "text": "PROGRESSION",
+    "px": 11.5
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 26,
+ "smallTapTargets": {
+  "count": 14,
+  "samples": [
+   {
+    "text": "Profil",
+    "w": 317,
+    "h": 42,
+    "tag": "button"
+   },
+   {
+    "text": "Attaquant",
+    "w": 30,
+    "h": 30,
+    "tag": "button"
+   },
+   {
+    "text": "Gardien",
+    "w": 30,
+    "h": 30,
+    "tag": "button"
+   },
+   {
+    "text": "Maestro",
+    "w": 30,
+    "h": 30,
+    "tag": "button"
+   },
+   {
+    "text": "Capitaine",
+    "w": 30,
+    "h": 30,
+    "tag": "button"
+   },
+   {
+    "text": "Rookie",
+    "w": 30,
+    "h": 30,
+    "tag": "button"
+   },
+   {
+    "text": "Fantôme",
+    "w": 30,
+    "h": 30,
+    "tag": "button"
+   },
+   {
+    "text": "Analyste",
+    "w": 30,
+    "h": 30,
+    "tag": "button"
+   },
+   {
+    "text": "Stratège",
+    "w": 30,
+    "h": 30,
+    "tag": "button"
+   },
+   {
+    "text": "Buteur Élite",
+    "w": 30,
+    "h": 30,
+    "tag": "button"
+   },
+   {
+    "text": "🔒",
+    "w": 30,
+    "h": 30,
+    "tag": "button"
+   },
+   {
+    "text": "Modifier email",
+    "w": 19,
+    "h": 19,
+    "tag": "button"
+   },
+   {
+    "text": "Modifier identifiant",
+    "w": 19,
+    "h": 19,
+    "tag": "button"
+   },
+   {
+    "text": "Ajouter mon numéro",
+    "w": 118,
+    "h": 16,
+    "tag": "button"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

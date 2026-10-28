@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PauseGate } from "@/components/pause-gate";
 import { DecisionsPageClient } from "./components/decisions-page-client";
 
 export const metadata: Metadata = {
@@ -6,5 +7,9 @@ export const metadata: Metadata = {
 };
 
 export default function DecisionsPage() {
-  return <DecisionsPageClient />;
+  return (
+    <PauseGate>
+      <DecisionsPageClient />
+    </PauseGate>
+  );
 }

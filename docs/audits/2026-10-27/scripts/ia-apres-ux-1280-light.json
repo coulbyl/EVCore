@@ -1,0 +1,134 @@
+{
+ "url": "http://localhost:3010/dashboard/arbitrage?filter=all",
+ "title": "Avis IA — EVCore",
+ "lang": "fr",
+ "headings": [
+  "h1: Avis IA",
+  "h2: BILAN DE L'IA"
+ ],
+ "overflowX": false,
+ "textElements": 59,
+ "smallText": {
+  "count": 3,
+  "samples": [
+   {
+    "text": "AUJOURD'HUI",
+    "px": 11
+   },
+   {
+    "text": "SUIVI",
+    "px": 11
+   },
+   {
+    "text": "ANALYSE",
+    "px": 11
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 26,
+ "smallTapTargets": {
+  "count": 15,
+  "samples": [
+   {
+    "text": "Accueil",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Coupons",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Avis IA",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Décisions",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Matchs",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mes coupons",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Inbox",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Formation",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mesures historiques",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Notifications",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Paramètres du compte",
+    "w": 36,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Notifications",
+    "w": 42,
+    "h": 44,
+    "tag": "a"
+   },
+   {
+    "text": "Mon coupon",
+    "w": 42,
+    "h": 44,
+    "tag": "button"
+   },
+   {
+    "text": "En savoir plus sur Avis IA",
+    "w": 12,
+    "h": 12,
+    "tag": "button"
+   },
+   {
+    "text": "Détail dans Mesures historiques",
+    "w": 199,
+    "h": 16,
+    "tag": "a"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

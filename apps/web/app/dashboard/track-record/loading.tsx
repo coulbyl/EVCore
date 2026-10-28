@@ -10,8 +10,10 @@ export default function TrackRecordLoading() {
       </PageHeader>
       <PageContent className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4 sm:p-5 ev-shell-shadow">
         <Skeleton className="h-10 w-72 rounded-full" />
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {Array.from({ length: 3 }, (_, index) => (
+        {/* Même grille que l'en-tête de la page (4 cartes, 2 puis 4
+            colonnes) : sinon la mise en page saute au chargement. */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {Array.from({ length: 4 }, (_, index) => (
             <Skeleton key={index} className="h-24 rounded-2xl" />
           ))}
         </div>

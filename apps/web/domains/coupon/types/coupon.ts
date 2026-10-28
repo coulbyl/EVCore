@@ -5,7 +5,8 @@ export type CouponClassName =
   | "UNIQUE"
   | "FAVOURITE"
   | "COMBO"
-  | "LONG";
+  | "LONG"
+  | "DOUBLE";
 
 export type CouponSource = "LLM" | "PRICE_COMPOSER" | "ENGINE";
 
@@ -32,6 +33,8 @@ export type CouponLegDto = {
   market: string;
   pick: string;
   probability: number;
+  /** Fréquence affichée : probabilité du marché, marge retirée. */
+  marketProbability: number | null;
   oddsSnapshot: number | null;
   /** Book qui a servi `oddsSnapshot` quand il est connu, sinon `null`. */
   bookmaker: string | null;
@@ -107,6 +110,8 @@ export type CouponProposalDto = {
    */
   realizedOdds: number | null;
   jointProbability: number;
+  /** Produit des probabilités du marché des jambes ; null s'il en manque une. */
+  marketJointProbability: number | null;
   signalScore: number;
   status: CouponStatus;
   /** Engagement réel, jamais fabriqué (CLAUDE.md §4 point 6) — viewerCount :

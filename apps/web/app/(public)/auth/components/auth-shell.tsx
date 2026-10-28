@@ -6,18 +6,18 @@ import { BarChart3, TrendingUp, Target } from "lucide-react";
 const FEATURES = [
   {
     icon: TrendingUp,
-    title: "Sélection quotidienne",
-    body: "Le moteur analyse les matchs et identifie les picks à valeur positive, canal par canal.",
+    title: "Les coupons du jour",
+    body: "Chaque jour, quelques coupons et sélections, avec leur probabilité et le raisonnement qui les a produits.",
   },
   {
     icon: BarChart3,
-    title: "Indice de paris",
-    body: "Taux de réussite et ROI par marché et tranche de cote — pour arbitrer entre vos sélections.",
+    title: "Des chances qui tiennent",
+    body: "Pour chaque marché, ce que le moteur annonce et ce qui arrive vraiment, mesuré sur les matchs joués.",
   },
   {
     icon: Target,
-    title: "Suivi de résultats",
-    body: "Historique complet par canal avec performance réelle, consultable à tout moment.",
+    title: "Tout est réglé",
+    body: "Chaque pronostic est confronté au résultat réel, pertes comprises, et reste consultable.",
   },
 ];
 
@@ -54,12 +54,15 @@ export function AuthShell({
                   height={20}
                   className="size-5 rounded-md"
                 />
-                <p className="text-[0.6rem] font-bold text-accent">Core</p>
+                <p className="text-xs font-bold text-accent">Core</p>
               </div>
-              <h1 className="mt-5 text-xl font-semibold leading-snug tracking-tight text-sidebar-foreground lg:text-[1.35rem]">
+              {/* Paragraphe, pas titre : le titre principal de la page est
+                  celui du formulaire, visible aussi sur téléphone (le seul
+                  h1 était dans ce panneau, caché sous md). */}
+              <p className="mt-5 text-xl font-semibold leading-snug tracking-tight text-sidebar-foreground lg:text-[1.35rem]">
                 {asideTitle}
-              </h1>
-              <p className="mt-3 max-w-xs text-sm leading-7 text-sidebar-foreground/60">
+              </p>
+              <p className="mt-3 max-w-xs text-sm leading-7 text-sidebar-foreground/75">
                 {asideText}
               </p>
             </div>
@@ -72,10 +75,10 @@ export function AuthShell({
                 >
                   <Icon className="mt-0.5 size-[15px] shrink-0 text-accent" />
                   <div>
-                    <p className="text-[0.8rem] font-semibold leading-snug text-sidebar-foreground">
+                    <p className="text-sm font-semibold leading-snug text-sidebar-foreground">
                       {featureTitle}
                     </p>
-                    <p className="mt-0.5 text-[0.75rem] leading-5 text-sidebar-foreground/55">
+                    <p className="mt-0.5 text-sm leading-5 text-sidebar-foreground/75">
                       {body}
                     </p>
                   </div>
@@ -83,8 +86,9 @@ export function AuthShell({
               ))}
             </div>
 
-            <p className="mt-8 border-t border-sidebar-border/30 pt-5 text-[0.7rem] leading-relaxed text-sidebar-foreground/35">
-              Accès sécurisé · Données chiffrées
+            <p className="mt-8 border-t border-sidebar-border/30 pt-5 text-xs leading-relaxed text-sidebar-foreground/75">
+              18+ · Parier comporte des risques de perte. EVCore ne prend aucune
+              mise.
             </p>
           </section>
 
@@ -100,14 +104,12 @@ export function AuthShell({
                   height={20}
                   className="size-5 rounded-md"
                 />
-                <p className="text-[0.6rem] font-bold text-muted-foreground/60">
-                  Core
-                </p>
+                <p className="text-xs font-bold text-muted-foreground">Core</p>
               </div>
 
-              <h2 className="text-[1.45rem] font-semibold tracking-tight text-foreground">
+              <h1 className="text-[1.45rem] font-semibold tracking-tight text-foreground">
                 {title}
-              </h2>
+              </h1>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 {subtitle}
               </p>
@@ -117,7 +119,7 @@ export function AuthShell({
               <p className="mt-10 text-center text-xs text-muted-foreground">
                 <Link
                   href="/"
-                  className="transition-colors hover:text-muted-foreground"
+                  className="inline-flex min-h-11 items-center transition-colors hover:text-foreground"
                 >
                   ← Retour à l&apos;accueil
                 </Link>

@@ -1,0 +1,113 @@
+{
+ "url": "http://localhost:3010/dashboard/decisions",
+ "title": "Décisions — EVCore",
+ "lang": "fr",
+ "headings": [],
+ "overflowX": false,
+ "textElements": 49,
+ "smallText": {
+  "count": 16,
+  "samples": [
+   {
+    "text": "NOTRE SÉLECTION",
+    "px": 9.9
+   },
+   {
+    "text": "Résultat",
+    "px": 10.9
+   },
+   {
+    "text": "79% de chances",
+    "px": 10.9
+   },
+   {
+    "text": "@1.28",
+    "px": 10.9
+   },
+   {
+    "text": "1xBet 1.24",
+    "px": 10.9
+   },
+   {
+    "text": "Fiable",
+    "px": 9.9
+   },
+   {
+    "text": "Double chance",
+    "px": 10.9
+   },
+   {
+    "text": "76% de chances",
+    "px": 10.9
+   },
+   {
+    "text": "@1.36",
+    "px": 10.9
+   },
+   {
+    "text": "1xBet 1.32",
+    "px": 10.9
+   },
+   {
+    "text": "Plus/Moins de buts",
+    "px": 10.9
+   },
+   {
+    "text": "67% de chances",
+    "px": 10.9
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 24,
+ "smallTapTargets": {
+  "count": 6,
+  "samples": [
+   {
+    "text": "Filtres",
+    "w": 77,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "Fiable",
+    "w": 57,
+    "h": 14,
+    "tag": "button"
+   },
+   {
+    "text": "Voir les 5 autres marchés analysés",
+    "w": 283,
+    "h": 33,
+    "tag": "button"
+   },
+   {
+    "text": "Voir 1 autre marché analysé",
+    "w": 283,
+    "h": 33,
+    "tag": "button"
+   },
+   {
+    "text": "En savoir plus sur Alerte calibration",
+    "w": 12,
+    "h": 12,
+    "tag": "button"
+   },
+   {
+    "text": "Voir les 2 autres marchés analysés",
+    "w": 283,
+    "h": 33,
+    "tag": "button"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

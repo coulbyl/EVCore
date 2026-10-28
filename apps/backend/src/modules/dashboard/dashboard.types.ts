@@ -59,12 +59,42 @@ export type CompetitionStat = {
   model: CompetitionModelStats;
 };
 
-export type PnlByCanalResponse = {
+/**
+ * En-tête de la page Mesures historiques : ce que les canaux ont annoncé et
+ * ce qui est arrivé, sur les sélections d'avant-match dédupliquées de la
+ * période (même source que le tableau par canal). Remplace le résumé lu dans
+ * la table `bet`, plus alimentée depuis le 2026-09-04, qui affichait
+ * « 1 pari réglé, 100 %, +64 % » sur 30 jours (audit du 2026-10-23, P1-5).
+ */
+export type TrackRecordRates = {
+  /** Sélections réglées (gagnées ou perdues). */
+  settled: number;
+  won: number;
+  /** Probabilité moyenne annoncée, 0–1 ; null sans sélection. */
+  announced: number | null;
+  /** Taux de réussite réel, 0–1 ; null sans sélection. */
+  realised: number | null;
+  /** Retour d'une mise de 1 à la cote d'analyse (0,97 = −3 %). */
+  returnPerUnit: number | null;
+  /** Assez de sélections pour lire les taux (seuil de la page). */
+  sufficient: boolean;
+};
+
+/** Même cohorte que l'en-tête, restreinte à une tranche de cote. */
+export type TrackRecordOddsBand = TrackRecordRates & {
+  /** Borne basse incluse ; null = pas de borne. */
+  minOdds: number | null;
+  /** Borne haute exclue ; null = pas de borne. */
+  maxOdds: number | null;
+  /** Même règle que les canaux (écart réalisé/annoncé, seuil de 30). */
+  status: ChannelStatus;
+};
+
+export type TrackRecordSummary = TrackRecordRates & {
   from: string;
   to: string;
-  global: PnlSummary;
-  value: PnlSummary;
-  safe: PnlSummary;
+  /** Tranches de TRACK_RECORD_ODDS_BREAKS, dans l'ordre des cotes. */
+  byOdds: TrackRecordOddsBand[];
 };
 
 export type LeaderboardEntry = {
@@ -118,6 +148,8 @@ export type ChannelStatsItem = {
   sampleSize: number;
   oddsAvailabilityRate: number;
   trend: 'UP' | 'FLAT' | 'DOWN';
+  /** Probabilité moyenne annoncée, 0–1 ; à lire face à `hitRate`. */
+  announced: number | null;
 };
 
 /**
@@ -135,6 +167,8 @@ export type ChannelCompetitionStatItem = {
   competitionCountry: string;
   roi: number | null;
   hitRate: number | null;
+  /** Probabilité moyenne annoncée, 0–1 ; à lire face à `hitRate`. */
+  announced: number | null;
   /** See ChannelHealthItem.calibrationRatio — same formula, drives `status`. */
   calibrationRatio: number | null;
   sampleSize: number;

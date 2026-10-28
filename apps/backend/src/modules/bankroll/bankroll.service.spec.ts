@@ -9,6 +9,7 @@ function makeRepo(balance = new Decimal(0)): BankrollRepository {
   return {
     getBalance: vi.fn().mockResolvedValue(balance),
     getTransactions: vi.fn().mockResolvedValue([]),
+    getDepositedTotal: vi.fn().mockResolvedValue(new Decimal(0)),
     insert: vi.fn().mockResolvedValue({}),
     insertMany: vi.fn().mockResolvedValue({ count: 0 }),
   } as unknown as BankrollRepository;
@@ -178,6 +179,18 @@ describe('BankrollService', () => {
     });
   });
 
+  describe('getSummary', () => {
+    it('returns the declared balance and every deposit ever made', async () => {
+      const repo = makeRepo(new Decimal('48320'));
+      vi.mocked(repo.getDepositedTotal).mockResolvedValue(new Decimal('60000'));
+      const service = new BankrollService(repo);
+      expect(await service.getSummary('u1')).toEqual({
+        balance: '48320.00',
+        deposited: '60000.00',
+      });
+    });
+  });
+
   describe('getTransactions', () => {
     it('serializes transactions to string amounts', async () => {
       const repo = makeRepo();
@@ -201,13 +214,42 @@ describe('BankrollService', () => {
           type: BankrollTransactionType.DEPOSIT,
           amount: '50000.00',
           betId: null,
-          canal: null,
           fixture: null,
+          homeTeam: null,
+          awayTeam: null,
+          pick: null,
+          comboLegs: null,
           market: null,
           note: 'Init',
           createdAt: '2026-04-18T10:00:00.000Z',
         },
       ]);
     });
+  });
+  it('names a combo by its leg count, not by its first match', async () => {
+    const repo = makeRepo();
+    vi.mocked(repo.getTransactions).mockResolvedValue([
+      {
+        id: 'tx-2',
+        type: BankrollTransactionType.BET_PLACED,
+        amount: new Decimal('-1000'),
+        betId: 'bet-1',
+        note: null,
+        createdAt: new Date('2026-10-20T10:00:00Z'),
+        userId: 'u1',
+        bet: {
+          market: 'ONE_X_TWO',
+          pick: 'HOME',
+          betSlipItems: [{ betSlip: { type: 'COMBO', _count: { items: 2 } } }],
+          fixture: {
+            homeTeam: { name: 'Ajax' },
+            awayTeam: { name: 'PSV' },
+          },
+        },
+      },
+    ] as never);
+    const service = new BankrollService(repo);
+    const [row] = await service.getTransactions({ userId: 'u1' });
+    expect(row).toMatchObject({ comboLegs: 2, pick: 'HOME', homeTeam: 'Ajax' });
   });
 });

@@ -1,0 +1,31 @@
+{
+ "url": "http://localhost:3010/dashboard/notifications",
+ "title": "EVCore",
+ "lang": "fr",
+ "headings": [
+  "h1: Notifications",
+  "h2: AUJOURD'HUI",
+  "h2: HIER"
+ ],
+ "overflowX": false,
+ "textElements": 25,
+ "smallText": {
+  "count": 0,
+  "samples": []
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 18,
+ "smallTapTargets": {
+  "count": 0,
+  "samples": []
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

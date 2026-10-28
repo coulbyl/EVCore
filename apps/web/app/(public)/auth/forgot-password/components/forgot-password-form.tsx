@@ -18,7 +18,7 @@ import {
 import { requestPasswordReset } from "@/domains/auth/use-cases/password-reset";
 
 const schema = z.object({
-  identifier: z.string().min(3, "Renseignez votre email ou nom d'utilisateur."),
+  identifier: z.string().min(3, "Indique ton e-mail ou ton nom d'utilisateur."),
 });
 
 type Values = z.infer<typeof schema>;
@@ -47,8 +47,8 @@ export function ForgotPasswordForm() {
     return (
       <div className="flex flex-col gap-5">
         <div className="rounded-xl border border-success/25 bg-success/8 px-4 py-3.5 text-sm text-foreground">
-          Si un compte correspond à cet identifiant et dispose d&apos;un email
-          vérifié, vous recevrez un lien dans les prochaines minutes.
+          Si un compte correspond à cet identifiant et dispose d&apos;un e-mail
+          vérifié, tu recevras un lien dans les prochaines minutes.
         </div>
         <p className="text-sm text-muted-foreground">
           Pas d&apos;email ?{" "}

@@ -1,0 +1,575 @@
+{
+ "route": "/dashboard/track-record",
+ "width": 1280,
+ "theme": "dark",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 33 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 2.8:1 (need 4.5:1) — text #ffffff on #f97316 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Opérateur\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.8:1 (need 4.5:1) — text #ffffff on #f97316 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cline-length%c ~92 chars on 2 of 3 rendered lines (aim for <80) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Pronostics réglés\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Annoncé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Réalisé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"À mise fixe\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Canal\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Statut\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Calibration\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"ROI\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Taux de réussite\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Échantillon\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"réelle.\" alone on the last of 2 lines (4% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"30j · calibration\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"jours.\" alone on the last of 2 lines (10% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cline-length%c ~127 chars on 2 of 3 rendered lines (aim for <80) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 33 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 2.8:1 (need 4.5:1) — text #ffffff on #f97316 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Opérateur\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.8:1 (need 4.5:1) — text #ffffff on #f97316 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cline-length%c ~92 chars on 2 of 3 rendered lines (aim for <80) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Pronostics réglés\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Annoncé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"Réalisé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"À mise fixe\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Canal\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Statut\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Calibration\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"ROI\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Taux de réussite\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Échantillon\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"réelle.\" alone on the last of 2 lines (4% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"30j · calibration\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"jours.\" alone on the last of 2 lines (10% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cline-length%c ~127 chars on 2 of 3 rendered lines (aim for <80) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "div",
+    "cls": "flex shrink-0 items-center justify-center rounded-full font-bold text-white ring",
+    "text": "E2",
+    "w": 32,
+    "h": 32
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.8:1 (need 4.5:1) — text #ffffff on #f97316"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center justify-center rounded-md border px-2 py-0.5 font-mediu",
+    "text": "Opérateur",
+    "w": 63,
+    "h": 21
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Opérateur\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "flex shrink-0 items-center justify-center rounded-full font-bold text-white ring",
+    "text": "E2",
+    "w": 32,
+    "h": 32
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.8:1 (need 4.5:1) — text #ffffff on #f97316"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "max-w-2xl text-sm leading-6 text-muted-foreground",
+    "text": "Les tableaux de canaux décrivent les dernières sélections en",
+    "w": 594,
+    "h": 72
+   },
+   "findings": [
+    {
+     "type": "line-length",
+     "detail": "~92 chars on 2 of 3 rendered lines (aim for <80)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "flex items-center gap-1.5 text-[0.58rem] font-semibold uppercase tracking-[0.18e",
+    "text": "PRONOSTICS RÉGLÉS",
+    "w": 167,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"Pronostics réglés\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "flex items-center gap-1.5 text-[0.58rem] font-semibold uppercase tracking-[0.18e",
+    "text": "ANNONCÉ",
+    "w": 167,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"Annoncé\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "flex items-center gap-1.5 text-[0.58rem] font-semibold uppercase tracking-[0.18e",
+    "text": "RÉALISÉ",
+    "w": 167,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"Réalisé\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "flex items-center gap-1.5 text-[0.58rem] font-semibold uppercase tracking-[0.18e",
+    "text": "À MISE FIXE",
+    "w": 167,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"À mise fixe\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center gap-1",
+    "text": "CANAL",
+    "w": 60,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Canal\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center gap-1",
+    "text": "STATUT",
+    "w": 48,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Statut\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center gap-1 justify-end",
+    "text": "CALIBRATION",
+    "w": 103,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Calibration\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center gap-1 justify-end",
+    "text": "ROI",
+    "w": 39,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"ROI\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center gap-1 justify-end",
+    "text": "TAUX DE RÉUSSITE",
+    "w": 139,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Taux de réussite\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex items-center gap-1 justify-end",
+    "text": "ÉCHANTILLON",
+    "w": 106,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Échantillon\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-xs leading-5 text-muted-foreground",
+    "text": "\"Volume insuffisant\" : moins de 30 sélections réglées sur la",
+    "w": 872,
+    "h": 40
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"réelle.\" alone on the last of 2 lines (4% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 90
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 90
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 90
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "ml-auto text-[0.6rem] font-medium uppercase tracking-wide text-muted-foreground",
+    "text": "30J · CALIBRATION",
+    "w": 91,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"30j · calibration\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-sm text-muted-foreground",
+    "text": "Pas encore assez de matchs analysés sur les 30 derniers jour",
+    "w": 382,
+    "h": 40
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"jours.\" alone on the last of 2 lines (10% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-sm leading-6 text-muted-foreground",
+    "text": "Aucun de ces chiffres ne garantit une performance future — c",
+    "w": 830,
+    "h": 72
+   },
+   "findings": [
+    {
+     "type": "line-length",
+     "detail": "~127 chars on 2 of 3 rendered lines (aim for <80)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12 righ",
+    "text": "",
+    "w": 48,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.15rem] border border-border bg-panel-strong px-3 py-2.5 shadow-sm sm:",
+    "text": "PRONOSTICS RÉGLÉS 14 966",
+    "w": 209,
+    "h": 111
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.15rem] border border-border bg-panel-strong px-3 py-2.5 shadow-sm sm:",
+    "text": "ANNONCÉ 48 %",
+    "w": 209,
+    "h": 111
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.15rem] border border-border bg-panel-strong px-3 py-2.5 shadow-sm sm:",
+    "text": "RÉALISÉ 45,9 %",
+    "w": 209,
+    "h": 111
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.15rem] border border-border bg-panel-strong px-3 py-2.5 shadow-sm sm:",
+    "text": "À MISE FIXE −9,4 %",
+    "w": 209,
+    "h": 111
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "hidden min-h-0 flex-1 flex-col overflow-hidden rounded-[1.3rem] border border-bo",
+    "text": "CANAL STATUT CALIBRATION ROI TAUX DE RÉUSSITE ÉCHANTILLON Nu",
+    "w": 872,
+    "h": 165
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Arsenal – Burnley 79% Résultat · Domicile ANGLETERRE · PREMI",
+    "w": 382,
+    "h": 92
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Bayern München – FC Augsburg 77% Résultat · Domicile ALLEMAG",
+    "w": 382,
+    "h": 92
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Ajax – PSV 82% Plus/Moins de buts · Plus de 1.5 PAYS-BAS · E",
+    "w": 382,
+    "h": 92
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "mt-4 rounded-2xl border border-border bg-panel p-3",
+    "text": "CANAUX AVEC UN ÉCART > 30 % Aucun canal dans cette tranche a",
+    "w": 382,
+    "h": 70
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "flex flex-col rounded-[1.35rem] border border-border bg-panel-strong p-4 sm:p-5 ",
+    "text": "Classement ligues 30J · CALIBRATION Pas encore assez de matc",
+    "w": 424,
+    "h": 512
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "section",
+    "cls": "rounded-2xl border border-border bg-panel p-5",
+    "text": "Aucun de ces chiffres ne garantit une performance future — c",
+    "w": 872,
+    "h": 114
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  }
+ ]
+}

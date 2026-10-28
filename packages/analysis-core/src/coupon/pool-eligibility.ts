@@ -48,6 +48,15 @@ export const POOL_EXCLUDED_CHANNELS: ReadonlySet<StrategyChannel> = new Set([
   ...UNIMPLEMENTED_STRATEGY_CHANNELS,
 ]);
 
+/**
+ * Marchés jamais admis dans un coupon, quel que soit le générateur (prix,
+ * moteur, LLM). Décision de l'utilisateur du 2026-10-28 : le « remboursé si
+ * match nul » rend la mise sur un nul, ce qui baisse la cote sans rien
+ * apporter à un coupon qu'on joue pour gagner. Il reste visible dans
+ * Décisions et la fiche de match, qui sont des lectures, pas des coupons.
+ */
+export const POOL_EXCLUDED_MARKETS: readonly string[] = ["DRAW_NO_BET"];
+
 export const POOL_ELIGIBLE_CHANNELS: readonly StrategyChannel[] = (
   Object.values(STRATEGY_CHANNEL) as StrategyChannel[]
 ).filter((channel) => !POOL_EXCLUDED_CHANNELS.has(channel));

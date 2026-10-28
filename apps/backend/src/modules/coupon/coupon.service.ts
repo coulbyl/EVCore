@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import Decimal from 'decimal.js';
 import { CouponProposalStatus } from '@evcore/db';
 import { CouponRepository } from './coupon.repository';
 import {
@@ -7,6 +8,7 @@ import {
   type PlayableQuote,
 } from '../betting-engine/pricing/playable-odds.repository';
 import { startOfUtcDay } from '@utils/date.utils';
+import { marketProbability } from '@evcore/analysis-core';
 import {
   classForTargetOddsMin,
   INTRADAY_SIGNAL_WINDOW_DAYS,
@@ -54,6 +56,63 @@ export class CouponService {
     return proposals.map((p) => {
       const reasoning = p.reasoning as Record<string, unknown> | null;
       const generationPass = reasoning?.generationPass;
+      const couponClass = classForTargetOddsMin(Number(p.targetOddsMin));
+      const legs = p.legs.map((leg) => ({
+        id: leg.id,
+        fixtureId: leg.fixtureId,
+        homeTeam: leg.fixture.homeTeam.name,
+        homeLogo: leg.fixture.homeTeam.logoUrl ?? null,
+        awayTeam: leg.fixture.awayTeam.name,
+        awayLogo: leg.fixture.awayTeam.logoUrl ?? null,
+        competition: leg.fixture.season.competition.code,
+        competitionName: leg.fixture.season.competition.name,
+        country: leg.fixture.season.competition.country,
+        scheduledAt: leg.fixture.scheduledAt.toISOString(),
+        score: formatFixtureScore({
+          homeScore: leg.fixture.homeScore,
+          awayScore: leg.fixture.awayScore,
+        }),
+        htScore: formatFixtureScore({
+          homeScore: leg.fixture.homeHtScore,
+          awayScore: leg.fixture.awayHtScore,
+        }),
+        canal: leg.canal,
+        market: leg.market,
+        pick: leg.pick,
+        probability: Number(leg.probability),
+        // Fréquence affichée au joueur : celle du marché, marge retirée
+        // (2026-10-28). Le coupon cote 2 la porte déjà, exacte, dans
+        // `probability` ; les autres la tirent de la cote.
+        marketProbability:
+          couponClass === 'DOUBLE'
+            ? Number(leg.probability)
+            : marketProbability({
+                odds: leg.oddsSnapshot ? Number(leg.oddsSnapshot) : null,
+                market: leg.market,
+              }),
+        oddsSnapshot: leg.oddsSnapshot ? Number(leg.oddsSnapshot) : null,
+        bookmaker: readQuotedBookmaker(leg.featureSnapshot),
+        signalScore: Number(leg.signalScore),
+        isCorrect: leg.isCorrect,
+        settledAt: leg.settledAt?.toISOString() ?? null,
+        closingOdds: leg.closingOdds !== null ? Number(leg.closingOdds) : null,
+        closingBookmaker: leg.closingBookmaker,
+        closingObservedAt: leg.closingObservedAt?.toISOString() ?? null,
+        closingLineValue:
+          leg.closingLineValue !== null ? Number(leg.closingLineValue) : null,
+        playableOdds:
+          playableFor(quotes, leg)?.operatorOdds ??
+          playableFor(quotes, leg)?.lowestOdds ??
+          null,
+        playableBookmaker:
+          playableFor(quotes, leg)?.operatorBookmaker ??
+          playableFor(quotes, leg)?.lowestBookmaker ??
+          null,
+        modelRunId:
+          readSnapshotString(leg.featureSnapshot, 'modelRunId') ??
+          leg.fixture.modelRuns[0]?.id ??
+          null,
+      }));
       return {
         id: p.id,
         forDate: p.forDate.toISOString().slice(0, 10),
@@ -61,7 +120,7 @@ export class CouponService {
         signalWindowDays: p.signalWindowDays,
         targetOddsMin: Number(p.targetOddsMin),
         targetOddsMax: Number(p.targetOddsMax),
-        couponClass: classForTargetOddsMin(Number(p.targetOddsMin)),
+        couponClass,
         batch:
           generationPass === 'INTRADAY' ||
           (generationPass === undefined &&
@@ -72,6 +131,17 @@ export class CouponService {
         combinedOdds: Number(p.combinedOdds),
         realizedOdds: p.realizedOdds !== null ? Number(p.realizedOdds) : null,
         jointProbability: Number(p.jointProbability),
+        marketJointProbability: legs.every(
+          (leg) => leg.marketProbability !== null,
+        )
+          ? legs
+              .reduce(
+                (acc, leg) => acc.times(leg.marketProbability ?? 1),
+                new Decimal(1),
+              )
+              .toDecimalPlaces(4)
+              .toNumber()
+          : null,
         signalScore: Number(p.signalScore),
         status: p.status,
         viewerCount: p._count.views,
@@ -81,53 +151,7 @@ export class CouponService {
         reasoning,
         lastFixtureScheduledAt: p.lastFixtureScheduledAt.toISOString(),
         generatedAt: p.generatedAt.toISOString(),
-        legs: p.legs.map((leg) => ({
-          id: leg.id,
-          fixtureId: leg.fixtureId,
-          homeTeam: leg.fixture.homeTeam.name,
-          homeLogo: leg.fixture.homeTeam.logoUrl ?? null,
-          awayTeam: leg.fixture.awayTeam.name,
-          awayLogo: leg.fixture.awayTeam.logoUrl ?? null,
-          competition: leg.fixture.season.competition.code,
-          competitionName: leg.fixture.season.competition.name,
-          country: leg.fixture.season.competition.country,
-          scheduledAt: leg.fixture.scheduledAt.toISOString(),
-          score: formatFixtureScore({
-            homeScore: leg.fixture.homeScore,
-            awayScore: leg.fixture.awayScore,
-          }),
-          htScore: formatFixtureScore({
-            homeScore: leg.fixture.homeHtScore,
-            awayScore: leg.fixture.awayHtScore,
-          }),
-          canal: leg.canal,
-          market: leg.market,
-          pick: leg.pick,
-          probability: Number(leg.probability),
-          oddsSnapshot: leg.oddsSnapshot ? Number(leg.oddsSnapshot) : null,
-          bookmaker: readQuotedBookmaker(leg.featureSnapshot),
-          signalScore: Number(leg.signalScore),
-          isCorrect: leg.isCorrect,
-          settledAt: leg.settledAt?.toISOString() ?? null,
-          closingOdds:
-            leg.closingOdds !== null ? Number(leg.closingOdds) : null,
-          closingBookmaker: leg.closingBookmaker,
-          closingObservedAt: leg.closingObservedAt?.toISOString() ?? null,
-          closingLineValue:
-            leg.closingLineValue !== null ? Number(leg.closingLineValue) : null,
-          playableOdds:
-            playableFor(quotes, leg)?.operatorOdds ??
-            playableFor(quotes, leg)?.lowestOdds ??
-            null,
-          playableBookmaker:
-            playableFor(quotes, leg)?.operatorBookmaker ??
-            playableFor(quotes, leg)?.lowestBookmaker ??
-            null,
-          modelRunId:
-            readSnapshotString(leg.featureSnapshot, 'modelRunId') ??
-            leg.fixture.modelRuns[0]?.id ??
-            null,
-        })),
+        legs,
       };
     });
   }
@@ -151,8 +175,16 @@ export class CouponService {
       won: row.won,
       avgOdds: row.avgOdds,
       returnPerUnit: row.returnPerUnit,
+      firstDay: isoDay(row.firstDay),
+      lastDay: isoDay(row.lastDay),
+      worstLosingStreak: row.worstLosingStreak,
     }));
   }
+}
+
+/** Colonne `@db.Date` lue par `$queryRaw` : minuit UTC, on garde AAAA-MM-JJ. */
+function isoDay(day: Date): string {
+  return day.toISOString().slice(0, 10);
 }
 
 function readSnapshotString(value: unknown, key: string): string | null {

@@ -163,6 +163,7 @@ export class AnnouncementsService {
       create: { userId, announcementId },
       update: {},
     });
+    await this.notification.markAnnouncementRead(userId, announcementId);
   }
 
   async listAdmin(): Promise<AnnouncementView[]> {

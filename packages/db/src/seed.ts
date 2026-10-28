@@ -932,7 +932,7 @@ const BADGES = [
   {
     code: "graduate",
     name: "Diplômé",
-    description: "Tous les contenus de base de la formation sont terminés.",
+    description: "Les cinq fiches de la formation sont lues.",
   },
 ] as const;
 

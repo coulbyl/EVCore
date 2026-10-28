@@ -19,6 +19,7 @@ import {
   ChannelDecisionListQueryDto,
 } from './dto/channel-decision-query.dto';
 import { ChannelDecisionSettleRangeQueryDto } from './dto/channel-decision-settle-range-query.dto';
+import { PausedGuard } from '@/common/guards/paused.guard';
 
 @Controller('channel-decisions')
 @UseGuards(AuthSessionGuard)
@@ -26,6 +27,7 @@ export class ChannelDecisionController {
   constructor(private readonly channelDecisions: ChannelDecisionService) {}
 
   @Get('by-match')
+  @UseGuards(PausedGuard)
   listByMatch(
     @Query() query: ChannelDecisionListQueryDto,
   ): Promise<ChannelDecisionMatchItem[]> {
@@ -33,6 +35,7 @@ export class ChannelDecisionController {
   }
 
   @Get('by-channel')
+  @UseGuards(PausedGuard)
   listByChannel(
     @Query() query: ChannelDecisionListQueryDto,
   ): Promise<ChannelDecisionChannelGroup[]> {
@@ -42,6 +45,7 @@ export class ChannelDecisionController {
   // Facet drawer (§2bis) — leagues + channels present that day, with counts.
   // See ChannelDecisionRepository.findFacetRows.
   @Get('facets')
+  @UseGuards(PausedGuard)
   getFacets(
     @Query() query: ChannelDecisionFacetsQueryDto,
   ): Promise<ChannelDecisionFacets> {

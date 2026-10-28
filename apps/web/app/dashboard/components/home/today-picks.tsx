@@ -7,7 +7,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { Skeleton } from "@evcore/ui";
 import { PickCard } from "@/components/pick-card";
 import { AddToCouponButton } from "@/components/add-to-coupon-button";
-import { ConfidenceBadge } from "@/components/confidence-badge";
 import { useChannelHealth } from "@/domains/dashboard/use-cases/get-channel-health";
 import { useChannelDecisionChannels } from "@/domains/channel-decision/use-cases/use-channel-decisions";
 import {
@@ -15,10 +14,8 @@ import {
   formatOdds,
 } from "@/app/dashboard/decisions/components/channel-constants";
 import { isExcludedFromDecisions } from "@/app/dashboard/decisions/components/decision-helpers";
-import {
-  formatMarketForDisplay,
-  formatPickForDisplay,
-} from "@/helpers/fixture";
+import { formatMarketForDisplay, formatPickWithTeams } from "@/helpers/fixture";
+import { frequencyOf } from "@/lib/frequency";
 import { daysAgoIso, todayIso } from "@/lib/date";
 import type { ChannelHealthItem } from "@/domains/dashboard/types/dashboard";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
@@ -120,6 +117,9 @@ export function TodayPicks() {
       const status = statusByChannel.get(group.channel);
       if (status !== "GREEN") continue;
       for (const decision of group.decisions) {
+        // « Données suspectes » : retiré des coupons, donc de l'accueil aussi
+        // (audit du 2026-10-23, P1-8).
+        if (decision.calibrationAlert) continue;
         const selection = decision.selections[0];
         if (!selection || selection.odds === null) continue;
         if (selection.odds < ODDS_BAND.min || selection.odds >= ODDS_BAND.max) {
@@ -165,7 +165,7 @@ export function TodayPicks() {
         </div>
         <Link
           href={`/dashboard/decisions?date=${today}`}
-          className="flex shrink-0 items-center gap-1 text-xs font-medium text-accent hover:text-accent/80"
+          className="-my-3 flex min-h-11 shrink-0 items-center gap-1 text-xs font-medium text-accent hover:text-accent/80"
         >
           {t("picksLink")} <ArrowRight size={12} />
         </Link>
@@ -200,23 +200,45 @@ export function TodayPicks() {
                 pick.selection.market,
                 marketLocale,
               )}
-              pickLabel={formatPickForDisplay(
+              pickLabel={formatPickWithTeams(
                 pick.selection.pick,
                 pick.selection.market,
+                {
+                  home: pick.decision.homeTeam,
+                  away: pick.decision.awayTeam,
+                },
               )}
-              probabilityPct={`${Math.round(pick.selection.probability * 100)}%`}
+              // En fréquence, celle du marché marge retirée, comme partout
+              // ailleurs (PRODUCT.md, 2026-10-28).
+              probabilityPct={
+                pick.selection.marketProbability !== null
+                  ? t(
+                      "pickFrequency",
+                      frequencyOf(pick.selection.marketProbability),
+                    )
+                  : null
+              }
               signalScore={null}
               odds={formatOdds(pick.selection.odds)}
+              playable={
+                pick.selection.playableOdds !== null &&
+                pick.selection.playableBookmaker !== null
+                  ? {
+                      odds: pick.selection.playableOdds,
+                      bookmaker: pick.selection.playableBookmaker,
+                    }
+                  : null
+              }
               score={pick.decision.score}
               htScore={pick.decision.htScore}
               betStatus={toBetStatus(pick.selection.result)}
               actionSlot={
-                <div className="flex items-center gap-2">
-                  <ConfidenceBadge status={pick.status} />
-                  {isUpcoming(pick.decision) && (
-                    <AddToCouponButton item={toDraftItem(pick)} />
-                  )}
-                </div>
+                // Plus de badge « Fiable » : le bloc ne garde que des canaux
+                // fiables, il valait « Fiable » cinq fois sur cinq (revue UX
+                // du 2026-10-24, P2 n°5) ; la règle est dans le sous-titre.
+                isUpcoming(pick.decision) ? (
+                  <AddToCouponButton item={toDraftItem(pick)} />
+                ) : null
               }
             />
           ))}

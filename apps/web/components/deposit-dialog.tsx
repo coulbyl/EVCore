@@ -12,17 +12,19 @@ import {
   Input,
 } from "@evcore/ui";
 import { Loader2, Plus, Wallet, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useDepositBankroll } from "@/domains/bankroll/use-cases/deposit-bankroll";
 import { InputAmount } from "@/components/input-amount";
 
 export function DepositDialog({
   trigger,
 }: {
-  /** Overrides the default "Ajouter un dépôt" button — used to trigger the
+  /** Overrides the default "Déclarer un dépôt" button — used to trigger the
    * same dialog from a compact shortcut (e.g. the bet slip's "Solde
    * insuffisant" banner) without duplicating the deposit form itself. */
   trigger?: React.ReactNode;
 } = {}) {
+  const t = useTranslations("bankrollPage.deposit");
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState<number | undefined>();
   const [note, setNote] = useState("");
@@ -66,9 +68,9 @@ export function DepositDialog({
     >
       <DialogTrigger asChild>
         {trigger ?? (
-          <Button className="gap-2">
+          <Button className="h-11 gap-2">
             <Plus size={14} />
-            Ajouter un dépôt
+            {t("trigger")}
           </Button>
         )}
       </DialogTrigger>
@@ -81,17 +83,17 @@ export function DepositDialog({
           <div className="min-w-0">
             <DialogTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
               <Wallet size={16} className="text-accent" />
-              Ajouter un dépôt
+              {t("title")}
             </DialogTitle>
             <DialogDescription className="mt-1 text-sm text-muted-foreground">
-              Ajoutez un dépôt pour mettre à jour votre solde et votre
-              historique.
+              {t("description")}
             </DialogDescription>
           </div>
           <DialogClose asChild>
             <button
               type="button"
-              className="rounded-lg p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+              aria-label={t("close")}
+              className="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground"
             >
               <X size={16} />
             </button>
@@ -103,9 +105,9 @@ export function DepositDialog({
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="deposit-amount"
-                className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+                className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
               >
-                Montant
+                {t("amount")}
               </label>
               <InputAmount
                 id="deposit-amount"
@@ -115,25 +117,23 @@ export function DepositDialog({
                 className="h-11 rounded-xl border-border bg-background text-sm font-semibold text-foreground"
               />
               {amountIsInvalid ? (
-                <p className="text-xs text-danger">
-                  Saisissez un montant supérieur ou égal à 1.
-                </p>
+                <p className="text-xs text-danger">{t("amountInvalid")}</p>
               ) : null}
             </div>
 
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="deposit-note"
-                className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+                className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
               >
-                Note
+                {t("note")}
               </label>
               <Input
                 id="deposit-note"
                 type="text"
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
-                placeholder="Dépôt initial"
+                placeholder={t("notePlaceholder")}
                 className="h-11 rounded-xl border-border bg-background text-sm text-foreground"
               />
             </div>
@@ -143,7 +143,7 @@ export function DepositDialog({
             <p className="mt-4 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive">
               {mutation.error instanceof Error
                 ? mutation.error.message
-                : "Impossible d’enregistrer le dépôt."}
+                : t("error")}
             </p>
           ) : null}
 
@@ -157,7 +157,7 @@ export function DepositDialog({
                 resetForm();
               }}
             >
-              Annuler
+              {t("cancel")}
             </Button>
             <Button
               type="submit"
@@ -169,10 +169,10 @@ export function DepositDialog({
               {mutation.isPending ? (
                 <>
                   <Loader2 size={14} className="animate-spin" />
-                  Confirmation...
+                  {t("confirming")}
                 </>
               ) : (
-                "Confirmer"
+                t("confirm")
               )}
             </Button>
           </div>

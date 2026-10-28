@@ -232,7 +232,7 @@ ModelRun stored + notification alert
 
 **Backend** (`--max-warnings 0`) — zéro tolérance, tout warning bloque le build :
 
-- `max-params` : **3 paramètres maximum** par fonction/méthode. Au-delà, regrouper en un objet options : `function foo(opts: { a, b, c, d })` — jamais 4 paramètres positionnels.
+- `max-params` : **3 paramètres maximum** par fonction/méthode. Au-delà, regrouper en un objet options : `function foo(opts: { a, b, c, d })` — jamais 4 paramètres positionnels. Seule exception : un constructeur d'injection NestJS (pas d'objet d'options possible), avec `// eslint-disable-next-line max-params -- <raison>`.
 - `no-unused-vars` : tout import ou variable non utilisé doit être supprimé avant commit.
 
 **Frontend web** (`--max-warnings 3`) — 2 warnings pré-existants dans `page-shell.tsx` (balises `<img>`). Ne pas en ajouter de nouveaux.
@@ -329,12 +329,25 @@ These rules reflect the product specification in EVCORE.md and must never be byp
 - Introducing OpenClaw into the scoring loop (not before MVP validation)
 - Manually disabling a factor auto-activé par la boucle d'apprentissage (rollback via `AdjustmentProposal`)
 
+### Money, settlement and totals — review expectations
+
+Measured mistakes from the PR #275 review (2026-10-28). Full list, cases and fixing commits in [docs/review-expectations.md](docs/review-expectations.md); read it before touching settlement, the bankroll, slip results or a scheduled job.
+
+- **Every bankroll write must survive a replay.** Settlement re-runs on every pass and `bankroll_transaction` has no `(betId, type)` uniqueness: credit on a _transition_ to settled, never on a state, and test both a second pass and a post-payout correction (WON → VOID, LOST → WON).
+- **A count and the amounts next to it cover the same set.** "N coupons réglés, misé X": X comes from those N only (`sumSlipMoney` / web `sumSlipResults`); a pending slip's whole stake is "encore en jeu".
+- **Unknown is not zero.** A value that cannot be computed (a win without recorded odds) is excluded and counted apart, never shown as 0 or as a loss — the same rule in every calculator of the domain.
+- **A dated job must handle late arrivals.** Key on "not yet reported" (record what was reported) over a sliding window, never on the date window alone.
+- **Decimal products too.** Odds and probability products used in comparisons or stored go through `decimal.js`; convert to `number` only at the Prisma/API boundary.
+- **Derived values travel with their source.** Borrowing odds from another record means borrowing their frequency from the same record.
+- **Mocks carry the real shape** of the row (a bet always has a `status`).
+- **Before a PR to main**, run `/code-review` (`high` for money, settlement or scheduled jobs) and fix every correctness finding before merging.
+
 ### What AI must never generate in this codebase
 
 - Code that lets LLM output bypass Zod schema validation
 - Kelly criterion formula (not before Phase 2 config flag is set)
 - Auto-reactivation of suspended markets
-- Direct Prisma calls outside of repository files
+- Direct Prisma calls outside of repository files — including in a service that already has some: when you touch it, move its queries to a repository instead of adding one more
 - Hardcoded numeric thresholds that belong in `config/`
 - Weight adjustment logic that bypasses the 50-bet minimum check
 

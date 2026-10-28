@@ -1,0 +1,120 @@
+=== 0. Qui est bien calibré, sur la tranche 1,20–1,80 ? ===
+
+-- marché sans marge
+                 n  annonce  realise  ecart
+bin                                        
+(0.0, 0.5]     416     48.3     54.3    6.1
+(0.5, 0.55]   7122     53.3     54.0    0.7
+(0.55, 0.6]  12637     57.5     56.9   -0.6
+(0.6, 0.65]  13507     62.6     63.1    0.5
+(0.65, 0.7]  14827     67.6     68.2    0.6
+(0.7, 0.75]  18952     72.6     73.8    1.1
+(0.75, 0.8]  12184     77.1     78.1    0.9
+(0.8, 0.85]     56     80.2     83.9    3.8
+
+-- moteur
+                 n  annonce  realise  ecart
+bin                                        
+(0.0, 0.5]   10638     41.3     58.9   17.6
+(0.5, 0.55]   6932     52.7     60.4    7.8
+(0.55, 0.6]   8552     57.6     62.0    4.3
+(0.6, 0.65]  10981     62.5     65.0    2.5
+(0.65, 0.7]  13650     67.6     68.2    0.6
+(0.7, 0.75]  14674     72.5     70.0   -2.5
+(0.75, 0.8]  10759     77.2     72.1   -5.2
+(0.8, 0.85]   5434     82.3     74.1   -8.2
+(0.85, 1.0]   3690     89.3     75.7  -13.6
+
+=== 1. Ce qu'on garde et ce qu'on laisse, cotes 1,20–1,80 ===
+                                groupe  jambes  matchs  cote_med  annonce_moteur  marche_sans_marge  realise ecart_moteur ecart_marche  mise_fixe
+               Vivier actuel du coupon   14707    4362      1.44            69.4               66.3     66.8   -2.6 ± 1.0   +0.9 ± 1.0 -4.3 ± 1.4
+           Laissé · ev_below_threshold   40299    4556      1.38            64.7               67.1     67.3   +2.6 ± 0.6   +0.3 ± 0.6 -5.4 ± 0.8
+          Laissé · probability_too_low    1153     824      1.67            36.5               57.3     58.5  +21.9 ± 3.4   +1.1 ± 3.5 -4.2 ± 5.5
+            Laissé · under_high_lambda    2563    2165      1.40            69.3               67.3     67.1   -2.2 ± 2.0   -0.2 ± 2.0 -5.1 ± 2.9
+             Laissé · odds_below_floor    1841    1249      1.55            77.3               62.0     63.7  -13.7 ± 2.5   +1.3 ± 2.6 -3.4 ± 3.9
+Laissé · quality_score_below_threshold    1326    1065      1.44            76.1               65.0     66.2   -9.9 ± 2.7   +1.0 ± 2.8 -4.0 ± 4.1
+             Laissé · market_suspended    5768    2870      1.40            66.7               66.3     67.0   +0.3 ± 1.0   +0.8 ± 1.0 -4.9 ± 1.4
+   Matchs « Données suspectes » (tout)   17651    1204      1.42            62.4               66.0     66.8   +4.4 ± 0.9   +1.1 ± 0.8 -4.8 ± 1.2
+
+=== 2. À même marché et même tranche de cote : le vivier fait-il mieux que ce qu'on laisse ? ===
+Cellules comparables : 33 ; vivier 14491 jambes, laissé 35537
+Réussite, pondérée par le vivier : vivier 66.9 %, laissé 66.5 % (écart +0.4 pts)
+Écart au marché sans marge : vivier +0.7 pts, laissé +0.4 pts
+                       cellule  n_vivier  n_laisse  vivier  laisse  res_vivier  res_laisse  diff
+     DOUBLE_CHANCE · 1,20–1,35      1174      3544    73.8    74.1        -0.8         0.2  -0.3
+        OVER_UNDER · 1,20–1,35      1108      3648    77.9    75.4         2.7         0.5   2.5
+TO_WIN_EITHER_HALF · 1,35–1,50       865       148    67.2    70.9         NaN         NaN  -3.8
+        OVER_UNDER · 1,35–1,50       863      2025    66.7    68.4         0.0         1.4  -1.7
+   TEAM_TOTAL_HOME · 1,20–1,35       765      3194    76.7    75.5         1.6         0.6   1.2
+   TEAM_TOTAL_AWAY · 1,20–1,35       752      2824    76.1    74.7         1.5         0.2   1.3
+TO_WIN_EITHER_HALF · 1,65–1,80       693       652    53.7    54.6         NaN         NaN  -0.9
+        OVER_UNDER · 1,50–1,65       663      1380    63.7    58.9         3.0        -1.6   4.7
+TO_WIN_EITHER_HALF · 1,50–1,65       602       242    62.8    59.5         NaN         NaN   3.3
+TO_WIN_EITHER_HALF · 1,20–1,35       588        34    77.4    76.5         NaN         NaN   0.9
+        OVER_UNDER · 1,65–1,80       573      1350    55.7    55.2         0.4        -0.2   0.5
+              BTTS · 1,65–1,80       487      1636    50.9    52.5        -2.9        -1.0  -1.6
+   TEAM_TOTAL_AWAY · 1,35–1,50       455      1508    66.2    66.2        -0.1        -0.1  -0.1
+              BTTS · 1,50–1,65       432       777    60.9    57.7         1.9        -1.1   3.2
+       DRAW_NO_BET · 1,20–1,35       431       284    75.2    75.7         1.0         1.7  -0.5
+              BTTS · 1,35–1,50       418       308    64.4    64.6        -0.3         0.7  -0.3
+   TEAM_TOTAL_HOME · 1,35–1,50       401      1466    68.6    67.8         2.1         1.3   0.8
+       DRAW_NO_BET · 1,35–1,50       388       323    68.8    68.4         3.3         3.3   0.4
+   TEAM_TOTAL_AWAY · 1,50–1,65       363      1128    55.1    61.3        -5.5         0.9  -6.3
+   TEAM_TOTAL_HOME · 1,50–1,65       328      1151    58.2    58.5        -2.1        -2.0  -0.2
+   TEAM_TOTAL_HOME · 1,65–1,80       252       938    54.8    56.8        -0.5         1.7  -2.1
+     DOUBLE_CHANCE · 1,35–1,50       238      2239    71.4    68.7         3.9         1.5   2.7
+   TEAM_TOTAL_AWAY · 1,65–1,80       223       703    55.2    53.8        -0.1        -1.4   1.4
+       DRAW_NO_BET · 1,50–1,65       208       340    63.9    63.5         5.0         4.6   0.4
+     OVER_UNDER_HT · 1,35–1,50       203      1088    68.5    67.6         1.7         1.0   0.9
+
+=== 3. Par marché, tout ce qui est jouable (cotes 1,20–1,80, hors suspendus et Données suspectes) ===
+            groupe  jambes  matchs  cote_med  annonce_moteur  marche_sans_marge  realise ecart_moteur ecart_marche  mise_fixe
+        OVER_UNDER   11610    4481      1.40            67.9               67.2     67.8   -0.1 ± 0.7   +0.6 ± 0.7 -3.9 ± 1.0
+     DOUBLE_CHANCE    9235    3943      1.33            68.5               68.4     68.6   +0.1 ± 0.4   -0.0 ± 0.4 -5.8 ± 0.5
+   TEAM_TOTAL_HOME    8495    4255      1.37            68.1               67.8     68.3   +0.2 ± 0.8   +0.5 ± 0.8 -4.6 ± 1.1
+   TEAM_TOTAL_AWAY    7956    4120      1.39            68.1               67.6     67.6   -0.5 ± 0.8   -0.1 ± 0.8 -5.5 ± 1.2
+              BTTS    4124    4124      1.67            55.2               57.3     56.6   +1.4 ± 1.5   -0.7 ± 1.5 -8.2 ± 2.5
+TO_WIN_EITHER_HALF    3824    3594      1.57            58.9                NaN     63.2   +4.3 ± 1.5            — -3.9 ± 2.3
+  CLEAN_SHEET_HOME    3459    3459      1.40            66.0               66.7     68.1   +2.2 ± 1.6   +1.4 ± 1.5 -4.6 ± 2.2
+     OVER_UNDER_HT    2737    1675      1.42            66.6               65.6     65.6   -1.0 ± 1.4   -0.0 ± 1.4 -5.8 ± 2.1
+  CLEAN_SHEET_AWAY    2533    2533      1.30            72.2               71.2     71.3   -1.0 ± 1.8   +0.1 ± 1.7 -6.3 ± 2.3
+       DRAW_NO_BET    2488    2488      1.44            61.8               64.1     66.6   +4.8 ± 1.9   +2.5 ± 1.8 -3.0 ± 2.8
+   WIN_TO_NIL_HOME    2262    2262      1.31            71.0               68.9     70.6   -0.5 ± 1.9   +1.7 ± 1.9 -6.0 ± 2.5
+         ONE_X_TWO    1499    1499      1.58            57.0               61.3     62.8   +5.9 ± 2.5   +1.6 ± 2.4 -2.9 ± 3.8
+RESULT_TOTAL_GOALS     865     548      1.65            50.1               53.8     61.0  +10.9 ± 3.9   +3.3 ± 5.1 -1.9 ± 6.2
+   WIN_TO_NIL_AWAY     750     750      1.27            75.4               71.1     70.8   -4.6 ± 3.3   -0.3 ± 3.2 -8.7 ± 4.2
+
+=== 4. Le désaccord du moteur avec le marché apporte-t-il quelque chose ? ===
+                                 groupe  jambes  matchs  cote_med  annonce_moteur  marche_sans_marge  realise ecart_moteur ecart_marche  mise_fixe
+ Q1 moteur bien plus bas (-53 à -6 pts)   11510    3811      1.44            53.9               65.5     66.0  +12.2 ± 1.3   +0.5 ± 1.3 -5.3 ± 1.9
+                       Q2 (-6 à -1 pts)   11509    4129      1.39            63.2               66.8     66.7   +3.4 ± 1.0   -0.2 ± 1.0 -6.1 ± 1.5
+                       Q3 (-1 à +2 pts)   11509    3858      1.36            68.0               67.6     68.0   +0.1 ± 0.9   +0.4 ± 0.9 -5.3 ± 1.2
+                       Q4 (+2 à +7 pts)   11509    4071      1.37            71.6               67.3     68.5   -3.1 ± 1.0   +1.1 ± 1.0 -4.5 ± 1.4
+Q5 moteur bien plus haut (+7 à +40 pts)   11509    3838      1.43            76.5               65.6     66.1  -10.4 ± 1.2   +0.5 ± 1.2 -5.2 ± 1.8
+
+=== 5. Favoris et outsiders : le marché sous-estime-t-il les cotes courtes ? (tous marchés, hors suspendus) ===
+       groupe  jambes  matchs  cote_med  annonce_moteur  marche_sans_marge  realise ecart_moteur ecart_marche   mise_fixe
+   (1.0, 1.2]   31093    4429      1.10            87.0               86.4     88.6   +1.6 ± 0.5   +2.1 ± 0.5  -3.1 ± 0.5
+  (1.2, 1.35]   21464    4443      1.28            73.9               73.8     74.7   +0.8 ± 0.6   +0.8 ± 0.6  -4.9 ± 0.8
+  (1.35, 1.5]   14757    4427      1.42            66.6               66.3     67.3   +0.7 ± 0.8   +1.0 ± 0.8  -4.4 ± 1.1
+  (1.5, 1.65]    9786    3772      1.57            59.7               59.9     59.6   -0.1 ± 1.0   -0.2 ± 0.9  -6.1 ± 1.5
+  (1.65, 1.8]    9267    4308      1.73            54.5               54.5     54.0   -0.5 ± 1.1   -0.4 ± 1.1  -6.6 ± 1.8
+   (1.8, 2.1]   14432    4340      1.95            47.8               48.0     48.4   +0.6 ± 0.6   +0.4 ± 0.6  -5.5 ± 1.2
+   (2.1, 2.6]   18353    4417      2.35            39.5               39.8     40.6   +1.1 ± 0.7   +0.8 ± 0.7  -5.0 ± 1.7
+   (2.6, 3.5]   33644    4530      3.06            30.0               30.2     29.8   -0.2 ± 0.5   -0.3 ± 0.5  -9.5 ± 1.5
+   (3.5, 6.0]   63043    4544      4.50            20.0               19.9     19.5   -0.4 ± 0.3   -0.3 ± 0.3 -12.2 ± 1.4
+(6.0, 1000.0]   59859    4374     10.00             8.5                8.8      7.4   -1.1 ± 0.3   -1.3 ± 0.3 -27.6 ± 3.2
+
+=== 6. Ça tient d'une période à l'autre ? (cellule marché × tranche × gardé/laissé) ===
+Cellules présentes sur les deux périodes (≥ 100 jambes chacune) : 50
+Corrélation de l'écart au marché P1 → P2 : -0.043
+Le quart des cellules les meilleures en P1 : +4.4 pts en P1 → -0.3 pts en P2
+Le quart des cellules les pires en P1 : -3.3 pts en P1 → -0.1 pts en P2
+
+=== 7. Ce que nos garde-fous écartent : avaient-ils raison ? (cotes 1,20–1,80) ===
+                                    groupe  jambes  matchs  cote_med  annonce_moteur  marche_sans_marge  realise ecart_moteur ecart_marche  mise_fixe
+                   Types de pari suspendus    5768    2870      1.40            66.7               66.3     67.0   +0.3 ± 1.0   +0.8 ± 1.0 -4.9 ± 1.4
+              Matchs « Données suspectes »   17651    1204      1.42            62.4               66.0     66.8   +4.4 ± 0.9   +1.1 ± 0.8 -4.8 ± 1.2
+Matchs « Données suspectes », cotes < 1,45    9642    1200      1.30            68.3               72.2     73.7   +5.4 ± 1.1   +1.5 ± 1.0 -4.2 ± 1.3
+Matchs « Données suspectes », cotes ≥ 1,45    8009    1203      1.62            55.3               58.2     58.5   +3.2 ± 1.2   +0.5 ± 1.2 -5.6 ± 1.9
+                             Tout le reste   61892    4561      1.40            66.1               66.6     66.9   +0.8 ± 0.4   +0.5 ± 0.4 -5.0 ± 0.6

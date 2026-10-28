@@ -1,0 +1,142 @@
+{
+ "route": "/auth/login",
+ "width": 1280,
+ "theme": "dark",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 7 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Core\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cunbalanced-heading%c last of 3 lines is 16% as wide as the line above color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #78808a on #121920 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #78808a on #121920 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #78808a on #121920 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.5:1 (need 4.5:1) — text #4e565e on #0a1118 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"d'investissement.\" alone on the last of 2 lines (29% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 7 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Core\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cunbalanced-heading%c last of 3 lines is 16% as wide as the line above color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #78808a on #121920 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #78808a on #121920 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #78808a on #121920 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.5:1 (need 4.5:1) — text #4e565e on #0a1118 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"d'investissement.\" alone on the last of 2 lines (29% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.6rem] font-bold text-accent",
+    "text": "Core",
+    "w": 22,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"Core\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "h1",
+    "cls": "mt-5 text-xl font-semibold leading-snug tracking-tight text-sidebar-foreground l",
+    "text": "Retrouvez vos sélections du jour, vos matchs et vos indices ",
+    "w": 369,
+    "h": 89
+   },
+   "findings": [
+    {
+     "type": "unbalanced-heading",
+     "detail": "last of 3 lines is 16% as wide as the line above"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-0.5 text-[0.75rem] leading-5 text-sidebar-foreground/55",
+    "text": "Le moteur analyse les matchs et identifie les picks à valeur",
+    "w": 308,
+    "h": 40
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.4:1 (need 4.5:1) — text #78808a on #121920",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-0.5 text-[0.75rem] leading-5 text-sidebar-foreground/55",
+    "text": "Taux de réussite et ROI par marché et tranche de cote — pour",
+    "w": 308,
+    "h": 40
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.4:1 (need 4.5:1) — text #78808a on #121920",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-0.5 text-[0.75rem] leading-5 text-sidebar-foreground/55",
+    "text": "Historique complet par canal avec performance réelle, consul",
+    "w": 308,
+    "h": 40
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.4:1 (need 4.5:1) — text #78808a on #121920",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-8 border-t border-sidebar-border/30 pt-5 text-[0.7rem] leading-relaxed text-s",
+    "text": "Accès sécurisé · Données chiffrées",
+    "w": 369,
+    "h": 39
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.5:1 (need 4.5:1) — text #4e565e on #0a1118"
+    },
+    {
+     "type": "tiny-text",
+     "detail": "11.2px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-2 text-sm leading-6 text-muted-foreground",
+    "text": "Connectez-vous pour retrouver vos sélections et votre suivi ",
+    "w": 369,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"d'investissement.\" alone on the last of 2 lines (29% of the measure)"
+    }
+   ]
+  }
+ ]
+}

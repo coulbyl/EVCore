@@ -15,11 +15,18 @@ import { downloadAnalysisSheet } from "@/domains/analysis-sheet/use-cases/use-ex
 import type { AnalysisSheetFilters } from "@/domains/analysis-sheet/types/analysis-sheet";
 import { EvaFilterBar } from "./eva-filter-bar";
 import { daysAheadIso, todayIso } from "@/lib/date";
+import { useActivePause } from "@/domains/auth/use-cases/use-active-pause";
 
 // Discovery ping: shown only until the user opens Eva once.
 const DISCOVERED_KEY = "evcore-eva-fab-discovered";
 
+/** L'export d'analyse liste des paris : rien pendant la pause du joueur. */
 export function EvaFab() {
+  const pauseEnd = useActivePause();
+  return pauseEnd ? null : <EvaFabPanel />;
+}
+
+function EvaFabPanel() {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   // false on the server and first client render (no hydration mismatch, no

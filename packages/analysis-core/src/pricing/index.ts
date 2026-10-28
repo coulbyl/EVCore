@@ -22,3 +22,10 @@ export {
 } from "./market-fair";
 export { outcomeGroup } from "./outcome-groups";
 export type { OutcomeGroup } from "./outcome-groups";
+export {
+  marketProbability,
+  priceOutcomeGroups,
+  TYPICAL_MARKET_MARGIN,
+  DEFAULT_MARKET_MARGIN,
+} from "./market-probability";
+export type { PricedRow } from "./market-probability";

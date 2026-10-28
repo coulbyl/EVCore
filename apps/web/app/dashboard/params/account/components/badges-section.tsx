@@ -6,12 +6,6 @@ import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
 import { SettingsSectionCard } from "./settings-section-card";
 
 const BADGE_EMOJI: Record<string, string> = {
-  vol_50: "🏅",
-  vol_150: "🥈",
-  vol_300: "🥇",
-  streak_5: "⚡",
-  patience: "🧘",
-  calibre: "🎯",
   graduate: "🎓",
 };
 
@@ -52,11 +46,11 @@ export function BadgesSection() {
                     }`}
                   >
                     <span className="text-2xl leading-none">{emoji}</span>
-                    <span className="text-center text-[0.68rem] font-semibold leading-tight">
+                    <span className="text-center text-xs font-semibold leading-tight">
                       {badge.name}
                     </span>
                     {unlocked && badge.unlockedAt && (
-                      <span className="text-[0.6rem] text-muted-foreground">
+                      <span className="text-xs text-muted-foreground">
                         {new Date(badge.unlockedAt).toLocaleDateString(locale, {
                           day: "numeric",
                           month: "short",

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { formatTime } from "@/lib/date";
+import { formatOddsValue } from "@/lib/frequency";
 import { translateCountry, translateCompetition } from "@/lib/competition-i18n";
 import { formatScore } from "@/domains/fixture/helpers/fixture";
 
@@ -30,6 +31,11 @@ export type PickCardProps = (InlineTeams | SingleFixture) & {
   probabilityPct: string | null;
   signalScore: string | null;
   odds: string | null;
+  /**
+   * Cote chez le bookmaker du joueur quand elle diffère de la nôtre — même
+   * présentation que sur les jambes d'un coupon (`components/coupon-card.tsx`).
+   */
+  playable?: { odds: number; bookmaker: string } | null;
   score: string | null;
   htScore: string | null;
   betStatus: "WON" | "LOST" | "PENDING" | null;
@@ -47,16 +53,16 @@ function ResultBadge({
   if (!betStatus) return null;
   if (betStatus === "PENDING")
     return (
-      <span className="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground">
+      <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
         En attente
       </span>
     );
   return betStatus === "WON" ? (
-    <span className="text-[0.6rem] font-bold uppercase tracking-widest text-emerald-500">
+    <span className="text-xs font-bold uppercase tracking-wide text-success">
       ✓ Gagné
     </span>
   ) : (
-    <span className="text-[0.6rem] font-bold uppercase tracking-widest text-destructive">
+    <span className="text-xs font-bold uppercase tracking-wide text-destructive">
       ✗ Perdu
     </span>
   );
@@ -142,6 +148,7 @@ export function PickCard(props: PickCardProps) {
     probabilityPct,
     signalScore,
     odds,
+    playable,
     score,
     htScore,
     betStatus,
@@ -187,17 +194,18 @@ export function PickCard(props: PickCardProps) {
         <div className="flex shrink-0 items-center gap-1.5">
           {probabilityPct && (
             <span
-              className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold tabular-nums"
+              className="rounded-full px-2 py-0.5 text-xs font-bold tabular-nums text-foreground"
               style={{
-                color: canalColor,
-                background: `color-mix(in srgb, ${canalColor} 14%, transparent)`,
+                // Texte neutre sur fond teinté : la couleur du canal en texte
+                // tombait à 3,1–4,4:1 selon le canal et le thème.
+                background: `color-mix(in srgb, ${canalColor} 18%, transparent)`,
               }}
             >
               {probabilityPct}
             </span>
           )}
           {signalScore && (
-            <span className="rounded-full bg-secondary px-2 py-0.5 text-[0.6rem] font-semibold tabular-nums text-muted-foreground">
+            <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground">
               ↗ {signalScore}
             </span>
           )}
@@ -211,23 +219,40 @@ export function PickCard(props: PickCardProps) {
       </div>
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground mt-0.5">
-        <span className="whitespace-nowrap uppercase tracking-widest text-[0.6rem]">
+        <span className="whitespace-nowrap text-[0.6875rem] uppercase tracking-wide">
           {translateCountry(country, locale)} ·{" "}
           {translateCompetition(competition, locale)}
         </span>
         <span className="opacity-40">·</span>
         <span className="whitespace-nowrap">{formatTime(scheduledAt)}</span>
+        {/* La cote que le ticket paiera d'abord, la nôtre en référence :
+            même lecture que la carte coupon et Décisions. */}
         {odds && (
           <>
             <span className="opacity-40">·</span>
-            <span className="whitespace-nowrap font-mono text-foreground">
-              @{odds}
-            </span>
+            {playable && Math.abs(playable.odds - Number(odds)) >= 0.005 ? (
+              <>
+                <span
+                  data-testid="pick-playable-odds"
+                  className="whitespace-nowrap font-semibold tabular-nums text-foreground"
+                >
+                  {playable.bookmaker} {formatOddsValue(playable.odds, locale)}
+                </span>
+                <span className="whitespace-nowrap tabular-nums">
+                  réf. {formatOddsValue(Number(odds), locale)}
+                </span>
+              </>
+            ) : (
+              <span className="whitespace-nowrap font-semibold tabular-nums text-foreground">
+                {playable ? playable.bookmaker : "Cote"}{" "}
+                {formatOddsValue(Number(odds), locale)}
+              </span>
+            )}
           </>
         )}
         <div className="ml-auto flex shrink-0 items-center gap-2">
           {scoreLabel && (
-            <span className="whitespace-nowrap font-mono text-[0.7rem] text-foreground">
+            <span className="whitespace-nowrap font-mono text-xs text-foreground">
               {scoreLabel}
             </span>
           )}

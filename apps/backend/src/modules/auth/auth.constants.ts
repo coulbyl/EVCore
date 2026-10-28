@@ -10,3 +10,10 @@ export const PASSWORD_RESET_TTL_MS = 15 * 60 * 1000;
 export const PASSWORD_RESET_EXPIRES_IN_MINUTES = 15;
 export const PASSWORD_RESET_RATE_LIMIT_MAX = 3;
 export const PASSWORD_RESET_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+
+/**
+ * Version des conditions d'utilisation et de la politique de confidentialité
+ * acceptées à l'inscription (date de mise à jour des pages /cgu et
+ * /confidentialite). À changer en même temps que ces pages.
+ */
+export const TERMS_VERSION = '2026-10-27';

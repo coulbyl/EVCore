@@ -1,0 +1,142 @@
+{
+ "route": "/auth/register",
+ "width": 1280,
+ "theme": "dark",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 7 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Core\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #78808a on #121920 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #78808a on #121920 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #78808a on #121920 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.5:1 (need 4.5:1) — text #4e565e on #0a1118 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.52px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.52px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 7 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Core\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #78808a on #121920 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #78808a on #121920 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #78808a on #121920 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.5:1 (need 4.5:1) — text #4e565e on #0a1118 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.52px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.52px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.6rem] font-bold text-accent",
+    "text": "Core",
+    "w": 22,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"Core\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-0.5 text-[0.75rem] leading-5 text-sidebar-foreground/55",
+    "text": "Le moteur analyse les matchs et identifie les picks à valeur",
+    "w": 308,
+    "h": 40
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.4:1 (need 4.5:1) — text #78808a on #121920",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-0.5 text-[0.75rem] leading-5 text-sidebar-foreground/55",
+    "text": "Taux de réussite et ROI par marché et tranche de cote — pour",
+    "w": 308,
+    "h": 40
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.4:1 (need 4.5:1) — text #78808a on #121920",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-0.5 text-[0.75rem] leading-5 text-sidebar-foreground/55",
+    "text": "Historique complet par canal avec performance réelle, consul",
+    "w": 308,
+    "h": 40
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.4:1 (need 4.5:1) — text #78808a on #121920",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-8 border-t border-sidebar-border/30 pt-5 text-[0.7rem] leading-relaxed text-s",
+    "text": "Accès sécurisé · Données chiffrées",
+    "w": 369,
+    "h": 39
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.5:1 (need 4.5:1) — text #4e565e on #0a1118"
+    },
+    {
+     "type": "tiny-text",
+     "detail": "11.2px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.72rem] leading-snug text-muted-foreground",
+    "text": "Un code à 6 chiffres vous sera envoyé à cette adresse pour l",
+    "w": 369,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "11.52px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.72rem] leading-snug text-muted-foreground",
+    "text": "Au moins 8 caractères. Une phrase longue et facile à retenir",
+    "w": 369,
+    "h": 32
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "11.52px body text"
+    }
+   ]
+  }
+ ]
+}

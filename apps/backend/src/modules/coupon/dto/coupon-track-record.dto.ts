@@ -27,4 +27,13 @@ export type CouponClassTrackRecord = {
   won: number;
   avgOdds: number;
   returnPerUnit: number;
+  /**
+   * Premier et dernier jour réglés de la classe dans la fenêtre (AAAA-MM-JJ).
+   * Un relevé s'affiche toujours avec ses dates exactes : « 30 derniers
+   * jours » sur sept jours réglés laissait croire à un mois complet.
+   */
+  firstDay: string;
+  lastDay: string;
+  /** Plus longue suite de coupons perdus d'affilée dans la fenêtre. */
+  worstLosingStreak: number;
 };

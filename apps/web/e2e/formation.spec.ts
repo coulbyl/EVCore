@@ -1,42 +1,36 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
-const STORAGE_KEY = "evcore:formation:progress:v1";
+/**
+ * Formation depuis le 2026-10-27 : cinq fiches d'une minute, dans l'ordre.
+ * On ouvre la première, on la marque comme lue, on passe à la suivante ; une
+ * ancienne adresse d'article mène à la fiche qui reprend son sujet.
+ */
+test.describe("Formation", () => {
+  test("cinq fiches, lues dans l'ordre @responsive", async ({ page }) => {
+    await page.goto("/dashboard/formation");
+    await expect(page.getByTestId("formation-item")).toHaveCount(5);
+    await page.getByTestId("formation-item").first().click();
 
-test("formation — ouvrir un article et marquer comme terminé @responsive", async ({
-  page,
-}) => {
-  await page.goto("/dashboard/formation");
-  await expect(page).toHaveURL(/\/dashboard\/formation/);
+    await expect(page.locator("h1")).toHaveText("Comment lire un pronostic ?");
+    await expect(page.getByText("Fiche 1 sur 5 · 1 min")).toBeVisible();
 
-  const firstCategory = page
-    .locator('[data-testid="formation-category-link"]')
-    .first();
-  await expect(firstCategory).toBeVisible();
-  await firstCategory.click();
+    const button = page.getByTestId("formation-completion-button");
+    await button.click();
+    await expect(button).toHaveText("Lue");
 
-  const firstItem = page
-    .locator('[data-testid="formation-category-item"]')
-    .first();
-  await expect(firstItem).toBeVisible();
-  await firstItem.click();
+    await page.getByRole("link", { name: "Fiche suivante" }).click();
+    await expect(page.locator("h1")).toHaveText(
+      "Une cote, c'est combien de chances ?",
+    );
+  });
 
-  await expect(page.locator("h1").first()).toBeVisible();
-
-  const button = page.locator('[data-testid="formation-completion-button"]');
-  await expect(button).toBeVisible();
-  await button.click();
-
-  const raw = await page.evaluate(
-    (key) => localStorage.getItem(key),
-    STORAGE_KEY,
-  );
-  expect(raw).toContain("read");
-});
-
-test("formation — ouvrir une vidéo et afficher le player @responsive", async ({
-  page,
-}) => {
-  await page.goto("/dashboard/formation/bases/intro-formation");
-  await expect(page.locator("h1").first()).toBeVisible();
-  await expect(page.locator("iframe, video").first()).toBeVisible();
+  test("une ancienne adresse d'article mène à la nouvelle fiche", async ({
+    page,
+  }) => {
+    await page.goto("/dashboard/formation/variance-et-patience");
+    await expect(page).toHaveURL(/\/dashboard\/formation\/series-perdantes$/);
+    await expect(page.locator("h1")).toHaveText(
+      "Pourquoi je perds plusieurs jours de suite ?",
+    );
+  });
 });

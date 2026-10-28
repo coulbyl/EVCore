@@ -1,5 +1,5 @@
 import type { Logger } from "pino";
-import { resolveSelectionOdds } from "@evcore/analysis-core";
+import { quoteSourceFor, resolveSelectionOdds } from "@evcore/analysis-core";
 import type { Market } from "@evcore/analysis-core";
 import type { Config } from "../config";
 import type { ChannelCalibration, MatchContext } from "../context/types";
@@ -29,7 +29,17 @@ import { sanitizeReasonText } from "./sanitize-reason";
 // it 0.790 — the cap alone removes the whole measured miscalibration
 // (docs/audits/2026-10-13/VANTAGE.md). Bumped so v4's calibration is read
 // on its own, never blended with v3's.
-const CONFIG_VERSION = "vantage-v4-gated";
+// v5-no-tension (2026-10-27): "tension" (a contradiction between two of our
+// own SELECTED readings) is no longer a basis for a play. Measured on v4's
+// 300 settled plays (13/10–24/10): VANTAGE played 80 % of the fixtures it
+// read against a prompt budget of 3 in 10; tension plays realised 63.3 % for
+// 65.9 % announced, −9.1 % at fixed stake, the other bases 65.4 % for
+// 62.7 %, +1.6 % (gap within noise, ~1 SE); 99 % of tension texts justified
+// the pick with "nos données internes sont en désaccord" and only 40 % named
+// a team. Décisions now tells the player such pairs are separate estimates,
+// not a reason to bet (docs/audits/2026-10-27/AVIS-IA.md). Bumped so the
+// v5 cohort is read on its own.
+const CONFIG_VERSION = "vantage-v5-no-tension";
 
 /** Same empirically-justified floor used elsewhere in the system — see
  * apps/backend/src/modules/coupon/coupon.constants.ts's MIN_LEG_ODDS and
@@ -46,6 +56,11 @@ const CONFIG_VERSION = "vantage-v4-gated";
  * 1.20; this is the defense-in-depth backstop, same pattern as
  * isValidPickForMarket. */
 const MIN_ODDS = 1.2;
+
+/** 2,76 plutôt que 2.76 dans un texte lu par le joueur. */
+function frOdds(odds: number): string {
+  return odds.toFixed(2).replace(".", ",");
+}
 
 /** Odds cap. The same cut every surface of this repo applies (CLAUDE.md:
  * "leg calibration collapses above odds 1.80"), measured on VANTAGE itself
@@ -93,15 +108,40 @@ export function closedMarkets(context: MatchContext): string[] {
  * function every channel strategy prices its own selections with. Checked
  * in that order; VANTAGE has no other source of odds — see MIN_ODDS
  * above. */
-function findKnownOdds(
+/**
+ * La cote d'un (marché, choix) et sa provenance : celle d'une lecture d'un
+ * autre canal sur la même analyse quand elle existe (même prix que celui
+ * qu'il a enregistré), sinon le relevé complet du match. La marge payée et
+ * la meilleure marge viennent avec : sans elles, impossible de classer les
+ * avis IA sur le coût du marché, la seule mesure qui persiste d'une période
+ * à l'autre (CLAUDE.md). Avant le 2026-10-27, l'avis IA n'enregistrait que la
+ * cote : marge nulle sur ses 300 avis réglés de v4.
+ */
+export type KnownQuote = {
+  odds: number;
+  bookmaker: string | null;
+  snapshotAt: Date | null;
+  marginPaid: number | null;
+  marginBest: number | null;
+};
+
+function findKnownQuote(
   context: MatchContext,
   market: string,
   pick: string,
-): number | null {
+): KnownQuote | null {
   const reading = context.readings.find(
     (r) => r.market === market && r.pick === pick && r.odds !== null,
   );
-  if (reading?.odds != null) return reading.odds;
+  if (reading?.odds != null) {
+    return {
+      odds: reading.odds,
+      bookmaker: reading.oddsBookmaker ?? null,
+      snapshotAt: reading.oddsSnapshotAt ?? null,
+      marginPaid: reading.marginPaid ?? null,
+      marginBest: reading.marginBest ?? null,
+    };
+  }
 
   if (!context.fullOddsSnapshot) return null;
   const odds = resolveSelectionOdds(
@@ -109,7 +149,20 @@ function findKnownOdds(
     market as Market,
     pick,
   );
-  return odds !== null ? odds.toNumber() : null;
+  if (odds === null) return null;
+  const source = quoteSourceFor(
+    context.fullOddsSnapshot,
+    market as Market,
+    pick,
+  );
+  return {
+    odds: odds.toNumber(),
+    bookmaker: source?.bookmaker ?? null,
+    snapshotAt: source?.snapshotAt ?? null,
+    marginPaid: source?.margin != null ? source.margin.toNumber() : null,
+    marginBest:
+      source?.bestMargin != null ? source.bestMargin.toNumber() : null,
+  };
 }
 
 /** Same floor CLAUDE.md already names for these markets ("ratio réel/annoncé
@@ -169,7 +222,10 @@ export type AnalyzeResult =
   | { outcome: "no_context" }
   | { outcome: "skipped_no_readings" }
   | { outcome: "invalid_response"; raw: string; error: string }
-  | { outcome: "gated"; reason: "odds_cap" | "self_calibration" }
+  | {
+      outcome: "gated";
+      reason: "odds_cap" | "self_calibration" | "basis";
+    }
   | { outcome: "persisted"; verdict: "play" | "no_play" };
 
 /** One fixture, one VANTAGE read, start to finish. Never throws on a bad LLM
@@ -302,6 +358,7 @@ export async function analyzeFixture(
   // channel's matching selection (arbitrage-constants.ts's findSiblingOdds),
   // which fails whenever VANTAGE's pick doesn't match any other channel's —
   // exactly the cases where VANTAGE is most likely to differ on purpose.
+  let knownQuote: KnownQuote | null = null;
   let knownOdds: number | null = null;
 
   // Le texte lu par le joueur, nettoyé des codes et du jargon que le modèle
@@ -310,7 +367,34 @@ export async function analyzeFixture(
   parsed.data.reasonDetails = sanitizeReasonText(parsed.data.reasonDetails);
 
   if (parsed.data.verdict === "play") {
-    knownOdds = findKnownOdds(context, parsed.data.market, parsed.data.pick);
+    knownQuote = findKnownQuote(context, parsed.data.market, parsed.data.pick);
+    knownOdds = knownQuote?.odds ?? null;
+    // v5 : une contradiction entre deux de nos lectures n'est plus une base
+    // de pari. Le prompt ne la propose plus ; si le modèle la déclare quand
+    // même, le refus est enregistré, comme pour le plafond de cote.
+    if (parsed.data.basis === "tension") {
+      logger.info(
+        {
+          fixtureId,
+          fixtureName,
+          scheduledAt: context.kickoff,
+          market: parsed.data.market,
+          pick: parsed.data.pick,
+        },
+        "vantage: play rests on a contradiction between our own readings — gated",
+      );
+      await persistVantageGateRejection({
+        fixtureId: context.fixtureId,
+        modelRunId: context.modelRunId,
+        configVersion: CONFIG_VERSION,
+        reasonCode: "VANTAGE_GATED_BASIS",
+        text: `Lecture non proposée : elle reposait sur un désaccord entre nos propres lectures, et chacune est une estimation à part. ${parsed.data.reasonDetails}`,
+        market: parsed.data.market,
+        pick: parsed.data.pick,
+        odds: knownOdds,
+      });
+      return { outcome: "gated", reason: "basis" };
+    }
     if (knownOdds !== null && knownOdds > MAX_ODDS) {
       logger.info(
         {
@@ -328,7 +412,8 @@ export async function analyzeFixture(
         modelRunId: context.modelRunId,
         configVersion: CONFIG_VERSION,
         reasonCode: "VANTAGE_GATED_ODDS",
-        text: `Lecture retenue mais non proposée : la cote (${knownOdds.toFixed(2)}) dépasse ${MAX_ODDS.toFixed(2)}, au-delà de laquelle nos avis ne tiennent pas leurs promesses. ${parsed.data.reasonDetails}`,
+        // Cotes à la française : ce texte est lu tel quel sur Avis IA.
+        text: `Lecture retenue mais non proposée : la cote (${frOdds(knownOdds)}) dépasse ${frOdds(MAX_ODDS)}, au-delà de laquelle nos avis ne tiennent pas leurs promesses. ${parsed.data.reasonDetails}`,
         market: parsed.data.market,
         pick: parsed.data.pick,
         odds: knownOdds,
@@ -410,7 +495,7 @@ export async function analyzeFixture(
     parsed.data,
     CONFIG_VERSION,
     research,
-    knownOdds,
+    knownQuote,
   );
   logger.info(
     {

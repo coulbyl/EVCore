@@ -1,25 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, FixtureStatus, BetSource, StrategyChannel } from '@evcore/db';
+import { Prisma, FixtureStatus } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
-import { toNumber } from '@utils/prisma.utils';
 import { startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
-import { formatSigned } from '@modules/dashboard/dashboard.utils';
 import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
 import type { EvaluatedPickSnapshot } from '@utils/model-run.utils';
+import { marketProbability, priceOutcomeGroups } from '@evcore/analysis-core';
 import type { FixtureScoringQueryDto } from './dto/fixture-scoring-query.dto';
 
 // ---------------------------------------------------------------------------
 // Output types
 // ---------------------------------------------------------------------------
 
+// betId, market, pick, betStatus, probEstimated, ev et safeValueBet venaient
+// des paris internes VALUE/SAFE de la table `bet`, plus écrite depuis le
+// 2026-09-04 : ils étaient nuls sur tous les matchs récents, et l'écran
+// affichait « Aucun marché ne répond aux critères » partout (revue UX du
+// 2026-10-27, Matchs P1-3). Retirés.
 export type ScoredFixtureModelRun = {
   modelRunId: string;
-  betId: string | null;
-  market: string | null;
-  pick: string | null;
-  betStatus: 'WON' | 'LOST' | 'PENDING' | null;
-  probEstimated: string | null;
-  ev: string | null;
   lambdaHome: string | null;
   lambdaAway: string | null;
   expectedTotalGoals: string | null;
@@ -30,12 +28,6 @@ export type ScoredFixtureModelRun = {
     performanceDomExt: number | null;
     volatiliteLigue: number | null;
   } | null;
-};
-
-export type ScoredFixtureSvBet = {
-  betId: string;
-  market: string;
-  pick: string;
 };
 
 export type ScoredFixtureRow = {
@@ -49,7 +41,30 @@ export type ScoredFixtureRow = {
   score: string | null;
   htScore: string | null;
   modelRun: ScoredFixtureModelRun | null;
-  safeValueBet: ScoredFixtureSvBet | null;
+};
+
+/**
+ * Fiche d'un match, ouverte depuis Décisions : les buts attendus, les
+ * facteurs et toutes les lectures évaluées avec leur motif de rejet. C'est un
+ * diagnostic : le front n'y filtre ni ne classe rien de ce que le moteur a
+ * évalué (mémoire projet « fiche = diagnostic »).
+ */
+export type FixtureSheet = Omit<ScoredFixtureRow, 'modelRun'> & {
+  homeTeam: string;
+  awayTeam: string;
+  country: string | null;
+  modelRun:
+    | (Omit<ScoredFixtureModelRun, 'evaluatedPicks'> & {
+        evaluatedPicks: (EvaluatedPickSnapshot & {
+          /**
+           * Fréquence affichée au joueur : probabilité du marché, marge
+           * retirée sur le groupe d'issues complet du match, sinon la marge
+           * typique du marché (2026-10-28). Null sans cote.
+           */
+          marketProbability: number | null;
+        })[];
+      })
+    | null;
 };
 
 export type ScoredFixturesResult = {
@@ -129,7 +144,7 @@ export class FixtureScoringService {
     date: Date,
     filters: Pick<
       FixtureScoringQueryDto,
-      'status' | 'competition' | 'timeSlot' | 'betStatus'
+      'status' | 'competition' | 'timeSlot'
     > = {},
     options: {
       cursor?: string;
@@ -187,60 +202,7 @@ export class FixtureScoringService {
 
     const fixtures = await this.prisma.client.fixture.findMany({
       where,
-      select: {
-        id: true,
-        scheduledAt: true,
-        status: true,
-        homeScore: true,
-        awayScore: true,
-        homeHtScore: true,
-        awayHtScore: true,
-        homeTeam: { select: { name: true, logoUrl: true } },
-        awayTeam: { select: { name: true, logoUrl: true } },
-        season: {
-          select: {
-            competition: { select: { name: true } },
-          },
-        },
-        modelRuns: {
-          select: {
-            id: true,
-            features: true,
-            analyzedAt: true,
-            bets: {
-              where: {
-                source: BetSource.MODEL,
-                channelSelection: {
-                  is: {
-                    channelDecision: {
-                      is: {
-                        channel: {
-                          in: [StrategyChannel.VALUE, StrategyChannel.SAFE],
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-              select: {
-                id: true,
-                market: true,
-                pick: true,
-                ev: true,
-                probEstimated: true,
-                status: true,
-                channelSelection: {
-                  select: { channelDecision: { select: { channel: true } } },
-                },
-              },
-              orderBy: { ev: 'desc' },
-              take: 2,
-            },
-          },
-          orderBy: { analyzedAt: 'desc' },
-          take: 1,
-        },
-      },
+      select: FIXTURE_ROW_SELECT,
       orderBy: [
         { season: { competition: { name: 'asc' } } },
         { scheduledAt: 'asc' },
@@ -252,78 +214,7 @@ export class FixtureScoringService {
     const hasMore = usePagination && fixtures.length > limit;
     const fixturesPage = hasMore ? fixtures.slice(0, limit) : fixtures;
 
-    let rows: ScoredFixtureRow[] = fixturesPage.map((f) => {
-      const run = f.modelRuns[0] ?? null;
-      const bet =
-        run?.bets.find(
-          (b) =>
-            b.channelSelection?.channelDecision.channel ===
-            StrategyChannel.VALUE,
-        ) ?? null;
-      const svBet =
-        run?.bets.find(
-          (b) =>
-            b.channelSelection?.channelDecision.channel ===
-            StrategyChannel.SAFE,
-        ) ?? null;
-      const betStatus =
-        bet?.status === 'WON' || bet?.status === 'LOST'
-          ? bet.status
-          : bet
-            ? 'PENDING'
-            : null;
-
-      const featureDiag = run
-        ? extractModelRunFeatureDiagnostics(run.features)
-        : null;
-
-      return {
-        fixtureId: f.id,
-        fixture: `${f.homeTeam.name} vs ${f.awayTeam.name}`,
-        homeLogo: f.homeTeam.logoUrl ?? null,
-        awayLogo: f.awayTeam.logoUrl ?? null,
-        competition: f.season.competition.name,
-        scheduledAt: f.scheduledAt.toISOString(),
-        status: f.status,
-        score:
-          f.homeScore !== null && f.awayScore !== null
-            ? `${f.homeScore} - ${f.awayScore}`
-            : null,
-        htScore:
-          f.homeHtScore !== null && f.awayHtScore !== null
-            ? `${f.homeHtScore} - ${f.awayHtScore}`
-            : null,
-        modelRun: run
-          ? {
-              modelRunId: run.id,
-              betId: bet?.id ?? null,
-              market: bet?.market ?? null,
-              pick: bet?.pick ?? null,
-              betStatus,
-              probEstimated: bet
-                ? `${(toNumber(bet.probEstimated) * 100).toFixed(1)}%`
-                : null,
-              ev: bet ? formatSigned(toNumber(bet.ev), 3) : null,
-              lambdaHome: featureDiag?.lambdaHome ?? null,
-              lambdaAway: featureDiag?.lambdaAway ?? null,
-              expectedTotalGoals: featureDiag?.expectedTotalGoals ?? null,
-              evaluatedPicks: featureDiag?.evaluatedPicks ?? [],
-              factors: featureDiag?.factors ?? null,
-            }
-          : null,
-        safeValueBet: svBet
-          ? {
-              betId: svBet.id,
-              market: svBet.market ?? '',
-              pick: svBet.pick ?? '',
-            }
-          : null,
-      };
-    });
-
-    if (filters.betStatus) {
-      rows = rows.filter((r) => r.modelRun?.betStatus === filters.betStatus);
-    }
+    const rows: ScoredFixtureRow[] = fixturesPage.map((f) => toScoredRow(f));
 
     const lastFixture = fixturesPage[fixturesPage.length - 1];
     const nextCursor =
@@ -333,4 +224,112 @@ export class FixtureScoringService {
 
     return { rows, total: rows.length, nextCursor };
   }
+
+  async getFixtureSheet(fixtureId: string): Promise<FixtureSheet | null> {
+    const fixture = await this.prisma.client.fixture.findUnique({
+      where: { id: fixtureId },
+      select: {
+        ...FIXTURE_ROW_SELECT,
+        season: {
+          select: { competition: { select: { name: true, country: true } } },
+        },
+      },
+    });
+    if (!fixture) return null;
+    const row = toScoredRow(fixture);
+    return {
+      ...row,
+      homeTeam: fixture.homeTeam.name,
+      awayTeam: fixture.awayTeam.name,
+      country: fixture.season.competition.country ?? null,
+      modelRun: row.modelRun
+        ? {
+            ...row.modelRun,
+            evaluatedPicks: withMarketProbability(
+              fixture.id,
+              row.modelRun.evaluatedPicks,
+            ),
+          }
+        : null,
+    };
+  }
+}
+
+/** Champs d'un match et de sa dernière analyse, partagés par la liste et la
+ * fiche. */
+const FIXTURE_ROW_SELECT = {
+  id: true,
+  scheduledAt: true,
+  status: true,
+  homeScore: true,
+  awayScore: true,
+  homeHtScore: true,
+  awayHtScore: true,
+  homeTeam: { select: { name: true, logoUrl: true } },
+  awayTeam: { select: { name: true, logoUrl: true } },
+  season: { select: { competition: { select: { name: true } } } },
+  modelRuns: {
+    select: { id: true, features: true, analyzedAt: true },
+    orderBy: { analyzedAt: 'desc' },
+    take: 1,
+  },
+} satisfies Prisma.FixtureSelect;
+
+type FixtureRowSource = Prisma.FixtureGetPayload<{
+  select: typeof FIXTURE_ROW_SELECT;
+}>;
+
+function toScoredRow(f: FixtureRowSource): ScoredFixtureRow {
+  const run = f.modelRuns[0] ?? null;
+  const featureDiag = run
+    ? extractModelRunFeatureDiagnostics(run.features)
+    : null;
+  return {
+    fixtureId: f.id,
+    fixture: `${f.homeTeam.name} vs ${f.awayTeam.name}`,
+    homeLogo: f.homeTeam.logoUrl ?? null,
+    awayLogo: f.awayTeam.logoUrl ?? null,
+    competition: f.season.competition.name,
+    scheduledAt: f.scheduledAt.toISOString(),
+    status: f.status,
+    score:
+      f.homeScore !== null && f.awayScore !== null
+        ? `${f.homeScore} - ${f.awayScore}`
+        : null,
+    htScore:
+      f.homeHtScore !== null && f.awayHtScore !== null
+        ? `${f.homeHtScore} - ${f.awayHtScore}`
+        : null,
+    modelRun: run
+      ? {
+          modelRunId: run.id,
+          lambdaHome: featureDiag?.lambdaHome ?? null,
+          lambdaAway: featureDiag?.lambdaAway ?? null,
+          expectedTotalGoals: featureDiag?.expectedTotalGoals ?? null,
+          evaluatedPicks: featureDiag?.evaluatedPicks ?? [],
+          factors: featureDiag?.factors ?? null,
+        }
+      : null,
+  };
+}
+
+function withMarketProbability(
+  fixtureId: string,
+  picks: EvaluatedPickSnapshot[],
+): (EvaluatedPickSnapshot & { marketProbability: number | null })[] {
+  const priced = picks
+    .map((p) => ({ ...p, fixtureId, odds: Number(p.odds) }))
+    .filter((p) => Number.isFinite(p.odds) && p.odds > 1);
+  const exact = new Map(
+    priceOutcomeGroups(priced).map((p) => [
+      `${p.market}|${p.pick}`,
+      p.fair.toDecimalPlaces(4).toNumber(),
+    ]),
+  );
+  return picks.map((p) => ({
+    ...p,
+    marketProbability:
+      exact.get(`${p.market}|${p.pick}`) ??
+      marketProbability({ odds: Number(p.odds) || null, market: p.market }),
+  }));
 }

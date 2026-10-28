@@ -1,0 +1,85 @@
+{
+ "url": "http://localhost:3010/dashboard/notifications",
+ "title": "EVCore",
+ "lang": "fr",
+ "headings": [],
+ "overflowX": false,
+ "textElements": 31,
+ "smallText": {
+  "count": 5,
+  "samples": [
+   {
+    "text": "AUJOURD'HUI",
+    "px": 11.5
+   },
+   {
+    "text": "HIER",
+    "px": 11.5
+   },
+   {
+    "text": "CRITIQUE",
+    "px": 9.9
+   },
+   {
+    "text": "SAMEDI 24 OCTOBRE",
+    "px": 11.5
+   },
+   {
+    "text": "JEUDI 22 OCTOBRE",
+    "px": 11.5
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 20,
+ "smallTapTargets": {
+  "count": 8,
+  "samples": [
+   {
+    "text": "Toutes",
+    "w": 65,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "Non lues 2",
+    "w": 101,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "📣 Annonces",
+    "w": 106,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "Tout marquer comme lu",
+    "w": 191,
+    "h": 32,
+    "tag": "button"
+   },
+   {
+    "text": "Voir",
+    "w": 41,
+    "h": 20,
+    "tag": "a"
+   },
+   {
+    "text": "Marquer comme lu",
+    "w": 27,
+    "h": 27,
+    "tag": "button"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

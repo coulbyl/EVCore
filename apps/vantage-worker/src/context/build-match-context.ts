@@ -101,6 +101,10 @@ export async function buildMatchContext(
       pick: top?.pick ?? null,
       probability: top ? Number(top.probability) : null,
       odds: top?.odds ? Number(top.odds) : null,
+      oddsBookmaker: top?.oddsBookmaker ?? null,
+      oddsSnapshotAt: top?.oddsSnapshotAt ?? null,
+      marginPaid: top?.marginPaid != null ? Number(top.marginPaid) : null,
+      marginBest: top?.marginBest != null ? Number(top.marginBest) : null,
       ev: top?.ev ? Number(top.ev) : null,
       nearMiss:
         status === "REJECTED"

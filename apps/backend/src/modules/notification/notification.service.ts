@@ -7,8 +7,8 @@ import {
   type Prisma,
   UserRole,
 } from '@evcore/db';
-import { PrismaService } from '@/prisma.service';
 import { MailService } from '@modules/mail/mail.service';
+import { NotificationRepository } from './notification.repository';
 
 const logger = createLogger('notification-service');
 
@@ -25,6 +25,24 @@ const logger = createLogger('notification-service');
 const OPERATOR_TYPES: NotificationType[] = [
   NotificationType.ANNOUNCEMENT_PUBLISHED,
 ];
+
+// Messages personnels du mécanisme d'abonnements retiré le 2026-09-03
+// (« Abonnement — VALUE (Valeur) », « 1 perdu(s) · -5 000 F »). Les lignes
+// restent en base jusqu'à la purge lancée par l'utilisateur, mais ne
+// s'affichent plus et ne comptent plus dans la cloche (revue UX du
+// 2026-10-27, Notifications P1-1).
+const RETIRED_PERSONAL_TYPES: NotificationType[] = [
+  NotificationType.SUBSCRIPTION_EVENTS_ADDED,
+  NotificationType.SUBSCRIPTION_SETTLED,
+];
+
+function announcementIdOf(payload: Prisma.JsonValue | null): string | null {
+  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+    const id = payload.announcementId;
+    return typeof id === 'string' ? id : null;
+  }
+  return null;
+}
 
 export type NotificationView = Omit<Notification, 'read' | 'readAt'> & {
   isRead: boolean;
@@ -48,7 +66,7 @@ export type WeeklyReportPayload = {
 @Injectable()
 export class NotificationService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly repository: NotificationRepository,
     private readonly mail: MailService,
   ) {}
 
@@ -291,6 +309,7 @@ export class NotificationService {
             },
             {
               userId: query.userId,
+              type: { notIn: RETIRED_PERSONAL_TYPES },
               ...(query.unread ? { read: false } : {}),
             },
           ],
@@ -298,16 +317,13 @@ export class NotificationService {
       ],
     };
     const [raw, total] = await Promise.all([
-      this.prisma.client.notification.findMany({
+      this.repository.findPage({
         where,
-        orderBy: { createdAt: 'desc' },
-        take: query.limit,
-        skip: query.offset,
-        include: {
-          reads: { where: { userId: query.userId }, select: { readAt: true } },
-        },
+        limit: query.limit,
+        offset: query.offset,
+        userId: query.userId,
       }),
-      this.prisma.client.notification.count({ where }),
+      this.repository.count(where),
     ]);
     const data: NotificationView[] = raw.map(
       ({ reads, read, readAt: _ra, ...n }) => ({
@@ -323,65 +339,90 @@ export class NotificationService {
     role: UserRole,
   ): Promise<{ count: number }> {
     const types = this.allowedTypes(role);
-    const count = await this.prisma.client.notification.count({
-      where: {
-        OR: [
-          { userId: null, type: { in: types }, reads: { none: { userId } } },
-          { userId, read: false },
-        ],
-      },
+    const count = await this.repository.count({
+      OR: [
+        { userId: null, type: { in: types }, reads: { none: { userId } } },
+        { userId, read: false, type: { notIn: RETIRED_PERSONAL_TYPES } },
+      ],
     });
     return { count };
   }
 
   async markRead(notificationId: string, userId: string): Promise<void> {
-    const notification = await this.prisma.client.notification.findUnique({
-      where: { id: notificationId },
-      select: { userId: true },
-    });
+    const notification = await this.repository.findReadTarget(notificationId);
     if (!notification) return;
     if (notification.userId) {
       // Personnelle — pas de table de lecture partagée, et seul le
       // destinataire peut la marquer lue (scope par userId dans le where).
-      await this.prisma.client.notification.updateMany({
-        where: { id: notificationId, userId },
-        data: { read: true, readAt: new Date() },
-      });
+      await this.repository.markPersonalRead(notificationId, userId);
       return;
     }
-    await this.prisma.client.userNotificationRead.upsert({
-      where: { userId_notificationId: { userId, notificationId } },
-      create: { userId, notificationId },
-      update: {},
-    });
+    await this.repository.markBroadcastRead(userId, notificationId);
+    const announcementId =
+      notification.type === NotificationType.ANNOUNCEMENT_PUBLISHED
+        ? announcementIdOf(notification.payload)
+        : null;
+    if (announcementId)
+      await this.syncAnnouncementReads(userId, [announcementId]);
+  }
+
+  /**
+   * Une annonce n'a qu'un état « lu » : la lire dans la cloche la marque lue
+   * dans Annonces, et inversement (`markAnnouncementRead`). Il y en avait
+   * deux, indépendants (revue UX du 2026-10-27, Notifications P2-6). Une
+   * annonce supprimée depuis est ignorée.
+   */
+  private async syncAnnouncementReads(
+    userId: string,
+    announcementIds: string[],
+  ): Promise<void> {
+    if (announcementIds.length === 0) return;
+    const existing =
+      await this.repository.findExistingAnnouncementIds(announcementIds);
+    await this.repository.markAnnouncementsRead(userId, existing);
+  }
+
+  /** L'annonce a été ouverte dans Annonces : sa notification devient lue. */
+  async markAnnouncementRead(
+    userId: string,
+    announcementId: string,
+  ): Promise<void> {
+    const notificationIds =
+      await this.repository.findAnnouncementNotificationIds(announcementId);
+    await this.repository.markBroadcastsRead(userId, notificationIds);
+  }
+
+  /**
+   * La conversation a été ouverte : ses réponses ne restent plus non lues
+   * dans la cloche. 115 sur 119 l'étaient en base, et la cloche comme l'Inbox
+   * comptaient chacune le même message (revue UX du 2026-10-27, P2-5).
+   */
+  async markSupportMessagesRead(userId: string): Promise<void> {
+    await this.repository.markPersonalReadByType(
+      userId,
+      NotificationType.SUPPORT_MESSAGE,
+    );
   }
 
   async markAllRead(userId: string, role: UserRole): Promise<void> {
     const types = this.allowedTypes(role);
-    const [unreadBroadcast] = await Promise.all([
-      this.prisma.client.notification.findMany({
-        where: {
-          userId: null,
-          type: { in: types },
-          reads: { none: { userId } },
-        },
-        select: { id: true },
-      }),
-    ]);
+    const unreadBroadcast = await this.repository.findUnreadBroadcasts(
+      userId,
+      types,
+    );
     await Promise.all([
-      unreadBroadcast.length > 0
-        ? this.prisma.client.userNotificationRead.createMany({
-            data: unreadBroadcast.map((n) => ({
-              userId,
-              notificationId: n.id,
-            })),
-            skipDuplicates: true,
-          })
-        : Promise.resolve(),
-      this.prisma.client.notification.updateMany({
-        where: { userId, read: false },
-        data: { read: true, readAt: new Date() },
-      }),
+      this.repository.markBroadcastsRead(
+        userId,
+        unreadBroadcast.map((n) => n.id),
+      ),
+      this.repository.markAllPersonalRead(userId),
+      this.syncAnnouncementReads(
+        userId,
+        unreadBroadcast
+          .filter((n) => n.type === NotificationType.ANNOUNCEMENT_PUBLISHED)
+          .map((n) => announcementIdOf(n.payload))
+          .filter((id): id is string => id !== null),
+      ),
     ]);
   }
 
@@ -396,14 +437,12 @@ export class NotificationService {
     payload?: Prisma.InputJsonValue;
   }): Promise<void> {
     try {
-      await this.prisma.client.notification.create({
-        data: {
-          userId: input.userId,
-          type: input.type,
-          title: input.title,
-          body: input.body,
-          payload: input.payload,
-        },
+      await this.repository.create({
+        userId: input.userId,
+        type: input.type,
+        title: input.title,
+        body: input.body,
+        payload: input.payload,
       });
     } catch (error) {
       logger.error(
@@ -420,9 +459,7 @@ export class NotificationService {
   private async save(input: SaveNotificationInput): Promise<void> {
     const { type, title, body, payload } = input;
     try {
-      await this.prisma.client.notification.create({
-        data: { type, title, body, payload },
-      });
+      await this.repository.create({ type, title, body, payload });
     } catch (error) {
       logger.error(
         { type, error: error instanceof Error ? error.message : String(error) },

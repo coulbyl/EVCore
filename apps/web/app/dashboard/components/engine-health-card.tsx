@@ -118,9 +118,14 @@ export function EngineHealthCard() {
         key: h.channel,
         primaryLabel: channelLabel(h.channel, locale),
         status: h.status,
-        roi: h.roi,
-        hitRate: h.hitRate,
+        // ratio = réalisé ÷ annoncé, donc annoncé = réalisé ÷ ratio.
+        announced:
+          h.hitRate !== null && h.calibrationRatio
+            ? h.hitRate / h.calibrationRatio
+            : null,
+        realised: h.hitRate,
         calibrationRatio: h.calibrationRatio,
+        roi: h.roi,
         sampleSize: h.sampleSize,
       }));
 
@@ -266,7 +271,11 @@ export function EngineHealthCard() {
           <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             {t("channelsByDeviation")}
           </p>
-          <ChannelStatsTable primaryColumnLabel={t("channel")} rows={rows} />
+          <ChannelStatsTable
+            primaryColumnLabel={t("channel")}
+            rows={rows}
+            keepRowOrder
+          />
         </div>
       )}
     </section>

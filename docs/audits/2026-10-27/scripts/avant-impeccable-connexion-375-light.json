@@ -1,0 +1,88 @@
+{
+ "route": "/auth/login",
+ "width": 375,
+ "theme": "light",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 4 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 2.1:1 (need 4.5:1) — text #92a0b2 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Core\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 4 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 2.1:1 (need 4.5:1) — text #92a0b2 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Core\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.6rem] font-bold text-muted-foreground/60",
+    "text": "Core",
+    "w": 22,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.1:1 (need 4.5:1) — text #92a0b2 on #dfe7f1"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"Core\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-2 text-sm leading-6 text-muted-foreground",
+    "text": "Connectez-vous pour retrouver vos sélections et votre suivi ",
+    "w": 343,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-center text-sm text-muted-foreground",
+    "text": "Pas encore de compte ? Créer un compte",
+    "w": 343,
+    "h": 20
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "a",
+    "cls": "transition-colors hover:text-muted-foreground",
+    "text": "← Retour à l'accueil",
+    "w": 107,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1"
+    }
+   ]
+  }
+ ]
+}

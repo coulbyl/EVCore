@@ -62,6 +62,7 @@ function makeRepo(
 
 function makeNotifier(): SupportNotifierService {
   return {
+    clearUserNotifications: vi.fn().mockResolvedValue(undefined),
     notifyAdmin: vi.fn().mockResolvedValue(undefined),
     notifyUser: vi.fn().mockResolvedValue(undefined),
   } as unknown as SupportNotifierService;

@@ -94,7 +94,8 @@ export type CouponClassName =
   | "UNIQUE"
   | "FAVOURITE"
   | "COMBO"
-  | "LONG";
+  | "LONG"
+  | "DOUBLE";
 
 export type CouponClass = {
   name: CouponClassName;
@@ -252,6 +253,29 @@ export const LONG_COUPON_CLASS: CouponClass = {
   targetOddsMax: 5,
 };
 
+/**
+ * Le coupon cote 2 : deux jambes (trois seulement si aucune paire n'existe),
+ * une par match, de cote combinée 2 à 3 chez le book du joueur, choisies
+ * parmi TOUT ce qui est coté — pas seulement les sélections du moteur — et
+ * classées par la probabilité du marché sans marge, c'est-à-dire par le prix.
+ *
+ * Mesuré le 2026-10-28 sur 115 jours (`docs/audits/2026-10-28/
+ * SELECTIONS-LAISSEES.md`) : un coupon 114 jours sur 115, 43,6 % annoncés,
+ * 48 % ± 9 réalisés, coût attendu −7,9 % (le plus bas des variantes). À prix
+ * égal, les sélections du moteur ne font pas mieux que ce qu'il rejette
+ * (66,9 % contre 66,5 %), et classer par le taux passé d'une cellule va
+ * chercher des marchés chers dont le passé ne se répète pas.
+ */
+export const DOUBLE_COUPON_CLASS: CouponClass = {
+  name: "DOUBLE",
+  minLegOdds: 1.2,
+  maxLegOdds: 1.8,
+  maxLegs: 3,
+  targetCombinedOdds: 2,
+  targetOddsMin: 2,
+  targetOddsMax: 3,
+};
+
 /** Retrouve la classe d'une proposition persistée depuis son `targetOddsMin`. */
 export function classForTargetOddsMin(
   targetOddsMin: number,
@@ -262,6 +286,7 @@ export function classForTargetOddsMin(
       FAVOURITE_COUPON_CLASS,
       COMBO_COUPON_CLASS,
       LONG_COUPON_CLASS,
+      DOUBLE_COUPON_CLASS,
       ...COUPON_CLASSES,
     ].find((c) => c.targetOddsMin === targetOddsMin)?.name ?? null
   );

@@ -21,10 +21,14 @@ const noPlaySchema = z.object({
     ),
 });
 
-/** The one basis the prompt allows a "play" to rest on. Optional in the
- * schema (an older model output without it is still a valid verdict) but
- * asked for by the prompt and persisted, so each basis can be measured on
- * its own — the first step to learning which of the three actually holds. */
+/** The basis a "play" declares. Optional in the schema (an older model
+ * output without it is still a valid verdict) but asked for by the prompt
+ * and persisted, so each basis can be measured on its own.
+ *
+ * "tension" stays parseable although the prompt no longer offers it since
+ * v5 (2026-10-27): a model that still answers with it gets a recorded,
+ * deterministic refusal (analyze-fixture.ts, VANTAGE_GATED_BASIS) instead of
+ * an invalid response retried in a loop. */
 export const PLAY_BASES = ["tension", "near_threshold", "raw_stats"] as const;
 
 const playSchema = z.object({

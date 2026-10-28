@@ -11,6 +11,12 @@ import {
   StrategyChannel,
 } from '@evcore/db';
 import Decimal from 'decimal.js';
+import {
+  fixedStakeOutcome,
+  slipMoney,
+  sumSlipMoney,
+  type SlipMoney,
+} from './bet-slip-outcome';
 import { PrismaService } from '@/prisma.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
 import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
@@ -23,7 +29,11 @@ import {
   type PlayableQuote,
 } from '../betting-engine/pricing/playable-odds.repository';
 import type { CreateBetSlipDto } from './dto/create-bet-slip.dto';
-import type { BetSlipSummaryView, BetSlipView } from './bet-slip.types';
+import type {
+  BetSlipResultView,
+  BetSlipSummaryView,
+  BetSlipView,
+} from './bet-slip.types';
 
 function buildPickKey(input: { market: string; pick: string }): string {
   return [input.market, input.pick].join('|');
@@ -339,34 +349,40 @@ export class BetSlipService {
     from?: Date,
     to?: Date,
   ): Promise<BetSlipSummaryView> {
-    const [{ slipCount, wonBets, lostBets, pendingBets }, globalBets] =
+    const [{ slipCount, wonBets, lostBets, pendingBets }, slips] =
       await Promise.all([
         this.repository.getUserSummary(userId, from, to),
-        this.repository.getGlobalModelBets(from, to),
+        this.repository.getUserPlayedSlips(userId, from, to),
       ]);
 
     const settledBets = wonBets + lostBets;
     const winRate =
       settledBets > 0 ? `${Math.round((wonBets / settledBets) * 100)}%` : '—';
 
-    let totalStaked = new Decimal(0);
-    let totalReturned = new Decimal(0);
-    const roiBetCount = globalBets.length;
-
-    for (const bet of globalBets) {
-      const stake = new Decimal(bet.stakePct.toString());
-      totalStaked = totalStaked.plus(stake);
-      if (bet.status === 'WON') {
-        totalReturned = totalReturned.plus(
-          stake.times(bet.oddsSnapshot!.toString()),
-        );
-      }
-    }
-
-    const globalRoi =
-      roiBetCount > 0 && totalStaked.gt(0)
-        ? `${totalReturned.minus(totalStaked).dividedBy(totalStaked).times(100).toFixed(1)}%`
-        : null;
+    const outcome = fixedStakeOutcome(
+      slips.map((slip) => ({
+        type: slip.type,
+        items: slip.items.map((item) => ({
+          status: item.bet.status,
+          odds: toOdds(item.bet.oddsSnapshot),
+        })),
+      })),
+    );
+    const money = sumSlipMoney(
+      slips.map((slip) =>
+        slipMoney({
+          type: slip.type,
+          unitStake: new Decimal(slip.unitStake.toString()),
+          items: slip.items.map((item) => ({
+            status: item.bet.status,
+            odds: toOdds(item.bet.oddsSnapshot),
+            stake: new Decimal(
+              (item.stakeOverride ?? slip.unitStake).toString(),
+            ),
+          })),
+        }),
+      ),
+    );
 
     return {
       slipCount,
@@ -375,8 +391,23 @@ export class BetSlipService {
       pendingBets,
       settledBets,
       winRate,
-      globalRoi,
-      globalRoiBetCount: roiBetCount,
+      plays: {
+        won: outcome.wonPlays,
+        lost: outcome.lostPlays,
+        void: outcome.voidPlays,
+        pending: outcome.pendingPlays,
+        settled: outcome.settledPlays,
+        profitUnits: outcome.profitUnits.toFixed(2),
+        returnRate: outcome.returnRate?.toFixed(4) ?? null,
+      },
+      money: {
+        settledSlips: money.settledSlips,
+        settledStake: money.settledStake.toFixed(2),
+        returned: money.returned.toFixed(2),
+        net: money.net.toFixed(2),
+        pendingStake: money.pendingStake.toFixed(2),
+        firstSlipAt: slips[0]?.createdAt.toISOString() ?? null,
+      },
     };
   }
 
@@ -432,6 +463,8 @@ function toBetSlipView(
         homeScore: item.fixture.homeScore,
         awayScore: item.fixture.awayScore,
         pnl: computePnl(status, stake, odds),
+        homeTeam: item.fixture.homeTeam.name,
+        awayTeam: item.fixture.awayTeam.name,
         canal:
           item.bet.channelSelection?.channelDecision.channel ===
           StrategyChannel.SAFE
@@ -439,6 +472,47 @@ function toBetSlipView(
             : 'VALUE',
       };
     }),
+    totalOdds:
+      betSlip.type === 'COMBO'
+        ? betSlip.items
+            .reduce(
+              (acc, item) =>
+                item.bet.oddsSnapshot === null
+                  ? acc
+                  : acc.times(item.bet.oddsSnapshot.toString()),
+              new Decimal(1),
+            )
+            .toFixed(2)
+        : null,
+    result: toResultView(
+      slipMoney({
+        type: betSlip.type,
+        unitStake: new Decimal(betSlip.unitStake.toString()),
+        items: betSlip.items.map((item) => ({
+          status: item.bet.status,
+          odds: toOdds(item.bet.oddsSnapshot),
+          stake: new Decimal(
+            (item.stakeOverride ?? betSlip.unitStake).toString(),
+          ),
+        })),
+      }),
+    ),
+  };
+}
+
+function toOdds(value: { toString(): string } | null): Decimal | null {
+  return value === null ? null : new Decimal(value.toString());
+}
+
+function toResultView(money: SlipMoney): BetSlipResultView {
+  return {
+    status: money.status,
+    staked: money.staked.toFixed(2),
+    settledStake: money.settledStake.toFixed(2),
+    returned: money.returned.toFixed(2),
+    net: money.net.toFixed(2),
+    pendingStake: money.pendingStake.toFixed(2),
+    potentialReturn: money.potentialReturn.toFixed(2),
   };
 }
 

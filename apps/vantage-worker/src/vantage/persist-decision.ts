@@ -2,6 +2,7 @@ import { prisma } from "@evcore/db";
 import { STRATEGY_CHANNEL } from "@evcore/analysis-core";
 import type { VantageResponse } from "./response-schema";
 import type { SituationalResearch } from "../research";
+import type { KnownQuote } from "./analyze-fixture";
 
 /** Writes VANTAGE's decision as a normal ChannelDecision + ChannelSelection,
  * attached to the fixture's existing ModelRun — the exact same shape every
@@ -23,15 +24,19 @@ export async function persistVantageDecision(
   response: VantageResponse,
   configVersion: string,
   research: SituationalResearch | null,
-  // Same value the MIN_ODDS floor check already resolved (analyze-fixture.ts's
-  // findKnownOdds) — VANTAGE's LLM response never carries odds itself (its
+  // Same quote the MIN_ODDS floor check already resolved (analyze-fixture.ts's
+  // findKnownQuote) — VANTAGE's LLM response never carries odds itself (its
   // schema has none), but the odds it already checked against the floor are
   // the honest price for this exact pick, not invented. Persisting it here
   // means the frontend reads it like any other channel's selection, instead
   // of guessing at a sibling channel's matching pick (which fails whenever
   // VANTAGE disagrees with every other channel — its whole reason to play).
-  odds: number | null = null,
+  // Since 2026-10-27 the quote carries its provenance too (book, snapshot
+  // time, margin paid and best margin), same columns every engine channel
+  // writes: VANTAGE's 300 settled v4 picks had no margin at all.
+  quote: KnownQuote | null = null,
 ): Promise<void> {
+  const odds = quote?.odds ?? null;
   const status = response.verdict === "play" ? "SELECTED" : "REJECTED";
   const reasonCode =
     response.verdict === "play" ? "VANTAGE_PLAY" : "VANTAGE_NO_PLAY";
@@ -55,6 +60,14 @@ export async function persistVantageDecision(
             pick: response.pick,
             probability: response.probability,
             odds: odds ?? undefined,
+            impliedProbability:
+              odds !== null && odds > 1
+                ? Number((1 / odds).toFixed(4))
+                : undefined,
+            oddsBookmaker: quote?.bookmaker ?? undefined,
+            oddsSnapshotAt: quote?.snapshotAt ?? undefined,
+            marginPaid: quote?.marginPaid ?? undefined,
+            marginBest: quote?.marginBest ?? undefined,
             rank: 1,
           },
         ]
@@ -121,7 +134,10 @@ export async function persistVantageGateRejection(input: {
   fixtureId: string;
   modelRunId: string;
   configVersion: string;
-  reasonCode: "VANTAGE_GATED_ODDS" | "VANTAGE_GATED_MARKET";
+  reasonCode:
+    | "VANTAGE_GATED_ODDS"
+    | "VANTAGE_GATED_MARKET"
+    | "VANTAGE_GATED_BASIS";
   text: string;
   market: string;
   pick: string;

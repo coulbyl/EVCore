@@ -1,0 +1,171 @@
+{
+ "url": "http://localhost:3010/dashboard/bet-slips",
+ "title": "EVCore",
+ "lang": "fr",
+ "headings": [
+  "h2: #bs1",
+  "h2: #bs2",
+  "h2: #bs3"
+ ],
+ "overflowX": false,
+ "textElements": 70,
+ "smallText": {
+  "count": 15,
+  "samples": [
+   {
+    "text": "AUJOURD'HUI",
+    "px": 11
+   },
+   {
+    "text": "SUIVI",
+    "px": 11
+   },
+   {
+    "text": "ANALYSE",
+    "px": 11
+   },
+   {
+    "text": "MISÉ",
+    "px": 11
+   },
+   {
+    "text": "NET RÉGLÉ",
+    "px": 11
+   },
+   {
+    "text": "EN ATTENTE",
+    "px": 11
+   },
+   {
+    "text": "TYPE",
+    "px": 10.4
+   },
+   {
+    "text": "DU",
+    "px": 10.4
+   },
+   {
+    "text": "AU",
+    "px": 10.4
+   },
+   {
+    "text": "COUPON",
+    "px": 10.9
+   },
+   {
+    "text": "Gagné",
+    "px": 9.9
+   },
+   {
+    "text": "Perdu",
+    "px": 9.9
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 23,
+ "smallTapTargets": {
+  "count": 15,
+  "samples": [
+   {
+    "text": "Accueil",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Coupons",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Avis IA",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Décisions",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mes coupons",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Inbox",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Formation",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mesures historiques",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Notifications 2",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Paramètres du compte",
+    "w": 36,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "2",
+    "w": 42,
+    "h": 44,
+    "tag": "a"
+   },
+   {
+    "text": "Tous",
+    "w": 155,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "20 oct. 2026",
+    "w": 155,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "27 oct. 2026",
+    "w": 155,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "Réinitialiser",
+    "w": 114,
+    "h": 32,
+    "tag": "button"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

@@ -23,8 +23,8 @@ const loginSchema = z.object({
   identifier: z
     .string()
     .trim()
-    .min(1, "Renseignez votre email ou votre username."),
-  password: z.string().min(1, "Renseignez votre mot de passe."),
+    .min(1, "Indique ton e-mail ou ton nom d'utilisateur."),
+  password: z.string().min(1, "Indique ton mot de passe."),
 });
 
 type LoginValues = z.infer<typeof loginSchema>;

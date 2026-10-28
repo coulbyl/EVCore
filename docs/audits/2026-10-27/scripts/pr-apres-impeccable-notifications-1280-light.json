@@ -1,0 +1,65 @@
+{
+ "route": "/dashboard/notifications",
+ "width": 1280,
+ "theme": "light",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 3 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 3 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "p",
+    "cls": "truncate text-xs text-sidebar-foreground/60",
+    "text": "@e2e_tester",
+    "w": 138,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.8:1 (need 4.5:1) — text #6e7885 on #e7eff3"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12 righ",
+    "text": "",
+    "w": 48,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "border border-border bg-panel-strong min-h-0 flex-1 overflow-y-auto p-4 sm:p-5 e",
+    "text": "Notifications Les annonces d'EVCore et les réponses de l'équ",
+    "w": 914,
+    "h": 689
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  }
+ ]
+}

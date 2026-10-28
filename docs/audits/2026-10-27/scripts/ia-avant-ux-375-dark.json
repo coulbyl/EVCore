@@ -1,0 +1,69 @@
+{
+ "url": "http://localhost:3010/dashboard/arbitrage?filter=all",
+ "title": "Arbitrage — EVCore",
+ "lang": "fr",
+ "headings": [
+  "h1: Avis IA"
+ ],
+ "overflowX": false,
+ "textElements": 49,
+ "smallText": {
+  "count": 10,
+  "samples": [
+   {
+    "text": "LECTURE IA",
+    "px": 9.9
+   },
+   {
+    "text": "SÉLECTION PROPOSÉE",
+    "px": 9.9
+   },
+   {
+    "text": "ANALYSE IA",
+    "px": 9.9
+   },
+   {
+    "text": "Décidé le 27/10/2026 06:49",
+    "px": 10.6
+   },
+   {
+    "text": "AUCUNE SÉLECTION",
+    "px": 9.9
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 18,
+ "smallTapTargets": {
+  "count": 3,
+  "samples": [
+   {
+    "text": "En savoir plus sur Avis IA",
+    "w": 12,
+    "h": 12,
+    "tag": "button"
+   },
+   {
+    "text": "Ligue Tous",
+    "w": 317,
+    "h": 42,
+    "tag": "button"
+   },
+   {
+    "text": "Filtre Toutes",
+    "w": 317,
+    "h": 42,
+    "tag": "button"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

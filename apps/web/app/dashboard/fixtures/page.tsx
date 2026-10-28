@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { Page, PageHeader, PageHeaderActions, PageContent } from "@evcore/ui";
 import { todayIso } from "@/lib/date";
 import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session";
@@ -17,6 +18,9 @@ export default async function FixturesPage({
   const date = typeof sp["date"] === "string" ? sp["date"] : todayIso();
   const session = await getCurrentSession();
   const isAdmin = session?.user.role === "ADMIN";
+  // Outil d'analyse réservé aux admins depuis le 2026-10-27 : le joueur lit
+  // les matchs sur Décisions, et la fiche de match s'ouvre depuis ses cartes.
+  if (!isAdmin) redirect("/dashboard/decisions");
 
   return (
     <Page className="flex h-full flex-col">

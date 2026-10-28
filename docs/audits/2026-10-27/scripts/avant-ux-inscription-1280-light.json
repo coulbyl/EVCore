@@ -1,0 +1,96 @@
+{
+ "url": "http://localhost:3000/auth/register",
+ "title": "EVCore — Arrêtez de parier. Commencez à investir.",
+ "lang": "fr",
+ "headings": [
+  "h1: Commencez à investir avec méthode.",
+  "h2: Créer un compte"
+ ],
+ "overflowX": false,
+ "textElements": 24,
+ "smallText": {
+  "count": 5,
+  "samples": [
+   {
+    "text": "Core",
+    "px": 9.6
+   },
+   {
+    "text": "Accès sécurisé · Données chiffrées",
+    "px": 11.2
+   },
+   {
+    "text": "Un code à 6 chiffres vous sera envoyé à cette adre",
+    "px": 11.5
+   },
+   {
+    "text": "Au moins 8 caractères. Une phrase longue et facile",
+    "px": 11.5
+   },
+   {
+    "text": "— optionnel",
+    "px": 11.5
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 9,
+ "smallTapTargets": {
+  "count": 3,
+  "samples": [
+   {
+    "text": "Afficher le mot de passe",
+    "w": 32,
+    "h": 32,
+    "tag": "button"
+   },
+   {
+    "text": "Se connecter",
+    "w": 83,
+    "h": 16,
+    "tag": "a"
+   },
+   {
+    "text": "← Retour à l'accueil",
+    "w": 107,
+    "h": 14,
+    "tag": "a"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 5,
+  "samples": [
+   {
+    "tag": "input",
+    "cls": "w-full min-w-0 rounded-md border border-input bg-transparent"
+   },
+   {
+    "tag": "input",
+    "cls": "w-full min-w-0 rounded-md border border-input bg-transparent"
+   },
+   {
+    "tag": "input",
+    "cls": "w-full min-w-0 rounded-md border border-input bg-transparent"
+   },
+   {
+    "tag": "input",
+    "cls": "w-full min-w-0 rounded-md border border-input bg-transparent"
+   },
+   {
+    "tag": "textarea",
+    "cls": "flex field-sizing-content min-h-16 w-full rounded-md border "
+   }
+  ]
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": [
+  {
+   "word": "investir",
+   "count": 1
+  }
+ ]
+}

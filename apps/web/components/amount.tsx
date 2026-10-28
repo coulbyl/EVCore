@@ -24,9 +24,11 @@ export function Amount({ value, signed = false, className }: AmountProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
+        {/* Zone de toucher élargie à 44 px autour du montant, sans
+            changer la mise en page (revue UX du 2026-10-27, P2-10). */}
         <button
           type="button"
-          className={`tabular-nums cursor-pointer underline decoration-dotted underline-offset-2 hover:decoration-solid ${className ?? ""}`}
+          className={`relative tabular-nums cursor-pointer underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 after:content-[''] hover:decoration-solid ${className ?? ""}`}
         >
           {display}
         </button>

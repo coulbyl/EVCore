@@ -24,9 +24,11 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Console EVCore",
+  // « Console EVCore » était le nom d'un outil interne : c'est aussi celui
+  // que le téléphone proposait à l'installation (audit du 2026-10-23, P2-5).
+  title: "EVCore",
   description:
-    "Console opérateur pour les analyses EVCore, les fixtures et les flux d'audit.",
+    "Analyses de football : probabilités, raisonnement et résultats réglés, pertes comprises. 18+.",
   // manifest est auto-généré par app/manifest.ts — ne pas dupliquer ici
   appleWebApp: {
     capable: true,

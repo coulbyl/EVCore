@@ -1,0 +1,1041 @@
+{
+ "route": "/",
+ "width": 1280,
+ "theme": "light",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 51 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #0f766e on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #0f766e on #cedee7 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %chero-eyebrow-chip%c eyebrow chip (tracked-caps) \"Stratégie d'investissement sportif\" above h1 \"Un avis sur chaque match.Une conviction sur presque aucun.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"produits.\" alone on the last of 5 lines (13% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.1:1 (need 4.5:1) — text #92a0b2 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.0:1 (need 4.5:1) — text #162033 on #0f766e color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Lecture du match\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"buts attendus\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.2:1 (need 4.5:1) — text #5f7088 on #e4ecf3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Double chance\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"74% attendus\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.2:1 (need 4.5:1) — text #5f7088 on #e4ecf3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Plus / moins de buts\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"49% attendus\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.2:1 (need 4.5:1) — text #5f7088 on #e4ecf3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 10.4px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"54% attendus\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.6:1 (need 4.5:1) — text #777f8c on #eef3f8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.1:1 (need 4.5:1) — text #9fabba on #eef3f8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Score exact\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.1:1 (need 4.5:1) — text #9fabba on #eef3f8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.6px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Le moteur\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ckicker-above-heading%c kicker \"Le moteur\" above h2 \"Trois familles. Pas trente pronostics.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.3:1 (need 4.5:1) — text #5f7088 on #e7edf5 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cline-length%c ~91 chars on 2 of 3 rendered lines (aim for <80) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.6:1 (need 4.5:1) — text #009966 on #b7e3dc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Poisson plein-match\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.1:1 (need 4.5:1) — text #5f7088 on #d7eaed color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.1:1 (need 4.5:1) — text #5f7088 on #d7eaed color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.6:1 (need 4.5:1) — text #0092b8 on #b7e2ef color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #d7e9f3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #d7e9f3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.9:1 (need 4.5:1) — text #7f22fe on #d5ccf7 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Implicite marché\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.9:1 (need 4.5:1) — text #5f7088 on #e1e2f6 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"opinion.\" alone on the last of 5 lines (14% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.9:1 (need 4.5:1) — text #5f7088 on #e1e2f6 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #0f766e on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"La discipline\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ckicker-above-heading%c kicker \"La discipline\" above h2 \"Ce qu'on refuse de vous proposer.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.46:1 (need 4.5:1) — text #854d0e on #d2d0d0 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #5f7088 on #dbdfe6 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"lisible.\" alone on the last of 2 lines (14% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #5f7088 on #dbdfe6 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #5f7088 on #dbdfe6 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #0f766e on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Fonctionnalités\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ckicker-above-heading%c kicker \"Fonctionnalités\" above h2 \"Conçu pour l'investisseur.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.5:1 (need 4.5:1) — text #499693 on #d0dfe8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Discipline\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ckicker-above-heading%c kicker \"Discipline\" above h3 \"Une mise. Répétée.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.7:1 (need 4.5:1) — text #5f7088 on #d0dfe8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 1.9:1 (need 4.5:1) — text #a7b2c0 on #eef3f8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Risque\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 1.9:1 (need 4.5:1) — text #a7b2c0 on #eef3f8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Transparence\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 1.9:1 (need 4.5:1) — text #a7b2c0 on #eef3f8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Philosophie\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ckicker-above-heading%c kicker \"Philosophie\" above h3 \"Investir, pas parier.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cline-length%c ~98 chars on 2 of 3 rendered lines (aim for <80) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"auditable.\" alone on the last of 5 lines (19% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #0f766e on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Prêt à investir ?\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ckicker-above-heading%c kicker \"Prêt à investir ?\" above h2 \"Notre analyse. Votre décision.C'est ça, investir.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.0:1 (need 4.5:1) — text #162033 on #0f766e color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ckicker-above-heading%c kicker \"Comment ça fonctionne\" above h2 \"Une position. Une mise. Un suivi.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cem-dash-overuse%c 13 em-dashes in body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 51 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #0f766e on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #0f766e on #cedee7 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %chero-eyebrow-chip%c eyebrow chip (tracked-caps) \"Stratégie d'investissement sportif\" above h1 \"Un avis sur chaque match.Une conviction sur presque aucun.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"produits.\" alone on the last of 5 lines (13% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.1:1 (need 4.5:1) — text #92a0b2 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.0:1 (need 4.5:1) — text #162033 on #0f766e color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.28px functional text \"Lecture du match\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.88px functional text \"buts attendus\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.2:1 (need 4.5:1) — text #5f7088 on #e4ecf3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Double chance\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"74% attendus\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.2:1 (need 4.5:1) — text #5f7088 on #e4ecf3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Plus / moins de buts\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"49% attendus\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.2:1 (need 4.5:1) — text #5f7088 on #e4ecf3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 10.4px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"54% attendus\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.6:1 (need 4.5:1) — text #777f8c on #eef3f8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.1:1 (need 4.5:1) — text #9fabba on #eef3f8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Score exact\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.1:1 (need 4.5:1) — text #9fabba on #eef3f8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 9.6px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Le moteur\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ckicker-above-heading%c kicker \"Le moteur\" above h2 \"Trois familles. Pas trente pronostics.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.3:1 (need 4.5:1) — text #5f7088 on #e7edf5 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cline-length%c ~91 chars on 2 of 3 rendered lines (aim for <80) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.6:1 (need 4.5:1) — text #009966 on #b7e3dc color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Poisson plein-match\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.1:1 (need 4.5:1) — text #5f7088 on #d7eaed color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.1:1 (need 4.5:1) — text #5f7088 on #d7eaed color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.6:1 (need 4.5:1) — text #0092b8 on #b7e2ef color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #d7e9f3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #d7e9f3 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.9:1 (need 4.5:1) — text #7f22fe on #d5ccf7 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Implicite marché\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.9:1 (need 4.5:1) — text #5f7088 on #e1e2f6 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"opinion.\" alone on the last of 5 lines (14% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.9:1 (need 4.5:1) — text #5f7088 on #e1e2f6 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ctiny-text%c 11.2px body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #0f766e on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"La discipline\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ckicker-above-heading%c kicker \"La discipline\" above h2 \"Ce qu'on refuse de vous proposer.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.46:1 (need 4.5:1) — text #854d0e on #d2d0d0 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #5f7088 on #dbdfe6 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"lisible.\" alone on the last of 2 lines (14% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #5f7088 on #dbdfe6 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.8:1 (need 4.5:1) — text #5f7088 on #dbdfe6 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #0f766e on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Fonctionnalités\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ckicker-above-heading%c kicker \"Fonctionnalités\" above h2 \"Conçu pour l'investisseur.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 2.5:1 (need 4.5:1) — text #499693 on #d0dfe8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Discipline\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ckicker-above-heading%c kicker \"Discipline\" above h3 \"Une mise. Répétée.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.7:1 (need 4.5:1) — text #5f7088 on #d0dfe8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 1.9:1 (need 4.5:1) — text #a7b2c0 on #eef3f8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Risque\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 1.9:1 (need 4.5:1) — text #a7b2c0 on #eef3f8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Transparence\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 1.9:1 (need 4.5:1) — text #a7b2c0 on #eef3f8 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 9.6px functional text \"Philosophie\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ckicker-above-heading%c kicker \"Philosophie\" above h3 \"Investir, pas parier.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cline-length%c ~98 chars on 2 of 3 rendered lines (aim for <80) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cstraggler%c \"auditable.\" alone on the last of 5 lines (19% of the measure) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.4:1 (need 4.5:1) — text #0f766e on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cundersized-ui-text%c 10.4px functional text \"Prêt à investir ?\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ckicker-above-heading%c kicker \"Prêt à investir ?\" above h2 \"Notre analyse. Votre décision.C'est ça, investir.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 3.0:1 (need 4.5:1) — text #162033 on #0f766e color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %clow-contrast%c 4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %ckicker-above-heading%c kicker \"Comment ça fonctionne\" above h2 \"Une position. Une mise. Un suivi.\" color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cem-dash-overuse%c 13 em-dashes in body text color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "span",
+    "cls": "text-sm font-black text-accent",
+    "text": "Core",
+    "w": 32,
+    "h": 20
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.4:1 (need 4.5:1) — text #0f766e on #dfe7f1",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "mb-5 inline-flex items-center gap-2 rounded-full border border-accent/35 bg-acce",
+    "text": "STRATÉGIE D'INVESTISSEMENT SPORTIF",
+    "w": 331,
+    "h": 30
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.0:1 (need 4.5:1) — text #0f766e on #cedee7"
+    },
+    {
+     "type": "hero-eyebrow-chip",
+     "detail": "eyebrow chip (tracked-caps) \"Stratégie d'investissement sportif\" above h1 \"Un avis sur chaque match.Une conviction sur presque aucun.\""
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mx-auto mt-6 max-w-lg text-base leading-relaxed text-muted-foreground lg:mx-0 lg",
+    "text": "Sur chaque match, le moteur pose une lecture complète : comb",
+    "w": 512,
+    "h": 136
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1"
+    },
+    {
+     "type": "straggler",
+     "detail": "\"produits.\" alone on the last of 5 lines (13% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "flex items-center gap-1.5",
+    "text": "50 000+ matchs analysés",
+    "w": 178,
+    "h": 20
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.1:1 (need 4.5:1) — text #92a0b2 on #dfe7f1"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "a",
+    "cls": "flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-7 py-3.5 ",
+    "text": "Rejoindre la stratégie",
+    "w": 221,
+    "h": 48
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.0:1 (need 4.5:1) — text #162033 on #0f766e"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "pointer-events-none absolute -inset-6 rounded-3xl bg-[radial-gradient(ellipse_80",
+    "text": "",
+    "w": 303,
+    "h": 419
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.58rem] font-bold uppercase tracking-[0.28em] text-accent",
+    "text": "LECTURE DU MATCH",
+    "w": 213,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.28px functional text \"Lecture du match\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "ml-1 text-[0.68rem] text-muted-foreground",
+    "text": "buts attendus",
+    "w": 65,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.88px functional text \"buts attendus\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "truncate text-[0.65rem] text-muted-foreground",
+    "text": "Double chance",
+    "w": 69,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.2:1 (need 4.5:1) — text #5f7088 on #e4ecf3",
+     "severity": "advisory"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Double chance\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.65rem] font-semibold tabular-nums text-accent",
+    "text": "74% attendus",
+    "w": 67,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"74% attendus\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "truncate text-[0.65rem] text-muted-foreground",
+    "text": "Plus / moins de buts",
+    "w": 94,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.2:1 (need 4.5:1) — text #5f7088 on #e4ecf3",
+     "severity": "advisory"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Plus / moins de buts\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.65rem] font-semibold tabular-nums text-accent",
+    "text": "49% attendus",
+    "w": 67,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"49% attendus\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "truncate text-[0.65rem] text-muted-foreground",
+    "text": "Les deux équipes marquent",
+    "w": 128,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.2:1 (need 4.5:1) — text #5f7088 on #e4ecf3",
+     "severity": "advisory"
+    },
+    {
+     "type": "tiny-text",
+     "detail": "10.4px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.65rem] font-semibold tabular-nums text-accent",
+    "text": "54% attendus",
+    "w": 67,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"54% attendus\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "truncate text-xs font-bold text-foreground line-through decoration-1",
+    "text": "2-1",
+    "w": 55,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.6:1 (need 4.5:1) — text #777f8c on #eef3f8"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "truncate text-[0.65rem] text-muted-foreground",
+    "text": "Score exact",
+    "w": 55,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.1:1 (need 4.5:1) — text #9fabba on #eef3f8"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Score exact\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "shrink-0 rounded-md border border-border px-1.5 py-0.5 text-[0.6rem] text-muted-",
+    "text": "Écarté — edge trop élevé",
+    "w": 123,
+    "h": 20
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.1:1 (need 4.5:1) — text #9fabba on #eef3f8"
+    },
+    {
+     "type": "tiny-text",
+     "detail": "9.6px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent",
+    "text": "LE MOTEUR",
+    "w": 1152,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Le moteur\" (below 11px floor)",
+     "severity": "advisory"
+    },
+    {
+     "type": "kicker-above-heading",
+     "detail": "kicker \"Le moteur\" above h2 \"Trois familles. Pas trente pronostics.\""
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground",
+    "text": "EVCore n'empile pas un modèle par marché. Il porte trois faç",
+    "w": 576,
+    "h": 68
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.3:1 (need 4.5:1) — text #5f7088 on #e7edf5",
+     "severity": "advisory"
+    },
+    {
+     "type": "line-length",
+     "detail": "~91 chars on 2 of 3 rendered lines (aim for <80)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "w-fit rounded-lg border px-2.5 py-1 text-[0.62rem] font-black uppercase tracking",
+    "text": "POISSON PLEIN-MATCH",
+    "w": 156,
+    "h": 25
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.6:1 (need 4.5:1) — text #009966 on #b7e3dc"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Poisson plein-match\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-2 text-[0.8rem] leading-6 text-muted-foreground",
+    "text": "Le moteur estime combien de buts chaque équipe est susceptib",
+    "w": 323,
+    "h": 120
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.1:1 (need 4.5:1) — text #5f7088 on #d7eaed"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "li",
+    "cls": "flex items-center gap-2 text-[0.75rem] text-muted-foreground",
+    "text": "Issue 1X2",
+    "w": 323,
+    "h": 18
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.1:1 (need 4.5:1) — text #5f7088 on #d7eaed"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "w-fit rounded-lg border px-2.5 py-1 text-[0.62rem] font-black uppercase tracking",
+    "text": "DISTRIBUTION MI-TEMPS",
+    "w": 164,
+    "h": 25
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.6:1 (need 4.5:1) — text #0092b8 on #b7e2ef"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-2 text-[0.8rem] leading-6 text-muted-foreground",
+    "text": "Les marchés de mi-temps ne se déduisent pas d'une fraction d",
+    "w": 323,
+    "h": 96
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.0:1 (need 4.5:1) — text #5f7088 on #d7e9f3"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "li",
+    "cls": "flex items-center gap-2 text-[0.75rem] text-muted-foreground",
+    "text": "Plus / moins mi-temps",
+    "w": 323,
+    "h": 18
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.0:1 (need 4.5:1) — text #5f7088 on #d7e9f3"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "w-fit rounded-lg border px-2.5 py-1 text-[0.62rem] font-black uppercase tracking",
+    "text": "IMPLICITE MARCHÉ",
+    "w": 133,
+    "h": 25
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.9:1 (need 4.5:1) — text #7f22fe on #d5ccf7"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Implicite marché\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-2 text-[0.8rem] leading-6 text-muted-foreground",
+    "text": "Sur certains marchés — le match nul en particulier — la prob",
+    "w": 323,
+    "h": 120
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.9:1 (need 4.5:1) — text #5f7088 on #e1e2f6"
+    },
+    {
+     "type": "straggler",
+     "detail": "\"opinion.\" alone on the last of 5 lines (14% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "li",
+    "cls": "flex items-center gap-2 text-[0.75rem] text-muted-foreground",
+    "text": "Match nul",
+    "w": 323,
+    "h": 18
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.9:1 (need 4.5:1) — text #5f7088 on #e1e2f6"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-0.5 text-[0.7rem] leading-snug text-muted-foreground",
+    "text": "prédictions confrontées au résultat",
+    "w": 264,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "11.2px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-0.5 text-[0.7rem] leading-snug text-muted-foreground",
+    "text": "championnats couverts",
+    "w": 264,
+    "h": 15
+   },
+   "findings": [
+    {
+     "type": "tiny-text",
+     "detail": "11.2px body text"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent",
+    "text": "LA DISCIPLINE",
+    "w": 1152,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.4:1 (need 4.5:1) — text #0f766e on #dfe7f1",
+     "severity": "advisory"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"La discipline\" (below 11px floor)",
+     "severity": "advisory"
+    },
+    {
+     "type": "kicker-above-heading",
+     "detail": "kicker \"La discipline\" above h2 \"Ce qu'on refuse de vous proposer.\""
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground",
+    "text": "Un moteur de prédiction se juge à ce qu'il écarte, pas à ce ",
+    "w": 576,
+    "h": 46
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "w-fit rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-1 text-[0.7rem",
+    "text": "19",
+    "w": 37,
+    "h": 27
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.46:1 (need 4.5:1) — text #854d0e on #d2d0d0",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.8rem] leading-6 text-muted-foreground",
+    "text": "Le moteur fait tourner dix-neuf canaux de prédiction. Ils re",
+    "w": 323,
+    "h": 120
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.8:1 (need 4.5:1) — text #5f7088 on #dbdfe6"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.9rem] font-semibold text-foreground",
+    "text": "Chaque pronostic écarté l'est pour une raison lisible.",
+    "w": 323,
+    "h": 43
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"lisible.\" alone on the last of 2 lines (14% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.8rem] leading-6 text-muted-foreground",
+    "text": "Cote trop courte, divergence modèle-marché implausible, pron",
+    "w": 323,
+    "h": 96
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.8:1 (need 4.5:1) — text #5f7088 on #dbdfe6"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.8rem] leading-6 text-muted-foreground",
+    "text": "AVOID n'émet jamais de pronostic. Il compare la probabilité ",
+    "w": 323,
+    "h": 120
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.8:1 (need 4.5:1) — text #5f7088 on #dbdfe6"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent",
+    "text": "FONCTIONNALITÉS",
+    "w": 1152,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.4:1 (need 4.5:1) — text #0f766e on #dfe7f1",
+     "severity": "advisory"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Fonctionnalités\" (below 11px floor)",
+     "severity": "advisory"
+    },
+    {
+     "type": "kicker-above-heading",
+     "detail": "kicker \"Fonctionnalités\" above h2 \"Conçu pour l'investisseur.\""
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.6rem] font-bold uppercase tracking-widest text-accent/70",
+    "text": "DISCIPLINE",
+    "w": 599,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.5:1 (need 4.5:1) — text #499693 on #d0dfe8"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"Discipline\" (below 11px floor)",
+     "severity": "advisory"
+    },
+    {
+     "type": "kicker-above-heading",
+     "detail": "kicker \"Discipline\" above h3 \"Une mise. Répétée.\""
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground",
+    "text": "Pas de jackpot, pas d'improvisation. Le moteur raisonne à mi",
+    "w": 384,
+    "h": 68
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.7:1 (need 4.5:1) — text #5f7088 on #d0dfe8"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/50",
+    "text": "RISQUE",
+    "w": 421,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "1.9:1 (need 4.5:1) — text #a7b2c0 on #eef3f8"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"Risque\" (below 11px floor)",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/50",
+    "text": "TRANSPARENCE",
+    "w": 421,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "1.9:1 (need 4.5:1) — text #a7b2c0 on #eef3f8"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"Transparence\" (below 11px floor)",
+     "severity": "advisory"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/50",
+    "text": "PHILOSOPHIE",
+    "w": 599,
+    "h": 14
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "1.9:1 (need 4.5:1) — text #a7b2c0 on #eef3f8"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.6px functional text \"Philosophie\" (below 11px floor)",
+     "severity": "advisory"
+    },
+    {
+     "type": "kicker-above-heading",
+     "detail": "kicker \"Philosophie\" above h3 \"Investir, pas parier.\""
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-sm leading-relaxed text-muted-foreground",
+    "text": "Aucun taux de réussite n'est affiché ici. À nos volumes, l'é",
+    "w": 599,
+    "h": 68
+   },
+   "findings": [
+    {
+     "type": "line-length",
+     "detail": "~98 chars on 2 of 3 rendered lines (aim for <80)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mt-2 text-sm leading-relaxed text-muted-foreground",
+    "text": "Les positions retenues comme celles écartées sont confrontée",
+    "w": 323,
+    "h": 114
+   },
+   "findings": [
+    {
+     "type": "straggler",
+     "detail": "\"auditable.\" alone on the last of 5 lines (19% of the measure)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent",
+    "text": "PRÊT À INVESTIR ?",
+    "w": 672,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.4:1 (need 4.5:1) — text #0f766e on #dfe7f1",
+     "severity": "advisory"
+    },
+    {
+     "type": "undersized-ui-text",
+     "detail": "10.4px functional text \"Prêt à investir ?\" (below 11px floor)"
+    },
+    {
+     "type": "kicker-above-heading",
+     "detail": "kicker \"Prêt à investir ?\" above h2 \"Notre analyse. Votre décision.C'est ça, investir.\""
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "mx-auto mt-5 max-w-md text-base leading-relaxed text-muted-foreground",
+    "text": "Accès sur invitation. L'objectif n'est pas de multiplier les",
+    "w": 448,
+    "h": 52
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "a",
+    "cls": "flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-8 py-4 te",
+    "text": "Rejoindre la stratégie",
+    "w": 229,
+    "h": 52
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "3.0:1 (need 4.5:1) — text #162033 on #0f766e"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-xs text-muted-foreground",
+    "text": "© 2026— Investir sur la valeur, pas sur l'émotion",
+    "w": 258,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "4.0:1 (need 4.5:1) — text #5f7088 on #dfe7f1"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "p",
+    "cls": "text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent",
+    "text": "COMMENT ÇA FONCTIONNE",
+    "w": 1152,
+    "h": 16
+   },
+   "findings": [
+    {
+     "type": "kicker-above-heading",
+     "detail": "kicker \"Comment ça fonctionne\" above h2 \"Une position. Une mise. Un suivi.\""
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "body",
+    "cls": "geistsans_d025f23b-module__btTCTG__variable geistmono_df95d851-module__CWPfka__v",
+    "text": "Core Connexion STRATÉGIE D'INVESTISSEMENT SPORTIF Un avis su",
+    "w": 1280,
+    "h": 800
+   },
+   "findings": [
+    {
+     "type": "em-dash-overuse",
+     "detail": "13 em-dashes in body text"
+    }
+   ]
+  }
+ ]
+}

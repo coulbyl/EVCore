@@ -23,6 +23,12 @@ type EvAreaChartProps = {
   className?: string;
   projectionKey?: string;
   projectionColor?: string;
+  /** Largeur de l'axe vertical : 48 px coupait « 500 M F » en « 00 M F ». */
+  yAxisWidth?: number;
+  /** Nom de la valeur dans l'infobulle (sinon la clé brute, « balance »). */
+  valueLabel?: string;
+  /** Axe calé sur les valeurs plutôt que sur 0, qui aplatissait la courbe. */
+  fitDomain?: boolean;
 };
 
 function EvAreaChart({
@@ -36,6 +42,9 @@ function EvAreaChart({
   className,
   projectionKey,
   projectionColor,
+  yAxisWidth,
+  valueLabel,
+  fitDomain = false,
 }: EvAreaChartProps) {
   return (
     <div className={className}>
@@ -68,11 +77,16 @@ function EvAreaChart({
             tickLine={false}
             tickMargin={8}
             tickFormatter={formatY}
-            width={formatY ? 48 : 32}
+            width={yAxisWidth ?? (formatY ? 48 : 32)}
+            domain={fitDomain ? ["auto", "auto"] : undefined}
           />
           <Tooltip
             contentStyle={CHART_TOOLTIP_CONTENT_STYLE}
             cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
+            formatter={(value) => [
+              formatY && typeof value === "number" ? formatY(value) : value,
+              valueLabel ?? yKey,
+            ]}
           />
           <Area
             type="monotone"

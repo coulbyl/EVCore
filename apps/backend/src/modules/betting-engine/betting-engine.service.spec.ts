@@ -517,6 +517,7 @@ describe('settleOpenBets', () => {
               id: 'bet-1',
               market: Market.ONE_X_TWO,
               pick: 'HOME',
+              status: BetStatus.PENDING,
               oddsSnapshot: new Decimal('2'),
               betSlipItems: [
                 {

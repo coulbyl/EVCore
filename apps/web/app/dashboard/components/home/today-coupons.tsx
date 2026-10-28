@@ -3,14 +3,17 @@
 import Link from "next/link";
 import { ArrowRight, Trophy } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { formatOddsValue } from "@/lib/frequency";
 import { Skeleton } from "@evcore/ui";
 import { useCoupons } from "@/domains/coupon/use-cases/use-coupons";
 import {
   trackRecordFor,
   useCouponTrackRecord,
 } from "@/domains/coupon/use-cases/use-coupon-track-record";
-import { couponClassMeta } from "@/domains/coupon/helpers/coupon-class";
-import { useCouponCelebration } from "@/hooks/use-coupon-celebration";
+import type {
+  CouponClassName,
+  CouponProposalDto,
+} from "@/domains/coupon/types/coupon";
 import { todayIso } from "@/lib/date";
 import { CouponCard } from "@/app/dashboard/coupons/components/coupon-card";
 
@@ -27,26 +30,18 @@ export function TodayCoupons() {
   const { data, isLoading, isError } = useCoupons(date);
   const { data: trackRecords } = useCouponTrackRecord();
 
-  // Le coupon long (cote 5–15, un jour gagnant sur sept) reste sur la page
-  // Coupons avec sa fréquence écrite dessus, mais pas en tête de l'accueil :
-  // onze « Perdu » sur quatorze jours n'y disent rien d'utile (2026-10-12).
-  // Le coupon long (cote 5–15, un jour sur sept) et le combiné « Analyse IA »
-  // (même vivier que celui du moteur, mesuré jambe à jambe sur la page
-  // Coupons) restent sur la page Coupons : l'accueil montre un pari sûr et
-  // un combiné, pas deux combinés.
-  const coupons = (data ?? [])
-    .filter(
-      (c) =>
-        c.couponClass !== "UNIQUE" &&
-        !(c.couponClass === "COMBO" && c.source === "LLM"),
-    )
-    .slice()
-    .sort((a, b) => {
-      const oa = couponClassMeta(a.couponClass)?.order ?? 99;
-      const ob = couponClassMeta(b.couponClass)?.order ?? 99;
-      return oa !== ob ? oa - ob : a.rank - b.rank;
-    });
-  useCouponCelebration(coupons);
+  // L'accueil montre deux cartes au plus : le favori et le combiné du moteur,
+  // un de chaque. Le coupon long (2,5–5, perd deux jours sur trois), le
+  // combiné « Analyse IA » (même vivier, mesuré jambe à jambe) et le 5–15 du
+  // compositeur par le prix vivent sur la page Coupons ; le coupon long y est
+  // signalé par une seule ligne (revue UX du 2026-10-24, P1 n°2 : le filtre
+  // laissait passer la classe LONG créée le 2026-10-18).
+  const all = data ?? [];
+  const coupons = pickHomeCoupons(all);
+  const longCoupon =
+    all.find((c) => c.couponClass === "LONG" && c.source !== "LLM") ??
+    all.find((c) => c.couponClass === "LONG") ??
+    null;
 
   return (
     <section
@@ -59,11 +54,11 @@ export function TodayCoupons() {
           id="home-coupon-title"
           className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground"
         >
-          {t("couponTitle")}
+          {t("couponTitle", { date: formatDayLabel(date, locale) })}
         </h2>
         <Link
           href={`/dashboard/coupons?date=${date}`}
-          className="flex items-center gap-1 text-xs font-medium text-accent hover:text-accent/80"
+          className="-my-3 flex min-h-11 items-center gap-1 text-xs font-medium text-accent hover:text-accent/80"
         >
           {t("couponsLink")} <ArrowRight size={12} />
         </Link>
@@ -104,6 +99,63 @@ export function TodayCoupons() {
           ))}
         </div>
       )}
+
+      {!isLoading && !isError && longCoupon && (
+        <Link
+          href={`/dashboard/coupons?date=${date}`}
+          data-testid="home-long-coupon-link"
+          className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-panel px-4 py-3 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <span>
+            {t("longCouponLink", {
+              odds: formatOddsValue(longCoupon.combinedOdds, locale),
+            })}
+          </span>
+          <ArrowRight size={14} className="shrink-0" />
+        </Link>
+      )}
     </section>
   );
+}
+
+/**
+ * « 2026-10-24 » → « ven. 24 oct. » : le titre dit de quel jour il s'agit
+ * (revue UX du 2026-10-24, P1 n°4 : aucune date sur la page).
+ */
+function formatDayLabel(isoDate: string, locale: string): string {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "fr-FR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year ?? 1970, (month ?? 1) - 1, day ?? 1)));
+}
+
+/**
+ * Classes affichées en tête de l'accueil, dans cet ordre : de la plus
+ * fréquente à la plus rare. Le coupon cote 2 (2026-10-28) gagne environ un
+ * jour sur deux ; le coupon long reste un lien vers Coupons.
+ */
+const HOME_CLASSES: readonly CouponClassName[] = [
+  "FAVOURITE",
+  "COMBO",
+  "DOUBLE",
+];
+
+/**
+ * Une carte par classe d'accueil, la mieux classée, hors source LLM : un
+ * second batch « intraday » de la même classe reste sur la page Coupons.
+ */
+function pickHomeCoupons(
+  coupons: readonly CouponProposalDto[],
+): CouponProposalDto[] {
+  const picked: CouponProposalDto[] = [];
+  for (const couponClass of HOME_CLASSES) {
+    const best = coupons
+      .filter((c) => c.couponClass === couponClass && c.source !== "LLM")
+      .sort((a, b) => a.rank - b.rank)[0];
+    if (best) picked.push(best);
+  }
+  return picked;
 }

@@ -12,7 +12,10 @@ import {
 import { translateCountry } from "@/lib/competition-i18n";
 import type { ChannelCompetitionStatItem } from "@/domains/dashboard/types/dashboard";
 import { channelLabel } from "../../decisions/components/channel-constants";
-import { orderChannels } from "../track-record-constants";
+import {
+  OUT_OF_TOTAL_CHANNELS,
+  orderChannels,
+} from "../track-record-constants";
 import { ChannelStatsTable, type ChannelStatRow } from "./channel-stats-table";
 
 /** Independent from the "Par canal" summary above — same settled data, one
@@ -29,7 +32,11 @@ export function ChannelCompetitionSection({
   // Les canaux viennent des données reçues, pas d'une liste locale : celle-ci
   // ne sert plus qu'à les ORDONNER (voir orderChannels).
   const channelsWithData = useMemo(() => {
-    const seen = new Set(rows.map((r) => r.channel));
+    const seen = new Set(
+      rows
+        .map((r) => r.channel)
+        .filter((channel) => !OUT_OF_TOTAL_CHANNELS.has(channel)),
+    );
     return orderChannels([...seen].map((channel) => ({ channel }))).map(
       (c) => c.channel,
     );
@@ -53,18 +60,30 @@ export function ChannelCompetitionSection({
     primaryLabel: row.competitionName,
     secondaryLabel: translateCountry(row.competitionCountry, locale),
     status: row.status,
-    roi: row.roi,
-    hitRate: row.hitRate,
+    announced: row.announced,
+    realised: row.hitRate,
     calibrationRatio: row.calibrationRatio,
+    roi: row.roi,
     sampleSize: row.sampleSize,
   }));
 
-  if (channelsWithData.length === 0) return null;
+  if (channelsWithData.length === 0) {
+    return (
+      <section className="flex flex-col gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          Par compétition
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Aucun pronostic réglé sur la période.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
           Par compétition
         </h2>
         <Select
@@ -73,7 +92,7 @@ export function ChannelCompetitionSection({
             setSelected(v as ChannelCompetitionStatItem["channel"])
           }
         >
-          <SelectTrigger className="w-[220px]">
+          <SelectTrigger className="w-[220px] data-[size=default]:h-11">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -86,7 +105,15 @@ export function ChannelCompetitionSection({
         </Select>
       </div>
 
-      <ChannelStatsTable primaryColumnLabel="Compétition" rows={filteredRows} />
+      <ChannelStatsTable
+        primaryColumnLabel="Compétition"
+        rows={filteredRows}
+        countNoun={{ one: "compétition", other: "compétitions" }}
+      />
+      <p className="text-xs leading-5 text-muted-foreground">
+        Un championnat qui réussit sur une période ne réussit pas mieux sur la
+        suivante : ce détail sert à repérer un écart, pas à choisir où parier.
+      </p>
     </section>
   );
 }

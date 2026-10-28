@@ -1,0 +1,286 @@
+{
+ "route": "/dashboard",
+ "width": 375,
+ "theme": "dark",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 16 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 2.8:1 (need 4.5:1) — text #ffffff on #f97316 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cdark-glow%c Colored box-shadow glow (#14b8a6) on dark background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 16 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %clow-contrast%c 2.8:1 (need 4.5:1) — text #ffffff on #f97316 color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cside-tab%c div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cdark-glow%c Colored box-shadow glow (#14b8a6) on dark background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "div",
+    "cls": "flex shrink-0 items-center justify-center rounded-full font-bold text-white ring",
+    "text": "E2",
+    "w": 32,
+    "h": 32
+   },
+   "findings": [
+    {
+     "type": "low-contrast",
+     "detail": "2.8:1 (need 4.5:1) — text #ffffff on #f97316"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 118
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 118
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 118
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 118
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "absolute inset-y-0 left-0 w-[3px]",
+    "text": "",
+    "w": 3,
+    "h": 118
+   },
+   "findings": [
+    {
+     "type": "side-tab",
+     "detail": "div.absolute.inset-y-0.left-0.w-[3px] — 3px stripe child (left)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "span",
+    "cls": "flex size-14 items-center justify-center rounded-full shadow-lg shadow-accent/30",
+    "text": "",
+    "w": 56,
+    "h": 56
+   },
+   "findings": [
+    {
+     "type": "dark-glow",
+     "detail": "Colored box-shadow glow (#14b8a6) on dark background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12 righ",
+    "text": "",
+    "w": 44,
+    "h": 44
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "bg-card text-card-foreground flex flex-col border shadow-xs gap-3 rounded-2xl py",
+    "text": "Favori du jour · cote 1,20–1,35 19 jours gagnés sur 24 · à m",
+    "w": 317,
+    "h": 307
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "bg-card text-card-foreground flex flex-col border shadow-xs gap-3 rounded-2xl py",
+    "text": "Combiné du jour · 2 sélections Relevé en cours · 3 jours rég",
+    "w": 317,
+    "h": 417
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Ajax – PSV 82% Plus/Moins de buts · Plus de 1.5 PAYS-BAS · E",
+    "w": 317,
+    "h": 120
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Arsenal – Burnley 79% Résultat · Domicile ANGLETERRE · PREMI",
+    "w": 317,
+    "h": 120
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Bayern München – FC Augsburg 77% Résultat · Domicile ALLEMAG",
+    "w": 317,
+    "h": 120
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "Atalanta – Lecce 74% Plus/Moins de buts · Plus de 1.5 ITALIE",
+    "w": 317,
+    "h": 120
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "relative overflow-hidden rounded-xl border p-3 pl-4 flex flex-col gap-1.5 transi",
+    "text": "ASEC Mimosas – Africa Sports 71% Double chance · Dom. ou Nul",
+    "w": 317,
+    "h": 120
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-2xl border border-border bg-panel px-4 py-3",
+    "text": "Ton résultat à mise fixe −15 % sur 3 paris réglés",
+    "w": 317,
+    "h": 96
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  }
+ ]
+}

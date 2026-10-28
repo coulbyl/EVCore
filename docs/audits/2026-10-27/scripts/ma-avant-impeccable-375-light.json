@@ -1,0 +1,99 @@
+{
+ "route": "/dashboard/fixtures",
+ "width": 375,
+ "theme": "light",
+ "title": "impeccable-preflight",
+ "logs": [
+  "startGroup: %c[impeccable] 5 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Terminé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd",
+  "startGroup: %c[impeccable] 5 anti-patterns found color: oklch(84% 0.19 80.46); font-weight: bold",
+  "log: %cundersized-ui-text%c 9.92px functional text \"Terminé\" (below 11px floor) color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cai-color-palette%c Cyan gradient background color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "log: %cnested-cards%c Card inside card color: oklch(84% 0.19 80.46); font-weight: bold color: inherit JSHandle@node",
+  "endGroup: console.groupEnd"
+ ],
+ "scan": [
+  {
+   "el": {
+    "tag": "span",
+    "cls": "inline-flex shrink-0 items-center rounded-full border px-2 py-1 text-[0.62rem] f",
+    "text": "TERMINÉ",
+    "w": 68,
+    "h": 25
+   },
+   "findings": [
+    {
+     "type": "undersized-ui-text",
+     "detail": "9.92px functional text \"Terminé\" (below 11px floor)"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "button",
+    "cls": "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12 righ",
+    "text": "",
+    "w": 44,
+    "h": 44
+   },
+   "findings": [
+    {
+     "type": "ai-color-palette",
+     "detail": "Cyan gradient background"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.2rem] border p-4 transition-colors border-border bg-panel-strong",
+    "text": "Arsenal vs Burnley Premier League·16:56",
+    "w": 317,
+    "h": 80
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.2rem] border p-4 transition-colors border-border bg-panel-strong",
+    "text": "Ajax vs PSV Premier League·18:56",
+    "w": 317,
+    "h": 80
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  },
+  {
+   "el": {
+    "tag": "div",
+    "cls": "rounded-[1.2rem] border p-4 transition-colors border-border bg-panel-strong",
+    "text": "ASEC Mimosas vs Africa Sports TERMINÉ Premier League·17:56·2",
+    "w": 317,
+    "h": 100
+   },
+   "findings": [
+    {
+     "type": "nested-cards",
+     "detail": "Card inside card"
+    }
+   ]
+  }
+ ]
+}

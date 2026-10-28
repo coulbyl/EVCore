@@ -6,6 +6,7 @@ export type {
 } from "./types";
 export {
   resolveSelectionOdds,
+  quoteSourceFor,
   priceSelection,
   priceForSelection,
 } from "./odds";

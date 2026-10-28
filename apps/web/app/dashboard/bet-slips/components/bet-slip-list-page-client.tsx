@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Receipt } from "lucide-react";
 import {
-  Badge,
   Button,
   Drawer,
   DrawerContent,
@@ -16,244 +15,43 @@ import {
   FilterBar,
   Page,
   PageContent,
-  StatCard,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
+  PageHeader,
+  PageHeaderTitle,
 } from "@evcore/ui";
 import type { FilterDef, FilterState } from "@evcore/ui";
-import { formatDateLong, todayIso, daysAgoIso } from "@/lib/date";
-import { useCurrencyFormat } from "@/providers/currency-provider";
+import { todayIso, daysAgoIso } from "@/lib/date";
 import { useBetSlips } from "@/domains/bet-slip/use-cases/get-bet-slips";
 import { useOperatorSummary } from "@/domains/bet-slip/use-cases/get-operator-summary";
 import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { BetSlipView } from "@/domains/bet-slip/types/bet-slip";
+import { BetSlipCard } from "./bet-slip-card";
+import { sumSlipResults } from "./bet-slip-constants";
 import { BetSlipDetailPanel } from "./bet-slip-detail-panel";
-import { UserLeaderboard } from "@/app/dashboard/components/user-leaderboard";
-import { useLeaderboard } from "@/domains/dashboard/use-cases/get-leaderboard";
+import { SlipsResultLine } from "./slips-result-line";
 
 type SlipTypeFilter = "ALL" | BetSlipView["type"];
-type BadgeTone = "accent" | "success" | "warning" | "danger" | "neutral";
-type CouponSummary = {
-  totalStake: number;
-  returned: number;
-  netPnl: number;
-  totalOdds: number | null;
-  potentialReturn: number;
-  settledCount: number;
-  pendingCount: number;
-  pendingSelections: number;
-  status: "Gagné" | "Perdu" | "En attente";
-  statusTone: BadgeTone;
-};
 
-const SLIP_FILTERS: FilterDef[] = [
-  {
-    key: "type",
-    type: "select",
-    label: "Type",
-    options: [
-      { value: "ALL", label: "Tous" },
-      { value: "SIMPLE", label: "Simples" },
-      { value: "COMBO", label: "Combinés" },
-    ],
-  },
-  { key: "from", type: "date", label: "Du" },
-  { key: "to", type: "date", label: "Au" },
-];
-
-function totalOdds(betSlip: BetSlipView) {
-  return betSlip.items.reduce((product, item) => {
-    const odds = Number(item.odds ?? 1);
-    return Number.isFinite(odds) && odds > 0 ? product * odds : product;
-  }, 1);
-}
-
-function couponSummary(betSlip: BetSlipView): CouponSummary {
-  if (betSlip.type === "COMBO") {
-    const hasPending = betSlip.items.some((i) => i.betStatus === "PENDING");
-    const allWon = betSlip.items.every((i) => i.betStatus === "WON");
-    const stake = Number(betSlip.unitStake);
-    const odds = totalOdds(betSlip);
-    const returned = !hasPending && allWon ? stake * odds : 0;
-    const netPnl = !hasPending ? returned - stake : 0;
-    return {
-      totalStake: stake,
-      returned,
-      netPnl,
-      totalOdds: odds,
-      potentialReturn: stake * odds,
-      settledCount: hasPending ? 0 : 1,
-      pendingCount: hasPending ? 1 : 0,
-      pendingSelections: hasPending ? betSlip.items.length : 0,
-      status: hasPending ? "En attente" : allWon ? "Gagné" : "Perdu",
-      statusTone: hasPending ? "warning" : allWon ? "success" : "danger",
-    };
-  }
-
-  let returned = 0,
-    settledCount = 0,
-    pendingCount = 0,
-    totalStake = 0,
-    settledStake = 0,
-    potentialReturn = 0;
-  for (const item of betSlip.items) {
-    const stake = Number(item.stake);
-    const odds = Number(item.odds ?? 0);
-    totalStake += stake;
-    if (Number.isFinite(odds)) potentialReturn += stake * odds;
-    if (item.betStatus === "WON" || item.betStatus === "LOST") {
-      settledCount++;
-      settledStake += stake;
-      if (item.betStatus === "WON" && item.odds !== null)
-        returned += stake * Number(item.odds);
-    } else {
-      pendingCount++;
-    }
-  }
-  const netPnl = returned - settledStake;
-  const isWon = returned >= totalStake;
-  return {
-    totalStake,
-    returned,
-    netPnl,
-    totalOdds: null,
-    potentialReturn,
-    settledCount,
-    pendingCount,
-    pendingSelections: pendingCount,
-    status: pendingCount > 0 ? "En attente" : isWon ? "Gagné" : "Perdu",
-    statusTone: pendingCount > 0 ? "warning" : isWon ? "success" : "danger",
-  };
-}
-
-function BetSlipCard({
-  betSlip,
-  selected,
-  onClick,
-}: {
-  betSlip: BetSlipView;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  const { formatAmount, formatSigned } = useCurrencyFormat();
-  const summary = couponSummary(betSlip);
-  const { settledCount, pendingCount, status } = summary;
-  const isPartial = settledCount > 0 && pendingCount > 0;
-  const isFullySettled = settledCount > 0 && pendingCount === 0;
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full cursor-pointer rounded-2xl border p-4 text-left transition-colors ${
-        selected
-          ? "border-accent bg-accent/5"
-          : "border-border bg-panel hover:bg-secondary"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Coupon
-          </p>
-          <h2 className="mt-1 text-base font-semibold text-foreground">
-            #{betSlip.id.slice(0, 8)}
-          </h2>
-        </div>
-        <Badge variant="accent">
-          {betSlip.type === "COMBO" ? "Combiné" : "Simples"} ·{" "}
-          {betSlip.itemCount} sélection{betSlip.itemCount > 1 ? "s" : ""}
-        </Badge>
-      </div>
-
-      <div className="mt-3 flex flex-col gap-1.5 text-sm">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-muted-foreground">Créé le</span>
-          <span className="font-medium text-foreground">
-            {formatDateLong(betSlip.createdAt)}
-          </span>
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-muted-foreground">Total misé</span>
-          <span className="font-semibold tabular-nums text-foreground">
-            {formatAmount(summary.totalStake)}
-          </span>
-        </div>
-        {betSlip.type === "COMBO" && (
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-muted-foreground">Cote totale</span>
-            <span className="font-semibold tabular-nums text-foreground">
-              {summary.totalOdds?.toFixed(2)}
-            </span>
-          </div>
-        )}
-        {(isFullySettled || isPartial) && (
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-muted-foreground">
-              {isPartial ? "Résultat partiel" : "Résultat"}
-            </span>
-            <span
-              className={`font-bold tabular-nums ${summary.netPnl >= 0 ? "text-success" : "text-danger"}`}
-            >
-              {formatSigned(summary.netPnl)}
-            </span>
-          </div>
-        )}
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-muted-foreground">Statut</span>
-          <Badge
-            variant={
-              summary.statusTone === "danger"
-                ? "destructive"
-                : summary.statusTone
-            }
-            className="py-0.5 text-[0.62rem]"
-          >
-            {status}
-          </Badge>
-        </div>
-        {pendingCount > 0 && (
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-muted-foreground">Gain potentiel</span>
-            <span className="font-semibold tabular-nums text-success">
-              {formatAmount(summary.potentialReturn)}
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-3 border-t border-border pt-2.5">
-        <p className="text-xs text-muted-foreground">
-          {(() => {
-            const fixtures = [...new Set(betSlip.items.map((i) => i.fixture))];
-            return (
-              fixtures.slice(0, 2).join(" • ") +
-              (fixtures.length > 2 ? ` • +${fixtures.length - 2}` : "")
-            );
-          })()}
-        </p>
-      </div>
-    </button>
-  );
-}
-
-function LeaderboardTab() {
-  const { data, isLoading, isError } = useLeaderboard();
-  return (
-    <UserLeaderboard
-      entries={data ?? []}
-      isLoading={isLoading}
-      isError={isError}
-    />
-  );
+function buildSlipFilters(t: ReturnType<typeof useTranslations>): FilterDef[] {
+  return [
+    {
+      key: "type",
+      type: "select",
+      label: t("filter.type"),
+      options: [
+        { value: "ALL", label: t("filter.all") },
+        { value: "SIMPLE", label: t("filter.single") },
+        { value: "COMBO", label: t("filter.combo") },
+      ],
+    },
+    { key: "from", type: "date", label: t("filter.from") },
+    { key: "to", type: "date", label: t("filter.to") },
+  ];
 }
 
 export function BetSlipListPageClient() {
   const t = useTranslations("betSlips");
-  const { formatAmount, formatSigned } = useCurrencyFormat();
+  const slipFilters = useMemo(() => buildSlipFilters(t), [t]);
   const [filterState, setFilterState] = useState<FilterState>({
     type: "ALL",
     from: daysAgoIso(7),
@@ -265,7 +63,7 @@ export function BetSlipListPageClient() {
   const to = (filterState.to as string) || "";
   const typeFilter = ((filterState.type as string) || "ALL") as SlipTypeFilter;
 
-  const { data } = useBetSlips(from, to);
+  const { data, isLoading, isError, refetch } = useBetSlips(from, to);
   const betSlips = useMemo(() => data ?? [], [data]);
   // Toutes périodes confondues : distingue « jamais joué » de « rien entre
   // ces dates ». Un nouvel arrivant n'a rien à filtrer (revue UX du
@@ -283,20 +81,9 @@ export function BetSlipListPageClient() {
     [betSlips, typeFilter],
   );
 
-  const periodSummary = useMemo(
-    () =>
-      betSlips.reduce(
-        (acc, slip) => {
-          const summary = couponSummary(slip);
-          acc.stake += summary.totalStake;
-          acc.pending += summary.pendingCount > 0 ? 1 : 0;
-          if (slip.type === "COMBO") acc.combo += 1;
-          if (summary.pendingCount === 0) acc.net += summary.netPnl;
-          return acc;
-        },
-        { stake: 0, net: 0, pending: 0, combo: 0 },
-      ),
-    [betSlips],
+  const totals = useMemo(
+    () => sumSlipResults(filteredBetSlips),
+    [filteredBetSlips],
   );
 
   function handleSelect(id: string) {
@@ -307,34 +94,18 @@ export function BetSlipListPageClient() {
     setSelectedId(null);
   }
 
-  // Les tuiles n'apparaissent qu'à partir du premier coupon de la période :
-  // trois zéros remplissaient l'écran d'un nouvel arrivant.
   const filter = (
-    <div className="shrink-0 flex flex-col gap-4 rounded-[1.1rem] border border-border bg-panel p-4">
-      {betSlips.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <StatCard
-            tone="neutral"
-            label="Misé"
-            value={formatAmount(periodSummary.stake)}
-            compact
-          />
-          <StatCard
-            tone={periodSummary.net >= 0 ? "success" : "danger"}
-            label="Net réglé"
-            value={formatSigned(periodSummary.net)}
-            compact
-          />
-          <StatCard
-            tone="warning"
-            label="En attente"
-            value={String(periodSummary.pending)}
-            compact
-          />
-        </div>
-      )}
+    <div className="shrink-0 flex flex-col gap-3 rounded-[1.1rem] border border-border bg-panel p-4">
+      {betSlips.length > 0 ? (
+        <SlipsResultLine
+          from={from || daysAgoIso(7)}
+          to={to || todayIso()}
+          totals={totals}
+          lifetime={lifetime?.money}
+        />
+      ) : null}
       <FilterBar
-        filters={SLIP_FILTERS}
+        filters={slipFilters}
         value={filterState}
         onChange={setFilterState}
         onReset={() =>
@@ -344,119 +115,119 @@ export function BetSlipListPageClient() {
     </div>
   );
 
-  const items =
-    filteredBetSlips.length === 0 ? (
-      neverPlayed ? (
-        <Empty
-          data-testid="bet-slips-never-played"
-          className="rounded-3xl border border-dashed border-border bg-panel/70 p-8"
+  // Sans ces deux états, un chargement lent ou une erreur réseau affichait
+  // « Tes coupons existent, mais pas entre ces dates » (revue UX du
+  // 2026-10-27).
+  const items = isLoading ? (
+    <p className="p-4 text-sm text-muted-foreground" role="status">
+      {t("loading")}
+    </p>
+  ) : isError ? (
+    <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
+      <EmptyHeader>
+        <EmptyTitle>{t("loadError")}</EmptyTitle>
+      </EmptyHeader>
+      <Button variant="outline" onClick={() => void refetch()}>
+        {t("retry")}
+      </Button>
+    </Empty>
+  ) : filteredBetSlips.length === 0 ? (
+    neverPlayed ? (
+      <Empty
+        data-testid="bet-slips-never-played"
+        className="rounded-3xl border border-dashed border-border bg-panel/70 p-8"
+      >
+        <EmptyHeader>
+          <Receipt size={28} className="mx-auto text-muted-foreground/40" />
+          <EmptyTitle>{t("neverPlayedTitle")}</EmptyTitle>
+          <EmptyDescription>{t("neverPlayedBody")}</EmptyDescription>
+        </EmptyHeader>
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:text-accent/80"
         >
-          <EmptyHeader>
-            <Receipt size={28} className="mx-auto text-muted-foreground/40" />
-            <EmptyTitle>{t("neverPlayedTitle")}</EmptyTitle>
-            <EmptyDescription>{t("neverPlayedBody")}</EmptyDescription>
-          </EmptyHeader>
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:text-accent/80"
-          >
-            {t("neverPlayedLink")} <ArrowRight size={14} />
-          </Link>
-        </Empty>
-      ) : (
-        <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
-          <EmptyHeader>
-            <EmptyTitle>{t("emptyTitle")}</EmptyTitle>
-            <EmptyDescription>
-              {betSlips.length > 0
-                ? t("emptyTypeDescription")
-                : t("emptyDescription")}
-            </EmptyDescription>
-          </EmptyHeader>
-          {betSlips.length === 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                setFilterState({
-                  type: "ALL",
-                  from: daysAgoIso(90),
-                  to: todayIso(),
-                })
-              }
-            >
-              {t("widenPeriod")}
-            </Button>
-          )}
-        </Empty>
-      )
+          {t("neverPlayedLink")} <ArrowRight size={14} />
+        </Link>
+      </Empty>
     ) : (
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-        {filteredBetSlips.map((betSlip) => (
-          <BetSlipCard
-            key={betSlip.id}
-            betSlip={betSlip}
-            selected={betSlip.id === selectedId}
-            onClick={() => handleSelect(betSlip.id)}
-          />
-        ))}
-      </div>
-    );
+      <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
+        <EmptyHeader>
+          <EmptyTitle>{t("emptyTitle")}</EmptyTitle>
+          <EmptyDescription>
+            {betSlips.length > 0
+              ? t("emptyTypeDescription")
+              : t("emptyDescription")}
+          </EmptyDescription>
+        </EmptyHeader>
+        {betSlips.length === 0 && (
+          <Button
+            variant="outline"
+            onClick={() =>
+              setFilterState({
+                type: "ALL",
+                from: daysAgoIso(90),
+                to: todayIso(),
+              })
+            }
+          >
+            {t("widenPeriod")}
+          </Button>
+        )}
+      </Empty>
+    )
+  ) : (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+      {filteredBetSlips.map((betSlip) => (
+        <BetSlipCard
+          key={betSlip.id}
+          betSlip={betSlip}
+          selected={betSlip.id === selectedId}
+          onClick={() => handleSelect(betSlip.id)}
+        />
+      ))}
+    </div>
+  );
 
   return (
     <Page className="flex h-full flex-col">
+      <PageHeader className="flex-col items-start gap-1 lg:flex-col lg:items-start lg:justify-start">
+        <PageHeaderTitle>{t("title")}</PageHeaderTitle>
+        <p className="max-w-xl text-sm leading-6 text-muted-foreground">
+          {t("intro")}
+        </p>
+      </PageHeader>
       <PageContent
         data-tour="bet-slips-summary"
         className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 sm:p-5 ev-shell-shadow"
       >
-        {/* Le classement des joueurs vivait sur l'accueil ; il parle à
-            quelqu'un qui joue, donc il vit ici, en second onglet
-            (revue UX du 2026-10-11). */}
-        <Tabs
-          defaultValue="slips"
-          className="flex min-h-0 flex-1 flex-col gap-4"
-        >
-          <TabsList className="w-max shrink-0">
-            <TabsTrigger value="slips">{t("tabSlips")}</TabsTrigger>
-            <TabsTrigger value="leaderboard">{t("tabLeaderboard")}</TabsTrigger>
-          </TabsList>
-          <TabsContent
-            value="slips"
-            className="flex min-h-0 flex-1 flex-col overflow-hidden"
-          >
-            <div className="hidden min-h-0 flex-1 lg:grid lg:grid-cols-[3fr_2fr] lg:grid-rows-1 lg:gap-5">
-              <div className="flex min-h-0 flex-col gap-4">
-                {!neverPlayed && filter}
-                <div className="min-h-0 flex-1 overflow-y-auto">{items}</div>
-              </div>
-              <div className="h-full min-h-0">
-                {selectedSlip ? (
-                  <BetSlipDetailPanel
-                    data={selectedSlip}
-                    onClose={handleClose}
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center rounded-[1.35rem] border border-dashed border-border bg-secondary">
-                    <p className="text-sm text-muted-foreground">
-                      Sélectionnez un coupon pour voir le détail
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex min-h-0 flex-1 flex-col gap-4 lg:hidden">
+        {/* Plus d'onglet « Classement des joueurs » : classer des parieurs par
+            ROI dès 5 coupons récompense la chance et pousse à jouer plus
+            (audit du 2026-10-23, P2-9). */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="hidden min-h-0 flex-1 lg:grid lg:grid-cols-[3fr_2fr] lg:grid-rows-1 lg:gap-5">
+            <div className="flex min-h-0 flex-col gap-4">
               {!neverPlayed && filter}
               <div className="min-h-0 flex-1 overflow-y-auto">{items}</div>
             </div>
-          </TabsContent>
-          <TabsContent
-            value="leaderboard"
-            className="min-h-0 flex-1 overflow-y-auto"
-          >
-            <LeaderboardTab />
-          </TabsContent>
-        </Tabs>
+            <div className="h-full min-h-0">
+              {selectedSlip ? (
+                <BetSlipDetailPanel data={selectedSlip} onClose={handleClose} />
+              ) : (
+                <div className="flex h-full items-center justify-center rounded-[1.35rem] border border-dashed border-border bg-secondary">
+                  <p className="text-sm text-muted-foreground">
+                    {t("selectHint")}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex min-h-0 flex-1 flex-col gap-4 lg:hidden">
+            {!neverPlayed && filter}
+            {/* pb-24 : le bouton flottant ne recouvre plus la dernière carte. */}
+            <div className="min-h-0 flex-1 overflow-y-auto pb-24">{items}</div>
+          </div>
+        </div>
       </PageContent>
 
       {isMobile && (
@@ -466,7 +237,7 @@ export function BetSlipListPageClient() {
           direction="bottom"
         >
           <DrawerContent className="z-50 flex max-h-[92dvh] flex-col rounded-t-3xl bg-panel outline-none">
-            <DrawerTitle className="sr-only">Détail du coupon</DrawerTitle>
+            <DrawerTitle className="sr-only">{t("detailTitle")}</DrawerTitle>
             {selectedSlip && (
               <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-2">
                 <BetSlipDetailPanel data={selectedSlip} onClose={handleClose} />

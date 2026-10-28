@@ -5,9 +5,10 @@ import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
 import { AnalysisSheetService } from './analysis-sheet.service';
 import { AnalysisSheetQueryDto } from './dto/analysis-sheet-query.dto';
 import type { LegPoolFilters } from './analysis-sheet-v2.types';
+import { PausedGuard } from '@/common/guards/paused.guard';
 
 @ApiTags('analysis-sheet')
-@UseGuards(AuthSessionGuard)
+@UseGuards(AuthSessionGuard, PausedGuard)
 @Controller('analysis-sheet')
 export class AnalysisSheetController {
   constructor(private readonly service: AnalysisSheetService) {}

@@ -1,15 +1,21 @@
 "use client";
 
-import { Loader2, Trophy } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Page, PageHeader, PageHeaderActions, PageContent } from "@evcore/ui";
+import {
+  Button,
+  Page,
+  PageContent,
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderTitle,
+} from "@evcore/ui";
 import { useTranslations, useLocale } from "next-intl";
 import { useCoupons } from "@/domains/coupon/use-cases/use-coupons";
 import {
   trackRecordFor,
   useCouponTrackRecord,
 } from "@/domains/coupon/use-cases/use-coupon-track-record";
-import { useCouponCelebration } from "@/hooks/use-coupon-celebration";
 import { todayIso } from "@/lib/date";
 import { DateNav } from "@/components/date-nav";
 import { FormationHelpLink } from "@/components/formation-help-link";
@@ -23,7 +29,7 @@ export function CouponsPageClient() {
   const searchParams = useSearchParams();
 
   const date = searchParams.get("date") ?? todayIso();
-  const { data, isLoading, isError } = useCoupons(date);
+  const { data, isLoading, isError, refetch } = useCoupons(date);
   const { data: trackRecords } = useCouponTrackRecord();
 
   // Tri par CLASSE (du plus fréquent au plus rare), puis par rang à
@@ -41,7 +47,6 @@ export function CouponsPageClient() {
       const ob = couponClassMeta(b.couponClass)?.order ?? 99;
       return oa !== ob ? oa - ob : a.rank - b.rank;
     });
-  useCouponCelebration(coupons);
 
   function navigateTo(iso: string) {
     const params = new URLSearchParams({ date: iso });
@@ -51,7 +56,15 @@ export function CouponsPageClient() {
   return (
     <Page className="flex h-full flex-col">
       <PageHeader>
-        <div />
+        {/* Un titre et la règle du jeu en une phrase : l'écran ne disait ni
+            ce qu'il sert à décider ni comment le lire (revue UX du
+            2026-10-27, Coupons P1-2). */}
+        <div className="flex min-w-0 flex-col gap-1">
+          <PageHeaderTitle>{t("title")}</PageHeaderTitle>
+          <p className="max-w-xl text-sm leading-6 text-muted-foreground">
+            {t("intro")}
+          </p>
+        </div>
         <PageHeaderActions className="w-full flex-nowrap lg:w-auto">
           <DateNav
             date={date}
@@ -59,7 +72,7 @@ export function CouponsPageClient() {
             className="min-w-0 flex-1 justify-center lg:w-auto lg:flex-none"
           />
           <FormationHelpLink
-            slug="channels-overview"
+            slug="coupons-et-avis-ia"
             label={t("helpLink")}
             tourId="coupons-help"
           />
@@ -76,15 +89,21 @@ export function CouponsPageClient() {
             )}
 
             {isError && !isLoading && (
-              <div className="rounded-[1.2rem] border border-dashed border-border bg-panel/70 p-8 text-center text-sm text-muted-foreground">
-                {t("loadError")}
+              <div className="flex flex-col items-center gap-3 rounded-[1.2rem] border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                <p>{t("loadError")}</p>
+                <Button variant="outline" onClick={() => void refetch()}>
+                  {t("retry")}
+                </Button>
               </div>
             )}
 
+            {/* S'abstenir est un résultat (PRODUCT.md, principe 4) : l'état
+                vide dit pourquoi, sans trophée décoratif. */}
             {!isLoading && !isError && coupons.length === 0 && (
-              <div className="flex flex-col items-center gap-4 rounded-[1.2rem] border border-dashed border-border bg-panel/70 px-8 py-16 text-center">
-                <Trophy size={36} className="text-muted-foreground/40" />
-                <p className="text-sm text-muted-foreground">{t("empty")}</p>
+              <div className="rounded-[1.2rem] border border-dashed border-border px-6 py-12 text-center">
+                <p className="mx-auto max-w-md text-sm leading-6 text-muted-foreground">
+                  {t("empty")}
+                </p>
               </div>
             )}
 
@@ -92,7 +111,10 @@ export function CouponsPageClient() {
                 280 px à 1 280 px tronquaient les noms d'équipes
                 (revue UX du 2026-10-11, P1-6). */}
             {!isLoading && !isError && coupons.length > 0 && (
-              <div className="grid grid-cols-1 items-stretch gap-4 pb-4 md:grid-cols-2 2xl:grid-cols-3">
+              // items-start : une carte à une jambe n'est plus étirée à la
+              // hauteur de sa voisine ; pb-20 : le bouton flottant ne couvre
+              // plus la dernière carte.
+              <div className="grid grid-cols-1 items-start gap-4 pb-20 md:grid-cols-2 2xl:grid-cols-3">
                 {coupons.map((coupon) => (
                   <CouponCard
                     key={coupon.id}

@@ -1,0 +1,39 @@
+{
+ "url": "http://localhost:3010/dashboard/fixtures",
+ "title": "EVCore",
+ "lang": "fr",
+ "headings": [],
+ "overflowX": false,
+ "textElements": 21,
+ "smallText": {
+  "count": 1,
+  "samples": [
+   {
+    "text": "TERMINÉ",
+    "px": 9.9
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 19,
+ "smallTapTargets": {
+  "count": 1,
+  "samples": [
+   {
+    "text": "Réussite",
+    "w": 91,
+    "h": 28,
+    "tag": "button"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

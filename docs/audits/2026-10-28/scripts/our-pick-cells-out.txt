@@ -1,0 +1,18 @@
+Cellules marché × tranche comparables : 15 (principales 2946, autres 3377)
+À marché et cote égaux : principale +2.5, autres +0.6 → écart +1.9 ± 2.3 pts
+
+Composition (part des sélections principales vs autres, par marché) :
+                   principale  autres  ecart_marche_du_marche
+market                                                       
+OVER_UNDER               31.4    22.7                     2.1
+TEAM_TOTAL_HOME          20.0    12.0                     1.8
+TEAM_TOTAL_AWAY          18.8    14.1                     1.2
+DOUBLE_CHANCE            17.0    20.7                    -0.2
+DRAW_NO_BET               3.8    14.8                     2.7
+BTTS                      3.4     5.1                     0.1
+OVER_UNDER_HT             3.3     5.7                     1.8
+ONE_X_TWO                 2.2     4.8                     1.9
+FIRST_HALF_WINNER         0.1     0.0                     6.1
+CLEAN_SHEET_HOME          0.1     0.0                    33.5
+P1 : écart à marché et cote égaux +3.4 pts (10 cellules)
+P2 : écart à marché et cote égaux +1.5 pts (17 cellules)

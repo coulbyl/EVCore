@@ -36,6 +36,14 @@ export class BankrollRepository {
     return result._sum.amount ?? new Decimal(0);
   }
 
+  async getDepositedTotal(userId: string): Promise<Decimal> {
+    const result = await this.prisma.client.bankrollTransaction.aggregate({
+      where: { userId, type: BankrollTransactionType.DEPOSIT },
+      _sum: { amount: true },
+    });
+    return result._sum.amount ?? new Decimal(0);
+  }
+
   getTransactions(input: GetTransactionsInput) {
     const { userId, from, to, limit = 100 } = input;
     return this.prisma.client.bankrollTransaction.findMany({
@@ -55,10 +63,20 @@ export class BankrollRepository {
       include: {
         bet: {
           select: {
-            channelSelection: {
-              select: { channelDecision: { select: { channel: true } } },
-            },
             market: true,
+            pick: true,
+            // La mise et le retour d'un combiné sont rattachés à sa première
+            // jambe : on remonte au coupon pour l'écrire « Combiné, N
+            // sélections » plutôt que sous le nom d'un seul match.
+            betSlipItems: {
+              where: { userId },
+              take: 1,
+              select: {
+                betSlip: {
+                  select: { type: true, _count: { select: { items: true } } },
+                },
+              },
+            },
             fixture: {
               select: {
                 homeTeam: { select: { name: true } },

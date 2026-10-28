@@ -1,0 +1,12 @@
+                                         groupe    n  cote_med moteur marche realise ecart_moteur ecart_marche mise_fixe
+            Actuel (avec statut de calibration) 5881      1.36   73.4   66.8    69.7   -3.7 ± 1.2   +2.7 ± 1.2      -2.0
+Sans statut : cote courte, puis proba du moteur 5868      1.34   75.6   67.6    70.5   -5.1 ± 1.2   +2.5 ± 1.2      -1.9
+                         actuel, cote 1,20–1,50 4310      1.30   76.0   72.0    74.3   -1.7 ± 1.3   +2.4 ± 1.4      -2.4
+                    sans statut, cote 1,20–1,50 4316      1.28   77.5   72.6    74.8   -2.7 ± 1.3   +2.2 ± 1.3      -2.6
+                            actuel 1,20–1,50 P1 1585      1.34   74.6   70.3    72.9   -1.8 ± 2.2   +2.6 ± 2.4      -2.6
+                       sans statut 1,20–1,50 P1 1596      1.33   75.2   70.5    73.6   -1.5 ± 2.2   +3.2 ± 2.3      -1.9
+                            actuel 1,20–1,50 P2 2725      1.28   76.9   73.0    75.2   -1.7 ± 1.6   +2.2 ± 1.7      -2.4
+                       sans statut 1,20–1,50 P2 2720      1.27   78.9   73.7    75.5   -3.4 ± 1.6   +1.6 ± 1.6      -3.1
+
+Même pari choisi sur 4999 matchs sur 6156 (81 %)
+Matchs avec une sélection à 1,20–1,50 : actuel 4570, sans statut 4589

@@ -1,0 +1,155 @@
+{
+ "url": "http://localhost:3000/dashboard/track-record",
+ "title": "Mesures historiques — EVCore",
+ "lang": "fr",
+ "headings": [
+  "h1: Ce que le moteur EVCore a réellement produit",
+  "h2: ANNONCÉ ET RÉALISÉ · DU 29 JUILLET 2026 AU 27 OCTO",
+  "h2: PAR CANAL",
+  "h2: Calibration des canaux actifs",
+  "h2: Classement ligues"
+ ],
+ "overflowX": false,
+ "textElements": 79,
+ "smallText": {
+  "count": 24,
+  "samples": [
+   {
+    "text": "PRONOSTICS RÉGLÉS",
+    "px": 9.3
+   },
+   {
+    "text": "ANNONCÉ",
+    "px": 9.3
+   },
+   {
+    "text": "RÉALISÉ",
+    "px": 9.3
+   },
+   {
+    "text": "À MISE FIXE",
+    "px": 9.3
+   },
+   {
+    "text": "CALIBRATION",
+    "px": 9.9
+   },
+   {
+    "text": "ROI",
+    "px": 9.9
+   },
+   {
+    "text": "RÉUSSITE",
+    "px": 9.9
+   },
+   {
+    "text": "ÉCHANTILLON",
+    "px": 9.9
+   },
+   {
+    "text": "AUJOURD'HUI",
+    "px": 11.5
+   },
+   {
+    "text": "SÉLECTIONS ISSUES DE CANAUX AVEC UN ÉCART ≤ 15 %",
+    "px": 10.4
+   },
+   {
+    "text": "ANGLETERRE · PREMIER LEAGUE",
+    "px": 11
+   },
+   {
+    "text": "ALLEMAGNE · BUNDESLIGA",
+    "px": 11
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 1,
+  "samples": [
+   {
+    "text": "E2",
+    "px": 12.2,
+    "ratio": 2.8,
+    "min": 4.5
+   }
+  ]
+ },
+ "interactive": 16,
+ "smallTapTargets": {
+  "count": 10,
+  "samples": [
+   {
+    "text": "Toggle Sidebar",
+    "w": 36,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "Portefeuille",
+    "w": 42,
+    "h": 44,
+    "tag": "a"
+   },
+   {
+    "text": "Rechercher dans la page",
+    "w": 36,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "Notifications",
+    "w": 36,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mon coupon",
+    "w": 36,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "E2",
+    "w": 38,
+    "h": 38,
+    "tag": "button"
+   },
+   {
+    "text": "30 jours",
+    "w": 78,
+    "h": 32,
+    "tag": "a"
+   },
+   {
+    "text": "90 jours",
+    "w": 78,
+    "h": 32,
+    "tag": "a"
+   },
+   {
+    "text": "Tout l'historique",
+    "w": 125,
+    "h": 32,
+    "tag": "a"
+   },
+   {
+    "text": "Comprendre les canaux",
+    "w": 149,
+    "h": 16,
+    "tag": "a"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": [
+  {
+   "word": "garanti",
+   "count": 1
+  }
+ ]
+}

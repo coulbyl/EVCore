@@ -25,6 +25,7 @@ export function PhoneNumberRow({
   removeLabel,
   saveLabel,
   cancelLabel,
+  editLabel,
   saveError,
 }: {
   label: string;
@@ -35,6 +36,7 @@ export function PhoneNumberRow({
   removeLabel: string;
   saveLabel: string;
   cancelLabel: string;
+  editLabel: string;
   saveError: string;
 }) {
   const currentUser = useCurrentUser();
@@ -107,7 +109,7 @@ export function PhoneNumberRow({
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <Phone size={13} className="shrink-0 text-muted-foreground" />
-      <span className="w-20 shrink-0 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+      <span className="w-24 shrink-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </span>
 
@@ -135,7 +137,7 @@ export function PhoneNumberRow({
             <button
               type="button"
               onClick={() => setAskingConsent(true)}
-              className="shrink-0 text-xs font-semibold text-accent hover:underline"
+              className="min-h-11 shrink-0 text-sm font-semibold text-accent hover:underline"
             >
               {addLabel}
             </button>
@@ -158,25 +160,21 @@ export function PhoneNumberRow({
             type="button"
             onClick={() => void handleSave()}
             disabled={busy || draft.trim() === ""}
-            className="shrink-0 rounded-md p-1 text-accent hover:bg-accent/10 disabled:opacity-40"
-            title={saveLabel}
+            aria-label={saveLabel}
+            className="flex size-11 shrink-0 items-center justify-center rounded-lg text-accent hover:bg-accent/10 disabled:opacity-40"
           >
-            <Check size={14} />
+            <Check size={16} />
           </button>
           <button
             type="button"
             onClick={cancelEdit}
             disabled={busy}
-            className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted/40"
-            title={cancelLabel}
+            aria-label={cancelLabel}
+            className="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/40"
           >
-            <X size={14} />
+            <X size={16} />
           </button>
-          {error && (
-            <span className="text-[0.68rem] text-destructive whitespace-nowrap">
-              {error}
-            </span>
-          )}
+          {error && <span className="text-xs text-destructive">{error}</span>}
         </div>
       ) : hasNumber ? (
         <div className="flex flex-1 items-center gap-2 min-w-0">
@@ -186,10 +184,10 @@ export function PhoneNumberRow({
           <button
             type="button"
             onClick={startEdit}
-            className="ml-auto shrink-0 rounded-md p-1 text-muted-foreground opacity-0 hover:opacity-100 group-hover:opacity-60 hover:text-foreground transition-opacity"
-            title={saveLabel}
+            aria-label={editLabel}
+            className="ml-auto flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           >
-            <Pencil size={11} />
+            <Pencil size={14} />
           </button>
         </div>
       ) : (
@@ -197,7 +195,7 @@ export function PhoneNumberRow({
           <button
             type="button"
             onClick={startEdit}
-            className="text-xs font-semibold text-accent hover:underline"
+            className="min-h-11 text-sm font-semibold text-accent hover:underline"
           >
             {addLabel}
           </button>
@@ -205,7 +203,7 @@ export function PhoneNumberRow({
             type="button"
             onClick={() => void setConsent(false)}
             disabled={busy}
-            className="shrink-0 text-[0.68rem] text-muted-foreground hover:text-foreground"
+            className="min-h-11 shrink-0 text-xs text-muted-foreground hover:text-foreground"
           >
             {removeLabel}
           </button>

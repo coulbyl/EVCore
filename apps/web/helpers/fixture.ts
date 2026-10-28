@@ -101,6 +101,128 @@ export function formatPickForDisplay(pick: string, market: string): string {
   return formatPickForDisplayFr(pick, market);
 }
 
+/**
+ * Le pari en clair, avec le nom des équipes : « Victoire Arsenal », « Burnley
+ * ou nul », « Arsenal n'encaisse pas ». Le joueur lit un pari, pas un canal
+ * (décision du 2026-10-27, docs/audits/2026-10-27/DECISIONS.md) : « Domicile »
+ * l'obligeait à relier le mot à l'équipe de la ligne au-dessus, et Victoire
+ * et Nul, deux canaux du même marché 1X2, se distinguent ici par l'issue.
+ * Sans nom d'équipe, ou pour un marché sans équipe, retombe sur
+ * formatPickForDisplay.
+ */
+export function formatPickWithTeams(
+  pick: string,
+  market: string,
+  teams: { home: string; away: string } | null,
+): string {
+  if (!teams) return formatPickForDisplay(pick, market);
+  const p = pick.includes(" ") ? pick.split(" ").slice(1).join("_") : pick;
+  const { home, away } = teams;
+  const side = (code: string): string | null =>
+    code === "HOME" ? home : code === "AWAY" ? away : null;
+  // « plus de 1,5 but », « plus de 2,5 buts » : singulier sous 2.
+  const goals = (code: string, suffix = ""): string | null => {
+    const label = formatGenericOverUnderPick(
+      code === "OVER" ? "OVER_2_5" : code === "UNDER" ? "UNDER_2_5" : code,
+    );
+    if (!label) return null;
+    const line = Number(label.replace(/^\D+/, ""));
+    const unit = line < 2 ? "but" : "buts";
+    return `${label.replace(".", ",")} ${unit}${suffix}`;
+  };
+
+  switch (market) {
+    case "ONE_X_TWO":
+    case "MATCH_WINNER":
+      if (p === "DRAW") return "Match nul";
+      return side(p)
+        ? `Victoire ${side(p)}`
+        : formatPickForDisplay(pick, market);
+    case "DOUBLE_CHANCE":
+      if (p === "1X") return `${home} ou nul`;
+      if (p === "X2") return `${away} ou nul`;
+      if (p === "12") return `${home} ou ${away}`;
+      break;
+    case "DRAW_NO_BET":
+      if (side(p)) return `${side(p)}, remboursé si nul`;
+      break;
+    case "TO_WIN_EITHER_HALF":
+      if (side(p)) return `${side(p)} gagne une mi-temps`;
+      break;
+    case "FIRST_HALF_WINNER":
+      if (p === "DRAW") return "Égalité à la pause";
+      if (side(p)) return `${side(p)} mène à la pause`;
+      break;
+    case "CLEAN_SHEET_HOME":
+    case "CLEAN_SHEET_AWAY": {
+      const team = market.endsWith("HOME") ? home : away;
+      if (p === "YES") return `${team} n'encaisse pas`;
+      if (p === "NO") return `${team} encaisse au moins un but`;
+      break;
+    }
+    case "WIN_TO_NIL_HOME":
+    case "WIN_TO_NIL_AWAY": {
+      const team = market.endsWith("HOME") ? home : away;
+      if (p === "YES") return `${team} gagne sans encaisser`;
+      if (p === "NO") return `${team} ne gagne pas sans encaisser`;
+      break;
+    }
+    case "TEAM_TOTAL_HOME":
+    case "TEAM_TOTAL_AWAY": {
+      const team = market.endsWith("HOME") ? home : away;
+      const label = goals(p);
+      if (label)
+        return `${team} : ${label.charAt(0).toLowerCase()}${label.slice(1)}`;
+      break;
+    }
+    case "BTTS":
+      if (p === "YES") return "Les deux équipes marquent";
+      if (p === "NO") return "Au moins une équipe ne marque pas";
+      break;
+    case "OVER_UNDER":
+    case "OVER_UNDER_25": {
+      const label = goals(p);
+      if (label) return label;
+      break;
+    }
+    case "OVER_UNDER_HT": {
+      const label = goals(p, " à la pause");
+      if (label) return label;
+      break;
+    }
+    case "CORRECT_SCORE": {
+      const score = /^(\d+)[:-](\d+)$/.exec(p);
+      if (score) return `${home} ${score[1]}–${score[2]} ${away}`;
+      break;
+    }
+    case "RESULT_TOTAL_GOALS":
+    case "RESULT_BTTS": {
+      const match = /^(HOME|DRAW|AWAY)_(.+)$/.exec(p);
+      if (!match) break;
+      const [, code = "", rest = ""] = match;
+      const result = code === "DRAW" ? "Match nul" : `Victoire ${side(code)}`;
+      if (rest === "YES") return `${result} et les deux équipes marquent`;
+      if (rest === "NO") return `${result} et une équipe ne marque pas`;
+      const label = goals(rest);
+      if (label)
+        return `${result} et ${label.charAt(0).toLowerCase()}${label.slice(1)}`;
+      break;
+    }
+    case "HALF_TIME_FULL_TIME": {
+      const [ht, ft] = p.split("_");
+      const atHalf = (code: string | undefined) =>
+        code === "DRAW" ? "égalité" : code ? `${side(code)} devant` : null;
+      const atEnd = (code: string | undefined) =>
+        code === "DRAW" ? "nul" : code ? `victoire ${side(code)}` : null;
+      if (atHalf(ht) && atEnd(ft)) {
+        return `${atHalf(ht)} à la pause, ${atEnd(ft)} à la fin`;
+      }
+      break;
+    }
+  }
+  return formatPickForDisplay(pick, market);
+}
+
 export function formatDiagnosticPickForDisplay(
   market: string,
   pick: string,

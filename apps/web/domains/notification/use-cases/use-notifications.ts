@@ -62,6 +62,10 @@ export function useMarkRead() {
       clientApiRequest<void>(`/notifications/${id}/read`, { method: "PATCH" }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      // Une annonce n'a qu'un état « lu » côté serveur : Annonces suit.
+      void queryClient.invalidateQueries({
+        queryKey: ["dashboard-announcements"],
+      });
       void queryClient.invalidateQueries({
         queryKey: ["notifications-unread-count"],
       });
@@ -76,6 +80,10 @@ export function useMarkAllRead() {
       clientApiRequest<void>("/notifications/read-all", { method: "PATCH" }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      // Une annonce n'a qu'un état « lu » côté serveur : Annonces suit.
+      void queryClient.invalidateQueries({
+        queryKey: ["dashboard-announcements"],
+      });
       void queryClient.invalidateQueries({
         queryKey: ["notifications-unread-count"],
       });

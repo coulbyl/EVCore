@@ -16,6 +16,12 @@ const PLAIN_FORMATTER = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 2,
 });
 
+// Le franc CFA n'a pas de centimes : « −462,4 F » n'existe sur aucun ticket
+// (revue UX du 2026-10-27).
+const WHOLE_FORMATTER = new Intl.NumberFormat("fr-FR", {
+  maximumFractionDigits: 0,
+});
+
 const PLAIN_COMPACT_FORMATTER = new Intl.NumberFormat("fr-FR", {
   notation: "compact",
   maximumFractionDigits: 1,
@@ -80,12 +86,16 @@ export function formatCurrency(
   compact = false,
   currency: AppCurrency = "XOF",
 ): string {
-  const n = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(n)) return typeof value === "string" ? value : "—";
+  const raw = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(raw)) return typeof value === "string" ? value : "—";
+  // « + 0 » évite d'écrire « -0 F » pour −0,4 arrondi.
+  const n = currency === "XOF" ? Math.round(raw) + 0 : raw;
   const numStr =
     compact && Math.abs(n) >= 1_000_000
       ? PLAIN_COMPACT_FORMATTER.format(n)
-      : PLAIN_FORMATTER.format(n);
+      : currency === "XOF"
+        ? WHOLE_FORMATTER.format(n)
+        : PLAIN_FORMATTER.format(n);
   return applySymbol(numStr, currency);
 }
 
@@ -94,8 +104,9 @@ export function formatSignedCurrency(
   compact = false,
   currency: AppCurrency = "XOF",
 ): string {
-  const n = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(n)) return typeof value === "string" ? value : "—";
+  const raw = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(raw)) return typeof value === "string" ? value : "—";
+  const n = currency === "XOF" ? Math.round(raw) + 0 : raw;
   const prefix = n > 0 ? "+" : "";
   return `${prefix}${formatCurrency(n, compact, currency)}`;
 }

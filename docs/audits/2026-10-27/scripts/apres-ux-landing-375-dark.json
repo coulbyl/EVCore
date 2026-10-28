@@ -1,0 +1,54 @@
+{
+ "url": "http://localhost:3000/",
+ "title": "EVCore — Avant de parier, lis le match",
+ "lang": "fr",
+ "headings": [
+  "h1: Avant de parier, lis le match.",
+  "h2: Trois familles. Pas trente pronostics.",
+  "h2: Ce qu'on refuse de te proposer.",
+  "h2: Conçu pour le parieur qui veut de la méthode.",
+  "h3: Une mise. Répétée.",
+  "h3: Un garde-fou sur les marchés perdants",
+  "h3: Décisions lisibles",
+  "h3: Une méthode, pas des tuyaux.",
+  "h2: Un pronostic. Une mise fixe. Un suivi.",
+  "h3: Estimation, puis filtre",
+  "h3: Une unité de mise, la même partout",
+  "h3: Tout est réglé, tout est visible",
+  "h2: Notre analyse. Ta décision."
+ ],
+ "overflowX": false,
+ "textElements": 101,
+ "smallText": {
+  "count": 0,
+  "samples": []
+ },
+ "lowContrast": {
+  "count": 0,
+  "samples": []
+ },
+ "interactive": 10,
+ "smallTapTargets": {
+  "count": 2,
+  "samples": [
+   {
+    "text": "Mode clair",
+    "w": 36,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "Connexion",
+    "w": 67,
+    "h": 20,
+    "tag": "a"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 0,
+  "samples": []
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}

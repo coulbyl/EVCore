@@ -75,3 +75,7 @@ Do not implement features from future phases without explicit instruction:
 - Phase 2: odds, EV live, OpenClaw, Grafana, TimescaleDB
 - Phase 3: Python worker, ML model, Monte Carlo
 - Phase 4: SaaS, multi-tenant
+
+## Review expectations
+
+Before touching settlement, the bankroll, slip results or a scheduled job, and before any PR to main, read `docs/review-expectations.md`: rules drawn from real review findings (replay-safe money writes, counts and amounts over the same set, unknown is not zero, late arrivals in dated jobs, Decimal products, repository rule in touched services).

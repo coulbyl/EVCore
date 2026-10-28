@@ -59,9 +59,12 @@ const baseContext: MatchContext = {
   calibration: [],
 };
 
-function playResponse(overrides: { market?: string; pick?: string } = {}) {
+function playResponse(
+  overrides: { market?: string; pick?: string; basis?: string } = {},
+) {
   return JSON.stringify({
     verdict: "play",
+    ...(overrides.basis ? { basis: overrides.basis } : {}),
     market: overrides.market ?? "ONE_X_TWO",
     pick: overrides.pick ?? "HOME",
     probability: 0.6,
@@ -99,9 +102,58 @@ describe("analyzeFixture — MAX_ODDS cap and self-calibration gate (v4, 2026-10
         market: "ONE_X_TWO",
         pick: "HOME",
         odds: 2.4,
-        text: expect.stringContaining("dépasse 1.80"),
+        text: expect.stringContaining("dépasse 1,80"),
       }),
     );
+  });
+
+  it("gates a play resting on a contradiction between our own readings (v5, 2026-10-27)", async () => {
+    buildMatchContext.mockResolvedValue({
+      ...baseContext,
+      readings: [{ ...baseContext.readings[0]!, odds: 1.5 }],
+    });
+    requestVantageCompletion.mockResolvedValue(
+      playResponse({ basis: "tension" }),
+    );
+
+    const result = await analyzeFixture(
+      "fixture-1",
+      dummyClients,
+      dummyConfig,
+      noopLogger,
+    );
+
+    expect(result).toEqual({ outcome: "gated", reason: "basis" });
+    expect(persistVantageDecision).not.toHaveBeenCalled();
+    expect(persistVantageGateRejection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reasonCode: "VANTAGE_GATED_BASIS",
+        configVersion: "vantage-v5-no-tension",
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        text: expect.stringContaining("désaccord entre nos propres lectures"),
+      }),
+    );
+  });
+
+  it("still persists a play on raw statistics", async () => {
+    buildMatchContext.mockResolvedValue({
+      ...baseContext,
+      readings: [{ ...baseContext.readings[0]!, odds: 1.5 }],
+    });
+    requestVantageCompletion.mockResolvedValue(
+      playResponse({ basis: "raw_stats" }),
+    );
+
+    const result = await analyzeFixture(
+      "fixture-1",
+      dummyClients,
+      dummyConfig,
+      noopLogger,
+    );
+
+    expect(result).toEqual({ outcome: "persisted", verdict: "play" });
+    expect(persistVantageGateRejection).not.toHaveBeenCalled();
   });
 
   it("gates a play on a market VANTAGE has measured itself unreliable on (ratio < 0.70, n >= 100)", async () => {
@@ -200,7 +252,9 @@ describe("analyzeFixture — MAX_ODDS cap and self-calibration gate (v4, 2026-10
     expect(persisted.reasonDetails).not.toMatch(
       /ONE_X_TWO|DOMINANT|calibration 0/,
     );
-    expect(persisted.reasonDetails).toContain("nos données internes");
+    expect(persisted.reasonDetails).toContain(
+      "Nos données internes soutiennent",
+    );
     expect(persisted.basis).toBe("raw_stats");
   });
 });
@@ -241,6 +295,36 @@ describe("analyzeFixture — MIN_ODDS floor", () => {
 
     expect(result.outcome).toBe("persisted");
     expect(persistVantageDecision).toHaveBeenCalledTimes(1);
+  });
+
+  it("persists the price with its provenance and margins, taken from the matching reading (2026-10-27)", async () => {
+    const snapshotAt = new Date("2026-10-27T09:00:00Z");
+    buildMatchContext.mockResolvedValue({
+      ...baseContext,
+      readings: [
+        {
+          ...baseContext.readings[0]!,
+          odds: 1.5,
+          oddsBookmaker: "Pinnacle",
+          oddsSnapshotAt: snapshotAt,
+          marginPaid: 0.031,
+          marginBest: 0.024,
+        },
+      ],
+    });
+    requestVantageCompletion.mockResolvedValue(
+      playResponse({ basis: "raw_stats" }),
+    );
+
+    await analyzeFixture("fixture-1", dummyClients, dummyConfig, noopLogger);
+
+    expect(persistVantageDecision.mock.calls[0]?.[5]).toEqual({
+      odds: 1.5,
+      bookmaker: "Pinnacle",
+      snapshotAt,
+      marginPaid: 0.031,
+      marginBest: 0.024,
+    });
   });
 
   it("accepts a play whose odds are unknown — VANTAGE has no other source of odds to check against", async () => {

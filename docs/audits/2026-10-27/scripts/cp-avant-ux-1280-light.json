@@ -1,0 +1,167 @@
+{
+ "url": "http://localhost:3010/dashboard/coupons",
+ "title": "Propositions",
+ "lang": "fr",
+ "headings": [],
+ "overflowX": false,
+ "textElements": 219,
+ "smallText": {
+  "count": 18,
+  "samples": [
+   {
+    "text": "AUJOURD'HUI",
+    "px": 11
+   },
+   {
+    "text": "SUIVI",
+    "px": 11
+   },
+   {
+    "text": "ANALYSE",
+    "px": 11
+   },
+   {
+    "text": "Opérateur",
+    "px": 9.9
+   },
+   {
+    "text": "COTE",
+    "px": 11
+   },
+   {
+    "text": "CHANCES",
+    "px": 11
+   },
+   {
+    "text": "1XBET",
+    "px": 11
+   },
+   {
+    "text": "PAYÉ",
+    "px": 11
+   }
+  ]
+ },
+ "lowContrast": {
+  "count": 2,
+  "samples": [
+   {
+    "text": "E2",
+    "px": 12.2,
+    "ratio": 2.8,
+    "min": 4.5
+   }
+  ]
+ },
+ "interactive": 25,
+ "smallTapTargets": {
+  "count": 19,
+  "samples": [
+   {
+    "text": "Accueil",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Coupons",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Avis IA",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Décisions",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Matchs",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mes coupons",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Inbox",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Formation",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Mesures historiques",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Notifications",
+    "w": 256,
+    "h": 36,
+    "tag": "a"
+   },
+   {
+    "text": "Paramètres du compte",
+    "w": 27,
+    "h": 27,
+    "tag": "a"
+   },
+   {
+    "text": "Rechercher dans la page",
+    "w": 36,
+    "h": 36,
+    "tag": "button"
+   },
+   {
+    "text": "Notifications",
+    "w": 42,
+    "h": 44,
+    "tag": "a"
+   },
+   {
+    "text": "Mon coupon",
+    "w": 42,
+    "h": 44,
+    "tag": "button"
+   },
+   {
+    "text": "E2",
+    "w": 38,
+    "h": 38,
+    "tag": "button"
+   }
+  ]
+ },
+ "unnamedInteractive": {
+  "count": 2,
+  "samples": [
+   {
+    "tag": "button",
+    "cls": "inline-flex shrink-0 items-center justify-center gap-2 round"
+   },
+   {
+    "tag": "button",
+    "cls": "inline-flex shrink-0 items-center justify-center gap-2 round"
+   }
+  ]
+ },
+ "imgsNoAlt": 0,
+ "bannedWords": []
+}
