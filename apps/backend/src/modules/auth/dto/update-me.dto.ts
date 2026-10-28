@@ -61,6 +61,15 @@ export class UpdateMeDto {
   @IsBoolean()
   emailSupportNotificationsEnabled?: boolean;
 
+  // Matinée et relevé du lundi (2026-10-29), actifs par défaut.
+  @IsOptional()
+  @IsBoolean()
+  morningBriefEnabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  weeklyStatementEnabled?: boolean;
+
   @IsOptional()
   @IsBoolean()
   hasSeenOnboarding?: boolean;

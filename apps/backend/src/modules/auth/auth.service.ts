@@ -140,6 +140,8 @@ export class AuthService {
         unitPercent: true,
         riskProfile: true,
         emailSupportNotificationsEnabled: true,
+        morningBriefEnabled: true,
+        weeklyStatementEnabled: true,
         hasSeenOnboarding: true,
         hasCompletedOnboarding: true,
         phoneNumber: true,
@@ -185,6 +187,8 @@ export class AuthService {
         unitPercent: true,
         riskProfile: true,
         emailSupportNotificationsEnabled: true,
+        morningBriefEnabled: true,
+        weeklyStatementEnabled: true,
         hasSeenOnboarding: true,
         hasCompletedOnboarding: true,
         phoneNumber: true,
@@ -230,6 +234,8 @@ export class AuthService {
           riskProfile: user.riskProfile,
           emailSupportNotificationsEnabled:
             user.emailSupportNotificationsEnabled,
+          morningBriefEnabled: user.morningBriefEnabled,
+          weeklyStatementEnabled: user.weeklyStatementEnabled,
           hasSeenOnboarding: user.hasSeenOnboarding,
           hasCompletedOnboarding: user.hasCompletedOnboarding,
           phoneNumber: user.phoneNumber,
@@ -279,6 +285,8 @@ export class AuthService {
             unitPercent: true,
             riskProfile: true,
             emailSupportNotificationsEnabled: true,
+            morningBriefEnabled: true,
+            weeklyStatementEnabled: true,
             hasSeenOnboarding: true,
             hasCompletedOnboarding: true,
             phoneNumber: true,
@@ -354,6 +362,12 @@ export class AuthService {
           emailSupportNotificationsEnabled:
             dto.emailSupportNotificationsEnabled,
         }),
+        ...(dto.morningBriefEnabled !== undefined && {
+          morningBriefEnabled: dto.morningBriefEnabled,
+        }),
+        ...(dto.weeklyStatementEnabled !== undefined && {
+          weeklyStatementEnabled: dto.weeklyStatementEnabled,
+        }),
         ...(dto.hasSeenOnboarding !== undefined && {
           hasSeenOnboarding: dto.hasSeenOnboarding,
         }),
@@ -391,6 +405,8 @@ export class AuthService {
         unitPercent: true,
         riskProfile: true,
         emailSupportNotificationsEnabled: true,
+        morningBriefEnabled: true,
+        weeklyStatementEnabled: true,
         hasSeenOnboarding: true,
         hasCompletedOnboarding: true,
         phoneNumber: true,
@@ -692,6 +708,8 @@ export class AuthService {
         unitPercent: true,
         riskProfile: true,
         emailSupportNotificationsEnabled: true,
+        morningBriefEnabled: true,
+        weeklyStatementEnabled: true,
         hasSeenOnboarding: true,
         hasCompletedOnboarding: true,
         phoneNumber: true,
@@ -774,6 +792,8 @@ export class AuthService {
     unitPercent: Prisma.Decimal | null;
     riskProfile: AuthSessionUser['riskProfile'];
     emailSupportNotificationsEnabled: boolean;
+    morningBriefEnabled: boolean;
+    weeklyStatementEnabled: boolean;
     hasSeenOnboarding: boolean;
     hasCompletedOnboarding: boolean;
     phoneNumber: string | null;

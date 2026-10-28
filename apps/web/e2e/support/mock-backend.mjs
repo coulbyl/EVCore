@@ -30,6 +30,8 @@ const SESSION = {
       hasCompletedOnboarding: true,
       // Sans ce drapeau la visite guidée (driver.js) démarre à la première
       // visite et pose un voile qui intercepte les clics.
+      morningBriefEnabled: true,
+      weeklyStatementEnabled: true,
       hasSeenOnboarding: true,
       // E2E_PAUSED=1 : un joueur en pause pour 7 jours (pages de paris
       // remplacées par l'annonce de la pause).

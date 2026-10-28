@@ -576,6 +576,15 @@
       "confirm": "Confirm",
       "cancel": "Cancel",
       "error": "The change did not go through. Try again."
+    },
+    "playerNotifications": {
+      "title": "Your morning and your statement",
+      "description": "Notifications in the app and on your phone. They never push you to bet.",
+      "morning": "The morning brief, at 8 am UTC",
+      "morningHint": "Yesterday's results and today's coupons, or why there are none.",
+      "weekly": "The Monday statement",
+      "weeklyHint": "Your week, what you followed and how our coupons did.",
+      "error": "Could not save this setting."
     }
   },
   "performance": {

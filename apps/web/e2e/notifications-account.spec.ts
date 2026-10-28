@@ -101,6 +101,27 @@ test.describe("Compte", () => {
     await expect(page.getByText("Offensif")).toHaveCount(0);
   });
 
+  test("la matinée et le relevé du lundi se coupent dans Compte", async ({
+    page,
+  }) => {
+    await page.goto("/dashboard/params/account/notifications");
+    const morning = page.getByRole("switch", {
+      name: "La matinée, à 8 h UTC",
+    });
+    await expect(morning).toBeChecked();
+    await expect(
+      page.getByRole("switch", { name: "Le relevé du lundi" }),
+    ).toBeChecked();
+    const patch = page.waitForRequest(
+      (req) => req.method() === "PATCH" && req.url().includes("/auth/me"),
+    );
+    await morning.click();
+    expect((await patch).postDataJSON()).toEqual({
+      morningBriefEnabled: false,
+    });
+    await expect(morning).not.toBeChecked();
+  });
+
   test("le joueur ne voit pas le rôle « Opérateur »", async ({ page }) => {
     test.skip(
       process.env.E2E_ROLE !== "OPERATOR",
