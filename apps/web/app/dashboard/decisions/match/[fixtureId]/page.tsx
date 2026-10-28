@@ -229,7 +229,11 @@ export default async function MatchSheetPage({
                           </span>
                           <span className="text-xs text-muted-foreground">
                             {t("line", {
-                              ...frequencyOf(Number(pick.probability)),
+                              ...frequencyOf(
+                                Number(
+                                  pick.marketProbability ?? pick.probability,
+                                ),
+                              ),
                               odds: formatOddsValue(Number(pick.odds), locale),
                               motive: motive(pick.rejectionReason),
                             })}

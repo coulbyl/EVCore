@@ -19,9 +19,6 @@
     "refunded": "Remboursé",
     "settlementPending": "Règlement en attente"
   },
-  "oddsBandNote": {
-    "optimistic": "{band} : sur 100 annoncés à {announced} %, {realised} passent (90 jours)"
-  },
   "calibrationVerdict": {
     "conform": "Conforme",
     "slightlyOptimistic": "Un peu optimiste",
@@ -406,7 +403,7 @@
     },
     "homePicks": {
       "title": "Les sélections du jour",
-      "description": "Cinq sélections au plus, dans la bande de cote où nos pourcentages tiennent. Le + les ajoute au coupon."
+      "description": "Cinq sélections au plus, à cote entre 1,20 et 1,65. Leurs chances viennent de la cote, marge retirée. Le + les ajoute au coupon."
     },
     "homeMySlips": {
       "title": "Tes coupons",
@@ -671,7 +668,7 @@
         "pending": "En attente"
       },
       "picksTitle": "Les sélections du jour",
-      "picksSubtitle": "Cote entre 1,20 et 1,65, là où nos pourcentages tiennent ; une sélection par match.",
+      "picksSubtitle": "Cote entre 1,20 et 1,65, une sélection par match. Les chances viennent de la cote, marge du bookmaker retirée.",
       "pickFrequency": "{count} sur {total}",
       "picksLink": "Toutes les décisions",
       "picksEmpty": "Aucune sélection ne remplit les conditions aujourd'hui.",

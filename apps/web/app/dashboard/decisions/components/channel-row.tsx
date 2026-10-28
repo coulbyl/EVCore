@@ -4,7 +4,6 @@ import { TriangleAlert } from "lucide-react";
 import { Badge, Tooltip, TooltipContent, TooltipTrigger, cn } from "@evcore/ui";
 import { formatMarketForDisplay, formatPickWithTeams } from "@/helpers/fixture";
 import { frequencyOf } from "@/lib/frequency";
-import { OddsBandNote } from "@/components/odds-band-note";
 import { OddsPair } from "@/components/odds-pair";
 import { useLocale, useTranslations } from "next-intl";
 import type {
@@ -105,18 +104,20 @@ export function ChannelRow({
             </div>
           </div>
           {/* Type de pari, fréquence, cote jouable d'abord : la même lecture
-              que la carte coupon. Plus de badge « Fiable » par canal et par
-              championnat : la note par cote ne s'affiche que quand nos
-              pourcentages ont été optimistes à cette cote. */}
+              que la carte coupon. La fréquence est celle du marché, marge
+              retirée (2026-10-28) : celle du moteur était optimiste de 4 à 8
+              points, d'où la note par cote, retirée avec elle. */}
           <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-snug text-muted-foreground">
             {selection.market !== "CORRECT_SCORE" && (
               <span className="max-w-full truncate">
                 {formatMarketForDisplay(selection.market, loc)}
               </span>
             )}
-            <span className="tabular-nums">
-              {t("chances", frequencyOf(selection.probability))}
-            </span>
+            {selection.marketProbability !== null ? (
+              <span className="tabular-nums">
+                {t("chances", frequencyOf(selection.marketProbability))}
+              </span>
+            ) : null}
             <OddsPair selection={selection} locale={locale} />
             <ClosingLine
               closingOdds={selection.closingOdds}
@@ -124,7 +125,6 @@ export function ChannelRow({
               closingBookmaker={selection.closingBookmaker}
               marginPaid={selection.marginPaid}
             />
-            <OddsBandNote odds={selection.odds} />
           </p>
         </div>
       ) : convergingChannels.length > 0 ? (

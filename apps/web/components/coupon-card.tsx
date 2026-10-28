@@ -17,7 +17,6 @@ import { FixtureCardHeader } from "@/components/fixture-card-header";
 import { formatOddsValue as formatOdds, frequencyOf } from "@/lib/frequency";
 import { ResultBadge, type ResultValue } from "@/components/result-badge";
 import { ClosingLine } from "@/components/closing-line";
-import { OddsBandNote } from "@/components/odds-band-note";
 
 export type NormalizedCouponLeg = {
   key: string;
@@ -33,6 +32,8 @@ export type NormalizedCouponLeg = {
   marketLabel: string;
   pickLabel: string;
   probability: number;
+  /** Fréquence affichée : probabilité du marché, marge retirée. */
+  marketProbability: number | null;
   odds: string | null;
   /** Cote chez le book de l'utilisateur (1xBet), sinon la plus basse relevée. */
   playable?: { odds: number; bookmaker: string } | null;
@@ -81,7 +82,8 @@ export type CouponCardProps = {
    * sur un coupon annoncé à 4,3 ne doit pas se lire comme un gain à 4,3.
    */
   realizedOdds?: number | null;
-  jointProbability: number;
+  /** Probabilité du marché de toutes les jambes ; null s'il en manque une. */
+  jointProbability: number | null;
   signalScore: number;
   reasoning?: string | null;
   /**
@@ -235,7 +237,10 @@ export function CouponCard({
   const playable = playableCombined(legs);
   const playableDiffers =
     playable !== null && Math.abs(playable.odds - combinedOdds) >= 0.005;
-  const chances = frequencyOf(jointProbability);
+  // Fréquence du marché (2026-10-28) : celle du moteur était optimiste de
+  // 4 à 8 points.
+  const chances =
+    jointProbability !== null ? frequencyOf(jointProbability) : null;
   // Plus de couleur ni de seuils sur les chances : « 15 % » en rouge se lisait
   // comme une alerte, alors que c'est l'arithmétique d'une cote 6. La classe
   // porte déjà la fréquence de gain en clair (« 1 jour sur 7 »).
@@ -366,11 +371,13 @@ export function CouponCard({
                   testId="coupon-realized-odds"
                 />
               )}
-            <Metric
-              label={t("chances")}
-              value={t("chancesValue", chances)}
-              testId="coupon-chances"
-            />
+            {chances ? (
+              <Metric
+                label={t("chances")}
+                value={t("chancesValue", chances)}
+                testId="coupon-chances"
+              />
+            ) : null}
           </div>
         </div>
       </CardHeader>
@@ -419,7 +426,8 @@ function CouponLegRow({
     leg.playable != null &&
     referenceOdds !== null &&
     Math.abs(leg.playable.odds - referenceOdds) >= 0.005;
-  const chances = frequencyOf(leg.probability);
+  const chances =
+    leg.marketProbability !== null ? frequencyOf(leg.marketProbability) : null;
   return (
     <div data-testid="coupon-leg" className="py-3">
       <div className="flex min-w-0 items-start justify-between gap-3">
@@ -482,12 +490,11 @@ function CouponLegRow({
         </div>
         <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-tight text-muted-foreground">
           <span className="max-w-full truncate">{leg.marketLabel}</span>
-          <span className="tabular-nums">{t("legChances", chances)}</span>
-          {/* Même note qu'en Décisions, lue sur le relevé par cote : au-dessus
-              de 1,80 la probabilité annoncée surestime la réalité, la jambe
-              le dit au lieu de présenter son pourcentage comme fiable
-              (PRODUCT.md). Rien quand la tranche est conforme. */}
-          <OddsBandNote odds={referenceOdds} />
+          {/* Fréquence du marché, marge retirée : plus de note « optimiste à
+              cette cote », qui qualifiait les chiffres du moteur. */}
+          {chances ? (
+            <span className="tabular-nums">{t("legChances", chances)}</span>
+          ) : null}
           {leg.closing && (
             <ClosingLine
               testId="leg-closing"

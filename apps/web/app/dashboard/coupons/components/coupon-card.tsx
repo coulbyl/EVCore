@@ -88,6 +88,7 @@ export function CouponCard({
       away: leg.awayTeam,
     }),
     probability: leg.probability,
+    marketProbability: leg.marketProbability,
     odds: leg.oddsSnapshot != null ? leg.oddsSnapshot.toFixed(2) : null,
     playable:
       leg.playableOdds !== null && leg.playableBookmaker !== null
@@ -204,7 +205,7 @@ export function CouponCard({
         locale={locale}
         combinedOdds={coupon.combinedOdds}
         realizedOdds={coupon.realizedOdds}
-        jointProbability={coupon.jointProbability}
+        jointProbability={coupon.marketJointProbability}
         signalScore={coupon.signalScore}
         couponClass={couponClassMeta(coupon.couponClass)}
         trackRecord={trackRecord}

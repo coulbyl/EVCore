@@ -19,9 +19,6 @@
     "refunded": "Refunded",
     "settlementPending": "Settlement pending"
   },
-  "oddsBandNote": {
-    "optimistic": "{band}: out of 100 announced at {announced}%, {realised} came in (90 days)"
-  },
   "calibrationVerdict": {
     "conform": "On target",
     "slightlyOptimistic": "Slightly optimistic",
@@ -406,7 +403,7 @@
     },
     "homePicks": {
       "title": "Today's picks",
-      "description": "Five picks at most, in the odds band where our percentages hold. The + adds them to the coupon."
+      "description": "Five picks at most, at odds between 1.20 and 1.65. Their chances come from the odds, margin removed. The + adds them to the coupon."
     },
     "homeMySlips": {
       "title": "Your coupons",
@@ -671,7 +668,7 @@
         "pending": "Pending"
       },
       "picksTitle": "Today's picks",
-      "picksSubtitle": "Odds between 1.20 and 1.65, where our percentages hold; one pick per match.",
+      "picksSubtitle": "Odds between 1.20 and 1.65, one pick per match. Chances come from the odds, bookmaker margin removed.",
       "pickFrequency": "{count} in {total}",
       "picksLink": "All decisions",
       "picksEmpty": "No pick meets the conditions today.",

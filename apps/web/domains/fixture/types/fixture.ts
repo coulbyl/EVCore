@@ -33,6 +33,11 @@ export type FixturePickSnapshot = {
 export type FixtureEvaluatedPickSnapshot = FixturePickSnapshot & {
   status: "viable" | "rejected";
   rejectionReason?: string;
+  /**
+   * Fiche de match : fréquence affichée, probabilité du marché marge
+   * retirée (2026-10-28). Absente de la vue admin, qui garde le brut.
+   */
+  marketProbability?: number | null;
 };
 
 export type FixtureRow = {

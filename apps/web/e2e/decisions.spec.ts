@@ -6,8 +6,9 @@ import { expect, test } from "@playwright/test";
  * Ce que l'écran doit dire depuis le 2026-10-27 : le pari en clair avec le nom
  * des équipes (plus de « Domicile »), la fréquence plutôt que le
  * pourcentage, plus de badge « Fiable », une phrase quand deux lectures du
- * même match ne peuvent pas passer ensemble, et la note par cote quand nos
- * pourcentages ont été optimistes à cette cote.
+ * même match ne peuvent pas passer ensemble. Depuis le 2026-10-28, la
+ * fréquence est celle du marché, marge retirée, et la note par cote a
+ * disparu avec la probabilité du moteur.
  */
 test.describe("Décisions", () => {
   test.beforeEach(async ({ page }) => {
@@ -22,7 +23,9 @@ test.describe("Décisions", () => {
       hasText: "Arsenal",
     });
     await expect(card.getByText("Notre sélection")).toBeVisible();
-    await expect(card.getByText("environ 8 fois sur 10")).toBeVisible();
+    // Fréquence du marché, marge retirée : 1 / 1,28 / 1,05 = 74 %, là où
+    // le moteur annonçait 79 % (« 8 fois sur 10 ») avant le 2026-10-28.
+    await expect(card.getByText("environ 7 fois sur 10")).toBeVisible();
     await expect(card.getByText(/^Domicile$/)).toHaveCount(0);
     await expect(page.getByText("Fiable", { exact: true })).toHaveCount(0);
   });
@@ -42,10 +45,9 @@ test.describe("Décisions", () => {
     await expect(card.getByTestId("contradiction-note")).toHaveText(
       /« Les deux équipes marquent » et « Arsenal n'encaisse pas » ne peuvent pas passer ensemble/,
     );
-    // Au-dessus de 1,80, nos pourcentages ont été optimistes sur 90 jours.
-    await expect(card.getByTestId("odds-band-note").first()).toContainText(
-      "Cote de 1,80 et plus",
-    );
+    // Plus de note « optimiste à cette cote » : la fréquence affichée est
+    // celle du marché, marge retirée (2026-10-28).
+    await expect(card.getByTestId("odds-band-note")).toHaveCount(0);
   });
 
   test("Victoire et Nul sur le même match se distinguent par l'issue", async ({

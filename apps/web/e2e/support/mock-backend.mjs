@@ -85,6 +85,9 @@ function couponLeg(overrides) {
     market: overrides.market ?? "ONE_X_TWO",
     pick: overrides.pick ?? "HOME",
     probability: overrides.probability ?? 0.62,
+    marketProbability:
+      overrides.marketProbability ??
+      Number((1 / overrides.odds / 1.05).toFixed(4)),
     oddsSnapshot: overrides.odds,
     bookmaker: overrides.bookmaker ?? null,
     signalScore: 0.62,
@@ -120,6 +123,9 @@ function coupon(overrides) {
     combinedOdds: Number(combinedOdds.toFixed(3)),
     realizedOdds: overrides.realizedOdds ?? null,
     jointProbability: overrides.jointProbability ?? 0.21,
+    marketJointProbability: Number(
+      legs.reduce((acc, leg) => acc * leg.marketProbability, 1).toFixed(4),
+    ),
     signalScore: 0.6,
     status: overrides.status ?? "EXPIRED",
     viewerCount: 0,
@@ -207,6 +213,7 @@ const COUPONS = [
         odds: 1.48,
         playableOdds: 1.53,
         probability: 0.648,
+        marketProbability: 0.648,
       }),
       couponLeg({
         id: "db2",
@@ -218,6 +225,7 @@ const COUPONS = [
         odds: 1.33,
         playableOdds: 1.36,
         probability: 0.741,
+        marketProbability: 0.741,
       }),
     ],
   }),
@@ -379,6 +387,8 @@ function decision(overrides) {
         marginPaid: 0.05,
         marginBest: 0.03,
         impliedProbability: Number((1 / overrides.odds).toFixed(4)),
+        // Probabilité du marché, marge payée retirée (marketProbability).
+        marketProbability: Number((1 / overrides.odds / 1.05).toFixed(4)),
         ev: null,
         qualityScore: null,
         rank: 1,
@@ -1280,6 +1290,17 @@ function route(method, url) {
         country: group.country,
         scheduledAt: group.scheduledAt,
         score: group.score ? group.score.replace("-", " - ") : null,
+        modelRun: base.modelRun
+          ? {
+              ...base.modelRun,
+              evaluatedPicks: base.modelRun.evaluatedPicks.map((p) => ({
+                ...p,
+                marketProbability: Number(
+                  (1 / Number(p.odds) / 1.05).toFixed(4),
+                ),
+              })),
+            }
+          : null,
       },
     ];
   }

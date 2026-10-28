@@ -3,7 +3,6 @@ import { Separator, cn } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import { FixtureCard } from "@/components/fixture-card";
 import { ResultBadge } from "@/components/result-badge";
-import { OddsBandNote } from "@/components/odds-band-note";
 import { OddsPair } from "@/components/odds-pair";
 import { formatMarketForDisplay, formatPickWithTeams } from "@/helpers/fixture";
 import { frequencyOf } from "@/lib/frequency";
@@ -103,11 +102,17 @@ export function ArbitrageCard({
             {selection.market !== "CORRECT_SCORE" && (
               <span>{formatMarketForDisplay(selection.market, loc)}</span>
             )}
-            <span className="tabular-nums">
-              {tDecisions("chances", frequencyOf(selection.probability))}
-            </span>
+            {/* Fréquence du marché, marge retirée (2026-10-28), comme en
+                Décisions. */}
+            {selection.marketProbability !== null ? (
+              <span className="tabular-nums">
+                {tDecisions(
+                  "chances",
+                  frequencyOf(selection.marketProbability),
+                )}
+              </span>
+            ) : null}
             <OddsPair selection={priced} locale={locale} />
-            <OddsBandNote odds={entry.displayOdds} />
           </p>
         </div>
       )}
@@ -123,8 +128,12 @@ export function ArbitrageCard({
               <span className="font-semibold text-foreground">
                 {formatPickWithTeams(ours.pick, ours.market, teams)}
               </span>
-              {", "}
-              {tDecisions("chances", frequencyOf(ours.probability))}
+              {ours.marketProbability !== null ? (
+                <>
+                  {", "}
+                  {tDecisions("chances", frequencyOf(ours.marketProbability))}
+                </>
+              ) : null}
               {" · "}
               <span className="font-medium text-foreground">
                 {samePick ? t("ourPick.same") : t("ourPick.different")}

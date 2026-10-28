@@ -208,11 +208,16 @@ export function TodayPicks() {
                   away: pick.decision.awayTeam,
                 },
               )}
-              // En fréquence, comme partout ailleurs (PRODUCT.md).
-              probabilityPct={t(
-                "pickFrequency",
-                frequencyOf(pick.selection.probability),
-              )}
+              // En fréquence, celle du marché marge retirée, comme partout
+              // ailleurs (PRODUCT.md, 2026-10-28).
+              probabilityPct={
+                pick.selection.marketProbability !== null
+                  ? t(
+                      "pickFrequency",
+                      frequencyOf(pick.selection.marketProbability),
+                    )
+                  : null
+              }
               signalScore={null}
               odds={formatOdds(pick.selection.odds)}
               playable={
