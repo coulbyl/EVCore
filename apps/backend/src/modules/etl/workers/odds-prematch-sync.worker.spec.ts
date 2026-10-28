@@ -13,6 +13,7 @@ import {
   parseOverUnderValues,
   FIXED_OUTCOME_MAPPINGS,
   resolveTargetDates,
+  keepsExtendedMarket,
 } from './odds-prematch-sync.worker';
 import { ApiFootballClient } from '../api-football.client';
 import {
@@ -1126,6 +1127,16 @@ describe('politique de collecte par marché', () => {
       'HIGHEST_SCORING_HALF',
       'TEAM_TO_SCORE_FIRST',
     ]);
+  });
+
+  it('garde les corners chez 1xBet, le book des joueurs, et nulle part ailleurs', () => {
+    expect(keepsExtendedMarket('Pinnacle', 'CORNERS')).toBe(true);
+    expect(keepsExtendedMarket('1xBet', 'CORNERS')).toBe(true);
+    expect(keepsExtendedMarket('Bet365', 'CORNERS')).toBe(false);
+    // Les autres marchés « référence seule » restent chez Pinnacle.
+    expect(keepsExtendedMarket('1xBet', 'CARDS')).toBe(false);
+    expect(keepsExtendedMarket('1xBet', 'CORNERS_HT')).toBe(false);
+    expect(keepsExtendedMarket('Bet365', 'ASIAN_HANDICAP')).toBe(true);
   });
 
   it('laisse le handicap asiatique collecté chez tous les books', () => {
