@@ -72,12 +72,19 @@ export default function ConfidentialitePage() {
             l&apos;adresse technique fournie par ton navigateur pour te les
             envoyer.
           </li>
+          <li>
+            <strong>Ton activité dans l&apos;application</strong> : les jours où
+            tu l&apos;ouvres, et quelques actions (ouvrir une notification,
+            finir le guide). Seulement quand tu es connecté, chez nous, pour
+            savoir si l&apos;application t&apos;est utile.
+          </li>
         </ul>
         <p>
           EVCore n&apos;utilise aucun pixel publicitaire ni outil de mesure
-          d&apos;audience tiers. Les cookies déposés sont ceux nécessaires au
-          service : la session de connexion et la langue d&apos;affichage. Ton
-          thème est gardé dans ton navigateur.
+          d&apos;audience tiers : la mesure d&apos;activité ci-dessus reste dans
+          notre base et n&apos;est partagée avec personne. Les cookies déposés
+          sont ceux nécessaires au service : la session de connexion et la
+          langue d&apos;affichage. Ton thème est gardé dans ton navigateur.
         </p>
       </section>
 
@@ -88,6 +95,11 @@ export default function ConfidentialitePage() {
           <li>Protéger ton compte et détecter les accès anormaux.</li>
           <li>Répondre à tes demandes de support.</li>
           <li>T&apos;envoyer les notifications que tu as choisies.</li>
+          <li>
+            Mesurer, sans te suivre ailleurs, si l&apos;application sert :
+            combien de joueurs reviennent, et quelles notifications sont
+            ouvertes.
+          </li>
           <li>
             Améliorer le service à partir de statistiques internes agrégées.
           </li>

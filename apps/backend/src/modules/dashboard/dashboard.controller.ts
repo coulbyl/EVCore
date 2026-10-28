@@ -1,6 +1,7 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { IsDateString, IsOptional } from 'class-validator';
 import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
+import { AdminGuard } from '@/common/guards/admin.guard';
 import { DashboardService } from './dashboard.service';
 import type {
   ChannelCompetitionStatItem,
@@ -35,6 +36,7 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('summary')
+  @UseGuards(AdminGuard)
   getSummary(@Query() query: DashboardSummaryQueryDto) {
     return this.dashboardService.getSummary(query.pnlDate);
   }
@@ -48,6 +50,7 @@ export class DashboardController {
   }
 
   @Get('competition-stats')
+  @UseGuards(AdminGuard)
   getCompetitionStats(@Query('canal') canal?: string) {
     const canalFilter =
       canal === 'VALUE' || canal === 'SAFE' ? canal : undefined;
@@ -55,6 +58,7 @@ export class DashboardController {
   }
 
   @Get('leaderboard')
+  @UseGuards(AdminGuard)
   getLeaderboard() {
     return this.dashboardService.getLeaderboard();
   }
