@@ -1,11 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { BetStatus } from '@evcore/db';
+import { type BetSlipType, BetStatus, type Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import {
   PlayableOddsRepository,
   type PlayableQuote,
   type PlayableQuoteKey,
 } from '../betting-engine/pricing/playable-odds.repository';
+
+export type PlayedSlipRow = {
+  type: BetSlipType;
+  unitStake: Prisma.Decimal;
+  createdAt: Date;
+  items: {
+    stakeOverride: Prisma.Decimal | null;
+    bet: { status: BetStatus; oddsSnapshot: Prisma.Decimal | null };
+  }[];
+};
 
 @Injectable()
 export class BetSlipRepository {
@@ -106,7 +116,11 @@ export class BetSlipRepository {
    * filtre de dates que `getUserSummary` (date des matchs), au niveau du
    * coupon : un coupon dont une jambe tombe dans la fenêtre y entre.
    */
-  getUserPlayedSlips(userId: string, from?: Date, to?: Date) {
+  getUserPlayedSlips(
+    userId: string,
+    from?: Date,
+    to?: Date,
+  ): Promise<PlayedSlipRow[]> {
     const fixtureFilter =
       from || to
         ? {
