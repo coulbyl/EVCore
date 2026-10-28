@@ -347,7 +347,7 @@ export class CouponRepository {
   // script — both were single-caller helpers for the retired write path.
 
   /** Matchs des jambes d'une proposition, pour la régler. */
-  findFixturesForSettlement(ids: readonly string[]): Promise<
+  async findFixturesForSettlement(ids: readonly string[]): Promise<
     {
       id: string;
       status: FixtureStatus;
@@ -356,9 +356,11 @@ export class CouponRepository {
       awayScore: number | null;
       homeHtScore: number | null;
       awayHtScore: number | null;
+      /** Corners des deux équipes (stats de match) ; null s'il en manque une. */
+      totalCorners: number | null;
     }[]
   > {
-    return this.prisma.client.fixture.findMany({
+    const fixtures = await this.prisma.client.fixture.findMany({
       where: { id: { in: [...ids] } },
       select: {
         id: true,
@@ -368,8 +370,19 @@ export class CouponRepository {
         awayScore: true,
         homeHtScore: true,
         awayHtScore: true,
+        fixtureStatistics: {
+          where: { type: 'corner_kicks' },
+          select: { value: true },
+        },
       },
     });
+    return fixtures.map(({ fixtureStatistics, ...fixture }) => ({
+      ...fixture,
+      totalCorners:
+        fixtureStatistics.length === 2
+          ? fixtureStatistics.reduce((sum, s) => sum + Number(s.value), 0)
+          : null,
+    }));
   }
 
   /**
