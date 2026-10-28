@@ -7,8 +7,8 @@ import {
   type Prisma,
   UserRole,
 } from '@evcore/db';
-import { PrismaService } from '@/prisma.service';
 import { MailService } from '@modules/mail/mail.service';
+import { NotificationRepository } from './notification.repository';
 
 const logger = createLogger('notification-service');
 
@@ -66,7 +66,7 @@ export type WeeklyReportPayload = {
 @Injectable()
 export class NotificationService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly repository: NotificationRepository,
     private readonly mail: MailService,
   ) {}
 
@@ -317,16 +317,13 @@ export class NotificationService {
       ],
     };
     const [raw, total] = await Promise.all([
-      this.prisma.client.notification.findMany({
+      this.repository.findPage({
         where,
-        orderBy: { createdAt: 'desc' },
-        take: query.limit,
-        skip: query.offset,
-        include: {
-          reads: { where: { userId: query.userId }, select: { readAt: true } },
-        },
+        limit: query.limit,
+        offset: query.offset,
+        userId: query.userId,
       }),
-      this.prisma.client.notification.count({ where }),
+      this.repository.count(where),
     ]);
     const data: NotificationView[] = raw.map(
       ({ reads, read, readAt: _ra, ...n }) => ({
@@ -342,37 +339,25 @@ export class NotificationService {
     role: UserRole,
   ): Promise<{ count: number }> {
     const types = this.allowedTypes(role);
-    const count = await this.prisma.client.notification.count({
-      where: {
-        OR: [
-          { userId: null, type: { in: types }, reads: { none: { userId } } },
-          { userId, read: false, type: { notIn: RETIRED_PERSONAL_TYPES } },
-        ],
-      },
+    const count = await this.repository.count({
+      OR: [
+        { userId: null, type: { in: types }, reads: { none: { userId } } },
+        { userId, read: false, type: { notIn: RETIRED_PERSONAL_TYPES } },
+      ],
     });
     return { count };
   }
 
   async markRead(notificationId: string, userId: string): Promise<void> {
-    const notification = await this.prisma.client.notification.findUnique({
-      where: { id: notificationId },
-      select: { userId: true, type: true, payload: true },
-    });
+    const notification = await this.repository.findReadTarget(notificationId);
     if (!notification) return;
     if (notification.userId) {
       // Personnelle — pas de table de lecture partagée, et seul le
       // destinataire peut la marquer lue (scope par userId dans le where).
-      await this.prisma.client.notification.updateMany({
-        where: { id: notificationId, userId },
-        data: { read: true, readAt: new Date() },
-      });
+      await this.repository.markPersonalRead(notificationId, userId);
       return;
     }
-    await this.prisma.client.userNotificationRead.upsert({
-      where: { userId_notificationId: { userId, notificationId } },
-      create: { userId, notificationId },
-      update: {},
-    });
+    await this.repository.markBroadcastRead(userId, notificationId);
     const announcementId =
       notification.type === NotificationType.ANNOUNCEMENT_PUBLISHED
         ? announcementIdOf(notification.payload)
@@ -392,15 +377,9 @@ export class NotificationService {
     announcementIds: string[],
   ): Promise<void> {
     if (announcementIds.length === 0) return;
-    const existing = await this.prisma.client.announcement.findMany({
-      where: { id: { in: announcementIds } },
-      select: { id: true },
-    });
-    if (existing.length === 0) return;
-    await this.prisma.client.announcementRead.createMany({
-      data: existing.map((a) => ({ userId, announcementId: a.id })),
-      skipDuplicates: true,
-    });
+    const existing =
+      await this.repository.findExistingAnnouncementIds(announcementIds);
+    await this.repository.markAnnouncementsRead(userId, existing);
   }
 
   /** L'annonce a été ouverte dans Annonces : sa notification devient lue. */
@@ -408,19 +387,9 @@ export class NotificationService {
     userId: string,
     announcementId: string,
   ): Promise<void> {
-    const notifications = await this.prisma.client.notification.findMany({
-      where: {
-        userId: null,
-        type: NotificationType.ANNOUNCEMENT_PUBLISHED,
-        payload: { path: ['announcementId'], equals: announcementId },
-      },
-      select: { id: true },
-    });
-    if (notifications.length === 0) return;
-    await this.prisma.client.userNotificationRead.createMany({
-      data: notifications.map((n) => ({ userId, notificationId: n.id })),
-      skipDuplicates: true,
-    });
+    const notificationIds =
+      await this.repository.findAnnouncementNotificationIds(announcementId);
+    await this.repository.markBroadcastsRead(userId, notificationIds);
   }
 
   /**
@@ -429,38 +398,24 @@ export class NotificationService {
    * comptaient chacune le même message (revue UX du 2026-10-27, P2-5).
    */
   async markSupportMessagesRead(userId: string): Promise<void> {
-    await this.prisma.client.notification.updateMany({
-      where: { userId, type: NotificationType.SUPPORT_MESSAGE, read: false },
-      data: { read: true, readAt: new Date() },
-    });
+    await this.repository.markPersonalReadByType(
+      userId,
+      NotificationType.SUPPORT_MESSAGE,
+    );
   }
 
   async markAllRead(userId: string, role: UserRole): Promise<void> {
     const types = this.allowedTypes(role);
-    const [unreadBroadcast] = await Promise.all([
-      this.prisma.client.notification.findMany({
-        where: {
-          userId: null,
-          type: { in: types },
-          reads: { none: { userId } },
-        },
-        select: { id: true, type: true, payload: true },
-      }),
-    ]);
+    const unreadBroadcast = await this.repository.findUnreadBroadcasts(
+      userId,
+      types,
+    );
     await Promise.all([
-      unreadBroadcast.length > 0
-        ? this.prisma.client.userNotificationRead.createMany({
-            data: unreadBroadcast.map((n) => ({
-              userId,
-              notificationId: n.id,
-            })),
-            skipDuplicates: true,
-          })
-        : Promise.resolve(),
-      this.prisma.client.notification.updateMany({
-        where: { userId, read: false },
-        data: { read: true, readAt: new Date() },
-      }),
+      this.repository.markBroadcastsRead(
+        userId,
+        unreadBroadcast.map((n) => n.id),
+      ),
+      this.repository.markAllPersonalRead(userId),
       this.syncAnnouncementReads(
         userId,
         unreadBroadcast
@@ -482,14 +437,12 @@ export class NotificationService {
     payload?: Prisma.InputJsonValue;
   }): Promise<void> {
     try {
-      await this.prisma.client.notification.create({
-        data: {
-          userId: input.userId,
-          type: input.type,
-          title: input.title,
-          body: input.body,
-          payload: input.payload,
-        },
+      await this.repository.create({
+        userId: input.userId,
+        type: input.type,
+        title: input.title,
+        body: input.body,
+        payload: input.payload,
       });
     } catch (error) {
       logger.error(
@@ -506,9 +459,7 @@ export class NotificationService {
   private async save(input: SaveNotificationInput): Promise<void> {
     const { type, title, body, payload } = input;
     try {
-      await this.prisma.client.notification.create({
-        data: { type, title, body, payload },
-      });
+      await this.repository.create({ type, title, body, payload });
     } catch (error) {
       logger.error(
         { type, error: error instanceof Error ? error.message : String(error) },
