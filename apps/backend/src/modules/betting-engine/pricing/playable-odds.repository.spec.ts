@@ -9,10 +9,16 @@ function repositoryReturning(
     pick: string;
     bookmaker: string;
     odds: number;
+    snapshotAt?: Date;
   }[],
 ) {
+  const at = new Date('2026-10-29T06:00:00Z');
   const prisma = {
-    client: { $queryRaw: vi.fn().mockResolvedValue(rows) },
+    client: {
+      $queryRaw: vi
+        .fn()
+        .mockResolvedValue(rows.map((r) => ({ snapshotAt: at, ...r }))),
+    },
   } as unknown as PrismaService;
   return new PlayableOddsRepository(prisma);
 }
@@ -67,6 +73,31 @@ describe('PlayableOddsRepository.findPlayableQuotes', () => {
         pick: 'NO',
         bookmaker: 'Bet365',
         odds: 2.0,
+      },
+    ]);
+    const quotes = await repository.findPlayableQuotes([
+      { fixtureId: 'f1', market: 'BTTS', pick: 'YES' },
+    ]);
+    expect(quotes.get('f1|BTTS|YES')?.operatorMargin).toBeNull();
+  });
+
+  it('ignores an outcome left on an older 1xBet snapshot', async () => {
+    const repository = repositoryReturning([
+      {
+        fixtureId: 'f1',
+        market: 'BTTS',
+        pick: 'YES',
+        bookmaker: '1xBet',
+        odds: 1.8,
+        snapshotAt: new Date('2026-10-29T18:00:00Z'),
+      },
+      {
+        fixtureId: 'f1',
+        market: 'BTTS',
+        pick: 'NO',
+        bookmaker: '1xBet',
+        odds: 1.9,
+        snapshotAt: new Date('2026-10-29T06:00:00Z'),
       },
     ]);
     const quotes = await repository.findPlayableQuotes([

@@ -98,9 +98,7 @@ describe('EmailChangeService.request', () => {
         password: 'correct-horse-battery',
       }),
     ).resolves.toBeUndefined();
-    expect(mail.sendEmailChangeTaken).toHaveBeenCalledWith('new@exemple.com', {
-      requestedBy: '@fannan',
-    });
+    expect(mail.sendEmailChangeTaken).toHaveBeenCalledWith('new@exemple.com');
     expect(mail.sendEmailChangeCode).not.toHaveBeenCalled();
     expect(repository.replaceEmailChangeCode).not.toHaveBeenCalled();
   });

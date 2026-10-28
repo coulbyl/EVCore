@@ -64,10 +64,24 @@ describe('CouponDoubleGenerationService', () => {
   });
 
   it('writes a two-leg 2–3 proposal announcing the market probability', async () => {
-    repository.findDoubleCandidates.mockResolvedValue([
+    const rows = [
       ...overUnder('f-1', 1.45, 2.65),
       ...overUnder('f-2', 1.45, 2.65),
-    ]);
+    ];
+    repository.findDoubleCandidates.mockResolvedValue(rows);
+    // 1xBet cote chaque issue au prix de référence : jambes jouables.
+    for (const row of rows) {
+      quotes.set(`${row.fixtureId}|${row.market}|${row.pick}`, {
+        fixtureId: row.fixtureId,
+        market: row.market,
+        pick: row.pick,
+        operatorOdds: row.odds,
+        operatorBookmaker: '1xBet',
+        operatorMargin: null,
+        lowestOdds: row.odds,
+        lowestBookmaker: '1xBet',
+      });
+    }
 
     const result = await service.generateForDate(FOR_DATE);
 

@@ -7,11 +7,7 @@ export type { WeightAdjustmentProps } from "./types";
 export type { WeeklyReportProps } from "./types";
 export type { XgUnavailableReportProps } from "./types";
 export type { EmailVerificationProps } from "./types";
-export type {
-  EmailChangeCodeProps,
-  EmailChangedProps,
-  EmailChangeTakenProps,
-} from "./types";
+export type { EmailChangeCodeProps, EmailChangedProps } from "./types";
 export type { PasswordResetProps } from "./types";
 export type { MlModelActivatedProps } from "./types";
 export type { MlModelMissingProps } from "./types";

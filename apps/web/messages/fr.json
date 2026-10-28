@@ -563,7 +563,7 @@
       "trigger": "Modifier",
       "title": "Changer d'adresse e-mail",
       "requestDescription": "Saisis ta nouvelle adresse et ton mot de passe. On t'envoie un code sur la nouvelle adresse pour vérifier qu'elle est à toi.",
-      "confirmDescription": "Un code à 6 chiffres vient de partir vers {email}. Il est valable 10 minutes.",
+      "confirmDescription": "Un code à 6 chiffres vient de partir vers {email}. Il est valable 10 minutes. Rien reçu ? Cette adresse a peut-être déjà un compte EVCore : son propriétaire a été prévenu, rien n'a changé.",
       "newEmailLabel": "Nouvelle adresse",
       "passwordLabel": "Ton mot de passe",
       "codeLabel": "Code reçu",

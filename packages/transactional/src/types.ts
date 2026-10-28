@@ -60,11 +60,6 @@ export type EmailChangeCodeProps = {
   expiresInMinutes: number;
 };
 
-export type EmailChangeTakenProps = {
-  /** Nom d'utilisateur du compte qui a fait la demande (« @fannan »). */
-  requestedBy: string;
-};
-
 export type EmailChangedProps = {
   username: string;
   /** Nouvelle adresse, masquée (« f***@exemple.com »). */

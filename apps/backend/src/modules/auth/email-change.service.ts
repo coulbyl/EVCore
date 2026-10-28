@@ -63,9 +63,7 @@ export class EmailChangeService {
     // code, et on répond comme si le code était parti. Un 409 ici laissait
     // tester quelles adresses ont un compte (revue du lot 2).
     if (await this.repository.isEmailTaken(newEmail, userId)) {
-      await this.mail.sendEmailChangeTaken(newEmail, {
-        requestedBy: `@${identity.username}`,
-      });
+      await this.mail.sendEmailChangeTaken(newEmail);
       return;
     }
 

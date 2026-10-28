@@ -24,6 +24,15 @@ function priced(
   };
 }
 
+const PRICES = new Map<string, number>([
+  ['f1|BTTS|YES', 1.6],
+  ['f1|BTTS|NO', 2.2],
+  ['f2|ONE_X_TWO|HOME', 2.1],
+  ['f2|ONE_X_TWO|DRAW', 3.3],
+  ['f2|ONE_X_TWO|AWAY', 3.6],
+  ['f3|CORRECT_SCORE|1:0', 6.5],
+]);
+
 function makeHarness(avoided: string[] = []) {
   const repository = {
     // BTTS coté complet sur f1 (dans la bande) ; 1X2 complet sur f2.
@@ -53,7 +62,29 @@ function makeHarness(avoided: string[] = []) {
     recordPriceComposerAttempt: vi.fn().mockResolvedValue(undefined),
   } as unknown as CouponRepository;
   const playable = {
-    findPlayableQuotes: vi.fn().mockResolvedValue(new Map()),
+    // 1xBet cote chaque choix demandé au prix de la ligne (PRICES).
+    findPlayableQuotes: vi.fn(
+      (keys: { fixtureId: string; market: string; pick: string }[]) =>
+        Promise.resolve(
+          new Map(
+            keys.map((k) => {
+              const key = `${k.fixtureId}|${k.market}|${k.pick}`;
+              const odds = PRICES.get(key) ?? 0;
+              return [
+                key,
+                {
+                  ...k,
+                  operatorOdds: odds,
+                  operatorBookmaker: '1xBet',
+                  operatorMargin: null,
+                  lowestOdds: odds,
+                  lowestBookmaker: '1xBet',
+                },
+              ];
+            }),
+          ),
+        ),
+    ),
   } as unknown as PlayableOddsRepository;
   return {
     service: new CouponHunterGenerationService(

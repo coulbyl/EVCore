@@ -56,12 +56,13 @@ export class PlayableOddsRepository {
         pick: string;
         bookmaker: string;
         odds: number;
+        snapshotAt: Date;
       }[]
     >`
       WITH latest AS (
         SELECT DISTINCT ON (o."fixtureId", o.market, o.pick, o.bookmaker)
                o."fixtureId", o.market, o.pick, o.bookmaker, o.odds,
-               o."homeOdds", o."drawOdds", o."awayOdds"
+               o."homeOdds", o."drawOdds", o."awayOdds", o."snapshotAt"
         FROM public.odds_snapshot o
         JOIN public.fixture f ON f.id = o."fixtureId"
         WHERE o."fixtureId" = ANY(ARRAY[${Prisma.join(fixtureIds)}]::uuid[])
@@ -74,14 +75,15 @@ export class PlayableOddsRepository {
              latest.market::text      AS market,
              latest.pick,
              latest.bookmaker,
-             latest.odds::float       AS odds
+             latest.odds::float       AS odds,
+             latest."snapshotAt"
       FROM latest
       WHERE latest.pick IS NOT NULL AND latest.odds IS NOT NULL
       UNION ALL
       -- Le 1X2 est relevé en triplet (pick NULL, trois colonnes) : une ligne
       -- par issue, comme pour la ligne de clôture.
       SELECT latest."fixtureId"::text, latest.market::text, side.pick,
-             latest.bookmaker, side.odds::float
+             latest.bookmaker, side.odds::float, latest."snapshotAt"
       FROM latest
       CROSS JOIN LATERAL (VALUES ('HOME', latest."homeOdds"), ('DRAW', latest."drawOdds"), ('AWAY', latest."awayOdds"))
         AS side(pick, odds)
@@ -91,11 +93,24 @@ export class PlayableOddsRepository {
     // Les issues sœurs de chaque choix sont dans `rows` (même match, même
     // marché) : la marge du book des joueurs se calcule sans autre requête,
     // sur son seul prix — jamais en mélangeant les books.
+    // Seules les issues du dernier relevé du book sur ce marché comptent :
+    // une issue restée sur un ancien relevé donnerait une marge sur des prix
+    // qui n'ont jamais coexisté (revue du lot 3).
     const operatorMargins = new Map<string, number>();
     for (const bookmaker of OPERATOR_BOOKMAKERS) {
-      for (const priced of priceOutcomeGroups(
-        rows.filter((row) => row.bookmaker === bookmaker),
-      )) {
+      const bookRows = rows.filter((row) => row.bookmaker === bookmaker);
+      const lastSnapshot = new Map<string, number>();
+      for (const row of bookRows) {
+        const key = `${row.fixtureId}|${row.market}`;
+        const at = new Date(row.snapshotAt).getTime();
+        lastSnapshot.set(key, Math.max(lastSnapshot.get(key) ?? 0, at));
+      }
+      const current = bookRows.filter(
+        (row) =>
+          new Date(row.snapshotAt).getTime() ===
+          lastSnapshot.get(`${row.fixtureId}|${row.market}`),
+      );
+      for (const priced of priceOutcomeGroups(current)) {
         const key = playableQuoteKey(priced);
         if (!operatorMargins.has(key)) {
           operatorMargins.set(key, priced.margin.toNumber());

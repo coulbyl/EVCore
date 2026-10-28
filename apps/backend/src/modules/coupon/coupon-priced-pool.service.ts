@@ -19,8 +19,9 @@ export type PricedPool = {
    * Tout ce qui est coté le jour dit, prêt pour les compositeurs : la marge
    * se retire sur le groupe complet aux cotes de référence, la bande se lit
    * sur la cote jouable chez 1xBet, et le coût est la marge payée chez 1xBet.
-   * Un choix non jouable chez l'opérateur reste dans son groupe (pour la
-   * marge) avec une cote jouable nulle : il ne peut pas devenir une jambe.
+   * Un choix que 1xBet ne cote pas, ou sous son minimum, reste dans son
+   * groupe (pour la marge) avec une cote jouable nulle : il ne peut pas
+   * devenir une jambe, le joueur ne pourrait pas le jouer.
    */
   candidates: DoubleCandidate[];
 };
@@ -57,9 +58,10 @@ export class CouponPricedPoolService {
         market: r.market,
         pick: r.pick,
         odds: r.odds,
-        playableOdds: playableAtOperator(r, quotes)
-          ? (quote?.operatorOdds ?? quote?.lowestOdds ?? r.odds)
-          : 0,
+        playableOdds:
+          quote?.operatorOdds != null && playableAtOperator(r, quotes)
+            ? quote.operatorOdds
+            : 0,
         operatorMargin: quote?.operatorMargin ?? null,
       };
     });

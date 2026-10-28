@@ -22,7 +22,6 @@ import {
   type EmailVerificationProps,
   type EmailChangeCodeProps,
   type EmailChangedProps,
-  type EmailChangeTakenProps,
   type EtlFailureProps,
   type MarketSuspensionProps,
   type MlModelActivatedProps,
@@ -76,11 +75,8 @@ export class MailService implements OnModuleInit {
   }
 
   /** Adresse déjà rattachée à un compte : prévenue, sans code. */
-  async sendEmailChangeTaken(
-    to: string,
-    props: EmailChangeTakenProps,
-  ): Promise<void> {
-    const { html, text } = await renderEmailChangeTaken(props);
+  async sendEmailChangeTaken(to: string): Promise<void> {
+    const { html, text } = await renderEmailChangeTaken();
     await this.sendTo(to, 'Cette adresse a déjà un compte EVCore', {
       html,
       text,
