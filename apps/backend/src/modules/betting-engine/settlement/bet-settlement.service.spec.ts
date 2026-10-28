@@ -9,7 +9,11 @@ type ComboLeg = { status: BetStatus; odds: string | null };
 
 function makeHarness(
   betStatus: BetStatus,
-  opts: { comboLegs?: ComboLeg[] } = {},
+  opts: {
+    comboLegs?: ComboLeg[];
+    market?: Market;
+    score?: { home: number; away: number };
+  } = {},
 ) {
   const update = vi.fn().mockResolvedValue(undefined);
   const slipType = opts.comboLegs ? 'COMBO' : 'SINGLE';
@@ -37,8 +41,8 @@ function makeHarness(
     client: {
       fixture: {
         findUnique: vi.fn().mockResolvedValue({
-          homeScore: 2,
-          awayScore: 1,
+          homeScore: opts.score?.home ?? 2,
+          awayScore: opts.score?.away ?? 1,
           homeHtScore: 1,
           awayHtScore: 0,
           status: FixtureStatus.FINISHED,
@@ -48,7 +52,7 @@ function makeHarness(
         findMany: vi.fn().mockResolvedValue([
           {
             id: 'bet-1',
-            market: Market.ONE_X_TWO,
+            market: opts.market ?? Market.ONE_X_TWO,
             pick: 'HOME',
             status: betStatus,
             oddsSnapshot: new Decimal('2.0'),
@@ -143,6 +147,33 @@ describe('BetSettlementService.settleOpenBets — combo crediting', () => {
       expect.anything(),
     );
     expect(bankroll.recordBetWon).not.toHaveBeenCalled();
+  });
+
+  it('does not pay a credited combo again when a won leg is corrected to refunded', async () => {
+    // Draw-no-bet leg first settled WON at 2-1, the combo was credited at
+    // 2.0 × 1.5; the score is then corrected to 1-1.
+    const { service, bankroll } = makeHarness(BetStatus.WON, {
+      market: Market.DRAW_NO_BET,
+      score: { home: 1, away: 1 },
+      comboLegs: [
+        { status: BetStatus.VOID, odds: '2.0' },
+        { status: BetStatus.WON, odds: '1.5' },
+      ],
+    });
+    await service.settleOpenBets('fixture-1');
+    expect(bankroll.recordBetWon).not.toHaveBeenCalled();
+    expect(bankroll.recordBetVoid).not.toHaveBeenCalled();
+  });
+
+  it('credits a combo whose lost leg is corrected to won', async () => {
+    const { service, bankroll } = makeHarness(BetStatus.LOST, {
+      comboLegs: [
+        { status: BetStatus.WON, odds: '2.0' },
+        { status: BetStatus.WON, odds: '1.5' },
+      ],
+    });
+    await service.settleOpenBets('fixture-1');
+    expect(bankroll.recordBetWon).toHaveBeenCalledTimes(1);
   });
 
   it('credits nothing while a leg is lost or still pending', async () => {

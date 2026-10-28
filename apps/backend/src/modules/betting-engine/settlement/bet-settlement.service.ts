@@ -160,6 +160,9 @@ export class BetSettlementService {
     return this.prisma.client.$transaction(async (tx) => {
       let settled = 0;
       const touchedComboSlipIds = new Set<string>();
+      // Statut d'avant ce passage, pour les paris qui changent : un combiné
+      // ne se crédite qu'une fois, quand il passe de non réglé à réglé.
+      const previousStatusByBetId = new Map<string, BetStatus>();
       for (const bet of bets) {
         let status: BetStatus;
 
@@ -211,6 +214,7 @@ export class BetSettlementService {
         // it never happened in the data, and reversing a credit is a
         // bankroll decision, not a settlement one.
         const transitioned = bet.status !== status;
+        if (transitioned) previousStatusByBetId.set(bet.id, bet.status);
         if (
           transitioned &&
           (status === BetStatus.WON || status === BetStatus.VOID)
@@ -281,6 +285,23 @@ export class BetSettlementService {
         });
 
         for (const slip of comboSlips) {
+          // Un combiné déjà gagné ou remboursé avant ce passage a déjà été
+          // crédité : une correction de score qui fait passer une jambe de
+          // gagnée à remboursée le recalculerait et le paierait une seconde
+          // fois. Comme pour un pari simple, une correction après crédit ne
+          // reprend rien ici.
+          const before = combineLegs(
+            slip.items.map((item) => ({
+              status: previousStatusByBetId.get(item.betId) ?? item.bet.status,
+              odds: null,
+            })),
+          );
+          if (
+            before.status === BetStatus.WON ||
+            before.status === BetStatus.VOID
+          )
+            continue;
+
           // Même règle que l'écran et le résultat à mise fixe : une jambe
           // remboursée compte pour une cote de 1, le combiné entièrement
           // remboursé rend la mise.
