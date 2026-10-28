@@ -20,7 +20,10 @@ import {
   TRACKED_CHANNELS,
   TRACK_RECORD_ODDS_BREAKS,
 } from './dashboard.constants';
-import { DashboardRepository } from './dashboard.repository';
+import {
+  DashboardRepository,
+  type VantageCohortRow,
+} from './dashboard.repository';
 
 // Assez long pour couvrir les appels simultanés d'un chargement de page et un
 // rafraîchissement rapide ; assez court pour qu'un nouveau règlement apparaisse
@@ -28,6 +31,8 @@ import { DashboardRepository } from './dashboard.repository';
 const SETTLED_CACHE_TTL_MS = 60_000;
 const SETTLED_CACHE_MAX_ENTRIES = 6;
 import type {
+  AiTrackRecord,
+  AiTrackRecordRow,
   ChannelCompetitionStatItem,
   ChannelHealthItem,
   ChannelStatsItem,
@@ -488,6 +493,32 @@ export class DashboardService {
     );
   }
 
+  /**
+   * Bilan de l'IA (2026-10-29) : avis comptés sur l'historique figé
+   * (vantageCohortSql), au total et par version de prompt, pour juger la
+   * cohorte v5 à part.
+   */
+  async getAiTrackRecord(from: string, to: string): Promise<AiTrackRecord> {
+    const rows = await this.repo.findVantageCohortRows({
+      since: startOfUtcDay(parseIsoDate(from)),
+      until: endOfUtcDay(parseIsoDate(to)),
+    });
+    const byVersion = new Map<string | null, VantageCohortRow[]>();
+    for (const row of rows) {
+      const list = byVersion.get(row.configVersion) ?? [];
+      list.push(row);
+      byVersion.set(row.configVersion, list);
+    }
+    return {
+      from,
+      to,
+      total: aiTrackRecordRow(null, rows),
+      versions: [...byVersion.entries()]
+        .map(([version, list]) => aiTrackRecordRow(version, list))
+        .sort((a, b) => (a.firstDay ?? '').localeCompare(b.firstDay ?? '')),
+    };
+  }
+
   /** Same settled data as getChannelStats, one level finer — grouped by
    * competition per channel. Independent tracking section on the
    * track-record page (channel × competition), not a replacement for the
@@ -797,6 +828,43 @@ function channelCompetitionStatsFromSelections(
       };
     },
   );
+}
+
+function aiTrackRecordRow(
+  configVersion: string | null,
+  rows: readonly VantageCohortRow[],
+): AiTrackRecordRow {
+  const selections = rows.map((row) => row.selection);
+  const days = rows.map((row) => row.kickoff.toISOString().slice(0, 10)).sort();
+  // Écart au marché par avis : gagné (1/0) moins la fréquence du marché.
+  const gaps = selections.flatMap((s) => {
+    const fair = marketProbability({
+      odds: s.odds === null ? null : toNumber(s.odds),
+      market: s.market,
+      marginPaid: s.marginPaid === null ? null : toNumber(s.marginPaid),
+    });
+    return fair === null ? [] : [(s.result === BetStatus.WON ? 1 : 0) - fair];
+  });
+  const mean =
+    gaps.length > 0 ? gaps.reduce((acc, g) => acc + g, 0) / gaps.length : null;
+  const variance =
+    mean !== null && gaps.length > 1
+      ? gaps.reduce((acc, g) => acc + (g - mean) ** 2, 0) / (gaps.length - 1)
+      : null;
+  const roi = flatBetRoi(asFlatBets(selections));
+  return {
+    configVersion,
+    settled: selections.length,
+    realised: hitRateOf(selections),
+    announced: announcedOf(selections),
+    market: marketOf(selections),
+    gap: mean,
+    gapMargin:
+      variance === null ? null : 1.96 * Math.sqrt(variance / gaps.length),
+    flatReturn: roi === null ? null : roi / 100,
+    firstDay: days[0] ?? null,
+    lastDay: days[days.length - 1] ?? null,
+  };
 }
 
 function channelStatsFromSelections(

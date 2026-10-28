@@ -4,6 +4,7 @@ import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
 import { AdminGuard } from '@/common/guards/admin.guard';
 import { DashboardService } from './dashboard.service';
 import type {
+  AiTrackRecord,
   ChannelCompetitionStatItem,
   ChannelHealthItem,
   ChannelStatsItem,
@@ -73,6 +74,13 @@ export class DashboardController {
   getChannelStats(@Query() query: PnlQueryDto): Promise<ChannelStatsItem[]> {
     const { from, to } = this.defaultRange(query);
     return this.dashboardService.getChannelStats(from, to);
+  }
+
+  /** Bilan de l'IA : joueurs compris, comme les autres bilans publics. */
+  @Get('ai-track-record')
+  getAiTrackRecord(@Query() query: PnlQueryDto): Promise<AiTrackRecord> {
+    const { from, to } = this.defaultRange(query);
+    return this.dashboardService.getAiTrackRecord(from, to);
   }
 
   @Get('channel-stats-by-competition')

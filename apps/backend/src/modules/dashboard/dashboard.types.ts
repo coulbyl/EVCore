@@ -192,3 +192,31 @@ export type ChannelCompetitionStatItem = {
   sampleSize: number;
   status: ChannelStatus;
 };
+
+/**
+ * Bilan de l'IA sur une fenêtre (2026-10-29), lu sur l'historique figé des
+ * avis : réalisé, annoncé, fréquence du marché (marge retirée), écart au
+ * marché avec sa marge d'erreur à 95 %, résultat à mise fixe.
+ */
+export type AiTrackRecordRow = {
+  configVersion: string | null;
+  settled: number;
+  realised: number | null;
+  announced: number | null;
+  market: number | null;
+  /** Réalisé − marché, en points de probabilité (0–1). */
+  gap: number | null;
+  /** Demi-largeur de l'intervalle à 95 % de `gap`. */
+  gapMargin: number | null;
+  /** Résultat à mise fixe, en part de la mise (−0,05 = −5 %). */
+  flatReturn: number | null;
+  firstDay: string | null;
+  lastDay: string | null;
+};
+
+export type AiTrackRecord = {
+  from: string;
+  to: string;
+  total: AiTrackRecordRow;
+  versions: AiTrackRecordRow[];
+};

@@ -1273,6 +1273,50 @@ const TRACK_RECORD_CHANNELS = [
   },
 ];
 
+// Bilan de l'IA lu sur l'historique figé, au total et par version.
+const AI_TRACK_RECORD = {
+  from: "2026-09-29",
+  to: "2026-10-29",
+  total: {
+    configVersion: null,
+    settled: 300,
+    realised: 0.647,
+    announced: 0.639,
+    market: 0.621,
+    gap: 0.026,
+    gapMargin: 0.054,
+    flatReturn: -0.023,
+    firstDay: "2026-09-29",
+    lastDay: "2026-10-28",
+  },
+  versions: [
+    {
+      configVersion: "vantage-v4-gated",
+      settled: 240,
+      realised: 0.65,
+      announced: 0.64,
+      market: 0.62,
+      gap: 0.03,
+      gapMargin: 0.06,
+      flatReturn: -0.02,
+      firstDay: "2026-10-13",
+      lastDay: "2026-10-26",
+    },
+    {
+      configVersion: "vantage-v5-no-tension",
+      settled: 60,
+      realised: 0.63,
+      announced: 0.63,
+      market: 0.62,
+      gap: 0.01,
+      gapMargin: 0.12,
+      flatReturn: -0.03,
+      firstDay: "2026-10-27",
+      lastDay: "2026-10-28",
+    },
+  ],
+};
+
 function calibrationStatus({ n, announced, hitRate }) {
   if (n < 30) return "INSUFFICIENT_DATA";
   const ratio = hitRate / announced;
@@ -1484,6 +1528,8 @@ function route(method, url) {
   if (path.startsWith("/channel-decisions/facets"))
     return [200, DECISION_FACETS];
   if (path.startsWith("/channel-decisions")) return [200, []];
+  if (path.startsWith("/dashboard/ai-track-record"))
+    return [200, AI_TRACK_RECORD];
   if (path.startsWith("/dashboard/channel-stats-by-competition"))
     return [200, CHANNEL_COMPETITION_STATS];
   if (path.startsWith("/dashboard/channel-stats")) return [200, CHANNEL_STATS];

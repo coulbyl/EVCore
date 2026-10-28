@@ -48,6 +48,13 @@ type DashboardChannelSelection = Prisma.ChannelSelectionGetPayload<{
   select: typeof CHANNEL_SELECTION_DASHBOARD_SELECT;
 }>;
 
+/** Un avis VANTAGE compté, avec sa version de prompt et son coup d'envoi. */
+export type VantageCohortRow = {
+  selection: DashboardChannelSelection;
+  configVersion: string | null;
+  kickoff: Date;
+};
+
 @Injectable()
 export class DashboardRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -362,7 +369,8 @@ export class DashboardRepository {
     }
 
     if (channels.includes(StrategyChannel.VANTAGE)) {
-      selections.push(...(await this.findVantageCohort(range)));
+      const vantage = await this.findVantageCohortRows(range);
+      selections.push(...vantage.map((row) => row.selection));
     }
     return selections;
   }
@@ -372,10 +380,10 @@ export class DashboardRepository {
    * mis à la forme d'une sélection : la ligne vivante, réécrite par upsert
    * et parfois après le coup d'envoi, n'entre dans aucun bilan (2026-10-29).
    */
-  private async findVantageCohort(range: {
+  async findVantageCohortRows(range: {
     since: Date;
     until: Date;
-  }): Promise<DashboardChannelSelection[]> {
+  }): Promise<VantageCohortRow[]> {
     const cohort = await this.prisma.client.$queryRaw<{ id: string }[]>(
       vantageCohortSql({
         asOf: new Date(),
@@ -383,7 +391,7 @@ export class DashboardRepository {
         until: range.until,
       }),
     );
-    const rows: DashboardChannelSelection[] = [];
+    const rows: VantageCohortRow[] = [];
     for (
       let offset = 0;
       offset < cohort.length;
@@ -405,8 +413,10 @@ export class DashboardRepository {
           probability: true,
           market: true,
           marginPaid: true,
+          configVersion: true,
           fixture: {
             select: {
+              scheduledAt: true,
               season: {
                 select: {
                   competition: {
@@ -422,14 +432,18 @@ export class DashboardRepository {
       for (const row of batch) {
         if (row.market === null || row.probability === null) continue;
         rows.push({
-          result: row.result,
-          odds: row.odds,
-          probability: row.probability,
-          market: row.market,
-          marginPaid: row.marginPaid,
-          channelDecision: {
-            channel: StrategyChannel.VANTAGE,
-            modelRun: { fixture: row.fixture },
+          configVersion: row.configVersion,
+          kickoff: row.fixture.scheduledAt,
+          selection: {
+            result: row.result,
+            odds: row.odds,
+            probability: row.probability,
+            market: row.market,
+            marginPaid: row.marginPaid,
+            channelDecision: {
+              channel: StrategyChannel.VANTAGE,
+              modelRun: { fixture: { season: row.fixture.season } },
+            },
           },
         });
       }
