@@ -51,10 +51,12 @@ Exemple complet pour `ARG1` (les 7 autres : remplacer le code) :
 
 ```bash
 BASE_URL=http://localhost:3000
+# Routes /etl protégées depuis le 2026-10-28 : jeton de service du backend.
+ADMIN_API_TOKEN=<valeur du .env du backend>
 
-curl -X POST "$BASE_URL/etl/sync/fixtures/ARG1/backfill?seasons=2022,2023,2024,2025"
-curl -X POST "$BASE_URL/etl/sync/stats/ARG1/backfill?seasons=2022,2023,2024,2025"
-curl -X POST "$BASE_URL/etl/sync/odds-csv/ARG1/backfill?seasons=2022,2023,2024,2025"
+curl -X POST -H "x-admin-token: $ADMIN_API_TOKEN" "$BASE_URL/etl/sync/fixtures/ARG1/backfill?seasons=2022,2023,2024,2025"
+curl -X POST -H "x-admin-token: $ADMIN_API_TOKEN" "$BASE_URL/etl/sync/stats/ARG1/backfill?seasons=2022,2023,2024,2025"
+curl -X POST -H "x-admin-token: $ADMIN_API_TOKEN" "$BASE_URL/etl/sync/odds-csv/ARG1/backfill?seasons=2022,2023,2024,2025"
 ```
 
 ## Groupe A — cotes via The Odds API uniquement (payant, `odds-historical`)
@@ -77,7 +79,7 @@ Ces deux-là existaient déjà avec `includeInBacktest: false` ; seul le
 backfill des cotes manque (fixtures/stats déjà en cours de sync normalement) :
 
 ```bash
-curl -X POST "$BASE_URL/etl/sync/odds-historical/KOR1/backfill?seasons=2022,2023,2024,2025"
+curl -X POST -H "x-admin-token: $ADMIN_API_TOKEN" "$BASE_URL/etl/sync/odds-historical/KOR1/backfill?seasons=2022,2023,2024,2025"
 ```
 
 > ⚠️ **`UNL` — vérifier avant de lancer.** C'est une compétition
@@ -105,8 +107,8 @@ stats suffisent pour que le moteur tourne, pas de backtest ROI possible.
 Exemple pour `ARG2` (les 5 autres : remplacer le code) :
 
 ```bash
-curl -X POST "$BASE_URL/etl/sync/fixtures/ARG2/backfill?seasons=2022,2023,2024,2025"
-curl -X POST "$BASE_URL/etl/sync/stats/ARG2/backfill?seasons=2022,2023,2024,2025"
+curl -X POST -H "x-admin-token: $ADMIN_API_TOKEN" "$BASE_URL/etl/sync/fixtures/ARG2/backfill?seasons=2022,2023,2024,2025"
+curl -X POST -H "x-admin-token: $ADMIN_API_TOKEN" "$BASE_URL/etl/sync/stats/ARG2/backfill?seasons=2022,2023,2024,2025"
 ```
 
 ---

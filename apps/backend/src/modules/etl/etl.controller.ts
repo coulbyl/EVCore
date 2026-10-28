@@ -9,7 +9,9 @@ import {
   Param,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import { AdminOrServiceTokenGuard } from '@modules/auth/admin-or-service-token.guard';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -97,6 +99,7 @@ const LEAGUE_SYNC_TYPE_VALUES = [
 
 @ApiTags('ETL')
 @Controller('etl')
+@UseGuards(AdminOrServiceTokenGuard)
 export class EtlController {
   constructor(private readonly etlService: EtlService) {}
 

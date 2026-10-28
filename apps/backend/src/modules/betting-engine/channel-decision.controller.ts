@@ -1,13 +1,5 @@
-import {
-  Controller,
-  Get,
-  HttpCode,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
-import { endOfUtcDay, parseIsoDate } from '@utils/date.utils';
 import {
   ChannelDecisionService,
   type ChannelDecisionChannelGroup,
@@ -18,16 +10,17 @@ import {
   ChannelDecisionFacetsQueryDto,
   ChannelDecisionListQueryDto,
 } from './dto/channel-decision-query.dto';
-import { ChannelDecisionSettleRangeQueryDto } from './dto/channel-decision-settle-range-query.dto';
 import { PausedGuard } from '@/common/guards/paused.guard';
 
+// Tout ce contrôleur propose des paris : la pause s'applique à la classe,
+// une route ajoutée plus tard ne peut pas l'oublier. Le rattrapage de
+// règlement vit dans ChannelDecisionAdminController.
 @Controller('channel-decisions')
-@UseGuards(AuthSessionGuard)
+@UseGuards(AuthSessionGuard, PausedGuard)
 export class ChannelDecisionController {
   constructor(private readonly channelDecisions: ChannelDecisionService) {}
 
   @Get('by-match')
-  @UseGuards(PausedGuard)
   listByMatch(
     @Query() query: ChannelDecisionListQueryDto,
   ): Promise<ChannelDecisionMatchItem[]> {
@@ -35,7 +28,6 @@ export class ChannelDecisionController {
   }
 
   @Get('by-channel')
-  @UseGuards(PausedGuard)
   listByChannel(
     @Query() query: ChannelDecisionListQueryDto,
   ): Promise<ChannelDecisionChannelGroup[]> {
@@ -45,25 +37,11 @@ export class ChannelDecisionController {
   // Facet drawer (§2bis) — leagues + channels present that day, with counts.
   // See ChannelDecisionRepository.findFacetRows.
   @Get('facets')
-  @UseGuards(PausedGuard)
   getFacets(
     @Query() query: ChannelDecisionFacetsQueryDto,
   ): Promise<ChannelDecisionFacets> {
     const today = new Date().toISOString().slice(0, 10);
     return this.channelDecisions.getFacets(query.date ?? today);
-  }
-
-  // Catch-up: force re-settlement of every ChannelSelection (the analytical
-  // "won/lost" mirror) on every FINISHED fixture in [from, to]. Idempotent —
-  // use after a settlement resolver bug fix or a post-hoc score correction.
-  @Post('settle-range')
-  @HttpCode(200)
-  async settleRange(
-    @Query() query: ChannelDecisionSettleRangeQueryDto,
-  ): Promise<{ fixturesResettled: number; selectionsResettled: number }> {
-    const from = parseIsoDate(query.from);
-    const to = endOfUtcDay(parseIsoDate(query.to));
-    return this.channelDecisions.settleRange(from, to);
   }
 
   private toQuery(query: ChannelDecisionListQueryDto) {

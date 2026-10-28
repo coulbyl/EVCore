@@ -10,8 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiParam } from '@nestjs/swagger';
 import { Market } from '@evcore/db';
-import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
-import { AdminGuard } from '@/common/guards/admin.guard';
+import { AdminOrServiceTokenGuard } from '@modules/auth/admin-or-service-token.guard';
 import {
   RiskService,
   type ActiveMarketSuspension,
@@ -25,6 +24,7 @@ import { WeeklyReportResponseDto } from './dto/weekly-report-response.dto';
 const RECENT_ALERTS_DEFAULT_DAYS = 7;
 
 @Controller('risk')
+@UseGuards(AdminOrServiceTokenGuard)
 export class RiskController {
   constructor(private readonly risk: RiskService) {}
 
@@ -63,13 +63,11 @@ export class RiskController {
   // targets, so they're guarded explicitly rather than following this
   // controller's existing unguarded routes.
   @Get('suspensions/active')
-  @UseGuards(AuthSessionGuard, AdminGuard)
   async activeSuspensions(): Promise<ActiveMarketSuspension[]> {
     return this.risk.listActiveSuspensions();
   }
 
   @Get('alerts/recent')
-  @UseGuards(AuthSessionGuard, AdminGuard)
   async recentAlerts(@Query('days') days?: string): Promise<RiskAlert[]> {
     const parsed = days ? Number.parseInt(days, 10) : NaN;
     const windowDays =

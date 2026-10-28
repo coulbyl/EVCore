@@ -1,9 +1,18 @@
-import { Controller, HttpCode, HttpStatus, Query, Post } from '@nestjs/common';
+import {
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Query,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { AdminOrServiceTokenGuard } from '@modules/auth/admin-or-service-token.guard';
 import { ChannelBacktestService } from './channel-backtest.service';
 import { ModelCalibrationService } from './model-calibration.service';
 import { ChannelTuningService } from './channel-tuning.service';
 
 @Controller('backtest')
+@UseGuards(AdminOrServiceTokenGuard)
 export class BacktestController {
   constructor(
     private readonly channelBacktest: ChannelBacktestService,
