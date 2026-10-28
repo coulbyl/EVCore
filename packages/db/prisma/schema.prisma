@@ -724,15 +724,27 @@ model UserFollowedLeague {
   @@schema("public")
 }
 
+// Un code sert soit à vérifier l'adresse du compte, soit à confirmer une
+// nouvelle adresse (2026-10-28) : les deux ne s'annulent plus l'un l'autre.
+enum EmailCodePurpose {
+  VERIFY
+  CHANGE_EMAIL
+
+  @@schema("public")
+}
+
 model EmailVerificationCode {
-  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  userId    String   @db.Uuid
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  codeHash  String
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  attempts  Int      @default(0)
-  createdAt DateTime @default(now())
+  id          String           @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId      String           @db.Uuid
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash    String
+  expiresAt   DateTime
+  used        Boolean          @default(false)
+  attempts    Int              @default(0)
+  purpose     EmailCodePurpose @default(VERIFY)
+  // Nouvelle adresse à confirmer, pour un code CHANGE_EMAIL.
+  targetEmail String?
+  createdAt   DateTime         @default(now())
 
   @@index([userId, expiresAt])
   @@map("email_verification_code")

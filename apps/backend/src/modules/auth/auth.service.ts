@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Prisma } from '@evcore/db';
+import { EmailCodePurpose, Prisma } from '@evcore/db';
 import type { UnitMode } from '@evcore/db';
 import { OTP } from 'otplib';
 import QRCode from 'qrcode';
@@ -394,7 +394,7 @@ export class AuthService {
     }
 
     await this.prisma.client.emailVerificationCode.updateMany({
-      where: { userId, used: false },
+      where: { userId, used: false, purpose: EmailCodePurpose.VERIFY },
       data: { used: true },
     });
 
@@ -420,6 +420,7 @@ export class AuthService {
       where: {
         userId,
         used: false,
+        purpose: EmailCodePurpose.VERIFY,
         expiresAt: { gt: new Date() },
       },
       orderBy: { createdAt: 'desc' },

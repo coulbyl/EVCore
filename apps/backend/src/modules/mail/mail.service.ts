@@ -5,6 +5,8 @@ import { createLogger } from '@utils/logger';
 import {
   renderBrierAlert,
   renderEmailVerification,
+  renderEmailChangeCode,
+  renderEmailChanged,
   renderEtlFailure,
   renderMarketSuspension,
   renderPasswordReset,
@@ -17,6 +19,8 @@ import {
   renderSupportMessage,
   type BrierAlertProps,
   type EmailVerificationProps,
+  type EmailChangeCodeProps,
+  type EmailChangedProps,
   type EtlFailureProps,
   type MarketSuspensionProps,
   type MlModelActivatedProps,
@@ -58,6 +62,21 @@ export class MailService implements OnModuleInit {
   ): Promise<void> {
     const { html, text } = await renderEmailVerification(props);
     await this.sendTo(to, 'Vérification de votre email', { html, text });
+  }
+
+  /** Code envoyé à la nouvelle adresse demandée (changement d'e-mail). */
+  async sendEmailChangeCode(
+    to: string,
+    props: EmailChangeCodeProps,
+  ): Promise<void> {
+    const { html, text } = await renderEmailChangeCode(props);
+    await this.sendTo(to, 'Confirme ta nouvelle adresse', { html, text });
+  }
+
+  /** Prévient l'ancienne adresse une fois le changement confirmé. */
+  async sendEmailChanged(to: string, props: EmailChangedProps): Promise<void> {
+    const { html, text } = await renderEmailChanged(props);
+    await this.sendTo(to, 'Ton adresse e-mail a changé', { html, text });
   }
 
   async sendPasswordReset(
