@@ -116,7 +116,10 @@ export class RetentionRepository {
         GROUP BY 1
       ),
       opened AS (
-        SELECT payload->>'notificationType' AS type, count(*)::int AS opened
+        -- Une ouverture par joueur et par jour : rouvrir le lien ne gonfle
+        -- pas le taux au-delà des notifications envoyées.
+        SELECT payload->>'notificationType' AS type,
+               count(DISTINCT ("userId", (at AT TIME ZONE 'UTC')::date))::int AS opened
         FROM public.product_event
         WHERE type = 'NOTIFICATION_OPENED' AND at >= ${since}
         GROUP BY 1
