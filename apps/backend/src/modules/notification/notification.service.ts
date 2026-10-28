@@ -271,6 +271,7 @@ export class NotificationService {
     offset: number;
     unread?: boolean;
     category?: 'announcement' | 'alert';
+    type?: NotificationType;
     userId: string;
     role: UserRole;
   }): Promise<{
@@ -298,6 +299,7 @@ export class NotificationService {
     const where: Prisma.NotificationWhereInput = {
       AND: [
         categoryFilter,
+        query.type ? { type: query.type } : {},
         {
           OR: [
             {

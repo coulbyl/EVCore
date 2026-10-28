@@ -73,6 +73,19 @@ export class CouponController {
     return this.coupon.getCoupons(date, session.user.id);
   }
 
+  // Avant les routes en :id. Information, pas une proposition : pas de
+  // garde de pause.
+  @Get('abstentions')
+  @UseGuards(AuthSessionGuard)
+  @ApiOperation({ summary: 'Products that abstained on a date, with reason' })
+  getAbstentions(
+    @Query() query: CouponQueryDto,
+  ): Promise<{ couponClass: string; reason: string | null }[]> {
+    return this.coupon.getAbstentions(
+      query.date ?? new Date().toISOString().slice(0, 10),
+    );
+  }
+
   @Post(':id/view')
   @UseGuards(AuthSessionGuard)
   @HttpCode(204)

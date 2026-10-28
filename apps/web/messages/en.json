@@ -307,12 +307,16 @@
     "kind": {
       "ANNOUNCEMENT_PUBLISHED": "Announcement",
       "SUPPORT_MESSAGE": "EVCore team",
-      "SLIPS_SETTLED_DIGEST": "Your coupons"
+      "SLIPS_SETTLED_DIGEST": "Your coupons",
+      "MORNING_BRIEF": "Your morning",
+      "WEEKLY_STATEMENT": "Your week"
     },
     "open": {
       "ANNOUNCEMENT_PUBLISHED": "Read the announcement",
       "SUPPORT_MESSAGE": "Open the conversation",
-      "SLIPS_SETTLED_DIGEST": "See my coupons"
+      "SLIPS_SETTLED_DIGEST": "See my coupons",
+      "MORNING_BRIEF": "Open home",
+      "WEEKLY_STATEMENT": "Open home"
     }
   },
   "updates": {
@@ -572,6 +576,15 @@
       "confirm": "Confirm",
       "cancel": "Cancel",
       "error": "The change did not go through. Try again."
+    },
+    "playerNotifications": {
+      "title": "Your morning and your statement",
+      "description": "Notifications in the app and on your phone. They never push you to bet.",
+      "morning": "The morning brief, at 8 am UTC",
+      "morningHint": "Yesterday's results and today's coupons, or why there are none.",
+      "weekly": "The Monday statement",
+      "weeklyHint": "Your week, what you followed and how our coupons did.",
+      "error": "Could not save this setting."
     }
   },
   "performance": {
@@ -694,7 +707,7 @@
       "fixedStake": "Your fixed-stake result",
       "fixedStakeSample": "{count, plural, one {over # settled bet} other {over # settled bets}}",
       "fixedStakeNone": "No settled bet yet",
-      "weeklyBriefTitle": "Weekly brief",
+      "weeklyBriefTitle": "Your week",
       "pageTitle": "Home",
       "riskLine": "18+ · Betting carries a risk of loss. Only stake what you can afford to lose."
     }
@@ -1101,6 +1114,17 @@
       "mySlips": "My coupons",
       "bankroll": "Stake tracking",
       "trackRecord": "Track record"
+    }
+  },
+  "couponAbstentions": {
+    "line": "No {product} today: {reason}.",
+    "reasons": {
+      "no_home_favourite_in_band": "no home favourite between 1.20 and 1.35",
+      "not_enough_calibrated_short_legs": "not enough reliable short-odds bets in different leagues",
+      "no_priced_candidate": "not enough bets priced at 1xBet in the band",
+      "no_combination_in_window": "no combination between 2 and 3",
+      "no_candidate_in_band": "no bet in its odds band",
+      "other": "no bet meeting the rule that day"
     }
   }
 }

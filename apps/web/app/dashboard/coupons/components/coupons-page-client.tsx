@@ -18,6 +18,7 @@ import {
 } from "@/domains/coupon/use-cases/use-coupon-track-record";
 import { todayIso } from "@/lib/date";
 import { DateNav } from "@/components/date-nav";
+import { CouponAbstentions } from "@/components/coupon-abstentions";
 import { FormationHelpLink } from "@/components/formation-help-link";
 import { CouponCard } from "./coupon-card";
 import { couponClassMeta } from "@/domains/coupon/helpers/coupon-class";
@@ -106,6 +107,8 @@ export function CouponsPageClient() {
                 </p>
               </div>
             )}
+
+            {!isLoading && !isError && <CouponAbstentions date={date} />}
 
             {/* Deux colonnes jusqu'au très grand écran : trois cartes de
                 280 px à 1 280 px tronquaient les noms d'équipes

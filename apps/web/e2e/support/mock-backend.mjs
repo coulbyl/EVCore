@@ -4,6 +4,7 @@
  * Started via playwright.config.ts webServer.
  */
 import http from "node:http";
+import { lastMondayAt } from "./dates.mjs";
 
 const PORT = Number(process.env.E2E_MOCK_PORT ?? 3099);
 
@@ -29,6 +30,8 @@ const SESSION = {
       hasCompletedOnboarding: true,
       // Sans ce drapeau la visite guidée (driver.js) démarre à la première
       // visite et pose un voile qui intercepte les clics.
+      morningBriefEnabled: true,
+      weeklyStatementEnabled: true,
       hasSeenOnboarding: true,
       // E2E_PAUSED=1 : un joueur en pause pour 7 jours (pages de paris
       // remplacées par l'annonce de la pause).
@@ -846,6 +849,23 @@ const ANNOUNCEMENTS = [
   },
 ];
 
+const RETENTION = {
+  asOf: "2026-10-28",
+  active: { dau: 4, wau: 11, mau: 23 },
+  engagement: { weeklyActive: 11, followedRate: 0.182, declaredRate: 0.364 },
+  notifications: [{ type: "MORNING_BRIEF", sent: 40, opened: 9, rate: 0.225 }],
+  cohorts: [
+    {
+      week: "2026-10-12",
+      signups: 7,
+      activation: 0.286,
+      d7: { eligible: 7, rate: 0.429 },
+      d14: { eligible: 7, rate: 0.143 },
+      d30: { eligible: 0, rate: null },
+    },
+  ],
+};
+
 const PLAYER_NOTIFICATIONS = [
   [
     "n1",
@@ -858,12 +878,21 @@ const PLAYER_NOTIFICATIONS = [
   ],
   [
     "n5",
-    "SLIPS_SETTLED_DIGEST",
-    "Tes coupons réglés",
-    "2 coupons réglés : 1 gagné, 1 perdu. Misé 2 000 F, rendu 1 540 F : -460 F.",
+    "MORNING_BRIEF",
+    "Ta matinée EVCore",
+    "2 coupons réglés : 1 gagné, 1 perdu. Misé 2 000 F, rendu 1 540 F : -460 F. Coupons du jour : Favori 1,28 · Coupon cote 2 2,10.",
     -2,
     false,
     { day: "2026-10-27", settled: 2, net: "-460.00" },
+  ],
+  [
+    "n6",
+    "WEEKLY_STATEMENT",
+    "Ta semaine EVCore",
+    "Nos coupons : Favori 5 jours gagnés sur 7 · Combiné 4 jours gagnés sur 6.",
+    -1,
+    true,
+    { week: "2026-10-19", settled: 0, net: "0.00" },
   ],
   [
     "n4",
@@ -897,7 +926,10 @@ const NOTIFICATIONS = [
   title,
   body,
   payload,
-  createdAt: todayAt(hours),
+  createdAt:
+    type === "WEEKLY_STATEMENT"
+      ? lastMondayAt(8).toISOString()
+      : todayAt(hours),
   isRead,
 }));
 
@@ -1434,6 +1466,12 @@ function route(method, url) {
       ],
     ];
   }
+  if (path === "/events" && method === "POST") return [201, {}];
+  if (path === "/coupons/abstentions")
+    return [
+      200,
+      [{ couponClass: "HUNTER_SCORE", reason: "no_candidate_in_band" }],
+    ];
   if (path === "/coupons" && method === "GET") return [200, COUPONS];
   if (path.startsWith("/coupons/") && path.endsWith("/view")) return [204, {}];
   if (path.startsWith("/coupons/") && path.endsWith("/follow"))
@@ -1523,16 +1561,22 @@ function route(method, url) {
   if (path.startsWith("/predictions")) return [200, []];
   if (path.startsWith("/notifications/unread-count"))
     return [200, { count: NOTIFICATIONS.filter((n) => !n.isRead).length }];
-  if (path.startsWith("/notifications"))
-    return [
-      200,
-      {
-        data: NOTIFICATIONS,
-        total: NOTIFICATIONS.length,
-        limit: 20,
-        offset: 0,
-      },
-    ];
+  if (path.startsWith("/notifications")) {
+    // Le filtre ?type= du vrai backend (point de la semaine de l'Accueil).
+    const type = new URLSearchParams(url.split("?")[1] ?? "").get("type");
+    const data = type
+      ? NOTIFICATIONS.filter((n) => n.type === type)
+      : NOTIFICATIONS;
+    return [200, { data, total: data.length, limit: 20, offset: 0 }];
+  }
+  // Listes de l'accueil admin : `{}` faisait planter EngineHealthCard.
+  if (
+    path === "/risk/calibration-curve" ||
+    path === "/risk/suspensions/active" ||
+    path.startsWith("/risk/alerts")
+  )
+    return [200, []];
+  if (path === "/dashboard/retention") return [200, RETENTION];
   if (path.startsWith("/risk")) return [200, {}];
   if (path.startsWith("/adjustment")) return [200, []];
   // Une requête React Query qui reçoit `{}` ou undefined fait planter la

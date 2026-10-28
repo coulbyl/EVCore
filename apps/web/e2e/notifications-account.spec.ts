@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { lastMondayAt } from "./support/dates.mjs";
 
 /**
  * Notifications et Compte sur le faux backend, en rôle joueur (les captures
@@ -8,6 +9,49 @@ import { expect, test } from "@playwright/test";
  * réglage de jeu responsable, plus de profil de risque ni de rôle
  * « Opérateur ».
  */
+test("arriver par la matinée compte une ouverture, puis efface le paramètre", async ({
+  page,
+}) => {
+  test.skip(
+    process.env.E2E_ROLE !== "OPERATOR",
+    "vue joueur : lancer avec E2E_ROLE=OPERATOR",
+  );
+  const event = page.waitForRequest(
+    (req) => req.method() === "POST" && req.url().includes("/events"),
+  );
+  await page.goto("/dashboard?from=morning");
+  expect((await event).postDataJSON()).toEqual({
+    type: "NOTIFICATION_OPENED",
+    notificationType: "MORNING_BRIEF",
+  });
+  await expect(page).toHaveURL(/\/dashboard$/);
+});
+
+test("le lundi, l'Accueil montre le relevé de la semaine", async ({ page }) => {
+  test.skip(
+    process.env.E2E_ROLE !== "OPERATOR",
+    "vue joueur : lancer avec E2E_ROLE=OPERATOR",
+  );
+  await page.clock.setFixedTime(lastMondayAt(10));
+  await page.goto("/dashboard");
+  await expect(
+    page.getByText("Nos coupons : Favori 5 jours gagnés sur 7"),
+  ).toBeVisible();
+});
+
+test("l'admin lit la fidélisation sur l'accueil", async ({ page }) => {
+  test.skip(
+    process.env.E2E_ROLE === "OPERATOR",
+    "vue admin : lancer sans E2E_ROLE",
+  );
+  await page.goto("/dashboard");
+  const card = page.getByTestId("retention-card");
+  await expect(card).toContainText("Fidélisation");
+  await expect(card).toContainText("Actifs / 7 j");
+  await expect(card).toContainText("Matinée ouverte");
+  await expect(card).toContainText("2026-10-12");
+});
+
 test.describe("Notifications", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/dashboard/notifications");
@@ -28,17 +72,18 @@ test.describe("Notifications", () => {
     ).toHaveAttribute("href", "/dashboard/updates?id=ann-1");
   });
 
-  test("le résumé du matin mène à Mes coupons, pertes comprises", async ({
+  test("la matinée mène à l'Accueil, pertes et coupons du jour compris", async ({
     page,
   }) => {
     const row = page
       .getByTestId("notification-row")
-      .filter({ hasText: "Tes coupons réglés" });
-    await expect(row).toContainText("Tes coupons");
+      .filter({ hasText: "Ta matinée EVCore" });
+    await expect(row).toContainText("Ta matinée");
     await expect(row).toContainText("1 perdu");
+    await expect(row).toContainText("Coupons du jour : Favori 1,28");
     await expect(
-      row.getByRole("link", { name: "Voir mes coupons" }),
-    ).toHaveAttribute("href", "/dashboard/bet-slips");
+      row.getByRole("link", { name: "Voir l'accueil" }),
+    ).toHaveAttribute("href", "/dashboard");
   });
 
   test("le joueur n'a ni gravité ni onglet Annonces", async ({ page }) => {
@@ -67,6 +112,27 @@ test.describe("Compte", () => {
       page.getByRole("link", { name: "Lire la page Jeu responsable" }),
     ).toHaveAttribute("href", "/jeu-responsable");
     await expect(page.getByText("Offensif")).toHaveCount(0);
+  });
+
+  test("la matinée et le relevé du lundi se coupent dans Compte", async ({
+    page,
+  }) => {
+    await page.goto("/dashboard/params/account/notifications");
+    const morning = page.getByRole("switch", {
+      name: "La matinée, à 8 h UTC",
+    });
+    await expect(morning).toBeChecked();
+    await expect(
+      page.getByRole("switch", { name: "Le relevé du lundi" }),
+    ).toBeChecked();
+    const patch = page.waitForRequest(
+      (req) => req.method() === "PATCH" && req.url().includes("/auth/me"),
+    );
+    await morning.click();
+    expect((await patch).postDataJSON()).toEqual({
+      morningBriefEnabled: false,
+    });
+    await expect(morning).not.toBeChecked();
   });
 
   test("le joueur ne voit pas le rôle « Opérateur »", async ({ page }) => {

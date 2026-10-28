@@ -13,6 +13,7 @@ import { marketProbability } from '@evcore/analysis-core';
 import {
   classForTargetOddsMin,
   INTRADAY_SIGNAL_WINDOW_DAYS,
+  ABSTENTION_PASS_CLASS,
 } from './coupon.constants';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
 import type { CouponClassTrackRecord } from './dto/coupon-track-record.dto';
@@ -174,6 +175,34 @@ export class CouponService {
   }
 
   /**
+   * Produits du jour qui se sont abstenus, avec leur raison (2026-10-29) :
+   * le joueur lit « Pas de Coupon cote 2 aujourd'hui : … » au lieu d'un
+   * texte fixe. Un produit qui a quand même un coupon publié ce jour-là
+   * (le combiné de l'IA, ou un passage antérieur qui avait composé) n'est
+   * jamais dit absent.
+   */
+  async getAbstentions(
+    date: string,
+  ): Promise<{ couponClass: string; reason: string | null }[]> {
+    const day = new Date(`${date}T00:00:00.000Z`);
+    const [attempts, targets] = await Promise.all([
+      this.repo.findLatestAttempts(day),
+      this.repo.findPublishedTargets(day),
+    ]);
+    const published = new Set<string | null>(
+      targets.map((target) => classForTargetOddsMin(target)),
+    );
+    return attempts.flatMap((attempt) => {
+      const couponClass = ABSTENTION_PASS_CLASS[attempt.pass];
+      return couponClass &&
+        attempt.outcome === 'abstained' &&
+        !published.has(couponClass)
+        ? [{ couponClass, reason: attempt.reason }]
+        : [];
+    });
+  }
+
+  /**
    * « Suivre ce coupon » (2026-10-28) : suivre sans déclarer de mise, pour
    * recevoir le résultat dans le résumé du matin. Idempotent dans les deux
    * sens.
@@ -192,7 +221,25 @@ export class CouponService {
   /** Historique réel par produit de coupon sur les `days` derniers jours. */
   async getTrackRecord(days = 30): Promise<CouponClassTrackRecord[]> {
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1_000);
-    const rows = await this.repo.findClassTrackRecord(startOfUtcDay(since));
+    return this.trackRecordRows({ from: startOfUtcDay(since), days });
+  }
+
+  /** Historique par produit sur une période fermée [from, to[ (relevé du lundi). */
+  async getTrackRecordBetween(
+    from: Date,
+    to: Date,
+  ): Promise<CouponClassTrackRecord[]> {
+    const days = Math.round((to.getTime() - from.getTime()) / 86_400_000);
+    return this.trackRecordRows({ from, to, days });
+  }
+
+  private async trackRecordRows(window: {
+    from: Date;
+    to?: Date;
+    days: number;
+  }): Promise<CouponClassTrackRecord[]> {
+    const { days } = window;
+    const rows = await this.repo.findClassTrackRecord(window.from, window.to);
     return rows.map((row) => ({
       couponClass: classForTargetOddsMin(row.targetOddsMin),
       source: row.source as CouponSource,

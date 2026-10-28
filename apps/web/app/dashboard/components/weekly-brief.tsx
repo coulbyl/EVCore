@@ -4,49 +4,28 @@ import { BookOpen } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useWeeklyBrief } from "@/domains/dashboard/use-cases/get-weekly-brief";
 
-function stripHtml(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function firstSentence(text: string): string {
-  const match = /^(.{20,}?[.!?])(\s|$)/.exec(text);
-  return match?.[1] ?? text;
-}
-
 function isMonday(): boolean {
   return new Date().getDay() === 1;
 }
 
+// Le relevé de ce lundi seulement : pas celui d'une semaine passée, resté le
+// dernier si le joueur a coupé le relevé ou avant l'envoi de 8 h.
+function isThisWeek(createdAt: string): boolean {
+  return Date.now() - new Date(createdAt).getTime() < 24 * 60 * 60 * 1000;
+}
+
+/**
+ * Le point de la semaine, le lundi : le corps du relevé envoyé à 8 h UTC
+ * (WEEKLY_STATEMENT). Avant le 2026-10-29 la carte lisait WEEKLY_REPORT,
+ * un rapport d'ingénierie filtré pour le joueur, et le filtre de type
+ * n'existait pas côté serveur : elle affichait la dernière notification.
+ */
 export function WeeklyBrief() {
   const t = useTranslations("dashboard.home");
   const { data: brief, isLoading } = useWeeklyBrief();
 
   if (!isMonday()) return null;
-  if (isLoading || !brief) return null;
-
-  // Le corps d'une annonce est du HTML rédigé dans l'éditeur admin : affiché
-  // tel quel, un utilisateur lisait « <p>Vous connaissez déjà… <strong> ».
-  // On n'en garde que le texte, et la première phrase.
-  const narrative = firstSentence(
-    stripHtml(
-      (brief.payload?.narrative as string | undefined) ??
-        brief.body.split("\n")[0] ??
-        brief.title,
-    ),
-  );
-
-  // Plus de ligne « ROI 1X2 » : un ROI sans période ni effectif, coloré en
-  // vert ou rouge, contredisait les règles de rédaction (apps/web/PRODUCT.md)
-  // et le dépôt lui-même (aucune puissance à ces volumes).
+  if (isLoading || !brief || !isThisWeek(brief.createdAt)) return null;
 
   return (
     <div className="flex items-start gap-3 rounded-[1.35rem] border border-accent/20 bg-accent/5 p-4 ev-shell-shadow sm:p-5">
@@ -58,7 +37,7 @@ export function WeeklyBrief() {
           {t("weeklyBriefTitle")}
         </p>
         <p className="text-sm font-medium leading-snug text-foreground">
-          {narrative}
+          {brief.body}
         </p>
       </div>
     </div>

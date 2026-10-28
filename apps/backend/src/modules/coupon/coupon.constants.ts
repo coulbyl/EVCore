@@ -401,3 +401,17 @@ export const COUPON_SETTLEMENT_POLICY = {
   // sélections de canal : voir betting-engine/pricing/closing-line.constants.ts.
   closingLineMaxHoursBeforeKickoff: CLOSING_LINE_POLICY.maxHoursBeforeKickoff,
 } as const;
+
+/**
+ * Passes dont l'abstention est expliquée au joueur, et le produit qu'elles
+ * composent (2026-10-29). Le coupon long et le combiné IA ne sont pas des
+ * produits de l'Accueil.
+ */
+export const ABSTENTION_PASS_CLASS: Readonly<Record<string, string>> = {
+  favourite: 'FAVOURITE',
+  'engine-combo': 'COMBO',
+  double: 'DOUBLE',
+  'hunter-hunter_btts': 'HUNTER_BTTS',
+  'hunter-hunter_draw': 'HUNTER_DRAW',
+  'hunter-hunter_score': 'HUNTER_SCORE',
+};

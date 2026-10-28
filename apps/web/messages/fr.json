@@ -307,12 +307,16 @@
     "kind": {
       "ANNOUNCEMENT_PUBLISHED": "Annonce",
       "SUPPORT_MESSAGE": "Équipe EVCore",
-      "SLIPS_SETTLED_DIGEST": "Tes coupons"
+      "SLIPS_SETTLED_DIGEST": "Tes coupons",
+      "MORNING_BRIEF": "Ta matinée",
+      "WEEKLY_STATEMENT": "Ton relevé de la semaine"
     },
     "open": {
       "ANNOUNCEMENT_PUBLISHED": "Lire l'annonce",
       "SUPPORT_MESSAGE": "Ouvrir la conversation",
-      "SLIPS_SETTLED_DIGEST": "Voir mes coupons"
+      "SLIPS_SETTLED_DIGEST": "Voir mes coupons",
+      "MORNING_BRIEF": "Voir l'accueil",
+      "WEEKLY_STATEMENT": "Voir l'accueil"
     }
   },
   "updates": {
@@ -572,6 +576,15 @@
       "confirm": "Confirmer",
       "cancel": "Annuler",
       "error": "Le changement n'a pas abouti. Réessaie."
+    },
+    "playerNotifications": {
+      "title": "Ta matinée et ton relevé",
+      "description": "Des notifications dans l'app et sur ton téléphone. Elles ne te poussent jamais à jouer.",
+      "morning": "La matinée, à 8 h UTC",
+      "morningHint": "Tes résultats d'hier et les coupons du jour, ou pourquoi il n'y en a pas.",
+      "weekly": "Le relevé du lundi",
+      "weeklyHint": "Ta semaine, ce que tu as suivi et le bilan de nos coupons.",
+      "error": "Impossible d'enregistrer ce réglage."
     }
   },
   "performance": {
@@ -694,7 +707,7 @@
       "fixedStake": "Ton résultat à mise fixe",
       "fixedStakeSample": "{count, plural, one {sur # pari réglé} other {sur # paris réglés}}",
       "fixedStakeNone": "Aucun pari réglé pour l'instant",
-      "weeklyBriefTitle": "Brief de la semaine",
+      "weeklyBriefTitle": "Ta semaine",
       "pageTitle": "Accueil",
       "riskLine": "18+ · Parier comporte des risques de perte. Ne mise que ce que tu peux perdre."
     }
@@ -1101,6 +1114,17 @@
       "mySlips": "Mes coupons",
       "bankroll": "Suivi de mise",
       "trackRecord": "Mesures historiques"
+    }
+  },
+  "couponAbstentions": {
+    "line": "Pas de {product} aujourd'hui : {reason}.",
+    "reasons": {
+      "no_home_favourite_in_band": "aucun favori à domicile entre 1,20 et 1,35",
+      "not_enough_calibrated_short_legs": "pas assez de paris fiables à cote courte, dans des championnats différents",
+      "no_priced_candidate": "pas assez de paris cotés chez 1xBet dans la bande",
+      "no_combination_in_window": "aucune combinaison entre 2 et 3",
+      "no_candidate_in_band": "aucun pari dans sa bande de cote",
+      "other": "pas de pari qui tienne la règle ce jour-là"
     }
   }
 }

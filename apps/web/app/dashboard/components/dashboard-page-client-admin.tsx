@@ -6,6 +6,7 @@ import { CompetitionRanking } from "./competition-ranking";
 import { UserLeaderboard } from "./user-leaderboard";
 import { PipelineStatus } from "./pipeline-status";
 import { ActiveAlerts } from "./active-alerts";
+import { RetentionCard } from "./retention-card";
 import { useCompetitionStats } from "@/domains/dashboard/use-cases/get-competition-stats";
 import { useLeaderboard } from "@/domains/dashboard/use-cases/get-leaderboard";
 import { useDashboardSummary } from "@/domains/dashboard/use-cases/get-dashboard-summary";
@@ -43,6 +44,11 @@ export function DashboardPageClientAdmin() {
                 à risque, marchés suspendus (détail complet sur /performance) */}
             <div className="col-span-2 sm:col-span-6 lg:col-span-12">
               <EngineHealthCard />
+            </div>
+
+            {/* Fidélisation (lot 4) : activité mesurée chez nous */}
+            <div className="col-span-2 sm:col-span-6 lg:col-span-12">
+              <RetentionCard />
             </div>
 
             {/* Row 2 : Pipeline + Alertes */}

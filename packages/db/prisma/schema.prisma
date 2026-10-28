@@ -193,6 +193,11 @@ enum NotificationType {
   // notification.service.ts.
   ANNOUNCEMENT_PUBLISHED
 
+  // Matinée (2026-10-29) : résultats d'hier et coupons du jour, à 8 h UTC.
+  MORNING_BRIEF
+  // Relevé du lundi (2026-10-29) : la semaine passée du joueur.
+  WEEKLY_STATEMENT
+
   @@schema("public")
 }
 
@@ -672,6 +677,9 @@ model User {
   // côté serveur et les notifications poussées coupées. Pas de retour
   // anticipé : la pause ne peut qu'être prolongée.
   pausedUntil                      DateTime?
+  // Notifications du joueur (2026-10-29), actives par défaut.
+  morningBriefEnabled              Boolean                   @default(true)
+  weeklyStatementEnabled           Boolean                   @default(true)
   sessions                         Session[]
   betSlips                         BetSlip[]
   betSlipItems                     BetSlipItem[]
@@ -695,6 +703,8 @@ model User {
   couponProposalViews              CouponProposalView[]
   couponProposalPlacements         CouponProposalPlacement[]
   couponFollows                    CouponFollow[]
+  activityDays                     UserActivityDay[]
+  productEvents                    ProductEvent[]
   createdAt                        DateTime                  @default(now())
   updatedAt                        DateTime                  @updatedAt
 
@@ -1526,3 +1536,42 @@ model ChatUsage {
 // with a real migration (Étape 5) but never wired to a caller;
 // model-calibration.service.ts/channel-tuning.service.ts use
 // BacktestRepository for persistence instead. See TODO.md/ROADMAP.md.
+
+// Un jour où le joueur a ouvert l'app (2026-10-29) : la mesure d'activité,
+// chez nous, sans outil tiers. Écrit au plus une fois par joueur et par jour
+// par AuthSessionGuard ; l'historique est reconstitué depuis les tables
+// datées existantes.
+model UserActivityDay {
+  userId      String   @db.Uuid
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  day         DateTime @db.Date
+  firstSeenAt DateTime @default(now())
+
+  @@id([userId, day])
+  @@index([day])
+  @@map("user_activity_day")
+  @@schema("public")
+}
+
+enum ProductEventType {
+  NOTIFICATION_OPENED
+  TOUR_COMPLETED
+
+  @@schema("public")
+}
+
+// Quelques actions produit (2026-10-29), liste fermée : ce qui ne laisse
+// pas déjà de trace dans une table (vues, suivis, coupons joués en ont une).
+model ProductEvent {
+  id      String           @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId  String           @db.Uuid
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type    ProductEventType
+  at      DateTime         @default(now())
+  payload Json?
+
+  @@index([type, at])
+  @@index([userId, at])
+  @@map("product_event")
+  @@schema("public")
+}

@@ -27,6 +27,7 @@ import { AppearanceSection } from "./components/appearance-section";
 import { LanguageSection } from "./components/language-section";
 import { PushNotificationsSection } from "./components/push-notifications-section";
 import { EmailNotificationsSection } from "./components/email-notifications-section";
+import { PlayerNotificationsSection } from "./components/player-notifications-section";
 import { BankrollPreferencesSection } from "./components/bankroll-preferences-section";
 import { SecurityMasterDetail } from "./components/security-master-detail";
 import type { AccountTabValue } from "./account-tabs-constants";
@@ -216,6 +217,7 @@ export function AccountTabsClient({
 
         <TabsContent value="notifications">
           <div className="flex flex-col gap-4">
+            <PlayerNotificationsSection />
             <PushNotificationsSection labels={pushNotificationLabels} />
             <EmailNotificationsSection labels={emailNotificationLabels} />
           </div>

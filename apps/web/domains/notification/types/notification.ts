@@ -14,6 +14,10 @@ export type NotificationType =
   | "SUPPORT_MESSAGE"
   // Résumé du matin des coupons déclarés réglés la veille (2026-10-28).
   | "SLIPS_SETTLED_DIGEST"
+  // La matinée (résultats d'hier + coupons du jour) et le relevé du lundi
+  // remplacent le résumé seul depuis le 2026-10-29.
+  | "MORNING_BRIEF"
+  | "WEEKLY_STATEMENT"
   | "ANNOUNCEMENT_PUBLISHED";
 
 export type NotificationCategory = "announcement" | "alert";
@@ -37,6 +41,8 @@ export const NOTIFICATION_SEVERITY: Record<
   ML_MODEL_MISSING: "medium",
   SUPPORT_MESSAGE: "low",
   SLIPS_SETTLED_DIGEST: "low",
+  MORNING_BRIEF: "low",
+  WEEKLY_STATEMENT: "low",
   ANNOUNCEMENT_PUBLISHED: "low",
 };
 

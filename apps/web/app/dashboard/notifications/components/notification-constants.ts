@@ -56,6 +56,10 @@ export function plainTextPreview(html: string): string {
 export function notificationHref(n: NotificationView): string | null {
   if (n.type === "SUPPORT_MESSAGE") return "/dashboard/inbox";
   if (n.type === "SLIPS_SETTLED_DIGEST") return "/dashboard/bet-slips";
+  // Sans ?from= : seul le push compte comme une ouverture de notification.
+  if (n.type === "MORNING_BRIEF" || n.type === "WEEKLY_STATEMENT") {
+    return "/dashboard";
+  }
   if (n.type === "ANNOUNCEMENT_PUBLISHED") {
     const id = n.payload?.announcementId;
     return typeof id === "string"

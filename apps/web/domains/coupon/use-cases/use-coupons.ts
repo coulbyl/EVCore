@@ -18,6 +18,20 @@ export function useCoupons(date: string) {
   });
 }
 
+export type CouponAbstention = { couponClass: string; reason: string | null };
+
+/** Produits du jour qui se sont abstenus, avec leur raison (2026-10-29). */
+export function useCouponAbstentions(date: string) {
+  return useQuery({
+    queryKey: ["coupon-abstentions", date],
+    queryFn: () =>
+      clientApiRequest<CouponAbstention[]>(
+        `/coupons/abstentions?${new URLSearchParams({ date }).toString()}`,
+      ),
+    staleTime: 5 * 60_000,
+  });
+}
+
 // Records a real, verifiable "view" (CouponProposalView, idempotent —
 // upserted server-side) — never a fabricated counter. Fire-and-forget: a
 // failed call just means one view goes uncounted, not worth surfacing to

@@ -13,4 +13,9 @@ export const SLIP_DIGEST = {
   // entre dans le résumé du jour où il est réglé, s'il s'est joué dans les
   // 7 derniers jours ; chaque coupon n'est annoncé réglé qu'une fois.
   LOOKBACK_DAYS: 7,
+  // Relevé du lundi (2026-10-29) : la semaine passée, lundi à 08:00 UTC,
+  // dans la même file. Surchargeable par WEEKLY_STATEMENT_CRON.
+  WEEKLY_SCHEDULER_KEY: 'weekly-statement',
+  WEEKLY_JOB: 'weekly-statement',
+  WEEKLY_CRON: '0 8 * * 1',
 } as const;

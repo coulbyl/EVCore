@@ -5,7 +5,14 @@ import { NotificationService } from '@modules/notification/notification.service'
 import { PushService } from '@modules/push/push.service';
 import { slipMoney, type SlipMoney } from '@modules/bet-slip/bet-slip-outcome';
 import { createLogger } from '@utils/logger';
-import { composeSlipDigest, type FollowedResult } from './slip-digest.compose';
+import { classForTargetOddsMin } from '@evcore/analysis-core';
+import { CouponService } from '@modules/coupon/coupon.service';
+import {
+  PRODUCT_SHORT_LABEL,
+  composeMorningBrief,
+  type FollowedResult,
+  type MorningCoupon,
+} from './slip-digest.compose';
 import { SLIP_DIGEST } from '@config/slip-digest.constants';
 import {
   SlipDigestRepository,
@@ -31,7 +38,19 @@ export function previousUtcDay(now: Date): string {
   return new Date(now.getTime() - DAY_MS).toISOString().slice(0, 10);
 }
 
-function toMoney(slip: DigestSlip): SlipMoney {
+/** Coup d'envoi de la dernière jambe : le jour auquel un coupon appartient. */
+export function lastKickoffMs(slip: DigestSlip): number {
+  return Math.max(
+    ...slip.items.map((item) => item.fixture.scheduledAt.getTime()),
+  );
+}
+
+/** En pause à `now` : le joueur a choisi de ne plus être sollicité. */
+export function isPausedAt(pausedUntil: Date | null, now: Date): boolean {
+  return pausedUntil !== null && pausedUntil.getTime() > now.getTime();
+}
+
+export function toMoney(slip: DigestSlip): SlipMoney {
   return slipMoney({
     type: slip.type,
     unitStake: new Decimal(slip.unitStake.toString()),
@@ -48,11 +67,47 @@ function toMoney(slip: DigestSlip): SlipMoney {
 
 @Injectable()
 export class SlipDigestService {
+  // eslint-disable-next-line max-params -- Nest DI constructor.
   constructor(
     private readonly repository: SlipDigestRepository,
     private readonly notification: NotificationService,
     private readonly push: PushService,
+    private readonly coupons: CouponService,
   ) {}
+
+  /**
+   * Coupons du jour pour la matinée : un par produit de l'Accueil (le
+   * générateur déterministe d'abord, l'IA ensuite), à la cote 1xBet quand
+   * toutes les jambes l'ont, sinon à la cote d'analyse.
+   */
+  private async morningCoupons(day: Date): Promise<MorningCoupon[]> {
+    const rows = await this.repository.findDayCoupons(day);
+    const byClass = new Map<string, MorningCoupon & { llm: boolean }>();
+    for (const row of rows) {
+      const couponClass = classForTargetOddsMin(Number(row.targetOddsMin));
+      if (!couponClass || !(couponClass in PRODUCT_SHORT_LABEL)) continue;
+      const llm = row.source === 'LLM';
+      const held = byClass.get(couponClass);
+      if (held && !(held.llm && !llm)) continue;
+      const operator = row.legs.every((leg) => leg.operatorOdds !== null)
+        ? row.legs.reduce(
+            (acc, leg) => acc.times(leg.operatorOdds!.toString()),
+            new Decimal(1),
+          )
+        : null;
+      byClass.set(couponClass, {
+        couponClass,
+        odds: (operator ?? new Decimal(row.combinedOdds.toString())).toNumber(),
+        llm,
+      });
+    }
+    const order = Object.keys(PRODUCT_SHORT_LABEL);
+    return [...byClass.values()]
+      .sort(
+        (a, b) => order.indexOf(a.couponClass) - order.indexOf(b.couponClass),
+      )
+      .map(({ couponClass, odds }) => ({ couponClass, odds }));
+  }
 
   /**
    * Un résumé par joueur : les coupons réglés depuis le dernier résumé, dont
@@ -100,12 +155,9 @@ export class SlipDigestService {
       byUser.set(user.id, bucket);
       return bucket;
     };
-    const isPaused = (pausedUntil: Date | null) =>
-      pausedUntil !== null && pausedUntil.getTime() > now.getTime();
+    const isPaused = (pausedUntil: Date | null) => isPausedAt(pausedUntil, now);
     for (const slip of slips) {
-      const lastKickoff = Math.max(
-        ...slip.items.map((item) => item.fixture.scheduledAt.getTime()),
-      );
+      const lastKickoff = lastKickoffMs(slip);
       if (lastKickoff < from.getTime() || lastKickoff >= to.getTime()) continue;
       const { user } = slip;
       if (isPaused(user.pausedUntil)) {
@@ -136,20 +188,49 @@ export class SlipDigestService {
       });
       bucket.followedIds.push(coupon.id);
     }
-    const skippedPaused = pausedUsers.size;
+    // La matinée part à tous les joueurs qui l'ont gardée (2026-10-29) :
+    // résultats s'ils en ont, coupons du jour pour tous.
+    const today = new Date(to.getTime());
+    const todayIso = today.toISOString().slice(0, 10);
+    const [recipients, coupons, abstentions, notified] = await Promise.all([
+      this.repository.findMorningRecipients(),
+      this.morningCoupons(today),
+      this.coupons.getAbstentions(todayIso),
+      this.repository.findNotifiedUserIds({
+        types: [
+          NotificationType.SLIPS_SETTLED_DIGEST,
+          NotificationType.MORNING_BRIEF,
+        ],
+        key: 'day',
+        value: day,
+      }),
+    ]);
 
     let sent = 0;
-    for (const [userId, bucket] of byUser) {
-      const message = composeSlipDigest(
-        bucket.results,
-        bucket.currency,
-        bucket.follows,
-      );
+    for (const recipient of recipients) {
+      if (isPaused(recipient.pausedUntil)) {
+        pausedUsers.add(recipient.id);
+        continue;
+      }
+      const bucket = byUser.get(recipient.id) ?? {
+        currency: recipient.currency,
+        results: [],
+        settledSlipIds: [],
+        follows: [],
+        followedIds: [],
+      };
+      const message = composeMorningBrief({
+        results: bucket.results,
+        currency: bucket.currency,
+        follows: bucket.follows,
+        coupons,
+        abstentions,
+      });
       if (!message) continue;
-      if (await this.repository.hasDigest(userId, day)) continue;
+      if (notified.has(recipient.id)) continue;
       await this.notification.notifyUser({
-        userId,
-        type: NotificationType.SLIPS_SETTLED_DIGEST,
+        userId: recipient.id,
+        type: NotificationType.MORNING_BRIEF,
         title: message.title,
         body: message.body,
         payload: {
@@ -160,13 +241,14 @@ export class SlipDigestService {
           followedIds: bucket.followedIds,
         },
       });
-      await this.push.sendToUser(userId, {
+      await this.push.sendToUser(recipient.id, {
         title: message.title,
         body: message.body,
-        url: '/dashboard/bet-slips',
+        url: '/dashboard?from=morning',
       });
       sent += 1;
     }
+    const skippedPaused = pausedUsers.size;
     logger.info({ day, sent, skippedPaused }, 'Slip digests sent');
     return { sent, skippedPaused };
   }

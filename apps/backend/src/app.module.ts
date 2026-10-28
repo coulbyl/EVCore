@@ -27,6 +27,7 @@ import { AnnouncementsModule } from './modules/announcements/announcements.modul
 import { SupportModule } from './modules/support/support.module';
 import { PushModule } from './modules/push/push.module';
 import { SlipDigestModule } from './modules/slip-digest/slip-digest.module';
+import { ActivityModule } from './modules/activity/activity.module';
 import { CouponModule } from './modules/coupon/coupon.module';
 import { MlModule } from './modules/ml/ml.module';
 import { AnalysisSheetModule } from './modules/analysis-sheet/analysis-sheet.module';
@@ -74,6 +75,7 @@ import { RedisModule } from './common/redis/redis.module';
     SupportModule,
     PushModule,
     SlipDigestModule,
+    ActivityModule,
     CouponModule,
     AnalysisSheetModule,
     PersonalizationModule,

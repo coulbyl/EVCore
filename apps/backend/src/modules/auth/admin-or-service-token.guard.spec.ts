@@ -12,6 +12,7 @@ import {
 } from './admin-or-service-token.guard';
 import type { AuthService } from './auth.service';
 import { AuthSessionGuard } from './auth-session.guard';
+import type { ActivityService } from '@modules/activity/activity.service';
 import { EtlController } from '@modules/etl/etl.controller';
 import { StatsBackfillController } from '@modules/etl/stats-backfill.controller';
 import { BettingEngineController } from '@modules/betting-engine/betting-engine.controller';
@@ -33,7 +34,9 @@ function makeGuard(opts: { token?: string; role?: Role | null }) {
     get: vi.fn().mockReturnValue(opts.token),
   } as unknown as ConfigService;
   return new AdminOrServiceTokenGuard(
-    new AuthSessionGuard(authService),
+    new AuthSessionGuard(authService, {
+      touch: vi.fn(),
+    } as unknown as ActivityService),
     config,
   );
 }

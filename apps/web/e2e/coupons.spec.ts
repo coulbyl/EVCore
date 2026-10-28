@@ -231,4 +231,12 @@ test.describe("Coupons", () => {
       "par jambe en moyenne",
     );
   });
+
+  test("un produit absent du jour dit pourquoi", async ({ page }) => {
+    await expect(
+      page.getByTestId("coupon-abstentions").filter({ visible: true }),
+    ).toContainText(
+      "Pas de Chasseur Score aujourd'hui : aucun pari dans sa bande de cote.",
+    );
+  });
 });

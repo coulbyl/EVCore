@@ -169,3 +169,41 @@ describe('CouponService.follow', () => {
     expect(follows.follow).not.toHaveBeenCalled();
   });
 });
+
+describe('CouponService.getAbstentions', () => {
+  it('keeps the products whose latest attempt abstained and that have no coupon', async () => {
+    const repo = {
+      findLatestAttempts: vi.fn().mockResolvedValue([
+        {
+          pass: 'double',
+          outcome: 'abstained',
+          reason: 'no_combination_in_window',
+        },
+        { pass: 'favourite', outcome: 'composed', reason: null },
+        // Pas un produit de l'Accueil : jamais expliqué au joueur.
+        { pass: 'price-composer', outcome: 'abstained', reason: 'x' },
+        {
+          pass: 'hunter-hunter_draw',
+          outcome: 'abstained',
+          reason: 'no_candidate_in_band',
+        },
+        // Le moteur s'abstient mais le combiné de l'IA (1,2) est publié.
+        {
+          pass: 'engine-combo',
+          outcome: 'abstained',
+          reason: 'not_enough_calibrated_short_legs',
+        },
+      ]),
+      findPublishedTargets: vi.fn().mockResolvedValue([1.2]),
+    } as unknown as CouponRepository;
+    const service = new CouponService(
+      repo,
+      {} as PlayableOddsRepository,
+      {} as CouponFollowRepository,
+    );
+    await expect(service.getAbstentions('2026-10-29')).resolves.toEqual([
+      { couponClass: 'DOUBLE', reason: 'no_combination_in_window' },
+      { couponClass: 'HUNTER_DRAW', reason: 'no_candidate_in_band' },
+    ]);
+  });
+});

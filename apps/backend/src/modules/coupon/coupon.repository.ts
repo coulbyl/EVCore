@@ -727,6 +727,9 @@ export class CouponRepository {
    */
   async findClassTrackRecord(
     since: Date,
+    // Borne haute exclusive : le relevé du lundi lit une semaine fermée,
+    // rejouable plus tard sans compter les jours suivants.
+    until: Date = new Date('9999-12-31T00:00:00.000Z'),
   ): Promise<readonly ClassTrackRecordRow[]> {
     // La pire série se compte sur la suite des coupons réglés de la classe,
     // dans l'ordre des jours : chaque coupon non perdu ouvre un nouveau
@@ -740,6 +743,7 @@ export class CouponRepository {
         FROM public.coupon_proposal
         WHERE result IS NOT NULL
           AND "forDate" >= ${since}
+          AND "forDate" < ${until}
       ), streaks AS (
         SELECT source, "targetOddsMin", max(run)::int AS "worstLosingStreak"
         FROM (
@@ -785,6 +789,34 @@ export class CouponRepository {
    * complet est nécessaire pour retirer la marge : on garde toutes les
    * issues, le compositeur filtre lui-même la bande de cote.
    */
+  /**
+   * Dernière tentative de chaque passe pour un jour : les abstentions
+   * expliquées au joueur (2026-10-29). La dernière fait foi (la passe de
+   * rattrapage peut avoir composé après une abstention).
+   */
+  findLatestAttempts(
+    forDate: Date,
+  ): Promise<{ pass: string; outcome: string; reason: string | null }[]> {
+    return this.prisma.client.$queryRaw<
+      { pass: string; outcome: string; reason: string | null }[]
+    >`
+      SELECT DISTINCT ON (pass) pass, outcome, reason
+      FROM public.coupon_generation_attempt
+      WHERE "forDate" = ${startOfUtcDay(forDate)}::date
+      ORDER BY pass, "generatedAt" DESC
+    `;
+  }
+
+  /** Bandes cibles des coupons publiés pour un jour, toutes sources. */
+  async findPublishedTargets(forDate: Date): Promise<number[]> {
+    const rows = await this.prisma.client.couponProposal.findMany({
+      where: { forDate: startOfUtcDay(forDate) },
+      select: { targetOddsMin: true },
+      distinct: ['targetOddsMin'],
+    });
+    return rows.map((row) => Number(row.targetOddsMin));
+  }
+
   /**
    * Matchs que le méta-canal AVOID signale sur la dernière analyse d'avant
    * coup d'envoi : les chasseurs ne les jouent pas.
