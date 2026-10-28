@@ -1,5 +1,4 @@
 import {
-  IsEmail,
   IsOptional,
   IsString,
   Matches,
@@ -7,11 +6,11 @@ import {
   MinLength,
 } from 'class-validator';
 
+// L'adresse e-mail ne change plus ici (2026-10-28) : sans mot de passe ni
+// code, n'importe quelle session pouvait la remplacer. Elle passe par
+// POST /auth/me/email/request puis /confirm. Un champ `email` envoyé ici est
+// retiré par la ValidationPipe (whitelist).
 export class UpdateIdentityDto {
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
   @IsOptional()
   @IsString()
   @MinLength(3)

@@ -635,53 +635,24 @@ export class AuthService {
     userId: string,
     dto: UpdateIdentityDto,
   ): Promise<AuthSessionUser> {
-    const email = dto.email ? normalizeIdentifier(dto.email) : undefined;
     const username = dto.username
       ? normalizeIdentifier(dto.username)
       : undefined;
 
-    if (email !== undefined || username !== undefined) {
-      const conflicts = await this.prisma.client.user.findFirst({
-        where: {
-          AND: [
-            { NOT: { id: userId } },
-            {
-              OR: [
-                ...(email !== undefined ? [{ email }] : []),
-                ...(username !== undefined ? [{ username }] : []),
-              ],
-            },
-          ],
-        },
-        select: { email: true, username: true },
+    if (username !== undefined) {
+      const conflict = await this.prisma.client.user.findFirst({
+        where: { username, NOT: { id: userId } },
+        select: { id: true },
       });
-
-      if (conflicts) {
-        if (email !== undefined && conflicts.email === email) {
-          throw new ConflictException('Cet email est déjà utilisé');
-        }
+      if (conflict) {
         throw new ConflictException("Ce nom d'utilisateur est déjà utilisé");
       }
     }
 
-    const current = await this.prisma.client.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { email: true, mfaMethod: true },
-    });
-
-    const emailChanged = email !== undefined && email !== current.email;
-    const shouldResetVerification =
-      emailChanged && current.mfaMethod === 'EMAIL';
-
     const user = await this.prisma.client.user.update({
       where: { id: userId },
       data: {
-        ...(email !== undefined && { email }),
         ...(username !== undefined && { username }),
-        ...(shouldResetVerification && {
-          emailVerified: false,
-          mfaMethod: null,
-        }),
       },
       select: {
         id: true,
