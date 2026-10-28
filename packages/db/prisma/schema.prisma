@@ -113,6 +113,11 @@ enum BankrollTransactionType {
   BET_PLACED
   BET_WON
   BET_VOID
+  // Coupon saisi par erreur, supprimé avant le premier coup d'envoi : la
+  // mise revient au solde (2026-10-28).
+  SLIP_CANCELLED
+  // Retrait déclaré par le joueur, comme le dépôt.
+  WITHDRAWAL
 
   @@schema("public")
 }

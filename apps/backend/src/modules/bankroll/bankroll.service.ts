@@ -34,12 +34,17 @@ export class BankrollService {
   /** Solde et dépôts déclarés, sur tout l'historique. */
   async getSummary(
     userId: string,
-  ): Promise<{ balance: string; deposited: string }> {
-    const [balance, deposited] = await Promise.all([
+  ): Promise<{ balance: string; deposited: string; withdrawn: string }> {
+    const [balance, deposited, withdrawn] = await Promise.all([
       this.bankrollRepository.getBalance(userId),
       this.bankrollRepository.getDepositedTotal(userId),
+      this.bankrollRepository.getWithdrawnTotal(userId),
     ]);
-    return { balance: balance.toFixed(2), deposited: deposited.toFixed(2) };
+    return {
+      balance: balance.toFixed(2),
+      deposited: deposited.toFixed(2),
+      withdrawn: withdrawn.toFixed(2),
+    };
   }
 
   async getTransactions(input: GetTransactionsInput) {
@@ -82,6 +87,58 @@ export class BankrollService {
       note: opts?.note,
     });
     return this.getBalance(userId);
+  }
+
+  /**
+   * Retrait déclaré (2026-10-28), le pendant du dépôt : jamais au-delà du
+   * solde. Le verrou par joueur et la lecture du solde partagent la
+   * transaction de l'écriture, pour que deux retraits simultanés ne passent
+   * pas tous les deux.
+   */
+  async withdraw(
+    userId: string,
+    amount: number,
+    opts?: { note?: string },
+  ): Promise<{ balance: string }> {
+    const value = new Decimal(amount);
+    if (!value.greaterThan(0)) {
+      throw new BadRequestException('Le montant doit être positif');
+    }
+    await this.bankrollRepository.runInTransaction(async (tx) => {
+      await this.bankrollRepository.lockUserBankroll(userId, tx);
+      const balance = await this.bankrollRepository.getBalance(userId, { tx });
+      if (balance.lessThan(value)) {
+        throw new BadRequestException(
+          'Tu ne peux pas retirer plus que ton solde.',
+        );
+      }
+      await this.bankrollRepository.insert(
+        {
+          userId,
+          type: BankrollTransactionType.WITHDRAWAL,
+          amount: value.negated(),
+          note: opts?.note,
+        },
+        { tx },
+      );
+    });
+    return this.getBalance(userId);
+  }
+
+  /** Coupon supprimé avant le coup d'envoi : sa mise revient au solde. */
+  async recordSlipCancelled(
+    input: { userId: string; betId: string; stake: Decimal },
+    options?: TransactionOptions,
+  ): Promise<void> {
+    await this.bankrollRepository.insert(
+      {
+        userId: input.userId,
+        type: BankrollTransactionType.SLIP_CANCELLED,
+        amount: input.stake,
+        betId: input.betId,
+      },
+      options,
+    );
   }
 
   async recordBetPlacedBatch(

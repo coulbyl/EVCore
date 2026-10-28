@@ -1,11 +1,13 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import {
   BetSlipType,
   BetSource,
+  BetStatus,
   Market,
   Prisma,
   StrategyChannel,
@@ -410,6 +412,62 @@ export class BetSlipService {
         firstSlipAt: slips[0]?.createdAt.toISOString() ?? null,
       },
     };
+  }
+
+  /**
+   * Supprimer un coupon saisi par erreur (2026-10-28) : seulement tant
+   * qu'aucun de ses matchs n'a commencé et qu'aucune jambe n'est réglée, pour
+   * qu'on ne puisse pas effacer un coupon qui part mal. La mise revient au
+   * solde par un mouvement « Coupon supprimé ». Rejouable : la suppression et
+   * le remboursement partagent une transaction, et un second appel ne trouve
+   * plus rien.
+   */
+  async delete(
+    userId: string,
+    slipId: string,
+    now: Date = new Date(),
+  ): Promise<{ refunded: string }> {
+    const slip = await this.repository.findDeletableSlip(userId, slipId);
+    const firstItem = slip?.items[0];
+    if (!slip || !firstItem) throw new NotFoundException('Coupon introuvable');
+    if (slip.items.some((item) => item.bet.status !== BetStatus.PENDING)) {
+      throw new ConflictException(
+        'Une jambe de ce coupon est déjà réglée : il ne peut plus être supprimé.',
+      );
+    }
+    const firstKickoff = Math.min(
+      ...slip.items.map((item) => item.fixture.scheduledAt.getTime()),
+    );
+    if (firstKickoff <= now.getTime()) {
+      throw new ConflictException(
+        'Un match de ce coupon a commencé : il ne peut plus être supprimé.',
+      );
+    }
+    // Même mise que celle débitée à la saisie : une fois pour un combiné,
+    // jambe par jambe pour des simples.
+    const unitStake = new Decimal(slip.unitStake.toString());
+    const stake =
+      slip.type === BetSlipType.COMBO
+        ? unitStake
+        : slip.items.reduce(
+            (acc, item) =>
+              acc.plus(
+                item.stakeOverride === null
+                  ? unitStake
+                  : new Decimal(item.stakeOverride.toString()),
+              ),
+            new Decimal(0),
+          );
+
+    await this.repository.runInTransaction(async (tx) => {
+      const deleted = await this.repository.deleteSlip({ slipId, userId }, tx);
+      if (!deleted) throw new NotFoundException('Coupon introuvable');
+      await this.bankroll.recordSlipCancelled(
+        { userId, betId: firstItem.betId, stake },
+        { tx },
+      );
+    });
+    return { refunded: stake.toFixed(2) };
   }
 
   async list(userId: string, from?: Date, to?: Date): Promise<BetSlipView[]> {

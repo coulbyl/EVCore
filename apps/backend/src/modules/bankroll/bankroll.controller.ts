@@ -12,6 +12,7 @@ import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
 import { CurrentSession } from '@modules/auth/current-session.decorator';
 import type { AuthSession } from '@modules/auth/auth.types';
 import { BankrollService } from './bankroll.service';
+import { WithdrawDto } from './dto/withdraw.dto';
 import { DepositDto } from './dto/deposit.dto';
 import { GetTransactionsQueryDto } from './dto/get-transactions-query.dto';
 
@@ -40,6 +41,14 @@ export class BankrollController {
       from: query.from ? new Date(query.from) : undefined,
       to: query.to ? new Date(query.to) : undefined,
       limit: query.limit,
+    });
+  }
+
+  @Post('withdrawal')
+  @HttpCode(HttpStatus.OK)
+  withdraw(@CurrentSession() session: AuthSession, @Body() body: WithdrawDto) {
+    return this.bankrollService.withdraw(session.user.id, body.amount, {
+      note: body.note,
     });
   }
 

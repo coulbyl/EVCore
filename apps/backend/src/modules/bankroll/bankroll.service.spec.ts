@@ -12,6 +12,11 @@ function makeRepo(balance = new Decimal(0)): BankrollRepository {
     getDepositedTotal: vi.fn().mockResolvedValue(new Decimal(0)),
     insert: vi.fn().mockResolvedValue({}),
     insertMany: vi.fn().mockResolvedValue({ count: 0 }),
+    getWithdrawnTotal: vi.fn().mockResolvedValue(new Decimal(0)),
+    lockUserBankroll: vi.fn().mockResolvedValue(undefined),
+    runInTransaction: vi.fn((fn: (tx: unknown) => Promise<unknown>) =>
+      fn({ tx: true }),
+    ),
   } as unknown as BankrollRepository;
 }
 
@@ -180,13 +185,15 @@ describe('BankrollService', () => {
   });
 
   describe('getSummary', () => {
-    it('returns the declared balance and every deposit ever made', async () => {
+    it('returns the declared balance, deposits and withdrawals', async () => {
       const repo = makeRepo(new Decimal('48320'));
       vi.mocked(repo.getDepositedTotal).mockResolvedValue(new Decimal('60000'));
+      vi.mocked(repo.getWithdrawnTotal).mockResolvedValue(new Decimal('5000'));
       const service = new BankrollService(repo);
       expect(await service.getSummary('u1')).toEqual({
         balance: '48320.00',
         deposited: '60000.00',
+        withdrawn: '5000.00',
       });
     });
   });
@@ -251,5 +258,40 @@ describe('BankrollService', () => {
     const service = new BankrollService(repo);
     const [row] = await service.getTransactions({ userId: 'u1' });
     expect(row).toMatchObject({ comboLegs: 2, pick: 'HOME', homeTeam: 'Ajax' });
+  });
+
+  describe('withdraw', () => {
+    it('writes a negative WITHDRAWAL under the per-player lock', async () => {
+      const repo = makeRepo(new Decimal('5000'));
+      const service = new BankrollService(repo);
+      await service.withdraw('u1', 2000, { note: 'Retrait Wave' });
+      expect(repo.lockUserBankroll).toHaveBeenCalledWith('u1', { tx: true });
+      expect(repo.getBalance).toHaveBeenCalledWith('u1', { tx: { tx: true } });
+      expect(repo.insert).toHaveBeenCalledWith(
+        {
+          userId: 'u1',
+          type: BankrollTransactionType.WITHDRAWAL,
+          amount: new Decimal(-2000),
+          note: 'Retrait Wave',
+        },
+        { tx: { tx: true } },
+      );
+    });
+
+    it('refuses to withdraw more than the balance', async () => {
+      const repo = makeRepo(new Decimal('1000'));
+      const service = new BankrollService(repo);
+      await expect(service.withdraw('u1', 1500)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(repo.insert).not.toHaveBeenCalled();
+    });
+
+    it('refuses a zero amount', async () => {
+      const service = new BankrollService(makeRepo(new Decimal('1000')));
+      await expect(service.withdraw('u1', 0)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
   });
 });
