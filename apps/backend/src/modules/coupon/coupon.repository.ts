@@ -256,13 +256,15 @@ export class CouponRepository {
   async findByDate(
     day: Date,
     userId: string,
-    status?: CouponProposalStatus,
+    opts: { status?: CouponProposalStatus; includeShadow?: boolean } = {},
   ): Promise<CouponProposalWithEngagement[]> {
     const dayStart = startOfUtcDay(day);
     return this.prisma.client.couponProposal.findMany({
       where: {
         forDate: dayStart,
-        ...(status ? { status } : {}),
+        ...(opts.status ? { status: opts.status } : {}),
+        // L'ombre n'est montrée qu'à l'admin.
+        ...(opts.includeShadow ? {} : { shadow: false }),
       },
       include: withEngagement(userId),
       orderBy: { rank: 'asc' },
@@ -402,6 +404,7 @@ export class CouponRepository {
           in: [CouponResult.WON, CouponResult.LOST, CouponResult.PARTIAL],
         },
         forDate: { gte: opts.from, lte: opts.to },
+        shadow: false,
         ...(opts.source ? { source: opts.source } : {}),
       },
       select: {
@@ -522,6 +525,8 @@ export class CouponRepository {
       source?: CouponSource;
       /** Canal écrit sur chaque jambe ; PRICE par défaut. */
       legCanal?: StrategyChannel;
+      /** En ombre : réglé, jamais montré au joueur (chasseurs). */
+      shadow?: boolean;
     };
   }): Promise<string> {
     const profile = input.profile ?? {
@@ -551,6 +556,7 @@ export class CouponRepository {
       // anti-prédictivité : le compositeur n'en produit aucun.
       signalScore: new Prisma.Decimal(0),
       lastFixtureScheduledAt: input.lastFixtureScheduledAt,
+      shadow: profile.shadow ?? false,
       reasoning: {
         policyVersion: profile.policyVersion,
         expectedReturn: input.expectedReturn,
@@ -728,6 +734,7 @@ export class CouponRepository {
                "combinedOdds", "realizedOdds"
         FROM public.coupon_proposal
         WHERE result IS NOT NULL
+          AND NOT shadow
           AND "forDate" >= ${since}
       ), streaks AS (
         SELECT source, "targetOddsMin", max(run)::int AS "worstLosingStreak"

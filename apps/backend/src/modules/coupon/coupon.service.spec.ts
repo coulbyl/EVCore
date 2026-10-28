@@ -20,6 +20,7 @@ function proposal(overrides: Record<string, unknown> = {}) {
     reasoning: { generationPass: 'INTRADAY' },
     lastFixtureScheduledAt: new Date('2026-09-14T20:00:00.000Z'),
     generatedAt: new Date('2026-09-14T12:00:00.000Z'),
+    shadow: false,
     _count: { views: 0, placements: 0, follows: 0 },
     placements: [],
     follows: [],

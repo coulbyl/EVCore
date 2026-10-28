@@ -70,7 +70,9 @@ export class CouponController {
     @Query() query: CouponQueryDto,
   ): Promise<CouponProposalDto[]> {
     const date = query.date ?? formatDateUtc(tomorrowUtc());
-    return this.coupon.getCoupons(date, session.user.id, undefined);
+    return this.coupon.getCoupons(date, session.user.id, {
+      includeShadow: session.user.role === 'ADMIN',
+    });
   }
 
   @Post(':id/view')

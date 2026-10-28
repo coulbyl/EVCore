@@ -38,10 +38,10 @@ export class CouponService {
   async getCoupons(
     date: string,
     userId: string,
-    status?: CouponProposalStatus,
+    opts: { status?: CouponProposalStatus; includeShadow?: boolean } = {},
   ): Promise<CouponProposalDto[]> {
     const forDate = new Date(`${date}T00:00:00.000Z`);
-    const proposals = await this.repo.findByDate(forDate, userId, status);
+    const proposals = await this.repo.findByDate(forDate, userId, opts);
     const quotes = await this.playableOdds
       .findPlayableQuotes(
         proposals.flatMap((p) =>
@@ -149,6 +149,7 @@ export class CouponService {
         viewerCount: p._count.views,
         playerCount: p._count.placements,
         playedByMe: p.placements.length > 0,
+        shadow: p.shadow,
         followerCount: p._count.follows,
         followedByMe: p.follows.length > 0,
         result: p.result,

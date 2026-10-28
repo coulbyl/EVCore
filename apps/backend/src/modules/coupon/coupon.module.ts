@@ -7,6 +7,7 @@ import { CouponSettlementService } from './coupon-settlement.service';
 import { CouponService } from './coupon.service';
 import { CouponPriceGenerationService } from './coupon-price-generation.service';
 import { CouponFavouriteGenerationService } from './coupon-favourite-generation.service';
+import { CouponHunterGenerationService } from './coupon-hunter-generation.service';
 import { CouponDoubleGenerationService } from './coupon-double-generation.service';
 import { CouponDailyGenerationService } from './coupon-daily-generation.service';
 import { CouponEngineComboGenerationService } from './coupon-engine-combo-generation.service';
@@ -39,6 +40,7 @@ import { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.
     CouponPriceGenerationService,
     CouponFavouriteGenerationService,
     CouponDoubleGenerationService,
+    CouponHunterGenerationService,
     CouponEngineComboGenerationService,
     CouponDailyGenerationService,
   ],
