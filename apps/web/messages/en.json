@@ -262,7 +262,7 @@
       "link": "Details in Historical measures",
       "gap": "Gap to the market: {gap} points, give or take {margin}. Only opinions written before kickoff count, as they were published.",
       "versions": "By version: {list}.",
-      "version": "{version} since {since} ({settled} opinions)",
+      "version": "{version} from {first} to {last} ({settled} opinions)",
       "aboveMarket": "Over this period the AI does better than the market frequency, beyond the margin of error. One period promises nothing for the next."
     },
     "todayLabel": "Today",

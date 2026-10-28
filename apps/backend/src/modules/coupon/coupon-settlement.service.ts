@@ -162,7 +162,17 @@ export class CouponSettlementService {
   async settleProposal(proposalId: string): Promise<void> {
     const proposal = await this.repo.findByIdWithLegs(proposalId);
     if (!proposal) return;
-    await this.priceUnpricedLegs(proposal);
+    // Analytique seulement : un échec de cotation ne bloque jamais le
+    // règlement du coupon.
+    await this.priceUnpricedLegs(proposal).catch((error: unknown) => {
+      logger.warn(
+        {
+          proposalId,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        'Coupon legs not priced at 1xBet',
+      );
+    });
 
     const fixtureIds = [...new Set(proposal.legs.map((l) => l.fixtureId))];
 

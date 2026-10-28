@@ -24,7 +24,7 @@ test.describe("Avis IA", () => {
       "Écart au marché : +2,6 points, à ± 5,4 points près.",
     );
     await expect(page.getByTestId("ai-track-record")).toContainText(
-      "v5 depuis le 27 octobre 2026 (60 avis)",
+      "v5 du 27/10/26 au 28/10/26 (60 avis)",
     );
     await expect(page.getByTestId("ai-today-count")).toHaveText(
       "Aujourd'hui : 2 avis proposés sur 3 matchs lus, 1 sans avis.",

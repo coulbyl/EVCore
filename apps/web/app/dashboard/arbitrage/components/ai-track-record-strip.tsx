@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useAiTrackRecord } from "@/domains/dashboard/use-cases/get-ai-track-record";
-import { daysAgoIso, formatDateLong, todayIso } from "@/lib/date";
+import {
+  daysAgoIso,
+  formatDateLong,
+  formatDateShort,
+  todayIso,
+} from "@/lib/date";
 import {
   formatCount,
   formatRate,
@@ -42,9 +47,11 @@ export function AiTrackRecordStrip() {
   const to = todayIso();
   const { data } = useAiTrackRecord(from, to);
   const total = data?.total;
+  const enough = total !== undefined && total.settled >= MIN_SETTLED;
   const beatsMarket =
-    total?.gap != null &&
-    total.gapMargin != null &&
+    enough &&
+    total.gap !== null &&
+    total.gapMargin !== null &&
     total.gap - total.gapMargin > 0;
 
   return (
@@ -55,7 +62,7 @@ export function AiTrackRecordStrip() {
       <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
         {t("title")}
       </h2>
-      {total && total.settled >= MIN_SETTLED ? (
+      {enough ? (
         <>
           <p className="text-foreground">
             {t("line", {
@@ -76,14 +83,15 @@ export function AiTrackRecordStrip() {
               })}
             </p>
           ) : null}
-          {data.versions.length > 1 ? (
+          {data && data.versions.length > 1 ? (
             <p className="text-muted-foreground">
               {t("versions", {
                 list: data.versions
                   .map((v) =>
                     t("version", {
                       version: versionLabel(v.configVersion),
-                      since: formatDateLong(v.firstDay ?? from),
+                      first: formatDateShort(v.firstDay ?? from),
+                      last: formatDateShort(v.lastDay ?? to),
                       settled: formatCount(v.settled, locale),
                     }),
                   )

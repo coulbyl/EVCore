@@ -35,11 +35,16 @@ export class VantageHistoryRepository {
     updates: readonly { id: string; result: BetStatus }[],
   ): Promise<void> {
     if (updates.length === 0) return;
+    // Écrit seulement quand le résultat change (premier règlement, score
+    // corrigé) : un re-règlement ne déplace pas la date d'un avis réglé.
     const settledAt = new Date();
     await this.prisma.client.$transaction(
       updates.map((update) =>
-        this.prisma.client.vantageDecisionHistory.update({
-          where: { id: update.id },
+        this.prisma.client.vantageDecisionHistory.updateMany({
+          where: {
+            id: update.id,
+            OR: [{ result: null }, { result: { not: update.result } }],
+          },
           data: { result: update.result, settledAt },
         }),
       ),
