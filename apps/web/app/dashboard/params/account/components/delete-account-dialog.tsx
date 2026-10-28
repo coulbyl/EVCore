@@ -72,6 +72,10 @@ export function DeleteAccountDialog() {
               {t("description")}
             </DialogDescription>
           </DialogHeader>
+          {/* La pause, proposée une fois, sans insister. */}
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            {t("pauseHint")}
+          </p>
           <div className="mt-4 flex flex-col gap-1.5">
             <label
               htmlFor="delete-account-password"

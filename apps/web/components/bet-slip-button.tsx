@@ -4,14 +4,17 @@ import { ReceiptText } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@evcore/ui/cn";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
+import { useActivePause } from "@/domains/auth/use-cases/use-active-pause";
 
 export function BetSlipButton() {
   const { draft, open } = useBetSlip();
   const pathname = usePathname();
   const count = draft.items.length;
   const hiddenOnPage = pathname.startsWith("/dashboard/bet-slips");
+  // Pendant la pause, on ne compose ni ne joue de coupon.
+  const pauseEnd = useActivePause();
 
-  if (hiddenOnPage) return null;
+  if (hiddenOnPage || pauseEnd) return null;
 
   const hasItems = count > 0;
   const displayCount = count > 9 ? "9+" : count;

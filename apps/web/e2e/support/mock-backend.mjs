@@ -26,12 +26,15 @@ const SESSION = {
       unitMode: null,
       unitAmount: null,
       unitPercent: null,
-      // Sans ce drapeau l'assistant de démarrage s'ouvre sur chaque page et
-      // son voile intercepte les clics (bouton de recherche de l'en-tête).
       hasCompletedOnboarding: true,
-      // Idem pour la visite guidée (driver.js), qui démarre une fois
-      // l'assistant terminé et pose elle aussi un voile sur la page.
+      // Sans ce drapeau la visite guidée (driver.js) démarre à la première
+      // visite et pose un voile qui intercepte les clics.
       hasSeenOnboarding: true,
+      // E2E_PAUSED=1 : un joueur en pause pour 7 jours (pages de paris
+      // remplacées par l'annonce de la pause).
+      pausedUntil: process.env.E2E_PAUSED
+        ? new Date(Date.now() + 7 * 86_400_000).toISOString()
+        : null,
     },
   },
 };
@@ -1206,6 +1209,11 @@ function route(method, url) {
   if (path === "/auth/me") return [200, SESSION];
   // Le faux backend ne lit pas les corps : la suppression répond toujours
   // « mot de passe incorrect », ce qui teste la boîte sans perdre la session.
+  if (path === "/auth/me/pause")
+    return [
+      200,
+      { pausedUntil: new Date(Date.now() + 7 * 86_400_000).toISOString() },
+    ];
   if (path === "/auth/me/delete")
     return [400, { message: "Mot de passe incorrect.", statusCode: 400 }];
   if (path === "/auth/login") return [200, SESSION, true];

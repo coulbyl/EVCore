@@ -89,3 +89,36 @@ test.describe("Compte", () => {
     await expect(page).toHaveURL(/\/dashboard\/params\/account\/profil$/);
   });
 });
+
+test.describe("Pause", () => {
+  test("une pause masque les paris tout de suite, sans retour en arrière", async ({
+    page,
+  }) => {
+    await page.goto("/dashboard/params/account/profil");
+    const section = page.getByTestId("pause-section");
+    await section.getByRole("button", { name: "Faire une pause" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toContainText("Pas de retour en arrière");
+    await dialog.getByRole("radio", { name: "7 jours" }).click();
+    await dialog.getByRole("button", { name: "Commencer la pause" }).click();
+    await expect(section).toContainText("Tu es en pause jusqu'au");
+    await expect(
+      section.getByRole("button", { name: "Prolonger la pause" }),
+    ).toBeVisible();
+
+    // Navigation dans l'app : la session côté client sait déjà que le
+    // joueur est en pause, Coupons montre l'annonce au lieu des coupons.
+    await page
+      .getByRole("link", { name: "Coupons" })
+      .filter({ visible: true })
+      .first()
+      .click();
+    await expect(page).toHaveURL(/\/dashboard\/coupons/);
+    await expect(page.getByTestId("paused-notice")).toContainText(
+      "Tu es en pause",
+    );
+    await expect(page.getByTestId("paused-notice")).toContainText(
+      "Ton historique reste accessible",
+    );
+  });
+});

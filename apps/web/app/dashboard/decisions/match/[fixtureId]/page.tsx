@@ -5,6 +5,9 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { Page, PageContent } from "@evcore/ui";
 import { serverApiRequest } from "@/lib/api/server-api";
+import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session";
+import { activePauseEnd } from "@/domains/auth/types/auth";
+import { PausedPage } from "@/components/pause-gate";
 import type {
   FixtureEvaluatedPickSnapshot,
   FixtureSheet,
@@ -45,6 +48,11 @@ export default async function MatchSheetPage({
   params: Promise<{ fixtureId: string }>;
 }) {
   const { fixtureId } = await params;
+  // En pause, le serveur refuse la fiche (403) : on l'annonce au lieu d'un
+  // « match introuvable ».
+  const session = await getCurrentSession();
+  const pauseEnd = activePauseEnd(session?.user.pausedUntil ?? null);
+  if (pauseEnd) return <PausedPage until={pauseEnd} />;
   const sheet = await loadSheet(fixtureId);
   if (!sheet) notFound();
 

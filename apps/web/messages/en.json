@@ -541,7 +541,25 @@
       "passwordLabel": "Your password, to confirm",
       "cancel": "Cancel",
       "confirm": "Delete for good",
-      "error": "The account could not be deleted."
+      "error": "The account could not be deleted.",
+      "pauseHint": "Only need a breather? A break turns off coupons and notifications without erasing anything."
+    },
+    "pause": {
+      "intro": "Need a breather? A break turns off coupons, forecasts and announcement notifications, without erasing anything.",
+      "activeUntil": "You are on a break until {end}.",
+      "trigger": "Take a break",
+      "extend": "Extend the break",
+      "description": "During the break, the app suggests no bet and sends no announcement notification. Your history, stake tracking and training stay available.",
+      "durationLabel": "Break length",
+      "duration": {
+        "1": "24 hours",
+        "7": "7 days",
+        "30": "30 days"
+      },
+      "noReturn": "No going back: the break runs to the end. You can only extend it.",
+      "cancel": "Cancel",
+      "confirm": "Start the break",
+      "error": "The break could not be started."
     }
   },
   "performance": {
@@ -1031,5 +1049,15 @@
     "replaceCancel": "Keep my slip",
     "addToCoupon": "Add to coupon",
     "removeFromCoupon": "Remove from coupon"
+  },
+  "pause": {
+    "title": "You are on a break",
+    "until": "Until {end}.",
+    "body": "Coupons, forecasts and AI opinions come back on that date. Your history stays available.",
+    "links": {
+      "mySlips": "My coupons",
+      "bankroll": "Stake tracking",
+      "trackRecord": "Track record"
+    }
   }
 }

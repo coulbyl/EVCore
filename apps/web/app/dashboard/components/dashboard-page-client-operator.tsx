@@ -8,6 +8,8 @@ import { TodayPicks } from "./home/today-picks";
 import { YesterdayCoupons } from "./home/yesterday-coupons";
 import { MySlipsSummary } from "./home/my-slips-summary";
 import { WeeklyBrief } from "./weekly-brief";
+import { PausedNotice } from "@/components/paused-notice";
+import { useActivePause } from "@/domains/auth/use-cases/use-active-pause";
 import { useTranslations } from "next-intl";
 
 /**
@@ -23,6 +25,9 @@ import { useTranslations } from "next-intl";
 export function DashboardPageClientOperator() {
   const t = useTranslations("dashboard.home");
   const announcementsQuery = useDashboardAnnouncements();
+  // En pause : ni coupons du jour, ni sélections, ni bilan d'hier ; le suivi
+  // du joueur reste (jeu responsable, 2026-10-28).
+  const pauseEnd = useActivePause();
 
   return (
     <Page className="flex h-full flex-col">
@@ -54,17 +59,27 @@ export function DashboardPageClientOperator() {
               brief hors lundi) ne laisse pas d'espace. */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
             <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-6">
-              <div className="order-2 min-w-0 empty:hidden lg:order-none">
-                <TodayCoupons />
-              </div>
-              <div className="order-3 min-w-0 empty:hidden lg:order-none">
-                <TodayPicks />
-              </div>
+              {pauseEnd ? (
+                <div className="order-2 min-w-0 lg:order-none">
+                  <PausedNotice until={pauseEnd} />
+                </div>
+              ) : (
+                <>
+                  <div className="order-2 min-w-0 empty:hidden lg:order-none">
+                    <TodayCoupons />
+                  </div>
+                  <div className="order-3 min-w-0 empty:hidden lg:order-none">
+                    <TodayPicks />
+                  </div>
+                </>
+              )}
             </div>
             <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-6">
-              <div className="order-1 min-w-0 empty:hidden lg:order-none">
-                <YesterdayCoupons />
-              </div>
+              {pauseEnd ? null : (
+                <div className="order-1 min-w-0 empty:hidden lg:order-none">
+                  <YesterdayCoupons />
+                </div>
+              )}
               <div className="order-4 min-w-0 empty:hidden lg:order-none">
                 <MySlipsSummary />
               </div>

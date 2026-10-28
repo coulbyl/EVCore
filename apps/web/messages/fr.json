@@ -541,7 +541,25 @@
       "passwordLabel": "Ton mot de passe, pour confirmer",
       "cancel": "Annuler",
       "confirm": "Supprimer définitivement",
-      "error": "Impossible de supprimer le compte."
+      "error": "Impossible de supprimer le compte.",
+      "pauseHint": "Tu veux seulement souffler ? Une pause coupe les coupons et les notifications sans rien effacer."
+    },
+    "pause": {
+      "intro": "Besoin de souffler ? Une pause coupe les coupons, les pronostics et les notifications d'annonce, sans rien effacer.",
+      "activeUntil": "Tu es en pause jusqu'au {end}.",
+      "trigger": "Faire une pause",
+      "extend": "Prolonger la pause",
+      "description": "Pendant la pause, l'app ne te propose plus aucun pari et ne t'envoie plus de notification d'annonce. Ton historique, ton suivi de mise et la formation restent accessibles.",
+      "durationLabel": "Durée de la pause",
+      "duration": {
+        "1": "24 heures",
+        "7": "7 jours",
+        "30": "30 jours"
+      },
+      "noReturn": "Pas de retour en arrière : la pause va jusqu'au bout. Tu pourras seulement la prolonger.",
+      "cancel": "Annuler",
+      "confirm": "Commencer la pause",
+      "error": "Impossible de commencer la pause."
     }
   },
   "performance": {
@@ -1031,5 +1049,15 @@
     "replaceCancel": "Garder mon ticket",
     "addToCoupon": "Ajouter au coupon",
     "removeFromCoupon": "Retirer du coupon"
+  },
+  "pause": {
+    "title": "Tu es en pause",
+    "until": "Jusqu'au {end}.",
+    "body": "Les coupons, les pronostics et les avis IA reviendront à cette date. Ton historique reste accessible.",
+    "links": {
+      "mySlips": "Mes coupons",
+      "bankroll": "Suivi de mise",
+      "trackRecord": "Mesures historiques"
+    }
   }
 }
