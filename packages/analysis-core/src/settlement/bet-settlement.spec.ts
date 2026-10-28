@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BetStatus, Market } from "../types";
 import {
+  resolveCornersBetStatus,
   resolveEarlyBetStatus,
   resolveFirstHalfBetStatus,
   resolveHalfTimeFullTimeBetStatus,
@@ -293,5 +294,19 @@ describe("resolveEarlyBetStatus", () => {
         ...base,
       }),
     ).toBe(BetStatus.WON);
+  });
+});
+
+describe("resolveCornersBetStatus", () => {
+  it("settles over and under on the match total", () => {
+    expect(resolveCornersBetStatus("OVER", 9.5, 10)).toBe(BetStatus.WON);
+    expect(resolveCornersBetStatus("OVER", 9.5, 9)).toBe(BetStatus.LOST);
+    expect(resolveCornersBetStatus("UNDER", 9.5, 9)).toBe(BetStatus.WON);
+    expect(resolveCornersBetStatus("UNDER", 9.5, 12)).toBe(BetStatus.LOST);
+  });
+
+  it("refunds an equalled whole line and waits on an unknown total", () => {
+    expect(resolveCornersBetStatus("OVER", 10, 10)).toBe(BetStatus.VOID);
+    expect(resolveCornersBetStatus("OVER", 9.5, null)).toBeNull();
   });
 });

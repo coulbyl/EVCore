@@ -30,6 +30,7 @@ function proposal(overrides: Record<string, unknown> = {}) {
         canal: 'BTTS',
         market: 'BTTS',
         pick: 'YES',
+        line: null,
         probability: 0.62,
         oddsSnapshot: 1.8,
         signalScore: 0.62,

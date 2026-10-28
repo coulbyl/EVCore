@@ -7,6 +7,7 @@
  *
  * Usage :
  *   pnpm --filter @evcore/backtest-core probe:api-football
+ *   pnpm --filter @evcore/backtest-core probe:extras  (marchés hors buts)
  *
  * La clé est lue dans API_FOOTBALL_KEY depuis l'environnement (le script est
  * lancé avec --env-file). Elle n'est ni affichée, ni journalisée, ni écrite.
@@ -186,6 +187,64 @@ async function probeTeamNews(): Promise<void> {
   if (predictions) line("champs", keysOf(predictions.response));
 }
 
+/** Marchés hors buts : tirs, fautes, hors-jeu, corners, cartons, joueurs… */
+const EXTRAS =
+  /shot|foul|offside|card|corner|save|throw|goal ?kick|tackle|possession|booking|player|scorer/i;
+/** Premier championnat de chaque grand pays : PL, Liga, Serie A, Bundesliga, Ligue 1. */
+const EXTRAS_LEAGUES = [39, 140, 135, 78, 61];
+const EXTRAS_BOOKS = ["1xBet", "Pinnacle", "Bet365"];
+
+/**
+ * `--extras` (lot 6, 2026-10-29) : l'inventaire des marchés hors buts, puis
+ * ce que 1xBet, Pinnacle et Bet365 cotent réellement sur le prochain match
+ * de cinq grands championnats. Une douzaine de requêtes.
+ */
+async function probeExtras(): Promise<void> {
+  const bets = await section("Types de paris « extras »", "/odds/bets");
+  const extras = asArray(bets?.response).filter((bet) =>
+    EXTRAS.test(String(bet.name)),
+  );
+  line("nombre", extras.length);
+  for (const bet of extras) line(`  ${String(bet.id)}`, String(bet.name));
+
+  for (const league of EXTRAS_LEAGUES) {
+    const fixtures = await section(
+      `Prochain match, championnat ${league}`,
+      `/fixtures?league=${league}&next=1`,
+    );
+    const fixture = asArray(fixtures?.response)[0]?.fixture as
+      | Record<string, unknown>
+      | undefined;
+    if (!fixture) continue;
+    line("match", `${String(fixture.id)} le ${String(fixture.date)}`);
+    const odds = await section(
+      `Cotes du match ${String(fixture.id)}`,
+      `/odds?fixture=${String(fixture.id)}`,
+    );
+    const books = asArray(asArray(odds?.response)[0]?.bookmakers);
+    for (const name of EXTRAS_BOOKS) {
+      const book = books.find((candidate) => candidate.name === name);
+      if (!book) {
+        line(`  ${name}`, "absent");
+        continue;
+      }
+      const all = asArray(book.bets);
+      const found = all.filter((bet) => EXTRAS.test(String(bet.name)));
+      line(`  ${name}`, `${all.length} marchés, ${found.length} extras`);
+      for (const bet of found) {
+        const values = asArray(bet.values);
+        line(
+          `    ${String(bet.id)} ${String(bet.name)}`,
+          `${values.length} issues : ${values
+            .slice(0, 4)
+            .map((value) => `${String(value.value)} @${String(value.odd)}`)
+            .join(", ")}`,
+        );
+      }
+    }
+  }
+}
+
 async function main(): Promise<void> {
   if (!KEY) {
     console.error("API_FOOTBALL_KEY absente de l'environnement.");
@@ -196,6 +255,11 @@ async function main(): Promise<void> {
     "Sonde API-Football — la clé est lue dans l'environnement, jamais affichée.",
   );
   await probePlan();
+  if (process.argv.includes("--extras")) {
+    await probeExtras();
+    console.log("\nFin de la sonde.");
+    return;
+  }
   await probeCatalogue();
   await probeOdds(FIXTURE_PAST, "Cotes sur une rencontre passée");
   await probeTeamNews();

@@ -347,7 +347,7 @@ export class CouponRepository {
   // script — both were single-caller helpers for the retired write path.
 
   /** Matchs des jambes d'une proposition, pour la régler. */
-  findFixturesForSettlement(ids: readonly string[]): Promise<
+  async findFixturesForSettlement(ids: readonly string[]): Promise<
     {
       id: string;
       status: FixtureStatus;
@@ -356,9 +356,11 @@ export class CouponRepository {
       awayScore: number | null;
       homeHtScore: number | null;
       awayHtScore: number | null;
+      /** Corners des deux équipes (stats de match) ; null s'il en manque une. */
+      totalCorners: number | null;
     }[]
   > {
-    return this.prisma.client.fixture.findMany({
+    const fixtures = await this.prisma.client.fixture.findMany({
       where: { id: { in: [...ids] } },
       select: {
         id: true,
@@ -368,8 +370,19 @@ export class CouponRepository {
         awayScore: true,
         homeHtScore: true,
         awayHtScore: true,
+        fixtureStatistics: {
+          where: { type: 'corner_kicks' },
+          select: { value: true },
+        },
       },
     });
+    return fixtures.map(({ fixtureStatistics, ...fixture }) => ({
+      ...fixture,
+      totalCorners:
+        fixtureStatistics.length === 2
+          ? fixtureStatistics.reduce((sum, s) => sum + Number(s.value), 0)
+          : null,
+    }));
   }
 
   /**
@@ -555,6 +568,8 @@ export class CouponRepository {
       fixtureId: string;
       market: Market;
       pick: string;
+      /** Ligne des marchés qui la portent en colonne (corners). */
+      line?: number | null;
       odds: number;
       expectedReturn: number;
       /** Canal d'origine de la jambe (combiné du moteur) ; PRICE sinon. */
@@ -633,6 +648,7 @@ export class CouponRepository {
             canal: leg.canal ?? profile.legCanal ?? StrategyChannel.PRICE,
             market: leg.market,
             pick: leg.pick,
+            line: leg.line == null ? null : new Prisma.Decimal(leg.line),
             probability: new Prisma.Decimal(
               Math.min(
                 leg.probability ?? leg.expectedReturn / leg.odds,
@@ -869,6 +885,84 @@ export class CouponRepository {
       distinct: ['targetOddsMin'],
     });
     return rows.map((row) => Number(row.targetOddsMin));
+  }
+
+  /**
+   * Dernier prix d'avant coup d'envoi des lignes de corners, chez les books
+   * demandés, pour les matchs à venir d'une journée (Chasseur Corners).
+   */
+  findCornersQuotes(opts: {
+    from: Date;
+    to: Date;
+    bookmakers: readonly string[];
+  }): Promise<
+    {
+      fixtureId: string;
+      competitionId: string;
+      scheduledAt: Date;
+      line: number;
+      pick: 'OVER' | 'UNDER';
+      bookmaker: string;
+      odds: number;
+      snapshotAt: Date;
+    }[]
+  > {
+    return this.prisma.client.$queryRaw`
+      SELECT DISTINCT ON (o."fixtureId", o.line, o.pick, o.bookmaker)
+             o."fixtureId"::text AS "fixtureId",
+             s."competitionId"::text AS "competitionId",
+             f."scheduledAt", o.line::float AS line, o.pick, o.bookmaker,
+             o.odds::float AS odds, o."snapshotAt"
+      FROM public.odds_snapshot o
+      JOIN public.fixture f ON f.id = o."fixtureId"
+      JOIN public.season s ON s.id = f."seasonId"
+      WHERE o.market = 'CORNERS'
+        AND o.pick IN ('OVER', 'UNDER')
+        AND o.line IS NOT NULL AND o.odds IS NOT NULL
+        AND o.bookmaker = ANY(ARRAY[${Prisma.join([...opts.bookmakers])}]::text[])
+        AND f.status = 'SCHEDULED'
+        AND f."scheduledAt" >= ${opts.from} AND f."scheduledAt" < ${opts.to}
+        AND o."snapshotAt" <= f."scheduledAt"
+      ORDER BY o."fixtureId", o.line, o.pick, o.bookmaker, o."snapshotAt" DESC
+    `;
+  }
+
+  /**
+   * Championnats où les stats de corners arrivent presque toujours : part des
+   * matchs finis entre `since` et `until` dont les deux équipes ont leurs
+   * corners enregistrés.
+   */
+  async findReliableCornerCompetitions(opts: {
+    since: Date;
+    until: Date;
+    minShare: number;
+    minFixtures: number;
+  }): Promise<string[]> {
+    const rows = await this.prisma.client.$queryRaw<
+      { competitionId: string }[]
+    >`
+      WITH finished AS (
+        SELECT f.id, f."scheduledAt", s."competitionId"
+        FROM public.fixture f
+        JOIN public.season s ON s.id = f."seasonId"
+        WHERE f.status = 'FINISHED'
+          AND f."scheduledAt" >= ${opts.since}
+          AND f."scheduledAt" < ${opts.until}
+      ), arrived AS (
+        SELECT fs."fixtureId", count(*) AS teams
+        FROM public.fixture_statistic fs
+        WHERE fs.type = 'corner_kicks'
+          AND fs."fixtureId" IN (SELECT id FROM finished)
+        GROUP BY fs."fixtureId"
+      )
+      SELECT fin."competitionId"::text AS "competitionId"
+      FROM finished fin
+      LEFT JOIN arrived a ON a."fixtureId" = fin.id
+      GROUP BY fin."competitionId"
+      HAVING count(*) >= ${opts.minFixtures}
+         AND avg(CASE WHEN a.teams = 2 THEN 1.0 ELSE 0.0 END) >= ${opts.minShare}
+    `;
+    return rows.map((row) => row.competitionId);
   }
 
   /**

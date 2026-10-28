@@ -16,6 +16,7 @@ function makeLeg(overrides: {
   oddsSnapshot?: number | null;
   closingOdds?: number | null;
   operatorOdds?: number | null;
+  line?: number | null;
   featureSnapshot?: Record<string, unknown>;
 }) {
   return {
@@ -23,6 +24,7 @@ function makeLeg(overrides: {
     fixtureId: overrides.fixtureId,
     market: overrides.market ?? Market.OVER_UNDER,
     pick: overrides.pick ?? 'OVER',
+    line: overrides.line ?? null,
     isCorrect: overrides.isCorrect ?? null,
     oddsSnapshot: overrides.oddsSnapshot ?? 2.0,
     closingOdds: overrides.closingOdds ?? null,
@@ -39,8 +41,10 @@ function makeFixture(overrides: {
   awayScore?: number | null;
   homeHtScore?: number | null;
   awayHtScore?: number | null;
+  totalCorners?: number | null;
 }) {
   return {
+    totalCorners: overrides.totalCorners ?? null,
     id: overrides.id,
     status: overrides.status,
     // Two days ago by default: a POSTPONED fixture this old is voided.
@@ -547,13 +551,85 @@ describe('CouponSettlementService.settleProposal — 1xBet price of the legs', (
 
     expect(findPlayableQuotes).toHaveBeenCalledWith(
       [
-        { fixtureId: 'f1', market: Market.OVER_UNDER, pick: 'OVER' },
-        { fixtureId: 'f3', market: Market.OVER_UNDER, pick: 'OVER' },
+        {
+          fixtureId: 'f1',
+          market: Market.OVER_UNDER,
+          pick: 'OVER',
+          line: null,
+        },
+        {
+          fixtureId: 'f3',
+          market: Market.OVER_UNDER,
+          pick: 'OVER',
+          line: null,
+        },
       ],
       { asOf: GENERATED_AT },
     );
     expect(applyLegOperatorPrices).toHaveBeenCalledWith([
       { legId: 'l1', operatorOdds: 1.62, operatorMargin: 0.071 },
     ]);
+  });
+});
+
+describe('CouponSettlementService.settleProposal — corners from match stats', () => {
+  const cornersLeg = (pick: 'OVER' | 'UNDER') =>
+    makeLeg({
+      id: 'l1',
+      fixtureId: 'f1',
+      market: Market.CORNERS,
+      pick,
+      line: 9.5,
+      oddsSnapshot: 1.9,
+    });
+
+  it('settles the leg on the total of both teams', async () => {
+    const { service, settleLeg } = makeHarness({
+      legs: [cornersLeg('OVER')],
+      fixtures: [
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.FINISHED,
+          homeScore: 1,
+          awayScore: 0,
+          totalCorners: 11,
+        }),
+      ],
+    });
+    await service.settleProposal('proposal-1');
+    expect(settleLeg).toHaveBeenCalledWith('l1', true);
+  });
+
+  it('waits for the stats, then refunds after the grace period, never a loss', async () => {
+    const recent = makeHarness({
+      legs: [cornersLeg('UNDER')],
+      fixtures: [
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.FINISHED,
+          homeScore: 1,
+          awayScore: 0,
+          scheduledAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        }),
+      ],
+    });
+    await recent.service.settleProposal('proposal-1');
+    expect(recent.settleLeg).not.toHaveBeenCalled();
+    expect(recent.updateResult).not.toHaveBeenCalled();
+
+    const late = makeHarness({
+      legs: [cornersLeg('UNDER')],
+      fixtures: [
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.FINISHED,
+          homeScore: 1,
+          awayScore: 0,
+          scheduledAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+        }),
+      ],
+    });
+    await late.service.settleProposal('proposal-1');
+    expect(late.settleLeg).toHaveBeenCalledWith('l1', null);
   });
 });

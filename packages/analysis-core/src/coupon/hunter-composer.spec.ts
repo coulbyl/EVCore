@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  CORNERS_HUNTER,
+  composeCornersHunter,
+  priceCornersSides,
+  type CornersQuote,
   BTTS_HUNTER,
   DRAW_HUNTER,
   composeHunterByMarket,
@@ -155,5 +159,85 @@ describe("composeScoreHunter", () => {
     expect(composeScoreHunter([score("f1", "0:0", 14)]).outcome).toBe(
       "abstained",
     );
+  });
+});
+
+describe("Chasseur Corners", () => {
+  const at = new Date("2026-10-30T10:00:00Z");
+  const quote = (
+    q: Partial<CornersQuote> & Pick<CornersQuote, "pick" | "odds">,
+  ): CornersQuote => ({
+    fixtureId: "f1",
+    line: 9.5,
+    bookmaker: "1xBet",
+    snapshotAt: at,
+    ...q,
+  });
+
+  it("prices both sides on the same 1xBet snapshot, market frequency from Pinnacle", () => {
+    const sides = priceCornersSides(
+      [
+        quote({ pick: "OVER", odds: 1.9 }),
+        quote({ pick: "UNDER", odds: 1.8 }),
+        quote({ pick: "OVER", odds: 2.0, bookmaker: "Pinnacle" }),
+        quote({ pick: "UNDER", odds: 1.85, bookmaker: "Pinnacle" }),
+        // Ligne entière : remboursement possible, écartée.
+        quote({ pick: "OVER", odds: 1.7, line: 10 }),
+        quote({ pick: "UNDER", odds: 2.0, line: 10 }),
+        // Paire sur deux relevés différents : écartée.
+        quote({ pick: "OVER", odds: 2.2, line: 10.5 }),
+        quote({
+          pick: "UNDER",
+          odds: 1.6,
+          line: 10.5,
+          snapshotAt: new Date("2026-10-30T08:00:00Z"),
+        }),
+      ],
+      "1xBet",
+      "Pinnacle",
+    );
+    expect(sides).toHaveLength(2);
+    const over = sides.find((s) => s.pick === "OVER");
+    // 1/1,9 + 1/1,8 − 1 = 8,19 %.
+    expect(over?.margin.toNumber()).toBeCloseTo(0.0819, 4);
+    // Pinnacle : 0,5 / (0,5 + 0,5405) = 0,4805.
+    expect(over?.fair.toNumber()).toBeCloseTo(0.4805, 3);
+  });
+
+  it("picks the cheapest side in the band, then the more likely", () => {
+    const sides = priceCornersSides(
+      [
+        quote({ pick: "OVER", odds: 1.9 }),
+        quote({ pick: "UNDER", odds: 1.8 }),
+        quote({ fixtureId: "f2", pick: "OVER", odds: 1.95 }),
+        quote({ fixtureId: "f2", pick: "UNDER", odds: 1.88 }),
+        // Hors bande : 1,40.
+        quote({ fixtureId: "f3", pick: "OVER", odds: 1.4 }),
+        quote({ fixtureId: "f3", pick: "UNDER", odds: 2.9 }),
+      ],
+      "1xBet",
+      "Pinnacle",
+    );
+    const composition = composeCornersHunter(sides);
+    expect(composition.outcome).toBe("picked");
+    if (composition.outcome !== "picked") return;
+    // f2 coûte 4,5 %, f1 8,2 % ; sur f2, MOINS est plus probable que PLUS.
+    expect(composition.leg).toMatchObject({
+      fixtureId: "f2",
+      market: CORNERS_HUNTER.market,
+      pick: "UNDER",
+      line: 9.5,
+      odds: 1.88,
+      operatorOdds: 1.88,
+    });
+    expect(composition.leg.operatorMargin).toBeCloseTo(0.0448, 3);
+    expect(composition.candidateCount).toBe(4);
+  });
+
+  it("abstains with no side in the band", () => {
+    expect(composeCornersHunter([])).toMatchObject({
+      outcome: "abstained",
+      reason: "no_candidate_in_band",
+    });
   });
 });

@@ -102,6 +102,22 @@ export function formatPickForDisplay(pick: string, market: string): string {
 }
 
 /**
+ * Un pari sur un marché à ligne en colonne (corners, lot 6) : « Plus de 9,5
+ * corners ». Null pour un autre marché : l'appelant garde son libellé.
+ */
+export function formatLinePick(
+  pick: string,
+  market: string,
+  line: number | null,
+): string | null {
+  if (line === null || market !== "CORNERS") return null;
+  const value = line.toLocaleString("fr-FR");
+  if (pick === "OVER") return `Plus de ${value} corners`;
+  if (pick === "UNDER") return `Moins de ${value} corners`;
+  return null;
+}
+
+/**
  * Le pari en clair, avec le nom des équipes : « Victoire Arsenal », « Burnley
  * ou nul », « Arsenal n'encaisse pas ». Le joueur lit un pari, pas un canal
  * (décision du 2026-10-27, docs/audits/2026-10-27/DECISIONS.md) : « Domicile »

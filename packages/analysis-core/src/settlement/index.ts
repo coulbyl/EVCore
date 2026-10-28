@@ -4,4 +4,5 @@ export {
   resolveEarlyBetStatus,
   resolvePickBetStatus,
   resolveWinEitherHalfBetStatus,
+  resolveCornersBetStatus,
 } from "./bet-settlement";

@@ -235,6 +235,13 @@ export const API_FOOTBALL_BOOKMAKERS = {
  *
  * Un marché sort de cette liste dès qu'une mesure le rend jouable.
  */
+/**
+ * Marchés de la liste ci-dessous gardés aussi chez le book des joueurs
+ * (OPERATOR_BOOKMAKERS, 1xBet) : le Chasseur Corners se joue au prix 1xBet
+ * (lot 6, 2026-10-29). Les autres books restent exclus, pour le volume.
+ */
+export const OPERATOR_EXTENDED_MARKETS = ['CORNERS'] as const;
+
 export const REFERENCE_ONLY_MARKETS = [
   'OVER_UNDER_2H',
   'CORNERS',

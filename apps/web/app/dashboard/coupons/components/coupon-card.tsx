@@ -12,7 +12,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@evcore/ui";
-import { formatMarketForDisplay, formatPickWithTeams } from "@/helpers/fixture";
+import {
+  formatLinePick,
+  formatMarketForDisplay,
+  formatPickWithTeams,
+} from "@/helpers/fixture";
 import { formatKickoff } from "@/domains/fixture/helpers/fixture";
 import type { CouponProposalDto } from "@/domains/coupon/types/coupon";
 import { couponClassMeta } from "@/domains/coupon/helpers/coupon-class";
@@ -88,10 +92,12 @@ export function CouponCard({
     score: leg.score,
     htScore: leg.htScore,
     marketLabel: formatMarketForDisplay(leg.market, loc),
-    pickLabel: formatPickWithTeams(leg.pick, leg.market, {
-      home: leg.homeTeam,
-      away: leg.awayTeam,
-    }),
+    pickLabel:
+      formatLinePick(leg.pick, leg.market, leg.line) ??
+      formatPickWithTeams(leg.pick, leg.market, {
+        home: leg.homeTeam,
+        away: leg.awayTeam,
+      }),
     probability: leg.probability,
     marketProbability: leg.marketProbability,
     odds: leg.oddsSnapshot != null ? leg.oddsSnapshot.toFixed(2) : null,
@@ -133,10 +139,13 @@ export function CouponCard({
   // CouponLegDto.modelRunId's own doc comment) simply can't be added; the
   // rest go to the bet slip as USER picks, same shape AddToSlipButton
   // (Matchs) already submits.
+  // Une jambe à ligne (corners) n'entre pas dans le ticket : un pari déclaré
+  // ne porte pas encore de ligne et ne pourrait pas se régler. Le coupon se
+  // suit (« Suivre ce coupon ») sans se déclarer.
   const slipItems: BetSlipDraftItem[] = coupon.legs
     .filter(
       (leg): leg is typeof leg & { modelRunId: string } =>
-        leg.modelRunId !== null,
+        leg.modelRunId !== null && leg.line === null,
     )
     .map((leg) => ({
       modelRunId: leg.modelRunId,

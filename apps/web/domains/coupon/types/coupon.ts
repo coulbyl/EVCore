@@ -9,7 +9,8 @@ export type CouponClassName =
   | "DOUBLE"
   | "HUNTER_BTTS"
   | "HUNTER_DRAW"
-  | "HUNTER_SCORE";
+  | "HUNTER_SCORE"
+  | "HUNTER_CORNERS";
 
 export type CouponSource = "LLM" | "PRICE_COMPOSER" | "ENGINE";
 
@@ -35,6 +36,8 @@ export type CouponLegDto = {
   canal: string;
   market: string;
   pick: string;
+  /** Ligne des marchés qui la portent en colonne (corners) ; null sinon. */
+  line: number | null;
   probability: number;
   /** Fréquence affichée : probabilité du marché, marge retirée. */
   marketProbability: number | null;

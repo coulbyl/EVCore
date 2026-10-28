@@ -33,7 +33,7 @@ const PRICES = new Map<string, number>([
   ['f3|CORRECT_SCORE|1:0', 6.5],
 ]);
 
-function makeHarness(avoided: string[] = []) {
+function makeHarness(avoided: string[] = [], reliable: string[] = ['c1']) {
   const repository = {
     // BTTS coté complet sur f1 (dans la bande) ; 1X2 complet sur f2.
     findDoubleCandidates: vi
@@ -58,6 +58,16 @@ function makeHarness(avoided: string[] = []) {
       },
     ]),
     findAvoidedFixtureIds: vi.fn().mockResolvedValue(avoided),
+    // f4 en championnat fiable (c1), f5 dans un championnat sans stats (c2).
+    findCornersQuotes: vi
+      .fn()
+      .mockResolvedValue(
+        [
+          corners('f4', 'c1', ['OVER', 1.95], ['UNDER', 1.88]),
+          corners('f5', 'c2', ['OVER', 1.92], ['UNDER', 1.92]),
+        ].flat(),
+      ),
+    findReliableCornerCompetitions: vi.fn().mockResolvedValue(reliable),
     upsertPriceComposerProposal: vi.fn().mockResolvedValue('proposal-1'),
     recordPriceComposerAttempt: vi.fn().mockResolvedValue(undefined),
   } as unknown as CouponRepository;
@@ -96,6 +106,25 @@ function makeHarness(avoided: string[] = []) {
   };
 }
 
+const SNAPSHOT = new Date('2026-10-29T10:00:00Z');
+
+function corners(
+  fixtureId: string,
+  competitionId: string,
+  ...sides: ['OVER' | 'UNDER', number][]
+) {
+  return sides.map(([pick, odds]) => ({
+    fixtureId,
+    competitionId,
+    scheduledAt: KICKOFF,
+    line: 9.5,
+    pick,
+    bookmaker: '1xBet',
+    odds,
+    snapshotAt: SNAPSHOT,
+  }));
+}
+
 describe('CouponHunterGenerationService', () => {
   it('writes the three hunters of the day, shown like any coupon', async () => {
     const { service, repository } = makeHarness();
@@ -105,19 +134,30 @@ describe('CouponHunterGenerationService', () => {
       ['HUNTER_BTTS', 'composed'],
       ['HUNTER_DRAW', 'composed'],
       ['HUNTER_SCORE', 'composed'],
+      ['HUNTER_CORNERS', 'composed'],
     ]);
     const calls = vi.mocked(repository.upsertPriceComposerProposal).mock.calls;
     expect(calls.map(([input]) => input.profile?.source)).toEqual([
       CouponSource.PRICE_COMPOSER,
       CouponSource.PRICE_COMPOSER,
       CouponSource.ENGINE,
+      CouponSource.PRICE_COMPOSER,
     ]);
     expect(calls.map(([input]) => input.profile?.targetOddsMin)).toEqual([
-      1.45, 2.9, 6,
+      1.45, 2.9, 6, 1.7,
     ]);
+    // Corners : le côté le moins cher du championnat fiable, avec sa ligne et
+    // son prix 1xBet ; f5 (championnat sans stats) n'est jamais joué.
+    expect(calls[3]?.[0].legs[0]).toMatchObject({
+      fixtureId: 'f4',
+      market: 'CORNERS',
+      pick: 'UNDER',
+      line: 9.5,
+      operatorOdds: 1.88,
+    });
     // Le score exact annonce la probabilité du marché (marge de grille 27 %).
     expect(calls[2]?.[0].legs[0]?.probability).toBeCloseTo(1 / 6.5 / 1.27, 3);
-    expect(repository.recordPriceComposerAttempt).toHaveBeenCalledTimes(3);
+    expect(repository.recordPriceComposerAttempt).toHaveBeenCalledTimes(4);
   });
 
   it('never hunts on a match the AVOID meta-channel flags', async () => {
@@ -126,6 +166,34 @@ describe('CouponHunterGenerationService', () => {
     const outcomes = await service.generateForDate(new Date('2026-10-29'));
     expect(outcomes.find((o) => o.hunter === 'HUNTER_DRAW')?.outcome).toBe(
       'abstained',
+    );
+  });
+
+  it('abstains on corners when no championship has reliable stats', async () => {
+    const { service, repository } = makeHarness([], []);
+    const outcomes = await service.generateForDate(new Date('2026-10-29'));
+    expect(outcomes.find((o) => o.hunter === 'HUNTER_CORNERS')?.outcome).toBe(
+      'abstained',
+    );
+    expect(repository.recordPriceComposerAttempt).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reason: 'no_reliable_competition',
+        pass: expect.objectContaining({ name: 'hunter-hunter_corners' }),
+      }),
+    );
+  });
+
+  it('says when 1xBet prices no corners at all', async () => {
+    const { service, repository } = makeHarness();
+    vi.mocked(repository.findCornersQuotes).mockResolvedValue(
+      corners('f4', 'c1', ['OVER', 1.95], ['UNDER', 1.88]).map((q) => ({
+        ...q,
+        bookmaker: 'Pinnacle',
+      })),
+    );
+    await service.generateForDate(new Date('2026-10-29'));
+    expect(repository.recordPriceComposerAttempt).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: 'no_operator_price' }),
     );
   });
 });

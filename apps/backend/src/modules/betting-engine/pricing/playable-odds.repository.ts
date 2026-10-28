@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@evcore/db';
+import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
 import { OPERATOR_BOOKMAKERS, priceOutcomeGroups } from '@evcore/analysis-core';
 
@@ -7,6 +8,11 @@ export type PlayableQuoteKey = {
   fixtureId: string;
   market: string;
   pick: string;
+  /**
+   * Ligne des marchés qui la portent en colonne (corners) ; absente ou nulle
+   * pour les autres, dont la ligne est dans `pick`.
+   */
+  line?: number | null;
 };
 
 export type PlayableQuote = PlayableQuoteKey & {
@@ -26,8 +32,21 @@ export type PlayableQuote = PlayableQuoteKey & {
 };
 
 export function playableQuoteKey(key: PlayableQuoteKey): string {
-  return `${key.fixtureId}|${key.market}|${key.pick}`;
+  const base = `${key.fixtureId}|${key.market}|${key.pick}`;
+  // La ligne n'entre dans la clé que pour les marchés qui l'ont en colonne :
+  // les clés des autres marchés ne changent pas.
+  return key.line == null ? base : `${base}|${Number(key.line)}`;
 }
+
+type QuoteRow = {
+  fixtureId: string;
+  market: string;
+  pick: string;
+  line: number | null;
+  bookmaker: string;
+  odds: number;
+  snapshotAt: Date;
+};
 
 /**
  * Dernier prix d'avant coup d'envoi de chaque book sur chaque choix demandé,
@@ -49,7 +68,9 @@ export class PlayableOddsRepository {
     keys: readonly PlayableQuoteKey[],
     opts: { asOf?: Date } = {},
   ): Promise<Map<string, PlayableQuote>> {
-    const result = new Map<string, PlayableQuote>();
+    const lined = keys.filter((key) => key.line != null);
+    const result = await this.findLineQuotes(lined, opts);
+    keys = keys.filter((key) => key.line == null);
     if (keys.length === 0) return result;
     const fixtureIds = [...new Set(keys.map((k) => k.fixtureId))];
     const markets = [...new Set(keys.map((k) => k.market))];
@@ -147,6 +168,78 @@ export class PlayableOddsRepository {
         current.operatorOdds = row.odds;
         current.operatorBookmaker = row.bookmaker;
         current.operatorMargin = operatorMargins.get(key) ?? null;
+      }
+      if (current.lowestOdds === null || row.odds < current.lowestOdds) {
+        current.lowestOdds = row.odds;
+        current.lowestBookmaker = row.bookmaker;
+      }
+      result.set(key, current);
+    }
+    return result;
+  }
+
+  /**
+   * Marchés à ligne (corners) : dernier prix d'avant coup d'envoi de chaque
+   * book sur la ligne demandée. La marge du book des joueurs se lit sur la
+   * paire plus/moins de la même ligne, relevée au même instant (somme des
+   * deux implicites − 1) ; inconnue si l'une des deux manque.
+   */
+  private async findLineQuotes(
+    keys: readonly PlayableQuoteKey[],
+    opts: { asOf?: Date },
+  ): Promise<Map<string, PlayableQuote>> {
+    const result = new Map<string, PlayableQuote>();
+    if (keys.length === 0) return result;
+    const fixtureIds = [...new Set(keys.map((k) => k.fixtureId))];
+    const markets = [...new Set(keys.map((k) => k.market))];
+    const lines = [...new Set(keys.map((k) => Number(k.line)))];
+    const wanted = new Set(keys.map(playableQuoteKey));
+    const rows = await this.prisma.client.$queryRaw<QuoteRow[]>`
+      SELECT DISTINCT ON (o."fixtureId", o.market, o.line, o.pick, o.bookmaker)
+             o."fixtureId"::text AS "fixtureId", o.market::text AS market,
+             o.pick, o.line::float AS line, o.bookmaker,
+             o.odds::float AS odds, o."snapshotAt"
+      FROM public.odds_snapshot o
+      JOIN public.fixture f ON f.id = o."fixtureId"
+      WHERE o."fixtureId" = ANY(ARRAY[${Prisma.join(fixtureIds)}]::uuid[])
+        AND o.market::text = ANY(ARRAY[${Prisma.join(markets)}]::text[])
+        AND o.line = ANY(ARRAY[${Prisma.join(lines)}]::numeric[])
+        AND o.odds IS NOT NULL
+        AND o."snapshotAt" <= f."scheduledAt"
+        ${opts.asOf ? Prisma.sql`AND coalesce(o."observedAt", o."snapshotAt") <= ${opts.asOf}` : Prisma.empty}
+      ORDER BY o."fixtureId", o.market, o.line, o.pick, o.bookmaker, o."snapshotAt" DESC
+    `;
+    const rowAt = (row: QuoteRow) => new Date(row.snapshotAt).getTime();
+    const pairKey = (row: QuoteRow, pick: string) =>
+      `${row.bookmaker}|${row.fixtureId}|${row.market}|${row.line}|${pick}|${rowAt(row)}`;
+    const byPair = new Map(rows.map((row) => [pairKey(row, row.pick), row]));
+    for (const row of rows) {
+      const key = playableQuoteKey(row);
+      if (!wanted.has(key)) continue;
+      const current = result.get(key) ?? {
+        fixtureId: row.fixtureId,
+        market: row.market,
+        pick: row.pick,
+        line: row.line,
+        operatorOdds: null,
+        operatorBookmaker: null,
+        operatorMargin: null,
+        lowestOdds: null,
+        lowestBookmaker: null,
+      };
+      if (OPERATOR_BOOKMAKERS.includes(row.bookmaker)) {
+        const other = byPair.get(
+          pairKey(row, row.pick === 'OVER' ? 'UNDER' : 'OVER'),
+        );
+        current.operatorOdds = row.odds;
+        current.operatorBookmaker = row.bookmaker;
+        current.operatorMargin = other
+          ? new Decimal(1)
+              .dividedBy(row.odds)
+              .plus(new Decimal(1).dividedBy(other.odds))
+              .minus(1)
+              .toNumber()
+          : null;
       }
       if (current.lowestOdds === null || row.odds < current.lowestOdds) {
         current.lowestOdds = row.odds;

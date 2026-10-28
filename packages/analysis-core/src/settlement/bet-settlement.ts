@@ -287,3 +287,24 @@ const PICK_CONDITION_MARKETS: ReadonlySet<Market> = new Set<Market>([
   Market.BTTS,
   Market.DOUBLE_CHANCE,
 ]);
+
+/**
+ * Plus/moins des corners du match (lot 6), sur le total des deux équipes tiré
+ * des stats de match. `null` tant que le total n'est pas connu : un total
+ * inconnu n'est jamais une perte. Une ligne entière égalée est remboursée.
+ */
+export function resolveCornersBetStatus(
+  pick: string,
+  line: number,
+  totalCorners: number | null,
+): BetStatus | null {
+  if (totalCorners === null) return null;
+  if (totalCorners === line) return BetStatus.VOID;
+  if (pick === "OVER") {
+    return totalCorners > line ? BetStatus.WON : BetStatus.LOST;
+  }
+  if (pick === "UNDER") {
+    return totalCorners < line ? BetStatus.WON : BetStatus.LOST;
+  }
+  return null;
+}

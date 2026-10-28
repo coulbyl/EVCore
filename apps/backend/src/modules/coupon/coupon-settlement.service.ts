@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { BetStatus, CouponResult, FixtureStatus, Market } from '@evcore/db';
-import { COUPON_SETTLEMENT_POLICY } from './coupon.constants';
+import {
+  CORNERS_HUNTER_POLICY,
+  COUPON_SETTLEMENT_POLICY,
+} from './coupon.constants';
+import { resolveCornersBetStatus } from '@evcore/analysis-core';
 import {
   resolveFirstHalfBetStatus,
   resolveHalfTimeFullTimeBetStatus,
@@ -113,6 +117,7 @@ export class CouponSettlementService {
         fixtureId: leg.fixtureId,
         market: leg.market,
         pick: leg.pick,
+        line: leg.line == null ? null : Number(leg.line),
       })),
       { asOf: proposal.generatedAt },
     );
@@ -123,6 +128,7 @@ export class CouponSettlementService {
             fixtureId: leg.fixtureId,
             market: leg.market,
             pick: leg.pick,
+            line: leg.line == null ? null : Number(leg.line),
           }),
         );
         return quote?.operatorOdds == null
@@ -219,6 +225,43 @@ export class CouponSettlementService {
         // rather than skip, so a freshly-voided leg's settledAt actually gets set.
         await this.repo.settleLeg(leg.id, null);
         voidedLegs++;
+        continue;
+      }
+
+      // Corners (lot 6) : réglés sur les stats de match, une fois le match
+      // terminé. Sans stats, on attend ; passé le délai de grâce, la jambe
+      // est remboursée, jamais comptée perdue.
+      if (leg.market === Market.CORNERS) {
+        if (fixture.status !== FixtureStatus.FINISHED) {
+          allResolved = false;
+          continue;
+        }
+        const graceOver =
+          now - fixture.scheduledAt.getTime() >=
+          CORNERS_HUNTER_POLICY.statsGraceDays * 24 * 60 * 60 * 1000;
+        const status =
+          leg.line === null
+            ? BetStatus.VOID
+            : resolveCornersBetStatus(
+                leg.pick,
+                Number(leg.line),
+                fixture.totalCorners,
+              );
+        if (status === null && !graceOver) {
+          allResolved = false;
+          continue;
+        }
+        if (status === null || status === BetStatus.VOID) {
+          await this.repo.settleLeg(leg.id, null);
+          voidedLegs++;
+          continue;
+        }
+        if (leg.oddsSnapshot !== null) survivingOdds.push(leg.oddsSnapshot);
+        const isCorrect = status === BetStatus.WON;
+        if (leg.isCorrect !== isCorrect) {
+          await this.repo.settleLeg(leg.id, isCorrect);
+        }
+        legResults.push(isCorrect);
         continue;
       }
 

@@ -23,6 +23,8 @@ export type CouponLegDto = {
   canal: StrategyChannel;
   market: Market;
   pick: string;
+  /** Ligne des marchés qui la portent en colonne (corners) ; null sinon. */
+  line: number | null;
   probability: number;
   /**
    * Fréquence affichée au joueur : probabilité du marché, marge retirée

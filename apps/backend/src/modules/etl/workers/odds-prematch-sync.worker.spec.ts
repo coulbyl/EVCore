@@ -13,6 +13,8 @@ import {
   parseOverUnderValues,
   FIXED_OUTCOME_MAPPINGS,
   resolveTargetDates,
+  keepsExtendedMarket,
+  operatorLegsKept,
 } from './odds-prematch-sync.worker';
 import { ApiFootballClient } from '../api-football.client';
 import {
@@ -1126,6 +1128,25 @@ describe('politique de collecte par marché', () => {
       'HIGHEST_SCORING_HALF',
       'TEAM_TO_SCORE_FIRST',
     ]);
+  });
+
+  it('garde les corners chez 1xBet, le book des joueurs, et nulle part ailleurs', () => {
+    expect(keepsExtendedMarket('Pinnacle', 'CORNERS')).toBe(true);
+    expect(keepsExtendedMarket('1xBet', 'CORNERS')).toBe(true);
+    expect(keepsExtendedMarket('Bet365', 'CORNERS')).toBe(false);
+    // Les autres marchés « référence seule » restent chez Pinnacle.
+    expect(keepsExtendedMarket('1xBet', 'CARDS')).toBe(false);
+    expect(keepsExtendedMarket('1xBet', 'CORNERS_HT')).toBe(false);
+    expect(keepsExtendedMarket('Bet365', 'ASIAN_HANDICAP')).toBe(true);
+  });
+
+  it('ne garde chez 1xBet que les lignes de corners en ,5', () => {
+    const legs = [9, 9.25, 9.5, 10, 10.5].map((line) => ({ line, odds: 1.9 }));
+    expect(
+      operatorLegsKept('1xBet', 'CORNERS', legs).map((leg) => leg.line),
+    ).toEqual([9.5, 10.5]);
+    expect(operatorLegsKept('Pinnacle', 'CORNERS', legs)).toHaveLength(5);
+    expect(operatorLegsKept('1xBet', 'ASIAN_HANDICAP', legs)).toHaveLength(5);
   });
 
   it('laisse le handicap asiatique collecté chez tous les books', () => {

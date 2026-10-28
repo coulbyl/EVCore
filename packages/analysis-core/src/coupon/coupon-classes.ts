@@ -98,7 +98,8 @@ export type CouponClassName =
   | "DOUBLE"
   | "HUNTER_BTTS"
   | "HUNTER_DRAW"
-  | "HUNTER_SCORE";
+  | "HUNTER_SCORE"
+  | "HUNTER_CORNERS";
 
 export type CouponClass = {
   name: CouponClassName;
@@ -315,6 +316,22 @@ export const HUNTER_SCORE_CLASS: CouponClass = {
   targetOddsMax: 12,
 };
 
+/**
+ * Chasseur Corners (lot 6, 2026-10-29) : le plus/moins des corners du match,
+ * autour de la ligne principale (1,70–2,10), au prix 1xBet. Le marché est
+ * calibré (1 564 matchs Pinnacle, 49,9 % annoncés pour 49,9 % réalisés) :
+ * un pari de variété, classé sur le coût, jamais un avantage.
+ */
+export const HUNTER_CORNERS_CLASS: CouponClass = {
+  name: "HUNTER_CORNERS",
+  minLegOdds: 1.7,
+  maxLegOdds: 2.1,
+  maxLegs: 1,
+  targetCombinedOdds: 1.7,
+  targetOddsMin: 1.7,
+  targetOddsMax: 2.1,
+};
+
 /** Retrouve la classe d'une proposition persistée depuis son `targetOddsMin`. */
 export function classForTargetOddsMin(
   targetOddsMin: number,
@@ -329,6 +346,7 @@ export function classForTargetOddsMin(
       HUNTER_BTTS_CLASS,
       HUNTER_DRAW_CLASS,
       HUNTER_SCORE_CLASS,
+      HUNTER_CORNERS_CLASS,
       ...COUPON_CLASSES,
     ].find((c) => c.targetOddsMin === targetOddsMin)?.name ?? null
   );
