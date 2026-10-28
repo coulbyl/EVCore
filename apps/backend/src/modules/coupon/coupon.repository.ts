@@ -346,6 +346,60 @@ export class CouponRepository {
   // backtest script's cleanup) retired alongside upsertProposal and that
   // script — both were single-caller helpers for the retired write path.
 
+  /** Matchs des jambes d'une proposition, pour la régler. */
+  findFixturesForSettlement(ids: readonly string[]): Promise<
+    {
+      id: string;
+      status: FixtureStatus;
+      scheduledAt: Date;
+      homeScore: number | null;
+      awayScore: number | null;
+      homeHtScore: number | null;
+      awayHtScore: number | null;
+    }[]
+  > {
+    return this.prisma.client.fixture.findMany({
+      where: { id: { in: [...ids] } },
+      select: {
+        id: true,
+        status: true,
+        scheduledAt: true,
+        homeScore: true,
+        awayScore: true,
+        homeHtScore: true,
+        awayHtScore: true,
+      },
+    });
+  }
+
+  /**
+   * Cote et marge 1xBet d'une jambe, écrites une seule fois : une jambe déjà
+   * cotée n'est jamais réécrite (rejouable).
+   */
+  async applyLegOperatorPrices(
+    updates: readonly {
+      legId: string;
+      operatorOdds: number;
+      operatorMargin: number | null;
+    }[],
+  ): Promise<void> {
+    if (updates.length === 0) return;
+    await this.prisma.client.$transaction(
+      updates.map((update) =>
+        this.prisma.client.couponProposalLeg.updateMany({
+          where: { id: update.legId, operatorOdds: null },
+          data: {
+            operatorOdds: new Prisma.Decimal(update.operatorOdds.toFixed(3)),
+            operatorMargin:
+              update.operatorMargin === null
+                ? null
+                : new Prisma.Decimal(update.operatorMargin.toFixed(4)),
+          },
+        }),
+      ),
+    );
+  }
+
   async findByIdWithLegs(id: string): Promise<CouponProposalWithLegs | null> {
     return this.prisma.client.couponProposal.findUnique({
       where: { id },

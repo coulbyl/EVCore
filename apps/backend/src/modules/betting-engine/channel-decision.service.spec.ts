@@ -3,6 +3,7 @@ import Decimal from 'decimal.js';
 import { BetStatus, Market } from '@evcore/db';
 import { ChannelDecisionService } from './channel-decision.service';
 import type { ChannelDecisionRepository } from './channel-decision.repository';
+import type { VantageHistoryRepository } from './vantage-history.repository';
 import type { OddsClosingLineRepository } from './pricing/odds-closing-line.repository';
 import type { PlayableOddsRepository } from './pricing/playable-odds.repository';
 import type { ClosingLineRow } from './pricing/closing-line';
@@ -155,6 +156,13 @@ function noPlayableOdds(): PlayableOddsRepository {
   } as unknown as PlayableOddsRepository;
 }
 
+function noVantageHistory(): VantageHistoryRepository {
+  return {
+    findPlaysForFixture: vi.fn().mockResolvedValue([]),
+    applyResults: vi.fn().mockResolvedValue(undefined),
+  } as unknown as VantageHistoryRepository;
+}
+
 function noClosingLines(): OddsClosingLineRepository {
   return closingLinesWith([]);
 }
@@ -168,6 +176,7 @@ describe('ChannelDecisionService', () => {
       repo,
       noClosingLines(),
       noPlayableOdds(),
+      noVantageHistory(),
     );
 
     const returned = await service.recordRunDecisions('run-1', richContext());
@@ -237,6 +246,7 @@ describe('ChannelDecisionService', () => {
       repo,
       noClosingLines(),
       noPlayableOdds(),
+      noVantageHistory(),
     );
 
     await expect(
@@ -274,6 +284,7 @@ describe('ChannelDecisionService', () => {
         repo,
         noClosingLines(),
         noPlayableOdds(),
+        noVantageHistory(),
       );
 
       const { settled } = await service.settleFixtureSelections({
@@ -289,6 +300,43 @@ describe('ChannelDecisionService', () => {
       expect(applySelectionResults).toHaveBeenCalledWith([
         { id: 's1', result: BetStatus.WON },
         { id: 's2', result: BetStatus.LOST },
+      ]);
+    });
+
+    it("settles VANTAGE's frozen history on the final pass, never on the early one", async () => {
+      const history = {
+        findPlaysForFixture: vi.fn().mockResolvedValue([
+          { id: 'h1', market: Market.ONE_X_TWO, pick: 'HOME' },
+          { id: 'h2', market: Market.BTTS, pick: 'NO' },
+        ]),
+        applyResults: vi.fn().mockResolvedValue(undefined),
+      };
+      const repo = {
+        findSelectionsForFixture: vi.fn().mockResolvedValue([]),
+        applySelectionResults: vi.fn().mockResolvedValue(undefined),
+      } as unknown as ChannelDecisionRepository;
+      const service = new ChannelDecisionService(
+        repo,
+        noClosingLines(),
+        noPlayableOdds(),
+        history as unknown as VantageHistoryRepository,
+      );
+
+      await service.settleFixtureSelections({
+        fixtureId: 'f1',
+        scores: SCORES,
+        mode: 'early',
+      });
+      expect(history.findPlaysForFixture).not.toHaveBeenCalled();
+
+      await service.settleFixtureSelections({
+        fixtureId: 'f1',
+        scores: SCORES,
+        mode: 'final',
+      });
+      expect(history.applyResults).toHaveBeenCalledWith([
+        { id: 'h1', result: BetStatus.WON },
+        { id: 'h2', result: BetStatus.LOST },
       ]);
     });
 
@@ -330,6 +378,7 @@ describe('ChannelDecisionService', () => {
         repo,
         closingLines,
         noPlayableOdds(),
+        noVantageHistory(),
       );
 
       await service.settleFixtureSelections({
@@ -391,6 +440,7 @@ describe('ChannelDecisionService', () => {
         repo,
         noClosingLines(),
         noPlayableOdds(),
+        noVantageHistory(),
       );
 
       const { settled } = await service.settleFixtureSelections({
@@ -481,6 +531,7 @@ describe('ChannelDecisionService', () => {
         repo,
         noClosingLines(),
         noPlayableOdds(),
+        noVantageHistory(),
       );
 
       const groups = await service.listByMatch({
@@ -580,6 +631,7 @@ describe('ChannelDecisionService', () => {
         repo,
         noClosingLines(),
         noPlayableOdds(),
+        noVantageHistory(),
       );
 
       const groups = await service.listByChannel({ date: '2026-01-18' });
@@ -624,6 +676,7 @@ describe('ChannelDecisionService', () => {
         repo,
         noClosingLines(),
         noPlayableOdds(),
+        noVantageHistory(),
       );
 
       const groups = await service.listByChannel({ date: '2026-01-18' });
@@ -671,6 +724,7 @@ describe('ChannelDecisionService', () => {
         repo,
         noClosingLines(),
         noPlayableOdds(),
+        noVantageHistory(),
       );
 
       const result = await service.getFacets('2026-01-18');

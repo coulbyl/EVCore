@@ -23,7 +23,7 @@ import { todayIso, daysAgoIso } from "@/lib/date";
 import { useBetSlips } from "@/domains/bet-slip/use-cases/get-bet-slips";
 import { useOperatorSummary } from "@/domains/bet-slip/use-cases/get-operator-summary";
 import { useTranslations } from "next-intl";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsSingleColumn } from "@/hooks/use-mobile";
 import type { BetSlipView } from "@/domains/bet-slip/types/bet-slip";
 import { BetSlipCard } from "./bet-slip-card";
 import { sumSlipResults } from "./bet-slip-constants";
@@ -70,7 +70,9 @@ export function BetSlipListPageClient() {
   // 2026-10-11, P1-9).
   const { data: lifetime } = useOperatorSummary();
   const neverPlayed = lifetime !== undefined && lifetime.slipCount === 0;
-  const isMobile = useIsMobile();
+  // Tablette comprise : entre 768 et 1023 px, ni tiroir ni colonne de
+  // détail ne s'affichait, et toucher un coupon ne montrait rien.
+  const singleColumn = useIsSingleColumn();
 
   const selectedSlip = betSlips.find((s) => s.id === selectedId) ?? null;
   const filteredBetSlips = useMemo(
@@ -230,7 +232,7 @@ export function BetSlipListPageClient() {
         </div>
       </PageContent>
 
-      {isMobile && (
+      {singleColumn && (
         <Drawer
           open={selectedSlip !== null}
           onOpenChange={(open) => !open && handleClose()}

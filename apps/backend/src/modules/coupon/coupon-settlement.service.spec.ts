@@ -2,7 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { CouponResult, FixtureStatus, Market } from '@evcore/db';
 import { CouponSettlementService } from './coupon-settlement.service';
 import type { CouponRepository } from './coupon.repository';
-import type { PrismaService } from '@/prisma.service';
+import type { PlayableQuote } from '../betting-engine/pricing/playable-odds.repository';
+import type { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
 import type { ClosingLineRow } from '../betting-engine/pricing/closing-line';
 import type { OddsClosingLineRepository } from '../betting-engine/pricing/odds-closing-line.repository';
 
@@ -14,6 +15,7 @@ function makeLeg(overrides: {
   isCorrect?: boolean | null;
   oddsSnapshot?: number | null;
   closingOdds?: number | null;
+  operatorOdds?: number | null;
   featureSnapshot?: Record<string, unknown>;
 }) {
   return {
@@ -24,6 +26,7 @@ function makeLeg(overrides: {
     isCorrect: overrides.isCorrect ?? null,
     oddsSnapshot: overrides.oddsSnapshot ?? 2.0,
     closingOdds: overrides.closingOdds ?? null,
+    operatorOdds: overrides.operatorOdds ?? null,
     featureSnapshot: overrides.featureSnapshot ?? {},
   };
 }
@@ -50,37 +53,51 @@ function makeFixture(overrides: {
   };
 }
 
+const GENERATED_AT = new Date('2026-10-20T20:30:00Z');
+
 function makeHarness(input: {
   legs: ReturnType<typeof makeLeg>[];
   fixtures: ReturnType<typeof makeFixture>[];
   closingLines?: ClosingLineRow[];
+  quotes?: Map<string, PlayableQuote>;
 }) {
   const settleLeg = vi.fn().mockResolvedValue(undefined);
   const updateResult = vi.fn().mockResolvedValue(undefined);
   const findClosingLines = vi.fn().mockResolvedValue(input.closingLines ?? []);
   const updateLegClosingLine = vi.fn().mockResolvedValue(undefined);
-  const findByIdWithLegs = vi
-    .fn()
-    .mockResolvedValue({ id: 'proposal-1', legs: input.legs });
+  const findByIdWithLegs = vi.fn().mockResolvedValue({
+    id: 'proposal-1',
+    generatedAt: GENERATED_AT,
+    legs: input.legs,
+  });
 
+  const applyLegOperatorPrices = vi.fn().mockResolvedValue(undefined);
   const repoMock = {
     findByIdWithLegs,
+    findFixturesForSettlement: vi.fn().mockResolvedValue(input.fixtures),
+    applyLegOperatorPrices,
     settleLeg,
     updateResult,
     updateLegClosingLine,
   } as unknown as CouponRepository;
+  const findPlayableQuotes = vi
+    .fn()
+    .mockResolvedValue(input.quotes ?? new Map());
+  const playableMock = {
+    findPlayableQuotes,
+  } as unknown as PlayableOddsRepository;
   const closingRepoMock = {
     findClosingLines,
   } as unknown as OddsClosingLineRepository;
 
-  const prismaMock = {
-    client: {
-      fixture: { findMany: vi.fn().mockResolvedValue(input.fixtures) },
-    },
-  } as unknown as PrismaService;
-
   return {
-    service: new CouponSettlementService(prismaMock, repoMock, closingRepoMock),
+    service: new CouponSettlementService(
+      repoMock,
+      closingRepoMock,
+      playableMock,
+    ),
+    applyLegOperatorPrices,
+    findPlayableQuotes,
     settleLeg,
     updateResult,
     findClosingLines,
@@ -494,5 +511,49 @@ describe('CouponSettlementService.settleProposal — ligne de clôture par jambe
       CouponResult.WON,
       2,
     );
+  });
+});
+
+describe('CouponSettlementService.settleProposal — 1xBet price of the legs', () => {
+  it('prices unpriced legs at publication time, never rewrites a priced one', async () => {
+    const quote: PlayableQuote = {
+      fixtureId: 'f1',
+      market: Market.OVER_UNDER,
+      pick: 'OVER',
+      operatorOdds: 1.62,
+      operatorBookmaker: '1xBet',
+      operatorMargin: 0.071,
+      lowestOdds: 1.6,
+      lowestBookmaker: '1xBet',
+    };
+    const { service, applyLegOperatorPrices, findPlayableQuotes } = makeHarness(
+      {
+        legs: [
+          makeLeg({ id: 'l1', fixtureId: 'f1' }),
+          makeLeg({ id: 'l2', fixtureId: 'f2', operatorOdds: 1.4 }),
+          // 1xBet ne cotait pas ce choix : la jambe reste sans prix.
+          makeLeg({ id: 'l3', fixtureId: 'f3' }),
+        ],
+        fixtures: [
+          makeFixture({ id: 'f1', status: FixtureStatus.SCHEDULED }),
+          makeFixture({ id: 'f2', status: FixtureStatus.SCHEDULED }),
+          makeFixture({ id: 'f3', status: FixtureStatus.SCHEDULED }),
+        ],
+        quotes: new Map([['f1|OVER_UNDER|OVER', quote]]),
+      },
+    );
+
+    await service.settleProposal('proposal-1');
+
+    expect(findPlayableQuotes).toHaveBeenCalledWith(
+      [
+        { fixtureId: 'f1', market: Market.OVER_UNDER, pick: 'OVER' },
+        { fixtureId: 'f3', market: Market.OVER_UNDER, pick: 'OVER' },
+      ],
+      { asOf: GENERATED_AT },
+    );
+    expect(applyLegOperatorPrices).toHaveBeenCalledWith([
+      { legId: 'l1', operatorOdds: 1.62, operatorMargin: 0.071 },
+    ]);
   });
 });

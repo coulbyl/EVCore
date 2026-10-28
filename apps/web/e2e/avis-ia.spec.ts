@@ -20,6 +20,12 @@ test.describe("Avis IA", () => {
     await expect(page.getByTestId("ai-track-record")).toContainText(
       "ne bat pas la cote du bookmaker",
     );
+    await expect(page.getByTestId("ai-track-record")).toContainText(
+      "Écart au marché : +2,6 points, à ± 5,4 points près.",
+    );
+    await expect(page.getByTestId("ai-track-record")).toContainText(
+      "v5 du 27/10/26 au 28/10/26 (60 avis)",
+    );
     await expect(page.getByTestId("ai-today-count")).toHaveText(
       "Aujourd'hui : 2 avis proposés sur 3 matchs lus, 1 sans avis.",
     );

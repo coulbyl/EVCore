@@ -13,6 +13,9 @@
 -- moyenne des jambes : comparée à `hitRate`, elle dit si la clôture était
 -- elle-même calibrée sur cet échantillon.
 --
+-- Une jambe a sa cote 1xBet depuis le lot 5 (règlement, prix connu à la
+-- publication) ; les colonnes operator* ne portent que sur celles-là.
+--
 -- Une ligne par (source, marché) et une ligne de total par source
 -- (`market` = NULL).
 SELECT
@@ -39,7 +42,18 @@ SELECT
   (stddev_samp((l."closingLineValue" + 1) / l."oddsSnapshot" * (l."oddsSnapshot" - l."closingOdds"))
      / sqrt(nullif(count(l."closingLineValue"), 0)))::float AS "excessSe",
   avg(l."oddsSnapshot")::float                     AS "meanOdds",
-  avg(l."closingOdds")::float                      AS "meanClosingOdds"
+  avg(l."closingOdds")::float                      AS "meanClosingOdds",
+  -- Au prix 1xBet, celui que paie le joueur (2026-10-29) : cote et marge à
+  -- la publication, fréquence du marché sans marge, et réalisé au même prix.
+  count(l."operatorOdds")::int                     AS "withOperator",
+  avg(l."operatorOdds")::float                     AS "meanOperatorOdds",
+  avg(l."operatorMargin")::float                   AS "meanOperatorMargin",
+  avg(1 / l."operatorOdds" / (1 + l."operatorMargin"))
+    FILTER (WHERE l."operatorMargin" IS NOT NULL AND l."isCorrect" IS NOT NULL)::float AS "operatorFair",
+  avg(CASE WHEN l."isCorrect" THEN 1.0 ELSE 0.0 END)
+    FILTER (WHERE l."operatorMargin" IS NOT NULL AND l."isCorrect" IS NOT NULL)::float AS "operatorHitRate",
+  avg(CASE WHEN l."isCorrect" THEN l."operatorOdds" - 1 ELSE -1 END)
+    FILTER (WHERE l."operatorOdds" IS NOT NULL AND l."isCorrect" IS NOT NULL)::float AS "operatorFlatReturn"
 FROM coupon_proposal_leg l
 JOIN coupon_proposal p ON p.id = l."couponProposalId"
 WHERE l."settledAt" IS NOT NULL

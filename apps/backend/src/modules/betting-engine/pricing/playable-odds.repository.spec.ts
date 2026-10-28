@@ -105,4 +105,25 @@ describe('PlayableOddsRepository.findPlayableQuotes', () => {
     ]);
     expect(quotes.get('f1|BTTS|YES')?.operatorMargin).toBeNull();
   });
+
+  it('reads the price as known at asOf when asked, never later', async () => {
+    const asOf = new Date('2026-10-20T20:30:00Z');
+    const repository = repositoryReturning([]);
+    const prisma = (repository as unknown as { prisma: PrismaService }).prisma;
+    const queryRaw = vi.mocked(prisma.client.$queryRaw);
+
+    await repository.findPlayableQuotes(
+      [{ fixtureId: 'f1', market: 'BTTS', pick: 'YES' }],
+      { asOf },
+    );
+    await repository.findPlayableQuotes([
+      { fixtureId: 'f1', market: 'BTTS', pick: 'YES' },
+    ]);
+
+    const sqlOf = (call: unknown[]) => JSON.stringify(call);
+    const [withAsOf, withoutAsOf] = queryRaw.mock.calls;
+    expect(sqlOf(withAsOf ?? [])).toContain('observedAt');
+    expect(sqlOf(withAsOf ?? [])).toContain(asOf.toISOString());
+    expect(sqlOf(withoutAsOf ?? [])).not.toContain('observedAt');
+  });
 });

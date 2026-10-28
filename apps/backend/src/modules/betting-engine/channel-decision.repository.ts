@@ -263,9 +263,18 @@ export class ChannelDecisionRepository {
       where: {
         status: 'FINISHED',
         scheduledAt: { gte: from, lte: to },
-        modelRuns: {
-          some: { channelDecisions: { some: { selections: { some: {} } } } },
-        },
+        // Les avis VANTAGE de l'historique se règlent aussi, même quand la
+        // ligne vivante a perdu sa sélection (réécrite en refus).
+        OR: [
+          {
+            modelRuns: {
+              some: {
+                channelDecisions: { some: { selections: { some: {} } } },
+              },
+            },
+          },
+          { vantageDecisionHistory: { some: { market: { not: null } } } },
+        ],
       },
       select: {
         id: true,

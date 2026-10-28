@@ -256,10 +256,14 @@
     },
     "track": {
       "title": "Bilan de l'IA",
-      "line": "Du {from} au {to}, sur {settled} avis réglés : {realised} passés, pour une fréquence du marché de {market} · à mise fixe {result}.",
+      "line": "Du {from} au {to}, sur {settled} avis réglés : {realised} passés pour {announced} annoncés, et une fréquence du marché de {market} · à mise fixe {result}.",
       "insufficient": "Pas encore assez d'avis réglés sur 30 jours pour un bilan.",
       "market": "Comme le reste du moteur, l'IA ne bat pas la cote du bookmaker sur la durée : c'est une deuxième lecture, pas un tuyau.",
-      "link": "Détail dans Mesures historiques"
+      "link": "Détail dans Mesures historiques",
+      "gap": "Écart au marché : {gap} points, à ± {margin} points près. Seuls comptent les avis écrits avant le coup d'envoi, tels qu'ils ont été publiés.",
+      "versions": "Par version : {list}.",
+      "version": "{version} du {first} au {last} ({settled} avis)",
+      "aboveMarket": "Sur cette période, l'IA fait mieux que la fréquence du marché, au-delà de la marge d'erreur. Une période ne promet rien pour la suivante."
     },
     "todayLabel": "Aujourd'hui",
     "today": "{day} : {plays, plural, =0 {aucun avis proposé} one {# avis proposé} other {# avis proposés}} sur {reads} matchs lus, {abstentions, plural, =0 {aucun sans avis} one {# sans avis} other {# sans avis}}.",

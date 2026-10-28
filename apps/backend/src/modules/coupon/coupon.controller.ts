@@ -24,7 +24,6 @@ import {
   endOfUtcDay,
 } from '@utils/date.utils';
 import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
-import { AdminGuard } from '@/common/guards/admin.guard';
 import { CurrentSession } from '@modules/auth/current-session.decorator';
 import type { AuthSession } from '@modules/auth/auth.types';
 import { CouponService } from './coupon.service';
@@ -40,6 +39,7 @@ import {
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
 import type { CouponIndicesResponse } from './dto/coupon-indices.dto';
 import { PausedGuard } from '@/common/guards/paused.guard';
+import { AdminOrServiceTokenGuard } from '@modules/auth/admin-or-service-token.guard';
 
 @ApiTags('coupons')
 @Controller('coupons')
@@ -139,8 +139,9 @@ export class CouponController {
   @HttpCode(200)
   // Déclenche une écriture sur toute la table : réservé à l'administration,
   // comme les autres relances d'ETL. Était ouvert sans session jusqu'au
-  // 2026-10-08.
-  @UseGuards(AuthSessionGuard, AdminGuard)
+  // 2026-10-08. Le jeton de service (x-admin-token) passe aussi, comme les
+  // autres relances depuis le lot 2.
+  @UseGuards(AdminOrServiceTokenGuard)
   @ApiOperation({
     summary: 'Settle all ready proposals',
     description:
@@ -191,8 +192,9 @@ export class CouponController {
   @HttpCode(200)
   // Déclenche une écriture sur toute la table : réservé à l'administration,
   // comme les autres relances d'ETL. Était ouvert sans session jusqu'au
-  // 2026-10-08.
-  @UseGuards(AuthSessionGuard, AdminGuard)
+  // 2026-10-08. Le jeton de service (x-admin-token) passe aussi, comme les
+  // autres relances depuis le lot 2.
+  @UseGuards(AdminOrServiceTokenGuard)
   @ApiOperation({ summary: 'Settle a specific proposal' })
   @ApiParam({ name: 'id', description: 'UUID of the CouponProposal.' })
   @ApiOkResponse({
@@ -211,8 +213,9 @@ export class CouponController {
   @HttpCode(200)
   // Déclenche une écriture sur toute la table : réservé à l'administration,
   // comme les autres relances d'ETL. Était ouvert sans session jusqu'au
-  // 2026-10-08.
-  @UseGuards(AuthSessionGuard, AdminGuard)
+  // 2026-10-08. Le jeton de service (x-admin-token) passe aussi, comme les
+  // autres relances depuis le lot 2.
+  @UseGuards(AdminOrServiceTokenGuard)
   @ApiOperation({
     summary: 'Force re-settlement of every proposal in a forDate range',
     description:

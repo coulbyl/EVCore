@@ -256,10 +256,14 @@
     },
     "track": {
       "title": "AI track record",
-      "line": "From {from} to {to}, out of {settled} settled opinions: {realised} came in, against a market frequency of {market} · fixed stake {result}.",
+      "line": "From {from} to {to}, out of {settled} settled opinions: {realised} came in for {announced} announced, against a market frequency of {market} · fixed stake {result}.",
       "insufficient": "Not enough settled opinions over 30 days for a track record yet.",
       "market": "Like the rest of the engine, the AI does not beat the bookmaker's odds over time: a second reading, not a tip.",
-      "link": "Details in Historical measures"
+      "link": "Details in Historical measures",
+      "gap": "Gap to the market: {gap} points, give or take {margin}. Only opinions written before kickoff count, as they were published.",
+      "versions": "By version: {list}.",
+      "version": "{version} from {first} to {last} ({settled} opinions)",
+      "aboveMarket": "Over this period the AI does better than the market frequency, beyond the margin of error. One period promises nothing for the next."
     },
     "todayLabel": "Today",
     "today": "{day}: {plays, plural, =0 {no suggested bet} one {# suggested bet} other {# suggested bets}} out of {reads} matches read, {abstentions, plural, =0 {none without opinion} one {# without opinion} other {# without opinion}}.",

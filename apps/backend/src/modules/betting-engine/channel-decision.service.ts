@@ -33,6 +33,7 @@ import {
   type FixtureScores,
 } from './channel-selection-settlement';
 import { OddsClosingLineRepository } from './pricing/odds-closing-line.repository';
+import { VantageHistoryRepository } from './vantage-history.repository';
 import { resolveClosingLine } from './pricing/closing-line';
 import { CLOSING_LINE_POLICY } from './pricing/closing-line.constants';
 import {
@@ -199,10 +200,12 @@ export type ChannelDecisionFacets = {
 export class ChannelDecisionService {
   private readonly orchestrator: ChannelStrategyOrchestrator;
 
+  // eslint-disable-next-line max-params -- Nest DI constructor.
   constructor(
     private readonly repository: ChannelDecisionRepository,
     private readonly closingLines: OddsClosingLineRepository,
     private readonly playableOdds: PlayableOddsRepository,
+    private readonly vantageHistory: VantageHistoryRepository,
   ) {
     this.orchestrator = createChannelStrategyOrchestrator();
   }
@@ -246,8 +249,27 @@ export class ChannelDecisionService {
     await this.repository.applySelectionResults(updates);
     if (mode === 'final') {
       await this.recordSelectionClosingLines(fixtureId, selections);
+      await this.settleVantageHistory(fixtureId, scores);
     }
     return { settled: updates.length };
+  }
+
+  /**
+   * Les avis VANTAGE de l'historique figé, réglés sur le score final avec
+   * les mêmes résolveurs que les sélections : c'est ce que lit le bilan de
+   * l'IA (vantageCohortSql), jamais la ligne vivante. Rejouable.
+   */
+  private async settleVantageHistory(
+    fixtureId: string,
+    scores: FixtureScores,
+  ): Promise<void> {
+    const plays = await this.vantageHistory.findPlaysForFixture(fixtureId);
+    await this.vantageHistory.applyResults(
+      plays.map((play) => ({
+        id: play.id,
+        result: resolveSelectionFinalResult(play, scores),
+      })),
+    );
   }
 
   /**

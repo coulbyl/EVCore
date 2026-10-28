@@ -372,3 +372,59 @@ describe('DashboardService — market frequency without a paid margin', () => {
     expect(summary.market).toBeCloseTo(0.4762, 4);
   });
 });
+
+describe('DashboardService.getAiTrackRecord', () => {
+  function opinion(opts: {
+    version: string;
+    day: string;
+    won: boolean;
+    odds: string;
+  }) {
+    return {
+      configVersion: opts.version,
+      kickoff: new Date(`${opts.day}T18:00:00Z`),
+      selection: {
+        result: opts.won ? 'WON' : 'LOST',
+        odds: new Decimal(opts.odds),
+        probability: new Decimal('0.6'),
+        market: 'ONE_X_TWO',
+        marginPaid: new Decimal('0.05'),
+        channelDecision: {
+          channel: StrategyChannel.VANTAGE,
+          modelRun: { fixture: { season: null } },
+        },
+      },
+    };
+  }
+
+  it('reads the frozen history, in total and per prompt version', async () => {
+    const findVantageCohortRows = vi
+      .fn()
+      .mockResolvedValue([
+        opinion({ version: 'v4', day: '2026-10-20', won: true, odds: '1.5' }),
+        opinion({ version: 'v4', day: '2026-10-21', won: false, odds: '1.5' }),
+        opinion({ version: 'v3', day: '2026-10-01', won: true, odds: '1.5' }),
+      ]);
+    const service = new DashboardService({
+      findVantageCohortRows,
+    } as unknown as DashboardRepository);
+
+    const record = await service.getAiTrackRecord('2026-09-29', '2026-10-28');
+
+    expect(record.total).toMatchObject({
+      settled: 3,
+      firstDay: '2026-10-01',
+      lastDay: '2026-10-21',
+    });
+    expect(record.total.realised).toBeCloseTo(2 / 3, 5);
+    // Deux gagnés à 1,50 sur trois : 2 × 0,5 − 1 = 0 ; mise fixe −0 %.
+    expect(record.total.flatReturn).toBeCloseTo(0, 5);
+    // Marché : 1 / 1,50 / 1,05 = 0,635 ; écart 0,667 − 0,635.
+    expect(record.total.gap).toBeCloseTo(2 / 3 - 1 / 1.5 / 1.05, 3);
+    expect(record.total.gapMargin).toBeGreaterThan(0);
+    expect(record.versions.map((v) => [v.configVersion, v.settled])).toEqual([
+      ['v3', 1],
+      ['v4', 2],
+    ]);
+  });
+});
