@@ -211,11 +211,15 @@ test.describe("Pause", () => {
 
     // Navigation dans l'app : la session côté client sait déjà que le
     // joueur est en pause, Coupons montre l'annonce au lieu des coupons.
-    await page
+    // Sur tablette, la navigation est derrière le bouton du menu.
+    const couponsLink = page
       .getByRole("link", { name: "Coupons" })
       .filter({ visible: true })
-      .first()
-      .click();
+      .first();
+    if (!(await couponsLink.isVisible())) {
+      await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    }
+    await couponsLink.click();
     await expect(page).toHaveURL(/\/dashboard\/coupons/);
     await expect(page.getByTestId("paused-notice")).toContainText(
       "Tu es en pause",
