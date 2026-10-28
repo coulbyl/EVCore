@@ -19,6 +19,7 @@ import { BettingEngineController } from '@modules/betting-engine/betting-engine.
 import { ChannelDecisionAdminController } from '@modules/betting-engine/channel-decision-admin.controller';
 import { BacktestController } from '@modules/backtest/backtest.controller';
 import { RiskController } from '@modules/risk/risk.controller';
+import { CouponController } from '@modules/coupon/coupon.controller';
 
 type Role = 'ADMIN' | 'OPERATOR';
 
@@ -106,4 +107,15 @@ describe('operations controllers are guarded as a whole', () => {
       | undefined;
     expect(guards).toContain(AdminOrServiceTokenGuard);
   });
+
+  it.each(['settle', 'settleOne', 'settleRange'] as const)(
+    'CouponController.%s carries AdminOrServiceTokenGuard',
+    (method) => {
+      const guards = Reflect.getMetadata(
+        GUARDS_METADATA,
+        CouponController.prototype[method],
+      ) as unknown[] | undefined;
+      expect(guards).toContain(AdminOrServiceTokenGuard);
+    },
+  );
 });

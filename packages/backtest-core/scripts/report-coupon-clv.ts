@@ -34,6 +34,12 @@ type Row = {
   excessSe: number | null;
   meanOdds: number | null;
   meanClosingOdds: number | null;
+  withOperator: number;
+  meanOperatorOdds: number | null;
+  meanOperatorMargin: number | null;
+  operatorFair: number | null;
+  operatorHitRate: number | null;
+  operatorFlatReturn: number | null;
 };
 
 function offlineDir(): string | null {
@@ -111,6 +117,37 @@ function render(rows: readonly Row[]): string {
   const table = [header, header.map(() => "---"), ...body]
     .map((line) => `| ${line.join(" | ")} |`)
     .join("\n");
+  const operatorHeader = [
+    "Source",
+    "Jambes cotées 1xBet",
+    "Cote 1xBet",
+    "Marge 1xBet",
+    "Marché (sans marge)",
+    "Réalisé",
+    "Écart au marché",
+    "À mise fixe au prix 1xBet",
+  ];
+  const operatorBody = rows
+    .filter((row) => row.market === null)
+    .map((row) => [
+      row.source,
+      `${row.withOperator} (${pct(row.withOperator / row.legs, 0)})`,
+      num(row.meanOperatorOdds),
+      pct(row.meanOperatorMargin),
+      pct(row.operatorFair),
+      pct(row.operatorHitRate),
+      row.operatorFair === null || row.operatorHitRate === null
+        ? "—"
+        : `${((row.operatorHitRate - row.operatorFair) * 100).toFixed(1)} pt`,
+      pct(row.operatorFlatReturn),
+    ]);
+  const operatorTable = [
+    operatorHeader,
+    operatorHeader.map(() => "---"),
+    ...operatorBody,
+  ]
+    .map((line) => `| ${line.join(" | ")} |`)
+    .join("\n");
   const totals = rows.filter((row) => row.market === null);
   const covered = totals.filter(
     (row) => row.legs > 0 && row.withClosing / row.legs >= COVERAGE_TARGET,
@@ -134,6 +171,14 @@ ${table}
 
 **${covered.length} source${covered.length > 1 ? "s" : ""} sur ${totals.length}** atteint la couverture
 cible de ${pct(COVERAGE_TARGET, 0)} (acceptation de E-2).
+
+## Au prix 1xBet
+
+Le prix que paie le joueur, connu à la publication du coupon. Les sources se
+comparent jambe à jambe à ce même prix : le réalisé face à la fréquence du
+marché sans marge, et le résultat d'une mise fixe sur chaque jambe.
+
+${operatorTable}
 `;
 }
 

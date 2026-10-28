@@ -40,8 +40,14 @@ export function playableQuoteKey(key: PlayableQuoteKey): string {
 export class PlayableOddsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * `asOf` : le prix tel qu'on le connaissait à cet instant (relevé observé
+   * à `asOf` ou avant), pour coter une jambe au moment de sa publication.
+   * Sans lui, le dernier prix d'avant coup d'envoi.
+   */
   async findPlayableQuotes(
     keys: readonly PlayableQuoteKey[],
+    opts: { asOf?: Date } = {},
   ): Promise<Map<string, PlayableQuote>> {
     const result = new Map<string, PlayableQuote>();
     if (keys.length === 0) return result;
@@ -69,6 +75,7 @@ export class PlayableOddsRepository {
           AND o.market::text = ANY(ARRAY[${Prisma.join(markets)}]::text[])
           AND o.line IS NULL
           AND o."snapshotAt" <= f."scheduledAt"
+          ${opts.asOf ? Prisma.sql`AND coalesce(o."observedAt", o."snapshotAt") <= ${opts.asOf}` : Prisma.empty}
         ORDER BY o."fixtureId", o.market, o.pick, o.bookmaker, o."snapshotAt" DESC
       )
       SELECT latest."fixtureId"::text AS "fixtureId",

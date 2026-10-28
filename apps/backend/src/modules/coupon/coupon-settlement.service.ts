@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { BetStatus, CouponResult, FixtureStatus, Market } from '@evcore/db';
-import { PrismaService } from '@/prisma.service';
 import { COUPON_SETTLEMENT_POLICY } from './coupon.constants';
 import {
   resolveFirstHalfBetStatus,
@@ -17,6 +16,10 @@ import {
   resolveClosingLine,
 } from '../betting-engine/pricing/closing-line';
 import { OddsClosingLineRepository } from '../betting-engine/pricing/odds-closing-line.repository';
+import {
+  PlayableOddsRepository,
+  playableQuoteKey,
+} from '../betting-engine/pricing/playable-odds.repository';
 import { createLogger } from '@utils/logger';
 import { productDecimal, type DecimalLike } from '@utils/decimal.utils';
 
@@ -87,10 +90,53 @@ function resolveIsCorrect(
 @Injectable()
 export class CouponSettlementService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly repo: CouponRepository,
     private readonly closingLines: OddsClosingLineRepository,
+    private readonly playableOdds: PlayableOddsRepository,
   ) {}
+
+  /**
+   * Cote 1xBet des jambes qui n'en ont pas (jambes de l'IA, propositions
+   * d'avant le lot 3), au prix connu à la publication (`generatedAt`) :
+   * l'IA et le générateur se comparent jambe à jambe au même prix
+   * (2026-10-29). Une jambe que 1xBet ne cotait pas reste vide.
+   */
+  private async priceUnpricedLegs(
+    proposal: NonNullable<
+      Awaited<ReturnType<CouponRepository['findByIdWithLegs']>>
+    >,
+  ): Promise<void> {
+    const unpriced = proposal.legs.filter((leg) => leg.operatorOdds === null);
+    if (unpriced.length === 0) return;
+    const quotes = await this.playableOdds.findPlayableQuotes(
+      unpriced.map((leg) => ({
+        fixtureId: leg.fixtureId,
+        market: leg.market,
+        pick: leg.pick,
+      })),
+      { asOf: proposal.generatedAt },
+    );
+    await this.repo.applyLegOperatorPrices(
+      unpriced.flatMap((leg) => {
+        const quote = quotes.get(
+          playableQuoteKey({
+            fixtureId: leg.fixtureId,
+            market: leg.market,
+            pick: leg.pick,
+          }),
+        );
+        return quote?.operatorOdds == null
+          ? []
+          : [
+              {
+                legId: leg.id,
+                operatorOdds: quote.operatorOdds,
+                operatorMargin: quote.operatorMargin,
+              },
+            ];
+      }),
+    );
+  }
 
   async settleReadyProposals(): Promise<void> {
     const ready = await this.repo.findPendingReadyToSettle(new Date());
@@ -116,21 +162,11 @@ export class CouponSettlementService {
   async settleProposal(proposalId: string): Promise<void> {
     const proposal = await this.repo.findByIdWithLegs(proposalId);
     if (!proposal) return;
+    await this.priceUnpricedLegs(proposal);
 
     const fixtureIds = [...new Set(proposal.legs.map((l) => l.fixtureId))];
 
-    const fixtures = await this.prisma.client.fixture.findMany({
-      where: { id: { in: fixtureIds } },
-      select: {
-        id: true,
-        status: true,
-        scheduledAt: true,
-        homeScore: true,
-        awayScore: true,
-        homeHtScore: true,
-        awayHtScore: true,
-      },
-    });
+    const fixtures = await this.repo.findFixturesForSettlement(fixtureIds);
 
     const fixtureMap = new Map(fixtures.map((f) => [f.id, f]));
     await this.recordClosingLines(proposal.legs, fixtureMap);
