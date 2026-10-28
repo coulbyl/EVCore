@@ -529,7 +529,7 @@ export class OddsPrematchSyncWorker extends WorkerHost {
       await this.fixtureService.upsertLineMarketOdds(
         context,
         entry.market,
-        entry.legs,
+        operatorLegsKept(input.bookmaker, entry.market, entry.legs),
       );
     }
     for (const entry of extended.fixedMarkets.filter((row) =>
@@ -553,6 +553,25 @@ export class OddsPrematchSyncWorker extends WorkerHost {
  * d'OPERATOR_EXTENDED_MARKETS est gardé aussi chez le book des joueurs, qui
  * en donne le prix jouable (corners, lot 6).
  */
+/**
+ * Chez le book des joueurs, les corners ne sont gardés que sur les lignes en
+ * ,5 (celles que joue le chasseur, sans remboursement) : son échelle complète
+ * (40 à 54 issues par match et par relevé) doublerait le volume pour rien.
+ */
+export function operatorLegsKept<T extends { line: number }>(
+  bookmaker: string,
+  market: string,
+  legs: readonly T[],
+): T[] {
+  if (
+    bookmaker === REFERENCE_BOOKMAKER ||
+    !(OPERATOR_EXTENDED_MARKETS as readonly string[]).includes(market)
+  ) {
+    return [...legs];
+  }
+  return legs.filter((leg) => Math.abs(leg.line % 1) === 0.5);
+}
+
 export function keepsExtendedMarket(
   bookmaker: string,
   market: string,

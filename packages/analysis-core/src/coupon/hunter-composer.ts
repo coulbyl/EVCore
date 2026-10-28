@@ -80,7 +80,10 @@ export type HunterComposition =
   | { outcome: "picked"; leg: HunterLeg; candidateCount: number }
   | {
       outcome: "abstained";
-      reason: "no_candidate_in_band" | "no_reliable_competition";
+      reason:
+        | "no_candidate_in_band"
+        | "no_reliable_competition"
+        | "no_operator_price";
       candidateCount: number;
     };
 

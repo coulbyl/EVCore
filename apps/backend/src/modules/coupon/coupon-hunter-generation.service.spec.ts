@@ -182,4 +182,18 @@ describe('CouponHunterGenerationService', () => {
       }),
     );
   });
+
+  it('says when 1xBet prices no corners at all', async () => {
+    const { service, repository } = makeHarness();
+    vi.mocked(repository.findCornersQuotes).mockResolvedValue(
+      corners('f4', 'c1', ['OVER', 1.95], ['UNDER', 1.88]).map((q) => ({
+        ...q,
+        bookmaker: 'Pinnacle',
+      })),
+    );
+    await service.generateForDate(new Date('2026-10-29'));
+    expect(repository.recordPriceComposerAttempt).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: 'no_operator_price' }),
+    );
+  });
 });

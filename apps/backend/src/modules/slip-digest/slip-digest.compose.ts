@@ -51,6 +51,7 @@ const ABSTENTION_REASON: Readonly<Record<string, string>> = {
   no_candidate_in_band: 'aucun pari dans sa bande de cote',
   no_reliable_competition:
     'aucun championnat dont les stats de corners arrivent à coup sûr',
+  no_operator_price: 'aucun corner coté chez 1xBet',
 };
 
 const FOLLOWED_OUTCOME: Record<CouponResult, string> = {

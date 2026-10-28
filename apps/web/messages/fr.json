@@ -1129,7 +1129,8 @@
       "no_combination_in_window": "aucune combinaison entre 2 et 3",
       "no_candidate_in_band": "aucun pari dans sa bande de cote",
       "other": "pas de pari qui tienne la règle ce jour-là",
-      "no_reliable_competition": "aucun championnat dont les stats de corners arrivent à coup sûr"
+      "no_reliable_competition": "aucun championnat dont les stats de corners arrivent à coup sûr",
+      "no_operator_price": "aucun corner coté chez 1xBet"
     }
   }
 }

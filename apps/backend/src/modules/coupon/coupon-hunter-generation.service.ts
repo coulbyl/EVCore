@@ -160,13 +160,22 @@ export class CouponHunterGenerationService {
         reliableSet.has(q.competitionId) && !input.avoided.has(q.fixtureId),
     );
     const kickoffs = new Map(quotes.map((q) => [q.fixtureId, q.scheduledAt]));
-    const composition =
-      quotes.length > 0 && playable.length === 0
-        ? ({
-            outcome: 'abstained',
-            reason: 'no_reliable_competition',
-            candidateCount: 0,
-          } as const)
+    // Raisons distinctes : 1xBet ne cote aucun corner (ou pas encore
+    // collecté), ou seulement dans des championnats sans stats.
+    const operatorPriced = quotes.some(
+      (q) => q.bookmaker === policy.operatorBookmaker,
+    );
+    const abstain = (
+      reason: 'no_reliable_competition' | 'no_operator_price',
+    ): HunterComposition => ({
+      outcome: 'abstained',
+      reason,
+      candidateCount: 0,
+    });
+    const composition = !operatorPriced
+      ? abstain('no_operator_price')
+      : !playable.some((q) => q.bookmaker === policy.operatorBookmaker)
+        ? abstain('no_reliable_competition')
         : composeCornersHunter(
             priceCornersSides(
               playable,

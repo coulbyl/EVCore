@@ -210,6 +210,9 @@ export class PlayableOddsRepository {
       ORDER BY o."fixtureId", o.market, o.line, o.pick, o.bookmaker, o."snapshotAt" DESC
     `;
     const rowAt = (row: QuoteRow) => new Date(row.snapshotAt).getTime();
+    const pairKey = (row: QuoteRow, pick: string) =>
+      `${row.bookmaker}|${row.fixtureId}|${row.market}|${row.line}|${pick}|${rowAt(row)}`;
+    const byPair = new Map(rows.map((row) => [pairKey(row, row.pick), row]));
     for (const row of rows) {
       const key = playableQuoteKey(row);
       if (!wanted.has(key)) continue;
@@ -225,14 +228,8 @@ export class PlayableOddsRepository {
         lowestBookmaker: null,
       };
       if (OPERATOR_BOOKMAKERS.includes(row.bookmaker)) {
-        const other = rows.find(
-          (candidate) =>
-            candidate.bookmaker === row.bookmaker &&
-            candidate.fixtureId === row.fixtureId &&
-            candidate.market === row.market &&
-            candidate.line === row.line &&
-            candidate.pick === (row.pick === 'OVER' ? 'UNDER' : 'OVER') &&
-            rowAt(candidate) === rowAt(row),
+        const other = byPair.get(
+          pairKey(row, row.pick === 'OVER' ? 'UNDER' : 'OVER'),
         );
         current.operatorOdds = row.odds;
         current.operatorBookmaker = row.bookmaker;

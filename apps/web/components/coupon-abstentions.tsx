@@ -12,6 +12,7 @@ const KNOWN_REASONS = new Set([
   "no_combination_in_window",
   "no_candidate_in_band",
   "no_reliable_competition",
+  "no_operator_price",
 ]);
 
 /**

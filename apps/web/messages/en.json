@@ -1129,7 +1129,8 @@
       "no_combination_in_window": "no combination between 2 and 3",
       "no_candidate_in_band": "no bet in its odds band",
       "other": "no bet meeting the rule that day",
-      "no_reliable_competition": "no championship whose corner stats reliably arrive"
+      "no_reliable_competition": "no championship whose corner stats reliably arrive",
+      "no_operator_price": "no corners priced at 1xBet"
     }
   }
 }

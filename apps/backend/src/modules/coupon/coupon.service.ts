@@ -89,7 +89,7 @@ export class CouponService {
         // (2026-10-28). Le coupon cote 2 la porte déjà, exacte, dans
         // `probability` ; les autres la tirent de la cote.
         marketProbability:
-          couponClass === 'DOUBLE'
+          couponClass === 'DOUBLE' || couponClass === 'HUNTER_CORNERS'
             ? Number(leg.probability)
             : marketProbability({
                 odds: leg.oddsSnapshot ? Number(leg.oddsSnapshot) : null,
