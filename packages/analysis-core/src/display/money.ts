@@ -63,5 +63,5 @@ export function formatMoney(
   const symbol = SYMBOL[code] ?? code;
   return code === "USD"
     ? `${sign}${symbol}${body}`
-    : `${sign}${body} ${symbol}`;
+    : `${sign}${body}\u00A0${symbol}`;
 }

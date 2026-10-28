@@ -3,7 +3,7 @@ import { formatMoney } from "./money";
 
 // Espaces du format français : insécable fine entre milliers (Intl),
 // insécable avant le symbole.
-const n = (s: string) => s.replace(/[  ]/g, " ");
+const n = (s: string) => s.replace(/[\u00A0\u202F]/g, " ");
 
 describe("formatMoney", () => {
   it("writes francs CFA without centimes, rounding half away from zero", () => {
