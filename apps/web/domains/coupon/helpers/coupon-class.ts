@@ -44,6 +44,18 @@ export const COUPON_CLASS_META: Record<CouponClassName, CouponClassMeta> = {
     order: -1.5,
     badgeVariant: "accent",
   },
+  // Le coupon cote 2 (2026-10-28) : deux jambes de cote combinée 2 à 3 chez
+  // 1xBet, prises parmi tout ce qui est coté et classées par la probabilité
+  // du marché sans marge. Rejoué sur 115 jours : un coupon 114 jours, 44 %
+  // annoncés, 48 % ± 9 réalisés (docs/audits/2026-10-28/
+  // SELECTIONS-LAISSEES.md). « Environ 1 jour sur 2 », jamais le 48 %.
+  DOUBLE: {
+    label: "Coupon cote 2",
+    shortLabel: "Cote 2",
+    frequency: "Gagne environ 1 jour sur 2",
+    order: -1.25,
+    badgeVariant: "accent",
+  },
   // Le coupon long (2026-10-18) : cible 2,5, plafond 5, jambes de 1,20 à 1,80
   // les plus longues d'abord, sur les mêmes sélections calibrées. 34 % de
   // jours gagnants mesurés à cote 3,0, pire série 8 jours

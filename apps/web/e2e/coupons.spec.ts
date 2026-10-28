@@ -25,7 +25,8 @@ test.describe("Coupons", () => {
       has: page.getByTestId("coupon-combined-odds"),
     });
     const count = await cards.count();
-    expect(count).toBe(6);
+    // Six coupons historiques et le coupon cote 2 (2026-10-28).
+    expect(count).toBe(7);
     // Le coupon prix 5–15 n'est plus affiché ; le coupon long 2,5–5 l'est.
     await expect(page.getByText(/cote 5–15/)).toHaveCount(0);
     await expect(
@@ -122,9 +123,10 @@ test.describe("Coupons", () => {
   test("les deux générateurs et le coupon remboursé sont identifiés", async ({
     page,
   }) => {
+    // Favori, coupon cote 2 et un coupon prix.
     await expect(
       page.getByText("Choisi sur les cotes", { exact: true }),
-    ).toHaveCount(2);
+    ).toHaveCount(3);
     await expect(page.getByText("Analyse IA", { exact: true })).toHaveCount(3);
     await expect(
       page.getByText("Sélections du moteur", { exact: true }),

@@ -132,8 +132,16 @@ function formatDayLabel(isoDate: string, locale: string): string {
   }).format(new Date(Date.UTC(year ?? 1970, (month ?? 1) - 1, day ?? 1)));
 }
 
-/** Classes affichées en tête de l'accueil, dans cet ordre. */
-const HOME_CLASSES: readonly CouponClassName[] = ["FAVOURITE", "COMBO"];
+/**
+ * Classes affichées en tête de l'accueil, dans cet ordre : de la plus
+ * fréquente à la plus rare. Le coupon cote 2 (2026-10-28) gagne environ un
+ * jour sur deux ; le coupon long reste un lien vers Coupons.
+ */
+const HOME_CLASSES: readonly CouponClassName[] = [
+  "FAVOURITE",
+  "COMBO",
+  "DOUBLE",
+];
 
 /**
  * Une carte par classe d'accueil, la mieux classée, hors source LLM : un

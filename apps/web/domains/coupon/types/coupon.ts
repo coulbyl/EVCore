@@ -5,7 +5,8 @@ export type CouponClassName =
   | "UNIQUE"
   | "FAVOURITE"
   | "COMBO"
-  | "LONG";
+  | "LONG"
+  | "DOUBLE";
 
 export type CouponSource = "LLM" | "PRICE_COMPOSER" | "ENGINE";
 
