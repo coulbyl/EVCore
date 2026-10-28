@@ -48,8 +48,7 @@ export function settleAsianHandicap(bet: AsianHandicapBet): SettlementReturn {
 
   // Le handicap est donné côté domicile : l'extérieur prend le signe opposé.
   const applied = pick === "HOME" ? line : -line;
-  const diff =
-    pick === "HOME" ? homeScore - awayScore : awayScore - homeScore;
+  const diff = pick === "HOME" ? homeScore - awayScore : awayScore - homeScore;
   const margin = diff + applied;
 
   // Quart de ligne : la mise se scinde sur les deux lignes adjacentes.

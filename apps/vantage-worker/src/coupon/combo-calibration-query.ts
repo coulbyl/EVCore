@@ -1,5 +1,7 @@
 import { prisma } from "@evcore/db";
 import type { CalibrationCell } from "@evcore/analysis-core";
+// Book des joueurs, partagé avec le backend (analysis-core/pricing/operator.ts).
+import { OPERATOR_BOOKMAKERS } from "@evcore/analysis-core";
 
 /**
  * Calibration canal × compétition sur une fenêtre glissante — réel / annoncé
@@ -40,11 +42,6 @@ export async function loadChannelCompetitionCalibration(
     ratio: r.ratio,
   }));
 }
-
-/** Books où les utilisateurs misent, et leur minimum de cote — mêmes
- * valeurs que apps/backend (playable-odds.constants.ts). */
-export const OPERATOR_BOOKMAKERS: readonly string[] = ["1xBet"];
-export const OPERATOR_MIN_ODDS = 1.1;
 
 export type OperatorQuoteKey = {
   fixtureId: string;

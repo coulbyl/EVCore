@@ -3,6 +3,7 @@ import {
   marketProbability,
   priceOutcomeGroups,
 } from "../pricing/market-probability";
+import { operatorMarginOrTypical } from "../pricing/operator";
 import type { ComboCandidate } from "./combo-generator";
 import {
   HUNTER_BTTS_CLASS,
@@ -19,8 +20,10 @@ import type { DoubleCandidate } from "./double-composer";
  * du marché, et mesurés jambe par jambe en direct. Jamais d'edge.
  *
  * BTTS et Nul (`composeHunterByMarket`) : tout ce qui est coté sur le marché
- * dans la bande, la marge la plus basse d'abord, puis la probabilité du
- * marché. Le coût est la seule chose qui persiste d'une période à l'autre
+ * dans la bande, la marge payée chez 1xBet la plus basse d'abord (sa marge
+ * typique du marché quand il ne cote pas tout le groupe), puis la
+ * probabilité du marché. Le joueur paie 9,3 % en médiane chez 1xBet contre
+ * 5,5 % chez les books de référence (MARGES-1XBET.md). Le coût est la seule chose qui persiste d'une période à l'autre
  * (r = +0,70) ; sur 116 jours, le nul « le plus probable » réalisait 6,4
  * points sous le marché (coût −24 %), le moins cher 1,1 (coût −7 %)
  * (docs/audits/2026-10-28/HUNTERS.md).
@@ -64,6 +67,8 @@ export type HunterLeg = {
   odds: number;
   /** Probabilité du marché, marge retirée : la fréquence affichée. */
   probability: number;
+  /** Marge payée chez 1xBet quand elle est connue. */
+  operatorMargin?: number | null;
 };
 
 export type HunterComposition =
@@ -94,12 +99,14 @@ export function composeHunterByMarket(
       leg.pick === spec.pick &&
       inBand(leg.playableOdds, spec),
   );
+  const cost = (leg: (typeof legs)[number]) =>
+    new Decimal(operatorMarginOrTypical(leg.market, leg.operatorMargin));
   let best: (typeof legs)[number] | null = null;
   for (const leg of legs) {
     if (
       !best ||
-      leg.margin.lt(best.margin) ||
-      (leg.margin.eq(best.margin) && leg.fair.gt(best.fair))
+      cost(leg).lt(cost(best)) ||
+      (cost(leg).eq(cost(best)) && leg.fair.gt(best.fair))
     ) {
       best = leg;
     }
@@ -113,6 +120,7 @@ export function composeHunterByMarket(
       pick: best.pick,
       odds: best.odds,
       probability: best.fair.toNumber(),
+      operatorMargin: best.operatorMargin ?? null,
     },
     candidateCount: legs.length,
   };

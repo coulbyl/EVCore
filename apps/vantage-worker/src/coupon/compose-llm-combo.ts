@@ -8,7 +8,8 @@ import {
   type ComboCandidate,
 } from "@evcore/analysis-core";
 import { requestVantageCompletion, type LlmClients } from "../groq/client";
-import { OPERATOR_MIN_ODDS, operatorQuoteKey } from "./combo-calibration-query";
+import { OPERATOR_MIN_ODDS } from "@evcore/analysis-core";
+import { operatorQuoteKey } from "./combo-calibration-query";
 import { sanitizeReasonText } from "../vantage/sanitize-reason";
 import type {
   CouponLlmProvenance,

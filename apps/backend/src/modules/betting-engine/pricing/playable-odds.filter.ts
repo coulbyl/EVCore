@@ -3,7 +3,7 @@ import {
   type PlayableQuote,
   type PlayableQuoteKey,
 } from './playable-odds.repository';
-import { OPERATOR_MIN_ODDS } from './playable-odds.constants';
+import { OPERATOR_MIN_ODDS } from '@evcore/analysis-core';
 
 /**
  * Garde « jouable chez l'opérateur » : écarte un candidat dont le prix chez
@@ -21,4 +21,16 @@ export function playableAtOperator(
   if (!quote) return true;
   const price = quote.operatorOdds ?? quote.lowestOdds;
   return price === null || price >= OPERATOR_MIN_ODDS;
+}
+
+/** Prix et marge chez le book des joueurs, à écrire sur une jambe de coupon. */
+export function operatorPrice(
+  candidate: PlayableQuoteKey,
+  quotes: Map<string, PlayableQuote>,
+): { operatorOdds: number | null; operatorMargin: number | null } {
+  const quote = quotes.get(playableQuoteKey(candidate));
+  return {
+    operatorOdds: quote?.operatorOdds ?? null,
+    operatorMargin: quote?.operatorMargin ?? null,
+  };
 }

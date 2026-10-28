@@ -1,5 +1,6 @@
 import Decimal from "decimal.js";
 import { priceOutcomeGroups } from "../pricing/market-probability";
+import { operatorMarginOrTypical } from "../pricing/operator";
 import { DOUBLE_COUPON_CLASS, type CouponClass } from "./coupon-classes";
 import { POOL_EXCLUDED_MARKETS } from "./pool-eligibility";
 
@@ -22,6 +23,11 @@ export type DoubleCandidate = {
   odds: number;
   /** Cote chez le book du joueur, sinon la plus basse relevée. */
   playableOdds: number;
+  /**
+   * Marge payée chez le book du joueur sur le groupe complet ; null s'il ne
+   * le cote pas en entier (on suppose alors sa marge typique du marché).
+   */
+  operatorMargin?: number | null;
 };
 
 export type DoubleLeg = DoubleCandidate & {
@@ -79,11 +85,18 @@ function distinctFixtures(legs: readonly DoubleLeg[]): boolean {
   return new Set(legs.map((leg) => leg.fixtureId)).size === legs.length;
 }
 
+/** Coût réel d'une jambe : la marge payée chez 1xBet (2026-10-29). */
+function costOf(leg: DoubleLeg): Decimal {
+  return new Decimal(operatorMarginOrTypical(leg.market, leg.operatorMargin));
+}
+
 function comboOf(legs: DoubleLeg[]): Combo {
   return {
     legs,
     score: legs.reduce((acc, leg) => acc.times(leg.fair), new Decimal(1)),
-    margin: legs.reduce((acc, leg) => acc.plus(leg.margin), new Decimal(0)),
+    // Départage : la marge payée chez 1xBet, plus celle de la référence,
+    // qui sous-estime ce que paie le joueur (MARGES-1XBET.md).
+    margin: legs.reduce((acc, leg) => acc.plus(costOf(leg)), new Decimal(0)),
   };
 }
 
@@ -100,7 +113,7 @@ function shortlist(legs: readonly DoubleLeg[]): DoubleLeg[] {
     if (
       !held ||
       leg.fair.gt(held.fair) ||
-      (leg.fair.eq(held.fair) && leg.margin.lt(held.margin))
+      (leg.fair.eq(held.fair) && costOf(leg).lt(costOf(held)))
     ) {
       best.set(key, leg);
     }

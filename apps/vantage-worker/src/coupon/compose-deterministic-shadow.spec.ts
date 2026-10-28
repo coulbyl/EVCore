@@ -165,4 +165,3 @@ describe("buildProbabilityRankedShadowAttempt", () => {
     expect(attempt.outcome).toBe("SHADOW_ABSTAINED");
   });
 });
-

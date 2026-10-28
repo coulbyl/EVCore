@@ -7,11 +7,27 @@ import {
 } from "./hunter-composer";
 import type { DoubleCandidate } from "./double-composer";
 
-/** BTTS coté complet (oui / non), au même prix chez le joueur. */
+/** BTTS coté complet (oui / non), au même prix chez le joueur : la marge
+ * payée chez 1xBet est celle du groupe. */
 function btts(fixtureId: string, yes: number, no: number): DoubleCandidate[] {
+  const operatorMargin = 1 / yes + 1 / no - 1;
   return [
-    { fixtureId, market: "BTTS", pick: "YES", odds: yes, playableOdds: yes },
-    { fixtureId, market: "BTTS", pick: "NO", odds: no, playableOdds: no },
+    {
+      fixtureId,
+      market: "BTTS",
+      pick: "YES",
+      odds: yes,
+      playableOdds: yes,
+      operatorMargin,
+    },
+    {
+      fixtureId,
+      market: "BTTS",
+      pick: "NO",
+      odds: no,
+      playableOdds: no,
+      operatorMargin,
+    },
   ];
 }
 
@@ -34,6 +50,35 @@ describe("composeHunterByMarket", () => {
     expect(result.candidateCount).toBe(2);
   });
 
+  it("ranks on the margin paid at 1xBet, not the reference one", () => {
+    // Même référence ; 1xBet prend 9 % sur f1, 4 % sur f2.
+    const result = composeHunterByMarket(
+      [
+        ...btts("f1", 1.8, 1.95).map((c) => ({ ...c, operatorMargin: 0.09 })),
+        ...btts("f2", 1.8, 1.95).map((c) => ({ ...c, operatorMargin: 0.04 })),
+      ],
+      BTTS_HUNTER,
+    );
+    expect(result.outcome).toBe("picked");
+    if (result.outcome !== "picked") return;
+    expect(result.leg.fixtureId).toBe("f2");
+    expect(result.leg.operatorMargin).toBe(0.04);
+  });
+
+  it("assumes 1xBet's typical margin when its group is incomplete", () => {
+    // f1 sans prix 1xBet complet : 8 % supposés pour BTTS ; f2 à 8,5 %.
+    const result = composeHunterByMarket(
+      [
+        ...btts("f1", 1.7, 2.1).map((c) => ({ ...c, operatorMargin: null })),
+        ...btts("f2", 1.8, 1.95).map((c) => ({ ...c, operatorMargin: 0.085 })),
+      ],
+      BTTS_HUNTER,
+    );
+    expect(result.outcome).toBe("picked");
+    if (result.outcome !== "picked") return;
+    expect(result.leg.fixtureId).toBe("f1");
+  });
+
   it("abstains when nothing is priced in the band", () => {
     expect(composeHunterByMarket(btts("f1", 1.3, 3.3), BTTS_HUNTER)).toEqual({
       outcome: "abstained",
@@ -50,7 +95,15 @@ describe("composeHunterByMarket — draw", () => {
   ): DoubleCandidate[] =>
     (["HOME", "DRAW", "AWAY"] as const).map((pick, i) => {
       const odds = [home, draw, away][i] as number;
-      return { fixtureId, market: "ONE_X_TWO", pick, odds, playableOdds: odds };
+      const operatorMargin = 1 / home + 1 / draw + 1 / away - 1;
+      return {
+        fixtureId,
+        market: "ONE_X_TWO",
+        pick,
+        odds,
+        playableOdds: odds,
+        operatorMargin,
+      };
     });
 
   it("takes the cheapest draw rather than the most likely one", () => {

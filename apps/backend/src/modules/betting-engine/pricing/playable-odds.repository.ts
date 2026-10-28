@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
-import { OPERATOR_BOOKMAKERS } from './playable-odds.constants';
+import { OPERATOR_BOOKMAKERS, priceOutcomeGroups } from '@evcore/analysis-core';
 
 export type PlayableQuoteKey = {
   fixtureId: string;
@@ -13,6 +13,13 @@ export type PlayableQuote = PlayableQuoteKey & {
   /** Prix chez le book de l'utilisateur quand il cote le choix, sinon null. */
   operatorOdds: number | null;
   operatorBookmaker: string | null;
+  /**
+   * Marge payée chez ce book sur le groupe d'issues complet du choix (somme
+   * des implicites rapportée au nombre d'issues gagnantes, moins 1) ; null
+   * si le book ne cote pas tout le groupe. C'est le coût réel du joueur
+   * (docs/audits/2026-10-29/MARGES-1XBET.md).
+   */
+  operatorMargin: number | null;
   /** Prix le plus bas de tous les books relevés (le pire cas). */
   lowestOdds: number | null;
   lowestBookmaker: string | null;
@@ -81,6 +88,21 @@ export class PlayableOddsRepository {
       WHERE latest.pick IS NULL AND side.odds IS NOT NULL
     `;
 
+    // Les issues sœurs de chaque choix sont dans `rows` (même match, même
+    // marché) : la marge du book des joueurs se calcule sans autre requête,
+    // sur son seul prix — jamais en mélangeant les books.
+    const operatorMargins = new Map<string, number>();
+    for (const bookmaker of OPERATOR_BOOKMAKERS) {
+      for (const priced of priceOutcomeGroups(
+        rows.filter((row) => row.bookmaker === bookmaker),
+      )) {
+        const key = playableQuoteKey(priced);
+        if (!operatorMargins.has(key)) {
+          operatorMargins.set(key, priced.margin.toNumber());
+        }
+      }
+    }
+
     for (const row of rows) {
       const key = playableQuoteKey(row);
       if (!wanted.has(key)) continue;
@@ -90,6 +112,7 @@ export class PlayableOddsRepository {
         pick: row.pick,
         operatorOdds: null,
         operatorBookmaker: null,
+        operatorMargin: null,
         lowestOdds: null,
         lowestBookmaker: null,
       };
@@ -101,6 +124,7 @@ export class PlayableOddsRepository {
       ) {
         current.operatorOdds = row.odds;
         current.operatorBookmaker = row.bookmaker;
+        current.operatorMargin = operatorMargins.get(key) ?? null;
       }
       if (current.lowestOdds === null || row.odds < current.lowestOdds) {
         current.lowestOdds = row.odds;
