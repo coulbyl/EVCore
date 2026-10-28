@@ -113,3 +113,7 @@ pnpm --filter backend test      # Vitest unit tests (backend)
 - `AGENTS.md`: Specific instructions for AI agents regarding secrets and documentation.
 
 Refer to these files before making any architectural changes or adding new features.
+
+## Review expectations
+
+Before touching settlement, the bankroll, slip results or a scheduled job, and before any PR to main, read `docs/review-expectations.md`: rules drawn from real review findings (replay-safe money writes, counts and amounts over the same set, unknown is not zero, late arrivals in dated jobs, Decimal products, repository rule in touched services).
