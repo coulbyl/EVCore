@@ -129,10 +129,20 @@ export function composeDouble(
     };
   }
 
+  // Les jambes sont triées par probabilité décroissante : le produit baisse
+  // quand j avance, et la meilleure paire commençant par i ne peut pas
+  // dépasser fair_i × fair_{i+1}. On s'arrête dès qu'une paire ne peut plus
+  // faire mieux que la meilleure trouvée (à égalité, la marge départage :
+  // on continue tant que le produit est égal).
   let best: Combo | null = null;
   for (let i = 0; i < legs.length; i++) {
+    const first = legs[i] as DoubleLeg;
+    const next = legs[i + 1];
+    if (best && next && first.fair.times(next.fair).lt(best.score)) break;
     for (let j = i + 1; j < legs.length; j++) {
-      const pair = [legs[i] as DoubleLeg, legs[j] as DoubleLeg];
+      const second = legs[j] as DoubleLeg;
+      if (best && first.fair.times(second.fair).lt(best.score)) break;
+      const pair = [first, second];
       if (!distinctFixtures(pair) || !inWindow(pair, bounds)) continue;
       const combo = comboOf(pair);
       if (better(combo, best)) best = combo;

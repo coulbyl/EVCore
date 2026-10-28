@@ -173,3 +173,65 @@ describe("composeDouble", () => {
     expect(result.outcome).toBe("abstained");
   });
 });
+
+describe("composeDouble pruning", () => {
+  /** Toutes les paires, sans élagage : la référence du résultat attendu. */
+  function bruteForce(candidates: DoubleCandidate[]) {
+    const legs = priceDoubleCandidates(candidates).filter(
+      (leg) => leg.playableOdds >= 1.2 && leg.playableOdds <= 1.8,
+    );
+    let best: { key: string; score: number; margin: number } | null = null;
+    for (let i = 0; i < legs.length; i++) {
+      for (let j = i + 1; j < legs.length; j++) {
+        const a = legs[i]!;
+        const b = legs[j]!;
+        if (a.fixtureId === b.fixtureId) continue;
+        const odds = a.playableOdds * b.playableOdds;
+        if (odds < 2 - 1e-9 || odds > 3 + 1e-9) continue;
+        const score = a.fair.times(b.fair).toNumber();
+        const margin = a.margin.plus(b.margin).toNumber();
+        if (
+          !best ||
+          score > best.score + 1e-12 ||
+          (Math.abs(score - best.score) <= 1e-12 && margin < best.margin)
+        ) {
+          best = {
+            key: [a, b]
+              .map((l) => l.fixtureId + l.pick)
+              .sort()
+              .join("|"),
+            score,
+            margin,
+          };
+        }
+      }
+    }
+    return best;
+  }
+
+  it("finds the same pair as the exhaustive search on random pools", () => {
+    let seed = 11;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let pool = 0; pool < 40; pool++) {
+      const candidates: DoubleCandidate[] = [];
+      for (let f = 0; f < 30; f++) {
+        const over = Math.round((1.15 + rnd() * 0.8) * 100) / 100;
+        const under = Math.round((1 / (1.06 - 1 / over)) * 100) / 100;
+        candidates.push(...overUnder(`f${pool}-${f}`, over, under));
+      }
+      const expected = bruteForce(candidates);
+      const result = composeDouble(candidates);
+      if (!expected) {
+        expect(result.outcome).toBe("abstained");
+        continue;
+      }
+      expect(result.outcome).toBe("composed");
+      if (result.outcome !== "composed") continue;
+      const key = result.legs
+        .map((l) => l.fixtureId + l.pick)
+        .sort()
+        .join("|");
+      expect(key).toBe(expected.key);
+    }
+  });
+});
