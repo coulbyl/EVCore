@@ -1089,7 +1089,9 @@
     "addToCoupon": "Ajouter au coupon",
     "removeFromCoupon": "Retirer du coupon",
     "follow": "Suivre ce coupon",
-    "following": "Suivi · résultat dans le résumé du matin"
+    "following": "Suivi · résultat dans le résumé du matin",
+    "legMargin": "{bookmaker} prend {margin}",
+    "operatorMargin": "Marge payée chez {bookmaker} : {margin} par jambe en moyenne. C'est le coût du pari."
   },
   "pause": {
     "title": "Tu es en pause",

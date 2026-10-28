@@ -215,4 +215,20 @@ test.describe("Coupons", () => {
     await expect(card).toContainText("Match nul");
     await expect(card.getByTestId("coupon-follow")).toBeVisible();
   });
+
+  test("chaque jambe dit ce que 1xBet prend, et le coupon sa moyenne", async ({
+    page,
+  }) => {
+    const card = page
+      .locator("[data-slot=card]")
+      .filter({ hasText: "Coupon cote 2" })
+      .filter({ visible: true })
+      .first();
+    await expect(card.getByTestId("leg-margin").first()).toHaveText(
+      /1xBet prend 6,2\s%/,
+    );
+    await expect(card.getByTestId("coupon-operator-margin")).toContainText(
+      "par jambe en moyenne",
+    );
+  });
 });
