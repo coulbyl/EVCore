@@ -147,6 +147,11 @@ export class BankrollService {
     options?: TransactionOptions,
   ): Promise<void> {
     const total = items.reduce((acc, i) => acc.plus(i.stake), new Decimal(0));
+    // Même verrou que le retrait : une saisie et un retrait simultanés ne
+    // lisent plus le même solde.
+    if (options?.tx) {
+      await this.bankrollRepository.lockUserBankroll(userId, options.tx);
+    }
     const balance = await this.bankrollRepository.getBalance(userId, options);
     if (balance.lessThan(total)) {
       throw new BadRequestException('Bankroll insuffisante');

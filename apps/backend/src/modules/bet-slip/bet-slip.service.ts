@@ -496,6 +496,7 @@ function deletionBlocker(
   }[],
   now: Date,
 ): 'settled' | 'started' | null {
+  if (items.length === 0) return 'settled';
   if (items.some((item) => item.bet.status !== BetStatus.PENDING)) {
     return 'settled';
   }

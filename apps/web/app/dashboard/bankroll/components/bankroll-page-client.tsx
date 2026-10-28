@@ -134,12 +134,21 @@ export function BankrollPageClient() {
                 label={t("stats.currentBalance")}
                 value={summaryQuery.data ? formatAmount(currentBalance) : "—"}
               />
+              {/* Avec des retraits, la carte montre ce qui reste apporté :
+                  sinon le solde semble avoir perdu ce qui a été retiré. */}
               <StatCard
                 tone="neutral"
-                label={t("stats.totalDeposited")}
+                label={
+                  summaryQuery.data && Number(summaryQuery.data.withdrawn) > 0
+                    ? t("stats.netDeposited")
+                    : t("stats.totalDeposited")
+                }
                 value={
                   summaryQuery.data
-                    ? formatAmount(summaryQuery.data.deposited)
+                    ? formatAmount(
+                        Number(summaryQuery.data.deposited) -
+                          Number(summaryQuery.data.withdrawn),
+                      )
                     : "—"
                 }
               />

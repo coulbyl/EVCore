@@ -43,5 +43,8 @@ SELECT
 FROM coupon_proposal_leg l
 JOIN coupon_proposal p ON p.id = l."couponProposalId"
 WHERE l."settledAt" IS NOT NULL
+  -- Les chasseurs en ombre (2026-10-28) partagent les sources ENGINE et
+  -- PRICE_COMPOSER : hors de ce relevé des produits publiés.
+  AND NOT p.shadow
 GROUP BY GROUPING SETS ((p.source, l.market), (p.source))
 ORDER BY p.source, l.market NULLS FIRST;

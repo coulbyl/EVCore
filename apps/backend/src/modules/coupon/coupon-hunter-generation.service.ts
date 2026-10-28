@@ -75,9 +75,15 @@ export class CouponHunterGenerationService {
           : 0,
       };
     });
-    const engineCandidates = engineRows.filter((r) =>
-      playableAtOperator(r, quotes),
-    );
+    const engineCandidates = engineRows
+      .filter((r) => playableAtOperator(r, quotes))
+      .map((r) => {
+        const quote = quotes.get(playableQuoteKey(r));
+        return {
+          ...r,
+          playableOdds: quote?.operatorOdds ?? quote?.lowestOdds ?? r.odds,
+        };
+      });
     const kickoffs = new Map(
       [...priced, ...engineRows].map((r) => [r.fixtureId, r.scheduledAt]),
     );

@@ -121,8 +121,12 @@ export function composeHunterByMarket(
   };
 }
 
+/** Sélection du canal, avec la cote jouable quand elle est connue : la bande
+ * se lit dessus, comme pour la variante « prix ». */
+export type EngineHunterCandidate = ComboCandidate & { playableOdds?: number };
+
 export function composeHunterByEngine(
-  candidates: readonly ComboCandidate[],
+  candidates: readonly EngineHunterCandidate[],
   calibration: readonly CalibrationCell[],
   spec: HunterSpec,
 ): HunterComposition {
@@ -135,7 +139,7 @@ export function composeHunterByEngine(
         c.channel === spec.channel &&
         c.market === spec.market &&
         c.pick === spec.pick &&
-        inBand(c.odds, spec),
+        inBand(c.playableOdds ?? c.odds, spec),
     )
     .flatMap((c) => {
       const cell = cells.get(`${c.channel}:${c.competition}`);

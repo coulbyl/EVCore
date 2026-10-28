@@ -294,4 +294,18 @@ describe('BankrollService', () => {
       );
     });
   });
+
+  describe('recordBetPlacedBatch', () => {
+    it('takes the same per-player lock as a withdrawal', async () => {
+      const repo = makeRepo(new Decimal('5000'));
+      const service = new BankrollService(repo);
+      const tx = { tx: true } as never;
+      await service.recordBetPlacedBatch(
+        'u1',
+        [{ betId: 'b1', stake: new Decimal(1000) }],
+        { tx },
+      );
+      expect(repo.lockUserBankroll).toHaveBeenCalledWith('u1', tx);
+    });
+  });
 });
