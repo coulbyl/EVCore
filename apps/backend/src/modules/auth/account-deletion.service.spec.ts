@@ -7,7 +7,7 @@ import {
 import { UserRole } from '@evcore/db';
 import type { StorageService } from '@modules/storage/storage.service';
 import { AccountDeletionService } from './account-deletion.service';
-import type { AccountDeletionRepository } from './account-deletion.repository';
+import type { AccountRepository } from './account.repository';
 import { hashPassword } from './auth.utils';
 
 let passwordHash: string;
@@ -21,7 +21,7 @@ function makeHarness(role: UserRole = UserRole.OPERATOR) {
     findCredentials: vi.fn().mockResolvedValue({ passwordHash, role }),
     findAttachmentKeys: vi.fn().mockResolvedValue(['support/a.jpg']),
     deleteUserAndOwnBets: vi.fn().mockResolvedValue({ bets: 2 }),
-  } as unknown as AccountDeletionRepository;
+  } as unknown as AccountRepository;
   const storage = {
     deleteObject: vi.fn().mockResolvedValue(undefined),
   } as unknown as StorageService;

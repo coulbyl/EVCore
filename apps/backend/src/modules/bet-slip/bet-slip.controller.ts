@@ -12,6 +12,7 @@ import { CurrentSession } from '@modules/auth/current-session.decorator';
 import type { AuthSession } from '@modules/auth/auth.types';
 import { BetSlipService } from './bet-slip.service';
 import { CreateBetSlipDto } from './dto/create-bet-slip.dto';
+import { PausedGuard } from '@/common/guards/paused.guard';
 
 @Controller('bet-slips')
 @UseGuards(AuthSessionGuard)
@@ -46,6 +47,7 @@ export class BetSlipController {
   }
 
   @Post()
+  @UseGuards(PausedGuard)
   create(
     @CurrentSession() session: AuthSession,
     @Body() body: CreateBetSlipDto,

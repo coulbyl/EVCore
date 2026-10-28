@@ -139,6 +139,7 @@ export class AuthService {
         hasCompletedOnboarding: true,
         phoneNumber: true,
         phoneNumberConsentGiven: true,
+        pausedUntil: true,
       },
     });
 
@@ -183,6 +184,7 @@ export class AuthService {
         hasCompletedOnboarding: true,
         phoneNumber: true,
         phoneNumberConsentGiven: true,
+        pausedUntil: true,
         passwordHash: true,
         suspended: true,
       },
@@ -227,6 +229,7 @@ export class AuthService {
           hasCompletedOnboarding: user.hasCompletedOnboarding,
           phoneNumber: user.phoneNumber,
           phoneNumberConsentGiven: user.phoneNumberConsentGiven,
+          pausedUntil: user.pausedUntil?.toISOString() ?? null,
         },
       },
     };
@@ -275,6 +278,7 @@ export class AuthService {
             hasCompletedOnboarding: true,
             phoneNumber: true,
             phoneNumberConsentGiven: true,
+            pausedUntil: true,
             suspended: true,
           },
         },
@@ -373,6 +377,7 @@ export class AuthService {
         hasCompletedOnboarding: true,
         phoneNumber: true,
         phoneNumberConsentGiven: true,
+        pausedUntil: true,
       },
     });
     return this.toSessionUser(user);
@@ -701,6 +706,7 @@ export class AuthService {
         hasCompletedOnboarding: true,
         phoneNumber: true,
         phoneNumberConsentGiven: true,
+        pausedUntil: true,
       },
     });
 
@@ -782,11 +788,13 @@ export class AuthService {
     hasCompletedOnboarding: boolean;
     phoneNumber: string | null;
     phoneNumberConsentGiven: boolean;
+    pausedUntil: Date | null;
   }): AuthSessionUser {
     return {
       ...user,
       unitAmount: user.unitAmount?.toString() ?? null,
       unitPercent: user.unitPercent?.toString() ?? null,
+      pausedUntil: user.pausedUntil?.toISOString() ?? null,
     };
   }
 }

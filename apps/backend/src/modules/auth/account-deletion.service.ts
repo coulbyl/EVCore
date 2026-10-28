@@ -7,7 +7,7 @@ import {
 import { UserRole } from '@evcore/db';
 import { StorageService } from '@modules/storage/storage.service';
 import { createLogger } from '@utils/logger';
-import { AccountDeletionRepository } from './account-deletion.repository';
+import { AccountRepository } from './account.repository';
 import { verifyPassword } from './auth.utils';
 
 const logger = createLogger('account-deletion');
@@ -21,7 +21,7 @@ const logger = createLogger('account-deletion');
 @Injectable()
 export class AccountDeletionService {
   constructor(
-    private readonly repository: AccountDeletionRepository,
+    private readonly repository: AccountRepository,
     private readonly storage: StorageService,
   ) {}
 

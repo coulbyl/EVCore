@@ -3,7 +3,7 @@ import type { UserRole } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
 @Injectable()
-export class AccountDeletionRepository {
+export class AccountRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   findCredentials(
@@ -12,6 +12,22 @@ export class AccountDeletionRepository {
     return this.prisma.client.user.findUnique({
       where: { id: userId },
       select: { passwordHash: true, role: true },
+    });
+  }
+
+  findPausedUntil(
+    userId: string,
+  ): Promise<{ pausedUntil: Date | null } | null> {
+    return this.prisma.client.user.findUnique({
+      where: { id: userId },
+      select: { pausedUntil: true },
+    });
+  }
+
+  async setPausedUntil(userId: string, pausedUntil: Date): Promise<void> {
+    await this.prisma.client.user.update({
+      where: { id: userId },
+      data: { pausedUntil },
     });
   }
 

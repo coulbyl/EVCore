@@ -15,6 +15,7 @@ import { Throttle } from '@nestjs/throttler';
 import { AUTH_LOGIN_RATE_LIMIT } from '@config/rate-limit.constants';
 import { AuthService } from './auth.service';
 import { AccountDeletionService } from './account-deletion.service';
+import { AccountPauseService } from './account-pause.service';
 import { CurrentSession } from './current-session.decorator';
 import { AuthSessionGuard } from './auth-session.guard';
 import type { AuthSession } from './auth.types';
@@ -28,12 +29,14 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ResetPasswordTotpDto } from './dto/reset-password-totp.dto';
 import { UpdateIdentityDto } from './dto/update-identity.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';
+import { PauseAccountDto } from './dto/pause-account.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly accountDeletion: AccountDeletionService,
+    private readonly accountPause: AccountPauseService,
   ) {}
 
   @Post('register')
@@ -117,6 +120,18 @@ export class AuthController {
     await this.accountDeletion.deleteAccount(session.user.id, body.password);
     this.authService.clearSessionCookie(response);
     return { status: 'ok' as const };
+  }
+
+  // Pas d'endpoint pour lever la pause : elle se prolonge, elle ne s'annule
+  // pas avant sa fin.
+  @Post('me/pause')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthSessionGuard)
+  pauseMe(
+    @CurrentSession() session: AuthSession,
+    @Body() body: PauseAccountDto,
+  ) {
+    return this.accountPause.pause(session.user.id, body.days);
   }
 
   @Patch('me/identity')

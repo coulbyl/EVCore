@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { MailModule } from '@modules/mail/mail.module';
 import { StorageModule } from '@modules/storage/storage.module';
-import { AccountDeletionRepository } from './account-deletion.repository';
+import { AccountRepository } from './account.repository';
 import { AccountDeletionService } from './account-deletion.service';
+import { AccountPauseService } from './account-pause.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthSessionGuard } from './auth-session.guard';
@@ -20,7 +21,8 @@ import { AuthSessionGuard } from './auth-session.guard';
     AuthService,
     AuthSessionGuard,
     AccountDeletionService,
-    AccountDeletionRepository,
+    AccountPauseService,
+    AccountRepository,
   ],
   exports: [AuthService, AuthSessionGuard],
 })
