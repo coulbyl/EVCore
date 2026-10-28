@@ -563,7 +563,7 @@
       "trigger": "Change",
       "title": "Change e-mail address",
       "requestDescription": "Enter your new address and your password. We send a code to the new address to check it is yours.",
-      "confirmDescription": "A 6-digit code was just sent to {email}. It is valid for 10 minutes.",
+      "confirmDescription": "A 6-digit code was just sent to {email}. It is valid for 10 minutes. Nothing received? This address may already have an EVCore account: its owner was told, nothing changed.",
       "newEmailLabel": "New address",
       "passwordLabel": "Your password",
       "codeLabel": "Code received",
@@ -1089,7 +1089,9 @@
     "addToCoupon": "Add to coupon",
     "removeFromCoupon": "Remove from coupon",
     "follow": "Follow this coupon",
-    "following": "Following · result in the morning digest"
+    "following": "Following · result in the morning digest",
+    "legMargin": "{bookmaker} takes {margin}",
+    "operatorMargin": "Margin paid at {bookmaker}: {margin} per leg on average. That is the cost of the bet."
   },
   "pause": {
     "title": "You are on a break",

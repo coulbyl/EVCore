@@ -7,6 +7,7 @@ import {
   renderEmailVerification,
   renderEmailChangeCode,
   renderEmailChanged,
+  renderEmailChangeTaken,
   renderEtlFailure,
   renderMarketSuspension,
   renderPasswordReset,
@@ -71,6 +72,15 @@ export class MailService implements OnModuleInit {
   ): Promise<void> {
     const { html, text } = await renderEmailChangeCode(props);
     await this.sendTo(to, 'Confirme ta nouvelle adresse', { html, text });
+  }
+
+  /** Adresse déjà rattachée à un compte : prévenue, sans code. */
+  async sendEmailChangeTaken(to: string): Promise<void> {
+    const { html, text } = await renderEmailChangeTaken();
+    await this.sendTo(to, 'Cette adresse a déjà un compte EVCore', {
+      html,
+      text,
+    });
   }
 
   /** Prévient l'ancienne adresse une fois le changement confirmé. */

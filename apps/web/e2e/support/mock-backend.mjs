@@ -101,6 +101,8 @@ function couponLeg(overrides) {
     closingLineValue: overrides.closingLineValue ?? null,
     playableOdds: overrides.playableOdds ?? null,
     playableBookmaker: overrides.playableOdds ? "1xBet" : null,
+    // Marge payée chez 1xBet sur le groupe complet (2026-10-29).
+    operatorMargin: overrides.operatorMargin ?? 0.062,
     modelRunId: `run-${overrides.id}`,
   };
 }

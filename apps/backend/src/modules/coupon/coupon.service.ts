@@ -110,6 +110,12 @@ export class CouponService {
           playableFor(quotes, leg)?.operatorBookmaker ??
           playableFor(quotes, leg)?.lowestBookmaker ??
           null,
+        // Coût réel de la jambe chez 1xBet : la marge écrite à la génération
+        // (2026-10-29), sinon celle du groupe relevé.
+        operatorMargin:
+          leg.operatorMargin !== null
+            ? Number(leg.operatorMargin)
+            : (playableFor(quotes, leg)?.operatorMargin ?? null),
         modelRunId:
           readSnapshotString(leg.featureSnapshot, 'modelRunId') ??
           leg.fixture.modelRuns[0]?.id ??

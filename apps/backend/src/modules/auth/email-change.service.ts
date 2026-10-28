@@ -59,8 +59,12 @@ export class EmailChangeService {
     if (newEmail === identity.email) {
       throw new BadRequestException("C'est déjà l'adresse de ton compte.");
     }
+    // Adresse déjà prise : on prévient son propriétaire au lieu d'envoyer un
+    // code, et on répond comme si le code était parti. Un 409 ici laissait
+    // tester quelles adresses ont un compte (revue du lot 2).
     if (await this.repository.isEmailTaken(newEmail, userId)) {
-      throw new ConflictException('Cette adresse est déjà utilisée.');
+      await this.mail.sendEmailChangeTaken(newEmail);
+      return;
     }
 
     const code = generateOtpCode();

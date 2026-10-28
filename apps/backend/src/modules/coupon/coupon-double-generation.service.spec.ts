@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CouponDoubleGenerationService } from './coupon-double-generation.service';
+import { CouponPricedPoolService } from './coupon-priced-pool.service';
 import type {
   PlayableOddsRepository,
   PlayableQuote,
@@ -48,21 +49,39 @@ describe('CouponDoubleGenerationService', () => {
     repository.upsertPriceComposerProposal.mockResolvedValue('proposal-1');
     repository.recordPriceComposerAttempt.mockResolvedValue();
     quotes = new Map();
+    const playable = {
+      findPlayableQuotes: vi
+        .fn()
+        .mockImplementation(() => Promise.resolve(quotes)),
+    } as unknown as PlayableOddsRepository;
     service = new CouponDoubleGenerationService(
       repository as unknown as CouponRepository,
-      {
-        findPlayableQuotes: vi
-          .fn()
-          .mockImplementation(() => Promise.resolve(quotes)),
-      } as unknown as PlayableOddsRepository,
+      new CouponPricedPoolService(
+        repository as unknown as CouponRepository,
+        playable,
+      ),
     );
   });
 
   it('writes a two-leg 2–3 proposal announcing the market probability', async () => {
-    repository.findDoubleCandidates.mockResolvedValue([
+    const rows = [
       ...overUnder('f-1', 1.45, 2.65),
       ...overUnder('f-2', 1.45, 2.65),
-    ]);
+    ];
+    repository.findDoubleCandidates.mockResolvedValue(rows);
+    // 1xBet cote chaque issue au prix de référence : jambes jouables.
+    for (const row of rows) {
+      quotes.set(`${row.fixtureId}|${row.market}|${row.pick}`, {
+        fixtureId: row.fixtureId,
+        market: row.market,
+        pick: row.pick,
+        operatorOdds: row.odds,
+        operatorBookmaker: '1xBet',
+        operatorMargin: null,
+        lowestOdds: row.odds,
+        lowestBookmaker: '1xBet',
+      });
+    }
 
     const result = await service.generateForDate(FOR_DATE);
 
@@ -101,6 +120,7 @@ describe('CouponDoubleGenerationService', () => {
         pick: 'OVER_1_5',
         operatorOdds: 1.38,
         operatorBookmaker: '1xBet',
+        operatorMargin: null,
         lowestOdds: 1.38,
         lowestBookmaker: '1xBet',
       });

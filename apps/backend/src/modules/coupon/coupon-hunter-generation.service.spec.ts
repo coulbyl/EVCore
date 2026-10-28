@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CouponSource } from '@evcore/db';
 import { CouponHunterGenerationService } from './coupon-hunter-generation.service';
+import { CouponPricedPoolService } from './coupon-priced-pool.service';
 import type { CouponRepository } from './coupon.repository';
 import type { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
 
@@ -23,7 +24,16 @@ function priced(
   };
 }
 
-function makeHarness() {
+const PRICES = new Map<string, number>([
+  ['f1|BTTS|YES', 1.6],
+  ['f1|BTTS|NO', 2.2],
+  ['f2|ONE_X_TWO|HOME', 2.1],
+  ['f2|ONE_X_TWO|DRAW', 3.3],
+  ['f2|ONE_X_TWO|AWAY', 3.6],
+  ['f3|CORRECT_SCORE|1:0', 6.5],
+]);
+
+function makeHarness(avoided: string[] = []) {
   const repository = {
     // BTTS coté complet sur f1 (dans la bande) ; 1X2 complet sur f2.
     findDoubleCandidates: vi
@@ -47,14 +57,41 @@ function makeHarness() {
         scheduledAt: KICKOFF,
       },
     ]),
+    findAvoidedFixtureIds: vi.fn().mockResolvedValue(avoided),
     upsertPriceComposerProposal: vi.fn().mockResolvedValue('proposal-1'),
     recordPriceComposerAttempt: vi.fn().mockResolvedValue(undefined),
   } as unknown as CouponRepository;
   const playable = {
-    findPlayableQuotes: vi.fn().mockResolvedValue(new Map()),
+    // 1xBet cote chaque choix demandé au prix de la ligne (PRICES).
+    findPlayableQuotes: vi.fn(
+      (keys: { fixtureId: string; market: string; pick: string }[]) =>
+        Promise.resolve(
+          new Map(
+            keys.map((k) => {
+              const key = `${k.fixtureId}|${k.market}|${k.pick}`;
+              const odds = PRICES.get(key) ?? 0;
+              return [
+                key,
+                {
+                  ...k,
+                  operatorOdds: odds,
+                  operatorBookmaker: '1xBet',
+                  operatorMargin: null,
+                  lowestOdds: odds,
+                  lowestBookmaker: '1xBet',
+                },
+              ];
+            }),
+          ),
+        ),
+    ),
   } as unknown as PlayableOddsRepository;
   return {
-    service: new CouponHunterGenerationService(repository, playable),
+    service: new CouponHunterGenerationService(
+      repository,
+      playable,
+      new CouponPricedPoolService(repository, playable),
+    ),
     repository,
   };
 }
@@ -81,5 +118,14 @@ describe('CouponHunterGenerationService', () => {
     // Le score exact annonce la probabilité du marché (marge de grille 27 %).
     expect(calls[2]?.[0].legs[0]?.probability).toBeCloseTo(1 / 6.5 / 1.27, 3);
     expect(repository.recordPriceComposerAttempt).toHaveBeenCalledTimes(3);
+  });
+
+  it('never hunts on a match the AVOID meta-channel flags', async () => {
+    // f2 porte le seul nul de la bande : signalé, le chasseur Nul s'abstient.
+    const { service } = makeHarness(['f2']);
+    const outcomes = await service.generateForDate(new Date('2026-10-29'));
+    expect(outcomes.find((o) => o.hunter === 'HUNTER_DRAW')?.outcome).toBe(
+      'abstained',
+    );
   });
 });

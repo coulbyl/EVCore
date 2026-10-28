@@ -29,3 +29,4 @@ export {
   DEFAULT_MARKET_MARGIN,
 } from "./market-probability";
 export type { PricedRow } from "./market-probability";
+export * from "./operator";

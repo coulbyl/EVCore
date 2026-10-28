@@ -64,6 +64,8 @@ export type CouponLegDto = {
    * des books relevés ; `null` quand aucun relevé ne couvre le choix. */
   playableOdds: number | null;
   playableBookmaker: string | null;
+  /** Marge payée chez 1xBet sur le groupe complet ; null si inconnue. */
+  operatorMargin: number | null;
   /** Fixture's latest ModelRun id — lets "Jouer ce coupon" submit this leg to
    * POST /bet-slips as a USER pick (modelRunId + market + pick). `null` on
    * the rare fixture with no ModelRun at all. */

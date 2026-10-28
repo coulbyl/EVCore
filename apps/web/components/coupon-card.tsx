@@ -43,7 +43,8 @@ export type NormalizedCouponLeg = {
   marketProbability: number | null;
   odds: string | null;
   /** Cote chez le book de l'utilisateur (1xBet), sinon la plus basse relevée. */
-  playable?: { odds: number; bookmaker: string } | null;
+  /** Cote chez le book du joueur et la marge qu'il y paie (null : inconnue). */
+  playable?: { odds: number; bookmaker: string; margin?: number | null } | null;
   result: ResultValue | null;
   /**
    * Ligne de clôture de la jambe quand elle est connue : cote juste avant le
@@ -119,6 +120,35 @@ export type CouponCardProps = {
  * Cote combinée chez le bookmaker des joueurs, quand toutes les jambes y sont
  * cotées chez le même : c'est ce que le ticket paiera.
  */
+/** « 7,5 % » : la marge, une décimale, au format de la langue. */
+function formatMarginPct(margin: number, locale: string): string {
+  return new Intl.NumberFormat(locale === "en" ? "en-GB" : "fr-FR", {
+    style: "percent",
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(margin);
+}
+
+/**
+ * Marge moyenne payée chez le book du joueur, si toutes les jambes sont chez
+ * le même book et que sa marge est connue pour chacune ; sinon rien.
+ */
+function averageOperatorMargin(
+  legs: readonly NormalizedCouponLeg[],
+): { margin: number; bookmaker: string } | null {
+  const margins = legs.map((leg) => leg.playable?.margin);
+  const [first] = legs;
+  if (
+    !first?.playable ||
+    margins.some((m) => m == null) ||
+    legs.some((leg) => leg.playable?.bookmaker !== first.playable?.bookmaker)
+  ) {
+    return null;
+  }
+  const total = margins.reduce<number>((acc, m) => acc + (m ?? 0), 0);
+  return { margin: total / legs.length, bookmaker: first.playable.bookmaker };
+}
+
 function playableCombined(
   legs: NormalizedCouponLeg[],
 ): { odds: number; bookmaker: string } | null {
@@ -242,6 +272,7 @@ export function CouponCard({
   const t = useTranslations("couponCard");
   const record = couponClass ? trackRecordLines(trackRecord, t) : null;
   const playable = playableCombined(legs);
+  const operatorMargin = averageOperatorMargin(legs);
   const playableDiffers =
     playable !== null && Math.abs(playable.odds - combinedOdds) >= 0.005;
   // Fréquence du marché (2026-10-28) : celle du moteur était optimiste de
@@ -333,6 +364,17 @@ export function CouponCard({
             {/* Le relevé sur sa propre ligne : jours gagnés et dates, puis la
                 pire série et le résultat à mise fixe (PRODUCT.md, principe
                 2 : chaque produit dit à quelle fréquence il perd). */}
+            {operatorMargin ? (
+              <p
+                data-testid="coupon-operator-margin"
+                className="mt-1.5 text-xs leading-5 text-muted-foreground"
+              >
+                {t("operatorMargin", {
+                  bookmaker: operatorMargin.bookmaker,
+                  margin: formatMarginPct(operatorMargin.margin, locale),
+                })}
+              </p>
+            ) : null}
             {record && (
               <div className="mt-1.5 text-xs leading-5 text-muted-foreground">
                 <p data-testid="coupon-track-record">{record.line}</p>
@@ -501,6 +543,15 @@ function CouponLegRow({
               cette cote », qui qualifiait les chiffres du moteur. */}
           {chances ? (
             <span className="tabular-nums">{t("legChances", chances)}</span>
+          ) : null}
+          {/* Le coût réel du pari chez le book du joueur (2026-10-29). */}
+          {leg.playable?.margin != null ? (
+            <span data-testid="leg-margin" className="tabular-nums">
+              {t("legMargin", {
+                bookmaker: leg.playable.bookmaker,
+                margin: formatMarginPct(leg.playable.margin, locale),
+              })}
+            </span>
           ) : null}
           {leg.closing && (
             <ClosingLine

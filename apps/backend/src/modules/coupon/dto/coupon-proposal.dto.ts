@@ -63,6 +63,8 @@ export type CouponLegDto = {
    */
   playableOdds: number | null;
   playableBookmaker: string | null;
+  /** Marge payée chez 1xBet sur le groupe complet de la jambe ; null si inconnue. */
+  operatorMargin: number | null;
   /**
    * The exact ModelRun id captured when the leg was proposed — lets the
    * frontend submit this leg to

@@ -6,7 +6,10 @@ import {
 } from '@evcore/analysis-core';
 import { CouponRepository } from './coupon.repository';
 import { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
-import { playableAtOperator } from '../betting-engine/pricing/playable-odds.filter';
+import {
+  operatorPrice,
+  playableAtOperator,
+} from '../betting-engine/pricing/playable-odds.filter';
 import { FAVOURITE_POLICY } from './coupon.constants';
 import { startOfUtcDay } from '@utils/date.utils';
 
@@ -92,6 +95,7 @@ export class CouponFavouriteGenerationService {
           pick: leg.pick,
           odds: leg.odds,
           expectedReturn: 1,
+          ...operatorPrice(leg, quotes),
         },
       ],
       profile: {

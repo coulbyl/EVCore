@@ -40,6 +40,7 @@ function makeHarness(
   const mail = {
     sendEmailChangeCode: vi.fn().mockResolvedValue(undefined),
     sendEmailChanged: vi.fn().mockResolvedValue(undefined),
+    sendEmailChangeTaken: vi.fn().mockResolvedValue(undefined),
   } as unknown as MailService;
   return {
     service: new EmailChangeService(repository, mail),
@@ -80,19 +81,26 @@ describe('EmailChangeService.request', () => {
     expect(mail.sendEmailChangeCode).not.toHaveBeenCalled();
   });
 
-  it('refuses the current address and one already taken', async () => {
+  it('refuses the current address', async () => {
     await expect(
       makeHarness().service.request('u1', {
         newEmail: 'old@exemple.com',
         password: 'correct-horse-battery',
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('answers the same for a taken address, warning its owner instead of sending a code', async () => {
+    const { service, repository, mail } = makeHarness({ taken: true });
     await expect(
-      makeHarness({ taken: true }).service.request('u1', {
+      service.request('u1', {
         newEmail: 'new@exemple.com',
         password: 'correct-horse-battery',
       }),
-    ).rejects.toBeInstanceOf(ConflictException);
+    ).resolves.toBeUndefined();
+    expect(mail.sendEmailChangeTaken).toHaveBeenCalledWith('new@exemple.com');
+    expect(mail.sendEmailChangeCode).not.toHaveBeenCalled();
+    expect(repository.replaceEmailChangeCode).not.toHaveBeenCalled();
   });
 });
 

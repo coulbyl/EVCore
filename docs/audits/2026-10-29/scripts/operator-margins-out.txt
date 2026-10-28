@@ -1,0 +1,50 @@
+== 1. Marge 1xBet par marché (groupes complets, médiane) ==
+                     groupes  médiane   p10   p90
+base                                             
+ONE_X_TWO               2435      7.0   1.7  10.6
+DOUBLE_CHANCE           2400      7.1   3.3  11.6
+BTTS                    2425      8.0   7.6   8.6
+TEAM_TOTAL_HOME         8846      8.7   6.9  10.2
+TEAM_TOTAL_AWAY         7700      8.7   7.0  10.3
+OVER_UNDER_HT           4850      8.9   6.2  10.3
+FIRST_HALF_WINNER       2425     10.1   8.7  11.0
+OVER_UNDER              9674     10.3   5.1  10.7
+HALF_TIME_FULL_TIME     2425     21.3  20.4  24.2
+Score exact : 2425 grilles, 121 scores en médiane, marge médiane 137 %
+
+== 1b. Marge 1X2 de 1xBet par championnat (≥ 20 matchs) ==
+moins chers : L1 1.5 %, PL 1.5 %, SA 1.5 %, UCL 1.6 %, BL1 1.6 %, RUS1 1.6 %, LL 1.6 %, FRI 2.3 %, UNL 3.1 %, UEL 3.1 %
+plus chers  : D3 10.6 %, POL2 10.6 %, FIN2 10.6 %, TUR2 10.6 %, EST1 10.6 %, CHN2 10.9 %, LAT1 10.9 %, CHI2 10.9 %
+
+== 2. Couverture ==
+vivier coté depuis le 2026-09-13 : 155617 sélections, 45.9% avec un groupe complet chez 1xBet
+market
+CLEAN_SHEET_AWAY        0.0
+CLEAN_SHEET_HOME        0.0
+RESULT_TOTAL_GOALS      0.0
+RESULT_BTTS             0.0
+WIN_TO_NIL_AWAY         0.0
+WIN_TO_NIL_HOME         0.0
+TEAM_TOTAL_AWAY        66.0
+TEAM_TOTAL_HOME        66.0
+DOUBLE_CHANCE          86.0
+OVER_UNDER             86.0
+HALF_TIME_FULL_TIME    86.0
+FIRST_HALF_WINNER      86.0
+OVER_UNDER_HT          86.0
+BTTS                   86.0
+ONE_X_TWO              87.0
+marge de référence médiane du vivier couvert 5.5 % contre 9.3 % chez 1xBet
+
+== 3. Coupon cote 2, rejoué au prix 1xBet ==
+actuelle     : 38 jours sur 39 · cote 1xBet méd. 2.01 · annoncé 49.0% · réalisé 63.2% · marge 1xBet moy. 5.9 % · coût attendu -0.9 % · réalisé à mise fixe +27.7% · écart par jambe +8.7 ± 9.0 pts
+marge 1xBet  : 38 jours sur 39 · cote 1xBet méd. 2.01 · annoncé 49.0% · réalisé 60.5% · marge 1xBet moy. 5.9 % · coût attendu -0.9 % · réalisé à mise fixe +22.4% · écart par jambe +7.4 ± 9.3 pts
+retour 1xBet : 38 jours sur 39 · cote 1xBet méd. 2.47 · annoncé 41.8% · réalisé 36.8% · marge 1xBet moy. 4.9 % · coût attendu +2.3 % · réalisé à mise fixe -9.3% · écart par jambe -5.5 ± 10.9 pts
+
+== 4. Chasseurs, rejoués au prix 1xBet ==
+BTTS (oui)  · marge de référence: 37 jours · cote 1xBet méd. 1.74 · marge 1xBet moy. 8.1 % · marché 55.2% · réalisé 45.9% · écart -9.2 ± 16.1 pts · à mise fixe 1xBet -24.9%
+BTTS (oui)  · marge 1xBet       : 37 jours · cote 1xBet méd. 1.67 · marge 1xBet moy. 7.5 % · marché 54.6% · réalisé 64.9% · écart +10.3 ± 15.6 pts · à mise fixe 1xBet +8.1%
+Nul         · marge de référence: 37 jours · cote 1xBet méd. 3.38 · marge 1xBet moy. 3.1 % · marché 29.6% · réalisé 27.0% · écart -2.6 ± 14.5 pts · à mise fixe 1xBet -10.7%
+Nul         · marge 1xBet       : 37 jours · cote 1xBet méd. 3.42 · marge 1xBet moy. 2.5 % · marché 29.1% · réalisé 29.7% · écart +0.6 ± 14.9 pts · à mise fixe 1xBet +0.4%
+Score exact · cote la plus basse         : 39 jours · cote 1xBet méd. 5.00 · marge de grille moy. 144 % · marché 13.2% · réalisé 15.4% · à mise fixe 1xBet -20.5%
+Score exact · grille 1xBet la moins chère: 39 jours · cote 1xBet méd. 7.00 · marge de grille moy. 124 % · marché 10.7% · réalisé 5.1% · à mise fixe 1xBet -48.5%

@@ -2,13 +2,13 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import {
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AdminGuard } from '@/common/guards/admin.guard';
 import type { AuthenticatedRequest } from './auth.types';
-import { AuthService } from './auth.service';
+import { AuthSessionGuard } from './auth-session.guard';
 
 export const ADMIN_TOKEN_HEADER = 'x-admin-token';
 
@@ -28,8 +28,12 @@ function sameToken(provided: string, expected: string): boolean {
  */
 @Injectable()
 export class AdminOrServiceTokenGuard implements CanActivate {
+  private readonly adminGuard = new AdminGuard();
+
+  // Délègue à AuthSessionGuard et AdminGuard : une règle de session changée
+  // là-bas vaut aussi pour les routes d'exploitation (revue du lot 2).
   constructor(
-    private readonly authService: AuthService,
+    private readonly sessionGuard: AuthSessionGuard,
     private readonly config: ConfigService,
   ) {}
 
@@ -42,14 +46,7 @@ export class AdminOrServiceTokenGuard implements CanActivate {
       throw new UnauthorizedException('Jeton de service invalide');
     }
 
-    const session = await this.authService.readSessionFromRequest(request);
-    if (!session) {
-      throw new UnauthorizedException('Session invalide ou expirée');
-    }
-    request.authSession = session;
-    if (session.user.role !== 'ADMIN') {
-      throw new ForbiddenException('Admin only');
-    }
-    return true;
+    await this.sessionGuard.canActivate(context);
+    return this.adminGuard.canActivate(context);
   }
 }
