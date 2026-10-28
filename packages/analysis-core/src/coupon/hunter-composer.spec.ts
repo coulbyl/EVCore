@@ -17,19 +17,21 @@ function btts(fixtureId: string, yes: number, no: number): DoubleCandidate[] {
 }
 
 describe("composeHunterByMarket", () => {
-  it("takes the most likely YES in the band, margin removed", () => {
+  it("takes the cheapest YES in the band, then the most likely", () => {
     const result = composeHunterByMarket(
       [
+        // Marge 6,8 % : la moins chère, même si moins probable.
         ...btts("f1", 1.8, 1.95),
+        // Marge 7,1 %, plus probable.
         ...btts("f2", 1.55, 2.35),
-        // Hors bande (1,30) : jamais retenu, même plus probable.
+        // Hors bande (1,30) : jamais retenu.
         ...btts("f3", 1.3, 3.3),
       ],
       BTTS_HUNTER,
     );
     expect(result.outcome).toBe("picked");
     if (result.outcome !== "picked") return;
-    expect(result.leg.fixtureId).toBe("f2");
+    expect(result.leg.fixtureId).toBe("f1");
     expect(result.candidateCount).toBe(2);
   });
 

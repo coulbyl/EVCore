@@ -15,8 +15,12 @@ import type { DoubleCandidate } from "./double-composer";
  * pour être jugés jambe par jambe sur l'écart au marché :
  *
  * - par le prix (`composeHunterByMarket`) : tout ce qui est coté sur le
- *   marché, classé par la probabilité du marché sans marge, puis la marge
- *   la plus basse — la méthode du coupon cote 2 ;
+ *   marché dans la bande, la marge la plus basse d'abord, puis la
+ *   probabilité du marché sans marge. Le coût est la seule chose qui
+ *   persiste d'une période à l'autre (r = +0,70, ESPACE-OPPORTUNITES) ; le
+ *   rejeu de 116 jours va dans le même sens : le nul « le plus probable »
+ *   réalisait 6,4 points sous le marché (coût −24 %), le nul le moins cher
+ *   1,1 point (coût −7 %), tous deux dans le bruit (HUNTERS.md) ;
  * - par le moteur (`composeHunterByEngine`) : les sélections du canal du
  *   jour, classées par la probabilité du canal recalée sur sa calibration
  *   canal × compétition, sans les cellules « peu fiables » — la méthode de
@@ -91,8 +95,8 @@ export function composeHunterByMarket(
   for (const leg of legs) {
     if (
       !best ||
-      leg.fair.gt(best.fair) ||
-      (leg.fair.eq(best.fair) && leg.margin.lt(best.margin))
+      leg.margin.lt(best.margin) ||
+      (leg.margin.eq(best.margin) && leg.fair.gt(best.fair))
     ) {
       best = leg;
     }
