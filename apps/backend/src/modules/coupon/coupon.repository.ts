@@ -786,6 +786,24 @@ export class CouponRepository {
    * issues, le compositeur filtre lui-même la bande de cote.
    */
   /**
+   * Dernière tentative de chaque passe pour un jour : les abstentions
+   * expliquées au joueur (2026-10-29). La dernière fait foi (la passe de
+   * rattrapage peut avoir composé après une abstention).
+   */
+  findLatestAttempts(
+    forDate: Date,
+  ): Promise<{ pass: string; outcome: string; reason: string | null }[]> {
+    return this.prisma.client.$queryRaw<
+      { pass: string; outcome: string; reason: string | null }[]
+    >`
+      SELECT DISTINCT ON (pass) pass, outcome, reason
+      FROM public.coupon_generation_attempt
+      WHERE "forDate" = ${startOfUtcDay(forDate)}::date
+      ORDER BY pass, "generatedAt" DESC
+    `;
+  }
+
+  /**
    * Matchs que le méta-canal AVOID signale sur la dernière analyse d'avant
    * coup d'envoi : les chasseurs ne les jouent pas.
    */

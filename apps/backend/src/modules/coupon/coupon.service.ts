@@ -13,6 +13,7 @@ import { marketProbability } from '@evcore/analysis-core';
 import {
   classForTargetOddsMin,
   INTRADAY_SIGNAL_WINDOW_DAYS,
+  ABSTENTION_PASS_CLASS,
 } from './coupon.constants';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
 import type { CouponClassTrackRecord } from './dto/coupon-track-record.dto';
@@ -171,6 +172,25 @@ export class CouponService {
       throw new NotFoundException('Coupon introuvable');
     }
     await this.repo.recordView(couponProposalId, userId);
+  }
+
+  /**
+   * Produits du jour qui se sont abstenus, avec leur raison (2026-10-29) :
+   * le joueur lit « Pas de Coupon cote 2 aujourd'hui : … » au lieu d'un
+   * texte fixe.
+   */
+  async getAbstentions(
+    date: string,
+  ): Promise<{ couponClass: string; reason: string | null }[]> {
+    const attempts = await this.repo.findLatestAttempts(
+      new Date(`${date}T00:00:00.000Z`),
+    );
+    return attempts.flatMap((attempt) => {
+      const couponClass = ABSTENTION_PASS_CLASS[attempt.pass];
+      return couponClass && attempt.outcome === 'abstained'
+        ? [{ couponClass, reason: attempt.reason }]
+        : [];
+    });
   }
 
   /**

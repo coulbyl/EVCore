@@ -1102,5 +1102,16 @@
       "bankroll": "Stake tracking",
       "trackRecord": "Track record"
     }
+  },
+  "couponAbstentions": {
+    "line": "No {product} today: {reason}.",
+    "reasons": {
+      "no_home_favourite_in_band": "no home favourite between 1.20 and 1.35",
+      "not_enough_calibrated_short_legs": "not enough reliable short-odds bets in different leagues",
+      "no_priced_candidate": "not enough bets priced at 1xBet in the band",
+      "no_combination_in_window": "no combination between 2 and 3",
+      "no_candidate_in_band": "no bet in its odds band",
+      "other": "no bet meeting the rule that day"
+    }
   }
 }

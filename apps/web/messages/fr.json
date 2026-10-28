@@ -1102,5 +1102,16 @@
       "bankroll": "Suivi de mise",
       "trackRecord": "Mesures historiques"
     }
+  },
+  "couponAbstentions": {
+    "line": "Pas de {product} aujourd'hui : {reason}.",
+    "reasons": {
+      "no_home_favourite_in_band": "aucun favori à domicile entre 1,20 et 1,35",
+      "not_enough_calibrated_short_legs": "pas assez de paris fiables à cote courte, dans des championnats différents",
+      "no_priced_candidate": "pas assez de paris cotés chez 1xBet dans la bande",
+      "no_combination_in_window": "aucune combinaison entre 2 et 3",
+      "no_candidate_in_band": "aucun pari dans sa bande de cote",
+      "other": "pas de pari qui tienne la règle ce jour-là"
+    }
   }
 }

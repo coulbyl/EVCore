@@ -1434,6 +1434,11 @@ function route(method, url) {
       ],
     ];
   }
+  if (path === "/coupons/abstentions")
+    return [
+      200,
+      [{ couponClass: "HUNTER_SCORE", reason: "no_candidate_in_band" }],
+    ];
   if (path === "/coupons" && method === "GET") return [200, COUPONS];
   if (path.startsWith("/coupons/") && path.endsWith("/view")) return [204, {}];
   if (path.startsWith("/coupons/") && path.endsWith("/follow"))

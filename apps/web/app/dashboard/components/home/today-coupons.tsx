@@ -16,6 +16,7 @@ import type {
 } from "@/domains/coupon/types/coupon";
 import { todayIso } from "@/lib/date";
 import { CouponCard } from "@/app/dashboard/coupons/components/coupon-card";
+import { CouponAbstentions } from "@/components/coupon-abstentions";
 
 /**
  * Le coupon du jour, en tête de l'accueil : c'est la raison d'être du
@@ -83,6 +84,9 @@ export function TodayCoupons() {
           </p>
         </div>
       )}
+
+      {/* Chaque produit absent du jour dit pourquoi (2026-10-29). */}
+      {!isLoading && !isError && <CouponAbstentions date={date} />}
 
       {!isLoading && !isError && coupons.length > 0 && (
         <div className="grid grid-cols-1 gap-4">
