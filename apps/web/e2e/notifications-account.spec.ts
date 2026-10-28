@@ -33,7 +33,7 @@ test.describe("Notifications", () => {
   }) => {
     const row = page
       .getByTestId("notification-row")
-      .filter({ hasText: "Tes coupons d'hier" });
+      .filter({ hasText: "Tes coupons réglés" });
     await expect(row).toContainText("Tes coupons");
     await expect(row).toContainText("1 perdu");
     await expect(

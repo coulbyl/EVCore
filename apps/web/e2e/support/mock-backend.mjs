@@ -832,7 +832,7 @@ const PLAYER_NOTIFICATIONS = [
   [
     "n5",
     "SLIPS_SETTLED_DIGEST",
-    "Tes coupons d'hier",
+    "Tes coupons réglés",
     "2 coupons réglés : 1 gagné, 1 perdu. Misé 2 000 F, rendu 1 540 F : -460 F.",
     -2,
     false,

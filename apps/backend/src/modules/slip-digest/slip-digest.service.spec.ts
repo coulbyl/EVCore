@@ -9,13 +9,18 @@ import type { SlipDigestRepository } from './slip-digest.repository';
 const NOW = new Date('2026-10-28T08:00:00.000Z');
 const DAY = '2026-10-27';
 
+let slipSeq = 0;
+
 function slip(opts: {
   userId: string;
   kickoffs: string[];
   status?: 'WON' | 'LOST' | 'PENDING';
   pausedUntil?: Date | null;
+  id?: string;
 }) {
+  slipSeq += 1;
   return {
+    id: opts.id ?? `slip-${slipSeq}`,
     type: 'SIMPLE' as const,
     unitStake: new Decimal(1000),
     user: {
@@ -31,10 +36,16 @@ function slip(opts: {
   };
 }
 
-function makeHarness(slips: ReturnType<typeof slip>[], alreadySent = false) {
+function makeHarness(
+  slips: ReturnType<typeof slip>[],
+  opts: { alreadySent?: boolean; reported?: string[] } = {},
+) {
   const repository = {
-    findSlipsTouchingDay: vi.fn().mockResolvedValue(slips),
-    hasDigest: vi.fn().mockResolvedValue(alreadySent),
+    findSlipsTouching: vi.fn().mockResolvedValue(slips),
+    findReportedSlipIds: vi
+      .fn()
+      .mockResolvedValue(new Set(opts.reported ?? [])),
+    hasDigest: vi.fn().mockResolvedValue(opts.alreadySent ?? false),
   } as unknown as SlipDigestRepository;
   const notification = {
     notifyUser: vi.fn().mockResolvedValue(undefined),
@@ -102,9 +113,43 @@ describe('SlipDigestService.sendDigests', () => {
   it('never sends the same day twice', async () => {
     const { service, notification } = makeHarness(
       [slip({ userId: 'u1', kickoffs: ['2026-10-27T19:00:00Z'] })],
-      true,
+      { alreadySent: true },
     );
     await service.sendDigests(DAY, NOW);
     expect(notification.notifyUser).not.toHaveBeenCalled();
+  });
+
+  it('announces a coupon settled late, once, and records it', async () => {
+    const late = slip({
+      userId: 'u1',
+      kickoffs: ['2026-10-25T23:30:00Z'],
+      status: 'WON',
+      id: 'late',
+    });
+    const { service, notification } = makeHarness([late]);
+    await service.sendDigests(DAY, NOW);
+    expect(notification.notifyUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({ settled: 1, slipIds: ['late'] }),
+      }),
+    );
+
+    const again = makeHarness([late], { reported: ['late'] });
+    await again.service.sendDigests(DAY, NOW);
+    expect(again.notification.notifyUser).not.toHaveBeenCalled();
+  });
+
+  it("counts only the day's own coupons as still pending", async () => {
+    const { service, notification } = makeHarness([
+      slip({ userId: 'u1', kickoffs: ['2026-10-27T19:00:00Z'], status: 'WON' }),
+      slip({
+        userId: 'u1',
+        kickoffs: ['2026-10-25T19:00:00Z'],
+        status: 'PENDING',
+      }),
+    ]);
+    await service.sendDigests(DAY, NOW);
+    const [input] = vi.mocked(notification.notifyUser).mock.calls[0] ?? [];
+    expect(input?.body).not.toContain('en attente');
   });
 });

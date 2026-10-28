@@ -1,5 +1,8 @@
 import Decimal from 'decimal.js';
-import type { SlipMoney } from '@modules/bet-slip/bet-slip-outcome';
+import {
+  sumSlipMoney,
+  type SlipMoney,
+} from '@modules/bet-slip/bet-slip-outcome';
 
 export type SlipDigestMessage = {
   title: string;
@@ -48,20 +51,12 @@ export function composeSlipDigest(
   results: readonly SlipMoney[],
   currency: string | null,
 ): SlipDigestMessage | null {
-  const settled = results.filter((r) => r.status !== 'PENDING');
-  if (settled.length === 0) return null;
+  const totals = sumSlipMoney(results);
+  if (totals.settledSlips === 0) return null;
   const count = (status: SlipMoney['status']) =>
-    settled.filter((r) => r.status === status).length;
-  const pending = results.length - settled.length;
-  const staked = settled.reduce(
-    (acc, r) => acc.plus(r.settledStake),
-    new Decimal(0),
-  );
-  const returned = settled.reduce(
-    (acc, r) => acc.plus(r.returned),
-    new Decimal(0),
-  );
-  const net = returned.minus(staked);
+    results.filter((r) => r.status === status).length;
+  const pending = totals.pendingSlips;
+  const { settledStake: staked, returned, net } = totals;
 
   const outcomes = [
     plural(count('WON'), 'gagné', 'gagnés'),
@@ -71,16 +66,16 @@ export function composeSlipDigest(
       : []),
   ].join(', ');
   const body =
-    `${plural(settled.length, 'coupon réglé', 'coupons réglés')} : ${outcomes}. ` +
+    `${plural(totals.settledSlips, 'coupon réglé', 'coupons réglés')} : ${outcomes}. ` +
     `Misé ${formatMoney(staked, currency)}, rendu ${formatMoney(returned, currency)} : ${formatMoney(net, currency, true)}.` +
     (pending > 0
       ? ` ${plural(pending, 'coupon encore en attente', 'coupons encore en attente')}.`
       : '');
 
   return {
-    title: "Tes coupons d'hier",
+    title: 'Tes coupons réglés',
     body,
-    settled: settled.length,
+    settled: totals.settledSlips,
     net: net.toFixed(2),
   };
 }

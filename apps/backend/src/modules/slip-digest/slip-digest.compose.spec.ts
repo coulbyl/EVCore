@@ -26,7 +26,7 @@ describe('composeSlipDigest', () => {
       [result('WON', 1000, 1540), result('LOST', 1000, 0)],
       'XOF',
     );
-    expect(message?.title).toBe("Tes coupons d'hier");
+    expect(message?.title).toBe('Tes coupons réglés');
     expect(message?.body).toBe(
       '2 coupons réglés : 1 gagné, 1 perdu. Misé 2 000 F, rendu 1 540 F : -460 F.',
     );
