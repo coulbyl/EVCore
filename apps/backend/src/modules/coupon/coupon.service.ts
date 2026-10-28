@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { CouponProposalStatus } from '@evcore/db';
 import { CouponRepository } from './coupon.repository';
+import { CouponFollowRepository } from './coupon-follow.repository';
 import {
   playableQuoteKey,
   PlayableOddsRepository,
@@ -31,6 +32,7 @@ export class CouponService {
   constructor(
     private readonly repo: CouponRepository,
     private readonly playableOdds: PlayableOddsRepository,
+    private readonly follows: CouponFollowRepository,
   ) {}
 
   async getCoupons(
@@ -147,6 +149,8 @@ export class CouponService {
         viewerCount: p._count.views,
         playerCount: p._count.placements,
         playedByMe: p.placements.length > 0,
+        followerCount: p._count.follows,
+        followedByMe: p.follows.length > 0,
         result: p.result,
         reasoning,
         lastFixtureScheduledAt: p.lastFixtureScheduledAt.toISOString(),
@@ -161,6 +165,22 @@ export class CouponService {
       throw new NotFoundException('Coupon introuvable');
     }
     await this.repo.recordView(couponProposalId, userId);
+  }
+
+  /**
+   * « Suivre ce coupon » (2026-10-28) : suivre sans déclarer de mise, pour
+   * recevoir le résultat dans le résumé du matin. Idempotent dans les deux
+   * sens.
+   */
+  async follow(couponProposalId: string, userId: string): Promise<void> {
+    if (!(await this.repo.exists(couponProposalId))) {
+      throw new NotFoundException('Coupon introuvable');
+    }
+    await this.follows.follow(couponProposalId, userId);
+  }
+
+  async unfollow(couponProposalId: string, userId: string): Promise<void> {
+    await this.follows.unfollow(couponProposalId, userId);
   }
 
   /** Historique réel par produit de coupon sur les `days` derniers jours. */

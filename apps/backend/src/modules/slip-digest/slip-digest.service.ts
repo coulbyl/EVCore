@@ -5,7 +5,7 @@ import { NotificationService } from '@modules/notification/notification.service'
 import { PushService } from '@modules/push/push.service';
 import { slipMoney, type SlipMoney } from '@modules/bet-slip/bet-slip-outcome';
 import { createLogger } from '@utils/logger';
-import { composeSlipDigest } from './slip-digest.compose';
+import { composeSlipDigest, type FollowedResult } from './slip-digest.compose';
 import { SLIP_DIGEST } from '@config/slip-digest.constants';
 import {
   SlipDigestRepository,
@@ -21,6 +21,9 @@ type UserBucket = {
   results: SlipMoney[];
   /** Coupons annoncés réglés dans ce résumé. */
   settledSlipIds: string[];
+  /** Coupons suivis, réglés, annoncés dans ce résumé. */
+  follows: FollowedResult[];
+  followedIds: string[];
 };
 
 /** « 2026-10-27 » : la veille, en UTC, du moment du passage. */
@@ -67,42 +70,81 @@ export class SlipDigestService {
     const dayStart = new Date(`${day}T00:00:00.000Z`);
     const to = new Date(dayStart.getTime() + DAY_MS);
     const from = new Date(to.getTime() - SLIP_DIGEST.LOOKBACK_DAYS * DAY_MS);
-    const slips = await this.repository.findSlipsTouching(from, to);
-    const reported = await this.repository.findReportedSlipIds(
-      [...new Set(slips.map((slip) => slip.user.id))],
+    const [slips, follows] = await Promise.all([
+      this.repository.findSlipsTouching(from, to),
+      this.repository.findSettledFollows(from, to),
+    ]);
+    const reported = await this.repository.findReported(
+      [
+        ...new Set([
+          ...slips.map((slip) => slip.user.id),
+          ...follows.map((follow) => follow.user.id),
+        ]),
+      ],
       from,
     );
 
     const byUser = new Map<string, UserBucket>();
     const pausedUsers = new Set<string>();
+    const bucketFor = (user: {
+      id: string;
+      currency: string | null;
+    }): UserBucket => {
+      const bucket = byUser.get(user.id) ?? {
+        currency: user.currency,
+        results: [],
+        settledSlipIds: [],
+        follows: [],
+        followedIds: [],
+      };
+      byUser.set(user.id, bucket);
+      return bucket;
+    };
+    const isPaused = (pausedUntil: Date | null) =>
+      pausedUntil !== null && pausedUntil.getTime() > now.getTime();
     for (const slip of slips) {
       const lastKickoff = Math.max(
         ...slip.items.map((item) => item.fixture.scheduledAt.getTime()),
       );
       if (lastKickoff < from.getTime() || lastKickoff >= to.getTime()) continue;
       const { user } = slip;
-      if (user.pausedUntil && user.pausedUntil.getTime() > now.getTime()) {
+      if (isPaused(user.pausedUntil)) {
         pausedUsers.add(user.id);
         continue;
       }
       const money = toMoney(slip);
       const pending = money.status === 'PENDING';
       if (pending && lastKickoff < dayStart.getTime()) continue;
-      if (!pending && reported.has(slip.id)) continue;
-      const bucket = byUser.get(user.id) ?? {
-        currency: user.currency,
-        results: [],
-        settledSlipIds: [],
-      };
+      if (!pending && reported.slipIds.has(slip.id)) continue;
+      const bucket = bucketFor(user);
       bucket.results.push(money);
       if (!pending) bucket.settledSlipIds.push(slip.id);
-      byUser.set(user.id, bucket);
+    }
+    for (const follow of follows) {
+      const { user, couponProposal: coupon } = follow;
+      if (isPaused(user.pausedUntil)) {
+        pausedUsers.add(user.id);
+        continue;
+      }
+      if (coupon.result === null || reported.followedIds.has(coupon.id)) {
+        continue;
+      }
+      const bucket = bucketFor(user);
+      bucket.follows.push({
+        targetOddsMin: Number(coupon.targetOddsMin),
+        result: coupon.result,
+      });
+      bucket.followedIds.push(coupon.id);
     }
     const skippedPaused = pausedUsers.size;
 
     let sent = 0;
     for (const [userId, bucket] of byUser) {
-      const message = composeSlipDigest(bucket.results, bucket.currency);
+      const message = composeSlipDigest(
+        bucket.results,
+        bucket.currency,
+        bucket.follows,
+      );
       if (!message) continue;
       if (await this.repository.hasDigest(userId, day)) continue;
       await this.notification.notifyUser({
@@ -115,6 +157,7 @@ export class SlipDigestService {
           settled: message.settled,
           net: message.net,
           slipIds: bucket.settledSlipIds,
+          followedIds: bucket.followedIds,
         },
       });
       await this.push.sendToUser(userId, {

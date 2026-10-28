@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { CouponService } from './coupon.service';
 import type { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
+import type { CouponFollowRepository } from './coupon-follow.repository';
 import type { CouponRepository } from './coupon.repository';
 
 function proposal(overrides: Record<string, unknown> = {}) {
@@ -19,8 +20,9 @@ function proposal(overrides: Record<string, unknown> = {}) {
     reasoning: { generationPass: 'INTRADAY' },
     lastFixtureScheduledAt: new Date('2026-09-14T20:00:00.000Z'),
     generatedAt: new Date('2026-09-14T12:00:00.000Z'),
-    _count: { views: 0, placements: 0 },
+    _count: { views: 0, placements: 0, follows: 0 },
     placements: [],
+    follows: [],
     legs: [
       {
         id: 'leg-1',
@@ -63,7 +65,11 @@ function serviceWith(rows: unknown[]) {
   const playable = {
     findPlayableQuotes: vi.fn().mockResolvedValue(new Map()),
   } as unknown as PlayableOddsRepository;
-  return new CouponService(repo, playable);
+  const follows = {
+    follow: vi.fn().mockResolvedValue(undefined),
+    unfollow: vi.fn().mockResolvedValue(undefined),
+  } as unknown as CouponFollowRepository;
+  return new CouponService(repo, playable, follows);
 }
 
 describe('CouponService.getCoupons', () => {
@@ -116,7 +122,11 @@ describe('CouponService.getTrackRecord', () => {
     const repo = { findClassTrackRecord } as unknown as CouponRepository;
     const playable = {} as unknown as PlayableOddsRepository;
 
-    const [row] = await new CouponService(repo, playable).getTrackRecord(30);
+    const [row] = await new CouponService(
+      repo,
+      playable,
+      {} as CouponFollowRepository,
+    ).getTrackRecord(30);
 
     expect(row).toMatchObject({
       settled: 7,
@@ -127,5 +137,35 @@ describe('CouponService.getTrackRecord', () => {
       worstLosingStreak: 1,
       days: 30,
     });
+  });
+});
+
+describe('CouponService.follow', () => {
+  function followHarness(exists: boolean) {
+    const repo = {
+      exists: vi.fn().mockResolvedValue(exists),
+    } as unknown as CouponRepository;
+    const follows = {
+      follow: vi.fn().mockResolvedValue(undefined),
+      unfollow: vi.fn().mockResolvedValue(undefined),
+    } as unknown as CouponFollowRepository;
+    return {
+      service: new CouponService(repo, {} as PlayableOddsRepository, follows),
+      follows,
+    };
+  }
+
+  it('follows an existing coupon', async () => {
+    const { service, follows } = followHarness(true);
+    await service.follow('coupon-1', 'u1');
+    expect(follows.follow).toHaveBeenCalledWith('coupon-1', 'u1');
+  });
+
+  it('answers 404 for an unknown coupon', async () => {
+    const { service, follows } = followHarness(false);
+    await expect(service.follow('nope', 'u1')).rejects.toThrow(
+      'Coupon introuvable',
+    );
+    expect(follows.follow).not.toHaveBeenCalled();
   });
 });

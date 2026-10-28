@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '@modules/auth/auth.module';
 import { PrismaModule } from '@/prisma.module';
 import { CouponRepository } from './coupon.repository';
+import { CouponFollowRepository } from './coupon-follow.repository';
 import { CouponSettlementService } from './coupon-settlement.service';
 import { CouponService } from './coupon.service';
 import { CouponPriceGenerationService } from './coupon-price-generation.service';
@@ -26,6 +27,7 @@ import { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.
   controllers: [CouponController],
   providers: [
     CouponRepository,
+    CouponFollowRepository,
     // Lecteur de la vue `odds_closing_line`, sans état : enregistré ici et
     // dans betting-engine.module.ts plutôt que d'importer tout le moteur
     // pour une seule requête.

@@ -694,6 +694,7 @@ model User {
   followedLeagues                  UserFollowedLeague[]
   couponProposalViews              CouponProposalView[]
   couponProposalPlacements         CouponProposalPlacement[]
+  couponFollows                    CouponFollow[]
   createdAt                        DateTime                  @default(now())
   updatedAt                        DateTime                  @updatedAt
 
@@ -1163,6 +1164,7 @@ model CouponProposal {
   // one per page load/click — see CouponProposalView/CouponProposalPlacement.
   views                  CouponProposalView[]
   placements             CouponProposalPlacement[]
+  follows                CouponFollow[]
   generatedAt            DateTime                  @default(now())
   updatedAt              DateTime                  @updatedAt
 
@@ -1269,6 +1271,23 @@ model CouponProposalPlacement {
   @@unique([couponProposalId, userId])
   @@index([couponProposalId])
   @@map("coupon_proposal_placement")
+  @@schema("public")
+}
+
+// « Suivre ce coupon » (2026-10-28) : le joueur suit un coupon sans déclarer
+// de mise et reçoit son résultat dans le résumé du matin. Une ligne par
+// joueur et par coupon ; ne crée ni pari ni mouvement de solde.
+model CouponFollow {
+  id               String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  couponProposalId String         @db.Uuid
+  couponProposal   CouponProposal @relation(fields: [couponProposalId], references: [id], onDelete: Cascade)
+  userId           String         @db.Uuid
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt        DateTime       @default(now())
+
+  @@unique([couponProposalId, userId])
+  @@index([userId])
+  @@map("coupon_follow")
   @@schema("public")
 }
 
