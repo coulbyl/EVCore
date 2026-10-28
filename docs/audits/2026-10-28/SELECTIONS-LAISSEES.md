@@ -110,6 +110,22 @@ Pourquoi C et D échouent : avec beaucoup plus de candidats, le classement par t
 
 Garde-fous gardés par cohérence avec l'écran : un type de pari suspendu ne doit pas apparaître dans un coupon quand Décisions le dit suspendu. Les garder ne coûte rien de mesurable (E ≈ F).
 
+## Livré le 28/10
+
+Sur confirmation de l'utilisateur, les étapes 1 et 2 de l'ordre recommandé sont livrées.
+
+| Commit                 | Changement                                                                                                                                                                                                                                                                                                                                                                             |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `4ee6cef3`, `6c53602f` | **Coupon cote 2** (classe `DOUBLE`) : tout ce qui est coté, classé par la probabilité du marché sans marge, deux jambes de cote combinée 2 à 3 chez 1xBet, une par match. Affiché sur l'accueil après le Combiné et dans Coupons : « Gagne environ 1 jour sur 2 ». Essai à blanc sur les 24, 25 et 26/10 de la copie de prod : deux jambes à 2,00–2,02 chez 1xBet, 48 à 51 % annoncés. |
+| `4ee6cef3`             | **Plus de « remboursé si match nul » dans aucun coupon** (décision de l'utilisateur) : `POOL_EXCLUDED_MARKETS` pour le coupon cote 2, le coupon prix, le combiné de Notre sélection et le combiné IA. Il reste visible dans Décisions et la fiche de match.                                                                                                                            |
+| `b204dfa4`, `e42571e9` | **La fréquence affichée est celle du marché**, marge retirée, dans Décisions, les avis IA, la fiche de match, l'accueil et les coupons. Victoire Arsenal à 1,28 passe de « 8 fois sur 10 » (moteur) à « 7 fois sur 10 » (marché). La note « Cote de 1,80 et plus », qui qualifiait les chiffres du moteur, est retirée avec eux.                                                       |
+
+Aucune migration. Restent, dans l'ordre :
+
+- rejouer le combiné du jour de Notre sélection avec cette méthode ;
+- étudier le choix de Notre sélection sur chaque match ;
+- revoir ce que lit l'IA après la relecture de la version v5 (vers le 10/11).
+
 ## Limites
 
 - **Cotes de référence (celles de l'analyse), pas celles de 1xBet.** En production, la fenêtre et la marge doivent se lire sur la cote 1xBet. Son classement peut différer, la méthode reste la même.
