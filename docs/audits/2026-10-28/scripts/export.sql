@@ -25,3 +25,7 @@ WHERE mr."analyzedAt" < f."scheduledAt" AND cd.status = 'SELECTED'
   AND cd.channel::text NOT IN ('CONSENSUS','CONTRARIAN','AVOID','VALUE','SAFE','VANTAGE');
 \copy (SELECT p."fixtureId", p.day, p.competition, p.market, p.pick, p.line, p.odds, p.model_prob, p.status, p.rejection_reason, p.won, (pl."fixtureId" IS NOT NULL) AS in_pool, (a."fixtureId" IS NOT NULL) AS alerted FROM study_1028.picks p LEFT JOIN study_1028.pool pl ON pl."fixtureId"=p."fixtureId" AND pl.market=p.market AND pl.pick=p.pick LEFT JOIN study_1028.alerted a ON a."fixtureId"=p."fixtureId") TO 'picks.csv' CSV HEADER
 DROP SCHEMA study_1028 CASCADE;
+
+-- Rejeu du combiné (combo.py) : sélections dédupliquées du moteur depuis
+-- mars, pour la calibration canal × compétition sur 90 jours glissants.
+\copy (SELECT s."fixtureId", (s."scheduledAt" AT TIME ZONE 'UTC')::date AS day, c.code AS competition, s.channel::text AS channel, s.market::text AS market, s.pick, s.odds::float AS odds, s.probability::float AS probability, s.result::text AS result, (cd.status = 'SELECTED') AS selected FROM channel_selection_deduped s JOIN channel_decision cd ON cd.id = s."channelDecisionId" JOIN fixture f ON f.id = s."fixtureId" JOIN season se ON se.id = f."seasonId" JOIN competition c ON c.id = se."competitionId" WHERE s."scheduledAt" >= DATE '2026-03-15') TO 'engine_sel.csv' CSV HEADER

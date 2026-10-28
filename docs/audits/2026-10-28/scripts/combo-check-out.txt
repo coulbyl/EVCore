@@ -1,0 +1,6 @@
+A: jambes avec proba marché 184/214 | réalisé 85.3 vs marché 76.6 → écart +8.8 ± 5.0 | cote de la sélection / cote d'analyse : +0.2 % (n=209) | coût attendu au prix d'analyse -11.1 % sur 79 coupons
+   A, jambes « gagner une mi-temps » : 25, réalisé 72.0 %, cote moy. 1.23
+   A, palier 0 : 80 jambes, réalisé 86.2 vs marché 77.1
+   A, palier 1 : 104 jambes, réalisé 84.6 vs marché 76.1
+B: jambes avec proba marché 228/228 | réalisé 81.1 vs marché 78.8 → écart +2.4 ± 5.1 | cote de la sélection / cote d'analyse : +0.0 % (n=228) | coût attendu au prix d'analyse -9.4 % sur 114 coupons
+C: jambes avec proba marché 212/212 | réalisé 84.4 vs marché 76.8 → écart +7.6 ± 4.8 | cote de la sélection / cote d'analyse : +0.9 % (n=212) | coût attendu au prix d'analyse -10.7 % sur 106 coupons
