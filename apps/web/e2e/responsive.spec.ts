@@ -10,17 +10,24 @@ import { test, expect } from "@playwright/test";
 
 const PAGES = [
   { name: "dashboard", path: "/dashboard" },
-  { name: "fixtures", path: "/dashboard/fixtures" },
+  { name: "fixtures", path: "/dashboard/fixtures", adminOnly: true },
   { name: "formation", path: "/dashboard/formation" },
   { name: "bankroll", path: "/dashboard/bankroll" },
   { name: "bet-slips", path: "/dashboard/bet-slips" },
   { name: "decisions", path: "/dashboard/decisions" },
   { name: "account", path: "/dashboard/params/account" },
-  { name: "audit", path: "/dashboard/audit" },
+  { name: "audit", path: "/dashboard/audit", adminOnly: true },
 ] as const;
 
-for (const { name, path } of PAGES) {
+for (const page of PAGES) {
+  const { name, path } = page;
+  const adminOnly = "adminOnly" in page && page.adminOnly;
   test(`${name} — pas de scroll horizontal @responsive`, async ({ page }) => {
+    // Matchs et Audit renvoient un joueur ailleurs : vue admin seulement.
+    test.skip(
+      adminOnly && process.env.E2E_ROLE === "OPERATOR",
+      "page réservée à l'admin",
+    );
     await page.goto(path);
 
     // Confirm auth worked — no redirect to login

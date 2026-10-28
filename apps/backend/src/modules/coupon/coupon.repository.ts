@@ -212,11 +212,17 @@ const WITH_LEGS = {
 function withEngagement(userId: string) {
   return {
     ...WITH_LEGS,
-    _count: { select: { views: true, placements: true } },
+    _count: { select: { views: true, placements: true, follows: true } },
     // Only the CURRENT user's own placement (0 or 1 row, unique per
     // [couponProposalId, userId]) — drives "Déjà joué par vous"; the total
     // player count comes from _count.placements above instead.
     placements: {
+      where: { userId },
+      select: { id: true },
+      take: 1,
+    },
+    // Même principe pour « Suivre ce coupon » (2026-10-28).
+    follows: {
       where: { userId },
       select: { id: true },
       take: 1,
@@ -250,13 +256,13 @@ export class CouponRepository {
   async findByDate(
     day: Date,
     userId: string,
-    status?: CouponProposalStatus,
+    opts: { status?: CouponProposalStatus } = {},
   ): Promise<CouponProposalWithEngagement[]> {
     const dayStart = startOfUtcDay(day);
     return this.prisma.client.couponProposal.findMany({
       where: {
         forDate: dayStart,
-        ...(status ? { status } : {}),
+        ...(opts.status ? { status: opts.status } : {}),
       },
       include: withEngagement(userId),
       orderBy: { rank: 'asc' },

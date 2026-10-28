@@ -10,6 +10,7 @@ import {
   StatCard,
 } from "@evcore/ui";
 import { serverApiRequest } from "@/lib/api/server-api";
+import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session";
 import type {
   ChannelCompetitionStatItem,
   ChannelHealthItem,
@@ -39,7 +40,7 @@ import {
 export const metadata: Metadata = {
   title: "Mesures historiques — EVCore",
   description:
-    "Ce que nos pronostics de football ont vraiment donné : annoncé et réalisé, par cote et par type de pari, pertes comprises.",
+    "Ce que nos pronostics de football ont vraiment donné : fréquence du marché et réalisé, par cote et par type de pari, pertes comprises.",
 };
 
 /**
@@ -86,13 +87,22 @@ export default async function TrackRecordPage({
   const { period: periodParam } = await searchParams;
   const period = resolvePeriod(periodParam);
   const { from, to } = dateRangeForPeriod(period);
-  const [{ summary, rows, channelCompetitionStats }, locale] =
-    await Promise.all([getTrackRecordData(from, to), getLocale()]);
+  const [{ summary, rows, channelCompetitionStats }, locale, session] =
+    await Promise.all([
+      getTrackRecordData(from, to),
+      getLocale(),
+      getCurrentSession(),
+    ]);
+  // Le joueur lit la fréquence du marché et le réalisé, sans verdict ;
+  // l'admin garde la probabilité du moteur et la lecture « Conforme /
+  // Optimiste » (2026-10-28).
+  const audience = session?.user.role === "ADMIN" ? "admin" : "player";
   const toRow = (row: NonNullable<typeof rows>[number]): ChannelStatRow => ({
     key: row.channel,
     primaryLabel: channelLabel(row.channel, locale),
     status: row.status,
     announced: row.announced,
+    market: row.market,
     realised: row.hitRate,
     calibrationRatio: row.calibrationRatio,
     roi: row.roi,
@@ -135,7 +145,7 @@ export default async function TrackRecordPage({
               2026-09-04 (audit du 2026-10-23, P1-5). */}
           <section className="flex flex-col gap-3">
             <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Annoncé et réalisé · du {formatDateLong(from)} au{" "}
+              Fréquence du marché et réalisé · du {formatDateLong(from)} au{" "}
               {formatDateLong(to)}
             </h2>
             {summary ? (
@@ -150,10 +160,10 @@ export default async function TrackRecordPage({
                   />
                   <StatCard
                     tone="neutral"
-                    label="Annoncé"
+                    label="Fréquence du marché"
                     value={
                       summary.sufficient
-                        ? formatRate(summary.announced, locale)
+                        ? formatRate(summary.market, locale)
                         : "—"
                     }
                   />
@@ -183,8 +193,11 @@ export default async function TrackRecordPage({
                 </div>
                 <p className="text-xs leading-5 text-muted-foreground">
                   {summary.sufficient
-                    ? "Une ligne par pronostic réel, publié avant le coup d'envoi, à la cote d'analyse. Chez ton bookmaker, la cote est en général un peu plus basse."
+                    ? "Une ligne par pronostic réel, publié avant le coup d'envoi, à la cote d'analyse. La fréquence du marché est ce que la cote annonçait, marge du bookmaker retirée. Chez ton bookmaker, la cote est en général un peu plus basse."
                     : "Moins de 30 pronostics réglés sur la période : les taux ne se lisent pas encore."}
+                  {audience === "admin" && summary.sufficient
+                    ? ` Moteur : ${formatRate(summary.announced, locale)} annoncés.`
+                    : null}
                 </p>
               </>
             ) : (
@@ -197,6 +210,7 @@ export default async function TrackRecordPage({
               bands={summary.byOdds}
               settledTotal={summary.settled}
               locale={locale}
+              audience={audience}
             />
           ) : null}
 
@@ -210,27 +224,31 @@ export default async function TrackRecordPage({
                   primaryColumnLabel="Type de pari"
                   rows={channelStatRows}
                   countNoun={{ one: "type de pari", other: "types de pari" }}
+                  audience={audience}
                 />
-                <p className="text-xs leading-5 text-muted-foreground">
-                  <strong className="font-medium text-foreground">
-                    Conforme
-                  </strong>{" "}
-                  : le réalisé reste à moins de 15 % de l&apos;annoncé.{" "}
-                  <strong className="font-medium text-foreground">
-                    Optimiste
-                  </strong>{" "}
-                  : moins de pronostics passés qu&apos;annoncé ;{" "}
-                  <strong className="font-medium text-foreground">
-                    prudent
-                  </strong>{" "}
-                  : plus. « Pas assez de recul » : moins de 30 réglés sur la
-                  période.
-                </p>
+                {audience === "admin" ? (
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    <strong className="font-medium text-foreground">
+                      Conforme
+                    </strong>{" "}
+                    : le réalisé reste à moins de 15 % de l&apos;annoncé.{" "}
+                    <strong className="font-medium text-foreground">
+                      Optimiste
+                    </strong>{" "}
+                    : moins de pronostics passés qu&apos;annoncé ;{" "}
+                    <strong className="font-medium text-foreground">
+                      prudent
+                    </strong>{" "}
+                    : plus. « Pas assez de recul » : moins de 30 réglés sur la
+                    période.
+                  </p>
+                ) : null}
                 {aiOpinions && aiOpinions.sampleSize > 0 ? (
                   <p className="text-xs leading-5 text-muted-foreground">
                     Avis IA, hors total car ils reprennent des matchs déjà
-                    comptés : annoncé {formatRate(aiOpinions.announced, locale)}
-                    , réalisé {formatRate(aiOpinions.hitRate, locale)}, sur{" "}
+                    comptés : fréquence du marché{" "}
+                    {formatRate(aiOpinions.market, locale)}, réalisé{" "}
+                    {formatRate(aiOpinions.hitRate, locale)}, sur{" "}
                     {formatCount(aiOpinions.sampleSize, locale)} réglés.{" "}
                     <Link
                       href="/dashboard/arbitrage"
@@ -247,7 +265,10 @@ export default async function TrackRecordPage({
           </section>
 
           {channelCompetitionStats ? (
-            <ChannelCompetitionSection rows={channelCompetitionStats} />
+            <ChannelCompetitionSection
+              rows={channelCompetitionStats}
+              audience={audience}
+            />
           ) : (
             <section className="flex flex-col gap-3">
               <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">

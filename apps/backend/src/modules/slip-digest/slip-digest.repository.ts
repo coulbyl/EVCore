@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   type BetSlipType,
   type BetStatus,
+  type CouponResult,
   NotificationType,
   type Prisma,
 } from '@evcore/db';
@@ -19,11 +20,22 @@ export type DigestSlip = {
   }[];
 };
 
-function slipIdsOf(payload: Prisma.JsonValue | null): string[] {
+export type DigestFollow = {
+  user: { id: string; currency: string | null; pausedUntil: Date | null };
+  couponProposal: {
+    id: string;
+    result: CouponResult | null;
+    targetOddsMin: Prisma.Decimal;
+  };
+};
+
+export type ReportedIds = { slipIds: Set<string>; followedIds: Set<string> };
+
+function idsOf(payload: Prisma.JsonValue | null, key: string): string[] {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
     return [];
   }
-  const ids = payload.slipIds;
+  const ids = payload[key];
   return Array.isArray(ids)
     ? ids.filter((id): id is string => typeof id === 'string')
     : [];
@@ -59,12 +71,38 @@ export class SlipDigestRepository {
     });
   }
 
-  /** Coupons déjà annoncés réglés dans un résumé envoyé depuis `since`. */
-  async findReportedSlipIds(
+  /**
+   * Coupons suivis (« Suivre ce coupon ») réglés, dont le dernier match se
+   * jouait entre `from` et `to`.
+   */
+  findSettledFollows(from: Date, to: Date): Promise<DigestFollow[]> {
+    return this.prisma.client.couponFollow.findMany({
+      where: {
+        couponProposal: {
+          result: { not: null },
+          lastFixtureScheduledAt: { gte: from, lt: to },
+        },
+      },
+      select: {
+        user: { select: { id: true, currency: true, pausedUntil: true } },
+        couponProposal: {
+          select: { id: true, result: true, targetOddsMin: true },
+        },
+      },
+    });
+  }
+
+  /**
+   * Coupons joués et coupons suivis déjà annoncés dans un résumé envoyé
+   * depuis `since`.
+   */
+  async findReported(
     userIds: readonly string[],
     since: Date,
-  ): Promise<Set<string>> {
-    if (userIds.length === 0) return new Set();
+  ): Promise<ReportedIds> {
+    if (userIds.length === 0) {
+      return { slipIds: new Set(), followedIds: new Set() };
+    }
     const digests = await this.prisma.client.notification.findMany({
       where: {
         userId: { in: [...userIds] },
@@ -73,7 +111,12 @@ export class SlipDigestRepository {
       },
       select: { payload: true },
     });
-    return new Set(digests.flatMap((digest) => slipIdsOf(digest.payload)));
+    return {
+      slipIds: new Set(digests.flatMap((d) => idsOf(d.payload, 'slipIds'))),
+      followedIds: new Set(
+        digests.flatMap((d) => idsOf(d.payload, 'followedIds')),
+      ),
+    };
   }
 
   /** Un relancement du job ne doit pas envoyer deux fois le même jour. */

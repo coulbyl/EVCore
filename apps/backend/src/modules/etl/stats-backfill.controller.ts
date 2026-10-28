@@ -7,8 +7,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { AdminGuard } from '@/common/guards/admin.guard';
-import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
+import { AdminOrServiceTokenGuard } from '@modules/auth/admin-or-service-token.guard';
 import {
   StatsBackfillService,
   type StatsBackfillStatus,
@@ -16,7 +15,7 @@ import {
 
 @ApiTags('ETL')
 @Controller('etl/stats-backfill')
-@UseGuards(AuthSessionGuard, AdminGuard)
+@UseGuards(AdminOrServiceTokenGuard)
 export class StatsBackfillController {
   constructor(private readonly statsBackfill: StatsBackfillService) {}
 

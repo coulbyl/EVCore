@@ -46,6 +46,36 @@ test.describe("Mes coupons", () => {
     await expect(detail).not.toContainText("EV");
   });
 
+  test("un coupon pas encore commencé se supprime, la mise revient", async ({
+    page,
+  }) => {
+    await page
+      .getByTestId("bet-slip-card")
+      .filter({ visible: true })
+      .filter({ hasText: "Bayern" })
+      .click();
+    const detail = page.getByTestId("bet-slip-detail").filter({
+      visible: true,
+    });
+    await detail.getByTestId("delete-slip-trigger").click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toContainText(/1\s000\sF reviennent à ton solde/);
+    await dialog.getByRole("button", { name: "Supprimer" }).click();
+    await expect(dialog).toBeHidden();
+  });
+
+  test("un coupon réglé ne propose pas la suppression", async ({ page }) => {
+    await page
+      .getByTestId("bet-slip-card")
+      .filter({ visible: true })
+      .filter({ hasText: "Real Madrid" })
+      .click();
+    const detail = page.getByTestId("bet-slip-detail").filter({
+      visible: true,
+    });
+    await expect(detail.getByTestId("delete-slip-trigger")).toHaveCount(0);
+  });
+
   test("les paris sont écrits avec les équipes", async ({ page }) => {
     await expect(
       page.getByText("Victoire Arsenal").filter({ visible: true }).first(),
@@ -71,6 +101,15 @@ test.describe("Suivi de mise", () => {
     await expect(
       page.getByRole("button", { name: "Déclarer un dépôt" }),
     ).toBeVisible();
+  });
+
+  test("un retrait se déclare comme un dépôt", async ({ page }) => {
+    await page.getByRole("button", { name: "Déclarer un retrait" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toContainText("Jamais plus que ton solde.");
+    await dialog.getByLabel("Montant").fill("1000");
+    await dialog.getByRole("button", { name: "Confirmer" }).click();
+    await expect(dialog).toBeHidden();
   });
 
   test("un combiné est nommé comme tel dans l'historique", async ({ page }) => {

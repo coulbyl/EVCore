@@ -70,8 +70,14 @@ export type TrackRecordRates = {
   /** Sélections réglées (gagnées ou perdues). */
   settled: number;
   won: number;
-  /** Probabilité moyenne annoncée, 0–1 ; null sans sélection. */
+  /** Probabilité moyenne annoncée par le moteur, 0–1 ; vue admin. */
   announced: number | null;
+  /**
+   * Fréquence du marché moyenne, 0–1 : 1 / cote, marge retirée (la marge
+   * payée, sinon la typique du marché). C'est la référence montrée au joueur
+   * depuis le 2026-10-28, à lire face à `realised`, sans verdict.
+   */
+  market: number | null;
   /** Taux de réussite réel, 0–1 ; null sans sélection. */
   realised: number | null;
   /** Retour d'une mise de 1 à la cote d'analyse (0,97 = −3 %). */
@@ -148,8 +154,14 @@ export type ChannelStatsItem = {
   sampleSize: number;
   oddsAvailabilityRate: number;
   trend: 'UP' | 'FLAT' | 'DOWN';
-  /** Probabilité moyenne annoncée, 0–1 ; à lire face à `hitRate`. */
+  /** Probabilité moyenne annoncée par le moteur, 0–1 ; vue admin. */
   announced: number | null;
+  /**
+   * Fréquence du marché moyenne, 0–1 : 1 / cote, marge retirée (la marge
+   * payée, sinon la typique du marché). C'est la référence montrée au joueur
+   * depuis le 2026-10-28, à lire face à `realised`, sans verdict.
+   */
+  market: number | null;
 };
 
 /**
@@ -167,8 +179,14 @@ export type ChannelCompetitionStatItem = {
   competitionCountry: string;
   roi: number | null;
   hitRate: number | null;
-  /** Probabilité moyenne annoncée, 0–1 ; à lire face à `hitRate`. */
+  /** Probabilité moyenne annoncée par le moteur, 0–1 ; vue admin. */
   announced: number | null;
+  /**
+   * Fréquence du marché moyenne, 0–1 : 1 / cote, marge retirée (la marge
+   * payée, sinon la typique du marché). C'est la référence montrée au joueur
+   * depuis le 2026-10-28, à lire face à `realised`, sans verdict.
+   */
+  market: number | null;
   /** See ChannelHealthItem.calibrationRatio — same formula, drives `status`. */
   calibrationRatio: number | null;
   sampleSize: number;

@@ -92,6 +92,24 @@ Un objet simulé doit avoir tous les champs que la vraie ligne a toujours. Par e
 
 _Cas réel : un spec de règlement simulait un pari sans statut. Le spec a cassé dès que le règlement a lu le statut précédent. Corrigé par `3b3643a3`._
 
+## 11. Toute route a un garde, vérifié par un test
+
+Un contrôleur sans `@UseGuards` répond à tout le monde sur l'API publique. Pour chaque contrôleur, on décide qui l'appelle :
+
+- un joueur : `AuthSessionGuard` ;
+- une proposition de pari : `PausedGuard` en plus, au niveau de la classe ;
+- l'exploitation : `AdminOrServiceTokenGuard`, qui accepte une session admin ou le jeton `ADMIN_API_TOKEN` pour les appels curl.
+
+Un spec lit les métadonnées `GUARDS_METADATA` pour que l'oubli casse les tests (`admin-or-service-token.guard.spec.ts`, `paused-coverage.spec.ts`).
+
+_Cas réel : `/etl/*`, `/betting-engine`, `/backtest` et une partie de `/risk` n'avaient aucun garde ; `GET /fixture` et `settle-range` étaient ouverts à tout joueur connecté ; `PATCH /auth/me/identity` changeait l'e-mail sans mot de passe. Corrigé dans le lot 2 (`edac3a64`, `ebad8fa6`, `ae18044c`)._
+
+## 12. Un test e2e suit le format qu'il vérifie
+
+Quand on change un format affiché (cote, pourcentage, libellé), on cherche aussi ses attentes dans `apps/web/e2e/` (`grep` sur l'ancien texte). Sinon le test casse plus tard, sur une autre branche, et on perd du temps à comprendre pourquoi.
+
+_Cas réel : « Clôture @1.90 » passé au format français (`2663acd0`), attente e2e retrouvée deux étapes plus tard._
+
 ## Constats laissés ouverts par la revue du 28/10
 
 Ils ne sont pas bloquants, mais ils sont à traiter avant qu'ils ne coûtent :

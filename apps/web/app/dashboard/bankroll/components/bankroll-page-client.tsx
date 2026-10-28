@@ -51,6 +51,8 @@ function buildBankrollFilters(t: Translator): FilterDef[] {
         { value: "BET_PLACED", label: t("filter.stake") },
         { value: "BET_WON", label: t("filter.return") },
         { value: "BET_VOID", label: t("filter.refund") },
+        { value: "SLIP_CANCELLED", label: t("filter.slipCancelled") },
+        { value: "WITHDRAWAL", label: t("filter.withdrawal") },
       ],
     },
   ];
@@ -132,12 +134,21 @@ export function BankrollPageClient() {
                 label={t("stats.currentBalance")}
                 value={summaryQuery.data ? formatAmount(currentBalance) : "—"}
               />
+              {/* Avec des retraits, la carte montre ce qui reste apporté :
+                  sinon le solde semble avoir perdu ce qui a été retiré. */}
               <StatCard
                 tone="neutral"
-                label={t("stats.totalDeposited")}
+                label={
+                  summaryQuery.data && Number(summaryQuery.data.withdrawn) > 0
+                    ? t("stats.netDeposited")
+                    : t("stats.totalDeposited")
+                }
                 value={
                   summaryQuery.data
-                    ? formatAmount(summaryQuery.data.deposited)
+                    ? formatAmount(
+                        Number(summaryQuery.data.deposited) -
+                          Number(summaryQuery.data.withdrawn),
+                      )
                     : "—"
                 }
               />
@@ -165,10 +176,9 @@ export function BankrollPageClient() {
                 : t("resultEmpty")}{" "}
               {t("declarative")}
             </p>
-            <div className="flex justify-stretch sm:justify-start">
-              <div className="w-full sm:w-auto">
-                <DepositDialog />
-              </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-start">
+              <DepositDialog />
+              <DepositDialog mode="withdraw" />
             </div>
           </section>
 

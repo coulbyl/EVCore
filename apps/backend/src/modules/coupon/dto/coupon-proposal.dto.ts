@@ -136,6 +136,10 @@ export type CouponProposalDto = {
   viewerCount: number;
   playerCount: number;
   playedByMe: boolean;
+  /** Joueurs qui suivent ce coupon sans mise (vrai compte, jamais inventé). */
+  followerCount: number;
+  /** Le joueur courant suit ce coupon : le bouton « Suivre » est coché. */
+  followedByMe: boolean;
   result: CouponResult | null;
   reasoning: Record<string, unknown> | null;
   lastFixtureScheduledAt: string;

@@ -36,15 +36,43 @@ function slip(opts: {
   };
 }
 
+type Follow = {
+  user: { id: string; currency: string; pausedUntil: Date | null };
+  couponProposal: {
+    id: string;
+    result: 'WON' | 'LOST';
+    targetOddsMin: Decimal;
+  };
+};
+
+function follow(
+  userId: string,
+  couponId: string,
+  result: 'WON' | 'LOST',
+): Follow {
+  return {
+    user: { id: userId, currency: 'XOF', pausedUntil: null },
+    // targetOddsMin 2 : la classe « Coupon cote 2 ».
+    couponProposal: { id: couponId, result, targetOddsMin: new Decimal(2) },
+  };
+}
+
 function makeHarness(
   slips: ReturnType<typeof slip>[],
-  opts: { alreadySent?: boolean; reported?: string[] } = {},
+  opts: {
+    alreadySent?: boolean;
+    reported?: string[];
+    follows?: Follow[];
+    reportedFollows?: string[];
+  } = {},
 ) {
   const repository = {
     findSlipsTouching: vi.fn().mockResolvedValue(slips),
-    findReportedSlipIds: vi
-      .fn()
-      .mockResolvedValue(new Set(opts.reported ?? [])),
+    findSettledFollows: vi.fn().mockResolvedValue(opts.follows ?? []),
+    findReported: vi.fn().mockResolvedValue({
+      slipIds: new Set(opts.reported ?? []),
+      followedIds: new Set(opts.reportedFollows ?? []),
+    }),
     hasDigest: vi.fn().mockResolvedValue(opts.alreadySent ?? false),
   } as unknown as SlipDigestRepository;
   const notification = {
@@ -151,5 +179,25 @@ describe('SlipDigestService.sendDigests', () => {
     await service.sendDigests(DAY, NOW);
     const [input] = vi.mocked(notification.notifyUser).mock.calls[0] ?? [];
     expect(input?.body).not.toContain('en attente');
+  });
+
+  it('announces a followed coupon once, without any amount', async () => {
+    const followed = follow('u2', 'coupon-9', 'WON');
+    const { service, notification } = makeHarness([], { follows: [followed] });
+    await service.sendDigests(DAY, NOW);
+    expect(notification.notifyUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'u2',
+        body: 'Coupon suivi : Coupon cote 2 gagné.',
+        payload: expect.objectContaining({ followedIds: ['coupon-9'] }),
+      }),
+    );
+
+    const again = makeHarness([], {
+      follows: [followed],
+      reportedFollows: ['coupon-9'],
+    });
+    await again.service.sendDigests(DAY, NOW);
+    expect(again.notification.notifyUser).not.toHaveBeenCalled();
   });
 });

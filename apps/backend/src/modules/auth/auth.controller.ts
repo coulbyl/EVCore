@@ -16,6 +16,7 @@ import { AUTH_LOGIN_RATE_LIMIT } from '@config/rate-limit.constants';
 import { AuthService } from './auth.service';
 import { AccountDeletionService } from './account-deletion.service';
 import { AccountPauseService } from './account-pause.service';
+import { EmailChangeService } from './email-change.service';
 import { CurrentSession } from './current-session.decorator';
 import { AuthSessionGuard } from './auth-session.guard';
 import type { AuthSession } from './auth.types';
@@ -30,13 +31,17 @@ import { ResetPasswordTotpDto } from './dto/reset-password-totp.dto';
 import { UpdateIdentityDto } from './dto/update-identity.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';
 import { PauseAccountDto } from './dto/pause-account.dto';
+import { RequestEmailChangeDto } from './dto/request-email-change.dto';
+import { ConfirmEmailChangeDto } from './dto/confirm-email-change.dto';
 
 @Controller('auth')
 export class AuthController {
+  // eslint-disable-next-line max-params -- Nest DI constructor: one service per account concern.
   constructor(
     private readonly authService: AuthService,
     private readonly accountDeletion: AccountDeletionService,
     private readonly accountPause: AccountPauseService,
+    private readonly emailChange: EmailChangeService,
   ) {}
 
   @Post('register')
@@ -120,6 +125,42 @@ export class AuthController {
     await this.accountDeletion.deleteAccount(session.user.id, body.password);
     this.authService.clearSessionCookie(response);
     return { status: 'ok' as const };
+  }
+
+  // Changement d'adresse : mot de passe, puis code envoyé à la nouvelle
+  // adresse. Même limite que le login contre l'essai de mots de passe et de
+  // codes.
+  @Post('me/email/request')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthSessionGuard)
+  @Throttle({
+    default: {
+      limit: AUTH_LOGIN_RATE_LIMIT.limit,
+      ttl: AUTH_LOGIN_RATE_LIMIT.ttlMs,
+    },
+  })
+  async requestEmailChange(
+    @CurrentSession() session: AuthSession,
+    @Body() body: RequestEmailChangeDto,
+  ) {
+    await this.emailChange.request(session.user.id, body);
+    return { status: 'ok' as const };
+  }
+
+  @Post('me/email/confirm')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthSessionGuard)
+  @Throttle({
+    default: {
+      limit: AUTH_LOGIN_RATE_LIMIT.limit,
+      ttl: AUTH_LOGIN_RATE_LIMIT.ttlMs,
+    },
+  })
+  confirmEmailChange(
+    @CurrentSession() session: AuthSession,
+    @Body() body: ConfirmEmailChangeDto,
+  ) {
+    return this.emailChange.confirm(session.user.id, body.code);
   }
 
   // Pas d'endpoint pour lever la pause : elle se prolonge, elle ne s'annule

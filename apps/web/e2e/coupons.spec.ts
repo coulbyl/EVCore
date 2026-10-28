@@ -25,8 +25,9 @@ test.describe("Coupons", () => {
       has: page.getByTestId("coupon-combined-odds"),
     });
     const count = await cards.count();
-    // Six coupons historiques et le coupon cote 2 (2026-10-28).
-    expect(count).toBe(7);
+    // Six coupons historiques, le coupon cote 2 et le chasseur Nul
+    // (2026-10-28).
+    expect(count).toBe(8);
     // Le coupon prix 5–15 n'est plus affiché ; le coupon long 2,5–5 l'est.
     await expect(page.getByText(/cote 5–15/)).toHaveCount(0);
     await expect(
@@ -116,17 +117,17 @@ test.describe("Coupons", () => {
     // Ligne de clôture d'une jambe : la cote seule, en couleur neutre ; la
     // valeur signée vit dans le détail (revue UX 2026-10-11, P1-7).
     const closing = card.getByTestId("leg-closing").first();
-    await expect(closing).toHaveText(/^(Clôture|Close) @1\.90$/);
+    await expect(closing).toHaveText(/^(Clôture|Close) 1[,.]90$/);
     await expect(closing).toHaveAttribute("data-verdict", "unknownMargin");
   });
 
   test("les deux générateurs et le coupon remboursé sont identifiés", async ({
     page,
   }) => {
-    // Favori, coupon cote 2 et un coupon prix.
+    // Favori, coupon cote 2, un coupon prix et le chasseur Nul.
     await expect(
       page.getByText("Choisi sur les cotes", { exact: true }),
-    ).toHaveCount(3);
+    ).toHaveCount(4);
     await expect(page.getByText("Analyse IA", { exact: true })).toHaveCount(3);
     await expect(
       page.getByText("Sélections du moteur", { exact: true }),
@@ -184,5 +185,34 @@ test.describe("Coupons", () => {
     await expect(second.getByTestId("coupon-playable-odds")).toHaveText("1,42");
     // 1,22 × 1,25 = 1,525, arrondi par Intl à 1,53.
     await expect(second.getByTestId("coupon-combined-odds")).toHaveText("1,53");
+  });
+
+  test("un coupon en cours se suit, la saisie passe en second", async ({
+    page,
+  }) => {
+    const card = page
+      .locator("[data-slot=card]")
+      .filter({ hasText: "Coupon cote 2" })
+      .filter({ visible: true })
+      .first();
+    const follow = card.getByTestId("coupon-follow");
+    await expect(follow).toHaveText("Suivre ce coupon");
+    await expect(follow).toHaveAttribute("aria-pressed", "false");
+    await follow.click();
+    await expect(
+      card.getByRole("button", { name: "Je l'ai joué" }),
+    ).toBeVisible();
+  });
+
+  test("un chasseur se lit comme un coupon, avec sa fréquence", async ({
+    page,
+  }) => {
+    const card = page
+      .locator("[data-slot=card]")
+      .filter({ hasText: "Chasseur Match nul" })
+      .filter({ visible: true })
+      .first();
+    await expect(card).toContainText("Match nul");
+    await expect(card.getByTestId("coupon-follow")).toBeVisible();
   });
 });

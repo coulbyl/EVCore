@@ -126,11 +126,15 @@ function selectionRow(opts: {
   won: boolean;
   odds: number;
   probability: number;
+  marginPaid?: number | null;
 }): ChannelSelectionRow {
   return {
     result: opts.won ? 'WON' : 'LOST',
     odds: new Decimal(opts.odds),
     probability: new Decimal(opts.probability),
+    market: 'ONE_X_TWO',
+    marginPaid:
+      opts.marginPaid === null ? null : new Decimal(opts.marginPaid ?? 0.05),
     channelDecision: {
       channel: StrategyChannel.DRAW,
       modelRun: {
@@ -264,6 +268,8 @@ describe('DashboardService.getTrackRecordSummary', () => {
     expect(summary.settled).toBe(30);
     expect(summary.won).toBe(9);
     expect(summary.announced).toBeCloseTo(0.3, 10);
+    // Fréquence du marché : 1 / 3,2 / 1,05 (marge payée) = 0,2976.
+    expect(summary.market).toBeCloseTo(0.2976, 4);
     expect(summary.realised).toBeCloseTo(0.3, 10);
     // (9 × 3,2 − 30) / 30 = −4 % → 0,96 par unité misée
     expect(summary.returnPerUnit).toBeCloseTo(0.96, 10);
@@ -339,5 +345,30 @@ describe('DashboardService.getTrackRecordSummary', () => {
     expect(byOdds[2]?.realised).toBe(0);
     expect(byOdds.every((b) => !b.sufficient)).toBe(true);
     expect(byOdds.every((b) => b.status === 'INSUFFICIENT_DATA')).toBe(true);
+  });
+});
+
+describe('DashboardService — market frequency without a paid margin', () => {
+  it('falls back on the typical margin of the market', async () => {
+    const selections = Array.from({ length: 30 }, (_, i) =>
+      selectionRow({
+        won: i < 15,
+        odds: 2,
+        probability: 0.6,
+        marginPaid: null,
+      }),
+    );
+    const repo = {
+      findChannelSelectionsInRange: vi.fn().mockResolvedValue(selections),
+    } satisfies Partial<DashboardRepository>;
+    const service = new DashboardService(
+      repo as unknown as DashboardRepository,
+    );
+    const summary = await service.getTrackRecordSummary(
+      '2026-09-01',
+      '2026-09-30',
+    );
+    // ONE_X_TWO : marge typique 5 % → 1 / 2 / 1,05 = 0,4762.
+    expect(summary.market).toBeCloseTo(0.4762, 4);
   });
 });

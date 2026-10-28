@@ -17,12 +17,69 @@ export type PlayedSlipRow = {
   }[];
 };
 
+export type DeletableSlip = {
+  id: string;
+  type: BetSlipType;
+  unitStake: Prisma.Decimal;
+  items: {
+    betId: string;
+    stakeOverride: Prisma.Decimal | null;
+    bet: { status: BetStatus };
+    fixture: { scheduledAt: Date };
+  }[];
+};
+
 @Injectable()
 export class BetSlipRepository {
   constructor(
     private readonly prisma: PrismaService,
     private readonly playableOdds: PlayableOddsRepository,
   ) {}
+
+  findDeletableSlip(
+    userId: string,
+    slipId: string,
+  ): Promise<DeletableSlip | null> {
+    return this.prisma.client.betSlip.findFirst({
+      where: { id: slipId, userId },
+      select: {
+        id: true,
+        type: true,
+        unitStake: true,
+        items: {
+          select: {
+            betId: true,
+            stakeOverride: true,
+            bet: { select: { status: true } },
+            fixture: { select: { scheduledAt: true } },
+          },
+        },
+      },
+    });
+  }
+
+  runInTransaction<T>(
+    fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    return this.prisma.client.$transaction(fn);
+  }
+
+  /**
+   * Supprime le coupon ; jambes et placement partent en cascade. Les paris
+   * restent : le mouvement de mise et celui du remboursement y sont
+   * rattachés (le nom du match dans Suivi de mise), et une nouvelle saisie
+   * du même choix les réutilise. Renvoie false si le coupon n'existait déjà
+   * plus : l'appelant annule alors la transaction, remboursement compris.
+   */
+  async deleteSlip(
+    input: { slipId: string; userId: string },
+    tx: Prisma.TransactionClient,
+  ): Promise<boolean> {
+    const deleted = await tx.betSlip.deleteMany({
+      where: { id: input.slipId, userId: input.userId },
+    });
+    return deleted.count > 0;
+  }
 
   /** Prix chez le book de l'utilisateur (1xBet) pour chaque choix d'un
    * ticket — voir BetSlipService.create. */
@@ -75,6 +132,7 @@ export class BetSlipRepository {
                 homeTeam: { select: { name: true } },
                 awayTeam: { select: { name: true } },
                 homeScore: true,
+                scheduledAt: true,
                 awayScore: true,
                 status: true,
               },
@@ -184,6 +242,7 @@ export class BetSlipRepository {
                 homeTeam: { select: { name: true } },
                 awayTeam: { select: { name: true } },
                 homeScore: true,
+                scheduledAt: true,
                 awayScore: true,
                 status: true,
               },

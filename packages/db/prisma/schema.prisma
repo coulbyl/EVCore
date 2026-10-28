@@ -113,6 +113,11 @@ enum BankrollTransactionType {
   BET_PLACED
   BET_WON
   BET_VOID
+  // Coupon saisi par erreur, supprimé avant le premier coup d'envoi : la
+  // mise revient au solde (2026-10-28).
+  SLIP_CANCELLED
+  // Retrait déclaré par le joueur, comme le dépôt.
+  WITHDRAWAL
 
   @@schema("public")
 }
@@ -689,6 +694,7 @@ model User {
   followedLeagues                  UserFollowedLeague[]
   couponProposalViews              CouponProposalView[]
   couponProposalPlacements         CouponProposalPlacement[]
+  couponFollows                    CouponFollow[]
   createdAt                        DateTime                  @default(now())
   updatedAt                        DateTime                  @updatedAt
 
@@ -724,15 +730,27 @@ model UserFollowedLeague {
   @@schema("public")
 }
 
+// Un code sert soit à vérifier l'adresse du compte, soit à confirmer une
+// nouvelle adresse (2026-10-28) : les deux ne s'annulent plus l'un l'autre.
+enum EmailCodePurpose {
+  VERIFY
+  CHANGE_EMAIL
+
+  @@schema("public")
+}
+
 model EmailVerificationCode {
-  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  userId    String   @db.Uuid
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  codeHash  String
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  attempts  Int      @default(0)
-  createdAt DateTime @default(now())
+  id          String           @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId      String           @db.Uuid
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash    String
+  expiresAt   DateTime
+  used        Boolean          @default(false)
+  attempts    Int              @default(0)
+  purpose     EmailCodePurpose @default(VERIFY)
+  // Nouvelle adresse à confirmer, pour un code CHANGE_EMAIL.
+  targetEmail String?
+  createdAt   DateTime         @default(now())
 
   @@index([userId, expiresAt])
   @@map("email_verification_code")
@@ -1146,6 +1164,7 @@ model CouponProposal {
   // one per page load/click — see CouponProposalView/CouponProposalPlacement.
   views                  CouponProposalView[]
   placements             CouponProposalPlacement[]
+  follows                CouponFollow[]
   generatedAt            DateTime                  @default(now())
   updatedAt              DateTime                  @updatedAt
 
@@ -1252,6 +1271,23 @@ model CouponProposalPlacement {
   @@unique([couponProposalId, userId])
   @@index([couponProposalId])
   @@map("coupon_proposal_placement")
+  @@schema("public")
+}
+
+// « Suivre ce coupon » (2026-10-28) : le joueur suit un coupon sans déclarer
+// de mise et reçoit son résultat dans le résumé du matin. Une ligne par
+// joueur et par coupon ; ne crée ni pari ni mouvement de solde.
+model CouponFollow {
+  id               String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  couponProposalId String         @db.Uuid
+  couponProposal   CouponProposal @relation(fields: [couponProposalId], references: [id], onDelete: Cascade)
+  userId           String         @db.Uuid
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt        DateTime       @default(now())
+
+  @@unique([couponProposalId, userId])
+  @@index([userId])
+  @@map("coupon_follow")
   @@schema("public")
 }
 

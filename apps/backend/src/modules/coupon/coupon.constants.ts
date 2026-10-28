@@ -315,6 +315,15 @@ export const DOUBLE_POLICY = {
 } as const;
 
 /**
+ * Chasseurs BTTS, Nul et Score exact (2026-10-28), montrés aux joueurs dès
+ * le premier jour et mesurés jambe par jambe (docs/audits/2026-10-28/
+ * HUNTERS.md).
+ */
+export const HUNTER_POLICY = {
+  version: 'hunter-v1',
+} as const;
+
+/**
  * Politique du combiné du jour sur les sélections du moteur (règle et
  * mesure dans COMBO_COUPON_CLASS / composeEngineCombo, @evcore/analysis-core).
  *

@@ -72,3 +72,6 @@ fiche-evcore-*.json
 # irrécupérables une fois perdues.
 packages/backtest-core/reports/market-cells/
 
+# Python
+__pycache__/
+*.pyc

@@ -8,6 +8,7 @@ import { formatDateLong } from "@/lib/date";
 import { formatOddsValue } from "@/lib/frequency";
 import { useCurrencyFormat } from "@/providers/currency-provider";
 import { ResultBadge } from "@/components/result-badge";
+import { DeleteSlipDialog } from "./delete-slip-dialog";
 import type {
   BetSlipItemView,
   BetSlipView,
@@ -223,6 +224,16 @@ export function BetSlipDetailPanel({
             />
           ))}
         </ul>
+
+        {data.deletable ? (
+          <div className="border-t border-border px-4 py-4">
+            <DeleteSlipDialog
+              slipId={data.id}
+              staked={result.staked}
+              onDeleted={onClose}
+            />
+          </div>
+        ) : null}
       </div>
     </div>
   );

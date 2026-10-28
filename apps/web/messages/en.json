@@ -256,7 +256,7 @@
     },
     "track": {
       "title": "AI track record",
-      "line": "From {from} to {to}, out of {settled} settled opinions: {realised} came in for {announced} announced · fixed stake {result}.",
+      "line": "From {from} to {to}, out of {settled} settled opinions: {realised} came in, against a market frequency of {market} · fixed stake {result}.",
       "insufficient": "Not enough settled opinions over 30 days for a track record yet.",
       "market": "Like the rest of the engine, the AI does not beat the bookmaker's odds over time: a second reading, not a tip.",
       "link": "Details in Historical measures"
@@ -363,7 +363,7 @@
     },
     "trackRecord": {
       "title": "Historical measures",
-      "description": "What our predictions actually delivered: announced and realised, by odds and by bet type, losses included."
+      "description": "What our predictions actually delivered: the frequency the odds implied and what actually came in, by odds and by bet type, losses included."
     },
     "formation": {
       "title": "Training",
@@ -375,11 +375,11 @@
     },
     "evaFab": {
       "title": "Eva",
-      "description": "Generates and exports the sheet of retained picks over a period (txt/json) — handy for archiving or sharing it. Long-press to hide it."
+      "description": "Generates and exports the sheet of retained picks over a period (txt/json) — handy for archiving or sharing it."
     },
     "pageSearchFab": {
       "title": "Search this page",
-      "description": "Search text directly on the current page — handy on a long list of matches. Hidden by default, long-press to hide it again."
+      "description": "Search text directly on the current page from the button at the top of the screen — handy on a long list of matches."
     },
     "notifications": {
       "title": "Notifications",
@@ -391,7 +391,7 @@
     },
     "profileBadges": {
       "title": "Profile and badges",
-      "description": "Your profile and the badges you unlock by learning: training completed, reading probabilities."
+      "description": "Your profile and your training badge, unlocked when you finish the sheets."
     },
     "accountSettings": {
       "title": "Settings",
@@ -399,7 +399,7 @@
     },
     "homeCoupon": {
       "title": "Today's coupon",
-      "description": "Everything starts here: today's proposed coupon, its legs and its odds. “Play this coupon” adds it to your slip."
+      "description": "Everything starts here: today's proposed coupon, its legs and its odds. “Follow this coupon” sends you its result in the morning digest, no stake; “I played it” adds it to your stake tracking."
     },
     "homePicks": {
       "title": "Today's picks",
@@ -525,7 +525,6 @@
       "ADMIN": "Admin"
     },
     "phoneNone": "Not set",
-    "emailChangeHint": "To change your address, write to the team from the Inbox.",
     "responsible": {
       "title": "Responsible gambling",
       "body": "Betting carries a risk of loss. Only stake what you can afford to lose, and never to chase losses.",
@@ -559,6 +558,20 @@
       "cancel": "Cancel",
       "confirm": "Start the break",
       "error": "The break could not be started."
+    },
+    "emailChange": {
+      "trigger": "Change",
+      "title": "Change e-mail address",
+      "requestDescription": "Enter your new address and your password. We send a code to the new address to check it is yours.",
+      "confirmDescription": "A 6-digit code was just sent to {email}. It is valid for 10 minutes.",
+      "newEmailLabel": "New address",
+      "passwordLabel": "Your password",
+      "codeLabel": "Code received",
+      "restart": "Change address or resend a code",
+      "send": "Send the code",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "error": "The change did not go through. Try again."
     }
   },
   "performance": {
@@ -733,6 +746,14 @@
       "combo": "Combos",
       "from": "From",
       "to": "To"
+    },
+    "delete": {
+      "trigger": "Delete this slip",
+      "title": "Delete this slip?",
+      "description": "Entered by mistake? As long as no match has started, you can delete it: {amount} go back to your balance. To correct it, delete it and enter it again.",
+      "cancel": "Keep",
+      "confirm": "Delete",
+      "error": "Could not delete this slip."
     }
   },
   "bankrollPage": {
@@ -744,7 +765,9 @@
       "from": "From",
       "to": "To",
       "type": "Type",
-      "return": "Return"
+      "return": "Return",
+      "slipCancelled": "Slip deleted",
+      "withdrawal": "Withdrawal"
     },
     "table": {
       "date": "Date",
@@ -756,7 +779,8 @@
     "stats": {
       "currentBalance": "Declared balance",
       "totalDeposited": "Declared deposits",
-      "betsResult": "Result of your bets"
+      "betsResult": "Result of your bets",
+      "netDeposited": "Deposits minus withdrawals"
     },
     "trend": {
       "title": "Declared balance, day by day",
@@ -774,7 +798,9 @@
     },
     "fallback": {
       "deposit": "Deposit",
-      "bet": "Bet"
+      "bet": "Bet",
+      "slipCancelled": "Slip deleted before kick-off: stake returned",
+      "withdrawal": "Withdrawal"
     },
     "title": "Stake tracking",
     "intro": "Your balance as you declare it: deposits made at your bookmaker, your stakes and what they return. EVCore does not hold your money.",
@@ -800,6 +826,20 @@
     },
     "detail": {
       "combo": "Combo · {count, plural, one {# selection} other {# selections}}"
+    },
+    "withdraw": {
+      "trigger": "Declare a withdrawal",
+      "title": "Declare a withdrawal",
+      "description": "Note a withdrawal made at your bookmaker, so your balance here follows yours. Never more than your balance.",
+      "close": "Close",
+      "amount": "Amount",
+      "amountInvalid": "Enter an amount of at least 1.",
+      "note": "Note",
+      "notePlaceholder": "Mobile money withdrawal",
+      "error": "Could not record the withdrawal.",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "confirming": "Saving…"
     }
   },
   "performancePage": {
@@ -1008,7 +1048,7 @@
     "helpLink": "What sets the coupons apart?"
   },
   "closingLine": {
-    "label": "Close @{odds}",
+    "label": "Close {odds}",
     "detail": "Odds just before kickoff at {bookmaker}. The proposed odds were worth {value} against the margin-free closing probability.",
     "verdict": {
       "beatsClose": "Better than the closing price: taken at that price it would have been worth {margin} (the bookmaker's margin).",
@@ -1041,13 +1081,15 @@
     "legPlayableHint": "Odds at {bookmaker}, the players' bookmaker. Ours come from the most generous books in the snapshot.",
     "playedByMe": "Already played by you",
     "inSlip": "In the coupon",
-    "play": "Play this coupon",
+    "play": "I played it",
     "replaceTitle": "Replace your slip?",
     "replaceDescription": "Your slip already holds {count, plural, one {# other pick} other {# other picks}}. A coupon is played on its own: its legs will replace those in the slip.",
     "replaceConfirm": "Replace",
     "replaceCancel": "Keep my slip",
     "addToCoupon": "Add to coupon",
-    "removeFromCoupon": "Remove from coupon"
+    "removeFromCoupon": "Remove from coupon",
+    "follow": "Follow this coupon",
+    "following": "Following · result in the morning digest"
   },
   "pause": {
     "title": "You are on a break",

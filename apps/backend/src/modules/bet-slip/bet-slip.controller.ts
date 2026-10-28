@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -44,6 +45,13 @@ export class BetSlipController {
   @Get(':id')
   getById(@CurrentSession() session: AuthSession, @Param('id') id: string) {
     return this.betSlipService.getById(session.user.id, id);
+  }
+
+  // Pas de PausedGuard : supprimer un coupon saisi par erreur ne propose
+  // rien à jouer.
+  @Delete(':id')
+  delete(@CurrentSession() session: AuthSession, @Param('id') id: string) {
+    return this.betSlipService.delete(session.user.id, id);
   }
 
   @Post()

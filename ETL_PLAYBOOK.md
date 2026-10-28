@@ -46,14 +46,16 @@ Ordre recommandé :
 4. odds-csv backfill si la compétition a un csvDivisionCode
 ```
 
+Depuis le 2026-10-28, les routes `/etl/*` exigent une session admin ou le jeton de service : exporte `ADMIN_API_TOKEN` (même valeur que dans le `.env` du backend) avant de lancer ces commandes.
+
 Exemple `J1` :
 
 ```bash
-curl -X POST 'http://localhost:3001/etl/sync/fixtures/sa/backfill?seasons=2023,2024,2025'
-curl -X POST 'http://localhost:3001/etl/sync/stats/J1/backfill?seasons=2023,2024,2025'
-curl -X POST 'http://localhost:3001/etl/sync/rolling-stats/J1/2023'
-curl -X POST 'http://localhost:3001/etl/sync/rolling-stats/J1/2024'
-curl -X POST 'http://localhost:3001/etl/sync/rolling-stats/J1/2025'
+curl -X POST -H "x-admin-token: $ADMIN_API_TOKEN" 'http://localhost:3001/etl/sync/fixtures/sa/backfill?seasons=2023,2024,2025'
+curl -X POST -H "x-admin-token: $ADMIN_API_TOKEN" 'http://localhost:3001/etl/sync/stats/J1/backfill?seasons=2023,2024,2025'
+curl -X POST -H "x-admin-token: $ADMIN_API_TOKEN" 'http://localhost:3001/etl/sync/rolling-stats/J1/2023'
+curl -X POST -H "x-admin-token: $ADMIN_API_TOKEN" 'http://localhost:3001/etl/sync/rolling-stats/J1/2024'
+curl -X POST -H "x-admin-token: $ADMIN_API_TOKEN" 'http://localhost:3001/etl/sync/rolling-stats/J1/2025'
 ```
 
 ---
@@ -61,7 +63,7 @@ curl -X POST 'http://localhost:3001/etl/sync/rolling-stats/J1/2025'
 ## Vérifier l'état
 
 ```bash
-curl 'http://localhost:3001/etl/status'
+curl -H "x-admin-token: $ADMIN_API_TOKEN" 'http://localhost:3001/etl/status'
 pnpm --filter @evcore/db db:stats
 pnpm --filter @evcore/db db:audit:fixtures YYYY-MM-DD
 ```

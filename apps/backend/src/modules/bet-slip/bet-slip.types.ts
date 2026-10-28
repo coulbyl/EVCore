@@ -41,6 +41,8 @@ export type BetSlipView = {
   items: BetSlipItemView[];
   /** Cote d'un combiné au moment du jeu (produit des jambes), sinon null. */
   totalOdds: string | null;
+  /** Supprimable : aucune jambe réglée et aucun match commencé. */
+  deletable: boolean;
   result: BetSlipResultView;
 };
 

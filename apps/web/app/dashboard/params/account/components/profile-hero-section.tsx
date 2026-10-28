@@ -12,6 +12,7 @@ import {
   Lock,
   X,
 } from "lucide-react";
+import { EmailChangeDialog } from "./email-change-dialog";
 import { useTranslations } from "next-intl";
 import { UserAvatar } from "@/components/user-avatar";
 import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
@@ -31,11 +32,13 @@ function ReadOnlyInfoRow({
   label,
   value,
   hint,
+  action,
 }: {
   icon: React.ElementType;
   label: string;
   value: string;
   hint?: string;
+  action?: React.ReactNode;
 }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
@@ -49,6 +52,7 @@ function ReadOnlyInfoRow({
           <span className="block text-xs text-muted-foreground">{hint}</span>
         ) : null}
       </div>
+      {action}
     </div>
   );
 }
@@ -227,9 +231,12 @@ export function ProfileHeroSection() {
 
   return (
     <section className="lg:col-span-2 overflow-hidden rounded-[1.6rem] border border-border bg-panel-strong ev-shell-shadow">
-      {/* Colonnes bornées (minmax 0) : sans elles, la bande d'avatars
-          élargissait la colonne et rognait les cartes sur téléphone. */}
-      <div className="grid grid-cols-1 gap-6 p-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-8 sm:p-7">
+      {/* Une seule colonne jusqu'aux très grands écrans : à côté de la grille
+          d'avatars, la colonne des informations tombait à ~170 px à 1280 px et
+          coupait les libellés et l'adresse (capture du 2026-10-28). Colonnes
+          bornées (minmax 0) au-delà, pour que la bande d'avatars n'élargisse
+          pas la grille. */}
+      <div className="grid grid-cols-1 gap-6 p-5 sm:p-7 2xl:grid-cols-[auto_minmax(0,1fr)] 2xl:gap-8">
         {/* ── Left: avatar + picker ── */}
         <div className="flex min-w-0 flex-col items-center gap-4 sm:items-start">
           <div
@@ -337,7 +344,7 @@ export function ProfileHeroSection() {
         </div>
 
         {/* ── Right: identity + info ── */}
-        <div className="flex flex-col justify-between gap-5">
+        <div className="flex min-w-0 flex-col justify-between gap-5">
           {/* Identity */}
           <div>
             <h2 className="text-base font-bold tracking-tight text-foreground">
@@ -360,14 +367,25 @@ export function ProfileHeroSection() {
 
           {/* Info rows */}
           <div className="group divide-y divide-border overflow-hidden rounded-2xl border border-border bg-background">
-            {/* L'adresse ne se change plus en ligne : sans mot de passe ni
-                code envoyé à la nouvelle adresse, le changement retirait la
-                vérification sans prévenir (revue UX du 2026-10-27, P2-8). */}
+            {/* L'adresse se change avec le mot de passe et un code envoyé à
+                la nouvelle adresse (2026-10-28) ; avant, elle se changeait
+                sans rien, puis plus du tout en ligne (revue UX du
+                2026-10-27, P2-8). */}
             <ReadOnlyInfoRow
               icon={Mail}
               label={t("email")}
               value={currentUser.email}
-              hint={t("emailChangeHint")}
+              action={
+                <EmailChangeDialog
+                  onChanged={(email) =>
+                    setCurrentUser({
+                      ...currentUser,
+                      email,
+                      emailVerified: true,
+                    })
+                  }
+                />
+              }
             />
             <EditableInfoRow
               icon={AtSign}

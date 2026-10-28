@@ -44,6 +44,32 @@ export class BankrollRepository {
     return result._sum.amount ?? new Decimal(0);
   }
 
+  /** Total des retraits déclarés, en valeur positive. */
+  async getWithdrawnTotal(userId: string): Promise<Decimal> {
+    const result = await this.prisma.client.bankrollTransaction.aggregate({
+      where: { userId, type: BankrollTransactionType.WITHDRAWAL },
+      _sum: { amount: true },
+    });
+    return (result._sum.amount ?? new Decimal(0)).negated();
+  }
+
+  /**
+   * Un mouvement à la fois par joueur, jusqu'à la fin de la transaction :
+   * deux retraits simultanés ne lisent plus le même solde.
+   */
+  async lockUserBankroll(
+    userId: string,
+    tx: Prisma.TransactionClient,
+  ): Promise<void> {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}))`;
+  }
+
+  runInTransaction<T>(
+    fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    return this.prisma.client.$transaction(fn);
+  }
+
   getTransactions(input: GetTransactionsInput) {
     const { userId, from, to, limit = 100 } = input;
     return this.prisma.client.bankrollTransaction.findMany({

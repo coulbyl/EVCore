@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   Post,
   Param,
@@ -69,7 +70,7 @@ export class CouponController {
     @Query() query: CouponQueryDto,
   ): Promise<CouponProposalDto[]> {
     const date = query.date ?? formatDateUtc(tomorrowUtc());
-    return this.coupon.getCoupons(date, session.user.id, undefined);
+    return this.coupon.getCoupons(date, session.user.id);
   }
 
   @Post(':id/view')
@@ -90,6 +91,30 @@ export class CouponController {
     @Param('id') id: string,
   ): Promise<void> {
     await this.coupon.recordView(id, session.user.id);
+  }
+
+  // « Suivre ce coupon » : propose de suivre un pari, donc fermé pendant
+  // une pause ; arrêter de suivre reste toujours possible.
+  @Post(':id/follow')
+  @UseGuards(AuthSessionGuard, PausedGuard)
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Follow a coupon without staking (idempotent)' })
+  async follow(
+    @CurrentSession() session: AuthSession,
+    @Param('id') id: string,
+  ): Promise<void> {
+    await this.coupon.follow(id, session.user.id);
+  }
+
+  @Delete(':id/follow')
+  @UseGuards(AuthSessionGuard)
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Stop following a coupon (idempotent)' })
+  async unfollow(
+    @CurrentSession() session: AuthSession,
+    @Param('id') id: string,
+  ): Promise<void> {
+    await this.coupon.unfollow(id, session.user.id);
   }
 
   // POST /coupons/generate retired 2026-09-03 alongside CouponComposerService

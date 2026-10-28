@@ -54,6 +54,18 @@ export type EmailVerificationProps = {
   expiresInMinutes: number;
 };
 
+export type EmailChangeCodeProps = {
+  username: string;
+  code: string;
+  expiresInMinutes: number;
+};
+
+export type EmailChangedProps = {
+  username: string;
+  /** Nouvelle adresse, masquée (« f***@exemple.com »). */
+  newEmail: string;
+};
+
 export type PasswordResetProps = {
   username: string;
   resetUrl: string;

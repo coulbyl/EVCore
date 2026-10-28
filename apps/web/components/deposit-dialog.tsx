@@ -11,24 +11,29 @@ import {
   DialogTrigger,
   Input,
 } from "@evcore/ui";
-import { Loader2, Plus, Wallet, X } from "lucide-react";
+import { Loader2, Minus, Plus, Wallet, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useDepositBankroll } from "@/domains/bankroll/use-cases/deposit-bankroll";
 import { InputAmount } from "@/components/input-amount";
 
 export function DepositDialog({
   trigger,
+  mode = "deposit",
 }: {
   /** Overrides the default "Déclarer un dépôt" button — used to trigger the
    * same dialog from a compact shortcut (e.g. the bet slip's "Solde
    * insuffisant" banner) without duplicating the deposit form itself. */
   trigger?: React.ReactNode;
+  /** « withdraw » : le même formulaire déclare un retrait (2026-10-28). */
+  mode?: "deposit" | "withdraw";
 } = {}) {
-  const t = useTranslations("bankrollPage.deposit");
+  const t = useTranslations(
+    mode === "deposit" ? "bankrollPage.deposit" : "bankrollPage.withdraw",
+  );
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState<number | undefined>();
   const [note, setNote] = useState("");
-  const mutation = useDepositBankroll();
+  const mutation = useDepositBankroll(mode);
 
   function resetForm() {
     setAmount(undefined);
@@ -68,8 +73,11 @@ export function DepositDialog({
     >
       <DialogTrigger asChild>
         {trigger ?? (
-          <Button className="h-11 gap-2">
-            <Plus size={14} />
+          <Button
+            variant={mode === "deposit" ? "default" : "outline"}
+            className="h-11 gap-2"
+          >
+            {mode === "deposit" ? <Plus size={14} /> : <Minus size={14} />}
             {t("trigger")}
           </Button>
         )}
@@ -104,13 +112,13 @@ export function DepositDialog({
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <label
-                htmlFor="deposit-amount"
+                htmlFor={`${mode}-amount`}
                 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
               >
                 {t("amount")}
               </label>
               <InputAmount
-                id="deposit-amount"
+                id={`${mode}-amount`}
                 value={amount}
                 onChange={setAmount}
                 placeholder="50000"
@@ -123,13 +131,13 @@ export function DepositDialog({
 
             <div className="flex flex-col gap-1.5">
               <label
-                htmlFor="deposit-note"
+                htmlFor={`${mode}-note`}
                 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
               >
                 {t("note")}
               </label>
               <Input
-                id="deposit-note"
+                id={`${mode}-note`}
                 type="text"
                 value={note}
                 onChange={(event) => setNote(event.target.value)}

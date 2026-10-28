@@ -1,18 +1,21 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Prisma } from '@evcore/db';
+import { EmailCodePurpose, Prisma } from '@evcore/db';
 import type { UnitMode } from '@evcore/db';
 import { OTP } from 'otplib';
 import QRCode from 'qrcode';
 import type { Response } from 'express';
 import { PrismaService } from '@/prisma.service';
+import { avatarChoiceFor } from '@evcore/analysis-core';
 import { MailService } from '@modules/mail/mail.service';
+import { AccountRepository } from './account.repository';
 import { createLogger } from '@utils/logger';
 
 const logger = createLogger('auth-service');
@@ -62,10 +65,12 @@ const totp = new OTP();
 
 @Injectable()
 export class AuthService {
+  // eslint-disable-next-line max-params -- Nest DI constructor.
   constructor(
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
     private readonly config: ConfigService,
+    private readonly account: AccountRepository,
   ) {}
 
   async register(
@@ -315,6 +320,19 @@ export class AuthService {
   }
 
   async updateMe(userId: string, dto: UpdateMeDto): Promise<AuthSessionUser> {
+    // L'avatar « Oracle » se mérite (badge Diplômé) : l'écran le verrouille,
+    // le serveur aussi depuis le 2026-10-28.
+    const requiredBadge = dto.avatarUrl
+      ? avatarChoiceFor(dto.avatarUrl)?.requiredBadge
+      : undefined;
+    if (
+      requiredBadge &&
+      !(await this.account.hasBadge(userId, requiredBadge))
+    ) {
+      throw new ForbiddenException(
+        'Cet avatar se débloque avec le badge Diplômé.',
+      );
+    }
     const user = await this.prisma.client.user.update({
       where: { id: userId },
       data: {
@@ -394,7 +412,7 @@ export class AuthService {
     }
 
     await this.prisma.client.emailVerificationCode.updateMany({
-      where: { userId, used: false },
+      where: { userId, used: false, purpose: EmailCodePurpose.VERIFY },
       data: { used: true },
     });
 
@@ -420,6 +438,7 @@ export class AuthService {
       where: {
         userId,
         used: false,
+        purpose: EmailCodePurpose.VERIFY,
         expiresAt: { gt: new Date() },
       },
       orderBy: { createdAt: 'desc' },
@@ -635,53 +654,24 @@ export class AuthService {
     userId: string,
     dto: UpdateIdentityDto,
   ): Promise<AuthSessionUser> {
-    const email = dto.email ? normalizeIdentifier(dto.email) : undefined;
     const username = dto.username
       ? normalizeIdentifier(dto.username)
       : undefined;
 
-    if (email !== undefined || username !== undefined) {
-      const conflicts = await this.prisma.client.user.findFirst({
-        where: {
-          AND: [
-            { NOT: { id: userId } },
-            {
-              OR: [
-                ...(email !== undefined ? [{ email }] : []),
-                ...(username !== undefined ? [{ username }] : []),
-              ],
-            },
-          ],
-        },
-        select: { email: true, username: true },
+    if (username !== undefined) {
+      const conflict = await this.prisma.client.user.findFirst({
+        where: { username, NOT: { id: userId } },
+        select: { id: true },
       });
-
-      if (conflicts) {
-        if (email !== undefined && conflicts.email === email) {
-          throw new ConflictException('Cet email est déjà utilisé');
-        }
+      if (conflict) {
         throw new ConflictException("Ce nom d'utilisateur est déjà utilisé");
       }
     }
 
-    const current = await this.prisma.client.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { email: true, mfaMethod: true },
-    });
-
-    const emailChanged = email !== undefined && email !== current.email;
-    const shouldResetVerification =
-      emailChanged && current.mfaMethod === 'EMAIL';
-
     const user = await this.prisma.client.user.update({
       where: { id: userId },
       data: {
-        ...(email !== undefined && { email }),
         ...(username !== undefined && { username }),
-        ...(shouldResetVerification && {
-          emailVerified: false,
-          mfaMethod: null,
-        }),
       },
       select: {
         id: true,

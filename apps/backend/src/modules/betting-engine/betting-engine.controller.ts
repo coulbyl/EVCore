@@ -1,4 +1,5 @@
-import { Controller, Param, Post, HttpCode } from '@nestjs/common';
+import { Controller, Param, Post, HttpCode, UseGuards } from '@nestjs/common';
+import { AdminOrServiceTokenGuard } from '@modules/auth/admin-or-service-token.guard';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import {
@@ -8,6 +9,7 @@ import {
 import type { BettingEngineAnalysisJobData } from '../etl/workers/betting-engine-analysis.worker';
 
 @Controller('betting-engine')
+@UseGuards(AdminOrServiceTokenGuard)
 export class BettingEngineController {
   constructor(
     @InjectQueue(BULLMQ_QUEUES.BETTING_ENGINE)

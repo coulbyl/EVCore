@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { BetStatus, StrategyChannel } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { toNumber } from '@utils/prisma.utils';
+import { marketProbability } from '@evcore/analysis-core';
 import {
   startOfUtcDay,
   endOfUtcDay,
@@ -664,12 +665,34 @@ function announcedOf(selections: SettledSelection[]): number | null {
   );
 }
 
+/**
+ * Fréquence du marché moyenne, 0–1 ; null sans sélection cotée. Somme en
+ * Decimal, comme toute arithmétique de probabilités.
+ */
+function marketOf(selections: SettledSelection[]): number | null {
+  const probabilities = selections
+    .map((s) =>
+      marketProbability({
+        odds: s.odds === null ? null : toNumber(s.odds),
+        market: s.market,
+        marginPaid: s.marginPaid === null ? null : toNumber(s.marginPaid),
+      }),
+    )
+    .filter((p): p is number => p !== null);
+  if (probabilities.length === 0) return null;
+  return probabilities
+    .reduce((acc, p) => acc.plus(p), new Decimal(0))
+    .dividedBy(probabilities.length)
+    .toNumber();
+}
+
 function trackRecordRates(selections: SettledSelection[]): TrackRecordRates {
   const roi = flatBetRoi(asFlatBets(selections));
   return {
     settled: selections.length,
     won: selections.filter((s) => s.result === BetStatus.WON).length,
     announced: announcedOf(selections),
+    market: marketOf(selections),
     realised: hitRateOf(selections),
     returnPerUnit: roi === null ? null : 1 + roi / 100,
     sufficient: selections.length >= TRACK_RECORD_MIN_SAMPLE,
@@ -685,6 +708,8 @@ type SettledSelection = {
   result: BetStatus | null;
   odds: { toString(): string } | null;
   probability: { toString(): string };
+  market: string;
+  marginPaid: { toString(): string } | null;
 };
 
 function asFlatBets(selections: SettledSelection[]): FlatBet[] {
@@ -765,6 +790,7 @@ function channelCompetitionStatsFromSelections(
         roi,
         hitRate: hitRateOf(rows),
         announced: announcedOf(rows),
+        market: marketOf(rows),
         calibrationRatio,
         sampleSize: rows.length,
         status: calibrationStatus(calibrationRatio, rows.length, 30),
@@ -790,6 +816,7 @@ function channelStatsFromSelections(
     oddsAvailabilityRate: 1,
     trend: 'FLAT' as const,
     announced: announcedOf(selections),
+    market: marketOf(selections),
   };
 }
 

@@ -131,6 +131,8 @@ function coupon(overrides) {
     viewerCount: 0,
     playerCount: 0,
     playedByMe: false,
+    followerCount: 0,
+    followedByMe: false,
     result: overrides.result ?? null,
     reasoning: null,
     lastFixtureScheduledAt: "2026-10-05T19:00:00.000Z",
@@ -189,6 +191,27 @@ const COUPONS = [
         score: "1-1",
         market: "DOUBLE_CHANCE",
         pick: "1X",
+      }),
+    ],
+  }),
+  // Chasseur Nul : une sélection, le nul le moins cher de la bande.
+  coupon({
+    id: "hunter-draw",
+    source: "PRICE_COMPOSER",
+    couponClass: "HUNTER_DRAW",
+    targetOddsMin: 2.9,
+    targetOddsMax: 3.6,
+    status: "PENDING",
+    jointProbability: 0.29,
+    legs: [
+      couponLeg({
+        id: "hd1",
+        homeTeam: "Lazio",
+        awayTeam: "Torino",
+        canal: "PRICE",
+        market: "ONE_X_TWO",
+        pick: "DRAW",
+        odds: 3.3,
       }),
     ],
   }),
@@ -714,6 +737,8 @@ const BET_SLIPS = [
       }),
     ],
     totalOdds: null,
+    // Match pas encore commencé : le serveur le dit supprimable.
+    deletable: true,
     result: slipResult({
       staked: "1000.00",
       pendingStake: "1000.00",
@@ -1167,15 +1192,51 @@ const TRACK_RECORD_CHANNELS = [
     channel: "DOUBLE_CHANCE",
     n: 5200,
     announced: 0.78,
+    market: 0.752,
     hitRate: 0.77,
     roi: -2.9,
   },
-  { channel: "DOMINANT", n: 3100, announced: 0.62, hitRate: 0.52, roi: -9.4 },
-  { channel: "DRAW", n: 1400, announced: 0.3, hitRate: 0.29, roi: -4.8 },
-  { channel: "CORRECT_SCORE", n: 20, announced: 0.11, hitRate: 0.05, roi: -41 },
-  { channel: "VALUE", n: 900, announced: 0.55, hitRate: 0.41, roi: -11.2 },
+  {
+    channel: "DOMINANT",
+    n: 3100,
+    announced: 0.62,
+    market: 0.553,
+    hitRate: 0.52,
+    roi: -9.4,
+  },
+  {
+    channel: "DRAW",
+    n: 1400,
+    announced: 0.3,
+    market: 0.287,
+    hitRate: 0.29,
+    roi: -4.8,
+  },
+  {
+    channel: "CORRECT_SCORE",
+    n: 20,
+    announced: 0.11,
+    market: 0.071,
+    hitRate: 0.05,
+    roi: -41,
+  },
+  {
+    channel: "VALUE",
+    n: 900,
+    announced: 0.55,
+    market: 0.448,
+    hitRate: 0.41,
+    roi: -11.2,
+  },
   // Avis IA : hors total sur Mesures historiques, bilan en tête d'Avis IA.
-  { channel: "VANTAGE", n: 300, announced: 0.639, hitRate: 0.647, roi: -2.3 },
+  {
+    channel: "VANTAGE",
+    n: 300,
+    announced: 0.639,
+    market: 0.621,
+    hitRate: 0.647,
+    roi: -2.3,
+  },
 ];
 
 function calibrationStatus({ n, announced, hitRate }) {
@@ -1190,6 +1251,7 @@ const CHANNEL_STATS = TRACK_RECORD_CHANNELS.map((c) => ({
   channel: c.channel,
   hitRate: c.hitRate,
   announced: c.announced,
+  market: c.market,
   avgThreshold: null,
   vsThreshold: null,
   roi: c.roi,
@@ -1213,10 +1275,10 @@ const CHANNEL_HEALTH = TRACK_RECORD_CHANNELS.map((c) => ({
 }));
 
 const CHANNEL_COMPETITION_STATS = [
-  ["PL", "Premier League", "England", 640, 0.77, 0.79],
-  ["FR1", "Ligue 1", "France", 410, 0.78, 0.74],
-  ["CSL", "Chinese Super League", "China", 12, 0.79, 0.67],
-].map(([code, name, country, n, announced, hitRate]) => ({
+  ["PL", "Premier League", "England", 640, 0.77, 0.762, 0.79],
+  ["FR1", "Ligue 1", "France", 410, 0.78, 0.751, 0.74],
+  ["CSL", "Chinese Super League", "China", 12, 0.79, 0.73, 0.67],
+].map(([code, name, country, n, announced, market, hitRate]) => ({
   channel: code === "PL" ? "DOMINANT" : "DOUBLE_CHANCE",
   competitionCode: code,
   competitionName: name,
@@ -1224,6 +1286,7 @@ const CHANNEL_COMPETITION_STATS = [
   roi: -2.1,
   hitRate,
   announced,
+  market,
   calibrationRatio: hitRate / announced,
   sampleSize: n,
   status: calibrationStatus({ n, announced, hitRate }),
@@ -1235,24 +1298,36 @@ const TRACK_RECORD_SUMMARY = {
   settled: 9720,
   won: 6855,
   announced: 0.636,
+  market: 0.596,
   realised: 0.605,
   returnPerUnit: 0.94,
   sufficient: true,
   byOdds: [
-    [null, 1.45, 5600, 0.76, 0.769, 0.969],
-    [1.45, 1.8, 2100, 0.653, 0.594, 0.951],
-    [1.8, null, 1700, 0.317, 0.258, 0.873],
-  ].map(([minOdds, maxOdds, settled, announced, realised, returnPerUnit]) => ({
-    minOdds,
-    maxOdds,
-    settled,
-    won: Math.round(settled * realised),
-    announced,
-    realised,
-    returnPerUnit,
-    sufficient: true,
-    status: calibrationStatus({ n: settled, announced, hitRate: realised }),
-  })),
+    [null, 1.45, 5600, 0.76, 0.751, 0.769, 0.969],
+    [1.45, 1.8, 2100, 0.653, 0.571, 0.594, 0.951],
+    [1.8, null, 1700, 0.317, 0.262, 0.258, 0.873],
+  ].map(
+    ([
+      minOdds,
+      maxOdds,
+      settled,
+      announced,
+      market,
+      realised,
+      returnPerUnit,
+    ]) => ({
+      minOdds,
+      maxOdds,
+      settled,
+      won: Math.round(settled * realised),
+      announced,
+      market,
+      realised,
+      returnPerUnit,
+      sufficient: true,
+      status: calibrationStatus({ n: settled, announced, hitRate: realised }),
+    }),
+  ),
 };
 
 function route(method, url) {
@@ -1270,6 +1345,11 @@ function route(method, url) {
     ];
   if (path === "/auth/me/delete")
     return [400, { message: "Mot de passe incorrect.", statusCode: 400 }];
+  // Changement d'adresse : le code part toujours, la confirmation renvoie
+  // une adresse fixe (le faux backend ne lit pas les corps).
+  if (path === "/auth/me/email/request") return [200, { status: "ok" }];
+  if (path === "/auth/me/email/confirm")
+    return [200, { email: "nouvelle@exemple.com" }];
   if (path === "/auth/login") return [200, SESSION, true];
   // Fiche de match : les équipes du match de Décisions, les lectures
   // évaluées de la première rencontre de FIXTURE_ROWS.
@@ -1354,6 +1434,8 @@ function route(method, url) {
   }
   if (path === "/coupons" && method === "GET") return [200, COUPONS];
   if (path.startsWith("/coupons/") && path.endsWith("/view")) return [204, {}];
+  if (path.startsWith("/coupons/") && path.endsWith("/follow"))
+    return [204, {}];
   if (path.startsWith("/coupons")) return [200, []];
   if (path.startsWith("/channel-decisions/by-channel"))
     return [200, CHANNEL_DECISIONS];
@@ -1414,11 +1496,22 @@ function route(method, url) {
     // doit le porter sans déborder.
     return [200, { balance: "500760000.00" }];
   if (path.startsWith("/bankroll/summary"))
-    return [200, { balance: "500760000.00", deposited: "500000000.00" }];
+    return [
+      200,
+      {
+        balance: "500760000.00",
+        deposited: "500000000.00",
+        withdrawn: "0.00",
+      },
+    ];
   if (path.startsWith("/bankroll/transactions"))
     return [200, BANKROLL_TRANSACTIONS];
   if (path.startsWith("/bankroll")) return [200, []];
   if (path === "/bet-slips" && method === "GET") return [200, BET_SLIPS];
+  if (path.startsWith("/bet-slips/") && method === "DELETE")
+    return [200, { refunded: "1000.00" }];
+  if (path.startsWith("/bankroll/withdrawal"))
+    return [200, { balance: "500759000.00" }];
   if (path.startsWith("/bet-slips/") && method === "GET") {
     const slip = BET_SLIPS.find((b) => path.endsWith(b.id));
     return slip ? [200, slip] : [404, {}];

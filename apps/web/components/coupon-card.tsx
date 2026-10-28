@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Check, MessageCircle, ShoppingCart, Sun, Tag } from "lucide-react";
+import {
+  Bell,
+  Check,
+  MessageCircle,
+  ShoppingCart,
+  Sun,
+  Tag,
+} from "lucide-react";
 import {
   Badge,
   Card,
@@ -399,7 +406,7 @@ export function CouponCard({
           <TapHint
             hint={reasoning}
             // Déjà 44 px : pas de zone étendue, elle mordrait sur le bouton
-            // « Jouer ce coupon » juste en dessous.
+            // « Suivre ce coupon » juste en dessous.
             className="flex min-h-11 w-fit items-center gap-1.5 rounded-full border border-dashed border-border/70 bg-background/20 px-3 text-xs font-medium text-muted-foreground transition-colors after:hidden hover:text-foreground"
           >
             <MessageCircle size={11} />
@@ -535,6 +542,41 @@ function Metric({
         {value}
       </p>
     </div>
+  );
+}
+
+/**
+ * « Suivre ce coupon » : l'action principale depuis le 2026-10-28. On suit
+ * sans déclarer de mise ; le résultat arrive dans le résumé du matin. Un
+ * second appui arrête de suivre.
+ */
+export function CouponFollowButton({
+  followed,
+  pending,
+  onToggle,
+}: {
+  followed: boolean;
+  pending: boolean;
+  onToggle: () => void;
+}) {
+  const t = useTranslations("couponCard");
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      disabled={pending}
+      aria-pressed={followed}
+      data-testid="coupon-follow"
+      className={cn(
+        "flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border text-xs font-semibold transition-colors disabled:opacity-60",
+        followed
+          ? "border-accent/30 bg-accent/12 text-accent"
+          : "border-accent bg-accent text-accent-foreground hover:bg-accent/90",
+      )}
+    >
+      {followed ? <Check size={12} /> : <Bell size={12} />}
+      {followed ? t("following") : t("follow")}
+    </button>
   );
 }
 

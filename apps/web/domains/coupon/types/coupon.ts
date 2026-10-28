@@ -6,7 +6,10 @@ export type CouponClassName =
   | "FAVOURITE"
   | "COMBO"
   | "LONG"
-  | "DOUBLE";
+  | "DOUBLE"
+  | "HUNTER_BTTS"
+  | "HUNTER_DRAW"
+  | "HUNTER_SCORE";
 
 export type CouponSource = "LLM" | "PRICE_COMPOSER" | "ENGINE";
 
@@ -121,6 +124,10 @@ export type CouponProposalDto = {
   viewerCount: number;
   playerCount: number;
   playedByMe: boolean;
+  /** Joueurs qui suivent ce coupon sans mise ; vrai compte. */
+  followerCount: number;
+  /** Le joueur courant le suit (« Suivre ce coupon », 2026-10-28). */
+  followedByMe: boolean;
   result: CouponResult | null;
   /**
    * Écrit par apps/vantage-worker (persist-coupon-proposal.ts) — un blob

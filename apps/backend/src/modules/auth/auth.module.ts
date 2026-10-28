@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { AdminOrServiceTokenGuard } from './admin-or-service-token.guard';
+import { EmailChangeService } from './email-change.service';
 import { MailModule } from '@modules/mail/mail.module';
 import { StorageModule } from '@modules/storage/storage.module';
 import { AccountRepository } from './account.repository';
@@ -20,10 +22,12 @@ import { AuthSessionGuard } from './auth-session.guard';
   providers: [
     AuthService,
     AuthSessionGuard,
+    AdminOrServiceTokenGuard,
     AccountDeletionService,
     AccountPauseService,
+    EmailChangeService,
     AccountRepository,
   ],
-  exports: [AuthService, AuthSessionGuard],
+  exports: [AuthService, AuthSessionGuard, AdminOrServiceTokenGuard],
 })
 export class AuthModule {}

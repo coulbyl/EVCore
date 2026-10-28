@@ -7,7 +7,11 @@ import {
 import { CalibrationVerdict } from "./calibration-verdict";
 
 /**
- * Annoncé et réalisé par tranche de cote, en fréquence.
+ * Fréquence du marché et réalisé par tranche de cote (2026-10-28 ; avant :
+ * la probabilité du moteur). Le joueur lit les deux chiffres côte à côte,
+ * sans verdict ni écart calculé (décision de l'étude Notre sélection : on
+ * n'affiche pas d'avantage mesuré) ; l'admin garde la lecture du moteur.
+ *
  *
  * La moyenne de l'en-tête mélange des favoris à 80 % et des cotes longues à
  * 30 % : elle ne dit pas au joueur si le pourcentage de son pronostic tient.
@@ -19,11 +23,13 @@ export function OddsBandSection({
   bands,
   settledTotal,
   locale,
+  audience,
 }: {
   bands: TrackRecordOddsBand[];
   /** Total de l'en-tête : la différence n'avait pas de cote relevée. */
   settledTotal: number;
   locale: string;
+  audience: "player" | "admin";
 }) {
   const withoutOdds =
     settledTotal - bands.reduce((acc, band) => acc + band.settled, 0);
@@ -48,23 +54,28 @@ export function OddsBandSection({
                 <p className="text-sm font-semibold text-foreground">
                   {formatOddsBand(band, locale)}
                 </p>
-                <CalibrationVerdict
-                  status={band.status}
-                  ratio={ratio}
-                  className="shrink-0"
-                />
+                {audience === "admin" ? (
+                  <CalibrationVerdict
+                    status={band.status}
+                    ratio={ratio}
+                    className="shrink-0"
+                  />
+                ) : null}
               </div>
               <p className="text-sm leading-6 text-muted-foreground">
                 {band.sufficient &&
-                band.announced !== null &&
+                band.market !== null &&
                 band.realised !== null ? (
                   <>
-                    Sur 100 pronostics annoncés à{" "}
-                    {Math.round(band.announced * 100)} %,{" "}
+                    Sur 100 pronostics que la cote donnait à{" "}
+                    {Math.round(band.market * 100)} %,{" "}
                     <span className="font-semibold text-foreground">
                       {Math.round(band.realised * 100)} sont passés
                     </span>
                     .
+                    {audience === "admin" && band.announced !== null
+                      ? ` Le moteur annonçait ${Math.round(band.announced * 100)} %.`
+                      : null}
                   </>
                 ) : (
                   "Moins de 30 pronostics réglés : pas assez de recul pour lire cette tranche."

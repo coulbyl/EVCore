@@ -1,16 +1,19 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import {
   BetSlipType,
   BetSource,
+  BetStatus,
   Market,
   Prisma,
   StrategyChannel,
 } from '@evcore/db';
 import Decimal from 'decimal.js';
+import { formatMoney } from '@evcore/analysis-core';
 import {
   fixedStakeOutcome,
   slipMoney,
@@ -188,7 +191,7 @@ export class BetSlipService {
     const potentialReturn = new Decimal(input.unitStake).times(totalOdds);
     if (potentialReturn.gt(SLIP_LIMITS.MAX_POTENTIAL_RETURN)) {
       throw new BadRequestException(
-        `Gain potentiel (${potentialReturn.toFixed(0)} XOF) dépasse le plafond autorisé de ${SLIP_LIMITS.MAX_POTENTIAL_RETURN.toLocaleString()} XOF`,
+        `Gain potentiel (${formatMoney(potentialReturn.toString())}) dépasse le plafond autorisé de ${formatMoney(SLIP_LIMITS.MAX_POTENTIAL_RETURN.toString())}`,
       );
     }
 
@@ -411,6 +414,60 @@ export class BetSlipService {
     };
   }
 
+  /**
+   * Supprimer un coupon saisi par erreur (2026-10-28) : seulement tant
+   * qu'aucun de ses matchs n'a commencé et qu'aucune jambe n'est réglée, pour
+   * qu'on ne puisse pas effacer un coupon qui part mal. La mise revient au
+   * solde par un mouvement « Coupon supprimé ». Rejouable : la suppression et
+   * le remboursement partagent une transaction, et un second appel ne trouve
+   * plus rien.
+   */
+  async delete(
+    userId: string,
+    slipId: string,
+    now: Date = new Date(),
+  ): Promise<{ refunded: string }> {
+    const slip = await this.repository.findDeletableSlip(userId, slipId);
+    const firstItem = slip?.items[0];
+    if (!slip || !firstItem) throw new NotFoundException('Coupon introuvable');
+    const blocker = deletionBlocker(slip.items, now);
+    if (blocker === 'settled') {
+      throw new ConflictException(
+        'Une jambe de ce coupon est déjà réglée : il ne peut plus être supprimé.',
+      );
+    }
+    if (blocker === 'started') {
+      throw new ConflictException(
+        'Un match de ce coupon a commencé : il ne peut plus être supprimé.',
+      );
+    }
+    // Même mise que celle débitée à la saisie : une fois pour un combiné,
+    // jambe par jambe pour des simples.
+    const unitStake = new Decimal(slip.unitStake.toString());
+    const stake =
+      slip.type === BetSlipType.COMBO
+        ? unitStake
+        : slip.items.reduce(
+            (acc, item) =>
+              acc.plus(
+                item.stakeOverride === null
+                  ? unitStake
+                  : new Decimal(item.stakeOverride.toString()),
+              ),
+            new Decimal(0),
+          );
+
+    await this.repository.runInTransaction(async (tx) => {
+      const deleted = await this.repository.deleteSlip({ slipId, userId }, tx);
+      if (!deleted) throw new NotFoundException('Coupon introuvable');
+      await this.bankroll.recordSlipCancelled(
+        { userId, betId: firstItem.betId, stake },
+        { tx },
+      );
+    });
+    return { refunded: stake.toFixed(2) };
+  }
+
   async list(userId: string, from?: Date, to?: Date): Promise<BetSlipView[]> {
     const betSlips = await this.repository.findUserBetSlips(userId, from, to);
     return betSlips.map(toBetSlipView);
@@ -426,6 +483,27 @@ export class BetSlipService {
     }
     return toBetSlipView(betSlip);
   }
+}
+
+/**
+ * Ce qui empêche de supprimer un coupon, ou null : une jambe réglée, ou un
+ * match commencé. Même règle pour la suppression et pour le bouton.
+ */
+function deletionBlocker(
+  items: readonly {
+    bet: { status: BetStatus };
+    fixture: { scheduledAt: Date };
+  }[],
+  now: Date,
+): 'settled' | 'started' | null {
+  if (items.length === 0) return 'settled';
+  if (items.some((item) => item.bet.status !== BetStatus.PENDING)) {
+    return 'settled';
+  }
+  const firstKickoff = Math.min(
+    ...items.map((item) => item.fixture.scheduledAt.getTime()),
+  );
+  return firstKickoff <= now.getTime() ? 'started' : null;
 }
 
 function toBetSlipView(
@@ -484,6 +562,7 @@ function toBetSlipView(
             )
             .toFixed(2)
         : null,
+    deletable: deletionBlocker(betSlip.items, new Date()) === null,
     result: toResultView(
       slipMoney({
         type: betSlip.type,

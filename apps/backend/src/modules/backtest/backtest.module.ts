@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from '@modules/auth/auth.module';
 import { PrismaModule } from '@/prisma.module';
 import { BacktestController } from './backtest.controller';
 import { BacktestRepository } from './backtest.repository';
@@ -7,7 +8,7 @@ import { ModelCalibrationService } from './model-calibration.service';
 import { ChannelTuningService } from './channel-tuning.service';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, AuthModule],
   controllers: [BacktestController],
   providers: [
     BacktestRepository,

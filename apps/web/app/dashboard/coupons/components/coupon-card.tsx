@@ -18,7 +18,10 @@ import type { CouponProposalDto } from "@/domains/coupon/types/coupon";
 import { couponClassMeta } from "@/domains/coupon/helpers/coupon-class";
 import { couponSourceMeta } from "@/domains/coupon/helpers/coupon-source";
 import type { CouponClassTrackRecord } from "@/domains/coupon/use-cases/use-coupon-track-record";
-import { useRecordCouponView } from "@/domains/coupon/use-cases/use-coupons";
+import {
+  useFollowCoupon,
+  useRecordCouponView,
+} from "@/domains/coupon/use-cases/use-coupons";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import {
   draftItemKey,
@@ -26,6 +29,7 @@ import {
 } from "@/domains/bet-slip/types/bet-slip";
 import {
   CouponCard as SharedCouponCard,
+  CouponFollowButton,
   CouponSlipButton,
   type NormalizedCouponLeg,
 } from "@/components/coupon-card";
@@ -54,6 +58,7 @@ export function CouponCard({
   // Real, verifiable "view" (CouponProposalView, upserted server-side) —
   // once per mount is enough, the backend already dedupes per user.
   const recordView = useRecordCouponView();
+  const follow = useFollowCoupon();
   const viewRecorded = useRef(false);
   useEffect(() => {
     if (viewRecorded.current) return;
@@ -114,7 +119,7 @@ export function CouponCard({
         : null,
   }));
 
-  // "Jouer ce coupon" only makes sense while the proposal itself is still
+  // Following and "Je l'ai joué" only make sense while the proposal itself is still
   // PENDING — once ACCEPTED/REJECTED/EXPIRED its fixtures have moved on
   // (started/finished), same signal the settlement worker already uses to
   // stop touching a proposal (persist-coupon-proposal.ts).
@@ -215,10 +220,28 @@ export function CouponCard({
         betStatus={displayResult}
         legs={legs}
         actionSlot={
-          coupon.playedByMe ? (
-            <CouponSlipButton allInSlip onPlay={handlePlay} playedByMe />
-          ) : isPending && slipItems.length > 0 ? (
-            <CouponSlipButton allInSlip={allInSlip} onPlay={handlePlay} />
+          // Suivre d'abord (sans mise), puis déclarer qu'on l'a joué : la
+          // saisie de coupon reste, en second (2026-10-28).
+          isPending || coupon.playedByMe ? (
+            <div className="flex flex-col gap-2">
+              {isPending ? (
+                <CouponFollowButton
+                  followed={coupon.followedByMe}
+                  pending={follow.isPending}
+                  onToggle={() =>
+                    follow.mutate({
+                      id: coupon.id,
+                      follow: !coupon.followedByMe,
+                    })
+                  }
+                />
+              ) : null}
+              {coupon.playedByMe ? (
+                <CouponSlipButton allInSlip onPlay={handlePlay} playedByMe />
+              ) : slipItems.length > 0 ? (
+                <CouponSlipButton allInSlip={allInSlip} onPlay={handlePlay} />
+              ) : null}
+            </div>
           ) : null
         }
       />

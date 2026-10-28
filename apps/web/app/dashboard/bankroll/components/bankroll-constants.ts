@@ -41,6 +41,10 @@ export function transactionTypeLabel(
       return t("filter.return");
     case "BET_VOID":
       return t("filter.refund");
+    case "SLIP_CANCELLED":
+      return t("filter.slipCancelled");
+    case "WITHDRAWAL":
+      return t("filter.withdrawal");
     default:
       return type;
   }
@@ -57,6 +61,12 @@ export function transactionDetail(
 ): string {
   if (transaction.type === "DEPOSIT") {
     return transaction.note || t("fallback.deposit");
+  }
+  if (transaction.type === "WITHDRAWAL") {
+    return transaction.note || t("fallback.withdrawal");
+  }
+  if (transaction.type === "SLIP_CANCELLED") {
+    return t("fallback.slipCancelled");
   }
   if (transaction.comboLegs !== null) {
     return t("detail.combo", { count: transaction.comboLegs });

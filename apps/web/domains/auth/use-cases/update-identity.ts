@@ -4,7 +4,6 @@ import { authRequest } from "./auth-request";
 import type { AuthSessionUser } from "../types/auth";
 
 type UpdateIdentityPayload = {
-  email?: string;
   username?: string;
 };
 

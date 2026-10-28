@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import type { RiskProfile, UnitMode } from '@evcore/db';
+import { AVATAR_PATHS } from '@evcore/analysis-core';
 import {
   IsBoolean,
   IsIn,
@@ -7,8 +8,6 @@ import {
   IsOptional,
   IsPhoneNumber,
   IsString,
-  IsUrl,
-  Matches,
   Max,
   Min,
 } from 'class-validator';
@@ -29,9 +28,10 @@ export class UpdateMeDto {
   @IsIn(['XOF', 'USD', 'EUR'])
   currency?: string;
 
+  // Un des avatars servis par l'application (2026-10-28) ; plus d'URL
+  // externe. Le badge requis se vérifie dans le service.
   @IsOptional()
-  @IsUrl()
-  @Matches(/^https:\/\/api\.dicebear\.com\//)
+  @IsIn(AVATAR_PATHS)
   avatarUrl?: string;
 
   @IsOptional()

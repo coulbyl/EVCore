@@ -1,0 +1,28 @@
+BTTS (oui) · prix, le moins cher · 112 jours sur 116
+  tout       : 112 jambes · cote méd. 1.50 · annoncé 59.3% · marché 59.3% · réalisé 63.4% · écart au marché +4.1 ± 8.9 pts · réalisé/annoncé 1.07 · coût -0.3% · pire série 4
+  juil.–août :  60 jambes · cote méd. 1.53 · annoncé 58.5% · marché 58.5% · réalisé 68.3% · écart au marché +9.8 ± 11.6 pts · réalisé/annoncé 1.17 · coût +8.3% · pire série 3
+  sept.–oct. :  52 jambes · cote méd. 1.50 · annoncé 60.3% · marché 60.3% · réalisé 57.7% · écart au marché -2.6 ± 13.6 pts · réalisé/annoncé 0.96 · coût -10.2% · pire série 4
+BTTS (oui) · prix, le plus probable · 112 jours sur 116
+  tout       : 112 jambes · cote méd. 1.50 · annoncé 60.7% · marché 60.7% · réalisé 67.0% · écart au marché +6.3 ± 8.7 pts · réalisé/annoncé 1.10 · coût +3.0% · pire série 4
+  juil.–août :  60 jambes · cote méd. 1.53 · annoncé 60.3% · marché 60.3% · réalisé 71.7% · écart au marché +11.4 ± 11.3 pts · réalisé/annoncé 1.19 · coût +10.2% · pire série 4
+  sept.–oct. :  52 jambes · cote méd. 1.50 · annoncé 61.1% · marché 61.1% · réalisé 61.5% · écart au marché +0.5 ± 13.5 pts · réalisé/annoncé 1.01 · coût -5.3% · pire série 4
+BTTS (oui) · moteur · 92 jours sur 116
+  tout       :  92 jambes · cote méd. 1.57 · annoncé 63.4% · marché 58.2% · réalisé 58.7% · écart au marché +0.5 ± 10.1 pts · réalisé/annoncé 0.93 · coût -5.8% · pire série 6
+  juil.–août :  48 jambes · cote méd. 1.60 · annoncé 64.4% · marché 57.6% · réalisé 60.4% · écart au marché +2.8 ± 14.0 pts · réalisé/annoncé 0.94 · coût -2.1% · pire série 3
+  sept.–oct. :  44 jambes · cote méd. 1.57 · annoncé 62.4% · marché 58.7% · réalisé 56.8% · écart au marché -1.9 ± 14.8 pts · réalisé/annoncé 0.91 · coût -9.9% · pire série 6
+Nul · prix, le moins cher · 112 jours sur 116
+  tout       : 112 jambes · cote méd. 3.28 · annoncé 29.6% · marché 29.6% · réalisé 28.6% · écart au marché -1.1 ± 8.4 pts · réalisé/annoncé 0.96 · coût -6.9% · pire série 10
+  juil.–août :  59 jambes · cote méd. 3.22 · annoncé 29.8% · marché 29.8% · réalisé 25.4% · écart au marché -4.4 ± 11.1 pts · réalisé/annoncé 0.85 · coût -18.6% · pire série 9
+  sept.–oct. :  53 jambes · cote méd. 3.32 · annoncé 29.5% · marché 29.5% · réalisé 32.1% · écart au marché +2.6 ± 12.7 pts · réalisé/annoncé 1.09 · coût +6.1% · pire série 10
+Nul · prix, le plus probable · 112 jours sur 116
+  tout       : 112 jambes · cote méd. 2.99 · annoncé 31.4% · marché 31.4% · réalisé 25.0% · écart au marché -6.4 ± 8.0 pts · réalisé/annoncé 0.80 · coût -23.9% · pire série 10
+  juil.–août :  59 jambes · cote méd. 2.99 · annoncé 31.3% · marché 31.3% · réalisé 22.0% · écart au marché -9.3 ± 10.7 pts · réalisé/annoncé 0.70 · coût -32.3% · pire série 6
+  sept.–oct. :  53 jambes · cote méd. 2.99 · annoncé 31.6% · marché 31.6% · réalisé 28.3% · écart au marché -3.3 ± 12.2 pts · réalisé/annoncé 0.90 · coût -14.7% · pire série 10
+Nul · moteur · 102 jours sur 116
+  tout       : 102 jambes · cote méd. 3.20 · annoncé 31.4% · marché 29.8% · réalisé 22.5% · écart au marché -7.2 ± 8.1 pts · réalisé/annoncé 0.72 · coût -28.4% · pire série 9
+  juil.–août :  50 jambes · cote méd. 3.12 · annoncé 32.1% · marché 30.6% · réalisé 22.0% · écart au marché -8.6 ± 11.6 pts · réalisé/annoncé 0.68 · coût -30.3% · pire série 9
+  sept.–oct. :  52 jambes · cote méd. 3.26 · annoncé 30.6% · marché 29.0% · réalisé 23.1% · écart au marché -5.9 ± 11.5 pts · réalisé/annoncé 0.75 · coût -26.5% · pire série 7
+BTTS (oui) · référence, tout le coté de la bande
+  tout       : 2945 jambes · cote méd. 1.67 · annoncé 55.6% · marché 55.6% · réalisé 56.3% · écart au marché +0.7 ± 1.8 pts · réalisé/annoncé 1.01 · coût -5.9% · pire série 9
+Nul · référence, tout le coté de la bande
+  tout       : 1913 jambes · cote méd. 3.36 · annoncé 28.6% · marché 28.6% · réalisé 28.6% · écart au marché -0.0 ± 2.0 pts · réalisé/annoncé 1.00 · coût -4.7% · pire série 18
