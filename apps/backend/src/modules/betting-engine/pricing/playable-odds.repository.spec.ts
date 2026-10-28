@@ -126,4 +126,66 @@ describe('PlayableOddsRepository.findPlayableQuotes', () => {
     expect(sqlOf(withAsOf ?? [])).toContain(asOf.toISOString());
     expect(sqlOf(withoutAsOf ?? [])).not.toContain('observedAt');
   });
+
+  it('prices a corners line on the over/under pair of the same 1xBet snapshot', async () => {
+    const at = new Date('2026-10-30T10:00:00Z');
+    const older = new Date('2026-10-30T08:00:00Z');
+    const prisma = {
+      client: {
+        $queryRaw: vi.fn().mockResolvedValue([
+          {
+            fixtureId: 'f1',
+            market: 'CORNERS',
+            pick: 'OVER',
+            line: 9.5,
+            bookmaker: '1xBet',
+            odds: 1.9,
+            snapshotAt: at,
+          },
+          {
+            fixtureId: 'f1',
+            market: 'CORNERS',
+            pick: 'UNDER',
+            line: 9.5,
+            bookmaker: '1xBet',
+            odds: 1.8,
+            snapshotAt: at,
+          },
+          {
+            fixtureId: 'f1',
+            market: 'CORNERS',
+            pick: 'OVER',
+            line: 10.5,
+            bookmaker: '1xBet',
+            odds: 2.3,
+            snapshotAt: at,
+          },
+          // L'autre côté sur un relevé plus ancien : marge inconnue.
+          {
+            fixtureId: 'f1',
+            market: 'CORNERS',
+            pick: 'UNDER',
+            line: 10.5,
+            bookmaker: '1xBet',
+            odds: 1.5,
+            snapshotAt: older,
+          },
+        ]),
+      },
+    } as unknown as PrismaService;
+    const repository = new PlayableOddsRepository(prisma);
+
+    const quotes = await repository.findPlayableQuotes([
+      { fixtureId: 'f1', market: 'CORNERS', pick: 'OVER', line: 9.5 },
+      { fixtureId: 'f1', market: 'CORNERS', pick: 'OVER', line: 10.5 },
+    ]);
+
+    const main = quotes.get('f1|CORNERS|OVER|9.5');
+    expect(main?.operatorOdds).toBe(1.9);
+    // 1/1,9 + 1/1,8 − 1 = 8,1 %.
+    expect(main?.operatorMargin).toBeCloseTo(0.0819, 3);
+    expect(quotes.get('f1|CORNERS|OVER|10.5')?.operatorMargin).toBeNull();
+    // Une clé sans ligne garde sa forme.
+    expect(quotes.has('f1|CORNERS|OVER')).toBe(false);
+  });
 });

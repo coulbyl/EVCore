@@ -555,6 +555,8 @@ export class CouponRepository {
       fixtureId: string;
       market: Market;
       pick: string;
+      /** Ligne des marchés qui la portent en colonne (corners). */
+      line?: number | null;
       odds: number;
       expectedReturn: number;
       /** Canal d'origine de la jambe (combiné du moteur) ; PRICE sinon. */
@@ -633,6 +635,7 @@ export class CouponRepository {
             canal: leg.canal ?? profile.legCanal ?? StrategyChannel.PRICE,
             market: leg.market,
             pick: leg.pick,
+            line: leg.line == null ? null : new Prisma.Decimal(leg.line),
             probability: new Prisma.Decimal(
               Math.min(
                 leg.probability ?? leg.expectedReturn / leg.odds,

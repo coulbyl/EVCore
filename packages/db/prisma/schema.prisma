@@ -1204,6 +1204,9 @@ model CouponProposalLeg {
   canal             StrategyChannel
   market            Market
   pick              String
+  // Ligne des marchés qui la portent en colonne (corners, lot 6), comme
+  // odds_snapshot.line ; nulle pour les marchés dont la ligne est dans pick.
+  line              Decimal?        @db.Decimal(6, 2)
   probability       Decimal         @db.Decimal(5, 4)
   oddsSnapshot      Decimal?        @db.Decimal(6, 3)
   // Prix chez le book des joueurs (1xBet) à la génération, et la marge de

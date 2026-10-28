@@ -50,6 +50,7 @@ export class CouponService {
             fixtureId: leg.fixtureId,
             market: leg.market as string,
             pick: leg.pick,
+            line: leg.line == null ? null : Number(leg.line),
           })),
         ),
       )
@@ -82,6 +83,7 @@ export class CouponService {
         canal: leg.canal,
         market: leg.market,
         pick: leg.pick,
+        line: leg.line == null ? null : Number(leg.line),
         probability: Number(leg.probability),
         // Fréquence affichée au joueur : celle du marché, marge retirée
         // (2026-10-28). Le coupon cote 2 la porte déjà, exacte, dans
@@ -278,13 +280,19 @@ function formatFixtureScore(scores: {
 
 function playableFor(
   quotes: Map<string, PlayableQuote>,
-  leg: { fixtureId: string; market: string; pick: string },
+  leg: {
+    fixtureId: string;
+    market: string;
+    pick: string;
+    line: { toString(): string } | null;
+  },
 ): PlayableQuote | undefined {
   return quotes.get(
     playableQuoteKey({
       fixtureId: leg.fixtureId,
       market: leg.market,
       pick: leg.pick,
+      line: leg.line == null ? null : Number(leg.line.toString()),
     }),
   );
 }

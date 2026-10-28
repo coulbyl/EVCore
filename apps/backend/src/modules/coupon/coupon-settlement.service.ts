@@ -113,6 +113,7 @@ export class CouponSettlementService {
         fixtureId: leg.fixtureId,
         market: leg.market,
         pick: leg.pick,
+        line: leg.line == null ? null : Number(leg.line),
       })),
       { asOf: proposal.generatedAt },
     );
@@ -123,6 +124,7 @@ export class CouponSettlementService {
             fixtureId: leg.fixtureId,
             market: leg.market,
             pick: leg.pick,
+            line: leg.line == null ? null : Number(leg.line),
           }),
         );
         return quote?.operatorOdds == null

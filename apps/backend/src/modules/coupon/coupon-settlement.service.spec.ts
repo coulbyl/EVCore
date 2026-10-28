@@ -23,6 +23,7 @@ function makeLeg(overrides: {
     fixtureId: overrides.fixtureId,
     market: overrides.market ?? Market.OVER_UNDER,
     pick: overrides.pick ?? 'OVER',
+    line: null,
     isCorrect: overrides.isCorrect ?? null,
     oddsSnapshot: overrides.oddsSnapshot ?? 2.0,
     closingOdds: overrides.closingOdds ?? null,
@@ -547,8 +548,18 @@ describe('CouponSettlementService.settleProposal — 1xBet price of the legs', (
 
     expect(findPlayableQuotes).toHaveBeenCalledWith(
       [
-        { fixtureId: 'f1', market: Market.OVER_UNDER, pick: 'OVER' },
-        { fixtureId: 'f3', market: Market.OVER_UNDER, pick: 'OVER' },
+        {
+          fixtureId: 'f1',
+          market: Market.OVER_UNDER,
+          pick: 'OVER',
+          line: null,
+        },
+        {
+          fixtureId: 'f3',
+          market: Market.OVER_UNDER,
+          pick: 'OVER',
+          line: null,
+        },
       ],
       { asOf: GENERATED_AT },
     );
