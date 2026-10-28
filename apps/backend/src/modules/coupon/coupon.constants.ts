@@ -304,6 +304,17 @@ export const FAVOURITE_POLICY = {
 } as const;
 
 /**
+ * Politique du coupon cote 2 (règle et mesure dans DOUBLE_COUPON_CLASS /
+ * composeDouble, @evcore/analysis-core) : tout ce qui est coté, classé par la
+ * probabilité du marché sans marge (docs/audits/2026-10-28/
+ * SELECTIONS-LAISSEES.md).
+ */
+export const DOUBLE_POLICY = {
+  version: 'double-market-v1',
+  pass: 'double',
+} as const;
+
+/**
  * Politique du combiné du jour sur les sélections du moteur (règle et
  * mesure dans COMBO_COUPON_CLASS / composeEngineCombo, @evcore/analysis-core).
  *

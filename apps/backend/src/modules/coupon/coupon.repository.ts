@@ -10,7 +10,10 @@ import {
   Prisma,
   StrategyChannel,
 } from '@evcore/db';
-import { UNIFIED_COUPON_CLASS } from '@evcore/analysis-core';
+import {
+  POOL_EXCLUDED_MARKETS,
+  UNIFIED_COUPON_CLASS,
+} from '@evcore/analysis-core';
 import {
   PRICE_COMPOSER_POLICY,
   PRICE_COMPOSER_SIGNAL_WINDOW_DAYS,
@@ -669,6 +672,7 @@ export class CouponRepository {
         AND s."scheduledAt" < ${opts.to}
         AND s."scheduledAt" > now()
         AND NOT (s.channel::text = ANY(${[...opts.excludedChannels]}::text[]))
+        AND s.market::text <> ALL(${[...POOL_EXCLUDED_MARKETS]}::text[])
         AND s."fixtureId" NOT IN (${calibrationAlertedFixtureIds(opts.from, opts.to)})
     `;
   }
@@ -757,6 +761,35 @@ export class CouponRepository {
     `;
   }
 
+  /**
+   * Vivier du coupon cote 2 : tout ce que le moteur a envisagé et qui est
+   * coté, retenu ou rejeté, hors types de pari suspendus (cohérence avec
+   * Décisions) et hors matchs « Données suspectes ». Le groupe d'issues
+   * complet est nécessaire pour retirer la marge : on garde toutes les
+   * issues, le compositeur filtre lui-même la bande de cote.
+   */
+  async findDoubleCandidates(opts: {
+    from: Date;
+    to: Date;
+  }): Promise<readonly PriceCandidateRow[]> {
+    return this.prisma.client.$queryRaw<PriceCandidateRow[]>`
+      SELECT "fixtureId",
+             competition,
+             market,
+             pick,
+             odds::float                AS odds,
+             ${Prisma.raw(ODDS_BAND_SQL)} AS band,
+             "scheduledAt"
+      FROM public.evaluated_pick
+      WHERE "fixtureStatus" NOT IN ('FINISHED', 'POSTPONED', 'CANCELLED')
+        AND "scheduledAt" >= ${opts.from}
+        AND "scheduledAt" < ${opts.to}
+        AND coalesce(rejection_reason, '') <> 'market_suspended'
+        AND market <> ALL(${[...POOL_EXCLUDED_MARKETS]}::text[])
+        AND "fixtureId" NOT IN (${calibrationAlertedFixtureIds(opts.from, opts.to)})
+    `;
+  }
+
   async findPriceCandidates(opts: {
     from: Date;
     to: Date;
@@ -773,6 +806,7 @@ export class CouponRepository {
       WHERE "fixtureStatus" NOT IN ('FINISHED', 'POSTPONED', 'CANCELLED')
         AND "scheduledAt" >= ${opts.from}
         AND "scheduledAt" < ${opts.to}
+        AND market <> ALL(${[...POOL_EXCLUDED_MARKETS]}::text[])
         AND "fixtureId" NOT IN (${calibrationAlertedFixtureIds(opts.from, opts.to)})
     `;
   }
