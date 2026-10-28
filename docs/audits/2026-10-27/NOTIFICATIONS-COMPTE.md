@@ -72,9 +72,24 @@ docker exec -i evcore-postgres psql -U postgres -d evcore < docs/audits/2026-10-
    - pour chaque type de pari suivi, « du … au …, sur N réglées : X % réalisées pour Y % annoncées ».
 2. **L'adresse e-mail ne se change plus en ligne.** Le bon parcours demande du travail backend : mot de passe, puis code envoyé à la nouvelle adresse avant de basculer. En attendant, le joueur écrit à l'équipe.
 
-## Questions ouvertes
+## Suite du 28/10 : suppression, pause et résumé du matin
 
-1. **Quelles notifications le joueur doit-il recevoir ?** Proposition de la revue : le règlement de ses coupons déclarés, pertes comprises. Jamais « les coupons du jour sont publiés », qui pousserait à jouer.
-2. **Pause et suppression en libre-service.** La pause doit-elle seulement couper les notifications, ou aussi masquer les coupons pendant N jours ? Pour l'instant, la carte « Jeu responsable » renvoie vers l'équipe pour supprimer le compte.
-3. **Le consentement téléphone** parle de « prospection terrain ». Le texte n'est pas touché : en changer le sens après coup changerait ce à quoi les joueurs ont consenti.
-4. Les 10 avatars sont chargés depuis `api.dicebear.com`. Les servir localement allégerait la page en 3G.
+Les trois questions ouvertes ont été tranchées par l'utilisateur le 28/10, sur recommandation. Elles sont livrées dans cet ordre, parce que la pause doit pouvoir couper les notifications.
+
+| Commit                 | Changement                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `799efb21`, `cfac64b0` | **Suppression du compte en libre-service.** Mot de passe demandé, effet immédiat, pas de délai de grâce. Tout part en cascade, plus les paris propres au joueur et ses pièces jointes de support. Les comptes admin sont refusés. Rejouée à blanc sur la copie de prod, la suppression d'un joueur ne laisse rien. CGU, Confidentialité et Jeu responsable sont mises à jour.                                                                |
+| `969bc5ed`, `9c5480ea` | **Pause de 24 heures, 7 jours ou 30 jours**, sans retour anticipé : elle ne peut que se prolonger. Pendant la pause, le serveur refuse ce qui propose un pari (coupons, Décisions, Avis IA, fiche de match, saisie de coupon, export d'analyse). Les annonces ne sont plus poussées. L'écran remplace ces pages par l'annonce de la pause. L'historique reste ouvert. La boîte de suppression propose la pause une fois.                     |
+| `8f475c8f`, `a2ac2239` | **Résumé du matin**, à 8 h UTC : « Tes coupons d'hier — 2 coupons réglés : 1 gagné, 1 perdu. Misé 2 000 F, rendu 1 540 F : -460 F. » Un par joueur et par jour, dans l'app et en push vers ses appareils, avec un lien vers Mes coupons. Une perte s'écrit comme un gain, sans appel à rejouer. Jamais pendant une pause, et jamais deux fois le même jour. Sur la copie de prod, 10 joueurs ont déjà déclaré un coupon, au plus 2 par jour. |
+
+**Deux migrations à lancer en prod avant de déployer le backend** :
+
+- `20261028120000_add_user_paused_until` ;
+- `20261028130000_add_slips_settled_digest_notification`.
+
+Elles sont appliquées sur la copie locale.
+
+## Questions encore ouvertes
+
+1. **Le consentement téléphone** parle de « prospection terrain ». Le texte n'est pas touché : en changer le sens après coup changerait ce à quoi les joueurs ont consenti.
+2. Les 10 avatars sont chargés depuis `api.dicebear.com`. Les servir localement allégerait la page en 3G.
