@@ -20,6 +20,8 @@ const CHANNEL_SELECTION_DASHBOARD_SELECT = {
   result: true,
   odds: true,
   probability: true,
+  market: true,
+  marginPaid: true,
   channelDecision: {
     select: {
       channel: true,
