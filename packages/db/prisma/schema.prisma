@@ -569,20 +569,28 @@ model ModelRun {
 // that change was for the better (2026-09-07, user request after noticing
 // picks/reasoning "renew" as kickoff nears).
 model VantageDecisionHistory {
-  id            String                @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  fixtureId     String                @db.Uuid
-  fixture       Fixture               @relation(fields: [fixtureId], references: [id])
-  modelRunId    String                @db.Uuid
-  modelRun      ModelRun              @relation(fields: [modelRunId], references: [id])
-  status        ChannelDecisionStatus
-  reasonCode    String?
-  reasonDetails Json?
-  configVersion String?
-  market        Market?
-  pick          String?
-  probability   Decimal?              @db.Decimal(5, 4)
-  odds          Decimal?              @db.Decimal(6, 3)
-  createdAt     DateTime              @default(now())
+  id             String                @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  fixtureId      String                @db.Uuid
+  fixture        Fixture               @relation(fields: [fixtureId], references: [id])
+  modelRunId     String                @db.Uuid
+  modelRun       ModelRun              @relation(fields: [modelRunId], references: [id])
+  status         ChannelDecisionStatus
+  reasonCode     String?
+  reasonDetails  Json?
+  configVersion  String?
+  market         Market?
+  pick           String?
+  probability    Decimal?              @db.Decimal(5, 4)
+  odds           Decimal?              @db.Decimal(6, 3)
+  // Provenance de la cote, comme ChannelSelection (2026-10-29).
+  oddsBookmaker  String?
+  oddsSnapshotAt DateTime?
+  marginPaid     Decimal?              @db.Decimal(5, 4)
+  // Résultat de l'avis réglé sur le score final : le bilan de l'IA lit
+  // l'historique figé, jamais la ligne vivante réécrite par upsert.
+  result         BetStatus?
+  settledAt      DateTime?
+  createdAt      DateTime              @default(now())
 
   @@index([fixtureId, createdAt])
   @@index([modelRunId])

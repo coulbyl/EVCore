@@ -1,5 +1,5 @@
 import type { Logger } from "pino";
-import { prisma } from "@evcore/db";
+import { prisma, vantageCohortSql } from "@evcore/db";
 import { Market } from "@evcore/analysis-core";
 import type { StrategyChannel } from "@evcore/analysis-core";
 import { STRATEGY_CHANNEL } from "@evcore/analysis-core";
@@ -256,17 +256,30 @@ async function loadVantageMarketCalibration(
   const since = new Date(
     before.getTime() - VANTAGE_SELF_CALIBRATION.windowDays * 86_400_000,
   );
-  const rows = await prisma.channelSelection.findMany({
+  // L'historique figé, pas la ligne vivante : un avis réécrit après le coup
+  // d'envoi ne doit pas noter la fiabilité de l'IA (2026-10-29).
+  const cohort = await prisma.$queryRaw<{ id: string }[]>(
+    vantageCohortSql({ asOf: before, since }),
+  );
+  const history = await prisma.vantageDecisionHistory.findMany({
     where: {
+      id: { in: cohort.map((row) => row.id) },
       result: { in: ["WON", "LOST"] },
       odds: { lte: VANTAGE_SELF_CALIBRATION.maxOdds },
-      channelDecision: {
-        channel: STRATEGY_CHANNEL.VANTAGE,
-        modelRun: { fixture: { scheduledAt: { gte: since, lt: before } } },
-      },
     },
     select: { market: true, result: true, probability: true },
   });
+  const rows = history.flatMap((row) =>
+    row.market === null || row.probability === null
+      ? []
+      : [
+          {
+            market: row.market,
+            result: row.result,
+            probability: row.probability,
+          },
+        ],
+  );
   const byMarket = new Map<
     Market,
     { won: number; total: number; announced: number }

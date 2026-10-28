@@ -117,6 +117,15 @@ export async function persistVantageDecision(
         probability:
           response.verdict === "play" ? response.probability : undefined,
         odds: response.verdict === "play" ? (odds ?? undefined) : undefined,
+        // Provenance de la cote, comme la sélection vivante : le bilan de
+        // l'IA lit l'historique figé (2026-10-29).
+        ...(response.verdict === "play" && quote
+          ? {
+              oddsBookmaker: quote.bookmaker ?? undefined,
+              oddsSnapshotAt: quote.snapshotAt ?? undefined,
+              marginPaid: quote.marginPaid ?? undefined,
+            }
+          : {}),
       },
     }),
   ]);

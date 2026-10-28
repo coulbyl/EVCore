@@ -1,4 +1,4 @@
-import { prematchCohortSql } from '@evcore/db';
+import { prematchCohortSql, vantageCohortSql } from '@evcore/db';
 import { Injectable } from '@nestjs/common';
 import {
   BetSource,
@@ -361,7 +361,80 @@ export class DashboardRepository {
       selections.push(...batch);
     }
 
+    if (channels.includes(StrategyChannel.VANTAGE)) {
+      selections.push(...(await this.findVantageCohort(range)));
+    }
     return selections;
+  }
+
+  /**
+   * Avis VANTAGE comptés, lus sur l'historique figé (vantageCohortSql) et
+   * mis à la forme d'une sélection : la ligne vivante, réécrite par upsert
+   * et parfois après le coup d'envoi, n'entre dans aucun bilan (2026-10-29).
+   */
+  private async findVantageCohort(range: {
+    since: Date;
+    until: Date;
+  }): Promise<DashboardChannelSelection[]> {
+    const cohort = await this.prisma.client.$queryRaw<{ id: string }[]>(
+      vantageCohortSql({
+        asOf: new Date(),
+        since: range.since,
+        until: range.until,
+      }),
+    );
+    const rows: DashboardChannelSelection[] = [];
+    for (
+      let offset = 0;
+      offset < cohort.length;
+      offset += CHANNEL_SELECTION_QUERY_BATCH_SIZE
+    ) {
+      const ids = cohort
+        .slice(offset, offset + CHANNEL_SELECTION_QUERY_BATCH_SIZE)
+        .map((row) => row.id);
+      const batch = await this.prisma.client.vantageDecisionHistory.findMany({
+        where: {
+          id: { in: ids },
+          result: { in: [BetStatus.WON, BetStatus.LOST] },
+          odds: { not: null },
+          market: { not: null },
+        },
+        select: {
+          result: true,
+          odds: true,
+          probability: true,
+          market: true,
+          marginPaid: true,
+          fixture: {
+            select: {
+              season: {
+                select: {
+                  competition: {
+                    select: { code: true, name: true, country: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      for (const row of batch) {
+        if (row.market === null || row.probability === null) continue;
+        rows.push({
+          result: row.result,
+          odds: row.odds,
+          probability: row.probability,
+          market: row.market,
+          marginPaid: row.marginPaid,
+          channelDecision: {
+            channel: StrategyChannel.VANTAGE,
+            modelRun: { fixture: row.fixture },
+          },
+        });
+      }
+    }
+    return rows;
   }
 
   getLeaderboardData(since: Date) {
