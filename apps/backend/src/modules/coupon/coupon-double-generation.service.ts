@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import Decimal from 'decimal.js';
 import {
   DOUBLE_COUPON_CLASS,
   composeDouble,
@@ -90,10 +91,10 @@ export class CouponDoubleGenerationService {
     }
 
     const referenceOdds = composition.legs.reduce(
-      (acc, leg) => acc * leg.odds,
-      1,
+      (acc, leg) => acc.times(leg.odds),
+      new Decimal(1),
     );
-    const probability = composition.probability.toNumber();
+    const probability = composition.probability;
     const kickoffs = composition.legs.map(
       (leg) =>
         rows.find((row) => row.fixtureId === leg.fixtureId)?.scheduledAt ??
@@ -106,8 +107,8 @@ export class CouponDoubleGenerationService {
     // qui la rend égale à la probabilité du marché.
     const proposalId = await this.repository.upsertPriceComposerProposal({
       forDate: dayStart,
-      combinedOdds: referenceOdds,
-      expectedReturn: probability * referenceOdds,
+      combinedOdds: referenceOdds.toNumber(),
+      expectedReturn: probability.times(referenceOdds).toNumber(),
       lastFixtureScheduledAt: lastKickoff,
       legs: composition.legs.map((leg) => ({
         fixtureId: leg.fixtureId,
@@ -115,7 +116,7 @@ export class CouponDoubleGenerationService {
         pick: leg.pick,
         odds: leg.odds,
         probability: leg.fair.toNumber(),
-        expectedReturn: leg.fair.toNumber() * leg.odds,
+        expectedReturn: leg.fair.times(leg.odds).toNumber(),
       })),
       profile: {
         targetOddsMin: DOUBLE_COUPON_CLASS.targetOddsMin,
@@ -133,7 +134,7 @@ export class CouponDoubleGenerationService {
     this.logger.log(
       `Coupon cote 2 ${dayStart.toISOString().slice(0, 10)} : ` +
         `${composition.legs.map((l) => `${l.market}/${l.pick}`).join(' + ')} ` +
-        `à ${composition.playableCombinedOdds.toFixed(2)} (${(probability * 100).toFixed(0)} %)`,
+        `à ${composition.playableCombinedOdds.toFixed(2)} (${probability.times(100).toFixed(0)} %)`,
     );
     return {
       outcome: 'composed',

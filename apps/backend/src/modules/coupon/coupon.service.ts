@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import Decimal from 'decimal.js';
 import { CouponProposalStatus } from '@evcore/db';
 import { CouponRepository } from './coupon.repository';
 import {
@@ -133,7 +134,13 @@ export class CouponService {
         marketJointProbability: legs.every(
           (leg) => leg.marketProbability !== null,
         )
-          ? legs.reduce((acc, leg) => acc * (leg.marketProbability ?? 1), 1)
+          ? legs
+              .reduce(
+                (acc, leg) => acc.times(leg.marketProbability ?? 1),
+                new Decimal(1),
+              )
+              .toDecimalPlaces(4)
+              .toNumber()
           : null,
         signalScore: Number(p.signalScore),
         status: p.status,

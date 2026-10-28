@@ -65,9 +65,14 @@ function better(candidate: Combo, best: Combo | null): boolean {
   return cmp > 0 || (cmp === 0 && candidate.margin.lt(best.margin));
 }
 
+// Produit de cotes en Decimal, comme toute arithmétique de cotes (CLAUDE.md),
+// pour que les bornes 2 et 3 se lisent exactement.
 function inWindow(legs: readonly DoubleLeg[], bounds: CouponClass): boolean {
-  const odds = legs.reduce((acc, leg) => acc * leg.playableOdds, 1);
-  return odds >= bounds.targetOddsMin && odds <= bounds.targetOddsMax;
+  const odds = legs.reduce(
+    (acc, leg) => acc.times(leg.playableOdds),
+    new Decimal(1),
+  );
+  return odds.gte(bounds.targetOddsMin) && odds.lte(bounds.targetOddsMax);
 }
 
 function distinctFixtures(legs: readonly DoubleLeg[]): boolean {

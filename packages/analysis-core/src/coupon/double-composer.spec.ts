@@ -60,6 +60,17 @@ describe("priceDoubleCandidates", () => {
 });
 
 describe("composeDouble", () => {
+  it("includes a pair exactly on the 2.00 floor", () => {
+    // 1,25 × 1,60 = 2,00 : la borne est incluse et lue exactement.
+    const result = composeDouble([
+      ...overUnder("f1", 1.25, 3.6),
+      ...overUnder("f2", 1.6, 2.2),
+    ]);
+    expect(result.outcome).toBe("composed");
+    if (result.outcome !== "composed") return;
+    expect(result.playableCombinedOdds.toFixed(2)).toBe("2.00");
+  });
+
   it("takes the pair the market rates most likely inside the 2–3 window", () => {
     const result = composeDouble([
       ...overUnder("f1", 1.45, 2.65),
