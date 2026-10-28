@@ -39,6 +39,19 @@ test("le lundi, l'Accueil montre le relevé de la semaine", async ({ page }) => 
   ).toBeVisible();
 });
 
+test("l'admin lit la fidélisation sur l'accueil", async ({ page }) => {
+  test.skip(
+    process.env.E2E_ROLE === "OPERATOR",
+    "vue admin : lancer sans E2E_ROLE",
+  );
+  await page.goto("/dashboard");
+  const card = page.getByTestId("retention-card");
+  await expect(card).toContainText("Fidélisation");
+  await expect(card).toContainText("Actifs / 7 j");
+  await expect(card).toContainText("Matinée ouverte");
+  await expect(card).toContainText("2026-10-12");
+});
+
 test.describe("Notifications", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/dashboard/notifications");

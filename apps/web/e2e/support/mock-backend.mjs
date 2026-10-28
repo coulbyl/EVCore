@@ -849,6 +849,23 @@ const ANNOUNCEMENTS = [
   },
 ];
 
+const RETENTION = {
+  asOf: "2026-10-28",
+  active: { dau: 4, wau: 11, mau: 23 },
+  engagement: { weeklyActive: 11, followedRate: 0.182, declaredRate: 0.364 },
+  notifications: [{ type: "MORNING_BRIEF", sent: 40, opened: 9, rate: 0.225 }],
+  cohorts: [
+    {
+      week: "2026-10-12",
+      signups: 7,
+      activation: 0.286,
+      d7: { eligible: 7, rate: 0.429 },
+      d14: { eligible: 7, rate: 0.143 },
+      d30: { eligible: 0, rate: null },
+    },
+  ],
+};
+
 const PLAYER_NOTIFICATIONS = [
   [
     "n1",
@@ -1552,6 +1569,14 @@ function route(method, url) {
       : NOTIFICATIONS;
     return [200, { data, total: data.length, limit: 20, offset: 0 }];
   }
+  // Listes de l'accueil admin : `{}` faisait planter EngineHealthCard.
+  if (
+    path === "/risk/calibration-curve" ||
+    path === "/risk/suspensions/active" ||
+    path.startsWith("/risk/alerts")
+  )
+    return [200, []];
+  if (path === "/dashboard/retention") return [200, RETENTION];
   if (path.startsWith("/risk")) return [200, {}];
   if (path.startsWith("/adjustment")) return [200, []];
   // Une requête React Query qui reçoit `{}` ou undefined fait planter la
