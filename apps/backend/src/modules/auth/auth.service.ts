@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -12,7 +13,9 @@ import { OTP } from 'otplib';
 import QRCode from 'qrcode';
 import type { Response } from 'express';
 import { PrismaService } from '@/prisma.service';
+import { avatarChoiceFor } from '@evcore/analysis-core';
 import { MailService } from '@modules/mail/mail.service';
+import { AccountRepository } from './account.repository';
 import { createLogger } from '@utils/logger';
 
 const logger = createLogger('auth-service');
@@ -62,10 +65,12 @@ const totp = new OTP();
 
 @Injectable()
 export class AuthService {
+  // eslint-disable-next-line max-params -- Nest DI constructor.
   constructor(
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
     private readonly config: ConfigService,
+    private readonly account: AccountRepository,
   ) {}
 
   async register(
@@ -315,6 +320,19 @@ export class AuthService {
   }
 
   async updateMe(userId: string, dto: UpdateMeDto): Promise<AuthSessionUser> {
+    // L'avatar « Oracle » se mérite (badge Diplômé) : l'écran le verrouille,
+    // le serveur aussi depuis le 2026-10-28.
+    const requiredBadge = dto.avatarUrl
+      ? avatarChoiceFor(dto.avatarUrl)?.requiredBadge
+      : undefined;
+    if (
+      requiredBadge &&
+      !(await this.account.hasBadge(userId, requiredBadge))
+    ) {
+      throw new ForbiddenException(
+        'Cet avatar se débloque avec le badge Diplômé.',
+      );
+    }
     const user = await this.prisma.client.user.update({
       where: { id: userId },
       data: {

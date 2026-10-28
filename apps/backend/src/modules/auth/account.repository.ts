@@ -31,6 +31,14 @@ export class AccountRepository {
     });
   }
 
+  async hasBadge(userId: string, badgeCode: string): Promise<boolean> {
+    const badge = await this.prisma.client.userBadge.findUnique({
+      where: { userId_badgeCode: { userId, badgeCode } },
+      select: { id: true },
+    });
+    return badge !== null;
+  }
+
   findIdentity(
     userId: string,
   ): Promise<{ email: string; username: string } | null> {

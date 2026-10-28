@@ -76,6 +76,25 @@ export default function MentionsLegalesPage() {
           aucun fonds et ne perçoit aucune commission sur les paris.
         </p>
       </section>
+
+      <section>
+        <h2>Crédits</h2>
+        <p>
+          Avatars : style « Micah » de{" "}
+          <a href="https://www.dicebear.com" className="underline">
+            DiceBear
+          </a>
+          , remix de « Avatar Illustration System » par Micah Lanier, sous
+          licence{" "}
+          <a
+            href="https://creativecommons.org/licenses/by/4.0/deed.fr"
+            className="underline"
+          >
+            CC BY 4.0
+          </a>
+          . Fichiers repris sans modification, servis par EVCore.
+        </p>
+      </section>
     </LegalPage>
   );
 }
