@@ -55,6 +55,7 @@ export function plainTextPreview(html: string): string {
 /** Où mène une notification : l'annonce elle-même, ou la conversation. */
 export function notificationHref(n: NotificationView): string | null {
   if (n.type === "SUPPORT_MESSAGE") return "/dashboard/inbox";
+  if (n.type === "SLIPS_SETTLED_DIGEST") return "/dashboard/bet-slips";
   if (n.type === "ANNOUNCEMENT_PUBLISHED") {
     const id = n.payload?.announcementId;
     return typeof id === "string"

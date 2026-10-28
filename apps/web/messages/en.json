@@ -291,7 +291,7 @@
     "severity": {
       "high": "Critical"
     },
-    "intro": "EVCore announcements and the team's replies to your messages.",
+    "intro": "EVCore announcements, the team's replies and, each morning, the result of your previous day's coupons.",
     "emptyUnread": "Everything is read.",
     "loadError": "Your notifications could not be loaded.",
     "retry": "Try again",
@@ -309,11 +309,13 @@
     },
     "kind": {
       "ANNOUNCEMENT_PUBLISHED": "Announcement",
-      "SUPPORT_MESSAGE": "EVCore team"
+      "SUPPORT_MESSAGE": "EVCore team",
+      "SLIPS_SETTLED_DIGEST": "Your coupons"
     },
     "open": {
       "ANNOUNCEMENT_PUBLISHED": "Read the announcement",
-      "SUPPORT_MESSAGE": "Open the conversation"
+      "SUPPORT_MESSAGE": "Open the conversation",
+      "SLIPS_SETTLED_DIGEST": "See my coupons"
     }
   },
   "updates": {

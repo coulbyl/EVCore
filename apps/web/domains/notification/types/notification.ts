@@ -12,6 +12,8 @@ export type NotificationType =
   // l'abonnement retiré (SUBSCRIPTION_*) ne sont plus servis depuis le
   // 2026-10-27.
   | "SUPPORT_MESSAGE"
+  // Résumé du matin des coupons déclarés réglés la veille (2026-10-28).
+  | "SLIPS_SETTLED_DIGEST"
   | "ANNOUNCEMENT_PUBLISHED";
 
 export type NotificationCategory = "announcement" | "alert";
@@ -34,6 +36,7 @@ export const NOTIFICATION_SEVERITY: Record<
   ML_MODEL_ACTIVATED: "low",
   ML_MODEL_MISSING: "medium",
   SUPPORT_MESSAGE: "low",
+  SLIPS_SETTLED_DIGEST: "low",
   ANNOUNCEMENT_PUBLISHED: "low",
 };
 

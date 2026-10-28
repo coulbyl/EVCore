@@ -15,6 +15,13 @@ import {
   plainTextPreview,
 } from "./notification-constants";
 
+/** Ce qu'un joueur reçoit : chacun a son libellé et son lien. */
+const PLAYER_TYPES = [
+  "ANNOUNCEMENT_PUBLISHED",
+  "SUPPORT_MESSAGE",
+  "SLIPS_SETTLED_DIGEST",
+] as const;
+
 const SEVERITY_BADGE = {
   high: "bg-destructive/15 text-destructive",
   medium: "bg-warning/15 text-warning",
@@ -44,10 +51,8 @@ export function NotificationRow({
   const preview = NOTIFICATION_BODY_IS_HTML.has(n.type)
     ? plainTextPreview(n.body)
     : n.body;
-  const kind =
-    n.type === "ANNOUNCEMENT_PUBLISHED" || n.type === "SUPPORT_MESSAGE"
-      ? t(`kind.${n.type}`)
-      : null;
+  const playerType = PLAYER_TYPES.find((type) => type === n.type) ?? null;
+  const kind = playerType ? t(`kind.${playerType}`) : null;
 
   return (
     <li
@@ -99,9 +104,7 @@ export function NotificationRow({
             }}
             className="mt-1 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-accent hover:underline"
           >
-            {t(
-              `open.${n.type === "SUPPORT_MESSAGE" ? "SUPPORT_MESSAGE" : "ANNOUNCEMENT_PUBLISHED"}`,
-            )}
+            {t(`open.${playerType ?? "ANNOUNCEMENT_PUBLISHED"}`)}
             <ArrowRight size={14} />
           </Link>
         ) : null}

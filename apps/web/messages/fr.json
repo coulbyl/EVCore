@@ -291,7 +291,7 @@
     "severity": {
       "high": "Critique"
     },
-    "intro": "Les annonces d'EVCore et les réponses de l'équipe à tes messages.",
+    "intro": "Les annonces d'EVCore, les réponses de l'équipe et, chaque matin, le résultat de tes coupons de la veille.",
     "emptyUnread": "Tout est lu.",
     "loadError": "Impossible de charger tes notifications.",
     "retry": "Réessayer",
@@ -309,11 +309,13 @@
     },
     "kind": {
       "ANNOUNCEMENT_PUBLISHED": "Annonce",
-      "SUPPORT_MESSAGE": "Équipe EVCore"
+      "SUPPORT_MESSAGE": "Équipe EVCore",
+      "SLIPS_SETTLED_DIGEST": "Tes coupons"
     },
     "open": {
       "ANNOUNCEMENT_PUBLISHED": "Lire l'annonce",
-      "SUPPORT_MESSAGE": "Ouvrir la conversation"
+      "SUPPORT_MESSAGE": "Ouvrir la conversation",
+      "SLIPS_SETTLED_DIGEST": "Voir mes coupons"
     }
   },
   "updates": {

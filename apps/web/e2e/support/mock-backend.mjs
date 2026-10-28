@@ -785,6 +785,15 @@ const PLAYER_NOTIFICATIONS = [
     { announcementId: "ann-1", href: null },
   ],
   [
+    "n5",
+    "SLIPS_SETTLED_DIGEST",
+    "Tes coupons d'hier",
+    "2 coupons réglés : 1 gagné, 1 perdu. Misé 2 000 F, rendu 1 540 F : -460 F.",
+    -2,
+    false,
+    { day: "2026-10-27", settled: 2, net: "-460.00" },
+  ],
+  [
     "n4",
     "SUPPORT_MESSAGE",
     "Réponse de l'équipe",

@@ -28,6 +28,19 @@ test.describe("Notifications", () => {
     ).toHaveAttribute("href", "/dashboard/updates?id=ann-1");
   });
 
+  test("le résumé du matin mène à Mes coupons, pertes comprises", async ({
+    page,
+  }) => {
+    const row = page
+      .getByTestId("notification-row")
+      .filter({ hasText: "Tes coupons d'hier" });
+    await expect(row).toContainText("Tes coupons");
+    await expect(row).toContainText("1 perdu");
+    await expect(
+      row.getByRole("link", { name: "Voir mes coupons" }),
+    ).toHaveAttribute("href", "/dashboard/bet-slips");
+  });
+
   test("le joueur n'a ni gravité ni onglet Annonces", async ({ page }) => {
     test.skip(
       process.env.E2E_ROLE !== "OPERATOR",
