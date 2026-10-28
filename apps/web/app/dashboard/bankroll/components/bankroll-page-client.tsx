@@ -51,6 +51,8 @@ function buildBankrollFilters(t: Translator): FilterDef[] {
         { value: "BET_PLACED", label: t("filter.stake") },
         { value: "BET_WON", label: t("filter.return") },
         { value: "BET_VOID", label: t("filter.refund") },
+        { value: "SLIP_CANCELLED", label: t("filter.slipCancelled") },
+        { value: "WITHDRAWAL", label: t("filter.withdrawal") },
       ],
     },
   ];
@@ -165,10 +167,9 @@ export function BankrollPageClient() {
                 : t("resultEmpty")}{" "}
               {t("declarative")}
             </p>
-            <div className="flex justify-stretch sm:justify-start">
-              <div className="w-full sm:w-auto">
-                <DepositDialog />
-              </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-start">
+              <DepositDialog />
+              <DepositDialog mode="withdraw" />
             </div>
           </section>
 

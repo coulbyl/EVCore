@@ -746,6 +746,14 @@
       "combo": "Combos",
       "from": "From",
       "to": "To"
+    },
+    "delete": {
+      "trigger": "Delete this slip",
+      "title": "Delete this slip?",
+      "description": "Entered by mistake? As long as no match has started, you can delete it: {amount} go back to your balance. To correct it, delete it and enter it again.",
+      "cancel": "Keep",
+      "confirm": "Delete",
+      "error": "Could not delete this slip."
     }
   },
   "bankrollPage": {
@@ -757,7 +765,9 @@
       "from": "From",
       "to": "To",
       "type": "Type",
-      "return": "Return"
+      "return": "Return",
+      "slipCancelled": "Slip deleted",
+      "withdrawal": "Withdrawal"
     },
     "table": {
       "date": "Date",
@@ -787,7 +797,9 @@
     },
     "fallback": {
       "deposit": "Deposit",
-      "bet": "Bet"
+      "bet": "Bet",
+      "slipCancelled": "Slip deleted before kick-off: stake returned",
+      "withdrawal": "Withdrawal"
     },
     "title": "Stake tracking",
     "intro": "Your balance as you declare it: deposits made at your bookmaker, your stakes and what they return. EVCore does not hold your money.",
@@ -813,6 +825,20 @@
     },
     "detail": {
       "combo": "Combo · {count, plural, one {# selection} other {# selections}}"
+    },
+    "withdraw": {
+      "trigger": "Declare a withdrawal",
+      "title": "Declare a withdrawal",
+      "description": "Note a withdrawal made at your bookmaker, so your balance here follows yours. Never more than your balance.",
+      "close": "Close",
+      "amount": "Amount",
+      "amountInvalid": "Enter an amount of at least 1.",
+      "note": "Note",
+      "notePlaceholder": "Mobile money withdrawal",
+      "error": "Could not record the withdrawal.",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "confirming": "Saving…"
     }
   },
   "performancePage": {

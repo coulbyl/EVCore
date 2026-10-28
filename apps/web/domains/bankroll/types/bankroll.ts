@@ -2,7 +2,9 @@ export type BankrollTransactionType =
   | "DEPOSIT"
   | "BET_PLACED"
   | "BET_WON"
-  | "BET_VOID";
+  | "BET_VOID"
+  | "SLIP_CANCELLED"
+  | "WITHDRAWAL";
 
 export type BankrollBalance = {
   balance: string;
@@ -12,6 +14,7 @@ export type BankrollBalance = {
 export type BankrollSummary = {
   balance: string;
   deposited: string;
+  withdrawn: string;
 };
 
 export type BankrollTransaction = {

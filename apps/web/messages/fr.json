@@ -746,6 +746,14 @@
       "combo": "Combinés",
       "from": "Du",
       "to": "Au"
+    },
+    "delete": {
+      "trigger": "Supprimer ce coupon",
+      "title": "Supprimer ce coupon ?",
+      "description": "Saisi par erreur ? Tant qu'aucun match n'a commencé, tu peux le supprimer : {amount} reviennent à ton solde. Pour le corriger, supprime-le puis saisis-le à nouveau.",
+      "cancel": "Garder",
+      "confirm": "Supprimer",
+      "error": "Impossible de supprimer ce coupon."
     }
   },
   "bankrollPage": {
@@ -757,7 +765,9 @@
       "from": "Du",
       "to": "Au",
       "type": "Type",
-      "return": "Retour"
+      "return": "Retour",
+      "slipCancelled": "Coupon supprimé",
+      "withdrawal": "Retrait"
     },
     "table": {
       "date": "Date",
@@ -787,7 +797,9 @@
     },
     "fallback": {
       "deposit": "Dépôt",
-      "bet": "Pari"
+      "bet": "Pari",
+      "slipCancelled": "Coupon supprimé avant le match : mise rendue",
+      "withdrawal": "Retrait"
     },
     "title": "Suivi de mise",
     "intro": "Ton solde tel que tu le déclares : les dépôts faits chez ton bookmaker, tes mises et ce qu'elles rendent. EVCore ne détient pas ton argent.",
@@ -813,6 +825,20 @@
     },
     "detail": {
       "combo": "Combiné · {count, plural, one {# sélection} other {# sélections}}"
+    },
+    "withdraw": {
+      "trigger": "Déclarer un retrait",
+      "title": "Déclarer un retrait",
+      "description": "Note un retrait fait chez ton bookmaker, pour que ton solde ici suive le tien. Jamais plus que ton solde.",
+      "close": "Fermer",
+      "amount": "Montant",
+      "amountInvalid": "Saisis un montant d'au moins 1.",
+      "note": "Note",
+      "notePlaceholder": "Retrait Wave",
+      "error": "Impossible d'enregistrer le retrait.",
+      "cancel": "Annuler",
+      "confirm": "Confirmer",
+      "confirming": "Enregistrement…"
     }
   },
   "performancePage": {

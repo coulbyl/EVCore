@@ -714,6 +714,8 @@ const BET_SLIPS = [
       }),
     ],
     totalOdds: null,
+    // Match pas encore commencé : le serveur le dit supprimable.
+    deletable: true,
     result: slipResult({
       staked: "1000.00",
       pendingStake: "1000.00",
@@ -1469,11 +1471,22 @@ function route(method, url) {
     // doit le porter sans déborder.
     return [200, { balance: "500760000.00" }];
   if (path.startsWith("/bankroll/summary"))
-    return [200, { balance: "500760000.00", deposited: "500000000.00" }];
+    return [
+      200,
+      {
+        balance: "500760000.00",
+        deposited: "500000000.00",
+        withdrawn: "0.00",
+      },
+    ];
   if (path.startsWith("/bankroll/transactions"))
     return [200, BANKROLL_TRANSACTIONS];
   if (path.startsWith("/bankroll")) return [200, []];
   if (path === "/bet-slips" && method === "GET") return [200, BET_SLIPS];
+  if (path.startsWith("/bet-slips/") && method === "DELETE")
+    return [200, { refunded: "1000.00" }];
+  if (path.startsWith("/bankroll/withdrawal"))
+    return [200, { balance: "500759000.00" }];
   if (path.startsWith("/bet-slips/") && method === "GET") {
     const slip = BET_SLIPS.find((b) => path.endsWith(b.id));
     return slip ? [200, slip] : [404, {}];

@@ -19,11 +19,22 @@ export async function depositBankroll(
   });
 }
 
-export function useDepositBankroll() {
+/** Retrait déclaré : jamais au-delà du solde (le serveur refuse). */
+export async function withdrawBankroll(
+  input: DepositBankrollInput,
+): Promise<BankrollBalance> {
+  return clientApiRequest<BankrollBalance>("/bankroll/withdrawal", {
+    method: "POST",
+    body: input,
+    fallbackErrorMessage: "Impossible d'enregistrer le retrait.",
+  });
+}
+
+export function useDepositBankroll(mode: "deposit" | "withdraw" = "deposit") {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: depositBankroll,
+    mutationFn: mode === "deposit" ? depositBankroll : withdrawBankroll,
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["bankroll-balance"] }),
