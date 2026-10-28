@@ -7,7 +7,11 @@ export type { WeightAdjustmentProps } from "./types";
 export type { WeeklyReportProps } from "./types";
 export type { XgUnavailableReportProps } from "./types";
 export type { EmailVerificationProps } from "./types";
-export type { EmailChangeCodeProps, EmailChangedProps } from "./types";
+export type {
+  EmailChangeCodeProps,
+  EmailChangedProps,
+  EmailChangeTakenProps,
+} from "./types";
 export type { PasswordResetProps } from "./types";
 export type { MlModelActivatedProps } from "./types";
 export type { MlModelMissingProps } from "./types";
@@ -23,6 +27,7 @@ export { renderXgUnavailableReport } from "./emails/xg-unavailable-report";
 export { renderEmailVerification } from "./emails/email-verification";
 export { renderEmailChangeCode } from "./emails/email-change-code";
 export { renderEmailChanged } from "./emails/email-changed";
+export { renderEmailChangeTaken } from "./emails/email-change-taken";
 export { renderPasswordReset } from "./emails/password-reset";
 export { renderMlModelActivated } from "./emails/ml-model-activated";
 export { renderMlModelMissing } from "./emails/ml-model-missing";
