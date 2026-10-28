@@ -698,7 +698,7 @@
       "fixedStake": "Your fixed-stake result",
       "fixedStakeSample": "{count, plural, one {over # settled bet} other {over # settled bets}}",
       "fixedStakeNone": "No settled bet yet",
-      "weeklyBriefTitle": "Weekly brief",
+      "weeklyBriefTitle": "Your week",
       "pageTitle": "Home",
       "riskLine": "18+ · Betting carries a risk of loss. Only stake what you can afford to lose."
     }

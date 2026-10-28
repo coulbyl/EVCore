@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { lastMondayAt } from "./support/dates.mjs";
 
 /**
  * Notifications et Compte sur le faux backend, en rôle joueur (les captures
@@ -24,6 +25,18 @@ test("arriver par la matinée compte une ouverture, puis efface le paramètre", 
     notificationType: "MORNING_BRIEF",
   });
   await expect(page).toHaveURL(/\/dashboard$/);
+});
+
+test("le lundi, l'Accueil montre le relevé de la semaine", async ({ page }) => {
+  test.skip(
+    process.env.E2E_ROLE !== "OPERATOR",
+    "vue joueur : lancer avec E2E_ROLE=OPERATOR",
+  );
+  await page.clock.setFixedTime(lastMondayAt(10));
+  await page.goto("/dashboard");
+  await expect(
+    page.getByText("Nos coupons : Favori 5 jours gagnés sur 7"),
+  ).toBeVisible();
 });
 
 test.describe("Notifications", () => {

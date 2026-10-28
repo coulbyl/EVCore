@@ -212,7 +212,25 @@ export class CouponService {
   /** Historique réel par produit de coupon sur les `days` derniers jours. */
   async getTrackRecord(days = 30): Promise<CouponClassTrackRecord[]> {
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1_000);
-    const rows = await this.repo.findClassTrackRecord(startOfUtcDay(since));
+    return this.trackRecordRows({ from: startOfUtcDay(since), days });
+  }
+
+  /** Historique par produit sur une période fermée [from, to[ (relevé du lundi). */
+  async getTrackRecordBetween(
+    from: Date,
+    to: Date,
+  ): Promise<CouponClassTrackRecord[]> {
+    const days = Math.round((to.getTime() - from.getTime()) / 86_400_000);
+    return this.trackRecordRows({ from, to, days });
+  }
+
+  private async trackRecordRows(window: {
+    from: Date;
+    to?: Date;
+    days: number;
+  }): Promise<CouponClassTrackRecord[]> {
+    const { days } = window;
+    const rows = await this.repo.findClassTrackRecord(window.from, window.to);
     return rows.map((row) => ({
       couponClass: classForTargetOddsMin(row.targetOddsMin),
       source: row.source as CouponSource,

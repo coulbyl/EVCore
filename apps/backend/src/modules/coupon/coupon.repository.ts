@@ -727,6 +727,9 @@ export class CouponRepository {
    */
   async findClassTrackRecord(
     since: Date,
+    // Borne haute exclusive : le relevé du lundi lit une semaine fermée,
+    // rejouable plus tard sans compter les jours suivants.
+    until: Date = new Date('9999-12-31T00:00:00.000Z'),
   ): Promise<readonly ClassTrackRecordRow[]> {
     // La pire série se compte sur la suite des coupons réglés de la classe,
     // dans l'ordre des jours : chaque coupon non perdu ouvre un nouveau
@@ -740,6 +743,7 @@ export class CouponRepository {
         FROM public.coupon_proposal
         WHERE result IS NOT NULL
           AND "forDate" >= ${since}
+          AND "forDate" < ${until}
       ), streaks AS (
         SELECT source, "targetOddsMin", max(run)::int AS "worstLosingStreak"
         FROM (

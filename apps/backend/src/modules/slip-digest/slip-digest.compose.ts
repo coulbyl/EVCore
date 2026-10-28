@@ -171,3 +171,65 @@ export function composeMorningBrief(input: {
     net: digest?.net ?? '0.00',
   };
 }
+
+/** Bilan d'un produit public sur la semaine (findClassTrackRecord). */
+export type WeeklyProduct = {
+  couponClass: string;
+  won: number;
+  settled: number;
+};
+
+/**
+ * Le relevé du lundi (2026-10-29) : la semaine passée du joueur (coupons
+ * déclarés, coupons suivis) et celle de nos produits, jours gagnés sur jours
+ * joués. Une semaine en perte reçoit une phrase de jeu responsable, jamais
+ * un appel à se refaire. Null s'il n'y a rien à dire.
+ */
+export function composeWeeklyStatement(input: {
+  results: readonly SlipMoney[];
+  currency: string | null;
+  follows: readonly FollowedResult[];
+  products: readonly WeeklyProduct[];
+}): SlipDigestMessage | null {
+  const { currency } = input;
+  const totals = sumSlipMoney(input.results);
+  const sentences: string[] = [];
+  if (totals.settledSlips > 0) {
+    const won = input.results.filter((r) => r.status === 'WON').length;
+    sentences.push(
+      `Tes coupons : ${plural(won, 'gagné', 'gagnés')} sur ${plural(totals.settledSlips, 'réglé', 'réglés')}. Misé ${formatMoney(totals.settledStake.toString(), { currency })}, rendu ${formatMoney(totals.returned.toString(), { currency })} : ${formatMoney(totals.net.toString(), { currency, signed: true })}.`,
+    );
+  }
+  if (input.follows.length > 0) {
+    const won = input.follows.filter(
+      (f) => f.result === 'WON' || f.result === 'PARTIAL',
+    ).length;
+    sentences.push(
+      `Coupons suivis : ${won} gagné${won > 1 ? 's' : ''} sur ${input.follows.length}.`,
+    );
+  }
+  const products = input.products.filter(
+    (p) => p.settled > 0 && PRODUCT_SHORT_LABEL[p.couponClass],
+  );
+  if (products.length > 0) {
+    const list = products
+      .map(
+        (p) =>
+          `${PRODUCT_SHORT_LABEL[p.couponClass]} ${p.won} jour${p.won > 1 ? 's' : ''} gagné${p.won > 1 ? 's' : ''} sur ${p.settled}`,
+      )
+      .join(' · ');
+    sentences.push(`Nos coupons : ${list}.`);
+  }
+  if (sentences.length === 0) return null;
+  if (totals.net.isNegative()) {
+    sentences.push(
+      'Semaine en perte : garde tes mises dans ce que tu avais prévu. Une pause est possible depuis Compte, si tu en as besoin.',
+    );
+  }
+  return {
+    title: 'Ta semaine EVCore',
+    body: sentences.join(' '),
+    settled: totals.settledSlips,
+    net: totals.net.toFixed(2),
+  };
+}

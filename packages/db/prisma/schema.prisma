@@ -676,10 +676,10 @@ model User {
   // cette date, coupons, Décisions, Avis IA et saisie de coupon sont bloqués
   // côté serveur et les notifications poussées coupées. Pas de retour
   // anticipé : la pause ne peut qu'être prolongée.
+  pausedUntil                      DateTime?
   // Notifications du joueur (2026-10-29), actives par défaut.
   morningBriefEnabled              Boolean                   @default(true)
   weeklyStatementEnabled           Boolean                   @default(true)
-  pausedUntil                      DateTime?
   sessions                         Session[]
   betSlips                         BetSlip[]
   betSlipItems                     BetSlipItem[]

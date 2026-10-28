@@ -4,6 +4,7 @@
  * Started via playwright.config.ts webServer.
  */
 import http from "node:http";
+import { lastMondayAt } from "./dates.mjs";
 
 const PORT = Number(process.env.E2E_MOCK_PORT ?? 3099);
 
@@ -866,6 +867,15 @@ const PLAYER_NOTIFICATIONS = [
     { day: "2026-10-27", settled: 2, net: "-460.00" },
   ],
   [
+    "n6",
+    "WEEKLY_STATEMENT",
+    "Ta semaine EVCore",
+    "Nos coupons : Favori 5 jours gagnés sur 7 · Combiné 4 jours gagnés sur 6.",
+    -1,
+    true,
+    { week: "2026-10-19", settled: 0, net: "0.00" },
+  ],
+  [
     "n4",
     "SUPPORT_MESSAGE",
     "Réponse de l'équipe",
@@ -897,7 +907,10 @@ const NOTIFICATIONS = [
   title,
   body,
   payload,
-  createdAt: todayAt(hours),
+  createdAt:
+    type === "WEEKLY_STATEMENT"
+      ? lastMondayAt(8).toISOString()
+      : todayAt(hours),
   isRead,
 }));
 
@@ -1529,16 +1542,14 @@ function route(method, url) {
   if (path.startsWith("/predictions")) return [200, []];
   if (path.startsWith("/notifications/unread-count"))
     return [200, { count: NOTIFICATIONS.filter((n) => !n.isRead).length }];
-  if (path.startsWith("/notifications"))
-    return [
-      200,
-      {
-        data: NOTIFICATIONS,
-        total: NOTIFICATIONS.length,
-        limit: 20,
-        offset: 0,
-      },
-    ];
+  if (path.startsWith("/notifications")) {
+    // Le filtre ?type= du vrai backend (point de la semaine de l'Accueil).
+    const type = new URLSearchParams(url.split("?")[1] ?? "").get("type");
+    const data = type
+      ? NOTIFICATIONS.filter((n) => n.type === type)
+      : NOTIFICATIONS;
+    return [200, { data, total: data.length, limit: 20, offset: 0 }];
+  }
   if (path.startsWith("/risk")) return [200, {}];
   if (path.startsWith("/adjustment")) return [200, []];
   // Une requête React Query qui reçoit `{}` ou undefined fait planter la

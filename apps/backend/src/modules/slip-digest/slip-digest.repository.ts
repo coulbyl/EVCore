@@ -139,7 +139,7 @@ export class SlipDigestRepository {
     { id: string; currency: string | null; pausedUntil: Date | null }[]
   > {
     return this.prisma.client.user.findMany({
-      where: { morningBriefEnabled: true },
+      where: { morningBriefEnabled: true, suspended: false },
       select: { id: true, currency: true, pausedUntil: true },
     });
   }
@@ -159,6 +159,29 @@ export class SlipDigestRepository {
       },
       orderBy: { rank: 'asc' },
     });
+  }
+
+  /** Joueurs qui reçoivent le relevé du lundi (réglage actif, 2026-10-29). */
+  findWeeklyRecipients(): Promise<
+    { id: string; currency: string | null; pausedUntil: Date | null }[]
+  > {
+    return this.prisma.client.user.findMany({
+      where: { weeklyStatementEnabled: true, suspended: false },
+      select: { id: true, currency: true, pausedUntil: true },
+    });
+  }
+
+  /** Un relevé par joueur et par semaine, même si le job est relancé. */
+  async hasStatement(userId: string, week: string): Promise<boolean> {
+    const existing = await this.prisma.client.notification.findFirst({
+      where: {
+        userId,
+        type: NotificationType.WEEKLY_STATEMENT,
+        payload: { path: ['week'], equals: week },
+      },
+      select: { id: true },
+    });
+    return existing !== null;
   }
 
   /** Un relancement du job ne doit pas envoyer deux fois le même jour. */

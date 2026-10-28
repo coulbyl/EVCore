@@ -38,6 +38,7 @@ export class NotificationController {
       offset: query.offset,
       unread: query.unread,
       category: query.category,
+      type: query.type,
       userId: session.user.id,
       role: session.user.role,
     });

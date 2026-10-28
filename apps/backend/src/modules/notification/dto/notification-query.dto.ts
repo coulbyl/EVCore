@@ -1,5 +1,14 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsIn,
+  IsInt,
+  IsOptional,
+  Max,
+  Min,
+} from 'class-validator';
+import { NotificationType } from '@evcore/db';
 
 export type NotificationCategory = 'announcement' | 'alert';
 
@@ -30,4 +39,10 @@ export class NotificationQueryDto {
   @IsOptional()
   @IsIn(['announcement', 'alert'])
   category?: NotificationCategory;
+
+  // Un seul type (le point de la semaine de l'Accueil lit le dernier
+  // WEEKLY_STATEMENT). Toujours ET-é sur les types permis au rôle.
+  @IsOptional()
+  @IsEnum(NotificationType)
+  type?: NotificationType;
 }

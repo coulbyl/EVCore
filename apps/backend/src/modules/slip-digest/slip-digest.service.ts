@@ -38,7 +38,7 @@ export function previousUtcDay(now: Date): string {
   return new Date(now.getTime() - DAY_MS).toISOString().slice(0, 10);
 }
 
-function toMoney(slip: DigestSlip): SlipMoney {
+export function toMoney(slip: DigestSlip): SlipMoney {
   return slipMoney({
     type: slip.type,
     unitStake: new Decimal(slip.unitStake.toString()),

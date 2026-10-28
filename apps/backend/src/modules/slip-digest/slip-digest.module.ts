@@ -9,6 +9,7 @@ import { SlipDigestRepository } from './slip-digest.repository';
 import { SlipDigestScheduler } from './slip-digest.scheduler';
 import { SlipDigestService } from './slip-digest.service';
 import { SlipDigestWorker } from './slip-digest.worker';
+import { WeeklyStatementService } from './weekly-statement.service';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { SlipDigestWorker } from './slip-digest.worker';
   providers: [
     SlipDigestRepository,
     SlipDigestService,
+    WeeklyStatementService,
     SlipDigestScheduler,
     SlipDigestWorker,
   ],
