@@ -97,7 +97,8 @@ export type CouponClassName =
   | "LONG"
   | "DOUBLE"
   | "HUNTER_BTTS"
-  | "HUNTER_DRAW";
+  | "HUNTER_DRAW"
+  | "HUNTER_SCORE";
 
 export type CouponClass = {
   name: CouponClassName;
@@ -279,10 +280,10 @@ export const DOUBLE_COUPON_CLASS: CouponClass = {
 };
 
 /**
- * Chasseurs (2026-10-28, en ombre) : une sélection par jour sur un seul
- * marché, ou l'abstention. Bandes du plan du 2026-10-23 ; `targetOddsMin`
- * propre à chacun (1,45 et 2,90, libres en base) pour la clé unique et
- * `classForTargetOddsMin`.
+ * Chasseurs (2026-10-28) : une sélection par jour sur un seul marché, ou
+ * l'abstention. Bandes du plan du 2026-10-23 ; `targetOddsMin` propre à
+ * chacun (1,45, 2,90 et 6, libres en base) pour la clé unique et
+ * `classForTargetOddsMin` — 5 est déjà le coupon long.
  */
 export const HUNTER_BTTS_CLASS: CouponClass = {
   name: "HUNTER_BTTS",
@@ -304,6 +305,16 @@ export const HUNTER_DRAW_CLASS: CouponClass = {
   targetOddsMax: 3.6,
 };
 
+export const HUNTER_SCORE_CLASS: CouponClass = {
+  name: "HUNTER_SCORE",
+  minLegOdds: 5,
+  maxLegOdds: 12,
+  maxLegs: 1,
+  targetCombinedOdds: 5,
+  targetOddsMin: 6,
+  targetOddsMax: 12,
+};
+
 /** Retrouve la classe d'une proposition persistée depuis son `targetOddsMin`. */
 export function classForTargetOddsMin(
   targetOddsMin: number,
@@ -317,6 +328,7 @@ export function classForTargetOddsMin(
       DOUBLE_COUPON_CLASS,
       HUNTER_BTTS_CLASS,
       HUNTER_DRAW_CLASS,
+      HUNTER_SCORE_CLASS,
       ...COUPON_CLASSES,
     ].find((c) => c.targetOddsMin === targetOddsMin)?.name ?? null
   );

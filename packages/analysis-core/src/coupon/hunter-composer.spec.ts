@@ -2,11 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   BTTS_HUNTER,
   DRAW_HUNTER,
-  composeHunterByEngine,
   composeHunterByMarket,
+  composeScoreHunter,
 } from "./hunter-composer";
 import type { DoubleCandidate } from "./double-composer";
-import type { CalibrationCell, ComboCandidate } from "./combo-generator";
 
 /** BTTS coté complet (oui / non), au même prix chez le joueur. */
 function btts(fixtureId: string, yes: number, no: number): DoubleCandidate[] {
@@ -44,61 +43,64 @@ describe("composeHunterByMarket", () => {
   });
 });
 
-describe("composeHunterByEngine", () => {
-  const draw = (
+describe("composeHunterByMarket — draw", () => {
+  const oneXTwo = (
     fixtureId: string,
-    competition: string,
-    probability: number,
-    odds = 3.2,
-  ): ComboCandidate => ({
-    fixtureId,
-    competition,
-    channel: "DRAW",
-    market: "ONE_X_TWO",
-    pick: "DRAW",
-    odds,
-    probability,
-  });
-  const cell = (
-    competition: string,
-    ratio: number,
-    sampleSize = 50,
-  ): CalibrationCell => ({ channel: "DRAW", competition, sampleSize, ratio });
+    [home, draw, away]: [number, number, number],
+  ): DoubleCandidate[] =>
+    (["HOME", "DRAW", "AWAY"] as const).map((pick, i) => {
+      const odds = [home, draw, away][i] as number;
+      return { fixtureId, market: "ONE_X_TWO", pick, odds, playableOdds: odds };
+    });
 
-  it("ranks by the channel probability recalibrated per competition", () => {
-    const result = composeHunterByEngine(
-      [draw("f1", "PL", 0.32), draw("f2", "SA", 0.3)],
-      // PL annonce trop (0,8) : 0,256 ; SA tient (1,0) : 0,30.
-      [cell("PL", 0.8), cell("SA", 1.0)],
-      DRAW_HUNTER,
-    );
-    expect(result.outcome).toBe("picked");
-    if (result.outcome !== "picked") return;
-    expect(result.leg.fixtureId).toBe("f2");
-    // La jambe annonce la probabilité du canal, pas la recalée.
-    expect(result.leg.probability).toBe(0.3);
-  });
-
-  it("drops unreliable cells and keeps unmeasured ones at face value", () => {
-    const result = composeHunterByEngine(
-      [draw("f1", "PL", 0.34), draw("f2", "L1", 0.29)],
-      [cell("PL", 0.6), cell("L1", 1.2, 10)],
-      DRAW_HUNTER,
-    );
-    expect(result.outcome).toBe("picked");
-    if (result.outcome !== "picked") return;
-    expect(result.leg.fixtureId).toBe("f2");
-  });
-
-  it("ignores other channels and odds outside the band", () => {
-    const result = composeHunterByEngine(
+  it("takes the cheapest draw rather than the most likely one", () => {
+    const result = composeHunterByMarket(
       [
-        { ...draw("f1", "PL", 0.3), channel: "DOMINANT" },
-        draw("f2", "PL", 0.3, 4.1),
+        // Nul à 3,00 mais marge 8,3 %.
+        ...oneXTwo("f1", [2.4, 3.0, 3.0]),
+        // Nul à 3,40, marge 2,6 % : retenu.
+        ...oneXTwo("f2", [2.2, 3.4, 3.6]),
       ],
-      [],
       DRAW_HUNTER,
     );
-    expect(result.outcome).toBe("abstained");
+    expect(result.outcome).toBe("picked");
+    if (result.outcome !== "picked") return;
+    expect(result.leg.fixtureId).toBe("f2");
+  });
+});
+
+describe("composeScoreHunter", () => {
+  const score = (fixtureId: string, pick: string, odds: number) => ({
+    fixtureId,
+    competition: "PL",
+    channel: "CORRECT_SCORE",
+    market: "CORRECT_SCORE",
+    pick,
+    odds,
+    probability: 0.12,
+  });
+
+  it("takes the score the market rates most likely in the 5–12 band", () => {
+    const result = composeScoreHunter([
+      score("f1", "1:1", 6.5),
+      score("f2", "1:0", 5.8),
+      // Hors bande : 4,5 et 13.
+      score("f3", "1:0", 4.5),
+      score("f4", "2:2", 13),
+    ]);
+    expect(result.outcome).toBe("picked");
+    if (result.outcome !== "picked") return;
+    expect(result.leg).toEqual(
+      expect.objectContaining({ fixtureId: "f2", pick: "1:0" }),
+    );
+    // 1 / 5,8 / 1,27 : la marge typique de la grille retirée.
+    expect(result.leg.probability).toBeCloseTo(0.1358, 3);
+    expect(result.candidateCount).toBe(2);
+  });
+
+  it("abstains when no score is in the band", () => {
+    expect(composeScoreHunter([score("f1", "0:0", 14)]).outcome).toBe(
+      "abstained",
+    );
   });
 });

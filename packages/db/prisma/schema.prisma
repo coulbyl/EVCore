@@ -1156,9 +1156,6 @@ model CouponProposal {
   // `LLM` par défaut : toutes les lignes antérieures au 2026-09-16 viennent du
   // générateur LLM, aucune autre source n'existait.
   source                 CouponSource              @default(LLM)
-  // En ombre : produit et réglé comme les autres, jamais montré au joueur ni
-  // compté dans les relevés publics (chasseurs BTTS et Nul, 2026-10-28).
-  shadow                 Boolean                   @default(false)
   lastFixtureScheduledAt DateTime
   legs                   CouponProposalLeg[]
   // Real, verifiable engagement — never a fabricated count (CLAUDE.md/

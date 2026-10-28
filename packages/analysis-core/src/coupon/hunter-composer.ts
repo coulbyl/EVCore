@@ -1,59 +1,60 @@
 import Decimal from "decimal.js";
-import { priceOutcomeGroups } from "../pricing/market-probability";
-import type { CalibrationCell, ComboCandidate } from "./combo-generator";
+import {
+  marketProbability,
+  priceOutcomeGroups,
+} from "../pricing/market-probability";
+import type { ComboCandidate } from "./combo-generator";
 import {
   HUNTER_BTTS_CLASS,
   HUNTER_DRAW_CLASS,
+  HUNTER_SCORE_CLASS,
   type CouponClass,
 } from "./coupon-classes";
 import type { DoubleCandidate } from "./double-composer";
 
 /**
- * Chasseurs (2026-10-28, en ombre) : un produit par marché, une sélection
- * par jour dans la bande de cote du marché, ou l'abstention. Jamais d'edge
- * (le filtre le plus perdant mesuré). Deux classements tournent côte à côte
- * pour être jugés jambe par jambe sur l'écart au marché :
+ * Chasseurs (2026-10-28) : un produit par marché, une sélection par jour
+ * dans la bande de cote du marché, ou l'abstention. Montrés aux joueurs
+ * tout de suite (décision du 2026-10-28 : pas d'ombre), avec la fréquence
+ * du marché, et mesurés jambe par jambe en direct. Jamais d'edge.
  *
- * - par le prix (`composeHunterByMarket`) : tout ce qui est coté sur le
- *   marché dans la bande, la marge la plus basse d'abord, puis la
- *   probabilité du marché sans marge. Le coût est la seule chose qui
- *   persiste d'une période à l'autre (r = +0,70, ESPACE-OPPORTUNITES) ; le
- *   rejeu de 116 jours va dans le même sens : le nul « le plus probable »
- *   réalisait 6,4 points sous le marché (coût −24 %), le nul le moins cher
- *   1,1 point (coût −7 %), tous deux dans le bruit (HUNTERS.md) ;
- * - par le moteur (`composeHunterByEngine`) : les sélections du canal du
- *   jour, classées par la probabilité du canal recalée sur sa calibration
- *   canal × compétition, sans les cellules « peu fiables » — la méthode de
- *   Notre sélection, qui bat le marché de 2,7 points sur la sélection
- *   principale (NOTRE-SELECTION.md).
+ * BTTS et Nul (`composeHunterByMarket`) : tout ce qui est coté sur le marché
+ * dans la bande, la marge la plus basse d'abord, puis la probabilité du
+ * marché. Le coût est la seule chose qui persiste d'une période à l'autre
+ * (r = +0,70) ; sur 116 jours, le nul « le plus probable » réalisait 6,4
+ * points sous le marché (coût −24 %), le moins cher 1,1 (coût −7 %)
+ * (docs/audits/2026-10-28/HUNTERS.md).
+ *
+ * Score exact (`composeScoreHunter`) : le score retenu par le moteur sur
+ * chaque match (canal CORRECT_SCORE), dans la bande 5–12. La grille de
+ * scores n'a pas de groupe d'issues fermé : la probabilité du marché retire
+ * la marge typique de la grille (27 %), donc le classement revient à la cote
+ * la plus basse.
  */
 
 export type HunterSpec = {
   coupon: CouponClass;
   market: string;
-  pick: string;
-  channel: string;
+  /** Issue chassée ; absente pour le score exact (tout score). */
+  pick?: string;
 };
 
 export const BTTS_HUNTER: HunterSpec = {
   coupon: HUNTER_BTTS_CLASS,
   market: "BTTS",
   pick: "YES",
-  channel: "BTTS",
 };
 
 export const DRAW_HUNTER: HunterSpec = {
   coupon: HUNTER_DRAW_CLASS,
   market: "ONE_X_TWO",
   pick: "DRAW",
-  channel: "DRAW",
 };
 
-export const HUNTERS: readonly HunterSpec[] = [BTTS_HUNTER, DRAW_HUNTER];
-
-/** Même volume et mêmes seuils que le combiné (combo-generator.ts). */
-const MIN_CALIBRATION_SAMPLE = 30;
-const BAD_RATIO = 0.7;
+export const SCORE_HUNTER: HunterSpec = {
+  coupon: HUNTER_SCORE_CLASS,
+  market: "CORRECT_SCORE",
+};
 
 export type HunterLeg = {
   fixtureId: string;
@@ -61,11 +62,7 @@ export type HunterLeg = {
   pick: string;
   /** Cote de référence de la sélection. */
   odds: number;
-  /**
-   * Probabilité annoncée par la variante : celle du marché (prix) ou celle
-   * du canal, non recalée (moteur), pour que le règlement compare chaque
-   * variante à ce qu'elle annonce.
-   */
+  /** Probabilité du marché, marge retirée : la fréquence affichée. */
   probability: number;
 };
 
@@ -76,6 +73,12 @@ export type HunterComposition =
       reason: "no_candidate_in_band";
       candidateCount: number;
     };
+
+const ABSTAINED: HunterComposition = {
+  outcome: "abstained",
+  reason: "no_candidate_in_band",
+  candidateCount: 0,
+};
 
 function inBand(odds: number, spec: HunterSpec): boolean {
   return odds >= spec.coupon.minLegOdds && odds <= spec.coupon.maxLegOdds;
@@ -101,13 +104,7 @@ export function composeHunterByMarket(
       best = leg;
     }
   }
-  if (!best) {
-    return {
-      outcome: "abstained",
-      reason: "no_candidate_in_band",
-      candidateCount: 0,
-    };
-  }
+  if (!best) return ABSTAINED;
   return {
     outcome: "picked",
     leg: {
@@ -122,68 +119,46 @@ export function composeHunterByMarket(
 }
 
 /** Sélection du canal, avec la cote jouable quand elle est connue : la bande
- * se lit dessus, comme pour la variante « prix ». */
-export type EngineHunterCandidate = ComboCandidate & { playableOdds?: number };
+ * se lit dessus, comme pour les autres chasseurs. */
+export type ScoreHunterCandidate = ComboCandidate & { playableOdds?: number };
 
-export function composeHunterByEngine(
-  candidates: readonly EngineHunterCandidate[],
-  calibration: readonly CalibrationCell[],
-  spec: HunterSpec,
+export function composeScoreHunter(
+  candidates: readonly ScoreHunterCandidate[],
+  spec: HunterSpec = SCORE_HUNTER,
 ): HunterComposition {
-  const cells = new Map(
-    calibration.map((c) => [`${c.channel}:${c.competition}`, c]),
-  );
   const scored = candidates
     .filter(
-      (c) =>
-        c.channel === spec.channel &&
-        c.market === spec.market &&
-        c.pick === spec.pick &&
-        inBand(c.playableOdds ?? c.odds, spec),
+      (c) => c.market === spec.market && inBand(c.playableOdds ?? c.odds, spec),
     )
     .flatMap((c) => {
-      const cell = cells.get(`${c.channel}:${c.competition}`);
-      const measured =
-        cell !== undefined &&
-        cell.ratio !== null &&
-        cell.sampleSize >= MIN_CALIBRATION_SAMPLE;
-      // « Peu fiable » sur la compétition : exclu, comme du combiné.
-      if (measured && cell.ratio !== null && cell.ratio < BAD_RATIO) return [];
-      const ratio = measured && cell.ratio !== null ? cell.ratio : 1;
-      return [
-        {
-          candidate: c,
-          calibrated: new Decimal(c.probability).times(ratio),
-        },
-      ];
+      const probability = marketProbability({
+        odds: c.odds,
+        market: spec.market,
+      });
+      return probability === null
+        ? []
+        : [{ candidate: c, probability: new Decimal(probability) }];
     });
   let best: (typeof scored)[number] | null = null;
   for (const row of scored) {
     if (
       !best ||
-      row.calibrated.gt(best.calibrated) ||
-      (row.calibrated.eq(best.calibrated) &&
-        row.candidate.odds < best.candidate.odds)
+      row.probability.gt(best.probability) ||
+      (row.probability.eq(best.probability) &&
+        row.candidate.fixtureId < best.candidate.fixtureId)
     ) {
       best = row;
     }
   }
-  if (!best) {
-    return {
-      outcome: "abstained",
-      reason: "no_candidate_in_band",
-      candidateCount: 0,
-    };
-  }
-  const { candidate } = best;
+  if (!best) return ABSTAINED;
   return {
     outcome: "picked",
     leg: {
-      fixtureId: candidate.fixtureId,
-      market: candidate.market,
-      pick: candidate.pick,
-      odds: candidate.odds,
-      probability: candidate.probability,
+      fixtureId: best.candidate.fixtureId,
+      market: best.candidate.market,
+      pick: best.candidate.pick,
+      odds: best.candidate.odds,
+      probability: best.probability.toNumber(),
     },
     candidateCount: scored.length,
   };

@@ -30,7 +30,7 @@ export type DailyGenerationOutcome = {
   double: DoubleGenerationOutcome | Failed;
   combo: EngineComboGenerationOutcome | Failed;
   long: EngineComboGenerationOutcome | Failed;
-  /** Chasseurs BTTS et Nul, en ombre. */
+  /** Chasseurs BTTS, Nul et Score exact. */
   hunters: HunterPassOutcome[] | Failed;
 };
 
@@ -69,7 +69,7 @@ export class CouponDailyGenerationService {
       long: await this.guard('engine long', () =>
         this.combo.generateForDate(forDate, ENGINE_LONG_PROFILE),
       ),
-      hunters: await this.guard('hunters (shadow)', () =>
+      hunters: await this.guard('hunters', () =>
         this.hunters.generateForDate(forDate),
       ),
     };

@@ -37,17 +37,16 @@ function makeHarness() {
       ]),
     findEngineComboCandidates: vi.fn().mockResolvedValue([
       {
-        fixtureId: 'f2',
+        fixtureId: 'f3',
         competition: 'PL',
-        channel: 'DRAW',
-        market: 'ONE_X_TWO',
-        pick: 'DRAW',
-        odds: 3.3,
-        probability: 0.3,
+        channel: 'CORRECT_SCORE',
+        market: 'CORRECT_SCORE',
+        pick: '1:0',
+        odds: 6.5,
+        probability: 0.13,
         scheduledAt: KICKOFF,
       },
     ]),
-    findChannelCompetitionCalibration: vi.fn().mockResolvedValue([]),
     upsertPriceComposerProposal: vi.fn().mockResolvedValue('proposal-1'),
     recordPriceComposerAttempt: vi.fn().mockResolvedValue(undefined),
   } as unknown as CouponRepository;
@@ -61,46 +60,26 @@ function makeHarness() {
 }
 
 describe('CouponHunterGenerationService', () => {
-  it('writes every hunter pick in shadow, one source per ranking', async () => {
+  it('writes the three hunters of the day, shown like any coupon', async () => {
     const { service, repository } = makeHarness();
     const outcomes = await service.generateForDate(new Date('2026-10-29'));
 
-    expect(outcomes).toEqual([
-      expect.objectContaining({
-        hunter: 'HUNTER_BTTS',
-        ranking: 'market',
-        outcome: 'composed',
-      }),
-      expect.objectContaining({
-        hunter: 'HUNTER_BTTS',
-        ranking: 'engine',
-        outcome: 'abstained',
-      }),
-      expect.objectContaining({
-        hunter: 'HUNTER_DRAW',
-        ranking: 'market',
-        outcome: 'composed',
-      }),
-      expect.objectContaining({
-        hunter: 'HUNTER_DRAW',
-        ranking: 'engine',
-        outcome: 'composed',
-      }),
+    expect(outcomes.map((o) => [o.hunter, o.outcome])).toEqual([
+      ['HUNTER_BTTS', 'composed'],
+      ['HUNTER_DRAW', 'composed'],
+      ['HUNTER_SCORE', 'composed'],
     ]);
     const calls = vi.mocked(repository.upsertPriceComposerProposal).mock.calls;
-    expect(calls).toHaveLength(3);
-    for (const [input] of calls) {
-      expect(input.profile?.shadow).toBe(true);
-    }
     expect(calls.map(([input]) => input.profile?.source)).toEqual([
       CouponSource.PRICE_COMPOSER,
       CouponSource.PRICE_COMPOSER,
       CouponSource.ENGINE,
     ]);
-    // Le chasseur Nul classé par le moteur annonce la probabilité du canal.
-    expect(calls[2]?.[0].legs[0]).toEqual(
-      expect.objectContaining({ pick: 'DRAW', probability: 0.3 }),
-    );
-    expect(repository.recordPriceComposerAttempt).toHaveBeenCalledTimes(4);
+    expect(calls.map(([input]) => input.profile?.targetOddsMin)).toEqual([
+      1.45, 2.9, 6,
+    ]);
+    // Le score exact annonce la probabilité du marché (marge de grille 27 %).
+    expect(calls[2]?.[0].legs[0]?.probability).toBeCloseTo(1 / 6.5 / 1.27, 3);
+    expect(repository.recordPriceComposerAttempt).toHaveBeenCalledTimes(3);
   });
 });

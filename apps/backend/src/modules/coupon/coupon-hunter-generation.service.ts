@@ -1,10 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import Decimal from 'decimal.js';
-import { CouponSource, StrategyChannel } from '@evcore/db';
+import { CouponSource } from '@evcore/db';
 import {
-  HUNTERS,
-  composeHunterByEngine,
+  BTTS_HUNTER,
+  DRAW_HUNTER,
+  SCORE_HUNTER,
   composeHunterByMarket,
+  composeScoreHunter,
   type HunterComposition,
   type HunterSpec,
   type Market,
@@ -20,16 +22,15 @@ const DAY_MS = 24 * 60 * 60 * 1_000;
 
 export type HunterPassOutcome = {
   hunter: string;
-  ranking: 'market' | 'engine';
   outcome: 'composed' | 'abstained';
   candidateCount: number;
 };
 
 /**
- * Chasseurs BTTS et Nul en ombre : chaque jour, pour chaque chasseur, une
- * sélection classée par le prix (source PRICE_COMPOSER) et une classée par
- * le moteur (source ENGINE), écrites `shadow: true`. Le règlement et la CLV
- * par jambe existants s'en occupent ; rien n'est montré au joueur.
+ * Chasseurs du jour, montrés aux joueurs comme les autres coupons
+ * (2026-10-28) : BTTS « oui » et Nul classés par le prix (source
+ * PRICE_COMPOSER), Score exact pris parmi les scores retenus par le moteur
+ * (source ENGINE). Une sélection par chasseur ou l'abstention, enregistrée.
  */
 @Injectable()
 export class CouponHunterGenerationService {
@@ -43,93 +44,89 @@ export class CouponHunterGenerationService {
   async generateForDate(forDate: Date): Promise<HunterPassOutcome[]> {
     const dayStart = startOfUtcDay(forDate);
     const range = { from: dayStart, to: new Date(dayStart.getTime() + DAY_MS) };
-    const since = new Date(
-      dayStart.getTime() - HUNTER_POLICY.calibrationWindowDays * DAY_MS,
-    );
-    const [priced, engineRows, calibration] = await Promise.all([
+    const [priced, engineRows] = await Promise.all([
       this.repository.findDoubleCandidates(range),
       this.repository.findEngineComboCandidates({
         ...range,
         excludedChannels: ENGINE_COMBO_POLICY.excludedChannels,
       }),
-      this.repository.findChannelCompetitionCalibration(since),
     ]);
+    const scoreRows = engineRows.filter(
+      (r) => r.market === SCORE_HUNTER.market,
+    );
     const quotes = await this.playableOdds.findPlayableQuotes(
-      [...priced, ...engineRows].map((r) => ({
+      [...priced, ...scoreRows].map((r) => ({
         fixtureId: r.fixtureId,
         market: r.market,
         pick: r.pick,
       })),
     );
+    const playableOf = (r: {
+      fixtureId: string;
+      market: string;
+      pick: string;
+      odds: number;
+    }): number => {
+      if (!playableAtOperator(r, quotes)) return 0;
+      const quote = quotes.get(playableQuoteKey(r));
+      return quote?.operatorOdds ?? quote?.lowestOdds ?? r.odds;
+    };
     // Même lecture que le coupon cote 2 : la marge se retire sur le groupe
     // complet aux cotes de référence, la bande se lit sur la cote jouable.
-    const marketCandidates = priced.map((r) => {
-      const quote = quotes.get(playableQuoteKey(r));
-      return {
-        fixtureId: r.fixtureId,
-        market: r.market,
-        pick: r.pick,
-        odds: r.odds,
-        playableOdds: playableAtOperator(r, quotes)
-          ? (quote?.operatorOdds ?? quote?.lowestOdds ?? r.odds)
-          : 0,
-      };
-    });
-    const engineCandidates = engineRows
-      .filter((r) => playableAtOperator(r, quotes))
-      .map((r) => {
-        const quote = quotes.get(playableQuoteKey(r));
-        return {
-          ...r,
-          playableOdds: quote?.operatorOdds ?? quote?.lowestOdds ?? r.odds,
-        };
-      });
+    const marketCandidates = priced.map((r) => ({
+      fixtureId: r.fixtureId,
+      market: r.market,
+      pick: r.pick,
+      odds: r.odds,
+      playableOdds: playableOf(r),
+    }));
+    const scoreCandidates = scoreRows.map((r) => ({
+      ...r,
+      playableOdds: playableOf(r),
+    }));
     const kickoffs = new Map(
       [...priced, ...engineRows].map((r) => [r.fixtureId, r.scheduledAt]),
     );
 
-    const outcomes: HunterPassOutcome[] = [];
-    for (const spec of HUNTERS) {
-      outcomes.push(
-        await this.persist({
-          dayStart,
-          spec,
-          ranking: 'market',
-          composition: composeHunterByMarket(marketCandidates, spec),
-          kickoffs,
-        }),
-        await this.persist({
-          dayStart,
-          spec,
-          ranking: 'engine',
-          composition: composeHunterByEngine(
-            engineCandidates,
-            calibration,
-            spec,
-          ),
-          kickoffs,
-        }),
-      );
-    }
-    return outcomes;
+    return [
+      await this.persist({
+        dayStart,
+        spec: BTTS_HUNTER,
+        source: CouponSource.PRICE_COMPOSER,
+        composition: composeHunterByMarket(marketCandidates, BTTS_HUNTER),
+        kickoffs,
+      }),
+      await this.persist({
+        dayStart,
+        spec: DRAW_HUNTER,
+        source: CouponSource.PRICE_COMPOSER,
+        composition: composeHunterByMarket(marketCandidates, DRAW_HUNTER),
+        kickoffs,
+      }),
+      await this.persist({
+        dayStart,
+        spec: SCORE_HUNTER,
+        source: CouponSource.ENGINE,
+        composition: composeScoreHunter(scoreCandidates),
+        kickoffs,
+      }),
+    ];
   }
 
   private async persist(input: {
     dayStart: Date;
     spec: HunterSpec;
-    ranking: 'market' | 'engine';
+    source: CouponSource;
     composition: HunterComposition;
     kickoffs: ReadonlyMap<string, Date>;
   }): Promise<HunterPassOutcome> {
-    const { dayStart, spec, ranking, composition } = input;
-    const policyVersion = `${HUNTER_POLICY.version}-${ranking}`;
+    const { dayStart, spec, composition } = input;
     const pass = {
-      name: `hunter-${spec.coupon.name.toLowerCase()}-${ranking}`,
-      policyVersion,
+      name: `hunter-${spec.coupon.name.toLowerCase()}`,
+      policyVersion: HUNTER_POLICY.version,
     };
     const base = {
       hunter: spec.coupon.name,
-      ranking,
       candidateCount: composition.candidateCount,
     };
     if (composition.outcome === 'abstained') {
@@ -144,13 +141,14 @@ export class CouponHunterGenerationService {
     }
 
     const { leg } = composition;
+    // Probabilité du marché × cote : jointProbability retombe sur la
+    // fréquence du marché, celle affichée au joueur.
     const expectedReturn = new Decimal(leg.probability)
       .times(leg.odds)
       .toNumber();
     const proposalId = await this.repository.upsertPriceComposerProposal({
       forDate: dayStart,
       combinedOdds: leg.odds,
-      // jointProbability = retour attendu / cote : la probabilité annoncée.
       expectedReturn,
       lastFixtureScheduledAt: input.kickoffs.get(leg.fixtureId) ?? dayStart,
       legs: [
@@ -161,20 +159,13 @@ export class CouponHunterGenerationService {
           odds: leg.odds,
           expectedReturn,
           probability: leg.probability,
-          ...(ranking === 'engine'
-            ? { canal: spec.channel as StrategyChannel }
-            : {}),
         },
       ],
       profile: {
-        source:
-          ranking === 'market'
-            ? CouponSource.PRICE_COMPOSER
-            : CouponSource.ENGINE,
+        source: input.source,
         targetOddsMin: spec.coupon.targetOddsMin,
         targetOddsMax: spec.coupon.targetOddsMax,
-        policyVersion,
-        shadow: true,
+        policyVersion: HUNTER_POLICY.version,
       },
     });
     await this.repository.recordPriceComposerAttempt({
@@ -185,7 +176,7 @@ export class CouponHunterGenerationService {
       pass,
     });
     this.logger.log(
-      `Chasseur ${spec.coupon.name} (${ranking}, ombre) ${dayStart.toISOString().slice(0, 10)} : ` +
+      `Chasseur ${spec.coupon.name} ${dayStart.toISOString().slice(0, 10)} : ` +
         `${leg.market}/${leg.pick} à ${leg.odds}`,
     );
     return { ...base, outcome: 'composed' };

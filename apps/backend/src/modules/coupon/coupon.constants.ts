@@ -315,14 +315,12 @@ export const DOUBLE_POLICY = {
 } as const;
 
 /**
- * Chasseurs BTTS et Nul en ombre (2026-10-28) : une passe par chasseur et
- * par classement. Jamais montrés au joueur avant 4 semaines d'ombre, 200
- * jambes réglées, réalisé ≥ 0,90 × annoncé et une décision humaine
- * (docs/plan-lot-2-2026-10-28.md, étape 7).
+ * Chasseurs BTTS, Nul et Score exact (2026-10-28), montrés aux joueurs dès
+ * le premier jour et mesurés jambe par jambe (docs/audits/2026-10-28/
+ * HUNTERS.md).
  */
 export const HUNTER_POLICY = {
   version: 'hunter-v1',
-  calibrationWindowDays: 90,
 } as const;
 
 /**

@@ -27,6 +27,11 @@ export const TYPICAL_MARKET_MARGIN: Readonly<Record<string, number>> = {
   RESULT_BTTS: 0.146,
   RESULT_TOTAL_GOALS: 0.158,
   HALF_TIME_FULL_TIME: 0.205,
+  // Grille de scores : surround médian de Marathonbet (25 scores listés)
+  // relevé le 2026-10-28 sur 20 jours. Sur nos scores à cote 5–12 (5 577
+  // réglés, 120 jours) : 13,5 % implicite brut, 10,6 % sans cette marge,
+  // 11,1 % réalisés.
+  CORRECT_SCORE: 0.27,
 };
 
 /** Marchés sans groupe d'issues propre (gagner une mi-temps…) ou inconnus. */

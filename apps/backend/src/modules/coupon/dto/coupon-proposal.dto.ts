@@ -136,8 +136,6 @@ export type CouponProposalDto = {
   viewerCount: number;
   playerCount: number;
   playedByMe: boolean;
-  /** En ombre : visible de l'admin seulement, jamais d'un joueur. */
-  shadow: boolean;
   /** Joueurs qui suivent ce coupon sans mise (vrai compte, jamais inventé). */
   followerCount: number;
   /** Le joueur courant suit ce coupon : le bouton « Suivre » est coché. */
