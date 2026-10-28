@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { BankrollTransactionType, Prisma } from '@evcore/db';
 import Decimal from 'decimal.js';
+import { formatMoney } from '@evcore/analysis-core';
 import { BANKROLL_LIMITS } from '@/config/bankroll.constants';
 import { BankrollRepository } from './bankroll.repository';
 
@@ -8,23 +9,6 @@ function comboLegsOf(
   slip: { type: string; _count: { items: number } } | undefined,
 ): number | null {
   return slip?.type === 'COMBO' ? slip._count.items : null;
-}
-
-function formatAmount(amount: Decimal, currency?: string | null): string {
-  const value = amount.toNumber();
-  if (currency) {
-    try {
-      return new Intl.NumberFormat('fr-FR', {
-        style: 'currency',
-        currency,
-        maximumFractionDigits: 0,
-      }).format(value);
-    } catch {
-      // Code devise inconnu — fallback nombre + code brut
-      return `${new Intl.NumberFormat('fr-FR').format(value)} ${currency}`;
-    }
-  }
-  return `${new Intl.NumberFormat('fr-FR').format(value)} €`;
 }
 
 type GetTransactionsInput = {
@@ -88,7 +72,7 @@ export class BankrollService {
     }
     if (new Decimal(amount).greaterThan(BANKROLL_LIMITS.MAX_DEPOSIT)) {
       throw new BadRequestException(
-        `Le dépôt unitaire ne peut pas dépasser ${formatAmount(BANKROLL_LIMITS.MAX_DEPOSIT, opts?.currency)}`,
+        `Le dépôt unitaire ne peut pas dépasser ${formatMoney(BANKROLL_LIMITS.MAX_DEPOSIT.toString(), { currency: opts?.currency })}`,
       );
     }
     await this.bankrollRepository.insert({

@@ -11,6 +11,7 @@ import {
   StrategyChannel,
 } from '@evcore/db';
 import Decimal from 'decimal.js';
+import { formatMoney } from '@evcore/analysis-core';
 import {
   fixedStakeOutcome,
   slipMoney,
@@ -188,7 +189,7 @@ export class BetSlipService {
     const potentialReturn = new Decimal(input.unitStake).times(totalOdds);
     if (potentialReturn.gt(SLIP_LIMITS.MAX_POTENTIAL_RETURN)) {
       throw new BadRequestException(
-        `Gain potentiel (${potentialReturn.toFixed(0)} XOF) dépasse le plafond autorisé de ${SLIP_LIMITS.MAX_POTENTIAL_RETURN.toLocaleString()} XOF`,
+        `Gain potentiel (${formatMoney(potentialReturn.toString())}) dépasse le plafond autorisé de ${formatMoney(SLIP_LIMITS.MAX_POTENTIAL_RETURN.toString())}`,
       );
     }
 

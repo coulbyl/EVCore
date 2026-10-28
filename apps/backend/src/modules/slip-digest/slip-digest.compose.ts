@@ -1,4 +1,4 @@
-import Decimal from 'decimal.js';
+import { formatMoney } from '@evcore/analysis-core';
 import {
   sumSlipMoney,
   type SlipMoney,
@@ -10,33 +10,6 @@ export type SlipDigestMessage = {
   settled: number;
   net: string;
 };
-
-const SYMBOL: Record<string, string> = { XOF: 'F', EUR: '€', USD: '$' };
-
-/** Montant au format de l'app : franc CFA sans centimes, signe si demandé. */
-export function formatMoney(
-  value: Decimal,
-  currency: string | null,
-  signed = false,
-): string {
-  const code = currency ?? 'XOF';
-  const digits = code === 'XOF' ? 0 : 2;
-  const rounded = value.toDecimalPlaces(digits);
-  const abs = new Intl.NumberFormat('fr-FR', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: digits,
-  }).format(rounded.abs().toNumber());
-  const sign =
-    rounded.isNegative() && !rounded.isZero()
-      ? '-'
-      : signed && rounded.greaterThan(0)
-        ? '+'
-        : '';
-  const symbol = SYMBOL[code] ?? code;
-  return code === 'USD'
-    ? `${sign}${symbol}${abs}`
-    : `${sign}${abs}\u00A0${symbol}`;
-}
 
 function plural(count: number, one: string, other: string): string {
   return `${count} ${count > 1 ? other : one}`;
@@ -67,7 +40,7 @@ export function composeSlipDigest(
   ].join(', ');
   const body =
     `${plural(totals.settledSlips, 'coupon réglé', 'coupons réglés')} : ${outcomes}. ` +
-    `Misé ${formatMoney(staked, currency)}, rendu ${formatMoney(returned, currency)} : ${formatMoney(net, currency, true)}.` +
+    `Misé ${formatMoney(staked.toString(), { currency })}, rendu ${formatMoney(returned.toString(), { currency })} : ${formatMoney(net.toString(), { currency, signed: true })}.` +
     (pending > 0
       ? ` ${plural(pending, 'coupon encore en attente', 'coupons encore en attente')}.`
       : '');

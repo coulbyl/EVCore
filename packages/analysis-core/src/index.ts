@@ -7,6 +7,7 @@
 export * from "./types";
 export * from "./display/market-labels-fr";
 export * from "./display/channel-labels-fr";
+export * from "./display/money";
 export * from "./math";
 export * from "./ev";
 export * from "./probability";

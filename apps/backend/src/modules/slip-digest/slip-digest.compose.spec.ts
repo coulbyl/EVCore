@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import Decimal from 'decimal.js';
 import type { SlipMoney } from '@modules/bet-slip/bet-slip-outcome';
-import { composeSlipDigest, formatMoney } from './slip-digest.compose';
+import { composeSlipDigest } from './slip-digest.compose';
 
 function result(
   status: SlipMoney['status'],
@@ -51,17 +51,5 @@ describe('composeSlipDigest', () => {
 
   it('sends nothing when no coupon is settled yet', () => {
     expect(composeSlipDigest([result('PENDING', 1000, 0)], 'XOF')).toBeNull();
-  });
-});
-
-describe('formatMoney', () => {
-  it('rounds francs CFA to the franc and signs on request', () => {
-    expect(formatMoney(new Decimal('537.6'), 'XOF', true)).toBe('+538 F');
-    expect(formatMoney(new Decimal('-0.4'), 'XOF', true)).toBe('0 F');
-  });
-
-  it('keeps cents for euros and puts the dollar sign first', () => {
-    expect(formatMoney(new Decimal('12.5'), 'EUR')).toBe('12,5 €');
-    expect(formatMoney(new Decimal('-3'), 'USD', true)).toBe('-$3');
   });
 });
