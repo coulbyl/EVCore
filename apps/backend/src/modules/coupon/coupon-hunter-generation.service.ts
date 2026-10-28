@@ -3,10 +3,13 @@ import Decimal from 'decimal.js';
 import { CouponSource } from '@evcore/db';
 import {
   BTTS_HUNTER,
+  CORNERS_HUNTER,
   DRAW_HUNTER,
   SCORE_HUNTER,
+  composeCornersHunter,
   composeHunterByMarket,
   composeScoreHunter,
+  priceCornersSides,
   type HunterComposition,
   type HunterSpec,
   type Market,
@@ -21,7 +24,11 @@ import {
   playableQuoteKey,
   type PlayableQuote,
 } from '../betting-engine/pricing/playable-odds.repository';
-import { ENGINE_COMBO_POLICY, HUNTER_POLICY } from './coupon.constants';
+import {
+  CORNERS_HUNTER_POLICY,
+  ENGINE_COMBO_POLICY,
+  HUNTER_POLICY,
+} from './coupon.constants';
 import {
   CouponPricedPoolService,
   type PricedPool,
@@ -119,7 +126,62 @@ export class CouponHunterGenerationService {
           scoreCandidates.filter((c) => !avoided.has(c.fixtureId)),
         ),
       }),
+      await this.persistCorners({ dayStart, avoided }),
     ];
+  }
+
+  /**
+   * Chasseur Corners (lot 6) : les lignes de corners cotées par 1xBet sur
+   * les matchs du jour, dans les championnats aux stats fiables (le pari se
+   * règle sur elles), hors matchs AVOID ; le côté le moins cher.
+   */
+  private async persistCorners(input: {
+    dayStart: Date;
+    avoided: ReadonlySet<string>;
+  }): Promise<HunterPassOutcome> {
+    const { dayStart } = input;
+    const policy = CORNERS_HUNTER_POLICY;
+    const [quotes, reliable] = await Promise.all([
+      this.repository.findCornersQuotes({
+        from: dayStart,
+        to: new Date(dayStart.getTime() + DAY_MS),
+        bookmakers: [policy.operatorBookmaker, policy.referenceBookmaker],
+      }),
+      this.repository.findReliableCornerCompetitions({
+        since: new Date(dayStart.getTime() - policy.statsWindowDays * DAY_MS),
+        until: new Date(dayStart.getTime() - policy.statsSettleDays * DAY_MS),
+        minShare: policy.statsMinShare,
+        minFixtures: policy.statsMinFixtures,
+      }),
+    ]);
+    const reliableSet = new Set(reliable);
+    const playable = quotes.filter(
+      (q) =>
+        reliableSet.has(q.competitionId) && !input.avoided.has(q.fixtureId),
+    );
+    const kickoffs = new Map(quotes.map((q) => [q.fixtureId, q.scheduledAt]));
+    const composition =
+      quotes.length > 0 && playable.length === 0
+        ? ({
+            outcome: 'abstained',
+            reason: 'no_reliable_competition',
+            candidateCount: 0,
+          } as const)
+        : composeCornersHunter(
+            priceCornersSides(
+              playable,
+              policy.operatorBookmaker,
+              policy.referenceBookmaker,
+            ),
+          );
+    return this.persist({
+      dayStart,
+      spec: CORNERS_HUNTER,
+      source: CouponSource.PRICE_COMPOSER,
+      composition,
+      kickoffs,
+      quotes: new Map(),
+    });
   }
 
   private async persist(input: {
@@ -166,10 +228,18 @@ export class CouponHunterGenerationService {
           fixtureId: leg.fixtureId,
           market: leg.market as Market,
           pick: leg.pick,
+          line: leg.line ?? null,
           odds: leg.odds,
           expectedReturn,
           probability: leg.probability,
-          ...operatorPrice(leg, input.quotes),
+          // Le chasseur Corners connaît déjà son prix 1xBet ; les autres le
+          // lisent dans les prix jouables.
+          ...(leg.operatorOdds != null
+            ? {
+                operatorOdds: leg.operatorOdds,
+                operatorMargin: leg.operatorMargin ?? null,
+              }
+            : operatorPrice(leg, input.quotes)),
         },
       ],
       profile: {
@@ -188,7 +258,7 @@ export class CouponHunterGenerationService {
     });
     this.logger.log(
       `Chasseur ${spec.coupon.name} ${dayStart.toISOString().slice(0, 10)} : ` +
-        `${leg.market}/${leg.pick} à ${leg.odds}`,
+        `${leg.market}/${leg.pick}${leg.line != null ? ` ${leg.line}` : ''} à ${leg.odds}`,
     );
     return { ...base, outcome: 'composed' };
   }

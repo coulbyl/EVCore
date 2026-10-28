@@ -9,6 +9,7 @@ import {
   HUNTER_BTTS_CLASS,
   HUNTER_DRAW_CLASS,
   HUNTER_SCORE_CLASS,
+  HUNTER_CORNERS_CLASS,
   type CouponClass,
 } from "./coupon-classes";
 import type { DoubleCandidate } from "./double-composer";
@@ -69,13 +70,17 @@ export type HunterLeg = {
   probability: number;
   /** Marge payée chez 1xBet quand elle est connue. */
   operatorMargin?: number | null;
+  /** Ligne des marchés qui la portent en colonne (corners). */
+  line?: number | null;
+  /** Cote 1xBet quand le chasseur la connaît déjà (corners). */
+  operatorOdds?: number | null;
 };
 
 export type HunterComposition =
   | { outcome: "picked"; leg: HunterLeg; candidateCount: number }
   | {
       outcome: "abstained";
-      reason: "no_candidate_in_band";
+      reason: "no_candidate_in_band" | "no_reliable_competition";
       candidateCount: number;
     };
 
@@ -169,5 +174,139 @@ export function composeScoreHunter(
       probability: best.probability.toNumber(),
     },
     candidateCount: scored.length,
+  };
+}
+
+export const CORNERS_HUNTER: HunterSpec = {
+  coupon: HUNTER_CORNERS_CLASS,
+  market: "CORNERS",
+};
+
+/** Un prix relevé sur une ligne de corners (plus ou moins), un book. */
+export type CornersQuote = {
+  fixtureId: string;
+  line: number;
+  pick: "OVER" | "UNDER";
+  bookmaker: string;
+  odds: number;
+  /** Instant du relevé : une paire ne se lit que sur un même relevé. */
+  snapshotAt: Date;
+};
+
+/** Un côté d'une ligne, au prix 1xBet, avec sa marge et la fréquence du marché. */
+export type CornersSide = {
+  fixtureId: string;
+  line: number;
+  pick: "OVER" | "UNDER";
+  /** Cote 1xBet du côté. */
+  odds: number;
+  /** Marge 1xBet de la paire (somme des deux implicites − 1). */
+  margin: Decimal;
+  /** Fréquence du marché sans marge : Pinnacle quand il cote la ligne, sinon 1xBet. */
+  fair: Decimal;
+};
+
+function pairsOf(
+  quotes: readonly CornersQuote[],
+  bookmaker: string,
+): Map<string, { over: CornersQuote; under: CornersQuote }> {
+  const pairs = new Map<
+    string,
+    { over?: CornersQuote; under?: CornersQuote }
+  >();
+  for (const quote of quotes) {
+    if (quote.bookmaker !== bookmaker) continue;
+    const key = `${quote.fixtureId}|${quote.line}`;
+    const pair = pairs.get(key) ?? {};
+    pair[quote.pick === "OVER" ? "over" : "under"] = quote;
+    pairs.set(key, pair);
+  }
+  const complete = new Map<
+    string,
+    { over: CornersQuote; under: CornersQuote }
+  >();
+  for (const [key, pair] of pairs) {
+    if (
+      pair.over &&
+      pair.under &&
+      pair.over.snapshotAt.getTime() === pair.under.snapshotAt.getTime()
+    ) {
+      complete.set(key, { over: pair.over, under: pair.under });
+    }
+  }
+  return complete;
+}
+
+/**
+ * Les deux côtés de chaque ligne de corners cotée en entier par 1xBet sur un
+ * même relevé, lignes en ,5 seulement (pas de remboursement) : marge 1xBet de
+ * la paire et fréquence du marché sans marge, en Decimal.
+ */
+export function priceCornersSides(
+  quotes: readonly CornersQuote[],
+  operator: string,
+  reference: string,
+): CornersSide[] {
+  const operatorPairs = pairsOf(quotes, operator);
+  const referencePairs = pairsOf(quotes, reference);
+  const sides: CornersSide[] = [];
+  for (const [key, pair] of operatorPairs) {
+    if (!new Decimal(pair.over.line).mod(1).eq(0.5)) continue;
+    const over = new Decimal(1).dividedBy(pair.over.odds);
+    const under = new Decimal(1).dividedBy(pair.under.odds);
+    const margin = over.plus(under).minus(1);
+    const ref = referencePairs.get(key);
+    const refOver = ref ? new Decimal(1).dividedBy(ref.over.odds) : over;
+    const refUnder = ref ? new Decimal(1).dividedBy(ref.under.odds) : under;
+    const fairOver = refOver.dividedBy(refOver.plus(refUnder));
+    for (const side of [pair.over, pair.under]) {
+      sides.push({
+        fixtureId: side.fixtureId,
+        line: side.line,
+        pick: side.pick,
+        odds: side.odds,
+        margin,
+        fair: side.pick === "OVER" ? fairOver : new Decimal(1).minus(fairOver),
+      });
+    }
+  }
+  return sides;
+}
+
+/**
+ * Chasseur Corners : parmi les côtés dans la bande (1,70–2,10 au prix
+ * 1xBet), la marge 1xBet la plus basse, puis la fréquence du marché la plus
+ * haute. Le marché est calibré : on choisit le moins cher, pas « le plus
+ * probable ».
+ */
+export function composeCornersHunter(
+  sides: readonly CornersSide[],
+  spec: HunterSpec = CORNERS_HUNTER,
+): HunterComposition {
+  const inside = sides.filter((side) => inBand(side.odds, spec));
+  let best: CornersSide | null = null;
+  for (const side of inside) {
+    if (
+      !best ||
+      side.margin.lt(best.margin) ||
+      (side.margin.eq(best.margin) && side.fair.gt(best.fair))
+    ) {
+      best = side;
+    }
+  }
+  if (!best) return { ...ABSTAINED, candidateCount: inside.length };
+  return {
+    outcome: "picked",
+    leg: {
+      fixtureId: best.fixtureId,
+      market: spec.market,
+      pick: best.pick,
+      line: best.line,
+      odds: best.odds,
+      operatorOdds: best.odds,
+      probability: best.fair.toNumber(),
+      operatorMargin: best.margin.toNumber(),
+    },
+    candidateCount: inside.length,
   };
 }

@@ -324,6 +324,26 @@ export const HUNTER_POLICY = {
 } as const;
 
 /**
+ * Chasseur Corners (lot 6, 2026-10-29). Le pari se règle sur les stats de
+ * match (synchronisées chaque nuit à 04:00 UTC). Elles arrivent pour tous les
+ * matchs des grands championnats et jamais pour certains petits (ARG2, USA2,
+ * NOR2… : 0 %) : le chasseur ne joue que les championnats où au moins 95 %
+ * des matchs finis depuis plus de 3 jours ont leurs corners, sur 60 jours.
+ * Une jambe dont les stats ne viennent jamais est remboursée après 14 jours,
+ * jamais comptée perdue. (`fixture_statistic` est réécrite à chaque
+ * synchronisation : sa date d'écriture ne dit pas quand la stat est arrivée.)
+ */
+export const CORNERS_HUNTER_POLICY = {
+  operatorBookmaker: '1xBet',
+  referenceBookmaker: 'Pinnacle',
+  statsWindowDays: 60,
+  statsSettleDays: 3,
+  statsMinShare: 0.95,
+  statsMinFixtures: 10,
+  statsGraceDays: 14,
+} as const;
+
+/**
  * Politique du combiné du jour sur les sélections du moteur (règle et
  * mesure dans COMBO_COUPON_CLASS / composeEngineCombo, @evcore/analysis-core).
  *
@@ -414,4 +434,5 @@ export const ABSTENTION_PASS_CLASS: Readonly<Record<string, string>> = {
   'hunter-hunter_btts': 'HUNTER_BTTS',
   'hunter-hunter_draw': 'HUNTER_DRAW',
   'hunter-hunter_score': 'HUNTER_SCORE',
+  'hunter-hunter_corners': 'HUNTER_CORNERS',
 };
