@@ -111,7 +111,10 @@ export function fixedStakeOutcome(
  * règle que le crédit du solde au règlement (`combineLegs`), pour que la
  * carte, le détail et le solde disent la même chose.
  *
- * Un pari remboursé rend sa mise : il est réglé, à résultat nul.
+ * Un pari remboursé rend sa mise : il est réglé, à résultat nul. Un gain
+ * sans cote connue ne peut pas être chiffré : compté comme gagné, mais sa
+ * mise reste hors des montants réglés plutôt que d'afficher une perte
+ * (même règle que `fixedStakeOutcome`).
  */
 export type MoneySlip = {
   type: 'SIMPLE' | 'COMBO';
@@ -164,6 +167,9 @@ function comboMoney(slip: MoneySlip): SlipMoney {
       potentialReturn: stake.times(odds),
     };
   }
+  if (combo.status === 'WON' && combo.odds === null) {
+    return { ...base, status: 'WON' };
+  }
   const returned =
     combo.status === 'WON' && combo.odds !== null
       ? stake.times(combo.odds)
@@ -196,24 +202,29 @@ function simplesMoney(slip: MoneySlip): SlipMoney {
       }
       continue;
     }
-    settledStake = settledStake.plus(item.stake);
-    if (item.status === 'WON' && item.odds !== null) {
+    if (item.status === 'WON') {
       won += 1;
+      if (item.odds === null) continue;
       returned = returned.plus(item.stake.times(item.odds));
     } else if (item.status === 'VOID') {
       returned = returned.plus(item.stake);
     } else if (item.status === 'LOST') {
       lost += 1;
     }
+    settledStake = settledStake.plus(item.stake);
   }
   const net = returned.minus(settledStake);
   const status: SlipMoney['status'] = pendingStake.greaterThan(0)
     ? 'PENDING'
     : won === 0 && lost === 0
       ? 'VOID'
-      : net.greaterThan(0)
+      : lost === 0
         ? 'WON'
-        : 'LOST';
+        : won === 0
+          ? 'LOST'
+          : net.greaterThan(0)
+            ? 'WON'
+            : 'LOST';
   return {
     status,
     staked,
@@ -229,4 +240,50 @@ export function slipMoney(slip: MoneySlip): SlipMoney {
   return slip.type === 'COMBO' && slip.items.length >= 2
     ? comboMoney(slip)
     : simplesMoney(slip);
+}
+
+export type SlipMoneyTotals = {
+  settledSlips: number;
+  pendingSlips: number;
+  /** Mises des coupons entièrement réglés. */
+  settledStake: Decimal;
+  returned: Decimal;
+  net: Decimal;
+  /** Mises entières des coupons encore en attente. */
+  pendingStake: Decimal;
+};
+
+/**
+ * Totaux d'une liste de coupons : les montants réglés ne viennent que des
+ * coupons entièrement réglés, pour que « N coupons réglés, misé X, rendu Y »
+ * parle des mêmes coupons. La jambe déjà perdue d'un coupon simple encore en
+ * attente y entre quand le coupon est réglé ; le solde, lui, la compte déjà.
+ */
+export function sumSlipMoney(results: readonly SlipMoney[]): SlipMoneyTotals {
+  return results.reduce<SlipMoneyTotals>(
+    (acc, result) => {
+      if (result.status === 'PENDING') {
+        return {
+          ...acc,
+          pendingSlips: acc.pendingSlips + 1,
+          pendingStake: acc.pendingStake.plus(result.staked),
+        };
+      }
+      return {
+        ...acc,
+        settledSlips: acc.settledSlips + 1,
+        settledStake: acc.settledStake.plus(result.settledStake),
+        returned: acc.returned.plus(result.returned),
+        net: acc.net.plus(result.net),
+      };
+    },
+    {
+      settledSlips: 0,
+      pendingSlips: 0,
+      settledStake: ZERO,
+      returned: ZERO,
+      net: ZERO,
+      pendingStake: ZERO,
+    },
+  );
 }

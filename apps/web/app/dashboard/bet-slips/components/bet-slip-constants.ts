@@ -41,20 +41,28 @@ export type SlipsTotals = {
 
 /**
  * Additionne les résultats déjà calculés par le backend : aucune règle de
- * règlement ici, seulement des sommes.
+ * règlement ici, seulement des sommes. Comme `sumSlipMoney` côté backend, les
+ * montants réglés ne viennent que des coupons entièrement réglés, pour que
+ * « N coupons réglés, misé X » parle des mêmes coupons ; un coupon en attente
+ * compte pour toute sa mise dans « encore en jeu ».
  */
 export function sumSlipResults(slips: readonly BetSlipView[]): SlipsTotals {
   return slips.reduce<SlipsTotals>(
     (acc, slip) => {
       const r = slip.result;
-      const pending = r.status === "PENDING";
+      if (r.status === "PENDING") {
+        return {
+          ...acc,
+          pending: acc.pending + 1,
+          pendingStake: acc.pendingStake + Number(r.staked),
+        };
+      }
       return {
-        settled: acc.settled + (pending ? 0 : 1),
-        pending: acc.pending + (pending ? 1 : 0),
+        ...acc,
+        settled: acc.settled + 1,
         settledStake: acc.settledStake + Number(r.settledStake),
         returned: acc.returned + Number(r.returned),
         net: acc.net + Number(r.net),
-        pendingStake: acc.pendingStake + Number(r.pendingStake),
       };
     },
     {

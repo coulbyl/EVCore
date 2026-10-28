@@ -14,6 +14,7 @@ import Decimal from 'decimal.js';
 import {
   fixedStakeOutcome,
   slipMoney,
+  sumSlipMoney,
   type SlipMoney,
 } from './bet-slip-outcome';
 import { PrismaService } from '@/prisma.service';
@@ -367,8 +368,8 @@ export class BetSlipService {
         })),
       })),
     );
-    const money = slips
-      .map((slip) =>
+    const money = sumSlipMoney(
+      slips.map((slip) =>
         slipMoney({
           type: slip.type,
           unitStake: new Decimal(slip.unitStake.toString()),
@@ -380,22 +381,8 @@ export class BetSlipService {
             ),
           })),
         }),
-      )
-      .reduce(
-        (acc, result) => ({
-          settledSlips:
-            acc.settledSlips + (result.status === 'PENDING' ? 0 : 1),
-          settledStake: acc.settledStake.plus(result.settledStake),
-          returned: acc.returned.plus(result.returned),
-          pendingStake: acc.pendingStake.plus(result.pendingStake),
-        }),
-        {
-          settledSlips: 0,
-          settledStake: new Decimal(0),
-          returned: new Decimal(0),
-          pendingStake: new Decimal(0),
-        },
-      );
+      ),
+    );
 
     return {
       slipCount,
@@ -417,7 +404,7 @@ export class BetSlipService {
         settledSlips: money.settledSlips,
         settledStake: money.settledStake.toFixed(2),
         returned: money.returned.toFixed(2),
-        net: money.returned.minus(money.settledStake).toFixed(2),
+        net: money.net.toFixed(2),
         pendingStake: money.pendingStake.toFixed(2),
         firstSlipAt: slips[0]?.createdAt.toISOString() ?? null,
       },

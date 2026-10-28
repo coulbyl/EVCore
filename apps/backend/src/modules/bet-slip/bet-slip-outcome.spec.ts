@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   fixedStakeOutcome,
   slipMoney,
+  sumSlipMoney,
   type PlayedSlip,
 } from './bet-slip-outcome';
 
@@ -148,5 +149,68 @@ describe('slipMoney', () => {
     expect(money.returned.toFixed(2)).toBe('2540.00');
     expect(money.net.toFixed(2)).toBe('40.00');
     expect(money.pendingStake.toFixed(2)).toBe('0.00');
+  });
+
+  it('never shows a won combo without odds as a loss', () => {
+    const money = slipMoney({
+      type: 'COMBO',
+      unitStake: dec(1000),
+      items: [
+        { status: 'WON', odds: null, stake: dec(1000) },
+        { status: 'WON', odds: dec('1.5'), stake: dec(1000) },
+      ],
+    });
+    expect(money.status).toBe('WON');
+    expect(money.settledStake.toFixed(2)).toBe('0.00');
+    expect(money.net.toFixed(2)).toBe('0.00');
+  });
+
+  it('counts a won single without odds as won, outside the amounts', () => {
+    const alone = slipMoney({
+      type: 'SIMPLE',
+      unitStake: dec(1000),
+      items: [{ status: 'WON', odds: null, stake: dec(1000) }],
+    });
+    expect(alone.status).toBe('WON');
+    expect(alone.net.toFixed(2)).toBe('0.00');
+
+    const withLoss = slipMoney({
+      type: 'SIMPLE',
+      unitStake: dec(1000),
+      items: [
+        { status: 'WON', odds: null, stake: dec(1000) },
+        { status: 'LOST', odds: dec('2'), stake: dec(500) },
+      ],
+    });
+    expect(withLoss.settledStake.toFixed(2)).toBe('500.00');
+    expect(withLoss.net.toFixed(2)).toBe('-500.00');
+  });
+});
+
+describe('sumSlipMoney', () => {
+  const dec = (v: string | number) => new Decimal(v);
+
+  it('takes settled amounts only from fully settled slips', () => {
+    const settled = slipMoney({
+      type: 'SIMPLE',
+      unitStake: dec(1000),
+      items: [{ status: 'WON', odds: dec('1.5'), stake: dec(1000) }],
+    });
+    // One leg already lost, one still pending: the slip is not settled yet.
+    const partly = slipMoney({
+      type: 'SIMPLE',
+      unitStake: dec(1000),
+      items: [
+        { status: 'LOST', odds: dec('2'), stake: dec(1000) },
+        { status: 'PENDING', odds: dec('2'), stake: dec(1000) },
+      ],
+    });
+    const totals = sumSlipMoney([settled, partly]);
+    expect(totals.settledSlips).toBe(1);
+    expect(totals.pendingSlips).toBe(1);
+    expect(totals.settledStake.toFixed(2)).toBe('1000.00');
+    expect(totals.returned.toFixed(2)).toBe('1500.00');
+    expect(totals.net.toFixed(2)).toBe('500.00');
+    expect(totals.pendingStake.toFixed(2)).toBe('2000.00');
   });
 });
