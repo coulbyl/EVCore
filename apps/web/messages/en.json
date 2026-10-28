@@ -525,7 +525,6 @@
       "ADMIN": "Admin"
     },
     "phoneNone": "Not set",
-    "emailChangeHint": "To change your address, write to the team from the Inbox.",
     "responsible": {
       "title": "Responsible gambling",
       "body": "Betting carries a risk of loss. Only stake what you can afford to lose, and never to chase losses.",
@@ -559,6 +558,20 @@
       "cancel": "Cancel",
       "confirm": "Start the break",
       "error": "The break could not be started."
+    },
+    "emailChange": {
+      "trigger": "Change",
+      "title": "Change e-mail address",
+      "requestDescription": "Enter your new address and your password. We send a code to the new address to check it is yours.",
+      "confirmDescription": "A 6-digit code was just sent to {email}. It is valid for 10 minutes.",
+      "newEmailLabel": "New address",
+      "passwordLabel": "Your password",
+      "codeLabel": "Code received",
+      "restart": "Change address or resend a code",
+      "send": "Send the code",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "error": "The change did not go through. Try again."
     }
   },
   "performance": {

@@ -97,6 +97,30 @@ test.describe("Compte", () => {
     await expect(page).toHaveURL(/\/dashboard\/params\/account\/profil$/);
   });
 
+  test("changer d'adresse demande le mot de passe puis le code reçu", async ({
+    page,
+  }) => {
+    await page
+      .getByTestId("email-change-trigger")
+      .filter({ visible: true })
+      .click();
+    const dialog = page.getByRole("dialog");
+    const send = dialog.getByRole("button", { name: "Envoyer le code" });
+    await expect(send).toBeDisabled();
+    await dialog.getByLabel("Nouvelle adresse").fill("nouvelle@exemple.com");
+    await dialog.getByLabel("Ton mot de passe").fill("un-bon-mot-de-passe");
+    await send.click();
+    await expect(dialog).toContainText(
+      "vient de partir vers nouvelle@exemple.com",
+    );
+    await dialog.getByLabel("Code reçu").fill("123456");
+    await dialog.getByRole("button", { name: "Confirmer" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(
+      page.getByText("nouvelle@exemple.com").filter({ visible: true }),
+    ).toBeVisible();
+  });
+
   test("l'ancien onglet Personnalisation mène au profil", async ({ page }) => {
     await page.goto("/dashboard/params/account/personnalisation");
     await expect(page).toHaveURL(/\/dashboard\/params\/account\/profil$/);

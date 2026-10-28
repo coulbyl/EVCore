@@ -1320,6 +1320,11 @@ function route(method, url) {
     ];
   if (path === "/auth/me/delete")
     return [400, { message: "Mot de passe incorrect.", statusCode: 400 }];
+  // Changement d'adresse : le code part toujours, la confirmation renvoie
+  // une adresse fixe (le faux backend ne lit pas les corps).
+  if (path === "/auth/me/email/request") return [200, { status: "ok" }];
+  if (path === "/auth/me/email/confirm")
+    return [200, { email: "nouvelle@exemple.com" }];
   if (path === "/auth/login") return [200, SESSION, true];
   // Fiche de match : les équipes du match de Décisions, les lectures
   // évaluées de la première rencontre de FIXTURE_ROWS.

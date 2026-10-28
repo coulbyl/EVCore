@@ -525,7 +525,6 @@
       "ADMIN": "Admin"
     },
     "phoneNone": "Non renseigné",
-    "emailChangeHint": "Pour changer d'adresse, écris à l'équipe depuis l'Inbox.",
     "responsible": {
       "title": "Jeu responsable",
       "body": "Parier comporte des risques de perte. Ne mise que ce que tu peux perdre, et jamais pour te refaire.",
@@ -559,6 +558,20 @@
       "cancel": "Annuler",
       "confirm": "Commencer la pause",
       "error": "Impossible de commencer la pause."
+    },
+    "emailChange": {
+      "trigger": "Modifier",
+      "title": "Changer d'adresse e-mail",
+      "requestDescription": "Saisis ta nouvelle adresse et ton mot de passe. On t'envoie un code sur la nouvelle adresse pour vérifier qu'elle est à toi.",
+      "confirmDescription": "Un code à 6 chiffres vient de partir vers {email}. Il est valable 10 minutes.",
+      "newEmailLabel": "Nouvelle adresse",
+      "passwordLabel": "Ton mot de passe",
+      "codeLabel": "Code reçu",
+      "restart": "Changer d'adresse ou renvoyer un code",
+      "send": "Envoyer le code",
+      "confirm": "Confirmer",
+      "cancel": "Annuler",
+      "error": "Le changement n'a pas abouti. Réessaie."
     }
   },
   "performance": {
