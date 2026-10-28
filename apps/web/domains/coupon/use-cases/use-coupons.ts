@@ -31,6 +31,21 @@ export function useRecordCouponView() {
   });
 }
 
+/**
+ * « Suivre ce coupon » (2026-10-28) : suivre sans mise, le résultat arrive
+ * dans le résumé du matin. `follow: false` arrête de suivre.
+ */
+export function useFollowCoupon() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, follow }: { id: string; follow: boolean }) =>
+      clientApiRequest<void>(`/coupons/${id}/follow`, {
+        method: follow ? "POST" : "DELETE",
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["coupons"] }),
+  });
+}
+
 // Force re-settlement of a specific proposal — works even if it's already
 // EXPIRED with a stale result (settleProposal self-corrects against the
 // current fixture state).

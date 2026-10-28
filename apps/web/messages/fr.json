@@ -399,7 +399,7 @@
     },
     "homeCoupon": {
       "title": "Le coupon du jour",
-      "description": "C'est par là que tout commence : les coupons proposés aujourd'hui, leurs jambes et leur cote. « Jouer ce coupon » l'ajoute à ton panier."
+      "description": "C'est par là que tout commence : les coupons proposés aujourd'hui, leurs jambes et leur cote. « Suivre ce coupon » t'envoie son résultat dans le résumé du matin, sans mise ; « Je l'ai joué » l'ajoute à ton suivi de mise."
     },
     "homePicks": {
       "title": "Les sélections du jour",
@@ -1080,13 +1080,15 @@
     "legPlayableHint": "Cote chez {bookmaker}, le bookmaker des joueurs. La nôtre vient des books les plus généreux du relevé.",
     "playedByMe": "Déjà joué par toi",
     "inSlip": "Dans le coupon",
-    "play": "Jouer ce coupon",
+    "play": "Je l'ai joué",
     "replaceTitle": "Remplacer ton ticket ?",
     "replaceDescription": "Ton ticket contient déjà {count, plural, one {# autre sélection} other {# autres sélections}}. Un coupon se joue seul : ses jambes remplaceront celles du ticket.",
     "replaceConfirm": "Remplacer",
     "replaceCancel": "Garder mon ticket",
     "addToCoupon": "Ajouter au coupon",
-    "removeFromCoupon": "Retirer du coupon"
+    "removeFromCoupon": "Retirer du coupon",
+    "follow": "Suivre ce coupon",
+    "following": "Suivi · résultat dans le résumé du matin"
   },
   "pause": {
     "title": "Tu es en pause",

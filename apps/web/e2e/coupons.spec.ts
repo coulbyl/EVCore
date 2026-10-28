@@ -116,7 +116,7 @@ test.describe("Coupons", () => {
     // Ligne de clôture d'une jambe : la cote seule, en couleur neutre ; la
     // valeur signée vit dans le détail (revue UX 2026-10-11, P1-7).
     const closing = card.getByTestId("leg-closing").first();
-    await expect(closing).toHaveText(/^(Clôture|Close) @1\.90$/);
+    await expect(closing).toHaveText(/^(Clôture|Close) 1[,.]90$/);
     await expect(closing).toHaveAttribute("data-verdict", "unknownMargin");
   });
 
@@ -184,5 +184,22 @@ test.describe("Coupons", () => {
     await expect(second.getByTestId("coupon-playable-odds")).toHaveText("1,42");
     // 1,22 × 1,25 = 1,525, arrondi par Intl à 1,53.
     await expect(second.getByTestId("coupon-combined-odds")).toHaveText("1,53");
+  });
+
+  test("un coupon en cours se suit, la saisie passe en second", async ({
+    page,
+  }) => {
+    const card = page
+      .locator("[data-slot=card]")
+      .filter({ hasText: "Coupon cote 2" })
+      .filter({ visible: true })
+      .first();
+    const follow = card.getByTestId("coupon-follow");
+    await expect(follow).toHaveText("Suivre ce coupon");
+    await expect(follow).toHaveAttribute("aria-pressed", "false");
+    await follow.click();
+    await expect(
+      card.getByRole("button", { name: "Je l'ai joué" }),
+    ).toBeVisible();
   });
 });

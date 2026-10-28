@@ -399,7 +399,7 @@
     },
     "homeCoupon": {
       "title": "Today's coupon",
-      "description": "Everything starts here: today's proposed coupon, its legs and its odds. “Play this coupon” adds it to your slip."
+      "description": "Everything starts here: today's proposed coupon, its legs and its odds. “Follow this coupon” sends you its result in the morning digest, no stake; “I played it” adds it to your stake tracking."
     },
     "homePicks": {
       "title": "Today's picks",
@@ -1080,13 +1080,15 @@
     "legPlayableHint": "Odds at {bookmaker}, the players' bookmaker. Ours come from the most generous books in the snapshot.",
     "playedByMe": "Already played by you",
     "inSlip": "In the coupon",
-    "play": "Play this coupon",
+    "play": "I played it",
     "replaceTitle": "Replace your slip?",
     "replaceDescription": "Your slip already holds {count, plural, one {# other pick} other {# other picks}}. A coupon is played on its own: its legs will replace those in the slip.",
     "replaceConfirm": "Replace",
     "replaceCancel": "Keep my slip",
     "addToCoupon": "Add to coupon",
-    "removeFromCoupon": "Remove from coupon"
+    "removeFromCoupon": "Remove from coupon",
+    "follow": "Follow this coupon",
+    "following": "Following · result in the morning digest"
   },
   "pause": {
     "title": "You are on a break",

@@ -131,6 +131,8 @@ function coupon(overrides) {
     viewerCount: 0,
     playerCount: 0,
     playedByMe: false,
+    followerCount: 0,
+    followedByMe: false,
     result: overrides.result ?? null,
     reasoning: null,
     lastFixtureScheduledAt: "2026-10-05T19:00:00.000Z",
@@ -1411,6 +1413,8 @@ function route(method, url) {
   }
   if (path === "/coupons" && method === "GET") return [200, COUPONS];
   if (path.startsWith("/coupons/") && path.endsWith("/view")) return [204, {}];
+  if (path.startsWith("/coupons/") && path.endsWith("/follow"))
+    return [204, {}];
   if (path.startsWith("/coupons")) return [200, []];
   if (path.startsWith("/channel-decisions/by-channel"))
     return [200, CHANNEL_DECISIONS];

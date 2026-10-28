@@ -121,6 +121,10 @@ export type CouponProposalDto = {
   viewerCount: number;
   playerCount: number;
   playedByMe: boolean;
+  /** Joueurs qui suivent ce coupon sans mise ; vrai compte. */
+  followerCount: number;
+  /** Le joueur courant le suit (« Suivre ce coupon », 2026-10-28). */
+  followedByMe: boolean;
   result: CouponResult | null;
   /**
    * Écrit par apps/vantage-worker (persist-coupon-proposal.ts) — un blob
