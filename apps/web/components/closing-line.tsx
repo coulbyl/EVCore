@@ -3,8 +3,9 @@
 import { useState } from "react";
 import * as HoverCard from "@radix-ui/react-hover-card";
 import { cn } from "@evcore/ui";
-import { useTranslations } from "next-intl";
-import { formatSignedPct } from "@/app/dashboard/decisions/components/channel-constants";
+import { useLocale, useTranslations } from "next-intl";
+import { formatSignedRate } from "@/app/dashboard/track-record/track-record-constants";
+import { formatOddsValue } from "@/lib/frequency";
 
 /**
  * Ligne de clôture d'une sélection réglée : cote juste avant le coup d'envoi.
@@ -37,6 +38,7 @@ export function ClosingLine({
   testId?: string;
 }) {
   const t = useTranslations("closingLine");
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
 
   if (closingOdds === null || closingLineValue === null) return null;
@@ -68,7 +70,7 @@ export function ClosingLine({
             beatsClose ? "text-success" : "text-muted-foreground",
           )}
         >
-          {t("label", { odds: closingOdds.toFixed(2) })}
+          {t("label", { odds: formatOddsValue(closingOdds, locale) })}
         </button>
       </HoverCard.Trigger>
       <HoverCard.Portal>
@@ -82,12 +84,15 @@ export function ClosingLine({
           <p>
             {t("detail", {
               bookmaker: closingBookmaker ?? "—",
-              value: formatSignedPct(closingLineValue),
+              value: formatSignedRate(closingLineValue, locale),
             })}
           </p>
           <p className="mt-1 text-muted-foreground">
             {t(`verdict.${verdict}`, {
-              margin: marginPaid !== null ? formatSignedPct(-marginPaid) : "—",
+              margin:
+                marginPaid !== null
+                  ? formatSignedRate(-marginPaid, locale)
+                  : "—",
             })}
           </p>
           <HoverCard.Arrow className="fill-panel" />

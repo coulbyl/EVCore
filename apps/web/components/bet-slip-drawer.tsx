@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useLocale } from "next-intl";
 import {
   X,
   ReceiptText,
@@ -28,6 +29,7 @@ import {
   type BetSlipDraftItem,
 } from "@/domains/bet-slip/types/bet-slip";
 import { FixtureName } from "./fixture-name";
+import { formatOddsValue } from "@/lib/frequency";
 import {
   formatMarketForDisplay,
   formatPickForDisplay,
@@ -151,6 +153,7 @@ function PickLeg({
   onRemove: () => void;
   onStakeChange: (v: string) => void;
 }) {
+  const locale = useLocale();
   const { formatAmount } = useCurrencyFormat();
   const odds = item.odds ? Number.parseFloat(item.odds) : null;
   const stake = item.stakeOverride ?? unitStake;
@@ -166,7 +169,7 @@ function PickLeg({
           <div className="flex shrink-0 items-center gap-1.5">
             {odds !== null && Number.isFinite(odds) && (
               <span className="text-sm font-bold italic tabular-nums text-foreground">
-                {odds.toFixed(2)}
+                {formatOddsValue(odds, locale)}
               </span>
             )}
             <button
@@ -337,6 +340,7 @@ function TypeTabs({
 // ─── Main drawer ─────────────────────────────────────────────────────────────
 
 export function BetSlipDrawer() {
+  const locale = useLocale();
   const isMobile = useIsMobile();
   const currentUser = useCurrentUser();
   const {
@@ -602,7 +606,7 @@ export function BetSlipDrawer() {
                 <div className="mt-2.5 flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Cote totale</span>
                   <span className="font-bold tabular-nums text-foreground">
-                    {totalOdds.toFixed(2)}
+                    {formatOddsValue(totalOdds, locale)}
                   </span>
                 </div>
               )}

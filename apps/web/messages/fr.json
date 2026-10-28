@@ -363,7 +363,7 @@
     },
     "trackRecord": {
       "title": "Mesures historiques",
-      "description": "Ce que nos pronostics ont vraiment donné : annoncé et réalisé, par cote et par type de pari, pertes comprises."
+      "description": "Ce que nos pronostics ont vraiment donné : la fréquence que la cote annonçait et ce qui est réellement passé, par cote et par type de pari, pertes comprises."
     },
     "formation": {
       "title": "Formation",
@@ -375,11 +375,11 @@
     },
     "evaFab": {
       "title": "Eva",
-      "description": "Génère et exporte la fiche des sélections retenues sur une période (txt/json) — pratique pour l'archiver ou la partager. Appui long pour la masquer."
+      "description": "Génère et exporte la fiche des sélections retenues sur une période (txt/json) — pratique pour l'archiver ou la partager."
     },
     "pageSearchFab": {
       "title": "Recherche dans la page",
-      "description": "Cherche un texte directement dans la page affichée — pratique sur une longue liste de matchs. Masquée par défaut, appui long pour la cacher à nouveau."
+      "description": "Cherche un texte directement dans la page affichée, depuis le bouton en haut de l'écran — pratique sur une longue liste de matchs."
     },
     "notifications": {
       "title": "Notifications",
@@ -391,7 +391,7 @@
     },
     "profileBadges": {
       "title": "Profil et badges",
-      "description": "Ton profil et les badges débloqués en apprenant : la formation terminée, la lecture des probabilités."
+      "description": "Ton profil et ton badge de formation, débloqué quand tu termines les fiches."
     },
     "accountSettings": {
       "title": "Paramètres",
@@ -1008,7 +1008,7 @@
     "helpLink": "Quelle différence entre les coupons ?"
   },
   "closingLine": {
-    "label": "Clôture @{odds}",
+    "label": "Clôture {odds}",
     "detail": "Cote juste avant le coup d'envoi chez {bookmaker}. La cote proposée valait {value} face à la probabilité de clôture, marge retirée.",
     "verdict": {
       "beatsClose": "Meilleure que le prix de clôture : prise à ce prix, elle aurait valu {margin} (la marge du bookmaker).",

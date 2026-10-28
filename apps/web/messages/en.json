@@ -363,7 +363,7 @@
     },
     "trackRecord": {
       "title": "Historical measures",
-      "description": "What our predictions actually delivered: announced and realised, by odds and by bet type, losses included."
+      "description": "What our predictions actually delivered: the frequency the odds implied and what actually came in, by odds and by bet type, losses included."
     },
     "formation": {
       "title": "Training",
@@ -375,11 +375,11 @@
     },
     "evaFab": {
       "title": "Eva",
-      "description": "Generates and exports the sheet of retained picks over a period (txt/json) — handy for archiving or sharing it. Long-press to hide it."
+      "description": "Generates and exports the sheet of retained picks over a period (txt/json) — handy for archiving or sharing it."
     },
     "pageSearchFab": {
       "title": "Search this page",
-      "description": "Search text directly on the current page — handy on a long list of matches. Hidden by default, long-press to hide it again."
+      "description": "Search text directly on the current page from the button at the top of the screen — handy on a long list of matches."
     },
     "notifications": {
       "title": "Notifications",
@@ -391,7 +391,7 @@
     },
     "profileBadges": {
       "title": "Profile and badges",
-      "description": "Your profile and the badges you unlock by learning: training completed, reading probabilities."
+      "description": "Your profile and your training badge, unlocked when you finish the sheets."
     },
     "accountSettings": {
       "title": "Settings",
@@ -1008,7 +1008,7 @@
     "helpLink": "What sets the coupons apart?"
   },
   "closingLine": {
-    "label": "Close @{odds}",
+    "label": "Close {odds}",
     "detail": "Odds just before kickoff at {bookmaker}. The proposed odds were worth {value} against the margin-free closing probability.",
     "verdict": {
       "beatsClose": "Better than the closing price: taken at that price it would have been worth {margin} (the bookmaker's margin).",
