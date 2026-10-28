@@ -38,6 +38,18 @@ export function previousUtcDay(now: Date): string {
   return new Date(now.getTime() - DAY_MS).toISOString().slice(0, 10);
 }
 
+/** Coup d'envoi de la dernière jambe : le jour auquel un coupon appartient. */
+export function lastKickoffMs(slip: DigestSlip): number {
+  return Math.max(
+    ...slip.items.map((item) => item.fixture.scheduledAt.getTime()),
+  );
+}
+
+/** En pause à `now` : le joueur a choisi de ne plus être sollicité. */
+export function isPausedAt(pausedUntil: Date | null, now: Date): boolean {
+  return pausedUntil !== null && pausedUntil.getTime() > now.getTime();
+}
+
 export function toMoney(slip: DigestSlip): SlipMoney {
   return slipMoney({
     type: slip.type,
@@ -143,12 +155,9 @@ export class SlipDigestService {
       byUser.set(user.id, bucket);
       return bucket;
     };
-    const isPaused = (pausedUntil: Date | null) =>
-      pausedUntil !== null && pausedUntil.getTime() > now.getTime();
+    const isPaused = (pausedUntil: Date | null) => isPausedAt(pausedUntil, now);
     for (const slip of slips) {
-      const lastKickoff = Math.max(
-        ...slip.items.map((item) => item.fixture.scheduledAt.getTime()),
-      );
+      const lastKickoff = lastKickoffMs(slip);
       if (lastKickoff < from.getTime() || lastKickoff >= to.getTime()) continue;
       const { user } = slip;
       if (isPaused(user.pausedUntil)) {
@@ -183,10 +192,18 @@ export class SlipDigestService {
     // résultats s'ils en ont, coupons du jour pour tous.
     const today = new Date(to.getTime());
     const todayIso = today.toISOString().slice(0, 10);
-    const [recipients, coupons, abstentions] = await Promise.all([
+    const [recipients, coupons, abstentions, notified] = await Promise.all([
       this.repository.findMorningRecipients(),
       this.morningCoupons(today),
       this.coupons.getAbstentions(todayIso),
+      this.repository.findNotifiedUserIds({
+        types: [
+          NotificationType.SLIPS_SETTLED_DIGEST,
+          NotificationType.MORNING_BRIEF,
+        ],
+        key: 'day',
+        value: day,
+      }),
     ]);
 
     let sent = 0;
@@ -210,7 +227,7 @@ export class SlipDigestService {
         abstentions,
       });
       if (!message) continue;
-      if (await this.repository.hasDigest(recipient.id, day)) continue;
+      if (notified.has(recipient.id)) continue;
       await this.notification.notifyUser({
         userId: recipient.id,
         type: NotificationType.MORNING_BRIEF,

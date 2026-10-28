@@ -200,6 +200,13 @@ export function composeWeeklyStatement(input: {
       `Tes coupons : ${plural(won, 'gagné', 'gagnés')} sur ${plural(totals.settledSlips, 'réglé', 'réglés')}. Misé ${formatMoney(totals.settledStake.toString(), { currency })}, rendu ${formatMoney(totals.returned.toString(), { currency })} : ${formatMoney(totals.net.toString(), { currency, signed: true })}.`,
     );
   }
+  // Réglé après l'envoi : le coupon arrive dans une matinée suivante, et le
+  // relevé le dit plutôt que de l'omettre des totaux sans un mot.
+  if (totals.pendingSlips > 0) {
+    sentences.push(
+      `${plural(totals.pendingSlips, 'coupon de la semaine encore en attente', 'coupons de la semaine encore en attente')} : le résultat arrivera dans ta matinée.`,
+    );
+  }
   if (input.follows.length > 0) {
     const won = input.follows.filter(
       (f) => f.result === 'WON' || f.result === 'PARTIAL',

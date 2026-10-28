@@ -83,7 +83,7 @@ test.describe("Notifications", () => {
     await expect(row).toContainText("Coupons du jour : Favori 1,28");
     await expect(
       row.getByRole("link", { name: "Voir l'accueil" }),
-    ).toHaveAttribute("href", "/dashboard?from=morning");
+    ).toHaveAttribute("href", "/dashboard");
   });
 
   test("le joueur n'a ni gravité ni onglet Annonces", async ({ page }) => {

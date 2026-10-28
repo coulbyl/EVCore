@@ -13,6 +13,11 @@ export type CohortRow = {
   d30Retained: number;
 };
 
+/** « 2026-10-29 » : le jour UTC, passé tel quel à Postgres. */
+function isoDay(at: Date): string {
+  return at.toISOString().slice(0, 10);
+}
+
 export type ActiveCounts = { dau: number; wau: number; mau: number };
 
 export type EngagementCounts = {
@@ -41,7 +46,9 @@ export class RetentionRepository {
   findCohorts(opts: { since: Date; asOf: Date }): Promise<CohortRow[]> {
     return this.prisma.client.$queryRaw<CohortRow[]>`
       WITH players AS (
-        SELECT id, ("createdAt" AT TIME ZONE 'UTC')::date AS signup
+        -- Colonnes en UTC sans fuseau : le cast direct reste juste quel que
+        -- soit le TimeZone de la session.
+        SELECT id, "createdAt"::date AS signup
         FROM public.users
         WHERE role <> 'ADMIN' AND "createdAt" >= ${opts.since}
       ),
@@ -55,7 +62,7 @@ export class RetentionRepository {
         LEFT JOIN public.user_activity_day a ON a."userId" = p.id
         GROUP BY p.id, p.signup
       ),
-      as_of AS (SELECT (${opts.asOf}::timestamp AT TIME ZONE 'UTC')::date AS today)
+      as_of AS (SELECT ${isoDay(opts.asOf)}::date AS today)
       SELECT date_trunc('week', signup)::date AS week,
         count(*)::int AS signups,
         count(*) FILTER (WHERE early_days >= 3)::int AS activated,
@@ -73,7 +80,7 @@ export class RetentionRepository {
 
   async findActiveCounts(asOf: Date): Promise<ActiveCounts> {
     const [row] = await this.prisma.client.$queryRaw<ActiveCounts[]>`
-      WITH as_of AS (SELECT (${asOf}::timestamp AT TIME ZONE 'UTC')::date AS today)
+      WITH as_of AS (SELECT ${isoDay(asOf)}::date AS today)
       SELECT
         count(DISTINCT a."userId") FILTER (WHERE a.day = today - 1)::int AS dau,
         count(DISTINCT a."userId") FILTER (WHERE a.day BETWEEN today - 7 AND today - 1)::int AS wau,
@@ -86,7 +93,7 @@ export class RetentionRepository {
 
   async findEngagement(asOf: Date): Promise<EngagementCounts> {
     const [row] = await this.prisma.client.$queryRaw<EngagementCounts[]>`
-      WITH as_of AS (SELECT (${asOf}::timestamp AT TIME ZONE 'UTC')::date AS today),
+      WITH as_of AS (SELECT ${isoDay(asOf)}::date AS today),
       weekly AS (
         SELECT DISTINCT a."userId"
         FROM public.user_activity_day a
@@ -97,10 +104,10 @@ export class RetentionRepository {
         (SELECT count(*) FROM weekly)::int AS "weeklyActive",
         (SELECT count(DISTINCT f."userId") FROM public.coupon_follow f, as_of
            WHERE f."userId" IN (SELECT "userId" FROM weekly)
-             AND f."createdAt" >= today - 7)::int AS followed,
+             AND f."createdAt" >= today - 7 AND f."createdAt" < today)::int AS followed,
         (SELECT count(DISTINCT s."userId") FROM public.bet_slip s, as_of
            WHERE s."userId" IN (SELECT "userId" FROM weekly)
-             AND s."createdAt" >= today - 7)::int AS declared
+             AND s."createdAt" >= today - 7 AND s."createdAt" < today)::int AS declared
     `;
     return row ?? { weeklyActive: 0, followed: 0, declared: 0 };
   }
@@ -119,7 +126,7 @@ export class RetentionRepository {
         -- Une ouverture par joueur et par jour : rouvrir le lien ne gonfle
         -- pas le taux au-delà des notifications envoyées.
         SELECT payload->>'notificationType' AS type,
-               count(DISTINCT ("userId", (at AT TIME ZONE 'UTC')::date))::int AS opened
+               count(DISTINCT ("userId", at::date))::int AS opened
         FROM public.product_event
         WHERE type = 'NOTIFICATION_OPENED' AND at >= ${since}
         GROUP BY 1

@@ -86,7 +86,11 @@ function makeHarness(
       slipIds: new Set(opts.reported ?? []),
       followedIds: new Set(opts.reportedFollows ?? []),
     }),
-    hasDigest: vi.fn().mockResolvedValue(opts.alreadySent ?? false),
+    findNotifiedUserIds: vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(new Set(opts.alreadySent ? ['u1'] : [])),
+      ),
     findMorningRecipients: vi.fn().mockResolvedValue(
       recipients.map((r) => ({
         id: r.id,

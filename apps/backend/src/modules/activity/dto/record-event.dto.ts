@@ -1,4 +1,4 @@
-import { IsEnum, IsIn, IsOptional } from 'class-validator';
+import { IsEnum, IsIn, ValidateIf } from 'class-validator';
 import { ProductEventType } from '@evcore/db';
 
 /** Types de notification dont on mesure l'ouverture. */
@@ -11,8 +11,12 @@ export class RecordEventDto {
   @IsEnum(ProductEventType)
   type!: ProductEventType;
 
-  /** Pour NOTIFICATION_OPENED : la notification d'origine. */
-  @IsOptional()
+  /** Obligatoire pour NOTIFICATION_OPENED : la notification d'origine. */
+  @ValidateIf(
+    (dto: RecordEventDto) =>
+      dto.type === ProductEventType.NOTIFICATION_OPENED ||
+      dto.notificationType !== undefined,
+  )
   @IsIn(TRACKED_NOTIFICATION_TYPES)
   notificationType?: (typeof TRACKED_NOTIFICATION_TYPES)[number];
 }

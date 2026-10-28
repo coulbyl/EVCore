@@ -807,6 +807,16 @@ export class CouponRepository {
     `;
   }
 
+  /** Bandes cibles des coupons publiés pour un jour, toutes sources. */
+  async findPublishedTargets(forDate: Date): Promise<number[]> {
+    const rows = await this.prisma.client.couponProposal.findMany({
+      where: { forDate: startOfUtcDay(forDate) },
+      select: { targetOddsMin: true },
+      distinct: ['targetOddsMin'],
+    });
+    return rows.map((row) => Number(row.targetOddsMin));
+  }
+
   /**
    * Matchs que le méta-canal AVOID signale sur la dernière analyse d'avant
    * coup d'envoi : les chasseurs ne les jouent pas.

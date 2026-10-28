@@ -177,17 +177,26 @@ export class CouponService {
   /**
    * Produits du jour qui se sont abstenus, avec leur raison (2026-10-29) :
    * le joueur lit « Pas de Coupon cote 2 aujourd'hui : … » au lieu d'un
-   * texte fixe.
+   * texte fixe. Un produit qui a quand même un coupon publié ce jour-là
+   * (le combiné de l'IA, ou un passage antérieur qui avait composé) n'est
+   * jamais dit absent.
    */
   async getAbstentions(
     date: string,
   ): Promise<{ couponClass: string; reason: string | null }[]> {
-    const attempts = await this.repo.findLatestAttempts(
-      new Date(`${date}T00:00:00.000Z`),
+    const day = new Date(`${date}T00:00:00.000Z`);
+    const [attempts, targets] = await Promise.all([
+      this.repo.findLatestAttempts(day),
+      this.repo.findPublishedTargets(day),
+    ]);
+    const published = new Set<string | null>(
+      targets.map((target) => classForTargetOddsMin(target)),
     );
     return attempts.flatMap((attempt) => {
       const couponClass = ABSTENTION_PASS_CLASS[attempt.pass];
-      return couponClass && attempt.outcome === 'abstained'
+      return couponClass &&
+        attempt.outcome === 'abstained' &&
+        !published.has(couponClass)
         ? [{ couponClass, reason: attempt.reason }]
         : [];
     });

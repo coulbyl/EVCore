@@ -73,7 +73,11 @@ function makeHarness(opts: {
     ),
     findSlipsTouching: vi.fn().mockResolvedValue(opts.slips ?? []),
     findSettledFollows: vi.fn().mockResolvedValue([]),
-    hasStatement: vi.fn().mockResolvedValue(opts.alreadySent ?? false),
+    findNotifiedUserIds: vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(new Set(opts.alreadySent ? ['u1'] : [])),
+      ),
   } as unknown as SlipDigestRepository;
   const coupons = {
     getTrackRecordBetween: vi.fn().mockResolvedValue(opts.products ?? []),
@@ -148,6 +152,21 @@ describe('WeeklyStatementService.sendStatements', () => {
     await service.sendStatements(WEEK, NOW);
     const [input] = vi.mocked(notification.notifyUser).mock.calls[0] ?? [];
     expect(input?.body).toBe('Nos coupons : Favori 5 jours gagnés sur 7.');
+  });
+
+  it('says a slip still pending will come in the morning brief', async () => {
+    const pending = slip({
+      userId: 'u1',
+      kickoff: '2026-10-25T21:00:00Z',
+      status: 'LOST',
+    });
+    pending.items[0].bet.status = 'PENDING';
+    const { service, notification } = makeHarness({ slips: [pending] });
+    await service.sendStatements(WEEK, NOW);
+    const [input] = vi.mocked(notification.notifyUser).mock.calls[0] ?? [];
+    expect(input?.body).toBe(
+      '1 coupon de la semaine encore en attente : le résultat arrivera dans ta matinée.',
+    );
   });
 
   it('skips a paused player, a repeated run and an empty week', async () => {

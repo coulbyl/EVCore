@@ -171,7 +171,7 @@ describe('CouponService.follow', () => {
 });
 
 describe('CouponService.getAbstentions', () => {
-  it('keeps the products whose latest attempt of the day abstained', async () => {
+  it('keeps the products whose latest attempt abstained and that have no coupon', async () => {
     const repo = {
       findLatestAttempts: vi.fn().mockResolvedValue([
         {
@@ -187,7 +187,14 @@ describe('CouponService.getAbstentions', () => {
           outcome: 'abstained',
           reason: 'no_candidate_in_band',
         },
+        // Le moteur s'abstient mais le combiné de l'IA (1,2) est publié.
+        {
+          pass: 'engine-combo',
+          outcome: 'abstained',
+          reason: 'not_enough_calibrated_short_legs',
+        },
       ]),
+      findPublishedTargets: vi.fn().mockResolvedValue([1.2]),
     } as unknown as CouponRepository;
     const service = new CouponService(
       repo,

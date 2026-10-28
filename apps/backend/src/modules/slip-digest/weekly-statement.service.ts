@@ -11,7 +11,7 @@ import {
   type WeeklyProduct,
 } from './slip-digest.compose';
 import { SlipDigestRepository } from './slip-digest.repository';
-import { toMoney } from './slip-digest.service';
+import { isPausedAt, lastKickoffMs, toMoney } from './slip-digest.service';
 
 const logger = createLogger('weekly-statement');
 
@@ -72,18 +72,21 @@ export class WeeklyStatementService {
   ): Promise<{ sent: number; skippedPaused: number }> {
     const from = new Date(`${week}T00:00:00.000Z`);
     const to = new Date(from.getTime() + 7 * DAY_MS);
-    const [recipients, slips, follows, products] = await Promise.all([
+    const [recipients, slips, follows, products, notified] = await Promise.all([
       this.repository.findWeeklyRecipients(),
       this.repository.findSlipsTouching(from, to),
       this.repository.findSettledFollows(from, to),
       this.weekProducts(from, to),
+      this.repository.findNotifiedUserIds({
+        types: [NotificationType.WEEKLY_STATEMENT],
+        key: 'week',
+        value: week,
+      }),
     ]);
 
     const results = new Map<string, SlipMoney[]>();
     for (const slip of slips) {
-      const lastKickoff = Math.max(
-        ...slip.items.map((item) => item.fixture.scheduledAt.getTime()),
-      );
+      const lastKickoff = lastKickoffMs(slip);
       if (lastKickoff < from.getTime() || lastKickoff >= to.getTime()) continue;
       const list = results.get(slip.user.id) ?? [];
       list.push(toMoney(slip));
@@ -103,10 +106,7 @@ export class WeeklyStatementService {
     let sent = 0;
     let skippedPaused = 0;
     for (const recipient of recipients) {
-      if (
-        recipient.pausedUntil !== null &&
-        recipient.pausedUntil.getTime() > now.getTime()
-      ) {
+      if (isPausedAt(recipient.pausedUntil, now)) {
         skippedPaused += 1;
         continue;
       }
@@ -117,7 +117,7 @@ export class WeeklyStatementService {
         products,
       });
       if (!message) continue;
-      if (await this.repository.hasStatement(recipient.id, week)) continue;
+      if (notified.has(recipient.id)) continue;
       await this.notification.notifyUser({
         userId: recipient.id,
         type: NotificationType.WEEKLY_STATEMENT,

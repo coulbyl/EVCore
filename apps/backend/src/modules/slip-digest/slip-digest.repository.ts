@@ -171,34 +171,26 @@ export class SlipDigestRepository {
     });
   }
 
-  /** Un relevé par joueur et par semaine, même si le job est relancé. */
-  async hasStatement(userId: string, week: string): Promise<boolean> {
-    const existing = await this.prisma.client.notification.findFirst({
+  /**
+   * Joueurs déjà notifiés pour une clé du payload (`day` de la matinée,
+   * `week` du relevé) : un relancement du job n'envoie rien deux fois. Une
+   * seule requête pour tous les destinataires.
+   */
+  async findNotifiedUserIds(opts: {
+    types: readonly NotificationType[];
+    key: 'day' | 'week';
+    value: string;
+  }): Promise<Set<string>> {
+    const rows = await this.prisma.client.notification.findMany({
       where: {
-        userId,
-        type: NotificationType.WEEKLY_STATEMENT,
-        payload: { path: ['week'], equals: week },
+        userId: { not: null },
+        type: { in: [...opts.types] },
+        payload: { path: [opts.key], equals: opts.value },
       },
-      select: { id: true },
+      select: { userId: true },
     });
-    return existing !== null;
-  }
-
-  /** Un relancement du job ne doit pas envoyer deux fois le même jour. */
-  async hasDigest(userId: string, day: string): Promise<boolean> {
-    const existing = await this.prisma.client.notification.findFirst({
-      where: {
-        userId,
-        type: {
-          in: [
-            NotificationType.SLIPS_SETTLED_DIGEST,
-            NotificationType.MORNING_BRIEF,
-          ],
-        },
-        payload: { path: ['day'], equals: day },
-      },
-      select: { id: true },
-    });
-    return existing !== null;
+    return new Set(
+      rows.flatMap((row) => (row.userId === null ? [] : [row.userId])),
+    );
   }
 }
