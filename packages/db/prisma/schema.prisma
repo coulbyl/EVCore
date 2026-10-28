@@ -181,6 +181,9 @@ enum NotificationType {
   SUBSCRIPTION_EVENTS_ADDED
   SUBSCRIPTION_SETTLED
   SUPPORT_MESSAGE
+  // Résumé du matin des coupons déclarés réglés la veille, pertes comprises
+  // (2026-10-28). Jamais « les coupons du jour sont publiés ».
+  SLIPS_SETTLED_DIGEST
   // Broadcast (Notification.userId null) — voir OPERATOR_TYPES dans
   // notification.service.ts.
   ANNOUNCEMENT_PUBLISHED

@@ -26,6 +26,7 @@ import { FormationProgressModule } from './modules/formation-progress/formation-
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
 import { SupportModule } from './modules/support/support.module';
 import { PushModule } from './modules/push/push.module';
+import { SlipDigestModule } from './modules/slip-digest/slip-digest.module';
 import { CouponModule } from './modules/coupon/coupon.module';
 import { MlModule } from './modules/ml/ml.module';
 import { AnalysisSheetModule } from './modules/analysis-sheet/analysis-sheet.module';
@@ -72,6 +73,7 @@ import { RedisModule } from './common/redis/redis.module';
     AnnouncementsModule,
     SupportModule,
     PushModule,
+    SlipDigestModule,
     CouponModule,
     AnalysisSheetModule,
     PersonalizationModule,
