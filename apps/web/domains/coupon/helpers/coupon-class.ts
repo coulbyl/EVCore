@@ -101,20 +101,29 @@ export const COUPON_CLASS_META: Record<CouponClassName, CouponClassMeta> = {
     order: 2,
     badgeVariant: "warning",
   },
-  // Chasseurs en ombre (2026-10-28) : vus par l'admin seulement, jamais par
-  // un joueur avant la porte d'affichage (docs/plan-lot-2-2026-10-28.md).
+  // Chasseurs (2026-10-28) : une sélection par jour sur un seul marché, ou
+  // rien. Fréquences du rejeu de 116 jours et du marché sans marge
+  // (docs/audits/2026-10-28/HUNTERS.md) ; mesurés en direct, jambe par
+  // jambe. La pire série se lit sur la carte.
   HUNTER_BTTS: {
-    label: "Ombre · chasseur Les deux marquent",
+    label: "Chasseur Les deux marquent · cote 1,45–1,90",
     shortLabel: "Chasseur BTTS",
-    frequency: "En ombre, pas encore mesuré",
-    order: 5,
-    badgeVariant: "warning",
+    frequency: "Gagne environ 3 fois sur 5",
+    order: 1,
+    badgeVariant: "accent",
   },
   HUNTER_DRAW: {
-    label: "Ombre · chasseur Match nul",
+    label: "Chasseur Match nul · cote 2,90–3,60",
     shortLabel: "Chasseur Nul",
-    frequency: "En ombre, pas encore mesuré",
-    order: 6,
+    frequency: "Gagne environ 1 fois sur 3",
+    order: 2,
+    badgeVariant: "warning",
+  },
+  HUNTER_SCORE: {
+    label: "Chasseur Score exact · cote 5–12",
+    shortLabel: "Chasseur Score",
+    frequency: "Gagne environ 1 fois sur 9",
+    order: 3,
     badgeVariant: "warning",
   },
 };

@@ -25,8 +25,9 @@ test.describe("Coupons", () => {
       has: page.getByTestId("coupon-combined-odds"),
     });
     const count = await cards.count();
-    // Six coupons historiques et le coupon cote 2 (2026-10-28).
-    expect(count).toBe(7);
+    // Six coupons historiques, le coupon cote 2 et le chasseur Nul
+    // (2026-10-28).
+    expect(count).toBe(8);
     // Le coupon prix 5–15 n'est plus affiché ; le coupon long 2,5–5 l'est.
     await expect(page.getByText(/cote 5–15/)).toHaveCount(0);
     await expect(
@@ -123,10 +124,10 @@ test.describe("Coupons", () => {
   test("les deux générateurs et le coupon remboursé sont identifiés", async ({
     page,
   }) => {
-    // Favori, coupon cote 2 et un coupon prix.
+    // Favori, coupon cote 2, un coupon prix et le chasseur Nul.
     await expect(
       page.getByText("Choisi sur les cotes", { exact: true }),
-    ).toHaveCount(3);
+    ).toHaveCount(4);
     await expect(page.getByText("Analyse IA", { exact: true })).toHaveCount(3);
     await expect(
       page.getByText("Sélections du moteur", { exact: true }),
@@ -201,5 +202,17 @@ test.describe("Coupons", () => {
     await expect(
       card.getByRole("button", { name: "Je l'ai joué" }),
     ).toBeVisible();
+  });
+
+  test("un chasseur se lit comme un coupon, avec sa fréquence", async ({
+    page,
+  }) => {
+    const card = page
+      .locator("[data-slot=card]")
+      .filter({ hasText: "Chasseur Match nul" })
+      .filter({ visible: true })
+      .first();
+    await expect(card).toContainText("Match nul");
+    await expect(card.getByTestId("coupon-follow")).toBeVisible();
   });
 });
