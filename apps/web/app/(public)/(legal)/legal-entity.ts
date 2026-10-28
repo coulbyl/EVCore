@@ -31,6 +31,6 @@ export const LEGAL_ENTITY = {
 } as const;
 
 /** Date de dernière mise à jour affichée en tête de chaque page légale. */
-export const LEGAL_LAST_UPDATED = "27 octobre 2026";
+export const LEGAL_LAST_UPDATED = "28 octobre 2026";
 
 export const TO_COMPLETE = "À compléter par l'éditeur";

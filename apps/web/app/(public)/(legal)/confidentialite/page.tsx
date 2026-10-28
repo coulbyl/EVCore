@@ -118,17 +118,19 @@ export default function ConfidentialitePage() {
       <section>
         <h2>5. Combien de temps</h2>
         <p>
-          Tes données sont conservées tant que ton compte existe. À ta demande
-          de suppression, le compte et les données qui y sont rattachées sont
-          supprimés, sauf obligation légale de conservation.
+          Tes données sont conservées tant que ton compte existe. Quand tu le
+          supprimes, le compte et les données qui y sont rattachées sont
+          supprimés immédiatement, sauf obligation légale de conservation.
         </p>
       </section>
 
       <section>
         <h2>6. Tes droits</h2>
         <p>
-          Tu peux accéder à tes données, les faire corriger, t&apos;opposer à un
-          traitement ou demander leur suppression en écrivant à{" "}
+          Tu peux supprimer ton compte toi-même, à tout moment, depuis Mon
+          compte. Tu peux aussi accéder à tes données, les faire corriger,
+          t&apos;opposer à un traitement ou demander leur suppression en
+          écrivant à{" "}
           <a href={`mailto:${LEGAL_ENTITY.contactEmail}`} className="underline">
             {LEGAL_ENTITY.contactEmail}
           </a>

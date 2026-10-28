@@ -64,6 +64,26 @@ test.describe("Compte", () => {
     await expect(page.getByText("Opérateur")).toHaveCount(0);
   });
 
+  test("supprimer le compte demande le mot de passe et dit pourquoi ça échoue", async ({
+    page,
+  }) => {
+    await page.getByRole("button", { name: "Supprimer mon compte" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toContainText("immédiat et définitif");
+    const confirm = dialog.getByRole("button", {
+      name: "Supprimer définitivement",
+    });
+    await expect(confirm).toBeDisabled();
+    await dialog
+      .getByLabel("Ton mot de passe, pour confirmer")
+      .fill("mauvais-mot");
+    await confirm.click();
+    await expect(dialog.getByRole("alert")).toHaveText(
+      "Mot de passe incorrect.",
+    );
+    await expect(page).toHaveURL(/\/dashboard\/params\/account\/profil$/);
+  });
+
   test("l'ancien onglet Personnalisation mène au profil", async ({ page }) => {
     await page.goto("/dashboard/params/account/personnalisation");
     await expect(page).toHaveURL(/\/dashboard\/params\/account\/profil$/);

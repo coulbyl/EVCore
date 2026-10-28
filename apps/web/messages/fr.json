@@ -530,9 +530,18 @@
     "responsible": {
       "title": "Jeu responsable",
       "body": "Parier comporte des risques de perte. Ne mise que ce que tu peux perdre, et jamais pour te refaire.",
-      "deletion": "Pour supprimer ton compte, écris à l'équipe : elle s'en occupe.",
+      "deletion": "Supprimer ton compte efface immédiatement tout ce qui t'appartient.",
       "readPage": "Lire la page Jeu responsable",
       "writeTeam": "Écrire à l'équipe"
+    },
+    "deleteAccount": {
+      "trigger": "Supprimer mon compte",
+      "title": "Supprimer mon compte",
+      "description": "C'est immédiat et définitif. Tes coupons déclarés, ton suivi de mise, tes badges, ta conversation avec l'équipe et tes réglages sont effacés. Les pronostics publics d'EVCore ne changent pas.",
+      "passwordLabel": "Ton mot de passe, pour confirmer",
+      "cancel": "Annuler",
+      "confirm": "Supprimer définitivement",
+      "error": "Impossible de supprimer le compte."
     }
   },
   "performance": {

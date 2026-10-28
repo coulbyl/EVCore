@@ -128,7 +128,7 @@ export default function CguPage() {
       <section>
         <h2>8. Suspension et suppression du compte</h2>
         <p>
-          Tu peux demander la suppression de ton compte à tout moment en
+          Tu peux supprimer ton compte à tout moment, depuis Mon compte, ou en
           écrivant à{" "}
           <a href={`mailto:${LEGAL_ENTITY.contactEmail}`} className="underline">
             {LEGAL_ENTITY.contactEmail}

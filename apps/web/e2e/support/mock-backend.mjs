@@ -1204,6 +1204,10 @@ function route(method, url) {
   if (method === "OPTIONS") return [200, {}];
   if (path === "/health") return [200, { ok: true }];
   if (path === "/auth/me") return [200, SESSION];
+  // Le faux backend ne lit pas les corps : la suppression répond toujours
+  // « mot de passe incorrect », ce qui teste la boîte sans perdre la session.
+  if (path === "/auth/me/delete")
+    return [400, { message: "Mot de passe incorrect.", statusCode: 400 }];
   if (path === "/auth/login") return [200, SESSION, true];
   // Fiche de match : les équipes du match de Décisions, les lectures
   // évaluées de la première rencontre de FIXTURE_ROWS.

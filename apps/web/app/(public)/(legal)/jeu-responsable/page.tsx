@@ -105,7 +105,8 @@ export default function JeuResponsablePage() {
             laquelle chaque produit perd.
           </li>
           <li>
-            Tu peux faire supprimer ton compte à tout moment en écrivant à{" "}
+            Tu peux supprimer ton compte à tout moment depuis Mon compte, ou en
+            écrivant à{" "}
             <a
               href={`mailto:${LEGAL_ENTITY.contactEmail}`}
               className="underline"

@@ -530,9 +530,18 @@
     "responsible": {
       "title": "Responsible gambling",
       "body": "Betting carries a risk of loss. Only stake what you can afford to lose, and never to chase losses.",
-      "deletion": "To delete your account, write to the team: they will take care of it.",
+      "deletion": "Deleting your account immediately erases everything that belongs to you.",
       "readPage": "Read the responsible gambling page",
       "writeTeam": "Write to the team"
+    },
+    "deleteAccount": {
+      "trigger": "Delete my account",
+      "title": "Delete my account",
+      "description": "It is immediate and final. Your declared coupons, stake tracking, badges, conversation with the team and settings are erased. EVCore's public forecasts do not change.",
+      "passwordLabel": "Your password, to confirm",
+      "cancel": "Cancel",
+      "confirm": "Delete for good",
+      "error": "The account could not be deleted."
     }
   },
   "performance": {
