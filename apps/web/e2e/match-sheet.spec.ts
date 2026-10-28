@@ -31,6 +31,10 @@ test.describe("Fiche de match", () => {
   });
 
   test("l'écran Matchs renvoie le joueur vers Décisions", async ({ page }) => {
+    test.skip(
+      process.env.E2E_ROLE !== "OPERATOR",
+      "vue joueur : lancer avec E2E_ROLE=OPERATOR",
+    );
     await page.goto("/dashboard/fixtures");
     await expect(page).toHaveURL(/\/dashboard\/decisions/);
   });
