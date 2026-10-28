@@ -103,12 +103,12 @@ export function ArbitrageCard({
               <span>{formatMarketForDisplay(selection.market, loc)}</span>
             )}
             {/* Fréquence du marché, marge retirée (2026-10-28), comme en
-                Décisions. */}
-            {selection.marketProbability !== null ? (
+                Décisions ; empruntée avec la cote quand l'IA n'en a pas. */}
+            {entry.displayMarketProbability !== null ? (
               <span className="tabular-nums">
                 {tDecisions(
                   "chances",
-                  frequencyOf(selection.marketProbability),
+                  frequencyOf(entry.displayMarketProbability),
                 )}
               </span>
             ) : null}

@@ -54,25 +54,30 @@ export type ArbitrageEntry = Pick<
     // pick) for decisions persisted before that date, or for markets
     // findKnownOdds doesn't cover yet (only ONE_X_TWO today).
     displayOdds: number | null;
+    /**
+     * Fréquence du marché de la cote affichée, empruntée avec elle à la
+     * lecture sœur quand l'IA n'a pas enregistré de cote.
+     */
+    displayMarketProbability: number | null;
   };
 
-function findSiblingOdds(
+function findSiblingSelection(
   decisions: ChannelDecisionMatchDto["decisions"],
   market: string,
   pick: string,
-): number | null {
+): ChannelSelectionDto | null {
   for (const decision of decisions) {
     if (decision.channel === "VANTAGE") continue;
     const match = decision.selections.find(
       (s) => s.market === market && s.pick === pick && s.odds !== null,
     );
-    if (match) return match.odds;
+    if (match) return match;
   }
   return null;
 }
 
 // Requires the UNFILTERED /channel-decisions/by-match response (every
-// channel, not just VANTAGE) — findSiblingOdds needs the other channels'
+// channel, not just VANTAGE) — findSiblingSelection needs the other channels'
 // selections to be present in `match.decisions` to borrow from.
 export function flattenArbitrageEntries(
   matches: ChannelDecisionMatchDto[],
@@ -88,11 +93,17 @@ export function flattenArbitrageEntries(
       .filter((d) => d.channel === "VANTAGE")
       .map((d) => {
         const selection = d.selections[0];
-        const displayOdds =
-          selection?.odds ??
-          (selection
-            ? findSiblingOdds(match.decisions, selection.market, selection.pick)
-            : null);
+        const sibling =
+          selection && selection.odds === null
+            ? findSiblingSelection(
+                match.decisions,
+                selection.market,
+                selection.pick,
+              )
+            : null;
+        const displayOdds = selection?.odds ?? sibling?.odds ?? null;
+        const displayMarketProbability =
+          selection?.marketProbability ?? sibling?.marketProbability ?? null;
         return {
           fixtureId: match.fixtureId,
           fixtureStatus: match.fixtureStatus,
@@ -114,6 +125,7 @@ export function flattenArbitrageEntries(
           decidedAt: d.decidedAt,
           selections: d.selections,
           displayOdds,
+          displayMarketProbability,
           ourPick: ours,
         };
       });
