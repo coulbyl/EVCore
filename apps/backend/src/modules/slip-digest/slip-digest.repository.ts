@@ -3,6 +3,7 @@ import {
   type BetSlipType,
   type BetStatus,
   type CouponResult,
+  type CouponSource,
   NotificationType,
   type Prisma,
 } from '@evcore/db';
@@ -27,6 +28,13 @@ export type DigestFollow = {
     result: CouponResult | null;
     targetOddsMin: Prisma.Decimal;
   };
+};
+
+export type DayCoupon = {
+  source: CouponSource;
+  targetOddsMin: Prisma.Decimal;
+  combinedOdds: Prisma.Decimal;
+  legs: { operatorOdds: Prisma.Decimal | null }[];
 };
 
 export type ReportedIds = { slipIds: Set<string>; followedIds: Set<string> };
@@ -106,7 +114,14 @@ export class SlipDigestRepository {
     const digests = await this.prisma.client.notification.findMany({
       where: {
         userId: { in: [...userIds] },
-        type: NotificationType.SLIPS_SETTLED_DIGEST,
+        // La matinée remplace le résumé seul depuis le 2026-10-29 : les deux
+        // portent les coupons déjà annoncés.
+        type: {
+          in: [
+            NotificationType.SLIPS_SETTLED_DIGEST,
+            NotificationType.MORNING_BRIEF,
+          ],
+        },
         createdAt: { gte: since },
       },
       select: { payload: true },
@@ -119,12 +134,44 @@ export class SlipDigestRepository {
     };
   }
 
+  /** Joueurs qui reçoivent la matinée (réglage actif, 2026-10-29). */
+  findMorningRecipients(): Promise<
+    { id: string; currency: string | null; pausedUntil: Date | null }[]
+  > {
+    return this.prisma.client.user.findMany({
+      where: { morningBriefEnabled: true },
+      select: { id: true, currency: true, pausedUntil: true },
+    });
+  }
+
+  /**
+   * Coupons publiés pour un jour, avec la cote 1xBet de leurs jambes quand
+   * elle est connue : la ligne « coupons du jour » de la matinée.
+   */
+  findDayCoupons(day: Date): Promise<DayCoupon[]> {
+    return this.prisma.client.couponProposal.findMany({
+      where: { forDate: day },
+      select: {
+        source: true,
+        targetOddsMin: true,
+        combinedOdds: true,
+        legs: { select: { operatorOdds: true } },
+      },
+      orderBy: { rank: 'asc' },
+    });
+  }
+
   /** Un relancement du job ne doit pas envoyer deux fois le même jour. */
   async hasDigest(userId: string, day: string): Promise<boolean> {
     const existing = await this.prisma.client.notification.findFirst({
       where: {
         userId,
-        type: NotificationType.SLIPS_SETTLED_DIGEST,
+        type: {
+          in: [
+            NotificationType.SLIPS_SETTLED_DIGEST,
+            NotificationType.MORNING_BRIEF,
+          ],
+        },
         payload: { path: ['day'], equals: day },
       },
       select: { id: true },

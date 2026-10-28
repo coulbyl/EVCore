@@ -4,7 +4,8 @@ import { NotificationType } from '@evcore/db';
 import type { NotificationService } from '@modules/notification/notification.service';
 import type { PushService } from '@modules/push/push.service';
 import { SlipDigestService, previousUtcDay } from './slip-digest.service';
-import type { SlipDigestRepository } from './slip-digest.repository';
+import type { CouponService } from '@modules/coupon/coupon.service';
+import type { DayCoupon, SlipDigestRepository } from './slip-digest.repository';
 
 const NOW = new Date('2026-10-28T08:00:00.000Z');
 const DAY = '2026-10-27';
@@ -64,8 +65,20 @@ function makeHarness(
     reported?: string[];
     follows?: Follow[];
     reportedFollows?: string[];
+    /** Joueurs ayant gardé la matinée ; par défaut ceux des coupons. */
+    recipients?: { id: string; pausedUntil?: Date | null }[];
+    coupons?: DayCoupon[];
+    abstentions?: { couponClass: string; reason: string | null }[];
   } = {},
 ) {
+  const recipients = opts.recipients ?? [
+    ...new Map(
+      [
+        ...slips.map((s) => s.user),
+        ...(opts.follows ?? []).map((f) => f.user),
+      ].map((u) => [u.id, u]),
+    ).values(),
+  ];
   const repository = {
     findSlipsTouching: vi.fn().mockResolvedValue(slips),
     findSettledFollows: vi.fn().mockResolvedValue(opts.follows ?? []),
@@ -74,7 +87,18 @@ function makeHarness(
       followedIds: new Set(opts.reportedFollows ?? []),
     }),
     hasDigest: vi.fn().mockResolvedValue(opts.alreadySent ?? false),
+    findMorningRecipients: vi.fn().mockResolvedValue(
+      recipients.map((r) => ({
+        id: r.id,
+        currency: 'XOF',
+        pausedUntil: r.pausedUntil ?? null,
+      })),
+    ),
+    findDayCoupons: vi.fn().mockResolvedValue(opts.coupons ?? []),
   } as unknown as SlipDigestRepository;
+  const coupons = {
+    getAbstentions: vi.fn().mockResolvedValue(opts.abstentions ?? []),
+  } as unknown as CouponService;
   const notification = {
     notifyUser: vi.fn().mockResolvedValue(undefined),
   } as unknown as NotificationService;
@@ -82,7 +106,9 @@ function makeHarness(
     sendToUser: vi.fn().mockResolvedValue(undefined),
   } as unknown as PushService;
   return {
-    service: new SlipDigestService(repository, notification, push),
+    service: new SlipDigestService(repository, notification, push, coupons),
+    repository,
+    coupons,
     notification,
     push,
   };
@@ -93,7 +119,7 @@ describe('SlipDigestService.sendDigests', () => {
     expect(previousUtcDay(NOW)).toBe(DAY);
   });
 
-  it('notifies once per player, in-app and push, linking to Mes coupons', async () => {
+  it('notifies once per player, in-app and push, linking to the home page', async () => {
     const { service, notification, push } = makeHarness([
       slip({ userId: 'u1', kickoffs: ['2026-10-27T19:00:00Z'] }),
       slip({ userId: 'u1', kickoffs: ['2026-10-27T21:00:00Z'], status: 'WON' }),
@@ -103,13 +129,13 @@ describe('SlipDigestService.sendDigests', () => {
     expect(notification.notifyUser).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: 'u1',
-        type: NotificationType.SLIPS_SETTLED_DIGEST,
+        type: NotificationType.MORNING_BRIEF,
         payload: expect.objectContaining({ day: DAY, settled: 2 }),
       }),
     );
     expect(push.sendToUser).toHaveBeenCalledWith(
       'u1',
-      expect.objectContaining({ url: '/dashboard/bet-slips' }),
+      expect.objectContaining({ url: '/dashboard?from=morning' }),
     );
   });
 
@@ -199,5 +225,59 @@ describe('SlipDigestService.sendDigests', () => {
     });
     await again.service.sendDigests(DAY, NOW);
     expect(again.notification.notifyUser).not.toHaveBeenCalled();
+  });
+
+  it("brings the day's coupons to a player without results, 1xBet odds first", async () => {
+    const coupon = (
+      source: DayCoupon['source'],
+      [targetOddsMin, combinedOdds]: [number, number],
+      legs: (number | null)[],
+    ): DayCoupon => ({
+      source,
+      targetOddsMin: new Decimal(targetOddsMin),
+      combinedOdds: new Decimal(combinedOdds),
+      legs: legs.map((o) => ({
+        operatorOdds: o === null ? null : new Decimal(o),
+      })),
+    });
+    const { service, notification, coupons } = makeHarness([], {
+      recipients: [{ id: 'u3' }],
+      coupons: [
+        // L'IA pour la même classe : le générateur déterministe passe devant.
+        coupon('LLM', [2, 2.4], [1.5, 1.6]),
+        coupon('PRICE_COMPOSER', [2, 2.2], [1.4, 1.5]),
+        coupon('PRICE_COMPOSER', [1.1, 1.3], [null]),
+      ],
+      abstentions: [
+        { couponClass: 'HUNTER_DRAW', reason: 'no_candidate_in_band' },
+      ],
+    });
+    const result = await service.sendDigests(DAY, NOW);
+    expect(result.sent).toBe(1);
+    expect(coupons.getAbstentions).toHaveBeenCalledWith('2026-10-28');
+    const [input] = vi.mocked(notification.notifyUser).mock.calls[0] ?? [];
+    expect(input?.title).toBe('Ta matinée EVCore');
+    expect(input?.body).toContain('Favori 1,30 · Coupon cote 2 2,10');
+    expect(input?.body).toContain("Pas de Chasseur Nul aujourd'hui");
+  });
+
+  it('stays silent for a player with nothing to read', async () => {
+    const { service, notification } = makeHarness([], {
+      recipients: [{ id: 'u3' }],
+    });
+    expect(await service.sendDigests(DAY, NOW)).toEqual({
+      sent: 0,
+      skippedPaused: 0,
+    });
+    expect(notification.notifyUser).not.toHaveBeenCalled();
+  });
+
+  it('respects a player who switched the morning off', async () => {
+    const { service, notification } = makeHarness(
+      [slip({ userId: 'u1', kickoffs: ['2026-10-27T19:00:00Z'] })],
+      { recipients: [] },
+    );
+    await service.sendDigests(DAY, NOW);
+    expect(notification.notifyUser).not.toHaveBeenCalled();
   });
 });

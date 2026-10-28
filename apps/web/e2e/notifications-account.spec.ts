@@ -8,6 +8,24 @@ import { expect, test } from "@playwright/test";
  * réglage de jeu responsable, plus de profil de risque ni de rôle
  * « Opérateur ».
  */
+test("arriver par la matinée compte une ouverture, puis efface le paramètre", async ({
+  page,
+}) => {
+  test.skip(
+    process.env.E2E_ROLE !== "OPERATOR",
+    "vue joueur : lancer avec E2E_ROLE=OPERATOR",
+  );
+  const event = page.waitForRequest(
+    (req) => req.method() === "POST" && req.url().includes("/events"),
+  );
+  await page.goto("/dashboard?from=morning");
+  expect((await event).postDataJSON()).toEqual({
+    type: "NOTIFICATION_OPENED",
+    notificationType: "MORNING_BRIEF",
+  });
+  await expect(page).toHaveURL(/\/dashboard$/);
+});
+
 test.describe("Notifications", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/dashboard/notifications");
@@ -28,17 +46,18 @@ test.describe("Notifications", () => {
     ).toHaveAttribute("href", "/dashboard/updates?id=ann-1");
   });
 
-  test("le résumé du matin mène à Mes coupons, pertes comprises", async ({
+  test("la matinée mène à l'Accueil, pertes et coupons du jour compris", async ({
     page,
   }) => {
     const row = page
       .getByTestId("notification-row")
-      .filter({ hasText: "Tes coupons réglés" });
-    await expect(row).toContainText("Tes coupons");
+      .filter({ hasText: "Ta matinée EVCore" });
+    await expect(row).toContainText("Ta matinée");
     await expect(row).toContainText("1 perdu");
+    await expect(row).toContainText("Coupons du jour : Favori 1,28");
     await expect(
-      row.getByRole("link", { name: "Voir mes coupons" }),
-    ).toHaveAttribute("href", "/dashboard/bet-slips");
+      row.getByRole("link", { name: "Voir l'accueil" }),
+    ).toHaveAttribute("href", "/dashboard?from=morning");
   });
 
   test("le joueur n'a ni gravité ni onglet Annonces", async ({ page }) => {

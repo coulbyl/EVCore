@@ -858,9 +858,9 @@ const PLAYER_NOTIFICATIONS = [
   ],
   [
     "n5",
-    "SLIPS_SETTLED_DIGEST",
-    "Tes coupons réglés",
-    "2 coupons réglés : 1 gagné, 1 perdu. Misé 2 000 F, rendu 1 540 F : -460 F.",
+    "MORNING_BRIEF",
+    "Ta matinée EVCore",
+    "2 coupons réglés : 1 gagné, 1 perdu. Misé 2 000 F, rendu 1 540 F : -460 F. Coupons du jour : Favori 1,28 · Coupon cote 2 2,10.",
     -2,
     false,
     { day: "2026-10-27", settled: 2, net: "-460.00" },
@@ -1434,6 +1434,7 @@ function route(method, url) {
       ],
     ];
   }
+  if (path === "/events" && method === "POST") return [201, {}];
   if (path === "/coupons/abstentions")
     return [
       200,

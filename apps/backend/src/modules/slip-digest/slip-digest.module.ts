@@ -4,6 +4,7 @@ import { SLIP_DIGEST } from '@config/slip-digest.constants';
 import { PrismaModule } from '@/prisma.module';
 import { NotificationModule } from '@modules/notification/notification.module';
 import { PushModule } from '@modules/push/push.module';
+import { CouponModule } from '@modules/coupon/coupon.module';
 import { SlipDigestRepository } from './slip-digest.repository';
 import { SlipDigestScheduler } from './slip-digest.scheduler';
 import { SlipDigestService } from './slip-digest.service';
@@ -15,6 +16,7 @@ import { SlipDigestWorker } from './slip-digest.worker';
     PrismaModule,
     NotificationModule,
     PushModule,
+    CouponModule,
   ],
   providers: [
     SlipDigestRepository,

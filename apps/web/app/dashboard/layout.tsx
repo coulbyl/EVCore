@@ -8,6 +8,8 @@ import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session"
 import { CurrencyProvider } from "@/providers/currency-provider";
 import type { AppCurrency } from "@/helpers/number";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { NotificationOpenTracker } from "@/components/notification-open-tracker";
 import { CurrentUserProvider } from "@/domains/auth/context/current-user-context";
 import { ProductTourProvider } from "@/domains/product-tour/context/product-tour-context";
 
@@ -36,6 +38,9 @@ export default async function DashboardLayout({
             <BetSlipDrawer />
             <EvaFab />
             <DashboardPwaInstallBanner />
+            <Suspense fallback={null}>
+              <NotificationOpenTracker />
+            </Suspense>
           </ProductTourProvider>
         </BetSlipProvider>
       </CurrentUserProvider>

@@ -307,12 +307,16 @@
     "kind": {
       "ANNOUNCEMENT_PUBLISHED": "Annonce",
       "SUPPORT_MESSAGE": "Équipe EVCore",
-      "SLIPS_SETTLED_DIGEST": "Tes coupons"
+      "SLIPS_SETTLED_DIGEST": "Tes coupons",
+      "MORNING_BRIEF": "Ta matinée",
+      "WEEKLY_STATEMENT": "Ton relevé de la semaine"
     },
     "open": {
       "ANNOUNCEMENT_PUBLISHED": "Lire l'annonce",
       "SUPPORT_MESSAGE": "Ouvrir la conversation",
-      "SLIPS_SETTLED_DIGEST": "Voir mes coupons"
+      "SLIPS_SETTLED_DIGEST": "Voir mes coupons",
+      "MORNING_BRIEF": "Voir l'accueil",
+      "WEEKLY_STATEMENT": "Voir l'accueil"
     }
   },
   "updates": {

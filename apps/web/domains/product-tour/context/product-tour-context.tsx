@@ -17,6 +17,7 @@ import {
   useCurrentUser,
   useSetCurrentUser,
 } from "@/domains/auth/context/current-user-context";
+import { recordProductEvent } from "@/domains/activity/record-product-event";
 import { PRODUCT_TOUR_STEPS } from "../product-tour-steps";
 
 type ProductTourContextValue = {
@@ -106,6 +107,9 @@ export function ProductTourProvider({ children }: { children: ReactNode }) {
       const nextIndex = (opts.index ?? 0) + 1;
       const nextStep = activeStepsRef.current[nextIndex];
       if (!nextStep) {
+        // Dernière étape franchie : le seul « guide terminé » qu'on compte
+        // (une fermeture anticipée passe par finish() sans cet événement).
+        recordProductEvent({ type: "TOUR_COMPLETED" });
         finish();
         return;
       }
