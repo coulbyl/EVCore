@@ -430,15 +430,13 @@ export class BetSlipService {
     const slip = await this.repository.findDeletableSlip(userId, slipId);
     const firstItem = slip?.items[0];
     if (!slip || !firstItem) throw new NotFoundException('Coupon introuvable');
-    if (slip.items.some((item) => item.bet.status !== BetStatus.PENDING)) {
+    const blocker = deletionBlocker(slip.items, now);
+    if (blocker === 'settled') {
       throw new ConflictException(
         'Une jambe de ce coupon est déjà réglée : il ne peut plus être supprimé.',
       );
     }
-    const firstKickoff = Math.min(
-      ...slip.items.map((item) => item.fixture.scheduledAt.getTime()),
-    );
-    if (firstKickoff <= now.getTime()) {
+    if (blocker === 'started') {
       throw new ConflictException(
         'Un match de ce coupon a commencé : il ne peut plus être supprimé.',
       );
@@ -485,6 +483,26 @@ export class BetSlipService {
     }
     return toBetSlipView(betSlip);
   }
+}
+
+/**
+ * Ce qui empêche de supprimer un coupon, ou null : une jambe réglée, ou un
+ * match commencé. Même règle pour la suppression et pour le bouton.
+ */
+function deletionBlocker(
+  items: readonly {
+    bet: { status: BetStatus };
+    fixture: { scheduledAt: Date };
+  }[],
+  now: Date,
+): 'settled' | 'started' | null {
+  if (items.some((item) => item.bet.status !== BetStatus.PENDING)) {
+    return 'settled';
+  }
+  const firstKickoff = Math.min(
+    ...items.map((item) => item.fixture.scheduledAt.getTime()),
+  );
+  return firstKickoff <= now.getTime() ? 'started' : null;
 }
 
 function toBetSlipView(
@@ -543,6 +561,7 @@ function toBetSlipView(
             )
             .toFixed(2)
         : null,
+    deletable: deletionBlocker(betSlip.items, new Date()) === null,
     result: toResultView(
       slipMoney({
         type: betSlip.type,
