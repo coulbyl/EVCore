@@ -87,6 +87,7 @@ function couponLeg(overrides) {
     canal: overrides.canal ?? "DOMINANT",
     market: overrides.market ?? "ONE_X_TWO",
     pick: overrides.pick ?? "HOME",
+    line: overrides.line ?? null,
     probability: overrides.probability ?? 0.62,
     marketProbability:
       overrides.marketProbability ??
@@ -217,6 +218,31 @@ const COUPONS = [
         market: "ONE_X_TWO",
         pick: "DRAW",
         odds: 3.3,
+      }),
+    ],
+  }),
+  // Chasseur Corners (lot 6) : le côté le moins cher chez 1xBet, avec sa
+  // ligne ; il se suit, il ne se déclare pas (pas de ligne sur un pari).
+  coupon({
+    id: "hunter-corners",
+    source: "PRICE_COMPOSER",
+    couponClass: "HUNTER_CORNERS",
+    targetOddsMin: 1.7,
+    targetOddsMax: 2.1,
+    status: "PENDING",
+    jointProbability: 0.51,
+    legs: [
+      couponLeg({
+        id: "hc1",
+        homeTeam: "Brentford",
+        awayTeam: "Everton",
+        canal: "PRICE",
+        market: "CORNERS",
+        pick: "UNDER",
+        line: 9.5,
+        odds: 1.88,
+        playableOdds: 1.88,
+        operatorMargin: 0.045,
       }),
     ],
   }),

@@ -27,6 +27,7 @@ const FOLLOWED_LABEL: Record<string, string> = {
   HUNTER_BTTS: 'Chasseur Les deux marquent',
   HUNTER_DRAW: 'Chasseur Match nul',
   HUNTER_SCORE: 'Chasseur Score exact',
+  HUNTER_CORNERS: 'Chasseur Corners',
 };
 
 /** Noms courts des produits, comme sur l'Accueil. */
@@ -37,6 +38,7 @@ export const PRODUCT_SHORT_LABEL: Readonly<Record<string, string>> = {
   HUNTER_BTTS: 'Chasseur BTTS',
   HUNTER_DRAW: 'Chasseur Nul',
   HUNTER_SCORE: 'Chasseur Score',
+  HUNTER_CORNERS: 'Chasseur Corners',
 };
 
 /** Raisons d'abstention, mêmes mots que l'écran (couponAbstentions). */
@@ -47,6 +49,8 @@ const ABSTENTION_REASON: Readonly<Record<string, string>> = {
   no_priced_candidate: 'pas assez de paris cotés chez 1xBet dans la bande',
   no_combination_in_window: 'aucune combinaison entre 2 et 3',
   no_candidate_in_band: 'aucun pari dans sa bande de cote',
+  no_reliable_competition:
+    'aucun championnat dont les stats de corners arrivent à coup sûr',
 };
 
 const FOLLOWED_OUTCOME: Record<CouponResult, string> = {

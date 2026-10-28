@@ -126,6 +126,16 @@ export const COUPON_CLASS_META: Record<CouponClassName, CouponClassMeta> = {
     order: 3,
     badgeVariant: "warning",
   },
+  // Lot 6 (2026-10-29) : le marché des corners est calibré (49,9 % annoncés
+  // pour 49,9 % réalisés sur 1 564 matchs) et 1xBet y prend environ 9,5 % :
+  // un pari de variété, classé sur le coût, jamais un avantage.
+  HUNTER_CORNERS: {
+    label: "Chasseur Corners · cote 1,70–2,10",
+    shortLabel: "Chasseur Corners",
+    frequency: "Gagne environ 1 fois sur 2",
+    order: 4,
+    badgeVariant: "accent",
+  },
 };
 
 export function couponClassMeta(

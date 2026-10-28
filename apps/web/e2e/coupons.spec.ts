@@ -25,9 +25,9 @@ test.describe("Coupons", () => {
       has: page.getByTestId("coupon-combined-odds"),
     });
     const count = await cards.count();
-    // Six coupons historiques, le coupon cote 2 et le chasseur Nul
-    // (2026-10-28).
-    expect(count).toBe(8);
+    // Six coupons historiques, le coupon cote 2, le chasseur Nul
+    // (2026-10-28) et le chasseur Corners (2026-10-29).
+    expect(count).toBe(9);
     // Le coupon prix 5–15 n'est plus affiché ; le coupon long 2,5–5 l'est.
     await expect(page.getByText(/cote 5–15/)).toHaveCount(0);
     await expect(
@@ -124,10 +124,10 @@ test.describe("Coupons", () => {
   test("les deux générateurs et le coupon remboursé sont identifiés", async ({
     page,
   }) => {
-    // Favori, coupon cote 2, un coupon prix et le chasseur Nul.
+    // Favori, coupon cote 2, un coupon prix, les chasseurs Nul et Corners.
     await expect(
       page.getByText("Choisi sur les cotes", { exact: true }),
-    ).toHaveCount(4);
+    ).toHaveCount(5);
     await expect(page.getByText("Analyse IA", { exact: true })).toHaveCount(3);
     await expect(
       page.getByText("Sélections du moteur", { exact: true }),
@@ -214,6 +214,25 @@ test.describe("Coupons", () => {
       .first();
     await expect(card).toContainText("Match nul");
     await expect(card.getByTestId("coupon-follow")).toBeVisible();
+  });
+
+  test("le chasseur corners dit sa ligne et se suit sans se déclarer", async ({
+    page,
+  }) => {
+    const card = page
+      .locator("[data-slot=card]")
+      .filter({ hasText: "Chasseur Corners" })
+      .filter({ visible: true })
+      .first();
+    await expect(card).toContainText("Moins de 9,5 corners");
+    await expect(card.getByTestId("leg-margin").first()).toHaveText(
+      /1xBet prend 4,5\s%/,
+    );
+    await card.getByTestId("coupon-follow").click();
+    // Un pari déclaré ne porte pas de ligne : pas de « Je l'ai joué ».
+    await expect(
+      card.getByRole("button", { name: "Je l'ai joué" }),
+    ).toHaveCount(0);
   });
 
   test("chaque jambe dit ce que 1xBet prend, et le coupon sa moyenne", async ({

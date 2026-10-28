@@ -1128,7 +1128,8 @@
       "no_priced_candidate": "pas assez de paris cotés chez 1xBet dans la bande",
       "no_combination_in_window": "aucune combinaison entre 2 et 3",
       "no_candidate_in_band": "aucun pari dans sa bande de cote",
-      "other": "pas de pari qui tienne la règle ce jour-là"
+      "other": "pas de pari qui tienne la règle ce jour-là",
+      "no_reliable_competition": "aucun championnat dont les stats de corners arrivent à coup sûr"
     }
   }
 }
