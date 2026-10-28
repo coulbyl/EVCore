@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MailModule } from '@modules/mail/mail.module';
+import { StorageModule } from '@modules/storage/storage.module';
+import { AccountDeletionRepository } from './account-deletion.repository';
+import { AccountDeletionService } from './account-deletion.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthSessionGuard } from './auth-session.guard';
@@ -11,9 +14,14 @@ import { AuthSessionGuard } from './auth-session.guard';
 // instead of the intended 300/min. Login gets its stricter limit via
 // @Throttle() on the route itself (see auth.controller.ts).
 @Module({
-  imports: [MailModule],
+  imports: [MailModule, StorageModule],
   controllers: [AuthController],
-  providers: [AuthService, AuthSessionGuard],
+  providers: [
+    AuthService,
+    AuthSessionGuard,
+    AccountDeletionService,
+    AccountDeletionRepository,
+  ],
   exports: [AuthService, AuthSessionGuard],
 })
 export class AuthModule {}

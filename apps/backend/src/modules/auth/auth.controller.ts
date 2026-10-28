@@ -14,6 +14,7 @@ import type { Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { AUTH_LOGIN_RATE_LIMIT } from '@config/rate-limit.constants';
 import { AuthService } from './auth.service';
+import { AccountDeletionService } from './account-deletion.service';
 import { CurrentSession } from './current-session.decorator';
 import { AuthSessionGuard } from './auth-session.guard';
 import type { AuthSession } from './auth.types';
@@ -26,10 +27,14 @@ import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ResetPasswordTotpDto } from './dto/reset-password-totp.dto';
 import { UpdateIdentityDto } from './dto/update-identity.dto';
+import { DeleteAccountDto } from './dto/delete-account.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly accountDeletion: AccountDeletionService,
+  ) {}
 
   @Post('register')
   async register(
@@ -90,6 +95,28 @@ export class AuthController {
   ) {
     const user = await this.authService.updateMe(session.user.id, body);
     return { user };
+  }
+
+  // POST plutôt que DELETE : le mot de passe voyage dans le corps, que
+  // certains proxys retirent d'une requête DELETE. Même limite que le login
+  // contre l'essai de mots de passe.
+  @Post('me/delete')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthSessionGuard)
+  @Throttle({
+    default: {
+      limit: AUTH_LOGIN_RATE_LIMIT.limit,
+      ttl: AUTH_LOGIN_RATE_LIMIT.ttlMs,
+    },
+  })
+  async deleteMe(
+    @CurrentSession() session: AuthSession,
+    @Body() body: DeleteAccountDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    await this.accountDeletion.deleteAccount(session.user.id, body.password);
+    this.authService.clearSessionCookie(response);
+    return { status: 'ok' as const };
   }
 
   @Patch('me/identity')
