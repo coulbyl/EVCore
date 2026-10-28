@@ -1,0 +1,40 @@
+                                               variante   jours  jambes_moy  cote_moy annonce   realise cout_attendu marge_moy mise_fixe_realisee
+       A. Vivier actuel, cellule, 2 ou 3 (proposé hier)  89/115        2.03      2.19  50.4 % 48.3 ± 10       -9.5 %    10.4 %             +4.3 %
+                    B. Vivier actuel, cellule, 2 puis 3  89/115        2.00      2.19  50.3 % 49.4 ± 10       -9.4 %    10.2 %             +6.7 %
+                    C. Vivier élargi, cellule, 2 puis 3 105/115        2.00      2.16  53.2 % 45.7 ± 10      -13.2 %    14.5 %             -2.1 %
+       D. Élargi + Données suspectes, cellule, 2 puis 3 106/115        2.00      2.15  53.0 %  34.9 ± 9      -13.5 %    14.8 %            -25.2 %
+             E. Vivier élargi, prix du marché, 2 puis 3 114/115        2.00      2.11  43.6 %  48.2 ± 9       -7.9 %     8.4 %             +1.8 %
+F. Élargi + Données suspectes, prix du marché, 2 puis 3 114/115        2.00      2.11  43.8 %  48.2 ± 9       -7.7 %     8.2 %             +1.8 %
+
+##### E prix du marché, vivier élargi
+         jours  annonce  realise  cout
+month                                 
+2026-07     30     43.1     46.7  -9.0
+2026-08     31     43.6     45.2  -8.0
+2026-09     29     43.9     51.7  -7.6
+2026-10     24     44.2     50.0  -6.7
+Jambes : n 228 | annonce par jambe 66.7 | marché sans marge 66.7 | réalisé 71.9 | cote moy. 1.47 | marge moy. 4.2
+Marchés choisis : {'OVER_UNDER': 133, 'ONE_X_TWO': 27, 'DOUBLE_CHANCE': 24, 'TEAM_TOTAL_HOME': 17, 'TEAM_TOTAL_AWAY': 14, 'OVER_UNDER_HT': 7, 'BTTS': 2, 'CLEAN_SHEET_AWAY': 2}
+Statut moteur des jambes : {'ev_below_threshold': 160, 'under_high_lambda': 39, 'odds_below_floor': 19, 'quality_score_below_threshold': 6, 'probability_too_low': 4} | dans le vivier actuel : 57
+
+##### B vivier actuel, cellule
+         jours  annonce  realise  cout
+month                                 
+2026-07      7     43.8     14.3  -9.4
+2026-08     30     50.5     36.7  -9.7
+2026-09     29     50.7     51.7 -10.1
+2026-10     23     51.6     73.9  -8.1
+Jambes : n 178 | annonce par jambe 71.1 | marché sans marge 64.8 | réalisé 71.3 | cote moy. 1.48 | marge moy. 5.1
+Marchés choisis : {'OVER_UNDER': 72, 'ONE_X_TWO': 36, 'TEAM_TOTAL_HOME': 22, 'DRAW_NO_BET': 16, 'DOUBLE_CHANCE': 11, 'TO_WIN_EITHER_HALF': 7, 'BTTS': 7, 'TEAM_TOTAL_AWAY': 6}
+Statut moteur des jambes : {'ev_below_threshold': 119, 'odds_below_floor': 27, 'under_high_lambda': 20, 'quality_score_below_threshold': 12} | dans le vivier actuel : 178
+
+##### C vivier élargi, cellule
+         jours  annonce  realise  cout
+month                                 
+2026-07     21     54.5     38.1 -11.3
+2026-08     31     52.2     54.8 -11.9
+2026-09     29     54.1     34.5 -13.9
+2026-10     24     52.2     54.2 -16.4
+Jambes : n 210 | annonce par jambe 73.1 | marché sans marge 64.1 | réalisé 66.7 | cote moy. 1.47 | marge moy. 7.3
+Marchés choisis : {'RESULT_TOTAL_GOALS': 42, 'DOUBLE_CHANCE': 37, 'CLEAN_SHEET_HOME': 33, 'ONE_X_TWO': 29, 'DRAW_NO_BET': 23, 'OVER_UNDER': 13, 'OVER_UNDER_HT': 12, 'TEAM_TOTAL_AWAY': 9}
+Statut moteur des jambes : {'ev_below_threshold': 179, 'odds_below_floor': 14, 'probability_too_low': 7, 'quality_score_below_threshold': 6, 'under_high_lambda': 3, 'viable': 1} | dans le vivier actuel : 27
