@@ -256,7 +256,7 @@
     },
     "track": {
       "title": "AI track record",
-      "line": "From {from} to {to}, out of {settled} settled opinions: {realised} came in for {announced} announced · fixed stake {result}.",
+      "line": "From {from} to {to}, out of {settled} settled opinions: {realised} came in, against a market frequency of {market} · fixed stake {result}.",
       "insufficient": "Not enough settled opinions over 30 days for a track record yet.",
       "market": "Like the rest of the engine, the AI does not beat the bookmaker's odds over time: a second reading, not a tip.",
       "link": "Details in Historical measures"

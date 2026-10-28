@@ -25,8 +25,10 @@ import { ChannelStatsTable, type ChannelStatRow } from "./channel-stats-table";
  * reload). */
 export function ChannelCompetitionSection({
   rows,
+  audience,
 }: {
   rows: ChannelCompetitionStatItem[];
+  audience: "player" | "admin";
 }) {
   const locale = useLocale();
   // Les canaux viennent des données reçues, pas d'une liste locale : celle-ci
@@ -61,6 +63,7 @@ export function ChannelCompetitionSection({
     secondaryLabel: translateCountry(row.competitionCountry, locale),
     status: row.status,
     announced: row.announced,
+    market: row.market,
     realised: row.hitRate,
     calibrationRatio: row.calibrationRatio,
     roi: row.roi,
@@ -109,6 +112,7 @@ export function ChannelCompetitionSection({
         primaryColumnLabel="Compétition"
         rows={filteredRows}
         countNoun={{ one: "compétition", other: "compétitions" }}
+        audience={audience}
       />
       <p className="text-xs leading-5 text-muted-foreground">
         Un championnat qui réussit sur une période ne réussit pas mieux sur la

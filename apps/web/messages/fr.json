@@ -256,7 +256,7 @@
     },
     "track": {
       "title": "Bilan de l'IA",
-      "line": "Du {from} au {to}, sur {settled} avis réglés : {realised} passés pour {announced} annoncés · à mise fixe {result}.",
+      "line": "Du {from} au {to}, sur {settled} avis réglés : {realised} passés, pour une fréquence du marché de {market} · à mise fixe {result}.",
       "insufficient": "Pas encore assez d'avis réglés sur 30 jours pour un bilan.",
       "market": "Comme le reste du moteur, l'IA ne bat pas la cote du bookmaker sur la durée : c'est une deuxième lecture, pas un tuyau.",
       "link": "Détail dans Mesures historiques"

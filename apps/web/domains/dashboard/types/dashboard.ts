@@ -43,8 +43,10 @@ export type PnlSummary = {
 export type TrackRecordRates = {
   settled: number;
   won: number;
-  /** Probabilité moyenne annoncée, 0–1. */
+  /** Probabilité moyenne annoncée par le moteur, 0–1 ; vue admin. */
   announced: number | null;
+  /** Fréquence du marché moyenne (marge retirée), 0–1 : la référence du joueur. */
+  market: number | null;
   /** Taux de réussite réel, 0–1. */
   realised: number | null;
   /** Retour d'une mise de 1 à la cote d'analyse (0,91 = −9 %). */
@@ -153,8 +155,10 @@ export type ChannelStatsItem = {
   sampleSize: number;
   oddsAvailabilityRate: number;
   trend: "UP" | "FLAT" | "DOWN";
-  /** Probabilité moyenne annoncée, 0–1 ; à lire face à `hitRate`. */
+  /** Probabilité moyenne annoncée par le moteur, 0–1 ; vue admin. */
   announced: number | null;
+  /** Fréquence du marché moyenne (marge retirée), 0–1 : la référence du joueur. */
+  market: number | null;
 };
 
 /** One (channel × competition) row — see backend dashboard.types.ts for the
@@ -166,8 +170,10 @@ export type ChannelCompetitionStatItem = {
   competitionCountry: string;
   roi: number | null;
   hitRate: number | null;
-  /** Probabilité moyenne annoncée, 0–1 ; à lire face à `hitRate`. */
+  /** Probabilité moyenne annoncée par le moteur, 0–1 ; vue admin. */
   announced: number | null;
+  /** Fréquence du marché moyenne (marge retirée), 0–1 : la référence du joueur. */
+  market: number | null;
   calibrationRatio: number | null;
   sampleSize: number;
   status: ChannelStatus;

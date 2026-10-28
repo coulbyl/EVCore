@@ -16,8 +16,10 @@ export type ChannelStatRow = {
   primaryLabel: string;
   secondaryLabel?: string;
   status: ChannelStatus;
-  /** Probabilité moyenne annoncée, 0–1. */
+  /** Probabilité moyenne annoncée par le moteur, 0–1 ; vue admin. */
   announced: number | null;
+  /** Fréquence du marché moyenne, 0–1 ; absente sur la Santé moteur. */
+  market?: number | null;
   /** Taux réellement passé, 0–1. */
   realised: number | null;
   /** Réalisé ÷ annoncé, porte le sens du verdict. */
@@ -35,12 +37,17 @@ export type ChannelStatRow = {
  * Annoncé et réalisé côte à côte, comme l'en-tête de la page : l'ancien
  * ratio « 0.84× » se lisait comme une cote sur téléphone. Le résultat à mise
  * fixe reste affiché en gris mais n'est pas triable : trié, il redevenait un
- * classement des canaux par gain (audit UX du 2026-10-27). */
+ * classement des canaux par gain (audit UX du 2026-10-27).
+ *
+ * Vue joueur (2026-10-28) : fréquence du marché et réalisé côte à côte, sans
+ * verdict ni écart. La probabilité du moteur et la lecture « Conforme /
+ * Optimiste » restent à l'admin. */
 export function ChannelStatsTable({
   primaryColumnLabel,
   rows,
   countNoun,
   keepRowOrder = false,
+  audience = "admin",
 }: {
   primaryColumnLabel: string;
   rows: ChannelStatRow[];
@@ -51,87 +58,109 @@ export function ChannelStatsTable({
   /** Garder l'ordre reçu (Santé moteur trie par écart) au lieu de trier par
    * nombre de réglés. */
   keepRowOrder?: boolean;
+  /** « player » : marché et réalisé, sans verdict ; « admin » : tout. */
+  audience?: "player" | "admin";
 }) {
   const locale = useLocale();
-  const columns: ColumnDef<ChannelStatRow>[] = useMemo(
-    () => [
-      {
-        id: "primary",
-        header: primaryColumnLabel,
-        accessorFn: (row) => row.primaryLabel,
-        cell: ({ row }) => (
-          <span className="font-medium text-foreground">
-            {row.original.primaryLabel}
-            {row.original.secondaryLabel ? (
-              <span className="ml-1.5 font-normal text-muted-foreground">
-                · {row.original.secondaryLabel}
-              </span>
-            ) : null}
-          </span>
-        ),
-      },
-      {
-        id: "announced",
-        header: "Annoncé",
-        accessorFn: (row) => row.announced ?? Number.NEGATIVE_INFINITY,
-        enableSorting: true,
-        meta: { align: "right" },
-        cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground">
-            {formatRate(row.original.announced, locale)}
-          </span>
-        ),
-      },
-      {
-        id: "realised",
-        header: "Réalisé",
-        accessorFn: (row) => row.realised ?? Number.NEGATIVE_INFINITY,
-        enableSorting: true,
-        meta: { align: "right" },
-        cell: ({ row }) => (
-          <span className="font-semibold tabular-nums text-foreground">
-            {formatRate(row.original.realised, locale)}
-          </span>
-        ),
-      },
-      {
-        id: "verdict",
-        header: "Lecture",
-        cell: ({ row }) => (
-          <CalibrationVerdict
-            status={row.original.status}
-            ratio={row.original.calibrationRatio}
-          />
-        ),
-      },
-      {
-        id: "sampleSize",
-        header: "Réglés",
-        accessorFn: (row) => row.sampleSize,
-        enableSorting: true,
-        meta: { align: "right" },
-        cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground">
-            {formatCount(row.original.sampleSize, locale)}
-          </span>
-        ),
-      },
-      {
-        id: "roi",
-        header: "À mise fixe",
-        meta: { align: "right" },
-        cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground">
-            {formatSignedRate(
-              row.original.roi === null ? null : row.original.roi / 100,
-              locale,
-            )}
-          </span>
-        ),
-      },
-    ],
-    [primaryColumnLabel, locale],
-  );
+  const isPlayer = audience === "player";
+  const showMarket = rows.some((row) => row.market !== undefined);
+  const columns: ColumnDef<ChannelStatRow>[] = useMemo(() => {
+    const primary: ColumnDef<ChannelStatRow> = {
+      id: "primary",
+      header: primaryColumnLabel,
+      accessorFn: (row) => row.primaryLabel,
+      cell: ({ row }) => (
+        <span className="font-medium text-foreground">
+          {row.original.primaryLabel}
+          {row.original.secondaryLabel ? (
+            <span className="ml-1.5 font-normal text-muted-foreground">
+              · {row.original.secondaryLabel}
+            </span>
+          ) : null}
+        </span>
+      ),
+    };
+    const engine: ColumnDef<ChannelStatRow> = {
+      id: "announced",
+      header: "Moteur",
+      accessorFn: (row) => row.announced ?? Number.NEGATIVE_INFINITY,
+      enableSorting: true,
+      meta: { align: "right" },
+      cell: ({ row }) => (
+        <span className="tabular-nums text-muted-foreground">
+          {formatRate(row.original.announced, locale)}
+        </span>
+      ),
+    };
+    const market: ColumnDef<ChannelStatRow> = {
+      id: "market",
+      header: "Fréquence du marché",
+      accessorFn: (row) => row.market ?? Number.NEGATIVE_INFINITY,
+      enableSorting: true,
+      meta: { align: "right" },
+      cell: ({ row }) => (
+        <span className="tabular-nums text-muted-foreground">
+          {formatRate(row.original.market ?? null, locale)}
+        </span>
+      ),
+    };
+    const realised: ColumnDef<ChannelStatRow> = {
+      id: "realised",
+      header: "Réalisé",
+      accessorFn: (row) => row.realised ?? Number.NEGATIVE_INFINITY,
+      enableSorting: true,
+      meta: { align: "right" },
+      cell: ({ row }) => (
+        <span className="font-semibold tabular-nums text-foreground">
+          {formatRate(row.original.realised, locale)}
+        </span>
+      ),
+    };
+    const verdict: ColumnDef<ChannelStatRow> = {
+      id: "verdict",
+      header: "Lecture",
+      cell: ({ row }) => (
+        <CalibrationVerdict
+          status={row.original.status}
+          ratio={row.original.calibrationRatio}
+        />
+      ),
+    };
+    const sampleSize: ColumnDef<ChannelStatRow> = {
+      id: "sampleSize",
+      header: "Réglés",
+      accessorFn: (row) => row.sampleSize,
+      enableSorting: true,
+      meta: { align: "right" },
+      cell: ({ row }) => (
+        <span className="tabular-nums text-muted-foreground">
+          {formatCount(row.original.sampleSize, locale)}
+        </span>
+      ),
+    };
+    const roi: ColumnDef<ChannelStatRow> = {
+      id: "roi",
+      header: "À mise fixe",
+      meta: { align: "right" },
+      cell: ({ row }) => (
+        <span className="tabular-nums text-muted-foreground">
+          {formatSignedRate(
+            row.original.roi === null ? null : row.original.roi / 100,
+            locale,
+          )}
+        </span>
+      ),
+    };
+    return [
+      primary,
+      ...(isPlayer ? [] : [engine]),
+      ...(showMarket ? [market] : []),
+      realised,
+      ...(isPlayer ? [] : [verdict]),
+      sampleSize,
+      roi,
+    ];
+  }, [primaryColumnLabel, locale, isPlayer, showMarket]);
 
   return (
     <DataTable
@@ -156,14 +185,20 @@ export function ChannelStatsTable({
                 </span>
               ) : null}
             </p>
-            <CalibrationVerdict
-              status={row.status}
-              ratio={row.calibrationRatio}
-              className="shrink-0"
-            />
+            {isPlayer ? null : (
+              <CalibrationVerdict
+                status={row.status}
+                ratio={row.calibrationRatio}
+                className="shrink-0"
+              />
+            )}
           </div>
           <p className="mt-2.5 text-sm tabular-nums text-muted-foreground">
-            Annoncé {formatRate(row.announced, locale)} · réalisé{" "}
+            {isPlayer ? null : `Moteur ${formatRate(row.announced, locale)} · `}
+            {showMarket
+              ? `Marché ${formatRate(row.market ?? null, locale)} · `
+              : null}
+            réalisé{" "}
             <span className="font-semibold text-foreground">
               {formatRate(row.realised, locale)}
             </span>

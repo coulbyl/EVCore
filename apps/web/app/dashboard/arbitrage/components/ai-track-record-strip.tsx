@@ -46,7 +46,7 @@ export function AiTrackRecordStrip() {
             to: formatDateLong(to),
             settled: formatCount(ai.sampleSize, locale),
             realised: formatRate(ai.hitRate, locale),
-            announced: formatRate(ai.announced, locale),
+            market: formatRate(ai.market, locale),
             result: formatSignedRate(
               ai.roi === null ? null : ai.roi / 100,
               locale,
