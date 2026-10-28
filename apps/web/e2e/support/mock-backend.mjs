@@ -131,6 +131,7 @@ function coupon(overrides) {
     viewerCount: 0,
     playerCount: 0,
     playedByMe: false,
+    shadow: false,
     followerCount: 0,
     followedByMe: false,
     result: overrides.result ?? null,

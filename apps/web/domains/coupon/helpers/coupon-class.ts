@@ -101,6 +101,22 @@ export const COUPON_CLASS_META: Record<CouponClassName, CouponClassMeta> = {
     order: 2,
     badgeVariant: "warning",
   },
+  // Chasseurs en ombre (2026-10-28) : vus par l'admin seulement, jamais par
+  // un joueur avant la porte d'affichage (docs/plan-lot-2-2026-10-28.md).
+  HUNTER_BTTS: {
+    label: "Ombre · chasseur Les deux marquent",
+    shortLabel: "Chasseur BTTS",
+    frequency: "En ombre, pas encore mesuré",
+    order: 5,
+    badgeVariant: "warning",
+  },
+  HUNTER_DRAW: {
+    label: "Ombre · chasseur Match nul",
+    shortLabel: "Chasseur Nul",
+    frequency: "En ombre, pas encore mesuré",
+    order: 6,
+    badgeVariant: "warning",
+  },
 };
 
 export function couponClassMeta(
