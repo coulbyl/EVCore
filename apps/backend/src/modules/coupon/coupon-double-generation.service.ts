@@ -6,11 +6,12 @@ import {
   type Market,
 } from '@evcore/analysis-core';
 import { CouponRepository } from './coupon.repository';
-import { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
-import { playableAtOperator } from '../betting-engine/pricing/playable-odds.filter';
-import { playableQuoteKey } from '../betting-engine/pricing/playable-odds.repository';
+import { operatorPrice } from '../betting-engine/pricing/playable-odds.filter';
 import { DOUBLE_POLICY } from './coupon.constants';
-import { startOfUtcDay } from '@utils/date.utils';
+import {
+  CouponPricedPoolService,
+  type PricedPool,
+} from './coupon-priced-pool.service';
 
 export type DoubleGenerationOutcome =
   | { outcome: 'composed'; proposalId: string; candidateCount: number }
@@ -31,42 +32,17 @@ export class CouponDoubleGenerationService {
 
   constructor(
     private readonly repository: CouponRepository,
-    private readonly playableOdds: PlayableOddsRepository,
+    private readonly pricedPool: CouponPricedPoolService,
   ) {}
 
-  async generateForDate(forDate: Date): Promise<DoubleGenerationOutcome> {
-    const dayStart = startOfUtcDay(forDate);
-    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1_000);
-    const rows = await this.repository.findDoubleCandidates({
-      from: dayStart,
-      to: dayEnd,
-    });
-    const quotes = await this.playableOdds.findPlayableQuotes(
-      rows.map((r) => ({
-        fixtureId: r.fixtureId,
-        market: r.market,
-        pick: r.pick,
-      })),
-    );
-    // La marge se retire sur le groupe complet aux cotes de référence ; la
-    // fenêtre 2–3 et la bande des jambes se lisent sur la cote jouable.
-    // Un choix non jouable chez l'opérateur reste dans son groupe (pour la
-    // marge) mais ne peut pas devenir une jambe.
-    const composition = composeDouble(
-      rows.map((r) => {
-        const quote = quotes.get(playableQuoteKey(r));
-        const playable = playableAtOperator(r, quotes)
-          ? (quote?.operatorOdds ?? quote?.lowestOdds ?? r.odds)
-          : 0;
-        return {
-          fixtureId: r.fixtureId,
-          market: r.market,
-          pick: r.pick,
-          odds: r.odds,
-          playableOdds: playable,
-        };
-      }),
-    );
+  /** `pool` : le vivier déjà chargé par la génération du soir, sinon relu. */
+  async generateForDate(
+    forDate: Date,
+    pool?: PricedPool,
+  ): Promise<DoubleGenerationOutcome> {
+    const { dayStart, rows, quotes, candidates } =
+      pool ?? (await this.pricedPool.load(forDate));
+    const composition = composeDouble(candidates);
 
     if (composition.outcome === 'abstained') {
       await this.repository.recordPriceComposerAttempt({
@@ -117,6 +93,7 @@ export class CouponDoubleGenerationService {
         odds: leg.odds,
         probability: leg.fair.toNumber(),
         expectedReturn: leg.fair.times(leg.odds).toNumber(),
+        ...operatorPrice(leg, quotes),
       })),
       profile: {
         targetOddsMin: DOUBLE_COUPON_CLASS.targetOddsMin,

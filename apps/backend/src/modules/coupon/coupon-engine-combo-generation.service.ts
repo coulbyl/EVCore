@@ -12,7 +12,10 @@ import {
 } from '@evcore/analysis-core';
 import { CouponRepository } from './coupon.repository';
 import { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
-import { playableAtOperator } from '../betting-engine/pricing/playable-odds.filter';
+import {
+  operatorPrice,
+  playableAtOperator,
+} from '../betting-engine/pricing/playable-odds.filter';
 import { ENGINE_COMBO_POLICY, ENGINE_LONG_POLICY } from './coupon.constants';
 import { startOfUtcDay } from '@utils/date.utils';
 
@@ -143,6 +146,7 @@ export class CouponEngineComboGenerationService {
         // combiné LLM construit sur le même vivier.
         probability: leg.probability,
         canal: leg.channel as StrategyChannel,
+        ...operatorPrice(leg, quotes),
       })),
       profile: {
         source: CouponSource.ENGINE,

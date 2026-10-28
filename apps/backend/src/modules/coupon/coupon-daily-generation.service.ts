@@ -11,6 +11,7 @@ import {
   CouponDoubleGenerationService,
   type DoubleGenerationOutcome,
 } from './coupon-double-generation.service';
+import { CouponPricedPoolService } from './coupon-priced-pool.service';
 import {
   CouponHunterGenerationService,
   type HunterPassOutcome,
@@ -50,9 +51,18 @@ export class CouponDailyGenerationService {
     private readonly double: CouponDoubleGenerationService,
     private readonly combo: CouponEngineComboGenerationService,
     private readonly hunters: CouponHunterGenerationService,
+    private readonly pricedPool: CouponPricedPoolService,
   ) {}
 
   async generateForDate(forDate: Date): Promise<DailyGenerationOutcome> {
+    // Vivier coté et prix 1xBet chargés une fois pour le coupon cote 2 et les
+    // chasseurs ; s'il échoue, chaque passe le relit elle-même.
+    const pool = await this.pricedPool.load(forDate).catch((error: unknown) => {
+      this.logger.error(
+        `Priced pool load failed, passes reload it: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return undefined;
+    });
     return {
       price: await this.guard('price composer', () =>
         this.price.generateForDate(forDate),
@@ -61,7 +71,7 @@ export class CouponDailyGenerationService {
         this.favourite.generateForDate(forDate),
       ),
       double: await this.guard('double', () =>
-        this.double.generateForDate(forDate),
+        this.double.generateForDate(forDate, pool),
       ),
       combo: await this.guard('engine combo', () =>
         this.combo.generateForDate(forDate, ENGINE_COMBO_PROFILE),
@@ -70,7 +80,7 @@ export class CouponDailyGenerationService {
         this.combo.generateForDate(forDate, ENGINE_LONG_PROFILE),
       ),
       hunters: await this.guard('hunters', () =>
-        this.hunters.generateForDate(forDate),
+        this.hunters.generateForDate(forDate, pool),
       ),
     };
   }

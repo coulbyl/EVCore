@@ -1188,6 +1188,11 @@ model CouponProposalLeg {
   pick              String
   probability       Decimal         @db.Decimal(5, 4)
   oddsSnapshot      Decimal?        @db.Decimal(6, 3)
+  // Prix chez le book des joueurs (1xBet) à la génération, et la marge de
+  // son groupe d'issues complet : le coût réel de la jambe (2026-10-29,
+  // docs/audits/2026-10-29/MARGES-1XBET.md). Null si 1xBet ne cote pas.
+  operatorOdds      Decimal?        @db.Decimal(6, 3)
+  operatorMargin    Decimal?        @db.Decimal(6, 4)
   signalScore       Decimal         @db.Decimal(5, 4)
   featureSnapshot   Json
   isCorrect         Boolean?

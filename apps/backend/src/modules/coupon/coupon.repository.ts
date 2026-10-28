@@ -508,6 +508,9 @@ export class CouponRepository {
       /** Probabilité annoncée par le canal (combiné du moteur) ; sinon
        * retour attendu / cote, l'estimation du prix. */
       probability?: number;
+      /** Prix et marge chez le book des joueurs (1xBet), quand il cote. */
+      operatorOdds?: number | null;
+      operatorMargin?: number | null;
     }[];
     /**
      * Profil écrit dans la clé unique et dans `reasoning.policyVersion`. Par
@@ -583,6 +586,14 @@ export class CouponRepository {
               ).toFixed(4),
             ),
             oddsSnapshot: new Prisma.Decimal(leg.odds),
+            operatorOdds:
+              leg.operatorOdds == null
+                ? null
+                : new Prisma.Decimal(leg.operatorOdds),
+            operatorMargin:
+              leg.operatorMargin == null
+                ? null
+                : new Prisma.Decimal(leg.operatorMargin.toFixed(4)),
             signalScore: new Prisma.Decimal(0),
             featureSnapshot: { expectedReturn: leg.expectedReturn },
           })),
@@ -774,6 +785,32 @@ export class CouponRepository {
    * complet est nécessaire pour retirer la marge : on garde toutes les
    * issues, le compositeur filtre lui-même la bande de cote.
    */
+  /**
+   * Matchs que le méta-canal AVOID signale sur la dernière analyse d'avant
+   * coup d'envoi : les chasseurs ne les jouent pas.
+   */
+  async findAvoidedFixtureIds(opts: {
+    from: Date;
+    to: Date;
+  }): Promise<string[]> {
+    const rows = await this.prisma.client.$queryRaw<{ fixtureId: string }[]>`
+      WITH latest AS (
+        SELECT DISTINCT ON (mr."fixtureId") mr.id, mr."fixtureId"
+        FROM public.model_run mr
+        JOIN public.fixture f ON f.id = mr."fixtureId"
+        WHERE f."scheduledAt" >= ${opts.from}
+          AND f."scheduledAt" < ${opts.to}
+          AND mr."analyzedAt" < f."scheduledAt"
+        ORDER BY mr."fixtureId", mr."analyzedAt" DESC
+      )
+      SELECT latest."fixtureId"::text AS "fixtureId"
+      FROM latest
+      JOIN public.channel_decision cd ON cd."modelRunId" = latest.id
+      WHERE cd.channel = 'AVOID' AND cd.status = 'SELECTED'
+    `;
+    return rows.map((r) => r.fixtureId);
+  }
+
   async findDoubleCandidates(opts: {
     from: Date;
     to: Date;

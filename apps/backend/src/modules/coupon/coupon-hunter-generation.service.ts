@@ -13,10 +13,19 @@ import {
 } from '@evcore/analysis-core';
 import { CouponRepository } from './coupon.repository';
 import { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
-import { playableAtOperator } from '../betting-engine/pricing/playable-odds.filter';
-import { playableQuoteKey } from '../betting-engine/pricing/playable-odds.repository';
+import {
+  operatorPrice,
+  playableAtOperator,
+} from '../betting-engine/pricing/playable-odds.filter';
+import {
+  playableQuoteKey,
+  type PlayableQuote,
+} from '../betting-engine/pricing/playable-odds.repository';
 import { ENGINE_COMBO_POLICY, HUNTER_POLICY } from './coupon.constants';
-import { startOfUtcDay } from '@utils/date.utils';
+import {
+  CouponPricedPoolService,
+  type PricedPool,
+} from './coupon-priced-pool.service';
 
 const DAY_MS = 24 * 60 * 60 * 1_000;
 
@@ -39,76 +48,76 @@ export class CouponHunterGenerationService {
   constructor(
     private readonly repository: CouponRepository,
     private readonly playableOdds: PlayableOddsRepository,
+    private readonly pricedPool: CouponPricedPoolService,
   ) {}
 
-  async generateForDate(forDate: Date): Promise<HunterPassOutcome[]> {
-    const dayStart = startOfUtcDay(forDate);
-    const range = { from: dayStart, to: new Date(dayStart.getTime() + DAY_MS) };
-    const [priced, engineRows] = await Promise.all([
-      this.repository.findDoubleCandidates(range),
-      this.repository.findEngineComboCandidates({
-        ...range,
+  /** `pool` : le vivier déjà chargé par la génération du soir, sinon relu. */
+  async generateForDate(
+    forDate: Date,
+    pool?: PricedPool,
+  ): Promise<HunterPassOutcome[]> {
+    const priced = pool ?? (await this.pricedPool.load(forDate));
+    const { dayStart } = priced;
+    const scoreRows = (
+      await this.repository.findEngineComboCandidates({
+        from: dayStart,
+        to: new Date(dayStart.getTime() + DAY_MS),
         excludedChannels: ENGINE_COMBO_POLICY.excludedChannels,
-      }),
-    ]);
-    const scoreRows = engineRows.filter(
-      (r) => r.market === SCORE_HUNTER.market,
-    );
-    const quotes = await this.playableOdds.findPlayableQuotes(
-      [...priced, ...scoreRows].map((r) => ({
+      })
+    ).filter((r) => r.market === SCORE_HUNTER.market);
+    const scoreQuotes = await this.playableOdds.findPlayableQuotes(
+      scoreRows.map((r) => ({
         fixtureId: r.fixtureId,
         market: r.market,
         pick: r.pick,
       })),
     );
-    const playableOf = (r: {
-      fixtureId: string;
-      market: string;
-      pick: string;
-      odds: number;
-    }): number => {
-      if (!playableAtOperator(r, quotes)) return 0;
-      const quote = quotes.get(playableQuoteKey(r));
-      return quote?.operatorOdds ?? quote?.lowestOdds ?? r.odds;
-    };
-    // Même lecture que le coupon cote 2 : la marge se retire sur le groupe
-    // complet aux cotes de référence, la bande se lit sur la cote jouable.
-    const marketCandidates = priced.map((r) => ({
-      fixtureId: r.fixtureId,
-      market: r.market,
-      pick: r.pick,
-      odds: r.odds,
-      playableOdds: playableOf(r),
-    }));
-    const scoreCandidates = scoreRows.map((r) => ({
-      ...r,
-      playableOdds: playableOf(r),
-    }));
-    const kickoffs = new Map(
-      [...priced, ...engineRows].map((r) => [r.fixtureId, r.scheduledAt]),
+    const scoreCandidates = scoreRows
+      .filter((r) => playableAtOperator(r, scoreQuotes))
+      .map((r) => {
+        const quote = scoreQuotes.get(playableQuoteKey(r));
+        return {
+          ...r,
+          playableOdds: quote?.operatorOdds ?? quote?.lowestOdds ?? r.odds,
+        };
+      });
+    // Les matchs que le méta-canal AVOID signale sont écartés des chasseurs
+    // (plan du 23/10, reste de revue du lot 2).
+    const avoided = new Set(
+      await this.repository.findAvoidedFixtureIds({
+        from: dayStart,
+        to: new Date(dayStart.getTime() + DAY_MS),
+      }),
     );
+    const marketCandidates = priced.candidates.map((c) =>
+      avoided.has(c.fixtureId) ? { ...c, playableOdds: 0 } : c,
+    );
+    const quotes = new Map([...priced.quotes, ...scoreQuotes]);
+    const kickoffs = new Map(
+      [...priced.rows, ...scoreRows].map((r) => [r.fixtureId, r.scheduledAt]),
+    );
+    const context = { dayStart, kickoffs, quotes };
 
     return [
       await this.persist({
-        dayStart,
+        ...context,
         spec: BTTS_HUNTER,
         source: CouponSource.PRICE_COMPOSER,
         composition: composeHunterByMarket(marketCandidates, BTTS_HUNTER),
-        kickoffs,
       }),
       await this.persist({
-        dayStart,
+        ...context,
         spec: DRAW_HUNTER,
         source: CouponSource.PRICE_COMPOSER,
         composition: composeHunterByMarket(marketCandidates, DRAW_HUNTER),
-        kickoffs,
       }),
       await this.persist({
-        dayStart,
+        ...context,
         spec: SCORE_HUNTER,
         source: CouponSource.ENGINE,
-        composition: composeScoreHunter(scoreCandidates),
-        kickoffs,
+        composition: composeScoreHunter(
+          scoreCandidates.filter((c) => !avoided.has(c.fixtureId)),
+        ),
       }),
     ];
   }
@@ -119,6 +128,7 @@ export class CouponHunterGenerationService {
     source: CouponSource;
     composition: HunterComposition;
     kickoffs: ReadonlyMap<string, Date>;
+    quotes: Map<string, PlayableQuote>;
   }): Promise<HunterPassOutcome> {
     const { dayStart, spec, composition } = input;
     const pass = {
@@ -159,6 +169,7 @@ export class CouponHunterGenerationService {
           odds: leg.odds,
           expectedReturn,
           probability: leg.probability,
+          ...operatorPrice(leg, input.quotes),
         },
       ],
       profile: {

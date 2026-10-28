@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CouponSource } from '@evcore/db';
 import { CouponHunterGenerationService } from './coupon-hunter-generation.service';
+import { CouponPricedPoolService } from './coupon-priced-pool.service';
 import type { CouponRepository } from './coupon.repository';
 import type { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
 
@@ -23,7 +24,7 @@ function priced(
   };
 }
 
-function makeHarness() {
+function makeHarness(avoided: string[] = []) {
   const repository = {
     // BTTS coté complet sur f1 (dans la bande) ; 1X2 complet sur f2.
     findDoubleCandidates: vi
@@ -47,6 +48,7 @@ function makeHarness() {
         scheduledAt: KICKOFF,
       },
     ]),
+    findAvoidedFixtureIds: vi.fn().mockResolvedValue(avoided),
     upsertPriceComposerProposal: vi.fn().mockResolvedValue('proposal-1'),
     recordPriceComposerAttempt: vi.fn().mockResolvedValue(undefined),
   } as unknown as CouponRepository;
@@ -54,7 +56,11 @@ function makeHarness() {
     findPlayableQuotes: vi.fn().mockResolvedValue(new Map()),
   } as unknown as PlayableOddsRepository;
   return {
-    service: new CouponHunterGenerationService(repository, playable),
+    service: new CouponHunterGenerationService(
+      repository,
+      playable,
+      new CouponPricedPoolService(repository, playable),
+    ),
     repository,
   };
 }
@@ -81,5 +87,14 @@ describe('CouponHunterGenerationService', () => {
     // Le score exact annonce la probabilité du marché (marge de grille 27 %).
     expect(calls[2]?.[0].legs[0]?.probability).toBeCloseTo(1 / 6.5 / 1.27, 3);
     expect(repository.recordPriceComposerAttempt).toHaveBeenCalledTimes(3);
+  });
+
+  it('never hunts on a match the AVOID meta-channel flags', async () => {
+    // f2 porte le seul nul de la bande : signalé, le chasseur Nul s'abstient.
+    const { service } = makeHarness(['f2']);
+    const outcomes = await service.generateForDate(new Date('2026-10-29'));
+    expect(outcomes.find((o) => o.hunter === 'HUNTER_DRAW')?.outcome).toBe(
+      'abstained',
+    );
   });
 });

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CouponDoubleGenerationService } from './coupon-double-generation.service';
+import { CouponPricedPoolService } from './coupon-priced-pool.service';
 import type {
   PlayableOddsRepository,
   PlayableQuote,
@@ -48,13 +49,17 @@ describe('CouponDoubleGenerationService', () => {
     repository.upsertPriceComposerProposal.mockResolvedValue('proposal-1');
     repository.recordPriceComposerAttempt.mockResolvedValue();
     quotes = new Map();
+    const playable = {
+      findPlayableQuotes: vi
+        .fn()
+        .mockImplementation(() => Promise.resolve(quotes)),
+    } as unknown as PlayableOddsRepository;
     service = new CouponDoubleGenerationService(
       repository as unknown as CouponRepository,
-      {
-        findPlayableQuotes: vi
-          .fn()
-          .mockImplementation(() => Promise.resolve(quotes)),
-      } as unknown as PlayableOddsRepository,
+      new CouponPricedPoolService(
+        repository as unknown as CouponRepository,
+        playable,
+      ),
     );
   });
 
@@ -101,6 +106,7 @@ describe('CouponDoubleGenerationService', () => {
         pick: 'OVER_1_5',
         operatorOdds: 1.38,
         operatorBookmaker: '1xBet',
+        operatorMargin: null,
         lowestOdds: 1.38,
         lowestBookmaker: '1xBet',
       });
