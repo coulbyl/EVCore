@@ -4,6 +4,7 @@ import { PrismaService } from '@/prisma.service';
 import { startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
 import type { EvaluatedPickSnapshot } from '@utils/model-run.utils';
+import { marketProbability, priceOutcomeGroups } from '@evcore/analysis-core';
 import type { FixtureScoringQueryDto } from './dto/fixture-scoring-query.dto';
 
 // ---------------------------------------------------------------------------
@@ -48,10 +49,22 @@ export type ScoredFixtureRow = {
  * diagnostic : le front n'y filtre ni ne classe rien de ce que le moteur a
  * évalué (mémoire projet « fiche = diagnostic »).
  */
-export type FixtureSheet = ScoredFixtureRow & {
+export type FixtureSheet = Omit<ScoredFixtureRow, 'modelRun'> & {
   homeTeam: string;
   awayTeam: string;
   country: string | null;
+  modelRun:
+    | (Omit<ScoredFixtureModelRun, 'evaluatedPicks'> & {
+        evaluatedPicks: (EvaluatedPickSnapshot & {
+          /**
+           * Fréquence affichée au joueur : probabilité du marché, marge
+           * retirée sur le groupe d'issues complet du match, sinon la marge
+           * typique du marché (2026-10-28). Null sans cote.
+           */
+          marketProbability: number | null;
+        })[];
+      })
+    | null;
 };
 
 export type ScoredFixturesResult = {
@@ -223,11 +236,21 @@ export class FixtureScoringService {
       },
     });
     if (!fixture) return null;
+    const row = toScoredRow(fixture);
     return {
-      ...toScoredRow(fixture),
+      ...row,
       homeTeam: fixture.homeTeam.name,
       awayTeam: fixture.awayTeam.name,
       country: fixture.season.competition.country ?? null,
+      modelRun: row.modelRun
+        ? {
+            ...row.modelRun,
+            evaluatedPicks: withMarketProbability(
+              fixture.id,
+              row.modelRun.evaluatedPicks,
+            ),
+          }
+        : null,
     };
   }
 }
@@ -288,4 +311,25 @@ function toScoredRow(f: FixtureRowSource): ScoredFixtureRow {
         }
       : null,
   };
+}
+
+function withMarketProbability(
+  fixtureId: string,
+  picks: EvaluatedPickSnapshot[],
+): (EvaluatedPickSnapshot & { marketProbability: number | null })[] {
+  const priced = picks
+    .map((p) => ({ ...p, fixtureId, odds: Number(p.odds) }))
+    .filter((p) => Number.isFinite(p.odds) && p.odds > 1);
+  const exact = new Map(
+    priceOutcomeGroups(priced).map((p) => [
+      `${p.market}|${p.pick}`,
+      p.fair.toDecimalPlaces(4).toNumber(),
+    ]),
+  );
+  return picks.map((p) => ({
+    ...p,
+    marketProbability:
+      exact.get(`${p.market}|${p.pick}`) ??
+      marketProbability({ odds: Number(p.odds) || null, market: p.market }),
+  }));
 }

@@ -1,7 +1,5 @@
 import Decimal from "decimal.js";
-import type { Market } from "../types";
-import { outcomeGroup } from "../pricing/outcome-groups";
-import { fairProbabilities } from "../pricing/closing-line-value";
+import { priceOutcomeGroups } from "../pricing/market-probability";
 import { DOUBLE_COUPON_CLASS, type CouponClass } from "./coupon-classes";
 import { POOL_EXCLUDED_MARKETS } from "./pool-eligibility";
 
@@ -51,50 +49,12 @@ export type DoubleComposition =
 
 /**
  * Probabilité du marché pour chaque candidat dont le groupe d'issues est
- * complet chez la référence. Un candidat sans groupe propre (gagner une
- * mi-temps, issues non exclusives) ou incomplet est écarté : une probabilité
- * sur groupe incomplet serait surévaluée.
+ * complet chez la référence (priceOutcomeGroups).
  */
 export function priceDoubleCandidates(
   candidates: readonly DoubleCandidate[],
 ): DoubleLeg[] {
-  const groups = new Map<
-    string,
-    { outcomeTotal: number; picks: readonly string[]; rows: DoubleCandidate[] }
-  >();
-  for (const row of candidates) {
-    const group = outcomeGroup(row.market as Market, row.pick);
-    if (!group) continue;
-    const key = `${row.fixtureId}|${row.market}|${group.picks.join(",")}`;
-    const entry = groups.get(key) ?? {
-      outcomeTotal: group.outcomeTotal,
-      picks: group.picks,
-      rows: [],
-    };
-    entry.rows.push(row);
-    groups.set(key, entry);
-  }
-
-  const priced: DoubleLeg[] = [];
-  for (const { outcomeTotal, picks, rows } of groups.values()) {
-    const byPick = new Map(rows.map((r) => [r.pick, r]));
-    if (!picks.every((pick) => byPick.has(pick))) continue;
-    const outcomes = picks.map((pick) => ({
-      pick,
-      odds: new Decimal((byPick.get(pick) as DoubleCandidate).odds),
-    }));
-    const fair = fairProbabilities(outcomes, outcomeTotal);
-    if (!fair) continue;
-    const margin = outcomes
-      .reduce((acc, o) => acc.plus(new Decimal(1).div(o.odds)), new Decimal(0))
-      .div(outcomeTotal)
-      .minus(1);
-    for (const row of byPick.values()) {
-      const p = fair.get(row.pick);
-      if (p) priced.push({ ...row, fair: p, margin });
-    }
-  }
-  return priced;
+  return priceOutcomeGroups(candidates);
 }
 
 type Combo = { legs: DoubleLeg[]; score: Decimal; margin: Decimal };

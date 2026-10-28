@@ -24,6 +24,11 @@ export type CouponLegDto = {
   market: Market;
   pick: string;
   probability: number;
+  /**
+   * Fréquence affichée au joueur : probabilité du marché, marge retirée
+   * (2026-10-28). Null sans cote.
+   */
+  marketProbability: number | null;
   oddsSnapshot: number | null;
   /**
    * Book qui a servi `oddsSnapshot` quand il est connu (citation du vivier
@@ -113,6 +118,8 @@ export type CouponProposalDto = {
    */
   realizedOdds: number | null;
   jointProbability: number;
+  /** Produit des probabilités du marché des jambes ; null s'il en manque une. */
+  marketJointProbability: number | null;
   signalScore: number;
   status: CouponProposalStatus;
   /**
