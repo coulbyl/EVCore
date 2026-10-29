@@ -24,6 +24,8 @@ Le monde ne prête que quatre choses : **le type, la palette, la densité, un ge
 
 **Règle** : couleur plate, sans dégradé, sans grain, sans ombre. L'élévation est un filet de 1 px ou rien.
 
+**Corrigé à l'implémentation (A2, 29/10)** pour tenir WCAG AA : vert gagné `#1C8045` en clair (le `#1F8A4C` des maquettes faisait 4,1:1 sur le sol) ; la diode allumée porte un contour `#B07A00` en clair, parce que l'ambre seul fait 1,8:1 sur blanc ; la diode éteinte en clair est un anneau `#7D8799`, pas un disque gris ; le gris discret des chevrons devient `#7D8799`. Rampe de gris : `#FFFFFF #F6F7F9 #E8EBF0 #D9DDE3 #B4BAC4 #7D8799 #5B6472 #2A3142 #141821 #0E1320 #0B0E16`. Vérification : `pnpm --filter web check:contrast`.
+
 ## 3. Le type
 
 - **Barlow Condensed** 600 et 700 pour tout ce qui est score : codes d'équipe à trois lettres, cotes, « 8 sur 10 », heures, compteurs. Toujours en chiffres tabulaires.
