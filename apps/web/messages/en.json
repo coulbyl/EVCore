@@ -1154,6 +1154,21 @@
       "void": "{label}: refunded",
       "pending": "{label}: not settled yet",
       "pendingUntil": "{label}: not settled yet, last match at {time}"
+    },
+    "states": {
+      "loading": "Loading",
+      "offlineSeenAt": "Offline · seen at {time}",
+      "offline": "Offline",
+      "loadError": "We can't load this",
+      "noNetwork": "No network",
+      "retry": "Try again",
+      "newVersion": "A new version is ready",
+      "update": "Update",
+      "maintenanceTitle": "We'll be back in a few minutes",
+      "maintenanceBody": "EVCore is under maintenance. Your followed coupons still settle.",
+      "pauseTitle": "Paused until {until}",
+      "pauseBody": "Today, Matches and your ticket are closed until then. Your followed coupons still settle: they wait for you in Me.",
+      "pauseExtend": "Extend the pause"
     }
   }
 }

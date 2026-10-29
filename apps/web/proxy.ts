@@ -10,11 +10,21 @@ const PLAYER_ROUTES = [
   "/notifications",
 ];
 
-async function getSession(request: NextRequest) {
+type SessionCheck =
+  | { state: "signed-in"; role: "ADMIN" | "OPERATOR" }
+  | { state: "signed-out" }
+  | { state: "unavailable" };
+
+/**
+ * Trois réponses, pas deux : un serveur qui ne répond pas n'est pas une
+ * session expirée. Sans cette différence, une panne du backend renvoyait le
+ * joueur vers l'écran de connexion (10-transverse.md § 2).
+ */
+async function checkSession(request: NextRequest): Promise<SessionCheck> {
   const cookie = request.headers.get("cookie");
 
   if (!cookie) {
-    return null;
+    return { state: "signed-out" };
   }
 
   try {
@@ -23,26 +33,38 @@ async function getSession(request: NextRequest) {
       cache: "no-store",
     });
 
+    if (response.status >= 500) {
+      return { state: "unavailable" };
+    }
     if (!response.ok) {
-      return null;
+      return { state: "signed-out" };
     }
 
     const payload = (await response.json()) as {
-      session: {
-        sessionId: string;
-        user: { id: string; role: "ADMIN" | "OPERATOR" };
-      };
+      session: { user: { role: "ADMIN" | "OPERATOR" } };
     };
 
-    return payload.session;
+    return { state: "signed-in", role: payload.session.user.role };
   } catch {
-    return null;
+    return { state: "unavailable" };
   }
 }
 
+function withLocaleCookie(
+  request: NextRequest,
+  response: NextResponse,
+): NextResponse {
+  if (!request.cookies.has("NEXT_LOCALE")) {
+    const acceptLanguage = request.headers.get("accept-language") ?? "";
+    const locale = acceptLanguage.startsWith("en") ? "en" : "fr";
+    response.cookies.set("NEXT_LOCALE", locale, { path: "/", sameSite: "lax" });
+  }
+  return response;
+}
+
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const session = await getSession(request);
+  const { pathname, search } = request.nextUrl;
+  const session = await checkSession(request);
   const isAuthRoute = pathname.startsWith("/auth/");
   const isDashboardRoute = pathname.startsWith("/dashboard");
   // Les onglets du joueur de la refonte (app/(player)), construits à côté
@@ -55,25 +77,34 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/dashboard/glossaire") ||
     pathname.startsWith("/dashboard/documentation-technique");
 
-  if (isAuthRoute && session) {
+  // Serveur injoignable : on laisse passer, l'écran montre la maintenance.
+  if (session.state === "unavailable") {
+    return withLocaleCookie(request, NextResponse.next());
+  }
+
+  if (isAuthRoute && session.state === "signed-in") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  if ((isDashboardRoute || isPlayerRoute) && !session) {
+  if (isPlayerRoute && session.state === "signed-out") {
+    // L'écran demandé est gardé : après connexion, on y revient.
+    const login = new URL("/auth/login", request.url);
+    login.searchParams.set("next", `${pathname}${search}`);
+    return NextResponse.redirect(login);
+  }
+
+  if (isDashboardRoute && session.state === "signed-out") {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
-  if (isAdminOnlyRoute && session?.user.role !== "ADMIN") {
+  if (
+    isAdminOnlyRoute &&
+    !(session.state === "signed-in" && session.role === "ADMIN")
+  ) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  const response = NextResponse.next();
-  if (!request.cookies.has("NEXT_LOCALE")) {
-    const acceptLanguage = request.headers.get("accept-language") ?? "";
-    const locale = acceptLanguage.startsWith("en") ? "en" : "fr";
-    response.cookies.set("NEXT_LOCALE", locale, { path: "/", sameSite: "lax" });
-  }
-  return response;
+  return withLocaleCookie(request, NextResponse.next());
 }
 
 export const config = {

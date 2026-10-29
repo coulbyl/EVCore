@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { BandActions } from "@/components/scoreboard/shell/band-actions";
 import { ScoreboardShell } from "@/components/scoreboard/shell/scoreboard-shell";
+import { MaintenanceScreen } from "@/components/scoreboard/states/maintenance-screen";
 import { initialOf } from "@/components/scoreboard/shell/shell-constants";
 import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
 
@@ -18,14 +19,21 @@ export default async function PlayerLayout({
   /** La feuille ouverte (fente parallèle `@sheet`), ou rien. */
   sheet: React.ReactNode;
 }) {
-  const [session, t] = await Promise.all([
+  const [result, t] = await Promise.all([
     getPlayerSession(),
     getTranslations("shell"),
   ]);
 
-  if (!session) {
+  // Le serveur ne répond pas : la maintenance, pas la connexion.
+  if (result.status === "unavailable") {
+    return <MaintenanceScreen />;
+  }
+  // Le proxy renvoie déjà vers la connexion avec l'écran demandé ; ceci ne
+  // sert que si la session expire entre les deux.
+  if (result.status === "signed-out") {
     redirect("/auth/login");
   }
+  const { session } = result;
 
   return (
     <ScoreboardShell

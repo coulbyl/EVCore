@@ -1154,6 +1154,21 @@
       "void": "{label} : remboursé",
       "pending": "{label} : pas encore réglé",
       "pendingUntil": "{label} : pas encore réglé, dernier match à {time}"
+    },
+    "states": {
+      "loading": "Chargement",
+      "offlineSeenAt": "Hors ligne · vu à {time}",
+      "offline": "Hors ligne",
+      "loadError": "On n'arrive pas à charger",
+      "noNetwork": "Pas de réseau",
+      "retry": "Réessayer",
+      "newVersion": "Une nouvelle version est prête",
+      "update": "Mettre à jour",
+      "maintenanceTitle": "On revient dans quelques minutes",
+      "maintenanceBody": "EVCore est en maintenance. Tes coupons suivis se règlent quand même.",
+      "pauseTitle": "En pause jusqu'au {until}",
+      "pauseBody": "Aujourd'hui, Matchs et ton ticket sont fermés jusque-là. Tes coupons suivis se règlent quand même : ils t'attendent dans Moi.",
+      "pauseExtend": "Prolonger la pause"
     }
   }
 }

@@ -18,6 +18,7 @@ import {
   PasswordInput,
 } from "@evcore/ui";
 import { login } from "@/domains/auth/use-cases/login";
+import { safeNextPath } from "@/domains/auth/helpers/safe-next-path";
 
 const loginSchema = z.object({
   identifier: z
@@ -45,7 +46,11 @@ export function LoginForm() {
     setIsSubmitting(true);
     try {
       await login({ identifier: values.identifier, password: values.password });
-      router.push("/dashboard");
+      // L'écran demandé avant la connexion (proxy.ts), s'il est interne.
+      const next = safeNextPath(
+        new URLSearchParams(window.location.search).get("next"),
+      );
+      router.push(next ?? "/dashboard");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Identifiants invalides.");

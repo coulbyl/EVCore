@@ -2,6 +2,7 @@ import { cn } from "@evcore/ui/cn";
 import { scoreboardFontVariables } from "@/app/fonts/scoreboard-fonts";
 import { SheetColumn } from "../sheet/sheet-column";
 import { SHEET_INERT_ATTRIBUTE } from "../sheet/sheet-constants";
+import { OfflineLine } from "../states/offline-line";
 import { BottomTabs } from "./bottom-tabs";
 import { SideRail } from "./side-rail";
 
@@ -50,6 +51,7 @@ export function ScoreboardShell({
           id="contenu"
           className="w-full max-w-[40rem] pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.5rem)] lg:pb-10"
         >
+          <OfflineLine />
           {children}
         </main>
       </div>

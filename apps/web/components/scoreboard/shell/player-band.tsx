@@ -9,7 +9,7 @@ import { initialOf } from "./shell-constants";
  * connecté, puis ce que l'écran y met (`children`).
  */
 export async function PlayerBand({ children }: { children?: React.ReactNode }) {
-  const [session, t] = await Promise.all([
+  const [result, t] = await Promise.all([
     getPlayerSession(),
     getTranslations("shell"),
   ]);
@@ -19,7 +19,9 @@ export async function PlayerBand({ children }: { children?: React.ReactNode }) {
       brand={t("brand")}
       actions={
         <BandActions
-          initial={session ? initialOf(session.user) : "?"}
+          initial={
+            result.status === "signed-in" ? initialOf(result.session.user) : "?"
+          }
           labels={{ notifications: t("notifications"), me: t("tabs.me") }}
         />
       }
