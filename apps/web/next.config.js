@@ -1,3 +1,4 @@
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants.js";
 import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./i18n.ts");
@@ -73,4 +74,18 @@ const nextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+// Les pages de développement (vitrine des composants, bancs e2e) sont
+// nommées `page.dev.tsx` : sous `next dev` l'extension `dev.tsx` en fait des
+// routes ; un build de production ne les compile pas du tout. C'est la phase
+// de Next qui décide, pas une variable d'environnement.
+const DEFAULT_PAGE_EXTENSIONS = ["tsx", "ts", "jsx", "js"];
+
+export default function config(phase) {
+  return withNextIntl({
+    ...nextConfig,
+    pageExtensions:
+      phase === PHASE_DEVELOPMENT_SERVER
+        ? ["dev.tsx", ...DEFAULT_PAGE_EXTENSIONS]
+        : DEFAULT_PAGE_EXTENSIONS,
+  });
+}
