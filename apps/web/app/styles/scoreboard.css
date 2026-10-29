@@ -205,3 +205,31 @@
   --color-icon-subtle: var(--icon-subtle);
   --color-scrim: var(--scrim);
 }
+
+/*
+ * La feuille (docs/refonte-ui/04-aujourdhui-en-detail.md § 1) : elle monte
+ * du bas sur téléphone, le voile s'assombrit en même temps. Courbe rapide au
+ * départ, douce à l'arrivée ; rien sous `prefers-reduced-motion`.
+ */
+@theme {
+  --animate-sheet-up: sheet-up 280ms cubic-bezier(0.32, 0.72, 0, 1);
+  --animate-scrim-in: scrim-in 200ms ease-out;
+
+  @keyframes sheet-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scrim-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}

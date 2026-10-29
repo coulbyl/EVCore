@@ -18,6 +18,7 @@ export function SideRail({ footer }: { footer: React.ReactNode }) {
 
   return (
     <nav
+      data-sheet-inert=""
       aria-label={t("tabsLabel")}
       className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col bg-band px-3 py-6 text-band-muted dark:border-r dark:border-band-rule lg:flex"
     >

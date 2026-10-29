@@ -12,8 +12,11 @@ import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
  */
 export default async function PlayerLayout({
   children,
+  sheet,
 }: {
   children: React.ReactNode;
+  /** La feuille ouverte (fente parallèle `@sheet`), ou rien. */
+  sheet: React.ReactNode;
 }) {
   const [session, t] = await Promise.all([
     getPlayerSession(),
@@ -27,6 +30,7 @@ export default async function PlayerLayout({
   return (
     <ScoreboardShell
       skipLinkLabel={t("skipToContent")}
+      sheet={sheet}
       railFooter={
         <BandActions
           initial={initialOf(session.user)}
