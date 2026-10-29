@@ -233,3 +233,33 @@
     }
   }
 }
+
+/*
+ * Sous la coquille, c'est la fenêtre qui défile, pas `body`.
+ *
+ * Le thème partagé fait de `body` un conteneur de défilement, hors couche :
+ * `height: 100%` et `overflow-x: hidden` sur `html, body`, `overflow-y:
+ * auto` sur téléphone, `overflow: hidden` à partir de 1024 px (l'ancien
+ * tableau de bord défile dans ses propres colonnes). Avec `overscroll-behavior:
+ * none` sur `body`, le geste s'arrête sur ce conteneur vide et la page ne
+ * défile plus au doigt ni à la molette ; sur Android la barre d'adresse ne
+ * se replie plus, et le blocage du défilement sous une feuille (posé sur
+ * `html`) ne bloquerait rien.
+ *
+ * Ici `body` redevient neutre : hauteur naturelle, pas de conteneur,
+ * débordement horizontal coupé par `clip` (qui, lui, n'en crée pas). Hors
+ * couche et plus précis que les règles partagées, qui restent en place pour
+ * les anciens écrans. Vérifié par le test de défilement de A6.
+ */
+html:has(.scoreboard) {
+  height: auto;
+  min-height: 100%;
+  overflow-x: clip;
+}
+
+html:has(.scoreboard) body {
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
+  overflow-x: clip;
+}

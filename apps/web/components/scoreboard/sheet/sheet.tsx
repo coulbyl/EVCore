@@ -69,7 +69,7 @@ export function Sheet({
           "fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col overflow-hidden rounded-t-[1.25rem] bg-card text-card-foreground outline-none",
           "animate-sheet-up motion-reduce:animate-none",
           "md:mx-auto md:max-w-[34rem]",
-          "lg:sticky lg:top-0 lg:inset-auto lg:z-auto lg:mx-0 lg:h-dvh lg:max-h-none lg:w-full lg:max-w-none lg:animate-none lg:rounded-none lg:border-l lg:border-border",
+          "lg:sticky lg:inset-x-auto lg:top-0 lg:bottom-auto lg:z-auto lg:mx-0 lg:h-dvh lg:max-h-none lg:w-full lg:max-w-none lg:animate-none lg:rounded-none lg:border-l lg:border-border",
         )}
       >
         <div
