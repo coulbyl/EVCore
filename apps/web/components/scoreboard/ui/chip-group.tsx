@@ -41,7 +41,7 @@ export function ChipGroup({
               className={cn(
                 "flex min-h-11 items-center rounded-full px-4 text-body font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
                 item.active
-                  ? "bg-led-on font-semibold text-band"
+                  ? "bg-led-on text-band"
                   : tone === "band"
                     ? "text-band-muted hover:text-band-foreground"
                     : "text-muted-foreground hover:text-foreground",

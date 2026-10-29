@@ -37,4 +37,4 @@ export function StateLine({
 
 /** L'issue d'une ligne d'état, en bouton ou en lien : même apparence. */
 export const stateActionClass =
-  "inline-flex min-h-11 items-center rounded-md px-1 font-semibold underline underline-offset-4 decoration-1 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+  "inline-flex min-h-11 items-center rounded-md px-1 font-medium underline underline-offset-4 decoration-1 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
