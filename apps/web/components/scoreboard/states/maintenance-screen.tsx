@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { cn } from "@evcore/ui/cn";
 import { scoreboardFontVariables } from "@/app/fonts/scoreboard-fonts";
+import { LegalLine } from "../shell/legal-line";
 
 /**
  * Le serveur ne répond pas (10-transverse.md § 2) : une page, pas un onglet,
@@ -43,6 +44,7 @@ export function MaintenanceScreen() {
           {t("retry")}
         </button>
       </main>
+      <LegalLine />
     </div>
   );
 }

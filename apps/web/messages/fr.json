@@ -1144,7 +1144,8 @@
       "results": "Résultats",
       "me": "Moi"
     },
-    "close": "Fermer"
+    "close": "Fermer",
+    "legal": "18+ · Parier comporte des risques de perte"
   },
   "scoreboard": {
     "outcome": {
@@ -1169,6 +1170,17 @@
       "pauseTitle": "En pause jusqu'au {until}",
       "pauseBody": "Aujourd'hui, Matchs et ton ticket sont fermés jusque-là. Tes coupons suivis se règlent quand même : ils t'attendent dans Moi.",
       "pauseExtend": "Prolonger la pause"
+    },
+    "chance": {
+      "outOfTen": "{count} sur {total}",
+      "oneIn": "1 sur {total}",
+      "rarerThan": "moins de 1 sur {total}",
+      "aboutOutOfTen": "environ {count} fois sur {total}",
+      "aboutOneIn": "environ 1 fois sur {total}",
+      "aboutRarerThan": "moins de 1 fois sur {total}",
+      "spokenOutOfTen": "{count} chances sur {total}",
+      "spokenOneIn": "1 chance sur {total}",
+      "spokenRarerThan": "moins d'une chance sur {total}"
     }
   }
 }

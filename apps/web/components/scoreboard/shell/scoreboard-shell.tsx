@@ -3,6 +3,7 @@ import { scoreboardFontVariables } from "@/app/fonts/scoreboard-fonts";
 import { SheetColumn } from "../sheet/sheet-column";
 import { SHEET_INERT_ATTRIBUTE } from "../sheet/sheet-constants";
 import { OfflineLine } from "../states/offline-line";
+import { LegalLine } from "./legal-line";
 import { BottomTabs } from "./bottom-tabs";
 import { SideRail } from "./side-rail";
 
@@ -53,6 +54,7 @@ export function ScoreboardShell({
         >
           <OfflineLine />
           {children}
+          <LegalLine />
         </main>
       </div>
       <SheetColumn>{sheet}</SheetColumn>

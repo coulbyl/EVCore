@@ -1144,7 +1144,8 @@
       "results": "Results",
       "me": "Me"
     },
-    "close": "Close"
+    "close": "Close",
+    "legal": "18+ · Betting carries a risk of loss"
   },
   "scoreboard": {
     "outcome": {
@@ -1169,6 +1170,17 @@
       "pauseTitle": "Paused until {until}",
       "pauseBody": "Today, Matches and your ticket are closed until then. Your followed coupons still settle: they wait for you in Me.",
       "pauseExtend": "Extend the pause"
+    },
+    "chance": {
+      "outOfTen": "{count} in {total}",
+      "oneIn": "1 in {total}",
+      "rarerThan": "less than 1 in {total}",
+      "aboutOutOfTen": "about {count} times in {total}",
+      "aboutOneIn": "about 1 time in {total}",
+      "aboutRarerThan": "less than 1 time in {total}",
+      "spokenOutOfTen": "{count} chances in {total}",
+      "spokenOneIn": "1 chance in {total}",
+      "spokenRarerThan": "less than one chance in {total}"
     }
   }
 }

@@ -2,7 +2,12 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { BandActions } from "@/components/scoreboard/shell/band-actions";
 import { ScoreboardShell } from "@/components/scoreboard/shell/scoreboard-shell";
+import { TimeZoneSync } from "@/components/scoreboard/shell/time-zone-sync";
 import { MaintenanceScreen } from "@/components/scoreboard/states/maintenance-screen";
+import {
+  TIME_ZONE_COOKIE,
+  getPlayerTimeZone,
+} from "@/domains/preferences/get-player-time-zone";
 import { initialOf } from "@/components/scoreboard/shell/shell-constants";
 import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
 
@@ -19,9 +24,10 @@ export default async function PlayerLayout({
   /** La feuille ouverte (fente parallèle `@sheet`), ou rien. */
   sheet: React.ReactNode;
 }) {
-  const [result, t] = await Promise.all([
+  const [result, t, timeZone] = await Promise.all([
     getPlayerSession(),
     getTranslations("shell"),
+    getPlayerTimeZone(),
   ]);
 
   // Le serveur ne répond pas : la maintenance, pas la connexion.
@@ -46,6 +52,7 @@ export default async function PlayerLayout({
         />
       }
     >
+      <TimeZoneSync cookieName={TIME_ZONE_COOKIE} serverTimeZone={timeZone} />
       {children}
     </ScoreboardShell>
   );
