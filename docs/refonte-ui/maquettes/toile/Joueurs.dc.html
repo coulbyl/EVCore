@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Admin, Joueurs</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:#141821;background:#F6F7F9}
+a{color:#141821}a:hover{color:#0E1320}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.nav a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border-radius:8px;color:#9AA3B2;text-decoration:none;font-weight:500;font-size:15px}
+.nav a.on{color:#fff;background:#1A2130}
+.card{background:#fff;border:1px solid #D9DDE3;border-radius:14px;padding:16px 24px;display:flex;flex-direction:column}
+h2{margin:0 0 6px;font-family:"Barlow Condensed";font-weight:600;font-size:20px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-family:"Barlow Condensed";font-weight:600;font-size:13px;letter-spacing:.04em;color:#5B6472;padding:8px 8px 6px;border-bottom:1px solid #D9DDE3}
+td{padding:9px 8px;border-bottom:1px solid #D9DDE3}
+td.n{font-family:"Barlow Condensed";font-weight:600;font-size:16px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag{font-size:12px;font-weight:600;padding:2px 8px;border-radius:4px;white-space:nowrap;background:#F6F7F9;color:#5B6472}
+.k{display:flex;flex-direction:column;gap:2px}.k b{font-family:"Barlow Condensed";font-weight:700;font-size:30px}.k span{font-size:13px;color:#5B6472}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 900px; display: flex; flex-wrap: wrap">
+  <nav class="nav" style="flex: 0 0 220px; background: #0E1320; padding: 24px 12px; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box" aria-label="Sections">
+    <span class="num" style="color: #fff; font-weight: 700; font-size: 24px; padding: 0 12px 16px">EVCore</span>
+    <a href="Main.dc.html">Aujourd'hui</a><a href="Matchs.dc.html">Matchs</a><a href="Resultats.dc.html">Résultats</a><a href="Moi.dc.html">Moi</a>
+    <span style="border-top: 1px solid #2A3142; margin: 12px 0"></span>
+    <a href="Admin.dc.html">Accueil admin</a><a href="Moteur.dc.html">Moteur</a><a class="on" href="Joueurs.dc.html">Joueurs</a>
+    <a href="Reglages.dc.html" style="margin-top: auto">Réglages</a>
+  </nav>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px">
+      <h1 class="num" style="margin: 0; font-weight: 600; font-size: 28px">Joueurs</h1>
+      <label for="q" style="display: flex"><input id="q" type="search" placeholder="Prénom, e-mail…" style="height: 36px; width: 240px; border-radius: 8px; border: 1px solid #D9DDE3; padding: 0 12px; font-family: Barlow, sans-serif; font-size: 14px; background: #fff"></label>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px">
+      <section class="card">
+        <h2>Ce mois</h2>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding-top: 6px"><div class="k"><b class="num">8</b><span>inscrits</span></div><div class="k"><b class="num">3</b><span>activés (un suivi en 14 j)</span></div><div class="k"><b class="num">12</b><span>actifs sur 7 jours</span></div><div class="k"><b class="num">61 %</b><span>matinée ouverte</span></div></div>
+      </section>
+      <section class="card">
+        <h2>Messages sans réponse</h2>
+        <a href="Joueurs.dc.html" style="display: flex; align-items: center; justify-content: space-between; min-height: 44px; border-top: 1px solid #D9DDE3; text-decoration: none; font-size: 14px"><span><b style="font-weight: 600">Junior</b> · « Le code de vérification n'arrive pas » · depuis 31 h</span><span style="font-weight: 500">Répondre ›</span></a>
+        <a href="Joueurs.dc.html" style="display: flex; align-items: center; justify-content: space-between; min-height: 44px; border-top: 1px solid #D9DDE3; text-decoration: none; font-size: 14px"><span><b style="font-weight: 600">Aya</b> · « Comment suivre un coupon ? » · depuis 26 h</span><span style="font-weight: 500">Répondre ›</span></a>
+        <a href="Joueurs.dc.html" style="margin-top: 8px; font-size: 14px; font-weight: 500; text-decoration: none; min-height: 36px; display: flex; align-items: center">Écrire une annonce ›</a>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Comptes</h2>
+      <div style="overflow-x: auto"><table>
+        <thead><tr><th>Joueur</th><th>E-mail</th><th>Rôle</th><th>Créé le</th><th>Suivis</th><th>État</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>Kouassi</td><td>kouassi@gmail.com</td><td>joueur</td><td class="n">13/10</td><td class="n">3</td><td><span class="tag" style="background: #FFB300; color: #0E1320">en pause → 5/11</span></td><td><a href="Joueurs.dc.html" style="font-weight: 500">Fiche ›</a></td></tr>
+          <tr><td>Aya</td><td>aya@yahoo.fr</td><td>joueur</td><td class="n">28/10</td><td class="n">0</td><td></td><td><a href="Joueurs.dc.html" style="font-weight: 500">Fiche ›</a></td></tr>
+          <tr><td>Junior</td><td>junior@gmail.com</td><td>joueur</td><td class="n">24/10</td><td class="n">5</td><td><span class="tag">e-mail non vérifié</span></td><td><a href="Joueurs.dc.html" style="font-weight: 500">Fiche ›</a></td></tr>
+          <tr><td>Mariam</td><td>mariam@gmail.com</td><td>joueur</td><td class="n">19/10</td><td class="n">1</td><td><span class="tag">suspendu</span></td><td><a href="Joueurs.dc.html" style="font-weight: 500">Fiche ›</a></td></tr>
+          <tr><td>Fannan</td><td>fannan@…</td><td>admin</td><td class="n">01/07</td><td class="n">0</td><td></td><td><a href="Joueurs.dc.html" style="font-weight: 500">Fiche ›</a></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

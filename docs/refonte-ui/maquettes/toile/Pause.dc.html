@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Pause active</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:#141821}
+a{color:#141821}a:hover{color:#0E1320}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.ic{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid #2A3142;color:#fff;font-weight:600;font-size:16px;background:transparent;padding:0}
+.ic svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:#5B6472;font-weight:500;text-decoration:none;padding:6px 0}
+.tab.on{color:#0E1320;font-weight:600}
+.tab.off{color:#B4BAC4}
+.tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.on svg{stroke:#FFB300}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F9; display: flex; flex-direction: column; overflow: hidden; position: relative">
+  <header style="background: #0E1320; color: #fff; padding: 52px 16px 14px; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <div class="num" style="font-weight: 700; font-size: 24px">EVCore</div>
+      <div style="display: flex; gap: 10px"><button class="ic" aria-label="Notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4l2-2z"/><path d="M10 21h4"/></svg></button><a class="ic" href="Moi.dc.html" aria-label="Moi" style="text-decoration: none">K</a></div>
+    </div>
+    <div style="display: flex; align-items: baseline; gap: 14px; border-top: 1px solid #2A3142; padding-top: 12px"><span style="color: #9AA3B2; font-size: 14px">Hier</span><span class="num" style="display: flex; gap: 16px; font-weight: 600; font-size: 20px"><span style="color: #FFB300">FAV ✓ <span style="color: #fff; font-size: 15px">1,24</span></span><span style="color: #FFB300">COM ✓ <span style="color: #fff; font-size: 15px">1,41</span></span></span></div>
+  </header>
+
+  <section style="margin: 16px; background: #FFFFFF; border: 1px solid #D9DDE3; border-radius: 14px; padding: 24px 16px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start">
+    <h1 class="num" style="margin: 0; font-weight: 600; font-size: 22px">En pause jusqu'au 5/11 à 19:00</h1>
+    <p style="margin: 0; font-size: 15px; color: #5B6472; line-height: 1.4">Aujourd'hui, Matchs et ton ticket sont fermés jusque-là. Tes coupons suivis se règlent quand même : ils t'attendent dans Moi.</p>
+    <div style="display: flex; gap: 10px; margin-top: 4px; width: 100%">
+      <a href="Resultats.dc.html" style="flex: 1; display: flex; align-items: center; justify-content: center; height: 44px; border-radius: 10px; border: 1px solid #0E1320; text-decoration: none; font-weight: 500; font-size: 15px">Résultats</a>
+      <a href="Moi.dc.html" style="flex: 1; display: flex; align-items: center; justify-content: center; height: 44px; border-radius: 10px; border: 1px solid #0E1320; text-decoration: none; font-weight: 500; font-size: 15px">Moi</a>
+    </div>
+    <a href="JeuResponsable.dc.html" style="font-size: 14px; color: #5B6472; min-height: 44px; display: flex; align-items: center">Prolonger la pause ›</a>
+  </section>
+
+  <p style="position: absolute; left: 0; right: 0; bottom: 70px; margin: 0; text-align: center; font-size: 11px; color: #5B6472">18+ · Parier comporte des risques de perte</p>
+  <nav style="position: absolute; left: 0; right: 0; bottom: 0; height: 68px; background: #fff; border-top: 1px solid #D9DDE3; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 4px 0 8px" aria-label="Onglets">
+    <a class="tab on" href="Pause.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Aujourd'hui</a>
+    <span class="tab off"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3c3 3 3 15 0 18M3 12h18"/></svg>Matchs</span>
+    <a class="tab" href="Resultats.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-8M22 19H2"/></svg>Résultats</a>
+    <a class="tab" href="Moi.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Moi</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

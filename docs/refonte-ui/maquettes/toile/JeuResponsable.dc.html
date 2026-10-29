@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Jeu responsable</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:#141821}
+a{color:#141821}a:hover{color:#0E1320}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.opt{flex:1;height:56px;border-radius:10px;border:1px solid #0E1320;background:#fff;font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:18px;color:#0E1320}
+.r{display:flex;align-items:center;gap:12px;min-height:52px;border-top:1px solid #D9DDE3;text-decoration:none;color:#141821;font-size:15px;font-weight:500}
+.r span{flex:1;min-width:0}
+.r svg{width:18px;height:18px;stroke:#8A94A6;fill:none;stroke-width:2;stroke-linecap:round;flex:none}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F9; display: flex; flex-direction: column; overflow: hidden">
+  <header style="background: #0E1320; color: #fff; padding: 52px 16px 14px; display: flex; align-items: center; justify-content: space-between">
+    <a href="Moi.dc.html" aria-label="Retour" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; margin-left: -12px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M15 6l-6 6 6 6"/></svg></a>
+    <span class="num" style="font-weight: 600; font-size: 22px">Jeu responsable</span>
+    <span style="width: 32px"></span>
+  </header>
+
+  <section style="margin: 16px 16px 0; background: #fff; border: 1px solid #D9DDE3; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+    <p style="margin: 0; font-size: 15px; line-height: 1.45">Parier doit rester un jeu. Si ce n'est plus le cas, fais une pause : l'application se ferme le temps choisi, sans retour anticipé.</p>
+    <div style="display: flex; gap: 10px"><button class="opt">24 heures</button><button class="opt">7 jours</button><button class="opt">30 jours</button></div>
+    <p style="margin: 0; font-size: 13px; color: #5B6472">Tu pourras prolonger, jamais écourter. Tes coupons suivis se règlent quand même.</p>
+  </section>
+
+  <section style="margin: 16px 16px 0; background: #fff; border: 1px solid #D9DDE3; border-radius: 14px; padding: 0 16px; display: flex; flex-direction: column">
+    <div class="r" style="border-top: 0; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 0"><span style="font-weight: 600">Besoin d'aide ?</span><span style="font-weight: 400; color: #5B6472; font-size: 14px">SOS Joueurs · <span class="num" style="font-weight: 600; color: #141821">09 74 75 13 13</span> (France) · les numéros par pays sur la page Jeu responsable</span></div>
+    <a class="r" href="JeuResponsable.dc.html"><span>Les numéros d'aide par pays</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+  </section>
+
+  <a href="JeuResponsable.dc.html" style="margin: 24px 16px 0; display: flex; align-items: center; justify-content: space-between; min-height: 52px; border-top: 1px solid #D9DDE3; border-bottom: 1px solid #D9DDE3; text-decoration: none; font-size: 15px; font-weight: 500; color: #C62828"><span>Supprimer mon compte</span><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 18px; height: 18px; stroke: #8A94A6; fill: none; stroke-width: 2; stroke-linecap: round"><path d="M9 6l6 6-6 6"/></svg></a>
+  <p style="margin: 8px 16px 0; font-size: 13px; color: #5B6472">Immédiat, avec ton mot de passe. Tes coupons suivis, tes messages et ton compte sont supprimés tout de suite.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

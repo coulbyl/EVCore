@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Ta semaine</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:#141821}
+a{color:#141821}a:hover{color:#0E1320}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.d{display:grid;grid-template-columns:52px repeat(4,minmax(0,1fr));gap:6px;align-items:center;min-height:48px;border-top:1px solid #D9DDE3;font-size:14px}
+.d .j{font-family:"Barlow Condensed";font-weight:600;font-size:16px;color:#5B6472}
+.d .c{font-family:"Barlow Condensed";font-weight:700;font-size:20px;text-align:center}
+.d .c small{display:block;font-family:Barlow;font-weight:400;font-size:11px;color:#5B6472}
+.hd{display:grid;grid-template-columns:52px repeat(4,minmax(0,1fr));gap:6px;font-family:"Barlow Condensed";font-weight:600;font-size:14px;color:#5B6472;letter-spacing:.04em;text-align:center;padding-bottom:6px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0B0E16; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden">
+  <div style="background: #FFFFFF; border-radius: 20px 20px 0 0; height: 780px; display: flex; flex-direction: column; overflow: hidden">
+    <div style="display: flex; justify-content: center; padding: 8px 0 0"><span style="width: 40px; height: 4px; border-radius: 2px; background: #D9DDE3"></span></div>
+    <header style="background: #0E1320; color: #fff; margin-top: 10px; padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: center; justify-content: space-between">
+        <a href="Resultats.dc.html" aria-label="Fermer" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; margin-left: -12px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M15 6l-6 6 6 6"/></svg></a>
+        <span class="num" style="font-weight: 600; font-size: 22px">Ta semaine</span>
+        <span style="width: 32px"></span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid #2A3142; padding-top: 12px">
+        <span style="color: #9AA3B2; font-size: 14px">du 22 au 28/10</span>
+        <span class="num" style="font-weight: 700; font-size: 24px; color: #FFB300">Favori 5 jours gagnés sur 6</span>
+      </div>
+    </header>
+
+    <div style="padding: 16px 16px 0; display: flex; flex-direction: column">
+      <div class="hd"><span></span><span>FAV</span><span>COM</span><span>C2</span><span>NUL</span></div>
+      <div class="d" style="border-top: 0"><span class="j">lun. 22</span><span class="c" style="color: #1F8A4C">✓<small>1,22</small></span><span class="c" style="color: #1F8A4C">✓<small>1,38</small></span><span class="c" style="color: #C62828">✗</span><span class="c" style="color: #B4BAC4">·</span></div>
+      <div class="d"><span class="j">mar. 23</span><span class="c" style="color: #1F8A4C">✓<small>1,30</small></span><span class="c" style="color: #C62828">✗</span><span class="c" style="color: #1F8A4C">✓<small>2,45</small></span><span class="c" style="color: #B4BAC4">·</span></div>
+      <div class="d"><span class="j">mer. 24</span><span class="c" style="color: #B4BAC4">·</span><span class="c" style="color: #1F8A4C">✓<small>1,44</small></span><span class="c" style="color: #C62828">✗</span><span class="c" style="color: #B4BAC4">·</span></div>
+      <div class="d"><span class="j">jeu. 25</span><span class="c" style="color: #1F8A4C">✓<small>1,25</small></span><span class="c" style="color: #1F8A4C">✓<small>1,40</small></span><span class="c" style="color: #1F8A4C">✓<small>2,10</small></span><span class="c" style="color: #B4BAC4">·</span></div>
+      <div class="d"><span class="j">ven. 26</span><span class="c" style="color: #C62828">✗</span><span class="c" style="color: #1F8A4C">✓<small>1,36</small></span><span class="c" style="color: #C62828">✗</span><span class="c" style="color: #B4BAC4">·</span></div>
+      <div class="d"><span class="j">sam. 27</span><span class="c" style="color: #1F8A4C">✓<small>1,20</small></span><span class="c" style="color: #C62828">✗</span><span class="c" style="color: #1F8A4C">✓<small>2,30</small></span><span class="c" style="color: #B4BAC4">·</span></div>
+      <div class="d"><span class="j">dim. 28</span><span class="c" style="color: #1F8A4C">✓<small>1,24</small></span><span class="c" style="color: #1F8A4C">✓<small>1,41</small></span><span class="c" style="color: #C62828">✗</span><span class="c" style="color: #1F8A4C">✓<small>3,40</small></span></div>
+      <div class="d" style="border-top: 2px solid #0E1320; min-height: 44px"><span class="j" style="color: #141821">Total</span><span class="c num" style="font-size: 16px">5 sur 6</span><span class="c num" style="font-size: 16px">5 sur 7</span><span class="c num" style="font-size: 16px">3 sur 7</span><span class="c num" style="font-size: 16px">1 sur 1</span></div>
+    </div>
+
+    <div style="margin: 16px 16px 0; border-top: 1px solid #D9DDE3; padding-top: 12px; display: flex; flex-direction: column; gap: 6px">
+      <span style="font-size: 14px; color: #5B6472">Tes coupons suivis cette semaine</span>
+      <span class="num" style="font-weight: 700; font-size: 22px">3 gagnés · 2 perdus</span>
+    </div>
+    <p style="margin: auto 16px 24px; font-size: 13px; color: #5B6472">Le relevé du lundi, le même que la notification de 8 h.</p>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

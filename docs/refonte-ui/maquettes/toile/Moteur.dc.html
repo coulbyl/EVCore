@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Admin, Moteur</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:#141821;background:#F6F7F9}
+a{color:#141821}a:hover{color:#0E1320}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.nav a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border-radius:8px;color:#9AA3B2;text-decoration:none;font-weight:500;font-size:15px}
+.nav a.on{color:#fff;background:#1A2130}
+.card{background:#fff;border:1px solid #D9DDE3;border-radius:14px;padding:16px 24px;display:flex;flex-direction:column}
+h2{margin:0 0 6px;font-family:"Barlow Condensed";font-weight:600;font-size:20px;display:flex;justify-content:space-between;align-items:center}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-family:"Barlow Condensed";font-weight:600;font-size:13px;letter-spacing:.04em;color:#5B6472;padding:8px 8px 6px;border-bottom:1px solid #D9DDE3}
+td{padding:9px 8px;border-bottom:1px solid #D9DDE3;vertical-align:middle}
+td.n{font-family:"Barlow Condensed";font-weight:600;font-size:16px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.per{height:32px;padding:0 12px;border-radius:16px;display:flex;align-items:center;font-size:13px;font-weight:500;color:#5B6472;text-decoration:none}
+.per.on{color:#0E1320;background:#FFB300;font-weight:600}
+.tag{font-size:12px;font-weight:600;padding:2px 8px;border-radius:4px;white-space:nowrap}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 900px; display: flex; flex-wrap: wrap">
+  <nav class="nav" style="flex: 0 0 220px; background: #0E1320; padding: 24px 12px; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box" aria-label="Sections">
+    <span class="num" style="color: #fff; font-weight: 700; font-size: 24px; padding: 0 12px 16px">EVCore</span>
+    <a href="Main.dc.html">Aujourd'hui</a><a href="Matchs.dc.html">Matchs</a><a href="Resultats.dc.html">Résultats</a><a href="Moi.dc.html">Moi</a>
+    <span style="border-top: 1px solid #2A3142; margin: 12px 0"></span>
+    <a href="Admin.dc.html">Accueil admin</a><a class="on" href="Moteur.dc.html">Moteur</a><a href="Joueurs.dc.html">Joueurs</a>
+    <a href="Reglages.dc.html" style="margin-top: auto">Réglages</a>
+  </nav>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px">
+      <h1 class="num" style="margin: 0; font-weight: 600; font-size: 28px">Moteur</h1>
+      <div style="display: flex; gap: 6px; align-items: center"><a class="per" href="Moteur.dc.html">30 j</a><a class="per on" href="Moteur.dc.html">90 j</a><a class="per" href="Moteur.dc.html">Tout</a><label for="q" style="margin-left: 12px; display: flex"><input id="q" type="search" placeholder="Compétition…" style="height: 36px; width: 200px; border-radius: 8px; border: 1px solid #D9DDE3; padding: 0 12px; font-family: Barlow, sans-serif; font-size: 14px; background: #fff"></label></div>
+    </div>
+
+    <section class="card">
+      <h2>Produits</h2>
+      <div style="overflow-x: auto"><table>
+        <thead><tr><th>Produit</th><th>Jours</th><th>Gagnés</th><th>Annoncé</th><th>Réalisé</th><th>Ratio</th><th>CLV</th><th>Marge 1xBet</th><th>Jambes</th></tr></thead>
+        <tbody>
+          <tr><td>Favori</td><td class="n">14</td><td class="n">11</td><td class="n">82 %</td><td class="n">79 %</td><td class="n">0,96</td><td class="n">+0,3</td><td class="n">6 %</td><td class="n">14</td></tr>
+          <tr><td>Combiné</td><td class="n">15</td><td class="n">11</td><td class="n">72 %</td><td class="n">73 %</td><td class="n">1,01</td><td class="n">−0,1</td><td class="n">9 %</td><td class="n">45</td></tr>
+          <tr><td>Cote 2</td><td class="n">1</td><td class="n">0</td><td class="n" colspan="4" style="color: #5B6472; font-family: Barlow; font-weight: 400">trop tôt</td><td class="n">10 %</td><td class="n">2</td></tr>
+          <tr><td>Avis IA</td><td class="n">207 avis</td><td class="n">136</td><td class="n">64 %</td><td class="n">66 %</td><td class="n">1,03</td><td class="n">−0,4</td><td class="n">8 %</td><td class="n">207</td></tr>
+          <tr style="color: #5B6472"><td>Coupon long <span class="tag" style="background: #F6F7F9">retiré le 29/10</span></td><td class="n">10</td><td class="n">4</td><td class="n">34 %</td><td class="n">40 %</td><td class="n">1,18</td><td class="n">−0,9</td><td class="n">12 %</td><td class="n">23</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section class="card">
+      <h2>Canaux × compétition <span style="display: flex; align-items: center; gap: 8px; font-family: Barlow; font-weight: 500; font-size: 14px"><span style="width: 36px; height: 20px; border-radius: 10px; background: #FFB300; position: relative; display: inline-block"><span style="position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; border-radius: 50%; background: #0E1320"></span></span>seulement les alertes</span></h2>
+      <div style="overflow-x: auto"><table>
+        <thead><tr><th>Canal</th><th>Compétition</th><th>Jambes</th><th>Ratio</th><th>Intervalle</th><th>Verdict</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>DOUBLE_CHANCE</td><td>BL1</td><td class="n">62</td><td class="n" style="color: #C62828">0,78</td><td class="n">0,66–0,90</td><td><span class="tag" style="background: #FFB300; color: #0E1320">alerte · perte établie</span></td><td><a href="Moteur.dc.html" style="font-weight: 500">Voir ›</a></td></tr>
+          <tr><td>GOALS</td><td>SWE2</td><td class="n">54</td><td class="n" style="color: #C62828">0,82</td><td class="n">0,70–0,94</td><td><span class="tag" style="background: #FFB300; color: #0E1320">alerte</span></td><td><a href="Moteur.dc.html" style="font-weight: 500">Voir ›</a></td></tr>
+          <tr><td>BTTS</td><td>ARG1</td><td class="n">71</td><td class="n" style="color: #C62828">0,84</td><td class="n">0,72–0,95</td><td><span class="tag" style="background: #FFB300; color: #0E1320">alerte</span></td><td><a href="Moteur.dc.html" style="font-weight: 500">Voir ›</a></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section class="card">
+      <h2>Marchés suspendus</h2>
+      <div style="overflow-x: auto"><table>
+        <thead><tr><th>Marché</th><th>Depuis</th><th>Mesure</th><th></th></tr></thead>
+        <tbody><tr><td>HALF_TIME_FULL_TIME</td><td class="n">18/10</td><td class="n">−19 % sur 212 jambes, borne 95 % < 0</td><td><button style="height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid #0E1320; background: #fff; font-family: Barlow, sans-serif; font-size: 13px; color: #0E1320">Réactiver</button></td></tr></tbody>
+      </table></div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

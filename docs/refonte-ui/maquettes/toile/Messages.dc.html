@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Messages</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:#141821}
+a{color:#141821}a:hover{color:#0E1320}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.msg{max-width:78%;padding:10px 14px;border-radius:14px;font-size:15px;line-height:1.4}
+.them{align-self:flex-start;background:#fff;border:1px solid #D9DDE3;border-bottom-left-radius:4px}
+.me{align-self:flex-end;background:#0E1320;color:#fff;border-bottom-right-radius:4px}
+.meta{font-size:12px;color:#5B6472;margin-top:4px}
+.ib{width:44px;height:44px;border-radius:50%;border:1px solid #D9DDE3;background:#fff;display:flex;align-items:center;justify-content:center;padding:0;flex:none}
+.ib svg{width:20px;height:20px;stroke:#141821;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F9; display: flex; flex-direction: column; overflow: hidden">
+  <header style="background: #0E1320; color: #fff; padding: 52px 16px 14px; display: flex; align-items: center; justify-content: space-between">
+    <a href="Moi.dc.html" aria-label="Retour" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; margin-left: -12px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M15 6l-6 6 6 6"/></svg></a>
+    <span style="display: flex; flex-direction: column; align-items: center"><span class="num" style="font-weight: 600; font-size: 22px">Messages</span><span style="font-size: 12px; color: #9AA3B2">l'équipe EVCore · répond en quelques heures</span></span>
+    <span style="width: 32px"></span>
+  </header>
+
+  <div style="flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 14px; overflow: hidden">
+    <div style="align-self: center; font-size: 12px; color: #5B6472">dim. 26 octobre</div>
+    <div style="display: flex; flex-direction: column; align-items: flex-start"><div class="msg them" style="color: #5B6472">Bienvenue. Écris-nous, on répond généralement en quelques heures.</div><span class="meta">automatique</span></div>
+    <div style="display: flex; flex-direction: column; align-items: flex-end"><div class="msg me">Le Combiné d'hier affichait 1,41 mais chez 1xBet j'avais 1,36. C'est normal ?</div><span class="meta">17:10</span></div>
+    <div style="display: flex; flex-direction: column; align-items: flex-end"><div class="msg me" style="padding: 6px"><div style="width: 180px; height: 120px; border-radius: 10px; background: #2A3142; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #9AA3B2">capture 1xBet</div></div><span class="meta">17:11</span></div>
+    <div style="display: flex; flex-direction: column; align-items: flex-start"><div class="msg them">Oui, la cote bouge jusqu'au coup d'envoi : on affiche celle relevée à 17 h, la tienne était celle de 19 h. On note l'heure du relevé sur la carte dès demain. Merci pour la capture.</div><span class="meta">Kouamé, équipe EVCore · 18:42</span></div>
+    <div style="align-self: center; font-size: 12px; color: #5B6472">aujourd'hui</div>
+    <div style="display: flex; flex-direction: column; align-items: flex-end"><div class="msg me">Merci, c'est clair.</div><span class="meta">08:14</span></div>
+  </div>
+
+  <div style="padding: 10px 16px 24px; background: #fff; border-top: 1px solid #D9DDE3; display: flex; align-items: center; gap: 10px">
+    <button class="ib" aria-label="Joindre une photo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15l-5-5L5 21M3 5h18v14H3z"/><circle cx="8.5" cy="9.5" r="1.5"/></svg></button>
+    <label for="msg" style="flex: 1; display: flex"><input id="msg" type="text" placeholder="Écris à l'équipe…" style="flex: 1; height: 44px; border-radius: 22px; border: 1px solid #D9DDE3; padding: 0 16px; font-family: Barlow, sans-serif; font-size: 15px; background: #F6F7F9; color: #141821"></label>
+    <button class="ib" aria-label="Enregistrer un message vocal"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Admin, accueil, téléphone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:#141821}
+a{color:#141821}a:hover{color:#0E1320}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.ic{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid #2A3142;color:#fff;background:transparent;padding:0}
+.ic svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.day{height:40px;padding:0 14px;border-radius:20px;display:flex;align-items:center;font-size:15px;font-weight:500;color:#9AA3B2;text-decoration:none}
+.day.on{color:#0E1320;background:#FFB300;font-weight:600}
+.voy{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600}
+.voy i{width:14px;height:14px;border-radius:50%;display:block}
+.card{margin:12px 16px 0;background:#fff;border:1px solid #D9DDE3;border-radius:14px;padding:0 16px;display:flex;flex-direction:column}
+.h{font-family:"Barlow Condensed";font-weight:600;font-size:15px;letter-spacing:.04em;color:#5B6472;padding:12px 0 2px}
+.todo{display:flex;align-items:center;gap:10px;min-height:48px;border-top:1px solid #D9DDE3;font-size:14px;text-decoration:none;color:#141821}
+.todo .w{width:18px;font-family:"Barlow Condensed";font-weight:700;font-size:18px;color:#FFB300;text-align:center}
+.todo .t{flex:1;min-width:0}.todo .t b{font-weight:600}
+.todo svg{width:18px;height:18px;stroke:#8A94A6;fill:none;stroke-width:2;stroke-linecap:round;flex:none}
+.pass{display:flex;align-items:center;gap:10px;min-height:44px;border-top:1px solid #D9DDE3;font-size:14px}
+.pass .hh{width:44px;font-family:"Barlow Condensed";font-weight:700;font-size:16px;color:#5B6472}
+.pass .t{flex:1;min-width:0}
+.pass .s{font-family:"Barlow Condensed";font-weight:600;font-size:15px;white-space:nowrap}
+.pass .s.ok{color:#1F8A4C}.pass .s.wait{color:#5B6472;font-family:Barlow;font-weight:500;font-size:13px}
+.pass button{height:32px;padding:0 10px;border-radius:8px;border:1px solid #0E1320;background:#fff;font-family:Barlow,sans-serif;font-size:13px;color:#0E1320}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:#5B6472;font-weight:500;text-decoration:none;padding:6px 0}
+.tab.on{color:#0E1320;font-weight:600}
+.tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.on svg{stroke:#FFB300}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F9; display: flex; flex-direction: column; overflow: hidden; position: relative">
+  <header style="background: #0E1320; color: #fff; padding: 52px 16px 12px; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; align-items: center; justify-content: space-between"><span class="num" style="font-weight: 700; font-size: 24px">Admin</span><span class="num" style="color: #9AA3B2; font-weight: 600; font-size: 15px">mar. 29/10 · 09:12</span></div>
+    <div style="display: flex; align-items: center; gap: 6px; border-top: 1px solid #2A3142; padding-top: 10px"><a class="day on" href="AdminMobile.dc.html">Accueil</a><a class="day" href="MoteurMobile.dc.html">Moteur</a><a class="day" href="JoueursMobile.dc.html">Joueurs</a><span style="flex: 1"></span><a class="ic" href="ReglagesMobile.dc.html" aria-label="Réglages"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.2 2.2M16.2 16.2l2.2 2.2M5.6 18.4l2.2-2.2M16.2 7.8l2.2-2.2"/></svg></a></div>
+  </header>
+
+  <div style="margin: 12px 16px 0; background: #0E1320; color: #fff; border-radius: 14px; padding: 14px 16px; display: flex; justify-content: space-between"><span class="voy"><i style="background: #1F8A4C"></i>Données</span><span class="voy"><i style="background: #FFB300"></i>Moteur</span><span class="voy"><i style="background: #1F8A4C"></i>Joueurs</span></div>
+
+  <div class="card">
+    <span class="h">À FAIRE</span>
+    <a class="todo" href="MoteurMobile.dc.html" style="border-top: 0"><span class="w">!</span><span class="t"><b>DOUBLE_CHANCE sur BL1</b> : 0,78 sur 90 j, 62 jambes</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="todo" href="MoteurMobile.dc.html"><span class="w">!</span><span class="t"><b>Chasseur Corners</b> absent 4 jours sur 7</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="todo" href="JoueursMobile.dc.html"><span class="w">!</span><span class="t"><b>2 messages</b> sans réponse depuis plus de 24 h</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+  </div>
+
+  <div class="card">
+    <span class="h">LES PASSES D'AUJOURD'HUI</span>
+    <div class="pass" style="border-top: 0"><span class="hh num">04:00</span><span class="t">Stats de match</span><span class="s ok num">✓ 412 matchs</span></div>
+    <div class="pass"><span class="hh num">06:00</span><span class="t">Cotes</span><span class="s ok num">✓ 06:01</span></div>
+    <div class="pass"><span class="hh num">08:00</span><span class="t">Matinée</span><span class="s ok num">✓ 41 joueurs</span></div>
+    <div class="pass"><span class="hh num">17:00</span><span class="t">Coupons de demain</span><span class="s ok num">✓ 17:03</span></div>
+    <div class="pass"><span class="hh num">17:45</span><span class="t">Combiné IA</span><span class="s wait">en attente</span><button>Relancer</button></div>
+    <div class="pass"><span class="hh num">21:00</span><span class="t">Analyse du jour</span><span class="s wait">en attente</span><button>Relancer</button></div>
+  </div>
+
+  <div class="card" style="padding-bottom: 10px">
+    <span class="h">AUJOURD'HUI</span>
+    <div class="num" style="display: flex; gap: 14px; font-weight: 600; font-size: 18px; padding: 4px 0 6px"><span style="color: #1F8A4C">FAV ✓</span><span style="color: #1F8A4C">COM ✓</span><span style="color: #C62828">C2 ✗</span><span style="color: #1F8A4C">IA ✓</span></div>
+    <span style="font-size: 14px; color: #5B6472"><span class="num" style="color: #141821; font-weight: 600; font-size: 16px">12</span> actifs hier · <span class="num" style="color: #141821; font-weight: 600; font-size: 16px">3</span> suivis · <span class="num" style="color: #141821; font-weight: 600; font-size: 16px">1</span> inscrit</span>
+  </div>
+
+  <nav style="position: absolute; left: 0; right: 0; bottom: 0; height: 68px; background: #fff; border-top: 1px solid #D9DDE3; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 4px 0 8px" aria-label="Onglets">
+    <a class="tab" href="Main.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Aujourd'hui</a>
+    <a class="tab" href="Matchs.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3c3 3 3 15 0 18M3 12h18"/></svg>Matchs</a>
+    <a class="tab" href="Resultats.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-8M22 19H2"/></svg>Résultats</a>
+    <a class="tab" href="Moi.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Moi</a>
+    <a class="tab on" href="AdminMobile.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18a8 8 0 1 1 16 0M12 18l4-6"/></svg>Admin</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

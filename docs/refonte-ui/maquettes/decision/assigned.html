@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Aujourd'hui — Le tableau d'affichage</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+:root{--ink:#0E1320;--led:#FFB300;--led-off:#2A3142;--bg:#F6F7F9;--fg:#141821;--mute:#5B6472;--rule:#D9DDE3;--win:#1F8A4C;--loss:#C62828;--card:#FFFFFF}
+*{box-sizing:border-box;margin:0}
+html,body{width:390px;height:844px;overflow:hidden;background:var(--bg);color:var(--fg);font:15px/1.35 Barlow,system-ui,sans-serif}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.band{background:var(--ink);color:#fff;padding:52px 16px 14px}
+.top{display:flex;align-items:center;justify-content:space-between}
+.brand{font:700 24px/1 "Barlow Condensed";letter-spacing:.01em}
+.top .r{display:flex;gap:12px;align-items:center}
+.ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;border:1px solid #2A3142;font:600 15px Barlow}
+.hier{margin-top:16px;display:flex;align-items:baseline;gap:14px;border-top:1px solid #2A3142;padding-top:12px}
+.hier .l{color:#9AA3B2;font-size:14px}
+.score{display:flex;gap:16px;font:600 20px/1 "Barlow Condensed";letter-spacing:.02em}
+.score span{display:inline-flex;gap:6px;align-items:baseline}
+.score .w{color:var(--led)}.score .x{color:#8A94A6}
+.score small{font-size:15px;font-weight:600;color:#fff}
+.hero{margin:16px 16px 0;background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:16px}
+.hero .hd{display:flex;justify-content:space-between;align-items:baseline}
+.hero h1{font:600 22px/1.1 "Barlow Condensed";letter-spacing:.01em}
+.hero .hd span{color:var(--mute);font-size:14px}
+.teams{margin-top:14px;display:grid;gap:8px}
+.team{display:flex;align-items:center;gap:10px;font-weight:500;font-size:17px}
+.crest{width:28px;height:28px;border-radius:50%;background:#E8EBF0;display:grid;place-items:center;font:700 11px "Barlow Condensed";color:var(--ink)}
+.bet{margin-top:14px;display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--rule);padding-top:12px}
+.bet b{font-size:17px;font-weight:600}
+.bet .odds{font:700 28px/1 "Barlow Condensed"}
+.chance{margin-top:12px;display:flex;align-items:center;justify-content:space-between}
+.leds{display:flex;gap:6px}
+.leds i{width:14px;height:14px;border-radius:50%;background:var(--led-off);display:block}
+.leds i.on{background:var(--led);box-shadow:0 0 0 2px #FFE7A8 inset}
+.chance b{font:700 26px/1 "Barlow Condensed"}
+.fact{margin-top:10px;color:var(--mute);font-size:14px}
+.forme{margin-top:14px;border-top:1px solid var(--rule);padding-top:12px}
+.forme .d{display:flex;gap:4px;flex-wrap:wrap}
+.forme .d i{width:9px;height:9px;border-radius:2px;background:var(--win);display:block}
+.forme .d i.x{background:var(--loss)}
+.forme p{margin-top:8px;font-size:14px;color:var(--mute)}
+.forme p b{color:var(--fg);font-weight:600}
+.btn{margin-top:14px;height:48px;border-radius:10px;background:var(--ink);color:#fff;display:grid;place-items:center;font:600 17px Barlow}
+.rows{margin:12px 16px 0}
+.row{display:flex;align-items:center;gap:10px;padding:13px 0;border-top:1px solid var(--rule);font-size:15px}
+.row:first-child{border-top:0}
+.row .n{flex:1;min-width:0}
+.row .n small{display:block;color:var(--mute);font-size:13px}
+.row .o{font:600 18px "Barlow Condensed";font-variant-numeric:tabular-nums}
+.row .c{font:600 18px "Barlow Condensed";min-width:62px;text-align:right}
+.row .ch{color:#8A94A6}
+.row.off{color:#8A94A6}
+.legal{position:absolute;left:0;right:0;bottom:64px;text-align:center;font-size:11px;color:#8A94A6}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:64px;background:#fff;border-top:1px solid var(--rule);display:grid;grid-template-columns:repeat(4,1fr);padding:8px 0 10px}
+.tab{display:grid;justify-items:center;gap:4px;font-size:11px;color:var(--mute);font-weight:500}
+.tab.on{color:var(--ink);font-weight:600}
+.tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+</style></head><body>
+<div class="band">
+  <div class="top"><div class="brand">EVCore</div><div class="r"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4l2-2zM10 21h4"/></svg></div><div class="ic">K</div></div></div>
+  <div class="hier"><span class="l">Hier</span><div class="score num"><span class="w">FAV ✓ <small>1,24</small></span><span class="w">COM ✓ <small>1,41</small></span><span class="x">C2 ✗</span></div></div>
+</div>
+<section class="hero">
+  <div class="hd"><h1>Favori du jour</h1><span>19:00 · Ligue 1</span></div>
+  <div class="teams"><div class="team"><span class="crest">PSG</span>Paris SG</div><div class="team"><span class="crest">LEN</span>Lens</div></div>
+  <div class="bet"><b>Victoire du PSG</b><span class="odds num">1,28</span></div>
+  <div class="chance"><div class="leds"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div><b class="num">8 sur 10</b></div>
+  <p class="fact">Le PSG a gagné ses 9 derniers matchs à domicile</p>
+  <div class="forme"><div class="d"><i></i><i></i><i class="x"></i><i></i><i></i><i></i><i></i><i class="x"></i><i></i><i></i><i></i><i></i><i></i><i class="x"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><p><b>19 jours gagnés sur 24</b> · pire série 1 · 1xBet garde 6 %</p></div>
+  <div class="btn">Suivre</div>
+</section>
+<div class="rows">
+  <div class="row"><div class="n">Combiné du jour<small>3 matchs</small></div><span class="o">1,41</span><span class="c num">7 sur 10</span><span class="ch">›</span></div>
+  <div class="row"><div class="n">Coupon cote 2<small>2 matchs</small></div><span class="o">2,30</span><span class="c num">1 sur 2</span><span class="ch">›</span></div>
+  <div class="row"><div class="n">Chasseur Nul<small>Lazio – Torino</small></div><span class="o">3,40</span><span class="c num">1 sur 3</span><span class="ch">›</span></div>
+  <div class="row off"><div class="n">Pas de Chasseur Corners aujourd'hui<small>aucun championnat fiable ce soir</small></div></div>
+</div>
+<p class="legal">18+ · Parier comporte des risques de perte</p>
+<nav class="tabs">
+  <div class="tab on"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Aujourd'hui</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3c3 3 3 15 0 18M3 12h18"/></svg>Matchs</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-8M22 19H2"/></svg>Résultats</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Moi</div>
+</nav>
+</body></html>

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Admin, Réglages, téléphone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:#141821}
+a{color:#141821}a:hover{color:#0E1320}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.card{margin:12px 16px 0;background:#fff;border:1px solid #D9DDE3;border-radius:14px;padding:0 16px;display:flex;flex-direction:column}
+.h{font-family:"Barlow Condensed";font-weight:600;font-size:15px;letter-spacing:.04em;color:#5B6472;padding:12px 0 2px}
+.r{display:flex;align-items:center;gap:12px;min-height:52px;border-top:1px solid #D9DDE3;text-decoration:none;color:#141821;font-size:15px}
+.r .t{flex:1;min-width:0;font-weight:500}
+.r .t small{display:block;color:#5B6472;font-size:12px;font-weight:400}
+.r .v{font-family:"Barlow Condensed";font-weight:600;font-size:16px;color:#141821;text-align:right}
+.r svg{width:18px;height:18px;stroke:#8A94A6;fill:none;stroke-width:2;stroke-linecap:round;flex:none}
+.sw{width:44px;height:26px;border-radius:13px;background:#D9DDE3;position:relative;flex:none;border:0;padding:0}
+.sw i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;display:block}
+.sw.on{background:#FFB300}.sw.on i{left:21px;background:#0E1320}
+.j{display:grid;grid-template-columns:48px 1fr;gap:4px 10px;min-height:48px;border-top:1px solid #D9DDE3;font-size:13px;align-items:center;padding:6px 0}
+.j .d{font-family:"Barlow Condensed";font-weight:600;font-size:14px;color:#5B6472}
+.j .w{color:#141821}.j .w b{font-weight:600}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F9; display: flex; flex-direction: column; overflow: hidden">
+  <header style="background: #0E1320; color: #fff; padding: 52px 16px 14px; display: flex; align-items: center; justify-content: space-between">
+    <a href="AdminMobile.dc.html" aria-label="Retour" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; margin-left: -12px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M15 6l-6 6 6 6"/></svg></a>
+    <span class="num" style="font-weight: 600; font-size: 22px">Réglages</span>
+    <span style="width: 32px"></span>
+  </header>
+
+  <div class="card">
+    <a class="r" href="ReglagesMobile.dc.html" style="border-top: 0"><span class="t">Fournisseur LLM<small>secours : groq, together</small></span><span class="v">cerebras</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="r" href="ReglagesMobile.dc.html"><span class="t">Recherche web<small>tavily · 12 championnats</small></span><span class="v">activée</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="r" href="ReglagesMobile.dc.html"><span class="t">Seuil d'alerte du quota API<small>défaut 80 %</small></span><span class="v">80 %</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="r" href="ReglagesMobile.dc.html"><span class="t">Réserve du rattrapage<small>appels par jour · défaut 300</small></span><span class="v">300</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <div class="r"><span class="t">Passes planifiées<small>à couper seulement en incident</small></span><button class="sw on" aria-label="Passes planifiées, actives"><i></i></button></div>
+  </div>
+  <p style="margin: 8px 16px 0; font-size: 12px; color: #5B6472">Un changement est pris en compte à la prochaine passe. Aucune clé n'est affichée ici.</p>
+
+  <div class="card" style="padding-bottom: 6px">
+    <span class="h">JOURNAL</span>
+    <div class="j" style="border-top: 0"><span class="d">28/10</span><span class="w"><b>Fannan</b> · Fournisseur LLM : together → cerebras</span></div>
+    <div class="j"><span class="d">18/10</span><span class="w"><b>Fannan</b> · HT/FT réactivé · « relecture 90 j »</span></div>
+    <div class="j"><span class="d">03/10</span><span class="w"><b>Fannan</b> · rôle de aya@… : joueur → opérateur</span></div>
+    <div class="j"><span class="d">27/09</span><span class="w"><b>Fannan</b> · annonce publiée : « Nouveau : le Chasseur Corners »</span></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
