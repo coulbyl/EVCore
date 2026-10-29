@@ -75,3 +75,6 @@ packages/backtest-core/reports/market-cells/
 # Python
 __pycache__/
 *.pyc
+
+# Sortie par défaut de apps/web/e2e/captures.spec.ts (captures jetables, jamais commitées)
+docs/audits/captures/
