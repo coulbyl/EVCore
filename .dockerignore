@@ -5,6 +5,19 @@
 **/dist
 **/coverage
 **/.turbo
+**/.next
+**/*.tsbuildinfo
+
+# Test outputs and e2e (never needed to build an image)
+**/test-results
+**/playwright-report
+apps/web/e2e
+
+# Local tooling and audit data
+.claude
+packages/backtest-core/scripts/**/*.csv
+packages/backtest-core/scripts/**/*.pkl
+packages/backtest-core/scripts/**/*.json
 
 # Git
 .git

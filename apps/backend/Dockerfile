@@ -4,21 +4,34 @@
 FROM node:24-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+ENV npm_config_store_dir="/pnpm/store"
 # Patch OS packages at base level to eliminate known Alpine CVEs in all stages
 RUN apk upgrade --no-cache \
  && corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 ################################################################################
-# Stage 2 — Builder: install deps, build workspace packages + backend
+# Stage 2 — Deps: the pnpm store, from the lockfile alone (lot 7, 2026-10-29)
+#
+# Cached as long as pnpm-lock.yaml does not change, locally and through the
+# registry build cache in CI: a code change no longer downloads every package.
 ################################################################################
-FROM base AS builder
+FROM base AS deps
+WORKDIR /app
+COPY pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+RUN pnpm fetch
+
+################################################################################
+# Stage 3 — Builder: link deps offline, build workspace packages + backend
+################################################################################
+FROM deps AS builder
 WORKDIR /app
 
 # Copy entire monorepo (filtered by .dockerignore at repo root)
 COPY . .
 
-# Install all deps (dev included — needed for prisma generate + nest build)
-RUN pnpm install --frozen-lockfile
+# Install all deps (dev included — needed for prisma generate + nest build),
+# linked from the store fetched above: no network.
+RUN pnpm install --offline --frozen-lockfile
 
 # prisma generate reads schema only — no real DB connection needed at build time
 # binaryTargets includes linux-musl-openssl-3.0.x so schema-engine is bundled for Alpine
@@ -43,8 +56,23 @@ RUN mkdir -p /tmp/prisma-engines \
 # pnpm copies built workspace packages (dist/) into /deploy/node_modules
 RUN pnpm --filter backend --prod deploy --legacy /deploy
 
+# Two trees for two layers: third-party packages (identical from one release
+# to the next while the lockfile holds) and the workspace packages rebuilt on
+# every release (@evcore/*, plus .modules.yaml which carries a date). With
+# reproducible timestamps (deploy.yml, rewrite-timestamp) the first layer
+# keeps its digest, so the server does not download 500 MB again.
+RUN mkdir -p /deploy-ws/node_modules/.pnpm/node_modules \
+ && mv /deploy/node_modules/@evcore /deploy-ws/node_modules/ \
+ && mv /deploy/node_modules/.pnpm/@evcore+* /deploy-ws/node_modules/.pnpm/ \
+ && if [ -e /deploy/node_modules/.pnpm/node_modules/@evcore ]; then \
+      mv /deploy/node_modules/.pnpm/node_modules/@evcore /deploy-ws/node_modules/.pnpm/node_modules/; \
+    fi \
+ && if [ -e /deploy/node_modules/.modules.yaml ]; then \
+      mv /deploy/node_modules/.modules.yaml /deploy-ws/node_modules/; \
+    fi
+
 ################################################################################
-# Stage 3 — Runner: minimal image with only what's needed at runtime
+# Stage 4 — Runner: minimal image with only what's needed at runtime
 ################################################################################
 FROM base AS runner
 WORKDIR /app
@@ -61,8 +89,10 @@ RUN addgroup --system --gid 1001 nodejs \
  && mkdir -p /app/logs /app/prisma-engines /app/logrotate /app/crontabs \
  && chown nestjs:nodejs /app/logs /app/prisma-engines /app/logrotate /app/crontabs
 
-# Production node_modules (includes built @evcore/db, @evcore/transactional, prisma CLI)
+# Production node_modules: third-party first (stable layer), then the built
+# workspace packages (@evcore/db, @evcore/transactional, @evcore/analysis-core).
 COPY --from=builder --chown=nestjs:nodejs /deploy/node_modules ./node_modules
+COPY --from=builder --chown=nestjs:nodejs /deploy-ws/node_modules ./node_modules
 
 # Prisma CLI v7 expects the datasource URL from prisma.config.ts at runtime.
 COPY --from=builder --chown=nestjs:nodejs /app/packages/db/prisma.config.ts ./node_modules/@evcore/db/prisma.config.ts
@@ -86,7 +116,10 @@ USER nestjs
 
 EXPOSE 3000
 
+# 127.0.0.1, not localhost: inside the container busybox wget resolves
+# localhost to ::1 first and the app listens on IPv4 only, so the check always
+# failed and the container stayed "unhealthy" (found 2026-10-29, lot 7).
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget -qO- http://localhost:3000/health || exit 1
+  CMD wget -qO- http://127.0.0.1:3000/health || exit 1
 
 CMD ["sh", "entrypoint.sh"]
