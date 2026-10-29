@@ -14,6 +14,7 @@ _Branche `feat/refonte-ui`. Cocher au fur et à mesure ; chaque ligne est un com
 - [ ] A8 `docs(web): DESIGN.md and .impeccable/design.json from the built tokens` — écrit depuis le code, pas avant.
 - [ ] A9 `feat(web): components showcase route (dev only)` — un écran qui montre chaque composant dans ses états, pour la revue.
 - [ ] A10 `feat(backend): compression, helmet, ETag, per-request duration log` (16 § 3).
+- [ ] A10b `chore: dependency audit — Dependabot reports 245 alerts on main (10 critical, 104 high)` — mettre à jour ou retirer, en commençant par les paquets qu'on supprime du bundle joueur (C0).
 - [ ] A11 `perf(auth): in-memory session cache (60 s) and cookie-only Next proxy` — plus d'appel réseau dans `proxy.ts`, une lecture de session par requête au plus (16 § 1–2).
 - [ ] A12 `ci(web): Lighthouse budgets on today, matches, results, me, landing` — LCP 2,5 s, INP 200 ms, CLS 0,1, JS 150 kB (16 § 2).
 - [ ] A13 Revue de phase A : `/code-review medium`, budgets mesurés, bilan écrit ici.
