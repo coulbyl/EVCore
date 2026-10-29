@@ -1,0 +1,25 @@
+=== Tous les books mous contre Pinnacle — 1X2, lignes à avantage annoncé > 0, par book
+   1xBet        n=  386 matchs=  374 cote moy  4.08 annoncé +0.027 réalisé +0.002 [-0.136 ; +0.166]
+   Bet365       n=  437 matchs=  434 cote moy  4.11 annoncé +0.029 réalisé +0.035 [-0.121 ; +0.204]
+   BetVictor    n=   92 matchs=   91 cote moy  5.33 annoncé +0.028 réalisé -0.023 [-0.322 ; +0.266]
+   Betano       n=  352 matchs=  343 cote moy  2.85 annoncé +0.016 réalisé -0.094 [-0.207 ; +0.035]
+   Betfair      n=  116 matchs=  114 cote moy  4.73 annoncé +0.028 réalisé -0.007 [-0.340 ; +0.331]
+   Marathonbet  n=  160 matchs=  160 cote moy  5.45 annoncé +0.030 réalisé -0.033 [-0.256 ; +0.219]
+   Unibet       n=  569 matchs=  561 cote moy  3.58 annoncé +0.026 réalisé -0.090 [-0.217 ; +0.022]
+   TOUS         n=2188 matchs=1643 réalisé -0.039 [-0.113 ; +0.034]
+
+=== Tous les books mous — 1X2  (lignes 89418, matchs 6392, annoncé moyen -0.090)
+   EV ]-1.00 ; -0.05]  n=67905  cote moy  3.67  annoncé -0.110  réalisé -0.117 [-0.134 ; -0.099]  taux 0.300 vs juste 0.300
+   EV ]-0.05 ; +0.00]  n=19325  cote moy  2.64  annoncé -0.032  réalisé -0.044 [-0.064 ; -0.026]  taux 0.446 vs juste 0.446
+   EV ]+0.00 ; +0.02]  n= 1379  cote moy  3.09  annoncé +0.008  réalisé -0.021 [-0.094 ; +0.058]  taux 0.421 vs juste 0.422
+   EV ]+0.02 ; +0.05]  n=  540  cote moy  4.08  annoncé +0.032  réalisé -0.004 [-0.145 ; +0.160]  taux 0.324 vs juste 0.331
+   EV ]+0.05 ; +0.10]  n=  176  cote moy  6.06  annoncé +0.070  réalisé -0.086 [-0.365 ; +0.222]  taux 0.239 vs juste 0.262
+   EV ]+0.10 ; +9.00]  n=   93  cote moy 10.82  annoncé +0.168  réalisé -0.410 [-0.758 ; -0.032]  taux 0.151 vs juste 0.215
+   → toutes les lignes à avantage annoncé > 0 : n=2188 (0.34 par match)  réalisé -0.039 [-0.119 ; +0.032]
+      2026-07: n=227 réalisé -0.145 [-0.352 ; +0.097]
+      2026-08: n=442 réalisé +0.025 [-0.144 ; +0.215]
+      2026-09: n=483 réalisé +0.018 [-0.126 ; +0.186]
+      2026-10: n=1036 réalisé -0.069 [-0.181 ; +0.043]
+      relevé 1–6 h avant : n=1132 réalisé -0.051 [-0.150 ; +0.053]
+      relevé 6–24 h avant : n=493 réalisé -0.017 [-0.176 ; +0.171]
+      relevé 24–1000 h avant : n=561 réalisé -0.034 [-0.177 ; +0.128]

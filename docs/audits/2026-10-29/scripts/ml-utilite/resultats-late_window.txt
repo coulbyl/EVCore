@@ -1,0 +1,18 @@
+=== ONE_X_TWO  matchs 314  lignes 942
+   mouvement Pinnacle T−60→T−10 : |Δlogit| médian 0.018, > 0,10 sur 11.0% des lignes (52 matchs)
+   1xBet suit : pente de Δ1xBet sur ΔPinnacle +0.92 (corr +0.80) ; sur les gros mouvements pente +1.00
+   marge 1xBet T−60 0.941… (1/somme 1/cote) ; CLV moyen d'un pari 1xBet pris à T−60 : -0.067
+   avantage statique à T−60 (Pinnacle T−60): lignes > 0 : 56 (0.18/match), annoncé +0.029, réalisé -0.315 [-0.597 ; -0.003], cote moy 4.71
+   CLV à T−60 contre clôture (Pinnacle T−10): lignes > 0 : 103 (0.33/match), annoncé +0.052, réalisé -0.170 [-0.380 ; +0.076], cote moy 3.77
+   avantage à T−10: lignes > 0 : 56 (0.18/match), annoncé +0.026, réalisé -0.314 [-0.554 ; -0.067], cote moy 4.43
+   quand Pinnacle monte (> 0,10 logit, n=51) : 1xBet monte de +0.153 logit contre +0.177 ; CLV d'un pari 1xBet pris à T−60 sur ces lignes +0.063, réalisé +0.186
+
+=== OVER_UNDER  matchs 307  lignes 614
+   mouvement Pinnacle T−60→T−10 : |Δlogit| médian 0.012, > 0,10 sur 9.8% des lignes (30 matchs)
+   1xBet suit : pente de Δ1xBet sur ΔPinnacle +0.61 (corr +0.69) ; sur les gros mouvements pente +0.67
+   marge 1xBet T−60 0.934… (1/somme 1/cote) ; CLV moyen d'un pari 1xBet pris à T−60 : -0.070
+   avantage statique à T−60 (Pinnacle T−60): 25 lignes > 0 seulement
+   CLV à T−60 contre clôture (Pinnacle T−10): lignes > 0 : 37 (0.12/match), annoncé +0.024, réalisé +0.113 [-0.200 ; +0.413], cote moy 1.94
+   avantage à T−10: 15 lignes > 0 seulement
+   quand Pinnacle monte (> 0,10 logit, n=30) : 1xBet monte de +0.103 logit contre +0.156 ; CLV d'un pari 1xBet pris à T−60 sur ces lignes -0.005, réalisé -0.061
+

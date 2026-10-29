@@ -1,0 +1,23 @@
+retrait de marge : power
+
+=== 1xBet contre Pinnacle — 1X2  (lignes 7326, matchs 2442, annoncé moyen -0.073)
+   EV ]-1.00 ; -0.05]  n= 4685  cote moy  4.10  annoncé -0.103  réalisé -0.108 [-0.142 ; -0.074]  taux 0.278 vs juste 0.279
+   EV ]-0.05 ; +0.00]  n= 2220  cote moy  2.74  annoncé -0.028  réalisé -0.048 [-0.089 ; -0.010]  taux 0.427 vs juste 0.424
+   EV ]+0.00 ; +0.02]  n=  286  cote moy  2.66  annoncé +0.009  réalisé -0.032 [-0.151 ; +0.098]  taux 0.483 vs juste 0.491
+   EV ]+0.02 ; +0.05]  n=  104  cote moy  3.08  annoncé +0.031  réalisé +0.019 [-0.218 ; +0.274]  taux 0.452 vs juste 0.444
+   → toutes les lignes à avantage annoncé > 0 : n=421 (0.17 par match)  réalisé -0.036 [-0.152 ; +0.077]
+      2026-09: n=75 réalisé -0.141 [-0.401 ; +0.121]
+      2026-10: n=346 réalisé -0.014 [-0.139 ; +0.120]
+      relevé 1–6 h avant : n=381 réalisé -0.034 [-0.160 ; +0.094]
+      relevé 6–24 h avant : n=40 réalisé -0.061 [-0.361 ; +0.263]
+retrait de marge : shin
+
+=== 1xBet contre Pinnacle — 1X2  (lignes 7326, matchs 2442, annoncé moyen -0.069)
+   EV ]-1.00 ; -0.05]  n= 4623  cote moy  3.95  annoncé -0.097  réalisé -0.105 [-0.136 ; -0.072]  taux 0.288 vs juste 0.288
+   EV ]-0.05 ; +0.00]  n= 2317  cote moy  2.92  annoncé -0.029  réalisé -0.062 [-0.100 ; -0.024]  taux 0.412 vs juste 0.413
+   EV ]+0.00 ; +0.02]  n=  259  cote moy  2.84  annoncé +0.009  réalisé +0.023 [-0.130 ; +0.189]  taux 0.459 vs juste 0.447
+   EV ]+0.02 ; +0.05]  n=   85  cote moy  3.83  annoncé +0.032  réalisé -0.040 [-0.348 ; +0.229]  taux 0.353 vs juste 0.355
+   → toutes les lignes à avantage annoncé > 0 : n=386 (0.16 par match)  réalisé +0.002 [-0.143 ; +0.145]
+      2026-09: n=68 réalisé -0.099 [-0.361 ; +0.222]
+      2026-10: n=318 réalisé +0.024 [-0.156 ; +0.206]
+      relevé 1–6 h avant : n=350 réalisé -0.017 [-0.167 ; +0.149]

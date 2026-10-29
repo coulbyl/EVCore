@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Phase 2 en production (argent réel) + Phase 3 ML en shadow — mise à jour le 2026-09-16 (deux générateurs de coupon en parallèle)**
+**Statut actuel : Phase 2 en production (argent réel) ; Phase 3 ML redéfinie le 2026-10-29 (le prix devient l'entrée du moteur, l'ombre XGBoost est coupée) — mise à jour le 2026-10-29**
 
 > Révisé le 2026-08-15 : sections Mois 1-3 condensées (détail non-critique,
 > tout est `[x]` depuis mars 2026) ; plusieurs items marqués `[ ]`/`[~]`
@@ -793,10 +793,19 @@ Aucune migration Prisma.
 
 ## Phase 3 — ML & Scalabilité (après stabilisation Phase 2)
 
-> Objectif : transformer EVCore en système circulant — les résultats réels alimentent l'entraînement,
-> qui améliore les prédictions, qui génère de meilleurs picks.
-> Architecture : Python worker dans le Docker Compose existant, communication via BullMQ/Redis et PostgreSQL.
-> NestJS reste l'autorité — Python entraîne et calibre, NestJS décide.
+> **Redéfini le 2026-10-29** (`docs/audits/2026-10-29/ML-UTILITE.md` et `ML-V2-PROPOSITION.md`) :
+> la couche de correction XGBoost en ombre ne bat le marché sur aucun canal, et aucun modèle
+> appris sur nos features ne bat le prix hors échantillon. Le ML ne pronostique plus le football.
+> **Le prix affûté (Pinnacle, Bet365 sinon) devient l'entrée du moteur** (λ et ρ déduits du prix,
+> 98 % des matchs) ; le moteur Poisson-stats devient le repli. Le ML apprend **ce que le prix ne
+> dit pas** : mi-temps (A), corners et cartons (B), retrait de marge appris sur 1xBet (C),
+> dépendance des buts (D). Chaque sous-modèle est jugé sur le résidu contre Pinnacle au même
+> instant, hors échantillon, et ne sort que s'il fait aussi bien que le prix. Python entraîne
+> chaque semaine et exporte des paramètres JSON ; `analysis-core` les applique ; **aucun appel ML
+> à l'analyse**. Le ml-worker est recentré sur l'entraînement, `ML_CORRECTION` devient une
+> constante `false`. Lots : ML-1 grille de marché (sans entraînement), ML-2 mi-temps + dépendance,
+> ML-3 corners/cartons, ML-4 retrait de marge.
+> NestJS reste l'autorité — Python entraîne et valide, NestJS décide.
 
 Docs de cadrage Phase 3:
 
@@ -843,7 +852,7 @@ Docs de cadrage Phase 3:
 - [x] Basculement automatique si Brier amélioré ≥ 5% + cooldown 7 jours
 - [x] Rollback manuel via `POST /ml/models/:id/rollback`
 - [x] Job BullMQ hebdomadaire — ré-entraînement si ≥ 50 nouveaux bets settled
-- [ ] **Promotion hors shadow** (décision par segment, voir `docs/phase3-ml-todo.md` étape 7ter) — LA SUITE
+- [-] **Promotion hors shadow** — abandonnée le 2026-10-29 : l'ombre est anti-informative ou redondante avec le prix sur tous les canaux (`docs/audits/2026-10-29/ML-UTILITE.md`). La correction est coupée (`ML_CORRECTION = false`, lot config) ; le ml-worker est recentré (voir l'en-tête de la phase).
 
 ### Bloc D — Gestion dynamique du drawdown
 
@@ -1191,3 +1200,7 @@ est écrite dans le plan plutôt que laissée à l'usure.
 | `mvp-month-3`     | Automatisation, apprentissage, validation | 8 avr 2026   |
 | `phase-2`         | Live, canaux prédiction, déploiement prod | 4 juin 2026  |
 | `phase-3`         | ML circulant, XGBoost, scalabilité DB     | TBD          |
+
+## Refonte UI — « le tableau d'affichage » (cadrée et dessinée le 2026-10-29, branche `feat/refonte-ui`)
+
+Tout le contenu est écrit et validé écran par écran dans `docs/refonte-ui/` (00 → 13), le style est choisi (13-style.md) et la maquette complète (37 écrans, admin sur téléphone compris) est sur la toile Design. Implémentation sur **une seule branche**, deux PR : PR 1 = public + joueur (phases A → E), PR 2 = admin et lot config (phases F → G). Feuille de route : `docs/refonte-ui/14-roadmap.md` ; un commit par ligne de `docs/refonte-ui/15-todo.md`. Décisions produit prises en chemin : coupon long et coupon prix remplacés par un accumulateur de chasseurs vendu à la semaine (`docs/audits/2026-10-29/ACCUMULATEUR.md`, lot moteur hors branche) ; au-dessus de la cote 1,80 la chance affichée est celle du marché ; l'admin ramené à trois écrans et une page de réglages.

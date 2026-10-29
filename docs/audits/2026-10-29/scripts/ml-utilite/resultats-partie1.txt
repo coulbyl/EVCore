@@ -1,0 +1,90 @@
+=== Par canal, tout l'historique (juillet → 29 octobre) ===
+GOALS                        n= 6559 matchs= 5670 | Brier moteur 0.2222 ML 0.2263 | annoncé moteur 0.685 ML 0.607 réalisé 0.629
+                             marché 0.2148 (annoncé 0.618)
+                             écart au marché  moteur +0.0074 [+0.0051, +0.0095]   ML +0.0116 [+0.0096, +0.0136]
+                             poids optimal sur le marché  moteur +0.06 [-0.06, +0.19]   ML -0.14 [-0.24, -0.02]
+                             corrélation des écarts au marché (ML, moteur) +0.04 ; écart moyen |ML−marché| 0.075 |moteur−marché| 0.072
+TEAM_TOTAL                   n= 3553 matchs= 3124 | Brier moteur 0.2375 ML 0.2568 | annoncé moteur 0.713 ML 0.632 réalisé 0.602
+                             marché 0.2195 (annoncé 0.591)
+                             écart au marché  moteur +0.0180 [+0.0129, +0.0229]   ML +0.0374 [+0.0311, +0.0437]
+                             poids optimal sur le marché  moteur +0.11 [+0.01, +0.21]   ML +0.02 [-0.07, +0.09]
+                             corrélation des écarts au marché (ML, moteur) +0.18 ; écart moyen |ML−marché| 0.160 |moteur−marché| 0.124
+CLEAN_SHEET                  n= 2717 matchs= 2684 | Brier moteur 0.2216 ML 0.2768 | annoncé moteur 0.374 ML 0.413 réalisé 0.323
+                             marché 0.2070 (annoncé 0.326)
+                             écart au marché  moteur +0.0146 [+0.0106, +0.0183]   ML +0.0698 [+0.0602, +0.0795]
+                             poids optimal sur le marché  moteur -0.06 [-0.20, +0.09]   ML -0.05 [-0.13, +0.01]
+                             corrélation des écarts au marché (ML, moteur) -0.19 ; écart moyen |ML−marché| 0.200 |moteur−marché| 0.085
+WIN_EITHER_HALF              n= 2423 matchs= 2401 | Brier moteur 0.2329 ML 0.2402 | annoncé moteur 0.634 ML 0.608 réalisé 0.616
+BTTS                         n= 2120 matchs= 2110 | Brier moteur 0.2432 ML 0.2429 | annoncé moteur 0.597 ML 0.590 réalisé 0.571
+                             marché 0.2369 (annoncé 0.570)
+                             écart au marché  moteur +0.0063 [+0.0035, +0.0093]   ML +0.0060 [+0.0029, +0.0088]
+                             poids optimal sur le marché  moteur -0.19 [-0.48, +0.10]   ML -0.11 [-0.39, +0.19]
+                             corrélation des écarts au marché (ML, moteur) +0.69 ; écart moyen |ML−marché| 0.055 |moteur−marché| 0.051
+DOMINANT                     n= 1151 matchs= 1151 | Brier moteur 0.2582 ML 0.2328 | annoncé moteur 0.640 ML 0.589 réalisé 0.553
+                             marché 0.2201 (annoncé 0.548)
+                             écart au marché  moteur +0.0381 [+0.0281, +0.0479]   ML +0.0127 [+0.0073, +0.0176]
+                             poids optimal sur le marché  moteur -0.07 [-0.21, +0.08]   ML -0.19 [-0.46, +0.08]
+                             corrélation des écarts au marché (ML, moteur) +0.71 ; écart moyen |ML−marché| 0.076 |moteur−marché| 0.139
+VALUE                        n=  517 matchs=  481 | Brier moteur 0.2749 ML 0.2432 | annoncé moteur 0.605 ML 0.469 réalisé 0.395
+                             marché 0.2280 (annoncé 0.422)
+                             écart au marché  moteur +0.0469 [+0.0300, +0.0623]   ML +0.0152 [+0.0044, +0.0249]
+                             poids optimal sur le marché  moteur -0.13 [-0.36, +0.07]   ML -0.09 [-0.48, +0.28]
+                             corrélation des écarts au marché (ML, moteur) +0.27 ; écart moyen |ML−marché| 0.089 |moteur−marché| 0.183
+
+=== Tous canaux avec prix de marché ===
+TOUS                         n=16617 matchs= 5957 | Brier moteur 0.2322 ML 0.2442 | annoncé moteur 0.623 ML 0.573 réalisé 0.553
+                             marché 0.2181 (annoncé 0.547)
+                             écart au marché  moteur +0.0141 [+0.0119, +0.0161]   ML +0.0261 [+0.0237, +0.0284]
+                             poids optimal sur le marché  moteur +0.01 [-0.07, +0.09]   ML -0.05 [-0.09, -0.00]
+                             corrélation des écarts au marché (ML, moteur) +0.09 ; écart moyen |ML−marché| 0.112 |moteur−marché| 0.091
+
+=== Par période (avant / après le 16/09, où l'identifiant de modèle apparaît) ===
+GOALS < 16/09                n= 3885 matchs= 3459 | Brier moteur 0.2329 ML 0.2363 | annoncé moteur 0.656 ML 0.560 réalisé 0.590
+                             marché 0.2241 (annoncé 0.578)
+                             écart au marché  moteur +0.0088 [+0.0059, +0.0120]   ML +0.0122 [+0.0096, +0.0148]
+                             poids optimal sur le marché  moteur +0.05 [-0.10, +0.20]   ML -0.24 [-0.40, -0.08]
+                             corrélation des écarts au marché (ML, moteur) +0.23 ; écart moyen |ML−marché| 0.068 |moteur−marché| 0.078
+GOALS ≥ 16/09                n= 2674 matchs= 2227 | Brier moteur 0.2066 ML 0.2118 | annoncé moteur 0.728 ML 0.675 réalisé 0.685
+                             marché 0.2012 (annoncé 0.676)
+                             écart au marché  moteur +0.0053 [+0.0022, +0.0085]   ML +0.0106 [+0.0077, +0.0138]
+                             poids optimal sur le marché  moteur +0.09 [-0.15, +0.30]   ML -0.02 [-0.18, +0.14]
+                             corrélation des écarts au marché (ML, moteur) -0.16 ; écart moyen |ML−marché| 0.084 |moteur−marché| 0.063
+BTTS < 16/09                 n=  935 matchs=  932 | Brier moteur 0.2421 ML 0.2420 | annoncé moteur 0.593 ML 0.593 réalisé 0.572
+                             marché 0.2352 (annoncé 0.561)
+                             écart au marché  moteur +0.0070 [+0.0023, +0.0117]   ML +0.0068 [+0.0021, +0.0118]
+                             poids optimal sur le marché  moteur -0.22 [-0.65, +0.27]   ML -0.06 [-0.45, +0.31]
+                             corrélation des écarts au marché (ML, moteur) +0.73 ; écart moyen |ML−marché| 0.062 |moteur−marché| 0.053
+BTTS ≥ 16/09                 n= 1185 matchs= 1178 | Brier moteur 0.2440 ML 0.2437 | annoncé moteur 0.600 ML 0.587 réalisé 0.570
+                             marché 0.2382 (annoncé 0.578)
+                             écart au marché  moteur +0.0058 [+0.0022, +0.0095]   ML +0.0054 [+0.0020, +0.0089]
+                             poids optimal sur le marché  moteur -0.17 [-0.60, +0.26]   ML -0.15 [-0.56, +0.26]
+                             corrélation des écarts au marché (ML, moteur) +0.64 ; écart moyen |ML−marché| 0.050 |moteur−marché| 0.049
+DOMINANT < 16/09             n=  725 matchs=  725 | Brier moteur 0.2714 ML 0.2374 | annoncé moteur 0.647 ML 0.581 réalisé 0.516
+                             marché 0.2201 (annoncé 0.526)
+                             écart au marché  moteur +0.0512 [+0.0360, +0.0655]   ML +0.0172 [+0.0098, +0.0247]
+                             poids optimal sur le marché  moteur -0.10 [-0.27, +0.06]   ML -0.21 [-0.49, +0.08]
+                             corrélation des écarts au marché (ML, moteur) +0.79 ; écart moyen |ML−marché| 0.090 |moteur−marché| 0.161
+DOMINANT ≥ 16/09             n=  426 matchs=  426 | Brier moteur 0.2358 ML 0.2250 | annoncé moteur 0.627 ML 0.603 réalisé 0.617
+                             marché 0.2201 (annoncé 0.586)
+                             écart au marché  moteur +0.0157 [+0.0033, +0.0284]   ML +0.0049 [-0.0014, +0.0104]
+                             poids optimal sur le marché  moteur +0.05 [-0.28, +0.40]   ML -0.10 [-0.80, +0.68]
+                             corrélation des écarts au marché (ML, moteur) +0.35 ; écart moyen |ML−marché| 0.050 |moteur−marché| 0.101
+TEAM_TOTAL < 16/09           n= 3515 matchs= 3092 | Brier moteur 0.2381 ML 0.2574 | annoncé moteur 0.713 ML 0.632 réalisé 0.601
+                             marché 0.2201 (annoncé 0.591)
+                             écart au marché  moteur +0.0180 [+0.0132, +0.0228]   ML +0.0373 [+0.0312, +0.0434]
+                             poids optimal sur le marché  moteur +0.11 [+0.00, +0.22]   ML +0.02 [-0.06, +0.10]
+                             corrélation des écarts au marché (ML, moteur) +0.18 ; écart moyen |ML−marché| 0.160 |moteur−marché| 0.124
+CLEAN_SHEET < 16/09          n= 2693 matchs= 2661 | Brier moteur 0.2213 ML 0.2766 | annoncé moteur 0.374 ML 0.413 réalisé 0.321
+                             marché 0.2064 (annoncé 0.326)
+                             écart au marché  moteur +0.0149 [+0.0109, +0.0185]   ML +0.0702 [+0.0606, +0.0796]
+                             poids optimal sur le marché  moteur -0.07 [-0.21, +0.07]   ML -0.06 [-0.12, +0.01]
+                             corrélation des écarts au marché (ML, moteur) -0.19 ; écart moyen |ML−marché| 0.201 |moteur−marché| 0.085
+WIN_EITHER_HALF < 16/09      n= 2410 matchs= 2389 | Brier moteur 0.2332 ML 0.2403 | annoncé moteur 0.634 ML 0.608 réalisé 0.616
+
+=== Calibration de la correction ML par tranche de proba annoncée (canaux avec marché) ===
+ML 0.0–0.4: n= 2530  annoncé ML 0.243  marché 0.356  moteur 0.465  réalisé 0.374
+ML 0.4–0.5: n= 2568  annoncé ML 0.471  marché 0.458  moteur 0.565  réalisé 0.456
+ML 0.5–0.6: n= 4640  annoncé ML 0.552  marché 0.551  moteur 0.629  réalisé 0.554
+ML 0.6–0.7: n= 3099  annoncé ML 0.643  marché 0.627  moteur 0.678  réalisé 0.623
+ML 0.7–0.8: n= 1413  annoncé ML 0.757  marché 0.612  moteur 0.673  réalisé 0.627
+ML 0.8–1.0: n= 2367  annoncé ML 0.875  marché 0.699  moteur 0.744  réalisé 0.714

@@ -1,0 +1,27 @@
+102 journées, 133758 jambes des marchés principaux
+
+Chasseur d'accumulateur : jambes courtes empilées, les plus courtes d'abord
+jambes 1.20-1.50  cible 8-15       jours  64  gagnés  6 ( 9.4 % ± 7.1)  1 sur  10.7  (cote dit 1 sur   8.9)  pire série  26 j  cote   9.0  jambes 11.6  rendu  -18.8 %
+jambes 1.20-1.50  cible 15-30      jours  11  gagnés  0 ( 0.0 % ± 0.0)  1 sur   inf  (cote dit 1 sur  16.6)  pire série  11 j  cote  16.8  jambes 13.8  rendu -100.0 %
+jambes 1.20-1.50  cible 8-30       jours  64  gagnés  6 ( 9.4 % ± 7.1)  1 sur  10.7  (cote dit 1 sur   8.9)  pire série  26 j  cote   9.0  jambes 11.6  rendu  -18.8 %
+jambes 1.30-1.60  cible 8-15       jours  82  gagnés  7 ( 8.5 % ± 6.0)  1 sur  11.7  (cote dit 1 sur   8.6)  pire série  27 j  cote   8.6  jambes  8.0  rendu  -28.1 %
+jambes 1.30-1.60  cible 15-30      jours  67  gagnés  2 ( 3.0 % ± 4.1)  1 sur  33.5  (cote dit 1 sur  17.9)  pire série  25 j  cote  18.0  jambes 10.7  rendu  -51.5 %
+jambes 1.30-1.60  cible 8-30       jours  82  gagnés  7 ( 8.5 % ± 6.0)  1 sur  11.7  (cote dit 1 sur   8.6)  pire série  27 j  cote   8.6  jambes  8.0  rendu  -28.1 %
+jambes 1.40-1.80  cible 8-15       jours  92  gagnés  8 ( 8.7 % ± 5.8)  1 sur  11.5  (cote dit 1 sur  10.3)  pire série  22 j  cote  10.3  jambes  6.8  rendu  -19.2 %
+jambes 1.40-1.80  cible 15-30      jours  84  gagnés  2 ( 2.4 % ± 3.3)  1 sur  42.0  (cote dit 1 sur  18.7)  pire série  54 j  cote  19.0  jambes  8.5  rendu  -52.1 %
+jambes 1.40-1.80  cible 8-30       jours  92  gagnés  8 ( 8.7 % ± 5.8)  1 sur  11.5  (cote dit 1 sur  10.3)  pire série  22 j  cote  10.3  jambes  6.8  rendu  -19.2 %
+jambes 1.50-2.00  cible 8-15       jours  96  gagnés 11 (11.5 % ± 6.4)  1 sur   8.7  (cote dit 1 sur  10.7)  pire série  43 j  cote  10.9  jambes  5.8  rendu  +20.6 %
+jambes 1.50-2.00  cible 15-30      jours  90  gagnés  6 ( 6.7 % ± 5.2)  1 sur  15.0  (cote dit 1 sur  17.9)  pire série  49 j  cote  18.1  jambes  6.9  rendu   -4.1 %
+jambes 1.50-2.00  cible 8-30       jours  96  gagnés 11 (11.5 % ± 6.4)  1 sur   8.7  (cote dit 1 sur  10.7)  pire série  43 j  cote  10.9  jambes  5.8  rendu  +20.6 %
+
+Variante : jambes 1,80-3,00, 2 à 4 jambes (ce que fait le compositeur actuel)
+jambes 1.80-3.00  cible 8-15       jours  97  gagnés 10 (10.3 % ± 6.1)  1 sur   9.7  (cote dit 1 sur  10.7)  pire série  18 j  cote  10.7  jambes  4.0  rendu   -0.9 %
+jambes 1.80-3.00  cible 15-30      aucun jour
+
+Variante : une jambe par championnat
+jambes 1.30-1.60  cible 8-30  1/ch jours  61  gagnés  6 ( 9.8 % ± 7.5)  1 sur  10.2  (cote dit 1 sur   8.5)  pire série  16 j  cote   8.5  jambes  8.0  rendu  -23.9 %
+jambes 1.40-1.80  cible 8-30  1/ch jours  73  gagnés  2 ( 2.7 % ± 3.7)  1 sur  36.5  (cote dit 1 sur  10.1)  pire série  27 j  cote  10.2  jambes  6.7  rendu  -75.2 %
+
+Rappel produits courts, même protocole
+jambes 1.20-1.50  cible 1.3-1.6    jours 100  gagnés 57 (57.0 % ± 9.7)  1 sur   1.8  (cote dit 1 sur   1.4)  pire série   5 j  cote   1.4  jambes  2.0  rendu  -19.2 %
+jambes 1.20-1.50  cible 2-3        jours  96  gagnés 42 (43.8 % ± 9.9)  1 sur   2.3  (cote dit 1 sur   2.1)  pire série   9 j  cote   2.1  jambes  4.0  rendu   -9.4 %

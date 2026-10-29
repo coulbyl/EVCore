@@ -386,6 +386,7 @@ Before adding any feature, verify it belongs to the current phase:
 | Kelly criterion, multi-league              | Phase 2                        |
 | Python worker (scikit-learn calibration)   | Phase 3                        |
 | ML model (XGBoost), Monte Carlo            | Phase 3                        |
+| Market grid as engine input + ML for what the price does not say (half-time, corners, learned margin, dependence) | Phase 3, redefined 2026-10-29 (`docs/audits/2026-10-29/ML-V2-PROPOSITION.md`); judged on the residual vs Pinnacle, never on absolute Brier; no ML call at analysis time |
 | SaaS, multi-tenant                         | Phase 4                        |
 
 If asked to implement something from a future phase, flag it and ask for confirmation.

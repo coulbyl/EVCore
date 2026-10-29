@@ -1,0 +1,30 @@
+matchs ajustés 2442  λ dom 1.62  λ ext 1.30  ρ -0.063  erreur quadratique médiane 0.00046  cibles/match 8.5
+lignes 1xBet pricées 366434  (150 par match)
+
+=== Par marché : la grille est-elle un meilleur estimateur que 1xBet lui-même ? (Brier sur l'issue) + marge 1xBet + lignes payées au-dessus du juste
+   BTTS             n=  4884  Brier grille 0.2432  Brier 1xBet(1/cote) 0.2447  lignes EV>0 :     7 (0.00/match)
+   CORRECT_SCORE    n=293897  Brier grille 0.0077  Brier 1xBet(1/cote) 0.0079  lignes EV>0 :   124 (0.05/match)  réalisé +1.330 [-0.451 ; +3.350]  cote moy 31.88  annoncé +0.143
+   DOUBLE_CHANCE    n=  7275  Brier grille 0.1950  Brier 1xBet(1/cote) 0.1978  lignes EV>0 :    20 (0.01/match)
+   ONE_X_TWO        n=  7326  Brier grille 0.1938  Brier 1xBet(1/cote) 0.1944  lignes EV>0 :   386 (0.16/match)  réalisé +0.002 [-0.141 ; +0.160]  cote moy 4.08  annoncé +0.027
+   OVER_UNDER       n= 19508  Brier grille 0.1896  Brier 1xBet(1/cote) 0.1918  lignes EV>0 :   248 (0.10/match)  réalisé -0.032 [-0.162 ; +0.102]  cote moy 2.23  annoncé +0.016
+   TEAM_TOTAL_AWAY  n= 15645  Brier grille 0.1746  Brier 1xBet(1/cote) 0.1766  lignes EV>0 :   110 (0.05/match)  réalisé -0.072 [-0.281 ; +0.199]  cote moy 3.30  annoncé +0.022
+   TEAM_TOTAL_HOME  n= 17899  Brier grille 0.1664  Brier 1xBet(1/cote) 0.1682  lignes EV>0 :   146 (0.06/match)  réalisé -0.101 [-0.270 ; +0.096]  cote moy 2.53  annoncé +0.022
+
+=== Lignes EV>0, par groupe et par tranche d'avantage annoncé
+--- derived (Pinnacle cote la ligne : direct ; dérivée de la grille : derived)
+   EV ]+0.00;+0.03]  n=   129 matchs=  111 cote moy  16.25 annoncé +0.011 réalisé +0.226 [-0.568 ; +1.876] taux 0.302 vs juste 0.348
+   → tout EV>0 : n=232 réalisé +0.655 [-0.296 ; +1.875]
+      2026-10: n=189 réalisé +0.843 [-0.320 ; +2.242]
+--- direct (Pinnacle cote la ligne : direct ; dérivée de la grille : derived)
+   EV ]+0.00;+0.03]  n=   681 matchs=  524 cote moy   2.36 annoncé +0.010 réalisé -0.012 [-0.101 ; +0.074] taux 0.515 vs juste 0.526
+   EV ]+0.03;+0.06]  n=    81 matchs=   74 cote moy   3.33 annoncé +0.042 réalisé -0.161 [-0.409 ; +0.107] taux 0.333 vs juste 0.392
+   → tout EV>0 : n=809 réalisé -0.025 [-0.117 ; +0.065]
+      2026-09: n=129 réalisé -0.106 [-0.312 ; +0.095]
+      2026-10: n=680 réalisé -0.010 [-0.112 ; +0.097]
+
+=== Score exact : calibration de la grille par tranche de probabilité
+   p ]0.00;0.01]  n=247342  grille 0.0006  1xBet 1/cote 0.0102  réalisé 0.0006
+   p ]0.01;0.03]  n= 17759  grille 0.0183  1xBet 1/cote 0.0317  réalisé 0.0180
+   p ]0.03;0.06]  n= 13516  grille 0.0440  1xBet 1/cote 0.0686  réalisé 0.0445
+   p ]0.06;0.10]  n= 11476  grille 0.0784  1xBet 1/cote 0.1087  réalisé 0.0760
+   p ]0.10;1.00]  n=  3804  grille 0.1223  1xBet 1/cote 0.1570  réalisé 0.1304
