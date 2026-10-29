@@ -41,6 +41,9 @@ jobs:
           else
             echo "tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
           fi
+          # Reproducible layers (lot 7): same content, same digest, so the
+          # server does not download unchanged dependency layers again.
+          echo "epoch=$(git log -1 --format=%ct)" >> $GITHUB_OUTPUT
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
@@ -56,10 +59,12 @@ jobs:
 
       - name: Build and push
         uses: docker/build-push-action@v7
+        env:
+          SOURCE_DATE_EPOCH: ${{ steps.version.outputs.epoch }}
         with:
           context: .
           file: apps/backend/Dockerfile
-          push: true
+          outputs: type=image,push=true,rewrite-timestamp=true
           tags: |
             ghcr.io/${{ github.repository_owner }}/evcore-backend:latest
             ghcr.io/${{ github.repository_owner }}/evcore-backend:${{ steps.version.outputs.tag }}
@@ -92,6 +97,9 @@ jobs:
           else
             echo "tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
           fi
+          # Reproducible layers (lot 7): same content, same digest, so the
+          # server does not download unchanged dependency layers again.
+          echo "epoch=$(git log -1 --format=%ct)" >> $GITHUB_OUTPUT
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
@@ -107,10 +115,12 @@ jobs:
 
       - name: Build and push
         uses: docker/build-push-action@v7
+        env:
+          SOURCE_DATE_EPOCH: ${{ steps.version.outputs.epoch }}
         with:
           context: .
           file: apps/web/Dockerfile
-          push: true
+          outputs: type=image,push=true,rewrite-timestamp=true
           build-args: |
             NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
           tags: |
@@ -144,6 +154,9 @@ jobs:
           else
             echo "tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
           fi
+          # Reproducible layers (lot 7): same content, same digest, so the
+          # server does not download unchanged dependency layers again.
+          echo "epoch=$(git log -1 --format=%ct)" >> $GITHUB_OUTPUT
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
@@ -159,10 +172,12 @@ jobs:
 
       - name: Build and push
         uses: docker/build-push-action@v7
+        env:
+          SOURCE_DATE_EPOCH: ${{ steps.version.outputs.epoch }}
         with:
           context: apps/ml-worker
           file: apps/ml-worker/Dockerfile
-          push: true
+          outputs: type=image,push=true,rewrite-timestamp=true
           tags: |
             ghcr.io/${{ github.repository_owner }}/evcore-ml-worker:latest
             ghcr.io/${{ github.repository_owner }}/evcore-ml-worker:${{ steps.version.outputs.tag }}
@@ -194,6 +209,9 @@ jobs:
           else
             echo "tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
           fi
+          # Reproducible layers (lot 7): same content, same digest, so the
+          # server does not download unchanged dependency layers again.
+          echo "epoch=$(git log -1 --format=%ct)" >> $GITHUB_OUTPUT
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
@@ -209,6 +227,8 @@ jobs:
 
       - name: Build and push
         uses: docker/build-push-action@v7
+        env:
+          SOURCE_DATE_EPOCH: ${{ steps.version.outputs.epoch }}
         with:
           # Full monorepo context (not apps/vantage-worker alone) — the
           # Dockerfile builds @evcore/analysis-core and @evcore/db from
@@ -216,7 +236,7 @@ jobs:
           # instead of a self-contained subdirectory context.
           context: .
           file: apps/vantage-worker/Dockerfile
-          push: true
+          outputs: type=image,push=true,rewrite-timestamp=true
           tags: |
             ghcr.io/${{ github.repository_owner }}/evcore-vantage-worker:latest
             ghcr.io/${{ github.repository_owner }}/evcore-vantage-worker:${{ steps.version.outputs.tag }}
