@@ -1145,5 +1145,15 @@
       "me": "Me"
     },
     "close": "Close"
+  },
+  "scoreboard": {
+    "outcome": {
+      "won": "{label}: won",
+      "wonAt": "{label}: won, odds {odds}",
+      "lost": "{label}: lost",
+      "void": "{label}: refunded",
+      "pending": "{label}: not settled yet",
+      "pendingUntil": "{label}: not settled yet, last match at {time}"
+    }
   }
 }

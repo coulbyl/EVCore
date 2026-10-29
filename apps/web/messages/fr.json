@@ -1145,5 +1145,15 @@
       "me": "Moi"
     },
     "close": "Fermer"
+  },
+  "scoreboard": {
+    "outcome": {
+      "won": "{label} : gagné",
+      "wonAt": "{label} : gagné, cote {odds}",
+      "lost": "{label} : perdu",
+      "void": "{label} : remboursé",
+      "pending": "{label} : pas encore réglé",
+      "pendingUntil": "{label} : pas encore réglé, dernier match à {time}"
+    }
   }
 }
