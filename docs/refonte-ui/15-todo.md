@@ -13,15 +13,23 @@ _Branche `feat/refonte-ui`. Cocher au fur et à mesure ; chaque ligne est un com
 - [ ] A7 `feat(web): legal footer line and page budget helpers` — ligne 18+ fixe, `formatOdds`, `formatFrequency` (« 8 sur 10 », « 1 fois sur N »), `formatMoney` sans centimes (10 § 5–6).
 - [ ] A8 `docs(web): DESIGN.md and .impeccable/design.json from the built tokens` — écrit depuis le code, pas avant.
 - [ ] A9 `feat(web): components showcase route (dev only)` — un écran qui montre chaque composant dans ses états, pour la revue.
+- [ ] A10 `feat(backend): compression, helmet, ETag, per-request duration log` (16 § 3).
+- [ ] A11 `perf(auth): in-memory session cache (60 s) and cookie-only Next proxy` — plus d'appel réseau dans `proxy.ts`, une lecture de session par requête au plus (16 § 1–2).
+- [ ] A12 `ci(web): Lighthouse budgets on today, matches, results, me, landing` — LCP 2,5 s, INP 200 ms, CLS 0,1, JS 150 kB (16 § 2).
+- [ ] A13 Revue de phase A : `/code-review medium`, budgets mesurés, bilan écrit ici.
 
 ## Phase B — Le serveur du joueur
 
+- [ ] B0 `feat(backend): screens module and GET /today aggregate endpoint` — un point d'entrée par écran, DTO plat, `select` explicite, ≤ 5 requêtes SQL, `EXPLAIN` dans le commit (16 § 3).
 - [ ] B1 `feat(backend): store a fact per coupon leg at generation` — colonne `coupon_proposal_leg.fact`, calcul déterministe par type de pari, 60 caractères, vide si rien de solide (04 § 1).
 - [ ] B2 `feat(backend): hero relay and dated abstentions` — le serveur désigne le héros du jour (Favori → Combiné → Cote 2 → premier chasseur), conserve les abstentions par date avec leur raison (04 § 5, 08 § 6).
 - [ ] B3 `feat(backend): refuse follow after first kickoff; followed-coupons summary` — `POST /coupons/:id/follow` refuse après le premier coup d'envoi ; `GET /coupons/followed/summary` (gagnés, perdus, remboursés, depuis) (04 § 3, 09 § 1).
 - [ ] B4 `feat(backend): evening settlement notification for followed coupons` — type `FOLLOWED_SETTLED`, créneau 20 h–1 h, jamais pendant une pause, idempotent, texte « Ton Favori est passé ✓ » (10 § 3).
 - [ ] B5 `feat(backend): fair market frequency (Shin) per priced pick` — service Shin sur le groupe d'issues 1xBet, exposé avec chaque cote ; au-dessus de 1,80 la chance affichée est celle du marché (06 § 2, 07 § 4, ACCUMULATEUR § 10).
+- [ ] B5b `feat(backend): GET /matches?day= aggregate endpoint with cursor` — liste du jour, lectures, signe ≠, phrase IA, bornée (16 § 3).
+- [ ] B5c `feat(backend): GET /matches/:id/sheet for players` — lecture, avis IA, forme, autres paris avec fréquence Shin, marge.
 - [ ] B6 `feat(backend): results per product endpoint` — `GET /results/products?period=` : jours joués/gagnés/perdus/remboursés, jours sans coupon et raison, pire série, annoncé moyen, rendu à 1 000 F, jour par jour ; produits retirés gardés pour l'admin ; Avis IA sur la cohorte figée (08 § 6).
+- [ ] B6b `feat(backend): product_day aggregates written at settlement` — Résultats lit des agrégats, jamais la table brute (16 § 3).
 - [ ] B7 `feat(backend): weekly statement data (Ta semaine)` — sept jours × produits + coupons suivis, même calcul que le relevé du lundi (08 § 3).
 - [ ] B8 `feat(backend): public hero of the day and daily share image data` — point d'entrée sans session, héros et forme seulement ; données de l'image `og` (11 § 1).
 - [ ] B9 `feat(backend): one support conversation per player` — fusion des fils existants par joueur, création implicite au premier message (09 § 2).
@@ -31,10 +39,13 @@ _Branche `feat/refonte-ui`. Cocher au fur et à mesure ; chaque ligne est un com
 - [ ] B13 `feat(backend): notification preferences — morning, weekly, followed result, replies, email` — quatre interrupteurs + e-mail, activés par défaut (09 § 5).
 - [ ] B14 `feat(backend): player notification feed without operator types` — la cloche ne reçoit que matinée, semaine, résultat, réponse, annonce (09 § 6).
 - [ ] B15 `chore(backend): migration — drop declared slips, bankroll, deposits, personalization` — migration nommée, SQL de vérification avant, code retiré (09 § 1, § 8).
+- [ ] B15b `feat(backend): GET /me aggregate endpoint` — bilan des suivis, coupons en cours et réglés (curseur), compteur de réponses, état de pause.
 - [ ] B16 `feat(web): redirects from retired player and public routes` — Formation, Glossaire, Décisions, Avis IA, Mesures historiques, Coupons, Mes coupons, Suivi de mise, Inbox → nouvel écran (11 § 8).
 
 ## Phase C — Les écrans du joueur
 
+- [ ] B17 Revue de phase B : `/code-review high` (argent, règlement, notifications, auth), `EXPLAIN ANALYZE` des points d'entrée sur la copie de prod, charge légère, bilan écrit ici.
+- [ ] C0 `chore(web): drop recharts, tiptap, driver.js, react-day-picker, vaul from the player bundle; socket.io loaded on Messages only` (16 § 1).
 - [ ] C1 `feat(web): Aujourd'hui — hero card, product rows, Hier line` (04 § 1, maquette Main).
 - [ ] C2 `feat(web): Aujourd'hui — states: evening settled, no coupon, outage, pause, offline` (04 § 2, § 5 ; maquettes Soir, RienAJouer, Pause).
 - [ ] C3 `feat(web): coupon sheet with fact per leg, form, follow button` (04 § 1–3 ; maquette Coupon).
@@ -56,6 +67,8 @@ _Branche `feat/refonte-ui`. Cocher au fur et à mesure ; chaque ligne est un com
 - [ ] C19 `feat(web): switch navigation to the four tabs; old player routes redirect` — le commit de bascule.
 - [ ] C20 `feat(web): wide screens — left rail and right column across the four tabs` (10 § 4).
 - [ ] C21 `feat(web): signature motion — LEDs light up once on open, reduced-motion respected` (13 § 5).
+- [ ] C22 `feat(web): offline cache of the last screen per tab in the service worker` (10 § 2, 16 § 2).
+- [ ] C23 Revue de phase C : `/code-review medium`, Lighthouse sur les quatre onglets, bilan écrit ici.
 
 ## Phase D — Le public
 
@@ -66,6 +79,8 @@ _Branche `feat/refonte-ui`. Cocher au fur et à mesure ; chaque ligne est un com
 - [ ] D5 `feat(web): sign-in, email verification with "Plus tard", password reset in three screens` (11 § 3–5 ; maquettes Connexion, Verification).
 - [ ] D6 `feat(web): legal pages in the app style; editor fields filled` (11 § 7).
 - [ ] D7 `feat(web): 404 page` (11 § 8 ; maquette Introuvable).
+- [ ] D8 `perf(web): public caching — revalidate and s-maxage on landing, /resultats, hero, og image` (16 § 3).
+- [ ] D9 Revue de phase D : `/code-review high` (inscription, connexion, codes), Lighthouse landing, bilan écrit ici.
 
 ## Phase E — Nettoyage et revue (fin de PR 1)
 
@@ -73,6 +88,7 @@ _Branche `feat/refonte-ui`. Cocher au fur et à mesure ; chaque ligne est un com
 - [ ] E2 `chore(web): english strings for every new screen` (10 § 6).
 - [ ] E3 `test(web): Playwright — player journeys (today, follow, ticket, results, account)`.
 - [ ] E4 `test(backend): settlement, follow refusal, evening notification, results endpoint`.
+- [ ] E4b `test(perf): light load test on screen endpoints (p95 ≤ 150 ms on the prod copy)` (16 § 2).
 - [ ] E5 `docs: update PRODUCT.md operating context and screens` — l'ancien contexte liste encore les anciens écrans.
 - [ ] E6 `/code-review high` sur la branche, corrections.
 - [ ] E7 Revue de finition impeccable sur Aujourd'hui, Matchs, Résultats, Moi, landing ; DESIGN.md relu.
@@ -102,4 +118,5 @@ _Branche `feat/refonte-ui`. Cocher au fur et à mesure ; chaque ligne est un com
 - [ ] G11 `feat(backend): human-actions journal covers reactivation, roles, suspensions, deletions, announcements` (12 § 4).
 - [ ] G12 `chore(web): remove the eleven retired admin pages and their code; redirects` (12 § 0).
 - [ ] G13 `test: admin lights, À faire, relaunch, settings reload`.
-- [ ] G14 `/code-review high`, revue de finition, PR 2 vers `main`.
+- [ ] G14 Revue de phase G : `/code-review high`, Lighthouse admin téléphone, `EXPLAIN` des points d'entrée admin.
+- [ ] G15 Revue de finition, PR 2 vers `main`.

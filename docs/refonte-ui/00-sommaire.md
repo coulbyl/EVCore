@@ -62,7 +62,7 @@ _Tout le contenu est écrit et validé au 29/10 au soir. Le style est choisi le 
 1. **Finir le joueur** : Aujourd'hui en détail et ses états, puis Matchs, Vérifie ton ticket, Résultats, Moi et chacun de ses sous-écrans, puis les sujets transverses.
 2. **Le public** : landing, inscription, connexion, pages légales.
 3. **L'admin**.
-4. **Le style**, testé sur Aujourd'hui puis étendu : direction « le tableau d'affichage » choisie le 29/10 ([13-style.md](13-style.md)), validé sur la maquette Aujourd'hui (bandeau sur chaque onglet, ambre seule couleur allumée, codes à trois lettres dans Hier) ; maquette complète de 37 écrans sur la toile Design (joueur avec ses états, public, admin sur téléphone et sur ordinateur ; liste dans 13 § 7) : https://claude.ai/artifact/1SWX3fFM9DmEAsagToX9hu. Implémentation : une seule branche `feat/refonte-ui`, PR 1 = public + joueur, PR 2 = admin, un commit par ligne de todo ([14-roadmap.md](14-roadmap.md), [15-todo.md](15-todo.md)).
+4. **Le style**, testé sur Aujourd'hui puis étendu : direction « le tableau d'affichage » choisie le 29/10 ([13-style.md](13-style.md)), validé sur la maquette Aujourd'hui (bandeau sur chaque onglet, ambre seule couleur allumée, codes à trois lettres dans Hier) ; maquette complète de 37 écrans sur la toile Design (joueur avec ses états, public, admin sur téléphone et sur ordinateur ; liste dans 13 § 7) : https://claude.ai/artifact/1SWX3fFM9DmEAsagToX9hu. Implémentation : une seule branche `feat/refonte-ui`, PR 1 = public + joueur, PR 2 = admin, un commit par ligne de todo ([14-roadmap.md](14-roadmap.md), [15-todo.md](15-todo.md)), budgets de performance et règles d'architecture dans [16-performance-et-qualite.md](16-performance-et-qualite.md).
 
 ## Décisions déjà prises (29/10)
 
