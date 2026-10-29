@@ -1132,5 +1132,17 @@
       "no_reliable_competition": "aucun championnat dont les stats de corners arrivent à coup sûr",
       "no_operator_price": "aucun corner coté chez 1xBet"
     }
+  },
+  "shell": {
+    "brand": "EVCore",
+    "tabsLabel": "Onglets",
+    "skipToContent": "Aller au contenu",
+    "notifications": "Notifications",
+    "tabs": {
+      "today": "Aujourd'hui",
+      "matches": "Matchs",
+      "results": "Résultats",
+      "me": "Moi"
+    }
   }
 }

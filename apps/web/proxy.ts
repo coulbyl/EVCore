@@ -2,6 +2,14 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { BACKEND_URL } from "@/lib/api/shared";
 
+const PLAYER_ROUTES = [
+  "/today",
+  "/matches",
+  "/results",
+  "/me",
+  "/notifications",
+];
+
 async function getSession(request: NextRequest) {
   const cookie = request.headers.get("cookie");
 
@@ -37,6 +45,11 @@ export async function proxy(request: NextRequest) {
   const session = await getSession(request);
   const isAuthRoute = pathname.startsWith("/auth/");
   const isDashboardRoute = pathname.startsWith("/dashboard");
+  // Les onglets du joueur de la refonte (app/(player)), construits à côté
+  // de /dashboard jusqu'au commit de bascule (docs/refonte-ui/15-todo.md).
+  const isPlayerRoute = PLAYER_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
   const isAdminOnlyRoute =
     pathname.startsWith("/dashboard/audit") ||
     pathname.startsWith("/dashboard/glossaire") ||
@@ -46,7 +59,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  if (isDashboardRoute && !session) {
+  if ((isDashboardRoute || isPlayerRoute) && !session) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
@@ -64,5 +77,13 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/auth/:path*", "/dashboard/:path*"],
+  matcher: [
+    "/auth/:path*",
+    "/dashboard/:path*",
+    "/today/:path*",
+    "/matches/:path*",
+    "/results/:path*",
+    "/me/:path*",
+    "/notifications/:path*",
+  ],
 };

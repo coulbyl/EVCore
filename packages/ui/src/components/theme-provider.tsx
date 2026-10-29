@@ -10,7 +10,11 @@ function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return (
     <NextThemesProvider
       attribute="class"
-      defaultTheme="dark"
+      // Le réglage du téléphone tant que le joueur n'a rien choisi : le
+      // joueur lit dehors, en plein soleil, et la plupart des téléphones
+      // sont en clair le jour (docs/refonte-ui/13-style.md § 2). Était
+      // « dark » forcé, quel que soit le téléphone.
+      defaultTheme="system"
       enableSystem
       disableTransitionOnChange
       {...props}
