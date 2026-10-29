@@ -64,6 +64,9 @@ catalog:
   supertest: "^7.0.0"
   "@types/express": "^5.0.0"
   "@types/supertest": "^7.2.0"
+  compression: "^1.8.2"
+  "@types/compression": "^1.8.1"
+  helmet: "^8.3.0"
 
   # Testing (Vitest + SWC + Playwright)
   vitest: "^4.1.3"

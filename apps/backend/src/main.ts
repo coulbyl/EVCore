@@ -1,10 +1,13 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import { AppModule } from './app.module';
+import { applyHttpHardening } from './common/http/http-hardening';
+import { createLogger } from './utils/logger';
 
 async function bootstrap() {
   const port = Number(process.env.PORT ?? 3000);
@@ -12,13 +15,14 @@ async function bootstrap() {
   const corsOrigins = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
     : [];
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   // In prod, `backend` sits behind a reverse proxy (see docker-compose.prod's
   // rustfs comment — same deployment shape applies here). Without this,
   // every request's req.ip is the proxy's own address, so @nestjs/throttler
   // would rate-limit all users' combined traffic as a single client instead
   // of each one individually. `1` trusts exactly one hop.
-  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  app.set('trust proxy', 1);
+  applyHttpHardening(app, createLogger('http'));
   app.enableCors({
     origin: (origin, callback) => {
       if (!origin) {
