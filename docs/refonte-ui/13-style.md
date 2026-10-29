@@ -2,6 +2,8 @@
 
 _29/10/2026. Direction choisie par l'utilisateur parmi la main tirée par la méthode impeccable (`apps/web/.impeccable/questions/direction-aujourdhui-2026-10-29.json`, contrat dans le brief de surface de `app/dashboard/page.tsx`). Elle se teste d'abord sur Aujourd'hui, puis s'étend écran par écran. Rien ici ne change le contenu décidé dans 01 à 12._
 
+_Depuis le 29/10, la référence normative du style construit est `apps/web/DESIGN.md` (jetons et règles tirés du code). Cette fiche garde le raisonnement du choix._
+
 ## 1. L'idée
 
 **Chaque chiffre d'EVCore se lit comme un score sur le tableau du stade** : trois lettres, un nombre tabulaire, une seule couleur allumée. C'est le monde que le joueur connaît par cœur (le bandeau de score de Canal+ Afrique et de beIN, le tableau du stade) et qui dit exactement ce qu'on promet : un résultat, compté, sans commentaire. Il refuse le défaut des applis de paris (fond vert sombre, néon, cartes dans les cartes, bonus) et son opposé (fintech blanche à accent bleu).
