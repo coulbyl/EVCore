@@ -2,6 +2,7 @@
 @source '../../../packages/ui/src/**/*.{ts,tsx}';
 @import '@evcore/ui/globals.css';
 @import 'driver.js/dist/driver.css';
+@import './styles/scoreboard.css';
 
 @theme inline {
   --font-sans: var(--font-geist-sans);

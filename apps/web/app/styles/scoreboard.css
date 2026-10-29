@@ -1,0 +1,42 @@
+/*
+ * Le tableau d'affichage — le type (docs/refonte-ui/13-style.md § 3).
+ *
+ * Les utilitaires existent partout, mais leurs familles ne se résolvent que
+ * sous la coquille de la refonte, qui pose `--font-barlow` et
+ * `--font-barlow-condensed` (app/fonts/scoreboard-fonts.ts). Ailleurs, la
+ * déclaration est invalide au calcul et la police héritée reste en place.
+ *
+ * Échelle : six tailles, rien au-dessus de 28 px sur téléphone.
+ *   legal  11  mentions 18+, notes de bas d'écran
+ *   meta   13  secondaire : championnat, heure, période
+ *   body   15  texte courant, lignes de liste
+ *   bet    17  le pari nommé, les équipes sur une carte
+ *   title  22  le titre d'une carte ou d'une feuille
+ *   figure 28  la cote et la chance du héros
+ */
+@theme inline {
+  --font-text: var(--font-barlow);
+  --font-score: var(--font-barlow-condensed);
+
+  --text-legal: 0.6875rem;
+  --text-legal--line-height: 1.35;
+  --text-meta: 0.8125rem;
+  --text-meta--line-height: 1.35;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.4;
+  --text-bet: 1.0625rem;
+  --text-bet--line-height: 1.3;
+  --text-title: 1.375rem;
+  --text-title--line-height: 1.15;
+  --text-figure: 1.75rem;
+  --text-figure--line-height: 1;
+}
+
+/*
+ * Un nombre de score : la voix condensée, des chiffres qui s'alignent en
+ * colonne d'une ligne à l'autre (cotes, « 8 sur 10 », heures).
+ */
+@utility score {
+  font-family: var(--font-barlow-condensed);
+  font-variant-numeric: tabular-nums lining-nums;
+}
