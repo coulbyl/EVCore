@@ -256,7 +256,25 @@ function standaloneServer() {
   return join(standalone, "server.js");
 }
 
+// Un serveur oublié sur un des deux ports répondrait à la place du build
+// mesuré : le nouveau serveur ne s'y attache pas, et la mesure porte sur
+// l'ancien code, avec des feuilles de style qui n'existent plus (vécu le
+// 30/10 : CLS 0,126 sur Aujourd'hui, des chiffres de Matchs périmés).
+async function assertPortsFree() {
+  for (const url of [BASE, MOCK]) {
+    const answered = await fetch(url, { signal: AbortSignal.timeout(1000) })
+      .then(() => true)
+      .catch(() => false);
+    if (answered) {
+      throw new Error(
+        `${url} répond déjà : arrêter ce serveur, puis relancer.`,
+      );
+    }
+  }
+}
+
 async function main() {
+  await assertPortsFree();
   const server = standaloneServer();
 
   const mock = start("node", ["e2e/support/mock-backend.mjs"], {

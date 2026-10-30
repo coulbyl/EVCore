@@ -1268,6 +1268,23 @@
       "yesterday": "No match yesterday",
       "today": "No match today",
       "tomorrow": "No match tomorrow"
+    },
+    "result": {
+      "won": "won",
+      "lost": "lost"
+    },
+    "refunded": "Refunded",
+    "postponedShort": "Ppd.",
+    "postponed": "{competition} · postponed",
+    "search": {
+      "open": "Search a team",
+      "close": "Close the search",
+      "placeholder": "A team",
+      "noResult": {
+        "yesterday": "No match for \"{query}\" yesterday",
+        "today": "No match for \"{query}\" today",
+        "tomorrow": "No match for \"{query}\" tomorrow"
+      }
     }
   }
 }

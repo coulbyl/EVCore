@@ -3,6 +3,7 @@ import {
   ENGINE_CHANCE_MAX_ODDS,
   READING_SPEAKING_PICKS,
   READING_SPEAKING_TOLERANCE,
+  TOMORROW_READINGS_UNTIL_HOUR_UTC,
 } from '@config/screens.constants';
 import { MIN_LEG_ODDS } from '@modules/coupon/coupon.constants';
 import {
@@ -44,10 +45,14 @@ export function readingOf(input: {
   candidates: readonly ReadingCandidateRow[];
   quotes: Map<string, PlayableQuote>;
   day: MatchesDay;
+  now: Date;
 }): { reading: MatchReading } | { without: MatchWithoutReading } {
   const { candidates } = input;
   if (candidates.length === 0) {
-    return { without: input.day === 'tomorrow' ? 'tonight' : 'not_analysed' };
+    const tonight =
+      input.day === 'tomorrow' &&
+      input.now.getUTCHours() < TOMORROW_READINGS_UNTIL_HOUR_UTC;
+    return { without: tonight ? 'tonight' : 'not_analysed' };
   }
   if (candidates.some((c) => c.avoided)) return { without: 'rejected' };
 

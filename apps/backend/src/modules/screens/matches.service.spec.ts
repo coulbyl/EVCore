@@ -291,6 +291,15 @@ describe('MatchesService', () => {
     };
     expect(await reason('today', [])).toBe('not_analysed');
     expect(await reason('tomorrow', [])).toBe('tonight');
+    // After the evening runs, a match still left out will not be read.
+    const late = harness({ candidates: [] });
+    const [unread] = (
+      await late.service.getMatches(
+        { day: 'tomorrow' },
+        new Date('2026-10-30T21:30:00.000Z'),
+      )
+    ).items;
+    expect(unread?.withoutReading).toBe('not_analysed');
     expect(
       await reason(
         'today',

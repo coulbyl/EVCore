@@ -150,6 +150,7 @@ export class MatchSheetService {
       candidates,
       quotes,
       day: dayOf(kickoff, now),
+      now,
     });
     const reading = 'reading' in choice ? choice.reading : null;
     const homeHistory = historyOf(historyRows, header.homeTeamId);

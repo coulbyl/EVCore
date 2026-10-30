@@ -53,6 +53,12 @@ export const READING_SPEAKING_PICKS: Readonly<
   OVER_UNDER: ['OVER', 'UNDER'],
 };
 
+// Tomorrow's matches still without an analysis read « Lecture ce soir »
+// until this hour (UTC): the 17:00 preview pass (ROLLING_HORIZON) is
+// overwritten by the 18:00 and 20:00 runs. After it, a match left out will
+// not be read tonight: « Pas de lecture » (06 § 1).
+export const TOMORROW_READINGS_UNTIL_HOUR_UTC = 21;
+
 // « Forme sur 30 jours » under each product (04 § 1).
 export const TODAY_FORM_WINDOW_DAYS = 30;
 

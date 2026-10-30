@@ -1268,6 +1268,23 @@
       "yesterday": "Aucun match hier",
       "today": "Aucun match aujourd'hui",
       "tomorrow": "Aucun match demain"
+    },
+    "result": {
+      "won": "gagné",
+      "lost": "perdu"
+    },
+    "refunded": "Remboursé",
+    "postponedShort": "Rep.",
+    "postponed": "{competition} · reporté",
+    "search": {
+      "open": "Chercher une équipe",
+      "close": "Fermer la recherche",
+      "placeholder": "Une équipe",
+      "noResult": {
+        "yesterday": "Aucun match pour « {query} » hier",
+        "today": "Aucun match pour « {query} » aujourd'hui",
+        "tomorrow": "Aucun match pour « {query} » demain"
+      }
     }
   }
 }

@@ -13,6 +13,12 @@ export function dayOf(param: string | string[] | undefined): MatchesDay {
   return MATCHES_DAYS.find((day) => day === value) ?? "today";
 }
 
+/** The team search sent with Enter (`?q=`), as the API takes it. */
+export function queryOf(param: string | string[] | undefined): string {
+  const value = Array.isArray(param) ? param[0] : param;
+  return (value ?? "").trim().slice(0, 40);
+}
+
 export function dayHref(day: MatchesDay): string {
   return day === "today" ? "/matches" : `/matches?day=${day}`;
 }

@@ -512,12 +512,101 @@ function matchItem(id, home, away, at, extra = {}) {
   };
 }
 
+// Hier (maquette MatchsHier) : scores et lectures réglées, un reporté.
+function yesterdayMatches() {
+  const settled = (id, home, away, score, reading, extra = {}) => ({
+    ...matchItem(id, home, away, [18, 0], { ...extra, reading }),
+    state: extra.state ?? "finished",
+    score,
+  });
+  return [
+    settled(
+      "y-psg",
+      "Paris SG",
+      "Lens",
+      { home: 2, away: 0 },
+      {
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        chance: 0.7,
+        result: "won",
+      },
+    ),
+    settled(
+      "y-int",
+      "Inter",
+      "Napoli",
+      { home: 1, away: 1 },
+      {
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        chance: 0.6,
+        result: "lost",
+      },
+      { competition: "Serie A" },
+    ),
+    settled(
+      "y-bre",
+      "Brest",
+      "Nice",
+      null,
+      {
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        chance: 0.6,
+        result: "void",
+      },
+      { state: "postponed" },
+    ),
+    {
+      ...matchItem("y-gre", "Gremio", "Santos", [20, 0], {
+        without: "rejected",
+      }),
+      state: "finished",
+      score: { home: 0, away: 0 },
+    },
+  ];
+}
+
+// Demain avant la passe du soir : l'heure, « Lecture ce soir ».
+function tomorrowMatches() {
+  return [
+    matchItem("t-ars", "Arsenal", "Everton", [19, 0], {
+      competition: "Premier League",
+      without: "tonight",
+    }),
+    matchItem("t-bvb", "Dortmund", "Mainz", [19, 30], {
+      competition: "Bundesliga",
+      reading: { market: "ONE_X_TWO", pick: "HOME", chance: 0.65 },
+    }),
+  ];
+}
+
 function matchesPage(url, cookie) {
   const params = new URL(url, "http://mock").searchParams;
   const day = params.get("day") ?? "today";
   const date = new Date().toISOString().slice(0, 10);
   if (/(^|;\s*)evcore_session=matches-empty(;|$)/.test(cookie))
     return { day, date, items: [], nextCursor: null };
+  const q = (params.get("q") ?? "").toLowerCase();
+  if (q) {
+    const all = [
+      ...matchesPage(url.replace(/[?&]q=[^&]*/, ""), cookie).items,
+      ...matchesPage("/matches?cursor=page-2", cookie).items,
+    ];
+    return {
+      day,
+      date,
+      items: all.filter((item) =>
+        `${item.home.name} ${item.away.name}`.toLowerCase().includes(q),
+      ),
+      nextCursor: null,
+    };
+  }
+  if (day === "yesterday")
+    return { day, date, items: yesterdayMatches(), nextCursor: null };
+  if (day === "tomorrow")
+    return { day, date, items: tomorrowMatches(), nextCursor: null };
   if (params.get("cursor") === "page-2")
     return {
       day,
