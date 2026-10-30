@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { ChanceFigure } from "@/components/scoreboard/ui/chance-figure";
 import { ResultMark } from "@/components/scoreboard/ui/result-mark";
 import type { MatchItem, MatchReading } from "@/domains/matches/types/matches";
@@ -28,10 +30,7 @@ export function MatchRow({
   item: MatchItem & { reading: MatchReading };
 }) {
   return (
-    <li
-      data-search={searchOf(item)}
-      className="flex min-h-14 items-center gap-3 py-2"
-    >
+    <MatchLink item={item}>
       <TeamPair item={item} />
       <MatchTitle item={item} />
       <span className="flex max-w-[48%] shrink-0 flex-wrap items-baseline justify-end gap-x-1.5 text-end text-body">
@@ -42,7 +41,7 @@ export function MatchRow({
           size="sm"
         />
       </span>
-    </li>
+    </MatchLink>
   );
 }
 
@@ -68,10 +67,7 @@ export function SettledMatchRow({
   const postponed = item.state === "postponed";
   const refunded = postponed || item.reading.result === "void";
   return (
-    <li
-      data-search={searchOf(item)}
-      className="flex min-h-14 items-center gap-3 py-2"
-    >
+    <MatchLink item={item}>
       <span
         className={
           postponed
@@ -104,7 +100,7 @@ export function SettledMatchRow({
           ) : null}
         </span>
       )}
-    </li>
+    </MatchLink>
   );
 }
 
@@ -122,13 +118,43 @@ export function MatchWithoutReadingRow({
   reason: string;
 }) {
   return (
-    <li
-      data-search={searchOf(item)}
-      className="flex min-h-14 items-center gap-3 py-2 text-muted-foreground"
-    >
+    <MatchLink item={item} muted>
       <TeamPair item={item} />
       <MatchTitle item={item} meta={meta} muted />
       <span className="shrink-0 text-end text-body">{reason}</span>
+    </MatchLink>
+  );
+}
+
+/**
+ * A row opens the match sheet (06 § 2), a set-aside match too (06 § 4: its
+ * other bets stay).
+ */
+function MatchLink({
+  item,
+  muted = false,
+  children,
+}: {
+  item: MatchItem;
+  muted?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <li data-search={searchOf(item)}>
+      <Link
+        href={`/matches/${item.fixtureId}`}
+        className={
+          (muted ? "text-muted-foreground " : "") +
+          "-mx-2 flex min-h-14 items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+        }
+      >
+        {children}
+        <ChevronRight
+          aria-hidden
+          strokeWidth={2}
+          className="size-[1.125rem] shrink-0 text-icon-subtle"
+        />
+      </Link>
     </li>
   );
 }

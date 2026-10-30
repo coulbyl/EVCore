@@ -23,18 +23,25 @@ export function dayHref(day: MatchesDay): string {
   return day === "today" ? "/matches" : `/matches?day=${day}`;
 }
 
-/** The reading named with its team: « Victoire Arsenal », « Plus de 2,5 buts ». */
+/** A bet named with its team: « Victoire Arsenal », « Plus de 2,5 buts ». */
+export function pickLabel(
+  bet: { market: string; pick: string },
+  teams: { home: { name: string }; away: { name: string } },
+): string {
+  return (
+    formatLinePick(bet.pick, bet.market, null) ??
+    formatPickWithTeams(bet.pick, bet.market, {
+      home: teams.home.name,
+      away: teams.away.name,
+    })
+  );
+}
+
+/** The reading of a row of the list. */
 export function readingLabel(
   item: MatchItem & { reading: MatchReading },
 ): string {
-  const { market, pick } = item.reading;
-  return (
-    formatLinePick(pick, market, null) ??
-    formatPickWithTeams(pick, market, {
-      home: item.home.name,
-      away: item.away.name,
-    })
-  );
+  return pickLabel(item.reading, item);
 }
 
 export type HourGroup<T extends MatchItem> = { time: string; items: T[] };

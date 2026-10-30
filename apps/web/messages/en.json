@@ -1285,6 +1285,32 @@
         "today": "No match for \"{query}\" today",
         "tomorrow": "No match for \"{query}\" tomorrow"
       }
+    },
+    "sheet": {
+      "ourReading": "Our reading",
+      "without": {
+        "rejected": "No reading · no chance sure enough",
+        "not_priced": "Not priced at 1xBet",
+        "not_analysed": "No reading",
+        "tonight": "Reading tonight"
+      },
+      "ai": "AI opinion",
+      "noAi": "No opinion",
+      "sameAsReading": "Same bet as our reading",
+      "form": "Form",
+      "formSummary": "{won, plural, one {# win} other {# wins}}, {drawn, plural, one {# draw} other {# draws}}, {lost, plural, one {# loss} other {# losses}}",
+      "rest": "{days} d rest",
+      "otherPicks": "Other bets",
+      "all": "All {count}",
+      "margin": "1xBet takes {share} on this match",
+      "inProgress": "In progress",
+      "postponed": "Postponed",
+      "halfTime": "half-time {home}-{away}",
+      "result": {
+        "won": "won",
+        "lost": "lost",
+        "void": "refunded"
+      }
     }
   }
 }

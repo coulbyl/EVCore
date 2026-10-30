@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 /**
  * « Matchs » (06 § 1, maquette Matchs), rendu côté serveur sur la journée
@@ -176,5 +176,113 @@ test.describe("Matchs, Hier, Demain et la recherche (06 § 1)", () => {
     await expect(
       page.getByRole("searchbox", { name: "Une équipe" }),
     ).toHaveValue("lazio");
+  });
+});
+
+/**
+ * La fiche du match (06 § 2–4, maquette Fiche) : une ligne de Matchs l'ouvre
+ * dans la feuille, et la même s'affiche sur un lien. Modale sous 1024 px,
+ * colonne de droite au-delà.
+ */
+test.describe("Fiche du match", () => {
+  const ARSENAL = "00000000-0000-4000-8000-617273000000";
+  const BREST = "00000000-0000-4000-8000-627265000000";
+  const sheetNamed = (page: Page, name: string) =>
+    page
+      .getByRole("dialog", { name })
+      .or(page.getByRole("complementary", { name }));
+
+  test("une ligne l'ouvre : lecture et fait, avis IA, forme, autres paris, marge", async ({
+    page,
+  }) => {
+    await page.goto("/matches");
+    await page.getByRole("link", { name: /Arsenal – Chelsea/ }).click();
+    await expect(page).toHaveURL(new RegExp(`/matches/${ARSENAL}$`), {
+      timeout: 15_000,
+    });
+    const sheet = sheetNamed(page, "Arsenal – Chelsea");
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByText("Premier League")).toBeVisible();
+
+    const reading = sheet.getByRole("region", { name: "Notre lecture" });
+    await expect(reading).toContainText("Victoire Arsenal");
+    await expect(reading).toContainText("1,60");
+    await expect(reading).toContainText("7 sur 10");
+    await expect(reading).toContainText(
+      "Arsenal a gagné ses 9 derniers matchs à domicile",
+    );
+
+    const ai = sheet.getByRole("region", { name: "Avis IA" });
+    await expect(ai).toContainText("Match nul");
+    await expect(ai).toContainText("3,40");
+    await expect(ai).toContainText(
+      "« Chelsea n'a perdu qu'une fois en 8 déplacements »",
+    );
+    await expect(ai).not.toContainText(/accord/);
+
+    const form = sheet.getByRole("region", { name: "Forme" });
+    await expect(
+      form.getByRole("img", { name: "3 victoires, 1 nul, 1 défaite" }),
+    ).toBeVisible();
+    await expect(
+      form.getByRole("img", { name: "2 victoires, 2 nuls, 1 défaite" }),
+    ).toBeVisible();
+    await expect(form).toContainText("repos 3 j");
+    await expect(form).toContainText(
+      "4 victoires d'Arsenal sur les 6 derniers",
+    );
+
+    const others = sheet.getByRole("region", { name: "Autres paris" });
+    await expect(others.getByRole("listitem")).toHaveCount(4);
+    await others.getByText("Tous les 6").click();
+    await expect(
+      others.getByText("Au moins une équipe ne marque pas"),
+    ).toBeVisible();
+
+    await expect(
+      sheet.getByText(/^1xBet prend 7\s%\ssur ce match$/),
+    ).toBeVisible();
+  });
+
+  test("un match écarté s'ouvre quand même, sans avis IA", async ({ page }) => {
+    await page.goto(`/matches/${BREST}`);
+    const sheet = sheetNamed(page, "Brest – Nice");
+    await expect(sheet).toBeVisible();
+    await expect(
+      sheet.getByText("Pas de lecture · aucune chance assez sûre"),
+    ).toBeVisible();
+    await expect(sheet.getByText("Pas d'avis")).toBeVisible();
+    await expect(
+      sheet.getByRole("region", { name: "Autres paris" }),
+    ).toBeVisible();
+    // Matchs reste dessous.
+    await expect(page.getByRole("navigation", { name: "Jour" })).toBeAttached();
+  });
+
+  test("hier : le score et la mi-temps, les paris réglés sans cote", async ({
+    page,
+  }) => {
+    await page.goto("/matches?day=yesterday");
+    await page.getByRole("link", { name: /Paris SG – Lens/ }).click();
+    const sheet = sheetNamed(page, "Paris SG – Lens");
+    await expect(sheet.getByText("mi-temps 1-0")).toBeVisible();
+    await expect(
+      sheet
+        .getByRole("region", { name: "Notre lecture" })
+        .getByRole("img", { name: "gagné" }),
+    ).toBeVisible();
+    const others = sheet.getByRole("region", { name: "Autres paris" });
+    await expect(others).not.toContainText("5,20");
+    await expect(
+      others
+        .getByRole("listitem")
+        .filter({ hasText: "Plus de 2,5 buts" })
+        .getByRole("img", { name: "gagné" }),
+    ).toBeVisible();
+  });
+
+  test("un match inconnu : page introuvable", async ({ page }) => {
+    await page.goto("/matches/00000000-0000-4000-8000-000000000000");
+    await expect(page.getByText("Page introuvable")).toBeVisible();
   });
 });

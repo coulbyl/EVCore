@@ -1285,6 +1285,32 @@
         "today": "Aucun match pour « {query} » aujourd'hui",
         "tomorrow": "Aucun match pour « {query} » demain"
       }
+    },
+    "sheet": {
+      "ourReading": "Notre lecture",
+      "without": {
+        "rejected": "Pas de lecture · aucune chance assez sûre",
+        "not_priced": "Pas coté chez 1xBet",
+        "not_analysed": "Pas de lecture",
+        "tonight": "Lecture ce soir"
+      },
+      "ai": "Avis IA",
+      "noAi": "Pas d'avis",
+      "sameAsReading": "Même pari que notre lecture",
+      "form": "Forme",
+      "formSummary": "{won, plural, one {# victoire} other {# victoires}}, {drawn, plural, one {# nul} other {# nuls}}, {lost, plural, one {# défaite} other {# défaites}}",
+      "rest": "repos {days} j",
+      "otherPicks": "Autres paris",
+      "all": "Tous les {count}",
+      "margin": "1xBet prend {share} sur ce match",
+      "inProgress": "En cours",
+      "postponed": "Reporté",
+      "halfTime": "mi-temps {home}-{away}",
+      "result": {
+        "won": "gagné",
+        "lost": "perdu",
+        "void": "remboursé"
+      }
     }
   }
 }

@@ -491,6 +491,17 @@ function matchAt(hour, minute) {
   return at.toISOString();
 }
 
+// Un identifiant de match en forme d'UUID, stable par nom : la fiche refuse
+// toute adresse qui n'en est pas un (le backend répondrait 400).
+function matchUuid(id) {
+  const hex = [...id]
+    .map((c) => c.charCodeAt(0).toString(16).padStart(2, "0"))
+    .join("")
+    .padEnd(12, "0")
+    .slice(0, 12);
+  return `00000000-0000-4000-8000-${hex}`;
+}
+
 function matchItem(id, home, away, at, extra = {}) {
   const team = (name) => ({
     name,
@@ -498,7 +509,7 @@ function matchItem(id, home, away, at, extra = {}) {
     logoUrl: crestUrl(name),
   });
   return {
-    fixtureId: `fx-match-${id}`,
+    fixtureId: matchUuid(id),
     kickoffAt: matchAt(...at),
     state: "upcoming",
     score: null,
@@ -580,6 +591,76 @@ function tomorrowMatches() {
       reading: { market: "ONE_X_TWO", pick: "HOME", chance: 0.65 },
     }),
   ];
+}
+
+// La fiche d'un match de la liste (GET /matches/:id/sheet, 06 § 2–4).
+function matchSheet(fixtureId) {
+  const all = [
+    ...matchesPage("/matches", "").items,
+    ...matchesPage("/matches?cursor=page-2", "").items,
+    ...yesterdayMatches(),
+  ];
+  const item = all.find((candidate) => candidate.fixtureId === fixtureId);
+  if (!item) return null;
+  const finished = item.state === "finished";
+  const settle = (result) => (finished ? result : null);
+  const pick = (market, pickName, odds, chance, result) => ({
+    market,
+    pick: pickName,
+    odds,
+    chance,
+    result: settle(result),
+  });
+  const isArsenal = item.home.name === "Arsenal";
+  return {
+    fixtureId,
+    kickoffAt: item.kickoffAt,
+    state: item.state,
+    score: item.score,
+    halfTimeScore: finished ? { home: 1, away: 0 } : null,
+    competition: item.competition,
+    home: item.home,
+    away: item.away,
+    reading: item.reading
+      ? {
+          ...item.reading,
+          fact: isArsenal
+            ? "Arsenal a gagné ses 9 derniers matchs à domicile"
+            : null,
+        }
+      : null,
+    withoutReading: item.withoutReading,
+    ai: isArsenal
+      ? {
+          ...pick("ONE_X_TWO", "DRAW", 3.4, 0.28, null),
+          sameAsReading: false,
+          sentence: "Chelsea n'a perdu qu'une fois en 8 déplacements",
+        }
+      : item.home.name === "Lyon"
+        ? {
+            ...pick("OVER_UNDER", "OVER", 1.6, 0.62, null),
+            sameAsReading: true,
+            sentence: null,
+          }
+        : null,
+    form: {
+      home: { last: ["won", "won", "lost", "won", "drawn"], restDays: 3 },
+      away: { last: ["won", "drawn", "drawn", "lost", "won"], restDays: 6 },
+    },
+    headToHead: isArsenal ? "4 victoires d'Arsenal sur les 6 derniers" : null,
+    otherPicks:
+      item.withoutReading === "not_priced"
+        ? []
+        : [
+            pick("ONE_X_TWO", "AWAY", 5.2, 0.18, "lost"),
+            pick("ONE_X_TWO", "DRAW", 3.4, 0.28, "lost"),
+            pick("OVER_UNDER", "OVER", 1.8, 0.52, "won"),
+            pick("BTTS", "YES", 1.7, 0.55, "lost"),
+            pick("OVER_UNDER", "UNDER", 2.05, 0.48, "lost"),
+            pick("BTTS", "NO", 2.1, 0.45, "won"),
+          ],
+    operatorMargin: item.withoutReading === "not_priced" ? null : 0.07,
+  };
 }
 
 function matchesPage(url, cookie) {
@@ -1972,6 +2053,11 @@ function route(method, url, cookie = "") {
         },
       ],
     ];
+  }
+  const sheetOfMatch = path.match(/^\/matches\/([^/]+)\/sheet$/);
+  if (sheetOfMatch && method === "GET") {
+    const sheet = matchSheet(sheetOfMatch[1]);
+    return sheet ? [200, sheet] : [404, { message: "Match introuvable" }];
   }
   if (path === "/matches" && method === "GET") {
     return [200, matchesPage(url, cookie)];
