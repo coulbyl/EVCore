@@ -196,7 +196,7 @@ function totalOf(pick: string, line: number | null): Total | null {
 }
 
 /** « de PSG », « d'Austin » : the elision before a vowel. */
-const of = (team: string): string =>
+export const of = (team: string): string =>
   /^[aeiouyàâäéèêëîïôöûüÿ]/i.test(team) ? `d'${team}` : `de ${team}`;
 
 const plural = (count: number, word: string): string =>

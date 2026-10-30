@@ -1,8 +1,17 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PausedGuard } from '@/common/guards/paused.guard';
 import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
 import { MatchesQueryDto } from './dto/matches-query.dto';
+import { MatchSheetService } from './match-sheet.service';
+import type { MatchSheet } from './match-sheet.types';
 import { MatchesService } from './matches.service';
 import type { MatchesScreen } from './matches.types';
 
@@ -14,7 +23,10 @@ import type { MatchesScreen } from './matches.types';
 @Controller('matches')
 @UseGuards(AuthSessionGuard, PausedGuard)
 export class MatchesController {
-  constructor(private readonly matches: MatchesService) {}
+  constructor(
+    private readonly matches: MatchesService,
+    private readonly sheets: MatchSheetService,
+  ) {}
 
   @Get()
   @ApiOperation({
@@ -29,5 +41,16 @@ export class MatchesController {
       search: query.q,
       cursor: query.cursor,
     });
+  }
+
+  @Get(':id/sheet')
+  @ApiOperation({
+    summary: "The player's match sheet",
+    description:
+      'Our reading with its fact, the AI’s pick as one more pick, the form of both teams, the head-to-head line, the other main lines at 1xBet with the market frequency, and 1xBet’s margin on the match.',
+  })
+  @ApiOkResponse({ description: 'The sheet.' })
+  getSheet(@Param('id', ParseUUIDPipe) id: string): Promise<MatchSheet> {
+    return this.sheets.getSheet(id);
   }
 }

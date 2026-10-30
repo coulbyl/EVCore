@@ -21,6 +21,7 @@ export type LegWithoutFact = {
 export type TeamMatchRow = {
   teamId: string;
   atHome: boolean;
+  scheduledAt: Date;
   goalsFor: number;
   goalsAgainst: number;
   halfTimeFor: number | null;
@@ -96,7 +97,8 @@ export class LegFactRepository {
                   ) AS rn
         FROM played
       )
-      SELECT latest."teamId", latest."atHome", latest."goalsFor",
+      SELECT latest."teamId", latest."atHome", latest."scheduledAt",
+             latest."goalsFor",
              latest."goalsAgainst", latest."halfTimeFor",
              latest."halfTimeAgainst", corners.total AS corners
       FROM latest

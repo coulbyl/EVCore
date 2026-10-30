@@ -43,6 +43,25 @@ export type ReadingCandidateRow = {
   result: 'PENDING' | 'WON' | 'LOST' | 'VOID' | null;
 };
 
+/** The match of a sheet, with its last meetings (home side's view). */
+export type SheetHeaderRow = MatchRow & {
+  homeTeamId: string;
+  awayTeamId: string;
+  homeHalfTimeScore: number | null;
+  awayHalfTimeScore: number | null;
+  /** Last finished meetings, most recent first: goals of this sheet's home and away teams. */
+  meetings: { homeGoals: number; awayGoals: number }[] | null;
+};
+
+/** The AI's latest decision before kick-off on one match. */
+export type AiOpinionRow = {
+  status: string;
+  text: string | null;
+  market: string | null;
+  pick: string | null;
+  result: 'PENDING' | 'WON' | 'LOST' | 'VOID' | null;
+};
+
 /**
  * The reads of GET /matches (16 § 3): a page of the day's matches and the
  * engine's picks for that page. Raw SQL, each read bounded by the page.
@@ -149,6 +168,84 @@ export class MatchesRepository {
             WHERE ms.market = cs.market AND ms.active
           )
       ) picks ON true
+    `;
+  }
+
+  /**
+   * One match for its sheet, with the last `meetings` finished meetings of
+   * its two teams (either venue) over `since`..kick-off, in one query.
+   */
+  async findSheetHeader(input: {
+    fixtureId: string;
+    meetings: number;
+    since: Date;
+  }): Promise<SheetHeaderRow | null> {
+    const [row] = await this.prisma.client.$queryRaw<SheetHeaderRow[]>`
+      SELECT f.id AS "fixtureId", f."scheduledAt", f.status::text AS status,
+             f."homeScore", f."awayScore",
+             f."homeHtScore" AS "homeHalfTimeScore",
+             f."awayHtScore" AS "awayHalfTimeScore",
+             f."homeTeamId", f."awayTeamId",
+             ht.name AS "homeName", ht."shortName" AS "homeShortName",
+             ht."logoUrl" AS "homeLogoUrl",
+             at.name AS "awayName", at."shortName" AS "awayShortName",
+             at."logoUrl" AS "awayLogoUrl",
+             c.code AS "competitionCode", c.name AS "competitionName",
+             0 AS "leagueRank",
+             (
+               SELECT json_agg(m ORDER BY m."scheduledAt" DESC)
+               FROM (
+                 SELECT p."scheduledAt",
+                        CASE WHEN p."homeTeamId" = f."homeTeamId"
+                             THEN p."homeScore" ELSE p."awayScore" END AS "homeGoals",
+                        CASE WHEN p."homeTeamId" = f."homeTeamId"
+                             THEN p."awayScore" ELSE p."homeScore" END AS "awayGoals"
+                 FROM public.fixture p
+                 WHERE p.status = 'FINISHED'
+                   AND p."homeScore" IS NOT NULL AND p."awayScore" IS NOT NULL
+                   AND p."scheduledAt" < f."scheduledAt"
+                   AND p."scheduledAt" >= ${input.since}
+                   AND (
+                     (p."homeTeamId" = f."homeTeamId" AND p."awayTeamId" = f."awayTeamId")
+                     OR (p."homeTeamId" = f."awayTeamId" AND p."awayTeamId" = f."homeTeamId")
+                   )
+                 ORDER BY p."scheduledAt" DESC
+                 LIMIT ${input.meetings}
+               ) m
+             ) AS meetings
+      FROM public.fixture f
+      JOIN public.team ht ON ht.id = f."homeTeamId"
+      JOIN public.team at ON at.id = f."awayTeamId"
+      JOIN public.season s ON s.id = f."seasonId"
+      JOIN public.competition c ON c.id = s."competitionId"
+      WHERE f.id = ${input.fixtureId}::uuid
+    `;
+    return row ?? null;
+  }
+
+  /**
+   * The AI's (VANTAGE) latest decision before kick-off on a match, its text
+   * and its pick. Nothing when it never looked at the match.
+   */
+  findAiOpinion(fixtureId: string): Promise<AiOpinionRow[]> {
+    return this.prisma.client.$queryRaw<AiOpinionRow[]>`
+      WITH latest AS (
+        SELECT cd.id, cd.status::text AS status,
+               cd."reasonDetails"->>'text' AS text
+        FROM public.channel_decision cd
+        JOIN public.model_run mr ON mr.id = cd."modelRunId"
+        JOIN public.fixture f ON f.id = mr."fixtureId"
+        WHERE mr."fixtureId" = ${fixtureId}::uuid
+          AND cd.channel = 'VANTAGE'
+          AND cd."createdAt" < f."scheduledAt"
+        ORDER BY cd."createdAt" DESC
+        LIMIT 1
+      )
+      SELECT latest.status, latest.text, cs.market::text AS market, cs.pick,
+             cs.result::text AS result
+      FROM latest
+      LEFT JOIN public.channel_selection cs
+        ON cs."channelDecisionId" = latest.id AND cs.rank = 1
     `;
   }
 }

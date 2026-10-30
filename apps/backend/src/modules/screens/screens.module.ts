@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '@modules/auth/auth.module';
 import { CouponModule } from '@modules/coupon/coupon.module';
 import { PlayableOddsRepository } from '@modules/betting-engine/pricing/playable-odds.repository';
+import { LegFactRepository } from '@modules/coupon/leg-fact/leg-fact.repository';
+import { MatchSheetService } from './match-sheet.service';
 import { MatchesController } from './matches.controller';
 import { MatchesRepository } from './matches.repository';
 import { MatchesService } from './matches.service';
@@ -21,6 +23,9 @@ import { TodayService } from './today.service';
     TodayRepository,
     MatchesService,
     MatchesRepository,
+    MatchSheetService,
+    // The teams' last matches, read as for the leg facts (stateless).
+    LegFactRepository,
     // Stateless reader of the prices, registered here as in coupon.module.ts
     // rather than importing the whole engine for one query.
     PlayableOddsRepository,

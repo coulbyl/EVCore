@@ -84,3 +84,40 @@ export const READING_CHANNELS = [
   'WIN_TO_NIL',
   'HALF_TIME_FULL_TIME',
 ] as const;
+
+// The match sheet (docs/refonte-ui/06 § 2).
+
+// « Autres paris »: the main lines at 1xBet. OVER_UNDER's 2.5 line lives
+// under the bare OVER / UNDER keys.
+export const SHEET_MAIN_LINES = [
+  { market: 'ONE_X_TWO', pick: 'HOME' },
+  { market: 'ONE_X_TWO', pick: 'DRAW' },
+  { market: 'ONE_X_TWO', pick: 'AWAY' },
+  { market: 'OVER_UNDER', pick: 'OVER' },
+  { market: 'OVER_UNDER', pick: 'UNDER' },
+  { market: 'BTTS', pick: 'YES' },
+  { market: 'BTTS', pick: 'NO' },
+] as const;
+
+// « Forme »: five squares per team, all competitions.
+export const SHEET_FORM_MATCHES = 5;
+
+// « Face à face »: the last meetings, over a few seasons; fewer than three
+// say nothing.
+export const SHEET_HEAD_TO_HEAD_MEETINGS = 6;
+export const SHEET_HEAD_TO_HEAD_YEARS = 5;
+export const SHEET_HEAD_TO_HEAD_MIN = 3;
+
+// The AI's sentence: one line, 90 characters at most, and never jargon: if
+// it is not clean it is not shown (06 § 2). VANTAGE's own cleaner fixes the
+// codes; these are the words a player should never read.
+export const AI_SENTENCE_MAX_LENGTH = 90;
+export const AI_SENTENCE_JARGON: readonly RegExp[] = [
+  /\bxG\b/i,
+  /données internes/i,
+  /\bseuil\b/i,
+  /probabilit/i,
+  /calibr/i,
+  /\bcanal\b/i,
+  /\d\s?%/,
+];

@@ -27,6 +27,7 @@ function leg(overrides: Partial<LegWithoutFact>): LegWithoutFact {
 const win = (teamId: string): TeamMatchRow => ({
   teamId,
   atHome: true,
+  scheduledAt: new Date('2026-10-20T19:00:00.000Z'),
   goalsFor: 2,
   goalsAgainst: 0,
   halfTimeFor: 1,
