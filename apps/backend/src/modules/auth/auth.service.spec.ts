@@ -17,6 +17,7 @@ import type {
 } from './auth.repository';
 import type { AuthenticatedRequest } from './auth.types';
 import { hashPassword, hashResetToken, hashSessionToken } from './auth.utils';
+import { SessionCache } from './session-cache';
 
 const USER: SessionUserRow = {
   id: 'user-1',
@@ -73,13 +74,15 @@ function makeHarness(
     get: vi.fn().mockReturnValue('https://app.example'),
     getOrThrow: vi.fn(),
   } as unknown as ConfigService;
+  const sessionCache = new SessionCache();
   const service = new AuthService(
     repository,
     {} as MailService,
     config,
     {} as AccountRepository,
+    sessionCache,
   );
-  return { service, repository };
+  return { service, repository, sessionCache };
 }
 
 function requestWith(token?: string): AuthenticatedRequest {
@@ -283,5 +286,72 @@ describe('AuthService.generateAdminResetLink', () => {
     expect(repository.createResetToken).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 'user-1', isAdminGenerated: true }),
     );
+  });
+});
+
+describe('AuthService session cache', () => {
+  const freshRow = (): SessionRow => ({
+    id: 'session-1',
+    expiresAt: new Date(Date.now() + 60 * 60_000),
+    user: { ...USER, suspended: false },
+  });
+
+  it('serves a second read of the same session from memory', async () => {
+    const { service, repository } = makeHarness({
+      findSessionByTokenHash: vi.fn().mockResolvedValue(freshRow()),
+    });
+    const first = await service.readSessionFromRequest(requestWith('tok'));
+    const second = await service.readSessionFromRequest(requestWith('tok'));
+    expect(second).toEqual(first);
+    expect(repository.findSessionByTokenHash).toHaveBeenCalledOnce();
+  });
+
+  it('a logout ends the cached session at once', async () => {
+    const { service, repository } = makeHarness({
+      findSessionByTokenHash: vi
+        .fn()
+        .mockResolvedValueOnce(freshRow())
+        .mockResolvedValueOnce(null),
+    });
+    await service.readSessionFromRequest(requestWith('tok'));
+    await service.logout(requestWith('tok'));
+    expect(await service.readSessionFromRequest(requestWith('tok'))).toBeNull();
+    expect(repository.findSessionByTokenHash).toHaveBeenCalledTimes(2);
+  });
+
+  it('a change of preferences is read back on the next request', async () => {
+    const dark = freshRow();
+    dark.user.theme = 'dark';
+    const { service, repository } = makeHarness({
+      findSessionByTokenHash: vi
+        .fn()
+        .mockResolvedValueOnce(freshRow())
+        .mockResolvedValueOnce(dark),
+    });
+    await service.readSessionFromRequest(requestWith('tok'));
+    await service.updateMe('user-1', { theme: 'dark' });
+    const after = await service.readSessionFromRequest(requestWith('tok'));
+    expect(after?.user.theme).toBe('dark');
+    expect(repository.findSessionByTokenHash).toHaveBeenCalledTimes(2);
+  });
+
+  it('a read that raced a write does not put stale data back', async () => {
+    let release: (row: SessionRow) => void = () => undefined;
+    const pending = new Promise<SessionRow>((resolve) => {
+      release = resolve;
+    });
+    const { service, repository } = makeHarness({
+      findSessionByTokenHash: vi
+        .fn()
+        .mockReturnValueOnce(pending)
+        .mockResolvedValue(freshRow()),
+    });
+    const racing = service.readSessionFromRequest(requestWith('tok'));
+    // The write lands while the read is still waiting on the database.
+    await service.updateMe('user-1', { theme: 'dark' });
+    release(freshRow());
+    await racing;
+    await service.readSessionFromRequest(requestWith('tok'));
+    expect(repository.findSessionByTokenHash).toHaveBeenCalledTimes(2);
   });
 });

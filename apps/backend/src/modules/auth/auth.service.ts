@@ -15,6 +15,7 @@ import { avatarChoiceFor } from '@evcore/analysis-core';
 import { MailService } from '@modules/mail/mail.service';
 import { AccountRepository } from './account.repository';
 import { AuthRepository, type SessionUserRow } from './auth.repository';
+import { SessionCache } from './session-cache';
 import { createLogger } from '@utils/logger';
 
 const logger = createLogger('auth-service');
@@ -70,6 +71,7 @@ export class AuthService {
     private readonly mail: MailService,
     private readonly config: ConfigService,
     private readonly account: AccountRepository,
+    private readonly sessionCache: SessionCache,
   ) {}
 
   async register(
@@ -161,7 +163,9 @@ export class AuthService {
   async logout(request: AuthenticatedRequest): Promise<void> {
     const token = this.extractSessionToken(request);
     if (!token) return;
-    await this.repository.deleteSessionByTokenHash(hashSessionToken(token));
+    const tokenHash = hashSessionToken(token);
+    await this.repository.deleteSessionByTokenHash(tokenHash);
+    this.sessionCache.invalidateToken(tokenHash);
   }
 
   async readSessionFromRequest(
@@ -170,9 +174,12 @@ export class AuthService {
     const token = this.extractSessionToken(request);
     if (!token) return null;
 
-    const row = await this.repository.findSessionByTokenHash(
-      hashSessionToken(token),
-    );
+    const tokenHash = hashSessionToken(token);
+    const cached = this.sessionCache.get(tokenHash);
+    if (cached) return cached;
+
+    const ticket = this.sessionCache.ticket();
+    const row = await this.repository.findSessionByTokenHash(tokenHash);
 
     if (!row || row.expiresAt.getTime() <= Date.now()) {
       return null;
@@ -180,13 +187,21 @@ export class AuthService {
 
     if (row.user.suspended) {
       await this.repository.deleteSession(row.id);
+      this.sessionCache.invalidateUser(row.user.id);
       return null;
     }
 
-    return {
+    const session: AuthSession = {
       sessionId: row.id,
       user: this.toSessionUser(row.user),
     };
+    this.sessionCache.set({
+      tokenHash,
+      session,
+      sessionExpiresAt: row.expiresAt,
+      ticket,
+    });
+    return session;
   }
 
   applySessionCookie(response: Response, token: string): void {
@@ -259,6 +274,7 @@ export class AuthService {
           phoneNumber: dto.phoneNumber,
         }),
     });
+    this.sessionCache.invalidateUser(userId);
     return this.toSessionUser(user);
   }
 
@@ -306,6 +322,7 @@ export class AuthService {
     }
 
     await this.repository.markEmailVerified({ codeId: record.id, userId });
+    this.sessionCache.invalidateUser(userId);
   }
 
   async setupTotp(
@@ -322,6 +339,7 @@ export class AuthService {
     const encryptedSecret = encryptTotpSecret(secret, appSecret);
 
     await this.repository.setTotpSecret(userId, encryptedSecret);
+    this.sessionCache.invalidateUser(userId);
 
     const otpauth = totp.generateURI({
       issuer: 'EVCore',
@@ -353,6 +371,7 @@ export class AuthService {
     }
 
     await this.repository.markTotpVerified(userId);
+    this.sessionCache.invalidateUser(userId);
   }
 
   async requestPasswordReset(dto: RequestPasswordResetDto): Promise<void> {
@@ -412,6 +431,7 @@ export class AuthService {
       userId: record.userId,
       passwordHash,
     });
+    this.sessionCache.invalidateUser(record.userId);
   }
 
   async resetPasswordWithTotp(dto: ResetPasswordTotpDto): Promise<void> {
@@ -438,6 +458,7 @@ export class AuthService {
       user.id,
       passwordHash,
     );
+    this.sessionCache.invalidateUser(user.id);
   }
 
   async updateIdentity(
@@ -461,6 +482,7 @@ export class AuthService {
     const user = await this.repository.updateSessionUser(userId, {
       ...(username !== undefined && { username }),
     });
+    this.sessionCache.invalidateUser(userId);
 
     return this.toSessionUser(user);
   }

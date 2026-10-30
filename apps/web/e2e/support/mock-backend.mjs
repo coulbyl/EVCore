@@ -1434,12 +1434,27 @@ const TRACK_RECORD_SUMMARY = {
   ),
 };
 
-function route(method, url) {
+// Lectures de session servies, pour vérifier qu'une page n'en fait qu'une
+// (docs/refonte-ui/16-performance-et-qualite.md § 2).
+let authMeReads = 0;
+
+function route(method, url, cookie = "") {
   const path = url.split("?")[0];
 
   if (method === "OPTIONS") return [200, {}];
   if (path === "/health") return [200, { ok: true }];
-  if (path === "/auth/me") return [200, SESSION];
+  if (path === "/__e2e/stats") return [200, { authMeReads }];
+  if (path === "/__e2e/reset") {
+    authMeReads = 0;
+    return [200, { ok: true }];
+  }
+  if (path === "/auth/me") {
+    authMeReads += 1;
+    // Un cookie « stale » joue une session expirée ou révoquée.
+    if (/(^|;\s*)evcore_session=stale(;|$)/.test(cookie))
+      return [401, { message: "Session invalide ou expirée" }];
+    return [200, SESSION];
+  }
   // Le faux backend ne lit pas les corps : la suppression répond toujours
   // « mot de passe incorrect », ce qui teste la boîte sans perdre la session.
   if (path === "/auth/me/pause")
@@ -1678,7 +1693,11 @@ const server = http.createServer((req, res) => {
   );
   res.setHeader("Content-Type", "application/json");
 
-  const [status, body, setLoginCookie] = route(req.method, req.url ?? "/");
+  const [status, body, setLoginCookie] = route(
+    req.method,
+    req.url ?? "/",
+    req.headers.cookie ?? "",
+  );
 
   if (setLoginCookie) {
     res.setHeader(

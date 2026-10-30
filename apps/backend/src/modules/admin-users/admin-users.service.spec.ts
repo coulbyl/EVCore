@@ -5,6 +5,7 @@ import type {
   AdminUserRecord,
   AdminUsersRepository,
 } from './admin-users.repository';
+import { SessionCache } from '@modules/auth/session-cache';
 
 const RECORD: AdminUserRecord = {
   id: 'user-2',
@@ -30,7 +31,13 @@ function makeHarness(exists = true) {
     deleteSessions: vi.fn().mockResolvedValue(undefined),
     delete: vi.fn().mockResolvedValue(undefined),
   } as unknown as AdminUsersRepository;
-  return { service: new AdminUsersService(repository), repository };
+  const sessionCache = new SessionCache();
+  vi.spyOn(sessionCache, 'invalidateUser');
+  return {
+    service: new AdminUsersService(repository, sessionCache),
+    repository,
+    sessionCache,
+  };
 }
 
 describe('AdminUsersService', () => {
@@ -51,8 +58,9 @@ describe('AdminUsersService', () => {
   });
 
   it('suspending a user signs them out everywhere', async () => {
-    const { service, repository } = makeHarness();
+    const { service, repository, sessionCache } = makeHarness();
     await service.updateUser('user-2', { suspended: true }, 'admin-1');
+    expect(sessionCache.invalidateUser).toHaveBeenCalledWith('user-2');
     expect(repository.update).toHaveBeenCalledWith(
       'user-2',
       expect.objectContaining({ suspended: true }),
@@ -61,9 +69,11 @@ describe('AdminUsersService', () => {
   });
 
   it('a role change keeps the sessions', async () => {
-    const { service, repository } = makeHarness();
+    const { service, repository, sessionCache } = makeHarness();
     await service.updateUser('user-2', { role: 'ADMIN' }, 'admin-1');
     expect(repository.deleteSessions).not.toHaveBeenCalled();
+    // The new role reaches the user's open sessions on their next request.
+    expect(sessionCache.invalidateUser).toHaveBeenCalledWith('user-2');
   });
 
   it('an admin cannot suspend or delete their own account', async () => {

@@ -1,6 +1,10 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { BACKEND_URL } from "@/lib/api/shared";
+import {
+  REQUESTED_PATH_HEADER,
+  SESSION_COOKIE,
+  loginPathFor,
+} from "@/domains/auth/routing/auth-routing";
 
 const PLAYER_ROUTES = [
   "/today",
@@ -9,46 +13,6 @@ const PLAYER_ROUTES = [
   "/me",
   "/notifications",
 ];
-
-type SessionCheck =
-  | { state: "signed-in"; role: "ADMIN" | "OPERATOR" }
-  | { state: "signed-out" }
-  | { state: "unavailable" };
-
-/**
- * Trois réponses, pas deux : un serveur qui ne répond pas n'est pas une
- * session expirée. Sans cette différence, une panne du backend renvoyait le
- * joueur vers l'écran de connexion (10-transverse.md § 2).
- */
-async function checkSession(request: NextRequest): Promise<SessionCheck> {
-  const cookie = request.headers.get("cookie");
-
-  if (!cookie) {
-    return { state: "signed-out" };
-  }
-
-  try {
-    const response = await fetch(`${BACKEND_URL}/auth/me`, {
-      headers: { cookie },
-      cache: "no-store",
-    });
-
-    if (response.status >= 500) {
-      return { state: "unavailable" };
-    }
-    if (!response.ok) {
-      return { state: "signed-out" };
-    }
-
-    const payload = (await response.json()) as {
-      session: { user: { role: "ADMIN" | "OPERATOR" } };
-    };
-
-    return { state: "signed-in", role: payload.session.user.role };
-  } catch {
-    return { state: "unavailable" };
-  }
-}
 
 function withLocaleCookie(
   request: NextRequest,
@@ -62,46 +26,41 @@ function withLocaleCookie(
   return response;
 }
 
-export async function proxy(request: NextRequest) {
+/**
+ * No network call here (docs/refonte-ui/16-performance-et-qualite.md § 2):
+ * the proxy only checks that a session cookie is present. Whether that
+ * session is still valid is answered once, by the backend, during the
+ * render: the player and dashboard layouts send a stale session to login,
+ * the auth layout sends a valid one to the dashboard, and the admin pages
+ * check the role in their own layout.
+ */
+export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  const session = await checkSession(request);
-  const isAuthRoute = pathname.startsWith("/auth/");
-  const isDashboardRoute = pathname.startsWith("/dashboard");
+  const hasSession = request.cookies.has(SESSION_COOKIE);
   // Les onglets du joueur de la refonte (app/(player)), construits à côté
   // de /dashboard jusqu'au commit de bascule (docs/refonte-ui/15-todo.md).
   const isPlayerRoute = PLAYER_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
-  const isAdminOnlyRoute =
-    pathname.startsWith("/dashboard/audit") ||
-    pathname.startsWith("/dashboard/glossaire") ||
-    pathname.startsWith("/dashboard/documentation-technique");
 
-  // Serveur injoignable : on laisse passer, l'écran montre la maintenance.
-  if (session.state === "unavailable") {
-    return withLocaleCookie(request, NextResponse.next());
-  }
-
-  if (isAuthRoute && session.state === "signed-in") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
-  if (isPlayerRoute && session.state === "signed-out") {
+  if (isPlayerRoute && !hasSession) {
     // L'écran demandé est gardé : après connexion, on y revient.
-    const login = new URL("/auth/login", request.url);
-    login.searchParams.set("next", `${pathname}${search}`);
-    return NextResponse.redirect(login);
+    return NextResponse.redirect(
+      new URL(loginPathFor(`${pathname}${search}`), request.url),
+    );
   }
 
-  if (isDashboardRoute && session.state === "signed-out") {
+  if (pathname.startsWith("/dashboard") && !hasSession) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
-  if (
-    isAdminOnlyRoute &&
-    !(session.state === "signed-in" && session.role === "ADMIN")
-  ) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  if (isPlayerRoute) {
+    const headers = new Headers(request.headers);
+    headers.set(REQUESTED_PATH_HEADER, `${pathname}${search}`);
+    return withLocaleCookie(
+      request,
+      NextResponse.next({ request: { headers } }),
+    );
   }
 
   return withLocaleCookie(request, NextResponse.next());

@@ -8,6 +8,7 @@ import { Prisma } from '@evcore/db';
 import { MailService } from '@modules/mail/mail.service';
 import { createLogger } from '@utils/logger';
 import { AccountRepository } from './account.repository';
+import { SessionCache } from './session-cache';
 import {
   OTP_CODE_TTL_MS,
   OTP_EXPIRES_IN_MINUTES,
@@ -39,6 +40,7 @@ export class EmailChangeService {
   constructor(
     private readonly repository: AccountRepository,
     private readonly mail: MailService,
+    private readonly sessionCache: SessionCache,
   ) {}
 
   async request(
@@ -121,6 +123,7 @@ export class EmailChangeService {
       }
       throw error;
     }
+    this.sessionCache.invalidateUser(userId);
 
     await this.mail.sendEmailChanged(identity.email, {
       username: identity.username,

@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { BandActions } from "@/components/scoreboard/shell/band-actions";
@@ -9,6 +10,11 @@ import {
   getPlayerTimeZone,
 } from "@/domains/preferences/get-player-time-zone";
 import { initialOf } from "@/components/scoreboard/shell/shell-constants";
+import {
+  REQUESTED_PATH_HEADER,
+  loginPathFor,
+} from "@/domains/auth/routing/auth-routing";
+import { safeNextPath } from "@/domains/auth/helpers/safe-next-path";
 import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
 
 /**
@@ -34,10 +40,11 @@ export default async function PlayerLayout({
   if (result.status === "unavailable") {
     return <MaintenanceScreen />;
   }
-  // Le proxy renvoie déjà vers la connexion avec l'écran demandé ; ceci ne
-  // sert que si la session expire entre les deux.
+  // Le proxy ne voit que la présence du cookie : une session expirée ou
+  // révoquée arrive ici, et repart vers la connexion avec l'écran demandé.
   if (result.status === "signed-out") {
-    redirect("/auth/login");
+    const requested = (await headers()).get(REQUESTED_PATH_HEADER);
+    redirect(loginPathFor(safeNextPath(requested)));
   }
   const { session } = result;
 

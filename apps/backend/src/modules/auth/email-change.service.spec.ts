@@ -4,6 +4,7 @@ import { Prisma, UserRole } from '@evcore/db';
 import type { MailService } from '@modules/mail/mail.service';
 import { EmailChangeService, maskEmail } from './email-change.service';
 import type { AccountRepository } from './account.repository';
+import { SessionCache } from './session-cache';
 import { hashOtpCode, hashPassword } from './auth.utils';
 
 let passwordHash: string;
@@ -42,10 +43,13 @@ function makeHarness(
     sendEmailChanged: vi.fn().mockResolvedValue(undefined),
     sendEmailChangeTaken: vi.fn().mockResolvedValue(undefined),
   } as unknown as MailService;
+  const sessionCache = new SessionCache();
+  vi.spyOn(sessionCache, 'invalidateUser');
   return {
-    service: new EmailChangeService(repository, mail),
+    service: new EmailChangeService(repository, mail, sessionCache),
     repository,
     mail,
+    sessionCache,
   };
 }
 
@@ -106,10 +110,13 @@ describe('EmailChangeService.request', () => {
 
 describe('EmailChangeService.confirm', () => {
   it('switches the address and warns the old one, masked', async () => {
-    const { service, repository, mail } = makeHarness({ code: validCode() });
+    const { service, repository, mail, sessionCache } = makeHarness({
+      code: validCode(),
+    });
     await expect(service.confirm('u1', '123456')).resolves.toEqual({
       email: 'new@exemple.com',
     });
+    expect(sessionCache.invalidateUser).toHaveBeenCalledWith('u1');
     expect(repository.confirmEmailChange).toHaveBeenCalledWith({
       codeId: 'code-1',
       userId: 'u1',

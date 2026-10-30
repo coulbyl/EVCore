@@ -30,7 +30,7 @@ Mesurés sur un **Moto G** simulé (Lighthouse mobile, CPU ×4, « Slow 4G »), 
 | Taille d'une réponse d'écran | **≤ 30 kB** gzip | `select` explicite dans Prisma, pas d'objet complet, pas de `featureSnapshot` vers le joueur. |
 | API p95 par point d'entrée d'écran | **≤ 150 ms** sur la copie de prod, ≤ 250 ms en prod | Mesuré par un test de charge léger (k6 ou autocannon) sur la base locale, et par les journaux en prod. |
 | Requêtes SQL par point d'entrée | **≤ 5**, aucune en boucle | Jointures et `IN (...)`, jamais un `await` dans une boucle. |
-| Connexion | **1 lecture de session par requête au plus**, mise en cache mémoire 60 s côté backend ; proxy sans appel réseau | Le proxy vérifie la présence et la signature du cookie, pas la base. |
+| Connexion | **1 lecture de session par requête au plus**, mise en cache mémoire 60 s côté backend ; proxy sans appel réseau | Le proxy vérifie la présence du cookie, pas la base (le jeton est opaque : rien à signer, rien à lire sans le backend). |
 | Hors ligne | Le dernier écran vu s'affiche en < 1 s sans réseau | Cache du dernier écran (10 § 2) via le service worker, données du jour seulement. |
 
 ## 3. Les règles d'architecture (en plus de CLAUDE.md, qui reste la référence)
@@ -52,7 +52,7 @@ Mesurés sur un **Moto G** simulé (Lighthouse mobile, CPU ×4, « Slow 4G »), 
 - **Un point d'entrée par écran**, dans un module `screens/` (`today.controller.ts`, `matches.controller.ts`, `results.controller.ts`, `me.controller.ts`, `admin-home.controller.ts`), qui compose depuis les dépôts et renvoie un DTO plat, typé, sans `featureSnapshot`, `reasoning` ni identifiants internes. C'est le seul endroit où la forme de l'écran est connue.
 - **Contrôleur → service → dépôt**, Prisma dans les dépôts seulement ; les 16 services existants qui l'enfreignent sont corrigés quand on les touche. `select` explicite, `take` sur toute liste, curseur pour « Voir plus ».
 - **Décimal** pour cotes, probabilités, francs ; `number` à la frontière seulement. Shin et les produits de cotes en `decimal.js`.
-- **Session** : lue une fois par requête, cache mémoire 60 s par identifiant de session (invalidé à la déconnexion et à la pause), `touch` d'activité déjà asynchrone. Le proxy Next ne fait plus d'appel réseau : il lit le cookie signé ; la vérité reste au backend à la première requête de données.
+- **Session** : lue une fois par requête, cache mémoire 60 s par empreinte du jeton, invalidé à chaque écriture d'un utilisateur ou d'une session (déconnexion, pause, suspension, rôle, préférences, mot de passe) ; `touch` d'activité déjà asynchrone. Le proxy Next ne fait plus d'appel réseau : il ne voit que la présence du cookie ; la vérité reste au backend, lue une fois pendant le rendu.
 - **Connexion** : mots de passe en argon2id (ou bcrypt coût 12 si déjà en place : à vérifier au commit B10), limitation par IP et par compte sur `/auth/*` (throttler existant, règles à écrire), codes à six chiffres à durée courte, session longue sur l'appareil avec rotation à la connexion.
 - **`compression`, `helmet`, `ETag`** sur l'API ; `Cache-Control: private, max-age=30` sur les écrans du jour, `public, s-maxage=300` sur `/results` public et le héros public.
 - **Jobs et notifications** : idempotents, fenêtre glissante, jamais une boucle d'`await` par utilisateur sans lot (`Promise.all` par tranches de 50, règle de `async.utils.ts`).

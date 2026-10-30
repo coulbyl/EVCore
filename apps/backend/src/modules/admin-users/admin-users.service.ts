@@ -8,6 +8,7 @@ import {
   AdminUsersRepository,
   type AdminUserRecord,
 } from './admin-users.repository';
+import { SessionCache } from '@modules/auth/session-cache';
 import type { ListUsersQueryDto } from './dto/list-users-query.dto';
 import type { UpdateUserDto } from './dto/update-user.dto';
 
@@ -29,7 +30,10 @@ export type AdminUserRow = {
 
 @Injectable()
 export class AdminUsersService {
-  constructor(private readonly repository: AdminUsersRepository) {}
+  constructor(
+    private readonly repository: AdminUsersRepository,
+    private readonly sessionCache: SessionCache,
+  ) {}
 
   async listUsers(query: ListUsersQueryDto): Promise<{
     items: AdminUserRow[];
@@ -84,6 +88,8 @@ export class AdminUsersService {
       // Kick the user out immediately instead of waiting for their session to expire.
       await this.repository.deleteSessions(id);
     }
+    // Rôle, suspension, vérification : la session porte ces champs.
+    this.sessionCache.invalidateUser(id);
 
     return this.toRow(updated);
   }
@@ -100,6 +106,7 @@ export class AdminUsersService {
     }
 
     await this.repository.delete(id);
+    this.sessionCache.invalidateUser(id);
   }
 
   private toRow(u: AdminUserRecord): AdminUserRow {

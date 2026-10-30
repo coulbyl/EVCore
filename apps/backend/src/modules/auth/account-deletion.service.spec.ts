@@ -8,6 +8,7 @@ import { UserRole } from '@evcore/db';
 import type { StorageService } from '@modules/storage/storage.service';
 import { AccountDeletionService } from './account-deletion.service';
 import type { AccountRepository } from './account.repository';
+import { SessionCache } from './session-cache';
 import { hashPassword } from './auth.utils';
 
 let passwordHash: string;
@@ -25,18 +26,22 @@ function makeHarness(role: UserRole = UserRole.OPERATOR) {
   const storage = {
     deleteObject: vi.fn().mockResolvedValue(undefined),
   } as unknown as StorageService;
+  const sessionCache = new SessionCache();
+  vi.spyOn(sessionCache, 'invalidateUser');
   return {
-    service: new AccountDeletionService(repository, storage),
+    service: new AccountDeletionService(repository, storage, sessionCache),
     repository,
     storage,
+    sessionCache,
   };
 }
 
 describe('AccountDeletionService.deleteAccount', () => {
   it('deletes the account, its bets, then its stored attachments', async () => {
-    const { service, repository, storage } = makeHarness();
+    const { service, repository, storage, sessionCache } = makeHarness();
     await service.deleteAccount('user-1', 'correct-horse-battery');
     expect(repository.deleteUserAndOwnBets).toHaveBeenCalledWith('user-1');
+    expect(sessionCache.invalidateUser).toHaveBeenCalledWith('user-1');
     expect(storage.deleteObject).toHaveBeenCalledWith('support/a.jpg');
   });
 

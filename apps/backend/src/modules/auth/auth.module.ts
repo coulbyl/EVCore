@@ -11,6 +11,7 @@ import { AuthController } from './auth.controller';
 import { AuthRepository } from './auth.repository';
 import { AuthService } from './auth.service';
 import { AuthSessionGuard } from './auth-session.guard';
+import { SessionCache } from './session-cache';
 
 // The app-wide ThrottlerModule (see app.module.ts) already covers every
 // route via APP_GUARD — a second ThrottlerModule.forRoot() here previously
@@ -30,9 +31,11 @@ import { AuthSessionGuard } from './auth-session.guard';
     EmailChangeService,
     AccountRepository,
     AuthRepository,
+    SessionCache,
   ],
   exports: [
     AuthService,
+    SessionCache,
     AuthSessionGuard,
     AdminOrServiceTokenGuard,
     ActivityModule,
