@@ -24,6 +24,7 @@ import {
   PlayableOddsRepository,
   playableQuoteKey,
 } from '../betting-engine/pricing/playable-odds.repository';
+import { mapWithConcurrency } from '@utils/async.utils';
 import { createLogger } from '@utils/logger';
 import { productDecimal, type DecimalLike } from '@utils/decimal.utils';
 import { ProductDayService } from './product-day/product-day.service';
@@ -152,7 +153,11 @@ export class CouponSettlementService {
     const ready = await this.repo.findPendingReadyToSettle(new Date());
     if (ready.length > 0) {
       logger.info({ count: ready.length }, 'Settling coupon proposals');
-      await Promise.all(ready.map((p) => this.settleProposal(p.id)));
+      await mapWithConcurrency(
+        ready,
+        COUPON_SETTLEMENT_POLICY.concurrency,
+        (p) => this.settleProposal(p.id),
+      );
     }
     // Every pass, settled or not: today's new coupons show as pending in
     // « Résultats », and a late settlement or a correction lands.
@@ -167,7 +172,9 @@ export class CouponSettlementService {
       { count: ids.length, from, to },
       'Force re-settling coupon proposals in range',
     );
-    await Promise.all(ids.map((id) => this.settleProposal(id)));
+    await mapWithConcurrency(ids, COUPON_SETTLEMENT_POLICY.concurrency, (id) =>
+      this.settleProposal(id),
+    );
     await this.refreshProductDays(() => this.productDays.refresh({ from, to }));
     return { resettled: ids.length };
   }

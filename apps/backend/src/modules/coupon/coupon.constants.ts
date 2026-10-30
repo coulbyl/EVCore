@@ -427,6 +427,11 @@ export const COUPON_SETTLEMENT_POLICY = {
   // Fenêtre de fraîcheur de la ligne de clôture, partagée avec les
   // sélections de canal : voir betting-engine/pricing/closing-line.constants.ts.
   closingLineMaxHoursBeforeKickoff: CLOSING_LINE_POLICY.maxHoursBeforeKickoff,
+  // Coupons réglés en parallèle. Sans borne, un settle-range de 99 coupons
+  // épuisait le pool : 23 n'obtenaient pas leur transaction de cotation
+  // (« Unable to start a transaction », 2026-10-30) et restaient sans prix
+  // 1xBet jusqu'au passage suivant.
+  concurrency: 5,
 } as const;
 
 /**
