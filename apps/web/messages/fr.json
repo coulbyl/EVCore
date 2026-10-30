@@ -1186,5 +1186,48 @@
       "spokenOneIn": "1 chance sur {total}",
       "spokenRarerThan": "moins d'une chance sur {total}"
     }
+  },
+  "today": {
+    "products": {
+      "FAVOURITE": "Favori du jour",
+      "COMBO": "Combiné du jour",
+      "DOUBLE": "Coupon cote 2",
+      "HUNTER_BTTS": "Chasseur Les deux marquent",
+      "HUNTER_DRAW": "Chasseur Nul",
+      "HUNTER_SCORE": "Chasseur Score exact",
+      "HUNTER_CORNERS": "Chasseur Corners"
+    },
+    "shortNames": {
+      "FAVOURITE": "Favori",
+      "COMBO": "Combiné",
+      "DOUBLE": "Coupon cote 2",
+      "HUNTER_BTTS": "Chasseur Les deux marquent",
+      "HUNTER_DRAW": "Chasseur Nul",
+      "HUNTER_SCORE": "Chasseur Score exact",
+      "HUNTER_CORNERS": "Chasseur Corners"
+    },
+    "codes": {
+      "FAVOURITE": "FAV",
+      "COMBO": "COM",
+      "DOUBLE": "C2",
+      "HUNTER_BTTS": "BTS",
+      "HUNTER_DRAW": "NUL",
+      "HUNTER_SCORE": "SCO",
+      "HUNTER_CORNERS": "COR"
+    },
+    "yesterday": "Hier",
+    "week": "Ta semaine",
+    "yourProduct": "Ton {product}",
+    "weekProduct": "{product} : {won} jours gagnés sur {played}",
+    "inProgress": "En cours",
+    "follow": "Suivre",
+    "followed": "Suivi",
+    "followError": "Le suivi n'est pas passé. Réessaie.",
+    "form": "{won} jours gagnés sur {played}",
+    "matches": "{count, plural, one {# match} other {# matchs}}",
+    "absent": "Pas de {product} aujourd'hui",
+    "followedRunning": "{count} en cours · prochain match à {time}",
+    "followedRunningDone": "{count} en cours",
+    "otherCoupons": "Autres coupons du jour"
   }
 }

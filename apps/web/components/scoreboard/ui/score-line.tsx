@@ -47,8 +47,11 @@ export function ScoreLine({
   className,
 }: {
   items: readonly ScoreItem[];
-  /** Ce que la ligne résume (« Hier »). */
-  label: string;
+  /**
+   * Ce que la ligne résume (« Hier »). Sans lui quand la ligne est dans un
+   * lien : le nom de la liste remplacerait les issues dans celui du lien.
+   */
+  label?: string;
   tone?: "band" | "surface";
   className?: string;
 }) {

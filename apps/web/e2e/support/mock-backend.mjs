@@ -408,6 +408,161 @@ function todayAt(hoursFromNow) {
   return new Date(Date.now() + hoursFromNow * 3_600_000).toISOString();
 }
 
+// « Aujourd'hui » (GET /today, apps/backend screens/today.types.ts) : le
+// Favori en héros, trois autres coupons, un absent, la ligne Hier. Les
+// heures sont relatives à l'exécution : le héros est toujours à venir.
+// Un écusson par équipe, en image intégrée : comme en production, chaque
+// équipe a son logo (API-Football), sans que les mesures dépendent d'un CDN.
+function crest(name) {
+  const hue = [...name].reduce((sum, c) => sum + c.charCodeAt(0), 0) % 360;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28"><path d="M14 2l10 4v8c0 6-4.5 10-10 12C8.5 24 4 20 4 14V6z" fill="hsl(${hue} 60% 42%)"/><text x="14" y="17" font-size="8" font-family="sans-serif" font-weight="700" fill="#fff" text-anchor="middle">${name.slice(0, 3).toUpperCase()}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+function todayLeg(id, home, away, pick, odds, extra = {}) {
+  return {
+    fixtureId: `fx-today-${id}`,
+    kickoffAt: todayAt(extra.hours ?? 5),
+    competition: { code: "FL1", name: extra.competition ?? "Ligue 1" },
+    home: {
+      name: home,
+      shortName: home.slice(0, 3).toUpperCase(),
+      logoUrl: crest(home),
+    },
+    away: {
+      name: away,
+      shortName: away.slice(0, 3).toUpperCase(),
+      logoUrl: crest(away),
+    },
+    market: extra.market ?? "ONE_X_TWO",
+    pick,
+    line: null,
+    odds,
+    chance: extra.chance ?? 0.8,
+    marketFrequency: extra.chance ?? 0.78,
+    fact: extra.fact ?? null,
+    state: "upcoming",
+    score: null,
+  };
+}
+
+function todayCoupon(id, product, legs, odds, chance) {
+  return {
+    id: `cp-today-${id}`,
+    product,
+    forDate: todayAt(0).slice(0, 10),
+    state: "upcoming",
+    firstKickoffAt: legs[0].kickoffAt,
+    odds,
+    referenceOdds: odds,
+    paidOdds: null,
+    chance,
+    followedByMe: false,
+    canFollow: true,
+    legs,
+  };
+}
+
+function formDays(pattern) {
+  return [...pattern].map((mark, index) => ({
+    date: todayAt(-24 * (pattern.length - index)).slice(0, 10),
+    outcome: mark === "x" ? "lost" : "won",
+  }));
+}
+
+function todayScreen() {
+  const favourite = todayCoupon(
+    "fav",
+    "FAVOURITE",
+    [
+      todayLeg("fav", "Paris SG", "Lens", "HOME", 1.28, {
+        fact: "Le PSG a gagné ses 9 derniers matchs à domicile",
+      }),
+    ],
+    1.28,
+    0.8,
+  );
+  return {
+    date: todayAt(0).slice(0, 10),
+    yesterday: [
+      { product: "FAVOURITE", outcome: "won", followedByMe: false },
+      { product: "COMBO", outcome: "won", followedByMe: false },
+      { product: "DOUBLE", outcome: "lost", followedByMe: false },
+    ],
+    week: null,
+    heroId: favourite.id,
+    coupons: [
+      favourite,
+      todayCoupon(
+        "com",
+        "COMBO",
+        [
+          todayLeg("com1", "Arsenal", "Brentford", "HOME", 1.12, {
+            hours: 6,
+            competition: "Premier League",
+          }),
+          todayLeg("com2", "Inter", "Lecce", "HOME", 1.1, {
+            hours: 7,
+            competition: "Serie A",
+          }),
+          todayLeg("com3", "Benfica", "Arouca", "HOME", 1.14, {
+            hours: 8,
+            competition: "Liga Portugal",
+          }),
+        ],
+        1.41,
+        0.7,
+      ),
+      todayCoupon(
+        "c2",
+        "DOUBLE",
+        [
+          todayLeg("c21", "Lyon", "Nantes", "HOME", 1.5, { hours: 6 }),
+          todayLeg("c22", "Betis", "Getafe", "HOME", 1.53, {
+            hours: 7,
+            competition: "LaLiga",
+          }),
+        ],
+        2.3,
+        0.5,
+      ),
+      todayCoupon(
+        "nul",
+        "HUNTER_DRAW",
+        [
+          todayLeg("nul", "Lazio", "Torino", "DRAW", 3.4, {
+            hours: 9,
+            competition: "Serie A",
+            chance: 0.3,
+          }),
+        ],
+        3.4,
+        0.3,
+      ),
+    ],
+    absences: [
+      { product: "HUNTER_CORNERS", reason: "no_reliable_competition" },
+    ],
+    followedInProgress: [],
+    forms: [
+      {
+        product: "FAVOURITE",
+        days: formDays("vvxvvvvxvvvvvxvvvvvvvvvv"),
+        won: 21,
+        played: 24,
+        worstLosingStreak: 1,
+      },
+      {
+        product: "COMBO",
+        days: formDays("vvxvvvxvv"),
+        won: 7,
+        played: 9,
+        worstLosingStreak: 1,
+      },
+    ],
+  };
+}
+
 function decision(overrides) {
   return {
     id: `dec-${overrides.id}`,
@@ -1572,6 +1727,7 @@ function route(method, url, cookie = "") {
       ],
     ];
   }
+  if (path === "/today" && method === "GET") return [200, todayScreen()];
   if (path === "/events" && method === "POST") return [201, {}];
   if (path === "/coupons/abstentions")
     return [

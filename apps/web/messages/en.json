@@ -1186,5 +1186,48 @@
       "spokenOneIn": "1 chance in {total}",
       "spokenRarerThan": "less than one chance in {total}"
     }
+  },
+  "today": {
+    "products": {
+      "FAVOURITE": "Favourite of the day",
+      "COMBO": "Combo of the day",
+      "DOUBLE": "Odds-2 coupon",
+      "HUNTER_BTTS": "Both teams to score hunter",
+      "HUNTER_DRAW": "Draw hunter",
+      "HUNTER_SCORE": "Correct score hunter",
+      "HUNTER_CORNERS": "Corners hunter"
+    },
+    "shortNames": {
+      "FAVOURITE": "Favourite",
+      "COMBO": "Combo",
+      "DOUBLE": "Odds-2 coupon",
+      "HUNTER_BTTS": "Both teams to score hunter",
+      "HUNTER_DRAW": "Draw hunter",
+      "HUNTER_SCORE": "Correct score hunter",
+      "HUNTER_CORNERS": "Corners hunter"
+    },
+    "codes": {
+      "FAVOURITE": "FAV",
+      "COMBO": "COM",
+      "DOUBLE": "C2",
+      "HUNTER_BTTS": "BTS",
+      "HUNTER_DRAW": "DRW",
+      "HUNTER_SCORE": "SCO",
+      "HUNTER_CORNERS": "COR"
+    },
+    "yesterday": "Yesterday",
+    "week": "Your week",
+    "yourProduct": "Your {product}",
+    "weekProduct": "{product}: {won} days won out of {played}",
+    "inProgress": "In play",
+    "follow": "Follow",
+    "followed": "Following",
+    "followError": "Following did not go through. Try again.",
+    "form": "{won} days won out of {played}",
+    "matches": "{count, plural, one {# match} other {# matches}}",
+    "absent": "No {product} today",
+    "followedRunning": "{count} in play · next match at {time}",
+    "followedRunningDone": "{count} in play",
+    "otherCoupons": "Other coupons of the day"
   }
 }
