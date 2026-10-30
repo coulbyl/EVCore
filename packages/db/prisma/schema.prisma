@@ -1214,6 +1214,10 @@ model CouponProposalLeg {
   // docs/audits/2026-10-29/MARGES-1XBET.md). Null si 1xBet ne cote pas.
   operatorOdds      Decimal?        @db.Decimal(6, 3)
   operatorMargin    Decimal?        @db.Decimal(6, 4)
+  // Le fait montré sous la jambe (docs/refonte-ui/04 § 1) : une phrase de
+  // 60 caractères au plus, calculée sur les matchs joués avant la génération
+  // et jamais réécrite. Null = pas encore calculé ; vide = rien de solide.
+  fact              String?         @db.VarChar(60)
   signalScore       Decimal         @db.Decimal(5, 4)
   featureSnapshot   Json
   isCorrect         Boolean?

@@ -184,6 +184,8 @@ function legOf(row: TodayLegRow, now: Date): TodayLeg {
     pick: row.pick,
     line: row.line === null ? null : Number(row.line),
     odds: row.operatorOdds === null ? null : Number(row.operatorOdds),
+    // Empty means « nothing solid »: no sentence either way.
+    fact: row.fact || null,
     state: legState(row, now),
     score:
       row.fixtureStatus === 'FINISHED' &&

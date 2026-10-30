@@ -35,6 +35,8 @@ export type TodayLeg = {
   line: number | null;
   /** The 1xBet price stored at generation; null when 1xBet had none. */
   odds: number | null;
+  /** One sentence about the bet (04 § 1); null when there is none. */
+  fact: string | null;
   state: TodayLegState;
   /** Full-time score, once the match is finished. */
   score: { home: number; away: number } | null;

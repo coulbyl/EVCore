@@ -28,6 +28,7 @@ function leg(overrides: Partial<TodayLegRow>): TodayLegRow {
     pick: 'HOME',
     line: null,
     operatorOdds: d('1.250'),
+    fact: 'PSG a gagné ses 9 derniers matchs à domicile',
     isCorrect: null,
     settledAt: null,
     fixtureId: 'fx-1',
@@ -203,6 +204,32 @@ describe('TodayService', () => {
     expect(combo?.legs.map((l) => [l.state, l.score])).toEqual([
       ['won', { home: 2, away: 0 }],
       ['void', null],
+    ]);
+  });
+
+  it('shows the fact under a leg, never an empty one', async () => {
+    const { service } = harness({
+      legs: [
+        leg({ couponId: 'combo', targetOddsMin: d(1.2), legId: 'c1' }),
+        leg({
+          couponId: 'combo',
+          targetOddsMin: d(1.2),
+          legId: 'c2',
+          fact: '',
+        }),
+        leg({
+          couponId: 'combo',
+          targetOddsMin: d(1.2),
+          legId: 'c3',
+          fact: null,
+        }),
+      ],
+    });
+    const [combo] = (await service.getToday('user-1', NOW)).coupons;
+    expect(combo?.legs.map((l) => l.fact)).toEqual([
+      'PSG a gagné ses 9 derniers matchs à domicile',
+      null,
+      null,
     ]);
   });
 

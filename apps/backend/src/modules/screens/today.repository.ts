@@ -17,6 +17,8 @@ export type TodayLegRow = {
   pick: string;
   line: Prisma.Decimal | null;
   operatorOdds: Prisma.Decimal | null;
+  /** Null: never computed; empty: nothing solid (CouponLegFactService). */
+  fact: string | null;
   isCorrect: boolean | null;
   settledAt: Date | null;
   fixtureId: string;
@@ -72,7 +74,7 @@ export class TodayRepository {
              cp.result::text AS result,
              (cf.id IS NOT NULL) AS "followedByMe",
              l.id AS "legId", l.market::text AS market, l.pick, l.line,
-             l."operatorOdds", l."isCorrect", l."settledAt",
+             l."operatorOdds", l.fact, l."isCorrect", l."settledAt",
              f.id AS "fixtureId", f."scheduledAt",
              f.status::text AS "fixtureStatus", f."homeScore", f."awayScore",
              ht.name AS "homeName", ht."shortName" AS "homeShortName",
