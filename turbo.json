@@ -81,6 +81,18 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    // Lighthouse sur un build déjà fait contre le faux backend
+    // (apps/web/scripts/lighthouse-budgets.mjs) : une mesure, jamais en cache.
+    "budgets": {
+      "cache": false,
+      "env": [
+        "BUDGET_WEB_PORT",
+        "BUDGET_MOCK_PORT",
+        "BUDGET_RUNS",
+        "CHROME_PATH",
+        "GITHUB_STEP_SUMMARY"
+      ]
     }
   }
 }

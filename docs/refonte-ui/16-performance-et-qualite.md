@@ -23,7 +23,7 @@ Mesurés sur un **Moto G** simulé (Lighthouse mobile, CPU ×4, « Slow 4G »), 
 | Budget | Valeur | Pourquoi |
 | --- | --- | --- |
 | LCP (plus grand élément peint) | **≤ 2,5 s** à froid, ≤ 1,2 s à chaud | La carte du jour est le LCP ; elle doit venir du serveur, pas d'une requête client. |
-| INP (réactivité au toucher) | **≤ 200 ms** | Suivre, [+], les puces de jour. |
+| INP (réactivité au toucher) | **≤ 200 ms** | Suivre, [+], les puces de jour. En CI, Lighthouse ne touche pas l'écran : on vérifie le TBT (temps de blocage total) au même budget, son équivalent de laboratoire. |
 | CLS (déplacement de mise en page) | **≤ 0,1** | Polices chargées en `swap` avec métriques de repli, hauteurs réservées pour les diodes et la forme. |
 | JavaScript par route | **≤ 150 kB** gzip, premier chargement ≤ 250 kB | Pas de bibliothèque de graphique, d'éditeur ni de guide côté joueur. |
 | Requêtes réseau pour afficher un écran | **1 requête d'API** (agrégée) + polices + icônes inline ; **0 requête bloquante** côté client au premier rendu | Un écran = un point d'entrée : `GET /today`, `GET /matches?day=`, `GET /results?period=`, `GET /me`. |

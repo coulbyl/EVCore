@@ -81,9 +81,11 @@ catalog:
   "@types/compression": "^1.8.1"
   helmet: "^8.3.0"
 
-  # Testing (Vitest + SWC + Playwright)
+  # Testing (Vitest + SWC + Playwright + Lighthouse)
   vitest: "^4.1.12"
   "@playwright/test": "^1.63.0"
+  lighthouse: "^13.5.0"
+  chrome-launcher: "^1.2.1"
   "@vitest/coverage-v8": "^4.1.12"
   unplugin-swc: "^2.0.0"
   "@swc/cli": "^0.8.1"
