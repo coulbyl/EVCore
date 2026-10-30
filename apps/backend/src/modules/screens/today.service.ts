@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import {
+  ENGINE_CHANCE_MAX_ODDS,
   TODAY_FOLLOWED_LOOKBACK_DAYS,
   TODAY_FORM_WINDOW_DAYS,
   TODAY_HERO_RELAY,
@@ -135,7 +136,7 @@ function couponOf(input: {
       state === 'won' && first.realizedOdds !== null
         ? Number(first.realizedOdds)
         : null,
-    probability: Number(first.jointProbability),
+    chance: couponChanceOf(legs),
     followedByMe: first.followedByMe,
     canFollow: state === 'upcoming',
     legs: legs.map((leg) => legOf(leg, now)),
@@ -167,6 +168,34 @@ function operatorOddsOf(legs: readonly TodayLegRow[]): number | null {
   return product.toDecimalPlaces(3).toNumber();
 }
 
+/**
+ * A leg's chance (06 § 2): the engine's announced probability up to
+ * ENGINE_CHANCE_MAX_ODDS, the market's frequency without margin above —
+ * the engine is optimistic there. The odds compared are the ones shown
+ * (1xBet's, else the reference). Above the threshold without a market
+ * frequency, the chance is unknown: never the engine's in its place.
+ */
+function legChanceOf(row: TodayLegRow): Decimal | null {
+  const odds = row.operatorOdds ?? row.oddsSnapshot;
+  if (odds !== null && Number(odds) > ENGINE_CHANCE_MAX_ODDS) {
+    return row.operatorFairProbability === null
+      ? null
+      : new Decimal(row.operatorFairProbability.toString());
+  }
+  return new Decimal(row.probability.toString());
+}
+
+/** Π of the legs' chances, in decimal.js; unknown if one is. */
+function couponChanceOf(legs: readonly TodayLegRow[]): number | null {
+  let chance = new Decimal(1);
+  for (const leg of legs) {
+    const legChance = legChanceOf(leg);
+    if (legChance === null) return null;
+    chance = chance.times(legChance);
+  }
+  return chance.toDecimalPlaces(4).toNumber();
+}
+
 function legOf(row: TodayLegRow, now: Date): TodayLeg {
   return {
     fixtureId: row.fixtureId,
@@ -186,6 +215,11 @@ function legOf(row: TodayLegRow, now: Date): TodayLeg {
     pick: row.pick,
     line: row.line === null ? null : Number(row.line),
     odds: row.operatorOdds === null ? null : Number(row.operatorOdds),
+    chance: legChanceOf(row)?.toNumber() ?? null,
+    marketFrequency:
+      row.operatorFairProbability === null
+        ? null
+        : Number(row.operatorFairProbability),
     // Empty means « nothing solid »: no sentence either way.
     fact: row.fact || null,
     state: legState(row, now),

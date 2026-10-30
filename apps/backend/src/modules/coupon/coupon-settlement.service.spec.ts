@@ -527,6 +527,7 @@ describe('CouponSettlementService.settleProposal — 1xBet price of the legs', (
       operatorOdds: 1.62,
       operatorBookmaker: '1xBet',
       operatorMargin: 0.071,
+      operatorFairProbability: 0.5841,
       lowestOdds: 1.6,
       lowestBookmaker: '1xBet',
     };
@@ -567,7 +568,13 @@ describe('CouponSettlementService.settleProposal — 1xBet price of the legs', (
       { asOf: GENERATED_AT },
     );
     expect(applyLegOperatorPrices).toHaveBeenCalledWith([
-      { legId: 'l1', operatorOdds: 1.62, operatorMargin: 0.071 },
+      {
+        legId: 'l1',
+        operatorOdds: 1.62,
+        operatorMargin: 0.071,
+        // The frequency travels with the price it was read on.
+        operatorFairProbability: 0.5841,
+      },
     ]);
   });
 });

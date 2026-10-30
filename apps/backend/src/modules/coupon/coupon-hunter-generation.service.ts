@@ -247,6 +247,7 @@ export class CouponHunterGenerationService {
             ? {
                 operatorOdds: leg.operatorOdds,
                 operatorMargin: leg.operatorMargin ?? null,
+                operatorFairProbability: leg.operatorFairProbability ?? null,
               }
             : operatorPrice(leg, input.quotes)),
         },

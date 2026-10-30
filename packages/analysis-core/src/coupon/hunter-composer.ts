@@ -4,6 +4,7 @@ import {
   priceOutcomeGroups,
 } from "../pricing/market-probability";
 import { operatorMarginOrTypical } from "../pricing/operator";
+import { shinProbabilities } from "../pricing/shin";
 import type { ComboCandidate } from "./combo-generator";
 import {
   HUNTER_BTTS_CLASS,
@@ -74,6 +75,11 @@ export type HunterLeg = {
   line?: number | null;
   /** Cote 1xBet quand le chasseur la connaît déjà (corners). */
   operatorOdds?: number | null;
+  /**
+   * Fréquence sans marge de Shin sur le groupe 1xBet de cette cote (corners),
+   * stockée avec elle : la chance affichée au-dessus de 1,80.
+   */
+  operatorFairProbability?: number | null;
 };
 
 export type HunterComposition =
@@ -207,6 +213,8 @@ export type CornersSide = {
   margin: Decimal;
   /** Fréquence du marché sans marge : Pinnacle quand il cote la ligne, sinon 1xBet. */
   fair: Decimal;
+  /** Fréquence de Shin sur la paire 1xBet, celle qu'on affiche avec sa cote. */
+  operatorFair: Decimal | null;
 };
 
 function pairsOf(
@@ -262,6 +270,10 @@ export function priceCornersSides(
     const refOver = ref ? new Decimal(1).dividedBy(ref.over.odds) : over;
     const refUnder = ref ? new Decimal(1).dividedBy(ref.under.odds) : under;
     const fairOver = refOver.dividedBy(refOver.plus(refUnder));
+    const operatorFair = shinProbabilities([
+      { pick: "OVER", odds: new Decimal(pair.over.odds) },
+      { pick: "UNDER", odds: new Decimal(pair.under.odds) },
+    ]);
     for (const side of [pair.over, pair.under]) {
       sides.push({
         fixtureId: side.fixtureId,
@@ -270,6 +282,7 @@ export function priceCornersSides(
         odds: side.odds,
         margin,
         fair: side.pick === "OVER" ? fairOver : new Decimal(1).minus(fairOver),
+        operatorFair: operatorFair?.get(side.pick) ?? null,
       });
     }
   }
@@ -309,6 +322,8 @@ export function composeCornersHunter(
       operatorOdds: best.odds,
       probability: best.fair.toNumber(),
       operatorMargin: best.margin.toNumber(),
+      operatorFairProbability:
+        best.operatorFair?.toDecimalPlaces(4).toNumber() ?? null,
     },
     candidateCount: inside.length,
   };

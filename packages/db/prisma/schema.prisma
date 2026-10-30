@@ -1217,6 +1217,11 @@ model CouponProposalLeg {
   // docs/audits/2026-10-29/MARGES-1XBET.md). Null si 1xBet ne cote pas.
   operatorOdds      Decimal?        @db.Decimal(6, 3)
   operatorMargin    Decimal?        @db.Decimal(6, 4)
+  // Fréquence sans marge de ce choix chez 1xBet, méthode de Shin sur le même
+  // groupe d'issues et le même relevé que operatorOdds (2026-10-30,
+  // docs/refonte-ui/07 § 4) : la chance affichée au-dessus de 1,80. Null si
+  // 1xBet ne cote pas tout le groupe.
+  operatorFairProbability Decimal? @db.Decimal(5, 4)
   // Le fait montré sous la jambe (docs/refonte-ui/04 § 1) : une phrase de
   // 60 caractères au plus, calculée sur les matchs joués avant la génération
   // et jamais réécrite. Null = pas encore calculé ; vide = rien de solide.

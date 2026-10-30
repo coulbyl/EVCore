@@ -35,6 +35,13 @@ export type TodayLeg = {
   line: number | null;
   /** The 1xBet price stored at generation; null when 1xBet had none. */
   odds: number | null;
+  /**
+   * The leg's chance, in [0, 1]: the engine's up to ENGINE_CHANCE_MAX_ODDS,
+   * the market's frequency above; null when that one is unknown.
+   */
+  chance: number | null;
+  /** Shin's frequency without margin on 1xBet's group, with `odds`. */
+  marketFrequency: number | null;
   /** One sentence about the bet (04 § 1); null when there is none. */
   fact: string | null;
   state: TodayLegState;
@@ -55,8 +62,11 @@ export type TodayCoupon = {
   referenceOdds: number;
   /** Paid odds of a won coupon (lower than `odds` after a refunded leg). */
   paidOdds: number | null;
-  /** Joint probability announced at generation, in [0, 1]. */
-  probability: number;
+  /**
+   * The coupon's chance, in [0, 1]: the product of its legs' chances
+   * (independence, as for every coupon); null if one leg's is unknown.
+   */
+  chance: number | null;
   followedByMe: boolean;
   /** Following is only offered before the first kick-off (04 § 3). */
   canFollow: boolean;

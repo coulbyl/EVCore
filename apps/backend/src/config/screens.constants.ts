@@ -28,6 +28,12 @@ export const TODAY_HERO_RELAY = [
   'HUNTER_CORNERS',
 ] as const satisfies readonly (typeof TODAY_PRODUCTS)[number][];
 
+// Up to these odds a leg's chance is the engine's calibrated probability;
+// above, the market's own frequency without margin (Shin on 1xBet's group):
+// at 2.5–4 the engine announces 34 % and lands 29 % (decided 2026-10-29,
+// docs/audits/2026-10-29/ACCUMULATEUR.md § 6 and § 10, refonte 06 § 2).
+export const ENGINE_CHANCE_MAX_ODDS = 1.8;
+
 // « Forme sur 30 jours » under each product (04 § 1).
 export const TODAY_FORM_WINDOW_DAYS = 30;
 

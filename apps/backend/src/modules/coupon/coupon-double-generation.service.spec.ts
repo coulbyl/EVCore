@@ -78,6 +78,7 @@ describe('CouponDoubleGenerationService', () => {
         operatorOdds: row.odds,
         operatorBookmaker: '1xBet',
         operatorMargin: null,
+        operatorFairProbability: null,
         lowestOdds: row.odds,
         lowestBookmaker: '1xBet',
       });
@@ -121,6 +122,7 @@ describe('CouponDoubleGenerationService', () => {
         operatorOdds: 1.38,
         operatorBookmaker: '1xBet',
         operatorMargin: null,
+        operatorFairProbability: null,
         lowestOdds: 1.38,
         lowestBookmaker: '1xBet',
       });

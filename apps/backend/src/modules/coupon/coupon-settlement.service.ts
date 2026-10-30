@@ -138,6 +138,7 @@ export class CouponSettlementService {
                 legId: leg.id,
                 operatorOdds: quote.operatorOdds,
                 operatorMargin: quote.operatorMargin,
+                operatorFairProbability: quote.operatorFairProbability,
               },
             ];
       }),

@@ -27,10 +27,16 @@ export function playableAtOperator(
 export function operatorPrice(
   candidate: PlayableQuoteKey,
   quotes: Map<string, PlayableQuote>,
-): { operatorOdds: number | null; operatorMargin: number | null } {
+): {
+  operatorOdds: number | null;
+  operatorMargin: number | null;
+  operatorFairProbability: number | null;
+} {
   const quote = quotes.get(playableQuoteKey(candidate));
+  // Les trois viennent du même relevé : ils voyagent ensemble.
   return {
     operatorOdds: quote?.operatorOdds ?? null,
     operatorMargin: quote?.operatorMargin ?? null,
+    operatorFairProbability: quote?.operatorFairProbability ?? null,
   };
 }

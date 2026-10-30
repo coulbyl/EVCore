@@ -414,6 +414,7 @@ export class CouponRepository {
       legId: string;
       operatorOdds: number;
       operatorMargin: number | null;
+      operatorFairProbability: number | null;
     }[],
   ): Promise<void> {
     if (updates.length === 0) return;
@@ -427,6 +428,10 @@ export class CouponRepository {
               update.operatorMargin === null
                 ? null
                 : new Prisma.Decimal(update.operatorMargin.toFixed(4)),
+            operatorFairProbability:
+              update.operatorFairProbability === null
+                ? null
+                : new Prisma.Decimal(update.operatorFairProbability.toFixed(4)),
           },
         }),
       ),
@@ -600,6 +605,8 @@ export class CouponRepository {
       /** Prix et marge chez le book des joueurs (1xBet), quand il cote. */
       operatorOdds?: number | null;
       operatorMargin?: number | null;
+      /** Fréquence de Shin chez 1xBet, du même relevé que operatorOdds. */
+      operatorFairProbability?: number | null;
     }[];
     /**
      * Profil écrit dans la clé unique et dans `reasoning.policyVersion`. Par
@@ -684,6 +691,10 @@ export class CouponRepository {
               leg.operatorMargin == null
                 ? null
                 : new Prisma.Decimal(leg.operatorMargin.toFixed(4)),
+            operatorFairProbability:
+              leg.operatorFairProbability == null
+                ? null
+                : new Prisma.Decimal(leg.operatorFairProbability.toFixed(4)),
             signalScore: new Prisma.Decimal(0),
             featureSnapshot: { expectedReturn: leg.expectedReturn },
           })),

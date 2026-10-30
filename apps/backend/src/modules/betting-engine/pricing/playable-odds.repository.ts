@@ -2,7 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
-import { OPERATOR_BOOKMAKERS, priceOutcomeGroups } from '@evcore/analysis-core';
+import {
+  OPERATOR_BOOKMAKERS,
+  priceOutcomeGroups,
+  shinOutcomeGroups,
+  shinProbabilities,
+} from '@evcore/analysis-core';
 
 export type PlayableQuoteKey = {
   fixtureId: string;
@@ -26,6 +31,13 @@ export type PlayableQuote = PlayableQuoteKey & {
    * (docs/audits/2026-10-29/MARGES-1XBET.md).
    */
   operatorMargin: number | null;
+  /**
+   * Fréquence sans marge de ce choix chez ce book, par la méthode de Shin sur
+   * le même groupe d'issues complet (la double chance par son 1X2) ; null si
+   * le groupe est incomplet. La chance affichée au-dessus de 1,80
+   * (docs/refonte-ui/06 § 2, 07 § 4), toujours lue avec la cote qui va avec.
+   */
+  operatorFairProbability: number | null;
   /** Prix le plus bas de tous les books relevés (le pire cas). */
   lowestOdds: number | null;
   lowestBookmaker: string | null;
@@ -73,7 +85,15 @@ export class PlayableOddsRepository {
     keys = keys.filter((key) => key.line == null);
     if (keys.length === 0) return result;
     const fixtureIds = [...new Set(keys.map((k) => k.fixtureId))];
-    const markets = [...new Set(keys.map((k) => k.market))];
+    // La double chance se lit sur le 1X2 du même book : on le relève aussi.
+    const markets = [
+      ...new Set([
+        ...keys.map((k) => k.market),
+        ...(keys.some((k) => k.market === 'DOUBLE_CHANCE')
+          ? ['ONE_X_TWO']
+          : []),
+      ]),
+    ];
     const wanted = new Set(keys.map(playableQuoteKey));
 
     const rows = await this.prisma.client.$queryRaw<
@@ -125,6 +145,7 @@ export class PlayableOddsRepository {
     // une issue restée sur un ancien relevé donnerait une marge sur des prix
     // qui n'ont jamais coexisté (revue du lot 3).
     const operatorMargins = new Map<string, number>();
+    const operatorFairs = new Map<string, number>();
     for (const bookmaker of OPERATOR_BOOKMAKERS) {
       const bookRows = rows.filter((row) => row.bookmaker === bookmaker);
       const lastSnapshot = new Map<string, number>();
@@ -144,6 +165,12 @@ export class PlayableOddsRepository {
           operatorMargins.set(key, priced.margin.toNumber());
         }
       }
+      for (const priced of shinOutcomeGroups(current)) {
+        const key = playableQuoteKey(priced);
+        if (!operatorFairs.has(key)) {
+          operatorFairs.set(key, priced.fair.toDecimalPlaces(4).toNumber());
+        }
+      }
     }
 
     for (const row of rows) {
@@ -156,6 +183,7 @@ export class PlayableOddsRepository {
         operatorOdds: null,
         operatorBookmaker: null,
         operatorMargin: null,
+        operatorFairProbability: null,
         lowestOdds: null,
         lowestBookmaker: null,
       };
@@ -168,6 +196,7 @@ export class PlayableOddsRepository {
         current.operatorOdds = row.odds;
         current.operatorBookmaker = row.bookmaker;
         current.operatorMargin = operatorMargins.get(key) ?? null;
+        current.operatorFairProbability = operatorFairs.get(key) ?? null;
       }
       if (current.lowestOdds === null || row.odds < current.lowestOdds) {
         current.lowestOdds = row.odds;
@@ -224,6 +253,7 @@ export class PlayableOddsRepository {
         operatorOdds: null,
         operatorBookmaker: null,
         operatorMargin: null,
+        operatorFairProbability: null,
         lowestOdds: null,
         lowestBookmaker: null,
       };
@@ -239,6 +269,16 @@ export class PlayableOddsRepository {
               .plus(new Decimal(1).dividedBy(other.odds))
               .minus(1)
               .toNumber()
+          : null;
+        // La paire plus/moins du même relevé, par Shin.
+        current.operatorFairProbability = other
+          ? (shinProbabilities([
+              { pick: row.pick, odds: new Decimal(row.odds) },
+              { pick: other.pick, odds: new Decimal(other.odds) },
+            ])
+              ?.get(row.pick)
+              ?.toDecimalPlaces(4)
+              .toNumber() ?? null)
           : null;
       }
       if (current.lowestOdds === null || row.odds < current.lowestOdds) {

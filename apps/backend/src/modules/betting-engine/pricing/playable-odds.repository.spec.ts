@@ -56,6 +56,54 @@ describe('PlayableOddsRepository.findPlayableQuotes', () => {
     expect(quote?.operatorOdds).toBe(1.8);
     // 1/1,8 + 1/1,9 − 1 = 8,2 %.
     expect(quote?.operatorMargin).toBeCloseTo(0.0819, 3);
+    // Shin on 1xBet's own pair, never Bet365's price.
+    expect(quote?.operatorFairProbability).toBe(0.5146);
+  });
+
+  it("reads double chance on 1xBet's 1X2, by Shin", async () => {
+    const repository = repositoryReturning([
+      {
+        fixtureId: 'f1',
+        market: 'ONE_X_TWO',
+        pick: 'HOME',
+        bookmaker: '1xBet',
+        odds: 1.5,
+      },
+      {
+        fixtureId: 'f1',
+        market: 'ONE_X_TWO',
+        pick: 'DRAW',
+        bookmaker: '1xBet',
+        odds: 4.2,
+      },
+      {
+        fixtureId: 'f1',
+        market: 'ONE_X_TWO',
+        pick: 'AWAY',
+        bookmaker: '1xBet',
+        odds: 6.5,
+      },
+      {
+        fixtureId: 'f1',
+        market: 'DOUBLE_CHANCE',
+        pick: '1X',
+        bookmaker: '1xBet',
+        odds: 1.12,
+      },
+    ]);
+    const quotes = await repository.findPlayableQuotes([
+      { fixtureId: 'f1', market: 'DOUBLE_CHANCE', pick: '1X' },
+      { fixtureId: 'f1', market: 'ONE_X_TWO', pick: 'AWAY' },
+    ]);
+    // 0,6427 + 0,2201 (independent reference: 0,862757).
+    expect(quotes.get('f1|DOUBLE_CHANCE|1X')?.operatorFairProbability).toBe(
+      0.8628,
+    );
+    expect(quotes.get('f1|ONE_X_TWO|AWAY')?.operatorFairProbability).toBe(
+      0.1372,
+    );
+    // The 1X2 read for the double chance is not returned unasked.
+    expect(quotes.has('f1|ONE_X_TWO|HOME')).toBe(false);
   });
 
   it('leaves the margin unknown when 1xBet does not quote the whole group', async () => {
@@ -79,6 +127,7 @@ describe('PlayableOddsRepository.findPlayableQuotes', () => {
       { fixtureId: 'f1', market: 'BTTS', pick: 'YES' },
     ]);
     expect(quotes.get('f1|BTTS|YES')?.operatorMargin).toBeNull();
+    expect(quotes.get('f1|BTTS|YES')?.operatorFairProbability).toBeNull();
   });
 
   it('ignores an outcome left on an older 1xBet snapshot', async () => {
@@ -184,7 +233,11 @@ describe('PlayableOddsRepository.findPlayableQuotes', () => {
     expect(main?.operatorOdds).toBe(1.9);
     // 1/1,9 + 1/1,8 − 1 = 8,1 %.
     expect(main?.operatorMargin).toBeCloseTo(0.0819, 3);
+    expect(main?.operatorFairProbability).toBe(0.4854);
     expect(quotes.get('f1|CORNERS|OVER|10.5')?.operatorMargin).toBeNull();
+    expect(
+      quotes.get('f1|CORNERS|OVER|10.5')?.operatorFairProbability,
+    ).toBeNull();
     // Une clé sans ligne garde sa forme.
     expect(quotes.has('f1|CORNERS|OVER')).toBe(false);
   });

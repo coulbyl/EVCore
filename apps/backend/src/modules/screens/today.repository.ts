@@ -9,7 +9,6 @@ export type TodayLegRow = {
   targetOddsMin: Prisma.Decimal;
   combinedOdds: Prisma.Decimal;
   realizedOdds: Prisma.Decimal | null;
-  jointProbability: Prisma.Decimal;
   result: 'WON' | 'LOST' | 'PARTIAL' | 'VOID' | null;
   followedByMe: boolean;
   legId: string;
@@ -17,6 +16,12 @@ export type TodayLegRow = {
   pick: string;
   line: Prisma.Decimal | null;
   operatorOdds: Prisma.Decimal | null;
+  /** Reference price the engine composed on. */
+  oddsSnapshot: Prisma.Decimal | null;
+  /** The leg's announced probability (the engine's for its own legs). */
+  probability: Prisma.Decimal;
+  /** Shin's frequency on 1xBet's group, read with operatorOdds. */
+  operatorFairProbability: Prisma.Decimal | null;
   /** Null: never computed; empty: nothing solid (CouponLegFactService). */
   fact: string | null;
   isCorrect: boolean | null;
@@ -70,11 +75,12 @@ export class TodayRepository {
   }): Promise<TodayLegRow[]> {
     return this.prisma.client.$queryRaw<TodayLegRow[]>`
       SELECT cp.id AS "couponId", cp."forDate", cp."targetOddsMin",
-             cp."combinedOdds", cp."realizedOdds", cp."jointProbability",
+             cp."combinedOdds", cp."realizedOdds",
              cp.result::text AS result,
              (cf.id IS NOT NULL) AS "followedByMe",
              l.id AS "legId", l.market::text AS market, l.pick, l.line,
-             l."operatorOdds", l.fact, l."isCorrect", l."settledAt",
+             l."operatorOdds", l."oddsSnapshot", l.probability,
+             l."operatorFairProbability", l.fact, l."isCorrect", l."settledAt",
              f.id AS "fixtureId", f."scheduledAt",
              f.status::text AS "fixtureStatus", f."homeScore", f."awayScore",
              ht.name AS "homeName", ht."shortName" AS "homeShortName",

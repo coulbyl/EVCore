@@ -20,7 +20,9 @@ function leg(overrides: Partial<TodayLegRow>): TodayLegRow {
     targetOddsMin: d(1.1),
     combinedOdds: d('1.280'),
     realizedOdds: null,
-    jointProbability: d('0.8100'),
+    probability: d('0.8100'),
+    oddsSnapshot: d('1.280'),
+    operatorFairProbability: d('0.7700'),
     result: null,
     followedByMe: false,
     legId: 'leg-1',
@@ -113,7 +115,7 @@ describe('TodayService', () => {
           couponId: 'combo',
           targetOddsMin: d(1.2),
           combinedOdds: d('1.450'),
-          jointProbability: d('0.6200'),
+          probability: d('0.8000'),
           legId: 'c1',
           fixtureId: 'fx-2',
           operatorOdds: d('1.18'),
@@ -143,7 +145,8 @@ describe('TodayService', () => {
       canFollow: true,
       odds: 1.25,
       referenceOdds: 1.28,
-      probability: 0.81,
+      // 1,25 at 1xBet: under 1,80, the engine's 0,81, not the market's.
+      chance: 0.81,
       firstKickoffAt: '2026-10-30T19:00:00.000Z',
     });
     // 1,18 × 1,21 = 1,4278, in decimal.js: never 1,4277999…
@@ -151,9 +154,48 @@ describe('TodayService', () => {
       state: 'live',
       canFollow: false,
       odds: 1.428,
+      // 0,80 × 0,81.
+      chance: 0.648,
       firstKickoffAt: '2026-10-30T13:00:00.000Z',
     });
     expect(combo?.legs.map((l) => l.state)).toEqual(['live', 'upcoming']);
+  });
+
+  it("above 1,80 a leg's chance is the market's, never the engine's", async () => {
+    const draw = {
+      couponId: 'draw',
+      targetOddsMin: d(2.9),
+      operatorOdds: d('3.300'),
+      oddsSnapshot: d('3.400'),
+      // The engine says 0,34, the market 0,29.
+      probability: d('0.3400'),
+      operatorFairProbability: d('0.2900'),
+    };
+    const { service } = harness({ legs: [leg(draw)] });
+    const [coupon] = (await service.getToday('user-1', NOW)).coupons;
+    expect(coupon?.chance).toBe(0.29);
+    expect(coupon?.legs[0]).toMatchObject({
+      chance: 0.29,
+      marketFrequency: 0.29,
+    });
+  });
+
+  it('above 1,80 without a market frequency, the chance is unknown', async () => {
+    const { service } = harness({
+      legs: [
+        leg({
+          couponId: 'draw',
+          targetOddsMin: d(2.9),
+          operatorOdds: null,
+          oddsSnapshot: d('3.400'),
+          probability: d('0.3400'),
+          operatorFairProbability: null,
+        }),
+      ],
+    });
+    const [coupon] = (await service.getToday('user-1', NOW)).coupons;
+    expect(coupon?.chance).toBeNull();
+    expect(coupon?.legs[0]?.chance).toBeNull();
   });
 
   it('a leg without a 1xBet price leaves the coupon price unknown', async () => {

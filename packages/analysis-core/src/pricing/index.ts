@@ -30,3 +30,8 @@ export {
 } from "./market-probability";
 export type { PricedRow } from "./market-probability";
 export * from "./operator";
+export {
+  shinProbabilities,
+  shinDoubleChance,
+  shinOutcomeGroups,
+} from "./shin";
