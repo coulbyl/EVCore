@@ -18,6 +18,8 @@ function coupon(id: string, product: TodayCoupon['product']): TodayCoupon {
     referenceOdds: 1.3,
     paidOdds: null,
     chance: 0.8,
+    operatorKeep: 0.06,
+    oddsBand: null,
     followedByMe: true,
     canFollow: true,
     legs: [],

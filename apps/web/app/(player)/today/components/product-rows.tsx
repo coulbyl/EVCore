@@ -48,6 +48,7 @@ export async function ProductRows({
         return (
           <Row
             key={coupon.id}
+            href={`/today/coupon/${coupon.id}`}
             title={t(`products.${coupon.product}`)}
             meta={
               single

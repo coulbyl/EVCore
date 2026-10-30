@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js';
 import { Injectable } from '@nestjs/common';
 import {
   TODAY_FOLLOWED_LOOKBACK_DAYS,
@@ -24,6 +25,7 @@ import {
 import {
   TODAY_PRODUCT_TARGETS,
   isTodayProduct,
+  oddsBandOf,
   productOfTarget,
   productRank,
 } from './today-products';
@@ -173,10 +175,29 @@ function couponOf(input: {
         ? Number(first.realizedOdds)
         : null,
     chance: couponChanceOf(priced),
+    operatorKeep: operatorKeepOf(priced),
+    oddsBand: oddsBandOf(input.product),
     followedByMe: first.followedByMe,
     canFollow: state === 'upcoming',
     legs: legs.map((leg) => legOf(leg, now)),
   };
+}
+
+/**
+ * What 1xBet keeps on the coupon (07 § 4): 1 − Π (frequency × odds) over the
+ * legs, in decimal.js; unknown when a leg lacks its price or its frequency.
+ */
+function operatorKeepOf(legs: readonly TodayLegRow[]): number | null {
+  let returned = new Decimal(1);
+  for (const leg of legs) {
+    if (leg.operatorOdds === null || leg.operatorFairProbability === null) {
+      return null;
+    }
+    returned = returned
+      .times(leg.operatorOdds.toString())
+      .times(leg.operatorFairProbability.toString());
+  }
+  return new Decimal(1).minus(returned).toDecimalPlaces(4).toNumber();
 }
 
 function couponState(

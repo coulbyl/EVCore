@@ -7,6 +7,7 @@ import {
   HUNTER_CORNERS_CLASS,
   HUNTER_DRAW_CLASS,
   HUNTER_SCORE_CLASS,
+  type CouponClass,
 } from '@evcore/analysis-core';
 import { TODAY_PRODUCTS } from '@config/screens.constants';
 import type { TodayProductKey } from './today.types';
@@ -62,4 +63,19 @@ export function isTodayCoupon(coupon: {
 /** Screen order (TODAY_PRODUCTS), for sorting. */
 export function productRank(product: TodayProductKey): number {
   return TODAY_PRODUCTS.indexOf(product);
+}
+
+const HUNTER_BANDS: Readonly<Partial<Record<TodayProductKey, CouponClass>>> = {
+  HUNTER_BTTS: HUNTER_BTTS_CLASS,
+  HUNTER_DRAW: HUNTER_DRAW_CLASS,
+  HUNTER_SCORE: HUNTER_SCORE_CLASS,
+  HUNTER_CORNERS: HUNTER_CORNERS_CLASS,
+};
+
+/** A hunter's odds band, its one distinguishing trait (04 § 1); null otherwise. */
+export function oddsBandOf(
+  product: TodayProductKey,
+): { min: number; max: number } | null {
+  const hunter = HUNTER_BANDS[product];
+  return hunter ? { min: hunter.minLegOdds, max: hunter.maxLegOdds } : null;
 }

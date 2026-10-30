@@ -173,6 +173,30 @@ describe('TodayService', () => {
     expect(combo?.legs.map((l) => l.state)).toEqual(['live', 'upcoming']);
   });
 
+  it("says what 1xBet keeps, and a hunter's odds band", async () => {
+    const { service } = harness({
+      legs: [
+        // 1,25 × 0,77 = 0,9625 : 1xBet garde 3,75 %.
+        leg({}),
+        leg({
+          couponId: 'draw',
+          targetOddsMin: d(2.9),
+          legId: 'h1',
+          fixtureId: 'fx-9',
+          operatorOdds: d('3.20'),
+          operatorFairProbability: null,
+        }),
+      ],
+    });
+    const [favourite, draw] = (await service.getToday('user-1', NOW)).coupons;
+    expect(favourite).toMatchObject({ operatorKeep: 0.0375, oddsBand: null });
+    // Unknown without the market's frequency, never 0.
+    expect(draw).toMatchObject({
+      operatorKeep: null,
+      oddsBand: { min: 2.9, max: 3.6 },
+    });
+  });
+
   it("above 1,80 a leg's chance is the market's, never the engine's", async () => {
     const draw = {
       couponId: 'draw',

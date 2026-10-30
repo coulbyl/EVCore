@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ChanceFigure } from "@/components/scoreboard/ui/chance-figure";
 import { ResultMark } from "@/components/scoreboard/ui/result-mark";
@@ -27,6 +28,9 @@ import {
  *
  * Un seul match (Favori, chasseur) : les deux équipes l'une sous l'autre et
  * le fait de la jambe. Un combiné : une ligne par match, la cote totale.
+ *
+ * Toute la carte ouvre la feuille du coupon (un lien posé dessus) ; « Suivre »
+ * passe au-dessus du lien.
  */
 export async function HeroCard({
   coupon,
@@ -50,8 +54,13 @@ export async function HeroCard({
   return (
     <section
       aria-labelledby="hero-title"
-      className="flex flex-col gap-3 rounded-[0.875rem] border border-border bg-card p-4 text-card-foreground"
+      className="relative flex flex-col gap-3 rounded-[0.875rem] border border-border bg-card p-4 text-card-foreground"
     >
+      <Link
+        href={`/today/coupon/${coupon.id}`}
+        aria-label={t("open", { product: t(`products.${coupon.product}`) })}
+        className="absolute inset-0 rounded-[0.875rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      />
       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
         <h2 id="hero-title" className="score text-title font-semibold">
           {t(`products.${coupon.product}`)}
@@ -150,15 +159,17 @@ export async function HeroCard({
       ) : null}
 
       {coupon.canFollow ? (
-        <FollowButton
-          couponId={coupon.id}
-          followed={coupon.followedByMe}
-          labels={{
-            follow: t("follow"),
-            followed: t("followed"),
-            error: t("followError"),
-          }}
-        />
+        <div className="relative z-10">
+          <FollowButton
+            couponId={coupon.id}
+            followed={coupon.followedByMe}
+            labels={{
+              follow: t("follow"),
+              followed: t("followed"),
+              error: t("followError"),
+            }}
+          />
+        </div>
       ) : coupon.followedByMe ? (
         <p className="flex items-center gap-2 text-body font-medium">
           <ResultMark kind="won" colored={false} size="sm" />

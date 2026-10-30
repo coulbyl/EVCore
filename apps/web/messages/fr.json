@@ -1239,6 +1239,13 @@
     "seeMatches": "Voir les matchs du jour",
     "noCouponYet": "Pas de coupon pour l'instant · réessaie plus tard",
     "pauseUntil": "{date} à {time}",
-    "absentShort": "Pas de {product}"
+    "absentShort": "Pas de {product}",
+    "formTitle": "Forme sur 30 jours",
+    "formSummary": "{won} jours gagnés sur {played}",
+    "worstStreak": "pire série {count}",
+    "keepBet": "1xBet garde {share} sur ce pari",
+    "keepCoupon": "1xBet garde {share} sur ce coupon",
+    "band": "{min} à {max}",
+    "open": "Ouvrir {product}"
   }
 }

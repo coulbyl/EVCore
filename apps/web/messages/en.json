@@ -1239,6 +1239,13 @@
     "seeMatches": "See today's matches",
     "noCouponYet": "No coupon for now · try again later",
     "pauseUntil": "{date} at {time}",
-    "absentShort": "No {product}"
+    "absentShort": "No {product}",
+    "formTitle": "Form over 30 days",
+    "formSummary": "{won} days won out of {played}",
+    "worstStreak": "worst run {count}",
+    "keepBet": "1xBet keeps {share} on this bet",
+    "keepCoupon": "1xBet keeps {share} on this coupon",
+    "band": "{min} to {max}",
+    "open": "Open {product}"
   }
 }

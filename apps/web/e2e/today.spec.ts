@@ -139,3 +139,86 @@ test.describe("Aujourd'hui, ses états (04 § 2, § 5)", () => {
     await context.setOffline(false);
   });
 });
+
+/**
+ * La feuille du coupon (04 § 1, maquette Coupon) : elle s'ouvre au toucher
+ * du héros ou d'une ligne, et la même s'affiche sur un lien partagé.
+ * Modale sous 1024 px, colonne de droite au-delà.
+ */
+test.describe("Feuille du coupon", () => {
+  const sheetNamed = (
+    page: import("@playwright/test").Page,
+    name: string | RegExp,
+  ) =>
+    page
+      .getByRole("dialog", { name })
+      .or(page.getByRole("complementary", { name }));
+
+  test("le héros l'ouvre : matchs, fait, forme, pire série, marge 1xBet, Suivre", async ({
+    page,
+  }) => {
+    await page.goto("/today");
+    await page.getByRole("link", { name: "Ouvrir Favori du jour" }).click();
+    await expect(page).toHaveURL(/\/today\/coupon\/cp-today-fav$/);
+    const sheet = sheetNamed(page, "Favori du jour");
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByText("Paris SG", { exact: true })).toBeVisible();
+    await expect(sheet.getByText("Victoire Paris SG")).toBeVisible();
+    await expect(
+      sheet.getByText("Le PSG a gagné ses 9 derniers matchs à domicile"),
+    ).toBeVisible();
+    await expect(sheet.getByText("Forme sur 30 jours")).toBeVisible();
+    await expect(
+      sheet.getByText("21 jours gagnés sur 24", { exact: true }),
+    ).toBeVisible();
+    await expect(sheet.getByText("· pire série 1")).toBeVisible();
+    await expect(
+      sheet.getByText(/^1xBet garde 6\s%\ssur ce pari$/),
+    ).toBeVisible();
+    await expect(sheet.getByRole("button", { name: "Suivre" })).toBeVisible();
+  });
+
+  test("une ligne l'ouvre ; un combiné dit « sur ce coupon »", async ({
+    page,
+  }) => {
+    await page.goto("/today");
+    await page
+      .getByRole("list", { name: "Autres coupons du jour" })
+      .getByRole("link", { name: /Combiné du jour/ })
+      .click();
+    const sheet = sheetNamed(page, "Combiné du jour");
+    await expect(sheet).toBeVisible();
+    for (const team of ["Arsenal", "Inter", "Benfica"]) {
+      await expect(sheet.getByText(team, { exact: true })).toBeVisible();
+    }
+    await expect(
+      sheet.getByText(/^1xBet garde 9\s%\ssur ce coupon$/),
+    ).toBeVisible();
+  });
+
+  test("sur un lien partagé : la même feuille, la bande du chasseur au titre", async ({
+    page,
+  }) => {
+    await page.goto("/today/coupon/cp-today-nul");
+    const sheet = sheetNamed(page, "Chasseur Nul · 2,90 à 3,60");
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByText("Lazio", { exact: true })).toBeVisible();
+    // L'écran Aujourd'hui reste dessous.
+    await expect(
+      page.getByRole("region", { name: "Favori du jour" }),
+    ).toBeAttached();
+  });
+
+  // Le chargement de l'onglet a déjà ouvert le flux : Next garde 200 et
+  // ajoute noindex (docs Next, streaming, « Status codes »).
+  test("un coupon inconnu : page introuvable, non indexée", async ({
+    page,
+  }) => {
+    await page.goto("/today/coupon/nope");
+    await expect(page.getByText("Page introuvable")).toBeVisible();
+    await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute(
+      "content",
+      "noindex",
+    );
+  });
+});

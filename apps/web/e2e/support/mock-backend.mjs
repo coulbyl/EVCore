@@ -457,6 +457,8 @@ function todayCoupon(id, product, legs, odds, chance) {
     referenceOdds: odds,
     paidOdds: null,
     chance,
+    operatorKeep: product === "FAVOURITE" ? 0.06 : 0.09,
+    oddsBand: product === "HUNTER_DRAW" ? { min: 2.9, max: 3.6 } : null,
     followedByMe: false,
     canFollow: true,
     legs,
