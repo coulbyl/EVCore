@@ -42,3 +42,45 @@ export const TODAY_FORM_WINDOW_DAYS = 30;
 // it is running). Two days back covers a late kick-off settled the morning
 // after, with a day of margin for a slow settlement.
 export const TODAY_FOLLOWED_LOOKBACK_DAYS = 2;
+
+// « Matchs » (docs/refonte-ui/06 § 1): a day reaches 224 matches (max over
+// 60 days on the production copy, mean 64), read 60 at a time.
+export const MATCHES_PAGE_SIZE = 60;
+
+// Within one kick-off time, the big competitions first (06 § 1), then the
+// others by name.
+export const MATCHES_LEAGUE_PRIORITY = [
+  'UCL',
+  'PL',
+  'LL',
+  'SA',
+  'BL1',
+  'L1',
+  'UEL',
+  'WC',
+] as const;
+
+// The channels whose picks a player sees as « une lecture ». Left out: the
+// meta channels (no pick of their own), VALUE and SAFE (disconnected from
+// the pipeline on 2026-09-03), VANTAGE (the AI's opinion, shown as ≠), the
+// price composer's legs and the live/market-move channels.
+export const READING_CHANNELS = [
+  'DOMINANT',
+  'BTTS',
+  'DRAW',
+  'GOALS',
+  'CLEAN_SHEET',
+  'TEAM_TOTAL',
+  'WIN_EITHER_HALF',
+  'FIRST_HALF',
+  'DOUBLE_CHANCE',
+  'UNDERDOG',
+  'FAVORITE',
+  'CORRECT_SCORE',
+  'RESULT_TOTAL_GOALS',
+  'OVER_UNDER_HT',
+  'RESULT_BTTS',
+  'DRAW_NO_BET',
+  'WIN_TO_NIL',
+  'HALF_TIME_FULL_TIME',
+] as const;

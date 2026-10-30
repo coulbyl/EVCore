@@ -4,9 +4,9 @@ import type { PricedOutcome } from "./closing-line-value";
 import type { PricedRow } from "./market-probability";
 import { outcomeGroup } from "./outcome-groups";
 
-/** Precision of the solve on z: far below the fourth decimal stored. */
-const SHIN_TOLERANCE = new Decimal("1e-12");
-const SHIN_MAX_ITERATIONS = 200;
+/** Precision of the solve (on Σ p − 1): far below the fourth decimal stored. */
+const SHIN_TOLERANCE = 1e-13;
+const SHIN_MAX_ITERATIONS = 100;
 
 /**
  * Fair probabilities of a complete, exclusive group of outcomes, by Shin's
@@ -35,41 +35,58 @@ export function shinProbabilities(
   const booksum = implied.reduce((acc, p) => acc.plus(p), new Decimal(0));
   if (booksum.lte(1)) return null;
 
-  const probabilitiesAt = (z: Decimal): Decimal[] =>
-    implied.map((p) =>
-      z
-        .pow(2)
-        .plus(
-          new Decimal(4)
-            .times(new Decimal(1).minus(z))
-            .times(p.pow(2))
-            .div(booksum),
-        )
-        .sqrt()
-        .minus(z)
-        .div(new Decimal(2).times(new Decimal(1).minus(z))),
-    );
-  const excess = (z: Decimal): Decimal =>
-    probabilitiesAt(z)
-      .reduce((acc, p) => acc.plus(p), new Decimal(0))
-      .minus(1);
+  // 4 π_i² / B does not depend on z: computed once.
+  const weights = implied.map((p) => p.pow(2).times(4).div(booksum));
+  const z = solveZ(weights.map((w) => w.toNumber()));
+  if (z === null) return null;
 
-  // Σ p_i falls as z grows: √B > 1 at z = 0. Bisection, bounded.
-  let low = new Decimal(0);
-  let high = new Decimal("0.99");
-  if (excess(high).gt(0)) return null;
-  for (let i = 0; i < SHIN_MAX_ITERATIONS; i += 1) {
-    const mid = low.plus(high).div(2);
-    if (excess(mid).gt(0)) low = mid;
-    else high = mid;
-    if (high.minus(low).lt(SHIN_TOLERANCE)) break;
-  }
-  const probabilities = probabilitiesAt(low.plus(high).div(2));
-  // The solve leaves a residue near 1e-12: renormalised, the group sums to 1.
+  // The probabilities themselves in decimal.js, at the z found.
+  const zd = new Decimal(z);
+  const zSquared = zd.pow(2);
+  const rest = new Decimal(1).minus(zd);
+  const probabilities = weights.map((w) =>
+    zSquared.plus(rest.times(w)).sqrt().minus(zd).div(rest.times(2)),
+  );
+  // The solve leaves a residue near 1e-13: renormalised, the group sums to 1.
   const total = probabilities.reduce((acc, p) => acc.plus(p), new Decimal(0));
   return new Map(
     outcomes.map((o, i) => [o.pick, (probabilities[i] as Decimal).div(total)]),
   );
+}
+
+/**
+ * z such that Σ p_i(z) = 1, by regula falsi (Illinois variant). In floating
+ * point on purpose: z is a solver variable, never shown nor stored, and the
+ * decimal.js solve cost 0,4 ms a group, a second on a page of « Matchs »;
+ * the probabilities are then computed and renormalised in decimal.js. Σ p_i
+ * falls as z grows (√B > 1 at z = 0), so [0, 0,99] brackets the root.
+ */
+function solveZ(weights: readonly number[]): number | null {
+  const excess = (z: number): number =>
+    weights.reduce(
+      (acc, w) => acc + (Math.sqrt(z * z + (1 - z) * w) - z) / (2 * (1 - z)),
+      0,
+    ) - 1;
+  let a = 0;
+  let fa = excess(a);
+  let b = 0.99;
+  let fb = excess(b);
+  if (fb > 0) return null;
+  let z = b;
+  for (let i = 0; i < SHIN_MAX_ITERATIONS; i += 1) {
+    z = b - (fb * (b - a)) / (fb - fa);
+    const fz = excess(z);
+    if (Math.abs(fz) < SHIN_TOLERANCE) break;
+    if (fz * fb < 0) {
+      a = b;
+      fa = fb;
+    } else {
+      fa /= 2;
+    }
+    b = z;
+    fb = fz;
+  }
+  return z;
 }
 
 /**

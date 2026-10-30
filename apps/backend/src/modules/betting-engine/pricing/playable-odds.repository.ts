@@ -78,7 +78,14 @@ export class PlayableOddsRepository {
    */
   async findPlayableQuotes(
     keys: readonly PlayableQuoteKey[],
-    opts: { asOf?: Date } = {},
+    opts: {
+      asOf?: Date;
+      /**
+       * Only the players' book: a screen that shows the 1xBet price reads a
+       * tenth of the rows. `lowestOdds` is then the lowest among those books.
+       */
+      operatorOnly?: boolean;
+    } = {},
   ): Promise<Map<string, PlayableQuote>> {
     const lined = keys.filter((key) => key.line != null);
     const result = await this.findLineQuotes(lined, opts);
@@ -95,6 +102,12 @@ export class PlayableOddsRepository {
       ]),
     ];
     const wanted = new Set(keys.map(playableQuoteKey));
+    const wantedGroups = new Set(
+      keys.flatMap((k) => [
+        `${k.fixtureId}|${k.market}`,
+        ...(k.market === 'DOUBLE_CHANCE' ? [`${k.fixtureId}|ONE_X_TWO`] : []),
+      ]),
+    );
 
     const rows = await this.prisma.client.$queryRaw<
       {
@@ -115,6 +128,7 @@ export class PlayableOddsRepository {
         WHERE o."fixtureId" = ANY(ARRAY[${Prisma.join(fixtureIds)}]::uuid[])
           AND o.market::text = ANY(ARRAY[${Prisma.join(markets)}]::text[])
           AND o.line IS NULL
+          ${opts.operatorOnly ? Prisma.sql`AND o.bookmaker = ANY(ARRAY[${Prisma.join(OPERATOR_BOOKMAKERS)}]::text[])` : Prisma.empty}
           AND o."snapshotAt" <= f."scheduledAt"
           ${opts.asOf ? Prisma.sql`AND coalesce(o."observedAt", o."snapshotAt") <= ${opts.asOf}` : Prisma.empty}
         ORDER BY o."fixtureId", o.market, o.pick, o.bookmaker, o."snapshotAt" DESC
@@ -154,10 +168,14 @@ export class PlayableOddsRepository {
         const at = new Date(row.snapshotAt).getTime();
         lastSnapshot.set(key, Math.max(lastSnapshot.get(key) ?? 0, at));
       }
+      // Only the groups a wanted choice belongs to (and the 1X2 a double
+      // chance is read on): pricing every group of the fixtures cost a
+      // second on a page of « Matchs ».
       const current = bookRows.filter(
         (row) =>
+          wantedGroups.has(`${row.fixtureId}|${row.market}`) &&
           new Date(row.snapshotAt).getTime() ===
-          lastSnapshot.get(`${row.fixtureId}|${row.market}`),
+            lastSnapshot.get(`${row.fixtureId}|${row.market}`),
       );
       for (const priced of priceOutcomeGroups(current)) {
         const key = playableQuoteKey(priced);
