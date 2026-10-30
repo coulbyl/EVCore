@@ -425,21 +425,52 @@ describe('NotificationService — ce que chaque rôle voit des diffusions', () =
 });
 
 describe('NotificationService — messages retirés et un seul état « lu »', () => {
-  it("ne compte plus les messages de l'abonnement retiré dans la cloche", async () => {
+  function personalTypesOf(prisma: PrismaService): {
+    in?: NotificationType[];
+    notIn?: NotificationType[];
+  } {
+    const where = (prisma.client.notification.count as ReturnType<typeof vi.fn>)
+      .mock.calls[0]?.[0] as {
+      where: {
+        OR: [
+          unknown,
+          { type: { in?: NotificationType[]; notIn?: NotificationType[] } },
+        ];
+      };
+    };
+    return where.where.OR[1].type;
+  }
+
+  it('la cloche du joueur ne reçoit que ses cinq sortes (09 § 6)', async () => {
     const prisma = makePrisma();
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
     );
     await service.unreadCount('user-1', UserRole.OPERATOR);
-    const where = (prisma.client.notification.count as ReturnType<typeof vi.fn>)
-      .mock.calls[0]?.[0] as {
-      where: { OR: [unknown, { type: { notIn: NotificationType[] } }] };
-    };
-    expect(where.where.OR[1].type.notIn).toEqual([
-      NotificationType.SUBSCRIPTION_EVENTS_ADDED,
-      NotificationType.SUBSCRIPTION_SETTLED,
-    ]);
+    expect(personalTypesOf(prisma)).toEqual({
+      in: [
+        NotificationType.MORNING_BRIEF,
+        NotificationType.WEEKLY_STATEMENT,
+        NotificationType.FOLLOWED_SETTLED,
+        NotificationType.SUPPORT_MESSAGE,
+      ],
+    });
+  });
+
+  it("un administrateur garde ses messages personnels, sauf l'abonnement retiré", async () => {
+    const prisma = makePrisma();
+    const service = new NotificationService(
+      new NotificationRepository(prisma),
+      makeMail(),
+    );
+    await service.unreadCount('admin-1', UserRole.ADMIN);
+    expect(personalTypesOf(prisma)).toEqual({
+      notIn: [
+        NotificationType.SUBSCRIPTION_EVENTS_ADDED,
+        NotificationType.SUBSCRIPTION_SETTLED,
+      ],
+    });
   });
 
   it("lire la notification d'une annonce marque l'annonce lue", async () => {

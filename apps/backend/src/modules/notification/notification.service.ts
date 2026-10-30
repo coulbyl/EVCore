@@ -26,6 +26,19 @@ const OPERATOR_TYPES: NotificationType[] = [
   NotificationType.ANNOUNCEMENT_PUBLISHED,
 ];
 
+// Ce que la cloche d'un joueur reçoit à son nom (refonte 09 § 6, 10 § 3) :
+// la matinée, la semaine, le résultat d'un coupon suivi et une réponse de
+// l'équipe ; l'annonce arrive par OPERATOR_TYPES. Une liste fermée plutôt
+// qu'une liste d'exclusions : un type ajouté plus tard n'apparaît pas chez
+// le joueur sans qu'on l'ait décidé (le résumé des coupons déclarés,
+// SLIPS_SETTLED_DIGEST, y passait encore).
+const PLAYER_PERSONAL_TYPES: NotificationType[] = [
+  NotificationType.MORNING_BRIEF,
+  NotificationType.WEEKLY_STATEMENT,
+  NotificationType.FOLLOWED_SETTLED,
+  NotificationType.SUPPORT_MESSAGE,
+];
+
 // Messages personnels du mécanisme d'abonnements retiré le 2026-09-03
 // (« Abonnement — VALUE (Valeur) », « 1 perdu(s) · -5 000 F »). Les lignes
 // restent en base jusqu'à la purge lancée par l'utilisateur, mais ne
@@ -74,6 +87,12 @@ export class NotificationService {
     return role === UserRole.ADMIN
       ? Object.values(NotificationType)
       : OPERATOR_TYPES;
+  }
+
+  private personalTypes(role: UserRole): Prisma.EnumNotificationTypeFilter {
+    return role === UserRole.ADMIN
+      ? { notIn: RETIRED_PERSONAL_TYPES }
+      : { in: PLAYER_PERSONAL_TYPES };
   }
 
   async sendRoiAlert(
@@ -311,7 +330,7 @@ export class NotificationService {
             },
             {
               userId: query.userId,
-              type: { notIn: RETIRED_PERSONAL_TYPES },
+              type: this.personalTypes(query.role),
               ...(query.unread ? { read: false } : {}),
             },
           ],
@@ -344,7 +363,7 @@ export class NotificationService {
     const count = await this.repository.count({
       OR: [
         { userId: null, type: { in: types }, reads: { none: { userId } } },
-        { userId, read: false, type: { notIn: RETIRED_PERSONAL_TYPES } },
+        { userId, read: false, type: this.personalTypes(role) },
       ],
     });
     return { count };
