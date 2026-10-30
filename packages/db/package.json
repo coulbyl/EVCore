@@ -24,6 +24,7 @@
     "db:reset": "prisma migrate reset",
     "db:studio": "prisma studio",
     "db:stats": "tsx scripts/db-stats.ts",
+    "db:backfill:odds-latest": "tsx scripts/backfill-odds-latest.ts",
     "db:purge:analysis": "tsx scripts/purge-analysis-data.ts",
     "db:cleanup:legacy-ml-models": "tsx scripts/cleanup-legacy-ml-models.ts",
     "db:scheduled": "tsx scripts/scheduled-fixtures-report.ts",

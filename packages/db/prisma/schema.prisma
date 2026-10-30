@@ -407,6 +407,7 @@ model Fixture {
   teamStats              TeamStats[]
   fixtureStatistics      FixtureStatistic[]
   oddsSnapshots          OddsSnapshot[]
+  oddsLatest             OddsLatest[]
   couponLegs             CouponProposalLeg[]
   vantageDecisionHistory VantageDecisionHistory[]
   createdAt              DateTime                 @default(now())
@@ -1470,5 +1471,32 @@ model VerifiedTicket {
 
   @@index([day])
   @@map("verified_ticket")
+  @@schema("public")
+}
+
+// Le dernier prix d'avant coup d'envoi de chaque choix chez chaque book,
+// tenu par le déclencheur `odds_snapshot_latest` sur `odds_snapshot`
+// (migration 20261031130000) : les écrans le lisent sans parcourir
+// l'historique. Un match sans ligne ici est lu dans l'historique.
+// La contrainte réelle est UNIQUE NULLS NOT DISTINCT (écrite à la main),
+// comme celle de `odds_snapshot` : ne pas la laisser régénérer.
+model OddsLatest {
+  fixtureId  String    @db.Uuid
+  fixture    Fixture   @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  bookmaker  String
+  market     Market
+  pick       String?
+  line       Decimal?  @db.Decimal(5, 2)
+  homeOdds   Decimal?  @db.Decimal(6, 3)
+  drawOdds   Decimal?  @db.Decimal(6, 3)
+  awayOdds   Decimal?  @db.Decimal(6, 3)
+  odds       Decimal?  @db.Decimal(9, 3)
+  snapshotAt DateTime
+  observedAt DateTime?
+  // Le relevé d'`odds_snapshot` d'où vient le prix (départage à heure égale).
+  snapshotId String    @unique @db.Uuid
+
+  @@unique([fixtureId, bookmaker, market, pick, line])
+  @@map("odds_latest")
   @@schema("public")
 }

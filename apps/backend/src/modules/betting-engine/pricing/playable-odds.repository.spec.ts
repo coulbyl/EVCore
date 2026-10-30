@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { Prisma } from '@evcore/db';
 import type { PrismaService } from '@/prisma.service';
 import { PlayableOddsRepository } from './playable-odds.repository';
 
@@ -240,5 +241,37 @@ describe('PlayableOddsRepository.findPlayableQuotes', () => {
     ).toBeNull();
     // Une clé sans ligne garde sa forme.
     expect(quotes.has('f1|CORNERS|OVER')).toBe(false);
+  });
+});
+
+describe('PlayableOddsRepository — where the prices are read', () => {
+  function sqlOf(asOf?: Date): Promise<string> {
+    const query = vi.fn().mockResolvedValue([]);
+    const repository = new PlayableOddsRepository({
+      client: { $queryRaw: query },
+    } as unknown as PrismaService);
+    return repository
+      .findPlayableQuotes([{ fixtureId: 'f1', market: 'BTTS', pick: 'YES' }], {
+        asOf,
+      })
+      .then(() => {
+        const [strings, ...values] = query.mock.calls[0] as [
+          TemplateStringsArray,
+          ...unknown[],
+        ];
+        return Prisma.sql(strings, ...values).text;
+      });
+  }
+
+  it('reads the latest prices, the history only for a match without any', async () => {
+    const sql = await sqlOf();
+    expect(sql).toContain('public.odds_latest');
+    expect(sql).toMatch(/NOT EXISTS[\s\S]*odds_latest[\s\S]*odds_snapshot/);
+  });
+
+  it('reads the history alone for a price known at a past instant', async () => {
+    const sql = await sqlOf(new Date('2026-10-29T12:00:00Z'));
+    expect(sql).not.toContain('odds_latest');
+    expect(sql).toContain('public.odds_snapshot');
   });
 });

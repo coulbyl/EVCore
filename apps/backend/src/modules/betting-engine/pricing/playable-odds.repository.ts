@@ -61,6 +61,60 @@ type QuoteRow = {
 };
 
 /**
+ * The CTE `latest`: each book's last price before kick-off on each pick of
+ * these markets (line-less), one row per fixture, market, pick and book.
+ * Read in `odds_latest` (kept by a trigger on `odds_snapshot`, B17c); a
+ * fixture without any row there is read in the history, as is everything
+ * when `asOf` asks for the price known at a past instant.
+ */
+function latestPrices(input: {
+  fixtureIds: readonly string[];
+  markets: readonly string[];
+  bookmakers: readonly string[] | null;
+  asOf: Date | null;
+}): Prisma.Sql {
+  const books = (alias: string) =>
+    input.bookmakers
+      ? Prisma.sql`AND ${Prisma.raw(alias)}.bookmaker = ANY(ARRAY[${Prisma.join(input.bookmakers)}]::text[])`
+      : Prisma.empty;
+  const fromHistory = (fixtures: Prisma.Sql) => Prisma.sql`
+    SELECT DISTINCT ON (o."fixtureId", o.market, o.pick, o.bookmaker)
+           o."fixtureId", o.market, o.pick, o.bookmaker, o.odds,
+           o."homeOdds", o."drawOdds", o."awayOdds", o."snapshotAt"
+    FROM public.odds_snapshot o
+    JOIN public.fixture f ON f.id = o."fixtureId"
+    WHERE o."fixtureId" IN (${fixtures})
+      AND o.market::text = ANY(ARRAY[${Prisma.join(input.markets)}]::text[])
+      AND o.line IS NULL
+      ${books('o')}
+      AND o."snapshotAt" <= f."scheduledAt"
+      ${input.asOf ? Prisma.sql`AND coalesce(o."observedAt", o."snapshotAt") <= ${input.asOf}` : Prisma.empty}
+    ORDER BY o."fixtureId", o.market, o.pick, o.bookmaker, o."snapshotAt" DESC
+  `;
+  const wanted = Prisma.sql`SELECT unnest(ARRAY[${Prisma.join(input.fixtureIds)}]::uuid[])`;
+  if (input.asOf) return Prisma.sql`latest AS (${fromHistory(wanted)})`;
+  return Prisma.sql`
+    missing AS (
+      SELECT w.id FROM (${wanted}) AS w(id)
+      WHERE NOT EXISTS (
+        SELECT 1 FROM public.odds_latest x WHERE x."fixtureId" = w.id
+      )
+    ),
+    latest AS (
+      SELECT l."fixtureId", l.market, l.pick, l.bookmaker, l.odds,
+             l."homeOdds", l."drawOdds", l."awayOdds", l."snapshotAt"
+      FROM public.odds_latest l
+      WHERE l."fixtureId" = ANY(ARRAY[${Prisma.join(input.fixtureIds)}]::uuid[])
+        AND l.market::text = ANY(ARRAY[${Prisma.join(input.markets)}]::text[])
+        AND l.line IS NULL
+        ${books('l')}
+      UNION ALL
+      (${fromHistory(Prisma.sql`SELECT id FROM missing`)})
+    )
+  `;
+}
+
+/**
  * Dernier prix d'avant coup d'envoi de chaque book sur chaque choix demandé,
  * réduit à deux chiffres : le prix chez le book de l'utilisateur et le prix
  * le plus bas du relevé. Lignes nulles seulement (le pick porte sa ligne
@@ -119,20 +173,12 @@ export class PlayableOddsRepository {
         snapshotAt: Date;
       }[]
     >`
-      WITH latest AS (
-        SELECT DISTINCT ON (o."fixtureId", o.market, o.pick, o.bookmaker)
-               o."fixtureId", o.market, o.pick, o.bookmaker, o.odds,
-               o."homeOdds", o."drawOdds", o."awayOdds", o."snapshotAt"
-        FROM public.odds_snapshot o
-        JOIN public.fixture f ON f.id = o."fixtureId"
-        WHERE o."fixtureId" = ANY(ARRAY[${Prisma.join(fixtureIds)}]::uuid[])
-          AND o.market::text = ANY(ARRAY[${Prisma.join(markets)}]::text[])
-          AND o.line IS NULL
-          ${opts.operatorOnly ? Prisma.sql`AND o.bookmaker = ANY(ARRAY[${Prisma.join(OPERATOR_BOOKMAKERS)}]::text[])` : Prisma.empty}
-          AND o."snapshotAt" <= f."scheduledAt"
-          ${opts.asOf ? Prisma.sql`AND coalesce(o."observedAt", o."snapshotAt") <= ${opts.asOf}` : Prisma.empty}
-        ORDER BY o."fixtureId", o.market, o.pick, o.bookmaker, o."snapshotAt" DESC
-      )
+      WITH ${latestPrices({
+        fixtureIds,
+        markets,
+        bookmakers: opts.operatorOnly ? OPERATOR_BOOKMAKERS : null,
+        asOf: opts.asOf ?? null,
+      })}
       SELECT latest."fixtureId"::text AS "fixtureId",
              latest.market::text      AS market,
              latest.pick,
