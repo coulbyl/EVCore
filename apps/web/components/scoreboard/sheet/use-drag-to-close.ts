@@ -2,10 +2,7 @@
 
 import { useCallback, useRef, type RefObject } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
-import {
-  DRAG_CLOSE_DISTANCE_PX,
-  DRAG_CLOSE_VELOCITY_PX_PER_MS,
-} from "./sheet-constants";
+import { isCloseGesture } from "./sheet-constants";
 
 type DragHandlers = {
   onPointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
@@ -79,11 +76,11 @@ export function useDragToClose({
   const onPointerUp = useCallback(
     (event: ReactPointerEvent<HTMLElement>) => {
       if (!start.current) return;
-      const elapsed = Math.max(1, event.timeStamp - start.current.time);
-      const velocity = offset.current / elapsed;
       settle(
-        offset.current > DRAG_CLOSE_DISTANCE_PX ||
-          velocity > DRAG_CLOSE_VELOCITY_PX_PER_MS,
+        isCloseGesture({
+          offsetPx: offset.current,
+          elapsedMs: event.timeStamp - start.current.time,
+        }),
       );
     },
     [settle],

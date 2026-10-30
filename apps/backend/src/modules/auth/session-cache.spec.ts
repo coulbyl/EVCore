@@ -95,6 +95,59 @@ describe('SessionCache', () => {
     expect(cache.get('h1', NOW)).toBeNull();
   });
 
+  it('keeps a read when only another user or token was invalidated', () => {
+    const cache = new SessionCache();
+    const ticket = cache.ticket();
+    cache.invalidateUser('u2');
+    cache.invalidateToken('other-token');
+    cache.set(
+      {
+        tokenHash: 'h1',
+        session: sessionOf('u1'),
+        sessionExpiresAt: LATER,
+        ticket,
+      },
+      NOW,
+    );
+    expect(cache.get('h1', NOW)).not.toBeNull();
+  });
+
+  it('refuses a read whose own token was logged out meanwhile', () => {
+    const cache = new SessionCache();
+    const ticket = cache.ticket();
+    cache.invalidateToken('h1');
+    cache.set(
+      {
+        tokenHash: 'h1',
+        session: sessionOf('u1'),
+        sessionExpiresAt: LATER,
+        ticket,
+      },
+      NOW,
+    );
+    expect(cache.get('h1', NOW)).toBeNull();
+  });
+
+  it('refuses reads in flight when its invalidation marks are pruned', () => {
+    const cache = new SessionCache();
+    const ticket = cache.ticket();
+    for (let i = 0; i <= SESSION_CACHE_MAX_ENTRIES; i += 1) {
+      cache.invalidateUser(`other-${i}`);
+    }
+    cache.set(
+      {
+        tokenHash: 'h1',
+        session: sessionOf('u1'),
+        sessionExpiresAt: LATER,
+        ticket,
+      },
+      NOW,
+    );
+    expect(cache.get('h1', NOW)).toBeNull();
+    store(cache, { tokenHash: 'h2', userId: 'u1' });
+    expect(cache.get('h2', NOW)).not.toBeNull();
+  });
+
   it('hands out copies: a caller cannot change the cached session', () => {
     const cache = new SessionCache();
     store(cache, { tokenHash: 'h1', userId: 'u1' });

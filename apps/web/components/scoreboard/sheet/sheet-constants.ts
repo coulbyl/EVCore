@@ -7,8 +7,27 @@ export const WIDE_SCREEN_QUERY = "(min-width: 1024px)";
 
 /** Glisser la feuille de plus de 96 px vers le bas la referme… */
 export const DRAG_CLOSE_DISTANCE_PX = 96;
-/** …ou d'un geste rapide, au-delà de 0,5 px par milliseconde. */
+/** …ou d'un geste rapide, au-delà de 0,5 px par milliseconde… */
 export const DRAG_CLOSE_VELOCITY_PX_PER_MS = 0.5;
+/**
+ * …à condition d'avoir glissé d'au moins 24 px : un doigt posé puis levé
+ * bouge de quelques pixels en quelques millisecondes, assez vite pour
+ * passer le seuil de vitesse.
+ */
+export const DRAG_FLICK_MIN_PX = 24;
+
+/** Le geste relâché referme-t-il la feuille ? (distance, ou geste rapide) */
+export function isCloseGesture(gesture: {
+  offsetPx: number;
+  elapsedMs: number;
+}): boolean {
+  if (gesture.offsetPx > DRAG_CLOSE_DISTANCE_PX) return true;
+  const velocity = gesture.offsetPx / Math.max(1, gesture.elapsedMs);
+  return (
+    gesture.offsetPx >= DRAG_FLICK_MIN_PX &&
+    velocity > DRAG_CLOSE_VELOCITY_PX_PER_MS
+  );
+}
 
 /** Les éléments que le clavier peut atteindre, pour garder le focus dedans. */
 export const FOCUSABLE_SELECTOR = [

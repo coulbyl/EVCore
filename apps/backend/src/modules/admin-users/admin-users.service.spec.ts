@@ -68,6 +68,17 @@ describe('AdminUsersService', () => {
     expect(repository.deleteSessions).toHaveBeenCalledWith('user-2');
   });
 
+  it('a failed session revocation still drops the cached session', async () => {
+    const { service, repository, sessionCache } = makeHarness();
+    vi.mocked(repository.deleteSessions).mockRejectedValueOnce(
+      new Error('pool timeout'),
+    );
+    await expect(
+      service.updateUser('user-2', { suspended: true }, 'admin-1'),
+    ).rejects.toThrow('pool timeout');
+    expect(sessionCache.invalidateUser).toHaveBeenCalledWith('user-2');
+  });
+
   it('a role change keeps the sessions', async () => {
     const { service, repository, sessionCache } = makeHarness();
     await service.updateUser('user-2', { role: 'ADMIN' }, 'admin-1');

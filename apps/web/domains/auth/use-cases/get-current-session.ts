@@ -1,21 +1,14 @@
-import { cache } from "react";
 import type { AuthSession } from "../types/auth";
-import { serverApiRequest } from "@/lib/api/server-api";
-
-async function readCurrentSession(): Promise<AuthSession | null> {
-  try {
-    const payload = await serverApiRequest<{ session: AuthSession }>(
-      "/auth/me",
-    );
-    return payload.session;
-  } catch {
-    return null;
-  }
-}
+import { getPlayerSession } from "./get-player-session";
 
 /**
- * The session of the dashboard, read once per request: the layout, the
- * admin-only layouts and the pages share the same answer (budget: one
- * session read per request, docs/refonte-ui/16-performance-et-qualite.md).
+ * The session or nothing, for pages that only need to know whether someone
+ * is signed in (dashboard, auth pages). Same single read per request as the
+ * player tabs (budget: one session read per request,
+ * docs/refonte-ui/16-performance-et-qualite.md): an outage reads as no
+ * session here, where the player layout shows maintenance instead.
  */
-export const getCurrentSession = cache(readCurrentSession);
+export async function getCurrentSession(): Promise<AuthSession | null> {
+  const result = await getPlayerSession();
+  return result.status === "signed-in" ? result.session : null;
+}

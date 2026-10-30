@@ -9,8 +9,9 @@ import type { AuthSession } from "../types/auth";
  * - `signed-in` : la session.
  * - `signed-out` : le serveur répond qu'il n'y a pas de session (401, 403) ;
  *   on renvoie vers la connexion.
- * - `unavailable` : le serveur ne répond pas (réseau, 5xx). Ce n'est pas une
- *   session expirée : on montre la maintenance, pas l'écran de connexion.
+ * - `unavailable` : le serveur ne répond pas ou pas sur la session (réseau,
+ *   5xx, 429). Ce n'est pas une session expirée : on montre la maintenance,
+ *   pas l'écran de connexion.
  */
 export type PlayerSessionResult =
   | { status: "signed-in"; session: AuthSession }
@@ -24,10 +25,12 @@ async function readPlayerSession(): Promise<PlayerSessionResult> {
     );
     return { status: "signed-in", session: payload.session };
   } catch (error) {
+    // 401 et 403 seulement : un 429 (limite de débit) ou un 404 ne dit rien
+    // de la session, et renvoyer le joueur à la connexion lui ferait croire
+    // qu'il a été déconnecté.
     if (
       error instanceof ApiError &&
-      error.status >= 400 &&
-      error.status < 500
+      (error.status === 401 || error.status === 403)
     ) {
       return { status: "signed-out" };
     }

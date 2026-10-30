@@ -207,14 +207,14 @@ export class AuthService {
   applySessionCookie(response: Response, token: string): void {
     response.setHeader(
       'Set-Cookie',
-      buildSessionCookie(token, process.env.NODE_ENV === 'production'),
+      buildSessionCookie(token, this.isProduction()),
     );
   }
 
   clearSessionCookie(response: Response): void {
     response.setHeader(
       'Set-Cookie',
-      buildExpiredSessionCookie(process.env.NODE_ENV === 'production'),
+      buildExpiredSessionCookie(this.isProduction()),
     );
   }
 
@@ -511,6 +511,10 @@ export class AuthService {
     const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
     const resetUrl = `${appUrl}/auth/reset-password?token=${token}`;
     return { token, resetUrl };
+  }
+
+  private isProduction(): boolean {
+    return this.config.get<string>('NODE_ENV') === 'production';
   }
 
   private extractSessionToken(request: AuthenticatedRequest): string | null {

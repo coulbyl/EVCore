@@ -75,23 +75,26 @@ export class AdminUsersService {
       throw new NotFoundException('User not found');
     }
 
-    const updated = await this.repository.update(id, {
-      role: dto.role,
-      emailVerified: dto.emailVerified,
-      ...(dto.suspended !== undefined && {
-        suspended: dto.suspended,
-        suspendedAt: dto.suspended ? new Date() : null,
-      }),
-    });
+    try {
+      const updated = await this.repository.update(id, {
+        role: dto.role,
+        emailVerified: dto.emailVerified,
+        ...(dto.suspended !== undefined && {
+          suspended: dto.suspended,
+          suspendedAt: dto.suspended ? new Date() : null,
+        }),
+      });
 
-    if (dto.suspended) {
-      // Kick the user out immediately instead of waiting for their session to expire.
-      await this.repository.deleteSessions(id);
+      if (dto.suspended) {
+        // Kick the user out immediately instead of waiting for their session to expire.
+        await this.repository.deleteSessions(id);
+      }
+      return this.toRow(updated);
+    } finally {
+      // Rôle, suspension, vérification : la session porte ces champs. Même si
+      // la révocation des sessions échoue, la suspension est déjà écrite.
+      this.sessionCache.invalidateUser(id);
     }
-    // Rôle, suspension, vérification : la session porte ces champs.
-    this.sessionCache.invalidateUser(id);
-
-    return this.toRow(updated);
   }
 
   async deleteUser(id: string, currentUserId: string): Promise<void> {

@@ -51,6 +51,12 @@ export function useModalSheet({
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        // Déjà traité (un menu, une notification), ou, sur écran large où la
+        // feuille n'est qu'une colonne, appuyé ailleurs que dans la feuille :
+        // ce n'est pas pour elle.
+        if (event.defaultPrevented) return;
+        const panel = panelRef.current;
+        if (!modal && !panel?.contains(document.activeElement)) return;
         event.preventDefault();
         onClose();
         return;

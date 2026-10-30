@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { InAppHistoryTracker } from "@/components/scoreboard/sheet/in-app-history";
 import { BandActions } from "@/components/scoreboard/shell/band-actions";
 import { ScoreboardShell } from "@/components/scoreboard/shell/scoreboard-shell";
 import { TimeZoneSync } from "@/components/scoreboard/shell/time-zone-sync";
@@ -60,6 +61,7 @@ export default async function PlayerLayout({
       }
     >
       <TimeZoneSync cookieName={TIME_ZONE_COOKIE} serverTimeZone={timeZone} />
+      <InAppHistoryTracker />
       {children}
     </ScoreboardShell>
   );

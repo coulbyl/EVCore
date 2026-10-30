@@ -760,7 +760,7 @@ importers:
         version: 1.2.1
       eslint-plugin-prettier:
         specifier: 'catalog:'
-        version: 5.5.7(@types/eslint@9.6.1)(eslint-config-prettier@10.1.8(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0))(prettier@3.9.10)
+        version: 5.5.7(@types/eslint@9.6.1)(eslint-config-prettier@10.1.8(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0))(prettier@3.8.1)
       eslint-plugin-react:
         specifier: 'catalog:'
         version: 7.37.5(eslint@9.39.5(jiti@2.7.0))
@@ -773,6 +773,9 @@ importers:
       globals:
         specifier: 'catalog:'
         version: 16.5.0
+      prettier:
+        specifier: 'catalog:'
+        version: 3.8.1
       typescript:
         specifier: 'catalog:'
         version: 6.0.2
@@ -14950,16 +14953,6 @@ snapshots:
     dependencies:
       eslint: 9.39.5(jiti@2.7.0)
       prettier: 3.8.1
-      prettier-linter-helpers: 1.0.1
-      synckit: 0.12.3
-    optionalDependencies:
-      '@types/eslint': 9.6.1
-      eslint-config-prettier: 10.1.8(eslint@9.39.5(jiti@2.7.0))
-
-  eslint-plugin-prettier@5.5.7(@types/eslint@9.6.1)(eslint-config-prettier@10.1.8(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0))(prettier@3.9.10):
-    dependencies:
-      eslint: 9.39.5(jiti@2.7.0)
-      prettier: 3.9.10
       prettier-linter-helpers: 1.0.1
       synckit: 0.12.3
     optionalDependencies:

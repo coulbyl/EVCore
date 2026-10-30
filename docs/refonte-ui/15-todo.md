@@ -29,11 +29,17 @@ _Branche `feat/refonte-ui`. Cocher au fur et à mesure ; chaque ligne est un com
 
   _LCP à chaud et CLS tiennent ; LCP à froid, TBT et JS dépassent sur les cinq écrans. Le job est donc rouge jusqu'à C0 (le JS vient de la racine, voir la ligne C0) et aux écrans de la phase B/C ; il reste bloquant, sans seuil assoupli. Mesures locales sous WSL : les chiffres des runners GitHub peuvent s'en écarter de quelques dizaines de ms._
 
-- [ ] A13 Revue de phase A : `/code-review medium`, budgets mesurés, bilan écrit ici.
+- [x] A13 Revue de phase A : `/code-review medium`, budgets mesurés, bilan écrit ici. _Fait le 30/10 en `high` plutôt que `medium` (la phase touche l'authentification, 16 § 4), sur les 24 commits de la branche hors lockfile et docs. Neuf constats, tous corrigés dans `fix: phase A review findings` :_
+  - _Session : un 429 (limite de débit) ou tout autre 4xx renvoyait le joueur à la connexion ; seuls 401 et 403 le font désormais, le reste montre la maintenance. `getCurrentSession` dérive maintenant de `getPlayerSession`, une seule lecture et une seule règle pour une panne._
+  - _Cache de session : invalidations suivies par utilisateur et par jeton (l'écriture d'un joueur ne fait plus perdre leur mise en cache aux lectures des autres) ; suspension par l'admin : le cache est vidé même si la révocation des sessions échoue ; deux requêtes d'un compte suspendu ne finissent plus en 500 (suppression idempotente) ; `NODE_ENV` lu par `ConfigService`._
+  - _Feuille : la refermer revenait en arrière même quand la page précédente était un autre site (`history.length`) — elle compte maintenant les navigations faites dans l'application ; un toucher qui bouge de 3 px en 4 ms la refermait (24 px minimum pour un geste rapide, règle testée en unitaire) ; sur écran large, Échap appuyé hors de la colonne la refermait._
+  - _Lockfile : l'ajout de Lighthouse en A12 avait fait résoudre prettier 3.9 pour `@evcore/eslint-config` (pair non déclaré), ce qui cassait le lint backend ; prettier y est déclaré, sur le catalogue (3.8.1)._
+
+  _Reste à traiter, noté pour B0 : tout le rendu serveur appelle l'API depuis l'adresse du conteneur web, donc sous la même limite globale (300 requêtes par minute) pour tous les joueurs. Avec un point d'entrée par écran rendu côté serveur, il faut transmettre l'adresse du joueur ou exempter les appels internes. Budgets : voir A12, le job reste rouge jusqu'à C0. Vérifié : tests backend 1 012, web unitaires 22, Playwright 289 réussis (18 ignorés), feuille 6/6 dans le navigateur, mutations attrapées pour le geste, Échap et la révocation._
 
 ## Phase B — Le serveur du joueur
 
-- [ ] B0 `feat(backend): screens module and GET /today aggregate endpoint` — un point d'entrée par écran, DTO plat, `select` explicite, ≤ 5 requêtes SQL, `EXPLAIN` dans le commit (16 § 3).
+- [ ] B0 `feat(backend): screens module and GET /today aggregate endpoint` — un point d'entrée par écran, DTO plat, `select` explicite, ≤ 5 requêtes SQL, `EXPLAIN` dans le commit (16 § 3). Avant de servir les écrans en rendu serveur : la limite de débit globale doit compter par joueur, pas par conteneur web (A13).
 - [ ] B1 `feat(backend): store a fact per coupon leg at generation` — colonne `coupon_proposal_leg.fact`, calcul déterministe par type de pari, 60 caractères, vide si rien de solide (04 § 1).
 - [ ] B2 `feat(backend): hero relay and dated abstentions` — le serveur désigne le héros du jour (Favori → Combiné → Cote 2 → premier chasseur), conserve les abstentions par date avec leur raison (04 § 5, 08 § 6).
 - [ ] B3 `feat(backend): refuse follow after first kickoff; followed-coupons summary` — `POST /coupons/:id/follow` refuse après le premier coup d'envoi ; `GET /coupons/followed/summary` (gagnés, perdus, remboursés, depuis) (04 § 3, 09 § 1).

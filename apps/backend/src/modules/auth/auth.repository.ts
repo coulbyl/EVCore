@@ -148,8 +148,9 @@ export class AuthRepository {
     await this.prisma.client.session.deleteMany({ where: { tokenHash } });
   }
 
+  /** Idempotent: parallel requests of a suspended user all land here. */
   async deleteSession(sessionId: string): Promise<void> {
-    await this.prisma.client.session.delete({ where: { id: sessionId } });
+    await this.prisma.client.session.deleteMany({ where: { id: sessionId } });
   }
 
   // --- Email verification --------------------------------------------------
