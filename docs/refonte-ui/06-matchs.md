@@ -127,3 +127,14 @@ Toutes les chances de la fiche viennent de la **même source** que les coupons. 
 1. **Le ≠ quitte la liste.** Un autre pari de l'IA est un choix, pas une contradiction : « l'équipe marque » et « victoire de l'équipe » passent ensemble. Et même un vrai désaccord (les deux paris ne peuvent pas gagner ensemble) n'a jamais été mesuré comme prédictif : VANTAGE v4 est calibrée mais ne bat pas la cote, le moteur non plus. Deux avis qui ne battent pas le marché ne deviennent pas utiles en se contredisant ; le signe ajoutait du doute sans information (29 lectures sur 47 le 30/10, le plus souvent pour un simple autre marché).
 2. **L'avis IA vit dans la fiche**, comme un pari de plus avec sa cote et sa chance, sans cadre d'accord.
 3. **À mesurer plus tard**, quand VANTAGE v5 aura assez tourné (cohorte à relire vers le 10/11, voir le bilan du lot 5) : sur les lectures réglées, notre lecture gagne-t-elle moins souvent quand l'IA a joué un pari **incompatible** (aucun score ne fait gagner les deux) ? Si oui, nettement et sur un volume suffisant, le signal a sa place, peut-être dans le moteur plutôt qu'à l'écran. Sinon, rien ne change.
+
+## 8. Question ouverte : quel pari montrer comme lecture
+
+La règle du § 2 choisit, parmi les paris retenus par le moteur, celui qui a **la meilleure chance**. Mesuré sur le point d'entrée le 30/10 (copie de prod), elle tombe souvent sur des paris très probables mais peu parlants : « Gremio marque au moins un but · 8 sur 10 » à 1,28, « moins de 4,5 buts » à 1,20. On attendait plutôt « Victoire Arsenal · 7 sur 10 ».
+
+Deux voies, à trancher avant l'écran (C4) :
+
+1. **Garder la meilleure chance** : la règle la plus simple et la plus honnête, mais des lectures banales.
+2. **Préférer des marchés parlants** (victoire, double chance, plus/moins 2,5 buts) quand leur chance est proche de la meilleure (par exemple à 5 points près), sinon garder la meilleure chance.
+
+Rien n'est changé en attendant : `MatchesService` applique la voie 1.

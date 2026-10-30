@@ -142,4 +142,6 @@ _Branche `feat/refonte-ui`. Cocher au fur et à mesure ; chaque ligne est un com
 
 ## À relire plus tard (hors lots)
 
+- [ ] Quel pari montrer comme lecture d'un match : la meilleure chance (règle actuelle, lectures souvent banales comme « l'équipe marque au moins un but ») ou un marché parlant quand sa chance est proche ? À trancher avant C4 (06 § 8).
+
 - [ ] Le désaccord de l'IA est-il prédictif ? À mesurer quand VANTAGE v5 aura assez tourné (cohorte vers le 10/11) : sur les lectures réglées, taux de réussite quand l'IA a joué un pari incompatible avec le nôtre contre les autres. Le signe ≠ a été retiré le 30/10 en attendant (06 § 7).
