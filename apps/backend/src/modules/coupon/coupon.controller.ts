@@ -4,6 +4,7 @@ import {
   Get,
   Post,
   Param,
+  ParseUUIDPipe,
   Query,
   HttpCode,
   UseGuards,
@@ -111,10 +112,13 @@ export class CouponController {
   @Post(':id/follow')
   @UseGuards(AuthSessionGuard, PausedGuard)
   @HttpCode(204)
-  @ApiOperation({ summary: 'Follow a coupon without staking (idempotent)' })
+  @ApiOperation({
+    summary: 'Follow a coupon without staking (idempotent)',
+    description: 'Refused (409) once the first match has kicked off.',
+  })
   async follow(
     @CurrentSession() session: AuthSession,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
     await this.coupon.follow(id, session.user.id);
   }
@@ -122,12 +126,35 @@ export class CouponController {
   @Delete(':id/follow')
   @UseGuards(AuthSessionGuard)
   @HttpCode(204)
-  @ApiOperation({ summary: 'Stop following a coupon (idempotent)' })
+  @ApiOperation({
+    summary: 'Stop following a coupon (idempotent)',
+    description:
+      'Refused (409) once the first match has kicked off: a losing coupon cannot be dropped from the record.',
+  })
   async unfollow(
     @CurrentSession() session: AuthSession,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
     await this.coupon.unfollow(id, session.user.id);
+  }
+
+  // Ni pause ni suggestion : le bilan reste lisible pendant une pause,
+  // comme tout l'onglet Moi (09 § 1).
+  @Get('followed/summary')
+  @UseGuards(AuthSessionGuard)
+  @ApiOperation({
+    summary: "The player's record on followed coupons",
+    description:
+      'Won (partial gains included), lost, refunded, and the date of the first follow. Unsettled coupons count nowhere.',
+  })
+  @ApiOkResponse({ description: 'The record.' })
+  getFollowedSummary(@CurrentSession() session: AuthSession): Promise<{
+    won: number;
+    lost: number;
+    refunded: number;
+    since: string | null;
+  }> {
+    return this.coupon.getFollowedSummary(session.user.id);
   }
 
   // POST /coupons/generate retired 2026-09-03 alongside CouponComposerService

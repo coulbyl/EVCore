@@ -81,7 +81,12 @@ function couponLeg(overrides) {
     competition: "PL",
     competitionName: "Premier League",
     country: "England",
-    scheduledAt: "2026-10-05T19:00:00.000Z",
+    // Une jambe pas encore réglée se joue plus tard dans la journée : on ne
+    // suit pas un coupon commencé (2026-10-30), le bouton suit l'horloge.
+    scheduledAt:
+      overrides.settledAt || overrides.isCorrect != null
+        ? "2026-10-05T19:00:00.000Z"
+        : todayAt(4),
     score: overrides.score ?? null,
     htScore: null,
     canal: overrides.canal ?? "DOMINANT",

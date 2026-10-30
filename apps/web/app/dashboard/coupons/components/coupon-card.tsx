@@ -134,6 +134,12 @@ export function CouponCard({
   // (started/finished), same signal the settlement worker already uses to
   // stop touching a proposal (persist-coupon-proposal.ts).
   const isPending = coupon.status === "PENDING";
+  // Le serveur refuse de suivre (ou de cesser de suivre) un coupon dont le
+  // premier match a commencé (2026-10-30) : le bouton disparaît avant.
+  const [openedAt] = useState(() => Date.now());
+  const canFollow =
+    isPending &&
+    coupon.legs.every((leg) => new Date(leg.scheduledAt).getTime() > openedAt);
 
   // Legs without a resolvable modelRunId (should be rare — see
   // CouponLegDto.modelRunId's own doc comment) simply can't be added; the
@@ -237,7 +243,7 @@ export function CouponCard({
           // saisie de coupon reste, en second (2026-10-28).
           isPending || coupon.playedByMe ? (
             <div className="flex flex-col gap-2">
-              {isPending ? (
+              {canFollow ? (
                 <CouponFollowButton
                   followed={coupon.followedByMe}
                   pending={follow.isPending}

@@ -1,3 +1,4 @@
+import { ConflictException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import { CouponService } from './coupon.service';
 import type { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
@@ -142,13 +143,25 @@ describe('CouponService.getTrackRecord', () => {
 });
 
 describe('CouponService.follow', () => {
-  function followHarness(exists: boolean) {
+  const NOW = new Date('2026-10-30T15:00:00.000Z');
+
+  function followHarness(firstKickoffAt: Date | null | undefined) {
     const repo = {
-      exists: vi.fn().mockResolvedValue(exists),
+      findFirstKickoff: vi
+        .fn()
+        .mockResolvedValue(
+          firstKickoffAt === undefined ? null : { firstKickoffAt },
+        ),
     } as unknown as CouponRepository;
     const follows = {
       follow: vi.fn().mockResolvedValue(undefined),
       unfollow: vi.fn().mockResolvedValue(undefined),
+      summaryFor: vi.fn().mockResolvedValue({
+        won: 7,
+        lost: 4,
+        refunded: 1,
+        since: new Date('2026-10-13T08:30:00.000Z'),
+      }),
     } as unknown as CouponFollowRepository;
     return {
       service: new CouponService(repo, {} as PlayableOddsRepository, follows),
@@ -156,18 +169,52 @@ describe('CouponService.follow', () => {
     };
   }
 
-  it('follows an existing coupon', async () => {
-    const { service, follows } = followHarness(true);
-    await service.follow('coupon-1', 'u1');
+  it('follows and unfollows a coupon before its first kick-off', async () => {
+    const { service, follows } = followHarness(
+      new Date('2026-10-30T19:00:00.000Z'),
+    );
+    await service.follow('coupon-1', 'u1', NOW);
+    await service.unfollow('coupon-1', 'u1', NOW);
     expect(follows.follow).toHaveBeenCalledWith('coupon-1', 'u1');
+    expect(follows.unfollow).toHaveBeenCalledWith('coupon-1', 'u1');
+  });
+
+  it('refuses both once the first match has kicked off', async () => {
+    const { service, follows } = followHarness(NOW);
+    await expect(service.follow('coupon-1', 'u1', NOW)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    // A losing coupon cannot be dropped from the record either.
+    await expect(
+      service.unfollow('coupon-1', 'u1', NOW),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(follows.follow).not.toHaveBeenCalled();
+    expect(follows.unfollow).not.toHaveBeenCalled();
   });
 
   it('answers 404 for an unknown coupon', async () => {
-    const { service, follows } = followHarness(false);
-    await expect(service.follow('nope', 'u1')).rejects.toThrow(
+    const { service, follows } = followHarness(undefined);
+    await expect(service.follow('nope', 'u1', NOW)).rejects.toThrow(
       'Coupon introuvable',
     );
     expect(follows.follow).not.toHaveBeenCalled();
+  });
+
+  it('a coupon without any leg can still be followed', async () => {
+    const { service, follows } = followHarness(null);
+    await service.follow('coupon-1', 'u1', NOW);
+    expect(follows.follow).toHaveBeenCalled();
+  });
+
+  it('gives the record with the first follow date', async () => {
+    const { service, follows } = followHarness(null);
+    await expect(service.getFollowedSummary('u1')).resolves.toEqual({
+      won: 7,
+      lost: 4,
+      refunded: 1,
+      since: '2026-10-13T08:30:00.000Z',
+    });
+    expect(follows.summaryFor).toHaveBeenCalledWith('u1');
   });
 });
 

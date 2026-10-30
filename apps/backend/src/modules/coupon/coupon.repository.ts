@@ -269,6 +269,26 @@ export class CouponRepository {
     });
   }
 
+  /**
+   * Le premier coup d'envoi d'un coupon, ou null s'il n'existe pas : on ne
+   * suit plus un coupon commencé (04 § 3).
+   */
+  async findFirstKickoff(
+    id: string,
+  ): Promise<{ firstKickoffAt: Date | null } | null> {
+    const [row] = await this.prisma.client.$queryRaw<
+      { firstKickoffAt: Date | null }[]
+    >`
+      SELECT min(f."scheduledAt") AS "firstKickoffAt"
+      FROM public.coupon_proposal cp
+      LEFT JOIN public.coupon_proposal_leg l ON l."couponProposalId" = cp.id
+      LEFT JOIN public.fixture f ON f.id = l."fixtureId"
+      WHERE cp.id = ${id}::uuid
+      GROUP BY cp.id
+    `;
+    return row ?? null;
+  }
+
   async exists(id: string): Promise<boolean> {
     const coupon = await this.prisma.client.couponProposal.findUnique({
       where: { id },

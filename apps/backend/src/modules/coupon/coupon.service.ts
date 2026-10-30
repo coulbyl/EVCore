@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { CouponProposalStatus } from '@evcore/db';
 import { CouponRepository } from './coupon.repository';
@@ -234,16 +238,51 @@ export class CouponService {
    * « Suivre ce coupon » (2026-10-28) : suivre sans déclarer de mise, pour
    * recevoir le résultat dans le résumé du matin. Idempotent dans les deux
    * sens.
+   *
+   * Seulement avant le premier coup d'envoi (04 § 3, 2026-10-30), dans les
+   * deux sens aussi : suivre un coupon commencé, ou cesser de suivre celui
+   * qui perd, ferait mentir le bilan de Moi.
    */
-  async follow(couponProposalId: string, userId: string): Promise<void> {
-    if (!(await this.repo.exists(couponProposalId))) {
-      throw new NotFoundException('Coupon introuvable');
-    }
+  async follow(
+    couponProposalId: string,
+    userId: string,
+    now: Date = new Date(),
+  ): Promise<void> {
+    await this.assertNotStarted(couponProposalId, now);
     await this.follows.follow(couponProposalId, userId);
   }
 
-  async unfollow(couponProposalId: string, userId: string): Promise<void> {
+  async unfollow(
+    couponProposalId: string,
+    userId: string,
+    now: Date = new Date(),
+  ): Promise<void> {
+    await this.assertNotStarted(couponProposalId, now);
     await this.follows.unfollow(couponProposalId, userId);
+  }
+
+  /** « 7 coupons gagnés · 4 perdus · depuis le 13/10 » (09 § 1). */
+  async getFollowedSummary(userId: string): Promise<{
+    won: number;
+    lost: number;
+    refunded: number;
+    since: string | null;
+  }> {
+    const summary = await this.follows.summaryFor(userId);
+    return { ...summary, since: summary.since?.toISOString() ?? null };
+  }
+
+  private async assertNotStarted(
+    couponProposalId: string,
+    now: Date,
+  ): Promise<void> {
+    const coupon = await this.repo.findFirstKickoff(couponProposalId);
+    if (!coupon) throw new NotFoundException('Coupon introuvable');
+    if (coupon.firstKickoffAt && coupon.firstKickoffAt <= now) {
+      throw new ConflictException(
+        'Le premier match a commencé : ce coupon ne se suit plus.',
+      );
+    }
   }
 
   /** Historique réel par produit de coupon sur les `days` derniers jours. */
