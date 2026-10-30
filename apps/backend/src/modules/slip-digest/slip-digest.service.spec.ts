@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import Decimal from 'decimal.js';
 import { NotificationType } from '@evcore/db';
 import type { NotificationService } from '@modules/notification/notification.service';
+import type { MailService } from '@modules/mail/mail.service';
 import type { PushService } from '@modules/push/push.service';
 import { SlipDigestService, previousUtcDay } from './slip-digest.service';
 import type { CouponService } from '@modules/coupon/coupon.service';
@@ -66,12 +67,17 @@ function makeHarness(
     follows?: Follow[];
     reportedFollows?: string[];
     /** Joueurs ayant gardé la matinée ; par défaut ceux des coupons. */
-    recipients?: { id: string; pausedUntil?: Date | null }[];
+    recipients?: {
+      id: string;
+      pausedUntil?: Date | null;
+      emailVerified?: boolean;
+      emailNotificationsEnabled?: boolean;
+    }[];
     coupons?: DayCoupon[];
     abstentions?: { couponClass: string; reason: string | null }[];
   } = {},
 ) {
-  const recipients = opts.recipients ?? [
+  const recipients: NonNullable<typeof opts.recipients> = opts.recipients ?? [
     ...new Map(
       [
         ...slips.map((s) => s.user),
@@ -96,6 +102,9 @@ function makeHarness(
         id: r.id,
         currency: 'XOF',
         pausedUntil: r.pausedUntil ?? null,
+        email: `${r.id}@example.com`,
+        emailVerified: r.emailVerified ?? false,
+        emailNotificationsEnabled: r.emailNotificationsEnabled ?? true,
       })),
     ),
     findDayCoupons: vi.fn().mockResolvedValue(opts.coupons ?? []),
@@ -109,8 +118,18 @@ function makeHarness(
   const push = {
     sendToUser: vi.fn().mockResolvedValue(undefined),
   } as unknown as PushService;
+  const mail = {
+    sendPlayerDigest: vi.fn().mockResolvedValue(undefined),
+  } as unknown as MailService;
   return {
-    service: new SlipDigestService(repository, notification, push, coupons),
+    service: new SlipDigestService(
+      repository,
+      notification,
+      push,
+      mail,
+      coupons,
+    ),
+    mail,
     repository,
     coupons,
     notification,
@@ -140,6 +159,29 @@ describe('SlipDigestService.sendDigests', () => {
     expect(push.sendToUser).toHaveBeenCalledWith(
       'u1',
       expect.objectContaining({ url: '/dashboard?from=morning' }),
+    );
+  });
+
+  it('sends the email copy only to a verified address that asked for it', async () => {
+    const { service, mail } = makeHarness(
+      [
+        slip({ userId: 'u1', kickoffs: ['2026-10-27T19:00:00Z'] }),
+        slip({ userId: 'u2', kickoffs: ['2026-10-27T19:00:00Z'] }),
+        slip({ userId: 'u3', kickoffs: ['2026-10-27T19:00:00Z'] }),
+      ],
+      {
+        recipients: [
+          { id: 'u1', emailVerified: true },
+          { id: 'u2', emailVerified: false },
+          { id: 'u3', emailVerified: true, emailNotificationsEnabled: false },
+        ],
+      },
+    );
+    await service.sendDigests(DAY, NOW);
+    expect(mail.sendPlayerDigest).toHaveBeenCalledTimes(1);
+    expect(mail.sendPlayerDigest).toHaveBeenCalledWith(
+      'u1@example.com',
+      expect.objectContaining({ path: '/dashboard?from=morning' }),
     );
   });
 

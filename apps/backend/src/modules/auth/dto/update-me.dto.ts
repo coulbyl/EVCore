@@ -57,11 +57,8 @@ export class UpdateMeDto {
   @IsIn(['CONSERVATIVE', 'BALANCED', 'AGGRESSIVE'])
   riskProfile?: RiskProfile;
 
-  @IsOptional()
-  @IsBoolean()
-  emailSupportNotificationsEnabled?: boolean;
-
-  // Matinée et relevé du lundi (2026-10-29), actifs par défaut.
+  // Les interrupteurs de Compte › Notifications (09 § 5) : quatre sortes,
+  // plus « Par e-mail aussi ».
   @IsOptional()
   @IsBoolean()
   morningBriefEnabled?: boolean;
@@ -69,6 +66,18 @@ export class UpdateMeDto {
   @IsOptional()
   @IsBoolean()
   weeklyStatementEnabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  followedResultEnabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  teamRepliesEnabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  emailNotificationsEnabled?: boolean;
 
   @IsOptional()
   @IsBoolean()

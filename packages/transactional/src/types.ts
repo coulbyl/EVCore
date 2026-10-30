@@ -94,3 +94,12 @@ export type SupportMessageProps = {
   fromUsername: string;
   preview: string;
 };
+
+export type PlayerDigestProps = {
+  /** Le titre de la notification : « Ta matinée EVCore ». */
+  title: string;
+  /** Son texte, tel quel. */
+  body: string;
+  /** L'écran où elle mène, en adresse absolue. */
+  url: string;
+};

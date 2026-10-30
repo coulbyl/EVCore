@@ -277,8 +277,14 @@ export class AuthService {
       ...(dto.riskProfile !== undefined && {
         riskProfile: dto.riskProfile,
       }),
-      ...(dto.emailSupportNotificationsEnabled !== undefined && {
-        emailSupportNotificationsEnabled: dto.emailSupportNotificationsEnabled,
+      ...(dto.emailNotificationsEnabled !== undefined && {
+        emailNotificationsEnabled: dto.emailNotificationsEnabled,
+      }),
+      ...(dto.followedResultEnabled !== undefined && {
+        followedResultEnabled: dto.followedResultEnabled,
+      }),
+      ...(dto.teamRepliesEnabled !== undefined && {
+        teamRepliesEnabled: dto.teamRepliesEnabled,
       }),
       ...(dto.morningBriefEnabled !== undefined && {
         morningBriefEnabled: dto.morningBriefEnabled,
@@ -596,7 +602,9 @@ export class AuthService {
       unitAmount: user.unitAmount?.toString() ?? null,
       unitPercent: user.unitPercent?.toString() ?? null,
       riskProfile: user.riskProfile,
-      emailSupportNotificationsEnabled: user.emailSupportNotificationsEnabled,
+      emailNotificationsEnabled: user.emailNotificationsEnabled,
+      followedResultEnabled: user.followedResultEnabled,
+      teamRepliesEnabled: user.teamRepliesEnabled,
       morningBriefEnabled: user.morningBriefEnabled,
       weeklyStatementEnabled: user.weeklyStatementEnabled,
       hasSeenOnboarding: user.hasSeenOnboarding,

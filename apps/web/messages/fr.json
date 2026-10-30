@@ -513,8 +513,8 @@
     "pushNotificationsUnsupported": "Ton navigateur ne prend pas en charge les notifications push.",
     "pushNotificationsDenied": "Notifications bloquées — autorise-les dans les paramètres de ton navigateur.",
     "emailNotifications": "Notifications par email",
-    "emailNotificationsDescription": "Reçois un email à chaque nouveau message de l'équipe EVCore.",
-    "emailNotificationsToggle": "Email à chaque nouveau message",
+    "emailNotificationsDescription": "La matinée, la semaine et les réponses de l'équipe, aussi par e-mail. Seulement vers une adresse vérifiée.",
+    "emailNotificationsToggle": "Par e-mail aussi",
     "bankrollDescription": "Choisis la devise affichée dans l'application.",
     "displayCurrency": "Devise d'affichage",
     "unitStake": "Mise par unité",
@@ -582,12 +582,16 @@
       "error": "Le changement n'a pas abouti. Réessaie."
     },
     "playerNotifications": {
-      "title": "Ta matinée et ton relevé",
+      "title": "Notifications",
       "description": "Des notifications dans l'app et sur ton téléphone. Elles ne te poussent jamais à jouer.",
       "morning": "La matinée, à 8 h UTC",
       "morningHint": "Tes résultats d'hier et les coupons du jour, ou pourquoi il n'y en a pas.",
       "weekly": "Le relevé du lundi",
       "weeklyHint": "Ta semaine, ce que tu as suivi et le bilan de nos coupons.",
+      "followed": "Résultat de mes coupons suivis",
+      "followedHint": "Le soir même, dès le dernier match réglé.",
+      "replies": "Réponses de l'équipe",
+      "repliesHint": "Quand l'équipe t'écrit dans Messages.",
       "error": "Impossible d'enregistrer ce réglage."
     }
   },

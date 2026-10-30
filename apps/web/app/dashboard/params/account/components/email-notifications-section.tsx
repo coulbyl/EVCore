@@ -27,13 +27,13 @@ export function EmailNotificationsSection({
     try {
       await clientApiRequest("/auth/me", {
         method: "PATCH",
-        body: { emailSupportNotificationsEnabled: checked },
+        body: { emailNotificationsEnabled: checked },
         fallbackErrorMessage:
           "Impossible d'enregistrer cette préférence de notification.",
       });
       setCurrentUser({
         ...currentUser,
-        emailSupportNotificationsEnabled: checked,
+        emailNotificationsEnabled: checked,
       });
     } finally {
       setIsBusy(false);
@@ -47,7 +47,7 @@ export function EmailNotificationsSection({
           {labels.toggleLabel}
         </p>
         <Switch
-          checked={currentUser.emailSupportNotificationsEnabled}
+          checked={currentUser.emailNotificationsEnabled}
           onCheckedChange={(checked) => void handleChange(checked)}
           disabled={isBusy}
         />

@@ -67,22 +67,32 @@ export class SupportRepository {
     });
   }
 
-  // Returns null when the user has opted out of support notification
-  // emails or has not verified the address (09 § 7: an unverified address
-  // may be mistyped, or someone else's) — callers treat null as "don't send".
-  async findUserEmail(userId: string): Promise<string | null> {
+  /**
+   * How a player hears of a team reply (09 § 5): not at all when « Réponses
+   * de l'équipe » is off; by email only when « Par e-mail aussi » is on and
+   * the address is verified (09 § 7: an unverified address may be mistyped,
+   * or someone else's).
+   */
+  async findReplyRecipient(
+    userId: string,
+  ): Promise<{ notify: boolean; email: string | null }> {
     const user = await this.prisma.client.user.findUnique({
       where: { id: userId },
       select: {
         email: true,
         emailVerified: true,
-        emailSupportNotificationsEnabled: true,
+        emailNotificationsEnabled: true,
+        teamRepliesEnabled: true,
       },
     });
-    if (!user?.emailVerified || !user.emailSupportNotificationsEnabled) {
-      return null;
-    }
-    return user.email;
+    if (!user?.teamRepliesEnabled) return { notify: false, email: null };
+    return {
+      notify: true,
+      email:
+        user.emailVerified && user.emailNotificationsEnabled
+          ? user.email
+          : null,
+    };
   }
 
   async userExists(userId: string): Promise<boolean> {

@@ -3,6 +3,7 @@ import Decimal from 'decimal.js';
 import { NotificationType } from '@evcore/db';
 import { NotificationService } from '@modules/notification/notification.service';
 import { PushService } from '@modules/push/push.service';
+import { MailService } from '@modules/mail/mail.service';
 import { slipMoney, type SlipMoney } from '@modules/bet-slip/bet-slip-outcome';
 import { createLogger } from '@utils/logger';
 import { classForTargetOddsMin } from '@evcore/analysis-core';
@@ -17,6 +18,7 @@ import { SLIP_DIGEST } from '@config/slip-digest.constants';
 import {
   SlipDigestRepository,
   type DigestSlip,
+  digestEmailOf,
 } from './slip-digest.repository';
 
 const logger = createLogger('slip-digest');
@@ -72,6 +74,7 @@ export class SlipDigestService {
     private readonly repository: SlipDigestRepository,
     private readonly notification: NotificationService,
     private readonly push: PushService,
+    private readonly mail: MailService,
     private readonly coupons: CouponService,
   ) {}
 
@@ -246,6 +249,14 @@ export class SlipDigestService {
         body: message.body,
         url: '/dashboard?from=morning',
       });
+      const email = digestEmailOf(recipient);
+      if (email) {
+        await this.mail.sendPlayerDigest(email, {
+          title: message.title,
+          body: message.body,
+          path: '/dashboard?from=morning',
+        });
+      }
       sent += 1;
     }
     const skippedPaused = pausedUsers.size;

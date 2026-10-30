@@ -39,7 +39,9 @@ function makeRepo(
     findConversationById: vi
       .fn()
       .mockResolvedValue({ id: CONVERSATION_ID, userId: USER_ID }),
-    findUserEmail: vi.fn().mockResolvedValue(null),
+    findReplyRecipient: vi
+      .fn()
+      .mockResolvedValue({ notify: true, email: null }),
     userExists: vi.fn().mockResolvedValue(true),
     createConversation: vi.fn(),
     findConversationByUserId: vi.fn(),
@@ -228,6 +230,42 @@ describe('SupportService — sendAsUser', () => {
         },
       }),
     ).rejects.toThrow(BadRequestException);
+  });
+});
+
+describe('SupportService — sendAsAdmin', () => {
+  function serviceWith(recipient: { notify: boolean; email: string | null }) {
+    const repo = makeRepo({
+      findReplyRecipient: vi.fn().mockResolvedValue(recipient),
+    } as unknown as Partial<SupportRepository>);
+    const notifier = makeNotifier();
+    const service = new SupportService(
+      repo,
+      notifier,
+      makeGateway(),
+      makeStorage(),
+      makeAutomation(),
+    );
+    return { service, notifier };
+  }
+
+  it('tells the player, by email when the preferences allow it', async () => {
+    const { service, notifier } = serviceWith({
+      notify: true,
+      email: 'joueur@example.com',
+    });
+    await service.sendAsAdmin(CONVERSATION_ID, 'admin-1', { content: 'Oui' });
+    expect(notifier.notifyUser).toHaveBeenCalledWith(
+      USER_ID,
+      'joueur@example.com',
+      expect.objectContaining({ conversationId: CONVERSATION_ID }),
+    );
+  });
+
+  it("sends nothing when « Réponses de l'équipe » is off", async () => {
+    const { service, notifier } = serviceWith({ notify: false, email: null });
+    await service.sendAsAdmin(CONVERSATION_ID, 'admin-1', { content: 'Oui' });
+    expect(notifier.notifyUser).not.toHaveBeenCalled();
   });
 });
 

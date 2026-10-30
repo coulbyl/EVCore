@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import Decimal from 'decimal.js';
 import { NotificationType } from '@evcore/db';
 import type { NotificationService } from '@modules/notification/notification.service';
+import type { MailService } from '@modules/mail/mail.service';
 import type { PushService } from '@modules/push/push.service';
 import type {
   ProductWeek,
@@ -42,7 +43,12 @@ function slip(opts: {
 
 function makeHarness(opts: {
   slips?: DigestSlip[];
-  recipients?: { id: string; pausedUntil?: Date | null }[];
+  recipients?: {
+    id: string;
+    pausedUntil?: Date | null;
+    emailVerified?: boolean;
+    emailNotificationsEnabled?: boolean;
+  }[];
   products?: ProductWeek['products'];
   alreadySent?: boolean;
 }) {
@@ -52,6 +58,9 @@ function makeHarness(opts: {
         id: r.id,
         currency: 'XOF',
         pausedUntil: r.pausedUntil ?? null,
+        email: `${r.id}@example.com`,
+        emailVerified: r.emailVerified ?? false,
+        emailNotificationsEnabled: r.emailNotificationsEnabled ?? true,
       })),
     ),
     findSlipsTouching: vi.fn().mockResolvedValue(opts.slips ?? []),
@@ -75,13 +84,18 @@ function makeHarness(opts: {
   const push = {
     sendToUser: vi.fn().mockResolvedValue(undefined),
   } as unknown as PushService;
+  const mail = {
+    sendPlayerDigest: vi.fn().mockResolvedValue(undefined),
+  } as unknown as MailService;
   return {
     service: new WeeklyStatementService(
       repository,
       notification,
       push,
+      mail,
       coupons,
     ),
+    mail,
     repository,
     coupons,
     notification,
@@ -125,6 +139,23 @@ describe('WeeklyStatementService.sendStatements', () => {
     expect(push.sendToUser).toHaveBeenCalledWith(
       'u1',
       expect.objectContaining({ url: '/dashboard?from=weekly' }),
+    );
+  });
+
+  it('emails the statement to a verified address that asked for it', async () => {
+    const { service, mail } = makeHarness({
+      slips: [
+        slip({ userId: 'u1', kickoff: '2026-10-20T19:00:00Z', status: 'LOST' }),
+      ],
+      recipients: [{ id: 'u1', emailVerified: true }],
+    });
+    await service.sendStatements(WEEK, NOW);
+    expect(mail.sendPlayerDigest).toHaveBeenCalledWith(
+      'u1@example.com',
+      expect.objectContaining({
+        title: expect.any(String),
+        path: '/dashboard?from=weekly',
+      }),
     );
   });
 

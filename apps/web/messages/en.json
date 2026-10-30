@@ -513,8 +513,8 @@
     "pushNotificationsUnsupported": "Your browser doesn't support push notifications.",
     "pushNotificationsDenied": "Notifications blocked — allow them in your browser settings.",
     "emailNotifications": "Email notifications",
-    "emailNotificationsDescription": "Get an email for every new message from the EVCore team.",
-    "emailNotificationsToggle": "Email on every new message",
+    "emailNotificationsDescription": "The morning brief, the week and the team's replies, by email too. Only to a verified address.",
+    "emailNotificationsToggle": "By email too",
     "bankrollDescription": "Choose the currency displayed in the app.",
     "displayCurrency": "Display currency",
     "unitStake": "Unit stake",
@@ -582,12 +582,16 @@
       "error": "The change did not go through. Try again."
     },
     "playerNotifications": {
-      "title": "Your morning and your statement",
+      "title": "Notifications",
       "description": "Notifications in the app and on your phone. They never push you to bet.",
       "morning": "The morning brief, at 8 am UTC",
       "morningHint": "Yesterday's results and today's coupons, or why there are none.",
       "weekly": "The Monday statement",
       "weeklyHint": "Your week, what you followed and how our coupons did.",
+      "followed": "Result of my followed coupons",
+      "followedHint": "The same evening, once the last match is settled.",
+      "replies": "Replies from the team",
+      "repliesHint": "When the team writes to you in Messages.",
       "error": "Could not save this setting."
     }
   },

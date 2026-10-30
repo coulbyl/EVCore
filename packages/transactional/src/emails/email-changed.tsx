@@ -15,8 +15,8 @@ export function EmailChangedEmail({ firstName, newEmail }: EmailChangedProps) {
       <Heading style={headingStyle()}>Ton adresse e-mail a changé</Heading>
       <Section>
         <Text style={intro}>
-          Bonjour {firstName}, ton compte EVCore utilise désormais l&apos;adresse{" "}
-          {newEmail}. Les prochains messages partiront vers elle.
+          Bonjour {firstName}, ton compte EVCore utilise désormais
+          l&apos;adresse {newEmail}. Les prochains messages partiront vers elle.
         </Text>
         <Text style={hint}>
           Si ce n&apos;est pas toi, écris-nous tout de suite en répondant à ce

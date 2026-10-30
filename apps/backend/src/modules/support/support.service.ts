@@ -316,8 +316,10 @@ export class SupportService {
     });
     const dto = await this.toMessageDto(raw);
     this.gateway.emitMessage(conversationId, dto);
-    const email = await this.repo.findUserEmail(conversation.userId);
-    await this.notifier.notifyUser(conversation.userId, email, dto);
+    const recipient = await this.repo.findReplyRecipient(conversation.userId);
+    if (recipient.notify) {
+      await this.notifier.notifyUser(conversation.userId, recipient.email, dto);
+    }
     return dto;
   }
 

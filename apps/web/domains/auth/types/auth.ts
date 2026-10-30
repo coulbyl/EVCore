@@ -18,9 +18,11 @@ export type AuthSessionUser = {
   unitAmount: string | null;
   unitPercent: string | null;
   riskProfile: RiskProfile;
-  emailSupportNotificationsEnabled: boolean;
+  emailNotificationsEnabled: boolean;
   morningBriefEnabled: boolean;
   weeklyStatementEnabled: boolean;
+  followedResultEnabled: boolean;
+  teamRepliesEnabled: boolean;
   hasSeenOnboarding: boolean;
   hasCompletedOnboarding: boolean;
   phoneNumber: string | null;

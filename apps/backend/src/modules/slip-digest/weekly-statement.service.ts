@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { NotificationType } from '@evcore/db';
 import { NotificationService } from '@modules/notification/notification.service';
 import { PushService } from '@modules/push/push.service';
+import { MailService } from '@modules/mail/mail.service';
 import { ProductWeekService } from '@modules/coupon/product-day/product-week.service';
 import type { SlipMoney } from '@modules/bet-slip/bet-slip-outcome';
 import { previousIsoWeek } from '@utils/date.utils';
@@ -11,7 +12,7 @@ import {
   type FollowedResult,
   type WeeklyProduct,
 } from './slip-digest.compose';
-import { SlipDigestRepository } from './slip-digest.repository';
+import { SlipDigestRepository, digestEmailOf } from './slip-digest.repository';
 import { isPausedAt, lastKickoffMs, toMoney } from './slip-digest.service';
 
 const logger = createLogger('weekly-statement');
@@ -28,6 +29,7 @@ export class WeeklyStatementService {
     private readonly repository: SlipDigestRepository,
     private readonly notification: NotificationService,
     private readonly push: PushService,
+    private readonly mail: MailService,
     private readonly productWeek: ProductWeekService,
   ) {}
 
@@ -115,6 +117,14 @@ export class WeeklyStatementService {
         body: message.body,
         url: '/dashboard?from=weekly',
       });
+      const email = digestEmailOf(recipient);
+      if (email) {
+        await this.mail.sendPlayerDigest(email, {
+          title: message.title,
+          body: message.body,
+          path: '/dashboard?from=weekly',
+        });
+      }
       sent += 1;
     }
     logger.info({ week, sent, skippedPaused }, 'Weekly statements sent');

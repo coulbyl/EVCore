@@ -37,6 +37,34 @@ export type DayCoupon = {
   legs: { operatorOdds: Prisma.Decimal | null }[];
 };
 
+const DIGEST_RECIPIENT_SELECT = {
+  id: true,
+  currency: true,
+  pausedUntil: true,
+  email: true,
+  emailVerified: true,
+  emailNotificationsEnabled: true,
+} as const;
+
+export type DigestRecipient = {
+  id: string;
+  currency: string | null;
+  pausedUntil: Date | null;
+  email: string;
+  emailVerified: boolean;
+  emailNotificationsEnabled: boolean;
+};
+
+/**
+ * L'adresse où envoyer aussi la matinée ou la semaine : « Par e-mail aussi »
+ * activé et adresse vérifiée (09 § 5, § 7), sinon rien.
+ */
+export function digestEmailOf(recipient: DigestRecipient): string | null {
+  return recipient.emailNotificationsEnabled && recipient.emailVerified
+    ? recipient.email
+    : null;
+}
+
 export type ReportedIds = { slipIds: Set<string>; followedIds: Set<string> };
 
 function idsOf(payload: Prisma.JsonValue | null, key: string): string[] {
@@ -135,12 +163,10 @@ export class SlipDigestRepository {
   }
 
   /** Joueurs qui reçoivent la matinée (réglage actif, 2026-10-29). */
-  findMorningRecipients(): Promise<
-    { id: string; currency: string | null; pausedUntil: Date | null }[]
-  > {
+  findMorningRecipients(): Promise<DigestRecipient[]> {
     return this.prisma.client.user.findMany({
       where: { morningBriefEnabled: true, suspended: false },
-      select: { id: true, currency: true, pausedUntil: true },
+      select: DIGEST_RECIPIENT_SELECT,
     });
   }
 
@@ -162,12 +188,10 @@ export class SlipDigestRepository {
   }
 
   /** Joueurs qui reçoivent le relevé du lundi (réglage actif, 2026-10-29). */
-  findWeeklyRecipients(): Promise<
-    { id: string; currency: string | null; pausedUntil: Date | null }[]
-  > {
+  findWeeklyRecipients(): Promise<DigestRecipient[]> {
     return this.prisma.client.user.findMany({
       where: { weeklyStatementEnabled: true, suspended: false },
-      select: { id: true, currency: true, pausedUntil: true },
+      select: DIGEST_RECIPIENT_SELECT,
     });
   }
 

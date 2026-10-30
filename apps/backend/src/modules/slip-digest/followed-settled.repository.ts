@@ -61,6 +61,9 @@ export class FollowedSettledRepository {
       JOIN public.fixture f ON f.id = l."fixtureId"
       JOIN public.team ht ON ht.id = f."homeTeamId"
       JOIN public.team at ON at.id = f."awayTeamId"
+      -- « Résultat de mes coupons suivis » coupé (09 § 5) : rien ce soir ;
+      -- la matinée du lendemain le dit quand même.
+      WHERE u."followedResultEnabled"
       ORDER BY cf."userId", s.id, f."scheduledAt", l.id
     `;
   }
