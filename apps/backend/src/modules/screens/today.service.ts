@@ -152,19 +152,27 @@ function couponOf(input: {
     legs[0]?.scheduledAt ?? first.scheduledAt,
   );
   const state = couponState(first.result, firstKickoff, now);
+  // A match postponed before kick-off, or refunded once settled, pays 1 at
+  // 1xBet: the odds and the chance are those of the matches still played
+  // (04 § 5). All of them refunded: the coupon is, its own odds stay shown.
+  const played = legs.filter((leg) => {
+    const legNow = legState(leg, now);
+    return legNow !== 'postponed' && legNow !== 'void';
+  });
+  const priced = played.length > 0 ? played : legs;
   return {
     id: first.couponId,
     product: input.product,
     forDate: input.forDate,
     state,
     firstKickoffAt: firstKickoff.toISOString(),
-    odds: operatorOddsOf(legs)?.toDecimalPlaces(3).toNumber() ?? null,
+    odds: operatorOddsOf(priced)?.toDecimalPlaces(3).toNumber() ?? null,
     referenceOdds: Number(first.combinedOdds),
     paidOdds:
       state === 'won' && first.realizedOdds !== null
         ? Number(first.realizedOdds)
         : null,
-    chance: couponChanceOf(legs),
+    chance: couponChanceOf(priced),
     followedByMe: first.followedByMe,
     canFollow: state === 'upcoming',
     legs: legs.map((leg) => legOf(leg, now)),

@@ -563,6 +563,57 @@ function todayScreen() {
   };
 }
 
+const NOTHING_ABSENCES = [
+  { product: "FAVOURITE", reason: "no_home_favourite_in_band" },
+  { product: "COMBO", reason: "not_enough_calibrated_short_legs" },
+  { product: "DOUBLE", reason: "no_combination_in_window" },
+];
+
+// Le soir : le Favori suivi et gagné (2-0), le Combiné perdu sur sa
+// deuxième jambe, le Chasseur Nul remboursé (match reporté).
+function eveningScreen() {
+  const screen = todayScreen();
+  const [favourite, combo, , draw] = screen.coupons;
+  const settle = (leg, state, score) => ({
+    ...leg,
+    kickoffAt: todayAt(-3),
+    state,
+    score,
+  });
+  return {
+    ...screen,
+    coupons: [
+      {
+        ...favourite,
+        state: "won",
+        paidOdds: 1.28,
+        followedByMe: true,
+        canFollow: false,
+        firstKickoffAt: todayAt(-3),
+        legs: [settle(favourite.legs[0], "won", { home: 2, away: 0 })],
+      },
+      {
+        ...combo,
+        state: "lost",
+        canFollow: false,
+        firstKickoffAt: todayAt(-3),
+        legs: [
+          settle(combo.legs[0], "won", { home: 3, away: 1 }),
+          settle(combo.legs[1], "lost", { home: 1, away: 1 }),
+          settle(combo.legs[2], "won", { home: 2, away: 0 }),
+        ],
+      },
+      {
+        ...draw,
+        state: "void",
+        canFollow: false,
+        firstKickoffAt: todayAt(-3),
+        legs: [{ ...draw.legs[0], state: "postponed" }],
+      },
+    ],
+  };
+}
+
 function decision(overrides) {
   return {
     id: `dec-${overrides.id}`,
@@ -1613,6 +1664,20 @@ function route(method, url, cookie = "") {
     // Un cookie « stale » joue une session expirée ou révoquée.
     if (/(^|;\s*)evcore_session=stale(;|$)/.test(cookie))
       return [401, { message: "Session invalide ou expirée" }];
+    // Un cookie « today-paused » joue un joueur en pause (Aujourd'hui fermé).
+    if (/(^|;\s*)evcore_session=today-paused(;|$)/.test(cookie))
+      return [
+        200,
+        {
+          session: {
+            ...SESSION.session,
+            user: {
+              ...SESSION.session.user,
+              pausedUntil: new Date(Date.now() + 5 * 86_400_000).toISOString(),
+            },
+          },
+        },
+      ];
     // Un cookie « unverified » joue un compte tout juste inscrit, qui n'a
     // vérifié ni son e-mail ni une application d'authentification.
     if (/(^|;\s*)evcore_session=unverified(;|$)/.test(cookie))
@@ -1727,7 +1792,27 @@ function route(method, url, cookie = "") {
       ],
     ];
   }
-  if (path === "/today" && method === "GET") return [200, todayScreen()];
+  if (path === "/today" && method === "GET") {
+    // Les états d'Aujourd'hui (04 § 5) se choisissent par le cookie.
+    if (/(^|;\s*)evcore_session=today-evening(;|$)/.test(cookie))
+      return [200, eveningScreen()];
+    if (/(^|;\s*)evcore_session=today-nothing(;|$)/.test(cookie))
+      return [
+        200,
+        {
+          ...todayScreen(),
+          heroId: null,
+          coupons: [],
+          absences: NOTHING_ABSENCES,
+        },
+      ];
+    if (/(^|;\s*)evcore_session=today-outage(;|$)/.test(cookie))
+      return [
+        200,
+        { ...todayScreen(), heroId: null, coupons: [], absences: [] },
+      ];
+    return [200, todayScreen()];
+  }
   if (path === "/events" && method === "POST") return [201, {}];
   if (path === "/coupons/abstentions")
     return [

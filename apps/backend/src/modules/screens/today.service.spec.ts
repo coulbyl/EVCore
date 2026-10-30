@@ -298,6 +298,32 @@ describe('TodayService', () => {
     expect(favourite?.legs[0]?.state).toBe('postponed');
   });
 
+  it('a combo with a postponed match is priced on the matches still played', async () => {
+    const combo = (overrides: Parameters<typeof leg>[0]) =>
+      leg({
+        couponId: 'combo',
+        targetOddsMin: d(1.2),
+        combinedOdds: d('1.450'),
+        probability: d('0.8000'),
+        ...overrides,
+      });
+    const { service } = harness({
+      legs: [
+        combo({ legId: 'c1', fixtureId: 'fx-2', operatorOdds: d('1.18') }),
+        combo({
+          legId: 'c2',
+          fixtureId: 'fx-3',
+          operatorOdds: d('1.21'),
+          fixtureStatus: 'POSTPONED',
+        }),
+      ],
+    });
+    const [coupon] = (await service.getToday('user-1', NOW)).coupons;
+    // 1,18 alone, the postponed match paying 1; its chance left out too.
+    expect(coupon).toMatchObject({ odds: 1.18, chance: 0.8 });
+    expect(coupon?.legs.map((l) => l.state)).toEqual(['upcoming', 'postponed']);
+  });
+
   it('keeps a followed coupon of an earlier day apart while it runs', async () => {
     const { service } = harness({
       legs: [

@@ -1228,6 +1228,17 @@
     "absent": "Pas de {product} aujourd'hui",
     "followedRunning": "{count} en cours · prochain match à {time}",
     "followedRunningDone": "{count} en cours",
-    "otherCoupons": "Autres coupons du jour"
+    "otherCoupons": "Autres coupons du jour",
+    "finished": "Terminé",
+    "refunded": "Remboursé",
+    "won": "Gagné",
+    "lost": "Perdu",
+    "followedDone": "Suivi",
+    "postponed": "Reporté",
+    "nothingTitle": "Rien à jouer aujourd'hui",
+    "seeMatches": "Voir les matchs du jour",
+    "noCouponYet": "Pas de coupon pour l'instant · réessaie plus tard",
+    "pauseUntil": "{date} à {time}",
+    "absentShort": "Pas de {product}"
   }
 }

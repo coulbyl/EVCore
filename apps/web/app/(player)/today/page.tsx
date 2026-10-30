@@ -1,8 +1,20 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { PlayerBand } from "@/components/scoreboard/shell/player-band";
+import { PauseNotice } from "@/components/scoreboard/states/pause-notice";
+import { activePauseEnd } from "@/domains/auth/types/auth";
+import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
+import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import { getToday } from "@/domains/today/use-cases/get-today";
+import {
+  displayLocaleOf,
+  formatShortDate,
+  formatTime,
+} from "@/helpers/scoreboard-format";
 import { HeroCard } from "./components/hero-card";
+import { NothingToPlay } from "./components/nothing-to-play";
+import { RefreshWhileRunning } from "./components/refresh-while-running";
+import { isSettled } from "./components/today-constants";
 import { ProductRows } from "./components/product-rows";
 import { YesterdayLine } from "./components/yesterday-line";
 
@@ -15,11 +27,25 @@ export async function generateMetadata(): Promise<Metadata> {
  * « Aujourd'hui » (02 § 1, 04, maquette Main) : la ligne Hier dans le
  * bandeau, le coupon héros désigné par le serveur, les autres coupons, les
  * absents et mes coupons en cours. Rendu côté serveur en une lecture
- * (GET /today). Les états (soir, rien à jouer, panne, pause, hors ligne)
- * viennent en C2, la feuille du coupon en C3.
+ * (GET /today). La pause prime sur tout (04 § 5) : ni coupon ni ligne Hier,
+ * et le serveur refuserait la lecture. Sans coupon : « Rien à jouer » ou,
+ * sans même une abstention, la panne. Hors ligne : la ligne de la coquille
+ * et « Suivre » grisé ; une erreur : l'état d'erreur de l'onglet.
  */
 export default async function Page() {
-  const [t, today] = await Promise.all([getTranslations("shell"), getToday()]);
+  const [t, session] = await Promise.all([
+    getTranslations("shell"),
+    getPlayerSession(),
+  ]);
+  const pauseEnd =
+    session.status === "signed-in"
+      ? activePauseEnd(session.session.user.pausedUntil)
+      : null;
+  if (pauseEnd) {
+    return <Paused until={new Date(pauseEnd)} title={t("tabs.today")} />;
+  }
+
+  const today = await getToday();
   const hero = today.coupons.find((coupon) => coupon.id === today.heroId);
   const hasYesterday = today.week
     ? today.week.products.some((product) => product.played > 0)
@@ -32,17 +58,52 @@ export default async function Page() {
         {hasYesterday ? <YesterdayLine today={today} /> : null}
       </PlayerBand>
       <h1 className="sr-only">{t("tabs.today")}</h1>
+      <RefreshWhileRunning
+        active={[...today.coupons, ...today.followedInProgress].some(
+          (coupon) => !isSettled(coupon.state),
+        )}
+      />
       <div className="flex flex-col gap-2 px-4 pt-4 lg:px-6">
-        {hero ? (
-          <HeroCard
-            coupon={hero}
-            form={today.forms.find((form) => form.product === hero.product)}
-          />
-        ) : null}
-        <ProductRows
-          coupons={others}
-          absences={today.absences}
-          followedInProgress={today.followedInProgress}
+        {today.coupons.length === 0 ? (
+          <NothingToPlay today={today} />
+        ) : (
+          <>
+            {hero ? (
+              <HeroCard
+                coupon={hero}
+                form={today.forms.find((form) => form.product === hero.product)}
+              />
+            ) : null}
+            <ProductRows
+              coupons={others}
+              absences={today.absences}
+              followedInProgress={today.followedInProgress}
+            />
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
+/** La pause, à la place de l'écran (04 § 5, maquette Pause). */
+async function Paused({ until, title }: { until: Date; title: string }) {
+  const [t, locale, timeZone] = await Promise.all([
+    getTranslations("today"),
+    getLocale(),
+    getPlayerTimeZone(),
+  ]);
+  const display = displayLocaleOf(locale);
+  return (
+    <>
+      <PlayerBand />
+      <h1 className="sr-only">{title}</h1>
+      <div className="px-4 pt-4 lg:px-6">
+        <PauseNotice
+          until={t("pauseUntil", {
+            date: formatShortDate(until, display, timeZone),
+            time: formatTime(until, display, timeZone),
+          })}
         />
       </div>
     </>

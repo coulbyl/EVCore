@@ -1228,6 +1228,17 @@
     "absent": "No {product} today",
     "followedRunning": "{count} in play · next match at {time}",
     "followedRunningDone": "{count} in play",
-    "otherCoupons": "Other coupons of the day"
+    "otherCoupons": "Other coupons of the day",
+    "finished": "Finished",
+    "refunded": "Refunded",
+    "won": "Won",
+    "lost": "Lost",
+    "followedDone": "Following",
+    "postponed": "Postponed",
+    "nothingTitle": "Nothing to play today",
+    "seeMatches": "See today's matches",
+    "noCouponYet": "No coupon for now · try again later",
+    "pauseUntil": "{date} at {time}",
+    "absentShort": "No {product}"
   }
 }

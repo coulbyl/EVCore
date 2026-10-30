@@ -2,13 +2,10 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { ChanceFigure } from "@/components/scoreboard/ui/chance-figure";
 import { Row, RowList } from "@/components/scoreboard/ui/row-list";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
-import {
-  displayLocaleOf,
-  formatOdds,
-  formatTime,
-} from "@/helpers/scoreboard-format";
+import { displayLocaleOf, formatTime } from "@/helpers/scoreboard-format";
 import type { TodayAbsence, TodayCoupon } from "@/domains/today/types/today";
-import { nextKickoff } from "./today-constants";
+import { CouponValue } from "./coupon-value";
+import { isSettled, nextKickoff, playedLegs } from "./today-constants";
 
 /**
  * Sous le héros (02 § 1) : les autres coupons du jour en lignes (nom, le
@@ -20,10 +17,13 @@ export async function ProductRows({
   coupons,
   absences,
   followedInProgress,
+  underNothingTitle = false,
 }: {
   coupons: readonly TodayCoupon[];
   absences: readonly TodayAbsence[];
   followedInProgress: readonly TodayCoupon[];
+  /** Sous « Rien à jouer aujourd'hui » : « Pas de Favori », sans redire le jour. */
+  underNothingTitle?: boolean;
 }) {
   const [t, reasons, locale, timeZone] = await Promise.all([
     getTranslations("today"),
@@ -52,16 +52,12 @@ export async function ProductRows({
             meta={
               single
                 ? `${single.home.name} – ${single.away.name}`
-                : t("matches", { count: coupon.legs.length })
+                : t("matches", { count: playedLegs(coupon).length })
             }
             value={
-              <span className="flex items-baseline gap-4">
-                {coupon.odds !== null ? (
-                  <span className="score text-bet font-semibold">
-                    {formatOdds(coupon.odds, display)}
-                  </span>
-                ) : null}
-                {coupon.chance !== null ? (
+              <span className="flex items-center gap-4">
+                <CouponValue coupon={coupon} locale={display} size="row" />
+                {coupon.chance !== null && !isSettled(coupon.state) ? (
                   <ChanceFigure
                     probability={coupon.chance}
                     showLeds={false}
@@ -77,7 +73,9 @@ export async function ProductRows({
         <Row
           key={absence.product}
           muted
-          title={t("absent", { product: t(`shortNames.${absence.product}`) })}
+          title={t(underNothingTitle ? "absentShort" : "absent", {
+            product: t(`shortNames.${absence.product}`),
+          })}
           meta={
             reasons.has(absence.reason ?? "other")
               ? reasons(absence.reason ?? "other")

@@ -2,6 +2,7 @@ import { formatLinePick, formatPickWithTeams } from "@/helpers/fixture";
 import type { Outcome } from "@/components/scoreboard/ui/outcome";
 import type {
   TodayCoupon,
+  TodayCouponState,
   TodayLeg,
   TodayProductForm,
   TodayProductKey,
@@ -49,3 +50,13 @@ export const PRODUCT_ORDER: readonly TodayProductKey[] = [
   "HUNTER_SCORE",
   "HUNTER_CORNERS",
 ];
+
+/** Réglé : la carte montre ✓, ✗ ou « Remboursé » à la place de la cote. */
+export function isSettled(state: TodayCouponState): boolean {
+  return state === "won" || state === "lost" || state === "void";
+}
+
+/** Les matchs encore joués : un match reporté sort du compte (04 § 5). */
+export function playedLegs(coupon: TodayCoupon): TodayLeg[] {
+  return coupon.legs.filter((leg) => leg.state !== "postponed");
+}
