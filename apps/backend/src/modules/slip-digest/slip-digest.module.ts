@@ -10,6 +10,8 @@ import { SlipDigestScheduler } from './slip-digest.scheduler';
 import { SlipDigestService } from './slip-digest.service';
 import { SlipDigestWorker } from './slip-digest.worker';
 import { WeeklyStatementService } from './weekly-statement.service';
+import { FollowedSettledRepository } from './followed-settled.repository';
+import { FollowedSettledService } from './followed-settled.service';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { WeeklyStatementService } from './weekly-statement.service';
     SlipDigestRepository,
     SlipDigestService,
     WeeklyStatementService,
+    FollowedSettledRepository,
+    FollowedSettledService,
     SlipDigestScheduler,
     SlipDigestWorker,
   ],

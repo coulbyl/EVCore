@@ -7,6 +7,7 @@ import {
   WeeklyStatementService,
   previousIsoWeek,
 } from './weekly-statement.service';
+import { FollowedSettledService } from './followed-settled.service';
 
 /**
  * `day` (matinée) ou `week` (relevé du lundi, son lundi) forcé pour un
@@ -21,6 +22,7 @@ export class SlipDigestWorker extends WorkerHost {
   constructor(
     private readonly service: SlipDigestService,
     private readonly weekly: WeeklyStatementService,
+    private readonly followed: FollowedSettledService,
   ) {
     super();
   }
@@ -28,6 +30,9 @@ export class SlipDigestWorker extends WorkerHost {
   async process(
     job: Job<SlipDigestJobData>,
   ): Promise<{ sent: number; skippedPaused: number }> {
+    if (job.name === SLIP_DIGEST.FOLLOWED_JOB) {
+      return this.followed.notifyEvening(new Date());
+    }
     if (job.name === SLIP_DIGEST.WEEKLY_JOB) {
       return this.weekly.sendStatements(
         job.data.week ?? previousIsoWeek(new Date()),

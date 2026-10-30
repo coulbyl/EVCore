@@ -437,7 +437,9 @@ export class NotificationService {
     title: string;
     body: string;
     payload?: Prisma.InputJsonValue;
-  }): Promise<void> {
+  }): Promise<boolean> {
+    // Vrai si la notification est écrite : un job qui s'en sert comme trace
+    // de ce qu'il a annoncé ne pousse rien d'autre sans elle.
     try {
       await this.repository.create({
         userId: input.userId,
@@ -446,6 +448,7 @@ export class NotificationService {
         body: input.body,
         payload: input.payload,
       });
+      return true;
     } catch (error) {
       logger.error(
         {
@@ -455,6 +458,7 @@ export class NotificationService {
         },
         'Failed to persist personal notification',
       );
+      return false;
     }
   }
 

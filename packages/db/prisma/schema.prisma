@@ -197,6 +197,9 @@ enum NotificationType {
   MORNING_BRIEF
   // Relevé du lundi (2026-10-29) : la semaine passée du joueur.
   WEEKLY_STATEMENT
+  // Résultat d'un coupon suivi, le soir même entre 20 h et 1 h (2026-10-30,
+  // docs/refonte-ui/10 § 3) : « Ton Favori est passé ✓ ».
+  FOLLOWED_SETTLED
 
   @@schema("public")
 }

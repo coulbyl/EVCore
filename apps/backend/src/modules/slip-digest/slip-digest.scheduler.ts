@@ -8,7 +8,10 @@ import type { SlipDigestJobData } from './slip-digest.worker';
 
 const logger = createLogger('slip-digest-scheduler');
 
-/** Enregistre la matinée et le relevé du lundi, coupés avec le reste des crons. */
+/**
+ * Enregistre la matinée, le relevé du lundi et le résultat des coupons
+ * suivis du soir, coupés avec le reste des crons.
+ */
 @Injectable()
 export class SlipDigestScheduler implements OnApplicationBootstrap {
   constructor(
@@ -21,6 +24,7 @@ export class SlipDigestScheduler implements OnApplicationBootstrap {
     if (this.config.get<string>('ETL_SCHEDULING_ENABLED', 'true') === 'false') {
       await this.queue.removeJobScheduler(SLIP_DIGEST.SCHEDULER_KEY);
       await this.queue.removeJobScheduler(SLIP_DIGEST.WEEKLY_SCHEDULER_KEY);
+      await this.queue.removeJobScheduler(SLIP_DIGEST.FOLLOWED_SCHEDULER_KEY);
       logger.info('Slip digest scheduler disabled');
       return;
     }
@@ -50,6 +54,22 @@ export class SlipDigestScheduler implements OnApplicationBootstrap {
         opts: { removeOnComplete: 30, removeOnFail: 60 },
       },
     );
-    logger.info({ pattern, weeklyPattern }, 'Slip digest scheduler registered');
+    const followedPattern = this.config.get<string>(
+      'FOLLOWED_SETTLED_CRON',
+      SLIP_DIGEST.FOLLOWED_CRON,
+    );
+    await this.queue.upsertJobScheduler(
+      SLIP_DIGEST.FOLLOWED_SCHEDULER_KEY,
+      { pattern: followedPattern },
+      {
+        name: SLIP_DIGEST.FOLLOWED_JOB,
+        data: {},
+        opts: { removeOnComplete: 30, removeOnFail: 60 },
+      },
+    );
+    logger.info(
+      { pattern, weeklyPattern, followedPattern },
+      'Slip digest scheduler registered',
+    );
   }
 }
