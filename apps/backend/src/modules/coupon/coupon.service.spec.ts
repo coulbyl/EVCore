@@ -208,3 +208,45 @@ describe('CouponService.getAbstentions', () => {
     ]);
   });
 });
+
+describe('CouponService.getProductAbstentions', () => {
+  it('reads each product pass with its band and dates every abstention', async () => {
+    const repo = {
+      findAbstentionsBetween: vi.fn().mockResolvedValue([
+        {
+          forDate: new Date('2026-10-28T00:00:00.000Z'),
+          pass: 'favourite',
+          reason: 'no_home_favourite_in_band',
+        },
+        {
+          forDate: new Date('2026-10-29T00:00:00.000Z'),
+          pass: 'engine-combo',
+          reason: 'not_enough_calibrated_short_legs',
+        },
+      ]),
+    } as unknown as CouponRepository;
+    const service = new CouponService(
+      repo,
+      {} as PlayableOddsRepository,
+      {} as CouponFollowRepository,
+    );
+    const from = new Date('2026-10-28T00:00:00.000Z');
+    const to = new Date('2026-10-30T00:00:00.000Z');
+    await expect(service.getProductAbstentions({ from, to })).resolves.toEqual([
+      {
+        date: '2026-10-28',
+        product: 'FAVOURITE',
+        reason: 'no_home_favourite_in_band',
+      },
+      {
+        date: '2026-10-29',
+        product: 'COMBO',
+        reason: 'not_enough_calibrated_short_legs',
+      },
+    ]);
+    const { passes } = vi.mocked(repo.findAbstentionsBetween).mock.calls[0][0];
+    expect(passes).toContainEqual({ pass: 'favourite', targetOddsMin: 1.1 });
+    expect(passes).toContainEqual({ pass: 'engine-combo', targetOddsMin: 1.2 });
+    expect(passes).toHaveLength(7);
+  });
+});

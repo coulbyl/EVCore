@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Prisma } from '@evcore/db';
-import type { CouponRepository } from '@modules/coupon/coupon.repository';
+import type { CouponService } from '@modules/coupon/coupon.service';
 import type {
   TodayFormRow,
   TodayLegRow,
@@ -65,15 +65,15 @@ function day(
 function harness(input: {
   legs?: TodayLegRow[];
   days?: TodayFormRow[];
-  attempts?: { pass: string; outcome: string; reason: string | null }[];
+  abstentions?: { date: string; product: string; reason: string | null }[];
 }) {
   const repository = {
     findCouponLegs: vi.fn().mockResolvedValue(input.legs ?? []),
     findProductDays: vi.fn().mockResolvedValue(input.days ?? []),
   } as unknown as TodayRepository;
   const coupons = {
-    findLatestAttempts: vi.fn().mockResolvedValue(input.attempts ?? []),
-  } as unknown as CouponRepository;
+    getProductAbstentions: vi.fn().mockResolvedValue(input.abstentions ?? []),
+  } as unknown as CouponService;
   return {
     service: new TodayService(repository, coupons),
     repository,
@@ -99,7 +99,10 @@ describe('TodayService', () => {
         until: TODAY,
       }),
     );
-    expect(coupons.findLatestAttempts).toHaveBeenCalledWith(TODAY);
+    expect(coupons.getProductAbstentions).toHaveBeenCalledWith({
+      from: TODAY,
+      to: new Date('2026-10-31T00:00:00.000Z'),
+    });
   });
 
   it('groups legs into coupons, in screen order, priced at 1xBet', async () => {
@@ -324,29 +327,56 @@ describe('TodayService', () => {
     ]);
   });
 
-  it('says which products abstained and why, never one that has a coupon', async () => {
+  it('lists the abstentions in screen order, products of the screen only', async () => {
     const { service } = harness({
-      legs: [leg({ couponId: 'combo', targetOddsMin: d(1.2) })],
-      attempts: [
+      abstentions: [
+        { date: '2026-10-30', product: 'DOUBLE', reason: 'target_unreachable' },
         {
-          pass: 'favourite',
-          outcome: 'abstained',
+          date: '2026-10-30',
+          product: 'FAVOURITE',
           reason: 'no_home_favourite_in_band',
         },
-        {
-          pass: 'engine-combo',
-          outcome: 'abstained',
-          reason: 'not_enough_calibrated_short_legs',
-        },
-        { pass: 'double', outcome: 'composed', reason: null },
-        // The long coupon and the LLM passes are not products of the screen.
-        { pass: 'engine-long', outcome: 'abstained', reason: 'x' },
-        { pass: 'EVENING', outcome: 'ABSTAINED', reason: 'y' },
+        // Not a product of « Aujourd'hui ».
+        { date: '2026-10-30', product: 'LONG', reason: 'x' },
       ],
     });
     const { absences } = await service.getToday('user-1', NOW);
     expect(absences).toEqual([
       { product: 'FAVOURITE', reason: 'no_home_favourite_in_band' },
+      { product: 'DOUBLE', reason: 'target_unreachable' },
     ]);
+  });
+
+  it('the Favori is the hero; when it abstains the Combiné takes over', async () => {
+    const favourite = leg({});
+    const combo = leg({ couponId: 'combo', targetOddsMin: d(1.2) });
+    const draw = leg({ couponId: 'draw', targetOddsMin: d(2.9) });
+    expect(
+      (await harness({ legs: [combo, favourite] }).service.getToday('u', NOW))
+        .heroId,
+    ).toBe('fav');
+    expect(
+      (await harness({ legs: [draw, combo] }).service.getToday('u', NOW))
+        .heroId,
+    ).toBe('combo');
+    // Then the Coupon cote 2, then the first hunter present.
+    expect(
+      (await harness({ legs: [draw] }).service.getToday('u', NOW)).heroId,
+    ).toBe('draw');
+    expect((await harness({}).service.getToday('u', NOW)).heroId).toBeNull();
+  });
+
+  it('a followed coupon of yesterday never becomes the hero', async () => {
+    const { service } = harness({
+      legs: [
+        leg({
+          couponId: 'yesterday-fav',
+          forDate: new Date('2026-10-29T00:00:00.000Z'),
+          followedByMe: true,
+        }),
+        leg({ couponId: 'combo', targetOddsMin: d(1.2) }),
+      ],
+    });
+    expect((await service.getToday('u', NOW)).heroId).toBe('combo');
   });
 });

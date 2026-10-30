@@ -8,12 +8,13 @@ import {
   PlayableOddsRepository,
   type PlayableQuote,
 } from '../betting-engine/pricing/playable-odds.repository';
-import { startOfUtcDay } from '@utils/date.utils';
+import { formatDateUtc, startOfUtcDay } from '@utils/date.utils';
 import { marketProbability } from '@evcore/analysis-core';
 import {
   classForTargetOddsMin,
   INTRADAY_SIGNAL_WINDOW_DAYS,
   ABSTENTION_PASS_CLASS,
+  ABSTENTION_PASS_TARGET,
 } from './coupon.constants';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
 import type { CouponClassTrackRecord } from './dto/coupon-track-record.dto';
@@ -200,6 +201,31 @@ export class CouponService {
         attempt.outcome === 'abstained' &&
         !published.has(couponClass)
         ? [{ couponClass, reason: attempt.reason }]
+        : [];
+    });
+  }
+
+  /**
+   * Les produits déterministes qui se sont abstenus, jour par jour sur
+   * [from, to[, avec la raison du moteur (2026-10-30). Aujourd'hui les lit
+   * pour un jour, Résultats sur sa période. Contrairement à
+   * `getAbstentions`, le combiné de l'IA ne masque pas l'abstention du
+   * Combiné : il n'est pas un produit de ces écrans.
+   */
+  async getProductAbstentions(input: {
+    from: Date;
+    to: Date;
+  }): Promise<{ date: string; product: string; reason: string | null }[]> {
+    const rows = await this.repo.findAbstentionsBetween({
+      ...input,
+      passes: Object.entries(ABSTENTION_PASS_TARGET).map(
+        ([pass, targetOddsMin]) => ({ pass, targetOddsMin }),
+      ),
+    });
+    return rows.flatMap((row) => {
+      const product = ABSTENTION_PASS_CLASS[row.pass];
+      return product
+        ? [{ date: formatDateUtc(row.forDate), product, reason: row.reason }]
         : [];
     });
   }

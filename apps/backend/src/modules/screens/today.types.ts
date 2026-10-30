@@ -95,6 +95,11 @@ export type TodayScreen = {
   /** The day shown (UTC), YYYY-MM-DD. */
   date: string;
   yesterday: TodayYesterdayItem[];
+  /**
+   * The coupon of the hero card, chosen by the server (TODAY_HERO_RELAY):
+   * null when nothing plays today.
+   */
+  heroId: string | null;
   /** Today's coupons, in screen order. */
   coupons: TodayCoupon[];
   absences: TodayAbsence[];

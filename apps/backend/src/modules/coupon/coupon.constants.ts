@@ -25,8 +25,15 @@
  */
 
 import {
+  COMBO_COUPON_CLASS,
   COUPON_BOUNDS,
   COUPON_CLASSES,
+  DOUBLE_COUPON_CLASS,
+  FAVOURITE_COUPON_CLASS,
+  HUNTER_BTTS_CLASS,
+  HUNTER_CORNERS_CLASS,
+  HUNTER_DRAW_CLASS,
+  HUNTER_SCORE_CLASS,
   DRAW_STAKED_LEAGUES,
   POOL_ELIGIBLE_CHANNELS,
   POOL_EXCLUDED_CHANNELS,
@@ -427,12 +434,29 @@ export const COUPON_SETTLEMENT_POLICY = {
  * composent (2026-10-29). Le coupon long et le combiné IA ne sont pas des
  * produits de l'Accueil.
  */
-export const ABSTENTION_PASS_CLASS: Readonly<Record<string, string>> = {
-  favourite: 'FAVOURITE',
-  'engine-combo': 'COMBO',
-  double: 'DOUBLE',
-  'hunter-hunter_btts': 'HUNTER_BTTS',
-  'hunter-hunter_draw': 'HUNTER_DRAW',
-  'hunter-hunter_score': 'HUNTER_SCORE',
-  'hunter-hunter_corners': 'HUNTER_CORNERS',
+const ABSTENTION_PASSES: Readonly<Record<string, CouponClass>> = {
+  favourite: FAVOURITE_COUPON_CLASS,
+  'engine-combo': COMBO_COUPON_CLASS,
+  double: DOUBLE_COUPON_CLASS,
+  'hunter-hunter_btts': HUNTER_BTTS_CLASS,
+  'hunter-hunter_draw': HUNTER_DRAW_CLASS,
+  'hunter-hunter_score': HUNTER_SCORE_CLASS,
+  'hunter-hunter_corners': HUNTER_CORNERS_CLASS,
 };
+
+export const ABSTENTION_PASS_CLASS: Readonly<Record<string, string>> =
+  Object.fromEntries(
+    Object.entries(ABSTENTION_PASSES).map(([pass, c]) => [pass, c.name]),
+  );
+
+/**
+ * La bande cible du produit de chaque passe : un produit qui a un coupon
+ * déterministe publié ce jour-là dans sa bande n'est jamais dit absent.
+ */
+export const ABSTENTION_PASS_TARGET: Readonly<Record<string, number>> =
+  Object.fromEntries(
+    Object.entries(ABSTENTION_PASSES).map(([pass, c]) => [
+      pass,
+      c.targetOddsMin,
+    ]),
+  );

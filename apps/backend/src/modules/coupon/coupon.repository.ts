@@ -877,6 +877,49 @@ export class CouponRepository {
     `;
   }
 
+  /**
+   * Les abstentions de chaque jour de [from, to[ (2026-10-30, 04 § 5 et
+   * 08 § 6) : la dernière tentative de chaque passe fait foi, et une passe
+   * dont le produit a quand même un coupon déterministe publié ce jour-là
+   * dans sa bande n'est pas une abstention. Les tentatives ne sont jamais
+   * purgées : la raison d'un jour se relit autant qu'on veut.
+   */
+  findAbstentionsBetween(input: {
+    from: Date;
+    to: Date;
+    passes: readonly { pass: string; targetOddsMin: number }[];
+  }): Promise<{ forDate: Date; pass: string; reason: string | null }[]> {
+    return this.prisma.client.$queryRaw<
+      { forDate: Date; pass: string; reason: string | null }[]
+    >`
+      WITH latest AS (
+        SELECT DISTINCT ON ("forDate", pass) "forDate", pass, outcome, reason
+        FROM public.coupon_generation_attempt
+        WHERE "forDate" >= ${startOfUtcDay(input.from)}::date
+          AND "forDate" < ${startOfUtcDay(input.to)}::date
+          AND pass = ANY(${input.passes.map((p) => p.pass)}::text[])
+        ORDER BY "forDate", pass, "generatedAt" DESC
+      ), product AS (
+        SELECT * FROM unnest(
+          ${input.passes.map((p) => p.pass)}::text[],
+          ${input.passes.map((p) => p.targetOddsMin)}::numeric[]
+        ) AS p(pass, target)
+      )
+      SELECT latest."forDate", latest.pass, latest.reason
+      FROM latest
+      JOIN product ON product.pass = latest.pass
+      WHERE latest.outcome = 'abstained'
+        AND NOT EXISTS (
+          SELECT 1 FROM public.coupon_proposal cp
+          WHERE cp."forDate" = latest."forDate"
+            AND cp."targetOddsMin" = product.target
+            AND cp.source <> 'LLM'
+            AND cp.rank = 1
+        )
+      ORDER BY latest."forDate", latest.pass
+    `;
+  }
+
   /** Bandes cibles des coupons publiés pour un jour, toutes sources. */
   async findPublishedTargets(forDate: Date): Promise<number[]> {
     const rows = await this.prisma.client.couponProposal.findMany({

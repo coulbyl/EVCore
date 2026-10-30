@@ -3,9 +3,9 @@ import Decimal from 'decimal.js';
 import {
   TODAY_FOLLOWED_LOOKBACK_DAYS,
   TODAY_FORM_WINDOW_DAYS,
+  TODAY_HERO_RELAY,
 } from '@config/screens.constants';
-import { ABSTENTION_PASS_CLASS } from '@modules/coupon/coupon.constants';
-import { CouponRepository } from '@modules/coupon/coupon.repository';
+import { CouponService } from '@modules/coupon/coupon.service';
 import { formatDateUtc, startOfUtcDay } from '@utils/date.utils';
 import {
   TodayRepository,
@@ -37,18 +37,19 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * GET /today: the « Aujourd'hui » screen in one answer
  * (docs/refonte-ui/04-aujourdhui-en-detail.md, 16 § 3). Three SQL queries:
  * the legs of today's and followed coupons, the product days of the form
- * window, the latest generation attempts of today.
+ * window, today's abstentions.
  */
 @Injectable()
 export class TodayService {
   constructor(
     private readonly repository: TodayRepository,
-    private readonly coupons: CouponRepository,
+    private readonly coupons: CouponService,
   ) {}
 
   async getToday(userId: string, now: Date = new Date()): Promise<TodayScreen> {
     const today = startOfUtcDay(now);
-    const [legRows, dayRows, attempts] = await Promise.all([
+    const tomorrow = new Date(today.getTime() + DAY_MS);
+    const [legRows, dayRows, abstentions] = await Promise.all([
       this.repository.findCouponLegs({
         userId,
         today,
@@ -63,7 +64,7 @@ export class TodayService {
         until: today,
         targets: TODAY_PRODUCT_TARGETS,
       }),
-      this.coupons.findLatestAttempts(today),
+      this.coupons.getProductAbstentions({ from: today, to: tomorrow }),
     ]);
 
     const allCoupons = couponsOf(legRows, now);
@@ -74,8 +75,9 @@ export class TodayService {
     return {
       date: todayKey,
       yesterday: yesterdayOf(dayRows, yesterdayKey),
+      heroId: heroOf(coupons),
       coupons,
-      absences: absencesOf(attempts, coupons),
+      absences: absencesOf(abstentions),
       followedInProgress: allCoupons.filter((c) => c.forDate !== todayKey),
       forms: formsOf(dayRows),
     };
@@ -300,25 +302,26 @@ function countsOf(days: TodayProductForm['days']): {
   return { won, played, worstLosingStreak: worst };
 }
 
+/** The first product of the relay that has a coupon today. */
+function heroOf(coupons: readonly TodayCoupon[]): string | null {
+  for (const product of TODAY_HERO_RELAY) {
+    const coupon = coupons.find((c) => c.product === product);
+    if (coupon) return coupon.id;
+  }
+  return null;
+}
+
 /**
- * Products that abstained today, with the engine's reason: the latest
- * attempt of each pass decides (a catch-up pass may have composed after an
- * abstention). A product with a coupon on this screen is never absent; the
- * LLM combo does not count, it is not a product of this screen.
+ * Products that abstained today, with the engine's reason, in screen
+ * order. CouponService.getProductAbstentions already leaves out a product
+ * that has a coupon of this screen, and the passes of other products.
  */
 function absencesOf(
-  attempts: readonly { pass: string; outcome: string; reason: string | null }[],
-  coupons: readonly TodayCoupon[],
+  abstentions: readonly { product: string; reason: string | null }[],
 ): TodayAbsence[] {
-  const present = new Set<string>(coupons.map((c) => c.product));
-  return attempts
-    .flatMap((attempt) => {
-      const product = ABSTENTION_PASS_CLASS[attempt.pass];
-      return attempt.outcome === 'abstained' &&
-        isTodayProduct(product) &&
-        !present.has(product)
-        ? [{ product, reason: attempt.reason }]
-        : [];
-    })
+  return abstentions
+    .flatMap(({ product, reason }) =>
+      isTodayProduct(product) ? [{ product, reason }] : [],
+    )
     .sort((a, b) => productRank(a.product) - productRank(b.product));
 }

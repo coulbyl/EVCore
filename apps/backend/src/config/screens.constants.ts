@@ -15,6 +15,19 @@ export const TODAY_PRODUCTS = [
   'HUNTER_CORNERS',
 ] as const;
 
+// Who takes the hero card (03, 04 § 5): the Favori, then the Combiné when
+// it abstains, then the Coupon cote 2, then the first hunter present. Never
+// the LLM combo (03 § 3 not revisited).
+export const TODAY_HERO_RELAY = [
+  'FAVOURITE',
+  'COMBO',
+  'DOUBLE',
+  'HUNTER_BTTS',
+  'HUNTER_DRAW',
+  'HUNTER_SCORE',
+  'HUNTER_CORNERS',
+] as const satisfies readonly (typeof TODAY_PRODUCTS)[number][];
+
 // « Forme sur 30 jours » under each product (04 § 1).
 export const TODAY_FORM_WINDOW_DAYS = 30;
 
