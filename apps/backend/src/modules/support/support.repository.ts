@@ -25,7 +25,7 @@ const MESSAGE_SELECT = {
   createdAt: true,
   // Null for an AUTOMATED message (no human sender) — the service layer
   // maps that to a "system" sender rather than a real username/role.
-  sender: { select: { username: true, role: true } },
+  sender: { select: { username: true, fullName: true, role: true } },
   attachment: {
     select: {
       kind: true,

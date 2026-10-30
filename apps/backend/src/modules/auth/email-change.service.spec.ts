@@ -29,7 +29,7 @@ function makeHarness(
       .mockResolvedValue({ passwordHash, role: UserRole.OPERATOR }),
     findIdentity: vi
       .fn()
-      .mockResolvedValue({ email: 'old@exemple.com', username: 'fannan' }),
+      .mockResolvedValue({ email: 'old@exemple.com', fullName: 'Fannan' }),
     isEmailTaken: vi.fn().mockResolvedValue(opts.taken ?? false),
     replaceEmailChangeCode: vi.fn().mockResolvedValue(undefined),
     findActiveEmailChangeCode: vi.fn().mockResolvedValue(opts.code ?? null),
@@ -73,7 +73,7 @@ describe('EmailChangeService.request', () => {
     );
     expect(mail.sendEmailChangeCode).toHaveBeenCalledWith(
       'new@exemple.com',
-      expect.objectContaining({ username: 'fannan', expiresInMinutes: 10 }),
+      expect.objectContaining({ firstName: 'Fannan', expiresInMinutes: 10 }),
     );
   });
 
@@ -123,7 +123,7 @@ describe('EmailChangeService.confirm', () => {
       email: 'new@exemple.com',
     });
     expect(mail.sendEmailChanged).toHaveBeenCalledWith('old@exemple.com', {
-      username: 'fannan',
+      firstName: 'Fannan',
       newEmail: 'n***@exemple.com',
     });
   });

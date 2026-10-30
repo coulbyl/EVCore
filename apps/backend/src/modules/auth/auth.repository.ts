@@ -66,14 +66,12 @@ export class AuthRepository {
 
   // --- Users ---------------------------------------------------------------
 
-  findIdentityClash(input: {
-    email: string;
-    username: string;
-  }): Promise<{ email: string; username: string } | null> {
-    return this.prisma.client.user.findFirst({
-      where: { OR: [{ email: input.email }, { username: input.username }] },
-      select: { email: true, username: true },
+  async isEmailTaken(email: string): Promise<boolean> {
+    const user = await this.prisma.client.user.findUnique({
+      where: { email },
+      select: { id: true },
     });
+    return user !== null;
   }
 
   createUser(data: Prisma.UserCreateInput): Promise<SessionUserRow> {
@@ -157,12 +155,12 @@ export class AuthRepository {
 
   findEmailVerificationTarget(userId: string): Promise<{
     email: string;
-    username: string;
+    fullName: string;
     emailVerified: boolean;
   }> {
     return this.prisma.client.user.findUniqueOrThrow({
       where: { id: userId },
-      select: { email: true, username: true, emailVerified: true },
+      select: { email: true, fullName: true, emailVerified: true },
     });
   }
 
@@ -279,11 +277,11 @@ export class AuthRepository {
   findPasswordResetTarget(identifier: string): Promise<{
     id: string;
     email: string;
-    username: string;
+    fullName: string;
   } | null> {
     return this.prisma.client.user.findFirst({
       where: byIdentifier(identifier),
-      select: { id: true, email: true, username: true },
+      select: { id: true, email: true, fullName: true },
     });
   }
 

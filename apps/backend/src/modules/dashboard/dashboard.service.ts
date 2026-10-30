@@ -553,7 +553,7 @@ export class DashboardService {
 
     for (const betSlip of betSlips) {
       const existing = byUser.get(betSlip.userId) ?? {
-        username: betSlip.user.username,
+        username: betSlip.user.username ?? betSlip.user.fullName,
         won: 0,
         total: 0,
         staked: new Decimal(0),

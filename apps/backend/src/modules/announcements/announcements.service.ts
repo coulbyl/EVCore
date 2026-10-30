@@ -17,7 +17,7 @@ export type AnnouncementView = {
   updatedAt: string;
   createdBy: {
     id: string;
-    username: string;
+    username: string | null;
     fullName: string;
   } | null;
 };
@@ -36,7 +36,7 @@ type AnnouncementRecord = {
   updatedAt: Date;
   createdBy: {
     id: string;
-    username: string;
+    username: string | null;
     fullName: string;
   } | null;
 };

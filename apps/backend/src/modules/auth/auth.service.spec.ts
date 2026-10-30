@@ -91,6 +91,46 @@ function requestWith(token?: string): AuthenticatedRequest {
   } as AuthenticatedRequest;
 }
 
+describe('AuthService.register', () => {
+  const input = {
+    email: ' Kouassi@Example.com ',
+    firstName: '  Kouassi ',
+    password: 'une phrase assez longue',
+    confirmAge: true,
+    acceptTerms: true,
+  };
+
+  it('creates the account from first name and email, without a username', async () => {
+    const createUser = vi.fn().mockResolvedValue({ ...USER, username: null });
+    const { service, repository } = makeHarness({
+      isEmailTaken: vi.fn().mockResolvedValue(false),
+      createUser,
+    });
+    const { session } = await service.register(input);
+
+    expect(repository.isEmailTaken).toHaveBeenCalledWith('kouassi@example.com');
+    const data = createUser.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(data).toMatchObject({
+      email: 'kouassi@example.com',
+      fullName: 'Kouassi',
+      hasCompletedOnboarding: false,
+    });
+    expect(data).not.toHaveProperty('username');
+    expect(session.user.username).toBeNull();
+  });
+
+  it('says the email already has an account', async () => {
+    const { service, repository } = makeHarness({
+      isEmailTaken: vi.fn().mockResolvedValue(true),
+      createUser: vi.fn(),
+    });
+    await expect(service.register(input)).rejects.toThrow(
+      new ConflictException('Cet e-mail a déjà un compte'),
+    );
+    expect(repository.createUser).not.toHaveBeenCalled();
+  });
+});
+
 describe('AuthService.login', () => {
   const loginRow = (): LoginUserRow => ({
     ...USER,

@@ -78,40 +78,20 @@ export class AuthService {
     input: RegisterDto,
   ): Promise<{ token: string; session: AuthSession }> {
     const email = normalizeIdentifier(input.email);
-    const username = normalizeIdentifier(input.username);
 
-    const existing = await this.repository.findIdentityClash({
-      email,
-      username,
-    });
-
-    if (existing) {
-      // The client-facing message stays deliberately generic ("email OR
-      // username") rather than naming which one collided — splitting it
-      // would let an attacker enumerate registered emails one probe at a
-      // time. Logged server-side instead (2026-09-04, investigating a
-      // report that some signups fail) so a real collision is at least
-      // traceable after the fact, without exposing it to the requester.
-      logger.warn(
-        {
-          collidedOn:
-            existing.email === email && existing.username === username
-              ? 'both'
-              : existing.email === email
-                ? 'email'
-                : 'username',
-        },
-        'register: rejected — email or username already in use',
-      );
-      throw new ConflictException('Email ou username déjà utilisé');
+    // Seul l'e-mail peut entrer en collision depuis que le nom d'utilisateur
+    // n'est plus demandé (2026-10-30). Le message le dit, comme le veut
+    // l'écran d'inscription (11 § 2) : un formulaire d'inscription révèle de
+    // toute façon qu'une adresse a un compte, autant que le joueur sache
+    // qu'il lui suffit de se connecter.
+    if (await this.repository.isEmailTaken(email)) {
+      throw new ConflictException('Cet e-mail a déjà un compte');
     }
 
     const user = await this.repository.createUser({
       email,
-      username,
-      fullName: input.fullName.trim(),
+      fullName: input.firstName.trim(),
       passwordHash: await hashPassword(input.password),
-      bio: input.bio?.trim() || null,
       // Preuve du consentement : le DTO refuse l'inscription sans les deux
       // cases cochées, on garde la date et la version acceptée.
       termsAcceptedAt: new Date(),
@@ -141,7 +121,7 @@ export class AuthService {
     const user = await this.repository.findLoginUser(identifier);
 
     if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
-      throw new UnauthorizedException('Identifiants invalides');
+      throw new UnauthorizedException('E-mail ou mot de passe incorrect');
     }
 
     if (user.suspended) {
@@ -293,7 +273,7 @@ export class AuthService {
     });
 
     await this.mail.sendEmailVerification(user.email, {
-      username: user.username,
+      firstName: user.fullName,
       code,
       expiresInMinutes: OTP_EXPIRES_IN_MINUTES,
     });
@@ -396,7 +376,7 @@ export class AuthService {
 
     if (recentCount >= PASSWORD_RESET_RATE_LIMIT_MAX) {
       logger.warn(
-        { userId: user.id, username: user.username, recentCount },
+        { userId: user.id, recentCount },
         'password-reset: rate limit reached',
       );
       return;
@@ -405,14 +385,14 @@ export class AuthService {
     const { resetUrl } = await this.createResetToken(user.id, false);
 
     await this.mail.sendPasswordReset(user.email, {
-      username: user.username,
+      firstName: user.fullName,
       resetUrl,
       expiresInMinutes: PASSWORD_RESET_EXPIRES_IN_MINUTES,
       isAdminGenerated: false,
     });
 
     logger.info(
-      { userId: user.id, username: user.username },
+      { userId: user.id },
       'password-reset: token created, email dispatch attempted',
     );
   }
@@ -439,7 +419,7 @@ export class AuthService {
     const user = await this.repository.findTotpResetTarget(identifier);
 
     if (!user || !user.totpVerified || !user.totpSecret) {
-      throw new UnauthorizedException('Identifiants invalides');
+      throw new UnauthorizedException('E-mail ou mot de passe incorrect');
     }
 
     const appSecret = this.config.getOrThrow<string>('TOTP_APP_SECRET');

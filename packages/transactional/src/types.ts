@@ -49,25 +49,25 @@ export type XgUnavailableReportProps = {
 };
 
 export type EmailVerificationProps = {
-  username: string;
+  firstName: string;
   code: string;
   expiresInMinutes: number;
 };
 
 export type EmailChangeCodeProps = {
-  username: string;
+  firstName: string;
   code: string;
   expiresInMinutes: number;
 };
 
 export type EmailChangedProps = {
-  username: string;
+  firstName: string;
   /** Nouvelle adresse, masquée (« f***@exemple.com »). */
   newEmail: string;
 };
 
 export type PasswordResetProps = {
-  username: string;
+  firstName: string;
   resetUrl: string;
   expiresInMinutes: number;
   isAdminGenerated: boolean;

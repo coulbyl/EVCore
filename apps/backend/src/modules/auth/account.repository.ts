@@ -41,10 +41,10 @@ export class AccountRepository {
 
   findIdentity(
     userId: string,
-  ): Promise<{ email: string; username: string } | null> {
+  ): Promise<{ email: string; fullName: string } | null> {
     return this.prisma.client.user.findUnique({
       where: { id: userId },
-      select: { email: true, username: true },
+      select: { email: true, fullName: true },
     });
   }
 

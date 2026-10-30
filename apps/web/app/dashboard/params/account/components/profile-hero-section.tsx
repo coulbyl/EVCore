@@ -244,7 +244,7 @@ export function ProfileHeroSection() {
           >
             <UserAvatar
               avatarUrl={selected}
-              username={currentUser.username}
+              username={currentUser.fullName}
               size={80}
             />
           </div>
@@ -352,7 +352,7 @@ export function ProfileHeroSection() {
             </h2>
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
               <span className="text-sm text-muted-foreground">
-                @{currentUser.username}
+                {currentUser.username ? `@${currentUser.username}` : null}
               </span>
               {/* « Opérateur » se lit « bookmaker » chez un parieur : le
                   rôle ne s'affiche qu'aux admins (revue UX du 2026-10-27). */}
@@ -390,7 +390,7 @@ export function ProfileHeroSection() {
             <EditableInfoRow
               icon={AtSign}
               label={t("username")}
-              value={`@${currentUser.username}`}
+              value={currentUser.username ? `@${currentUser.username}` : ""}
               editing={editingField === "username"}
               onStartEdit={() => startEdit("username")}
               onSave={(val) =>

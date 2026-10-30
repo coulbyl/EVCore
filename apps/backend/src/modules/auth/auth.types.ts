@@ -4,7 +4,7 @@ import type { RiskProfile, UserRole } from '@evcore/db';
 export type AuthSessionUser = {
   id: string;
   email: string;
-  username: string;
+  username: string | null;
   fullName: string;
   bio: string | null;
   role: UserRole;

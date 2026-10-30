@@ -306,7 +306,9 @@ export function AppShell({
                 ) : null}
               </div>
               <p className="truncate text-xs text-sidebar-foreground/60">
-                @{currentUser.username}
+                {currentUser.username
+                  ? `@${currentUser.username}`
+                  : currentUser.email}
               </p>
             </div>
             <Link

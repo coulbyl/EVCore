@@ -15,7 +15,7 @@ import type { UpdateUserDto } from './dto/update-user.dto';
 export type AdminUserRow = {
   id: string;
   email: string;
-  username: string;
+  username: string | null;
   fullName: string;
   role: UserRole;
   emailVerified: boolean;

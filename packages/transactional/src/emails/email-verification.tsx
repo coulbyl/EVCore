@@ -25,7 +25,7 @@ const styles = {
 } as const;
 
 export function EmailVerificationEmail({
-  username,
+  firstName,
   code,
   expiresInMinutes,
 }: EmailVerificationProps) {
@@ -34,7 +34,7 @@ export function EmailVerificationEmail({
       <Heading style={headingStyle()}>Vérification de votre email</Heading>
       <Section>
         <Text style={intro}>
-          Bonjour {username}, utilisez le code ci-dessous pour vérifier votre
+          Bonjour {firstName}, utilisez le code ci-dessous pour vérifier votre
           adresse email et activer votre compte EVCore.
         </Text>
         <Text style={styles.code}>{code}</Text>
@@ -52,7 +52,7 @@ export const renderEmailVerification = (props: EmailVerificationProps) =>
 export default function EmailVerificationPreview() {
   return (
     <EmailVerificationEmail
-      username="fannan"
+      firstName="Fannan"
       code="847291"
       expiresInMinutes={10}
     />

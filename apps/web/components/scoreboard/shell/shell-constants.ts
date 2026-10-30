@@ -32,9 +32,9 @@ export function isTabActive(pathname: string, href: string): boolean {
 /** L'initiale affichée à la place d'un avatar (09-moi.md § 5). */
 export function initialOf(user: {
   fullName: string;
-  username: string;
+  username: string | null;
   email: string;
 }): string {
-  const source = user.fullName.trim() || user.username.trim() || user.email;
+  const source = user.fullName.trim() || user.username?.trim() || user.email;
   return source.charAt(0).toLocaleUpperCase("fr") || "?";
 }

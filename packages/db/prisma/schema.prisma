@@ -642,7 +642,10 @@ model Bet {
 model User {
   id                               String                    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   email                            String                    @unique
-  username                         String                    @unique
+  // Facultatif depuis le 2026-10-30 : on s'inscrit et se connecte par e-mail, le
+  // prénom (`fullName`) sert de nom affiché. Gardé pour les comptes qui en
+  // ont un (connexion toujours acceptée) ; NULL multiples permis par l'index.
+  username                         String?                   @unique
   passwordHash                     String
   fullName                         String
   bio                              String?

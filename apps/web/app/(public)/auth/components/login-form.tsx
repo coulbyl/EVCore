@@ -24,7 +24,7 @@ const loginSchema = z.object({
   identifier: z
     .string()
     .trim()
-    .min(1, "Indique ton e-mail ou ton nom d'utilisateur."),
+    .min(1, "Indique ton e-mail."),
   password: z.string().min(1, "Indique ton mot de passe."),
 });
 
@@ -76,9 +76,14 @@ export function LoginForm() {
           name="identifier"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email ou nom d&apos;utilisateur</FormLabel>
+              <FormLabel>E-mail</FormLabel>
               <FormControl>
-                <Input autoComplete="username" className="h-11" {...field} />
+                <Input
+                  inputMode="email"
+                  autoComplete="email"
+                  className="h-11"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

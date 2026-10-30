@@ -26,7 +26,7 @@ const styles = {
 
 /** Envoyé à la NOUVELLE adresse : elle doit prouver qu'elle est à toi. */
 export function EmailChangeCodeEmail({
-  username,
+  firstName,
   code,
   expiresInMinutes,
 }: EmailChangeCodeProps) {
@@ -35,7 +35,7 @@ export function EmailChangeCodeEmail({
       <Heading style={headingStyle()}>Confirme ta nouvelle adresse</Heading>
       <Section>
         <Text style={intro}>
-          Bonjour {username}, tu as demandé à utiliser cette adresse pour ton
+          Bonjour {firstName}, tu as demandé à utiliser cette adresse pour ton
           compte EVCore. Saisis ce code dans l&apos;application pour confirmer.
         </Text>
         <Text style={styles.code}>{code}</Text>
@@ -54,7 +54,7 @@ export const renderEmailChangeCode = (props: EmailChangeCodeProps) =>
 export default function EmailChangeCodePreview() {
   return (
     <EmailChangeCodeEmail
-      username="fannan"
+      firstName="Fannan"
       code="847291"
       expiresInMinutes={10}
     />

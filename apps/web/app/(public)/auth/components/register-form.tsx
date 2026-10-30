@@ -21,18 +21,14 @@ import {
 import { register } from "@/domains/auth/use-cases/register";
 
 const registerSchema = z.object({
-  email: z.email("Cet email n'est pas valide."),
-  username: z
+  // Prénom, e-mail, mot de passe : plus de nom d'utilisateur, on se
+  // connecte avec l'e-mail (refonte, 11 § 2).
+  firstName: z
     .string()
     .trim()
-    .min(3, "Au moins 3 caractères.")
-    .max(32, "32 caractères max.")
-    .regex(/^[a-zA-Z0-9_]+$/, "Lettres, chiffres ou _ uniquement."),
-  fullName: z
-    .string()
-    .trim()
-    .min(2, "Indique ton nom complet.")
-    .max(80, "80 caractères max."),
+    .min(1, "Indique ton prénom.")
+    .max(50, "50 caractères max."),
+  email: z.email("Cet e-mail n'est pas valide."),
   password: z
     .string()
     .min(8, "8 caractères minimum.")
@@ -60,9 +56,8 @@ export function RegisterForm() {
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
+      firstName: "",
       email: "",
-      username: "",
-      fullName: "",
       password: "",
       confirmAge: false,
       acceptTerms: false,
@@ -75,9 +70,8 @@ export function RegisterForm() {
     setIsSubmitting(true);
     try {
       await register({
+        firstName: values.firstName,
         email: values.email,
-        username: values.username,
-        fullName: values.fullName,
         password: values.password,
         // Validés par le schéma : on n'arrive ici que les deux cochés.
         confirmAge: true,
@@ -110,14 +104,30 @@ export function RegisterForm() {
           </div>
         ) : null}
 
-        {/* Email + Username */}
         <div className="grid grid-cols-1 gap-4">
+          <FormField
+            control={form.control}
+            name="firstName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Prénom</FormLabel>
+                <FormControl>
+                  <Input
+                    autoComplete="given-name"
+                    className="h-11"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>E-mail</FormLabel>
                 <FormControl>
                   <Input
                     type="email"
@@ -138,36 +148,9 @@ export function RegisterForm() {
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="username"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nom d&apos;utilisateur</FormLabel>
-                <FormControl>
-                  <Input autoComplete="username" className="h-11" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
 
-        {/* Full name + Password */}
         <div className="grid grid-cols-1 gap-4">
-          <FormField
-            control={form.control}
-            name="fullName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nom complet</FormLabel>
-                <FormControl>
-                  <Input autoComplete="name" className="h-11" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           <FormField
             control={form.control}
             name="password"

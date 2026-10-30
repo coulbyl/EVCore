@@ -101,7 +101,7 @@ export type BetSlipResult = {
 export type BetSlipView = {
   id: string;
   userId: string;
-  username: string;
+  username: string | null;
   unitStake: string;
   type: "SIMPLE" | "COMBO";
   itemCount: number;

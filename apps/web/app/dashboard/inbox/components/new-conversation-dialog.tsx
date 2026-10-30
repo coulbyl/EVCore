@@ -88,7 +88,7 @@ export function NewConversationDialog() {
               >
                 <UserAvatar
                   avatarUrl={user.avatarUrl}
-                  username={user.username}
+                  username={user.fullName}
                   size={32}
                 />
                 <div className="min-w-0 flex-1">
@@ -96,7 +96,7 @@ export function NewConversationDialog() {
                     {user.fullName || user.username}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
-                    @{user.username}
+                    {user.username ? `@${user.username}` : null}
                   </p>
                 </div>
               </button>

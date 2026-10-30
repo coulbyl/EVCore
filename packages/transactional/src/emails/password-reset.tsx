@@ -28,7 +28,7 @@ const styles = {
 } as const;
 
 export function PasswordResetEmail({
-  username,
+  firstName,
   resetUrl,
   expiresInMinutes,
   isAdminGenerated,
@@ -38,7 +38,7 @@ export function PasswordResetEmail({
       <Heading style={headingStyle()}>Réinitialisation du mot de passe</Heading>
       <Section>
         <Text style={intro}>
-          Bonjour {username},{" "}
+          Bonjour {firstName},{" "}
           {isAdminGenerated
             ? "un administrateur a généré ce lien de réinitialisation pour vous."
             : "vous avez demandé à réinitialiser votre mot de passe EVCore."}{" "}
@@ -67,7 +67,7 @@ export const renderPasswordReset = (props: PasswordResetProps) =>
 export default function PasswordResetPreview() {
   return (
     <PasswordResetEmail
-      username="fannan"
+      firstName="Fannan"
       resetUrl="https://evcore.app/auth/reset-password?token=abc123"
       expiresInMinutes={15}
       isAdminGenerated={false}

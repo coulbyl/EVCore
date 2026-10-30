@@ -77,7 +77,7 @@ export class EmailChangeService {
       expiresAt: new Date(Date.now() + OTP_CODE_TTL_MS),
     });
     await this.mail.sendEmailChangeCode(newEmail, {
-      username: identity.username,
+      firstName: identity.fullName,
       code,
       expiresInMinutes: OTP_EXPIRES_IN_MINUTES,
     });
@@ -126,7 +126,7 @@ export class EmailChangeService {
     this.sessionCache.invalidateUser(userId);
 
     await this.mail.sendEmailChanged(identity.email, {
-      username: identity.username,
+      firstName: identity.fullName,
       newEmail: maskEmail(email),
     });
     logger.info({ userId }, 'E-mail address changed by its owner');

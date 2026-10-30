@@ -90,7 +90,9 @@ export function AccountButton({
                 {currentUser.fullName}
               </p>
               <p className="truncate text-xs text-muted-foreground">
-                @{currentUser.username}
+                {currentUser.username
+                  ? `@${currentUser.username}`
+                  : currentUser.email}
               </p>
             </div>
           </div>

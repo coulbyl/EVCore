@@ -468,7 +468,7 @@ export class DashboardRepository {
         userId: true,
         type: true,
         unitStake: true,
-        user: { select: { username: true } },
+        user: { select: { username: true, fullName: true } },
         items: {
           select: {
             stakeOverride: true,

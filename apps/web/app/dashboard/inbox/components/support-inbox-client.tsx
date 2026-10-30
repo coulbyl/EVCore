@@ -44,7 +44,7 @@ function ConversationRow({
     >
       <UserAvatar
         avatarUrl={conversation.avatarUrl}
-        username={conversation.username}
+        username={conversation.fullName}
         size={36}
       />
       <div className="min-w-0 flex-1">
@@ -139,7 +139,7 @@ function ThreadView({
             </button>
             <UserAvatar
               avatarUrl={conversation.avatarUrl}
-              username={conversation.username}
+              username={conversation.fullName}
               size={32}
             />
             <div>
@@ -147,7 +147,7 @@ function ThreadView({
                 {conversation.fullName || conversation.username}
               </p>
               <p className="text-xs text-muted-foreground">
-                @{conversation.username}
+                {conversation.username ? `@${conversation.username}` : null}
               </p>
             </div>
           </div>

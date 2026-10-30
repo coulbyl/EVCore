@@ -5,11 +5,9 @@ import { applyLocaleFromSession } from "./apply-locale";
 import type { AuthSession } from "../types/auth";
 
 export type RegisterInput = {
+  firstName: string;
   email: string;
-  username: string;
-  fullName: string;
   password: string;
-  bio?: string;
   /** Âge légal confirmé et conditions acceptées : exigés par l'API. */
   confirmAge: true;
   acceptTerms: true;

@@ -3,7 +3,7 @@ export type RiskProfile = "CONSERVATIVE" | "BALANCED" | "AGGRESSIVE";
 export type AuthSessionUser = {
   id: string;
   email: string;
-  username: string;
+  username: string | null;
   fullName: string;
   bio: string | null;
   role: "ADMIN" | "OPERATOR";
