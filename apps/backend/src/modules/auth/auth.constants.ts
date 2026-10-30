@@ -14,6 +14,9 @@ export const LOGIN_CHALLENGE_MAX_ATTEMPTS = 5;
 // permet d'en obtenir d'autres.
 export const LOGIN_TOTP_MAX_FAILURES = 10;
 export const LOGIN_TOTP_FAILURE_WINDOW_MS = 15 * 60 * 1000;
+// Un code accepté ne resert pas : retenu plus longtemps que sa tolérance
+// (30 s par pas, un pas de part et d'autre au plus).
+export const TOTP_USED_CODE_TTL_MS = 2 * 60 * 1000;
 
 export const PASSWORD_RESET_TTL_MS = 15 * 60 * 1000;
 export const PASSWORD_RESET_EXPIRES_IN_MINUTES = 15;

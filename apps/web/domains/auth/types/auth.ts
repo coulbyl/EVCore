@@ -40,10 +40,6 @@ export function activePauseEnd(
     : null;
 }
 
-export function isAccountVerified(user: AuthSessionUser): boolean {
-  return user.emailVerified || user.totpVerified;
-}
-
 export type AuthSession = {
   sessionId: string;
   user: AuthSessionUser;

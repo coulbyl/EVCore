@@ -1,4 +1,6 @@
-import { ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
+import { Prisma } from '@evcore/db';
+import { TODAY_PRODUCT_TARGETS } from '@modules/screens/today-products';
 import { describe, expect, it, vi } from 'vitest';
 import { CouponService } from './coupon.service';
 import type { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
@@ -144,12 +146,24 @@ describe('CouponService.getTrackRecord', () => {
 describe('CouponService.follow', () => {
   const NOW = new Date('2026-10-30T15:00:00.000Z');
 
-  function followHarness(firstKickoffAt: Date | null | undefined) {
+  // Le Favori du jour : un coupon d'Aujourd'hui.
+  const FAVOURITE = {
+    source: 'PRICE_COMPOSER',
+    rank: 1,
+    targetOddsMin: new Prisma.Decimal(1.1),
+  };
+
+  function followHarness(
+    firstKickoffAt: Date | null | undefined,
+    coupon: Partial<typeof FAVOURITE> = {},
+  ) {
     const repo = {
       findFirstKickoff: vi
         .fn()
         .mockResolvedValue(
-          firstKickoffAt === undefined ? null : { firstKickoffAt },
+          firstKickoffAt === undefined
+            ? null
+            : { firstKickoffAt, ...FAVOURITE, ...coupon },
         ),
     } as unknown as CouponRepository;
     const follows = {
@@ -205,6 +219,26 @@ describe('CouponService.follow', () => {
     expect(follows.follow).toHaveBeenCalled();
   });
 
+  it("refuses a coupon that is not one of Aujourd'hui", async () => {
+    const llm = followHarness(new Date('2026-10-30T19:00:00.000Z'), {
+      source: 'LLM',
+      targetOddsMin: new Prisma.Decimal(1.2),
+    });
+    await expect(llm.service.follow('c', 'u1', NOW)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    // L'ancien coupon long (2,50), retiré d'Aujourd'hui.
+    const long = followHarness(new Date('2026-10-30T19:00:00.000Z'), {
+      source: 'ENGINE',
+      targetOddsMin: new Prisma.Decimal(2.5),
+    });
+    await expect(long.service.follow('c', 'u1', NOW)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    expect(llm.follows.follow).not.toHaveBeenCalled();
+    expect(long.follows.follow).not.toHaveBeenCalled();
+  });
+
   it('gives the record with the first follow date', async () => {
     const { service, follows } = followHarness(null);
     await expect(service.getFollowedSummary('u1')).resolves.toEqual({
@@ -213,7 +247,11 @@ describe('CouponService.follow', () => {
       refunded: 1,
       since: '2026-10-13T08:30:00.000Z',
     });
-    expect(follows.summaryFor).toHaveBeenCalledWith('u1', undefined);
+    expect(follows.summaryFor).toHaveBeenCalledWith({
+      userId: 'u1',
+      targets: TODAY_PRODUCT_TARGETS,
+      range: undefined,
+    });
   });
 });
 

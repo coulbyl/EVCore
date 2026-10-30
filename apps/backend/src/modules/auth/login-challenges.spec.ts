@@ -4,6 +4,7 @@ import {
   LOGIN_CHALLENGE_TTL_MS,
   LOGIN_TOTP_FAILURE_WINDOW_MS,
   LOGIN_TOTP_MAX_FAILURES,
+  TOTP_USED_CODE_TTL_MS,
 } from './auth.constants';
 import { LoginChallenges } from './login-challenges';
 
@@ -52,5 +53,15 @@ describe('LoginChallenges', () => {
     expect(challenges.begin(challenges.issue('user-1', later), later)).toBe(
       'user-1',
     );
+  });
+
+  it('refuses a code already accepted, until it can no longer be valid', () => {
+    const challenges = new LoginChallenges();
+    expect(challenges.consumeCode('user-1', '123456', T0)).toBe(true);
+    expect(challenges.consumeCode('user-1', '123456', T0 + 1_000)).toBe(false);
+    expect(challenges.consumeCode('user-2', '123456', T0)).toBe(true);
+    expect(
+      challenges.consumeCode('user-1', '123456', T0 + TOTP_USED_CODE_TTL_MS),
+    ).toBe(true);
   });
 });

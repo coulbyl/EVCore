@@ -7,6 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Prisma } from '@evcore/db';
 import { OTP } from 'otplib';
 import QRCode from 'qrcode';
 import type { Response } from 'express';
@@ -94,19 +95,30 @@ export class AuthService {
       throw new ConflictException('Cet e-mail a déjà un compte');
     }
 
-    const user = await this.repository.createUser({
-      email,
-      fullName: input.firstName.trim(),
-      passwordHash: await hashPassword(input.password),
-      // Preuve du consentement : le DTO refuse l'inscription sans les deux
-      // cases cochées, on garde la date et la version acceptée.
-      termsAcceptedAt: new Date(),
-      termsVersion: TERMS_VERSION,
-      // Schema default is `true` (existing users were already past the
-      // point of needing it) — a genuinely new signup must start `false`
-      // so the active onboarding wizard actually shows.
-      hasCompletedOnboarding: false,
-    });
+    const user = await this.repository
+      .createUser({
+        email,
+        fullName: input.firstName.trim(),
+        passwordHash: await hashPassword(input.password),
+        // Preuve du consentement : le DTO refuse l'inscription sans les deux
+        // cases cochées, on garde la date et la version acceptée.
+        termsAcceptedAt: new Date(),
+        termsVersion: TERMS_VERSION,
+        // Schema default is `true` (existing users were already past the
+        // point of needing it) — a genuinely new signup must start `false`
+        // so the active onboarding wizard actually shows.
+        hasCompletedOnboarding: false,
+      })
+      .catch((error: unknown) => {
+        // Deux inscriptions simultanées : la seconde bute sur l'index unique.
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          throw new ConflictException('Cet e-mail a déjà un compte');
+        }
+        throw error;
+      });
 
     logger.info({ userId: user.id }, 'register: account created');
 
@@ -159,7 +171,7 @@ export class AuthService {
       token: input.code,
       secret: decryptTotpSecret(user.totpSecret, appSecret),
     });
-    if (!valid) {
+    if (!valid || !this.loginChallenges.consumeCode(userId, input.code)) {
       this.loginChallenges.fail(userId);
       throw new UnauthorizedException('Code incorrect');
     }
@@ -474,7 +486,10 @@ export class AuthService {
       secret: plainSecret,
     });
 
-    if (!result.valid) {
+    if (
+      !result.valid ||
+      !this.loginChallenges.consumeCode(user.id, dto.totpCode)
+    ) {
       this.loginChallenges.fail(user.id);
       throw new UnauthorizedException('Code TOTP invalide');
     }

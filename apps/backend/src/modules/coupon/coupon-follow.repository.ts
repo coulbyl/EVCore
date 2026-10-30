@@ -23,16 +23,19 @@ export class CouponFollowRepository {
   }
 
   /**
-   * Le bilan des coupons suivis d'un joueur (09 § 1) : gagnés (gain partiel
+   * Le bilan des coupons suivis d'un joueur (09 § 1), sur les coupons
+   * d'Aujourd'hui seulement, comme Moi : gagnés (gain partiel
    * compris), perdus, remboursés, et la date du premier suivi. Un coupon
    * pas encore réglé n'est compté nulle part. Avec `range`, les coupons dont
    * le dernier match se joue dans [from, to[, comme le relevé du lundi
    * (« Ta semaine », 08 § 3).
    */
-  async summaryFor(
-    userId: string,
-    range?: { from: Date; to: Date },
-  ): Promise<{
+  async summaryFor(input: {
+    userId: string;
+    /** The bands of the products of « Aujourd'hui » (isTodayCoupon). */
+    targets: readonly number[];
+    range?: { from: Date; to: Date };
+  }): Promise<{
     won: number;
     lost: number;
     refunded: number;
@@ -47,11 +50,14 @@ export class CouponFollowRepository {
              min(cf."createdAt") AS since
       FROM public.coupon_follow cf
       JOIN public.coupon_proposal cp ON cp.id = cf."couponProposalId"
-      WHERE cf."userId" = ${userId}::uuid
+      WHERE cf."userId" = ${input.userId}::uuid
+        AND cp.source <> 'LLM'
+        AND cp.rank = 1
+        AND cp."targetOddsMin" = ANY(${input.targets}::numeric[])
         ${
-          range
-            ? Prisma.sql`AND cp."lastFixtureScheduledAt" >= ${range.from}
-                         AND cp."lastFixtureScheduledAt" < ${range.to}`
+          input.range
+            ? Prisma.sql`AND cp."lastFixtureScheduledAt" >= ${input.range.from}
+                         AND cp."lastFixtureScheduledAt" < ${input.range.to}`
             : Prisma.empty
         }
     `;

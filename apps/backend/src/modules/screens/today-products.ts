@@ -42,6 +42,23 @@ export function productOfTarget(targetOddsMin: number): TodayProductKey | null {
   return isTodayProduct(name) ? name : null;
 }
 
+/**
+ * A coupon of « Aujourd'hui », the only ones a player follows (09 § 1):
+ * rank 1, a product's band, never the LLM source. Moi, its record and the
+ * notifications all read the same coupons.
+ */
+export function isTodayCoupon(coupon: {
+  source: string;
+  rank: number;
+  targetOddsMin: number;
+}): boolean {
+  return (
+    coupon.source !== 'LLM' &&
+    coupon.rank === 1 &&
+    productOfTarget(coupon.targetOddsMin) !== null
+  );
+}
+
 /** Screen order (TODAY_PRODUCTS), for sorting. */
 export function productRank(product: TodayProductKey): number {
   return TODAY_PRODUCTS.indexOf(product);

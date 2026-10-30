@@ -4,6 +4,7 @@ import {
   LOGIN_CHALLENGE_TTL_MS,
   LOGIN_TOTP_MAX_FAILURES,
   LOGIN_TOTP_FAILURE_WINDOW_MS,
+  TOTP_USED_CODE_TTL_MS,
 } from './auth.constants';
 import { generateSessionToken, hashSessionToken } from './auth.utils';
 
@@ -32,6 +33,8 @@ type Failures = { count: number; windowStart: number };
 export class LoginChallenges {
   private readonly challenges = new Map<string, Challenge>();
   private readonly failures = new Map<string, Failures>();
+  /** `userId:code` → epoch ms until which that code is refused. */
+  private readonly usedCodes = new Map<string, number>();
 
   issue(userId: string, now: number = Date.now()): string {
     this.prune(now);
@@ -81,6 +84,19 @@ export class LoginChallenges {
     current.count += 1;
   }
 
+  /**
+   * Marks a code the authenticator accepted as used, or says it already
+   * was: a code seen over a shoulder cannot open a second session or reset
+   * the password within its validity window.
+   */
+  consumeCode(userId: string, code: string, now: number = Date.now()): boolean {
+    const key = `${userId}:${code}`;
+    const until = this.usedCodes.get(key);
+    if (until !== undefined && until > now) return false;
+    this.usedCodes.set(key, now + TOTP_USED_CODE_TTL_MS);
+    return true;
+  }
+
   /** Also read by the password reset by code, which needs no challenge. */
   isLockedOut(userId: string, now: number = Date.now()): boolean {
     const current = this.failures.get(userId);
@@ -94,6 +110,9 @@ export class LoginChallenges {
   private prune(now: number): void {
     for (const [key, challenge] of this.challenges) {
       if (challenge.expiresAt <= now) this.challenges.delete(key);
+    }
+    for (const [key, until] of this.usedCodes) {
+      if (until <= now) this.usedCodes.delete(key);
     }
     for (const [userId, current] of this.failures) {
       if (now - current.windowStart >= LOGIN_TOTP_FAILURE_WINDOW_MS) {

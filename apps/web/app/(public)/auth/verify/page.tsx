@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session";
-import { isAccountVerified } from "@/domains/auth/types/auth";
 import { AuthShell } from "../components/auth-shell";
 import { VerifyChoiceForm } from "./components/verify-choice-form";
 
@@ -17,7 +16,9 @@ export default async function VerifyPage() {
     redirect("/auth/login");
   }
 
-  if (isAccountVerified(session.user)) {
+  // L'e-mail, et lui seul : une application d'authentification ne vérifie
+  // pas l'adresse où partent les e-mails (09 § 7).
+  if (session.user.emailVerified) {
     redirect("/dashboard");
   }
 
@@ -28,7 +29,7 @@ export default async function VerifyPage() {
       asideTitle="Un compte protégé, c'est un compte récupérable."
       asideText="En vérifiant ton e-mail ou en connectant une application d'authentification, tu t'assures de toujours pouvoir récupérer l'accès à ton compte."
     >
-      <VerifyChoiceForm />
+      <VerifyChoiceForm hasAuthenticator={session.user.totpVerified} />
     </AuthShell>
   );
 }

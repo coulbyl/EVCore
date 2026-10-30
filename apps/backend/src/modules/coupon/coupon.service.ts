@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -7,6 +8,10 @@ import Decimal from 'decimal.js';
 import { CouponProposalStatus } from '@evcore/db';
 import { CouponRepository } from './coupon.repository';
 import { CouponFollowRepository } from './coupon-follow.repository';
+import {
+  TODAY_PRODUCT_TARGETS,
+  isTodayCoupon,
+} from '@modules/screens/today-products';
 import {
   playableQuoteKey,
   PlayableOddsRepository,
@@ -246,7 +251,18 @@ export class CouponService {
     userId: string,
     now: Date = new Date(),
   ): Promise<void> {
-    await this.assertNotStarted(couponProposalId, now);
+    const coupon = await this.assertNotStarted(couponProposalId, now);
+    // Seulement les coupons d'Aujourd'hui (2026-10-31) : Moi, son bilan et
+    // les notifications lisent les mêmes coupons.
+    if (
+      !isTodayCoupon({
+        source: coupon.source,
+        rank: coupon.rank,
+        targetOddsMin: Number(coupon.targetOddsMin),
+      })
+    ) {
+      throw new BadRequestException('Ce coupon ne se suit pas.');
+    }
     await this.follows.follow(couponProposalId, userId);
   }
 
@@ -269,14 +285,15 @@ export class CouponService {
     refunded: number;
     since: string | null;
   }> {
-    const summary = await this.follows.summaryFor(userId, range);
+    const summary = await this.follows.summaryFor({
+      userId,
+      targets: TODAY_PRODUCT_TARGETS,
+      range,
+    });
     return { ...summary, since: summary.since?.toISOString() ?? null };
   }
 
-  private async assertNotStarted(
-    couponProposalId: string,
-    now: Date,
-  ): Promise<void> {
+  private async assertNotStarted(couponProposalId: string, now: Date) {
     const coupon = await this.repo.findFirstKickoff(couponProposalId);
     if (!coupon) throw new NotFoundException('Coupon introuvable');
     if (coupon.firstKickoffAt && coupon.firstKickoffAt <= now) {
@@ -284,6 +301,7 @@ export class CouponService {
         'Le premier match a commencé : ce coupon ne se suit plus.',
       );
     }
+    return coupon;
   }
 
   /** Historique réel par produit de coupon sur les `days` derniers jours. */

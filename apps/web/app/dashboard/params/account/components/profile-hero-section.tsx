@@ -15,7 +15,6 @@ import {
 import { EmailChangeDialog } from "./email-change-dialog";
 import { useTranslations } from "next-intl";
 import { UserAvatar } from "@/components/user-avatar";
-import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
 import { FREE_AVATARS, LOCKED_AVATARS } from "@/lib/avatars";
 import {
   useCurrentUser,
@@ -170,11 +169,6 @@ export function ProfileHeroSection() {
   const [fieldSaving, setFieldSaving] = useState(false);
   const [fieldError, setFieldError] = useState<string | null>(null);
 
-  const { data: badges } = useMyBadges();
-  const unlockedBadges = new Set(
-    (badges ?? []).filter((b) => b.unlockedAt !== null).map((b) => b.code),
-  );
-
   useEffect(() => {
     setSelected(currentUser.avatarUrl);
   }, [currentUser.avatarUrl]);
@@ -286,9 +280,9 @@ export function ProfileHeroSection() {
               <div className="mx-1 w-px self-stretch bg-border" />
 
               {LOCKED_AVATARS.map((avatar) => {
-                const isLocked = avatar.requiredBadge
-                  ? !unlockedBadges.has(avatar.requiredBadge)
-                  : false;
+                // Les badges sont partis (2026-10-31) : un avatar qui en
+                // demandait un reste fermé, le serveur le refuse aussi.
+                const isLocked = Boolean(avatar.requiredBadge);
 
                 const btn = (
                   <button

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { Prisma } from '@evcore/db';
 import {
   BadRequestException,
   ConflictException,
@@ -130,6 +131,21 @@ describe('AuthService.register', () => {
     expect(session.user.username).toBeNull();
   });
 
+  it('says the same when a simultaneous signup took the email first', async () => {
+    const { service } = makeHarness({
+      isEmailTaken: vi.fn().mockResolvedValue(false),
+      createUser: vi.fn().mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('unique', {
+          code: 'P2002',
+          clientVersion: 'test',
+        }),
+      ),
+    });
+    await expect(service.register(input)).rejects.toThrow(
+      new ConflictException('Cet e-mail a déjà un compte'),
+    );
+  });
+
   it('says the email already has an account', async () => {
     const { service, repository } = makeHarness({
       isEmailTaken: vi.fn().mockResolvedValue(true),
@@ -253,6 +269,22 @@ describe('AuthService login with an authenticator app', () => {
     await expect(
       service.loginWithTotp({ challenge, code }),
     ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('refuses a code already used, even with a fresh challenge', async () => {
+    const { service, repository } = makeHarness({
+      findLoginUser: vi.fn().mockResolvedValue(totpRow()),
+      findTotpLoginUser: vi.fn().mockResolvedValue(totpRow()),
+    });
+    const code = otp.generateSync({ secret });
+    await service.loginWithTotp({
+      challenge: await challengeFor(service),
+      code,
+    });
+    await expect(
+      service.loginWithTotp({ challenge: await challengeFor(service), code }),
+    ).rejects.toThrow('Code incorrect');
+    expect(repository.createSession).toHaveBeenCalledTimes(1);
   });
 
   it('refuses a wrong code and counts it', async () => {

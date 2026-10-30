@@ -21,7 +21,6 @@ import {
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { ProfileHeroSection } from "./components/profile-hero-section";
-import { BadgesSection } from "./components/badges-section";
 import { ResponsibleGamblingCard } from "./components/responsible-gambling-card";
 import { AppearanceSection } from "./components/appearance-section";
 import { LanguageSection } from "./components/language-section";
@@ -193,7 +192,6 @@ export function AccountTabsClient({
           >
             {hasSession ? <ProfileHeroSection /> : null}
             <ResponsibleGamblingCard />
-            <BadgesSection />
           </div>
         </TabsContent>
 

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@evcore/db';
 import { ME_SETTLED_PAGE_SIZE } from '@config/screens.constants';
+import type { CouponService } from '@modules/coupon/coupon.service';
 import type { SupportRepository } from '@modules/support/support.repository';
 import type { AuthSessionUser } from '@modules/auth/auth.types';
 import type { MeFollowedRow, MeRepository } from './me.repository';
@@ -73,12 +74,6 @@ function harness(opts: { inProgress: number[]; settled: number[] }) {
   ];
   const me = {
     findFollowed: vi.fn().mockResolvedValue(rows),
-    findRecord: vi.fn().mockResolvedValue({
-      won: 7,
-      lost: 4,
-      refunded: 1,
-      since: new Date('2026-10-13T09:00:00.000Z'),
-    }),
   } as unknown as MeRepository;
   const today = {
     findCouponLegsByIds: vi.fn(({ couponIds }: { couponIds: string[] }) =>
@@ -93,7 +88,15 @@ function harness(opts: { inProgress: number[]; settled: number[] }) {
   const support = {
     countUnreadForUser: vi.fn().mockResolvedValue(1),
   } as unknown as SupportRepository;
-  return { service: new MeService(me, today, support), me, today };
+  const coupons = {
+    getFollowedSummary: vi.fn().mockResolvedValue({
+      won: 7,
+      lost: 4,
+      refunded: 1,
+      since: '2026-10-13T09:00:00.000Z',
+    }),
+  } as unknown as CouponService;
+  return { service: new MeService(me, today, support, coupons), me, today };
 }
 
 const USER = {

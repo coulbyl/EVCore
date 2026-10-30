@@ -12,9 +12,9 @@ export type MeFollowedRow = {
 };
 
 /**
- * The reads of GET /me (09 § 1). Every one keeps the followed coupons of
- * the products of « Aujourd'hui » (rank 1, a target of `targets`, never the
- * LLM source): the record and the lists cover the same coupons.
+ * The followed coupons of GET /me (09 § 1): those of the products of
+ * « Aujourd'hui » (isTodayCoupon), as the record
+ * (CouponFollowRepository.summaryFor) counts them.
  */
 @Injectable()
 export class MeRepository {
@@ -57,35 +57,5 @@ export class MeRepository {
        ORDER BY cp."lastFixtureScheduledAt" DESC, cp.id DESC
        LIMIT ${input.settledLimit})
     `;
-  }
-
-  /**
-   * « 7 coupons gagnés · 4 perdus », the remboursés apart, and the day of
-   * the first follow, over the same coupons as the lists.
-   */
-  async findRecord(input: {
-    userId: string;
-    targets: readonly number[];
-  }): Promise<{
-    won: number;
-    lost: number;
-    refunded: number;
-    since: Date | null;
-  }> {
-    const [row] = await this.prisma.client.$queryRaw<
-      { won: number; lost: number; refunded: number; since: Date | null }[]
-    >`
-      SELECT count(*) FILTER (WHERE cp.result IN ('WON', 'PARTIAL'))::int AS won,
-             count(*) FILTER (WHERE cp.result = 'LOST')::int AS lost,
-             count(*) FILTER (WHERE cp.result = 'VOID')::int AS refunded,
-             min(cf."createdAt") AS since
-      FROM public.coupon_follow cf
-      JOIN public.coupon_proposal cp ON cp.id = cf."couponProposalId"
-      WHERE cf."userId" = ${input.userId}::uuid
-        AND cp.source <> 'LLM'
-        AND cp.rank = 1
-        AND cp."targetOddsMin" = ANY(${input.targets}::numeric[])
-    `;
-    return row ?? { won: 0, lost: 0, refunded: 0, since: null };
   }
 }

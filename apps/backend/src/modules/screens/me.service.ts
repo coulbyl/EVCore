@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ME_SETTLED_PAGE_SIZE } from '@config/screens.constants';
+import { CouponService } from '@modules/coupon/coupon.service';
 import { SupportRepository } from '@modules/support/support.repository';
 import type { AuthSessionUser } from '@modules/auth/auth.types';
 import {
@@ -30,15 +31,18 @@ export function decodeCursor(raw: string): MeSettledCursor {
  * GET /me (09 § 1): the record of the followed coupons, those still running,
  * the last settled ones with a cursor for « Voir plus », the unread team
  * replies and the pause. Open during a pause (09 § 4). Five SQL queries:
- * the followed coupons, their legs, the record, and the two of the unread
- * count.
+ * the followed coupons, their legs, the record (shared with
+ * /coupons/followed/summary and « Ta semaine »), and the two of the
+ * unread count.
  */
 @Injectable()
 export class MeService {
+  // eslint-disable-next-line max-params -- Nest DI constructor.
   constructor(
     private readonly me: MeRepository,
     private readonly today: TodayRepository,
     private readonly support: SupportRepository,
+    private readonly coupons: CouponService,
   ) {}
 
   async getMe(
@@ -47,17 +51,12 @@ export class MeService {
   ): Promise<MeScreen> {
     const [followed, record, unreadReplies] = await Promise.all([
       this.followedCoupons({ userId: user.id, after: null, now }),
-      this.me.findRecord({ userId: user.id, targets: TODAY_PRODUCT_TARGETS }),
+      this.coupons.getFollowedSummary(user.id),
       this.support.countUnreadForUser(user.id),
     ]);
     return {
       firstName: user.fullName,
-      record: {
-        won: record.won,
-        lost: record.lost,
-        refunded: record.refunded,
-        since: record.since?.toISOString() ?? null,
-      },
+      record,
       inProgress: followed.inProgress,
       settled: followed.settled,
       unreadReplies,
