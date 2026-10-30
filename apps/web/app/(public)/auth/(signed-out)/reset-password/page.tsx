@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { AuthShell } from "../components/auth-shell";
+import { AuthShell } from "../../components/auth-shell";
 import { ResetPasswordForm } from "./components/reset-password-form";
 
 export const metadata: Metadata = {

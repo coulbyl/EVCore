@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { AuthShell } from "../components/auth-shell";
-import { RegisterForm } from "../components/register-form";
+import { AuthShell } from "../../components/auth-shell";
+import { RegisterForm } from "../../components/register-form";
 
 export const metadata: Metadata = {
   title: "Créer un compte — EVCore",

@@ -5,11 +5,15 @@ import { SESSION_COOKIE } from "@/domains/auth/routing/auth-routing";
 import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session";
 
 /**
- * A signed-in visitor has nothing to do on the auth pages: to the dashboard.
- * The session is read only when a cookie is there, and a stale cookie simply
- * shows the page (the proxy cannot tell, it makes no network call).
+ * A signed-in visitor has nothing to do on the signed-out pages (login,
+ * register, password recovery): to the dashboard. The session is read only
+ * when a cookie is there, and a stale cookie simply shows the page (the proxy
+ * cannot tell, it makes no network call).
+ *
+ * `/auth/verify` stays outside this group: it is the step right after
+ * registering, so its visitor is signed in by definition.
  */
-export default async function PublicAuthLayout({
+export default async function SignedOutAuthLayout({
   children,
 }: {
   children: ReactNode;

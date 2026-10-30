@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AuthShell } from "../../components/auth-shell";
+import { AuthShell } from "../../../components/auth-shell";
 import { ForgotPasswordTotpForm } from "./components/forgot-password-totp-form";
 
 export const metadata: Metadata = {

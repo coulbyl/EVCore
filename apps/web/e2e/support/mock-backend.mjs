@@ -1453,6 +1453,22 @@ function route(method, url, cookie = "") {
     // Un cookie « stale » joue une session expirée ou révoquée.
     if (/(^|;\s*)evcore_session=stale(;|$)/.test(cookie))
       return [401, { message: "Session invalide ou expirée" }];
+    // Un cookie « unverified » joue un compte tout juste inscrit, qui n'a
+    // vérifié ni son e-mail ni une application d'authentification.
+    if (/(^|;\s*)evcore_session=unverified(;|$)/.test(cookie))
+      return [
+        200,
+        {
+          session: {
+            ...SESSION.session,
+            user: {
+              ...SESSION.session.user,
+              emailVerified: false,
+              totpVerified: false,
+            },
+          },
+        },
+      ];
     return [200, SESSION];
   }
   // Le faux backend ne lit pas les corps : la suppression répond toujours
