@@ -8,12 +8,8 @@ import {
 } from '@config/results.constants';
 import { CouponService } from '@modules/coupon/coupon.service';
 import { formatDateUtc, startOfUtcDay } from '@utils/date.utils';
-import { couponChanceOf } from './coupon-chance';
-import {
-  ResultsRepository,
-  type AiAdviceRow,
-  type ProductLegRow,
-} from './results.repository';
+import { ProductDayRepository } from '@modules/coupon/product-day/product-day.repository';
+import { ResultsRepository, type AiAdviceRow } from './results.repository';
 import type {
   AiSummary,
   DayOutcome,
@@ -49,13 +45,15 @@ type ProductDay = {
 
 /**
  * « Résultats » (docs/refonte-ui/08): what each product gave, dated and
- * counted, losses included, against what was announced. Two reads: every
- * product's days since the first launch, the AI's settled opinions.
+ * counted, losses included, against what was announced. It reads the
+ * product_day aggregate written at settlement, never the coupons (16 § 3),
+ * the abstentions, and the AI's settled opinions.
  */
 @Injectable()
 export class ResultsService {
   constructor(
     private readonly repository: ResultsRepository,
+    private readonly productDayRows: ProductDayRepository,
     private readonly coupons: CouponService,
   ) {}
 
@@ -68,7 +66,7 @@ export class ResultsService {
     );
     const today = startOfUtcDay(now);
     const [days, abstentions, advice] = await Promise.all([
-      this.productDays(products, today),
+      this.productDays(products),
       this.abstentions(products, today, input.period),
       this.repository.findAiAdvice({
         since: aiSince(input.period, today),
@@ -101,7 +99,7 @@ export class ResultsService {
     if (!product) throw new NotFoundException('Produit inconnu');
     const today = startOfUtcDay(now);
     const [days, abstentions] = await Promise.all([
-      this.productDays([product], today),
+      this.productDays([product]),
       this.abstentions([product], today, input.period),
     ]);
     const productDays = days.get(product.key) ?? [];
@@ -124,39 +122,32 @@ export class ResultsService {
     };
   }
 
-  /** Every day of these products since the first launch, by product. */
+  /** Every stored day of these products since the first launch. */
   private async productDays(
     products: readonly Product[],
-    today: Date,
   ): Promise<Map<ResultsProductKey, ProductDay[]>> {
-    const rows = await this.repository.findProductLegs({
+    const rows = await this.productDayRows.findDays({
       since: new Date(firstLaunch(products)),
-      until: today,
-      products,
+      products: products.map((p) => p.key),
     });
-    const byCoupon = new Map<string, ProductLegRow[]>();
-    for (const row of rows) {
-      const legs = byCoupon.get(row.couponId) ?? [];
-      legs.push(row);
-      byCoupon.set(row.couponId, legs);
-    }
     const byProduct = new Map<ResultsProductKey, ProductDay[]>();
-    for (const legs of byCoupon.values()) {
-      const [first] = legs;
-      const product = first
-        ? products.find(
-            (p) =>
-              p.source === first.source &&
-              p.targetOddsMin === Number(first.targetOddsMin),
-          )
-        : undefined;
-      if (!first || !product) continue;
+    for (const row of rows) {
+      const product = products.find((p) => p.key === row.product);
+      if (!product) continue;
       const list = byProduct.get(product.key) ?? [];
-      list.push(dayOf(legs, first));
+      list.push({
+        date: formatDateUtc(row.forDate),
+        couponId: row.couponProposalId,
+        outcome: row.outcome,
+        chance: row.chance === null ? null : Number(row.chance),
+        paidOdds:
+          row.paidOdds === null ? null : new Decimal(row.paidOdds.toString()),
+        priced: row.priced,
+        label: row.label,
+        market: row.market,
+        pick: row.pick,
+      });
       byProduct.set(product.key, list);
-    }
-    for (const list of byProduct.values()) {
-      list.sort((a, b) => a.date.localeCompare(b.date));
     }
     return byProduct;
   }
@@ -209,49 +200,6 @@ function aiSince(period: ResultsPeriod, today: Date): Date {
   // « Tout » for the AI: its whole frozen history.
   if (period === 'all') return new Date('2020-01-01T00:00:00.000Z');
   return new Date(today.getTime() - (Number(period) - 1) * DAY_MS);
-}
-
-function outcomeOf(result: ProductLegRow['result']): DayOutcome {
-  if (result === 'WON' || result === 'PARTIAL') return 'won';
-  if (result === 'LOST') return 'lost';
-  if (result === 'VOID') return 'refunded';
-  return 'pending';
-}
-
-function dayOf(
-  legs: readonly ProductLegRow[],
-  first: ProductLegRow,
-): ProductDay {
-  const outcome = outcomeOf(first.result);
-  const single = legs.length === 1;
-  return {
-    date: formatDateUtc(first.forDate),
-    couponId: first.couponId,
-    outcome,
-    chance: couponChanceOf(legs),
-    paidOdds: outcome === 'won' ? paidOddsOf(legs) : null,
-    priced: legs.every((leg) => leg.operatorOdds !== null),
-    label: single
-      ? `${first.homeName} – ${first.awayName}`
-      : `${legs.length} matchs`,
-    market: single ? first.market : null,
-    pick: single ? first.pick : null,
-  };
-}
-
-/**
- * The 1xBet odds really paid on a won coupon: the product of its won legs'
- * prices, a refunded leg paying 1. Unknown when a won leg has no 1xBet
- * price: never the reference odds in its place.
- */
-function paidOddsOf(legs: readonly ProductLegRow[]): Decimal | null {
-  let product = new Decimal(1);
-  for (const leg of legs) {
-    if (leg.isCorrect !== true) continue;
-    if (leg.operatorOdds === null) return null;
-    product = product.times(leg.operatorOdds.toString());
-  }
-  return product;
 }
 
 function summaryOf(input: {

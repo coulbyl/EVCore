@@ -6,7 +6,11 @@ import {
 } from '@config/screens.constants';
 import { CouponService } from '@modules/coupon/coupon.service';
 import { formatDateUtc, startOfUtcDay } from '@utils/date.utils';
-import { couponChanceOf, legChanceOf, operatorOddsOf } from './coupon-chance';
+import {
+  couponChanceOf,
+  legChanceOf,
+  operatorOddsOf,
+} from '@modules/coupon/product-day/coupon-chance';
 import {
   TodayRepository,
   type TodayFormRow,

@@ -2,11 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { NotFoundException } from '@nestjs/common';
 import { Prisma } from '@evcore/db';
 import type { CouponService } from '@modules/coupon/coupon.service';
+import { RESULTS_PRODUCTS } from '@config/results.constants';
+import { productDaysOf } from '@modules/coupon/product-day/product-day';
 import type {
-  AiAdviceRow,
+  ProductDayRepository,
   ProductLegRow,
-  ResultsRepository,
-} from './results.repository';
+} from '@modules/coupon/product-day/product-day.repository';
+import type { AiAdviceRow, ResultsRepository } from './results.repository';
 import { ResultsService } from './results.service';
 
 const NOW = new Date('2026-10-30T15:00:00.000Z');
@@ -55,13 +57,21 @@ function harness(input: {
   advice?: AiAdviceRow[];
 }) {
   const repository = {
-    findProductLegs: vi.fn().mockResolvedValue(input.legs ?? []),
     findAiAdvice: vi.fn().mockResolvedValue(input.advice ?? []),
   } as unknown as ResultsRepository;
+  // The stored days, written from the legs by the real rule.
+  const productDays = {
+    findDays: vi
+      .fn()
+      .mockResolvedValue(productDaysOf(input.legs ?? [], RESULTS_PRODUCTS)),
+  } as unknown as ProductDayRepository;
   const coupons = {
     getProductAbstentions: vi.fn().mockResolvedValue(input.abstentions ?? []),
   } as unknown as CouponService;
-  return { service: new ResultsService(repository, coupons), repository };
+  return {
+    service: new ResultsService(repository, productDays, coupons),
+    repository,
+  };
 }
 
 const W: ProductLegRow['result'] = 'WON';

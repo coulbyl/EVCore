@@ -1186,6 +1186,7 @@ model CouponProposal {
   views                  CouponProposalView[]
   placements             CouponProposalPlacement[]
   follows                CouponFollow[]
+  productDays            ProductDay[]
   generatedAt            DateTime                  @default(now())
   updatedAt              DateTime                  @updatedAt
 
@@ -1315,6 +1316,38 @@ model CouponProposalPlacement {
 // « Suivre ce coupon » (2026-10-28) : le joueur suit un coupon sans déclarer
 // de mise et reçoit son résultat dans le résumé du matin. Une ligne par
 // joueur et par coupon ; ne crée ni pari ni mouvement de solde.
+// Le jour d'un produit, tel que « Résultats » le compte (2026-10-30,
+// docs/refonte-ui/08 et 16 § 3) : écrit au règlement depuis le coupon du jour
+// (le premier de rang 1 publié avant son premier coup d'envoi), pour que
+// l'écran lise un agrégat et jamais la table brute. Réécrit à chaque passage
+// de règlement sur une fenêtre glissante : une correction s'y reporte.
+model ProductDay {
+  id               String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  // Clé de RESULTS_PRODUCTS (config/results.constants.ts).
+  product          String
+  forDate          DateTime       @db.Date
+  couponProposalId String         @db.Uuid
+  couponProposal   CouponProposal @relation(fields: [couponProposalId], references: [id], onDelete: Cascade)
+  // won | lost | refunded | pending
+  outcome          String
+  // Chance affichée du coupon (moteur jusqu'à 1,80, Shin au-dessus) ; null si inconnue.
+  chance           Decimal?       @db.Decimal(5, 4)
+  // Cote 1xBet réellement payée d'un jour gagné ; null sinon ou si inconnue.
+  paidOdds         Decimal?       @db.Decimal(8, 3)
+  // Toutes les jambes ont leur prix 1xBet : le jour entre dans les francs.
+  priced           Boolean
+  // « PSG – Lens », ou « 3 matchs » pour un combiné.
+  label            String
+  market           String?
+  pick             String?
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([product, forDate])
+  @@index([forDate])
+  @@map("product_day")
+  @@schema("public")
+}
+
 model CouponFollow {
   id               String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
   couponProposalId String         @db.Uuid

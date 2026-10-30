@@ -94,3 +94,9 @@ export const RESULTS_FORM_DAYS = 10;
 
 // « En francs, à 1 000 F par jour » (08 § 2).
 export const RESULTS_FIXED_STAKE = 1000;
+
+// Each settlement pass (every 30 minutes) rewrites the products' days over
+// this sliding window, up to tomorrow: a late settlement or a correction
+// lands, and today's coupons show as pending. Older corrections go through
+// POST /coupons/settle-range, which rewrites its own range.
+export const PRODUCT_DAY_REFRESH_DAYS = 7;
