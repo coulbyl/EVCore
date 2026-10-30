@@ -17,8 +17,6 @@ export type MatchReading = {
   chance: number;
   /** Settled reading (Hier): its mark; null until then. */
   result: 'won' | 'lost' | 'void' | null;
-  /** The AI picked something else: the ≠ sign. */
-  aiDisagrees: boolean;
 };
 
 /**

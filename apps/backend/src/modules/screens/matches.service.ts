@@ -16,7 +16,6 @@ import { formatDateUtc, startOfUtcDay } from '@utils/date.utils';
 import type { MatchesDay } from './dto/matches-query.dto';
 import {
   MatchesRepository,
-  type AiPickRow,
   type MatchRow,
   type MatchesCursor,
   type ReadingCandidateRow,
@@ -39,8 +38,13 @@ const DAY_OFFSET: Record<MatchesDay, number> = {
 
 /**
  * GET /matches?day=: « Matchs » (docs/refonte-ui/06 § 1), one page at a
- * time. Four SQL queries per page: the matches, the engine's picks, the
- * 1xBet prices of those picks, the AI's opinion.
+ * time. Three SQL queries per page: the matches, the engine's picks, the
+ * 1xBet prices of those picks.
+ *
+ * No AI sign on the list (decided 2026-10-30): a different pick from the AI
+ * is a choice, not a contradiction, and no measure yet says its
+ * disagreement predicts anything; it would add doubt without information.
+ * The AI's opinion lives in the match sheet, as one more pick.
  */
 @Injectable()
 export class MatchesService {
@@ -67,13 +71,10 @@ export class MatchesService {
     const page = rows.slice(0, MATCHES_PAGE_SIZE);
     const ids = page.map((row) => row.fixtureId);
 
-    const [candidates, aiPicks] = await Promise.all([
-      this.repository.findReadingCandidates({
-        fixtureIds: ids,
-        channels: READING_CHANNELS,
-      }),
-      this.repository.findAiPicks(ids),
-    ]);
+    const candidates = await this.repository.findReadingCandidates({
+      fixtureIds: ids,
+      channels: READING_CHANNELS,
+    });
     // The screen shows 1xBet's price only: its rows alone.
     const quotes = await this.playableOdds.findPlayableQuotes(
       uniqueKeys(candidates),
@@ -81,7 +82,6 @@ export class MatchesService {
     );
 
     const byFixture = groupBy(candidates, (c) => c.fixtureId);
-    const aiByFixture = groupBy(aiPicks, (a) => a.fixtureId);
     const last = page.at(-1);
     return {
       day: input.day,
@@ -90,7 +90,6 @@ export class MatchesService {
         itemOf({
           row,
           candidates: byFixture.get(row.fixtureId) ?? [],
-          aiPicks: aiByFixture.get(row.fixtureId) ?? [],
           quotes,
           day: input.day,
           now,
@@ -105,7 +104,6 @@ export class MatchesService {
 function itemOf(input: {
   row: MatchRow;
   candidates: readonly ReadingCandidateRow[];
-  aiPicks: readonly AiPickRow[];
   quotes: Map<string, PlayableQuote>;
   day: MatchesDay;
   now: Date;
@@ -154,7 +152,6 @@ function stateOf(row: MatchRow, now: Date): MatchState {
  */
 function readingOf(input: {
   candidates: readonly ReadingCandidateRow[];
-  aiPicks: readonly AiPickRow[];
   quotes: Map<string, PlayableQuote>;
   day: MatchesDay;
 }): { reading: MatchReading } | { without: MatchWithoutReading } {
@@ -197,7 +194,6 @@ function readingOf(input: {
         odds: quote.operatorOdds,
         chance: chance.toDecimalPlaces(4).toNumber(),
         result: resultOf(pick.result),
-        aiDisagrees: aiDisagrees(input.aiPicks, pick),
       },
     };
   }
@@ -212,23 +208,6 @@ function resultOf(
   if (result === 'LOST') return 'lost';
   if (result === 'VOID') return 'void';
   return null;
-}
-
-/**
- * ≠ when the AI played a pick and none is ours. Its silence (no opinion,
- * or it chose not to play) is not a disagreement (06 § 1).
- */
-function aiDisagrees(
-  aiPicks: readonly AiPickRow[],
-  reading: { market: string; pick: string },
-): boolean {
-  const played = aiPicks.filter(
-    (a) => a.status === 'SELECTED' && a.market !== null,
-  );
-  return (
-    played.length > 0 &&
-    !played.some((a) => a.market === reading.market && a.pick === reading.pick)
-  );
 }
 
 function uniqueKeys(

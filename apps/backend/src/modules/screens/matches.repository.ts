@@ -43,18 +43,9 @@ export type ReadingCandidateRow = {
   result: 'PENDING' | 'WON' | 'LOST' | 'VOID' | null;
 };
 
-/** The AI's latest opinion before kick-off, one row per pick. */
-export type AiPickRow = {
-  fixtureId: string;
-  status: string;
-  market: string | null;
-  pick: string | null;
-};
-
 /**
- * The reads of GET /matches (16 § 3): a page of the day's matches, the
- * engine's picks for that page, the AI's opinion for that page. Raw SQL,
- * each read bounded by the page.
+ * The reads of GET /matches (16 § 3): a page of the day's matches and the
+ * engine's picks for that page. Raw SQL, each read bounded by the page.
  */
 @Injectable()
 export class MatchesRepository {
@@ -158,28 +149,6 @@ export class MatchesRepository {
             WHERE ms.market = cs.market AND ms.active
           )
       ) picks ON true
-    `;
-  }
-
-  /** The AI's (VANTAGE) latest decision before kick-off, with its picks. */
-  findAiPicks(fixtureIds: readonly string[]): Promise<AiPickRow[]> {
-    if (fixtureIds.length === 0) return Promise.resolve([]);
-    return this.prisma.client.$queryRaw<AiPickRow[]>`
-      WITH latest AS (
-        SELECT DISTINCT ON (mr."fixtureId") mr."fixtureId", cd.id,
-               cd.status::text AS status
-        FROM public.channel_decision cd
-        JOIN public.model_run mr ON mr.id = cd."modelRunId"
-        JOIN public.fixture f ON f.id = mr."fixtureId"
-        WHERE mr."fixtureId" = ANY(${fixtureIds}::uuid[])
-          AND cd.channel = 'VANTAGE'
-          AND cd."createdAt" < f."scheduledAt"
-        ORDER BY mr."fixtureId", cd."createdAt" DESC
-      )
-      SELECT latest."fixtureId", latest.status, cs.market::text AS market,
-             cs.pick
-      FROM latest
-      LEFT JOIN public.channel_selection cs ON cs."channelDecisionId" = latest.id
     `;
   }
 }

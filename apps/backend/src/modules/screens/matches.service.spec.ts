@@ -7,7 +7,6 @@ import type {
   PlayableQuote,
 } from '@modules/betting-engine/pricing/playable-odds.repository';
 import type {
-  AiPickRow,
   MatchRow,
   MatchesRepository,
   ReadingCandidateRow,
@@ -78,13 +77,11 @@ function quote(
 function harness(input: {
   rows?: MatchRow[];
   candidates?: ReadingCandidateRow[];
-  ai?: AiPickRow[];
   quotes?: [string, PlayableQuote][];
 }) {
   const repository = {
     findDayPage: vi.fn().mockResolvedValue(input.rows ?? [match()]),
     findReadingCandidates: vi.fn().mockResolvedValue(input.candidates ?? []),
-    findAiPicks: vi.fn().mockResolvedValue(input.ai ?? []),
   } as unknown as MatchesRepository;
   const playableOdds = {
     findPlayableQuotes: vi.fn().mockResolvedValue(new Map(input.quotes ?? [])),
@@ -179,7 +176,6 @@ describe('MatchesService', () => {
       odds: 1.3,
       chance: 0.78,
       result: null,
-      aiDisagrees: false,
     });
     expect(item?.withoutReading).toBeNull();
   });
@@ -250,43 +246,6 @@ describe('MatchesService', () => {
         }),
       ]),
     ).toBe('rejected');
-  });
-
-  it('≠ when the AI played something else, never when it stayed silent', async () => {
-    const disagrees = async (ai: AiPickRow[]) => {
-      const { service } = harness({
-        candidates: [candidate()],
-        quotes: [quote('ONE_X_TWO', 'HOME')],
-        ai,
-      });
-      return (await service.getMatches({ day: 'today' }, NOW)).items[0]?.reading
-        ?.aiDisagrees;
-    };
-    expect(
-      await disagrees([
-        {
-          fixtureId: FX,
-          status: 'SELECTED',
-          market: 'ONE_X_TWO',
-          pick: 'DRAW',
-        },
-      ]),
-    ).toBe(true);
-    expect(
-      await disagrees([
-        {
-          fixtureId: FX,
-          status: 'SELECTED',
-          market: 'ONE_X_TWO',
-          pick: 'HOME',
-        },
-      ]),
-    ).toBe(false);
-    expect(
-      await disagrees([
-        { fixtureId: FX, status: 'REJECTED', market: null, pick: null },
-      ]),
-    ).toBe(false);
   });
 
   it("yesterday: the score, and the reading's mark", async () => {
