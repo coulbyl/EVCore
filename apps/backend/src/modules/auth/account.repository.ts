@@ -31,14 +31,6 @@ export class AccountRepository {
     });
   }
 
-  async hasBadge(userId: string, badgeCode: string): Promise<boolean> {
-    const badge = await this.prisma.client.userBadge.findUnique({
-      where: { userId_badgeCode: { userId, badgeCode } },
-      select: { id: true },
-    });
-    return badge !== null;
-  }
-
   findIdentity(
     userId: string,
   ): Promise<{ email: string; fullName: string } | null> {
@@ -143,23 +135,12 @@ export class AccountRepository {
   }
 
   /**
-   * Supprime le compte et tout ce qui lui appartient. Toutes les tables liées
-   * suppriment en cascade (sessions, coupons, mouvements, notifications,
-   * support, badges…), sauf `bet.userId` qui passe à NULL : les paris créés
-   * par le joueur lui sont propres (jamais partagés entre comptes) et sont
-   * donc supprimés ensuite, dans la même transaction.
+   * Supprime le compte et tout ce qui lui appartient : toutes les tables
+   * liées suppriment en cascade (sessions, suivis, notifications, support…).
+   * Les paris déclarés, seuls à ne pas suivre la cascade, sont partis le
+   * 2026-10-31.
    */
-  async deleteUserAndOwnBets(userId: string): Promise<{ bets: number }> {
-    return this.prisma.client.$transaction(async (tx) => {
-      const bets = await tx.bet.findMany({
-        where: { userId },
-        select: { id: true },
-      });
-      await tx.user.delete({ where: { id: userId } });
-      const deleted = await tx.bet.deleteMany({
-        where: { id: { in: bets.map((bet) => bet.id) }, userId: null },
-      });
-      return { bets: deleted.count };
-    });
+  async deleteUser(userId: string): Promise<void> {
+    await this.prisma.client.user.delete({ where: { id: userId } });
   }
 }

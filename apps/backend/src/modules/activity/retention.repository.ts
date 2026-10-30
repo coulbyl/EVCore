@@ -23,7 +23,6 @@ export type ActiveCounts = { dau: number; wau: number; mau: number };
 export type EngagementCounts = {
   weeklyActive: number;
   followed: number;
-  declared: number;
 };
 
 export type NotificationOpenRow = {
@@ -104,12 +103,9 @@ export class RetentionRepository {
         (SELECT count(*) FROM weekly)::int AS "weeklyActive",
         (SELECT count(DISTINCT f."userId") FROM public.coupon_follow f, as_of
            WHERE f."userId" IN (SELECT "userId" FROM weekly)
-             AND f."createdAt" >= today - 7 AND f."createdAt" < today)::int AS followed,
-        (SELECT count(DISTINCT s."userId") FROM public.bet_slip s, as_of
-           WHERE s."userId" IN (SELECT "userId" FROM weekly)
-             AND s."createdAt" >= today - 7 AND s."createdAt" < today)::int AS declared
+             AND f."createdAt" >= today - 7 AND f."createdAt" < today)::int AS followed
     `;
-    return row ?? { weeklyActive: 0, followed: 0, declared: 0 };
+    return row ?? { weeklyActive: 0, followed: 0 };
   }
 
   /** Notifications envoyées et ouvertes (événement NOTIFICATION_OPENED). */

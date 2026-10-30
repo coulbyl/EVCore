@@ -18,11 +18,10 @@ export type RetentionCohort = {
 export type RetentionView = {
   asOf: string;
   active: { dau: number; wau: number; mau: number };
-  /** Parmi les actifs des 7 derniers jours, part qui suit ou déclare un coupon. */
+  /** Parmi les actifs des 7 derniers jours, part qui suit un coupon. */
   engagement: {
     weeklyActive: number;
     followedRate: number | null;
-    declaredRate: number | null;
   };
   notifications: {
     type: string;
@@ -63,7 +62,6 @@ export class RetentionService {
       engagement: {
         weeklyActive: engagement.weeklyActive,
         followedRate: rate(engagement.followed, engagement.weeklyActive),
-        declaredRate: rate(engagement.declared, engagement.weeklyActive),
       },
       notifications: opens.map((o) => ({ ...o, rate: rate(o.opened, o.sent) })),
       cohorts: cohorts.map((c) => ({

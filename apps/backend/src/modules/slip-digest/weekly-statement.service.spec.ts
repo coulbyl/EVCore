@@ -9,7 +9,7 @@ import type {
   ProductWeekService,
 } from '@modules/coupon/product-day/product-week.service';
 import type {
-  DigestSlip,
+  DigestFollow,
   SlipDigestRepository,
 } from './slip-digest.repository';
 import {
@@ -21,28 +21,19 @@ import {
 const NOW = new Date('2026-10-26T08:00:00.000Z');
 const WEEK = '2026-10-19';
 
-function slip(opts: {
-  userId: string;
-  kickoff: string;
-  status: 'WON' | 'LOST';
-}): DigestSlip {
+function follow(userId: string, result: 'WON' | 'LOST'): DigestFollow {
   return {
-    id: `slip-${opts.kickoff}`,
-    type: 'SIMPLE',
-    unitStake: new Decimal(1000),
-    user: { id: opts.userId, currency: 'XOF', pausedUntil: null },
-    items: [
-      {
-        stakeOverride: null,
-        fixture: { scheduledAt: new Date(opts.kickoff) },
-        bet: { status: opts.status, oddsSnapshot: new Decimal('1.5') },
-      },
-    ],
+    user: { id: userId, pausedUntil: null },
+    couponProposal: {
+      id: `coupon-${result}`,
+      result,
+      targetOddsMin: new Decimal(1.2),
+    },
   };
 }
 
 function makeHarness(opts: {
-  slips?: DigestSlip[];
+  follows?: DigestFollow[];
   recipients?: {
     id: string;
     pausedUntil?: Date | null;
@@ -56,15 +47,13 @@ function makeHarness(opts: {
     findWeeklyRecipients: vi.fn().mockResolvedValue(
       (opts.recipients ?? [{ id: 'u1' }]).map((r) => ({
         id: r.id,
-        currency: 'XOF',
         pausedUntil: r.pausedUntil ?? null,
         email: `${r.id}@example.com`,
         emailVerified: r.emailVerified ?? false,
         emailNotificationsEnabled: r.emailNotificationsEnabled ?? true,
       })),
     ),
-    findSlipsTouching: vi.fn().mockResolvedValue(opts.slips ?? []),
-    findSettledFollows: vi.fn().mockResolvedValue([]),
+    findSettledFollows: vi.fn().mockResolvedValue(opts.follows ?? []),
     findNotifiedUserIds: vi
       .fn()
       .mockImplementation(() =>
@@ -111,11 +100,7 @@ describe('WeeklyStatementService.sendStatements', () => {
 
   it('closes the week and reads our products from the shared week', async () => {
     const { service, notification, push, coupons } = makeHarness({
-      slips: [
-        slip({ userId: 'u1', kickoff: '2026-10-20T19:00:00Z', status: 'LOST' }),
-        // Dernière jambe le lundi suivant : elle appartient à la semaine d'après.
-        slip({ userId: 'u1', kickoff: '2026-10-26T19:00:00Z', status: 'WON' }),
-      ],
+      follows: [follow('u1', 'WON'), follow('u1', 'LOST')],
       products: [
         { product: 'FAVOURITE', won: 5, played: 7 },
         { product: 'COMBO', won: 4, played: 6 },
@@ -129,13 +114,11 @@ describe('WeeklyStatementService.sendStatements', () => {
       userId: 'u1',
       type: NotificationType.WEEKLY_STATEMENT,
       title: 'Ta semaine EVCore',
-      payload: { week: WEEK, settled: 1, net: '-1000.00' },
+      payload: { week: WEEK },
     });
-    expect(input?.body).toContain('0 gagné sur 1 réglé');
-    expect(input?.body).toContain(
-      'Favori 5 jours gagnés sur 7 · Combiné 4 jours gagnés sur 6',
+    expect(input?.body).toBe(
+      'Coupons suivis : 1 gagné sur 2. Nos coupons : Favori 5 jours gagnés sur 7 · Combiné 4 jours gagnés sur 6.',
     );
-    expect(input?.body).toContain('Semaine en perte');
     expect(push.sendToUser).toHaveBeenCalledWith(
       'u1',
       expect.objectContaining({ url: '/dashboard?from=weekly' }),
@@ -144,9 +127,7 @@ describe('WeeklyStatementService.sendStatements', () => {
 
   it('emails the statement to a verified address that asked for it', async () => {
     const { service, mail } = makeHarness({
-      slips: [
-        slip({ userId: 'u1', kickoff: '2026-10-20T19:00:00Z', status: 'LOST' }),
-      ],
+      follows: [follow('u1', 'LOST')],
       recipients: [{ id: 'u1', emailVerified: true }],
     });
     await service.sendStatements(WEEK, NOW);
@@ -159,28 +140,13 @@ describe('WeeklyStatementService.sendStatements', () => {
     );
   });
 
-  it('says nothing about losses in a week without loss', async () => {
+  it('tells only our products to a player who followed nothing', async () => {
     const { service, notification } = makeHarness({
       products: [{ product: 'FAVOURITE', won: 5, played: 7 }],
     });
     await service.sendStatements(WEEK, NOW);
     const [input] = vi.mocked(notification.notifyUser).mock.calls[0] ?? [];
     expect(input?.body).toBe('Nos coupons : Favori 5 jours gagnés sur 7.');
-  });
-
-  it('says a slip still pending will come in the morning brief', async () => {
-    const pending = slip({
-      userId: 'u1',
-      kickoff: '2026-10-25T21:00:00Z',
-      status: 'LOST',
-    });
-    pending.items[0].bet.status = 'PENDING';
-    const { service, notification } = makeHarness({ slips: [pending] });
-    await service.sendStatements(WEEK, NOW);
-    const [input] = vi.mocked(notification.notifyUser).mock.calls[0] ?? [];
-    expect(input?.body).toBe(
-      '1 coupon de la semaine encore en attente : le résultat arrivera dans ta matinée.',
-    );
   });
 
   it('skips a paused player, a repeated run and an empty week', async () => {

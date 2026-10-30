@@ -4,7 +4,6 @@ import { NotificationService } from '@modules/notification/notification.service'
 import { PushService } from '@modules/push/push.service';
 import { MailService } from '@modules/mail/mail.service';
 import { ProductWeekService } from '@modules/coupon/product-day/product-week.service';
-import type { SlipMoney } from '@modules/bet-slip/bet-slip-outcome';
 import { previousIsoWeek } from '@utils/date.utils';
 import { createLogger } from '@utils/logger';
 import {
@@ -13,7 +12,7 @@ import {
   type WeeklyProduct,
 } from './slip-digest.compose';
 import { SlipDigestRepository, digestEmailOf } from './slip-digest.repository';
-import { isPausedAt, lastKickoffMs, toMoney } from './slip-digest.service';
+import { isPausedAt } from './slip-digest.service';
 
 const logger = createLogger('weekly-statement');
 
@@ -59,9 +58,8 @@ export class WeeklyStatementService {
   ): Promise<{ sent: number; skippedPaused: number }> {
     const from = new Date(`${week}T00:00:00.000Z`);
     const to = new Date(from.getTime() + 7 * DAY_MS);
-    const [recipients, slips, follows, products, notified] = await Promise.all([
+    const [recipients, follows, products, notified] = await Promise.all([
       this.repository.findWeeklyRecipients(),
-      this.repository.findSlipsTouching(from, to),
       this.repository.findSettledFollows(from, to),
       this.weekProducts(week),
       this.repository.findNotifiedUserIds({
@@ -71,14 +69,6 @@ export class WeeklyStatementService {
       }),
     ]);
 
-    const results = new Map<string, SlipMoney[]>();
-    for (const slip of slips) {
-      const lastKickoff = lastKickoffMs(slip);
-      if (lastKickoff < from.getTime() || lastKickoff >= to.getTime()) continue;
-      const list = results.get(slip.user.id) ?? [];
-      list.push(toMoney(slip));
-      results.set(slip.user.id, list);
-    }
     const followed = new Map<string, FollowedResult[]>();
     for (const { user, couponProposal: coupon } of follows) {
       if (coupon.result === null) continue;
@@ -98,8 +88,6 @@ export class WeeklyStatementService {
         continue;
       }
       const message = composeWeeklyStatement({
-        results: results.get(recipient.id) ?? [],
-        currency: recipient.currency,
         follows: followed.get(recipient.id) ?? [],
         products,
       });
@@ -110,7 +98,7 @@ export class WeeklyStatementService {
         type: NotificationType.WEEKLY_STATEMENT,
         title: message.title,
         body: message.body,
-        payload: { week, settled: message.settled, net: message.net },
+        payload: { week },
       });
       await this.push.sendToUser(recipient.id, {
         title: message.title,

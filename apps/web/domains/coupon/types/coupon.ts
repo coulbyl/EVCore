@@ -127,8 +127,6 @@ export type CouponProposalDto = {
    * distincts l'ayant réellement joué (bet slip soumis) ; playedByMe :
    * l'utilisateur courant en fait partie (gèle "Jouer ce coupon"). */
   viewerCount: number;
-  playerCount: number;
-  playedByMe: boolean;
   /** Joueurs qui suivent ce coupon sans mise ; vrai compte. */
   followerCount: number;
   /** Le joueur courant le suit (« Suivre ce coupon », 2026-10-28). */

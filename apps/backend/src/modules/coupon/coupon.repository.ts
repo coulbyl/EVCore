@@ -204,24 +204,18 @@ const WITH_LEGS = {
   },
 } as const;
 
-// Adds real, verifiable engagement counts (CouponProposalView/
-// CouponProposalPlacement — never a fabricated number, see their own doc
-// comments in schema.prisma) on top of WITH_LEGS — only for the listing
+// Adds real, verifiable engagement counts (CouponProposalView and
+// CouponFollow — never a fabricated number, see their own doc comments in
+// schema.prisma) on top of WITH_LEGS — only for the listing
 // used by the Coupons page (findByDate), not settlement's findByIdWithLegs,
 // which has no per-viewer concept.
 function withEngagement(userId: string) {
   return {
     ...WITH_LEGS,
-    _count: { select: { views: true, placements: true, follows: true } },
-    // Only the CURRENT user's own placement (0 or 1 row, unique per
-    // [couponProposalId, userId]) — drives "Déjà joué par vous"; the total
-    // player count comes from _count.placements above instead.
-    placements: {
-      where: { userId },
-      select: { id: true },
-      take: 1,
-    },
-    // Même principe pour « Suivre ce coupon » (2026-10-28).
+    _count: { select: { views: true, follows: true } },
+    // Only the CURRENT user's own follow (0 or 1 row, unique per
+    // [couponProposalId, userId]) — drives the ticked « Suivre » button; the
+    // follower count comes from _count.follows above instead.
     follows: {
       where: { userId },
       select: { id: true },

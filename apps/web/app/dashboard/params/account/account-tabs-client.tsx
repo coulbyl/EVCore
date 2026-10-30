@@ -64,13 +64,6 @@ export function AccountTabsClient({
     savedAutomatically: string;
     displayCurrency: string;
     currencyOptions: Array<{ value: string; label: string }>;
-    unitStake: string;
-    unitModeFixed: string;
-    unitModePct: string;
-    unitAmountPlaceholder: string;
-    unitPctPlaceholder: string;
-    unitPctSuffix: string;
-    unitOptionalHint: string;
   };
 }) {
   const t = useTranslations("account");

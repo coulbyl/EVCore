@@ -12,7 +12,6 @@ export type RetentionView = {
   engagement: {
     weeklyActive: number;
     followedRate: number | null;
-    declaredRate: number | null;
   };
   notifications: {
     type: string;

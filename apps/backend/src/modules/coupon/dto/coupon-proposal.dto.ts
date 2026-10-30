@@ -131,15 +131,10 @@ export type CouponProposalDto = {
    * (CLAUDE.md/docs/vantage-centric-redesign-2026-09-01.md §4 point 6).
    * `viewerCount`: distinct users who ever opened the Coupons page while
    * this proposal was showing (CouponProposalView, one row per user).
-   * `playerCount`: distinct users who actually submitted a bet slip via
-   * "Jouer ce coupon" (CouponProposalPlacement, recorded server-side inside
-   * the bet slip's own creation transaction — never a client-side click
-   * alone). `playedByMe`: whether the CURRENT user is one of them — freezes
-   * "Jouer ce coupon" into "Déjà joué par vous".
+   * « Jouer ce coupon » and its count left with the declared slips
+   * (2026-10-31).
    */
   viewerCount: number;
-  playerCount: number;
-  playedByMe: boolean;
   /** Joueurs qui suivent ce coupon sans mise (vrai compte, jamais inventé). */
   followerCount: number;
   /** Le joueur courant suit ce coupon : le bouton « Suivre » est coché. */

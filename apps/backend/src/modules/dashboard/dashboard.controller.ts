@@ -58,12 +58,6 @@ export class DashboardController {
     return this.dashboardService.getCompetitionStats(canalFilter);
   }
 
-  @Get('leaderboard')
-  @UseGuards(AdminGuard)
-  getLeaderboard() {
-    return this.dashboardService.getLeaderboard();
-  }
-
   @Get('channel-health')
   getChannelHealth(@Query() query: PnlQueryDto): Promise<ChannelHealthItem[]> {
     const { from, to } = this.defaultRange(query);

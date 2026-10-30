@@ -1,5 +1,5 @@
 import type { Request } from 'express';
-import type { RiskProfile, UserRole } from '@evcore/db';
+import type { UserRole } from '@evcore/db';
 
 export type AuthSessionUser = {
   id: string;
@@ -15,10 +15,6 @@ export type AuthSessionUser = {
   theme: string | null;
   locale: string | null;
   currency: string | null;
-  unitMode: string | null;
-  unitAmount: string | null;
-  unitPercent: string | null;
-  riskProfile: RiskProfile;
   emailNotificationsEnabled: boolean;
   morningBriefEnabled: boolean;
   weeklyStatementEnabled: boolean;

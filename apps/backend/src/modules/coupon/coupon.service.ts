@@ -161,8 +161,6 @@ export class CouponService {
         signalScore: Number(p.signalScore),
         status: p.status,
         viewerCount: p._count.views,
-        playerCount: p._count.placements,
-        playedByMe: p.placements.length > 0,
         followerCount: p._count.follows,
         followedByMe: p.follows.length > 0,
         result: p.result,

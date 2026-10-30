@@ -44,7 +44,7 @@ export class AccountDeletionService {
     }
 
     const attachmentKeys = await this.repository.findAttachmentKeys(userId);
-    const { bets } = await this.repository.deleteUserAndOwnBets(userId);
+    await this.repository.deleteUser(userId);
     this.sessionCache.invalidateUser(userId);
     // Après la transaction : un fichier orphelin ne bloque rien, un compte à
     // moitié supprimé si.
@@ -52,7 +52,7 @@ export class AccountDeletionService {
       attachmentKeys.map((key) => this.storage.deleteObject(key)),
     );
     logger.info(
-      { userId, bets, attachments: attachmentKeys.length },
+      { userId, attachments: attachmentKeys.length },
       'Account deleted by its owner',
     );
   }

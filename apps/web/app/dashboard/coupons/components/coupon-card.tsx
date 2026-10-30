@@ -241,7 +241,7 @@ export function CouponCard({
         actionSlot={
           // Suivre d'abord (sans mise), puis déclarer qu'on l'a joué : la
           // saisie de coupon reste, en second (2026-10-28).
-          isPending || coupon.playedByMe ? (
+          isPending ? (
             <div className="flex flex-col gap-2">
               {canFollow ? (
                 <CouponFollowButton
@@ -255,9 +255,7 @@ export function CouponCard({
                   }
                 />
               ) : null}
-              {coupon.playedByMe ? (
-                <CouponSlipButton allInSlip onPlay={handlePlay} playedByMe />
-              ) : slipItems.length > 0 ? (
+              {slipItems.length > 0 ? (
                 <CouponSlipButton allInSlip={allInSlip} onPlay={handlePlay} />
               ) : null}
             </div>

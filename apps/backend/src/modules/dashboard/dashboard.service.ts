@@ -39,7 +39,6 @@ import type {
   ChannelStatus,
   CompetitionStat,
   DashboardSummary,
-  LeaderboardEntry,
   PnlSummary,
   TrackRecordRates,
   TrackRecordSummary,
@@ -57,25 +56,6 @@ const SUMMARY_EXCLUDED_CHANNELS: ReadonlySet<StrategyChannel> = new Set([
 
 /** Même seuil que le tableau par canal (« Volume insuffisant » sous 30). */
 const TRACK_RECORD_MIN_SAMPLE = 30;
-// Minimum settled coupons before a user is ranked on the leaderboard at all.
-// Below this, a single lucky longshot coupon (e.g. +900% ROI on one bet)
-// could otherwise permanently outrank consistent, high-volume players —
-// ROI on 1-4 coupons isn't a track record yet. Chosen deliberately as a
-// hard eligibility floor rather than a soft ROI-shrinkage weight: with an
-// unbounded metric like ROI (a single parlay can return orders of magnitude
-// more than a typical coupon), no fixed shrinkage constant reliably tames
-// a large enough outlier — a floor does, by construction.
-const LEADERBOARD_MIN_SETTLED = 5;
-
-// The leaderboard query was unbounded (every settled coupon ever, no LIMIT,
-// full aggregation in JS) — a genuine "heavier every day" cost on a page
-// loaded on every visit. A rolling window keeps it light without changing
-// what it measures for an active player (whose settled history is recent
-// anyway); same 90-day default already used elsewhere for this kind of
-// "enough signal, still cheap" tradeoff (Decisions' calibration badge,
-// Track Record's default period).
-const LEADERBOARD_WINDOW_DAYS = 90;
-
 type SummaryData = Awaited<ReturnType<DashboardRepository['getSummaryData']>>;
 
 type UnreadNotification = SummaryData['unreadNotifications'][number];
@@ -537,67 +517,7 @@ export class DashboardService {
       channelCompetitionStatsFromSelections(channel, selections),
     );
   }
-
-  async getLeaderboard(): Promise<LeaderboardEntry[]> {
-    const since = new Date(Date.now() - LEADERBOARD_WINDOW_DAYS * 86_400_000);
-    const betSlips = await this.repo.getLeaderboardData(since);
-
-    type UserAgg = {
-      username: string;
-      won: number;
-      total: number;
-      staked: Decimal;
-      returned: Decimal;
-    };
-    const byUser = new Map<string, UserAgg>();
-
-    for (const betSlip of betSlips) {
-      const existing = byUser.get(betSlip.userId) ?? {
-        username: betSlip.user.username ?? betSlip.user.fullName,
-        won: 0,
-        total: 0,
-        staked: new Decimal(0),
-        returned: new Decimal(0),
-      };
-
-      const { staked, returned } = computeSettledCouponReturn(betSlip);
-      existing.total += 1;
-      existing.staked = existing.staked.plus(staked);
-      existing.returned = existing.returned.plus(returned);
-      if (returned.gt(staked)) {
-        existing.won += 1;
-      }
-      byUser.set(betSlip.userId, existing);
-    }
-
-    const eligible = [...byUser.values()]
-      .filter((u) => u.total >= LEADERBOARD_MIN_SETTLED && u.staked.gt(0))
-      .map((u) => ({
-        username: u.username,
-        settled: u.total,
-        won: u.won,
-        roiValue: u.returned
-          .minus(u.staked)
-          .dividedBy(u.staked)
-          .times(100)
-          .toNumber(),
-      }))
-      .sort((a, b) => b.roiValue - a.roiValue)
-      .slice(0, 10);
-
-    return eligible.map((u, i) => ({
-      rank: i + 1,
-      username: u.username,
-      roi: formatSigned(u.roiValue, 1) + '%',
-      settled: u.settled,
-      won: u.won,
-    }));
-  }
 }
-
-type LeaderboardSlip = Awaited<
-  ReturnType<DashboardRepository['getLeaderboardData']>
->[number];
 
 // ---------------------------------------------------------------------------
 // Channel-health pure helpers
@@ -886,34 +806,4 @@ function channelStatsFromSelections(
     announced: announcedOf(selections),
     market: marketOf(selections),
   };
-}
-
-function computeSettledCouponReturn(betSlip: LeaderboardSlip): {
-  staked: Decimal;
-  returned: Decimal;
-} {
-  if (betSlip.type === 'COMBO') {
-    const staked = new Decimal(betSlip.unitStake.toString());
-    const allWon = betSlip.items.every((item) => item.bet.status === 'WON');
-    if (!allWon) return { staked, returned: new Decimal(0) };
-
-    const totalOdds = betSlip.items.reduce(
-      (product, item) => product.times(item.bet.oddsSnapshot!.toString()),
-      new Decimal(1),
-    );
-    return { staked, returned: staked.times(totalOdds) };
-  }
-
-  let staked = new Decimal(0);
-  let returned = new Decimal(0);
-  for (const item of betSlip.items) {
-    const stake = new Decimal(
-      (item.stakeOverride ?? betSlip.unitStake).toString(),
-    );
-    staked = staked.plus(stake);
-    if (item.bet.status === 'WON') {
-      returned = returned.plus(stake.times(item.bet.oddsSnapshot!.toString()));
-    }
-  }
-  return { staked, returned };
 }

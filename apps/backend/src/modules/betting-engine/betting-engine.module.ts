@@ -4,7 +4,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
 import { PrismaModule } from '@/prisma.module';
-import { BankrollModule } from '@modules/bankroll/bankroll.module';
 import { MlInferenceModule } from '@modules/ml/ml.inference.module';
 import { AuthModule } from '@modules/auth/auth.module';
 import { BULLMQ_QUEUES } from '@config/etl.constants';
@@ -27,7 +26,6 @@ import { BetSettlementService } from './settlement/bet-settlement.service';
   imports: [
     PrismaModule,
     ConfigModule,
-    BankrollModule,
     MlInferenceModule,
     AuthModule,
     BullModule.registerQueue({ name: BULLMQ_QUEUES.BETTING_ENGINE }),

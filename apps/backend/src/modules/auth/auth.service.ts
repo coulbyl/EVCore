@@ -7,7 +7,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Prisma } from '@evcore/db';
 import { OTP } from 'otplib';
 import QRCode from 'qrcode';
 import type { Response } from 'express';
@@ -249,34 +248,16 @@ export class AuthService {
   }
 
   async updateMe(userId: string, dto: UpdateMeDto): Promise<AuthSessionUser> {
-    // L'avatar « Oracle » se mérite (badge Diplômé) : l'écran le verrouille,
-    // le serveur aussi depuis le 2026-10-28.
-    const requiredBadge = dto.avatarUrl
-      ? avatarChoiceFor(dto.avatarUrl)?.requiredBadge
-      : undefined;
-    if (
-      requiredBadge &&
-      !(await this.account.hasBadge(userId, requiredBadge))
-    ) {
-      throw new ForbiddenException(
-        'Cet avatar se débloque avec le badge Diplômé.',
-      );
+    // L'avatar « Oracle » se méritait par un badge ; les badges sont partis
+    // le 2026-10-31, il ne se choisit plus.
+    if (dto.avatarUrl && avatarChoiceFor(dto.avatarUrl)?.requiredBadge) {
+      throw new ForbiddenException("Cet avatar n'est plus disponible.");
     }
     const user = await this.repository.updateSessionUser(userId, {
       ...(dto.theme !== undefined && { theme: dto.theme }),
       ...(dto.locale !== undefined && { locale: dto.locale }),
       ...(dto.currency !== undefined && { currency: dto.currency }),
       ...(dto.avatarUrl !== undefined && { avatarUrl: dto.avatarUrl }),
-      ...(dto.unitMode !== undefined && { unitMode: dto.unitMode }),
-      ...(dto.unitAmount !== undefined && {
-        unitAmount: new Prisma.Decimal(dto.unitAmount),
-      }),
-      ...(dto.unitPercent !== undefined && {
-        unitPercent: new Prisma.Decimal(dto.unitPercent),
-      }),
-      ...(dto.riskProfile !== undefined && {
-        riskProfile: dto.riskProfile,
-      }),
       ...(dto.emailNotificationsEnabled !== undefined && {
         emailNotificationsEnabled: dto.emailNotificationsEnabled,
       }),
@@ -598,10 +579,6 @@ export class AuthService {
       theme: user.theme,
       locale: user.locale,
       currency: user.currency,
-      unitMode: user.unitMode,
-      unitAmount: user.unitAmount?.toString() ?? null,
-      unitPercent: user.unitPercent?.toString() ?? null,
-      riskProfile: user.riskProfile,
       emailNotificationsEnabled: user.emailNotificationsEnabled,
       followedResultEnabled: user.followedResultEnabled,
       teamRepliesEnabled: user.teamRepliesEnabled,

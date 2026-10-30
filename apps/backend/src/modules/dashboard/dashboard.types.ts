@@ -103,15 +103,6 @@ export type TrackRecordSummary = TrackRecordRates & {
   byOdds: TrackRecordOddsBand[];
 };
 
-export type LeaderboardEntry = {
-  rank: number;
-  username: string;
-  /** ROI formaté ex. "+12.3%" */
-  roi: string;
-  settled: number;
-  won: number;
-};
-
 export type ChannelStatus =
   | 'GREEN'
   | 'ORANGE'

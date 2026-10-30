@@ -1,9 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useCurrentUser } from "@/domains/auth/context/current-user-context";
-import type { AuthSessionUser } from "@/domains/auth/types/auth";
-import { useBankrollBalance } from "@/domains/bankroll/use-cases/get-bankroll-balance";
 import {
   draftItemKey,
   type BetSlipDraft,
@@ -31,24 +28,6 @@ function isValidDraftItem(item: unknown): item is BetSlipDraftItem {
     (draftItem.modelRunId && draftItem.market && draftItem.pick) ||
     (draftItem.fixtureId && draftItem.market && draftItem.pick),
   );
-}
-
-function resolveInitialUnit(
-  session: AuthSessionUser | null,
-  currentBalance: number | null,
-): number {
-  if (!session?.unitMode) return DEFAULT_UNIT_STAKE;
-  if (session.unitMode === "FIXED" && session.unitAmount) {
-    return Number(session.unitAmount);
-  }
-  if (
-    session.unitMode === "PCT" &&
-    session.unitPercent &&
-    currentBalance !== null
-  ) {
-    return Math.round(currentBalance * Number(session.unitPercent));
-  }
-  return DEFAULT_UNIT_STAKE;
 }
 
 function normalizeDraft(
@@ -96,30 +75,17 @@ function saveDraft(draft: BetSlipDraft): void {
 }
 
 export function useBetSlipDraft() {
-  const currentUser = useCurrentUser();
-  const shouldLoadBalance = currentUser.unitMode === "PCT";
-  const bankrollQuery = useBankrollBalance(currentUser.id, shouldLoadBalance);
-  const currentBalance =
-    bankrollQuery.data?.balance !== undefined
-      ? Number.parseFloat(bankrollQuery.data.balance)
-      : null;
-  const initialUnitStake = resolveInitialUnit(currentUser, currentBalance);
+  // La mise par unité est partie avec le suivi de mise (2026-10-31) ; ce
+  // brouillon disparaît avec ses écrans (E1).
+  const initialUnitStake = DEFAULT_UNIT_STAKE;
   const [draft, setDraftState] = useState<BetSlipDraft>(() =>
     emptyDraft(initialUnitStake),
   );
 
   // Hydrate from localStorage after mount to avoid SSR/client mismatch
   useEffect(() => {
-    if (shouldLoadBalance && bankrollQuery.isPending && !bankrollQuery.data) {
-      return;
-    }
     setDraftState(loadDraft(initialUnitStake));
-  }, [
-    bankrollQuery.data,
-    bankrollQuery.isPending,
-    initialUnitStake,
-    shouldLoadBalance,
-  ]);
+  }, [initialUnitStake]);
 
   // Sync depuis d'autres onglets
   useEffect(() => {
