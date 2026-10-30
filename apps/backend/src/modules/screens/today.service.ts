@@ -56,7 +56,11 @@ export class TodayService {
     private readonly productWeek: ProductWeekService,
   ) {}
 
-  async getToday(userId: string, now: Date = new Date()): Promise<TodayScreen> {
+  /** `userId` null for a visitor (GET /public/today): nothing followed. */
+  async getToday(
+    userId: string | null,
+    now: Date = new Date(),
+  ): Promise<TodayScreen> {
     const today = startOfUtcDay(now);
     const tomorrow = new Date(today.getTime() + DAY_MS);
     const [legRows, dayRows, abstentions, week] = await Promise.all([

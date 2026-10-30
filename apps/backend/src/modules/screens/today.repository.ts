@@ -68,7 +68,8 @@ export class TodayRepository {
    * first. One row per leg; `forDate` tells the two sets apart.
    */
   findCouponLegs(input: {
-    userId: string;
+    /** Null for a visitor: nothing is followed. */
+    userId: string | null;
     today: Date;
     followedSince: Date;
     targets: readonly number[];
@@ -118,7 +119,8 @@ export class TodayRepository {
    * form strip and the « Hier » line read the same rows.
    */
   findProductDays(input: {
-    userId: string;
+    /** Null for a visitor: nothing is followed. */
+    userId: string | null;
     since: Date;
     until: Date;
     targets: readonly number[];

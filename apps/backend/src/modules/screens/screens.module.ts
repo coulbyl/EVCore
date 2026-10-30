@@ -8,6 +8,8 @@ import { ResultsController } from './results.controller';
 import { ResultsRepository } from './results.repository';
 import { ResultsService } from './results.service';
 import { WeekService } from './week.service';
+import { PublicController } from './public.controller';
+import { PublicService } from './public.service';
 import { MatchesController } from './matches.controller';
 import { MatchesRepository } from './matches.repository';
 import { MatchesService } from './matches.service';
@@ -21,7 +23,12 @@ import { TodayService } from './today.service';
  */
 @Module({
   imports: [AuthModule, CouponModule],
-  controllers: [TodayController, MatchesController, ResultsController],
+  controllers: [
+    TodayController,
+    MatchesController,
+    ResultsController,
+    PublicController,
+  ],
   providers: [
     TodayService,
     TodayRepository,
@@ -30,6 +37,7 @@ import { TodayService } from './today.service';
     MatchSheetService,
     ResultsService,
     WeekService,
+    PublicService,
     ResultsRepository,
     // The teams' last matches, read as for the leg facts (stateless).
     LegFactRepository,
