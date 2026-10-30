@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import Decimal from 'decimal.js';
 import {
-  ENGINE_CHANCE_MAX_ODDS,
   TODAY_FOLLOWED_LOOKBACK_DAYS,
   TODAY_FORM_WINDOW_DAYS,
   TODAY_HERO_RELAY,
 } from '@config/screens.constants';
 import { CouponService } from '@modules/coupon/coupon.service';
 import { formatDateUtc, startOfUtcDay } from '@utils/date.utils';
+import { couponChanceOf, legChanceOf, operatorOddsOf } from './coupon-chance';
 import {
   TodayRepository,
   type TodayFormRow,
@@ -130,7 +129,7 @@ function couponOf(input: {
     forDate: input.forDate,
     state,
     firstKickoffAt: firstKickoff.toISOString(),
-    odds: operatorOddsOf(legs),
+    odds: operatorOddsOf(legs)?.toDecimalPlaces(3).toNumber() ?? null,
     referenceOdds: Number(first.combinedOdds),
     paidOdds:
       state === 'won' && first.realizedOdds !== null
@@ -152,48 +151,6 @@ function couponState(
   if (result === 'LOST') return 'lost';
   if (result === 'VOID') return 'void';
   return firstKickoff.getTime() <= now.getTime() ? 'live' : 'upcoming';
-}
-
-/**
- * The 1xBet price of the coupon: the product of its legs' prices, in
- * decimal.js. A leg without a 1xBet price makes the whole price unknown,
- * never borrowed from the reference odds (docs/review-expectations.md).
- */
-function operatorOddsOf(legs: readonly TodayLegRow[]): number | null {
-  let product = new Decimal(1);
-  for (const leg of legs) {
-    if (leg.operatorOdds === null) return null;
-    product = product.times(leg.operatorOdds.toString());
-  }
-  return product.toDecimalPlaces(3).toNumber();
-}
-
-/**
- * A leg's chance (06 § 2): the engine's announced probability up to
- * ENGINE_CHANCE_MAX_ODDS, the market's frequency without margin above —
- * the engine is optimistic there. The odds compared are the ones shown
- * (1xBet's, else the reference). Above the threshold without a market
- * frequency, the chance is unknown: never the engine's in its place.
- */
-function legChanceOf(row: TodayLegRow): Decimal | null {
-  const odds = row.operatorOdds ?? row.oddsSnapshot;
-  if (odds !== null && Number(odds) > ENGINE_CHANCE_MAX_ODDS) {
-    return row.operatorFairProbability === null
-      ? null
-      : new Decimal(row.operatorFairProbability.toString());
-  }
-  return new Decimal(row.probability.toString());
-}
-
-/** Π of the legs' chances, in decimal.js; unknown if one is. */
-function couponChanceOf(legs: readonly TodayLegRow[]): number | null {
-  let chance = new Decimal(1);
-  for (const leg of legs) {
-    const legChance = legChanceOf(leg);
-    if (legChance === null) return null;
-    chance = chance.times(legChance);
-  }
-  return chance.toDecimalPlaces(4).toNumber();
 }
 
 function legOf(row: TodayLegRow, now: Date): TodayLeg {
