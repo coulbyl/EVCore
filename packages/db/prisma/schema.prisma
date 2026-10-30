@@ -1634,3 +1634,20 @@ model ProductEvent {
   @@map("product_event")
   @@schema("public")
 }
+
+// Un ticket vérifié dans « Vérifie ton ticket » (refonte 07 § 7) : la mesure
+// de 05 § 4 (combien de paris, quelle cote, quelle chance, quel jour). Rien
+// d'identifiant : ni joueur, ni heure, ni contenu du ticket, et un id v4
+// (uuidv7 porterait l'instant de l'écriture).
+model VerifiedTicket {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  day       DateTime @db.Date
+  legCount  Int
+  totalOdds Decimal  @db.Decimal(14, 3)
+  // Produit des fréquences sans marge, 0 < chance ≤ 1.
+  chance    Decimal  @db.Decimal(12, 10)
+
+  @@index([day])
+  @@map("verified_ticket")
+  @@schema("public")
+}
