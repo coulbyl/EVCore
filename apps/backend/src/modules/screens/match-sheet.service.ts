@@ -7,8 +7,12 @@ import {
   SHEET_HEAD_TO_HEAD_MEETINGS,
   SHEET_HEAD_TO_HEAD_MIN,
   SHEET_HEAD_TO_HEAD_YEARS,
+  SCREEN_READS_KEEP_MS,
+  SCREEN_READS_MAX_KEYS,
+  SCREEN_READS_TTL_MS,
   SHEET_MAIN_LINES,
 } from '@config/screens.constants';
+import { SharedReads } from '@utils/shared-reads';
 import {
   LEG_FACT_HISTORY_DAYS,
   LEG_FACT_HISTORY_MATCHES,
@@ -54,8 +58,27 @@ type DatedMatch = PastMatch & { scheduledAt: Date };
  * § 2–4). Five SQL queries: the match and its last meetings, the engine's
  * picks, the AI's opinion, the two teams' last matches, the 1xBet prices.
  */
+/** What a sheet reads, shared between the players who open it. */
+type SheetReads = {
+  header: SheetHeaderRow;
+  candidates: ReadingCandidateRow[];
+  aiRows: AiOpinionRow[];
+  historyRows: TeamMatchRow[];
+  quotes: Map<string, PlayableQuote>;
+};
+
 @Injectable()
 export class MatchSheetService {
+  /**
+   * A sheet is the same for every player: its reads are shared per match
+   * (B17b), the sheet rebuilt per request with the current time.
+   */
+  private readonly reads = new SharedReads<SheetReads | null>({
+    ttlMs: SCREEN_READS_TTL_MS,
+    keepMs: SCREEN_READS_KEEP_MS,
+    maxKeys: SCREEN_READS_MAX_KEYS,
+  });
+
   constructor(
     private readonly repository: MatchesRepository,
     private readonly playableOdds: PlayableOddsRepository,
@@ -66,12 +89,26 @@ export class MatchSheetService {
     fixtureId: string,
     now: Date = new Date(),
   ): Promise<MatchSheet> {
+    const reads = await this.reads.get(
+      fixtureId,
+      () => this.readSheet(fixtureId, now),
+      now.getTime(),
+    );
+    if (!reads) throw new NotFoundException('Match introuvable');
+    return this.sheetOf({ ...reads, kickoff: reads.header.scheduledAt, now });
+  }
+
+  /** Five SQL queries; null for an unknown match. */
+  private async readSheet(
+    fixtureId: string,
+    now: Date,
+  ): Promise<SheetReads | null> {
     const header = await this.repository.findSheetHeader({
       fixtureId,
       meetings: SHEET_HEAD_TO_HEAD_MEETINGS,
       since: new Date(now.getTime() - SHEET_HEAD_TO_HEAD_YEARS * 365 * DAY_MS),
     });
-    if (!header) throw new NotFoundException('Match introuvable');
+    if (!header) return null;
     const kickoff = header.scheduledAt;
 
     const [candidates, aiRows, historyRows] = await Promise.all([
@@ -98,6 +135,16 @@ export class MatchSheetService {
       ],
       { operatorOnly: true },
     );
+    return { header, candidates, aiRows, historyRows, quotes };
+  }
+
+  private sheetOf(
+    input: SheetReads & { kickoff: Date; now: Date },
+  ): MatchSheet {
+    const { header, candidates, aiRows, historyRows, quotes, kickoff, now } =
+      input;
+    const fixtureId = header.fixtureId;
+    const ai = aiRows.find((row) => row.status === 'SELECTED' && row.market);
 
     const choice = readingOf({
       candidates,

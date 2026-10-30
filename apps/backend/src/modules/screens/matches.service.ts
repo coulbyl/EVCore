@@ -3,7 +3,11 @@ import {
   MATCHES_LEAGUE_PRIORITY,
   MATCHES_PAGE_SIZE,
   READING_CHANNELS,
+  SCREEN_READS_KEEP_MS,
+  SCREEN_READS_MAX_KEYS,
+  SCREEN_READS_TTL_MS,
 } from '@config/screens.constants';
+import { SharedReads } from '@utils/shared-reads';
 import {
   PlayableOddsRepository,
   type PlayableQuote,
@@ -39,6 +43,17 @@ const DAY_OFFSET: Record<MatchesDay, number> = {
  */
 @Injectable()
 export class MatchesService {
+  /**
+   * A page is the same for every player: its three reads are shared
+   * (B17b: under load they set the endpoint's time). The screen itself is
+   * rebuilt per request, with the current time for each match's state.
+   */
+  private readonly pages = new SharedReads<PageReads>({
+    ttlMs: SCREEN_READS_TTL_MS,
+    keepMs: SCREEN_READS_KEEP_MS,
+    maxKeys: SCREEN_READS_MAX_KEYS,
+  });
+
   constructor(
     private readonly repository: MatchesRepository,
     private readonly playableOdds: PlayableOddsRepository,
@@ -51,27 +66,16 @@ export class MatchesService {
     const from = new Date(
       startOfUtcDay(now).getTime() + DAY_OFFSET[input.day] * DAY_MS,
     );
-    const rows = await this.repository.findDayPage({
-      from,
-      to: new Date(from.getTime() + DAY_MS),
-      search: input.search?.trim() || null,
-      after: input.cursor ? decodeCursor(input.cursor) : null,
-      limit: MATCHES_PAGE_SIZE + 1,
-      leaguePriority: MATCHES_LEAGUE_PRIORITY,
-    });
-    const page = rows.slice(0, MATCHES_PAGE_SIZE);
-    const ids = page.map((row) => row.fixtureId);
-
-    const candidates = await this.repository.findReadingCandidates({
-      fixtureIds: ids,
-      channels: READING_CHANNELS,
-    });
-    // The screen shows 1xBet's price only: its rows alone.
-    const quotes = await this.playableOdds.findPlayableQuotes(
-      uniqueKeys(candidates),
-      { operatorOnly: true },
+    const search = input.search?.trim() || null;
+    // Decoded before the shared read: a forged cursor is a 400 for its
+    // sender, never a cached failure.
+    const after = input.cursor ? decodeCursor(input.cursor) : null;
+    const { rows, candidates, quotes } = await this.pages.get(
+      [formatDateUtc(from), search ?? '', input.cursor ?? ''].join('|'),
+      () => this.readPage({ from, search, after }),
+      now.getTime(),
     );
-
+    const page = rows.slice(0, MATCHES_PAGE_SIZE);
     const byFixture = groupBy(candidates, (c) => c.fixtureId);
     const last = page.at(-1);
     return {
@@ -90,7 +94,40 @@ export class MatchesService {
         rows.length > MATCHES_PAGE_SIZE && last ? encodeCursor(last) : null,
     };
   }
+
+  /** Three SQL queries: the matches, the engine's picks, their 1xBet prices. */
+  private async readPage(input: {
+    from: Date;
+    search: string | null;
+    after: MatchesCursor | null;
+  }): Promise<PageReads> {
+    const rows = await this.repository.findDayPage({
+      from: input.from,
+      to: new Date(input.from.getTime() + DAY_MS),
+      search: input.search,
+      after: input.after,
+      limit: MATCHES_PAGE_SIZE + 1,
+      leaguePriority: MATCHES_LEAGUE_PRIORITY,
+    });
+    const candidates = await this.repository.findReadingCandidates({
+      fixtureIds: rows.slice(0, MATCHES_PAGE_SIZE).map((row) => row.fixtureId),
+      channels: READING_CHANNELS,
+    });
+    // The screen shows 1xBet's price only: its rows alone.
+    const quotes = await this.playableOdds.findPlayableQuotes(
+      uniqueKeys(candidates),
+      { operatorOnly: true },
+    );
+    return { rows, candidates, quotes };
+  }
 }
+
+type PageReads = {
+  /** One more than the page: its presence says another page follows. */
+  rows: MatchRow[];
+  candidates: ReadingCandidateRow[];
+  quotes: Map<string, PlayableQuote>;
+};
 
 function itemOf(input: {
   row: MatchRow;

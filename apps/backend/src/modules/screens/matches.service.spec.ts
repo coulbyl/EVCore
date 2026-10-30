@@ -138,6 +138,20 @@ describe('MatchesService', () => {
     );
   });
 
+  it('reads a page once for the players who open it together', async () => {
+    const { service, repository, playableOdds } = harness({});
+    await Promise.all([
+      service.getMatches({ day: 'today' }, NOW),
+      service.getMatches({ day: 'today' }, new Date(NOW.getTime() + 1_000)),
+    ]);
+    expect(repository.findDayPage).toHaveBeenCalledTimes(1);
+    expect(playableOdds.findPlayableQuotes).toHaveBeenCalledTimes(1);
+    // Another day, another search: their own reads.
+    await service.getMatches({ day: 'tomorrow' }, NOW);
+    await service.getMatches({ day: 'today', search: 'Lens' }, NOW);
+    expect(repository.findDayPage).toHaveBeenCalledTimes(3);
+  });
+
   it('refuses a cursor it did not write', async () => {
     const { service } = harness({});
     await expect(

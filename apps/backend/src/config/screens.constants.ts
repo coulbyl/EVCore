@@ -129,3 +129,12 @@ export const PUBLIC_CACHE_CONTROL = 'public, max-age=60, s-maxage=300';
 
 // « Réglés » in Moi: the last 30 followed coupons, then « Voir plus » (09 § 1).
 export const ME_SETTLED_PAGE_SIZE = 30;
+
+// « Matchs » and the match sheet are the same for every player: their reads
+// are shared (SharedReads) and served this long, about one odds ingestion
+// cycle; after that the last answer is still served while one fresh read
+// runs. A page or sheet nobody opened for SCREEN_READS_KEEP_MS is forgotten.
+export const SCREEN_READS_TTL_MS = 60_000;
+export const SCREEN_READS_KEEP_MS = 10 * 60_000;
+// Pages and sheets kept at most (a team search makes its own page).
+export const SCREEN_READS_MAX_KEYS = 500;
