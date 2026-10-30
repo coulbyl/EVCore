@@ -214,7 +214,7 @@ describe('CouponService.follow', () => {
       refunded: 1,
       since: '2026-10-13T08:30:00.000Z',
     });
-    expect(follows.summaryFor).toHaveBeenCalledWith('u1');
+    expect(follows.summaryFor).toHaveBeenCalledWith('u1', undefined);
   });
 });
 

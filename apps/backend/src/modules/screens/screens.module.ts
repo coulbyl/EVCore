@@ -7,6 +7,7 @@ import { MatchSheetService } from './match-sheet.service';
 import { ResultsController } from './results.controller';
 import { ResultsRepository } from './results.repository';
 import { ResultsService } from './results.service';
+import { WeekService } from './week.service';
 import { MatchesController } from './matches.controller';
 import { MatchesRepository } from './matches.repository';
 import { MatchesService } from './matches.service';
@@ -28,6 +29,7 @@ import { TodayService } from './today.service';
     MatchesRepository,
     MatchSheetService,
     ResultsService,
+    WeekService,
     ResultsRepository,
     // The teams' last matches, read as for the leg facts (stateless).
     LegFactRepository,

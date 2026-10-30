@@ -5,7 +5,12 @@ import {
   TODAY_HERO_RELAY,
 } from '@config/screens.constants';
 import { CouponService } from '@modules/coupon/coupon.service';
-import { formatDateUtc, startOfUtcDay } from '@utils/date.utils';
+import { ProductWeekService } from '@modules/coupon/product-day/product-week.service';
+import {
+  formatDateUtc,
+  previousIsoWeek,
+  startOfUtcDay,
+} from '@utils/date.utils';
 import {
   couponChanceOf,
   legChanceOf,
@@ -39,21 +44,22 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * GET /today: the « Aujourd'hui » screen in one answer
- * (docs/refonte-ui/04-aujourdhui-en-detail.md, 16 § 3). Three SQL queries:
- * the legs of today's and followed coupons, the product days of the form
- * window, today's abstentions.
+ * (docs/refonte-ui/04-aujourdhui-en-detail.md, 16 § 3). Three SQL queries,
+ * four on Monday: the legs of today's and followed coupons, the product days
+ * of the form window, today's abstentions, and last week's product days.
  */
 @Injectable()
 export class TodayService {
   constructor(
     private readonly repository: TodayRepository,
     private readonly coupons: CouponService,
+    private readonly productWeek: ProductWeekService,
   ) {}
 
   async getToday(userId: string, now: Date = new Date()): Promise<TodayScreen> {
     const today = startOfUtcDay(now);
     const tomorrow = new Date(today.getTime() + DAY_MS);
-    const [legRows, dayRows, abstentions] = await Promise.all([
+    const [legRows, dayRows, abstentions, week] = await Promise.all([
       this.repository.findCouponLegs({
         userId,
         today,
@@ -69,6 +75,10 @@ export class TodayService {
         targets: TODAY_PRODUCT_TARGETS,
       }),
       this.coupons.getProductAbstentions({ from: today, to: tomorrow }),
+      // Monday: last week, in place of « Hier » (04 § 4).
+      now.getUTCDay() === 1
+        ? this.productWeek.getWeek(previousIsoWeek(now))
+        : Promise.resolve(null),
     ]);
 
     const allCoupons = couponsOf(legRows, now);
@@ -79,6 +89,14 @@ export class TodayService {
     return {
       date: todayKey,
       yesterday: yesterdayOf(dayRows, yesterdayKey),
+      week: week
+        ? {
+            week: week.week,
+            products: week.products.flatMap(({ product, won, played }) =>
+              isTodayProduct(product) ? [{ product, won, played }] : [],
+            ),
+          }
+        : null,
       heroId: heroOf(coupons),
       coupons,
       absences: absencesOf(abstentions),

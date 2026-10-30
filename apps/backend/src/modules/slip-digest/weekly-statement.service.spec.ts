@@ -3,8 +3,10 @@ import Decimal from 'decimal.js';
 import { NotificationType } from '@evcore/db';
 import type { NotificationService } from '@modules/notification/notification.service';
 import type { PushService } from '@modules/push/push.service';
-import type { CouponService } from '@modules/coupon/coupon.service';
-import type { CouponClassTrackRecord } from '@modules/coupon/dto/coupon-track-record.dto';
+import type {
+  ProductWeek,
+  ProductWeekService,
+} from '@modules/coupon/product-day/product-week.service';
 import type {
   DigestSlip,
   SlipDigestRepository,
@@ -38,29 +40,10 @@ function slip(opts: {
   };
 }
 
-function track(
-  couponClass: CouponClassTrackRecord['couponClass'],
-  source: CouponClassTrackRecord['source'],
-  [won, settled]: [number, number],
-): CouponClassTrackRecord {
-  return {
-    couponClass,
-    source,
-    days: 7,
-    settled,
-    won,
-    avgOdds: 1.3,
-    returnPerUnit: 0.9,
-    firstDay: '2026-10-19',
-    lastDay: '2026-10-25',
-    worstLosingStreak: 1,
-  };
-}
-
 function makeHarness(opts: {
   slips?: DigestSlip[];
   recipients?: { id: string; pausedUntil?: Date | null }[];
-  products?: CouponClassTrackRecord[];
+  products?: ProductWeek['products'];
   alreadySent?: boolean;
 }) {
   const repository = {
@@ -80,8 +63,12 @@ function makeHarness(opts: {
       ),
   } as unknown as SlipDigestRepository;
   const coupons = {
-    getTrackRecordBetween: vi.fn().mockResolvedValue(opts.products ?? []),
-  } as unknown as CouponService;
+    getWeek: vi.fn().mockResolvedValue({
+      week: WEEK,
+      days: [],
+      products: opts.products ?? [],
+    }),
+  } as unknown as ProductWeekService;
   const notification = {
     notifyUser: vi.fn().mockResolvedValue(undefined),
   } as unknown as NotificationService;
@@ -108,7 +95,7 @@ describe('WeeklyStatementService.sendStatements', () => {
     expect(previousIsoWeek(new Date('2026-11-01T23:00:00Z'))).toBe(WEEK);
   });
 
-  it('closes the week and leaves the AI out of our products', async () => {
+  it('closes the week and reads our products from the shared week', async () => {
     const { service, notification, push, coupons } = makeHarness({
       slips: [
         slip({ userId: 'u1', kickoff: '2026-10-20T19:00:00Z', status: 'LOST' }),
@@ -116,17 +103,13 @@ describe('WeeklyStatementService.sendStatements', () => {
         slip({ userId: 'u1', kickoff: '2026-10-26T19:00:00Z', status: 'WON' }),
       ],
       products: [
-        track('FAVOURITE', 'PRICE_COMPOSER', [5, 7]),
-        track('COMBO', 'LLM', [1, 7]),
-        track('COMBO', 'ENGINE', [4, 6]),
+        { product: 'FAVOURITE', won: 5, played: 7 },
+        { product: 'COMBO', won: 4, played: 6 },
       ],
     });
     const result = await service.sendStatements(WEEK, NOW);
     expect(result).toEqual({ sent: 1, skippedPaused: 0 });
-    expect(coupons.getTrackRecordBetween).toHaveBeenCalledWith(
-      new Date('2026-10-19T00:00:00Z'),
-      new Date('2026-10-26T00:00:00Z'),
-    );
+    expect(coupons.getWeek).toHaveBeenCalledWith(WEEK);
     const [input] = vi.mocked(notification.notifyUser).mock.calls[0] ?? [];
     expect(input).toMatchObject({
       userId: 'u1',
@@ -147,7 +130,7 @@ describe('WeeklyStatementService.sendStatements', () => {
 
   it('says nothing about losses in a week without loss', async () => {
     const { service, notification } = makeHarness({
-      products: [track('FAVOURITE', 'PRICE_COMPOSER', [5, 7])],
+      products: [{ product: 'FAVOURITE', won: 5, played: 7 }],
     });
     await service.sendStatements(WEEK, NOW);
     const [input] = vi.mocked(notification.notifyUser).mock.calls[0] ?? [];
@@ -170,7 +153,7 @@ describe('WeeklyStatementService.sendStatements', () => {
   });
 
   it('skips a paused player, a repeated run and an empty week', async () => {
-    const products = [track('FAVOURITE', 'PRICE_COMPOSER', [5, 7])];
+    const products = [{ product: 'FAVOURITE', won: 5, played: 7 }];
     const paused = makeHarness({
       products,
       recipients: [{ id: 'u1', pausedUntil: new Date('2026-11-01T00:00:00Z') }],

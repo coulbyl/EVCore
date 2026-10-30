@@ -262,13 +262,16 @@ export class CouponService {
   }
 
   /** « 7 coupons gagnés · 4 perdus · depuis le 13/10 » (09 § 1). */
-  async getFollowedSummary(userId: string): Promise<{
+  async getFollowedSummary(
+    userId: string,
+    range?: { from: Date; to: Date },
+  ): Promise<{
     won: number;
     lost: number;
     refunded: number;
     since: string | null;
   }> {
-    const summary = await this.follows.summaryFor(userId);
+    const summary = await this.follows.summaryFor(userId, range);
     return { ...summary, since: summary.since?.toISOString() ?? null };
   }
 

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Prisma } from '@evcore/db';
 import type { CouponService } from '@modules/coupon/coupon.service';
+import type { ProductWeekService } from '@modules/coupon/product-day/product-week.service';
 import type {
   TodayFormRow,
   TodayLegRow,
@@ -76,10 +77,21 @@ function harness(input: {
   const coupons = {
     getProductAbstentions: vi.fn().mockResolvedValue(input.abstentions ?? []),
   } as unknown as CouponService;
+  const productWeek = {
+    getWeek: vi.fn().mockResolvedValue({
+      week: '2026-10-26',
+      days: [],
+      products: [
+        { product: 'FAVOURITE', won: 5, played: 6 },
+        { product: 'COMBO', won: 4, played: 6 },
+      ],
+    }),
+  } as unknown as ProductWeekService;
   return {
-    service: new TodayService(repository, coupons),
+    service: new TodayService(repository, coupons, productWeek),
     repository,
     coupons,
+    productWeek,
   };
 }
 
@@ -420,5 +432,22 @@ describe('TodayService', () => {
       ],
     });
     expect((await service.getToday('u', NOW)).heroId).toBe('combo');
+  });
+
+  it('on Monday, « Ta semaine » comes with the screen; not on other days', async () => {
+    const monday = new Date('2026-11-02T08:00:00.000Z');
+    const { service, productWeek } = harness({});
+    const screen = await service.getToday('u', monday);
+    expect(productWeek.getWeek).toHaveBeenCalledWith('2026-10-26');
+    expect(screen.week).toEqual({
+      week: '2026-10-26',
+      products: [
+        { product: 'FAVOURITE', won: 5, played: 6 },
+        { product: 'COMBO', won: 4, played: 6 },
+      ],
+    });
+    const other = harness({});
+    expect((await other.service.getToday('u', NOW)).week).toBeNull();
+    expect(other.productWeek.getWeek).not.toHaveBeenCalled();
   });
 });

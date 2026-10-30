@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '@evcore/db';
+import { Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import type { PricedLeg } from './coupon-chance';
 
@@ -132,9 +132,13 @@ export class ProductDayRepository {
     `;
   }
 
-  /** The stored days of these products from `since` on, oldest first. */
+  /**
+   * The stored days of these products from `since` on, before `until` when
+   * given, oldest first.
+   */
   findDays(input: {
     since: Date;
+    until?: Date;
     products: readonly string[];
   }): Promise<ProductDayRow[]> {
     return this.prisma.client.$queryRaw<ProductDayRow[]>`
@@ -143,6 +147,7 @@ export class ProductDayRepository {
       FROM public.product_day
       WHERE product = ANY(${input.products}::text[])
         AND "forDate" >= ${input.since}::date
+        ${input.until ? Prisma.sql`AND "forDate" < ${input.until}::date` : Prisma.empty}
       ORDER BY "forDate", product
     `;
   }

@@ -106,6 +106,14 @@ export type TodayScreen = {
   date: string;
   yesterday: TodayYesterdayItem[];
   /**
+   * On Monday only, « Ta semaine » replaces « Hier » (04 § 4): last week's
+   * days won over played per product, the Monday statement's count.
+   */
+  week: {
+    week: string;
+    products: { product: TodayProductKey; won: number; played: number }[];
+  } | null;
+  /**
    * The coupon of the hero card, chosen by the server (TODAY_HERO_RELAY):
    * null when nothing plays today.
    */

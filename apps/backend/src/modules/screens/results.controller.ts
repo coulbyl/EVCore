@@ -6,6 +6,8 @@ import { CurrentSession } from '@modules/auth/current-session.decorator';
 import type { AuthSession } from '@modules/auth/auth.types';
 import { ResultsQueryDto } from './dto/results-query.dto';
 import { ResultsService } from './results.service';
+import { WeekQueryDto } from './dto/week-query.dto';
+import { WeekService, type WeekScreen } from './week.service';
 import type { ProductDetail, ResultsScreen } from './results.types';
 
 /**
@@ -13,12 +15,15 @@ import type { ProductDetail, ResultsScreen } from './results.types';
  * (08 § 4), so no PausedGuard. Admins also see the retired products.
  */
 @ApiTags('screens')
-@Controller('results/products')
+@Controller('results')
 @UseGuards(AuthSessionGuard)
 export class ResultsController {
-  constructor(private readonly results: ResultsService) {}
+  constructor(
+    private readonly results: ResultsService,
+    private readonly weeks: WeekService,
+  ) {}
 
-  @Get()
+  @Get('products')
   @ApiOperation({
     summary: 'What each product gave over the period, and the AI',
     description:
@@ -35,7 +40,22 @@ export class ResultsController {
     });
   }
 
-  @Get(':product')
+  @Get('week')
+  @ApiOperation({
+    summary:
+      '« Ta semaine »: the week of each product and of my followed coupons',
+    description:
+      "Monday to Sunday, each product's mark per day and its days won over played (a refund is neither), counted as the Monday statement; and the player's followed coupons whose last match was that week.",
+  })
+  @ApiOkResponse({ description: 'The week.' })
+  getWeek(
+    @CurrentSession() session: AuthSession,
+    @Query() query: WeekQueryDto,
+  ): Promise<WeekScreen> {
+    return this.weeks.getWeek({ userId: session.user.id, week: query.week });
+  }
+
+  @Get('products/:product')
   @ApiOperation({
     summary: "A product's detail: its grid and its days",
     description:

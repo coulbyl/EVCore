@@ -20,6 +20,7 @@ import { LegFactRepository } from './leg-fact/leg-fact.repository';
 import { CouponLegFactService } from './leg-fact/coupon-leg-fact.service';
 import { ProductDayRepository } from './product-day/product-day.repository';
 import { ProductDayService } from './product-day/product-day.service';
+import { ProductWeekService } from './product-day/product-week.service';
 
 // CalibrationService/OddsSnapshotLoader/CouponPoolService/CouponComposerService
 // removed 2026-09-03 — they existed here only for the retired write path
@@ -53,10 +54,12 @@ import { ProductDayService } from './product-day/product-day.service';
     CouponLegFactService,
     ProductDayRepository,
     ProductDayService,
+    ProductWeekService,
   ],
   exports: [
     CouponService,
     ProductDayRepository,
+    ProductWeekService,
     CouponSettlementService,
     CouponRepository,
     CouponPriceGenerationService,
