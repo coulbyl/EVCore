@@ -1,4 +1,7 @@
-import { cn } from "@evcore/ui/cn";
+// clsx, not cn: also drawn by the player's client components, where
+// tailwind-merge weighed 8.6 kio of JS (C0). A `className` passed in adds
+// classes, it never overrides one of these.
+import { clsx as cn } from "clsx";
 
 /**
  * Le bandeau encre en tête de chaque écran (13-style.md § 2 ; tranché le

@@ -6,17 +6,17 @@ import { useState } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { Button } from "@evcore/ui/components/button";
 import {
-  Button,
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-  Input,
-  PasswordInput,
-} from "@evcore/ui";
+} from "@evcore/ui/components/form";
+import { Input } from "@evcore/ui/components/input";
+import { PasswordInput } from "@evcore/ui/components/password-input";
 import { login } from "@/domains/auth/use-cases/login";
 import { safeNextPath } from "@/domains/auth/helpers/safe-next-path";
 import { LoginTotpStep } from "./login-totp-step";

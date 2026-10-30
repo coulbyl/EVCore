@@ -8,8 +8,11 @@ import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session"
 import { CurrencyProvider } from "@/providers/currency-provider";
 import type { AppCurrency } from "@/helpers/number";
 import { redirect } from "next/navigation";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import { Suspense } from "react";
 import { NotificationOpenTracker } from "@/components/notification-open-tracker";
+import { DashboardProviders } from "./providers";
 import { CurrentUserProvider } from "@/domains/auth/context/current-user-context";
 import { ProductTourProvider } from "@/domains/product-tour/context/product-tour-context";
 
@@ -18,7 +21,11 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getCurrentSession();
+  const [session, locale, messages] = await Promise.all([
+    getCurrentSession(),
+    getLocale(),
+    getMessages(),
+  ]);
 
   if (!session) {
     redirect("/auth/login");
@@ -28,22 +35,26 @@ export default async function DashboardLayout({
     (session.user.currency as AppCurrency | null) ?? "XOF";
 
   return (
-    <CurrencyProvider initialCurrency={initialCurrency}>
-      <CurrentUserProvider initialUser={session.user}>
-        <BetSlipProvider>
-          <ProductTourProvider>
-            <AppShell headerNotice={<NetworkStatusBanner />}>
-              {children}
-            </AppShell>
-            <BetSlipDrawer />
-            <EvaFab />
-            <DashboardPwaInstallBanner />
-            <Suspense fallback={null}>
-              <NotificationOpenTracker />
-            </Suspense>
-          </ProductTourProvider>
-        </BetSlipProvider>
-      </CurrentUserProvider>
-    </CurrencyProvider>
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      <DashboardProviders>
+        <CurrencyProvider initialCurrency={initialCurrency}>
+          <CurrentUserProvider initialUser={session.user}>
+            <BetSlipProvider>
+              <ProductTourProvider>
+                <AppShell headerNotice={<NetworkStatusBanner />}>
+                  {children}
+                </AppShell>
+                <BetSlipDrawer />
+                <EvaFab />
+                <DashboardPwaInstallBanner />
+                <Suspense fallback={null}>
+                  <NotificationOpenTracker />
+                </Suspense>
+              </ProductTourProvider>
+            </BetSlipProvider>
+          </CurrentUserProvider>
+        </CurrencyProvider>
+      </DashboardProviders>
+    </NextIntlClientProvider>
   );
 }

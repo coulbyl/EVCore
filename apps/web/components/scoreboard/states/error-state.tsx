@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { usePlayerText } from "../text/player-texts";
 import { ScreenBand } from "../shell/screen-band";
 import { StateLine, stateActionClass } from "./state-line";
 import { useOnline } from "./use-online";
@@ -34,8 +34,8 @@ export function ErrorState({
   retry: () => void;
 }) {
   const online = useOnline();
-  const t = useTranslations("scoreboard.states");
-  const brand = useTranslations("shell")("brand");
+  const t = usePlayerText("scoreboard.states");
+  const brand = usePlayerText("shell")("brand");
 
   let message: string;
   let action: React.ReactNode;

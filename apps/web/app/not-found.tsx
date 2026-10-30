@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FileQuestion } from "lucide-react";
-import { Button } from "@evcore/ui";
+import { Button } from "@evcore/ui/components/button";
 
 export default function NotFound() {
   return (

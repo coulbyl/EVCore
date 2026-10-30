@@ -1,18 +1,23 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages } from "next-intl/server";
+import { getLocale } from "next-intl/server";
 import { Providers } from "./providers";
 import { PwaRegister } from "./pwa-register";
 import "./globals.css";
 
+// Not preloaded: 134 kB that every page fetched first, while the player's
+// screens are set in Barlow (app/fonts/scoreboard-fonts.ts). The browser
+// still loads Geist as soon as a page shows text in it (dashboard, public
+// pages), never on the player's screens (C0).
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
+  preload: false,
 });
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
+  preload: false,
 });
 
 export const viewport: Viewport = {
@@ -46,16 +51,16 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getLocale();
-  const messages = await getMessages();
 
   return (
     <html lang={locale} suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          <Providers>{children}</Providers>
-        </NextIntlClientProvider>
+        {/* No client messages here: the dashboard sets next-intl's provider,
+            the player its own few texts (C0). Every message of the app,
+            53 kB, went out with each page. */}
+        <Providers>{children}</Providers>
         <PwaRegister />
       </body>
     </html>

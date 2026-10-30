@@ -1,7 +1,9 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-import { cn } from "@evcore/ui/cn";
+import { usePlayerText } from "../text/player-texts";
+// clsx alone: no class comes from outside, nothing for tailwind-merge to
+// resolve, and it weighed 8.5 kio of the player's JS (C0).
+import { clsx as cn } from "clsx";
 import { scoreboardFontVariables } from "@/app/fonts/scoreboard-fonts";
 import { LegalLine } from "../shell/legal-line";
 
@@ -14,8 +16,9 @@ import { LegalLine } from "../shell/legal-line";
  * `.scoreboard` et les polices.
  */
 export function MaintenanceScreen() {
-  const t = useTranslations("scoreboard.states");
-  const brand = useTranslations("shell")("brand");
+  const t = usePlayerText("scoreboard.states");
+  const shell = usePlayerText("shell");
+  const brand = shell("brand");
 
   return (
     <div
@@ -44,7 +47,7 @@ export function MaintenanceScreen() {
           {t("retry")}
         </button>
       </main>
-      <LegalLine />
+      <LegalLine text={shell("legal")} />
     </div>
   );
 }

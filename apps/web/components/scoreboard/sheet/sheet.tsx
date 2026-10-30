@@ -1,9 +1,11 @@
 "use client";
 
 import { useId, useRef } from "react";
-import { useTranslations } from "next-intl";
+import { usePlayerText } from "../text/player-texts";
 import { X } from "lucide-react";
-import { cn } from "@evcore/ui/cn";
+// clsx alone: no class comes from outside, nothing for tailwind-merge to
+// resolve, and it weighed 8.5 kio of the player's JS (C0).
+import { clsx as cn } from "clsx";
 import { useDragToClose } from "./use-drag-to-close";
 import { useModalSheet } from "./use-modal-sheet";
 import { useSheetClose } from "./use-sheet-close";
@@ -42,7 +44,7 @@ export function Sheet({
   footer?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const t = useTranslations("shell");
+  const t = usePlayerText("shell");
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const wide = useWideScreen();

@@ -24,11 +24,13 @@ import { SideRail } from "./side-rail";
 export function ScoreboardShell({
   railFooter,
   skipLinkLabel,
+  legalText,
   sheet,
   children,
 }: {
   railFooter: React.ReactNode;
   skipLinkLabel: string;
+  legalText: string;
   sheet: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -54,7 +56,7 @@ export function ScoreboardShell({
         >
           <OfflineLine />
           {children}
-          <LegalLine />
+          <LegalLine text={legalText} />
         </main>
       </div>
       <SheetColumn>{sheet}</SheetColumn>

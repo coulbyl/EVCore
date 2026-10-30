@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { usePlayerText } from "../text/player-texts";
 import { WifiOff } from "lucide-react";
 import { useOnline } from "./use-online";
 
@@ -14,7 +14,7 @@ import { useOnline } from "./use-online";
 export function OfflineLine() {
   const online = useOnline();
   const pathname = usePathname();
-  const t = useTranslations("scoreboard.states");
+  const t = usePlayerText("scoreboard.states");
   const [seenAt, setSeenAt] = useState<Date | null>(null);
 
   // L'heure du dernier écran chargé avec du réseau.

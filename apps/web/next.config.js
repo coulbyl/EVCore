@@ -8,6 +8,11 @@ const nextConfig = {
   output: "standalone",
   // Ne plus annoncer « x-powered-by: Next.js » (audit du 2026-10-23, P3-1).
   poweredByHeader: false,
+  experimental: {
+    // `@evcore/ui` is one barrel of 54 exports, Radix and Sonner among them:
+    // a page importing one of them got all (C0, measured in A12).
+    optimizePackageImports: ["@evcore/ui"],
+  },
   // Ensure runtime access to `content/formation/**` when using `output: "standalone"`.
   // These files are read via `fs` at runtime, so they must be included in Next.js output file tracing.
   outputFileTracingIncludes: {

@@ -28,6 +28,7 @@
     "@tiptap/extension-link": "catalog:",
     "@tiptap/react": "catalog:",
     "@tiptap/starter-kit": "catalog:",
+    "clsx": "^2.1.1",
     "date-fns": "catalog:",
     "driver.js": "catalog:",
     "lucide-react": "catalog:",

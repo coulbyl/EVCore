@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { cn } from "@evcore/ui/cn";
+import { usePlayerText } from "../text/player-texts";
+// clsx alone: no class comes from outside, nothing for tailwind-merge to
+// resolve, and it weighed 8.5 kio of the player's JS (C0).
+import { clsx as cn } from "clsx";
 import { PLAYER_TABS, isTabActive } from "./shell-constants";
 import { TabLed } from "./tab-led";
 
@@ -14,7 +16,7 @@ import { TabLed } from "./tab-led";
  */
 export function SideRail({ footer }: { footer: React.ReactNode }) {
   const pathname = usePathname();
-  const t = useTranslations("shell");
+  const t = usePlayerText("shell");
 
   return (
     <nav

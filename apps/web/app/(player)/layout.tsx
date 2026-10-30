@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getMessages, getTranslations } from "next-intl/server";
 import { InAppHistoryTracker } from "@/components/scoreboard/sheet/in-app-history";
 import { BandActions } from "@/components/scoreboard/shell/band-actions";
 import { ScoreboardShell } from "@/components/scoreboard/shell/scoreboard-shell";
@@ -17,6 +17,8 @@ import {
 } from "@/domains/auth/routing/auth-routing";
 import { safeNextPath } from "@/domains/auth/helpers/safe-next-path";
 import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
+import { PlayerTextsProvider } from "@/components/scoreboard/text/player-texts";
+import { pickPlayerTexts } from "@/components/scoreboard/text/player-texts-constants";
 
 /**
  * Les quatre onglets du joueur dans la coquille du tableau d'affichage.
@@ -31,15 +33,22 @@ export default async function PlayerLayout({
   /** La feuille ouverte (fente parallèle `@sheet`), ou rien. */
   sheet: React.ReactNode;
 }) {
-  const [result, t, timeZone] = await Promise.all([
+  const [result, t, timeZone, messages] = await Promise.all([
     getPlayerSession(),
     getTranslations("shell"),
     getPlayerTimeZone(),
+    getMessages(),
   ]);
+  // Les seuls textes que ses composants client affichent (C0).
+  const texts = pickPlayerTexts(messages);
 
   // Le serveur ne répond pas : la maintenance, pas la connexion.
   if (result.status === "unavailable") {
-    return <MaintenanceScreen />;
+    return (
+      <PlayerTextsProvider texts={texts}>
+        <MaintenanceScreen />
+      </PlayerTextsProvider>
+    );
   }
   // Le proxy ne voit que la présence du cookie : une session expirée ou
   // révoquée arrive ici, et repart vers la connexion avec l'écran demandé.
@@ -50,19 +59,22 @@ export default async function PlayerLayout({
   const { session } = result;
 
   return (
-    <ScoreboardShell
-      skipLinkLabel={t("skipToContent")}
-      sheet={sheet}
-      railFooter={
-        <BandActions
-          initial={initialOf(session.user)}
-          labels={{ notifications: t("notifications"), me: t("tabs.me") }}
-        />
-      }
-    >
-      <TimeZoneSync cookieName={TIME_ZONE_COOKIE} serverTimeZone={timeZone} />
-      <InAppHistoryTracker />
-      {children}
-    </ScoreboardShell>
+    <PlayerTextsProvider texts={texts}>
+      <ScoreboardShell
+        skipLinkLabel={t("skipToContent")}
+        legalText={t("legal")}
+        sheet={sheet}
+        railFooter={
+          <BandActions
+            initial={initialOf(session.user)}
+            labels={{ notifications: t("notifications"), me: t("tabs.me") }}
+          />
+        }
+      >
+        <TimeZoneSync cookieName={TIME_ZONE_COOKIE} serverTimeZone={timeZone} />
+        <InAppHistoryTracker />
+        {children}
+      </ScoreboardShell>
+    </PlayerTextsProvider>
   );
 }

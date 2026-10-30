@@ -4,16 +4,16 @@ import { useState } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { Button } from "@evcore/ui/components/button";
 import {
-  Button,
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-  Input,
-} from "@evcore/ui";
+} from "@evcore/ui/components/form";
+import { Input } from "@evcore/ui/components/input";
 import { loginWithTotp } from "@/domains/auth/use-cases/login";
 
 const codeSchema = z.object({
