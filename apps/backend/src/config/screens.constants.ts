@@ -126,3 +126,6 @@ export const AI_SENTENCE_JARGON: readonly RegExp[] = [
 // every visitor, cached by the edge for five minutes and by the browser for
 // one (16 § 3, « public, s-maxage=300 »).
 export const PUBLIC_CACHE_CONTROL = 'public, max-age=60, s-maxage=300';
+
+// « Réglés » in Moi: the last 30 followed coupons, then « Voir plus » (09 § 1).
+export const ME_SETTLED_PAGE_SIZE = 30;

@@ -16,6 +16,10 @@ import { MatchesService } from './matches.service';
 import { TodayController } from './today.controller';
 import { TodayRepository } from './today.repository';
 import { TodayService } from './today.service';
+import { MeController } from './me.controller';
+import { MeRepository } from './me.repository';
+import { MeService } from './me.service';
+import { SupportRepository } from '@modules/support/support.repository';
 
 /**
  * One aggregate endpoint per player screen (16 § 3): the only place that
@@ -28,6 +32,7 @@ import { TodayService } from './today.service';
     MatchesController,
     ResultsController,
     PublicController,
+    MeController,
   ],
   providers: [
     TodayService,
@@ -44,6 +49,10 @@ import { TodayService } from './today.service';
     // Stateless reader of the prices, registered here as in coupon.module.ts
     // rather than importing the whole engine for one query.
     PlayableOddsRepository,
+    MeService,
+    MeRepository,
+    // The unread replies of Moi (stateless reader, as above).
+    SupportRepository,
   ],
 })
 export class ScreensModule {}

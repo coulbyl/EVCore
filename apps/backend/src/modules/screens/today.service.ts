@@ -111,7 +111,10 @@ export class TodayService {
 }
 
 /** Groups leg rows into coupons, one per product and day, in screen order. */
-function couponsOf(rows: readonly TodayLegRow[], now: Date): TodayCoupon[] {
+export function couponsOf(
+  rows: readonly TodayLegRow[],
+  now: Date,
+): TodayCoupon[] {
   const byId = new Map<string, { first: TodayLegRow; legs: TodayLegRow[] }>();
   for (const row of rows) {
     const entry = byId.get(row.couponId);
