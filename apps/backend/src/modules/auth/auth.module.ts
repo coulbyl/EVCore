@@ -8,6 +8,7 @@ import { AccountRepository } from './account.repository';
 import { AccountDeletionService } from './account-deletion.service';
 import { AccountPauseService } from './account-pause.service';
 import { AuthController } from './auth.controller';
+import { AuthRepository } from './auth.repository';
 import { AuthService } from './auth.service';
 import { AuthSessionGuard } from './auth-session.guard';
 
@@ -28,6 +29,7 @@ import { AuthSessionGuard } from './auth-session.guard';
     AccountPauseService,
     EmailChangeService,
     AccountRepository,
+    AuthRepository,
   ],
   exports: [
     AuthService,

@@ -7,15 +7,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { EmailCodePurpose, Prisma } from '@evcore/db';
-import type { UnitMode } from '@evcore/db';
+import { Prisma } from '@evcore/db';
 import { OTP } from 'otplib';
 import QRCode from 'qrcode';
 import type { Response } from 'express';
-import { PrismaService } from '@/prisma.service';
 import { avatarChoiceFor } from '@evcore/analysis-core';
 import { MailService } from '@modules/mail/mail.service';
 import { AccountRepository } from './account.repository';
+import { AuthRepository, type SessionUserRow } from './auth.repository';
 import { createLogger } from '@utils/logger';
 
 const logger = createLogger('auth-service');
@@ -67,7 +66,7 @@ const totp = new OTP();
 export class AuthService {
   // eslint-disable-next-line max-params -- Nest DI constructor.
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly repository: AuthRepository,
     private readonly mail: MailService,
     private readonly config: ConfigService,
     private readonly account: AccountRepository,
@@ -79,9 +78,9 @@ export class AuthService {
     const email = normalizeIdentifier(input.email);
     const username = normalizeIdentifier(input.username);
 
-    const existing = await this.prisma.client.user.findFirst({
-      where: { OR: [{ email }, { username }] },
-      select: { email: true, username: true },
+    const existing = await this.repository.findIdentityClash({
+      email,
+      username,
     });
 
     if (existing) {
@@ -105,49 +104,20 @@ export class AuthService {
       throw new ConflictException('Email ou username déjà utilisé');
     }
 
-    const user = await this.prisma.client.user.create({
-      data: {
-        email,
-        username,
-        fullName: input.fullName.trim(),
-        passwordHash: await hashPassword(input.password),
-        bio: input.bio?.trim() || null,
-        // Preuve du consentement : le DTO refuse l'inscription sans les deux
-        // cases cochées, on garde la date et la version acceptée.
-        termsAcceptedAt: new Date(),
-        termsVersion: TERMS_VERSION,
-        // Schema default is `true` (existing users were already past the
-        // point of needing it) — a genuinely new signup must start `false`
-        // so the active onboarding wizard actually shows.
-        hasCompletedOnboarding: false,
-      },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        fullName: true,
-        bio: true,
-        role: true,
-        emailVerified: true,
-        mfaMethod: true,
-        totpVerified: true,
-        avatarUrl: true,
-        theme: true,
-        locale: true,
-        currency: true,
-        unitMode: true,
-        unitAmount: true,
-        unitPercent: true,
-        riskProfile: true,
-        emailSupportNotificationsEnabled: true,
-        morningBriefEnabled: true,
-        weeklyStatementEnabled: true,
-        hasSeenOnboarding: true,
-        hasCompletedOnboarding: true,
-        phoneNumber: true,
-        phoneNumberConsentGiven: true,
-        pausedUntil: true,
-      },
+    const user = await this.repository.createUser({
+      email,
+      username,
+      fullName: input.fullName.trim(),
+      passwordHash: await hashPassword(input.password),
+      bio: input.bio?.trim() || null,
+      // Preuve du consentement : le DTO refuse l'inscription sans les deux
+      // cases cochées, on garde la date et la version acceptée.
+      termsAcceptedAt: new Date(),
+      termsVersion: TERMS_VERSION,
+      // Schema default is `true` (existing users were already past the
+      // point of needing it) — a genuinely new signup must start `false`
+      // so the active onboarding wizard actually shows.
+      hasCompletedOnboarding: false,
     });
 
     logger.info({ userId: user.id }, 'register: account created');
@@ -166,38 +136,7 @@ export class AuthService {
     input: LoginDto,
   ): Promise<{ token: string; session: AuthSession }> {
     const identifier = normalizeIdentifier(input.identifier);
-    const user = await this.prisma.client.user.findFirst({
-      where: { OR: [{ email: identifier }, { username: identifier }] },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        fullName: true,
-        bio: true,
-        role: true,
-        emailVerified: true,
-        mfaMethod: true,
-        totpVerified: true,
-        avatarUrl: true,
-        theme: true,
-        locale: true,
-        currency: true,
-        unitMode: true,
-        unitAmount: true,
-        unitPercent: true,
-        riskProfile: true,
-        emailSupportNotificationsEnabled: true,
-        morningBriefEnabled: true,
-        weeklyStatementEnabled: true,
-        hasSeenOnboarding: true,
-        hasCompletedOnboarding: true,
-        phoneNumber: true,
-        phoneNumberConsentGiven: true,
-        pausedUntil: true,
-        passwordHash: true,
-        suspended: true,
-      },
-    });
+    const user = await this.repository.findLoginUser(identifier);
 
     if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
       throw new UnauthorizedException('Identifiants invalides');
@@ -214,34 +153,7 @@ export class AuthService {
       token,
       session: {
         sessionId: session.id,
-        user: {
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          fullName: user.fullName,
-          bio: user.bio,
-          role: user.role,
-          emailVerified: user.emailVerified,
-          mfaMethod: user.mfaMethod,
-          totpVerified: user.totpVerified,
-          avatarUrl: user.avatarUrl,
-          theme: user.theme,
-          locale: user.locale,
-          currency: user.currency,
-          unitMode: user.unitMode,
-          unitAmount: user.unitAmount?.toString() ?? null,
-          unitPercent: user.unitPercent?.toString() ?? null,
-          riskProfile: user.riskProfile,
-          emailSupportNotificationsEnabled:
-            user.emailSupportNotificationsEnabled,
-          morningBriefEnabled: user.morningBriefEnabled,
-          weeklyStatementEnabled: user.weeklyStatementEnabled,
-          hasSeenOnboarding: user.hasSeenOnboarding,
-          hasCompletedOnboarding: user.hasCompletedOnboarding,
-          phoneNumber: user.phoneNumber,
-          phoneNumberConsentGiven: user.phoneNumberConsentGiven,
-          pausedUntil: user.pausedUntil?.toISOString() ?? null,
-        },
+        user: this.toSessionUser(user),
       },
     };
   }
@@ -249,9 +161,7 @@ export class AuthService {
   async logout(request: AuthenticatedRequest): Promise<void> {
     const token = this.extractSessionToken(request);
     if (!token) return;
-    await this.prisma.client.session.deleteMany({
-      where: { tokenHash: hashSessionToken(token) },
-    });
+    await this.repository.deleteSessionByTokenHash(hashSessionToken(token));
   }
 
   async readSessionFromRequest(
@@ -260,50 +170,16 @@ export class AuthService {
     const token = this.extractSessionToken(request);
     if (!token) return null;
 
-    const row = await this.prisma.client.session.findUnique({
-      where: { tokenHash: hashSessionToken(token) },
-      select: {
-        id: true,
-        expiresAt: true,
-        user: {
-          select: {
-            id: true,
-            email: true,
-            username: true,
-            fullName: true,
-            bio: true,
-            role: true,
-            emailVerified: true,
-            mfaMethod: true,
-            totpVerified: true,
-            avatarUrl: true,
-            theme: true,
-            locale: true,
-            currency: true,
-            unitMode: true,
-            unitAmount: true,
-            unitPercent: true,
-            riskProfile: true,
-            emailSupportNotificationsEnabled: true,
-            morningBriefEnabled: true,
-            weeklyStatementEnabled: true,
-            hasSeenOnboarding: true,
-            hasCompletedOnboarding: true,
-            phoneNumber: true,
-            phoneNumberConsentGiven: true,
-            pausedUntil: true,
-            suspended: true,
-          },
-        },
-      },
-    });
+    const row = await this.repository.findSessionByTokenHash(
+      hashSessionToken(token),
+    );
 
     if (!row || row.expiresAt.getTime() <= Date.now()) {
       return null;
     }
 
     if (row.user.suspended) {
-      await this.prisma.client.session.delete({ where: { id: row.id } });
+      await this.repository.deleteSession(row.id);
       return null;
     }
 
@@ -341,104 +217,63 @@ export class AuthService {
         'Cet avatar se débloque avec le badge Diplômé.',
       );
     }
-    const user = await this.prisma.client.user.update({
-      where: { id: userId },
-      data: {
-        ...(dto.theme !== undefined && { theme: dto.theme }),
-        ...(dto.locale !== undefined && { locale: dto.locale }),
-        ...(dto.currency !== undefined && { currency: dto.currency }),
-        ...(dto.avatarUrl !== undefined && { avatarUrl: dto.avatarUrl }),
-        ...(dto.unitMode !== undefined && { unitMode: dto.unitMode }),
-        ...(dto.unitAmount !== undefined && {
-          unitAmount: new Prisma.Decimal(dto.unitAmount),
+    const user = await this.repository.updateSessionUser(userId, {
+      ...(dto.theme !== undefined && { theme: dto.theme }),
+      ...(dto.locale !== undefined && { locale: dto.locale }),
+      ...(dto.currency !== undefined && { currency: dto.currency }),
+      ...(dto.avatarUrl !== undefined && { avatarUrl: dto.avatarUrl }),
+      ...(dto.unitMode !== undefined && { unitMode: dto.unitMode }),
+      ...(dto.unitAmount !== undefined && {
+        unitAmount: new Prisma.Decimal(dto.unitAmount),
+      }),
+      ...(dto.unitPercent !== undefined && {
+        unitPercent: new Prisma.Decimal(dto.unitPercent),
+      }),
+      ...(dto.riskProfile !== undefined && {
+        riskProfile: dto.riskProfile,
+      }),
+      ...(dto.emailSupportNotificationsEnabled !== undefined && {
+        emailSupportNotificationsEnabled: dto.emailSupportNotificationsEnabled,
+      }),
+      ...(dto.morningBriefEnabled !== undefined && {
+        morningBriefEnabled: dto.morningBriefEnabled,
+      }),
+      ...(dto.weeklyStatementEnabled !== undefined && {
+        weeklyStatementEnabled: dto.weeklyStatementEnabled,
+      }),
+      ...(dto.hasSeenOnboarding !== undefined && {
+        hasSeenOnboarding: dto.hasSeenOnboarding,
+      }),
+      ...(dto.hasCompletedOnboarding !== undefined && {
+        hasCompletedOnboarding: dto.hasCompletedOnboarding,
+      }),
+      // Revoking consent clears the stored number rather than keeping an
+      // unconsented phone number around — see schema.prisma's own comment
+      // on phoneNumberConsentGiven.
+      ...(dto.phoneNumberConsentGiven !== undefined && {
+        phoneNumberConsentGiven: dto.phoneNumberConsentGiven,
+        ...(dto.phoneNumberConsentGiven === false && { phoneNumber: null }),
+      }),
+      ...(dto.phoneNumber !== undefined &&
+        dto.phoneNumberConsentGiven !== false && {
+          phoneNumber: dto.phoneNumber,
         }),
-        ...(dto.unitPercent !== undefined && {
-          unitPercent: new Prisma.Decimal(dto.unitPercent),
-        }),
-        ...(dto.riskProfile !== undefined && {
-          riskProfile: dto.riskProfile,
-        }),
-        ...(dto.emailSupportNotificationsEnabled !== undefined && {
-          emailSupportNotificationsEnabled:
-            dto.emailSupportNotificationsEnabled,
-        }),
-        ...(dto.morningBriefEnabled !== undefined && {
-          morningBriefEnabled: dto.morningBriefEnabled,
-        }),
-        ...(dto.weeklyStatementEnabled !== undefined && {
-          weeklyStatementEnabled: dto.weeklyStatementEnabled,
-        }),
-        ...(dto.hasSeenOnboarding !== undefined && {
-          hasSeenOnboarding: dto.hasSeenOnboarding,
-        }),
-        ...(dto.hasCompletedOnboarding !== undefined && {
-          hasCompletedOnboarding: dto.hasCompletedOnboarding,
-        }),
-        // Revoking consent clears the stored number rather than keeping an
-        // unconsented phone number around — see schema.prisma's own comment
-        // on phoneNumberConsentGiven.
-        ...(dto.phoneNumberConsentGiven !== undefined && {
-          phoneNumberConsentGiven: dto.phoneNumberConsentGiven,
-          ...(dto.phoneNumberConsentGiven === false && { phoneNumber: null }),
-        }),
-        ...(dto.phoneNumber !== undefined &&
-          dto.phoneNumberConsentGiven !== false && {
-            phoneNumber: dto.phoneNumber,
-          }),
-      },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        fullName: true,
-        bio: true,
-        role: true,
-        emailVerified: true,
-        mfaMethod: true,
-        totpVerified: true,
-        avatarUrl: true,
-        theme: true,
-        locale: true,
-        currency: true,
-        unitMode: true,
-        unitAmount: true,
-        unitPercent: true,
-        riskProfile: true,
-        emailSupportNotificationsEnabled: true,
-        morningBriefEnabled: true,
-        weeklyStatementEnabled: true,
-        hasSeenOnboarding: true,
-        hasCompletedOnboarding: true,
-        phoneNumber: true,
-        phoneNumberConsentGiven: true,
-        pausedUntil: true,
-      },
     });
     return this.toSessionUser(user);
   }
 
   async sendEmailVerification(userId: string): Promise<void> {
-    const user = await this.prisma.client.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { email: true, username: true, emailVerified: true },
-    });
+    const user = await this.repository.findEmailVerificationTarget(userId);
 
     if (user.emailVerified) {
       throw new BadRequestException('Email déjà vérifié');
     }
 
-    await this.prisma.client.emailVerificationCode.updateMany({
-      where: { userId, used: false, purpose: EmailCodePurpose.VERIFY },
-      data: { used: true },
-    });
-
     const code = generateOtpCode();
-    await this.prisma.client.emailVerificationCode.create({
-      data: {
-        userId,
-        codeHash: hashOtpCode(code),
-        expiresAt: new Date(Date.now() + OTP_CODE_TTL_MS),
-      },
+    await this.repository.replaceVerificationCode({
+      userId,
+      codeHash: hashOtpCode(code),
+      expiresAt: new Date(Date.now() + OTP_CODE_TTL_MS),
     });
 
     await this.mail.sendEmailVerification(user.email, {
@@ -450,15 +285,10 @@ export class AuthService {
 
   async verifyEmail(userId: string, dto: VerifyEmailDto): Promise<void> {
     const codeHash = hashOtpCode(dto.code);
-    const record = await this.prisma.client.emailVerificationCode.findFirst({
-      where: {
-        userId,
-        used: false,
-        purpose: EmailCodePurpose.VERIFY,
-        expiresAt: { gt: new Date() },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const record = await this.repository.findActiveVerificationCode(
+      userId,
+      new Date(),
+    );
 
     if (!record) {
       throw new BadRequestException('Code expiré ou invalide');
@@ -471,32 +301,17 @@ export class AuthService {
     }
 
     if (record.codeHash !== codeHash) {
-      await this.prisma.client.emailVerificationCode.update({
-        where: { id: record.id },
-        data: { attempts: { increment: 1 } },
-      });
+      await this.repository.incrementVerificationAttempts(record.id);
       throw new BadRequestException('Code incorrect');
     }
 
-    await this.prisma.client.$transaction([
-      this.prisma.client.emailVerificationCode.update({
-        where: { id: record.id },
-        data: { used: true },
-      }),
-      this.prisma.client.user.update({
-        where: { id: userId },
-        data: { emailVerified: true, mfaMethod: 'EMAIL' },
-      }),
-    ]);
+    await this.repository.markEmailVerified({ codeId: record.id, userId });
   }
 
   async setupTotp(
     userId: string,
   ): Promise<{ qrDataUrl: string; secret: string }> {
-    const user = await this.prisma.client.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { email: true, totpVerified: true },
-    });
+    const user = await this.repository.findTotpSetupTarget(userId);
 
     if (user.totpVerified) {
       throw new BadRequestException('Authenticator app déjà configurée');
@@ -506,10 +321,7 @@ export class AuthService {
     const appSecret = this.config.getOrThrow<string>('TOTP_APP_SECRET');
     const encryptedSecret = encryptTotpSecret(secret, appSecret);
 
-    await this.prisma.client.user.update({
-      where: { id: userId },
-      data: { totpSecret: encryptedSecret },
-    });
+    await this.repository.setTotpSecret(userId, encryptedSecret);
 
     const otpauth = totp.generateURI({
       issuer: 'EVCore',
@@ -522,10 +334,7 @@ export class AuthService {
   }
 
   async confirmTotp(userId: string, dto: ConfirmTotpDto): Promise<void> {
-    const user = await this.prisma.client.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { totpSecret: true, totpVerified: true },
-    });
+    const user = await this.repository.findTotpState(userId);
 
     if (user.totpVerified) {
       throw new BadRequestException('Authenticator app déjà configurée');
@@ -543,25 +352,12 @@ export class AuthService {
       throw new BadRequestException('Code TOTP invalide');
     }
 
-    await this.prisma.client.user.update({
-      where: { id: userId },
-      data: { totpVerified: true, mfaMethod: 'TOTP' },
-    });
+    await this.repository.markTotpVerified(userId);
   }
 
   async requestPasswordReset(dto: RequestPasswordResetDto): Promise<void> {
     const identifier = normalizeIdentifier(dto.identifier);
-    const user = await this.prisma.client.user.findFirst({
-      where: { OR: [{ email: identifier }, { username: identifier }] },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        emailVerified: true,
-        totpVerified: true,
-        mfaMethod: true,
-      },
-    });
+    const user = await this.repository.findPasswordResetTarget(identifier);
 
     if (!user) {
       logger.debug(
@@ -574,13 +370,10 @@ export class AuthService {
     const windowStart = new Date(
       Date.now() - PASSWORD_RESET_RATE_LIMIT_WINDOW_MS,
     );
-    const recentCount = await this.prisma.client.passwordResetToken.count({
-      where: {
-        userId: user.id,
-        isAdminGenerated: false,
-        createdAt: { gt: windowStart },
-      },
-    });
+    const recentCount = await this.repository.countRecentSelfServiceResets(
+      user.id,
+      windowStart,
+    );
 
     if (recentCount >= PASSWORD_RESET_RATE_LIMIT_MAX) {
       logger.warn(
@@ -607,37 +400,23 @@ export class AuthService {
 
   async resetPassword(dto: ResetPasswordDto): Promise<void> {
     const tokenHash = hashResetToken(dto.token);
-    const record = await this.prisma.client.passwordResetToken.findUnique({
-      where: { tokenHash },
-      select: { id: true, userId: true, expiresAt: true, used: true },
-    });
+    const record = await this.repository.findResetToken(tokenHash);
 
     if (!record || record.used || record.expiresAt.getTime() <= Date.now()) {
       throw new BadRequestException('Lien invalide ou expiré');
     }
 
     const passwordHash = await hashPassword(dto.newPassword);
-    await this.prisma.client.$transaction([
-      this.prisma.client.passwordResetToken.update({
-        where: { id: record.id },
-        data: { used: true },
-      }),
-      this.prisma.client.user.update({
-        where: { id: record.userId },
-        data: { passwordHash },
-      }),
-      this.prisma.client.session.deleteMany({
-        where: { userId: record.userId },
-      }),
-    ]);
+    await this.repository.resetPasswordWithToken({
+      resetTokenId: record.id,
+      userId: record.userId,
+      passwordHash,
+    });
   }
 
   async resetPasswordWithTotp(dto: ResetPasswordTotpDto): Promise<void> {
     const identifier = normalizeIdentifier(dto.identifier);
-    const user = await this.prisma.client.user.findFirst({
-      where: { OR: [{ email: identifier }, { username: identifier }] },
-      select: { id: true, totpSecret: true, totpVerified: true },
-    });
+    const user = await this.repository.findTotpResetTarget(identifier);
 
     if (!user || !user.totpVerified || !user.totpSecret) {
       throw new UnauthorizedException('Identifiants invalides');
@@ -655,15 +434,10 @@ export class AuthService {
     }
 
     const passwordHash = await hashPassword(dto.newPassword);
-    await this.prisma.client.$transaction([
-      this.prisma.client.user.update({
-        where: { id: user.id },
-        data: { passwordHash },
-      }),
-      this.prisma.client.session.deleteMany({
-        where: { userId: user.id },
-      }),
-    ]);
+    await this.repository.replacePasswordAndRevokeSessions(
+      user.id,
+      passwordHash,
+    );
   }
 
   async updateIdentity(
@@ -675,59 +449,24 @@ export class AuthService {
       : undefined;
 
     if (username !== undefined) {
-      const conflict = await this.prisma.client.user.findFirst({
-        where: { username, NOT: { id: userId } },
-        select: { id: true },
+      const taken = await this.repository.isUsernameTaken({
+        username,
+        exceptUserId: userId,
       });
-      if (conflict) {
+      if (taken) {
         throw new ConflictException("Ce nom d'utilisateur est déjà utilisé");
       }
     }
 
-    const user = await this.prisma.client.user.update({
-      where: { id: userId },
-      data: {
-        ...(username !== undefined && { username }),
-      },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        fullName: true,
-        bio: true,
-        role: true,
-        emailVerified: true,
-        mfaMethod: true,
-        totpVerified: true,
-        avatarUrl: true,
-        theme: true,
-        locale: true,
-        currency: true,
-        unitMode: true,
-        unitAmount: true,
-        unitPercent: true,
-        riskProfile: true,
-        emailSupportNotificationsEnabled: true,
-        morningBriefEnabled: true,
-        weeklyStatementEnabled: true,
-        hasSeenOnboarding: true,
-        hasCompletedOnboarding: true,
-        phoneNumber: true,
-        phoneNumberConsentGiven: true,
-        pausedUntil: true,
-      },
+    const user = await this.repository.updateSessionUser(userId, {
+      ...(username !== undefined && { username }),
     });
 
     return this.toSessionUser(user);
   }
 
   async generateAdminResetLink(userId: string): Promise<string> {
-    const user = await this.prisma.client.user.findUnique({
-      where: { id: userId },
-      select: { id: true },
-    });
-
-    if (!user) {
+    if (!(await this.repository.userExists(userId))) {
       throw new NotFoundException('Utilisateur introuvable');
     }
 
@@ -740,13 +479,11 @@ export class AuthService {
     isAdminGenerated: boolean,
   ): Promise<{ token: string; resetUrl: string }> {
     const token = generateResetToken();
-    await this.prisma.client.passwordResetToken.create({
-      data: {
-        userId,
-        tokenHash: hashResetToken(token),
-        expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
-        isAdminGenerated,
-      },
+    await this.repository.createResetToken({
+      userId,
+      tokenHash: hashResetToken(token),
+      expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
+      isAdminGenerated,
     });
 
     const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
@@ -761,49 +498,46 @@ export class AuthService {
 
   private async createSession(userId: string) {
     const token = generateSessionToken();
-    const session = await this.prisma.client.session.create({
-      data: {
-        userId,
-        tokenHash: hashSessionToken(token),
-        expiresAt: new Date(Date.now() + AUTH_SESSION_TTL_MS),
-      },
-      select: { id: true },
+    const session = await this.repository.createSession({
+      userId,
+      tokenHash: hashSessionToken(token),
+      expiresAt: new Date(Date.now() + AUTH_SESSION_TTL_MS),
     });
 
     return { token, session };
   }
 
-  private toSessionUser(user: {
-    id: string;
-    email: string;
-    username: string;
-    fullName: string;
-    bio: string | null;
-    role: AuthSessionUser['role'];
-    emailVerified: boolean;
-    mfaMethod: AuthSessionUser['mfaMethod'];
-    totpVerified: boolean;
-    avatarUrl: string | null;
-    theme: string | null;
-    locale: string | null;
-    currency: string | null;
-    unitMode: UnitMode | null;
-    unitAmount: Prisma.Decimal | null;
-    unitPercent: Prisma.Decimal | null;
-    riskProfile: AuthSessionUser['riskProfile'];
-    emailSupportNotificationsEnabled: boolean;
-    morningBriefEnabled: boolean;
-    weeklyStatementEnabled: boolean;
-    hasSeenOnboarding: boolean;
-    hasCompletedOnboarding: boolean;
-    phoneNumber: string | null;
-    phoneNumberConsentGiven: boolean;
-    pausedUntil: Date | null;
-  }): AuthSessionUser {
+  /**
+   * Field by field on purpose: rows read for login or session checks also
+   * carry `passwordHash` and `suspended`, and a spread would send them to the
+   * client.
+   */
+  private toSessionUser(user: SessionUserRow): AuthSessionUser {
     return {
-      ...user,
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      fullName: user.fullName,
+      bio: user.bio,
+      role: user.role,
+      emailVerified: user.emailVerified,
+      mfaMethod: user.mfaMethod,
+      totpVerified: user.totpVerified,
+      avatarUrl: user.avatarUrl,
+      theme: user.theme,
+      locale: user.locale,
+      currency: user.currency,
+      unitMode: user.unitMode,
       unitAmount: user.unitAmount?.toString() ?? null,
       unitPercent: user.unitPercent?.toString() ?? null,
+      riskProfile: user.riskProfile,
+      emailSupportNotificationsEnabled: user.emailSupportNotificationsEnabled,
+      morningBriefEnabled: user.morningBriefEnabled,
+      weeklyStatementEnabled: user.weeklyStatementEnabled,
+      hasSeenOnboarding: user.hasSeenOnboarding,
+      hasCompletedOnboarding: user.hasCompletedOnboarding,
+      phoneNumber: user.phoneNumber,
+      phoneNumberConsentGiven: user.phoneNumberConsentGiven,
       pausedUntil: user.pausedUntil?.toISOString() ?? null,
     };
   }
