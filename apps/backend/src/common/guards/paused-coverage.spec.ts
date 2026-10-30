@@ -4,6 +4,7 @@ import { PausedGuard } from './paused.guard';
 import { ChannelDecisionController } from '@modules/betting-engine/channel-decision.controller';
 import { FixtureScoringController } from '@modules/fixture/fixture-scoring.controller';
 import { AnalysisSheetController } from '@modules/analysis-sheet/analysis-sheet.controller';
+import { TodayController } from '@modules/screens/today.controller';
 
 describe('pause applies to whole suggestion controllers', () => {
   // Une route ajoutée plus tard à ces contrôleurs ne peut pas oublier la
@@ -12,6 +13,7 @@ describe('pause applies to whole suggestion controllers', () => {
     ChannelDecisionController,
     FixtureScoringController,
     AnalysisSheetController,
+    TodayController,
   ])('%o carries PausedGuard at class level', (controller) => {
     const guards = Reflect.getMetadata(GUARDS_METADATA, controller) as
       | unknown[]
