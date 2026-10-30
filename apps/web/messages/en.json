@@ -1173,7 +1173,8 @@
       "maintenanceBody": "EVCore is under maintenance. Your followed coupons still settle.",
       "pauseTitle": "Paused until {until}",
       "pauseBody": "Today, Matches and your ticket are closed until then. Your followed coupons still settle: they wait for you in Me.",
-      "pauseExtend": "Extend the pause"
+      "pauseExtend": "Extend the pause",
+      "pauseUntil": "{date} at {time}"
     },
     "chance": {
       "outOfTen": "{count} in {total}",
@@ -1238,7 +1239,6 @@
     "nothingTitle": "Nothing to play today",
     "seeMatches": "See today's matches",
     "noCouponYet": "No coupon for now · try again later",
-    "pauseUntil": "{date} at {time}",
     "absentShort": "No {product}",
     "formTitle": "Form over 30 days",
     "formSummary": "{won} days won out of {played}",
@@ -1247,5 +1247,27 @@
     "keepCoupon": "1xBet keeps {share} on this coupon",
     "band": "{min} to {max}",
     "open": "Open {product}"
+  },
+  "matches": {
+    "days": {
+      "label": "Day",
+      "yesterday": "Yesterday",
+      "today": "Today",
+      "tomorrow": "Tomorrow"
+    },
+    "kickoff": "Kick-offs at {time}",
+    "withoutReading": "{count, plural, one {# match without a reading} other {# matches without a reading}}",
+    "see": "See",
+    "without": {
+      "rejected": "Set aside",
+      "not_priced": "Not priced at 1xBet",
+      "not_analysed": "No reading",
+      "tonight": "Reading tonight"
+    },
+    "empty": {
+      "yesterday": "No match yesterday",
+      "today": "No match today",
+      "tomorrow": "No match tomorrow"
+    }
   }
 }

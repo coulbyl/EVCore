@@ -137,4 +137,4 @@ Deux voies, à trancher avant l'écran (C4) :
 1. **Garder la meilleure chance** : la règle la plus simple et la plus honnête, mais des lectures banales.
 2. **Préférer des marchés parlants** (victoire, double chance, plus/moins 2,5 buts) quand leur chance est proche de la meilleure (par exemple à 5 points près), sinon garder la meilleure chance.
 
-Rien n'est changé en attendant : `MatchesService` applique la voie 1.
+**Tranché le 31/10 : voie 2, à 10 points** (`READING_SPEAKING_TOLERANCE`, `READING_SPEAKING_PICKS` dans `screens.constants.ts`). Mesuré sur 1 556 matchs réglés du 8 au 28/10 (copie de prod) : la meilleure chance tombait à 49 % sur un total d'équipe et à 26 % sur un plus/moins de buts autre que 2,5, à 2 % sur une victoire. À 10 points, 428 lectures changent (28 %) ; sur ces matchs, le pari parlant gagne aussi souvent (75,5 % contre 75,7 %) et annonce juste (75,4 % annoncé), là où la meilleure chance annonçait 80,0 %. Le gain de lisibilité est modeste : les remplacements sont surtout la double chance 12 (« Arsenal ou Chelsea gagne », 61 %), une victoire seulement dans 10 % des cas. La fiche suit la même règle (`readingOf`, partagée).

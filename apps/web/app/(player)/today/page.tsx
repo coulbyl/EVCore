@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { PlayerBand } from "@/components/scoreboard/shell/player-band";
-import { PauseNotice } from "@/components/scoreboard/states/pause-notice";
-import { activePauseEnd } from "@/domains/auth/types/auth";
-import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
-import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
-import { getToday } from "@/domains/today/use-cases/get-today";
 import {
-  displayLocaleOf,
-  formatShortDate,
-  formatTime,
-} from "@/helpers/scoreboard-format";
+  activePause,
+  PausedScreen,
+} from "@/components/scoreboard/states/paused-screen";
+import { getToday } from "@/domains/today/use-cases/get-today";
 import { HeroCard } from "./components/hero-card";
 import { NothingToPlay } from "./components/nothing-to-play";
 import { RefreshWhileRunning } from "./components/refresh-while-running";
@@ -33,16 +28,12 @@ export async function generateMetadata(): Promise<Metadata> {
  * et « Suivre » grisé ; une erreur : l'état d'erreur de l'onglet.
  */
 export default async function Page() {
-  const [t, session] = await Promise.all([
+  const [t, pauseEnd] = await Promise.all([
     getTranslations("shell"),
-    getPlayerSession(),
+    activePause(),
   ]);
-  const pauseEnd =
-    session.status === "signed-in"
-      ? activePauseEnd(session.session.user.pausedUntil)
-      : null;
   if (pauseEnd) {
-    return <Paused until={new Date(pauseEnd)} title={t("tabs.today")} />;
+    return <PausedScreen until={pauseEnd} title={t("tabs.today")} />;
   }
 
   const today = await getToday();
@@ -81,30 +72,6 @@ export default async function Page() {
             />
           </>
         )}
-      </div>
-    </>
-  );
-}
-
-/** La pause, à la place de l'écran (04 § 5, maquette Pause). */
-async function Paused({ until, title }: { until: Date; title: string }) {
-  const [t, locale, timeZone] = await Promise.all([
-    getTranslations("today"),
-    getLocale(),
-    getPlayerTimeZone(),
-  ]);
-  const display = displayLocaleOf(locale);
-  return (
-    <>
-      <PlayerBand />
-      <h1 className="sr-only">{title}</h1>
-      <div className="px-4 pt-4 lg:px-6">
-        <PauseNotice
-          until={t("pauseUntil", {
-            date: formatShortDate(until, display, timeZone),
-            time: formatTime(until, display, timeZone),
-          })}
-        />
       </div>
     </>
   );

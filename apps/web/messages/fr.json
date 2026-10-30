@@ -1173,7 +1173,8 @@
       "maintenanceBody": "EVCore est en maintenance. Tes coupons suivis se règlent quand même.",
       "pauseTitle": "En pause jusqu'au {until}",
       "pauseBody": "Aujourd'hui, Matchs et ton ticket sont fermés jusque-là. Tes coupons suivis se règlent quand même : ils t'attendent dans Moi.",
-      "pauseExtend": "Prolonger la pause"
+      "pauseExtend": "Prolonger la pause",
+      "pauseUntil": "{date} à {time}"
     },
     "chance": {
       "outOfTen": "{count} sur {total}",
@@ -1238,7 +1239,6 @@
     "nothingTitle": "Rien à jouer aujourd'hui",
     "seeMatches": "Voir les matchs du jour",
     "noCouponYet": "Pas de coupon pour l'instant · réessaie plus tard",
-    "pauseUntil": "{date} à {time}",
     "absentShort": "Pas de {product}",
     "formTitle": "Forme sur 30 jours",
     "formSummary": "{won} jours gagnés sur {played}",
@@ -1247,5 +1247,27 @@
     "keepCoupon": "1xBet garde {share} sur ce coupon",
     "band": "{min} à {max}",
     "open": "Ouvrir {product}"
+  },
+  "matches": {
+    "days": {
+      "label": "Jour",
+      "yesterday": "Hier",
+      "today": "Aujourd'hui",
+      "tomorrow": "Demain"
+    },
+    "kickoff": "Coups d'envoi à {time}",
+    "withoutReading": "{count, plural, one {# match sans lecture} other {# matchs sans lecture}}",
+    "see": "Voir",
+    "without": {
+      "rejected": "Écarté",
+      "not_priced": "Pas coté chez 1xBet",
+      "not_analysed": "Pas de lecture",
+      "tonight": "Lecture ce soir"
+    },
+    "empty": {
+      "yesterday": "Aucun match hier",
+      "today": "Aucun match aujourd'hui",
+      "tomorrow": "Aucun match demain"
+    }
   }
 }

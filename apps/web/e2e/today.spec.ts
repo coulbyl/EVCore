@@ -159,7 +159,10 @@ test.describe("Feuille du coupon", () => {
   }) => {
     await page.goto("/today");
     await page.getByRole("link", { name: "Ouvrir Favori du jour" }).click();
-    await expect(page).toHaveURL(/\/today\/coupon\/cp-today-fav$/);
+    // En dev, la première ouverture compile la route interceptée.
+    await expect(page).toHaveURL(/\/today\/coupon\/cp-today-fav$/, {
+      timeout: 15_000,
+    });
     const sheet = sheetNamed(page, "Favori du jour");
     await expect(sheet).toBeVisible();
     await expect(sheet.getByText("Paris SG", { exact: true })).toBeVisible();

@@ -1,12 +1,11 @@
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Sheet } from "@/components/scoreboard/sheet/sheet";
+import { activePause } from "@/components/scoreboard/states/paused-screen";
 import { ChanceFigure } from "@/components/scoreboard/ui/chance-figure";
 import { FormStrip } from "@/components/scoreboard/ui/form-strip";
 import { ResultMark } from "@/components/scoreboard/ui/result-mark";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
-import { activePauseEnd } from "@/domains/auth/types/auth";
-import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
 import { getToday } from "@/domains/today/use-cases/get-today";
 import {
   displayLocaleOf,
@@ -259,13 +258,7 @@ function LegBlock({
  */
 export async function CouponSheet({ id }: { id: string }) {
   // Paused: the screen shows the pause and the server would refuse the read.
-  const session = await getPlayerSession();
-  if (
-    session.status === "signed-in" &&
-    activePauseEnd(session.session.user.pausedUntil)
-  ) {
-    return null;
-  }
+  if (await activePause()) return null;
   const { coupon, form } = await findTodayCoupon(id);
   return (
     <Sheet

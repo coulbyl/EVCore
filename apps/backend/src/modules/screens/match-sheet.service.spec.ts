@@ -342,7 +342,7 @@ describe('MatchSheetService', () => {
           channel: 'GOALS',
           market: 'OVER_UNDER',
           pick: 'OVER_1_5',
-          probability: new Prisma.Decimal('0.8'),
+          probability: new Prisma.Decimal('0.85'),
         }),
       ],
       quotes: [
@@ -350,7 +350,8 @@ describe('MatchSheetService', () => {
         quote('OVER_UNDER/OVER_1_5', { odds: 1.25, fair: 0.76 }),
       ],
     }).service.getSheet(FX, NOW);
-    // The best chance is now « plus de 1,5 but »: it is the reading, and
+    // « Plus de 1,5 but » is 15 points above the home win, beyond the
+    // speaking tolerance: it is the reading, and
     // the 1X2 home win joins « Autres paris » with the main lines.
     expect(sheet.reading?.pick).toBe('OVER_1_5');
     expect(sheet.otherPicks.at(0)).toEqual({

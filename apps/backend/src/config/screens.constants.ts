@@ -34,6 +34,25 @@ export const TODAY_HERO_RELAY = [
 // docs/audits/2026-10-29/ACCUMULATEUR.md § 6 and § 10, refonte 06 § 2).
 export const ENGINE_CHANCE_MAX_ODDS = 1.8;
 
+// The reading of a match (06 § 8, decided 2026-10-31): a « speaking » pick
+// (who wins, double chance, over/under 2.5 goals) when its chance is within
+// this distance of the best one, the best chance otherwise. Measured on
+// 1 556 settled matches (2026-10-08 → 10-28, production copy): 428 readings
+// change, mostly to double chance; the speaking pick lands as often (75.5 %
+// vs 75.7 %) and announces its rate exactly where the best one announced
+// 80.0 % for 75.7 %.
+export const READING_SPEAKING_TOLERANCE = 0.1;
+
+// The speaking picks: market → picks, `null` for every pick of the market.
+// OVER_UNDER keeps its line in `pick`: OVER/UNDER is the 2.5 line.
+export const READING_SPEAKING_PICKS: Readonly<
+  Record<string, readonly string[] | null>
+> = {
+  ONE_X_TWO: null,
+  DOUBLE_CHANCE: null,
+  OVER_UNDER: ['OVER', 'UNDER'],
+};
+
 // « Forme sur 30 jours » under each product (04 § 1).
 export const TODAY_FORM_WINDOW_DAYS = 30;
 

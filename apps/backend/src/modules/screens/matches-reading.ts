@@ -1,5 +1,9 @@
 import Decimal from 'decimal.js';
-import { ENGINE_CHANCE_MAX_ODDS } from '@config/screens.constants';
+import {
+  ENGINE_CHANCE_MAX_ODDS,
+  READING_SPEAKING_PICKS,
+  READING_SPEAKING_TOLERANCE,
+} from '@config/screens.constants';
 import { MIN_LEG_ODDS } from '@modules/coupon/coupon.constants';
 import {
   playableQuoteKey,
@@ -28,9 +32,11 @@ export function stateOf(row: MatchRow, now: Date): MatchState {
 }
 
 /**
- * The one reading of a match (06 § 1, § 2): among the engine's picks of its
- * latest analysis that 1xBet prices at MIN_LEG_ODDS or more, the best
- * chance. The chance is the engine's up to ENGINE_CHANCE_MAX_ODDS and the
+ * The one reading of a match (06 § 1, § 2, § 8): among the engine's picks of
+ * its latest analysis that 1xBet prices at MIN_LEG_ODDS or more, the best
+ * speaking pick (who wins, double chance, over/under 2.5) when its chance is
+ * within READING_SPEAKING_TOLERANCE of the best chance, the best chance
+ * otherwise. The chance is the engine's up to ENGINE_CHANCE_MAX_ODDS and the
  * market's frequency above; a pick above the threshold without that
  * frequency is left out rather than shown with the engine's.
  */
@@ -50,7 +56,9 @@ export function readingOf(input: {
       ? [{ ...c, market: c.market, pick: c.pick, probability: c.probability }]
       : [],
   );
-  let best: { reading: MatchReading; chance: Decimal } | null = null;
+  type Choice = { reading: MatchReading; chance: Decimal };
+  let best: Choice | null = null;
+  let bestSpeaking: Choice | null = null;
   let priced = false;
   for (const pick of picks) {
     const quote = input.quotes.get(
@@ -69,8 +77,8 @@ export function readingOf(input: {
           ? null
           : new Decimal(quote.operatorFairProbability)
         : new Decimal(pick.probability.toString());
-    if (chance === null || (best && !chance.gt(best.chance))) continue;
-    best = {
+    if (chance === null) continue;
+    const choice: Choice = {
       chance,
       reading: {
         market: pick.market,
@@ -80,9 +88,27 @@ export function readingOf(input: {
         result: resultOf(pick.result),
       },
     };
+    if (!best || chance.gt(best.chance)) best = choice;
+    if (isSpeaking(pick) && (!bestSpeaking || chance.gt(bestSpeaking.chance))) {
+      bestSpeaking = choice;
+    }
+  }
+  if (
+    best &&
+    bestSpeaking &&
+    best.chance.minus(bestSpeaking.chance).lte(READING_SPEAKING_TOLERANCE)
+  ) {
+    best = bestSpeaking;
   }
   if (best) return { reading: best.reading };
   return { without: picks.length > 0 && !priced ? 'not_priced' : 'rejected' };
+}
+
+/** Who wins, double chance, over/under 2.5: a reading a player reads. */
+function isSpeaking(pick: { market: string; pick: string }): boolean {
+  if (!(pick.market in READING_SPEAKING_PICKS)) return false;
+  const picks = READING_SPEAKING_PICKS[pick.market];
+  return picks == null || picks.includes(pick.pick);
 }
 
 export function resultOf(

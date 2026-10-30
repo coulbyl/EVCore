@@ -413,10 +413,20 @@ function todayAt(hoursFromNow) {
 // heures sont relatives à l'exécution : le héros est toujours à venir.
 // Un écusson par équipe, en image intégrée : comme en production, chaque
 // équipe a son logo (API-Football), sans que les mesures dépendent d'un CDN.
-function crest(name) {
+function crestSvg(name) {
   const hue = [...name].reduce((sum, c) => sum + c.charCodeAt(0), 0) % 360;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28"><path d="M14 2l10 4v8c0 6-4.5 10-10 12C8.5 24 4 20 4 14V6z" fill="hsl(${hue} 60% 42%)"/><text x="14" y="17" font-size="8" font-family="sans-serif" font-weight="700" fill="#fff" text-anchor="middle">${name.slice(0, 3).toUpperCase()}</text></svg>`;
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28"><path d="M14 2l10 4v8c0 6-4.5 10-10 12C8.5 24 4 20 4 14V6z" fill="hsl(${hue} 60% 42%)"/><text x="14" y="17" font-size="8" font-family="sans-serif" font-weight="700" fill="#fff" text-anchor="middle">${name.slice(0, 3).toUpperCase()}</text></svg>`;
+}
+
+function crest(name) {
+  return `data:image/svg+xml,${encodeURIComponent(crestSvg(name))}`;
+}
+
+// Matchs montre jusqu'à 224 matchs : ses écussons sont des adresses, comme le
+// CDN d'API-Football en production, pas des images intégrées qui gonfleraient
+// la page et fausseraient la mesure du LCP (C4).
+function crestUrl(name) {
+  return `http://127.0.0.1:${PORT}/crests/${encodeURIComponent(name)}.svg`;
 }
 
 function todayLeg(id, home, away, pick, odds, extra = {}) {
@@ -470,6 +480,86 @@ function formDays(pattern) {
     date: todayAt(-24 * (pattern.length - index)).slice(0, 10),
     outcome: mark === "x" ? "lost" : "won",
   }));
+}
+
+// « Matchs » (GET /matches, apps/backend screens/matches.types.ts) : une
+// journée sur deux pages, comme l'API qui sert 60 matchs à la fois ; trois
+// matchs sans lecture, un par raison.
+function matchAt(hour, minute) {
+  const at = new Date();
+  at.setUTCHours(hour, minute, 0, 0);
+  return at.toISOString();
+}
+
+function matchItem(id, home, away, at, extra = {}) {
+  const team = (name) => ({
+    name,
+    shortName: name.slice(0, 3).toUpperCase(),
+    logoUrl: crestUrl(name),
+  });
+  return {
+    fixtureId: `fx-match-${id}`,
+    kickoffAt: matchAt(...at),
+    state: "upcoming",
+    score: null,
+    competition: { code: "XX", name: extra.competition ?? "Ligue 1" },
+    home: team(home),
+    away: team(away),
+    reading: extra.reading
+      ? { odds: 1.6, result: null, ...extra.reading }
+      : null,
+    withoutReading: extra.reading ? null : (extra.without ?? "rejected"),
+  };
+}
+
+function matchesPage(url, cookie) {
+  const params = new URL(url, "http://mock").searchParams;
+  const day = params.get("day") ?? "today";
+  const date = new Date().toISOString().slice(0, 10);
+  if (/(^|;\s*)evcore_session=matches-empty(;|$)/.test(cookie))
+    return { day, date, items: [], nextCursor: null };
+  if (params.get("cursor") === "page-2")
+    return {
+      day,
+      date,
+      items: [
+        matchItem("bet", "Betis", "Sevilla", [20, 45], {
+          competition: "LaLiga",
+          reading: { market: "BTTS", pick: "YES", chance: 0.5 },
+        }),
+        matchItem("asec", "Asec", "Africa", [21, 0], {
+          competition: "Ligue 1 Côte d'Ivoire",
+          without: "not_priced",
+        }),
+        matchItem("gre", "Gremio", "Santos", [21, 0], {
+          competition: "Serie A Brésil",
+          without: "not_analysed",
+        }),
+      ],
+      nextCursor: null,
+    };
+  return {
+    day,
+    date,
+    items: [
+      matchItem("ars", "Arsenal", "Chelsea", [19, 0], {
+        competition: "Premier League",
+        reading: { market: "ONE_X_TWO", pick: "HOME", chance: 0.7 },
+      }),
+      matchItem("lyo", "Lyon", "Lens", [19, 0], {
+        reading: { market: "OVER_UNDER", pick: "OVER", chance: 0.62 },
+      }),
+      matchItem("bre", "Brest", "Nice", [19, 0], { without: "rejected" }),
+      matchItem("psg", "Paris SG", "Marseille", [20, 45], {
+        reading: { market: "ONE_X_TWO", pick: "HOME", chance: 0.6 },
+      }),
+      matchItem("laz", "Lazio", "Torino", [20, 45], {
+        competition: "Serie A",
+        reading: { market: "ONE_X_TWO", pick: "DRAW", chance: 0.3, odds: 3.3 },
+      }),
+    ],
+    nextCursor: "page-2",
+  };
 }
 
 function todayScreen() {
@@ -1794,6 +1884,9 @@ function route(method, url, cookie = "") {
       ],
     ];
   }
+  if (path === "/matches" && method === "GET") {
+    return [200, matchesPage(url, cookie)];
+  }
   if (path === "/today" && method === "GET") {
     // Les états d'Aujourd'hui (04 § 5) se choisissent par le cookie.
     if (/(^|;\s*)evcore_session=today-evening(;|$)/.test(cookie))
@@ -1955,6 +2048,13 @@ const server = http.createServer((req, res) => {
     "Access-Control-Allow-Headers",
     "Content-Type, Cookie, Authorization",
   );
+  const crestPath = /^\/crests\/(.+)\.svg$/.exec(req.url ?? "");
+  if (crestPath) {
+    res.setHeader("Content-Type", "image/svg+xml");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.end(crestSvg(decodeURIComponent(crestPath[1])));
+    return;
+  }
   res.setHeader("Content-Type", "application/json");
 
   const [status, body, setLoginCookie] = route(

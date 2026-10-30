@@ -174,7 +174,7 @@ describe('MatchesService', () => {
           channel: 'GOALS',
           market: 'OVER_UNDER',
           pick: 'OVER_1_5',
-          probability: new Prisma.Decimal('0.7800'),
+          probability: new Prisma.Decimal('0.8500'),
         }),
       ],
       quotes: [
@@ -188,10 +188,61 @@ describe('MatchesService', () => {
       market: 'OVER_UNDER',
       pick: 'OVER_1_5',
       odds: 1.3,
-      chance: 0.78,
+      chance: 0.85,
       result: null,
     });
     expect(item?.withoutReading).toBeNull();
+  });
+
+  it('prefers who wins, double chance or 2.5 goals within 10 points of the best', async () => {
+    const teamScores = candidate({
+      channel: 'TEAM_TOTAL',
+      market: 'TEAM_TOTAL_HOME',
+      pick: 'OVER_0_5',
+      probability: new Prisma.Decimal('0.8000'),
+    });
+    const quotes: [string, PlayableQuote][] = [
+      quote('ONE_X_TWO', 'HOME'),
+      quote('TEAM_TOTAL_HOME', 'OVER_0_5', { operatorOdds: 1.25 }),
+      quote('OVER_UNDER', 'OVER_1_5', { operatorOdds: 1.22 }),
+    ];
+    // 0.80 against 0.70: the home win is within the tolerance.
+    const within = harness({ candidates: [candidate(), teamScores], quotes });
+    const [near] = (await within.service.getMatches({ day: 'today' }, NOW))
+      .items;
+    expect(near?.reading).toMatchObject({ market: 'ONE_X_TWO', pick: 'HOME' });
+
+    // 0.81 against 0.70: the best chance stays.
+    const beyond = harness({
+      candidates: [
+        candidate(),
+        { ...teamScores, probability: new Prisma.Decimal('0.8100') },
+      ],
+      quotes,
+    });
+    const [far] = (await beyond.service.getMatches({ day: 'today' }, NOW))
+      .items;
+    expect(far?.reading).toMatchObject({
+      market: 'TEAM_TOTAL_HOME',
+      pick: 'OVER_0_5',
+    });
+
+    // Over 1.5 is not the 2.5 line: not a speaking pick.
+    const lowLine = harness({
+      candidates: [
+        candidate({
+          channel: 'GOALS',
+          market: 'OVER_UNDER',
+          pick: 'OVER_1_5',
+          probability: new Prisma.Decimal('0.7500'),
+        }),
+        teamScores,
+      ],
+      quotes,
+    });
+    const [line] = (await lowLine.service.getMatches({ day: 'today' }, NOW))
+      .items;
+    expect(line?.reading).toMatchObject({ market: 'TEAM_TOTAL_HOME' });
   });
 
   it("above 1,80 the chance is the market's; without it the pick is left out", async () => {
