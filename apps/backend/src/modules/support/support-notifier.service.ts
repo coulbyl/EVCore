@@ -24,10 +24,8 @@ function notificationBody(message: SupportMessageDto): string {
 
 // Groups the out-of-app / in-app notification channels for support messages
 // so SupportService only needs one collaborator here (keeps its constructor
-// at 3 params — see max-params rule). Push fires whenever a subscription
-// exists; email always fires too — it's the one channel that still works
-// with zero setup (no permission prompt, no PWA install), so it stays as a
-// baseline rather than a fallback-only path.
+// at 3 params — see max-params rule). The team is told by email and push;
+// a player by the bell and push only (notifyUser).
 @Injectable()
 export class SupportNotifierService {
   constructor(
@@ -56,21 +54,14 @@ export class SupportNotifierService {
     ]);
   }
 
-  async notifyUser(
-    userId: string,
-    email: string | null,
-    message: SupportMessageDto,
-  ): Promise<void> {
+  /**
+   * A team reply: the bell and the push, never an email (refonte 10 § 3:
+   * the email copy is the morning and the week only). What the player wrote
+   * to support, and what the team answered, stay in the app.
+   */
+  async notifyUser(userId: string, message: SupportMessageDto): Promise<void> {
     const title = "Nouveau message de l'équipe EVCore";
     await Promise.all([
-      email
-        ? this.mail.sendSupportMessage({
-            recipientKind: 'USER',
-            to: email,
-            fromUsername: message.senderUsername,
-            preview: notificationBody(message),
-          })
-        : Promise.resolve(),
       this.push.sendToUser(userId, {
         title,
         body: notificationBody(message),

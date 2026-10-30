@@ -513,7 +513,7 @@
     "pushNotificationsUnsupported": "Ton navigateur ne prend pas en charge les notifications push.",
     "pushNotificationsDenied": "Notifications bloquées — autorise-les dans les paramètres de ton navigateur.",
     "emailNotifications": "Notifications par email",
-    "emailNotificationsDescription": "La matinée, la semaine et les réponses de l'équipe, aussi par e-mail. Seulement vers une adresse vérifiée.",
+    "emailNotificationsDescription": "La matinée et la semaine, aussi par e-mail, vers une adresse vérifiée. Éteint tant que tu ne l'allumes pas.",
     "emailNotificationsToggle": "Par e-mail aussi",
     "bankrollDescription": "Choisis la devise affichée dans l'application.",
     "displayCurrency": "Devise d'affichage",

@@ -67,32 +67,13 @@ export class SupportRepository {
     });
   }
 
-  /**
-   * How a player hears of a team reply (09 § 5): not at all when « Réponses
-   * de l'équipe » is off; by email only when « Par e-mail aussi » is on and
-   * the address is verified (09 § 7: an unverified address may be mistyped,
-   * or someone else's).
-   */
-  async findReplyRecipient(
-    userId: string,
-  ): Promise<{ notify: boolean; email: string | null }> {
+  /** « Réponses de l'équipe » (09 § 5): off, a team reply notifies nothing. */
+  async wantsTeamReplies(userId: string): Promise<boolean> {
     const user = await this.prisma.client.user.findUnique({
       where: { id: userId },
-      select: {
-        email: true,
-        emailVerified: true,
-        emailNotificationsEnabled: true,
-        teamRepliesEnabled: true,
-      },
+      select: { teamRepliesEnabled: true },
     });
-    if (!user?.teamRepliesEnabled) return { notify: false, email: null };
-    return {
-      notify: true,
-      email:
-        user.emailVerified && user.emailNotificationsEnabled
-          ? user.email
-          : null,
-    };
+    return user?.teamRepliesEnabled ?? false;
   }
 
   async userExists(userId: string): Promise<boolean> {

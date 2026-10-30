@@ -614,9 +614,10 @@ model User {
   theme                     String?
   locale                    String?
   currency                  String?
-  // « Par e-mail aussi » (refonte 09 § 5) : la matinée, la semaine et les
-  // réponses de l'équipe, vers une adresse vérifiée seulement.
-  emailNotificationsEnabled Boolean                 @default(true)
+  // « Par e-mail aussi » (refonte 09 § 5, 10 § 3) : la matinée et la semaine
+  // par e-mail, vers une adresse vérifiée seulement. Choisi par le joueur,
+  // jamais activé d'office (2026-10-31).
+  emailNotificationsEnabled Boolean                 @default(false)
   // Optional, collected in the Profil settings tab — never at registration
   // (TODO.md: keeping signup low-friction). phoneNumberConsentGiven gates
   // collection: the frontend only shows the phone input once consent is

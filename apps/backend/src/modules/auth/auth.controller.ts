@@ -12,7 +12,10 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
-import { AUTH_LOGIN_RATE_LIMIT } from '@config/rate-limit.constants';
+import {
+  AUTH_LOGIN_RATE_LIMIT,
+  AUTH_REGISTER_RATE_LIMIT,
+} from '@config/rate-limit.constants';
 import { AuthService } from './auth.service';
 import { AccountDeletionService } from './account-deletion.service';
 import { AccountPauseService } from './account-pause.service';
@@ -46,6 +49,12 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @Throttle({
+    default: {
+      limit: AUTH_REGISTER_RATE_LIMIT.limit,
+      ttl: AUTH_REGISTER_RATE_LIMIT.ttlMs,
+    },
+  })
   async register(
     @Body() body: RegisterDto,
     @Res({ passthrough: true }) response: Response,

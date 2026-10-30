@@ -316,9 +316,8 @@ export class SupportService {
     });
     const dto = await this.toMessageDto(raw);
     this.gateway.emitMessage(conversationId, dto);
-    const recipient = await this.repo.findReplyRecipient(conversation.userId);
-    if (recipient.notify) {
-      await this.notifier.notifyUser(conversation.userId, recipient.email, dto);
+    if (await this.repo.wantsTeamReplies(conversation.userId)) {
+      await this.notifier.notifyUser(conversation.userId, dto);
     }
     return dto;
   }

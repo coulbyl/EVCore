@@ -513,7 +513,7 @@
     "pushNotificationsUnsupported": "Your browser doesn't support push notifications.",
     "pushNotificationsDenied": "Notifications blocked — allow them in your browser settings.",
     "emailNotifications": "Email notifications",
-    "emailNotificationsDescription": "The morning brief, the week and the team's replies, by email too. Only to a verified address.",
+    "emailNotificationsDescription": "The morning brief and the week, by email too, to a verified address. Off until you turn it on.",
     "emailNotificationsToggle": "By email too",
     "bankrollDescription": "Choose the currency displayed in the app.",
     "displayCurrency": "Display currency",
