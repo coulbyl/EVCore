@@ -88,6 +88,21 @@ export class AuthRepository {
     });
   }
 
+  /** The second step of a login: same row as `findLoginUser`, by id. */
+  findTotpLoginUser(
+    userId: string,
+  ): Promise<(LoginUserRow & { totpSecret: string | null }) | null> {
+    return this.prisma.client.user.findUnique({
+      where: { id: userId },
+      select: {
+        ...SESSION_USER_SELECT,
+        passwordHash: true,
+        suspended: true,
+        totpSecret: true,
+      },
+    });
+  }
+
   updateSessionUser(
     userId: string,
     data: Prisma.UserUpdateInput,

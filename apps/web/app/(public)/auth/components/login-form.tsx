@@ -19,12 +19,10 @@ import {
 } from "@evcore/ui";
 import { login } from "@/domains/auth/use-cases/login";
 import { safeNextPath } from "@/domains/auth/helpers/safe-next-path";
+import { LoginTotpStep } from "./login-totp-step";
 
 const loginSchema = z.object({
-  identifier: z
-    .string()
-    .trim()
-    .min(1, "Indique ton e-mail."),
+  identifier: z.string().trim().min(1, "Indique ton e-mail."),
   password: z.string().min(1, "Indique ton mot de passe."),
 });
 
@@ -34,6 +32,7 @@ export function LoginForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [challenge, setChallenge] = useState<string | null>(null);
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -41,22 +40,47 @@ export function LoginForm() {
     mode: "onTouched",
   });
 
+  function goToNext() {
+    // L'écran demandé avant la connexion (proxy.ts), s'il est interne.
+    const next = safeNextPath(
+      new URLSearchParams(window.location.search).get("next"),
+    );
+    router.push(next ?? "/dashboard");
+    router.refresh();
+  }
+
   async function onSubmit(values: LoginValues) {
     setError(null);
     setIsSubmitting(true);
     try {
-      await login({ identifier: values.identifier, password: values.password });
-      // L'écran demandé avant la connexion (proxy.ts), s'il est interne.
-      const next = safeNextPath(
-        new URLSearchParams(window.location.search).get("next"),
-      );
-      router.push(next ?? "/dashboard");
-      router.refresh();
+      const result = await login({
+        identifier: values.identifier,
+        password: values.password,
+      });
+      if (result.kind === "totp") {
+        setChallenge(result.challenge);
+        return;
+      }
+      goToNext();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Identifiants invalides.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "E-mail ou mot de passe incorrect.",
+      );
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (challenge) {
+    return (
+      <LoginTotpStep
+        challenge={challenge}
+        onSignedIn={goToNext}
+        onBack={() => setChallenge(null)}
+      />
+    );
   }
 
   return (

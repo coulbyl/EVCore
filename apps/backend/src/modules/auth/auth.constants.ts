@@ -6,6 +6,15 @@ export const OTP_CODE_TTL_MS = 10 * 60 * 1000;
 export const OTP_MAX_ATTEMPTS = 5;
 export const OTP_EXPIRES_IN_MINUTES = 10;
 
+// Connexion avec application d'authentification (11 § 3) : le mot de passe
+// donne un défi court, le code à six chiffres l'échange contre une session.
+export const LOGIN_CHALLENGE_TTL_MS = 5 * 60 * 1000;
+export const LOGIN_CHALLENGE_MAX_ATTEMPTS = 5;
+// Mauvais codes par joueur, tous défis confondus : le mot de passe seul
+// permet d'en obtenir d'autres.
+export const LOGIN_TOTP_MAX_FAILURES = 10;
+export const LOGIN_TOTP_FAILURE_WINDOW_MS = 15 * 60 * 1000;
+
 export const PASSWORD_RESET_TTL_MS = 15 * 60 * 1000;
 export const PASSWORD_RESET_EXPIRES_IN_MINUTES = 15;
 export const PASSWORD_RESET_RATE_LIMIT_MAX = 3;

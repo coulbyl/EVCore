@@ -58,12 +58,20 @@ export function VerifyChoiceForm() {
         </div>
       </button>
 
-      <div className="border-t border-border pt-2">
+      {/* Jamais imposé (11 § 4, § 6) : un compte non vérifié suit des
+          coupons ; seuls les e-mails attendent la vérification. */}
+      <div className="flex items-center justify-between border-t border-border pt-2">
         <Link
           href="/auth/login"
           className="text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           ← Me connecter avec un autre compte
+        </Link>
+        <Link
+          href="/dashboard"
+          className="text-sm font-medium text-foreground transition-colors hover:text-accent"
+        >
+          Plus tard
         </Link>
       </div>
     </div>

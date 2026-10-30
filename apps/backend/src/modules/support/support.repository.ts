@@ -67,14 +67,21 @@ export class SupportRepository {
     });
   }
 
-  // Returns null when the user has no email or has opted out of support
-  // notification emails — callers treat a null email as "don't send".
+  // Returns null when the user has opted out of support notification
+  // emails or has not verified the address (09 § 7: an unverified address
+  // may be mistyped, or someone else's) — callers treat null as "don't send".
   async findUserEmail(userId: string): Promise<string | null> {
     const user = await this.prisma.client.user.findUnique({
       where: { id: userId },
-      select: { email: true, emailSupportNotificationsEnabled: true },
+      select: {
+        email: true,
+        emailVerified: true,
+        emailSupportNotificationsEnabled: true,
+      },
     });
-    if (!user || !user.emailSupportNotificationsEnabled) return null;
+    if (!user?.emailVerified || !user.emailSupportNotificationsEnabled) {
+      return null;
+    }
     return user.email;
   }
 

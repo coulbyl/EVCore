@@ -24,7 +24,7 @@ export default async function VerifyPage() {
   return (
     <AuthShell
       title="Sécurise ton compte"
-      subtitle="Choisis comment vérifier ton identité. C'est la dernière étape avant ton tableau de bord."
+      subtitle="Vérifie ton e-mail pour recevoir nos e-mails et pouvoir récupérer ton compte. Tu peux le faire plus tard depuis ton compte."
       asideTitle="Un compte protégé, c'est un compte récupérable."
       asideText="En vérifiant ton e-mail ou en connectant une application d'authentification, tu t'assures de toujours pouvoir récupérer l'accès à ton compte."
     >

@@ -21,6 +21,7 @@ import { CurrentSession } from './current-session.decorator';
 import { AuthSessionGuard } from './auth-session.guard';
 import type { AuthSession } from './auth.types';
 import { LoginDto } from './dto/login.dto';
+import { LoginTotpDto } from './dto/login-totp.dto';
 import { RegisterDto } from './dto/register.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
@@ -71,6 +72,27 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const result = await this.authService.login(body);
+    if (result.kind === 'totp') {
+      // Pas de session avant le code de l'application (11 § 3).
+      return { totpRequired: true as const, challenge: result.challenge };
+    }
+    this.authService.applySessionCookie(response, result.token);
+    return { session: result.session };
+  }
+
+  @Post('login/totp')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({
+    default: {
+      limit: AUTH_LOGIN_RATE_LIMIT.limit,
+      ttl: AUTH_LOGIN_RATE_LIMIT.ttlMs,
+    },
+  })
+  async loginWithTotp(
+    @Body() body: LoginTotpDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.authService.loginWithTotp(body);
     this.authService.applySessionCookie(response, result.token);
     return { session: result.session };
   }
@@ -240,6 +262,12 @@ export class AuthController {
 
   @Post('reset-password/totp')
   @HttpCode(HttpStatus.OK)
+  @Throttle({
+    default: {
+      limit: AUTH_LOGIN_RATE_LIMIT.limit,
+      ttl: AUTH_LOGIN_RATE_LIMIT.ttlMs,
+    },
+  })
   async resetPasswordWithTotp(@Body() body: ResetPasswordTotpDto) {
     await this.authService.resetPasswordWithTotp(body);
     return { status: 'ok' as const };

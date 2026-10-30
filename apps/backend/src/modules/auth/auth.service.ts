@@ -16,6 +16,7 @@ import { MailService } from '@modules/mail/mail.service';
 import { AccountRepository } from './account.repository';
 import { AuthRepository, type SessionUserRow } from './auth.repository';
 import { SessionCache } from './session-cache';
+import { LoginChallenges } from './login-challenges';
 import { createLogger } from '@utils/logger';
 
 const logger = createLogger('auth-service');
@@ -52,6 +53,7 @@ import {
   verifyPassword,
 } from './auth.utils';
 import type { LoginDto } from './dto/login.dto';
+import type { LoginTotpDto } from './dto/login-totp.dto';
 import type { RegisterDto } from './dto/register.dto';
 import type { UpdateMeDto } from './dto/update-me.dto';
 import type { VerifyEmailDto } from './dto/verify-email.dto';
@@ -63,6 +65,10 @@ import type { UpdateIdentityDto } from './dto/update-identity.dto';
 
 const totp = new OTP();
 
+export type LoginResult =
+  | { kind: 'session'; token: string; session: AuthSession }
+  | { kind: 'totp'; challenge: string };
+
 @Injectable()
 export class AuthService {
   // eslint-disable-next-line max-params -- Nest DI constructor.
@@ -72,6 +78,7 @@ export class AuthService {
     private readonly config: ConfigService,
     private readonly account: AccountRepository,
     private readonly sessionCache: SessionCache,
+    private readonly loginChallenges: LoginChallenges,
   ) {}
 
   async register(
@@ -104,19 +111,15 @@ export class AuthService {
 
     logger.info({ userId: user.id }, 'register: account created');
 
-    const { token, session } = await this.createSession(user.id);
-    return {
-      token,
-      session: {
-        sessionId: session.id,
-        user: this.toSessionUser(user),
-      },
-    };
+    return this.openSession(user);
   }
 
-  async login(
-    input: LoginDto,
-  ): Promise<{ token: string; session: AuthSession }> {
+  /**
+   * Right password: a session, or, when the account has an authenticator
+   * app, a challenge the six-digit code redeems (`loginWithTotp`). The app
+   * protected only the password reset until 2026-10-30.
+   */
+  async login(input: LoginDto): Promise<LoginResult> {
     const identifier = normalizeIdentifier(input.identifier);
     const user = await this.repository.findLoginUser(identifier);
 
@@ -124,12 +127,59 @@ export class AuthService {
       throw new UnauthorizedException('E-mail ou mot de passe incorrect');
     }
 
+    this.assertNotSuspended(user);
+
+    if (user.totpVerified) {
+      return {
+        kind: 'totp',
+        challenge: this.loginChallenges.issue(user.id),
+      };
+    }
+
+    return { kind: 'session', ...(await this.openSession(user)) };
+  }
+
+  async loginWithTotp(
+    input: LoginTotpDto,
+  ): Promise<{ token: string; session: AuthSession }> {
+    const userId = this.loginChallenges.begin(input.challenge);
+    if (!userId) {
+      throw new UnauthorizedException(
+        'Code expiré ou trop de tentatives — reconnecte-toi',
+      );
+    }
+
+    const user = await this.repository.findTotpLoginUser(userId);
+    if (!user || !user.totpVerified || !user.totpSecret) {
+      throw new UnauthorizedException('Reconnecte-toi');
+    }
+    this.assertNotSuspended(user);
+
+    const appSecret = this.config.getOrThrow<string>('TOTP_APP_SECRET');
+    const { valid } = totp.verifySync({
+      token: input.code,
+      secret: decryptTotpSecret(user.totpSecret, appSecret),
+    });
+    if (!valid) {
+      this.loginChallenges.fail(userId);
+      throw new UnauthorizedException('Code incorrect');
+    }
+
+    this.loginChallenges.succeed(input.challenge, userId);
+    return this.openSession(user);
+  }
+
+  private assertNotSuspended(user: { suspended: boolean }): void {
     if (user.suspended) {
       throw new UnauthorizedException(
         'Compte suspendu — contactez un administrateur.',
       );
     }
+  }
 
+  private async openSession(
+    user: SessionUserRow,
+  ): Promise<{ token: string; session: AuthSession }> {
     const { token, session } = await this.createSession(user.id);
     return {
       token,
@@ -422,6 +472,14 @@ export class AuthService {
       throw new UnauthorizedException('E-mail ou mot de passe incorrect');
     }
 
+    // Même plafond de mauvais codes que la connexion : ce chemin remplace le
+    // mot de passe avec le seul code, il ne doit pas servir à le deviner.
+    if (this.loginChallenges.isLockedOut(user.id)) {
+      throw new UnauthorizedException(
+        "Trop de codes incorrects — réessaie dans un quart d'heure",
+      );
+    }
+
     const appSecret = this.config.getOrThrow<string>('TOTP_APP_SECRET');
     const plainSecret = decryptTotpSecret(user.totpSecret, appSecret);
     const result = totp.verifySync({
@@ -430,6 +488,7 @@ export class AuthService {
     });
 
     if (!result.valid) {
+      this.loginChallenges.fail(user.id);
       throw new UnauthorizedException('Code TOTP invalide');
     }
 

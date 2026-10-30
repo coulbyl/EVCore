@@ -25,6 +25,8 @@ test("un compte tout juste inscrit voit la vérification", async ({
   await expect(
     page.getByRole("button", { name: /Vérification par email/ }),
   ).toBeVisible();
+  // Jamais imposée (11 § 4) : on peut passer.
+  await expect(page.getByRole("link", { name: "Plus tard" })).toBeVisible();
 });
 
 test("un compte déjà vérifié repart vers le tableau de bord", async ({

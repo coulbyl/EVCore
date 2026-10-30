@@ -16,8 +16,16 @@ import type {
   SessionUserRow,
 } from './auth.repository';
 import type { AuthenticatedRequest } from './auth.types';
-import { hashPassword, hashResetToken, hashSessionToken } from './auth.utils';
+import {
+  encryptTotpSecret,
+  hashPassword,
+  hashResetToken,
+  hashSessionToken,
+} from './auth.utils';
 import { SessionCache } from './session-cache';
+import { LoginChallenges } from './login-challenges';
+import { LOGIN_TOTP_MAX_FAILURES } from './auth.constants';
+import { OTP } from 'otplib';
 
 const USER: SessionUserRow = {
   id: 'user-1',
@@ -47,6 +55,9 @@ const USER: SessionUserRow = {
   pausedUntil: null,
 } as SessionUserRow;
 
+const TOTP_APP_SECRET = 'secret-de-test';
+const otp = new OTP();
+
 let passwordHash: string;
 
 beforeAll(async () => {
@@ -72,17 +83,19 @@ function makeHarness(
   } as unknown as AuthRepository;
   const config = {
     get: vi.fn().mockReturnValue('https://app.example'),
-    getOrThrow: vi.fn(),
+    getOrThrow: vi.fn().mockReturnValue(TOTP_APP_SECRET),
   } as unknown as ConfigService;
   const sessionCache = new SessionCache();
+  const loginChallenges = new LoginChallenges();
   const service = new AuthService(
     repository,
     {} as MailService,
     config,
     {} as AccountRepository,
     sessionCache,
+    loginChallenges,
   );
-  return { service, repository, sessionCache };
+  return { service, repository, sessionCache, loginChallenges };
 }
 
 function requestWith(token?: string): AuthenticatedRequest {
@@ -173,10 +186,12 @@ describe('AuthService.login', () => {
     const { service, repository } = makeHarness({
       findLoginUser: vi.fn().mockResolvedValue(loginRow()),
     });
-    const { token, session } = await service.login({
+    const result = await service.login({
       identifier: '  Joueur ',
       password: 'correct horse',
     });
+    if (result.kind !== 'session') throw new Error('expected a session');
+    const { token, session } = result;
     expect(repository.findLoginUser).toHaveBeenCalledWith('joueur');
     expect(repository.createSession).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -188,6 +203,110 @@ describe('AuthService.login', () => {
     expect(session.user).not.toHaveProperty('passwordHash');
     expect(session.user).not.toHaveProperty('suspended');
     expect(session.user.email).toBe('joueur@example.com');
+  });
+});
+
+describe('AuthService login with an authenticator app', () => {
+  const secret = otp.generateSecret();
+  const totpRow = () => ({
+    ...USER,
+    totpVerified: true,
+    mfaMethod: 'TOTP' as const,
+    passwordHash,
+    suspended: false,
+    totpSecret: encryptTotpSecret(secret, TOTP_APP_SECRET),
+  });
+
+  async function challengeFor(service: AuthService): Promise<string> {
+    const result = await service.login({
+      identifier: 'joueur',
+      password: 'correct horse',
+    });
+    if (result.kind !== 'totp') throw new Error('expected a challenge');
+    return result.challenge;
+  }
+
+  it('asks for the code instead of opening a session', async () => {
+    const { service, repository } = makeHarness({
+      findLoginUser: vi.fn().mockResolvedValue(totpRow()),
+    });
+    const result = await service.login({
+      identifier: 'joueur',
+      password: 'correct horse',
+    });
+    expect(result.kind).toBe('totp');
+    expect(result).not.toHaveProperty('token');
+    expect(repository.createSession).not.toHaveBeenCalled();
+  });
+
+  it('opens the session on the right code, once', async () => {
+    const { service, repository } = makeHarness({
+      findLoginUser: vi.fn().mockResolvedValue(totpRow()),
+      findTotpLoginUser: vi.fn().mockResolvedValue(totpRow()),
+    });
+    const challenge = await challengeFor(service);
+    const code = otp.generateSync({ secret });
+
+    const { session } = await service.loginWithTotp({ challenge, code });
+    expect(session.user.id).toBe('user-1');
+    expect(session.user).not.toHaveProperty('totpSecret');
+    expect(repository.createSession).toHaveBeenCalledTimes(1);
+
+    await expect(
+      service.loginWithTotp({ challenge, code }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('refuses a wrong code and counts it', async () => {
+    const { service, repository, loginChallenges } = makeHarness({
+      findLoginUser: vi.fn().mockResolvedValue(totpRow()),
+      findTotpLoginUser: vi.fn().mockResolvedValue(totpRow()),
+    });
+    const fail = vi.spyOn(loginChallenges, 'fail');
+    const challenge = await challengeFor(service);
+    const right = otp.generateSync({ secret });
+    const wrong = right === '000000' ? '111111' : '000000';
+
+    await expect(
+      service.loginWithTotp({ challenge, code: wrong }),
+    ).rejects.toThrow('Code incorrect');
+    expect(fail).toHaveBeenCalledWith('user-1');
+    expect(repository.createSession).not.toHaveBeenCalled();
+  });
+
+  it('refuses the code of an account suspended in between', async () => {
+    const { service, repository } = makeHarness({
+      findLoginUser: vi.fn().mockResolvedValue(totpRow()),
+      findTotpLoginUser: vi
+        .fn()
+        .mockResolvedValue({ ...totpRow(), suspended: true }),
+    });
+    const challenge = await challengeFor(service);
+    await expect(
+      service.loginWithTotp({
+        challenge,
+        code: otp.generateSync({ secret }),
+      }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(repository.createSession).not.toHaveBeenCalled();
+  });
+
+  it('stops the password reset by code once the player is locked out', async () => {
+    const { service, repository, loginChallenges } = makeHarness({
+      findTotpResetTarget: vi.fn().mockResolvedValue(totpRow()),
+      replacePasswordAndRevokeSessions: vi.fn(),
+    });
+    for (let i = 0; i < LOGIN_TOTP_MAX_FAILURES; i++) {
+      loginChallenges.fail('user-1');
+    }
+    await expect(
+      service.resetPasswordWithTotp({
+        identifier: 'joueur',
+        totpCode: otp.generateSync({ secret }),
+        newPassword: 'une autre phrase longue',
+      }),
+    ).rejects.toThrow('Trop de codes incorrects');
+    expect(repository.replacePasswordAndRevokeSessions).not.toHaveBeenCalled();
   });
 });
 
