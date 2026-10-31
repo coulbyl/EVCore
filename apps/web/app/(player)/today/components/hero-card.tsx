@@ -40,8 +40,11 @@ export async function HeroCard({
 }: {
   coupon: TodayCoupon;
   form: TodayProductForm | undefined;
-  /** Where the card opens its coupon: Résultats opens yesterday's (08 § 3). */
-  couponPath?: string;
+  /**
+   * Where the card opens its coupon: Résultats opens yesterday's (08 § 3);
+   * null on the landing, whose visitor has no sheet to open (11 § 1).
+   */
+  couponPath?: string | null;
 }) {
   const [t, locale, timeZone] = await Promise.all([
     getTranslations("today"),
@@ -60,11 +63,13 @@ export async function HeroCard({
       aria-labelledby="hero-title"
       className="relative flex flex-col gap-3 rounded-[0.875rem] border border-border bg-card p-4 text-card-foreground"
     >
-      <Link
-        href={`${couponPath}/${coupon.id}`}
-        aria-label={t("open", { product: t(`products.${coupon.product}`) })}
-        className="absolute inset-0 rounded-[0.875rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-      />
+      {couponPath !== null ? (
+        <Link
+          href={`${couponPath}/${coupon.id}`}
+          aria-label={t("open", { product: t(`products.${coupon.product}`) })}
+          className="absolute inset-0 rounded-[0.875rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        />
+      ) : null}
       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
         <h2 id="hero-title" className="score text-title font-semibold">
           {t(`products.${coupon.product}`)}

@@ -1,13 +1,15 @@
 /*
  * The player's stylesheet (15-todo.md C0b): built from the player's own
  * sources only — its screens and the scoreboard components — instead of
- * every class of the dashboard, the editor and driver.js. The dashboard and
- * the public pages keep app/globals.css.
+ * every class of the dashboard, the editor and driver.js. The landing and
+ * /resultats use it too; the dashboard, the legal pages and sign-in keep
+ * app/globals.css until their overhaul.
  */
 @import 'tailwindcss' source(none);
 @source '.';
 @source '../../components/scoreboard';
 @source '../layout.tsx';
+@source '../(public)/(visitor)';
 @import '@evcore/ui/globals.css';
 @import '../styles/scoreboard.css';
 

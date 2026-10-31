@@ -1643,5 +1643,23 @@
     "title": "Page introuvable",
     "line": "Cette page n'existe pas.",
     "home": "Accueil"
+  },
+  "landing": {
+    "signIn": "Se connecter",
+    "brandLine": "Un pari par jour. Compté, daté, pertes comprises.",
+    "signUp": "Créer mon compte",
+    "free": "C'est gratuit. On ne prend jamais ta mise.",
+    "results": "Nos résultats",
+    "resultsSince": "Nos résultats, depuis le {date}",
+    "seeAll": "Tout voir",
+    "howTitle": "Comment ça marche",
+    "how": "On lit les matchs et les cotes de 1xBet, on propose un pari par jour, on compte ce qu'il a donné. Toi, tu suis ou pas.",
+    "legal": {
+      "label": "Pages légales",
+      "terms": "Conditions",
+      "privacy": "Confidentialité",
+      "notice": "Mentions",
+      "responsible": "Jeu responsable"
+    }
   }
 }

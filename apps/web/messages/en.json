@@ -1643,5 +1643,23 @@
     "title": "Page not found",
     "line": "This page does not exist.",
     "home": "Home"
+  },
+  "landing": {
+    "signIn": "Sign in",
+    "brandLine": "One bet a day. Counted, dated, losses included.",
+    "signUp": "Create my account",
+    "free": "It's free. We never take your stake.",
+    "results": "Our results",
+    "resultsSince": "Our results, since {date}",
+    "seeAll": "See all",
+    "howTitle": "How it works",
+    "how": "We read the matches and 1xBet's odds, we suggest one bet a day, we count what it gave. You follow it or not.",
+    "legal": {
+      "label": "Legal pages",
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "notice": "Legal notice",
+      "responsible": "Responsible gambling"
+    }
   }
 }

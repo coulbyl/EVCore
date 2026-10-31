@@ -1184,6 +1184,63 @@ function matchesPage(url, cookie) {
   };
 }
 
+// La landing (GET /public/today, 11 § 1) : le héros d'Aujourd'hui sans rien
+// de joueur, sa forme, Hier, et les premières lignes de Résultats.
+function publicToday() {
+  const screen = todayScreen();
+  const {
+    followedByMe: _f,
+    canFollow: _c,
+    ...hero
+  } = screen.coupons.find((coupon) => coupon.id === screen.heroId);
+  const form = screen.forms.find((f) => f.product === hero.product);
+  return {
+    date: screen.date,
+    hero,
+    heroForm: {
+      days: form.days,
+      won: form.won,
+      played: form.played,
+      since: form.days[0]?.date ?? null,
+    },
+    yesterday: screen.yesterday.map(({ product, outcome }) => ({
+      product,
+      outcome,
+    })),
+    absences: screen.absences,
+    results: [
+      {
+        product: "FAVOURITE",
+        won: 11,
+        lost: 3,
+        refunded: 0,
+        tooEarly: false,
+        settledDays: 14,
+        since: "2026-10-13",
+      },
+      {
+        product: "COMBO",
+        won: 11,
+        lost: 4,
+        refunded: 0,
+        tooEarly: false,
+        settledDays: 15,
+        since: "2026-10-13",
+      },
+      {
+        product: "DOUBLE",
+        won: 1,
+        lost: 0,
+        refunded: 0,
+        tooEarly: true,
+        settledDays: 1,
+        since: "2026-10-28",
+      },
+    ],
+    ai: { won: 136, lost: 71, tooEarly: false, since: "2026-10-13" },
+  };
+}
+
 function todayScreen() {
   const favourite = todayCoupon(
     "fav",
@@ -2569,6 +2626,9 @@ function route(method, url, cookie = "") {
   if (path === "/me/settled" && method === "GET") return [200, meSettledPage()];
   if (path === "/matches" && method === "GET") {
     return [200, matchesPage(url, cookie)];
+  }
+  if (path === "/public/today" && method === "GET") {
+    return [200, publicToday()];
   }
   if (path === "/today" && method === "GET") {
     // Les états d'Aujourd'hui (04 § 5) se choisissent par le cookie.
