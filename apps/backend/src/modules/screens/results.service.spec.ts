@@ -216,6 +216,8 @@ describe('ResultsService.getResults', () => {
     ).products;
     expect(fav?.comparison).toEqual({
       days: 10,
+      from: '2026-10-13',
+      to: '2026-10-22',
       announced: 0.8,
       realised: 0.8,
     });
@@ -347,6 +349,26 @@ describe('ResultsService — Avis IA', () => {
     configVersion: 'v5',
   });
 
+  it('lists the opinions most recent first and marks a change of setting', async () => {
+    const rows = [
+      { ...advice('WON', 2), configVersion: 'v5' },
+      { ...advice('LOST', 1), configVersion: 'v5' },
+      { ...advice('VOID', 0), configVersion: 'v4' },
+    ];
+    const { service } = harness({ advice: rows });
+    const detail = await service.getAi({ period: '90' }, NOW);
+    expect(detail.opinions.map((o) => [o.outcome, o.settingChanged])).toEqual([
+      ['won', false],
+      // v4 → v5 with this one: « réglage changé ».
+      ['lost', true],
+      ['refunded', false],
+    ]);
+    expect(detail.opinions[0]).toMatchObject({
+      label: 'PSG – Lens',
+      odds: 1.5,
+    });
+  });
+
   it('counts per opinion; a void one is refunded; at its own odds', async () => {
     const rows = [
       'WON',
@@ -367,7 +389,13 @@ describe('ResultsService — Avis IA', () => {
       NOW,
     );
     expect(ai).toMatchObject({ won: 8, lost: 2, refunded: 1, tooEarly: false });
-    expect(ai.comparison).toEqual({ days: 10, announced: 0.65, realised: 0.8 });
+    expect(ai.comparison).toEqual({
+      days: 10,
+      from: '2026-10-19',
+      to: '2026-10-29',
+      announced: 0.65,
+      realised: 0.8,
+    });
     // 8 won at 1,50 on 10 staked.
     expect(ai.francs).toMatchObject({
       days: 10,

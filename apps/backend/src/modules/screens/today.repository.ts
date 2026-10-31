@@ -124,6 +124,23 @@ export class TodayRepository {
     `;
   }
 
+  /**
+   * One published coupon of any day (rank 1, not the LLM's), as
+   * `findCouponLegs` reads them: the settled coupon Résultats opens.
+   */
+  findPublishedCouponLegs(input: {
+    userId: string;
+    couponId: string;
+  }): Promise<TodayLegRow[]> {
+    return this.prisma.client.$queryRaw<TodayLegRow[]>`
+      ${legColumns(input.userId)}
+      WHERE cp.id = ${input.couponId}::uuid
+        AND cp.source <> 'LLM'
+        AND cp.rank = 1
+      ORDER BY f."scheduledAt", l.id
+    `;
+  }
+
   /** Every leg of the given coupons, as `findCouponLegs` reads them. */
   findCouponLegsByIds(input: {
     userId: string;

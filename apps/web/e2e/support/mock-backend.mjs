@@ -833,6 +833,137 @@ function resultsScreen(url, cookie) {
   };
 }
 
+// Le détail d'une ligne de Résultats (08 § 2) : la grille de la période, le
+// jour par jour, l'IA avec un changement de réglage, un coupon réglé.
+const RESULTS_COUPON = "00000000-0000-4000-8000-0000000000c1";
+
+function resultsDay(offset) {
+  return todayAt(-24 * offset).slice(0, 10);
+}
+
+function resultsProduct(product, url, cookie) {
+  const summary = resultsScreen(url, cookie).products.find(
+    (p) => p.product === product,
+  );
+  if (!summary) return null;
+  const period = new URL(url, "http://mock").searchParams.get("period") ?? "90";
+  const length = period === "30" ? 30 : 90;
+  const mature = !summary.tooEarly;
+  const outcomeAt = (offset) =>
+    !mature
+      ? offset === 2
+        ? (summary.last[0] ?? "none")
+        : "none"
+      : offset > 18
+        ? "none"
+        : offset === 5
+          ? "none"
+          : [3, 8, 14].includes(offset)
+            ? "lost"
+            : offset === 11
+              ? "refunded"
+              : "won";
+  const grid = Array.from({ length }, (_, i) => {
+    const offset = length - i;
+    return { date: resultsDay(offset), outcome: outcomeAt(offset) };
+  });
+  const days = [];
+  for (let offset = 1; offset <= length; offset += 1) {
+    const outcome = outcomeAt(offset);
+    if (outcome !== "none") {
+      days.push({
+        date: resultsDay(offset),
+        outcome,
+        label: offset % 2 ? "Paris SG – Lens" : "Bayern – Köln",
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        paidOdds: outcome === "won" ? 1.24 : null,
+        couponId: RESULTS_COUPON,
+      });
+    } else if (mature && offset === 5) {
+      days.push({
+        date: resultsDay(offset),
+        outcome: "none",
+        reason: "no_home_favourite_in_band",
+      });
+    }
+  }
+  return {
+    ...summary,
+    worstLosingStreak: mature ? 1 : 0,
+    daysWithoutCoupon: mature ? 1 : 0,
+    comparison: mature
+      ? {
+          days: 14,
+          from: resultsDay(18),
+          to: resultsDay(1),
+          announced: 0.8,
+          realised: 0.79,
+        }
+      : null,
+    francs: mature
+      ? {
+          days: 14,
+          staked: 14000,
+          returned: 13600,
+          unpricedDays: 2,
+          from: resultsDay(18),
+          to: resultsDay(1),
+        }
+      : null,
+    grid,
+    days,
+  };
+}
+
+function resultsAi(url, cookie) {
+  const { ai } = resultsScreen(url, cookie);
+  const opinion = (offset, outcome, config) => ({
+    date: resultsDay(offset),
+    label: "Lazio – Torino",
+    market: "ONE_X_TWO",
+    pick: "DRAW",
+    odds: 3.3,
+    outcome,
+    config,
+  });
+  const rows = [
+    opinion(1, "won", "v5"),
+    opinion(2, "lost", "v5"),
+    opinion(3, "won", "v5"),
+    opinion(4, "won", "v4"),
+    opinion(5, "refunded", "v4"),
+  ];
+  return {
+    ...ai,
+    comparison: {
+      days: 207,
+      from: resultsDay(30),
+      to: resultsDay(1),
+      announced: 0.64,
+      realised: 0.66,
+    },
+    francs: {
+      days: 207,
+      staked: 207000,
+      returned: 212300,
+      unpricedDays: 0,
+      from: resultsDay(30),
+      to: resultsDay(1),
+    },
+    opinions: rows.map(({ config, ...row }, i) => ({
+      ...row,
+      settingChanged: rows[i + 1] ? rows[i + 1].config !== config : false,
+    })),
+  };
+}
+
+function resultsCoupon(id) {
+  if (id !== RESULTS_COUPON) return null;
+  const [favourite] = eveningScreen().coupons;
+  return { ...favourite, id: RESULTS_COUPON, followedByMe: false };
+}
+
 function matchesPage(url, cookie) {
   const params = new URL(url, "http://mock").searchParams;
   const day = params.get("day") ?? "today";
@@ -2230,6 +2361,17 @@ function route(method, url, cookie = "") {
   if (sheetOfMatch && method === "GET") {
     const sheet = matchSheet(sheetOfMatch[1]);
     return sheet ? [200, sheet] : [404, { message: "Match introuvable" }];
+  }
+  const resultsPath = path.match(/^\/results\/(products|coupons)\/([^/]+)$/);
+  if (resultsPath && method === "GET") {
+    const found =
+      resultsPath[1] === "coupons"
+        ? resultsCoupon(resultsPath[2])
+        : resultsProduct(resultsPath[2], url, cookie);
+    return found ? [200, found] : [404, { message: "Introuvable" }];
+  }
+  if (path === "/results/ai" && method === "GET") {
+    return [200, resultsAi(url, cookie)];
   }
   if (path === "/results/products" && method === "GET") {
     return [200, resultsScreen(url, cookie)];

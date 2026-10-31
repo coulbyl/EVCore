@@ -2,19 +2,40 @@
 export const RESULTS_PERIODS = ["30", "90", "all"] as const;
 export type ResultsPeriod = (typeof RESULTS_PERIODS)[number];
 
-export type ResultsProductKey =
-  | "FAVOURITE"
-  | "COMBO"
-  | "DOUBLE"
-  | "HUNTER_BTTS"
-  | "HUNTER_DRAW"
-  | "HUNTER_SCORE"
-  | "HUNTER_CORNERS"
-  | "COMBO_AI"
-  | "LONG"
-  | "UNIQUE";
+export const RESULTS_PRODUCT_KEYS = [
+  "FAVOURITE",
+  "COMBO",
+  "DOUBLE",
+  "HUNTER_BTTS",
+  "HUNTER_DRAW",
+  "HUNTER_SCORE",
+  "HUNTER_CORNERS",
+  "COMBO_AI",
+  "LONG",
+  "UNIQUE",
+] as const;
+export type ResultsProductKey = (typeof RESULTS_PRODUCT_KEYS)[number];
 
 export type DayOutcome = "won" | "lost" | "refunded" | "pending";
+
+/** « Annoncé 8 sur 10 · Réalisé 8 sur 10 » over the same days (08 § 2). */
+export type ResultsComparison = {
+  days: number;
+  from: string | null;
+  to: string | null;
+  announced: number;
+  realised: number;
+};
+
+/** « En francs, à 1 000 F par jour » (08 § 2). */
+export type ResultsFrancs = {
+  days: number;
+  staked: number;
+  returned: number;
+  unpricedDays: number;
+  from: string | null;
+  to: string | null;
+};
 
 export type ProductSummary = {
   product: ResultsProductKey;
@@ -30,6 +51,8 @@ export type ProductSummary = {
   last: ("won" | "lost")[];
   tooEarly: boolean;
   settledDays: number;
+  comparison: ResultsComparison | null;
+  francs: ResultsFrancs | null;
 };
 
 export type AiSummary = {
@@ -39,6 +62,8 @@ export type AiSummary = {
   refunded: number;
   last: ("won" | "lost")[];
   tooEarly: boolean;
+  comparison: ResultsComparison | null;
+  francs: ResultsFrancs | null;
 };
 
 export type ResultsScreen = {
@@ -58,3 +83,41 @@ export type ResultsScreen = {
   products: ProductSummary[];
   ai: AiSummary;
 };
+
+/** A cell of the grid: one per calendar day of the period, oldest first. */
+export type ResultsGridDay = {
+  date: string;
+  outcome: DayOutcome | "none";
+};
+
+/** « Jour par jour », most recent first. */
+export type ResultsDay =
+  | {
+      date: string;
+      outcome: DayOutcome;
+      label: string;
+      market: string | null;
+      pick: string | null;
+      paidOdds: number | null;
+      couponId: string;
+    }
+  | { date: string; outcome: "none"; reason: string | null };
+
+/** GET /results/products/:product?period=. */
+export type ProductDetail = ProductSummary & {
+  grid: ResultsGridDay[];
+  days: ResultsDay[];
+};
+
+export type AiOpinion = {
+  date: string;
+  label: string;
+  market: string;
+  pick: string;
+  odds: number;
+  outcome: "won" | "lost" | "refunded";
+  settingChanged: boolean;
+};
+
+/** GET /results/ai?period=. */
+export type AiDetail = AiSummary & { opinions: AiOpinion[] };

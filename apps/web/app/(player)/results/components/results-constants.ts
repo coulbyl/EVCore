@@ -1,8 +1,34 @@
 import {
   RESULTS_PERIODS,
+  RESULTS_PRODUCT_KEYS,
   type ResultsPeriod,
+  type ResultsProductKey,
   type ResultsScreen,
 } from "@/domains/results/types/results";
+
+/** The AI's sheet, beside the products' (08 § 2). */
+export const AI_SLUG = "ai";
+
+/** « /results/favourite », « /results/hunter-draw ». */
+export function productSlug(product: ResultsProductKey): string {
+  return product.toLowerCase().replace(/_/g, "-");
+}
+
+/** The product of a sheet's address, the AI, or null when unknown. */
+export function sheetOf(
+  slug: string,
+): { kind: "ai" } | { kind: "product"; product: ResultsProductKey } | null {
+  if (slug === AI_SLUG) return { kind: "ai" };
+  const product = RESULTS_PRODUCT_KEYS.find((key) => productSlug(key) === slug);
+  return product ? { kind: "product", product } : null;
+}
+
+/** A sheet's address, keeping the period chosen on the list. */
+export function sheetHref(slug: string, period: ResultsPeriod): string {
+  return period === "90"
+    ? `/results/${slug}`
+    : `/results/${slug}?period=${period}`;
+}
 
 /** The period chip of the address, 90 days when absent or unknown (08 § 1). */
 export function periodOf(param: string | string[] | undefined): ResultsPeriod {

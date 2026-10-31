@@ -15,6 +15,9 @@ export type DayOutcome = 'won' | 'lost' | 'refunded' | 'pending';
  */
 export type ResultsComparison = {
   days: number;
+  /** First and last of those days, YYYY-MM-DD: « du 13/10 au 28/10 ». */
+  from: string | null;
+  to: string | null;
   /** Mean of the chances shown, in [0, 1]. */
   announced: number;
   /** Won over played, in [0, 1]. */
@@ -138,3 +141,21 @@ export type ProductDetail = ProductSummary & {
   grid: ResultsGridDay[];
   days: ResultsDay[];
 };
+
+/** An opinion of the AI in its list (08 § 2, « Sur Avis IA »). */
+export type AiOpinion = {
+  /** The match's day, YYYY-MM-DD. */
+  date: string;
+  /** « PSG – Lens ». */
+  label: string;
+  market: string;
+  pick: string;
+  /** The 1xBet odds it was recorded and settled at. */
+  odds: number;
+  outcome: 'won' | 'lost' | 'refunded';
+  /** The AI's setting changed with this opinion (« réglage changé le 27/10 »). */
+  settingChanged: boolean;
+};
+
+/** GET /results/ai?period=: the AI's detail, most recent opinion first. */
+export type AiDetail = AiSummary & { opinions: AiOpinion[] };

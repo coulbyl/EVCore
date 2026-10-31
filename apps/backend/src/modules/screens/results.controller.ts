@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RESULTS_DEFAULT_PERIOD } from '@config/results.constants';
 import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
@@ -8,7 +15,9 @@ import { ResultsQueryDto } from './dto/results-query.dto';
 import { ResultsService } from './results.service';
 import { WeekQueryDto } from './dto/week-query.dto';
 import { WeekService, type WeekScreen } from './week.service';
-import type { ProductDetail, ResultsScreen } from './results.types';
+import { TodayService } from './today.service';
+import type { TodayCoupon } from './today.types';
+import type { AiDetail, ProductDetail, ResultsScreen } from './results.types';
 
 /**
  * « Résultats ». It proposes nothing to play: it stays open during a pause
@@ -21,7 +30,35 @@ export class ResultsController {
   constructor(
     private readonly results: ResultsService,
     private readonly weeks: WeekService,
+    private readonly today: TodayService,
   ) {}
+
+  @Get('ai')
+  @ApiOperation({
+    summary: '« Avis IA » opened: its blocks and its opinions',
+    description:
+      'The AI summary over the period and its settled opinions, most recent first, each at the 1xBet odds it was recorded at; a change of setting is marked.',
+  })
+  @ApiOkResponse({ description: 'The AI detail.' })
+  getAi(@Query() query: ResultsQueryDto): Promise<AiDetail> {
+    return this.results.getAi({
+      period: query.period ?? RESULTS_DEFAULT_PERIOD,
+    });
+  }
+
+  @Get('coupons/:id')
+  @ApiOperation({
+    summary: 'A published coupon of any day, settled or not',
+    description:
+      'The coupon a day of Résultats opens, in the shape of the coupon sheet. Rank 1 and not the LLM only.',
+  })
+  @ApiOkResponse({ description: 'The coupon.' })
+  getCoupon(
+    @CurrentSession() session: AuthSession,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<TodayCoupon> {
+    return this.today.couponById({ userId: session.user.id, couponId: id });
+  }
 
   @Get('products')
   @ApiOperation({

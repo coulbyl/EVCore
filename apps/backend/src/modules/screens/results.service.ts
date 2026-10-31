@@ -18,6 +18,8 @@ import { ProductDayRepository } from '@modules/coupon/product-day/product-day.re
 import { ResultsRepository, type AiAdviceRow } from './results.repository';
 import type {
   ResultsYesterday,
+  AiDetail,
+  AiOpinion,
   AiSummary,
   DayOutcome,
   ProductDetail,
@@ -108,6 +110,27 @@ export class ResultsService {
         }),
       ),
       ai: aiSummaryOf(advice, input.period, today),
+    };
+  }
+
+  /**
+   * « Avis IA » opened (08 § 2): the same blocks with the opinion for unit,
+   * and its opinions most recent first, the change of setting marked
+   * rather than the older ones hidden.
+   */
+  async getAi(
+    input: { period: ResultsPeriod },
+    now: Date = new Date(),
+  ): Promise<AiDetail> {
+    const today = startOfUtcDay(now);
+    const advice = await this.repository.findAiAdvice({
+      since: aiSince(input.period, today),
+      until: new Date(today.getTime() + DAY_MS - 1),
+      asOf: now,
+    });
+    return {
+      ...aiSummaryOf(advice, input.period, today),
+      opinions: opinionsOf(advice),
     };
   }
 
@@ -306,15 +329,22 @@ function lastPlayed(outcomes: readonly string[]): ('won' | 'lost')[] {
 }
 
 function comparisonOf(
-  played: readonly { outcome: DayOutcome; chance: number | null }[],
+  played: readonly {
+    date: string;
+    outcome: DayOutcome;
+    chance: number | null;
+  }[],
 ): ResultsComparison | null {
   const known = played.filter((d) => d.chance !== null);
   if (known.length === 0) return null;
+  const dates = known.map((d) => d.date).sort();
   const announced = known
     .reduce((acc, d) => acc.plus(d.chance ?? 0), new Decimal(0))
     .div(known.length);
   return {
     days: known.length,
+    from: dates[0] ?? null,
+    to: dates.at(-1) ?? null,
     announced: announced.toDecimalPlaces(4).toNumber(),
     realised: new Decimal(known.filter((d) => d.outcome === 'won').length)
       .div(known.length)
@@ -403,6 +433,35 @@ function detailOf(input: {
  * announced chance is the AI's own probability; the francs use the odds it
  * was settled at.
  */
+/**
+ * The opinions, most recent first (the rows come in that order). An
+ * opinion whose setting differs from the one before it in time marks the
+ * change.
+ */
+export function opinionsOf(rows: readonly AiAdviceRow[]): AiOpinion[] {
+  return rows.map((row, index) => {
+    const older = rows[index + 1];
+    return {
+      date: formatDateUtc(row.kickoff),
+      label: `${row.homeName} – ${row.awayName}`,
+      market: row.market,
+      pick: row.pick,
+      odds: new Decimal(row.odds.toString()).toDecimalPlaces(3).toNumber(),
+      outcome:
+        row.result === 'WON'
+          ? 'won'
+          : row.result === 'LOST'
+            ? 'lost'
+            : 'refunded',
+      settingChanged:
+        older !== undefined &&
+        row.configVersion !== null &&
+        older.configVersion !== null &&
+        row.configVersion !== older.configVersion,
+    };
+  });
+}
+
 function aiSummaryOf(
   rows: readonly AiAdviceRow[],
   period: ResultsPeriod,

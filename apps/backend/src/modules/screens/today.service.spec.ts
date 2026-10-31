@@ -73,6 +73,7 @@ function harness(input: {
   const repository = {
     findCouponLegs: vi.fn().mockResolvedValue(input.legs ?? []),
     findProductDays: vi.fn().mockResolvedValue(input.days ?? []),
+    findPublishedCouponLegs: vi.fn().mockResolvedValue(input.legs ?? []),
   } as unknown as TodayRepository;
   const coupons = {
     getProductAbstentions: vi.fn().mockResolvedValue(input.abstentions ?? []),
@@ -499,5 +500,24 @@ describe('TodayService', () => {
     const other = harness({});
     expect((await other.service.getToday('u', NOW)).week).toBeNull();
     expect(other.productWeek.getWeek).not.toHaveBeenCalled();
+  });
+});
+
+describe('TodayService.couponById', () => {
+  it('a published coupon of any day, in the shape of the sheet; otherwise 404', async () => {
+    const found = harness({ legs: [leg({})] });
+    const coupon = await found.service.couponById(
+      { userId: 'u1', couponId: 'cp-1' },
+      NOW,
+    );
+    expect(coupon.legs).toHaveLength(1);
+    expect(found.repository.findPublishedCouponLegs).toHaveBeenCalledWith({
+      userId: 'u1',
+      couponId: 'cp-1',
+    });
+    const missing = harness({ legs: [] });
+    await expect(
+      missing.service.couponById({ userId: 'u1', couponId: 'cp-x' }, NOW),
+    ).rejects.toThrow('Coupon introuvable');
   });
 });

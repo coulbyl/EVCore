@@ -1,5 +1,5 @@
 import Decimal from 'decimal.js';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import {
   TODAY_FOLLOWED_LOOKBACK_DAYS,
   TODAY_FORM_WINDOW_DAYS,
@@ -109,6 +109,21 @@ export class TodayService {
       followedInProgress: allCoupons.filter((c) => c.forDate !== todayKey),
       forms: formsOf(dayRows),
     };
+  }
+
+  /**
+   * One published coupon of any day, in the shape of the coupon sheet: the
+   * settled coupon a day of Résultats opens (08 § 2). Unknown, the LLM's or
+   * not rank 1: 404.
+   */
+  async couponById(
+    input: { userId: string; couponId: string },
+    now: Date = new Date(),
+  ): Promise<TodayCoupon> {
+    const rows = await this.repository.findPublishedCouponLegs(input);
+    const coupon = couponsOf(rows, now)[0];
+    if (!coupon) throw new NotFoundException('Coupon introuvable');
+    return coupon;
   }
 
   /**

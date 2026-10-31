@@ -92,6 +92,16 @@ export function formatShare(fraction: number, locale: DisplayLocale): string {
   }).format(fraction);
 }
 
+/**
+ * Un montant en francs CFA, sans décimale : « 14 000 F » (08 § 2, la ligne
+ * de mise fixe). Une perte s'écrit avec le même poids qu'un gain.
+ */
+export function formatFrancs(amount: number, locale: DisplayLocale): string {
+  return `${new Intl.NumberFormat(INTL_LOCALE[locale], {
+    maximumFractionDigits: 0,
+  }).format(amount)} F`;
+}
+
 /** L'heure sur 24 heures, dans le fuseau de l'appareil : « 19:00 ». */
 export function formatTime(
   date: Date,

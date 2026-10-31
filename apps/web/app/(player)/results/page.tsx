@@ -58,7 +58,11 @@ export default async function Page({
             active: key === period,
           }))}
         />
-        <ProductRows products={screen.products} ai={screen.ai} />
+        <ProductRows
+          products={screen.products}
+          ai={screen.ai}
+          period={period}
+        />
         {since ? (
           <p className="pt-1 text-meta text-muted-foreground">
             {t("since", {
