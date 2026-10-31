@@ -86,11 +86,7 @@ test.describe("Mon ticket", () => {
     await expect(
       sheet.getByRole("img", { name: "1 chance sur 6" }),
     ).toBeVisible();
-    await expect(
-      sheet.getByText(
-        /^Sur la durée, le bookmaker garde 6\s%\sdes mises sur ce ticket\?$/,
-      ),
-    ).toBeVisible();
+    await expect(sheet.getByText(/bookmaker garde/)).toHaveCount(0);
     await expect(
       sheet.getByRole("link", { name: /Notre Favori du jour/ }),
     ).toContainText("8 sur 10");
@@ -220,7 +216,7 @@ async function seedYesterday(
           checked: checked
             ? {
                 key,
-                totals: { legCount: legs.length, keep: 0.3, ...checked },
+                totals: { legCount: legs.length, ...checked },
               }
             : null,
         }),

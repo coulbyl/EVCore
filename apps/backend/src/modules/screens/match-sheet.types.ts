@@ -73,6 +73,4 @@ export type MatchSheet = {
   headToHead: string | null;
   /** The main 1xBet lines and the engine's other picks, market chance. */
   otherPicks: SheetPick[];
-  /** « 1xBet prend 7 % sur ce match »: its 1X2 margin, or null. */
-  operatorMargin: number | null;
 };

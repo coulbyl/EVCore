@@ -176,7 +176,7 @@ describe('MatchSheetService', () => {
       result: null,
       fact: 'Arsenal a gagné ses 6 derniers matchs à domicile',
     });
-    expect(sheet.operatorMargin).toBe(0.07);
+    expect(sheet).not.toHaveProperty('operatorMargin');
   });
 
   it("the AI's pick is one more pick, with the market's chance", async () => {

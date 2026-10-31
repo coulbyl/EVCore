@@ -21,7 +21,6 @@ export type HelpSheet = {
 export const HELP_SLUGS = [
   "reading-a-coupon",
   "chances",
-  "bookmaker-margin",
   "abstentions",
   "following",
   "ticket",
@@ -38,6 +37,7 @@ const FR: Record<HelpSlug, Omit<HelpSheet, "slug">> = {
     paragraphs: [
       "Un coupon montre le produit, l'heure du premier match, les équipes et **le pari nommé avec l'équipe** : « Victoire Paris SG », « Plus de 2,5 buts ».",
       "À droite, **la cote**, celle que ton ticket paiera. Dessous, **la chance** : « 8 sur 10 » et ses diodes.",
+      "Les cotes affichées sont relevées chez 1xBet, le bookmaker le plus joué par nos joueurs, via API-Football. EVCore n'a aucun lien avec lui.",
       "La forme du produit suit : un carré par jour joué, plein s'il a gagné, barré s'il a perdu.",
       "Une fois réglé, **✓ ou ✗** prend la place de la cote, avec la cote réellement payée.",
     ],
@@ -55,18 +55,6 @@ const FR: Record<HelpSlug, Omit<HelpSheet, "slug">> = {
     example:
       "Le Favori annonce 8 sur 10 depuis le 13/10. Réalisé : 11 jours gagnés sur 14, soit 8 sur 10.",
     link: { href: "/results", label: "Voir nos résultats" },
-  },
-  "bookmaker-margin": {
-    title: "La marge du bookmaker",
-    paragraphs: [
-      "Une cote paie **un peu moins que le risque**. La différence, c'est la marge du bookmaker : ce qu'il garde des mises, en moyenne. Tous les bookmakers en prennent une.",
-      "Elle change d'un pari à l'autre : faible sur le résultat d'un grand match, plus forte sur les petits championnats et les autres paris. À chance égale, choisis le moins cher.",
-      "Sur un ticket, elle se multiplie. **« Sur la durée »** : un ticket gagne ou perd tout ; ce chiffre est la moyenne sur beaucoup de tickets.",
-      "Les cotes affichées sont relevées chez 1xBet, le bookmaker le plus joué par nos joueurs, via API-Football. EVCore n'a aucun lien avec lui.",
-    ],
-    example:
-      "Un pari à 1 chance sur 2 vaut 2,00 ; payé 1,86, la marge est de 7 %. Huit paris à 1,50 dont la vraie chance est 0,62 : le bookmaker garde 44 % des mises.",
-    link: { href: "/matches", label: "Composer un ticket" },
   },
   abstentions: {
     title: "Pourquoi on s'abstient certains jours",
@@ -94,11 +82,10 @@ const FR: Record<HelpSlug, Omit<HelpSheet, "slug">> = {
     title: "Vérifie ton ticket",
     paragraphs: [
       "Ajoute tes paris depuis la fiche d'un match avec **[+]** : un par match, 15 au plus.",
-      "EVCore te donne **la cote totale, tes chances et la marge du bookmaker**. Pas de mise, pas de gain : tes chances, en clair.",
+      "EVCore te donne **la cote totale et tes chances**. Pas de mise, pas de gain : tes chances, en clair.",
       "Le ticket reste sur ton téléphone. On compte seulement, sans savoir qui, qu'un ticket a été vérifié.",
     ],
-    example:
-      "4 matchs, cote 10,6 : environ 1 fois sur 9. Sur la durée, le bookmaker garde 31 % des mises sur ce ticket.",
+    example: "4 matchs, cote 10,6 : environ 1 fois sur 9.",
     link: { href: "/matches", label: "Aller aux matchs" },
   },
   products: {
@@ -141,6 +128,7 @@ const EN: Record<HelpSlug, Omit<HelpSheet, "slug">> = {
     paragraphs: [
       "A coupon shows the product, the first match's time, the teams and **the bet named with its team**: “Paris SG to win”, “Over 2.5 goals”.",
       "On the right, **the odds**, the ones your ticket pays. Under them, **the chance**: “8 in 10” and its lights.",
+      "The odds shown are taken from 1xBet, the bookmaker our players use most, through API-Football. EVCore has no tie to it.",
       "Then the product's form: one square per day played, full when won, crossed when lost.",
       "Once settled, **✓ or ✗** replaces the odds, with the odds really paid.",
     ],
@@ -158,18 +146,6 @@ const EN: Record<HelpSlug, Omit<HelpSheet, "slug">> = {
     example:
       "The Favourite announces 8 in 10 since 13/10. Realised: 11 days won of 14, that is 8 in 10.",
     link: { href: "/results", label: "See our results" },
-  },
-  "bookmaker-margin": {
-    title: "The bookmaker's margin",
-    paragraphs: [
-      "Odds pay **a little less than the risk**. The gap is the bookmaker's margin: what it keeps of the stakes, on average. Every bookmaker takes one.",
-      "It changes from bet to bet: small on a big match's result, larger on small leagues and other bets. At equal chance, pick the cheaper one.",
-      "On a ticket it multiplies. **“Over time”**: a ticket wins or loses all; this figure is the average over many tickets.",
-      "The odds shown are taken from 1xBet, the bookmaker our players use most, through API-Football. EVCore has no tie to it.",
-    ],
-    example:
-      "A 1-in-2 bet is worth 2.00; paid 1.86, the margin is 7%. Eight bets at 1.50 whose true chance is 0.62: the bookmaker keeps 44% of the stakes.",
-    link: { href: "/matches", label: "Build a ticket" },
   },
   abstentions: {
     title: "Why we sit out some days",
@@ -196,11 +172,10 @@ const EN: Record<HelpSlug, Omit<HelpSheet, "slug">> = {
     title: "Check your ticket",
     paragraphs: [
       "Add your bets from a match sheet with **[+]**: one per match, 15 at most.",
-      "EVCore gives **the total odds, your chances and the bookmaker's margin**. No stake, no winnings: your chances, plainly.",
+      "EVCore gives **the total odds and your chances**. No stake, no winnings: your chances, plainly.",
       "The ticket stays on your phone. We only count, without knowing who, that a ticket was checked.",
     ],
-    example:
-      "4 matches, odds 10.6: about 1 time in 9. Over time, the bookmaker keeps 31% of the stakes on this ticket.",
+    example: "4 matches, odds 10.6: about 1 time in 9.",
     link: { href: "/matches", label: "Go to the matches" },
   },
   products: {

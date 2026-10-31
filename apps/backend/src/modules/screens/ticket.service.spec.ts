@@ -109,8 +109,6 @@ describe('TicketService.quote', () => {
       legCount: 2,
       odds: 2.25,
       chance: 0.3844,
-      // 1 − (0.62 × 1.5)² = 1 − 0.8649
-      keep: 0.1351,
     });
     expect(quote.hero).toEqual({
       couponId: 'cp-fav',
@@ -199,7 +197,7 @@ describe('TicketService.quote, the ticket of yesterday (07 § 6)', () => {
 });
 
 describe('totalsOf', () => {
-  it('eight bets at 1.50 with a fair frequency of 0.62: 1xBet keeps 44 %', () => {
+  it('eight bets at 1.50 with a fair frequency of 0.62: odds and chance multiply', () => {
     const legs: TicketQuoteLeg[] = Array.from({ length: 8 }, (_, n) => ({
       fixtureId: id(n),
       market: 'ONE_X_TWO',
@@ -211,7 +209,11 @@ describe('totalsOf', () => {
       result: null,
       score: null,
     }));
-    // (0.93)^8 = 0.5596 (07 § 4).
-    expect(totalsOf(legs)?.keep).toBe(0.4404);
+    // 1.5^8 = 25.629; 0.62^8 = 0.0218…, in decimal.js.
+    expect(totalsOf(legs)).toEqual({
+      legCount: 8,
+      odds: 25.629,
+      chance: 0.0218340106,
+    });
   });
 });

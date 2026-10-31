@@ -1,8 +1,7 @@
 /**
  * « Partager mes chances » (07 § 5, maquette Partage): the ticket drawn on
  * a canvas, vertical, on the band's ink, for WhatsApp. The bets, the total
- * odds, the chance very large with its diodes, what 1xBet keeps over time;
- * at the bottom our hero of the day and the legal line. Never a stake nor
+ * odds, the chance very large with its diodes; at the bottom our hero of the day and the legal line. Never a stake nor
  * a gain (07 § 9). Loaded on the tap of the button only.
  */
 
@@ -16,7 +15,6 @@ export type ShareImageInput = {
   about: string;
   chance: string;
   leds: { lit: number; total: number } | null;
-  keep: string;
   ours: string | null;
   legal: string;
 };
@@ -97,12 +95,12 @@ export async function drawTicketImage(input: ShareImageInput): Promise<Blob> {
   c.textAlign = "left";
 
   // The bets: two lines each while they fit, one line beyond (15 at most).
-  // The body (bets, odds, chance, keep) is centred between the header and
+  // The body (bets, odds, chance) is centred between the header and
   // the footer: a short ticket does not leave a hole under its bets.
   const headerEnd = PAD + 90;
   const footerStart = HEIGHT - PAD - 90;
   const ledsHeight = input.leds ? 66 : 0;
-  const restHeight = 170 + (input.about ? 40 : 0) + 140 + ledsHeight + 40;
+  const restHeight = 170 + (input.about ? 40 : 0) + 140 + ledsHeight;
   // The bets take what the rest leaves, up to two comfortable lines each.
   const room = footerStart - headerEnd - restHeight;
   const row = Math.min(108, room / Math.max(1, input.legs.length));
@@ -191,15 +189,10 @@ export async function drawTicketImage(input: ShareImageInput): Promise<Blob> {
       c.fillStyle = i < input.leds.lit ? look.amber : look.ledOff;
       c.fill();
     }
-    y += dot + 30;
   }
 
-  // What 1xBet keeps, over time.
-  c.fillStyle = look.muted;
-  c.font = `500 32px ${look.body}`;
-  c.fillText(fit(c, input.keep, inner), PAD, y + 32);
-
   // Our hero and the legal line, small, at the bottom.
+  c.fillStyle = look.muted;
   c.font = `500 26px ${look.body}`;
   if (input.ours) c.fillText(fit(c, input.ours, inner), PAD, HEIGHT - PAD - 44);
   c.font = `500 22px ${look.body}`;

@@ -199,13 +199,12 @@ test.describe("Feuille du coupon", () => {
       sheet.getByText("21 jours gagnés sur 24", { exact: true }),
     ).toBeVisible();
     await expect(sheet.getByText("· pire série 1")).toBeVisible();
-    await expect(
-      sheet.getByText(/^Marge du bookmaker : 6\s%\?$/),
-    ).toBeVisible();
+    // No bookmaker's margin (decided 31/10).
+    await expect(sheet.getByText(/Marge du bookmaker/)).toHaveCount(0);
     await expect(sheet.getByRole("button", { name: "Suivre" })).toBeVisible();
   });
 
-  test("une ligne l'ouvre ; un combiné dit « sur ce coupon »", async ({
+  test("une ligne ouvre un combiné, ses matchs dans la feuille", async ({
     page,
   }) => {
     await page.goto("/today");
@@ -218,9 +217,6 @@ test.describe("Feuille du coupon", () => {
     for (const team of ["Arsenal", "Inter", "Benfica"]) {
       await expect(sheet.getByText(team, { exact: true })).toBeVisible();
     }
-    await expect(
-      sheet.getByText(/^Marge du bookmaker sur ce coupon : 9\s%\?$/),
-    ).toBeVisible();
   });
 
   test("sur un lien partagé : la même feuille, la bande du chasseur au titre", async ({

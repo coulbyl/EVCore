@@ -239,9 +239,7 @@ test.describe("Fiche du match", () => {
       others.getByText("Au moins une équipe ne marque pas"),
     ).toBeVisible();
 
-    await expect(
-      sheet.getByText(/^Marge du bookmaker sur ce match : 7\s%$/),
-    ).toBeVisible();
+    await expect(sheet.getByText(/Marge du bookmaker/)).toHaveCount(0);
   });
 
   test("un match écarté s'ouvre quand même, sans avis IA", async ({ page }) => {

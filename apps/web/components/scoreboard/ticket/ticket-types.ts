@@ -16,7 +16,6 @@ export type TicketTotals = {
   legCount: number;
   odds: number;
   chance: number;
-  keep: number;
 };
 
 export type TicketQuote = {

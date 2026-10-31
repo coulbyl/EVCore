@@ -7,14 +7,12 @@ import { clsx } from "clsx";
 import {
   chanceOf,
   formatOdds,
-  formatShare,
   formatShortDate,
   formatTime,
   ledsOf,
   type DisplayLocale,
 } from "@/helpers/scoreboard-format";
 import { TeamMark } from "@/app/(player)/today/components/team-mark";
-import { HelpHint } from "../ui/help-hint";
 import { useOnline } from "../states/use-online";
 import { usePlayerText } from "../text/player-texts";
 import { needsCount, quoteTicket } from "./quote-ticket";
@@ -291,8 +289,8 @@ function LegRow({
 /**
  * The summary fixed at the bottom of the sheet, visible while the list of
  * up to 15 bets scrolls (bet slips' habit): the total odds, the chance with
- * its diodes, what 1xBet keeps over time. « Partager mes chances » joins it
- * in C8.
+ * its diodes. No bookmaker's margin: it read as running 1xBet down
+ * (decided 31/10). « Partager mes chances » joins it in C8.
  */
 export function TicketFooter({
   locale,
@@ -338,20 +336,13 @@ export function TicketFooter({
           />
         </p>
       </div>
-      <p className="text-meta text-muted-foreground">
-        {t(totals.legCount === 1 ? "keepBet" : "keepTicket", {
-          share: formatShare(totals.keep, locale),
-        })}
-        <HelpHint slug="bookmaker-margin" label={t("helpKeep")} />
-        {!online ? (
-          <>
-            {" · "}
-            {t("oddsAt", {
-              time: formatTime(new Date(quote.quotedAt), locale, timeZone),
-            })}
-          </>
-        ) : null}
-      </p>
+      {!online ? (
+        <p className="text-meta text-muted-foreground">
+          {t("oddsAt", {
+            time: formatTime(new Date(quote.quotedAt), locale, timeZone),
+          })}
+        </p>
+      ) : null}
       <ShareButton
         legs={ticket.legs}
         quote={quote}
@@ -427,9 +418,6 @@ function ShareButton({
           about: single || chance?.kind === "rarerThan" ? "" : t("imageAbout"),
           chance: words,
           leds: chance ? ledsOf(chance) : null,
-          keep: single
-            ? t("keepBet", { share: formatShare(totals.keep, locale) })
-            : t("imageKeep", { share: formatShare(totals.keep, locale) }),
           ours:
             hero && heroChance?.kind === "outOfTen"
               ? `${t("imageOurs", {

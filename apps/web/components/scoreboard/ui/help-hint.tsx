@@ -2,7 +2,7 @@ import Link from "next/link";
 
 /**
  * The contextual « ? » (09 § 3): next to a word the app introduces
- * (« 1xBet garde 6 % », « 8 sur 10 »), a tap opens its help sheet over the
+ * (« 8 sur 10 »), a tap opens its help sheet over the
  * screen, closed with a gesture. One source: the sheets of Aide. No hooks,
  * so it also sits in the ticket's client sheet.
  */
@@ -12,7 +12,7 @@ export function HelpHint({
   tone = "surface",
 }: {
   slug: string;
-  /** « Aide : ce que 1xBet garde ». */
+  /** « Aide : « 8 sur 10 », ça veut dire quoi ». */
   label: string;
   tone?: "surface" | "band";
 }) {

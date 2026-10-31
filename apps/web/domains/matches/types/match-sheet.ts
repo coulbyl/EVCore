@@ -44,5 +44,4 @@ export type MatchSheet = {
   form: { home: SheetTeamForm; away: SheetTeamForm };
   headToHead: string | null;
   otherPicks: SheetPick[];
-  operatorMargin: number | null;
 };

@@ -467,7 +467,6 @@ function todayCoupon(id, product, legs, odds, chance) {
     referenceOdds: odds,
     paidOdds: null,
     chance,
-    operatorKeep: product === "FAVOURITE" ? 0.06 : 0.09,
     oddsBand: product === "HUNTER_DRAW" ? { min: 2.9, max: 3.6 } : null,
     followedByMe: false,
     canFollow: true,
@@ -663,7 +662,6 @@ function matchSheet(fixtureId) {
             pick("OVER_UNDER", "UNDER", 2.05, 0.48, "lost"),
             pick("BTTS", "NO", 2.1, 0.45, "won"),
           ],
-    operatorMargin: item.withoutReading === "not_priced" ? null : 0.07,
   };
 }
 
@@ -715,8 +713,6 @@ function ticketQuote(body) {
           legCount: counted.length,
           odds: Math.round(product((l) => l.odds) * 1000) / 1000,
           chance: product((l) => l.fair),
-          keep:
-            Math.round((1 - product((l) => l.fair * l.odds)) * 10000) / 10000,
         }
       : null,
     hero: body.day

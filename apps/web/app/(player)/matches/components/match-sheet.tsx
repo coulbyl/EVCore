@@ -15,7 +15,6 @@ import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import {
   displayLocaleOf,
   formatOdds,
-  formatShare,
   formatTime,
   type DisplayLocale,
 } from "@/helpers/scoreboard-format";
@@ -33,7 +32,8 @@ type Translate = Awaited<ReturnType<typeof getTranslations<"matches.sheet">>>;
  * tap (intercepted route) and on a shared link or a reload (the `@sheet`
  * slot's own page, over Matchs). From top to bottom: the header, « Notre
  * lecture » with its fact, « Avis IA » as one more bet with its speech in a popover, the form of both
- * teams and the head-to-head, « Autres paris », and the 1xBet margin.
+ * teams and the head-to-head, « Autres paris ». No bookmaker's margin:
+ * shown to the player, it read as running 1xBet down (decided 31/10).
  * Rendered on the server: the sheet adds no JavaScript of its own.
  */
 export async function MatchSheetView({ id }: { id: string }) {
@@ -134,14 +134,6 @@ export async function MatchSheetView({ id }: { id: string }) {
 
         {sheet.otherPicks.length > 0 ? (
           <OtherPicks sheet={sheet} t={t} locale={display} />
-        ) : null}
-
-        {sheet.operatorMargin !== null ? (
-          <p className="py-4 text-body text-muted-foreground">
-            {t("margin", {
-              share: formatShare(sheet.operatorMargin, display),
-            })}
-          </p>
         ) : null}
       </div>
     </Sheet>

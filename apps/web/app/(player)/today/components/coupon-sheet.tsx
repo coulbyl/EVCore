@@ -6,14 +6,11 @@ import { activePause } from "@/components/scoreboard/states/paused-screen";
 import { ChanceFigure } from "@/components/scoreboard/ui/chance-figure";
 import { FormStrip } from "@/components/scoreboard/ui/form-strip";
 import { ResultMark } from "@/components/scoreboard/ui/result-mark";
-import { HelpHint } from "@/components/scoreboard/ui/help-hint";
-import { helpSheet } from "@/domains/help/help-sheets";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import { getToday } from "@/domains/today/use-cases/get-today";
 import {
   displayLocaleOf,
   formatOdds,
-  formatShare,
   formatTime,
   type DisplayLocale,
 } from "@/helpers/scoreboard-format";
@@ -122,8 +119,9 @@ export async function CouponSheetFooter({ coupon }: { coupon: TodayCoupon }) {
  * The coupon opened (04 § 1, maquette Coupon): one block per match in
  * kick-off order (logos, teams, time and competition, the bet named with
  * its team and its odds, its one fact), then the product's form over 30
- * days, its worst run, and what 1xBet keeps. Nothing else: no reference
- * odds, no closing, no joint probability.
+ * days and its worst run. Nothing else: no reference odds, no closing, no
+ * joint probability, no bookmaker's margin (it read as running 1xBet down,
+ * decided 31/10).
  */
 export async function CouponSheetBody({
   coupon,
@@ -132,16 +130,12 @@ export async function CouponSheetBody({
   coupon: TodayCoupon;
   form: TodayProductForm | undefined;
 }) {
-  const [t, help, locale, timeZone] = await Promise.all([
+  const [t, locale, timeZone] = await Promise.all([
     getTranslations("today"),
-    getTranslations("help"),
     getLocale(),
     getPlayerTimeZone(),
   ]);
   const display = displayLocaleOf(locale);
-  const keepHint = help("hint", {
-    title: helpSheet("bookmaker-margin", display)?.title ?? "",
-  });
   const legs = [...coupon.legs].sort((a, b) =>
     a.kickoffAt.localeCompare(b.kickoffAt),
   );
@@ -181,15 +175,6 @@ export async function CouponSheetBody({
             </span>
           </p>
         </section>
-      ) : null}
-
-      {coupon.operatorKeep !== null ? (
-        <p className="py-4 text-body text-muted-foreground">
-          {t(coupon.legs.length > 1 ? "keepCoupon" : "keepBet", {
-            share: formatShare(coupon.operatorKeep, display),
-          })}
-          <HelpHint slug="bookmaker-margin" label={keepHint} />
-        </p>
       ) : null}
     </div>
   );

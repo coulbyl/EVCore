@@ -18,7 +18,8 @@ import type { TicketQuote, TicketQuoteLeg } from './ticket.types';
  * 1xBet's group, the same as « Autres paris »). Started or postponed matches
  * leave the figures; the rest multiply, under the independence assumption
  * of the coupons:
- * - odds = Π o, chance = Π p, keep = 1 − Π (p × o).
+ * - odds = Π o, chance = Π p. No bookmaker's margin: shown to the player it
+ *   read as running 1xBet down (decided 2026-10-31).
  */
 @Injectable()
 export class TicketService {
@@ -164,18 +165,15 @@ export function totalsOf(
   if (counted.length === 0) return null;
   let odds = new Decimal(1);
   let chance = new Decimal(1);
-  let paid = new Decimal(1);
   for (const leg of counted) {
     const o = new Decimal(leg.odds as number);
     const p = new Decimal(leg.fair as number);
     odds = odds.times(o);
     chance = chance.times(p);
-    paid = paid.times(p.times(o));
   }
   return {
     legCount: counted.length,
     odds: odds.toDecimalPlaces(3).toNumber(),
     chance: chance.toDecimalPlaces(10).toNumber(),
-    keep: new Decimal(1).minus(paid).toDecimalPlaces(4).toNumber(),
   };
 }

@@ -67,11 +67,6 @@ export type TodayCoupon = {
    * (independence, as for every coupon); null if one leg's is unknown.
    */
   chance: number | null;
-  /**
-   * What 1xBet keeps on this coupon, in [0, 1]: 1 − Π (frequency × odds)
-   * over the matches still played (07 § 4); null if one is unpriced.
-   */
-  operatorKeep: number | null;
   /** A hunter's odds band (« Chasseur Nul · 2,90 à 3,60 », 04 § 1). */
   oddsBand: { min: number; max: number } | null;
   followedByMe: boolean;

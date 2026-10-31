@@ -57,8 +57,6 @@ export type TodayCoupon = {
   paidOdds: number | null;
   /** In [0, 1]; null if one leg's chance is unknown. */
   chance: number | null;
-  /** What 1xBet keeps, in [0, 1]; null when a leg is unpriced. */
-  operatorKeep: number | null;
   /** A hunter's odds band; null for the other products. */
   oddsBand: { min: number; max: number } | null;
   followedByMe: boolean;

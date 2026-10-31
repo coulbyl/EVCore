@@ -84,14 +84,6 @@ export function formatOdds(odds: number, locale: DisplayLocale): string {
   }).format(odds);
 }
 
-/** Une part en pour cent, sans décimale : « 1xBet garde 6 % ». */
-export function formatShare(fraction: number, locale: DisplayLocale): string {
-  return new Intl.NumberFormat(INTL_LOCALE[locale], {
-    style: "percent",
-    maximumFractionDigits: 0,
-  }).format(fraction);
-}
-
 /** Le jour court d'une ligne de semaine : « lun. 22 ». */
 export function formatShortWeekdayDay(
   date: Date,

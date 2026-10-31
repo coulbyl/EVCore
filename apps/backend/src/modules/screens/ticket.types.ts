@@ -38,8 +38,6 @@ export type TicketQuote = {
     odds: number;
     /** Product of the fair frequencies: « environ 1 fois sur N ». */
     chance: number;
-    /** 1 − Π (fair × odds): what 1xBet keeps of the stake over time. */
-    keep: number;
   } | null;
   /**
    * « Notre Favori du jour · 8 sur 10 » to compare, of `day` (yesterday's

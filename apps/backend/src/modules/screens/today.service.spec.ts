@@ -174,10 +174,9 @@ describe('TodayService', () => {
     expect(combo?.legs.map((l) => l.state)).toEqual(['live', 'upcoming']);
   });
 
-  it("says what 1xBet keeps, and a hunter's odds band", async () => {
+  it("gives a hunter its odds band, and no bookmaker's margin", async () => {
     const { service } = harness({
       legs: [
-        // 1,25 × 0,77 = 0,9625 : 1xBet garde 3,75 %.
         leg({}),
         leg({
           couponId: 'draw',
@@ -190,12 +189,10 @@ describe('TodayService', () => {
       ],
     });
     const [favourite, draw] = (await service.getToday('user-1', NOW)).coupons;
-    expect(favourite).toMatchObject({ operatorKeep: 0.0375, oddsBand: null });
-    // Unknown without the market's frequency, never 0.
-    expect(draw).toMatchObject({
-      operatorKeep: null,
-      oddsBand: { min: 2.9, max: 3.6 },
-    });
+    expect(favourite).toMatchObject({ oddsBand: null });
+    expect(draw).toMatchObject({ oddsBand: { min: 2.9, max: 3.6 } });
+    // Shown to the player it read as running 1xBet down (2026-10-31).
+    expect(favourite).not.toHaveProperty('operatorKeep');
   });
 
   it("above 1,80 a leg's chance is the market's, never the engine's", async () => {

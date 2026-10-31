@@ -221,8 +221,6 @@ export class MatchSheetService {
         ),
         finished,
       }),
-      operatorMargin:
-        quoteOf({ market: 'ONE_X_TWO', pick: 'HOME' })?.operatorMargin ?? null,
     };
   }
 }

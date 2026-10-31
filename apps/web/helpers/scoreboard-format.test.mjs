@@ -6,7 +6,6 @@ import { describe, it } from "node:test";
 import {
   chanceOf,
   formatOdds,
-  formatShare,
   formatShortDate,
   formatTime,
   formatWeekdayDay,
@@ -92,14 +91,6 @@ describe("formatOdds", () => {
     assert.equal(formatOdds(12.444, "fr"), "12,4");
     assert.equal(plain(formatOdds(146.3, "fr")), "146");
     assert.equal(formatOdds(1.28, "en"), "1.28");
-  });
-});
-
-describe("formatShare", () => {
-  it("writes a whole percentage with the French spacing", () => {
-    assert.equal(plain(formatShare(0.064, "fr")), "6 %");
-    assert.equal(plain(formatShare(0.31, "fr")), "31 %");
-    assert.equal(formatShare(0.064, "en"), "6%");
   });
 });
 
