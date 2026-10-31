@@ -1478,5 +1478,32 @@
     "replies": "{count, plural, one {# réponse} other {# réponses}}",
     "signOut": "Se déconnecter",
     "signOutFailed": "La déconnexion n'a pas marché, réessaie"
+  },
+  "messages": {
+    "title": "Messages",
+    "back": "Retour à Moi",
+    "subtitle": "l'équipe EVCore · répond en quelques heures",
+    "today": "aujourd'hui",
+    "yesterday": "hier",
+    "automatic": "automatique",
+    "teamSign": "{name}, équipe EVCore",
+    "older": "Messages précédents",
+    "placeholder": "Écris à l'équipe…",
+    "send": "Envoyer",
+    "photo": "Ajouter une photo",
+    "record": "Enregistrer un message vocal",
+    "stop": "Arrêter l'enregistrement",
+    "recording": "Enregistrement",
+    "sendVoice": "Envoyer le vocal",
+    "cancel": "Annuler",
+    "sending": "Envoi…",
+    "failed": "Pas envoyé",
+    "retry": "Réessayer",
+    "tooBig": "Trop lourd pour être envoyé",
+    "micDenied": "Le micro n'est pas autorisé",
+    "voice": "Message vocal",
+    "image": "Photo jointe",
+    "file": "Fichier joint",
+    "empty": "Écris-nous : une question, une cote qui ne colle pas, une idée."
   }
 }

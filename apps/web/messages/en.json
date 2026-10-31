@@ -1478,5 +1478,32 @@
     "replies": "{count, plural, one {# reply} other {# replies}}",
     "signOut": "Sign out",
     "signOutFailed": "Signing out failed, try again"
+  },
+  "messages": {
+    "title": "Messages",
+    "back": "Back to Me",
+    "subtitle": "the EVCore team · replies within a few hours",
+    "today": "today",
+    "yesterday": "yesterday",
+    "automatic": "automatic",
+    "teamSign": "{name}, EVCore team",
+    "older": "Earlier messages",
+    "placeholder": "Write to the team…",
+    "send": "Send",
+    "photo": "Add a photo",
+    "record": "Record a voice message",
+    "stop": "Stop recording",
+    "recording": "Recording",
+    "sendVoice": "Send the voice message",
+    "cancel": "Cancel",
+    "sending": "Sending…",
+    "failed": "Not sent",
+    "retry": "Retry",
+    "tooBig": "Too large to send",
+    "micDenied": "The microphone is not allowed",
+    "voice": "Voice message",
+    "image": "Attached photo",
+    "file": "Attached file",
+    "empty": "Write to us: a question, odds that do not match, an idea."
   }
 }

@@ -1048,6 +1048,72 @@ function meSettledPage() {
   };
 }
 
+// « Messages » (GET /support/conversation, 09 § 2) : l'accueil
+// automatique, une question avec sa capture, la réponse de l'équipe, puis
+// ce que le joueur envoie pendant le test (gardé en mémoire).
+let supportSent = [];
+let supportReadCalls = 0;
+
+function supportMessage(id, extra) {
+  return {
+    id,
+    conversationId: "conv-1",
+    senderId: extra.senderRole === "ADMIN" ? "admin-1" : "e2e-user",
+    senderRole: "OPERATOR",
+    senderUsername: "",
+    content: null,
+    attachment: null,
+    kind: "STANDARD",
+    ...extra,
+  };
+}
+
+function supportConversation() {
+  return {
+    conversation: {
+      id: "conv-1",
+      userReadAt: todayAt(-30),
+    },
+    messages: [
+      supportMessage("m-welcome", {
+        senderRole: "ADMIN",
+        senderUsername: "EVCore",
+        kind: "AUTOMATED",
+        content:
+          "Bienvenue. Écris-nous, on répond généralement en quelques heures.",
+        createdAt: todayAt(-50),
+      }),
+      supportMessage("m-question", {
+        content:
+          "Le Combiné d'hier affichait 1,41 mais chez 1xBet j'avais 1,36. C'est normal ?",
+        createdAt: todayAt(-26),
+      }),
+      supportMessage("m-photo", {
+        attachment: {
+          kind: "IMAGE",
+          url: crest("1xBet"),
+          mimeType: "image/svg+xml",
+          sizeBytes: 900,
+          fileName: "capture.png",
+          durationMs: null,
+          width: 28,
+          height: 28,
+        },
+        createdAt: todayAt(-26),
+      }),
+      supportMessage("m-reply", {
+        senderRole: "ADMIN",
+        senderUsername: "Kouamé",
+        content:
+          "Oui, la cote bouge jusqu'au coup d'envoi. Merci pour la capture.",
+        createdAt: todayAt(-25),
+      }),
+      ...supportSent,
+    ],
+    hasMore: false,
+  };
+}
+
 function matchesPage(url, cookie) {
   const params = new URL(url, "http://mock").searchParams;
   const day = params.get("day") ?? "today";
@@ -2302,7 +2368,8 @@ function route(method, url, cookie = "") {
 
   if (method === "OPTIONS") return [200, {}];
   if (path === "/health") return [200, { ok: true }];
-  if (path === "/__e2e/stats") return [200, { authMeReads, verifiedTickets }];
+  if (path === "/__e2e/stats")
+    return [200, { authMeReads, verifiedTickets, supportReadCalls }];
   if (path === "/__e2e/reset") {
     authMeReads = 0;
     verifiedTickets = 0;
@@ -2467,6 +2534,12 @@ function route(method, url, cookie = "") {
     return [200, resultsScreen(url, cookie)];
   }
   if (path === "/me" && method === "GET") return [200, meScreen(cookie)];
+  if (path === "/support/conversation" && method === "GET")
+    return [200, supportConversation()];
+  if (path === "/support/read" && method === "POST") {
+    supportReadCalls += 1;
+    return [200, { ok: true }];
+  }
   if (path === "/me/settled" && method === "GET") return [200, meSettledPage()];
   if (path === "/matches" && method === "GET") {
     return [200, matchesPage(url, cookie)];
@@ -2640,6 +2713,23 @@ const server = http.createServer((req, res) => {
     return;
   }
   res.setHeader("Content-Type", "application/json");
+
+  // Un message envoyé à l'équipe (09 § 2) : gardé pour le fil suivant.
+  if (req.method === "POST" && (req.url ?? "") === "/support/messages") {
+    let raw = "";
+    req.on("data", (chunk) => (raw += chunk));
+    req.on("end", () => {
+      const body = JSON.parse(raw || "{}");
+      const message = supportMessage(`m-sent-${supportSent.length + 1}`, {
+        content: body.content ?? null,
+        createdAt: new Date().toISOString(),
+      });
+      supportSent = [...supportSent, message];
+      res.statusCode = 200;
+      res.end(JSON.stringify(message));
+    });
+    return;
+  }
 
   // La seule route qui lit son corps : le ticket à coter.
   if (
