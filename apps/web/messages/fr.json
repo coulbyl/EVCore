@@ -1344,15 +1344,15 @@
   "playerAccount": {
     "title": "Compte",
     "back": "Retour à Moi",
-    "firstName": "prénom",
-    "phone": "téléphone",
-    "noPhone": "pas de téléphone",
-    "edit": "modifier",
+    "firstName": "Prénom",
+    "phone": "Téléphone",
+    "noPhone": "Aucun numéro",
+    "edit": "Modifier",
     "save": "Enregistrer",
     "cancel": "Annuler",
     "saveFailed": "Pas enregistré, réessaie",
-    "emailVerified": "e-mail vérifié",
-    "emailNotVerified": "e-mail pas encore vérifié",
+    "emailVerified": "Vérifié",
+    "emailNotVerified": "Pas encore vérifié",
     "newEmail": "Nouvel e-mail",
     "password": "Mot de passe",
     "sendCode": "Recevoir un code",
@@ -1379,18 +1379,18 @@
     "signedOutOthers": "Autres appareils déconnectés : {count}",
     "notifications": "Notifications",
     "switches": {
-      "morningBriefEnabled": "Ma matinée",
-      "weeklyStatementEnabled": "Ma semaine",
-      "followedResultEnabled": "Résultat de mes coupons suivis",
-      "teamRepliesEnabled": "Réponses de l'équipe",
-      "emailNotificationsEnabled": "Par e-mail aussi"
+      "morningBriefEnabled": "Les coupons du matin",
+      "weeklyStatementEnabled": "Le bilan de ta semaine",
+      "followedResultEnabled": "Le résultat de tes coupons suivis",
+      "teamRepliesEnabled": "Les réponses de l'équipe",
+      "emailNotificationsEnabled": "Les recevoir aussi par e-mail"
     },
     "switchHints": {
-      "morningBriefEnabled": "8 h",
-      "weeklyStatementEnabled": "lundi 8 h",
+      "morningBriefEnabled": "chaque jour à {time}",
+      "weeklyStatementEnabled": "le lundi à {time}",
       "followedResultEnabled": "le soir même",
       "teamRepliesEnabled": "",
-      "emailNotificationsEnabled": "matinée et semaine"
+      "emailNotificationsEnabled": "le matin et le lundi"
     },
     "display": "Affichage",
     "theme": "Thème",
@@ -1404,14 +1404,19 @@
     "currencies": {
       "XOF": "F CFA",
       "EUR": "Euro",
-      "USD": "Dollar"
+      "USD": "Dollar US"
     },
     "legal": {
       "cgu": "Conditions",
       "privacy": "Confidentialité",
       "notice": "Mentions légales"
     },
-    "signOutFailed": "Pas fait, réessaie"
+    "signOutFailed": "Pas fait, réessaie",
+    "profile": "Profil",
+    "email": "E-mail",
+    "verifyEmail": "Vérifier",
+    "pushNudge": "Active les notifications sur cet appareil pour les recevoir.",
+    "pushEnable": "Activer"
   },
   "playerNotifications": {
     "title": "Notifications",

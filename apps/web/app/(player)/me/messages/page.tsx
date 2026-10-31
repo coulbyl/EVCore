@@ -8,7 +8,7 @@ import { serverApiRequest } from "@/lib/api/server-api";
 import { displayLocaleOf, formatTime } from "@/helpers/scoreboard-format";
 import { Composer } from "./components/composer";
 import { MessageBubble } from "./components/message-bubble";
-import { PushNudge } from "./components/push-nudge";
+import { PushNudge } from "@/components/scoreboard/ui/push-nudge";
 import { ThreadLive } from "./components/thread-live";
 
 export async function generateMetadata(): Promise<Metadata> {

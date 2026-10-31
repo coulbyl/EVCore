@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { ChevronRight } from "lucide-react";
 import { SubpageBand } from "@/components/scoreboard/shell/subpage-band";
+import { PushNudge } from "@/components/scoreboard/ui/push-nudge";
 import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
+import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
+import { displayLocaleOf, formatTime } from "@/helpers/scoreboard-format";
 import { serverApiRequest } from "@/lib/api/server-api";
 import { AccountChoice, ThemeChoice } from "./components/display-choices";
 import { EditableValue } from "./components/editable-value";
@@ -27,6 +31,11 @@ const SWITCHES = [
   "emailNotificationsEnabled",
 ] as const;
 
+// The morning and the Monday statement leave at 08:00 UTC (backend
+// slip-digest.constants): 8 h in Abidjan and Dakar, 9 h in Douala. The
+// screen says it in the player's own time.
+const SENT_AT_UTC_HOUR = 8;
+
 /**
  * « Compte » (09 § 5, maquette Compte) : une seule page en sections, sans
  * onglet. Profil (prénom, e-mail par code, téléphone), Sécurité (mot de
@@ -35,10 +44,15 @@ const SWITCHES = [
  * langue, devise). La suppression du compte vit dans Jeu responsable.
  */
 export default async function Page() {
-  const [t, session] = await Promise.all([
+  const [t, session, locale, timeZone] = await Promise.all([
     getTranslations("playerAccount"),
     getPlayerSession(),
+    getLocale(),
+    getPlayerTimeZone(),
   ]);
+  const sentAt = new Date();
+  sentAt.setUTCHours(SENT_AT_UTC_HOUR, 0, 0, 0);
+  const time = formatTime(sentAt, displayLocaleOf(locale), timeZone);
   if (session.status !== "signed-in") redirect("/auth/login");
   const user = session.session.user;
   const { count: devices } = await serverApiRequest<{ count: number }>(
@@ -61,7 +75,8 @@ export default async function Page() {
         back={{ href: "/me", label: t("back") }}
       />
       <div className="flex flex-col divide-y divide-border px-4 pb-4 lg:px-6">
-        <section className={section}>
+        <section className={section} aria-label={t("profile")}>
+          <h2 className={heading}>{t("profile")}</h2>
           <EditableValue
             value={user.fullName}
             caption={t("firstName")}
@@ -71,8 +86,14 @@ export default async function Page() {
           />
           <EmailChange
             email={user.email}
+            caption={t("email")}
             verifiedText={
               user.emailVerified ? t("emailVerified") : t("emailNotVerified")
+            }
+            verify={
+              user.emailVerified
+                ? null
+                : { href: "/auth/verify", label: t("verifyEmail") }
             }
             labels={{
               edit: t("edit"),
@@ -97,15 +118,14 @@ export default async function Page() {
         </section>
 
         <section className={section} aria-label={t("security")}>
+          <h2 className={heading}>{t("security")}</h2>
           <details className="group">
             <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between text-body [&::-webkit-details-marker]:hidden">
               {t("password")}
-              <span
+              <ChevronRight
                 aria-hidden
-                className="text-muted-foreground group-open:rotate-90"
-              >
-                ›
-              </span>
+                className="size-5 text-icon-subtle group-open:rotate-90"
+              />
             </summary>
             <PasswordChange
               labels={{
@@ -126,8 +146,12 @@ export default async function Page() {
             <details className="group">
               <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between text-body [&::-webkit-details-marker]:hidden">
                 {t("twoFactor")}
-                <span className="text-muted-foreground">
-                  {t("twoFactorOff")} ›
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  {t("twoFactorOff")}
+                  <ChevronRight
+                    aria-hidden
+                    className="size-5 text-icon-subtle group-open:rotate-90"
+                  />
                 </span>
               </summary>
               <TwoFactorSetup
@@ -161,12 +185,16 @@ export default async function Page() {
 
         <section className={section} aria-label={t("notifications")}>
           <h2 className={heading}>{t("notifications")}</h2>
+          <PushNudge
+            className="py-2"
+            labels={{ text: t("pushNudge"), enable: t("pushEnable") }}
+          />
           {SWITCHES.map((field) => (
             <NotificationSwitch
               key={field}
               field={field}
               label={t(`switches.${field}`)}
-              hint={t(`switchHints.${field}`)}
+              hint={t(`switchHints.${field}`, { time })}
               initial={user[field]}
             />
           ))}

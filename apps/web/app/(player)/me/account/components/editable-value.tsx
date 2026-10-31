@@ -57,8 +57,8 @@ export function EditableValue({
     return (
       <div className="flex min-h-12 items-center justify-between gap-3">
         <p className="flex flex-col">
-          <span className="text-body font-medium">{value ?? emptyText}</span>
           <span className="text-meta text-muted-foreground">{caption}</span>
+          <span className="text-body font-medium">{value ?? emptyText}</span>
         </p>
         <button
           type="button"

@@ -4,23 +4,27 @@ import { Bell } from "lucide-react";
 import { usePushSubscription } from "@/domains/push/use-cases/use-push-subscription";
 
 /**
- * « Active les notifications pour ne rater aucune réponse » over the
- * thread, the one place a player waits for someone (taken from the old
- * inbox). Only while this device can still be asked: gone once subscribed,
+ * « Active les notifications… » with « Activer »: over the thread of
+ * Messages, where a player waits for someone (taken from the old inbox),
+ * and over the switches of Compte, which do nothing on a device that does
+ * not receive. Only while this device can still be asked: gone once subscribed,
  * never for a refusal (only the browser's settings can undo it) nor where
  * push does not exist.
  */
 export function PushNudge({
   labels,
+  className = "border-b border-border px-4 py-2 lg:px-6",
 }: {
   labels: { text: string; enable: string };
+  /** Its frame: a band under the thread's header by default. */
+  className?: string;
 }) {
   const { status, isBusy, error, enable } = usePushSubscription();
   // « default » is the hook's state before it has looked: no flash.
   if (status !== "available") return null;
 
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2 lg:px-6">
+    <div className={`flex items-center justify-between gap-3 ${className}`}>
       <p className="flex items-center gap-2 text-meta text-muted-foreground">
         <Bell aria-hidden className="size-4 shrink-0" strokeWidth={2} />
         {error ?? labels.text}

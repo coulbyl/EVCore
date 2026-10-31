@@ -1344,15 +1344,15 @@
   "playerAccount": {
     "title": "Account",
     "back": "Back to Me",
-    "firstName": "first name",
-    "phone": "phone",
-    "noPhone": "no phone",
-    "edit": "edit",
+    "firstName": "First name",
+    "phone": "Phone",
+    "noPhone": "No number",
+    "edit": "Edit",
     "save": "Save",
     "cancel": "Cancel",
     "saveFailed": "Not saved, try again",
-    "emailVerified": "e-mail verified",
-    "emailNotVerified": "e-mail not verified yet",
+    "emailVerified": "Verified",
+    "emailNotVerified": "Not verified yet",
     "newEmail": "New e-mail",
     "password": "Password",
     "sendCode": "Get a code",
@@ -1379,18 +1379,18 @@
     "signedOutOthers": "Other devices signed out: {count}",
     "notifications": "Notifications",
     "switches": {
-      "morningBriefEnabled": "My morning",
-      "weeklyStatementEnabled": "My week",
-      "followedResultEnabled": "Result of my followed coupons",
-      "teamRepliesEnabled": "Team replies",
-      "emailNotificationsEnabled": "By e-mail too"
+      "morningBriefEnabled": "The morning coupons",
+      "weeklyStatementEnabled": "Your week's summary",
+      "followedResultEnabled": "The result of your followed coupons",
+      "teamRepliesEnabled": "The team's replies",
+      "emailNotificationsEnabled": "Also by e-mail"
     },
     "switchHints": {
-      "morningBriefEnabled": "8 h",
-      "weeklyStatementEnabled": "Monday 8 am",
+      "morningBriefEnabled": "every day at {time}",
+      "weeklyStatementEnabled": "on Monday at {time}",
       "followedResultEnabled": "the same evening",
       "teamRepliesEnabled": "",
-      "emailNotificationsEnabled": "morning and week"
+      "emailNotificationsEnabled": "the morning and Monday ones"
     },
     "display": "Display",
     "theme": "Theme",
@@ -1404,14 +1404,19 @@
     "currencies": {
       "XOF": "F CFA",
       "EUR": "Euro",
-      "USD": "Dollar"
+      "USD": "US dollar"
     },
     "legal": {
       "cgu": "Terms",
       "privacy": "Privacy",
       "notice": "Legal notice"
     },
-    "signOutFailed": "Not done, try again"
+    "signOutFailed": "Not done, try again",
+    "profile": "Profile",
+    "email": "E-mail",
+    "verifyEmail": "Verify",
+    "pushNudge": "Turn on notifications on this device to receive them.",
+    "pushEnable": "Turn on"
   },
   "playerNotifications": {
     "title": "Notifications",

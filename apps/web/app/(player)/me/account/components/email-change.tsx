@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { playerFetch } from "@/lib/api/player-fetch";
 import {
@@ -16,11 +17,17 @@ import {
  */
 export function EmailChange({
   email,
+  caption,
   verifiedText,
+  verify,
   labels,
 }: {
   email: string;
+  /** « E-mail », above the address as the other rows. */
+  caption: string;
   verifiedText: string;
+  /** Not verified yet: where to do it, « Vérifier » (the code page). */
+  verify: { href: string; label: string } | null;
   labels: {
     edit: string;
     newEmail: string;
@@ -55,12 +62,21 @@ export function EmailChange({
   if (step === "idle") {
     return (
       <div className="flex min-h-12 items-center justify-between gap-3">
-        <p className="flex min-w-0 flex-col">
+        <div className="flex min-w-0 flex-col">
+          <span className="text-meta text-muted-foreground">{caption}</span>
           <span className="truncate text-body font-medium">{email}</span>
-          <span className="text-meta text-muted-foreground">
+          <span className="flex flex-wrap items-baseline gap-x-2 text-meta text-muted-foreground">
             {verifiedText}
+            {verify ? (
+              <Link
+                href={verify.href}
+                className="font-medium text-foreground underline underline-offset-4"
+              >
+                {verify.label}
+              </Link>
+            ) : null}
           </span>
-        </p>
+        </div>
         <button
           type="button"
           onClick={() => setStep("request")}

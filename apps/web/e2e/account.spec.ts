@@ -8,7 +8,7 @@ test.describe("Compte", () => {
   test("le prénom se modifie sur place", async ({ page }) => {
     await page.goto("/me/account");
     await expect(page.getByRole("heading", { name: "Compte" })).toBeVisible();
-    await page.getByRole("button", { name: "modifier : prénom" }).click();
+    await page.getByRole("button", { name: "Modifier : Prénom" }).click();
     const field = page.getByLabel("prénom");
     await field.fill("Kouassi");
     const saved = page.waitForRequest(
@@ -22,7 +22,7 @@ test.describe("Compte", () => {
     page,
   }) => {
     await page.goto("/me/account");
-    await page.getByRole("button", { name: "modifier : e-mail" }).click();
+    await page.getByRole("button", { name: "Modifier : e-mail" }).click();
     await page.getByLabel("Nouvel e-mail").fill("nouveau@example.com");
     await page.getByLabel("Mot de passe", { exact: true }).fill("secret-123");
     const requested = page.waitForRequest((r) =>
@@ -67,7 +67,9 @@ test.describe("Compte", () => {
     await page.goto("/me/account");
     const notifications = page.getByRole("region", { name: "Notifications" });
     await expect(notifications.getByRole("switch")).toHaveCount(5);
-    const morning = notifications.getByRole("switch", { name: /Ma matinée/ });
+    const morning = notifications.getByRole("switch", {
+      name: /Les coupons du matin/,
+    });
     const before = await morning.getAttribute("aria-checked");
     const patched = page.waitForRequest(
       (r) => r.url().endsWith("/auth/me") && r.method() === "PATCH",
