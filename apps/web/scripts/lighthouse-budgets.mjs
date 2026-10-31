@@ -188,6 +188,13 @@ function explainLcp(screen, lhr) {
     .join(", ");
   const node = items.find((item) => item.type === "node");
   console.log(`${screen.path} : ${node?.snippet ?? "?"} — ${phases}`);
+  if (process.env.LCP_EXPLAIN === "requests") {
+    for (const r of lhr.audits["network-requests"]?.details?.items ?? []) {
+      console.log(
+        `  ${Math.round(r.networkRequestTime)}→${Math.round(r.networkEndTime)} ms ${(r.transferSize / 1024).toFixed(1)} kio ${r.priority} ${r.resourceType} ${r.url.slice(-60)}`,
+      );
+    }
+  }
 }
 
 async function measureScreen(port, screen) {
