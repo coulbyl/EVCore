@@ -889,12 +889,12 @@
     "reasons": {
       "no_home_favourite_in_band": "no home favourite between 1.20 and 1.35",
       "not_enough_calibrated_short_legs": "not enough reliable short-odds bets in different leagues",
-      "no_priced_candidate": "not enough bets priced at 1xBet in the band",
+      "no_priced_candidate": "not enough priced bets in the band",
       "no_combination_in_window": "no combination between 2 and 3",
       "no_candidate_in_band": "no bet in its odds band",
       "other": "no bet meeting the rule that day",
       "no_reliable_competition": "no championship whose corner stats reliably arrive",
-      "no_operator_price": "no corners priced at 1xBet"
+      "no_operator_price": "no corners priced"
     }
   },
   "shell": {
@@ -909,7 +909,7 @@
       "me": "Me"
     },
     "close": "Close",
-    "legal": "18+ · Betting carries a risk of loss",
+    "legal": "18+ (21+ in Cameroon) · Betting carries a risk of loss · Only stake what you can afford to lose",
     "unread": "{count} unread"
   },
   "scoreboard": {
@@ -997,15 +997,15 @@
     "lost": "Lost",
     "followedDone": "Following",
     "postponed": "Postponed",
-    "nothingTitle": "Nothing to play today",
+    "nothingTitle": "Today, we sit this one out",
     "seeMatches": "See today's matches",
-    "noCouponYet": "No coupon for now · try again later",
+    "noCouponYet": "Today's coupons are on their way.",
     "absentShort": "No {product}",
     "formTitle": "Form over 30 days",
     "formSummary": "{won} days won out of {played}",
     "worstStreak": "worst run {count}",
-    "keepBet": "1xBet keeps {share} on this bet",
-    "keepCoupon": "1xBet keeps {share} on this coupon",
+    "keepBet": "Bookmaker's margin: {share}",
+    "keepCoupon": "Bookmaker's margin on this coupon: {share}",
     "band": "{min} to {max}",
     "open": "Open {product}",
     "welcome": "Every day, one bet we have tracked since {date}: won {won} days of {played}. We never take your stake.",
@@ -1029,7 +1029,7 @@
     "see": "See",
     "without": {
       "rejected": "Set aside",
-      "not_priced": "Not priced at 1xBet",
+      "not_priced": "No odds yet",
       "not_analysed": "No reading",
       "tonight": "Reading tonight"
     },
@@ -1059,7 +1059,7 @@
       "ourReading": "Our reading",
       "without": {
         "rejected": "No reading · no chance sure enough",
-        "not_priced": "Not priced at 1xBet",
+        "not_priced": "No odds yet",
         "not_analysed": "No reading",
         "tonight": "Reading tonight"
       },
@@ -1071,7 +1071,7 @@
       "rest": "{days} d rest",
       "otherPicks": "Other bets",
       "all": "All {count}",
-      "margin": "1xBet takes {share} on this match",
+      "margin": "Bookmaker's margin on this match: {share}",
       "inProgress": "In progress",
       "postponed": "Postponed",
       "halfTime": "half-time {home}-{away}",
@@ -1082,7 +1082,7 @@
       },
       "setAside": {
         "divergence": "No reading · the model and the market disagree too much",
-        "low_odds": "No reading · the 1xBet odds are too low",
+        "low_odds": "No reading: the odds are too low to be worth it",
         "suspended": "No reading · this market is suspended on our side",
         "not_sure": "No reading · no chance sure enough"
       }
@@ -1099,11 +1099,11 @@
     "full": "15 at most",
     "totalOdds": "Total odds",
     "yourChances": "Your chances",
-    "keepTicket": "Over time, 1xBet keeps {share} of your stake on this ticket",
-    "keepBet": "1xBet keeps {share} on this bet",
+    "keepTicket": "Over time, the bookmaker keeps {share} of the stakes on this ticket",
+    "keepBet": "Bookmaker's margin: {share}",
     "started": "Started",
     "postponed": "Postponed",
-    "notPriced": "No longer priced at 1xBet",
+    "notPriced": "No odds any more",
     "oddsUpdated": "odds updated",
     "remove": "Remove {bet}",
     "clear": "Clear",
@@ -1127,10 +1127,10 @@
     "imageDate": "my ticket of {date}",
     "imageAbout": "about",
     "imageChance": "1 time in {total}",
-    "imageKeep": "Over time, 1xBet keeps {share} of the stake",
+    "imageKeep": "Over time, the bookmaker keeps {share} of the stakes",
     "imageOurs": "Our {product}: {chance}",
     "outcomePending": "waiting for the last match",
-    "helpKeep": "Help: what 1xBet keeps"
+    "helpKeep": "Help: the bookmaker's margin"
   },
   "results": {
     "yesterday": "Yesterday",
@@ -1158,7 +1158,7 @@
     "daysWon": "{won, plural, one {# day won} other {# days won}} of {played}",
     "adviceWon": "{won, plural, one {# opinion won} other {# opinions won}} of {played}",
     "tooEarlyDays": "Too early · {count, plural, one {# day} other {# days}}",
-    "tooEarlyAdvice": "Too early · {count, plural, one {# opinion} other {# opinions}}",
+    "tooEarlyAdvice": "Still too early: {count} settled opinions",
     "lastPlayed": "{count, plural, one {The last day played} other {The last # days played}}",
     "since": "since {date} · each line from its launch day",
     "retired": "retired",
@@ -1187,7 +1187,7 @@
         "COMBO_AI": "the combo the AI picks from the same pool",
         "LONG": "retired",
         "UNIQUE": "retired",
-        "AI": "one AI bet per match, settled at the 1xBet price"
+        "AI": "one AI bet per match, settled at the day's odds"
       },
       "lastDays": "{count, plural, one {The last day} other {The last # days}}",
       "allSince": "Since {date}",
@@ -1207,7 +1207,7 @@
       "staked": "staked",
       "returned": "returned",
       "francsOn": "{from} to {to}",
-      "unpriced": "{count, plural, one {# day} other {# days}} without a 1xBet price, left out",
+      "unpriced": "{count, plural, one {# day} other {# days}} without odds, left aside",
       "dayByDay": "Day by day",
       "opinionByOpinion": "Opinion by opinion",
       "noCoupon": "no {product}",
@@ -1230,7 +1230,7 @@
       "followedRefunded": "{count} refunded",
       "mondayNote": "The Monday statement, the same as the 8 am notification."
     },
-    "notPlayedYet": "Not played yet · launched {date}",
+    "notPlayedYet": "Launched {date}, no day played yet",
     "noAdviceYet": "No settled opinion yet"
   },
   "me": {
@@ -1310,7 +1310,7 @@
     "extendOnly": "Only lengths that extend your break are offered.",
     "pauseFailed": "The break could not be set, try again",
     "helpTitle": "Need help?",
-    "helpLine": "SOS Joueurs · 09 74 75 13 13 (France)",
+    "helpLine": "Talk to someone close, or write to us in Messages: we answer discreetly.",
     "helpNumbers": "Help numbers by country",
     "delete": "Delete my account",
     "deleteWhat": "Immediate, with your password. Your followed coupons, your messages and your account are deleted at once.",
@@ -1408,14 +1408,14 @@
   },
   "landing": {
     "signIn": "Sign in",
-    "brandLine": "One bet a day. Counted, dated, losses included.",
+    "brandLine": "Every day, one bet analysed. Counted, dated, losses included.",
     "signUp": "Create my account",
-    "free": "It's free. We never take your stake.",
+    "free": "Free. We never touch your money.",
     "results": "Our results",
-    "resultsSince": "Our results, since {date}",
+    "resultsSince": "Our results since {date}, losses included",
     "seeAll": "See all",
     "howTitle": "How it works",
-    "how": "We read the matches and 1xBet's odds, we suggest one bet a day, we count what it gave. You follow it or not.",
+    "how": "We read every match, suggest the bet with the best chance, and count everything it gives, even when it loses. You follow, or not.",
     "legal": {
       "label": "Legal pages",
       "terms": "Terms",
@@ -1424,7 +1424,8 @@
       "responsible": "Responsible gambling"
     },
     "home": "Home",
-    "lastWon": "Last winning coupon · {date}"
+    "lastWon": "Our last winning coupon, on {date}",
+    "pastTitle": "{product}, {date}"
   },
   "playerAuth": {
     "back": "Back",

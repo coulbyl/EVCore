@@ -29,7 +29,7 @@ import { legPickLabel } from "../../(player)/today/components/today-constants";
  * polices Barlow.
  */
 export const shareImageAlt =
-  "EVCore — le pari du jour, sa cote 1xBet et sa chance, compté et daté. 18+.";
+  "EVCore — le pari du jour, sa cote et sa chance, compté et daté. 18+ (21+ au Cameroun).";
 export const shareImageSize = { width: 1200, height: 630 };
 
 const LOOK = {
@@ -50,6 +50,11 @@ export async function renderShareImage(): Promise<ImageResponse> {
     locale: "fr",
     messages,
     namespace: "scoreboard.chance",
+  });
+  const shell = createTranslator({
+    locale: "fr",
+    messages,
+    namespace: "shell",
   });
   const landing = createTranslator({
     locale: "fr",
@@ -132,9 +137,7 @@ export async function renderShareImage(): Promise<ImageResponse> {
         {hero ? (
           <div style={{ display: "flex" }}>{landing("brandLine")}</div>
         ) : null}
-        <div style={{ display: "flex" }}>
-          18+ · Parier comporte des risques de perte
-        </div>
+        <div style={{ display: "flex" }}>{shell("legal")}</div>
       </div>
     </div>,
     shareImageSize,

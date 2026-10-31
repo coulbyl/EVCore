@@ -118,7 +118,7 @@ test.describe("Résultats, la fiche d'une ligne", () => {
     await expect(sheet).toContainText("En francs, à 1 000 F par jour");
     await expect(sheet).toContainText(/misé 14\s000 F · rendu 13\s600 F/);
     await expect(
-      sheet.getByText("2 jours sans cote 1xBet, laissés à part"),
+      sheet.getByText("2 jours sans cote, laissés à part"),
     ).toBeVisible();
     await expect(sheet.getByText("Jour par jour")).toBeVisible();
     await expect(sheet).toContainText("Paris SG – Lens · Victoire Paris SG");

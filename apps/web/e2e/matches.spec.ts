@@ -51,7 +51,7 @@ test.describe("Matchs", () => {
     await summary.click();
     for (const [match, reason] of [
       ["Brest – Nice", "Écarté"],
-      ["Asec – Africa", "Pas coté chez 1xBet"],
+      ["Asec – Africa", "Pas encore de cote"],
       ["Gremio – Santos", "Pas de lecture"],
     ] as const) {
       const row = fold.getByRole("listitem").filter({ hasText: match });
@@ -240,7 +240,7 @@ test.describe("Fiche du match", () => {
     ).toBeVisible();
 
     await expect(
-      sheet.getByText(/^1xBet prend 7\s%\ssur ce match$/),
+      sheet.getByText(/^Marge du bookmaker sur ce match : 7\s%$/),
     ).toBeVisible();
   });
 

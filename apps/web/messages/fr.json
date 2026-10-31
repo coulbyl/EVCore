@@ -889,12 +889,12 @@
     "reasons": {
       "no_home_favourite_in_band": "aucun favori à domicile entre 1,20 et 1,35",
       "not_enough_calibrated_short_legs": "pas assez de paris fiables à cote courte, dans des championnats différents",
-      "no_priced_candidate": "pas assez de paris cotés chez 1xBet dans la bande",
+      "no_priced_candidate": "pas assez de paris cotés dans la bande",
       "no_combination_in_window": "aucune combinaison entre 2 et 3",
       "no_candidate_in_band": "aucun pari dans sa bande de cote",
       "other": "pas de pari qui tienne la règle ce jour-là",
       "no_reliable_competition": "aucun championnat dont les stats de corners arrivent à coup sûr",
-      "no_operator_price": "aucun corner coté chez 1xBet"
+      "no_operator_price": "aucun corner coté"
     }
   },
   "shell": {
@@ -909,7 +909,7 @@
       "me": "Moi"
     },
     "close": "Fermer",
-    "legal": "18+ · Parier comporte des risques de perte",
+    "legal": "18+ (21+ au Cameroun) · Parier comporte des risques de perte · Ne mise que ce que tu peux perdre",
     "unread": "{count} non lues"
   },
   "scoreboard": {
@@ -997,15 +997,15 @@
     "lost": "Perdu",
     "followedDone": "Suivi",
     "postponed": "Reporté",
-    "nothingTitle": "Rien à jouer aujourd'hui",
+    "nothingTitle": "Aujourd'hui, on passe notre tour",
     "seeMatches": "Voir les matchs du jour",
-    "noCouponYet": "Pas de coupon pour l'instant · réessaie plus tard",
+    "noCouponYet": "Les coupons du jour arrivent bientôt.",
     "absentShort": "Pas de {product}",
     "formTitle": "Forme sur 30 jours",
     "formSummary": "{won} jours gagnés sur {played}",
     "worstStreak": "pire série {count}",
-    "keepBet": "1xBet garde {share} sur ce pari",
-    "keepCoupon": "1xBet garde {share} sur ce coupon",
+    "keepBet": "Marge du bookmaker : {share}",
+    "keepCoupon": "Marge du bookmaker sur ce coupon : {share}",
     "band": "{min} à {max}",
     "open": "Ouvrir {product}",
     "welcome": "Chaque jour, un pari qu'on suit depuis le {date} : gagné {won} jours sur {played}. On ne prend jamais ta mise.",
@@ -1029,7 +1029,7 @@
     "see": "Voir",
     "without": {
       "rejected": "Écarté",
-      "not_priced": "Pas coté chez 1xBet",
+      "not_priced": "Pas encore de cote",
       "not_analysed": "Pas de lecture",
       "tonight": "Lecture ce soir"
     },
@@ -1059,7 +1059,7 @@
       "ourReading": "Notre lecture",
       "without": {
         "rejected": "Pas de lecture · aucune chance assez sûre",
-        "not_priced": "Pas coté chez 1xBet",
+        "not_priced": "Pas encore de cote",
         "not_analysed": "Pas de lecture",
         "tonight": "Lecture ce soir"
       },
@@ -1071,7 +1071,7 @@
       "rest": "repos {days} j",
       "otherPicks": "Autres paris",
       "all": "Tous les {count}",
-      "margin": "1xBet prend {share} sur ce match",
+      "margin": "Marge du bookmaker sur ce match : {share}",
       "inProgress": "En cours",
       "postponed": "Reporté",
       "halfTime": "mi-temps {home}-{away}",
@@ -1082,7 +1082,7 @@
       },
       "setAside": {
         "divergence": "Pas de lecture · le modèle et le marché se contredisent trop",
-        "low_odds": "Pas de lecture · la cote 1xBet est trop basse",
+        "low_odds": "Pas de lecture : la cote est trop basse pour valoir le coup",
         "suspended": "Pas de lecture · ce marché est suspendu chez nous",
         "not_sure": "Pas de lecture · aucune chance assez sûre"
       }
@@ -1099,11 +1099,11 @@
     "full": "15 au plus",
     "totalOdds": "Cote totale",
     "yourChances": "Tes chances",
-    "keepTicket": "Sur la durée, 1xBet garde {share} de ta mise sur ce ticket",
-    "keepBet": "1xBet garde {share} sur ce pari",
+    "keepTicket": "Sur la durée, le bookmaker garde {share} des mises sur ce ticket",
+    "keepBet": "Marge du bookmaker : {share}",
     "started": "Commencé",
     "postponed": "Reporté",
-    "notPriced": "Plus coté chez 1xBet",
+    "notPriced": "Plus de cote",
     "oddsUpdated": "cote mise à jour",
     "remove": "Retirer {bet}",
     "clear": "Vider",
@@ -1127,10 +1127,10 @@
     "imageDate": "mon ticket du {date}",
     "imageAbout": "environ",
     "imageChance": "1 fois sur {total}",
-    "imageKeep": "Sur la durée, 1xBet garde {share} de la mise",
+    "imageKeep": "Sur la durée, le bookmaker garde {share} des mises",
     "imageOurs": "Notre {product} : {chance}",
     "outcomePending": "en attente du dernier match",
-    "helpKeep": "Aide : ce que 1xBet garde"
+    "helpKeep": "Aide : la marge du bookmaker"
   },
   "results": {
     "yesterday": "Hier",
@@ -1158,7 +1158,7 @@
     "daysWon": "{won, plural, one {# jour gagné} other {# jours gagnés}} sur {played}",
     "adviceWon": "{won, plural, one {# avis gagné} other {# avis gagnés}} sur {played}",
     "tooEarlyDays": "Trop tôt · {count, plural, =0 {0 jour} one {# jour} other {# jours}}",
-    "tooEarlyAdvice": "Trop tôt · {count} avis",
+    "tooEarlyAdvice": "Encore trop tôt : {count} avis réglés",
     "lastPlayed": "{count, plural, one {Le dernier jour joué} other {Les # derniers jours joués}}",
     "since": "depuis le {date} · chaque ligne à sa date de mise en ligne",
     "retired": "retiré",
@@ -1187,7 +1187,7 @@
         "COMBO_AI": "le combiné choisi par l'IA dans le même vivier",
         "LONG": "retiré de l'offre",
         "UNIQUE": "retiré de l'offre",
-        "AI": "un pari de l'IA par match, réglé au prix 1xBet"
+        "AI": "un pari de l'IA par match, réglé à la cote du jour"
       },
       "lastDays": "{count, plural, one {Le dernier jour} other {Les # derniers jours}}",
       "allSince": "Depuis le {date}",
@@ -1207,7 +1207,7 @@
       "staked": "misé",
       "returned": "rendu",
       "francsOn": "du {from} au {to}",
-      "unpriced": "{count, plural, one {# jour} other {# jours}} sans cote 1xBet, laissés à part",
+      "unpriced": "{count, plural, one {# jour} other {# jours}} sans cote, laissés à part",
       "dayByDay": "Jour par jour",
       "opinionByOpinion": "Avis par avis",
       "noCoupon": "pas de {product}",
@@ -1230,7 +1230,7 @@
       "followedRefunded": "{count, plural, one {# remboursé} other {# remboursés}}",
       "mondayNote": "Le relevé du lundi, le même que la notification de 8 h."
     },
-    "notPlayedYet": "Pas encore joué · lancé le {date}",
+    "notPlayedYet": "Lancé le {date}, pas encore de jour joué",
     "noAdviceYet": "Pas encore d'avis réglé"
   },
   "me": {
@@ -1310,7 +1310,7 @@
     "extendOnly": "Seules les durées qui prolongent ta pause sont proposées.",
     "pauseFailed": "La pause n'a pas pu être posée, réessaie",
     "helpTitle": "Besoin d'aide ?",
-    "helpLine": "SOS Joueurs · 09 74 75 13 13 (France)",
+    "helpLine": "Parles-en à un proche, ou écris-nous dans Messages : on te répond en toute discrétion.",
     "helpNumbers": "Les numéros d'aide par pays",
     "delete": "Supprimer mon compte",
     "deleteWhat": "Immédiat, avec ton mot de passe. Tes coupons suivis, tes messages et ton compte sont supprimés tout de suite.",
@@ -1408,14 +1408,14 @@
   },
   "landing": {
     "signIn": "Se connecter",
-    "brandLine": "Un pari par jour. Compté, daté, pertes comprises.",
+    "brandLine": "Chaque jour, un pari analysé. Compté, daté, pertes comprises.",
     "signUp": "Créer mon compte",
-    "free": "C'est gratuit. On ne prend jamais ta mise.",
+    "free": "Gratuit. On ne touche jamais à ton argent.",
     "results": "Nos résultats",
-    "resultsSince": "Nos résultats, depuis le {date}",
+    "resultsSince": "Nos résultats depuis le {date}, pertes comprises",
     "seeAll": "Tout voir",
     "howTitle": "Comment ça marche",
-    "how": "On lit les matchs et les cotes de 1xBet, on propose un pari par jour, on compte ce qu'il a donné. Toi, tu suis ou pas.",
+    "how": "On lit chaque match, on te propose le pari qui a le plus de chances, et on compte tout ce qu'il donne, même quand il perd. Tu suis, ou pas.",
     "legal": {
       "label": "Pages légales",
       "terms": "Conditions",
@@ -1424,7 +1424,8 @@
       "responsible": "Jeu responsable"
     },
     "home": "Accueil",
-    "lastWon": "Dernier coupon gagné · {date}"
+    "lastWon": "Notre dernier coupon gagnant, le {date}",
+    "pastTitle": "{product} du {date}"
   },
   "playerAuth": {
     "back": "Retour",

@@ -73,9 +73,10 @@ export default async function LandingPage() {
  * côté.
  */
 async function TodaySection({ today }: { today: PublicToday }) {
-  const [t, landing, locale] = await Promise.all([
+  const [t, landing, results, locale] = await Promise.all([
     getTranslations("today"),
     getTranslations("landing"),
+    getTranslations("results"),
     getLocale(),
   ]);
   const { hero, lastWon, heroForm } = today;
@@ -95,6 +96,18 @@ async function TodaySection({ today }: { today: PublicToday }) {
           : undefined
       }
       couponPath={null}
+      title={
+        lastWon && !hero
+          ? landing("pastTitle", {
+              product: results(`names.${shown.product}`),
+              date: formatShortDate(
+                new Date(`${lastWon.date}T12:00:00Z`),
+                displayLocaleOf(locale),
+                DEFAULT_TIME_ZONE,
+              ),
+            })
+          : undefined
+      }
     />
   ) : null;
   if (hero) return card;

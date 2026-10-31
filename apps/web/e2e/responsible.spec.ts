@@ -58,9 +58,7 @@ test.describe("Jeu responsable", () => {
 
   test("l'aide et le lien vers les numéros par pays", async ({ page }) => {
     await page.goto("/me/responsible");
-    await expect(
-      page.getByText("SOS Joueurs · 09 74 75 13 13 (France)"),
-    ).toBeVisible();
+    await expect(page.getByText(/écris-nous dans Messages/)).toBeVisible();
     await expect(
       page.getByRole("link", { name: /Les numéros d'aide par pays/ }),
     ).toHaveAttribute("href", "/jeu-responsable");

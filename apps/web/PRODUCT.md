@@ -62,12 +62,14 @@ Face aux pronostiqueurs Telegram (« 100 % », « sûr », captures de tickets g
 
 - « Sélection », « coupon », « jambe » (une sélection dans un coupon), « cote », « chances », « Écarté », « Remboursé » (pas « Annulé » pour un pari rendu).
 - Les codes de canal (`DRAW`, `SAFE`, `BTTS`, `DOMINANT`…) ne s'affichent jamais bruts : toujours le libellé traduit.
+- **Le bookmaker n'est pas nommé dans les phrases** (tranché le 2026-10-31, docs/audits/2026-10-31/REVUE-CONFORMITE-TEXTES.md) : « la cote », « la marge du bookmaker ». La source des cotes (1xBet, via API-Football) est citée une seule fois, dans l'Aide, comme une source, avec « EVCore n'a aucun lien avec lui ». Le calcul et les données gardent 1xBet.
 - Une probabilité se lit en fréquence quand c'est possible (« environ 1 jour sur 2 »).
 
 **Règles de rédaction (contraintes durables, plan marketing §5)** :
 
 - Interdit : toute promesse de gain directe ou implicite (« gagner », « rentable », « sûr », « garanti », « 100 % », « fixe », « VIP ») ; le vocabulaire de l'investissement appliqué aux paris (« investir », « portefeuille », « placement », « allocation de capital ») ; un taux, un ROI ou une fréquence sans période ni effectif ; un chiffre de backtest présenté comme un résultat ; nommer, lier ou promouvoir un bookmaker hors de la cote jouable.
-- Obligatoire sur les surfaces publiques et les contenus de campagne : « 18+ » (« 21+ » au Cameroun) et « Parier comporte des risques de perte. Ne mise que ce que tu peux perdre. »
+- Obligatoire sur les surfaces publiques et les contenus de campagne : « 18+ » (« 21+ » au Cameroun) et « Parier comporte des risques de perte. Ne mise que ce que tu peux perdre. » — la ligne en pied de chaque écran et l'image de partage le disent depuis le 2026-10-31.
+- Ton : des phrases, pas des étiquettes. Le point médian « · » sépare des chiffres (« FAV ✓ 1,24 »), pas deux bouts de phrase.
 - Format d'un chiffre de performance : « [indicateur] du [date] au [date], sur [N] [sélections/jours] réglés : [valeur]. »
 
 **Contraintes de mesure (non négociables)** :
@@ -79,7 +81,6 @@ Face aux pronostiqueurs Telegram (« 100 % », « sûr », captures de tickets g
 
 **Décisions ouvertes** (à ne pas trancher dans le design sans accord) :
 
-- Nom du bookmaker à l'écran : « 1xBet » affiché depuis le 2026-10-18 ; « cote jouable estimée » sans nom proposé pour raisons réglementaires.
 - Modèle économique : aucun dans le code. Rien ne doit suggérer un tarif, un abonnement ou une offre « Premium » tant que l'activation et la rétention ne sont pas mesurées.
 
 ## Brand Commitments

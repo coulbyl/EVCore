@@ -38,16 +38,18 @@ test.describe("Aide", () => {
     ).toHaveAttribute("href", "/results");
   });
 
-  test("le « ? » à côté de « 1xBet garde » ouvre la fiche par-dessus le coupon", async ({
+  test("le « ? » à côté de la marge du bookmaker ouvre la fiche par-dessus le coupon", async ({
     page,
   }) => {
     await page.goto("/today/coupon/cp-today-fav");
-    await page.getByRole("link", { name: "Aide : Ce que 1xBet garde" }).click();
-    await expect(page).toHaveURL(/\/me\/help\/what-1xbet-keeps$/, {
+    await page
+      .getByRole("link", { name: "Aide : La marge du bookmaker" })
+      .click();
+    await expect(page).toHaveURL(/\/me\/help\/bookmaker-margin$/, {
       timeout: 15_000,
     });
-    await expect(sheetNamed(page, "Ce que 1xBet garde")).toContainText(
-      "1xBet garde 44 %",
+    await expect(sheetNamed(page, "La marge du bookmaker")).toContainText(
+      "le bookmaker garde 44 %",
     );
   });
 });

@@ -22,7 +22,9 @@ test.describe("Pages légales", () => {
           .getByRole("link"),
       ).toHaveCount(4);
       await expect(
-        page.getByText("18+ · Parier comporte des risques de perte"),
+        page.getByText(
+          /^18\+ \(21\+ au Cameroun\) · Parier comporte des risques de perte/,
+        ),
       ).toBeVisible();
     });
   }

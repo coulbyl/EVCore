@@ -115,7 +115,9 @@ test.describe("Aujourd'hui, ses états (04 § 2, § 5)", () => {
   }) => {
     await playAs(context, "today-nothing");
     await page.goto("/today");
-    const card = page.getByRole("region", { name: "Rien à jouer aujourd'hui" });
+    const card = page.getByRole("region", {
+      name: "Aujourd'hui, on passe notre tour",
+    });
     await expect(card).toBeVisible();
     await expect(
       card.getByText("aucun favori à domicile entre 1,20 et 1,35"),
@@ -131,7 +133,7 @@ test.describe("Aujourd'hui, ses états (04 § 2, § 5)", () => {
     await playAs(context, "today-outage");
     await page.goto("/today");
     await expect(
-      page.getByText("Pas de coupon pour l'instant · réessaie plus tard"),
+      page.getByText("Les coupons du jour arrivent bientôt."),
     ).toBeVisible();
     await expect(page.getByRole("region")).toHaveCount(0);
   });
@@ -188,7 +190,7 @@ test.describe("Feuille du coupon", () => {
     ).toBeVisible();
     await expect(sheet.getByText("· pire série 1")).toBeVisible();
     await expect(
-      sheet.getByText(/^1xBet garde 6\s%\ssur ce pari\?$/),
+      sheet.getByText(/^Marge du bookmaker : 6\s%\?$/),
     ).toBeVisible();
     await expect(sheet.getByRole("button", { name: "Suivre" })).toBeVisible();
   });
@@ -207,7 +209,7 @@ test.describe("Feuille du coupon", () => {
       await expect(sheet.getByText(team, { exact: true })).toBeVisible();
     }
     await expect(
-      sheet.getByText(/^1xBet garde 9\s%\ssur ce coupon\?$/),
+      sheet.getByText(/^Marge du bookmaker sur ce coupon : 9\s%\?$/),
     ).toBeVisible();
   });
 

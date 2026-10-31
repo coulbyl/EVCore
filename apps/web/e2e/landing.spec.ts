@@ -15,7 +15,7 @@ test.describe("Landing", () => {
     await expect(
       page.getByRole("heading", {
         level: 1,
-        name: "Un pari par jour. Compté, daté, pertes comprises.",
+        name: "Chaque jour, un pari analysé. Compté, daté, pertes comprises.",
       }),
     ).toBeVisible();
     const hero = page.getByRole("region", { name: "Favori du jour" });
@@ -32,7 +32,7 @@ test.describe("Landing", () => {
       page.getByRole("link", { name: "Créer mon compte" }),
     ).toHaveAttribute("href", "/auth/register");
     await expect(
-      page.getByText("C'est gratuit. On ne prend jamais ta mise."),
+      page.getByText("Gratuit. On ne touche jamais à ton argent."),
     ).toBeVisible();
   });
 
@@ -41,7 +41,7 @@ test.describe("Landing", () => {
   }) => {
     await page.goto("/");
     const results = page.getByRole("region", {
-      name: "Nos résultats, depuis le 13/10",
+      name: "Nos résultats depuis le 13/10, pertes comprises",
     });
     await expect(results.getByText("11 jours gagnés sur 14")).toBeVisible();
     await expect(results.getByText("Trop tôt · 1 jour")).toBeVisible();
@@ -57,7 +57,9 @@ test.describe("Landing", () => {
   }) => {
     await page.goto("/");
     await expect(
-      page.getByText("18+ · Parier comporte des risques de perte"),
+      page.getByText(
+        /^18\+ \(21\+ au Cameroun\) · Parier comporte des risques de perte · Ne mise que ce que tu peux perdre$/,
+      ),
     ).toBeVisible();
     const legal = page.getByRole("navigation", { name: "Pages légales" });
     await expect(legal.getByRole("link")).toHaveCount(4);

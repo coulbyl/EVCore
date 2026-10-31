@@ -57,7 +57,7 @@ test.describe("Mon ticket", () => {
     await expect(bar(page)).toHaveCount(0);
   });
 
-  test("la feuille : les paris, la cote totale, les chances, ce que 1xBet garde, notre coupon", async ({
+  test("la feuille : les paris, la cote totale, les chances, la marge du bookmaker, notre coupon", async ({
     page,
   }) => {
     await add(page, ARSENAL, "Victoire Arsenal");
@@ -88,7 +88,7 @@ test.describe("Mon ticket", () => {
     ).toBeVisible();
     await expect(
       sheet.getByText(
-        /^Sur la durée, 1xBet garde 6\s%\sde ta mise sur ce ticket\?$/,
+        /^Sur la durée, le bookmaker garde 6\s%\sdes mises sur ce ticket\?$/,
       ),
     ).toBeVisible();
     await expect(

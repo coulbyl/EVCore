@@ -342,7 +342,7 @@ export function TicketFooter({
         {t(totals.legCount === 1 ? "keepBet" : "keepTicket", {
           share: formatShare(totals.keep, locale),
         })}
-        <HelpHint slug="what-1xbet-keeps" label={t("helpKeep")} />
+        <HelpHint slug="bookmaker-margin" label={t("helpKeep")} />
         {!online ? (
           <>
             {" · "}

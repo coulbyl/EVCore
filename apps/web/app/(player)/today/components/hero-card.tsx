@@ -37,6 +37,7 @@ export async function HeroCard({
   coupon,
   form,
   couponPath = "/today/coupon",
+  title,
 }: {
   coupon: TodayCoupon;
   form: TodayProductForm | undefined;
@@ -45,6 +46,8 @@ export async function HeroCard({
    * null on the landing, whose visitor has no sheet to open (11 § 1).
    */
   couponPath?: string | null;
+  /** In place of « Favori du jour »: a past coupon names its day. */
+  title?: string;
 }) {
   const [t, locale, timeZone] = await Promise.all([
     getTranslations("today"),
@@ -72,7 +75,7 @@ export async function HeroCard({
       ) : null}
       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
         <h2 id="hero-title" className="score text-title font-semibold">
-          {t(`products.${coupon.product}`)}
+          {title ?? t(`products.${coupon.product}`)}
         </h2>
         <span className="text-meta text-muted-foreground">
           {coupon.state === "live"

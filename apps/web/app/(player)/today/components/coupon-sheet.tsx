@@ -135,7 +135,7 @@ export async function CouponSheetBody({
   ]);
   const display = displayLocaleOf(locale);
   const keepHint = help("hint", {
-    title: helpSheet("what-1xbet-keeps", display)?.title ?? "",
+    title: helpSheet("bookmaker-margin", display)?.title ?? "",
   });
   const legs = [...coupon.legs].sort((a, b) =>
     a.kickoffAt.localeCompare(b.kickoffAt),
@@ -183,7 +183,7 @@ export async function CouponSheetBody({
           {t(coupon.legs.length > 1 ? "keepCoupon" : "keepBet", {
             share: formatShare(coupon.operatorKeep, display),
           })}
-          <HelpHint slug="what-1xbet-keeps" label={keepHint} />
+          <HelpHint slug="bookmaker-margin" label={keepHint} />
         </p>
       ) : null}
     </div>

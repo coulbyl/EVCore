@@ -15,7 +15,7 @@ test.describe("In English", () => {
     await expect(
       page.getByRole("heading", {
         level: 1,
-        name: "One bet a day. Counted, dated, losses included.",
+        name: "Every day, one bet analysed. Counted, dated, losses included.",
       }),
     ).toBeVisible();
     await expect(
