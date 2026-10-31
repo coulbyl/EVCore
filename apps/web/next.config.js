@@ -29,8 +29,9 @@ const nextConfig = {
         ["/dashboard/formation", "/me/help"],
         ["/dashboard/glossaire", "/me/help"],
       ].flatMap(([from, to]) => [
-        { source: from, destination: to, permanent: true },
-        { source: `${from}/:path*`, destination: to, permanent: true },
+        // Not permanent: the admin overhaul (phase G) may reuse an address.
+        { source: from, destination: to, permanent: false },
+        { source: `${from}/:path*`, destination: to, permanent: false },
       ]),
     ];
   },

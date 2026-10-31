@@ -103,14 +103,14 @@ export class WeeklyStatementService {
       await this.push.sendToUser(recipient.id, {
         title: message.title,
         body: message.body,
-        url: '/dashboard?from=weekly',
+        url: '/today?from=weekly',
       });
       const email = digestEmailOf(recipient);
       if (email) {
         await this.mail.sendPlayerDigest(email, {
           title: message.title,
           body: message.body,
-          path: '/dashboard?from=weekly',
+          path: '/today?from=weekly',
         });
       }
       sent += 1;

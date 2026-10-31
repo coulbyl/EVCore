@@ -2,6 +2,7 @@
 // against a backend on the prod copy (docs/refonte-ui/16 § 2: p95 ≤ 150 ms).
 // Light load on the screen endpoints (16 § 2): N requests per route,
 // C in parallel, p50/p95 in ms. A throwaway account, deleted at the end.
+// Sign-up allows 5 accounts per 15 minutes (B17a): space the runs.
 const BASE = process.env.BASE ?? "http://127.0.0.1:3201";
 const N = Number(process.env.N ?? 60);
 const C = Number(process.env.C ?? 6);
@@ -43,22 +44,26 @@ async function one([method, path, body]) {
   return { ms: performance.now() - t, status: r.status };
 }
 
-const pct = (xs, p) => xs[Math.min(xs.length - 1, Math.floor((xs.length * p) / 100))];
-console.log("| Route | p50 | p95 | statuts |");
-console.log("|---|---|---|---|");
-for (const route of routes) {
-  await one(route); // warm-up
-  const results = [];
-  for (let i = 0; i < N; i += C) {
-    results.push(...(await Promise.all(Array.from({ length: Math.min(C, N - i) }, () => one(route)))));
+try {
+  const pct = (xs, p) => xs[Math.min(xs.length - 1, Math.floor((xs.length * p) / 100))];
+  console.log("| Route | p50 | p95 | statuts |");
+  console.log("|---|---|---|---|");
+  for (const route of routes) {
+    await one(route); // warm-up
+    const results = [];
+    for (let i = 0; i < N; i += C) {
+      results.push(...(await Promise.all(Array.from({ length: Math.min(C, N - i) }, () => one(route)))));
+    }
+    const ms = results.map((r) => r.ms).sort((a, b) => a - b);
+    const statuses = [...new Set(results.map((r) => r.status))].join(",");
+    console.log(`| ${route[0]} ${route[1].replace(fixture, ":id")} | ${pct(ms, 50).toFixed(0)} | ${pct(ms, 95).toFixed(0)} | ${statuses} |`);
   }
-  const ms = results.map((r) => r.ms).sort((a, b) => a - b);
-  const statuses = [...new Set(results.map((r) => r.status))].join(",");
-  console.log(`| ${route[0]} ${route[1].replace(fixture, ":id")} | ${pct(ms, 50).toFixed(0)} | ${pct(ms, 95).toFixed(0)} | ${statuses} |`);
+} finally {
+  // Deleted even when a route fails mid-run: no account left behind.
+  const del = await fetch(`${BASE}/auth/me/delete`, {
+    method: "POST",
+    headers: { cookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ password }),
+  });
+  console.log(`compte jetable supprimé : ${del.status}`);
 }
-const del = await fetch(`${BASE}/auth/me/delete`, {
-  method: "POST",
-  headers: { cookie, "Content-Type": "application/json" },
-  body: JSON.stringify({ password }),
-});
-console.log(`compte jetable supprimé : ${del.status}`);

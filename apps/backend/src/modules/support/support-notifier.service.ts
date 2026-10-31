@@ -65,7 +65,7 @@ export class SupportNotifierService {
       this.push.sendToUser(userId, {
         title,
         body: notificationBody(message),
-        url: '/dashboard/inbox',
+        url: '/me/messages',
       }),
       this.notification.notifyUser({
         userId,

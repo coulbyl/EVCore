@@ -121,7 +121,7 @@ describe('WeeklyStatementService.sendStatements', () => {
     );
     expect(push.sendToUser).toHaveBeenCalledWith(
       'u1',
-      expect.objectContaining({ url: '/dashboard?from=weekly' }),
+      expect.objectContaining({ url: '/today?from=weekly' }),
     );
   });
 
@@ -135,7 +135,7 @@ describe('WeeklyStatementService.sendStatements', () => {
       'u1@example.com',
       expect.objectContaining({
         title: expect.any(String),
-        path: '/dashboard?from=weekly',
+        path: '/today?from=weekly',
       }),
     );
   });

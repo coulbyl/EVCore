@@ -34,22 +34,18 @@ export function PausedNotice({ until }: { until: string }) {
       </p>
       <p className="text-muted-foreground">{t("body")}</p>
       <ul className="flex flex-wrap gap-x-5">
-        {(
-          [
-            ["/dashboard/bet-slips", "mySlips"],
-            ["/dashboard/bankroll", "bankroll"],
-            ["/dashboard/track-record", "trackRecord"],
-          ] as const
-        ).map(([href, key]) => (
-          <li key={href}>
-            <Link
-              href={href}
-              className="inline-flex min-h-11 items-center font-medium text-accent underline underline-offset-4"
-            >
-              {t(`links.${key}`)}
-            </Link>
-          </li>
-        ))}
+        {([["/dashboard/track-record", "trackRecord"]] as const).map(
+          ([href, key]) => (
+            <li key={href}>
+              <Link
+                href={href}
+                className="inline-flex min-h-11 items-center font-medium text-accent underline underline-offset-4"
+              >
+                {t(`links.${key}`)}
+              </Link>
+            </li>
+          ),
+        )}
       </ul>
     </section>
   );

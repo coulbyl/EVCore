@@ -32,6 +32,18 @@ test.describe("Aujourd'hui", () => {
     await expect(hero.getByRole("button", { name: "Suivre" })).toBeVisible();
   });
 
+  test("arrivé par la matinée : l'adresse perd « from », un rechargement ne recompte pas", async ({
+    page,
+  }) => {
+    // The open is counted server side (POST /events to the backend), then
+    // the page redirects to the bare address.
+    await page.goto("/today?from=morning");
+    await expect(page).toHaveURL(/\/today$/);
+    await expect(
+      page.getByRole("region", { name: "Favori du jour" }),
+    ).toBeVisible();
+  });
+
   test("la ligne Hier mène à Résultats", async ({ page }) => {
     await page.goto("/today");
     const line = page.getByRole("link", {

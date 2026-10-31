@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { serverApiRequest } from "@/lib/api/server-api";
 import { PlayerBand } from "@/components/scoreboard/shell/player-band";
 import {
   activePause,
@@ -29,7 +31,32 @@ export async function generateMetadata(): Promise<Metadata> {
  * sans même une abstention, la panne. Hors ligne : la ligne de la coquille
  * et « Suivre » grisé ; une erreur : l'état d'erreur de l'onglet.
  */
-export default async function Page() {
+/** `?from=` of the morning digest and the Monday statement (lot 4). */
+const FROM_NOTIFICATION = {
+  morning: "MORNING_BRIEF",
+  weekly: "WEEKLY_STATEMENT",
+} as const;
+
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string | string[] }>;
+}) {
+  // Arrived from the morning digest or the statement: one open counted,
+  // then the address without `from`, so a reload does not count it again.
+  // Server side: the player's tabs carry no tracker of their own (C0).
+  const { from } = await searchParams;
+  if (from === "morning" || from === "weekly") {
+    await serverApiRequest("/events", {
+      method: "POST",
+      body: {
+        type: "NOTIFICATION_OPENED",
+        notificationType: FROM_NOTIFICATION[from],
+      },
+    }).catch(() => undefined);
+    redirect("/today");
+  }
+
   const [t, todayText, pauseEnd, session] = await Promise.all([
     getTranslations("shell"),
     getTranslations("today"),

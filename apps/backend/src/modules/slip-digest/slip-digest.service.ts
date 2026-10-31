@@ -170,14 +170,14 @@ export class SlipDigestService {
       await this.push.sendToUser(recipient.id, {
         title: message.title,
         body: message.body,
-        url: '/dashboard?from=morning',
+        url: '/today?from=morning',
       });
       const email = digestEmailOf(recipient);
       if (email) {
         await this.mail.sendPlayerDigest(email, {
           title: message.title,
           body: message.body,
-          path: '/dashboard?from=morning',
+          path: '/today?from=morning',
         });
       }
       sent += 1;

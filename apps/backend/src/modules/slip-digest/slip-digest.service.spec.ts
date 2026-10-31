@@ -120,7 +120,7 @@ describe('SlipDigestService.sendDigests', () => {
     );
     expect(push.sendToUser).toHaveBeenCalledWith(
       'u1',
-      expect.objectContaining({ url: '/dashboard?from=morning' }),
+      expect.objectContaining({ url: '/today?from=morning' }),
     );
   });
 
@@ -137,7 +137,7 @@ describe('SlipDigestService.sendDigests', () => {
     expect(mail.sendPlayerDigest).toHaveBeenCalledTimes(1);
     expect(mail.sendPlayerDigest).toHaveBeenCalledWith(
       'u1@example.com',
-      expect.objectContaining({ path: '/dashboard?from=morning' }),
+      expect.objectContaining({ path: '/today?from=morning' }),
     );
   });
 
