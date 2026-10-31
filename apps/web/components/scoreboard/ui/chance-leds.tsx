@@ -11,6 +11,9 @@ import { clsx as cn } from "clsx";
  * le remplacent pas. `label` est ce nombre en toutes lettres pour les
  * lecteurs d'écran (« 8 chances sur 10 »).
  */
+/** The whole lighting, first diode to last (13-style.md § 5). */
+const LIGHT_UP_MS = 300;
+
 const SIZES = {
   sm: { dot: "size-2.5", gap: "gap-1" },
   md: { dot: "size-3.5", gap: "gap-1.5" },
@@ -23,6 +26,7 @@ export function ChanceLeds({
   label,
   tone = "surface",
   size = "md",
+  lightUp = false,
   className,
 }: {
   lit: number;
@@ -31,6 +35,12 @@ export function ChanceLeds({
   /** `band` : posées sur l'encre du bandeau ou d'une feuille. */
   tone?: "surface" | "band";
   size?: keyof typeof SIZES;
+  /**
+   * Aujourd'hui's hero only (13-style.md § 5, the app's one motion): the lit
+   * diodes light up left to right once, in 300 ms; none under reduced
+   * motion.
+   */
+  lightUp?: boolean;
   className?: string;
 }) {
   const count = Math.max(1, Math.round(total));
@@ -47,7 +57,17 @@ export function ChanceLeds({
         <span
           key={index}
           aria-hidden
+          style={
+            lightUp && index < on
+              ? {
+                  animationDelay: `${Math.round((index * LIGHT_UP_MS) / on)}ms`,
+                }
+              : undefined
+          }
           className={cn(
+            lightUp &&
+              index < on &&
+              "animate-led-light motion-reduce:animate-none",
             "block shrink-0 rounded-full border",
             dot,
             index < on

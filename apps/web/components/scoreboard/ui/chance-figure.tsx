@@ -16,6 +16,7 @@ export function ChanceFigure({
   showLeds = true,
   tone = "surface",
   size = "md",
+  lightUp = false,
   className,
 }: {
   probability: number;
@@ -23,6 +24,8 @@ export function ChanceFigure({
   showLeds?: boolean;
   tone?: "surface" | "band";
   size?: "sm" | "md" | "lg";
+  /** Light the diodes up once on open (Aujourd'hui's hero, 13-style.md § 5). */
+  lightUp?: boolean;
   className?: string;
 }) {
   const t = useTranslations("scoreboard.chance");
@@ -44,6 +47,7 @@ export function ChanceFigure({
           label={spoken}
           tone={tone}
           size={size === "lg" ? "md" : "sm"}
+          lightUp={lightUp}
         />
       ) : null}
       <span

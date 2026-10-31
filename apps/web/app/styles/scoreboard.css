@@ -214,6 +214,9 @@
 @theme {
   --animate-sheet-up: sheet-up 280ms cubic-bezier(0.32, 0.72, 0, 1);
   --animate-scrim-in: scrim-in 200ms ease-out;
+  /* The signature (13-style.md § 5): the lit diodes of Aujourd'hui light
+     up left to right, once, in 300 ms; each waits its turn (inline delay). */
+  --animate-led-light: led-light 140ms ease-out both;
 
   @keyframes sheet-up {
     from {
@@ -221,6 +224,17 @@
     }
     to {
       transform: translateY(0);
+    }
+  }
+
+  @keyframes led-light {
+    from {
+      opacity: 0.15;
+      transform: scale(0.7);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
     }
   }
 

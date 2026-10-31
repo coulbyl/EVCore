@@ -225,3 +225,34 @@ test.describe("Feuille du coupon", () => {
     );
   });
 });
+
+/** Le geste signature (13-style.md § 5) : le seul mouvement de l'application. */
+test.describe("Les diodes du héros", () => {
+  test("s'allument de gauche à droite à l'ouverture, une fois", async ({
+    page,
+  }) => {
+    await page.goto("/today");
+    const hero = page.getByRole("region", { name: "Favori du jour" });
+    const lit = hero.locator(".animate-led-light");
+    await expect(lit).toHaveCount(8);
+    const delays = await lit.evaluateAll((nodes) =>
+      nodes.map((n) => parseInt((n as HTMLElement).style.animationDelay, 10)),
+    );
+    expect(delays).toEqual([...delays].sort((a, b) => a - b));
+    expect(Math.max(...delays)).toBeLessThan(300);
+  });
+
+  test("restent immobiles quand le téléphone demande moins de mouvement", async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/today");
+    const first = page
+      .getByRole("region", { name: "Favori du jour" })
+      .locator(".animate-led-light")
+      .first();
+    expect(await first.evaluate((n) => getComputedStyle(n).animationName)).toBe(
+      "none",
+    );
+  });
+});
