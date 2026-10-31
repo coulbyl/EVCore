@@ -58,44 +58,43 @@ export default async function Page({
 
   return (
     <>
-      <PlayerBand />
-      <h1 className="sr-only">{shell("tabs.me")}</h1>
-      <div className="flex flex-col gap-4 px-4 pt-4 pb-4 lg:px-6">
-        <section className="flex flex-col gap-1">
-          <p className="score text-title font-semibold">{me.firstName}</p>
-          {followed ? (
-            <p className="flex flex-wrap items-baseline justify-between gap-x-3">
-              <span className="score text-bet font-semibold">
-                {t("record", { won: record.won, lost: record.lost })}
-                {record.refunded > 0
-                  ? ` · ${t("refunded", { count: record.refunded })}`
-                  : null}
-              </span>
-              {record.since ? (
-                <span className="text-meta text-muted-foreground">
-                  {t("since", {
-                    date: formatShortDate(
-                      new Date(record.since),
-                      display,
-                      timeZone,
-                    ),
-                  })}
+      {/* Two lines as the other tabs: who and the record, then the choice. */}
+      <PlayerBand>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <p className="score text-title font-semibold">{me.firstName}</p>
+            {followed ? (
+              <p className="flex flex-wrap items-baseline gap-x-2">
+                <span className="score text-bet font-semibold">
+                  {t("record", { won: record.won, lost: record.lost })}
+                  {record.refunded > 0
+                    ? ` · ${t("refunded", { count: record.refunded })}`
+                    : null}
                 </span>
-              ) : null}
-            </p>
-          ) : me.inProgress.length === 0 ? (
-            <Link
-              href="/today"
-              className="text-body font-medium underline underline-offset-4"
-            >
-              {t("firstFollow")}
-            </Link>
-          ) : null}
-        </section>
-
-        <section className="flex flex-col gap-1">
+                {record.since ? (
+                  <span className="text-meta text-band-muted">
+                    {t("since", {
+                      date: formatShortDate(
+                        new Date(record.since),
+                        display,
+                        timeZone,
+                      ),
+                    })}
+                  </span>
+                ) : null}
+              </p>
+            ) : me.inProgress.length === 0 ? (
+              <Link
+                href="/today"
+                className="text-body font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-led-on"
+              >
+                {t("firstFollow")}
+              </Link>
+            ) : null}
+          </div>
           <ChipGroup
             label={t("tabs.label")}
+            tone="band"
             items={[
               {
                 key: "running",
@@ -111,6 +110,11 @@ export default async function Page({
               },
             ]}
           />
+        </div>
+      </PlayerBand>
+      <h1 className="sr-only">{shell("tabs.me")}</h1>
+      <div className="flex flex-col gap-4 px-4 pt-2 pb-4 lg:px-6">
+        <section className="flex flex-col gap-1">
           {shown.length === 0 ? (
             <p className="py-3 text-body text-muted-foreground">
               {settledTab ? t("noneSettled") : t("noneRunning")}

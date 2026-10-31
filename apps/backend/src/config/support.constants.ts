@@ -7,10 +7,9 @@ export const SUPPORT_AUTOMATION_KEYS = {
   WELCOME: 'WELCOME',
 } as const;
 
-export const WELCOME_MESSAGE_CONTENT = `Bienvenue dans EVCore, et merci de nous avoir rejoints ! 👋
+// Tutoiement, as every text of the player's app (31/10).
+export const WELCOME_MESSAGE_CONTENT = `Bienvenue dans EVCore, et merci d'être là ! 👋
 
-On est ravis de vous compter parmi nous. N'hésitez pas à explorer l'application, à tester les différentes fonctionnalités et à vous faire votre propre avis sur nos analyses.
+Si tu tombes sur un bug, une explication pas claire ou quelque chose qui te semble bizarre, dis-le-nous ici, dans cette conversation. Même les petits détails nous aident à faire évoluer EVCore.
 
-Si vous tombez sur un bug, une explication pas claire, ou si quelque chose vous semble bizarre ou mal pensé — dites-le-nous ici, dans cette conversation. Vos retours (même les petits détails) sont ce qui nous permet de faire évoluer EVCore dans le bon sens.
-
-On vous lit et on vous répond dès qu'on peut !`;
+On te répond dès qu'on peut.`;
