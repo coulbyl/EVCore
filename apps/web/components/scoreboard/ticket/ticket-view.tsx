@@ -5,9 +5,12 @@ import Link from "next/link";
 import { ChevronRight, X } from "lucide-react";
 import { clsx } from "clsx";
 import {
+  chanceOf,
   formatOdds,
   formatShare,
+  formatShortDate,
   formatTime,
+  ledsOf,
   type DisplayLocale,
 } from "@/helpers/scoreboard-format";
 import { TeamMark } from "@/app/(player)/today/components/team-mark";
@@ -16,13 +19,22 @@ import { usePlayerText } from "../text/player-texts";
 import { needsCount, quoteTicket } from "./quote-ticket";
 import {
   acknowledgeMoves,
+  checkedTotals,
   clearTicket,
   currentQuote,
+  pastTicketDay,
   removeFromTicket,
+  ticketOutcome,
   ticketSnapshot,
 } from "./ticket-store";
+import { YesterdayTicket, type YesterdayTicketData } from "./ticket-yesterday";
 import { TicketChance } from "./ticket-chance";
-import type { TicketLeg, TicketQuoteLeg } from "./ticket-types";
+import type {
+  TicketLeg,
+  TicketQuote,
+  TicketQuoteLeg,
+  TicketTotals,
+} from "./ticket-types";
 import { useTicket } from "./use-ticket";
 
 /**
@@ -60,13 +72,36 @@ export function TicketView({ locale }: { locale: DisplayLocale }) {
     // On opening only.
   }, []);
 
+  // The ticket of yesterday (07 § 6): shown once settled, then emptied.
+  // The sheet keeps what it shows until it closes; React's double mount in
+  // development included.
+  const past = pastTicketDay(ticket.legs);
+  const quote = currentQuote(ticket);
+  const [settled, setSettled] = useState<YesterdayTicketData | null>(null);
+  const emptied = useRef(false);
+  useEffect(() => {
+    if (!past || !quote || emptied.current) return;
+    if (ticketOutcome(quote).outcome === "pending") return;
+    emptied.current = true;
+    setSettled({
+      legs: ticket.legs,
+      quote,
+      totals: checkedTotals(ticket),
+      day: past,
+    });
+    clearTicket();
+  }, [past, quote, ticket]);
+
   // Once per opening, then again when the ticket changes in the sheet.
   const key = ticket.legs.map((leg) => leg.fixtureId).join(",");
   useEffect(() => {
     if (count === 0 || !online) return;
     let live = true;
     setStatus("pending");
-    quoteTicket(ticket.legs, needsCount(ticket, new Date()))
+    quoteTicket(ticket.legs, {
+      verify: !past && needsCount(ticket, new Date()),
+      day: past,
+    })
       .then(() => {
         takeMoves();
         if (live) setStatus("idle");
@@ -78,6 +113,21 @@ export function TicketView({ locale }: { locale: DisplayLocale }) {
     // The composition decides, not each new snapshot of the same one.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, online]);
+
+  if (settled) return <YesterdayTicket ticket={settled} locale={locale} />;
+  if (past) {
+    return (
+      <YesterdayTicket
+        ticket={{
+          legs: ticket.legs,
+          quote,
+          totals: checkedTotals(ticket),
+          day: past,
+        }}
+        locale={locale}
+      />
+    );
+  }
 
   if (count === 0) {
     return (
@@ -93,7 +143,6 @@ export function TicketView({ locale }: { locale: DisplayLocale }) {
     );
   }
 
-  const quote = currentQuote(ticket);
   const legs = [...ticket.legs].sort((a, b) =>
     a.kickoffAt.localeCompare(b.kickoffAt),
   );
@@ -254,10 +303,11 @@ export function TicketFooter({
   const t = usePlayerText("ticket");
   const online = useOnline();
   const ticket = useTicket();
-  if (ticket.legs.length === 0) return null;
+  // Yesterday's ticket has its own way out (« Composer celui d'aujourd'hui »).
+  if (ticket.legs.length === 0 || pastTicketDay(ticket.legs)) return null;
   const quote = currentQuote(ticket);
   const totals = quote?.totals ?? null;
-  if (!totals) {
+  if (!quote || !totals) {
     return (
       <p aria-live="polite" className="text-body text-muted-foreground">
         {t("pending")}
@@ -291,7 +341,7 @@ export function TicketFooter({
         {t(totals.legCount === 1 ? "keepBet" : "keepTicket", {
           share: formatShare(totals.keep, locale),
         })}
-        {!online && quote ? (
+        {!online ? (
           <>
             {" · "}
             {t("oddsAt", {
@@ -300,6 +350,124 @@ export function TicketFooter({
           </>
         ) : null}
       </p>
+      <ShareButton
+        legs={ticket.legs}
+        quote={quote}
+        totals={totals}
+        locale={locale}
+        timeZone={timeZone}
+      />
     </section>
+  );
+}
+
+/**
+ * « Partager mes chances » (07 § 5): the image of the ticket, drawn on the
+ * tap only (its code loads then), shared through the phone or downloaded.
+ * The bets still to come, as the figures count them.
+ */
+function ShareButton({
+  legs,
+  quote,
+  totals,
+  locale,
+  timeZone,
+}: {
+  legs: readonly TicketLeg[];
+  quote: TicketQuote;
+  totals: TicketTotals;
+  locale: DisplayLocale;
+  timeZone: string;
+}) {
+  const t = usePlayerText("ticket");
+  const chanceText = usePlayerText("scoreboard.chance");
+  const products = usePlayerText("today.products");
+  const shell = usePlayerText("shell");
+  const [state, setState] = useState<"idle" | "busy" | "failed">("idle");
+
+  async function share() {
+    setState("busy");
+    const open = new Set(
+      quote.legs.filter((l) => l.state === "open").map((l) => l.fixtureId),
+    );
+    const chance = chanceOf(totals.chance);
+    const single = totals.legCount === 1;
+    const words = !chance
+      ? ""
+      : chance.kind === "outOfTen"
+        ? chanceText("outOfTen", {
+            count: String(chance.count),
+            total: String(chance.total),
+          })
+        : chance.kind === "oneIn"
+          ? t("imageChance", { total: String(chance.total) })
+          : chanceText("aboutRarerThan", { total: String(chance.total) });
+    const hero = quote.hero;
+    const heroChance = hero?.chance != null ? chanceOf(hero.chance) : null;
+    try {
+      const { shareTicketImage } = await import("./share-image");
+      await shareTicketImage(
+        {
+          title: "EVCore",
+          date: t("imageDate", {
+            date: formatShortDate(new Date(), locale, timeZone),
+          }),
+          legs: [...legs]
+            .filter((leg) => open.has(leg.fixtureId))
+            .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt))
+            .map((leg) => ({
+              teams: `${leg.home.name} – ${leg.away.name}`,
+              label: leg.label,
+              odds: formatOdds(leg.odds, locale),
+            })),
+          totalOddsLabel: t("totalOdds"),
+          totalOdds: formatOdds(totals.odds, locale),
+          about: single || chance?.kind === "rarerThan" ? "" : t("imageAbout"),
+          chance: words,
+          leds: chance ? ledsOf(chance) : null,
+          keep: single
+            ? t("keepBet", { share: formatShare(totals.keep, locale) })
+            : t("imageKeep", { share: formatShare(totals.keep, locale) }),
+          ours:
+            hero && heroChance?.kind === "outOfTen"
+              ? `${t("imageOurs", {
+                  product: products(hero.product),
+                  chance: chanceText("outOfTen", {
+                    count: String(heroChance.count),
+                    total: String(heroChance.total),
+                  }),
+                })} · evcore.app`
+              : "evcore.app",
+          legal: shell("legal"),
+        },
+        "evcore-ticket.png",
+      );
+      setState("idle");
+    } catch (error) {
+      // Closing the phone's share sheet is not a failure.
+      setState(
+        error instanceof DOMException && error.name === "AbortError"
+          ? "idle"
+          : "failed",
+      );
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1 pt-1">
+      <button
+        type="button"
+        onClick={share}
+        disabled={state === "busy"}
+        className="inline-flex min-h-12 w-full items-center justify-center rounded-[0.625rem] bg-primary text-bet font-medium text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-60"
+      >
+        {t("share")}
+      </button>
+      {state === "failed" ? (
+        <p role="alert" className="text-meta">
+          {t("shareFailed")}
+        </p>
+      ) : null}
+    </div>
   );
 }

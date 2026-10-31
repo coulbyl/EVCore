@@ -5,6 +5,7 @@ import {
   IsArray,
   IsBoolean,
   IsOptional,
+  IsDateString,
   IsUUID,
   Matches,
   MaxLength,
@@ -41,4 +42,13 @@ export class TicketQuoteDto {
   @IsOptional()
   @IsBoolean()
   verify?: boolean;
+
+  /**
+   * The day whose hero coupon to compare with (YYYY-MM-DD): yesterday's for
+   * the ticket of yesterday (07 § 6). Today when absent.
+   */
+  @IsOptional()
+  @IsDateString({ strict: true })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  day?: string;
 }

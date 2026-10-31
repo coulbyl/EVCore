@@ -1337,6 +1337,23 @@
     "ours": "Our {product}",
     "oddsAt": "odds of {time}",
     "pending": "Working out your chances…",
-    "failed": "We can't work out your chances"
+    "failed": "We can't work out your chances",
+    "yesterdayTitle": "Yesterday's ticket",
+    "oddsOf": "odds {odds}",
+    "won": "won",
+    "lost": "lost",
+    "void": "refunded",
+    "neededAll": "it needed all {count}",
+    "wasTheOne": "1 time in {total}, and this was it",
+    "oursYesterday": "Our {product} yesterday:",
+    "composeToday": "Build today's",
+    "share": "Share my chances",
+    "shareFailed": "Sharing did not work",
+    "imageDate": "my ticket of {date}",
+    "imageAbout": "about",
+    "imageChance": "1 time in {total}",
+    "imageKeep": "Over time, 1xBet keeps {share} of the stake",
+    "imageOurs": "Our {product}: {chance}",
+    "outcomePending": "waiting for the last match"
   }
 }

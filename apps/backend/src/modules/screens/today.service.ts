@@ -110,6 +110,28 @@ export class TodayService {
       forms: formsOf(dayRows),
     };
   }
+
+  /**
+   * The hero coupon of a given day, as everyone saw it (no player): the
+   * ticket of yesterday compares with « Notre Favori d'hier » (07 § 6).
+   */
+  async heroOfDay(
+    day: Date,
+    now: Date = new Date(),
+  ): Promise<TodayCoupon | null> {
+    const from = startOfUtcDay(day);
+    const rows = await this.repository.findCouponLegs({
+      userId: null,
+      today: from,
+      followedSince: from,
+      targets: TODAY_PRODUCT_TARGETS,
+    });
+    const coupons = couponsOf(rows, now).filter(
+      (c) => c.forDate === formatDateUtc(from),
+    );
+    const heroId = heroOf(coupons);
+    return coupons.find((c) => c.id === heroId) ?? null;
+  }
 }
 
 /** Groups leg rows into coupons, one per product and day, in screen order. */

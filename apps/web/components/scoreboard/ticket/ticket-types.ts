@@ -7,17 +7,34 @@ export type TicketQuoteLeg = {
   state: "open" | "started" | "postponed" | "unknown";
   odds: number | null;
   fair: number | null;
+  /** Once the match is over (07 § 6); `void` when postponed. */
+  result: "won" | "lost" | "void" | null;
+  score: { home: number; away: number } | null;
+};
+
+export type TicketTotals = {
+  legCount: number;
+  odds: number;
+  chance: number;
+  keep: number;
 };
 
 export type TicketQuote = {
   legs: TicketQuoteLeg[];
-  totals: {
-    legCount: number;
-    odds: number;
-    chance: number;
-    keep: number;
+  totals: TicketTotals | null;
+  /** Our hero coupon of the day asked (yesterday's for yesterday's ticket). */
+  hero: {
+    couponId: string;
+    product: string;
+    chance: number | null;
+    state: "upcoming" | "live" | "won" | "lost" | "void";
+    odds: number | null;
+    match: {
+      home: string;
+      away: string;
+      score: { home: number; away: number } | null;
+    } | null;
   } | null;
-  hero: { couponId: string; product: string; chance: number | null } | null;
   quotedAt: string;
 };
 
@@ -45,4 +62,10 @@ export type TicketState = {
   quote: { key: string; value: TicketQuote } | null;
   /** The composition last counted as verified, and its UTC day. */
   counted: string | null;
+  /**
+   * The figures of the whole ticket, last seen while every match was still
+   * to come: what the ticket of yesterday recalls (« cote 12,4 », « 1 fois
+   * sur 46, c'était celle-là »).
+   */
+  checked?: { key: string; totals: TicketTotals } | null;
 };

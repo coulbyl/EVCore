@@ -7,8 +7,10 @@ export const PLAYER_CLIENT_NAMESPACES = [
   "scoreboard.states",
   "scoreboard.chance",
   "ticket",
-  // The products' names, for « Notre Favori du jour » in the ticket.
+  // The products' names, for « Notre Favori du jour » in the ticket and
+  // « Notre Favori d'hier » under yesterday's.
   "today.products",
+  "today.shortNames",
 ] as const;
 
 export type PlayerClientNamespace = (typeof PLAYER_CLIENT_NAMESPACES)[number];

@@ -45,4 +45,11 @@ describe('TicketQuoteDto', () => {
       await errorsFor({ legs: [{ ...leg(1), market: "1X2'; --" }] }),
     ).toContain('legs.market');
   });
+
+  it('takes a day to compare with, as a date only', async () => {
+    expect(await errorsFor({ legs: [leg(1)], day: '2026-10-30' })).toEqual([]);
+    expect(await errorsFor({ legs: [leg(1)], day: '30/10/2026' })).toEqual([
+      'day',
+    ]);
+  });
 });

@@ -184,3 +184,147 @@ test.describe("Mon ticket", () => {
     ).toContain("Victoire Arsenal");
   });
 });
+
+/** A ticket of yesterday kept on the device (its matches are over). */
+async function seedYesterday(
+  page: Page,
+  legs: { id: string; label: string; home: string; away: string }[],
+  checked: { odds: number; chance: number } | null,
+) {
+  await page.addInitScript(
+    ({ legs, checked }) => {
+      const yesterday = new Date(Date.now() - 86_400_000);
+      yesterday.setUTCHours(18, 0, 0, 0);
+      const stored = legs.map((leg) => ({
+        fixtureId: leg.id,
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        label: leg.label,
+        home: { name: leg.home, shortName: "HOM", logoUrl: null },
+        away: { name: leg.away, shortName: "AWA", logoUrl: null },
+        kickoffAt: yesterday.toISOString(),
+        odds: 1.5,
+      }));
+      const key = stored
+        .map((leg) => `${leg.fixtureId}|ONE_X_TWO|HOME`)
+        .sort()
+        .join(",");
+      if (window.sessionStorage.getItem("seeded")) return;
+      window.sessionStorage.setItem("seeded", "1");
+      window.localStorage.setItem(
+        "evcore.ticket.v1",
+        JSON.stringify({
+          legs: stored,
+          quote: null,
+          counted: null,
+          checked: checked
+            ? {
+                key,
+                totals: { legCount: legs.length, keep: 0.3, ...checked },
+              }
+            : null,
+        }),
+      );
+    },
+    { legs, checked },
+  );
+}
+
+const PSG_YESTERDAY = {
+  id: "00000000-0000-4000-8000-792d70736700",
+  label: "Victoire Paris SG",
+  home: "Paris SG",
+  away: "Lens",
+};
+const INTER_YESTERDAY = {
+  id: "00000000-0000-4000-8000-792d696e7400",
+  label: "Victoire Inter",
+  home: "Inter",
+  away: "Napoli",
+};
+
+test.describe("Mon ticket, le lendemain et le partage (07 § 5–6)", () => {
+  test("le ticket d'hier perdu : « il fallait les 2 », jamais combien sont passés, puis il se vide", async ({
+    page,
+  }) => {
+    await seedYesterday(page, [PSG_YESTERDAY, INTER_YESTERDAY], {
+      odds: 2.25,
+      chance: 0.36,
+    });
+    await page.goto("/matches");
+    await expect(bar(page)).toContainText("Ton ticket d'hier");
+    await expect(bar(page)).toContainText("perdu");
+
+    await bar(page).click();
+    const sheet = sheetNamed(page, "Mon ticket");
+    await expect(sheet.getByText("Ton ticket d'hier")).toBeVisible();
+    await expect(sheet).toContainText("2 matchs · cote 2,25");
+    await expect(sheet.getByText("perdu", { exact: true })).toBeVisible();
+    await expect(sheet.getByText("il fallait les 2")).toBeVisible();
+    await expect(sheet).not.toContainText(/passé|sur 2 passés/);
+    const psg = sheet
+      .getByRole("listitem")
+      .filter({ hasText: "Victoire Paris SG" });
+    await expect(psg).toContainText("2–0");
+    await expect(psg.getByRole("img", { name: "gagné" })).toBeVisible();
+    const inter = sheet
+      .getByRole("listitem")
+      .filter({ hasText: "Victoire Inter" });
+    await expect(inter.getByRole("img", { name: "perdu" })).toBeVisible();
+    await expect(sheet).toContainText("Notre Favori d'hier :");
+    await expect(sheet).toContainText("Paris SG – Lens 2–0 · 1,24");
+
+    // Shown once: the device's ticket is now empty.
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem("evcore.ticket.v1")))
+      .toContain('"legs":[]');
+    await sheet
+      .getByRole("link", { name: "Composer celui d'aujourd'hui" })
+      .click();
+    await expect(page).toHaveURL(/\/matches$/);
+    await expect(bar(page)).toHaveCount(0);
+  });
+
+  test("le ticket d'hier gagné : « 1 fois sur 46, c'était celle-là »", async ({
+    page,
+  }) => {
+    await seedYesterday(page, [PSG_YESTERDAY], { odds: 1.5, chance: 1 / 46 });
+    await page.goto("/ticket");
+    const sheet = sheetNamed(page, "Mon ticket");
+    await expect(sheet.getByText("gagné", { exact: true })).toBeVisible();
+    await expect(
+      sheet.getByText("1 fois sur 46, c'était celle-là"),
+    ).toBeVisible();
+  });
+
+  test("un [+] sur le ticket d'hier commence celui d'aujourd'hui", async ({
+    page,
+  }) => {
+    await seedYesterday(page, [PSG_YESTERDAY, INTER_YESTERDAY], null);
+    await add(page, ARSENAL, "Victoire Arsenal");
+    await page.goto("/matches");
+    await expect(bar(page)).toContainText("Mon ticket");
+    await expect(bar(page)).toContainText("1 match");
+  });
+
+  test("Partager mes chances : une image PNG du ticket", async ({ page }) => {
+    // No share sheet in the test browser: the image is downloaded.
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "canShare", { value: undefined });
+    });
+    await add(page, ARSENAL, "Victoire Arsenal");
+    await add(page, LAZIO, "Match nul");
+    await page.goto("/ticket");
+    const sheet = sheetNamed(page, "Mon ticket");
+    await expect(sheet.getByText("Cote totale")).toBeVisible();
+    const download = page.waitForEvent("download");
+    await sheet.getByRole("button", { name: "Partager mes chances" }).click();
+    const file = await download;
+    expect(file.suggestedFilename()).toBe("evcore-ticket.png");
+    const path = await file.path();
+    const { readFileSync } = await import("node:fs");
+    const png = readFileSync(path);
+    expect(png.subarray(1, 4).toString()).toBe("PNG");
+    expect(png.length).toBeGreaterThan(20_000);
+  });
+});

@@ -9,16 +9,18 @@ const inFlight = new Map<string, Promise<void>>();
 /**
  * Prices the ticket now on the server (POST /ticket/quote): the 1xBet price
  * and fair frequency of each bet, the three figures in decimal, the hero of
- * the day. `verify`: the player opened the sheet on a composition not yet
- * counted today; the server counts it, anonymously (07 § 7). One call in
+ * day. `verify`: the player opened the sheet on a composition not yet
+ * counted today; the server counts it, anonymously (07 § 7). `day`: the
+ * ticket of yesterday, settled, compared with that day's hero (07 § 6). One call in
  * flight per composition, whoever asks (the bar or the sheet).
  */
 export function quoteTicket(
   legs: readonly TicketLeg[],
-  verify: boolean,
+  opts: { verify: boolean; day?: string | null },
 ): Promise<void> {
+  const { verify, day } = opts;
   const key = ticketKey(legs);
-  const flight = `${key}|${verify}`;
+  const flight = `${key}|${verify}|${day ?? ""}`;
   const running = inFlight.get(flight);
   if (running) return running;
   const call = playerFetch<TicketQuote>("/ticket/quote", {
@@ -30,6 +32,7 @@ export function quoteTicket(
         pick,
       })),
       ...(verify ? { verify: true } : {}),
+      ...(day ? { day } : {}),
     },
   })
     .then((quote) => {

@@ -16,7 +16,35 @@ export const TICKET_MAX_LEGS = 15;
 /** Beyond this move since the last quote, « cote mise à jour » (07 § 6). */
 export const ODDS_MOVE_SHOWN = 0.05;
 
-const EMPTY: TicketState = { legs: [], quote: null, counted: null };
+const EMPTY: TicketState = {
+  legs: [],
+  quote: null,
+  counted: null,
+  checked: null,
+};
+
+const DAY_MS = 86_400_000;
+
+/**
+ * The day of a ticket's last match when that day is over (07 § 6: « le
+ * lendemain »), YYYY-MM-DD in UTC (Abidjan time); null otherwise. Judged on
+ * the matches, not on when it was made: a ticket built at 23:00 for
+ * tomorrow's matches is not yesterday's in the morning.
+ */
+export function pastTicketDay(
+  legs: readonly TicketLeg[],
+  now: Date = new Date(),
+): string | null {
+  if (legs.length === 0) return null;
+  const last = legs.reduce((latest, leg) =>
+    leg.kickoffAt > latest.kickoffAt ? leg : latest,
+  ).kickoffAt;
+  const lastDay = last.slice(0, 10);
+  const today = new Date(Math.floor(now.getTime() / DAY_MS) * DAY_MS)
+    .toISOString()
+    .slice(0, 10);
+  return lastDay < today ? lastDay : null;
+}
 
 let cache: { raw: string | null; state: TicketState } | null = null;
 
@@ -75,7 +103,9 @@ export type AddResult = "added" | "replaced" | "full";
  * first (07 § 4, « Un seul pari par match »); a 16th is refused.
  */
 export function addToTicket(leg: TicketLeg): AddResult {
-  const { legs, ...rest } = read();
+  const current = read();
+  // A bet on a ticket of yesterday starts today's: the old one is over.
+  const { legs, ...rest } = pastTicketDay(current.legs) ? EMPTY : current;
   const same = legs.findIndex((l) => l.fixtureId === leg.fixtureId);
   if (same >= 0) {
     const next = [...legs];
@@ -118,10 +148,13 @@ export function saveQuote(
     // Kept until the sheet has shown it: the bar may quote first.
     return { ...leg, odds: priced.odds, oddsMoved: leg.oddsMoved || moved };
   });
+  const totals = quote.totals;
+  const complete = totals !== null && totals.legCount === legs.length;
   write({
     legs,
     quote: { key, value: quote },
     counted: opts.counted ? countedKey(key, quote.quotedAt) : state.counted,
+    checked: complete ? { key, totals } : state.checked,
   });
 }
 
@@ -138,6 +171,31 @@ export function acknowledgeMoves(): void {
 /** A composition is counted once a day (07 § 7). */
 export function countedKey(key: string, at: string): string {
   return `${at.slice(0, 10)}#${key}`;
+}
+
+export type TicketOutcome = "won" | "lost" | "void" | "pending";
+
+/**
+ * A settled ticket (07 § 6): lost as soon as one bet is, won when every bet
+ * that counts is, refunded when none counts (all postponed), pending while a
+ * match is still to settle. `needed`: the bets that had to pass.
+ */
+export function ticketOutcome(quote: TicketQuote): {
+  outcome: TicketOutcome;
+  needed: number;
+} {
+  const results = quote.legs.map((leg) => leg.result);
+  const needed = results.filter((r) => r !== "void").length;
+  if (results.includes("lost")) return { outcome: "lost", needed };
+  if (results.includes(null)) return { outcome: "pending", needed };
+  return { outcome: needed === 0 ? "void" : "won", needed };
+}
+
+/** The whole ticket's figures, from before its first match. */
+export function checkedTotals(state: TicketState): TicketQuote["totals"] {
+  return state.checked && state.checked.key === ticketKey(state.legs)
+    ? state.checked.totals
+    : null;
 }
 
 /** The quote of the current composition, if there is one. */

@@ -17,6 +17,7 @@ describe("player texts", () => {
       "scoreboard.chance",
       "ticket",
       "today.products",
+      "today.shortNames",
     ]);
     assert.equal(formatPlayerText(texts.shell, "tabs.today"), "Aujourd'hui");
   });

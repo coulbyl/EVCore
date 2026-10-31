@@ -249,13 +249,29 @@ export class MatchesRepository {
     `;
   }
 
-  /** Kick-off and status of the matches of a ticket (refonte 07 § 4). */
-  findTicketFixtures(
-    fixtureIds: readonly string[],
-  ): Promise<{ id: string; scheduledAt: Date; status: string }[]> {
+  /** Kick-off, status and scores of the matches of a ticket (07 § 4, § 6). */
+  findTicketFixtures(fixtureIds: readonly string[]): Promise<
+    {
+      id: string;
+      scheduledAt: Date;
+      status: string;
+      homeScore: number | null;
+      awayScore: number | null;
+      homeHtScore: number | null;
+      awayHtScore: number | null;
+    }[]
+  > {
     return this.prisma.client.fixture.findMany({
       where: { id: { in: [...fixtureIds] } },
-      select: { id: true, scheduledAt: true, status: true },
+      select: {
+        id: true,
+        scheduledAt: true,
+        status: true,
+        homeScore: true,
+        awayScore: true,
+        homeHtScore: true,
+        awayHtScore: true,
+      },
     });
   }
 }

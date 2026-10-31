@@ -1337,6 +1337,23 @@
     "ours": "Notre {product}",
     "oddsAt": "cotes de {time}",
     "pending": "Calcul de tes chances…",
-    "failed": "On n'arrive pas à calculer tes chances"
+    "failed": "On n'arrive pas à calculer tes chances",
+    "yesterdayTitle": "Ton ticket d'hier",
+    "oddsOf": "cote {odds}",
+    "won": "gagné",
+    "lost": "perdu",
+    "void": "remboursé",
+    "neededAll": "il fallait les {count}",
+    "wasTheOne": "1 fois sur {total}, c'était celle-là",
+    "oursYesterday": "Notre {product} d'hier :",
+    "composeToday": "Composer celui d'aujourd'hui",
+    "share": "Partager mes chances",
+    "shareFailed": "Le partage n'a pas marché",
+    "imageDate": "mon ticket du {date}",
+    "imageAbout": "environ",
+    "imageChance": "1 fois sur {total}",
+    "imageKeep": "Sur la durée, 1xBet garde {share} de la mise",
+    "imageOurs": "Notre {product} : {chance}",
+    "outcomePending": "en attente du dernier match"
   }
 }

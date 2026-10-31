@@ -10,14 +10,45 @@ const NOW = new Date('2026-10-31T15:00:00.000Z');
 const id = (n: number) =>
   `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 
+type Fixture = {
+  id: string;
+  scheduledAt: Date;
+  status: string;
+  homeScore?: number | null;
+  awayScore?: number | null;
+};
+
 function harness(input: {
-  fixtures: { id: string; scheduledAt: Date; status: string }[];
+  fixtures: Fixture[];
   quotes: { fixtureId: string; odds: number | null; fair: number | null }[];
 }) {
   const record = vi.fn().mockResolvedValue(undefined);
+  const heroOfDay = vi.fn().mockResolvedValue({
+    id: 'cp-fav',
+    product: 'FAVOURITE',
+    chance: 0.8,
+    state: 'won',
+    odds: 1.24,
+    paidOdds: null,
+    legs: [
+      {
+        home: { name: 'Paris SG' },
+        away: { name: 'Lens' },
+        score: { home: 2, away: 0 },
+      },
+    ],
+  });
   const service = new TicketService(
     {
-      findTicketFixtures: vi.fn().mockResolvedValue(input.fixtures),
+      findTicketFixtures: vi.fn().mockResolvedValue(
+        input.fixtures.map((f) => ({
+          homeScore: null,
+          awayScore: null,
+          homeHtScore: null,
+          awayHtScore: null,
+          ...f,
+        })),
+      ),
     } as unknown as MatchesRepository,
     {
       findPlayableQuotes: vi.fn().mockResolvedValue(
@@ -39,15 +70,10 @@ function harness(input: {
         ),
       ),
     } as unknown as PlayableOddsRepository,
-    {
-      getToday: vi.fn().mockResolvedValue({
-        heroId: 'cp-fav',
-        coupons: [{ id: 'cp-fav', product: 'FAVOURITE', chance: 0.8 }],
-      }),
-    } as unknown as TodayService,
+    { heroOfDay } as unknown as TodayService,
     { record } as unknown as VerifiedTicketService,
   );
-  return { service, record };
+  return { service, record, heroOfDay };
 }
 
 const upcoming = (n: number) => ({
@@ -89,6 +115,9 @@ describe('TicketService.quote', () => {
       couponId: 'cp-fav',
       product: 'FAVOURITE',
       chance: 0.8,
+      state: 'won',
+      odds: 1.24,
+      match: { home: 'Paris SG', away: 'Lens', score: { home: 2, away: 0 } },
     });
     expect(record).not.toHaveBeenCalled();
   });
@@ -134,6 +163,38 @@ describe('TicketService.quote', () => {
   });
 });
 
+describe('TicketService.quote, the ticket of yesterday (07 § 6)', () => {
+  it('settles each bet by the selections rules and compares with that day', async () => {
+    const finished = (n: number, home: number, away: number) => ({
+      ...upcoming(n),
+      scheduledAt: new Date('2026-10-30T19:00:00.000Z'),
+      status: 'FINISHED',
+      homeScore: home,
+      awayScore: away,
+    });
+    const { service, heroOfDay } = harness({
+      fixtures: [
+        finished(1, 2, 0),
+        finished(2, 1, 1),
+        { ...upcoming(3), status: 'POSTPONED' },
+        { ...upcoming(4), status: 'IN_PROGRESS' },
+      ],
+      quotes: [],
+    });
+    const quote = await service.quote(
+      { legs: [leg(1), leg(2), leg(3), leg(4)], day: '2026-10-30' },
+      NOW,
+    );
+    expect(quote.legs.map((l) => [l.result, l.score])).toEqual([
+      ['won', { home: 2, away: 0 }],
+      ['lost', { home: 1, away: 1 }],
+      ['void', null],
+      [null, null],
+    ]);
+    expect(heroOfDay).toHaveBeenCalledWith(new Date('2026-10-30'), NOW);
+  });
+});
+
 describe('totalsOf', () => {
   it('eight bets at 1.50 with a fair frequency of 0.62: 1xBet keeps 44 %', () => {
     const legs: TicketQuoteLeg[] = Array.from({ length: 8 }, (_, n) => ({
@@ -144,6 +205,8 @@ describe('totalsOf', () => {
       state: 'open',
       odds: 1.5,
       fair: 0.62,
+      result: null,
+      score: null,
     }));
     // (0.93)^8 = 0.5596 (07 § 4).
     expect(totalsOf(legs)?.keep).toBe(0.4404);

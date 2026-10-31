@@ -682,10 +682,20 @@ function ticketQuote(body) {
       sheet?.home.name === "Arsenal" &&
       leg.market === "ONE_X_TWO" &&
       leg.pick === "HOME";
+    const over = sheet?.state === "finished";
+    const postponed = sheet?.state === "postponed";
     return {
       ...leg,
       kickoffAt: sheet?.kickoffAt ?? null,
-      state: sheet ? "open" : "unknown",
+      state: !sheet
+        ? "unknown"
+        : postponed
+          ? "postponed"
+          : over
+            ? "started"
+            : "open",
+      result: postponed ? "void" : over ? (bet?.result ?? null) : null,
+      score: over ? sheet.score : null,
       odds: bet ? (moved ? 1.7 : bet.odds) : null,
       fair: bet
         ? bet.market === "ONE_X_TWO" && bet.pick === "HOME"
@@ -708,7 +718,27 @@ function ticketQuote(body) {
             Math.round((1 - product((l) => l.fair * l.odds)) * 10000) / 10000,
         }
       : null,
-    hero: { couponId: "cp-today-fav", product: "FAVOURITE", chance: 0.8 },
+    hero: body.day
+      ? {
+          couponId: "cp-yesterday-fav",
+          product: "FAVOURITE",
+          chance: 0.8,
+          state: "won",
+          odds: 1.24,
+          match: {
+            home: "Paris SG",
+            away: "Lens",
+            score: { home: 2, away: 0 },
+          },
+        }
+      : {
+          couponId: "cp-today-fav",
+          product: "FAVOURITE",
+          chance: 0.8,
+          state: "upcoming",
+          odds: 1.28,
+          match: { home: "Paris SG", away: "Lens", score: null },
+        },
     quotedAt: new Date().toISOString(),
   };
 }

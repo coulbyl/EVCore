@@ -1,4 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { BetStatus, type Market } from '@evcore/db';
+import { resolveSelectionFinalResult } from '@modules/betting-engine/channel-selection-settlement';
 import Decimal from 'decimal.js';
 import {
   PlayableOddsRepository,
@@ -29,7 +31,7 @@ export class TicketService {
   ) {}
 
   async quote(
-    input: { legs: readonly TicketLegDto[]; verify?: boolean },
+    input: { legs: readonly TicketLegDto[]; verify?: boolean; day?: string },
     now: Date = new Date(),
   ): Promise<TicketQuote> {
     const ids = input.legs.map((leg) => leg.fixtureId);
@@ -38,10 +40,10 @@ export class TicketService {
     if (new Set(ids).size !== ids.length) {
       throw new BadRequestException('One bet per match.');
     }
-    const [fixtures, quotes, today] = await Promise.all([
+    const [fixtures, quotes, hero] = await Promise.all([
       this.matches.findTicketFixtures(ids),
       this.playableOdds.findPlayableQuotes(input.legs, { operatorOnly: true }),
-      this.today.getToday(null, now),
+      this.today.heroOfDay(input.day ? new Date(input.day) : now, now),
     ]);
     const fixtureOf = new Map(fixtures.map((f) => [f.id, f]));
 
@@ -63,6 +65,7 @@ export class TicketService {
               : 'open',
         odds: quote?.operatorOdds ?? null,
         fair: quote?.operatorFairProbability ?? null,
+        ...settlementOf(leg, fixture),
       };
     });
 
@@ -78,16 +81,75 @@ export class TicketService {
       );
     }
 
-    const hero = today.coupons.find((c) => c.id === today.heroId);
+    const single = hero?.legs.length === 1 ? hero.legs[0] : undefined;
     return {
       legs,
       totals,
       hero: hero
-        ? { couponId: hero.id, product: hero.product, chance: hero.chance }
+        ? {
+            couponId: hero.id,
+            product: hero.product,
+            chance: hero.chance,
+            state: hero.state,
+            odds: hero.paidOdds ?? hero.odds,
+            match: single
+              ? {
+                  home: single.home.name,
+                  away: single.away.name,
+                  score: single.score,
+                }
+              : null,
+          }
         : null,
       quotedAt: now.toISOString(),
     };
   }
+}
+
+type TicketFixture = Awaited<
+  ReturnType<MatchesRepository['findTicketFixtures']>
+>[number];
+
+/**
+ * A bet of the ticket once its match is over (07 § 6), by the rules that
+ * settle the engine's selections (and the bets they mirror). A postponed or
+ * cancelled match is void, as a bookmaker voids the leg.
+ */
+export function settlementOf(
+  leg: TicketLegDto,
+  fixture: TicketFixture | undefined,
+): Pick<TicketQuoteLeg, 'result' | 'score'> {
+  if (!fixture) return { result: null, score: null };
+  if (fixture.status === 'POSTPONED' || fixture.status === 'CANCELLED') {
+    return { result: 'void', score: null };
+  }
+  if (
+    fixture.status !== 'FINISHED' ||
+    fixture.homeScore === null ||
+    fixture.awayScore === null
+  ) {
+    return { result: null, score: null };
+  }
+  const status = resolveSelectionFinalResult(
+    { market: leg.market as Market, pick: leg.pick },
+    {
+      homeScore: fixture.homeScore,
+      awayScore: fixture.awayScore,
+      homeHtScore: fixture.homeHtScore,
+      awayHtScore: fixture.awayHtScore,
+    },
+  );
+  return {
+    result:
+      status === BetStatus.WON
+        ? 'won'
+        : status === BetStatus.LOST
+          ? 'lost'
+          : status === BetStatus.VOID
+            ? 'void'
+            : null,
+    score: { home: fixture.homeScore, away: fixture.awayScore },
+  };
 }
 
 /** The three figures over the open legs priced now (07 § 4). */
