@@ -146,7 +146,13 @@ function itemOf(input: {
       row.homeScore !== null && row.awayScore !== null
         ? { home: row.homeScore, away: row.awayScore }
         : null,
-    competition: { code: row.competitionCode, name: row.competitionName },
+    competition: {
+      code: row.competitionCode,
+      name: row.competitionName,
+      big: (MATCHES_LEAGUE_PRIORITY as readonly string[]).includes(
+        row.competitionCode,
+      ),
+    },
     home: {
       name: row.homeName,
       shortName: row.homeShortName,

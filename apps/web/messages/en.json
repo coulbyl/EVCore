@@ -1088,7 +1088,9 @@
         "suspended": "No reading · this market is suspended on our side",
         "not_sure": "No reading · no chance sure enough"
       }
-    }
+    },
+    "played": "{count, plural, one {# match already played} other {# matches already played}}",
+    "bigOnly": "Big leagues"
   },
   "ticket": {
     "title": "My ticket",

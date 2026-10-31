@@ -5,6 +5,7 @@ import { ChanceFigure } from "@/components/scoreboard/ui/chance-figure";
 import { ResultMark } from "@/components/scoreboard/ui/result-mark";
 import type { MatchItem, MatchReading } from "@/domains/matches/types/matches";
 import { TeamMark } from "../../today/components/team-mark";
+import { formatOdds, type DisplayLocale } from "@/helpers/scoreboard-format";
 import { readingLabel } from "./matches-constants";
 import { searchKey } from "./search-key";
 
@@ -22,13 +23,15 @@ function searchOf(item: MatchItem): string {
 
 /**
  * One match (06 § 1, maquette Matchs): the two logos, the two teams and the
- * competition, one reading on the right, « Victoire Arsenal · 7 sur 10 ».
- * One figure: the chance.
+ * competition, one reading on the right, « Victoire Arsenal · 1,45 · 7 sur
+ * 10 »: the 1xBet odds the player will look for, then the chance.
  */
 export function MatchRow({
   item,
+  locale,
 }: {
   item: MatchItem & { reading: MatchReading };
+  locale: DisplayLocale;
 }) {
   return (
     <MatchLink item={item}>
@@ -38,8 +41,11 @@ export function MatchRow({
         side={
           <>
             <span className="min-w-0">{readingLabel(item)}</span>
-            {/* « 9 sur 10 » never breaks across two lines. */}
-            <span className="shrink-0 whitespace-nowrap">
+            {/* The odds, then the chance; neither breaks across two lines. */}
+            <span className="flex shrink-0 items-baseline gap-3 whitespace-nowrap">
+              <span className="score text-bet font-semibold">
+                {formatOdds(item.reading.odds, locale)}
+              </span>
               <ChanceFigure
                 probability={item.reading.chance}
                 showLeds={false}

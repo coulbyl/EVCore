@@ -148,6 +148,8 @@ _Branche `feat/refonte-ui`. Cocher au fur et à mesure ; chaque ligne est un com
 
 ## À relire plus tard (hors lots)
 
+- [ ] **Une lecture à 1 chance sur 3 ?** Relevé le 31/10 sur la copie de prod : Detroit City – Hartford Athletic avait pour lecture « Match nul », 1 sur 3. La règle de lecture (06 § 8 : le pari « parlant » à 10 points de la meilleure chance, les paris cotés ≥ MIN_LEG_ODDS chez 1xBet) a retenu un nul, sans doute parce que les autres choix étaient sous le plancher de cote. Regarder les candidats de ce match (`readingOf`, `matches-reading.ts`) et décider s'il faut un plancher de chance pour qu'un match ait une lecture, ou le laisser « sans lecture ».
+
 - [x] Quel pari montrer comme lecture d'un match : la meilleure chance (règle actuelle, lectures souvent banales comme « l'équipe marque au moins un but ») ou un marché parlant quand sa chance est proche ? À trancher avant C4 (06 § 8). _Tranché le 31/10 : un marché parlant (victoire, double chance, plus/moins 2,5) à 10 points ou moins de la meilleure chance, sinon la meilleure chance (06 § 8, chiffres mesurés)._
 
 - [ ] Le désaccord de l'IA est-il prédictif ? À mesurer quand VANTAGE v5 aura assez tourné (cohorte vers le 10/11) : sur les lectures réglées, taux de réussite quand l'IA a joué un pari incompatible avec le nôtre contre les autres. Le signe ≠ a été retiré le 30/10 en attendant (06 § 7).

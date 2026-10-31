@@ -19,8 +19,19 @@ export function queryOf(param: string | string[] | undefined): string {
   return (value ?? "").trim().slice(0, 40);
 }
 
-export function dayHref(day: MatchesDay): string {
-  return day === "today" ? "/matches" : `/matches?day=${day}`;
+/** « Grands championnats » kept on (`?big=1`), off when absent. */
+export function bigOf(param: string | string[] | undefined): boolean {
+  const value = Array.isArray(param) ? param[0] : param;
+  return value === "1";
+}
+
+/** A day of Matchs, keeping « Grands championnats » when it is on. */
+export function dayHref(day: MatchesDay, big = false): string {
+  const params = new URLSearchParams();
+  if (day !== "today") params.set("day", day);
+  if (big) params.set("big", "1");
+  const query = params.toString();
+  return query ? `/matches?${query}` : "/matches";
 }
 
 /** A bet named with its team: « Victoire Arsenal », « Plus de 2,5 buts ». */

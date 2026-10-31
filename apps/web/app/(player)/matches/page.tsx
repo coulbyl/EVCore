@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Search, X } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { PlayerBand } from "@/components/scoreboard/shell/player-band";
@@ -17,12 +18,14 @@ import {
   SettledMatchRow,
 } from "./components/match-row";
 import {
+  bigOf,
   dayHref,
   dayOf,
   hasReading,
   hourGroups,
   queryOf,
 } from "./components/matches-constants";
+import { PlayedFold } from "./components/played-fold";
 import { SearchBox } from "./components/search-box";
 import { WithoutReadingFold } from "./components/without-reading-fold";
 
@@ -48,7 +51,11 @@ const LIST_ID = "match-list";
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ day?: string | string[]; q?: string | string[] }>;
+  searchParams: Promise<{
+    day?: string | string[];
+    q?: string | string[];
+    big?: string | string[];
+  }>;
 }) {
   const [shell, t, pauseEnd, params] = await Promise.all([
     getTranslations("shell"),
@@ -61,18 +68,35 @@ export default async function Page({
   }
 
   const day = dayOf(params.day);
+  const big = bigOf(params.big);
   const query = queryOf(params.q);
-  const [{ items }, locale, timeZone] = await Promise.all([
+  const [{ items: dayItems }, locale, timeZone] = await Promise.all([
     getMatchesDay(day, query),
     getLocale(),
     getPlayerTimeZone(),
   ]);
   const display = displayLocaleOf(locale);
+  // « Grands championnats »: the day of the big competitions only.
+  const items = big
+    ? dayItems.filter((item) => item.competition.big)
+    : dayItems;
   // Tomorrow's matches the evening pass has not read yet keep their hour.
   const listed = items.filter(
     (item) => hasReading(item) || item.withoutReading === "tonight",
   );
   const folded = items.filter((item) => !listed.includes(item));
+  // Today, the matches already played fold at the top: the list starts at
+  // the next kick-off.
+  const played =
+    day === "today"
+      ? listed
+          .filter(hasReading)
+          .filter(
+            (item) => item.state === "finished" || item.state === "postponed",
+          )
+      : [];
+  const playedIds = new Set(played.map((item) => item.fixtureId));
+  const ahead = listed.filter((item) => !playedIds.has(item.fixtureId));
   const noResult = t.raw(`search.noResult.${day}`) as string;
 
   const settledLabels = (item: MatchItem) => ({
@@ -94,7 +118,7 @@ export default async function Page({
             items={MATCHES_DAYS.map((key) => ({
               key,
               label: t(`days.${key}`),
-              href: dayHref(key),
+              href: dayHref(key, big),
               active: key === day,
             }))}
           />
@@ -127,6 +151,21 @@ export default async function Page({
         >
           {noResult.replace("{query}", query)}
         </p>
+        <div className="pt-3">
+          <Link
+            href={dayHref(day, !big)}
+            aria-pressed={big}
+            className={
+              "inline-flex min-h-11 items-center rounded-full border px-4 text-body font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring " +
+              (big
+                ? "border-led-on bg-led-on text-band"
+                : "border-border text-muted-foreground hover:text-foreground")
+            }
+          >
+            {t("bigOnly")}
+          </Link>
+        </div>
+        <PlayedFold items={played} />
         {items.length === 0 && !query ? (
           <p className="py-6 text-body text-muted-foreground">
             {t(`empty.${day}`)}
@@ -143,7 +182,7 @@ export default async function Page({
             ))}
           </ul>
         ) : (
-          hourGroups(listed, display, timeZone).map((group) => (
+          hourGroups(ahead, display, timeZone).map((group) => (
             <section
               key={group.time}
               data-group
@@ -157,17 +196,12 @@ export default async function Page({
               </h2>
               <ul className="divide-y divide-border">
                 {group.items.map((item: MatchItem) =>
-                  // Played already (a night match seen in the afternoon):
-                  // its score and its ✓ ✗, as in « Hier », in its hour.
-                  hasReading(item) &&
-                  (item.state === "finished" || item.state === "postponed") ? (
-                    <SettledMatchRow
+                  hasReading(item) ? (
+                    <MatchRow
                       key={item.fixtureId}
                       item={item}
-                      labels={settledLabels(item)}
+                      locale={display}
                     />
-                  ) : hasReading(item) ? (
-                    <MatchRow key={item.fixtureId} item={item} />
                   ) : (
                     <MatchWithoutReadingRow
                       key={item.fixtureId}

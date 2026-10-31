@@ -27,7 +27,8 @@ export type MatchItem = {
   kickoffAt: string;
   state: MatchState;
   score: { home: number; away: number } | null;
-  competition: { code: string; name: string };
+  /** `big`: one of the big competitions, for « Grands championnats ». */
+  competition: { code: string; name: string; big: boolean };
   home: TodayTeam;
   away: TodayTeam;
   reading: MatchReading | null;
