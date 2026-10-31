@@ -59,5 +59,7 @@ import { SupportRepository } from '@modules/support/support.repository';
     // The unread replies of Moi (stateless reader, as above).
     SupportRepository,
   ],
+  // The admin's Moteur reads the same product summaries (console).
+  exports: [ResultsService],
 })
 export class ScreensModule {}

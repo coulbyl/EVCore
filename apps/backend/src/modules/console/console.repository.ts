@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CONSOLE_RULES as R } from '@config/console.constants';
+import { vantageCohortSql } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -234,5 +235,78 @@ export class ConsoleRepository {
     });
     if (!row || row.value !== false) return null;
     return { since: row.updatedAt, by: row.updatedBy?.fullName ?? null };
+  }
+
+  /**
+   * Per product, the legs of its coupons in a span of days: how many, their
+   * mean closing line value and 1xBet margin (unknown ones left out).
+   */
+  async productLegs(span: { from: Date | null; to: Date }): Promise<
+    {
+      product: string;
+      legs: number;
+      clv: number | null;
+      margin: number | null;
+    }[]
+  > {
+    const rows = await this.prisma.client.$queryRaw<
+      {
+        product: string;
+        legs: bigint;
+        clv: number | null;
+        margin: number | null;
+      }[]
+    >`
+      SELECT pd.product::text AS product,
+             count(l.id) AS legs,
+             avg(l."closingLineValue")::float AS clv,
+             avg(l."operatorMargin")::float AS margin
+      FROM public.product_day pd
+      JOIN public.coupon_proposal_leg l ON l."couponProposalId" = pd."couponProposalId"
+      WHERE pd."forDate" <= ${span.to}
+        AND (${span.from}::timestamp IS NULL OR pd."forDate" >= ${span.from})
+      GROUP BY pd.product
+    `;
+    return rows.map((row) => ({ ...row, legs: Number(row.legs) }));
+  }
+
+  /**
+   * The AI's settled opinions by configuration version, in a span: the
+   * same cohort as Résultats (one frozen opinion per match, vantageCohortSql),
+   * never every re-analysis.
+   */
+  async aiVersions(input: {
+    span: { from: Date | null; to: Date };
+    asOf: Date;
+  }): Promise<
+    {
+      version: string;
+      from: Date;
+      to: Date;
+      won: bigint;
+      lost: bigint;
+      announced: number | null;
+      margin: number | null;
+    }[]
+  > {
+    const since = input.span.from ?? new Date('2020-01-01T00:00:00.000Z');
+    const until = new Date(input.span.to.getTime() + DAY_MS - 1);
+    return this.prisma.client.$queryRaw`
+      WITH cohort AS (
+        ${vantageCohortSql({ asOf: input.asOf, since, until })}
+      )
+      SELECT coalesce(h."configVersion", '—') AS version,
+             min(f."scheduledAt") AS "from", max(f."scheduledAt") AS "to",
+             count(*) FILTER (WHERE h.result = 'WON') AS won,
+             count(*) FILTER (WHERE h.result = 'LOST') AS lost,
+             avg(h.probability)::float AS announced,
+             avg(h."marginPaid")::float AS margin
+      FROM cohort c
+      JOIN public.vantage_decision_history h ON h.id = c.id
+      JOIN public.fixture f ON f.id = h."fixtureId"
+      WHERE h.result IN ('WON', 'LOST')
+      GROUP BY 1
+      ORDER BY min(f."scheduledAt") DESC
+    `;
   }
 }

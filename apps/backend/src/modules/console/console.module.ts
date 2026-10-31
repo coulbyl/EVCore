@@ -5,6 +5,8 @@ import { AuthModule } from '@modules/auth/auth.module';
 import { CouponModule } from '@modules/coupon/coupon.module';
 import { EtlModule } from '@modules/etl/etl.module';
 import { MailModule } from '@modules/mail/mail.module';
+import { ScreensModule } from '@modules/screens/screens.module';
+import { ConsoleEngineService } from './console-engine.service';
 import { ConsolePassesService } from './console-passes.service';
 import {
   ConsoleWatchScheduler,
@@ -22,6 +24,7 @@ import { ConsoleService } from './console.service';
     CouponModule,
     EtlModule,
     MailModule,
+    ScreensModule,
     BullModule.registerQueue({ name: CONSOLE_WATCH.QUEUE }),
     // The passes' queues, read for their last runs (vantage-analysis is the
     // vantage-worker's, on the same Redis).
@@ -34,6 +37,7 @@ import { ConsoleService } from './console.service';
     ConsoleService,
     ConsoleRepository,
     ConsolePassesService,
+    ConsoleEngineService,
     ConsoleWatchService,
     ConsoleWatchScheduler,
     ConsoleWatchWorker,

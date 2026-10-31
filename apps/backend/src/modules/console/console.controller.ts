@@ -5,15 +5,19 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AdminGuard } from '@/common/guards/admin.guard';
 import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
 import type { PassView } from './console-passes';
+import { ResultsQueryDto } from '@modules/screens/dto/results-query.dto';
+import { RESULTS_DEFAULT_PERIOD } from '@config/results.constants';
+import { ConsoleEngineService } from './console-engine.service';
 import { ConsolePassesService } from './console-passes.service';
 import { ConsoleService } from './console.service';
-import type { ConsoleStatus } from './console.types';
+import type { ConsoleStatus, EngineProducts } from './console.types';
 
 /** The admin (docs/refonte-ui/12-admin.md). Admin accounts only. */
 @ApiTags('console')
@@ -23,6 +27,7 @@ export class ConsoleController {
   constructor(
     private readonly console: ConsoleService,
     private readonly passes: ConsolePassesService,
+    private readonly engine: ConsoleEngineService,
   ) {}
 
   @Get('status')
@@ -57,5 +62,16 @@ export class ConsoleController {
   @ApiOkResponse({ description: 'The pass after the relaunch.' })
   relaunch(@Param('key') key: string): Promise<PassView> {
     return this.passes.relaunch(key);
+  }
+
+  @Get('engine/products')
+  @ApiOperation({
+    summary: 'Moteur › Produits',
+    description:
+      "Résultats' products with the retired ones, announced against realised, and what a player never sees: legs, mean closing line value, mean 1xBet margin; the AI with its record by configuration version.",
+  })
+  @ApiOkResponse({ description: 'The products and the AI.' })
+  getEngineProducts(@Query() query: ResultsQueryDto): Promise<EngineProducts> {
+    return this.engine.getProducts(query.period ?? RESULTS_DEFAULT_PERIOD);
   }
 }

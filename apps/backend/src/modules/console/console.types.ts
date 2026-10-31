@@ -101,3 +101,46 @@ export type ConsoleSignals = {
   lastPlayerSeenAt: Date | null;
   unansweredMessages: number;
 };
+
+/** Moteur › Produits (12 § 2): Résultats' line, and what a player never sees. */
+export type EngineProduct = {
+  product: string;
+  retired: boolean;
+  launchedOn: string;
+  won: number;
+  lost: number;
+  refunded: number;
+  tooEarly: boolean;
+  /** Mean announced chance and realised rate, null while too early. */
+  announced: number | null;
+  realised: number | null;
+  /** Legs of the period's coupons; their mean closing line value and 1xBet margin. */
+  legs: number;
+  clv: number | null;
+  margin: number | null;
+};
+
+/** The AI's line, and its record by configuration version. */
+export type EngineAi = {
+  won: number;
+  lost: number;
+  announced: number | null;
+  realised: number | null;
+  margin: number | null;
+  versions: {
+    version: string;
+    from: string;
+    to: string;
+    won: number;
+    lost: number;
+    announced: number | null;
+    margin: number | null;
+  }[];
+};
+
+/** GET /console/engine/products?period=. */
+export type EngineProducts = {
+  period: string;
+  products: EngineProduct[];
+  ai: EngineAi;
+};
