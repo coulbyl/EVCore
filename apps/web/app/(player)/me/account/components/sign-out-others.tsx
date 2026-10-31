@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { playerFetch } from "@/lib/api/player-fetch";
-import { LINK } from "./account-ui";
+import { LINK } from "@/components/scoreboard/ui/form-looks";
 
 /** « Déconnecter les autres » (09 § 5): every device but this one. */
 export function SignOutOthers({

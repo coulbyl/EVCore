@@ -2,10 +2,9 @@ import { expect, test, type BrowserContext } from "@playwright/test";
 
 /**
  * Juste après l'inscription, le formulaire envoie vers /auth/verify avec une
- * session ouverte. Jusqu'au 2026-10-30, toutes les pages /auth renvoyaient un
- * visiteur connecté vers le tableau de bord : la vérification du compte
- * n'était jamais montrée. Seules les pages « déconnecté » (connexion,
- * inscription, mot de passe oublié) le font désormais.
+ * session ouverte (11 § 4) : l'e-mail seul, qu'on peut passer. Les pages
+ * « déconnecté » (connexion, inscription, mot de passe oublié) renvoient un
+ * visiteur connecté vers Aujourd'hui.
  */
 test.use({ storageState: { cookies: [], origins: [] } });
 
@@ -15,41 +14,63 @@ async function signIn(context: BrowserContext, session: string) {
   ]);
 }
 
-test("un compte tout juste inscrit voit la vérification", async ({
+test("un compte tout juste inscrit voit la vérification de l'e-mail", async ({
   page,
   context,
 }) => {
   await signIn(context, "unverified");
   await page.goto("/auth/verify");
-  await expect(page).toHaveURL(/\/auth\/verify$/);
   await expect(
-    page.getByRole("button", { name: /Vérification par email/ }),
+    page.getByRole("heading", { level: 1, name: "Vérifie ton e-mail" }),
   ).toBeVisible();
-  // Jamais imposée (11 § 4) : on peut passer.
-  await expect(page.getByRole("link", { name: "Plus tard" })).toBeVisible();
+  await expect(page.getByText(/On a envoyé un code à .+@/)).toBeVisible();
+  // Renvoyer attend 30 s ; jamais imposée (11 § 4) : on peut passer.
+  await expect(
+    page.getByRole("button", { name: /Renvoyer le code \(dans \d+ s\)/ }),
+  ).toBeDisabled();
+  await expect(page.getByRole("link", { name: "Plus tard" })).toHaveAttribute(
+    "href",
+    "/today",
+  );
+  // Plus d'application d'authentification dans ce parcours (11 § 6).
+  await expect(page.getByText(/authentification/)).toHaveCount(0);
 });
 
-test("un compte déjà vérifié repart vers le tableau de bord", async ({
+test("un mauvais code se dit sous le champ, le bon mène à Aujourd'hui", async ({
+  page,
+  context,
+}) => {
+  await signIn(context, "unverified");
+  await page.goto("/auth/verify");
+  await page.getByLabel("Le code reçu").fill("000000");
+  await page.getByRole("button", { name: "Vérifier" }).click();
+  await expect(page.getByText("Code incorrect ou expiré.")).toBeVisible();
+  await page.getByLabel("Le code reçu").fill("123456");
+  await page.getByRole("button", { name: "Vérifier" }).click();
+  await expect(page).toHaveURL(/\/today$/);
+});
+
+test("un compte déjà vérifié repart vers Aujourd'hui", async ({
   page,
   context,
 }) => {
   await signIn(context, "e2e");
   await page.goto("/auth/verify");
-  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page).toHaveURL(/\/today$/);
 });
 
-test("connecté, la page de connexion renvoie au tableau de bord", async ({
+test("connecté, la page de connexion renvoie à Aujourd'hui", async ({
   page,
   context,
 }) => {
   await signIn(context, "unverified");
   await page.goto("/auth/login");
-  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page).toHaveURL(/\/today$/);
 });
 
 test("sans session, la vérification renvoie à la connexion", async ({
   page,
 }) => {
   await page.goto("/auth/verify");
-  await expect(page).toHaveURL(/\/auth\/login$/);
+  await expect(page).toHaveURL(/\/auth\/login/);
 });

@@ -9,6 +9,16 @@
  */
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
+/** A non-2xx answer; `status` lets a form tell « taken » from « down ». */
+export class PlayerFetchError extends Error {
+  constructor(
+    path: string,
+    readonly status: number,
+  ) {
+    super(`${path}: ${status}`);
+  }
+}
+
 export async function playerFetch<T>(
   path: string,
   init: {
@@ -25,7 +35,7 @@ export async function playerFetch<T>(
     headers: init.body ? { "Content-Type": "application/json" } : undefined,
     body: init.body ? JSON.stringify(init.body) : undefined,
   });
-  if (!response.ok) throw new Error(`${path}: ${response.status}`);
+  if (!response.ok) throw new PlayerFetchError(path, response.status);
   const text = await response.text();
   return text ? (JSON.parse(text) as T) : undefined;
 }

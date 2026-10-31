@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { playerFetch } from "@/lib/api/player-fetch";
 import { clearScreensCache } from "@/components/scoreboard/states/screens-cache";
-import { FIELD, PRIMARY } from "./account-ui";
+import { FIELD, PRIMARY } from "@/components/scoreboard/ui/form-looks";
 
 /**
  * « Mot de passe » (09 § 5): the current one, then the new one. Every

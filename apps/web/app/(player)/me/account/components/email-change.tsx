@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { playerFetch } from "@/lib/api/player-fetch";
-import { FIELD, LINK, PRIMARY, QUIET } from "./account-ui";
+import {
+  FIELD,
+  LINK,
+  PRIMARY,
+  QUIET,
+} from "@/components/scoreboard/ui/form-looks";
 
 /**
  * The e-mail (09 § 5): changed with the password, then a code sent to the

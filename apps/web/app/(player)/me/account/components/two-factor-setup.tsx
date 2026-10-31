@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { playerFetch } from "@/lib/api/player-fetch";
-import { FIELD, PRIMARY } from "./account-ui";
+import { FIELD, PRIMARY } from "@/components/scoreboard/ui/form-looks";
 
 type Setup = { qrDataUrl: string; secret: string };
 

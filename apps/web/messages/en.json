@@ -1661,5 +1661,79 @@
       "notice": "Legal notice",
       "responsible": "Responsible gambling"
     }
+  },
+  "playerAuth": {
+    "back": "Back",
+    "signIn": "Sign in",
+    "fields": {
+      "firstName": "First name",
+      "email": "Email",
+      "password": "Password"
+    },
+    "register": {
+      "title": "Create my account",
+      "passwordHint": "At least 8 characters",
+      "age": "I am 18 or older (21 in Cameroon), or of legal age in my country",
+      "termsBefore": "I accept the",
+      "termsLink": "terms of use",
+      "submitting": "Creating…",
+      "haveAccount": "Already have an account?"
+    },
+    "login": {
+      "show": "show",
+      "hide": "hide",
+      "submitting": "Signing in…",
+      "forgot": "Forgot password?",
+      "register": "Create an account",
+      "resetDone": "Password changed. Sign in with the new one.",
+      "code": "The code from your app",
+      "codeHint": "Six digits",
+      "codeSubmit": "Confirm",
+      "codeBack": "Back"
+    },
+    "verify": {
+      "title": "Check your email",
+      "intro": "We sent a code to {email}. Type it, or tap the link in the email.",
+      "code": "The code received",
+      "submit": "Verify",
+      "later": "Later",
+      "resend": "Send the code again",
+      "resendIn": "(in {seconds} s)",
+      "changeEmail": "Change email",
+      "sendFailed": "The code did not go out. Try again."
+    },
+    "forgot": {
+      "title": "Forgot password",
+      "intro": "We'll send you a link to choose a new one.",
+      "submit": "Get the link",
+      "sent": "If an account exists for {email}, we just sent a link there.",
+      "sentNote": "It is valid for 15 minutes. Check your spam too.",
+      "resend": "Send the link again",
+      "withApp": "With my authenticator app",
+      "noAccess": "No access to your email or the app?",
+      "writeTeam": "Write to the team",
+      "appIntro": "Your email, the code from your authenticator app, then the new password.",
+      "appCode": "The code from your app"
+    },
+    "reset": {
+      "title": "New password",
+      "password": "New password",
+      "submit": "Change the password",
+      "expired": "This link no longer works: it was already used or is over 15 minutes old.",
+      "askAgain": "Ask for a new link"
+    },
+    "errors": {
+      "firstName": "Enter your first name.",
+      "email": "This email is not valid.",
+      "password": "At least 8 characters.",
+      "tick": "Tick this box to create your account.",
+      "taken": "This email already has an account",
+      "registerFailed": "The account could not be created. Try again.",
+      "wrong": "Wrong email or password",
+      "locked": "Too many tries. Try again in fifteen minutes.",
+      "failed": "That didn't work. Try again.",
+      "code": "Wrong or expired code.",
+      "appWrong": "Wrong email or code."
+    }
   }
 }

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Mail, ShieldCheck } from "lucide-react";
-import { EmailVerifyFlow } from "@/app/(public)/auth/verify/components/email-verify-flow";
-import { TotpSetupFlow } from "@/app/(public)/auth/verify/components/totp-setup-flow";
+import { EmailVerifyFlow } from "./email-verify-flow";
+import { TotpSetupFlow } from "./totp-setup-flow";
 
 type Choice = "email" | "totp" | null;
 

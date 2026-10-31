@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { playerFetch } from "@/lib/api/player-fetch";
-import { FIELD, LINK, PRIMARY, QUIET } from "./account-ui";
+import {
+  FIELD,
+  LINK,
+  PRIMARY,
+  QUIET,
+} from "@/components/scoreboard/ui/form-looks";
 
 /**
  * A profile value with « modifier » (09 § 5): the first name, the phone.

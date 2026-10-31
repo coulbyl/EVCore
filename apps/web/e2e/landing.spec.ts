@@ -86,7 +86,10 @@ test.describe("Landing", () => {
       .getAttribute("content");
     expect(src).toMatch(/\/opengraph-image/);
     const url = new URL(src ?? "");
-    const image = await request.get(`${url.pathname}${url.search}`);
+    // Its first build in the dev server can take a while under load.
+    const image = await request.get(`${url.pathname}${url.search}`, {
+      timeout: 60_000,
+    });
     expect(image.status()).toBe(200);
     expect(image.headers()["content-type"]).toBe("image/png");
   });

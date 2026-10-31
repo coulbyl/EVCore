@@ -1,4 +1,4 @@
-/** Shared looks of Compte's small forms (no JSX: imported by clients). */
+/** The looks of the small forms (Compte, sign-in, sign-up); no JSX: imported by clients. */
 export const FIELD =
   "min-h-12 rounded-[0.625rem] border border-border bg-card px-3 text-body text-foreground focus:outline-2 focus:outline-ring";
 export const PRIMARY =

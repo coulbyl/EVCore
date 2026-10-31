@@ -6,7 +6,7 @@ import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session"
 
 /**
  * A signed-in visitor has nothing to do on the signed-out pages (login,
- * register, password recovery): to the dashboard. The session is read only
+ * register, password recovery): to Aujourd'hui. The session is read only
  * when a cookie is there, and a stale cookie simply shows the page (the proxy
  * cannot tell, it makes no network call).
  *
@@ -20,7 +20,7 @@ export default async function SignedOutAuthLayout({
 }) {
   const hasCookie = (await cookies()).has(SESSION_COOKIE);
   if (hasCookie && (await getCurrentSession())) {
-    redirect("/dashboard");
+    redirect("/today");
   }
   return children;
 }

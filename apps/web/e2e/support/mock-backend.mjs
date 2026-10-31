@@ -2421,6 +2421,50 @@ const TRACK_RECORD_SUMMARY = {
 let authMeReads = 0;
 let verifiedTickets = 0;
 
+const AUTH_BODY_ROUTES = new Set([
+  "/auth/register",
+  "/auth/login",
+  "/auth/login/totp",
+  "/auth/verify-email",
+  "/auth/send-verification",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/reset-password/totp",
+]);
+
+function authAnswer(path, body) {
+  const ok = [200, { status: "ok" }];
+  switch (path) {
+    case "/auth/register":
+      return String(body.email ?? "").startsWith("deja@")
+        ? [409, { message: "Cet e-mail a déjà un compte" }]
+        : [201, SESSION, true];
+    case "/auth/login":
+      if (body.password === "mauvais")
+        return [401, { message: "E-mail ou mot de passe incorrect" }];
+      if (String(body.identifier ?? "").startsWith("app@"))
+        return [200, { totpRequired: true, challenge: "defi" }];
+      return [200, SESSION, true];
+    case "/auth/login/totp":
+    case "/auth/reset-password/totp":
+      return (body.code ?? body.totpCode) === "123456"
+        ? path === "/auth/login/totp"
+          ? [200, SESSION, true]
+          : ok
+        : [401, { message: "Code incorrect" }];
+    case "/auth/verify-email":
+      return body.code === "123456"
+        ? ok
+        : [400, { message: "Code invalide ou expiré" }];
+    case "/auth/reset-password":
+      return body.token === "bon"
+        ? ok
+        : [400, { message: "Lien invalide ou expiré" }];
+    default:
+      return ok;
+  }
+}
+
 function route(method, url, cookie = "") {
   const path = url.split("?")[0];
 
@@ -2837,6 +2881,33 @@ const server = http.createServer((req, res) => {
     req.on("end", () => {
       res.statusCode = 200;
       res.end(JSON.stringify(ticketQuote(JSON.parse(raw || "{}"))));
+    });
+    return;
+  }
+
+  // Les écrans du compte (11 § 2–5) : la réponse dépend du corps. Un
+  // e-mail « deja@ » est déjà inscrit, le mot de passe « mauvais » est faux,
+  // « app@ » a une application d'authentification, le code 123456 et le
+  // lien « bon » passent.
+  const authPost = AUTH_BODY_ROUTES.has(req.url ?? "") && req.method === "POST";
+  if (authPost) {
+    let raw = "";
+    req.on("data", (chunk) => (raw += chunk));
+    req.on("end", () => {
+      const [status, body, signIn] = authAnswer(
+        req.url ?? "",
+        JSON.parse(raw || "{}"),
+      );
+      // Lax : le web (3000) et ce serveur sont le même site, localhost ; un
+      // cookie SameSite=None sans Secure serait refusé par le navigateur.
+      if (signIn) {
+        res.setHeader(
+          "Set-Cookie",
+          "evcore_session=e2e-session; Path=/; SameSite=Lax; HttpOnly",
+        );
+      }
+      res.statusCode = status;
+      res.end(JSON.stringify(body));
     });
     return;
   }

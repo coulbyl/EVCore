@@ -1661,5 +1661,79 @@
       "notice": "Mentions",
       "responsible": "Jeu responsable"
     }
+  },
+  "playerAuth": {
+    "back": "Retour",
+    "signIn": "Se connecter",
+    "fields": {
+      "firstName": "Prénom",
+      "email": "E-mail",
+      "password": "Mot de passe"
+    },
+    "register": {
+      "title": "Créer mon compte",
+      "passwordHint": "8 caractères au moins",
+      "age": "J'ai 18 ans ou plus (21 au Cameroun), ou l'âge légal de mon pays",
+      "termsBefore": "J'accepte les",
+      "termsLink": "conditions d'utilisation",
+      "submitting": "Création…",
+      "haveAccount": "Déjà un compte ?"
+    },
+    "login": {
+      "show": "afficher",
+      "hide": "masquer",
+      "submitting": "Connexion…",
+      "forgot": "Mot de passe oublié ?",
+      "register": "Créer un compte",
+      "resetDone": "Mot de passe changé. Connecte-toi avec le nouveau.",
+      "code": "Le code de ton application",
+      "codeHint": "Six chiffres",
+      "codeSubmit": "Valider",
+      "codeBack": "Retour"
+    },
+    "verify": {
+      "title": "Vérifie ton e-mail",
+      "intro": "On a envoyé un code à {email}. Tape-le, ou touche le lien dans l'e-mail.",
+      "code": "Le code reçu",
+      "submit": "Vérifier",
+      "later": "Plus tard",
+      "resend": "Renvoyer le code",
+      "resendIn": "(dans {seconds} s)",
+      "changeEmail": "Changer d'e-mail",
+      "sendFailed": "Le code n'est pas parti. Réessaie."
+    },
+    "forgot": {
+      "title": "Mot de passe oublié",
+      "intro": "On t'envoie un lien pour en choisir un nouveau.",
+      "submit": "Recevoir le lien",
+      "sent": "Si un compte existe pour {email}, on vient d'y envoyer un lien.",
+      "sentNote": "Il est valable 15 minutes. Regarde aussi dans les spams.",
+      "resend": "Renvoyer le lien",
+      "withApp": "Avec mon application d'authentification",
+      "noAccess": "Plus accès à ton e-mail ni à l'application ?",
+      "writeTeam": "Écrire à l'équipe",
+      "appIntro": "Ton e-mail, le code de ton application d'authentification, puis le nouveau mot de passe.",
+      "appCode": "Le code de ton application"
+    },
+    "reset": {
+      "title": "Nouveau mot de passe",
+      "password": "Nouveau mot de passe",
+      "submit": "Changer le mot de passe",
+      "expired": "Ce lien ne marche plus : il a déjà servi ou a dépassé 15 minutes.",
+      "askAgain": "Demander un nouveau lien"
+    },
+    "errors": {
+      "firstName": "Indique ton prénom.",
+      "email": "Cet e-mail n'est pas valide.",
+      "password": "8 caractères au moins.",
+      "tick": "Coche cette case pour créer ton compte.",
+      "taken": "Cet e-mail a déjà un compte",
+      "registerFailed": "Le compte n'a pas pu être créé. Réessaie.",
+      "wrong": "E-mail ou mot de passe incorrect",
+      "locked": "Trop d'essais. Réessaie dans un quart d'heure.",
+      "failed": "Ça n'a pas marché. Réessaie.",
+      "code": "Code incorrect ou expiré.",
+      "appWrong": "E-mail ou code incorrect."
+    }
   }
 }
