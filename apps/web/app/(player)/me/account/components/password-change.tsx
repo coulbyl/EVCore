@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { playerFetch } from "@/lib/api/player-fetch";
+import { clearScreensCache } from "@/components/scoreboard/states/screens-cache";
 import { FIELD, PRIMARY } from "./account-ui";
 
 /**
@@ -31,6 +32,7 @@ export function PasswordChange({
         method: "POST",
         body: { currentPassword: current, newPassword: next },
       });
+      await clearScreensCache();
       window.location.assign("/auth/login");
     } catch {
       setState("failed");

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { playerFetch } from "@/lib/api/player-fetch";
+import { clearScreensCache } from "@/components/scoreboard/states/screens-cache";
 
 /**
  * « Se déconnecter », light, at the bottom of Moi (09 § 1). The server
@@ -19,6 +20,7 @@ export function SignOutButton({
     setState("busy");
     try {
       await playerFetch("/auth/logout", { method: "POST" });
+      await clearScreensCache();
       window.location.assign("/auth/login");
     } catch {
       setState("failed");

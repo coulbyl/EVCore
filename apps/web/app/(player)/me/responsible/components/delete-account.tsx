@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { playerFetch } from "@/lib/api/player-fetch";
+import { clearScreensCache } from "@/components/scoreboard/states/screens-cache";
 
 /**
  * « Supprimer mon compte » (09 § 4): here rather than in Compte, an act of
@@ -26,6 +27,7 @@ export function DeleteAccount({
         method: "POST",
         body: { password },
       });
+      await clearScreensCache();
       window.location.assign("/");
     } catch {
       setState("failed");
