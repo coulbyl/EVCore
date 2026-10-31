@@ -410,27 +410,15 @@ describe('setAsideReasonOf (06 § 4–5)', () => {
 });
 
 describe('speechOf', () => {
-  it('keeps every clean sentence, however long', () => {
+  it('keeps the whole text, figures and all (31/10)', () => {
     const text =
-      'Barcelona crée en moyenne plus de 3 buts attendus alors qu’Alavés n’en concède que 1,2; leurs confrontations récentes affichent souvent plus de 2,5 buts. Ces indicateurs suggèrent que le match dépassera les 2,5 buts.';
+      'Le Bayer Leverkusen affiche une forme à domicile exceptionnelle (62 % de réussite, 100 % de victoires à domicile) et un xG supérieur à celui de Stuttgart. Ces indicateurs laissent penser que les Leverkusen sont très susceptibles de l’emporter.';
     expect(speechOf(text)).toBe(text);
+    expect(speechOf(`  ${text}  `)).toBe(text);
   });
 
-  it('leaves out the sentences with jargon', () => {
-    expect(
-      speechOf(
-        'Les deux équipes affichent des xG combinés supérieurs à 3,4. Lens reste sur cinq matchs sans défaite.',
-      ),
-    ).toBe('Lens reste sur cinq matchs sans défaite.');
-    expect(speechOf('Nos données internes indiquent une tendance.')).toBeNull();
-    expect(speechOf('Probabilité de 47 % que les deux marquent.')).toBeNull();
+  it('says nothing for an empty text', () => {
     expect(speechOf(null)).toBeNull();
-  });
-
-  it('stops at a whole sentence past the length cap', () => {
-    const sentence = `${'Une phrase propre et assez longue '.repeat(3)}.`;
-    const speech = speechOf(sentence.repeat(10).replace(/\.(?=U)/g, '. '));
-    expect(speech?.length).toBeLessThanOrEqual(400);
-    expect(speech?.endsWith('.')).toBe(true);
+    expect(speechOf('   ')).toBeNull();
   });
 });

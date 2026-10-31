@@ -1,7 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import {
-  AI_SPEECH_JARGON,
-  AI_SPEECH_MAX_LENGTH,
   READING_CHANNELS,
   SHEET_FORM_MATCHES,
   SHEET_HEAD_TO_HEAD_MEETINGS,
@@ -329,20 +327,12 @@ function aiOpinionOf(
 }
 
 /**
- * The AI's text as the player reads it: its sentences free of jargon, in
- * order, up to AI_SPEECH_MAX_LENGTH; nothing when none is left (06 § 2).
+ * The AI's text as the player reads it: whole, as it wrote it (decided
+ * 31/10). Its figures are its reasons; the words a player should not read
+ * are fixed in VANTAGE's prompt, never cut here. Nothing when it is empty.
  */
 export function speechOf(text: string | null): string | null {
-  if (!text) return null;
-  let speech = '';
-  for (const raw of text.trim().split(/(?<=[.!?])\s+/)) {
-    const sentence = raw.trim();
-    if (sentence === '') continue;
-    if (AI_SPEECH_JARGON.some((pattern) => pattern.test(sentence))) continue;
-    const next = speech === '' ? sentence : `${speech} ${sentence}`;
-    if (next.length > AI_SPEECH_MAX_LENGTH) break;
-    speech = next;
-  }
+  const speech = text?.trim() ?? '';
   return speech === '' ? null : speech;
 }
 

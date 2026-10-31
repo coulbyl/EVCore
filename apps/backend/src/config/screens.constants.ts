@@ -133,20 +133,6 @@ export const SHEET_HEAD_TO_HEAD_MEETINGS = 6;
 export const SHEET_HEAD_TO_HEAD_YEARS = 5;
 export const SHEET_HEAD_TO_HEAD_MIN = 3;
 
-// The AI's speech, opened from its pick: its sentences without jargon, a
-// sentence that is not clean is left out (06 § 2). VANTAGE's own cleaner
-// fixes the codes; these are the words a player should never read.
-export const AI_SPEECH_MAX_LENGTH = 400;
-export const AI_SPEECH_JARGON: readonly RegExp[] = [
-  /\bxG\b/i,
-  /données internes/i,
-  /\bseuil\b/i,
-  /probabilit/i,
-  /calibr/i,
-  /\bcanal\b/i,
-  /\d\s?%/,
-];
-
 // The public screens (landing hero, share image, /resultats): the same for
 // every visitor, cached by the edge for five minutes and by the browser for
 // one (16 § 3, « public, s-maxage=300 »).
