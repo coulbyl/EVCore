@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { clsx } from "clsx";
@@ -44,6 +44,10 @@ function Choices({
   );
 }
 
+function noSubscription(): () => void {
+  return () => {};
+}
+
 /** « Thème » (09 § 5): applied at once, kept on the account. */
 export function ThemeChoice({
   label,
@@ -53,11 +57,19 @@ export function ThemeChoice({
   options: readonly { value: string; label: string }[];
 }) {
   const { theme, setTheme } = useTheme();
+  // The theme lives in the browser (next-themes): the server cannot know
+  // it, so nothing is lit until hydrated, then the real one is. Lighting
+  // « Système » on the server mismatched a browser set to « Clair ».
+  const hydrated = useSyncExternalStore(
+    noSubscription,
+    () => true,
+    () => false,
+  );
   return (
     <Choices
       label={label}
       options={options}
-      value={theme ?? "system"}
+      value={hydrated ? (theme ?? "system") : ""}
       onChoose={(value) => {
         setTheme(value);
         void playerFetch("/auth/me", {
