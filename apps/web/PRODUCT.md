@@ -6,7 +6,7 @@
 
 web
 
-Application Next.js installable en PWA, utilisée d'abord sur téléphone. Les écrans d'administration (audit, moteur, ML, rapports, utilisateurs) sont utilisés sur ordinateur par l'équipe.
+Application Next.js installable en PWA, utilisée d'abord sur téléphone, dans le style « tableau d'affichage » de la refonte (`docs/refonte-ui/`). Les écrans d'administration (`/dashboard` : audit, moteur, ML, rapports, utilisateurs, support) sont utilisés sur ordinateur par l'équipe, en attendant leur propre refonte (`docs/refonte-ui/12-admin.md`).
 
 ## Users
 
@@ -27,7 +27,7 @@ Personas de travail (plan marketing, `docs/audits/2026-10-23/03-PLAN-MARKETING.m
 
 ## Product Purpose
 
-EVCore analyse chaque match de football et propose, chaque jour, quelques sélections et coupons avec leur probabilité, leur raisonnement et leur historique réglé. **Il ne place aucun pari** : pas de dépôt, pas de fonds, pas de lien de mise. Le suivi de mise et les coupons joués sont déclaratifs.
+EVCore analyse chaque match de football et propose, chaque jour, quelques sélections et coupons avec leur probabilité, leur raisonnement et leur historique réglé. **Il ne place aucun pari** : pas de dépôt, pas de fonds, pas de lien de mise. Le joueur « suit » un coupon (sans mise) et peut vérifier son propre ticket ; ce ticket vit sur son téléphone, le serveur ne fait que le coter et compter anonymement qu'il a été vérifié. Le suivi de mise et les coupons déclarés sont partis le 2026-10-31.
 
 **Promesse (confirmée le 2026-10-24) : méthode et transparence.** « On te montre la vraie probabilité, notre raisonnement et tous nos résultats, pertes comprises. » Aucun gain n'est promis.
 
@@ -38,8 +38,8 @@ EVCore analyse chaque match de football et propose, chaque jour, quelques sélec
 Ce qu'un pronostiqueur ne peut pas copier sans se trahir :
 
 - **La calibration mesurée et datée** : ce qui est annoncé à 73 % arrive à 73 %, publié avec sa période et son effectif.
-- **Tout est réglé en public, pertes comprises**, y compris les coupons perdus et le solde à mise fixe.
-- **Les refus motivés** : chaque match écarté porte sa raison (vue « Écarté », canal AVOID). Ne pas parier fait partie de l'analyse.
+- **Tout est réglé en public, pertes comprises** : `/resultats` montre sans compte les mêmes lignes que l'onglet Résultats, jour par jour, avec les francs à mise fixe.
+- **Les refus motivés** : un produit qui ne joue pas dit pourquoi, et un match laissé de côté porte sa raison dans sa fiche. Ne pas parier fait partie de l'analyse.
 - **Gratuit, sans prise de mise, sans commission sur les paris.**
 
 Face aux pronostiqueurs Telegram (« 100 % », « sûr », captures de tickets gagnants) et aux applis de bookmakers (bonus, combinés géants), EVCore est le seul qui dit quand ne pas jouer et qui montre ses pertes.
@@ -47,8 +47,8 @@ Face aux pronostiqueurs Telegram (« 100 % », « sûr », captures de tickets g
 ## Operating Context
 
 - **Rythme quotidien** : les coupons et sélections sont publiés la veille au soir et ajustés le jour même ; les résultats sont réglés après les matchs. Le volume varie fortement : 20 à 30 matchs analysés en semaine, 120 à 160 le samedi et le dimanche.
-- **Produits du jour** : une sélection simple à cote 1,20–1,35, un combiné à deux sélections, un coupon long à cote 2,5–5, un combiné « Analyse IA » ; un coupon à cote 2 et des chasseurs spécialisés (BTTS, nul, plus de 3,5 buts, score exact) sont en préparation, en ombre avant toute publication.
-- **Écrans principaux du joueur** : Accueil, Coupons, Décisions (« Notre sélection » et « Écarté »), Avis IA, Matchs, Mes coupons, Suivi de mise, Mesures historiques, Formation (15 contenus), Glossaire, Aide, Support (messagerie avec l'équipe), Notifications.
+- **Produits du jour** : le Favori du jour (un match, cote 1,20–1,35), le Combiné du jour, le Coupon cote 2 et les chasseurs (Les deux marquent, Nul, Score exact, Corners), montrés tout de suite et mesurés en direct ; l'Avis IA est une ligne à part de Résultats. Le coupon long et le coupon unique IA sont retirés.
+- **Écrans du joueur (refonte, 2026-10-31)** : quatre onglets — Aujourd'hui (le coupon héros, les autres coupons, Hier), Matchs (une lecture par match, la fiche de match, Hier · Aujourd'hui · Demain), Résultats (une ligne par produit et l'Avis IA, leur détail, Hier, Ta semaine), Moi (coupons suivis, Messages, Aide, Jeu responsable, Compte) — plus Mon ticket et la cloche. Côté visiteur : la landing, `/resultats`, l'inscription, la connexion et les pages légales.
 - **Conditions d'usage** : téléphone Android d'entrée et de milieu de gamme, réseau mobile 3G/4G variable, écran consulté en extérieur, souvent pressé (« avant quelle heure dois-je jouer ? »).
 - **Où le joueur découvre EVCore** : Facebook, TikTok, groupes et chaînes WhatsApp et Telegram, bouche-à-oreille.
 
@@ -79,7 +79,6 @@ Face aux pronostiqueurs Telegram (« 100 % », « sûr », captures de tickets g
 
 **Décisions ouvertes** (à ne pas trancher dans le design sans accord) :
 
-- Nom de la sélection simple du jour : « Pari sûr du jour » est à retirer ; « Favori du jour » proposé, pas confirmé.
 - Nom du bookmaker à l'écran : « 1xBet » affiché depuis le 2026-10-18 ; « cote jouable estimée » sans nom proposé pour raisons réglementaires.
 - Modèle économique : aucun dans le code. Rien ne doit suggérer un tarif, un abonnement ou une offre « Premium » tant que l'activation et la rétention ne sont pas mesurées.
 
@@ -97,9 +96,9 @@ Chiffres réels, utilisables avec leur période et leur effectif :
 - Bande de cotes 1,20–1,65, du 11 au 16/10/2026, 1 499 sélections réglées : 73,6 % réalisées pour 73,0 % annoncées (`docs/audits/2026-10-17/PREMIERE-LECTURE.md`).
 - Avis IA du 13 au 24/10/2026, 300 sélections réglées : 64,7 % réalisées pour 63,9 % annoncées ; écart au marché sans marge +1,0 point ± 2,7 (pas mieux que la cote), à mise fixe −2,3 % ; l'IA jouait 80 % des matchs lus (`docs/audits/2026-10-27/AVIS-IA.md`).
 - Coupon cote 2 sur 120 jours : composé par cellule, 55 % de jours gagnés pour 55 % annoncés ; composé par la probabilité du moteur, 50 % pour 72 % (`docs/audits/2026-10-24/COUPON-COTE-2-JOURS.md`).
-- Contenus de formation : 15 articles et vidéos (`apps/web/app/dashboard/formation`).
+- Fiches d'aide : neuf fiches courtes en français et en anglais (`apps/web/domains/help/help-sheets.ts`), qui remplacent les 15 contenus de Formation et le Glossaire (retirés le 2026-10-31).
 
-**Absences à ne jamais fabriquer** : aucun témoignage, aucun utilisateur payant, aucun tarif, aucune presse, aucun partenariat, aucun rendement positif. Le chiffre « 300 000+ prédictions » de la landing est vraisemblablement un comptage gonflé et doit être recompté avant réutilisation.
+**Absences à ne jamais fabriquer** : aucun témoignage, aucun utilisateur payant, aucun tarif, aucune presse, aucun partenariat, aucun rendement positif. La landing de la refonte ne montre plus de volumes d'ensemble : seulement le héros du jour et des comptes datés (« 11 jours gagnés sur 14, depuis le 13/10 »).
 
 ## Product Principles
 
@@ -114,4 +113,4 @@ Chiffres réels, utilisables avec leur période et leur effectif :
 - Téléphones d'entrée de gamme, réseau lent : poids de page et nombre de requêtes maîtrisés, lisibilité en plein soleil (contrastes WCAG AA minimum, 4,5:1 pour le texte).
 - Lecture rapide sur petit écran : texte lu à 12 px minimum, cibles tactiles de 44 px.
 - Littératie numérique et statistique variable : aucune notion (cote, probabilité, marge, calibration) affichée sans explication accessible au doigt, pas seulement au survol.
-- Jeu responsable : vérification d'âge à l'inscription, mention de risque, ressources d'aide ; à terme, limites et auto-exclusion.
+- Jeu responsable : âge et conditions cochés à l'inscription, ligne 18+ en pied de chaque écran, pause de 1 à 30 jours (paris fermés, résultats ouverts), suppression du compte, ressources d'aide ; à terme, limites.
