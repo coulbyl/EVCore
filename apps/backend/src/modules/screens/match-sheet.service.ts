@@ -312,15 +312,20 @@ function aiOpinionOf(
 ): SheetAiOpinion {
   const key = { market: ai.market ?? '', pick: ai.pick ?? '' };
   const quote = quoteOf(key);
+  const sameAsReading =
+    reading !== null &&
+    reading.market === key.market &&
+    reading.pick === key.pick;
   return {
     ...key,
     odds: quote?.operatorOdds ?? null,
-    chance: quote?.operatorFairProbability ?? null,
+    // One bet, one chance on the sheet: the AI's pick when it is ours reads
+    // the reading's chance, never a second figure next to it.
+    chance: sameAsReading
+      ? reading.chance
+      : (quote?.operatorFairProbability ?? null),
     result: resultOf(ai.result),
-    sameAsReading:
-      reading !== null &&
-      reading.market === key.market &&
-      reading.pick === key.pick,
+    sameAsReading,
     speech: speechOf(ai.text),
   };
 }

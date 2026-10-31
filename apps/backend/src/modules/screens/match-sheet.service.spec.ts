@@ -210,7 +210,7 @@ describe('MatchSheetService', () => {
     ]);
   });
 
-  it('says when the AI played our pick, and nothing when it did not play', async () => {
+  it('says when the AI played our pick, with our chance, and nothing when it did not play', async () => {
     const same = await harness({
       ai: [
         {
@@ -222,7 +222,7 @@ describe('MatchSheetService', () => {
         },
       ],
     }).service.getSheet(FX, NOW);
-    expect(same.ai?.sameAsReading).toBe(true);
+    expect(same.ai).toMatchObject({ sameAsReading: true, chance: 0.7 });
     const silent = await harness({
       ai: [
         {
