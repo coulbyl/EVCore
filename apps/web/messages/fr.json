@@ -1149,7 +1149,15 @@
     "keepBet": "1xBet garde {share} sur ce pari",
     "keepCoupon": "1xBet garde {share} sur ce coupon",
     "band": "{min} à {max}",
-    "open": "Ouvrir {product}"
+    "open": "Ouvrir {product}",
+    "welcome": "Chaque jour, un pari qu'on suit depuis le {date} : gagné {won} jours sur {played}. On ne prend jamais ta mise.",
+    "welcomeShort": "Chaque jour, un pari qu'on suit et qu'on compte. On ne prend jamais ta mise.",
+    "welcomeClose": "Fermer le message d'accueil",
+    "yesterdayEmpty": "rien à montrer encore",
+    "firstFollowNote": "Tu recevras son résultat demain matin",
+    "pushAsk": "Recevoir le résultat demain matin ?",
+    "pushYes": "Oui, à 8 h",
+    "pushLater": "Plus tard"
   },
   "matches": {
     "days": {

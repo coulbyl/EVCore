@@ -12,7 +12,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 export async function playerFetch<T>(
   path: string,
   init: {
-    method: "POST" | "PATCH" | "DELETE";
+    method: "GET" | "POST" | "PATCH" | "DELETE";
     body?: object;
     keepalive?: boolean;
   },

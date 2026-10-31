@@ -172,6 +172,12 @@ export async function HeroCard({
               followed: t("followed"),
               error: t("followError"),
             }}
+            firstFollow={{
+              note: t("firstFollowNote"),
+              ask: t("pushAsk"),
+              yes: t("pushYes"),
+              later: t("pushLater"),
+            }}
             followedMark={
               <Check aria-hidden className="size-4" strokeWidth={2.5} />
             }

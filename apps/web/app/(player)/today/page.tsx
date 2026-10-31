@@ -6,6 +6,8 @@ import {
   PausedScreen,
 } from "@/components/scoreboard/states/paused-screen";
 import { getToday } from "@/domains/today/use-cases/get-today";
+import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
+import { WelcomeLine } from "./components/welcome-line";
 import { HeroCard } from "./components/hero-card";
 import { NothingToPlay } from "./components/nothing-to-play";
 import { RefreshWhileRunning } from "./components/refresh-while-running";
@@ -28,9 +30,11 @@ export async function generateMetadata(): Promise<Metadata> {
  * et « Suivre » grisé ; une erreur : l'état d'erreur de l'onglet.
  */
 export default async function Page() {
-  const [t, pauseEnd] = await Promise.all([
+  const [t, todayText, pauseEnd, session] = await Promise.all([
     getTranslations("shell"),
+    getTranslations("today"),
     activePause(),
+    getPlayerSession(),
   ]);
   if (pauseEnd) {
     return <PausedScreen until={pauseEnd} title={t("tabs.today")} />;
@@ -42,11 +46,24 @@ export default async function Page() {
     ? today.week.products.some((product) => product.played > 0)
     : today.yesterday.length > 0;
   const others = today.coupons.filter((coupon) => coupon !== hero);
+  // The first launch (10 § 1): the welcome line, once, and an empty Hier.
+  const firstLaunch =
+    session.status === "signed-in" && !session.session.user.hasSeenOnboarding;
+  const heroForm = today.forms.find(
+    (form) => form.product === (hero?.product ?? "FAVOURITE"),
+  );
 
   return (
     <>
       <PlayerBand>
-        {hasYesterday ? <YesterdayLine today={today} /> : null}
+        {hasYesterday ? (
+          <YesterdayLine today={today} />
+        ) : firstLaunch ? (
+          <p className="flex items-baseline gap-3 text-meta text-band-muted">
+            <span>{todayText("yesterday")}</span>
+            <span>{todayText("yesterdayEmpty")}</span>
+          </p>
+        ) : null}
       </PlayerBand>
       <h1 className="sr-only">{t("tabs.today")}</h1>
       <RefreshWhileRunning
@@ -55,6 +72,7 @@ export default async function Page() {
         )}
       />
       <div className="flex flex-col gap-2 px-4 pt-4 lg:px-6">
+        {firstLaunch ? <WelcomeLine form={heroForm} /> : null}
         {today.coupons.length === 0 ? (
           <NothingToPlay today={today} />
         ) : (

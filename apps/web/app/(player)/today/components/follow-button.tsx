@@ -1,10 +1,27 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { lazy, Suspense, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
 import { playerFetch } from "@/lib/api/player-fetch";
 import { useOnline } from "@/components/scoreboard/states/use-online";
+import type { FirstFollowLabels } from "./first-follow-note";
+
+// Loaded after a first follow only (04 § 3): the note and the push request.
+const FirstFollowNote = lazy(() => import("./first-follow-note"));
+
+/** This device already had its first follow. */
+const FIRST_FOLLOW_KEY = "evcore.firstFollow";
+
+function isFirstFollowOnDevice(): boolean {
+  try {
+    if (window.localStorage.getItem(FIRST_FOLLOW_KEY)) return false;
+    window.localStorage.setItem(FIRST_FOLLOW_KEY, "1");
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * « Suivre » (04 § 3) : un toucher, pas de confirmation. Suivi, le bouton
@@ -18,16 +35,20 @@ export function FollowButton({
   followed,
   labels,
   followedMark,
+  firstFollow,
 }: {
   couponId: string;
   followed: boolean;
   labels: { follow: string; followed: string; error: string };
+  /** The note and push request of the first follow on this device. */
+  firstFollow: FirstFollowLabels;
   /** « ✓ », rendered on the server: lucide stays out of the client bundle. */
   followedMark: React.ReactNode;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [failed, setFailed] = useState(false);
+  const [first, setFirst] = useState(false);
   const online = useOnline();
 
   function toggle() {
@@ -37,6 +58,7 @@ export function FollowButton({
         await playerFetch(`/coupons/${couponId}/follow`, {
           method: followed ? "DELETE" : "POST",
         });
+        if (!followed && isFirstFollowOnDevice()) setFirst(true);
         router.refresh();
       } catch {
         setFailed(true);
@@ -67,6 +89,11 @@ export function FollowButton({
           labels.follow
         )}
       </button>
+      {first ? (
+        <Suspense fallback={null}>
+          <FirstFollowNote labels={firstFollow} />
+        </Suspense>
+      ) : null}
       {failed ? (
         <p role="alert" className="text-meta text-foreground">
           {labels.error}

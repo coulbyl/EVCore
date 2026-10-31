@@ -1149,7 +1149,15 @@
     "keepBet": "1xBet keeps {share} on this bet",
     "keepCoupon": "1xBet keeps {share} on this coupon",
     "band": "{min} to {max}",
-    "open": "Open {product}"
+    "open": "Open {product}",
+    "welcome": "Every day, one bet we have tracked since {date}: won {won} days of {played}. We never take your stake.",
+    "welcomeShort": "Every day, one bet we track and count. We never take your stake.",
+    "welcomeClose": "Close the welcome message",
+    "yesterdayEmpty": "nothing to show yet",
+    "firstFollowNote": "You will get its result tomorrow morning",
+    "pushAsk": "Get the result tomorrow morning?",
+    "pushYes": "Yes, at 8 am",
+    "pushLater": "Later"
   },
   "matches": {
     "days": {
