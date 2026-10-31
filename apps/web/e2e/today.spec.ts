@@ -129,13 +129,23 @@ test.describe("Aujourd'hui, ses états (04 § 2, § 5)", () => {
     await expect(page.getByRole("link", { name: /^Hier/ })).toBeVisible();
   });
 
-  test("panne : une ligne, sans heure", async ({ page, context }) => {
+  test("panne : une carte honnête, sans heure, et une suite", async ({
+    page,
+    context,
+  }) => {
     await playAs(context, "today-outage");
     await page.goto("/today");
+    const card = page.getByRole("region", {
+      name: "Pas de coupon aujourd'hui",
+    });
+    await expect(card.getByText(/On regarde ce qui bloque\.$/)).toBeVisible();
+    await expect(card.getByText(/\d{1,2}:\d{2}/)).toHaveCount(0);
     await expect(
-      page.getByText("Les coupons du jour arrivent bientôt."),
-    ).toBeVisible();
-    await expect(page.getByRole("region")).toHaveCount(0);
+      card.getByRole("link", { name: "Voir les matchs du jour" }),
+    ).toHaveAttribute("href", "/matches");
+    await expect(
+      card.getByRole("link", { name: "Nos résultats" }),
+    ).toHaveAttribute("href", "/results");
   });
 
   test("pause : ni coupon ni ligne Hier", async ({ page, context }) => {

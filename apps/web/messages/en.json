@@ -999,7 +999,6 @@
     "postponed": "Postponed",
     "nothingTitle": "Today, we sit this one out",
     "seeMatches": "See today's matches",
-    "noCouponYet": "Today's coupons are on their way.",
     "absentShort": "No {product}",
     "formTitle": "Form over 30 days",
     "formSummary": "{won} days won out of {played}",
@@ -1015,7 +1014,10 @@
     "firstFollowNote": "You will get its result tomorrow morning",
     "pushAsk": "Get the result tomorrow morning?",
     "pushYes": "Yes, at 8 am",
-    "pushLater": "Later"
+    "pushLater": "Later",
+    "outageTitle": "No coupon today",
+    "outageBody": "They usually come out the evening before. We're looking into what's blocking them.",
+    "seeResults": "Our results"
   },
   "matches": {
     "days": {

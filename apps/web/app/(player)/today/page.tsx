@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { serverApiRequest } from "@/lib/api/server-api";
+import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
+import { displayLocaleOf, formatLongDay } from "@/helpers/scoreboard-format";
 import { PlayerBand } from "@/components/scoreboard/shell/player-band";
 import {
   activePause,
@@ -57,12 +59,16 @@ export default async function Page({
     redirect("/today");
   }
 
-  const [t, todayText, pauseEnd, session] = await Promise.all([
-    getTranslations("shell"),
-    getTranslations("today"),
-    activePause(),
-    getPlayerSession(),
-  ]);
+  const [t, todayText, pauseEnd, session, locale, timeZone] = await Promise.all(
+    [
+      getTranslations("shell"),
+      getTranslations("today"),
+      activePause(),
+      getPlayerSession(),
+      getLocale(),
+      getPlayerTimeZone(),
+    ],
+  );
   if (pauseEnd) {
     return <PausedScreen until={pauseEnd} title={t("tabs.today")} />;
   }
@@ -82,15 +88,22 @@ export default async function Page({
 
   return (
     <>
+      {/* The day always heads the tab, on a wide screen too, where the
+          band would otherwise vanish on a day without « Hier ». */}
       <PlayerBand>
-        {hasYesterday ? (
-          <YesterdayLine today={today} />
-        ) : firstLaunch ? (
-          <p className="flex items-baseline gap-3 text-meta text-band-muted">
-            <span>{todayText("yesterday")}</span>
-            <span>{todayText("yesterdayEmpty")}</span>
+        <div className="flex flex-col gap-2">
+          <p className="text-meta text-band-muted">
+            {formatLongDay(new Date(), displayLocaleOf(locale), timeZone)}
           </p>
-        ) : null}
+          {hasYesterday ? (
+            <YesterdayLine today={today} />
+          ) : firstLaunch ? (
+            <p className="flex items-baseline gap-3 text-meta text-band-muted">
+              <span>{todayText("yesterday")}</span>
+              <span>{todayText("yesterdayEmpty")}</span>
+            </p>
+          ) : null}
+        </div>
       </PlayerBand>
       <h1 className="sr-only">{t("tabs.today")}</h1>
       <RefreshWhileRunning

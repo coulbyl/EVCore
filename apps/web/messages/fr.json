@@ -999,7 +999,6 @@
     "postponed": "Reporté",
     "nothingTitle": "Aujourd'hui, on passe notre tour",
     "seeMatches": "Voir les matchs du jour",
-    "noCouponYet": "Les coupons du jour arrivent bientôt.",
     "absentShort": "Pas de {product}",
     "formTitle": "Forme sur 30 jours",
     "formSummary": "{won} jours gagnés sur {played}",
@@ -1015,7 +1014,10 @@
     "firstFollowNote": "Tu recevras son résultat demain matin",
     "pushAsk": "Recevoir le résultat demain matin ?",
     "pushYes": "Oui, à 8 h",
-    "pushLater": "Plus tard"
+    "pushLater": "Plus tard",
+    "outageTitle": "Pas de coupon aujourd'hui",
+    "outageBody": "Ils sortent d'habitude la veille au soir. On regarde ce qui bloque.",
+    "seeResults": "Nos résultats"
   },
   "matches": {
     "days": {

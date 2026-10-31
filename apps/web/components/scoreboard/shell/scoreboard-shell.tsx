@@ -57,11 +57,12 @@ export function ScoreboardShell({
       <div className="flex min-w-0 flex-1 justify-center" {...inert}>
         <main
           id="contenu"
-          className="w-full max-w-[40rem] pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.5rem)] lg:pb-10"
+          className="flex min-h-dvh w-full max-w-[40rem] flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.5rem)] lg:pb-10"
         >
           <OfflineLine />
           {children}
-          <LegalLine text={legalText} />
+          {/* At the bottom of the screen, however short the content. */}
+          <LegalLine text={legalText} className="mt-auto" />
           {dock}
         </main>
       </div>

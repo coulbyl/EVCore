@@ -142,6 +142,21 @@ export function formatShortDate(
   }).format(date);
 }
 
+/** La date du jour en tête d'Aujourd'hui : « Samedi 31 octobre ». */
+export function formatLongDay(
+  date: Date,
+  locale: DisplayLocale,
+  timeZone: string,
+): string {
+  const text = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone,
+  }).format(date);
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 /** Le jour dans la journée : « mardi 28 », « Tuesday 28 ». */
 export function formatWeekdayDay(
   date: Date,
