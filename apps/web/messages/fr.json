@@ -1164,7 +1164,7 @@
     "tooEarlyDays": "Trop tôt · {count, plural, =0 {0 jour} one {# jour} other {# jours}}",
     "tooEarlyAdvice": "Encore trop tôt : {count} avis réglés",
     "lastPlayed": "{count, plural, one {Le dernier jour joué} other {Les # derniers jours joués}}",
-    "since": "depuis le {date} · chaque ligne à sa date de mise en ligne",
+    "since": "Depuis le {date}. Chaque produit compte depuis sa mise en ligne.",
     "retired": "retiré",
     "sheet": {
       "titles": {
@@ -1220,6 +1220,7 @@
       "won": "gagné",
       "lost": "perdu",
       "refunded": "remboursé",
+      "pending": "En cours",
       "nothing": "Rien sur cette période",
       "outOfHundred": "{count} sur 100",
       "yesterdayTitle": "Hier, {date}",

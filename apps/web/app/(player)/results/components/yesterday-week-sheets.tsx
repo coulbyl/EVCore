@@ -236,9 +236,12 @@ function columnsOf(week: WeekScreen): ResultsProductKey[] {
       if (!seen.includes(mark.product)) seen.push(mark.product);
     }
   }
-  const order = week.days.flatMap((d) => d.marks.map((m) => m.product));
-  // The server sorts each day's marks in screen order; keep that order.
-  return seen.sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  // The products' own order (the Favori first, as in the list), never the
+  // order they first appear in: a Monday without Favori put « COM » first.
+  const order = week.products.map((p) => p.product);
+  const rank = (product: ResultsProductKey) =>
+    order.includes(product) ? order.indexOf(product) : order.length;
+  return seen.sort((a, b) => rank(a) - rank(b));
 }
 
 function WeekMark({

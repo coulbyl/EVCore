@@ -521,6 +521,15 @@ function DayRow({
             size="sm"
             label={t(kind === "void" ? "refunded" : kind)}
           />
+        ) : outcome === "pending" ? (
+          // Not settled yet (04 § 2: « … » until the last match ends).
+          <span
+            role="img"
+            aria-label={t("pending")}
+            className="score text-body font-semibold text-muted-foreground"
+          >
+            …
+          </span>
         ) : null}
       </span>
       <span className="min-w-0 flex-1 text-body">{text}</span>

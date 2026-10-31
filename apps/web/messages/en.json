@@ -1164,7 +1164,7 @@
     "tooEarlyDays": "Too early · {count, plural, one {# day} other {# days}}",
     "tooEarlyAdvice": "Still too early: {count} settled opinions",
     "lastPlayed": "{count, plural, one {The last day played} other {The last # days played}}",
-    "since": "since {date} · each line from its launch day",
+    "since": "Since {date}. Each product counts from its launch.",
     "retired": "retired",
     "sheet": {
       "titles": {
@@ -1220,6 +1220,7 @@
       "won": "won",
       "lost": "lost",
       "refunded": "refunded",
+      "pending": "In progress",
       "nothing": "Nothing over this period",
       "outOfHundred": "{count} in 100",
       "yesterdayTitle": "Yesterday, {date}",

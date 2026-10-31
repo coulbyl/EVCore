@@ -41,7 +41,7 @@ test.describe("Résultats", () => {
     await expect(ai).toContainText("136 avis gagnés sur 207");
     await expect(
       page.getByText(
-        "depuis le 13/10 · chaque ligne à sa date de mise en ligne",
+        "Depuis le 13/10. Chaque produit compte depuis sa mise en ligne.",
       ),
     ).toBeVisible();
   });
