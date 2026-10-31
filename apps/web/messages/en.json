@@ -1420,7 +1420,8 @@
       "privacy": "Privacy",
       "notice": "Legal notice",
       "responsible": "Responsible gambling"
-    }
+    },
+    "lastHero": "Last coupon published · {date}"
   },
   "playerAuth": {
     "back": "Back",

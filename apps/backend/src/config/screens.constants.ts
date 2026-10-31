@@ -167,3 +167,8 @@ export const SCREEN_READS_MAX_KEYS = 500;
 // « Vérifie ton ticket » (refonte 07 § 4): one call per opening of the sheet
 // or change of the ticket, a few a minute at most for a player.
 export const TICKET_QUOTE_RATE_LIMIT = { limit: 60, ttlMs: 60_000 } as const;
+
+// The landing on a day without a hero (11 § 1): the last hero published
+// within this many days, so a visitor sees the product rather than an empty
+// card. Each day looked at is one read; the web caches the answer a minute.
+export const LAST_HERO_LOOKBACK_DAYS = 7;

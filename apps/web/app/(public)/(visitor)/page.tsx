@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ResultMark } from "@/components/scoreboard/ui/result-mark";
 import { getPublicToday } from "@/domains/public/use-cases/get-public-today";
 import type { PublicToday } from "@/domains/public/types/public";
 import {
@@ -33,11 +32,12 @@ export default async function LandingPage() {
 
   return (
     <>
-      <VisitorBand />
-      <main id="contenu" className="flex flex-col gap-6 px-4 pt-6 pb-8 lg:px-6">
+      <VisitorBand>
         <h1 className="score text-title font-bold text-balance">
           {t("brandLine")}
         </h1>
+      </VisitorBand>
+      <main id="contenu" className="flex flex-col gap-6 px-4 pt-4 pb-8 lg:px-6">
         {today ? <TodaySection today={today} /> : null}
         <div className="flex flex-col items-center gap-2">
           <Link
@@ -62,68 +62,69 @@ export default async function LandingPage() {
 }
 
 /**
- * Le héros, ou le jour vide tel qu'un joueur le voit : la ligne Hier et
- * « Rien à jouer aujourd'hui » avec la raison de chaque produit. Sans
- * même une abstention, la ligne de panne.
+ * Le héros du jour. Un jour sans héros, jamais une carte vide ni une ligne
+ * de panne pour un visiteur : « Rien à jouer aujourd'hui » et la raison de
+ * chaque produit quand le moteur s'est abstenu, puis le dernier coupon
+ * publié de la semaine avec son jour et son issue — le produit en vrai,
+ * pertes comprises.
  */
 async function TodaySection({ today }: { today: PublicToday }) {
-  const t = await getTranslations("today");
-  const { hero, heroForm } = today;
-  if (hero) {
-    return (
-      <HeroCard
-        coupon={{ ...hero, canFollow: false, followedByMe: false }}
-        form={
-          heroForm
-            ? {
-                product: hero.product,
-                days: heroForm.days,
-                won: heroForm.won,
-                played: heroForm.played,
-                worstLosingStreak: 0,
-              }
-            : undefined
-        }
-        couponPath={null}
-      />
-    );
-  }
+  const [t, landing, locale] = await Promise.all([
+    getTranslations("today"),
+    getTranslations("landing"),
+    getLocale(),
+  ]);
+  const { hero, lastHero, heroForm } = today;
+  const shown = hero ?? lastHero?.coupon;
+  const card = shown ? (
+    <HeroCard
+      coupon={{ ...shown, canFollow: false, followedByMe: false }}
+      form={
+        heroForm
+          ? {
+              product: shown.product,
+              days: heroForm.days,
+              won: heroForm.won,
+              played: heroForm.played,
+              worstLosingStreak: 0,
+            }
+          : undefined
+      }
+      couponPath={null}
+    />
+  ) : null;
+  if (hero) return card;
+
   return (
-    <section
-      aria-labelledby="nothing-title"
-      className="flex flex-col gap-1 rounded-[0.875rem] border border-border bg-card px-4 pt-4 pb-1 text-card-foreground"
-    >
-      {today.yesterday.length > 0 ? (
-        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 pb-2 text-meta text-muted-foreground">
-          <span>{t("yesterday")}</span>
-          {today.yesterday.map((item) => (
-            <span key={item.product} className="flex items-center gap-1.5">
-              {t(`shortNames.${item.product}`)}
-              {item.outcome === "pending" ? null : (
-                <ResultMark
-                  kind={item.outcome}
-                  size="sm"
-                  label={t(item.outcome === "void" ? "refunded" : item.outcome)}
-                />
-              )}
-            </span>
-          ))}
-        </p>
-      ) : null}
-      <h2 id="nothing-title" className="score text-title font-semibold">
-        {today.absences.length > 0 ? t("nothingTitle") : t("noCouponYet")}
-      </h2>
+    <div className="flex flex-col gap-4">
       {today.absences.length > 0 ? (
-        <ProductRows
-          coupons={[]}
-          absences={today.absences}
-          followedInProgress={[]}
-          underNothingTitle
-        />
-      ) : (
-        <div className="pb-3" />
-      )}
-    </section>
+        <section aria-labelledby="nothing-title" className="flex flex-col">
+          <h2 id="nothing-title" className="text-body font-medium">
+            {t("nothingTitle")}
+          </h2>
+          <ProductRows
+            coupons={[]}
+            absences={today.absences}
+            followedInProgress={[]}
+            underNothingTitle
+          />
+        </section>
+      ) : null}
+      {lastHero && card ? (
+        <div className="flex flex-col gap-2">
+          <p className="text-meta text-muted-foreground">
+            {landing("lastHero", {
+              date: formatShortDate(
+                new Date(`${lastHero.date}T12:00:00Z`),
+                displayLocaleOf(locale),
+                DEFAULT_TIME_ZONE,
+              ),
+            })}
+          </p>
+          {card}
+        </div>
+      ) : null}
+    </div>
   );
 }
 

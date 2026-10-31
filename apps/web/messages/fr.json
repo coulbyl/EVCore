@@ -1420,7 +1420,8 @@
       "privacy": "Confidentialité",
       "notice": "Mentions",
       "responsible": "Jeu responsable"
-    }
+    },
+    "lastHero": "Dernier coupon publié · {date}"
   },
   "playerAuth": {
     "back": "Retour",

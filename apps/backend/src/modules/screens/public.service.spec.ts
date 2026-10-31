@@ -81,9 +81,13 @@ const RESULTS = {
   },
 } as unknown as ResultsScreen;
 
-function harness(today: TodayScreen) {
+function harness(today: TodayScreen, lastHeroes: (TodayCoupon | null)[] = []) {
+  const heroOfDay = vi.fn();
+  for (const coupon of lastHeroes) heroOfDay.mockResolvedValueOnce(coupon);
+  heroOfDay.mockResolvedValue(null);
   const todayService = {
     getToday: vi.fn().mockResolvedValue(today),
+    heroOfDay,
   } as unknown as TodayService;
   const results = {
     getResults: vi.fn().mockResolvedValue(RESULTS),
@@ -163,7 +167,23 @@ describe('PublicService.getToday', () => {
     );
     const page = await service.getToday(NOW);
     expect(page.hero).toBeNull();
+    expect(page.lastHero).toBeNull();
     expect(page.heroForm).toBeNull();
     expect(page.absences).toHaveLength(1);
+  });
+
+  it('a day without a hero shows the last one published, with its day', async () => {
+    const empty = screen({ heroId: null, coupons: [], absences: [] });
+    const published = screen({}).coupons[0] as TodayCoupon;
+    // Nothing yesterday, the hero of two days ago.
+    const { service, todayService } = harness(empty, [null, published]);
+    const page = await service.getToday(NOW);
+    expect(page.hero).toBeNull();
+    expect(page.lastHero?.coupon.id).toBe(published.id);
+    expect(page.lastHero?.date).toBe(
+      new Date(NOW.getTime() - 2 * 86_400_000).toISOString().slice(0, 10),
+    );
+    expect(page.lastHero?.coupon).not.toHaveProperty('followedByMe');
+    expect(vi.mocked(todayService.heroOfDay)).toHaveBeenCalledTimes(2);
   });
 });
