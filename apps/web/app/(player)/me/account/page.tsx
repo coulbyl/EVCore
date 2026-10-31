@@ -10,6 +10,7 @@ import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import { displayLocaleOf, formatTime } from "@/helpers/scoreboard-format";
 import { serverApiRequest } from "@/lib/api/server-api";
 import { AccountChoice, ThemeChoice } from "./components/display-choices";
+import { AvatarChoice } from "./components/avatar-choice";
 import { EditableValue } from "./components/editable-value";
 import { EmailChange } from "./components/email-change";
 import { NotificationSwitch } from "./components/notification-switch";
@@ -77,6 +78,7 @@ export default async function Page() {
       <div className="flex flex-col divide-y divide-border px-4 pb-4 lg:px-6">
         <section className={section} aria-label={t("profile")}>
           <h2 className={heading}>{t("profile")}</h2>
+          <AvatarChoice initial={user.avatarUrl} label={t("avatar")} />
           <EditableValue
             value={user.fullName}
             caption={t("firstName")}

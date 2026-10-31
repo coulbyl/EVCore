@@ -9,11 +9,14 @@ import { cn } from "@evcore/ui/cn";
  */
 export function BandActions({
   initial,
+  avatarUrl,
   unread = 0,
   labels,
   className,
 }: {
   initial: string;
+  /** The player's avatar, shown in place of the initial once chosen. */
+  avatarUrl?: string | null;
   /** Unread notifications: the bell's badge (09 § 6). */
   unread?: number;
   labels: { notifications: string; me: string; unread: string };
@@ -46,9 +49,14 @@ export function BandActions({
       <Link
         href="/me"
         aria-label={labels.me}
-        className={cn(action, "score text-body font-semibold")}
+        className={cn(action, "score overflow-hidden text-body font-semibold")}
       >
-        {initial}
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- a small local SVG
+          <img src={avatarUrl} alt="" className="size-full" />
+        ) : (
+          initial
+        )}
       </Link>
     </div>
   );

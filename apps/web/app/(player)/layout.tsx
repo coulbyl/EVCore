@@ -80,6 +80,7 @@ export default async function PlayerLayout({
         railFooter={
           <BandActions
             initial={initialOf(session.user)}
+            avatarUrl={session.user.avatarUrl}
             unread={unread}
             labels={{
               notifications: t("notifications"),

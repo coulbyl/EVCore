@@ -2,6 +2,7 @@
 // tailwind-merge weighed 8.6 kio of JS (C0). A `className` passed in adds
 // classes, it never overrides one of these.
 import { clsx as cn } from "clsx";
+import { BrandMark } from "./brand-mark";
 
 /**
  * Le bandeau encre en tête de chaque écran (13-style.md § 2 ; tranché le
@@ -32,7 +33,10 @@ export function ScreenBand({
       )}
     >
       <div className="flex min-h-11 items-center justify-between lg:hidden">
-        <span className="score text-title font-bold">{brand}</span>
+        <span className="flex items-center gap-2 score text-title font-bold">
+          <BrandMark className="size-6" />
+          {brand}
+        </span>
         {actions}
       </div>
       {children ? (

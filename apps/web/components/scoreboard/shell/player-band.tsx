@@ -24,6 +24,9 @@ export async function PlayerBand({ children }: { children?: React.ReactNode }) {
           initial={
             result.status === "signed-in" ? initialOf(result.session.user) : "?"
           }
+          avatarUrl={
+            result.status === "signed-in" ? result.session.user.avatarUrl : null
+          }
           unread={unread}
           labels={{
             notifications: t("notifications"),

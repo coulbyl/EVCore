@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BrandMark } from "./brand-mark";
 import { usePathname } from "next/navigation";
 import { usePlayerText } from "../text/player-texts";
 // clsx alone: no class comes from outside, nothing for tailwind-merge to
@@ -26,8 +27,9 @@ export function SideRail({ footer }: { footer: React.ReactNode }) {
     >
       <Link
         href="/today"
-        className="mb-5 rounded-md px-3 score text-title font-bold text-band-foreground focus-visible:outline-2 focus-visible:outline-led-on"
+        className="mb-5 flex items-center gap-2 rounded-md px-3 score text-title font-bold text-band-foreground focus-visible:outline-2 focus-visible:outline-led-on"
       >
+        <BrandMark className="size-6" />
         {t("brand")}
       </Link>
       <ul className="flex flex-col gap-1">

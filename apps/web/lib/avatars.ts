@@ -11,15 +11,11 @@ export type AvatarOption = {
 const OPTIONS: AvatarOption[] = AVATAR_CHOICES.map((choice) => ({
   url: choice.path,
   label: choice.label,
-  ...(choice.requiredBadge ? { requiredBadge: choice.requiredBadge } : {}),
 }));
 
-export const FREE_AVATARS: AvatarOption[] = OPTIONS.filter(
-  (option) => !option.requiredBadge,
-);
+// Every avatar is free since 2026-10-31: no badge left to earn.
+export const FREE_AVATARS: AvatarOption[] = OPTIONS;
 
-export const LOCKED_AVATARS: AvatarOption[] = OPTIONS.filter(
-  (option) => option.requiredBadge,
-);
+export const LOCKED_AVATARS: AvatarOption[] = [];
 
 export const AVATAR_OPTIONS: AvatarOption[] = OPTIONS;

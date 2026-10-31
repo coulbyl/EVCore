@@ -1416,7 +1416,8 @@
     "email": "E-mail",
     "verifyEmail": "Vérifier",
     "pushNudge": "Active les notifications sur cet appareil pour les recevoir.",
-    "pushEnable": "Activer"
+    "pushEnable": "Activer",
+    "avatar": "Avatar"
   },
   "playerNotifications": {
     "title": "Notifications",

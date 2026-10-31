@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -11,7 +10,6 @@ import { Prisma } from '@evcore/db';
 import { OTP } from 'otplib';
 import QRCode from 'qrcode';
 import type { Response } from 'express';
-import { avatarChoiceFor } from '@evcore/analysis-core';
 import { MailService } from '@modules/mail/mail.service';
 import { AccountRepository } from './account.repository';
 import { AuthRepository, type SessionUserRow } from './auth.repository';
@@ -260,11 +258,6 @@ export class AuthService {
   }
 
   async updateMe(userId: string, dto: UpdateMeDto): Promise<AuthSessionUser> {
-    // L'avatar « Oracle » se méritait par un badge ; les badges sont partis
-    // le 2026-10-31, il ne se choisit plus.
-    if (dto.avatarUrl && avatarChoiceFor(dto.avatarUrl)?.requiredBadge) {
-      throw new ForbiddenException("Cet avatar n'est plus disponible.");
-    }
     const user = await this.repository.updateSessionUser(userId, {
       ...(dto.theme !== undefined && { theme: dto.theme }),
       ...(dto.locale !== undefined && { locale: dto.locale }),

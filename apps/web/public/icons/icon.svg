@@ -1,12 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- The EVCore mark (components/scoreboard/shell/brand-mark.tsx) on the band's ink. -->
   <rect width="512" height="512" rx="96" fill="#142033"/>
-  <text
-    x="256"
-    y="324"
-    font-family="system-ui, -apple-system, sans-serif"
-    font-size="216"
-    font-weight="700"
-    text-anchor="middle"
-    fill="#0f766e"
-  >EV</text>
+  <g transform="translate(64 64) scale(16)" fill="#f4f6fa">
+    <rect x="3" y="13" width="4" height="8" rx="1"/>
+    <rect x="10" y="9" width="4" height="12" rx="1"/>
+    <rect x="17" y="10.5" width="4" height="10.5" rx="1" opacity="0.55"/>
+    <circle cx="12" cy="4.5" r="2.5" fill="#f5b400"/>
+  </g>
 </svg>
