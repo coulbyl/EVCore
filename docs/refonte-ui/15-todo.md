@@ -161,8 +161,13 @@ PR https://github.com/coulbyl/EVCore/pull/282 ouverte (C–F). Avant la phase G,
 - Matchs : lignes sur deux niveaux, matchs joués repliés en haut, puce « Grands championnats ». Libellés : ne jamais arrondir une ligne (« moins de 2,5 » ≠ « moins de 3 ») ; seuls 0,5 d'équipe et double chance 12 passent en mots.
 - Fiche de match : pari de l'IA toujours montré, son explication complète dans un popover natif, une seule chance par pari.
 - Chance : montrée seulement sur le coupon (héros, en-tête de sa feuille) et sous notre lecture, écrite « Passe 8 fois sur 10 », jamais sur un coupon réglé (DESIGN.md, « The One Chance Rule »).
+- Fiche coupon à plusieurs jambes : diodes au-dessus de « Passe 8 fois sur 10 » (elles passaient sur deux lignes à 390 px), forme d'un produit neuf accordée (« 1 jour gagné sur 1 · aucun jour perdu »).
+- Marge du bookmaker retirée de tout l'espace joueur (coupon, match, ticket, image partagée, fiche d'Aide) : elle se lisait comme un dénigrement de 1xBet (00-sommaire).
+- Avis IA : texte entier, chiffres compris (le filtre « % »/« xG » ne laissait que la conclusion) ; le vocabulaire se corrige dans le prompt de VANTAGE ; bouton « Pourquoi ? » ; « Décidé le 31/10 à 13:41 ».
+- Ticket (téléphone et bureau, 3 et 4 paris) : rien à redire. Le ticket à un seul pari n'a pas été vu.
+- Bas d'écran coupé dans Moby : artefact du simulateur, vérifié sur iPhone 11 et Redmi (ci-dessous).
 
-**Reste à revoir.** Fiche coupon avec plusieurs jambes, ticket, Résultats (fiches produit, Avis IA, Ta semaine), Moi et ses pages, Notifications. Ensuite la phase G (admin).
+**Reste à revoir.** Résultats (fiches produit, Avis IA, Ta semaine), Moi et ses pages, Notifications. Ensuite la phase G (admin).
 
 **Ouverts, sans suite immédiate.** Budget LCP froid rouge en CI (« on cherchera un vrai gain après »), ressource d'aide locale, relecture juridique.
 
