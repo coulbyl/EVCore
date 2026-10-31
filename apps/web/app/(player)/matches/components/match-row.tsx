@@ -33,15 +33,19 @@ export function MatchRow({
   return (
     <MatchLink item={item}>
       <TeamPair item={item} />
-      <MatchTitle item={item} />
-      <span className="flex max-w-[48%] shrink-0 flex-wrap items-baseline justify-end gap-x-1.5 text-end text-body">
-        <span>{readingLabel(item)} ·</span>
-        <ChanceFigure
-          probability={item.reading.chance}
-          showLeds={false}
-          size="sm"
-        />
-      </span>
+      <RowBody
+        title={<MatchTitle item={item} />}
+        side={
+          <>
+            <span>{readingLabel(item)}</span>
+            <ChanceFigure
+              probability={item.reading.chance}
+              showLeds={false}
+              size="sm"
+            />
+          </>
+        }
+      />
     </MatchLink>
   );
 }
@@ -82,25 +86,30 @@ export function SettledMatchRow({
             ? `${item.score.home}–${item.score.away}`
             : "–"}
       </span>
-      <MatchTitle
-        item={item}
-        meta={postponed ? labels.postponedMeta : undefined}
+      <RowBody
+        title={
+          <MatchTitle
+            item={item}
+            meta={postponed ? labels.postponedMeta : undefined}
+          />
+        }
+        side={
+          refunded ? (
+            <span className="text-muted-foreground">{labels.refunded}</span>
+          ) : (
+            <>
+              <span>{readingLabel(item)}</span>
+              {item.reading.result === "won" ||
+              item.reading.result === "lost" ? (
+                <ResultMark
+                  kind={item.reading.result}
+                  label={labels[item.reading.result]}
+                />
+              ) : null}
+            </>
+          )
+        }
       />
-      {refunded ? (
-        <span className="shrink-0 text-body text-muted-foreground">
-          {labels.refunded}
-        </span>
-      ) : (
-        <span className="flex max-w-[48%] shrink-0 items-center justify-end gap-2 text-end text-body">
-          {readingLabel(item)}
-          {item.reading.result === "won" || item.reading.result === "lost" ? (
-            <ResultMark
-              kind={item.reading.result}
-              label={labels[item.reading.result]}
-            />
-          ) : null}
-        </span>
-      )}
     </MatchLink>
   );
 }
@@ -121,8 +130,10 @@ export function MatchWithoutReadingRow({
   return (
     <MatchLink item={item} muted>
       <TeamPair item={item} />
-      <MatchTitle item={item} meta={meta} muted />
-      <span className="shrink-0 text-end text-body">{reason}</span>
+      <RowBody
+        title={<MatchTitle item={item} meta={meta} muted />}
+        side={<span>{reason}</span>}
+      />
     </MatchLink>
   );
 }
@@ -173,6 +184,28 @@ async function MatchLink({
         />
       </Link>
     </li>
+  );
+}
+
+/**
+ * The teams, then the reading. On a phone the reading goes under the teams,
+ * its figure on the right: three columns in 375 px wrapped both into three
+ * lines. From 640 px, side by side on one line. One element either way.
+ */
+function RowBody({
+  title,
+  side,
+}: {
+  title: React.ReactNode;
+  side: React.ReactNode;
+}) {
+  return (
+    <span className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+      {title}
+      <span className="flex items-center justify-between gap-x-3 text-body sm:max-w-[48%] sm:shrink-0 sm:justify-end sm:text-end">
+        {side}
+      </span>
+    </span>
   );
 }
 
