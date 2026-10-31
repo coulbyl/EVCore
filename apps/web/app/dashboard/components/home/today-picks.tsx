@@ -6,7 +6,6 @@ import { ArrowRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Skeleton } from "@evcore/ui";
 import { PickCard } from "@/components/pick-card";
-import { AddToCouponButton } from "@/components/add-to-coupon-button";
 import { useChannelHealth } from "@/domains/dashboard/use-cases/get-channel-health";
 import { useChannelDecisionChannels } from "@/domains/channel-decision/use-cases/use-channel-decisions";
 import {
@@ -18,7 +17,6 @@ import { formatMarketForDisplay, formatPickWithTeams } from "@/helpers/fixture";
 import { frequencyOf } from "@/lib/frequency";
 import { daysAgoIso, todayIso } from "@/lib/date";
 import type { ChannelHealthItem } from "@/domains/dashboard/types/dashboard";
-import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
 import type {
   ChannelDecisionDto,
   ChannelSelectionDto,
@@ -55,37 +53,6 @@ function toBetStatus(
   return result === "WON" || result === "LOST" || result === "PENDING"
     ? result
     : null;
-}
-
-function isUpcoming(decision: ChannelDecisionDto): boolean {
-  return (
-    decision.score === null &&
-    new Date(decision.scheduledAt).getTime() > Date.now()
-  );
-}
-
-function toDraftItem(pick: TodayPick): BetSlipDraftItem {
-  const { decision, selection } = pick;
-  return {
-    modelRunId: decision.modelRunId,
-    fixtureId: decision.fixtureId,
-    fixture: `${decision.homeTeam} vs ${decision.awayTeam}`,
-    homeLogo: decision.homeLogo,
-    awayLogo: decision.awayLogo,
-    competition: decision.competitionName ?? decision.competition ?? "",
-    scheduledAt: decision.scheduledAt,
-    market: selection.market,
-    pick: selection.pick,
-    odds:
-      selection.playableOdds !== null
-        ? String(selection.playableOdds)
-        : selection.odds !== null
-          ? String(selection.odds)
-          : null,
-    ev: null,
-    canal: pick.channel,
-    stakeOverride: null,
-  };
 }
 
 /**
@@ -232,14 +199,6 @@ export function TodayPicks() {
               score={pick.decision.score}
               htScore={pick.decision.htScore}
               betStatus={toBetStatus(pick.selection.result)}
-              actionSlot={
-                // Plus de badge « Fiable » : le bloc ne garde que des canaux
-                // fiables, il valait « Fiable » cinq fois sur cinq (revue UX
-                // du 2026-10-24, P2 n°5) ; la règle est dans le sous-titre.
-                isUpcoming(pick.decision) ? (
-                  <AddToCouponButton item={toDraftItem(pick)} />
-                ) : null
-              }
             />
           ))}
         </div>

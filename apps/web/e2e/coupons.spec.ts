@@ -187,7 +187,7 @@ test.describe("Coupons", () => {
     await expect(second.getByTestId("coupon-combined-odds")).toHaveText("1,53");
   });
 
-  test("un coupon en cours se suit, la saisie passe en second", async ({
+  test("un coupon en cours se suit, sans déclarer de mise", async ({
     page,
   }) => {
     const card = page
@@ -199,9 +199,11 @@ test.describe("Coupons", () => {
     await expect(follow).toHaveText("Suivre ce coupon");
     await expect(follow).toHaveAttribute("aria-pressed", "false");
     await follow.click();
+    // La déclaration d'un coupon joué est partie avec les coupons déclarés
+    // (B15) : plus de « Je l'ai joué » (E1).
     await expect(
       card.getByRole("button", { name: "Je l'ai joué" }),
-    ).toBeVisible();
+    ).toHaveCount(0);
   });
 
   test("un chasseur se lit comme un coupon, avec sa fréquence", async ({

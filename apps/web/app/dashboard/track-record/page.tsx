@@ -283,7 +283,7 @@ export default async function TrackRecordPage({
             de mise ni de paiement chez un bookmaker. Ils décrivent le passé,
             pas la suite.{" "}
             <Link
-              href="/dashboard/formation/series-perdantes"
+              href="/me/help/results"
               className="font-medium text-accent underline underline-offset-4"
             >
               Pourquoi on perd des jours de suite

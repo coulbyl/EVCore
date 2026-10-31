@@ -13,11 +13,6 @@ const nextConfig = {
     // a page importing one of them got all (C0, measured in A12).
     optimizePackageImports: ["@evcore/ui"],
   },
-  // Ensure runtime access to `content/formation/**` when using `output: "standalone"`.
-  // These files are read via `fs` at runtime, so they must be included in Next.js output file tracing.
-  outputFileTracingIncludes: {
-    "/*": ["./content/formation/**/*"],
-  },
   async redirects() {
     return [
       {
@@ -25,6 +20,18 @@ const nextConfig = {
         destination: "/dashboard/params/account/profil",
         permanent: false,
       },
+      // Screens removed for everyone (15-todo.md, E1): an old bookmark lands
+      // on the screen that replaced it rather than on a 404. The dashboard
+      // layout cannot do it, it never runs for a route that does not exist.
+      ...[
+        ["/dashboard/bet-slips", "/me"],
+        ["/dashboard/bankroll", "/me"],
+        ["/dashboard/formation", "/me/help"],
+        ["/dashboard/glossaire", "/me/help"],
+      ].flatMap(([from, to]) => [
+        { source: from, destination: to, permanent: true },
+        { source: `${from}/:path*`, destination: to, permanent: true },
+      ]),
     ];
   },
   async headers() {

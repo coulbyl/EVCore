@@ -90,6 +90,7 @@
         "BUDGET_WEB_PORT",
         "BUDGET_MOCK_PORT",
         "BUDGET_RUNS",
+        "LCP_EXPLAIN",
         "CHROME_PATH",
         "GITHUB_STEP_SUMMARY"
       ]

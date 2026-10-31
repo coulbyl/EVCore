@@ -21,10 +21,6 @@ const ALL_ROUTES: readonly { name: string; path: string }[] = [
   { name: "avis-ia", path: "/dashboard/arbitrage" },
   { name: "matchs", path: "/dashboard/fixtures" },
   { name: "track-record", path: "/dashboard/track-record" },
-  { name: "bankroll", path: "/dashboard/bankroll" },
-  { name: "mes-coupons", path: "/dashboard/bet-slips" },
-  { name: "formation", path: "/dashboard/formation" },
-  { name: "glossaire", path: "/dashboard/glossaire" },
   { name: "notifications", path: "/dashboard/notifications" },
   { name: "compte", path: "/dashboard/params/account/profil" },
 ];

@@ -19,7 +19,6 @@ import {
 import { todayIso } from "@/lib/date";
 import { DateNav } from "@/components/date-nav";
 import { CouponAbstentions } from "@/components/coupon-abstentions";
-import { FormationHelpLink } from "@/components/formation-help-link";
 import { CouponCard } from "./coupon-card";
 import { couponClassMeta } from "@/domains/coupon/helpers/coupon-class";
 
@@ -71,11 +70,6 @@ export function CouponsPageClient() {
             date={date}
             onChange={navigateTo}
             className="min-w-0 flex-1 justify-center lg:w-auto lg:flex-none"
-          />
-          <FormationHelpLink
-            slug="coupons-et-avis-ia"
-            label={t("helpLink")}
-            tourId="coupons-help"
           />
         </PageHeaderActions>
       </PageHeader>

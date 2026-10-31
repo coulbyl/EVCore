@@ -7,27 +7,23 @@ import { useTranslations } from "next-intl";
 import { Badge } from "@evcore/ui";
 import {
   Bell,
-  BookOpen,
   BrainCircuit,
   CalendarDays,
   ClipboardCheck,
   Cpu,
   FlaskConical,
-  GraduationCap,
   History,
   Layers,
   LayoutDashboard,
   Library,
   Megaphone,
   MessageCircle,
-  Receipt,
   Scale,
   Settings,
   Users,
   Wand2,
 } from "lucide-react";
 import { PageShell, type NavGroup } from "./page-shell";
-import { BetSlipButton } from "./bet-slip-button";
 import { AccountButton } from "./account-button";
 import { NotificationBell } from "./notification-bell";
 import { PageSearchButton } from "./page-search/page-search-fab";
@@ -112,12 +108,6 @@ export function AppShell({
             icon: CalendarDays,
           },
           {
-            label: tNav("glossary"),
-            href: "/dashboard/glossaire",
-            active: pathname === "/dashboard/glossaire",
-            icon: BookOpen,
-          },
-          {
             label: tNav("technicalDocs"),
             href: "/dashboard/documentation-technique",
             active: pathname.startsWith("/dashboard/documentation-technique"),
@@ -173,12 +163,6 @@ export function AppShell({
         label: tNav("navGroupTracking"),
         items: [
           {
-            label: tNav("betSlips"),
-            href: "/dashboard/bet-slips",
-            active: pathname.startsWith("/dashboard/bet-slips"),
-            icon: Receipt,
-          },
-          {
             label: tNav("inbox"),
             href: "/dashboard/inbox",
             active: pathname.startsWith("/dashboard/inbox"),
@@ -190,12 +174,6 @@ export function AppShell({
       {
         label: tNav("navGroupAnalysis"),
         items: [
-          {
-            label: tNav("formation"),
-            href: "/dashboard/formation",
-            active: pathname.startsWith("/dashboard/formation"),
-            icon: GraduationCap,
-          },
           {
             label: tNav("trackRecord"),
             href: "/dashboard/track-record",
@@ -260,7 +238,6 @@ export function AppShell({
         <div className="relative flex items-center gap-1.5 sm:gap-2">
           <PageSearchButton />
           <NotificationBell />
-          <BetSlipButton />
           <AccountButton currentUser={currentUser} />
         </div>
       }

@@ -18,7 +18,7 @@ import {
 import { FixtureCard } from "@/components/fixture-card";
 import { NewCoachChip } from "@/components/new-coach-badge";
 import { ResultBadge } from "@/components/result-badge";
-import { ChannelRow, type SlipContext } from "./channel-row";
+import { ChannelRow } from "./channel-row";
 
 function parseAvoidOffenders(raw: unknown): AvoidOffender[] {
   if (!raw || typeof raw !== "object") return [];
@@ -49,22 +49,6 @@ export function ChannelSelectionRow({
   const avoidOffenders = isAvoid
     ? parseAvoidOffenders(decision.reasonDetails)
     : [];
-
-  // Pariable uniquement avant le coup d'envoi : pas de match en cours ni terminé.
-  const isUpcoming =
-    decision.score === null &&
-    new Date(decision.scheduledAt).getTime() > Date.now();
-
-  const slipContext: SlipContext | undefined = isUpcoming
-    ? {
-        fixtureId: decision.fixtureId,
-        fixture: `${decision.homeTeam} vs ${decision.awayTeam}`,
-        homeLogo: decision.homeLogo,
-        awayLogo: decision.awayLogo,
-        competition: decision.competition,
-        scheduledAt: decision.scheduledAt,
-      }
-    : undefined;
 
   return (
     <FixtureCard
@@ -101,7 +85,6 @@ export function ChannelSelectionRow({
           channel={decision.channel}
           decision={decision}
           locale={locale}
-          slipContext={slipContext}
           teams={{ home: decision.homeTeam, away: decision.awayTeam }}
         />
       )}
