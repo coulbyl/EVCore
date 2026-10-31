@@ -1632,5 +1632,10 @@
     "seeMore": "Voir plus",
     "note": "Quatre sortes et pas plus : ta matinée, ta semaine, le résultat de tes coupons, les réponses de l'équipe, et une annonce de temps en temps.",
     "settings": "Réglables dans Compte"
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "line": "Cette page n'existe pas.",
+    "home": "Accueil"
   }
 }

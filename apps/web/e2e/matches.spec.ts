@@ -283,6 +283,8 @@ test.describe("Fiche du match", () => {
 
   test("un match inconnu : page introuvable", async ({ page }) => {
     await page.goto("/matches/00000000-0000-4000-8000-000000000000");
-    await expect(page.getByText("Page introuvable")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Cette page n'existe pas." }),
+    ).toBeVisible();
   });
 });

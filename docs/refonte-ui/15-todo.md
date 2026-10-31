@@ -102,7 +102,7 @@ _Branche `feat/refonte-ui`. Cocher au fur et à mesure ; chaque ligne est un com
 - [ ] D4 `feat(web): sign-up with three fields and two checkboxes; inline errors` (11 § 2 ; maquette Inscription).
 - [ ] D5 `feat(web): sign-in, email verification with "Plus tard", password reset in three screens` (11 § 3–5 ; maquettes Connexion, Verification).
 - [ ] D6 `feat(web): legal pages in the app style; editor fields filled` (11 § 7).
-- [ ] D7 `feat(web): 404 page` (11 § 8 ; maquette Introuvable).
+- [x] D7 `feat(web): 404 page` (11 § 8 ; maquette Introuvable). _Fait le 31/10, en avance, parce que C0b en dépendait : la feuille de style de la page introuvable racine se charge sur toutes les pages, et l'ancienne importait toute la feuille de l'application. Maintenant : le bandeau EVCore, « 404 », « Cette page n'existe pas. », un bouton « Aujourd'hui » (« Accueil » sans cookie de session), la ligne 18+ ; titre du document « Page introuvable ». Stylée par un petit module CSS isolé (`app/not-found.module.css`, jetons avec valeurs de repli pour une adresse hors de tout groupe). Tests de C3, C6, C10 ajustés au nouveau titre._
 - [ ] D8 `perf(web): public caching — revalidate and s-maxage on landing, /resultats, hero, og image` (16 § 3).
 - [ ] D9 Revue de phase D : `/code-review high` (inscription, connexion, codes), Lighthouse landing, bilan écrit ici.
 

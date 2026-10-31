@@ -218,7 +218,9 @@ test.describe("Feuille du coupon", () => {
     page,
   }) => {
     await page.goto("/today/coupon/nope");
-    await expect(page.getByText("Page introuvable")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Cette page n'existe pas." }),
+    ).toBeVisible();
     await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute(
       "content",
       "noindex",

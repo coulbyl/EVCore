@@ -1632,5 +1632,10 @@
     "seeMore": "See more",
     "note": "Four kinds and no more: your morning, your week, the result of your coupons, the team's replies, and an announcement now and then.",
     "settings": "Set them in Account"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "line": "This page does not exist.",
+    "home": "Home"
   }
 }

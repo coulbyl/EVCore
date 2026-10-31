@@ -179,7 +179,9 @@ test.describe("Résultats, la fiche d'une ligne", () => {
 
   test("une ligne inconnue : page introuvable", async ({ page }) => {
     await page.goto("/results/nope");
-    await expect(page.getByText("Page introuvable")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Cette page n'existe pas." }),
+    ).toBeVisible();
   });
 });
 
