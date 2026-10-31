@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@evcore/db';
 import type { CouponService } from '@modules/coupon/coupon.service';
 import type { ProductWeekService } from '@modules/coupon/product-day/product-week.service';
@@ -10,7 +10,7 @@ import type {
   ProductLegRow,
 } from '@modules/coupon/product-day/product-day.repository';
 import type { AiAdviceRow, ResultsRepository } from './results.repository';
-import { ResultsService } from './results.service';
+import { ResultsService, spanOf } from './results.service';
 
 const NOW = new Date('2026-10-30T15:00:00.000Z');
 const d = (value: number | string) => new Prisma.Decimal(value);
@@ -278,6 +278,92 @@ describe('ResultsService.getResults', () => {
       // 1,20 × 1,10, the refunded leg paying 1.
       paidOdds: 1.32,
     });
+  });
+});
+
+describe("ResultsService — the player's own dates", () => {
+  it('counts the days between the two dates only, both included', async () => {
+    // 13/10 → 24/10: W L W W L W W W W W W W.
+    const { service, repository } = harness({
+      legs: favouriteRun([W, L, W, W, L, W, W, W, W, W, W, W]),
+      abstentions: [
+        { date: '2026-10-12', product: 'FAVOURITE', reason: null },
+        { date: '2026-10-16', product: 'FAVOURITE', reason: null },
+        { date: '2026-10-20', product: 'FAVOURITE', reason: null },
+      ],
+    });
+    const screen = await service.getResults(
+      { period: '2026-10-14..2026-10-17', isAdmin: false },
+      NOW,
+    );
+    expect(screen.until).toBe('2026-10-17');
+    // Launched after the 17th: not on the list.
+    expect(screen.products.map((p) => p.product)).not.toContain('DOUBLE');
+    expect(screen.products[0]).toMatchObject({
+      since: '2026-10-14',
+      // 14 L, 15 W, 16 W, 17 L.
+      won: 2,
+      lost: 2,
+      daysWithoutCoupon: 1,
+      worstLosingStreak: 1,
+      // The last played up to the 17th, never the days after.
+      last: ['won', 'lost', 'won', 'won', 'lost'],
+    });
+    // The AI's opinions are read over the same days.
+    expect(repository.findAiAdvice).toHaveBeenCalledWith(
+      expect.objectContaining({
+        since: new Date('2026-10-14T00:00:00.000Z'),
+        until: new Date('2026-10-17T23:59:59.999Z'),
+      }),
+    );
+  });
+
+  it('the grid of a product stops on the last date', async () => {
+    const { service } = harness({ legs: favouriteRun([W, L, W, W, L]) });
+    const detail = await service.getProduct(
+      {
+        product: 'FAVOURITE',
+        period: '2026-10-14..2026-10-16',
+        isAdmin: false,
+      },
+      NOW,
+    );
+    expect(detail.grid.map((cell) => cell.date)).toEqual([
+      '2026-10-14',
+      '2026-10-15',
+      '2026-10-16',
+    ]);
+    expect(detail.days.map((day) => day.date)).toEqual([
+      '2026-10-16',
+      '2026-10-15',
+      '2026-10-14',
+    ]);
+  });
+
+  it('a last date after today stops today; dates out of order are refused', () => {
+    const today = new Date('2026-10-30T00:00:00.000Z');
+    expect(spanOf('2026-10-20..2026-12-31', today)).toEqual({
+      from: new Date('2026-10-20T00:00:00.000Z'),
+      to: today,
+    });
+    expect(() => spanOf('2026-10-25..2026-10-20', today)).toThrow(
+      BadRequestException,
+    );
+    expect(() => spanOf('2026-13-45..2026-10-20', today)).toThrow(
+      BadRequestException,
+    );
+    expect(() => spanOf('2026-02-30..2026-10-20', today)).toThrow(
+      BadRequestException,
+    );
+  });
+
+  it('a preset still ends today', () => {
+    const today = new Date('2026-10-30T00:00:00.000Z');
+    expect(spanOf('30', today)).toEqual({
+      from: new Date('2026-10-01T00:00:00.000Z'),
+      to: today,
+    });
+    expect(spanOf('all', today)).toEqual({ from: null, to: today });
   });
 });
 

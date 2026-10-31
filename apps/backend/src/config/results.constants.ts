@@ -85,6 +85,9 @@ export const RESULTS_PRODUCTS = [
 /** 30 j · 90 j · Tout; 90 days by default (08 § 1). */
 export const RESULTS_PERIODS = ['30', '90', 'all'] as const;
 export const RESULTS_DEFAULT_PERIOD = '90';
+// Or the player's own dates, « 2026-10-13..2026-10-25 » (both days counted).
+export const RESULTS_RANGE_PATTERN =
+  /^(\d{4}-\d{2}-\d{2})\.\.(\d{4}-\d{2}-\d{2})$/;
 
 // Fewer settled days than this: « Trop tôt », no comparison, no francs.
 export const RESULTS_TOO_EARLY_DAYS = 10;

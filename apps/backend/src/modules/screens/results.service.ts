@@ -1,9 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import Decimal from 'decimal.js';
 import {
   RESULTS_FIXED_STAKE,
   RESULTS_FORM_DAYS,
   RESULTS_PRODUCTS,
+  RESULTS_RANGE_PATTERN,
   RESULTS_TOO_EARLY_DAYS,
 } from '@config/results.constants';
 import { CouponService } from '@modules/coupon/coupon.service';
@@ -35,6 +40,12 @@ import type {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 type Product = (typeof RESULTS_PRODUCTS)[number];
+
+/**
+ * The days a period counts: from its first day (null: since each launch,
+ * « Tout ») to its last, both at UTC midnight and both counted.
+ */
+type Span = { from: Date | null; to: Date };
 
 /** A product's coupon of one day, reduced to what « Résultats » counts. */
 type ProductDay = {
@@ -76,12 +87,13 @@ export class ResultsService {
       (p) => input.isAdmin || !p.retired,
     );
     const today = startOfUtcDay(now);
+    const span = spanOf(input.period, today);
     const [days, abstentions, advice, week] = await Promise.all([
       this.productDays(products),
-      this.abstentions(products, today, input.period),
+      this.abstentions(products, span),
       this.repository.findAiAdvice({
-        since: aiSince(input.period, today),
-        until: new Date(today.getTime() + DAY_MS - 1),
+        since: aiSince(span),
+        until: new Date(span.to.getTime() + DAY_MS - 1),
         asOf: now,
       }),
       // Monday: last week, in place of « Hier » (04 § 4, 08 § 1).
@@ -91,6 +103,7 @@ export class ResultsService {
     ]);
     return {
       period: input.period,
+      until: formatDateUtc(span.to),
       yesterday: yesterdayOf(products, days, today),
       week: week
         ? {
@@ -100,16 +113,18 @@ export class ResultsService {
             ),
           }
         : null,
-      products: products.map((product) =>
-        summaryOf({
-          product,
-          days: days.get(product.key) ?? [],
-          abstentions: abstentions.get(product.key) ?? [],
-          period: input.period,
-          today,
-        }),
-      ),
-      ai: aiSummaryOf(advice, input.period, today),
+      // A product launched after the player's last date has nothing to say.
+      products: products
+        .filter((product) => product.launchedOn <= formatDateUtc(span.to))
+        .map((product) =>
+          summaryOf({
+            product,
+            days: days.get(product.key) ?? [],
+            abstentions: abstentions.get(product.key) ?? [],
+            span,
+          }),
+        ),
+      ai: aiSummaryOf(advice, span),
     };
   }
 
@@ -122,14 +137,14 @@ export class ResultsService {
     input: { period: ResultsPeriod },
     now: Date = new Date(),
   ): Promise<AiDetail> {
-    const today = startOfUtcDay(now);
+    const span = spanOf(input.period, startOfUtcDay(now));
     const advice = await this.repository.findAiAdvice({
-      since: aiSince(input.period, today),
-      until: new Date(today.getTime() + DAY_MS - 1),
+      since: aiSince(span),
+      until: new Date(span.to.getTime() + DAY_MS - 1),
       asOf: now,
     });
     return {
-      ...aiSummaryOf(advice, input.period, today),
+      ...aiSummaryOf(advice, span),
       opinions: opinionsOf(advice),
     };
   }
@@ -142,10 +157,10 @@ export class ResultsService {
       (p) => p.key === input.product && (input.isAdmin || !p.retired),
     );
     if (!product) throw new NotFoundException('Produit inconnu');
-    const today = startOfUtcDay(now);
+    const span = spanOf(input.period, startOfUtcDay(now));
     const [days, abstentions] = await Promise.all([
       this.productDays([product]),
-      this.abstentions([product], today, input.period),
+      this.abstentions([product], span),
     ]);
     const productDays = days.get(product.key) ?? [];
     const productAbstentions = abstentions.get(product.key) ?? [];
@@ -153,14 +168,13 @@ export class ResultsService {
       product,
       days: productDays,
       abstentions: productAbstentions,
-      period: input.period,
-      today,
+      span,
     });
     return {
       ...summary,
       ...detailOf({
         since: summary.since,
-        today,
+        until: span.to,
         days: productDays,
         abstentions: productAbstentions,
       }),
@@ -200,15 +214,14 @@ export class ResultsService {
   /** Abstention days of the period, by product (the AI's are not recorded). */
   private async abstentions(
     products: readonly Product[],
-    today: Date,
-    period: ResultsPeriod,
+    span: Span,
   ): Promise<Map<string, { date: string; reason: string | null }[]>> {
     const from = Math.min(
-      ...products.map((p) => periodStart(p, period, today).getTime()),
+      ...products.map((p) => periodStart(p, span).getTime()),
     );
     const rows = await this.coupons.getProductAbstentions({
       from: new Date(from),
-      to: new Date(today.getTime() + DAY_MS),
+      to: new Date(span.to.getTime() + DAY_MS),
     });
     const byProduct = new Map<
       string,
@@ -259,35 +272,55 @@ function firstLaunch(products: readonly Product[]): string {
   );
 }
 
-/** The period's first day for a product: never before its launch. */
-function periodStart(
-  product: Pick<Product, 'launchedOn'>,
-  period: ResultsPeriod,
-  today: Date,
-): Date {
-  const launch = new Date(`${product.launchedOn}T00:00:00.000Z`);
-  if (period === 'all') return launch;
-  const start = new Date(today.getTime() - (Number(period) - 1) * DAY_MS);
-  return start > launch ? start : launch;
+/**
+ * The days a period counts. A preset ends today; the player's own dates
+ * end on their last day, never after today, and a first day after the
+ * last is refused.
+ */
+export function spanOf(period: ResultsPeriod, today: Date): Span {
+  const range = RESULTS_RANGE_PATTERN.exec(period);
+  if (range) {
+    const from = new Date(`${range[1]}T00:00:00.000Z`);
+    const last = new Date(`${range[2]}T00:00:00.000Z`);
+    // « 2026-02-30 » would roll over to March: a date must read back the same.
+    const real = (date: Date, text: string | undefined) =>
+      !Number.isNaN(date.getTime()) && formatDateUtc(date) === text;
+    if (!real(from, range[1]) || !real(last, range[2])) {
+      throw new BadRequestException('Dates invalides');
+    }
+    const to = last < today ? last : today;
+    if (from > to) throw new BadRequestException('Dates dans le désordre');
+    return { from, to };
+  }
+  if (period === 'all') return { from: null, to: today };
+  return {
+    from: new Date(today.getTime() - (Number(period) - 1) * DAY_MS),
+    to: today,
+  };
 }
 
-function aiSince(period: ResultsPeriod, today: Date): Date {
+/** The period's first day for a product: never before its launch. */
+function periodStart(product: Pick<Product, 'launchedOn'>, span: Span): Date {
+  const launch = new Date(`${product.launchedOn}T00:00:00.000Z`);
+  if (span.from === null) return launch;
+  return span.from > launch ? span.from : launch;
+}
+
+function aiSince(span: Span): Date {
   // « Tout » for the AI: its whole frozen history.
-  if (period === 'all') return new Date('2020-01-01T00:00:00.000Z');
-  return new Date(today.getTime() - (Number(period) - 1) * DAY_MS);
+  return span.from ?? new Date('2020-01-01T00:00:00.000Z');
 }
 
 function summaryOf(input: {
   product: Product;
   days: readonly ProductDay[];
   abstentions: readonly { date: string }[];
-  period: ResultsPeriod;
-  today: Date;
+  span: Span;
 }): ProductSummary {
-  const since = formatDateUtc(
-    periodStart(input.product, input.period, input.today),
-  );
-  const inPeriod = input.days.filter((d) => d.date >= since);
+  const since = formatDateUtc(periodStart(input.product, input.span));
+  const until = formatDateUtc(input.span.to);
+  const upToEnd = input.days.filter((d) => d.date <= until);
+  const inPeriod = upToEnd.filter((d) => d.date >= since);
   const played = inPeriod.filter(
     (d) => d.outcome === 'won' || d.outcome === 'lost',
   );
@@ -301,9 +334,12 @@ function summaryOf(input: {
     won: played.filter((d) => d.outcome === 'won').length,
     lost: played.filter((d) => d.outcome === 'lost').length,
     refunded: inPeriod.filter((d) => d.outcome === 'refunded').length,
-    daysWithoutCoupon: input.abstentions.filter((a) => a.date >= since).length,
+    daysWithoutCoupon: input.abstentions.filter(
+      (a) => a.date >= since && a.date <= until,
+    ).length,
     worstLosingStreak: worstStreakOf(inPeriod.map((d) => d.outcome)),
-    last: lastPlayed(input.days.map((d) => d.outcome)),
+    // The last ten played up to the period's end: today for a preset.
+    last: lastPlayed(upToEnd.map((d) => d.outcome)),
     tooEarly,
     settledDays,
     comparison: tooEarly ? null : comparisonOf(played),
@@ -395,7 +431,8 @@ function francsOf(
  */
 function detailOf(input: {
   since: string;
-  today: Date;
+  /** The period's last day, UTC midnight. */
+  until: Date;
   days: readonly ProductDay[];
   abstentions: readonly { date: string; reason: string | null }[];
 }): Pick<ProductDetail, 'grid' | 'days'> {
@@ -405,7 +442,7 @@ function detailOf(input: {
   const list: ResultsDay[] = [];
   for (
     let at = new Date(`${input.since}T00:00:00.000Z`);
-    at <= input.today;
+    at <= input.until;
     at = new Date(at.getTime() + DAY_MS)
   ) {
     const date = formatDateUtc(at);
@@ -462,11 +499,7 @@ export function opinionsOf(rows: readonly AiAdviceRow[]): AiOpinion[] {
   });
 }
 
-function aiSummaryOf(
-  rows: readonly AiAdviceRow[],
-  period: ResultsPeriod,
-  today: Date,
-): AiSummary {
+function aiSummaryOf(rows: readonly AiAdviceRow[], span: Span): AiSummary {
   const chronological = [...rows].reverse();
   const played = chronological.filter((r) => r.result !== 'VOID');
   const outcome = (r: AiAdviceRow): DayOutcome =>
@@ -482,11 +515,11 @@ function aiSummaryOf(
   }));
   return {
     since:
-      period === 'all'
+      span.from === null
         ? chronological[0]
           ? formatDateUtc(chronological[0].kickoff)
           : null
-        : formatDateUtc(aiSince(period, today)),
+        : formatDateUtc(span.from),
     won: played.filter((r) => r.result === 'WON').length,
     lost: played.filter((r) => r.result === 'LOST').length,
     refunded: chronological.length - played.length,

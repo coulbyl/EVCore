@@ -3,7 +3,10 @@ import type {
   RESULTS_PRODUCTS,
 } from '@config/results.constants';
 
-export type ResultsPeriod = (typeof RESULTS_PERIODS)[number];
+/** 30 j · 90 j · Tout, or the player's own dates « from..to » (08 § 1). */
+export type ResultsPeriod =
+  | (typeof RESULTS_PERIODS)[number]
+  | `${string}..${string}`;
 export type ResultsProductKey = (typeof RESULTS_PRODUCTS)[number]['key'];
 
 /** A day of a product; `pending` until settled (08 § 4: never « en attente » on screen). */
@@ -102,6 +105,8 @@ export type ResultsWeek = {
 /** GET /results/products?period=. */
 export type ResultsScreen = {
   period: ResultsPeriod;
+  /** Last day counted, YYYY-MM-DD: today, or the end of the player's dates. */
+  until: string;
   yesterday: ResultsYesterday;
   /** Mondays only. */
   week: ResultsWeek | null;
