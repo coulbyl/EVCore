@@ -145,29 +145,37 @@ async function ResultsSection({ today }: { today: PublicToday }) {
   const since = [...today.results.map((p) => p.since), today.ai.since]
     .filter((date): date is string => date !== null)
     .sort()[0];
+  // Only the lines that have played: an empty line tells a visitor
+  // nothing here, /resultats keeps every product (« Pas encore joué »).
   const rows = [
-    ...today.results.map((product) => ({
-      key: product.product,
-      name: r(`names.${product.product}`),
-      tooEarly: product.tooEarly,
-      figure: product.tooEarly
-        ? r("tooEarlyDays", { count: product.won + product.lost })
-        : r("daysWon", {
-            won: product.won,
-            played: product.won + product.lost,
-          }),
-    })),
-    {
-      key: "AI",
-      name: r("ai"),
-      tooEarly: today.ai.tooEarly,
-      figure: today.ai.tooEarly
-        ? r("tooEarlyAdvice", { count: today.ai.won + today.ai.lost })
-        : r("adviceWon", {
-            won: today.ai.won,
-            played: today.ai.won + today.ai.lost,
-          }),
-    },
+    ...today.results
+      .filter((product) => product.won + product.lost > 0)
+      .map((product) => ({
+        key: product.product,
+        name: r(`names.${product.product}`),
+        tooEarly: product.tooEarly,
+        figure: product.tooEarly
+          ? r("tooEarlyDays", { count: product.won + product.lost })
+          : r("daysWon", {
+              won: product.won,
+              played: product.won + product.lost,
+            }),
+      })),
+    ...(today.ai.won + today.ai.lost > 0
+      ? [
+          {
+            key: "AI",
+            name: r("ai"),
+            tooEarly: today.ai.tooEarly,
+            figure: today.ai.tooEarly
+              ? r("tooEarlyAdvice", { count: today.ai.won + today.ai.lost })
+              : r("adviceWon", {
+                  won: today.ai.won,
+                  played: today.ai.won + today.ai.lost,
+                }),
+          },
+        ]
+      : []),
   ];
 
   return (

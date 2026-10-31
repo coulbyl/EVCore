@@ -104,6 +104,7 @@ export function RegisterForm({ labels }: { labels: RegisterLabels }) {
       <AuthField
         label={labels.firstName}
         name="firstName"
+        enterKeyHint="next"
         autoComplete="given-name"
         maxLength={50}
         error={errors.firstName}
@@ -111,6 +112,7 @@ export function RegisterForm({ labels }: { labels: RegisterLabels }) {
       <AuthField
         label={labels.email}
         name="email"
+        enterKeyHint="next"
         type="email"
         autoComplete="email"
         inputMode="email"
@@ -130,6 +132,7 @@ export function RegisterForm({ labels }: { labels: RegisterLabels }) {
       <AuthField
         label={labels.password}
         name="password"
+        enterKeyHint="done"
         type="password"
         autoComplete="new-password"
         maxLength={128}

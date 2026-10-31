@@ -78,6 +78,7 @@ export function ResetPasswordForm({
       <AuthField
         label={labels.password}
         name="password"
+        enterKeyHint="go"
         type="password"
         autoComplete="new-password"
         maxLength={128}

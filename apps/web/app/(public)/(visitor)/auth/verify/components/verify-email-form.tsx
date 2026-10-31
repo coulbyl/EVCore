@@ -83,6 +83,7 @@ export function VerifyEmailForm({ labels }: { labels: VerifyLabels }) {
       <AuthField
         label={labels.code}
         name="code"
+        enterKeyHint="go"
         inputMode="numeric"
         autoComplete="one-time-code"
         pattern="\d{6}"

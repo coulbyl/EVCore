@@ -1229,7 +1229,9 @@
       "followedCounts": "{won} won · {lost} lost",
       "followedRefunded": "{count} refunded",
       "mondayNote": "The Monday statement, the same as the 8 am notification."
-    }
+    },
+    "notPlayedYet": "Not played yet · launched {date}",
+    "noAdviceYet": "No settled opinion yet"
   },
   "me": {
     "record": "{won} won · {lost} lost",

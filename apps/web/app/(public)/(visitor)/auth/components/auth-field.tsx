@@ -42,6 +42,9 @@ export function AuthField({
           aria-describedby={describedBy}
           className={`${FIELD} w-full aria-invalid:border-foreground ${aside ? "pe-24" : ""}`}
           {...input}
+          onKeyDown={
+            input.enterKeyHint === "next" ? focusNextField : input.onKeyDown
+          }
         />
         {aside ? (
           <div className="absolute inset-y-0 end-1 flex items-center">
@@ -108,4 +111,22 @@ export function AuthCheck({
       </p>
     </div>
   );
+}
+
+/**
+ * « Suivant » on the keyboard (`enterKeyHint="next"`): Enter goes to the
+ * next text field instead of sending the form, so the thumb never has to
+ * reach the button; the last field (« OK ») sends it.
+ */
+function focusNextField(event: React.KeyboardEvent<HTMLInputElement>) {
+  if (event.key !== "Enter") return;
+  const fields = Array.from(
+    event.currentTarget.form?.querySelectorAll<HTMLInputElement>(
+      'input:not([type="checkbox"]):not([type="hidden"])',
+    ) ?? [],
+  );
+  const next = fields[fields.indexOf(event.currentTarget) + 1];
+  if (!next) return;
+  event.preventDefault();
+  next.focus();
 }

@@ -106,6 +106,7 @@ export function ForgotPasswordForm({
       <AuthField
         label={labels.email}
         name="email"
+        enterKeyHint="go"
         type="email"
         inputMode="email"
         autoComplete="email"

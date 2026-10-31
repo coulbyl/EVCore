@@ -126,6 +126,7 @@ export function LoginForm({
         <AuthField
           label={labels.code}
           name="code"
+          enterKeyHint="go"
           inputMode="numeric"
           autoComplete="one-time-code"
           pattern="\d{6}"
@@ -166,6 +167,7 @@ export function LoginForm({
       <AuthField
         label={labels.email}
         name="identifier"
+        enterKeyHint="next"
         type="text"
         inputMode="email"
         autoComplete="username"
@@ -175,6 +177,7 @@ export function LoginForm({
       <AuthField
         label={labels.password}
         name="password"
+        enterKeyHint="go"
         type={shown ? "text" : "password"}
         autoComplete="current-password"
         required

@@ -6,8 +6,13 @@ _Suite du lot config (15-todo.md, F1 à F5) et de l'audit [ENV-PROD](../2026-10-
 
 1. **Déployer** la PR. Rien ne change de comportement. Au démarrage, le backend et le vantage-worker écrivent dans leur journal la liste des variables qu'ils ne lisent plus (« Environment variables no longer read » côté backend, `retiredEnv` dans la ligne de démarrage du worker). Ils ne refusent jamais de démarrer pour ça.
 2. **Lancer la migration** `20261031140000_add_app_setting` (le backend l'applique à son démarrage, comme les autres).
-3. **Écrire les réglages** (§ 3) qui reprennent les valeurs de prod, en SQL tant que l'écran Réglages n'existe pas (il vient avec la refonte de l'admin).
-4. **Retirer** les variables du § 1, puis celles du § 3 une fois leurs lignes écrites. Redémarrer, puis vérifier que le journal de démarrage ne nomme plus aucune variable.
+3. **Lancer les deux rattrapages**, une fois :
+   - `POST /coupons/settle-range?from=2026-09-17&to=<jour>` remplit `product_day` et les prix 1xBet manquants ;
+   - `POST /channel-decisions/settle-range?from=2026-09-08&to=<jour>` règle l'historique figé de l'IA. Sans lui, le bilan « Avis IA » ne compte que les avis réglés depuis le déploiement : 5 sur la copie du 29/10, alors que plus de 5 000 avis joués portent sur des matchs terminés.
+
+   Tous deux prennent l'en-tête `x-admin-token`, sont rejouables, et ne touchent aucun montant.
+4. **Écrire les réglages** (§ 3) qui reprennent les valeurs de prod, en SQL tant que l'écran Réglages n'existe pas (il vient avec la refonte de l'admin).
+5. **Retirer** les variables du § 1, puis celles du § 3 une fois leurs lignes écrites. Redémarrer, puis vérifier que le journal de démarrage ne nomme plus aucune variable.
 
 ## 1. À retirer — plus aucun effet
 

@@ -1229,7 +1229,9 @@
       "followedCounts": "{won, plural, one {# gagné} other {# gagnés}} · {lost, plural, one {# perdu} other {# perdus}}",
       "followedRefunded": "{count, plural, one {# remboursé} other {# remboursés}}",
       "mondayNote": "Le relevé du lundi, le même que la notification de 8 h."
-    }
+    },
+    "notPlayedYet": "Pas encore joué · lancé le {date}",
+    "noAdviceYet": "Pas encore d'avis réglé"
   },
   "me": {
     "record": "{won, plural, one {# gagné} other {# gagnés}} · {lost, plural, one {# perdu} other {# perdus}}",

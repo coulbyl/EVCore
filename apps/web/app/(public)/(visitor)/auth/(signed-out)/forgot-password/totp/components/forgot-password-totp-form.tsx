@@ -73,6 +73,7 @@ export function ForgotPasswordTotpForm({
       <AuthField
         label={labels.email}
         name="email"
+        enterKeyHint="next"
         type="text"
         inputMode="email"
         autoComplete="username"
@@ -82,6 +83,7 @@ export function ForgotPasswordTotpForm({
       <AuthField
         label={labels.code}
         name="code"
+        enterKeyHint="next"
         inputMode="numeric"
         autoComplete="one-time-code"
         pattern="\d{6}"
@@ -91,6 +93,7 @@ export function ForgotPasswordTotpForm({
       <AuthField
         label={labels.password}
         name="password"
+        enterKeyHint="go"
         type="password"
         autoComplete="new-password"
         maxLength={128}
