@@ -1355,5 +1355,36 @@
     "imageKeep": "Sur la durée, 1xBet garde {share} de la mise",
     "imageOurs": "Notre {product} : {chance}",
     "outcomePending": "en attente du dernier match"
+  },
+  "results": {
+    "yesterday": "Hier",
+    "week": "Ta semaine",
+    "weekSummary": "{won, plural, one {# jour gagné} other {# jours gagnés}} sur {played}",
+    "periods": {
+      "label": "Période",
+      "30": "30 j",
+      "90": "90 j",
+      "all": "Tout"
+    },
+    "names": {
+      "FAVOURITE": "Favori",
+      "COMBO": "Combiné",
+      "DOUBLE": "Cote 2",
+      "HUNTER_BTTS": "Chasseur Les deux marquent",
+      "HUNTER_DRAW": "Chasseur Nul",
+      "HUNTER_SCORE": "Chasseur Score exact",
+      "HUNTER_CORNERS": "Chasseur Corners",
+      "COMBO_AI": "Combiné IA",
+      "LONG": "Coupon long",
+      "UNIQUE": "Coupon unique IA"
+    },
+    "ai": "Avis IA",
+    "daysWon": "{won, plural, one {# jour gagné} other {# jours gagnés}} sur {played}",
+    "adviceWon": "{won, plural, one {# avis gagné} other {# avis gagnés}} sur {played}",
+    "tooEarlyDays": "Trop tôt · {count, plural, =0 {0 jour} one {# jour} other {# jours}}",
+    "tooEarlyAdvice": "Trop tôt · {count} avis",
+    "lastPlayed": "{count, plural, one {Le dernier jour joué} other {Les # derniers jours joués}}",
+    "since": "depuis le {date} · chaque ligne à sa date de mise en ligne",
+    "retired": "retiré"
   }
 }

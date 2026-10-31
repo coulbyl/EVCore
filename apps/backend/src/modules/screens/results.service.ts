@@ -7,10 +7,17 @@ import {
   RESULTS_TOO_EARLY_DAYS,
 } from '@config/results.constants';
 import { CouponService } from '@modules/coupon/coupon.service';
-import { formatDateUtc, startOfUtcDay } from '@utils/date.utils';
+import { ProductWeekService } from '@modules/coupon/product-day/product-week.service';
+import { isTodayProduct } from './today-products';
+import {
+  formatDateUtc,
+  previousIsoWeek,
+  startOfUtcDay,
+} from '@utils/date.utils';
 import { ProductDayRepository } from '@modules/coupon/product-day/product-day.repository';
 import { ResultsRepository, type AiAdviceRow } from './results.repository';
 import type {
+  ResultsYesterday,
   AiSummary,
   DayOutcome,
   ProductDetail,
@@ -51,10 +58,12 @@ type ProductDay = {
  */
 @Injectable()
 export class ResultsService {
+  // eslint-disable-next-line max-params -- NestJS constructor injection: the AI, the product days, the abstentions, the week
   constructor(
     private readonly repository: ResultsRepository,
     private readonly productDayRows: ProductDayRepository,
     private readonly coupons: CouponService,
+    private readonly productWeek: ProductWeekService,
   ) {}
 
   async getResults(
@@ -65,7 +74,7 @@ export class ResultsService {
       (p) => input.isAdmin || !p.retired,
     );
     const today = startOfUtcDay(now);
-    const [days, abstentions, advice] = await Promise.all([
+    const [days, abstentions, advice, week] = await Promise.all([
       this.productDays(products),
       this.abstentions(products, today, input.period),
       this.repository.findAiAdvice({
@@ -73,9 +82,22 @@ export class ResultsService {
         until: new Date(today.getTime() + DAY_MS - 1),
         asOf: now,
       }),
+      // Monday: last week, in place of « Hier » (04 § 4, 08 § 1).
+      now.getUTCDay() === 1
+        ? this.productWeek.getWeek(previousIsoWeek(now))
+        : Promise.resolve(null),
     ]);
     return {
       period: input.period,
+      yesterday: yesterdayOf(products, days, today),
+      week: week
+        ? {
+            week: week.week,
+            products: week.products.flatMap(({ product, won, played }) =>
+              isTodayProduct(product) ? [{ product, won, played }] : [],
+            ),
+          }
+        : null,
       products: products.map((product) =>
         summaryOf({
           product,
@@ -176,6 +198,36 @@ export class ResultsService {
     }
     return byProduct;
   }
+}
+
+/**
+ * Yesterday's coupon of each product of « Aujourd'hui », in screen order
+ * (the AI combo and the retired products stay off the line).
+ */
+function yesterdayOf(
+  products: readonly Product[],
+  days: Map<ResultsProductKey, ProductDay[]>,
+  today: Date,
+): ResultsYesterday {
+  const date = formatDateUtc(new Date(today.getTime() - DAY_MS));
+  return {
+    date,
+    items: products.flatMap((product) => {
+      if (!isTodayProduct(product.key)) return [];
+      const day = days.get(product.key)?.find((d) => d.date === date);
+      if (!day) return [];
+      return [
+        {
+          product: product.key,
+          outcome: day.outcome,
+          paidOdds:
+            day.outcome === 'won' && day.paidOdds
+              ? day.paidOdds.toDecimalPlaces(3).toNumber()
+              : null,
+        },
+      ];
+    }),
+  };
 }
 
 function firstLaunch(products: readonly Product[]): string {

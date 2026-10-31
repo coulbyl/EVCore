@@ -743,6 +743,96 @@ function ticketQuote(body) {
   };
 }
 
+// « Résultats » (GET /results/products, 08 § 1) : deux produits mûrs, les
+// autres trop tôt, l'IA ; « Ta semaine » le lundi (cookie results-monday).
+function resultsScreen(url, cookie) {
+  const period = new URL(url, "http://mock").searchParams.get("period") ?? "90";
+  const days = (pattern) =>
+    [...pattern].map((mark) => (mark === "x" ? "lost" : "won"));
+  const product = (key, extra) => ({
+    product: key,
+    retired: false,
+    launchedOn: "2026-10-13",
+    since: "2026-10-13",
+    won: 0,
+    lost: 0,
+    refunded: 0,
+    daysWithoutCoupon: 0,
+    worstLosingStreak: 0,
+    last: [],
+    tooEarly: true,
+    settledDays: 0,
+    ...extra,
+  });
+  const yesterday = todayAt(-24).slice(0, 10);
+  return {
+    period,
+    yesterday: {
+      date: yesterday,
+      items: [
+        { product: "FAVOURITE", outcome: "won", paidOdds: 1.24 },
+        { product: "COMBO", outcome: "won", paidOdds: 1.41 },
+        { product: "DOUBLE", outcome: "lost", paidOdds: null },
+      ],
+    },
+    week: /(^|;\s*)evcore_session=results-monday(;|$)/.test(cookie)
+      ? {
+          week: "2026-10-26",
+          products: [
+            { product: "FAVOURITE", won: 5, played: 6 },
+            { product: "COMBO", won: 4, played: 6 },
+          ],
+        }
+      : null,
+    products: [
+      product("FAVOURITE", {
+        won: period === "30" ? 11 : 15,
+        lost: 3,
+        last: days("vvxvvvvvvv"),
+        tooEarly: false,
+        settledDays: 18,
+      }),
+      product("COMBO", {
+        won: 11,
+        lost: 4,
+        last: days("vxvvvvxvvv"),
+        tooEarly: false,
+        settledDays: 15,
+      }),
+      product("DOUBLE", {
+        since: "2026-10-29",
+        lost: 1,
+        last: days("x"),
+        settledDays: 1,
+      }),
+      product("HUNTER_BTTS", { since: "2026-10-29" }),
+      product("HUNTER_DRAW", {
+        since: "2026-10-29",
+        won: 1,
+        last: days("v"),
+        settledDays: 1,
+      }),
+      product("HUNTER_SCORE", { since: "2026-10-29" }),
+      product("HUNTER_CORNERS", { since: "2026-10-30" }),
+      product("COMBO_AI", {
+        won: 8,
+        lost: 3,
+        last: days("vvxvvxvvvx"),
+        tooEarly: false,
+        settledDays: 11,
+      }),
+    ],
+    ai: {
+      since: "2026-10-28",
+      won: 136,
+      lost: 71,
+      refunded: 2,
+      last: days("vvvxvvxvvv"),
+      tooEarly: false,
+    },
+  };
+}
+
 function matchesPage(url, cookie) {
   const params = new URL(url, "http://mock").searchParams;
   const day = params.get("day") ?? "today";
@@ -2140,6 +2230,9 @@ function route(method, url, cookie = "") {
   if (sheetOfMatch && method === "GET") {
     const sheet = matchSheet(sheetOfMatch[1]);
     return sheet ? [200, sheet] : [404, { message: "Match introuvable" }];
+  }
+  if (path === "/results/products" && method === "GET") {
+    return [200, resultsScreen(url, cookie)];
   }
   if (path === "/matches" && method === "GET") {
     return [200, matchesPage(url, cookie)];

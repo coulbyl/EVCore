@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { NotFoundException } from '@nestjs/common';
 import { Prisma } from '@evcore/db';
 import type { CouponService } from '@modules/coupon/coupon.service';
+import type { ProductWeekService } from '@modules/coupon/product-day/product-week.service';
 import { RESULTS_PRODUCTS } from '@config/results.constants';
 import { productDaysOf } from '@modules/coupon/product-day/product-day';
 import type {
@@ -68,9 +69,19 @@ function harness(input: {
   const coupons = {
     getProductAbstentions: vi.fn().mockResolvedValue(input.abstentions ?? []),
   } as unknown as CouponService;
+  const productWeek = {
+    getWeek: vi.fn().mockResolvedValue({
+      week: '2026-10-26',
+      products: [
+        { product: 'FAVOURITE', won: 5, played: 6, days: [] },
+        { product: 'COMBO_AI', won: 3, played: 4, days: [] },
+      ],
+    }),
+  } as unknown as ProductWeekService;
   return {
-    service: new ResultsService(repository, productDays, coupons),
+    service: new ResultsService(repository, productDays, coupons, productWeek),
     repository,
+    productWeek,
   };
 }
 
@@ -79,6 +90,34 @@ const L: ProductLegRow['result'] = 'LOST';
 const V: ProductLegRow['result'] = 'VOID';
 
 describe('ResultsService.getResults', () => {
+  it("« Hier »: yesterday's coupon of each product of Aujourd'hui, the odds paid after a win", async () => {
+    const { service } = harness({
+      legs: [favourite('2026-10-29', 'WON'), favourite('2026-10-28', 'LOST')],
+    });
+    const screen = await service.getResults(
+      { period: '90', isAdmin: false },
+      NOW,
+    );
+    expect(screen.yesterday).toEqual({
+      date: '2026-10-29',
+      items: [{ product: 'FAVOURITE', outcome: 'won', paidOdds: 1.25 }],
+    });
+    expect(screen.week).toBeNull();
+  });
+
+  it("Monday: « Ta semaine », the products of Aujourd'hui only", async () => {
+    const { service } = harness({});
+    const monday = new Date('2026-11-02T08:00:00.000Z');
+    const screen = await service.getResults(
+      { period: '90', isAdmin: false },
+      monday,
+    );
+    expect(screen.week).toEqual({
+      week: '2026-10-26',
+      products: [{ product: 'FAVOURITE', won: 5, played: 6 }],
+    });
+  });
+
   it('lists the products a player sees, in screen order, then the AI', async () => {
     const { service } = harness({});
     const screen = await service.getResults(

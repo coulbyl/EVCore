@@ -1355,5 +1355,36 @@
     "imageKeep": "Over time, 1xBet keeps {share} of the stake",
     "imageOurs": "Our {product}: {chance}",
     "outcomePending": "waiting for the last match"
+  },
+  "results": {
+    "yesterday": "Yesterday",
+    "week": "Your week",
+    "weekSummary": "{won, plural, one {# day won} other {# days won}} of {played}",
+    "periods": {
+      "label": "Period",
+      "30": "30 d",
+      "90": "90 d",
+      "all": "All"
+    },
+    "names": {
+      "FAVOURITE": "Favourite",
+      "COMBO": "Combo",
+      "DOUBLE": "Odds 2",
+      "HUNTER_BTTS": "Both-score hunter",
+      "HUNTER_DRAW": "Draw hunter",
+      "HUNTER_SCORE": "Exact-score hunter",
+      "HUNTER_CORNERS": "Corners hunter",
+      "COMBO_AI": "AI combo",
+      "LONG": "Long coupon",
+      "UNIQUE": "AI single coupon"
+    },
+    "ai": "AI opinion",
+    "daysWon": "{won, plural, one {# day won} other {# days won}} of {played}",
+    "adviceWon": "{won, plural, one {# opinion won} other {# opinions won}} of {played}",
+    "tooEarlyDays": "Too early · {count, plural, one {# day} other {# days}}",
+    "tooEarlyAdvice": "Too early · {count, plural, one {# opinion} other {# opinions}}",
+    "lastPlayed": "{count, plural, one {The last day played} other {The last # days played}}",
+    "since": "since {date} · each line from its launch day",
+    "retired": "retired"
   }
 }

@@ -75,9 +75,33 @@ export type AiSummary = {
   francs: ResultsFrancs | null;
 };
 
+/**
+ * « Hier » at the top of Résultats (08 § 1): each coupon of yesterday of
+ * the products of « Aujourd'hui », its outcome, the odds really paid after
+ * a win. Monday: `week` instead, « Ta semaine » (B7, 04 § 4).
+ */
+export type ResultsYesterday = {
+  date: string;
+  items: {
+    product: ResultsProductKey;
+    outcome: DayOutcome;
+    /** The 1xBet odds paid on a won day; null otherwise or unknown. */
+    paidOdds: number | null;
+  }[];
+};
+
+export type ResultsWeek = {
+  /** Its Monday, YYYY-MM-DD. */
+  week: string;
+  products: { product: ResultsProductKey; won: number; played: number }[];
+};
+
 /** GET /results/products?period=. */
 export type ResultsScreen = {
   period: ResultsPeriod;
+  yesterday: ResultsYesterday;
+  /** Mondays only. */
+  week: ResultsWeek | null;
   products: ProductSummary[];
   ai: AiSummary;
 };
