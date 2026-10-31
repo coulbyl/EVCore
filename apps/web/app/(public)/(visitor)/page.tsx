@@ -42,7 +42,7 @@ export default async function LandingPage() {
         <div className="flex flex-col items-center gap-2">
           <Link
             href="/auth/register"
-            className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-primary px-6 text-bet font-semibold text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:w-auto"
+            className="inline-flex min-h-12 w-full items-center justify-center rounded-[0.625rem] bg-primary px-6 text-bet font-medium text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:w-auto"
           >
             {t("signUp")}
           </Link>
@@ -50,7 +50,7 @@ export default async function LandingPage() {
         </div>
         {today ? <ResultsSection today={today} /> : null}
         <section aria-labelledby="how-title" className="flex flex-col gap-2">
-          <h2 id="how-title" className="text-body font-semibold">
+          <h2 id="how-title" className="text-body font-medium">
             {t("howTitle")}
           </h2>
           <p className="text-body text-muted-foreground">{t("how")}</p>
@@ -168,7 +168,7 @@ async function ResultsSection({ today }: { today: PublicToday }) {
 
   return (
     <section aria-labelledby="results-title" className="flex flex-col">
-      <h2 id="results-title" className="pb-1 text-body font-semibold">
+      <h2 id="results-title" className="pb-1 text-body font-medium">
         {since
           ? t("resultsSince", {
               date: formatShortDate(

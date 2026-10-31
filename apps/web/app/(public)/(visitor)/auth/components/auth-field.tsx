@@ -42,11 +42,16 @@ export function AuthField({
         />
         {aside}
       </div>
-      {error ? (
-        <p id={`${input.name}-error`} className="text-meta font-medium">
-          {error}
-        </p>
-      ) : hint ? (
+      {/* Always in the page, empty without an error: a live region added
+          together with its text is not reliably announced. */}
+      <p
+        id={`${input.name}-error`}
+        aria-live="polite"
+        className={error ? "text-meta font-medium" : "sr-only"}
+      >
+        {error}
+      </p>
+      {hint && !error ? (
         <p
           id={`${input.name}-hint`}
           className="text-meta text-muted-foreground"
@@ -80,11 +85,13 @@ export function AuthCheck({
         />
         <span>{children}</span>
       </label>
-      {error ? (
-        <p id={`${name}-error`} className="ps-8 text-meta font-medium">
-          {error}
-        </p>
-      ) : null}
+      <p
+        id={`${name}-error`}
+        aria-live="polite"
+        className={error ? "ps-8 text-meta font-medium" : "sr-only"}
+      >
+        {error}
+      </p>
     </div>
   );
 }
