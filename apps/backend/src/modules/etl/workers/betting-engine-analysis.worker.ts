@@ -32,9 +32,9 @@ export class BettingEngineAnalysisWorker extends WorkerHost {
     logger.info(result, 'Betting engine daily analysis complete');
 
     // The LLM coupon pipeline stays on its own scheduler in
-    // apps/vantage-worker (VANTAGE_COUPON_CRON, 30 minutes after this cron's
-    // 20:00 UTC default) — see docs/vantage-centric-redesign-2026-09-01.md
-    // §9bis.
+    // apps/vantage-worker, 45 minutes after the 17:00 horizon pass that
+    // composes every coupon of the day (COUPON_SCHEDULE in
+    // packages/analysis-core, ENV-PROD § 3).
     //
     // The price composer is CHAINED here instead of getting its own cron, and
     // deliberately so: it reads the `evaluatedPicks` this very analysis just

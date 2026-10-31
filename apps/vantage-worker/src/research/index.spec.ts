@@ -23,7 +23,6 @@ const baseConfig: Config = {
   tavilyApiKey: undefined,
   researchCompetitionCodes: ["PL", "LL"],
   couponCron: "30 20 * * *",
-  couponRetryCron: "15 21 * * *",
   couponIntradayWindowHours: 3,
 };
 

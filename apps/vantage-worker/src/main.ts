@@ -1,9 +1,9 @@
-import { loadConfig } from "./config";
+import { loadConfig, retiredEnvPresent } from "./config";
 import { createLogger } from "./logger";
 import { createLlmClients, findProviderClient } from "./groq/client";
 import { createVantageWorker } from "./queue/worker";
 import { createQueue } from "./queue/queue";
-import { removeObsoleteIntradaySchedulers } from "./queue/remove-obsolete-schedulers";
+import { removeObsoleteSchedulers } from "./queue/remove-obsolete-schedulers";
 
 async function main() {
   const config = loadConfig();
@@ -84,17 +84,6 @@ async function main() {
       jobId: "vantage-recurring-coupon-generation",
     },
   );
-  // Self-healing second pass — see config.ts's couponRetryCron doc comment.
-  // Distinct jobId (same job name, "generate-coupons") so both repeatable
-  // registrations coexist instead of one overwriting the other.
-  await queue.add(
-    "generate-coupons",
-    {},
-    {
-      repeat: { pattern: config.couponRetryCron },
-      jobId: "vantage-recurring-coupon-generation-retry",
-    },
-  );
 
   // Intraday batch (recheck J-J) — NO LONGER SCHEDULED since 2026-09-16.
   //
@@ -114,16 +103,20 @@ async function main() {
   // A repeatable job already registered in Redis keeps firing until it is
   // explicitly removed, so removing the `queue.add` above would not have been
   // enough on a running deployment.
-  const removedIntradaySchedulers =
-    await removeObsoleteIntradaySchedulers(queue);
+  // Same for the coupon passes at another hour than COUPON_SCHEDULE's: the
+  // 20:30 pass and the 21:15 retry (ENV-PROD § 3) keep firing until removed,
+  // since a repeatable's key carries its pattern.
+  const removedObsoleteSchedulers = await removeObsoleteSchedulers(queue, {
+    couponCron: config.couponCron,
+  });
 
   logger.info(
     {
       sweepIntervalMs: config.sweepIntervalMs,
       couponCron: config.couponCron,
-      couponRetryCron: config.couponRetryCron,
       couponIntradayWindowHours: config.couponIntradayWindowHours,
-      removedIntradaySchedulers,
+      removedObsoleteSchedulers,
+      retiredEnv: retiredEnvPresent(),
       llmProvider: config.llmProvider,
       model: config.llmModel,
       llmFallbackProviders: llmClients.fallbacks.map((f) => f.provider),

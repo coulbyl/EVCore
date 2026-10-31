@@ -1,3 +1,4 @@
+import { COUPON_SCHEDULE } from '@evcore/analysis-core';
 // ETL configuration constants — never hardcode these inline
 
 import { currentSeason } from '@utils/date.utils';
@@ -529,7 +530,7 @@ export const ETL_CRON_SCHEDULES = {
   // (~1h out) and any late odds movement would go unpicked-up. Closed by
   // SAME_DAY_ANALYSIS below (flagged 2026-08-28, closed 2026-09-03).
   BETTING_ENGINE_ANALYSIS: '0 21 * * *',
-  ROLLING_HORIZON: '0 17 * * *', // 17:00 UTC daily — warm preview for J+1..J+4 (J+1 gets re-analysed by the 21:00 run; coupons are composed on this pass)
+  ROLLING_HORIZON: COUPON_SCHEDULE.HORIZON_PASS_CRON, // 17:00 UTC daily — warm preview for J+1..J+4 (J+1 gets re-analysed by the 21:00 run; coupons are composed on this pass)
   // Every 30 minutes — re-analyzes only fixtures kicking off within
   // SAME_DAY_ANALYSIS_WINDOW_HOURS (default 3h) from now
   // (BettingEngineService.analyzeUpcoming), never the whole day. Closes the
