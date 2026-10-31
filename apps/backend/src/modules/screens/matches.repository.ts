@@ -57,6 +57,8 @@ export type SheetHeaderRow = MatchRow & {
 export type AiOpinionRow = {
   status: string;
   text: string | null;
+  /** When the AI wrote it. */
+  decidedAt: Date;
   market: string | null;
   pick: string | null;
   result: 'PENDING' | 'WON' | 'LOST' | 'VOID' | null;
@@ -231,7 +233,8 @@ export class MatchesRepository {
     return this.prisma.client.$queryRaw<AiOpinionRow[]>`
       WITH latest AS (
         SELECT cd.id, cd.status::text AS status,
-               cd."reasonDetails"->>'text' AS text
+               cd."reasonDetails"->>'text' AS text,
+               cd."createdAt" AS "decidedAt"
         FROM public.channel_decision cd
         JOIN public.model_run mr ON mr.id = cd."modelRunId"
         JOIN public.fixture f ON f.id = mr."fixtureId"
@@ -241,7 +244,8 @@ export class MatchesRepository {
         ORDER BY cd."createdAt" DESC
         LIMIT 1
       )
-      SELECT latest.status, latest.text, cs.market::text AS market, cs.pick,
+      SELECT latest.status, latest.text, latest."decidedAt",
+             cs.market::text AS market, cs.pick,
              cs.result::text AS result
       FROM latest
       LEFT JOIN public.channel_selection cs

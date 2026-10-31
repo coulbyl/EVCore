@@ -16,8 +16,10 @@ export type SheetReading = SheetPick & { fact: string | null };
 
 export type SheetAiOpinion = SheetPick & {
   sameAsReading: boolean;
-  /** The AI's text without jargon, opened from its pick. */
+  /** The AI's text, whole, opened from its pick. */
   speech: string | null;
+  /** When it decided, ISO. */
+  decidedAt: string;
 };
 
 export type SheetTeamForm = {

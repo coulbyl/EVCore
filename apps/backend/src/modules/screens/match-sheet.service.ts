@@ -323,6 +323,7 @@ function aiOpinionOf(
     result: resultOf(ai.result),
     sameAsReading,
     speech: speechOf(ai.text),
+    decidedAt: ai.decidedAt.toISOString(),
   };
 }
 

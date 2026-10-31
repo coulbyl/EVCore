@@ -184,6 +184,7 @@ describe('MatchSheetService', () => {
       ai: [
         {
           status: 'SELECTED',
+          decidedAt: new Date('2026-10-31T13:41:00Z'),
           text: 'Chelsea n’a perdu qu’une fois en huit déplacements. Le reste du texte.',
           market: 'ONE_X_TWO',
           pick: 'DRAW',
@@ -200,6 +201,7 @@ describe('MatchSheetService', () => {
       sameAsReading: false,
       speech:
         'Chelsea n’a perdu qu’une fois en huit déplacements. Le reste du texte.',
+      decidedAt: '2026-10-31T13:41:00.000Z',
     });
     // Neither the reading nor the AI's pick come back in « Autres paris ».
     expect(sheet.otherPicks.map((p) => `${p.market}/${p.pick}`)).toEqual([
@@ -215,6 +217,7 @@ describe('MatchSheetService', () => {
       ai: [
         {
           status: 'SELECTED',
+          decidedAt: new Date('2026-10-31T13:41:00Z'),
           text: null,
           market: 'ONE_X_TWO',
           pick: 'HOME',
@@ -227,6 +230,7 @@ describe('MatchSheetService', () => {
       ai: [
         {
           status: 'REJECTED',
+          decidedAt: new Date('2026-10-31T13:41:00Z'),
           text: 'x',
           market: null,
           pick: null,

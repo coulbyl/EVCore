@@ -638,12 +638,14 @@ function matchSheet(fixtureId) {
           ...pick("ONE_X_TWO", "DRAW", 3.4, 0.28, null),
           sameAsReading: false,
           sentence: "Chelsea n'a perdu qu'une fois en 8 déplacements",
+          decidedAt: "2026-10-30T13:41:00.000Z",
         }
       : item.home.name === "Lyon"
         ? {
             ...pick("OVER_UNDER", "OVER", 1.6, 0.62, null),
             sameAsReading: true,
             sentence: null,
+            decidedAt: "2026-10-30T13:41:00.000Z",
           }
         : null,
     form: {

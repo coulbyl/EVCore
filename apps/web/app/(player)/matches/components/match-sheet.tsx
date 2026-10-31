@@ -15,6 +15,7 @@ import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import {
   displayLocaleOf,
   formatOdds,
+  formatShortDate,
   formatTime,
   type DisplayLocale,
 } from "@/helpers/scoreboard-format";
@@ -118,6 +119,20 @@ export async function MatchSheetView({ id }: { id: string }) {
                   }}
                 />
               ) : null}
+              <p className="text-meta text-muted-foreground">
+                {t("aiDecidedAt", {
+                  date: formatShortDate(
+                    new Date(sheet.ai.decidedAt),
+                    display,
+                    timeZone,
+                  ),
+                  time: formatTime(
+                    new Date(sheet.ai.decidedAt),
+                    display,
+                    timeZone,
+                  ),
+                })}
+              </p>
             </>
           )}
         </Section>
