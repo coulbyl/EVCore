@@ -103,3 +103,15 @@ export type PlayerDigestProps = {
   /** L'écran où elle mène, en adresse absolue. */
   url: string;
 };
+
+/** A light of the admin turned red (docs/refonte-ui/12-admin.md § 1). */
+export type OpsLightRedProps = {
+  /** « Données », « Moteur », « Joueurs ». */
+  light: string;
+  /** When it turned red, already written for the reader. */
+  since: string;
+  /** The red lines of « À faire », written. */
+  lines: string[];
+  /** The admin home, to act. */
+  url: string;
+};

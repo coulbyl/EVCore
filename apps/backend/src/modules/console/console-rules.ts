@@ -149,6 +149,8 @@ export function consoleStatusOf(s: ConsoleSignals): ConsoleStatus {
       engine: lightOf('engine'),
       players: lightOf('players'),
     },
+    // Filled by ConsoleService from the ten-minute check.
+    since: { data: null, engine: null, players: null },
     // Reds first, then in the order of the lights.
     todo: [...todo].sort((a, b) =>
       a.severity === b.severity ? 0 : a.severity === 'red' ? -1 : 1,

@@ -1,10 +1,16 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
-import { CONSOLE_PASSES } from '@config/console.constants';
+import { CONSOLE_PASSES, CONSOLE_WATCH } from '@config/console.constants';
 import { AuthModule } from '@modules/auth/auth.module';
 import { CouponModule } from '@modules/coupon/coupon.module';
 import { EtlModule } from '@modules/etl/etl.module';
+import { MailModule } from '@modules/mail/mail.module';
 import { ConsolePassesService } from './console-passes.service';
+import {
+  ConsoleWatchScheduler,
+  ConsoleWatchWorker,
+} from './console-watch.scheduler';
+import { ConsoleWatchService } from './console-watch.service';
 import { ConsoleController } from './console.controller';
 import { ConsoleRepository } from './console.repository';
 import { ConsoleService } from './console.service';
@@ -15,6 +21,8 @@ import { ConsoleService } from './console.service';
     AuthModule,
     CouponModule,
     EtlModule,
+    MailModule,
+    BullModule.registerQueue({ name: CONSOLE_WATCH.QUEUE }),
     // The passes' queues, read for their last runs (vantage-analysis is the
     // vantage-worker's, on the same Redis).
     ...[...new Set(CONSOLE_PASSES.map((p) => p.queue))].map((name) =>
@@ -22,7 +30,14 @@ import { ConsoleService } from './console.service';
     ),
   ],
   controllers: [ConsoleController],
-  providers: [ConsoleService, ConsoleRepository, ConsolePassesService],
+  providers: [
+    ConsoleService,
+    ConsoleRepository,
+    ConsolePassesService,
+    ConsoleWatchService,
+    ConsoleWatchScheduler,
+    ConsoleWatchWorker,
+  ],
   exports: [ConsoleService],
 })
 export class ConsoleModule {}

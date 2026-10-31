@@ -21,7 +21,19 @@ export class ConsoleService {
   ) {}
 
   async getStatus(now: Date = new Date()): Promise<ConsoleStatus> {
-    return consoleStatusOf(await this.signals(now));
+    const [signals, recorded] = await Promise.all([
+      this.signals(now),
+      this.repository.lights(),
+    ]);
+    const status = consoleStatusOf(signals);
+    // The time a light entered its state, from the ten-minute check.
+    for (const row of recorded) {
+      const key = row.light as keyof ConsoleStatus['lights'];
+      if (key in status.lights && status.lights[key] === row.state) {
+        status.since[key] = row.changedAt.toISOString();
+      }
+    }
+    return status;
   }
 
   async signals(now: Date): Promise<ConsoleSignals> {

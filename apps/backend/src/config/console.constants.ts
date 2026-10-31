@@ -109,3 +109,16 @@ export const CONSOLE_PASSES: readonly {
 
 /** A pass with nothing after its time plus this is « manquée ». */
 export const CONSOLE_PASS_GRACE_MINUTES = 30;
+
+/**
+ * The lights are checked every ten minutes; a light turning red sends one
+ * e-mail to RESEND_ADMIN_TO (12-admin.md § 1, tranché le 29/10).
+ */
+export const CONSOLE_WATCH = {
+  QUEUE: 'console-watch',
+  SCHEDULER_KEY: 'console-watch',
+  JOB: 'console-watch',
+  CRON: '*/10 * * * *',
+  /** The admin home, linked from the e-mail (APP_URL + this). */
+  HOME_PATH: '/admin',
+} as const;

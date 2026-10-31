@@ -151,4 +151,47 @@ export class ConsoleRepository {
     `;
     return Number(row?.n ?? 0);
   }
+
+  lights(): Promise<
+    { light: string; state: string; changedAt: Date; notifiedAt: Date | null }[]
+  > {
+    return this.prisma.client.consoleLight.findMany({
+      select: { light: true, state: true, changedAt: true, notifiedAt: true },
+    });
+  }
+
+  /**
+   * Records a light's state at a check: a new state resets when it changed
+   * and its e-mail, the same state only moves checkedAt.
+   */
+  async recordLight(input: {
+    light: string;
+    state: string;
+    now: Date;
+  }): Promise<void> {
+    const { light, state, now } = input;
+    await this.prisma.client.$executeRaw`
+      INSERT INTO public.console_light (light, state, "changedAt", "notifiedAt", "checkedAt")
+      VALUES (${light}, ${state}, ${now}, NULL, ${now})
+      ON CONFLICT (light) DO UPDATE SET
+        "changedAt" = CASE WHEN console_light.state = EXCLUDED.state
+                           THEN console_light."changedAt" ELSE EXCLUDED."changedAt" END,
+        "notifiedAt" = CASE WHEN console_light.state = EXCLUDED.state
+                            THEN console_light."notifiedAt" ELSE NULL END,
+        state = EXCLUDED.state,
+        "checkedAt" = EXCLUDED."checkedAt"
+    `;
+  }
+
+  /**
+   * Claims the red e-mail of a light: true once per red, whoever checks
+   * first (two checks at once never send it twice).
+   */
+  async claimRedNotice(light: string, now: Date): Promise<boolean> {
+    const claimed = await this.prisma.client.$executeRaw`
+      UPDATE public.console_light SET "notifiedAt" = ${now}
+      WHERE light = ${light} AND state = 'red' AND "notifiedAt" IS NULL
+    `;
+    return claimed === 1;
+  }
 }

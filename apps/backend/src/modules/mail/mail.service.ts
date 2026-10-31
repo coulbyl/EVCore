@@ -9,6 +9,7 @@ import {
   renderEmailChanged,
   renderEmailChangeTaken,
   renderEtlFailure,
+  renderOpsLightRed,
   renderMarketSuspension,
   renderPasswordReset,
   renderRoiAlert,
@@ -24,6 +25,7 @@ import {
   type EmailChangeCodeProps,
   type EmailChangedProps,
   type EtlFailureProps,
+  type OpsLightRedProps,
   type MarketSuspensionProps,
   type MlModelActivatedProps,
   type MlModelMissingProps,
@@ -141,6 +143,12 @@ export class MailService implements OnModuleInit {
   async sendEtlFailure(props: EtlFailureProps): Promise<void> {
     const { html, text } = await renderEtlFailure(props);
     await this.sendToAdmin(`ETL Failure — ${props.queue}`, html, text);
+  }
+
+  /** A light of the admin turned red: once per transition (console-watch). */
+  async sendOpsLightRed(props: OpsLightRedProps): Promise<void> {
+    const { html, text } = await renderOpsLightRed(props);
+    await this.sendToAdmin(`${props.light} au rouge`, html, text);
   }
 
   async sendWeightAdjustment(props: WeightAdjustmentProps): Promise<void> {

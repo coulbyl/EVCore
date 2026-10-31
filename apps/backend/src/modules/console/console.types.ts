@@ -74,6 +74,8 @@ export type TodoItem =
 export type ConsoleStatus = {
   at: string;
   lights: Record<LightKey, LightState>;
+  /** Since when each light is in its state, as last recorded; null if not yet. */
+  since: Record<LightKey, string | null>;
   todo: TodoItem[];
 };
 

@@ -1518,3 +1518,20 @@ model AppSetting {
   @@map("app_setting")
   @@schema("public")
 }
+
+/// A light of the admin's home (docs/refonte-ui/12-admin.md § 1): its
+/// state when last checked, when it changed, and when the team was told it
+/// turned red. One row per light; the e-mail leaves once per transition.
+model ConsoleLight {
+  /// « data », « engine », « players ».
+  light      String    @id
+  /// « green », « orange », « red ».
+  state      String
+  changedAt  DateTime
+  /// The red e-mail of the current red, if sent; null otherwise.
+  notifiedAt DateTime?
+  checkedAt  DateTime
+
+  @@map("console_light")
+  @@schema("public")
+}
