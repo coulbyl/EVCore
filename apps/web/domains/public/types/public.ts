@@ -13,8 +13,8 @@ export type PublicHero = Omit<TodayCoupon, "followedByMe" | "canFollow">;
 export type PublicToday = {
   date: string;
   hero: PublicHero | null;
-  /** Without a hero today: the last one of the week, and its day. */
-  lastHero: { date: string; coupon: PublicHero } | null;
+  /** Without a hero today: the last hero that won, and its day. */
+  lastWon: { date: string; coupon: PublicHero } | null;
   heroForm: {
     days: { date: string; outcome: TodayFormOutcome }[];
     won: number;

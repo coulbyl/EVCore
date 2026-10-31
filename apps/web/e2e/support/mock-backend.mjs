@@ -1197,7 +1197,7 @@ function publicToday() {
   return {
     date: screen.date,
     hero,
-    lastHero: null,
+    lastWon: null,
     heroForm: {
       days: form.days,
       won: form.won,

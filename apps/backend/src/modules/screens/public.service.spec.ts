@@ -167,23 +167,27 @@ describe('PublicService.getToday', () => {
     );
     const page = await service.getToday(NOW);
     expect(page.hero).toBeNull();
-    expect(page.lastHero).toBeNull();
+    expect(page.lastWon).toBeNull();
     expect(page.heroForm).toBeNull();
     expect(page.absences).toHaveLength(1);
   });
 
-  it('a day without a hero shows the last one published, with its day', async () => {
+  it('a day without a hero shows the last one that won, with its day', async () => {
     const empty = screen({ heroId: null, coupons: [], absences: [] });
-    const published = screen({}).coupons[0] as TodayCoupon;
-    // Nothing yesterday, the hero of two days ago.
-    const { service, todayService } = harness(empty, [null, published]);
+    const won = {
+      ...screen({}).coupons[0],
+      state: 'won' as const,
+    };
+    const lost = { ...won, id: 'lost-one', state: 'lost' as const };
+    // Nothing yesterday, a loss two days ago, the win three days ago.
+    const { service, todayService } = harness(empty, [null, lost, won]);
     const page = await service.getToday(NOW);
     expect(page.hero).toBeNull();
-    expect(page.lastHero?.coupon.id).toBe(published.id);
-    expect(page.lastHero?.date).toBe(
-      new Date(NOW.getTime() - 2 * 86_400_000).toISOString().slice(0, 10),
+    expect(page.lastWon?.coupon.id).toBe(won.id);
+    expect(page.lastWon?.date).toBe(
+      new Date(NOW.getTime() - 3 * 86_400_000).toISOString().slice(0, 10),
     );
-    expect(page.lastHero?.coupon).not.toHaveProperty('followedByMe');
-    expect(vi.mocked(todayService.heroOfDay)).toHaveBeenCalledTimes(2);
+    expect(page.lastWon?.coupon).not.toHaveProperty('followedByMe');
+    expect(vi.mocked(todayService.heroOfDay)).toHaveBeenCalledTimes(3);
   });
 });

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { LAST_HERO_LOOKBACK_DAYS } from '@config/screens.constants';
+import { LAST_WON_LOOKBACK_DAYS } from '@config/screens.constants';
 import { formatDateUtc, startOfUtcDay } from '@utils/date.utils';
 import { ResultsService } from './results.service';
 import type { AiSummary, ProductSummary } from './results.types';
@@ -25,10 +25,11 @@ export type PublicToday = {
   /** The coupon of the day, or null when nothing plays. */
   hero: PublicHero | null;
   /**
-   * Without a hero today, the last one published within a week, settled or
-   * not, and its day: a visitor sees the product, not an empty card.
+   * Without a hero today, the last hero that won (two weeks at most) and
+   * its day: the landing says « Dernier coupon gagné » and keeps the form
+   * and the full record beside it (decided 31/10).
    */
-  lastHero: { date: string; coupon: PublicHero } | null;
+  lastWon: { date: string; coupon: PublicHero } | null;
   /** « 19 jours gagnés sur 24 · depuis le 13/10 »: its product over 30 days. */
   heroForm: {
     days: { date: string; outcome: TodayFormOutcome }[];
@@ -66,14 +67,14 @@ export class PublicService {
     private readonly results: ResultsService,
   ) {}
 
-  /** The most recent hero of the past week, newest day first. */
-  private async lastHero(
+  /** The most recent hero that won, newest day first. */
+  private async lastWon(
     now: Date,
   ): Promise<{ date: string; coupon: TodayCoupon } | null> {
-    for (let back = 1; back <= LAST_HERO_LOOKBACK_DAYS; back += 1) {
+    for (let back = 1; back <= LAST_WON_LOOKBACK_DAYS; back += 1) {
       const day = new Date(startOfUtcDay(now).getTime() - back * DAY_MS);
       const coupon = await this.today.heroOfDay(day, now);
-      if (coupon) return { date: formatDateUtc(day), coupon };
+      if (coupon?.state === 'won') return { date: formatDateUtc(day), coupon };
     }
     return null;
   }
@@ -84,16 +85,16 @@ export class PublicService {
       this.results.getResults({ period: 'all', isAdmin: false }, now),
     ]);
     const hero = screen.coupons.find((c) => c.id === screen.heroId) ?? null;
-    const lastHero = hero ? null : await this.lastHero(now);
-    const shown = hero ?? lastHero?.coupon;
+    const lastWon = hero ? null : await this.lastWon(now);
+    const shown = hero ?? lastWon?.coupon;
     const form = shown
       ? screen.forms.find((f) => f.product === shown.product)
       : undefined;
     return {
       date: screen.date,
       hero: hero ? publicHero(hero) : null,
-      lastHero: lastHero
-        ? { date: lastHero.date, coupon: publicHero(lastHero.coupon) }
+      lastWon: lastWon
+        ? { date: lastWon.date, coupon: publicHero(lastWon.coupon) }
         : null,
       heroForm: form
         ? {

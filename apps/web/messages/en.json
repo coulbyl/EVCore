@@ -1423,8 +1423,8 @@
       "notice": "Legal notice",
       "responsible": "Responsible gambling"
     },
-    "lastHero": "Last coupon published · {date}",
-    "home": "Home"
+    "home": "Home",
+    "lastWon": "Last winning coupon · {date}"
   },
   "playerAuth": {
     "back": "Back",

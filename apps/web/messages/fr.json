@@ -1423,8 +1423,8 @@
       "notice": "Mentions",
       "responsible": "Jeu responsable"
     },
-    "lastHero": "Dernier coupon publié · {date}",
-    "home": "Accueil"
+    "home": "Accueil",
+    "lastWon": "Dernier coupon gagné · {date}"
   },
   "playerAuth": {
     "back": "Retour",

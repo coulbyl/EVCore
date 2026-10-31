@@ -68,8 +68,9 @@ export default async function LandingPage() {
  * Le héros du jour. Un jour sans héros, jamais une carte vide ni une ligne
  * de panne pour un visiteur : « Rien à jouer aujourd'hui » et la raison de
  * chaque produit quand le moteur s'est abstenu, puis le dernier coupon
- * publié de la semaine avec son jour et son issue — le produit en vrai,
- * pertes comprises.
+ * gagné (choix du 31/10, un appel à entrer), dit comme tel avec son jour ;
+ * sa forme et le compte complet de « Nos résultats » gardent les pertes à
+ * côté.
  */
 async function TodaySection({ today }: { today: PublicToday }) {
   const [t, landing, locale] = await Promise.all([
@@ -77,8 +78,8 @@ async function TodaySection({ today }: { today: PublicToday }) {
     getTranslations("landing"),
     getLocale(),
   ]);
-  const { hero, lastHero, heroForm } = today;
-  const shown = hero ?? lastHero?.coupon;
+  const { hero, lastWon, heroForm } = today;
+  const shown = hero ?? lastWon?.coupon;
   const card = shown ? (
     <HeroCard
       coupon={{ ...shown, canFollow: false, followedByMe: false }}
@@ -113,12 +114,12 @@ async function TodaySection({ today }: { today: PublicToday }) {
           />
         </section>
       ) : null}
-      {lastHero && card ? (
+      {lastWon && card ? (
         <div className="flex flex-col gap-2">
           <p className="text-meta text-muted-foreground">
-            {landing("lastHero", {
+            {landing("lastWon", {
               date: formatShortDate(
-                new Date(`${lastHero.date}T12:00:00Z`),
+                new Date(`${lastWon.date}T12:00:00Z`),
                 displayLocaleOf(locale),
                 DEFAULT_TIME_ZONE,
               ),
