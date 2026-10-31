@@ -7,7 +7,7 @@ import { usePlayerText } from "../text/player-texts";
 // clsx alone: no class comes from outside, nothing for tailwind-merge to
 // resolve, and it weighed 8.5 kio of the player's JS (C0).
 import { clsx as cn } from "clsx";
-import { PLAYER_TABS, isTabActive } from "./shell-constants";
+import { ADMIN_SECTIONS, PLAYER_TABS, isTabActive } from "./shell-constants";
 import { TabLed } from "./tab-led";
 
 /**
@@ -15,7 +15,14 @@ import { TabLed } from "./tab-led";
  * quatre onglets que la barre du bas, et en pied la cloche et l'initiale
  * (passées par `footer`, rendues côté serveur). 10-transverse.md § 4.
  */
-export function SideRail({ footer }: { footer: React.ReactNode }) {
+export function SideRail({
+  footer,
+  admin = false,
+}: {
+  footer: React.ReactNode;
+  /** An admin also gets its screens under the tabs (maquette Admin). */
+  admin?: boolean;
+}) {
   const pathname = usePathname();
   const t = usePlayerText("shell");
 
@@ -56,6 +63,43 @@ export function SideRail({ footer }: { footer: React.ReactNode }) {
           );
         })}
       </ul>
+      {admin ? (
+        <>
+          <p className="mt-6 mb-2 px-3 text-meta font-semibold text-band-muted">
+            {t("tabs.admin")}
+          </p>
+          <ul className="flex flex-col gap-1">
+            {ADMIN_SECTIONS.map((section) => {
+              // « Accueil admin » is only /admin itself, not its sub-screens.
+              const active =
+                section.href === "/admin"
+                  ? pathname === "/admin"
+                  : isTabActive(pathname, section.href);
+              const Icon = section.icon;
+              return (
+                <li key={section.key}>
+                  <Link
+                    href={section.href}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "flex min-h-11 items-center gap-3 rounded-lg px-3 text-body font-medium transition-colors focus-visible:outline-2 focus-visible:outline-led-on",
+                      active
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "hover:text-band-foreground",
+                    )}
+                  >
+                    <Icon aria-hidden strokeWidth={1.8} className="size-5" />
+                    <span className="flex-1">
+                      {t(`adminSections.${section.key}`)}
+                    </span>
+                    {active ? <TabLed /> : null}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      ) : null}
       <div className="mt-auto px-1">{footer}</div>
     </nav>
   );

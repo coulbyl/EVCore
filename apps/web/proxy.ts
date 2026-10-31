@@ -13,6 +13,7 @@ const PLAYER_ROUTES = [
   "/me",
   "/notifications",
   "/ticket",
+  "/admin",
 ];
 
 function withLocaleCookie(
@@ -80,5 +81,6 @@ export const config = {
     "/me/:path*",
     "/notifications/:path*",
     "/ticket/:path*",
+    "/admin/:path*",
   ],
 };

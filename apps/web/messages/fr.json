@@ -906,11 +906,18 @@
       "today": "Aujourd'hui",
       "matches": "Matchs",
       "results": "Résultats",
-      "me": "Moi"
+      "me": "Moi",
+      "admin": "Admin"
     },
     "close": "Fermer",
     "legal": "18+ (21+ au Cameroun) · Parier comporte des risques de perte · Ne mise que ce que tu peux perdre",
-    "unread": "{count} non lues"
+    "unread": "{count} non lues",
+    "adminSections": {
+      "home": "Accueil admin",
+      "engine": "Moteur",
+      "players": "Joueurs",
+      "settings": "Réglages"
+    }
   },
   "scoreboard": {
     "outcome": {
@@ -1527,6 +1534,14 @@
       "failed": "Ça n'a pas marché. Réessaie.",
       "code": "Code incorrect ou expiré.",
       "appWrong": "E-mail ou code incorrect."
+    }
+  },
+  "console": {
+    "titles": {
+      "home": "Admin",
+      "engine": "Moteur",
+      "players": "Joueurs",
+      "settings": "Réglages"
     }
   }
 }

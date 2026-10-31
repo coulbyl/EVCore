@@ -130,7 +130,7 @@ _Branche `feat/refonte-ui`. Cocher au fur et à mesure ; chaque ligne est un com
 
 ## Phase G — L'admin
 
-- [ ] G1 `feat(web): fifth tab "Admin" for admin accounts; admin left rail on wide screens` (12 § 1 ; maquettes AdminMobile, Admin).
+- [x] G1 `feat(web): fifth tab "Admin" for admin accounts; admin left rail on wide screens` (12 § 1 ; maquettes AdminMobile, Admin). _Fait : `/admin`, `/admin/engine`, `/admin/players`, `/admin/settings` dans la coquille joueur (layout : 404 hors admin) ; onglet par `tabsFor(admin)`, section admin dans la colonne, puces + ⚙ dans le bandeau sur téléphone ; textes `console` et `shell.adminSections`._
 - [ ] G2 `feat(backend): three traffic lights with written rules; "À faire" aggregated from existing alerts` (12 § 1).
 - [ ] G3 `feat(backend): passes of the day with last run per pass; relaunch endpoint` (12 § 1, § 6).
 - [ ] G4 `feat(backend): operations email on red, once per transition` (12 § 1).

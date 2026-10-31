@@ -906,11 +906,18 @@
       "today": "Today",
       "matches": "Matches",
       "results": "Results",
-      "me": "Me"
+      "me": "Me",
+      "admin": "Admin"
     },
     "close": "Close",
     "legal": "18+ (21+ in Cameroon) · Betting carries a risk of loss · Only stake what you can afford to lose",
-    "unread": "{count} unread"
+    "unread": "{count} unread",
+    "adminSections": {
+      "home": "Admin home",
+      "engine": "Engine",
+      "players": "Players",
+      "settings": "Settings"
+    }
   },
   "scoreboard": {
     "outcome": {
@@ -1527,6 +1534,14 @@
       "failed": "That didn't work. Try again.",
       "code": "Wrong or expired code.",
       "appWrong": "Wrong email or code."
+    }
+  },
+  "console": {
+    "titles": {
+      "home": "Admin",
+      "engine": "Engine",
+      "players": "Players",
+      "settings": "Settings"
     }
   }
 }

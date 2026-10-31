@@ -30,6 +30,7 @@ export function ScoreboardShell({
   legalText,
   sheet,
   dock,
+  admin = false,
   children,
 }: {
   railFooter: React.ReactNode;
@@ -37,6 +38,8 @@ export function ScoreboardShell({
   skipLinkLabel: string;
   legalText: string;
   sheet: React.ReactNode;
+  /** An admin account: the fifth tab and the rail's admin section. */
+  admin?: boolean;
   children: React.ReactNode;
 }) {
   const inert = { [SHEET_INERT_ATTRIBUTE]: "" };
@@ -53,7 +56,7 @@ export function ScoreboardShell({
       >
         {skipLinkLabel}
       </a>
-      <SideRail footer={railFooter} />
+      <SideRail footer={railFooter} admin={admin} />
       <div className="flex min-w-0 flex-1 justify-center" {...inert}>
         <main
           id="contenu"
@@ -67,7 +70,7 @@ export function ScoreboardShell({
         </main>
       </div>
       <SheetColumn>{sheet}</SheetColumn>
-      <BottomTabs />
+      <BottomTabs admin={admin} />
     </div>
   );
 }
