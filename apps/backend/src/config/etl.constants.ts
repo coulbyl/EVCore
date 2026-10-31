@@ -1,4 +1,4 @@
-import { COUPON_SCHEDULE } from '@evcore/analysis-core';
+import { APP_SETTING_DEFAULTS, COUPON_SCHEDULE } from '@evcore/analysis-core';
 // ETL configuration constants — never hardcode these inline
 
 import { currentSeason } from '@utils/date.utils';
@@ -369,7 +369,8 @@ export const STATS_BACKFILL = {
   CRON: '*/5 * * * *',
   // Appels API-Football toujours laissés libres pour la production.
   // Surchargeable par STATS_BACKFILL_DAILY_RESERVE.
-  DEFAULT_DAILY_RESERVE: 2_500,
+  // The one default, shared with the operator switch (app_setting).
+  DEFAULT_DAILY_RESERVE: APP_SETTING_DEFAULTS['statsBackfill.dailyReserve'],
   MAX_FIXTURES_PER_LOT: 100,
   // Aucun lot ne démarre si une synchro stats de routine (file league-sync)
   // tourne, attend, ou est due dans ce délai : couvre la durée d'un lot de

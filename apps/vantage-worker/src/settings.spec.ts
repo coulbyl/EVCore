@@ -1,10 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Logger } from "pino";
 import type { Config } from "./config";
-import { readLiveConfig } from "./settings";
+import { readLiveConfig, scheduledPassesEnabled } from "./settings";
 
-const { findMany } = vi.hoisted(() => ({ findMany: vi.fn() }));
-vi.mock("@evcore/db", () => ({ prisma: { appSetting: { findMany } } }));
+const { findMany, findUnique } = vi.hoisted(() => ({
+  findMany: vi.fn(),
+  findUnique: vi.fn(),
+}));
+vi.mock("@evcore/db", () => ({
+  prisma: { appSetting: { findMany, findUnique } },
+}));
 
 const logger = { warn: vi.fn() } as unknown as Logger;
 const base = {
@@ -74,5 +79,16 @@ describe("readLiveConfig", () => {
       researchProvider: "tavily",
       researchCompetitionCodes: ["L1"],
     });
+  });
+});
+
+describe("scheduledPassesEnabled", () => {
+  it("on without a row, off when the row says so, on when unreadable", async () => {
+    findUnique.mockResolvedValueOnce(null);
+    expect(await scheduledPassesEnabled(logger)).toBe(true);
+    findUnique.mockResolvedValueOnce({ value: false });
+    expect(await scheduledPassesEnabled(logger)).toBe(false);
+    findUnique.mockRejectedValueOnce(new Error("no table"));
+    expect(await scheduledPassesEnabled(logger)).toBe(true);
   });
 });

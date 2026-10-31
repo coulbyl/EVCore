@@ -17,9 +17,10 @@ _Suite du lot config (15-todo.md, F1 à F5) et de l'audit [ENV-PROD](../2026-10-
 - Passés en code avec les valeurs de prod :
   - **tous les horaires `ETL_*_CRON`** : l'analyse à 21 h et les cotes à 6 h et 19 h sont désormais les valeurs du code ;
   - `SLIP_DIGEST_CRON`, `WEEKLY_STATEMENT_CRON`, `FOLLOWED_SETTLED_CRON` ;
-  - `ETL_STATS_BACKFILL_CRON`, `STATS_BACKFILL_ENABLED`, `ETL_REBUILD_CONCURRENCY`, `STALE_SCHEDULED_SYNC_LOOKBACK_DAYS` ;
+  - `ETL_STATS_BACKFILL_CRON`, `ETL_REBUILD_CONCURRENCY`, `STALE_SCHEDULED_SYNC_LOOKBACK_DAYS` ;
   - `SHADOW_PREDICTIONS_ENABLED` (vrai en code) et `ML_CORRECTION_ENABLED` (faux en code) ;
-  - `API_FOOTBALL_DAILY_QUOTA`, `API_FOOTBALL_AVG_DAILY_FIXTURES_PER_LEAGUE`, `API_FOOTBALL_AVG_DAILY_STATS_FIXTURES_PER_LEAGUE`.
+  - `API_FOOTBALL_DAILY_QUOTA`, `API_FOOTBALL_AVG_DAILY_FIXTURES_PER_LEAGUE`, `API_FOOTBALL_AVG_DAILY_STATS_FIXTURES_PER_LEAGUE`. **À vérifier avant** : le code compte sur un quota de **7 500 appels par jour**. Si le `.env` de prod en dit un autre (un plan plus grand), dis-le-moi, la constante change par PR ; sinon l'alerte de quota sonnerait à tort.
+- `STATS_BACKFILL_ENABLED` : encore honorée si elle vaut `false`, parce que sa valeur de prod n'est pas connue. Si elle est à `true` ou absente, la retirer.
 - `ETL_SCHEDULING_ENABLED=true` : redite, à retirer. La variable ne sert plus qu'à couper les passes sur une copie locale. En prod, l'interrupteur est la ligne `scheduling.enabled` (§ 3).
 
 **vantage-worker** (`apps/vantage-worker/.env`) : `GROQ_MODEL`, `CEREBRAS_MODEL`, `TOGETHER_MODEL`, `FIREWORKS_MODEL`, `GROQ_RESEARCH_MODEL`, `SWEEP_INTERVAL_MS`, `VANTAGE_COMPETITION_CODES`, `VANTAGE_COUPON_CRON`, `VANTAGE_COUPON_RETRY_CRON`, `VANTAGE_COUPON_INTRADAY_WINDOW_HOURS`. La passe IA tourne désormais à **17 h 45**, depuis une constante partagée avec le backend. La reprise de 21 h 15 est supprimée, et son ancienne planification est retirée de Redis au démarrage.
@@ -59,4 +60,5 @@ Vérifier d'abord les valeurs actuelles du `.env` de prod (fournisseur, chaîne 
 ## 4. À décider ensemble
 
 - **Le conteneur ml-worker** : la correction ML est coupée et le réentraînement n'est plus planifié. Le backend ne l'appelle plus que pour sa vérification de santé (un avertissement s'il ne répond pas) et pour un entraînement lancé à la main. On peut le retirer du compose de prod : c'est un changement de déploiement, pas de code.
+- **Couper les passes planifiées longtemps** : l'interrupteur `scheduling.enabled` est fait pour un incident. Au rallumage, chaque passe arrivée à échéance pendant la coupure tourne une fois, aussitôt (la composition de 17 h comprise). Ne pas le laisser coupé à cheval sur 17 h sans y penser.
 - **La composition de 21 h** : les générateurs tournent encore à 21 h, retrouvent le coupon de 17 h et écrivent désormais `preserved`. Les retirer de cette passe économiserait une composition jetée par soir, sans effet pour le joueur.

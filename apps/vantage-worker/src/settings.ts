@@ -76,6 +76,25 @@ export async function readLiveConfig(
   return config;
 }
 
+/**
+ * « Passes planifiées » (12-admin § 4), the same row the backend reads: off,
+ * the worker's own scheduled passes (sweep, coupon generation) skip. On
+ * when the row is absent, malformed or unreadable.
+ */
+export async function scheduledPassesEnabled(logger: Logger): Promise<boolean> {
+  try {
+    const row = await prisma.appSetting.findUnique({
+      where: { key: "scheduling.enabled" },
+      select: { value: true },
+    });
+    if (!row) return true;
+    return parseAppSetting("scheduling.enabled", row.value) ?? true;
+  } catch (err) {
+    logger.warn({ err }, "vantage: app_setting unreadable, passes stay on");
+    return true;
+  }
+}
+
 /** One set of clients per provider chain: built once, reused across passes. */
 const clientsByChain = new Map<string, LlmClients>();
 

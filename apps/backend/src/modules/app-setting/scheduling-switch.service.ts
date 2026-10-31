@@ -28,7 +28,12 @@ const QUEUE_NAMES = [...Object.values(BULLMQ_QUEUES), SLIP_DIGEST.QUEUE];
  * « Passes planifiées » (12-admin § 4), for an incident: turned off, every
  * backend queue is paused (Redis keeps the pause across restarts), turned
  * back on, the queues it paused resume — never one paused elsewhere (the
- * stats backfill has its own pause). Read every minute.
+ * stats backfill has its own pause). Read every minute. The vantage-worker
+ * reads the same row before its scheduled passes.
+ *
+ * Back on, each pass that came due meanwhile runs once, at once (BullMQ
+ * keeps one pending run per scheduler): an incident switch, not a pause to
+ * hold for hours across the 17:00 coupon pass.
  *
  * ETL_SCHEDULING_ENABLED=false (a local copy) leaves it idle: nothing is
  * scheduled there anyway.
@@ -77,11 +82,13 @@ export class SchedulingSwitchService
     const paused: string[] = [];
     for (const queue of this.queues()) {
       if (await queue.isPaused()) continue;
+      // Marked before pausing: a crash between the two leaves a mark on a
+      // running queue (resuming it is harmless), never a pause without one.
+      await this.redis.sadd(SWITCH_PAUSED_KEY, queue.name);
       await queue.pause();
       paused.push(queue.name);
     }
     if (paused.length === 0) return;
-    await this.redis.sadd(SWITCH_PAUSED_KEY, ...paused);
     logger.warn({ paused }, 'scheduled passes off: queues paused');
   }
 

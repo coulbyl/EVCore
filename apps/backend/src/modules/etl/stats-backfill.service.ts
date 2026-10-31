@@ -67,8 +67,11 @@ export class StatsBackfillService implements OnApplicationBootstrap {
     private readonly apiFootball: ApiFootballClient,
     private readonly settings: AppSettingService,
   ) {
+    // STATS_BACKFILL_ENABLED=false still holds: its production value is not
+    // known (ENV-NETTOYAGE § 1), so the deploy must not turn the backfill on.
     this.scheduled =
-      config.get<string>('ETL_SCHEDULING_ENABLED', 'true') !== 'false';
+      config.get<string>('ETL_SCHEDULING_ENABLED', 'true') !== 'false' &&
+      config.get<string>('STATS_BACKFILL_ENABLED', 'true') !== 'false';
     this.cronPattern = STATS_BACKFILL.CRON;
   }
 

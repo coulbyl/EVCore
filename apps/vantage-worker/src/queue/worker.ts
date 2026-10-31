@@ -2,7 +2,11 @@ import { Worker, type Job } from "bullmq";
 import type { Logger } from "pino";
 import type { Config } from "../config";
 import type { LlmClients } from "../groq/client";
-import { clientsFor, readLiveConfig } from "../settings";
+import {
+  clientsFor,
+  readLiveConfig,
+  scheduledPassesEnabled,
+} from "../settings";
 import { analyzeFixture } from "../vantage/analyze-fixture";
 import {
   runCouponGeneration,
@@ -36,6 +40,19 @@ export function createVantageWorker(
   return new Worker<VantageJobData>(
     VANTAGE_QUEUE_NAME,
     async (job: Job<VantageJobData>) => {
+      // A scheduled run (not one triggered by hand) honours the operator's
+      // switch; a skipped sweep enqueues no analysis either.
+      if (
+        job.repeatJobKey &&
+        (job.name === "sweep" || job.name === "generate-coupons") &&
+        !(await scheduledPassesEnabled(logger))
+      ) {
+        logger.warn(
+          { jobName: job.name },
+          "vantage: scheduled passes off, skipped",
+        );
+        return undefined;
+      }
       if (job.name === "sweep") {
         return runSweep(queue, config, logger);
       }
