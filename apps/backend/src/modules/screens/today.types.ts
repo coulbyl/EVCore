@@ -132,3 +132,11 @@ export type TodayScreen = {
   followedInProgress: TodayCoupon[];
   forms: TodayProductForm[];
 };
+
+/** GET /results/yesterday: yesterday's coupons as « Aujourd'hui » showed them (08 § 3). */
+export type YesterdayScreen = {
+  date: string;
+  heroId: string | null;
+  coupons: TodayCoupon[];
+  absences: TodayAbsence[];
+};

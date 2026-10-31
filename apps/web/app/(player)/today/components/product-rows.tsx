@@ -17,11 +17,14 @@ export async function ProductRows({
   coupons,
   absences,
   followedInProgress,
+  couponPath = "/today/coupon",
   underNothingTitle = false,
 }: {
   coupons: readonly TodayCoupon[];
   absences: readonly TodayAbsence[];
   followedInProgress: readonly TodayCoupon[];
+  /** Where a row opens its coupon: Résultats opens yesterday's (08 § 3). */
+  couponPath?: string;
   /** Sous « Rien à jouer aujourd'hui » : « Pas de Favori », sans redire le jour. */
   underNothingTitle?: boolean;
 }) {
@@ -48,7 +51,7 @@ export async function ProductRows({
         return (
           <Row
             key={coupon.id}
-            href={`/today/coupon/${coupon.id}`}
+            href={`${couponPath}/${coupon.id}`}
             title={t(`products.${coupon.product}`)}
             meta={
               single

@@ -31,6 +31,7 @@ import {
 } from './today-products';
 import type {
   TodayAbsence,
+  YesterdayScreen,
   TodayCoupon,
   TodayCouponState,
   TodayFormOutcome,
@@ -108,6 +109,38 @@ export class TodayService {
       absences: absencesOf(abstentions),
       followedInProgress: allCoupons.filter((c) => c.forDate !== todayKey),
       forms: formsOf(dayRows),
+    };
+  }
+
+  /**
+   * Yesterday's coupons, all, in the order and shape of « Aujourd'hui »,
+   * with the products that abstained and why (08 § 3, the sheet opened from
+   * the « Hier » line of Résultats).
+   */
+  async getYesterday(
+    userId: string,
+    now: Date = new Date(),
+  ): Promise<YesterdayScreen> {
+    const day = new Date(startOfUtcDay(now).getTime() - DAY_MS);
+    const [rows, abstentions] = await Promise.all([
+      this.repository.findCouponLegs({
+        userId,
+        today: day,
+        followedSince: day,
+        targets: TODAY_PRODUCT_TARGETS,
+      }),
+      this.coupons.getProductAbstentions({
+        from: day,
+        to: new Date(day.getTime() + DAY_MS),
+      }),
+    ]);
+    const date = formatDateUtc(day);
+    const coupons = couponsOf(rows, now).filter((c) => c.forDate === date);
+    return {
+      date,
+      heroId: heroOf(coupons),
+      coupons,
+      absences: absencesOf(abstentions),
     };
   }
 

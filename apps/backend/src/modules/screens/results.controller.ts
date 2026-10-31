@@ -16,7 +16,7 @@ import { ResultsService } from './results.service';
 import { WeekQueryDto } from './dto/week-query.dto';
 import { WeekService, type WeekScreen } from './week.service';
 import { TodayService } from './today.service';
-import type { TodayCoupon } from './today.types';
+import type { TodayCoupon, YesterdayScreen } from './today.types';
 import type { AiDetail, ProductDetail, ResultsScreen } from './results.types';
 
 /**
@@ -44,6 +44,19 @@ export class ResultsController {
     return this.results.getAi({
       period: query.period ?? RESULTS_DEFAULT_PERIOD,
     });
+  }
+
+  @Get('yesterday')
+  @ApiOperation({
+    summary: "Yesterday's coupons, all, as Aujourd'hui showed them",
+    description:
+      "The sheet the « Hier » line opens: every coupon of yesterday in the order and shape of « Aujourd'hui », settled, and the products that abstained with their reason.",
+  })
+  @ApiOkResponse({ description: "Yesterday's coupons." })
+  getYesterday(
+    @CurrentSession() session: AuthSession,
+  ): Promise<YesterdayScreen> {
+    return this.today.getYesterday(session.user.id);
   }
 
   @Get('coupons/:id')

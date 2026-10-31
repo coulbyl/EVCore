@@ -27,6 +27,7 @@ import {
   type DisplayLocale,
 } from "@/helpers/scoreboard-format";
 import { periodHref, sheetOf } from "./results-constants";
+import { WeekSheet, YesterdaySheet } from "./yesterday-week-sheets";
 
 type Translate = Awaited<ReturnType<typeof getTranslations<"results.sheet">>>;
 
@@ -61,7 +62,7 @@ function betOf(label: string, market: string | null, pick: string | null) {
  * stake, then day by day. For « Avis IA » the same blocks with the opinion
  * for unit. Rendered on the server; open during a pause (08 § 4).
  */
-export async function ResultsSheet({
+export function ResultsSheet({
   slug,
   period,
 }: {
@@ -70,6 +71,19 @@ export async function ResultsSheet({
 }) {
   const sheet = sheetOf(slug);
   if (!sheet) notFound();
+  if (sheet.kind === "yesterday") return <YesterdaySheet period={period} />;
+  if (sheet.kind === "week") return <WeekSheet period={period} />;
+  return <LineSheet sheet={sheet} period={period} />;
+}
+
+/** A product's or the AI's sheet (08 § 2). */
+async function LineSheet({
+  sheet,
+  period,
+}: {
+  sheet: NonNullable<ReturnType<typeof sheetOf>>;
+  period: ResultsPeriod;
+}) {
   const [t, locale] = await Promise.all([
     getTranslations("results.sheet"),
     getLocale(),
@@ -83,6 +97,7 @@ export async function ResultsSheet({
       </Sheet>
     );
   }
+  if (sheet.kind !== "product") notFound();
   const detail = await getProductDetail(sheet.product, period);
   return (
     <Sheet

@@ -6,6 +6,8 @@ import type { TodayCoupon } from "@/domains/today/types/today";
 import type {
   AiDetail,
   ProductDetail,
+  WeekScreen,
+  YesterdayScreen,
   ResultsPeriod,
   ResultsProductKey,
 } from "../types/results";
@@ -46,4 +48,15 @@ export const getResultsCoupon = cache(
       serverApiRequest<TodayCoupon>(`/results/coupons/${encodeURIComponent(id)}`),
     );
   },
+);
+
+/** Yesterday's coupons, all, settled (08 § 3). */
+export const getYesterday = cache(
+  (): Promise<YesterdayScreen> =>
+    serverApiRequest<YesterdayScreen>("/results/yesterday"),
+);
+
+/** « Ta semaine »: the week closed last Sunday (08 § 3). */
+export const getWeek = cache(
+  (): Promise<WeekScreen> => serverApiRequest<WeekScreen>("/results/week"),
 );

@@ -92,6 +92,19 @@ export function formatShare(fraction: number, locale: DisplayLocale): string {
   }).format(fraction);
 }
 
+/** Le jour court d'une ligne de semaine : « lun. 22 ». */
+export function formatShortWeekdayDay(
+  date: Date,
+  locale: DisplayLocale,
+  timeZone: string,
+): string {
+  return new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    weekday: "short",
+    day: "numeric",
+    timeZone,
+  }).format(date);
+}
+
 /**
  * Un montant en francs CFA, sans décimale : « 14 000 F » (08 § 2, la ligne
  * de mise fixe). Une perte s'écrit avec le même poids qu'un gain.

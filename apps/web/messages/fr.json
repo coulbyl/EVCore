@@ -1441,7 +1441,18 @@
       "lost": "perdu",
       "refunded": "remboursé",
       "nothing": "Rien sur cette période",
-      "outOfHundred": "{count} sur 100"
+      "outOfHundred": "{count} sur 100",
+      "yesterdayTitle": "Hier, {date}",
+      "nothingYesterday": "Hier · rien à jouer",
+      "weekTitle": "Ta semaine",
+      "weekRange": "du {from} au {to}",
+      "dayColumn": "Jour",
+      "total": "Total",
+      "outOf": "{won} sur {played}",
+      "followedWeek": "Tes coupons suivis cette semaine",
+      "followedCounts": "{won, plural, one {# gagné} other {# gagnés}} · {lost, plural, one {# perdu} other {# perdus}}",
+      "followedRefunded": "{count, plural, one {# remboursé} other {# remboursés}}",
+      "mondayNote": "Le relevé du lundi, le même que la notification de 8 h."
     }
   }
 }

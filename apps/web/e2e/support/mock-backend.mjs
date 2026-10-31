@@ -964,6 +964,60 @@ function resultsCoupon(id) {
   return { ...favourite, id: RESULTS_COUPON, followedByMe: false };
 }
 
+// « Hier » ouvert (GET /results/yesterday) et « Ta semaine »
+// (GET /results/week), 08 § 3.
+function resultsYesterday() {
+  const screen = eveningScreen();
+  return {
+    date: todayAt(-24).slice(0, 10),
+    heroId: screen.heroId,
+    coupons: screen.coupons,
+    absences: [
+      { product: "HUNTER_CORNERS", reason: "no_reliable_competition" },
+    ],
+  };
+}
+
+function resultsWeek() {
+  const monday = "2026-10-19";
+  const day = (i) =>
+    new Date(Date.parse(`${monday}T00:00:00Z`) + i * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+  const mark = (product, outcome, paidOdds = null) => ({
+    product,
+    outcome,
+    paidOdds,
+  });
+  return {
+    week: monday,
+    days: [
+      [
+        mark("FAVOURITE", "won", 1.22),
+        mark("COMBO", "won", 1.38),
+        mark("DOUBLE", "lost"),
+      ],
+      [mark("FAVOURITE", "won", 1.3), mark("COMBO", "lost")],
+      [mark("COMBO", "won", 1.44)],
+      [mark("FAVOURITE", "won", 1.25), mark("COMBO", "won", 1.4)],
+      [mark("FAVOURITE", "lost"), mark("COMBO", "won", 1.36)],
+      [mark("FAVOURITE", "won", 1.2), mark("COMBO", "refunded")],
+      [
+        mark("FAVOURITE", "won", 1.24),
+        mark("COMBO", "won", 1.41),
+        mark("HUNTER_DRAW", "won", 3.4),
+      ],
+    ].map((marks, i) => ({ date: day(i), marks })),
+    products: [
+      { product: "FAVOURITE", won: 5, played: 6 },
+      { product: "COMBO", won: 5, played: 6 },
+      { product: "DOUBLE", won: 0, played: 1 },
+      { product: "HUNTER_DRAW", won: 1, played: 1 },
+    ],
+    followed: { won: 3, lost: 2, refunded: 0 },
+  };
+}
+
 function matchesPage(url, cookie) {
   const params = new URL(url, "http://mock").searchParams;
   const day = params.get("day") ?? "today";
@@ -2369,6 +2423,12 @@ function route(method, url, cookie = "") {
         ? resultsCoupon(resultsPath[2])
         : resultsProduct(resultsPath[2], url, cookie);
     return found ? [200, found] : [404, { message: "Introuvable" }];
+  }
+  if (path === "/results/yesterday" && method === "GET") {
+    return [200, resultsYesterday()];
+  }
+  if (path === "/results/week" && method === "GET") {
+    return [200, resultsWeek()];
   }
   if (path === "/results/ai" && method === "GET") {
     return [200, resultsAi(url, cookie)];

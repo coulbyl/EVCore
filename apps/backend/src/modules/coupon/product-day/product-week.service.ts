@@ -22,7 +22,12 @@ export type ProductWeek = {
   /** Monday to Sunday: each product's outcome that day, when it played. */
   days: {
     date: string;
-    marks: { product: string; outcome: ProductDayRow['outcome'] }[];
+    marks: {
+      product: string;
+      outcome: ProductDayRow['outcome'];
+      /** The 1xBet odds paid on a won day (« ✓ 1,22 »); null otherwise. */
+      paidOdds: number | null;
+    }[];
   }[];
   /**
    * « Favori 5/6 »: won over played; a refunded day is neither (08 § 1),
@@ -55,7 +60,14 @@ export class ProductWeekService {
         marks: rows
           .filter((row) => formatDateUtc(row.forDate) === date)
           .sort((a, b) => rank(a.product) - rank(b.product))
-          .map((row) => ({ product: row.product, outcome: row.outcome })),
+          .map((row) => ({
+            product: row.product,
+            outcome: row.outcome,
+            paidOdds:
+              row.outcome === 'won' && row.paidOdds !== null
+                ? Number(row.paidOdds.toFixed(3))
+                : null,
+          })),
       };
     });
     const products = WEEK_PRODUCTS.flatMap((product) => {

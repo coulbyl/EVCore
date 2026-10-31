@@ -36,9 +36,12 @@ import {
 export async function HeroCard({
   coupon,
   form,
+  couponPath = "/today/coupon",
 }: {
   coupon: TodayCoupon;
   form: TodayProductForm | undefined;
+  /** Where the card opens its coupon: Résultats opens yesterday's (08 § 3). */
+  couponPath?: string;
 }) {
   const [t, locale, timeZone] = await Promise.all([
     getTranslations("today"),
@@ -58,7 +61,7 @@ export async function HeroCard({
       className="relative flex flex-col gap-3 rounded-[0.875rem] border border-border bg-card p-4 text-card-foreground"
     >
       <Link
-        href={`/today/coupon/${coupon.id}`}
+        href={`${couponPath}/${coupon.id}`}
         aria-label={t("open", { product: t(`products.${coupon.product}`) })}
         className="absolute inset-0 rounded-[0.875rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       />

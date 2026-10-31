@@ -1,3 +1,8 @@
+import type {
+  TodayAbsence,
+  TodayCoupon,
+} from "@/domains/today/types/today";
+
 /** Mirror of apps/backend screens/results.types.ts (GET /results/products). */
 export const RESULTS_PERIODS = ["30", "90", "all"] as const;
 export type ResultsPeriod = (typeof RESULTS_PERIODS)[number];
@@ -121,3 +126,26 @@ export type AiOpinion = {
 
 /** GET /results/ai?period=. */
 export type AiDetail = AiSummary & { opinions: AiOpinion[] };
+
+/** GET /results/yesterday: yesterday's coupons as Aujourd'hui showed them (08 § 3). */
+export type YesterdayScreen = {
+  date: string;
+  heroId: string | null;
+  coupons: TodayCoupon[];
+  absences: TodayAbsence[];
+};
+
+/** GET /results/week: « Ta semaine », the Monday statement (08 § 3). */
+export type WeekScreen = {
+  week: string;
+  days: {
+    date: string;
+    marks: {
+      product: ResultsProductKey;
+      outcome: DayOutcome;
+      paidOdds: number | null;
+    }[];
+  }[];
+  products: { product: ResultsProductKey; won: number; played: number }[];
+  followed: { won: number; lost: number; refunded: number };
+};

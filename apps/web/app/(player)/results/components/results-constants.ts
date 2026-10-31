@@ -8,6 +8,9 @@ import {
 
 /** The AI's sheet, beside the products' (08 § 2). */
 export const AI_SLUG = "ai";
+/** The sheets the « Hier » line opens (08 § 3). */
+export const YESTERDAY_SLUG = "yesterday";
+export const WEEK_SLUG = "week";
 
 /** « /results/favourite », « /results/hunter-draw ». */
 export function productSlug(product: ResultsProductKey): string {
@@ -17,8 +20,15 @@ export function productSlug(product: ResultsProductKey): string {
 /** The product of a sheet's address, the AI, or null when unknown. */
 export function sheetOf(
   slug: string,
-): { kind: "ai" } | { kind: "product"; product: ResultsProductKey } | null {
+):
+  | { kind: "ai" }
+  | { kind: "yesterday" }
+  | { kind: "week" }
+  | { kind: "product"; product: ResultsProductKey }
+  | null {
   if (slug === AI_SLUG) return { kind: "ai" };
+  if (slug === YESTERDAY_SLUG) return { kind: "yesterday" };
+  if (slug === WEEK_SLUG) return { kind: "week" };
   const product = RESULTS_PRODUCT_KEYS.find((key) => productSlug(key) === slug);
   return product ? { kind: "product", product } : null;
 }

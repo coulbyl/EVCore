@@ -9,7 +9,7 @@ test.describe("Résultats", () => {
     page,
   }) => {
     await page.goto("/results");
-    const line = page.getByRole("list", { name: "Hier" });
+    const line = page.getByRole("link", { name: /^Hier / });
     await expect(line).toBeVisible();
     await expect(line).toContainText("FAV");
     await expect(line).toContainText("1,24");
@@ -62,7 +62,7 @@ test.describe("Résultats", () => {
     ).toContainText("11 jours gagnés sur 14");
   });
 
-  test("le lundi : « Ta semaine » à la place de Hier", async ({
+  test("le lundi : « Ta semaine », le compte du héros", async ({
     page,
     context,
   }) => {
@@ -75,9 +75,10 @@ test.describe("Résultats", () => {
       },
     ]);
     await page.goto("/results");
-    await expect(page.getByText("Ta semaine")).toBeVisible();
-    await expect(page.getByText("9 jours gagnés sur 12")).toBeVisible();
-    await expect(page.getByRole("list", { name: "Hier" })).toHaveCount(0);
+    const line = page.getByRole("link", { name: /^Ta semaine/ });
+    await expect(line).toContainText("Favori");
+    await expect(line).toContainText("5 jours gagnés sur 6");
+    await expect(page.getByRole("link", { name: /^Hier / })).toHaveCount(0);
   });
 });
 
@@ -179,5 +180,59 @@ test.describe("Résultats, la fiche d'une ligne", () => {
   test("une ligne inconnue : page introuvable", async ({ page }) => {
     await page.goto("/results/nope");
     await expect(page.getByText("Page introuvable")).toBeVisible();
+  });
+});
+
+/** « Hier » et « Ta semaine » ouverts (08 § 3, maquette Semaine). */
+test.describe("Résultats, hier et la semaine", () => {
+  const sheetNamed = (page: Page, name: string | RegExp) =>
+    page
+      .getByRole("dialog", { name })
+      .or(page.getByRole("complementary", { name }));
+
+  test("Hier ouvre les coupons d'hier, réglés, et les absents avec leur raison", async ({
+    page,
+  }) => {
+    await page.goto("/results");
+    await page.getByRole("link", { name: /^Hier / }).click();
+    await expect(page).toHaveURL(/\/results\/yesterday$/, { timeout: 15_000 });
+    const sheet = sheetNamed(page, /^Hier, /);
+    await expect(sheet).toBeVisible();
+    await expect(
+      sheet.getByRole("region", { name: "Favori du jour" }),
+    ).toBeVisible();
+    await expect(
+      sheet.getByRole("img", { name: "Gagné" }).first(),
+    ).toBeVisible();
+    await expect(sheet.getByText("Pas de Chasseur Corners")).toBeVisible();
+
+    // A card opens its settled coupon.
+    await sheet.getByRole("link", { name: "Ouvrir Favori du jour" }).click();
+    await expect(page).toHaveURL(/\/results\/coupon\/cp-today-fav$/, {
+      timeout: 15_000,
+    });
+  });
+
+  test("Ta semaine : sept jours, la pastille et la cote payée, le total, mes suivis", async ({
+    page,
+  }) => {
+    await page.goto("/results/week");
+    const sheet = sheetNamed(page, "Ta semaine");
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByText("du 19 au 25/10")).toBeVisible();
+    await expect(sheet).toContainText("Favori 5 jours gagnés sur 6");
+    const table = sheet.getByRole("table");
+    await expect(table.getByRole("row")).toHaveCount(9);
+    const monday = table.getByRole("row", { name: /lun\. 19/ });
+    await expect(monday).toContainText("1,22");
+    await expect(monday.getByRole("img", { name: "perdu" })).toBeVisible();
+    const total = table.getByRole("row", { name: /Total/ });
+    await expect(total).toContainText("5 sur 6");
+    await expect(sheet).toContainText("3 gagnés · 2 perdus");
+    await expect(
+      sheet.getByText(
+        "Le relevé du lundi, le même que la notification de 8 h.",
+      ),
+    ).toBeVisible();
   });
 });

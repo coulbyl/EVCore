@@ -1,3 +1,4 @@
+import { Prisma } from '@evcore/db';
 import { describe, expect, it, vi } from 'vitest';
 import type {
   ProductDayRepository,
@@ -46,7 +47,10 @@ describe('ProductWeekService', () => {
 
   it('counts won over played: a refund is neither, a pending day waits', async () => {
     const { service } = harness([
-      day('FAVOURITE', '2026-10-19', 'won'),
+      {
+        ...day('FAVOURITE', '2026-10-19', 'won'),
+        paidOdds: new Prisma.Decimal('1.220'),
+      },
       day('FAVOURITE', '2026-10-20', 'refunded'),
       day('FAVOURITE', '2026-10-21', 'lost'),
       day('FAVOURITE', '2026-10-25', 'pending'),
@@ -61,13 +65,14 @@ describe('ProductWeekService', () => {
     expect(week.days[0]).toEqual({
       date: '2026-10-19',
       marks: [
-        { product: 'FAVOURITE', outcome: 'won' },
-        { product: 'COMBO', outcome: 'won' },
+        // The odds paid after a win (« ✓ 1,22 »), when stored.
+        { product: 'FAVOURITE', outcome: 'won', paidOdds: 1.22 },
+        { product: 'COMBO', outcome: 'won', paidOdds: null },
       ],
     });
     expect(week.days[6]).toEqual({
       date: '2026-10-25',
-      marks: [{ product: 'FAVOURITE', outcome: 'pending' }],
+      marks: [{ product: 'FAVOURITE', outcome: 'pending', paidOdds: null }],
     });
   });
 });

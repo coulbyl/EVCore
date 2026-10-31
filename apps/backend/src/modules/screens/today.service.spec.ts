@@ -521,3 +521,44 @@ describe('TodayService.couponById', () => {
     ).rejects.toThrow('Coupon introuvable');
   });
 });
+
+describe('TodayService.getYesterday', () => {
+  it("yesterday's coupons in the order of Aujourd'hui, settled, and who abstained", async () => {
+    const yesterday = new Date('2026-10-29T00:00:00.000Z');
+    const { service, repository, coupons } = harness({
+      legs: [
+        leg({
+          forDate: yesterday,
+          result: 'WON',
+          realizedOdds: d('1.240'),
+          isCorrect: true,
+          fixtureStatus: 'FINISHED',
+          homeScore: 2,
+          awayScore: 0,
+          scheduledAt: new Date('2026-10-29T19:00:00.000Z'),
+        }),
+      ],
+      abstentions: [
+        {
+          date: '2026-10-29',
+          product: 'COMBO',
+          reason: 'not_enough_calibrated_short_legs',
+        },
+      ],
+    });
+    const screen = await service.getYesterday('u1', NOW);
+    expect(repository.findCouponLegs).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'u1', today: yesterday }),
+    );
+    expect(coupons.getProductAbstentions).toHaveBeenCalledWith({
+      from: yesterday,
+      to: new Date('2026-10-30T00:00:00.000Z'),
+    });
+    expect(screen.date).toBe('2026-10-29');
+    expect(screen.heroId).toBe('fav');
+    expect(screen.coupons[0]).toMatchObject({ state: 'won', paidOdds: 1.24 });
+    expect(screen.absences).toEqual([
+      { product: 'COMBO', reason: 'not_enough_calibrated_short_legs' },
+    ]);
+  });
+});

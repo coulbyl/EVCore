@@ -1441,7 +1441,18 @@
       "lost": "lost",
       "refunded": "refunded",
       "nothing": "Nothing over this period",
-      "outOfHundred": "{count} in 100"
+      "outOfHundred": "{count} in 100",
+      "yesterdayTitle": "Yesterday, {date}",
+      "nothingYesterday": "Yesterday · nothing to play",
+      "weekTitle": "Your week",
+      "weekRange": "{from} to {to}",
+      "dayColumn": "Day",
+      "total": "Total",
+      "outOf": "{won} of {played}",
+      "followedWeek": "Your followed coupons this week",
+      "followedCounts": "{won} won · {lost} lost",
+      "followedRefunded": "{count} refunded",
+      "mondayNote": "The Monday statement, the same as the 8 am notification."
     }
   }
 }

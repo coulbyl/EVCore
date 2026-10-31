@@ -45,7 +45,7 @@ export default async function Page({
   return (
     <>
       <PlayerBand>
-        <ResultsYesterdayLine screen={screen} />
+        <ResultsYesterdayLine screen={screen} period={period} />
       </PlayerBand>
       <h1 className="sr-only">{shell("tabs.results")}</h1>
       <div className="flex flex-col gap-2 px-4 pt-3 pb-4 lg:px-6">
