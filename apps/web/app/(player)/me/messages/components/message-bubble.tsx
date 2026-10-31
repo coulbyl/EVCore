@@ -1,9 +1,10 @@
 import { clsx } from "clsx";
 import type { SupportMessage } from "@/domains/support/types/support";
+import { VoicePlayer } from "./voice-player";
 
 /**
  * One message of the thread (09 § 2, maquette Messages): mine on the right,
- * the team's on the left signed with the name of who answered and the time,
+ * the team's on the left signed « L'équipe EVCore » with the time,
  * the automatic welcome in grey. A photo shows, a voice message plays.
  * No hooks: drawn on the server for the thread and in the composer for a
  * message being sent.
@@ -18,7 +19,7 @@ export function MessageBubble({
 }: {
   message: SupportMessage;
   mine: boolean;
-  /** « Kouamé, équipe EVCore » for the team, nothing for mine. */
+  /** « L'équipe EVCore » for the team, nothing for mine. */
   sign: string | null;
   time: string;
   labels: { voice: string; image: string; file: string; automatic: string };
@@ -64,13 +65,10 @@ export function MessageBubble({
             )}
           />
         ) : attachment?.kind === "AUDIO" ? (
-          <audio
-            controls
-            // The length shows before playing, without loading the sound.
-            preload="metadata"
+          <VoicePlayer
             src={attachment.url}
-            aria-label={labels.voice}
-            className="max-w-full"
+            durationMs={attachment.durationMs}
+            label={labels.voice}
           />
         ) : attachment ? (
           <a

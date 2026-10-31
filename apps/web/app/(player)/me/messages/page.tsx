@@ -8,6 +8,7 @@ import { serverApiRequest } from "@/lib/api/server-api";
 import { displayLocaleOf, formatTime } from "@/helpers/scoreboard-format";
 import { Composer } from "./components/composer";
 import { MessageBubble } from "./components/message-bubble";
+import { PushNudge } from "./components/push-nudge";
 import { ThreadLive } from "./components/thread-live";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -94,6 +95,7 @@ export default async function Page({
         subtitle={t("subtitle")}
         back={{ href: "/me", label: t("back") }}
       />
+      <PushNudge labels={{ text: t("pushNudge"), enable: t("pushEnable") }} />
       <ThreadLive unread={unread} />
       <div className="flex flex-col px-4 pt-3 lg:px-6">
         {hasMore ? (

@@ -1279,6 +1279,8 @@
     "yesterday": "hier",
     "automatic": "automatique",
     "teamSign": "L'équipe EVCore",
+    "pushNudge": "Active les notifications pour ne rater aucune réponse.",
+    "pushEnable": "Activer",
     "older": "Messages précédents",
     "placeholder": "Écris à l'équipe…",
     "send": "Envoyer",
