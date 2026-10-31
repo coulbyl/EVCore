@@ -39,6 +39,8 @@ export function VerifyEmailForm({ labels }: { labels: VerifyLabels }) {
     try {
       await playerFetch("/auth/send-verification", { method: "POST" });
     } catch {
+      // Not sent: « Renvoyer » is the way to retry, open at once.
+      setWait(0);
       setError(labels.sendFailed);
     }
   }

@@ -13,3 +13,11 @@ export function loginPathFor(path: string | null): string {
   if (!path) return "/auth/login";
   return `/auth/login?next=${encodeURIComponent(path)}`;
 }
+
+/**
+ * Where an account lands once signed in: the admin keeps /dashboard until
+ * its own overhaul (12-admin.md), a player has Aujourd'hui.
+ */
+export function homePathFor(role: "ADMIN" | "OPERATOR"): string {
+  return role === "ADMIN" ? "/dashboard" : "/today";
+}

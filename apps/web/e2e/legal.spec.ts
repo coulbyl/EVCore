@@ -35,4 +35,25 @@ test.describe("Pages légales", () => {
       page.getByText("À compléter par l'éditeur").first(),
     ).toBeVisible();
   });
+
+  test("un joueur connecté retrouve Aujourd'hui en tête", async ({
+    page,
+    context,
+  }) => {
+    await context.addCookies([
+      {
+        name: "evcore_session",
+        value: "player",
+        domain: "localhost",
+        path: "/",
+      },
+    ]);
+    await page.goto("/cgu");
+    await expect(
+      page.getByRole("link", { name: "Aujourd'hui" }),
+    ).toHaveAttribute("href", "/today");
+    await expect(page.getByRole("link", { name: "Se connecter" })).toHaveCount(
+      0,
+    );
+  });
 });

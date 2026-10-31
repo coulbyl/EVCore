@@ -85,8 +85,13 @@ export function RegisterForm({ labels }: { labels: RegisterLabels }) {
       if (answer) applyLocaleFromSession(answer.session);
       window.location.assign("/auth/verify");
     } catch (error) {
-      if (error instanceof PlayerFetchError && error.status === 409) {
+      const status = error instanceof PlayerFetchError ? error.status : 0;
+      if (status === 409) {
         setTaken(true);
+      } else if (status === 400) {
+        // The first name and the password are checked here as the server
+        // does: what it still refuses is the address (IsEmail).
+        setErrors({ email: labels.errors.email });
       } else {
         setErrors({ form: labels.errors.failed });
       }

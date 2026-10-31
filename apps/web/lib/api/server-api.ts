@@ -15,6 +15,8 @@ type ServerApiRequestOptions = {
    * only for reads sent without the visitor's cookies (the public routes).
    */
   revalidate?: number;
+  /** Gives up after this many milliseconds (a read that has a fallback). */
+  timeoutMs?: number;
 };
 
 function hasHeaders(headers: Headers): boolean {
@@ -64,6 +66,10 @@ export async function serverApiRequest<T>(
       ? { next: { revalidate: options.revalidate } }
       : { cache: options?.cache ?? "no-store" }),
     headers: hasHeaders(headers) ? headers : undefined,
+    signal:
+      options?.timeoutMs !== undefined
+        ? AbortSignal.timeout(options.timeoutMs)
+        : undefined,
     body,
   });
 

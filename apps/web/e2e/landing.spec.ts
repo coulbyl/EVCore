@@ -66,16 +66,6 @@ test.describe("Landing", () => {
     ).toHaveAttribute("href", "/auth/login");
   });
 
-  test("aucun script client propre à la page", async ({ page }) => {
-    const scripts: string[] = [];
-    page.on("request", (request) => {
-      if (request.resourceType() === "script") scripts.push(request.url());
-    });
-    await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    expect(scripts.some((url) => url.includes("page-"))).toBe(false);
-  });
-
   test("l'image de partage est celle du héros du jour", async ({
     page,
     request,

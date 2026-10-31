@@ -2432,24 +2432,33 @@ const AUTH_BODY_ROUTES = new Set([
   "/auth/reset-password/totp",
 ]);
 
+// A player's session: the admin of the default session would land on
+// /dashboard, not the screens these forms lead to.
+const PLAYER_SESSION = {
+  session: {
+    ...SESSION.session,
+    user: { ...SESSION.session.user, role: "OPERATOR" },
+  },
+};
+
 function authAnswer(path, body) {
   const ok = [200, { status: "ok" }];
   switch (path) {
     case "/auth/register":
       return String(body.email ?? "").startsWith("deja@")
         ? [409, { message: "Cet e-mail a déjà un compte" }]
-        : [201, SESSION, true];
+        : [201, PLAYER_SESSION, true];
     case "/auth/login":
       if (body.password === "mauvais")
         return [401, { message: "E-mail ou mot de passe incorrect" }];
       if (String(body.identifier ?? "").startsWith("app@"))
         return [200, { totpRequired: true, challenge: "defi" }];
-      return [200, SESSION, true];
+      return [200, PLAYER_SESSION, true];
     case "/auth/login/totp":
     case "/auth/reset-password/totp":
       return (body.code ?? body.totpCode) === "123456"
         ? path === "/auth/login/totp"
-          ? [200, SESSION, true]
+          ? [200, PLAYER_SESSION, true]
           : ok
         : [401, { message: "Code incorrect" }];
     case "/auth/verify-email":

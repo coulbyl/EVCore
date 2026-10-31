@@ -1,6 +1,9 @@
 import { cache } from "react";
 import { serverApiRequest } from "@/lib/api/server-api";
-import { PUBLIC_TODAY_REVALIDATE_S } from "../public-cache";
+import {
+  PUBLIC_TODAY_REVALIDATE_S,
+  PUBLIC_TODAY_TIMEOUT_MS,
+} from "../public-cache";
 import type { PublicToday } from "../types/public";
 
 /**
@@ -14,6 +17,7 @@ export const getPublicToday = cache(async (): Promise<PublicToday | null> => {
     return await serverApiRequest<PublicToday>("/public/today", {
       cookieHeader: "",
       revalidate: PUBLIC_TODAY_REVALIDATE_S,
+      timeoutMs: PUBLIC_TODAY_TIMEOUT_MS,
     });
   } catch {
     return null;

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { PlayerFetchError, playerFetch } from "@/lib/api/player-fetch";
 import { applyLocaleFromSession } from "@/domains/auth/use-cases/apply-locale";
 import { safeNextPath } from "@/domains/auth/helpers/safe-next-path";
+import { homePathFor } from "@/domains/auth/routing/auth-routing";
 import type { AuthSession } from "@/domains/auth/types/auth";
 import { PRIMARY, QUIET } from "@/components/scoreboard/ui/form-looks";
 import { AuthField } from "./auth-field";
@@ -60,7 +61,9 @@ export function LoginForm({
     const next = safeNextPath(
       new URLSearchParams(window.location.search).get("next"),
     );
-    window.location.assign(next ?? "/today");
+    window.location.assign(
+      next ?? homePathFor(session?.user.role ?? "OPERATOR"),
+    );
   }
 
   function failure(caught: unknown, wrong: string) {

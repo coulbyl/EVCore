@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { homePathFor } from "@/domains/auth/routing/auth-routing";
 import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session";
 import { AuthScreen } from "../components/auth-screen";
 import { VerifyEmailForm } from "./components/verify-email-form";
@@ -21,7 +22,7 @@ export default async function VerifyPage() {
     getTranslations("playerAuth"),
   ]);
   if (!session) redirect("/auth/login");
-  if (session.user.emailVerified) redirect("/today");
+  if (session.user.emailVerified) redirect(homePathFor(session.user.role));
 
   return (
     <AuthScreen

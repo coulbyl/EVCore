@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { SESSION_COOKIE } from "@/domains/auth/routing/auth-routing";
+import {
+  SESSION_COOKIE,
+  homePathFor,
+} from "@/domains/auth/routing/auth-routing";
 import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session";
 
 /**
@@ -19,8 +22,7 @@ export default async function SignedOutAuthLayout({
   children: ReactNode;
 }) {
   const hasCookie = (await cookies()).has(SESSION_COOKIE);
-  if (hasCookie && (await getCurrentSession())) {
-    redirect("/today");
-  }
+  const session = hasCookie ? await getCurrentSession() : null;
+  if (session) redirect(homePathFor(session.user.role));
   return children;
 }

@@ -5,3 +5,9 @@
  */
 export const PUBLIC_TODAY_REVALIDATE_S = 60;
 export const PUBLIC_RESULTS_REVALIDATE_S = 300;
+/**
+ * The landing and the share image do without the hero when the API is slow
+ * or unreachable — `next build` prerenders the image and must not hang on
+ * it.
+ */
+export const PUBLIC_TODAY_TIMEOUT_MS = 5_000;

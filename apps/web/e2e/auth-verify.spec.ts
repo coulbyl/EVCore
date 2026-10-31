@@ -50,20 +50,26 @@ test("un mauvais code se dit sous le champ, le bon mène à Aujourd'hui", async 
   await expect(page).toHaveURL(/\/today$/);
 });
 
-test("un compte déjà vérifié repart vers Aujourd'hui", async ({
+test("un joueur déjà vérifié repart vers Aujourd'hui", async ({
   page,
   context,
 }) => {
-  await signIn(context, "e2e");
+  await signIn(context, "player");
   await page.goto("/auth/verify");
   await expect(page).toHaveURL(/\/today$/);
+});
+
+test("l'admin, lui, garde le tableau de bord", async ({ page, context }) => {
+  await signIn(context, "e2e");
+  await page.goto("/auth/verify");
+  await expect(page).toHaveURL(/\/dashboard$/);
 });
 
 test("connecté, la page de connexion renvoie à Aujourd'hui", async ({
   page,
   context,
 }) => {
-  await signIn(context, "unverified");
+  await signIn(context, "player");
   await page.goto("/auth/login");
   await expect(page).toHaveURL(/\/today$/);
 });
