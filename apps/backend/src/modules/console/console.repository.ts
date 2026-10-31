@@ -337,4 +337,152 @@ export class ConsoleRepository {
       select: { id: true, market: true, createdAt: true, reason: true },
     });
   }
+
+  /** Joueurs › Ce mois, for the month starting `start` (UTC). */
+  async playersMonth(input: { start: Date; end: Date; now: Date }): Promise<{
+    signups: number;
+    activated: number;
+    active7: number;
+    sent: number;
+    opened: number;
+  }> {
+    const { start, end } = input;
+    const activeTo = input.now < end ? input.now : end;
+    const activeFrom = new Date(activeTo.getTime() - 7 * DAY_MS);
+    const [row] = await this.prisma.client.$queryRaw<
+      {
+        signups: bigint;
+        activated: bigint;
+        active7: bigint;
+        sent: bigint;
+        opened: bigint;
+      }[]
+    >`
+      SELECT
+        (SELECT count(*) FROM public.users u
+         WHERE u.role <> 'ADMIN' AND u."createdAt" >= ${start} AND u."createdAt" < ${end}) AS signups,
+        (SELECT count(*) FROM public.users u
+         WHERE u.role <> 'ADMIN' AND u."createdAt" >= ${start} AND u."createdAt" < ${end}
+           AND EXISTS (SELECT 1 FROM public.coupon_follow f
+                       WHERE f."userId" = u.id
+                         AND f."createdAt" < u."createdAt" + interval '14 days')) AS activated,
+        (SELECT count(DISTINCT a."userId") FROM public.user_activity_day a
+         JOIN public.users u ON u.id = a."userId"
+         WHERE u.role <> 'ADMIN' AND a."firstSeenAt" >= ${activeFrom}
+           AND a."firstSeenAt" < ${activeTo}) AS active7,
+        (SELECT count(*) FROM public.notification n
+         WHERE n.type = 'MORNING_BRIEF' AND n."userId" IS NOT NULL
+           AND n."createdAt" >= ${start} AND n."createdAt" < ${end}) AS sent,
+        (SELECT count(*) FROM public.notification n
+         WHERE n.type = 'MORNING_BRIEF' AND n."userId" IS NOT NULL AND n.read
+           AND n."createdAt" >= ${start} AND n."createdAt" < ${end}) AS opened
+    `;
+    return {
+      signups: Number(row?.signups ?? 0),
+      activated: Number(row?.activated ?? 0),
+      active7: Number(row?.active7 ?? 0),
+      sent: Number(row?.sent ?? 0),
+      opened: Number(row?.opened ?? 0),
+    };
+  }
+
+  /** Joueurs › Comptes: newest first, by first name or e-mail. */
+  accounts(input: { q: string; take: number; skip: number }): Promise<
+    {
+      id: string;
+      fullName: string;
+      email: string;
+      role: string;
+      createdAt: Date;
+      pausedUntil: Date | null;
+      suspended: boolean;
+      _count: { couponFollows: number };
+    }[]
+  > {
+    const q = input.q.trim();
+    return this.prisma.client.user.findMany({
+      where: q
+        ? {
+            OR: [
+              { fullName: { contains: q, mode: 'insensitive' } },
+              { email: { contains: q, mode: 'insensitive' } },
+            ],
+          }
+        : {},
+      orderBy: { createdAt: 'desc' },
+      take: input.take,
+      skip: input.skip,
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        pausedUntil: true,
+        suspended: true,
+        _count: { select: { couponFollows: true } },
+      },
+    });
+  }
+
+  /** A player's account, its last followed coupons and its thread. */
+  async player(id: string): Promise<{
+    user: {
+      id: string;
+      fullName: string;
+      email: string;
+      role: string;
+      createdAt: Date;
+      pausedUntil: Date | null;
+      suspended: boolean;
+      emailVerified: boolean;
+      _count: { couponFollows: number };
+    } | null;
+    followed: {
+      couponId: string;
+      forDate: Date;
+      product: string | null;
+      outcome: string | null;
+    }[];
+    conversationId: string | null;
+  }> {
+    const [user, followed, conversation] = await Promise.all([
+      this.prisma.client.user.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          pausedUntil: true,
+          suspended: true,
+          emailVerified: true,
+          _count: { select: { couponFollows: true } },
+        },
+      }),
+      this.prisma.client.$queryRaw<
+        {
+          couponId: string;
+          forDate: Date;
+          product: string | null;
+          outcome: string | null;
+        }[]
+      >`
+        SELECT f."couponProposalId" AS "couponId", cp."forDate",
+               pd.product::text AS product, pd.outcome::text AS outcome
+        FROM public.coupon_follow f
+        JOIN public.coupon_proposal cp ON cp.id = f."couponProposalId"
+        LEFT JOIN public.product_day pd ON pd."couponProposalId" = cp.id
+        WHERE f."userId" = ${id}::uuid
+        ORDER BY cp."forDate" DESC
+        LIMIT 20
+      `,
+      this.prisma.client.supportConversation.findFirst({
+        where: { userId: id },
+        select: { id: true },
+      }),
+    ]);
+    return { user, followed, conversationId: conversation?.id ?? null };
+  }
 }

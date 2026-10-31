@@ -183,3 +183,38 @@ export type SuspendedMarket = {
   since: string;
   reason: string;
 };
+
+/** Joueurs › Ce mois (12 § 3): four figures, players only. */
+export type PlayersMonth = {
+  month: string;
+  signups: number;
+  /** Signed up this month and followed a coupon within 14 days. */
+  activated: number;
+  /** Came on at least one of the last 7 days (of the month, if past). */
+  active7: number;
+  morning: { sent: number; opened: number };
+};
+
+/** A line of Joueurs › Comptes. */
+export type PlayerAccount = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  createdAt: string;
+  follows: number;
+  pausedUntil: string | null;
+  suspended: boolean;
+};
+
+/** A player's sheet: the account, its followed coupons, its thread. */
+export type PlayerSheet = PlayerAccount & {
+  emailVerified: boolean;
+  followed: {
+    couponId: string;
+    forDate: string;
+    product: string | null;
+    outcome: string | null;
+  }[];
+  conversationId: string | null;
+};

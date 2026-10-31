@@ -8,6 +8,7 @@ import { EtlModule } from '@modules/etl/etl.module';
 import { MailModule } from '@modules/mail/mail.module';
 import { ScreensModule } from '@modules/screens/screens.module';
 import { ConsoleEngineService } from './console-engine.service';
+import { ConsolePlayersService } from './console-players.service';
 import { ConsolePassesService } from './console-passes.service';
 import {
   ConsoleWatchScheduler,
@@ -40,6 +41,7 @@ import { ConsoleService } from './console.service';
     ConsoleRepository,
     ConsolePassesService,
     ConsoleEngineService,
+    ConsolePlayersService,
     ConsoleWatchService,
     ConsoleWatchScheduler,
     ConsoleWatchWorker,

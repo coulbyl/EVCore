@@ -6,6 +6,10 @@ import type {
   EngineProducts,
   PassView,
   SuspendedMarket,
+  PlayersMonth,
+  PlayerAccount,
+  PlayerSheet,
+  AnnouncementView,
 } from "../types/console";
 
 /** The lights and « À faire », read once per request. */
@@ -37,4 +41,33 @@ export const getEngineChannels = cache(
 export const getSuspensions = cache(
   (): Promise<SuspendedMarket[]> =>
     serverApiRequest<SuspendedMarket[]>("/console/engine/suspensions"),
+);
+
+export const getPlayersMonth = cache(
+  (month?: string): Promise<PlayersMonth> =>
+    serverApiRequest<PlayersMonth>(
+      month
+        ? `/console/players/month?month=${month}`
+        : "/console/players/month",
+    ),
+);
+
+export const getAccounts = cache(
+  (
+    q: string,
+    page: number,
+  ): Promise<{ items: PlayerAccount[]; page: number; more: boolean }> =>
+    serverApiRequest(
+      `/console/players/accounts?page=${page}${q ? `&q=${encodeURIComponent(q)}` : ""}`,
+    ),
+);
+
+export const getPlayer = cache(
+  (id: string): Promise<PlayerSheet> =>
+    serverApiRequest<PlayerSheet>(`/console/players/${id}`),
+);
+
+export const getAnnouncements = cache(
+  (): Promise<AnnouncementView[]> =>
+    serverApiRequest<AnnouncementView[]>("/admin/announcements"),
 );

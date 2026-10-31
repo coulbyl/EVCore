@@ -159,3 +159,41 @@ export type SuspendedMarket = {
   since: string;
   reason: string;
 };
+
+export type PlayersMonth = {
+  month: string;
+  signups: number;
+  activated: number;
+  active7: number;
+  morning: { sent: number; opened: number };
+};
+
+export type PlayerAccount = {
+  id: string;
+  name: string;
+  email: string;
+  role: "ADMIN" | "OPERATOR";
+  createdAt: string;
+  follows: number;
+  pausedUntil: string | null;
+  suspended: boolean;
+};
+
+export type PlayerSheet = PlayerAccount & {
+  emailVerified: boolean;
+  followed: {
+    couponId: string;
+    forDate: string;
+    product: string | null;
+    outcome: string | null;
+  }[];
+  conversationId: string | null;
+};
+
+export type AnnouncementView = {
+  id: string;
+  title: string;
+  description: string;
+  published: boolean;
+  publishedAt: string | null;
+};

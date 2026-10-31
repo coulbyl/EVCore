@@ -17,6 +17,11 @@ import type { PassView } from './console-passes';
 import { ResultsQueryDto } from '@modules/screens/dto/results-query.dto';
 import { RESULTS_DEFAULT_PERIOD } from '@config/results.constants';
 import { ConsoleEngineService } from './console-engine.service';
+import { ConsolePlayersService } from './console-players.service';
+import {
+  PlayersAccountsQueryDto,
+  PlayersMonthQueryDto,
+} from './dto/players-query.dto';
 import { ConsolePassesService } from './console-passes.service';
 import { ConsoleService } from './console.service';
 import { ReactivateMarketDto } from './dto/reactivate.dto';
@@ -24,6 +29,9 @@ import type {
   ChannelCell,
   ConsoleStatus,
   EngineProducts,
+  PlayerAccount,
+  PlayerSheet,
+  PlayersMonth,
   SuspendedMarket,
 } from './console.types';
 
@@ -32,10 +40,12 @@ import type {
 @Controller('console')
 @UseGuards(AuthSessionGuard, AdminGuard)
 export class ConsoleController {
+  // eslint-disable-next-line max-params -- NestJS constructor injection: the home, its passes, Moteur, Joueurs
   constructor(
     private readonly console: ConsoleService,
     private readonly passes: ConsolePassesService,
     private readonly engine: ConsoleEngineService,
+    private readonly players: ConsolePlayersService,
   ) {}
 
   @Get('status')
@@ -114,5 +124,37 @@ export class ConsoleController {
     @Body() body: ReactivateMarketDto,
   ): Promise<SuspendedMarket> {
     return this.engine.reactivate({ id, reason: body.reason });
+  }
+
+  @Get('players/month')
+  @ApiOperation({
+    summary: 'Joueurs › Ce mois',
+    description:
+      'Players only: sign-ups, activated (a follow within 14 days), active on the last 7 days, morning briefs sent and opened.',
+  })
+  @ApiOkResponse({ description: 'The four figures.' })
+  getPlayersMonth(@Query() query: PlayersMonthQueryDto): Promise<PlayersMonth> {
+    return this.players.getMonth(query.month);
+  }
+
+  @Get('players/accounts')
+  @ApiOperation({
+    summary: 'Joueurs › Comptes',
+    description: 'Newest first, by first name or e-mail, 30 a page.',
+  })
+  @ApiOkResponse({ description: 'The accounts.' })
+  getAccounts(
+    @Query() query: PlayersAccountsQueryDto,
+  ): Promise<{ items: PlayerAccount[]; page: number; more: boolean }> {
+    return this.players.getAccounts(query);
+  }
+
+  @Get('players/:id')
+  @ApiOperation({
+    summary: "A player's sheet: account, followed coupons, thread",
+  })
+  @ApiOkResponse({ description: 'The sheet.' })
+  getPlayer(@Param('id', ParseUUIDPipe) id: string): Promise<PlayerSheet> {
+    return this.players.getPlayer(id);
   }
 }
