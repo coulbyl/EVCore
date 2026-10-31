@@ -15,7 +15,7 @@ import type {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** A read the API answers 404 to (unknown product or coupon): not found. */
-async function orNotFound<T>(read: Promise<T>): Promise<T> {
+export async function orNotFound<T>(read: Promise<T>): Promise<T> {
   try {
     return await read;
   } catch (error) {
@@ -41,14 +41,12 @@ export const getAiDetail = cache(
 );
 
 /** A published coupon of any day, opened from « Jour par jour ». */
-export const getResultsCoupon = cache(
-  (id: string): Promise<TodayCoupon> => {
-    if (!UUID.test(id)) notFound();
-    return orNotFound(
-      serverApiRequest<TodayCoupon>(`/results/coupons/${encodeURIComponent(id)}`),
-    );
-  },
-);
+export const getResultsCoupon = cache((id: string): Promise<TodayCoupon> => {
+  if (!UUID.test(id)) notFound();
+  return orNotFound(
+    serverApiRequest<TodayCoupon>(`/results/coupons/${encodeURIComponent(id)}`),
+  );
+});
 
 /** Yesterday's coupons, all, settled (08 § 3). */
 export const getYesterday = cache(

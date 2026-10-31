@@ -31,7 +31,9 @@ import {
 import { periodHref, sheetOf } from "./results-constants";
 import { WeekSheet, YesterdaySheet } from "./yesterday-week-sheets";
 
-type Translate = Awaited<ReturnType<typeof getTranslations<"results.sheet">>>;
+export type Translate = Awaited<
+  ReturnType<typeof getTranslations<"results.sheet">>
+>;
 
 /** The squares of the grid, one per day (08 § 2): R for a refund. */
 const GRID: Record<string, Outcome> = {
@@ -117,16 +119,22 @@ async function LineSheet({
   );
 }
 
-async function ProductBody({
+/**
+ * `visitor`: /resultats without an account (11 § 1) — no coupon to open,
+ * no help sheet, both behind the session.
+ */
+export async function ProductBody({
   detail,
   period,
   t,
   locale,
+  visitor = false,
 }: {
   detail: ProductDetail;
   period: ResultsPeriod;
   t: Translate;
   locale: DisplayLocale;
+  visitor?: boolean;
 }) {
   const [results, reasons] = await Promise.all([
     getTranslations("results"),
@@ -137,7 +145,7 @@ async function ProductBody({
   const count = (outcome: string) =>
     detail.grid.filter((cell) => cell.outcome === outcome).length;
   // The AI combo's coupons are the LLM's: not opened as a published coupon.
-  const opens = detail.product !== "COMBO_AI";
+  const opens = detail.product !== "COMBO_AI" && !visitor;
 
   return (
     <div className="flex flex-col divide-y divide-border">
@@ -191,7 +199,7 @@ async function ProductBody({
         unit="day"
         t={t}
         locale={locale}
-        chancesHint={await chancesHintOf(locale)}
+        chancesHint={visitor ? null : await chancesHintOf(locale)}
       />
 
       <Block title={t("dayByDay")}>
@@ -242,16 +250,18 @@ async function ProductBody({
   );
 }
 
-async function AiBody({
+export async function AiBody({
   detail,
   period,
   t,
   locale,
+  visitor = false,
 }: {
   detail: AiDetail;
   period: ResultsPeriod;
   t: Translate;
   locale: DisplayLocale;
+  visitor?: boolean;
 }) {
   // Oldest first for the grid, as the products' days.
   const chronological = [...detail.opinions].reverse();
@@ -305,7 +315,7 @@ async function AiBody({
         unit="opinion"
         t={t}
         locale={locale}
-        chancesHint={await chancesHintOf(locale)}
+        chancesHint={visitor ? null : await chancesHintOf(locale)}
       />
 
       <Block title={t("opinionByOpinion")}>
@@ -390,7 +400,8 @@ function Figures({
   unit: "day" | "opinion";
   t: Translate;
   locale: DisplayLocale;
-  chancesHint: string;
+  /** Null: no « ? », its help sheet is behind the session. */
+  chancesHint: string | null;
 }) {
   if (!comparison && !francs) {
     return (
@@ -413,7 +424,9 @@ function Figures({
         <section className="grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-1 py-4">
           <span className="text-body text-muted-foreground">
             {t("announced")}
-            <HelpHint slug="chances" label={chancesHint} />
+            {chancesHint ? (
+              <HelpHint slug="chances" label={chancesHint} />
+            ) : null}
           </span>
           <span>{chance(comparison.announced)}</span>
           <span className="text-body text-muted-foreground">

@@ -7,7 +7,9 @@ const BASE = "https://c-evcore.com";
 export default function sitemap(): MetadataRoute.Sitemap {
   const legalUpdated = new Date("2026-10-27");
   return [
-    { url: `${BASE}/`, changeFrequency: "weekly", priority: 1 },
+    { url: `${BASE}/`, changeFrequency: "daily", priority: 1 },
+    // La page de conformité : tout ce que la landing affirme (11 § 1).
+    { url: `${BASE}/resultats`, changeFrequency: "daily", priority: 0.9 },
     { url: `${BASE}/auth/register`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/auth/login`, changeFrequency: "yearly", priority: 0.4 },
     ...[

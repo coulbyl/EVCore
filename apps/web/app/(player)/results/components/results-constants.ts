@@ -33,11 +33,18 @@ export function sheetOf(
   return product ? { kind: "product", product } : null;
 }
 
+/** The tab, or /resultats for a visitor (11 § 1): the same lines. */
+export type ResultsBase = "/results" | "/resultats";
+
 /** A sheet's address, keeping the period chosen on the list. */
-export function sheetHref(slug: string, period: ResultsPeriod): string {
+export function sheetHref(
+  slug: string,
+  period: ResultsPeriod,
+  base: ResultsBase = "/results",
+): string {
   return period === "90"
-    ? `/results/${slug}`
-    : `/results/${slug}?period=${period}`;
+    ? `${base}/${slug}`
+    : `${base}/${slug}?period=${period}`;
 }
 
 /** The period chip of the address, 90 days when absent or unknown (08 § 1). */
@@ -46,8 +53,11 @@ export function periodOf(param: string | string[] | undefined): ResultsPeriod {
   return RESULTS_PERIODS.find((period) => period === value) ?? "90";
 }
 
-export function periodHref(period: ResultsPeriod): string {
-  return period === "90" ? "/results" : `/results?period=${period}`;
+export function periodHref(
+  period: ResultsPeriod,
+  base: ResultsBase = "/results",
+): string {
+  return period === "90" ? base : `${base}?period=${period}`;
 }
 
 /**

@@ -7,7 +7,12 @@ import type {
   ProductSummary,
   ResultsPeriod,
 } from "@/domains/results/types/results";
-import { AI_SLUG, productSlug, sheetHref } from "./results-constants";
+import {
+  AI_SLUG,
+  productSlug,
+  sheetHref,
+  type ResultsBase,
+} from "./results-constants";
 
 /**
  * One line per product, in the order of Aujourd'hui (08 § 1): its name,
@@ -21,10 +26,13 @@ export async function ProductRows({
   products,
   ai,
   period,
+  base = "/results",
 }: {
   products: readonly ProductSummary[];
   ai: AiSummary;
   period: ResultsPeriod;
+  /** /resultats for a visitor: the same lines, its own detail pages. */
+  base?: ResultsBase;
 }) {
   const t = await getTranslations("results");
   return (
@@ -33,7 +41,7 @@ export async function ProductRows({
         {products.map((product) => (
           <ResultRow
             key={product.product}
-            href={sheetHref(productSlug(product.product), period)}
+            href={sheetHref(productSlug(product.product), period, base)}
             name={
               product.retired
                 ? `${t(`names.${product.product}`)} · ${t("retired")}`
@@ -55,7 +63,7 @@ export async function ProductRows({
       </ul>
       <ul className="border-t-2 border-foreground">
         <ResultRow
-          href={sheetHref(AI_SLUG, period)}
+          href={sheetHref(AI_SLUG, period, base)}
           name={t("ai")}
           last={ai.last}
           figure={

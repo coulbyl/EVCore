@@ -2593,6 +2593,16 @@ function route(method, url, cookie = "") {
     const sheet = matchSheet(sheetOfMatch[1]);
     return sheet ? [200, sheet] : [404, { message: "Match introuvable" }];
   }
+  // /resultats (11 § 1) : les mêmes réponses que l'onglet, sans session.
+  const publicResults = path.match(
+    /^\/public\/results\/(products|ai)(?:\/([^/]+))?$/,
+  );
+  if (publicResults && method === "GET") {
+    if (publicResults[1] === "ai") return [200, resultsAi(url, "")];
+    if (!publicResults[2]) return [200, resultsScreen(url, "")];
+    const found = resultsProduct(publicResults[2], url, "");
+    return found ? [200, found] : [404, { message: "Introuvable" }];
+  }
   const resultsPath = path.match(/^\/results\/(products|coupons)\/([^/]+)$/);
   if (resultsPath && method === "GET") {
     const found =

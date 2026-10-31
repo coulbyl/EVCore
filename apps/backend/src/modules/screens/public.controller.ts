@@ -5,7 +5,7 @@ import { PUBLIC_CACHE_CONTROL } from '@config/screens.constants';
 import { ResultsQueryDto } from './dto/results-query.dto';
 import { PublicService, type PublicToday } from './public.service';
 import { ResultsService } from './results.service';
-import type { ProductDetail, ResultsScreen } from './results.types';
+import type { AiDetail, ProductDetail, ResultsScreen } from './results.types';
 
 /**
  * Without a session (docs/refonte-ui/11 § 1): the landing's hero and the
@@ -40,6 +40,16 @@ export class PublicController {
     return this.results.getResults({
       period: query.period ?? RESULTS_DEFAULT_PERIOD,
       isAdmin: false,
+    });
+  }
+
+  @Get('results/ai')
+  @Header('Cache-Control', PUBLIC_CACHE_CONTROL)
+  @ApiOperation({ summary: '« Avis IA » opened, read-only, for /resultats' })
+  @ApiOkResponse({ description: 'The AI detail.' })
+  getAi(@Query() query: ResultsQueryDto): Promise<AiDetail> {
+    return this.results.getAi({
+      period: query.period ?? RESULTS_DEFAULT_PERIOD,
     });
   }
 

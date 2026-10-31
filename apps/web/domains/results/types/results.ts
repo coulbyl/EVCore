@@ -1,7 +1,4 @@
-import type {
-  TodayAbsence,
-  TodayCoupon,
-} from "@/domains/today/types/today";
+import type { TodayAbsence, TodayCoupon } from "@/domains/today/types/today";
 
 /** Mirror of apps/backend screens/results.types.ts (GET /results/products). */
 export const RESULTS_PERIODS = ["30", "90", "all"] as const;
