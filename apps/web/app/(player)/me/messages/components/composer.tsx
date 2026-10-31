@@ -19,6 +19,7 @@ import {
   maxBytesForKind,
 } from "@/app/dashboard/inbox/components/attachment-constants";
 import { MessageBubble } from "./message-bubble";
+import { VoicePlayer } from "./voice-player";
 
 export type ComposerLabels = {
   placeholder: string;
@@ -207,13 +208,19 @@ export function Composer({
           </p>
         ) : null}
         {recorder.state === "recording" ? (
-          <div className="flex min-h-12 items-center gap-3">
+          <div className="flex min-h-12 items-center gap-2">
+            {/* Changed one's mind: thrown away, nothing to listen to. */}
+            <IconButton label={labels.cancel} onClick={recorder.cancel}>
+              <X aria-hidden className="size-5" />
+            </IconButton>
             <span
               className="size-2.5 animate-pulse rounded-full bg-loss"
               aria-hidden
             />
-            <span className="score flex-1 text-bet" aria-live="polite">
-              {labels.recording} {formatDuration(recorder.elapsedMs)}
+            {/* Announced once: the counter ticks every 200 ms. */}
+            <span className="score flex-1 text-bet">
+              <span role="status">{labels.recording}</span>{" "}
+              <span aria-hidden>{formatDuration(recorder.elapsedMs)}</span>
             </span>
             <IconButton label={labels.stop} onClick={recorder.stop}>
               <Square aria-hidden className="size-5" />
@@ -221,7 +228,15 @@ export function Composer({
           </div>
         ) : recorder.state === "preview" && previewUrl ? (
           <div className="flex min-h-12 items-center gap-2">
-            <audio controls src={previewUrl} className="min-w-0 flex-1" />
+            {/* The same player as the thread: the voice looks the same
+                before and after it is sent. */}
+            <div className="min-w-0 flex-1">
+              <VoicePlayer
+                src={previewUrl}
+                durationMs={recorder.elapsedMs}
+                label={labels.voice}
+              />
+            </div>
             <IconButton label={labels.cancel} onClick={recorder.reset}>
               <X aria-hidden className="size-5" />
             </IconButton>
