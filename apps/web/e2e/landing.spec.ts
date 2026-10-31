@@ -75,4 +75,19 @@ test.describe("Landing", () => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     expect(scripts.some((url) => url.includes("page-"))).toBe(false);
   });
+
+  test("l'image de partage est celle du héros du jour", async ({
+    page,
+    request,
+  }) => {
+    await page.goto("/");
+    const src = await page
+      .locator('meta[property="og:image"]')
+      .getAttribute("content");
+    expect(src).toMatch(/\/opengraph-image/);
+    const url = new URL(src ?? "");
+    const image = await request.get(`${url.pathname}${url.search}`);
+    expect(image.status()).toBe(200);
+    expect(image.headers()["content-type"]).toBe("image/png");
+  });
 });
