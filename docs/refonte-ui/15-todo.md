@@ -146,6 +146,26 @@ _Branche `feat/refonte-ui`. Cocher au fur et à mesure ; chaque ligne est un com
 - [ ] G14 Revue de phase G : `/code-review high`, Lighthouse admin téléphone, `EXPLAIN` des points d'entrée admin.
 - [ ] G15 Revue de finition, PR 2 vers `main`.
 
+## Revue page par page avec l'utilisateur (en cours, 31/10)
+
+PR https://github.com/coulbyl/EVCore/pull/282 ouverte (C–F). Avant la phase G, on revoit chaque écran ensemble : l'utilisateur regarde son serveur local (localhost:3000, extension Moby pour le téléphone) sur une copie de la base de prod, envoie des captures ; on critique, on corrige sur `feat/refonte-ui`, un commit poussé par correction (la PR suit seule).
+
+**Méthode.**
+- Jamais le faux backend e2e pour une revue : on juge l'écran sur les vraies données, un écran vide se juge comme un état.
+- Pour vérifier soi-même : un compte jetable (`POST http://127.0.0.1:3001/auth/register` avec `email`, `password`, `firstName`, `confirmAge`, `acceptTerms`), le cookie `evcore_session` posé sur le domaine `localhost`, captures Playwright (`@playwright/test`, script temporaire dans `apps/web`, supprimé après) sur le serveur de l'utilisateur, puis `POST /auth/me/delete` avec le mot de passe.
+- La base locale : Postgres Docker `evcore-postgres` sur le port 5432, restaurée depuis `backups/evcore_db_evcore-2026-10-31_10-42-51.sql`.
+
+**Revu et corrigé.**
+- Landing, `/resultats`, inscription, connexion : bandeau d'encre, dernier coupon gagnant les jours sans héros, revue de conformité des textes (`docs/audits/2026-10-31/REVUE-CONFORMITE-TEXTES.md`, points 1 à 4 appliqués).
+- Aujourd'hui : états vides en carte, ligne « Hier » en mots (vert gagné, rouge perdu), cote payée d'un coupon gagné = cotes 1xBet de ses jambes gagnées.
+- Matchs : lignes sur deux niveaux, matchs joués repliés en haut, puce « Grands championnats ». Libellés : ne jamais arrondir une ligne (« moins de 2,5 » ≠ « moins de 3 ») ; seuls 0,5 d'équipe et double chance 12 passent en mots.
+- Fiche de match : pari de l'IA toujours montré, son explication complète dans un popover natif, une seule chance par pari.
+- Chance : montrée seulement sur le coupon (héros, en-tête de sa feuille) et sous notre lecture, écrite « Passe 8 fois sur 10 », jamais sur un coupon réglé (DESIGN.md, « The One Chance Rule »).
+
+**Reste à revoir.** Fiche coupon avec plusieurs jambes, ticket, Résultats (fiches produit, Avis IA, Ta semaine), Moi et ses pages, Notifications. Ensuite la phase G (admin).
+
+**Ouverts, sans suite immédiate.** Budget LCP froid rouge en CI (« on cherchera un vrai gain après »), feuille courte coupée sur iPhone (ci-dessous), ressource d'aide locale, relecture juridique.
+
 ## À relire plus tard (hors lots)
 
 - [ ] **Feuille courte coupée en bas sur iPhone ?** Relevé le 31/10 dans l'extension Moby (iPhone, barre Safari flottante d'iOS 26) : la feuille « Hier » (Résultats) cache sa dernière ligne sous la barre du navigateur et ne défile pas. Une feuille plus courte que 92 % de l'écran prend la hauteur de son contenu, il n'y a donc rien à faire défiler, et Moby fait passer la page sous sa barre. La fiche de match, plus longue, défile. La marge de zone sûre (`env(safe-area-inset-bottom)`, commit e3f6806d) ne suffit pas dans Moby, qui déclare une zone sûre nulle. **À tester sur un vrai iPhone au déploiement** : feuille Hier, puis une fiche coupon courte, puis la barre d'onglets du bas. Si c'est coupé, donner aux feuilles sans pied une marge basse fixe qui ne dépend pas du navigateur (`components/scoreboard/sheet/sheet.tsx`). Le réglage `NEXT_DEV_ORIGINS` (commit 622bee90) permet de tester le serveur de dev depuis un téléphone, mais demande un relais de ports Windows (PowerShell administrateur).
