@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
-import { getTranslations } from "next-intl/server";
+import { createTranslator } from "next-intl";
+import messages from "@/messages/fr.json";
 import { getPublicToday } from "@/domains/public/use-cases/get-public-today";
 import type { PublicHero } from "@/domains/public/types/public";
 import {
@@ -20,7 +21,9 @@ import { legPickLabel } from "../../(player)/today/components/today-constants";
  *
  * Jamais de donnée de compte (audit du 2026-10-23, P1-4 : l'ancienne image
  * montrait un solde et un fondateur). En français : le lien circule sur
- * WhatsApp, l'appareil qui le reçoit n'a pas dit sa langue.
+ * WhatsApp, l'appareil qui le reçoit n'a pas dit sa langue. Les textes
+ * viennent du fichier de messages, pas de la requête : l'image ne dépend
+ * d'aucun cookie et se sert statique, régénérée à la minute.
  *
  * Police par défaut d'ImageResponse : le moteur ne lit pas le woff2 des
  * polices Barlow.
@@ -41,12 +44,18 @@ const LOOK = {
 const SHOWN_LEGS = 3;
 
 export async function renderShareImage(): Promise<ImageResponse> {
-  const [today, t, chanceText, landing] = await Promise.all([
-    getPublicToday(),
-    getTranslations({ locale: "fr", namespace: "today" }),
-    getTranslations({ locale: "fr", namespace: "scoreboard.chance" }),
-    getTranslations({ locale: "fr", namespace: "landing" }),
-  ]);
+  const today = await getPublicToday();
+  const t = createTranslator({ locale: "fr", messages, namespace: "today" });
+  const chanceText = createTranslator({
+    locale: "fr",
+    messages,
+    namespace: "scoreboard.chance",
+  });
+  const landing = createTranslator({
+    locale: "fr",
+    messages,
+    namespace: "landing",
+  });
   const hero = today?.hero ?? null;
   const date = today
     ? formatShortDate(
@@ -132,21 +141,22 @@ export async function renderShareImage(): Promise<ImageResponse> {
   );
 }
 
+type ChanceTranslate = ReturnType<
+  typeof createTranslator<typeof messages, "scoreboard.chance">
+>;
+
 type ChanceLine = { text: string; leds: { lit: number; total: number } | null };
 
 function chanceLine(
   probability: number,
-  t: Awaited<ReturnType<typeof getTranslations<"scoreboard.chance">>>,
+  t: ChanceTranslate,
 ): ChanceLine | null {
   const chance = chanceOf(probability);
   if (!chance) return null;
   return { text: written(chance, t), leds: ledsOf(chance) };
 }
 
-function written(
-  chance: Chance,
-  t: Awaited<ReturnType<typeof getTranslations<"scoreboard.chance">>>,
-): string {
+function written(chance: Chance, t: ChanceTranslate): string {
   switch (chance.kind) {
     case "outOfTen":
       return t("outOfTen", { count: chance.count, total: chance.total });

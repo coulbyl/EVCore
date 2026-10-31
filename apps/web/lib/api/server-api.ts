@@ -10,6 +10,11 @@ type ServerApiRequestOptions = {
   fallbackErrorMessage?: string;
   cache?: RequestCache;
   cookieHeader?: string;
+  /**
+   * Seconds the answer stays in Next's data cache, shared by every request:
+   * only for reads sent without the visitor's cookies (the public routes).
+   */
+  revalidate?: number;
 };
 
 function hasHeaders(headers: Headers): boolean {
@@ -55,7 +60,9 @@ export async function serverApiRequest<T>(
 
   const response = await fetch(`${BACKEND_URL}${path}`, {
     method: options?.method ?? "GET",
-    cache: options?.cache ?? "no-store",
+    ...(options?.revalidate !== undefined && !cookieHeader
+      ? { next: { revalidate: options.revalidate } }
+      : { cache: options?.cache ?? "no-store" }),
     headers: hasHeaders(headers) ? headers : undefined,
     body,
   });
