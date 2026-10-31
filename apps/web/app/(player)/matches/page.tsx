@@ -75,6 +75,14 @@ export default async function Page({
   const folded = items.filter((item) => !listed.includes(item));
   const noResult = t.raw(`search.noResult.${day}`) as string;
 
+  const settledLabels = (item: MatchItem) => ({
+    won: t("result.won"),
+    lost: t("result.lost"),
+    refunded: t("refunded"),
+    postponedShort: t("postponedShort"),
+    postponedMeta: t("postponed", { competition: item.competition.name }),
+  });
+
   return (
     <>
       <PlayerBand>
@@ -109,6 +117,7 @@ export default async function Page({
         </div>
       </PlayerBand>
       <h1 className="sr-only">{shell("tabs.matches")}</h1>
+
       <div id={LIST_ID} className="flex flex-col px-4 pb-4 lg:px-6">
         <p
           data-search-empty
@@ -129,15 +138,7 @@ export default async function Page({
               <SettledMatchRow
                 key={item.fixtureId}
                 item={item}
-                labels={{
-                  won: t("result.won"),
-                  lost: t("result.lost"),
-                  refunded: t("refunded"),
-                  postponedShort: t("postponedShort"),
-                  postponedMeta: t("postponed", {
-                    competition: item.competition.name,
-                  }),
-                }}
+                labels={settledLabels(item)}
               />
             ))}
           </ul>
@@ -156,7 +157,16 @@ export default async function Page({
               </h2>
               <ul className="divide-y divide-border">
                 {group.items.map((item: MatchItem) =>
-                  hasReading(item) ? (
+                  // Played already (a night match seen in the afternoon):
+                  // its score and its ✓ ✗, as in « Hier », in its hour.
+                  hasReading(item) &&
+                  (item.state === "finished" || item.state === "postponed") ? (
+                    <SettledMatchRow
+                      key={item.fixtureId}
+                      item={item}
+                      labels={settledLabels(item)}
+                    />
+                  ) : hasReading(item) ? (
                     <MatchRow key={item.fixtureId} item={item} />
                   ) : (
                     <MatchWithoutReadingRow

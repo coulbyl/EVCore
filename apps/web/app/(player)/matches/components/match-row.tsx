@@ -37,12 +37,15 @@ export function MatchRow({
         title={<MatchTitle item={item} />}
         side={
           <>
-            <span>{readingLabel(item)}</span>
-            <ChanceFigure
-              probability={item.reading.chance}
-              showLeds={false}
-              size="sm"
-            />
+            <span className="min-w-0">{readingLabel(item)}</span>
+            {/* « 9 sur 10 » never breaks across two lines. */}
+            <span className="shrink-0 whitespace-nowrap">
+              <ChanceFigure
+                probability={item.reading.chance}
+                showLeds={false}
+                size="sm"
+              />
+            </span>
           </>
         }
       />
