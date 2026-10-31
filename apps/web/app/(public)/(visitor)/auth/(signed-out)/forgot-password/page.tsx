@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { LEGAL_ENTITY } from "../../../../(legal)/legal-entity";
+import { LEGAL_ENTITY } from "../../../(legal)/legal-entity";
 import { AuthScreen } from "../../components/auth-screen";
 import { ForgotPasswordForm } from "./components/forgot-password-form";
 
