@@ -164,6 +164,24 @@ export class AuthRepository {
     await this.prisma.client.session.deleteMany({ where: { id: sessionId } });
   }
 
+  /** « Appareils connectés » (09 § 5): the user's sessions not expired. */
+  countActiveSessions(userId: string, now: Date): Promise<number> {
+    return this.prisma.client.session.count({
+      where: { userId, expiresAt: { gt: now } },
+    });
+  }
+
+  /** « Déconnecter les autres »: every session but this one. */
+  async deleteOtherSessions(input: {
+    userId: string;
+    keepSessionId: string;
+  }): Promise<number> {
+    const { count } = await this.prisma.client.session.deleteMany({
+      where: { userId: input.userId, id: { not: input.keepSessionId } },
+    });
+    return count;
+  }
+
   // --- Email verification --------------------------------------------------
 
   findEmailVerificationTarget(userId: string): Promise<{

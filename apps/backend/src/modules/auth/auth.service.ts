@@ -502,6 +502,50 @@ export class AuthService {
     this.sessionCache.invalidateUser(user.id);
   }
 
+  /**
+   * « Mot de passe » in Compte (09 § 5): the current password checked, the
+   * new one stored, every session revoked, this one included — whoever
+   * else knew the old password is out. 400 rather than 401 on a wrong
+   * password, as for the deletion: a 401 would sign the client out before
+   * it can retry.
+   */
+  async changePassword(
+    userId: string,
+    input: { currentPassword: string; newPassword: string },
+  ): Promise<void> {
+    const credentials = await this.account.findCredentials(userId);
+    if (!credentials) throw new NotFoundException('Compte introuvable');
+    if (
+      !(await verifyPassword(input.currentPassword, credentials.passwordHash))
+    ) {
+      throw new BadRequestException('Mot de passe actuel incorrect.');
+    }
+    await this.repository.replacePasswordAndRevokeSessions(
+      userId,
+      await hashPassword(input.newPassword),
+    );
+    this.sessionCache.invalidateUser(userId);
+  }
+
+  /** « Appareils connectés · 2 » (09 § 5). */
+  countSessions(userId: string, now: Date = new Date()): Promise<number> {
+    return this.repository.countActiveSessions(userId, now);
+  }
+
+  /**
+   * « Déconnecter les autres » (09 § 5): every other session goes, this one
+   * stays. The cache forgets the user so a removed session is refused at
+   * its next request rather than after the cache's minute.
+   */
+  async signOutOtherSessions(session: AuthSession): Promise<number> {
+    const removed = await this.repository.deleteOtherSessions({
+      userId: session.user.id,
+      keepSessionId: session.sessionId,
+    });
+    this.sessionCache.invalidateUser(session.user.id);
+    return removed;
+  }
+
   async updateIdentity(
     userId: string,
     dto: UpdateIdentityDto,
@@ -522,6 +566,7 @@ export class AuthService {
 
     const user = await this.repository.updateSessionUser(userId, {
       ...(username !== undefined && { username }),
+      ...(dto.firstName !== undefined && { fullName: dto.firstName.trim() }),
     });
     this.sessionCache.invalidateUser(userId);
 

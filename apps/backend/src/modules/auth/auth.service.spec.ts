@@ -16,7 +16,7 @@ import type {
   SessionRow,
   SessionUserRow,
 } from './auth.repository';
-import type { AuthenticatedRequest } from './auth.types';
+import type { AuthenticatedRequest, AuthSession } from './auth.types';
 import {
   encryptTotpSecret,
   hashPassword,
@@ -542,5 +542,65 @@ describe('AuthService session cache', () => {
     await racing;
     await service.readSessionFromRequest(requestWith('tok'));
     expect(repository.findSessionByTokenHash).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('AuthService — Compte (09 § 5)', () => {
+  it('changes the first name, trimmed, into fullName', async () => {
+    const { service, repository } = makeHarness();
+    await service.updateIdentity('user-1', { firstName: '  Kouassi ' });
+    expect(repository.updateSessionUser).toHaveBeenCalledWith('user-1', {
+      fullName: 'Kouassi',
+    });
+  });
+
+  it('signs the other sessions out, keeps this one, and forgets the user in the cache', async () => {
+    const deleteOtherSessions = vi.fn().mockResolvedValue(2);
+    const { service, sessionCache } = makeHarness({ deleteOtherSessions });
+    const invalidate = vi.spyOn(sessionCache, 'invalidateUser');
+    const removed = await service.signOutOtherSessions({
+      sessionId: 'session-1',
+      user: USER as unknown as AuthSession['user'],
+    });
+    expect(removed).toBe(2);
+    expect(deleteOtherSessions).toHaveBeenCalledWith({
+      userId: USER.id,
+      keepSessionId: 'session-1',
+    });
+    expect(invalidate).toHaveBeenCalledWith(USER.id);
+  });
+});
+
+describe('AuthService.changePassword', () => {
+  it('checks the current password, stores the new one, closes every session', async () => {
+    const replacePasswordAndRevokeSessions = vi
+      .fn()
+      .mockResolvedValue(undefined);
+    const { service, sessionCache } = makeHarness({
+      replacePasswordAndRevokeSessions,
+    });
+    (service as unknown as { account: { findCredentials: unknown } }).account =
+      {
+        findCredentials: vi
+          .fn()
+          .mockResolvedValue({ passwordHash, role: 'OPERATOR' }),
+      };
+    const invalidate = vi.spyOn(sessionCache, 'invalidateUser');
+    await service.changePassword('user-1', {
+      currentPassword: 'correct horse',
+      newPassword: 'une nouvelle phrase',
+    });
+    expect(replacePasswordAndRevokeSessions).toHaveBeenCalledWith(
+      'user-1',
+      expect.not.stringContaining('une nouvelle phrase'),
+    );
+    expect(invalidate).toHaveBeenCalledWith('user-1');
+
+    await expect(
+      service.changePassword('user-1', {
+        currentPassword: 'wrong',
+        newPassword: 'une nouvelle phrase',
+      }),
+    ).rejects.toThrow('Mot de passe actuel incorrect.');
   });
 });

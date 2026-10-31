@@ -11,6 +11,13 @@ import {
 // POST /auth/me/email/request puis /confirm. Un champ `email` envoyé ici est
 // retiré par la ValidationPipe (whitelist).
 export class UpdateIdentityDto {
+  /** « Kouassi »: shown on Moi and in the e-mails (09 § 5). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  @Matches(/\S/, { message: 'Le prénom ne peut pas être vide.' })
+  firstName?: string;
+
   @IsOptional()
   @IsString()
   @MinLength(3)

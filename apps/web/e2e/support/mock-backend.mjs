@@ -2534,6 +2534,9 @@ function route(method, url, cookie = "") {
     return [200, resultsScreen(url, cookie)];
   }
   if (path === "/me" && method === "GET") return [200, meScreen(cookie)];
+  if (path === "/auth/sessions" && method === "GET") return [200, { count: 2 }];
+  if (path === "/auth/sessions/sign-out-others" && method === "POST")
+    return [200, { signedOut: 1 }];
   if (path === "/support/conversation" && method === "GET")
     return [200, supportConversation()];
   if (path === "/support/read" && method === "POST") {

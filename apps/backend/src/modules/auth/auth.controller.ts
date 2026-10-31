@@ -34,6 +34,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ResetPasswordTotpDto } from './dto/reset-password-totp.dto';
 import { UpdateIdentityDto } from './dto/update-identity.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { PauseAccountDto } from './dto/pause-account.dto';
 import { RequestEmailChangeDto } from './dto/request-email-change.dto';
 import { ConfirmEmailChangeDto } from './dto/confirm-email-change.dto';
@@ -161,6 +162,54 @@ export class AuthController {
   // Changement d'adresse : mot de passe, puis code envoyé à la nouvelle
   // adresse. Même limite que le login contre l'essai de mots de passe et de
   // codes.
+  /**
+   * « Mot de passe » (09 § 5): every session closes, this one too; the
+   * player signs in again with the new password.
+   */
+  @Post('me/password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthSessionGuard)
+  @Throttle({
+    default: {
+      limit: AUTH_LOGIN_RATE_LIMIT.limit,
+      ttl: AUTH_LOGIN_RATE_LIMIT.ttlMs,
+    },
+  })
+  async changePassword(
+    @CurrentSession() session: AuthSession,
+    @Body() body: ChangePasswordDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    await this.authService.changePassword(session.user.id, body);
+    this.authService.clearSessionCookie(response);
+    return { status: 'ok' as const };
+  }
+
+  /** « Appareils connectés » (09 § 5): how many sessions are open. */
+  @Get('sessions')
+  @UseGuards(AuthSessionGuard)
+  async countSessions(
+    @CurrentSession() session: AuthSession,
+  ): Promise<{ count: number }> {
+    return { count: await this.authService.countSessions(session.user.id) };
+  }
+
+  /** « Déconnecter les autres »: every session but the one asking. */
+  @Post('sessions/sign-out-others')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthSessionGuard)
+  @Throttle({
+    default: {
+      limit: AUTH_LOGIN_RATE_LIMIT.limit,
+      ttl: AUTH_LOGIN_RATE_LIMIT.ttlMs,
+    },
+  })
+  async signOutOthers(
+    @CurrentSession() session: AuthSession,
+  ): Promise<{ signedOut: number }> {
+    return { signedOut: await this.authService.signOutOtherSessions(session) };
+  }
+
   @Post('me/email/request')
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthSessionGuard)

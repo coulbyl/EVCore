@@ -11,7 +11,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 export async function playerFetch<T>(
   path: string,
-  init: { method: "POST" | "DELETE"; body?: object },
+  init: { method: "POST" | "PATCH" | "DELETE"; body?: object },
 ): Promise<T | undefined> {
   const response = await fetch(`${BACKEND_URL}${path}`, {
     method: init.method,
