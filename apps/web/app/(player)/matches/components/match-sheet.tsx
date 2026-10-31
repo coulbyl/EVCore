@@ -1,5 +1,8 @@
+import Link from "next/link";
 import { useId } from "react";
+import { Stethoscope } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
+import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
 import { Sheet } from "@/components/scoreboard/sheet/sheet";
 import { activePause } from "@/components/scoreboard/states/paused-screen";
 import { ChanceFigure } from "@/components/scoreboard/ui/chance-figure";
@@ -40,12 +43,17 @@ type Translate = Awaited<ReturnType<typeof getTranslations<"matches.sheet">>>;
 export async function MatchSheetView({ id }: { id: string }) {
   // Paused: Matchs is closed and the server would refuse the read.
   if (await activePause()) return null;
-  const [sheet, t, locale, timeZone] = await Promise.all([
+  const [sheet, t, locale, timeZone, session] = await Promise.all([
     getMatchSheet(id),
     getTranslations("matches.sheet"),
     getLocale(),
     getPlayerTimeZone(),
+    getPlayerSession(),
   ]);
+  // An admin opens the match's diagnostic from here (12-admin.md § 2):
+  // λ, factors, every reading the engine set aside with its reason.
+  const admin =
+    session.status === "signed-in" && session.session.user.role === "ADMIN";
   const display = displayLocaleOf(locale);
   const muted = sheet.state === "postponed";
 
@@ -55,7 +63,15 @@ export async function MatchSheetView({ id }: { id: string }) {
       fallbackHref="/matches"
       tone="band"
       bandContent={
-        <SheetHeader sheet={sheet} t={t} locale={display} timeZone={timeZone} />
+        <SheetHeader
+          sheet={sheet}
+          t={t}
+          locale={display}
+          timeZone={timeZone}
+          diagnosticHref={
+            admin ? `/dashboard/decisions/match/${sheet.fixtureId}` : null
+          }
+        />
       }
     >
       <div
@@ -164,11 +180,14 @@ function SheetHeader({
   t,
   locale,
   timeZone,
+  diagnosticHref,
 }: {
   sheet: MatchSheet;
   t: Translate;
   locale: DisplayLocale;
   timeZone: string;
+  /** Admins only: the match's diagnostic. */
+  diagnosticHref: string | null;
 }) {
   const status =
     sheet.state === "live"
@@ -184,7 +203,18 @@ function SheetHeader({
     <div className="flex flex-col gap-2">
       <p className="flex justify-between gap-3 text-meta text-band-muted">
         <span>{sheet.competition.name}</span>
-        {status ? <span className="score">{status}</span> : null}
+        <span className="flex items-center gap-2">
+          {status ? <span className="score">{status}</span> : null}
+          {diagnosticHref ? (
+            <Link
+              href={diagnosticHref}
+              aria-label={t("diagnostic")}
+              className="flex size-8 items-center justify-center rounded-full text-band-muted hover:text-band-foreground focus-visible:outline-2 focus-visible:outline-led-on"
+            >
+              <Stethoscope aria-hidden className="size-4" strokeWidth={2} />
+            </Link>
+          ) : null}
+        </span>
       </p>
       {(
         [

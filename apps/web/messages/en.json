@@ -1098,7 +1098,8 @@
         "low_odds": "No reading: the odds are too low to be worth it",
         "suspended": "No reading · this market is suspended on our side",
         "not_sure": "No reading · no chance sure enough"
-      }
+      },
+      "diagnostic": "Match diagnostic"
     },
     "played": "{count, plural, one {# match already played} other {# matches already played}}",
     "bigOnly": "Big leagues"
