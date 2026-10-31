@@ -70,7 +70,12 @@ export async function CouponSheetBand({ coupon }: { coupon: TodayCoupon }) {
   return (
     <div className="flex items-center justify-between gap-4">
       {coupon.chance !== null ? (
-        <ChanceFigure probability={coupon.chance} tone="band" size="md" />
+        <ChanceFigure
+          probability={coupon.chance}
+          phrasing="passes"
+          tone="band"
+          size="md"
+        />
       ) : (
         <span />
       )}

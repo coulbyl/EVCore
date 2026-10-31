@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ChevronRight, TicketCheck } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { ChanceFigure } from "@/components/scoreboard/ui/chance-figure";
 import { ResultMark } from "@/components/scoreboard/ui/result-mark";
 import type { MatchItem, MatchReading } from "@/domains/matches/types/matches";
 import { TeamMark } from "../../today/components/team-mark";
@@ -41,16 +40,9 @@ export function MatchRow({
         side={
           <>
             <span className="min-w-0">{readingLabel(item)}</span>
-            {/* The odds, then the chance; neither breaks across two lines. */}
-            <span className="flex shrink-0 items-baseline gap-3 whitespace-nowrap">
-              <span className="score text-bet font-semibold">
-                {formatOdds(item.reading.odds, locale)}
-              </span>
-              <ChanceFigure
-                probability={item.reading.chance}
-                showLeds={false}
-                size="sm"
-              />
+            {/* The odds alone: the chance is told on the sheet. */}
+            <span className="score shrink-0 text-bet font-semibold whitespace-nowrap">
+              {formatOdds(item.reading.odds, locale)}
             </span>
           </>
         }

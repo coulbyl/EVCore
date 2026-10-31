@@ -151,6 +151,7 @@ export async function HeroCard({
       {coupon.chance !== null ? (
         <ChanceFigure
           probability={coupon.chance}
+          phrasing="passes"
           size="lg"
           className="justify-between"
           lightUp

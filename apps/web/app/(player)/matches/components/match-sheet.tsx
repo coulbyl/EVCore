@@ -74,6 +74,13 @@ export async function MatchSheetView({ id }: { id: string }) {
                 locale={display}
                 strong
               />
+              {sheet.reading.chance !== null && sheet.state !== "finished" ? (
+                <ChanceFigure
+                  probability={sheet.reading.chance}
+                  phrasing="passes"
+                  size="sm"
+                />
+              ) : null}
               {sheet.reading.fact ? (
                 <p className="text-body text-muted-foreground">
                   {sheet.reading.fact}
@@ -231,9 +238,8 @@ function Section({
 }
 
 /**
- * A bet with its 1xBet price and its chance, « Victoire Arsenal 1,65
- * 7 sur 10 », and its mark once the match is over. No price at 1xBet: the
- * chance alone (06 § 4).
+ * A bet with its 1xBet price, « Victoire Arsenal 1,65 », and its mark once
+ * the match is over. Its chance is told once, under our reading only.
  */
 function PickLine({
   pick,
@@ -258,9 +264,6 @@ function PickLine({
           <span className="score text-bet font-semibold">
             {formatOdds(pick.odds, locale)}
           </span>
-        ) : null}
-        {pick.chance !== null ? (
-          <ChanceFigure probability={pick.chance} showLeds={false} size="sm" />
         ) : null}
         <Mark result={pick.result} t={t} />
         <AddButton pick={pick} sheet={sheet} />
@@ -327,8 +330,9 @@ function FormLine({
 }
 
 /**
- * The main 1xBet lines and the engine's other picks, market chance (06 § 2);
- * once the match is over, what landed, without the price (06 § 3).
+ * The main 1xBet lines and the engine's other picks, by market chance, with
+ * their price only (06 § 2); once the match is over, what landed, without
+ * the price (06 § 3).
  */
 function OtherPicks({
   sheet,
@@ -351,18 +355,6 @@ function OtherPicks({
           <span className="score font-semibold">
             {formatOdds(pick.odds, locale)}
           </span>
-        ) : null}
-        {!finished && pick.chance !== null ? (
-          <>
-            <span aria-hidden className="text-muted-foreground">
-              ·
-            </span>
-            <ChanceFigure
-              probability={pick.chance}
-              showLeds={false}
-              size="sm"
-            />
-          </>
         ) : null}
         {finished ? <Mark result={pick.result} t={t} /> : null}
         <AddButton pick={pick} sheet={sheet} />

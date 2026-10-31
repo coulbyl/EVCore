@@ -1,16 +1,15 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { ChanceFigure } from "@/components/scoreboard/ui/chance-figure";
 import { Row, RowList } from "@/components/scoreboard/ui/row-list";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import { displayLocaleOf, formatTime } from "@/helpers/scoreboard-format";
 import type { TodayAbsence, TodayCoupon } from "@/domains/today/types/today";
 import { CouponValue } from "./coupon-value";
-import { isSettled, nextKickoff, playedLegs } from "./today-constants";
+import { nextKickoff, playedLegs } from "./today-constants";
 
 /**
  * Sous le héros (02 § 1) : les autres coupons du jour en lignes (nom, le
- * match ou le nombre de matchs, la cote, la chance), puis les produits
- * absents en gris avec la raison du moteur (04 § 5), puis mes coupons des
+ * match ou le nombre de matchs, la cote ; la chance se lit dans la
+ * feuille), puis les produits absents en gris avec la raison du moteur (04 § 5), puis mes coupons des
  * jours précédents encore en cours, qui mènent à Moi.
  */
 export async function ProductRows({
@@ -58,18 +57,7 @@ export async function ProductRows({
                 ? `${single.home.name} – ${single.away.name}`
                 : t("matches", { count: playedLegs(coupon).length })
             }
-            value={
-              <span className="flex items-center gap-4">
-                <CouponValue coupon={coupon} locale={display} size="row" />
-                {coupon.chance !== null && !isSettled(coupon.state) ? (
-                  <ChanceFigure
-                    probability={coupon.chance}
-                    showLeds={false}
-                    size="sm"
-                  />
-                ) : null}
-              </span>
-            }
+            value={<CouponValue coupon={coupon} locale={display} size="row" />}
           />
         );
       })}

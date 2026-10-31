@@ -944,6 +944,9 @@
       "aboutOutOfTen": "environ {count} fois sur {total}",
       "aboutOneIn": "environ 1 fois sur {total}",
       "aboutRarerThan": "moins de 1 fois sur {total}",
+      "passesOutOfTen": "<verb>Passe</verb> {count} fois sur {total}",
+      "passesOneIn": "<verb>Passe</verb> 1 fois sur {total}",
+      "passesRarerThan": "<verb>Passe</verb> moins d'1 fois sur {total}",
       "spokenOutOfTen": "{count} chances sur {total}",
       "spokenOneIn": "1 chance sur {total}",
       "spokenRarerThan": "moins d'une chance sur {total}"

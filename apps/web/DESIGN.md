@@ -197,6 +197,8 @@ La rampe, du plus clair au plus sombre : `card`, `ground`, `fill`, `rule`, `ramp
 
 **The Written Number Rule.** Une chance est toujours écrite. Les diodes la redoublent, elles ne la remplacent jamais, et un lecteur d'écran l'entend en toutes lettres (« 8 chances sur 10 »).
 
+**The One Chance Rule.** La chance se montre là où le joueur décide, et nulle part ailleurs : le coupon (héros d'Aujourd'hui, en-tête de sa feuille) et notre lecture sur la fiche de match. Elle s'écrit en phrase, « Passe 8 fois sur 10 » (`ChanceFigure phrasing="passes"`) : « 8 sur 10 » seul ne dit pas ce qu'il compte. Les listes (lignes de Matchs, autres coupons d'Aujourd'hui, « Autres paris », avis IA) ne montrent que la cote. Restent à part le ticket (« environ 1 fois sur 9 », ce que le joueur a composé lui-même) et le bilan annoncé contre réalisé de Résultats. Sur une même fiche, un même pari n'a qu'une chance.
+
 ## Layout
 
 Téléphone d'abord, en une colonne : bandeau, contenu, ligne 18+, puis la barre d'onglets fixée en bas au-dessus de la zone de geste du système. Marge latérale de 16 px. Une ligne de liste fait au moins 56 px de haut, une cible de toucher au moins 44 px.
