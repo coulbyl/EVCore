@@ -1354,7 +1354,8 @@
     "imageChance": "1 time in {total}",
     "imageKeep": "Over time, 1xBet keeps {share} of the stake",
     "imageOurs": "Our {product}: {chance}",
-    "outcomePending": "waiting for the last match"
+    "outcomePending": "waiting for the last match",
+    "helpKeep": "Help: what 1xBet keeps"
   },
   "results": {
     "yesterday": "Yesterday",
@@ -1505,5 +1506,13 @@
     "image": "Attached photo",
     "file": "Attached file",
     "empty": "Write to us: a question, odds that do not match, an idea."
+  },
+  "help": {
+    "title": "Help",
+    "back": "Back to Me",
+    "ask": "A question? Write to us",
+    "example": "Example",
+    "hint": "Help: {title}",
+    "sheets": "The sheets"
   }
 }

@@ -111,7 +111,7 @@ test.describe("Résultats, la fiche d'une ligne", () => {
       "15 jours gagnés sur 18 · 1 jour sans Favori",
     );
     await expect(sheet).toContainText("pire série1 jour perdu de suite");
-    await expect(sheet).toContainText("Annoncé8 sur 10");
+    await expect(sheet).toContainText("Annoncé?8 sur 10");
     await expect(sheet).toContainText(
       /du \d\d\/\d\d au \d\d\/\d\d · 14 jours réglés/,
     );
@@ -168,7 +168,7 @@ test.describe("Résultats, la fiche d'une ligne", () => {
     await page.goto("/results/ai");
     const sheet = sheetNamed(page, "Avis IA");
     await expect(sheet).toContainText("136 avis gagnés sur 207");
-    await expect(sheet).toContainText("Annoncé64 sur 100");
+    await expect(sheet).toContainText("Annoncé?64 sur 100");
     await expect(sheet).toContainText("Réalisé66 sur 100");
     await expect(
       sheet.getByText("En francs, à 1 000 F par avis"),

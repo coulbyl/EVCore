@@ -14,6 +14,7 @@ import {
   type DisplayLocale,
 } from "@/helpers/scoreboard-format";
 import { TeamMark } from "@/app/(player)/today/components/team-mark";
+import { HelpHint } from "../ui/help-hint";
 import { useOnline } from "../states/use-online";
 import { usePlayerText } from "../text/player-texts";
 import { needsCount, quoteTicket } from "./quote-ticket";
@@ -341,6 +342,7 @@ export function TicketFooter({
         {t(totals.legCount === 1 ? "keepBet" : "keepTicket", {
           share: formatShare(totals.keep, locale),
         })}
+        <HelpHint slug="what-1xbet-keeps" label={t("helpKeep")} />
         {!online ? (
           <>
             {" · "}

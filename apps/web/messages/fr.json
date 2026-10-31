@@ -1354,7 +1354,8 @@
     "imageChance": "1 fois sur {total}",
     "imageKeep": "Sur la durée, 1xBet garde {share} de la mise",
     "imageOurs": "Notre {product} : {chance}",
-    "outcomePending": "en attente du dernier match"
+    "outcomePending": "en attente du dernier match",
+    "helpKeep": "Aide : ce que 1xBet garde"
   },
   "results": {
     "yesterday": "Hier",
@@ -1505,5 +1506,13 @@
     "image": "Photo jointe",
     "file": "Fichier joint",
     "empty": "Écris-nous : une question, une cote qui ne colle pas, une idée."
+  },
+  "help": {
+    "title": "Aide",
+    "back": "Retour à Moi",
+    "ask": "Une question ? Écris-nous",
+    "example": "Exemple",
+    "hint": "Aide : {title}",
+    "sheets": "Les fiches"
   }
 }

@@ -176,7 +176,7 @@ test.describe("Feuille du coupon", () => {
     ).toBeVisible();
     await expect(sheet.getByText("· pire série 1")).toBeVisible();
     await expect(
-      sheet.getByText(/^1xBet garde 6\s%\ssur ce pari$/),
+      sheet.getByText(/^1xBet garde 6\s%\ssur ce pari\?$/),
     ).toBeVisible();
     await expect(sheet.getByRole("button", { name: "Suivre" })).toBeVisible();
   });
@@ -195,7 +195,7 @@ test.describe("Feuille du coupon", () => {
       await expect(sheet.getByText(team, { exact: true })).toBeVisible();
     }
     await expect(
-      sheet.getByText(/^1xBet garde 9\s%\ssur ce coupon$/),
+      sheet.getByText(/^1xBet garde 9\s%\ssur ce coupon\?$/),
     ).toBeVisible();
   });
 

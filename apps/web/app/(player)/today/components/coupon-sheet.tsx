@@ -6,6 +6,8 @@ import { activePause } from "@/components/scoreboard/states/paused-screen";
 import { ChanceFigure } from "@/components/scoreboard/ui/chance-figure";
 import { FormStrip } from "@/components/scoreboard/ui/form-strip";
 import { ResultMark } from "@/components/scoreboard/ui/result-mark";
+import { HelpHint } from "@/components/scoreboard/ui/help-hint";
+import { helpSheet } from "@/domains/help/help-sheets";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import { getToday } from "@/domains/today/use-cases/get-today";
 import {
@@ -119,12 +121,16 @@ export async function CouponSheetBody({
   coupon: TodayCoupon;
   form: TodayProductForm | undefined;
 }) {
-  const [t, locale, timeZone] = await Promise.all([
+  const [t, help, locale, timeZone] = await Promise.all([
     getTranslations("today"),
+    getTranslations("help"),
     getLocale(),
     getPlayerTimeZone(),
   ]);
   const display = displayLocaleOf(locale);
+  const keepHint = help("hint", {
+    title: helpSheet("what-1xbet-keeps", display)?.title ?? "",
+  });
   const legs = [...coupon.legs].sort((a, b) =>
     a.kickoffAt.localeCompare(b.kickoffAt),
   );
@@ -171,6 +177,7 @@ export async function CouponSheetBody({
           {t(coupon.legs.length > 1 ? "keepCoupon" : "keepBet", {
             share: formatShare(coupon.operatorKeep, display),
           })}
+          <HelpHint slug="what-1xbet-keeps" label={keepHint} />
         </p>
       ) : null}
     </div>

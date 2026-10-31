@@ -88,7 +88,7 @@ test.describe("Mon ticket", () => {
     ).toBeVisible();
     await expect(
       sheet.getByText(
-        /^Sur la durée, 1xBet garde 6\s%\sde ta mise sur ce ticket$/,
+        /^Sur la durée, 1xBet garde 6\s%\sde ta mise sur ce ticket\?$/,
       ),
     ).toBeVisible();
     await expect(

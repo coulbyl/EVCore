@@ -7,6 +7,8 @@ import { ChanceFigure } from "@/components/scoreboard/ui/chance-figure";
 import { FormStrip } from "@/components/scoreboard/ui/form-strip";
 import type { Outcome } from "@/components/scoreboard/ui/outcome";
 import { ResultMark } from "@/components/scoreboard/ui/result-mark";
+import { HelpHint } from "@/components/scoreboard/ui/help-hint";
+import { helpSheet } from "@/domains/help/help-sheets";
 import {
   getAiDetail,
   getProductDetail,
@@ -39,6 +41,12 @@ const GRID: Record<string, Outcome> = {
   pending: "pending",
   none: "none",
 };
+
+/** « Aide : « 8 sur 10 », ça veut dire quoi » for the « ? » of Annoncé. */
+async function chancesHintOf(locale: DisplayLocale): Promise<string> {
+  const help = await getTranslations("help");
+  return help("hint", { title: helpSheet("chances", locale)?.title ?? "" });
+}
 
 /** A short date « 28/10 » from a UTC day, YYYY-MM-DD. */
 function day(date: string, locale: DisplayLocale): string {
@@ -183,6 +191,7 @@ async function ProductBody({
         unit="day"
         t={t}
         locale={locale}
+        chancesHint={await chancesHintOf(locale)}
       />
 
       <Block title={t("dayByDay")}>
@@ -233,7 +242,7 @@ async function ProductBody({
   );
 }
 
-function AiBody({
+async function AiBody({
   detail,
   period,
   t,
@@ -296,6 +305,7 @@ function AiBody({
         unit="opinion"
         t={t}
         locale={locale}
+        chancesHint={await chancesHintOf(locale)}
       />
 
       <Block title={t("opinionByOpinion")}>
@@ -372,6 +382,7 @@ function Figures({
   unit,
   t,
   locale,
+  chancesHint,
 }: {
   comparison: ResultsComparison | null;
   francs: ResultsFrancs | null;
@@ -379,6 +390,7 @@ function Figures({
   unit: "day" | "opinion";
   t: Translate;
   locale: DisplayLocale;
+  chancesHint: string;
 }) {
   if (!comparison && !francs) {
     return (
@@ -401,6 +413,7 @@ function Figures({
         <section className="grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-1 py-4">
           <span className="text-body text-muted-foreground">
             {t("announced")}
+            <HelpHint slug="chances" label={chancesHint} />
           </span>
           <span>{chance(comparison.announced)}</span>
           <span className="text-body text-muted-foreground">
