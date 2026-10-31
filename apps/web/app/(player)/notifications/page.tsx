@@ -13,6 +13,7 @@ import {
   formatShortDate,
   formatTime,
 } from "@/helpers/scoreboard-format";
+import { plainTextOf } from "@/helpers/plain-text";
 import { NotificationLink } from "./components/notification-link";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -119,7 +120,7 @@ export default async function Page({
                           className="me-1.5 inline-block size-2 rounded-full bg-led-on align-middle"
                         />
                       ) : null}
-                      {notification.title}
+                      {plainTextOf(notification.title)}
                     </span>
                     <span
                       className={
@@ -128,7 +129,8 @@ export default async function Page({
                           : "whitespace-pre-line text-meta text-muted-foreground"
                       }
                     >
-                      {notification.body}
+                      {/* Announcements are written as HTML: read as text. */}
+                      {plainTextOf(notification.body)}
                     </span>
                   </span>
                   {href ? (
