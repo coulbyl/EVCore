@@ -81,7 +81,9 @@ export async function MatchSheetView({ id }: { id: string }) {
             </>
           ) : (
             <p className="text-body text-muted-foreground">
-              {t(`without.${sheet.withoutReading ?? "not_analysed"}`)}
+              {sheet.setAsideReason
+                ? t(`setAside.${sheet.setAsideReason}`)
+                : t(`without.${sheet.withoutReading ?? "not_analysed"}`)}
             </p>
           )}
         </Section>

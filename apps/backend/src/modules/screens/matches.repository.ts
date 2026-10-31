@@ -249,6 +249,35 @@ export class MatchesRepository {
     `;
   }
 
+  /**
+   * Why the engine turned a match's picks down (06 § 4–5): the reason codes
+   * of the rejected decisions of its latest analysis before kick-off, on
+   * the channels a player sees.
+   */
+  async findRejectionReasons(input: {
+    fixtureId: string;
+    channels: readonly string[];
+  }): Promise<string[]> {
+    const rows = await this.prisma.client.$queryRaw<{ reasonCode: string }[]>`
+      WITH run AS (
+        SELECT mr.id
+        FROM public.model_run mr
+        JOIN public.fixture f ON f.id = mr."fixtureId"
+        WHERE mr."fixtureId" = ${input.fixtureId}::uuid
+          AND mr."analyzedAt" < f."scheduledAt"
+        ORDER BY mr."analyzedAt" DESC
+        LIMIT 1
+      )
+      SELECT DISTINCT cd."reasonCode"
+      FROM public.channel_decision cd
+      JOIN run ON run.id = cd."modelRunId"
+      WHERE cd.status = 'REJECTED'
+        AND cd."reasonCode" IS NOT NULL
+        AND cd.channel::text = ANY(${input.channels}::text[])
+    `;
+    return rows.map((row) => row.reasonCode);
+  }
+
   /** Kick-off, status and scores of the matches of a ticket (07 § 4, § 6). */
   findTicketFixtures(fixtureIds: readonly string[]): Promise<
     {

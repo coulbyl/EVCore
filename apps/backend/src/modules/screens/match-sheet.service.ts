@@ -39,12 +39,14 @@ import {
 import type { MatchesDay } from './dto/matches-query.dto';
 import type {
   MatchSheet,
+  SetAsideReason,
   SheetAiOpinion,
   SheetPick,
   SheetReading,
   SheetTeamForm,
 } from './match-sheet.types';
 import type { MatchReading } from './matches.types';
+import { MIN_LEG_ODDS } from '@modules/coupon/coupon.constants';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -65,6 +67,7 @@ type SheetReads = {
   aiRows: AiOpinionRow[];
   historyRows: TeamMatchRow[];
   quotes: Map<string, PlayableQuote>;
+  rejectionReasons: string[];
 };
 
 @Injectable()
@@ -111,19 +114,24 @@ export class MatchSheetService {
     if (!header) return null;
     const kickoff = header.scheduledAt;
 
-    const [candidates, aiRows, historyRows] = await Promise.all([
-      this.repository.findReadingCandidates({
-        fixtureIds: [fixtureId],
-        channels: READING_CHANNELS,
-      }),
-      this.repository.findAiOpinion(fixtureId),
-      this.history.findTeamHistories({
-        teamIds: [header.homeTeamId, header.awayTeamId],
-        since: new Date(kickoff.getTime() - LEG_FACT_HISTORY_DAYS * DAY_MS),
-        before: kickoff,
-        perVenue: LEG_FACT_HISTORY_MATCHES,
-      }),
-    ]);
+    const [candidates, aiRows, historyRows, rejectionReasons] =
+      await Promise.all([
+        this.repository.findReadingCandidates({
+          fixtureIds: [fixtureId],
+          channels: READING_CHANNELS,
+        }),
+        this.repository.findAiOpinion(fixtureId),
+        this.history.findTeamHistories({
+          teamIds: [header.homeTeamId, header.awayTeamId],
+          since: new Date(kickoff.getTime() - LEG_FACT_HISTORY_DAYS * DAY_MS),
+          before: kickoff,
+          perVenue: LEG_FACT_HISTORY_MATCHES,
+        }),
+        this.repository.findRejectionReasons({
+          fixtureId,
+          channels: READING_CHANNELS,
+        }),
+      ]);
     const ai = aiRows.find((row) => row.status === 'SELECTED' && row.market);
     const quotes = await this.playableOdds.findPlayableQuotes(
       [
@@ -135,7 +143,14 @@ export class MatchSheetService {
       ],
       { operatorOnly: true },
     );
-    return { header, candidates, aiRows, historyRows, quotes };
+    return {
+      header,
+      candidates,
+      aiRows,
+      historyRows,
+      quotes,
+      rejectionReasons,
+    };
   }
 
   private sheetOf(
@@ -183,6 +198,14 @@ export class MatchSheetService {
         ? readingOnSheet(reading, header, { homeHistory, awayHistory })
         : null,
       withoutReading: 'without' in choice ? choice.without : null,
+      setAsideReason:
+        'without' in choice && choice.without === 'rejected'
+          ? setAsideReasonOf({
+              candidates,
+              quotes,
+              rejectionReasons: input.rejectionReasons,
+            })
+          : null,
       ai: ai ? aiOpinionOf(ai, reading, quoteOf) : null,
       form: {
         home: formOf(homeHistory, kickoff),
@@ -202,6 +225,35 @@ export class MatchSheetService {
         quoteOf({ market: 'ONE_X_TWO', pick: 'HOME' })?.operatorMargin ?? null,
     };
   }
+}
+
+/**
+ * Why a match has no reading though it was analysed (06 § 4–5), most
+ * telling first: AVOID fired; the engine's picks all priced under the
+ * floor at 1xBet; a suspended market; otherwise no chance sure enough.
+ */
+export function setAsideReasonOf(input: {
+  candidates: readonly ReadingCandidateRow[];
+  quotes: Map<string, PlayableQuote>;
+  rejectionReasons: readonly string[];
+}): SetAsideReason {
+  if (input.candidates.some((c) => c.avoided)) return 'divergence';
+  const priced = input.candidates.flatMap((c) => {
+    if (c.market === null || c.pick === null) return [];
+    const odds = input.quotes.get(
+      playableQuoteKey({
+        fixtureId: c.fixtureId,
+        market: c.market,
+        pick: c.pick,
+      }),
+    )?.operatorOdds;
+    return odds == null ? [] : [odds];
+  });
+  if (priced.length > 0 && priced.every((odds) => odds < MIN_LEG_ODDS)) {
+    return 'low_odds';
+  }
+  if (input.rejectionReasons.includes('market_suspended')) return 'suspended';
+  return 'not_sure';
 }
 
 /** « Lecture ce soir » applies to tomorrow's matches only. */

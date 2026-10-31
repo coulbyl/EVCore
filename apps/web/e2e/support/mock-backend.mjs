@@ -633,6 +633,7 @@ function matchSheet(fixtureId) {
         }
       : null,
     withoutReading: item.withoutReading,
+    setAsideReason: item.withoutReading === "rejected" ? "divergence" : null,
     ai: isArsenal
       ? {
           ...pick("ONE_X_TWO", "DRAW", 3.4, 0.28, null),

@@ -37,6 +37,8 @@ export type MatchSheet = {
   away: TodayTeam;
   reading: SheetReading | null;
   withoutReading: MatchWithoutReading | null;
+  /** Why a set-aside match has no reading (06 § 4–5). */
+  setAsideReason: "divergence" | "low_odds" | "suspended" | "not_sure" | null;
   ai: SheetAiOpinion | null;
   form: { home: SheetTeamForm; away: SheetTeamForm };
   headToHead: string | null;

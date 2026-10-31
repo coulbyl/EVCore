@@ -249,7 +249,9 @@ test.describe("Fiche du match", () => {
     const sheet = sheetNamed(page, "Brest – Nice");
     await expect(sheet).toBeVisible();
     await expect(
-      sheet.getByText("Pas de lecture · aucune chance assez sûre"),
+      sheet.getByText(
+        "Pas de lecture · le modèle et le marché se contredisent trop",
+      ),
     ).toBeVisible();
     await expect(sheet.getByText("Pas d'avis")).toBeVisible();
     await expect(

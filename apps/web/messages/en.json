@@ -1319,6 +1319,12 @@
         "won": "won",
         "lost": "lost",
         "void": "refunded"
+      },
+      "setAside": {
+        "divergence": "No reading · the model and the market disagree too much",
+        "low_odds": "No reading · the 1xBet odds are too low",
+        "suspended": "No reading · this market is suspended on our side",
+        "not_sure": "No reading · no chance sure enough"
       }
     }
   },

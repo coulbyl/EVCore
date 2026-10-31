@@ -15,7 +15,11 @@ import type {
   ReadingCandidateRow,
   SheetHeaderRow,
 } from './matches.repository';
-import { MatchSheetService, sentenceOf } from './match-sheet.service';
+import {
+  MatchSheetService,
+  sentenceOf,
+  setAsideReasonOf,
+} from './match-sheet.service';
 
 const NOW = new Date('2026-10-30T15:00:00.000Z');
 const FX = '0190a000-0000-7000-8000-000000000001';
@@ -111,6 +115,7 @@ function harness(input: {
   ai?: AiOpinionRow[];
   history?: TeamMatchRow[];
   quotes?: [string, PlayableQuote][];
+  reasons?: string[];
 }) {
   const repository = {
     findSheetHeader: vi
@@ -120,6 +125,7 @@ function harness(input: {
       .fn()
       .mockResolvedValue(input.candidates ?? [candidate()]),
     findAiOpinion: vi.fn().mockResolvedValue(input.ai ?? []),
+    findRejectionReasons: vi.fn().mockResolvedValue(input.reasons ?? []),
   } as unknown as MatchesRepository;
   const playableOdds = {
     findPlayableQuotes: vi
@@ -361,6 +367,44 @@ describe('MatchSheetService', () => {
       chance: 0.58,
       result: null,
     });
+  });
+});
+
+describe('setAsideReasonOf (06 § 4–5)', () => {
+  const quotes = (odds: number) =>
+    new Map([quote('ONE_X_TWO/HOME', { odds, fair: 0.7 })]);
+
+  it('AVOID first: the model and the market disagree too much', () => {
+    expect(
+      setAsideReasonOf({
+        candidates: [candidate({ avoided: true })],
+        quotes: quotes(1.6),
+        rejectionReasons: ['market_suspended'],
+      }),
+    ).toBe('divergence');
+  });
+
+  it('every pick priced under the floor at 1xBet: the odds are too low', () => {
+    expect(
+      setAsideReasonOf({
+        candidates: [candidate()],
+        quotes: quotes(1.12),
+        rejectionReasons: [],
+      }),
+    ).toBe('low_odds');
+  });
+
+  it('a suspended market, otherwise no chance sure enough', () => {
+    const none = {
+      candidates: [candidate({ market: null, pick: null })],
+      quotes: new Map(),
+    };
+    expect(
+      setAsideReasonOf({ ...none, rejectionReasons: ['market_suspended'] }),
+    ).toBe('suspended');
+    expect(
+      setAsideReasonOf({ ...none, rejectionReasons: ['below_threshold'] }),
+    ).toBe('not_sure');
   });
 });
 

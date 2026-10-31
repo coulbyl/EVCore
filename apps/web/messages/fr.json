@@ -1319,6 +1319,12 @@
         "won": "gagné",
         "lost": "perdu",
         "void": "remboursé"
+      },
+      "setAside": {
+        "divergence": "Pas de lecture · le modèle et le marché se contredisent trop",
+        "low_odds": "Pas de lecture · la cote 1xBet est trop basse",
+        "suspended": "Pas de lecture · ce marché est suspendu chez nous",
+        "not_sure": "Pas de lecture · aucune chance assez sûre"
       }
     }
   },
