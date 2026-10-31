@@ -170,12 +170,24 @@ async function measure(port, screen, warm) {
   if (landedOn !== screen.path) {
     throw new Error(`${screen.path} redirige vers ${landedOn}`);
   }
+  if (process.env.LCP_EXPLAIN && !warm) explainLcp(screen, lhr);
   return {
     lcpMs: lhr.audits["largest-contentful-paint"].numericValue,
     tbtMs: lhr.audits["total-blocking-time"].numericValue,
     cls: lhr.audits["cumulative-layout-shift"].numericValue,
     scriptKib: scriptBytes(lhr) / 1024,
   };
+}
+
+// LCP_EXPLAIN=1 : l'élément du LCP froid et ses phases observées (hors
+// simulation du réseau lent), pour trouver ce qui le retarde.
+function explainLcp(screen, lhr) {
+  const items = lhr.audits["lcp-breakdown-insight"]?.details?.items ?? [];
+  const phases = (items.find((item) => item.type === "table")?.items ?? [])
+    .map((phase) => `${phase.label} ${Math.round(phase.duration)} ms`)
+    .join(", ");
+  const node = items.find((item) => item.type === "node");
+  console.log(`${screen.path} : ${node?.snippet ?? "?"} — ${phases}`);
 }
 
 async function measureScreen(port, screen) {
