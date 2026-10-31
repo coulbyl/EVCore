@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { CONSOLE_PASSES, CONSOLE_WATCH } from '@config/console.constants';
 import { AuthModule } from '@modules/auth/auth.module';
 import { CouponModule } from '@modules/coupon/coupon.module';
+import { DashboardModule } from '@modules/dashboard/dashboard.module';
 import { EtlModule } from '@modules/etl/etl.module';
 import { MailModule } from '@modules/mail/mail.module';
 import { ScreensModule } from '@modules/screens/screens.module';
@@ -22,6 +23,7 @@ import { ConsoleService } from './console.service';
   imports: [
     AuthModule,
     CouponModule,
+    DashboardModule,
     EtlModule,
     MailModule,
     ScreensModule,

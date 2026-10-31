@@ -3,7 +3,9 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Body,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
   UseGuards,
@@ -17,7 +19,13 @@ import { RESULTS_DEFAULT_PERIOD } from '@config/results.constants';
 import { ConsoleEngineService } from './console-engine.service';
 import { ConsolePassesService } from './console-passes.service';
 import { ConsoleService } from './console.service';
-import type { ConsoleStatus, EngineProducts } from './console.types';
+import { ReactivateMarketDto } from './dto/reactivate.dto';
+import type {
+  ChannelCell,
+  ConsoleStatus,
+  EngineProducts,
+  SuspendedMarket,
+} from './console.types';
 
 /** The admin (docs/refonte-ui/12-admin.md). Admin accounts only. */
 @ApiTags('console')
@@ -73,5 +81,38 @@ export class ConsoleController {
   @ApiOkResponse({ description: 'The products and the AI.' })
   getEngineProducts(@Query() query: ResultsQueryDto): Promise<EngineProducts> {
     return this.engine.getProducts(query.period ?? RESULTS_DEFAULT_PERIOD);
+  }
+
+  @Get('engine/channels')
+  @ApiOperation({
+    summary: 'Moteur › Canaux × compétition',
+    description:
+      '90 rolling days of settled legs, deduplicated: ratio realised/announced with its 95 % interval and its word (conforme, optimistic, alert, not_enough), alerts first.',
+  })
+  @ApiOkResponse({ description: 'The cells.' })
+  getChannels(): Promise<ChannelCell[]> {
+    return this.engine.getChannels();
+  }
+
+  @Get('engine/suspensions')
+  @ApiOperation({ summary: 'Moteur › Marchés suspendus' })
+  @ApiOkResponse({ description: 'The active suspensions, oldest first.' })
+  getSuspensions(): Promise<SuspendedMarket[]> {
+    return this.engine.getSuspensions();
+  }
+
+  @Post('engine/suspensions/:id/reactivate')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Réactiver a suspended market',
+    description:
+      'A human decision with its reason; never automatic. 404 when unknown or already lifted.',
+  })
+  @ApiOkResponse({ description: 'The suspension lifted.' })
+  reactivate(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: ReactivateMarketDto,
+  ): Promise<SuspendedMarket> {
+    return this.engine.reactivate({ id, reason: body.reason });
   }
 }

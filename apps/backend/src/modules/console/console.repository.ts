@@ -309,4 +309,32 @@ export class ConsoleRepository {
       ORDER BY min(f."scheduledAt") DESC
     `;
   }
+
+  activeSuspensionsFull(): Promise<
+    { id: string; market: string; createdAt: Date; reason: string }[]
+  > {
+    return this.prisma.client.marketSuspension.findMany({
+      where: { active: true },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, market: true, createdAt: true, reason: true },
+    });
+  }
+
+  /** Lifts an active suspension; null if unknown or already lifted. */
+  async liftSuspension(id: string): Promise<{
+    id: string;
+    market: string;
+    createdAt: Date;
+    reason: string;
+  } | null> {
+    const lifted = await this.prisma.client.marketSuspension.updateMany({
+      where: { id, active: true },
+      data: { active: false, liftedAt: new Date() },
+    });
+    if (lifted.count === 0) return null;
+    return this.prisma.client.marketSuspension.findUnique({
+      where: { id },
+      select: { id: true, market: true, createdAt: true, reason: true },
+    });
+  }
 }

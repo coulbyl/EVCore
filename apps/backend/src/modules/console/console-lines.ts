@@ -32,6 +32,8 @@ export function todoLineOf(item: TodoItem): string {
       return `${item.product} absent ${item.days} jours sur ${item.window}`;
     case 'market_suspended':
       return `${item.market} suspendu depuis le ${item.since}`;
+    case 'channel_alert':
+      return `${item.channel} sur ${item.competition} : ${item.ratio.toFixed(2).replace('.', ',')} réalisé/annoncé, ${item.sample} jambes`;
     case 'ai_silent':
       return `L'IA n'a rien publié ${since(item.hours)}`;
     case 'players_silent':

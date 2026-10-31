@@ -110,6 +110,14 @@ export function consoleStatusOf(s: ConsoleSignals): ConsoleStatus {
       since: formatDateUtc(suspension.since),
     });
   }
+  for (const cell of s.channelAlerts) {
+    todo.push({
+      kind: 'channel_alert',
+      light: 'engine',
+      severity: 'orange',
+      ...cell,
+    });
+  }
   if (staleFor(s.lastAiAt, now, R.AI_STALE_HOURS)) {
     todo.push({
       kind: 'ai_silent',

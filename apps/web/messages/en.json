@@ -1571,7 +1571,8 @@
       "ai_silentNever": "The AI has published nothing yet",
       "players_silent": "No player came for {hours} h",
       "players_silentNever": "No player came",
-      "support_unanswered": "{count, plural, one {A message} other {# messages}} unanswered for over 24 h"
+      "support_unanswered": "{count, plural, one {A message} other {# messages}} unanswered for over 24 h",
+      "channel_alert": "{channel} in {competition}: {ratio} realised/announced, {sample} legs"
     },
     "passesTitle": "Today's passes",
     "passes": {
@@ -1597,6 +1598,44 @@
     "passesOffAnonymous": "Passes cut since {date}",
     "todayTitle": "Today",
     "noCoupons": "No coupon today",
-    "yesterday": "{active, plural, one {# active player} other {# active players}} yesterday · {follows, plural, one {# follow} other {# follows}} · {signups, plural, one {# sign-up} other {# sign-ups}}"
+    "yesterday": "{active, plural, one {# active player} other {# active players}} yesterday · {follows, plural, one {# follow} other {# follows}} · {signups, plural, one {# sign-up} other {# sign-ups}}",
+    "engine": {
+      "productsTitle": "Products",
+      "channelsTitle": "Channels × competition",
+      "suspendedTitle": "Suspended markets",
+      "onlyAlerts": "Alerts only",
+      "allCells": "All",
+      "search": "Competition",
+      "searchSubmit": "Search",
+      "days": "{count, plural, one {# d} other {# d}}",
+      "won": "{count} won",
+      "announcedRealised": "{announced} / {realised}",
+      "tooEarly": "too early",
+      "clv": "CLV {value}",
+      "margin": "margin {value}",
+      "legs": "{count} legs",
+      "retired": "retired",
+      "ai": "AI opinion",
+      "aiOpinions": "{count} opinions",
+      "versions": "By version",
+      "version": "{version} · {from} to {to}",
+      "sample": "{count} legs",
+      "words": {
+        "conforme": "on track",
+        "optimistic": "optimistic",
+        "alert": "alert",
+        "not_enough": "not enough data"
+      },
+      "noCells": "No cell",
+      "noneSuspended": "No suspended market",
+      "since": "since {date}",
+      "reactivate": "Reactivate",
+      "reactivateTitle": "Reactivate {market}",
+      "reactivateReason": "Reason (required)",
+      "reactivateConfirm": "Confirm the reactivation",
+      "cancel": "Cancel",
+      "reactivateFailed": "Not reactivated",
+      "moreCells": "{count, plural, one {# more cell} other {# more cells}}: search a competition."
+    }
   }
 }

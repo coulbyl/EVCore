@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CONSOLE_RULES as R } from '@config/console.constants';
 import { CouponService } from '@modules/coupon/coupon.service';
 import { formatDateUtc, startOfUtcDay } from '@utils/date.utils';
+import { ConsoleEngineService } from './console-engine.service';
 import { consoleStatusOf } from './console-rules';
 import { ConsoleRepository } from './console.repository';
 import type { ConsoleSignals, ConsoleStatus } from './console.types';
@@ -18,6 +19,7 @@ export class ConsoleService {
   constructor(
     private readonly repository: ConsoleRepository,
     private readonly coupons: CouponService,
+    private readonly engine: ConsoleEngineService,
   ) {}
 
   async getStatus(now: Date = new Date()): Promise<ConsoleStatus> {
@@ -60,6 +62,7 @@ export class ConsoleService {
       suspensions,
       lastPlayerSeenAt,
       unansweredMessages,
+      channels,
     ] = await Promise.all([
       this.repository.lastOddsAt(),
       this.repository.etlFailures(
@@ -76,6 +79,7 @@ export class ConsoleService {
       this.repository.activeSuspensions(),
       this.repository.lastPlayerSeenAt(),
       this.repository.unansweredMessages(now),
+      this.engine.getChannels(now),
     ]);
 
     const todayKey = formatDateUtc(today);
@@ -104,6 +108,21 @@ export class ConsoleService {
       })),
       lastPlayerSeenAt,
       unansweredMessages,
+      // A market already suspended says so on its own line: its cells'
+      // alerts would only repeat it.
+      channelAlerts: channels
+        .filter(
+          (cell) =>
+            cell.word === 'alert' &&
+            cell.ratio !== null &&
+            !suspensions.some((s) => s.market === cell.channel),
+        )
+        .map((cell) => ({
+          channel: cell.channel,
+          competition: cell.competitionCode,
+          ratio: cell.ratio ?? 0,
+          sample: cell.sample,
+        })),
     };
   }
 }

@@ -20,6 +20,7 @@ function healthy(over: Partial<ConsoleSignals> = {}): ConsoleSignals {
     suspendedMarkets: [],
     lastPlayerSeenAt: ago(1),
     unansweredMessages: 0,
+    channelAlerts: [],
     ...over,
   };
 }
@@ -105,6 +106,26 @@ describe('consoleStatusOf', () => {
     expect(status.todo[0]).toMatchObject({
       kind: 'players_silent',
       hours: null,
+    });
+  });
+
+  it('a channel × competition in alert is an orange line of Moteur', () => {
+    const status = consoleStatusOf(
+      healthy({
+        channelAlerts: [
+          {
+            channel: 'DOUBLE_CHANCE',
+            competition: 'BL1',
+            ratio: 0.78,
+            sample: 62,
+          },
+        ],
+      }),
+    );
+    expect(status.lights.engine).toBe('orange');
+    expect(status.todo[0]).toMatchObject({
+      kind: 'channel_alert',
+      competition: 'BL1',
     });
   });
 });

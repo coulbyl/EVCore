@@ -1571,7 +1571,8 @@
       "ai_silentNever": "L'IA n'a encore rien publié",
       "players_silent": "Aucun joueur venu depuis {hours} h",
       "players_silentNever": "Aucun joueur venu",
-      "support_unanswered": "{count, plural, one {Un message sans réponse} other {# messages sans réponse}} depuis plus de 24 h"
+      "support_unanswered": "{count, plural, one {Un message sans réponse} other {# messages sans réponse}} depuis plus de 24 h",
+      "channel_alert": "{channel} sur {competition} : {ratio} réalisé/annoncé, {sample} jambes"
     },
     "passesTitle": "Les passes d'aujourd'hui",
     "passes": {
@@ -1597,6 +1598,44 @@
     "passesOffAnonymous": "Passes coupées depuis le {date}",
     "todayTitle": "Aujourd'hui",
     "noCoupons": "Aucun coupon aujourd'hui",
-    "yesterday": "{active, plural, one {# joueur actif} other {# joueurs actifs}} hier · {follows, plural, one {# suivi} other {# suivis}} · {signups, plural, one {# inscrit} other {# inscrits}}"
+    "yesterday": "{active, plural, one {# joueur actif} other {# joueurs actifs}} hier · {follows, plural, one {# suivi} other {# suivis}} · {signups, plural, one {# inscrit} other {# inscrits}}",
+    "engine": {
+      "productsTitle": "Produits",
+      "channelsTitle": "Canaux × compétition",
+      "suspendedTitle": "Marchés suspendus",
+      "onlyAlerts": "Seulement les alertes",
+      "allCells": "Toutes",
+      "search": "Compétition",
+      "searchSubmit": "Chercher",
+      "days": "{count, plural, one {# j} other {# j}}",
+      "won": "{count} gagnés",
+      "announcedRealised": "{announced} / {realised}",
+      "tooEarly": "trop tôt",
+      "clv": "CLV {value}",
+      "margin": "marge {value}",
+      "legs": "{count} jambes",
+      "retired": "retiré",
+      "ai": "Avis IA",
+      "aiOpinions": "{count} avis",
+      "versions": "Par version",
+      "version": "{version} · du {from} au {to}",
+      "sample": "{count} j.",
+      "words": {
+        "conforme": "conforme",
+        "optimistic": "optimiste",
+        "alert": "alerte",
+        "not_enough": "pas assez de recul"
+      },
+      "noCells": "Aucune cellule",
+      "noneSuspended": "Aucun marché suspendu",
+      "since": "depuis le {date}",
+      "reactivate": "Réactiver",
+      "reactivateTitle": "Réactiver {market}",
+      "reactivateReason": "Motif (obligatoire)",
+      "reactivateConfirm": "Confirmer la réactivation",
+      "cancel": "Annuler",
+      "reactivateFailed": "Pas réactivé",
+      "moreCells": "{count, plural, one {# autre cellule} other {# autres cellules}} : cherche une compétition."
+    }
   }
 }

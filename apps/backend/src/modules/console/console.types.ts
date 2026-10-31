@@ -64,6 +64,15 @@ export type TodoItem =
       hours: number | null;
     }
   | {
+      kind: 'channel_alert';
+      light: 'engine';
+      severity: 'orange';
+      channel: string;
+      competition: string;
+      ratio: number;
+      sample: number;
+    }
+  | {
       kind: 'support_unanswered';
       light: 'players';
       severity: 'orange';
@@ -100,6 +109,13 @@ export type ConsoleSignals = {
   suspendedMarkets: { market: string; since: Date }[];
   lastPlayerSeenAt: Date | null;
   unansweredMessages: number;
+  /** Channel × competition cells in alert (Moteur). */
+  channelAlerts: {
+    channel: string;
+    competition: string;
+    ratio: number;
+    sample: number;
+  }[];
 };
 
 /** Moteur › Produits (12 § 2): Résultats' line, and what a player never sees. */
@@ -143,4 +159,27 @@ export type EngineProducts = {
   period: string;
   products: EngineProduct[];
   ai: EngineAi;
+};
+
+/** A cell of Moteur › Canaux × compétition. */
+export type ChannelCell = {
+  channel: string;
+  competitionCode: string;
+  competitionName: string;
+  sample: number;
+  announced: number | null;
+  realised: number | null;
+  ratio: number | null;
+  low: number | null;
+  high: number | null;
+  /** conforme, optimiste (below 0,85, not established), alerte, pas assez de recul. */
+  word: 'conforme' | 'optimistic' | 'alert' | 'not_enough';
+};
+
+/** A market suspended by the risk sweep, until a human reactivates it. */
+export type SuspendedMarket = {
+  id: string;
+  market: string;
+  since: string;
+  reason: string;
 };

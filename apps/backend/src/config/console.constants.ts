@@ -122,3 +122,14 @@ export const CONSOLE_WATCH = {
   /** The admin home, linked from the e-mail (APP_URL + this). */
   HOME_PATH: '/admin',
 } as const;
+
+/**
+ * Moteur › Canaux × compétition (12-admin.md § 2): 90 rolling days, the
+ * ratio realised/announced with a 95 % interval. Below GOOD with the
+ * interval's top under it too, the loss is established: an alert.
+ */
+export const CONSOLE_CALIBRATION = {
+  WINDOW_DAYS: 90,
+  GOOD_RATIO: 0.85,
+  Z_95: 1.96,
+} as const;

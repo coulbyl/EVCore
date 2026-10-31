@@ -59,6 +59,15 @@ export type TodoItem =
       hours: number | null;
     }
   | {
+      kind: "channel_alert";
+      light: "engine";
+      severity: "orange";
+      channel: string;
+      competition: string;
+      ratio: number;
+      sample: number;
+    }
+  | {
       kind: "support_unanswered";
       light: "players";
       severity: "orange";
@@ -93,4 +102,60 @@ export type PassView = {
   failed: number;
   reason: string | null;
   canRelaunch: boolean;
+};
+
+export type EngineProduct = {
+  product: string;
+  retired: boolean;
+  launchedOn: string;
+  won: number;
+  lost: number;
+  refunded: number;
+  tooEarly: boolean;
+  announced: number | null;
+  realised: number | null;
+  legs: number;
+  clv: number | null;
+  margin: number | null;
+};
+
+export type EngineProducts = {
+  period: string;
+  products: EngineProduct[];
+  ai: {
+    won: number;
+    lost: number;
+    announced: number | null;
+    realised: number | null;
+    margin: number | null;
+    versions: {
+      version: string;
+      from: string;
+      to: string;
+      won: number;
+      lost: number;
+      announced: number | null;
+      margin: number | null;
+    }[];
+  };
+};
+
+export type ChannelCell = {
+  channel: string;
+  competitionCode: string;
+  competitionName: string;
+  sample: number;
+  announced: number | null;
+  realised: number | null;
+  ratio: number | null;
+  low: number | null;
+  high: number | null;
+  word: "conforme" | "optimistic" | "alert" | "not_enough";
+};
+
+export type SuspendedMarket = {
+  id: string;
+  market: string;
+  since: string;
+  reason: string;
 };

@@ -12,6 +12,7 @@ export function todoHref(item: TodoItem): string {
   switch (item.kind) {
     case "product_absent":
     case "market_suspended":
+    case "channel_alert":
       return "/admin/engine";
     case "players_silent":
     case "support_unanswered":

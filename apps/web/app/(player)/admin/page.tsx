@@ -83,6 +83,16 @@ export default async function Page() {
         });
       case "support_unanswered":
         return t(key, { count: item.count });
+      case "channel_alert":
+        return t(key, {
+          channel: item.channel,
+          competition: item.competition,
+          ratio: new Intl.NumberFormat(display === "en" ? "en-GB" : "fr-FR", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }).format(item.ratio),
+          sample: item.sample,
+        });
       default:
         return t(key, { hours: item.hours ?? 0 });
     }
