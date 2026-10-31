@@ -51,13 +51,6 @@ export async function AccountPageShell({
               { value: "USD", label: t("currencies.usd") },
               { value: "EUR", label: t("currencies.eur") },
             ],
-            unitStake: t("unitStake"),
-            unitModeFixed: t("unitModeFixed"),
-            unitModePct: t("unitModePct"),
-            unitAmountPlaceholder: t("unitAmountPlaceholder"),
-            unitPctPlaceholder: t("unitPctPlaceholder"),
-            unitPctSuffix: t("unitPctSuffix"),
-            unitOptionalHint: t("unitOptionalHint"),
           }}
         />
       </PageContent>

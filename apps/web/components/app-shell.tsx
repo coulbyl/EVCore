@@ -4,44 +4,34 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Badge, Tooltip, TooltipContent, TooltipTrigger } from "@evcore/ui";
+import { Badge } from "@evcore/ui";
 import {
   Bell,
-  BookOpen,
   BrainCircuit,
   CalendarDays,
   ClipboardCheck,
   Cpu,
   FlaskConical,
-  GraduationCap,
   History,
   Layers,
   LayoutDashboard,
   Library,
   Megaphone,
   MessageCircle,
-  Receipt,
   Scale,
   Settings,
   Users,
   Wand2,
 } from "lucide-react";
 import { PageShell, type NavGroup } from "./page-shell";
-import { BetSlipButton } from "./bet-slip-button";
 import { AccountButton } from "./account-button";
-import { BankrollWidget } from "./bankroll-widget";
 import { NotificationBell } from "./notification-bell";
 import { PageSearchButton } from "./page-search/page-search-fab";
 import { UserAvatar } from "./user-avatar";
 import { useCurrentUser } from "@/domains/auth/context/current-user-context";
-import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
 import { useUnreadCount } from "@/domains/notification/use-cases/use-notifications";
 import { useUnreadSupportCount } from "@/domains/support/use-cases/use-support-chat";
 import { useAdminUnreadSupportCount } from "@/domains/support/use-cases/use-admin-support";
-
-const BADGE_EMOJI: Record<string, string> = {
-  graduate: "🎓",
-};
 
 export function AppShell({
   children,
@@ -60,7 +50,6 @@ export function AppShell({
   // there, TODO.md's "badge de rôle incohérent" for the same account.
   const tAccount = useTranslations("account");
   const isAdmin = currentUser.role === "ADMIN";
-  const { data: badges } = useMyBadges();
   const { data: unreadData } = useUnreadCount();
   const unreadCount = unreadData?.count ?? 0;
   const { data: operatorInboxUnread } = useUnreadSupportCount(!isAdmin);
@@ -68,13 +57,6 @@ export function AppShell({
   const inboxUnreadCount = isAdmin
     ? (adminInboxUnread?.count ?? 0)
     : (operatorInboxUnread?.count ?? 0);
-
-  const unlockedBadges = useMemo(
-    () => (badges ?? []).filter((badge) => badge.unlockedAt !== null),
-    [badges],
-  );
-
-  const highlightedBadges = unlockedBadges.slice(0, 3);
 
   const navGroups = useMemo((): NavGroup[] => {
     const adminItems = isAdmin
@@ -124,12 +106,6 @@ export function AppShell({
             href: "/dashboard/fixtures",
             active: pathname.startsWith("/dashboard/fixtures"),
             icon: CalendarDays,
-          },
-          {
-            label: tNav("glossary"),
-            href: "/dashboard/glossaire",
-            active: pathname === "/dashboard/glossaire",
-            icon: BookOpen,
           },
           {
             label: tNav("technicalDocs"),
@@ -187,12 +163,6 @@ export function AppShell({
         label: tNav("navGroupTracking"),
         items: [
           {
-            label: tNav("betSlips"),
-            href: "/dashboard/bet-slips",
-            active: pathname.startsWith("/dashboard/bet-slips"),
-            icon: Receipt,
-          },
-          {
             label: tNav("inbox"),
             href: "/dashboard/inbox",
             active: pathname.startsWith("/dashboard/inbox"),
@@ -204,12 +174,6 @@ export function AppShell({
       {
         label: tNav("navGroupAnalysis"),
         items: [
-          {
-            label: tNav("formation"),
-            href: "/dashboard/formation",
-            active: pathname.startsWith("/dashboard/formation"),
-            icon: GraduationCap,
-          },
           {
             label: tNav("trackRecord"),
             href: "/dashboard/track-record",
@@ -272,10 +236,8 @@ export function AppShell({
       headerNotice={headerNotice}
       actions={
         <div className="relative flex items-center gap-1.5 sm:gap-2">
-          <BankrollWidget />
           <PageSearchButton />
           <NotificationBell />
-          <BetSlipButton />
           <AccountButton currentUser={currentUser} />
         </div>
       }
@@ -306,7 +268,9 @@ export function AppShell({
                 ) : null}
               </div>
               <p className="truncate text-xs text-sidebar-foreground/60">
-                @{currentUser.username}
+                {currentUser.username
+                  ? `@${currentUser.username}`
+                  : currentUser.email}
               </p>
             </div>
             <Link
@@ -317,25 +281,6 @@ export function AppShell({
               <Settings size={15} />
             </Link>
           </div>
-
-          {/* Badges d'apprentissage seulement : plus de rang ni de ROI au
-              classement des joueurs (audit du 2026-10-23, P2-9). */}
-          {highlightedBadges.length > 0 && (
-            <div className="flex items-center justify-end gap-1 px-1">
-              {highlightedBadges.map((badge) => (
-                <Tooltip key={badge.code}>
-                  <TooltipTrigger asChild>
-                    <span className="cursor-default text-sm">
-                      {BADGE_EMOJI[badge.code] ?? "🏆"}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">
-                    {badge.name}
-                  </TooltipContent>
-                </Tooltip>
-              ))}
-            </div>
-          )}
         </div>
       }
     >

@@ -10,6 +10,7 @@ import {
   ETL_SCHEDULER_KEYS,
   STATS_BACKFILL,
 } from '@config/etl.constants';
+import { AppSettingService } from '@modules/app-setting/app-setting.service';
 import { FixtureService } from '../fixture/fixture.service';
 import {
   ApiFootballClient,
@@ -19,7 +20,6 @@ import type { LeagueSyncJobData } from './workers/league-sync.worker';
 import {
   rankStatsBackfillSeasons,
   statsBackfillBudget,
-  statsBackfillDailyReserve,
 } from './stats-backfill.plan';
 import type { StatsBackfillJobData } from './workers/stats-backfill.worker';
 
@@ -54,7 +54,6 @@ export type StatsBackfillStatus = {
 @Injectable()
 export class StatsBackfillService implements OnApplicationBootstrap {
   private readonly scheduled: boolean;
-  private readonly reserve: number;
   private readonly cronPattern: string;
 
   // eslint-disable-next-line max-params -- Explicit queue injection keeps queue wiring transparent (same as EtlService).
@@ -66,15 +65,14 @@ export class StatsBackfillService implements OnApplicationBootstrap {
     config: ConfigService,
     private readonly fixtureService: FixtureService,
     private readonly apiFootball: ApiFootballClient,
+    private readonly settings: AppSettingService,
   ) {
+    // STATS_BACKFILL_ENABLED=false still holds: its production value is not
+    // known (ENV-NETTOYAGE § 1), so the deploy must not turn the backfill on.
     this.scheduled =
       config.get<string>('ETL_SCHEDULING_ENABLED', 'true') !== 'false' &&
       config.get<string>('STATS_BACKFILL_ENABLED', 'true') !== 'false';
-    this.reserve = statsBackfillDailyReserve(config);
-    this.cronPattern = config.get<string>(
-      'ETL_STATS_BACKFILL_CRON',
-      STATS_BACKFILL.CRON,
-    );
+    this.cronPattern = STATS_BACKFILL.CRON;
   }
 
   async onApplicationBootstrap(): Promise<void> {
@@ -94,7 +92,10 @@ export class StatsBackfillService implements OnApplicationBootstrap {
       },
     );
     logger.info(
-      { pattern: this.cronPattern, reserve: this.reserve },
+      {
+        pattern: this.cronPattern,
+        reserve: await this.settings.statsBackfillDailyReserve(),
+      },
       'Automatic stats backfill scheduler registered',
     );
   }
@@ -106,13 +107,13 @@ export class StatsBackfillService implements OnApplicationBootstrap {
     budget: number;
     reserve: number;
   } | null> {
-    const usage = await this.apiFootball.getQuotaUsage();
+    // An operator switch (app_setting), read at every run.
+    const [usage, reserve] = await Promise.all([
+      this.apiFootball.getQuotaUsage(),
+      this.settings.statsBackfillDailyReserve(),
+    ]);
     if (usage === null) return null;
-    return {
-      usage,
-      budget: statsBackfillBudget(usage, this.reserve),
-      reserve: this.reserve,
-    };
+    return { usage, budget: statsBackfillBudget(usage, reserve), reserve };
   }
 
   // The routine stats sync (league-sync queue, 04:00 UTC by default) works on
@@ -155,12 +156,13 @@ export class StatsBackfillService implements OnApplicationBootstrap {
   }
 
   async getStatus(): Promise<StatsBackfillStatus> {
-    const [paused, usage, candidates] = await Promise.all([
+    const [paused, usage, candidates, reserve] = await Promise.all([
       this.queue.isPaused(),
       this.apiFootball.getQuotaUsage(),
       this.fixtureService.findStatsBackfillCandidates(
         new Date(STATS_BACKFILL.MIN_SEASON_START),
       ),
+      this.settings.statsBackfillDailyReserve(),
     ]);
     const ranked = rankStatsBackfillSeasons(candidates, new Date());
     const view = (
@@ -178,11 +180,11 @@ export class StatsBackfillService implements OnApplicationBootstrap {
     return {
       scheduled: this.scheduled,
       paused,
-      reserve: this.reserve,
+      reserve,
       quota:
         usage === null
           ? null
-          : { ...usage, budget: statsBackfillBudget(usage, this.reserve) },
+          : { ...usage, budget: statsBackfillBudget(usage, reserve) },
       totals: {
         seasons: ranked.length,
         completedSeasons: ranked.length - open.length,

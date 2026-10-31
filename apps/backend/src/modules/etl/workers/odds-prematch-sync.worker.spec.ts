@@ -1195,6 +1195,6 @@ describe('fenêtres de capture avant coup d’envoi', () => {
 
   it('planifie le balayage plus souvent que la synchro d’horizon', () => {
     expect(ETL_CRON_SCHEDULES.ODDS_CLOSING_SYNC).toBe('*/10 * * * *');
-    expect(ETL_CRON_SCHEDULES.ODDS_PREMATCH_SYNC).toBe('0 6,18 * * *');
+    expect(ETL_CRON_SCHEDULES.ODDS_PREMATCH_SYNC).toBe('0 6,19 * * *');
   });
 });

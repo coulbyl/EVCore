@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Matchs, hier</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:#141821}
+a{color:#141821}a:hover{color:#0E1320}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.ic{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid #2A3142;color:#fff;font-weight:600;font-size:16px;background:transparent;padding:0}
+.ic svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.day{height:40px;padding:0 16px;border-radius:20px;display:flex;align-items:center;font-size:15px;font-weight:500;color:#9AA3B2;text-decoration:none}
+.day.on{color:#0E1320;background:#FFB300;font-weight:600}
+.m{display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 0;border-top:1px solid #D9DDE3;text-decoration:none;color:#141821}
+.m .sc{width:46px;font-family:"Barlow Condensed";font-weight:700;font-size:20px;text-align:center;flex:none}
+.m .t{flex:1;min-width:0;font-size:15px;font-weight:500}
+.m .t small{display:block;color:#5B6472;font-size:13px;font-weight:400}
+.m .r{font-family:"Barlow Condensed";font-weight:600;font-size:17px;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.m .r b{font-size:22px;font-weight:700}
+.m .r.off{color:#8A94A6;font-weight:500;font-family:Barlow;font-size:14px}
+.m svg{width:18px;height:18px;stroke:#8A94A6;fill:none;stroke-width:2;stroke-linecap:round;flex:none}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:#5B6472;font-weight:500;text-decoration:none;padding:6px 0}
+.tab.on{color:#0E1320;font-weight:600}
+.tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.on svg{stroke:#FFB300}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F9; display: flex; flex-direction: column; overflow: hidden; position: relative">
+  <header style="background: #0E1320; color: #fff; padding: 52px 16px 12px; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; align-items: center; justify-content: space-between"><div class="num" style="font-weight: 700; font-size: 24px">EVCore</div><div style="display: flex; gap: 10px"><button class="ic" aria-label="Notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4l2-2z"/><path d="M10 21h4"/></svg></button><a class="ic" href="Moi.dc.html" aria-label="Moi" style="text-decoration: none">K</a></div></div>
+    <div style="display: flex; align-items: center; gap: 6px; border-top: 1px solid #2A3142; padding-top: 10px"><a class="day on" href="MatchsHier.dc.html">Hier</a><a class="day" href="Matchs.dc.html">Aujourd'hui</a><a class="day" href="Matchs.dc.html">Demain</a><span style="flex: 1"></span><button class="ic" aria-label="Chercher une équipe"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button></div>
+  </header>
+
+  <div style="padding: 8px 16px 0; display: flex; flex-direction: column">
+    <a class="m" href="Soir.dc.html" style="border-top: 0"><span class="sc num">2–0</span><span class="t">PSG – Lens<small>Ligue 1</small></span><span class="r">Victoire du PSG <b style="color: #1F8A4C">✓</b></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="m" href="Soir.dc.html"><span class="sc num">1–1</span><span class="t">Lazio – Torino<small>Serie A</small></span><span class="r">Match nul <b style="color: #1F8A4C">✓</b></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="m" href="Soir.dc.html"><span class="sc num">1–1</span><span class="t">Inter – Napoli<small>Serie A</small></span><span class="r">Victoire de l'Inter <b style="color: #C62828">✗</b></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="m" href="Soir.dc.html"><span class="sc num">3–1</span><span class="t">Bayern – Köln<small>Bundesliga</small></span><span class="r">Plus de 2,5 buts <b style="color: #1F8A4C">✓</b></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="m" href="Soir.dc.html"><span class="sc num">0–0</span><span class="t">Betis – Sevilla<small>LaLiga</small></span><span class="r">Les deux marquent <b style="color: #C62828">✗</b></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="m" href="Soir.dc.html"><span class="sc num" style="color: #8A94A6; font-size: 14px; font-family: Barlow; font-weight: 500">Rep.</span><span class="t">Brest – Nice<small>Ligue 1 · reporté</small></span><span class="r off">Remboursé</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="m" href="MatchsHier.dc.html" style="color: #5B6472"><span class="t" style="font-weight: 400">18 matchs sans lecture</span><span class="r off" style="color: #0E1320">Voir</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></a>
+  </div>
+
+  <p style="position: absolute; left: 0; right: 0; bottom: 70px; margin: 0; text-align: center; font-size: 11px; color: #5B6472">18+ · Parier comporte des risques de perte</p>
+  <nav style="position: absolute; left: 0; right: 0; bottom: 0; height: 68px; background: #fff; border-top: 1px solid #D9DDE3; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 4px 0 8px" aria-label="Onglets">
+    <a class="tab" href="Main.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Aujourd'hui</a>
+    <a class="tab on" href="Matchs.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3c3 3 3 15 0 18M3 12h18"/></svg>Matchs</a>
+    <a class="tab" href="Resultats.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-8M22 19H2"/></svg>Résultats</a>
+    <a class="tab" href="Moi.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Moi</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

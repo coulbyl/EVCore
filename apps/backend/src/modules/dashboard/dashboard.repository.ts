@@ -450,37 +450,4 @@ export class DashboardRepository {
     }
     return rows;
   }
-
-  getLeaderboardData(since: Date) {
-    return this.prisma.client.betSlip.findMany({
-      where: {
-        createdAt: { gte: since },
-        items: {
-          every: {
-            bet: {
-              status: { in: [BetStatus.WON, BetStatus.LOST] },
-              oddsSnapshot: { not: null },
-            },
-          },
-        },
-      },
-      select: {
-        userId: true,
-        type: true,
-        unitStake: true,
-        user: { select: { username: true } },
-        items: {
-          select: {
-            stakeOverride: true,
-            bet: {
-              select: {
-                status: true,
-                oddsSnapshot: true,
-              },
-            },
-          },
-        },
-      },
-    });
-  }
 }

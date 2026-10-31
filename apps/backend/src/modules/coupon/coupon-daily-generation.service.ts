@@ -22,6 +22,7 @@ import {
   ENGINE_LONG_PROFILE,
   type EngineComboGenerationOutcome,
 } from './coupon-engine-combo-generation.service';
+import { CouponLegFactService } from './leg-fact/coupon-leg-fact.service';
 
 type Failed = { outcome: 'failed'; error: string };
 
@@ -33,6 +34,8 @@ export type DailyGenerationOutcome = {
   long: EngineComboGenerationOutcome | Failed;
   /** Chasseurs BTTS, Nul et Score exact. */
   hunters: HunterPassOutcome[] | Failed;
+  /** Le fait sous chaque jambe, écrit après toutes les passes. */
+  facts: { legs: number; withFact: number } | Failed;
 };
 
 /**
@@ -52,6 +55,7 @@ export class CouponDailyGenerationService {
     private readonly combo: CouponEngineComboGenerationService,
     private readonly hunters: CouponHunterGenerationService,
     private readonly pricedPool: CouponPricedPoolService,
+    private readonly legFacts: CouponLegFactService,
   ) {}
 
   async generateForDate(forDate: Date): Promise<DailyGenerationOutcome> {
@@ -63,7 +67,7 @@ export class CouponDailyGenerationService {
       );
       return undefined;
     });
-    return {
+    const outcome = {
       price: await this.guard('price composer', () =>
         this.price.generateForDate(forDate),
       ),
@@ -81,6 +85,14 @@ export class CouponDailyGenerationService {
       ),
       hunters: await this.guard('hunters', () =>
         this.hunters.generateForDate(forDate, pool),
+      ),
+    };
+    // Après toutes les passes, pour couvrir chaque jambe écrite ; une panne
+    // ici laisse les coupons publiés, sans phrase sous leurs jambes.
+    return {
+      ...outcome,
+      facts: await this.guard('leg facts', () =>
+        this.legFacts.fillForDate(forDate),
       ),
     };
   }

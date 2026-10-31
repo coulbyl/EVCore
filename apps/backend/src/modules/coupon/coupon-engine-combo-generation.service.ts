@@ -130,34 +130,37 @@ export class CouponEngineComboGenerationService {
     const combinedOdds = selection.legs.reduce((acc, leg) => acc * leg.odds, 1);
     // Retour attendu = 1 : la règle ne crédite aucun avantage (retour mesuré
     // 1,048 ± bruit) ; la probabilité affichée est celle du prix.
-    const proposalId = await this.repository.upsertPriceComposerProposal({
-      forDate: dayStart,
-      combinedOdds,
-      expectedReturn: 1,
-      lastFixtureScheduledAt,
-      legs: selection.legs.map((leg) => ({
-        fixtureId: leg.fixtureId,
-        market: leg.market as Market,
-        pick: leg.pick,
-        odds: leg.odds,
+    const { proposalId, created } =
+      await this.repository.upsertPriceComposerProposal({
+        forDate: dayStart,
+        combinedOdds,
         expectedReturn: 1,
-        // La jambe annonce ce que son canal annonce sur Décisions : c'est
-        // cette probabilité que le règlement compare au réel, et celle du
-        // combiné LLM construit sur le même vivier.
-        probability: leg.probability,
-        canal: leg.channel as StrategyChannel,
-        ...operatorPrice(leg, quotes),
-      })),
-      profile: {
-        source: CouponSource.ENGINE,
-        targetOddsMin: profile.couponClass.targetOddsMin,
-        targetOddsMax: profile.couponClass.targetOddsMax,
-        policyVersion: profile.policy.version,
-      },
-    });
+        lastFixtureScheduledAt,
+        legs: selection.legs.map((leg) => ({
+          fixtureId: leg.fixtureId,
+          market: leg.market as Market,
+          pick: leg.pick,
+          odds: leg.odds,
+          expectedReturn: 1,
+          // La jambe annonce ce que son canal annonce sur Décisions : c'est
+          // cette probabilité que le règlement compare au réel, et celle du
+          // combiné LLM construit sur le même vivier.
+          probability: leg.probability,
+          canal: leg.channel as StrategyChannel,
+          ...operatorPrice(leg, quotes),
+        })),
+        profile: {
+          source: CouponSource.ENGINE,
+          targetOddsMin: profile.couponClass.targetOddsMin,
+          targetOddsMax: profile.couponClass.targetOddsMax,
+          policyVersion: profile.policy.version,
+        },
+      });
     await this.repository.recordPriceComposerAttempt({
       forDate: dayStart,
-      outcome: 'composed',
+      // The proposal of the day is immutable: a later pass that finds it
+      // published says so instead of « composed » (ENV-PROD § 3).
+      outcome: created ? 'composed' : 'preserved',
       candidateCount: selection.candidateCount,
       proposalId,
       pass,

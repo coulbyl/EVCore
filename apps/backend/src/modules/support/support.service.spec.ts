@@ -39,7 +39,7 @@ function makeRepo(
     findConversationById: vi
       .fn()
       .mockResolvedValue({ id: CONVERSATION_ID, userId: USER_ID }),
-    findUserEmail: vi.fn().mockResolvedValue(null),
+    wantsTeamReplies: vi.fn().mockResolvedValue(true),
     userExists: vi.fn().mockResolvedValue(true),
     createConversation: vi.fn(),
     findConversationByUserId: vi.fn(),
@@ -228,6 +228,38 @@ describe('SupportService — sendAsUser', () => {
         },
       }),
     ).rejects.toThrow(BadRequestException);
+  });
+});
+
+describe('SupportService — sendAsAdmin', () => {
+  function serviceWith(wantsTeamReplies: boolean) {
+    const repo = makeRepo({
+      wantsTeamReplies: vi.fn().mockResolvedValue(wantsTeamReplies),
+    } as unknown as Partial<SupportRepository>);
+    const notifier = makeNotifier();
+    const service = new SupportService(
+      repo,
+      notifier,
+      makeGateway(),
+      makeStorage(),
+      makeAutomation(),
+    );
+    return { service, notifier };
+  }
+
+  it('tells the player in the app, never by email', async () => {
+    const { service, notifier } = serviceWith(true);
+    await service.sendAsAdmin(CONVERSATION_ID, 'admin-1', { content: 'Oui' });
+    expect(notifier.notifyUser).toHaveBeenCalledWith(
+      USER_ID,
+      expect.objectContaining({ conversationId: CONVERSATION_ID }),
+    );
+  });
+
+  it("sends nothing when « Réponses de l'équipe » is off", async () => {
+    const { service, notifier } = serviceWith(false);
+    await service.sendAsAdmin(CONVERSATION_ID, 'admin-1', { content: 'Oui' });
+    expect(notifier.notifyUser).not.toHaveBeenCalled();
   });
 });
 

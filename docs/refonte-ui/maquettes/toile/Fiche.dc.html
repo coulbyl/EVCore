@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>La fiche du match</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:#141821}
+a{color:#141821}a:hover{color:#0E1320}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.crest{width:28px;height:28px;border-radius:50%;background:#E8EBF0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0E1320;flex:none}
+.sec{border-top:1px solid #D9DDE3;padding:12px 0;display:flex;flex-direction:column;gap:8px}
+.lab{font-size:13px;color:#5B6472}
+.bet{display:flex;align-items:center;gap:10px}
+.bet .t{flex:1;font-size:17px;font-weight:600}
+.bet .o{font-family:"Barlow Condensed";font-weight:600;font-size:18px}
+.bet .c{font-family:"Barlow Condensed";font-weight:700;font-size:20px;min-width:66px;text-align:right}
+.add{width:44px;height:44px;border-radius:50%;border:1px solid #0E1320;background:#fff;display:flex;align-items:center;justify-content:center;padding:0;margin-right:-6px}
+.add svg{width:18px;height:18px;stroke:#0E1320;fill:none;stroke-width:2.2;stroke-linecap:round}
+.f{display:flex;align-items:center;gap:10px;font-size:14px}
+.f .n{width:64px;font-weight:500}
+.f .d{display:flex;gap:4px}
+.f .d i{width:12px;height:12px;border-radius:2px;background:#1F8A4C;display:block}
+.f .d i.x{background:#C62828}
+.f .m{color:#5B6472;margin-left:auto}
+.ot{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;font-size:14px}
+.ot div{display:flex;justify-content:space-between;gap:6px}
+.ot .v{font-family:"Barlow Condensed";font-weight:600;font-size:16px;white-space:nowrap}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0B0E16; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden">
+  <div style="background: #FFFFFF; border-radius: 20px 20px 0 0; height: 800px; display: flex; flex-direction: column; overflow: hidden">
+    <div style="display: flex; justify-content: center; padding: 8px 0 0"><span style="width: 40px; height: 4px; border-radius: 2px; background: #D9DDE3"></span></div>
+    <header style="background: #0E1320; color: #fff; margin-top: 10px; padding: 12px 16px 14px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: center; justify-content: space-between">
+        <a href="Matchs.dc.html" aria-label="Fermer" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; margin-left: -12px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M15 6l-6 6 6 6"/></svg></a>
+        <span style="color: #9AA3B2; font-size: 14px">Premier League</span>
+        <span class="num" style="font-weight: 700; font-size: 20px">19:00</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; font-size: 18px; font-weight: 600">
+        <div style="display: flex; align-items: center; gap: 10px"><span class="crest num" style="background: #2A3142; color: #fff">ARS</span>Arsenal</div>
+        <div style="display: flex; align-items: center; gap: 10px"><span class="crest num" style="background: #2A3142; color: #fff">CHE</span>Chelsea</div>
+      </div>
+    </header>
+
+    <div style="padding: 4px 16px 0; display: flex; flex-direction: column; flex: 1">
+      <div class="sec" style="border-top: 0">
+        <span class="lab">Notre lecture</span>
+        <div class="bet"><span class="t">Victoire Arsenal</span><span class="o num">1,65</span><span class="c num">7 sur 10</span><button class="add" aria-label="Ajouter à mon ticket"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+        <p style="margin: 0; font-size: 14px; color: #5B6472">Arsenal a gagné ses 9 derniers matchs à domicile</p>
+      </div>
+      <div class="sec">
+        <div style="display: flex; justify-content: space-between; align-items: baseline"><span class="lab">Avis IA</span><span class="num" style="font-weight: 600; font-size: 15px; color: #FFB300; background: #0E1320; padding: 2px 8px; border-radius: 4px">Pas d'accord</span></div>
+        <div class="bet"><span class="t">Match nul</span><span class="o num">3,40</span><span class="c num">3 sur 10</span><button class="add" aria-label="Ajouter à mon ticket"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+        <p style="margin: 0; font-size: 14px; color: #5B6472">« Chelsea n'a perdu qu'une fois en 8 déplacements »</p>
+      </div>
+      <div class="sec">
+        <span class="lab">Forme</span>
+        <div class="f"><span class="n">Arsenal</span><span class="d"><i></i><i></i><i class="x"></i><i></i><i></i></span><span class="m">repos 3 j · 2 absents</span></div>
+        <div class="f"><span class="n">Chelsea</span><span class="d"><i></i><i></i><i></i><i class="x"></i><i></i></span><span class="m">repos 6 j</span></div>
+        <p style="margin: 0; font-size: 14px; color: #5B6472">4 victoires d'Arsenal sur les 6 derniers face à face</p>
+      </div>
+      <div class="sec">
+        <div style="display: flex; justify-content: space-between; align-items: baseline"><span class="lab">Autres paris</span><a href="Fiche.dc.html" style="font-size: 14px; font-weight: 500; text-decoration: none">Tous ›</a></div>
+        <div class="ot">
+          <div><span>Plus de 2,5 buts</span><span class="v">1,80 · 1 sur 2</span></div>
+          <div><span>Les deux marquent</span><span class="v">1,70 · 5 sur 10</span></div>
+          <div><span>Victoire Chelsea</span><span class="v">5,20 · 2 sur 10</span></div>
+          <div><span>Match nul</span><span class="v">3,40 · 3 sur 10</span></div>
+        </div>
+      </div>
+      <p style="margin: auto 0 0; padding: 12px 0 20px; font-size: 13px; color: #5B6472; border-top: 1px solid #D9DDE3">1xBet prend 7 % sur ce match</p>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

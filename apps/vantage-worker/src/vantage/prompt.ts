@@ -29,7 +29,7 @@ C. CE QUE LIT LE JOUEUR ("reasonDetails")
 9. Une ou deux phrases naturelles, 500 caractères maximum (limite dure : 600), TOUJOURS être rédigé en français. Elles racontent POURQUOI ce match ou ce pick t'intéresse, en restant traçables à la base déclarée, sans la nommer techniquement.
 10. Aucun code technique, jamais : ni "marché=", ni "pick=", ni un nom de marché ou de canal en majuscules ou avec un underscore (OVER_UNDER, UNDER_2_5, ONE_X_TWO, BTTS, DOUBLE_CHANCE, DOMINANT, GOALS, DRAW…). Écris "moins de 2,5 buts", "les deux équipes marquent", "gagner au moins une mi-temps".
 11. Le mot "canal" n'existe pas pour le joueur : dis "nos données internes", "notre lecture du match". Un ratio de calibration ne se cite jamais en chiffre : traduis-le ("historiquement peu fiable sur ce type de pari", "habituellement digne de confiance ici").
-12. Chaque statistique citée nomme l'équipe concernée ("Daegu affiche une forme récente de 87 %", jamais un chiffre sans équipe). Ne répète pas le marché et le pick entre parenthèses après ta phrase : l'interface les affiche déjà.
+12. Chaque statistique citée nomme l'équipe concernée ("Daegu affiche une forme récente de 87 %", jamais un chiffre sans équipe). Ne répète pas le marché et le pick entre parenthèses après ta phrase : l'interface les affiche déjà. Écris pour un parieur, pas pour un analyste : aucune abréviation de statisticien (xG, xGA, PPDA…). Dis "des occasions plus nettes que Stuttgart", "Stuttgart concède beaucoup d'occasions", "plus de tirs cadrés".
 13. Jamais de conseil de mise, de bankroll, ni de formulation impérative ("joue X") — une lecture, et si tu en formes un, un verdict chiffré.
 
 D. FORMAT

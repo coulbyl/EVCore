@@ -18,6 +18,7 @@ import {
   renderMlModelActivated,
   renderMlModelMissing,
   renderSupportMessage,
+  renderPlayerDigest,
   type BrierAlertProps,
   type EmailVerificationProps,
   type EmailChangeCodeProps,
@@ -29,6 +30,7 @@ import {
   type PasswordResetProps,
   type RoiAlertProps,
   type SupportMessageProps,
+  type PlayerDigestProps,
   type WeightAdjustmentProps,
   type WeeklyReportProps,
   type XgUnavailableReportProps,
@@ -87,6 +89,23 @@ export class MailService implements OnModuleInit {
   async sendEmailChanged(to: string, props: EmailChangedProps): Promise<void> {
     const { html, text } = await renderEmailChanged(props);
     await this.sendTo(to, 'Ton adresse e-mail a changé', { html, text });
+  }
+
+  /**
+   * La matinée ou la semaine par e-mail (« Par e-mail aussi », 09 § 5).
+   * `path` est l'écran où mène la notification, rendu absolu ici.
+   */
+  async sendPlayerDigest(
+    to: string,
+    props: Omit<PlayerDigestProps, 'url'> & { path: string },
+  ): Promise<void> {
+    const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
+    const { html, text } = await renderPlayerDigest({
+      title: props.title,
+      body: props.body,
+      url: `${appUrl}${props.path}`,
+    });
+    await this.sendTo(to, props.title, { html, text });
   }
 
   async sendPasswordReset(

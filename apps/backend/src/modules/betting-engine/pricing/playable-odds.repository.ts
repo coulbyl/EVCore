@@ -2,7 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
-import { OPERATOR_BOOKMAKERS, priceOutcomeGroups } from '@evcore/analysis-core';
+import {
+  OPERATOR_BOOKMAKERS,
+  priceOutcomeGroups,
+  shinOutcomeGroups,
+  shinProbabilities,
+} from '@evcore/analysis-core';
 
 export type PlayableQuoteKey = {
   fixtureId: string;
@@ -26,6 +31,13 @@ export type PlayableQuote = PlayableQuoteKey & {
    * (docs/audits/2026-10-29/MARGES-1XBET.md).
    */
   operatorMargin: number | null;
+  /**
+   * Fréquence sans marge de ce choix chez ce book, par la méthode de Shin sur
+   * le même groupe d'issues complet (la double chance par son 1X2) ; null si
+   * le groupe est incomplet. La chance affichée au-dessus de 1,80
+   * (docs/refonte-ui/06 § 2, 07 § 4), toujours lue avec la cote qui va avec.
+   */
+  operatorFairProbability: number | null;
   /** Prix le plus bas de tous les books relevés (le pire cas). */
   lowestOdds: number | null;
   lowestBookmaker: string | null;
@@ -49,6 +61,60 @@ type QuoteRow = {
 };
 
 /**
+ * The CTE `latest`: each book's last price before kick-off on each pick of
+ * these markets (line-less), one row per fixture, market, pick and book.
+ * Read in `odds_latest` (kept by a trigger on `odds_snapshot`, B17c); a
+ * fixture without any row there is read in the history, as is everything
+ * when `asOf` asks for the price known at a past instant.
+ */
+function latestPrices(input: {
+  fixtureIds: readonly string[];
+  markets: readonly string[];
+  bookmakers: readonly string[] | null;
+  asOf: Date | null;
+}): Prisma.Sql {
+  const books = (alias: string) =>
+    input.bookmakers
+      ? Prisma.sql`AND ${Prisma.raw(alias)}.bookmaker = ANY(ARRAY[${Prisma.join(input.bookmakers)}]::text[])`
+      : Prisma.empty;
+  const fromHistory = (fixtures: Prisma.Sql) => Prisma.sql`
+    SELECT DISTINCT ON (o."fixtureId", o.market, o.pick, o.bookmaker)
+           o."fixtureId", o.market, o.pick, o.bookmaker, o.odds,
+           o."homeOdds", o."drawOdds", o."awayOdds", o."snapshotAt"
+    FROM public.odds_snapshot o
+    JOIN public.fixture f ON f.id = o."fixtureId"
+    WHERE o."fixtureId" IN (${fixtures})
+      AND o.market::text = ANY(ARRAY[${Prisma.join(input.markets)}]::text[])
+      AND o.line IS NULL
+      ${books('o')}
+      AND o."snapshotAt" <= f."scheduledAt"
+      ${input.asOf ? Prisma.sql`AND coalesce(o."observedAt", o."snapshotAt") <= ${input.asOf}` : Prisma.empty}
+    ORDER BY o."fixtureId", o.market, o.pick, o.bookmaker, o."snapshotAt" DESC
+  `;
+  const wanted = Prisma.sql`SELECT unnest(ARRAY[${Prisma.join(input.fixtureIds)}]::uuid[])`;
+  if (input.asOf) return Prisma.sql`latest AS (${fromHistory(wanted)})`;
+  return Prisma.sql`
+    missing AS (
+      SELECT w.id FROM (${wanted}) AS w(id)
+      WHERE NOT EXISTS (
+        SELECT 1 FROM public.odds_latest x WHERE x."fixtureId" = w.id
+      )
+    ),
+    latest AS (
+      SELECT l."fixtureId", l.market, l.pick, l.bookmaker, l.odds,
+             l."homeOdds", l."drawOdds", l."awayOdds", l."snapshotAt"
+      FROM public.odds_latest l
+      WHERE l."fixtureId" = ANY(ARRAY[${Prisma.join(input.fixtureIds)}]::uuid[])
+        AND l.market::text = ANY(ARRAY[${Prisma.join(input.markets)}]::text[])
+        AND l.line IS NULL
+        ${books('l')}
+      UNION ALL
+      (${fromHistory(Prisma.sql`SELECT id FROM missing`)})
+    )
+  `;
+}
+
+/**
  * Dernier prix d'avant coup d'envoi de chaque book sur chaque choix demandé,
  * réduit à deux chiffres : le prix chez le book de l'utilisateur et le prix
  * le plus bas du relevé. Lignes nulles seulement (le pick porte sa ligne
@@ -66,15 +132,36 @@ export class PlayableOddsRepository {
    */
   async findPlayableQuotes(
     keys: readonly PlayableQuoteKey[],
-    opts: { asOf?: Date } = {},
+    opts: {
+      asOf?: Date;
+      /**
+       * Only the players' book: a screen that shows the 1xBet price reads a
+       * tenth of the rows. `lowestOdds` is then the lowest among those books.
+       */
+      operatorOnly?: boolean;
+    } = {},
   ): Promise<Map<string, PlayableQuote>> {
     const lined = keys.filter((key) => key.line != null);
     const result = await this.findLineQuotes(lined, opts);
     keys = keys.filter((key) => key.line == null);
     if (keys.length === 0) return result;
     const fixtureIds = [...new Set(keys.map((k) => k.fixtureId))];
-    const markets = [...new Set(keys.map((k) => k.market))];
+    // La double chance se lit sur le 1X2 du même book : on le relève aussi.
+    const markets = [
+      ...new Set([
+        ...keys.map((k) => k.market),
+        ...(keys.some((k) => k.market === 'DOUBLE_CHANCE')
+          ? ['ONE_X_TWO']
+          : []),
+      ]),
+    ];
     const wanted = new Set(keys.map(playableQuoteKey));
+    const wantedGroups = new Set(
+      keys.flatMap((k) => [
+        `${k.fixtureId}|${k.market}`,
+        ...(k.market === 'DOUBLE_CHANCE' ? [`${k.fixtureId}|ONE_X_TWO`] : []),
+      ]),
+    );
 
     const rows = await this.prisma.client.$queryRaw<
       {
@@ -86,19 +173,12 @@ export class PlayableOddsRepository {
         snapshotAt: Date;
       }[]
     >`
-      WITH latest AS (
-        SELECT DISTINCT ON (o."fixtureId", o.market, o.pick, o.bookmaker)
-               o."fixtureId", o.market, o.pick, o.bookmaker, o.odds,
-               o."homeOdds", o."drawOdds", o."awayOdds", o."snapshotAt"
-        FROM public.odds_snapshot o
-        JOIN public.fixture f ON f.id = o."fixtureId"
-        WHERE o."fixtureId" = ANY(ARRAY[${Prisma.join(fixtureIds)}]::uuid[])
-          AND o.market::text = ANY(ARRAY[${Prisma.join(markets)}]::text[])
-          AND o.line IS NULL
-          AND o."snapshotAt" <= f."scheduledAt"
-          ${opts.asOf ? Prisma.sql`AND coalesce(o."observedAt", o."snapshotAt") <= ${opts.asOf}` : Prisma.empty}
-        ORDER BY o."fixtureId", o.market, o.pick, o.bookmaker, o."snapshotAt" DESC
-      )
+      WITH ${latestPrices({
+        fixtureIds,
+        markets,
+        bookmakers: opts.operatorOnly ? OPERATOR_BOOKMAKERS : null,
+        asOf: opts.asOf ?? null,
+      })}
       SELECT latest."fixtureId"::text AS "fixtureId",
              latest.market::text      AS market,
              latest.pick,
@@ -125,6 +205,7 @@ export class PlayableOddsRepository {
     // une issue restée sur un ancien relevé donnerait une marge sur des prix
     // qui n'ont jamais coexisté (revue du lot 3).
     const operatorMargins = new Map<string, number>();
+    const operatorFairs = new Map<string, number>();
     for (const bookmaker of OPERATOR_BOOKMAKERS) {
       const bookRows = rows.filter((row) => row.bookmaker === bookmaker);
       const lastSnapshot = new Map<string, number>();
@@ -133,15 +214,25 @@ export class PlayableOddsRepository {
         const at = new Date(row.snapshotAt).getTime();
         lastSnapshot.set(key, Math.max(lastSnapshot.get(key) ?? 0, at));
       }
+      // Only the groups a wanted choice belongs to (and the 1X2 a double
+      // chance is read on): pricing every group of the fixtures cost a
+      // second on a page of « Matchs ».
       const current = bookRows.filter(
         (row) =>
+          wantedGroups.has(`${row.fixtureId}|${row.market}`) &&
           new Date(row.snapshotAt).getTime() ===
-          lastSnapshot.get(`${row.fixtureId}|${row.market}`),
+            lastSnapshot.get(`${row.fixtureId}|${row.market}`),
       );
       for (const priced of priceOutcomeGroups(current)) {
         const key = playableQuoteKey(priced);
         if (!operatorMargins.has(key)) {
           operatorMargins.set(key, priced.margin.toNumber());
+        }
+      }
+      for (const priced of shinOutcomeGroups(current)) {
+        const key = playableQuoteKey(priced);
+        if (!operatorFairs.has(key)) {
+          operatorFairs.set(key, priced.fair.toDecimalPlaces(4).toNumber());
         }
       }
     }
@@ -156,6 +247,7 @@ export class PlayableOddsRepository {
         operatorOdds: null,
         operatorBookmaker: null,
         operatorMargin: null,
+        operatorFairProbability: null,
         lowestOdds: null,
         lowestBookmaker: null,
       };
@@ -168,6 +260,7 @@ export class PlayableOddsRepository {
         current.operatorOdds = row.odds;
         current.operatorBookmaker = row.bookmaker;
         current.operatorMargin = operatorMargins.get(key) ?? null;
+        current.operatorFairProbability = operatorFairs.get(key) ?? null;
       }
       if (current.lowestOdds === null || row.odds < current.lowestOdds) {
         current.lowestOdds = row.odds;
@@ -224,6 +317,7 @@ export class PlayableOddsRepository {
         operatorOdds: null,
         operatorBookmaker: null,
         operatorMargin: null,
+        operatorFairProbability: null,
         lowestOdds: null,
         lowestBookmaker: null,
       };
@@ -239,6 +333,16 @@ export class PlayableOddsRepository {
               .plus(new Decimal(1).dividedBy(other.odds))
               .minus(1)
               .toNumber()
+          : null;
+        // La paire plus/moins du même relevé, par Shin.
+        current.operatorFairProbability = other
+          ? (shinProbabilities([
+              { pick: row.pick, odds: new Decimal(row.odds) },
+              { pick: other.pick, odds: new Decimal(other.odds) },
+            ])
+              ?.get(row.pick)
+              ?.toDecimalPlaces(4)
+              .toNumber() ?? null)
           : null;
       }
       if (current.lowestOdds === null || row.odds < current.lowestOdds) {

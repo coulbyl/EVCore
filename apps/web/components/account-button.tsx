@@ -5,13 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
-  GraduationCap,
-  HelpCircle,
   LogOut,
   MessageCircle,
   Settings,
   Sprout,
-  Wallet,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -26,7 +23,6 @@ import { logout } from "@/domains/auth/use-cases/logout";
 import type { AuthSessionUser } from "@/domains/auth/types/auth";
 import { UserAvatar } from "@/components/user-avatar";
 import { useTranslations } from "next-intl";
-import { useProductTour } from "@/domains/product-tour/context/product-tour-context";
 
 export function AccountButton({
   currentUser,
@@ -37,7 +33,6 @@ export function AccountButton({
   const queryClient = useQueryClient();
   const tNav = useTranslations("nav");
   const tAuth = useTranslations("auth");
-  const { startTour } = useProductTour();
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -90,7 +85,9 @@ export function AccountButton({
                 {currentUser.fullName}
               </p>
               <p className="truncate text-xs text-muted-foreground">
-                @{currentUser.username}
+                {currentUser.username
+                  ? `@${currentUser.username}`
+                  : currentUser.email}
               </p>
             </div>
           </div>
@@ -101,27 +98,9 @@ export function AccountButton({
             asChild
             className="rounded-xl focus:bg-accent/8 focus:text-foreground"
           >
-            <Link href="/dashboard/bankroll">
-              <Wallet className="text-accent" />
-              {tNav("bankroll")}
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            asChild
-            className="rounded-xl focus:bg-accent/8 focus:text-foreground"
-          >
             <Link href="/dashboard/inbox">
               <MessageCircle className="text-accent" />
               {tNav("inbox")}
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            asChild
-            className="rounded-xl focus:bg-accent/8 focus:text-foreground"
-          >
-            <Link href="/dashboard/formation">
-              <GraduationCap className="text-accent" />
-              {tNav("formation")}
             </Link>
           </DropdownMenuItem>
           {currentUser.role === "ADMIN" ? (
@@ -143,13 +122,6 @@ export function AccountButton({
               <Settings className="text-accent" />
               {tNav("settings")}
             </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="rounded-xl focus:bg-accent/8 focus:text-foreground"
-            onSelect={() => startTour()}
-          >
-            <HelpCircle className="text-accent" />
-            {tNav("replayTour")}
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

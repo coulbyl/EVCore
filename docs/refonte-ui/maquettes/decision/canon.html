@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Aujourd'hui — Le standard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+:root{--bg:#F8FAFC;--card:#FFFFFF;--fg:#111827;--mute:#6B7280;--rule:#E5E7EB;--blue:#2563EB;--win:#16A34A;--loss:#DC2626}
+*{box-sizing:border-box;margin:0}
+html,body{width:390px;height:844px;overflow:hidden;background:var(--bg);color:var(--fg);font:15px/1.4 Inter,system-ui,sans-serif}
+.top{padding:52px 16px 12px;display:flex;justify-content:space-between;align-items:center}
+.brand{font-weight:700;font-size:20px;color:var(--blue)}
+.top .r{display:flex;gap:10px}
+.ic{width:36px;height:36px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.08);display:grid;place-items:center;font-weight:600}
+.hier{margin:0 16px;padding:10px 14px;background:var(--card);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;gap:12px;font-size:14px}
+.hier .l{color:var(--mute)}.hier .w{color:var(--win);font-weight:600}.hier .x{color:var(--loss);font-weight:600}
+.card{margin:12px 16px 0;background:var(--card);border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.07);padding:16px}
+.hd{display:flex;justify-content:space-between;align-items:center}
+.hd h1{font-size:18px;font-weight:700}
+.pill{background:#DBEAFE;color:var(--blue);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600}
+.teams{margin-top:12px;display:grid;gap:8px}
+.team{display:flex;align-items:center;gap:10px;font-weight:500;font-size:16px}
+.crest{width:28px;height:28px;border-radius:50%;background:#EEF2F7;display:grid;place-items:center;font-size:10px;font-weight:700;color:var(--mute)}
+.bet{margin-top:12px;display:flex;justify-content:space-between;align-items:center;background:#F1F5F9;border-radius:10px;padding:10px 12px}
+.bet b{font-weight:600}.bet .odds{font-weight:700;font-size:20px;color:var(--blue)}
+.chance{margin-top:12px;display:flex;align-items:center;justify-content:space-between}
+.dots{display:flex;gap:5px}.dots i{width:12px;height:12px;border-radius:50%;background:#DBEAFE;display:block}.dots i.on{background:var(--blue)}
+.chance b{font-weight:700;font-size:20px}
+.fact{margin-top:10px;color:var(--mute);font-size:14px}
+.forme{margin-top:12px;display:flex;gap:4px;flex-wrap:wrap}
+.forme i{width:9px;height:9px;border-radius:50%;background:var(--win);display:block}.forme i.x{background:var(--loss)}
+.meta{margin-top:8px;font-size:13px;color:var(--mute)}.meta b{color:var(--fg)}
+.btn{margin-top:14px;height:48px;border-radius:12px;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:600;font-size:16px;box-shadow:0 4px 12px rgba(37,99,235,.25)}
+.rows{margin:12px 16px 0;display:grid;gap:10px}
+.row{background:var(--card);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:15px}
+.row .n{flex:1;min-width:0}.row .n small{display:block;color:var(--mute);font-size:13px}
+.row .o{font-weight:700;color:var(--blue)}.row .c{font-weight:600;min-width:62px;text-align:right}.row .ch{color:#9CA3AF}
+.row.off{color:var(--mute);box-shadow:none;border:1px dashed var(--rule);background:transparent}
+.legal{position:absolute;left:0;right:0;bottom:64px;text-align:center;font-size:11px;color:#9CA3AF}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:64px;background:#fff;border-top:1px solid var(--rule);display:grid;grid-template-columns:repeat(4,1fr);padding:8px 0 10px}
+.tab{display:grid;justify-items:center;gap:4px;font-size:11px;color:var(--mute);font-weight:500}
+.tab.on{color:var(--blue);font-weight:600}
+.tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+</style></head><body>
+<div class="top"><div class="brand">EVCore</div><div class="r"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="1.8"><path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4l2-2zM10 21h4"/></svg></div><div class="ic">K</div></div></div>
+<div class="hier"><span class="l">Hier</span><span class="w">Favori ✓ 1,24</span><span class="w">Combiné ✓ 1,41</span><span class="x">Cote 2 ✗</span></div>
+<section class="card">
+  <div class="hd"><h1>Favori du jour</h1><span class="pill">19:00 · Ligue 1</span></div>
+  <div class="teams"><div class="team"><span class="crest">PSG</span>Paris SG</div><div class="team"><span class="crest">LEN</span>Lens</div></div>
+  <div class="bet"><b>Victoire du PSG</b><span class="odds">1,28</span></div>
+  <div class="chance"><div class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div><b>8 sur 10</b></div>
+  <p class="fact">Le PSG a gagné ses 9 derniers matchs à domicile</p>
+  <div class="forme"><i></i><i></i><i class="x"></i><i></i><i></i><i></i><i></i><i class="x"></i><i></i><i></i><i></i><i></i><i></i><i class="x"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <p class="meta"><b>19 jours gagnés sur 24</b> · pire série 1 · 1xBet garde 6 %</p>
+  <div class="btn">Suivre</div>
+</section>
+<div class="rows">
+  <div class="row"><div class="n">Combiné du jour<small>3 matchs</small></div><span class="o">1,41</span><span class="c">7 sur 10</span><span class="ch">›</span></div>
+  <div class="row"><div class="n">Coupon cote 2<small>2 matchs</small></div><span class="o">2,30</span><span class="c">1 sur 2</span><span class="ch">›</span></div>
+  <div class="row"><div class="n">Chasseur Nul<small>Lazio – Torino</small></div><span class="o">3,40</span><span class="c">1 sur 3</span><span class="ch">›</span></div>
+  <div class="row off"><div class="n">Pas de Chasseur Corners aujourd'hui<small>aucun championnat fiable ce soir</small></div></div>
+</div>
+<p class="legal">18+ · Parier comporte des risques de perte</p>
+<nav class="tabs">
+  <div class="tab on"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Aujourd'hui</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3c3 3 3 15 0 18M3 12h18"/></svg>Matchs</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-8M22 19H2"/></svg>Résultats</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Moi</div>
+</nav>
+</body></html>

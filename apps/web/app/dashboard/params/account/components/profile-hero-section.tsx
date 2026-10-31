@@ -15,7 +15,6 @@ import {
 import { EmailChangeDialog } from "./email-change-dialog";
 import { useTranslations } from "next-intl";
 import { UserAvatar } from "@/components/user-avatar";
-import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
 import { FREE_AVATARS, LOCKED_AVATARS } from "@/lib/avatars";
 import {
   useCurrentUser,
@@ -170,11 +169,6 @@ export function ProfileHeroSection() {
   const [fieldSaving, setFieldSaving] = useState(false);
   const [fieldError, setFieldError] = useState<string | null>(null);
 
-  const { data: badges } = useMyBadges();
-  const unlockedBadges = new Set(
-    (badges ?? []).filter((b) => b.unlockedAt !== null).map((b) => b.code),
-  );
-
   useEffect(() => {
     setSelected(currentUser.avatarUrl);
   }, [currentUser.avatarUrl]);
@@ -244,7 +238,7 @@ export function ProfileHeroSection() {
           >
             <UserAvatar
               avatarUrl={selected}
-              username={currentUser.username}
+              username={currentUser.fullName}
               size={80}
             />
           </div>
@@ -286,9 +280,9 @@ export function ProfileHeroSection() {
               <div className="mx-1 w-px self-stretch bg-border" />
 
               {LOCKED_AVATARS.map((avatar) => {
-                const isLocked = avatar.requiredBadge
-                  ? !unlockedBadges.has(avatar.requiredBadge)
-                  : false;
+                // Les badges sont partis (2026-10-31) : un avatar qui en
+                // demandait un reste fermé, le serveur le refuse aussi.
+                const isLocked = Boolean(avatar.requiredBadge);
 
                 const btn = (
                   <button
@@ -352,7 +346,7 @@ export function ProfileHeroSection() {
             </h2>
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
               <span className="text-sm text-muted-foreground">
-                @{currentUser.username}
+                {currentUser.username ? `@${currentUser.username}` : null}
               </span>
               {/* « Opérateur » se lit « bookmaker » chez un parieur : le
                   rôle ne s'affiche qu'aux admins (revue UX du 2026-10-27). */}
@@ -390,7 +384,7 @@ export function ProfileHeroSection() {
             <EditableInfoRow
               icon={AtSign}
               label={t("username")}
-              value={`@${currentUser.username}`}
+              value={currentUser.username ? `@${currentUser.username}` : ""}
               editing={editingField === "username"}
               onStartEdit={() => startEdit("username")}
               onSave={(val) =>

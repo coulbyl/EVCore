@@ -1,0 +1,37 @@
+Matchs par jour de semaine (médiane)
+  1:10  2:9  3:10  4:9  5:19  6:71  7:58
+
+Accu 8-15, 3 jambes 2-4
+  tous les jours         cote  9.8 coupons 1070 gagnés  10.6 % ± 1.8 (cote dit 10.5 %) pire série  43 | semaines : un gain  44 %  vert  44 % (197) | rendu  -0.8 %
+  samedi + dimanche      cote  8.9 coupons  381 gagnés  12.6 % ± 3.3 (cote dit 11.4 %) pire série  27 | semaines : un gain  22 %  vert  22 % (194) | rendu  +8.2 %
+  lundi à vendredi       cote 10.2 coupons  689 gagnés   9.4 % ± 2.2 (cote dit 10.0 %) pire série  42 | semaines : un gain  32 %  vert  32 % (190) | rendu  -5.8 %
+
+Accu 8-15, 7 jambes 1,4-1,8
+  tous les jours         cote 10.3 coupons  532 gagnés   8.5 % ± 2.4 (cote dit  9.9 %) pire série  49 | semaines : un gain  23 %  vert  23 % (172) | rendu -16.3 %
+  samedi + dimanche      cote 10.1 coupons  310 gagnés   8.7 % ± 3.1 (cote dit 10.0 %) pire série  34 | semaines : un gain  15 %  vert  15 % (171) | rendu -15.7 %
+  lundi à vendredi       cote 10.5 coupons  222 gagnés   8.1 % ± 3.6 (cote dit  9.8 %) pire série  41 | semaines : un gain  13 %  vert  13 % (112) | rendu -17.2 %
+
+Accu 15-30, 4 jambes 2-4
+  tous les jours         cote 20.4 coupons  947 gagnés   3.8 % ± 1.2 (cote dit  5.0 %) pire série 102 | semaines : un gain  17 %  vert  17 % (194) | rendu -24.1 %
+  samedi + dimanche      cote 18.5 coupons  366 gagnés   3.8 % ± 2.0 (cote dit  5.5 %) pire série  47 | semaines : un gain   7 %  vert   7 % (191) | rendu -34.2 %
+  lundi à vendredi       cote 21.6 coupons  581 gagnés   3.8 % ± 1.6 (cote dit  4.8 %) pire série  67 | semaines : un gain  11 %  vert  11 % (183) | rendu -17.8 %
+
+Cote 5-8, 2-3 jambes 2-3
+  tous les jours         cote  5.7 coupons  216 gagnés  13.9 % ± 4.6 (cote dit 17.7 %) pire série  30 | semaines : un gain  22 %  vert  22 % (129) | rendu -23.5 %
+  samedi + dimanche      cote  6.3 coupons   26 gagnés   7.7 % ± 10.2 (cote dit 16.5 %) pire série  23 | semaines : un gain   8 %  vert   8 % (26) | rendu -60.7 %
+  lundi à vendredi       cote  5.6 coupons  190 gagnés  14.7 % ± 5.0 (cote dit 17.9 %) pire série  28 | semaines : un gain  22 %  vert  22 % (122) | rendu -18.4 %
+
+Cote 2-3, jambes 1,2-1,6
+  tous les jours         cote  2.4 coupons  728 gagnés  43.0 % ± 3.6 (cote dit 42.7 %) pire série  12 | semaines : un gain  81 %  vert  51 % (187) | rendu  +0.9 %
+  samedi + dimanche      cote  2.3 coupons  330 gagnés  47.3 % ± 5.4 (cote dit 43.1 %) pire série   6 | semaines : un gain  67 %  vert  67 % (180) | rendu +10.5 %
+  lundi à vendredi       cote  2.4 coupons  398 gagnés  39.4 % ± 4.8 (cote dit 42.4 %) pire série   9 | semaines : un gain  68 %  vert  45 % (154) | rendu  -7.0 %
+
+Combiné 1,4-1,6
+  tous les jours         cote  1.5 coupons  419 gagnés  67.5 % ± 4.5 (cote dit 67.0 %) pire série   3 | semaines : un gain  88 %  vert  54 % (170) | rendu  +0.9 %
+  samedi + dimanche      cote  1.5 coupons  210 gagnés  66.7 % ± 6.4 (cote dit 66.4 %) pire série   3 | semaines : un gain  76 %  vert  59 % (143) | rendu  +0.9 %
+  lundi à vendredi       cote  1.5 coupons  209 gagnés  68.4 % ± 6.3 (cote dit 67.7 %) pire série   4 | semaines : un gain  77 %  vert  59 % (132) | rendu  +0.9 %
+
+Favori 1,20-1,35
+  tous les jours         cote  1.3 coupons  702 gagnés  80.3 % ± 2.9 (cote dit 80.0 %) pire série   3 | semaines : un gain  97 %  vert  54 % (182) | rendu  +0.3 %
+  samedi + dimanche      cote  1.2 coupons  300 gagnés  82.0 % ± 4.3 (cote dit 80.8 %) pire série   3 | semaines : un gain  95 %  vert  71 % (168) | rendu  +1.5 %
+  lundi à vendredi       cote  1.3 coupons  402 gagnés  79.1 % ± 4.0 (cote dit 79.4 %) pire série   3 | semaines : un gain  92 %  vert  60 % (167) | rendu  -0.6 %

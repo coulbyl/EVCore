@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Notifications</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:#141821}
+a{color:#141821}a:hover{color:#0E1320}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.n{display:flex;gap:12px;padding:14px 0;border-top:1px solid #D9DDE3;text-decoration:none;color:#141821}
+.n:first-child{border-top:0}
+.n .w{width:52px;flex:none;font-family:"Barlow Condensed";font-weight:600;font-size:15px;color:#5B6472;line-height:1.2}
+.n .b{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.n .b b{font-size:15px;font-weight:600}
+.n .b p{margin:0;font-size:14px;color:#5B6472;line-height:1.35}
+.n .dot{width:10px;height:10px;border-radius:50%;background:#FFB300;flex:none;margin-top:6px}
+.n svg{width:18px;height:18px;stroke:#8A94A6;fill:none;stroke-width:2;stroke-linecap:round;flex:none;align-self:center}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F9; display: flex; flex-direction: column; overflow: hidden">
+  <header style="background: #0E1320; color: #fff; padding: 52px 16px 14px; display: flex; align-items: center; justify-content: space-between">
+    <a href="Main.dc.html" aria-label="Retour" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; margin-left: -12px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M15 6l-6 6 6 6"/></svg></a>
+    <span class="num" style="font-weight: 600; font-size: 22px">Notifications</span>
+    <span style="width: 32px"></span>
+  </header>
+  <div style="margin: 8px 16px 0; background: #fff; border: 1px solid #D9DDE3; border-radius: 14px; padding: 0 16px; display: flex; flex-direction: column">
+    <a class="n" href="Main.dc.html"><span class="w">auj.<br>08:00</span><span class="b"><b>Ta matinée EVCore</b><p>Favori ✓ 1,24 · Combiné ✗. Ton Combiné suivi : perdu. Aujourd'hui : Favori 1,28 · Combiné 1,41 · Cote 2 2,30.</p></span><span class="dot" aria-label="Non lue"></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="n" href="Soir.dc.html"><span class="w">hier<br>22:48</span><span class="b"><b>Ton Favori est passé ✓</b><p>PSG – Lens 2-0 · 1,24</p></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="n" href="Semaine.dc.html"><span class="w">lun.<br>08:00</span><span class="b"><b>Ta semaine EVCore</b><p>Favori : 5 jours gagnés sur 6. Combiné : 5 sur 7. Tes coupons suivis : 3 gagnés, 2 perdus.</p></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="n" href="Messages.dc.html"><span class="w">26/10<br>18:42</span><span class="b"><b>L'équipe t'a répondu</b><p>Merci, on a corrigé la cote du Combiné d'hier…</p></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="n" href="Main.dc.html"><span class="w">25/10<br>09:10</span><span class="b"><b>Nouveau : le Chasseur Corners</b><p>Un pari sur les corners, sur les championnats où les stats sont fiables.</p></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+  </div>
+  <p style="margin: 16px; font-size: 13px; color: #5B6472">Quatre sortes et pas plus : ta matinée, ta semaine, le résultat de tes coupons, les réponses de l'équipe, et une annonce de temps en temps. Réglables dans Compte.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

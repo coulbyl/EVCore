@@ -2,6 +2,11 @@ import { Worker, type Job } from "bullmq";
 import type { Logger } from "pino";
 import type { Config } from "../config";
 import type { LlmClients } from "../groq/client";
+import {
+  clientsFor,
+  readLiveConfig,
+  scheduledPassesEnabled,
+} from "../settings";
 import { analyzeFixture } from "../vantage/analyze-fixture";
 import {
   runCouponGeneration,
@@ -29,25 +34,50 @@ export function createVantageWorker(
   // The worker enqueues its own follow-up analysis jobs from within the sweep
   // handler, so it needs a Queue handle alongside the Worker.
   const queue = createQueue(config);
+  const liveClients = (live: Config): LlmClients =>
+    live === config ? llmClients : clientsFor(live);
 
   return new Worker<VantageJobData>(
     VANTAGE_QUEUE_NAME,
     async (job: Job<VantageJobData>) => {
+      // A scheduled run (not one triggered by hand) honours the operator's
+      // switch; a skipped sweep enqueues no analysis either.
+      if (
+        job.repeatJobKey &&
+        (job.name === "sweep" || job.name === "generate-coupons") &&
+        !(await scheduledPassesEnabled(logger))
+      ) {
+        logger.warn(
+          { jobName: job.name },
+          "vantage: scheduled passes off, skipped",
+        );
+        return undefined;
+      }
       if (job.name === "sweep") {
         return runSweep(queue, config, logger);
       }
+      // The provider chain and research are operator switches, read at
+      // every pass (app_setting); the boot clients serve until a row says
+      // otherwise.
       if (job.name === "analyze") {
         const { fixtureId } = job.data as AnalyzeJobData;
-        return analyzeFixture(fixtureId, llmClients, config, logger);
+        const live = await readLiveConfig(config, logger);
+        return analyzeFixture(fixtureId, liveClients(live), live, logger);
       }
       if (job.name === "generate-coupons") {
         const { date } = job.data as CouponJobData;
-        return runCouponGeneration(date ?? tomorrowUtc(), llmClients, logger);
+        const live = await readLiveConfig(config, logger);
+        return runCouponGeneration(
+          date ?? tomorrowUtc(),
+          liveClients(live),
+          logger,
+        );
       }
       if (job.name === "generate-intraday-coupons") {
+        const live = await readLiveConfig(config, logger);
         return runIntradayCouponGeneration(
           config.couponIntradayWindowHours,
-          llmClients,
+          liveClients(live),
           logger,
         );
       }

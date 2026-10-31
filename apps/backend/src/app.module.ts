@@ -16,10 +16,6 @@ import { AdjustmentModule } from './modules/adjustment/adjustment.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { BetSlipModule } from './modules/bet-slip/bet-slip.module';
-import { BetModule } from './modules/bet/bet.module';
-import { BankrollModule } from './modules/bankroll/bankroll.module';
-import { GamificationModule } from './modules/gamification/gamification.module';
 import { AdminUsersModule } from './modules/admin-users/admin-users.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { FormationProgressModule } from './modules/formation-progress/formation-progress.module';
@@ -29,14 +25,18 @@ import { PushModule } from './modules/push/push.module';
 import { SlipDigestModule } from './modules/slip-digest/slip-digest.module';
 import { ActivityModule } from './modules/activity/activity.module';
 import { CouponModule } from './modules/coupon/coupon.module';
+import { ScreensModule } from './modules/screens/screens.module';
+import { VerifiedTicketModule } from './modules/verified-ticket/verified-ticket.module';
 import { MlModule } from './modules/ml/ml.module';
 import { AnalysisSheetModule } from './modules/analysis-sheet/analysis-sheet.module';
-import { PersonalizationModule } from './modules/personalization/personalization.module';
 import { RedisModule } from './common/redis/redis.module';
+import { validateEnv } from './config/env.schema';
+import { AppSettingModule } from './modules/app-setting/app-setting.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
+    AppSettingModule,
     ThrottlerModule.forRoot([
       {
         name: 'default',
@@ -62,12 +62,8 @@ import { RedisModule } from './common/redis/redis.module';
     RiskModule,
     AdjustmentModule,
     AuthModule,
-    BetSlipModule,
-    BetModule,
-    BankrollModule,
     DashboardModule,
     AuditModule,
-    GamificationModule,
     AdminUsersModule,
     ReportsModule,
     FormationProgressModule,
@@ -77,8 +73,9 @@ import { RedisModule } from './common/redis/redis.module';
     SlipDigestModule,
     ActivityModule,
     CouponModule,
+    ScreensModule,
+    VerifiedTicketModule,
     AnalysisSheetModule,
-    PersonalizationModule,
     MlModule,
   ],
   controllers: [AppController],

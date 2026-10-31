@@ -93,9 +93,10 @@ function DeleteUserDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Supprimer {user.fullName} ?</AlertDialogTitle>
           <AlertDialogDescription>
-            Cette action est irréversible : le compte @{user.username} et toutes
-            ses données associées (paris, coupons, sessions…) seront
-            définitivement supprimés.
+            Cette action est irréversible : le compte{" "}
+            {user.username ? `@${user.username}` : user.email} et toutes ses
+            données associées (paris, coupons, sessions…) seront définitivement
+            supprimés.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -284,7 +285,8 @@ export function UsersPageClient() {
                 {row.original.fullName}
               </p>
               <p className="truncate text-xs text-muted-foreground">
-                @{row.original.username} · {row.original.email}
+                {row.original.username ? `@${row.original.username} · ` : null}
+                {row.original.email}
               </p>
             </div>
           </div>
@@ -426,7 +428,7 @@ export function UsersPageClient() {
                       {user.fullName}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      @{user.username}
+                      {user.username ? `@${user.username}` : null}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
                       {user.email}

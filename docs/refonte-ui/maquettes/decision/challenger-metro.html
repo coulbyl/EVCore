@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:390px;height:844px;overflow:hidden}
+body{background:#000;color:#fff;font:15px/1.35 "Open Sans",system-ui,sans-serif}
+.app{padding:18px 0 0 16px;font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+h1{font-weight:300;font-size:76px;line-height:1;white-space:nowrap;margin:6px 0 0 12px;letter-spacing:-.02em}
+.next{font-weight:300;font-size:30px;color:#777;position:absolute;top:96px;right:-40px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:16px}
+.t{padding:12px;min-height:150px;display:flex;flex-direction:column;justify-content:space-between}
+.wide{grid-column:span 2;min-height:120px}
+.c{background:#00aba9}.g{background:#a4c400;color:#111}.m{background:#d80073}.k{background:#1b1b1b}
+.t small{font-size:12px;font-weight:600}
+.t .big{font-weight:300;font-size:44px;line-height:1}
+.t p{font-size:13px}
+.nav{position:absolute;bottom:0;left:0;right:0;height:60px;background:#111;display:grid;grid-template-columns:repeat(5,1fr);text-align:center;font-size:11px;align-items:center;color:#aaa}
+.nav .on{color:#00aba9}
+</style></head><body>
+<div class="app">EVCore · jeudi 30 octobre</div>
+<h1>aujourd'hui</h1><div class="next">hier</div>
+<div class="grid">
+  <div class="t c wide"><small>Favori du jour · N° 1 204</small><div class="big">8 sur 10</div><p>Victoire du PSG · Ligue 1 19:00 · 1xBet 1,28</p></div>
+  <div class="t g"><small>Combiné du jour</small><div class="big">6/10</div><p>2 sélections · 1,45</p></div>
+  <div class="t m"><small>Chasseur Nul</small><div class="big">1/3</div><p>Lazio–Torino · 3,30</p></div>
+  <div class="t k"><small>Hier</small><div class="big">2 ✓</div><p>1 coupon perdu</p></div>
+  <div class="t k"><small>Coupon cote 2</small><div class="big">1/2</div><p>2 sélections · 2,08</p></div>
+</div>
+<div class="nav"><div class="on">Accueil</div><div>Coupons</div><div>Décisions</div><div>Avis IA</div><div>Suivi</div></div>
+</body></html>

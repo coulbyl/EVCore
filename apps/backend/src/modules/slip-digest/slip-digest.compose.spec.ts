@@ -1,55 +1,48 @@
 import { describe, it, expect } from 'vitest';
-import Decimal from 'decimal.js';
-import type { SlipMoney } from '@modules/bet-slip/bet-slip-outcome';
-import { composeSlipDigest } from './slip-digest.compose';
+import {
+  composeMorningBrief,
+  composeWeeklyStatement,
+} from './slip-digest.compose';
 
-function result(
-  status: SlipMoney['status'],
-  settledStake: number,
-  returned: number,
-): SlipMoney {
-  const d = (n: number) => new Decimal(n);
-  return {
-    status,
-    staked: d(settledStake),
-    settledStake: status === 'PENDING' ? d(0) : d(settledStake),
-    returned: d(returned),
-    net: d(returned - settledStake),
-    pendingStake: status === 'PENDING' ? d(settledStake) : d(0),
-    potentialReturn: d(0),
-  };
-}
-
-describe('composeSlipDigest', () => {
-  it('writes a loss with the same words as a gain', () => {
-    const message = composeSlipDigest(
-      [result('WON', 1000, 1540), result('LOST', 1000, 0)],
-      'XOF',
-    );
-    expect(message?.title).toBe('Tes coupons réglés');
-    expect(message?.body).toBe(
-      '2 coupons réglés : 1 gagné, 1 perdu. Misé 2 000 F, rendu 1 540 F : -460 F.',
-    );
-    expect(message?.net).toBe('-460.00');
-  });
-
-  it('counts refunds and still-pending coupons', () => {
-    const message = composeSlipDigest(
-      [
-        result('WON', 2000, 2660),
-        result('VOID', 1000, 1000),
-        result('PENDING', 1000, 0),
+describe('composeMorningBrief', () => {
+  it('tells the followed coupons, then the coupons of the day, without any amount', () => {
+    const message = composeMorningBrief({
+      follows: [
+        { targetOddsMin: 1.2, result: 'WON' },
+        { targetOddsMin: 1.36, result: 'LOST' },
       ],
-      'XOF',
-    );
-    expect(message?.body).toContain(
-      '2 coupons réglés : 1 gagné, 0 perdu, 1 remboursé.',
-    );
-    expect(message?.body).toContain(': +660 F.');
-    expect(message?.body).toMatch(/1 coupon encore en attente\.$/);
+      coupons: [{ couponClass: 'FAVOURITE', odds: 1.28 }],
+      abstentions: [],
+    });
+    expect(message?.title).toBe('Ta matinée EVCore');
+    expect(message?.body).toContain('Coupons suivis :');
+    expect(message?.body).toContain('Coupons du jour : Favori 1,28.');
+    expect(message?.body).not.toMatch(/F CFA|XOF|Misé|rendu/);
   });
 
-  it('sends nothing when no coupon is settled yet', () => {
-    expect(composeSlipDigest([result('PENDING', 1000, 0)], 'XOF')).toBeNull();
+  it('says nothing when there is nothing to say', () => {
+    expect(
+      composeMorningBrief({ follows: [], coupons: [], abstentions: [] }),
+    ).toBeNull();
+  });
+});
+
+describe('composeWeeklyStatement', () => {
+  it('counts the followed coupons won and our products', () => {
+    const message = composeWeeklyStatement({
+      follows: [
+        { targetOddsMin: 1.2, result: 'WON' },
+        { targetOddsMin: 1.2, result: 'PARTIAL' },
+        { targetOddsMin: 1.36, result: 'LOST' },
+      ],
+      products: [{ couponClass: 'FAVOURITE', won: 5, settled: 6 }],
+    });
+    expect(message?.body).toBe(
+      'Coupons suivis : 2 gagnés sur 3. Nos coupons : Favori 5 jours gagnés sur 6.',
+    );
+  });
+
+  it('says nothing for an empty week', () => {
+    expect(composeWeeklyStatement({ follows: [], products: [] })).toBeNull();
   });
 });

@@ -5,8 +5,7 @@ import { RegisterDto } from './register.dto';
 
 const base = {
   email: 'joueur@example.com',
-  username: 'joueur_ci',
-  fullName: 'Koffi Test',
+  firstName: 'Koffi',
   password: 'une phrase assez longue',
 };
 
@@ -38,5 +37,19 @@ describe('RegisterDto consent', () => {
     expect(
       await errorsFor({ ...base, confirmAge: 'true', acceptTerms: 1 }),
     ).toEqual(['confirmAge', 'acceptTerms']);
+  });
+});
+
+describe('RegisterDto fields', () => {
+  const consent = { confirmAge: true, acceptTerms: true };
+
+  it('needs no username', async () => {
+    expect(await errorsFor({ ...base, ...consent })).toEqual([]);
+  });
+
+  it('rejects a blank first name', async () => {
+    expect(await errorsFor({ ...base, ...consent, firstName: '   ' })).toEqual([
+      'firstName',
+    ]);
   });
 });

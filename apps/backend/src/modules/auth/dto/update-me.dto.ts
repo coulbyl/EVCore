@@ -1,15 +1,10 @@
-import { Type } from 'class-transformer';
-import type { RiskProfile, UnitMode } from '@evcore/db';
 import { AVATAR_PATHS } from '@evcore/analysis-core';
 import {
   IsBoolean,
   IsIn,
-  IsNumber,
   IsOptional,
   IsPhoneNumber,
   IsString,
-  Max,
-  Min,
 } from 'class-validator';
 
 export class UpdateMeDto {
@@ -34,34 +29,8 @@ export class UpdateMeDto {
   @IsIn(AVATAR_PATHS)
   avatarUrl?: string;
 
-  @IsOptional()
-  @IsString()
-  @IsIn(['FIXED', 'PCT'])
-  unitMode?: UnitMode;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  unitAmount?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 4 })
-  @Min(0)
-  @Max(1)
-  unitPercent?: number;
-
-  @IsOptional()
-  @IsString()
-  @IsIn(['CONSERVATIVE', 'BALANCED', 'AGGRESSIVE'])
-  riskProfile?: RiskProfile;
-
-  @IsOptional()
-  @IsBoolean()
-  emailSupportNotificationsEnabled?: boolean;
-
-  // Matinée et relevé du lundi (2026-10-29), actifs par défaut.
+  // Les interrupteurs de Compte › Notifications (09 § 5) : quatre sortes,
+  // plus « Par e-mail aussi ».
   @IsOptional()
   @IsBoolean()
   morningBriefEnabled?: boolean;
@@ -69,6 +38,18 @@ export class UpdateMeDto {
   @IsOptional()
   @IsBoolean()
   weeklyStatementEnabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  followedResultEnabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  teamRepliesEnabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  emailNotificationsEnabled?: boolean;
 
   @IsOptional()
   @IsBoolean()

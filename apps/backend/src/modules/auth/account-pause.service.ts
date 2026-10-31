@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import type { PauseDurationDays } from '@config/pause.constants';
 import { createLogger } from '@utils/logger';
 import { AccountRepository } from './account.repository';
+import { SessionCache } from './session-cache';
 
 const logger = createLogger('account-pause');
 
@@ -14,7 +15,10 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  */
 @Injectable()
 export class AccountPauseService {
-  constructor(private readonly repository: AccountRepository) {}
+  constructor(
+    private readonly repository: AccountRepository,
+    private readonly sessionCache: SessionCache,
+  ) {}
 
   async pause(
     userId: string,
@@ -30,6 +34,8 @@ export class AccountPauseService {
       );
     }
     await this.repository.setPausedUntil(userId, requested);
+    // La pause masque les paris dès la requête suivante (PausedGuard).
+    this.sessionCache.invalidateUser(userId);
     logger.info({ userId, days }, 'Account paused by its owner');
     return { pausedUntil: requested.toISOString() };
   }

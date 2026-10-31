@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { BadRequestException } from '@nestjs/common';
 import { AccountPauseService } from './account-pause.service';
 import type { AccountRepository } from './account.repository';
+import { SessionCache } from './session-cache';
 
 const NOW = new Date('2026-10-28T10:00:00.000Z');
 
@@ -10,13 +11,21 @@ function makeHarness(pausedUntil: Date | null) {
     findPausedUntil: vi.fn().mockResolvedValue({ pausedUntil }),
     setPausedUntil: vi.fn().mockResolvedValue(undefined),
   } as unknown as AccountRepository;
-  return { service: new AccountPauseService(repository), repository };
+  const sessionCache = new SessionCache();
+  vi.spyOn(sessionCache, 'invalidateUser');
+  return {
+    service: new AccountPauseService(repository, sessionCache),
+    repository,
+    sessionCache,
+  };
 }
 
 describe('AccountPauseService.pause', () => {
   it('pauses for the chosen number of days', async () => {
-    const { service, repository } = makeHarness(null);
+    const { service, repository, sessionCache } = makeHarness(null);
     const result = await service.pause('user-1', 7, NOW);
+    // The pause hides bets from the very next request.
+    expect(sessionCache.invalidateUser).toHaveBeenCalledWith('user-1');
     expect(result.pausedUntil).toBe('2026-11-04T10:00:00.000Z');
     expect(repository.setPausedUntil).toHaveBeenCalledWith(
       'user-1',

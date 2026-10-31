@@ -81,7 +81,12 @@ function couponLeg(overrides) {
     competition: "PL",
     competitionName: "Premier League",
     country: "England",
-    scheduledAt: "2026-10-05T19:00:00.000Z",
+    // Une jambe pas encore réglée se joue plus tard dans la journée : on ne
+    // suit pas un coupon commencé (2026-10-30), le bouton suit l'horloge.
+    scheduledAt:
+      overrides.settledAt || overrides.isCorrect != null
+        ? "2026-10-05T19:00:00.000Z"
+        : todayAt(4),
     score: overrides.score ?? null,
     htScore: null,
     canal: overrides.canal ?? "DOMINANT",
@@ -401,6 +406,983 @@ const COUPONS = [
 // l'exécution : l'accueil ne regarde que la journée courante.
 function todayAt(hoursFromNow) {
   return new Date(Date.now() + hoursFromNow * 3_600_000).toISOString();
+}
+
+// « Aujourd'hui » (GET /today, apps/backend screens/today.types.ts) : le
+// Favori en héros, trois autres coupons, un absent, la ligne Hier. Les
+// heures sont relatives à l'exécution : le héros est toujours à venir.
+// Un écusson par équipe, en image intégrée : comme en production, chaque
+// équipe a son logo (API-Football), sans que les mesures dépendent d'un CDN.
+function crestSvg(name) {
+  const hue = [...name].reduce((sum, c) => sum + c.charCodeAt(0), 0) % 360;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28"><path d="M14 2l10 4v8c0 6-4.5 10-10 12C8.5 24 4 20 4 14V6z" fill="hsl(${hue} 60% 42%)"/><text x="14" y="17" font-size="8" font-family="sans-serif" font-weight="700" fill="#fff" text-anchor="middle">${name.slice(0, 3).toUpperCase()}</text></svg>`;
+}
+
+function crest(name) {
+  return `data:image/svg+xml,${encodeURIComponent(crestSvg(name))}`;
+}
+
+// Matchs montre jusqu'à 224 matchs : ses écussons sont des adresses, comme le
+// CDN d'API-Football en production, pas des images intégrées qui gonfleraient
+// la page et fausseraient la mesure du LCP (C4).
+function crestUrl(name) {
+  return `http://127.0.0.1:${PORT}/crests/${encodeURIComponent(name)}.svg`;
+}
+
+function todayLeg(id, home, away, pick, odds, extra = {}) {
+  return {
+    fixtureId: `fx-today-${id}`,
+    kickoffAt: todayAt(extra.hours ?? 5),
+    competition: { code: "FL1", name: extra.competition ?? "Ligue 1" },
+    home: {
+      name: home,
+      shortName: home.slice(0, 3).toUpperCase(),
+      logoUrl: crestUrl(home),
+    },
+    away: {
+      name: away,
+      shortName: away.slice(0, 3).toUpperCase(),
+      logoUrl: crestUrl(away),
+    },
+    market: extra.market ?? "ONE_X_TWO",
+    pick,
+    line: null,
+    odds,
+    chance: extra.chance ?? 0.8,
+    marketFrequency: extra.chance ?? 0.78,
+    fact: extra.fact ?? null,
+    state: "upcoming",
+    score: null,
+  };
+}
+
+function todayCoupon(id, product, legs, odds, chance) {
+  return {
+    id: `cp-today-${id}`,
+    product,
+    forDate: todayAt(0).slice(0, 10),
+    state: "upcoming",
+    firstKickoffAt: legs[0].kickoffAt,
+    odds,
+    referenceOdds: odds,
+    paidOdds: null,
+    chance,
+    oddsBand: product === "HUNTER_DRAW" ? { min: 2.9, max: 3.6 } : null,
+    followedByMe: false,
+    canFollow: true,
+    legs,
+  };
+}
+
+function formDays(pattern) {
+  return [...pattern].map((mark, index) => ({
+    date: todayAt(-24 * (pattern.length - index)).slice(0, 10),
+    outcome: mark === "x" ? "lost" : "won",
+  }));
+}
+
+// « Matchs » (GET /matches, apps/backend screens/matches.types.ts) : une
+// journée sur deux pages, comme l'API qui sert 60 matchs à la fois ; trois
+// matchs sans lecture, un par raison.
+// L'heure affichée seule compte pour la liste ; la date est celle de demain
+// pour que ces matchs restent à venir quelle que soit l'heure des tests
+// (le ticket sort du calcul un match commencé, 07 § 4).
+function matchAt(hour, minute) {
+  const at = new Date(Date.now() + 24 * 3_600_000);
+  at.setUTCHours(hour, minute, 0, 0);
+  return at.toISOString();
+}
+
+// Un identifiant de match en forme d'UUID, stable par nom : la fiche refuse
+// toute adresse qui n'en est pas un (le backend répondrait 400).
+function matchUuid(id) {
+  const hex = [...id]
+    .map((c) => c.charCodeAt(0).toString(16).padStart(2, "0"))
+    .join("")
+    .padEnd(12, "0")
+    .slice(0, 12);
+  return `00000000-0000-4000-8000-${hex}`;
+}
+
+function matchItem(id, home, away, at, extra = {}) {
+  const team = (name) => ({
+    name,
+    shortName: name.slice(0, 3).toUpperCase(),
+    logoUrl: crestUrl(name),
+  });
+  return {
+    fixtureId: matchUuid(id),
+    kickoffAt: matchAt(...at),
+    state: "upcoming",
+    score: null,
+    competition: { code: "XX", name: extra.competition ?? "Ligue 1" },
+    home: team(home),
+    away: team(away),
+    reading: extra.reading
+      ? { odds: 1.6, result: null, ...extra.reading }
+      : null,
+    withoutReading: extra.reading ? null : (extra.without ?? "rejected"),
+  };
+}
+
+// Hier (maquette MatchsHier) : scores et lectures réglées, un reporté.
+function yesterdayMatches() {
+  const settled = (id, home, away, score, reading, extra = {}) => ({
+    ...matchItem(id, home, away, [18, 0], { ...extra, reading }),
+    state: extra.state ?? "finished",
+    score,
+  });
+  return [
+    settled(
+      "y-psg",
+      "Paris SG",
+      "Lens",
+      { home: 2, away: 0 },
+      {
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        chance: 0.7,
+        result: "won",
+      },
+    ),
+    settled(
+      "y-int",
+      "Inter",
+      "Napoli",
+      { home: 1, away: 1 },
+      {
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        chance: 0.6,
+        result: "lost",
+      },
+      { competition: "Serie A" },
+    ),
+    settled(
+      "y-bre",
+      "Brest",
+      "Nice",
+      null,
+      {
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        chance: 0.6,
+        result: "void",
+      },
+      { state: "postponed" },
+    ),
+    {
+      ...matchItem("y-gre", "Gremio", "Santos", [20, 0], {
+        without: "rejected",
+      }),
+      state: "finished",
+      score: { home: 0, away: 0 },
+    },
+  ];
+}
+
+// Demain avant la passe du soir : l'heure, « Lecture ce soir ».
+function tomorrowMatches() {
+  return [
+    matchItem("t-ars", "Arsenal", "Everton", [19, 0], {
+      competition: "Premier League",
+      without: "tonight",
+    }),
+    matchItem("t-bvb", "Dortmund", "Mainz", [19, 30], {
+      competition: "Bundesliga",
+      reading: { market: "ONE_X_TWO", pick: "HOME", chance: 0.65 },
+    }),
+  ];
+}
+
+// La fiche d'un match de la liste (GET /matches/:id/sheet, 06 § 2–4).
+function matchSheet(fixtureId) {
+  const all = [
+    ...matchesPage("/matches", "").items,
+    ...matchesPage("/matches?cursor=page-2", "").items,
+    ...yesterdayMatches(),
+  ];
+  const item = all.find((candidate) => candidate.fixtureId === fixtureId);
+  if (!item) return null;
+  const finished = item.state === "finished";
+  const settle = (result) => (finished ? result : null);
+  const pick = (market, pickName, odds, chance, result) => ({
+    market,
+    pick: pickName,
+    odds,
+    chance,
+    result: settle(result),
+  });
+  const isArsenal = item.home.name === "Arsenal";
+  return {
+    fixtureId,
+    kickoffAt: item.kickoffAt,
+    state: item.state,
+    score: item.score,
+    halfTimeScore: finished ? { home: 1, away: 0 } : null,
+    competition: item.competition,
+    home: item.home,
+    away: item.away,
+    reading: item.reading
+      ? {
+          ...item.reading,
+          fact: isArsenal
+            ? "Arsenal a gagné ses 9 derniers matchs à domicile"
+            : null,
+        }
+      : null,
+    withoutReading: item.withoutReading,
+    setAsideReason: item.withoutReading === "rejected" ? "divergence" : null,
+    ai: isArsenal
+      ? {
+          ...pick("ONE_X_TWO", "DRAW", 3.4, 0.28, null),
+          sameAsReading: false,
+          sentence: "Chelsea n'a perdu qu'une fois en 8 déplacements",
+          decidedAt: "2026-10-30T13:41:00.000Z",
+        }
+      : item.home.name === "Lyon"
+        ? {
+            ...pick("OVER_UNDER", "OVER", 1.6, 0.62, null),
+            sameAsReading: true,
+            sentence: null,
+            decidedAt: "2026-10-30T13:41:00.000Z",
+          }
+        : null,
+    form: {
+      home: { last: ["won", "won", "lost", "won", "drawn"], restDays: 3 },
+      away: { last: ["won", "drawn", "drawn", "lost", "won"], restDays: 6 },
+    },
+    headToHead: isArsenal ? "4 victoires d'Arsenal sur les 6 derniers" : null,
+    otherPicks:
+      item.withoutReading === "not_priced"
+        ? []
+        : [
+            pick("ONE_X_TWO", "AWAY", 5.2, 0.18, "lost"),
+            pick("ONE_X_TWO", "DRAW", 3.4, 0.28, "lost"),
+            pick("OVER_UNDER", "OVER", 1.8, 0.52, "won"),
+            pick("BTTS", "YES", 1.7, 0.55, "lost"),
+            pick("OVER_UNDER", "UNDER", 2.05, 0.48, "lost"),
+            pick("BTTS", "NO", 2.1, 0.45, "won"),
+          ],
+  };
+}
+
+// « Mon ticket » coté maintenant (POST /ticket/quote, 07 § 4) : les cotes de
+// la fiche, sauf la victoire d'Arsenal passée de 1,60 à 1,70 depuis l'ajout
+// (« cote mise à jour », plus de 5 %).
+function ticketQuote(body) {
+  const legs = (body.legs ?? []).map((leg) => {
+    const sheet = matchSheet(leg.fixtureId);
+    const bets = sheet
+      ? [sheet.reading, sheet.ai, ...sheet.otherPicks].filter(Boolean)
+      : [];
+    const bet = bets.find(
+      (b) => b.market === leg.market && b.pick === leg.pick,
+    );
+    const moved =
+      sheet?.home.name === "Arsenal" &&
+      leg.market === "ONE_X_TWO" &&
+      leg.pick === "HOME";
+    const over = sheet?.state === "finished";
+    const postponed = sheet?.state === "postponed";
+    return {
+      ...leg,
+      kickoffAt: sheet?.kickoffAt ?? null,
+      state: !sheet
+        ? "unknown"
+        : postponed
+          ? "postponed"
+          : over
+            ? "started"
+            : "open",
+      result: postponed ? "void" : over ? (bet?.result ?? null) : null,
+      score: over ? sheet.score : null,
+      odds: bet ? (moved ? 1.7 : bet.odds) : null,
+      fair: bet
+        ? bet.market === "ONE_X_TWO" && bet.pick === "HOME"
+          ? 0.56
+          : bet.chance
+        : null,
+    };
+  });
+  const counted = legs.filter((l) => l.state === "open" && l.odds && l.fair);
+  if (body.verify && counted.length > 0) verifiedTickets += 1;
+  const product = (f) => counted.reduce((acc, l) => acc * f(l), 1);
+  return {
+    legs,
+    totals: counted.length
+      ? {
+          legCount: counted.length,
+          odds: Math.round(product((l) => l.odds) * 1000) / 1000,
+          chance: product((l) => l.fair),
+        }
+      : null,
+    hero: body.day
+      ? {
+          couponId: "cp-yesterday-fav",
+          product: "FAVOURITE",
+          chance: 0.8,
+          state: "won",
+          odds: 1.24,
+          match: {
+            home: "Paris SG",
+            away: "Lens",
+            score: { home: 2, away: 0 },
+          },
+        }
+      : {
+          couponId: "cp-today-fav",
+          product: "FAVOURITE",
+          chance: 0.8,
+          state: "upcoming",
+          odds: 1.28,
+          match: { home: "Paris SG", away: "Lens", score: null },
+        },
+    quotedAt: new Date().toISOString(),
+  };
+}
+
+// « Résultats » (GET /results/products, 08 § 1) : deux produits mûrs, les
+// autres trop tôt, l'IA ; « Ta semaine » le lundi (cookie results-monday).
+function resultsScreen(url, cookie) {
+  const period = new URL(url, "http://mock").searchParams.get("period") ?? "90";
+  const days = (pattern) =>
+    [...pattern].map((mark) => (mark === "x" ? "lost" : "won"));
+  const product = (key, extra) => ({
+    product: key,
+    retired: false,
+    launchedOn: "2026-10-13",
+    since: "2026-10-13",
+    won: 0,
+    lost: 0,
+    refunded: 0,
+    daysWithoutCoupon: 0,
+    worstLosingStreak: 0,
+    last: [],
+    tooEarly: true,
+    settledDays: 0,
+    ...extra,
+  });
+  const yesterday = todayAt(-24).slice(0, 10);
+  return {
+    period,
+    until: todayAt(0).slice(0, 10),
+    yesterday: {
+      date: yesterday,
+      items: [
+        { product: "FAVOURITE", outcome: "won", paidOdds: 1.24 },
+        { product: "COMBO", outcome: "won", paidOdds: 1.41 },
+        { product: "DOUBLE", outcome: "lost", paidOdds: null },
+      ],
+    },
+    week: /(^|;\s*)evcore_session=results-monday(;|$)/.test(cookie)
+      ? {
+          week: "2026-10-26",
+          products: [
+            { product: "FAVOURITE", won: 5, played: 6 },
+            { product: "COMBO", won: 4, played: 6 },
+          ],
+        }
+      : null,
+    products: [
+      product("FAVOURITE", {
+        won: period === "30" ? 11 : 15,
+        lost: 3,
+        last: days("vvxvvvvvvv"),
+        tooEarly: false,
+        settledDays: 18,
+      }),
+      product("COMBO", {
+        won: 11,
+        lost: 4,
+        last: days("vxvvvvxvvv"),
+        tooEarly: false,
+        settledDays: 15,
+      }),
+      product("DOUBLE", {
+        since: "2026-10-29",
+        lost: 1,
+        last: days("x"),
+        settledDays: 1,
+      }),
+      product("HUNTER_BTTS", { since: "2026-10-29" }),
+      product("HUNTER_DRAW", {
+        since: "2026-10-29",
+        won: 1,
+        last: days("v"),
+        settledDays: 1,
+      }),
+      product("HUNTER_SCORE", { since: "2026-10-29" }),
+      product("HUNTER_CORNERS", { since: "2026-10-30" }),
+      product("COMBO_AI", {
+        won: 8,
+        lost: 3,
+        last: days("vvxvvxvvvx"),
+        tooEarly: false,
+        settledDays: 11,
+      }),
+    ],
+    ai: {
+      since: "2026-10-28",
+      won: 136,
+      lost: 71,
+      refunded: 2,
+      last: days("vvvxvvxvvv"),
+      tooEarly: false,
+    },
+  };
+}
+
+// Le détail d'une ligne de Résultats (08 § 2) : la grille de la période, le
+// jour par jour, l'IA avec un changement de réglage, un coupon réglé.
+const RESULTS_COUPON = "00000000-0000-4000-8000-0000000000c1";
+
+function resultsDay(offset) {
+  return todayAt(-24 * offset).slice(0, 10);
+}
+
+function resultsProduct(product, url, cookie) {
+  const summary = resultsScreen(url, cookie).products.find(
+    (p) => p.product === product,
+  );
+  if (!summary) return null;
+  const period = new URL(url, "http://mock").searchParams.get("period") ?? "90";
+  const length = period === "30" ? 30 : 90;
+  const mature = !summary.tooEarly;
+  const outcomeAt = (offset) =>
+    !mature
+      ? offset === 2
+        ? (summary.last[0] ?? "none")
+        : "none"
+      : offset > 18
+        ? "none"
+        : offset === 5
+          ? "none"
+          : [3, 8, 14].includes(offset)
+            ? "lost"
+            : offset === 11
+              ? "refunded"
+              : "won";
+  const grid = Array.from({ length }, (_, i) => {
+    const offset = length - i;
+    return { date: resultsDay(offset), outcome: outcomeAt(offset) };
+  });
+  const days = [];
+  for (let offset = 1; offset <= length; offset += 1) {
+    const outcome = outcomeAt(offset);
+    if (outcome !== "none") {
+      days.push({
+        date: resultsDay(offset),
+        outcome,
+        label: offset % 2 ? "Paris SG – Lens" : "Bayern – Köln",
+        market: "ONE_X_TWO",
+        pick: "HOME",
+        paidOdds: outcome === "won" ? 1.24 : null,
+        couponId: RESULTS_COUPON,
+      });
+    } else if (mature && offset === 5) {
+      days.push({
+        date: resultsDay(offset),
+        outcome: "none",
+        reason: "no_home_favourite_in_band",
+      });
+    }
+  }
+  return {
+    ...summary,
+    worstLosingStreak: mature ? 1 : 0,
+    daysWithoutCoupon: mature ? 1 : 0,
+    comparison: mature
+      ? {
+          days: 14,
+          from: resultsDay(18),
+          to: resultsDay(1),
+          announced: 0.8,
+          realised: 0.79,
+        }
+      : null,
+    francs: mature
+      ? {
+          days: 14,
+          staked: 14000,
+          returned: 13600,
+          unpricedDays: 2,
+          from: resultsDay(18),
+          to: resultsDay(1),
+        }
+      : null,
+    grid,
+    days,
+  };
+}
+
+function resultsAi(url, cookie) {
+  const { ai } = resultsScreen(url, cookie);
+  const opinion = (offset, outcome, config) => ({
+    date: resultsDay(offset),
+    label: "Lazio – Torino",
+    market: "ONE_X_TWO",
+    pick: "DRAW",
+    odds: 3.3,
+    outcome,
+    config,
+  });
+  const rows = [
+    opinion(1, "won", "v5"),
+    opinion(2, "lost", "v5"),
+    opinion(3, "won", "v5"),
+    opinion(4, "won", "v4"),
+    opinion(5, "refunded", "v4"),
+  ];
+  return {
+    ...ai,
+    comparison: {
+      days: 207,
+      from: resultsDay(30),
+      to: resultsDay(1),
+      announced: 0.64,
+      realised: 0.66,
+    },
+    francs: {
+      days: 207,
+      staked: 207000,
+      returned: 212300,
+      unpricedDays: 0,
+      from: resultsDay(30),
+      to: resultsDay(1),
+    },
+    opinions: rows.map(({ config, ...row }, i) => ({
+      ...row,
+      settingChanged: rows[i + 1] ? rows[i + 1].config !== config : false,
+    })),
+  };
+}
+
+function resultsCoupon(id) {
+  if (id !== RESULTS_COUPON) return null;
+  const [favourite] = eveningScreen().coupons;
+  return { ...favourite, id: RESULTS_COUPON, followedByMe: false };
+}
+
+// « Hier » ouvert (GET /results/yesterday) et « Ta semaine »
+// (GET /results/week), 08 § 3.
+function resultsYesterday() {
+  const screen = eveningScreen();
+  return {
+    date: todayAt(-24).slice(0, 10),
+    heroId: screen.heroId,
+    coupons: screen.coupons,
+    absences: [
+      { product: "HUNTER_CORNERS", reason: "no_reliable_competition" },
+    ],
+  };
+}
+
+function resultsWeek() {
+  const monday = "2026-10-19";
+  const day = (i) =>
+    new Date(Date.parse(`${monday}T00:00:00Z`) + i * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+  const mark = (product, outcome, paidOdds = null) => ({
+    product,
+    outcome,
+    paidOdds,
+  });
+  return {
+    week: monday,
+    days: [
+      [
+        mark("FAVOURITE", "won", 1.22),
+        mark("COMBO", "won", 1.38),
+        mark("DOUBLE", "lost"),
+      ],
+      [mark("FAVOURITE", "won", 1.3), mark("COMBO", "lost")],
+      [mark("COMBO", "won", 1.44)],
+      [mark("FAVOURITE", "won", 1.25), mark("COMBO", "won", 1.4)],
+      [mark("FAVOURITE", "lost"), mark("COMBO", "won", 1.36)],
+      [mark("FAVOURITE", "won", 1.2), mark("COMBO", "refunded")],
+      [
+        mark("FAVOURITE", "won", 1.24),
+        mark("COMBO", "won", 1.41),
+        mark("HUNTER_DRAW", "won", 3.4),
+      ],
+    ].map((marks, i) => ({ date: day(i), marks })),
+    products: [
+      { product: "FAVOURITE", won: 5, played: 6 },
+      { product: "COMBO", won: 5, played: 6 },
+      { product: "DOUBLE", won: 0, played: 1 },
+      { product: "HUNTER_DRAW", won: 1, played: 1 },
+    ],
+    followed: { won: 3, lost: 2, refunded: 0 },
+  };
+}
+
+// « Moi » (GET /me, GET /me/settled, 09 § 1) : un coupon suivi en cours,
+// deux réglés et une page de plus derrière « Voir plus » ; « me-new » joue
+// un joueur qui n'a encore rien suivi.
+function meScreen(cookie) {
+  const today = todayScreen();
+  const evening = eveningScreen();
+  const fresh = /(^|;\s*)evcore_session=me-new(;|$)/.test(cookie);
+  return {
+    firstName: "Kouassi",
+    record: fresh
+      ? { won: 0, lost: 0, refunded: 0, since: null }
+      : { won: 7, lost: 4, refunded: 1, since: "2026-10-13T08:00:00.000Z" },
+    inProgress: fresh ? [] : [{ ...today.coupons[0], followedByMe: true }],
+    settled: {
+      coupons: fresh ? [] : evening.coupons.slice(0, 2),
+      nextCursor: fresh ? null : "settled-2",
+    },
+    unreadReplies: fresh ? 0 : 1,
+    pausedUntil: null,
+  };
+}
+
+function meSettledPage() {
+  const [, , double] = eveningScreen().coupons;
+  return {
+    coupons: [{ ...(double ?? eveningScreen().coupons[0]), id: "cp-older" }],
+    nextCursor: null,
+  };
+}
+
+// « Messages » (GET /support/conversation, 09 § 2) : l'accueil
+// automatique, une question avec sa capture, la réponse de l'équipe, puis
+// ce que le joueur envoie pendant le test (gardé en mémoire).
+let supportSent = [];
+let supportReadCalls = 0;
+
+function supportMessage(id, extra) {
+  return {
+    id,
+    conversationId: "conv-1",
+    senderId: extra.senderRole === "ADMIN" ? "admin-1" : "e2e-user",
+    senderRole: "OPERATOR",
+    senderUsername: "",
+    content: null,
+    attachment: null,
+    kind: "STANDARD",
+    ...extra,
+  };
+}
+
+function supportConversation() {
+  return {
+    conversation: {
+      id: "conv-1",
+      userReadAt: todayAt(-30),
+    },
+    messages: [
+      supportMessage("m-welcome", {
+        senderRole: "ADMIN",
+        senderUsername: "EVCore",
+        kind: "AUTOMATED",
+        content:
+          "Bienvenue. Écris-nous, on répond généralement en quelques heures.",
+        createdAt: todayAt(-50),
+      }),
+      supportMessage("m-question", {
+        content:
+          "Le Combiné d'hier affichait 1,41 mais chez 1xBet j'avais 1,36. C'est normal ?",
+        createdAt: todayAt(-26),
+      }),
+      supportMessage("m-photo", {
+        attachment: {
+          kind: "IMAGE",
+          url: crest("1xBet"),
+          mimeType: "image/svg+xml",
+          sizeBytes: 900,
+          fileName: "capture.png",
+          durationMs: null,
+          width: 28,
+          height: 28,
+        },
+        createdAt: todayAt(-26),
+      }),
+      supportMessage("m-reply", {
+        senderRole: "ADMIN",
+        senderUsername: "Kouamé",
+        content:
+          "Oui, la cote bouge jusqu'au coup d'envoi. Merci pour la capture.",
+        createdAt: todayAt(-25),
+      }),
+      ...supportSent,
+    ],
+    hasMore: false,
+  };
+}
+
+function matchesPage(url, cookie) {
+  const params = new URL(url, "http://mock").searchParams;
+  const day = params.get("day") ?? "today";
+  const date = new Date().toISOString().slice(0, 10);
+  if (/(^|;\s*)evcore_session=matches-empty(;|$)/.test(cookie))
+    return { day, date, items: [], nextCursor: null };
+  const q = (params.get("q") ?? "").toLowerCase();
+  if (q) {
+    const all = [
+      ...matchesPage(url.replace(/[?&]q=[^&]*/, ""), cookie).items,
+      ...matchesPage("/matches?cursor=page-2", cookie).items,
+    ];
+    return {
+      day,
+      date,
+      items: all.filter((item) =>
+        `${item.home.name} ${item.away.name}`.toLowerCase().includes(q),
+      ),
+      nextCursor: null,
+    };
+  }
+  if (day === "yesterday")
+    return { day, date, items: yesterdayMatches(), nextCursor: null };
+  if (day === "tomorrow")
+    return { day, date, items: tomorrowMatches(), nextCursor: null };
+  if (params.get("cursor") === "page-2")
+    return {
+      day,
+      date,
+      items: [
+        matchItem("bet", "Betis", "Sevilla", [20, 45], {
+          competition: "LaLiga",
+          reading: { market: "BTTS", pick: "YES", chance: 0.5 },
+        }),
+        matchItem("asec", "Asec", "Africa", [21, 0], {
+          competition: "Ligue 1 Côte d'Ivoire",
+          without: "not_priced",
+        }),
+        matchItem("gre", "Gremio", "Santos", [21, 0], {
+          competition: "Serie A Brésil",
+          without: "not_analysed",
+        }),
+      ],
+      nextCursor: null,
+    };
+  return {
+    day,
+    date,
+    items: [
+      matchItem("ars", "Arsenal", "Chelsea", [19, 0], {
+        competition: "Premier League",
+        reading: { market: "ONE_X_TWO", pick: "HOME", chance: 0.7 },
+      }),
+      matchItem("lyo", "Lyon", "Lens", [19, 0], {
+        reading: { market: "OVER_UNDER", pick: "OVER", chance: 0.62 },
+      }),
+      matchItem("bre", "Brest", "Nice", [19, 0], { without: "rejected" }),
+      matchItem("psg", "Paris SG", "Marseille", [20, 45], {
+        reading: { market: "ONE_X_TWO", pick: "HOME", chance: 0.6 },
+      }),
+      matchItem("laz", "Lazio", "Torino", [20, 45], {
+        competition: "Serie A",
+        reading: { market: "ONE_X_TWO", pick: "DRAW", chance: 0.3, odds: 3.3 },
+      }),
+    ],
+    nextCursor: "page-2",
+  };
+}
+
+// La landing (GET /public/today, 11 § 1) : le héros d'Aujourd'hui sans rien
+// de joueur, sa forme, Hier, et les premières lignes de Résultats.
+function publicToday() {
+  const screen = todayScreen();
+  const {
+    followedByMe: _f,
+    canFollow: _c,
+    ...hero
+  } = screen.coupons.find((coupon) => coupon.id === screen.heroId);
+  const form = screen.forms.find((f) => f.product === hero.product);
+  return {
+    date: screen.date,
+    hero,
+    lastWon: null,
+    heroForm: {
+      days: form.days,
+      won: form.won,
+      played: form.played,
+      since: form.days[0]?.date ?? null,
+    },
+    yesterday: screen.yesterday.map(({ product, outcome }) => ({
+      product,
+      outcome,
+    })),
+    absences: screen.absences,
+    results: [
+      {
+        product: "FAVOURITE",
+        won: 11,
+        lost: 3,
+        refunded: 0,
+        tooEarly: false,
+        settledDays: 14,
+        since: "2026-10-13",
+      },
+      {
+        product: "COMBO",
+        won: 11,
+        lost: 4,
+        refunded: 0,
+        tooEarly: false,
+        settledDays: 15,
+        since: "2026-10-13",
+      },
+      {
+        product: "DOUBLE",
+        won: 1,
+        lost: 0,
+        refunded: 0,
+        tooEarly: true,
+        settledDays: 1,
+        since: "2026-10-28",
+      },
+    ],
+    ai: { won: 136, lost: 71, tooEarly: false, since: "2026-10-13" },
+  };
+}
+
+function todayScreen() {
+  const favourite = todayCoupon(
+    "fav",
+    "FAVOURITE",
+    [
+      todayLeg("fav", "Paris SG", "Lens", "HOME", 1.28, {
+        fact: "Le PSG a gagné ses 9 derniers matchs à domicile",
+      }),
+    ],
+    1.28,
+    0.8,
+  );
+  return {
+    date: todayAt(0).slice(0, 10),
+    yesterday: [
+      { product: "FAVOURITE", outcome: "won", followedByMe: false },
+      { product: "COMBO", outcome: "won", followedByMe: false },
+      { product: "DOUBLE", outcome: "lost", followedByMe: false },
+    ],
+    week: null,
+    heroId: favourite.id,
+    coupons: [
+      favourite,
+      todayCoupon(
+        "com",
+        "COMBO",
+        [
+          todayLeg("com1", "Arsenal", "Brentford", "HOME", 1.12, {
+            hours: 6,
+            competition: "Premier League",
+          }),
+          todayLeg("com2", "Inter", "Lecce", "HOME", 1.1, {
+            hours: 7,
+            competition: "Serie A",
+          }),
+          todayLeg("com3", "Benfica", "Arouca", "HOME", 1.14, {
+            hours: 8,
+            competition: "Liga Portugal",
+          }),
+        ],
+        1.41,
+        0.7,
+      ),
+      todayCoupon(
+        "c2",
+        "DOUBLE",
+        [
+          todayLeg("c21", "Lyon", "Nantes", "HOME", 1.5, { hours: 6 }),
+          todayLeg("c22", "Betis", "Getafe", "HOME", 1.53, {
+            hours: 7,
+            competition: "LaLiga",
+          }),
+        ],
+        2.3,
+        0.5,
+      ),
+      todayCoupon(
+        "nul",
+        "HUNTER_DRAW",
+        [
+          todayLeg("nul", "Lazio", "Torino", "DRAW", 3.4, {
+            hours: 9,
+            competition: "Serie A",
+            chance: 0.3,
+          }),
+        ],
+        3.4,
+        0.3,
+      ),
+    ],
+    absences: [
+      { product: "HUNTER_CORNERS", reason: "no_reliable_competition" },
+    ],
+    followedInProgress: [],
+    forms: [
+      {
+        product: "FAVOURITE",
+        days: formDays("vvxvvvvxvvvvvxvvvvvvvvvv"),
+        won: 21,
+        played: 24,
+        worstLosingStreak: 1,
+      },
+      {
+        product: "COMBO",
+        days: formDays("vvxvvvxvv"),
+        won: 7,
+        played: 9,
+        worstLosingStreak: 1,
+      },
+    ],
+  };
+}
+
+const NOTHING_ABSENCES = [
+  { product: "FAVOURITE", reason: "no_home_favourite_in_band" },
+  { product: "COMBO", reason: "not_enough_calibrated_short_legs" },
+  { product: "DOUBLE", reason: "no_combination_in_window" },
+];
+
+// Le soir : le Favori suivi et gagné (2-0), le Combiné perdu sur sa
+// deuxième jambe, le Chasseur Nul remboursé (match reporté).
+function eveningScreen() {
+  const screen = todayScreen();
+  const [favourite, combo, , draw] = screen.coupons;
+  const settle = (leg, state, score) => ({
+    ...leg,
+    kickoffAt: todayAt(-3),
+    state,
+    score,
+  });
+  return {
+    ...screen,
+    coupons: [
+      {
+        ...favourite,
+        state: "won",
+        paidOdds: 1.28,
+        followedByMe: true,
+        canFollow: false,
+        firstKickoffAt: todayAt(-3),
+        legs: [settle(favourite.legs[0], "won", { home: 2, away: 0 })],
+      },
+      {
+        ...combo,
+        state: "lost",
+        canFollow: false,
+        firstKickoffAt: todayAt(-3),
+        legs: [
+          settle(combo.legs[0], "won", { home: 3, away: 1 }),
+          settle(combo.legs[1], "lost", { home: 1, away: 1 }),
+          settle(combo.legs[2], "won", { home: 2, away: 0 }),
+        ],
+      },
+      {
+        ...draw,
+        state: "void",
+        canFollow: false,
+        firstKickoffAt: todayAt(-3),
+        legs: [{ ...draw.legs[0], state: "postponed" }],
+      },
+    ],
+  };
 }
 
 function decision(overrides) {
@@ -1434,12 +2416,135 @@ const TRACK_RECORD_SUMMARY = {
   ),
 };
 
-function route(method, url) {
+// Lectures de session servies, pour vérifier qu'une page n'en fait qu'une
+// (docs/refonte-ui/16-performance-et-qualite.md § 2).
+let authMeReads = 0;
+let verifiedTickets = 0;
+
+const AUTH_BODY_ROUTES = new Set([
+  "/auth/register",
+  "/auth/login",
+  "/auth/login/totp",
+  "/auth/verify-email",
+  "/auth/send-verification",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/reset-password/totp",
+]);
+
+// A player's session: the admin of the default session would land on
+// /dashboard, not the screens these forms lead to.
+const PLAYER_SESSION = {
+  session: {
+    ...SESSION.session,
+    user: { ...SESSION.session.user, role: "OPERATOR" },
+  },
+};
+
+function authAnswer(path, body) {
+  const ok = [200, { status: "ok" }];
+  switch (path) {
+    case "/auth/register":
+      return String(body.email ?? "").startsWith("deja@")
+        ? [409, { message: "Cet e-mail a déjà un compte" }]
+        : [201, PLAYER_SESSION, true];
+    case "/auth/login":
+      if (body.password === "mauvais")
+        return [401, { message: "E-mail ou mot de passe incorrect" }];
+      if (String(body.identifier ?? "").startsWith("app@"))
+        return [200, { totpRequired: true, challenge: "defi" }];
+      return [200, PLAYER_SESSION, true];
+    case "/auth/login/totp":
+    case "/auth/reset-password/totp":
+      return (body.code ?? body.totpCode) === "123456"
+        ? path === "/auth/login/totp"
+          ? [200, PLAYER_SESSION, true]
+          : ok
+        : [401, { message: "Code incorrect" }];
+    case "/auth/verify-email":
+      return body.code === "123456"
+        ? ok
+        : [400, { message: "Code invalide ou expiré" }];
+    case "/auth/reset-password":
+      return body.token === "bon"
+        ? ok
+        : [400, { message: "Lien invalide ou expiré" }];
+    default:
+      return ok;
+  }
+}
+
+function route(method, url, cookie = "") {
   const path = url.split("?")[0];
 
   if (method === "OPTIONS") return [200, {}];
   if (path === "/health") return [200, { ok: true }];
-  if (path === "/auth/me") return [200, SESSION];
+  if (path === "/__e2e/stats")
+    return [200, { authMeReads, verifiedTickets, supportReadCalls }];
+  if (path === "/__e2e/reset") {
+    authMeReads = 0;
+    verifiedTickets = 0;
+    return [200, { ok: true }];
+  }
+  if (path === "/auth/me") {
+    authMeReads += 1;
+    // Un cookie « stale » joue une session expirée ou révoquée.
+    if (/(^|;\s*)evcore_session=stale(;|$)/.test(cookie))
+      return [401, { message: "Session invalide ou expirée" }];
+    // Un cookie « player » joue un joueur (rôle OPERATOR), pour la bascule.
+    if (/(^|;\s*)evcore_session=player(;|$)/.test(cookie))
+      return [
+        200,
+        {
+          session: {
+            ...SESSION.session,
+            user: { ...SESSION.session.user, role: "OPERATOR" },
+          },
+        },
+      ];
+    // Un cookie « first-launch » joue un joueur à son premier lancement.
+    if (/(^|;\s*)evcore_session=first-launch(;|$)/.test(cookie))
+      return [
+        200,
+        {
+          session: {
+            ...SESSION.session,
+            user: { ...SESSION.session.user, hasSeenOnboarding: false },
+          },
+        },
+      ];
+    // Un cookie « today-paused » joue un joueur en pause (Aujourd'hui fermé).
+    if (/(^|;\s*)evcore_session=today-paused(;|$)/.test(cookie))
+      return [
+        200,
+        {
+          session: {
+            ...SESSION.session,
+            user: {
+              ...SESSION.session.user,
+              pausedUntil: new Date(Date.now() + 5 * 86_400_000).toISOString(),
+            },
+          },
+        },
+      ];
+    // Un cookie « unverified » joue un compte tout juste inscrit, qui n'a
+    // vérifié ni son e-mail ni une application d'authentification.
+    if (/(^|;\s*)evcore_session=unverified(;|$)/.test(cookie))
+      return [
+        200,
+        {
+          session: {
+            ...SESSION.session,
+            user: {
+              ...SESSION.session.user,
+              emailVerified: false,
+              totpVerified: false,
+            },
+          },
+        },
+      ];
+    return [200, SESSION];
+  }
   // Le faux backend ne lit pas les corps : la suppression répond toujours
   // « mot de passe incorrect », ce qui teste la boîte sans perdre la session.
   if (path === "/auth/me/pause")
@@ -1535,6 +2640,79 @@ function route(method, url) {
         },
       ],
     ];
+  }
+  const sheetOfMatch = path.match(/^\/matches\/([^/]+)\/sheet$/);
+  if (sheetOfMatch && method === "GET") {
+    const sheet = matchSheet(sheetOfMatch[1]);
+    return sheet ? [200, sheet] : [404, { message: "Match introuvable" }];
+  }
+  // /resultats (11 § 1) : les mêmes réponses que l'onglet, sans session.
+  const publicResults = path.match(
+    /^\/public\/results\/(products|ai)(?:\/([^/]+))?$/,
+  );
+  if (publicResults && method === "GET") {
+    if (publicResults[1] === "ai") return [200, resultsAi(url, "")];
+    if (!publicResults[2]) return [200, resultsScreen(url, "")];
+    const found = resultsProduct(publicResults[2], url, "");
+    return found ? [200, found] : [404, { message: "Introuvable" }];
+  }
+  const resultsPath = path.match(/^\/results\/(products|coupons)\/([^/]+)$/);
+  if (resultsPath && method === "GET") {
+    const found =
+      resultsPath[1] === "coupons"
+        ? resultsCoupon(resultsPath[2])
+        : resultsProduct(resultsPath[2], url, cookie);
+    return found ? [200, found] : [404, { message: "Introuvable" }];
+  }
+  if (path === "/results/yesterday" && method === "GET") {
+    return [200, resultsYesterday()];
+  }
+  if (path === "/results/week" && method === "GET") {
+    return [200, resultsWeek()];
+  }
+  if (path === "/results/ai" && method === "GET") {
+    return [200, resultsAi(url, cookie)];
+  }
+  if (path === "/results/products" && method === "GET") {
+    return [200, resultsScreen(url, cookie)];
+  }
+  if (path === "/me" && method === "GET") return [200, meScreen(cookie)];
+  if (path === "/auth/sessions" && method === "GET") return [200, { count: 2 }];
+  if (path === "/auth/sessions/sign-out-others" && method === "POST")
+    return [200, { signedOut: 1 }];
+  if (path === "/support/conversation" && method === "GET")
+    return [200, supportConversation()];
+  if (path === "/support/read" && method === "POST") {
+    supportReadCalls += 1;
+    return [200, { ok: true }];
+  }
+  if (path === "/me/settled" && method === "GET") return [200, meSettledPage()];
+  if (path === "/matches" && method === "GET") {
+    return [200, matchesPage(url, cookie)];
+  }
+  if (path === "/public/today" && method === "GET") {
+    return [200, publicToday()];
+  }
+  if (path === "/today" && method === "GET") {
+    // Les états d'Aujourd'hui (04 § 5) se choisissent par le cookie.
+    if (/(^|;\s*)evcore_session=today-evening(;|$)/.test(cookie))
+      return [200, eveningScreen()];
+    if (/(^|;\s*)evcore_session=today-nothing(;|$)/.test(cookie))
+      return [
+        200,
+        {
+          ...todayScreen(),
+          heroId: null,
+          coupons: [],
+          absences: NOTHING_ABSENCES,
+        },
+      ];
+    if (/(^|;\s*)evcore_session=today-outage(;|$)/.test(cookie))
+      return [
+        200,
+        { ...todayScreen(), heroId: null, coupons: [], absences: [] },
+      ];
+    return [200, todayScreen()];
   }
   if (path === "/events" && method === "POST") return [201, {}];
   if (path === "/coupons/abstentions")
@@ -1676,9 +2854,78 @@ const server = http.createServer((req, res) => {
     "Access-Control-Allow-Headers",
     "Content-Type, Cookie, Authorization",
   );
+  const crestPath = /^\/crests\/(.+)\.svg$/.exec(req.url ?? "");
+  if (crestPath) {
+    res.setHeader("Content-Type", "image/svg+xml");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.end(crestSvg(decodeURIComponent(crestPath[1])));
+    return;
+  }
   res.setHeader("Content-Type", "application/json");
 
-  const [status, body, setLoginCookie] = route(req.method, req.url ?? "/");
+  // Un message envoyé à l'équipe (09 § 2) : gardé pour le fil suivant.
+  if (req.method === "POST" && (req.url ?? "") === "/support/messages") {
+    let raw = "";
+    req.on("data", (chunk) => (raw += chunk));
+    req.on("end", () => {
+      const body = JSON.parse(raw || "{}");
+      const message = supportMessage(`m-sent-${supportSent.length + 1}`, {
+        content: body.content ?? null,
+        createdAt: new Date().toISOString(),
+      });
+      supportSent = [...supportSent, message];
+      res.statusCode = 200;
+      res.end(JSON.stringify(message));
+    });
+    return;
+  }
+
+  // La seule route qui lit son corps : le ticket à coter.
+  if (
+    req.method === "POST" &&
+    (req.url ?? "").split("?")[0] === "/ticket/quote"
+  ) {
+    let raw = "";
+    req.on("data", (chunk) => (raw += chunk));
+    req.on("end", () => {
+      res.statusCode = 200;
+      res.end(JSON.stringify(ticketQuote(JSON.parse(raw || "{}"))));
+    });
+    return;
+  }
+
+  // Les écrans du compte (11 § 2–5) : la réponse dépend du corps. Un
+  // e-mail « deja@ » est déjà inscrit, le mot de passe « mauvais » est faux,
+  // « app@ » a une application d'authentification, le code 123456 et le
+  // lien « bon » passent.
+  const authPost = AUTH_BODY_ROUTES.has(req.url ?? "") && req.method === "POST";
+  if (authPost) {
+    let raw = "";
+    req.on("data", (chunk) => (raw += chunk));
+    req.on("end", () => {
+      const [status, body, signIn] = authAnswer(
+        req.url ?? "",
+        JSON.parse(raw || "{}"),
+      );
+      // Lax : le web (3000) et ce serveur sont le même site, localhost ; un
+      // cookie SameSite=None sans Secure serait refusé par le navigateur.
+      if (signIn) {
+        res.setHeader(
+          "Set-Cookie",
+          "evcore_session=e2e-session; Path=/; SameSite=Lax; HttpOnly",
+        );
+      }
+      res.statusCode = status;
+      res.end(JSON.stringify(body));
+    });
+    return;
+  }
+
+  const [status, body, setLoginCookie] = route(
+    req.method,
+    req.url ?? "/",
+    req.headers.cookie ?? "",
+  );
 
   if (setLoginCookie) {
     res.setHeader(

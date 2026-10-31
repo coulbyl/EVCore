@@ -21,7 +21,6 @@ import {
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { ProfileHeroSection } from "./components/profile-hero-section";
-import { BadgesSection } from "./components/badges-section";
 import { ResponsibleGamblingCard } from "./components/responsible-gambling-card";
 import { AppearanceSection } from "./components/appearance-section";
 import { LanguageSection } from "./components/language-section";
@@ -64,13 +63,6 @@ export function AccountTabsClient({
     savedAutomatically: string;
     displayCurrency: string;
     currencyOptions: Array<{ value: string; label: string }>;
-    unitStake: string;
-    unitModeFixed: string;
-    unitModePct: string;
-    unitAmountPlaceholder: string;
-    unitPctPlaceholder: string;
-    unitPctSuffix: string;
-    unitOptionalHint: string;
   };
 }) {
   const t = useTranslations("account");
@@ -200,7 +192,6 @@ export function AccountTabsClient({
           >
             {hasSession ? <ProfileHeroSection /> : null}
             <ResponsibleGamblingCard />
-            <BadgesSection />
           </div>
         </TabsContent>
 

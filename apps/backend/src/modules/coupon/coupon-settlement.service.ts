@@ -24,8 +24,10 @@ import {
   PlayableOddsRepository,
   playableQuoteKey,
 } from '../betting-engine/pricing/playable-odds.repository';
+import { mapWithConcurrency } from '@utils/async.utils';
 import { createLogger } from '@utils/logger';
 import { productDecimal, type DecimalLike } from '@utils/decimal.utils';
+import { ProductDayService } from './product-day/product-day.service';
 
 const logger = createLogger('coupon-settlement');
 
@@ -93,10 +95,12 @@ function resolveIsCorrect(
 
 @Injectable()
 export class CouponSettlementService {
+  // eslint-disable-next-line max-params -- Nest DI constructor.
   constructor(
     private readonly repo: CouponRepository,
     private readonly closingLines: OddsClosingLineRepository,
     private readonly playableOdds: PlayableOddsRepository,
+    private readonly productDays: ProductDayService,
   ) {}
 
   /**
@@ -138,6 +142,7 @@ export class CouponSettlementService {
                 legId: leg.id,
                 operatorOdds: quote.operatorOdds,
                 operatorMargin: quote.operatorMargin,
+                operatorFairProbability: quote.operatorFairProbability,
               },
             ];
       }),
@@ -146,11 +151,17 @@ export class CouponSettlementService {
 
   async settleReadyProposals(): Promise<void> {
     const ready = await this.repo.findPendingReadyToSettle(new Date());
-    if (ready.length === 0) return;
-
-    logger.info({ count: ready.length }, 'Settling coupon proposals');
-
-    await Promise.all(ready.map((p) => this.settleProposal(p.id)));
+    if (ready.length > 0) {
+      logger.info({ count: ready.length }, 'Settling coupon proposals');
+      await mapWithConcurrency(
+        ready,
+        COUPON_SETTLEMENT_POLICY.concurrency,
+        (p) => this.settleProposal(p.id),
+      );
+    }
+    // Every pass, settled or not: today's new coupons show as pending in
+    // « Résultats », and a late settlement or a correction lands.
+    await this.refreshProductDays(() => this.productDays.refreshRecent());
   }
 
   /** Force re-settlement of every proposal (any status) in a `forDate` range —
@@ -161,8 +172,23 @@ export class CouponSettlementService {
       { count: ids.length, from, to },
       'Force re-settling coupon proposals in range',
     );
-    await Promise.all(ids.map((id) => this.settleProposal(id)));
+    await mapWithConcurrency(ids, COUPON_SETTLEMENT_POLICY.concurrency, (id) =>
+      this.settleProposal(id),
+    );
+    await this.refreshProductDays(() => this.productDays.refresh({ from, to }));
     return { resettled: ids.length };
+  }
+
+  /** « Résultats » is analytics: its aggregate never blocks a settlement. */
+  private async refreshProductDays(
+    refresh: () => Promise<number>,
+  ): Promise<void> {
+    await refresh().catch((error: unknown) => {
+      logger.error(
+        { error: error instanceof Error ? error.message : String(error) },
+        'Product days not written',
+      );
+    });
   }
 
   async settleProposal(proposalId: string): Promise<void> {

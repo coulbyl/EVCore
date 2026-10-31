@@ -43,10 +43,12 @@ export class MlModule implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
-    await this.schedulerQueue.upsertJobScheduler(
+    // No scheduled retraining (docs/audits/2026-10-29/ML-UTILITE.md § 4):
+    // the correction is off and no new source is collected, so Monday's
+    // retrain only spent a pass. The scheduler a running deployment holds
+    // in Redis is removed; a manual train stays possible from the admin.
+    await this.schedulerQueue.removeJobScheduler(
       ML_SCHEDULER_KEYS.RETRAIN_CHECK,
-      { pattern: ML_CRON_SCHEDULES.RETRAIN_CHECK },
-      { name: 'ml-retrain-check', data: {}, opts: ML_TRAINING_JOB_OPTIONS },
     );
     await this.schedulerQueue.upsertJobScheduler(
       ML_SCHEDULER_KEYS.CATCH_UP_SWITCH,

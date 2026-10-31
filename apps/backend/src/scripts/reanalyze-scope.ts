@@ -7,7 +7,7 @@
  * without deleting duplicates every model_run / channel_decision / channel_selection
  * and the backtest would double-count. FK delete order (all RESTRICT upward):
  *   bet → channel_selection → channel_decision → model_run.
- * Deleting a bet cascades its bet_slip_item and nulls bankroll_transaction.betId.
+ * Deleting a bet touches no other table since the declared slips left (2026-10-31).
  *
  * Dev-only. Run after build:
  *   cd apps/backend && pnpm build

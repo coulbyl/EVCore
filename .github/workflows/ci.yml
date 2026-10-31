@@ -58,6 +58,42 @@ jobs:
       - name: Test (vantage-worker)
         run: pnpm --filter vantage-worker test
 
+  # Budgets Lighthouse des écrans joueur et de la landing
+  # (docs/refonte-ui/16-performance-et-qualite.md § 2), bloquants avant une PR.
+  web-budgets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.9
+        with:
+          version: 10.33.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # NEXT_PUBLIC_API_URL est figé au build : il vise le faux backend des
+      # tests e2e, que le script lance sur ce port.
+      - name: Build (web, against the e2e mock backend)
+        run: pnpm turbo run build --filter=web
+        env:
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:3098
+
+      # Chrome est préinstallé sur les runners ubuntu-latest.
+      - name: Lighthouse budgets
+        run: pnpm turbo run budgets --filter=web
+
   ml-worker:
     runs-on: ubuntu-latest
     timeout-minutes: 15

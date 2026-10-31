@@ -6,7 +6,6 @@ import { useDashboardAnnouncements } from "@/domains/announcements/use-cases/get
 import { TodayCoupons } from "./home/today-coupons";
 import { TodayPicks } from "./home/today-picks";
 import { YesterdayCoupons } from "./home/yesterday-coupons";
-import { MySlipsSummary } from "./home/my-slips-summary";
 import { WeeklyBrief } from "./weekly-brief";
 import { PausedNotice } from "@/components/paused-notice";
 import { useActivePause } from "@/domains/auth/use-cases/use-active-pause";
@@ -80,9 +79,6 @@ export function DashboardPageClientOperator() {
                   <YesterdayCoupons />
                 </div>
               )}
-              <div className="order-4 min-w-0 empty:hidden lg:order-none">
-                <MySlipsSummary />
-              </div>
               <div className="order-5 min-w-0 empty:hidden lg:order-none">
                 <WeeklyBrief />
               </div>

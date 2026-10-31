@@ -18,9 +18,6 @@ import { prisma } from "../src/client";
 const CONFIRM_FLAG = "--confirm=PURGE_ANALYSIS_DATA";
 
 type TargetCounts = {
-  bankrollTransactions: number;
-  betSlipItems: number;
-  betSlips: number;
   couponProposalLegs: number;
   couponProposals: number;
   bets: number;
@@ -48,9 +45,6 @@ async function countLegacyPredictions(): Promise<number> {
 
 async function countTargets(): Promise<TargetCounts> {
   const [
-    bankrollTransactions,
-    betSlipItems,
-    betSlips,
     couponProposalLegs,
     couponProposals,
     bets,
@@ -59,9 +53,6 @@ async function countTargets(): Promise<TargetCounts> {
     legacyPredictions,
     modelRuns,
   ] = await Promise.all([
-    prisma.bankrollTransaction.count({ where: { betId: { not: null } } }),
-    prisma.betSlipItem.count(),
-    prisma.betSlip.count(),
     prisma.couponProposalLeg.count(),
     prisma.couponProposal.count(),
     prisma.bet.count(),
@@ -72,9 +63,6 @@ async function countTargets(): Promise<TargetCounts> {
   ]);
 
   return {
-    bankrollTransactions,
-    betSlipItems,
-    betSlips,
     couponProposalLegs,
     couponProposals,
     bets,
@@ -88,11 +76,6 @@ async function countTargets(): Promise<TargetCounts> {
 async function purgeAnalysisData(): Promise<TargetCounts> {
   return prisma.$transaction(
     async (tx) => {
-      const bankrollTransactions = await tx.bankrollTransaction.deleteMany({
-        where: { betId: { not: null } },
-      });
-      const betSlipItems = await tx.betSlipItem.deleteMany({});
-      const betSlips = await tx.betSlip.deleteMany({});
       const couponProposalLegs = await tx.couponProposalLeg.deleteMany({});
       const couponProposals = await tx.couponProposal.deleteMany({});
       const bets = await tx.bet.deleteMany({});
@@ -111,9 +94,6 @@ async function purgeAnalysisData(): Promise<TargetCounts> {
       const modelRuns = await tx.modelRun.deleteMany({});
 
       return {
-        bankrollTransactions: bankrollTransactions.count,
-        betSlipItems: betSlipItems.count,
-        betSlips: betSlips.count,
         couponProposalLegs: couponProposalLegs.count,
         couponProposals: couponProposals.count,
         bets: bets.count,
@@ -130,12 +110,6 @@ async function purgeAnalysisData(): Promise<TargetCounts> {
 function printCounts(title: string, counts: TargetCounts): void {
   console.log(title);
   console.table([
-    {
-      table: "bankroll_transaction (bet-linked)",
-      rows: counts.bankrollTransactions,
-    },
-    { table: "bet_slip_item", rows: counts.betSlipItems },
-    { table: "bet_slip", rows: counts.betSlips },
     { table: "coupon_proposal_leg", rows: counts.couponProposalLegs },
     { table: "coupon_proposal", rows: counts.couponProposals },
     { table: "bet", rows: counts.bets },

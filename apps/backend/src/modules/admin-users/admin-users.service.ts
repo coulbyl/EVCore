@@ -3,15 +3,19 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '@/prisma.service';
 import type { UserRole } from '@evcore/db';
+import {
+  AdminUsersRepository,
+  type AdminUserRecord,
+} from './admin-users.repository';
+import { SessionCache } from '@modules/auth/session-cache';
 import type { ListUsersQueryDto } from './dto/list-users-query.dto';
 import type { UpdateUserDto } from './dto/update-user.dto';
 
 export type AdminUserRow = {
   id: string;
   email: string;
-  username: string;
+  username: string | null;
   fullName: string;
   role: UserRole;
   emailVerified: boolean;
@@ -24,25 +28,12 @@ export type AdminUserRow = {
   updatedAt: string;
 };
 
-const USER_ROW_SELECT = {
-  id: true,
-  email: true,
-  username: true,
-  fullName: true,
-  role: true,
-  emailVerified: true,
-  avatarUrl: true,
-  locale: true,
-  currency: true,
-  suspended: true,
-  suspendedAt: true,
-  createdAt: true,
-  updatedAt: true,
-} as const;
-
 @Injectable()
 export class AdminUsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly repository: AdminUsersRepository,
+    private readonly sessionCache: SessionCache,
+  ) {}
 
   async listUsers(query: ListUsersQueryDto): Promise<{
     items: AdminUserRow[];
@@ -55,29 +46,11 @@ export class AdminUsersService {
     const q = query.q?.trim() ?? '';
     const role = query.role ?? 'ALL';
 
-    const where = {
-      ...(role !== 'ALL' ? { role: role as UserRole } : {}),
-      ...(q
-        ? {
-            OR: [
-              { email: { contains: q, mode: 'insensitive' as const } },
-              { username: { contains: q, mode: 'insensitive' as const } },
-              { fullName: { contains: q, mode: 'insensitive' as const } },
-            ],
-          }
-        : {}),
-    };
-
-    const [total, users] = await Promise.all([
-      this.prisma.client.user.count({ where }),
-      this.prisma.client.user.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        select: USER_ROW_SELECT,
-      }),
-    ]);
+    const { total, users } = await this.repository.listPage({
+      filter: { q, role },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
 
     return {
       items: users.map((u) => this.toRow(u)),
@@ -98,31 +71,30 @@ export class AdminUsersService {
       );
     }
 
-    const existing = await this.prisma.client.user.findUnique({
-      where: { id },
-      select: { id: true },
-    });
-    if (!existing) throw new NotFoundException('User not found');
+    if (!(await this.repository.exists(id))) {
+      throw new NotFoundException('User not found');
+    }
 
-    const updated = await this.prisma.client.user.update({
-      where: { id },
-      data: {
+    try {
+      const updated = await this.repository.update(id, {
         role: dto.role,
         emailVerified: dto.emailVerified,
         ...(dto.suspended !== undefined && {
           suspended: dto.suspended,
           suspendedAt: dto.suspended ? new Date() : null,
         }),
-      },
-      select: USER_ROW_SELECT,
-    });
+      });
 
-    if (dto.suspended) {
-      // Kick the user out immediately instead of waiting for their session to expire.
-      await this.prisma.client.session.deleteMany({ where: { userId: id } });
+      if (dto.suspended) {
+        // Kick the user out immediately instead of waiting for their session to expire.
+        await this.repository.deleteSessions(id);
+      }
+      return this.toRow(updated);
+    } finally {
+      // Rôle, suspension, vérification : la session porte ces champs. Même si
+      // la révocation des sessions échoue, la suspension est déjà écrite.
+      this.sessionCache.invalidateUser(id);
     }
-
-    return this.toRow(updated);
   }
 
   async deleteUser(id: string, currentUserId: string): Promise<void> {
@@ -132,30 +104,15 @@ export class AdminUsersService {
       );
     }
 
-    const existing = await this.prisma.client.user.findUnique({
-      where: { id },
-      select: { id: true },
-    });
-    if (!existing) throw new NotFoundException('User not found');
+    if (!(await this.repository.exists(id))) {
+      throw new NotFoundException('User not found');
+    }
 
-    await this.prisma.client.user.delete({ where: { id } });
+    await this.repository.delete(id);
+    this.sessionCache.invalidateUser(id);
   }
 
-  private toRow(u: {
-    id: string;
-    email: string;
-    username: string;
-    fullName: string;
-    role: UserRole;
-    emailVerified: boolean;
-    avatarUrl: string | null;
-    locale: string | null;
-    currency: string | null;
-    suspended: boolean;
-    suspendedAt: Date | null;
-    createdAt: Date;
-    updatedAt: Date;
-  }): AdminUserRow {
+  private toRow(u: AdminUserRecord): AdminUserRow {
     return {
       ...u,
       suspendedAt: u.suspendedAt?.toISOString() ?? null,

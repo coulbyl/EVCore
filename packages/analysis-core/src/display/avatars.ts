@@ -3,7 +3,7 @@
  * (apps/web/public/avatars) depuis le 2026-10-28 : avant, chaque affichage
  * appelait api.dicebear.com, un tiers qui voyait passer nos joueurs. Liste
  * partagée par l'écran et par la validation du backend, qui refuse tout
- * autre chemin et un avatar à badge sans le badge.
+ * autre chemin. Tous libres depuis le 2026-10-31 : plus de badge à mériter.
  *
  * Style « Micah » de DiceBear, remix de « Avatar Illustration System » par
  * Micah Lanier, sous licence CC BY 4.0 (crédit dans les mentions légales).
@@ -11,14 +11,11 @@
 export type AvatarChoice = {
   path: string;
   label: string;
-  /** Badge nécessaire pour le choisir ; absent = libre. */
-  requiredBadge?: string;
 };
 
-const avatar = (file: string, label: string, requiredBadge?: string) => ({
+const avatar = (file: string, label: string): AvatarChoice => ({
   path: `/avatars/${file}.svg`,
   label,
-  ...(requiredBadge ? { requiredBadge } : {}),
 });
 
 export const AVATAR_CHOICES: readonly AvatarChoice[] = [
@@ -31,8 +28,7 @@ export const AVATAR_CHOICES: readonly AvatarChoice[] = [
   avatar("analyst", "Analyste"),
   avatar("strategist", "Stratège"),
   avatar("strikerx", "Buteur Élite"),
-  // Débloqué en lisant les cinq fiches de la Formation (badge « Diplômé »).
-  avatar("oracle", "Oracle", "graduate"),
+  avatar("oracle", "Oracle"),
 ];
 
 export const AVATAR_PATHS: readonly string[] = AVATAR_CHOICES.map(

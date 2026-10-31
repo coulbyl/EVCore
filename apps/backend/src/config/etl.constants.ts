@@ -1,3 +1,4 @@
+import { APP_SETTING_DEFAULTS, COUPON_SCHEDULE } from '@evcore/analysis-core';
 // ETL configuration constants — never hardcode these inline
 
 import { currentSeason } from '@utils/date.utils';
@@ -368,7 +369,8 @@ export const STATS_BACKFILL = {
   CRON: '*/5 * * * *',
   // Appels API-Football toujours laissés libres pour la production.
   // Surchargeable par STATS_BACKFILL_DAILY_RESERVE.
-  DEFAULT_DAILY_RESERVE: 2_500,
+  // The one default, shared with the operator switch (app_setting).
+  DEFAULT_DAILY_RESERVE: APP_SETTING_DEFAULTS['statsBackfill.dailyReserve'],
   MAX_FIXTURES_PER_LOT: 100,
   // Aucun lot ne démarre si une synchro stats de routine (file league-sync)
   // tourne, attend, ou est due dans ce délai : couvre la durée d'un lot de
@@ -469,6 +471,20 @@ export const BULLMQ_DEFAULT_JOB_OPTIONS = {
 } as const;
 
 // Cron schedules for daily/weekly ETL automation (BullMQ repeatable jobs)
+/**
+ * API-Football budget (ENV-PROD § 6: decisions in code). The plan's daily
+ * quota and the average fixtures a league adds to a day, which size the
+ * quota check before a sync.
+ */
+/** Past days the stale-scheduled pass reconciles (was a .env redite, 14). */
+export const STALE_SCHEDULED_SYNC_LOOKBACK_DAYS = 14;
+
+export const API_FOOTBALL_QUOTA = {
+  DAILY: 7500,
+  AVG_DAILY_FIXTURES_PER_LEAGUE: 10,
+  AVG_DAILY_STATS_FIXTURES_PER_LEAGUE: 2,
+} as const;
+
 export const ETL_CRON_SCHEDULES = {
   FIXTURES_SYNC: '0 2 * * *', // 02:00 UTC daily
   PENDING_BETS_SETTLEMENT: '*/30 * * * *', // every 30 minutes
@@ -481,10 +497,11 @@ export const ETL_CRON_SCHEDULES = {
   // §3.4), and a full pass is ~1725 teams * 6s rate limit ≈ 2.9h, so weekly is
   // plenty. Runs before the Sunday FIXTURES_SYNC/STATS_SYNC/INJURIES_SYNC batch.
   COACH_SYNC: '0 1 * * 0',
-  // 06:00 + 18:00 UTC — two snapshots/day over the J+1..J+3 horizon so the
-  // line-movement signal has points to compare. The 18:00 run stays ahead of
-  // BETTING_ENGINE_ANALYSIS (20:00) so next-day fixtures analyze on fresh odds.
-  ODDS_PREMATCH_SYNC: '0 6,18 * * *',
+  // 06:00 + 19:00 UTC — two snapshots/day over the J+1..J+3 horizon so the
+  // line-movement signal has points to compare. The 19:00 run stays ahead of
+  // BETTING_ENGINE_ANALYSIS (21:00) so next-day fixtures analyze on fresh odds.
+  // Production values since 2026-10, moved out of the .env (ENV-PROD § 6).
+  ODDS_PREMATCH_SYNC: '0 6,19 * * *',
   // Toutes les 10 minutes — balayage des cotes proche du coup d'envoi
   // (chantier B du plan de rentabilité, tâches B-1 et B-2).
   //
@@ -503,7 +520,9 @@ export const ETL_CRON_SCHEDULES = {
   // automatiquement malgré la règle documentée. Quotidien et non toutes les
   // demi-heures, parce que les alertes de ROI sont réémises à chaque passage.
   RISK_MARKET_SWEEP: '45 7 * * *',
-  // 20:00 UTC daily — analyze next-day fixtures after prematch odds sync.
+  // 21:00 UTC daily (production since 2026-10, out of the .env since
+  // ENV-PROD § 6) — analyze next-day fixtures after prematch odds sync.
+  // Coupons are composed by the 17:00 horizon pass, not this one (§ 3).
   // No job data is passed on the cron trigger, so BettingEngineAnalysisWorker
   // defaults to `tomorrowUtc()` (see that file) — this run NEVER targets
   // "today". Combined with ROLLING_HORIZON below (J+1..J+4, same gap): this
@@ -511,8 +530,8 @@ export const ETL_CRON_SCHEDULES = {
   // fixture again on its own match day before kickoff — official lineups
   // (~1h out) and any late odds movement would go unpicked-up. Closed by
   // SAME_DAY_ANALYSIS below (flagged 2026-08-28, closed 2026-09-03).
-  BETTING_ENGINE_ANALYSIS: '0 20 * * *',
-  ROLLING_HORIZON: '0 17 * * *', // 17:00 UTC daily — warm preview for J+1..J+4 (J+1 gets overwritten by 18:00/20:00 authoritative runs)
+  BETTING_ENGINE_ANALYSIS: '0 21 * * *',
+  ROLLING_HORIZON: COUPON_SCHEDULE.HORIZON_PASS_CRON, // 17:00 UTC daily — warm preview for J+1..J+4 (J+1 gets re-analysed by the 21:00 run; coupons are composed on this pass)
   // Every 30 minutes — re-analyzes only fixtures kicking off within
   // SAME_DAY_ANALYSIS_WINDOW_HOURS (default 3h) from now
   // (BettingEngineService.analyzeUpcoming), never the whole day. Closes the

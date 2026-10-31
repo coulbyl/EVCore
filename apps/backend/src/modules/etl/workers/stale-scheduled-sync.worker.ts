@@ -4,7 +4,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FixtureStatus } from '@evcore/db';
 import { createLogger } from '@utils/logger';
-import { BULLMQ_QUEUES, ETL_CONSTANTS } from '@config/etl.constants';
+import {
+  BULLMQ_QUEUES,
+  ETL_CONSTANTS,
+  STALE_SCHEDULED_SYNC_LOOKBACK_DAYS,
+} from '@config/etl.constants';
 import {
   ApiFootballFixturesResponseSchema,
   type ApiFootballFixture,
@@ -39,14 +43,9 @@ export class StaleScheduledSyncWorker extends WorkerHost {
 
   async process(job: Job<StaleScheduledSyncJobData>): Promise<void> {
     const lookbackDays =
-      job.data.lookbackDays ??
-      Number(
-        this.config.get<string>('STALE_SCHEDULED_SYNC_LOOKBACK_DAYS', '14'),
-      );
+      job.data.lookbackDays ?? STALE_SCHEDULED_SYNC_LOOKBACK_DAYS;
     if (!Number.isInteger(lookbackDays) || lookbackDays < 1) {
-      throw new Error(
-        'STALE_SCHEDULED_SYNC_LOOKBACK_DAYS must be a positive integer',
-      );
+      throw new Error('lookbackDays must be a positive integer');
     }
 
     const now = new Date();

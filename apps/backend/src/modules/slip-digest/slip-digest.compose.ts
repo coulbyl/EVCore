@@ -1,15 +1,9 @@
-import { classForTargetOddsMin, formatMoney } from '@evcore/analysis-core';
+import { classForTargetOddsMin } from '@evcore/analysis-core';
 import type { CouponResult } from '@evcore/db';
-import {
-  sumSlipMoney,
-  type SlipMoney,
-} from '@modules/bet-slip/bet-slip-outcome';
 
 export type SlipDigestMessage = {
   title: string;
   body: string;
-  settled: number;
-  net: string;
 };
 
 /** Un coupon suivi (« Suivre ce coupon ») et son résultat. */
@@ -46,12 +40,12 @@ const ABSTENTION_REASON: Readonly<Record<string, string>> = {
   no_home_favourite_in_band: 'aucun favori à domicile entre 1,20 et 1,35',
   not_enough_calibrated_short_legs:
     'pas assez de paris fiables à cote courte, dans des championnats différents',
-  no_priced_candidate: 'pas assez de paris cotés chez 1xBet dans la bande',
+  no_priced_candidate: 'pas assez de paris cotés dans la bande',
   no_combination_in_window: 'aucune combinaison entre 2 et 3',
   no_candidate_in_band: 'aucun pari dans sa bande de cote',
   no_reliable_competition:
     'aucun championnat dont les stats de corners arrivent à coup sûr',
-  no_operator_price: 'aucun corner coté chez 1xBet',
+  no_operator_price: 'aucun corner coté',
 };
 
 const FOLLOWED_OUTCOME: Record<CouponResult, string> = {
@@ -71,57 +65,6 @@ function followedSentence(follows: readonly FollowedResult[]): string {
   return `${follows.length > 1 ? 'Coupons suivis' : 'Coupon suivi'} : ${parts.join(', ')}.`;
 }
 
-function plural(count: number, one: string, other: string): string {
-  return `${count} ${count > 1 ? other : one}`;
-}
-
-/**
- * Le résumé du matin d'un joueur, ou null s'il n'a aucun coupon réglé. Une
- * perte s'écrit comme un gain : mêmes mots, aucun « Bravo », et aucun appel
- * à rejouer (décision du 2026-10-28).
- */
-export function composeSlipDigest(
-  results: readonly SlipMoney[],
-  currency: string | null,
-  follows: readonly FollowedResult[] = [],
-): SlipDigestMessage | null {
-  const totals = sumSlipMoney(results);
-  if (totals.settledSlips === 0 && follows.length === 0) return null;
-  const count = (status: SlipMoney['status']) =>
-    results.filter((r) => r.status === status).length;
-  const pending = totals.pendingSlips;
-  const { settledStake: staked, returned, net } = totals;
-
-  const sentences: string[] = [];
-  if (totals.settledSlips > 0) {
-    const outcomes = [
-      plural(count('WON'), 'gagné', 'gagnés'),
-      plural(count('LOST'), 'perdu', 'perdus'),
-      ...(count('VOID') > 0
-        ? [plural(count('VOID'), 'remboursé', 'remboursés')]
-        : []),
-    ].join(', ');
-    sentences.push(
-      `${plural(totals.settledSlips, 'coupon réglé', 'coupons réglés')} : ${outcomes}.`,
-      `Misé ${formatMoney(staked.toString(), { currency })}, rendu ${formatMoney(returned.toString(), { currency })} : ${formatMoney(net.toString(), { currency, signed: true })}.`,
-    );
-    if (pending > 0) {
-      sentences.push(
-        `${plural(pending, 'coupon encore en attente', 'coupons encore en attente')}.`,
-      );
-    }
-  }
-  // Suivre sans mise : le résultat seulement, aucun montant.
-  if (follows.length > 0) sentences.push(followedSentence(follows));
-
-  return {
-    title: 'Tes coupons réglés',
-    body: sentences.join(' '),
-    settled: totals.settledSlips,
-    net: net.toFixed(2),
-  };
-}
-
 export type MorningCoupon = { couponClass: string; odds: number };
 export type MorningAbstention = { couponClass: string; reason: string | null };
 
@@ -133,24 +76,18 @@ function formatOdds(odds: number): string {
 }
 
 /**
- * La matinée d'un joueur (2026-10-29) : ses résultats d'hier s'il en a, puis
- * les coupons du jour (ou pourquoi un produit manque). Null s'il n'y a rien
- * à dire. Même ton que le résumé : une perte s'écrit comme un gain, aucun
- * appel à jouer.
+ * La matinée d'un joueur (2026-10-29) : ses coupons suivis réglés s'il en a,
+ * puis les coupons du jour (ou pourquoi un produit manque). Null s'il n'y a
+ * rien à dire. Une perte s'écrit comme un gain, aucun appel à jouer, et
+ * aucun montant : les coupons déclarés avec mise ont disparu (2026-10-31).
  */
 export function composeMorningBrief(input: {
-  results: readonly SlipMoney[];
-  currency: string | null;
   follows: readonly FollowedResult[];
   coupons: readonly MorningCoupon[];
   abstentions: readonly MorningAbstention[];
 }): SlipDigestMessage | null {
-  const digest = composeSlipDigest(
-    input.results,
-    input.currency,
-    input.follows,
-  );
-  const sentences: string[] = digest ? [digest.body] : [];
+  const sentences: string[] =
+    input.follows.length > 0 ? [followedSentence(input.follows)] : [];
   if (input.coupons.length > 0) {
     const list = input.coupons
       .map(
@@ -169,12 +106,7 @@ export function composeMorningBrief(input: {
     sentences.push(`Pas de ${label} aujourd'hui : ${reason}.`);
   }
   if (sentences.length === 0) return null;
-  return {
-    title: 'Ta matinée EVCore',
-    body: sentences.join(' '),
-    settled: digest?.settled ?? 0,
-    net: digest?.net ?? '0.00',
-  };
+  return { title: 'Ta matinée EVCore', body: sentences.join(' ') };
 }
 
 /** Bilan d'un produit public sur la semaine (findClassTrackRecord). */
@@ -185,33 +117,15 @@ export type WeeklyProduct = {
 };
 
 /**
- * Le relevé du lundi (2026-10-29) : la semaine passée du joueur (coupons
- * déclarés, coupons suivis) et celle de nos produits, jours gagnés sur jours
- * joués. Une semaine en perte reçoit une phrase de jeu responsable, jamais
- * un appel à se refaire. Null s'il n'y a rien à dire.
+ * Le relevé du lundi (2026-10-29) : les coupons suivis du joueur sur la
+ * semaine passée et nos produits, jours gagnés sur jours joués. Null s'il
+ * n'y a rien à dire.
  */
 export function composeWeeklyStatement(input: {
-  results: readonly SlipMoney[];
-  currency: string | null;
   follows: readonly FollowedResult[];
   products: readonly WeeklyProduct[];
 }): SlipDigestMessage | null {
-  const { currency } = input;
-  const totals = sumSlipMoney(input.results);
   const sentences: string[] = [];
-  if (totals.settledSlips > 0) {
-    const won = input.results.filter((r) => r.status === 'WON').length;
-    sentences.push(
-      `Tes coupons : ${plural(won, 'gagné', 'gagnés')} sur ${plural(totals.settledSlips, 'réglé', 'réglés')}. Misé ${formatMoney(totals.settledStake.toString(), { currency })}, rendu ${formatMoney(totals.returned.toString(), { currency })} : ${formatMoney(totals.net.toString(), { currency, signed: true })}.`,
-    );
-  }
-  // Réglé après l'envoi : le coupon arrive dans une matinée suivante, et le
-  // relevé le dit plutôt que de l'omettre des totaux sans un mot.
-  if (totals.pendingSlips > 0) {
-    sentences.push(
-      `${plural(totals.pendingSlips, 'coupon de la semaine encore en attente', 'coupons de la semaine encore en attente')} : le résultat arrivera dans ta matinée.`,
-    );
-  }
   if (input.follows.length > 0) {
     const won = input.follows.filter(
       (f) => f.result === 'WON' || f.result === 'PARTIAL',
@@ -233,15 +147,5 @@ export function composeWeeklyStatement(input: {
     sentences.push(`Nos coupons : ${list}.`);
   }
   if (sentences.length === 0) return null;
-  if (totals.net.isNegative()) {
-    sentences.push(
-      'Semaine en perte : garde tes mises dans ce que tu avais prévu. Une pause est possible depuis Compte, si tu en as besoin.',
-    );
-  }
-  return {
-    title: 'Ta semaine EVCore',
-    body: sentences.join(' '),
-    settled: totals.settledSlips,
-    net: totals.net.toFixed(2),
-  };
+  return { title: 'Ta semaine EVCore', body: sentences.join(' ') };
 }

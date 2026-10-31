@@ -1,37 +1,30 @@
 import {
   Equals,
   IsEmail,
-  IsOptional,
   IsString,
   MaxLength,
-  MinLength,
   Matches,
+  MinLength,
 } from 'class-validator';
 
 export class RegisterDto {
   @IsEmail()
   email!: string;
 
+  /**
+   * Prénom, seul nom demandé (refonte, 11 § 2) : il s'affiche en haut de Moi
+   * et dans les e-mails. Rangé dans `fullName`. Plus de nom d'utilisateur à
+   * l'inscription : on se connecte avec l'e-mail.
+   */
   @IsString()
-  @MinLength(3)
-  @MaxLength(32)
-  @Matches(/^[a-zA-Z0-9_.]+$/)
-  username!: string;
-
-  @IsString()
-  @MinLength(2)
-  @MaxLength(80)
-  fullName!: string;
+  @MaxLength(50)
+  @Matches(/\S/, { message: 'Indique ton prénom.' })
+  firstName!: string;
 
   @IsString()
   @MinLength(8)
   @MaxLength(128)
   password!: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(280)
-  bio?: string;
 
   /**
    * L'utilisateur confirme avoir l'âge légal (18 ans, 21 au Cameroun, ou

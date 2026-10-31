@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Compte</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:#141821}
+a{color:#141821}a:hover{color:#0E1320}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.card{margin:12px 16px 0;background:#fff;border:1px solid #D9DDE3;border-radius:14px;padding:0 16px;display:flex;flex-direction:column}
+.h{font-family:"Barlow Condensed";font-weight:600;font-size:15px;letter-spacing:.04em;color:#5B6472;padding:12px 0 2px}
+.r{display:flex;align-items:center;gap:12px;min-height:48px;border-top:1px solid #D9DDE3;text-decoration:none;color:#141821;font-size:15px}
+.r:first-child{border-top:0}
+.r .t{flex:1;min-width:0;font-weight:500}
+.r .t small{display:block;color:#5B6472;font-size:13px;font-weight:400}
+.r .v{color:#5B6472;font-size:14px}
+.r svg{width:18px;height:18px;stroke:#8A94A6;fill:none;stroke-width:2;stroke-linecap:round;flex:none}
+.sw{width:44px;height:26px;border-radius:13px;background:#D9DDE3;position:relative;flex:none;border:0;padding:0}
+.sw i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;display:block}
+.sw.on{background:#FFB300}.sw.on i{left:21px;background:#0E1320}
+.seg{display:flex;border:1px solid #D9DDE3;border-radius:8px;overflow:hidden}
+.seg span{padding:6px 10px;font-size:13px;color:#5B6472}
+.seg span.on{background:#0E1320;color:#fff;font-weight:600}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F9; display: flex; flex-direction: column; overflow: hidden">
+  <header style="background: #0E1320; color: #fff; padding: 52px 16px 14px; display: flex; align-items: center; justify-content: space-between">
+    <a href="Moi.dc.html" aria-label="Retour" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; margin-left: -12px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M15 6l-6 6 6 6"/></svg></a>
+    <span class="num" style="font-weight: 600; font-size: 22px">Compte</span>
+    <span style="width: 32px"></span>
+  </header>
+
+  <div class="card">
+    <a class="r" href="Compte.dc.html"><span class="t">Kouassi<small>prénom</small></span><span class="v">modifier</span></a>
+    <a class="r" href="Compte.dc.html"><span class="t">kouassi@gmail.com<small>e-mail vérifié</small></span><span class="v">modifier</span></a>
+    <a class="r" href="Compte.dc.html"><span class="t">+225 07 08 09 10 11<small>téléphone</small></span><span class="v">modifier</span></a>
+  </div>
+  <div class="card">
+    <a class="r" href="Compte.dc.html"><span class="t">Mot de passe</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="r" href="Compte.dc.html"><span class="t">Double authentification</span><span class="v">activée</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="r" href="Compte.dc.html"><span class="t">Appareils connectés</span><span class="v num" style="font-weight: 600; font-size: 16px; color: #141821">2</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+  </div>
+  <div class="card">
+    <span class="h">NOTIFICATIONS</span>
+    <div class="r" style="border-top: 0"><span class="t">Ma matinée<small>8 h</small></span><button class="sw on" aria-label="Ma matinée, activée"><i></i></button></div>
+    <div class="r"><span class="t">Ma semaine<small>lundi 8 h</small></span><button class="sw on" aria-label="Ma semaine, activée"><i></i></button></div>
+    <div class="r"><span class="t">Résultat de mes coupons suivis<small>le soir même</small></span><button class="sw on" aria-label="Résultat, activé"><i></i></button></div>
+    <div class="r"><span class="t">Réponses de l'équipe</span><button class="sw on" aria-label="Réponses, activées"><i></i></button></div>
+    <div class="r"><span class="t">Par e-mail aussi<small>matinée et semaine</small></span><button class="sw" aria-label="Par e-mail, désactivé"><i></i></button></div>
+  </div>
+  <div class="card">
+    <span class="h">AFFICHAGE</span>
+    <div class="r" style="border-top: 0"><span class="t">Thème</span><span class="seg"><span class="on">Système</span><span>Clair</span><span>Sombre</span></span></div>
+    <div class="r"><span class="t">Langue</span><span class="seg"><span class="on">Français</span><span>English</span></span></div>
+    <div class="r"><span class="t">Devise</span><span class="v">F CFA</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
+  </div>
+  <p style="margin: 12px 16px 0; font-size: 12px; color: #5B6472">Conditions · Confidentialité · Mentions légales</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

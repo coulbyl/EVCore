@@ -1,0 +1,25 @@
+/*
+ * The player's stylesheet (15-todo.md C0b): built from the player's own
+ * sources only — its screens and the scoreboard components — instead of
+ * every class of the dashboard, the editor and driver.js. The landing and
+ * /resultats use it too; the dashboard, the legal pages and sign-in keep
+ * app/globals.css until their overhaul.
+ */
+@import "tailwindcss" source(none);
+@source '.';
+@source '../../components/scoreboard';
+@source '../layout.tsx';
+@source '../(public)/(visitor)';
+@import "@evcore/ui/globals.css";
+@import "../styles/scoreboard.css";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  font-family: var(--font-sans), sans-serif;
+  /* PWA standalone mode has no browser chrome to absorb scroll rubber-banding */
+  overscroll-behavior: none;
+}

@@ -9,9 +9,12 @@
     "start": "next start",
     "lint": "eslint --max-warnings 3",
     "typecheck": "next typegen && tsc --noEmit",
+    "check:contrast": "node scripts/scoreboard-contrast.mjs",
+    "test:unit": "node --test \"helpers/**/*.test.mjs\" \"app/**/*.test.mjs\" \"components/**/*.test.mjs\" \"domains/**/*.test.mjs\"",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
-    "e2e:report": "playwright show-report"
+    "e2e:report": "playwright show-report",
+    "budgets": "node scripts/lighthouse-budgets.mjs"
   },
   "dependencies": {
     "@evcore/analysis-core": "workspace:*",
@@ -25,6 +28,7 @@
     "@tiptap/extension-link": "catalog:",
     "@tiptap/react": "catalog:",
     "@tiptap/starter-kit": "catalog:",
+    "clsx": "^2.1.1",
     "date-fns": "catalog:",
     "driver.js": "catalog:",
     "lucide-react": "catalog:",
@@ -49,7 +53,9 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "chrome-launcher": "catalog:",
     "eslint": "catalog:",
+    "lighthouse": "catalog:",
     "tailwindcss": "^4.3.3",
     "typescript": "catalog:"
   }

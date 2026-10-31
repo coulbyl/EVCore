@@ -14,6 +14,7 @@ import {
   BULLMQ_DEFAULT_JOB_OPTIONS,
   DEFAULT_SEASON_START_MONTH,
   ETL_CONSTANTS,
+  API_FOOTBALL_QUOTA,
   ETL_CRON_SCHEDULES,
   ETL_SCHEDULER_KEYS,
   ROLLING_HORIZON_DEFAULTS,
@@ -24,6 +25,7 @@ import {
 import { addDays } from 'date-fns';
 import { formatDateUtc } from '@utils/date.utils';
 import { PrismaService } from '@/prisma.service';
+import { AppSettingService } from '@modules/app-setting/app-setting.service';
 import { RollingStatsService } from '../rolling-stats/rolling-stats.service';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
 import type { EloSyncJobData } from './workers/elo-sync.worker';
@@ -113,7 +115,6 @@ function toCompetitionPlan(competition: CompetitionRow): CompetitionPlan {
 @Injectable()
 export class EtlService implements OnApplicationBootstrap {
   private readonly schedulingEnabled: boolean;
-  private readonly quotaAlertPct: number;
   private readonly dailyQuota: number;
   private readonly avgScheduledFixturesPerLeaguePerDay: number;
   private readonly avgFinishedFixturesWithoutXgPerLeaguePerDay: number;
@@ -162,86 +163,17 @@ export class EtlService implements OnApplicationBootstrap {
     config: ConfigService,
     private readonly prisma: PrismaService,
     private readonly rollingStatsService: RollingStatsService,
+    private readonly settings: AppSettingService,
   ) {
     this.schedulingEnabled =
       config.get<string>('ETL_SCHEDULING_ENABLED', 'true') !== 'false';
-    this.quotaAlertPct = Number(
-      config.get<string>('API_FOOTBALL_QUOTA_ALERT_PCT', '80'),
-    );
-    this.dailyQuota = Number(
-      config.get<string>('API_FOOTBALL_DAILY_QUOTA', '7500'),
-    );
-    this.avgScheduledFixturesPerLeaguePerDay = Number(
-      config.get<string>('API_FOOTBALL_AVG_DAILY_FIXTURES_PER_LEAGUE', '10'),
-    );
-    this.avgFinishedFixturesWithoutXgPerLeaguePerDay = Number(
-      config.get<string>(
-        'API_FOOTBALL_AVG_DAILY_STATS_FIXTURES_PER_LEAGUE',
-        '2',
-      ),
-    );
-    this.cronSchedules = {
-      FIXTURES_SYNC: config.get<string>(
-        'ETL_FIXTURES_SYNC_CRON',
-        ETL_CRON_SCHEDULES.FIXTURES_SYNC,
-      ),
-      PENDING_BETS_SETTLEMENT: config.get<string>(
-        'ETL_PENDING_BETS_SETTLEMENT_CRON',
-        ETL_CRON_SCHEDULES.PENDING_BETS_SETTLEMENT,
-      ),
-      STALE_SCHEDULED_SYNC: config.get<string>(
-        'ETL_STALE_SCHEDULED_SYNC_CRON',
-        ETL_CRON_SCHEDULES.STALE_SCHEDULED_SYNC,
-      ),
-      STATS_SYNC: config.get<string>(
-        'ETL_STATS_SYNC_CRON',
-        ETL_CRON_SCHEDULES.STATS_SYNC,
-      ),
-      INJURIES_SYNC: config.get<string>(
-        'ETL_INJURIES_SYNC_CRON',
-        ETL_CRON_SCHEDULES.INJURIES_SYNC,
-      ),
-      ODDS_CSV_IMPORT: config.get<string>(
-        'ETL_ODDS_CSV_IMPORT_CRON',
-        ETL_CRON_SCHEDULES.ODDS_CSV_IMPORT,
-      ),
-      ELO_SYNC: config.get<string>(
-        'ETL_ELO_SYNC_CRON',
-        ETL_CRON_SCHEDULES.ELO_SYNC,
-      ),
-      COACH_SYNC: config.get<string>(
-        'ETL_COACH_SYNC_CRON',
-        ETL_CRON_SCHEDULES.COACH_SYNC,
-      ),
-      ODDS_PREMATCH_SYNC: config.get<string>(
-        'ETL_ODDS_PREMATCH_SYNC_CRON',
-        ETL_CRON_SCHEDULES.ODDS_PREMATCH_SYNC,
-      ),
-      ODDS_CLOSING_SYNC: config.get<string>(
-        'ETL_ODDS_CLOSING_SYNC_CRON',
-        ETL_CRON_SCHEDULES.ODDS_CLOSING_SYNC,
-      ),
-      RISK_MARKET_SWEEP: config.get<string>(
-        'ETL_RISK_MARKET_SWEEP_CRON',
-        ETL_CRON_SCHEDULES.RISK_MARKET_SWEEP,
-      ),
-      BETTING_ENGINE_ANALYSIS: config.get<string>(
-        'ETL_BETTING_ENGINE_ANALYSIS_CRON',
-        ETL_CRON_SCHEDULES.BETTING_ENGINE_ANALYSIS,
-      ),
-      SAME_DAY_ANALYSIS: config.get<string>(
-        'ETL_SAME_DAY_ANALYSIS_CRON',
-        ETL_CRON_SCHEDULES.SAME_DAY_ANALYSIS,
-      ),
-      ROLLING_HORIZON: config.get<string>(
-        'ETL_ROLLING_HORIZON_CRON',
-        ETL_CRON_SCHEDULES.ROLLING_HORIZON,
-      ),
-      SEASON_ROLLOVER_SYNC: config.get<string>(
-        'ETL_SEASON_ROLLOVER_SYNC_CRON',
-        ETL_CRON_SCHEDULES.SEASON_ROLLOVER_SYNC,
-      ),
-    };
+    // Decisions, not settings (ENV-PROD § 6): in config, changed by a PR.
+    this.dailyQuota = API_FOOTBALL_QUOTA.DAILY;
+    this.avgScheduledFixturesPerLeaguePerDay =
+      API_FOOTBALL_QUOTA.AVG_DAILY_FIXTURES_PER_LEAGUE;
+    this.avgFinishedFixturesWithoutXgPerLeaguePerDay =
+      API_FOOTBALL_QUOTA.AVG_DAILY_STATS_FIXTURES_PER_LEAGUE;
+    this.cronSchedules = ETL_CRON_SCHEDULES;
     this.leagueSeasonSyncs = {
       fixtures: {
         queue: this.leagueSyncQueue,
@@ -410,7 +342,7 @@ export class EtlService implements OnApplicationBootstrap {
 
     const currentSeasonCode = getCurrentCsvSeasonCode();
 
-    this.logApiFootballBudget(this.competitionPlans);
+    await this.logApiFootballBudget(this.competitionPlans);
 
     await Promise.all(
       this.competitionPlans.map(async ({ competition, seasons }) => {
@@ -498,7 +430,9 @@ export class EtlService implements OnApplicationBootstrap {
     );
   }
 
-  private logApiFootballBudget(plans: CompetitionPlan[]): void {
+  private async logApiFootballBudget(plans: CompetitionPlan[]): Promise<void> {
+    // An operator switch (app_setting), read at this pass.
+    const quotaAlertPct = await this.settings.quotaAlertPct();
     const estimate = estimateApiFootballDailyCalls({
       leagueCount: plans.length,
       seasonJobCount: plans.length,
@@ -508,7 +442,7 @@ export class EtlService implements OnApplicationBootstrap {
         this.avgFinishedFixturesWithoutXgPerLeaguePerDay,
     });
 
-    const threshold = Math.floor((this.dailyQuota * this.quotaAlertPct) / 100);
+    const threshold = Math.floor((this.dailyQuota * quotaAlertPct) / 100);
     const usagePct =
       this.dailyQuota > 0 ? (estimate.totalCalls / this.dailyQuota) * 100 : 0;
 

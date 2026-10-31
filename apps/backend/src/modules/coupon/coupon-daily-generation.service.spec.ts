@@ -6,6 +6,7 @@ import type { CouponDoubleGenerationService } from './coupon-double-generation.s
 import type { CouponEngineComboGenerationService } from './coupon-engine-combo-generation.service';
 import type { CouponHunterGenerationService } from './coupon-hunter-generation.service';
 import type { CouponPricedPoolService } from './coupon-priced-pool.service';
+import type { CouponLegFactService } from './leg-fact/coupon-leg-fact.service';
 
 function makeHarness(loadFails = false) {
   const pool = {
@@ -26,6 +27,9 @@ function makeHarness(loadFails = false) {
   const hunters = {
     generateForDate: vi.fn().mockResolvedValue([]),
   } as unknown as CouponHunterGenerationService;
+  const legFacts = {
+    fillForDate: vi.fn().mockResolvedValue({ legs: 3, withFact: 2 }),
+  } as unknown as CouponLegFactService;
   const service = new CouponDailyGenerationService(
     {
       generateForDate: vi.fn().mockResolvedValue(ok),
@@ -39,8 +43,9 @@ function makeHarness(loadFails = false) {
     } as unknown as CouponEngineComboGenerationService,
     hunters,
     pricedPool,
+    legFacts,
   );
-  return { service, pricedPool, double, hunters, pool };
+  return { service, pricedPool, double, hunters, pool, legFacts };
 }
 
 describe('CouponDailyGenerationService', () => {
@@ -51,6 +56,19 @@ describe('CouponDailyGenerationService', () => {
     expect(pricedPool.load).toHaveBeenCalledTimes(1);
     expect(double.generateForDate).toHaveBeenCalledWith(day, pool);
     expect(hunters.generateForDate).toHaveBeenCalledWith(day, pool);
+  });
+
+  it('writes the leg facts once every pass has written its legs', async () => {
+    const { service, hunters, legFacts } = makeHarness();
+    const day = new Date('2026-10-29');
+    const outcome = await service.generateForDate(day);
+    expect(legFacts.fillForDate).toHaveBeenCalledWith(day);
+    expect(
+      vi.mocked(legFacts.fillForDate).mock.invocationCallOrder[0],
+    ).toBeGreaterThan(
+      vi.mocked(hunters.generateForDate).mock.invocationCallOrder[0] ?? 0,
+    );
+    expect(outcome.facts).toEqual({ legs: 3, withFact: 2 });
   });
 
   it('lets each pass reload the pool when the shared load fails', async () => {

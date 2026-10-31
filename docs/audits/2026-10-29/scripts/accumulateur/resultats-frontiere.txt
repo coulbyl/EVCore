@@ -1,0 +1,9 @@
+Frontière : jambes les moins chères d'abord, 1 par match, 2 par championnat
+Favori (1 jambe 1,20-1,35)   cote   1.2  jours  84/102 gagnés (82.4 %)  semaines positives  9/15  mois positifs 2/4  rendu   -0.9 %
+cible 1,4-1,6                cote   1.4  jours  56/100 gagnés (56.0 %)  semaines positives  6/15  mois positifs 1/4  rendu  -18.9 %
+cible 1,8-2,2                cote   2.1  jours  40/ 96 gagnés (41.7 %)  semaines positives  7/15  mois positifs 2/4  rendu  -13.5 %
+cible 2-3                    cote   2.1  jours  41/ 97 gagnés (42.3 %)  semaines positives  7/15  mois positifs 2/4  rendu  -10.3 %
+cible 3-5 (jambes 1,8-3)     cote   3.3  jours  28/101 gagnés (27.7 %)  semaines positives  7/15  mois positifs 0/4  rendu   -9.9 %
+cible 5-8 (jambes 1,8-3)     cote   5.9  jours  17/100 gagnés (17.0 %)  semaines positives  6/15  mois positifs 3/4  rendu   +1.3 %
+cible 8-15 (jambes 2-4)      cote   8.1  jours  14/100 gagnés (14.0 %)  semaines positives 11/15  mois positifs 2/4  rendu  +12.0 %
+cible 15-30 (jambes 2-4)     cote  16.3  jours   6/ 97 gagnés ( 6.2 %)  semaines positives  6/15  mois positifs 3/4  rendu   -1.0 %

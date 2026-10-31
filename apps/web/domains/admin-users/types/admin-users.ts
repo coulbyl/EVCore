@@ -3,7 +3,7 @@ export type AdminUserRole = "ADMIN" | "OPERATOR";
 export type AdminUserRow = {
   id: string;
   email: string;
-  username: string;
+  username: string | null;
   fullName: string;
   role: AdminUserRole;
   emailVerified: boolean;

@@ -157,7 +157,8 @@ export function formatPickWithTeams(
     case "DOUBLE_CHANCE":
       if (p === "1X") return `${home} ou nul`;
       if (p === "X2") return `${away} ou nul`;
-      if (p === "12") return `${home} ou ${away}`;
+      // « A ou B » read as a doubt between two teams: it is « no draw ».
+      if (p === "12") return "Pas de match nul";
       break;
     case "DRAW_NO_BET":
       if (side(p)) return `${side(p)}, remboursé si nul`;
@@ -186,6 +187,10 @@ export function formatPickWithTeams(
     case "TEAM_TOTAL_HOME":
     case "TEAM_TOTAL_AWAY": {
       const team = market.endsWith("HOME") ? home : away;
+      // The 0,5 line in words; the others keep the bookmaker's wording
+      // (« Total équipe : moins de 2,5 »), the one the player looks for.
+      if (p === "OVER_0_5") return `${team} marque`;
+      if (p === "UNDER_0_5") return `${team} ne marque pas`;
       const label = goals(p);
       if (label)
         return `${team} : ${label.charAt(0).toLowerCase()}${label.slice(1)}`;

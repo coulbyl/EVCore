@@ -8,6 +8,7 @@ import { UserRole } from '@evcore/db';
 import { StorageService } from '@modules/storage/storage.service';
 import { createLogger } from '@utils/logger';
 import { AccountRepository } from './account.repository';
+import { SessionCache } from './session-cache';
 import { verifyPassword } from './auth.utils';
 
 const logger = createLogger('account-deletion');
@@ -23,6 +24,7 @@ export class AccountDeletionService {
   constructor(
     private readonly repository: AccountRepository,
     private readonly storage: StorageService,
+    private readonly sessionCache: SessionCache,
   ) {}
 
   async deleteAccount(userId: string, password: string): Promise<void> {
@@ -42,14 +44,15 @@ export class AccountDeletionService {
     }
 
     const attachmentKeys = await this.repository.findAttachmentKeys(userId);
-    const { bets } = await this.repository.deleteUserAndOwnBets(userId);
+    await this.repository.deleteUser(userId);
+    this.sessionCache.invalidateUser(userId);
     // Après la transaction : un fichier orphelin ne bloque rien, un compte à
     // moitié supprimé si.
     await Promise.all(
       attachmentKeys.map((key) => this.storage.deleteObject(key)),
     );
     logger.info(
-      { userId, bets, attachments: attachmentKeys.length },
+      { userId, attachments: attachmentKeys.length },
       'Account deleted by its owner',
     );
   }

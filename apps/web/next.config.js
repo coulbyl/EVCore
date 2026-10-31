@@ -1,3 +1,5 @@
+import process from "node:process";
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants.js";
 import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./i18n.ts");
@@ -7,10 +9,13 @@ const nextConfig = {
   output: "standalone",
   // Ne plus annoncer « x-powered-by: Next.js » (audit du 2026-10-23, P3-1).
   poweredByHeader: false,
-  // Ensure runtime access to `content/formation/**` when using `output: "standalone"`.
-  // These files are read via `fs` at runtime, so they must be included in Next.js output file tracing.
-  outputFileTracingIncludes: {
-    "/*": ["./content/formation/**/*"],
+  // Opening the dev server from a phone on the local network: its address,
+  // e.g. NEXT_DEV_ORIGINS=192.168.1.20 (dev only, Next blocks it otherwise).
+  allowedDevOrigins: process.env.NEXT_DEV_ORIGINS?.split(",") ?? [],
+  experimental: {
+    // `@evcore/ui` is one barrel of 54 exports, Radix and Sonner among them:
+    // a page importing one of them got all (C0, measured in A12).
+    optimizePackageImports: ["@evcore/ui"],
   },
   async redirects() {
     return [
@@ -19,6 +24,19 @@ const nextConfig = {
         destination: "/dashboard/params/account/profil",
         permanent: false,
       },
+      // Screens removed for everyone (15-todo.md, E1): an old bookmark lands
+      // on the screen that replaced it rather than on a 404. The dashboard
+      // layout cannot do it, it never runs for a route that does not exist.
+      ...[
+        ["/dashboard/bet-slips", "/me"],
+        ["/dashboard/bankroll", "/me"],
+        ["/dashboard/formation", "/me/help"],
+        ["/dashboard/glossaire", "/me/help"],
+      ].flatMap(([from, to]) => [
+        // Not permanent: the admin overhaul (phase G) may reuse an address.
+        { source: from, destination: to, permanent: false },
+        { source: `${from}/:path*`, destination: to, permanent: false },
+      ]),
     ];
   },
   async headers() {
@@ -39,9 +57,12 @@ const nextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {
+            // The microphone stays ours: Messages records voice notes, and
+            // « microphone=() » refused it without ever asking (31/10).
+            // The photo button is a file field, which no policy touches.
             key: "Permissions-Policy",
             value:
-              "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+              "camera=(), microphone=(self), geolocation=(), browsing-topics=()",
           },
         ],
       },
@@ -73,4 +94,18 @@ const nextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+// Les pages de développement (vitrine des composants, bancs e2e) sont
+// nommées `page.dev.tsx` : sous `next dev` l'extension `dev.tsx` en fait des
+// routes ; un build de production ne les compile pas du tout. C'est la phase
+// de Next qui décide, pas une variable d'environnement.
+const DEFAULT_PAGE_EXTENSIONS = ["tsx", "ts", "jsx", "js"];
+
+export default function config(phase) {
+  return withNextIntl({
+    ...nextConfig,
+    pageExtensions:
+      phase === PHASE_DEVELOPMENT_SERVER
+        ? ["dev.tsx", ...DEFAULT_PAGE_EXTENSIONS]
+        : DEFAULT_PAGE_EXTENSIONS,
+  });
+}

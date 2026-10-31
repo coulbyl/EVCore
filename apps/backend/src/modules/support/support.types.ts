@@ -59,7 +59,7 @@ export type SupportConversationDto = {
 // Admin inbox row — one per conversation, enough to render a list without
 // fetching every message.
 export type SupportConversationSummaryDto = SupportConversationDto & {
-  username: string;
+  username: string | null;
   fullName: string;
   avatarUrl: string | null;
   lastMessage: SupportMessageDto | null;

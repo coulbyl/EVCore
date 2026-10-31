@@ -16,6 +16,11 @@ import { CouponIndicesService } from './coupon-indices.service';
 import { CouponController } from './coupon.controller';
 import { OddsClosingLineRepository } from '../betting-engine/pricing/odds-closing-line.repository';
 import { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
+import { LegFactRepository } from './leg-fact/leg-fact.repository';
+import { CouponLegFactService } from './leg-fact/coupon-leg-fact.service';
+import { ProductDayRepository } from './product-day/product-day.repository';
+import { ProductDayService } from './product-day/product-day.service';
+import { ProductWeekService } from './product-day/product-week.service';
 
 // CalibrationService/OddsSnapshotLoader/CouponPoolService/CouponComposerService
 // removed 2026-09-03 — they existed here only for the retired write path
@@ -45,9 +50,16 @@ import { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.
     CouponHunterGenerationService,
     CouponEngineComboGenerationService,
     CouponDailyGenerationService,
+    LegFactRepository,
+    CouponLegFactService,
+    ProductDayRepository,
+    ProductDayService,
+    ProductWeekService,
   ],
   exports: [
     CouponService,
+    ProductDayRepository,
+    ProductWeekService,
     CouponSettlementService,
     CouponRepository,
     CouponPriceGenerationService,

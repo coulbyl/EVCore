@@ -85,16 +85,19 @@ export class CouponPriceGenerationService {
       return kickoff && kickoff > latest ? kickoff : latest;
     }, dayStart);
 
-    const proposalId = await this.repository.upsertPriceComposerProposal({
-      forDate: dayStart,
-      combinedOdds: composition.coupon.combinedOdds.toNumber(),
-      expectedReturn: composition.coupon.expectedReturn.toNumber(),
-      lastFixtureScheduledAt,
-      legs,
-    });
+    const { proposalId, created } =
+      await this.repository.upsertPriceComposerProposal({
+        forDate: dayStart,
+        combinedOdds: composition.coupon.combinedOdds.toNumber(),
+        expectedReturn: composition.coupon.expectedReturn.toNumber(),
+        lastFixtureScheduledAt,
+        legs,
+      });
     await this.repository.recordPriceComposerAttempt({
       forDate: dayStart,
-      outcome: 'composed',
+      // The proposal of the day is immutable: a later pass that finds it
+      // published says so instead of « composed » (ENV-PROD § 3).
+      outcome: created ? 'composed' : 'preserved',
       candidateCount: candidates.length,
       proposalId,
     });

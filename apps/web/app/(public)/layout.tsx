@@ -5,6 +5,10 @@ import type { Metadata } from "next";
 // « investissement » ni les noms de canaux (audit du 2026-10-23, P1-3 ; règles
 // de rédaction dans apps/web/PRODUCT.md). L'image de partage est générée par
 // opengraph-image.tsx et twitter-image.tsx, qui priment sur ce bloc.
+//
+// Pas de feuille de style ici : la landing et /resultats prennent celle du
+// joueur ((visitor)/layout.tsx), les pages légales et l'authentification
+// gardent celle de l'application jusqu'à leur refonte (D4–D6).
 const TITLE = "EVCore — Avant de parier, lis le match";
 const DESCRIPTION =
   "Analyses de football gratuites : chaque match lu en probabilités, avec le raisonnement et tous les résultats réglés, pertes comprises. Réservé aux 18+.";
@@ -34,5 +38,5 @@ export default function PublicLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="h-dvh overflow-y-auto">{children}</div>;
+  return children;
 }

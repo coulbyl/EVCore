@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Landing EVCore</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:#141821;background:#F6F7F9}
+a{color:#141821}a:hover{color:#0E1320}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px;box-sizing:border-box}
+.led{width:16px;height:16px;border-radius:50%;background:#D9DDE3}
+.led.on{background:#FFB300}
+.sq{width:10px;height:10px;border-radius:2px;background:#1F8A4C}
+.sq.x{background:#C62828}
+.res{display:flex;align-items:center;gap:14px;min-height:52px;border-top:1px solid #D9DDE3;font-size:16px;font-weight:500}
+.res .d{display:flex;gap:3px;flex:1}
+.res .d i{width:9px;height:9px;border-radius:2px;background:#1F8A4C;display:block}
+.res .d i.x{background:#C62828}
+.res .c{font-family:"Barlow Condensed";font-weight:600;font-size:18px;white-space:nowrap}
+.res .c.off{color:#5B6472;font-family:Barlow;font-weight:500;font-size:15px}
+.crest{width:32px;height:32px;border-radius:50%;background:#E8EBF0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#0E1320;flex:none}
+@media (max-width:720px){.two{flex-direction:column !important}}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 1180px; display: flex; flex-direction: column">
+  <header style="background: #0E1320; color: #fff">
+    <div class="wrap" style="display: flex; align-items: center; justify-content: space-between; min-height: 72px">
+      <span class="num" style="font-weight: 700; font-size: 26px">EVCore</span>
+      <a href="Landing.dc.html" style="color: #fff; text-decoration: none; font-weight: 500; min-height: 44px; display: flex; align-items: center">Se connecter</a>
+    </div>
+    <div class="wrap" style="padding-bottom: 40px; padding-top: 24px; border-top: 1px solid #2A3142">
+      <h1 class="num" style="margin: 0; font-weight: 700; font-size: 44px; line-height: 1.05; max-width: 640px; text-wrap: balance">Un pari par jour. Compté, daté, pertes comprises.</h1>
+    </div>
+  </header>
+
+  <main class="wrap" style="display: flex; flex-direction: column; gap: 40px; padding-top: 40px; padding-bottom: 40px">
+    <div class="two" style="display: flex; gap: 40px; align-items: flex-start">
+      <section style="flex: 1 1 420px; min-width: 0; background: #fff; border: 1px solid #D9DDE3; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 class="num" style="margin: 0; font-weight: 600; font-size: 24px">Favori du jour</h2><span style="color: #5B6472">aujourd'hui · 19:00 · Ligue 1</span></div>
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 18px; font-weight: 500">
+          <div style="display: flex; align-items: center; gap: 12px"><span class="crest num">PSG</span>Paris SG</div>
+          <div style="display: flex; align-items: center; gap: 12px"><span class="crest num">LEN</span>Lens</div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid #D9DDE3; padding-top: 14px"><span style="font-size: 18px; font-weight: 600">Victoire du PSG</span><span class="num" style="font-weight: 700; font-size: 32px">1,28</span></div>
+        <div style="display: flex; align-items: center; justify-content: space-between"><div style="display: flex; gap: 7px" role="img" aria-label="8 chances sur 10"><span class="led on"></span><span class="led on"></span><span class="led on"></span><span class="led on"></span><span class="led on"></span><span class="led on"></span><span class="led on"></span><span class="led on"></span><span class="led"></span><span class="led"></span></div><span class="num" style="font-weight: 700; font-size: 28px">8 sur 10</span></div>
+        <div style="border-top: 1px solid #D9DDE3; padding-top: 14px; display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; gap: 4px; flex-wrap: wrap" role="img" aria-label="Forme sur 30 jours"><span class="sq"></span><span class="sq"></span><span class="sq x"></span><span class="sq"></span><span class="sq"></span><span class="sq"></span><span class="sq"></span><span class="sq x"></span><span class="sq"></span><span class="sq"></span><span class="sq"></span><span class="sq"></span><span class="sq"></span><span class="sq x"></span><span class="sq"></span><span class="sq"></span><span class="sq"></span><span class="sq"></span><span class="sq"></span><span class="sq"></span><span class="sq"></span><span class="sq"></span><span class="sq"></span><span class="sq"></span></div>
+          <p style="margin: 0; font-size: 15px; color: #5B6472"><span style="color: #141821; font-weight: 600">19 jours gagnés sur 24</span> · depuis le 13/10 · pire série 1</p>
+        </div>
+      </section>
+      <div style="flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <a href="Landing.dc.html" style="display: flex; align-items: center; justify-content: center; height: 56px; border-radius: 10px; background: #0E1320; color: #fff; text-decoration: none; font-weight: 600; font-size: 18px">Créer mon compte</a>
+          <p style="margin: 0; text-align: center; font-size: 14px; color: #5B6472">C'est gratuit. On ne prend jamais ta mise.</p>
+        </div>
+        <section style="display: flex; flex-direction: column">
+          <h2 class="num" style="margin: 0 0 6px; font-weight: 600; font-size: 20px">Nos résultats, depuis le 13/10</h2>
+          <div class="res" style="border-top: 0"><span style="width: 90px">Favori</span><span class="d"><i></i><i></i><i class="x"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="c num">11 jours gagnés sur 14</span></div>
+          <div class="res"><span style="width: 90px">Combiné</span><span class="d"><i></i><i class="x"></i><i></i><i></i><i></i><i></i><i class="x"></i><i></i><i></i><i></i></span><span class="c num">11 jours gagnés sur 15</span></div>
+          <div class="res"><span style="width: 90px">Cote 2</span><span class="d"><i class="x"></i></span><span class="c off">Trop tôt · 1 jour</span></div>
+          <div class="res"><span style="width: 90px">Avis IA</span><span class="d"><i></i><i></i><i></i><i class="x"></i><i></i><i></i><i class="x"></i><i></i><i></i><i></i></span><span class="c num">136 avis gagnés sur 207</span></div>
+          <a href="Landing.dc.html" style="margin-top: 10px; font-weight: 500; text-decoration: none; min-height: 44px; display: flex; align-items: center">Tout voir ›</a>
+        </section>
+      </div>
+    </div>
+
+    <section style="border-top: 1px solid #D9DDE3; padding-top: 24px; max-width: 640px">
+      <h2 class="num" style="margin: 0 0 8px; font-weight: 600; font-size: 20px">Comment ça marche</h2>
+      <p style="margin: 0; font-size: 17px; line-height: 1.5; color: #141821">On lit les matchs et les cotes de 1xBet, on propose un pari par jour, on compte ce qu'il a donné. Toi, tu suis ou pas.</p>
+    </section>
+  </main>
+
+  <footer style="margin-top: auto; border-top: 1px solid #D9DDE3; background: #fff">
+    <div class="wrap" style="display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: center; justify-content: space-between; min-height: 64px; font-size: 13px; color: #5B6472">
+      <span>18+ · Parier comporte des risques de perte</span>
+      <span style="display: flex; gap: 20px"><a href="Landing.dc.html" style="color: #5B6472; text-decoration: none">Conditions</a><a href="Landing.dc.html" style="color: #5B6472; text-decoration: none">Confidentialité</a><a href="Landing.dc.html" style="color: #5B6472; text-decoration: none">Mentions</a><a href="Landing.dc.html" style="color: #5B6472; text-decoration: none">Jeu responsable</a></span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

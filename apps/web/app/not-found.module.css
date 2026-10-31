@@ -1,0 +1,72 @@
+/*
+ * The 404 page (11 § 8, maquette Introuvable), styled on its own: the root
+ * not-found's stylesheet loads on every page, so it is a few scoped rules
+ * here rather than the app's Tailwind sheet (C0b). Tokens with fallbacks:
+ * an unknown address outside every group has no other stylesheet.
+ */
+.page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--background, #f6f7f9);
+  color: var(--foreground, #141821);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.band {
+  background: var(--band, #0e1320);
+  color: var(--band-foreground, #ffffff);
+  padding: max(1rem, env(safe-area-inset-top)) 1rem 0.875rem;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.code {
+  margin: 0;
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--muted-foreground, #5b6472);
+}
+
+.line {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.action {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  border-radius: 0.625rem;
+  padding: 0 1.75rem;
+  background: var(--primary, #0e1320);
+  color: var(--primary-foreground, #ffffff);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.action:focus-visible {
+  outline: 2px solid var(--ring, #ffb300);
+  outline-offset: 2px;
+}
+
+.legal {
+  margin: 0;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.6875rem;
+  color: var(--muted-foreground, #5b6472);
+}

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import Decimal from 'decimal.js';
-import { BetStatus, FixtureStatus, Market, ModelRunPhase } from '@evcore/db';
+import { FixtureStatus, Market, ModelRunPhase } from '@evcore/db';
 import {
   poissonProba,
   calculateDeterministicScore,
@@ -16,7 +16,6 @@ import { blendTeamStats } from './math/probability';
 import type { PrismaService } from '@/prisma.service';
 import type { H2HService } from './h2h.service';
 import type { CongestionService } from './congestion.service';
-import type { BankrollService } from '@modules/bankroll/bankroll.service';
 import type { MlInferenceService } from '@modules/ml/ml.inference.service';
 import type { ChannelDecisionService } from './channel-decision.service';
 import {
@@ -120,16 +119,6 @@ function makeMlInferenceServiceMock(): MlInferenceService {
   return {
     predictShadowCorrection: vi.fn().mockResolvedValue(null),
   } as unknown as MlInferenceService;
-}
-
-function makeBankrollServiceMock(): Pick<
-  BankrollService,
-  'recordBetWon' | 'recordBetVoid'
-> {
-  return {
-    recordBetWon: vi.fn().mockResolvedValue(undefined),
-    recordBetVoid: vi.fn().mockResolvedValue(undefined),
-  };
 }
 
 // Stands in for the real ChannelDecisionService in tests that predate the
@@ -383,267 +372,6 @@ describe('deriveModelRunPhase', () => {
   });
 });
 
-describe('settleOpenBets', () => {
-  it('credits winning slips with the effective stake and odds snapshot', async () => {
-    const bankroll = makeBankrollServiceMock();
-    const tx = {
-      bet: {
-        update: vi.fn().mockResolvedValue({}),
-      },
-    };
-    const prismaMock = {
-      client: {
-        user: {
-          findMany: vi.fn().mockResolvedValue([]),
-        },
-        fixture: {
-          findUnique: vi.fn().mockResolvedValue({
-            homeScore: 2,
-            awayScore: 1,
-            homeHtScore: 1,
-            awayHtScore: 0,
-            status: 'FINISHED',
-          }),
-        },
-        bet: {
-          findMany: vi.fn().mockResolvedValue([
-            {
-              id: 'bet-1',
-              market: Market.ONE_X_TWO,
-              pick: 'HOME',
-              oddsSnapshot: new Decimal('2.30'),
-              betSlipItems: [
-                {
-                  userId: 'u1',
-                  stakeOverride: new Decimal('12.50'),
-                  betSlip: { unitStake: new Decimal('10.00') },
-                },
-                {
-                  userId: 'u2',
-                  stakeOverride: null,
-                  betSlip: { unitStake: new Decimal('8.00') },
-                },
-              ],
-            },
-          ]),
-          update: tx.bet.update,
-        },
-        $transaction: vi.fn().mockImplementation((callback) => callback(tx)),
-      },
-    } as unknown as PrismaService;
-
-    const service = new BettingEngineService(
-      prismaMock,
-      makeH2hServiceMock(),
-      makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
-      bankroll as BankrollService,
-    );
-
-    await expect(service.settleOpenBets('fixture-1')).resolves.toEqual({
-      settled: 1,
-    });
-
-    expect(tx.bet.update).toHaveBeenCalledWith({
-      where: { id: 'bet-1' },
-      data: { status: BetStatus.WON },
-    });
-    expect(bankroll.recordBetWon).toHaveBeenCalledTimes(2);
-    expect(bankroll.recordBetWon).toHaveBeenNthCalledWith(
-      1,
-      {
-        userId: 'u1',
-        betId: 'bet-1',
-        stake: new Decimal('12.50'),
-        odds: new Decimal('2.30'),
-      },
-      { tx },
-    );
-    expect(bankroll.recordBetWon).toHaveBeenNthCalledWith(
-      2,
-      {
-        userId: 'u2',
-        betId: 'bet-1',
-        stake: new Decimal('8.00'),
-        odds: new Decimal('2.30'),
-      },
-      { tx },
-    );
-  });
-
-  it('credits a winning combo slip once with the total odds', async () => {
-    const bankroll = makeBankrollServiceMock();
-    const tx = {
-      bet: {
-        update: vi.fn().mockResolvedValue({}),
-      },
-      betSlip: {
-        findMany: vi.fn().mockResolvedValue([
-          {
-            id: 'combo-slip',
-            userId: 'u1',
-            unitStake: new Decimal('10.00'),
-            items: [
-              {
-                betId: 'bet-1',
-                bet: { status: BetStatus.WON, oddsSnapshot: new Decimal('2') },
-              },
-              {
-                betId: 'bet-2',
-                bet: { status: BetStatus.WON, oddsSnapshot: new Decimal('3') },
-              },
-            ],
-          },
-        ]),
-      },
-    };
-    const prismaMock = {
-      client: {
-        user: {
-          findMany: vi.fn().mockResolvedValue([]),
-        },
-        fixture: {
-          findUnique: vi.fn().mockResolvedValue({
-            homeScore: 2,
-            awayScore: 1,
-            homeHtScore: 1,
-            awayHtScore: 0,
-            status: 'FINISHED',
-          }),
-        },
-        bet: {
-          findMany: vi.fn().mockResolvedValue([
-            {
-              id: 'bet-1',
-              market: Market.ONE_X_TWO,
-              pick: 'HOME',
-              status: BetStatus.PENDING,
-              oddsSnapshot: new Decimal('2'),
-              betSlipItems: [
-                {
-                  userId: 'u1',
-                  stakeOverride: null,
-                  betSlip: {
-                    id: 'combo-slip',
-                    type: 'COMBO',
-                    unitStake: new Decimal('10.00'),
-                  },
-                },
-              ],
-            },
-          ]),
-          update: tx.bet.update,
-        },
-        $transaction: vi.fn().mockImplementation((callback) => callback(tx)),
-      },
-    } as unknown as PrismaService;
-
-    const service = new BettingEngineService(
-      prismaMock,
-      makeH2hServiceMock(),
-      makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
-      bankroll as BankrollService,
-    );
-
-    await expect(service.settleOpenBets('fixture-1')).resolves.toEqual({
-      settled: 1,
-    });
-
-    expect(bankroll.recordBetWon).toHaveBeenCalledTimes(1);
-    expect(bankroll.recordBetWon).toHaveBeenCalledWith(
-      {
-        userId: 'u1',
-        betId: 'bet-1',
-        stake: new Decimal('10.00'),
-        odds: new Decimal('6'),
-      },
-      { tx },
-    );
-  });
-
-  it('does not credit a combo slip when one leg is lost', async () => {
-    const bankroll = makeBankrollServiceMock();
-    const tx = {
-      bet: {
-        update: vi.fn().mockResolvedValue({}),
-      },
-      betSlip: {
-        findMany: vi.fn().mockResolvedValue([
-          {
-            id: 'combo-slip',
-            userId: 'u1',
-            unitStake: new Decimal('10.00'),
-            items: [
-              {
-                betId: 'bet-1',
-                bet: { status: BetStatus.WON, oddsSnapshot: new Decimal('2') },
-              },
-              {
-                betId: 'bet-2',
-                bet: { status: BetStatus.LOST, oddsSnapshot: new Decimal('3') },
-              },
-            ],
-          },
-        ]),
-      },
-    };
-    const prismaMock = {
-      client: {
-        user: {
-          findMany: vi.fn().mockResolvedValue([]),
-        },
-        fixture: {
-          findUnique: vi.fn().mockResolvedValue({
-            homeScore: 2,
-            awayScore: 1,
-            homeHtScore: 1,
-            awayHtScore: 0,
-            status: 'FINISHED',
-          }),
-        },
-        bet: {
-          findMany: vi.fn().mockResolvedValue([
-            {
-              id: 'bet-1',
-              market: Market.ONE_X_TWO,
-              pick: 'HOME',
-              oddsSnapshot: new Decimal('2'),
-              betSlipItems: [
-                {
-                  userId: 'u1',
-                  stakeOverride: null,
-                  betSlip: {
-                    id: 'combo-slip',
-                    type: 'COMBO',
-                    unitStake: new Decimal('10.00'),
-                  },
-                },
-              ],
-            },
-          ]),
-          update: tx.bet.update,
-        },
-        $transaction: vi.fn().mockImplementation((callback) => callback(tx)),
-      },
-    } as unknown as PrismaService;
-
-    const service = new BettingEngineService(
-      prismaMock,
-      makeH2hServiceMock(),
-      makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
-      bankroll as BankrollService,
-    );
-
-    await expect(service.settleOpenBets('fixture-1')).resolves.toEqual({
-      settled: 1,
-    });
-
-    expect(bankroll.recordBetWon).not.toHaveBeenCalled();
-  });
-});
-
 describe('resolveHalfTimeFullTimeBetStatus', () => {
   it('returns WON when both half-time and full-time outcomes match', () => {
     const result = resolveHalfTimeFullTimeBetStatus({
@@ -840,7 +568,6 @@ describe('BettingEngineService', () => {
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
       undefined,
-      undefined,
       makeChannelDecisionServiceMock(),
     );
 
@@ -935,7 +662,6 @@ describe('BettingEngineService', () => {
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
-      undefined,
       undefined,
       makeChannelDecisionServiceMock(),
     );
@@ -1101,7 +827,6 @@ describe('BettingEngineService', () => {
       h2hService,
       congestionService,
       makeMlInferenceServiceMock(),
-      undefined,
       undefined,
       makeChannelDecisionServiceMock(),
     );
@@ -1850,7 +1575,6 @@ describe('BettingEngineService', () => {
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
       makeMlInferenceServiceMock(),
-      undefined,
       undefined,
       makeChannelDecisionServiceMock(),
     );

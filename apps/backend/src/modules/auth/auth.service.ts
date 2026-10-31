@@ -1,21 +1,20 @@
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { EmailCodePurpose, Prisma } from '@evcore/db';
-import type { UnitMode } from '@evcore/db';
+import { Prisma } from '@evcore/db';
 import { OTP } from 'otplib';
 import QRCode from 'qrcode';
 import type { Response } from 'express';
-import { PrismaService } from '@/prisma.service';
-import { avatarChoiceFor } from '@evcore/analysis-core';
 import { MailService } from '@modules/mail/mail.service';
 import { AccountRepository } from './account.repository';
+import { AuthRepository, type SessionUserRow } from './auth.repository';
+import { SessionCache } from './session-cache';
+import { LoginChallenges } from './login-challenges';
 import { createLogger } from '@utils/logger';
 
 const logger = createLogger('auth-service');
@@ -52,6 +51,7 @@ import {
   verifyPassword,
 } from './auth.utils';
 import type { LoginDto } from './dto/login.dto';
+import type { LoginTotpDto } from './dto/login-totp.dto';
 import type { RegisterDto } from './dto/register.dto';
 import type { UpdateMeDto } from './dto/update-me.dto';
 import type { VerifyEmailDto } from './dto/verify-email.dto';
@@ -63,55 +63,41 @@ import type { UpdateIdentityDto } from './dto/update-identity.dto';
 
 const totp = new OTP();
 
+export type LoginResult =
+  | { kind: 'session'; token: string; session: AuthSession }
+  | { kind: 'totp'; challenge: string };
+
 @Injectable()
 export class AuthService {
   // eslint-disable-next-line max-params -- Nest DI constructor.
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly repository: AuthRepository,
     private readonly mail: MailService,
     private readonly config: ConfigService,
     private readonly account: AccountRepository,
+    private readonly sessionCache: SessionCache,
+    private readonly loginChallenges: LoginChallenges,
   ) {}
 
   async register(
     input: RegisterDto,
   ): Promise<{ token: string; session: AuthSession }> {
     const email = normalizeIdentifier(input.email);
-    const username = normalizeIdentifier(input.username);
 
-    const existing = await this.prisma.client.user.findFirst({
-      where: { OR: [{ email }, { username }] },
-      select: { email: true, username: true },
-    });
-
-    if (existing) {
-      // The client-facing message stays deliberately generic ("email OR
-      // username") rather than naming which one collided — splitting it
-      // would let an attacker enumerate registered emails one probe at a
-      // time. Logged server-side instead (2026-09-04, investigating a
-      // report that some signups fail) so a real collision is at least
-      // traceable after the fact, without exposing it to the requester.
-      logger.warn(
-        {
-          collidedOn:
-            existing.email === email && existing.username === username
-              ? 'both'
-              : existing.email === email
-                ? 'email'
-                : 'username',
-        },
-        'register: rejected — email or username already in use',
-      );
-      throw new ConflictException('Email ou username déjà utilisé');
+    // Seul l'e-mail peut entrer en collision depuis que le nom d'utilisateur
+    // n'est plus demandé (2026-10-30). Le message le dit, comme le veut
+    // l'écran d'inscription (11 § 2) : un formulaire d'inscription révèle de
+    // toute façon qu'une adresse a un compte, autant que le joueur sache
+    // qu'il lui suffit de se connecter.
+    if (await this.repository.isEmailTaken(email)) {
+      throw new ConflictException('Cet e-mail a déjà un compte');
     }
 
-    const user = await this.prisma.client.user.create({
-      data: {
+    const user = await this.repository
+      .createUser({
         email,
-        username,
-        fullName: input.fullName.trim(),
+        fullName: input.firstName.trim(),
         passwordHash: await hashPassword(input.password),
-        bio: input.bio?.trim() || null,
         // Preuve du consentement : le DTO refuse l'inscription sans les deux
         // cases cochées, on garde la date et la version acceptée.
         termsAcceptedAt: new Date(),
@@ -120,38 +106,89 @@ export class AuthService {
         // point of needing it) — a genuinely new signup must start `false`
         // so the active onboarding wizard actually shows.
         hasCompletedOnboarding: false,
-      },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        fullName: true,
-        bio: true,
-        role: true,
-        emailVerified: true,
-        mfaMethod: true,
-        totpVerified: true,
-        avatarUrl: true,
-        theme: true,
-        locale: true,
-        currency: true,
-        unitMode: true,
-        unitAmount: true,
-        unitPercent: true,
-        riskProfile: true,
-        emailSupportNotificationsEnabled: true,
-        morningBriefEnabled: true,
-        weeklyStatementEnabled: true,
-        hasSeenOnboarding: true,
-        hasCompletedOnboarding: true,
-        phoneNumber: true,
-        phoneNumberConsentGiven: true,
-        pausedUntil: true,
-      },
-    });
+      })
+      .catch((error: unknown) => {
+        // Deux inscriptions simultanées : la seconde bute sur l'index unique.
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          throw new ConflictException('Cet e-mail a déjà un compte');
+        }
+        throw error;
+      });
 
     logger.info({ userId: user.id }, 'register: account created');
 
+    return this.openSession(user);
+  }
+
+  /**
+   * Right password: a session, or, when the account has an authenticator
+   * app, a challenge the six-digit code redeems (`loginWithTotp`). The app
+   * protected only the password reset until 2026-10-30.
+   */
+  async login(input: LoginDto): Promise<LoginResult> {
+    const identifier = normalizeIdentifier(input.identifier);
+    const user = await this.repository.findLoginUser(identifier);
+
+    if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
+      throw new UnauthorizedException('E-mail ou mot de passe incorrect');
+    }
+
+    this.assertNotSuspended(user);
+
+    if (user.totpVerified) {
+      return {
+        kind: 'totp',
+        challenge: this.loginChallenges.issue(user.id),
+      };
+    }
+
+    return { kind: 'session', ...(await this.openSession(user)) };
+  }
+
+  async loginWithTotp(
+    input: LoginTotpDto,
+  ): Promise<{ token: string; session: AuthSession }> {
+    const userId = this.loginChallenges.begin(input.challenge);
+    if (!userId) {
+      throw new UnauthorizedException(
+        'Code expiré ou trop de tentatives — reconnecte-toi',
+      );
+    }
+
+    const user = await this.repository.findTotpLoginUser(userId);
+    if (!user || !user.totpVerified || !user.totpSecret) {
+      throw new UnauthorizedException('Reconnecte-toi');
+    }
+    this.assertNotSuspended(user);
+
+    const appSecret = this.config.getOrThrow<string>('TOTP_APP_SECRET');
+    const { valid } = totp.verifySync({
+      token: input.code,
+      secret: decryptTotpSecret(user.totpSecret, appSecret),
+    });
+    if (!valid || !this.loginChallenges.consumeCode(userId, input.code)) {
+      this.loginChallenges.fail(userId);
+      throw new UnauthorizedException('Code incorrect');
+    }
+
+    this.loginChallenges.succeed(input.challenge, userId);
+    return this.openSession(user);
+  }
+
+  private assertNotSuspended(user: { suspended: boolean }): void {
+    if (user.suspended) {
+      throw new UnauthorizedException(
+        'Compte suspendu — contactez un administrateur.',
+      );
+    }
+  }
+
+  private async openSession(
+    user: SessionUserRow,
+  ): Promise<{ token: string; session: AuthSession }> {
     const { token, session } = await this.createSession(user.id);
     return {
       token,
@@ -162,96 +199,12 @@ export class AuthService {
     };
   }
 
-  async login(
-    input: LoginDto,
-  ): Promise<{ token: string; session: AuthSession }> {
-    const identifier = normalizeIdentifier(input.identifier);
-    const user = await this.prisma.client.user.findFirst({
-      where: { OR: [{ email: identifier }, { username: identifier }] },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        fullName: true,
-        bio: true,
-        role: true,
-        emailVerified: true,
-        mfaMethod: true,
-        totpVerified: true,
-        avatarUrl: true,
-        theme: true,
-        locale: true,
-        currency: true,
-        unitMode: true,
-        unitAmount: true,
-        unitPercent: true,
-        riskProfile: true,
-        emailSupportNotificationsEnabled: true,
-        morningBriefEnabled: true,
-        weeklyStatementEnabled: true,
-        hasSeenOnboarding: true,
-        hasCompletedOnboarding: true,
-        phoneNumber: true,
-        phoneNumberConsentGiven: true,
-        pausedUntil: true,
-        passwordHash: true,
-        suspended: true,
-      },
-    });
-
-    if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
-      throw new UnauthorizedException('Identifiants invalides');
-    }
-
-    if (user.suspended) {
-      throw new UnauthorizedException(
-        'Compte suspendu — contactez un administrateur.',
-      );
-    }
-
-    const { token, session } = await this.createSession(user.id);
-    return {
-      token,
-      session: {
-        sessionId: session.id,
-        user: {
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          fullName: user.fullName,
-          bio: user.bio,
-          role: user.role,
-          emailVerified: user.emailVerified,
-          mfaMethod: user.mfaMethod,
-          totpVerified: user.totpVerified,
-          avatarUrl: user.avatarUrl,
-          theme: user.theme,
-          locale: user.locale,
-          currency: user.currency,
-          unitMode: user.unitMode,
-          unitAmount: user.unitAmount?.toString() ?? null,
-          unitPercent: user.unitPercent?.toString() ?? null,
-          riskProfile: user.riskProfile,
-          emailSupportNotificationsEnabled:
-            user.emailSupportNotificationsEnabled,
-          morningBriefEnabled: user.morningBriefEnabled,
-          weeklyStatementEnabled: user.weeklyStatementEnabled,
-          hasSeenOnboarding: user.hasSeenOnboarding,
-          hasCompletedOnboarding: user.hasCompletedOnboarding,
-          phoneNumber: user.phoneNumber,
-          phoneNumberConsentGiven: user.phoneNumberConsentGiven,
-          pausedUntil: user.pausedUntil?.toISOString() ?? null,
-        },
-      },
-    };
-  }
-
   async logout(request: AuthenticatedRequest): Promise<void> {
     const token = this.extractSessionToken(request);
     if (!token) return;
-    await this.prisma.client.session.deleteMany({
-      where: { tokenHash: hashSessionToken(token) },
-    });
+    const tokenHash = hashSessionToken(token);
+    await this.repository.deleteSessionByTokenHash(tokenHash);
+    this.sessionCache.invalidateToken(tokenHash);
   }
 
   async readSessionFromRequest(
@@ -260,189 +213,109 @@ export class AuthService {
     const token = this.extractSessionToken(request);
     if (!token) return null;
 
-    const row = await this.prisma.client.session.findUnique({
-      where: { tokenHash: hashSessionToken(token) },
-      select: {
-        id: true,
-        expiresAt: true,
-        user: {
-          select: {
-            id: true,
-            email: true,
-            username: true,
-            fullName: true,
-            bio: true,
-            role: true,
-            emailVerified: true,
-            mfaMethod: true,
-            totpVerified: true,
-            avatarUrl: true,
-            theme: true,
-            locale: true,
-            currency: true,
-            unitMode: true,
-            unitAmount: true,
-            unitPercent: true,
-            riskProfile: true,
-            emailSupportNotificationsEnabled: true,
-            morningBriefEnabled: true,
-            weeklyStatementEnabled: true,
-            hasSeenOnboarding: true,
-            hasCompletedOnboarding: true,
-            phoneNumber: true,
-            phoneNumberConsentGiven: true,
-            pausedUntil: true,
-            suspended: true,
-          },
-        },
-      },
-    });
+    const tokenHash = hashSessionToken(token);
+    const cached = this.sessionCache.get(tokenHash);
+    if (cached) return cached;
+
+    const ticket = this.sessionCache.ticket();
+    const row = await this.repository.findSessionByTokenHash(tokenHash);
 
     if (!row || row.expiresAt.getTime() <= Date.now()) {
       return null;
     }
 
     if (row.user.suspended) {
-      await this.prisma.client.session.delete({ where: { id: row.id } });
+      await this.repository.deleteSession(row.id);
+      this.sessionCache.invalidateUser(row.user.id);
       return null;
     }
 
-    return {
+    const session: AuthSession = {
       sessionId: row.id,
       user: this.toSessionUser(row.user),
     };
+    this.sessionCache.set({
+      tokenHash,
+      session,
+      sessionExpiresAt: row.expiresAt,
+      ticket,
+    });
+    return session;
   }
 
   applySessionCookie(response: Response, token: string): void {
     response.setHeader(
       'Set-Cookie',
-      buildSessionCookie(token, process.env.NODE_ENV === 'production'),
+      buildSessionCookie(token, this.isProduction()),
     );
   }
 
   clearSessionCookie(response: Response): void {
     response.setHeader(
       'Set-Cookie',
-      buildExpiredSessionCookie(process.env.NODE_ENV === 'production'),
+      buildExpiredSessionCookie(this.isProduction()),
     );
   }
 
   async updateMe(userId: string, dto: UpdateMeDto): Promise<AuthSessionUser> {
-    // L'avatar « Oracle » se mérite (badge Diplômé) : l'écran le verrouille,
-    // le serveur aussi depuis le 2026-10-28.
-    const requiredBadge = dto.avatarUrl
-      ? avatarChoiceFor(dto.avatarUrl)?.requiredBadge
-      : undefined;
-    if (
-      requiredBadge &&
-      !(await this.account.hasBadge(userId, requiredBadge))
-    ) {
-      throw new ForbiddenException(
-        'Cet avatar se débloque avec le badge Diplômé.',
-      );
-    }
-    const user = await this.prisma.client.user.update({
-      where: { id: userId },
-      data: {
-        ...(dto.theme !== undefined && { theme: dto.theme }),
-        ...(dto.locale !== undefined && { locale: dto.locale }),
-        ...(dto.currency !== undefined && { currency: dto.currency }),
-        ...(dto.avatarUrl !== undefined && { avatarUrl: dto.avatarUrl }),
-        ...(dto.unitMode !== undefined && { unitMode: dto.unitMode }),
-        ...(dto.unitAmount !== undefined && {
-          unitAmount: new Prisma.Decimal(dto.unitAmount),
+    const user = await this.repository.updateSessionUser(userId, {
+      ...(dto.theme !== undefined && { theme: dto.theme }),
+      ...(dto.locale !== undefined && { locale: dto.locale }),
+      ...(dto.currency !== undefined && { currency: dto.currency }),
+      ...(dto.avatarUrl !== undefined && { avatarUrl: dto.avatarUrl }),
+      ...(dto.emailNotificationsEnabled !== undefined && {
+        emailNotificationsEnabled: dto.emailNotificationsEnabled,
+      }),
+      ...(dto.followedResultEnabled !== undefined && {
+        followedResultEnabled: dto.followedResultEnabled,
+      }),
+      ...(dto.teamRepliesEnabled !== undefined && {
+        teamRepliesEnabled: dto.teamRepliesEnabled,
+      }),
+      ...(dto.morningBriefEnabled !== undefined && {
+        morningBriefEnabled: dto.morningBriefEnabled,
+      }),
+      ...(dto.weeklyStatementEnabled !== undefined && {
+        weeklyStatementEnabled: dto.weeklyStatementEnabled,
+      }),
+      ...(dto.hasSeenOnboarding !== undefined && {
+        hasSeenOnboarding: dto.hasSeenOnboarding,
+      }),
+      ...(dto.hasCompletedOnboarding !== undefined && {
+        hasCompletedOnboarding: dto.hasCompletedOnboarding,
+      }),
+      // Revoking consent clears the stored number rather than keeping an
+      // unconsented phone number around — see schema.prisma's own comment
+      // on phoneNumberConsentGiven.
+      ...(dto.phoneNumberConsentGiven !== undefined && {
+        phoneNumberConsentGiven: dto.phoneNumberConsentGiven,
+        ...(dto.phoneNumberConsentGiven === false && { phoneNumber: null }),
+      }),
+      ...(dto.phoneNumber !== undefined &&
+        dto.phoneNumberConsentGiven !== false && {
+          phoneNumber: dto.phoneNumber,
         }),
-        ...(dto.unitPercent !== undefined && {
-          unitPercent: new Prisma.Decimal(dto.unitPercent),
-        }),
-        ...(dto.riskProfile !== undefined && {
-          riskProfile: dto.riskProfile,
-        }),
-        ...(dto.emailSupportNotificationsEnabled !== undefined && {
-          emailSupportNotificationsEnabled:
-            dto.emailSupportNotificationsEnabled,
-        }),
-        ...(dto.morningBriefEnabled !== undefined && {
-          morningBriefEnabled: dto.morningBriefEnabled,
-        }),
-        ...(dto.weeklyStatementEnabled !== undefined && {
-          weeklyStatementEnabled: dto.weeklyStatementEnabled,
-        }),
-        ...(dto.hasSeenOnboarding !== undefined && {
-          hasSeenOnboarding: dto.hasSeenOnboarding,
-        }),
-        ...(dto.hasCompletedOnboarding !== undefined && {
-          hasCompletedOnboarding: dto.hasCompletedOnboarding,
-        }),
-        // Revoking consent clears the stored number rather than keeping an
-        // unconsented phone number around — see schema.prisma's own comment
-        // on phoneNumberConsentGiven.
-        ...(dto.phoneNumberConsentGiven !== undefined && {
-          phoneNumberConsentGiven: dto.phoneNumberConsentGiven,
-          ...(dto.phoneNumberConsentGiven === false && { phoneNumber: null }),
-        }),
-        ...(dto.phoneNumber !== undefined &&
-          dto.phoneNumberConsentGiven !== false && {
-            phoneNumber: dto.phoneNumber,
-          }),
-      },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        fullName: true,
-        bio: true,
-        role: true,
-        emailVerified: true,
-        mfaMethod: true,
-        totpVerified: true,
-        avatarUrl: true,
-        theme: true,
-        locale: true,
-        currency: true,
-        unitMode: true,
-        unitAmount: true,
-        unitPercent: true,
-        riskProfile: true,
-        emailSupportNotificationsEnabled: true,
-        morningBriefEnabled: true,
-        weeklyStatementEnabled: true,
-        hasSeenOnboarding: true,
-        hasCompletedOnboarding: true,
-        phoneNumber: true,
-        phoneNumberConsentGiven: true,
-        pausedUntil: true,
-      },
     });
+    this.sessionCache.invalidateUser(userId);
     return this.toSessionUser(user);
   }
 
   async sendEmailVerification(userId: string): Promise<void> {
-    const user = await this.prisma.client.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { email: true, username: true, emailVerified: true },
-    });
+    const user = await this.repository.findEmailVerificationTarget(userId);
 
     if (user.emailVerified) {
       throw new BadRequestException('Email déjà vérifié');
     }
 
-    await this.prisma.client.emailVerificationCode.updateMany({
-      where: { userId, used: false, purpose: EmailCodePurpose.VERIFY },
-      data: { used: true },
-    });
-
     const code = generateOtpCode();
-    await this.prisma.client.emailVerificationCode.create({
-      data: {
-        userId,
-        codeHash: hashOtpCode(code),
-        expiresAt: new Date(Date.now() + OTP_CODE_TTL_MS),
-      },
+    await this.repository.replaceVerificationCode({
+      userId,
+      codeHash: hashOtpCode(code),
+      expiresAt: new Date(Date.now() + OTP_CODE_TTL_MS),
     });
 
     await this.mail.sendEmailVerification(user.email, {
-      username: user.username,
+      firstName: user.fullName,
       code,
       expiresInMinutes: OTP_EXPIRES_IN_MINUTES,
     });
@@ -450,15 +323,10 @@ export class AuthService {
 
   async verifyEmail(userId: string, dto: VerifyEmailDto): Promise<void> {
     const codeHash = hashOtpCode(dto.code);
-    const record = await this.prisma.client.emailVerificationCode.findFirst({
-      where: {
-        userId,
-        used: false,
-        purpose: EmailCodePurpose.VERIFY,
-        expiresAt: { gt: new Date() },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const record = await this.repository.findActiveVerificationCode(
+      userId,
+      new Date(),
+    );
 
     if (!record) {
       throw new BadRequestException('Code expiré ou invalide');
@@ -471,32 +339,18 @@ export class AuthService {
     }
 
     if (record.codeHash !== codeHash) {
-      await this.prisma.client.emailVerificationCode.update({
-        where: { id: record.id },
-        data: { attempts: { increment: 1 } },
-      });
+      await this.repository.incrementVerificationAttempts(record.id);
       throw new BadRequestException('Code incorrect');
     }
 
-    await this.prisma.client.$transaction([
-      this.prisma.client.emailVerificationCode.update({
-        where: { id: record.id },
-        data: { used: true },
-      }),
-      this.prisma.client.user.update({
-        where: { id: userId },
-        data: { emailVerified: true, mfaMethod: 'EMAIL' },
-      }),
-    ]);
+    await this.repository.markEmailVerified({ codeId: record.id, userId });
+    this.sessionCache.invalidateUser(userId);
   }
 
   async setupTotp(
     userId: string,
   ): Promise<{ qrDataUrl: string; secret: string }> {
-    const user = await this.prisma.client.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { email: true, totpVerified: true },
-    });
+    const user = await this.repository.findTotpSetupTarget(userId);
 
     if (user.totpVerified) {
       throw new BadRequestException('Authenticator app déjà configurée');
@@ -506,10 +360,8 @@ export class AuthService {
     const appSecret = this.config.getOrThrow<string>('TOTP_APP_SECRET');
     const encryptedSecret = encryptTotpSecret(secret, appSecret);
 
-    await this.prisma.client.user.update({
-      where: { id: userId },
-      data: { totpSecret: encryptedSecret },
-    });
+    await this.repository.setTotpSecret(userId, encryptedSecret);
+    this.sessionCache.invalidateUser(userId);
 
     const otpauth = totp.generateURI({
       issuer: 'EVCore',
@@ -522,10 +374,7 @@ export class AuthService {
   }
 
   async confirmTotp(userId: string, dto: ConfirmTotpDto): Promise<void> {
-    const user = await this.prisma.client.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { totpSecret: true, totpVerified: true },
-    });
+    const user = await this.repository.findTotpState(userId);
 
     if (user.totpVerified) {
       throw new BadRequestException('Authenticator app déjà configurée');
@@ -543,25 +392,13 @@ export class AuthService {
       throw new BadRequestException('Code TOTP invalide');
     }
 
-    await this.prisma.client.user.update({
-      where: { id: userId },
-      data: { totpVerified: true, mfaMethod: 'TOTP' },
-    });
+    await this.repository.markTotpVerified(userId);
+    this.sessionCache.invalidateUser(userId);
   }
 
   async requestPasswordReset(dto: RequestPasswordResetDto): Promise<void> {
     const identifier = normalizeIdentifier(dto.identifier);
-    const user = await this.prisma.client.user.findFirst({
-      where: { OR: [{ email: identifier }, { username: identifier }] },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        emailVerified: true,
-        totpVerified: true,
-        mfaMethod: true,
-      },
-    });
+    const user = await this.repository.findPasswordResetTarget(identifier);
 
     if (!user) {
       logger.debug(
@@ -574,17 +411,14 @@ export class AuthService {
     const windowStart = new Date(
       Date.now() - PASSWORD_RESET_RATE_LIMIT_WINDOW_MS,
     );
-    const recentCount = await this.prisma.client.passwordResetToken.count({
-      where: {
-        userId: user.id,
-        isAdminGenerated: false,
-        createdAt: { gt: windowStart },
-      },
-    });
+    const recentCount = await this.repository.countRecentSelfServiceResets(
+      user.id,
+      windowStart,
+    );
 
     if (recentCount >= PASSWORD_RESET_RATE_LIMIT_MAX) {
       logger.warn(
-        { userId: user.id, username: user.username, recentCount },
+        { userId: user.id, recentCount },
         'password-reset: rate limit reached',
       );
       return;
@@ -593,54 +427,49 @@ export class AuthService {
     const { resetUrl } = await this.createResetToken(user.id, false);
 
     await this.mail.sendPasswordReset(user.email, {
-      username: user.username,
+      firstName: user.fullName,
       resetUrl,
       expiresInMinutes: PASSWORD_RESET_EXPIRES_IN_MINUTES,
       isAdminGenerated: false,
     });
 
     logger.info(
-      { userId: user.id, username: user.username },
+      { userId: user.id },
       'password-reset: token created, email dispatch attempted',
     );
   }
 
   async resetPassword(dto: ResetPasswordDto): Promise<void> {
     const tokenHash = hashResetToken(dto.token);
-    const record = await this.prisma.client.passwordResetToken.findUnique({
-      where: { tokenHash },
-      select: { id: true, userId: true, expiresAt: true, used: true },
-    });
+    const record = await this.repository.findResetToken(tokenHash);
 
     if (!record || record.used || record.expiresAt.getTime() <= Date.now()) {
       throw new BadRequestException('Lien invalide ou expiré');
     }
 
     const passwordHash = await hashPassword(dto.newPassword);
-    await this.prisma.client.$transaction([
-      this.prisma.client.passwordResetToken.update({
-        where: { id: record.id },
-        data: { used: true },
-      }),
-      this.prisma.client.user.update({
-        where: { id: record.userId },
-        data: { passwordHash },
-      }),
-      this.prisma.client.session.deleteMany({
-        where: { userId: record.userId },
-      }),
-    ]);
+    await this.repository.resetPasswordWithToken({
+      resetTokenId: record.id,
+      userId: record.userId,
+      passwordHash,
+    });
+    this.sessionCache.invalidateUser(record.userId);
   }
 
   async resetPasswordWithTotp(dto: ResetPasswordTotpDto): Promise<void> {
     const identifier = normalizeIdentifier(dto.identifier);
-    const user = await this.prisma.client.user.findFirst({
-      where: { OR: [{ email: identifier }, { username: identifier }] },
-      select: { id: true, totpSecret: true, totpVerified: true },
-    });
+    const user = await this.repository.findTotpResetTarget(identifier);
 
     if (!user || !user.totpVerified || !user.totpSecret) {
-      throw new UnauthorizedException('Identifiants invalides');
+      throw new UnauthorizedException('E-mail ou mot de passe incorrect');
+    }
+
+    // Même plafond de mauvais codes que la connexion : ce chemin remplace le
+    // mot de passe avec le seul code, il ne doit pas servir à le deviner.
+    if (this.loginChallenges.isLockedOut(user.id)) {
+      throw new UnauthorizedException(
+        "Trop de codes incorrects — réessaie dans un quart d'heure",
+      );
     }
 
     const appSecret = this.config.getOrThrow<string>('TOTP_APP_SECRET');
@@ -650,20 +479,64 @@ export class AuthService {
       secret: plainSecret,
     });
 
-    if (!result.valid) {
+    if (
+      !result.valid ||
+      !this.loginChallenges.consumeCode(user.id, dto.totpCode)
+    ) {
+      this.loginChallenges.fail(user.id);
       throw new UnauthorizedException('Code TOTP invalide');
     }
 
     const passwordHash = await hashPassword(dto.newPassword);
-    await this.prisma.client.$transaction([
-      this.prisma.client.user.update({
-        where: { id: user.id },
-        data: { passwordHash },
-      }),
-      this.prisma.client.session.deleteMany({
-        where: { userId: user.id },
-      }),
-    ]);
+    await this.repository.replacePasswordAndRevokeSessions(
+      user.id,
+      passwordHash,
+    );
+    this.sessionCache.invalidateUser(user.id);
+  }
+
+  /**
+   * « Mot de passe » in Compte (09 § 5): the current password checked, the
+   * new one stored, every session revoked, this one included — whoever
+   * else knew the old password is out. 400 rather than 401 on a wrong
+   * password, as for the deletion: a 401 would sign the client out before
+   * it can retry.
+   */
+  async changePassword(
+    userId: string,
+    input: { currentPassword: string; newPassword: string },
+  ): Promise<void> {
+    const credentials = await this.account.findCredentials(userId);
+    if (!credentials) throw new NotFoundException('Compte introuvable');
+    if (
+      !(await verifyPassword(input.currentPassword, credentials.passwordHash))
+    ) {
+      throw new BadRequestException('Mot de passe actuel incorrect.');
+    }
+    await this.repository.replacePasswordAndRevokeSessions(
+      userId,
+      await hashPassword(input.newPassword),
+    );
+    this.sessionCache.invalidateUser(userId);
+  }
+
+  /** « Appareils connectés · 2 » (09 § 5). */
+  countSessions(userId: string, now: Date = new Date()): Promise<number> {
+    return this.repository.countActiveSessions(userId, now);
+  }
+
+  /**
+   * « Déconnecter les autres » (09 § 5): every other session goes, this one
+   * stays. The cache forgets the user so a removed session is refused at
+   * its next request rather than after the cache's minute.
+   */
+  async signOutOtherSessions(session: AuthSession): Promise<number> {
+    const removed = await this.repository.deleteOtherSessions({
+      userId: session.user.id,
+      keepSessionId: session.sessionId,
+    });
+    this.sessionCache.invalidateUser(session.user.id);
+    return removed;
   }
 
   async updateIdentity(
@@ -675,59 +548,26 @@ export class AuthService {
       : undefined;
 
     if (username !== undefined) {
-      const conflict = await this.prisma.client.user.findFirst({
-        where: { username, NOT: { id: userId } },
-        select: { id: true },
+      const taken = await this.repository.isUsernameTaken({
+        username,
+        exceptUserId: userId,
       });
-      if (conflict) {
+      if (taken) {
         throw new ConflictException("Ce nom d'utilisateur est déjà utilisé");
       }
     }
 
-    const user = await this.prisma.client.user.update({
-      where: { id: userId },
-      data: {
-        ...(username !== undefined && { username }),
-      },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        fullName: true,
-        bio: true,
-        role: true,
-        emailVerified: true,
-        mfaMethod: true,
-        totpVerified: true,
-        avatarUrl: true,
-        theme: true,
-        locale: true,
-        currency: true,
-        unitMode: true,
-        unitAmount: true,
-        unitPercent: true,
-        riskProfile: true,
-        emailSupportNotificationsEnabled: true,
-        morningBriefEnabled: true,
-        weeklyStatementEnabled: true,
-        hasSeenOnboarding: true,
-        hasCompletedOnboarding: true,
-        phoneNumber: true,
-        phoneNumberConsentGiven: true,
-        pausedUntil: true,
-      },
+    const user = await this.repository.updateSessionUser(userId, {
+      ...(username !== undefined && { username }),
+      ...(dto.firstName !== undefined && { fullName: dto.firstName.trim() }),
     });
+    this.sessionCache.invalidateUser(userId);
 
     return this.toSessionUser(user);
   }
 
   async generateAdminResetLink(userId: string): Promise<string> {
-    const user = await this.prisma.client.user.findUnique({
-      where: { id: userId },
-      select: { id: true },
-    });
-
-    if (!user) {
+    if (!(await this.repository.userExists(userId))) {
       throw new NotFoundException('Utilisateur introuvable');
     }
 
@@ -740,18 +580,20 @@ export class AuthService {
     isAdminGenerated: boolean,
   ): Promise<{ token: string; resetUrl: string }> {
     const token = generateResetToken();
-    await this.prisma.client.passwordResetToken.create({
-      data: {
-        userId,
-        tokenHash: hashResetToken(token),
-        expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
-        isAdminGenerated,
-      },
+    await this.repository.createResetToken({
+      userId,
+      tokenHash: hashResetToken(token),
+      expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
+      isAdminGenerated,
     });
 
     const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
     const resetUrl = `${appUrl}/auth/reset-password?token=${token}`;
     return { token, resetUrl };
+  }
+
+  private isProduction(): boolean {
+    return this.config.get<string>('NODE_ENV') === 'production';
   }
 
   private extractSessionToken(request: AuthenticatedRequest): string | null {
@@ -761,49 +603,44 @@ export class AuthService {
 
   private async createSession(userId: string) {
     const token = generateSessionToken();
-    const session = await this.prisma.client.session.create({
-      data: {
-        userId,
-        tokenHash: hashSessionToken(token),
-        expiresAt: new Date(Date.now() + AUTH_SESSION_TTL_MS),
-      },
-      select: { id: true },
+    const session = await this.repository.createSession({
+      userId,
+      tokenHash: hashSessionToken(token),
+      expiresAt: new Date(Date.now() + AUTH_SESSION_TTL_MS),
     });
 
     return { token, session };
   }
 
-  private toSessionUser(user: {
-    id: string;
-    email: string;
-    username: string;
-    fullName: string;
-    bio: string | null;
-    role: AuthSessionUser['role'];
-    emailVerified: boolean;
-    mfaMethod: AuthSessionUser['mfaMethod'];
-    totpVerified: boolean;
-    avatarUrl: string | null;
-    theme: string | null;
-    locale: string | null;
-    currency: string | null;
-    unitMode: UnitMode | null;
-    unitAmount: Prisma.Decimal | null;
-    unitPercent: Prisma.Decimal | null;
-    riskProfile: AuthSessionUser['riskProfile'];
-    emailSupportNotificationsEnabled: boolean;
-    morningBriefEnabled: boolean;
-    weeklyStatementEnabled: boolean;
-    hasSeenOnboarding: boolean;
-    hasCompletedOnboarding: boolean;
-    phoneNumber: string | null;
-    phoneNumberConsentGiven: boolean;
-    pausedUntil: Date | null;
-  }): AuthSessionUser {
+  /**
+   * Field by field on purpose: rows read for login or session checks also
+   * carry `passwordHash` and `suspended`, and a spread would send them to the
+   * client.
+   */
+  private toSessionUser(user: SessionUserRow): AuthSessionUser {
     return {
-      ...user,
-      unitAmount: user.unitAmount?.toString() ?? null,
-      unitPercent: user.unitPercent?.toString() ?? null,
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      fullName: user.fullName,
+      bio: user.bio,
+      role: user.role,
+      emailVerified: user.emailVerified,
+      mfaMethod: user.mfaMethod,
+      totpVerified: user.totpVerified,
+      avatarUrl: user.avatarUrl,
+      theme: user.theme,
+      locale: user.locale,
+      currency: user.currency,
+      emailNotificationsEnabled: user.emailNotificationsEnabled,
+      followedResultEnabled: user.followedResultEnabled,
+      teamRepliesEnabled: user.teamRepliesEnabled,
+      morningBriefEnabled: user.morningBriefEnabled,
+      weeklyStatementEnabled: user.weeklyStatementEnabled,
+      hasSeenOnboarding: user.hasSeenOnboarding,
+      hasCompletedOnboarding: user.hasCompletedOnboarding,
+      phoneNumber: user.phoneNumber,
+      phoneNumberConsentGiven: user.phoneNumberConsentGiven,
       pausedUntil: user.pausedUntil?.toISOString() ?? null,
     };
   }

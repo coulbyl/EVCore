@@ -219,7 +219,6 @@ function makeService(prisma: PrismaService): BettingEngineService {
     congestion,
     ml,
     undefined,
-    undefined,
     makeChannelDecisionServiceMock(),
   );
 }

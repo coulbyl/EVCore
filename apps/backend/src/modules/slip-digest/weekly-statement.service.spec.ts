@@ -2,11 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 import Decimal from 'decimal.js';
 import { NotificationType } from '@evcore/db';
 import type { NotificationService } from '@modules/notification/notification.service';
+import type { MailService } from '@modules/mail/mail.service';
 import type { PushService } from '@modules/push/push.service';
-import type { CouponService } from '@modules/coupon/coupon.service';
-import type { CouponClassTrackRecord } from '@modules/coupon/dto/coupon-track-record.dto';
 import type {
-  DigestSlip,
+  ProductWeek,
+  ProductWeekService,
+} from '@modules/coupon/product-day/product-week.service';
+import type {
+  DigestFollow,
   SlipDigestRepository,
 } from './slip-digest.repository';
 import {
@@ -18,61 +21,39 @@ import {
 const NOW = new Date('2026-10-26T08:00:00.000Z');
 const WEEK = '2026-10-19';
 
-function slip(opts: {
-  userId: string;
-  kickoff: string;
-  status: 'WON' | 'LOST';
-}): DigestSlip {
+function follow(userId: string, result: 'WON' | 'LOST'): DigestFollow {
   return {
-    id: `slip-${opts.kickoff}`,
-    type: 'SIMPLE',
-    unitStake: new Decimal(1000),
-    user: { id: opts.userId, currency: 'XOF', pausedUntil: null },
-    items: [
-      {
-        stakeOverride: null,
-        fixture: { scheduledAt: new Date(opts.kickoff) },
-        bet: { status: opts.status, oddsSnapshot: new Decimal('1.5') },
-      },
-    ],
-  };
-}
-
-function track(
-  couponClass: CouponClassTrackRecord['couponClass'],
-  source: CouponClassTrackRecord['source'],
-  [won, settled]: [number, number],
-): CouponClassTrackRecord {
-  return {
-    couponClass,
-    source,
-    days: 7,
-    settled,
-    won,
-    avgOdds: 1.3,
-    returnPerUnit: 0.9,
-    firstDay: '2026-10-19',
-    lastDay: '2026-10-25',
-    worstLosingStreak: 1,
+    user: { id: userId, pausedUntil: null },
+    couponProposal: {
+      id: `coupon-${result}`,
+      result,
+      targetOddsMin: new Decimal(1.2),
+    },
   };
 }
 
 function makeHarness(opts: {
-  slips?: DigestSlip[];
-  recipients?: { id: string; pausedUntil?: Date | null }[];
-  products?: CouponClassTrackRecord[];
+  follows?: DigestFollow[];
+  recipients?: {
+    id: string;
+    pausedUntil?: Date | null;
+    emailVerified?: boolean;
+    emailNotificationsEnabled?: boolean;
+  }[];
+  products?: ProductWeek['products'];
   alreadySent?: boolean;
 }) {
   const repository = {
     findWeeklyRecipients: vi.fn().mockResolvedValue(
       (opts.recipients ?? [{ id: 'u1' }]).map((r) => ({
         id: r.id,
-        currency: 'XOF',
         pausedUntil: r.pausedUntil ?? null,
+        email: `${r.id}@example.com`,
+        emailVerified: r.emailVerified ?? false,
+        emailNotificationsEnabled: r.emailNotificationsEnabled ?? true,
       })),
     ),
-    findSlipsTouching: vi.fn().mockResolvedValue(opts.slips ?? []),
-    findSettledFollows: vi.fn().mockResolvedValue([]),
+    findSettledFollows: vi.fn().mockResolvedValue(opts.follows ?? []),
     findNotifiedUserIds: vi
       .fn()
       .mockImplementation(() =>
@@ -80,21 +61,30 @@ function makeHarness(opts: {
       ),
   } as unknown as SlipDigestRepository;
   const coupons = {
-    getTrackRecordBetween: vi.fn().mockResolvedValue(opts.products ?? []),
-  } as unknown as CouponService;
+    getWeek: vi.fn().mockResolvedValue({
+      week: WEEK,
+      days: [],
+      products: opts.products ?? [],
+    }),
+  } as unknown as ProductWeekService;
   const notification = {
     notifyUser: vi.fn().mockResolvedValue(undefined),
   } as unknown as NotificationService;
   const push = {
     sendToUser: vi.fn().mockResolvedValue(undefined),
   } as unknown as PushService;
+  const mail = {
+    sendPlayerDigest: vi.fn().mockResolvedValue(undefined),
+  } as unknown as MailService;
   return {
     service: new WeeklyStatementService(
       repository,
       notification,
       push,
+      mail,
       coupons,
     ),
+    mail,
     repository,
     coupons,
     notification,
@@ -108,69 +98,59 @@ describe('WeeklyStatementService.sendStatements', () => {
     expect(previousIsoWeek(new Date('2026-11-01T23:00:00Z'))).toBe(WEEK);
   });
 
-  it('closes the week and leaves the AI out of our products', async () => {
+  it('closes the week and reads our products from the shared week', async () => {
     const { service, notification, push, coupons } = makeHarness({
-      slips: [
-        slip({ userId: 'u1', kickoff: '2026-10-20T19:00:00Z', status: 'LOST' }),
-        // Dernière jambe le lundi suivant : elle appartient à la semaine d'après.
-        slip({ userId: 'u1', kickoff: '2026-10-26T19:00:00Z', status: 'WON' }),
-      ],
+      follows: [follow('u1', 'WON'), follow('u1', 'LOST')],
       products: [
-        track('FAVOURITE', 'PRICE_COMPOSER', [5, 7]),
-        track('COMBO', 'LLM', [1, 7]),
-        track('COMBO', 'ENGINE', [4, 6]),
+        { product: 'FAVOURITE', won: 5, played: 7 },
+        { product: 'COMBO', won: 4, played: 6 },
       ],
     });
     const result = await service.sendStatements(WEEK, NOW);
     expect(result).toEqual({ sent: 1, skippedPaused: 0 });
-    expect(coupons.getTrackRecordBetween).toHaveBeenCalledWith(
-      new Date('2026-10-19T00:00:00Z'),
-      new Date('2026-10-26T00:00:00Z'),
-    );
+    expect(coupons.getWeek).toHaveBeenCalledWith(WEEK);
     const [input] = vi.mocked(notification.notifyUser).mock.calls[0] ?? [];
     expect(input).toMatchObject({
       userId: 'u1',
       type: NotificationType.WEEKLY_STATEMENT,
       title: 'Ta semaine EVCore',
-      payload: { week: WEEK, settled: 1, net: '-1000.00' },
+      payload: { week: WEEK },
     });
-    expect(input?.body).toContain('0 gagné sur 1 réglé');
-    expect(input?.body).toContain(
-      'Favori 5 jours gagnés sur 7 · Combiné 4 jours gagnés sur 6',
+    expect(input?.body).toBe(
+      'Coupons suivis : 1 gagné sur 2. Nos coupons : Favori 5 jours gagnés sur 7 · Combiné 4 jours gagnés sur 6.',
     );
-    expect(input?.body).toContain('Semaine en perte');
     expect(push.sendToUser).toHaveBeenCalledWith(
       'u1',
-      expect.objectContaining({ url: '/dashboard?from=weekly' }),
+      expect.objectContaining({ url: '/today?from=weekly' }),
     );
   });
 
-  it('says nothing about losses in a week without loss', async () => {
+  it('emails the statement to a verified address that asked for it', async () => {
+    const { service, mail } = makeHarness({
+      follows: [follow('u1', 'LOST')],
+      recipients: [{ id: 'u1', emailVerified: true }],
+    });
+    await service.sendStatements(WEEK, NOW);
+    expect(mail.sendPlayerDigest).toHaveBeenCalledWith(
+      'u1@example.com',
+      expect.objectContaining({
+        title: expect.any(String),
+        path: '/today?from=weekly',
+      }),
+    );
+  });
+
+  it('tells only our products to a player who followed nothing', async () => {
     const { service, notification } = makeHarness({
-      products: [track('FAVOURITE', 'PRICE_COMPOSER', [5, 7])],
+      products: [{ product: 'FAVOURITE', won: 5, played: 7 }],
     });
     await service.sendStatements(WEEK, NOW);
     const [input] = vi.mocked(notification.notifyUser).mock.calls[0] ?? [];
     expect(input?.body).toBe('Nos coupons : Favori 5 jours gagnés sur 7.');
   });
 
-  it('says a slip still pending will come in the morning brief', async () => {
-    const pending = slip({
-      userId: 'u1',
-      kickoff: '2026-10-25T21:00:00Z',
-      status: 'LOST',
-    });
-    pending.items[0].bet.status = 'PENDING';
-    const { service, notification } = makeHarness({ slips: [pending] });
-    await service.sendStatements(WEEK, NOW);
-    const [input] = vi.mocked(notification.notifyUser).mock.calls[0] ?? [];
-    expect(input?.body).toBe(
-      '1 coupon de la semaine encore en attente : le résultat arrivera dans ta matinée.',
-    );
-  });
-
   it('skips a paused player, a repeated run and an empty week', async () => {
-    const products = [track('FAVOURITE', 'PRICE_COMPOSER', [5, 7])];
+    const products = [{ product: 'FAVOURITE', won: 5, played: 7 }];
     const paused = makeHarness({
       products,
       recipients: [{ id: 'u1', pausedUntil: new Date('2026-11-01T00:00:00Z') }],

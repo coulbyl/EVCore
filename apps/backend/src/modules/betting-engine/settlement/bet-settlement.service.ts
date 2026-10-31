@@ -1,9 +1,6 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { BetStatus, FixtureStatus, Market } from '@evcore/db';
-import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
-import { BankrollService } from '@modules/bankroll/bankroll.service';
-import { combineLegs } from '@modules/bet-slip/bet-slip-outcome';
 import { ChannelDecisionService } from '../channel-decision.service';
 import {
   resolveEarlyBetStatus,
@@ -15,8 +12,9 @@ import {
 
 /**
  * Settles materialised Bets against final/early fixture scores and mirrors the
- * outcome onto channel selections. Bet.status is the financial authority; the
- * channel mirror is analytical only. Extracted verbatim from BettingEngineService.
+ * outcome onto channel selections. The channel mirror is analytical only.
+ * Since the declared slips and the bankroll left (2026-10-31), a settlement
+ * writes statuses and nothing else: no money moves here.
  */
 @Injectable()
 export class BetSettlementService {
@@ -24,8 +22,6 @@ export class BetSettlementService {
     private readonly prisma: PrismaService,
     @Optional()
     private readonly channelDecisionService?: ChannelDecisionService,
-    @Optional()
-    private readonly bankroll?: BankrollService,
   ) {}
 
   async settleEarlyBets(fixtureId: string): Promise<{ settled: number }> {
@@ -113,21 +109,6 @@ export class BetSettlementService {
         id: true,
         market: true,
         pick: true,
-        status: true,
-        oddsSnapshot: true,
-        betSlipItems: {
-          select: {
-            userId: true,
-            stakeOverride: true,
-            betSlip: {
-              select: {
-                id: true,
-                type: true,
-                unitStake: true,
-              },
-            },
-          },
-        },
       },
     });
 
@@ -148,21 +129,8 @@ export class BetSettlementService {
 
     if (bets.length === 0) return { settled: 0 };
 
-    const userIds = [
-      ...new Set(bets.flatMap((b) => b.betSlipItems.map((i) => i.userId))),
-    ];
-    const users = await this.prisma.client.user.findMany({
-      where: { id: { in: userIds } },
-      select: { id: true, currency: true },
-    });
-    const currencyByUser = new Map(users.map((u) => [u.id, u.currency]));
-
     return this.prisma.client.$transaction(async (tx) => {
       let settled = 0;
-      const touchedComboSlipIds = new Set<string>();
-      // Statut d'avant ce passage, pour les paris qui changent : un combiné
-      // ne se crédite qu'une fois, quand il passe de non réglé à réglé.
-      const previousStatusByBetId = new Map<string, BetStatus>();
       for (const bet of bets) {
         let status: BetStatus;
 
@@ -205,142 +173,7 @@ export class BetSettlementService {
           data: { status },
         });
 
-        // Bankroll writes only on a status TRANSITION. This method re-settles
-        // PENDING + WON + LOST bets on every pass (VAR self-correction) and
-        // is also replayed by the rebuild worker and the manual
-        // settleAndCheck: without this guard a bet already WON was credited
-        // again at each pass (bankroll_transaction has no (betId, type)
-        // uniqueness). A WON → LOST reversal is still not debited here —
-        // it never happened in the data, and reversing a credit is a
-        // bankroll decision, not a settlement one.
-        const transitioned = bet.status !== status;
-        if (transitioned) previousStatusByBetId.set(bet.id, bet.status);
-        if (
-          transitioned &&
-          (status === BetStatus.WON || status === BetStatus.VOID)
-        ) {
-          for (const item of bet.betSlipItems) {
-            if (item.betSlip.type === 'COMBO') {
-              touchedComboSlipIds.add(item.betSlip.id);
-              continue;
-            }
-
-            const stake = new Decimal(
-              (item.stakeOverride ?? item.betSlip.unitStake).toString(),
-            );
-
-            if (status === BetStatus.WON) {
-              if (bet.oddsSnapshot === null) {
-                throw new Error(
-                  `Impossible de créditer le bet ${bet.id} sans oddsSnapshot`,
-                );
-              }
-
-              await this.bankroll?.recordBetWon(
-                {
-                  userId: item.userId,
-                  betId: bet.id,
-                  stake,
-                  odds: new Decimal(bet.oddsSnapshot.toString()),
-                  currency: currencyByUser.get(item.userId),
-                },
-                { tx },
-              );
-              continue;
-            }
-
-            await this.bankroll?.recordBetVoid(
-              {
-                userId: item.userId,
-                betId: bet.id,
-                stake,
-              },
-              { tx },
-            );
-          }
-        }
-
         settled++;
-      }
-
-      if (touchedComboSlipIds.size > 0) {
-        const comboSlips = await tx.betSlip.findMany({
-          where: { id: { in: [...touchedComboSlipIds] }, type: 'COMBO' },
-          select: {
-            id: true,
-            userId: true,
-            unitStake: true,
-            items: {
-              select: {
-                betId: true,
-                bet: {
-                  select: {
-                    status: true,
-                    oddsSnapshot: true,
-                  },
-                },
-              },
-            },
-          },
-        });
-
-        for (const slip of comboSlips) {
-          // Un combiné déjà gagné ou remboursé avant ce passage a déjà été
-          // crédité : une correction de score qui fait passer une jambe de
-          // gagnée à remboursée le recalculerait et le paierait une seconde
-          // fois. Comme pour un pari simple, une correction après crédit ne
-          // reprend rien ici.
-          const before = combineLegs(
-            slip.items.map((item) => ({
-              status: previousStatusByBetId.get(item.betId) ?? item.bet.status,
-              odds: null,
-            })),
-          );
-          if (
-            before.status === BetStatus.WON ||
-            before.status === BetStatus.VOID
-          )
-            continue;
-
-          // Même règle que l'écran et le résultat à mise fixe : une jambe
-          // remboursée compte pour une cote de 1, le combiné entièrement
-          // remboursé rend la mise.
-          const combo = combineLegs(
-            slip.items.map((item) => ({
-              status: item.bet.status,
-              odds:
-                item.bet.oddsSnapshot === null
-                  ? null
-                  : new Decimal(item.bet.oddsSnapshot.toString()),
-            })),
-          );
-          const firstBetId = slip.items[0]?.betId;
-          if (firstBetId === undefined) continue;
-          const stake = new Decimal(slip.unitStake.toString());
-
-          if (combo.status === BetStatus.WON) {
-            if (combo.odds === null) {
-              throw new Error(
-                `Impossible de créditer le coupon combiné ${slip.id} sans oddsSnapshot`,
-              );
-            }
-            await this.bankroll?.recordBetWon(
-              {
-                userId: slip.userId,
-                betId: firstBetId,
-                stake,
-                odds: combo.odds,
-                currency: currencyByUser.get(slip.userId),
-              },
-              { tx },
-            );
-          } else if (combo.status === BetStatus.VOID) {
-            await this.bankroll?.recordBetVoid(
-              { userId: slip.userId, betId: firstBetId, stake },
-              { tx },
-            );
-          }
-        }
       }
 
       return { settled };

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Aide</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:#141821}
+a{color:#141821}a:hover{color:#0E1320}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.r{display:flex;align-items:center;gap:12px;min-height:52px;border-top:1px solid #D9DDE3;text-decoration:none;color:#141821;font-size:15px;font-weight:500}
+.r:first-child{border-top:0}
+.r span{flex:1;min-width:0}
+.r svg{width:18px;height:18px;stroke:#8A94A6;fill:none;stroke-width:2;stroke-linecap:round;flex:none}
+.led{width:12px;height:12px;border-radius:50%;background:#D9DDE3}
+.led.on{background:#FFB300}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F9; display: flex; flex-direction: column; overflow: hidden">
+  <header style="background: #0E1320; color: #fff; padding: 52px 16px 14px; display: flex; align-items: center; justify-content: space-between">
+    <a href="Moi.dc.html" aria-label="Retour" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; margin-left: -12px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M15 6l-6 6 6 6"/></svg></a>
+    <span class="num" style="font-weight: 600; font-size: 22px">Aide</span>
+    <span style="width: 32px"></span>
+  </header>
+
+  <div style="margin: 8px 16px 0; background: #fff; border: 1px solid #D9DDE3; border-radius: 14px; padding: 0 16px; display: flex; flex-direction: column">
+    <a class="r" href="Aide.dc.html"><span>Comment lire un coupon</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="r" href="Aide.dc.html" style="background: #F6F7F9; margin: 0 -16px; padding: 0 16px"><span>« 8 sur 10 », ça veut dire quoi</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></a>
+    <div style="padding: 12px 0 16px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #D9DDE3">
+      <div style="display: flex; align-items: center; gap: 12px"><div style="display: flex; gap: 5px"><span class="led on"></span><span class="led on"></span><span class="led on"></span><span class="led on"></span><span class="led on"></span><span class="led on"></span><span class="led on"></span><span class="led on"></span><span class="led"></span><span class="led"></span></div><span class="num" style="font-weight: 700; font-size: 20px">8 sur 10</span></div>
+      <p style="margin: 0; font-size: 15px; line-height: 1.45">Sur 10 jours comme celui-là, ce pari passe environ 8 fois et rate 2 fois. Ce n'est pas une promesse pour aujourd'hui : c'est ce qu'il a donné, compté sur la période affichée.</p>
+      <p style="margin: 0; font-size: 15px; line-height: 1.45">Exemple : le Favori annonce <span class="num" style="font-weight: 600">8 sur 10</span> depuis le 13/10. Réalisé : <span class="num" style="font-weight: 600">11 jours gagnés sur 14</span>, soit 8 sur 10. Quand les deux chiffres se ressemblent, on dit vrai.</p>
+      <a href="Resultats.dc.html" style="font-size: 14px; font-weight: 500; min-height: 44px; display: flex; align-items: center; text-decoration: none">Voir nos résultats ›</a>
+    </div>
+    <a class="r" href="Aide.dc.html"><span>Ce que 1xBet garde</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="r" href="Aide.dc.html"><span>Pourquoi on s'abstient certains jours</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="r" href="Aide.dc.html"><span>Suivre un coupon</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="r" href="Aide.dc.html"><span>Vérifie ton ticket</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="r" href="Aide.dc.html"><span>Le Favori, le Combiné, le Cote 2, les chasseurs</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="r" href="Aide.dc.html"><span>Nos résultats : comment on les compte</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a class="r" href="JeuResponsable.dc.html"><span>Jeu responsable</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+  </div>
+  <a href="Messages.dc.html" style="margin: 16px; display: flex; align-items: center; justify-content: space-between; min-height: 52px; border-top: 1px solid #D9DDE3; border-bottom: 1px solid #D9DDE3; text-decoration: none; font-size: 15px; font-weight: 500"><span>Une question ? Écris-nous</span><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 18px; height: 18px; stroke: #8A94A6; fill: none; stroke-width: 2; stroke-linecap: round"><path d="M9 6l6 6-6 6"/></svg></a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

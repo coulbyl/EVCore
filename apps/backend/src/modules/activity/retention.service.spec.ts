@@ -25,7 +25,7 @@ describe('RetentionService', () => {
       findActiveCounts: vi.fn().mockResolvedValue({ dau: 2, wau: 5, mau: 9 }),
       findEngagement: vi
         .fn()
-        .mockResolvedValue({ weeklyActive: 5, followed: 2, declared: 1 }),
+        .mockResolvedValue({ weeklyActive: 5, followed: 2 }),
       findNotificationOpens: vi
         .fn()
         .mockResolvedValue([{ type: 'MORNING_BRIEF', sent: 20, opened: 7 }]),
@@ -44,7 +44,6 @@ describe('RetentionService', () => {
     expect(view.engagement).toEqual({
       weeklyActive: 5,
       followedRate: 0.4,
-      declaredRate: 0.2,
     });
     expect(view.notifications[0]?.rate).toBe(0.35);
   });
@@ -57,7 +56,7 @@ describe('admin-only measurement routes', () => {
     );
   });
 
-  it.each(['getSummary', 'getLeaderboard', 'getCompetitionStats'] as const)(
+  it.each(['getSummary', 'getCompetitionStats'] as const)(
     'guards dashboard %s with AdminGuard',
     (method) => {
       const handler = (

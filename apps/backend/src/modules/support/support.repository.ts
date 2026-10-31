@@ -25,7 +25,7 @@ const MESSAGE_SELECT = {
   createdAt: true,
   // Null for an AUTOMATED message (no human sender) — the service layer
   // maps that to a "system" sender rather than a real username/role.
-  sender: { select: { username: true, role: true } },
+  sender: { select: { username: true, fullName: true, role: true } },
   attachment: {
     select: {
       kind: true,
@@ -67,15 +67,13 @@ export class SupportRepository {
     });
   }
 
-  // Returns null when the user has no email or has opted out of support
-  // notification emails — callers treat a null email as "don't send".
-  async findUserEmail(userId: string): Promise<string | null> {
+  /** « Réponses de l'équipe » (09 § 5): off, a team reply notifies nothing. */
+  async wantsTeamReplies(userId: string): Promise<boolean> {
     const user = await this.prisma.client.user.findUnique({
       where: { id: userId },
-      select: { email: true, emailSupportNotificationsEnabled: true },
+      select: { teamRepliesEnabled: true },
     });
-    if (!user || !user.emailSupportNotificationsEnabled) return null;
-    return user.email;
+    return user?.teamRepliesEnabled ?? false;
   }
 
   async userExists(userId: string): Promise<boolean> {
@@ -286,11 +284,17 @@ export class SupportRepository {
 
   // Inbox listing — one row per conversation, with the last message and an
   // unread count (messages from the user created after the admin's read
-  // watermark). Kept as two queries rather than a single complex join since
-  // volume is tiny (one row per conversation, not per message).
+  // watermark). Four queries whatever the number of conversations (16 § 3:
+  // never a query per row; it was two per conversation until 2026-10-30).
+  //
+  // A conversation holding only the automatic welcome (a player who opened
+  // Messages and never wrote) is left out: the thread is created at opening
+  // so the player reads « on répond généralement en quelques heures », but
+  // the team has nothing to answer there (B9, 2026-10-30).
   async listConversationsForAdmin() {
     const conversations = await this.prisma.client.supportConversation.findMany(
       {
+        where: { messages: { some: { senderId: { not: null } } } },
         orderBy: { lastMessageAt: 'desc' },
         include: {
           user: {
@@ -299,29 +303,42 @@ export class SupportRepository {
         },
       },
     );
+    if (conversations.length === 0) return [];
+    const ids = conversations.map((conversation) => conversation.id);
 
-    const results = await Promise.all(
-      conversations.map(async (conversation) => {
-        const [lastMessage, unreadCount] = await Promise.all([
-          this.prisma.client.supportMessage.findFirst({
-            where: { conversationId: conversation.id },
-            orderBy: { createdAt: 'desc' },
-            select: MESSAGE_SELECT,
-          }),
-          this.prisma.client.supportMessage.count({
-            where: {
-              conversationId: conversation.id,
-              senderId: conversation.userId,
-              ...(conversation.adminReadAt
-                ? { createdAt: { gt: conversation.adminReadAt } }
-                : {}),
-            },
-          }),
-        ]);
-        return { conversation, lastMessage, unreadCount };
-      }),
+    const [lastIds, unreadRows] = await Promise.all([
+      this.prisma.client.$queryRaw<{ id: string }[]>`
+        SELECT DISTINCT ON ("conversationId") id
+        FROM public.support_message
+        WHERE "conversationId" = ANY(${ids}::uuid[])
+        ORDER BY "conversationId", "createdAt" DESC, id DESC
+      `,
+      this.prisma.client.$queryRaw<
+        { conversationId: string; unread: number }[]
+      >`
+        SELECT m."conversationId", count(*)::int AS unread
+        FROM public.support_message m
+        JOIN public.support_conversation c ON c.id = m."conversationId"
+        WHERE c.id = ANY(${ids}::uuid[])
+          AND m."senderId" = c."userId"
+          AND (c."adminReadAt" IS NULL OR m."createdAt" > c."adminReadAt")
+        GROUP BY m."conversationId"
+      `,
+    ]);
+    const lastMessages = await this.prisma.client.supportMessage.findMany({
+      where: { id: { in: lastIds.map((row) => row.id) } },
+      select: MESSAGE_SELECT,
+    });
+    const lastByConversation = new Map(
+      lastMessages.map((message) => [message.conversationId, message]),
     );
-
-    return results;
+    const unreadByConversation = new Map(
+      unreadRows.map((row) => [row.conversationId, row.unread]),
+    );
+    return conversations.map((conversation) => ({
+      conversation,
+      lastMessage: lastByConversation.get(conversation.id) ?? null,
+      unreadCount: unreadByConversation.get(conversation.id) ?? 0,
+    }));
   }
 }

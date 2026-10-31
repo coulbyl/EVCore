@@ -3,7 +3,7 @@ export type RiskProfile = "CONSERVATIVE" | "BALANCED" | "AGGRESSIVE";
 export type AuthSessionUser = {
   id: string;
   email: string;
-  username: string;
+  username: string | null;
   fullName: string;
   bio: string | null;
   role: "ADMIN" | "OPERATOR";
@@ -14,13 +14,11 @@ export type AuthSessionUser = {
   theme: string | null;
   locale: string | null;
   currency: string | null;
-  unitMode: string | null;
-  unitAmount: string | null;
-  unitPercent: string | null;
-  riskProfile: RiskProfile;
-  emailSupportNotificationsEnabled: boolean;
+  emailNotificationsEnabled: boolean;
   morningBriefEnabled: boolean;
   weeklyStatementEnabled: boolean;
+  followedResultEnabled: boolean;
+  teamRepliesEnabled: boolean;
   hasSeenOnboarding: boolean;
   hasCompletedOnboarding: boolean;
   phoneNumber: string | null;
@@ -40,10 +38,6 @@ export function activePauseEnd(
   return pausedUntil && new Date(pausedUntil).getTime() > now
     ? pausedUntil
     : null;
-}
-
-export function isAccountVerified(user: AuthSessionUser): boolean {
-  return user.emailVerified || user.totpVerified;
 }
 
 export type AuthSession = {

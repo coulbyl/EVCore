@@ -3,12 +3,10 @@
 import { Page, PageContent } from "@evcore/ui";
 import { EngineHealthCard } from "./engine-health-card";
 import { CompetitionRanking } from "./competition-ranking";
-import { UserLeaderboard } from "./user-leaderboard";
 import { PipelineStatus } from "./pipeline-status";
 import { ActiveAlerts } from "./active-alerts";
 import { RetentionCard } from "./retention-card";
 import { useCompetitionStats } from "@/domains/dashboard/use-cases/get-competition-stats";
-import { useLeaderboard } from "@/domains/dashboard/use-cases/get-leaderboard";
 import { useDashboardSummary } from "@/domains/dashboard/use-cases/get-dashboard-summary";
 
 // No date-range filter on this page — EngineHealthCard, CompetitionRanking,
@@ -23,11 +21,6 @@ export function DashboardPageClientAdmin() {
     isLoading: competitionLoading,
     isError: competitionError,
   } = useCompetitionStats();
-  const {
-    data: leaderboard,
-    isLoading: leaderboardLoading,
-    isError: leaderboardError,
-  } = useLeaderboard();
   const {
     data: summary,
     isLoading: summaryLoading,
@@ -67,19 +60,12 @@ export function DashboardPageClientAdmin() {
               />
             </div>
 
-            {/* Row 3 : Classement ligues + Top joueurs */}
+            {/* Row 3 : Classement ligues */}
             <div className="col-span-2 sm:col-span-3 lg:col-span-6">
               <CompetitionRanking
                 stats={competitionStats ?? []}
                 isLoading={competitionLoading}
                 isError={competitionError}
-              />
-            </div>
-            <div className="col-span-2 sm:col-span-3 lg:col-span-6">
-              <UserLeaderboard
-                entries={leaderboard ?? []}
-                isLoading={leaderboardLoading}
-                isError={leaderboardError}
               />
             </div>
           </div>

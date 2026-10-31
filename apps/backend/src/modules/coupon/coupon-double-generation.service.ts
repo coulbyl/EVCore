@@ -81,29 +81,32 @@ export class CouponDoubleGenerationService {
     );
     // jointProbability = retour attendu / cote : on écrit le retour attendu
     // qui la rend égale à la probabilité du marché.
-    const proposalId = await this.repository.upsertPriceComposerProposal({
-      forDate: dayStart,
-      combinedOdds: referenceOdds.toNumber(),
-      expectedReturn: probability.times(referenceOdds).toNumber(),
-      lastFixtureScheduledAt: lastKickoff,
-      legs: composition.legs.map((leg) => ({
-        fixtureId: leg.fixtureId,
-        market: leg.market as Market,
-        pick: leg.pick,
-        odds: leg.odds,
-        probability: leg.fair.toNumber(),
-        expectedReturn: leg.fair.times(leg.odds).toNumber(),
-        ...operatorPrice(leg, quotes),
-      })),
-      profile: {
-        targetOddsMin: DOUBLE_COUPON_CLASS.targetOddsMin,
-        targetOddsMax: DOUBLE_COUPON_CLASS.targetOddsMax,
-        policyVersion: DOUBLE_POLICY.version,
-      },
-    });
+    const { proposalId, created } =
+      await this.repository.upsertPriceComposerProposal({
+        forDate: dayStart,
+        combinedOdds: referenceOdds.toNumber(),
+        expectedReturn: probability.times(referenceOdds).toNumber(),
+        lastFixtureScheduledAt: lastKickoff,
+        legs: composition.legs.map((leg) => ({
+          fixtureId: leg.fixtureId,
+          market: leg.market as Market,
+          pick: leg.pick,
+          odds: leg.odds,
+          probability: leg.fair.toNumber(),
+          expectedReturn: leg.fair.times(leg.odds).toNumber(),
+          ...operatorPrice(leg, quotes),
+        })),
+        profile: {
+          targetOddsMin: DOUBLE_COUPON_CLASS.targetOddsMin,
+          targetOddsMax: DOUBLE_COUPON_CLASS.targetOddsMax,
+          policyVersion: DOUBLE_POLICY.version,
+        },
+      });
     await this.repository.recordPriceComposerAttempt({
       forDate: dayStart,
-      outcome: 'composed',
+      // The proposal of the day is immutable: a later pass that finds it
+      // published says so instead of « composed » (ENV-PROD § 3).
+      outcome: created ? 'composed' : 'preserved',
       candidateCount: composition.candidateCount,
       proposalId,
       pass: { name: DOUBLE_POLICY.pass, policyVersion: DOUBLE_POLICY.version },

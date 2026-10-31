@@ -13,8 +13,6 @@ import { H2HService } from '@modules/betting-engine/h2h.service';
 import { CongestionService } from '@modules/betting-engine/congestion.service';
 import { FriModelService } from '@modules/betting-engine/fri-model/fri-model.service';
 import { MlInferenceService } from '@modules/ml/ml.inference.service';
-import { BankrollService } from '@modules/bankroll/bankroll.service';
-import { BankrollRepository } from '@modules/bankroll/bankroll.repository';
 import { AdjustmentService } from '@modules/adjustment/adjustment.service';
 import { CalibrationService } from '@modules/adjustment/calibration.service';
 import { NotificationService } from '@modules/notification/notification.service';
@@ -38,8 +36,6 @@ describe('Adjustment flow (e2e)', () => {
         CongestionService,
         FriModelService,
         MlInferenceService,
-        BankrollRepository,
-        BankrollService,
         CalibrationService,
         MailService,
         NotificationService,

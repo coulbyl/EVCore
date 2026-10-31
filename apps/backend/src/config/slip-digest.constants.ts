@@ -18,4 +18,22 @@ export const SLIP_DIGEST = {
   WEEKLY_SCHEDULER_KEY: 'weekly-statement',
   WEEKLY_JOB: 'weekly-statement',
   WEEKLY_CRON: '0 8 * * 1',
+  // Résultat d'un coupon suivi, le soir même (2026-10-30, refonte 10 § 3) :
+  // toutes les 10 minutes de 20:00 à 00:50 UTC, l'heure d'Abidjan.
+  // Surchargeable par FOLLOWED_SETTLED_CRON.
+  FOLLOWED_SCHEDULER_KEY: 'followed-settled',
+  FOLLOWED_JOB: 'followed-settled',
+  FOLLOWED_CRON: '*/10 20-23,0 * * *',
+} as const;
+
+/**
+ * Le créneau du soir (heures UTC) : rien avant 20 h, rien entre 1 h et 8 h,
+ * ce qui se règle après attend la matinée (refonte 10 § 3).
+ */
+export const FOLLOWED_SETTLED_WINDOW = {
+  START_HOUR_UTC: 20,
+  /** Exclusive. */
+  END_HOUR_UTC: 1,
+  /** Joueurs notifiés en parallèle (le pool de connexions vaut 10). */
+  CONCURRENCY: 5,
 } as const;

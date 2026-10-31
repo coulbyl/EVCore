@@ -204,24 +204,18 @@ const WITH_LEGS = {
   },
 } as const;
 
-// Adds real, verifiable engagement counts (CouponProposalView/
-// CouponProposalPlacement — never a fabricated number, see their own doc
-// comments in schema.prisma) on top of WITH_LEGS — only for the listing
+// Adds real, verifiable engagement counts (CouponProposalView and
+// CouponFollow — never a fabricated number, see their own doc comments in
+// schema.prisma) on top of WITH_LEGS — only for the listing
 // used by the Coupons page (findByDate), not settlement's findByIdWithLegs,
 // which has no per-viewer concept.
 function withEngagement(userId: string) {
   return {
     ...WITH_LEGS,
-    _count: { select: { views: true, placements: true, follows: true } },
-    // Only the CURRENT user's own placement (0 or 1 row, unique per
-    // [couponProposalId, userId]) — drives "Déjà joué par vous"; the total
-    // player count comes from _count.placements above instead.
-    placements: {
-      where: { userId },
-      select: { id: true },
-      take: 1,
-    },
-    // Même principe pour « Suivre ce coupon » (2026-10-28).
+    _count: { select: { views: true, follows: true } },
+    // Only the CURRENT user's own follow (0 or 1 row, unique per
+    // [couponProposalId, userId]) — drives the ticked « Suivre » button; the
+    // follower count comes from _count.follows above instead.
     follows: {
       where: { userId },
       select: { id: true },
@@ -267,6 +261,35 @@ export class CouponRepository {
       include: withEngagement(userId),
       orderBy: { rank: 'asc' },
     });
+  }
+
+  /**
+   * Le premier coup d'envoi d'un coupon, ou null s'il n'existe pas : on ne
+   * suit plus un coupon commencé (04 § 3).
+   */
+  async findFirstKickoff(id: string): Promise<{
+    firstKickoffAt: Date | null;
+    source: string;
+    rank: number;
+    targetOddsMin: Prisma.Decimal;
+  } | null> {
+    const [row] = await this.prisma.client.$queryRaw<
+      {
+        firstKickoffAt: Date | null;
+        source: string;
+        rank: number;
+        targetOddsMin: Prisma.Decimal;
+      }[]
+    >`
+      SELECT min(f."scheduledAt") AS "firstKickoffAt",
+             cp.source::text AS source, cp.rank, cp."targetOddsMin"
+      FROM public.coupon_proposal cp
+      LEFT JOIN public.coupon_proposal_leg l ON l."couponProposalId" = cp.id
+      LEFT JOIN public.fixture f ON f.id = l."fixtureId"
+      WHERE cp.id = ${id}::uuid
+      GROUP BY cp.id
+    `;
+    return row ?? null;
   }
 
   async exists(id: string): Promise<boolean> {
@@ -394,6 +417,7 @@ export class CouponRepository {
       legId: string;
       operatorOdds: number;
       operatorMargin: number | null;
+      operatorFairProbability: number | null;
     }[],
   ): Promise<void> {
     if (updates.length === 0) return;
@@ -407,6 +431,10 @@ export class CouponRepository {
               update.operatorMargin === null
                 ? null
                 : new Prisma.Decimal(update.operatorMargin.toFixed(4)),
+            operatorFairProbability:
+              update.operatorFairProbability === null
+                ? null
+                : new Prisma.Decimal(update.operatorFairProbability.toFixed(4)),
           },
         }),
       ),
@@ -558,6 +586,10 @@ export class CouponRepository {
    *
    * `source` fait partie de la clé unique : l'upsert ne peut donc jamais
    * écraser la proposition du LLM du même jour sur la même cible.
+   *
+   * Une proposition existante n'est jamais réécrite : `created` dit si
+   * cette passe l'a écrite ou l'a trouvée publiée (la passe de 21 h trouve
+   * celle de 17 h, ENV-PROD § 3).
    */
   async upsertPriceComposerProposal(input: {
     forDate: Date;
@@ -580,6 +612,8 @@ export class CouponRepository {
       /** Prix et marge chez le book des joueurs (1xBet), quand il cote. */
       operatorOdds?: number | null;
       operatorMargin?: number | null;
+      /** Fréquence de Shin chez 1xBet, du même relevé que operatorOdds. */
+      operatorFairProbability?: number | null;
     }[];
     /**
      * Profil écrit dans la clé unique et dans `reasoning.policyVersion`. Par
@@ -595,7 +629,7 @@ export class CouponRepository {
       /** Canal écrit sur chaque jambe ; PRICE par défaut. */
       legCanal?: StrategyChannel;
     };
-  }): Promise<string> {
+  }): Promise<{ proposalId: string; created: boolean }> {
     const profile = input.profile ?? {
       targetOddsMin: UNIFIED_COUPON_CLASS.targetOddsMin,
       targetOddsMax: UNIFIED_COUPON_CLASS.targetOddsMax,
@@ -635,6 +669,15 @@ export class CouponRepository {
       } satisfies Prisma.InputJsonValue,
     };
 
+    const uniqueKey = {
+      forDate_source_signalWindowDays_targetOddsMin_targetOddsMax_rank: key,
+    };
+    const existing = await this.prisma.client.couponProposal.findUnique({
+      where: uniqueKey,
+      select: { id: true },
+    });
+    if (existing) return { proposalId: existing.id, created: false };
+
     const proposal = await this.prisma.client.couponProposal.upsert({
       where: {
         forDate_source_signalWindowDays_targetOddsMin_targetOddsMax_rank: key,
@@ -664,16 +707,21 @@ export class CouponRepository {
               leg.operatorMargin == null
                 ? null
                 : new Prisma.Decimal(leg.operatorMargin.toFixed(4)),
+            operatorFairProbability:
+              leg.operatorFairProbability == null
+                ? null
+                : new Prisma.Decimal(leg.operatorFairProbability.toFixed(4)),
             signalScore: new Prisma.Decimal(0),
             featureSnapshot: { expectedReturn: leg.expectedReturn },
           })),
         },
       },
-      // Une proposition déjà réglée ou décidée n'est jamais réécrite.
+      // Une proposition déjà réglée ou décidée n'est jamais réécrite (et une
+      // passe concurrente qui l'aurait créée entre-temps la garde).
       update: {},
       select: { id: true },
     });
-    return proposal.id;
+    return { proposalId: proposal.id, created: true };
   }
 
   async recordPriceComposerAttempt(input: {
@@ -874,6 +922,49 @@ export class CouponRepository {
       FROM public.coupon_generation_attempt
       WHERE "forDate" = ${startOfUtcDay(forDate)}::date
       ORDER BY pass, "generatedAt" DESC
+    `;
+  }
+
+  /**
+   * Les abstentions de chaque jour de [from, to[ (2026-10-30, 04 § 5 et
+   * 08 § 6) : la dernière tentative de chaque passe fait foi, et une passe
+   * dont le produit a quand même un coupon déterministe publié ce jour-là
+   * dans sa bande n'est pas une abstention. Les tentatives ne sont jamais
+   * purgées : la raison d'un jour se relit autant qu'on veut.
+   */
+  findAbstentionsBetween(input: {
+    from: Date;
+    to: Date;
+    passes: readonly { pass: string; targetOddsMin: number }[];
+  }): Promise<{ forDate: Date; pass: string; reason: string | null }[]> {
+    return this.prisma.client.$queryRaw<
+      { forDate: Date; pass: string; reason: string | null }[]
+    >`
+      WITH latest AS (
+        SELECT DISTINCT ON ("forDate", pass) "forDate", pass, outcome, reason
+        FROM public.coupon_generation_attempt
+        WHERE "forDate" >= ${startOfUtcDay(input.from)}::date
+          AND "forDate" < ${startOfUtcDay(input.to)}::date
+          AND pass = ANY(${input.passes.map((p) => p.pass)}::text[])
+        ORDER BY "forDate", pass, "generatedAt" DESC
+      ), product AS (
+        SELECT * FROM unnest(
+          ${input.passes.map((p) => p.pass)}::text[],
+          ${input.passes.map((p) => p.targetOddsMin)}::numeric[]
+        ) AS p(pass, target)
+      )
+      SELECT latest."forDate", latest.pass, latest.reason
+      FROM latest
+      JOIN product ON product.pass = latest.pass
+      WHERE latest.outcome = 'abstained'
+        AND NOT EXISTS (
+          SELECT 1 FROM public.coupon_proposal cp
+          WHERE cp."forDate" = latest."forDate"
+            AND cp."targetOddsMin" = product.target
+            AND cp.source <> 'LLM'
+            AND cp.rank = 1
+        )
+      ORDER BY latest."forDate", latest.pass
     `;
   }
 

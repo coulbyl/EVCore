@@ -47,7 +47,7 @@ type RawMessage = {
   content: string | null;
   createdAt: Date;
   // Null for an AUTOMATED message — no human sender.
-  sender: { username: string; role: UserRole } | null;
+  sender: { username: string | null; fullName: string; role: UserRole } | null;
   attachment: RawAttachment | null;
 };
 
@@ -85,7 +85,11 @@ export class SupportService {
         !raw.sender || raw.sender.role === UserRole.ADMIN
           ? 'ADMIN'
           : 'OPERATOR',
-      senderUsername: raw.sender?.username ?? 'EVCore',
+      // Sans nom d'utilisateur (inscription par e-mail depuis le 2026-10-30),
+      // le prénom.
+      senderUsername: raw.sender
+        ? (raw.sender.username ?? raw.sender.fullName)
+        : 'EVCore',
       content: raw.content,
       attachment: await this.toAttachmentDto(raw.attachment),
       kind:
@@ -312,8 +316,9 @@ export class SupportService {
     });
     const dto = await this.toMessageDto(raw);
     this.gateway.emitMessage(conversationId, dto);
-    const email = await this.repo.findUserEmail(conversation.userId);
-    await this.notifier.notifyUser(conversation.userId, email, dto);
+    if (await this.repo.wantsTeamReplies(conversation.userId)) {
+      await this.notifier.notifyUser(conversation.userId, dto);
+    }
     return dto;
   }
 

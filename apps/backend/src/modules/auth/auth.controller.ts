@@ -12,7 +12,10 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
-import { AUTH_LOGIN_RATE_LIMIT } from '@config/rate-limit.constants';
+import {
+  AUTH_LOGIN_RATE_LIMIT,
+  AUTH_REGISTER_RATE_LIMIT,
+} from '@config/rate-limit.constants';
 import { AuthService } from './auth.service';
 import { AccountDeletionService } from './account-deletion.service';
 import { AccountPauseService } from './account-pause.service';
@@ -21,6 +24,7 @@ import { CurrentSession } from './current-session.decorator';
 import { AuthSessionGuard } from './auth-session.guard';
 import type { AuthSession } from './auth.types';
 import { LoginDto } from './dto/login.dto';
+import { LoginTotpDto } from './dto/login-totp.dto';
 import { RegisterDto } from './dto/register.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
@@ -30,6 +34,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ResetPasswordTotpDto } from './dto/reset-password-totp.dto';
 import { UpdateIdentityDto } from './dto/update-identity.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { PauseAccountDto } from './dto/pause-account.dto';
 import { RequestEmailChangeDto } from './dto/request-email-change.dto';
 import { ConfirmEmailChangeDto } from './dto/confirm-email-change.dto';
@@ -45,6 +50,12 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @Throttle({
+    default: {
+      limit: AUTH_REGISTER_RATE_LIMIT.limit,
+      ttl: AUTH_REGISTER_RATE_LIMIT.ttlMs,
+    },
+  })
   async register(
     @Body() body: RegisterDto,
     @Res({ passthrough: true }) response: Response,
@@ -71,6 +82,27 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const result = await this.authService.login(body);
+    if (result.kind === 'totp') {
+      // Pas de session avant le code de l'application (11 § 3).
+      return { totpRequired: true as const, challenge: result.challenge };
+    }
+    this.authService.applySessionCookie(response, result.token);
+    return { session: result.session };
+  }
+
+  @Post('login/totp')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({
+    default: {
+      limit: AUTH_LOGIN_RATE_LIMIT.limit,
+      ttl: AUTH_LOGIN_RATE_LIMIT.ttlMs,
+    },
+  })
+  async loginWithTotp(
+    @Body() body: LoginTotpDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.authService.loginWithTotp(body);
     this.authService.applySessionCookie(response, result.token);
     return { session: result.session };
   }
@@ -125,6 +157,54 @@ export class AuthController {
     await this.accountDeletion.deleteAccount(session.user.id, body.password);
     this.authService.clearSessionCookie(response);
     return { status: 'ok' as const };
+  }
+
+  /**
+   * « Mot de passe » (09 § 5): every session closes, this one too; the
+   * player signs in again with the new password.
+   */
+  @Post('me/password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthSessionGuard)
+  @Throttle({
+    default: {
+      limit: AUTH_LOGIN_RATE_LIMIT.limit,
+      ttl: AUTH_LOGIN_RATE_LIMIT.ttlMs,
+    },
+  })
+  async changePassword(
+    @CurrentSession() session: AuthSession,
+    @Body() body: ChangePasswordDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    await this.authService.changePassword(session.user.id, body);
+    this.authService.clearSessionCookie(response);
+    return { status: 'ok' as const };
+  }
+
+  /** « Appareils connectés » (09 § 5): how many sessions are open. */
+  @Get('sessions')
+  @UseGuards(AuthSessionGuard)
+  async countSessions(
+    @CurrentSession() session: AuthSession,
+  ): Promise<{ count: number }> {
+    return { count: await this.authService.countSessions(session.user.id) };
+  }
+
+  /** « Déconnecter les autres »: every session but the one asking. */
+  @Post('sessions/sign-out-others')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthSessionGuard)
+  @Throttle({
+    default: {
+      limit: AUTH_LOGIN_RATE_LIMIT.limit,
+      ttl: AUTH_LOGIN_RATE_LIMIT.ttlMs,
+    },
+  })
+  async signOutOthers(
+    @CurrentSession() session: AuthSession,
+  ): Promise<{ signedOut: number }> {
+    return { signedOut: await this.authService.signOutOtherSessions(session) };
   }
 
   // Changement d'adresse : mot de passe, puis code envoyé à la nouvelle
@@ -240,6 +320,12 @@ export class AuthController {
 
   @Post('reset-password/totp')
   @HttpCode(HttpStatus.OK)
+  @Throttle({
+    default: {
+      limit: AUTH_LOGIN_RATE_LIMIT.limit,
+      ttl: AUTH_LOGIN_RATE_LIMIT.ttlMs,
+    },
+  })
   async resetPasswordWithTotp(@Body() body: ResetPasswordTotpDto) {
     await this.authService.resetPasswordWithTotp(body);
     return { status: 'ok' as const };

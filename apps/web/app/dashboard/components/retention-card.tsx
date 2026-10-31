@@ -47,10 +47,6 @@ function RetentionBody({ data }: { data: RetentionView }) {
           label="Suivent un coupon"
           value={pct(data.engagement.followedRate)}
         />
-        <Tile
-          label="Déclarent un coupon"
-          value={pct(data.engagement.declaredRate)}
-        />
         {data.notifications.map((n) => (
           <Tile
             key={n.type}

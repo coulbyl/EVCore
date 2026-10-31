@@ -1,4 +1,6 @@
 import "dotenv/config";
+import { COUPON_SCHEDULE } from "@evcore/analysis-core";
+import { z } from "zod";
 
 /** Every provider here speaks the same OpenAI-compatible chat-completions
  * shape — groq.client.ts picks groq-sdk for "groq" (its own hardcoded
@@ -22,11 +24,10 @@ export type ResearchProvider = "groq" | "tavily";
 type ProviderDefaults = {
   /** Env var carrying this provider's API key. */
   apiKeyEnv: string;
-  /** Env var letting the model be overridden for this provider. */
-  modelEnv: string;
-  /** Fallback model id when `modelEnv` is unset — gpt-oss-120b everywhere,
-   * since that's the model VANTAGE's prompt/JSON-mode contract was tuned
-   * against; only the id format differs per provider. */
+  /** The model id — gpt-oss-120b everywhere, since that's the model
+   * VANTAGE's prompt/JSON-mode contract was tuned against; only the id
+   * format differs per provider. A decision in code (ENV-PROD § 6), no
+   * longer overridable from the environment. */
   model: string;
   /** OpenAI-compatible base URL. Omitted for Groq — groq-sdk's own default
    * (https://api.groq.com) applies. */
@@ -42,24 +43,20 @@ type ProviderDefaults = {
 const PROVIDER_DEFAULTS: Record<LlmProvider, ProviderDefaults> = {
   groq: {
     apiKeyEnv: "GROQ_API_KEY",
-    modelEnv: "GROQ_MODEL",
     model: "openai/gpt-oss-120b",
   },
   cerebras: {
     apiKeyEnv: "CEREBRAS_API_KEY",
-    modelEnv: "CEREBRAS_MODEL",
     model: "gpt-oss-120b",
     baseURL: "https://api.cerebras.ai/v1",
   },
   together: {
     apiKeyEnv: "TOGETHER_API_KEY",
-    modelEnv: "TOGETHER_MODEL",
     model: "openai/gpt-oss-120b",
     baseURL: "https://api.together.xyz/v1",
   },
   fireworks: {
     apiKeyEnv: "FIREWORKS_API_KEY",
-    modelEnv: "FIREWORKS_MODEL",
     model: "accounts/fireworks/models/gpt-oss-120b",
     baseURL: "https://api.fireworks.ai/inference/v1",
   },
@@ -135,38 +132,15 @@ export type Config = {
    * VANTAGE_RESEARCH_COMPETITION_CODES if the big-leagues default isn't
    * what you want. */
   researchCompetitionCodes: string[];
-  /** Cron pattern for the daily coupon-generation sweep (BullMQ repeatable
-   * job, see main.ts/queue/worker.ts) — the LLM coupon pipeline
-   * (docs/vantage-centric-redesign-2026-09-01.md §9bis). Default `30 20 *
-   * * *` (20:30 UTC) is deliberately apps/backend's own
-   * ETL_BETTING_ENGINE_ANALYSIS_CRON default (20:00 UTC,
-   * apps/backend/src/config/etl.constants.ts) plus 30 minutes — a guess at
-   * enough margin for that cron's betting-engine analysis pass (a strictly
-   * serial per-fixture loop with blocking API-Football/ml-worker calls, no
-   * measured/documented duration anywhere) to finish writing the day's
-   * ModelRun/ChannelDecision rows before this pool query reads them. The
-   * two apps don't share config at runtime (backend LLM-agnostic, no
-   * cross-app coupling — see that doc's §9bis), so if
-   * ETL_BETTING_ENGINE_ANALYSIS_CRON is ever changed there,
-   * VANTAGE_COUPON_CRON needs a matching manual update here. Since that
-   * margin is a guess, not a verified guarantee, `couponRetryCron` below
-   * exists specifically to self-heal a run that read an incomplete day. */
+  /** The daily coupon-generation pass (BullMQ repeatable job, see
+   * main.ts/queue/worker.ts): COUPON_SCHEDULE.LLM_COUPON_CRON, 17:45 UTC,
+   * shared with apps/backend's 17:00 horizon pass that composes every
+   * other coupon of the day on the same pool (ENV-PROD § 3). The 21:15
+   * retry pass is gone: proposals are immutable, it paid an LLM call each
+   * evening to keep the one already published. */
   couponCron: string;
-  /** A second, later pass of the exact same coupon-generation job (see
-   * couponCron above) — self-healing insurance against the analysis pass
-   * running past the first cron's margin on a heavy day. Safe to re-run:
-   * persist-coupon-proposal.ts's upsert only ever touches a still-PENDING
-   * proposal (never overwrites a human ACCEPTED/REJECTED decision), so a
-   * later pass with a more complete pool can only improve a proposal a
-   * user hasn't acted on yet, never corrupt one they have. Default `15 21
-   * * * *` (21:15 UTC — 45 minutes after the first pass). */
-  couponRetryCron: string;
-  /** How far ahead (hours from "now") the intraday pass looks for
-   * fixtures — matches apps/backend's `SAME_DAY_ANALYSIS_WINDOW_HOURS`
-   * default (3h) on purpose: no point building a coupon pool from fixtures
-   * outside the window apps/backend is actually rechecking. The two apps
-   * don't share config at runtime, so keep them in sync manually if either
-   * changes. */
+  /** How far ahead (hours from "now") the manual intraday pass looks for
+   * fixtures — apps/backend's same-day re-analysis window (3 h). */
   couponIntradayWindowHours: number;
 };
 
@@ -183,6 +157,13 @@ const DEFAULT_RESEARCH_COMPETITION_CODES = [
   "UEL",
   "UECL",
 ];
+
+/** How often the sweep looks for fixtures ready for analysis (5 min). */
+const SWEEP_INTERVAL_MS = 300_000;
+/** The agentic search model when research runs on Groq. */
+const GROQ_RESEARCH_MODEL = "groq/compound-mini";
+/** apps/backend's same-day re-analysis window, in hours. */
+const COUPON_INTRADAY_WINDOW_HOURS = 3;
 
 function required(key: string): string {
   const value = process.env[key];
@@ -202,8 +183,77 @@ function isResearchProvider(value: string): value is ResearchProvider {
   return (RESEARCH_PROVIDERS as readonly string[]).includes(value);
 }
 
+/**
+ * The environment of the worker (ENV-PROD § 6): the database, Redis, the
+ * provider chain and its keys, research. Hours, models, the sweep interval
+ * are decisions in this file. An empty value counts as absent.
+ */
+const ENV_SCHEMA = z.object({
+  DATABASE_URL: z.string().min(1),
+  REDIS_HOST: z.string().min(1).optional(),
+  REDIS_PORT: z.coerce.number().int().min(1).max(65_535).optional(),
+  LOG_LEVEL: z
+    .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
+    .optional(),
+});
+
+/** Read no more (ENV-PROD § 6): warned about at start, never refused. */
+const RETIRED_ENV = [
+  "GROQ_MODEL",
+  "CEREBRAS_MODEL",
+  "TOGETHER_MODEL",
+  "FIREWORKS_MODEL",
+  "GROQ_RESEARCH_MODEL",
+  "SWEEP_INTERVAL_MS",
+  "VANTAGE_COMPETITION_CODES",
+  "VANTAGE_COUPON_CRON",
+  "VANTAGE_COUPON_RETRY_CRON",
+  "VANTAGE_COUPON_INTRADAY_WINDOW_HOURS",
+] as const;
+
+/** Variables set in the environment and not empty (`KEY=` is absent). */
+function presentEnv(): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(process.env).filter(
+      (entry): entry is [string, string] =>
+        entry[1] !== undefined && entry[1] !== "",
+    ),
+  );
+}
+
+/** The retired variables still set, for the start-up log. */
+export function retiredEnvPresent(): string[] {
+  const env = presentEnv();
+  return RETIRED_ENV.filter((name) => env[name] !== undefined);
+}
+
+/**
+ * A provider resolved from its name and its key in the environment, or
+ * null when the key is missing: a switch in app_setting can name a
+ * provider, never supply its secret.
+ */
+export function resolveProvider(name: LlmProvider): ResolvedLlmProvider | null {
+  const defaults = PROVIDER_DEFAULTS[name];
+  const apiKey = process.env[defaults.apiKeyEnv];
+  if (!apiKey) return null;
+  return {
+    provider: name,
+    apiKey,
+    model: defaults.model,
+    baseUrl: defaults.baseURL,
+  };
+}
+
 export function loadConfig(): Config {
-  const requestedProvider = process.env["LLM_PROVIDER"] ?? "groq";
+  const checked = ENV_SCHEMA.safeParse(presentEnv());
+  if (!checked.success) {
+    throw new Error(
+      `Invalid environment:\n${checked.error.issues
+        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+        .join("\n")}`,
+    );
+  }
+  const requestedProvider = process.env["LLM_PROVIDER"] || "groq";
   if (!isLlmProvider(requestedProvider)) {
     throw new Error(
       `Unknown LLM_PROVIDER "${requestedProvider}" — expected one of: ${Object.keys(PROVIDER_DEFAULTS).join(", ")}`,
@@ -235,7 +285,7 @@ export function loadConfig(): Config {
     llmFallbackProviders.push({
       provider: name,
       apiKey: required(fallbackDefaults.apiKeyEnv),
-      model: process.env[fallbackDefaults.modelEnv] ?? fallbackDefaults.model,
+      model: fallbackDefaults.model,
       baseUrl: fallbackDefaults.baseURL,
     });
   }
@@ -243,24 +293,21 @@ export function loadConfig(): Config {
   return {
     databaseUrl: required("DATABASE_URL"),
     redisHost: process.env["REDIS_HOST"] ?? "localhost",
-    redisPort: Number(process.env["REDIS_PORT"] ?? "6379"),
+    redisPort: checked.data.REDIS_PORT ?? 6379,
     llmProvider: requestedProvider,
     llmApiKey: required(providerDefaults.apiKeyEnv),
-    llmModel: process.env[providerDefaults.modelEnv] ?? providerDefaults.model,
+    llmModel: providerDefaults.model,
     llmBaseUrl: providerDefaults.baseURL,
     llmFallbackProviders,
-    logLevel: process.env["LOG_LEVEL"] ?? "info",
-    sweepIntervalMs: Number(process.env["SWEEP_INTERVAL_MS"] ?? "300000"),
-    competitionCodes: (process.env["VANTAGE_COMPETITION_CODES"] ?? "")
-      .split(",")
-      .map((code) => code.trim())
-      .filter(Boolean),
+    logLevel: checked.data.LOG_LEVEL ?? "info",
+    sweepIntervalMs: SWEEP_INTERVAL_MS,
+    // Every active competition (the prod value was empty, ENV-PROD § 2).
+    competitionCodes: [],
     enableResearch: ["1", "true", "yes", "on"].includes(
       (process.env["VANTAGE_ENABLE_RESEARCH"] ?? "").toLowerCase(),
     ),
     researchProvider: requestedResearchProvider,
-    groqResearchModel:
-      process.env["GROQ_RESEARCH_MODEL"] ?? "groq/compound-mini",
+    groqResearchModel: GROQ_RESEARCH_MODEL,
     tavilyApiKey: process.env["TAVILY_API_KEY"],
     researchCompetitionCodes: process.env["VANTAGE_RESEARCH_COMPETITION_CODES"]
       ? process.env["VANTAGE_RESEARCH_COMPETITION_CODES"]
@@ -268,10 +315,7 @@ export function loadConfig(): Config {
           .map((code) => code.trim())
           .filter(Boolean)
       : DEFAULT_RESEARCH_COMPETITION_CODES,
-    couponCron: process.env["VANTAGE_COUPON_CRON"] ?? "30 20 * * *",
-    couponRetryCron: process.env["VANTAGE_COUPON_RETRY_CRON"] ?? "15 21 * * *",
-    couponIntradayWindowHours: Number(
-      process.env["VANTAGE_COUPON_INTRADAY_WINDOW_HOURS"] ?? "3",
-    ),
+    couponCron: COUPON_SCHEDULE.LLM_COUPON_CRON,
+    couponIntradayWindowHours: COUPON_INTRADAY_WINDOW_HOURS,
   };
 }

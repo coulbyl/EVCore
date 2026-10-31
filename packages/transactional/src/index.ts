@@ -12,6 +12,7 @@ export type { PasswordResetProps } from "./types";
 export type { MlModelActivatedProps } from "./types";
 export type { MlModelMissingProps } from "./types";
 export type { SupportMessageProps } from "./types";
+export type { PlayerDigestProps } from "./types";
 
 export { renderRoiAlert } from "./emails/roi-alert";
 export { renderMarketSuspension } from "./emails/market-suspension";
@@ -28,3 +29,4 @@ export { renderPasswordReset } from "./emails/password-reset";
 export { renderMlModelActivated } from "./emails/ml-model-activated";
 export { renderMlModelMissing } from "./emails/ml-model-missing";
 export { renderSupportMessage } from "./emails/support-message";
+export { renderPlayerDigest } from "./emails/player-digest";

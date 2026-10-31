@@ -58,7 +58,6 @@ import {
 } from './ev.constants';
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
 import { H2H_GAMMA, LINE_MOVEMENT_THRESHOLD } from './ev.constants';
-import { BankrollService } from '@modules/bankroll/bankroll.service';
 import type {
   EvaluatedPick,
   FullOddsSnapshot,
@@ -146,7 +145,6 @@ export class BettingEngineService {
     private readonly h2hService: H2HService,
     private readonly congestionService: CongestionService,
     private readonly mlInference: MlInferenceService,
-    private readonly bankroll?: BankrollService,
     friModelService?: FriModelService,
     // Injected by Nest in production (BettingEngineModule provides it); omitted
     // in unit/e2e test modules that don't, where channel persistence is a no-op.
@@ -166,11 +164,7 @@ export class BettingEngineService {
     this.oddsLoader = oddsLoader ?? new OddsSnapshotLoader(this.prisma);
     this.betSettlement =
       betSettlement ??
-      new BetSettlementService(
-        this.prisma,
-        this.channelDecisionService,
-        this.bankroll,
-      );
+      new BetSettlementService(this.prisma, this.channelDecisionService);
   }
 
   computeProbabilities(

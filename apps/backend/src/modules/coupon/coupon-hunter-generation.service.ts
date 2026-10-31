@@ -227,40 +227,44 @@ export class CouponHunterGenerationService {
     const expectedReturn = new Decimal(leg.probability)
       .times(leg.odds)
       .toNumber();
-    const proposalId = await this.repository.upsertPriceComposerProposal({
-      forDate: dayStart,
-      combinedOdds: leg.odds,
-      expectedReturn,
-      lastFixtureScheduledAt: input.kickoffs.get(leg.fixtureId) ?? dayStart,
-      legs: [
-        {
-          fixtureId: leg.fixtureId,
-          market: leg.market as Market,
-          pick: leg.pick,
-          line: leg.line ?? null,
-          odds: leg.odds,
-          expectedReturn,
-          probability: leg.probability,
-          // Le chasseur Corners connaît déjà son prix 1xBet ; les autres le
-          // lisent dans les prix jouables.
-          ...(leg.operatorOdds != null
-            ? {
-                operatorOdds: leg.operatorOdds,
-                operatorMargin: leg.operatorMargin ?? null,
-              }
-            : operatorPrice(leg, input.quotes)),
+    const { proposalId, created } =
+      await this.repository.upsertPriceComposerProposal({
+        forDate: dayStart,
+        combinedOdds: leg.odds,
+        expectedReturn,
+        lastFixtureScheduledAt: input.kickoffs.get(leg.fixtureId) ?? dayStart,
+        legs: [
+          {
+            fixtureId: leg.fixtureId,
+            market: leg.market as Market,
+            pick: leg.pick,
+            line: leg.line ?? null,
+            odds: leg.odds,
+            expectedReturn,
+            probability: leg.probability,
+            // Le chasseur Corners connaît déjà son prix 1xBet ; les autres le
+            // lisent dans les prix jouables.
+            ...(leg.operatorOdds != null
+              ? {
+                  operatorOdds: leg.operatorOdds,
+                  operatorMargin: leg.operatorMargin ?? null,
+                  operatorFairProbability: leg.operatorFairProbability ?? null,
+                }
+              : operatorPrice(leg, input.quotes)),
+          },
+        ],
+        profile: {
+          source: input.source,
+          targetOddsMin: spec.coupon.targetOddsMin,
+          targetOddsMax: spec.coupon.targetOddsMax,
+          policyVersion: HUNTER_POLICY.version,
         },
-      ],
-      profile: {
-        source: input.source,
-        targetOddsMin: spec.coupon.targetOddsMin,
-        targetOddsMax: spec.coupon.targetOddsMax,
-        policyVersion: HUNTER_POLICY.version,
-      },
-    });
+      });
     await this.repository.recordPriceComposerAttempt({
       forDate: dayStart,
-      outcome: 'composed',
+      // The proposal of the day is immutable: a later pass that finds it
+      // published says so instead of « composed » (ENV-PROD § 3).
+      outcome: created ? 'composed' : 'preserved',
       candidateCount: composition.candidateCount,
       proposalId,
       pass,

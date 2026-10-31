@@ -1,135 +1,191 @@
-// EVCore — Service Worker minimal
-// Cache statique uniquement. Pas de cache métier (données API exclues).
+// EVCore — Service Worker
+// Cache statique, plus le dernier écran vu de chaque onglet du joueur
+// (docs/refonte-ui/10-transverse.md § 2, 16 § 2) : hors ligne, l'onglet
+// reste lisible. Jamais l'API, jamais une feuille, jamais Compte : rien
+// d'argent ni de session. Le jour même seulement.
 
-const CACHE_NAME = 'evcore-static'
+const CACHE_NAME = "evcore-static";
+// Vidé par la page à la déconnexion (components/scoreboard/states/screens-cache.ts).
+const SCREENS_CACHE = "evcore-screens";
+const TABS = ["/today", "/matches", "/results", "/me"];
+const CACHED_AT = "x-evcore-cached-at";
 const IS_DEV_HOST =
-  self.location.hostname === 'localhost' ||
-  self.location.hostname === '127.0.0.1'
+  self.location.hostname === "localhost" ||
+  self.location.hostname === "127.0.0.1";
 
 // Assets mis en cache à l'installation
-const PRECACHE_ASSETS = ['/favicon.ico', '/icons/icon.svg']
+const PRECACHE_ASSETS = ["/favicon.ico", "/icons/icon.svg"];
 
-self.addEventListener('install', event => {
+self.addEventListener("install", (event) => {
   if (IS_DEV_HOST) {
-    event.waitUntil(self.skipWaiting())
-    return
+    event.waitUntil(self.skipWaiting());
+    return;
   }
 
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then(cache => cache.addAll(PRECACHE_ASSETS))
+      .then((cache) => cache.addAll(PRECACHE_ASSETS))
       .then(() => self.skipWaiting()),
-  )
-})
+  );
+});
 
-self.addEventListener('activate', event => {
+self.addEventListener("activate", (event) => {
   if (IS_DEV_HOST) {
     event.waitUntil(
       caches
         .keys()
-        .then(keys => Promise.all(keys.map(key => caches.delete(key))))
+        .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
         .then(() => self.clients.claim()),
-    )
-    return
+    );
+    return;
   }
 
   event.waitUntil(
     caches
       .keys()
-      .then(keys =>
+      .then((keys) =>
         Promise.all(
-          keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)),
+          keys
+            .filter((key) => key !== CACHE_NAME && key !== SCREENS_CACHE)
+            .map((key) => caches.delete(key)),
         ),
       )
       .then(() => self.clients.claim()),
-  )
-})
+  );
+});
 
 // Payload is the JSON string built by PushService: { title, body, url }.
-self.addEventListener('push', event => {
-  if (!event.data) return
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
 
-  let payload
+  let payload;
   try {
-    payload = event.data.json()
+    payload = event.data.json();
   } catch {
-    return
+    return;
   }
 
-  const { title, body, url } = payload
+  const { title, body, url } = payload;
   event.waitUntil(
-    self.registration.showNotification(title ?? 'EVCore', {
+    self.registration.showNotification(title ?? "EVCore", {
       body,
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon.svg',
-      data: { url: url ?? '/dashboard' },
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon.svg",
+      data: { url: url ?? "/today" },
     }),
-  )
-})
+  );
+});
 
 // Focuses an already-open EVCore tab on that route if one exists, otherwise
 // opens a new one — standard "notification click" behavior.
-self.addEventListener('notificationclick', event => {
-  event.notification.close()
-  const targetUrl = event.notification.data?.url ?? '/dashboard'
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url ?? "/today";
 
   event.waitUntil(
     self.clients
-      .matchAll({ type: 'window', includeUncontrolled: true })
-      .then(clientList => {
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
         for (const client of clientList) {
-          const clientUrl = new URL(client.url)
-          if (clientUrl.pathname === targetUrl && 'focus' in client) {
-            return client.focus()
+          const clientUrl = new URL(client.url);
+          if (clientUrl.pathname === targetUrl && "focus" in client) {
+            return client.focus();
           }
         }
         if (self.clients.openWindow) {
-          return self.clients.openWindow(targetUrl)
+          return self.clients.openWindow(targetUrl);
         }
       }),
-  )
-})
+  );
+});
 
-self.addEventListener('fetch', event => {
-  if (IS_DEV_HOST) return
+self.addEventListener("fetch", (event) => {
+  if (IS_DEV_HOST) return;
 
-  const { request } = event
+  const { request } = event;
 
   // GET uniquement, même origine uniquement
-  if (request.method !== 'GET') return
+  if (request.method !== "GET") return;
 
-  let url
+  let url;
   try {
-    url = new URL(request.url)
+    url = new URL(request.url);
   } catch {
-    return
+    return;
   }
 
-  if (url.origin !== self.location.origin) return
+  if (url.origin !== self.location.origin) return;
 
   // Exclure les routes API et les données dynamiques
-  if (url.pathname.startsWith('/api/')) return
+  if (url.pathname.startsWith("/api/")) return;
+
+  // Le dernier écran d'un onglet : réseau d'abord, l'écran gardé sinon.
+  if (request.mode === "navigate" && TABS.includes(url.pathname)) {
+    event.respondWith(lastScreen(event, url.pathname));
+    return;
+  }
+
+  // Une page de connexion : la session d'avant est finie (expirée sans
+  // déconnexion comprise), ses écrans ne sont pas ceux du prochain joueur.
+  if (request.mode === "navigate" && url.pathname.startsWith("/auth/")) {
+    event.waitUntil(caches.delete(SCREENS_CACHE));
+  }
 
   // Cache-first pour les assets statiques Next.js et les icônes
   const isStaticAsset =
-    url.pathname.startsWith('/_next/static/') ||
-    url.pathname.startsWith('/icons/') ||
-    url.pathname === '/favicon.ico'
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname.startsWith("/icons/") ||
+    url.pathname === "/favicon.ico";
 
   if (isStaticAsset) {
     event.respondWith(
       caches.match(request).then(
-        cached =>
+        (cached) =>
           cached ??
-          fetch(request).then(response => {
+          fetch(request).then((response) => {
             if (response.ok) {
-              const clone = response.clone()
-              caches.open(CACHE_NAME).then(cache => cache.put(request, clone))
+              const clone = response.clone();
+              caches
+                .open(CACHE_NAME)
+                .then((cache) => cache.put(request, clone));
             }
-            return response
+            return response;
           }),
       ),
-    )
+    );
   }
-})
+});
+
+// The product's day is UTC (Abidjan time), whatever the device's zone.
+function sameDay(a, b) {
+  return a.toISOString().slice(0, 10) === b.toISOString().slice(0, 10);
+}
+
+// One entry per tab, its query aside: the last screen seen of that tab.
+// The response goes to the page as it streams; the copy is kept beside it.
+async function lastScreen(event, tab) {
+  try {
+    const response = await fetch(event.request);
+    // A redirect (sign-in, pause) or an error page is not a screen to keep.
+    if (response.ok && !response.redirected) {
+      event.waitUntil(keepScreen(tab, response.clone()));
+    }
+    return response;
+  } catch (error) {
+    const cache = await caches.open(SCREENS_CACHE);
+    const cached = await cache.match(tab);
+    const at = cached && new Date(cached.headers.get(CACHED_AT) ?? 0);
+    // The day's data only: yesterday's coupons would mislead.
+    if (cached && at && sameDay(at, new Date())) return cached;
+    throw error;
+  }
+}
+
+async function keepScreen(tab, response) {
+  const body = await response.blob();
+  const headers = new Headers(response.headers);
+  headers.set(CACHED_AT, new Date().toISOString());
+  const cache = await caches.open(SCREENS_CACHE);
+  await cache.put(tab, new Response(body, { status: 200, headers }));
+}

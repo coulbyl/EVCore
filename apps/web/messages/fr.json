@@ -333,103 +333,6 @@
     "close": "Fermer",
     "isRead": "Lu"
   },
-  "productTour": {
-    "next": "Suivant",
-    "prev": "Précédent",
-    "done": "Terminé",
-    "welcome": {
-      "title": "Bienvenue sur EVCore",
-      "description": "Un tour complet des pages et outils de l'app. Ferme-le à tout moment — tu pourras toujours le relancer depuis le menu de ton profil."
-    },
-    "mobileNav": {
-      "title": "Le menu complet",
-      "description": "Sur mobile, ce bouton ouvre le menu complet de navigation — toutes les sections y sont, même celles qui ne rentrent pas dans la barre du bas."
-    },
-    "decisions": {
-      "title": "Décisions",
-      "description": "Chaque match du jour avec nos lectures, dont une mise en avant : Notre sélection. Le bouton « ? » ici t'explique comment lire une fiche à tout moment."
-    },
-    "arbitrage": {
-      "title": "Avis IA",
-      "description": "Une deuxième lecture de chaque match par notre IA, à côté de Notre sélection, avec son bilan pertes comprises. Le « ? » ici détaille ce qu'elle fait."
-    },
-    "coupons": {
-      "title": "Coupons",
-      "description": "Les coupons du jour, composés automatiquement. Chaque carte dit combien de jours le coupon a gagné, sa pire série et la cote que ton ticket paiera."
-    },
-    "betSlipComposer": {
-      "title": "Mon coupon",
-      "description": "Construis ton propre coupon en ajoutant des sélections depuis Décisions — ce bouton te suit partout dans l'app."
-    },
-    "betSlips": {
-      "title": "Mes coupons",
-      "description": "L'historique de tes coupons placés, réglés ou en attente, avec le récapitulatif de la période en tête."
-    },
-    "bankroll": {
-      "title": "Suivi de mise",
-      "description": "Ton solde et tes dépôts, tels que tu les déclares, avec le résultat de tes paris."
-    },
-    "trackRecord": {
-      "title": "Mesures historiques",
-      "description": "Ce que nos pronostics ont vraiment donné : la fréquence que la cote annonçait et ce qui est réellement passé, par cote et par type de pari, pertes comprises."
-    },
-    "formation": {
-      "title": "Formation",
-      "description": "Cinq fiches d'une minute : lire un pronostic, les cotes, les coupons, les séries perdantes et les erreurs à éviter."
-    },
-    "inbox": {
-      "title": "Inbox",
-      "description": "Une messagerie directe avec l'équipe EVCore, pour tes questions ou retours."
-    },
-    "evaFab": {
-      "title": "Eva",
-      "description": "Génère et exporte la fiche des sélections retenues sur une période (txt/json) — pratique pour l'archiver ou la partager."
-    },
-    "pageSearchFab": {
-      "title": "Recherche dans la page",
-      "description": "Cherche un texte directement dans la page affichée, depuis le bouton en haut de l'écran — pratique sur une longue liste de matchs."
-    },
-    "notifications": {
-      "title": "Notifications",
-      "description": "Alertes de performance et annonces de l'équipe apparaissent ici — toujours accessible, où que tu sois dans l'app."
-    },
-    "accountMenu": {
-      "title": "Ton menu de profil",
-      "description": "Suivi de mise, Inbox, Formation et Paramètres : tout ce qu'on vient de voir est aussi accessible d'ici."
-    },
-    "profileBadges": {
-      "title": "Profil et badges",
-      "description": "Ton profil et ton badge de formation, débloqué quand tu termines les fiches."
-    },
-    "accountSettings": {
-      "title": "Paramètres",
-      "description": "Apparence, langue, notifications, préférences de bankroll et sécurité — tout se règle depuis ces onglets."
-    },
-    "homeCoupon": {
-      "title": "Le coupon du jour",
-      "description": "C'est par là que tout commence : les coupons proposés aujourd'hui, leurs jambes et leur cote. « Suivre ce coupon » t'envoie son résultat dans le résumé du matin, sans mise ; « Je l'ai joué » l'ajoute à ton suivi de mise."
-    },
-    "homePicks": {
-      "title": "Les sélections du jour",
-      "description": "Cinq sélections au plus, à cote entre 1,20 et 1,65. Leurs chances viennent de la cote, marge retirée. Le + les ajoute au coupon."
-    },
-    "homeMySlips": {
-      "title": "Tes coupons",
-      "description": "Ce que tu as joué : gagnés, perdus, en attente, et ton résultat à mise fixe. La page Mes coupons détaille chaque ticket."
-    }
-  },
-  "formation": {
-    "label": "Formation",
-    "title": "Formation",
-    "subtitle": "Cinq fiches d'une minute pour lire nos pronostics sans te tromper.",
-    "progress": "{done, plural, =0 {Aucune fiche lue} one {# fiche lue} other {# fiches lues}} sur {total}",
-    "minutes": "{count} min",
-    "position": "Fiche {n} sur {total} · {minutes} min",
-    "markCompleted": "J'ai lu cette fiche",
-    "completed": "Lue",
-    "next": "Fiche suivante",
-    "backToList": "Retour aux fiches"
-  },
   "filters": {
     "label": "Filtres",
     "resetAll": "Tout réinitialiser",
@@ -513,8 +416,8 @@
     "pushNotificationsUnsupported": "Ton navigateur ne prend pas en charge les notifications push.",
     "pushNotificationsDenied": "Notifications bloquées — autorise-les dans les paramètres de ton navigateur.",
     "emailNotifications": "Notifications par email",
-    "emailNotificationsDescription": "Reçois un email à chaque nouveau message de l'équipe EVCore.",
-    "emailNotificationsToggle": "Email à chaque nouveau message",
+    "emailNotificationsDescription": "La matinée et la semaine, aussi par e-mail, vers une adresse vérifiée. Éteint tant que tu ne l'allumes pas.",
+    "emailNotificationsToggle": "Par e-mail aussi",
     "bankrollDescription": "Choisis la devise affichée dans l'application.",
     "displayCurrency": "Devise d'affichage",
     "unitStake": "Mise par unité",
@@ -582,12 +485,16 @@
       "error": "Le changement n'a pas abouti. Réessaie."
     },
     "playerNotifications": {
-      "title": "Ta matinée et ton relevé",
+      "title": "Notifications",
       "description": "Des notifications dans l'app et sur ton téléphone. Elles ne te poussent jamais à jouer.",
       "morning": "La matinée, à 8 h UTC",
       "morningHint": "Tes résultats d'hier et les coupons du jour, ou pourquoi il n'y en a pas.",
       "weekly": "Le relevé du lundi",
       "weeklyHint": "Ta semaine, ce que tu as suivi et le bilan de nos coupons.",
+      "followed": "Résultat de mes coupons suivis",
+      "followedHint": "Le soir même, dès le dernier match réglé.",
+      "replies": "Réponses de l'équipe",
+      "repliesHint": "Quand l'équipe t'écrit dans Messages.",
       "error": "Impossible d'enregistrer ce réglage."
     }
   },
@@ -714,149 +621,6 @@
       "weeklyBriefTitle": "Ta semaine",
       "pageTitle": "Accueil",
       "riskLine": "18+ · Parier comporte des risques de perte. Ne mise que ce que tu peux perdre."
-    }
-  },
-  "betSlips": {
-    "emptyTitle": "Aucun coupon sur cette période",
-    "emptyDescription": "Tes coupons existent, mais pas entre ces dates.",
-    "neverPlayedTitle": "Tu n'as pas encore joué de coupon",
-    "neverPlayedBody": "Le favori du jour et le combiné sont sur l'accueil. Un coupon joué apparaît ici avec son résultat.",
-    "neverPlayedLink": "Voir le coupon du jour",
-    "widenPeriod": "Afficher les 90 derniers jours",
-    "emptyTypeDescription": "Aucun coupon de ce type sur la période.",
-    "title": "Mes coupons",
-    "intro": "Les coupons que tu as déclarés, réglés avec le vrai résultat. Les montants sont ceux que tu as saisis.",
-    "loading": "Chargement de tes coupons…",
-    "loadError": "Impossible de charger tes coupons.",
-    "retry": "Réessayer",
-    "periodLine": "Du {from} au {to} : {settled, plural, =0 {aucun coupon réglé} one {# coupon réglé} other {# coupons réglés}}{pending, plural, =0 {} other {, # en cours}}.",
-    "periodMoney": "Misé {staked}, rendu {returned} : {net}.",
-    "inPlay": "{amount} encore en jeu.",
-    "lifetimeLine": "Depuis ton premier coupon, le {date} : {settled, plural, one {# coupon réglé} other {# coupons réglés}}, résultat {net}.",
-    "kindCombo": "Combiné · {count, plural, one {# sélection} other {# sélections}}",
-    "kindSingle": "{count, plural, one {Pari simple} other {# paris simples}}",
-    "status": {
-      "WON": "Gagné",
-      "LOST": "Perdu",
-      "VOID": "Remboursé",
-      "PENDING": "En cours"
-    },
-    "playedOn": "Joué le {date}",
-    "staked": "Misé",
-    "odds": "Cote",
-    "returned": "Rendu",
-    "net": "Gain net",
-    "partialNet": "Résultat partiel",
-    "potential": "Retour possible {amount}, dont {gain} de gain, si tout passe.",
-    "moreLegs": "+ {count, plural, one {# autre sélection} other {# autres sélections}}",
-    "selectHint": "Sélectionne un coupon pour voir le détail",
-    "detailTitle": "Détail du coupon",
-    "close": "Fermer",
-    "legStake": "Mise {amount}",
-    "legRefunded": "mise rendue",
-    "legPotential": "retour possible {amount}",
-    "refundRule": "Une sélection remboursée compte pour une cote de 1 : le combiné est payé sur les autres.",
-    "filter": {
-      "type": "Type",
-      "all": "Tous",
-      "single": "Simples",
-      "combo": "Combinés",
-      "from": "Du",
-      "to": "Au"
-    },
-    "delete": {
-      "trigger": "Supprimer ce coupon",
-      "title": "Supprimer ce coupon ?",
-      "description": "Saisi par erreur ? Tant qu'aucun match n'a commencé, tu peux le supprimer : {amount} reviennent à ton solde. Pour le corriger, supprime-le puis saisis-le à nouveau.",
-      "cancel": "Garder",
-      "confirm": "Supprimer",
-      "error": "Impossible de supprimer ce coupon."
-    }
-  },
-  "bankrollPage": {
-    "filter": {
-      "allTypes": "Tous les types",
-      "deposit": "Dépôt",
-      "stake": "Mise",
-      "refund": "Remboursement",
-      "from": "Du",
-      "to": "Au",
-      "type": "Type",
-      "return": "Retour",
-      "slipCancelled": "Coupon supprimé",
-      "withdrawal": "Retrait"
-    },
-    "table": {
-      "date": "Date",
-      "type": "Type",
-      "amount": "Montant",
-      "detail": "Pari / note",
-      "balanceAfter": "Solde après"
-    },
-    "stats": {
-      "currentBalance": "Solde déclaré",
-      "totalDeposited": "Dépôts déclarés",
-      "betsResult": "Résultat de tes paris",
-      "netDeposited": "Dépôts moins retraits"
-    },
-    "trend": {
-      "title": "Solde déclaré, jour par jour",
-      "subtitle": "Un dépôt fait monter la courbe : ce n'est pas un gain.",
-      "notEnoughData": "Pas assez de données",
-      "notEnoughDataDescription": "Déclare un dépôt ou joue un coupon pour voir la courbe.",
-      "valueLabel": "Solde",
-      "range": "Du {from} au {to}, sur les mouvements affichés."
-    },
-    "history": {
-      "title": "Historique des mouvements",
-      "subtitle": "Les 200 derniers mouvements, avec le solde après chacun.",
-      "emptyTitle": "Aucune transaction",
-      "emptyDescription": "Aucune transaction ne correspond aux filtres courants."
-    },
-    "fallback": {
-      "deposit": "Dépôt",
-      "bet": "Pari",
-      "slipCancelled": "Coupon supprimé avant le match : mise rendue",
-      "withdrawal": "Retrait"
-    },
-    "title": "Suivi de mise",
-    "intro": "Ton solde tel que tu le déclares : les dépôts faits chez ton bookmaker, tes mises et ce qu'elles rendent. EVCore ne détient pas ton argent.",
-    "loading": "Chargement de ton suivi…",
-    "loadError": "Impossible de charger ton suivi.",
-    "retry": "Réessayer",
-    "resultLine": "Résultat de tes paris depuis ton premier coupon, le {date} : {settled, plural, one {# coupon réglé} other {# coupons réglés}}, misé {staked}, rendu {returned}.",
-    "resultEmpty": "Aucun coupon réglé pour l'instant.",
-    "declarative": "Tout est déclaratif : un dépôt fait monter le solde, ce n'est pas un gain.",
-    "deposit": {
-      "trigger": "Déclarer un dépôt",
-      "title": "Déclarer un dépôt",
-      "description": "Note un dépôt fait chez ton bookmaker, pour que ton solde ici suive le tien.",
-      "close": "Fermer",
-      "amount": "Montant",
-      "amountInvalid": "Saisis un montant d'au moins 1.",
-      "note": "Note",
-      "notePlaceholder": "Dépôt initial",
-      "error": "Impossible d'enregistrer le dépôt.",
-      "cancel": "Annuler",
-      "confirm": "Confirmer",
-      "confirming": "Enregistrement…"
-    },
-    "detail": {
-      "combo": "Combiné · {count, plural, one {# sélection} other {# sélections}}"
-    },
-    "withdraw": {
-      "trigger": "Déclarer un retrait",
-      "title": "Déclarer un retrait",
-      "description": "Note un retrait fait chez ton bookmaker, pour que ton solde ici suive le tien. Jamais plus que ton solde.",
-      "close": "Fermer",
-      "amount": "Montant",
-      "amountInvalid": "Saisis un montant d'au moins 1.",
-      "note": "Note",
-      "notePlaceholder": "Retrait Wave",
-      "error": "Impossible d'enregistrer le retrait.",
-      "cancel": "Annuler",
-      "confirm": "Confirmer",
-      "confirming": "Enregistrement…"
     }
   },
   "performancePage": {
@@ -1125,12 +889,644 @@
     "reasons": {
       "no_home_favourite_in_band": "aucun favori à domicile entre 1,20 et 1,35",
       "not_enough_calibrated_short_legs": "pas assez de paris fiables à cote courte, dans des championnats différents",
-      "no_priced_candidate": "pas assez de paris cotés chez 1xBet dans la bande",
+      "no_priced_candidate": "pas assez de paris cotés dans la bande",
       "no_combination_in_window": "aucune combinaison entre 2 et 3",
       "no_candidate_in_band": "aucun pari dans sa bande de cote",
       "other": "pas de pari qui tienne la règle ce jour-là",
       "no_reliable_competition": "aucun championnat dont les stats de corners arrivent à coup sûr",
-      "no_operator_price": "aucun corner coté chez 1xBet"
+      "no_operator_price": "aucun corner coté"
+    }
+  },
+  "shell": {
+    "brand": "EVCore",
+    "tabsLabel": "Onglets",
+    "skipToContent": "Aller au contenu",
+    "notifications": "Notifications",
+    "tabs": {
+      "today": "Aujourd'hui",
+      "matches": "Matchs",
+      "results": "Résultats",
+      "me": "Moi"
+    },
+    "close": "Fermer",
+    "legal": "18+ (21+ au Cameroun) · Parier comporte des risques de perte · Ne mise que ce que tu peux perdre",
+    "unread": "{count} non lues"
+  },
+  "scoreboard": {
+    "outcome": {
+      "won": "{label} : gagné",
+      "wonAt": "{label} : gagné, cote {odds}",
+      "lost": "{label} : perdu",
+      "void": "{label} : remboursé",
+      "pending": "{label} : pas encore réglé",
+      "pendingUntil": "{label} : pas encore réglé, dernier match à {time}"
+    },
+    "states": {
+      "loading": "Chargement",
+      "offlineSeenAt": "Hors ligne · vu à {time}",
+      "offline": "Hors ligne",
+      "loadError": "On n'arrive pas à charger",
+      "noNetwork": "Pas de réseau",
+      "retry": "Réessayer",
+      "newVersion": "Une nouvelle version est prête",
+      "update": "Mettre à jour",
+      "maintenanceTitle": "On revient dans quelques minutes",
+      "maintenanceBody": "EVCore est en maintenance. Tes coupons suivis se règlent quand même.",
+      "pauseTitle": "En pause jusqu'au {until}",
+      "pauseBody": "Aujourd'hui, Matchs et ton ticket sont fermés jusque-là. Tes coupons suivis se règlent quand même : ils t'attendent dans Moi.",
+      "pauseExtend": "Prolonger la pause",
+      "pauseUntil": "{date} à {time}"
+    },
+    "chance": {
+      "outOfTen": "{count} sur {total}",
+      "oneIn": "1 sur {total}",
+      "rarerThan": "moins de 1 sur {total}",
+      "aboutOutOfTen": "environ {count} fois sur {total}",
+      "aboutOneIn": "environ 1 fois sur {total}",
+      "aboutRarerThan": "moins de 1 fois sur {total}",
+      "passesOutOfTen": "<verb>Passe</verb> {count} fois sur {total}",
+      "passesOneIn": "<verb>Passe</verb> 1 fois sur {total}",
+      "passesRarerThan": "<verb>Passe</verb> moins d'1 fois sur {total}",
+      "spokenOutOfTen": "{count} chances sur {total}",
+      "spokenOneIn": "1 chance sur {total}",
+      "spokenRarerThan": "moins d'une chance sur {total}"
+    }
+  },
+  "today": {
+    "products": {
+      "FAVOURITE": "Favori du jour",
+      "COMBO": "Combiné du jour",
+      "DOUBLE": "Coupon cote 2",
+      "HUNTER_BTTS": "Chasseur Les deux marquent",
+      "HUNTER_DRAW": "Chasseur Nul",
+      "HUNTER_SCORE": "Chasseur Score exact",
+      "HUNTER_CORNERS": "Chasseur Corners"
+    },
+    "shortNames": {
+      "FAVOURITE": "Favori",
+      "COMBO": "Combiné",
+      "DOUBLE": "Coupon cote 2",
+      "HUNTER_BTTS": "Chasseur Les deux marquent",
+      "HUNTER_DRAW": "Chasseur Nul",
+      "HUNTER_SCORE": "Chasseur Score exact",
+      "HUNTER_CORNERS": "Chasseur Corners"
+    },
+    "codes": {
+      "FAVOURITE": "FAV",
+      "COMBO": "COM",
+      "DOUBLE": "C2",
+      "HUNTER_BTTS": "BTS",
+      "HUNTER_DRAW": "NUL",
+      "HUNTER_SCORE": "SCO",
+      "HUNTER_CORNERS": "COR"
+    },
+    "yesterday": "Hier",
+    "week": "Ta semaine",
+    "yourProduct": "Ton {product}",
+    "weekProduct": "{product} : {won} jours gagnés sur {played}",
+    "inProgress": "En cours",
+    "follow": "Suivre",
+    "followed": "Suivi",
+    "followError": "Le suivi n'est pas passé. Réessaie.",
+    "form": "{won} jours gagnés sur {played}",
+    "matches": "{count, plural, one {# match} other {# matchs}}",
+    "absent": "Pas de {product} aujourd'hui",
+    "followedRunning": "{count} en cours · prochain match à {time}",
+    "followedRunningDone": "{count} en cours",
+    "otherCoupons": "Autres coupons du jour",
+    "finished": "Terminé",
+    "refunded": "Remboursé",
+    "won": "Gagné",
+    "lost": "Perdu",
+    "followedDone": "Suivi",
+    "postponed": "Reporté",
+    "nothingTitle": "Aujourd'hui, on passe notre tour",
+    "seeMatches": "Voir les matchs du jour",
+    "absentShort": "Pas de {product}",
+    "formTitle": "Forme sur 30 jours",
+    "formSummary": "{won, plural, one {# jour gagné} other {# jours gagnés}} sur {played}",
+    "worstStreak": "{count, plural, =0 {aucun jour perdu} other {pire série #}}",
+    "band": "{min} à {max}",
+    "open": "Ouvrir {product}",
+    "welcome": "Chaque jour, un pari qu'on suit depuis le {date} : gagné {won} jours sur {played}. On ne prend jamais ta mise.",
+    "welcomeShort": "Chaque jour, un pari qu'on suit et qu'on compte. On ne prend jamais ta mise.",
+    "welcomeClose": "Fermer le message d'accueil",
+    "yesterdayEmpty": "rien à montrer encore",
+    "firstFollowNote": "Tu recevras son résultat demain matin",
+    "pushAsk": "Recevoir le résultat demain matin ?",
+    "pushYes": "Oui, à 8 h",
+    "pushLater": "Plus tard",
+    "outageTitle": "Pas de coupon aujourd'hui",
+    "outageBody": "Ils sortent d'habitude la veille au soir. On regarde ce qui bloque.",
+    "seeResults": "Nos résultats",
+    "yesterdayCount": "{won, plural, one {# gagné} other {# gagnés}} sur {played}"
+  },
+  "matches": {
+    "days": {
+      "label": "Jour",
+      "yesterday": "Hier",
+      "today": "Aujourd'hui",
+      "tomorrow": "Demain"
+    },
+    "kickoff": "Coups d'envoi à {time}",
+    "withoutReading": "{count, plural, one {# match sans lecture} other {# matchs sans lecture}}",
+    "see": "Voir",
+    "without": {
+      "rejected": "Écarté",
+      "not_priced": "Pas encore de cote",
+      "not_analysed": "Pas de lecture",
+      "tonight": "Lecture ce soir"
+    },
+    "empty": {
+      "yesterday": "Aucun match hier",
+      "today": "Aucun match aujourd'hui",
+      "tomorrow": "Aucun match demain"
+    },
+    "result": {
+      "won": "gagné",
+      "lost": "perdu"
+    },
+    "refunded": "Remboursé",
+    "postponedShort": "Rep.",
+    "postponed": "{competition} · reporté",
+    "search": {
+      "open": "Chercher une équipe",
+      "close": "Fermer la recherche",
+      "placeholder": "Une équipe",
+      "noResult": {
+        "yesterday": "Aucun match pour « {query} » hier",
+        "today": "Aucun match pour « {query} » aujourd'hui",
+        "tomorrow": "Aucun match pour « {query} » demain"
+      }
+    },
+    "sheet": {
+      "ourReading": "Notre lecture",
+      "without": {
+        "rejected": "Pas de lecture · aucune chance assez sûre",
+        "not_priced": "Pas encore de cote",
+        "not_analysed": "Pas de lecture",
+        "tonight": "Lecture ce soir"
+      },
+      "ai": "Avis IA",
+      "noAi": "Pas d'avis",
+      "sameAsReading": "Même pari que notre lecture",
+      "aiSpeech": "Pourquoi ?",
+      "aiDecidedAt": "Décidé le {date} à {time}",
+      "aiSpeechClose": "Fermer",
+      "form": "Forme",
+      "formSummary": "{won, plural, one {# victoire} other {# victoires}}, {drawn, plural, one {# nul} other {# nuls}}, {lost, plural, one {# défaite} other {# défaites}}",
+      "rest": "repos {days} j",
+      "otherPicks": "Autres paris",
+      "all": "Tous les {count}",
+      "inProgress": "En cours",
+      "postponed": "Reporté",
+      "halfTime": "mi-temps {home}-{away}",
+      "result": {
+        "won": "gagné",
+        "lost": "perdu",
+        "void": "remboursé"
+      },
+      "setAside": {
+        "divergence": "Pas de lecture · le modèle et le marché se contredisent trop",
+        "low_odds": "Pas de lecture : la cote est trop basse pour valoir le coup",
+        "suspended": "Pas de lecture · ce marché est suspendu chez nous",
+        "not_sure": "Pas de lecture · aucune chance assez sûre"
+      }
+    },
+    "played": "{count, plural, one {# match déjà joué} other {# matchs déjà joués}}",
+    "bigOnly": "Grands championnats"
+  },
+  "ticket": {
+    "title": "Mon ticket",
+    "open": "Ouvrir mon ticket",
+    "matchOne": "1 match",
+    "matchMany": "{count} matchs",
+    "add": "Ajouter à mon ticket",
+    "inTicket": "Dans mon ticket",
+    "onePerMatch": "Un seul pari par match",
+    "full": "15 au plus",
+    "totalOdds": "Cote totale",
+    "yourChances": "Tes chances",
+    "started": "Commencé",
+    "postponed": "Reporté",
+    "notPriced": "Plus de cote",
+    "oddsUpdated": "cote mise à jour",
+    "remove": "Retirer {bet}",
+    "clear": "Vider",
+    "empty": "Ajoute des paris depuis les matchs",
+    "seeMatches": "Voir les matchs",
+    "ours": "Notre {product}",
+    "oddsAt": "cotes de {time}",
+    "pending": "Calcul de tes chances…",
+    "failed": "On n'arrive pas à calculer tes chances",
+    "yesterdayTitle": "Ton ticket d'hier",
+    "oddsOf": "cote {odds}",
+    "won": "gagné",
+    "lost": "perdu",
+    "void": "remboursé",
+    "neededAll": "il fallait les {count}",
+    "wasTheOne": "1 fois sur {total}, c'était celle-là",
+    "oursYesterday": "Notre {product} d'hier :",
+    "composeToday": "Composer celui d'aujourd'hui",
+    "share": "Partager mes chances",
+    "shareFailed": "Le partage n'a pas marché",
+    "imageDate": "mon ticket du {date}",
+    "imageAbout": "environ",
+    "imageChance": "1 fois sur {total}",
+    "imageOurs": "Notre {product} : {chance}",
+    "outcomePending": "en attente du dernier match"
+  },
+  "results": {
+    "yesterday": "Hier",
+    "week": "Ta semaine",
+    "weekSummary": "{won, plural, one {# jour gagné} other {# jours gagnés}} sur {played}",
+    "periods": {
+      "label": "Période",
+      "30": "30 j",
+      "90": "90 j",
+      "all": "Tout",
+      "dates": "Dates",
+      "range": "{from} – {to}",
+      "datesTitle": "Choisir les dates",
+      "from": "Du",
+      "to": "Au",
+      "show": "Voir",
+      "close": "Fermer"
+    },
+    "names": {
+      "FAVOURITE": "Favori",
+      "COMBO": "Combiné",
+      "DOUBLE": "Cote 2",
+      "HUNTER_BTTS": "Chasseur Les deux marquent",
+      "HUNTER_DRAW": "Chasseur Nul",
+      "HUNTER_SCORE": "Chasseur Score exact",
+      "HUNTER_CORNERS": "Chasseur Corners",
+      "COMBO_AI": "Combiné IA",
+      "LONG": "Coupon long",
+      "UNIQUE": "Coupon unique IA"
+    },
+    "ai": "Avis IA",
+    "daysWon": "{won, plural, one {# jour gagné} other {# jours gagnés}} sur {played}",
+    "adviceWon": "{won, plural, one {# avis gagné} other {# avis gagnés}} sur {played}",
+    "tooEarlyDays": "Trop tôt · {count, plural, =0 {0 jour} one {# jour} other {# jours}}",
+    "tooEarlyAdvice": "Encore trop tôt : {count} avis réglés",
+    "lastPlayed": "{count, plural, one {Le dernier jour joué} other {Les # derniers jours joués}}",
+    "since": "Depuis le {date}. Chaque produit compte depuis sa mise en ligne.",
+    "between": "Du {from} au {to}. Chaque produit compte depuis sa mise en ligne.",
+    "retired": "retiré",
+    "sheet": {
+      "titles": {
+        "FAVOURITE": "Favori du jour",
+        "COMBO": "Combiné du jour",
+        "DOUBLE": "Coupon cote 2",
+        "HUNTER_BTTS": "Chasseur Les deux marquent",
+        "HUNTER_DRAW": "Chasseur Nul",
+        "HUNTER_SCORE": "Chasseur Score exact",
+        "HUNTER_CORNERS": "Chasseur Corners",
+        "COMBO_AI": "Combiné IA",
+        "LONG": "Coupon long",
+        "UNIQUE": "Coupon unique IA",
+        "AI": "Avis IA"
+      },
+      "definitions": {
+        "FAVOURITE": "un match, favori à domicile, cote 1,20 à 1,35",
+        "COMBO": "des matchs de championnats différents, chacun coté 1,20 à 1,50",
+        "DOUBLE": "jusqu'à trois matchs, cote totale de 2 à 3",
+        "HUNTER_BTTS": "un match où les deux équipes marquent, cote 1,45 à 1,90",
+        "HUNTER_DRAW": "un match nul, cote 2,90 à 3,60",
+        "HUNTER_SCORE": "un score exact, cote 6 à 12",
+        "HUNTER_CORNERS": "un total de corners, cote 1,70 à 2,10",
+        "COMBO_AI": "le combiné choisi par l'IA dans le même vivier",
+        "LONG": "retiré de l'offre",
+        "UNIQUE": "retiré de l'offre",
+        "AI": "un pari de l'IA par match, réglé à la cote du jour"
+      },
+      "lastDays": "{count, plural, one {Le dernier jour} other {Les # derniers jours}}",
+      "allSince": "Depuis le {date}",
+      "between": "Du {from} au {to}",
+      "lastOpinions": "{count, plural, one {Le dernier avis} other {Les # derniers avis}}",
+      "gridLabel": "{won} gagnés, {lost} perdus, {refunded} remboursés, {none} sans coupon",
+      "daysWithout": "{count, plural, one {# jour} other {# jours}} sans {product}",
+      "worstStreak": "pire série",
+      "worstValue": "{count, plural, =0 {aucun jour perdu} one {# jour perdu de suite} other {# jours perdus de suite}}",
+      "worstValueAi": "{count, plural, =0 {aucun avis perdu} one {# avis perdu de suite} other {# avis perdus de suite}}",
+      "announced": "Annoncé",
+      "realised": "Réalisé",
+      "comparedOn": "du {from} au {to} · {count, plural, one {# jour réglé} other {# jours réglés}}",
+      "comparedOnAi": "du {from} au {to} · {count} avis",
+      "tooEarlyCompare": "Trop tôt pour comparer · {count, plural, =0 {aucun jour réglé} one {# jour réglé} other {# jours réglés}}",
+      "francsDay": "En francs, à 1 000 F par jour",
+      "francsAdvice": "En francs, à 1 000 F par avis",
+      "staked": "misé",
+      "returned": "rendu",
+      "francsOn": "du {from} au {to}",
+      "unpriced": "{count, plural, one {# jour} other {# jours}} sans cote, laissés à part",
+      "dayByDay": "Jour par jour",
+      "opinionByOpinion": "Avis par avis",
+      "noCoupon": "pas de {product}",
+      "settingChanged": "réglage changé le {date}",
+      "matches": "{count} matchs",
+      "won": "gagné",
+      "lost": "perdu",
+      "refunded": "remboursé",
+      "pending": "En cours",
+      "nothing": "Rien sur cette période",
+      "outOfHundred": "{count} sur 100",
+      "yesterdayTitle": "Hier, {date}",
+      "nothingYesterday": "Hier · rien à jouer",
+      "weekTitle": "Ta semaine",
+      "weekRange": "du {from} au {to}",
+      "dayColumn": "Jour",
+      "total": "Total",
+      "outOf": "{won} sur {played}",
+      "followedWeek": "Tes coupons suivis cette semaine",
+      "followedCounts": "{won, plural, one {# gagné} other {# gagnés}} · {lost, plural, one {# perdu} other {# perdus}}",
+      "followedRefunded": "{count, plural, one {# remboursé} other {# remboursés}}",
+      "mondayNote": "Le relevé du lundi, le même que la notification de 8 h."
+    },
+    "notPlayedYet": "Lancé le {date}, pas encore de jour joué",
+    "noAdviceYet": "Pas encore d'avis réglé"
+  },
+  "me": {
+    "record": "{won, plural, one {# gagné} other {# gagnés}} · {lost, plural, one {# perdu} other {# perdus}}",
+    "refunded": "{count, plural, one {# remboursé} other {# remboursés}}",
+    "since": "coupons suivis depuis le {date}",
+    "firstFollow": "Suis ton premier coupon",
+    "tabs": {
+      "label": "Mes coupons suivis",
+      "running": "En cours",
+      "settled": "Réglés"
+    },
+    "noneRunning": "Aucun coupon suivi en cours",
+    "noneSettled": "Aucun coupon suivi réglé",
+    "inProgress": "En cours",
+    "seeMore": "Voir plus",
+    "rows": {
+      "messages": "Messages",
+      "help": "Aide",
+      "responsible": "Jeu responsable",
+      "account": "Compte"
+    },
+    "replies": "{count, plural, one {# réponse} other {# réponses}}",
+    "signOut": "Se déconnecter",
+    "signOutFailed": "La déconnexion n'a pas marché, réessaie"
+  },
+  "messages": {
+    "title": "Messages",
+    "back": "Retour à Moi",
+    "subtitle": "l'équipe EVCore · répond en quelques heures",
+    "today": "aujourd'hui",
+    "yesterday": "hier",
+    "automatic": "automatique",
+    "teamSign": "L'équipe EVCore",
+    "pushNudge": "Active les notifications pour ne rater aucune réponse.",
+    "pushEnable": "Activer",
+    "older": "Messages précédents",
+    "placeholder": "Écris à l'équipe…",
+    "send": "Envoyer",
+    "photo": "Ajouter une photo",
+    "record": "Enregistrer un message vocal",
+    "stop": "Arrêter l'enregistrement",
+    "recording": "Enregistrement",
+    "sendVoice": "Envoyer le vocal",
+    "cancel": "Annuler",
+    "sending": "Envoi…",
+    "failed": "Pas envoyé",
+    "retry": "Réessayer",
+    "tooBig": "Trop lourd pour être envoyé",
+    "mic": {
+      "denied": "Le micro est bloqué. Autorise-le dans les réglages du navigateur.",
+      "notFound": "Aucun micro trouvé sur cet appareil.",
+      "busy": "Le micro est utilisé par une autre application.",
+      "unsupported": "Ce navigateur ne permet pas d'enregistrer un vocal.",
+      "unknown": "Le micro n'a pas pu démarrer."
+    },
+    "voice": "Message vocal",
+    "image": "Photo jointe",
+    "file": "Fichier joint",
+    "empty": "Écris-nous : une question, une cote qui ne colle pas, une idée."
+  },
+  "help": {
+    "title": "Aide",
+    "back": "Retour à Moi",
+    "ask": "Une question ? Écris-nous",
+    "example": "Exemple",
+    "hint": "Aide : {title}",
+    "sheets": "Les fiches"
+  },
+  "responsible": {
+    "title": "Jeu responsable",
+    "back": "Retour à Moi",
+    "intro": "Parier doit rester un jeu. Si ce n'est plus le cas, fais une pause : l'application se ferme le temps choisi, sans retour anticipé.",
+    "durations": {
+      "1": "24 heures",
+      "7": "7 jours",
+      "30": "30 jours"
+    },
+    "durationsLabel": "Durée de la pause",
+    "note": "Tu pourras prolonger, jamais écourter. Tes coupons suivis se règlent quand même.",
+    "confirmLine": "L'application sera fermée jusqu'au {date}. Tu ne pourras pas revenir avant.",
+    "confirm": "Faire la pause",
+    "cancel": "Annuler",
+    "pausedUntil": "En pause jusqu'au {date}",
+    "extendOnly": "Seules les durées qui prolongent ta pause sont proposées.",
+    "pauseFailed": "La pause n'a pas pu être posée, réessaie",
+    "helpTitle": "Besoin d'aide ?",
+    "helpLine": "Parles-en à un proche, ou écris-nous dans Messages : on te répond en toute discrétion.",
+    "helpNumbers": "Les numéros d'aide par pays",
+    "delete": "Supprimer mon compte",
+    "deleteWhat": "Immédiat, avec ton mot de passe. Tes coupons suivis, tes messages et ton compte sont supprimés tout de suite.",
+    "password": "Mot de passe",
+    "deleteConfirm": "Supprimer définitivement",
+    "deleteFailed": "Le compte n'a pas été supprimé : vérifie ton mot de passe",
+    "dateAt": "{date} à {time}"
+  },
+  "playerAccount": {
+    "title": "Compte",
+    "back": "Retour à Moi",
+    "firstName": "Prénom",
+    "phone": "Téléphone",
+    "noPhone": "Aucun numéro",
+    "edit": "Modifier",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "saveFailed": "Pas enregistré, réessaie",
+    "emailVerified": "Vérifié",
+    "emailNotVerified": "Pas encore vérifié",
+    "newEmail": "Nouvel e-mail",
+    "password": "Mot de passe",
+    "sendCode": "Recevoir un code",
+    "code": "Code reçu par e-mail",
+    "confirmEmail": "Changer l'e-mail",
+    "emailFailed": "L'e-mail n'a pas changé : vérifie le mot de passe ou le code",
+    "security": "Sécurité",
+    "currentPassword": "Mot de passe actuel",
+    "newPassword": "Nouveau mot de passe (8 caractères au moins)",
+    "changePassword": "Changer le mot de passe",
+    "passwordNote": "Tous tes appareils seront déconnectés, celui-ci aussi.",
+    "passwordFailed": "Le mot de passe n'a pas changé : vérifie l'actuel",
+    "twoFactor": "Double authentification",
+    "twoFactorOn": "activée",
+    "twoFactorOff": "désactivée",
+    "twoFactorStart": "Activer avec une application d'authentification",
+    "twoFactorScan": "Scanne ce code avec ton application, ou saisis la clé, puis entre le code à 6 chiffres.",
+    "twoFactorKey": "Clé",
+    "twoFactorCode": "Code à 6 chiffres",
+    "twoFactorConfirm": "Activer",
+    "twoFactorFailed": "Code refusé, réessaie avec le suivant",
+    "devices": "Appareils connectés",
+    "signOutOthers": "Déconnecter les autres",
+    "signedOutOthers": "Autres appareils déconnectés : {count}",
+    "notifications": "Notifications",
+    "switches": {
+      "morningBriefEnabled": "Les coupons du matin",
+      "weeklyStatementEnabled": "Le bilan de ta semaine",
+      "followedResultEnabled": "Le résultat de tes coupons suivis",
+      "teamRepliesEnabled": "Les réponses de l'équipe",
+      "emailNotificationsEnabled": "Les recevoir aussi par e-mail"
+    },
+    "switchHints": {
+      "morningBriefEnabled": "chaque jour à {time}",
+      "weeklyStatementEnabled": "le lundi à {time}",
+      "followedResultEnabled": "le soir même",
+      "teamRepliesEnabled": "",
+      "emailNotificationsEnabled": "le matin et le lundi"
+    },
+    "display": "Affichage",
+    "theme": "Thème",
+    "themes": {
+      "system": "Système",
+      "light": "Clair",
+      "dark": "Sombre"
+    },
+    "language": "Langue",
+    "currency": "Devise",
+    "currencies": {
+      "XOF": "F CFA",
+      "EUR": "Euro",
+      "USD": "Dollar US"
+    },
+    "legal": {
+      "cgu": "Conditions",
+      "privacy": "Confidentialité",
+      "notice": "Mentions légales"
+    },
+    "signOutFailed": "Pas fait, réessaie",
+    "profile": "Profil",
+    "email": "E-mail",
+    "verifyEmail": "Vérifier",
+    "pushNudge": "Active les notifications sur cet appareil pour les recevoir.",
+    "pushEnable": "Activer",
+    "avatar": "Avatar"
+  },
+  "playerNotifications": {
+    "title": "Notifications",
+    "today": "auj.",
+    "yesterday": "hier",
+    "unread": "non lue",
+    "empty": "Rien pour l'instant : ta matinée arrive à 8 h.",
+    "seeMore": "Voir plus",
+    "note": "Quatre sortes et pas plus : ta matinée, ta semaine, le résultat de tes coupons, les réponses de l'équipe, et une annonce de temps en temps.",
+    "settings": "Réglables dans Compte"
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "line": "Cette page n'existe pas.",
+    "home": "Accueil"
+  },
+  "landing": {
+    "signIn": "Se connecter",
+    "brandLine": "Chaque jour, un pari analysé. Compté, daté, pertes comprises.",
+    "signUp": "Créer mon compte",
+    "free": "Gratuit. On ne touche jamais à ton argent.",
+    "results": "Nos résultats",
+    "resultsSince": "Nos résultats depuis le {date}, pertes comprises",
+    "seeAll": "Tout voir",
+    "howTitle": "Comment ça marche",
+    "how": "On lit chaque match, on te propose le pari qui a le plus de chances, et on compte tout ce qu'il donne, même quand il perd. Tu suis, ou pas.",
+    "legal": {
+      "label": "Pages légales",
+      "terms": "Conditions",
+      "privacy": "Confidentialité",
+      "notice": "Mentions",
+      "responsible": "Jeu responsable"
+    },
+    "home": "Accueil",
+    "lastWon": "Notre dernier coupon gagnant, le {date}",
+    "pastTitle": "{product} du {date}"
+  },
+  "playerAuth": {
+    "back": "Retour",
+    "signIn": "Se connecter",
+    "fields": {
+      "firstName": "Prénom",
+      "email": "E-mail",
+      "password": "Mot de passe"
+    },
+    "register": {
+      "title": "Créer mon compte",
+      "passwordHint": "8 caractères au moins",
+      "age": "J'ai 18 ans ou plus (21 au Cameroun), ou l'âge légal de mon pays",
+      "termsBefore": "J'accepte les",
+      "termsLink": "conditions d'utilisation",
+      "submitting": "Création…",
+      "haveAccount": "Déjà un compte ?"
+    },
+    "login": {
+      "show": "afficher",
+      "hide": "masquer",
+      "submitting": "Connexion…",
+      "forgot": "Mot de passe oublié ?",
+      "register": "Créer un compte",
+      "resetDone": "Mot de passe changé. Connecte-toi avec le nouveau.",
+      "code": "Le code de ton application",
+      "codeHint": "Six chiffres",
+      "codeSubmit": "Valider",
+      "codeBack": "Retour"
+    },
+    "verify": {
+      "title": "Vérifie ton e-mail",
+      "intro": "On a envoyé un code à {email}. Tape-le, ou touche le lien dans l'e-mail.",
+      "code": "Le code reçu",
+      "submit": "Vérifier",
+      "later": "Plus tard",
+      "resend": "Renvoyer le code",
+      "resendIn": "(dans {seconds} s)",
+      "changeEmail": "Changer d'e-mail",
+      "sendFailed": "Le code n'est pas parti. Réessaie."
+    },
+    "forgot": {
+      "title": "Mot de passe oublié",
+      "intro": "On t'envoie un lien pour en choisir un nouveau.",
+      "submit": "Recevoir le lien",
+      "sent": "Si un compte existe pour {email}, on vient d'y envoyer un lien.",
+      "sentNote": "Il est valable 15 minutes. Regarde aussi dans les spams.",
+      "resend": "Renvoyer le lien",
+      "withApp": "Avec mon application d'authentification",
+      "noAccess": "Plus accès à ton e-mail ni à l'application ?",
+      "writeTeam": "Écrire à l'équipe",
+      "appIntro": "Ton e-mail, le code de ton application d'authentification, puis le nouveau mot de passe.",
+      "appCode": "Le code de ton application"
+    },
+    "reset": {
+      "title": "Nouveau mot de passe",
+      "password": "Nouveau mot de passe",
+      "submit": "Changer le mot de passe",
+      "expired": "Ce lien ne marche plus : il a déjà servi ou a dépassé 15 minutes.",
+      "askAgain": "Demander un nouveau lien"
+    },
+    "errors": {
+      "firstName": "Indique ton prénom.",
+      "email": "Cet e-mail n'est pas valide.",
+      "password": "8 caractères au moins.",
+      "tick": "Coche cette case pour créer ton compte.",
+      "taken": "Cet e-mail a déjà un compte",
+      "registerFailed": "Le compte n'a pas pu être créé. Réessaie.",
+      "wrong": "E-mail ou mot de passe incorrect",
+      "locked": "Trop d'essais. Réessaie dans un quart d'heure.",
+      "failed": "Ça n'a pas marché. Réessaie.",
+      "code": "Code incorrect ou expiré.",
+      "appWrong": "E-mail ou code incorrect."
     }
   }
 }

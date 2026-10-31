@@ -6,6 +6,7 @@ import type { PlayableQuote } from '../betting-engine/pricing/playable-odds.repo
 import type { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
 import type { ClosingLineRow } from '../betting-engine/pricing/closing-line';
 import type { OddsClosingLineRepository } from '../betting-engine/pricing/odds-closing-line.repository';
+import type { ProductDayService } from './product-day/product-day.service';
 
 function makeLeg(overrides: {
   id: string;
@@ -93,13 +94,20 @@ function makeHarness(input: {
   const closingRepoMock = {
     findClosingLines,
   } as unknown as OddsClosingLineRepository;
+  const productDays = {
+    refresh: vi.fn().mockResolvedValue(3),
+    refreshRecent: vi.fn().mockResolvedValue(3),
+  } as unknown as ProductDayService;
 
   return {
     service: new CouponSettlementService(
       repoMock,
       closingRepoMock,
       playableMock,
+      productDays,
     ),
+    repoMock,
+    productDays,
     applyLegOperatorPrices,
     findPlayableQuotes,
     settleLeg,
@@ -527,6 +535,7 @@ describe('CouponSettlementService.settleProposal — 1xBet price of the legs', (
       operatorOdds: 1.62,
       operatorBookmaker: '1xBet',
       operatorMargin: 0.071,
+      operatorFairProbability: 0.5841,
       lowestOdds: 1.6,
       lowestBookmaker: '1xBet',
     };
@@ -567,7 +576,13 @@ describe('CouponSettlementService.settleProposal — 1xBet price of the legs', (
       { asOf: GENERATED_AT },
     );
     expect(applyLegOperatorPrices).toHaveBeenCalledWith([
-      { legId: 'l1', operatorOdds: 1.62, operatorMargin: 0.071 },
+      {
+        legId: 'l1',
+        operatorOdds: 1.62,
+        operatorMargin: 0.071,
+        // The frequency travels with the price it was read on.
+        operatorFairProbability: 0.5841,
+      },
     ]);
   });
 });
@@ -631,5 +646,45 @@ describe('CouponSettlementService.settleProposal — corners from match stats', 
     });
     await late.service.settleProposal('proposal-1');
     expect(late.settleLeg).toHaveBeenCalledWith('l1', null);
+  });
+});
+
+describe('CouponSettlementService — product days for « Résultats »', () => {
+  it('rewrites the recent days on every pass, even with nothing to settle', async () => {
+    const { service, repoMock, productDays } = makeHarness({
+      legs: [],
+      fixtures: [],
+    });
+    (
+      repoMock as unknown as { findPendingReadyToSettle: unknown }
+    ).findPendingReadyToSettle = vi.fn().mockResolvedValue([]);
+    await service.settleReadyProposals();
+    expect(productDays.refreshRecent).toHaveBeenCalledTimes(1);
+  });
+
+  it('a failing rewrite never fails the settlement', async () => {
+    const { service, repoMock, productDays } = makeHarness({
+      legs: [],
+      fixtures: [],
+    });
+    (
+      repoMock as unknown as { findPendingReadyToSettle: unknown }
+    ).findPendingReadyToSettle = vi.fn().mockResolvedValue([]);
+    vi.mocked(productDays.refreshRecent).mockRejectedValueOnce(new Error('db'));
+    await expect(service.settleReadyProposals()).resolves.toBeUndefined();
+  });
+
+  it('a forced re-settlement rewrites its own range', async () => {
+    const { service, repoMock, productDays } = makeHarness({
+      legs: [],
+      fixtures: [],
+    });
+    (repoMock as unknown as { findIdsInRange: unknown }).findIdsInRange = vi
+      .fn()
+      .mockResolvedValue([]);
+    const from = new Date('2026-09-17T00:00:00.000Z');
+    const to = new Date('2026-10-30T00:00:00.000Z');
+    await service.settleRange(from, to);
+    expect(productDays.refresh).toHaveBeenCalledWith({ from, to });
   });
 });

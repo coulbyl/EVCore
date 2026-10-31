@@ -1,0 +1,299 @@
+/*
+ * Le tableau d'affichage — le type (docs/refonte-ui/13-style.md § 3).
+ *
+ * Les utilitaires existent partout, mais leurs familles ne se résolvent que
+ * sous la coquille de la refonte, qui pose `--font-barlow` et
+ * `--font-barlow-condensed` (app/fonts/scoreboard-fonts.ts). Ailleurs, la
+ * déclaration est invalide au calcul et la police héritée reste en place.
+ *
+ * Échelle : six tailles, rien au-dessus de 28 px sur téléphone.
+ *   legal  11  mentions 18+, notes de bas d'écran
+ *   meta   13  secondaire : championnat, heure, période
+ *   body   15  texte courant, lignes de liste
+ *   bet    17  le pari nommé, les équipes sur une carte
+ *   title  22  le titre d'une carte ou d'une feuille
+ *   figure 28  la cote et la chance du héros
+ */
+@theme inline {
+  --font-text: var(--font-barlow);
+  --font-score: var(--font-barlow-condensed);
+
+  --text-legal: 0.6875rem;
+  --text-legal--line-height: 1.35;
+  --text-meta: 0.8125rem;
+  --text-meta--line-height: 1.35;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.4;
+  --text-bet: 1.0625rem;
+  --text-bet--line-height: 1.3;
+  --text-title: 1.375rem;
+  --text-title--line-height: 1.15;
+  --text-figure: 1.75rem;
+  --text-figure--line-height: 1;
+}
+
+/*
+ * Un nombre de score : la voix condensée, des chiffres qui s'alignent en
+ * colonne d'une ligne à l'autre (cotes, « 8 sur 10 », heures).
+ */
+@utility score {
+  font-family: var(--font-barlow-condensed);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/*
+ * Le tableau d'affichage — les couleurs (docs/refonte-ui/13-style.md § 2).
+ *
+ * Tout se pose sous `.scoreboard`, la racine de la coquille (A3). Les
+ * anciens écrans gardent le thème de @evcore/ui jusqu'à leur suppression ;
+ * sous la coquille, les jetons sémantiques de shadcn (background, card,
+ * primary, border…) sont redéfinis, si bien que les composants partagés
+ * prennent le nouveau monde sans être réécrits.
+ *
+ * Règles :
+ * - une seule couleur allumée, l'ambre des diodes (`led-on`), jamais en
+ *   texte sur fond clair (1,8:1 sur blanc) ;
+ * - vert et rouge réservés aux résultats (`win`, `loss`) ;
+ * - tous les gris viennent de la rampe à onze pas, aucun gris ad hoc ;
+ * - couleur plate : ni dégradé, ni grain, ni ombre (les jetons d'ombre du
+ *   thème partagé sont neutralisés ici).
+ *
+ * `accent` et `primary` sont la couleur d'action : l'encre en clair, l'ambre
+ * en sombre (le bouton Suivre des maquettes). Contrastes vérifiés par
+ * `pnpm --filter web check:contrast` (scripts/scoreboard-contrast.mjs).
+ */
+/*
+ * En couche `base`, comme les règles `a` et `button` du thème partagé : hors
+ * couche, ce `background-color` écraserait un utilitaire (`bg-band`) posé sur
+ * la même racine.
+ */
+@layer base {
+  .scoreboard {
+    /* La rampe : onze pas, teinte froide tirée vers l'encre. */
+    --ramp-0: #ffffff;
+    --ramp-1: #f6f7f9;
+    --ramp-2: #e8ebf0;
+    --ramp-3: #d9dde3;
+    --ramp-4: #b4bac4;
+    --ramp-5: #7d8799;
+    --ramp-6: #5b6472;
+    --ramp-7: #2a3142;
+    --ramp-8: #141821;
+    --ramp-9: #0e1320;
+    --ramp-10: #0b0e16;
+
+    /* Propres au tableau d'affichage. */
+    --band: var(--ramp-9);
+    --band-foreground: var(--ramp-0);
+    --band-muted: var(--ramp-4);
+    --band-rule: var(--ramp-7);
+    --led-on: #ffb300;
+    --led-on-edge: #b07a00;
+    --led-off: transparent;
+    --led-off-edge: var(--ramp-5);
+    --led-off-band: var(--ramp-7);
+    --win: #1c8045;
+    --loss: #c62828;
+    /* On the ink band, light or dark: the dark-theme shades, 6:1 and 4.6:1
+       on the ink (decided 31/10: gained in green, lost in red, band too). */
+    --win-band: #2ea866;
+    --loss-band: #e05252;
+    --icon-subtle: var(--ramp-5);
+    --scrim: rgb(11 14 22 / 0.6);
+
+    /* Jetons sémantiques partagés, redéfinis. */
+    --background: var(--ramp-1);
+    --foreground: var(--ramp-8);
+    --panel: var(--ramp-1);
+    --panel-strong: var(--ramp-0);
+    --card: var(--ramp-0);
+    --card-foreground: var(--ramp-8);
+    --popover: var(--ramp-0);
+    --popover-foreground: var(--ramp-8);
+    --primary: var(--ramp-9);
+    --primary-foreground: var(--ramp-0);
+    --accent: var(--ramp-9);
+    --accent-foreground: var(--ramp-0);
+    --accent-soft: var(--ramp-2);
+    --secondary: var(--ramp-2);
+    --secondary-foreground: var(--ramp-8);
+    --muted: var(--ramp-2);
+    --muted-foreground: var(--ramp-6);
+    --skeleton: var(--ramp-2);
+    --border: var(--ramp-3);
+    --input: var(--ramp-3);
+    --ring: var(--ramp-9);
+    --success: var(--win);
+    --danger: var(--loss);
+    --destructive: var(--loss);
+    --destructive-foreground: var(--ramp-0);
+    --warning: #8a5a00;
+    --pending: var(--ramp-6);
+    --sidebar: var(--band);
+    --sidebar-muted: var(--ramp-8);
+    --sidebar-foreground: var(--band-muted);
+    --sidebar-primary: var(--led-on);
+    --sidebar-primary-foreground: var(--ramp-9);
+    --sidebar-accent: var(--ramp-7);
+    --sidebar-accent-foreground: var(--ramp-0);
+    --sidebar-border: var(--band-rule);
+    --sidebar-ring: var(--led-on);
+    --shadow: none;
+    --shadow-bento-rest: none;
+    --shadow-bento-hover: none;
+    --shadow-bento-drag: none;
+
+    color-scheme: light;
+    background-color: var(--background);
+    color: var(--foreground);
+    /* Deux graisses livrées par voix : jamais de gras simulé par le
+       navigateur quand un 600 est demandé au texte (13-style.md § 3). */
+    font-synthesis-weight: none;
+  }
+
+  /*
+   * Sombre : le sol descend sous l'encre du bandeau, l'ambre ne change pas,
+   * l'action passe à l'ambre (texte encre dessus, 10,3:1).
+   */
+  .dark .scoreboard {
+    --led-on-edge: var(--led-on);
+    --led-off: var(--ramp-7);
+    --led-off-edge: var(--ramp-7);
+    --win: #2ea866;
+    --loss: #e05252;
+    --icon-subtle: var(--ramp-5);
+    --scrim: rgb(0 0 0 / 0.6);
+
+    --background: var(--ramp-10);
+    --foreground: var(--ramp-1);
+    --panel: var(--ramp-10);
+    --panel-strong: var(--ramp-8);
+    --card: var(--ramp-8);
+    --card-foreground: var(--ramp-1);
+    --popover: var(--ramp-8);
+    --popover-foreground: var(--ramp-1);
+    --primary: var(--led-on);
+    --primary-foreground: var(--ramp-9);
+    --accent: var(--led-on);
+    --accent-foreground: var(--ramp-9);
+    --accent-soft: rgb(255 179 0 / 0.14);
+    --secondary: var(--ramp-7);
+    --secondary-foreground: var(--ramp-1);
+    --muted: var(--ramp-7);
+    --muted-foreground: var(--ramp-4);
+    --skeleton: var(--ramp-7);
+    --border: var(--ramp-7);
+    --input: var(--ramp-7);
+    --ring: var(--led-on);
+    --destructive-foreground: var(--ramp-9);
+    --warning: var(--led-on);
+    --pending: var(--ramp-4);
+
+    color-scheme: dark;
+  }
+}
+
+/* Utilitaires des jetons propres (bg-band, text-band-muted, bg-led-on…). */
+@theme inline {
+  --color-band: var(--band);
+  --color-band-foreground: var(--band-foreground);
+  --color-band-muted: var(--band-muted);
+  --color-band-rule: var(--band-rule);
+  --color-led-on: var(--led-on);
+  --color-led-on-edge: var(--led-on-edge);
+  --color-led-off: var(--led-off);
+  --color-led-off-edge: var(--led-off-edge);
+  --color-led-off-band: var(--led-off-band);
+  --color-win: var(--win);
+  --color-loss: var(--loss);
+  --color-win-band: var(--win-band);
+  --color-loss-band: var(--loss-band);
+  --color-icon-subtle: var(--icon-subtle);
+  --color-scrim: var(--scrim);
+}
+
+/*
+ * La feuille (docs/refonte-ui/04-aujourdhui-en-detail.md § 1) : elle monte
+ * du bas sur téléphone, le voile s'assombrit en même temps. Courbe rapide au
+ * départ, douce à l'arrivée ; rien sous `prefers-reduced-motion`.
+ */
+@theme {
+  --animate-sheet-up: sheet-up 280ms cubic-bezier(0.32, 0.72, 0, 1);
+  --animate-scrim-in: scrim-in 200ms ease-out;
+  /* The signature (13-style.md § 5): the lit diodes of Aujourd'hui light
+     up left to right, once, in 300 ms; each waits its turn (inline delay). */
+  --animate-led-light: led-light 140ms ease-out both;
+
+  @keyframes sheet-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes led-light {
+    from {
+      opacity: 0.15;
+      transform: scale(0.7);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes scrim-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+/*
+ * Sous la coquille, c'est la fenêtre qui défile, pas `body`.
+ *
+ * Le thème partagé fait de `body` un conteneur de défilement, hors couche :
+ * `height: 100%` et `overflow-x: hidden` sur `html, body`, `overflow-y:
+ * auto` sur téléphone, `overflow: hidden` à partir de 1024 px (l'ancien
+ * tableau de bord défile dans ses propres colonnes). Avec `overscroll-behavior:
+ * none` sur `body`, le geste s'arrête sur ce conteneur vide et la page ne
+ * défile plus au doigt ni à la molette ; sur Android la barre d'adresse ne
+ * se replie plus, et le blocage du défilement sous une feuille (posé sur
+ * `html`) ne bloquerait rien.
+ *
+ * Ici `body` redevient neutre : hauteur naturelle, pas de conteneur,
+ * débordement horizontal coupé par `clip` (qui, lui, n'en crée pas). Hors
+ * couche et plus précis que les règles partagées, qui restent en place pour
+ * les anciens écrans. Vérifié par le test de défilement de A6.
+ */
+html:has(.scoreboard) {
+  height: auto;
+  min-height: 100%;
+  overflow-x: clip;
+}
+
+html:has(.scoreboard) body {
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
+  overflow-x: clip;
+}
+
+/*
+ * Le remplissage automatique du navigateur peint les champs en bleu clair,
+ * hors de la palette : le champ garde sa carte et son encre. La longue
+ * transition empêche Chrome de reposer son fond.
+ */
+.scoreboard input:-webkit-autofill,
+.scoreboard input:-webkit-autofill:hover,
+.scoreboard input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  box-shadow: inset 0 0 0 1000px var(--card);
+  caret-color: var(--foreground);
+  transition: background-color 600000s 0s;
+}

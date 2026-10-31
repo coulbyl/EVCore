@@ -23,7 +23,7 @@ import {
   selectedPicks,
   type AvoidFlag,
 } from "./decision-helpers";
-import { ChannelRow, type SlipContext } from "./channel-row";
+import { ChannelRow } from "./channel-row";
 
 export type MatchGroup = ChannelDecisionMatchDto;
 
@@ -64,21 +64,6 @@ export function MatchCard({
   const avoidEdgeByChannel = new Map<StrategyChannel, number>(
     avoid?.offenders.map((o) => [o.channel, o.edge]) ?? [],
   );
-
-  // Pariable uniquement avant le coup d'envoi : pas de match en cours ni terminé.
-  const isUpcoming =
-    group.score === null && new Date(group.scheduledAt).getTime() > Date.now();
-
-  const slipContext: SlipContext | undefined = isUpcoming
-    ? {
-        fixtureId: group.fixtureId,
-        fixture: `${group.homeTeam} vs ${group.awayTeam}`,
-        homeLogo: group.homeLogo,
-        awayLogo: group.awayLogo,
-        competition: group.competition,
-        scheduledAt: group.scheduledAt,
-      }
-    : undefined;
 
   const banners = (avoid || calibrationAlert) && (
     <div className="flex flex-col gap-2 px-3 pt-3">
@@ -194,7 +179,6 @@ export function MatchCard({
                   decision={decision}
                   locale={locale}
                   avoidEdge={avoidEdgeByChannel.get(decision.channel)}
-                  slipContext={slipContext}
                   teams={teams}
                 />
               </div>

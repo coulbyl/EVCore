@@ -4,6 +4,29 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export type VoiceRecorderState = "idle" | "recording" | "preview" | "error";
 
+/**
+ * Why the microphone could not start, from the browser's error: a player
+ * told « pas autorisé » when the PC simply has no microphone looks for a
+ * setting that does not exist.
+ */
+export type VoiceRecorderProblem =
+  | "denied"
+  | "notFound"
+  | "busy"
+  | "unsupported"
+  | "unknown";
+
+function problemOf(error: unknown): VoiceRecorderProblem {
+  const name = error instanceof DOMException ? error.name : "";
+  if (name === "NotAllowedError" || name === "SecurityError") return "denied";
+  if (name === "NotFoundError" || name === "OverconstrainedError") {
+    return "notFound";
+  }
+  if (name === "NotReadableError" || name === "AbortError") return "busy";
+  if (name === "NotSupportedError") return "unsupported";
+  return "unknown";
+}
+
 // Codecs tried in signed-URL-friendly preference order — the mime type
 // actually used (MediaRecorder.mimeType, read after recording starts) is
 // what gets sent to the backend, stripped of the ";codecs=..." suffix (the
@@ -33,6 +56,7 @@ export function useVoiceRecorder() {
   const [state, setState] = useState<VoiceRecorderState>("idle");
   const [elapsedMs, setElapsedMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [problem, setProblem] = useState<VoiceRecorderProblem | null>(null);
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -55,12 +79,14 @@ export function useVoiceRecorder() {
 
   const start = useCallback(async () => {
     setError(null);
+    setProblem(null);
     if (
       typeof navigator === "undefined" ||
       !navigator.mediaDevices ||
       typeof MediaRecorder === "undefined"
     ) {
       setError("Enregistrement vocal non supporté par ce navigateur");
+      setProblem("unsupported");
       setState("error");
       return;
     }
@@ -94,8 +120,9 @@ export function useVoiceRecorder() {
         setElapsedMs(Date.now() - startTimeRef.current);
       }, 200);
       setState("recording");
-    } catch {
+    } catch (caught) {
       setError("Microphone indisponible ou permission refusée");
+      setProblem(problemOf(caught));
       setState("error");
     }
   }, [releaseStream]);
@@ -132,6 +159,7 @@ export function useVoiceRecorder() {
     setPreviewBlob(null);
     setElapsedMs(0);
     setError(null);
+    setProblem(null);
     setState("idle");
   }, []);
 
@@ -146,6 +174,7 @@ export function useVoiceRecorder() {
     state,
     elapsedMs,
     error,
+    problem,
     previewBlob,
     start,
     stop,

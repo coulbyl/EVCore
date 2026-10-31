@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Accueil admin</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:#141821;background:#F6F7F9}
+a{color:#141821}a:hover{color:#0E1320}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.nav a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border-radius:8px;color:#9AA3B2;text-decoration:none;font-weight:500;font-size:15px}
+.nav a.on{color:#fff;background:#1A2130}
+.nav a svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.voy{display:flex;align-items:center;gap:12px;font-size:17px;font-weight:600}
+.voy i{width:18px;height:18px;border-radius:50%;display:block}
+.todo{display:flex;align-items:center;gap:12px;min-height:48px;border-top:1px solid #D9DDE3;font-size:15px;text-decoration:none;color:#141821}
+.todo .w{width:22px;font-family:"Barlow Condensed";font-weight:700;font-size:18px;text-align:center}
+.todo .t{flex:1;min-width:0}
+.todo .t b{font-weight:600}
+.todo svg{width:18px;height:18px;stroke:#8A94A6;fill:none;stroke-width:2;stroke-linecap:round;flex:none}
+.pass{display:grid;grid-template-columns:64px 1fr auto auto;gap:16px;align-items:center;min-height:44px;border-top:1px solid #D9DDE3;font-size:15px}
+.pass .h{font-family:"Barlow Condensed";font-weight:700;font-size:17px;color:#5B6472}
+.pass .s{font-family:"Barlow Condensed";font-weight:600;font-size:16px;white-space:nowrap}
+.pass .s.ok{color:#1F8A4C}.pass .s.wait{color:#5B6472;font-weight:500;font-family:Barlow;font-size:14px}
+.pass button{height:36px;padding:0 12px;border-radius:8px;border:1px solid #0E1320;background:#fff;font-family:Barlow,sans-serif;font-weight:500;font-size:14px;color:#0E1320}
+.pass button[disabled]{opacity:.4}
+.card{background:#fff;border:1px solid #D9DDE3;border-radius:14px;padding:20px 24px;display:flex;flex-direction:column}
+h2{margin:0 0 8px;font-family:"Barlow Condensed";font-weight:600;font-size:20px}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 900px; display: flex; flex-wrap: wrap">
+  <nav class="nav" style="flex: 0 0 220px; background: #0E1320; padding: 24px 12px; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box" aria-label="Sections">
+    <span class="num" style="color: #fff; font-weight: 700; font-size: 24px; padding: 0 12px 16px">EVCore</span>
+    <a href="Main.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/></svg>Aujourd'hui</a>
+    <a href="Matchs.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg>Matchs</a>
+    <a href="Resultats.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-8M22 19H2"/></svg>Résultats</a>
+    <a href="Moi.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Moi</a>
+    <span style="border-top: 1px solid #2A3142; margin: 12px 0"></span>
+    <a class="on" href="Admin.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12l9-8 9 8M5 10v10h14V10"/></svg>Accueil admin</a>
+    <a href="Admin.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Moteur</a>
+    <a href="Admin.dc.html"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20a6 6 0 0 1 12 0M14 19a4.5 4.5 0 0 1 7 0"/></svg>Joueurs</a>
+    <a href="Admin.dc.html" style="margin-top: auto"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.4 1a7 7 0 0 0-1.7-1L14.5 3h-5l-.3 2.6a7 7 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a7 7 0 0 0 1.7 1l.3 2.6h5l.3-2.6a7 7 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5c.1-.3.1-.7.1-1z"/></svg>Réglages</a>
+  </nav>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; justify-content: space-between; align-items: baseline">
+      <h1 class="num" style="margin: 0; font-weight: 600; font-size: 28px">Admin</h1>
+      <span class="num" style="color: #5B6472; font-weight: 600; font-size: 16px">mardi 29/10 · 09:12</span>
+    </div>
+
+    <div style="display: flex; gap: 40px; flex-wrap: wrap; background: #0E1320; color: #fff; border-radius: 14px; padding: 18px 24px">
+      <span class="voy"><i style="background: #1F8A4C"></i>Données</span>
+      <span class="voy"><i style="background: #FFB300"></i>Moteur</span>
+      <span class="voy"><i style="background: #1F8A4C"></i>Joueurs</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px">
+      <section class="card">
+        <h2>À faire</h2>
+        <a class="todo" href="Admin.dc.html" style="border-top: 0"><span class="w" style="color: #FFB300">!</span><span class="t"><b>DOUBLE_CHANCE sur BL1</b> : 0,78 réalisé/annoncé sur 90 j, 62 jambes</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+        <a class="todo" href="Admin.dc.html"><span class="w" style="color: #FFB300">!</span><span class="t"><b>Chasseur Corners</b> absent 4 jours sur 7</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+        <a class="todo" href="Admin.dc.html"><span class="w" style="color: #FFB300">!</span><span class="t"><b>2 messages</b> sans réponse depuis plus de 24 h</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+      </section>
+      <section class="card">
+        <h2>Aujourd'hui</h2>
+        <div class="num" style="display: flex; gap: 16px; font-weight: 600; font-size: 20px; padding: 6px 0 10px"><span style="color: #1F8A4C">FAV ✓ <span style="color: #141821; font-size: 15px">1,24</span></span><span style="color: #1F8A4C">COM ✓ <span style="color: #141821; font-size: 15px">1,41</span></span><span style="color: #C62828">C2 ✗</span><span style="color: #1F8A4C">IA ✓ <span style="color: #141821; font-size: 15px">1,56</span></span></div>
+        <p style="margin: 0; font-size: 15px; color: #5B6472; border-top: 1px solid #D9DDE3; padding-top: 10px"><span class="num" style="color: #141821; font-weight: 600; font-size: 17px">12</span> joueurs actifs hier · <span class="num" style="color: #141821; font-weight: 600; font-size: 17px">3</span> suivis · <span class="num" style="color: #141821; font-weight: 600; font-size: 17px">1</span> inscrit</p>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Les passes d'aujourd'hui</h2>
+      <div class="pass" style="border-top: 0"><span class="h num">04:00</span><span>Stats de match</span><span class="s ok num">✓ 04:02 · 412 matchs</span><button disabled>Relancer</button></div>
+      <div class="pass"><span class="h num">06:00</span><span>Cotes</span><span class="s ok num">✓ 06:01</span><button disabled>Relancer</button></div>
+      <div class="pass"><span class="h num">08:00</span><span>Matinée</span><span class="s ok num">✓ envoyée à 41 joueurs</span><span></span></div>
+      <div class="pass"><span class="h num">17:00</span><span>Coupons de demain</span><span class="s ok num">✓ 17:03 · Favori, Combiné, Cote 2, 3 chasseurs</span><button disabled>Relancer</button></div>
+      <div class="pass"><span class="h num">17:45</span><span>Combiné IA</span><span class="s wait">en attente</span><button>Relancer</button></div>
+      <div class="pass"><span class="h num">19:00</span><span>Cotes</span><span class="s wait">en attente</span><button>Relancer</button></div>
+      <div class="pass"><span class="h num">21:00</span><span>Analyse du jour</span><span class="s wait">en attente</span><button>Relancer</button></div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

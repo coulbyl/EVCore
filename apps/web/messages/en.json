@@ -333,103 +333,6 @@
     "close": "Close",
     "isRead": "Read"
   },
-  "productTour": {
-    "next": "Next",
-    "prev": "Previous",
-    "done": "Done",
-    "welcome": {
-      "title": "Welcome to EVCore",
-      "description": "A full tour of the app's pages and tools. Close it anytime — you can always replay it from your profile menu."
-    },
-    "mobileNav": {
-      "title": "The full menu",
-      "description": "On mobile, this button opens the full navigation menu — every section is there, even the ones that don't fit the bottom bar."
-    },
-    "decisions": {
-      "title": "Decisions",
-      "description": "Every match of the day with our readings, one of them put forward: Our pick. The \"?\" button here explains how to read a sheet at any time."
-    },
-    "arbitrage": {
-      "title": "AI opinion",
-      "description": "A second reading of each match by our AI, next to Our pick, with its track record, losses included. The \"?\" here details what it does."
-    },
-    "coupons": {
-      "title": "Coupons",
-      "description": "Today's coupons, built automatically. Each card says how many days the coupon won, its worst run and the odds your slip will pay."
-    },
-    "betSlipComposer": {
-      "title": "My bet slip",
-      "description": "Build your own bet slip by adding picks from Decisions — this button follows you everywhere in the app."
-    },
-    "betSlips": {
-      "title": "My bet slips",
-      "description": "Your history of placed bet slips — settled or pending — with the period summary up top."
-    },
-    "bankroll": {
-      "title": "Stake tracking",
-      "description": "Your balance and deposits, as you declare them, with the result of your bets."
-    },
-    "trackRecord": {
-      "title": "Historical measures",
-      "description": "What our predictions actually delivered: the frequency the odds implied and what actually came in, by odds and by bet type, losses included."
-    },
-    "formation": {
-      "title": "Training",
-      "description": "Five one-minute sheets: reading a prediction, odds, coupons, losing runs and the mistakes to avoid."
-    },
-    "inbox": {
-      "title": "Inbox",
-      "description": "A direct line to the EVCore team for your questions or feedback."
-    },
-    "evaFab": {
-      "title": "Eva",
-      "description": "Generates and exports the sheet of retained picks over a period (txt/json) — handy for archiving or sharing it."
-    },
-    "pageSearchFab": {
-      "title": "Search this page",
-      "description": "Search text directly on the current page from the button at the top of the screen — handy on a long list of matches."
-    },
-    "notifications": {
-      "title": "Notifications",
-      "description": "Performance alerts and team announcements show up here — always reachable, wherever you are in the app."
-    },
-    "accountMenu": {
-      "title": "Your profile menu",
-      "description": "Stake tracking, Inbox, Training and Settings: everything we just covered is also reachable from here."
-    },
-    "profileBadges": {
-      "title": "Profile and badges",
-      "description": "Your profile and your training badge, unlocked when you finish the sheets."
-    },
-    "accountSettings": {
-      "title": "Settings",
-      "description": "Appearance, language, notifications, bankroll preferences and security — all set from these tabs."
-    },
-    "homeCoupon": {
-      "title": "Today's coupon",
-      "description": "Everything starts here: today's proposed coupon, its legs and its odds. “Follow this coupon” sends you its result in the morning digest, no stake; “I played it” adds it to your stake tracking."
-    },
-    "homePicks": {
-      "title": "Today's picks",
-      "description": "Five picks at most, at odds between 1.20 and 1.65. Their chances come from the odds, margin removed. The + adds them to the coupon."
-    },
-    "homeMySlips": {
-      "title": "Your coupons",
-      "description": "What you played: pending, won, hit rate. The My coupons page details every slip."
-    }
-  },
-  "formation": {
-    "label": "Training",
-    "title": "Training",
-    "subtitle": "Five one-minute sheets to read our predictions without getting it wrong.",
-    "progress": "{done, plural, =0 {No sheet read} one {# sheet read} other {# sheets read}} out of {total}",
-    "minutes": "{count} min",
-    "position": "Sheet {n} of {total} · {minutes} min",
-    "markCompleted": "I've read this sheet",
-    "completed": "Read",
-    "next": "Next sheet",
-    "backToList": "Back to the sheets"
-  },
   "filters": {
     "label": "Filters",
     "resetAll": "Reset all",
@@ -513,8 +416,8 @@
     "pushNotificationsUnsupported": "Your browser doesn't support push notifications.",
     "pushNotificationsDenied": "Notifications blocked — allow them in your browser settings.",
     "emailNotifications": "Email notifications",
-    "emailNotificationsDescription": "Get an email for every new message from the EVCore team.",
-    "emailNotificationsToggle": "Email on every new message",
+    "emailNotificationsDescription": "The morning brief and the week, by email too, to a verified address. Off until you turn it on.",
+    "emailNotificationsToggle": "By email too",
     "bankrollDescription": "Choose the currency displayed in the app.",
     "displayCurrency": "Display currency",
     "unitStake": "Unit stake",
@@ -582,12 +485,16 @@
       "error": "The change did not go through. Try again."
     },
     "playerNotifications": {
-      "title": "Your morning and your statement",
+      "title": "Notifications",
       "description": "Notifications in the app and on your phone. They never push you to bet.",
       "morning": "The morning brief, at 8 am UTC",
       "morningHint": "Yesterday's results and today's coupons, or why there are none.",
       "weekly": "The Monday statement",
       "weeklyHint": "Your week, what you followed and how our coupons did.",
+      "followed": "Result of my followed coupons",
+      "followedHint": "The same evening, once the last match is settled.",
+      "replies": "Replies from the team",
+      "repliesHint": "When the team writes to you in Messages.",
       "error": "Could not save this setting."
     }
   },
@@ -714,149 +621,6 @@
       "weeklyBriefTitle": "Your week",
       "pageTitle": "Home",
       "riskLine": "18+ · Betting carries a risk of loss. Only stake what you can afford to lose."
-    }
-  },
-  "betSlips": {
-    "emptyTitle": "No coupon in this period",
-    "emptyDescription": "Your coupons exist, just not between these dates.",
-    "neverPlayedTitle": "You have not played a coupon yet",
-    "neverPlayedBody": "The daily favourite and the combo are on the home page. A coupon you play shows up here with its result.",
-    "neverPlayedLink": "See today's coupon",
-    "widenPeriod": "Show the last 90 days",
-    "emptyTypeDescription": "No coupon of this type in the period.",
-    "title": "My coupons",
-    "intro": "The coupons you declared, settled with the real result. Amounts are the ones you entered.",
-    "loading": "Loading your coupons…",
-    "loadError": "Your coupons could not be loaded.",
-    "retry": "Try again",
-    "periodLine": "From {from} to {to}: {settled, plural, =0 {no settled coupon} one {# settled coupon} other {# settled coupons}}{pending, plural, =0 {} other {, # in play}}.",
-    "periodMoney": "Staked {staked}, returned {returned}: {net}.",
-    "inPlay": "{amount} still in play.",
-    "lifetimeLine": "Since your first coupon, on {date}: {settled, plural, one {# settled coupon} other {# settled coupons}}, result {net}.",
-    "kindCombo": "Combo · {count, plural, one {# selection} other {# selections}}",
-    "kindSingle": "{count, plural, one {Single bet} other {# single bets}}",
-    "status": {
-      "WON": "Won",
-      "LOST": "Lost",
-      "VOID": "Refunded",
-      "PENDING": "In play"
-    },
-    "playedOn": "Played on {date}",
-    "staked": "Staked",
-    "odds": "Odds",
-    "returned": "Returned",
-    "net": "Net gain",
-    "partialNet": "Partial result",
-    "potential": "Possible return {amount}, of which {gain} gain, if everything lands.",
-    "moreLegs": "+ {count, plural, one {# other selection} other {# other selections}}",
-    "selectHint": "Select a coupon to see the details",
-    "detailTitle": "Coupon details",
-    "close": "Close",
-    "legStake": "Stake {amount}",
-    "legRefunded": "stake returned",
-    "legPotential": "possible return {amount}",
-    "refundRule": "A refunded selection counts at odds of 1: the combo is paid on the others.",
-    "filter": {
-      "type": "Type",
-      "all": "All",
-      "single": "Singles",
-      "combo": "Combos",
-      "from": "From",
-      "to": "To"
-    },
-    "delete": {
-      "trigger": "Delete this slip",
-      "title": "Delete this slip?",
-      "description": "Entered by mistake? As long as no match has started, you can delete it: {amount} go back to your balance. To correct it, delete it and enter it again.",
-      "cancel": "Keep",
-      "confirm": "Delete",
-      "error": "Could not delete this slip."
-    }
-  },
-  "bankrollPage": {
-    "filter": {
-      "allTypes": "All types",
-      "deposit": "Deposit",
-      "stake": "Stake",
-      "refund": "Refund",
-      "from": "From",
-      "to": "To",
-      "type": "Type",
-      "return": "Return",
-      "slipCancelled": "Slip deleted",
-      "withdrawal": "Withdrawal"
-    },
-    "table": {
-      "date": "Date",
-      "type": "Type",
-      "amount": "Amount",
-      "detail": "Bet / note",
-      "balanceAfter": "Balance after"
-    },
-    "stats": {
-      "currentBalance": "Declared balance",
-      "totalDeposited": "Declared deposits",
-      "betsResult": "Result of your bets",
-      "netDeposited": "Deposits minus withdrawals"
-    },
-    "trend": {
-      "title": "Declared balance, day by day",
-      "subtitle": "A deposit raises the curve: it is not a gain.",
-      "notEnoughData": "Not enough data",
-      "notEnoughDataDescription": "Declare a deposit or play a coupon to see the curve.",
-      "valueLabel": "Balance",
-      "range": "From {from} to {to}, over the movements shown."
-    },
-    "history": {
-      "title": "Movement history",
-      "subtitle": "The last 200 movements, with the balance after each.",
-      "emptyTitle": "No transactions",
-      "emptyDescription": "No transactions match the current filters."
-    },
-    "fallback": {
-      "deposit": "Deposit",
-      "bet": "Bet",
-      "slipCancelled": "Slip deleted before kick-off: stake returned",
-      "withdrawal": "Withdrawal"
-    },
-    "title": "Stake tracking",
-    "intro": "Your balance as you declare it: deposits made at your bookmaker, your stakes and what they return. EVCore does not hold your money.",
-    "loading": "Loading your tracking…",
-    "loadError": "Your tracking could not be loaded.",
-    "retry": "Try again",
-    "resultLine": "Result of your bets since your first coupon, on {date}: {settled, plural, one {# settled coupon} other {# settled coupons}}, staked {staked}, returned {returned}.",
-    "resultEmpty": "No settled coupon yet.",
-    "declarative": "Everything is declared by you: a deposit raises the balance, it is not a gain.",
-    "deposit": {
-      "trigger": "Declare a deposit",
-      "title": "Declare a deposit",
-      "description": "Record a deposit made at your bookmaker, so your balance here follows yours.",
-      "close": "Close",
-      "amount": "Amount",
-      "amountInvalid": "Enter an amount of at least 1.",
-      "note": "Note",
-      "notePlaceholder": "Initial deposit",
-      "error": "The deposit could not be saved.",
-      "cancel": "Cancel",
-      "confirm": "Confirm",
-      "confirming": "Saving…"
-    },
-    "detail": {
-      "combo": "Combo · {count, plural, one {# selection} other {# selections}}"
-    },
-    "withdraw": {
-      "trigger": "Declare a withdrawal",
-      "title": "Declare a withdrawal",
-      "description": "Note a withdrawal made at your bookmaker, so your balance here follows yours. Never more than your balance.",
-      "close": "Close",
-      "amount": "Amount",
-      "amountInvalid": "Enter an amount of at least 1.",
-      "note": "Note",
-      "notePlaceholder": "Mobile money withdrawal",
-      "error": "Could not record the withdrawal.",
-      "cancel": "Cancel",
-      "confirm": "Confirm",
-      "confirming": "Saving…"
     }
   },
   "performancePage": {
@@ -1125,12 +889,644 @@
     "reasons": {
       "no_home_favourite_in_band": "no home favourite between 1.20 and 1.35",
       "not_enough_calibrated_short_legs": "not enough reliable short-odds bets in different leagues",
-      "no_priced_candidate": "not enough bets priced at 1xBet in the band",
+      "no_priced_candidate": "not enough priced bets in the band",
       "no_combination_in_window": "no combination between 2 and 3",
       "no_candidate_in_band": "no bet in its odds band",
       "other": "no bet meeting the rule that day",
       "no_reliable_competition": "no championship whose corner stats reliably arrive",
-      "no_operator_price": "no corners priced at 1xBet"
+      "no_operator_price": "no corners priced"
+    }
+  },
+  "shell": {
+    "brand": "EVCore",
+    "tabsLabel": "Tabs",
+    "skipToContent": "Skip to content",
+    "notifications": "Notifications",
+    "tabs": {
+      "today": "Today",
+      "matches": "Matches",
+      "results": "Results",
+      "me": "Me"
+    },
+    "close": "Close",
+    "legal": "18+ (21+ in Cameroon) · Betting carries a risk of loss · Only stake what you can afford to lose",
+    "unread": "{count} unread"
+  },
+  "scoreboard": {
+    "outcome": {
+      "won": "{label}: won",
+      "wonAt": "{label}: won, odds {odds}",
+      "lost": "{label}: lost",
+      "void": "{label}: refunded",
+      "pending": "{label}: not settled yet",
+      "pendingUntil": "{label}: not settled yet, last match at {time}"
+    },
+    "states": {
+      "loading": "Loading",
+      "offlineSeenAt": "Offline · seen at {time}",
+      "offline": "Offline",
+      "loadError": "We can't load this",
+      "noNetwork": "No network",
+      "retry": "Try again",
+      "newVersion": "A new version is ready",
+      "update": "Update",
+      "maintenanceTitle": "We'll be back in a few minutes",
+      "maintenanceBody": "EVCore is under maintenance. Your followed coupons still settle.",
+      "pauseTitle": "Paused until {until}",
+      "pauseBody": "Today, Matches and your ticket are closed until then. Your followed coupons still settle: they wait for you in Me.",
+      "pauseExtend": "Extend the pause",
+      "pauseUntil": "{date} at {time}"
+    },
+    "chance": {
+      "outOfTen": "{count} in {total}",
+      "oneIn": "1 in {total}",
+      "rarerThan": "less than 1 in {total}",
+      "aboutOutOfTen": "about {count} times in {total}",
+      "aboutOneIn": "about 1 time in {total}",
+      "aboutRarerThan": "less than 1 time in {total}",
+      "passesOutOfTen": "<verb>Lands</verb> {count} times in {total}",
+      "passesOneIn": "<verb>Lands</verb> 1 time in {total}",
+      "passesRarerThan": "<verb>Lands</verb> less than 1 time in {total}",
+      "spokenOutOfTen": "{count} chances in {total}",
+      "spokenOneIn": "1 chance in {total}",
+      "spokenRarerThan": "less than one chance in {total}"
+    }
+  },
+  "today": {
+    "products": {
+      "FAVOURITE": "Favourite of the day",
+      "COMBO": "Combo of the day",
+      "DOUBLE": "Odds-2 coupon",
+      "HUNTER_BTTS": "Both teams to score hunter",
+      "HUNTER_DRAW": "Draw hunter",
+      "HUNTER_SCORE": "Correct score hunter",
+      "HUNTER_CORNERS": "Corners hunter"
+    },
+    "shortNames": {
+      "FAVOURITE": "Favourite",
+      "COMBO": "Combo",
+      "DOUBLE": "Odds-2 coupon",
+      "HUNTER_BTTS": "Both teams to score hunter",
+      "HUNTER_DRAW": "Draw hunter",
+      "HUNTER_SCORE": "Correct score hunter",
+      "HUNTER_CORNERS": "Corners hunter"
+    },
+    "codes": {
+      "FAVOURITE": "FAV",
+      "COMBO": "COM",
+      "DOUBLE": "C2",
+      "HUNTER_BTTS": "BTS",
+      "HUNTER_DRAW": "DRW",
+      "HUNTER_SCORE": "SCO",
+      "HUNTER_CORNERS": "COR"
+    },
+    "yesterday": "Yesterday",
+    "week": "Your week",
+    "yourProduct": "Your {product}",
+    "weekProduct": "{product}: {won} days won out of {played}",
+    "inProgress": "In play",
+    "follow": "Follow",
+    "followed": "Following",
+    "followError": "Following did not go through. Try again.",
+    "form": "{won} days won out of {played}",
+    "matches": "{count, plural, one {# match} other {# matches}}",
+    "absent": "No {product} today",
+    "followedRunning": "{count} in play · next match at {time}",
+    "followedRunningDone": "{count} in play",
+    "otherCoupons": "Other coupons of the day",
+    "finished": "Finished",
+    "refunded": "Refunded",
+    "won": "Won",
+    "lost": "Lost",
+    "followedDone": "Following",
+    "postponed": "Postponed",
+    "nothingTitle": "Today, we sit this one out",
+    "seeMatches": "See today's matches",
+    "absentShort": "No {product}",
+    "formTitle": "Form over 30 days",
+    "formSummary": "{won, plural, one {# day won} other {# days won}} out of {played}",
+    "worstStreak": "{count, plural, =0 {no day lost} other {worst run #}}",
+    "band": "{min} to {max}",
+    "open": "Open {product}",
+    "welcome": "Every day, one bet we have tracked since {date}: won {won} days of {played}. We never take your stake.",
+    "welcomeShort": "Every day, one bet we track and count. We never take your stake.",
+    "welcomeClose": "Close the welcome message",
+    "yesterdayEmpty": "nothing to show yet",
+    "firstFollowNote": "You will get its result tomorrow morning",
+    "pushAsk": "Get the result tomorrow morning?",
+    "pushYes": "Yes, at 8 am",
+    "pushLater": "Later",
+    "outageTitle": "No coupon today",
+    "outageBody": "They usually come out the evening before. We're looking into what's blocking them.",
+    "seeResults": "Our results",
+    "yesterdayCount": "{won} won of {played}"
+  },
+  "matches": {
+    "days": {
+      "label": "Day",
+      "yesterday": "Yesterday",
+      "today": "Today",
+      "tomorrow": "Tomorrow"
+    },
+    "kickoff": "Kick-offs at {time}",
+    "withoutReading": "{count, plural, one {# match without a reading} other {# matches without a reading}}",
+    "see": "See",
+    "without": {
+      "rejected": "Set aside",
+      "not_priced": "No odds yet",
+      "not_analysed": "No reading",
+      "tonight": "Reading tonight"
+    },
+    "empty": {
+      "yesterday": "No match yesterday",
+      "today": "No match today",
+      "tomorrow": "No match tomorrow"
+    },
+    "result": {
+      "won": "won",
+      "lost": "lost"
+    },
+    "refunded": "Refunded",
+    "postponedShort": "Ppd.",
+    "postponed": "{competition} · postponed",
+    "search": {
+      "open": "Search a team",
+      "close": "Close the search",
+      "placeholder": "A team",
+      "noResult": {
+        "yesterday": "No match for \"{query}\" yesterday",
+        "today": "No match for \"{query}\" today",
+        "tomorrow": "No match for \"{query}\" tomorrow"
+      }
+    },
+    "sheet": {
+      "ourReading": "Our reading",
+      "without": {
+        "rejected": "No reading · no chance sure enough",
+        "not_priced": "No odds yet",
+        "not_analysed": "No reading",
+        "tonight": "Reading tonight"
+      },
+      "ai": "AI opinion",
+      "noAi": "No opinion",
+      "sameAsReading": "Same bet as our reading",
+      "aiSpeech": "Why?",
+      "aiDecidedAt": "Decided on {date} at {time}",
+      "aiSpeechClose": "Close",
+      "form": "Form",
+      "formSummary": "{won, plural, one {# win} other {# wins}}, {drawn, plural, one {# draw} other {# draws}}, {lost, plural, one {# loss} other {# losses}}",
+      "rest": "{days} d rest",
+      "otherPicks": "Other bets",
+      "all": "All {count}",
+      "inProgress": "In progress",
+      "postponed": "Postponed",
+      "halfTime": "half-time {home}-{away}",
+      "result": {
+        "won": "won",
+        "lost": "lost",
+        "void": "refunded"
+      },
+      "setAside": {
+        "divergence": "No reading · the model and the market disagree too much",
+        "low_odds": "No reading: the odds are too low to be worth it",
+        "suspended": "No reading · this market is suspended on our side",
+        "not_sure": "No reading · no chance sure enough"
+      }
+    },
+    "played": "{count, plural, one {# match already played} other {# matches already played}}",
+    "bigOnly": "Big leagues"
+  },
+  "ticket": {
+    "title": "My ticket",
+    "open": "Open my ticket",
+    "matchOne": "1 match",
+    "matchMany": "{count} matches",
+    "add": "Add to my ticket",
+    "inTicket": "In my ticket",
+    "onePerMatch": "One bet per match",
+    "full": "15 at most",
+    "totalOdds": "Total odds",
+    "yourChances": "Your chances",
+    "started": "Started",
+    "postponed": "Postponed",
+    "notPriced": "No odds any more",
+    "oddsUpdated": "odds updated",
+    "remove": "Remove {bet}",
+    "clear": "Clear",
+    "empty": "Add bets from the matches",
+    "seeMatches": "See the matches",
+    "ours": "Our {product}",
+    "oddsAt": "odds of {time}",
+    "pending": "Working out your chances…",
+    "failed": "We can't work out your chances",
+    "yesterdayTitle": "Yesterday's ticket",
+    "oddsOf": "odds {odds}",
+    "won": "won",
+    "lost": "lost",
+    "void": "refunded",
+    "neededAll": "it needed all {count}",
+    "wasTheOne": "1 time in {total}, and this was it",
+    "oursYesterday": "Our {product} yesterday:",
+    "composeToday": "Build today's",
+    "share": "Share my chances",
+    "shareFailed": "Sharing did not work",
+    "imageDate": "my ticket of {date}",
+    "imageAbout": "about",
+    "imageChance": "1 time in {total}",
+    "imageOurs": "Our {product}: {chance}",
+    "outcomePending": "waiting for the last match"
+  },
+  "results": {
+    "yesterday": "Yesterday",
+    "week": "Your week",
+    "weekSummary": "{won, plural, one {# day won} other {# days won}} of {played}",
+    "periods": {
+      "label": "Period",
+      "30": "30 d",
+      "90": "90 d",
+      "all": "All",
+      "dates": "Dates",
+      "range": "{from} – {to}",
+      "datesTitle": "Choose the dates",
+      "from": "From",
+      "to": "To",
+      "show": "Show",
+      "close": "Close"
+    },
+    "names": {
+      "FAVOURITE": "Favourite",
+      "COMBO": "Combo",
+      "DOUBLE": "Odds 2",
+      "HUNTER_BTTS": "Both-score hunter",
+      "HUNTER_DRAW": "Draw hunter",
+      "HUNTER_SCORE": "Exact-score hunter",
+      "HUNTER_CORNERS": "Corners hunter",
+      "COMBO_AI": "AI combo",
+      "LONG": "Long coupon",
+      "UNIQUE": "AI single coupon"
+    },
+    "ai": "AI opinion",
+    "daysWon": "{won, plural, one {# day won} other {# days won}} of {played}",
+    "adviceWon": "{won, plural, one {# opinion won} other {# opinions won}} of {played}",
+    "tooEarlyDays": "Too early · {count, plural, one {# day} other {# days}}",
+    "tooEarlyAdvice": "Still too early: {count} settled opinions",
+    "lastPlayed": "{count, plural, one {The last day played} other {The last # days played}}",
+    "since": "Since {date}. Each product counts from its launch.",
+    "between": "From {from} to {to}. Each product counts from its launch.",
+    "retired": "retired",
+    "sheet": {
+      "titles": {
+        "FAVOURITE": "Favourite of the day",
+        "COMBO": "Combo of the day",
+        "DOUBLE": "Odds-2 coupon",
+        "HUNTER_BTTS": "Both-score hunter",
+        "HUNTER_DRAW": "Draw hunter",
+        "HUNTER_SCORE": "Exact-score hunter",
+        "HUNTER_CORNERS": "Corners hunter",
+        "COMBO_AI": "AI combo",
+        "LONG": "Long coupon",
+        "UNIQUE": "AI single coupon",
+        "AI": "AI opinion"
+      },
+      "definitions": {
+        "FAVOURITE": "one match, home favourite, odds 1.20 to 1.35",
+        "COMBO": "matches from different leagues, each priced 1.20 to 1.50",
+        "DOUBLE": "up to three matches, total odds 2 to 3",
+        "HUNTER_BTTS": "one match where both teams score, odds 1.45 to 1.90",
+        "HUNTER_DRAW": "one draw, odds 2.90 to 3.60",
+        "HUNTER_SCORE": "one exact score, odds 6 to 12",
+        "HUNTER_CORNERS": "one corners total, odds 1.70 to 2.10",
+        "COMBO_AI": "the combo the AI picks from the same pool",
+        "LONG": "retired",
+        "UNIQUE": "retired",
+        "AI": "one AI bet per match, settled at the day's odds"
+      },
+      "lastDays": "{count, plural, one {The last day} other {The last # days}}",
+      "allSince": "Since {date}",
+      "between": "From {from} to {to}",
+      "lastOpinions": "{count, plural, one {The last opinion} other {The last # opinions}}",
+      "gridLabel": "{won} won, {lost} lost, {refunded} refunded, {none} without a coupon",
+      "daysWithout": "{count, plural, one {# day} other {# days}} without {product}",
+      "worstStreak": "worst run",
+      "worstValue": "{count, plural, =0 {no day lost} one {# day lost in a row} other {# days lost in a row}}",
+      "worstValueAi": "{count, plural, =0 {no opinion lost} one {# opinion lost in a row} other {# opinions lost in a row}}",
+      "announced": "Announced",
+      "realised": "Realised",
+      "comparedOn": "{from} to {to} · {count, plural, one {# settled day} other {# settled days}}",
+      "comparedOnAi": "{from} to {to} · {count, plural, one {# opinion} other {# opinions}}",
+      "tooEarlyCompare": "Too early to compare · {count, plural, one {# settled day} other {# settled days}}",
+      "francsDay": "In francs, at 1,000 F a day",
+      "francsAdvice": "In francs, at 1,000 F an opinion",
+      "staked": "staked",
+      "returned": "returned",
+      "francsOn": "{from} to {to}",
+      "unpriced": "{count, plural, one {# day} other {# days}} without odds, left aside",
+      "dayByDay": "Day by day",
+      "opinionByOpinion": "Opinion by opinion",
+      "noCoupon": "no {product}",
+      "settingChanged": "setting changed on {date}",
+      "matches": "{count} matches",
+      "won": "won",
+      "lost": "lost",
+      "refunded": "refunded",
+      "pending": "In progress",
+      "nothing": "Nothing over this period",
+      "outOfHundred": "{count} in 100",
+      "yesterdayTitle": "Yesterday, {date}",
+      "nothingYesterday": "Yesterday · nothing to play",
+      "weekTitle": "Your week",
+      "weekRange": "{from} to {to}",
+      "dayColumn": "Day",
+      "total": "Total",
+      "outOf": "{won} of {played}",
+      "followedWeek": "Your followed coupons this week",
+      "followedCounts": "{won} won · {lost} lost",
+      "followedRefunded": "{count} refunded",
+      "mondayNote": "The Monday statement, the same as the 8 am notification."
+    },
+    "notPlayedYet": "Launched {date}, no day played yet",
+    "noAdviceYet": "No settled opinion yet"
+  },
+  "me": {
+    "record": "{won} won · {lost} lost",
+    "refunded": "{count} refunded",
+    "since": "coupons followed since {date}",
+    "firstFollow": "Follow your first coupon",
+    "tabs": {
+      "label": "My followed coupons",
+      "running": "Running",
+      "settled": "Settled"
+    },
+    "noneRunning": "No followed coupon running",
+    "noneSettled": "No followed coupon settled yet",
+    "inProgress": "Live",
+    "seeMore": "See more",
+    "rows": {
+      "messages": "Messages",
+      "help": "Help",
+      "responsible": "Responsible gambling",
+      "account": "Account"
+    },
+    "replies": "{count, plural, one {# reply} other {# replies}}",
+    "signOut": "Sign out",
+    "signOutFailed": "Signing out failed, try again"
+  },
+  "messages": {
+    "title": "Messages",
+    "back": "Back to Me",
+    "subtitle": "the EVCore team · replies within a few hours",
+    "today": "today",
+    "yesterday": "yesterday",
+    "automatic": "automatic",
+    "teamSign": "The EVCore team",
+    "pushNudge": "Turn on notifications so you never miss a reply.",
+    "pushEnable": "Turn on",
+    "older": "Earlier messages",
+    "placeholder": "Write to the team…",
+    "send": "Send",
+    "photo": "Add a photo",
+    "record": "Record a voice message",
+    "stop": "Stop recording",
+    "recording": "Recording",
+    "sendVoice": "Send the voice message",
+    "cancel": "Cancel",
+    "sending": "Sending…",
+    "failed": "Not sent",
+    "retry": "Retry",
+    "tooBig": "Too large to send",
+    "mic": {
+      "denied": "The microphone is blocked. Allow it in the browser's settings.",
+      "notFound": "No microphone found on this device.",
+      "busy": "The microphone is used by another app.",
+      "unsupported": "This browser cannot record a voice message.",
+      "unknown": "The microphone could not start."
+    },
+    "voice": "Voice message",
+    "image": "Attached photo",
+    "file": "Attached file",
+    "empty": "Write to us: a question, odds that do not match, an idea."
+  },
+  "help": {
+    "title": "Help",
+    "back": "Back to Me",
+    "ask": "A question? Write to us",
+    "example": "Example",
+    "hint": "Help: {title}",
+    "sheets": "The sheets"
+  },
+  "responsible": {
+    "title": "Responsible gambling",
+    "back": "Back to Me",
+    "intro": "Betting must stay a game. If it no longer is, take a break: the app closes for the time you choose, with no early return.",
+    "durations": {
+      "1": "24 hours",
+      "7": "7 days",
+      "30": "30 days"
+    },
+    "durationsLabel": "Length of the break",
+    "note": "You can extend it, never shorten it. Your followed coupons still settle.",
+    "confirmLine": "The app will be closed until {date}. You will not be able to come back before.",
+    "confirm": "Take the break",
+    "cancel": "Cancel",
+    "pausedUntil": "On a break until {date}",
+    "extendOnly": "Only lengths that extend your break are offered.",
+    "pauseFailed": "The break could not be set, try again",
+    "helpTitle": "Need help?",
+    "helpLine": "Talk to someone close, or write to us in Messages: we answer discreetly.",
+    "helpNumbers": "Help numbers by country",
+    "delete": "Delete my account",
+    "deleteWhat": "Immediate, with your password. Your followed coupons, your messages and your account are deleted at once.",
+    "password": "Password",
+    "deleteConfirm": "Delete for good",
+    "deleteFailed": "The account was not deleted: check your password",
+    "dateAt": "{date} at {time}"
+  },
+  "playerAccount": {
+    "title": "Account",
+    "back": "Back to Me",
+    "firstName": "First name",
+    "phone": "Phone",
+    "noPhone": "No number",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saveFailed": "Not saved, try again",
+    "emailVerified": "Verified",
+    "emailNotVerified": "Not verified yet",
+    "newEmail": "New e-mail",
+    "password": "Password",
+    "sendCode": "Get a code",
+    "code": "Code received by e-mail",
+    "confirmEmail": "Change the e-mail",
+    "emailFailed": "The e-mail did not change: check the password or the code",
+    "security": "Security",
+    "currentPassword": "Current password",
+    "newPassword": "New password (8 characters at least)",
+    "changePassword": "Change the password",
+    "passwordNote": "All your devices will be signed out, this one too.",
+    "passwordFailed": "The password did not change: check the current one",
+    "twoFactor": "Two-factor authentication",
+    "twoFactorOn": "on",
+    "twoFactorOff": "off",
+    "twoFactorStart": "Turn on with an authenticator app",
+    "twoFactorScan": "Scan this code with your app, or type the key, then enter the 6-digit code.",
+    "twoFactorKey": "Key",
+    "twoFactorCode": "6-digit code",
+    "twoFactorConfirm": "Turn on",
+    "twoFactorFailed": "Code refused, try the next one",
+    "devices": "Signed-in devices",
+    "signOutOthers": "Sign the others out",
+    "signedOutOthers": "Other devices signed out: {count}",
+    "notifications": "Notifications",
+    "switches": {
+      "morningBriefEnabled": "The morning coupons",
+      "weeklyStatementEnabled": "Your week's summary",
+      "followedResultEnabled": "The result of your followed coupons",
+      "teamRepliesEnabled": "The team's replies",
+      "emailNotificationsEnabled": "Also by e-mail"
+    },
+    "switchHints": {
+      "morningBriefEnabled": "every day at {time}",
+      "weeklyStatementEnabled": "on Monday at {time}",
+      "followedResultEnabled": "the same evening",
+      "teamRepliesEnabled": "",
+      "emailNotificationsEnabled": "the morning and Monday ones"
+    },
+    "display": "Display",
+    "theme": "Theme",
+    "themes": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "language": "Language",
+    "currency": "Currency",
+    "currencies": {
+      "XOF": "F CFA",
+      "EUR": "Euro",
+      "USD": "US dollar"
+    },
+    "legal": {
+      "cgu": "Terms",
+      "privacy": "Privacy",
+      "notice": "Legal notice"
+    },
+    "signOutFailed": "Not done, try again",
+    "profile": "Profile",
+    "email": "E-mail",
+    "verifyEmail": "Verify",
+    "pushNudge": "Turn on notifications on this device to receive them.",
+    "pushEnable": "Turn on",
+    "avatar": "Avatar"
+  },
+  "playerNotifications": {
+    "title": "Notifications",
+    "today": "today",
+    "yesterday": "yesterday",
+    "unread": "unread",
+    "empty": "Nothing yet: your morning comes at 8 am.",
+    "seeMore": "See more",
+    "note": "Four kinds and no more: your morning, your week, the result of your coupons, the team's replies, and an announcement now and then.",
+    "settings": "Set them in Account"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "line": "This page does not exist.",
+    "home": "Home"
+  },
+  "landing": {
+    "signIn": "Sign in",
+    "brandLine": "Every day, one bet analysed. Counted, dated, losses included.",
+    "signUp": "Create my account",
+    "free": "Free. We never touch your money.",
+    "results": "Our results",
+    "resultsSince": "Our results since {date}, losses included",
+    "seeAll": "See all",
+    "howTitle": "How it works",
+    "how": "We read every match, suggest the bet with the best chance, and count everything it gives, even when it loses. You follow, or not.",
+    "legal": {
+      "label": "Legal pages",
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "notice": "Legal notice",
+      "responsible": "Responsible gambling"
+    },
+    "home": "Home",
+    "lastWon": "Our last winning coupon, on {date}",
+    "pastTitle": "{product}, {date}"
+  },
+  "playerAuth": {
+    "back": "Back",
+    "signIn": "Sign in",
+    "fields": {
+      "firstName": "First name",
+      "email": "Email",
+      "password": "Password"
+    },
+    "register": {
+      "title": "Create my account",
+      "passwordHint": "At least 8 characters",
+      "age": "I am 18 or older (21 in Cameroon), or of legal age in my country",
+      "termsBefore": "I accept the",
+      "termsLink": "terms of use",
+      "submitting": "Creating…",
+      "haveAccount": "Already have an account?"
+    },
+    "login": {
+      "show": "show",
+      "hide": "hide",
+      "submitting": "Signing in…",
+      "forgot": "Forgot password?",
+      "register": "Create an account",
+      "resetDone": "Password changed. Sign in with the new one.",
+      "code": "The code from your app",
+      "codeHint": "Six digits",
+      "codeSubmit": "Confirm",
+      "codeBack": "Back"
+    },
+    "verify": {
+      "title": "Check your email",
+      "intro": "We sent a code to {email}. Type it, or tap the link in the email.",
+      "code": "The code received",
+      "submit": "Verify",
+      "later": "Later",
+      "resend": "Send the code again",
+      "resendIn": "(in {seconds} s)",
+      "changeEmail": "Change email",
+      "sendFailed": "The code did not go out. Try again."
+    },
+    "forgot": {
+      "title": "Forgot password",
+      "intro": "We'll send you a link to choose a new one.",
+      "submit": "Get the link",
+      "sent": "If an account exists for {email}, we just sent a link there.",
+      "sentNote": "It is valid for 15 minutes. Check your spam too.",
+      "resend": "Send the link again",
+      "withApp": "With my authenticator app",
+      "noAccess": "No access to your email or the app?",
+      "writeTeam": "Write to the team",
+      "appIntro": "Your email, the code from your authenticator app, then the new password.",
+      "appCode": "The code from your app"
+    },
+    "reset": {
+      "title": "New password",
+      "password": "New password",
+      "submit": "Change the password",
+      "expired": "This link no longer works: it was already used or is over 15 minutes old.",
+      "askAgain": "Ask for a new link"
+    },
+    "errors": {
+      "firstName": "Enter your first name.",
+      "email": "This email is not valid.",
+      "password": "At least 8 characters.",
+      "tick": "Tick this box to create your account.",
+      "taken": "This email already has an account",
+      "registerFailed": "The account could not be created. Try again.",
+      "wrong": "Wrong email or password",
+      "locked": "Too many tries. Try again in fifteen minutes.",
+      "failed": "That didn't work. Try again.",
+      "code": "Wrong or expired code.",
+      "appWrong": "Wrong email or code."
     }
   }
 }

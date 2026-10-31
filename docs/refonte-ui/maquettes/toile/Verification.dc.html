@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Vérifie ton e-mail</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:#141821}
+a{color:#141821}a:hover{color:#0E1320}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.code{display:flex;gap:8px}
+.code input{width:48px;height:56px;border-radius:10px;border:1px solid #D9DDE3;background:#fff;text-align:center;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:28px;color:#141821;padding:0}
+.code input.on{border-color:#0E1320}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F9; display: flex; flex-direction: column; overflow: hidden">
+  <header style="background: #0E1320; color: #fff; padding: 52px 16px 14px; display: flex; align-items: center; justify-content: space-between">
+    <a href="Inscription.dc.html" aria-label="Retour" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; margin-left: -12px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M15 6l-6 6 6 6"/></svg></a>
+    <span class="num" style="font-weight: 600; font-size: 22px">Vérifie ton e-mail</span>
+    <span style="width: 32px"></span>
+  </header>
+
+  <div style="margin: 24px 16px 0; display: flex; flex-direction: column; gap: 18px">
+    <p style="margin: 0; font-size: 15px; line-height: 1.45">On a envoyé un code à <span style="font-weight: 600">kouassi@gmail.com</span>. Tape-le, ou touche le lien dans l'e-mail.</p>
+    <div class="code" role="group" aria-label="Code à six chiffres">
+      <label for="c1" style="display: none">1</label><input id="c1" type="text" inputmode="numeric" maxlength="1" value="4">
+      <label for="c2" style="display: none">2</label><input id="c2" type="text" inputmode="numeric" maxlength="1" value="8">
+      <label for="c3" style="display: none">3</label><input id="c3" type="text" inputmode="numeric" maxlength="1" value="2">
+      <label for="c4" style="display: none">4</label><input id="c4" type="text" inputmode="numeric" maxlength="1" value="" class="on">
+      <label for="c5" style="display: none">5</label><input id="c5" type="text" inputmode="numeric" maxlength="1" value="">
+      <label for="c6" style="display: none">6</label><input id="c6" type="text" inputmode="numeric" maxlength="1" value="">
+    </div>
+    <p style="margin: 0; font-size: 14px; color: #5B6472; display: flex; gap: 14px"><span>Renvoyer le code <span class="num">(dans 24 s)</span></span><a href="Inscription.dc.html" style="font-weight: 500">Changer d'e-mail</a></p>
+    <button type="button" style="height: 52px; border-radius: 10px; background: #0E1320; color: #fff; border: 0; font-family: Barlow, sans-serif; font-weight: 600; font-size: 17px">Vérifier</button>
+    <a href="Premier.dc.html" style="align-self: center; font-size: 15px; color: #5B6472; text-decoration: none; min-height: 44px; display: flex; align-items: center; font-weight: 500">Plus tard</a>
+  </div>
+
+  <p style="margin: auto 16px 20px; text-align: center; font-size: 11px; color: #5B6472">18+ · Parier comporte des risques de perte</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

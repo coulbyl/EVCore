@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Se connecter</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+body{margin:0;font-family:Barlow,system-ui,sans-serif;color:#141821}
+a{color:#141821}a:hover{color:#0E1320}
+.num{font-family:"Barlow Condensed",Barlow,sans-serif;font-variant-numeric:tabular-nums}
+.f{display:flex;flex-direction:column;gap:6px}
+.f label{font-size:14px;color:#5B6472}
+.f input{height:48px;border-radius:10px;border:1px solid #D9DDE3;padding:0 14px;font-family:Barlow,sans-serif;font-size:16px;background:#fff;color:#141821;width:100%;box-sizing:border-box}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F9; display: flex; flex-direction: column; overflow: hidden">
+  <header style="background: #0E1320; color: #fff; padding: 52px 16px 14px; display: flex; align-items: center; justify-content: space-between">
+    <a href="LandingMobile.dc.html" aria-label="Retour" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; margin-left: -12px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M15 6l-6 6 6 6"/></svg></a>
+    <span class="num" style="font-weight: 600; font-size: 22px">Se connecter</span>
+    <span style="width: 32px"></span>
+  </header>
+
+  <form style="margin: 24px 16px 0; display: flex; flex-direction: column; gap: 16px">
+    <div class="f"><label for="email">E-mail</label><input id="email" type="email" value="kouassi@gmail.com"></div>
+    <div class="f"><label for="mdp">Mot de passe</label><div style="position: relative; display: flex"><input id="mdp" type="password" value="••••••••••" style="padding-right: 84px"><button type="button" style="position: absolute; right: 4px; top: 2px; height: 44px; padding: 0 12px; border: 0; background: transparent; font-family: Barlow, sans-serif; font-size: 14px; color: #5B6472; font-weight: 500">afficher</button></div></div>
+    <button type="button" style="height: 52px; border-radius: 10px; background: #0E1320; color: #fff; border: 0; font-family: Barlow, sans-serif; font-weight: 600; font-size: 17px">Se connecter</button>
+    <p style="margin: 0; text-align: center; font-size: 14px; color: #5B6472; display: flex; justify-content: center; gap: 14px"><a href="Verification.dc.html" style="font-weight: 500; min-height: 44px; display: flex; align-items: center">Mot de passe oublié ?</a><a href="Inscription.dc.html" style="font-weight: 500; min-height: 44px; display: flex; align-items: center">Créer un compte</a></p>
+  </form>
+
+  <p style="margin: auto 16px 20px; text-align: center; font-size: 11px; color: #5B6472">18+ · Parier comporte des risques de perte</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

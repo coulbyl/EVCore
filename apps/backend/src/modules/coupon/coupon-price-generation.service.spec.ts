@@ -41,7 +41,7 @@ function makeRepository() {
     findPriceCandidates: vi.fn<CouponRepository['findPriceCandidates']>(),
     upsertPriceComposerProposal: vi
       .fn<CouponRepository['upsertPriceComposerProposal']>()
-      .mockResolvedValue('proposal-1'),
+      .mockResolvedValue({ proposalId: 'proposal-1', created: true }),
     recordPriceComposerAttempt: vi
       .fn<CouponRepository['recordPriceComposerAttempt']>()
       .mockResolvedValue(undefined),

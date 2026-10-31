@@ -1,0 +1,22 @@
+Vivier par jour de semaine (matchs distincts avec au moins une cote principale)
+  lun  14 jours  médiane   16 matchs
+  mar  14 jours  médiane   17 matchs
+  mer  15 jours  médiane   18 matchs
+  jeu  15 jours  médiane   27 matchs
+  ven  15 jours  médiane   30 matchs
+  sam  15 jours  médiane  104 matchs
+  dim  14 jours  médiane  127 matchs
+
+Accumulateur 8-15, 3 jambes 2,0-4,0
+tous les jours             cote  8.1  coupons 100  gagnés 14 (14.0 %)  pire série 16  semaines avec un gain 11/15  semaines dans le vert 11/15  rendu  +12.0 %
+samedi + dimanche          cote  8.0  coupons  29  gagnés  8 (27.6 %)  pire série  5  semaines avec un gain  7/15  semaines dans le vert  7/15  rendu +120.7 %
+vendredi à dimanche        cote  8.0  coupons  44  gagnés  9 (20.5 %)  pire série  8  semaines avec un gain  8/15  semaines dans le vert  8/15  rendu  +63.6 %
+
+Accumulateur 8-15, 7 jambes 1,40-1,80
+tous les jours             cote 10.3  coupons  92  gagnés  8 ( 8.7 %)  pire série 34  semaines avec un gain  8/15  semaines dans le vert  8/15  rendu  -11.0 %
+samedi + dimanche          cote 10.4  coupons  29  gagnés  3 (10.3 %)  pire série 18  semaines avec un gain  3/15  semaines dans le vert  3/15  rendu   +7.3 %
+
+Favori et Combiné, pour comparer
+Favori, samedi + dimanche  cote  1.2  coupons  29  gagnés 25 (86.2 %)  pire série  1  semaines avec un gain 15/15  semaines dans le vert 11/15  rendu   +3.4 %
+Combiné 1,4-1,6, sam + dim cote  1.4  coupons  29  gagnés 16 (55.2 %)  pire série  6  semaines avec un gain 12/15  semaines dans le vert  5/15  rendu  -20.5 %
+Cote 2-3, sam + dim        cote  2.1  coupons  29  gagnés 11 (37.9 %)  pire série  8  semaines avec un gain  9/15  semaines dans le vert  9/15  rendu  -20.4 %

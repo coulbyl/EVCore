@@ -8,12 +8,9 @@ import { OddsPair } from "@/components/odds-pair";
 import { useLocale, useTranslations } from "next-intl";
 import type {
   ChannelDecisionMatchDecisionDto,
-  ChannelSelectionDto,
   ConsensusReasonDetails,
   StrategyChannel,
 } from "@/domains/channel-decision/types/channel-decision";
-import { AddToCouponButton } from "@/components/add-to-coupon-button";
-import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
 import { ClosingLine } from "@/components/closing-line";
 import {
   CHANNEL_COLOR,
@@ -27,16 +24,6 @@ import { ResultBadge } from "@/components/result-badge";
 // une liste positive de 6 canaux (`SLIPPABLE`) jusqu'au 2026-08-22, figée
 // avant l'ouverture des autres : elle privait DOUBLE_CHANCE — le canal le
 // mieux mesuré — de bouton, alors qu'Investir permettait déjà de l'ajouter.
-import { isMetaChannel } from "./decision-helpers";
-
-export type SlipContext = {
-  fixtureId: string;
-  fixture: string;
-  homeLogo: string | null;
-  awayLogo: string | null;
-  competition: string | null;
-  scheduledAt: string;
-};
 
 function parseConsensusChannels(raw: unknown): StrategyChannel[] {
   if (!raw || typeof raw !== "object") return [];
@@ -50,14 +37,12 @@ export function ChannelRow({
   decision,
   locale,
   avoidEdge,
-  slipContext,
   teams = null,
 }: {
   channel: StrategyChannel;
   decision: ChannelDecisionMatchDecisionDto | undefined;
   locale: string;
   avoidEdge?: number;
-  slipContext?: SlipContext;
   /** Pour écrire le pari avec le nom des équipes (« Victoire Arsenal »). */
   teams?: { home: string; away: string } | null;
 }) {
@@ -93,14 +78,6 @@ export function ChannelRow({
             <div className="flex shrink-0 items-center gap-1.5">
               {avoidEdge !== undefined && <AvoidEdgeBadge edge={avoidEdge} />}
               <ResultBadge result={selection.result} />
-              {slipContext && !isMetaChannel(channel) && decision && (
-                <SlipButton
-                  channel={channel}
-                  decision={decision}
-                  selection={selection}
-                  slipContext={slipContext}
-                />
-              )}
             </div>
           </div>
           {/* Type de pari, fréquence, cote jouable d'abord : la même lecture
@@ -210,44 +187,4 @@ function RejectedLabel({
       </TooltipContent>
     </Tooltip>
   );
-}
-
-function SlipButton({
-  channel,
-  decision,
-  selection,
-  slipContext,
-}: {
-  channel: StrategyChannel;
-  decision: ChannelDecisionMatchDecisionDto;
-  selection: ChannelSelectionDto;
-  slipContext: SlipContext;
-}) {
-  const item: BetSlipDraftItem = {
-    modelRunId: decision.modelRunId,
-    fixtureId: slipContext.fixtureId,
-    fixture: slipContext.fixture,
-    homeLogo: slipContext.homeLogo,
-    awayLogo: slipContext.awayLogo,
-    competition: slipContext.competition ?? "",
-    scheduledAt: slipContext.scheduledAt,
-    market: selection.market,
-    pick: selection.pick,
-    // Le prix que l'utilisateur trouvera chez 1xBet quand il est connu ; le
-    // serveur enregistre le même au moment de jouer (BetSlipService.create).
-    odds:
-      selection.playableOdds !== null
-        ? String(selection.playableOdds)
-        : selection.odds !== null
-          ? String(selection.odds)
-          : null,
-    ev:
-      selection.ev !== null
-        ? `${selection.ev >= 0 ? "+" : ""}${(selection.ev * 100).toFixed(0)}%`
-        : null,
-    canal: channel,
-    stakeOverride: null,
-  };
-
-  return <AddToCouponButton item={item} />;
 }

@@ -11,14 +11,20 @@ import {
 } from "@/domains/auth/context/current-user-context";
 import { SettingsSectionCard } from "./settings-section-card";
 
-type Setting = "morningBriefEnabled" | "weeklyStatementEnabled";
+type Setting =
+  | "morningBriefEnabled"
+  | "weeklyStatementEnabled"
+  | "followedResultEnabled"
+  | "teamRepliesEnabled";
 
 const ROWS = [
   { key: "morningBriefEnabled", label: "morning", hint: "morningHint" },
   { key: "weeklyStatementEnabled", label: "weekly", hint: "weeklyHint" },
+  { key: "followedResultEnabled", label: "followed", hint: "followedHint" },
+  { key: "teamRepliesEnabled", label: "replies", hint: "repliesHint" },
 ] as const;
 
-/** La matinée et le relevé du lundi (2026-10-29), actifs par défaut. */
+/** Les quatre sortes de notification (09 § 5), actives par défaut. */
 export function PlayerNotificationsSection() {
   const t = useTranslations("account.playerNotifications");
   const currentUser = useCurrentUser();

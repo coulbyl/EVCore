@@ -146,6 +146,6 @@ Les deux services sont câblés en continu, sans profil :
 
 ## État de calibration connu
 
-- **ml-worker / shadow ML** : le flag `ML_CORRECTION_ENABLED=true` est actif en production (confirmé 2026-08-30). La correction n'a jamais été relue par aucune décision de canal — c'est une mesure pure, sans effet sur le scoring.
+- **ml-worker / shadow ML** : coupé depuis le 2026-10-31 (`FEATURE_FLAGS.SCORING.ML_CORRECTION = false`, constante, plus de variable d'environnement) et plus de ré-entraînement planifié le lundi : l'ombre n'apportait rien de mesurable (docs/audits/2026-10-29/ML-UTILITE.md). Le ml-worker reste appelable à la main depuis l'admin.
 - **VANTAGE** : déployé en production depuis le 2026-08-28. Le premier contrôle de calibration (2026-08-29, `n=158`) montrait une calibration globale proche du parfait (53.3 % réel vs 53.2 % annoncé), mais aucun marché individuel n'avait encore atteint le seuil minimal de 50 sélections réglées nécessaire pour un jugement fiable par marché. `BTTS` en était proche ; `CLEAN_SHEET_HOME` était jugé suspect à ce stade. Ces chiffres datent du tout début du déploiement et doivent être vérifiés à nouveau en base avant toute conclusion.
 - Le même audit (2026-08-29) a mesuré que 92 % des verdicts `no_play` de VANTAGE (942/1020) étaient justifiés par « les canaux convergent, pas de tension » — un artefact direct du prompt actuel, qui ne cherche que la tension inter-canaux (voir la proposition d'élargissement de contexte ci-dessus).

@@ -21,7 +21,6 @@ import {
   Skeleton,
 } from "@evcore/ui";
 import { DateNav } from "@/components/date-nav";
-import { FormationHelpLink } from "@/components/formation-help-link";
 import { FiltersPopover } from "@/components/filters-popover";
 
 export function DecisionsPageFrame({
@@ -111,11 +110,6 @@ export function DecisionsPageFrame({
             date={date}
             onChange={onDateChange}
             className="min-w-0 flex-1 justify-center"
-          />
-          <FormationHelpLink
-            slug="lire-un-pronostic"
-            label={t("helpLink")}
-            tourId="decisions-help"
           />
         </PageHeaderActions>
       </PageHeader>

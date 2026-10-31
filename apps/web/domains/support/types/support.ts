@@ -57,7 +57,7 @@ export type SupportConversation = {
 };
 
 export type SupportConversationSummary = SupportConversation & {
-  username: string;
+  username: string | null;
   fullName: string;
   avatarUrl: string | null;
   lastMessage: SupportMessage | null;

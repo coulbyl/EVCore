@@ -56,7 +56,10 @@ describe('CouponEngineComboGenerationService', () => {
 
   beforeEach(() => {
     repository = makeRepository();
-    repository.upsertPriceComposerProposal.mockResolvedValue('proposal-1');
+    repository.upsertPriceComposerProposal.mockResolvedValue({
+      proposalId: 'proposal-1',
+      created: true,
+    });
     repository.recordPriceComposerAttempt.mockResolvedValue();
     service = new CouponEngineComboGenerationService(
       repository as unknown as CouponRepository,
