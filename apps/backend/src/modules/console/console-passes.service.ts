@@ -63,8 +63,9 @@ export class ConsolePassesService {
           queue.getJobs(['completed'], 0, JOBS_READ),
           queue.getJobs(['failed'], 0, JOBS_READ),
           // Queued and not started yet counts as running: a second
-          // Relancer would only queue it twice.
-          queue.getJobs(['active', 'waiting', 'delayed'], 0, JOBS_READ),
+          // Relancer would only queue it twice. Never `delayed`: that is
+          // the schedule's next occurrence, not a run.
+          queue.getJobs(['active', 'waiting'], 0, JOBS_READ),
         ]);
         jobs.set(name, [
           ...completed.map((j) => toPassJob(j, 'completed')),

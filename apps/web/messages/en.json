@@ -1542,6 +1542,61 @@
       "engine": "Engine",
       "players": "Players",
       "settings": "Settings"
-    }
+    },
+    "lights": {
+      "data": "Data",
+      "engine": "Engine",
+      "players": "Players"
+    },
+    "lightStates": {
+      "green": "green",
+      "orange": "to watch",
+      "red": "red"
+    },
+    "redSince": "since {time}",
+    "todoTitle": "To do",
+    "nothing": "Nothing to do",
+    "todo": {
+      "odds_stale": "No odds fetched for {hours} h",
+      "odds_staleNever": "No odds fetched",
+      "etl_failed": "{count, plural, one {A pass failed} other {# passes failed}}: {last}",
+      "quota": "API-Football quota at the alert threshold: {detail}",
+      "stats_late": "{fixtures, plural, one {# match} other {# matches}} without stats for over 3 days, in {competitions, plural, one {# reliable league} other {# reliable leagues}}",
+      "coupons_missing": "No coupon composed for tomorrow, {date}",
+      "analysis_stopped": "Analysis stopped: last run {hours} h ago",
+      "analysis_stoppedNever": "The analysis never ran",
+      "product_absent": "{product} absent {days} days out of {window}",
+      "market_suspended": "{market} suspended since {date}",
+      "ai_silent": "The AI published nothing for {hours} h",
+      "ai_silentNever": "The AI has published nothing yet",
+      "players_silent": "No player came for {hours} h",
+      "players_silentNever": "No player came",
+      "support_unanswered": "{count, plural, one {A message} other {# messages}} unanswered for over 24 h"
+    },
+    "passesTitle": "Today's passes",
+    "passes": {
+      "stats": "Match stats",
+      "odds_morning": "Odds",
+      "morning_brief": "Morning",
+      "coupons": "Tomorrow's coupons",
+      "ai_combo": "AI combo",
+      "odds_evening": "Odds",
+      "analysis": "Day's analysis"
+    },
+    "passState": {
+      "done": "✓ {time}",
+      "doneJobs": "✓ {time} · {jobs} batches",
+      "failed": "failed",
+      "running": "running for {minutes} min",
+      "waiting": "waiting",
+      "missed": "missed"
+    },
+    "relaunch": "Relaunch",
+    "relaunchFailed": "Not relaunched",
+    "passesOff": "Passes cut since {date} by {by}",
+    "passesOffAnonymous": "Passes cut since {date}",
+    "todayTitle": "Today",
+    "noCoupons": "No coupon today",
+    "yesterday": "{active, plural, one {# active player} other {# active players}} yesterday · {follows, plural, one {# follow} other {# follows}} · {signups, plural, one {# sign-up} other {# sign-ups}}"
   }
 }

@@ -194,4 +194,45 @@ export class ConsoleRepository {
     `;
     return claimed === 1;
   }
+
+  /** Players (not the team) active, follows and sign-ups on one UTC day. */
+  async dayFigures(day: Date): Promise<{
+    active: number;
+    follows: number;
+    signups: number;
+  }> {
+    const next = new Date(day.getTime() + DAY_MS);
+    const [row] = await this.prisma.client.$queryRaw<
+      { active: bigint; follows: bigint; signups: bigint }[]
+    >`
+      SELECT
+        (SELECT count(DISTINCT a."userId") FROM public.user_activity_day a
+         JOIN public.users u ON u.id = a."userId"
+         WHERE a.day = ${day}::date AND u.role <> 'ADMIN') AS active,
+        (SELECT count(*) FROM public.coupon_follow
+         WHERE "createdAt" >= ${day} AND "createdAt" < ${next}) AS follows,
+        (SELECT count(*) FROM public.users
+         WHERE "createdAt" >= ${day} AND "createdAt" < ${next}
+           AND role <> 'ADMIN') AS signups
+    `;
+    return {
+      active: Number(row?.active ?? 0),
+      follows: Number(row?.follows ?? 0),
+      signups: Number(row?.signups ?? 0),
+    };
+  }
+
+  /** The scheduled passes' switch when it is off: since when, by whom. */
+  async passesOff(): Promise<{ since: Date; by: string | null } | null> {
+    const row = await this.prisma.client.appSetting.findUnique({
+      where: { key: 'scheduling.enabled' },
+      select: {
+        value: true,
+        updatedAt: true,
+        updatedBy: { select: { fullName: true } },
+      },
+    });
+    if (!row || row.value !== false) return null;
+    return { since: row.updatedAt, by: row.updatedBy?.fullName ?? null };
+  }
 }

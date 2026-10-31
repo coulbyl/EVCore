@@ -151,6 +151,8 @@ export function consoleStatusOf(s: ConsoleSignals): ConsoleStatus {
     },
     // Filled by ConsoleService from the ten-minute check.
     since: { data: null, engine: null, players: null },
+    yesterday: { active: 0, follows: 0, signups: 0 },
+    passesOff: null,
     // Reds first, then in the order of the lights.
     todo: [...todo].sort((a, b) =>
       a.severity === b.severity ? 0 : a.severity === 'red' ? -1 : 1,

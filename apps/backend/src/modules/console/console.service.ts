@@ -21,11 +21,19 @@ export class ConsoleService {
   ) {}
 
   async getStatus(now: Date = new Date()): Promise<ConsoleStatus> {
-    const [signals, recorded] = await Promise.all([
+    const [signals, recorded, yesterday, passesOff] = await Promise.all([
       this.signals(now),
       this.repository.lights(),
+      this.repository.dayFigures(
+        new Date(startOfUtcDay(now).getTime() - DAY_MS),
+      ),
+      this.repository.passesOff(),
     ]);
     const status = consoleStatusOf(signals);
+    status.yesterday = yesterday;
+    status.passesOff = passesOff
+      ? { since: passesOff.since.toISOString(), by: passesOff.by }
+      : null;
     // The time a light entered its state, from the ten-minute check.
     for (const row of recorded) {
       const key = row.light as keyof ConsoleStatus['lights'];

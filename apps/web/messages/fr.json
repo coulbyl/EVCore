@@ -1542,6 +1542,61 @@
       "engine": "Moteur",
       "players": "Joueurs",
       "settings": "Réglages"
-    }
+    },
+    "lights": {
+      "data": "Données",
+      "engine": "Moteur",
+      "players": "Joueurs"
+    },
+    "lightStates": {
+      "green": "au vert",
+      "orange": "à surveiller",
+      "red": "au rouge"
+    },
+    "redSince": "depuis {time}",
+    "todoTitle": "À faire",
+    "nothing": "Rien à faire",
+    "todo": {
+      "odds_stale": "Aucune cote relevée depuis {hours} h",
+      "odds_staleNever": "Aucune cote relevée",
+      "etl_failed": "{count, plural, one {Une passe en échec} other {# passes en échec}} : {last}",
+      "quota": "Quota API-Football au seuil d'alerte : {detail}",
+      "stats_late": "{fixtures, plural, one {# match} other {# matchs}} sans stats depuis plus de 3 jours, sur {competitions, plural, one {# championnat fiable} other {# championnats fiables}}",
+      "coupons_missing": "Aucun coupon composé pour demain, {date}",
+      "analysis_stopped": "Analyse arrêtée : dernier passage il y a {hours} h",
+      "analysis_stoppedNever": "L'analyse n'est jamais passée",
+      "product_absent": "{product} absent {days} jours sur {window}",
+      "market_suspended": "{market} suspendu depuis le {date}",
+      "ai_silent": "L'IA n'a rien publié depuis {hours} h",
+      "ai_silentNever": "L'IA n'a encore rien publié",
+      "players_silent": "Aucun joueur venu depuis {hours} h",
+      "players_silentNever": "Aucun joueur venu",
+      "support_unanswered": "{count, plural, one {Un message sans réponse} other {# messages sans réponse}} depuis plus de 24 h"
+    },
+    "passesTitle": "Les passes d'aujourd'hui",
+    "passes": {
+      "stats": "Stats de match",
+      "odds_morning": "Cotes",
+      "morning_brief": "Matinée",
+      "coupons": "Coupons de demain",
+      "ai_combo": "Combiné IA",
+      "odds_evening": "Cotes",
+      "analysis": "Analyse du jour"
+    },
+    "passState": {
+      "done": "✓ {time}",
+      "doneJobs": "✓ {time} · {jobs} lots",
+      "failed": "échec",
+      "running": "en cours depuis {minutes} min",
+      "waiting": "en attente",
+      "missed": "manquée"
+    },
+    "relaunch": "Relancer",
+    "relaunchFailed": "Pas relancée",
+    "passesOff": "Passes coupées depuis le {date} par {by}",
+    "passesOffAnonymous": "Passes coupées depuis le {date}",
+    "todayTitle": "Aujourd'hui",
+    "noCoupons": "Aucun coupon aujourd'hui",
+    "yesterday": "{active, plural, one {# joueur actif} other {# joueurs actifs}} hier · {follows, plural, one {# suivi} other {# suivis}} · {signups, plural, one {# inscrit} other {# inscrits}}"
   }
 }

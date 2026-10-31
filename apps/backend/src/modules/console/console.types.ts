@@ -77,6 +77,10 @@ export type ConsoleStatus = {
   /** Since when each light is in its state, as last recorded; null if not yet. */
   since: Record<LightKey, string | null>;
   todo: TodoItem[];
+  /** « 12 joueurs actifs hier · 3 suivis · 1 inscrit » (players, not the team). */
+  yesterday: { active: number; follows: number; signups: number };
+  /** The scheduled passes cut (Réglages): since when, by whom; null if on. */
+  passesOff: { since: string; by: string | null } | null;
 };
 
 /** What the repository reads, the rules decide (console-rules.ts). */

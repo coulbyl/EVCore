@@ -41,6 +41,8 @@ function harness() {
           at: '',
           lights: { data: 'green', engine, players: 'green' },
           since: { data: null, engine: null, players: null },
+          yesterday: { active: 0, follows: 0, signups: 0 },
+          passesOff: null,
           todo:
             engine === 'red'
               ? [
