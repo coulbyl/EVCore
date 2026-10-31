@@ -27,6 +27,8 @@ export function MessageBubble({
 }) {
   const automatic = message.kind === "AUTOMATED";
   const attachment = message.attachment ?? null;
+  // A photo alone is the bubble itself: no ink frame around it.
+  const imageOnly = attachment?.kind === "IMAGE" && !message.content;
   return (
     <li
       className={clsx(
@@ -36,12 +38,15 @@ export function MessageBubble({
     >
       <div
         className={clsx(
-          "flex flex-col gap-2 rounded-[0.875rem] px-3.5 py-2.5 text-body",
-          automatic
-            ? "bg-muted text-muted-foreground"
-            : mine
-              ? "rounded-br-sm bg-primary text-primary-foreground"
-              : "rounded-bl-sm border border-border bg-card text-card-foreground",
+          "flex flex-col gap-2 rounded-[0.875rem] text-body",
+          !imageOnly && "px-3.5 py-2.5",
+          imageOnly
+            ? "overflow-hidden border border-border"
+            : automatic
+              ? "bg-muted text-muted-foreground"
+              : mine
+                ? "rounded-br-sm bg-primary text-primary-foreground"
+                : "rounded-bl-sm border border-border bg-card text-card-foreground",
         )}
       >
         {attachment?.kind === "IMAGE" ? (
@@ -53,12 +58,16 @@ export function MessageBubble({
             width={attachment.width ?? undefined}
             height={attachment.height ?? undefined}
             loading="lazy"
-            className="h-auto max-h-72 max-w-full rounded-md object-contain"
+            className={clsx(
+              "h-auto max-h-72 max-w-full object-contain",
+              !imageOnly && "rounded-md",
+            )}
           />
         ) : attachment?.kind === "AUDIO" ? (
           <audio
             controls
-            preload="none"
+            // The length shows before playing, without loading the sound.
+            preload="metadata"
             src={attachment.url}
             aria-label={labels.voice}
             className="max-w-full"

@@ -25,7 +25,7 @@ test.describe("Messages", () => {
     await expect(
       thread.getByRole("img", { name: "Photo jointe" }),
     ).toBeVisible();
-    await expect(thread).toContainText("Kouamé, équipe EVCore");
+    await expect(thread).toContainText("L'équipe EVCore");
     // A reply not read yet: opening the thread marks it read.
     await read;
     await expect(

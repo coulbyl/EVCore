@@ -130,9 +130,7 @@ export default async function Page({
                 message={message}
                 mine={mine}
                 sign={
-                  mine || message.kind === "AUTOMATED"
-                    ? null
-                    : t("teamSign", { name: message.senderUsername })
+                  mine || message.kind === "AUTOMATED" ? null : t("teamSign")
                 }
                 time={formatTime(
                   new Date(message.createdAt),

@@ -262,7 +262,7 @@ export function Composer({
               maxLength={4000}
               placeholder={labels.placeholder}
               aria-label={labels.placeholder}
-              className="max-h-32 min-h-11 flex-1 resize-none rounded-[1.25rem] border border-border bg-card px-4 py-2.5 text-body focus:outline-2 focus:outline-ring"
+              className="field-sizing-content max-h-36 min-h-11 flex-1 resize-none rounded-[1.25rem] border border-border bg-card px-4 py-2.5 text-body focus:outline-2 focus:outline-ring"
             />
             {text.trim() ? (
               <IconButton label={labels.send} type="submit" primary>
