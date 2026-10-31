@@ -1514,5 +1514,32 @@
     "example": "Example",
     "hint": "Help: {title}",
     "sheets": "The sheets"
+  },
+  "responsible": {
+    "title": "Responsible gambling",
+    "back": "Back to Me",
+    "intro": "Betting must stay a game. If it no longer is, take a break: the app closes for the time you choose, with no early return.",
+    "durations": {
+      "1": "24 hours",
+      "7": "7 days",
+      "30": "30 days"
+    },
+    "durationsLabel": "Length of the break",
+    "note": "You can extend it, never shorten it. Your followed coupons still settle.",
+    "confirmLine": "The app will be closed until {date}. You will not be able to come back before.",
+    "confirm": "Take the break",
+    "cancel": "Cancel",
+    "pausedUntil": "On a break until {date}",
+    "extendOnly": "Only lengths that extend your break are offered.",
+    "pauseFailed": "The break could not be set, try again",
+    "helpTitle": "Need help?",
+    "helpLine": "SOS Joueurs · 09 74 75 13 13 (France)",
+    "helpNumbers": "Help numbers by country",
+    "delete": "Delete my account",
+    "deleteWhat": "Immediate, with your password. Your followed coupons, your messages and your account are deleted at once.",
+    "password": "Password",
+    "deleteConfirm": "Delete for good",
+    "deleteFailed": "The account was not deleted: check your password",
+    "dateAt": "{date} at {time}"
   }
 }

@@ -1514,5 +1514,32 @@
     "example": "Exemple",
     "hint": "Aide : {title}",
     "sheets": "Les fiches"
+  },
+  "responsible": {
+    "title": "Jeu responsable",
+    "back": "Retour à Moi",
+    "intro": "Parier doit rester un jeu. Si ce n'est plus le cas, fais une pause : l'application se ferme le temps choisi, sans retour anticipé.",
+    "durations": {
+      "1": "24 heures",
+      "7": "7 jours",
+      "30": "30 jours"
+    },
+    "durationsLabel": "Durée de la pause",
+    "note": "Tu pourras prolonger, jamais écourter. Tes coupons suivis se règlent quand même.",
+    "confirmLine": "L'application sera fermée jusqu'au {date}. Tu ne pourras pas revenir avant.",
+    "confirm": "Faire la pause",
+    "cancel": "Annuler",
+    "pausedUntil": "En pause jusqu'au {date}",
+    "extendOnly": "Seules les durées qui prolongent ta pause sont proposées.",
+    "pauseFailed": "La pause n'a pas pu être posée, réessaie",
+    "helpTitle": "Besoin d'aide ?",
+    "helpLine": "SOS Joueurs · 09 74 75 13 13 (France)",
+    "helpNumbers": "Les numéros d'aide par pays",
+    "delete": "Supprimer mon compte",
+    "deleteWhat": "Immédiat, avec ton mot de passe. Tes coupons suivis, tes messages et ton compte sont supprimés tout de suite.",
+    "password": "Mot de passe",
+    "deleteConfirm": "Supprimer définitivement",
+    "deleteFailed": "Le compte n'a pas été supprimé : vérifie ton mot de passe",
+    "dateAt": "{date} à {time}"
   }
 }
