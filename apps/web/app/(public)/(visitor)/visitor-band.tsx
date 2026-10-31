@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { SESSION_COOKIE } from "@/domains/auth/routing/auth-routing";
+import { BrandMark } from "@/components/scoreboard/shell/brand-mark";
 
 /**
  * Le bandeau encre des pages du visiteur (DESIGN.md : un bandeau encre en
@@ -32,8 +33,9 @@ export async function VisitorBand({
       <div className="mx-auto flex min-h-11 w-full max-w-[40rem] px-4 lg:px-6 items-center justify-between gap-3">
         <Link
           href="/"
-          className="score text-title font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-led-on"
+          className="flex items-center gap-2 score text-title font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-led-on"
         >
+          <BrandMark className="size-6" />
           EVCore
         </Link>
         {action ? (

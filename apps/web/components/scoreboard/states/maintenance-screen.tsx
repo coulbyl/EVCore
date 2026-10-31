@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { clsx as cn } from "clsx";
 import { scoreboardFontVariables } from "@/app/fonts/scoreboard-fonts";
 import { LegalLine } from "../shell/legal-line";
+import { BrandMark } from "../shell/brand-mark";
 
 /**
  * Le serveur ne répond pas (10-transverse.md § 2) : une page, pas un onglet,
@@ -33,7 +34,10 @@ export async function MaintenanceScreen() {
     >
       <header className="bg-band px-4 pb-3.5 text-band-foreground pt-[max(1rem,env(safe-area-inset-top))] dark:border-b dark:border-band-rule">
         <div className="flex min-h-11 items-center">
-          <span className="score text-title font-bold">{brand}</span>
+          <span className="flex items-center gap-2 score text-title font-bold">
+            <BrandMark className="size-6" />
+            {brand}
+          </span>
         </div>
       </header>
       <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">

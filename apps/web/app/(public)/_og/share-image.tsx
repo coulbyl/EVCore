@@ -90,7 +90,29 @@ export async function renderShareImage(): Promise<ImageResponse> {
           alignItems: "baseline",
         }}
       >
-        <div style={{ display: "flex", fontSize: 40, fontWeight: 800 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            fontSize: 40,
+            fontWeight: 800,
+          }}
+        >
+          {/* The EVCore mark (shell/brand-mark.tsx), drawn for Satori. */}
+          <svg width="44" height="44" viewBox="0 0 24 24" fill={LOOK.text}>
+            <rect x="3" y="13" width="4" height="8" rx="1" />
+            <rect x="10" y="9" width="4" height="12" rx="1" />
+            <rect
+              x="17"
+              y="10.5"
+              width="4"
+              height="10.5"
+              rx="1"
+              opacity="0.55"
+            />
+            <circle cx="12" cy="4.5" r="2.5" fill="#f5b400" />
+          </svg>
           EVCore
         </div>
         {date ? (

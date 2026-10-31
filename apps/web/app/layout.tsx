@@ -39,7 +39,13 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "EVCore",
   },
+  // The EVCore mark (components/scoreboard/shell/brand-mark.tsx): the SVG
+  // for browsers that take it, favicon.ico and the PNGs for the others.
   icons: {
+    icon: [
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
     apple: "/icons/apple-touch-icon.png",
   },
 };
