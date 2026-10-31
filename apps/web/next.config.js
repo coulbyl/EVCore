@@ -57,9 +57,12 @@ const nextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {
+            // The microphone stays ours: Messages records voice notes, and
+            // « microphone=() » refused it without ever asking (31/10).
+            // The photo button is a file field, which no policy touches.
             key: "Permissions-Policy",
             value:
-              "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+              "camera=(), microphone=(self), geolocation=(), browsing-topics=()",
           },
         ],
       },
