@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { InAppHistoryTracker } from "@/components/scoreboard/sheet/in-app-history";
 import { BandActions } from "@/components/scoreboard/shell/band-actions";
+import { getUnreadCount } from "@/domains/notifications/use-cases/get-notifications";
 import { ScoreboardShell } from "@/components/scoreboard/shell/scoreboard-shell";
 import { TimeZoneSync } from "@/components/scoreboard/shell/time-zone-sync";
 import { MaintenanceScreen } from "@/components/scoreboard/states/maintenance-screen";
@@ -61,6 +62,7 @@ export default async function PlayerLayout({
     redirect(loginPathFor(safeNextPath(requested)));
   }
   const { session } = result;
+  const unread = await getUnreadCount();
 
   return (
     <PlayerTextsProvider texts={texts}>
@@ -77,7 +79,12 @@ export default async function PlayerLayout({
         railFooter={
           <BandActions
             initial={initialOf(session.user)}
-            labels={{ notifications: t("notifications"), me: t("tabs.me") }}
+            unread={unread}
+            labels={{
+              notifications: t("notifications"),
+              me: t("tabs.me"),
+              unread: t.raw("unread") as string,
+            }}
           />
         }
       >

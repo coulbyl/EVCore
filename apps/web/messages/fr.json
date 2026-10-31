@@ -282,46 +282,13 @@
   },
   "notifications": {
     "title": "Notifications",
-    "empty": "Aucune notification",
-    "emptyDescription": "Les annonces et les réponses de l'équipe apparaîtront ici.",
-    "markAllRead": "Tout marquer comme lu",
-    "unread": "Non lues",
-    "all": "Toutes",
-    "announcements": "Annonces",
-    "alerts": "Alertes",
-    "severity": {
-      "high": "Critique"
-    },
-    "intro": "Les annonces d'EVCore, les réponses de l'équipe et, chaque matin, le résultat de tes coupons de la veille.",
-    "emptyUnread": "Tout est lu.",
-    "loadError": "Impossible de charger tes notifications.",
-    "retry": "Réessayer",
-    "markRead": "Marquer comme lu",
-    "read": "lu",
-    "today": "Aujourd'hui",
-    "yesterday": "Hier",
-    "newer": "Plus récentes",
-    "older": "Plus anciennes",
-    "age": {
-      "justNow": "À l'instant",
-      "minutes": "il y a {count} min",
-      "hours": "il y a {count} h",
-      "days": "il y a {count} j"
-    },
-    "kind": {
-      "ANNOUNCEMENT_PUBLISHED": "Annonce",
-      "SUPPORT_MESSAGE": "Équipe EVCore",
-      "SLIPS_SETTLED_DIGEST": "Tes coupons",
-      "MORNING_BRIEF": "Ta matinée",
-      "WEEKLY_STATEMENT": "Ton relevé de la semaine"
-    },
-    "open": {
-      "ANNOUNCEMENT_PUBLISHED": "Lire l'annonce",
-      "SUPPORT_MESSAGE": "Ouvrir la conversation",
-      "SLIPS_SETTLED_DIGEST": "Voir mes coupons",
-      "MORNING_BRIEF": "Voir l'accueil",
-      "WEEKLY_STATEMENT": "Voir l'accueil"
-    }
+    "today": "auj.",
+    "yesterday": "hier",
+    "unread": "non lue",
+    "empty": "Rien pour l'instant : ta matinée arrive à 8 h.",
+    "seeMore": "Voir plus",
+    "note": "Quatre sortes et pas plus : ta matinée, ta semaine, le résultat de tes coupons, les réponses de l'équipe, et une annonce de temps en temps.",
+    "settings": "Réglables dans Compte"
   },
   "updates": {
     "title": "Annonces",
@@ -1084,7 +1051,8 @@
       "me": "Moi"
     },
     "close": "Fermer",
-    "legal": "18+ · Parier comporte des risques de perte"
+    "legal": "18+ · Parier comporte des risques de perte",
+    "unread": "{count} non lues"
   },
   "scoreboard": {
     "outcome": {

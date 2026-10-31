@@ -282,46 +282,13 @@
   },
   "notifications": {
     "title": "Notifications",
-    "empty": "No notifications",
-    "emptyDescription": "Announcements and the team's replies will show up here.",
-    "markAllRead": "Mark all as read",
-    "unread": "Unread",
-    "all": "All",
-    "announcements": "Announcements",
-    "alerts": "Alerts",
-    "severity": {
-      "high": "Critical"
-    },
-    "intro": "EVCore announcements, the team's replies and, each morning, the result of your previous day's coupons.",
-    "emptyUnread": "Everything is read.",
-    "loadError": "Your notifications could not be loaded.",
-    "retry": "Try again",
-    "markRead": "Mark as read",
-    "read": "read",
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "newer": "Newer",
-    "older": "Older",
-    "age": {
-      "justNow": "Just now",
-      "minutes": "{count} min ago",
-      "hours": "{count} h ago",
-      "days": "{count} d ago"
-    },
-    "kind": {
-      "ANNOUNCEMENT_PUBLISHED": "Announcement",
-      "SUPPORT_MESSAGE": "EVCore team",
-      "SLIPS_SETTLED_DIGEST": "Your coupons",
-      "MORNING_BRIEF": "Your morning",
-      "WEEKLY_STATEMENT": "Your week"
-    },
-    "open": {
-      "ANNOUNCEMENT_PUBLISHED": "Read the announcement",
-      "SUPPORT_MESSAGE": "Open the conversation",
-      "SLIPS_SETTLED_DIGEST": "See my coupons",
-      "MORNING_BRIEF": "Open home",
-      "WEEKLY_STATEMENT": "Open home"
-    }
+    "today": "today",
+    "yesterday": "yesterday",
+    "unread": "unread",
+    "empty": "Nothing yet: your morning comes at 8 am.",
+    "seeMore": "See more",
+    "note": "Four kinds and no more: your morning, your week, the result of your coupons, the team's replies, and an announcement now and then.",
+    "settings": "Set them in Account"
   },
   "updates": {
     "title": "Announcements",
@@ -1084,7 +1051,8 @@
       "me": "Me"
     },
     "close": "Close",
-    "legal": "18+ · Betting carries a risk of loss"
+    "legal": "18+ · Betting carries a risk of loss",
+    "unread": "{count} unread"
   },
   "scoreboard": {
     "outcome": {

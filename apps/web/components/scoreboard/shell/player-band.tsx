@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
+import { getUnreadCount } from "@/domains/notifications/use-cases/get-notifications";
 import { BandActions } from "./band-actions";
 import { ScreenBand } from "./screen-band";
 import { initialOf } from "./shell-constants";
@@ -9,9 +10,10 @@ import { initialOf } from "./shell-constants";
  * connecté, puis ce que l'écran y met (`children`).
  */
 export async function PlayerBand({ children }: { children?: React.ReactNode }) {
-  const [result, t] = await Promise.all([
+  const [result, t, unread] = await Promise.all([
     getPlayerSession(),
     getTranslations("shell"),
+    getUnreadCount(),
   ]);
 
   return (
@@ -22,7 +24,12 @@ export async function PlayerBand({ children }: { children?: React.ReactNode }) {
           initial={
             result.status === "signed-in" ? initialOf(result.session.user) : "?"
           }
-          labels={{ notifications: t("notifications"), me: t("tabs.me") }}
+          unread={unread}
+          labels={{
+            notifications: t("notifications"),
+            me: t("tabs.me"),
+            unread: t.raw("unread") as string,
+          }}
         />
       }
     >

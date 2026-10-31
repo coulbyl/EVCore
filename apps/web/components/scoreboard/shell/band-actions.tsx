@@ -9,11 +9,14 @@ import { cn } from "@evcore/ui/cn";
  */
 export function BandActions({
   initial,
+  unread = 0,
   labels,
   className,
 }: {
   initial: string;
-  labels: { notifications: string; me: string };
+  /** Unread notifications: the bell's badge (09 § 6). */
+  unread?: number;
+  labels: { notifications: string; me: string; unread: string };
   className?: string;
 }) {
   const action =
@@ -23,10 +26,22 @@ export function BandActions({
     <div className={cn("flex items-center gap-2.5", className)}>
       <Link
         href="/notifications"
-        aria-label={labels.notifications}
-        className={action}
+        aria-label={
+          unread > 0
+            ? `${labels.notifications}, ${labels.unread.replace("{count}", String(unread))}`
+            : labels.notifications
+        }
+        className={cn(action, "relative")}
       >
         <Bell aria-hidden className="size-5" strokeWidth={1.8} />
+        {unread > 0 ? (
+          <span
+            aria-hidden
+            className="score absolute -end-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-led-on px-1 text-legal font-bold text-band"
+          >
+            {unread > 9 ? "9+" : unread}
+          </span>
+        ) : null}
       </Link>
       <Link
         href="/me"
