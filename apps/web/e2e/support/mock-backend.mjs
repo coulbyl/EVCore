@@ -1018,6 +1018,36 @@ function resultsWeek() {
   };
 }
 
+// « Moi » (GET /me, GET /me/settled, 09 § 1) : un coupon suivi en cours,
+// deux réglés et une page de plus derrière « Voir plus » ; « me-new » joue
+// un joueur qui n'a encore rien suivi.
+function meScreen(cookie) {
+  const today = todayScreen();
+  const evening = eveningScreen();
+  const fresh = /(^|;\s*)evcore_session=me-new(;|$)/.test(cookie);
+  return {
+    firstName: "Kouassi",
+    record: fresh
+      ? { won: 0, lost: 0, refunded: 0, since: null }
+      : { won: 7, lost: 4, refunded: 1, since: "2026-10-13T08:00:00.000Z" },
+    inProgress: fresh ? [] : [{ ...today.coupons[0], followedByMe: true }],
+    settled: {
+      coupons: fresh ? [] : evening.coupons.slice(0, 2),
+      nextCursor: fresh ? null : "settled-2",
+    },
+    unreadReplies: fresh ? 0 : 1,
+    pausedUntil: null,
+  };
+}
+
+function meSettledPage() {
+  const [, , double] = eveningScreen().coupons;
+  return {
+    coupons: [{ ...(double ?? eveningScreen().coupons[0]), id: "cp-older" }],
+    nextCursor: null,
+  };
+}
+
 function matchesPage(url, cookie) {
   const params = new URL(url, "http://mock").searchParams;
   const day = params.get("day") ?? "today";
@@ -2436,6 +2466,8 @@ function route(method, url, cookie = "") {
   if (path === "/results/products" && method === "GET") {
     return [200, resultsScreen(url, cookie)];
   }
+  if (path === "/me" && method === "GET") return [200, meScreen(cookie)];
+  if (path === "/me/settled" && method === "GET") return [200, meSettledPage()];
   if (path === "/matches" && method === "GET") {
     return [200, matchesPage(url, cookie)];
   }

@@ -1454,5 +1454,29 @@
       "followedRefunded": "{count, plural, one {# remboursé} other {# remboursés}}",
       "mondayNote": "Le relevé du lundi, le même que la notification de 8 h."
     }
+  },
+  "me": {
+    "record": "{won, plural, one {# gagné} other {# gagnés}} · {lost, plural, one {# perdu} other {# perdus}}",
+    "refunded": "{count, plural, one {# remboursé} other {# remboursés}}",
+    "since": "coupons suivis depuis le {date}",
+    "firstFollow": "Suis ton premier coupon",
+    "tabs": {
+      "label": "Mes coupons suivis",
+      "running": "En cours",
+      "settled": "Réglés"
+    },
+    "noneRunning": "Aucun coupon suivi en cours",
+    "noneSettled": "Aucun coupon suivi réglé",
+    "inProgress": "En cours",
+    "seeMore": "Voir plus",
+    "rows": {
+      "messages": "Messages",
+      "help": "Aide",
+      "responsible": "Jeu responsable",
+      "account": "Compte"
+    },
+    "replies": "{count, plural, one {# réponse} other {# réponses}}",
+    "signOut": "Se déconnecter",
+    "signOutFailed": "La déconnexion n'a pas marché, réessaie"
   }
 }

@@ -1454,5 +1454,29 @@
       "followedRefunded": "{count} refunded",
       "mondayNote": "The Monday statement, the same as the 8 am notification."
     }
+  },
+  "me": {
+    "record": "{won} won · {lost} lost",
+    "refunded": "{count} refunded",
+    "since": "coupons followed since {date}",
+    "firstFollow": "Follow your first coupon",
+    "tabs": {
+      "label": "My followed coupons",
+      "running": "Running",
+      "settled": "Settled"
+    },
+    "noneRunning": "No followed coupon running",
+    "noneSettled": "No followed coupon settled yet",
+    "inProgress": "Live",
+    "seeMore": "See more",
+    "rows": {
+      "messages": "Messages",
+      "help": "Help",
+      "responsible": "Responsible gambling",
+      "account": "Account"
+    },
+    "replies": "{count, plural, one {# reply} other {# replies}}",
+    "signOut": "Sign out",
+    "signOutFailed": "Signing out failed, try again"
   }
 }
