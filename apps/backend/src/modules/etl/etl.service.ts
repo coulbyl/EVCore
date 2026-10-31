@@ -25,6 +25,7 @@ import {
 import { addDays } from 'date-fns';
 import { formatDateUtc } from '@utils/date.utils';
 import { PrismaService } from '@/prisma.service';
+import { AppSettingService } from '@modules/app-setting/app-setting.service';
 import { RollingStatsService } from '../rolling-stats/rolling-stats.service';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
 import type { EloSyncJobData } from './workers/elo-sync.worker';
@@ -114,7 +115,6 @@ function toCompetitionPlan(competition: CompetitionRow): CompetitionPlan {
 @Injectable()
 export class EtlService implements OnApplicationBootstrap {
   private readonly schedulingEnabled: boolean;
-  private readonly quotaAlertPct: number;
   private readonly dailyQuota: number;
   private readonly avgScheduledFixturesPerLeaguePerDay: number;
   private readonly avgFinishedFixturesWithoutXgPerLeaguePerDay: number;
@@ -163,12 +163,10 @@ export class EtlService implements OnApplicationBootstrap {
     config: ConfigService,
     private readonly prisma: PrismaService,
     private readonly rollingStatsService: RollingStatsService,
+    private readonly settings: AppSettingService,
   ) {
     this.schedulingEnabled =
       config.get<string>('ETL_SCHEDULING_ENABLED', 'true') !== 'false';
-    this.quotaAlertPct = Number(
-      config.get<string>('API_FOOTBALL_QUOTA_ALERT_PCT', '80'),
-    );
     // Decisions, not settings (ENV-PROD § 6): in config, changed by a PR.
     this.dailyQuota = API_FOOTBALL_QUOTA.DAILY;
     this.avgScheduledFixturesPerLeaguePerDay =
@@ -344,7 +342,7 @@ export class EtlService implements OnApplicationBootstrap {
 
     const currentSeasonCode = getCurrentCsvSeasonCode();
 
-    this.logApiFootballBudget(this.competitionPlans);
+    await this.logApiFootballBudget(this.competitionPlans);
 
     await Promise.all(
       this.competitionPlans.map(async ({ competition, seasons }) => {
@@ -432,7 +430,9 @@ export class EtlService implements OnApplicationBootstrap {
     );
   }
 
-  private logApiFootballBudget(plans: CompetitionPlan[]): void {
+  private async logApiFootballBudget(plans: CompetitionPlan[]): Promise<void> {
+    // An operator switch (app_setting), read at this pass.
+    const quotaAlertPct = await this.settings.quotaAlertPct();
     const estimate = estimateApiFootballDailyCalls({
       leagueCount: plans.length,
       seasonJobCount: plans.length,
@@ -442,7 +442,7 @@ export class EtlService implements OnApplicationBootstrap {
         this.avgFinishedFixturesWithoutXgPerLeaguePerDay,
     });
 
-    const threshold = Math.floor((this.dailyQuota * this.quotaAlertPct) / 100);
+    const threshold = Math.floor((this.dailyQuota * quotaAlertPct) / 100);
     const usagePct =
       this.dailyQuota > 0 ? (estimate.totalCalls / this.dailyQuota) * 100 : 0;
 

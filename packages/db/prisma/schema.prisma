@@ -673,6 +673,7 @@ model User {
   productEvents             ProductEvent[]
   createdAt                 DateTime                @default(now())
   updatedAt                 DateTime                @updatedAt
+  appSettings               AppSetting[]
 
   @@map("users")
   @@schema("public")
@@ -1498,5 +1499,22 @@ model OddsLatest {
 
   @@unique([fixtureId, bookmaker, market, pick, line])
   @@map("odds_latest")
+  @@schema("public")
+}
+
+// Les réglages d'exploitation (docs/refonte-ui/12-admin.md § 4) : cinq clés
+// qu'un exploitant change le soir même sans déploiement, lues à chaque passe
+// par le backend et le vantage-worker. Valeurs par défaut en code
+// (packages/analysis-core, app-settings.ts) : une table vide ne change rien.
+// Jamais de secret ici.
+model AppSetting {
+  key         String   @id
+  value       Json
+  updatedAt   DateTime @default(now()) @updatedAt
+  // Qui a changé la valeur ; le journal complet vient avec l'écran (G).
+  updatedById String?  @db.Uuid
+  updatedBy   User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@map("app_setting")
   @@schema("public")
 }

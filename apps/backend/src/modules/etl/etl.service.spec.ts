@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { AppSettingService } from '@modules/app-setting/app-setting.service';
 import { EtlService } from './etl.service';
 import {
   BULLMQ_DEFAULT_JOB_OPTIONS,
@@ -145,6 +146,9 @@ describe('EtlService', () => {
     configMock,
     prismaMock,
     rollingStatsServiceMock,
+    {
+      quotaAlertPct: vi.fn().mockResolvedValue(80),
+    } as unknown as AppSettingService,
   );
 
   beforeEach(() => {

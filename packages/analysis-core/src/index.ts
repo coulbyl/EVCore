@@ -25,3 +25,4 @@ export * from "./pricing/closing-line-value";
 export * from "./pricing/asian-handicap-settlement";
 export * from "./coupon/price-composer";
 export * from "./schedule";
+export * from "./app-settings";

@@ -227,6 +227,23 @@ export function retiredEnvPresent(): string[] {
   return RETIRED_ENV.filter((name) => env[name] !== undefined);
 }
 
+/**
+ * A provider resolved from its name and its key in the environment, or
+ * null when the key is missing: a switch in app_setting can name a
+ * provider, never supply its secret.
+ */
+export function resolveProvider(name: LlmProvider): ResolvedLlmProvider | null {
+  const defaults = PROVIDER_DEFAULTS[name];
+  const apiKey = process.env[defaults.apiKeyEnv];
+  if (!apiKey) return null;
+  return {
+    provider: name,
+    apiKey,
+    model: defaults.model,
+    baseUrl: defaults.baseURL,
+  };
+}
+
 export function loadConfig(): Config {
   const checked = ENV_SCHEMA.safeParse(presentEnv());
   if (!checked.success) {

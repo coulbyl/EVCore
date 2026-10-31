@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ConfigService } from '@nestjs/config';
 import type { Job, Queue } from 'bullmq';
+import type { AppSettingService } from '@modules/app-setting/app-setting.service';
 import { StatsBackfillService } from '../stats-backfill.service';
 import type { LeagueSyncJobData } from './league-sync.worker';
 import type { FixtureService } from '../../fixture/fixture.service';
@@ -77,6 +78,9 @@ describe('StatsBackfillWorker', () => {
         config as unknown as ConfigService,
         fixtureService as unknown as FixtureService,
         apiFootball as unknown as ApiFootballClient,
+        {
+          statsBackfillDailyReserve: vi.fn().mockResolvedValue(2_500),
+        } as unknown as AppSettingService,
       ),
       fixtureService as unknown as FixtureService,
       statsSync as unknown as StatsSyncWorker,

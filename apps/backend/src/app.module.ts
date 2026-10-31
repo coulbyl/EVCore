@@ -31,10 +31,12 @@ import { MlModule } from './modules/ml/ml.module';
 import { AnalysisSheetModule } from './modules/analysis-sheet/analysis-sheet.module';
 import { RedisModule } from './common/redis/redis.module';
 import { validateEnv } from './config/env.schema';
+import { AppSettingModule } from './modules/app-setting/app-setting.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
+    AppSettingModule,
     ThrottlerModule.forRoot([
       {
         name: 'default',
