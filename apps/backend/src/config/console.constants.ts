@@ -30,3 +30,82 @@ export const CONSOLE_RULES = {
   /** Players, orange: a player's message unanswered for this long. */
   SUPPORT_UNANSWERED_HOURS: 24,
 } as const;
+
+/**
+ * « Les passes d'aujourd'hui » (12-admin.md § 1): the day's scheduled
+ * passes, in the order of the day. Each reads its time from the cron it
+ * runs on (console-passes.spec.ts checks they agree), its queue, and the
+ * name of its jobs. `relaunch: false` for the morning brief: a second run
+ * would write to every player again (maquette AdminMobile: no Relancer).
+ */
+export type ConsolePassKey =
+  | 'stats'
+  | 'odds_morning'
+  | 'morning_brief'
+  | 'coupons'
+  | 'ai_combo'
+  | 'odds_evening'
+  | 'analysis';
+
+export const CONSOLE_PASSES: readonly {
+  key: ConsolePassKey;
+  /** UTC hour and minute, as in the cron it runs on. */
+  at: { hour: number; minute: number };
+  queue: string;
+  /** Its jobs' name, or the start of it (one stats job per league). */
+  job: { name: string } | { prefix: string };
+  relaunch: boolean;
+}[] = [
+  {
+    key: 'stats',
+    at: { hour: 4, minute: 0 },
+    queue: 'league-sync',
+    job: { prefix: 'stats-sync-' },
+    relaunch: true,
+  },
+  {
+    key: 'odds_morning',
+    at: { hour: 6, minute: 0 },
+    queue: 'odds-prematch-sync',
+    job: { name: 'odds-prematch-sync' },
+    relaunch: true,
+  },
+  {
+    key: 'morning_brief',
+    at: { hour: 8, minute: 0 },
+    queue: 'slip-digest',
+    job: { name: 'slip-digest' },
+    relaunch: false,
+  },
+  {
+    key: 'coupons',
+    at: { hour: 17, minute: 0 },
+    queue: 'rolling-horizon',
+    job: { name: 'rolling-horizon' },
+    relaunch: true,
+  },
+  {
+    key: 'ai_combo',
+    at: { hour: 17, minute: 45 },
+    queue: 'vantage-analysis',
+    job: { name: 'generate-coupons' },
+    relaunch: true,
+  },
+  {
+    key: 'odds_evening',
+    at: { hour: 19, minute: 0 },
+    queue: 'odds-prematch-sync',
+    job: { name: 'odds-prematch-sync' },
+    relaunch: true,
+  },
+  {
+    key: 'analysis',
+    at: { hour: 21, minute: 0 },
+    queue: 'betting-engine',
+    job: { name: 'betting-engine-analysis' },
+    relaunch: true,
+  },
+];
+
+/** A pass with nothing after its time plus this is « manquée ». */
+export const CONSOLE_PASS_GRACE_MINUTES = 30;
