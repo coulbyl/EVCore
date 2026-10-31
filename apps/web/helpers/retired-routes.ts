@@ -1,10 +1,7 @@
 /**
  * Les anciennes adresses du joueur et l'écran qui les remplace
  * (docs/refonte-ui/11-public.md § 8). Une seule table : le layout du
- * tableau de bord la lit au commit de bascule (15-todo.md, C19), d'ici là
- * rien ne redirige. Les sous-écrans de Moi (Messages, Aide, Compte) n'ont
- * pas encore d'adresse : ils pointent vers Moi, à préciser avec C13, C14 et
- * C16.
+ * tableau de bord la lit depuis le commit de bascule (15-todo.md, C19).
  *
  * L'admin garde /dashboard jusqu'à sa propre refonte (12-admin.md, PR 2).
  */
@@ -21,12 +18,12 @@ const RETIRED_ROUTES: readonly { from: string; to: string }[] = [
   { from: "/dashboard/bet-slips", to: "/me" },
   { from: "/dashboard/bankroll", to: "/me" },
   // Formation et Glossaire : l'Aide de Moi (09 § 3).
-  { from: "/dashboard/formation", to: "/me" },
-  { from: "/dashboard/glossaire", to: "/me" },
+  { from: "/dashboard/formation", to: "/me/help" },
+  { from: "/dashboard/glossaire", to: "/me/help" },
   // Inbox : Messages, dans Moi (09 § 2).
-  { from: "/dashboard/inbox", to: "/me" },
+  { from: "/dashboard/inbox", to: "/me/messages" },
   // Compte, ses cinq onglets compris : dans Moi (09 § 5).
-  { from: "/dashboard/params", to: "/me" },
+  { from: "/dashboard/params", to: "/me/account" },
   // La cloche sans onglets (09 § 6).
   { from: "/dashboard/notifications", to: "/notifications" },
 ];

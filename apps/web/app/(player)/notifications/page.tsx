@@ -16,7 +16,7 @@ import {
 import { NotificationLink } from "./components/notification-link";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("notifications");
+  const t = await getTranslations("playerNotifications");
   return { title: `${t("title")} — EVCore` };
 }
 
@@ -54,7 +54,7 @@ export default async function Page({
   searchParams: Promise<{ more?: string }>;
 }) {
   const [t, shell, params, locale, timeZone] = await Promise.all([
-    getTranslations("notifications"),
+    getTranslations("playerNotifications"),
     getTranslations("shell"),
     searchParams,
     getLocale(),

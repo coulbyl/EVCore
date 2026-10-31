@@ -2380,6 +2380,17 @@ function route(method, url, cookie = "") {
     // Un cookie « stale » joue une session expirée ou révoquée.
     if (/(^|;\s*)evcore_session=stale(;|$)/.test(cookie))
       return [401, { message: "Session invalide ou expirée" }];
+    // Un cookie « player » joue un joueur (rôle OPERATOR), pour la bascule.
+    if (/(^|;\s*)evcore_session=player(;|$)/.test(cookie))
+      return [
+        200,
+        {
+          session: {
+            ...SESSION.session,
+            user: { ...SESSION.session.user, role: "OPERATOR" },
+          },
+        },
+      ];
     // Un cookie « first-launch » joue un joueur à son premier lancement.
     if (/(^|;\s*)evcore_session=first-launch(;|$)/.test(cookie))
       return [

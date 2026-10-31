@@ -15,10 +15,10 @@ describe("retiredRouteTarget", () => {
       "/dashboard/track-record": "/results",
       "/dashboard/bet-slips": "/me",
       "/dashboard/bankroll": "/me",
-      "/dashboard/formation/lire-une-cote": "/me",
-      "/dashboard/glossaire": "/me",
-      "/dashboard/inbox/42": "/me",
-      "/dashboard/params/account/securite": "/me",
+      "/dashboard/formation/lire-une-cote": "/me/help",
+      "/dashboard/glossaire": "/me/help",
+      "/dashboard/inbox/42": "/me/messages",
+      "/dashboard/params/account/securite": "/me/account",
       "/dashboard/notifications": "/notifications",
     };
     for (const [from, to] of Object.entries(cases)) {

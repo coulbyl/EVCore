@@ -12,6 +12,7 @@ const PLAYER_ROUTES = [
   "/results",
   "/me",
   "/notifications",
+  "/ticket",
 ];
 
 function withLocaleCookie(
@@ -37,8 +38,9 @@ function withLocaleCookie(
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const hasSession = request.cookies.has(SESSION_COOKIE);
-  // Les onglets du joueur de la refonte (app/(player)), construits à côté
-  // de /dashboard jusqu'au commit de bascule (docs/refonte-ui/15-todo.md).
+  // Les onglets du joueur (app/(player)). Depuis la bascule (15-todo.md,
+  // C19), un joueur qui ouvre /dashboard est renvoyé ici par le layout du
+  // tableau de bord ; l'admin y reste.
   const isPlayerRoute = PLAYER_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
@@ -54,7 +56,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
-  if (isPlayerRoute) {
+  // The dashboard layout needs the address too, to send a player from an
+  // old screen to the one that replaces it (helpers/retired-routes.ts).
+  if (isPlayerRoute || pathname.startsWith("/dashboard")) {
     const headers = new Headers(request.headers);
     headers.set(REQUESTED_PATH_HEADER, `${pathname}${search}`);
     return withLocaleCookie(
@@ -75,5 +79,6 @@ export const config = {
     "/results/:path*",
     "/me/:path*",
     "/notifications/:path*",
+    "/ticket/:path*",
   ],
 };

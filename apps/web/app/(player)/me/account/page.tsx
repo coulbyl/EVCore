@@ -14,7 +14,7 @@ import { SignOutOthers } from "./components/sign-out-others";
 import { TwoFactorSetup } from "./components/two-factor-setup";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("account");
+  const t = await getTranslations("playerAccount");
   return { title: `${t("title")} — EVCore` };
 }
 
@@ -36,7 +36,7 @@ const SWITCHES = [
  */
 export default async function Page() {
   const [t, session] = await Promise.all([
-    getTranslations("account"),
+    getTranslations("playerAccount"),
     getPlayerSession(),
   ]);
   if (session.status !== "signed-in") redirect("/auth/login");

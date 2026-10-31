@@ -7,7 +7,10 @@ import { EvaFab } from "@/components/eva/eva-fab";
 import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session";
 import { CurrencyProvider } from "@/providers/currency-provider";
 import type { AppCurrency } from "@/helpers/number";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { REQUESTED_PATH_HEADER } from "@/domains/auth/routing/auth-routing";
+import { retiredRouteTarget } from "@/helpers/retired-routes";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { Suspense } from "react";
@@ -30,6 +33,18 @@ export default async function DashboardLayout({
   if (!session) {
     redirect("/auth/login");
   }
+
+  // The switch (15-todo.md, C19): a player opening an old screen lands on
+  // the one that replaces it, /dashboard itself on Aujourd'hui. The admin
+  // keeps /dashboard until its own overhaul (12-admin.md).
+  const requested = (await headers()).get(REQUESTED_PATH_HEADER);
+  const target = requested
+    ? retiredRouteTarget(
+        new URL(requested, "http://evcore").pathname,
+        session.user.role,
+      )
+    : null;
+  if (target) redirect(target);
 
   const initialCurrency =
     (session.user.currency as AppCurrency | null) ?? "XOF";
