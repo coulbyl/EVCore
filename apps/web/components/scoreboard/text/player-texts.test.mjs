@@ -11,7 +11,13 @@ describe("player texts", () => {
   const texts = pickPlayerTexts(fr);
 
   it("keeps only the player's namespaces", () => {
-    assert.deepEqual(Object.keys(texts), ["shell", "scoreboard.states"]);
+    assert.deepEqual(Object.keys(texts), [
+      "shell",
+      "scoreboard.states",
+      "scoreboard.chance",
+      "ticket",
+      "today.products",
+    ]);
     assert.equal(formatPlayerText(texts.shell, "tabs.today"), "Aujourd'hui");
   });
 

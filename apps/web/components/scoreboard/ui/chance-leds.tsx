@@ -1,4 +1,6 @@
-import { cn } from "@evcore/ui/cn";
+// clsx alone: it also renders in the ticket's client sheet, and no caller
+// passes a class that tailwind-merge would have to resolve (C0).
+import { clsx as cn } from "clsx";
 
 /**
  * Les diodes de chance : « 8 sur 10 », « 1 fois sur 9 » (13-style.md § 5).

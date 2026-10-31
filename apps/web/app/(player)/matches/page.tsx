@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Search, X } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { PlayerBand } from "@/components/scoreboard/shell/player-band";
 import {
@@ -94,6 +95,10 @@ export default async function Page({
             listId={LIST_ID}
             day={day}
             initialQuery={query}
+            icons={{
+              search: <Search aria-hidden strokeWidth={2} className="size-5" />,
+              close: <X aria-hidden strokeWidth={2} className="size-5" />,
+            }}
             labels={{
               open: t("search.open"),
               close: t("search.close"),

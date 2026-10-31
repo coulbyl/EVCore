@@ -4,6 +4,7 @@ import { Sheet } from "@/components/scoreboard/sheet/sheet";
 import { activePause } from "@/components/scoreboard/states/paused-screen";
 import { ChanceFigure } from "@/components/scoreboard/ui/chance-figure";
 import { ResultMark } from "@/components/scoreboard/ui/result-mark";
+import { AddToTicket } from "@/components/scoreboard/ticket/add-to-ticket";
 import { getMatchSheet } from "@/domains/matches/use-cases/get-match-sheet";
 import type {
   MatchSheet,
@@ -175,6 +176,28 @@ function SheetHeader({
   );
 }
 
+/**
+ * The [+] of a bet (06 § 2, 07 § 4): a match still to come, a bet 1xBet
+ * prices. Live, finished or postponed: none (06 § 3).
+ */
+function AddButton({ pick, sheet }: { pick: SheetPick; sheet: MatchSheet }) {
+  if (sheet.state !== "upcoming" || pick.odds === null) return null;
+  return (
+    <AddToTicket
+      leg={{
+        fixtureId: sheet.fixtureId,
+        market: pick.market,
+        pick: pick.pick,
+        label: pickLabel(pick, sheet),
+        home: sheet.home,
+        away: sheet.away,
+        kickoffAt: sheet.kickoffAt,
+        odds: pick.odds,
+      }}
+    />
+  );
+}
+
 function Section({
   title,
   children,
@@ -226,6 +249,7 @@ function PickLine({
           <ChanceFigure probability={pick.chance} showLeds={false} size="sm" />
         ) : null}
         <Mark result={pick.result} t={t} />
+        <AddButton pick={pick} sheet={sheet} />
       </span>
     </p>
   );
@@ -327,6 +351,7 @@ function OtherPicks({
           </>
         ) : null}
         {finished ? <Mark result={pick.result} t={t} /> : null}
+        <AddButton pick={pick} sheet={sheet} />
       </span>
     </li>
   );

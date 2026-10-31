@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getMessages, getTranslations } from "next-intl/server";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { InAppHistoryTracker } from "@/components/scoreboard/sheet/in-app-history";
 import { BandActions } from "@/components/scoreboard/shell/band-actions";
 import { ScoreboardShell } from "@/components/scoreboard/shell/scoreboard-shell";
@@ -19,6 +19,9 @@ import { safeNextPath } from "@/domains/auth/helpers/safe-next-path";
 import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
 import { PlayerTextsProvider } from "@/components/scoreboard/text/player-texts";
 import { pickPlayerTexts } from "@/components/scoreboard/text/player-texts-constants";
+import { TicketDock } from "@/components/scoreboard/ticket/ticket-dock";
+import { activePauseEnd } from "@/domains/auth/types/auth";
+import { displayLocaleOf } from "@/helpers/scoreboard-format";
 
 /**
  * Les quatre onglets du joueur dans la coquille du tableau d'affichage.
@@ -33,11 +36,12 @@ export default async function PlayerLayout({
   /** La feuille ouverte (fente parallèle `@sheet`), ou rien. */
   sheet: React.ReactNode;
 }) {
-  const [result, t, timeZone, messages] = await Promise.all([
+  const [result, t, timeZone, messages, locale] = await Promise.all([
     getPlayerSession(),
     getTranslations("shell"),
     getPlayerTimeZone(),
     getMessages(),
+    getLocale(),
   ]);
   // Les seuls textes que ses composants client affichent (C0).
   const texts = pickPlayerTexts(messages);
@@ -64,6 +68,12 @@ export default async function PlayerLayout({
         skipLinkLabel={t("skipToContent")}
         legalText={t("legal")}
         sheet={sheet}
+        dock={
+          <TicketDock
+            locale={displayLocaleOf(locale)}
+            paused={activePauseEnd(session.user.pausedUntil) !== null}
+          />
+        }
         railFooter={
           <BandActions
             initial={initialOf(session.user)}

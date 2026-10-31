@@ -17,6 +17,9 @@ import { SideRail } from "./side-rail";
  * contenu bornée (pas de ligne qui s'étire sur un grand écran), puis la
  * feuille ouverte s'il y en a une (fente `@sheet`).
  *
+ * `dock` se pose à la fin du contenu : la barre « Mon ticket », fixée
+ * au-dessus des onglets sur téléphone, collée au bas de la colonne au-delà.
+ *
  * Le contenu, la barre d'onglets et la colonne gauche portent
  * `data-sheet-inert` : une feuille modale les rend inertes pendant qu'elle
  * est ouverte.
@@ -26,9 +29,11 @@ export function ScoreboardShell({
   skipLinkLabel,
   legalText,
   sheet,
+  dock,
   children,
 }: {
   railFooter: React.ReactNode;
+  dock?: React.ReactNode;
   skipLinkLabel: string;
   legalText: string;
   sheet: React.ReactNode;
@@ -57,6 +62,7 @@ export function ScoreboardShell({
           <OfflineLine />
           {children}
           <LegalLine text={legalText} />
+          {dock}
         </main>
       </div>
       <SheetColumn>{sheet}</SheetColumn>

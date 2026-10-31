@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Sheet } from "@/components/scoreboard/sheet/sheet";
@@ -89,6 +90,9 @@ export async function CouponSheetFooter({ coupon }: { coupon: TodayCoupon }) {
           followed: t("followed"),
           error: t("followError"),
         }}
+        followedMark={
+          <Check aria-hidden className="size-4" strokeWidth={2.5} />
+        }
       />
     );
   }

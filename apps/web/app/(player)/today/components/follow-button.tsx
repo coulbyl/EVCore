@@ -2,9 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check } from "lucide-react";
 import { clsx } from "clsx";
-import { clientApiRequest } from "@/lib/api/client-api";
+import { playerFetch } from "@/lib/api/player-fetch";
 import { useOnline } from "@/components/scoreboard/states/use-online";
 
 /**
@@ -18,10 +17,13 @@ export function FollowButton({
   couponId,
   followed,
   labels,
+  followedMark,
 }: {
   couponId: string;
   followed: boolean;
   labels: { follow: string; followed: string; error: string };
+  /** « ✓ », rendered on the server: lucide stays out of the client bundle. */
+  followedMark: React.ReactNode;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -32,7 +34,7 @@ export function FollowButton({
     setFailed(false);
     startTransition(async () => {
       try {
-        await clientApiRequest(`/coupons/${couponId}/follow`, {
+        await playerFetch(`/coupons/${couponId}/follow`, {
           method: followed ? "DELETE" : "POST",
         });
         router.refresh();
@@ -59,7 +61,7 @@ export function FollowButton({
         {followed ? (
           <>
             {labels.followed}
-            <Check aria-hidden className="size-4" strokeWidth={2.5} />
+            {followedMark}
           </>
         ) : (
           labels.follow

@@ -248,4 +248,14 @@ export class MatchesRepository {
         ON cs."channelDecisionId" = latest.id AND cs.rank = 1
     `;
   }
+
+  /** Kick-off and status of the matches of a ticket (refonte 07 § 4). */
+  findTicketFixtures(
+    fixtureIds: readonly string[],
+  ): Promise<{ id: string; scheduledAt: Date; status: string }[]> {
+    return this.prisma.client.fixture.findMany({
+      where: { id: { in: [...fixtureIds] } },
+      select: { id: true, scheduledAt: true, status: true },
+    });
+  }
 }

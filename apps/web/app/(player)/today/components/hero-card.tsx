@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ChanceFigure } from "@/components/scoreboard/ui/chance-figure";
@@ -168,6 +169,9 @@ export async function HeroCard({
               followed: t("followed"),
               error: t("followError"),
             }}
+            followedMark={
+              <Check aria-hidden className="size-4" strokeWidth={2.5} />
+            }
           />
         </div>
       ) : coupon.followedByMe ? (

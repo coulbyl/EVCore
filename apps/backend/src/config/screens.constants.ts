@@ -163,3 +163,7 @@ export const SCREEN_READS_TTL_MS = 60_000;
 export const SCREEN_READS_KEEP_MS = 10 * 60_000;
 // Pages and sheets kept at most (a team search makes its own page).
 export const SCREEN_READS_MAX_KEYS = 500;
+
+// « Vérifie ton ticket » (refonte 07 § 4): one call per opening of the sheet
+// or change of the ticket, a few a minute at most for a player.
+export const TICKET_QUOTE_RATE_LIMIT = { limit: 60, ttlMs: 60_000 } as const;

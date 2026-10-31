@@ -4,5 +4,9 @@
  * « koln » finds « Köln » and « atletico » « Atlético ».
  */
 export function searchKey(text: string): string {
-  return text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }

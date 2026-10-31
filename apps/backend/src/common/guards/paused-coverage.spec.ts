@@ -6,7 +6,7 @@ import { FixtureScoringController } from '@modules/fixture/fixture-scoring.contr
 import { AnalysisSheetController } from '@modules/analysis-sheet/analysis-sheet.controller';
 import { TodayController } from '@modules/screens/today.controller';
 import { MatchesController } from '@modules/screens/matches.controller';
-import { VerifiedTicketController } from '@modules/verified-ticket/verified-ticket.controller';
+import { TicketController } from '@modules/screens/ticket.controller';
 
 describe('pause applies to whole suggestion controllers', () => {
   // Une route ajoutée plus tard à ces contrôleurs ne peut pas oublier la
@@ -17,7 +17,7 @@ describe('pause applies to whole suggestion controllers', () => {
     AnalysisSheetController,
     TodayController,
     MatchesController,
-    VerifiedTicketController,
+    TicketController,
   ])('%o carries PausedGuard at class level', (controller) => {
     const guards = Reflect.getMetadata(GUARDS_METADATA, controller) as
       | unknown[]

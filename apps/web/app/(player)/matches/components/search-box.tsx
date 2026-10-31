@@ -1,9 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Search, X } from "lucide-react";
-import { searchKey } from "./search-key";
 
 /**
  * The team search of Matchs (06 § 1, § 5): the magnifier in the band opens a
@@ -17,11 +14,14 @@ export function SearchBox({
   listId,
   day,
   initialQuery,
+  icons,
   labels,
 }: {
   listId: string;
   day: string;
   initialQuery: string;
+  /** Rendered on the server: lucide stays out of the client bundle (C7). */
+  icons: { search: React.ReactNode; close: React.ReactNode };
   labels: {
     open: string;
     close: string;
@@ -30,16 +30,20 @@ export function SearchBox({
     noResult: string;
   };
 }) {
-  const router = useRouter();
   const [open, setOpen] = useState(initialQuery !== "");
   const [query, setQuery] = useState(initialQuery);
-  const input = useRef<HTMLInputElement>(null);
   const openedFold = useRef(false);
 
   useEffect(() => {
     const list = document.getElementById(listId);
     if (!list) return;
-    const key = searchKey(query);
+    // searchKey (search-key.ts) inline: the rows' keys are made on the
+    // server with it; its module alone weighed on the budget (C7).
+    const key = query
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
     let shown = 0;
     for (const row of list.querySelectorAll<HTMLElement>("[data-search]")) {
       const match = key === "" || (row.dataset.search ?? "").includes(key);
@@ -75,8 +79,12 @@ export function SearchBox({
   function close() {
     setQuery("");
     setOpen(false);
+    // A search sent with Enter filtered the server's reads: read the day
+    // again, whole. Rare enough for a plain navigation.
     if (initialQuery !== "") {
-      router.replace(day === "today" ? "/matches" : `/matches?day=${day}`);
+      window.location.replace(
+        day === "today" ? "/matches" : `/matches?day=${day}`,
+      );
     }
   }
 
@@ -85,13 +93,10 @@ export function SearchBox({
       <button
         type="button"
         aria-label={labels.open}
-        onClick={() => {
-          setOpen(true);
-          requestAnimationFrame(() => input.current?.focus());
-        }}
+        onClick={() => setOpen(true)}
         className="flex size-11 shrink-0 items-center justify-center rounded-full text-band-muted hover:text-band-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-led-on"
       >
-        <Search aria-hidden strokeWidth={2} className="size-5" />
+        {icons.search}
       </button>
     );
   }
@@ -104,13 +109,10 @@ export function SearchBox({
       className="flex basis-full items-center gap-2 rounded-full bg-band-foreground/10 ps-4"
     >
       {day !== "today" ? <input type="hidden" name="day" value={day} /> : null}
-      <Search
-        aria-hidden
-        strokeWidth={2}
-        className="size-5 shrink-0 text-band-muted"
-      />
+      <span className="shrink-0 text-band-muted">{icons.search}</span>
       <input
-        ref={input}
+        // Opened by a tap on the magnifier: the field takes the keyboard.
+        autoFocus={initialQuery === ""}
         type="search"
         name="q"
         value={query}
@@ -130,7 +132,7 @@ export function SearchBox({
         onClick={close}
         className="flex size-11 shrink-0 items-center justify-center rounded-full text-band-muted hover:text-band-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-led-on"
       >
-        <X aria-hidden strokeWidth={2} className="size-5" />
+        {icons.close}
       </button>
     </form>
   );

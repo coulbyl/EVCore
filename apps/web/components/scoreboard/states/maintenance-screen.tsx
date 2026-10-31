@@ -1,6 +1,4 @@
-"use client";
-
-import { usePlayerText } from "../text/player-texts";
+import { getTranslations } from "next-intl/server";
 // clsx alone: no class comes from outside, nothing for tailwind-merge to
 // resolve, and it weighed 8.5 kio of the player's JS (C0).
 import { clsx as cn } from "clsx";
@@ -14,10 +12,16 @@ import { LegalLine } from "../shell/legal-line";
  *
  * Elle se rend à la place de la coquille, donc elle pose elle-même
  * `.scoreboard` et les polices.
+ *
+ * Rendue côté serveur, sans JavaScript : « Réessayer » est un formulaire
+ * qui recharge la page. Composant client, elle pesait 0,6 kio sur toutes
+ * les pages du joueur, panne ou pas (C7).
  */
-export function MaintenanceScreen() {
-  const t = usePlayerText("scoreboard.states");
-  const shell = usePlayerText("shell");
+export async function MaintenanceScreen() {
+  const [t, shell] = await Promise.all([
+    getTranslations("scoreboard.states"),
+    getTranslations("shell"),
+  ]);
   const brand = shell("brand");
 
   return (
@@ -39,13 +43,14 @@ export function MaintenanceScreen() {
         <p className="max-w-[28rem] text-body text-muted-foreground">
           {t("maintenanceBody")}
         </p>
-        <button
-          type="button"
-          onClick={() => window.location.reload()}
-          className="mt-2 inline-flex min-h-12 items-center rounded-[0.625rem] bg-primary px-7 text-bet font-medium text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
-          {t("retry")}
-        </button>
+        <form method="get" className="mt-2">
+          <button
+            type="submit"
+            className="inline-flex min-h-12 items-center rounded-[0.625rem] bg-primary px-7 text-bet font-medium text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            {t("retry")}
+          </button>
+        </form>
       </main>
       <LegalLine text={shell("legal")} />
     </div>

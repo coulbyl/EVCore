@@ -485,8 +485,11 @@ function formDays(pattern) {
 // « Matchs » (GET /matches, apps/backend screens/matches.types.ts) : une
 // journée sur deux pages, comme l'API qui sert 60 matchs à la fois ; trois
 // matchs sans lecture, un par raison.
+// L'heure affichée seule compte pour la liste ; la date est celle de demain
+// pour que ces matchs restent à venir quelle que soit l'heure des tests
+// (le ticket sort du calcul un match commencé, 07 § 4).
 function matchAt(hour, minute) {
-  const at = new Date();
+  const at = new Date(Date.now() + 24 * 3_600_000);
   at.setUTCHours(hour, minute, 0, 0);
   return at.toISOString();
 }
@@ -660,6 +663,53 @@ function matchSheet(fixtureId) {
             pick("BTTS", "NO", 2.1, 0.45, "won"),
           ],
     operatorMargin: item.withoutReading === "not_priced" ? null : 0.07,
+  };
+}
+
+// « Mon ticket » coté maintenant (POST /ticket/quote, 07 § 4) : les cotes de
+// la fiche, sauf la victoire d'Arsenal passée de 1,60 à 1,70 depuis l'ajout
+// (« cote mise à jour », plus de 5 %).
+function ticketQuote(body) {
+  const legs = (body.legs ?? []).map((leg) => {
+    const sheet = matchSheet(leg.fixtureId);
+    const bets = sheet
+      ? [sheet.reading, sheet.ai, ...sheet.otherPicks].filter(Boolean)
+      : [];
+    const bet = bets.find(
+      (b) => b.market === leg.market && b.pick === leg.pick,
+    );
+    const moved =
+      sheet?.home.name === "Arsenal" &&
+      leg.market === "ONE_X_TWO" &&
+      leg.pick === "HOME";
+    return {
+      ...leg,
+      kickoffAt: sheet?.kickoffAt ?? null,
+      state: sheet ? "open" : "unknown",
+      odds: bet ? (moved ? 1.7 : bet.odds) : null,
+      fair: bet
+        ? bet.market === "ONE_X_TWO" && bet.pick === "HOME"
+          ? 0.56
+          : bet.chance
+        : null,
+    };
+  });
+  const counted = legs.filter((l) => l.state === "open" && l.odds && l.fair);
+  if (body.verify && counted.length > 0) verifiedTickets += 1;
+  const product = (f) => counted.reduce((acc, l) => acc * f(l), 1);
+  return {
+    legs,
+    totals: counted.length
+      ? {
+          legCount: counted.length,
+          odds: Math.round(product((l) => l.odds) * 1000) / 1000,
+          chance: product((l) => l.fair),
+          keep:
+            Math.round((1 - product((l) => l.fair * l.odds)) * 10000) / 10000,
+        }
+      : null,
+    hero: { couponId: "cp-today-fav", product: "FAVOURITE", chance: 0.8 },
+    quotedAt: new Date().toISOString(),
   };
 }
 
@@ -1910,15 +1960,17 @@ const TRACK_RECORD_SUMMARY = {
 // Lectures de session servies, pour vérifier qu'une page n'en fait qu'une
 // (docs/refonte-ui/16-performance-et-qualite.md § 2).
 let authMeReads = 0;
+let verifiedTickets = 0;
 
 function route(method, url, cookie = "") {
   const path = url.split("?")[0];
 
   if (method === "OPTIONS") return [200, {}];
   if (path === "/health") return [200, { ok: true }];
-  if (path === "/__e2e/stats") return [200, { authMeReads }];
+  if (path === "/__e2e/stats") return [200, { authMeReads, verifiedTickets }];
   if (path === "/__e2e/reset") {
     authMeReads = 0;
+    verifiedTickets = 0;
     return [200, { ok: true }];
   }
   if (path === "/auth/me") {
@@ -2231,6 +2283,20 @@ const server = http.createServer((req, res) => {
     return;
   }
   res.setHeader("Content-Type", "application/json");
+
+  // La seule route qui lit son corps : le ticket à coter.
+  if (
+    req.method === "POST" &&
+    (req.url ?? "").split("?")[0] === "/ticket/quote"
+  ) {
+    let raw = "";
+    req.on("data", (chunk) => (raw += chunk));
+    req.on("end", () => {
+      res.statusCode = 200;
+      res.end(JSON.stringify(ticketQuote(JSON.parse(raw || "{}"))));
+    });
+    return;
+  }
 
   const [status, body, setLoginCookie] = route(
     req.method,

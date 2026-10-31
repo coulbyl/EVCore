@@ -2,7 +2,14 @@
  * The message namespaces the player's client components read
  * (PlayerTextsProvider). Everything else is translated on the server.
  */
-export const PLAYER_CLIENT_NAMESPACES = ["shell", "scoreboard.states"] as const;
+export const PLAYER_CLIENT_NAMESPACES = [
+  "shell",
+  "scoreboard.states",
+  "scoreboard.chance",
+  "ticket",
+  // The products' names, for « Notre Favori du jour » in the ticket.
+  "today.products",
+] as const;
 
 export type PlayerClientNamespace = (typeof PLAYER_CLIENT_NAMESPACES)[number];
 
@@ -42,8 +49,7 @@ export function pickPlayerTexts(all: Record<string, unknown>): PlayerTexts {
       );
     return node && typeof node === "object" ? (node as PlayerMessages) : {};
   };
-  return {
-    shell: at("shell"),
-    "scoreboard.states": at("scoreboard.states"),
-  };
+  return Object.fromEntries(
+    PLAYER_CLIENT_NAMESPACES.map((namespace) => [namespace, at(namespace)]),
+  ) as PlayerTexts;
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, TicketCheck } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { ChanceFigure } from "@/components/scoreboard/ui/chance-figure";
 import { ResultMark } from "@/components/scoreboard/ui/result-mark";
 import type { MatchItem, MatchReading } from "@/domains/matches/types/matches";
@@ -128,9 +129,10 @@ export function MatchWithoutReadingRow({
 
 /**
  * A row opens the match sheet (06 § 2), a set-aside match too (06 § 4: its
- * other bets stay).
+ * other bets stay). Its ticket mark (maquette MatchsTicket) is shown by a style
+ * the ticket dock writes from the device's ticket.
  */
-function MatchLink({
+async function MatchLink({
   item,
   muted = false,
   children,
@@ -139,6 +141,7 @@ function MatchLink({
   muted?: boolean;
   children: React.ReactNode;
 }) {
+  const t = await getTranslations("ticket");
   return (
     <li data-search={searchOf(item)}>
       <Link
@@ -149,6 +152,20 @@ function MatchLink({
         }
       >
         {children}
+        {/* Shown by a style of the ticket dock when the match is in « Mon
+            ticket » (ticket-dock.tsx). */}
+        <span
+          data-ticket-mark={item.fixtureId}
+          role="img"
+          aria-label={t("inTicket")}
+          className="hidden shrink-0 text-led-on-edge"
+        >
+          <TicketCheck
+            aria-hidden
+            strokeWidth={2}
+            className="size-[1.125rem]"
+          />
+        </span>
         <ChevronRight
           aria-hidden
           strokeWidth={2}

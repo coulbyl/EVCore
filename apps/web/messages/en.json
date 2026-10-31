@@ -1312,5 +1312,31 @@
         "void": "refunded"
       }
     }
+  },
+  "ticket": {
+    "title": "My ticket",
+    "open": "Open my ticket",
+    "matchOne": "1 match",
+    "matchMany": "{count} matches",
+    "add": "Add to my ticket",
+    "inTicket": "In my ticket",
+    "onePerMatch": "One bet per match",
+    "full": "15 at most",
+    "totalOdds": "Total odds",
+    "yourChances": "Your chances",
+    "keepTicket": "Over time, 1xBet keeps {share} of your stake on this ticket",
+    "keepBet": "1xBet keeps {share} on this bet",
+    "started": "Started",
+    "postponed": "Postponed",
+    "notPriced": "No longer priced at 1xBet",
+    "oddsUpdated": "odds updated",
+    "remove": "Remove {bet}",
+    "clear": "Clear",
+    "empty": "Add bets from the matches",
+    "seeMatches": "See the matches",
+    "ours": "Our {product}",
+    "oddsAt": "odds of {time}",
+    "pending": "Working out your chances…",
+    "failed": "We can't work out your chances"
   }
 }

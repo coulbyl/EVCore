@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '@modules/auth/auth.module';
 import { CouponModule } from '@modules/coupon/coupon.module';
+import { VerifiedTicketModule } from '@modules/verified-ticket/verified-ticket.module';
 import { PlayableOddsRepository } from '@modules/betting-engine/pricing/playable-odds.repository';
 import { LegFactRepository } from '@modules/coupon/leg-fact/leg-fact.repository';
 import { MatchSheetService } from './match-sheet.service';
@@ -19,6 +20,8 @@ import { TodayService } from './today.service';
 import { MeController } from './me.controller';
 import { MeRepository } from './me.repository';
 import { MeService } from './me.service';
+import { TicketController } from './ticket.controller';
+import { TicketService } from './ticket.service';
 import { SupportRepository } from '@modules/support/support.repository';
 
 /**
@@ -26,13 +29,14 @@ import { SupportRepository } from '@modules/support/support.repository';
  * knows a screen's shape. Composes from repositories, returns a flat DTO.
  */
 @Module({
-  imports: [AuthModule, CouponModule],
+  imports: [AuthModule, CouponModule, VerifiedTicketModule],
   controllers: [
     TodayController,
     MatchesController,
     ResultsController,
     PublicController,
     MeController,
+    TicketController,
   ],
   providers: [
     TodayService,
@@ -50,6 +54,7 @@ import { SupportRepository } from '@modules/support/support.repository';
     // rather than importing the whole engine for one query.
     PlayableOddsRepository,
     MeService,
+    TicketService,
     MeRepository,
     // The unread replies of Moi (stateless reader, as above).
     SupportRepository,

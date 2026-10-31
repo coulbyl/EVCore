@@ -24,4 +24,10 @@ describe('VerifiedTicketService.record', () => {
       chance: '0.0218765432',
     });
   });
+
+  it('does not count a ticket the columns cannot hold', async () => {
+    const { service, create } = harness();
+    await service.record({ legCount: 15, totalOdds: 2e12, chance: 1e-12 });
+    expect(create).not.toHaveBeenCalled();
+  });
 });
