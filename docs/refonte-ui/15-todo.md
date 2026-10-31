@@ -131,7 +131,7 @@ _Branche `feat/refonte-ui`. Cocher au fur et à mesure ; chaque ligne est un com
 ## Phase G — L'admin
 
 - [x] G1 `feat(web): fifth tab "Admin" for admin accounts; admin left rail on wide screens` (12 § 1 ; maquettes AdminMobile, Admin). _Fait : `/admin`, `/admin/engine`, `/admin/players`, `/admin/settings` dans la coquille joueur (layout : 404 hors admin) ; onglet par `tabsFor(admin)`, section admin dans la colonne, puces + ⚙ dans le bandeau sur téléphone ; textes `console` et `shell.adminSections`._
-- [ ] G2 `feat(backend): three traffic lights with written rules; "À faire" aggregated from existing alerts` (12 § 1).
+- [x] G2 `feat(backend): three traffic lights with written rules; "À faire" aggregated from existing alerts` (12 § 1). _Fait : module `console`, `GET /console/status` (admin) ; signaux lus par `ConsoleRepository`, règles pures `consoleStatusOf` (7 tests), seuils dans `config/console.constants.ts`. Écarts : « canal × compétition sous 0,85 » arrive avec G6/G7 (même calcul que Moteur) ; « inscription en échec » et « relevé manqué » ne sont enregistrés nulle part, laissés de côté (les échecs de passe et le quota passent par les alertes ETL)._
 - [ ] G3 `feat(backend): passes of the day with last run per pass; relaunch endpoint` (12 § 1, § 6).
 - [ ] G4 `feat(backend): operations email on red, once per transition` (12 § 1).
 - [ ] G5 `feat(web): admin home — lights, À faire, passes with Relancer, today in numbers, passes-off banner` (maquettes AdminMobile, Admin).
