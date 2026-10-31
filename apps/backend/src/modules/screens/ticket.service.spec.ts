@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { Market } from '@evcore/db';
 import type { PlayableOddsRepository } from '@modules/betting-engine/pricing/playable-odds.repository';
 import type { VerifiedTicketService } from '@modules/verified-ticket/verified-ticket.service';
 import type { MatchesRepository } from './matches.repository';
@@ -83,7 +84,7 @@ const upcoming = (n: number) => ({
 });
 const leg = (n: number) => ({
   fixtureId: id(n),
-  market: 'ONE_X_TWO',
+  market: Market.ONE_X_TWO,
   pick: 'HOME',
 });
 
@@ -158,6 +159,8 @@ describe('TicketService.quote', () => {
       'open',
       'unknown',
     ]);
+    // A match the server no longer knows does not leave the ticket pending.
+    expect(quote.legs[2]?.result).toBe('void');
     expect(quote.totals).toBeNull();
     expect(record).not.toHaveBeenCalled();
   });

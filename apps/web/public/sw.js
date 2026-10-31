@@ -122,8 +122,14 @@ self.addEventListener("fetch", (event) => {
 
   // Le dernier écran d'un onglet : réseau d'abord, l'écran gardé sinon.
   if (request.mode === "navigate" && TABS.includes(url.pathname)) {
-    event.respondWith(lastScreen(request, url.pathname));
+    event.respondWith(lastScreen(event, url.pathname));
     return;
+  }
+
+  // Une page de connexion : la session d'avant est finie (expirée sans
+  // déconnexion comprise), ses écrans ne sont pas ceux du prochain joueur.
+  if (request.mode === "navigate" && url.pathname.startsWith("/auth/")) {
+    event.waitUntil(caches.delete(SCREENS_CACHE));
   }
 
   // Cache-first pour les assets statiques Next.js et les icônes
@@ -151,32 +157,35 @@ self.addEventListener("fetch", (event) => {
   }
 });
 
+// The product's day is UTC (Abidjan time), whatever the device's zone.
 function sameDay(a, b) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
+  return a.toISOString().slice(0, 10) === b.toISOString().slice(0, 10);
 }
 
 // One entry per tab, its query aside: the last screen seen of that tab.
-async function lastScreen(request, tab) {
-  const cache = await caches.open(SCREENS_CACHE);
+// The response goes to the page as it streams; the copy is kept beside it.
+async function lastScreen(event, tab) {
   try {
-    const response = await fetch(request);
+    const response = await fetch(event.request);
     // A redirect (sign-in, pause) or an error page is not a screen to keep.
     if (response.ok && !response.redirected) {
-      const body = await response.clone().blob();
-      const headers = new Headers(response.headers);
-      headers.set(CACHED_AT, new Date().toISOString());
-      await cache.put(tab, new Response(body, { status: 200, headers }));
+      event.waitUntil(keepScreen(tab, response.clone()));
     }
     return response;
   } catch (error) {
+    const cache = await caches.open(SCREENS_CACHE);
     const cached = await cache.match(tab);
     const at = cached && new Date(cached.headers.get(CACHED_AT) ?? 0);
     // The day's data only: yesterday's coupons would mislead.
     if (cached && at && sameDay(at, new Date())) return cached;
     throw error;
   }
+}
+
+async function keepScreen(tab, response) {
+  const body = await response.blob();
+  const headers = new Headers(response.headers);
+  headers.set(CACHED_AT, new Date().toISOString());
+  const cache = await caches.open(SCREENS_CACHE);
+  await cache.put(tab, new Response(body, { status: 200, headers }));
 }

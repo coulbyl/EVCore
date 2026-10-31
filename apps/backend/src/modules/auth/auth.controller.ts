@@ -159,9 +159,6 @@ export class AuthController {
     return { status: 'ok' as const };
   }
 
-  // Changement d'adresse : mot de passe, puis code envoyé à la nouvelle
-  // adresse. Même limite que le login contre l'essai de mots de passe et de
-  // codes.
   /**
    * « Mot de passe » (09 § 5): every session closes, this one too; the
    * player signs in again with the new password.
@@ -210,6 +207,9 @@ export class AuthController {
     return { signedOut: await this.authService.signOutOtherSessions(session) };
   }
 
+  // Changement d'adresse : mot de passe, puis code envoyé à la nouvelle
+  // adresse. Même limite que le login contre l'essai de mots de passe et de
+  // codes.
   @Post('me/email/request')
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthSessionGuard)

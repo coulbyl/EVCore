@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { BetStatus, type Market } from '@evcore/db';
+import { BetStatus } from '@evcore/db';
 import { resolveSelectionFinalResult } from '@modules/betting-engine/channel-selection-settlement';
 import Decimal from 'decimal.js';
 import {
@@ -119,7 +119,9 @@ export function settlementOf(
   leg: TicketLegDto,
   fixture: TicketFixture | undefined,
 ): Pick<TicketQuoteLeg, 'result' | 'score'> {
-  if (!fixture) return { result: null, score: null };
+  // A match the server no longer knows cannot be played: void, as 1xBet
+  // voids a leg it cannot settle, rather than pending forever.
+  if (!fixture) return { result: 'void', score: null };
   if (fixture.status === 'POSTPONED' || fixture.status === 'CANCELLED') {
     return { result: 'void', score: null };
   }
@@ -131,7 +133,7 @@ export function settlementOf(
     return { result: null, score: null };
   }
   const status = resolveSelectionFinalResult(
-    { market: leg.market as Market, pick: leg.pick },
+    { market: leg.market, pick: leg.pick },
     {
       homeScore: fixture.homeScore,
       awayScore: fixture.awayScore,

@@ -6,20 +6,21 @@ import {
   IsBoolean,
   IsOptional,
   IsDateString,
+  IsEnum,
   IsUUID,
   Matches,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
+import { Market } from '@evcore/db';
 import { VERIFIED_TICKET_LIMITS } from '@config/verified-ticket.constants';
 
 export class TicketLegDto {
   @IsUUID()
   fixtureId!: string;
 
-  @Matches(/^[A-Z0-9_]+$/)
-  @MaxLength(40)
-  market!: string;
+  @IsEnum(Market)
+  market!: Market;
 
   @Matches(/^[A-Z0-9_]+$/)
   @MaxLength(40)

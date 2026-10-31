@@ -140,7 +140,14 @@ export function saveQuote(
   opts: { counted: boolean },
 ): void {
   const state = read();
-  if (ticketKey(state.legs) !== key) return;
+  if (ticketKey(state.legs) !== key) {
+    // The ticket changed during the call; the server still counted the one
+    // it was asked about, so it is not counted twice if it comes back.
+    if (opts.counted) {
+      write({ ...state, counted: countedKey(key, quote.quotedAt) });
+    }
+    return;
+  }
   const legs = state.legs.map((leg) => {
     const priced = quote.legs.find((q) => q.fixtureId === leg.fixtureId);
     if (!priced || priced.odds === null) return leg;
