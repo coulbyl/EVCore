@@ -41,7 +41,7 @@ _Toujours en blocs, sans style._
 **Au toucher sur un coupon**
 - Les jambes avec logos, le pari et la cote.
 - Un fait par jambe (le pourquoi).
-- La forme sur 30 jours, la pire série, la marge 1xBet.
+- La forme sur 30 jours, la pire série.
 - « Suivre ».
 
 **Sort de l'écran**
@@ -85,13 +85,11 @@ Il remplace le solde et le ticket déclaré. Il répond à la vraie douleur du j
 - Les jambes : logos, pari, cote 1xBet.
 - La cote totale.
 - **Ses chances, en points** : « environ **1 fois sur 9** », avec 9 points dont un seul plein.
-- **Ce que 1xBet garde** : « Sur la durée, 1xBet garde environ 23 % de ta mise sur ce ticket ».
 - En une ligne, pour comparer : « Notre coupon du jour : 8 sur 10 ».
 - Un bouton **Partager mes chances** (image pour WhatsApp) et un bouton Vider.
 
 **Règles**
 - Les chances sont le produit des fréquences du marché sans marge (l'hypothèse d'indépendance des coupons).
-- Le gardé par 1xBet vaut 1 moins le produit, sur toutes les jambes, de la fréquence du marché multipliée par la cote 1xBet.
 - Deux paris d'un même match ne vont pas ensemble : ils sont corrélés, et on le dit.
 - Seuls les paris cotés chez 1xBet entrent.
 - Jamais « Joue » ni « Place » : le seul verbe est « Vérifie ». Aucun lien vers un bookmaker, aucune mise saisie.

@@ -68,7 +68,6 @@ Formation et Glossaire deviennent **un index de fiches courtes**, sans vidéo, s
 ────────────────────────────────────────────────
  Comment lire un coupon                               ›
  « 8 sur 10 », ça veut dire quoi                      ›
- Ce que 1xBet garde                                   ›
  Pourquoi on s'abstient certains jours                ›
  Suivre un coupon                                     ›
  Vérifie ton ticket                                   ›
@@ -80,7 +79,7 @@ Formation et Glossaire deviennent **un index de fiches courtes**, sans vidéo, s
 ```
 
 - **Une fiche = un écran**, 150 mots au plus, un exemple chiffré, pas de lien sortant sauf vers l'écran concerné. Les anciennes adresses de Formation redirigent.
-- **Le « ? » contextuel** : à côté d'un mot nouveau ailleurs dans l'application (« 1xBet garde 6 % », « jusqu'à 3 semaines sans gain »), un toucher ouvre la fiche directement, par-dessus l'écran, et la referme d'un geste. C'est l'explication « au doigt » déjà en place (TapHint), ramenée à une seule source.
+- **Le « ? » contextuel** : à côté d'un mot nouveau ailleurs dans l'application (« 8 sur 10 », « jusqu'à 3 semaines sans gain »), un toucher ouvre la fiche directement, par-dessus l'écran, et la referme d'un geste. C'est l'explication « au doigt » déjà en place (TapHint), ramenée à une seule source.
 - **Le glossaire** disparaît comme page : chaque terme devient soit une fiche, soit une ligne dans une fiche. Un mot qui n'a pas sa place dans une fiche n'a pas sa place à l'écran.
 - La dernière ligne mène à Messages.
 
@@ -139,7 +138,7 @@ Cinq onglets aujourd'hui (profil, sécurité, préférences, notifications, devi
 - **Profil** : prénom, e-mail (changement par lien de vérification, comme aujourd'hui), téléphone. Pas d'avatar à téléverser : l'initiale suffit.
 - **Sécurité** : mot de passe, double authentification (déjà en place), appareils connectés avec « Déconnecter les autres ».
 - **Notifications** : quatre interrupteurs, tous activés par défaut (règle du lot 4), plus « Par e-mail aussi ». Les textes des notifications sont écrits dans [10-transverse.md](10-transverse.md). Ici on ne règle pas le contenu, seulement l'envoi.
-- **Affichage** : thème, langue, devise. **La devise reste** (F CFA par défaut, parce que « En francs » et « 1xBet garde X F sur 100 » s'affichent dans la devise du joueur) ; **la mise par unité disparaît** avec le suivi de mise.
+- **Affichage** : thème, langue, devise. **La devise reste** (F CFA par défaut, parce que « En francs » s'affiche dans la devise du joueur) ; **la mise par unité disparaît** avec le suivi de mise.
 - **Ce qui sort** : « Devise et mise », les badges, la personnalisation, l'assistant d'accueil, la suppression (déplacée dans Jeu responsable).
 
 ## 6. La cloche

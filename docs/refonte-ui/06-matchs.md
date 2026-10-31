@@ -67,8 +67,6 @@ Toucher une ligne ouvre une feuille, comme le coupon dans [04](04-aujourdhui-en-
  Autres paris                                     ›
  Plus de 2,5 buts  1,80 · 1 sur 2     Les deux marquent  1,70 · 5 sur 10
  Victoire Chelsea  5,20 · 2 sur 10    Match nul  3,40 · 3 sur 10
-────────────────────────────────────────────────
- 1xBet prend 7 % sur ce match
 ```
 
 **De haut en bas**
@@ -78,7 +76,7 @@ Toucher une ligne ouvre une feuille, comme le coupon dans [04](04-aujourdhui-en-
 3. **Avis IA** : **un pari parmi d'autres** (tranché le 30/10, § 7) : son pari, sa cote et sa chance, avec un [+], sans étiquette « D'accord » ni « Pas d'accord ». S'il joue le même pari que notre lecture, une ligne « Même pari que notre lecture » à la place. Sans avis (l'IA ne couvre pas tous les championnats), le bloc n'apparaît pas. **Une phrase** de son raisonnement, entre guillemets, 90 caractères au plus ; le reste au toucher. Jamais de jargon : si la phrase n'est pas propre, on ne l'affiche pas (le nettoyeur de VANTAGE v5 décide).
 4. **Forme** : cinq pastilles par équipe (derniers matchs, toutes compétitions), les jours de repos, les absents s'ils sont connus. Une ligne de face-à-face, qui est un fait.
 5. **Autres paris** : les lignes principales cotées chez 1xBet (1X2, plus/moins 2,5, les deux marquent), chacune avec sa cote et sa chance, chacune avec [+]. C'est le catalogue de « Vérifie ton ticket » : le joueur compose son ticket ici, sans jamais voir un écran de cotes.
-6. **La marge** : « 1xBet prend 7 % sur ce match », une ligne, la seule mention d'argent.
+6. ~~**La marge** : « 1xBet prend 7 % sur ce match »~~. Retirée le 31/10 : montrée au joueur, la marge se lisait comme un dénigrement de 1xBet ; elle reste dans l'admin.
 
 **Ce qui n'y est pas** : les λ, la trace de calcul, les tables de calibration, la couverture des données, le vivier, les cotes des autres books, le mouvement de ligne, la probabilité du marché contre la nôtre. Tout cela vit dans la fiche admin, inchangée.
 
@@ -98,7 +96,7 @@ Toutes les chances de la fiche viennent de la **même source** que les coupons. 
 ## 4. Les états
 
 - **Écarté** : la fiche s'ouvre quand même. À la place de « Notre lecture » : « Pas de lecture · aucune chance assez sûre » (ou la vraie raison en une ligne, § 5). L'avis IA, la forme et « Autres paris » restent : le joueur peut composer son ticket.
-- **Pas coté chez 1xBet** : « Pas coté chez 1xBet », pas de [+] nulle part, pas de marge. La lecture s'affiche sans cote.
+- **Pas coté chez 1xBet** : « Pas coté chez 1xBet », pas de [+] nulle part. La lecture s'affiche sans cote.
 - **Pas d'analyse** (championnat hors moteur, données manquantes) : « Pas de lecture », la forme seule si on l'a.
 - **Pas d'avis IA** : la section dit « Pas d'avis » en gris, sans explication.
 - **Recherche sans résultat** : « Aucun match pour "Asec" aujourd'hui » et les puces Hier/Demain restent actives.

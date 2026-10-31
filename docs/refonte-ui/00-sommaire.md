@@ -21,7 +21,7 @@ Légende :
 | ↳ Notifications | Notifications, Annonces | ✅ | [09-moi.md](09-moi.md) § 6 : la cloche, quatre sortes, sans onglet ; textes dans 10. |
 | ↳ Jeu responsable | Compte › Jeu responsable | ✅ | [09-moi.md](09-moi.md) § 4 : pause, numéros d'aide, suppression du compte. |
 | ↳ Compte | Compte (5 onglets) | ✅ | [09-moi.md](09-moi.md) § 5 : une page en sections, devise gardée, mise par unité retirée. |
-| ↳ Aide | Formation, Glossaire | ✅ | [09-moi.md](09-moi.md) § 3 : 9 fiches, « ? » contextuel, glossaire fondu dans les fiches. |
+| ↳ Aide | Formation, Glossaire | ✅ | [09-moi.md](09-moi.md) § 3 : 8 fiches (celle de la marge retirée le 31/10), « ? » contextuel, glossaire fondu dans les fiches. |
 
 ## Joueur — ce qui traverse tous les écrans
 
@@ -80,6 +80,7 @@ _Tout le contenu est écrit et validé au 29/10 au soir. Le style est choisi le 
 - Admin à l'essentiel : trois écrans (Accueil, Moteur, Joueurs) + Réglages ; Relancer à l'écran ; fiches d'Aide dans le code par PR ; e-mail d'exploitation au passage au rouge ; outils et rapports dans le dépôt.
 - Résultats ne montre jamais de pourcentage ni de rejeu : des coupons publiés, datés et comptés.
 - Le Coupon long 2,5–5 et le coupon prix 5–15 disparaissent ; un accumulateur de chasseurs (3 jambes 2,0–4,0 classées par coût du marché, cote 8–15, rien du moteur au-dessus de 1,80) les remplace, **vendu à la semaine** : « une semaine sur deux finit dans le vert ». Nom montré à choisir. Lot à planifier après la refonte.
+- **Aucune marge du bookmaker côté joueur** (31/10) : ni « 1xBet garde X % », ni marge par match, coupon ou ticket, ni fiche d'Aide dédiée. Montrée au joueur, elle se lisait comme un dénigrement de 1xBet. L'admin la garde (Moteur › Produits).
 - Au-dessus de la cote 1,80, la chance affichée est celle du marché sans marge, jamais celle du moteur ; aucun produit ne prend une jambe du moteur au-dessus de 1,80.
 - Le Chasseur BTTS reste (même fréquence qu'un plus/moins, 3 points plus cher en argent) ; pas de produit du week-end.
 - Filtres : aucune liste déroulante côté joueur, au plus une bascule visible par écran.

@@ -19,7 +19,6 @@ Toucher le héros ou une ligne de produit ouvre **une feuille** par-dessus l'éc
  Forme sur 30 jours
  ✓ ✓ ✗ ✓ ✓ ✓ ✓ ✗ ✓ ✓ ✓ ✓ ✓ ✗ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓
  19 jours gagnés sur 24 · pire série 1
- 1xBet garde 6 % sur ce pari
 ────────────────────────────────────────────────
                  [ Suivre ]
 ```
@@ -33,7 +32,7 @@ Toucher le héros ou une ligne de produit ouvre **une feuille** par-dessus l'éc
    - l'heure et le championnat, en petit ;
    - le pari **nommé avec l'équipe** (« Victoire du PSG », « Plus de 1,5 but », « Les deux marquent ») et sa cote 1xBet ;
    - **un fait**, une ligne, toujours visible. C'est le seul texte de la feuille.
-4. **La forme du produit** sur 30 jours, « 19 jours gagnés sur 24 », la pire série, et ce que 1xBet garde sur ce coupon. Tout est daté par la période affichée dans Résultats ; ici on ne répète pas la date.
+4. **La forme du produit** sur 30 jours, « 19 jours gagnés sur 24 », et la pire série. Pas de marge du bookmaker (31/10, [00](00-sommaire.md)). Tout est daté par la période affichée dans Résultats ; ici on ne répète pas la date.
 5. **Le bouton** « Suivre », fixé en bas, toujours visible même quand on fait défiler.
 
 **Ce qui n'y est pas** : la cote de référence, la clôture, la fréquence du marché contre la nôtre, la probabilité jointe, le relevé, l'identifiant. Tout cela vit dans Résultats (détail du produit) ou dans l'admin.

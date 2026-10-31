@@ -99,7 +99,7 @@ L'application est faite pour le téléphone ; sur un écran large elle ne change
 ## 6. La langue et la devise
 
 - **Français par défaut**, anglais disponible dans Compte › Affichage. Les deux fichiers de langue existent ; le registre reste le tutoiement en français et le « you » direct en anglais.
-- **La devise** : F CFA par défaut, sans centimes, avec l'espace fine comme séparateur de milliers (« 14 000 F »). Le joueur peut la changer dans Compte. Elle ne sert qu'à deux endroits : « En francs » dans Résultats et « 1xBet garde X F sur 100 » dans les fiches d'Aide. Partout ailleurs on parle en fréquences et en cotes.
+- **La devise** : F CFA par défaut, sans centimes, avec l'espace fine comme séparateur de milliers (« 14 000 F »). Le joueur peut la changer dans Compte. Elle ne sert qu'à un endroit : « En francs » dans Résultats. Partout ailleurs on parle en fréquences et en cotes.
 - **Les cotes** : toujours avec une virgule et deux décimales en français (« 1,28 »), un point en anglais.
 - **Les heures** : celles de l'appareil, en format 24 h, sans fuseau affiché ; les coupons sont composés à 17 h UTC, soit 17 h à Abidjan, et la matinée part à 8 h d'Abidjan quel que soit l'appareil.
 - **Les noms d'équipes et de championnats** passent par les mêmes tables de traduction que l'application actuelle (`translateCompetition`), une seule source.
