@@ -26,8 +26,8 @@ export type SheetReading = SheetPick & {
 export type SheetAiOpinion = SheetPick & {
   /** The AI played the same pick as our reading. */
   sameAsReading: boolean;
-  /** One clean line, 90 characters at most, or nothing (06 § 2). */
-  sentence: string | null;
+  /** Its text without jargon, opened from its pick, or nothing (06 § 2). */
+  speech: string | null;
 };
 
 export type SheetTeamForm = {

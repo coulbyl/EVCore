@@ -17,7 +17,7 @@ import type {
 } from './matches.repository';
 import {
   MatchSheetService,
-  sentenceOf,
+  speechOf,
   setAsideReasonOf,
 } from './match-sheet.service';
 
@@ -198,7 +198,8 @@ describe('MatchSheetService', () => {
       chance: 0.27,
       result: null,
       sameAsReading: false,
-      sentence: 'Chelsea n’a perdu qu’une fois en huit déplacements.',
+      speech:
+        'Chelsea n’a perdu qu’une fois en huit déplacements. Le reste du texte.',
     });
     // Neither the reading nor the AI's pick come back in « Autres paris ».
     expect(sheet.otherPicks.map((p) => `${p.market}/${p.pick}`)).toEqual([
@@ -408,26 +409,28 @@ describe('setAsideReasonOf (06 § 4–5)', () => {
   });
 });
 
-describe('sentenceOf', () => {
-  it('keeps one clean line of 90 characters at most', () => {
-    expect(sentenceOf('Lens reste sur cinq matchs sans défaite. Suite.')).toBe(
-      'Lens reste sur cinq matchs sans défaite.',
-    );
+describe('speechOf', () => {
+  it('keeps every clean sentence, however long', () => {
+    const text =
+      'Barcelona crée en moyenne plus de 3 buts attendus alors qu’Alavés n’en concède que 1,2; leurs confrontations récentes affichent souvent plus de 2,5 buts. Ces indicateurs suggèrent que le match dépassera les 2,5 buts.';
+    expect(speechOf(text)).toBe(text);
   });
 
-  it('drops jargon and long sentences rather than cutting them', () => {
+  it('leaves out the sentences with jargon', () => {
     expect(
-      sentenceOf(
-        'Les deux équipes affichent des xG combinés supérieurs à 3,4.',
+      speechOf(
+        'Les deux équipes affichent des xG combinés supérieurs à 3,4. Lens reste sur cinq matchs sans défaite.',
       ),
-    ).toBeNull();
-    expect(
-      sentenceOf('Nos données internes indiquent une tendance.'),
-    ).toBeNull();
-    expect(sentenceOf('Probabilité de 47 % que les deux marquent.')).toBeNull();
-    expect(
-      sentenceOf(`${'Une très longue phrase '.repeat(5)}sans point`),
-    ).toBeNull();
-    expect(sentenceOf(null)).toBeNull();
+    ).toBe('Lens reste sur cinq matchs sans défaite.');
+    expect(speechOf('Nos données internes indiquent une tendance.')).toBeNull();
+    expect(speechOf('Probabilité de 47 % que les deux marquent.')).toBeNull();
+    expect(speechOf(null)).toBeNull();
+  });
+
+  it('stops at a whole sentence past the length cap', () => {
+    const sentence = `${'Une phrase propre et assez longue '.repeat(3)}.`;
+    const speech = speechOf(sentence.repeat(10).replace(/\.(?=U)/g, '. '));
+    expect(speech?.length).toBeLessThanOrEqual(400);
+    expect(speech?.endsWith('.')).toBe(true);
   });
 });

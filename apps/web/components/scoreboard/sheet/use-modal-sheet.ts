@@ -56,6 +56,8 @@ export function useModalSheet({
         // ce n'est pas pour elle.
         if (event.defaultPrevented) return;
         const panel = panelRef.current;
+        // A popover open in the sheet (the AI's speech) closes first.
+        if (panel && hasOpenPopover(panel)) return;
         if (!modal && !panel?.contains(document.activeElement)) return;
         event.preventDefault();
         onClose();
@@ -101,4 +103,13 @@ export function useModalSheet({
       root.style.overflow = previousOverflow;
     };
   }, [modal]);
+}
+
+/** A browser without popovers throws on the selector: nothing is open. */
+function hasOpenPopover(panel: HTMLElement): boolean {
+  try {
+    return panel.querySelector(":popover-open") !== null;
+  } catch {
+    return false;
+  }
 }

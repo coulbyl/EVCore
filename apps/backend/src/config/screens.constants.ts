@@ -133,11 +133,11 @@ export const SHEET_HEAD_TO_HEAD_MEETINGS = 6;
 export const SHEET_HEAD_TO_HEAD_YEARS = 5;
 export const SHEET_HEAD_TO_HEAD_MIN = 3;
 
-// The AI's sentence: one line, 90 characters at most, and never jargon: if
-// it is not clean it is not shown (06 § 2). VANTAGE's own cleaner fixes the
-// codes; these are the words a player should never read.
-export const AI_SENTENCE_MAX_LENGTH = 90;
-export const AI_SENTENCE_JARGON: readonly RegExp[] = [
+// The AI's speech, opened from its pick: its sentences without jargon, a
+// sentence that is not clean is left out (06 § 2). VANTAGE's own cleaner
+// fixes the codes; these are the words a player should never read.
+export const AI_SPEECH_MAX_LENGTH = 400;
+export const AI_SPEECH_JARGON: readonly RegExp[] = [
   /\bxG\b/i,
   /données internes/i,
   /\bseuil\b/i,

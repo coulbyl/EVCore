@@ -1069,6 +1069,8 @@
       "ai": "Avis IA",
       "noAi": "Pas d'avis",
       "sameAsReading": "Même pari que notre lecture",
+      "aiSpeech": "Son explication",
+      "aiSpeechClose": "Fermer",
       "form": "Forme",
       "formSummary": "{won, plural, one {# victoire} other {# victoires}}, {drawn, plural, one {# nul} other {# nuls}}, {lost, plural, one {# défaite} other {# défaites}}",
       "rest": "repos {days} j",

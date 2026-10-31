@@ -1069,6 +1069,8 @@
       "ai": "AI opinion",
       "noAi": "No opinion",
       "sameAsReading": "Same bet as our reading",
+      "aiSpeech": "Its reasoning",
+      "aiSpeechClose": "Close",
       "form": "Form",
       "formSummary": "{won, plural, one {# win} other {# wins}}, {drawn, plural, one {# draw} other {# draws}}, {lost, plural, one {# loss} other {# losses}}",
       "rest": "{days} d rest",

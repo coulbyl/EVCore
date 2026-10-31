@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import {
-  AI_SENTENCE_JARGON,
-  AI_SENTENCE_MAX_LENGTH,
+  AI_SPEECH_JARGON,
+  AI_SPEECH_MAX_LENGTH,
   READING_CHANNELS,
   SHEET_FORM_MATCHES,
   SHEET_HEAD_TO_HEAD_MEETINGS,
@@ -321,25 +321,26 @@ function aiOpinionOf(
       reading !== null &&
       reading.market === key.market &&
       reading.pick === key.pick,
-    sentence: sentenceOf(ai.text),
+    speech: speechOf(ai.text),
   };
 }
 
 /**
- * The first sentence of the AI's text, when it is one line (90 characters
- * at most) and free of jargon; otherwise nothing (06 § 2).
+ * The AI's text as the player reads it: its sentences free of jargon, in
+ * order, up to AI_SPEECH_MAX_LENGTH; nothing when none is left (06 § 2).
  */
-export function sentenceOf(text: string | null): string | null {
+export function speechOf(text: string | null): string | null {
   if (!text) return null;
-  const first =
-    text
-      .trim()
-      .split(/(?<=[.!?])\s+/)[0]
-      ?.trim() ?? '';
-  if (first === '' || first.length > AI_SENTENCE_MAX_LENGTH) return null;
-  return AI_SENTENCE_JARGON.some((pattern) => pattern.test(first))
-    ? null
-    : first;
+  let speech = '';
+  for (const raw of text.trim().split(/(?<=[.!?])\s+/)) {
+    const sentence = raw.trim();
+    if (sentence === '') continue;
+    if (AI_SPEECH_JARGON.some((pattern) => pattern.test(sentence))) continue;
+    const next = speech === '' ? sentence : `${speech} ${sentence}`;
+    if (next.length > AI_SPEECH_MAX_LENGTH) break;
+    speech = next;
+  }
+  return speech === '' ? null : speech;
 }
 
 /** One team's matches, most recent first (rows come per venue). */

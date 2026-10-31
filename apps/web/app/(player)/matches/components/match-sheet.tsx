@@ -20,6 +20,7 @@ import {
   type DisplayLocale,
 } from "@/helpers/scoreboard-format";
 import { TeamMark } from "../../today/components/team-mark";
+import { AiSpeech } from "./ai-speech";
 import { pickLabel } from "./matches-constants";
 
 /** « Autres paris » shown before « Tous » (maquette Fiche). */
@@ -31,7 +32,7 @@ type Translate = Awaited<ReturnType<typeof getTranslations<"matches.sheet">>>;
  * The match sheet of the player (06 § 2–4, maquette Fiche), the same on a
  * tap (intercepted route) and on a shared link or a reload (the `@sheet`
  * slot's own page, over Matchs). From top to bottom: the header, « Notre
- * lecture » with its fact, « Avis IA » as one more bet, the form of both
+ * lecture » with its fact, « Avis IA » as one more bet with its speech in a popover, the form of both
  * teams and the head-to-head, « Autres paris », and the 1xBet margin.
  * Rendered on the server: the sheet adds no JavaScript of its own.
  */
@@ -91,16 +92,27 @@ export async function MatchSheetView({ id }: { id: string }) {
         <Section title={t("ai")}>
           {!sheet.ai ? (
             <p className="text-body text-muted-foreground">{t("noAi")}</p>
-          ) : sheet.ai.sameAsReading ? (
-            <p className="text-body">{t("sameAsReading")}</p>
           ) : (
-            <PickLine pick={sheet.ai} sheet={sheet} t={t} locale={display} />
+            <>
+              <PickLine pick={sheet.ai} sheet={sheet} t={t} locale={display} />
+              {sheet.ai.sameAsReading ? (
+                <p className="text-meta text-muted-foreground">
+                  {t("sameAsReading")}
+                </p>
+              ) : null}
+              {sheet.ai.speech ? (
+                <AiSpeech
+                  id={`ai-speech-${sheet.fixtureId}`}
+                  speech={sheet.ai.speech}
+                  labels={{
+                    open: t("aiSpeech"),
+                    title: t("ai"),
+                    close: t("aiSpeechClose"),
+                  }}
+                />
+              ) : null}
+            </>
           )}
-          {sheet.ai?.sentence ? (
-            <p className="text-body text-muted-foreground">
-              « {sheet.ai.sentence} »
-            </p>
-          ) : null}
         </Section>
 
         <Section title={t("form")}>
