@@ -121,7 +121,14 @@ export function Sheet({
             </div>
           ) : null}
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+        {/* Without a footer the last row ends the sheet: it clears the
+            phone's home bar and the browser's own bar laid over the page. */}
+        <div
+          className={cn(
+            "min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4",
+            footer ? "pb-4" : "pb-[max(1rem,env(safe-area-inset-bottom))]",
+          )}
+        >
           {children}
         </div>
         {footer ? (

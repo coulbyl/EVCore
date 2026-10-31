@@ -25,7 +25,7 @@ import type {
 import { CouponValue } from "./coupon-value";
 import { FollowButton } from "./follow-button";
 import { TeamMark } from "./team-mark";
-import { legPickLabel } from "./today-constants";
+import { isSettled, legPickLabel } from "./today-constants";
 
 /**
  * A coupon of « Aujourd'hui » and its product's form, read from the same
@@ -69,7 +69,7 @@ export async function CouponSheetBand({ coupon }: { coupon: TodayCoupon }) {
   const locale = displayLocaleOf(await getLocale());
   return (
     <div className="flex items-center justify-between gap-4">
-      {coupon.chance !== null ? (
+      {coupon.chance !== null && !isSettled(coupon.state) ? (
         <ChanceFigure
           probability={coupon.chance}
           phrasing="passes"

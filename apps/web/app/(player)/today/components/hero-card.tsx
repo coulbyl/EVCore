@@ -148,7 +148,7 @@ export async function HeroCard({
         <CouponValue coupon={coupon} locale={display} size="hero" />
       </div>
 
-      {coupon.chance !== null ? (
+      {coupon.chance !== null && !settled ? (
         <ChanceFigure
           probability={coupon.chance}
           phrasing="passes"
