@@ -6,10 +6,13 @@ import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session"
 import { AuthScreen } from "../components/auth-screen";
 import { VerifyEmailForm } from "./components/verify-email-form";
 
-export const metadata: Metadata = {
-  title: "Vérifie ton e-mail — EVCore",
-  robots: { index: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("playerAuth");
+  return {
+    title: `${t("verify.title")} — EVCore`,
+    robots: { index: false },
+  };
+}
 
 /**
  * Juste après l'inscription, ou depuis Compte (11 § 4). L'e-mail seul : la

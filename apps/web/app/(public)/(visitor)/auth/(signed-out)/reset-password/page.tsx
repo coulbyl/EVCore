@@ -3,10 +3,13 @@ import { getTranslations } from "next-intl/server";
 import { AuthScreen } from "../../components/auth-screen";
 import { ResetPasswordForm } from "./components/reset-password-form";
 
-export const metadata: Metadata = {
-  title: "Nouveau mot de passe — EVCore",
-  robots: { index: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("playerAuth");
+  return {
+    title: `${t("reset.title")} — EVCore`,
+    robots: { index: false },
+  };
+}
 
 /** Le nouveau mot de passe, ouvert par le lien de l'e-mail (11 § 5). */
 export default async function ResetPasswordPage({

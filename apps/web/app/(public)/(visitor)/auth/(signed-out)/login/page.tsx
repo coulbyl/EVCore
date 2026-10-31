@@ -3,10 +3,13 @@ import { getTranslations } from "next-intl/server";
 import { AuthScreen } from "../../components/auth-screen";
 import { LoginForm } from "../../components/login-form";
 
-export const metadata: Metadata = {
-  title: "Se connecter — EVCore",
-  alternates: { canonical: "/auth/login" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("playerAuth");
+  return {
+    title: `${t("signIn")} — EVCore`,
+    alternates: { canonical: "/auth/login" },
+  };
+}
 
 /** « Se connecter » (11 § 3, maquette Connexion). */
 export default async function LoginPage({

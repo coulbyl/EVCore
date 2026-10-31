@@ -4,10 +4,13 @@ import { LEGAL_ENTITY } from "../../../(legal)/legal-entity";
 import { AuthScreen } from "../../components/auth-screen";
 import { ForgotPasswordForm } from "./components/forgot-password-form";
 
-export const metadata: Metadata = {
-  title: "Mot de passe oublié — EVCore",
-  alternates: { canonical: "/auth/forgot-password" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("playerAuth");
+  return {
+    title: `${t("forgot.title")} — EVCore`,
+    alternates: { canonical: "/auth/forgot-password" },
+  };
+}
 
 /** Le mot de passe oublié, l'e-mail puis le lien envoyé (11 § 5). */
 export default async function ForgotPasswordPage() {

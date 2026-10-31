@@ -3,10 +3,13 @@ import { getTranslations } from "next-intl/server";
 import { AuthScreen } from "../../../components/auth-screen";
 import { ForgotPasswordTotpForm } from "./components/forgot-password-totp-form";
 
-export const metadata: Metadata = {
-  title: "Mot de passe oublié — EVCore",
-  robots: { index: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("playerAuth");
+  return {
+    title: `${t("forgot.title")} — EVCore`,
+    robots: { index: false },
+  };
+}
 
 /** Le mot de passe oublié, avec l'application d'authentification (11 § 5). */
 export default async function ForgotPasswordTotpPage() {

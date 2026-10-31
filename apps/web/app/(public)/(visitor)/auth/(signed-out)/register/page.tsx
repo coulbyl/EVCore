@@ -3,10 +3,13 @@ import { getTranslations } from "next-intl/server";
 import { AuthScreen } from "../../components/auth-screen";
 import { RegisterForm } from "../../components/register-form";
 
-export const metadata: Metadata = {
-  title: "Créer mon compte — EVCore",
-  alternates: { canonical: "/auth/register" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("playerAuth");
+  return {
+    title: `${t("register.title")} — EVCore`,
+    alternates: { canonical: "/auth/register" },
+  };
+}
 
 /** « Créer mon compte » (11 § 2, maquette Inscription). */
 export default async function RegisterPage() {
