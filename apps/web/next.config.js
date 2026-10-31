@@ -1,3 +1,4 @@
+import process from "node:process";
 import { PHASE_DEVELOPMENT_SERVER } from "next/constants.js";
 import createNextIntlPlugin from "next-intl/plugin";
 
@@ -8,6 +9,9 @@ const nextConfig = {
   output: "standalone",
   // Ne plus annoncer « x-powered-by: Next.js » (audit du 2026-10-23, P3-1).
   poweredByHeader: false,
+  // Opening the dev server from a phone on the local network: its address,
+  // e.g. NEXT_DEV_ORIGINS=192.168.1.20 (dev only, Next blocks it otherwise).
+  allowedDevOrigins: process.env.NEXT_DEV_ORIGINS?.split(",") ?? [],
   experimental: {
     // `@evcore/ui` is one barrel of 54 exports, Radix and Sonner among them:
     // a page importing one of them got all (C0, measured in A12).

@@ -80,7 +80,9 @@
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      // A phone on the local network opening the dev server (next.config.js).
+      "passThroughEnv": ["NEXT_DEV_ORIGINS"]
     },
     // Lighthouse sur un build déjà fait contre le faux backend
     // (apps/web/scripts/lighthouse-budgets.mjs) : une mesure, jamais en cache.
