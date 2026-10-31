@@ -87,4 +87,25 @@ describe('ProductDayService', () => {
     await service.refresh({ from: new Date(), to: new Date() });
     expect(vi.mocked(repository.upsertDays).mock.calls[0]?.[0]).toEqual([]);
   });
+
+  it('a correction after the fact rewrites the day, a replay writes it the same', async () => {
+    const day = { from: new Date('2026-10-28'), to: new Date('2026-10-28') };
+    // Settled won, then the score corrected (VAR, a late fix): lost.
+    const won = harness([leg({})]);
+    await won.service.refresh(day);
+    await won.service.refresh(day);
+    const lost = harness([leg({ result: 'LOST', isCorrect: false })]);
+    await lost.service.refresh(day);
+
+    const written = (h: ReturnType<typeof harness>, call: number) =>
+      vi.mocked(h.repository.upsertDays).mock.calls[call]?.[0];
+    // A second pass on the same rows writes exactly the same day: upserted
+    // by (product, day), nothing adds up.
+    expect(written(won, 1)).toEqual(written(won, 0));
+    expect(written(won, 0)?.[0]?.outcome).toBe('won');
+    expect(written(lost, 0)?.[0]).toMatchObject({
+      outcome: 'lost',
+      paidOdds: null,
+    });
+  });
 });
