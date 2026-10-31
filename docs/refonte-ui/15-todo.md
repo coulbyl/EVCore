@@ -167,7 +167,13 @@ PR https://github.com/coulbyl/EVCore/pull/282 ouverte (C–F). Avant la phase G,
 - Ticket (téléphone et bureau, 3 et 4 paris) : rien à redire. Le ticket à un seul pari n'a pas été vu.
 - Bas d'écran coupé dans Moby : artefact du simulateur, vérifié sur iPhone 11 et Redmi (ci-dessous).
 
-**Reste à revoir.** Résultats (fiches produit, Avis IA, Ta semaine), Moi et ses pages, Notifications. Ensuite la phase G (admin).
+- Résultats : périodes dans le bandeau avec « Dates » (période Du/Au, backend compris), phrase sous la liste, Ta semaine Favori d'abord, « … » pour un jour en cours.
+- Moi : bandeau sur deux lignes (prénom, bilan, En cours · Réglés). Aide réécrite en langage naturel. Compte : textes humains, heure locale des envois, « Vérifier » l'e-mail, invitation aux notifications, titres, thème sans erreur d'hydratation.
+- Messages : signé « L'équipe EVCore », photo sans cadre, champ qui grandit, lecteur vocal maison avec sa durée, annulation pendant l'enregistrement, invitation aux notifications, cause réelle d'un micro refusé, et `Permissions-Policy: microphone=(self)` (le micro était coupé sur tout le site depuis la v11.25.0). Bienvenue au tutoiement.
+- Notifications : les annonces (HTML de l'éditeur admin) lues en texte ; toutes gardées.
+- Un serveur local sur une copie de la prod envoie de vraies notifications (push et e-mail) : 5 abonnements push réels dans la base locale.
+
+**Reste.** La phase G (admin).
 
 **Ouverts, sans suite immédiate.** Budget LCP froid rouge en CI (« on cherchera un vrai gain après »), ressource d'aide locale, relecture juridique.
 
