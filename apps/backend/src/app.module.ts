@@ -30,10 +30,11 @@ import { VerifiedTicketModule } from './modules/verified-ticket/verified-ticket.
 import { MlModule } from './modules/ml/ml.module';
 import { AnalysisSheetModule } from './modules/analysis-sheet/analysis-sheet.module';
 import { RedisModule } from './common/redis/redis.module';
+import { validateEnv } from './config/env.schema';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     ThrottlerModule.forRoot([
       {
         name: 'default',

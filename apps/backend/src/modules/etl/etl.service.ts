@@ -14,6 +14,7 @@ import {
   BULLMQ_DEFAULT_JOB_OPTIONS,
   DEFAULT_SEASON_START_MONTH,
   ETL_CONSTANTS,
+  API_FOOTBALL_QUOTA,
   ETL_CRON_SCHEDULES,
   ETL_SCHEDULER_KEYS,
   ROLLING_HORIZON_DEFAULTS,
@@ -168,80 +169,13 @@ export class EtlService implements OnApplicationBootstrap {
     this.quotaAlertPct = Number(
       config.get<string>('API_FOOTBALL_QUOTA_ALERT_PCT', '80'),
     );
-    this.dailyQuota = Number(
-      config.get<string>('API_FOOTBALL_DAILY_QUOTA', '7500'),
-    );
-    this.avgScheduledFixturesPerLeaguePerDay = Number(
-      config.get<string>('API_FOOTBALL_AVG_DAILY_FIXTURES_PER_LEAGUE', '10'),
-    );
-    this.avgFinishedFixturesWithoutXgPerLeaguePerDay = Number(
-      config.get<string>(
-        'API_FOOTBALL_AVG_DAILY_STATS_FIXTURES_PER_LEAGUE',
-        '2',
-      ),
-    );
-    this.cronSchedules = {
-      FIXTURES_SYNC: config.get<string>(
-        'ETL_FIXTURES_SYNC_CRON',
-        ETL_CRON_SCHEDULES.FIXTURES_SYNC,
-      ),
-      PENDING_BETS_SETTLEMENT: config.get<string>(
-        'ETL_PENDING_BETS_SETTLEMENT_CRON',
-        ETL_CRON_SCHEDULES.PENDING_BETS_SETTLEMENT,
-      ),
-      STALE_SCHEDULED_SYNC: config.get<string>(
-        'ETL_STALE_SCHEDULED_SYNC_CRON',
-        ETL_CRON_SCHEDULES.STALE_SCHEDULED_SYNC,
-      ),
-      STATS_SYNC: config.get<string>(
-        'ETL_STATS_SYNC_CRON',
-        ETL_CRON_SCHEDULES.STATS_SYNC,
-      ),
-      INJURIES_SYNC: config.get<string>(
-        'ETL_INJURIES_SYNC_CRON',
-        ETL_CRON_SCHEDULES.INJURIES_SYNC,
-      ),
-      ODDS_CSV_IMPORT: config.get<string>(
-        'ETL_ODDS_CSV_IMPORT_CRON',
-        ETL_CRON_SCHEDULES.ODDS_CSV_IMPORT,
-      ),
-      ELO_SYNC: config.get<string>(
-        'ETL_ELO_SYNC_CRON',
-        ETL_CRON_SCHEDULES.ELO_SYNC,
-      ),
-      COACH_SYNC: config.get<string>(
-        'ETL_COACH_SYNC_CRON',
-        ETL_CRON_SCHEDULES.COACH_SYNC,
-      ),
-      ODDS_PREMATCH_SYNC: config.get<string>(
-        'ETL_ODDS_PREMATCH_SYNC_CRON',
-        ETL_CRON_SCHEDULES.ODDS_PREMATCH_SYNC,
-      ),
-      ODDS_CLOSING_SYNC: config.get<string>(
-        'ETL_ODDS_CLOSING_SYNC_CRON',
-        ETL_CRON_SCHEDULES.ODDS_CLOSING_SYNC,
-      ),
-      RISK_MARKET_SWEEP: config.get<string>(
-        'ETL_RISK_MARKET_SWEEP_CRON',
-        ETL_CRON_SCHEDULES.RISK_MARKET_SWEEP,
-      ),
-      BETTING_ENGINE_ANALYSIS: config.get<string>(
-        'ETL_BETTING_ENGINE_ANALYSIS_CRON',
-        ETL_CRON_SCHEDULES.BETTING_ENGINE_ANALYSIS,
-      ),
-      SAME_DAY_ANALYSIS: config.get<string>(
-        'ETL_SAME_DAY_ANALYSIS_CRON',
-        ETL_CRON_SCHEDULES.SAME_DAY_ANALYSIS,
-      ),
-      ROLLING_HORIZON: config.get<string>(
-        'ETL_ROLLING_HORIZON_CRON',
-        ETL_CRON_SCHEDULES.ROLLING_HORIZON,
-      ),
-      SEASON_ROLLOVER_SYNC: config.get<string>(
-        'ETL_SEASON_ROLLOVER_SYNC_CRON',
-        ETL_CRON_SCHEDULES.SEASON_ROLLOVER_SYNC,
-      ),
-    };
+    // Decisions, not settings (ENV-PROD § 6): in config, changed by a PR.
+    this.dailyQuota = API_FOOTBALL_QUOTA.DAILY;
+    this.avgScheduledFixturesPerLeaguePerDay =
+      API_FOOTBALL_QUOTA.AVG_DAILY_FIXTURES_PER_LEAGUE;
+    this.avgFinishedFixturesWithoutXgPerLeaguePerDay =
+      API_FOOTBALL_QUOTA.AVG_DAILY_STATS_FIXTURES_PER_LEAGUE;
+    this.cronSchedules = ETL_CRON_SCHEDULES;
     this.leagueSeasonSyncs = {
       fixtures: {
         queue: this.leagueSyncQueue,

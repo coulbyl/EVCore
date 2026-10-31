@@ -68,13 +68,9 @@ export class StatsBackfillService implements OnApplicationBootstrap {
     private readonly apiFootball: ApiFootballClient,
   ) {
     this.scheduled =
-      config.get<string>('ETL_SCHEDULING_ENABLED', 'true') !== 'false' &&
-      config.get<string>('STATS_BACKFILL_ENABLED', 'true') !== 'false';
+      config.get<string>('ETL_SCHEDULING_ENABLED', 'true') !== 'false';
     this.reserve = statsBackfillDailyReserve(config);
-    this.cronPattern = config.get<string>(
-      'ETL_STATS_BACKFILL_CRON',
-      STATS_BACKFILL.CRON,
-    );
+    this.cronPattern = STATS_BACKFILL.CRON;
   }
 
   async onApplicationBootstrap(): Promise<void> {

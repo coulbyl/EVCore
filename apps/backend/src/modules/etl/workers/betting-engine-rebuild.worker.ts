@@ -1,6 +1,5 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import type { Job } from 'bullmq';
-import { ConfigService } from '@nestjs/config';
 import { createLogger } from '@utils/logger';
 import { FixtureStatus } from '@evcore/db';
 import { BULLMQ_QUEUES } from '@config/etl.constants';
@@ -32,9 +31,9 @@ const logger = createLogger('betting-engine-rebuild-worker');
 // so a small batch overlaps latency without starving CPU/memory (per-fixture
 // state is GC'd between batches; only `id`s are held in memory). The worker runs
 // in-process with the live API and shares its Prisma pool, so the default is
-// deliberately low to leave connections for HTTP requests — raise
-// ETL_REBUILD_CONCURRENCY when no one is using the UI. Keep it well under the
-// Prisma connection_limit.
+// deliberately low to leave connections for HTTP requests. A decision in code
+// (ENV-PROD § 6, was ETL_REBUILD_CONCURRENCY): keep it well under the Prisma
+// connection_limit.
 const DEFAULT_REBUILD_CONCURRENCY = 4;
 // Log progress + push BullMQ progress every N fixtures, instead of once per
 // fixture — avoids thousands of Redis round-trips on a full-season rebuild.
@@ -61,25 +60,13 @@ function buildScheduledAtFilter(
 export class BettingEngineRebuildWorker extends WorkerHost {
   private readonly concurrency: number;
 
-  // eslint-disable-next-line max-params -- Nest constructor injection of 4 providers.
   constructor(
     private readonly prisma: PrismaService,
     private readonly bettingEngine: BettingEngineService,
     private readonly notification: NotificationService,
-    config: ConfigService,
   ) {
     super();
-    const parsed = Number.parseInt(
-      config.get<string>(
-        'ETL_REBUILD_CONCURRENCY',
-        String(DEFAULT_REBUILD_CONCURRENCY),
-      ),
-      10,
-    );
-    this.concurrency =
-      Number.isInteger(parsed) && parsed > 0
-        ? parsed
-        : DEFAULT_REBUILD_CONCURRENCY;
+    this.concurrency = DEFAULT_REBUILD_CONCURRENCY;
   }
 
   async process(job: Job<BettingEngineRebuildJobData>): Promise<RebuildResult> {

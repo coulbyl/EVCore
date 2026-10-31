@@ -16,6 +16,7 @@ export const FEATURE_FLAGS = {
     // API-Football /predictions as an independent second model — shadow only:
     // stored in features.shadow_predictions, logged on directional conflict
     // with our λ, never consumed by scoring. ~1 request per analysis pass.
-    SHADOW_PREDICTIONS: process.env['SHADOW_PREDICTIONS_ENABLED'] !== 'false',
+    // Decided, in code since ENV-PROD § 6 (was SHADOW_PREDICTIONS_ENABLED).
+    SHADOW_PREDICTIONS: true,
   },
 } as const;

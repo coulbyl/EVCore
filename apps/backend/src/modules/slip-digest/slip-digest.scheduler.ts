@@ -28,10 +28,8 @@ export class SlipDigestScheduler implements OnApplicationBootstrap {
       logger.info('Slip digest scheduler disabled');
       return;
     }
-    const pattern = this.config.get<string>(
-      'SLIP_DIGEST_CRON',
-      SLIP_DIGEST.CRON,
-    );
+    // The hours are decisions in code (ENV-PROD § 6), never in the .env.
+    const pattern = SLIP_DIGEST.CRON;
     await this.queue.upsertJobScheduler(
       SLIP_DIGEST.SCHEDULER_KEY,
       { pattern },
@@ -41,10 +39,7 @@ export class SlipDigestScheduler implements OnApplicationBootstrap {
         opts: { removeOnComplete: 30, removeOnFail: 60 },
       },
     );
-    const weeklyPattern = this.config.get<string>(
-      'WEEKLY_STATEMENT_CRON',
-      SLIP_DIGEST.WEEKLY_CRON,
-    );
+    const weeklyPattern = SLIP_DIGEST.WEEKLY_CRON;
     await this.queue.upsertJobScheduler(
       SLIP_DIGEST.WEEKLY_SCHEDULER_KEY,
       { pattern: weeklyPattern },
@@ -54,10 +49,7 @@ export class SlipDigestScheduler implements OnApplicationBootstrap {
         opts: { removeOnComplete: 30, removeOnFail: 60 },
       },
     );
-    const followedPattern = this.config.get<string>(
-      'FOLLOWED_SETTLED_CRON',
-      SLIP_DIGEST.FOLLOWED_CRON,
-    );
+    const followedPattern = SLIP_DIGEST.FOLLOWED_CRON;
     await this.queue.upsertJobScheduler(
       SLIP_DIGEST.FOLLOWED_SCHEDULER_KEY,
       { pattern: followedPattern },
