@@ -34,7 +34,10 @@ describe('CouponFavouriteGenerationService', () => {
 
   beforeEach(() => {
     repository = makeRepository();
-    repository.upsertPriceComposerProposal.mockResolvedValue('proposal-1');
+    repository.upsertPriceComposerProposal.mockResolvedValue({
+      proposalId: 'proposal-1',
+      created: true,
+    });
     repository.recordPriceComposerAttempt.mockResolvedValue();
     service = new CouponFavouriteGenerationService(
       repository as unknown as CouponRepository,
@@ -77,6 +80,30 @@ describe('CouponFavouriteGenerationService', () => {
       expect.objectContaining({
         outcome: 'composed',
         pass: { name: 'favourite', policyVersion: 'favourite-v2' },
+      }),
+    );
+  });
+
+  it('a later pass finding the day published records « preserved », not « composed »', async () => {
+    repository.findPriceCandidates.mockResolvedValue([
+      row({ fixtureId: 'f-1', odds: 1.22 }),
+    ]);
+    repository.upsertPriceComposerProposal.mockResolvedValue({
+      proposalId: 'published-at-17',
+      created: false,
+    });
+
+    const result = await service.generateForDate(FOR_DATE);
+
+    // The coupon of the day exists: the pass answers with it.
+    expect(result).toMatchObject({
+      outcome: 'composed',
+      proposalId: 'published-at-17',
+    });
+    expect(repository.recordPriceComposerAttempt).toHaveBeenCalledWith(
+      expect.objectContaining({
+        outcome: 'preserved',
+        proposalId: 'published-at-17',
       }),
     );
   });

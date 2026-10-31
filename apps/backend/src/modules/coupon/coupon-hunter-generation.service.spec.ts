@@ -68,7 +68,9 @@ function makeHarness(avoided: string[] = [], reliable: string[] = ['c1']) {
         ].flat(),
       ),
     findReliableCornerCompetitions: vi.fn().mockResolvedValue(reliable),
-    upsertPriceComposerProposal: vi.fn().mockResolvedValue('proposal-1'),
+    upsertPriceComposerProposal: vi
+      .fn()
+      .mockResolvedValue({ proposalId: 'proposal-1', created: true }),
     recordPriceComposerAttempt: vi.fn().mockResolvedValue(undefined),
   } as unknown as CouponRepository;
   const playable = {

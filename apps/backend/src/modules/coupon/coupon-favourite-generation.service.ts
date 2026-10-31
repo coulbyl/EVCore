@@ -83,30 +83,33 @@ export class CouponFavouriteGenerationService {
     // Retour attendu = 1 : la règle ne crédite aucun avantage (ROI mesuré
     // +0,9 à +3,2 % par an au meilleur prix, −5 % aux cotes d'analyse), et la
     // probabilité affichée doit rester celle du PRIX, jamais du moteur.
-    const proposalId = await this.repository.upsertPriceComposerProposal({
-      forDate: dayStart,
-      combinedOdds: leg.odds,
-      expectedReturn: 1,
-      lastFixtureScheduledAt: kickoff,
-      legs: [
-        {
-          fixtureId: leg.fixtureId,
-          market: leg.market as Market,
-          pick: leg.pick,
-          odds: leg.odds,
-          expectedReturn: 1,
-          ...operatorPrice(leg, quotes),
+    const { proposalId, created } =
+      await this.repository.upsertPriceComposerProposal({
+        forDate: dayStart,
+        combinedOdds: leg.odds,
+        expectedReturn: 1,
+        lastFixtureScheduledAt: kickoff,
+        legs: [
+          {
+            fixtureId: leg.fixtureId,
+            market: leg.market as Market,
+            pick: leg.pick,
+            odds: leg.odds,
+            expectedReturn: 1,
+            ...operatorPrice(leg, quotes),
+          },
+        ],
+        profile: {
+          targetOddsMin: FAVOURITE_COUPON_CLASS.targetOddsMin,
+          targetOddsMax: FAVOURITE_COUPON_CLASS.targetOddsMax,
+          policyVersion: FAVOURITE_POLICY.version,
         },
-      ],
-      profile: {
-        targetOddsMin: FAVOURITE_COUPON_CLASS.targetOddsMin,
-        targetOddsMax: FAVOURITE_COUPON_CLASS.targetOddsMax,
-        policyVersion: FAVOURITE_POLICY.version,
-      },
-    });
+      });
     await this.repository.recordPriceComposerAttempt({
       forDate: dayStart,
-      outcome: 'composed',
+      // The proposal of the day is immutable: a later pass that finds it
+      // published says so instead of « composed » (ENV-PROD § 3).
+      outcome: created ? 'composed' : 'preserved',
       candidateCount: selection.candidateCount,
       proposalId,
       pass: {

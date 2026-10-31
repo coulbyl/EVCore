@@ -586,6 +586,10 @@ export class CouponRepository {
    *
    * `source` fait partie de la clé unique : l'upsert ne peut donc jamais
    * écraser la proposition du LLM du même jour sur la même cible.
+   *
+   * Une proposition existante n'est jamais réécrite : `created` dit si
+   * cette passe l'a écrite ou l'a trouvée publiée (la passe de 21 h trouve
+   * celle de 17 h, ENV-PROD § 3).
    */
   async upsertPriceComposerProposal(input: {
     forDate: Date;
@@ -625,7 +629,7 @@ export class CouponRepository {
       /** Canal écrit sur chaque jambe ; PRICE par défaut. */
       legCanal?: StrategyChannel;
     };
-  }): Promise<string> {
+  }): Promise<{ proposalId: string; created: boolean }> {
     const profile = input.profile ?? {
       targetOddsMin: UNIFIED_COUPON_CLASS.targetOddsMin,
       targetOddsMax: UNIFIED_COUPON_CLASS.targetOddsMax,
@@ -665,6 +669,15 @@ export class CouponRepository {
       } satisfies Prisma.InputJsonValue,
     };
 
+    const uniqueKey = {
+      forDate_source_signalWindowDays_targetOddsMin_targetOddsMax_rank: key,
+    };
+    const existing = await this.prisma.client.couponProposal.findUnique({
+      where: uniqueKey,
+      select: { id: true },
+    });
+    if (existing) return { proposalId: existing.id, created: false };
+
     const proposal = await this.prisma.client.couponProposal.upsert({
       where: {
         forDate_source_signalWindowDays_targetOddsMin_targetOddsMax_rank: key,
@@ -703,11 +716,12 @@ export class CouponRepository {
           })),
         },
       },
-      // Une proposition déjà réglée ou décidée n'est jamais réécrite.
+      // Une proposition déjà réglée ou décidée n'est jamais réécrite (et une
+      // passe concurrente qui l'aurait créée entre-temps la garde).
       update: {},
       select: { id: true },
     });
-    return proposal.id;
+    return { proposalId: proposal.id, created: true };
   }
 
   async recordPriceComposerAttempt(input: {

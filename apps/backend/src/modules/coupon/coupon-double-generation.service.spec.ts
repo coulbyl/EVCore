@@ -46,7 +46,10 @@ describe('CouponDoubleGenerationService', () => {
 
   beforeEach(() => {
     repository = makeRepository();
-    repository.upsertPriceComposerProposal.mockResolvedValue('proposal-1');
+    repository.upsertPriceComposerProposal.mockResolvedValue({
+      proposalId: 'proposal-1',
+      created: true,
+    });
     repository.recordPriceComposerAttempt.mockResolvedValue();
     quotes = new Map();
     const playable = {
