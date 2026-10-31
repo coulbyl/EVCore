@@ -1144,7 +1144,14 @@
       "label": "Period",
       "30": "30 d",
       "90": "90 d",
-      "all": "All"
+      "all": "All",
+      "dates": "Dates",
+      "range": "{from} – {to}",
+      "datesTitle": "Choose the dates",
+      "from": "From",
+      "to": "To",
+      "show": "Show",
+      "close": "Close"
     },
     "names": {
       "FAVOURITE": "Favourite",
@@ -1165,6 +1172,7 @@
     "tooEarlyAdvice": "Still too early: {count} settled opinions",
     "lastPlayed": "{count, plural, one {The last day played} other {The last # days played}}",
     "since": "Since {date}. Each product counts from its launch.",
+    "between": "From {from} to {to}. Each product counts from its launch.",
     "retired": "retired",
     "sheet": {
       "titles": {
@@ -1195,6 +1203,7 @@
       },
       "lastDays": "{count, plural, one {The last day} other {The last # days}}",
       "allSince": "Since {date}",
+      "between": "From {from} to {to}",
       "lastOpinions": "{count, plural, one {The last opinion} other {The last # opinions}}",
       "gridLabel": "{won} won, {lost} lost, {refunded} refunded, {none} without a coupon",
       "daysWithout": "{count, plural, one {# day} other {# days}} without {product}",

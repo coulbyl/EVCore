@@ -47,10 +47,55 @@ export function sheetHref(
     : `${base}/${slug}?period=${period}`;
 }
 
-/** The period chip of the address, 90 days when absent or unknown (08 § 1). */
-export function periodOf(param: string | string[] | undefined): ResultsPeriod {
-  const value = Array.isArray(param) ? param[0] : param;
-  return RESULTS_PERIODS.find((period) => period === value) ?? "90";
+const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/** A real day « 2026-10-13 » (« 2026-02-30 » is not one), else null. */
+function dayOf(value: string | undefined): string | null {
+  if (!value || !DAY_PATTERN.test(value)) return null;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) &&
+    date.toISOString().slice(0, 10) === value
+    ? value
+    : null;
+}
+
+/** The player's dates as a period, « from..to », or null if not a range. */
+export function rangeOf(
+  from: string | undefined,
+  to: string | undefined,
+): ResultsPeriod | null {
+  const first = dayOf(from);
+  const last = dayOf(to);
+  if (!first || !last || first > last) return null;
+  return `${first}..${last}`;
+}
+
+/** The two days of the player's dates, or null for 30 j · 90 j · Tout. */
+export function rangeDays(
+  period: ResultsPeriod,
+): { from: string; to: string } | null {
+  const [from, to] = period.split("..");
+  return from && to ? { from, to } : null;
+}
+
+/**
+ * The period of the address, 90 days when absent or unknown (08 § 1): a
+ * chip, or the player's dates, as « period=from..to » (a link) or as
+ * « from » and « to » (the dates form).
+ */
+export function periodOf(
+  param: string | string[] | undefined,
+  form?: { from?: string | string[]; to?: string | string[] },
+): ResultsPeriod {
+  const first = (v: string | string[] | undefined) =>
+    Array.isArray(v) ? v[0] : v;
+  const fromForm = form ? rangeOf(first(form.from), first(form.to)) : null;
+  if (fromForm) return fromForm;
+  const value = first(param);
+  const preset = RESULTS_PERIODS.find((period) => period === value);
+  if (preset) return preset;
+  const [from, to] = (value ?? "").split("..");
+  return rangeOf(from, to) ?? "90";
 }
 
 export function periodHref(

@@ -28,7 +28,7 @@ import {
   formatShortDate,
   type DisplayLocale,
 } from "@/helpers/scoreboard-format";
-import { periodHref, sheetOf } from "./results-constants";
+import { periodHref, rangeDays, sheetOf } from "./results-constants";
 import { WeekSheet, YesterdaySheet } from "./yesterday-week-sheets";
 
 export type Translate = Awaited<
@@ -155,9 +155,14 @@ export async function ProductBody({
 
       <Block
         title={
-          period === "all"
-            ? t("allSince", { date: day(detail.since, locale) })
-            : t("lastDays", { count: Number(period) })
+          rangeDays(period)
+            ? t("between", {
+                from: day(rangeDays(period)?.from ?? detail.since, locale),
+                to: day(rangeDays(period)?.to ?? detail.since, locale),
+              })
+            : period === "all"
+              ? t("allSince", { date: day(detail.since, locale) })
+              : t("lastDays", { count: Number(period) })
         }
       >
         <FormStrip
@@ -282,9 +287,14 @@ export async function AiBody({
 
       <Block
         title={
-          period === "all" && detail.since
-            ? t("allSince", { date: day(detail.since, locale) })
-            : t("lastOpinions", { count: shown.length })
+          rangeDays(period)
+            ? t("between", {
+                from: day(rangeDays(period)?.from ?? "", locale),
+                to: day(rangeDays(period)?.to ?? "", locale),
+              })
+            : period === "all" && detail.since
+              ? t("allSince", { date: day(detail.since, locale) })
+              : t("lastOpinions", { count: shown.length })
         }
       >
         {shown.length > 0 ? (

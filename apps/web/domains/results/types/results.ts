@@ -2,7 +2,10 @@ import type { TodayAbsence, TodayCoupon } from "@/domains/today/types/today";
 
 /** Mirror of apps/backend screens/results.types.ts (GET /results/products). */
 export const RESULTS_PERIODS = ["30", "90", "all"] as const;
-export type ResultsPeriod = (typeof RESULTS_PERIODS)[number];
+/** 30 j · 90 j · Tout, or the player's dates « 2026-10-13..2026-10-25 ». */
+export type ResultsPeriod =
+  | (typeof RESULTS_PERIODS)[number]
+  | `${string}..${string}`;
 
 export const RESULTS_PRODUCT_KEYS = [
   "FAVOURITE",
@@ -70,6 +73,8 @@ export type AiSummary = {
 
 export type ResultsScreen = {
   period: ResultsPeriod;
+  /** Last day counted, YYYY-MM-DD: today, or the end of the player's dates. */
+  until: string;
   yesterday: {
     date: string;
     items: {

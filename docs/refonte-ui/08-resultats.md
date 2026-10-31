@@ -36,7 +36,7 @@ _29/10/2026. Suite de [02-les-4-onglets.md](02-les-4-onglets.md) § 3. Propositi
 **Premier niveau, de haut en bas**
 
 1. **Hier**, la même ligne qu'en haut d'Aujourd'hui, avec la date : chaque coupon d'hier, sa pastille, la cote réellement payée après un ✓. Un toucher ouvre les coupons d'hier (§ 3). Le lundi, la ligne devient « Ta semaine : 5 jours gagnés sur 6 ».
-2. **La période**, trois puces : 30 j · 90 j · Tout. 90 j par défaut. C'est la seule bascule de l'écran ([02](02-les-4-onglets.md) § 5).
+2. **La période**, dans le bandeau sous la ligne Hier (comme les jours de Matchs) : 30 j · 90 j · Tout · **Dates**. 90 j par défaut. « Dates » (31/10) ouvre deux champs de date natifs, Du et Au ; la période choisie s'écrit dans l'adresse (`?period=2026-10-14..2026-10-20`) et la puce l'affiche, « 14/10 – 20/10 ». Une période finit au plus aujourd'hui ; un produit lancé après sa fin n'apparaît pas. C'est la seule bascule de l'écran ([02](02-les-4-onglets.md) § 5).
 3. **Une ligne par produit**, dans l'ordre d'Aujourd'hui : le nom court, **la forme sur les 10 derniers jours joués** en pastilles, « 11 jours gagnés sur 14 ». Le compte est celui de la période choisie ; les pastilles sont toujours les 10 derniers jours joués, quelle que soit la période.
 4. **Avis IA**, séparé par un trait, parce que son unité n'est pas le jour mais l'avis : « 136 avis gagnés sur 207 ». Un avis est un pari sur un match, réglé au prix 1xBet.
 5. **La ligne de date**, en pied : « depuis le 13/10 · chaque ligne à sa date de mise en ligne ». Sur « Tout », chaque produit compte depuis son premier jour en ligne, jamais avant.

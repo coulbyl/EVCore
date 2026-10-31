@@ -1144,7 +1144,14 @@
       "label": "Période",
       "30": "30 j",
       "90": "90 j",
-      "all": "Tout"
+      "all": "Tout",
+      "dates": "Dates",
+      "range": "{from} – {to}",
+      "datesTitle": "Choisir les dates",
+      "from": "Du",
+      "to": "Au",
+      "show": "Voir",
+      "close": "Fermer"
     },
     "names": {
       "FAVOURITE": "Favori",
@@ -1165,6 +1172,7 @@
     "tooEarlyAdvice": "Encore trop tôt : {count} avis réglés",
     "lastPlayed": "{count, plural, one {Le dernier jour joué} other {Les # derniers jours joués}}",
     "since": "Depuis le {date}. Chaque produit compte depuis sa mise en ligne.",
+    "between": "Du {from} au {to}. Chaque produit compte depuis sa mise en ligne.",
     "retired": "retiré",
     "sheet": {
       "titles": {
@@ -1195,6 +1203,7 @@
       },
       "lastDays": "{count, plural, one {Le dernier jour} other {Les # derniers jours}}",
       "allSince": "Depuis le {date}",
+      "between": "Du {from} au {to}",
       "lastOpinions": "{count, plural, one {Le dernier avis} other {Les # derniers avis}}",
       "gridLabel": "{won} gagnés, {lost} perdus, {refunded} remboursés, {none} sans coupon",
       "daysWithout": "{count, plural, one {# jour} other {# jours}} sans {product}",

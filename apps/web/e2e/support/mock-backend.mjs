@@ -766,6 +766,7 @@ function resultsScreen(url, cookie) {
   const yesterday = todayAt(-24).slice(0, 10);
   return {
     period,
+    until: todayAt(0).slice(0, 10),
     yesterday: {
       date: yesterday,
       items: [
