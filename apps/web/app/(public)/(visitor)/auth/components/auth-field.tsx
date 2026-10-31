@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { FIELD } from "@/components/scoreboard/ui/form-looks";
 
 /**
@@ -32,15 +33,21 @@ export function AuthField({
       <label htmlFor={input.name} className="text-meta text-muted-foreground">
         {label}
       </label>
-      <div className="flex items-center gap-2">
+      {/* « afficher » sits inside the field, at its right edge: the
+          fields keep one width and one right edge. */}
+      <div className="relative">
         <input
           id={input.name}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
-          className={`${FIELD} min-w-0 flex-1 aria-invalid:border-foreground`}
+          className={`${FIELD} w-full aria-invalid:border-foreground ${aside ? "pe-24" : ""}`}
           {...input}
         />
-        {aside}
+        {aside ? (
+          <div className="absolute inset-y-0 end-1 flex items-center">
+            {aside}
+          </div>
+        ) : null}
       </div>
       {/* Always in the page, empty without an error: a live region added
           together with its text is not reliably announced. */}
@@ -76,13 +83,20 @@ export function AuthCheck({
   return (
     <div className="flex flex-col gap-1">
       <label className="flex min-h-11 items-start gap-3 text-body">
-        <input
-          type="checkbox"
-          name={name}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? `${name}-error` : undefined}
-          className="mt-0.5 size-5 shrink-0 accent-primary"
-        />
+        <span className="relative mt-0.5 flex size-5 shrink-0">
+          <input
+            type="checkbox"
+            name={name}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? `${name}-error` : undefined}
+            className="peer size-5 appearance-none rounded-[0.3rem] border border-icon-subtle bg-card checked:border-primary checked:bg-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          />
+          <Check
+            aria-hidden
+            strokeWidth={3}
+            className="pointer-events-none absolute inset-0.5 hidden size-4 text-primary-foreground peer-checked:block"
+          />
+        </span>
         <span>{children}</span>
       </label>
       <p

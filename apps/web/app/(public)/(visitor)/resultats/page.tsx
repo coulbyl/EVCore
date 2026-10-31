@@ -14,6 +14,7 @@ import {
   periodHref,
   periodOf,
 } from "../../../(player)/results/components/results-constants";
+import { BandTitle } from "../band-title";
 import { VisitorBand } from "../visitor-band";
 import { VisitorFooter } from "../visitor-footer";
 
@@ -37,8 +38,9 @@ export default async function PublicResultsPage({
 }: {
   searchParams: Promise<{ period?: string | string[] }>;
 }) {
-  const [shell, t, params, locale] = await Promise.all([
+  const [shell, landing, t, params, locale] = await Promise.all([
     getTranslations("shell"),
+    getTranslations("landing"),
     getTranslations("results"),
     searchParams,
     getLocale(),
@@ -49,9 +51,16 @@ export default async function PublicResultsPage({
 
   return (
     <>
-      <VisitorBand />
-      <main id="contenu" className="flex flex-col gap-2 px-4 pt-6 pb-8 lg:px-6">
-        <h1 className="score text-title font-bold">{shell("tabs.results")}</h1>
+      <VisitorBand>
+        <BandTitle
+          title={shell("tabs.results")}
+          back={{ href: "/", label: landing("home") }}
+        />
+      </VisitorBand>
+      <main
+        id="contenu"
+        className="mx-auto w-full max-w-[40rem] flex flex-col gap-2 px-4 pt-3 pb-8 lg:px-6"
+      >
         <ChipGroup
           label={t("periods.label")}
           items={RESULTS_PERIODS.map((key) => ({

@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import {
   getPublicAiDetail,
@@ -17,6 +15,7 @@ import {
   periodOf,
   sheetOf,
 } from "../../../../(player)/results/components/results-constants";
+import { BandTitle } from "../../band-title";
 import { VisitorBand } from "../../visitor-band";
 import { VisitorFooter } from "../../visitor-footer";
 
@@ -87,18 +86,19 @@ export default async function PublicResultPage({
 
   return (
     <>
-      <VisitorBand />
-      <main id="contenu" className="flex flex-col gap-3 px-4 pt-4 pb-8 lg:px-6">
-        <Link
-          href={periodHref(period, "/resultats")}
-          className="inline-flex min-h-11 items-center gap-1 self-start text-body text-muted-foreground underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
-          <ChevronLeft aria-hidden className="size-4" strokeWidth={2} />
-          {shell("tabs.results")}
-        </Link>
-        <h1 className="score text-title font-bold">
-          {t(`titles.${line.kind === "ai" ? "AI" : line.product}`)}
-        </h1>
+      <VisitorBand>
+        <BandTitle
+          title={t(`titles.${line.kind === "ai" ? "AI" : line.product}`)}
+          back={{
+            href: periodHref(period, "/resultats"),
+            label: shell("tabs.results"),
+          }}
+        />
+      </VisitorBand>
+      <main
+        id="contenu"
+        className="mx-auto w-full max-w-[40rem] flex flex-col gap-3 px-4 pt-4 pb-8 lg:px-6"
+      >
         {body}
       </main>
       <VisitorFooter />

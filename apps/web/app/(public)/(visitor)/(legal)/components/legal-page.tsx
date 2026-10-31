@@ -20,7 +20,10 @@ export function LegalPage({
   return (
     <>
       <VisitorBand />
-      <main id="contenu" className="px-4 pt-6 pb-10 lg:px-6">
+      <main
+        id="contenu"
+        className="mx-auto w-full max-w-[40rem] px-4 pt-6 pb-10 lg:px-6"
+      >
         <article className="flex max-w-[68ch] flex-col gap-2">
           <h1 className="score text-title font-bold">{title}</h1>
           <p className="text-meta text-muted-foreground">

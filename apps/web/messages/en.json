@@ -1421,7 +1421,8 @@
       "notice": "Legal notice",
       "responsible": "Responsible gambling"
     },
-    "lastHero": "Last coupon published · {date}"
+    "lastHero": "Last coupon published · {date}",
+    "home": "Home"
   },
   "playerAuth": {
     "back": "Back",

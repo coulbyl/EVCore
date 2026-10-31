@@ -28,8 +28,8 @@ export async function VisitorBand({
   ]);
   const signedIn = jar.has(SESSION_COOKIE);
   return (
-    <header className="bg-band px-4 pb-3.5 pt-[max(1rem,env(safe-area-inset-top))] text-band-foreground dark:border-b dark:border-band-rule lg:px-6">
-      <div className="flex min-h-11 items-center justify-between gap-3">
+    <header className="bg-band pb-3.5 pt-[max(1rem,env(safe-area-inset-top))] text-band-foreground dark:border-b dark:border-band-rule">
+      <div className="mx-auto flex min-h-11 w-full max-w-[40rem] px-4 lg:px-6 items-center justify-between gap-3">
         <Link
           href="/"
           className="score text-title font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-led-on"
@@ -46,7 +46,10 @@ export async function VisitorBand({
         ) : null}
       </div>
       {children ? (
-        <div className="mt-3 border-t border-band-rule pt-3">{children}</div>
+        // The rule spans the column's text, not its padding.
+        <div className="mx-auto mt-3 w-full max-w-[40rem] px-4 lg:px-6">
+          <div className="border-t border-band-rule pt-3">{children}</div>
+        </div>
       ) : null}
     </header>
   );

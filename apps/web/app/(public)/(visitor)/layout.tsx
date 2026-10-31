@@ -18,9 +18,9 @@ export default function VisitorLayout({
         "scoreboard min-h-dvh bg-background font-text text-foreground antialiased",
       )}
     >
-      <div className="mx-auto flex min-h-dvh w-full max-w-[40rem] flex-col">
-        {children}
-      </div>
+      {/* The ink band spans the screen; the band's content, the page and
+          its footer keep one column of 40 rem at most (each sets it). */}
+      <div className="flex min-h-dvh w-full flex-col">{children}</div>
     </div>
   );
 }

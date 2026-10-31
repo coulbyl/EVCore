@@ -277,3 +277,17 @@ html:has(.scoreboard) body {
   overflow: visible;
   overflow-x: clip;
 }
+
+/*
+ * Le remplissage automatique du navigateur peint les champs en bleu clair,
+ * hors de la palette : le champ garde sa carte et son encre. La longue
+ * transition empêche Chrome de reposer son fond.
+ */
+.scoreboard input:-webkit-autofill,
+.scoreboard input:-webkit-autofill:hover,
+.scoreboard input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  box-shadow: inset 0 0 0 1000px var(--card);
+  caret-color: var(--foreground);
+  transition: background-color 600000s 0s;
+}

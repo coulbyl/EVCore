@@ -200,7 +200,7 @@ export function LoginForm({
       <p className="flex flex-wrap justify-center gap-x-2 text-body text-muted-foreground">
         <Link
           href="/auth/forgot-password"
-          className="underline-offset-4 hover:underline"
+          className="font-medium text-foreground underline-offset-4 hover:underline"
         >
           {labels.forgot}
         </Link>

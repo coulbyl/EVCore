@@ -37,7 +37,10 @@ export default async function LandingPage() {
           {t("brandLine")}
         </h1>
       </VisitorBand>
-      <main id="contenu" className="flex flex-col gap-6 px-4 pt-4 pb-8 lg:px-6">
+      <main
+        id="contenu"
+        className="mx-auto w-full max-w-[40rem] flex flex-col gap-6 px-4 pt-4 pb-8 lg:px-6"
+      >
         {today ? <TodaySection today={today} /> : null}
         <div className="flex flex-col items-center gap-2">
           <Link

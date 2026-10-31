@@ -16,7 +16,7 @@ export async function VisitorFooter() {
     getTranslations("shell"),
   ]);
   return (
-    <footer className="mt-auto border-t border-border">
+    <footer className="mx-auto mt-auto w-full max-w-[40rem] border-t border-border">
       <LegalLine text={shell("legal")} className="pb-1" />
       <nav
         aria-label={t("label")}

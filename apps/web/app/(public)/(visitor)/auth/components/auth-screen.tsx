@@ -1,7 +1,6 @@
-import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { LegalLine } from "@/components/scoreboard/shell/legal-line";
+import { BandTitle } from "../../band-title";
 import { VisitorBand } from "../../visitor-band";
 
 /**
@@ -28,18 +27,13 @@ export async function AuthScreen({
   return (
     <>
       <VisitorBand action={action}>
-        <div className="-ms-2 flex items-center gap-1">
-          <Link
-            href={back.href}
-            aria-label={back.label}
-            className="flex size-11 shrink-0 items-center justify-center rounded-full text-band-muted hover:text-band-foreground focus-visible:outline-2 focus-visible:outline-led-on"
-          >
-            <ChevronLeft aria-hidden strokeWidth={2} className="size-6" />
-          </Link>
-          <h1 className="score text-title font-semibold">{title}</h1>
-        </div>
+        <BandTitle title={title} back={back} />
       </VisitorBand>
-      <main id="contenu" className="flex flex-col gap-4 px-4 pt-4 pb-8 lg:px-6">
+      {/* A form reads best narrow: centred, 26 rem at most on a wide screen. */}
+      <main
+        id="contenu"
+        className="mx-auto flex w-full max-w-[26rem] flex-col gap-4 px-4 pt-5 pb-8"
+      >
         {intro ? (
           <p className="text-body text-muted-foreground">{intro}</p>
         ) : null}
