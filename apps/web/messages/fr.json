@@ -1017,7 +1017,8 @@
     "pushLater": "Plus tard",
     "outageTitle": "Pas de coupon aujourd'hui",
     "outageBody": "Ils sortent d'habitude la veille au soir. On regarde ce qui bloque.",
-    "seeResults": "Nos résultats"
+    "seeResults": "Nos résultats",
+    "yesterdayCount": "{won, plural, one {# gagné} other {# gagnés}} sur {played}"
   },
   "matches": {
     "days": {

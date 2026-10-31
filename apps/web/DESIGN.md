@@ -144,7 +144,7 @@ Une encre bleu nuit, un sol blanc froid, des gris tirés d'une seule rampe, et u
 ### Primary
 
 - **Encre du bandeau** (`ink`) : le bandeau en tête de chaque écran, la colonne gauche sur ordinateur, le bouton principal en clair, le texte posé sur l'ambre.
-- **Diode ambre** (`led-amber`) : la seule couleur allumée. Diodes de chance, puce choisie, onglet actif, score gagné dans le bandeau, bouton principal en sombre.
+- **Diode ambre** (`led-amber`) : la seule couleur allumée. Diodes de chance, puce choisie, onglet actif, bouton principal en sombre.
 - **Bord de diode** (`led-amber-edge`) : le contour d'une diode allumée sur fond clair, sans lequel l'ambre (1,8:1 sur blanc) disparaît au soleil.
 
 ### Tertiary
@@ -250,9 +250,7 @@ Des angles doux, jamais ronds au point d'adoucir le propos : 6 px pour les zones
 - **Bandeau :** encre, marque en `title` 700, cloche et initiale en cercles de 44 px bordés de `band-rule`.
 
 ### Ligne de score (signature)
-
-`FAV ✓ 1,24 · COM ✓ 1,41 · C2 ✗` en `title` condensé : codes à trois lettres, signe ✓ ✗ dessiné en SVG, cote payée en `body` après un gain. Sur le bandeau, gagné s'allume en ambre et perdu s'éteint en gris ; sur une surface claire, ils prennent `win` et `loss`. Un lecteur d'écran entend le nom complet et l'issue en mots.
-
+« Hier · Favori ✓ 1,24 · 4 gagnés sur 7 › » (revue du 31/10) : le premier produit en clair avec son ✓ ou ✗ dessiné en SVG et la cote payée après un gain, puis le compte des coupons gagnés ; un toucher ouvre la feuille d'hier, où chaque produit est nommé. Les codes à trois lettres (`FAV ✓ · COM ✓ · C2 ✗`) se lisaient comme des codes internes dès sept produits ; ils ne restent qu'en têtes de colonnes du tableau de la semaine. Gagné en vert, perdu en rouge, sur le bandeau aussi, dans les teintes `win-band` et `loss-band`, lisibles sur l'encre. Un lecteur d'écran entend le nom complet et l'issue en mots.
 ### Diodes de chance
 
 Cercles de 10, 14 ou 22 px. Allumée : ambre bordée de `led-amber-edge` en clair. Éteinte : anneau `icon-subtle` sur fond clair, disque `band-rule` sur l'encre et en sombre. Jusqu'à 20 diodes ; au-delà, le nombre seul.

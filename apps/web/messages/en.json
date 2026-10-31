@@ -1017,7 +1017,8 @@
     "pushLater": "Later",
     "outageTitle": "No coupon today",
     "outageBody": "They usually come out the evening before. We're looking into what's blocking them.",
-    "seeResults": "Our results"
+    "seeResults": "Our results",
+    "yesterdayCount": "{won} won of {played}"
   },
   "matches": {
     "days": {

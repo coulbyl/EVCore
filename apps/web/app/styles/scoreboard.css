@@ -94,6 +94,10 @@
     --led-off-band: var(--ramp-7);
     --win: #1c8045;
     --loss: #c62828;
+    /* On the ink band, light or dark: the dark-theme shades, 6:1 and 4.6:1
+       on the ink (decided 31/10: gained in green, lost in red, band too). */
+    --win-band: #2ea866;
+    --loss-band: #e05252;
     --icon-subtle: var(--ramp-5);
     --scrim: rgb(11 14 22 / 0.6);
 
@@ -202,6 +206,8 @@
   --color-led-off-band: var(--led-off-band);
   --color-win: var(--win);
   --color-loss: var(--loss);
+  --color-win-band: var(--win-band);
+  --color-loss-band: var(--loss-band);
   --color-icon-subtle: var(--icon-subtle);
   --color-scrim: var(--scrim);
 }

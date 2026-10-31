@@ -5,13 +5,13 @@
  * /resultats use it too; the dashboard, the legal pages and sign-in keep
  * app/globals.css until their overhaul.
  */
-@import 'tailwindcss' source(none);
+@import "tailwindcss" source(none);
 @source '.';
 @source '../../components/scoreboard';
 @source '../layout.tsx';
 @source '../(public)/(visitor)';
-@import '@evcore/ui/globals.css';
-@import '../styles/scoreboard.css';
+@import "@evcore/ui/globals.css";
+@import "../styles/scoreboard.css";
 
 @theme inline {
   --font-sans: var(--font-geist-sans);

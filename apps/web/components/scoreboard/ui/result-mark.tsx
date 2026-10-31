@@ -24,6 +24,13 @@ const COLORS: Record<MarkKind, string> = {
   diverges: "text-current",
 };
 
+const BAND_COLORS: Record<MarkKind, string> = {
+  won: "text-win-band",
+  lost: "text-loss-band",
+  void: "text-band-muted",
+  diverges: "text-current",
+};
+
 const SIZES = {
   sm: "size-3.5",
   md: "size-5",
@@ -35,12 +42,15 @@ export function ResultMark({
   label,
   size = "md",
   colored = true,
+  tone = "surface",
   className,
 }: {
   kind: MarkKind;
   label?: string;
   size?: keyof typeof SIZES;
   colored?: boolean;
+  /** `band`: on the ink band, the shades that read there. */
+  tone?: "surface" | "band";
   className?: string;
 }) {
   const Icon = ICONS[kind];
@@ -53,7 +63,7 @@ export function ResultMark({
       className={cn(
         "inline-block shrink-0",
         SIZES[size],
-        colored && COLORS[kind],
+        colored && (tone === "band" ? BAND_COLORS : COLORS)[kind],
         className,
       )}
     />
