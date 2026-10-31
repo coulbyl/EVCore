@@ -23,6 +23,7 @@ import { pickPlayerTexts } from "@/components/scoreboard/text/player-texts-const
 import { TicketDock } from "@/components/scoreboard/ticket/ticket-dock";
 import { activePauseEnd } from "@/domains/auth/types/auth";
 import { displayLocaleOf } from "@/helpers/scoreboard-format";
+import "./player.css";
 
 /**
  * Les quatre onglets du joueur dans la coquille du tableau d'affichage.

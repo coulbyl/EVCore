@@ -28,10 +28,9 @@ test.describe("Messages", () => {
     await expect(thread).toContainText("Kouamé, équipe EVCore");
     // A reply not read yet: opening the thread marks it read.
     await read;
-    await expect(page.getByRole("link", { name: "Retour à Moi" })).toHaveAttribute(
-      "href",
-      "/me",
-    );
+    await expect(
+      page.getByRole("link", { name: "Retour à Moi" }),
+    ).toHaveAttribute("href", "/me");
   });
 
   test("écrire à l'équipe : le message part et reste dans le fil", async ({

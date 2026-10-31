@@ -437,12 +437,12 @@ function todayLeg(id, home, away, pick, odds, extra = {}) {
     home: {
       name: home,
       shortName: home.slice(0, 3).toUpperCase(),
-      logoUrl: crest(home),
+      logoUrl: crestUrl(home),
     },
     away: {
       name: away,
       shortName: away.slice(0, 3).toUpperCase(),
-      logoUrl: crest(away),
+      logoUrl: crestUrl(away),
     },
     market: extra.market ?? "ONE_X_TWO",
     pick,

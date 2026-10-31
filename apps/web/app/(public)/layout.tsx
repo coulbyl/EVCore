@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "../globals.css";
 
 // Titre et description des pages publiques : la promesse du produit en clair
 // (football, probabilités, résultats réglés, gratuit, 18+), sans le discours

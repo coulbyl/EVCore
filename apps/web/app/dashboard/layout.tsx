@@ -18,6 +18,7 @@ import { NotificationOpenTracker } from "@/components/notification-open-tracker"
 import { DashboardProviders } from "./providers";
 import { CurrentUserProvider } from "@/domains/auth/context/current-user-context";
 import { ProductTourProvider } from "@/domains/product-tour/context/product-tour-context";
+import "../globals.css";
 
 export default async function DashboardLayout({
   children,

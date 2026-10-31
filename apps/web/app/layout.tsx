@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import { getLocale } from "next-intl/server";
 import { Providers } from "./providers";
 import { PwaRegister } from "./pwa-register";
-import "./globals.css";
 
 // Not preloaded: 134 kB that every page fetched first, while the player's
 // screens are set in Barlow (app/fonts/scoreboard-fonts.ts). The browser
@@ -45,6 +44,9 @@ export const metadata: Metadata = {
   },
 };
 
+// No stylesheet here: the player's screens load app/(player)/player.css,
+// built from their own sources; the dashboard and the public pages load
+// app/globals.css (C0b).
 export default async function RootLayout({
   children,
 }: Readonly<{
