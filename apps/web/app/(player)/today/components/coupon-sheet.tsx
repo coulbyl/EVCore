@@ -67,11 +67,14 @@ export async function CouponSheetBand({ coupon }: { coupon: TodayCoupon }) {
   return (
     <div className="flex items-center justify-between gap-4">
       {coupon.chance !== null && !isSettled(coupon.state) ? (
+        // Diodes over the phrase: side by side with the odds, ten diodes
+        // and « Passe 8 fois sur 10 » wrapped on a 390 px phone.
         <ChanceFigure
           probability={coupon.chance}
           phrasing="passes"
           tone="band"
           size="md"
+          className="flex-col items-start gap-1.5"
         />
       ) : (
         <span />
