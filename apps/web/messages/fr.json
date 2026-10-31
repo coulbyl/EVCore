@@ -1294,7 +1294,13 @@
     "failed": "Pas envoyé",
     "retry": "Réessayer",
     "tooBig": "Trop lourd pour être envoyé",
-    "micDenied": "Le micro n'est pas autorisé",
+    "mic": {
+      "denied": "Le micro est bloqué. Autorise-le dans les réglages du navigateur.",
+      "notFound": "Aucun micro trouvé sur cet appareil.",
+      "busy": "Le micro est utilisé par une autre application.",
+      "unsupported": "Ce navigateur ne permet pas d'enregistrer un vocal.",
+      "unknown": "Le micro n'a pas pu démarrer."
+    },
     "voice": "Message vocal",
     "image": "Photo jointe",
     "file": "Fichier joint",

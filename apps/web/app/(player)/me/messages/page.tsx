@@ -160,7 +160,13 @@ export default async function Page({
             failed: t("failed"),
             retry: t("retry"),
             tooBig: t("tooBig"),
-            micDenied: t("micDenied"),
+            mic: {
+              denied: t("mic.denied"),
+              notFound: t("mic.notFound"),
+              busy: t("mic.busy"),
+              unsupported: t("mic.unsupported"),
+              unknown: t("mic.unknown"),
+            },
             ...labels,
           }}
         />

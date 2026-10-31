@@ -1294,7 +1294,13 @@
     "failed": "Not sent",
     "retry": "Retry",
     "tooBig": "Too large to send",
-    "micDenied": "The microphone is not allowed",
+    "mic": {
+      "denied": "The microphone is blocked. Allow it in the browser's settings.",
+      "notFound": "No microphone found on this device.",
+      "busy": "The microphone is used by another app.",
+      "unsupported": "This browser cannot record a voice message.",
+      "unknown": "The microphone could not start."
+    },
     "voice": "Voice message",
     "image": "Attached photo",
     "file": "Attached file",

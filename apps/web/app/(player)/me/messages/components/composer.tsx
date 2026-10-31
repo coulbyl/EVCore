@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { Camera, Mic, Send, Square, X } from "lucide-react";
 import { playerFetch } from "@/lib/api/player-fetch";
 import { useMessageComposer } from "@/domains/support/use-cases/use-message-composer";
-import { useVoiceRecorder } from "@/domains/support/use-cases/use-voice-recorder";
+import {
+  useVoiceRecorder,
+  type VoiceRecorderProblem,
+} from "@/domains/support/use-cases/use-voice-recorder";
 import type {
   AttachmentUploadUrlResponse,
   SupportMessage,
@@ -30,7 +33,8 @@ export type ComposerLabels = {
   failed: string;
   retry: string;
   tooBig: string;
-  micDenied: string;
+  /** What the microphone's failure was, said as it is. */
+  mic: Record<VoiceRecorderProblem, string>;
   voice: string;
   image: string;
   file: string;
@@ -199,7 +203,7 @@ export function Composer({
       <div className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] -mx-4 flex flex-col gap-1 border-t border-border bg-background px-4 py-2 lg:bottom-0">
         {problem || recorder.state === "error" ? (
           <p role="alert" className="text-meta">
-            {problem ?? labels.micDenied}
+            {problem ?? labels.mic[recorder.problem ?? "unknown"]}
           </p>
         ) : null}
         {recorder.state === "recording" ? (
