@@ -16,6 +16,7 @@ import {
   couponChanceOf,
   legChanceOf,
   operatorOddsOf,
+  paidOddsOf,
 } from '@modules/coupon/product-day/coupon-chance';
 import {
   TodayRepository,
@@ -240,9 +241,11 @@ function couponOf(input: {
     firstKickoffAt: firstKickoff.toISOString(),
     odds: operatorOddsOf(priced)?.toDecimalPlaces(3).toNumber() ?? null,
     referenceOdds: Number(first.combinedOdds),
+    // The 1xBet odds of the won legs, as on the legs below: the reference
+    // odds stored at settlement would show a price no leg carries.
     paidOdds:
-      state === 'won' && first.realizedOdds !== null
-        ? Number(first.realizedOdds)
+      state === 'won'
+        ? (paidOddsOf(legs)?.toDecimalPlaces(3).toNumber() ?? null)
         : null,
     chance: couponChanceOf(priced),
     operatorKeep: operatorKeepOf(priced),

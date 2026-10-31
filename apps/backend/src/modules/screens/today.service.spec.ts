@@ -253,7 +253,27 @@ describe('TodayService', () => {
     expect(combo?.legs[1]?.odds).toBeNull();
   });
 
-  it('a partial gain reads won with the odds really paid', async () => {
+  it('a won leg without a 1xBet price leaves the paid odds unknown', async () => {
+    const { service } = harness({
+      legs: [
+        leg({
+          result: 'WON',
+          realizedOdds: d('1.200'),
+          isCorrect: true,
+          operatorOdds: null,
+          settledAt: NOW,
+          fixtureStatus: 'FINISHED',
+          homeScore: 1,
+          awayScore: 0,
+          scheduledAt: new Date('2026-10-30T11:00:00.000Z'),
+        }),
+      ],
+    });
+    const [coupon] = (await service.getToday('user-1', NOW)).coupons;
+    expect(coupon).toMatchObject({ state: 'won', paidOdds: null });
+  });
+
+  it('a partial gain reads won with the 1xBet odds of its won legs, not the reference odds', async () => {
     const settled = {
       couponId: 'combo',
       targetOddsMin: d(1.2),
@@ -266,6 +286,7 @@ describe('TodayService', () => {
           ...settled,
           legId: 'c1',
           isCorrect: true,
+          operatorOdds: d('1.360'),
           settledAt: NOW,
           fixtureStatus: 'FINISHED',
           homeScore: 2,
@@ -282,7 +303,7 @@ describe('TodayService', () => {
       ],
     });
     const [combo] = (await service.getToday('user-1', NOW)).coupons;
-    expect(combo).toMatchObject({ state: 'won', paidOdds: 1.32 });
+    expect(combo).toMatchObject({ state: 'won', paidOdds: 1.36 });
     expect(combo?.legs.map((l) => [l.state, l.score])).toEqual([
       ['won', { home: 2, away: 0 }],
       ['void', null],
@@ -556,7 +577,7 @@ describe('TodayService.getYesterday', () => {
     });
     expect(screen.date).toBe('2026-10-29');
     expect(screen.heroId).toBe('fav');
-    expect(screen.coupons[0]).toMatchObject({ state: 'won', paidOdds: 1.24 });
+    expect(screen.coupons[0]).toMatchObject({ state: 'won', paidOdds: 1.25 });
     expect(screen.absences).toEqual([
       { product: 'COMBO', reason: 'not_enough_calibrated_short_legs' },
     ]);

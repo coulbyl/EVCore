@@ -57,3 +57,17 @@ export function operatorOddsOf(
   }
   return product;
 }
+
+/**
+ * The 1xBet odds really paid on a won coupon: the product of its won legs'
+ * prices, a refunded leg paying 1. Unknown when a won leg has no 1xBet
+ * price: never the reference odds in its place.
+ */
+export function paidOddsOf(
+  legs: readonly {
+    isCorrect: boolean | null;
+    operatorOdds: Prisma.Decimal | null;
+  }[],
+): Decimal | null {
+  return operatorOddsOf(legs.filter((leg) => leg.isCorrect === true));
+}

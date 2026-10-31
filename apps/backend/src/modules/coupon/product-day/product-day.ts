@@ -1,6 +1,5 @@
-import Decimal from 'decimal.js';
 import { Prisma } from '@evcore/db';
-import { couponChanceOf } from './coupon-chance';
+import { couponChanceOf, paidOddsOf } from './coupon-chance';
 import type { ProductDayRow, ProductLegRow } from './product-day.repository';
 
 type ProductRef = { key: string; source: string; targetOddsMin: number };
@@ -67,19 +66,4 @@ function dayOf(
     market: single ? first.market : null,
     pick: single ? first.pick : null,
   };
-}
-
-/**
- * The 1xBet odds really paid on a won coupon: the product of its won legs'
- * prices, a refunded leg paying 1. Unknown when a won leg has no 1xBet
- * price: never the reference odds in its place.
- */
-function paidOddsOf(legs: readonly ProductLegRow[]): Decimal | null {
-  let product = new Decimal(1);
-  for (const leg of legs) {
-    if (leg.isCorrect !== true) continue;
-    if (leg.operatorOdds === null) return null;
-    product = product.times(leg.operatorOdds.toString());
-  }
-  return product;
 }
