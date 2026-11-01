@@ -1,6 +1,7 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { CONSOLE_PASSES, CONSOLE_WATCH } from '@config/console.constants';
+import { AppSettingModule } from '@modules/app-setting/app-setting.module';
 import { AuthModule } from '@modules/auth/auth.module';
 import { CouponModule } from '@modules/coupon/coupon.module';
 import { DashboardModule } from '@modules/dashboard/dashboard.module';
@@ -10,6 +11,7 @@ import { ScreensModule } from '@modules/screens/screens.module';
 import { ConsoleEngineService } from './console-engine.service';
 import { ConsolePlayersService } from './console-players.service';
 import { ConsolePassesService } from './console-passes.service';
+import { ConsoleSettingsService } from './console-settings.service';
 import {
   ConsoleWatchScheduler,
   ConsoleWatchWorker,
@@ -22,6 +24,7 @@ import { ConsoleService } from './console.service';
 /** The admin's screens (docs/refonte-ui/12-admin.md), phase G. */
 @Module({
   imports: [
+    AppSettingModule,
     AuthModule,
     CouponModule,
     DashboardModule,
@@ -42,6 +45,7 @@ import { ConsoleService } from './console.service';
     ConsolePassesService,
     ConsoleEngineService,
     ConsolePlayersService,
+    ConsoleSettingsService,
     ConsoleWatchService,
     ConsoleWatchScheduler,
     ConsoleWatchWorker,

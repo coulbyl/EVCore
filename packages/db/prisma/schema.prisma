@@ -1535,3 +1535,27 @@ model ConsoleLight {
   @@map("console_light")
   @@schema("public")
 }
+
+/// The admin's one journal (docs/refonte-ui/12-admin.md § 4): every human
+/// action — settings, reactivated markets, roles, suspensions, deletions,
+/// announcements, relaunched passes. Who, when, before, after, why.
+model AdminAction {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  createdAt DateTime @default(now())
+  actorId   String?  @db.Uuid
+  /// The actor's name when it acted: a deleted account keeps its lines.
+  actorName String
+  /// « setting », « market_reactivated », « role », « suspension »,
+  /// « account_deleted », « announcement », « pass_relaunched ».
+  kind      String
+  /// What it acted on: a setting key, a market, an e-mail, a title, a pass.
+  target    String
+  before    Json?
+  after     Json?
+  reason    String?
+
+  @@index([createdAt])
+  @@index([actorId])
+  @@map("admin_action")
+  @@schema("public")
+}

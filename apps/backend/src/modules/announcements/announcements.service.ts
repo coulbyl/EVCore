@@ -1,3 +1,4 @@
+import { AdminJournalService } from '@modules/admin-journal/admin-journal.service';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma.service';
 import { PushService } from '@modules/push/push.service';
@@ -43,10 +44,12 @@ type AnnouncementRecord = {
 
 @Injectable()
 export class AnnouncementsService {
+  // eslint-disable-next-line max-params -- NestJS constructor injection: the table, the push, the bell, the journal
   constructor(
     private readonly prisma: PrismaService,
     private readonly push: PushService,
     private readonly notification: NotificationService,
+    private readonly journal: AdminJournalService,
   ) {}
 
   private toView(announcement: AnnouncementRecord): AnnouncementView {
@@ -194,6 +197,11 @@ export class AnnouncementsService {
 
     if (created.published) {
       await this.notifyPublished(created, userId);
+      await this.journal.record({
+        actorId: userId,
+        kind: 'announcement',
+        target: created.title,
+      });
     }
 
     return this.toView(created);

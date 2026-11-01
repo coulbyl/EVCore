@@ -51,6 +51,16 @@ export class AdminUsersRepository {
     return { total, users };
   }
 
+  /** What the journal records before a change: who, and the two fields. */
+  findState(
+    userId: string,
+  ): Promise<{ email: string; role: UserRole; suspended: boolean } | null> {
+    return this.prisma.client.user.findUnique({
+      where: { id: userId },
+      select: { email: true, role: true, suspended: true },
+    });
+  }
+
   async exists(userId: string): Promise<boolean> {
     const user = await this.prisma.client.user.findUnique({
       where: { id: userId },

@@ -218,3 +218,14 @@ export type PlayerSheet = PlayerAccount & {
   }[];
   conversationId: string | null;
 };
+
+/** A line of Réglages (12 § 4): its value, the default, who changed it. */
+export type SettingView = {
+  key: string;
+  /** The written value; null when none (the default, or the environment). */
+  value: unknown;
+  /** The code's default; null when the environment decides (LLM, research). */
+  defaultValue: unknown;
+  updatedAt: string | null;
+  updatedBy: string | null;
+};

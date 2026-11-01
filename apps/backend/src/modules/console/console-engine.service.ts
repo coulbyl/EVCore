@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CONSOLE_CALIBRATION } from '@config/console.constants';
+import { AdminJournalService } from '@modules/admin-journal/admin-journal.service';
 import { DashboardService } from '@modules/dashboard/dashboard.service';
 import { ResultsService, spanOf } from '@modules/screens/results.service';
 import type { ResultsPeriod } from '@modules/screens/results.types';
@@ -21,10 +22,12 @@ const CHANNELS_CACHE_MS = 10 * 60 * 1000;
 
 @Injectable()
 export class ConsoleEngineService {
+  // eslint-disable-next-line max-params -- NestJS constructor injection: Résultats, the console's reads, the dashboard's legs, the journal
   constructor(
     private readonly results: ResultsService,
     private readonly repository: ConsoleRepository,
     private readonly dashboard: DashboardService,
+    private readonly journal: AdminJournalService,
   ) {}
 
   /**
@@ -88,14 +91,23 @@ export class ConsoleEngineService {
 
   /**
    * A human reactivates a suspended market (CLAUDE.md: never automatic).
-   * The reason is required; the journal records it (G11).
+   * The reason is required; the journal records it.
    */
   async reactivate(input: {
     id: string;
     reason: string;
+    actorId: string;
   }): Promise<SuspendedMarket> {
     const row = await this.repository.liftSuspension(input.id);
     if (!row) throw new NotFoundException('Suspension inconnue ou déjà levée');
+    await this.journal.record({
+      actorId: input.actorId,
+      kind: 'market_reactivated',
+      target: row.market,
+      before: 'suspended',
+      after: 'active',
+      reason: input.reason,
+    });
     return {
       id: row.id,
       market: row.market,

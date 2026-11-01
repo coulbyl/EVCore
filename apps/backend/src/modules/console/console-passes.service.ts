@@ -7,6 +7,7 @@ import {
 import type { Job, Queue } from 'bullmq';
 import { CONSOLE_PASSES, type ConsolePassKey } from '@config/console.constants';
 import { ETL_SCHEDULER_KEYS } from '@config/etl.constants';
+import { AdminJournalService } from '@modules/admin-journal/admin-journal.service';
 import { EtlService } from '@modules/etl/etl.service';
 import { formatDateUtc } from '@utils/date.utils';
 import { passesOf, type PassJob, type PassView } from './console-passes';
@@ -35,9 +36,10 @@ function toPassJob(job: Job, state: PassJob['state']): PassJob {
 export class ConsolePassesService {
   private readonly queues: ReadonlyMap<string, Queue>;
 
-  // eslint-disable-next-line max-params -- NestJS constructor injection: one queue per pass, and the ETL for its triggers
+  // eslint-disable-next-line max-params -- NestJS constructor injection: one queue per pass, the ETL for its triggers, the journal
   constructor(
     private readonly etl: EtlService,
+    private readonly journal: AdminJournalService,
     @InjectQueue('league-sync') leagueSync: Queue,
     @InjectQueue('odds-prematch-sync') odds: Queue,
     @InjectQueue('slip-digest') digest: Queue,
@@ -81,7 +83,12 @@ export class ConsolePassesService {
    * Adds the pass's job again. Refused for the morning brief (it writes to
    * every player) and while the pass runs.
    */
-  async relaunch(key: string, now: Date = new Date()): Promise<PassView> {
+  async relaunch(input: {
+    key: string;
+    actorId: string;
+    now?: Date;
+  }): Promise<PassView> {
+    const { key, now = new Date() } = input;
     const pass = CONSOLE_PASSES.find((p) => p.key === key);
     if (!pass) throw new BadRequestException('Passe inconnue');
     const before = (await this.getPasses(now)).find((p) => p.key === key);
@@ -89,6 +96,12 @@ export class ConsolePassesService {
       throw new ConflictException('Cette passe ne se relance pas maintenant');
     }
     await this.launch(pass.key, now);
+    await this.journal.record({
+      actorId: input.actorId,
+      kind: 'pass_relaunched',
+      target: pass.key,
+      before: before.state,
+    });
     const after = (await this.getPasses(now)).find((p) => p.key === key);
     return after ?? before;
   }

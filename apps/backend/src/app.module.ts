@@ -13,6 +13,7 @@ import { BacktestModule } from './modules/backtest/backtest.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { RiskModule } from './modules/risk/risk.module';
 import { AdjustmentModule } from './modules/adjustment/adjustment.module';
+import { AdminJournalModule } from './modules/admin-journal/admin-journal.module';
 import { ConsoleModule } from './modules/console/console.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { AuditModule } from './modules/audit/audit.module';
@@ -63,6 +64,7 @@ import { AppSettingModule } from './modules/app-setting/app-setting.module';
     RiskModule,
     AdjustmentModule,
     AuthModule,
+    AdminJournalModule,
     ConsoleModule,
     DashboardModule,
     AuditModule,

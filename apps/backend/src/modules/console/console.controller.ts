@@ -7,12 +7,17 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AdminGuard } from '@/common/guards/admin.guard';
+import { AdminJournalService } from '@modules/admin-journal/admin-journal.service';
+import type { AdminActionView } from '@modules/admin-journal/admin-journal.types';
 import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
+import type { AuthSession } from '@modules/auth/auth.types';
+import { CurrentSession } from '@modules/auth/current-session.decorator';
 import type { PassView } from './console-passes';
 import { ResultsQueryDto } from '@modules/screens/dto/results-query.dto';
 import { RESULTS_DEFAULT_PERIOD } from '@config/results.constants';
@@ -23,8 +28,10 @@ import {
   PlayersMonthQueryDto,
 } from './dto/players-query.dto';
 import { ConsolePassesService } from './console-passes.service';
+import { ConsoleSettingsService } from './console-settings.service';
 import { ConsoleService } from './console.service';
 import { ReactivateMarketDto } from './dto/reactivate.dto';
+import { JournalQueryDto, SetSettingDto } from './dto/setting.dto';
 import type {
   ChannelCell,
   ConsoleStatus,
@@ -32,6 +39,7 @@ import type {
   PlayerAccount,
   PlayerSheet,
   PlayersMonth,
+  SettingView,
   SuspendedMarket,
 } from './console.types';
 
@@ -40,12 +48,14 @@ import type {
 @Controller('console')
 @UseGuards(AuthSessionGuard, AdminGuard)
 export class ConsoleController {
-  // eslint-disable-next-line max-params -- NestJS constructor injection: the home, its passes, Moteur, Joueurs
+  // eslint-disable-next-line max-params -- NestJS constructor injection: the home, its passes, Moteur, Joueurs, Réglages, the journal
   constructor(
     private readonly console: ConsoleService,
     private readonly passes: ConsolePassesService,
     private readonly engine: ConsoleEngineService,
     private readonly players: ConsolePlayersService,
+    private readonly settings: ConsoleSettingsService,
+    private readonly journal: AdminJournalService,
   ) {}
 
   @Get('status')
@@ -78,8 +88,11 @@ export class ConsoleController {
       'Adds the same job as the schedule. Refused (409) while it runs, once done, and for the morning brief, which writes to every player.',
   })
   @ApiOkResponse({ description: 'The pass after the relaunch.' })
-  relaunch(@Param('key') key: string): Promise<PassView> {
-    return this.passes.relaunch(key);
+  relaunch(
+    @Param('key') key: string,
+    @CurrentSession() session: AuthSession,
+  ): Promise<PassView> {
+    return this.passes.relaunch({ key, actorId: session.user.id });
   }
 
   @Get('engine/products')
@@ -122,8 +135,13 @@ export class ConsoleController {
   reactivate(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: ReactivateMarketDto,
+    @CurrentSession() session: AuthSession,
   ): Promise<SuspendedMarket> {
-    return this.engine.reactivate({ id, reason: body.reason });
+    return this.engine.reactivate({
+      id,
+      reason: body.reason,
+      actorId: session.user.id,
+    });
   }
 
   @Get('players/month')
@@ -156,5 +174,53 @@ export class ConsoleController {
   @ApiOkResponse({ description: 'The sheet.' })
   getPlayer(@Param('id', ParseUUIDPipe) id: string): Promise<PlayerSheet> {
     return this.players.getPlayer(id);
+  }
+
+  @Get('settings')
+  @ApiOperation({
+    summary: 'Réglages',
+    description:
+      'The operator settings: value, default, who changed them last. Never a secret.',
+  })
+  @ApiOkResponse({ description: 'The settings.' })
+  getSettings(): Promise<SettingView[]> {
+    return this.settings.list();
+  }
+
+  @Put('settings/:key')
+  @ApiOperation({
+    summary: 'Change a setting',
+    description:
+      'Validated by the parser the passes read with (400 when refused); journaled; taken into account at the next pass.',
+  })
+  @ApiOkResponse({ description: 'The setting after the change.' })
+  setSetting(
+    @Param('key') key: string,
+    @Body() body: SetSettingDto,
+    @CurrentSession() session: AuthSession,
+  ): Promise<SettingView> {
+    return this.settings.set({
+      key,
+      value: body.value,
+      actorId: session.user.id,
+    });
+  }
+
+  @Get('journal')
+  @ApiOperation({
+    summary: 'Réglages › Journal',
+    description:
+      'Every human action, newest first, with the people who acted for the filter.',
+  })
+  @ApiOkResponse({ description: 'The lines and the people.' })
+  async getJournal(@Query() query: JournalQueryDto): Promise<{
+    items: AdminActionView[];
+    actors: { id: string; name: string }[];
+  }> {
+    const [items, actors] = await Promise.all([
+      this.journal.list({ actorId: query.actor }),
+      this.journal.actors(),
+    ]);
+    return { items, actors };
   }
 }
