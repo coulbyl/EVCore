@@ -25,6 +25,7 @@ import {
 } from './console-watch.scheduler';
 import { ConsoleWatchService } from './console-watch.service';
 import { ConsoleExploitationController } from './console-exploitation.controller';
+import { ConsoleIntegrationsController } from './console-integrations.controller';
 import { ConsoleController } from './console.controller';
 import { ConsoleRepository } from './console.repository';
 import { ConsoleService } from './console.service';
@@ -52,7 +53,11 @@ import { ConsoleService } from './console.service';
       .filter((name) => name !== CONSOLE_WATCH.QUEUE)
       .map((name) => BullModule.registerQueue({ name })),
   ],
-  controllers: [ConsoleController, ConsoleExploitationController],
+  controllers: [
+    ConsoleController,
+    ConsoleExploitationController,
+    ConsoleIntegrationsController,
+  ],
   providers: [
     ConsoleService,
     ConsoleRepository,

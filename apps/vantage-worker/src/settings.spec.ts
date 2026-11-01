@@ -3,13 +3,23 @@ import type { Logger } from "pino";
 import type { Config } from "./config";
 import { readLiveConfig, scheduledPassesEnabled } from "./settings";
 
-const { findMany, findUnique } = vi.hoisted(() => ({
+const { findMany, findUnique, integrationRows } = vi.hoisted(() => ({
   findMany: vi.fn(),
   findUnique: vi.fn(),
+  integrationRows: vi.fn(),
 }));
-vi.mock("@evcore/db", () => ({
-  prisma: { appSetting: { findMany, findUnique } },
-}));
+vi.mock("@evcore/db", async () => {
+  const actual =
+    await vi.importActual<typeof import("@evcore/db")>("@evcore/db");
+  return {
+    deriveSettingsKey: actual.deriveSettingsKey,
+    readIntegrationRows: actual.readIntegrationRows,
+    prisma: {
+      appSetting: { findMany, findUnique },
+      integrationSetting: { findMany: integrationRows },
+    },
+  };
+});
 
 const logger = { warn: vi.fn() } as unknown as Logger;
 const base = {
@@ -26,6 +36,8 @@ const base = {
 describe("readLiveConfig", () => {
   beforeEach(() => {
     findMany.mockReset();
+    integrationRows.mockReset();
+    integrationRows.mockResolvedValue([]);
     process.env["GROQ_API_KEY"] = "groq-key";
     delete process.env["TOGETHER_API_KEY"];
   });
@@ -79,6 +91,53 @@ describe("readLiveConfig", () => {
       researchProvider: "tavily",
       researchCompetitionCodes: ["L1"],
     });
+  });
+
+  it("a key stored in Réglages › Intégrations serves over the environment's", async () => {
+    const { deriveSettingsKey, encryptSetting } =
+      await vi.importActual<typeof import("@evcore/db")>("@evcore/db");
+    process.env["SETTINGS_ENCRYPTION_KEY"] =
+      "a-local-master-key-of-at-least-32-chars";
+    const key = deriveSettingsKey(process.env["SETTINGS_ENCRYPTION_KEY"]);
+    integrationRows.mockResolvedValue([
+      {
+        key: "cerebras.apiKey",
+        value: encryptSetting("cerebras-db", key),
+        secret: true,
+      },
+      {
+        key: "tavily.apiKey",
+        value: encryptSetting("tvly-db", key),
+        secret: true,
+      },
+    ]);
+    findMany.mockResolvedValue([]);
+    const live = await readLiveConfig(base, logger);
+    expect(live.llmApiKey).toBe("cerebras-db");
+    expect(live.tavilyApiKey).toBe("tvly-db");
+    delete process.env["SETTINGS_ENCRYPTION_KEY"];
+  });
+
+  it("a stored key gives a provider without one in the environment", async () => {
+    const { deriveSettingsKey, encryptSetting } =
+      await vi.importActual<typeof import("@evcore/db")>("@evcore/db");
+    process.env["SETTINGS_ENCRYPTION_KEY"] =
+      "a-local-master-key-of-at-least-32-chars";
+    const key = deriveSettingsKey(process.env["SETTINGS_ENCRYPTION_KEY"]);
+    integrationRows.mockResolvedValue([
+      {
+        key: "together.apiKey",
+        value: encryptSetting("together-db", key),
+        secret: true,
+      },
+    ]);
+    findMany.mockResolvedValue([
+      { key: "llm.providers", value: { primary: "together", fallbacks: [] } },
+    ]);
+    const live = await readLiveConfig(base, logger);
+    expect(live.llmProvider).toBe("together");
+    expect(live.llmApiKey).toBe("together-db");
+    delete process.env["SETTINGS_ENCRYPTION_KEY"];
   });
 });
 
