@@ -44,7 +44,7 @@ export function OpsLightRedEmail({
             {line}
           </Text>
         ))}
-        <Button href={url}>Ouvrir l'accueil admin</Button>
+        <Button href={url}>Ouvrir l’accueil admin</Button>
       </Section>
     </EvCoreLayout>
   );
