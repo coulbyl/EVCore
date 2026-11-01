@@ -1064,7 +1064,11 @@
       "older": "Messages précédents",
       "pick": "Choisis une conversation.",
       "write": "Lui écrire",
-      "writeFailed": "Conversation pas ouverte, réessaie."
+      "writeFailed": "Conversation pas ouverte, réessaie.",
+      "backTo": {
+        "players": "Retour à Joueurs",
+        "home": "Retour à l'accueil"
+      }
     },
     "exploitation": {
       "queuesTitle": "Les files",

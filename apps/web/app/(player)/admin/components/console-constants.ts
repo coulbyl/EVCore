@@ -17,7 +17,7 @@ export function todoHref(item: TodoItem): string {
     case "players_silent":
       return "/admin/players";
     case "support_unanswered":
-      return "/admin/messages";
+      return "/admin/messages?from=home";
     default:
       return "/admin#passes";
   }

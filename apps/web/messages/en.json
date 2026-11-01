@@ -1064,7 +1064,11 @@
       "older": "Earlier messages",
       "pick": "Pick a conversation.",
       "write": "Write to them",
-      "writeFailed": "Conversation not opened, try again."
+      "writeFailed": "Conversation not opened, try again.",
+      "backTo": {
+        "players": "Back to Players",
+        "home": "Back to home"
+      }
     },
     "exploitation": {
       "queuesTitle": "Queues",
