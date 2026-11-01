@@ -129,61 +129,6 @@ jobs:
           cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/evcore-web:buildcache
           cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/evcore-web:buildcache,mode=max
 
-  docker-ml-worker:
-    name: Build & push ML worker image to GHCR
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    outputs:
-      version: ${{ steps.version.outputs.tag }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Resolve version tag
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
-          fi
-          # Reproducible layers (lot 7): same content, same digest, so the
-          # server does not download unchanged dependency layers again.
-          echo "epoch=$(git log -1 --format=%ct)" >> $GITHUB_OUTPUT
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-        with:
-          version: latest
-
-      - name: Build and push
-        uses: docker/build-push-action@v7
-        env:
-          SOURCE_DATE_EPOCH: ${{ steps.version.outputs.epoch }}
-        with:
-          context: apps/ml-worker
-          file: apps/ml-worker/Dockerfile
-          outputs: type=image,push=true,rewrite-timestamp=true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/evcore-ml-worker:latest
-            ghcr.io/${{ github.repository_owner }}/evcore-ml-worker:${{ steps.version.outputs.tag }}
-          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/evcore-ml-worker:buildcache
-          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/evcore-ml-worker:buildcache,mode=max
-
   docker-vantage-worker:
     name: Build & push VANTAGE worker image to GHCR
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
@@ -246,7 +191,7 @@ jobs:
   deploy:
     name: Deploy to Hetzner
     runs-on: ubuntu-latest
-    needs: [docker-backend, docker-web, docker-ml-worker, docker-vantage-worker]
+    needs: [docker-backend, docker-web, docker-vantage-worker]
     environment: production
     permissions:
       contents: read

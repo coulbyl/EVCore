@@ -64,28 +64,6 @@ services:
       postgres:
         condition: service_healthy
 
-  ml-worker:
-    build:
-      context: ./apps/ml-worker
-      dockerfile: Dockerfile
-    container_name: evcore-ml-worker
-    restart: unless-stopped
-    environment:
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-evcore}"
-      PGBOUNCER_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@pgbouncer:5432/${POSTGRES_DB:-evcore}"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      LOG_LEVEL: info
-    ports:
-      - "8001:8000"
-    volumes:
-      - ml_models:/app/models
-    depends_on:
-      pgbouncer:
-        condition: service_started
-      redis:
-        condition: service_healthy
-
   # Opt-in (`docker compose --profile vantage up -d vantage-worker`), not
   # started by a bare `docker compose up` — GROQ_API_KEY is required, and
   # most dev work on this repo doesn't need VANTAGE running. See
@@ -159,5 +137,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  ml_models:
   rustfs_data:
