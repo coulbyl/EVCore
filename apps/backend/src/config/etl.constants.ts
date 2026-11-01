@@ -101,6 +101,9 @@ export const ETL_CONSTANTS = {
   CSV_ODDS_BASE: 'https://www.football-data.co.uk/mmz4281',
   // World Football Elo Ratings export used by the FRI fallback reference model.
   ELO_RATINGS_WORLD_TSV_URL: 'https://eloratings.net/World.tsv',
+  // A failed download keeps the last Elo snapshot without failing the pass
+  // while it is younger than this: national-team ratings move slowly.
+  ELO_SNAPSHOT_MAX_AGE_DAYS: 7,
 
   // --- The Odds API — historical odds import for European competitions ---
   THE_ODDS_API_BASE: 'https://api.the-odds-api.com/v4',

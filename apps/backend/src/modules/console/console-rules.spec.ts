@@ -128,4 +128,24 @@ describe('consoleStatusOf', () => {
       competition: 'BL1',
     });
   });
+
+  it('a suspended market is a line on its first day only', () => {
+    const fresh = consoleStatusOf(
+      healthy({ suspendedMarkets: [{ market: 'RESULT_BTTS', since: ago(5) }] }),
+    );
+    expect(fresh.lights.engine).toBe('orange');
+    expect(fresh.todo).toEqual([
+      expect.objectContaining({
+        kind: 'market_suspended',
+        market: 'RESULT_BTTS',
+      }),
+    ]);
+    const known = consoleStatusOf(
+      healthy({
+        suspendedMarkets: [{ market: 'RESULT_BTTS', since: ago(30) }],
+      }),
+    );
+    expect(known.lights.engine).toBe('green');
+    expect(known.todo).toEqual([]);
+  });
 });

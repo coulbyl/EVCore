@@ -803,13 +803,11 @@
       "players": "Joueurs"
     },
     "lightStates": {
-      "green": "au vert",
+      "green": "rien à faire",
       "orange": "à surveiller",
       "red": "au rouge"
     },
     "redSince": "depuis {time}",
-    "todoTitle": "À faire",
-    "nothing": "Rien à faire",
     "todo": {
       "odds_stale": "Aucune cote relevée depuis {hours} h",
       "odds_staleNever": "Aucune cote relevée",

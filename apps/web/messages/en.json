@@ -803,13 +803,11 @@
       "players": "Players"
     },
     "lightStates": {
-      "green": "green",
+      "green": "nothing to do",
       "orange": "to watch",
       "red": "red"
     },
     "redSince": "since {time}",
-    "todoTitle": "To do",
-    "nothing": "Nothing to do",
     "todo": {
       "odds_stale": "No odds fetched for {hours} h",
       "odds_staleNever": "No odds fetched",

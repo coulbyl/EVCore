@@ -15,9 +15,8 @@ import {
 } from "@/helpers/scoreboard-format";
 import { AdminBand } from "./components/admin-band";
 import { neverKey } from "./components/console-constants";
-import { LightsRow } from "./components/lights-row";
+import { LightSections } from "./components/light-sections";
 import { PassesList } from "./components/passes-list";
-import { TodoList } from "./components/todo-list";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("console");
@@ -26,7 +25,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /**
  * Accueil admin — « tout tourne ? » (12-admin.md § 1, maquettes AdminMobile,
- * Admin): the three lights, « À faire », the day's passes with Relancer,
+ * Admin): the three lights with their « À faire » lines, the day's passes
+ * with Relancer,
  * and today's coupons with three players' figures. Nothing else.
  */
 export default async function Page() {
@@ -147,8 +147,9 @@ export default async function Page() {
                 })}
           </p>
         ) : null}
-        <LightsRow
+        <LightSections
           status={status}
+          textOf={todoText}
           timeOf={time}
           labels={{
             names: {
@@ -163,11 +164,6 @@ export default async function Page() {
             },
             redSince: (at) => t("redSince", { time: at }),
           }}
-        />
-        <TodoList
-          items={status.todo}
-          textOf={todoText}
-          labels={{ title: t("todoTitle"), nothing: t("nothing") }}
         />
         <PassesList
           passes={passes}

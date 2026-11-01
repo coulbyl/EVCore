@@ -102,6 +102,7 @@ export function consoleStatusOf(s: ConsoleSignals): ConsoleStatus {
     }
   }
   for (const suspension of s.suspendedMarkets) {
+    if (staleFor(suspension.since, now, R.SUSPENSION_NEW_HOURS)) continue;
     todo.push({
       kind: 'market_suspended',
       light: 'engine',

@@ -25,6 +25,12 @@ export const CONSOLE_RULES = {
   /** Engine, « À faire »: a product absent this many days of the last week. */
   PRODUCT_ABSENT_DAYS: 3,
   PRODUCT_ABSENT_WINDOW_DAYS: 7,
+  /**
+   * Engine, « À faire »: a market suspension this recent. Past it, the
+   * suspension is a known state (Moteur › Marchés suspendus), not a task:
+   * kept in « À faire » it would hold Moteur orange for good.
+   */
+  SUSPENSION_NEW_HOURS: 24,
   /** Players, red: nobody came back for this long. */
   PLAYERS_SILENT_HOURS: 48,
   /** Players, orange: a player's message unanswered for this long. */
