@@ -36,11 +36,11 @@ const FR: Record<HelpSlug, Omit<HelpSheet, "slug">> = {
   "reading-a-coupon": {
     title: "Comment lire un coupon",
     paragraphs: [
-      "Un coupon, c'est un ou plusieurs matchs, avec pour chacun le pari qu'on te propose. On l'écrit comme tu le dirais : « Victoire du PSG », « Plus de 2,5 buts ».",
-      "À droite, tu as **la cote**, celle que tu trouveras chez ton bookmaker. Juste en dessous, **ta chance** de gagner : « Passe 8 fois sur 10 », avec les petites diodes pour la voir d'un coup d'œil.",
-      "Les petits carrés racontent les derniers jours du produit : vert quand il a gagné, barré quand il a perdu.",
-      "Une fois les matchs finis, **un ✓ ou un ✗** prend la place de la cote. Si c'est gagné, tu vois la cote vraiment payée.",
-      "Nos cotes viennent de 1xBet, le bookmaker que nos joueurs utilisent le plus. On n'a aucun lien avec eux : on lit simplement leurs prix.",
+      "Un coupon, c'est un ou plusieurs matchs, avec le pari qu'on te propose pour chacun, écrit comme tu le dirais : « Victoire du PSG », « Plus de 2,5 buts ».",
+      "À droite, **la cote**, celle de ton bookmaker. Juste dessous, **ta chance** de gagner : « Passe 8 fois sur 10 », avec les petites diodes pour la voir d'un coup d'œil.",
+      "Les petits carrés racontent ses derniers jours : vert gagné, barré perdu.",
+      "Une fois les matchs finis, **un ✓ ou un ✗** remplace la cote ; si c'est gagné, tu vois la cote vraiment payée.",
+      "Nos cotes viennent de 1xBet, le bookmaker que nos joueurs utilisent le plus. Aucun lien avec eux : on lit simplement leurs prix.",
     ],
     example:
       "Favori du jour · 19:00 · Paris SG – Lens · Victoire Paris SG · 1,28 · 8 sur 10.",
@@ -129,7 +129,7 @@ const EN: Record<HelpSlug, Omit<HelpSheet, "slug">> = {
     title: "How to read a coupon",
     paragraphs: [
       "A coupon is one or more matches, each with the bet we suggest. We write it the way you would say it: “PSG to win”, “Over 2.5 goals”.",
-      "On the right you have **the odds**, the ones you will find at your bookmaker. Just below, **your chance** of winning: “Lands 8 times in 10”, with the little lights to see it at a glance.",
+      "On the right, **the odds**, the ones at your bookmaker. Just below, **your chance** of winning: “Lands 8 times in 10”, with the little lights to see it at a glance.",
       "The small squares tell the product's last days: green when it won, crossed when it lost.",
       "Once the matches are over, **a ✓ or a ✗** takes the place of the odds. If it won, you see the odds really paid.",
       "Our odds come from 1xBet, the bookmaker our players use most. We have no tie to them: we simply read their prices.",

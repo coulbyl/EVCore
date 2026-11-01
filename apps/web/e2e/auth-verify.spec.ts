@@ -59,10 +59,10 @@ test("un joueur déjà vérifié repart vers Aujourd'hui", async ({
   await expect(page).toHaveURL(/\/today$/);
 });
 
-test("l'admin, lui, garde le tableau de bord", async ({ page, context }) => {
+test("l'admin, lui, arrive sur son accueil", async ({ page, context }) => {
   await signIn(context, "e2e");
   await page.goto("/auth/verify");
-  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page).toHaveURL(/\/admin$/);
 });
 
 test("connecté, la page de connexion renvoie à Aujourd'hui", async ({

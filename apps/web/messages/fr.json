@@ -1,40 +1,4 @@
 {
-  "common": {
-    "loading": "Chargement…",
-    "error": "Une erreur est survenue",
-    "empty": "Aucune donnée",
-    "reset": "Réinitialiser",
-    "apply": "Appliquer",
-    "save": "Enregistrer",
-    "cancel": "Annuler",
-    "close": "Fermer",
-    "confirm": "Confirmer",
-    "back": "Retour",
-    "seeAll": "Voir tout"
-  },
-  "resultBadge": {
-    "won": "Gagné",
-    "lost": "Perdu",
-    "void": "Annulé",
-    "refunded": "Remboursé",
-    "settlementPending": "Règlement en attente"
-  },
-  "calibrationVerdict": {
-    "conform": "Conforme",
-    "slightlyOptimistic": "Un peu optimiste",
-    "optimistic": "Trop optimiste",
-    "slightlyCautious": "Un peu prudent",
-    "cautious": "Trop prudent",
-    "insufficient": "Pas assez de recul",
-    "inactive": "Aucun réglé"
-  },
-  "channelCalibrationStatus": {
-    "within15": "Écart ≤ 15 %",
-    "between15And30": "Écart 15–30 %",
-    "above30": "Écart > 30 %",
-    "notMeasured": "Non mesuré",
-    "insufficientVolume": "Volume insuffisant"
-  },
   "pwaInstall": {
     "title": "Installer EVCore",
     "subtitle": "Accès rapide depuis l'écran d'accueil",
@@ -72,7 +36,8 @@
     "coupons": "Coupons",
     "decisions": "Décisions",
     "decisionsShort": "Décisions",
-    "arbitrage": "Avis IA"
+    "arbitrage": "Avis IA",
+    "admin": "Admin"
   },
   "decisions": {
     "channels": {
@@ -234,52 +199,6 @@
     "oddsLabel": "Cote {odds}",
     "belowMinimum": "sous le minimum de {bookmaker} ({min})"
   },
-  "arbitrage": {
-    "title": "Avis IA",
-    "intro": "Une deuxième lecture de chaque match, par notre IA, à côté de Notre sélection. Elle propose souvent un pari : son bilan est juste en dessous, pertes comprises.",
-    "description": "L'IA relit nos lectures du match et les statistiques des deux équipes, puis propose un pari ou s'abstient. Ses pourcentages passent à peu près aussi souvent qu'annoncé, mais comme le reste du moteur elle ne bat pas la cote du bookmaker : c'est une deuxième lecture, pas un tuyau.",
-    "filters": {
-      "all": "Toutes",
-      "play": "Avis proposés",
-      "noPlay": "Sans avis",
-      "label": "Filtre"
-    },
-    "verdict": {
-      "play": "Avis proposé",
-      "noPlay": "Sans avis"
-    },
-    "ourPick": {
-      "label": "Notre sélection sur ce match :",
-      "same": "même pari",
-      "different": "pari différent",
-      "none": "Notre sélection ne propose rien sur ce match."
-    },
-    "track": {
-      "title": "Bilan de l'IA",
-      "line": "Du {from} au {to}, sur {settled} avis réglés : {realised} passés pour {announced} annoncés, et une fréquence du marché de {market} · à mise fixe {result}.",
-      "insufficient": "Pas encore assez d'avis réglés sur 30 jours pour un bilan.",
-      "market": "Comme le reste du moteur, l'IA ne bat pas la cote du bookmaker sur la durée : c'est une deuxième lecture, pas un tuyau.",
-      "link": "Détail dans Mesures historiques",
-      "gap": "Écart au marché : {gap} points, à ± {margin} points près. Seuls comptent les avis écrits avant le coup d'envoi, tels qu'ils ont été publiés.",
-      "versions": "Par version : {list}.",
-      "version": "{version} du {first} au {last} ({settled} avis)",
-      "aboveMarket": "Sur cette période, l'IA fait mieux que la fréquence du marché, au-delà de la marge d'erreur. Une période ne promet rien pour la suivante."
-    },
-    "todayLabel": "Aujourd'hui",
-    "today": "{day} : {plays, plural, =0 {aucun avis proposé} one {# avis proposé} other {# avis proposés}} sur {reads} matchs lus, {abstentions, plural, =0 {aucun sans avis} one {# sans avis} other {# sans avis}}.",
-    "finished": "{count, plural, one {Match terminé (#)} other {Matchs terminés (#)}}",
-    "reasoningLabel": "Pourquoi",
-    "sourcesLabel": "Sources",
-    "decidedAt": "Décidé le {date}",
-    "noPlay": "Aucune lecture retenue.",
-    "loadError": "Les avis n'ont pas chargé.",
-    "retry": "Réessayer",
-    "showAll": "Voir tous les matchs lus",
-    "emptyTitle": "Aucune lecture",
-    "emptyDescription": "L'avis IA n'a encore rien analysé pour cette date.",
-    "emptyFilteredTitle": "Rien à signaler",
-    "emptyFilteredDescription": "Aucun avis proposé pour cette date."
-  },
   "notifications": {
     "title": "Notifications",
     "empty": "Aucune notification",
@@ -322,21 +241,6 @@
       "MORNING_BRIEF": "Voir l'accueil",
       "WEEKLY_STATEMENT": "Voir l'accueil"
     }
-  },
-  "updates": {
-    "title": "Annonces",
-    "subtitle": "Historique des annonces publiées par l'équipe EVCore.",
-    "empty": "Aucune annonce",
-    "emptyDescription": "Rien à signaler pour le moment.",
-    "unread": "Non lues",
-    "all": "Toutes",
-    "close": "Fermer",
-    "isRead": "Lu"
-  },
-  "filters": {
-    "label": "Filtres",
-    "resetAll": "Tout réinitialiser",
-    "apply": "Appliquer"
   },
   "table": {
     "empty": "Aucune donnée.",
@@ -623,114 +527,6 @@
       "riskLine": "18+ · Parier comporte des risques de perte. Ne mise que ce que tu peux perdre."
     }
   },
-  "performancePage": {
-    "title": "Performance",
-    "overview": "Vue d'ensemble",
-    "calibration": "Calibration du modèle",
-    "calibrationHint": "Score Brier après chaque recalibration automatique (0 = parfait).",
-    "weights": "Évolution des poids",
-    "weightsHint": "Contribution de chaque facteur, ajustée automatiquement.",
-    "competitions": "ROI par compétition",
-    "competitionsPeriod": "30 derniers jours",
-    "backtest": "Backtest",
-    "backtestHint": "Simulation du modèle sur l'historique pour estimer sa robustesse. Le dernier résultat est conservé dans ce navigateur.",
-    "runBacktest": "Lancer le backtest",
-    "backtestRunning": "Backtest en cours…",
-    "backtestIdle": "Lance une simulation pour voir comment le modèle aurait performé sur les données passées.",
-    "backtestFreshTitle": "Résultat du dernier lancement",
-    "backtestStoredTitle": "Dernier résultat enregistré sur cet appareil",
-    "backtestGeneratedAt": "Calculé le {date} à {time}.",
-    "backtestEmptyTitle": "Pas de détail par marché",
-    "backtestEmpty": "Le backtest s'est terminé, mais aucun découpage par marché n'a été renvoyé.",
-    "marketBreakdown": "Résultat par marché",
-    "marketBreakdownHint": "Chaque barre montre le rendement simulé d'un type de pari.",
-    "roiSimulated": "Rendement simulé",
-    "maxDrawdown": "Pire baisse",
-    "currentWeights": "Poids actuels",
-    "noCalibrationData": "Aucune recalibration effectuée.",
-    "noWeightData": "Pas encore de données d'apprentissage.",
-    "stats": {
-      "winRate": "Réussite",
-      "netUnits": "Gain net",
-      "settledBets": "Paris réglés",
-      "calibrationError": "La calibration n'a pas pu être calculée.",
-      "brierScore": "Précision du modèle",
-      "analyzedBets": "Paris testés"
-    },
-    "chart": {
-      "roi": "Rendement"
-    },
-    "factors": {
-      "recentForm": "Forme récente",
-      "xg": "Expected Goals (xG)",
-      "domExtPerf": "Avantage dom./ext.",
-      "leagueVolat": "Stabilité de la ligue"
-    },
-    "table": {
-      "competition": "Compétition",
-      "analyzed": "Matchs 30j",
-      "modelRoi": "ROI Modèle",
-      "modelWinRate": "Réussite",
-      "myRoi": "Mes paris",
-      "matches": "matchs",
-      "best": "Meilleur ROI",
-      "worst": "ROI le plus faible"
-    },
-    "proposalHistory": "Historique des recalibrations",
-    "latestBrierScore": "Dernier Brier Score",
-    "reliabilityDiagram": "Diagramme de fiabilité",
-    "reliabilityDiagramHint": "Probabilité estimée par le modèle vs fréquence réelle des victoires (la diagonale = calibration parfaite).",
-    "reliabilityX": "Prob. estimée",
-    "reliabilityY": "Fréquence réelle",
-    "backtestTabEv": "EV",
-    "backtestTabSv": "Canal Sécurité",
-    "backtestSvIdle": "Lance une simulation pour voir comment le Canal Sécurité aurait performé sur les données passées.",
-    "svAvgOdds": "Cote moyenne",
-    "seasonBreakdown": "Détail par saison",
-    "season": "Saison",
-    "canalGlobal": "Global",
-    "canalValue": "Valeur",
-    "canalSafe": "Sûr",
-    "period7d": "7 jours",
-    "period30d": "30 jours",
-    "periodAll": "Tout",
-    "analysis": "Analyse par canal",
-    "analysisHint": "Backtest, calibration et tuning des seuils — lecture directe des sorties du moteur.",
-    "tabChannels": "Backtest canaux",
-    "tabTuning": "Tuning seuils",
-    "tabCalibration": "Calibration modèle",
-    "channelsHint": "ROI mise plate par canal × ligue sur les sélections réglées.",
-    "calibrationModelHint": "Qualité du modèle 1X2 (Brier / ECE) par ligue — indépendant des canaux.",
-    "tuningHint": "Sweep de seuils hors-ligne → meilleur seuil observé par ligue. Résultat consultatif à confirmer hors échantillon.",
-    "runAnalysis": "Lancer l'analyse",
-    "analysisWindow": "Fenêtre {from} → {to}",
-    "analysisWindowPicker": "Fenêtre (défaut : 1 an)",
-    "analysisIdle": "Lance l'analyse pour afficher les résultats.",
-    "analysisEmpty": "Aucune donnée sur la fenêtre.",
-    "colChannel": "Canal",
-    "colCompetition": "Ligue",
-    "colSettled": "Réglés",
-    "colPriced": "Pricés",
-    "settledPricedSummary": "{total} ({priced} pricés)",
-    "colHitRate": "Réussite",
-    "colRoi": "ROI",
-    "colVerdict": "Verdict",
-    "colAnalyzed": "Analysés",
-    "colEce": "ECE",
-    "colCurrent": "Actuel",
-    "colRecommended": "Meilleur seuil observé",
-    "colRecRoi": "ROI reco",
-    "colRecSample": "Échantillon",
-    "colSegment": "Ligne",
-    "colTeam": "Équipe",
-    "goalsSection": "GOALS — sweep over/under (ligne × côté)",
-    "teamTotalSection": "TEAM_TOTAL — sweep par équipe (ligne × côté, observation)",
-    "verdict": {
-      "PASS": "Validé",
-      "FAIL": "Échec",
-      "INSUFFICIENT_DATA": "Insuffisant"
-    }
-  },
   "matchSheet": {
     "back": "Décisions",
     "expectedTitle": "Ce que notre modèle attend",
@@ -773,51 +569,6 @@
     "seeDecisions": "Voir les lectures retenues sur Décisions",
     "openSheet": "Pourquoi ? Voir la fiche du match"
   },
-  "fixtureDiagnostics": {
-    "rejection": {
-      "odds_below_floor": "Cote trop basse",
-      "odds_above_cap": "Cote trop haute",
-      "ev_below_threshold": "Valeur insuffisante",
-      "ev_above_hard_cap": "Valeur au-dessus du plafond",
-      "ev_above_soft_cap": "Valeur au-dessus du plafond (calibration)",
-      "filtered_longshot": "Grande cote écartée",
-      "market_suspended": "Marché suspendu",
-      "probability_too_low": "Probabilité insuffisante",
-      "quality_score_below_threshold": "Qualité insuffisante",
-      "under_high_lambda": "Nbre de buts élevé"
-    },
-    "factors": {
-      "recentForm": "Forme récente",
-      "xg": "Occasions (xG)",
-      "performanceDomExt": "Avantage dom./ext.",
-      "volatiliteLigue": "Stabilité de la ligue"
-    },
-    "factorHints": {
-      "recentForm": "Qui est le plus en forme ? 50% = équilibre. <50% avantage extérieur, >50% avantage domicile.",
-      "xg": "Qui se crée le plus d’occasions ? (xG) 50% = équilibre. <50% avantage extérieur, >50% avantage domicile.",
-      "performanceDomExt": "Avantage à domicile vs à l’extérieur. 50% = équilibre. <50% avantage extérieur, >50% avantage domicile.",
-      "volatiliteLigue": "Imprévisibilité de la ligue : plus c’est haut, plus c’est aléatoire (pas un avantage dom./ext.)."
-    },
-    "table": {
-      "market": "Marché",
-      "probability": "Prob.",
-      "odds": "Cote",
-      "value": "Valeur",
-      "status": "Statut",
-      "viable": "Viable"
-    },
-    "empty": {
-      "title": "Aucune analyse disponible",
-      "description": "Ce match n'a pas encore été analysé."
-    },
-    "sections": {
-      "factors": "Facteurs",
-      "analyzedMarkets": "Lectures évaluées"
-    },
-    "predictionSummary": {
-      "expectedGoals": "buts attendus"
-    }
-  },
   "coupons": {
     "pageTitle": "Coupons",
     "title": "Coupons du jour",
@@ -827,52 +578,6 @@
     "retry": "Réessayer",
     "aiNote": "Ces propositions sont générées par notre moteur IA, qui s'améliore en continu grâce aux résultats passés. Il ne s'agit pas de conseils financiers.",
     "helpLink": "Quelle différence entre les coupons ?"
-  },
-  "closingLine": {
-    "label": "Clôture {odds}",
-    "detail": "Cote juste avant le coup d'envoi chez {bookmaker}. La cote proposée valait {value} face à la probabilité de clôture, marge retirée.",
-    "verdict": {
-      "beatsClose": "Meilleure que le prix de clôture : prise à ce prix, elle aurait valu {margin} (la marge du bookmaker).",
-      "behindClose": "Moins bonne que le prix de clôture, qui vaut {margin} (la marge du bookmaker).",
-      "unknownMargin": "Marge du bookmaker inconnue pour cette sélection : la comparaison au prix de clôture n'est pas possible."
-    }
-  },
-  "couponCard": {
-    "noRecord": "Pas encore de relevé",
-    "recordInProgress": "Relevé en cours · {count, plural, one {# jour réglé} other {# jours réglés}}",
-    "record": "{won, plural, one {# jour gagné} other {# jours gagnés}} sur {settled}, du {from} au {to}",
-    "recordDetail": "Pire série : {streak, plural, =0 {aucun jour perdu} one {# jour perdu} other {# jours perdus d'affilée}} · à mise fixe {result}",
-    "intraday": "Mis à jour en journée",
-    "intradayHint": "Régénéré en journée, proche du coup d'envoi : s'ajoute au coupon du soir déjà publié pour cette classe.",
-    "resultWon": "✓ Gagné",
-    "resultPartial": "✓ Gagné · jambe remboursée",
-    "resultPartialHint": "Toutes les jambes jouées ont gagné ; une jambe au moins a été remboursée, la cote payée est réduite d'autant.",
-    "resultLost": "✗ Perdu",
-    "resultVoid": "Remboursé",
-    "resultVoidHint": "Toutes les jambes ont été remboursées (matchs reportés ou annulés) : mise rendue.",
-    "odds": "Cote",
-    "reference": "Réf.",
-    "chancesValue": "{count} sur {total}",
-    "paid": "Payé",
-    "chances": "Chances",
-    "playable": "Jouable",
-    "why": "Pourquoi ce coupon ?",
-    "legChances": "environ {count} fois sur {total}",
-    "legReferencePrefix": "réf.",
-    "legPlayableHint": "Cote chez {bookmaker}, le bookmaker des joueurs. La nôtre vient des books les plus généreux du relevé.",
-    "playedByMe": "Déjà joué par toi",
-    "inSlip": "Dans le coupon",
-    "play": "Je l'ai joué",
-    "replaceTitle": "Remplacer ton ticket ?",
-    "replaceDescription": "Ton ticket contient déjà {count, plural, one {# autre sélection} other {# autres sélections}}. Un coupon se joue seul : ses jambes remplaceront celles du ticket.",
-    "replaceConfirm": "Remplacer",
-    "replaceCancel": "Garder mon ticket",
-    "addToCoupon": "Ajouter au coupon",
-    "removeFromCoupon": "Retirer du coupon",
-    "follow": "Suivre ce coupon",
-    "following": "Suivi · résultat dans le résumé du matin",
-    "legMargin": "{bookmaker} prend {margin}",
-    "operatorMargin": "Marge payée chez {bookmaker} : {margin} par jambe en moyenne. C'est le coût du pari."
   },
   "pause": {
     "title": "Tu es en pause",

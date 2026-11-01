@@ -11,7 +11,7 @@ export function NotificationBell() {
 
   return (
     <Link
-      href="/dashboard/notifications"
+      href="/notifications"
       title="Notifications"
       data-tour="notification-bell"
       className="relative flex size-11 items-center justify-center rounded-xl border border-border bg-panel-strong text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:size-auto md:min-h-11 md:px-3"

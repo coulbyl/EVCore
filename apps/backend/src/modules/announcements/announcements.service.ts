@@ -85,7 +85,7 @@ export class AnnouncementsService {
         {
           title: announcement.title,
           body: announcement.description,
-          url: announcement.href ?? '/dashboard',
+          url: announcement.href ?? '/notifications',
         },
         excludeUserId,
       ),

@@ -3,7 +3,8 @@
  * (docs/refonte-ui/11-public.md § 8). Une seule table : le layout du
  * tableau de bord la lit depuis le commit de bascule (15-todo.md, C19).
  *
- * L'admin garde /dashboard jusqu'à sa propre refonte (12-admin.md, PR 2).
+ * L'admin ne garde de /dashboard que la boîte de support et la fiche de
+ * diagnostic (12-admin.md § 0) ; le reste mène à l'écran le plus proche.
  */
 const RETIRED_ROUTES: readonly { from: string; to: string }[] = [
   // Accueil et Coupons : les coupons du jour sont sur Aujourd'hui.
@@ -31,19 +32,53 @@ const RETIRED_ROUTES: readonly { from: string; to: string }[] = [
 /** Tout le reste de /dashboard est l'admin : un joueur repart d'Aujourd'hui. */
 const DEFAULT_TARGET = "/today";
 
+/** Ce que l'admin garde de /dashboard (12-admin.md § 0). */
+const ADMIN_KEPT: readonly string[] = [
+  "/dashboard/inbox",
+  "/dashboard/decisions/match",
+];
+
+/** Les pages retirées de l'admin et l'écran qui les remplace (12 § 6). */
+const ADMIN_RETIRED: readonly { from: string; to: string }[] = [
+  // Les outils, rapports et mesures : Moteur ; le reste vit dans le dépôt.
+  { from: "/dashboard/audit", to: "/admin/engine" },
+  { from: "/dashboard/reports", to: "/admin/engine" },
+  { from: "/dashboard/documentation-technique", to: "/admin/engine" },
+  { from: "/dashboard/ml", to: "/admin/engine" },
+  { from: "/dashboard/performance", to: "/admin/engine" },
+  { from: "/dashboard/engine", to: "/admin/engine" },
+  { from: "/dashboard/arbitrage", to: "/admin/engine" },
+  { from: "/dashboard/track-record", to: "/admin/engine" },
+  // Comptes et annonces : Joueurs.
+  { from: "/dashboard/users", to: "/admin/players" },
+  { from: "/dashboard/announcements", to: "/admin/players/announce" },
+  // Les écrans du joueur, que l'admin a dans ses onglets.
+  { from: "/dashboard/coupons", to: "/today" },
+  { from: "/dashboard/decisions", to: "/matches" },
+  { from: "/dashboard/fixtures", to: "/matches" },
+  { from: "/dashboard/params", to: "/me/account" },
+  { from: "/dashboard/notifications", to: "/notifications" },
+  { from: "/dashboard/updates", to: "/notifications" },
+];
+
 function isUnder(pathname: string, route: string): boolean {
   return pathname === route || pathname.startsWith(`${route}/`);
 }
 
 /**
- * Où envoyer un joueur qui ouvre une ancienne adresse de /dashboard ; null
- * pour l'admin et pour toute adresse hors de /dashboard.
+ * Où envoyer qui ouvre une ancienne adresse de /dashboard ; null pour ce
+ * que l'admin garde et pour toute adresse hors de /dashboard.
  */
 export function retiredRouteTarget(
   pathname: string,
   role: "ADMIN" | "OPERATOR",
 ): string | null {
-  if (role === "ADMIN" || !isUnder(pathname, "/dashboard")) return null;
+  if (!isUnder(pathname, "/dashboard")) return null;
+  if (role === "ADMIN") {
+    if (ADMIN_KEPT.some((route) => isUnder(pathname, route))) return null;
+    const match = ADMIN_RETIRED.find(({ from }) => isUnder(pathname, from));
+    return match?.to ?? "/admin";
+  }
   const match = RETIRED_ROUTES.find(({ from }) => isUnder(pathname, from));
   return match?.to ?? DEFAULT_TARGET;
 }

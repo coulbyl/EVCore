@@ -34,7 +34,7 @@ export function PausedNotice({ until }: { until: string }) {
       </p>
       <p className="text-muted-foreground">{t("body")}</p>
       <ul className="flex flex-wrap gap-x-5">
-        {([["/dashboard/track-record", "trackRecord"]] as const).map(
+        {([["/results", "trackRecord"]] as const).map(
           ([href, key]) => (
             <li key={href}>
               <Link

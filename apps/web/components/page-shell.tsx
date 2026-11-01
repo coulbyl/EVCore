@@ -94,7 +94,7 @@ export function PageShell({
       >
         <SidebarHeader className="gap-0 border-b border-sidebar-border/70 px-4 py-5">
           <Link
-            href="/dashboard"
+            href="/admin"
             className="flex items-center gap-3 rounded-xl px-2 py-1.5 text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
           >
             <div className="relative shrink-0">
@@ -215,7 +215,7 @@ export function PageShell({
                 className="lg:hidden size-11 rounded-xl border border-border bg-panel-strong text-muted-foreground hover:bg-secondary hover:text-foreground"
               />
               <Link
-                href="/dashboard"
+                href="/admin"
                 className="hidden min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 sm:flex lg:hidden"
               >
                 <div className="relative shrink-0">

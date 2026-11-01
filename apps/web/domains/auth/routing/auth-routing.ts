@@ -15,9 +15,9 @@ export function loginPathFor(path: string | null): string {
 }
 
 /**
- * Where an account lands once signed in: the admin keeps /dashboard until
- * its own overhaul (12-admin.md), a player has Aujourd'hui.
+ * Where an account lands once signed in: the admin on its home
+ * (12-admin.md § 1), a player on Aujourd'hui.
  */
 export function homePathFor(role: "ADMIN" | "OPERATOR"): string {
-  return role === "ADMIN" ? "/dashboard" : "/today";
+  return role === "ADMIN" ? "/admin" : "/today";
 }

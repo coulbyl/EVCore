@@ -8,7 +8,6 @@ import {
   LogOut,
   MessageCircle,
   Settings,
-  Sprout,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -103,22 +102,11 @@ export function AccountButton({
               {tNav("inbox")}
             </Link>
           </DropdownMenuItem>
-          {currentUser.role === "ADMIN" ? (
-            <DropdownMenuItem
-              asChild
-              className="rounded-xl focus:bg-accent/8 focus:text-foreground"
-            >
-              <Link href="/dashboard/performance">
-                <Sprout className="text-accent" />
-                {tNav("performance")}
-              </Link>
-            </DropdownMenuItem>
-          ) : null}
           <DropdownMenuItem
             asChild
             className="rounded-xl focus:bg-accent/8 focus:text-foreground"
           >
-            <Link href="/dashboard/params/account">
+            <Link href="/me/account">
               <Settings className="text-accent" />
               {tNav("settings")}
             </Link>

@@ -5,24 +5,7 @@ import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Badge } from "@evcore/ui";
-import {
-  Bell,
-  BrainCircuit,
-  CalendarDays,
-  ClipboardCheck,
-  Cpu,
-  FlaskConical,
-  History,
-  Layers,
-  LayoutDashboard,
-  Library,
-  Megaphone,
-  MessageCircle,
-  Scale,
-  Settings,
-  Users,
-  Wand2,
-} from "lucide-react";
+import { Bell, LayoutDashboard, MessageCircle, Settings } from "lucide-react";
 import { PageShell, type NavGroup } from "./page-shell";
 import { AccountButton } from "./account-button";
 import { NotificationBell } from "./notification-bell";
@@ -58,112 +41,24 @@ export function AppShell({
     ? (adminInboxUnread?.count ?? 0)
     : (operatorInboxUnread?.count ?? 0);
 
-  const navGroups = useMemo((): NavGroup[] => {
-    const adminItems = isAdmin
-      ? [
-          {
-            label: tNav("audit"),
-            href: "/dashboard/audit",
-            active: pathname === "/dashboard/audit",
-            icon: ClipboardCheck,
-          },
-          {
-            label: tNav("users"),
-            href: "/dashboard/users",
-            active: pathname.startsWith("/dashboard/users"),
-            icon: Users,
-          },
-          {
-            label: tNav("announcements"),
-            href: "/dashboard/announcements",
-            active: pathname.startsWith("/dashboard/announcements"),
-            icon: Megaphone,
-          },
-          {
-            label: tNav("ml"),
-            href: "/dashboard/ml",
-            active: pathname.startsWith("/dashboard/ml"),
-            icon: BrainCircuit,
-          },
-          {
-            label: tNav("reports"),
-            href: "/dashboard/reports",
-            active: pathname.startsWith("/dashboard/reports"),
-            icon: FlaskConical,
-          },
-          {
-            label: tNav("engine"),
-            href: "/dashboard/engine",
-            active: pathname.startsWith("/dashboard/engine"),
-            icon: Cpu,
-          },
-          // Matchs n'est plus dans la navigation du joueur depuis le
-          // 2026-10-27 : Décisions montre déjà presque tous les matchs, et la
-          // fiche de match s'ouvre depuis ses cartes. Le diagnostic brut
-          // (EV, motifs de rejet, λ) reste ici, pour les admins.
-          {
-            label: tNav("fixtures"),
-            href: "/dashboard/fixtures",
-            active: pathname.startsWith("/dashboard/fixtures"),
-            icon: CalendarDays,
-          },
-          {
-            label: tNav("technicalDocs"),
-            href: "/dashboard/documentation-technique",
-            active: pathname.startsWith("/dashboard/documentation-technique"),
-            icon: Library,
-          },
-        ]
-      : [];
-
-    return [
+  // What is left of /dashboard after the admin's overhaul (12-admin.md
+  // § 0): the support inbox and the diagnostic sheet, reached from the
+  // admin's screens; the rest redirects (helpers/retired-routes.ts).
+  const navGroups = useMemo(
+    (): NavGroup[] => [
       {
+        label: tNav("navGroupAdmin"),
         items: [
           {
-            label: tNav("dashboard"),
-            mobileLabel: tNav("dashboard"),
-            href: "/dashboard",
-            active: pathname === "/dashboard",
+            label: tNav("admin"),
+            mobileLabel: tNav("admin"),
+            href: "/admin",
+            active: false,
             icon: LayoutDashboard,
           },
-        ],
-      },
-      {
-        label: tNav("navGroupToday"),
-        items: [
-          {
-            label: tNav("coupons"),
-            href: "/dashboard/coupons",
-            active: pathname.startsWith("/dashboard/coupons"),
-            // Wand2, not Receipt/Ticket — these are AI-generated proposals to
-            // consider, not the user's own placed bets (that's "Mes coupons"
-            // below, which already owns the Receipt/ticket-stub look).
-            icon: Wand2,
-            // Raised, accent-filled center button in the mobile bottom nav —
-            // Investir's old slot/styling (screenshot confirmed: elevated
-            // circular button, dead center of 5), not just a spot in the row.
-            featured: true,
-          },
-          {
-            label: tNav("arbitrage"),
-            href: "/dashboard/arbitrage",
-            active: pathname.startsWith("/dashboard/arbitrage"),
-            icon: Scale,
-          },
-          {
-            label: tNav("decisions"),
-            mobileLabel: tNav("decisionsShort"),
-            href: "/dashboard/decisions",
-            active: pathname.startsWith("/dashboard/decisions"),
-            icon: Layers,
-          },
-        ],
-      },
-      {
-        label: tNav("navGroupTracking"),
-        items: [
           {
             label: tNav("inbox"),
+            mobileLabel: tNav("inbox"),
             href: "/dashboard/inbox",
             active: pathname.startsWith("/dashboard/inbox"),
             icon: MessageCircle,
@@ -171,34 +66,21 @@ export function AppShell({
           },
         ],
       },
-      {
-        label: tNav("navGroupAnalysis"),
-        items: [
-          {
-            label: tNav("trackRecord"),
-            href: "/dashboard/track-record",
-            active: pathname.startsWith("/dashboard/track-record"),
-            icon: History,
-          },
-        ],
-      },
-      ...(adminItems.length > 0
-        ? [{ label: tNav("navGroupAdmin"), items: adminItems }]
-        : []),
-    ];
-  }, [isAdmin, pathname, tNav, inboxUnreadCount]);
+    ],
+    [pathname, tNav, inboxUnreadCount],
+  );
 
   const pinnedNavItems = useMemo(
     () => [
       {
         label: tNav("notifications"),
-        href: "/dashboard/notifications",
-        active: pathname.startsWith("/dashboard/notifications"),
+        href: "/notifications",
+        active: false,
         icon: Bell,
         badge: unreadCount,
       },
     ],
-    [pathname, tNav, unreadCount],
+    [tNav, unreadCount],
   );
 
   const pageTitle = useMemo(
@@ -206,16 +88,7 @@ export function AppShell({
     [navGroups],
   );
 
-  // Coupons takes Investir's old slot AND styling (module removed entirely,
-  // 2026-09-04) — the raised, accent-filled center button (`featured: true`
-  // above), dead center of the 5, not just a spot in the row.
-  const MOBILE_NAV_ORDER = [
-    "/dashboard",
-    "/dashboard/decisions",
-    "/dashboard/coupons",
-    "/dashboard/arbitrage",
-    "/dashboard/inbox",
-  ];
+  const MOBILE_NAV_ORDER = ["/admin", "/dashboard/inbox"];
 
   const allNavItems = useMemo(
     () => navGroups.flatMap((g) => g.items),
@@ -274,7 +147,7 @@ export function AppShell({
               </p>
             </div>
             <Link
-              href="/dashboard/params/account"
+              href="/me/account"
               title="Paramètres du compte"
               className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
             >
