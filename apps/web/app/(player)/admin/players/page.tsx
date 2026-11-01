@@ -103,7 +103,7 @@ export default async function Page({
         </section>
 
         <Link
-          href="/admin/players/announce"
+          href="/admin/players/announcements"
           className="flex min-h-12 items-center justify-between gap-3 border-y border-border py-2 text-body font-medium"
         >
           {t("announce")}

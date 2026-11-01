@@ -55,7 +55,7 @@ const ADMIN_RETIRED: readonly { from: string; to: string }[] = [
   { from: "/dashboard/track-record", to: "/admin/engine" },
   // Comptes et annonces : Joueurs.
   { from: "/dashboard/users", to: "/admin/players" },
-  { from: "/dashboard/announcements", to: "/admin/players/announce" },
+  { from: "/dashboard/announcements", to: "/admin/players/announcements" },
   // Les écrans du joueur, que l'admin a dans ses onglets.
   { from: "/dashboard/coupons", to: "/today" },
   { from: "/dashboard/decisions", to: "/matches" },

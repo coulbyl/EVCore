@@ -195,8 +195,13 @@ export type AnnouncementView = {
   id: string;
   title: string;
   description: string;
+  href: string | null;
   published: boolean;
   publishedAt: string | null;
+  expiresAt: string | null;
+  updatedAt: string;
+  /** How many players read it. */
+  reads: number;
 };
 
 /** A Réglages row (12-admin.md § 4); `value` null means « not written ». */

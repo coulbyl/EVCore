@@ -6,6 +6,8 @@ export type AdminActionKind =
   | 'suspension'
   | 'account_deleted'
   | 'announcement'
+  | 'announcement_withdrawn'
+  | 'announcement_deleted'
   | 'pass_relaunched'
   | 'queue_retried'
   | 'queue_cleared'
@@ -48,7 +50,11 @@ export const ADMIN_ACTION_GROUPS = {
     'market_reactivated',
   ],
   accounts: ['role', 'suspension', 'account_deleted'],
-  announcements: ['announcement'],
+  announcements: [
+    'announcement',
+    'announcement_withdrawn',
+    'announcement_deleted',
+  ],
 } as const satisfies Record<string, readonly AdminActionKind[]>;
 
 export type AdminActionGroup = keyof typeof ADMIN_ACTION_GROUPS;

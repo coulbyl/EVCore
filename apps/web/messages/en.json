@@ -957,10 +957,6 @@
       "textField": "Text",
       "preview": "Notification preview",
       "publish": "Publish",
-      "published": "Published",
-      "publishFailed": "Not published",
-      "pastTitle": "Past announcements",
-      "draft": "draft",
       "noAnnouncements": "No announcement",
       "withdraw": "Withdraw",
       "withdrawQuestion": "Withdraw this announcement from the players' bell?",
@@ -974,7 +970,40 @@
         "morning": "brief opened"
       },
       "lastSeen": "last seen {date}",
-      "neverSeen": "never back"
+      "neverSeen": "never back",
+      "announcements": {
+        "title": "Announcements",
+        "newTitle": "Write an announcement",
+        "editTitle": "Edit the announcement",
+        "link": "Link (optional)",
+        "linkHint": "Where it leads: an app page (/today) or an https address.",
+        "expires": "Expires on (optional)",
+        "expiresHint": "After this date it leaves the players' bell.",
+        "bold": "Bold",
+        "italic": "Italic",
+        "list": "List",
+        "addLink": "Link",
+        "linkPrompt": "Link address (https://… or /page)",
+        "saveDraft": "Save as draft",
+        "save": "Save",
+        "cancel": "Cancel",
+        "failed": "Not saved, try again.",
+        "states": {
+          "published": "Published",
+          "draft": "Draft",
+          "expired": "Expired"
+        },
+        "publishedOn": "published {date}",
+        "editedOn": "edited {date}",
+        "expiresOn": "expires {date}",
+        "reads": "{count, plural, =0 {read by nobody} one {read by # player} other {read by # players}}",
+        "edit": "Edit",
+        "unpublish": "Unpublish",
+        "remove": "Delete",
+        "removeQuestion": "Delete this announcement? Players will no longer see it.",
+        "removeConfirm": "Delete",
+        "actionFailed": "Not done, try again."
+      }
     },
     "settings": {
       "title": "Settings",

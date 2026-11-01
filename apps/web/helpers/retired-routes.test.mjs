@@ -63,7 +63,7 @@ describe("retiredRouteTarget", () => {
       "/dashboard/ml": "/admin/engine",
       "/dashboard/performance": "/admin/engine",
       "/dashboard/users": "/admin/players",
-      "/dashboard/announcements": "/admin/players/announce",
+      "/dashboard/announcements": "/admin/players/announcements",
       "/dashboard/decisions": "/matches",
       "/dashboard/fixtures": "/matches",
       "/dashboard/coupons": "/today",

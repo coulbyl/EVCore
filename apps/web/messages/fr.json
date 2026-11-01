@@ -957,10 +957,6 @@
       "textField": "Texte",
       "preview": "Aperçu de la notification",
       "publish": "Publier",
-      "published": "Publiée",
-      "publishFailed": "Pas publiée",
-      "pastTitle": "Annonces passées",
-      "draft": "brouillon",
       "noAnnouncements": "Aucune annonce",
       "withdraw": "Retirer",
       "withdrawQuestion": "Retirer cette annonce de la cloche des joueurs ?",
@@ -974,7 +970,40 @@
         "morning": "matinée ouverte"
       },
       "lastSeen": "venu le {date}",
-      "neverSeen": "jamais revenu"
+      "neverSeen": "jamais revenu",
+      "announcements": {
+        "title": "Annonces",
+        "newTitle": "Écrire une annonce",
+        "editTitle": "Modifier l'annonce",
+        "link": "Lien (facultatif)",
+        "linkHint": "Où mène l'annonce : une page de l'app (/today) ou une adresse en https.",
+        "expires": "Expire le (facultatif)",
+        "expiresHint": "Après cette date, elle quitte la cloche des joueurs.",
+        "bold": "Gras",
+        "italic": "Italique",
+        "list": "Liste",
+        "addLink": "Lien",
+        "linkPrompt": "Adresse du lien (https://… ou /page)",
+        "saveDraft": "Enregistrer en brouillon",
+        "save": "Enregistrer",
+        "cancel": "Annuler",
+        "failed": "Pas enregistrée, réessaie.",
+        "states": {
+          "published": "Publiée",
+          "draft": "Brouillon",
+          "expired": "Expirée"
+        },
+        "publishedOn": "publiée le {date}",
+        "editedOn": "modifiée le {date}",
+        "expiresOn": "expire le {date}",
+        "reads": "{count, plural, =0 {lue par personne} one {lue par # joueur} other {lue par # joueurs}}",
+        "edit": "Modifier",
+        "unpublish": "Dépublier",
+        "remove": "Supprimer",
+        "removeQuestion": "Supprimer cette annonce ? Les joueurs ne la verront plus.",
+        "removeConfirm": "Supprimer",
+        "actionFailed": "Pas fait, réessaie."
+      }
     },
     "settings": {
       "title": "Réglages",
