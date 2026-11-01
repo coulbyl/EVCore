@@ -869,7 +869,7 @@
       "searchSubmit": "Chercher",
       "days": "{count, plural, one {# j} other {# j}}",
       "won": "{count} gagnés",
-      "announcedRealised": "{announced} / {realised}",
+      "announcedRealised": "annoncé {announced} · réel {realised}",
       "tooEarly": "trop tôt",
       "clv": "CLV {value}",
       "margin": "marge {value}",
@@ -879,7 +879,6 @@
       "aiOpinions": "{count} avis",
       "versions": "Par version",
       "version": "{version} · du {from} au {to}",
-      "sample": "{count} j.",
       "words": {
         "conforme": "conforme",
         "optimistic": "optimiste",
@@ -895,7 +894,11 @@
       "reactivateConfirm": "Confirmer la réactivation",
       "cancel": "Annuler",
       "reactivateFailed": "Pas réactivé",
-      "moreCells": "{count, plural, one {# autre cellule} other {# autres cellules}} : cherche une compétition."
+      "moreCells": "{count, plural, one {# autre cellule} other {# autres cellules}} : cherche une compétition.",
+      "retiredTitle": "Retirés",
+      "cellLine": "{count, plural, one {# jambe} other {# jambes}} · {ratio} réel/annoncé",
+      "interval": "(de {low} à {high})",
+      "suspendedNote": "Suspendus automatiquement : ROI des jambes réglées sur 90 jours, perte établie."
     },
     "players": {
       "monthTitle": "Ce mois",
@@ -963,7 +966,15 @@
       "withdrawQuestion": "Retirer cette annonce de la cloche des joueurs ?",
       "withdrawConfirm": "Retirer",
       "withdrawCancel": "Annuler",
-      "withdrawFailed": "Pas retirée, réessaie."
+      "withdrawFailed": "Pas retirée, réessaie.",
+      "figures": {
+        "signups": "inscrits",
+        "activated": "activés",
+        "active7": "actifs 7 j",
+        "morning": "matinée ouverte"
+      },
+      "lastSeen": "venu le {date}",
+      "neverSeen": "jamais revenu"
     },
     "settings": {
       "title": "Réglages",
@@ -1020,7 +1031,19 @@
         "queue_cleared": "échec effacé : {queue}",
         "backfill_paused": "rattrapage des stats mis en pause",
         "backfill_resumed": "rattrapage des stats repris",
-        "settlement_replayed": "règlement rejoué : {target} · {replayed} relus, {corrected} corrigés"
+        "settlement_replayed": "règlement rejoué : {target} · {replayed} relus, {corrected} corrigés",
+        "settleRange": {
+          "coupons": "coupons du {from} au {to}",
+          "selections": "paris du moteur du {from} au {to}"
+        }
+      },
+      "journalType": "Par type",
+      "allTypes": "Tout",
+      "groups": {
+        "settings": "Réglages",
+        "operations": "Exploitation",
+        "accounts": "Comptes",
+        "announcements": "Annonces"
       }
     },
     "messages": {
@@ -1119,7 +1142,11 @@
         "confirm": "Rejouer",
         "cancel": "Annuler",
         "done": "{replayed} relus · {corrected} corrigés",
-        "last": "Dernier passage : {date} · {target} · {actor}"
+        "last": "Dernier passage : {date} · {target} · {actor}",
+        "lastRange": {
+          "coupons": "coupons du {from} au {to}",
+          "selections": "paris du moteur du {from} au {to}"
+        }
       },
       "repoTitle": "Depuis le dépôt",
       "repoText": "Le reste se lance à froid, en commande : sync complet, opérations par championnat, historiques (matchs, stats, CSV, Pinnacle), moteur rejoué sur l'historique.",

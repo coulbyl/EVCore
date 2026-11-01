@@ -16,6 +16,7 @@ import {
   formatTime,
 } from "@/helpers/scoreboard-format";
 import { AdminBand } from "../components/admin-band";
+import { settleTargetOf } from "../components/console-constants";
 import { SchedulingSwitch } from "./components/scheduling-switch";
 import { SettingEditor } from "./components/setting-editor";
 
@@ -30,6 +31,14 @@ export async function generateMetadata(): Promise<Metadata> {
 type Settings = Awaited<ReturnType<typeof getTranslations<"console.settings">>>;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** The journal's filter by type (backend ADMIN_ACTION_GROUPS). */
+const JOURNAL_GROUPS = [
+  "settings",
+  "operations",
+  "accounts",
+  "announcements",
+] as const;
 
 // Message keys cannot hold the dots of the setting keys.
 const NAME_KEY: Record<string, string> = {
@@ -156,8 +165,11 @@ function lineOf(
       return t(`journal.${item.kind}`);
     case "settlement_replayed": {
       const r = recordOf(item.after);
+      const range = settleTargetOf(item.target);
       return t("journal.settlement_replayed", {
-        target: item.target,
+        target: range
+          ? t(`journal.settleRange.${range.kind}`, range)
+          : item.target,
         replayed: Number(r?.["replayed"] ?? 0),
         corrected: Number(r?.["corrected"] ?? 0),
       });
@@ -176,18 +188,31 @@ function lineOf(
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ actor?: string }>;
+  searchParams: Promise<{ actor?: string; group?: string }>;
 }) {
   const params = await searchParams;
   // The journal's filter is an account id; anything else shows everyone.
   const actor = UUID.test(params.actor ?? "") ? params.actor : undefined;
+  const group = JOURNAL_GROUPS.find((g) => g === params.group);
+  const journalHref = (over: {
+    actor?: string | null;
+    group?: string | null;
+  }) => {
+    const q = new URLSearchParams();
+    const a = over.actor === undefined ? actor : over.actor;
+    const g = over.group === undefined ? group : over.group;
+    if (a) q.set("actor", a);
+    if (g) q.set("group", g);
+    const s = q.toString();
+    return s ? `/admin/settings?${s}` : "/admin/settings";
+  };
   const [t, console, locale, timeZone, settings, journal] = await Promise.all([
     getTranslations("console.settings"),
     getTranslations("console"),
     getLocale(),
     getPlayerTimeZone(),
     getSettings(),
-    getJournal(actor),
+    getJournal(actor, group),
   ]);
   const display = displayLocaleOf(locale);
   const intl = display === "en" ? "en-GB" : "fr-FR";
@@ -271,6 +296,23 @@ export default async function Page({
           <h2 id="journal-title" className={heading}>
             {t("journalTitle")}
           </h2>
+          <ChipGroup
+            label={t("journalType")}
+            items={[
+              {
+                key: "all",
+                label: t("allTypes"),
+                href: journalHref({ group: null }),
+                active: !group,
+              },
+              ...JOURNAL_GROUPS.map((g) => ({
+                key: g,
+                label: t(`groups.${g}`),
+                href: journalHref({ group: g }),
+                active: g === group,
+              })),
+            ]}
+          />
           {journal.actors.length > 1 ? (
             <ChipGroup
               label={t("journalBy")}
@@ -278,13 +320,13 @@ export default async function Page({
                 {
                   key: "all",
                   label: t("everyone"),
-                  href: "/admin/settings",
+                  href: journalHref({ actor: null }),
                   active: !actor,
                 },
                 ...journal.actors.map((a) => ({
                   key: a.id,
                   label: a.name,
-                  href: `/admin/settings?actor=${a.id}`,
+                  href: journalHref({ actor: a.id }),
                   active: a.id === actor,
                 })),
               ]}

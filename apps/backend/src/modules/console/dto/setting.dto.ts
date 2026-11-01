@@ -1,4 +1,4 @@
-import { IsDefined, IsOptional, IsUUID } from 'class-validator';
+import { IsDefined, IsIn, IsOptional, IsUUID } from 'class-validator';
 
 /** A setting's new value; its shape is checked by parseAppSetting. */
 export class SetSettingDto {
@@ -11,4 +11,8 @@ export class JournalQueryDto {
   @IsOptional()
   @IsUUID()
   actor?: string;
+
+  @IsOptional()
+  @IsIn(['settings', 'operations', 'accounts', 'announcements'])
+  group?: 'settings' | 'operations' | 'accounts' | 'announcements';
 }

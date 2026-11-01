@@ -29,3 +29,23 @@ export function neverKey(item: TodoItem): string {
     ? `${item.kind}Never`
     : item.kind;
 }
+
+/**
+ * « coupons 2026-10-25 → 2026-11-01 », as the journal stores a settlement
+ * replay, said « {kind} du 25/10 au 01/11 »; null for any other target.
+ */
+export function settleTargetOf(
+  target: string,
+): { kind: "coupons" | "selections"; from: string; to: string } | null {
+  const match =
+    /^(coupons|selections) (\d{4})-(\d{2})-(\d{2}) → (\d{4})-(\d{2})-(\d{2})$/.exec(
+      target,
+    );
+  if (!match) return null;
+  const [, kind, , fm, fd, , tm, td] = match;
+  return {
+    kind: kind as "coupons" | "selections",
+    from: `${fd}/${fm}`,
+    to: `${td}/${tm}`,
+  };
+}

@@ -86,15 +86,17 @@ export const getSettings = cache(
 export const getJournal = cache(
   (
     actor?: string,
+    group?: string,
   ): Promise<{
     items: AdminActionView[];
     actors: { id: string; name: string }[];
-  }> =>
-    serverApiRequest(
-      actor
-        ? `/console/journal?actor=${encodeURIComponent(actor)}`
-        : "/console/journal",
-    ),
+  }> => {
+    const query = new URLSearchParams();
+    if (actor) query.set("actor", actor);
+    if (group) query.set("group", group);
+    const s = query.toString();
+    return serverApiRequest(s ? `/console/journal?${s}` : "/console/journal");
+  },
 );
 
 /** Exploitation › Les files, read fresh each time (no cache: it moves). */

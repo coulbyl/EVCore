@@ -35,6 +35,7 @@ export class AdminJournalRepository {
 
   async list(input: {
     kind?: string;
+    kinds?: readonly string[];
     actorId?: string;
     take: number;
   }): Promise<AdminActionView[]> {
@@ -42,6 +43,7 @@ export class AdminJournalRepository {
       where: {
         ...(input.actorId && { actorId: input.actorId }),
         ...(input.kind && { kind: input.kind }),
+        ...(input.kinds && { kind: { in: [...input.kinds] } }),
       },
       orderBy: { createdAt: 'desc' },
       take: input.take,

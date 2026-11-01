@@ -204,6 +204,8 @@ export type PlayerAccount = {
   email: string;
   role: string;
   createdAt: string;
+  /** The last day the account came into the app, or null. */
+  lastSeenAt: string | null;
   follows: number;
   pausedUntil: string | null;
   suspended: boolean;

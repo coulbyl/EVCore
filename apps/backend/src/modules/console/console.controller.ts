@@ -163,8 +163,9 @@ export class ConsoleController {
   @ApiOkResponse({ description: 'The accounts.' })
   getAccounts(
     @Query() query: PlayersAccountsQueryDto,
+    @CurrentSession() session: AuthSession,
   ): Promise<{ items: PlayerAccount[]; page: number; more: boolean }> {
-    return this.players.getAccounts(query);
+    return this.players.getAccounts({ ...query, exclude: session.user.id });
   }
 
   @Get('players/:id')
@@ -218,7 +219,7 @@ export class ConsoleController {
     actors: { id: string; name: string }[];
   }> {
     const [items, actors] = await Promise.all([
-      this.journal.list({ actorId: query.actor }),
+      this.journal.list({ actorId: query.actor, group: query.group }),
       this.journal.actors(),
     ]);
     return { items, actors };

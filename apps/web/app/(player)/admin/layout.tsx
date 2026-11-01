@@ -16,5 +16,10 @@ export default async function AdminLayout({
   if (result.status !== "signed-in" || result.session.user.role !== "ADMIN") {
     notFound();
   }
-  return children;
+  // Widens the shell's column on a wide screen (scoreboard-shell.tsx).
+  return (
+    <div data-admin-wide="" className="contents">
+      {children}
+    </div>
+  );
 }

@@ -34,3 +34,21 @@ export type AdminActionView = {
   after: unknown;
   reason: string | null;
 };
+
+/** The journal's filter by type (Réglages): which kinds each group holds. */
+export const ADMIN_ACTION_GROUPS = {
+  settings: ['setting'],
+  operations: [
+    'pass_relaunched',
+    'queue_retried',
+    'queue_cleared',
+    'backfill_paused',
+    'backfill_resumed',
+    'settlement_replayed',
+    'market_reactivated',
+  ],
+  accounts: ['role', 'suspension', 'account_deleted'],
+  announcements: ['announcement'],
+} as const satisfies Record<string, readonly AdminActionKind[]>;
+
+export type AdminActionGroup = keyof typeof ADMIN_ACTION_GROUPS;

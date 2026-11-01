@@ -395,7 +395,12 @@ export class ConsoleRepository {
   }
 
   /** Joueurs › Comptes: newest first, by first name or e-mail. */
-  accounts(input: { q: string; take: number; skip: number }): Promise<
+  accounts(input: {
+    q: string;
+    take: number;
+    skip: number;
+    exclude: string;
+  }): Promise<
     {
       id: string;
       fullName: string;
@@ -409,14 +414,15 @@ export class ConsoleRepository {
   > {
     const q = input.q.trim();
     return this.prisma.client.user.findMany({
-      where: q
-        ? {
-            OR: [
-              { fullName: { contains: q, mode: 'insensitive' } },
-              { email: { contains: q, mode: 'insensitive' } },
-            ],
-          }
-        : {},
+      where: {
+        id: { not: input.exclude },
+        ...(q && {
+          OR: [
+            { fullName: { contains: q, mode: 'insensitive' } },
+            { email: { contains: q, mode: 'insensitive' } },
+          ],
+        }),
+      },
       orderBy: { createdAt: 'desc' },
       take: input.take,
       skip: input.skip,
@@ -434,6 +440,20 @@ export class ConsoleRepository {
   }
 
   /** A player's account, its last followed coupons and its thread. */
+  /** Each account's last day in the app (« dernière venue »). */
+  async lastSeen(ids: string[]): Promise<Map<string, Date>> {
+    if (ids.length === 0) return new Map();
+    const rows = await this.prisma.client.$queryRaw<
+      { userId: string; at: Date }[]
+    >`
+      SELECT "userId", max("firstSeenAt") AS at
+      FROM public.user_activity_day
+      WHERE "userId" = ANY(${ids}::uuid[])
+      GROUP BY "userId"
+    `;
+    return new Map(rows.map((r) => [r.userId, r.at]));
+  }
+
   async player(id: string): Promise<{
     user: {
       id: string;

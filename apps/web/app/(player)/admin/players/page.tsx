@@ -82,13 +82,36 @@ export default async function Page({
               {month.month === current ? t("previousMonth") : t("currentMonth")}
             </Link>
           </div>
-          <p className="score text-body">
-            {t("signups", { count: month.signups })} ·{" "}
-            {t("activated", { count: month.activated })} ·{" "}
-            {t("active7", { count: month.active7 })} ·{" "}
-            {rate ? t("morning", { rate }) : t("morningNone")}
-          </p>
+          <dl className="grid grid-cols-4 gap-2 pt-1">
+            {[
+              { value: String(month.signups), label: t("figures.signups") },
+              { value: String(month.activated), label: t("figures.activated") },
+              { value: String(month.active7), label: t("figures.active7") },
+              { value: rate ?? "—", label: t("figures.morning") },
+            ].map((figure) => (
+              <div
+                key={figure.label}
+                className="flex flex-col-reverse gap-0.5 rounded-[0.75rem] border border-border bg-card px-2 py-2.5 text-center"
+              >
+                <dt className="text-legal text-muted-foreground">
+                  {figure.label}
+                </dt>
+                <dd className="score text-figure font-bold">{figure.value}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
+
+        <Link
+          href="/admin/players/announce"
+          className="flex min-h-12 items-center justify-between gap-3 border-y border-border py-2 text-body font-medium"
+        >
+          {t("announce")}
+          <ChevronRight
+            aria-hidden
+            className="size-[1.125rem] text-icon-subtle"
+          />
+        </Link>
 
         <Link
           href="/admin/messages"
@@ -146,8 +169,10 @@ export default async function Page({
                       </span>
                       <span className="text-meta text-muted-foreground">
                         {t(`roles.${a.role}`)} ·{" "}
-                        {t("createdOn", { date: day(a.createdAt) })} ·{" "}
-                        {t("follows", { count: a.follows })}
+                        {a.lastSeenAt
+                          ? t("lastSeen", { date: day(a.lastSeenAt) })
+                          : t("neverSeen")}{" "}
+                        · {t("follows", { count: a.follows })}
                         {a.pausedUntil
                           ? ` · ${t("pausedUntil", { date: day(a.pausedUntil) })}`
                           : ""}
@@ -172,17 +197,6 @@ export default async function Page({
             </Link>
           ) : null}
         </section>
-
-        <Link
-          href="/admin/players/announce"
-          className="flex min-h-12 items-center justify-between gap-3 border-y border-border py-2 text-body font-medium"
-        >
-          {t("announce")}
-          <ChevronRight
-            aria-hidden
-            className="size-[1.125rem] text-icon-subtle"
-          />
-        </Link>
       </div>
     </>
   );

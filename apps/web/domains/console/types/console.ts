@@ -174,6 +174,7 @@ export type PlayerAccount = {
   email: string;
   role: "ADMIN" | "OPERATOR";
   createdAt: string;
+  lastSeenAt: string | null;
   follows: number;
   pausedUntil: string | null;
   suspended: boolean;

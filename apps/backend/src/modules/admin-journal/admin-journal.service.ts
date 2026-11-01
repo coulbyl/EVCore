@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { createLogger } from '@utils/logger';
 import { AdminJournalRepository } from './admin-journal.repository';
-import type {
-  AdminActionEntry,
-  AdminActionKind,
-  AdminActionView,
+import {
+  ADMIN_ACTION_GROUPS,
+  type AdminActionGroup,
+  type AdminActionEntry,
+  type AdminActionKind,
+  type AdminActionView,
 } from './admin-journal.types';
 
 const logger = createLogger('admin-journal');
@@ -46,9 +48,14 @@ export class AdminJournalService {
     return masked;
   }
 
-  list(input: { actorId?: string; take?: number }): Promise<AdminActionView[]> {
+  list(input: {
+    actorId?: string;
+    group?: AdminActionGroup;
+    take?: number;
+  }): Promise<AdminActionView[]> {
     return this.repository.list({
       actorId: input.actorId,
+      kinds: input.group ? ADMIN_ACTION_GROUPS[input.group] : undefined,
       take: input.take ?? 100,
     });
   }

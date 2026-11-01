@@ -37,7 +37,12 @@ export class ConsolePlayersService {
     };
   }
 
-  async getAccounts(input: { q?: string; page?: number }): Promise<{
+  async getAccounts(input: {
+    q?: string;
+    page?: number;
+    /** The admin reading: not in the list of the accounts to look at. */
+    exclude: string;
+  }): Promise<{
     items: PlayerAccount[];
     page: number;
     more: boolean;
@@ -47,9 +52,12 @@ export class ConsolePlayersService {
       q: input.q ?? '',
       take: PAGE_SIZE + 1,
       skip: (page - 1) * PAGE_SIZE,
+      exclude: input.exclude,
     });
+    const shown = rows.slice(0, PAGE_SIZE);
+    const seen = await this.repository.lastSeen(shown.map((r) => r.id));
     return {
-      items: rows.slice(0, PAGE_SIZE).map(accountOf),
+      items: shown.map((row) => accountOf(row, seen.get(row.id) ?? null)),
       page,
       more: rows.length > PAGE_SIZE,
     };
@@ -59,7 +67,10 @@ export class ConsolePlayersService {
     const { user, followed, conversationId } = await this.repository.player(id);
     if (!user) throw new NotFoundException('Compte inconnu');
     return {
-      ...accountOf(user),
+      ...accountOf(
+        user,
+        (await this.repository.lastSeen([user.id])).get(user.id) ?? null,
+      ),
       emailVerified: user.emailVerified,
       followed: followed.map((f) => ({
         couponId: f.couponId,
@@ -72,22 +83,26 @@ export class ConsolePlayersService {
   }
 }
 
-function accountOf(row: {
-  id: string;
-  fullName: string;
-  email: string;
-  role: string;
-  createdAt: Date;
-  pausedUntil: Date | null;
-  suspended: boolean;
-  _count: { couponFollows: number };
-}): PlayerAccount {
+function accountOf(
+  row: {
+    id: string;
+    fullName: string;
+    email: string;
+    role: string;
+    createdAt: Date;
+    pausedUntil: Date | null;
+    suspended: boolean;
+    _count: { couponFollows: number };
+  },
+  lastSeen: Date | null,
+): PlayerAccount {
   return {
     id: row.id,
     name: row.fullName,
     email: row.email,
     role: row.role,
     createdAt: row.createdAt.toISOString(),
+    lastSeenAt: lastSeen?.toISOString() ?? null,
     follows: row._count.couponFollows,
     pausedUntil:
       row.pausedUntil && row.pausedUntil > new Date()

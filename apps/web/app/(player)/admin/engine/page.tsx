@@ -3,6 +3,7 @@ import Link from "next/link";
 import { clsx } from "clsx";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ChipGroup } from "@/components/scoreboard/ui/chip-group";
+import type { EngineProducts } from "@/domains/console/types/console";
 import {
   getEngineChannels,
   getEngineProducts,
@@ -20,6 +21,13 @@ export async function generateMetadata(): Promise<Metadata> {
 const PERIODS = ["30", "90", "all"] as const;
 // Alerts come first: past these, the search narrows the list.
 const CELLS_SHOWN = 50;
+// The cell's word as a diode, like the queues' (Exploitation).
+const WORD_DOT = {
+  alert: "bg-loss",
+  optimistic: "bg-warning",
+  conforme: "bg-win",
+  not_enough: "bg-icon-subtle",
+} as const;
 
 /**
  * Moteur — « tient-il ce qu'il annonce ? » (12-admin.md § 2, maquettes
@@ -34,7 +42,8 @@ export default async function Page({
 }) {
   const params = await searchParams;
   const period = PERIODS.find((p) => p === params.period) ?? "90";
-  const onlyAlerts = params.alerts === "1";
+  // Alerts by default: 896 cells otherwise, alerts first but 50 lines long.
+  const onlyAlerts = params.alerts !== "0";
   const query = (params.q ?? "").trim().toLowerCase();
   const [t, results, today, locale, products, channels, suspensions] =
     await Promise.all([
@@ -81,7 +90,7 @@ export default async function Page({
     const p = new URLSearchParams();
     const next = { period, alerts: onlyAlerts, q: params.q ?? "", ...over };
     if (next.period !== "90") p.set("period", next.period);
-    if (next.alerts) p.set("alerts", "1");
+    if (!next.alerts) p.set("alerts", "0");
     if (next.q) p.set("q", next.q);
     const s = p.toString();
     return s ? `/admin/engine?${s}` : "/admin/engine";
@@ -94,6 +103,36 @@ export default async function Page({
         c.competitionName.toLowerCase().includes(query)),
   );
   const heading = "text-meta font-semibold text-muted-foreground";
+  const productRow = (p: EngineProducts["products"][number]) => (
+    <li key={p.product} className="flex flex-col gap-0.5 py-2.5">
+      <span className="flex flex-wrap items-baseline justify-between gap-x-3">
+        <span className="text-body font-semibold">{name(p.product)}</span>
+        <span className="score text-body">
+          {t("engine.days", { count: p.won + p.lost })} ·{" "}
+          {t("engine.won", { count: p.won })}
+        </span>
+      </span>
+      <span className="flex flex-wrap gap-x-3 text-meta text-muted-foreground">
+        <span>
+          {p.tooEarly
+            ? t("engine.tooEarly")
+            : t("engine.announcedRealised", {
+                announced: pct(p.announced),
+                realised: pct(p.realised),
+              })}
+        </span>
+        <span>{t("engine.clv", { value: signed(p.clv) })}</span>
+        <span>{t("engine.margin", { value: pct(p.margin) })}</span>
+        <span>{t("engine.legs", { count: p.legs })}</span>
+      </span>
+    </li>
+  );
+  const retired = products.products.filter((p) => p.retired);
+  // The suspensions' reason repeats its window and cause on every line: said
+  // once above the list, each line keeps its figures.
+  const SUSPENSION_TAIL =
+    / jambes réglées en 90 jours — suspension automatique$/;
+  const allAutomatic = suspensions.every((s) => SUSPENSION_TAIL.test(s.reason));
 
   return (
     <>
@@ -117,37 +156,7 @@ export default async function Page({
             {t("engine.productsTitle")}
           </h2>
           <ul className="divide-y divide-border">
-            {products.products.map((p) => (
-              <li key={p.product} className="flex flex-col gap-0.5 py-2.5">
-                <span className="flex flex-wrap items-baseline justify-between gap-x-3">
-                  <span className="text-body font-semibold">
-                    {name(p.product)}
-                    {p.retired ? (
-                      <span className="ms-2 text-meta font-normal text-muted-foreground">
-                        {t("engine.retired")}
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className="score text-body">
-                    {t("engine.days", { count: p.won + p.lost })} ·{" "}
-                    {t("engine.won", { count: p.won })}
-                  </span>
-                </span>
-                <span className="flex flex-wrap gap-x-3 text-meta text-muted-foreground">
-                  <span>
-                    {p.tooEarly
-                      ? t("engine.tooEarly")
-                      : t("engine.announcedRealised", {
-                          announced: pct(p.announced),
-                          realised: pct(p.realised),
-                        })}
-                  </span>
-                  <span>{t("engine.clv", { value: signed(p.clv) })}</span>
-                  <span>{t("engine.margin", { value: pct(p.margin) })}</span>
-                  <span>{t("engine.legs", { count: p.legs })}</span>
-                </span>
-              </li>
-            ))}
+            {products.products.filter((p) => !p.retired).map(productRow)}
             <li className="flex flex-col gap-0.5 py-2.5">
               <details>
                 <summary className="flex cursor-pointer flex-wrap items-baseline justify-between gap-x-3">
@@ -189,6 +198,62 @@ export default async function Page({
               </details>
             </li>
           </ul>
+          {retired.length > 0 ? (
+            <>
+              <h3 className="pt-3 text-meta font-semibold text-muted-foreground">
+                {t("engine.retiredTitle")}
+              </h3>
+              <ul className="divide-y divide-border">
+                {retired.map(productRow)}
+              </ul>
+            </>
+          ) : null}
+        </section>
+
+        <section
+          aria-labelledby="suspended-title"
+          className="flex flex-col gap-1"
+        >
+          <h2 id="suspended-title" className={heading}>
+            {t("engine.suspendedTitle")}
+          </h2>
+          {suspensions.length > 0 && allAutomatic ? (
+            <p className="text-meta text-muted-foreground">
+              {t("engine.suspendedNote")}
+            </p>
+          ) : null}
+          {suspensions.length === 0 ? (
+            <p className="text-body text-muted-foreground">
+              {t("engine.noneSuspended")}
+            </p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {suspensions.map((s) => (
+                <li key={s.id} className="flex items-center gap-3 py-2.5">
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="text-body font-medium">{s.market}</span>
+                    <span className="text-meta text-muted-foreground">
+                      {t("engine.since", { date: day(s.since) })} ·{" "}
+                      {allAutomatic
+                        ? s.reason.replace(SUSPENSION_TAIL, " jambes")
+                        : s.reason}
+                    </span>
+                  </span>
+                  <ReactivateMarket
+                    id={s.id}
+                    labels={{
+                      action: t("engine.reactivate"),
+                      title: t("engine.reactivateTitle", { market: s.market }),
+                      reason: t("engine.reactivateReason"),
+                      confirm: t("engine.reactivateConfirm"),
+                      cancel: t("engine.cancel"),
+                      failed: t("engine.reactivateFailed"),
+                    }}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         <section
@@ -221,8 +286,8 @@ export default async function Page({
             {period !== "90" ? (
               <input type="hidden" name="period" value={period} />
             ) : null}
-            {onlyAlerts ? (
-              <input type="hidden" name="alerts" value="1" />
+            {!onlyAlerts ? (
+              <input type="hidden" name="alerts" value="0" />
             ) : null}
             <input
               type="search"
@@ -248,36 +313,53 @@ export default async function Page({
               {cells.slice(0, CELLS_SHOWN).map((c) => (
                 <li
                   key={`${c.channel}-${c.competitionCode}`}
-                  className="grid grid-cols-[1fr_auto] items-baseline gap-x-3 py-2"
+                  className="flex items-center gap-3 py-2"
                 >
-                  <span className="min-w-0 text-body">
-                    <span className="font-medium">{c.channel}</span>{" "}
-                    <span className="text-muted-foreground">
-                      {c.competitionCode}
-                    </span>
-                  </span>
                   <span
+                    aria-hidden
                     className={clsx(
-                      "score text-meta",
-                      c.word === "alert"
-                        ? "text-loss"
-                        : c.word === "optimistic"
-                          ? "text-warning"
-                          : "text-muted-foreground",
+                      "size-2.5 shrink-0 rounded-full",
+                      WORD_DOT[c.word],
                     )}
-                  >
-                    {t(`engine.words.${c.word}`)}
-                  </span>
-                  <span className="score text-meta text-muted-foreground">
-                    {t("engine.sample", { count: c.sample })} · {ratio(c.ratio)}
-                    {c.low !== null && c.high !== null
-                      ? ` [${ratio(c.low)}–${ratio(c.high)}]`
-                      : ""}
+                  />
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="text-body">
+                      <span className="font-medium">{c.channel}</span>{" "}
+                      <span className="text-muted-foreground">
+                        {c.competitionCode}
+                      </span>
+                      <span className="sr-only">
+                        {" "}
+                        · {t(`engine.words.${c.word}`)}
+                      </span>
+                    </span>
+                    <span className="text-meta text-muted-foreground">
+                      {t("engine.cellLine", {
+                        count: c.sample,
+                        ratio: ratio(c.ratio),
+                      })}
+                      {c.low !== null && c.high !== null
+                        ? ` ${t("engine.interval", { low: ratio(c.low), high: ratio(c.high) })}`
+                        : ""}
+                    </span>
                   </span>
                 </li>
               ))}
             </ul>
           )}
+          <p className="flex flex-wrap gap-x-3 gap-y-1 text-legal text-muted-foreground">
+            {(["alert", "optimistic", "conforme", "not_enough"] as const).map(
+              (word) => (
+                <span key={word} className="flex items-center gap-1.5">
+                  <span
+                    aria-hidden
+                    className={clsx("size-2 rounded-full", WORD_DOT[word])}
+                  />
+                  {t(`engine.words.${word}`)}
+                </span>
+              ),
+            )}
+          </p>
           {cells.length > CELLS_SHOWN ? (
             <p className="text-meta text-muted-foreground">
               {t("engine.moreCells", { count: cells.length - CELLS_SHOWN })}
@@ -285,43 +367,6 @@ export default async function Page({
           ) : null}
         </section>
 
-        <section
-          aria-labelledby="suspended-title"
-          className="flex flex-col gap-1"
-        >
-          <h2 id="suspended-title" className={heading}>
-            {t("engine.suspendedTitle")}
-          </h2>
-          {suspensions.length === 0 ? (
-            <p className="text-body text-muted-foreground">
-              {t("engine.noneSuspended")}
-            </p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {suspensions.map((s) => (
-                <li key={s.id} className="flex items-center gap-3 py-2.5">
-                  <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="text-body font-medium">{s.market}</span>
-                    <span className="text-meta text-muted-foreground">
-                      {t("engine.since", { date: day(s.since) })} · {s.reason}
-                    </span>
-                  </span>
-                  <ReactivateMarket
-                    id={s.id}
-                    labels={{
-                      action: t("engine.reactivate"),
-                      title: t("engine.reactivateTitle", { market: s.market }),
-                      reason: t("engine.reactivateReason"),
-                      confirm: t("engine.reactivateConfirm"),
-                      cancel: t("engine.cancel"),
-                      failed: t("engine.reactivateFailed"),
-                    }}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
         <Link href="/admin" className="sr-only">
           {t("titles.home")}
         </Link>

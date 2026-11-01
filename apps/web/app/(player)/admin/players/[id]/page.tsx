@@ -57,6 +57,10 @@ export default async function Page({
           <p className="text-meta text-muted-foreground">
             {t(`roles.${player.role}`)} ·{" "}
             {t("createdOn", { date: day(player.createdAt) })} ·{" "}
+            {player.lastSeenAt
+              ? t("lastSeen", { date: day(player.lastSeenAt) })
+              : t("neverSeen")}{" "}
+            ·{" "}
             {player.emailVerified
               ? t("sheet.verified")
               : t("sheet.notVerified")}

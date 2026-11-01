@@ -60,7 +60,9 @@ export function ScoreboardShell({
       <div className="flex min-w-0 flex-1 justify-center" {...inert}>
         <main
           id="contenu"
-          className="flex min-h-dvh w-full max-w-[40rem] flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.5rem)] lg:pb-10"
+          // The admin's screens are tables of figures: a wider column on a
+          // wide screen, marked by their layout (data-admin-wide).
+          className="flex min-h-dvh w-full max-w-[40rem] flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom)+1.5rem)] lg:pb-10 lg:has-[[data-admin-wide]]:max-w-[60rem]"
         >
           <OfflineLine />
           {children}
