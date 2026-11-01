@@ -12,6 +12,8 @@ import type {
   AnnouncementView,
   SettingView,
   AdminActionView,
+  QueuesScreen,
+  SettlePreview,
 } from "../types/console";
 
 /** The lights and « À faire », read once per request. */
@@ -92,5 +94,19 @@ export const getJournal = cache(
       actor
         ? `/console/journal?actor=${encodeURIComponent(actor)}`
         : "/console/journal",
+    ),
+);
+
+/** Exploitation › Les files, read fresh each time (no cache: it moves). */
+export const getQueues = cache(
+  (): Promise<QueuesScreen> =>
+    serverApiRequest<QueuesScreen>("/console/queues"),
+);
+
+/** The last settlement replay, read through an empty preview of today. */
+export const getLastSettle = cache(
+  (today: string): Promise<SettlePreview> =>
+    serverApiRequest<SettlePreview>(
+      `/console/settle/preview?kind=coupons&from=${today}&to=${today}`,
     ),
 );

@@ -6,7 +6,8 @@ import { usePlayerText } from "../text/player-texts";
 // clsx alone: no class comes from outside, nothing for tailwind-merge to
 // resolve, and it weighed 8.5 kio of the player's JS (C0).
 import { clsx as cn } from "clsx";
-import { isTabActive, tabsFor } from "./shell-constants";
+import { AdminBottomTabs } from "./admin-bottom-tabs";
+import { PLAYER_TABS, isTabActive } from "./shell-constants";
 import { TabLed } from "./tab-led";
 
 /**
@@ -17,6 +18,8 @@ import { TabLed } from "./tab-led";
 export function BottomTabs({ admin = false }: { admin?: boolean }) {
   const pathname = usePathname();
   const t = usePlayerText("shell");
+  // An admin has its own bar: its screens, the rest under « Plus ».
+  if (admin) return <AdminBottomTabs />;
 
   return (
     <nav
@@ -24,8 +27,8 @@ export function BottomTabs({ admin = false }: { admin?: boolean }) {
       aria-label={t("tabsLabel")}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
-      <ul className={admin ? "grid grid-cols-5" : "grid grid-cols-4"}>
-        {tabsFor(admin).map((tab) => {
+      <ul className="grid grid-cols-4">
+        {PLAYER_TABS.map((tab) => {
           const active = isTabActive(pathname, tab.href);
           const Icon = tab.icon;
           return (

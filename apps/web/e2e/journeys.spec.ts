@@ -15,6 +15,19 @@ const tab = (page: Page, name: string) =>
   page.getByRole("navigation").getByRole("link", { name, exact: true }).first();
 
 test.describe("Parcours du joueur", () => {
+  // A player's screens: an admin has its own bar (Accueil · Moteur ·
+  // Joueurs · Messages · Plus) and its own Messages.
+  test.beforeEach(async ({ context }) => {
+    await context.addCookies([
+      {
+        name: "evcore_session",
+        value: "player",
+        domain: "localhost",
+        path: "/",
+      },
+    ]);
+  });
+
   test("le matin : le coupon du jour, sa feuille, Suivre", async ({ page }) => {
     await page.goto("/today");
     await page

@@ -6,6 +6,19 @@ import { expect, test } from "@playwright/test";
  * « Se déconnecter ».
  */
 test.describe("Moi", () => {
+  // A player's screens: an admin has its own bar (Accueil · Moteur ·
+  // Joueurs · Messages · Plus) and its own Messages.
+  test.beforeEach(async ({ context }) => {
+    await context.addCookies([
+      {
+        name: "evcore_session",
+        value: "player",
+        domain: "localhost",
+        path: "/",
+      },
+    ]);
+  });
+
   test("le prénom, mon bilan, la date du premier suivi", async ({ page }) => {
     await page.goto("/me");
     await expect(page.getByText("Kouassi", { exact: true })).toBeVisible();

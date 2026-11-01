@@ -168,7 +168,14 @@
       "engine": "Engine",
       "players": "Players",
       "settings": "Settings",
-      "messages": "Messages"
+      "messages": "Messages",
+      "exploitation": "Operations"
+    },
+    "adminBar": {
+      "home": "Home",
+      "more": "More",
+      "adminGroup": "Admin",
+      "playerGroup": "Player side"
     }
   },
   "scoreboard": {
@@ -791,11 +798,12 @@
   },
   "console": {
     "titles": {
-      "home": "Admin",
+      "home": "Home",
       "engine": "Engine",
       "players": "Players",
       "settings": "Settings",
-      "messages": "Messages"
+      "messages": "Messages",
+      "exploitation": "Operations"
     },
     "lights": {
       "data": "Data",
@@ -1007,7 +1015,12 @@
         "unsuspended": "{email} restored",
         "account_deleted": "account {email} deleted",
         "announcement": "announcement published: “{title}”",
-        "pass_relaunched": "{pass} relaunched"
+        "pass_relaunched": "{pass} relaunched",
+        "queue_retried": "{queue} relaunched ({count, plural, one {# failure} other {# failures}})",
+        "queue_cleared": "failure cleared: {queue}",
+        "backfill_paused": "stats catch-up paused",
+        "backfill_resumed": "stats catch-up resumed",
+        "settlement_replayed": "settlement replayed: {target} · {replayed} read again, {corrected} corrected"
       }
     },
     "messages": {
@@ -1029,6 +1042,88 @@
       "pick": "Pick a conversation.",
       "write": "Write to them",
       "writeFailed": "Conversation not opened, try again."
+    },
+    "exploitation": {
+      "queuesTitle": "Queues",
+      "readAt": "read at {time} · every 30 s",
+      "queues": {
+        "analysis_soon": "Analysis before kick-off",
+        "odds": "Odds",
+        "ai": "AI opinions",
+        "settlement": "Settlement",
+        "player_mail": "Morning brief and statements",
+        "horizon": "Tomorrow's coupons",
+        "analysis": "Next-day analysis",
+        "season_rollover": "Season rollover",
+        "league": "Matches, stats, injuries",
+        "odds_csv": "CSV closing odds",
+        "stale": "Matches left « upcoming »",
+        "elo": "Elo",
+        "coach": "Coaches",
+        "stats_backfill": "Stats catch-up",
+        "odds_historical": "Historical Pinnacle odds",
+        "rebuild": "Engine replayed on history",
+        "watch": "Lights watch"
+      },
+      "states": {
+        "failed": "failed",
+        "running": "running",
+        "on_time": "on time",
+        "paused": "paused",
+        "on_demand": "on demand"
+      },
+      "failedAt": "{count, plural, one {failed} other {# failed}} · {time}",
+      "runningFor": "running for {minutes} min",
+      "doneAt": "✓ {time}",
+      "yesterdayAt": "yesterday {time}",
+      "nextNow": "next now",
+      "nextIn": "next in {minutes} min",
+      "nextAt": "next at {time}",
+      "nextTomorrow": "next tomorrow {time}",
+      "nextOn": "next on {date}",
+      "paused": "paused",
+      "pausedSince": "paused since {date}",
+      "onDemand": "on demand",
+      "onDemandLast": "on demand · last ✓ {date}",
+      "backfillSeasons": "{done} / {total} seasons",
+      "backfillQuota": "today's quota {used} / {limit}",
+      "retry": "Relaunch",
+      "clear": "Clear the failure",
+      "pause": "Pause",
+      "resume": "Resume",
+      "actionFailed": "Not done, try again.",
+      "watchNote": "The lights watch shows only when it fails.",
+      "settleTitle": "Settle again",
+      "settle": {
+        "legend": "Settle",
+        "coupons": "The coupons",
+        "selections": "The engine's picks",
+        "from": "From",
+        "to": "To",
+        "note": "A result already right does not change. Nothing is sent to players.",
+        "replay": "Replay the settlement",
+        "reading": "Reading…",
+        "failed": "Not done: dates refused (120 days at most) or network.",
+        "confirmTitle": {
+          "coupons": "Replay the coupons' settlement for {range}?",
+          "selections": "Replay the engine picks' settlement for {range}?"
+        },
+        "items": {
+          "coupons": "Coupons in the range",
+          "selections": "Picks of finished matches"
+        },
+        "followers": "Players following them",
+        "unfinished": "Dates still missing results",
+        "confirmNote": "A corrected result updates Results and followed coupons; nothing is sent to players.",
+        "journal": "Logged in the journal, with your name.",
+        "confirm": "Replay",
+        "cancel": "Cancel",
+        "done": "{replayed} read again · {corrected} corrected",
+        "last": "Last pass: {date} · {target} · {actor}"
+      },
+      "repoTitle": "From the repository",
+      "repoText": "The rest runs cold, as commands: full sync, per-league operations, history (matches, stats, CSV, Pinnacle), engine replayed on history.",
+      "scheduled": "scheduled, no failure"
     }
   }
 }

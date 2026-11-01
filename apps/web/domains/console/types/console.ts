@@ -224,3 +224,67 @@ export type AdminActionView = {
   after: unknown;
   reason: string | null;
 };
+
+/** Exploitation › Les files (docs/refonte-ui/exploitation-inventaire.md). */
+export type QueueKey =
+  | "analysis_soon"
+  | "odds"
+  | "ai"
+  | "settlement"
+  | "player_mail"
+  | "horizon"
+  | "analysis"
+  | "season_rollover"
+  | "league"
+  | "odds_csv"
+  | "stale"
+  | "elo"
+  | "coach"
+  | "stats_backfill"
+  | "odds_historical"
+  | "rebuild"
+  | "watch";
+
+export type QueueView = {
+  key: QueueKey;
+  state: "failed" | "running" | "on_time" | "paused" | "on_demand";
+  lastDoneAt: string | null;
+  nextAt: string | null;
+  runningSince: string | null;
+  failure: { count: number; at: string | null; reason: string | null } | null;
+};
+
+export type BackfillView = {
+  paused: boolean;
+  pausedSince: string | null;
+  pausedBy: string | null;
+  completedSeasons: number;
+  seasons: number;
+  pending: number;
+  quota: { used: number; limit: number } | null;
+  reserve: number;
+};
+
+export type QueuesScreen = {
+  at: string;
+  queues: QueueView[];
+  backfill: BackfillView | null;
+};
+
+export type SettleKind = "coupons" | "selections";
+
+export type SettlePreview = {
+  kind: SettleKind;
+  from: string;
+  to: string;
+  items: number;
+  followers: number;
+  unfinishedDates: number;
+  last: AdminActionView | null;
+};
+
+export type SettleResult = {
+  kind: SettleKind;
+  replayed: number;
+  corrected: number;
+};

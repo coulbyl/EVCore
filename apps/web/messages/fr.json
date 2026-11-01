@@ -168,7 +168,14 @@
       "engine": "Moteur",
       "players": "Joueurs",
       "settings": "Réglages",
-      "messages": "Messages"
+      "messages": "Messages",
+      "exploitation": "Exploitation"
+    },
+    "adminBar": {
+      "home": "Accueil",
+      "more": "Plus",
+      "adminGroup": "Admin",
+      "playerGroup": "Côté joueur"
     }
   },
   "scoreboard": {
@@ -791,11 +798,12 @@
   },
   "console": {
     "titles": {
-      "home": "Admin",
+      "home": "Accueil",
       "engine": "Moteur",
       "players": "Joueurs",
       "settings": "Réglages",
-      "messages": "Messages"
+      "messages": "Messages",
+      "exploitation": "Exploitation"
     },
     "lights": {
       "data": "Données",
@@ -1007,7 +1015,12 @@
         "unsuspended": "{email} rétabli",
         "account_deleted": "compte {email} supprimé",
         "announcement": "annonce publiée : « {title} »",
-        "pass_relaunched": "{pass} relancée"
+        "pass_relaunched": "{pass} relancée",
+        "queue_retried": "{queue} relancée ({count, plural, one {# échec} other {# échecs}})",
+        "queue_cleared": "échec effacé : {queue}",
+        "backfill_paused": "rattrapage des stats mis en pause",
+        "backfill_resumed": "rattrapage des stats repris",
+        "settlement_replayed": "règlement rejoué : {target} · {replayed} relus, {corrected} corrigés"
       }
     },
     "messages": {
@@ -1029,6 +1042,88 @@
       "pick": "Choisis une conversation.",
       "write": "Lui écrire",
       "writeFailed": "Conversation pas ouverte, réessaie."
+    },
+    "exploitation": {
+      "queuesTitle": "Les files",
+      "readAt": "lu à {time} · toutes les 30 s",
+      "queues": {
+        "analysis_soon": "Analyse avant le coup d'envoi",
+        "odds": "Cotes",
+        "ai": "Avis de l'IA",
+        "settlement": "Règlement",
+        "player_mail": "Matinée et relevés",
+        "horizon": "Coupons de demain",
+        "analysis": "Analyse du lendemain",
+        "season_rollover": "Changement de saison",
+        "league": "Matchs, stats, blessures",
+        "odds_csv": "Cotes de clôture CSV",
+        "stale": "Matchs restés « à venir »",
+        "elo": "Elo",
+        "coach": "Entraîneurs",
+        "stats_backfill": "Rattrapage des stats",
+        "odds_historical": "Cotes Pinnacle historiques",
+        "rebuild": "Moteur rejoué sur l'historique",
+        "watch": "Veille des voyants"
+      },
+      "states": {
+        "failed": "échec",
+        "running": "en cours",
+        "on_time": "à l'heure",
+        "paused": "en pause",
+        "on_demand": "à la demande"
+      },
+      "failedAt": "{count, plural, one {en échec} other {# en échec}} · {time}",
+      "runningFor": "en cours depuis {minutes} min",
+      "doneAt": "✓ {time}",
+      "yesterdayAt": "hier {time}",
+      "nextNow": "prochain maintenant",
+      "nextIn": "prochain dans {minutes} min",
+      "nextAt": "prochain à {time}",
+      "nextTomorrow": "prochain demain {time}",
+      "nextOn": "prochain le {date}",
+      "paused": "en pause",
+      "pausedSince": "en pause depuis le {date}",
+      "onDemand": "à la demande",
+      "onDemandLast": "à la demande · dernier ✓ {date}",
+      "backfillSeasons": "{done} / {total} saisons",
+      "backfillQuota": "quota du jour {used} / {limit}",
+      "retry": "Relancer",
+      "clear": "Effacer l'échec",
+      "pause": "Mettre en pause",
+      "resume": "Reprendre",
+      "actionFailed": "Pas fait, réessaie.",
+      "watchNote": "La veille des voyants n'apparaît que si elle échoue.",
+      "settleTitle": "Régler de nouveau",
+      "settle": {
+        "legend": "Régler",
+        "coupons": "Les coupons",
+        "selections": "Les paris du moteur",
+        "from": "Du",
+        "to": "Au",
+        "note": "Un résultat déjà juste ne change pas. Rien n'est envoyé aux joueurs.",
+        "replay": "Rejouer le règlement",
+        "reading": "Lecture…",
+        "failed": "Pas fait : dates refusées (120 jours au plus) ou réseau.",
+        "confirmTitle": {
+          "coupons": "Rejouer le règlement des coupons du {range} ?",
+          "selections": "Rejouer le règlement des paris du moteur du {range} ?"
+        },
+        "items": {
+          "coupons": "Coupons dans la plage",
+          "selections": "Sélections de matchs finis"
+        },
+        "followers": "Joueurs qui en suivent",
+        "unfinished": "Dates encore sans tous leurs résultats",
+        "confirmNote": "Un résultat corrigé met à jour Résultats et les coupons suivis ; rien n'est envoyé aux joueurs.",
+        "journal": "Noté au journal, avec ton nom.",
+        "confirm": "Rejouer",
+        "cancel": "Annuler",
+        "done": "{replayed} relus · {corrected} corrigés",
+        "last": "Dernier passage : {date} · {target} · {actor}"
+      },
+      "repoTitle": "Depuis le dépôt",
+      "repoText": "Le reste se lance à froid, en commande : sync complet, opérations par championnat, historiques (matchs, stats, CSV, Pinnacle), moteur rejoué sur l'historique.",
+      "scheduled": "planifiée, sans échec"
     }
   }
 }

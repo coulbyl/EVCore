@@ -99,9 +99,13 @@ function shown(
 /** One journal line in words: « Fournisseur LLM : together → cerebras ». */
 function lineOf(
   item: AdminActionView,
-  input: { t: Settings; passName: (key: string) => string },
+  input: {
+    t: Settings;
+    passName: (key: string) => string;
+    queueName: (key: string) => string;
+  },
 ): string {
-  const { t, passName } = input;
+  const { t, passName, queueName } = input;
   const text = (v: unknown): string => {
     if (v === null || v === undefined) return t("fromEnv");
     if (typeof v === "boolean") return v ? t("on") : t("off");
@@ -141,6 +145,23 @@ function lineOf(
       return t("journal.announcement", { title: item.target });
     case "pass_relaunched":
       return t("journal.pass_relaunched", { pass: passName(item.target) });
+    case "queue_retried":
+    case "queue_cleared":
+      return t(`journal.${item.kind}`, {
+        queue: queueName(item.target),
+        count: Number(item.after ?? 0),
+      });
+    case "backfill_paused":
+    case "backfill_resumed":
+      return t(`journal.${item.kind}`);
+    case "settlement_replayed": {
+      const r = recordOf(item.after);
+      return t("journal.settlement_replayed", {
+        target: item.target,
+        replayed: Number(r?.["replayed"] ?? 0),
+        corrected: Number(r?.["corrected"] ?? 0),
+      });
+    }
     default:
       return `${item.kind} · ${item.target}`;
   }
@@ -174,6 +195,10 @@ export default async function Page({
   const time = (iso: string) => formatTime(new Date(iso), display, timeZone);
   const day = (iso: string) =>
     formatShortDate(new Date(iso), display, timeZone);
+  const queueName = (key: string) =>
+    console.has(`exploitation.queues.${key}`)
+      ? console(`exploitation.queues.${key}`)
+      : key;
   const passName = (key: string) =>
     console.has(`passes.${key}`) ? console(`passes.${key}`) : key;
   const heading = "text-meta font-semibold text-muted-foreground";
@@ -282,7 +307,7 @@ export default async function Page({
                   <span className="text-body">
                     <span className="font-semibold">{item.actor}</span>
                     {" · "}
-                    {lineOf(item, { t, passName })}
+                    {lineOf(item, { t, passName, queueName })}
                     <span className="ms-2 text-meta text-muted-foreground">
                       {time(item.at)}
                     </span>

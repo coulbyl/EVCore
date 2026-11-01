@@ -7,7 +7,12 @@ import { usePlayerText } from "../text/player-texts";
 // clsx alone: no class comes from outside, nothing for tailwind-merge to
 // resolve, and it weighed 8.5 kio of the player's JS (C0).
 import { clsx as cn } from "clsx";
-import { ADMIN_SECTIONS, PLAYER_TABS, isTabActive } from "./shell-constants";
+import {
+  ADMIN_SECTIONS,
+  PLAYER_TABS,
+  isAdminSectionActive,
+  isTabActive,
+} from "./shell-constants";
 import { TabLed } from "./tab-led";
 
 /**
@@ -71,10 +76,7 @@ export function SideRail({
           <ul className="flex flex-col gap-1">
             {ADMIN_SECTIONS.map((section) => {
               // « Accueil admin » is only /admin itself, not its sub-screens.
-              const active =
-                section.href === "/admin"
-                  ? pathname === "/admin"
-                  : isTabActive(pathname, section.href);
+              const active = isAdminSectionActive(pathname, section.href);
               const Icon = section.icon;
               return (
                 <li key={section.key}>
