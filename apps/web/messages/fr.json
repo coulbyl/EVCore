@@ -1064,7 +1064,11 @@
         "settleRange": {
           "coupons": "coupons du {from} au {to}",
           "selections": "paris du moteur du {from} au {to}"
-        }
+        },
+        "integration_set": "intégration : {field} enregistrée",
+        "integration_cleared": "intégration : {field} retirée, le .env sert",
+        "announcement_withdrawn": "annonce dépubliée : « {title} »",
+        "announcement_deleted": "annonce supprimée : « {title} »"
       },
       "journalType": "Par type",
       "allTypes": "Tout",
@@ -1073,7 +1077,11 @@
         "operations": "Exploitation",
         "accounts": "Comptes",
         "announcements": "Annonces"
-      }
+      },
+      "integrationsLink": "Intégrations",
+      "integrationsHint": "clés et adresses des services tiers, chiffrées",
+      "keyStored": "clé enregistrée",
+      "keyMissing": "pas de clé enregistrée"
     },
     "messages": {
       "search": "Chercher un joueur",
@@ -1184,6 +1192,61 @@
       "repoTitle": "Depuis le dépôt",
       "repoText": "Le reste se lance à froid, en commande : sync complet, opérations par championnat, historiques (matchs, stats, CSV, Pinnacle), moteur rejoué sur l'historique.",
       "scheduled": "planifiée, sans échec"
+    },
+    "integrations": {
+      "title": "Intégrations",
+      "back": "Retour à Réglages",
+      "intro": "Les clés et adresses des services tiers. Un secret est chiffré et n'est jamais réaffiché ; un champ vide garde la valeur du .env. Pris en compte en moins d'une minute, sans redéploiement.",
+      "noEncryption": "SETTINGS_ENCRYPTION_KEY n'est pas posée sur le serveur : les secrets ne peuvent pas être enregistrés ici. Les adresses, oui.",
+      "groups": {
+        "data": "Données",
+        "players": "Joueurs",
+        "ai": "Intelligence artificielle"
+      },
+      "names": {
+        "apiFootball": "API-Football",
+        "theOddsApi": "The Odds API",
+        "email": "E-mail (Resend)",
+        "push": "Notifications push",
+        "storage": "Stockage des pièces jointes",
+        "groq": "Groq",
+        "cerebras": "Cerebras",
+        "together": "Together",
+        "fireworks": "Fireworks",
+        "tavily": "Recherche web (Tavily)"
+      },
+      "fields": {
+        "key": "Clé d'API",
+        "apiKey": "Clé d'API",
+        "from": "Expéditeur",
+        "adminTo": "Adresse de l'équipe",
+        "publicKey": "Clé publique",
+        "privateKey": "Clé privée",
+        "subject": "Contact",
+        "endpoint": "Adresse interne",
+        "publicEndpoint": "Adresse publique",
+        "region": "Région",
+        "bucket": "Bucket",
+        "accessKey": "Identifiant d'accès",
+        "secretKey": "Secret d'accès"
+      },
+      "source": {
+        "stored": "enregistrée ici",
+        "env": "lue dans le .env",
+        "none": "absente"
+      },
+      "secretSet": "•••••••• définie",
+      "unreadable": "illisible avec la clé actuelle",
+      "setBy": "changée par {by} le {date}",
+      "edit": "Modifier",
+      "replace": "Remplacer",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "clear": "Retirer",
+      "clearHint": "Retire la valeur enregistrée : celle du .env sert de nouveau.",
+      "test": "Tester la connexion",
+      "testing": "Test…",
+      "failed": "Pas fait, réessaie."
     }
   }
 }

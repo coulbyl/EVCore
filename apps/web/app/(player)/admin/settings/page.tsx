@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ChipGroup } from "@/components/scoreboard/ui/chip-group";
 import type {
@@ -6,6 +8,7 @@ import type {
   SettingView,
 } from "@/domains/console/types/console";
 import {
+  getIntegrations,
   getJournal,
   getSettings,
 } from "@/domains/console/use-cases/get-console";
@@ -160,6 +163,12 @@ function lineOf(
         queue: queueName(item.target),
         count: Number(item.after ?? 0),
       });
+    case "integration_set":
+    case "integration_cleared":
+      return t(`journal.${item.kind}`, { field: item.target });
+    case "announcement_withdrawn":
+    case "announcement_deleted":
+      return t(`journal.${item.kind}`, { title: item.target });
     case "backfill_paused":
     case "backfill_resumed":
       return t(`journal.${item.kind}`);
@@ -206,14 +215,23 @@ export default async function Page({
     const s = q.toString();
     return s ? `/admin/settings?${s}` : "/admin/settings";
   };
-  const [t, console, locale, timeZone, settings, journal] = await Promise.all([
-    getTranslations("console.settings"),
-    getTranslations("console"),
-    getLocale(),
-    getPlayerTimeZone(),
-    getSettings(),
-    getJournal(actor, group),
-  ]);
+  const [t, console, locale, timeZone, settings, journal, integrations] =
+    await Promise.all([
+      getTranslations("console.settings"),
+      getTranslations("console"),
+      getLocale(),
+      getPlayerTimeZone(),
+      getSettings(),
+      getJournal(actor, group),
+      getIntegrations().catch(() => null),
+    ]);
+  // The LLM providers whose key is stored in Intégrations (the worker's
+  // .env is out of the backend's sight).
+  const providersWithKey = (integrations?.items ?? [])
+    .filter((i) =>
+      i.fields.some((f) => f.key.endsWith(".apiKey") && f.source === "stored"),
+    )
+    .map((i) => i.key);
   const display = displayLocaleOf(locale);
   const intl = display === "en" ? "en-GB" : "fr-FR";
   const number = (v: number) => new Intl.NumberFormat(intl).format(v);
@@ -238,6 +256,9 @@ export default async function Page({
     provider: t("provider"),
     competitions: t("competitions"),
     competitionsHint: t("competitionsHint"),
+    keyStored: t("keyStored"),
+    keyMissing: t("keyMissing"),
+    providersWithKey,
   };
 
   return (
@@ -288,6 +309,24 @@ export default async function Page({
           </ul>
           <p className="text-meta text-muted-foreground">{t("footnote")}</p>
         </section>
+
+        <Link
+          href="/admin/settings/integrations"
+          className="flex min-h-14 items-center justify-between gap-3 border-y border-border py-2"
+        >
+          <span className="flex flex-col">
+            <span className="text-body font-medium">
+              {t("integrationsLink")}
+            </span>
+            <span className="text-meta text-muted-foreground">
+              {t("integrationsHint")}
+            </span>
+          </span>
+          <ChevronRight
+            aria-hidden
+            className="size-[1.125rem] shrink-0 text-icon-subtle"
+          />
+        </Link>
 
         <section
           aria-labelledby="journal-title"

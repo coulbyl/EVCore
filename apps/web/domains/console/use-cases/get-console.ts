@@ -13,6 +13,7 @@ import type {
   SettingView,
   AdminActionView,
   QueuesScreen,
+  IntegrationView,
   SettlePreview,
 } from "../types/console";
 
@@ -111,4 +112,10 @@ export const getLastSettle = cache(
     serverApiRequest<SettlePreview>(
       `/console/settle/preview?kind=coupons&from=${today}&to=${today}`,
     ),
+);
+
+/** Réglages › Intégrations, and whether secrets can be saved. */
+export const getIntegrations = cache(
+  (): Promise<{ canEncrypt: boolean; items: IntegrationView[] }> =>
+    serverApiRequest("/console/integrations"),
 );

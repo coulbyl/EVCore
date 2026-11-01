@@ -19,6 +19,12 @@ export type SettingEditorLabels = {
   provider: string;
   competitions: string;
   competitionsHint: string;
+  /** « clé enregistrée » next to a provider whose key is in Intégrations. */
+  keyStored: string;
+  /** « pas de clé enregistrée »: may still be in the worker's .env. */
+  keyMissing: string;
+  /** The LLM providers whose key is stored in Réglages › Intégrations. */
+  providersWithKey: readonly string[];
 };
 
 /** The value being edited, before it is sent: the server parses it again. */
@@ -166,7 +172,14 @@ export function SettingEditor({
                         onChange={() => setDraft({ ...draft, primary: p })}
                         className="size-4 accent-primary"
                       />
-                      {p}
+                      <span>
+                        {p}
+                        <span className="ms-1.5 text-legal text-muted-foreground">
+                          {labels.providersWithKey.includes(p)
+                            ? labels.keyStored
+                            : labels.keyMissing}
+                        </span>
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -189,7 +202,14 @@ export function SettingEditor({
                         }
                         className="size-4 accent-primary"
                       />
-                      {p}
+                      <span>
+                        {p}
+                        <span className="ms-1.5 text-legal text-muted-foreground">
+                          {labels.providersWithKey.includes(p)
+                            ? labels.keyStored
+                            : labels.keyMissing}
+                        </span>
+                      </span>
                     </label>
                   ))}
                 </div>

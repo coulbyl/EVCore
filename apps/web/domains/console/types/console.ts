@@ -294,3 +294,32 @@ export type SettleResult = {
   replayed: number;
   corrected: number;
 };
+
+/** Réglages › Intégrations: a field, never a secret's value. */
+export type IntegrationFieldView = {
+  key: string;
+  env: string;
+  secret: boolean;
+  source: "stored" | "env" | "none";
+  unreadable: boolean;
+  value: string | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
+};
+
+export type IntegrationView = {
+  key:
+    | "apiFootball"
+    | "theOddsApi"
+    | "email"
+    | "push"
+    | "storage"
+    | "groq"
+    | "cerebras"
+    | "together"
+    | "fireworks"
+    | "tavily";
+  fields: IntegrationFieldView[];
+};
+
+export type IntegrationTestResult = { ok: boolean; detail: string };

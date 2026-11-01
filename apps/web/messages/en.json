@@ -1064,7 +1064,11 @@
         "settleRange": {
           "coupons": "coupons from {from} to {to}",
           "selections": "engine picks from {from} to {to}"
-        }
+        },
+        "integration_set": "integration: {field} saved",
+        "integration_cleared": "integration: {field} removed, the .env serves",
+        "announcement_withdrawn": "announcement unpublished: “{title}”",
+        "announcement_deleted": "announcement deleted: “{title}”"
       },
       "journalType": "By type",
       "allTypes": "All",
@@ -1073,7 +1077,11 @@
         "operations": "Operations",
         "accounts": "Accounts",
         "announcements": "Announcements"
-      }
+      },
+      "integrationsLink": "Integrations",
+      "integrationsHint": "third-party keys and addresses, encrypted",
+      "keyStored": "key stored",
+      "keyMissing": "no key stored"
     },
     "messages": {
       "search": "Find a player",
@@ -1184,6 +1192,61 @@
       "repoTitle": "From the repository",
       "repoText": "The rest runs cold, as commands: full sync, per-league operations, history (matches, stats, CSV, Pinnacle), engine replayed on history.",
       "scheduled": "scheduled, no failure"
+    },
+    "integrations": {
+      "title": "Integrations",
+      "back": "Back to Settings",
+      "intro": "The third-party services' keys and addresses. A secret is encrypted and never shown again; an empty field keeps the .env's value. Taken into account within a minute, without a redeploy.",
+      "noEncryption": "SETTINGS_ENCRYPTION_KEY is not set on the server: secrets cannot be saved here. Addresses can.",
+      "groups": {
+        "data": "Data",
+        "players": "Players",
+        "ai": "Artificial intelligence"
+      },
+      "names": {
+        "apiFootball": "API-Football",
+        "theOddsApi": "The Odds API",
+        "email": "E-mail (Resend)",
+        "push": "Push notifications",
+        "storage": "Attachment storage",
+        "groq": "Groq",
+        "cerebras": "Cerebras",
+        "together": "Together",
+        "fireworks": "Fireworks",
+        "tavily": "Web research (Tavily)"
+      },
+      "fields": {
+        "key": "API key",
+        "apiKey": "API key",
+        "from": "Sender",
+        "adminTo": "Team address",
+        "publicKey": "Public key",
+        "privateKey": "Private key",
+        "subject": "Contact",
+        "endpoint": "Internal address",
+        "publicEndpoint": "Public address",
+        "region": "Region",
+        "bucket": "Bucket",
+        "accessKey": "Access id",
+        "secretKey": "Access secret"
+      },
+      "source": {
+        "stored": "stored here",
+        "env": "read from the .env",
+        "none": "absent"
+      },
+      "secretSet": "•••••••• set",
+      "unreadable": "unreadable with the current key",
+      "setBy": "changed by {by} on {date}",
+      "edit": "Edit",
+      "replace": "Replace",
+      "save": "Save",
+      "cancel": "Cancel",
+      "clear": "Remove",
+      "clearHint": "Removes the stored value: the .env's serves again.",
+      "test": "Test the connection",
+      "testing": "Testing…",
+      "failed": "Not done, try again."
     }
   }
 }
