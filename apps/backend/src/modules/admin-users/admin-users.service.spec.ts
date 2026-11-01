@@ -41,6 +41,7 @@ function makeHarness(exists = true) {
   vi.spyOn(sessionCache, 'invalidateUser');
   const journal = {
     record: vi.fn().mockResolvedValue(undefined),
+    forgetEmail: vi.fn().mockResolvedValue('a@…'),
   } as unknown as AdminJournalService;
   return {
     service: new AdminUsersService(repository, sessionCache, journal),
@@ -139,7 +140,19 @@ describe('AdminUsersService', () => {
       }),
     );
     expect(journal.record).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'account_deleted', actorId: 'admin' }),
+      expect.objectContaining({
+        kind: 'account_deleted',
+        actorId: 'admin',
+        target: 'a@…',
+      }),
     );
+  });
+
+  it('refuses an admin removing their own admin role', async () => {
+    const { service, repository } = makeHarness();
+    await expect(
+      service.updateUser('admin', { role: 'OPERATOR' }, 'admin'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.update).not.toHaveBeenCalled();
   });
 });

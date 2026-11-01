@@ -196,6 +196,14 @@ export class ConsoleRepository {
     return claimed === 1;
   }
 
+  /** Gives a claim back when its e-mail could not leave. */
+  async releaseRedNotice(light: string, claimedAt: Date): Promise<void> {
+    await this.prisma.client.$executeRaw`
+      UPDATE public.console_light SET "notifiedAt" = NULL
+      WHERE light = ${light} AND "notifiedAt" = ${claimedAt}
+    `;
+  }
+
   /** Players (not the team) active, follows and sign-ups on one UTC day. */
   async dayFigures(day: Date): Promise<{
     active: number;

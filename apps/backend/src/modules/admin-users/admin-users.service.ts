@@ -72,6 +72,16 @@ export class AdminUsersService {
         'Vous ne pouvez pas suspendre votre propre compte.',
       );
     }
+    // The last admin demoting themselves would lock everyone out of /admin.
+    if (
+      dto.role !== undefined &&
+      dto.role !== 'ADMIN' &&
+      id === currentUserId
+    ) {
+      throw new ForbiddenException(
+        'Vous ne pouvez pas retirer votre propre rôle admin.',
+      );
+    }
 
     const before = await this.repository.findState(id);
     if (!before) {
@@ -136,7 +146,7 @@ export class AdminUsersService {
     await this.journal.record({
       actorId: currentUserId,
       kind: 'account_deleted',
-      target: before.email,
+      target: await this.journal.forgetEmail(before.email),
       before: before.role,
     });
   }

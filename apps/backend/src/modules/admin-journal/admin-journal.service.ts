@@ -25,6 +25,23 @@ export class AdminJournalService {
     }
   }
 
+  /**
+   * A deleted account leaves no address behind: its lines keep « aya@… »
+   * (the mockup's form), enough to read the journal, not to reach anyone.
+   */
+  async forgetEmail(email: string): Promise<string> {
+    const masked = maskEmail(email);
+    try {
+      await this.repository.renameTarget({
+        target: email,
+        replacement: masked,
+      });
+    } catch (err) {
+      logger.error({ err }, 'Journal could not forget an address');
+    }
+    return masked;
+  }
+
   list(input: { actorId?: string; take?: number }): Promise<AdminActionView[]> {
     return this.repository.list({
       actorId: input.actorId,
@@ -35,4 +52,10 @@ export class AdminJournalService {
   actors(): Promise<{ id: string; name: string }[]> {
     return this.repository.actors();
   }
+}
+
+/** « aya@example.com » → « aya@… ». */
+export function maskEmail(email: string): string {
+  const at = email.indexOf('@');
+  return at > 0 ? `${email.slice(0, at)}@…` : email;
 }

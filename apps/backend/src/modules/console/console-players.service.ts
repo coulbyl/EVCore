@@ -8,8 +8,8 @@ const PAGE_SIZE = 30;
 /**
  * Joueurs — « viennent-ils ? » (12-admin.md § 3): the month in four
  * figures, the accounts with their follows and pause, one player's sheet.
- * The actions (role, suspension, reset link, deletion) stay on
- * /admin/users, journaled there (G11).
+ * The actions (role, suspension, reset link, deletion) go through the
+ * /admin/users endpoints from the player's sheet, journaled there.
  */
 @Injectable()
 export class ConsolePlayersService {

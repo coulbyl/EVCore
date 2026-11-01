@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
+import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
 import { getPlayer } from "@/domains/console/use-cases/get-console";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import { displayLocaleOf, formatShortDate } from "@/helpers/scoreboard-format";
@@ -26,7 +27,12 @@ export default async function Page({
     getLocale(),
     getPlayerTimeZone(),
   ]);
-  const player = await getPlayer(id).catch(() => null);
+  const [player, current] = await Promise.all([
+    getPlayer(id).catch(() => null),
+    getPlayerSession(),
+  ]);
+  // One's own account: the server refuses role, suspension and deletion.
+  const self = current.status === "signed-in" && current.session.user.id === id;
   if (!player) notFound();
   const display = displayLocaleOf(locale);
   const day = (iso: string) =>
@@ -107,32 +113,34 @@ export default async function Page({
           </p>
         )}
 
-        <section
-          aria-labelledby="actions-title"
-          className="flex flex-col gap-2"
-        >
-          <h2 id="actions-title" className={heading}>
-            {t("sheet.actions")}
-          </h2>
-          <PlayerActions
-            id={player.id}
-            role={player.role}
-            suspended={player.suspended}
-            labels={{
-              makeAdmin: t("sheet.makeAdmin"),
-              makePlayer: t("sheet.makePlayer"),
-              suspend: t("sheet.suspend"),
-              unsuspend: t("sheet.unsuspend"),
-              resetLink: t("sheet.resetLink"),
-              delete: t("sheet.delete"),
-              deleteConfirm: t("sheet.deleteConfirm", { name: player.name }),
-              confirm: t("sheet.confirm"),
-              cancel: t("sheet.cancel"),
-              failed: t("sheet.failed"),
-              copied: t("sheet.copied"),
-            }}
-          />
-        </section>
+        {self ? null : (
+          <section
+            aria-labelledby="actions-title"
+            className="flex flex-col gap-2"
+          >
+            <h2 id="actions-title" className={heading}>
+              {t("sheet.actions")}
+            </h2>
+            <PlayerActions
+              id={player.id}
+              role={player.role}
+              suspended={player.suspended}
+              labels={{
+                makeAdmin: t("sheet.makeAdmin"),
+                makePlayer: t("sheet.makePlayer"),
+                suspend: t("sheet.suspend"),
+                unsuspend: t("sheet.unsuspend"),
+                resetLink: t("sheet.resetLink"),
+                delete: t("sheet.delete"),
+                deleteConfirm: t("sheet.deleteConfirm", { name: player.name }),
+                confirm: t("sheet.confirm"),
+                cancel: t("sheet.cancel"),
+                failed: t("sheet.failed"),
+                copied: t("sheet.copied"),
+              }}
+            />
+          </section>
+        )}
       </div>
     </>
   );

@@ -1404,7 +1404,12 @@
       "publishFailed": "Not published",
       "pastTitle": "Past announcements",
       "draft": "draft",
-      "noAnnouncements": "No announcement"
+      "noAnnouncements": "No announcement",
+      "withdraw": "Withdraw",
+      "withdrawQuestion": "Withdraw this announcement from the players' bell?",
+      "withdrawConfirm": "Withdraw",
+      "withdrawCancel": "Cancel",
+      "withdrawFailed": "Not withdrawn, try again."
     },
     "settings": {
       "title": "Settings",

@@ -5,6 +5,7 @@ import { getAnnouncements } from "@/domains/console/use-cases/get-console";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import { plainTextOf } from "@/helpers/plain-text";
 import { displayLocaleOf, formatShortDate } from "@/helpers/scoreboard-format";
+import { WithdrawAnnouncement } from "../components/withdraw-announcement";
 import { AdminBand } from "../../components/admin-band";
 import { AnnounceForm } from "../components/announce-form";
 
@@ -76,6 +77,18 @@ export default async function Page() {
                     {" · "}
                     {plainTextOf(a.description).slice(0, 120)}
                   </span>
+                  {a.published ? (
+                    <WithdrawAnnouncement
+                      id={a.id}
+                      labels={{
+                        action: t("withdraw"),
+                        question: t("withdrawQuestion"),
+                        confirm: t("withdrawConfirm"),
+                        cancel: t("withdrawCancel"),
+                        failed: t("withdrawFailed"),
+                      }}
+                    />
+                  ) : null}
                 </li>
               ))}
             </ul>

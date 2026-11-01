@@ -45,10 +45,12 @@ export class ConsoleEngineService {
       now.getTime() - this.channelsCache.at < CHANNELS_CACHE_MS;
     if (!fresh) {
       const cells = this.readChannels(now);
-      this.channelsCache = { at: now.getTime(), cells };
-      // A failed read is not kept: the next one tries again.
+      const entry = { at: now.getTime(), cells };
+      this.channelsCache = entry;
+      // A failed read is not kept: the next one tries again (unless a
+      // newer read has already taken its place).
       cells.catch(() => {
-        this.channelsCache = null;
+        if (this.channelsCache === entry) this.channelsCache = null;
       });
     }
     return (this.channelsCache as { cells: Promise<ChannelCell[]> }).cells;

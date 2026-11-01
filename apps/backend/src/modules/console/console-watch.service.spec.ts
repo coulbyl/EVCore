@@ -19,6 +19,11 @@ function fakeTable() {
       });
       return Promise.resolve();
     }),
+    releaseRedNotice: vi.fn((light: string) => {
+      const row = rows.get(light);
+      if (row) row.notifiedAt = null;
+      return Promise.resolve();
+    }),
     claimRedNotice: vi.fn((light: string, now: Date) => {
       const row = rows.get(light);
       if (!row || row.state !== 'red' || row.notifiedAt) {
@@ -32,6 +37,7 @@ function fakeTable() {
 
 function harness() {
   let engine: LightState = 'green';
+  let passesOff: ConsoleStatus['passesOff'] = null;
   const table = fakeTable();
   const mail = { sendOpsLightRed: vi.fn(() => Promise.resolve()) };
   const console = {
@@ -42,7 +48,7 @@ function harness() {
           lights: { data: 'green', engine, players: 'green' },
           since: { data: null, engine: null, players: null },
           yesterday: { active: 0, follows: 0, signups: 0 },
-          passesOff: null,
+          passesOff,
           todo:
             engine === 'red'
               ? [
@@ -63,7 +69,12 @@ function harness() {
     mail as unknown as MailService,
     { get: () => 'https://evcore.app' } as unknown as ConfigService,
   );
-  return { service, mail, setEngine: (s: LightState) => (engine = s) };
+  return {
+    service,
+    mail,
+    setEngine: (s: LightState) => (engine = s),
+    cutPasses: () => (passesOff = { since: '2026-11-01T00:00:00Z', by: 'A' }),
+  };
 }
 
 describe('ConsoleWatchService', () => {
@@ -96,6 +107,23 @@ describe('ConsoleWatchService', () => {
   it('orange never writes', async () => {
     const { service, mail, setEngine } = harness();
     setEngine('orange');
+    await service.check();
+    expect(mail.sendOpsLightRed).not.toHaveBeenCalled();
+  });
+
+  it('a failed e-mail is sent again at the next check', async () => {
+    const { service, mail, setEngine } = harness();
+    setEngine('red');
+    mail.sendOpsLightRed.mockRejectedValueOnce(new Error('down'));
+    await expect(service.check()).rejects.toThrow('down');
+    expect((await service.check()).sent).toEqual(['engine']);
+    expect(mail.sendOpsLightRed).toHaveBeenCalledTimes(2);
+  });
+
+  it('no e-mail while the passes are cut on purpose', async () => {
+    const { service, mail, setEngine, cutPasses } = harness();
+    cutPasses();
+    setEngine('red');
     await service.check();
     expect(mail.sendOpsLightRed).not.toHaveBeenCalled();
   });

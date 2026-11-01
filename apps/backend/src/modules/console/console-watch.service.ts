@@ -6,7 +6,7 @@ import { createLogger } from '@utils/logger';
 import { LIGHT_NAMES, todoLineOf } from './console-lines';
 import { ConsoleRepository } from './console.repository';
 import { ConsoleService } from './console.service';
-import type { LightKey } from './console.types';
+import type { ConsoleStatus, LightKey } from './console.types';
 
 const logger = createLogger('console-watch');
 
@@ -35,16 +35,17 @@ export class ConsoleWatchService {
     const lights = Object.entries(status.lights) as [LightKey, string][];
     for (const [light, state] of lights) {
       await this.repository.recordLight({ light, state, now });
-      if (state !== 'red') continue;
+      // Passes cut on purpose (Réglages): the home says so in red; an
+      // e-mail would only report the operator's own decision.
+      if (state !== 'red' || status.passesOff) continue;
       if (!(await this.repository.claimRedNotice(light, now))) continue;
-      await this.mail.sendOpsLightRed({
-        light: LIGHT_NAMES[light],
-        since: now.toISOString().slice(0, 16).replace('T', ' ') + ' UTC',
-        lines: status.todo
-          .filter((item) => item.light === light && item.severity === 'red')
-          .map(todoLineOf),
-        url: `${this.config.get<string>('APP_URL', '')}${CONSOLE_WATCH.HOME_PATH}`,
-      });
+      try {
+        await this.send({ light, status, now });
+      } catch (err) {
+        // Released: the next check tries again instead of staying silent.
+        await this.repository.releaseRedNotice(light, now);
+        throw err;
+      }
       sent.push(light);
       logger.warn({ light }, 'Console light turned red — e-mail sent');
     }
@@ -52,5 +53,21 @@ export class ConsoleWatchService {
       red: lights.filter(([, state]) => state === 'red').map(([l]) => l),
       sent,
     };
+  }
+
+  private send(input: {
+    light: LightKey;
+    status: ConsoleStatus;
+    now: Date;
+  }): Promise<void> {
+    const { light, status, now } = input;
+    return this.mail.sendOpsLightRed({
+      light: LIGHT_NAMES[light],
+      since: now.toISOString().slice(0, 16).replace('T', ' ') + ' UTC',
+      lines: status.todo
+        .filter((item) => item.light === light && item.severity === 'red')
+        .map(todoLineOf),
+      url: `${this.config.get<string>('APP_URL', '')}${CONSOLE_WATCH.HOME_PATH}`,
+    });
   }
 }

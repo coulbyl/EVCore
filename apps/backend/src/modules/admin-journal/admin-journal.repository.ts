@@ -50,6 +50,17 @@ export class AdminJournalRepository {
     }));
   }
 
+  /** Rewrites every line about `target` to `replacement`. */
+  async renameTarget(input: {
+    target: string;
+    replacement: string;
+  }): Promise<void> {
+    await this.prisma.client.adminAction.updateMany({
+      where: { target: input.target },
+      data: { target: input.replacement },
+    });
+  }
+
   /** The people who acted, for the journal's filter. */
   async actors(): Promise<{ id: string; name: string }[]> {
     const rows = await this.prisma.client.adminAction.findMany({

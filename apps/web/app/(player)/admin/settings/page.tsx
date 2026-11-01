@@ -29,6 +29,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 type Settings = Awaited<ReturnType<typeof getTranslations<"console.settings">>>;
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Message keys cannot hold the dots of the setting keys.
 const NAME_KEY: Record<string, string> = {
   "llm.providers": "llm",
@@ -155,7 +157,9 @@ export default async function Page({
 }: {
   searchParams: Promise<{ actor?: string }>;
 }) {
-  const { actor } = await searchParams;
+  const params = await searchParams;
+  // The journal's filter is an account id; anything else shows everyone.
+  const actor = UUID.test(params.actor ?? "") ? params.actor : undefined;
   const [t, console, locale, timeZone, settings, journal] = await Promise.all([
     getTranslations("console.settings"),
     getTranslations("console"),

@@ -1404,7 +1404,12 @@
       "publishFailed": "Pas publiée",
       "pastTitle": "Annonces passées",
       "draft": "brouillon",
-      "noAnnouncements": "Aucune annonce"
+      "noAnnouncements": "Aucune annonce",
+      "withdraw": "Retirer",
+      "withdrawQuestion": "Retirer cette annonce de la cloche des joueurs ?",
+      "withdrawConfirm": "Retirer",
+      "withdrawCancel": "Annuler",
+      "withdrawFailed": "Pas retirée, réessaie."
     },
     "settings": {
       "title": "Réglages",
