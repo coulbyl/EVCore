@@ -34,11 +34,13 @@ import { AnalysisSheetModule } from './modules/analysis-sheet/analysis-sheet.mod
 import { RedisModule } from './common/redis/redis.module';
 import { validateEnv } from './config/env.schema';
 import { AppSettingModule } from './modules/app-setting/app-setting.module';
+import { IntegrationsModule } from './modules/integrations/integrations.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     AppSettingModule,
+    IntegrationsModule,
     ThrottlerModule.forRoot([
       {
         name: 'default',

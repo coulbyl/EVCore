@@ -207,7 +207,7 @@ export class SupportService {
     mimeType: string;
     sizeBytes: number;
   }): Promise<AttachmentUploadUrlDto> {
-    if (!this.storage.isEnabled()) {
+    if (!(await this.storage.isEnabled())) {
       throw new BadRequestException(
         "L'envoi de fichiers n'est pas disponible pour le moment",
       );

@@ -1,6 +1,7 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { IntegrationsService } from '@modules/integrations/integrations.service';
 import { ConfigService } from '@nestjs/config';
 import { FixtureStatus } from '@evcore/db';
 import { createLogger } from '@utils/logger';
@@ -34,6 +35,11 @@ export class StaleScheduledSyncWorker extends WorkerHost {
   @Inject(ConfigService)
   private config!: ConfigService;
 
+  // Réglages › Intégrations: the key stored there serves over the .env's.
+  @Optional()
+  @Inject(IntegrationsService)
+  private integrations?: IntegrationsService;
+
   constructor(
     private readonly fixtureService: FixtureService,
     private readonly rollingStatsService: RollingStatsService,
@@ -53,7 +59,9 @@ export class StaleScheduledSyncWorker extends WorkerHost {
       now,
       lookbackDays,
     );
-    const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
+    const apiKey =
+      (await this.integrations?.get('apiFootball.key')) ??
+      this.config.getOrThrow<string>('API_FOOTBALL_KEY');
 
     logger.info(
       { fixtureCount: fixtures.length, lookbackDays },

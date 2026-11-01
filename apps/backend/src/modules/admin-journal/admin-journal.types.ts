@@ -1,6 +1,8 @@
 /** The kinds of human action the journal keeps (12-admin.md § 4). */
 export type AdminActionKind =
   | 'setting'
+  | 'integration_set'
+  | 'integration_cleared'
   | 'market_reactivated'
   | 'role'
   | 'suspension'
@@ -39,7 +41,7 @@ export type AdminActionView = {
 
 /** The journal's filter by type (Réglages): which kinds each group holds. */
 export const ADMIN_ACTION_GROUPS = {
-  settings: ['setting'],
+  settings: ['setting', 'integration_set', 'integration_cleared'],
   operations: [
     'pass_relaunched',
     'queue_retried',

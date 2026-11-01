@@ -1,3 +1,5 @@
+import { Inject, Optional } from '@nestjs/common';
+import { IntegrationsService } from '@modules/integrations/integrations.service';
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { execFile } from 'node:child_process';
@@ -41,6 +43,11 @@ const TOTALS_FALLBACK_KEY = 'unibet_eu';
 // lockDuration: 20 min — one season import fetches many pages with rate limiting
 @Processor(BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT, { lockDuration: 1_200_000 })
 export class OddsHistoricalImportWorker extends WorkerHost {
+  // Réglages › Intégrations: the key stored there serves over the .env's.
+  @Optional()
+  @Inject(IntegrationsService)
+  private integrations?: IntegrationsService;
+
   constructor(
     private readonly fixtureService: FixtureService,
     private readonly config: ConfigService,
@@ -58,7 +65,9 @@ export class OddsHistoricalImportWorker extends WorkerHost {
       );
     }
 
-    const apiKey = this.config.getOrThrow<string>('THE_ODDS_API_KEY');
+    const apiKey =
+      (await this.integrations?.get('theOddsApi.key')) ??
+      this.config.getOrThrow<string>('THE_ODDS_API_KEY');
     const sportKey = THE_ODDS_API_SPORT_KEYS[competitionCode];
 
     logger.info(

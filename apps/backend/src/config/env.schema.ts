@@ -39,6 +39,10 @@ export const ENV_SCHEMA = z
     AUTH_COOKIE_DOMAIN: z.string().min(1).optional(),
     TOTP_APP_SECRET: z.string().min(1).optional(),
     ADMIN_API_TOKEN: z.string().min(1).optional(),
+    // Encrypts the secrets of Réglages › Intégrations (AES-256-GCM, derived
+    // by SHA-256). Without it, a secret cannot be saved there and the .env
+    // keeps serving; changing it makes the stored secrets unreadable.
+    SETTINGS_ENCRYPTION_KEY: z.string().min(32).optional(),
 
     API_FOOTBALL_KEY: z.string().min(1).optional(),
     THE_ODDS_API_KEY: z.string().min(1).optional(),

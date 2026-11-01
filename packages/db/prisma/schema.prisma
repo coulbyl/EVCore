@@ -674,6 +674,7 @@ model User {
   createdAt                 DateTime                @default(now())
   updatedAt                 DateTime                @updatedAt
   appSettings               AppSetting[]
+  integrationSettings       IntegrationSetting[]
 
   @@map("users")
   @@schema("public")
@@ -1516,6 +1517,23 @@ model AppSetting {
   updatedBy   User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
 
   @@map("app_setting")
+  @@schema("public")
+}
+
+// Les clés et adresses des services tiers (Réglages › Intégrations, revue
+// admin du 01/11) : une ligne par champ, la valeur d'un secret chiffrée en
+// AES-256-GCM avec SETTINGS_ENCRYPTION_KEY, jamais renvoyée à l'écran. Une
+// ligne absente laisse la variable d'environnement d'origine servir.
+model IntegrationSetting {
+  key         String   @id
+  /// En clair pour une adresse, chiffrée (iv:tag:texte, base64) pour un secret.
+  value       String
+  secret      Boolean
+  updatedAt   DateTime @default(now()) @updatedAt
+  updatedById String?  @db.Uuid
+  updatedBy   User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@map("integration_setting")
   @@schema("public")
 }
 

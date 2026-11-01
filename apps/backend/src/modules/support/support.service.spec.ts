@@ -74,7 +74,7 @@ function makeGateway(): SupportGateway {
 
 function makeStorage(overrides: Partial<StorageService> = {}): StorageService {
   return {
-    isEnabled: vi.fn().mockReturnValue(true),
+    isEnabled: vi.fn().mockResolvedValue(true),
     createUploadUrl: vi.fn().mockResolvedValue('https://rustfs.local/upload'),
     createDownloadUrl: vi
       .fn()
@@ -269,7 +269,7 @@ describe('SupportService — createAttachmentUploadUrl', () => {
       makeRepo(),
       makeNotifier(),
       makeGateway(),
-      makeStorage({ isEnabled: vi.fn().mockReturnValue(false) }),
+      makeStorage({ isEnabled: vi.fn().mockResolvedValue(false) }),
       makeAutomation(),
     );
 
