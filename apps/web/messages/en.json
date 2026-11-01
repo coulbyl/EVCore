@@ -1700,6 +1700,59 @@
       "pastTitle": "Past announcements",
       "draft": "draft",
       "noAnnouncements": "No announcement"
+    },
+    "settings": {
+      "title": "Settings",
+      "names": {
+        "llm": "LLM provider",
+        "research": "Web research",
+        "quota": "API quota alert threshold",
+        "reserve": "Backfill reserve",
+        "scheduling": "Scheduled passes"
+      },
+      "fromEnv": ".env",
+      "fromEnvDetail": "not written here yet",
+      "fallbacksOf": "fallback: {list}",
+      "noFallback": "no fallback",
+      "researchDetail": "{provider} · {count, plural, =0 {default competitions} one {# competition} other {# competitions}}",
+      "defaultPct": "default {value} %",
+      "defaultCalls": "calls per day · default {value}",
+      "on": "on",
+      "off": "off",
+      "incidentOnly": "cut only during an incident",
+      "changedBy": "changed by {by} on {date}",
+      "save": "Save",
+      "cancel": "Cancel",
+      "failed": "Not saved: value refused or network.",
+      "nextPass": "Taken into account at the next pass.",
+      "primary": "Primary",
+      "fallbacks": "Fallbacks, in order",
+      "researchOn": "Research on",
+      "provider": "Provider",
+      "competitions": "Competitions (codes)",
+      "competitionsHint": "Empty: the big leagues and the European cups.",
+      "cutTitle": "Cut every pass?",
+      "cutBody": "No odds, analysis or coupons while cut. The admin home shows it in red.",
+      "cut": "Cut",
+      "footnote": "A change is taken into account at the next pass. No key is shown here.",
+      "journalTitle": "Journal",
+      "journalBy": "By person",
+      "everyone": "Everyone",
+      "journalEmpty": "No action yet.",
+      "roles": {
+        "ADMIN": "admin",
+        "OPERATOR": "player"
+      },
+      "journal": {
+        "setting": "{name}: {before} → {after}",
+        "market_reactivated": "{market} reactivated · “{reason}”",
+        "role": "{email}'s role: {before} → {after}",
+        "suspended": "{email} suspended",
+        "unsuspended": "{email} restored",
+        "account_deleted": "account {email} deleted",
+        "announcement": "announcement published: “{title}”",
+        "pass_relaunched": "{pass} relaunched"
+      }
     }
   }
 }

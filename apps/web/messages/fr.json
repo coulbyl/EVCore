@@ -1700,6 +1700,59 @@
       "pastTitle": "Annonces passées",
       "draft": "brouillon",
       "noAnnouncements": "Aucune annonce"
+    },
+    "settings": {
+      "title": "Réglages",
+      "names": {
+        "llm": "Fournisseur LLM",
+        "research": "Recherche web",
+        "quota": "Seuil d'alerte du quota API",
+        "reserve": "Réserve du rattrapage",
+        "scheduling": "Passes planifiées"
+      },
+      "fromEnv": "le .env",
+      "fromEnvDetail": "pas encore écrit ici",
+      "fallbacksOf": "secours : {list}",
+      "noFallback": "sans secours",
+      "researchDetail": "{provider} · {count, plural, =0 {championnats par défaut} one {# championnat} other {# championnats}}",
+      "defaultPct": "défaut {value} %",
+      "defaultCalls": "appels par jour · défaut {value}",
+      "on": "activée",
+      "off": "coupée",
+      "incidentOnly": "à couper seulement en incident",
+      "changedBy": "changé par {by} le {date}",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "failed": "Pas enregistré : valeur refusée ou réseau.",
+      "nextPass": "Pris en compte à la prochaine passe.",
+      "primary": "Principal",
+      "fallbacks": "Secours, dans l'ordre",
+      "researchOn": "Recherche activée",
+      "provider": "Fournisseur",
+      "competitions": "Championnats (codes)",
+      "competitionsHint": "Vide : les grands championnats et les coupes d'Europe.",
+      "cutTitle": "Couper toutes les passes ?",
+      "cutBody": "Plus de cotes, d'analyse ni de coupons tant que c'est coupé. L'accueil admin l'affiche en rouge.",
+      "cut": "Couper",
+      "footnote": "Un changement est pris en compte à la prochaine passe. Aucune clé n'est affichée ici.",
+      "journalTitle": "Journal",
+      "journalBy": "Par personne",
+      "everyone": "Tout le monde",
+      "journalEmpty": "Aucune action encore.",
+      "roles": {
+        "ADMIN": "admin",
+        "OPERATOR": "joueur"
+      },
+      "journal": {
+        "setting": "{name} : {before} → {after}",
+        "market_reactivated": "{market} réactivé · « {reason} »",
+        "role": "rôle de {email} : {before} → {after}",
+        "suspended": "{email} suspendu",
+        "unsuspended": "{email} rétabli",
+        "account_deleted": "compte {email} supprimé",
+        "announcement": "annonce publiée : « {title} »",
+        "pass_relaunched": "{pass} relancée"
+      }
     }
   }
 }

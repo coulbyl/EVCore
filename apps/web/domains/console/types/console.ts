@@ -197,3 +197,30 @@ export type AnnouncementView = {
   published: boolean;
   publishedAt: string | null;
 };
+
+/** A Réglages row (12-admin.md § 4); `value` null means « not written ». */
+export type SettingView = {
+  key:
+    | "llm.providers"
+    | "research"
+    | "apiFootball.quotaAlertPct"
+    | "statsBackfill.dailyReserve"
+    | "scheduling.enabled";
+  value: unknown;
+  defaultValue: unknown;
+  updatedAt: string | null;
+  updatedBy: string | null;
+};
+
+/** A line of the human-actions journal. */
+export type AdminActionView = {
+  id: string;
+  at: string;
+  actorId: string | null;
+  actor: string;
+  kind: string;
+  target: string;
+  before: unknown;
+  after: unknown;
+  reason: string | null;
+};

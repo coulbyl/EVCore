@@ -10,6 +10,8 @@ import type {
   PlayerAccount,
   PlayerSheet,
   AnnouncementView,
+  SettingView,
+  AdminActionView,
 } from "../types/console";
 
 /** The lights and « À faire », read once per request. */
@@ -70,4 +72,25 @@ export const getPlayer = cache(
 export const getAnnouncements = cache(
   (): Promise<AnnouncementView[]> =>
     serverApiRequest<AnnouncementView[]>("/admin/announcements"),
+);
+
+/** Réglages: the five operator settings. */
+export const getSettings = cache(
+  (): Promise<SettingView[]> =>
+    serverApiRequest<SettingView[]>("/console/settings"),
+);
+
+/** The human-actions journal, optionally one person's. */
+export const getJournal = cache(
+  (
+    actor?: string,
+  ): Promise<{
+    items: AdminActionView[];
+    actors: { id: string; name: string }[];
+  }> =>
+    serverApiRequest(
+      actor
+        ? `/console/journal?actor=${encodeURIComponent(actor)}`
+        : "/console/journal",
+    ),
 );
