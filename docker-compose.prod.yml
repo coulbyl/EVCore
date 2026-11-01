@@ -92,6 +92,8 @@ services:
       VANTAGE_RESEARCH_PROVIDER: ${VANTAGE_RESEARCH_PROVIDER:-groq}
       GROQ_RESEARCH_MODEL: ${GROQ_RESEARCH_MODEL:-groq/compound-mini}
       TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      # Decrypts the keys of Réglages › Intégrations: the backend's value.
+      SETTINGS_ENCRYPTION_KEY: ${SETTINGS_ENCRYPTION_KEY:-}
       VANTAGE_RESEARCH_COMPETITION_CODES: ${VANTAGE_RESEARCH_COMPETITION_CODES:-}
     networks:
       - evcore_internal
