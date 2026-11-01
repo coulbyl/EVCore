@@ -493,4 +493,85 @@ export class ConsoleRepository {
     ]);
     return { user, followed, conversationId: conversation?.id ?? null };
   }
+
+  /** Exploitation › Régler de nouveau: the coupons a replay would read. */
+  async settleCouponsPreview(span: { from: Date; to: Date }): Promise<{
+    items: number;
+    followers: number;
+    unfinishedDates: number;
+  }> {
+    const [row] = await this.prisma.client.$queryRaw<
+      { items: bigint; followers: bigint; unfinished: bigint }[]
+    >`
+      SELECT
+        count(*) AS items,
+        (SELECT count(DISTINCT f."userId") FROM public.coupon_follow f
+         JOIN public.coupon_proposal q ON q.id = f."couponProposalId"
+         WHERE q."forDate" BETWEEN ${span.from}::date AND ${span.to}::date) AS followers,
+        count(DISTINCT p."forDate") FILTER (WHERE p.result IS NULL) AS unfinished
+      FROM public.coupon_proposal p
+      WHERE p."forDate" BETWEEN ${span.from}::date AND ${span.to}::date
+    `;
+    return {
+      items: Number(row?.items ?? 0),
+      followers: Number(row?.followers ?? 0),
+      unfinishedDates: Number(row?.unfinished ?? 0),
+    };
+  }
+
+  /** The engine's picks a replay would read: those of finished matches. */
+  async settleSelectionsPreview(span: { from: Date; to: Date }): Promise<{
+    items: number;
+    followers: number;
+    unfinishedDates: number;
+  }> {
+    const [row] = await this.prisma.client.$queryRaw<
+      { items: bigint; unfinished: bigint }[]
+    >`
+      SELECT
+        count(cs.id) FILTER (WHERE f.status = 'FINISHED') AS items,
+        count(DISTINCT f."scheduledAt"::date) FILTER (WHERE f.status <> 'FINISHED') AS unfinished
+      FROM public.channel_selection cs
+      JOIN public.channel_decision cd ON cd.id = cs."channelDecisionId"
+      JOIN public.model_run mr ON mr.id = cd."modelRunId"
+      JOIN public.fixture f ON f.id = mr."fixtureId"
+      WHERE f."scheduledAt" BETWEEN ${span.from} AND ${span.to}
+    `;
+    return {
+      items: Number(row?.items ?? 0),
+      followers: 0,
+      unfinishedDates: Number(row?.unfinished ?? 0),
+    };
+  }
+
+  /** Each coupon's status and result, to count what a replay changed. */
+  async couponResults(span: {
+    from: Date;
+    to: Date;
+  }): Promise<Map<string, string | null>> {
+    const rows = await this.prisma.client.couponProposal.findMany({
+      where: { forDate: { gte: span.from, lte: span.to } },
+      select: { id: true, status: true, result: true },
+    });
+    return new Map(rows.map((r) => [r.id, `${r.status}/${r.result ?? ''}`]));
+  }
+
+  /** Each settled pick's result, to count what a replay changed. */
+  async selectionResults(span: {
+    from: Date;
+    to: Date;
+  }): Promise<Map<string, string | null>> {
+    const rows = await this.prisma.client.$queryRaw<
+      { id: string; result: string | null }[]
+    >`
+      SELECT cs.id, cs.result::text AS result
+      FROM public.channel_selection cs
+      JOIN public.channel_decision cd ON cd.id = cs."channelDecisionId"
+      JOIN public.model_run mr ON mr.id = cd."modelRunId"
+      JOIN public.fixture f ON f.id = mr."fixtureId"
+      WHERE f.status = 'FINISHED'
+        AND f."scheduledAt" BETWEEN ${span.from} AND ${span.to}
+    `;
+    return new Map(rows.map((r) => [r.id, r.result]));
+  }
 }

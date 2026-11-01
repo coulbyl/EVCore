@@ -1,3 +1,5 @@
+import type { AdminActionView } from '@modules/admin-journal/admin-journal.types';
+import type { QueueView } from './console-queues';
 /** A light of the admin's home (12 § 1): green, orange or red. */
 export type LightState = 'green' | 'orange' | 'red';
 
@@ -228,4 +230,41 @@ export type SettingView = {
   defaultValue: unknown;
   updatedAt: string | null;
   updatedBy: string | null;
+};
+
+/** Exploitation › Les files: the stats catch-up's own figures. */
+export type BackfillView = {
+  paused: boolean;
+  pausedSince: string | null;
+  pausedBy: string | null;
+  completedSeasons: number;
+  seasons: number;
+  pending: number;
+  quota: { used: number; limit: number } | null;
+  reserve: number;
+};
+
+export type QueuesScreen = {
+  at: string;
+  queues: QueueView[];
+  backfill: BackfillView | null;
+};
+
+export type SettleKind = 'coupons' | 'selections';
+
+/** What a replay would read, said before it runs. */
+export type SettlePreview = {
+  kind: SettleKind;
+  from: string;
+  to: string;
+  items: number;
+  followers: number;
+  unfinishedDates: number;
+  last: AdminActionView | null;
+};
+
+export type SettleResult = {
+  kind: SettleKind;
+  replayed: number;
+  corrected: number;
 };

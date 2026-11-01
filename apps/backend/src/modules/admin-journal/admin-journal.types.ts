@@ -6,7 +6,12 @@ export type AdminActionKind =
   | 'suspension'
   | 'account_deleted'
   | 'announcement'
-  | 'pass_relaunched';
+  | 'pass_relaunched'
+  | 'queue_retried'
+  | 'queue_cleared'
+  | 'backfill_paused'
+  | 'backfill_resumed'
+  | 'settlement_replayed';
 
 export type AdminActionEntry = {
   actorId: string;

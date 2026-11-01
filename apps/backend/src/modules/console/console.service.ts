@@ -3,6 +3,7 @@ import { CONSOLE_RULES as R } from '@config/console.constants';
 import { CouponService } from '@modules/coupon/coupon.service';
 import { formatDateUtc, startOfUtcDay } from '@utils/date.utils';
 import { ConsoleEngineService } from './console-engine.service';
+import { ConsoleQueuesService } from './console-queues.service';
 import { consoleStatusOf } from './console-rules';
 import { ConsoleRepository } from './console.repository';
 import type { ConsoleSignals, ConsoleStatus } from './console.types';
@@ -16,10 +17,12 @@ const HOUR_MS = 60 * 60 * 1000;
  */
 @Injectable()
 export class ConsoleService {
+  // eslint-disable-next-line max-params -- NestJS constructor injection: the console's reads, coupons, Moteur, the queues
   constructor(
     private readonly repository: ConsoleRepository,
     private readonly coupons: CouponService,
     private readonly engine: ConsoleEngineService,
+    private readonly queues: ConsoleQueuesService,
   ) {}
 
   async getStatus(now: Date = new Date()): Promise<ConsoleStatus> {
@@ -53,7 +56,8 @@ export class ConsoleService {
     );
     const [
       lastOddsAt,
-      etlFailures,
+      quotaFailures,
+      queueFailures,
       statsLate,
       tomorrowCoupons,
       lastAnalysisAt,
@@ -68,6 +72,9 @@ export class ConsoleService {
       this.repository.etlFailures(
         new Date(now.getTime() - R.ETL_FAILURE_HOURS * HOUR_MS),
       ),
+      // A failure still in its queue: « Effacer l'échec » acknowledges it
+      // here too (Exploitation). The quota stays read from its alert.
+      this.queues.failures(now),
       this.repository.statsLate(now),
       this.repository.countCouponsFor(new Date(today.getTime() + DAY_MS)),
       this.repository.lastAnalysisAt(),
@@ -92,7 +99,11 @@ export class ConsoleService {
     return {
       now,
       lastOddsAt,
-      etlFailures,
+      etlFailures: {
+        count: queueFailures.count + (quotaFailures.quotaBody ? 1 : 0),
+        lastBody: queueFailures.last,
+        quotaBody: quotaFailures.quotaBody,
+      },
       statsLate,
       tomorrowCoupons,
       lastAnalysisAt,

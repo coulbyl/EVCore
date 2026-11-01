@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { createLogger } from '@utils/logger';
 import { AdminJournalRepository } from './admin-journal.repository';
-import type { AdminActionEntry, AdminActionView } from './admin-journal.types';
+import type {
+  AdminActionEntry,
+  AdminActionKind,
+  AdminActionView,
+} from './admin-journal.types';
 
 const logger = createLogger('admin-journal');
 
@@ -47,6 +51,11 @@ export class AdminJournalService {
       actorId: input.actorId,
       take: input.take ?? 100,
     });
+  }
+
+  /** The latest line of a kind, or null. */
+  latest(kind: AdminActionKind): Promise<AdminActionView | null> {
+    return this.repository.latest(kind);
   }
 
   actors(): Promise<{ id: string; name: string }[]> {

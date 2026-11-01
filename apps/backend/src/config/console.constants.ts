@@ -113,6 +113,45 @@ export const CONSOLE_PASSES: readonly {
   },
 ];
 
+/**
+ * Exploitation › Les files (docs/refonte-ui/exploitation-inventaire.md): every
+ * queue the team watches, in the order of the list when nothing differs.
+ * `on_demand`: no schedule, launched by hand (a command). `silent`: shown
+ * only while it fails (the lights' own watch).
+ */
+export const CONSOLE_QUEUES = [
+  { key: 'analysis_soon', queue: 'same-day-analysis', kind: 'scheduled' },
+  { key: 'odds', queue: 'odds-prematch-sync', kind: 'scheduled' },
+  { key: 'ai', queue: 'vantage-analysis', kind: 'scheduled' },
+  {
+    key: 'settlement',
+    queue: 'pending-bets-settlement-sync',
+    kind: 'scheduled',
+  },
+  { key: 'player_mail', queue: 'slip-digest', kind: 'scheduled' },
+  { key: 'horizon', queue: 'rolling-horizon', kind: 'scheduled' },
+  { key: 'analysis', queue: 'betting-engine', kind: 'scheduled' },
+  { key: 'season_rollover', queue: 'season-rollover-sync', kind: 'scheduled' },
+  { key: 'league', queue: 'league-sync', kind: 'scheduled' },
+  { key: 'odds_csv', queue: 'odds-csv-import', kind: 'scheduled' },
+  { key: 'stale', queue: 'stale-scheduled-sync', kind: 'scheduled' },
+  { key: 'elo', queue: 'elo-sync', kind: 'scheduled' },
+  { key: 'coach', queue: 'coach-sync', kind: 'scheduled' },
+  { key: 'stats_backfill', queue: 'stats-backfill', kind: 'scheduled' },
+  {
+    key: 'odds_historical',
+    queue: 'odds-historical-import',
+    kind: 'on_demand',
+  },
+  { key: 'rebuild', queue: 'betting-engine-rebuild', kind: 'on_demand' },
+  { key: 'watch', queue: 'console-watch', kind: 'silent' },
+] as const;
+
+export type ConsoleQueueKey = (typeof CONSOLE_QUEUES)[number]['key'];
+
+/** Exploitation › Régler de nouveau: the widest range one replay takes. */
+export const CONSOLE_SETTLE_MAX_DAYS = 120;
+
 /** A pass with nothing after its time plus this is « manquée ». */
 export const CONSOLE_PASS_GRACE_MINUTES = 30;
 

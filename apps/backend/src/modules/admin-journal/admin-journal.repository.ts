@@ -28,12 +28,21 @@ export class AdminJournalRepository {
     });
   }
 
+  async latest(kind: string): Promise<AdminActionView | null> {
+    const [row] = await this.list({ kind, take: 1 });
+    return row ?? null;
+  }
+
   async list(input: {
+    kind?: string;
     actorId?: string;
     take: number;
   }): Promise<AdminActionView[]> {
     const rows = await this.prisma.client.adminAction.findMany({
-      where: input.actorId ? { actorId: input.actorId } : {},
+      where: {
+        ...(input.actorId && { actorId: input.actorId }),
+        ...(input.kind && { kind: input.kind }),
+      },
       orderBy: { createdAt: 'desc' },
       take: input.take,
     });
