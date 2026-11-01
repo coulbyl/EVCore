@@ -19,19 +19,13 @@
   "dependencies": {
     "@evcore/analysis-core": "workspace:*",
     "@evcore/ui": "workspace:*",
-    "@tanstack/react-query": "catalog:",
     "clsx": "^2.1.1",
-    "date-fns": "catalog:",
     "lucide-react": "catalog:",
     "next": "catalog:",
     "next-intl": "catalog:",
     "next-themes": "catalog:",
     "react": "catalog:",
-    "react-day-picker": "catalog:",
-    "react-dom": "catalog:",
-    "socket.io-client": "catalog:",
-    "sonner": "catalog:",
-    "vaul": "catalog:"
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "@evcore/eslint-config": "workspace:*",

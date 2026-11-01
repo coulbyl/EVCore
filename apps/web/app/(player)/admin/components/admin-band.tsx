@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings } from "lucide-react";
+import { MessageCircle, Settings } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { PlayerBand } from "@/components/scoreboard/shell/player-band";
 import {
@@ -8,19 +8,24 @@ import {
 } from "@/components/scoreboard/shell/shell-constants";
 import { ChipGroup } from "@/components/scoreboard/ui/chip-group";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
+import { serverApiRequest } from "@/lib/api/server-api";
 import { displayLocaleOf, formatTime } from "@/helpers/scoreboard-format";
 
 /**
  * The admin's band (maquettes AdminMobile, Admin): its title and the
- * moment it is read, then on a phone the three screens as chips and the
- * settings wheel (the rail carries them on a wide screen).
+ * moment it is read, then on a phone the three screens as chips, Messages
+ * (a dot while a player's message is unread) and the settings wheel (the
+ * rail carries them on a wide screen).
  */
 export async function AdminBand({ current }: { current: AdminSectionKey }) {
-  const [t, shell, locale, timeZone] = await Promise.all([
+  const [t, shell, locale, timeZone, unread] = await Promise.all([
     getTranslations("console"),
     getTranslations("shell"),
     getLocale(),
     getPlayerTimeZone(),
+    serverApiRequest<{ count: number }>("/admin/support/unread-count").catch(
+      () => ({ count: 0 }),
+    ),
   ]);
   const display = displayLocaleOf(locale);
   const now = new Date();
@@ -30,7 +35,11 @@ export async function AdminBand({ current }: { current: AdminSectionKey }) {
     month: "2-digit",
     timeZone,
   }).format(now);
-  const screens = ADMIN_SECTIONS.filter((s) => s.key !== "settings");
+  const screens = ADMIN_SECTIONS.filter(
+    (s) => s.key !== "settings" && s.key !== "messages",
+  );
+  const icon =
+    "relative flex size-11 items-center justify-center rounded-full text-band-muted hover:text-band-foreground focus-visible:outline-2 focus-visible:outline-led-on aria-[current=page]:text-led-on";
 
   return (
     <PlayerBand>
@@ -49,19 +58,44 @@ export async function AdminBand({ current }: { current: AdminSectionKey }) {
             tone="band"
             items={screens.map((s) => ({
               key: s.key,
-              label: shell(`adminSections.${s.key}`),
+              // « Admin » for the home: « Accueil admin » pushed the chips
+              // onto two lines on a phone.
+              label:
+                s.key === "home"
+                  ? t("titles.home")
+                  : shell(`adminSections.${s.key}`),
               href: s.href,
               active: s.key === current,
             }))}
           />
-          <Link
-            href="/admin/settings"
-            aria-label={shell("adminSections.settings")}
-            aria-current={current === "settings" ? "page" : undefined}
-            className="flex size-11 items-center justify-center rounded-full text-band-muted hover:text-band-foreground focus-visible:outline-2 focus-visible:outline-led-on aria-[current=page]:text-led-on"
-          >
-            <Settings aria-hidden className="size-5" strokeWidth={1.8} />
-          </Link>
+          <span className="flex items-center">
+            <Link
+              href="/admin/messages"
+              aria-label={
+                unread.count > 0
+                  ? `${shell("adminSections.messages")} · ${unread.count}`
+                  : shell("adminSections.messages")
+              }
+              aria-current={current === "messages" ? "page" : undefined}
+              className={icon}
+            >
+              <MessageCircle aria-hidden className="size-5" strokeWidth={1.8} />
+              {unread.count > 0 ? (
+                <span
+                  aria-hidden
+                  className="absolute top-2.5 right-2.5 size-2 rounded-full bg-led-on"
+                />
+              ) : null}
+            </Link>
+            <Link
+              href="/admin/settings"
+              aria-label={shell("adminSections.settings")}
+              aria-current={current === "settings" ? "page" : undefined}
+              className={icon}
+            >
+              <Settings aria-hidden className="size-5" strokeWidth={1.8} />
+            </Link>
+          </span>
         </div>
       </div>
     </PlayerBand>

@@ -3,8 +3,9 @@
  * (docs/refonte-ui/11-public.md § 8). Une seule table : le layout du
  * tableau de bord la lit depuis le commit de bascule (15-todo.md, C19).
  *
- * L'admin ne garde de /dashboard que la boîte de support et la fiche de
- * diagnostic (12-admin.md § 0) ; le reste mène à l'écran le plus proche.
+ * /dashboard n'existe plus (12-admin.md § 0) : l'admin a ses écrans sous
+ * /admin, le joueur ses onglets ; chaque ancienne adresse mène à l'écran
+ * le plus proche.
  */
 const RETIRED_ROUTES: readonly { from: string; to: string }[] = [
   // Accueil et Coupons : les coupons du jour sont sur Aujourd'hui.
@@ -32,10 +33,13 @@ const RETIRED_ROUTES: readonly { from: string; to: string }[] = [
 /** Tout le reste de /dashboard est l'admin : un joueur repart d'Aujourd'hui. */
 const DEFAULT_TARGET = "/today";
 
-/** Ce que l'admin garde de /dashboard (12-admin.md § 0). */
-const ADMIN_KEPT: readonly string[] = [
-  "/dashboard/inbox",
-  "/dashboard/decisions/match",
+/**
+ * Les adresses de l'admin qui portent un identifiant : il passe tel quel
+ * sur le nouvel écran (un lien d'e-mail ou de notification reste bon).
+ */
+const ADMIN_MOVED: readonly { from: string; to: string }[] = [
+  { from: "/dashboard/inbox", to: "/admin/messages" },
+  { from: "/dashboard/decisions/match", to: "/admin/matches" },
 ];
 
 /** Les pages retirées de l'admin et l'écran qui les remplace (12 § 6). */
@@ -66,8 +70,8 @@ function isUnder(pathname: string, route: string): boolean {
 }
 
 /**
- * Où envoyer qui ouvre une ancienne adresse de /dashboard ; null pour ce
- * que l'admin garde et pour toute adresse hors de /dashboard.
+ * Où envoyer qui ouvre une ancienne adresse de /dashboard ; null pour toute
+ * adresse hors de /dashboard.
  */
 export function retiredRouteTarget(
   pathname: string,
@@ -75,7 +79,8 @@ export function retiredRouteTarget(
 ): string | null {
   if (!isUnder(pathname, "/dashboard")) return null;
   if (role === "ADMIN") {
-    if (ADMIN_KEPT.some((route) => isUnder(pathname, route))) return null;
+    const moved = ADMIN_MOVED.find(({ from }) => isUnder(pathname, from));
+    if (moved) return `${moved.to}${pathname.slice(moved.from.length)}`;
     const match = ADMIN_RETIRED.find(({ from }) => isUnder(pathname, from));
     return match?.to ?? "/admin";
   }

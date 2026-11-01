@@ -43,13 +43,15 @@ describe("retiredRouteTarget", () => {
     assert.equal(retiredRouteTarget("/admin", "ADMIN"), null);
   });
 
-  it("keeps the admin's inbox and diagnostic sheet (12-admin § 0)", () => {
-    assert.equal(retiredRouteTarget("/dashboard/inbox", "ADMIN"), null);
-    assert.equal(retiredRouteTarget("/dashboard/inbox/42", "ADMIN"), null);
-    assert.equal(
-      retiredRouteTarget("/dashboard/decisions/match/abc", "ADMIN"),
-      null,
-    );
+  it("moves the admin's inbox and diagnostic sheet, ids kept", () => {
+    const cases = {
+      "/dashboard/inbox": "/admin/messages",
+      "/dashboard/inbox/42": "/admin/messages/42",
+      "/dashboard/decisions/match/abc": "/admin/matches/abc",
+    };
+    for (const [from, to] of Object.entries(cases)) {
+      assert.equal(retiredRouteTarget(from, "ADMIN"), to, from);
+    }
   });
 
   it("sends the admin's retired pages to the nearest screen", () => {

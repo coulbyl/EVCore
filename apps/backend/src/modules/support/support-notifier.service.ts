@@ -49,7 +49,7 @@ export class SupportNotifierService {
       this.push.sendToRole(UserRole.ADMIN, {
         title: `Support — ${message.senderUsername}`,
         body: notificationBody(message),
-        url: `/dashboard/inbox/${message.conversationId}`,
+        url: `/admin/messages/${message.conversationId}`,
       }),
     ]);
   }

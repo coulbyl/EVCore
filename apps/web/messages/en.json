@@ -1,204 +1,4 @@
 {
-  "pwaInstall": {
-    "title": "Install EVCore",
-    "subtitle": "Quick access from your home screen",
-    "iosSafari": "Tap Share, then Add to Home Screen.",
-    "iosOther": "Open EVCore in Safari, tap Share, then Add to Home Screen.",
-    "install": "Install",
-    "close": "Close"
-  },
-  "nav": {
-    "eva": "EVA",
-    "dashboard": "Dashboard",
-    "fixtures": "Fixtures",
-    "navGroupToday": "Today",
-    "navGroupTracking": "Tracking",
-    "navGroupAnalysis": "Analysis",
-    "navGroupAdmin": "Admin",
-    "performance": "Performance",
-    "bankroll": "Stake tracking",
-    "betSlips": "My bet slips",
-    "inbox": "Inbox",
-    "audit": "Audit",
-    "users": "Users",
-    "announcements": "Announcements",
-    "ml": "ML Engine",
-    "reports": "Reports",
-    "engine": "Engine & ETL",
-    "glossary": "Glossary",
-    "technicalDocs": "Technical documentation",
-    "formation": "Training",
-    "trackRecord": "Historical measures",
-    "notifications": "Notifications",
-    "settings": "Settings",
-    "replayTour": "Replay guide",
-    "summary": "Selections summary",
-    "coupons": "Coupons",
-    "decisions": "Decisions",
-    "decisionsShort": "Decisions",
-    "arbitrage": "AI opinion",
-    "admin": "Admin"
-  },
-  "decisions": {
-    "channels": {
-      "VALUE": {
-        "description": "Positive expected value odds."
-      },
-      "SAFE": {
-        "description": "Prudent selections built for steadier returns."
-      },
-      "DOMINANT": {
-        "description": "The model's strongest 1X2 angle."
-      },
-      "BTTS": {
-        "description": "Both teams to score."
-      },
-      "DRAW": {
-        "description": "Draw angle from market-implied probability."
-      },
-      "GOALS": {
-        "description": "Total goals over/under line."
-      },
-      "CLEAN_SHEET": {
-        "description": "A team finishes the match without conceding."
-      },
-      "TEAM_TOTAL": {
-        "description": "Over/under goals scored by a single team."
-      },
-      "WIN_EITHER_HALF": {
-        "description": "A team wins at least one of the two halves."
-      },
-      "FIRST_HALF": {
-        "description": "First-half winner."
-      },
-      "DOUBLE_CHANCE": {
-        "description": "Double chance (1X, X2, or 12)."
-      },
-      "UNDERDOG": {
-        "description": "Backs the market's underdog."
-      },
-      "FAVORITE": {
-        "description": "Backs the market's favorite."
-      },
-      "LIVE_VALUE": {
-        "description": "Value detected live during the match."
-      },
-      "MARKET_MOVE": {
-        "description": "Significant pre-match odds movement detected."
-      },
-      "CONSENSUS": {
-        "description": "Several independent strategies converge on the same pick."
-      },
-      "CONTRARIAN": {
-        "description": "Position against the market."
-      },
-      "AVOID": {
-        "description": "Fixture flagged: implausible model/market divergence."
-      },
-      "CORRECT_SCORE": {
-        "description": "Most likely exact scoreline (observation only, never staked)."
-      },
-      "RESULT_TOTAL_GOALS": {
-        "description": "Match result combined with total goals."
-      },
-      "OVER_UNDER_HT": {
-        "description": "Over/under goals at half-time."
-      },
-      "RESULT_BTTS": {
-        "description": "Match result combined with both teams to score."
-      },
-      "DRAW_NO_BET": {
-        "description": "Result excluding the draw — stake refunded on a draw."
-      },
-      "WIN_TO_NIL": {
-        "description": "A team wins the match without conceding."
-      },
-      "HALF_TIME_FULL_TIME": {
-        "description": "Half-time result combined with the final result."
-      },
-      "VANTAGE": {
-        "description": "Reads every other channel's decision and its observed calibration in this competition; only proposes a pick when it finds a concrete tension between them."
-      }
-    },
-    "reasons": {
-      "score_below_threshold": "Model score below threshold",
-      "no_viable_pick": "No viable pick",
-      "line_movement": "Unfavorable odds movement",
-      "no_safe_candidate": "No safety candidate",
-      "below_threshold": "Probability below threshold",
-      "insufficient_margin": "Insufficient margin",
-      "no_consensus": "No cross-channel consensus",
-      "consensus": "Independent channels converged",
-      "no_avoid_signal": "No avoidance signal",
-      "extreme_divergence": "Extreme model/market divergence",
-      "no_model": "No model probabilities",
-      "no_odds": "No priced scoreline",
-      "no_modelable_scoreline": "No modelable scoreline priced",
-      "below_conviction": "No scoreline confident enough to predict",
-      "BACKFILL": "Backfilled",
-      "VANTAGE_GATED_ODDS": "Read kept but not proposed: odds above 1.80",
-      "VANTAGE_GATED_MARKET": "Read kept but not proposed: recently unreliable bet type",
-      "VANTAGE_GATED_BASIS": "Not proposed: it rested on a disagreement between our own readings"
-    },
-    "statuses": {
-      "SELECTED": "Selected",
-      "REJECTED": "Rejected",
-      "DISABLED": "Disabled",
-      "INSUFFICIENT_DATA": "Insufficient data",
-      "MISSING_ODDS": "Missing odds",
-      "NOT_APPLICABLE": "Not applicable"
-    },
-    "lens": {
-      "matches": "Match"
-    },
-    "avoid": {
-      "banner": "Caution",
-      "tooltipLabel": "Caution signal",
-      "tooltipDetail": "One of the picks below has too large a gap between the model's probability and the market's implied probability (≥ 30 points). Historically the market is right in this case — spot the pick flagged ⚠ and skip it, the others remain valid.",
-      "edge": "gap",
-      "edgeTooltip": "Model/market divergence: {pct} — this pick triggered the Caution signal"
-    },
-    "calibration": {
-      "banner": "Suspect data",
-      "tooltipLabel": "Calibration alert",
-      "tooltipDetail": "The model and the market strongly disagree on this match (flipped favorite or extreme gap across several bookmakers). This almost always signals corrupted input data, not an opportunity: the match is removed from all our coupons and from the home picks. Predictions stay visible for reading; on these matches, above 1.45, our percentages are clearly too optimistic."
-    },
-    "consensus": {
-      "tooltipLabel": "Consensus signal",
-      "tooltipDetail": "Several independent channels selected the same outcome without coordinating. It is an agreement, not a guarantee: CONSENSUS no longer emits a pick or a probability of its own — the one it used to publish was the maximum across the agreeing channels, and therefore optimistic by construction.",
-      "rowLabel": "Agreement:"
-    },
-    "noPick": "No pick retained on this fixture.",
-    "noPickShort": "no pick",
-    "pickCount": "{count, plural, one {# pick} other {# picks}}",
-    "evaluatedCount": "{count, plural, one {# other bet type evaluated} other {# other bet types evaluated}}",
-    "showMorePicks": "{count, plural, one {See the other reading of the match} other {See the # other readings of the match}}",
-    "showLessPicks": "Show less",
-    "filters": {
-      "all": "All",
-      "leagueLabel": "League",
-      "channelLabel": "Bet type",
-      "displayLabel": "Display",
-      "noMatch": "No fixture matches the filters.",
-      "groupByNone": "By kickoff time",
-      "groupByLeague": "Group by league",
-      "searchLeague": "Search a competition…",
-      "noLeagueResults": "No competition.",
-      "searchChannel": "Search a bet type…",
-      "noChannelResults": "No bet type.",
-      "allFilters": "Filters"
-    },
-    "helpLink": "How to read a prediction",
-    "primaryPick": "Our pick",
-    "otherMarketsTitle": "Other readings of the match",
-    "contradictionNote": "“{first}” and “{second}” cannot both come in: each reading is a separate estimate, only Our pick is put forward.",
-    "pageTitle": "Today's decisions",
-    "chances": "about {count} times in {total}",
-    "playableLabel": "{bookmaker} {odds}",
-    "referenceOdds": "ref. {odds}",
-    "oddsLabel": "Odds {odds}",
-    "belowMinimum": "below {bookmaker}'s minimum ({min})"
-  },
   "notifications": {
     "title": "Notifications",
     "empty": "No notifications",
@@ -255,153 +55,6 @@
     "fr": "Français",
     "en": "English"
   },
-  "auth": {
-    "login": "Sign in",
-    "register": "Create account",
-    "logout": "Sign out",
-    "emailOrUsername": "Email or username",
-    "password": "Password",
-    "noAccount": "No account yet?",
-    "alreadyAccount": "Already have an account?",
-    "logoutLoading": "Signing out..."
-  },
-  "account": {
-    "title": "My account",
-    "appearance": "Appearance",
-    "language": "Language",
-    "notifications": "Notifications",
-    "account": "Account",
-    "bankroll": "Currency and stake",
-    "theme": "Theme",
-    "savedAutomatically": "Saved automatically.",
-    "email": "Email",
-    "username": "Username",
-    "bio": "Bio",
-    "phone": "Phone",
-    "phoneConsentLabel": "I agree to be contacted by phone as part of a field outreach effort. Never automated marketing calls.",
-    "phonePlaceholder": "+1 555 000 0000",
-    "phoneAdd": "Add my number",
-    "phoneRemove": "Turn off",
-    "phoneSaveError": "Couldn't save the phone number.",
-    "avatar": "Avatar",
-    "save": "Save",
-    "cancel": "Cancel",
-    "editField": "Edit {field}",
-    "groupAccount": "Account",
-    "groupPreferences": "Preferences",
-    "tabProfile": "Profile",
-    "tabPreferences": "Display",
-    "tabSecurity": "Security",
-    "tabNotifications": "Notifications",
-    "tabBankroll": "Currency and stake",
-    "requires": "Requires:",
-    "avatarSaveError": "Couldn't save the avatar.",
-    "genericError": "Something went wrong.",
-    "badgeNames": {
-      "graduate": "The 5 training sheets read"
-    },
-    "badgesEyebrow": "Progress",
-    "badgesTitle": "My badges",
-    "badgesDescription": "Read the five training sheets to earn the Graduate badge and the Oracle avatar.",
-    "securityTitle": "Authentication & verification",
-    "securitySetupHeading": "Account verification",
-    "accountVerified": "Account verified",
-    "accountNotVerified": "Account not verified",
-    "totpConfigured": "Authenticator app (TOTP) configured.",
-    "emailVerifiedMessage": "Email verified — {email}",
-    "notVerifiedMessage": "Your account isn't verified yet. Some features are unavailable.",
-    "verifyAction": "Verify →",
-    "totpTitle": "Authenticator app",
-    "totpDescription": "Not configured. Add a TOTP app to further secure your account and recover access without email.",
-    "configureAction": "Configure →",
-    "pushNotifications": "Push notifications",
-    "pushNotificationsDescription": "Get notified on this device for messages from the EVCore team and new announcements.",
-    "pushNotificationsToggle": "Enable push notifications",
-    "pushNotificationsUnsupported": "Your browser doesn't support push notifications.",
-    "pushNotificationsDenied": "Notifications blocked — allow them in your browser settings.",
-    "emailNotifications": "Email notifications",
-    "emailNotificationsDescription": "The morning brief and the week, by email too, to a verified address. Off until you turn it on.",
-    "emailNotificationsToggle": "By email too",
-    "bankrollDescription": "Choose the currency displayed in the app.",
-    "displayCurrency": "Display currency",
-    "unitStake": "Unit stake",
-    "unitModeFixed": "Fixed amount",
-    "unitModePct": "% of bankroll",
-    "unitAmountPlaceholder": "e.g. 2,000",
-    "unitPctPlaceholder": "e.g. 1",
-    "unitPctSuffix": "%",
-    "unitOptionalHint": "Optional — pre-fills the bet slip each time it opens",
-    "currencies": {
-      "xof": "CFA Franc (XOF)",
-      "usd": "Dollar ($)",
-      "eur": "Euro (€)"
-    },
-    "roles": {
-      "ADMIN": "Admin"
-    },
-    "phoneNone": "Not set",
-    "responsible": {
-      "title": "Responsible gambling",
-      "body": "Betting carries a risk of loss. Only stake what you can afford to lose, and never to chase losses.",
-      "deletion": "Deleting your account immediately erases everything that belongs to you.",
-      "readPage": "Read the responsible gambling page",
-      "writeTeam": "Write to the team"
-    },
-    "deleteAccount": {
-      "trigger": "Delete my account",
-      "title": "Delete my account",
-      "description": "It is immediate and final. Your declared coupons, stake tracking, badges, conversation with the team and settings are erased. EVCore's public forecasts do not change.",
-      "passwordLabel": "Your password, to confirm",
-      "cancel": "Cancel",
-      "confirm": "Delete for good",
-      "error": "The account could not be deleted.",
-      "pauseHint": "Only need a breather? A break turns off coupons and notifications without erasing anything."
-    },
-    "pause": {
-      "intro": "Need a breather? A break turns off coupons, forecasts and announcement notifications, without erasing anything.",
-      "activeUntil": "You are on a break until {end}.",
-      "trigger": "Take a break",
-      "extend": "Extend the break",
-      "description": "During the break, the app suggests no bet and sends no announcement notification. Your history, stake tracking and training stay available.",
-      "durationLabel": "Break length",
-      "duration": {
-        "1": "24 hours",
-        "7": "7 days",
-        "30": "30 days"
-      },
-      "noReturn": "No going back: the break runs to the end. You can only extend it.",
-      "cancel": "Cancel",
-      "confirm": "Start the break",
-      "error": "The break could not be started."
-    },
-    "emailChange": {
-      "trigger": "Change",
-      "title": "Change e-mail address",
-      "requestDescription": "Enter your new address and your password. We send a code to the new address to check it is yours.",
-      "confirmDescription": "A 6-digit code was just sent to {email}. It is valid for 10 minutes. Nothing received? This address may already have an EVCore account: its owner was told, nothing changed.",
-      "newEmailLabel": "New address",
-      "passwordLabel": "Your password",
-      "codeLabel": "Code received",
-      "restart": "Change address or resend a code",
-      "send": "Send the code",
-      "confirm": "Confirm",
-      "cancel": "Cancel",
-      "error": "The change did not go through. Try again."
-    },
-    "playerNotifications": {
-      "title": "Notifications",
-      "description": "Notifications in the app and on your phone. They never push you to bet.",
-      "morning": "The morning brief, at 8 am UTC",
-      "morningHint": "Yesterday's results and today's coupons, or why there are none.",
-      "weekly": "The Monday statement",
-      "weeklyHint": "Your week, what you followed and how our coupons did.",
-      "followed": "Result of my followed coupons",
-      "followedHint": "The same evening, once the last match is settled.",
-      "replies": "Replies from the team",
-      "repliesHint": "When the team writes to you in Messages.",
-      "error": "Could not save this setting."
-    }
-  },
   "performance": {
     "headline": "Overall performance",
     "title": "Gains & losses",
@@ -431,104 +84,8 @@
     "proposals": "Proposals",
     "activeSuspensions": "Active suspensions"
   },
-  "dashboard": {
-    "announcements": {
-      "title": "What's new",
-      "dismiss": "Later",
-      "close": "Dismiss announcement",
-      "closeItem": "Hide this announcement",
-      "read": "Read",
-      "markAsRead": "Mark as read"
-    },
-    "leagueRanking": {
-      "title": "League ranking",
-      "period": "Last 30 days · calibration",
-      "empty": "No data over 30 days."
-    },
-    "operatorCard": {
-      "headline": "My performance",
-      "title": "My bet slips summary",
-      "slips": "Slips",
-      "created": "created",
-      "settled": "settled",
-      "settledLong": "settled bets",
-      "winRate": "Win rate",
-      "filterByDate": "Filter by date",
-      "allTime": "All",
-      "modelReturn": "Model return",
-      "notEnoughData": "Not enough data",
-      "winForm": "On form",
-      "neutral": "Neutral",
-      "toWatch": "Gap to review",
-      "pendingResult": "pending result",
-      "pendingResults": "pending results"
-    },
-    "engineHealth": {
-      "headline": "Engine health",
-      "title": "Overview",
-      "globalClose": "Global gap ≤ 15%",
-      "globalModerateGap": "Global gap up to 30%",
-      "globalLargeGap": "Large gap or suspended market",
-      "globalUnknown": "Insufficient volume",
-      "globalRatio": "Calibration ratio",
-      "redChannels": "Channels with gap > 30%",
-      "activeSuspensions": "Suspended markets",
-      "trend": "Trend",
-      "trendCaption": "7d vs 30d",
-      "calibrationCurve": "Calibration curve",
-      "announced": "Announced",
-      "actual": "Actual",
-      "suspendedMarkets": "Suspended markets",
-      "recentAlerts": "Recent alerts (7d)",
-      "channelsByDeviation": "Channels sorted by calibration deviation",
-      "channel": "Channel"
-    },
-    "home": {
-      "couponTitle": "Today's coupons · {date}",
-      "couponsLink": "All coupons",
-      "couponError": "Today's coupon could not be loaded.",
-      "couponEmptyTitle": "No coupon today",
-      "couponEmptyBody": "Today's pool was too thin to compose a coupon without lowering the bar. Abstaining is a result, not a failure.",
-      "longCouponLink": "Today's long coupon (odds {odds}): on the Coupons page",
-      "yesterdayTitle": "Yesterday",
-      "yesterdayLink": "See details",
-      "yesterdayTally": {
-        "won": "{count} won",
-        "lost": "{count} lost",
-        "void": "{count} refunded",
-        "pending": "{count} pending"
-      },
-      "legs": "{count, plural, one {# leg} other {# legs}}",
-      "odds": "odds {odds}",
-      "paid": "paid {odds}",
-      "result": {
-        "won": "Won",
-        "partial": "Won",
-        "lost": "Lost",
-        "void": "Refunded",
-        "pending": "Pending"
-      },
-      "picksTitle": "Today's picks",
-      "picksSubtitle": "Odds between 1.20 and 1.65, one pick per match. Chances come from the odds, bookmaker margin removed.",
-      "pickFrequency": "{count} in {total}",
-      "picksLink": "All decisions",
-      "picksEmpty": "No pick meets the conditions today.",
-      "mySlipsTitle": "My coupons",
-      "mySlipsLink": "My coupons",
-      "mySlipsEmptyTitle": "You have not played anything yet",
-      "mySlipsEmptyBody": "Today's coupon is at the top of this page. A played coupon shows up here with its result.",
-      "mySlipsEmptyLink": "See today's coupon",
-      "mySlipsTally": "{won} won · {lost} lost · {pending} pending",
-      "fixedStake": "Your fixed-stake result",
-      "fixedStakeSample": "{count, plural, one {over # settled bet} other {over # settled bets}}",
-      "fixedStakeNone": "No settled bet yet",
-      "weeklyBriefTitle": "Your week",
-      "pageTitle": "Home",
-      "riskLine": "18+ · Betting carries a risk of loss. Only stake what you can afford to lose."
-    }
-  },
   "matchSheet": {
-    "back": "Decisions",
+    "back": "Back to the match",
     "expectedTitle": "What our model expects",
     "expected": "{home} about {homeGoals} goals, {away} about {awayGoals} goals: {total} goals on average.",
     "expectedNote": "An average, not a predicted score.",
@@ -549,7 +106,7 @@
       "mid": "average"
     },
     "rejectedTitle": "What we set aside, and why",
-    "rejectedIntro": "{evaluated, plural, one {# reading evaluated} other {# readings evaluated}} on this match. The ones we keep are on the Decisions card; {rejected, plural, one {here is the one set aside, with its reason} other {here are the # set aside, with their reason}}.",
+    "rejectedIntro": "{evaluated, plural, one {# reading evaluated} other {# readings evaluated}} on this match; {rejected, plural, one {here is the one set aside, with its reason} other {here are the # set aside, with their reason}}.",
     "rejectedNone": "No reading set aside on this match.",
     "line": "about {count} times in {total} · odds {odds} · {motive}",
     "motive": {
@@ -566,7 +123,6 @@
       "other": "set aside by the engine"
     },
     "noAnalysis": "This match has not been analysed yet.",
-    "seeDecisions": "See the readings we keep on Decisions",
     "openSheet": "Why? See the match sheet"
   },
   "coupons": {
@@ -578,16 +134,6 @@
     "retry": "Try again",
     "aiNote": "These proposals are generated by our AI engine, which continuously improves based on past results. This is not financial advice.",
     "helpLink": "What sets the coupons apart?"
-  },
-  "pause": {
-    "title": "You are on a break",
-    "until": "Until {end}.",
-    "body": "Coupons, forecasts and AI opinions come back on that date. Your history stays available.",
-    "links": {
-      "mySlips": "My coupons",
-      "bankroll": "Stake tracking",
-      "trackRecord": "Track record"
-    }
   },
   "couponAbstentions": {
     "line": "No {product} today: {reason}.",
@@ -621,7 +167,8 @@
       "home": "Admin home",
       "engine": "Engine",
       "players": "Players",
-      "settings": "Settings"
+      "settings": "Settings",
+      "messages": "Messages"
     }
   },
   "scoreboard": {
@@ -1247,7 +794,8 @@
       "home": "Admin",
       "engine": "Engine",
       "players": "Players",
-      "settings": "Settings"
+      "settings": "Settings",
+      "messages": "Messages"
     },
     "lights": {
       "data": "Data",
@@ -1463,6 +1011,26 @@
         "announcement": "announcement published: “{title}”",
         "pass_relaunched": "{pass} relaunched"
       }
+    },
+    "messages": {
+      "search": "Find a player",
+      "searchSubmit": "Search",
+      "toAnswer": "To answer",
+      "others": "The others",
+      "waitingFor": "waiting since {time}",
+      "unread": "{count} unread",
+      "you": "You: ",
+      "silent": "{count, plural, one {# player never wrote} other {# players never wrote}}",
+      "showSilent": "Show them",
+      "none": "No messages yet.",
+      "noMatch": "No player by that name.",
+      "back": "Back to messages",
+      "sheet": "Their sheet",
+      "placeholder": "Write to {name}…",
+      "older": "Earlier messages",
+      "pick": "Pick a conversation.",
+      "write": "Write to them",
+      "writeFailed": "Conversation not opened, try again."
     }
   }
 }

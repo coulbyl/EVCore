@@ -6,8 +6,8 @@ import { PwaRegister } from "./pwa-register";
 
 // Not preloaded: 134 kB that every page fetched first, while the player's
 // screens are set in Barlow (app/fonts/scoreboard-fonts.ts). The browser
-// still loads Geist as soon as a page shows text in it (dashboard, public
-// pages), never on the player's screens (C0).
+// still loads Geist as soon as a page shows text in it (the body's default
+// face), never on the player's scoreboard (C0).
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -50,9 +50,8 @@ export const metadata: Metadata = {
   },
 };
 
-// No stylesheet here: the player's screens load app/(player)/player.css,
-// built from their own sources; the dashboard and the public pages load
-// app/globals.css (C0b).
+// No stylesheet here: every screen loads app/(player)/player.css, built
+// from its own sources (C0b); app/globals.css left with the dashboard.
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -65,9 +64,9 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
-        {/* No client messages here: the dashboard sets next-intl's provider,
-            the player its own few texts (C0). Every message of the app,
-            53 kB, went out with each page. */}
+        {/* No client messages here: the player's screens pass their own
+            few texts (C0). Every message of the app, 53 kB, went out with
+            each page. */}
         <Providers>{children}</Providers>
         <PwaRegister />
       </body>

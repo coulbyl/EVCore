@@ -15,8 +15,9 @@ export function todoHref(item: TodoItem): string {
     case "channel_alert":
       return "/admin/engine";
     case "players_silent":
-    case "support_unanswered":
       return "/admin/players";
+    case "support_unanswered":
+      return "/admin/messages";
     default:
       return "/admin#passes";
   }

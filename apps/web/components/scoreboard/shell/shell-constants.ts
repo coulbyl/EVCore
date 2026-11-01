@@ -1,12 +1,13 @@
 import {
   CalendarDays,
   ChartColumn,
+  Cpu,
   Gauge,
+  MessageCircle,
   Settings,
   Shirt,
   UserRound,
   UsersRound,
-  Cpu,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -45,7 +46,12 @@ export function tabsFor(admin: boolean): readonly PlayerTab[] {
   return admin ? [...PLAYER_TABS, ADMIN_TAB] : PLAYER_TABS;
 }
 
-export type AdminSectionKey = "home" | "engine" | "players" | "settings";
+export type AdminSectionKey =
+  | "home"
+  | "engine"
+  | "players"
+  | "messages"
+  | "settings";
 
 /**
  * The admin's three screens and its settings (12-admin.md § 0): chips in
@@ -59,6 +65,7 @@ export const ADMIN_SECTIONS: readonly {
   { key: "home", href: "/admin", icon: Gauge },
   { key: "engine", href: "/admin/engine", icon: Cpu },
   { key: "players", href: "/admin/players", icon: UsersRound },
+  { key: "messages", href: "/admin/messages", icon: MessageCircle },
   { key: "settings", href: "/admin/settings", icon: Settings },
 ] as const;
 

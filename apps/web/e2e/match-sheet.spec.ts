@@ -8,7 +8,7 @@ import { expect, test } from "@playwright/test";
  */
 test.describe("Fiche de diagnostic", () => {
   test("se lit sans jargon", async ({ page }) => {
-    await page.goto("/dashboard/decisions/match/fx-m1");
+    await page.goto("/admin/matches/fx-m1");
     await expect(page.locator("h1")).toHaveText("Arsenal – Burnley");
     await expect(page.getByTestId("sheet-expected")).toHaveText(
       "Arsenal environ 1,6 but, Burnley environ 0,9 but : 2,6 buts en moyenne.",

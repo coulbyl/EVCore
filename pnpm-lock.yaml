@@ -75,9 +75,6 @@ catalogs:
     '@swc/core':
       specifier: ^1.13.5
       version: 1.16.18
-    '@tanstack/react-query':
-      specifier: ^5.90.5
-      version: 5.104.3
     '@tanstack/react-table':
       specifier: ^8.21.3
       version: 8.21.3
@@ -205,9 +202,6 @@ catalogs:
       specifier: ^7.8.2
       version: 7.8.2
     socket.io:
-      specifier: ^4.8.1
-      version: 4.8.4
-    socket.io-client:
       specifier: ^4.8.1
       version: 4.8.4
     sonner:
@@ -514,15 +508,9 @@ importers:
       '@evcore/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-      '@tanstack/react-query':
-        specifier: 'catalog:'
-        version: 5.104.3(react@19.3.1)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      date-fns:
-        specifier: 'catalog:'
-        version: 4.4.0
       lucide-react:
         specifier: 'catalog:'
         version: 0.577.0(react@19.3.1)
@@ -538,21 +526,9 @@ importers:
       react:
         specifier: 'catalog:'
         version: 19.3.1
-      react-day-picker:
-        specifier: 'catalog:'
-        version: 9.14.0(react@19.3.1)
       react-dom:
         specifier: 'catalog:'
         version: 19.3.1(react@19.3.1)
-      socket.io-client:
-        specifier: 'catalog:'
-        version: 4.8.4
-      sonner:
-        specifier: 'catalog:'
-        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      vaul:
-        specifier: 'catalog:'
-        version: 1.1.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
     devDependencies:
       '@evcore/eslint-config':
         specifier: workspace:*
@@ -4302,14 +4278,6 @@ packages:
   '@tailwindcss/postcss@4.3.3':
     resolution: {integrity: sha512-JTSZZGQi1AyKirbLN3azmjVzef92tcX7h+iSqPdaeStyFpGpDlKvvpxeOE8njhbUanbRwr3z8DyzhICWnMtQeg==}
 
-  '@tanstack/query-core@5.104.3':
-    resolution: {integrity: sha512-DZY9TuJAOgU3UyHUhXb4CcTYEHNZszlwkPg4VViIwTxOKzLprPUU+rbaPZQd3srqkGOtpaDdKpW972UV/LKlcg==}
-
-  '@tanstack/react-query@5.104.3':
-    resolution: {integrity: sha512-5Ts1ImwJKqoJgPkLxl9WrPQy1JEoEmti3MaaODCfBamHUGFk57IFrc+AIksPq+BAm10EsroX56qm398Z42LG7w==}
-    peerDependencies:
-      react: ^18 || ^19
-
   '@tanstack/react-table@8.21.3':
     resolution: {integrity: sha512-5nNMTSETP4ykGegmVkhjcS8tTLW6Vl4axfEGQN3v0zdHYbK4UfoqfPChclTrJ4EoK9QynqAu9oUf8VEmrpZ5Ww==}
     engines: {node: '>=12'}
@@ -5772,9 +5740,6 @@ packages:
 
   end-of-stream@1.4.5:
     resolution: {integrity: sha512-ooEGc6HP26xXq/N+GCGOT0JKCLDGrq2bQUZrQ7gyrJiZANJ/8YDTxTpQBXGMn+WbIQXNVpyWymm7KYVICQnyOg==}
-
-  engine.io-client@6.6.7:
-    resolution: {integrity: sha512-GyAvmPA7gnRCpDQbYACAy79Lg4ewevrmaPzySZz0OVvgyZc3gEfLLqPTYk8wVBScjOEpM9ZO4KryyFpVItjGEA==}
 
   engine.io-parser@5.2.3:
     resolution: {integrity: sha512-HqD3yTBfnBxIrbnM1DoD6Pcq8NECnh8d4As1Qgh0z5Gg3jRRIqijury0CL3ghu/edArpUYiYqQiDUQBIs4np3Q==}
@@ -8286,10 +8251,6 @@ packages:
   socket.io-adapter@2.5.8:
     resolution: {integrity: sha512-6Oy52pbg+kvdCVvjcN+FnY7BvxZ7cIHNScbvztT/It5d0vbwoJoVZmF2gjJmnV0/4WlXRfG15zc45ySk9Ah8bw==}
 
-  socket.io-client@4.8.4:
-    resolution: {integrity: sha512-7wjKAvVXYOJsbmUgkWbnhPD4bFpkqrUR0++XOjpGFmqDqsqV1CI93VTraeExLxpjxEqrWgFoSRZu1ihjLWfkAA==}
-    engines: {node: '>=10.0.0'}
-
   socket.io-parser@4.2.7:
     resolution: {integrity: sha512-IH/iSeO9T6gz1KkFleGDWkG9N3dl4jXVYUtMhIqH10Md0ttMer8nUNWiP1DKuNrybD2xBrixLJdCC9J6ECoYkg==}
     engines: {node: '>=10.0.0'}
@@ -9181,10 +9142,6 @@ packages:
   xdg-basedir@5.1.0:
     resolution: {integrity: sha512-GCPAHLvrIH13+c0SuacwvRYj2SxJXQ4kaVTT5xgL3kPrz56XxkF21IGhjSE1+W0aw7gpBWRGXLCPnPby6lSpmQ==}
     engines: {node: '>=12'}
-
-  xmlhttprequest-ssl@2.1.2:
-    resolution: {integrity: sha512-TEU+nJVUUnA4CYJFLvK5X9AOeH4KvDvhIfm0vV1GaQRtchnG0hgK5p8hw/xjv8cunWYCsiPCSDzObPyhEwq3KQ==}
-    engines: {node: '>=0.4.0'}
 
   xtend@4.0.2:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
@@ -12472,13 +12429,6 @@ snapshots:
       postcss: 8.5.30
       tailwindcss: 4.3.3
 
-  '@tanstack/query-core@5.104.3': {}
-
-  '@tanstack/react-query@5.104.3(react@19.3.1)':
-    dependencies:
-      '@tanstack/query-core': 5.104.3
-      react: 19.3.1
-
   '@tanstack/react-table@8.21.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
       '@tanstack/table-core': 8.21.3
@@ -14144,18 +14094,6 @@ snapshots:
   end-of-stream@1.4.5:
     dependencies:
       once: 1.4.0
-
-  engine.io-client@6.6.7:
-    dependencies:
-      '@socket.io/component-emitter': 3.1.2
-      debug: 4.4.3
-      engine.io-parser: 5.2.3
-      ws: 8.21.3
-      xmlhttprequest-ssl: 2.1.2
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
 
   engine.io-parser@5.2.3: {}
 
@@ -17089,17 +17027,6 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  socket.io-client@4.8.4:
-    dependencies:
-      '@socket.io/component-emitter': 3.1.2
-      debug: 4.4.3
-      engine.io-client: 6.6.7
-      socket.io-parser: 4.2.7
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
-
   socket.io-parser@4.2.7:
     dependencies:
       '@socket.io/component-emitter': 3.1.2
@@ -18022,8 +17949,6 @@ snapshots:
       powershell-utils: 0.2.1
 
   xdg-basedir@5.1.0: {}
-
-  xmlhttprequest-ssl@2.1.2: {}
 
   xtend@4.0.2: {}
 

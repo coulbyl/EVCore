@@ -64,6 +64,8 @@ export type SupportConversationSummaryDto = SupportConversationDto & {
   avatarUrl: string | null;
   lastMessage: SupportMessageDto | null;
   unreadCount: number;
+  /** The player ever wrote in it (not only the team's messages). */
+  playerWrote: boolean;
 };
 
 // Client → server: "I started/stopped typing". conversationId is required

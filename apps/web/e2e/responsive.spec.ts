@@ -8,12 +8,12 @@ import { test, expect } from "@playwright/test";
  *  3. No horizontal overflow
  */
 
-// What is left of /dashboard (12-admin § 0), the admin's only.
+// The admin's screens that read the e2e backend (12-admin § 2, § 3).
 const PAGES = [
-  { name: "inbox", path: "/dashboard/inbox", adminOnly: true },
+  { name: "messages", path: "/admin/messages", adminOnly: true },
   {
     name: "diagnostic",
-    path: "/dashboard/decisions/match/fx-m1",
+    path: "/admin/matches/fx-m1",
     adminOnly: true,
   },
 ] as const;

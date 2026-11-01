@@ -372,3 +372,40 @@ describe('SupportService — pagination', () => {
     expect(hasMore).toBe(true);
   });
 });
+
+describe('SupportService — getMessagesForAdmin', () => {
+  function serviceWith(conversation: unknown) {
+    const repo = makeRepo({
+      findConversationWithPlayer: vi.fn().mockResolvedValue(conversation),
+      listRecentMessages: vi
+        .fn()
+        .mockResolvedValue({ messages: [], hasMore: false }),
+    } as unknown as Partial<SupportRepository>);
+    return new SupportService(
+      repo,
+      makeNotifier(),
+      makeGateway(),
+      makeStorage(),
+      makeAutomation(),
+    );
+  }
+
+  it('names the player even before anyone wrote (a thread the team just opened)', async () => {
+    const service = serviceWith({
+      id: CONVERSATION_ID,
+      userId: USER_ID,
+      adminReadAt: null,
+      user: { id: USER_ID, fullName: 'Aya' },
+    });
+    const thread = await service.getMessagesForAdmin(CONVERSATION_ID);
+    expect(thread.player).toEqual({ id: USER_ID, fullName: 'Aya' });
+    expect(thread.messages).toEqual([]);
+  });
+
+  it('404s an unknown conversation', async () => {
+    const service = serviceWith(null);
+    await expect(service.getMessagesForAdmin('nope')).rejects.toThrow(
+      'Conversation introuvable',
+    );
+  });
+});

@@ -91,7 +91,7 @@ export default async function Page({
         </section>
 
         <Link
-          href="/dashboard/inbox"
+          href="/admin/messages"
           className="flex min-h-12 items-center justify-between gap-3 border-y border-border py-2 text-body font-medium"
         >
           {t("unanswered")}

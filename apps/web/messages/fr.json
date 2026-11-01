@@ -1,204 +1,4 @@
 {
-  "pwaInstall": {
-    "title": "Installer EVCore",
-    "subtitle": "Accès rapide depuis l'écran d'accueil",
-    "iosSafari": "Touche Partager, puis Sur l'écran d'accueil.",
-    "iosOther": "Ouvre EVCore dans Safari, touche Partager, puis Sur l'écran d'accueil.",
-    "install": "Installer",
-    "close": "Fermer"
-  },
-  "nav": {
-    "eva": "EVA",
-    "dashboard": "Accueil",
-    "fixtures": "Matchs",
-    "navGroupToday": "Aujourd'hui",
-    "navGroupTracking": "Suivi",
-    "navGroupAnalysis": "Analyse",
-    "navGroupAdmin": "Admin",
-    "performance": "Performance",
-    "bankroll": "Suivi de mise",
-    "betSlips": "Mes coupons",
-    "inbox": "Inbox",
-    "audit": "Audit",
-    "users": "Utilisateurs",
-    "announcements": "Annonces",
-    "ml": "Moteur ML",
-    "reports": "Rapports",
-    "engine": "Moteur & ETL",
-    "glossary": "Glossaire",
-    "technicalDocs": "Documentation technique",
-    "formation": "Formation",
-    "trackRecord": "Mesures historiques",
-    "notifications": "Notifications",
-    "settings": "Paramètres",
-    "replayTour": "Revoir le guide",
-    "summary": "Résumé sélections",
-    "coupons": "Coupons",
-    "decisions": "Décisions",
-    "decisionsShort": "Décisions",
-    "arbitrage": "Avis IA",
-    "admin": "Admin"
-  },
-  "decisions": {
-    "channels": {
-      "VALUE": {
-        "description": "Cotes à valeur attendue positive."
-      },
-      "SAFE": {
-        "description": "Sélections prudentes à rendement régulier."
-      },
-      "DOMINANT": {
-        "description": "Angle le plus affirmé du modèle sur le 1N2."
-      },
-      "BTTS": {
-        "description": "Deux équipes marquent."
-      },
-      "DRAW": {
-        "description": "Match nul via la probabilité implicite du marché."
-      },
-      "GOALS": {
-        "description": "Plus/moins de buts (Over/Under)."
-      },
-      "CLEAN_SHEET": {
-        "description": "Une équipe termine le match sans encaisser de but."
-      },
-      "TEAM_TOTAL": {
-        "description": "Plus/moins de buts marqués par une seule équipe."
-      },
-      "WIN_EITHER_HALF": {
-        "description": "Une équipe gagne au moins l'une des deux mi-temps."
-      },
-      "FIRST_HALF": {
-        "description": "Vainqueur de la première mi-temps."
-      },
-      "DOUBLE_CHANCE": {
-        "description": "Double chance (1N, N2 ou 12)."
-      },
-      "UNDERDOG": {
-        "description": "Mise sur l'outsider face au favori du marché."
-      },
-      "FAVORITE": {
-        "description": "Mise sur le favori du marché."
-      },
-      "LIVE_VALUE": {
-        "description": "Valeur détectée en direct pendant le match."
-      },
-      "MARKET_MOVE": {
-        "description": "Mouvement de cote significatif détecté avant le match."
-      },
-      "CONSENSUS": {
-        "description": "Plusieurs stratégies indépendantes convergent sur la même sélection."
-      },
-      "CONTRARIAN": {
-        "description": "Position à contre-courant du marché."
-      },
-      "AVOID": {
-        "description": "Match écarté : divergence modèle/marché implausible."
-      },
-      "CORRECT_SCORE": {
-        "description": "Score exact le plus probable (observation seule, jamais misé)."
-      },
-      "RESULT_TOTAL_GOALS": {
-        "description": "Résultat du match combiné au total de buts."
-      },
-      "OVER_UNDER_HT": {
-        "description": "Plus/moins de buts à la mi-temps."
-      },
-      "RESULT_BTTS": {
-        "description": "Résultat du match combiné aux deux équipes qui marquent."
-      },
-      "DRAW_NO_BET": {
-        "description": "Résultat sans le nul — mise remboursée en cas de match nul."
-      },
-      "WIN_TO_NIL": {
-        "description": "Une équipe gagne le match sans encaisser de but."
-      },
-      "HALF_TIME_FULL_TIME": {
-        "description": "Résultat à la mi-temps combiné au résultat final."
-      },
-      "VANTAGE": {
-        "description": "Lit les décisions des autres canaux et leur calibration observée sur cette compétition ; ne propose une sélection que s'il identifie une tension concrète entre eux."
-      }
-    },
-    "reasons": {
-      "score_below_threshold": "Score modèle sous le seuil",
-      "no_viable_pick": "Aucune sélection viable",
-      "line_movement": "Mouvement de cote défavorable",
-      "no_safe_candidate": "Aucun candidat sûr",
-      "below_threshold": "Probabilité sous le seuil",
-      "insufficient_margin": "Marge insuffisante",
-      "no_consensus": "Pas de consensus entre canaux",
-      "consensus": "Convergence de canaux indépendants",
-      "no_avoid_signal": "Aucun signal de prudence détecté",
-      "extreme_divergence": "Divergence modèle/marché extrême",
-      "no_model": "Pas de probabilités modèle",
-      "no_odds": "Aucun score coté",
-      "no_modelable_scoreline": "Aucun score cotable modélisable",
-      "below_conviction": "Aucun score assez probable à prédire",
-      "BACKFILL": "Rétro-rempli",
-      "VANTAGE_GATED_ODDS": "Avis retenu mais non proposé : cote au-dessus de 1,80",
-      "VANTAGE_GATED_MARKET": "Avis retenu mais non proposé : type de pari peu fiable récemment",
-      "VANTAGE_GATED_BASIS": "Avis non proposé : il reposait sur un désaccord entre nos propres lectures"
-    },
-    "statuses": {
-      "SELECTED": "Sélectionné",
-      "REJECTED": "Écarté",
-      "DISABLED": "Désactivé",
-      "INSUFFICIENT_DATA": "Données insuffisantes",
-      "MISSING_ODDS": "Cotes manquantes",
-      "NOT_APPLICABLE": "Non applicable"
-    },
-    "lens": {
-      "matches": "Match"
-    },
-    "avoid": {
-      "banner": "Attention",
-      "tooltipLabel": "Signal d'attention",
-      "tooltipDetail": "Une des sélections ci-dessous a un écart trop important entre la probabilité du modèle et celle implicite du marché (≥ 30 points). Historiquement, le marché a raison dans ce cas — repère la sélection marquée ⚠ et évite-la, les autres restent valides.",
-      "edge": "écart",
-      "edgeTooltip": "Divergence modèle/marché : {pct} — cette sélection a déclenché le signal Attention"
-    },
-    "calibration": {
-      "banner": "Données suspectes",
-      "tooltipLabel": "Alerte calibration",
-      "tooltipDetail": "Le modèle et le marché sont en désaccord fort sur ce match (favori inversé ou écart extrême sur plusieurs bookmakers). C'est presque toujours le signe de données d'entrée faussées, pas une occasion : ce match est retiré de tous nos coupons et des sélections de l'accueil. Les pronostics restent affichés pour la lecture ; sur ces matchs, au-dessus de 1,45, nos pourcentages sont nettement trop optimistes."
-    },
-    "consensus": {
-      "tooltipLabel": "Signal consensus",
-      "tooltipDetail": "Plusieurs canaux indépendants ont sélectionné le même outcome sans se concerter. C'est une convergence, pas une garantie : CONSENSUS n'émet plus de pronostic ni de probabilité propre — celle qu'il publiait était le maximum des canaux d'accord, donc optimiste par construction.",
-      "rowLabel": "Convergence :"
-    },
-    "noPick": "Aucune sélection retenue sur ce match.",
-    "noPickShort": "aucune sélection",
-    "pickCount": "{count, plural, one {# sélection} other {# sélections}}",
-    "evaluatedCount": "{count, plural, one {# autre type de pari évalué} other {# autres types de pari évalués}}",
-    "showMorePicks": "{count, plural, one {Voir l'autre lecture du match} other {Voir les # autres lectures du match}}",
-    "showLessPicks": "Voir moins",
-    "filters": {
-      "all": "Tous",
-      "leagueLabel": "Ligue",
-      "channelLabel": "Type de pari",
-      "displayLabel": "Affichage",
-      "noMatch": "Aucun match ne correspond aux filtres.",
-      "groupByNone": "Par heure",
-      "groupByLeague": "Grouper par ligue",
-      "searchLeague": "Rechercher un championnat…",
-      "noLeagueResults": "Aucun championnat.",
-      "searchChannel": "Rechercher un type de pari…",
-      "noChannelResults": "Aucun type de pari.",
-      "allFilters": "Filtres"
-    },
-    "helpLink": "Comment lire un pronostic",
-    "primaryPick": "Notre sélection",
-    "otherMarketsTitle": "Les autres lectures du match",
-    "contradictionNote": "« {first} » et « {second} » ne peuvent pas passer ensemble : chaque lecture est une estimation à part, seule Notre sélection est mise en avant.",
-    "pageTitle": "Décisions du jour",
-    "chances": "environ {count} fois sur {total}",
-    "playableLabel": "{bookmaker} {odds}",
-    "referenceOdds": "réf. {odds}",
-    "oddsLabel": "Cote {odds}",
-    "belowMinimum": "sous le minimum de {bookmaker} ({min})"
-  },
   "notifications": {
     "title": "Notifications",
     "empty": "Aucune notification",
@@ -255,153 +55,6 @@
     "fr": "Français",
     "en": "English"
   },
-  "auth": {
-    "login": "Se connecter",
-    "register": "Créer un compte",
-    "logout": "Se déconnecter",
-    "emailOrUsername": "Email ou username",
-    "password": "Mot de passe",
-    "noAccount": "Pas encore de compte ?",
-    "alreadyAccount": "Déjà un compte ?",
-    "logoutLoading": "Déconnexion..."
-  },
-  "account": {
-    "title": "Mon compte",
-    "appearance": "Apparence",
-    "language": "Langue",
-    "notifications": "Notifications",
-    "account": "Compte",
-    "bankroll": "Devise et mise",
-    "theme": "Thème",
-    "savedAutomatically": "Enregistré automatiquement.",
-    "email": "Email",
-    "username": "Identifiant",
-    "bio": "Biographie",
-    "phone": "Téléphone",
-    "phoneConsentLabel": "J'accepte d'être contacté(e) par téléphone dans le cadre d'une démarche de prospection terrain. Jamais de démarchage commercial automatisé.",
-    "phonePlaceholder": "+225 07 00 00 00 00",
-    "phoneAdd": "Ajouter mon numéro",
-    "phoneRemove": "Désactiver",
-    "phoneSaveError": "Impossible d'enregistrer le numéro.",
-    "avatar": "Avatar",
-    "save": "Enregistrer",
-    "cancel": "Annuler",
-    "editField": "Modifier {field}",
-    "groupAccount": "Compte",
-    "groupPreferences": "Préférences",
-    "tabProfile": "Profil",
-    "tabPreferences": "Affichage",
-    "tabSecurity": "Sécurité",
-    "tabNotifications": "Notifications",
-    "tabBankroll": "Devise et mise",
-    "requires": "Requiert :",
-    "avatarSaveError": "Impossible de sauvegarder l'avatar.",
-    "genericError": "Une erreur est survenue. Réessaie dans quelques instants.",
-    "badgeNames": {
-      "graduate": "Les 5 fiches de la formation lues"
-    },
-    "badgesEyebrow": "Progression",
-    "badgesTitle": "Mes badges",
-    "badgesDescription": "Lis les cinq fiches de la formation pour obtenir le badge Diplômé et l'avatar Oracle.",
-    "securityTitle": "Authentification & vérification",
-    "securitySetupHeading": "Vérification du compte",
-    "accountVerified": "Compte vérifié",
-    "accountNotVerified": "Compte non vérifié",
-    "totpConfigured": "Application d'authentification (TOTP) configurée.",
-    "emailVerifiedMessage": "Email vérifié — {email}",
-    "notVerifiedMessage": "Ton compte n'est pas encore vérifié. Certaines fonctionnalités sont inaccessibles.",
-    "verifyAction": "Vérifier →",
-    "totpTitle": "Application d'authentification",
-    "totpDescription": "Non configurée. Ajoute une app TOTP pour sécuriser davantage ton compte et récupérer l'accès sans email.",
-    "configureAction": "Configurer →",
-    "pushNotifications": "Notifications push",
-    "pushNotificationsDescription": "Reçois une notification sur cet appareil pour les messages de l'équipe EVCore et les nouvelles annonces.",
-    "pushNotificationsToggle": "Activer les notifications push",
-    "pushNotificationsUnsupported": "Ton navigateur ne prend pas en charge les notifications push.",
-    "pushNotificationsDenied": "Notifications bloquées — autorise-les dans les paramètres de ton navigateur.",
-    "emailNotifications": "Notifications par email",
-    "emailNotificationsDescription": "La matinée et la semaine, aussi par e-mail, vers une adresse vérifiée. Éteint tant que tu ne l'allumes pas.",
-    "emailNotificationsToggle": "Par e-mail aussi",
-    "bankrollDescription": "Choisis la devise affichée dans l'application.",
-    "displayCurrency": "Devise d'affichage",
-    "unitStake": "Mise par unité",
-    "unitModeFixed": "Montant fixe",
-    "unitModePct": "% de la bankroll",
-    "unitAmountPlaceholder": "ex. 2 000",
-    "unitPctPlaceholder": "ex. 1",
-    "unitPctSuffix": "%",
-    "unitOptionalHint": "Optionnel — pré-remplit le coupon à chaque ouverture",
-    "currencies": {
-      "xof": "Franc CFA (XOF)",
-      "usd": "Dollar ($)",
-      "eur": "Euro (€)"
-    },
-    "roles": {
-      "ADMIN": "Admin"
-    },
-    "phoneNone": "Non renseigné",
-    "responsible": {
-      "title": "Jeu responsable",
-      "body": "Parier comporte des risques de perte. Ne mise que ce que tu peux perdre, et jamais pour te refaire.",
-      "deletion": "Supprimer ton compte efface immédiatement tout ce qui t'appartient.",
-      "readPage": "Lire la page Jeu responsable",
-      "writeTeam": "Écrire à l'équipe"
-    },
-    "deleteAccount": {
-      "trigger": "Supprimer mon compte",
-      "title": "Supprimer mon compte",
-      "description": "C'est immédiat et définitif. Tes coupons déclarés, ton suivi de mise, tes badges, ta conversation avec l'équipe et tes réglages sont effacés. Les pronostics publics d'EVCore ne changent pas.",
-      "passwordLabel": "Ton mot de passe, pour confirmer",
-      "cancel": "Annuler",
-      "confirm": "Supprimer définitivement",
-      "error": "Impossible de supprimer le compte.",
-      "pauseHint": "Tu veux seulement souffler ? Une pause coupe les coupons et les notifications sans rien effacer."
-    },
-    "pause": {
-      "intro": "Besoin de souffler ? Une pause coupe les coupons, les pronostics et les notifications d'annonce, sans rien effacer.",
-      "activeUntil": "Tu es en pause jusqu'au {end}.",
-      "trigger": "Faire une pause",
-      "extend": "Prolonger la pause",
-      "description": "Pendant la pause, l'app ne te propose plus aucun pari et ne t'envoie plus de notification d'annonce. Ton historique, ton suivi de mise et la formation restent accessibles.",
-      "durationLabel": "Durée de la pause",
-      "duration": {
-        "1": "24 heures",
-        "7": "7 jours",
-        "30": "30 jours"
-      },
-      "noReturn": "Pas de retour en arrière : la pause va jusqu'au bout. Tu pourras seulement la prolonger.",
-      "cancel": "Annuler",
-      "confirm": "Commencer la pause",
-      "error": "Impossible de commencer la pause."
-    },
-    "emailChange": {
-      "trigger": "Modifier",
-      "title": "Changer d'adresse e-mail",
-      "requestDescription": "Saisis ta nouvelle adresse et ton mot de passe. On t'envoie un code sur la nouvelle adresse pour vérifier qu'elle est à toi.",
-      "confirmDescription": "Un code à 6 chiffres vient de partir vers {email}. Il est valable 10 minutes. Rien reçu ? Cette adresse a peut-être déjà un compte EVCore : son propriétaire a été prévenu, rien n'a changé.",
-      "newEmailLabel": "Nouvelle adresse",
-      "passwordLabel": "Ton mot de passe",
-      "codeLabel": "Code reçu",
-      "restart": "Changer d'adresse ou renvoyer un code",
-      "send": "Envoyer le code",
-      "confirm": "Confirmer",
-      "cancel": "Annuler",
-      "error": "Le changement n'a pas abouti. Réessaie."
-    },
-    "playerNotifications": {
-      "title": "Notifications",
-      "description": "Des notifications dans l'app et sur ton téléphone. Elles ne te poussent jamais à jouer.",
-      "morning": "La matinée, à 8 h UTC",
-      "morningHint": "Tes résultats d'hier et les coupons du jour, ou pourquoi il n'y en a pas.",
-      "weekly": "Le relevé du lundi",
-      "weeklyHint": "Ta semaine, ce que tu as suivi et le bilan de nos coupons.",
-      "followed": "Résultat de mes coupons suivis",
-      "followedHint": "Le soir même, dès le dernier match réglé.",
-      "replies": "Réponses de l'équipe",
-      "repliesHint": "Quand l'équipe t'écrit dans Messages.",
-      "error": "Impossible d'enregistrer ce réglage."
-    }
-  },
   "performance": {
     "headline": "Performance globale",
     "title": "Gains & pertes",
@@ -431,104 +84,8 @@
     "proposals": "Propositions",
     "activeSuspensions": "Suspensions actives"
   },
-  "dashboard": {
-    "announcements": {
-      "title": "Nouveautés",
-      "dismiss": "Plus tard",
-      "close": "Fermer l'annonce",
-      "closeItem": "Masquer cette annonce",
-      "read": "Lire",
-      "markAsRead": "Marquer comme lu"
-    },
-    "leagueRanking": {
-      "title": "Classement ligues",
-      "period": "30 derniers jours · calibration",
-      "empty": "Pas encore assez de matchs analysés sur les 30 derniers jours."
-    },
-    "operatorCard": {
-      "headline": "Mes performances",
-      "title": "Résumé de mes coupons",
-      "slips": "Coupons",
-      "created": "créés",
-      "settled": "réglés",
-      "settledLong": "paris réglés",
-      "winRate": "Réussite",
-      "filterByDate": "Filtrer par date",
-      "allTime": "Tout",
-      "modelReturn": "Rendement du modèle",
-      "notEnoughData": "Pas assez de données",
-      "winForm": "En forme",
-      "neutral": "Neutre",
-      "toWatch": "Écart à examiner",
-      "pendingResult": "en attente de résultat",
-      "pendingResults": "en attente de résultats"
-    },
-    "engineHealth": {
-      "headline": "Santé moteur",
-      "title": "Vue d'ensemble",
-      "globalClose": "Écart global ≤ 15 %",
-      "globalModerateGap": "Écart global jusqu'à 30 %",
-      "globalLargeGap": "Écart fort ou marché suspendu",
-      "globalUnknown": "Volume insuffisant",
-      "globalRatio": "Ratio calibration",
-      "redChannels": "Canaux avec écart > 30 %",
-      "activeSuspensions": "Marchés suspendus",
-      "trend": "Tendance",
-      "trendCaption": "7j vs 30j",
-      "calibrationCurve": "Courbe de calibration",
-      "announced": "Annoncée",
-      "actual": "Réelle",
-      "suspendedMarkets": "Marchés suspendus",
-      "recentAlerts": "Alertes récentes (7j)",
-      "channelsByDeviation": "Canaux triés par écart à la calibration",
-      "channel": "Canal"
-    },
-    "home": {
-      "couponTitle": "Les coupons du jour · {date}",
-      "couponsLink": "Tous les coupons",
-      "couponError": "Le coupon du jour n'a pas pu être chargé.",
-      "couponEmptyTitle": "Pas de coupon aujourd'hui",
-      "couponEmptyBody": "Le vivier du jour était trop mince pour composer un coupon sans baisser les exigences. L'abstention est un résultat, pas une panne.",
-      "longCouponLink": "Coupon long du jour (cote {odds}) : sur la page Coupons",
-      "yesterdayTitle": "Hier",
-      "yesterdayLink": "Voir le détail",
-      "yesterdayTally": {
-        "won": "{count, plural, one {# gagné} other {# gagnés}}",
-        "lost": "{count, plural, one {# perdu} other {# perdus}}",
-        "void": "{count, plural, one {# remboursé} other {# remboursés}}",
-        "pending": "{count} en attente"
-      },
-      "legs": "{count, plural, one {# jambe} other {# jambes}}",
-      "odds": "cote {odds}",
-      "paid": "payé {odds}",
-      "result": {
-        "won": "Gagné",
-        "partial": "Gagné",
-        "lost": "Perdu",
-        "void": "Remboursé",
-        "pending": "En attente"
-      },
-      "picksTitle": "Les sélections du jour",
-      "picksSubtitle": "Cote entre 1,20 et 1,65, une sélection par match. Les chances viennent de la cote, marge du bookmaker retirée.",
-      "pickFrequency": "{count} sur {total}",
-      "picksLink": "Toutes les décisions",
-      "picksEmpty": "Aucune sélection ne remplit les conditions aujourd'hui.",
-      "mySlipsTitle": "Mes coupons",
-      "mySlipsLink": "Mes coupons",
-      "mySlipsEmptyTitle": "Tu n'as encore rien joué",
-      "mySlipsEmptyBody": "Le coupon du jour est en haut de cette page. Un coupon joué apparaît ici avec son résultat.",
-      "mySlipsEmptyLink": "Voir le coupon du jour",
-      "mySlipsTally": "{won, plural, one {# gagné} other {# gagnés}} · {lost, plural, one {# perdu} other {# perdus}} · {pending} en attente",
-      "fixedStake": "Ton résultat à mise fixe",
-      "fixedStakeSample": "{count, plural, one {sur # pari réglé} other {sur # paris réglés}}",
-      "fixedStakeNone": "Aucun pari réglé pour l'instant",
-      "weeklyBriefTitle": "Ta semaine",
-      "pageTitle": "Accueil",
-      "riskLine": "18+ · Parier comporte des risques de perte. Ne mise que ce que tu peux perdre."
-    }
-  },
   "matchSheet": {
-    "back": "Décisions",
+    "back": "Retour au match",
     "expectedTitle": "Ce que notre modèle attend",
     "expected": "{home} environ {homeGoals} {homeUnit}, {away} environ {awayGoals} {awayUnit} : {total} buts en moyenne.",
     "expectedNote": "Une moyenne, pas un score annoncé.",
@@ -549,7 +106,7 @@
       "mid": "dans la moyenne"
     },
     "rejectedTitle": "Ce qu'on a écarté, et pourquoi",
-    "rejectedIntro": "{evaluated, plural, one {# lecture évaluée} other {# lectures évaluées}} sur ce match. Celles qu'on retient sont sur la carte Décisions ; {rejected, plural, one {voici celle qu'on a écartée, avec son motif} other {voici les # écartées, avec leur motif}}.",
+    "rejectedIntro": "{evaluated, plural, one {# lecture évaluée} other {# lectures évaluées}} sur ce match ; {rejected, plural, one {voici celle qu'on a écartée, avec son motif} other {voici les # écartées, avec leur motif}}.",
     "rejectedNone": "Aucune lecture écartée sur ce match.",
     "line": "environ {count} fois sur {total} · cote {odds} · {motive}",
     "motive": {
@@ -566,7 +123,6 @@
       "other": "écartée par le moteur"
     },
     "noAnalysis": "Ce match n'a pas encore été analysé.",
-    "seeDecisions": "Voir les lectures retenues sur Décisions",
     "openSheet": "Pourquoi ? Voir la fiche du match"
   },
   "coupons": {
@@ -578,16 +134,6 @@
     "retry": "Réessayer",
     "aiNote": "Ces propositions sont générées par notre moteur IA, qui s'améliore en continu grâce aux résultats passés. Il ne s'agit pas de conseils financiers.",
     "helpLink": "Quelle différence entre les coupons ?"
-  },
-  "pause": {
-    "title": "Tu es en pause",
-    "until": "Jusqu'au {end}.",
-    "body": "Les coupons, les pronostics et les avis IA reviendront à cette date. Ton historique reste accessible.",
-    "links": {
-      "mySlips": "Mes coupons",
-      "bankroll": "Suivi de mise",
-      "trackRecord": "Mesures historiques"
-    }
   },
   "couponAbstentions": {
     "line": "Pas de {product} aujourd'hui : {reason}.",
@@ -621,7 +167,8 @@
       "home": "Accueil admin",
       "engine": "Moteur",
       "players": "Joueurs",
-      "settings": "Réglages"
+      "settings": "Réglages",
+      "messages": "Messages"
     }
   },
   "scoreboard": {
@@ -1247,7 +794,8 @@
       "home": "Admin",
       "engine": "Moteur",
       "players": "Joueurs",
-      "settings": "Réglages"
+      "settings": "Réglages",
+      "messages": "Messages"
     },
     "lights": {
       "data": "Données",
@@ -1463,6 +1011,26 @@
         "announcement": "annonce publiée : « {title} »",
         "pass_relaunched": "{pass} relancée"
       }
+    },
+    "messages": {
+      "search": "Chercher un joueur",
+      "searchSubmit": "Chercher",
+      "toAnswer": "À répondre",
+      "others": "Les autres",
+      "waitingFor": "attend depuis {time}",
+      "unread": "{count, plural, one {# non lu} other {# non lus}}",
+      "you": "Toi : ",
+      "silent": "{count, plural, one {# joueur n'a jamais écrit} other {# joueurs n'ont jamais écrit}}",
+      "showSilent": "Les montrer",
+      "none": "Aucun message pour l'instant.",
+      "noMatch": "Aucun joueur à ce nom.",
+      "back": "Retour aux messages",
+      "sheet": "Sa fiche",
+      "placeholder": "Écris à {name}…",
+      "older": "Messages précédents",
+      "pick": "Choisis une conversation.",
+      "write": "Lui écrire",
+      "writeFailed": "Conversation pas ouverte, réessaie."
     }
   }
 }

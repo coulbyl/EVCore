@@ -8,6 +8,7 @@ import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import { displayLocaleOf, formatShortDate } from "@/helpers/scoreboard-format";
 import { AdminBand } from "../../components/admin-band";
 import { PlayerActions } from "../components/player-actions";
+import { StartConversation } from "../components/start-conversation";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("console");
@@ -21,8 +22,9 @@ export default async function Page({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [t, today, locale, timeZone] = await Promise.all([
+  const [t, m, today, locale, timeZone] = await Promise.all([
     getTranslations("console.players"),
+    getTranslations("console.messages"),
     getTranslations("today"),
     getLocale(),
     getPlayerTimeZone(),
@@ -102,15 +104,16 @@ export default async function Page({
 
         {player.conversationId ? (
           <Link
-            href={`/dashboard/inbox/${player.conversationId}`}
+            href={`/admin/messages/${player.conversationId}`}
             className="flex min-h-12 items-center border-y border-border text-body font-medium"
           >
             {t("sheet.thread")} ›
           </Link>
         ) : (
-          <p className="text-body text-muted-foreground">
-            {t("sheet.noThread")}
-          </p>
+          <StartConversation
+            userId={player.id}
+            labels={{ write: m("write"), failed: m("writeFailed") }}
+          />
         )}
 
         {self ? null : (

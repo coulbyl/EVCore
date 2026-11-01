@@ -62,6 +62,8 @@ export type SupportConversationSummary = SupportConversation & {
   avatarUrl: string | null;
   lastMessage: SupportMessage | null;
   unreadCount: number;
+  /** The player ever wrote in it (not only the team's messages). */
+  playerWrote: boolean;
 };
 
 export type OwnConversationResponse = {

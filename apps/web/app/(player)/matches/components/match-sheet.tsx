@@ -69,7 +69,7 @@ export async function MatchSheetView({ id }: { id: string }) {
           locale={display}
           timeZone={timeZone}
           diagnosticHref={
-            admin ? `/dashboard/decisions/match/${sheet.fixtureId}` : null
+            admin ? `/admin/matches/${sheet.fixtureId}` : null
           }
         />
       }

@@ -2686,6 +2686,50 @@ function route(method, url, cookie = "") {
     supportReadCalls += 1;
     return [200, { ok: true }];
   }
+  // The team's side of the same thread (12-admin § 3).
+  if (path === "/admin/support/unread-count" && method === "GET")
+    return [200, { count: 1 }];
+  if (path === "/admin/support/conversations" && method === "GET") {
+    const thread = supportConversation();
+    const last = thread.messages[thread.messages.length - 1];
+    return [
+      200,
+      [
+        {
+          id: "conv-1",
+          userId: "e2e-user",
+          status: "OPEN",
+          userReadAt: null,
+          adminReadAt: null,
+          lastMessageAt: last.createdAt,
+          createdAt: todayAt(-50),
+          username: "aya",
+          fullName: "Aya Koné",
+          avatarUrl: null,
+          lastMessage: last,
+          unreadCount: 1,
+          playerWrote: true,
+        },
+      ],
+    ];
+  }
+  if (
+    path === "/admin/support/conversations/conv-1/messages" &&
+    method === "GET"
+  ) {
+    const thread = supportConversation();
+    return [
+      200,
+      {
+        messages: thread.messages,
+        hasMore: false,
+        player: { id: "e2e-user", fullName: "Aya Koné" },
+        adminReadAt: null,
+      },
+    ];
+  }
+  if (path === "/admin/support/conversations/conv-1/read" && method === "POST")
+    return [200, { ok: true }];
   if (path === "/me/settled" && method === "GET") return [200, meSettledPage()];
   if (path === "/matches" && method === "GET") {
     return [200, matchesPage(url, cookie)];
