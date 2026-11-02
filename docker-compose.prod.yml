@@ -1,24 +1,10 @@
-# No `name:` here — the compose project name must stay the directory-derived
-# default ("evcore", from /opt/apps/evcore) to match the containers already
-# running on the server. Setting it explicitly makes Compose treat every
-# existing container as belonging to a different project and refuse to
-# recreate them (name conflict on the fixed container_name).
-#
-# Image built and pushed to GHCR by GitHub Actions (workflows/deploy.yml).
-# The VPS only pulls and runs — no build step on the server. The web's API
-# address is fixed in its image at build time (deploy.yml, secret
-# NEXT_PUBLIC_API_URL): Next.js inlines it, a runtime value is never read.
-#
-# The server's .env holds secrets and addresses only (ENV-PROD § 6). Service
-# keys and the LLM chain are set in the admin, Réglages › Intégrations /
-# Réglages; a variable left in the .env still serves while its field there is
-# empty.
+# Project name comes from the directory (/opt/apps/evcore): never set `name:`,
+# the running containers would conflict. The .env holds secrets and addresses
+# only; everything else is in the admin (Réglages).
 
-# The stack's own addresses, the same for every service that reads the data.
 x-data-env: &data-env
   DATABASE_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-evcore}
   PGBOUNCER_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@pgbouncer:5432/${POSTGRES_DB:-evcore}
-  # Prisma's pool per process, under pgbouncer's DEFAULT_POOL_SIZE (25).
   DATABASE_POOL_MAX: 18
   REDIS_HOST: redis
   REDIS_PORT: 6379
@@ -79,10 +65,6 @@ services:
       postgres:
         condition: service_healthy
 
-  # apps/vantage-worker — the LLM's coupon and opinions. Postgres + Redis only,
-  # never on the backend/web request path. See apps/vantage-worker/README.md.
-  # Reads the same .env as the backend (SETTINGS_ENCRYPTION_KEY, and the LLM
-  # keys while Réglages › Intégrations has none).
   vantage-worker:
     container_name: evcore-vantage-worker
     image: ghcr.io/coulbyl/evcore-vantage-worker:latest
@@ -99,12 +81,6 @@ services:
       redis:
         condition: service_healthy
 
-  # S3-compatible attachment storage (support chat). Reachable internally at
-  # rustfs:9000 (backend's own admin calls); presigned URLs handed to
-  # browsers use the public endpoint (Réglages › Intégrations › Stockage,
-  # RUSTFS_PUBLIC_ENDPOINT as fallback) — a public HTTPS host
-  # that coulby_studio_net's reverse proxy forwards here unmodified (no path
-  # rewrite, query string intact, or the signature breaks).
   rustfs:
     container_name: evcore-rustfs
     image: rustfs/rustfs:latest
