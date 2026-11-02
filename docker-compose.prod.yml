@@ -164,6 +164,9 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
+      # Server renders reach the backend on the Docker network, not through
+      # the public proxy (lib/api/server-api.ts). The topology, not a secret.
+      API_INTERNAL_URL: http://backend:3000
     expose:
       - "3000"
     networks:

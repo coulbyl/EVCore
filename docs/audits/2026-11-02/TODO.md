@@ -6,7 +6,7 @@ _Mesures de départ (copie de prod du 02/11, 7,9 Go) : `odds_snapshot` 6,1 Go / 
 
 ## A. Fluidité
 
-- [ ] A1 `perf(web): server renders call the API on the internal network` — `API_INTERNAL_URL` (serveur seulement, repli `NEXT_PUBLIC_API_URL`), posée dans le compose de prod ; le rendu serveur transmet l'adresse du joueur (`X-Forwarded-For`) pour que la limite de débit compte par joueur (reste de A13 de la refonte).
+- [x] A1 `perf(web): server renders call the API on the internal network` — `API_INTERNAL_URL` (serveur seulement, repli `NEXT_PUBLIC_API_URL`), posée dans le compose de prod ; le rendu serveur transmet l'adresse du joueur (`X-Forwarded-For`) pour que la limite de débit compte par joueur (reste de A13 de la refonte). _Fait : `SERVER_BACKEND_URL` dans `server-api.ts` seul (jamais dans le bundle client, `shared.ts` reste public). L'en-tête du proxy est transmis tel quel : le backend fait confiance à un saut (`trust proxy 1`) et lit la dernière entrée, celle que le proxy a vue — un joueur qui forge l'en-tête ne change que les entrées de gauche. Les lectures publiques (`cookieHeader: ""`) ne lisent aucun en-tête et restent en cache._
 - [ ] A2 `perf(web): loading boundaries on every screen and sheet` — `loading.tsx` avec les squelettes existants, squelette de fiche de match.
 - [ ] A3 `feat(web): pending state on tapped rows` — `useLinkStatus` sur les lignes de match, de coupon et de résultat.
 - [ ] A4 `perf(web): stream the match sheet by block, unread count beside the session` — `<Suspense>` par bloc, non-lus en parallèle.

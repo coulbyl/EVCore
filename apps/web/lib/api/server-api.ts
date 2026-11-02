@@ -1,5 +1,14 @@
-import { cookies } from "next/headers";
+import { cookies, headers as requestHeaders } from "next/headers";
 import { BACKEND_URL, parseApiError } from "./shared";
+
+/**
+ * Where the server reaches the API. In production the web and the backend
+ * share a Docker network: `API_INTERNAL_URL` (http://backend:3000, set in the
+ * compose) skips the public proxy, DNS and TLS on every server read. Read at
+ * runtime, never inlined; the public address serves when it is unset (dev,
+ * e2e, build-time renders).
+ */
+const SERVER_BACKEND_URL = process.env.API_INTERNAL_URL ?? BACKEND_URL;
 
 type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
@@ -55,12 +64,21 @@ export async function serverApiRequest<T>(
     body = JSON.stringify(body);
   }
 
+  // A read for the visitor carries the visitor's address: behind the web
+  // server, the API's rate limit would otherwise count every player as one
+  // client. The proxy's header is forwarded as is — the backend trusts one
+  // hop and reads its last entry, the address the proxy saw. Public reads
+  // (cookieHeader given) stay cacheable and read no request header.
+  if (options?.cookieHeader === undefined) {
+    const forwardedFor = (await requestHeaders()).get("x-forwarded-for");
+    if (forwardedFor) headers.set("x-forwarded-for", forwardedFor);
+  }
   const cookieHeader = options?.cookieHeader ?? (await getCookieHeader());
   if (cookieHeader) {
     headers.set("cookie", cookieHeader);
   }
 
-  const response = await fetch(`${BACKEND_URL}${path}`, {
+  const response = await fetch(`${SERVER_BACKEND_URL}${path}`, {
     method: options?.method ?? "GET",
     ...(options?.revalidate !== undefined && !cookieHeader
       ? { next: { revalidate: options.revalidate } }
