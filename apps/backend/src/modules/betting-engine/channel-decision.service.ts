@@ -1,11 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { createLogger } from '@utils/logger';
-import type {
-  BetStatus,
-  FixtureStatus,
-  Market,
-  ModelRunPhase,
-} from '@evcore/db';
+import type { BetStatus } from '@evcore/db';
 import {
   ChannelDecisionRepository,
   type PersistedChannelDecision,
@@ -14,11 +9,7 @@ import {
   ChannelStrategyOrchestrator,
   createChannelStrategyOrchestrator,
 } from '@evcore/analysis-core';
-import type {
-  ChannelDecisionStatus,
-  StrategyChannel,
-  StrategyContext,
-} from './channel-strategy.types';
+import type { StrategyContext } from './channel-strategy.types';
 import {
   resolveSelectionEarlyResult,
   resolveSelectionFinalResult,
@@ -31,151 +22,6 @@ import { CLOSING_LINE_POLICY } from './pricing/closing-line.constants';
 import type { SettleableSelectionRow } from './channel-decision.repository';
 
 const logger = createLogger('channel-decision');
-
-export type ChannelSelectionItem = {
-  id: string;
-  market: Market;
-  pick: string;
-  probability: number;
-  odds: number | null;
-  /** Book qui a servi `odds` (null avant le 2026-10-10). */
-  oddsBookmaker: string | null;
-  /** Marge payée sur le groupe d'issues de ce book, et meilleure marge du relevé (E-5/E-6). */
-  marginPaid: number | null;
-  marginBest: number | null;
-  impliedProbability: number | null;
-  /**
-   * Fréquence affichée au joueur : probabilité du marché, marge payée
-   * retirée (sinon la marge typique du marché). Remplace la probabilité du
-   * moteur à l'écran, optimiste de 4 à 8 points (2026-10-28). Null sans cote.
-   */
-  marketProbability: number | null;
-  ev: number | null;
-  qualityScore: number | null;
-  rank: number;
-  result: BetStatus | null;
-  settledAt: string | null;
-  /**
-   * Ligne de clôture (E-2) : cote du choix chez `closingBookmaker` juste
-   * avant le coup d'envoi, et `closingLineValue` = odds × probabilité de
-   * clôture sans marge − 1. Null tant que la sélection n'est pas réglée ou
-   * qu'aucun book n'a coté le groupe complet à moins de 90 min.
-   */
-  closingOdds: number | null;
-  closingBookmaker: string | null;
-  closingLineValue: number | null;
-  /**
-   * Cote jouable : prix du choix chez le book de l'utilisateur
-   * (`playableBookmaker`, 1xBet) quand il le cote, sinon le plus bas des
-   * books relevés. Notre prix de référence (Bet365, Pinnacle) est le plus
-   * généreux du relevé ; c'est celui-ci que l'utilisateur trouvera.
-   */
-  playableOdds: number | null;
-  playableBookmaker: string | null;
-};
-
-// Normalised read shape (doc §5): one object per run × channel, REJECTED decisions
-// included with their reasonCode, SELECTED ones carrying their selections.
-export type ChannelDecisionItem = {
-  id: string;
-  fixtureId: string;
-  fixtureStatus: FixtureStatus;
-  modelRunId: string;
-  competition: string | null;
-  competitionName: string | null;
-  country: string | null;
-  homeTeam: string;
-  awayTeam: string;
-  homeLogo: string | null;
-  awayLogo: string | null;
-  // Informational only (coach-continuity.constants.ts) — true when that team
-  // has played fewer than NEW_COACH_WINDOW_MATCHES finished matches under
-  // its current coach as of this fixture. Never feeds scoring/EV.
-  homeNewCoach: boolean;
-  awayNewCoach: boolean;
-  kickoff: string;
-  scheduledAt: string;
-  score: string | null;
-  htScore: string | null;
-  phase: ModelRunPhase;
-  channel: StrategyChannel;
-  status: ChannelDecisionStatus;
-  reasonCode: string | null;
-  reasonDetails: unknown;
-  // When this specific ChannelDecision was written — see
-  // ChannelDecisionReadRow.createdAt. Not surfaced on the primaries' cards
-  // today (their own ModelRun.phase already conveys "when"), but it's the
-  // only accurate "decided at" for a later, separate pass like VANTAGE's.
-  decidedAt: string;
-  // Model↔market coherence gate flag on the underlying ModelRun — when true
-  // the whole fixture is excluded from the staking pool.
-  calibrationAlert: boolean;
-  selections: ChannelSelectionItem[];
-};
-
-export type ChannelDecisionMatchDecision = Pick<
-  ChannelDecisionItem,
-  | 'id'
-  | 'modelRunId'
-  | 'phase'
-  | 'channel'
-  | 'status'
-  | 'reasonCode'
-  | 'reasonDetails'
-  | 'decidedAt'
-  | 'calibrationAlert'
-  | 'selections'
->;
-
-export type ChannelDecisionMatchItem = Pick<
-  ChannelDecisionItem,
-  | 'fixtureId'
-  | 'fixtureStatus'
-  | 'competition'
-  | 'competitionName'
-  | 'country'
-  | 'homeTeam'
-  | 'awayTeam'
-  | 'homeLogo'
-  | 'awayLogo'
-  | 'homeNewCoach'
-  | 'awayNewCoach'
-  | 'kickoff'
-  | 'scheduledAt'
-  | 'score'
-  | 'htScore'
-> & {
-  selectedCount: number;
-  decisions: ChannelDecisionMatchDecision[];
-};
-
-export type ChannelDecisionChannelGroup = {
-  channel: StrategyChannel;
-  decisions: ChannelDecisionItem[];
-};
-
-export type ChannelDecisionListQuery = {
-  date: string;
-  competition?: string[];
-  channel?: StrategyChannel[];
-  market?: Market;
-  status?: ChannelDecisionStatus;
-  phase?: ModelRunPhase;
-};
-
-export type LeagueFacet = {
-  code: string;
-  name: string;
-  country: string;
-  count: number;
-};
-
-export type ChannelFacet = { channel: StrategyChannel; count: number };
-
-export type ChannelDecisionFacets = {
-  leagues: LeagueFacet[];
-  channels: ChannelFacet[];
-};
 
 /**
  * Bridges the betting engine to the channel-strategy layer (doc §5): runs every

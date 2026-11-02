@@ -1,11 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  BetStatus,
-  FixtureStatus,
-  Market,
-  ModelRunPhase,
-  Prisma,
-} from '@evcore/db';
+import { BetStatus, Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import type {
   ChannelDecisionStatus,
@@ -32,83 +26,6 @@ export type PersistedChannelDecision = {
   channel: StrategyChannel;
   status: ChannelDecisionStatus;
   selections: PersistedChannelSelection[];
-};
-
-// Filters for the read API (doc §5). `market` matches decisions that selected
-// on that market. `competition`/`channel` are multi-select (facet drawer,
-// §2bis) — a checked-off subset of leagues/channels, never a single value the
-// caller has to special-case.
-export type ChannelDecisionFilters = {
-  range: { gte: Date; lte: Date };
-  competition?: string[];
-  channel?: StrategyChannel[];
-  status?: ChannelDecisionStatus;
-  market?: Market;
-  phase?: ModelRunPhase;
-};
-
-export type FacetSourceRow = {
-  channel: StrategyChannel;
-  code: string;
-  name: string;
-  country: string;
-};
-
-export type ChannelSelectionReadRow = {
-  id: string;
-  market: Market;
-  pick: string;
-  probability: Prisma.Decimal;
-  odds: Prisma.Decimal | null;
-  oddsBookmaker: string | null;
-  marginPaid: Prisma.Decimal | null;
-  marginBest: Prisma.Decimal | null;
-  impliedProbability: Prisma.Decimal | null;
-  ev: Prisma.Decimal | null;
-  qualityScore: Prisma.Decimal | null;
-  rank: number;
-  result: BetStatus | null;
-  settledAt: Date | null;
-  closingOdds: Prisma.Decimal | null;
-  closingBookmaker: string | null;
-  closingLineValue: Prisma.Decimal | null;
-};
-
-export type ChannelDecisionReadRow = {
-  id: string;
-  modelRunId: string;
-  phase: ModelRunPhase;
-  analyzedAt: Date;
-  // When THIS ChannelDecision row was written — distinct from
-  // modelRun.analyzedAt (the deterministic engine's pass, shared by every
-  // channel on that run). VANTAGE attaches to an already-analyzed ModelRun
-  // as a later, separate pass, so its own createdAt is the only accurate
-  // "decided at" for it.
-  createdAt: Date;
-  channel: StrategyChannel;
-  status: ChannelDecisionStatus;
-  reasonCode: string | null;
-  reasonDetails: Prisma.JsonValue | null;
-  // True when the ModelRun was flagged by the model↔market coherence gate
-  // (features.calibration_alert) — the fixture is dropped from staking.
-  calibrationAlert: boolean;
-  fixtureId: string;
-  fixtureStatus: FixtureStatus;
-  scheduledAt: Date;
-  homeTeamId: string;
-  awayTeamId: string;
-  homeTeam: string;
-  awayTeam: string;
-  homeLogo: string | null;
-  awayLogo: string | null;
-  competitionCode: string | null;
-  competitionName: string | null;
-  country: string | null;
-  homeScore: number | null;
-  awayScore: number | null;
-  homeHtScore: number | null;
-  awayHtScore: number | null;
-  selections: ChannelSelectionReadRow[];
 };
 
 /**

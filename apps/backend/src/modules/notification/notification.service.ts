@@ -68,14 +68,6 @@ type SaveNotificationInput = {
   payload: Prisma.InputJsonValue;
 };
 
-export type WeeklyReportPayload = {
-  roiOneXTwo: number;
-  betsPlaced: number;
-  brierScore: number;
-  periodStart: Date;
-  periodEnd: Date;
-};
-
 @Injectable()
 export class NotificationService {
   constructor(
