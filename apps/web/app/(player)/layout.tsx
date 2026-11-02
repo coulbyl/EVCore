@@ -38,12 +38,15 @@ export default async function PlayerLayout({
   /** La feuille ouverte (fente parallèle `@sheet`), ou rien. */
   sheet: React.ReactNode;
 }) {
-  const [result, t, timeZone, messages, locale] = await Promise.all([
+  // The badge beside the session, not after it: a signed-out visitor's read
+  // fails into no badge (getUnreadCount), and is redirected anyway.
+  const [result, t, timeZone, messages, locale, unread] = await Promise.all([
     getPlayerSession(),
     getTranslations("shell"),
     getPlayerTimeZone(),
     getMessages(),
     getLocale(),
+    getUnreadCount(),
   ]);
   // Les seuls textes que ses composants client affichent (C0).
   const texts = pickPlayerTexts(messages);
@@ -63,7 +66,6 @@ export default async function PlayerLayout({
     redirect(loginPathFor(safeNextPath(requested)));
   }
   const { session } = result;
-  const unread = await getUnreadCount();
 
   return (
     <PlayerTextsProvider texts={texts}>
