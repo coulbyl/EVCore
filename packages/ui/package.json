@@ -37,7 +37,6 @@
     "typescript": "catalog:"
   },
   "dependencies": {
-    "@hookform/resolvers": "catalog:",
     "@shadcn/react": "^0.2.1",
     "@tanstack/react-table": "catalog:",
     "class-variance-authority": "^0.7.1",
@@ -54,7 +53,6 @@
     "shadcn": "^4.13.1",
     "sonner": "catalog:",
     "tailwind-merge": "^3.3.1",
-    "vaul": "catalog:",
-    "zod": "catalog:"
+    "vaul": "catalog:"
   }
 }
