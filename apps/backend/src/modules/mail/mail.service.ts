@@ -4,7 +4,6 @@ import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 import { createLogger } from '@utils/logger';
 import {
-  renderBrierAlert,
   renderEmailVerification,
   renderEmailChangeCode,
   renderEmailChanged,
@@ -15,28 +14,19 @@ import {
   renderPasswordReset,
   renderRoiAlert,
   renderWeightAdjustment,
-  renderWeeklyReport,
-  renderXgUnavailableReport,
-  renderMlModelActivated,
-  renderMlModelMissing,
   renderSupportMessage,
   renderPlayerDigest,
-  type BrierAlertProps,
   type EmailVerificationProps,
   type EmailChangeCodeProps,
   type EmailChangedProps,
   type EtlFailureProps,
   type OpsLightRedProps,
   type MarketSuspensionProps,
-  type MlModelActivatedProps,
-  type MlModelMissingProps,
   type PasswordResetProps,
   type RoiAlertProps,
   type SupportMessageProps,
   type PlayerDigestProps,
   type WeightAdjustmentProps,
-  type WeeklyReportProps,
-  type XgUnavailableReportProps,
 } from '@evcore/transactional';
 
 const logger = createLogger('mail-service');
@@ -139,15 +129,6 @@ export class MailService {
     await this.sendToAdmin(`Market Suspended — ${props.market}`, html, text);
   }
 
-  async sendBrierAlert(props: BrierAlertProps): Promise<void> {
-    const { html, text } = await renderBrierAlert(props);
-    await this.sendToAdmin(
-      `Brier Score Alert — Season ${props.seasonId}`,
-      html,
-      text,
-    );
-  }
-
   async sendEtlFailure(props: EtlFailureProps): Promise<void> {
     const { html, text } = await renderEtlFailure(props);
     await this.sendToAdmin(`ETL Failure — ${props.queue}`, html, text);
@@ -164,38 +145,6 @@ export class MailService {
     const { html, text } = await renderWeightAdjustment(props);
     await this.sendToAdmin(
       `Weight Adjustment ${action} — ${props.proposalId}`,
-      html,
-      text,
-    );
-  }
-
-  async sendWeeklyReport(props: WeeklyReportProps): Promise<void> {
-    const period = `${props.periodStart.slice(0, 10)} → ${props.periodEnd.slice(0, 10)}`;
-    const { html, text } = await renderWeeklyReport(props);
-    await this.sendToAdmin(`Weekly Report — ${period}`, html, text);
-  }
-
-  async sendMlModelActivated(props: MlModelActivatedProps): Promise<void> {
-    const action = props.isRollback ? 'Rollback' : 'Auto-Activé';
-    const { html, text } = await renderMlModelActivated(props);
-    await this.sendToAdmin(`ML Model ${action} — ${props.segment}`, html, text);
-  }
-
-  async sendMlModelMissing(props: MlModelMissingProps): Promise<void> {
-    const { html, text } = await renderMlModelMissing(props);
-    await this.sendToAdmin(
-      `ML Model Missing — ${props.segments.length} segment(s)`,
-      html,
-      text,
-    );
-  }
-
-  async sendXgUnavailableReport(
-    props: XgUnavailableReportProps,
-  ): Promise<void> {
-    const { html, text } = await renderXgUnavailableReport(props);
-    await this.sendToAdmin(
-      `Stats Sync — ${props.unavailableCount} fixtures sans xG (${props.season})`,
       html,
       text,
     );

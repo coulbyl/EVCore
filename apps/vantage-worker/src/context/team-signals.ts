@@ -1,11 +1,9 @@
 import { prisma } from "@evcore/db";
 import type { TeamSignal, CoachSignal } from "./types";
 
-/** Mirrors backend/coach-continuity.constants.ts's NEW_COACH_WINDOW_MATCHES.
- * Duplicated rather than imported — vantage-worker never imports
- * apps/backend (same boundary every other app in this monorepo respects;
- * see README's "why a separate app"). Keep in sync by hand if that constant
- * ever changes. */
+/** A coach is "new" for their first 5 finished matches with the team. The
+ * backend's copy of this window went with the old Décisions list (02/11):
+ * this one is the only reader left. */
 const NEW_COACH_WINDOW_MATCHES = 5;
 
 /** Same query shape as betting-engine.service.ts's own team_stats lookup —

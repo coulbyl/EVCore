@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { AdjustmentStatus, Market, Prisma } from '@evcore/db';
 import Decimal from 'decimal.js';
-import { PrismaService } from '@/prisma.service';
+import { FixtureService } from '@modules/fixture/fixture.service';
+import { AdjustmentRepository } from './adjustment.repository';
 import { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
 import { NotificationService } from '@modules/notification/notification.service';
 import {
@@ -54,11 +55,31 @@ const SHADOW_CORRELATION_LOOKBACK = 200;
 export class AdjustmentService {
   // eslint-disable-next-line max-params -- Nest DI constructor wiring for core services.
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly repository: AdjustmentRepository,
     private readonly bettingEngine: BettingEngineService,
     private readonly calibration: CalibrationService,
     private readonly notification: NotificationService,
+    private readonly fixtures: FixtureService,
   ) {}
+
+  /**
+   * An operator sets a match's result by hand, then settles it as the ETL
+   * would. Null for an unknown match.
+   */
+  async setFixtureResult(
+    id: string,
+    scores: {
+      homeScore: number;
+      awayScore: number;
+      homeHtScore: number | null;
+      awayHtScore: number | null;
+    },
+  ): Promise<({ fixtureId: string } & SettleAndCheckResult) | null> {
+    const fixture = await this.fixtures.setResult(id, scores);
+    if (!fixture) return null;
+    const settle = await this.settleAndCheck(id);
+    return { fixtureId: id, ...settle };
+  }
 
   async settleAndCheck(fixtureId: string): Promise<SettleAndCheckResult> {
     const { settled } = await this.bettingEngine.settleOpenBets(fixtureId);
@@ -109,23 +130,17 @@ export class AdjustmentService {
   }
 
   async rollback(proposalId: string): Promise<{ newProposalId: string }> {
-    const target =
-      await this.prisma.client.adjustmentProposal.findUniqueOrThrow({
-        where: { id: proposalId },
-      });
+    const target = await this.repository.findProposalOrThrow(proposalId);
 
     // Rollback = new APPLIED proposal that restores the state before target was applied.
-    const newProposal = await this.prisma.client.adjustmentProposal.create({
-      data: {
-        currentWeights: target.proposedWeights as Prisma.InputJsonValue,
-        proposedWeights: target.currentWeights as Prisma.InputJsonValue,
-        calibrationError: target.calibrationError,
-        triggerBetCount: target.triggerBetCount,
-        status: AdjustmentStatus.APPLIED,
-        appliedAt: new Date(),
-        notes: `Rollback of proposal ${proposalId}`,
-      },
-      select: { id: true },
+    const newProposal = await this.repository.createProposal({
+      currentWeights: target.proposedWeights as Prisma.InputJsonValue,
+      proposedWeights: target.currentWeights as Prisma.InputJsonValue,
+      calibrationError: target.calibrationError,
+      triggerBetCount: target.triggerBetCount,
+      status: AdjustmentStatus.APPLIED,
+      appliedAt: new Date(),
+      notes: `Rollback of proposal ${proposalId}`,
     });
 
     await this.notification.sendWeightAdjustmentAlert({
@@ -191,22 +206,14 @@ export class AdjustmentService {
   }
 
   async listProposals() {
-    return this.prisma.client.adjustmentProposal.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+    return this.repository.listProposals();
   }
 
   private async findRecentApply() {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - MIN_DAYS_BETWEEN_APPLICATIONS);
 
-    return this.prisma.client.adjustmentProposal.findFirst({
-      where: {
-        status: AdjustmentStatus.APPLIED,
-        appliedAt: { gte: cutoff },
-      },
-      select: { id: true },
-    });
+    return this.repository.findAppliedSince(cutoff);
   }
 
   private async autoApply(
@@ -218,18 +225,15 @@ export class AdjustmentService {
       calibrationResult.meanError,
     );
 
-    const proposal = await this.prisma.client.adjustmentProposal.create({
-      data: {
-        currentWeights: weightsToJson(currentWeights),
-        proposedWeights: weightsToJson(proposedWeights),
-        calibrationError: calibrationResult.brierScore
-          .toDecimalPlaces(6)
-          .toNumber(),
-        triggerBetCount: calibrationResult.betCount,
-        status: AdjustmentStatus.APPLIED,
-        appliedAt: new Date(),
-      },
-      select: { id: true },
+    const proposal = await this.repository.createProposal({
+      currentWeights: weightsToJson(currentWeights),
+      proposedWeights: weightsToJson(proposedWeights),
+      calibrationError: calibrationResult.brierScore
+        .toDecimalPlaces(6)
+        .toNumber(),
+      triggerBetCount: calibrationResult.betCount,
+      status: AdjustmentStatus.APPLIED,
+      appliedAt: new Date(),
     });
 
     await this.notification.sendWeightAdjustmentAlert({
@@ -243,15 +247,9 @@ export class AdjustmentService {
   }
 
   async computeShadowCorrelations(): Promise<ShadowCorrelationsResult | null> {
-    const settledBets = await this.prisma.client.bet.findMany({
-      where: { status: { in: ['WON', 'LOST'] } },
-      select: {
-        status: true,
-        modelRun: { select: { features: true } },
-      },
-      orderBy: { updatedAt: 'desc' },
-      take: SHADOW_CORRELATION_LOOKBACK,
-    });
+    const settledBets = await this.repository.findRecentSettledBetsWithFeatures(
+      SHADOW_CORRELATION_LOOKBACK,
+    );
 
     if (settledBets.length < MIN_BET_COUNT) return null;
 
@@ -315,17 +313,14 @@ export class AdjustmentService {
       .join(', ');
 
     // Runtime constants are immutable; we persist activation intent in APPLIED proposal notes.
-    const proposal = await this.prisma.client.adjustmentProposal.create({
-      data: {
-        currentWeights: currentWeightsJson,
-        proposedWeights: currentWeightsJson,
-        calibrationError: 0,
-        triggerBetCount: correlations.betCount,
-        status: AdjustmentStatus.APPLIED,
-        appliedAt: new Date(),
-        notes: `Shadow auto-activation: ${featureList}`,
-      },
-      select: { id: true },
+    const proposal = await this.repository.createProposal({
+      currentWeights: currentWeightsJson,
+      proposedWeights: currentWeightsJson,
+      calibrationError: 0,
+      triggerBetCount: correlations.betCount,
+      status: AdjustmentStatus.APPLIED,
+      appliedAt: new Date(),
+      notes: `Shadow auto-activation: ${featureList}`,
     });
 
     await this.notification.sendWeightAdjustmentAlert({

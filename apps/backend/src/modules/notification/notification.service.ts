@@ -8,6 +8,10 @@ import {
   UserRole,
 } from '@evcore/db';
 import { MailService } from '@modules/mail/mail.service';
+import type { OpsLightRedProps } from '@evcore/transactional';
+import { PushService } from '@modules/push/push.service';
+import { PUSH_POLICY } from '@config/push.constants';
+import { NOTIFICATION_BELL_WINDOW_DAYS } from '@config/notification.constants';
 import { NotificationRepository } from './notification.repository';
 
 const logger = createLogger('notification-service');
@@ -49,6 +53,26 @@ const RETIRED_PERSONAL_TYPES: NotificationType[] = [
   NotificationType.SUBSCRIPTION_SETTLED,
 ];
 
+// How long a personal push may wait for an unreachable phone, and how
+// urgent it is (config/push.constants.ts).
+const PERSONAL_PUSH_POLICY: Partial<
+  Record<NotificationType, (typeof PUSH_POLICY)[keyof typeof PUSH_POLICY]>
+> = {
+  [NotificationType.MORNING_BRIEF]: PUSH_POLICY.MORNING_BRIEF,
+  [NotificationType.WEEKLY_STATEMENT]: PUSH_POLICY.WEEKLY_STATEMENT,
+  [NotificationType.FOLLOWED_SETTLED]: PUSH_POLICY.FOLLOWED_SETTLED,
+  [NotificationType.SUPPORT_MESSAGE]: PUSH_POLICY.SUPPORT_MESSAGE,
+};
+
+/** What the bell reads: the last NOTIFICATION_BELL_WINDOW_DAYS days. */
+function bellWindow(now: Date = new Date()): Prisma.NotificationWhereInput {
+  return {
+    createdAt: {
+      gte: new Date(now.getTime() - NOTIFICATION_BELL_WINDOW_DAYS * 86_400_000),
+    },
+  };
+}
+
 function announcementIdOf(payload: Prisma.JsonValue | null): string | null {
   if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
     const id = payload.announcementId;
@@ -68,19 +92,12 @@ type SaveNotificationInput = {
   payload: Prisma.InputJsonValue;
 };
 
-export type WeeklyReportPayload = {
-  roiOneXTwo: number;
-  betsPlaced: number;
-  brierScore: number;
-  periodStart: Date;
-  periodEnd: Date;
-};
-
 @Injectable()
 export class NotificationService {
   constructor(
     private readonly repository: NotificationRepository,
     private readonly mail: MailService,
+    private readonly push: PushService,
   ) {}
 
   private allowedTypes(role: UserRole): NotificationType[] {
@@ -129,21 +146,12 @@ export class NotificationService {
       roi,
       betCount,
     });
-  }
-
-  async sendBrierScoreAlert(
-    seasonId: string,
-    brierScore: number,
-  ): Promise<void> {
-    const title = `Brier Score Alert — Season ${seasonId}`;
-    const body = `Brier score ${brierScore.toFixed(4)} exceeds alert threshold (> 0.25)`;
-    await this.save({
-      type: NotificationType.BRIER_ALERT,
+    await this.pushOperators({
       title,
       body,
-      payload: { seasonId, brierScore },
+      url: '/admin/engine',
+      tag: `market-${market}`,
     });
-    await this.mail.sendBrierAlert({ seasonId, brierScore });
   }
 
   async sendEtlFailureAlert(
@@ -160,6 +168,27 @@ export class NotificationService {
       payload: { queue, jobName, errorMessage },
     });
     await this.mail.sendEtlFailure({ queue, jobName, errorMessage });
+    // One per queue on the phone: a queue failing again replaces it.
+    await this.pushOperators({
+      title,
+      body,
+      url: '/admin/exploitation',
+      tag: `etl-${queue}`,
+    });
+  }
+
+  /**
+   * A light of the admin home turned red (ConsoleWatchService, once per
+   * turn): the e-mail to the team and a push to the admins' phones.
+   */
+  async sendOpsLightRed(props: OpsLightRedProps): Promise<void> {
+    await this.mail.sendOpsLightRed(props);
+    await this.pushOperators({
+      title: `${props.light} au rouge`,
+      body: props.lines[0] ?? "À voir dans l'admin",
+      url: '/admin',
+      tag: `light-${props.light}`,
+    });
   }
 
   async sendWeightAdjustmentAlert(payload: {
@@ -196,93 +225,47 @@ export class NotificationService {
       body,
       payload: { season, unavailableCount, externalIds },
     });
-    await this.mail.sendXgUnavailableReport({
-      season,
-      unavailableCount,
-      externalIds,
-    });
+    // The bell only: a report, nothing to act on, sent once per league
+    // synced (5 to 11 a day in October) — no e-mail, no push.
   }
 
-  async sendWeeklyReport(payload: WeeklyReportPayload): Promise<void> {
-    const title = `Weekly Report — ${payload.periodStart.toISOString().slice(0, 10)} → ${payload.periodEnd.toISOString().slice(0, 10)}`;
-    const body = [
-      `ROI (1X2): ${(payload.roiOneXTwo * 100).toFixed(2)}%`,
-      `Bets placed: ${payload.betsPlaced}`,
-      `Brier score: ${payload.brierScore.toFixed(4)}`,
-    ].join('\n');
-    await this.save({
-      type: NotificationType.WEEKLY_REPORT,
-      title,
-      body,
-      payload: {
-        roiOneXTwo: payload.roiOneXTwo,
-        betsPlaced: payload.betsPlaced,
-        brierScore: payload.brierScore,
-        periodStart: payload.periodStart.toISOString(),
-        periodEnd: payload.periodEnd.toISOString(),
-      },
-    });
-    await this.mail.sendWeeklyReport({
-      roiOneXTwo: payload.roiOneXTwo,
-      betsPlaced: payload.betsPlaced,
-      brierScore: payload.brierScore,
-      periodStart: payload.periodStart.toISOString(),
-      periodEnd: payload.periodEnd.toISOString(),
-    });
-  }
-
-  async sendMlModelActivatedAlert(payload: {
-    versionId: string;
-    segment: string;
-    algorithm: string;
-    brierScore: number;
-    calibrationError: number;
-    roiSimulated: number;
-    isRollback: boolean;
-    rolledBackVersionId?: string;
-  }): Promise<void> {
-    const action = payload.isRollback ? 'Rollback' : 'Auto-Activé';
-    const title = `ML Model ${action} — ${payload.segment} (${payload.versionId})`;
-    const body = payload.isRollback
-      ? `Rollback vers version précédente. Version annulée : ${payload.rolledBackVersionId ?? 'n/a'}`
-      : `Brier: ${payload.brierScore.toFixed(4)}, CalErr: ${payload.calibrationError.toFixed(4)}, ROI: ${(payload.roiSimulated * 100).toFixed(2)}%`;
-    await this.save({
-      type: NotificationType.ML_MODEL_ACTIVATED,
-      title,
-      body,
-      payload: { ...payload },
-    });
-    await this.mail.sendMlModelActivated(payload);
-  }
-
-  async sendMlModelMissingAlert(segments: string[]): Promise<void> {
-    const title = `ML Model Missing — ${segments.length} segment(s)`;
-    const body = `isActive=true en DB mais absent des active_segments ml-worker : ${segments.join(', ')}`;
-    await this.save({
-      type: NotificationType.ML_MODEL_MISSING,
-      title,
-      body,
-      payload: { segments },
-    });
-    await this.mail.sendMlModelMissing({ segments });
-  }
-
-  // Broadcast (userId null) — mirrors AnnouncementsService's existing push
-  // notification, doesn't replace it: this is what makes a published
-  // announcement show up in the bell / `/dashboard/notifications` too,
-  // instead of only ever reaching users who already granted push permission.
-  async sendAnnouncementPublished(payload: {
+  /**
+   * A published announcement, to every player: the bell's broadcast row,
+   * then the push (its author excepted). The row reaches those who never
+   * granted the push too.
+   */
+  async deliverAnnouncement(input: {
     announcementId: string;
     title: string;
     body: string;
     href: string | null;
+    authorId: string;
   }): Promise<void> {
     await this.save({
       type: NotificationType.ANNOUNCEMENT_PUBLISHED,
-      title: payload.title,
-      body: payload.body,
-      payload: { announcementId: payload.announcementId, href: payload.href },
+      title: input.title,
+      body: input.body,
+      payload: { announcementId: input.announcementId, href: input.href },
     });
+    await this.push
+      .sendToAllUsers(
+        {
+          title: input.title,
+          body: input.body,
+          url: input.href ?? '/notifications',
+          tag: `announcement-${input.announcementId}`,
+        },
+        input.authorId,
+      )
+      .catch((error: unknown) =>
+        logger.error(
+          {
+            announcementId: input.announcementId,
+            error: error instanceof Error ? error.message : String(error),
+          },
+          'Failed to queue the announcement push',
+        ),
+      );
   }
 
   async list(query: {
@@ -317,6 +300,7 @@ export class NotificationService {
     // (userId = moi) où `read` sur la ligne elle-même fait foi.
     const where: Prisma.NotificationWhereInput = {
       AND: [
+        bellWindow(),
         categoryFilter,
         query.type ? { type: query.type } : {},
         {
@@ -361,6 +345,7 @@ export class NotificationService {
   ): Promise<{ count: number }> {
     const types = this.allowedTypes(role);
     const count = await this.repository.count({
+      ...bellWindow(),
       OR: [
         { userId: null, type: { in: types }, reads: { none: { userId } } },
         { userId, read: false, type: this.personalTypes(role) },
@@ -425,49 +410,35 @@ export class NotificationService {
     );
   }
 
-  async markAllRead(userId: string, role: UserRole): Promise<void> {
-    const types = this.allowedTypes(role);
-    const unreadBroadcast = await this.repository.findUnreadBroadcasts(
-      userId,
-      types,
-    );
-    await Promise.all([
-      this.repository.markBroadcastsRead(
-        userId,
-        unreadBroadcast.map((n) => n.id),
-      ),
-      this.repository.markAllPersonalRead(userId),
-      this.syncAnnouncementReads(
-        userId,
-        unreadBroadcast
-          .filter((n) => n.type === NotificationType.ANNOUNCEMENT_PUBLISHED)
-          .map((n) => announcementIdOf(n.payload))
-          .filter((id): id is string => id !== null),
-      ),
-    ]);
-  }
-
-  // Notification personnelle (userId non-null) — voir SaveNotificationInput
-  // pour le régime broadcast (types système/ops). Ne throw jamais : un échec
-  // de persistance ne doit pas faire échouer l'appelant (settlement, matching…).
-  async notifyUser(input: {
+  /**
+   * A personal notification (userId non-null): the bell's row, then — only
+   * once it is written — the push that opens `url`. The row is the record
+   * of what was announced: a job that keys on it ("not yet notified") tries
+   * again on its next run, and never pushes twice. The recipient's
+   * preference (morning brief, team replies…) is applied by the caller's
+   * recipient query, in bulk. Never throws: a failed write must not fail
+   * the caller (settlement, digests). True when the row is written.
+   */
+  async deliverToUser(input: {
     userId: string;
     type: NotificationType;
     title: string;
     body: string;
     payload?: Prisma.InputJsonValue;
+    /** Opened when the push is tapped. */
+    url: string;
+    /** A newer push with this tag replaces the shown one (PushPayload.tag). */
+    tag: string;
   }): Promise<boolean> {
-    // Vrai si la notification est écrite : un job qui s'en sert comme trace
-    // de ce qu'il a annoncé ne pousse rien d'autre sans elle.
+    let notificationId: string;
     try {
-      await this.repository.create({
+      notificationId = await this.repository.create({
         userId: input.userId,
         type: input.type,
         title: input.title,
         body: input.body,
         payload: input.payload,
       });
-      return true;
     } catch (error) {
       logger.error(
         {
@@ -479,6 +450,51 @@ export class NotificationService {
       );
       return false;
     }
+    // The row is written: a push that cannot be queued is logged, never
+    // thrown — the caller's loop (a digest pass, a reply) goes on.
+    await this.push
+      .sendToUser(
+        input.userId,
+        {
+          title: input.title,
+          body: input.body,
+          url: input.url,
+          notificationId,
+          tag: input.tag,
+        },
+        PERSONAL_PUSH_POLICY[input.type] ?? PUSH_POLICY.DEFAULT,
+      )
+      .catch((error: unknown) =>
+        logger.error(
+          {
+            type: input.type,
+            userId: input.userId,
+            error: error instanceof Error ? error.message : String(error),
+          },
+          'Failed to queue the personal push',
+        ),
+      );
+    return true;
+  }
+
+  /** An operations alert on the admins' phones; never throws. */
+  private async pushOperators(input: {
+    title: string;
+    body: string;
+    url: string;
+    tag: string;
+  }): Promise<void> {
+    await this.push
+      .sendToRole(UserRole.ADMIN, input, PUSH_POLICY.OPERATIONS)
+      .catch((error: unknown) =>
+        logger.error(
+          {
+            tag: input.tag,
+            error: error instanceof Error ? error.message : String(error),
+          },
+          'Failed to queue the operations push',
+        ),
+      );
   }
 
   private async save(input: SaveNotificationInput): Promise<void> {

@@ -5,7 +5,6 @@ import { ChannelDecisionService } from './channel-decision.service';
 import type { ChannelDecisionRepository } from './channel-decision.repository';
 import type { VantageHistoryRepository } from './vantage-history.repository';
 import type { OddsClosingLineRepository } from './pricing/odds-closing-line.repository';
-import type { PlayableOddsRepository } from './pricing/playable-odds.repository';
 import type { ClosingLineRow } from './pricing/closing-line';
 import { buildStrategyContext } from './strategies/strategy-context.builder';
 import {
@@ -150,12 +149,6 @@ function closingLinesWith(rows: ClosingLineRow[]): OddsClosingLineRepository {
   } as unknown as OddsClosingLineRepository;
 }
 
-function noPlayableOdds(): PlayableOddsRepository {
-  return {
-    findPlayableQuotes: vi.fn().mockResolvedValue(new Map()),
-  } as unknown as PlayableOddsRepository;
-}
-
 function noVantageHistory(): VantageHistoryRepository {
   return {
     findPlaysForFixture: vi.fn().mockResolvedValue([]),
@@ -175,7 +168,6 @@ describe('ChannelDecisionService', () => {
     const service = new ChannelDecisionService(
       repo,
       noClosingLines(),
-      noPlayableOdds(),
       noVantageHistory(),
     );
 
@@ -245,7 +237,6 @@ describe('ChannelDecisionService', () => {
     const service = new ChannelDecisionService(
       repo,
       noClosingLines(),
-      noPlayableOdds(),
       noVantageHistory(),
     );
 
@@ -283,7 +274,6 @@ describe('ChannelDecisionService', () => {
       const service = new ChannelDecisionService(
         repo,
         noClosingLines(),
-        noPlayableOdds(),
         noVantageHistory(),
       );
 
@@ -318,7 +308,6 @@ describe('ChannelDecisionService', () => {
       const service = new ChannelDecisionService(
         repo,
         noClosingLines(),
-        noPlayableOdds(),
         history as unknown as VantageHistoryRepository,
       );
 
@@ -377,7 +366,6 @@ describe('ChannelDecisionService', () => {
       const service = new ChannelDecisionService(
         repo,
         closingLines,
-        noPlayableOdds(),
         noVantageHistory(),
       );
 
@@ -439,7 +427,6 @@ describe('ChannelDecisionService', () => {
       const service = new ChannelDecisionService(
         repo,
         noClosingLines(),
-        noPlayableOdds(),
         noVantageHistory(),
       );
 
@@ -461,292 +448,6 @@ describe('ChannelDecisionService', () => {
       expect(applySelectionResults).toHaveBeenCalledWith([
         { id: 'btts', result: BetStatus.WON },
       ]);
-    });
-  });
-
-  describe('listByMatch', () => {
-    it('maps read rows to normalised DTOs and forwards filters', async () => {
-      const findByDate = vi.fn().mockResolvedValue([
-        {
-          id: 'cd-ev',
-          modelRunId: 'run-1',
-          channel: STRATEGY_CHANNEL.VALUE,
-          status: CHANNEL_DECISION_STATUS.SELECTED,
-          reasonCode: null,
-          fixtureId: 'f1',
-          createdAt: new Date('2026-01-18T13:00:00.000Z'),
-          scheduledAt: new Date('2026-01-18T14:00:00.000Z'),
-          homeTeam: 'Home',
-          awayTeam: 'Away',
-          homeLogo: 'https://logo/home.png',
-          awayLogo: null,
-          competitionCode: 'BL1',
-          country: 'Germany',
-          homeScore: 2,
-          awayScore: 1,
-          homeHtScore: 1,
-          awayHtScore: 0,
-          selections: [
-            {
-              market: Market.ONE_X_TWO,
-              pick: 'HOME',
-              probability: new Decimal('0.6'),
-              odds: new Decimal('1.9'),
-              impliedProbability: null,
-              ev: new Decimal('0.14'),
-              qualityScore: null,
-              rank: 1,
-              result: BetStatus.WON,
-            },
-          ],
-        },
-        {
-          id: 'cd-safe',
-          modelRunId: 'run-1',
-          channel: STRATEGY_CHANNEL.SAFE,
-          status: CHANNEL_DECISION_STATUS.REJECTED,
-          reasonCode: 'no_safe_candidate',
-          fixtureId: 'f1',
-          createdAt: new Date('2026-01-18T13:05:00.000Z'),
-          scheduledAt: new Date('2026-01-18T14:00:00.000Z'),
-          homeTeam: 'Home',
-          awayTeam: 'Away',
-          homeLogo: null,
-          awayLogo: null,
-          competitionCode: 'BL1',
-          country: 'Germany',
-          homeScore: null,
-          awayScore: null,
-          homeHtScore: null,
-          awayHtScore: null,
-          selections: [],
-        },
-      ]);
-      const findNewCoachTeams = vi.fn().mockResolvedValue(new Set());
-      const repo = {
-        findByDate,
-        findNewCoachTeams,
-      } as unknown as ChannelDecisionRepository;
-      const service = new ChannelDecisionService(
-        repo,
-        noClosingLines(),
-        noPlayableOdds(),
-        noVantageHistory(),
-      );
-
-      const groups = await service.listByMatch({
-        date: '2026-01-18',
-        competition: ['BL1'],
-        channel: [STRATEGY_CHANNEL.VALUE],
-      });
-
-      // Day range + filters forwarded.
-      const [filters] = findByDate.mock.calls[0];
-      expect(filters.competition).toEqual(['BL1']);
-      expect(filters.channel).toEqual([STRATEGY_CHANNEL.VALUE]);
-      expect(filters.range.gte.toISOString()).toBe('2026-01-18T00:00:00.000Z');
-
-      // Both decisions belong to the same fixture → one match group.
-      expect(groups).toHaveLength(1);
-      const match = groups[0];
-      expect(match?.homeTeam).toBe('Home');
-      expect(match?.awayTeam).toBe('Away');
-      expect(match?.homeLogo).toBe('https://logo/home.png');
-      expect(match?.country).toBe('Germany');
-      expect(match?.score).toBe('2-1');
-      expect(match?.htScore).toBe('1-0');
-      expect(match?.decisions).toHaveLength(2);
-
-      const ev = match?.decisions[0];
-      expect(ev?.selections[0]?.probability).toBe(0.6);
-      expect(ev?.selections[0]?.ev).toBe(0.14);
-      expect(ev?.selections[0]?.impliedProbability).toBeNull();
-      expect(ev?.selections[0]?.result).toBe(BetStatus.WON);
-
-      // REJECTED decision is exposed with its reasonCode and no selections.
-      const safe = match?.decisions[1];
-      expect(safe?.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
-      expect(safe?.reasonCode).toBe('no_safe_candidate');
-      expect(safe?.selections).toHaveLength(0);
-    });
-  });
-
-  describe('listByChannel', () => {
-    // Regression test (2026-07-19): READ_CHANNEL_ORDER is a hardcoded list
-    // that groups.get(channel) is read against — a channel missing from it
-    // is silently dropped from the "Par canal" web lens, not an error. This
-    // already happened once for CORRECT_SCORE, then again for
-    // CLEAN_SHEET/TEAM_TOTAL/WIN_EITHER_HALF. VANTAGE is intentionally NOT
-    // in this list (nor in `channels` below) — it has its own dedicated page
-    // now (see READ_CHANNEL_ORDER's comment), this is a deliberate exclusion
-    // rather than a recurrence of the bug this test guards against.
-    it('includes every primary and meta channel, not just the original six', async () => {
-      const baseRow = {
-        id: 'cd',
-        modelRunId: 'run-1',
-        status: CHANNEL_DECISION_STATUS.SELECTED,
-        reasonCode: null,
-        fixtureId: 'f1',
-        createdAt: new Date('2026-01-18T13:00:00.000Z'),
-        scheduledAt: new Date('2026-01-18T14:00:00.000Z'),
-        homeTeam: 'Home',
-        awayTeam: 'Away',
-        homeLogo: null,
-        awayLogo: null,
-        competitionCode: 'BL1',
-        country: 'Germany',
-        homeScore: null,
-        awayScore: null,
-        homeHtScore: null,
-        awayHtScore: null,
-        selections: [],
-      };
-      const channels = [
-        STRATEGY_CHANNEL.VALUE,
-        STRATEGY_CHANNEL.SAFE,
-        STRATEGY_CHANNEL.DOMINANT,
-        STRATEGY_CHANNEL.BTTS,
-        STRATEGY_CHANNEL.DRAW,
-        STRATEGY_CHANNEL.GOALS,
-        STRATEGY_CHANNEL.CLEAN_SHEET,
-        STRATEGY_CHANNEL.TEAM_TOTAL,
-        STRATEGY_CHANNEL.WIN_EITHER_HALF,
-        STRATEGY_CHANNEL.CORRECT_SCORE,
-        STRATEGY_CHANNEL.AVOID,
-        STRATEGY_CHANNEL.CONSENSUS,
-      ];
-      const findByDate = vi.fn().mockResolvedValue(
-        channels.map((channel, i) => ({
-          ...baseRow,
-          id: `cd-${i}`,
-          channel,
-        })),
-      );
-      const findNewCoachTeams = vi.fn().mockResolvedValue(new Set());
-      const repo = {
-        findByDate,
-        findNewCoachTeams,
-      } as unknown as ChannelDecisionRepository;
-      const service = new ChannelDecisionService(
-        repo,
-        noClosingLines(),
-        noPlayableOdds(),
-        noVantageHistory(),
-      );
-
-      const groups = await service.listByChannel({ date: '2026-01-18' });
-
-      expect(groups.map((g) => g.channel).sort()).toEqual([...channels].sort());
-    });
-
-    // VANTAGE has its own dedicated page (apps/web's /dashboard/arbitrage) —
-    // it must never resurface on "Par canal" even when the raw rows contain
-    // it, so a future accidental re-add to READ_CHANNEL_ORDER is the only
-    // thing that could break this, not silence.
-    it('drops VANTAGE even when present in the raw rows', async () => {
-      const baseRow = {
-        id: 'cd',
-        modelRunId: 'run-1',
-        status: CHANNEL_DECISION_STATUS.SELECTED,
-        reasonCode: null,
-        fixtureId: 'f1',
-        createdAt: new Date('2026-01-18T13:00:00.000Z'),
-        scheduledAt: new Date('2026-01-18T14:00:00.000Z'),
-        homeTeam: 'Home',
-        awayTeam: 'Away',
-        homeLogo: null,
-        awayLogo: null,
-        competitionCode: 'BL1',
-        country: 'Germany',
-        homeScore: null,
-        awayScore: null,
-        homeHtScore: null,
-        awayHtScore: null,
-        selections: [],
-      };
-      const findByDate = vi.fn().mockResolvedValue([
-        { ...baseRow, id: 'cd-1', channel: STRATEGY_CHANNEL.DOMINANT },
-        { ...baseRow, id: 'cd-2', channel: STRATEGY_CHANNEL.VANTAGE },
-      ]);
-      const repo = {
-        findByDate,
-        findNewCoachTeams: vi.fn().mockResolvedValue(new Set()),
-      } as unknown as ChannelDecisionRepository;
-      const service = new ChannelDecisionService(
-        repo,
-        noClosingLines(),
-        noPlayableOdds(),
-        noVantageHistory(),
-      );
-
-      const groups = await service.listByChannel({ date: '2026-01-18' });
-
-      expect(groups.map((g) => g.channel)).not.toContain(
-        STRATEGY_CHANNEL.VANTAGE,
-      );
-      expect(groups.map((g) => g.channel)).toContain(STRATEGY_CHANNEL.DOMINANT);
-    });
-  });
-
-  describe('getFacets', () => {
-    it('resolves the date into a UTC day range and aggregates leagues + channels with counts', async () => {
-      const findFacetRows = vi.fn().mockResolvedValue([
-        {
-          channel: STRATEGY_CHANNEL.DRAW,
-          code: 'PL',
-          name: 'Premier League',
-          country: 'England',
-        },
-        {
-          channel: STRATEGY_CHANNEL.BTTS,
-          code: 'PL',
-          name: 'Premier League',
-          country: 'England',
-        },
-        {
-          channel: STRATEGY_CHANNEL.DRAW,
-          code: 'BL1',
-          name: 'Bundesliga',
-          country: 'Germany',
-        },
-        // CONSENSUS is a meta-channel with no pick of its own (§2bis point 5)
-        // — never surfaced as a filterable channel, same exclusion
-        // listByChannel already applies via READ_CHANNEL_ORDER.
-        {
-          channel: STRATEGY_CHANNEL.CONSENSUS,
-          code: 'PL',
-          name: 'Premier League',
-          country: 'England',
-        },
-      ]);
-      const repo = { findFacetRows } as unknown as ChannelDecisionRepository;
-      const service = new ChannelDecisionService(
-        repo,
-        noClosingLines(),
-        noPlayableOdds(),
-        noVantageHistory(),
-      );
-
-      const result = await service.getFacets('2026-01-18');
-
-      expect(findFacetRows).toHaveBeenCalledTimes(1);
-      const [range] = findFacetRows.mock.calls[0];
-      expect(range.gte.toISOString()).toBe('2026-01-18T00:00:00.000Z');
-      expect(range.lte.toISOString()).toBe('2026-01-18T23:59:59.999Z');
-
-      expect(result.leagues).toEqual([
-        { code: 'BL1', name: 'Bundesliga', country: 'Germany', count: 1 },
-        { code: 'PL', name: 'Premier League', country: 'England', count: 3 },
-      ]);
-      expect(result.channels).toEqual(
-        expect.arrayContaining([
-          { channel: STRATEGY_CHANNEL.DRAW, count: 2 },
-          { channel: STRATEGY_CHANNEL.BTTS, count: 1 },
-        ]),
-      );
-      expect(
-        result.channels.some((c) => c.channel === STRATEGY_CHANNEL.CONSENSUS),
-      ).toBe(false);
     });
   });
 });

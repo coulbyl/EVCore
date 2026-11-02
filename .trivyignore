@@ -1,0 +1,6 @@
+# Vulnerabilities the images may keep for a while, read by the Trivy scan in
+# .github/workflows/deploy.yml. Each one: why it is accepted on the line
+# above, then its ID and the date it stops being accepted, e.g.
+#
+# Not reachable: the API never parses X.509 certificates from users.
+# CVE-2026-12345 exp:2026-12-31

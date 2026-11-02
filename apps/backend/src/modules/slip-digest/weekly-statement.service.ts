@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { NotificationType } from '@evcore/db';
 import { NotificationService } from '@modules/notification/notification.service';
-import { PushService } from '@modules/push/push.service';
 import { MailService } from '@modules/mail/mail.service';
 import { ProductWeekService } from '@modules/coupon/product-day/product-week.service';
 import { previousIsoWeek } from '@utils/date.utils';
@@ -27,7 +26,6 @@ export class WeeklyStatementService {
   constructor(
     private readonly repository: SlipDigestRepository,
     private readonly notification: NotificationService,
-    private readonly push: PushService,
     private readonly mail: MailService,
     private readonly productWeek: ProductWeekService,
   ) {}
@@ -93,18 +91,17 @@ export class WeeklyStatementService {
       });
       if (!message) continue;
       if (notified.has(recipient.id)) continue;
-      await this.notification.notifyUser({
+      // No row, no push nor e-mail: the next run tries this player again.
+      const recorded = await this.notification.deliverToUser({
         userId: recipient.id,
         type: NotificationType.WEEKLY_STATEMENT,
         title: message.title,
         body: message.body,
         payload: { week },
-      });
-      await this.push.sendToUser(recipient.id, {
-        title: message.title,
-        body: message.body,
         url: '/today?from=weekly',
+        tag: 'weekly-statement',
       });
+      if (!recorded) continue;
       const email = digestEmailOf(recipient);
       if (email) {
         await this.mail.sendPlayerDigest(email, {

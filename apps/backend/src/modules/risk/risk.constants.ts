@@ -18,6 +18,4 @@ export const RISK_CONSTANTS = {
   ROI_SUSPENSION_THRESHOLD: new Decimal('-0.15'),
   ROI_SUSPENSION_BET_COUNT: 50,
   ROI_SUSPENSION_Z: new Decimal('1.96'),
-  // Brier score alert threshold (lower is better; 0.33 = random baseline)
-  BRIER_SCORE_ALERT_THRESHOLD: new Decimal('0.30'),
 } as const;

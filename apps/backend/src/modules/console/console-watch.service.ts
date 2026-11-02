@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CONSOLE_WATCH } from '@config/console.constants';
-import { MailService } from '@modules/mail/mail.service';
+import { NotificationService } from '@modules/notification/notification.service';
 import { createLogger } from '@utils/logger';
 import { LIGHT_NAMES, todoLineOf } from './console-lines';
 import { ConsoleRepository } from './console.repository';
@@ -12,18 +12,19 @@ const logger = createLogger('console-watch');
 
 /**
  * Every ten minutes: the lights are read and recorded; a light that has
- * turned red since its last e-mail sends one (12-admin.md § 1). The e-mail
+ * turned red since its last e-mail sends one, with a push to the admins
+ * (12-admin.md § 1). The e-mail
  * is claimed in the table before it leaves: a replay, a second worker or a
  * light staying red never sends it twice; going back to green and red
  * again does.
  */
 @Injectable()
 export class ConsoleWatchService {
-  // eslint-disable-next-line max-params -- NestJS constructor injection: the lights, their table, the mail, the app URL
+  // eslint-disable-next-line max-params -- NestJS constructor injection: the lights, their table, the alerts, the app URL
   constructor(
     private readonly console: ConsoleService,
     private readonly repository: ConsoleRepository,
-    private readonly mail: MailService,
+    private readonly alerts: NotificationService,
     private readonly config: ConfigService,
   ) {}
 
@@ -61,7 +62,7 @@ export class ConsoleWatchService {
     now: Date;
   }): Promise<void> {
     const { light, status, now } = input;
-    return this.mail.sendOpsLightRed({
+    return this.alerts.sendOpsLightRed({
       light: LIGHT_NAMES[light],
       since: now.toISOString().slice(0, 16).replace('T', ' ') + ' UTC',
       lines: status.todo

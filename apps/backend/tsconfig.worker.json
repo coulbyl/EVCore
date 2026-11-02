@@ -1,0 +1,8 @@
+{
+  // `pnpm dev:worker`: the worker process watched beside the API, built to
+  // its own folder — two watchers cleaning the same dist would race.
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": {
+    "outDir": "./dist-worker"
+  }
+}

@@ -15,11 +15,6 @@ export type MarketSuspensionProps = {
   betCount: number;
 };
 
-export type BrierAlertProps = {
-  seasonId: string;
-  brierScore: number;
-};
-
 export type EtlFailureProps = {
   queue: string;
   jobName: string;
@@ -32,20 +27,6 @@ export type WeightAdjustmentProps = {
   brierScore?: number;
   meanError?: number;
   rolledBackProposalId?: string;
-};
-
-export type WeeklyReportProps = {
-  roiOneXTwo: number;
-  betsPlaced: number;
-  brierScore: number;
-  periodStart: string;
-  periodEnd: string;
-};
-
-export type XgUnavailableReportProps = {
-  season: string; // e.g. "2022-23"
-  unavailableCount: number;
-  externalIds: number[];
 };
 
 export type EmailVerificationProps = {
@@ -71,21 +52,6 @@ export type PasswordResetProps = {
   resetUrl: string;
   expiresInMinutes: number;
   isAdminGenerated: boolean;
-};
-
-export type MlModelActivatedProps = {
-  versionId: string;
-  segment: string;
-  algorithm: string;
-  brierScore: number;
-  calibrationError: number;
-  roiSimulated: number;
-  isRollback: boolean;
-  rolledBackVersionId?: string;
-};
-
-export type MlModelMissingProps = {
-  segments: string[];
 };
 
 export type SupportMessageProps = {

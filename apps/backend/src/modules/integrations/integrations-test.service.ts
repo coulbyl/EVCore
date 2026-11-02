@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { HeadBucketCommand, S3Client } from '@aws-sdk/client-s3';
 import webpush from 'web-push';
 import { INTEGRATIONS, type IntegrationKey } from '@evcore/db';
@@ -32,7 +33,10 @@ const fail = (detail: string): IntegrationTestResult => ({ ok: false, detail });
  */
 @Injectable()
 export class IntegrationsTestService {
-  constructor(private readonly integrations: IntegrationsService) {}
+  constructor(
+    private readonly integrations: IntegrationsService,
+    private readonly config: ConfigService,
+  ) {}
 
   async test(key: string): Promise<IntegrationTestResult> {
     const integration = INTEGRATIONS.find((i) => i.key === key);
@@ -120,14 +124,14 @@ export class IntegrationsTestService {
         return { ok: true, detail: 'clés valides' };
       }
       case 'storage': {
-        const [endpoint, region, bucket, accessKeyId, secretAccessKey] =
-          await Promise.all([
-            get('endpoint'),
-            get('region'),
-            get('bucket'),
-            get('accessKey'),
-            get('secretKey'),
-          ]);
+        const [endpoint, region, bucket] = await Promise.all([
+          get('endpoint'),
+          get('region'),
+          get('bucket'),
+        ]);
+        // The access keys are read from the .env only (storage.service.ts).
+        const accessKeyId = this.config.get<string>('RUSTFS_ACCESS_KEY');
+        const secretAccessKey = this.config.get<string>('RUSTFS_SECRET_KEY');
         if (!endpoint || !bucket || !accessKeyId || !secretAccessKey) {
           return fail('champ manquant');
         }

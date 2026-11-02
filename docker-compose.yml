@@ -5,6 +5,14 @@ services:
     image: postgres:18-alpine
     container_name: evcore-postgres
     restart: unless-stopped
+    # Per-query counts and times (pg_stat_statements, the extension is
+    # created by migration 20261102180000): what to read before optimising.
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - pg_stat_statements.max=5000
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-evcore}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -114,7 +122,9 @@ services:
   # it at RUSTFS_ENDPOINT (dev: same host-published port, no
   # RUSTFS_PUBLIC_ENDPOINT override needed — see .env.example).
   rustfs:
-    image: rustfs/rustfs:latest
+    # Pinned: `latest` moved under us at each pull. 1.0.4 is the latest
+    # release (25/10), the one a deploy has been pulling since.
+    image: rustfs/rustfs:1.0.4
     container_name: evcore-rustfs
     restart: unless-stopped
     environment:

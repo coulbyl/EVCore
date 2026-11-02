@@ -4,6 +4,20 @@ EVCore fait tourner deux services autonomes en dehors du backend NestJS : `apps/
 
 ---
 
+## backend-worker : les files et les passes du backend
+
+Depuis le 02/11/2026, le backend tourne en **deux processus** depuis la même image (modèle iddia) :
+
+- `backend` (`src/main.ts`, `AppModule`) : les routes HTTP et la messagerie du support. Il **dépose** des travaux dans les files (relances de l'admin), il n'en consomme aucun.
+- `backend-worker` (`src/main.worker.ts`, `WorkerModule`, `createApplicationContext`, sans serveur HTTP) : les 16 consommateurs BullMQ (ETL, analyse, cotes, règlement, résumés, veille de la console) et toutes les planifications récurrentes (`EtlScheduler`, `StatsBackfillService.registerScheduler`, `ConsoleWatchScheduler`, `SlipDigestScheduler`, l'interrupteur « Passes planifiées » `SchedulingSwitchScheduler`).
+
+Pourquoi : une passe d'analyse calcule le Poisson de tous les matchs ; dans le même processus, chaque requête d'un joueur attendait derrière elle. Règles :
+
+- un nouveau consommateur ou une nouvelle planification va dans un `<domaine>-worker.module.ts` importé par `WorkerModule`, jamais dans `AppModule` ; `src/process-separation.spec.ts` le vérifie (aucun `@Processor` ni `*Scheduler` dans le graphe de l'API) ;
+- les modules de domaine restent communs aux deux processus : leurs contrôleurs sont chargés par le worker mais inertes (pas de serveur HTTP) ;
+- `backend` applique les migrations à son démarrage, `backend-worker` attend qu'il soit sain ;
+- en local : `pnpm dev` lance les deux (`dev` et `dev:worker`), le worker compilé dans `dist-worker/`.
+
 ## ml-worker : correction ML shadow
 
 ### Rôle
@@ -43,7 +57,7 @@ Point capital : **ml-worker n'entre jamais dans le scoring actif**. Ses correcti
 
 `CORRECT_SCORE` reste explicitement exclu au moment de la rédaction : un marché à ~50 scores concurrents nécessite une logique de dé-vig différente des marchés à deux/trois issues gérés aujourd'hui — c'est un chantier différé, pas un oubli.
 
-Pour l'inférence en temps réel (`predictShadowCorrection`), `ML_SHADOW_CHANNELS` dans `apps/backend/src/modules/ml/ml.constants.ts` liste les canaux réellement branchés : `VALUE`, `DOMINANT`, `BTTS`, `DRAW`, `GOALS`, `CLEAN_SHEET`, `TEAM_TOTAL`, `WIN_EITHER_HALF`. `SAFE` est entraîné mais volontairement exclu de l'inférence live.
+Jusqu'au 02/11/2026, l'inférence en temps réel (`predictShadowCorrection`) visait `VALUE`, `DOMINANT`, `BTTS`, `DRAW`, `GOALS`, `CLEAN_SHEET`, `TEAM_TOTAL` et `WIN_EITHER_HALF` ; elle est retirée avec le module ML du backend (voir Déclenchement).
 
 ### Accès base de données
 
@@ -54,8 +68,7 @@ Pour l'inférence en temps réel (`predictShadowCorrection`), `ML_SHADOW_CHANNEL
 
 ### Déclenchement
 
-- Entraînement : jobs BullMQ sur la file `ml-training` (nom de job `train`), poussés par le backend NestJS (`apps/backend/src/modules/ml/ml.service.ts`) selon un planning cron (`ML_CRON_SCHEDULES` : vérification hebdomadaire le lundi 03:00 UTC, rattrapage horaire, health-check toutes les 15 minutes) et les règles de ré-entraînement (`ML_RETRAIN_MIN_NEW_BETS = 50`, `ML_COOLDOWN_DAYS = 7`, amélioration minimale de Brier `ML_MIN_BRIER_IMPROVEMENT = 0.05`).
-- Inférence : appel HTTP synchrone du backend vers `ml-worker` (`ML_WORKER_URL`, défaut `http://ml-worker:8000`) via `apps/backend/src/modules/ml/ml.inference.service.ts`, avec un timeout de 500 ms pour `/infer` et de 5 s pour `/reload`. Un échec ou un timeout ne bloque jamais le scoring — la méthode retourne `null` et le pipeline continue sans correction.
+Plus rien ne l'appelle depuis le 02/11/2026 : le module ML du backend (planification de l'entraînement, inférence `predictShadowCorrection`, e-mails « modèle activé » et « modèle manquant ») est retiré, après l'étude d'utilité du 29/10 (`docs/audits/2026-10-29/ML-UTILITE.md`) qui ne lui a trouvé aucun gain mesurable. Le code d'`apps/ml-worker` reste, testé en CI, pour le lot ML v2 (`docs/audits/2026-10-29/ML-V2-PROPOSITION.md`), qui n'appellera aucun modèle pendant l'analyse.
 
 ---
 

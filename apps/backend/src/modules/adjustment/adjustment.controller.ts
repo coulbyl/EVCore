@@ -9,9 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { IsInt, IsOptional, Min } from 'class-validator';
-import { PrismaService } from '@/prisma.service';
-import { AdminGuard } from '@/common/guards/admin.guard';
-import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
+import { AdminOrServiceTokenGuard } from '@modules/auth/admin-or-service-token.guard';
 import { AdjustmentService } from './adjustment.service';
 
 class SetFixtureResultDto {
@@ -34,38 +32,27 @@ class SetFixtureResultDto {
   awayHtScore?: number;
 }
 
+// The operations routes' guard: an admin's session or the service token
+// (x-admin-token), so the human rollback CLAUDE.md requires can be run from
+// docs/exploitation.md.
 @Controller('adjustment')
-@UseGuards(AuthSessionGuard, AdminGuard)
+@UseGuards(AdminOrServiceTokenGuard)
 export class AdjustmentController {
-  constructor(
-    private readonly adjustment: AdjustmentService,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly adjustment: AdjustmentService) {}
 
   @Patch('fixture/:id/result')
   async setFixtureResult(
     @Param('id') id: string,
     @Body() dto: SetFixtureResultDto,
   ) {
-    const fixture = await this.prisma.client.fixture.findUnique({
-      where: { id },
-      select: { id: true },
+    const result = await this.adjustment.setFixtureResult(id, {
+      homeScore: dto.homeScore,
+      awayScore: dto.awayScore,
+      homeHtScore: dto.homeHtScore ?? null,
+      awayHtScore: dto.awayHtScore ?? null,
     });
-    if (!fixture) throw new NotFoundException(`Fixture ${id} not found`);
-
-    await this.prisma.client.fixture.update({
-      where: { id },
-      data: {
-        homeScore: dto.homeScore,
-        awayScore: dto.awayScore,
-        homeHtScore: dto.homeHtScore ?? null,
-        awayHtScore: dto.awayHtScore ?? null,
-        status: 'FINISHED',
-      },
-    });
-
-    const settle = await this.adjustment.settleAndCheck(id);
-    return { fixtureId: id, ...settle };
+    if (!result) throw new NotFoundException(`Fixture ${id} not found`);
+    return result;
   }
 
   @Post('settle-and-check/:fixtureId')

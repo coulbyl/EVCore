@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import {
-  BetSource,
-  BetStatus,
   CouponProposalStatus,
   CouponResult,
   CouponSource,
@@ -204,64 +202,9 @@ const WITH_LEGS = {
   },
 } as const;
 
-// Adds real, verifiable engagement counts (CouponProposalView and
-// CouponFollow — never a fabricated number, see their own doc comments in
-// schema.prisma) on top of WITH_LEGS — only for the listing
-// used by the Coupons page (findByDate), not settlement's findByIdWithLegs,
-// which has no per-viewer concept.
-function withEngagement(userId: string) {
-  return {
-    ...WITH_LEGS,
-    _count: { select: { views: true, follows: true } },
-    // Only the CURRENT user's own follow (0 or 1 row, unique per
-    // [couponProposalId, userId]) — drives the ticked « Suivre » button; the
-    // follower count comes from _count.follows above instead.
-    follows: {
-      where: { userId },
-      select: { id: true },
-      take: 1,
-    },
-  } satisfies Prisma.CouponProposalInclude;
-}
-
-export type CouponProposalWithEngagement = Prisma.CouponProposalGetPayload<{
-  include: ReturnType<typeof withEngagement>;
-}>;
-
 @Injectable()
 export class CouponRepository {
   constructor(private readonly prisma: PrismaService) {}
-
-  // upsertProposal (CouponComposerService's write path) retired 2026-09-03
-  // alongside the composer itself — apps/vantage-worker's
-  // persist-coupon-proposal.ts now writes CouponProposal/CouponProposalLeg
-  // directly via @evcore/db, same unique key and PENDING-only overwrite
-  // guard preserved there. This repository is read/settlement-only now.
-
-  // `forDate` equality — the coupon's own generation date, not an overlap
-  // window. A prior version matched any batch whose [forDate,
-  // lastFixtureScheduledAt] window overlapped the requested day, so a
-  // multi-day weekend/midweek LONGSHOT batch (forDate = the Friday it was
-  // generated) stayed visible on Saturday/Sunday too — but that meant one
-  // viewed day could surface TWO independently-ranked batches at once (each
-  // showing its own "rank 1"), with no way to tell them apart in the UI
-  // (2026-08-19 incident). Pinning to `forDate` removes the ambiguity: one
-  // day shows exactly the batch generated that day, full stop.
-  async findByDate(
-    day: Date,
-    userId: string,
-    opts: { status?: CouponProposalStatus } = {},
-  ): Promise<CouponProposalWithEngagement[]> {
-    const dayStart = startOfUtcDay(day);
-    return this.prisma.client.couponProposal.findMany({
-      where: {
-        forDate: dayStart,
-        ...(opts.status ? { status: opts.status } : {}),
-      },
-      include: withEngagement(userId),
-      orderBy: { rank: 'asc' },
-    });
-  }
 
   /**
    * Le premier coup d'envoi d'un coupon, ou null s'il n'existe pas : on ne
@@ -290,24 +233,6 @@ export class CouponRepository {
       GROUP BY cp.id
     `;
     return row ?? null;
-  }
-
-  async exists(id: string): Promise<boolean> {
-    const coupon = await this.prisma.client.couponProposal.findUnique({
-      where: { id },
-      select: { id: true },
-    });
-    return coupon !== null;
-  }
-
-  /** Idempotent — a repeat view from the same user is a no-op, never a
-   * second row (unique on [couponProposalId, userId]). */
-  async recordView(couponProposalId: string, userId: string): Promise<void> {
-    await this.prisma.client.couponProposalView.upsert({
-      where: { couponProposalId_userId: { couponProposalId, userId } },
-      create: { couponProposalId, userId },
-      update: {},
-    });
   }
 
   /**
@@ -446,73 +371,6 @@ export class CouponRepository {
       where: { id },
       include: WITH_LEGS,
     });
-  }
-
-  async findSettledBetsForIndices(opts: {
-    channel: StrategyChannel;
-    from: Date;
-    to: Date;
-  }): Promise<
-    {
-      probEstimated: Prisma.Decimal;
-      status: string;
-      market: string;
-      oddsSnapshot: Prisma.Decimal | null;
-    }[]
-  > {
-    const { channel, from, to } = opts;
-    return this.prisma.client.bet.findMany({
-      where: {
-        channelSelection: {
-          is: { channelDecision: { is: { channel } } },
-        },
-        source: BetSource.MODEL,
-        status: { in: [BetStatus.WON, BetStatus.LOST] },
-        fixture: { scheduledAt: { gte: from, lte: to } },
-      },
-      select: {
-        probEstimated: true,
-        status: true,
-        market: true,
-        oddsSnapshot: true,
-      },
-    });
-  }
-
-  async findResolvedCouponsForIndices(opts: {
-    from: Date;
-    to: Date;
-    source?: CouponSource;
-  }): Promise<
-    {
-      jointProbability: Prisma.Decimal;
-      result: CouponResult;
-      combinedOdds: Prisma.Decimal;
-      realizedOdds: Prisma.Decimal | null;
-    }[]
-  > {
-    return this.prisma.client.couponProposal.findMany({
-      where: {
-        result: {
-          in: [CouponResult.WON, CouponResult.LOST, CouponResult.PARTIAL],
-        },
-        forDate: { gte: opts.from, lte: opts.to },
-        ...(opts.source ? { source: opts.source } : {}),
-      },
-      select: {
-        jointProbability: true,
-        result: true,
-        combinedOdds: true,
-        realizedOdds: true,
-      },
-    }) as unknown as Promise<
-      {
-        jointProbability: Prisma.Decimal;
-        result: CouponResult;
-        combinedOdds: Prisma.Decimal;
-        realizedOdds: Prisma.Decimal | null;
-      }[]
-    >;
   }
 
   // `realizedOdds` n'a de sens que sur un gain : un LOST ou un VOID l'efface,

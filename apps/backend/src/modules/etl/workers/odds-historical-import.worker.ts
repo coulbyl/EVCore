@@ -13,7 +13,6 @@ import {
   BULLMQ_QUEUES,
   THE_ODDS_API_SPORT_KEYS,
 } from '@config/etl.constants';
-import { BACKTEST_CONSTANTS } from '@modules/backtest/backtest.constants';
 import { FixtureService } from '@modules/fixture/fixture.service';
 import { NotificationService } from '@modules/notification/notification.service';
 import {
@@ -59,9 +58,9 @@ export class OddsHistoricalImportWorker extends WorkerHost {
   async process(job: Job<OddsHistoricalImportJobData>): Promise<void> {
     const { competitionCode, seasonYear } = job.data;
 
-    if (seasonYear < BACKTEST_CONSTANTS.EUROPEAN_BACKTEST_SEASON_FROM) {
+    if (seasonYear < ETL_CONSTANTS.EUROPEAN_ODDS_HISTORY_SEASON_FROM) {
       throw new Error(
-        `seasonYear ${seasonYear} is below EUROPEAN_BACKTEST_SEASON_FROM (${BACKTEST_CONSTANTS.EUROPEAN_BACKTEST_SEASON_FROM})`,
+        `seasonYear ${seasonYear} is below EUROPEAN_ODDS_HISTORY_SEASON_FROM (${ETL_CONSTANTS.EUROPEAN_ODDS_HISTORY_SEASON_FROM})`,
       );
     }
 

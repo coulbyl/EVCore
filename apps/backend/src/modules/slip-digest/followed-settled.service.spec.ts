@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { NotificationType, Prisma } from '@evcore/db';
 import type { NotificationService } from '@modules/notification/notification.service';
-import type { PushService } from '@modules/push/push.service';
 import type {
   FollowedSettledRepository,
   FollowedSettledRow,
@@ -39,16 +38,12 @@ function harness(input: {
     findAnnounced: vi.fn().mockResolvedValue(new Set(input.announced ?? [])),
   } as unknown as FollowedSettledRepository;
   const notification = {
-    notifyUser: vi.fn().mockResolvedValue(input.recorded ?? true),
+    deliverToUser: vi.fn().mockResolvedValue(input.recorded ?? true),
   } as unknown as NotificationService;
-  const push = {
-    sendToUser: vi.fn().mockResolvedValue(undefined),
-  } as unknown as PushService;
   return {
-    service: new FollowedSettledService(repository, notification, push),
+    service: new FollowedSettledService(repository, notification),
     repository,
     notification,
-    push,
   };
 }
 
@@ -76,7 +71,7 @@ describe('FollowedSettledService.notifyEvening', () => {
   });
 
   it('announces each followed coupon settled since the evening day began', async () => {
-    const { service, repository, notification, push } = harness({
+    const { service, repository, notification } = harness({
       rows: [
         row({}),
         row({
@@ -109,18 +104,23 @@ describe('FollowedSettledService.notifyEvening', () => {
       since: new Date('2026-10-30T00:00:00.000Z'),
       forDateFrom: new Date('2026-10-28T00:00:00.000Z'),
     });
-    expect(notification.notifyUser).toHaveBeenCalledWith({
+    expect(notification.deliverToUser).toHaveBeenCalledWith({
       userId: 'u2',
       type: NotificationType.FOLLOWED_SETTLED,
       title: 'Ton Combiné a perdu ✗',
       body: 'cassé sur Lazio – Torino 1-0',
       payload: { couponProposalId: 'combo', evening: '2026-10-30' },
+      url: '/me?coupon=combo',
+      tag: 'followed-combo',
     });
-    expect(push.sendToUser).toHaveBeenCalledWith('u1', {
-      title: 'Ton Favori est passé ✓',
-      body: 'PSG – Lens 2-0 · 1,24',
-      url: '/me?coupon=fav',
-    });
+    expect(notification.deliverToUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'u1',
+        title: 'Ton Favori est passé ✓',
+        body: 'PSG – Lens 2-0 · 1,24',
+        url: '/me?coupon=fav',
+      }),
+    );
   });
 
   it('a second run sends nothing already announced', async () => {
@@ -129,7 +129,7 @@ describe('FollowedSettledService.notifyEvening', () => {
       announced: ['u1:fav'],
     });
     expect((await service.notifyEvening(EVENING)).sent).toBe(0);
-    expect(notification.notifyUser).not.toHaveBeenCalled();
+    expect(notification.deliverToUser).not.toHaveBeenCalled();
     // A coupon announced yesterday evening and corrected today is not sent
     // again either.
     expect(repository.findAnnounced).toHaveBeenCalledWith({
@@ -146,12 +146,11 @@ describe('FollowedSettledService.notifyEvening', () => {
       sent: 0,
       skippedPaused: 1,
     });
-    expect(notification.notifyUser).not.toHaveBeenCalled();
+    expect(notification.deliverToUser).not.toHaveBeenCalled();
   });
 
-  it('no record written, no push: the next run tries again', async () => {
-    const { service, push } = harness({ rows: [row({})], recorded: false });
+  it('no record written, nothing counted: the next run tries again', async () => {
+    const { service } = harness({ rows: [row({})], recorded: false });
     expect((await service.notifyEvening(EVENING)).sent).toBe(0);
-    expect(push.sendToUser).not.toHaveBeenCalled();
   });
 });

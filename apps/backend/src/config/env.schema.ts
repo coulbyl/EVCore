@@ -46,7 +46,6 @@ export const ENV_SCHEMA = z
 
     API_FOOTBALL_KEY: z.string().min(1).optional(),
     THE_ODDS_API_KEY: z.string().min(1).optional(),
-    ML_WORKER_URL: url.optional(),
 
     RESEND_API_KEY: z.string().min(1).optional(),
     RESEND_FROM: z.string().min(1).optional(),
@@ -116,6 +115,7 @@ export const RETIRED_ENV = [
   'STALE_SCHEDULED_SYNC_LOOKBACK_DAYS',
   'SHADOW_PREDICTIONS_ENABLED',
   'ML_CORRECTION_ENABLED',
+  'ML_WORKER_URL',
   'SLIP_DIGEST_CRON',
   'WEEKLY_STATEMENT_CRON',
   'FOLLOWED_SETTLED_CRON',

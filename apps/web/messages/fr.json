@@ -1127,7 +1127,8 @@
         "stats_backfill": "Rattrapage des stats",
         "odds_historical": "Cotes Pinnacle historiques",
         "rebuild": "Moteur rejoué sur l'historique",
-        "watch": "Veille des voyants"
+        "watch": "Veille des voyants",
+        "push": "Notifications push"
       },
       "states": {
         "failed": "échec",
@@ -1226,9 +1227,7 @@
         "endpoint": "Adresse interne",
         "publicEndpoint": "Adresse publique",
         "region": "Région",
-        "bucket": "Bucket",
-        "accessKey": "Identifiant d'accès",
-        "secretKey": "Secret d'accès"
+        "bucket": "Bucket"
       },
       "source": {
         "stored": "enregistrée ici",

@@ -7,6 +7,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import { AppModule } from './app.module';
 import { applyHttpHardening } from './common/http/http-hardening';
+import { API_REFERENCE_PATH } from './config/http.constants';
 import { createLogger } from './utils/logger';
 
 async function bootstrap() {
@@ -15,7 +16,14 @@ async function bootstrap() {
   const corsOrigins = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
     : [];
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    // Nest 12: a literal segment is registered before a parameter whatever
+    // the declaration order (`/etl/sync/full` before `/etl/sync/:type`), so a
+    // shadowed route cannot happen by reordering a controller; two identical
+    // routes refuse to boot.
+    routeResolutionStrategy: 'specificity',
+    routeConflictPolicy: { duplicate: 'error', shadow: 'off' },
+  });
   // In prod, `backend` sits behind a reverse proxy (see docker-compose.prod's
   // rustfs comment — same deployment shape applies here). Without this,
   // every request's req.ip is the proxy's own address, so @nestjs/throttler
@@ -39,27 +47,44 @@ async function bootstrap() {
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
-  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
-  app.useWebSocketAdapter(new IoAdapter(app));
-
-  const openApiConfig = new DocumentBuilder()
-    .setTitle('EVCore Backend API')
-    .setDescription('EVCore backend API reference')
-    .setVersion('1.0.0')
-    .build();
-
-  const document = SwaggerModule.createDocument(app, openApiConfig);
-  app.use(
-    '/reference',
-    apiReference({
-      content: document,
-      theme: 'default',
+  // errorFormat fixed: the web reads `message` as a list of strings
+  // (extractFirstErrorMessage), Nest 12's default, written down.
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      errorFormat: 'list',
     }),
   );
+  app.useWebSocketAdapter(new IoAdapter(app));
 
+  // The API reference lists every route: served in development only. In
+  // production it gave the whole surface to anyone (audit 2026-11-02 § 2.3).
+  if (process.env.NODE_ENV !== 'production') {
+    const openApiConfig = new DocumentBuilder()
+      .setTitle('EVCore Backend API')
+      .setDescription('EVCore backend API reference')
+      .setVersion('1.0.0')
+      .build();
+
+    const document = SwaggerModule.createDocument(app, openApiConfig);
+    app.use(
+      API_REFERENCE_PATH,
+      apiReference({
+        content: document,
+        theme: 'default',
+      }),
+    );
+  }
+
+  // SIGTERM (container stop): requests in flight finish, then Prisma and
+  // the queues' connections close.
+  app.enableShutdownHooks();
   await app.listen(port, host);
   const appUrl = await app.getUrl();
   console.log(`🚀 Backend running at ${appUrl}`);
-  console.log(`📚 Scalar API reference: ${appUrl}/reference`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`📚 Scalar API reference: ${appUrl}${API_REFERENCE_PATH}`);
+  }
 }
 void bootstrap();

@@ -28,6 +28,14 @@ services:
     image: postgres:18-alpine
     container_name: evcore-postgres
     restart: unless-stopped
+    # Per-query counts and times (pg_stat_statements, the extension is
+    # created by migration 20261102180000): what to read before optimising.
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - pg_stat_statements.max=5000
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-evcore}
       POSTGRES_USER: ${POSTGRES_USER:-evcore}
@@ -106,7 +114,9 @@ services:
   # rewrite, query string intact, or the signature breaks).
   rustfs:
     container_name: evcore-rustfs
-    image: rustfs/rustfs:latest
+    # Pinned: `latest` moved under us at each pull. 1.0.4 is the latest
+    # release (25/10), the one a deploy has been pulling since.
+    image: rustfs/rustfs:1.0.4
     restart: unless-stopped
     environment:
       RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:?RUSTFS_ACCESS_KEY is required}
@@ -158,12 +168,51 @@ services:
       retries: 3
       start_period: 60s
 
+
+  # The backend's worker process (apps/backend/src/main.worker.ts): every
+  # BullMQ consumer and recurring pass — analysis, odds, settlement, digests.
+  # Same image as `backend`, no HTTP server: the passes no longer hold the
+  # event loop that serves the players' screens. `backend` runs the
+  # migrations at start; the worker waits for it.
+  backend-worker:
+    container_name: evcore-backend-worker
+    image: ghcr.io/coulbyl/evcore-backend:latest
+    restart: unless-stopped
+    command: ["node", "dist/main.worker"]
+    env_file:
+      - .env
+    environment:
+      <<: *data-env
+      NODE_ENV: production
+      RUSTFS_ENDPOINT: http://rustfs:9000
+      RUSTFS_BUCKET: ${RUSTFS_BUCKET:-evcore-support}
+    networks:
+      - evcore_internal
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # No HTTP to probe: the image's /health check does not apply. The worker
+    # touches this file every 30 s (WORKER_HEARTBEAT, config/worker.constants);
+    # older than two minutes, `docker ps` shows it unhealthy. The
+    # monitoring probe reads the same beat through the API: GET /health/worker.
+    healthcheck:
+      test: ["CMD-SHELL", "f=/tmp/evcore-worker-alive; test -f $$f && test $$(( $$(date +%s) - $$(stat -c %Y $$f) )) -lt 120"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
   web:
     container_name: evcore-web
     image: ghcr.io/coulbyl/evcore-web:latest
     restart: unless-stopped
     environment:
       NODE_ENV: production
+      # Server renders reach the backend on the Docker network, not through
+      # the public proxy (lib/api/server-api.ts). The topology, not a secret.
+      API_INTERNAL_URL: http://backend:3000
     expose:
       - "3000"
     networks:

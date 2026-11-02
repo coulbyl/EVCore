@@ -14,12 +14,10 @@ import type { AuthService } from './auth.service';
 import { AuthSessionGuard } from './auth-session.guard';
 import type { ActivityService } from '@modules/activity/activity.service';
 import { EtlController } from '@modules/etl/etl.controller';
-import { StatsBackfillController } from '@modules/etl/stats-backfill.controller';
 import { BettingEngineController } from '@modules/betting-engine/betting-engine.controller';
 import { ChannelDecisionAdminController } from '@modules/betting-engine/channel-decision-admin.controller';
-import { BacktestController } from '@modules/backtest/backtest.controller';
-import { RiskController } from '@modules/risk/risk.controller';
 import { CouponController } from '@modules/coupon/coupon.controller';
+import { AdjustmentController } from '@modules/adjustment/adjustment.controller';
 
 type Role = 'ADMIN' | 'OPERATOR';
 
@@ -92,15 +90,14 @@ describe('AdminOrServiceTokenGuard', () => {
 });
 
 describe('operations controllers are guarded as a whole', () => {
-  // Avant le 2026-10-28, ETL, analyse, backtest et une partie du risque
+  // Avant le 2026-10-28, ETL, analyse, backtest (retiré depuis) et une partie
+  // du risque
   // répondaient sans aucune authentification sur l'API publique.
   it.each([
     EtlController,
-    StatsBackfillController,
     BettingEngineController,
     ChannelDecisionAdminController,
-    BacktestController,
-    RiskController,
+    AdjustmentController,
   ])('%o carries AdminOrServiceTokenGuard at class level', (controller) => {
     const guards = Reflect.getMetadata(GUARDS_METADATA, controller) as
       | unknown[]
@@ -108,7 +105,7 @@ describe('operations controllers are guarded as a whole', () => {
     expect(guards).toContain(AdminOrServiceTokenGuard);
   });
 
-  it.each(['settle', 'settleOne', 'settleRange'] as const)(
+  it.each(['settleRange'] as const)(
     'CouponController.%s carries AdminOrServiceTokenGuard',
     (method) => {
       const guards = Reflect.getMetadata(

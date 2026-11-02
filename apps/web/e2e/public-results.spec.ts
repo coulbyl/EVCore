@@ -49,8 +49,9 @@ test.describe("/resultats, sans compte", () => {
       timeout: 15_000,
     });
     const main = page.getByRole("main");
+    // The title and the way back are in the band, above the content.
     await expect(
-      main.getByRole("heading", { level: 1, name: "Favori du jour" }),
+      page.getByRole("heading", { level: 1, name: "Favori du jour" }),
     ).toBeVisible();
     await expect(main).toContainText(
       "15 jours gagnés sur 18 · 1 jour sans Favori",
@@ -62,7 +63,7 @@ test.describe("/resultats, sans compte", () => {
       main.getByRole("link", { name: /Paris SG – Lens/ }),
     ).toHaveCount(0);
     await expect(main.getByRole("link", { name: /Aide/ })).toHaveCount(0);
-    await main.getByRole("link", { name: "Résultats" }).click();
+    await page.getByRole("link", { name: "Résultats" }).click();
     await expect(page).toHaveURL(/\/resultats$/);
   });
 

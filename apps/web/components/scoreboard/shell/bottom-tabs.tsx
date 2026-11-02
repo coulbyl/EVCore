@@ -8,7 +8,7 @@ import { usePlayerText } from "../text/player-texts";
 import { clsx as cn } from "clsx";
 import { AdminBottomTabs } from "./admin-bottom-tabs";
 import { PLAYER_TABS, isTabActive } from "./shell-constants";
-import { TabLed } from "./tab-led";
+import { TabStatusLed } from "./tab-status-led";
 
 /**
  * La barre d'onglets du téléphone, fixée en bas, au-dessus de la zone de
@@ -47,9 +47,10 @@ export function BottomTabs({ admin = false }: { admin?: boolean }) {
                     strokeWidth={1.8}
                     className={cn("size-[1.375rem]", active && "text-primary")}
                   />
-                  {active ? (
-                    <TabLed className="absolute -top-2 left-1/2 -translate-x-1/2" />
-                  ) : null}
+                  <TabStatusLed
+                    active={active}
+                    className="absolute -top-2 left-1/2 -translate-x-1/2"
+                  />
                 </span>
                 {t(`tabs.${tab.key}`)}
               </Link>

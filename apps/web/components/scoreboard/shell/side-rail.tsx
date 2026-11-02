@@ -13,7 +13,7 @@ import {
   isAdminSectionActive,
   isTabActive,
 } from "./shell-constants";
-import { TabLed } from "./tab-led";
+import { TabStatusLed } from "./tab-status-led";
 
 /**
  * La colonne gauche des écrans larges (≥ 1024 px) : la marque, les mêmes
@@ -62,7 +62,7 @@ export function SideRail({
               >
                 <Icon aria-hidden strokeWidth={1.8} className="size-5" />
                 <span className="flex-1">{t(`tabs.${tab.key}`)}</span>
-                {active ? <TabLed /> : null}
+                <TabStatusLed active={active} />
               </Link>
             </li>
           );
@@ -94,7 +94,7 @@ export function SideRail({
                     <span className="flex-1">
                       {t(`adminSections.${section.key}`)}
                     </span>
-                    {active ? <TabLed /> : null}
+                    <TabStatusLed active={active} />
                   </Link>
                 </li>
               );

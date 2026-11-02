@@ -80,25 +80,21 @@ export class StorageService implements OnModuleInit {
    * them changed. False when the credentials are missing.
    */
   private async ready(): Promise<boolean> {
-    const [
-      accessKeyId,
-      secretAccessKey,
-      endpointValue,
-      publicValue,
-      regionValue,
-      bucketValue,
-    ] = await Promise.all([
-      this.value('accessKey', 'RUSTFS_ACCESS_KEY'),
-      this.value('secretKey', 'RUSTFS_SECRET_KEY'),
-      this.value('endpoint', 'RUSTFS_ENDPOINT'),
-      this.value('publicEndpoint', 'RUSTFS_PUBLIC_ENDPOINT'),
-      this.value('region', 'RUSTFS_REGION'),
-      this.value('bucket', 'RUSTFS_BUCKET'),
-    ]);
+    // The access keys: the .env only, like the RustFS container that
+    // checks them.
+    const accessKeyId = this.config.get<string>('RUSTFS_ACCESS_KEY');
+    const secretAccessKey = this.config.get<string>('RUSTFS_SECRET_KEY');
+    const [endpointValue, publicValue, regionValue, bucketValue] =
+      await Promise.all([
+        this.value('endpoint', 'RUSTFS_ENDPOINT'),
+        this.value('publicEndpoint', 'RUSTFS_PUBLIC_ENDPOINT'),
+        this.value('region', 'RUSTFS_REGION'),
+        this.value('bucket', 'RUSTFS_BUCKET'),
+      ]);
     if (!accessKeyId || !secretAccessKey) {
       if (this.signature !== '') {
         logger.warn(
-          'Storage credentials not set (Réglages › Intégrations or RUSTFS_ACCESS_KEY/RUSTFS_SECRET_KEY) — attachment storage disabled',
+          'Storage credentials not set (RUSTFS_ACCESS_KEY/RUSTFS_SECRET_KEY) — attachment storage disabled',
         );
       }
       this.client = null;

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LinkPendingVeil } from "./link-pending-veil";
 import { cn } from "@evcore/ui/cn";
 
 /**
@@ -39,7 +40,7 @@ export function ChipGroup({
               href={item.href}
               aria-current={item.active ? "true" : undefined}
               className={cn(
-                "flex min-h-11 items-center rounded-full px-4 text-body font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
+                "relative flex min-h-11 items-center rounded-full px-4 text-body font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
                 item.active
                   ? "bg-led-on text-band"
                   : tone === "band"
@@ -51,6 +52,7 @@ export function ChipGroup({
               )}
             >
               {item.label}
+              <LinkPendingVeil />
             </Link>
           </li>
         ))}

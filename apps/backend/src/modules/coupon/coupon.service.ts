@@ -4,31 +4,20 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import Decimal from 'decimal.js';
-import { CouponProposalStatus } from '@evcore/db';
 import { CouponRepository } from './coupon.repository';
 import { CouponFollowRepository } from './coupon-follow.repository';
 import {
   TODAY_PRODUCT_TARGETS,
   isTodayCoupon,
 } from '@modules/screens/today-products';
-import {
-  playableQuoteKey,
-  PlayableOddsRepository,
-  type PlayableQuote,
-} from '../betting-engine/pricing/playable-odds.repository';
-import { formatDateUtc, startOfUtcDay } from '@utils/date.utils';
-import { marketProbability } from '@evcore/analysis-core';
+import { formatDateUtc } from '@utils/date.utils';
 import {
   classForTargetOddsMin,
-  INTRADAY_SIGNAL_WINDOW_DAYS,
   ABSTENTION_PASS_CLASS,
   ABSTENTION_PASS_TARGET,
 } from './coupon.constants';
-import type { CouponProposalDto } from './dto/coupon-proposal.dto';
 import type { CouponClassTrackRecord } from './dto/coupon-track-record.dto';
 import type { CouponSource } from '@evcore/db';
-import { readQuotedBookmaker } from '../betting-engine/pricing/closing-line';
 
 // generateCoupons/generateForClass (CouponComposerService's glouton
 // deterministic composer) retired 2026-09-03 — coupon composition is now
@@ -42,147 +31,8 @@ import { readQuotedBookmaker } from '../betting-engine/pricing/closing-line';
 export class CouponService {
   constructor(
     private readonly repo: CouponRepository,
-    private readonly playableOdds: PlayableOddsRepository,
     private readonly follows: CouponFollowRepository,
   ) {}
-
-  async getCoupons(
-    date: string,
-    userId: string,
-    opts: { status?: CouponProposalStatus } = {},
-  ): Promise<CouponProposalDto[]> {
-    const forDate = new Date(`${date}T00:00:00.000Z`);
-    const proposals = await this.repo.findByDate(forDate, userId, opts);
-    const quotes = await this.playableOdds
-      .findPlayableQuotes(
-        proposals.flatMap((p) =>
-          p.legs.map((leg) => ({
-            fixtureId: leg.fixtureId,
-            market: leg.market as string,
-            pick: leg.pick,
-            line: leg.line == null ? null : Number(leg.line),
-          })),
-        ),
-      )
-      // Un affichage de confort : jamais bloquant pour la page.
-      .catch(() => new Map<string, PlayableQuote>());
-
-    return proposals.map((p) => {
-      const reasoning = p.reasoning as Record<string, unknown> | null;
-      const generationPass = reasoning?.generationPass;
-      const couponClass = classForTargetOddsMin(Number(p.targetOddsMin));
-      const legs = p.legs.map((leg) => ({
-        id: leg.id,
-        fixtureId: leg.fixtureId,
-        homeTeam: leg.fixture.homeTeam.name,
-        homeLogo: leg.fixture.homeTeam.logoUrl ?? null,
-        awayTeam: leg.fixture.awayTeam.name,
-        awayLogo: leg.fixture.awayTeam.logoUrl ?? null,
-        competition: leg.fixture.season.competition.code,
-        competitionName: leg.fixture.season.competition.name,
-        country: leg.fixture.season.competition.country,
-        scheduledAt: leg.fixture.scheduledAt.toISOString(),
-        score: formatFixtureScore({
-          homeScore: leg.fixture.homeScore,
-          awayScore: leg.fixture.awayScore,
-        }),
-        htScore: formatFixtureScore({
-          homeScore: leg.fixture.homeHtScore,
-          awayScore: leg.fixture.awayHtScore,
-        }),
-        canal: leg.canal,
-        market: leg.market,
-        pick: leg.pick,
-        line: leg.line == null ? null : Number(leg.line),
-        probability: Number(leg.probability),
-        // Fréquence affichée au joueur : celle du marché, marge retirée
-        // (2026-10-28). Le coupon cote 2 la porte déjà, exacte, dans
-        // `probability` ; les autres la tirent de la cote.
-        marketProbability:
-          couponClass === 'DOUBLE' || couponClass === 'HUNTER_CORNERS'
-            ? Number(leg.probability)
-            : marketProbability({
-                odds: leg.oddsSnapshot ? Number(leg.oddsSnapshot) : null,
-                market: leg.market,
-              }),
-        oddsSnapshot: leg.oddsSnapshot ? Number(leg.oddsSnapshot) : null,
-        bookmaker: readQuotedBookmaker(leg.featureSnapshot),
-        signalScore: Number(leg.signalScore),
-        isCorrect: leg.isCorrect,
-        settledAt: leg.settledAt?.toISOString() ?? null,
-        closingOdds: leg.closingOdds !== null ? Number(leg.closingOdds) : null,
-        closingBookmaker: leg.closingBookmaker,
-        closingObservedAt: leg.closingObservedAt?.toISOString() ?? null,
-        closingLineValue:
-          leg.closingLineValue !== null ? Number(leg.closingLineValue) : null,
-        playableOdds:
-          playableFor(quotes, leg)?.operatorOdds ??
-          playableFor(quotes, leg)?.lowestOdds ??
-          null,
-        playableBookmaker:
-          playableFor(quotes, leg)?.operatorBookmaker ??
-          playableFor(quotes, leg)?.lowestBookmaker ??
-          null,
-        // Coût réel de la jambe chez 1xBet : la marge écrite à la génération
-        // (2026-10-29), sinon celle du groupe relevé.
-        operatorMargin:
-          leg.operatorMargin !== null
-            ? Number(leg.operatorMargin)
-            : (playableFor(quotes, leg)?.operatorMargin ?? null),
-        modelRunId:
-          readSnapshotString(leg.featureSnapshot, 'modelRunId') ??
-          leg.fixture.modelRuns[0]?.id ??
-          null,
-      }));
-      return {
-        id: p.id,
-        forDate: p.forDate.toISOString().slice(0, 10),
-        rank: p.rank,
-        signalWindowDays: p.signalWindowDays,
-        targetOddsMin: Number(p.targetOddsMin),
-        targetOddsMax: Number(p.targetOddsMax),
-        couponClass,
-        batch:
-          generationPass === 'INTRADAY' ||
-          (generationPass === undefined &&
-            p.signalWindowDays === INTRADAY_SIGNAL_WINDOW_DAYS)
-            ? 'intraday'
-            : 'evening',
-        source: p.source,
-        combinedOdds: Number(p.combinedOdds),
-        realizedOdds: p.realizedOdds !== null ? Number(p.realizedOdds) : null,
-        jointProbability: Number(p.jointProbability),
-        marketJointProbability: legs.every(
-          (leg) => leg.marketProbability !== null,
-        )
-          ? legs
-              .reduce(
-                (acc, leg) => acc.times(leg.marketProbability ?? 1),
-                new Decimal(1),
-              )
-              .toDecimalPlaces(4)
-              .toNumber()
-          : null,
-        signalScore: Number(p.signalScore),
-        status: p.status,
-        viewerCount: p._count.views,
-        followerCount: p._count.follows,
-        followedByMe: p.follows.length > 0,
-        result: p.result,
-        reasoning,
-        lastFixtureScheduledAt: p.lastFixtureScheduledAt.toISOString(),
-        generatedAt: p.generatedAt.toISOString(),
-        legs,
-      };
-    });
-  }
-
-  async recordView(couponProposalId: string, userId: string): Promise<void> {
-    if (!(await this.repo.exists(couponProposalId))) {
-      throw new NotFoundException('Coupon introuvable');
-    }
-    await this.repo.recordView(couponProposalId, userId);
-  }
 
   /**
    * Produits du jour qui se sont abstenus, avec leur raison (2026-10-29) :
@@ -304,12 +154,6 @@ export class CouponService {
     return coupon;
   }
 
-  /** Historique réel par produit de coupon sur les `days` derniers jours. */
-  async getTrackRecord(days = 30): Promise<CouponClassTrackRecord[]> {
-    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1_000);
-    return this.trackRecordRows({ from: startOfUtcDay(since), days });
-  }
-
   /** Historique par produit sur une période fermée [from, to[ (relevé du lundi). */
   async getTrackRecordBetween(
     from: Date,
@@ -344,39 +188,4 @@ export class CouponService {
 /** Colonne `@db.Date` lue par `$queryRaw` : minuit UTC, on garde AAAA-MM-JJ. */
 function isoDay(day: Date): string {
   return day.toISOString().slice(0, 10);
-}
-
-function readSnapshotString(value: unknown, key: string): string | null {
-  if (!value || typeof value !== 'object') return null;
-  const field = (value as Record<string, unknown>)[key];
-  return typeof field === 'string' && field.length > 0 ? field : null;
-}
-
-function formatFixtureScore(scores: {
-  homeScore: number | null;
-  awayScore: number | null;
-}): string | null {
-  const { homeScore, awayScore } = scores;
-  return homeScore === null || awayScore === null
-    ? null
-    : `${homeScore}-${awayScore}`;
-}
-
-function playableFor(
-  quotes: Map<string, PlayableQuote>,
-  leg: {
-    fixtureId: string;
-    market: string;
-    pick: string;
-    line: { toString(): string } | null;
-  },
-): PlayableQuote | undefined {
-  return quotes.get(
-    playableQuoteKey({
-      fixtureId: leg.fixtureId,
-      market: leg.market,
-      pick: leg.pick,
-      line: leg.line == null ? null : Number(leg.line.toString()),
-    }),
-  );
 }

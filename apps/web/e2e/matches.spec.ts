@@ -31,8 +31,10 @@ test.describe("Matchs", () => {
     const arsenal = at19.getByRole("listitem").filter({ hasText: "Arsenal" });
     await expect(arsenal).toContainText("Arsenal – Chelsea");
     await expect(arsenal).toContainText("Premier League");
-    await expect(arsenal).toContainText("Victoire Arsenal ·");
-    await expect(arsenal.getByText("7 sur 10")).toBeVisible();
+    await expect(arsenal).toContainText("Victoire Arsenal");
+    await expect(arsenal).toContainText("1,60");
+    // The One Chance Rule (DESIGN.md): a list shows the price alone.
+    await expect(arsenal.getByText(/sur 10/)).toHaveCount(0);
 
     // La seconde page de l'API est lue aussi : Betis est à 20:45.
     const at2045 = page.getByRole("region", { name: "Coups d'envoi à 20:45" });
@@ -207,7 +209,7 @@ test.describe("Fiche du match", () => {
     const reading = sheet.getByRole("region", { name: "Notre lecture" });
     await expect(reading).toContainText("Victoire Arsenal");
     await expect(reading).toContainText("1,60");
-    await expect(reading).toContainText("7 sur 10");
+    await expect(reading).toContainText("Passe 7 fois sur 10");
     await expect(reading).toContainText(
       "Arsenal a gagné ses 9 derniers matchs à domicile",
     );
@@ -215,9 +217,12 @@ test.describe("Fiche du match", () => {
     const ai = sheet.getByRole("region", { name: "Avis IA" });
     await expect(ai).toContainText("Match nul");
     await expect(ai).toContainText("3,40");
-    await expect(ai).toContainText(
-      "« Chelsea n'a perdu qu'une fois en 8 déplacements »",
+    // Its text opens from « Pourquoi ? », in a popover (ee391364).
+    await ai.getByRole("button", { name: "Pourquoi ?" }).click();
+    await expect(page.getByRole("dialog", { name: "Avis IA" })).toContainText(
+      "Chelsea n'a perdu qu'une fois en 8 déplacements",
     );
+    await page.keyboard.press("Escape");
     await expect(ai).not.toContainText(/accord/);
 
     const form = sheet.getByRole("region", { name: "Forme" });
@@ -286,5 +291,72 @@ test.describe("Fiche du match", () => {
     await expect(
       page.getByRole("heading", { name: "Cette page n'existe pas." }),
     ).toBeVisible();
+  });
+});
+
+/**
+ * A slow sheet (A2 of the perf lot): it rises at the tap with grey rows,
+ * the content takes its place without a second slide, and closing it hands
+ * the focus back to the tapped row, not to the page.
+ */
+test.describe("Fiche lente", () => {
+  test("monte au toucher, puis rend le focus à la ligne", async ({
+    page,
+    context,
+  }) => {
+    await context.addCookies([
+      { name: "e2e_slow", value: "sheet", domain: "localhost", path: "/" },
+    ]);
+    await page.goto("/matches");
+    const row = page.getByRole("link", { name: /Arsenal – Chelsea/ });
+    await row.focus();
+    await page.keyboard.press("Enter");
+
+    const loading = page
+      .getByRole("dialog", { name: "Chargement" })
+      .or(page.getByRole("complementary", { name: "Chargement" }));
+    await expect(loading).toBeVisible();
+
+    const sheet = page
+      .getByRole("dialog", { name: "Arsenal – Chelsea" })
+      .or(page.getByRole("complementary", { name: "Arsenal – Chelsea" }));
+    await expect(sheet).toBeVisible({ timeout: 15_000 });
+    await expect(sheet).not.toHaveClass(/animate-sheet-up/);
+
+    await page.keyboard.press("Escape");
+    await expect(page).toHaveURL(/\/matches$/);
+    await expect(row).toBeFocused();
+  });
+});
+
+/**
+ * A tab whose screen is slow (A3 of the perf lot): the tapped tab's diode
+ * lights up and pulses until the screen arrives, then stays lit.
+ */
+test.describe("Onglet lent", () => {
+  test("la diode de l'onglet touché pulse jusqu'à l'écran", async ({
+    page,
+    context,
+  }) => {
+    // A player: an admin's bar has no Matchs tab.
+    await context.addCookies([
+      { name: "e2e_slow", value: "matches", domain: "localhost", path: "/" },
+      {
+        name: "evcore_session",
+        value: "player",
+        domain: "localhost",
+        path: "/",
+      },
+    ]);
+    await page.goto("/today");
+    const tab = page
+      .getByRole("navigation", { name: "Onglets" })
+      .locator("visible=true")
+      .getByRole("link", { name: "Matchs", exact: true });
+    await tab.click();
+    await expect(tab.locator('[class*="animate-pulse"]')).toHaveCount(1);
+    await expect(page).toHaveURL(/\/matches$/, { timeout: 15_000 });
+    await expect(tab).toHaveAttribute("aria-current", "page");
+    await expect(tab.locator('[class*="animate-pulse"]')).toHaveCount(0);
   });
 });

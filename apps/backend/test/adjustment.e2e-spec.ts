@@ -12,7 +12,10 @@ import { BettingEngineService } from '@modules/betting-engine/betting-engine.ser
 import { H2HService } from '@modules/betting-engine/h2h.service';
 import { CongestionService } from '@modules/betting-engine/congestion.service';
 import { FriModelService } from '@modules/betting-engine/fri-model/fri-model.service';
-import { MlInferenceService } from '@modules/ml/ml.inference.service';
+import { AdjustmentRepository } from '@modules/adjustment/adjustment.repository';
+import { FixtureService } from '@modules/fixture/fixture.service';
+import { FixtureRepository } from '@modules/fixture/fixture.repository';
+import { MatchLegDetectionService } from '@modules/fixture/match-leg-detection.service';
 import { AdjustmentService } from '@modules/adjustment/adjustment.service';
 import { CalibrationService } from '@modules/adjustment/calibration.service';
 import { NotificationService } from '@modules/notification/notification.service';
@@ -35,11 +38,14 @@ describe('Adjustment flow (e2e)', () => {
         H2HService,
         CongestionService,
         FriModelService,
-        MlInferenceService,
         CalibrationService,
         MailService,
         NotificationService,
         AdjustmentService,
+        AdjustmentRepository,
+        FixtureService,
+        FixtureRepository,
+        MatchLegDetectionService,
       ],
     }).compile();
 

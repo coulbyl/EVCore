@@ -11,12 +11,12 @@ test.describe("Résultats", () => {
     await page.goto("/results");
     const line = page.getByRole("link", { name: /^Hier / });
     await expect(line).toBeVisible();
-    await expect(line).toContainText("FAV");
+    // In words (945b49a5): the first product, its mark, the price paid, the
+    // count of the day.
+    await expect(line).toContainText("Favori");
+    await expect(line.getByRole("img", { name: "Gagné" })).toBeVisible();
     await expect(line).toContainText("1,24");
-    await expect(line).toContainText("C2");
-    await expect(
-      line.getByText("Favori : gagné, cote 1,24", { exact: true }),
-    ).toBeAttached();
+    await expect(line).toContainText("2 gagnés sur 3");
   });
 
   test("une ligne par produit : la forme et un chiffre ; trop tôt sans pourcentage", async ({
@@ -34,7 +34,8 @@ test.describe("Résultats", () => {
     const double = rows.filter({ hasText: /^Cote 2/ });
     await expect(double).toContainText("Trop tôt · 1 jour");
     const btts = rows.filter({ hasText: /^Chasseur Les deux marquent/ });
-    await expect(btts).toContainText("Trop tôt · 0 jour");
+    // Not one day played yet: its launch date, never « 0 jour ».
+    await expect(btts).toContainText("Lancé le 29/10, pas encore de jour joué");
     await expect(page.getByText(/%/)).toHaveCount(0);
 
     const ai = rows.filter({ hasText: /^Avis IA/ });

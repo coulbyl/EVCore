@@ -3,7 +3,6 @@ import Decimal from 'decimal.js';
 import { NotificationType } from '@evcore/db';
 import type { NotificationService } from '@modules/notification/notification.service';
 import type { MailService } from '@modules/mail/mail.service';
-import type { PushService } from '@modules/push/push.service';
 import type {
   ProductWeek,
   ProductWeekService,
@@ -68,11 +67,8 @@ function makeHarness(opts: {
     }),
   } as unknown as ProductWeekService;
   const notification = {
-    notifyUser: vi.fn().mockResolvedValue(undefined),
+    deliverToUser: vi.fn().mockResolvedValue(true),
   } as unknown as NotificationService;
-  const push = {
-    sendToUser: vi.fn().mockResolvedValue(undefined),
-  } as unknown as PushService;
   const mail = {
     sendPlayerDigest: vi.fn().mockResolvedValue(undefined),
   } as unknown as MailService;
@@ -80,7 +76,6 @@ function makeHarness(opts: {
     service: new WeeklyStatementService(
       repository,
       notification,
-      push,
       mail,
       coupons,
     ),
@@ -88,7 +83,6 @@ function makeHarness(opts: {
     repository,
     coupons,
     notification,
-    push,
   };
 }
 
@@ -99,7 +93,7 @@ describe('WeeklyStatementService.sendStatements', () => {
   });
 
   it('closes the week and reads our products from the shared week', async () => {
-    const { service, notification, push, coupons } = makeHarness({
+    const { service, notification, coupons } = makeHarness({
       follows: [follow('u1', 'WON'), follow('u1', 'LOST')],
       products: [
         { product: 'FAVOURITE', won: 5, played: 7 },
@@ -109,19 +103,16 @@ describe('WeeklyStatementService.sendStatements', () => {
     const result = await service.sendStatements(WEEK, NOW);
     expect(result).toEqual({ sent: 1, skippedPaused: 0 });
     expect(coupons.getWeek).toHaveBeenCalledWith(WEEK);
-    const [input] = vi.mocked(notification.notifyUser).mock.calls[0] ?? [];
+    const [input] = vi.mocked(notification.deliverToUser).mock.calls[0] ?? [];
     expect(input).toMatchObject({
       userId: 'u1',
       type: NotificationType.WEEKLY_STATEMENT,
       title: 'Ta semaine EVCore',
       payload: { week: WEEK },
+      url: '/today?from=weekly',
     });
     expect(input?.body).toBe(
       'Coupons suivis : 1 gagné sur 2. Nos coupons : Favori 5 jours gagnés sur 7 · Combiné 4 jours gagnés sur 6.',
-    );
-    expect(push.sendToUser).toHaveBeenCalledWith(
-      'u1',
-      expect.objectContaining({ url: '/today?from=weekly' }),
     );
   });
 
@@ -145,7 +136,7 @@ describe('WeeklyStatementService.sendStatements', () => {
       products: [{ product: 'FAVOURITE', won: 5, played: 7 }],
     });
     await service.sendStatements(WEEK, NOW);
-    const [input] = vi.mocked(notification.notifyUser).mock.calls[0] ?? [];
+    const [input] = vi.mocked(notification.deliverToUser).mock.calls[0] ?? [];
     expect(input?.body).toBe('Nos coupons : Favori 5 jours gagnés sur 7.');
   });
 
@@ -162,10 +153,10 @@ describe('WeeklyStatementService.sendStatements', () => {
 
     const again = makeHarness({ products, alreadySent: true });
     await again.service.sendStatements(WEEK, NOW);
-    expect(again.notification.notifyUser).not.toHaveBeenCalled();
+    expect(again.notification.deliverToUser).not.toHaveBeenCalled();
 
     const empty = makeHarness({});
     await empty.service.sendStatements(WEEK, NOW);
-    expect(empty.notification.notifyUser).not.toHaveBeenCalled();
+    expect(empty.notification.deliverToUser).not.toHaveBeenCalled();
   });
 });

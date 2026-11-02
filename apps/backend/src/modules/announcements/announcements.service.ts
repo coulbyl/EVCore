@@ -1,6 +1,5 @@
 import { AdminJournalService } from '@modules/admin-journal/admin-journal.service';
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PushService } from '@modules/push/push.service';
 import { NotificationService } from '@modules/notification/notification.service';
 import type { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import type { UpdateAnnouncementDto } from './dto/update-announcement.dto';
@@ -33,10 +32,8 @@ export type AdminAnnouncementView = AnnouncementView & { reads: number };
 
 @Injectable()
 export class AnnouncementsService {
-  // eslint-disable-next-line max-params -- NestJS constructor injection: the table, the push, the bell, the journal
   constructor(
     private readonly repository: AnnouncementsRepository,
-    private readonly push: PushService,
     private readonly notification: NotificationService,
     private readonly journal: AdminJournalService,
   ) {}
@@ -69,22 +66,13 @@ export class AnnouncementsService {
     >,
     excludeUserId: string,
   ): Promise<void> {
-    await Promise.all([
-      this.push.sendToAllUsers(
-        {
-          title: announcement.title,
-          body: announcement.description,
-          url: announcement.href ?? '/notifications',
-        },
-        excludeUserId,
-      ),
-      this.notification.sendAnnouncementPublished({
-        announcementId: announcement.id,
-        title: announcement.title,
-        body: announcement.description,
-        href: announcement.href,
-      }),
-    ]);
+    await this.notification.deliverAnnouncement({
+      announcementId: announcement.id,
+      title: announcement.title,
+      body: announcement.description,
+      href: announcement.href,
+      authorId: excludeUserId,
+    });
   }
 
   async listPublished(): Promise<AnnouncementView[]> {

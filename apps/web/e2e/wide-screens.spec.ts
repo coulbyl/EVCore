@@ -16,11 +16,20 @@ const SCREENS = [
 ];
 
 test.describe("Grands écrans", () => {
-  test.beforeEach(({}, testInfo) => {
+  test.beforeEach(async ({ context }, testInfo) => {
     test.skip(
       testInfo.project.name !== "desktop-1280",
       "Disposition des écrans larges : vérifiée à 1280 px.",
     );
+    // A player: an admin's rail adds its six sections.
+    await context.addCookies([
+      {
+        name: "evcore_session",
+        value: "player",
+        domain: "localhost",
+        path: "/",
+      },
+    ]);
   });
 
   for (const path of SCREENS) {

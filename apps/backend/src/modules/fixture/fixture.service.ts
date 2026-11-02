@@ -125,6 +125,19 @@ export class FixtureService {
     private readonly matchLegDetection: MatchLegDetectionService,
   ) {}
 
+  /** An operator's manual result (adjustment): the match finished with these scores. */
+  setResult(
+    id: string,
+    scores: {
+      homeScore: number;
+      awayScore: number;
+      homeHtScore: number | null;
+      awayHtScore: number | null;
+    },
+  ): Promise<{ id: string } | null> {
+    return this.fixtureRepository.setResultById(id, scores);
+  }
+
   detectKnockoutLegsForSeason(seasonId: string): Promise<number> {
     return this.matchLegDetection.detectLegsForSeason(seasonId);
   }

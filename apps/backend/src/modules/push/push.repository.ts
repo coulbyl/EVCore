@@ -31,6 +31,10 @@ export class PushRepository {
     });
   }
 
+  findById(id: string) {
+    return this.prisma.client.pushSubscription.findUnique({ where: { id } });
+  }
+
   findByUserId(userId: string) {
     return this.prisma.client.pushSubscription.findMany({
       where: { userId },

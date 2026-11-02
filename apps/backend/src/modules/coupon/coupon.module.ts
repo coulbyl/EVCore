@@ -12,7 +12,6 @@ import { CouponPricedPoolService } from './coupon-priced-pool.service';
 import { CouponDoubleGenerationService } from './coupon-double-generation.service';
 import { CouponDailyGenerationService } from './coupon-daily-generation.service';
 import { CouponEngineComboGenerationService } from './coupon-engine-combo-generation.service';
-import { CouponIndicesService } from './coupon-indices.service';
 import { CouponController } from './coupon.controller';
 import { OddsClosingLineRepository } from '../betting-engine/pricing/odds-closing-line.repository';
 import { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
@@ -42,7 +41,6 @@ import { ProductWeekService } from './product-day/product-week.service';
     PlayableOddsRepository,
     CouponSettlementService,
     CouponService,
-    CouponIndicesService,
     CouponPriceGenerationService,
     CouponFavouriteGenerationService,
     CouponPricedPoolService,

@@ -16,7 +16,6 @@ import { BettingEngineService } from './betting-engine.service';
 import type { PrismaService } from '@/prisma.service';
 import type { H2HService } from './h2h.service';
 import type { CongestionService } from './congestion.service';
-import type { MlInferenceService } from '@modules/ml/ml.inference.service';
 import type { ChannelDecisionService } from './channel-decision.service';
 import {
   CHANNEL_DECISION_STATUS,
@@ -38,7 +37,6 @@ type OddsRow = {
 function makeDeps(): {
   h2h: H2HService;
   congestion: CongestionService;
-  ml: MlInferenceService;
 } {
   return {
     h2h: {
@@ -61,9 +59,6 @@ function makeDeps(): {
     congestion: {
       computeCongestionScore: vi.fn().mockResolvedValue(0.1),
     } as unknown as CongestionService,
-    ml: {
-      predictShadowCorrection: vi.fn().mockResolvedValue(null),
-    } as unknown as MlInferenceService,
   };
 }
 
@@ -212,12 +207,11 @@ function makeChannelDecisionServiceMock(): ChannelDecisionService {
 }
 
 function makeService(prisma: PrismaService): BettingEngineService {
-  const { h2h, congestion, ml } = makeDeps();
+  const { h2h, congestion } = makeDeps();
   return new BettingEngineService(
     prisma,
     h2h,
     congestion,
-    ml,
     undefined,
     makeChannelDecisionServiceMock(),
   );

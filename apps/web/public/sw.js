@@ -55,7 +55,8 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Payload is the JSON string built by PushService: { title, body, url }.
+// Payload is the JSON string built by PushService:
+// { title, body, url, notificationId?, tag? }.
 self.addEventListener("push", (event) => {
   if (!event.data) return;
 
@@ -66,36 +67,62 @@ self.addEventListener("push", (event) => {
     return;
   }
 
-  const { title, body, url } = payload;
+  const { title, body, url, notificationId, tag } = payload;
   event.waitUntil(
-    self.registration.showNotification(title ?? "EVCore", {
-      body,
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon.svg",
-      data: { url: url ?? "/today" },
-    }),
+    Promise.all([
+      self.registration.showNotification(title ?? "EVCore", {
+        body,
+        icon: "/icons/icon-192.png",
+        badge: "/icons/icon.svg",
+        // Same tag (a conversation, the morning): replaces the shown one,
+        // and still rings for the new message.
+        ...(tag ? { tag, renotify: true } : {}),
+        data: { url: url ?? "/today", notificationId: notificationId ?? null },
+      }),
+      // An open tab refreshes, its bell counts the new one (PushBridge).
+      self.clients
+        .matchAll({ type: "window", includeUncontrolled: true })
+        .then((clientList) => {
+          for (const client of clientList) client.postMessage({ type: "push" });
+        }),
+      // The installed app's icon: a dot until a screen sets the count.
+      self.navigator.setAppBadge
+        ? self.navigator.setAppBadge().catch(() => undefined)
+        : Promise.resolve(),
+    ]),
   );
 });
 
-// Focuses an already-open EVCore tab on that route if one exists, otherwise
-// opens a new one — standard "notification click" behavior.
+// Opens the push's page with ?n=<id>, so the screen marks that notification
+// read (PushBridge). Only a tab already on that page is reused: another tab
+// may hold a draft (a message being written, a ticket) a navigation would
+// lose, so it opens a new window instead.
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url ?? "/today";
+  const { url, notificationId } = event.notification.data ?? {};
+  const target = new URL(url ?? "/today", self.location.origin);
+  if (notificationId) target.searchParams.set("n", notificationId);
+  const openNew = () =>
+    self.clients.openWindow
+      ? self.clients.openWindow(target.href)
+      : Promise.resolve();
 
   event.waitUntil(
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
-        for (const client of clientList) {
-          const clientUrl = new URL(client.url);
-          if (clientUrl.pathname === targetUrl && "focus" in client) {
-            return client.focus();
-          }
+        const samePage = clientList.find((client) => {
+          const at = new URL(client.url);
+          return at.origin === target.origin && at.pathname === target.pathname;
+        });
+        if (samePage && "navigate" in samePage) {
+          // navigate() refuses a tab this worker does not control.
+          return samePage
+            .navigate(target.href)
+            .then((client) => client?.focus())
+            .catch(openNew);
         }
-        if (self.clients.openWindow) {
-          return self.clients.openWindow(targetUrl);
-        }
+        return openNew();
       }),
   );
 });

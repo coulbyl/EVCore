@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { removeObsoleteSchedulers } from "./remove-obsolete-schedulers";
+import {
+  removeObsoleteSchedulers,
+  VANTAGE_SCHEDULERS,
+} from "./remove-obsolete-schedulers";
 
 function queueWith(
   schedulers: { key: string; name: string; pattern?: string }[],
@@ -14,38 +17,65 @@ function queueWith(
   };
 }
 
+const removedKeys = (mock: ReturnType<typeof vi.fn>) =>
+  mock.mock.calls.map(([key]) => key as string);
+
 describe("removeObsoleteSchedulers", () => {
-  it("removes every legacy intraday schedule by its Redis repeat key", async () => {
+  it("keeps the two fixed-key schedulers", async () => {
     const { queue, removeJobScheduler } = queueWith([
-      { key: "sweep-key", name: "sweep" },
+      { key: VANTAGE_SCHEDULERS.sweep.id, name: "sweep" },
+      {
+        key: VANTAGE_SCHEDULERS.coupons.id,
+        name: "generate-coupons",
+        pattern: "45 17 * * *",
+      },
+    ]);
+
+    expect(await removeObsoleteSchedulers(queue)).toBe(0);
+    expect(removeJobScheduler).not.toHaveBeenCalled();
+  });
+
+  it("removes the repeatables of before the schedulers, whose hashed keys would fire twice", async () => {
+    const { queue, removeJobScheduler } = queueWith([
+      { key: VANTAGE_SCHEDULERS.sweep.id, name: "sweep" },
+      { key: "sweep:vantage-recurring-sweep::30000", name: "sweep" },
+      {
+        key: VANTAGE_SCHEDULERS.coupons.id,
+        name: "generate-coupons",
+        pattern: "45 17 * * *",
+      },
+      { key: "old-1745", name: "generate-coupons", pattern: "45 17 * * *" },
+      { key: "old-2030", name: "generate-coupons", pattern: "30 20 * * *" },
+      { key: "retry-2115", name: "generate-coupons", pattern: "15 21 * * *" },
+    ]);
+
+    expect(await removeObsoleteSchedulers(queue)).toBe(4);
+    expect(removedKeys(removeJobScheduler)).toEqual([
+      "sweep:vantage-recurring-sweep::30000",
+      "old-1745",
+      "old-2030",
+      "retry-2115",
+    ]);
+  });
+
+  it("removes every legacy intraday schedule", async () => {
+    const { queue, removeJobScheduler } = queueWith([
       { key: "intraday-default", name: "generate-intraday-coupons" },
       { key: "intraday-custom", name: "generate-intraday-coupons" },
     ]);
 
-    const removed = await removeObsoleteSchedulers(queue, {
-      couponCron: "45 17 * * *",
-    });
-
-    expect(removed).toBe(2);
-    expect(removeJobScheduler).toHaveBeenNthCalledWith(1, "intraday-default");
-    expect(removeJobScheduler).toHaveBeenNthCalledWith(2, "intraday-custom");
+    expect(await removeObsoleteSchedulers(queue)).toBe(2);
+    expect(removedKeys(removeJobScheduler)).toEqual([
+      "intraday-default",
+      "intraday-custom",
+    ]);
   });
 
-  it("keeps the coupon pass at the current hour, removes the 20:30 pass and the 21:15 retry", async () => {
+  it("leaves a job it does not own", async () => {
     const { queue, removeJobScheduler } = queueWith([
-      { key: "now", name: "generate-coupons", pattern: "45 17 * * *" },
-      { key: "old", name: "generate-coupons", pattern: "30 20 * * *" },
-      { key: "retry", name: "generate-coupons", pattern: "15 21 * * *" },
+      { key: "other", name: "analyze-fixture" },
     ]);
-
-    const removed = await removeObsoleteSchedulers(queue, {
-      couponCron: "45 17 * * *",
-    });
-
-    expect(removed).toBe(2);
-    expect(removeJobScheduler.mock.calls.map(([key]) => key)).toEqual([
-      "old",
-      "retry",
-    ]);
+    expect(await removeObsoleteSchedulers(queue)).toBe(0);
+    expect(removeJobScheduler).not.toHaveBeenCalled();
   });
 });

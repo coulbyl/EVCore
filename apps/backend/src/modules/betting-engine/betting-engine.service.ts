@@ -1,7 +1,4 @@
-import {
-  BETTING_ENGINE_CONFIG_VERSION,
-  computeMarketFair,
-} from '@evcore/analysis-core';
+import { BETTING_ENGINE_CONFIG_VERSION } from '@evcore/analysis-core';
 import { Injectable, Optional } from '@nestjs/common';
 import {
   AdjustmentStatus,
@@ -68,11 +65,6 @@ import type {
   ViablePick,
 } from './betting-engine.types';
 import { FriModelService } from './fri-model/fri-model.service';
-import { MlInferenceService } from '@modules/ml/ml.inference.service';
-import {
-  ML_SHADOW_CHANNELS,
-  type ShadowMlByChannel,
-} from '@modules/ml/ml.constants';
 import { ChannelDecisionService } from './channel-decision.service';
 import { OddsSnapshotLoader } from './pricing/odds-snapshot.loader';
 import { BetSettlementService } from './settlement/bet-settlement.service';
@@ -96,7 +88,6 @@ import {
   summarizePick,
   summarizePicks,
 } from './selection/pick-validation';
-import { buildMlShadowFeatures } from './ml-shadow-features';
 import {
   listEvaluatedOneXTwoPicks,
   listEvaluatedPicks,
@@ -144,7 +135,6 @@ export class BettingEngineService {
     private readonly prisma: PrismaService,
     private readonly h2hService: H2HService,
     private readonly congestionService: CongestionService,
-    private readonly mlInference: MlInferenceService,
     friModelService?: FriModelService,
     // Injected by Nest in production (BettingEngineModule provides it); omitted
     // in unit/e2e test modules that don't, where channel persistence is a no-op.
@@ -1091,9 +1081,6 @@ export class BettingEngineService {
       congestion_correction_applied: congestionCorrectionApplied,
       shadow_lineups: null,
       shadow_injuries: null,
-      shadow_ml_corrected_p: null,
-      shadow_ml_edge_delta: null,
-      shadow_ml_by_channel: null,
       homeDrawRate: effectiveHomeStats
         ? Number(effectiveHomeStats.drawRate)
         : null,
@@ -1171,29 +1158,6 @@ export class BettingEngineService {
             'EV soft alert: high channel-selection EV may indicate calibration anomaly',
           );
         }
-      }
-    }
-
-    // Shadow ML correction — per channel, logged only; never changes a decision.
-    if (FEATURE_FLAGS.SCORING.ML_CORRECTION) {
-      const shadowMlByChannel = await this.computeShadowMlByChannel({
-        decisions: persistedChannelDecisions,
-        odds: latestOdds,
-        deterministicScore,
-        probabilities,
-        features,
-        competitionCode,
-      });
-      if (shadowMlByChannel !== null) {
-        modelRunFeatures.shadow_ml_by_channel = shadowMlByChannel;
-        const valueResult = shadowMlByChannel[STRATEGY_CHANNEL.VALUE] ?? null;
-        modelRunFeatures.shadow_ml_corrected_p =
-          valueResult?.correctedP ?? null;
-        modelRunFeatures.shadow_ml_edge_delta = valueResult?.edgeDelta ?? null;
-        await this.prisma.client.modelRun.update({
-          where: { id: modelRun.id },
-          data: { features: modelRunFeatures as Prisma.InputJsonValue },
-        });
       }
     }
 
@@ -1580,75 +1544,6 @@ export class BettingEngineService {
       },
       orderBy: { afterFixture: { scheduledAt: 'desc' } },
     });
-  }
-
-  // Shadow ML correction, per channel. Calls /infer for each channel's
-  // rank-1 SELECTED selection (when it carries odds+ev) and logs the
-  // corrected probability — never fed back into any decision. Channels not
-  // in ML_SHADOW_CHANNELS (e.g. CORRECT_SCORE) are trained but not called
-  // here yet: see docs/ml-worker-sync.md for the volume rationale.
-  private async computeShadowMlByChannel(opts: {
-    decisions: readonly PersistedChannelDecision[];
-    odds: FullOddsSnapshot | null;
-    deterministicScore: Decimal;
-    probabilities: MatchProbabilities;
-    features: DeterministicFeatures;
-    competitionCode: string | null;
-  }): Promise<ShadowMlByChannel | null> {
-    const {
-      decisions,
-      deterministicScore,
-      probabilities,
-      features,
-      competitionCode,
-    } = opts;
-
-    const results: ShadowMlByChannel = {};
-    for (const channel of ML_SHADOW_CHANNELS) {
-      const decision = decisions.find(
-        (d) => d.channel === channel && d.status === 'SELECTED',
-      );
-      const selection = decision?.selections.find((s) => s.rank === 1);
-      if (
-        selection === undefined ||
-        selection.odds === undefined ||
-        selection.ev === undefined
-      ) {
-        continue;
-      }
-
-      const mlFeatures = buildMlShadowFeatures({
-        marketFairProbability: opts.odds
-          ? (computeMarketFair(selection.market, selection.pick, opts.odds)
-              ?.pMarketFair ?? null)
-          : null,
-        pick: {
-          market: selection.market,
-          probability: selection.probability,
-          ev: selection.ev,
-          odds: selection.odds,
-        },
-        channel,
-        deterministicScore,
-        probabilities,
-        features,
-        competitionCode,
-      });
-      const mlResult = await this.mlInference.predictShadowCorrection(
-        `${channel}:${selection.market}`,
-        mlFeatures,
-      );
-      if (mlResult !== null && mlResult.corrected_probability !== null) {
-        results[channel] = {
-          correctedP: mlResult.corrected_probability,
-          modelId: mlResult.model_id ?? null,
-          edgeDelta:
-            mlResult.corrected_probability - selection.probability.toNumber(),
-        };
-      }
-    }
-
-    return Object.keys(results).length > 0 ? results : null;
   }
 }
 

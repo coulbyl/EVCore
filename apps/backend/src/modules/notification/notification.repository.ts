@@ -22,8 +22,13 @@ export type BroadcastNotificationRef = {
 export class NotificationRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: Prisma.NotificationUncheckedCreateInput): Promise<void> {
-    await this.prisma.client.notification.create({ data });
+  /** The new row's id: the push names the notification it opens. */
+  async create(data: Prisma.NotificationUncheckedCreateInput): Promise<string> {
+    const row = await this.prisma.client.notification.create({
+      data,
+      select: { id: true },
+    });
+    return row.id;
   }
 
   findPage(query: {
@@ -92,20 +97,6 @@ export class NotificationRepository {
     });
   }
 
-  findUnreadBroadcasts(
-    userId: string,
-    types: readonly NotificationType[],
-  ): Promise<BroadcastNotificationRef[]> {
-    return this.prisma.client.notification.findMany({
-      where: {
-        userId: null,
-        type: { in: [...types] },
-        reads: { none: { userId } },
-      },
-      select: { id: true, type: true, payload: true },
-    });
-  }
-
   async findAnnouncementNotificationIds(
     announcementId: string,
   ): Promise<string[]> {
@@ -118,13 +109,6 @@ export class NotificationRepository {
       select: { id: true },
     });
     return rows.map((row) => row.id);
-  }
-
-  async markAllPersonalRead(userId: string): Promise<void> {
-    await this.prisma.client.notification.updateMany({
-      where: { userId, read: false },
-      data: { read: true, readAt: new Date() },
-    });
   }
 
   async markPersonalReadByType(

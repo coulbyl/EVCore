@@ -22,7 +22,8 @@ test.describe("Aujourd'hui", () => {
     await expect(hero.getByText("Lens", { exact: true })).toBeVisible();
     await expect(hero.getByText("Victoire Paris SG")).toBeVisible();
     await expect(hero.getByText("1,28")).toBeVisible();
-    await expect(hero.getByText("8 sur 10")).toBeVisible();
+    // The One Chance Rule (DESIGN.md): the chance in words, on the coupon.
+    await expect(hero.getByText("Passe 8 fois sur 10")).toBeVisible();
     await expect(
       hero.getByText("Le PSG a gagné ses 9 derniers matchs à domicile"),
     ).toBeVisible();
@@ -46,12 +47,14 @@ test.describe("Aujourd'hui", () => {
 
   test("la ligne Hier mène à Résultats", async ({ page }) => {
     await page.goto("/today");
+    // « Hier » in words (945b49a5): the first product with its mark, then
+    // the count; it opens yesterday's sheet of Résultats.
     const line = page.getByRole("link", {
-      name: "Hier Favori : gagné Combiné : gagné Coupon cote 2 : perdu",
+      name: "Hier Favori Gagné · 2 gagnés sur 3",
     });
     await expect(line).toBeVisible();
-    await expect(line).toHaveAttribute("href", "/results");
-    await expect(line.getByText("FAV", { exact: true })).toBeVisible();
+    await expect(line).toHaveAttribute("href", "/results/yesterday");
+    await expect(line.getByRole("img", { name: "Gagné" })).toBeVisible();
   });
 
   test("les autres coupons en lignes, l'absent en gris avec sa raison", async ({

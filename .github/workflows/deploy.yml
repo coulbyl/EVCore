@@ -29,7 +29,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           fetch-depth: 0
 
@@ -46,19 +46,57 @@ jobs:
           echo "epoch=$(git log -1 --format=%ct)" >> $GITHUB_OUTPUT
 
       - name: Log in to GHCR
-        uses: docker/login-action@v4
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # Trivy comes from its immutable release, checked against this digest,
+      # never through its action or image: those were hijacked in March 2026
+      # (GHSA-69fq-xp46-6x23). Same procedure as iddia's docker.yml.
+      - name: Install Trivy
+        env:
+          TRIVY_VERSION: 0.75.0
+          TRIVY_SHA256: c6e65abddb348e25f10549df887045629cf28cc72453cd1c63acb717316b3f3f
+        run: |
+          set -euo pipefail
+          archive="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/aquasecurity/trivy/releases/download/v$TRIVY_VERSION/$archive"
+          echo "$TRIVY_SHA256  $RUNNER_TEMP/$archive" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" trivy
+
+      # Scanned before it is pushed: an image with a critical or high
+      # vulnerability that has a fix is never published. One accepted for a
+      # while goes in .trivyignore, with its end date.
+      - name: Build image for the scan
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        env:
+          SOURCE_DATE_EPOCH: ${{ steps.version.outputs.epoch }}
         with:
-          version: latest
+          context: .
+          file: apps/backend/Dockerfile
+          outputs: type=docker,dest=${{ runner.temp }}/image.tar
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/evcore-backend:buildcache
+
+      - name: Scan image
+        run: |
+          set -euo pipefail
+          scan() {
+            "$RUNNER_TEMP/trivy" image --input "$RUNNER_TEMP/image.tar" --scanners vuln \
+              --severity CRITICAL,HIGH --cache-dir "$RUNNER_TEMP/trivy-cache" --no-progress \
+              --skip-version-check --ignorefile .trivyignore "$@"
+          }
+          # Every one first, those without a fix included, then only those that block.
+          scan
+          scan --ignore-unfixed --exit-code 1 --quiet
 
       - name: Build and push
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         env:
           SOURCE_DATE_EPOCH: ${{ steps.version.outputs.epoch }}
         with:
@@ -85,7 +123,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           fetch-depth: 0
 
@@ -102,19 +140,59 @@ jobs:
           echo "epoch=$(git log -1 --format=%ct)" >> $GITHUB_OUTPUT
 
       - name: Log in to GHCR
-        uses: docker/login-action@v4
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # Trivy comes from its immutable release, checked against this digest,
+      # never through its action or image: those were hijacked in March 2026
+      # (GHSA-69fq-xp46-6x23). Same procedure as iddia's docker.yml.
+      - name: Install Trivy
+        env:
+          TRIVY_VERSION: 0.75.0
+          TRIVY_SHA256: c6e65abddb348e25f10549df887045629cf28cc72453cd1c63acb717316b3f3f
+        run: |
+          set -euo pipefail
+          archive="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/aquasecurity/trivy/releases/download/v$TRIVY_VERSION/$archive"
+          echo "$TRIVY_SHA256  $RUNNER_TEMP/$archive" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" trivy
+
+      # Scanned before it is pushed: an image with a critical or high
+      # vulnerability that has a fix is never published. One accepted for a
+      # while goes in .trivyignore, with its end date.
+      - name: Build image for the scan
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        env:
+          SOURCE_DATE_EPOCH: ${{ steps.version.outputs.epoch }}
         with:
-          version: latest
+          context: .
+          file: apps/web/Dockerfile
+          outputs: type=docker,dest=${{ runner.temp }}/image.tar
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/evcore-web:buildcache
+
+      - name: Scan image
+        run: |
+          set -euo pipefail
+          scan() {
+            "$RUNNER_TEMP/trivy" image --input "$RUNNER_TEMP/image.tar" --scanners vuln \
+              --severity CRITICAL,HIGH --cache-dir "$RUNNER_TEMP/trivy-cache" --no-progress \
+              --skip-version-check --ignorefile .trivyignore "$@"
+          }
+          # Every one first, those without a fix included, then only those that block.
+          scan
+          scan --ignore-unfixed --exit-code 1 --quiet
 
       - name: Build and push
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         env:
           SOURCE_DATE_EPOCH: ${{ steps.version.outputs.epoch }}
         with:
@@ -142,7 +220,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           fetch-depth: 0
 
@@ -159,19 +237,57 @@ jobs:
           echo "epoch=$(git log -1 --format=%ct)" >> $GITHUB_OUTPUT
 
       - name: Log in to GHCR
-        uses: docker/login-action@v4
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # Trivy comes from its immutable release, checked against this digest,
+      # never through its action or image: those were hijacked in March 2026
+      # (GHSA-69fq-xp46-6x23). Same procedure as iddia's docker.yml.
+      - name: Install Trivy
+        env:
+          TRIVY_VERSION: 0.75.0
+          TRIVY_SHA256: c6e65abddb348e25f10549df887045629cf28cc72453cd1c63acb717316b3f3f
+        run: |
+          set -euo pipefail
+          archive="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/aquasecurity/trivy/releases/download/v$TRIVY_VERSION/$archive"
+          echo "$TRIVY_SHA256  $RUNNER_TEMP/$archive" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" trivy
+
+      # Scanned before it is pushed: an image with a critical or high
+      # vulnerability that has a fix is never published. One accepted for a
+      # while goes in .trivyignore, with its end date.
+      - name: Build image for the scan
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        env:
+          SOURCE_DATE_EPOCH: ${{ steps.version.outputs.epoch }}
         with:
-          version: latest
+          context: .
+          file: apps/vantage-worker/Dockerfile
+          outputs: type=docker,dest=${{ runner.temp }}/image.tar
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/evcore-vantage-worker:buildcache
+
+      - name: Scan image
+        run: |
+          set -euo pipefail
+          scan() {
+            "$RUNNER_TEMP/trivy" image --input "$RUNNER_TEMP/image.tar" --scanners vuln \
+              --severity CRITICAL,HIGH --cache-dir "$RUNNER_TEMP/trivy-cache" --no-progress \
+              --skip-version-check --ignorefile .trivyignore "$@"
+          }
+          # Every one first, those without a fix included, then only those that block.
+          scan
+          scan --ignore-unfixed --exit-code 1 --quiet
 
       - name: Build and push
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         env:
           SOURCE_DATE_EPOCH: ${{ steps.version.outputs.epoch }}
         with:
@@ -199,7 +315,7 @@ jobs:
 
     steps:
     - name: Deploy via SSH
-      uses: appleboy/ssh-action@v1
+      uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
       with:
         host: ${{ secrets.VPS_HOST }}
         username: ${{ secrets.VPS_USER }}

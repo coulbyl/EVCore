@@ -1127,7 +1127,8 @@
         "stats_backfill": "Stats catch-up",
         "odds_historical": "Historical Pinnacle odds",
         "rebuild": "Engine replayed on history",
-        "watch": "Lights watch"
+        "watch": "Lights watch",
+        "push": "Push notifications"
       },
       "states": {
         "failed": "failed",
@@ -1226,9 +1227,7 @@
         "endpoint": "Internal address",
         "publicEndpoint": "Public address",
         "region": "Region",
-        "bucket": "Bucket",
-        "accessKey": "Access id",
-        "secretKey": "Access secret"
+        "bucket": "Bucket"
       },
       "source": {
         "stored": "stored here",

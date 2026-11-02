@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Market, NotificationType, UserRole } from '@evcore/db';
 import { NotificationService } from './notification.service';
+import type { PushService } from '@modules/push/push.service';
+import { PUSH_POLICY } from '@config/push.constants';
 import { NotificationRepository } from './notification.repository';
 import type { PrismaService } from '@/prisma.service';
 import type { MailService } from '@modules/mail/mail.service';
@@ -9,7 +11,7 @@ function makePrisma(): PrismaService {
   return {
     client: {
       notification: {
-        create: vi.fn().mockResolvedValue({}),
+        create: vi.fn().mockResolvedValue({ id: 'notif-1' }),
         findMany: vi.fn().mockResolvedValue([]),
         // Broadcast par défaut (userId null) — matche le comportement des
         // notifications existantes avant l'ajout des notifs personnelles.
@@ -39,9 +41,15 @@ function makeMail(): MailService {
     sendBrierAlert: vi.fn().mockResolvedValue(undefined),
     sendEtlFailure: vi.fn().mockResolvedValue(undefined),
     sendWeightAdjustment: vi.fn().mockResolvedValue(undefined),
-    sendWeeklyReport: vi.fn().mockResolvedValue(undefined),
-    sendMlModelMissing: vi.fn().mockResolvedValue(undefined),
   } as unknown as MailService;
+}
+
+function makePush(): PushService {
+  return {
+    sendToUser: vi.fn().mockResolvedValue(undefined),
+    sendToAllUsers: vi.fn().mockResolvedValue(undefined),
+    sendToRole: vi.fn().mockResolvedValue(undefined),
+  } as unknown as PushService;
 }
 
 describe('NotificationService — persistence', () => {
@@ -50,6 +58,7 @@ describe('NotificationService — persistence', () => {
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
+      makePush(),
     );
 
     await service.sendRoiAlert(Market.ONE_X_TWO, -0.12, 32);
@@ -60,23 +69,7 @@ describe('NotificationService — persistence', () => {
         title: expect.stringContaining('ROI Alert'),
         body: expect.stringContaining('-12.00%'),
       }),
-    });
-  });
-
-  it('persists a Brier Score alert to the database', async () => {
-    const prisma = makePrisma();
-    const service = new NotificationService(
-      new NotificationRepository(prisma),
-      makeMail(),
-    );
-
-    await service.sendBrierScoreAlert('season-123', 0.32);
-
-    expect(prisma.client.notification.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        type: NotificationType.BRIER_ALERT,
-        title: expect.stringContaining('season-123'),
-      }),
+      select: { id: true },
     });
   });
 
@@ -85,6 +78,7 @@ describe('NotificationService — persistence', () => {
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
+      makePush(),
     );
 
     await service.sendEtlFailureAlert(
@@ -98,25 +92,68 @@ describe('NotificationService — persistence', () => {
         type: NotificationType.ETL_FAILURE,
         body: expect.stringContaining('timeout'),
       }),
+      select: { id: true },
     });
   });
+});
 
-  it('persists an ML model missing alert to the database', async () => {
+describe("NotificationService — operations alerts on the admins' phones", () => {
+  it('pushes an ETL failure to the admins, one tag per queue', async () => {
+    const push = makePush();
+    const service = new NotificationService(
+      new NotificationRepository(makePrisma()),
+      makeMail(),
+      push,
+    );
+
+    await service.sendEtlFailureAlert('odds-prematch-sync', 'sync', 'quota');
+
+    expect(push.sendToRole).toHaveBeenCalledWith(
+      UserRole.ADMIN,
+      expect.objectContaining({
+        url: '/admin/exploitation',
+        tag: 'etl-odds-prematch-sync',
+      }),
+      PUSH_POLICY.OPERATIONS,
+    );
+  });
+
+  // No e-mail either: MailService has no sender for it any more.
+  it('keeps the xG report to the bell: no push', async () => {
+    const prisma = makePrisma();
+    const push = makePush();
+    const service = new NotificationService(
+      new NotificationRepository(prisma),
+      makeMail(),
+      push,
+    );
+
+    await service.sendXgUnavailableReport('2026', [1, 2]);
+
+    expect(prisma.client.notification.create).toHaveBeenCalledTimes(1);
+    expect(push.sendToRole).not.toHaveBeenCalled();
+  });
+});
+
+describe('NotificationService — the bell reads 90 days', () => {
+  it('counts no unread notification older than the window', async () => {
     const prisma = makePrisma();
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
+      makePush(),
     );
+    const before = Date.now();
 
-    await service.sendMlModelMissingAlert(['CONF:ONE_X_TWO', 'SAFE:BTTS']);
+    await service.unreadCount('user-1', UserRole.OPERATOR);
 
-    expect(prisma.client.notification.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        type: NotificationType.ML_MODEL_MISSING,
-        body: expect.stringContaining('CONF:ONE_X_TWO'),
-        payload: { segments: ['CONF:ONE_X_TWO', 'SAFE:BTTS'] },
-      }),
-    });
+    const [args] =
+      vi.mocked(prisma.client.notification.count).mock.calls[0] ?? [];
+    const since = (args as { where: { createdAt: { gte: Date } } }).where
+      .createdAt.gte;
+    const days = (before - since.getTime()) / 86_400_000;
+    expect(days).toBeGreaterThan(89.99);
+    expect(days).toBeLessThan(90.01);
   });
 });
 
@@ -128,7 +165,11 @@ describe('NotificationService — mail delegation', () => {
   beforeEach(() => {
     prisma = makePrisma();
     mail = makeMail();
-    service = new NotificationService(new NotificationRepository(prisma), mail);
+    service = new NotificationService(
+      new NotificationRepository(prisma),
+      mail,
+      makePush(),
+    );
   });
 
   it('delegates to mail.sendRoiAlert with stringified market', async () => {
@@ -151,15 +192,6 @@ describe('NotificationService — mail delegation', () => {
     });
   });
 
-  it('delegates to mail.sendBrierAlert', async () => {
-    await service.sendBrierScoreAlert('2024-2025', 0.2731);
-
-    expect(mail.sendBrierAlert).toHaveBeenCalledWith({
-      seasonId: '2024-2025',
-      brierScore: 0.2731,
-    });
-  });
-
   it('delegates to mail.sendEtlFailure', async () => {
     await service.sendEtlFailureAlert('fixtures', 'fetch-ligue1', 'timeout');
 
@@ -179,35 +211,6 @@ describe('NotificationService — mail delegation', () => {
     await service.sendWeightAdjustmentAlert(payload);
 
     expect(mail.sendWeightAdjustment).toHaveBeenCalledWith(payload);
-  });
-
-  it('delegates to mail.sendWeeklyReport with ISO date strings', async () => {
-    const start = new Date('2025-03-03');
-    const end = new Date('2025-03-09');
-    await service.sendWeeklyReport({
-      roiOneXTwo: 0.04,
-      betsPlaced: 87,
-      brierScore: 0.22,
-      periodStart: start,
-      periodEnd: end,
-    });
-
-    expect(mail.sendWeeklyReport).toHaveBeenCalledWith(
-      expect.objectContaining({
-        roiOneXTwo: 0.04,
-        betsPlaced: 87,
-        periodStart: start.toISOString(),
-        periodEnd: end.toISOString(),
-      }),
-    );
-  });
-
-  it('delegates to mail.sendMlModelMissing', async () => {
-    await service.sendMlModelMissingAlert(['CONF:ONE_X_TWO']);
-
-    expect(mail.sendMlModelMissing).toHaveBeenCalledWith({
-      segments: ['CONF:ONE_X_TWO'],
-    });
   });
 });
 
@@ -233,6 +236,7 @@ describe('NotificationService — list & mark read', () => {
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
+      makePush(),
     );
     const result = await service.list({
       limit: 20,
@@ -253,6 +257,7 @@ describe('NotificationService — list & mark read', () => {
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
+      makePush(),
     );
     await service.list({
       limit: 20,
@@ -279,6 +284,7 @@ describe('NotificationService — list & mark read', () => {
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
+      makePush(),
     );
     await service.list({
       limit: 20,
@@ -304,6 +310,7 @@ describe('NotificationService — list & mark read', () => {
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
+      makePush(),
     );
 
     await service.markRead('notif-id-1', 'user-1');
@@ -328,6 +335,7 @@ describe('NotificationService — list & mark read', () => {
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
+      makePush(),
     );
 
     await service.markRead('notif-id-1', 'user-1');
@@ -339,52 +347,92 @@ describe('NotificationService — list & mark read', () => {
     expect(prisma.client.userNotificationRead.upsert).not.toHaveBeenCalled();
   });
 
-  it('persists a personal notification with userId set', async () => {
+  it('writes a personal notification, then pushes it with its id', async () => {
     const prisma = makePrisma();
+    const push = makePush();
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
+      push,
     );
 
-    await service.notifyUser({
+    const recorded = await service.deliverToUser({
       userId: 'user-1',
-      type: NotificationType.SUBSCRIPTION_EVENTS_ADDED,
-      title: 'Abonnement — VALUE',
-      body: '2 nouveaux événements ajoutés',
-      payload: { subscriptionId: 'sub-1', created: 2 },
+      type: NotificationType.SUPPORT_MESSAGE,
+      title: "Nouveau message de l'équipe EVCore",
+      body: 'Bonjour',
+      payload: { conversationId: 'conv-1' },
+      url: '/me/messages',
+      tag: 'support-conv-1',
     });
 
+    expect(recorded).toBe(true);
     expect(prisma.client.notification.create).toHaveBeenCalledWith({
       data: {
         userId: 'user-1',
-        type: NotificationType.SUBSCRIPTION_EVENTS_ADDED,
-        title: 'Abonnement — VALUE',
-        body: '2 nouveaux événements ajoutés',
-        payload: { subscriptionId: 'sub-1', created: 2 },
+        type: NotificationType.SUPPORT_MESSAGE,
+        title: "Nouveau message de l'équipe EVCore",
+        body: 'Bonjour',
+        payload: { conversationId: 'conv-1' },
       },
+      select: { id: true },
     });
+    expect(push.sendToUser).toHaveBeenCalledWith(
+      'user-1',
+      {
+        title: "Nouveau message de l'équipe EVCore",
+        body: 'Bonjour',
+        url: '/me/messages',
+        notificationId: 'notif-1',
+        tag: 'support-conv-1',
+      },
+      PUSH_POLICY.SUPPORT_MESSAGE,
+    );
   });
 
-  it('marks all visible notifications as read', async () => {
+  it('stays true, and throws nothing, when the push cannot be queued', async () => {
+    const push = makePush();
+    vi.mocked(push.sendToUser).mockRejectedValue(new Error('redis down'));
+    const service = new NotificationService(
+      new NotificationRepository(makePrisma()),
+      makeMail(),
+      push,
+    );
+    await expect(
+      service.deliverToUser({
+        userId: 'user-1',
+        type: NotificationType.MORNING_BRIEF,
+        title: 'Ta matinée',
+        body: '…',
+        url: '/today?from=morning',
+        tag: 'morning-brief',
+      }),
+    ).resolves.toBe(true);
+  });
+
+  it('pushes nothing when the row could not be written', async () => {
     const prisma = makePrisma();
-    vi.mocked(prisma.client.notification.findMany).mockResolvedValue([
-      { id: 'n1' } as never,
-      { id: 'n2' } as never,
-    ]);
+    vi.mocked(prisma.client.notification.create).mockRejectedValue(
+      new Error('db down'),
+    );
+    const push = makePush();
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
+      push,
     );
 
-    await service.markAllRead('user-1', UserRole.OPERATOR);
-
-    expect(prisma.client.userNotificationRead.createMany).toHaveBeenCalledWith({
-      data: [
-        { userId: 'user-1', notificationId: 'n1' },
-        { userId: 'user-1', notificationId: 'n2' },
-      ],
-      skipDuplicates: true,
+    const recorded = await service.deliverToUser({
+      userId: 'user-1',
+      type: NotificationType.MORNING_BRIEF,
+      title: 'Ta matinée',
+      body: '…',
+      url: '/today?from=morning',
+      tag: 'morning-brief',
     });
+
+    expect(recorded).toBe(false);
+    expect(push.sendToUser).not.toHaveBeenCalled();
   });
 });
 
@@ -402,6 +450,7 @@ describe('NotificationService — ce que chaque rôle voit des diffusions', () =
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
+      makePush(),
     );
     await service.unreadCount('user-1', UserRole.OPERATOR);
     const types = typesPassedToPrisma(prisma);
@@ -416,6 +465,7 @@ describe('NotificationService — ce que chaque rôle voit des diffusions', () =
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
+      makePush(),
     );
     await service.unreadCount('admin-1', UserRole.ADMIN);
     expect(typesPassedToPrisma(prisma)).toEqual(
@@ -446,6 +496,7 @@ describe('NotificationService — messages retirés et un seul état « lu »', 
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
+      makePush(),
     );
     await service.unreadCount('user-1', UserRole.OPERATOR);
     expect(personalTypesOf(prisma)).toEqual({
@@ -463,6 +514,7 @@ describe('NotificationService — messages retirés et un seul état « lu »', 
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
+      makePush(),
     );
     await service.unreadCount('admin-1', UserRole.ADMIN);
     expect(personalTypesOf(prisma)).toEqual({
@@ -486,6 +538,7 @@ describe('NotificationService — messages retirés et un seul état « lu »', 
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
+      makePush(),
     );
 
     await service.markRead('notif-1', 'user-1');
@@ -504,6 +557,7 @@ describe('NotificationService — messages retirés et un seul état « lu »', 
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
+      makePush(),
     );
 
     await service.markAnnouncementRead('user-1', 'ann-1');
@@ -519,6 +573,7 @@ describe('NotificationService — messages retirés et un seul état « lu »', 
     const service = new NotificationService(
       new NotificationRepository(prisma),
       makeMail(),
+      makePush(),
     );
 
     await service.markSupportMessagesRead('user-1');

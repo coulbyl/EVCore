@@ -2,8 +2,6 @@ import {
   BadRequestException,
   Body,
   Controller,
-  Delete,
-  Get,
   HttpCode,
   HttpStatus,
   Param,
@@ -115,89 +113,6 @@ export class EtlController {
     const code = this.resolveCode(competition);
     await trigger(code);
     return { status: 'ok' as const, competitionCode: code };
-  }
-
-  // ─── Status ───────────────────────────────────────────────────────────────
-
-  @Get('status')
-  @ApiOperation({
-    summary: 'Queue status',
-    description:
-      'Returns BullMQ job counts (active, waiting, completed, failed, delayed) ' +
-      'for every ETL queue. Use this to monitor pipeline health.',
-  })
-  @ApiOkResponse({
-    description: 'Job counts per queue.',
-    schema: {
-      example: {
-        'league-sync': {
-          active: 0,
-          waiting: 0,
-          completed: 48,
-          failed: 0,
-          delayed: 0,
-        },
-        'pending-bets-settlement-sync': {
-          active: 0,
-          waiting: 0,
-          completed: 8,
-          failed: 0,
-          delayed: 0,
-        },
-        'stale-scheduled-sync': {
-          active: 0,
-          waiting: 0,
-          completed: 3,
-          failed: 0,
-          delayed: 0,
-        },
-        'odds-csv-import': {
-          active: 0,
-          waiting: 0,
-          completed: 3,
-          failed: 0,
-          delayed: 0,
-        },
-        'elo-sync': {
-          active: 0,
-          waiting: 0,
-          completed: 1,
-          failed: 0,
-          delayed: 0,
-        },
-        'coach-sync': {
-          active: 0,
-          waiting: 0,
-          completed: 1,
-          failed: 0,
-          delayed: 0,
-        },
-        'odds-prematch-sync': {
-          active: 0,
-          waiting: 0,
-          completed: 5,
-          failed: 0,
-          delayed: 0,
-        },
-        'betting-engine': {
-          active: 0,
-          waiting: 0,
-          completed: 5,
-          failed: 0,
-          delayed: 0,
-        },
-        'odds-historical-import': {
-          active: 0,
-          waiting: 0,
-          completed: 9,
-          failed: 0,
-          delayed: 0,
-        },
-      },
-    },
-  })
-  getStatus() {
-    return this.etlService.getQueueStatus();
   }
 
   // ─── Rolling horizon ──────────────────────────────────────────────────────
@@ -569,49 +484,6 @@ export class EtlController {
     return this.okForLeague(competitionCode, (code) =>
       this.triggerLeagueSync(type, code),
     );
-  }
-
-  // ─── Queue management ─────────────────────────────────────────────────────
-
-  @Delete('queue/:name/failed')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Clear failed jobs from a queue',
-    description:
-      'Removes all failed jobs from the given BullMQ queue. ' +
-      'Returns the number of removed jobs.',
-  })
-  @ApiParam({ name: 'name', description: 'Queue name (e.g. league-sync)' })
-  @ApiOkResponse({
-    schema: { example: { status: 'ok', removed: 3 } },
-  })
-  async clearQueueFailed(@Param('name') name: string) {
-    const removed = await this.etlService.cleanQueueFailed(name);
-    return { status: 'ok' as const, removed };
-  }
-
-  @Get('schedulers')
-  @ApiOperation({
-    summary: 'List all registered job schedulers',
-    description:
-      'Returns all BullMQ job schedulers across every ETL queue, ' +
-      'including the cron pattern and the next scheduled run timestamp (ms).',
-  })
-  @ApiOkResponse({
-    schema: {
-      example: [
-        {
-          queueName: 'betting-engine',
-          key: 'cron:betting-engine-analysis',
-          name: 'betting-engine-analysis',
-          pattern: '*/15 * * * *',
-          next: 1749600000000,
-        },
-      ],
-    },
-  })
-  getSchedulers() {
-    return this.etlService.getSchedulerStatus();
   }
 
   private resolveCode(competition: string): string {

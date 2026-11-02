@@ -12,6 +12,7 @@ import { CouponModule } from '@modules/coupon/coupon.module';
 import { DashboardModule } from '@modules/dashboard/dashboard.module';
 import { EtlModule } from '@modules/etl/etl.module';
 import { MailModule } from '@modules/mail/mail.module';
+import { NotificationModule } from '@modules/notification/notification.module';
 import { ScreensModule } from '@modules/screens/screens.module';
 import { ConsoleEngineService } from './console-engine.service';
 import { ConsolePlayersService } from './console-players.service';
@@ -19,10 +20,6 @@ import { ConsolePassesService } from './console-passes.service';
 import { ConsoleQueuesService } from './console-queues.service';
 import { ConsoleSettleService } from './console-settle.service';
 import { ConsoleSettingsService } from './console-settings.service';
-import {
-  ConsoleWatchScheduler,
-  ConsoleWatchWorker,
-} from './console-watch.scheduler';
 import { ConsoleWatchService } from './console-watch.service';
 import { ConsoleExploitationController } from './console-exploitation.controller';
 import { ConsoleIntegrationsController } from './console-integrations.controller';
@@ -40,6 +37,7 @@ import { ConsoleService } from './console.service';
     DashboardModule,
     EtlModule,
     MailModule,
+    NotificationModule,
     ScreensModule,
     BullModule.registerQueue({ name: CONSOLE_WATCH.QUEUE }),
     // The passes' queues, read for their last runs (vantage-analysis is the
@@ -68,9 +66,8 @@ import { ConsoleService } from './console.service';
     ConsoleQueuesService,
     ConsoleSettleService,
     ConsoleWatchService,
-    ConsoleWatchScheduler,
-    ConsoleWatchWorker,
   ],
-  exports: [ConsoleService],
+  // The watch and its queue: ConsoleWorkerModule runs the ten-minute check.
+  exports: [ConsoleService, ConsoleWatchService, BullModule],
 })
 export class ConsoleModule {}

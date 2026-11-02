@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { NotificationType, UserRole } from '@evcore/db';
 import { MailService } from '@modules/mail/mail.service';
 import { PushService } from '@modules/push/push.service';
+import { PUSH_POLICY } from '@config/push.constants';
 import { NotificationService } from '@modules/notification/notification.service';
 import type { SupportMessageDto } from './support.types';
 
@@ -46,11 +47,16 @@ export class SupportNotifierService {
         fromUsername: message.senderUsername,
         preview: notificationBody(message),
       }),
-      this.push.sendToRole(UserRole.ADMIN, {
-        title: `Support — ${message.senderUsername}`,
-        body: notificationBody(message),
-        url: `/admin/messages/${message.conversationId}`,
-      }),
+      this.push.sendToRole(
+        UserRole.ADMIN,
+        {
+          title: `Support — ${message.senderUsername}`,
+          body: notificationBody(message),
+          url: `/admin/messages/${message.conversationId}`,
+          tag: `admin-support-${message.conversationId}`,
+        },
+        PUSH_POLICY.SUPPORT_MESSAGE,
+      ),
     ]);
   }
 
@@ -61,19 +67,16 @@ export class SupportNotifierService {
    */
   async notifyUser(userId: string, message: SupportMessageDto): Promise<void> {
     const title = "Nouveau message de l'équipe EVCore";
-    await Promise.all([
-      this.push.sendToUser(userId, {
-        title,
-        body: notificationBody(message),
-        url: '/me/messages',
-      }),
-      this.notification.notifyUser({
-        userId,
-        type: NotificationType.SUPPORT_MESSAGE,
-        title,
-        body: notificationBody(message),
-        payload: { conversationId: message.conversationId },
-      }),
-    ]);
+    // The row first, the push only once it exists (NotificationService).
+    await this.notification.deliverToUser({
+      userId,
+      type: NotificationType.SUPPORT_MESSAGE,
+      title,
+      body: notificationBody(message),
+      payload: { conversationId: message.conversationId },
+      url: '/me/messages',
+      // Three replies in a row show as one notification, the latest.
+      tag: `support-${message.conversationId}`,
+    });
   }
 }

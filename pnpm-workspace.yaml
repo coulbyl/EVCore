@@ -7,6 +7,22 @@ packages:
 # days; waiting costs nothing on a lockfile project.
 minimumReleaseAge: 20160
 
+# Let through, at these exact versions only, releases still inside the delay
+# (iddia's practice, its 95a390af): NestJS 12.3.2 (27/10), the first to pin
+# multer 2.5.0, and Express's body-parser 2.4.0 (22/10) — the fixes of the two
+# high advisories that reach production (DoS). Remove each line once past the
+# delay (NestJS on 10/11, the others on 05/11): pnpm then accepts it without
+# the exception and the lockfile stays the same.
+minimumReleaseAgeExclude:
+  - "@nestjs/common@12.3.2"
+  - "@nestjs/core@12.3.2"
+  - "@nestjs/platform-express@12.3.2"
+  - "@nestjs/websockets@12.3.2"
+  - "@nestjs/platform-socket.io@12.3.2"
+  - "@nestjs/testing@12.3.2"
+  - multer@2.5.0
+  - body-parser@2.4.0
+
 # Narrow security overrides: each one only matches vulnerable versions, so it
 # turns into a no-op once the tree moves past them. Remove when audit is clean
 # without it.
@@ -22,13 +38,12 @@ catalog:
   turbo: "^2.11.7"
 
   # Node
-  "@types/node": "^22.0.0"
+  "@types/node": "^24.0.0"
 
   # React ecosystem
   react: "^19.2.7"
   react-dom: "^19.2.7"
   lucide-react: "^0.577.0"
-  "driver.js": "^1.8.0"
   next: "16.4.2"
   "@types/react": "19.3.0"
   "@types/react-dom": "19.3.0"
@@ -61,17 +76,16 @@ catalog:
   tsx: "^4.19.4"
 
   # NestJS backend
-  "@nestjs/common": "^11.1.27"
-  "@nestjs/core": "^11.1.27"
-  "@nestjs/platform-express": "^11.1.27"
-  "@nestjs/websockets": "^11.1.27"
-  "@nestjs/platform-socket.io": "^11.1.27"
+  "@nestjs/common": "^12.3.2"
+  "@nestjs/core": "^12.3.2"
+  "@nestjs/platform-express": "^12.3.2"
+  "@nestjs/websockets": "^12.3.2"
+  "@nestjs/platform-socket.io": "^12.3.2"
   "socket.io": "^4.8.1"
-  "socket.io-client": "^4.8.1"
-  "@nestjs/cli": "^11.0.23"
-  "@nestjs/schematics": "^11.1.0"
-  "@nestjs/testing": "^11.1.27"
-  "@nestjs/swagger": "^11.4.4"
+  "@nestjs/cli": "^12.0.8"
+  "@nestjs/schematics": "^12.0.7"
+  "@nestjs/testing": "^12.3.2"
+  "@nestjs/swagger": "^12.0.2"
   reflect-metadata: "^0.2.2"
   rxjs: "^7.8.2"
   supertest: "^7.0.0"
@@ -92,12 +106,11 @@ catalog:
   "@swc/core": "^1.13.5"
 
   # ETL & async
-  "@nestjs/bullmq": "^11.0.4"
-  "@nestjs/config": "^4.0.4"
-  "@nestjs/throttler": "^6.4.0"
+  "@nestjs/bullmq": "^12.0.0"
+  "@nestjs/config": "^12.0.1"
+  "@nestjs/throttler": "^6.7.1"
   bullmq: "^5.78.0"
   ioredis: "^5.11.1"
-  cheerio: "^1.2.0"
   zod: "^4.6.7"
   pino: "^10.3.1"
   pino-pretty: "^13.1.3"
@@ -106,20 +119,13 @@ catalog:
   "@scalar/nestjs-api-reference": "^1.2.19"
 
   # Tiptap rich text editor
-  "@tiptap/core": "^3.32.0"
-  "@tiptap/react": "^3.32.0"
-  "@tiptap/starter-kit": "^3.32.0"
-  "@tiptap/extension-link": "^3.32.0"
 
   # UI — frontend libs (web + ui package)
   next-themes: "^0.4.6"
-  recharts: "^3.10.1"
   "@tanstack/react-table": "^8.21.3"
-  "@tanstack/react-query": "^5.90.5"
   react-day-picker: "^9.14.0"
   cmdk: "^1.1.1"
   vaul: "^1.1.2"
   next-intl: "^4.14.9"
   react-hook-form: "^7.74.0"
-  "@hookform/resolvers": "^5.2.2"
   sonner: "^2.0.7"

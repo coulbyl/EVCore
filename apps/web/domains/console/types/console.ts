@@ -249,7 +249,8 @@ export type QueueKey =
   | "stats_backfill"
   | "odds_historical"
   | "rebuild"
-  | "watch";
+  | "watch"
+  | "push";
 
 export type QueueView = {
   key: QueueKey;

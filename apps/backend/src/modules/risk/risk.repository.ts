@@ -37,6 +37,22 @@ export class RiskRepository {
     `;
   }
 
+  async hasActiveSuspension(market: Market): Promise<boolean> {
+    const row = await this.prisma.client.marketSuspension.findFirst({
+      where: { market, active: true },
+      select: { id: true },
+    });
+    return row !== null;
+  }
+
+  async createSuspension(data: {
+    market: Market;
+    reason: string;
+    triggeredBy: string;
+  }): Promise<void> {
+    await this.prisma.client.marketSuspension.create({ data });
+  }
+
   /** Whether a ROI alert for this market was already raised since `since`
    * — the sweep runs daily and every market is priced against us, so an
    * alert re-emitted at every pass would be noise, not a signal. */

@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { InAppHistoryTracker } from "@/components/scoreboard/sheet/in-app-history";
+import { PushBridge } from "@/components/scoreboard/shell/push-bridge";
 import { BandActions } from "@/components/scoreboard/shell/band-actions";
 import { getUnreadCount } from "@/domains/notifications/use-cases/get-notifications";
 import { ScoreboardShell } from "@/components/scoreboard/shell/scoreboard-shell";
@@ -38,12 +39,15 @@ export default async function PlayerLayout({
   /** La feuille ouverte (fente parallèle `@sheet`), ou rien. */
   sheet: React.ReactNode;
 }) {
-  const [result, t, timeZone, messages, locale] = await Promise.all([
+  // The badge beside the session, not after it: a signed-out visitor's read
+  // fails into no badge (getUnreadCount), and is redirected anyway.
+  const [result, t, timeZone, messages, locale, unread] = await Promise.all([
     getPlayerSession(),
     getTranslations("shell"),
     getPlayerTimeZone(),
     getMessages(),
     getLocale(),
+    getUnreadCount(),
   ]);
   // Les seuls textes que ses composants client affichent (C0).
   const texts = pickPlayerTexts(messages);
@@ -63,7 +67,6 @@ export default async function PlayerLayout({
     redirect(loginPathFor(safeNextPath(requested)));
   }
   const { session } = result;
-  const unread = await getUnreadCount();
 
   return (
     <PlayerTextsProvider texts={texts}>
@@ -93,6 +96,7 @@ export default async function PlayerLayout({
       >
         <TimeZoneSync cookieName={TIME_ZONE_COOKIE} serverTimeZone={timeZone} />
         <InAppHistoryTracker />
+        <PushBridge unread={unread} />
         {children}
       </ScoreboardShell>
     </PlayerTextsProvider>

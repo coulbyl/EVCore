@@ -68,6 +68,10 @@ export function estimateApiFootballDailyCalls(
 }
 
 export const ETL_CONSTANTS = {
+  // Earliest season the historical odds import accepts for European
+  // competitions: earlier seasons lack Pinnacle odds, and 2020/21–2021/22
+  // are left out as COVID-era noise (moved from the retired backtest module).
+  EUROPEAN_ODDS_HISTORY_SEASON_FROM: 2022,
   // --- API-FOOTBALL (single provider for fixtures, results, future odds) ---
   API_FOOTBALL_BASE: 'https://v3.football.api-sports.io',
   // Pro plan: 7 500 req/day — keep conservative staggering between season jobs
@@ -332,8 +336,6 @@ export const API_FOOTBALL_BET_IDS = {
 } as const;
 
 export const BULLMQ_QUEUES = {
-  ML_TRAINING: 'ml-training',
-  ML_SCHEDULER: 'ml-scheduler',
   LEAGUE_SYNC: 'league-sync',
   PENDING_BETS_SETTLEMENT: 'pending-bets-settlement-sync',
   STALE_SCHEDULED_SYNC: 'stale-scheduled-sync',
