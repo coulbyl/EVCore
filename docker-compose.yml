@@ -114,7 +114,9 @@ services:
   # it at RUSTFS_ENDPOINT (dev: same host-published port, no
   # RUSTFS_PUBLIC_ENDPOINT override needed — see .env.example).
   rustfs:
-    image: rustfs/rustfs:latest
+    # Pinned: `latest` moved under us at each pull. 1.0.4 is the latest
+    # release (25/10), the one a deploy has been pulling since.
+    image: rustfs/rustfs:1.0.4
     container_name: evcore-rustfs
     restart: unless-stopped
     environment:

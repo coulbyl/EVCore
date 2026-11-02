@@ -19,14 +19,40 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           fetch-depth: 0
 
-      - name: Create semver tag
-        uses: K-Phoen/semver-release-action@master
-        with:
-          release_branch: main
-          tag_format: 'v%major%.%minor%.%patch%'
+      # The version from the pull request's label (label-check.yml requires
+      # exactly one of patch, minor, major), after the last vX.Y.Z tag. Written
+      # here rather than through a third-party action: the previous one ran
+      # from its `master` branch, whatever was pushed there, with this token.
+      - name: Create the release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT: ${{ github.event.pull_request.merge_commit_sha }}
+          TITLE: ${{ github.event.pull_request.title }}
+          MAJOR: ${{ contains(github.event.pull_request.labels.*.name, 'major') }}
+          MINOR: ${{ contains(github.event.pull_request.labels.*.name, 'minor') }}
+          PATCH: ${{ contains(github.event.pull_request.labels.*.name, 'patch') }}
+        run: |
+          set -euo pipefail
+          case "$MAJOR $MINOR $PATCH" in
+            "true false false") BUMP=major ;;
+            "false true false") BUMP=minor ;;
+            "false false true") BUMP=patch ;;
+            *)
+              echo "::error::Label the pull request with exactly one of major, minor or patch."
+              exit 1
+              ;;
+          esac
+          LAST=$(git tag --list 'v*' | { grep -xE 'v[0-9]+\.[0-9]+\.[0-9]+' || true; } | sort -V | tail -n 1)
+          IFS=. read -r x y z <<< "${LAST:-v0.0.0}"
+          x=${x#v}
+          case "$BUMP" in
+            major) TAG="v$((x + 1)).0.0" ;;
+            minor) TAG="v$x.$((y + 1)).0" ;;
+            patch) TAG="v$x.$y.$((z + 1))" ;;
+          esac
+          echo "Last release ${LAST:-none}, this one $TAG ($BUMP)."
+          gh release create "$TAG" --target "$COMMIT" --title "$TAG" --notes "$TITLE"

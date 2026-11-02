@@ -106,7 +106,9 @@ services:
   # rewrite, query string intact, or the signature breaks).
   rustfs:
     container_name: evcore-rustfs
-    image: rustfs/rustfs:latest
+    # Pinned: `latest` moved under us at each pull. 1.0.4 is the latest
+    # release (25/10), the one a deploy has been pulling since.
+    image: rustfs/rustfs:1.0.4
     restart: unless-stopped
     environment:
       RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:?RUSTFS_ACCESS_KEY is required}
