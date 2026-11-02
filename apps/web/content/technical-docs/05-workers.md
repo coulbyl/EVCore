@@ -131,16 +131,13 @@ Le document signale aussi que la table `standing` n'est peuplée que pour la Cou
 
 ### Production (`docker-compose.prod.yml`)
 
-Les deux services sont câblés en continu, sans profil :
+Le vantage-worker tourne en continu, sans profil (le ml-worker n'est plus déployé depuis le 2026-11-01) :
 
-- **ml-worker** : image `ghcr.io/${GHCR_OWNER}/evcore-ml-worker:latest`, mêmes variables qu'en dev (`DATABASE_URL`, `PGBOUNCER_URL`, `REDIS_HOST`, `REDIS_PORT`, `LOG_LEVEL`), volume `ml_models` conservé, pas de port exposé côté hôte (accès uniquement via le réseau Docker interne, contrairement au dev où `8001` est publié). Dépend de `pgbouncer` et `redis`.
-- **vantage-worker** : image `ghcr.io/${GHCR_OWNER}/evcore-vantage-worker:latest`. Variables critiques :
-  - `LLM_PROVIDER` (défaut `groq`, prod actuelle sur `cerebras`) et les quatre paires clé/modèle (`GROQ_API_KEY`/`GROQ_MODEL`, `CEREBRAS_API_KEY`/`CEREBRAS_MODEL`, `TOGETHER_API_KEY`/`TOGETHER_MODEL`, `FIREWORKS_API_KEY`/`FIREWORKS_MODEL`) — seule la clé du provider réellement sélectionné est exigée par l'application elle-même au démarrage (Compose ne peut pas rendre une variable conditionnellement obligatoire).
-  - `LLM_PROVIDER_FALLBACKS` (chaîne de secours, vide par défaut).
-  - `SWEEP_INTERVAL_MS`, `VANTAGE_COMPETITION_CODES` (vide = toutes les compétitions actives).
-  - `VANTAGE_ENABLE_RESEARCH` (défaut `false`), `VANTAGE_RESEARCH_PROVIDER` (défaut `groq`), `GROQ_RESEARCH_MODEL`, `TAVILY_API_KEY`, `VANTAGE_RESEARCH_COMPETITION_CODES` (vide = défaut « grands championnats »).
-  - Les deux services partagent le même Postgres/PgBouncer/Redis que le `backend`, et dépendent de `pgbouncer` (démarré) et `redis` (healthy).
-- `.github/workflows/deploy.yml` construit et pousse les deux images (`evcore-ml-worker`, `evcore-vantage-worker`) sur GHCR à chaque déploiement, au même titre que les autres services.
+- **vantage-worker** : image `ghcr.io/coulbyl/evcore-vantage-worker:latest`. Il charge le même `.env` que le `backend` et reçoit du compose les adresses de la stack (`DATABASE_URL`, `PGBOUNCER_URL`, `REDIS_HOST`, `REDIS_PORT`, `DATABASE_POOL_MAX`), partagées avec le backend.
+  - La chaîne de fournisseurs LLM et la recherche web se règlent dans l'admin (**Réglages**), les clés dans **Réglages › Intégrations**, déchiffrées avec `SETTINGS_ENCRYPTION_KEY`. Une variable restée dans le `.env` (`LLM_PROVIDER`, `GROQ_API_KEY`…) sert tant que le réglage correspondant est vide.
+  - Modèles et intervalle de balayage sont des constantes du code : `*_MODEL`, `SWEEP_INTERVAL_MS` et `VANTAGE_COMPETITION_CODES` ne sont plus lues.
+  - Dépend de `pgbouncer` (démarré) et `redis` (healthy).
+- `.github/workflows/deploy.yml` construit et pousse les images sur GHCR à chaque déploiement.
 
 ---
 

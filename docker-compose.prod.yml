@@ -5,8 +5,23 @@
 # recreate them (name conflict on the fixed container_name).
 #
 # Image built and pushed to GHCR by GitHub Actions (workflows/deploy.yml).
-# The VPS only pulls and runs — no build step on the server.
-# GHCR_OWNER and every secret below go in the server's .env file.
+# The VPS only pulls and runs — no build step on the server. The web's API
+# address is fixed in its image at build time (deploy.yml, secret
+# NEXT_PUBLIC_API_URL): Next.js inlines it, a runtime value is never read.
+#
+# The server's .env holds secrets and addresses only (ENV-PROD § 6). Service
+# keys and the LLM chain are set in the admin, Réglages › Intégrations /
+# Réglages; a variable left in the .env still serves while its field there is
+# empty.
+
+# The stack's own addresses, the same for every service that reads the data.
+x-data-env: &data-env
+  DATABASE_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-evcore}
+  PGBOUNCER_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@pgbouncer:5432/${POSTGRES_DB:-evcore}
+  # Prisma's pool per process, under pgbouncer's DEFAULT_POOL_SIZE (25).
+  DATABASE_POOL_MAX: 18
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
 
 services:
   postgres:
@@ -64,37 +79,18 @@ services:
       postgres:
         condition: service_healthy
 
-  # apps/vantage-worker — 20th channel, LLM-derived pick. Postgres+Redis only,
+  # apps/vantage-worker — the LLM's coupon and opinions. Postgres + Redis only,
   # never on the backend/web request path. See apps/vantage-worker/README.md.
+  # Reads the same .env as the backend (SETTINGS_ENCRYPTION_KEY, and the LLM
+  # keys while Réglages › Intégrations has none).
   vantage-worker:
     container_name: evcore-vantage-worker
-    image: ghcr.io/${GHCR_OWNER}/evcore-vantage-worker:latest
+    image: ghcr.io/coulbyl/evcore-vantage-worker:latest
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-evcore}
-      PGBOUNCER_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@pgbouncer:5432/${POSTGRES_DB:-evcore}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      LLM_PROVIDER: ${LLM_PROVIDER:-groq}
-      GROQ_API_KEY: ${GROQ_API_KEY:-}
-      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
-      CEREBRAS_API_KEY: ${CEREBRAS_API_KEY:-}
-      CEREBRAS_MODEL: ${CEREBRAS_MODEL:-gpt-oss-120b}
-      TOGETHER_API_KEY: ${TOGETHER_API_KEY:-}
-      TOGETHER_MODEL: ${TOGETHER_MODEL:-openai/gpt-oss-120b}
-      FIREWORKS_API_KEY: ${FIREWORKS_API_KEY:-}
-      FIREWORKS_MODEL: ${FIREWORKS_MODEL:-accounts/fireworks/models/gpt-oss-120b}
-      LLM_PROVIDER_FALLBACKS: ${LLM_PROVIDER_FALLBACKS:-}
-      LOG_LEVEL: info
-      SWEEP_INTERVAL_MS: ${VANTAGE_SWEEP_INTERVAL_MS:-300000}
-      VANTAGE_COMPETITION_CODES: ${VANTAGE_COMPETITION_CODES:-}
-      VANTAGE_ENABLE_RESEARCH: ${VANTAGE_ENABLE_RESEARCH:-false}
-      VANTAGE_RESEARCH_PROVIDER: ${VANTAGE_RESEARCH_PROVIDER:-groq}
-      GROQ_RESEARCH_MODEL: ${GROQ_RESEARCH_MODEL:-groq/compound-mini}
-      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
-      # Decrypts the keys of Réglages › Intégrations: the backend's value.
-      SETTINGS_ENCRYPTION_KEY: ${SETTINGS_ENCRYPTION_KEY:-}
-      VANTAGE_RESEARCH_COMPETITION_CODES: ${VANTAGE_RESEARCH_COMPETITION_CODES:-}
+      <<: *data-env
     networks:
       - evcore_internal
     depends_on:
@@ -134,16 +130,13 @@ services:
 
   backend:
     container_name: evcore-backend
-    image: ghcr.io/${GHCR_OWNER}/evcore-backend:latest
+    image: ghcr.io/coulbyl/evcore-backend:latest
     restart: unless-stopped
     env_file:
       - .env
     environment:
+      <<: *data-env
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-evcore}
-      PGBOUNCER_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@pgbouncer:5432/${POSTGRES_DB:-evcore}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
       RUSTFS_ENDPOINT: http://rustfs:9000
       RUSTFS_BUCKET: ${RUSTFS_BUCKET:-evcore-support}
     expose:
@@ -167,11 +160,10 @@ services:
 
   web:
     container_name: evcore-web
-    image: ghcr.io/${GHCR_OWNER}/evcore-web:latest
+    image: ghcr.io/coulbyl/evcore-web:latest
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
     expose:
       - "3000"
     networks:
