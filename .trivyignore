@@ -4,13 +4,3 @@
 #
 # Not reachable: the API never parses X.509 certificates from users.
 # CVE-2026-12345 exp:2026-12-31
-
-# body-parser 2.3 under express 5 / @nestjs/platform-express 12 (DoS via
-# trailing bytes). Fixed in 2.4.0, which the 14-day release-age guard
-# admits on 05/11: refresh then (pnpm update -r --no-save), and this line
-# goes. Behind the throttler and helmet meanwhile.
-CVE-2026-111181 exp:2026-11-12
-
-# multer 2.4 under @nestjs/platform-express 12 (DoS via a pending async
-# file). Fixed in 2.5.0, admitted on 05/11: same refresh.
-CVE-2026-113872 exp:2026-11-12
