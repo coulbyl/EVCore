@@ -7,6 +7,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import { AppModule } from './app.module';
 import { applyHttpHardening } from './common/http/http-hardening';
+import { API_REFERENCE_PATH } from './config/http.constants';
 import { createLogger } from './utils/logger';
 
 async function bootstrap() {
@@ -42,20 +43,24 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.useWebSocketAdapter(new IoAdapter(app));
 
-  const openApiConfig = new DocumentBuilder()
-    .setTitle('EVCore Backend API')
-    .setDescription('EVCore backend API reference')
-    .setVersion('1.0.0')
-    .build();
+  // The API reference lists every route: served in development only. In
+  // production it gave the whole surface to anyone (audit 2026-11-02 § 2.3).
+  if (process.env.NODE_ENV !== 'production') {
+    const openApiConfig = new DocumentBuilder()
+      .setTitle('EVCore Backend API')
+      .setDescription('EVCore backend API reference')
+      .setVersion('1.0.0')
+      .build();
 
-  const document = SwaggerModule.createDocument(app, openApiConfig);
-  app.use(
-    '/reference',
-    apiReference({
-      content: document,
-      theme: 'default',
-    }),
-  );
+    const document = SwaggerModule.createDocument(app, openApiConfig);
+    app.use(
+      API_REFERENCE_PATH,
+      apiReference({
+        content: document,
+        theme: 'default',
+      }),
+    );
+  }
 
   await app.listen(port, host);
   const appUrl = await app.getUrl();
