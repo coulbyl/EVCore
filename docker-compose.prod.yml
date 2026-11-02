@@ -185,10 +185,16 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    # No HTTP to probe: the image's /health check does not apply. Its health
-    # is its heartbeat, read by the API's GET /health/worker.
+    # No HTTP to probe: the image's /health check does not apply. The worker
+    # touches this file every 30 s (WORKER_HEARTBEAT, config/worker.constants);
+    # older than two minutes, `docker ps` shows it unhealthy. The
+    # monitoring probe reads the same beat through the API: GET /health/worker.
     healthcheck:
-      disable: true
+      test: ["CMD-SHELL", "f=/tmp/evcore-worker-alive; test -f $$f && test $$(( $$(date +%s) - $$(stat -c %Y $$f) )) -lt 120"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
 
   web:
     container_name: evcore-web

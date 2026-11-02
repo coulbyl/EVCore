@@ -28,6 +28,7 @@ import { RedisModule } from './common/redis/redis.module';
 import { validateEnv } from './config/env.schema';
 import { AppSettingModule } from './modules/app-setting/app-setting.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
+import { WorkerHealthModule } from './modules/worker-health/worker-health.module';
 
 /**
  * The API process (main.ts): HTTP routes and the support chat. It puts jobs
@@ -66,6 +67,7 @@ import { IntegrationsModule } from './modules/integrations/integrations.module';
     ScreensModule,
     VerifiedTicketModule,
     AnalysisSheetModule,
+    WorkerHealthModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

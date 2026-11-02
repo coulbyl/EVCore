@@ -10,6 +10,7 @@ import { ConsoleWorkerModule } from './modules/console/console-worker.module';
 import { EtlWorkerModule } from './modules/etl/etl-worker.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { SlipDigestModule } from './modules/slip-digest/slip-digest.module';
+import { WorkerHeartbeatModule } from './modules/worker-health/worker-heartbeat.module';
 import { PrismaModule } from './prisma.module';
 
 /**
@@ -33,6 +34,7 @@ import { PrismaModule } from './prisma.module';
     ConsoleWorkerModule,
     SlipDigestModule,
     SchedulingSwitchModule,
+    WorkerHeartbeatModule,
   ],
 })
 export class WorkerModule {}

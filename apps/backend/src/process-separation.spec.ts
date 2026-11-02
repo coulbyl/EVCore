@@ -90,6 +90,7 @@ describe('process separation (worker.module.ts)', () => {
     // The walk reached the API's modules: not an empty graph passing by default.
     expect(api.controllers).toContain('TodayController');
     expect([...api.providers].map((p) => p.name)).toContain('EtlService');
+    expect(api.controllers).toContain('WorkerHealthController');
 
     expect([...api.providers].filter(isConsumer).map((p) => p.name)).toEqual(
       [],
@@ -110,6 +111,7 @@ describe('process separation (worker.module.ts)', () => {
         'ConsoleWatchScheduler',
         'SlipDigestScheduler',
         'SchedulingSwitchScheduler',
+        'WorkerHeartbeatScheduler',
         'BettingEngineAnalysisWorker',
         'PendingBetsSettlementWorker',
         'SlipDigestWorker',
