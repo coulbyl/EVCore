@@ -1226,9 +1226,7 @@
         "endpoint": "Internal address",
         "publicEndpoint": "Public address",
         "region": "Region",
-        "bucket": "Bucket",
-        "accessKey": "Access id",
-        "secretKey": "Access secret"
+        "bucket": "Bucket"
       },
       "source": {
         "stored": "stored here",

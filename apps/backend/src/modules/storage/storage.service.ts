@@ -88,8 +88,9 @@ export class StorageService implements OnModuleInit {
       regionValue,
       bucketValue,
     ] = await Promise.all([
-      this.value('accessKey', 'RUSTFS_ACCESS_KEY'),
-      this.value('secretKey', 'RUSTFS_SECRET_KEY'),
+      // The .env only, like the RustFS container that checks them.
+      this.config.get<string>('RUSTFS_ACCESS_KEY'),
+      this.config.get<string>('RUSTFS_SECRET_KEY'),
       this.value('endpoint', 'RUSTFS_ENDPOINT'),
       this.value('publicEndpoint', 'RUSTFS_PUBLIC_ENDPOINT'),
       this.value('region', 'RUSTFS_REGION'),
@@ -98,7 +99,7 @@ export class StorageService implements OnModuleInit {
     if (!accessKeyId || !secretAccessKey) {
       if (this.signature !== '') {
         logger.warn(
-          'Storage credentials not set (Réglages › Intégrations or RUSTFS_ACCESS_KEY/RUSTFS_SECRET_KEY) — attachment storage disabled',
+          'Storage credentials not set (RUSTFS_ACCESS_KEY/RUSTFS_SECRET_KEY) — attachment storage disabled',
         );
       }
       this.client = null;

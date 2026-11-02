@@ -76,8 +76,9 @@ export const INTEGRATIONS: readonly {
       },
       { key: "storage.region", env: "RUSTFS_REGION", secret: false },
       { key: "storage.bucket", env: "RUSTFS_BUCKET", secret: false },
-      { key: "storage.accessKey", env: "RUSTFS_ACCESS_KEY", secret: true },
-      { key: "storage.secretKey", env: "RUSTFS_SECRET_KEY", secret: true },
+      // Its access keys stay in the .env only: the RustFS container reads
+      // the same two variables, and a copy here drifted from them on 02/11
+      // (InvalidAccessKeyId). Nothing to set in two places.
     ],
   },
   {
