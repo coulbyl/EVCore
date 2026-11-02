@@ -17,6 +17,7 @@ import { EtlController } from '@modules/etl/etl.controller';
 import { BettingEngineController } from '@modules/betting-engine/betting-engine.controller';
 import { ChannelDecisionAdminController } from '@modules/betting-engine/channel-decision-admin.controller';
 import { CouponController } from '@modules/coupon/coupon.controller';
+import { AdjustmentController } from '@modules/adjustment/adjustment.controller';
 
 type Role = 'ADMIN' | 'OPERATOR';
 
@@ -96,6 +97,7 @@ describe('operations controllers are guarded as a whole', () => {
     EtlController,
     BettingEngineController,
     ChannelDecisionAdminController,
+    AdjustmentController,
   ])('%o carries AdminOrServiceTokenGuard at class level', (controller) => {
     const guards = Reflect.getMetadata(GUARDS_METADATA, controller) as
       | unknown[]

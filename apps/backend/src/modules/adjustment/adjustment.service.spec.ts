@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import Decimal from 'decimal.js';
 import { AdjustmentStatus } from '@evcore/db';
 import { AdjustmentService } from './adjustment.service';
+import { AdjustmentRepository } from './adjustment.repository';
+import type { FixtureService } from '@modules/fixture/fixture.service';
 import type { PrismaService } from '@/prisma.service';
 import type { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
 import type { NotificationService } from '@modules/notification/notification.service';
@@ -58,10 +60,11 @@ function makeService({
   void calibration; // not used directly — computeForMarket mock drives behaviour
 
   return new AdjustmentService(
-    prismaMock,
+    new AdjustmentRepository(prismaMock),
     bettingEngine,
     calibrationService,
     notification,
+    {} as FixtureService,
   );
 }
 
@@ -182,10 +185,11 @@ describe('AdjustmentService.rollback', () => {
     } as unknown as NotificationService;
 
     const service = new AdjustmentService(
-      prismaMock,
+      new AdjustmentRepository(prismaMock),
       {} as BettingEngineService,
       {} as CalibrationService,
       notification,
+      {} as FixtureService,
     );
 
     const result = await service.rollback('original-id');
@@ -317,5 +321,44 @@ describe('AdjustmentService shadow correlations', () => {
         }),
       }),
     );
+  });
+});
+
+describe('AdjustmentService.setFixtureResult', () => {
+  const scores = { homeScore: 2, awayScore: 1, homeHtScore: 1, awayHtScore: 0 };
+
+  it('answers null for an unknown match, and settles nothing', async () => {
+    const settleOpenBets = vi.fn();
+    const service = new AdjustmentService(
+      {} as AdjustmentRepository,
+      { settleOpenBets } as unknown as BettingEngineService,
+      {} as CalibrationService,
+      {} as NotificationService,
+      {
+        setResult: vi.fn().mockResolvedValue(null),
+      } as unknown as FixtureService,
+    );
+    expect(await service.setFixtureResult('missing', scores)).toBeNull();
+    expect(settleOpenBets).not.toHaveBeenCalled();
+  });
+
+  it('writes the result, then settles the match', async () => {
+    const setResult = vi.fn().mockResolvedValue({ id: 'fx-1' });
+    const service = new AdjustmentService(
+      {
+        findRecentSettledBetsWithFeatures: vi.fn().mockResolvedValue([]),
+      } as unknown as AdjustmentRepository,
+      {
+        settleOpenBets: vi.fn().mockResolvedValue({ settled: 2 }),
+      } as unknown as BettingEngineService,
+      {
+        computeForMarket: vi.fn().mockResolvedValue(null),
+      } as unknown as CalibrationService,
+      {} as NotificationService,
+      { setResult } as unknown as FixtureService,
+    );
+    const result = await service.setFixtureResult('fx-1', scores);
+    expect(setResult).toHaveBeenCalledWith('fx-1', scores);
+    expect(result).toMatchObject({ fixtureId: 'fx-1', settled: 2 });
   });
 });
