@@ -53,3 +53,32 @@ test.describe("Notifications", () => {
     await expect(page).toHaveURL(/\/today$/);
   });
 });
+
+/**
+ * A tapped push opens its page with ?n=<id> (public/sw.js, N4 of the perf
+ * lot): the screen marks that notification read and drops the parameter.
+ */
+test.describe("Push touché", () => {
+  test("marque sa notification lue et nettoie l'adresse", async ({
+    page,
+    context,
+  }) => {
+    await context.addCookies([
+      {
+        name: "evcore_session",
+        value: "player",
+        domain: "localhost",
+        path: "/",
+      },
+    ]);
+    const read = page.waitForRequest(
+      (request) =>
+        request.url().endsWith("/notifications/notif-push-1/read") &&
+        request.method() === "PATCH",
+    );
+    await page.goto("/today?from=morning&n=notif-push-1");
+    await read;
+    // The morning visit is counted and `from` dropped (lot 4), `n` read.
+    await expect(page).toHaveURL(/\/today$/);
+  });
+});

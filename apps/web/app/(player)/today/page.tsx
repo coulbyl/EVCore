@@ -42,12 +42,12 @@ const FROM_NOTIFICATION = {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string | string[] }>;
+  searchParams: Promise<{ from?: string | string[]; n?: string | string[] }>;
 }) {
   // Arrived from the morning digest or the statement: one open counted,
   // then the address without `from`, so a reload does not count it again.
   // Server side: the player's tabs carry no tracker of their own (C0).
-  const { from } = await searchParams;
+  const { from, n } = await searchParams;
   if (from === "morning" || from === "weekly") {
     await serverApiRequest("/events", {
       method: "POST",
@@ -56,7 +56,10 @@ export default async function Page({
         notificationType: FROM_NOTIFICATION[from],
       },
     }).catch(() => undefined);
-    redirect("/today");
+    // A tapped push's notification id stays: PushBridge marks it read.
+    redirect(
+      typeof n === "string" ? `/today?n=${encodeURIComponent(n)}` : "/today",
+    );
   }
 
   const [t, todayText, pauseEnd, session, locale, timeZone] = await Promise.all(

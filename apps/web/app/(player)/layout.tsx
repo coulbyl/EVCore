@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { InAppHistoryTracker } from "@/components/scoreboard/sheet/in-app-history";
+import { PushBridge } from "@/components/scoreboard/shell/push-bridge";
 import { BandActions } from "@/components/scoreboard/shell/band-actions";
 import { getUnreadCount } from "@/domains/notifications/use-cases/get-notifications";
 import { ScoreboardShell } from "@/components/scoreboard/shell/scoreboard-shell";
@@ -95,6 +96,7 @@ export default async function PlayerLayout({
       >
         <TimeZoneSync cookieName={TIME_ZONE_COOKIE} serverTimeZone={timeZone} />
         <InAppHistoryTracker />
+        <PushBridge unread={unread} />
         {children}
       </ScoreboardShell>
     </PlayerTextsProvider>
