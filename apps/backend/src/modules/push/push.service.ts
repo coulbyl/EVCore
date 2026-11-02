@@ -6,7 +6,12 @@ import { ConfigService } from '@nestjs/config';
 import webpush from 'web-push';
 import { UserRole, type PushSubscription } from '@evcore/db';
 import { createLogger } from '@utils/logger';
-import { PUSH_DELIVERY } from '@config/push.constants';
+import { createHash } from 'node:crypto';
+import {
+  PUSH_DELIVERY,
+  PUSH_POLICY,
+  type PushDeliveryPolicy,
+} from '@config/push.constants';
 import { PushRepository } from './push.repository';
 
 const logger = createLogger('push-service');
@@ -18,6 +23,12 @@ export type PushPayload = {
   url?: string;
   /** The bell's row this push announces: tapping it marks the row read. */
   notificationId?: string;
+  /**
+   * What it is about (a conversation, a coupon, the morning): a newer push
+   * with the same tag replaces the shown one instead of stacking, on the
+   * device and at the push service while the device is off.
+   */
+  tag?: string;
 };
 
 export type Vapid = { publicKey: string; privateKey: string; subject: string };
@@ -26,7 +37,16 @@ export type Vapid = { publicKey: string; privateKey: string; subject: string };
 export type PushDeliveryJobData = {
   subscriptionId: string;
   payload: PushPayload;
+  policy: PushDeliveryPolicy;
 };
+
+/**
+ * The Topic header of a tag: at most 32 characters of the URL-safe base64
+ * alphabet (RFC 8030 § 5.4), so any tag is hashed into one.
+ */
+export function pushTopicOf(tag: string): string {
+  return createHash('sha256').update(tag).digest('base64url').slice(0, 32);
+}
 
 @Injectable()
 export class PushService {
@@ -62,12 +82,28 @@ export class PushService {
     return (await this.value('publicKey', 'VAPID_PUBLIC_KEY')) ?? null;
   }
 
-  async sendToUser(userId: string, payload: PushPayload): Promise<void> {
-    await this.enqueue(() => this.repo.findByUserId(userId), payload);
+  async sendToUser(
+    userId: string,
+    payload: PushPayload,
+    policy: PushDeliveryPolicy = PUSH_POLICY.DEFAULT,
+  ): Promise<void> {
+    await this.enqueue({
+      audience: () => this.repo.findByUserId(userId),
+      payload,
+      policy,
+    });
   }
 
-  async sendToRole(role: UserRole, payload: PushPayload): Promise<void> {
-    await this.enqueue(() => this.repo.findByRole(role), payload);
+  async sendToRole(
+    role: UserRole,
+    payload: PushPayload,
+    policy: PushDeliveryPolicy = PUSH_POLICY.DEFAULT,
+  ): Promise<void> {
+    await this.enqueue({
+      audience: () => this.repo.findByRole(role),
+      payload,
+      policy,
+    });
   }
 
   // Broadcast audience — announcements, not a per-user conversation.
@@ -75,7 +111,11 @@ export class PushService {
     payload: PushPayload,
     excludeUserId?: string,
   ): Promise<void> {
-    await this.enqueue(() => this.repo.findAll(excludeUserId), payload);
+    await this.enqueue({
+      audience: () => this.repo.findAll(excludeUserId),
+      payload,
+      policy: PUSH_POLICY.ANNOUNCEMENT,
+    });
   }
 
   /**
@@ -83,17 +123,19 @@ export class PushService {
    * worker process): the caller — a request, a pass — never waits on a push
    * service. Nothing is queued while push is not configured.
    */
-  private async enqueue(
-    audience: () => Promise<PushSubscription[]>,
-    payload: PushPayload,
-  ): Promise<void> {
+  private async enqueue(input: {
+    audience: () => Promise<PushSubscription[]>;
+    payload: PushPayload;
+    policy: PushDeliveryPolicy;
+  }): Promise<void> {
+    const { audience, payload, policy } = input;
     if (!(await this.vapid())) return;
     const subscriptions = await audience();
     if (subscriptions.length === 0) return;
     await this.queue.addBulk(
       subscriptions.map((sub) => ({
         name: PUSH_DELIVERY.JOB,
-        data: { subscriptionId: sub.id, payload },
+        data: { subscriptionId: sub.id, payload, policy },
         opts: {
           attempts: PUSH_DELIVERY.ATTEMPTS,
           backoff: { type: 'exponential', delay: PUSH_DELIVERY.BACKOFF_MS },
@@ -113,9 +155,10 @@ export class PushService {
   async deliverOne(input: {
     subscription: PushSubscription;
     payload: PushPayload;
+    policy: PushDeliveryPolicy;
     vapid: Vapid;
   }): Promise<'sent' | 'gone' | 'refused'> {
-    const { subscription: sub, payload, vapid } = input;
+    const { subscription: sub, payload, policy, vapid } = input;
     try {
       await webpush.sendNotification(
         {
@@ -123,8 +166,13 @@ export class PushService {
           keys: { p256dh: sub.p256dh, auth: sub.auth },
         },
         JSON.stringify(payload),
-        // Per send: a key changed in Réglages › Intégrations serves at once.
-        { vapidDetails: vapid },
+        {
+          // Per send: a key changed in Réglages › Intégrations serves at once.
+          vapidDetails: vapid,
+          TTL: policy.ttlSeconds,
+          urgency: policy.urgency,
+          ...(payload.tag ? { topic: pushTopicOf(payload.tag) } : {}),
+        },
       );
       return 'sent';
     } catch (error) {

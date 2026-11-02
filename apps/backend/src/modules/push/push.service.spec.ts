@@ -3,8 +3,12 @@ import type { ConfigService } from '@nestjs/config';
 import type { Queue } from 'bullmq';
 import webpush from 'web-push';
 import type { PushSubscription } from '@evcore/db';
-import { PUSH_DELIVERY } from '@config/push.constants';
-import { PushService, type PushDeliveryJobData } from './push.service';
+import { PUSH_DELIVERY, PUSH_POLICY } from '@config/push.constants';
+import {
+  PushService,
+  pushTopicOf,
+  type PushDeliveryJobData,
+} from './push.service';
 import type { PushRepository } from './push.repository';
 
 vi.mock('web-push', () => ({ default: { sendNotification: vi.fn() } }));
@@ -81,7 +85,12 @@ describe('PushService — through the delivery queue', () => {
     refuseWith({ statusCode: 410 });
     const vapid = await service.vapid();
     await expect(
-      service.deliverOne({ subscription: sub('s1'), payload, vapid: vapid! }),
+      service.deliverOne({
+        subscription: sub('s1'),
+        payload,
+        policy: PUSH_POLICY.DEFAULT,
+        vapid: vapid!,
+      }),
     ).resolves.toBe('gone');
     expect(repo.deleteByEndpoint).toHaveBeenCalledWith(
       'https://push.example/s1',
@@ -95,18 +104,56 @@ describe('PushService — through the delivery queue', () => {
       refuseWith({ statusCode });
       const vapid = await service.vapid();
       await expect(
-        service.deliverOne({ subscription: sub('s1'), payload, vapid: vapid! }),
+        service.deliverOne({
+          subscription: sub('s1'),
+          payload,
+          policy: PUSH_POLICY.DEFAULT,
+          vapid: vapid!,
+        }),
       ).rejects.toMatchObject({ statusCode });
       expect(repo.deleteByEndpoint).not.toHaveBeenCalled();
     },
   );
+
+  it('sends with the TTL, the urgency and a topic that collapses the same tag', async () => {
+    const { service } = harness();
+    vi.mocked(webpush.sendNotification).mockResolvedValue({} as never);
+    const vapid = await service.vapid();
+    await service.deliverOne({
+      subscription: sub('s1'),
+      payload: { ...payload, tag: 'support-conv-1' },
+      policy: PUSH_POLICY.MORNING_BRIEF,
+      vapid: vapid!,
+    });
+    const [, body, options] =
+      vi.mocked(webpush.sendNotification).mock.calls[0] ?? [];
+    expect(JSON.parse(String(body))).toMatchObject({ tag: 'support-conv-1' });
+    expect(options).toMatchObject({
+      TTL: 4 * 3600,
+      urgency: 'normal',
+      topic: pushTopicOf('support-conv-1'),
+    });
+  });
+
+  it('turns any tag into a valid Topic header', () => {
+    const topic = pushTopicOf('followed-00000000-0000-4000-8000-000000000000');
+    expect(topic).toMatch(/^[A-Za-z0-9_-]{1,32}$/);
+    expect(pushTopicOf('followed-00000000-0000-4000-8000-000000000000')).toBe(
+      topic,
+    );
+  });
 
   it('logs another refusal (400) without retrying', async () => {
     const { service } = harness();
     refuseWith({ statusCode: 400 });
     const vapid = await service.vapid();
     await expect(
-      service.deliverOne({ subscription: sub('s1'), payload, vapid: vapid! }),
+      service.deliverOne({
+        subscription: sub('s1'),
+        payload,
+        policy: PUSH_POLICY.DEFAULT,
+        vapid: vapid!,
+      }),
     ).resolves.toBe('refused');
   });
 });

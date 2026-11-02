@@ -16,3 +16,26 @@ export const PUSH_DELIVERY = {
   KEEP_COMPLETED: 1000,
   KEEP_FAILED: 1000,
 } as const;
+
+export type PushUrgency = 'very-low' | 'low' | 'normal' | 'high';
+
+/** How long a push service keeps a push for an unreachable device, and its urgency. */
+export type PushDeliveryPolicy = { ttlSeconds: number; urgency: PushUrgency };
+
+const HOUR_S = 3600;
+
+/**
+ * Per kind of push. A push older than its TTL is dropped by the push
+ * service instead of arriving stale when the phone comes back.
+ */
+export const PUSH_POLICY = {
+  // Sent at 08:00 UTC: it says « today's coupons », worthless after noon.
+  MORNING_BRIEF: { ttlSeconds: 4 * HOUR_S, urgency: 'normal' },
+  WEEKLY_STATEMENT: { ttlSeconds: 24 * HOUR_S, urgency: 'low' },
+  // Sent in the evening: still worth reading the next morning.
+  FOLLOWED_SETTLED: { ttlSeconds: 12 * HOUR_S, urgency: 'normal' },
+  SUPPORT_MESSAGE: { ttlSeconds: 24 * HOUR_S, urgency: 'high' },
+  ANNOUNCEMENT: { ttlSeconds: 72 * HOUR_S, urgency: 'normal' },
+  OPERATIONS: { ttlSeconds: 6 * HOUR_S, urgency: 'high' },
+  DEFAULT: { ttlSeconds: 24 * HOUR_S, urgency: 'normal' },
+} as const satisfies Record<string, PushDeliveryPolicy>;

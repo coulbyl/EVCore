@@ -111,6 +111,7 @@ describe('FollowedSettledService.notifyEvening', () => {
       body: 'cassé sur Lazio – Torino 1-0',
       payload: { couponProposalId: 'combo', evening: '2026-10-30' },
       url: '/me?coupon=combo',
+      tag: 'followed-combo',
     });
     expect(notification.deliverToUser).toHaveBeenCalledWith(
       expect.objectContaining({

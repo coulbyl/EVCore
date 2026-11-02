@@ -99,6 +99,7 @@ export class WeeklyStatementService {
         body: message.body,
         payload: { week },
         url: '/today?from=weekly',
+        tag: 'weekly-statement',
       });
       if (!recorded) continue;
       const email = digestEmailOf(recipient);

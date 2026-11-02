@@ -9,6 +9,7 @@ import {
 } from '@evcore/db';
 import { MailService } from '@modules/mail/mail.service';
 import { PushService } from '@modules/push/push.service';
+import { PUSH_POLICY } from '@config/push.constants';
 import { NotificationRepository } from './notification.repository';
 
 const logger = createLogger('notification-service');
@@ -49,6 +50,17 @@ const RETIRED_PERSONAL_TYPES: NotificationType[] = [
   NotificationType.SUBSCRIPTION_EVENTS_ADDED,
   NotificationType.SUBSCRIPTION_SETTLED,
 ];
+
+// How long a personal push may wait for an unreachable phone, and how
+// urgent it is (config/push.constants.ts).
+const PERSONAL_PUSH_POLICY: Partial<
+  Record<NotificationType, (typeof PUSH_POLICY)[keyof typeof PUSH_POLICY]>
+> = {
+  [NotificationType.MORNING_BRIEF]: PUSH_POLICY.MORNING_BRIEF,
+  [NotificationType.WEEKLY_STATEMENT]: PUSH_POLICY.WEEKLY_STATEMENT,
+  [NotificationType.FOLLOWED_SETTLED]: PUSH_POLICY.FOLLOWED_SETTLED,
+  [NotificationType.SUPPORT_MESSAGE]: PUSH_POLICY.SUPPORT_MESSAGE,
+};
 
 function announcementIdOf(payload: Prisma.JsonValue | null): string | null {
   if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
@@ -205,6 +217,7 @@ export class NotificationService {
         title: input.title,
         body: input.body,
         url: input.href ?? '/notifications',
+        tag: `announcement-${input.announcementId}`,
       },
       input.authorId,
     );
@@ -367,6 +380,8 @@ export class NotificationService {
     payload?: Prisma.InputJsonValue;
     /** Opened when the push is tapped. */
     url: string;
+    /** A newer push with this tag replaces the shown one (PushPayload.tag). */
+    tag: string;
   }): Promise<boolean> {
     let notificationId: string;
     try {
@@ -388,12 +403,17 @@ export class NotificationService {
       );
       return false;
     }
-    await this.push.sendToUser(input.userId, {
-      title: input.title,
-      body: input.body,
-      url: input.url,
-      notificationId,
-    });
+    await this.push.sendToUser(
+      input.userId,
+      {
+        title: input.title,
+        body: input.body,
+        url: input.url,
+        notificationId,
+        tag: input.tag,
+      },
+      PERSONAL_PUSH_POLICY[input.type] ?? PUSH_POLICY.DEFAULT,
+    );
     return true;
   }
 

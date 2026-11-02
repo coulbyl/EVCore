@@ -106,6 +106,7 @@ export class FollowedSettledService {
             evening: evening.toISOString().slice(0, 10),
           },
           url: `/me?coupon=${couponId}`,
+          tag: `followed-${couponId}`,
         });
         if (!recorded) return;
         sent += 1;

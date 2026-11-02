@@ -166,6 +166,8 @@ export class SlipDigestService {
         body: message.body,
         payload: { day, followedIds: bucket.followedIds },
         url: '/today?from=morning',
+        // One morning at a time: today's replaces yesterday's if still shown.
+        tag: 'morning-brief',
       });
       if (!recorded) continue;
       const email = digestEmailOf(recipient);

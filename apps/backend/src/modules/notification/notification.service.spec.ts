@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Market, NotificationType, UserRole } from '@evcore/db';
 import { NotificationService } from './notification.service';
 import type { PushService } from '@modules/push/push.service';
+import { PUSH_POLICY } from '@config/push.constants';
 import { NotificationRepository } from './notification.repository';
 import type { PrismaService } from '@/prisma.service';
 import type { MailService } from '@modules/mail/mail.service';
@@ -302,6 +303,7 @@ describe('NotificationService — list & mark read', () => {
       body: 'Bonjour',
       payload: { conversationId: 'conv-1' },
       url: '/me/messages',
+      tag: 'support-conv-1',
     });
 
     expect(recorded).toBe(true);
@@ -315,12 +317,17 @@ describe('NotificationService — list & mark read', () => {
       },
       select: { id: true },
     });
-    expect(push.sendToUser).toHaveBeenCalledWith('user-1', {
-      title: "Nouveau message de l'équipe EVCore",
-      body: 'Bonjour',
-      url: '/me/messages',
-      notificationId: 'notif-1',
-    });
+    expect(push.sendToUser).toHaveBeenCalledWith(
+      'user-1',
+      {
+        title: "Nouveau message de l'équipe EVCore",
+        body: 'Bonjour',
+        url: '/me/messages',
+        notificationId: 'notif-1',
+        tag: 'support-conv-1',
+      },
+      PUSH_POLICY.SUPPORT_MESSAGE,
+    );
   });
 
   it('pushes nothing when the row could not be written', async () => {
@@ -341,6 +348,7 @@ describe('NotificationService — list & mark read', () => {
       title: 'Ta matinée',
       body: '…',
       url: '/today?from=morning',
+      tag: 'morning-brief',
     });
 
     expect(recorded).toBe(false);

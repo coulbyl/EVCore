@@ -1,6 +1,6 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import type { Job } from 'bullmq';
-import { PUSH_DELIVERY } from '@config/push.constants';
+import { PUSH_DELIVERY, PUSH_POLICY } from '@config/push.constants';
 import { createLogger } from '@utils/logger';
 import { PushService, type PushDeliveryJobData } from './push.service';
 
@@ -25,6 +25,8 @@ export class PushDeliveryWorker extends WorkerHost {
     return this.push.deliverOne({
       subscription,
       payload: job.data.payload,
+      // A job queued before the policy existed: the default one.
+      policy: job.data.policy ?? PUSH_POLICY.DEFAULT,
       vapid,
     });
   }
