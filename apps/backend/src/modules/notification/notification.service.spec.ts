@@ -390,6 +390,26 @@ describe('NotificationService — list & mark read', () => {
     );
   });
 
+  it('stays true, and throws nothing, when the push cannot be queued', async () => {
+    const push = makePush();
+    vi.mocked(push.sendToUser).mockRejectedValue(new Error('redis down'));
+    const service = new NotificationService(
+      new NotificationRepository(makePrisma()),
+      makeMail(),
+      push,
+    );
+    await expect(
+      service.deliverToUser({
+        userId: 'user-1',
+        type: NotificationType.MORNING_BRIEF,
+        title: 'Ta matinée',
+        body: '…',
+        url: '/today?from=morning',
+        tag: 'morning-brief',
+      }),
+    ).resolves.toBe(true);
+  });
+
   it('pushes nothing when the row could not be written', async () => {
     const prisma = makePrisma();
     vi.mocked(prisma.client.notification.create).mockRejectedValue(

@@ -143,6 +143,30 @@ describe('PushService — through the delivery queue', () => {
     );
   });
 
+  it('retries a network error, refuses a malformed subscription', async () => {
+    const { service } = harness();
+    const vapid = await service.vapid();
+    const send = () =>
+      service.deliverOne({
+        subscription: sub('s1'),
+        payload,
+        policy: PUSH_POLICY.DEFAULT,
+        vapid: vapid!,
+      });
+    vi.mocked(webpush.sendNotification).mockImplementation(() =>
+      Promise.reject(
+        Object.assign(new Error('socket hang up'), { code: 'ECONNRESET' }),
+      ),
+    );
+    await expect(send()).rejects.toMatchObject({ code: 'ECONNRESET' });
+    vi.mocked(webpush.sendNotification).mockImplementation(() =>
+      Promise.reject(
+        new Error('The subscription p256dh value should be 65 bytes long.'),
+      ),
+    );
+    await expect(send()).resolves.toBe('refused');
+  });
+
   it('logs another refusal (400) without retrying', async () => {
     const { service } = harness();
     refuseWith({ statusCode: 400 });

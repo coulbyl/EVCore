@@ -56,6 +56,22 @@ describe('worker heartbeat → GET /health/worker', () => {
     await expect(health.read()).resolves.toEqual({ status: 'stale' });
   });
 
+  it('leaves the beat of another instance on its stop', async () => {
+    let clock = Date.now();
+    const redis = fakeRedis(() => clock);
+    const old = new WorkerHeartbeatScheduler(redis);
+    const replacement = new WorkerHeartbeatScheduler(redis);
+    await old.beat(new Date(clock));
+    clock += 1000;
+    await replacement.beat(new Date(clock));
+
+    await old.onApplicationShutdown();
+
+    await expect(new WorkerHealthService(redis).read()).resolves.toMatchObject({
+      status: 'ok',
+    });
+  });
+
   it('reports stale rather than failing when Redis is unreachable', async () => {
     const redis = {
       get: vi.fn().mockRejectedValue(new Error('ECONNREFUSED')),

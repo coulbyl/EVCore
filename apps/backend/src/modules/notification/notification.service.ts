@@ -247,15 +247,25 @@ export class NotificationService {
       body: input.body,
       payload: { announcementId: input.announcementId, href: input.href },
     });
-    await this.push.sendToAllUsers(
-      {
-        title: input.title,
-        body: input.body,
-        url: input.href ?? '/notifications',
-        tag: `announcement-${input.announcementId}`,
-      },
-      input.authorId,
-    );
+    await this.push
+      .sendToAllUsers(
+        {
+          title: input.title,
+          body: input.body,
+          url: input.href ?? '/notifications',
+          tag: `announcement-${input.announcementId}`,
+        },
+        input.authorId,
+      )
+      .catch((error: unknown) =>
+        logger.error(
+          {
+            announcementId: input.announcementId,
+            error: error instanceof Error ? error.message : String(error),
+          },
+          'Failed to queue the announcement push',
+        ),
+      );
   }
 
   async list(query: {
@@ -440,17 +450,30 @@ export class NotificationService {
       );
       return false;
     }
-    await this.push.sendToUser(
-      input.userId,
-      {
-        title: input.title,
-        body: input.body,
-        url: input.url,
-        notificationId,
-        tag: input.tag,
-      },
-      PERSONAL_PUSH_POLICY[input.type] ?? PUSH_POLICY.DEFAULT,
-    );
+    // The row is written: a push that cannot be queued is logged, never
+    // thrown — the caller's loop (a digest pass, a reply) goes on.
+    await this.push
+      .sendToUser(
+        input.userId,
+        {
+          title: input.title,
+          body: input.body,
+          url: input.url,
+          notificationId,
+          tag: input.tag,
+        },
+        PERSONAL_PUSH_POLICY[input.type] ?? PUSH_POLICY.DEFAULT,
+      )
+      .catch((error: unknown) =>
+        logger.error(
+          {
+            type: input.type,
+            userId: input.userId,
+            error: error instanceof Error ? error.message : String(error),
+          },
+          'Failed to queue the personal push',
+        ),
+      );
     return true;
   }
 

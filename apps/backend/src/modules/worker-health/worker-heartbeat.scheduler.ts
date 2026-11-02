@@ -23,6 +23,8 @@ export class WorkerHeartbeatScheduler
   implements OnApplicationBootstrap, OnApplicationShutdown
 {
   private timer: NodeJS.Timeout | null = null;
+  /** The last beat written: the key is only deleted while it is still ours. */
+  private lastBeat: string | null = null;
 
   constructor(@Inject(REDIS_CLIENT) private readonly redis: Redis) {}
 
@@ -34,18 +36,27 @@ export class WorkerHeartbeatScheduler
 
   async onApplicationShutdown(): Promise<void> {
     if (this.timer) clearInterval(this.timer);
-    // A stopped worker is down at once, not 90 s later.
-    await this.redis.del(WORKER_HEARTBEAT.REDIS_KEY).catch(() => undefined);
+    // A stopped worker is down at once, not 90 s later — unless another
+    // instance (a deploy overlapping this one) has beaten since.
+    if (!this.lastBeat) return;
+    const current = await this.redis
+      .get(WORKER_HEARTBEAT.REDIS_KEY)
+      .catch(() => null);
+    if (current === this.lastBeat) {
+      await this.redis.del(WORKER_HEARTBEAT.REDIS_KEY).catch(() => undefined);
+    }
   }
 
   async beat(now: Date = new Date()): Promise<void> {
     try {
+      const beat = now.toISOString();
       await this.redis.set(
         WORKER_HEARTBEAT.REDIS_KEY,
-        now.toISOString(),
+        beat,
         'PX',
         WORKER_HEARTBEAT.STALE_AFTER_MS,
       );
+      this.lastBeat = beat;
       await writeFile(WORKER_HEARTBEAT.LIVENESS_FILE, now.toISOString());
     } catch (err) {
       logger.warn({ err }, 'worker heartbeat not written');

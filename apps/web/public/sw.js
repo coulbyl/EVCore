@@ -94,30 +94,35 @@ self.addEventListener("push", (event) => {
 });
 
 // Opens the push's page with ?n=<id>, so the screen marks that notification
-// read (PushBridge). Reuses an open EVCore tab when there is one.
+// read (PushBridge). Only a tab already on that page is reused: another tab
+// may hold a draft (a message being written, a ticket) a navigation would
+// lose, so it opens a new window instead.
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const { url, notificationId } = event.notification.data ?? {};
   const target = new URL(url ?? "/today", self.location.origin);
   if (notificationId) target.searchParams.set("n", notificationId);
+  const openNew = () =>
+    self.clients.openWindow
+      ? self.clients.openWindow(target.href)
+      : Promise.resolve();
 
   event.waitUntil(
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
-        const open = clientList.find(
-          (client) => new URL(client.url).origin === target.origin,
-        );
-        if (open && "navigate" in open) {
-          // navigate() refuses a tab this worker does not control: a new one then.
-          return open
+        const samePage = clientList.find((client) => {
+          const at = new URL(client.url);
+          return at.origin === target.origin && at.pathname === target.pathname;
+        });
+        if (samePage && "navigate" in samePage) {
+          // navigate() refuses a tab this worker does not control.
+          return samePage
             .navigate(target.href)
             .then((client) => client?.focus())
-            .catch(() => self.clients.openWindow?.(target.href));
+            .catch(openNew);
         }
-        if (self.clients.openWindow) {
-          return self.clients.openWindow(target.href);
-        }
+        return openNew();
       }),
   );
 });

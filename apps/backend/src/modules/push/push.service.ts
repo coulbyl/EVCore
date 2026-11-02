@@ -148,9 +148,9 @@ export class PushService {
 
   /**
    * Sends one push now (PushDeliveryWorker). A gone subscription (404/410)
-   * is deleted; a push service that is busy or down (429, 5xx, no answer)
-   * throws, and the queue tries again later; any other refusal is logged,
-   * not retried.
+   * is deleted; a push service that is busy or down (429, 5xx, a network
+   * error) throws, and the queue tries again later; any other refusal —
+   * malformed subscription keys included — is logged, not retried.
    */
   async deliverOne(input: {
     subscription: PushSubscription;
@@ -185,7 +185,18 @@ export class PushService {
         await this.repo.deleteByEndpoint(sub.endpoint);
         return 'gone';
       }
-      if (statusCode === null || statusCode === 429 || statusCode >= 500) {
+      // Busy or down push service, or no answer at all (a network error
+      // carries a code such as ECONNRESET): tried again by the queue. An
+      // error with neither is web-push refusing the subscription itself.
+      const networkError =
+        statusCode === null &&
+        error !== null &&
+        typeof error === 'object' &&
+        'code' in error;
+      if (
+        networkError ||
+        (statusCode !== null && (statusCode === 429 || statusCode >= 500))
+      ) {
         throw error;
       }
       logger.warn(
