@@ -9,10 +9,22 @@ export const HTTP_COMPRESSION_THRESHOLD_BYTES = 1024;
 // gets the security headers without the API's `default-src 'none'` policy.
 export const API_REFERENCE_PATH = '/reference';
 
-// The container healthcheck calls this every 30 s (docker-compose.prod.yml):
+// The container healthcheck and the monitoring probe call these every 30 s:
 // logging it would bury the requests that matter.
-export const REQUEST_LOG_SKIPPED_PATHS: readonly string[] = ['/health'];
+export const REQUEST_LOG_SKIPPED_PATHS: readonly string[] = [
+  '/health',
+  '/health/worker',
+];
 
 // Enough of the session row id to follow one visitor through the log
 // without writing a full identifier. The id is not the cookie token.
 export const REQUEST_LOG_SESSION_PREFIX_LENGTH = 8;
+
+/** The event-loop delay line of each process (EventLoopMonitor). */
+export const EVENT_LOOP_MONITOR = {
+  // Sampling: a stall shorter than this is not seen.
+  RESOLUTION_MS: 20,
+  REPORT_MS: 60_000,
+  // A screen read answers in tens of ms: a stall past this is worth a warn.
+  WARN_MS: 200,
+} as const;

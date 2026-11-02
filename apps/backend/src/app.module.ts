@@ -24,6 +24,7 @@ import { ScreensModule } from './modules/screens/screens.module';
 import { VerifiedTicketModule } from './modules/verified-ticket/verified-ticket.module';
 import { AnalysisSheetModule } from './modules/analysis-sheet/analysis-sheet.module';
 import { BullRootModule } from './common/bullmq/bull-root.module';
+import { ObservabilityModule } from './common/observability/observability.module';
 import { RedisModule } from './common/redis/redis.module';
 import { validateEnv } from './config/env.schema';
 import { AppSettingModule } from './modules/app-setting/app-setting.module';
@@ -68,6 +69,7 @@ import { WorkerHealthModule } from './modules/worker-health/worker-health.module
     VerifiedTicketModule,
     AnalysisSheetModule,
     WorkerHealthModule,
+    ObservabilityModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { BullRootModule } from './common/bullmq/bull-root.module';
+import { ObservabilityModule } from './common/observability/observability.module';
 import { RedisModule } from './common/redis/redis.module';
 import { validateEnv } from './config/env.schema';
 import { AdminJournalModule } from './modules/admin-journal/admin-journal.module';
@@ -35,6 +36,7 @@ import { PrismaModule } from './prisma.module';
     SlipDigestModule,
     SchedulingSwitchModule,
     WorkerHeartbeatModule,
+    ObservabilityModule,
   ],
 })
 export class WorkerModule {}
