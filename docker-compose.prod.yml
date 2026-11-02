@@ -170,7 +170,7 @@ services:
     container_name: evcore-backend-worker
     image: ghcr.io/coulbyl/evcore-backend:latest
     restart: unless-stopped
-    command: ["node", "dist/src/main.worker"]
+    command: ["node", "dist/main.worker"]
     env_file:
       - .env
     environment:

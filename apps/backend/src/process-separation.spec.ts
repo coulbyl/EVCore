@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 import { describe, expect, it, vi } from 'vitest';
 import type { DynamicModule, Type } from '@nestjs/common';
-import { PROCESSOR_METADATA } from '@nestjs/bullmq/dist/bull.constants';
 import { AppModule } from './app.module';
 import { WorkerModule } from './worker.module';
 
@@ -78,6 +77,10 @@ function collectGraph(root: Type): ModuleGraph {
   visit(root);
   return graph;
 }
+
+// What @Processor() writes on a class (@nestjs/bullmq's PROCESSOR_METADATA,
+// not exported since its 12 exports map).
+const PROCESSOR_METADATA = 'bullmq:processor_metadata';
 
 const isConsumer = (cls: Type) =>
   Reflect.getMetadata(PROCESSOR_METADATA, cls) !== undefined;

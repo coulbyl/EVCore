@@ -16,7 +16,14 @@ async function bootstrap() {
   const corsOrigins = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
     : [];
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    // Nest 12: a literal segment is registered before a parameter whatever
+    // the declaration order (`/etl/sync/full` before `/etl/sync/:type`), so a
+    // shadowed route cannot happen by reordering a controller; two identical
+    // routes refuse to boot.
+    routeResolutionStrategy: 'specificity',
+    routeConflictPolicy: { duplicate: 'error', shadow: 'off' },
+  });
   // In prod, `backend` sits behind a reverse proxy (see docker-compose.prod's
   // rustfs comment — same deployment shape applies here). Without this,
   // every request's req.ip is the proxy's own address, so @nestjs/throttler
@@ -40,7 +47,15 @@ async function bootstrap() {
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
-  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+  // errorFormat fixed: the web reads `message` as a list of strings
+  // (extractFirstErrorMessage), Nest 12's default, written down.
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      errorFormat: 'list',
+    }),
+  );
   app.useWebSocketAdapter(new IoAdapter(app));
 
   // The API reference lists every route: served in development only. In

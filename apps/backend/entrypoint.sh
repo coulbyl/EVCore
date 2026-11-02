@@ -13,4 +13,4 @@ EOF
 crond -b -l 2 -c /app/crontabs
 echo "Log rotation scheduler enabled: Thursday 02:00"
 
-exec node dist/src/main
+exec node dist/main
