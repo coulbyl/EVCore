@@ -3,13 +3,15 @@ import {
   OnApplicationBootstrap,
   OnApplicationShutdown,
 } from '@nestjs/common';
-import { monitorEventLoopDelay, type IntervalHistogram } from 'node:perf_hooks';
+import { monitorEventLoopDelay } from 'node:perf_hooks';
 import { EVENT_LOOP_MONITOR } from '@config/http.constants';
 import { createLogger } from '@utils/logger';
 
 const logger = createLogger('event-loop');
 
 const NS_PER_MS = 1_000_000;
+
+type EventLoopHistogram = ReturnType<typeof monitorEventLoopDelay>;
 
 /**
  * How long the event loop was held, one line a minute per process (API
@@ -21,7 +23,7 @@ const NS_PER_MS = 1_000_000;
 export class EventLoopMonitor
   implements OnApplicationBootstrap, OnApplicationShutdown
 {
-  private histogram: IntervalHistogram | null = null;
+  private histogram: EventLoopHistogram | null = null;
   private timer: NodeJS.Timeout | null = null;
 
   onApplicationBootstrap(): void {
