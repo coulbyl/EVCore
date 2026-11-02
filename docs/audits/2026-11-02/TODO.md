@@ -55,4 +55,11 @@ _Mesures de départ (copie de prod du 02/11, 7,9 Go) : `odds_snapshot` 6,1 Go / 
 ## F. Fin
 
 - [x] F1 `test(web): player e2e green`. _Fait : 30 échecs (10 tests × 3 largeurs) hérités de `main`, tous des tests en retard sur des changements voulus de l'interface : « One Chance Rule » (5eb8332f, la chance en phrase « Passe 8 fois sur 10 », seule la cote dans les listes), « Hier » en mots (945b49a5), un chasseur sans jour joué dit « Lancé le … » (4aec8d14), titre et retour dans le bandeau hors du `<main>`, bulle « Pourquoi ? » de l'avis IA (ee391364, et le faux backend envoyait encore `sentence` au lieu de `speech`), grands écrans testés avec la session admin par défaut (6 liens de plus). Un parcours devenu instable sous charge (Échap avant l'entrée du focus dans la feuille) attend le focus. Suite complète : 501 réussis, 1 instable corrigé, 0 échec (18 ignorés)._
-- [ ] F2 Revue `/code-review high`, corrections, bilan ici, PR.
+- [x] F2 Revue `/code-review high`, corrections, bilan ici, PR. _Faite sur les 33 commits : 7 constats, 5 corrigés dans `fix: review findings…` (push non mis en file qui faisait échouer `deliverToUser` ; scan Trivy bloquant jusqu'au 05/11, accepté dans `.trivyignore` jusqu'au 12/11 ; push touché qui naviguait n'importe quel onglet ; erreurs web-push sans statut relancées 5 fois ; arrêt du worker qui effaçait le battement d'une autre instance), avec un test chacun. Laissés : routes `/risk/*` peut-être appelées hors dépôt (cron du serveur, à vérifier côté serveur) ; double construction des images et base Trivy non mise en cache (le lot « images plus rapides » reprendra). Vérifié en fin de lot : lint, typecheck, tests backend 1 145, vantage-worker 173, web unitaires 43, e2e 501/501 hors 18 ignorés, build web ; image Docker non construite en local (réseau), elle l'est en CI avec son scan._
+
+## À faire avant la fusion
+
+1. **05/11** : `pnpm update -r --no-save`, `pnpm audit --prod` sans haute (body-parser 2.4, multer 2.5), retirer les deux lignes de `.trivyignore`.
+2. **Serveur** : si `/opt/apps/scripts/deploy-evcore.sh` nomme les services, y ajouter `backend-worker`. Le déploiement redémarre Postgres (pg_stat_statements) : quelques secondes de coupure.
+3. **Supervision** : brancher la sonde `GET /health/worker` (200 / 503).
+4. Vérifier qu'aucun cron du serveur n'appelle les routes retirées (`/risk/report/weekly`, `/etl/status`…).
