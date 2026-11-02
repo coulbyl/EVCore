@@ -116,6 +116,7 @@ describe('process separation (worker.module.ts)', () => {
         'PendingBetsSettlementWorker',
         'SlipDigestWorker',
         'ConsoleWatchWorker',
+        'PushDeliveryWorker',
       ]),
     );
   });
