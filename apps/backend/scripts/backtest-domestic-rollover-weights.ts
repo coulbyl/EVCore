@@ -37,7 +37,7 @@ import {
   brierScoreOneXTwo,
   getOneXTwoOutcome,
   type OneXTwoPrediction,
-} from '@modules/backtest/backtest.report';
+} from '@evcore/analysis-core';
 
 // Competitions excluded from the domestic-rollover fallback branch itself
 // (European club comps handled by their own EUROPEAN_CROSS_COMP_* weights;

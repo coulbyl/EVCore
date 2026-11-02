@@ -5,7 +5,6 @@ import { Queue } from 'bullmq';
 import type { Job } from 'bullmq';
 import { createLogger } from '@utils/logger';
 import {
-  BULLMQ_DEFAULT_JOB_OPTIONS,
   BULLMQ_QUEUES,
   ETL_SCHEDULER_KEYS,
   STATS_BACKFILL,
@@ -146,13 +145,6 @@ export class StatsBackfillService implements OnApplicationBootstrap {
 
   async resume(): Promise<void> {
     await this.queue.resume();
-  }
-
-  async runNow(): Promise<void> {
-    await this.queue.add('stats-backfill', {} satisfies StatsBackfillJobData, {
-      ...BULLMQ_DEFAULT_JOB_OPTIONS,
-      attempts: 1,
-    });
   }
 
   async getStatus(): Promise<StatsBackfillStatus> {

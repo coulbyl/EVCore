@@ -9,7 +9,6 @@ import { AuthModule } from '@modules/auth/auth.module';
 import { BULLMQ_QUEUES } from '@config/etl.constants';
 import { BettingEngineService } from './betting-engine.service';
 import { BettingEngineController } from './betting-engine.controller';
-import { ChannelDecisionController } from './channel-decision.controller';
 import { ChannelDecisionAdminController } from './channel-decision-admin.controller';
 import { H2HService } from './h2h.service';
 import { CongestionService } from './congestion.service';
@@ -30,11 +29,7 @@ import { BetSettlementService } from './settlement/bet-settlement.service';
     AuthModule,
     BullModule.registerQueue({ name: BULLMQ_QUEUES.BETTING_ENGINE }),
   ],
-  controllers: [
-    BettingEngineController,
-    ChannelDecisionController,
-    ChannelDecisionAdminController,
-  ],
+  controllers: [BettingEngineController, ChannelDecisionAdminController],
   providers: [
     BettingEngineService,
     ApiFootballClient,

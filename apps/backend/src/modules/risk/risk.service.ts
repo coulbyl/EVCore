@@ -1,24 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Market, NotificationType } from '@evcore/db';
+import { Market } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { createLogger } from '@utils/logger';
-import { PrismaService } from '@/prisma.service';
-import {
-  NotificationService,
-  type WeeklyReportPayload,
-} from '@modules/notification/notification.service';
+import { NotificationService } from '@modules/notification/notification.service';
 import { RISK_CONSTANTS } from './risk.constants';
 import { RiskRepository, type SettledLegRow } from './risk.repository';
 
 const logger = createLogger('risk-service');
-
-export type CalibrationBin = {
-  minProb: number;
-  maxProb: number;
-  avgProb: number;
-  actualRate: number;
-  count: number;
-};
 
 export type RoiCheckResult = {
   market: Market;
@@ -29,84 +17,20 @@ export type RoiCheckResult = {
   action: 'suspended' | 'alerted' | 'ok' | 'insufficient_data';
 };
 
-export type WeeklyReportResult = WeeklyReportPayload;
-
-export type ActiveMarketSuspension = {
-  market: Market;
-  reason: string;
-  triggeredBy: string;
-  createdAt: string;
-};
-
-export type RiskAlert = {
-  id: string;
-  type: NotificationType;
-  title: string;
-  body: string;
-  createdAt: string;
-  read: boolean;
-};
-
-const RISK_ALERT_TYPES = [
-  NotificationType.MARKET_SUSPENSION,
-  NotificationType.ROI_ALERT,
-  NotificationType.BRIER_ALERT,
-] as const;
-
+/**
+ * The market guard-rail, run by the settlement worker's daily sweep. Its
+ * HTTP routes (calibration curve, weekly report, alert lists) had no
+ * caller since the old admin was retired, and left with it (2026-11-02).
+ */
 @Injectable()
 export class RiskService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly notification: NotificationService,
     private readonly repository: RiskRepository,
   ) {}
 
   async isMarketSuspended(market: Market): Promise<boolean> {
-    const suspension = await this.prisma.client.marketSuspension.findFirst({
-      where: { market, active: true },
-    });
-    return suspension !== null;
-  }
-
-  // Every currently-active suspension, detail (not just isMarketSuspended's
-  // per-market boolean) — the admin health view needs to list which markets
-  // are suspended and why, not just count them (audit.service.ts's
-  // getOverview already exposes a bare count).
-  async listActiveSuspensions(): Promise<ActiveMarketSuspension[]> {
-    const rows = await this.prisma.client.marketSuspension.findMany({
-      where: { active: true },
-      orderBy: { createdAt: 'desc' },
-    });
-    return rows.map((row) => ({
-      market: row.market,
-      reason: row.reason,
-      triggeredBy: row.triggeredBy,
-      createdAt: row.createdAt.toISOString(),
-    }));
-  }
-
-  // MARKET_SUSPENSION/ROI_ALERT/BRIER_ALERT notifications from the last
-  // `days` days — narrower than dashboard.service.ts's buildActiveAlerts
-  // (which also includes ETL_FAILURE, dedups to one per type per day, and
-  // caps at 3): the admin health view wants the full, undeduped risk
-  // picture, not a "top 3 alerts of any kind" digest.
-  async getRecentAlerts(days: number): Promise<RiskAlert[]> {
-    const since = new Date(Date.now() - days * 86_400_000);
-    const rows = await this.prisma.client.notification.findMany({
-      where: {
-        type: { in: [...RISK_ALERT_TYPES] },
-        createdAt: { gte: since },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    return rows.map((row) => ({
-      id: row.id,
-      type: row.type,
-      title: row.title,
-      body: row.body,
-      createdAt: row.createdAt.toISOString(),
-      read: row.read,
-    }));
+    return this.repository.hasActiveSuspension(market);
   }
 
   /**
@@ -143,12 +67,10 @@ export class RiskService {
     ) {
       const alreadySuspended = await this.isMarketSuspended(market);
       if (!alreadySuspended) {
-        await this.prisma.client.marketSuspension.create({
-          data: {
-            market,
-            reason: `ROI ${(roi.toNumber() * 100).toFixed(1)} % ± ${(standardError.toNumber() * 100).toFixed(1)} sur ${legs.length} jambes réglées en ${RISK_CONSTANTS.ROI_WINDOW_DAYS} jours — suspension automatique`,
-            triggeredBy: 'auto',
-          },
+        await this.repository.createSuspension({
+          market,
+          reason: `ROI ${(roi.toNumber() * 100).toFixed(1)} % ± ${(standardError.toNumber() * 100).toFixed(1)} sur ${legs.length} jambes réglées en ${RISK_CONSTANTS.ROI_WINDOW_DAYS} jours — suspension automatique`,
+          triggeredBy: 'auto',
         });
         await this.notification.sendMarketSuspensionAlert(
           market,
@@ -221,99 +143,6 @@ export class RiskService {
     );
     return results;
   }
-
-  async checkBrierScore(seasonId: string, brierScore: Decimal): Promise<void> {
-    if (brierScore.greaterThan(RISK_CONSTANTS.BRIER_SCORE_ALERT_THRESHOLD)) {
-      await this.notification.sendBrierScoreAlert(
-        seasonId,
-        brierScore.toNumber(),
-      );
-      logger.warn(
-        { seasonId, brierScore: brierScore.toNumber() },
-        'Brier score alert sent',
-      );
-    }
-  }
-
-  async getCalibrationCurve(): Promise<CalibrationBin[]> {
-    const bets = await this.prisma.client.bet.findMany({
-      where: {
-        status: { in: ['WON', 'LOST'] },
-        source: 'MODEL',
-      },
-      select: { status: true, probEstimated: true },
-    });
-
-    const BIN_COUNT = 10;
-    const bins: { sumProb: number; wins: number; count: number }[] = Array.from(
-      { length: BIN_COUNT },
-      () => ({ sumProb: 0, wins: 0, count: 0 }),
-    );
-
-    for (const bet of bets) {
-      const prob = new Decimal(bet.probEstimated.toString()).toNumber();
-      const idx = Math.min(Math.floor(prob * BIN_COUNT), BIN_COUNT - 1);
-      bins[idx].sumProb += prob;
-      bins[idx].count += 1;
-      if (bet.status === 'WON') bins[idx].wins += 1;
-    }
-
-    return bins
-      .map((bin, i) => ({
-        minProb: i / BIN_COUNT,
-        maxProb: (i + 1) / BIN_COUNT,
-        avgProb:
-          bin.count > 0 ? bin.sumProb / bin.count : (i + 0.5) / BIN_COUNT,
-        actualRate: bin.count > 0 ? bin.wins / bin.count : 0,
-        count: bin.count,
-      }))
-      .filter((bin) => bin.count > 0);
-  }
-
-  async generateWeeklyReport(): Promise<WeeklyReportResult> {
-    const periodEnd = new Date();
-    const periodStart = new Date(periodEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-    const bets = await this.prisma.client.bet.findMany({
-      where: {
-        market: Market.ONE_X_TWO,
-        status: { not: 'VOID' },
-        createdAt: { gte: periodStart },
-      },
-      select: { status: true, oddsSnapshot: true, probEstimated: true },
-    });
-
-    const settledBets = bets.filter(
-      (bet) => bet.status === 'WON' || bet.status === 'LOST',
-    );
-    // Le rapport hebdomadaire lit encore la table `bet` (paris USER
-    // uniquement depuis le 2026-09-04) ; un gain sans cote compte zéro.
-    const roiOneXTwo =
-      settledBets.length > 0
-        ? computeRoi(
-            settledBets.map((bet) => ({
-              result:
-                bet.status === 'WON' ? ('WON' as const) : ('LOST' as const),
-              odds: bet.oddsSnapshot !== null ? Number(bet.oddsSnapshot) : 1,
-            })),
-          ).toNumber()
-        : 0;
-    const brierScore =
-      settledBets.length > 0 ? computeBrierScore(settledBets) : 0;
-
-    const result: WeeklyReportResult = {
-      periodStart,
-      periodEnd,
-      roiOneXTwo,
-      betsPlaced: bets.length,
-      brierScore,
-    };
-
-    await this.notification.sendWeeklyReport(result);
-    logger.info({ roiOneXTwo, betsPlaced: bets.length }, 'Weekly report sent');
-
-    return result;
-  }
 }
 
 function daysAgo(days: number): Date {
@@ -349,21 +178,4 @@ function computeStandardError(
     .div(legs.length - 1)
     .sqrt()
     .div(new Decimal(legs.length).sqrt());
-}
-
-type SettledBetRow = {
-  status: string;
-  probEstimated: { toString(): string };
-};
-
-// Brier score = mean((probEstimated - outcome)^2), outcome = 1 if WON else 0.
-// Was previously hardcoded to 0 in generateWeeklyReport, silently claiming
-// perfect calibration every week.
-function computeBrierScore(bets: SettledBetRow[]): number {
-  const sumSquaredError = bets.reduce((sum, bet) => {
-    const prob = new Decimal(bet.probEstimated.toString());
-    const outcome = bet.status === 'WON' ? 1 : 0;
-    return sum + prob.minus(outcome).pow(2).toNumber();
-  }, 0);
-  return sumSquaredError / bets.length;
 }

@@ -9,18 +9,14 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma.module';
 import { EtlModule } from './modules/etl/etl.module';
 import { BettingEngineModule } from './modules/betting-engine/betting-engine.module';
-import { BacktestModule } from './modules/backtest/backtest.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { RiskModule } from './modules/risk/risk.module';
 import { AdjustmentModule } from './modules/adjustment/adjustment.module';
 import { AdminJournalModule } from './modules/admin-journal/admin-journal.module';
 import { ConsoleModule } from './modules/console/console.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
-import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AdminUsersModule } from './modules/admin-users/admin-users.module';
-import { ReportsModule } from './modules/reports/reports.module';
-import { FormationProgressModule } from './modules/formation-progress/formation-progress.module';
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
 import { SupportModule } from './modules/support/support.module';
 import { PushModule } from './modules/push/push.module';
@@ -61,7 +57,6 @@ import { IntegrationsModule } from './modules/integrations/integrations.module';
     PrismaModule,
     EtlModule,
     BettingEngineModule,
-    BacktestModule,
     NotificationModule,
     RiskModule,
     AdjustmentModule,
@@ -69,10 +64,7 @@ import { IntegrationsModule } from './modules/integrations/integrations.module';
     AdminJournalModule,
     ConsoleModule,
     DashboardModule,
-    AuditModule,
     AdminUsersModule,
-    ReportsModule,
-    FormationProgressModule,
     AnnouncementsModule,
     SupportModule,
     PushModule,

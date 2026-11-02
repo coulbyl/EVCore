@@ -3,63 +3,25 @@ import { BetStatus, StrategyChannel } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { toNumber } from '@utils/prisma.utils';
 import { marketProbability } from '@evcore/analysis-core';
-import {
-  startOfUtcDay,
-  endOfUtcDay,
-  formatTimeUtc,
-  parseIsoDate,
-} from '@utils/date.utils';
-import {
-  signedDelta,
-  formatSigned,
-  buildWorkerStatus,
-  notificationSeverity,
-} from './dashboard.utils';
-import {
-  PRIMARY_METRIC_BY_CHANNEL,
-  TRACKED_CHANNELS,
-  TRACK_RECORD_ODDS_BREAKS,
-} from './dashboard.constants';
-import {
-  DashboardRepository,
-  type VantageCohortRow,
-} from './dashboard.repository';
+import { startOfUtcDay, endOfUtcDay, parseIsoDate } from '@utils/date.utils';
+import { TRACKED_CHANNELS } from './dashboard.constants';
+import { DashboardRepository } from './dashboard.repository';
+import type {
+  ChannelCompetitionStatItem,
+  ChannelStatus,
+} from './dashboard.types';
 
 // Assez long pour couvrir les appels simultanés d'un chargement de page et un
 // rafraîchissement rapide ; assez court pour qu'un nouveau règlement apparaisse
 // sans redémarrage.
 const SETTLED_CACHE_TTL_MS = 60_000;
 const SETTLED_CACHE_MAX_ENTRIES = 6;
-import type {
-  AiTrackRecord,
-  AiTrackRecordRow,
-  ChannelCompetitionStatItem,
-  ChannelHealthItem,
-  ChannelStatsItem,
-  ChannelStatus,
-  CompetitionStat,
-  DashboardSummary,
-  PnlSummary,
-  TrackRecordRates,
-  TrackRecordSummary,
-  WorkerStatus,
-} from './dashboard.types';
 
-const MIN_SETTLED_MODEL = 10;
-
-/** Canaux exclus de l'en-tête de Mesures historiques (voir getTrackRecordSummary). */
-const SUMMARY_EXCLUDED_CHANNELS: ReadonlySet<StrategyChannel> = new Set([
-  StrategyChannel.VALUE,
-  StrategyChannel.SAFE,
-  StrategyChannel.VANTAGE,
-]);
-
-/** Même seuil que le tableau par canal (« Volume insuffisant » sous 30). */
-const TRACK_RECORD_MIN_SAMPLE = 30;
-type SummaryData = Awaited<ReturnType<DashboardRepository['getSummaryData']>>;
-
-type UnreadNotification = SummaryData['unreadNotifications'][number];
-
+/**
+ * Channel × competition calibration, read by the admin console's engine
+ * screen. What is left of the old dashboard: its routes had no caller
+ * since its pages were retired, and left on 2026-11-02.
+ */
 @Injectable()
 export class DashboardService {
   /**
@@ -77,315 +39,6 @@ export class DashboardService {
 
   constructor(private readonly repo: DashboardRepository) {}
 
-  async getSummary(pnlDate?: string): Promise<DashboardSummary> {
-    const now = new Date();
-    const yesterday = new Date(now.getTime() - 86_400_000);
-    const pnlDay = pnlDate ? parseIsoDate(pnlDate) : undefined;
-    const data = await this.repo.getSummaryData({
-      today: { start: startOfUtcDay(now), end: endOfUtcDay(now) },
-      yesterday: {
-        start: startOfUtcDay(yesterday),
-        end: endOfUtcDay(yesterday),
-      },
-      pnlDateRange: pnlDay
-        ? { start: startOfUtcDay(pnlDay), end: endOfUtcDay(pnlDay) }
-        : undefined,
-    });
-    return {
-      dashboardKpis: this.buildKpis(data),
-      workerStatuses: this.buildWorkerStatuses(data),
-      activeAlerts: this.buildActiveAlerts(data.unreadNotifications),
-      pnlSummary: this.buildPnlSummary(data.settledBets),
-    };
-  }
-
-  // ---------------------------------------------------------------------------
-  // Section builders
-  // ---------------------------------------------------------------------------
-
-  private buildKpis(data: SummaryData): DashboardSummary['dashboardKpis'] {
-    const coveragePct =
-      data.scheduledToday > 0
-        ? (data.fixturesWithOddsToday / data.scheduledToday) * 100
-        : 0;
-
-    return [
-      {
-        label: 'Matchs planifiés',
-        value: String(data.scheduledToday),
-        delta: `${signedDelta(data.scheduledToday - data.scheduledYesterday)} vs hier`,
-        tone: 'accent',
-      },
-      {
-        label: 'Matchs avec cotes',
-        value: String(data.fixturesWithOddsToday),
-        delta: `${coveragePct.toFixed(1).replace('.', ',')}% de couverture`,
-        tone: 'success',
-      },
-      {
-        label: 'Scorings du jour',
-        value: String(data.selectedDecisionsToday),
-        delta: `${data.modelRunsToday} analysés`,
-        tone: 'warning',
-      },
-      {
-        label: 'Alertes actives',
-        value: String(data.unreadNotificationsTotal).padStart(2, '0'),
-        delta: `${data.unreadHighAlertsTotal} haute priorité`,
-        tone: 'danger',
-      },
-    ];
-  }
-
-  private buildWorkerStatuses(data: SummaryData): WorkerStatus[] {
-    return [
-      buildWorkerStatus({
-        worker: 'fixtures-sync',
-        lastRun: data.latestFixture?.updatedAt ?? null,
-        healthyMinutes: 20,
-        watchMinutes: 60,
-        detail: `${data.scheduledToday} matchs planifiés aujourd'hui`,
-        formatTime: formatTimeUtc,
-      }),
-      buildWorkerStatus({
-        worker: 'odds-prematch-sync',
-        lastRun: data.latestOddsSnapshot?.snapshotAt ?? null,
-        healthyMinutes: 10,
-        watchMinutes: 30,
-        detail: `${data.fixturesWithOddsToday} matchs avec snapshot de cotes`,
-        formatTime: formatTimeUtc,
-      }),
-      buildWorkerStatus({
-        worker: 'injuries-sync',
-        lastRun: data.latestTeamStats?.createdAt ?? null,
-        healthyMinutes: 120,
-        watchMinutes: 360,
-        detail: 'Stats équipe calculées (proxy disponibilité injuries)',
-        formatTime: formatTimeUtc,
-      }),
-    ];
-  }
-
-  private buildActiveAlerts(
-    notifications: UnreadNotification[],
-  ): DashboardSummary['activeAlerts'] {
-    const byTypeAndDay = new Map<string, UnreadNotification>();
-
-    for (const notification of notifications) {
-      const day = notification.createdAt.toISOString().slice(0, 10);
-      const key = `${notification.type}-${day}`;
-      if (!byTypeAndDay.has(key)) {
-        byTypeAndDay.set(key, notification);
-      }
-    }
-
-    return Array.from(byTypeAndDay.values())
-      .slice(0, 3)
-      .map((n) => ({
-        id: n.id,
-        title: n.title,
-        detail: this.sanitizeAlertDetail(n.body),
-        severity: notificationSeverity(n.type),
-      }));
-  }
-
-  private buildPnlSummary(
-    settled: {
-      status: string;
-      stakePct: { toString(): string };
-      oddsSnapshot: { toString(): string } | null;
-    }[],
-  ): PnlSummary {
-    const won = settled.filter((b) => b.status === 'WON');
-    const lost = settled.filter((b) => b.status === 'LOST');
-    const settledCount = won.length + lost.length;
-
-    const totalStaked = settled.reduce(
-      (acc, b) => acc + toNumber(b.stakePct),
-      0,
-    );
-    const totalReturned = won.reduce(
-      (acc, b) => acc + toNumber(b.stakePct) * toNumber(b.oddsSnapshot ?? 1),
-      0,
-    );
-    const netUnits = totalReturned - totalStaked;
-    const roi = totalStaked > 0 ? (netUnits / totalStaked) * 100 : 0;
-    const winRate = settledCount > 0 ? (won.length / settledCount) * 100 : 0;
-
-    return {
-      settledBets: settledCount,
-      wonBets: won.length,
-      winRate: `${winRate.toFixed(1)}%`,
-      netUnits: formatSigned(netUnits, 3),
-      roi: `${formatSigned(roi, 1)}%`,
-    };
-  }
-
-  private sanitizeAlertDetail(body: string): string {
-    const normalized = body.replace(/\s+/g, ' ').trim();
-    if (normalized.length <= 180) return normalized;
-    return `${normalized.slice(0, 177)}...`;
-  }
-
-  /**
-   * En-tête de Mesures historiques, sur la même cohorte que le tableau par
-   * canal (sélections d'avant-match dédupliquées, réglées, avec cote).
-   *
-   * VALUE et SAFE sont des filtres qui re-sélectionnent des décisions d'autres
-   * canaux, et VANTAGE est l'avis IA : les compter dédoublerait des paris déjà
-   * présents. Même exclusion que l'écran Décisions.
-   */
-  async getTrackRecordSummary(
-    from: string,
-    to: string,
-  ): Promise<TrackRecordSummary> {
-    const range = {
-      since: startOfUtcDay(parseIsoDate(from)),
-      until: endOfUtcDay(parseIsoDate(to)),
-    };
-    const byChannel = await this.settledByChannel(range);
-    const selections = [...byChannel]
-      .filter(([channel]) => !SUMMARY_EXCLUDED_CHANNELS.has(channel))
-      .flatMap(([, rows]) => rows);
-
-    const bounds = [null, ...TRACK_RECORD_ODDS_BREAKS, null];
-    const byOdds = bounds.slice(0, -1).map((minOdds, i) => {
-      const maxOdds = bounds[i + 1] ?? null;
-      const inBand = selections.filter((s) => {
-        if (s.odds === null) return false;
-        const odds = toNumber(s.odds);
-        return (
-          (minOdds === null || odds >= minOdds) &&
-          (maxOdds === null || odds < maxOdds)
-        );
-      });
-      return {
-        minOdds,
-        maxOdds,
-        ...trackRecordRates(inBand),
-        status: calibrationStatus(
-          calibrationRatioOf(inBand),
-          inBand.length,
-          TRACK_RECORD_MIN_SAMPLE,
-        ),
-      };
-    });
-
-    return { from, to, ...trackRecordRates(selections), byOdds };
-  }
-
-  async getCompetitionStats(
-    canal?: 'VALUE' | 'SAFE',
-  ): Promise<CompetitionStat[]> {
-    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const [analyzedRuns, modelBets] = await this.repo.getCompetitionData(
-      since,
-      canal,
-    );
-
-    // Compter les fixtures analysées par compétition
-    const activeByComp = new Map<string, number>();
-    for (const run of analyzedRuns) {
-      const comp = run.fixture.season.competition;
-      activeByComp.set(comp.id, (activeByComp.get(comp.id) ?? 0) + 1);
-    }
-
-    // Agréger les bets MODEL par compétition
-    type CompKey = string;
-    type BetAgg = {
-      won: number;
-      total: number;
-      probSum: Decimal;
-    };
-    const modelAgg = new Map<
-      CompKey,
-      BetAgg & { comp: { id: string; name: string; code: string } }
-    >();
-    for (const bet of modelBets) {
-      const comp = bet.fixture.season.competition;
-      const existing = modelAgg.get(comp.id) ?? {
-        comp,
-        won: 0,
-        total: 0,
-        probSum: new Decimal(0),
-      };
-      existing.total += 1;
-      existing.probSum = existing.probSum.plus(
-        new Decimal(bet.probEstimated.toString()),
-      );
-      if (bet.status === 'WON') existing.won += 1;
-      modelAgg.set(comp.id, existing);
-    }
-
-    const stats: CompetitionStat[] = [];
-
-    for (const [compId, model] of modelAgg) {
-      const active = activeByComp.get(compId) ?? 0;
-
-      const avgProbability =
-        model.total > 0 ? model.probSum.dividedBy(model.total).toNumber() : 0;
-      const hitRate = model.won / model.total;
-      const calibrationRatio =
-        model.total >= MIN_SETTLED_MODEL && avgProbability > 0
-          ? hitRate / avgProbability
-          : null;
-
-      const modelWinRate =
-        model.total >= MIN_SETTLED_MODEL
-          ? `${Math.round(hitRate * 100)}%`
-          : null;
-
-      stats.push({
-        competitionId: compId,
-        competitionName: model.comp.name,
-        competitionCode: model.comp.code,
-        activeFixtures: active,
-        model: {
-          settled: model.total,
-          won: model.won,
-          winRate: modelWinRate,
-          calibrationRatio,
-          status: calibrationStatus(
-            calibrationRatio,
-            model.total,
-            MIN_SETTLED_MODEL,
-          ),
-        },
-      });
-    }
-
-    // Tri : fixtures actives décroissant, puis fiabilité (ratio de
-    // calibration) décroissante — plus le ROI, anti-prédictif à ce volume
-    // (voir CLAUDE.md et l'audit 2026-08-22). Une compétition sans donnée
-    // suffisante (ratio null) est classée après celles qui en ont.
-    return stats.sort((a, b) => {
-      if (b.activeFixtures !== a.activeFixtures)
-        return b.activeFixtures - a.activeFixtures;
-      const ratioA = a.model.calibrationRatio ?? -Infinity;
-      const ratioB = b.model.calibrationRatio ?? -Infinity;
-      return ratioB - ratioA;
-    });
-  }
-
-  /**
-   * Charge une fois les sélections réglées de tous les canaux suivis, et les
-   * regroupe par canal.
-   *
-   * La PROMESSE est mise en cache, pas son résultat : les trois endpoints de
-   * la page partent en parallèle sur la même plage, donc mémoriser la valeur
-   * résolue arriverait trop tard — les trois requêtes seraient déjà lancées.
-   * En cachant la promesse, les deux appels suivants attendent la première.
-   *
-   * Les trois endpoints appelaient auparavant une requête PAR CANAL, toutes
-   * lancées en parallèle. Tenable à 10 canaux, plus du tout à
-   * 18 : chaque worker parallèle de Postgres réclame un segment de mémoire
-   * partagée, et le conteneur n'a que les 64 Mo de `/dev/shm` par défaut. La
-   * page tombait sur « could not resize shared memory segment » (SQLSTATE
-   * 53100) dès la période « tout l'historique ».
-   *
-   * Chaque canal suivi est présent dans la carte même sans sélection sur la
-   * période : un canal silencieux doit figurer à zéro, pas disparaître.
-   */
   private settledByChannel(range: {
     since: Date;
     until: Date;
@@ -427,82 +80,7 @@ export class DashboardService {
     return byChannel;
   }
 
-  /**
-   * Santé de chaque canal suivi.
-   *
-   * Itère sur TRACKED_CHANNELS au lieu d'énumérer les canaux : la version
-   * précédente en listait 10 en dur, et les 8 canaux ouverts depuis
-   * n'apparaissaient nulle part malgré leurs résultats réglés.
-   *
-   * Tout est lu depuis `channel_selection`, y compris VALUE et SAFE qui
-   * passaient auparavant par la table `bet`. Deux raisons : `bet` n'est écrit
-   * que pour ces deux canaux (persistChannelBet), donc leurs lignes n'étaient
-   * pas comparables aux autres sur cette page ; et c'est la source qu'ont déjà
-   * adoptée la calibration et le pool de coupon pour cette raison exacte.
-   * Effet de bord bienvenu : VALUE et SAFE ont désormais un taux de réussite,
-   * là où ils affichaient `null`.
-   */
-  async getChannelHealth(
-    from: string,
-    to: string,
-  ): Promise<ChannelHealthItem[]> {
-    const range = {
-      since: startOfUtcDay(parseIsoDate(from)),
-      until: endOfUtcDay(parseIsoDate(to)),
-    };
-    const bySelection = await this.settledByChannel(range);
-
-    return [...bySelection].map(([channel, selections]) =>
-      channelHealthFromSelections(
-        channel,
-        selections,
-        PRIMARY_METRIC_BY_CHANNEL[channel] ?? 'HIT_RATE',
-      ),
-    );
-  }
-
-  async getChannelStats(from: string, to: string): Promise<ChannelStatsItem[]> {
-    const range = {
-      since: startOfUtcDay(parseIsoDate(from)),
-      until: endOfUtcDay(parseIsoDate(to)),
-    };
-    const bySelection = await this.settledByChannel(range);
-
-    return [...bySelection].map(([channel, selections]) =>
-      channelStatsFromSelections(channel, selections),
-    );
-  }
-
-  /**
-   * Bilan de l'IA (2026-10-29) : avis comptés sur l'historique figé
-   * (vantageCohortSql), au total et par version de prompt, pour juger la
-   * cohorte v5 à part.
-   */
-  async getAiTrackRecord(from: string, to: string): Promise<AiTrackRecord> {
-    const rows = await this.repo.findVantageCohortRows({
-      since: startOfUtcDay(parseIsoDate(from)),
-      until: endOfUtcDay(parseIsoDate(to)),
-    });
-    const byVersion = new Map<string | null, VantageCohortRow[]>();
-    for (const row of rows) {
-      const list = byVersion.get(row.configVersion) ?? [];
-      list.push(row);
-      byVersion.set(row.configVersion, list);
-    }
-    return {
-      from,
-      to,
-      total: aiTrackRecordRow(null, rows),
-      versions: [...byVersion.entries()]
-        .map(([version, list]) => aiTrackRecordRow(version, list))
-        .sort((a, b) => (a.firstDay ?? '').localeCompare(b.firstDay ?? '')),
-    };
-  }
-
-  /** Same settled data as getChannelStats, one level finer — grouped by
-   * competition per channel. Independent tracking section on the
-   * track-record page (channel × competition), not a replacement for the
-   * per-channel summary. */
+  /** Settled selections grouped by competition per channel. */
   async getChannelStatsByCompetition(
     from: string,
     to: string,
@@ -539,32 +117,6 @@ function flatBetRoi(
 }
 
 type FlatBet = { status: string; oddsSnapshot: { toString(): string } | null };
-
-function netUnitsFromBets(bets: FlatBet[]): number | null {
-  if (!bets.length) return null;
-  return bets.reduce((acc, b) => {
-    const odds = b.oddsSnapshot ? parseFloat(b.oddsSnapshot.toString()) : null;
-    if (odds === null) return acc;
-    return acc + (b.status === 'WON' ? odds - 1 : -1);
-  }, 0);
-}
-
-// bets must be in chronological order (oldest first)
-function maxDrawdownFromBets(bets: FlatBet[]): number | null {
-  if (!bets.length) return null;
-  let peak = 0;
-  let running = 0;
-  let maxDD = 0;
-  for (const b of bets) {
-    const odds = b.oddsSnapshot ? parseFloat(b.oddsSnapshot.toString()) : null;
-    if (odds === null) continue;
-    running += b.status === 'WON' ? odds - 1 : -1;
-    if (running > peak) peak = running;
-    const dd = peak - running;
-    if (dd > maxDD) maxDD = dd;
-  }
-  return maxDD;
-}
 
 // Same floor CLAUDE.md/VANTAGE's own guardrail use for "poorly calibrated"
 // (docs/vantage-centric-redesign-2026-09-01.md §4 point 3, §5.8) — ratio
@@ -637,19 +189,6 @@ function marketOf(selections: SettledSelection[]): number | null {
     .toNumber();
 }
 
-function trackRecordRates(selections: SettledSelection[]): TrackRecordRates {
-  const roi = flatBetRoi(asFlatBets(selections));
-  return {
-    settled: selections.length,
-    won: selections.filter((s) => s.result === BetStatus.WON).length,
-    announced: announcedOf(selections),
-    market: marketOf(selections),
-    realised: hitRateOf(selections),
-    returnPerUnit: roi === null ? null : 1 + roi / 100,
-    sufficient: selections.length >= TRACK_RECORD_MIN_SAMPLE,
-  };
-}
-
 // DOMINANT/BTTS/DRAW/GOALS settle via ChannelSelection.result rather than a
 // materialised Bet (see DashboardRepository.findRecentChannelSelections) —
 // reshape into the {status, oddsSnapshot} FlatBet shape so the same flat-stake
@@ -674,27 +213,6 @@ function hitRateOf(selections: SettledSelection[]): number | null {
   if (selections.length === 0) return null;
   const won = selections.filter((s) => s.result === BetStatus.WON).length;
   return won / selections.length;
-}
-
-function channelHealthFromSelections(
-  channel: ChannelHealthItem['channel'],
-  selections: SettledSelection[],
-  primaryMetricType: ChannelHealthItem['primaryMetricType'],
-): ChannelHealthItem {
-  const roi = flatBetRoi(asFlatBets(selections));
-  const hitRate = hitRateOf(selections);
-  const calibrationRatio = calibrationRatioOf(selections);
-  return {
-    channel,
-    status: calibrationStatus(calibrationRatio, selections.length, 30),
-    primaryMetric: (primaryMetricType === 'HIT_RATE' ? hitRate : roi) ?? 0,
-    primaryMetricType,
-    roi,
-    hitRate,
-    calibrationRatio,
-    vsThreshold: null,
-    sampleSize: selections.length,
-  };
 }
 
 type CompetitionRef = { code: string; name: string; country: string };
@@ -748,62 +266,4 @@ function channelCompetitionStatsFromSelections(
       };
     },
   );
-}
-
-function aiTrackRecordRow(
-  configVersion: string | null,
-  rows: readonly VantageCohortRow[],
-): AiTrackRecordRow {
-  const selections = rows.map((row) => row.selection);
-  const days = rows.map((row) => row.kickoff.toISOString().slice(0, 10)).sort();
-  // Écart au marché par avis : gagné (1/0) moins la fréquence du marché.
-  const gaps = selections.flatMap((s) => {
-    const fair = marketProbability({
-      odds: s.odds === null ? null : toNumber(s.odds),
-      market: s.market,
-      marginPaid: s.marginPaid === null ? null : toNumber(s.marginPaid),
-    });
-    return fair === null ? [] : [(s.result === BetStatus.WON ? 1 : 0) - fair];
-  });
-  const mean =
-    gaps.length > 0 ? gaps.reduce((acc, g) => acc + g, 0) / gaps.length : null;
-  const variance =
-    mean !== null && gaps.length > 1
-      ? gaps.reduce((acc, g) => acc + (g - mean) ** 2, 0) / (gaps.length - 1)
-      : null;
-  const roi = flatBetRoi(asFlatBets(selections));
-  return {
-    configVersion,
-    settled: selections.length,
-    realised: hitRateOf(selections),
-    announced: announcedOf(selections),
-    market: marketOf(selections),
-    gap: mean,
-    gapMargin:
-      variance === null ? null : 1.96 * Math.sqrt(variance / gaps.length),
-    flatReturn: roi === null ? null : roi / 100,
-    firstDay: days[0] ?? null,
-    lastDay: days[days.length - 1] ?? null,
-  };
-}
-
-function channelStatsFromSelections(
-  channel: ChannelStatsItem['channel'],
-  selections: SettledSelection[],
-): ChannelStatsItem {
-  const flatBets = asFlatBets(selections);
-  return {
-    channel,
-    hitRate: hitRateOf(selections),
-    avgThreshold: null,
-    vsThreshold: null,
-    roi: flatBetRoi(flatBets),
-    netUnits: netUnitsFromBets(flatBets),
-    maxDrawdown: maxDrawdownFromBets([...flatBets].reverse()),
-    sampleSize: selections.length,
-    oddsAvailabilityRate: 1,
-    trend: 'FLAT' as const,
-    announced: announcedOf(selections),
-    market: marketOf(selections),
-  };
 }

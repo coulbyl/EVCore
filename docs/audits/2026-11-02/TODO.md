@@ -20,7 +20,7 @@ _Mesures de départ (copie de prod du 02/11, 7,9 Go) : `odds_snapshot` 6,1 Go / 
 
 ## D. Code mort
 
-- [ ] D1 `refactor(backend): remove routes no screen calls` — § 4.1 du rapport, plus `/coupons/indices` et `/backtest/*` (lisent `channel_selection` sans déduplication).
+- [x] D1 `refactor(backend): remove routes no screen calls` — § 4.1 du rapport, plus `/coupons/indices` et `/backtest/*` (lisent `channel_selection` sans déduplication). _Fait : chaque route vérifiée sans appelant (web, vantage-worker, `docs/exploitation.md`, workflows, scripts), plus `GET /coupons` que le rapport avait manqué. Modules entiers retirés : `audit`, `reports`, `formation-progress`, `backtest`. Contrôleurs retirés : `dashboard`, `risk`, `channel-decisions` (lecture ; le rattrapage `settle-range` reste), `etl/stats-backfill`. Services élagués jusqu'au bout avec `tsc --noUnusedLocals` (aucun reste) : le dashboard ne garde que la calibration canal × championnat de la console, le risque que le balayage des marchés (ses deux requêtes Prisma passent dans le dépôt), les coupons perdent liste, vues, bilan et indices, les notifications `markAllRead`, `sendWeeklyReport`, `sendBrierScoreAlert` et leurs deux e-mails. Gardés : `POST /coupons/settle-range`, `POST /channel-decisions/settle-range`, `POST /adjustment/:id/rollback` (retour arrière humain, CLAUDE.md). La constante de saison des cotes européennes passe du module backtest à `config/etl.constants.ts`. Doc d'exploitation à jour (section Retiré). Tests backend : 1 128 réussis, lint sans avertissement._
 - [ ] D2 `refactor(backend): remove the ML module` — inférence, ordonnanceur, e-mails ML, `ML_WORKER_URL`.
 - [ ] D3 `chore: remove dead files and scripts`.
 

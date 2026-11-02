@@ -131,21 +131,6 @@ export class NotificationService {
     });
   }
 
-  async sendBrierScoreAlert(
-    seasonId: string,
-    brierScore: number,
-  ): Promise<void> {
-    const title = `Brier Score Alert — Season ${seasonId}`;
-    const body = `Brier score ${brierScore.toFixed(4)} exceeds alert threshold (> 0.25)`;
-    await this.save({
-      type: NotificationType.BRIER_ALERT,
-      title,
-      body,
-      payload: { seasonId, brierScore },
-    });
-    await this.mail.sendBrierAlert({ seasonId, brierScore });
-  }
-
   async sendEtlFailureAlert(
     queue: string,
     jobName: string,
@@ -200,34 +185,6 @@ export class NotificationService {
       season,
       unavailableCount,
       externalIds,
-    });
-  }
-
-  async sendWeeklyReport(payload: WeeklyReportPayload): Promise<void> {
-    const title = `Weekly Report — ${payload.periodStart.toISOString().slice(0, 10)} → ${payload.periodEnd.toISOString().slice(0, 10)}`;
-    const body = [
-      `ROI (1X2): ${(payload.roiOneXTwo * 100).toFixed(2)}%`,
-      `Bets placed: ${payload.betsPlaced}`,
-      `Brier score: ${payload.brierScore.toFixed(4)}`,
-    ].join('\n');
-    await this.save({
-      type: NotificationType.WEEKLY_REPORT,
-      title,
-      body,
-      payload: {
-        roiOneXTwo: payload.roiOneXTwo,
-        betsPlaced: payload.betsPlaced,
-        brierScore: payload.brierScore,
-        periodStart: payload.periodStart.toISOString(),
-        periodEnd: payload.periodEnd.toISOString(),
-      },
-    });
-    await this.mail.sendWeeklyReport({
-      roiOneXTwo: payload.roiOneXTwo,
-      betsPlaced: payload.betsPlaced,
-      brierScore: payload.brierScore,
-      periodStart: payload.periodStart.toISOString(),
-      periodEnd: payload.periodEnd.toISOString(),
     });
   }
 
@@ -423,28 +380,6 @@ export class NotificationService {
       userId,
       NotificationType.SUPPORT_MESSAGE,
     );
-  }
-
-  async markAllRead(userId: string, role: UserRole): Promise<void> {
-    const types = this.allowedTypes(role);
-    const unreadBroadcast = await this.repository.findUnreadBroadcasts(
-      userId,
-      types,
-    );
-    await Promise.all([
-      this.repository.markBroadcastsRead(
-        userId,
-        unreadBroadcast.map((n) => n.id),
-      ),
-      this.repository.markAllPersonalRead(userId),
-      this.syncAnnouncementReads(
-        userId,
-        unreadBroadcast
-          .filter((n) => n.type === NotificationType.ANNOUNCEMENT_PUBLISHED)
-          .map((n) => announcementIdOf(n.payload))
-          .filter((id): id is string => id !== null),
-      ),
-    ]);
   }
 
   // Notification personnelle (userId non-null) — voir SaveNotificationInput

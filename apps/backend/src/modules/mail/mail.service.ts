@@ -4,7 +4,6 @@ import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 import { createLogger } from '@utils/logger';
 import {
-  renderBrierAlert,
   renderEmailVerification,
   renderEmailChangeCode,
   renderEmailChanged,
@@ -15,13 +14,11 @@ import {
   renderPasswordReset,
   renderRoiAlert,
   renderWeightAdjustment,
-  renderWeeklyReport,
   renderXgUnavailableReport,
   renderMlModelActivated,
   renderMlModelMissing,
   renderSupportMessage,
   renderPlayerDigest,
-  type BrierAlertProps,
   type EmailVerificationProps,
   type EmailChangeCodeProps,
   type EmailChangedProps,
@@ -35,7 +32,6 @@ import {
   type SupportMessageProps,
   type PlayerDigestProps,
   type WeightAdjustmentProps,
-  type WeeklyReportProps,
   type XgUnavailableReportProps,
 } from '@evcore/transactional';
 
@@ -139,15 +135,6 @@ export class MailService {
     await this.sendToAdmin(`Market Suspended — ${props.market}`, html, text);
   }
 
-  async sendBrierAlert(props: BrierAlertProps): Promise<void> {
-    const { html, text } = await renderBrierAlert(props);
-    await this.sendToAdmin(
-      `Brier Score Alert — Season ${props.seasonId}`,
-      html,
-      text,
-    );
-  }
-
   async sendEtlFailure(props: EtlFailureProps): Promise<void> {
     const { html, text } = await renderEtlFailure(props);
     await this.sendToAdmin(`ETL Failure — ${props.queue}`, html, text);
@@ -167,12 +154,6 @@ export class MailService {
       html,
       text,
     );
-  }
-
-  async sendWeeklyReport(props: WeeklyReportProps): Promise<void> {
-    const period = `${props.periodStart.slice(0, 10)} → ${props.periodEnd.slice(0, 10)}`;
-    const { html, text } = await renderWeeklyReport(props);
-    await this.sendToAdmin(`Weekly Report — ${period}`, html, text);
   }
 
   async sendMlModelActivated(props: MlModelActivatedProps): Promise<void> {

@@ -124,43 +124,6 @@ describe('ChannelDecisionRepository (e2e)', () => {
     expect(stillUnsettled).toHaveLength(1);
   });
 
-  it('lists decisions by date with channel and market filters', async () => {
-    const runId = await createModelRun();
-    await repo.saveRunDecisions(runId, sampleDecisions());
-    // Fixtures created by the helper are scheduled on 2026-01-18.
-    const range = {
-      gte: new Date('2026-01-18T00:00:00.000Z'),
-      lte: new Date('2026-01-18T23:59:59.999Z'),
-    };
-
-    const all = await repo.findByDate({ range });
-    expect(all.length).toBeGreaterThanOrEqual(3);
-    const ev = all.find((d) => d.channel === StrategyChannel.VALUE);
-    expect(ev?.fixtureId).toBeDefined();
-    expect(ev?.homeTeam).toContain('Home');
-    expect(ev?.selections[0]?.pick).toBe('HOME');
-
-    // Channel filter narrows to a single decision.
-    const onlyEv = await repo.findByDate({
-      range,
-      channel: [StrategyChannel.VALUE],
-    });
-    expect(onlyEv.every((d) => d.channel === StrategyChannel.VALUE)).toBe(true);
-
-    // Market filter keeps only decisions that selected on that market.
-    const onlyBtts = await repo.findByDate({ range, market: Market.BTTS });
-    expect(onlyBtts).toHaveLength(0);
-
-    // A date outside the range returns nothing.
-    const empty = await repo.findByDate({
-      range: {
-        gte: new Date('2026-02-01T00:00:00.000Z'),
-        lte: new Date('2026-02-01T23:59:59.999Z'),
-      },
-    });
-    expect(empty).toHaveLength(0);
-  });
-
   function sampleDecisions(): StrategyDecision[] {
     return [
       {

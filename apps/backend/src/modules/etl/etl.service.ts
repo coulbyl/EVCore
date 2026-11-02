@@ -1,11 +1,6 @@
-import {
-  Injectable,
-  NotFoundException,
-  OnApplicationBootstrap,
-} from '@nestjs/common';
+import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import type { JobSchedulerJson } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { createLogger } from '@utils/logger';
 import { activeSeasons } from '@utils/date.utils';
@@ -52,15 +47,6 @@ const LEAGUE_SEASON_SYNC_KINDS: LeagueSyncType[] = [
   'stats',
   'injuries',
 ];
-
-type SchedulerEntry = {
-  queueName: string;
-  key: string;
-  name: string;
-  pattern?: string;
-  every?: number;
-  next?: number;
-};
 
 type CompetitionRow = {
   leagueId: number;
@@ -677,65 +663,6 @@ export class EtlService implements OnApplicationBootstrap {
     }
 
     await this.rollingStatsService.refreshSeasonYear(season, competitionCode);
-  }
-
-  async getQueueStatus(): Promise<Record<string, Record<string, number>>> {
-    const entries = await Promise.all(
-      Object.entries(this.buildQueueMap()).map(async ([name, queue]) => {
-        const counts = await queue.getJobCounts(
-          'active',
-          'waiting',
-          'completed',
-          'failed',
-          'delayed',
-        );
-        return [name, counts] as const;
-      }),
-    );
-    return Object.fromEntries(entries);
-  }
-
-  async cleanQueueFailed(queueName: string): Promise<number> {
-    const queue = this.buildQueueMap()[queueName];
-    if (!queue) {
-      throw new NotFoundException(`Queue not found: ${queueName}`);
-    }
-    const removed = await queue.clean(0, 1000, 'failed');
-    return removed.length;
-  }
-
-  async getSchedulerStatus(): Promise<SchedulerEntry[]> {
-    const results = await Promise.all(
-      Object.entries(this.buildQueueMap()).map(async ([queueName, queue]) => {
-        const schedulers: JobSchedulerJson[] = await queue.getJobSchedulers();
-        return schedulers.map((s) => ({
-          queueName,
-          key: s.key,
-          name: s.name,
-          pattern: s.pattern,
-          every: s.every,
-          next: s.next,
-        }));
-      }),
-    );
-    return results.flat();
-  }
-
-  private buildQueueMap(): Record<string, Queue> {
-    return {
-      [BULLMQ_QUEUES.LEAGUE_SYNC]: this.leagueSyncQueue,
-      [BULLMQ_QUEUES.PENDING_BETS_SETTLEMENT]: this.pendingBetsSettlementQueue,
-      [BULLMQ_QUEUES.STALE_SCHEDULED_SYNC]: this.staleScheduledSyncQueue,
-      [BULLMQ_QUEUES.ODDS_CSV_IMPORT]: this.oddsCsvQueue,
-      [BULLMQ_QUEUES.ELO_SYNC]: this.eloSyncQueue,
-      [BULLMQ_QUEUES.COACH_SYNC]: this.coachSyncQueue,
-      [BULLMQ_QUEUES.ODDS_PREMATCH_SYNC]: this.oddsPrematchQueue,
-      [BULLMQ_QUEUES.BETTING_ENGINE]: this.bettingEngineQueue,
-      [BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT]: this.oddsHistoricalImportQueue,
-      [BULLMQ_QUEUES.ROLLING_HORIZON]: this.rollingHorizonQueue,
-      [BULLMQ_QUEUES.BETTING_ENGINE_REBUILD]: this.bettingEngineRebuildQueue,
-      [BULLMQ_QUEUES.SAME_DAY_ANALYSIS]: this.sameDayAnalysisQueue,
-    };
   }
 
   async triggerFixturesSyncForLeague(competitionCode: string): Promise<void> {

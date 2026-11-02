@@ -15,11 +15,6 @@ export type MarketSuspensionProps = {
   betCount: number;
 };
 
-export type BrierAlertProps = {
-  seasonId: string;
-  brierScore: number;
-};
-
 export type EtlFailureProps = {
   queue: string;
   jobName: string;
@@ -32,14 +27,6 @@ export type WeightAdjustmentProps = {
   brierScore?: number;
   meanError?: number;
   rolledBackProposalId?: string;
-};
-
-export type WeeklyReportProps = {
-  roiOneXTwo: number;
-  betsPlaced: number;
-  brierScore: number;
-  periodStart: string;
-  periodEnd: string;
 };
 
 export type XgUnavailableReportProps = {

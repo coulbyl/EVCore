@@ -1,7 +1,6 @@
 import {
   Controller,
   Delete,
-  Get,
   Post,
   Param,
   ParseUUIDPipe,
@@ -13,32 +12,15 @@ import {
   ApiTags,
   ApiOperation,
   ApiQuery,
-  ApiParam,
   ApiOkResponse,
-  ApiNoContentResponse,
-  ApiNotFoundResponse,
 } from '@nestjs/swagger';
-import {
-  formatDateUtc,
-  tomorrowUtc,
-  parseIsoDate,
-  endOfUtcDay,
-} from '@utils/date.utils';
+import { parseIsoDate, endOfUtcDay } from '@utils/date.utils';
 import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
 import { CurrentSession } from '@modules/auth/current-session.decorator';
 import type { AuthSession } from '@modules/auth/auth.types';
 import { CouponService } from './coupon.service';
 import { CouponSettlementService } from './coupon-settlement.service';
-import { CouponIndicesService } from './coupon-indices.service';
-import { CouponQueryDto } from './dto/coupon-query.dto';
-import { CouponIndicesQueryDto } from './dto/coupon-indices-query.dto';
 import { CouponSettleRangeQueryDto } from './dto/coupon-settle-range-query.dto';
-import {
-  CouponTrackRecordQueryDto,
-  type CouponClassTrackRecord,
-} from './dto/coupon-track-record.dto';
-import type { CouponProposalDto } from './dto/coupon-proposal.dto';
-import type { CouponIndicesResponse } from './dto/coupon-indices.dto';
 import { PausedGuard } from '@/common/guards/paused.guard';
 import { AdminOrServiceTokenGuard } from '@modules/auth/admin-or-service-token.guard';
 
@@ -48,64 +30,7 @@ export class CouponController {
   constructor(
     private readonly coupon: CouponService,
     private readonly settlement: CouponSettlementService,
-    private readonly indices: CouponIndicesService,
   ) {}
-
-  @Get()
-  @UseGuards(AuthSessionGuard, PausedGuard)
-  @ApiOperation({
-    summary: 'Get coupon proposals for a date',
-    description:
-      'Returns all generated coupon proposals (all statuses) for the given date. Defaults to tomorrow (UTC) when no date is provided.',
-  })
-  @ApiQuery({
-    name: 'date',
-    required: false,
-    description:
-      'Target date in YYYY-MM-DD format (UTC). Defaults to tomorrow.',
-    example: '2026-05-17',
-  })
-  @ApiOkResponse({ description: 'List of coupon proposals with their legs.' })
-  async getCoupons(
-    @CurrentSession() session: AuthSession,
-    @Query() query: CouponQueryDto,
-  ): Promise<CouponProposalDto[]> {
-    const date = query.date ?? formatDateUtc(tomorrowUtc());
-    return this.coupon.getCoupons(date, session.user.id);
-  }
-
-  // Avant les routes en :id. Information, pas une proposition : pas de
-  // garde de pause.
-  @Get('abstentions')
-  @UseGuards(AuthSessionGuard)
-  @ApiOperation({ summary: 'Products that abstained on a date, with reason' })
-  getAbstentions(
-    @Query() query: CouponQueryDto,
-  ): Promise<{ couponClass: string; reason: string | null }[]> {
-    return this.coupon.getAbstentions(
-      query.date ?? new Date().toISOString().slice(0, 10),
-    );
-  }
-
-  @Post(':id/view')
-  @UseGuards(AuthSessionGuard)
-  @HttpCode(204)
-  @ApiOperation({
-    summary: 'Record that the current user has seen this coupon',
-    description:
-      'Idempotent — a repeat view from the same user is a no-op. Backs the ' +
-      'real "N vues" count shown on the coupon card (never a fabricated ' +
-      'social-proof number).',
-  })
-  @ApiParam({ name: 'id', description: 'UUID of the CouponProposal.' })
-  @ApiNoContentResponse({ description: 'View recorded (or already was).' })
-  @ApiNotFoundResponse({ description: 'No proposal found with the given ID.' })
-  async recordView(
-    @CurrentSession() session: AuthSession,
-    @Param('id') id: string,
-  ): Promise<void> {
-    await this.coupon.recordView(id, session.user.id);
-  }
 
   // « Suivre ce coupon » : propose de suivre un pari, donc fermé pendant
   // une pause ; arrêter de suivre reste toujours possible.
@@ -136,104 +61,6 @@ export class CouponController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
     await this.coupon.unfollow(id, session.user.id);
-  }
-
-  // Ni pause ni suggestion : le bilan reste lisible pendant une pause,
-  // comme tout l'onglet Moi (09 § 1).
-  @Get('followed/summary')
-  @UseGuards(AuthSessionGuard)
-  @ApiOperation({
-    summary: "The player's record on followed coupons",
-    description:
-      'Won (partial gains included), lost, refunded, and the date of the first follow. Unsettled coupons count nowhere.',
-  })
-  @ApiOkResponse({ description: 'The record.' })
-  getFollowedSummary(@CurrentSession() session: AuthSession): Promise<{
-    won: number;
-    lost: number;
-    refunded: number;
-    since: string | null;
-  }> {
-    return this.coupon.getFollowedSummary(session.user.id);
-  }
-
-  // POST /coupons/generate retired 2026-09-03 alongside CouponComposerService
-  // — coupon composition is now apps/vantage-worker's own LLM pipeline,
-  // triggered by its own scheduler, not by an HTTP call into this app. See
-  // docs/vantage-centric-redesign-2026-09-01.md §9bis.
-
-  @Post('settle')
-  @HttpCode(200)
-  // Déclenche une écriture sur toute la table : réservé à l'administration,
-  // comme les autres relances d'ETL. Était ouvert sans session jusqu'au
-  // 2026-10-08. Le jeton de service (x-admin-token) passe aussi, comme les
-  // autres relances depuis le lot 2.
-  @UseGuards(AdminOrServiceTokenGuard)
-  @ApiOperation({
-    summary: 'Settle all ready proposals',
-    description:
-      'Scans all PENDING proposals whose last fixture has a final result and settles them. Safe to call multiple times.',
-  })
-  @ApiOkResponse({
-    schema: {
-      type: 'object',
-      properties: { settled: { type: 'boolean', example: true } },
-    },
-  })
-  async settle(): Promise<{ settled: boolean }> {
-    await this.settlement.settleReadyProposals();
-    return { settled: true };
-  }
-
-  @Get('track-record')
-  @UseGuards(AuthSessionGuard)
-  @ApiOperation({
-    summary:
-      'Measured track record per coupon product (source + target band) over the last N days',
-  })
-  @ApiOkResponse({ description: 'One row per coupon class.' })
-  async getTrackRecord(
-    @Query() query: CouponTrackRecordQueryDto,
-  ): Promise<CouponClassTrackRecord[]> {
-    return this.coupon.getTrackRecord(query.days ?? 30);
-  }
-
-  @Get('indices')
-  @UseGuards(AuthSessionGuard)
-  @ApiOperation({
-    summary: 'Coupon probability indices — hit rate by probability bucket',
-  })
-  @ApiOkResponse({ description: 'Probability indices data.' })
-  async getIndices(
-    @Query() query: CouponIndicesQueryDto,
-  ): Promise<CouponIndicesResponse> {
-    return this.indices.getIndices({
-      canal: query.canal,
-      from: query.from,
-      to: query.to,
-      source: query.source,
-    });
-  }
-
-  @Post(':id/settle')
-  @HttpCode(200)
-  // Déclenche une écriture sur toute la table : réservé à l'administration,
-  // comme les autres relances d'ETL. Était ouvert sans session jusqu'au
-  // 2026-10-08. Le jeton de service (x-admin-token) passe aussi, comme les
-  // autres relances depuis le lot 2.
-  @UseGuards(AdminOrServiceTokenGuard)
-  @ApiOperation({ summary: 'Settle a specific proposal' })
-  @ApiParam({ name: 'id', description: 'UUID of the CouponProposal.' })
-  @ApiOkResponse({
-    schema: {
-      type: 'object',
-      properties: { settled: { type: 'boolean', example: true } },
-    },
-  })
-  @ApiNotFoundResponse({ description: 'No proposal found with the given ID.' })
-  async settleOne(@Param('id') id: string): Promise<{ settled: boolean }> {
-    await this.settlement.settleProposal(id);
-    return { settled: true };
   }
 
   @Post('settle-range')

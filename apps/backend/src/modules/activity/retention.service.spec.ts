@@ -4,7 +4,6 @@ import { AdminGuard } from '@/common/guards/admin.guard';
 import { RetentionService } from './retention.service';
 import type { RetentionRepository } from './retention.repository';
 import { RetentionController } from './activity.controller';
-import { DashboardController } from '@modules/dashboard/dashboard.controller';
 
 describe('RetentionService', () => {
   it('turns counts into rates, null without a denominator', async () => {
@@ -55,20 +54,4 @@ describe('admin-only measurement routes', () => {
       AdminGuard,
     );
   });
-
-  it.each(['getSummary', 'getCompetitionStats'] as const)(
-    'guards dashboard %s with AdminGuard',
-    (method) => {
-      const handler = (
-        DashboardController.prototype as unknown as Record<
-          string,
-          () => unknown
-        >
-      )[method];
-      expect(handler).toBeDefined();
-      expect(Reflect.getMetadata(GUARDS_METADATA, handler)).toContain(
-        AdminGuard,
-      );
-    },
-  );
 });

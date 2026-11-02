@@ -28,7 +28,6 @@ import { RollingHorizonWorker } from './workers/rolling-horizon.worker';
 import { SeasonRolloverSyncWorker } from './workers/season-rollover-sync.worker';
 import { StatsBackfillWorker } from './workers/stats-backfill.worker';
 import { StatsBackfillService } from './stats-backfill.service';
-import { StatsBackfillController } from './stats-backfill.controller';
 import { CouponModule } from '../coupon/coupon.module';
 import { AdjustmentModule } from '../adjustment/adjustment.module';
 import { AuthModule } from '../auth/auth.module';
@@ -68,7 +67,7 @@ import { FixtureStatisticsModule } from '../fixture-statistics/fixture-statistic
     // n'était atteignable que par un appel HTTP manuel.
     RiskModule,
   ],
-  controllers: [EtlController, StatsBackfillController],
+  controllers: [EtlController],
   providers: [
     EtlService,
     ApiFootballClient,

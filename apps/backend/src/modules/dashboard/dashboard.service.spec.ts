@@ -34,7 +34,7 @@ function selectionRow(opts: {
   } as unknown as ChannelSelectionRow;
 }
 
-describe('DashboardService.getChannelHealth — calibration-based classification', () => {
+describe('DashboardService.getChannelStatsByCompetition — calibration-based classification', () => {
   it('classifies GREEN by calibration even when flat-stake ROI is negative (regression: DRAW showed "Négatif" on ROI while being one of only 2 well-calibrated channels — docs/vantage-centric-redesign-2026-09-01.md §5.4)', async () => {
     // 40 settled selections, 31 won (77.5% real) — announced probability
     // 0.77 on every row (~perfectly calibrated, ratio ≈ 1.006), but odds
@@ -55,7 +55,10 @@ describe('DashboardService.getChannelHealth — calibration-based classification
     const service = new DashboardService(
       repo as unknown as DashboardRepository,
     );
-    const result = await service.getChannelHealth('2026-01-01', '2026-01-31');
+    const result = await service.getChannelStatsByCompetition(
+      '2026-01-01',
+      '2026-01-31',
+    );
     const draw = result.find((r) => r.channel === StrategyChannel.DRAW);
 
     expect(draw?.roi).toBeLessThan(0);
@@ -81,7 +84,10 @@ describe('DashboardService.getChannelHealth — calibration-based classification
     const service = new DashboardService(
       repo as unknown as DashboardRepository,
     );
-    const result = await service.getChannelHealth('2026-01-01', '2026-01-31');
+    const result = await service.getChannelStatsByCompetition(
+      '2026-01-01',
+      '2026-01-31',
+    );
     const draw = result.find((r) => r.channel === StrategyChannel.DRAW);
 
     expect(draw?.calibrationRatio).toBeLessThan(0.7);
@@ -99,138 +105,13 @@ describe('DashboardService.getChannelHealth — calibration-based classification
     const service = new DashboardService(
       repo as unknown as DashboardRepository,
     );
-    const result = await service.getChannelHealth('2026-01-01', '2026-01-31');
+    const result = await service.getChannelStatsByCompetition(
+      '2026-01-01',
+      '2026-01-31',
+    );
     const draw = result.find((r) => r.channel === StrategyChannel.DRAW);
 
     expect(draw?.status).toBe('INSUFFICIENT_DATA');
-  });
-});
-
-describe('DashboardService.getTrackRecordSummary', () => {
-  function rowFor(
-    channel: StrategyChannel,
-    opts: { won: boolean; odds: number; probability: number },
-  ): ChannelSelectionRow {
-    const row = selectionRow(opts);
-    return {
-      ...row,
-      channelDecision: { ...row.channelDecision, channel },
-    } as ChannelSelectionRow;
-  }
-
-  it('summarises announced vs realised on the deduplicated cohort, without the filter channels', async () => {
-    // DRAW : 30 sélections annoncées à 0,30, 9 gagnées à cote 3,2.
-    // VALUE et SAFE re-sélectionnent des paris déjà comptés : exclus.
-    const selections = [
-      ...Array.from({ length: 9 }, () =>
-        rowFor(StrategyChannel.DRAW, {
-          won: true,
-          odds: 3.2,
-          probability: 0.3,
-        }),
-      ),
-      ...Array.from({ length: 21 }, () =>
-        rowFor(StrategyChannel.DRAW, {
-          won: false,
-          odds: 3.2,
-          probability: 0.3,
-        }),
-      ),
-      rowFor(StrategyChannel.VALUE, { won: true, odds: 2, probability: 0.6 }),
-      rowFor(StrategyChannel.SAFE, { won: true, odds: 1.3, probability: 0.8 }),
-    ];
-    const repo = {
-      findChannelSelectionsInRange: vi.fn().mockResolvedValue(selections),
-    } satisfies Partial<DashboardRepository>;
-    const service = new DashboardService(
-      repo as unknown as DashboardRepository,
-    );
-
-    const summary = await service.getTrackRecordSummary(
-      '2026-09-01',
-      '2026-09-30',
-    );
-
-    expect(summary.settled).toBe(30);
-    expect(summary.won).toBe(9);
-    expect(summary.announced).toBeCloseTo(0.3, 10);
-    // Fréquence du marché : 1 / 3,2 / 1,05 (marge payée) = 0,2976.
-    expect(summary.market).toBeCloseTo(0.2976, 4);
-    expect(summary.realised).toBeCloseTo(0.3, 10);
-    // (9 × 3,2 − 30) / 30 = −4 % → 0,96 par unité misée
-    expect(summary.returnPerUnit).toBeCloseTo(0.96, 10);
-    expect(summary.sufficient).toBe(true);
-  });
-
-  it('flags a period under 30 settled selections as insufficient', async () => {
-    const selections = [
-      rowFor(StrategyChannel.DRAW, { won: true, odds: 3.2, probability: 0.3 }),
-    ];
-    const repo = {
-      findChannelSelectionsInRange: vi.fn().mockResolvedValue(selections),
-    } satisfies Partial<DashboardRepository>;
-    const service = new DashboardService(
-      repo as unknown as DashboardRepository,
-    );
-
-    const summary = await service.getTrackRecordSummary(
-      '2026-10-01',
-      '2026-10-02',
-    );
-
-    expect(summary.settled).toBe(1);
-    expect(summary.sufficient).toBe(false);
-  });
-
-  it('splits the same cohort into odds bands, lower bound included', async () => {
-    const selections = [
-      // sous 1,45 : 2 réglées, annoncées à 0,80, une gagnée
-      rowFor(StrategyChannel.DOUBLE_CHANCE, {
-        won: true,
-        odds: 1.3,
-        probability: 0.8,
-      }),
-      rowFor(StrategyChannel.DOUBLE_CHANCE, {
-        won: false,
-        odds: 1.3,
-        probability: 0.8,
-      }),
-      // 1,45 tombe dans la tranche 1,45–1,80
-      rowFor(StrategyChannel.GOALS, {
-        won: true,
-        odds: 1.45,
-        probability: 0.6,
-      }),
-      // 1,80 tombe dans la tranche au-dessus
-      rowFor(StrategyChannel.DRAW, { won: false, odds: 1.8, probability: 0.5 }),
-      rowFor(StrategyChannel.DRAW, { won: false, odds: 3.4, probability: 0.3 }),
-      // VALUE reste hors cohorte, y compris dans les tranches
-      rowFor(StrategyChannel.VALUE, { won: true, odds: 1.3, probability: 0.8 }),
-    ];
-    const repo = {
-      findChannelSelectionsInRange: vi.fn().mockResolvedValue(selections),
-    } satisfies Partial<DashboardRepository>;
-    const service = new DashboardService(
-      repo as unknown as DashboardRepository,
-    );
-
-    const { byOdds, settled } = await service.getTrackRecordSummary(
-      '2026-09-01',
-      '2026-09-30',
-    );
-
-    expect(settled).toBe(5);
-    expect(byOdds.map((b) => [b.minOdds, b.maxOdds, b.settled])).toEqual([
-      [null, 1.45, 2],
-      [1.45, 1.8, 1],
-      [1.8, null, 2],
-    ]);
-    expect(byOdds[0]?.announced).toBeCloseTo(0.8, 10);
-    expect(byOdds[0]?.realised).toBeCloseTo(0.5, 10);
-    expect(byOdds[2]?.announced).toBeCloseTo(0.4, 10);
-    expect(byOdds[2]?.realised).toBe(0);
-    expect(byOdds.every((b) => !b.sufficient)).toBe(true);
-    expect(byOdds.every((b) => b.status === 'INSUFFICIENT_DATA')).toBe(true);
   });
 });
 
@@ -250,67 +131,11 @@ describe('DashboardService — market frequency without a paid margin', () => {
     const service = new DashboardService(
       repo as unknown as DashboardRepository,
     );
-    const summary = await service.getTrackRecordSummary(
+    const [draw] = await service.getChannelStatsByCompetition(
       '2026-09-01',
       '2026-09-30',
     );
     // ONE_X_TWO : marge typique 5 % → 1 / 2 / 1,05 = 0,4762.
-    expect(summary.market).toBeCloseTo(0.4762, 4);
-  });
-});
-
-describe('DashboardService.getAiTrackRecord', () => {
-  function opinion(opts: {
-    version: string;
-    day: string;
-    won: boolean;
-    odds: string;
-  }) {
-    return {
-      configVersion: opts.version,
-      kickoff: new Date(`${opts.day}T18:00:00Z`),
-      selection: {
-        result: opts.won ? 'WON' : 'LOST',
-        odds: new Decimal(opts.odds),
-        probability: new Decimal('0.6'),
-        market: 'ONE_X_TWO',
-        marginPaid: new Decimal('0.05'),
-        channelDecision: {
-          channel: StrategyChannel.VANTAGE,
-          modelRun: { fixture: { season: null } },
-        },
-      },
-    };
-  }
-
-  it('reads the frozen history, in total and per prompt version', async () => {
-    const findVantageCohortRows = vi
-      .fn()
-      .mockResolvedValue([
-        opinion({ version: 'v4', day: '2026-10-20', won: true, odds: '1.5' }),
-        opinion({ version: 'v4', day: '2026-10-21', won: false, odds: '1.5' }),
-        opinion({ version: 'v3', day: '2026-10-01', won: true, odds: '1.5' }),
-      ]);
-    const service = new DashboardService({
-      findVantageCohortRows,
-    } as unknown as DashboardRepository);
-
-    const record = await service.getAiTrackRecord('2026-09-29', '2026-10-28');
-
-    expect(record.total).toMatchObject({
-      settled: 3,
-      firstDay: '2026-10-01',
-      lastDay: '2026-10-21',
-    });
-    expect(record.total.realised).toBeCloseTo(2 / 3, 5);
-    // Deux gagnés à 1,50 sur trois : 2 × 0,5 − 1 = 0 ; mise fixe −0 %.
-    expect(record.total.flatReturn).toBeCloseTo(0, 5);
-    // Marché : 1 / 1,50 / 1,05 = 0,635 ; écart 0,667 − 0,635.
-    expect(record.total.gap).toBeCloseTo(2 / 3 - 1 / 1.5 / 1.05, 3);
-    expect(record.total.gapMargin).toBeGreaterThan(0);
-    expect(record.versions.map((v) => [v.configVersion, v.settled])).toEqual([
-      ['v3', 1],
-      ['v4', 2],
-    ]);
+    expect(draw?.market).toBeCloseTo(0.4762, 4);
   });
 });

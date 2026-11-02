@@ -63,23 +63,6 @@ describe('NotificationService — persistence', () => {
     });
   });
 
-  it('persists a Brier Score alert to the database', async () => {
-    const prisma = makePrisma();
-    const service = new NotificationService(
-      new NotificationRepository(prisma),
-      makeMail(),
-    );
-
-    await service.sendBrierScoreAlert('season-123', 0.32);
-
-    expect(prisma.client.notification.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        type: NotificationType.BRIER_ALERT,
-        title: expect.stringContaining('season-123'),
-      }),
-    });
-  });
-
   it('persists an ETL failure alert to the database', async () => {
     const prisma = makePrisma();
     const service = new NotificationService(
@@ -151,15 +134,6 @@ describe('NotificationService — mail delegation', () => {
     });
   });
 
-  it('delegates to mail.sendBrierAlert', async () => {
-    await service.sendBrierScoreAlert('2024-2025', 0.2731);
-
-    expect(mail.sendBrierAlert).toHaveBeenCalledWith({
-      seasonId: '2024-2025',
-      brierScore: 0.2731,
-    });
-  });
-
   it('delegates to mail.sendEtlFailure', async () => {
     await service.sendEtlFailureAlert('fixtures', 'fetch-ligue1', 'timeout');
 
@@ -179,27 +153,6 @@ describe('NotificationService — mail delegation', () => {
     await service.sendWeightAdjustmentAlert(payload);
 
     expect(mail.sendWeightAdjustment).toHaveBeenCalledWith(payload);
-  });
-
-  it('delegates to mail.sendWeeklyReport with ISO date strings', async () => {
-    const start = new Date('2025-03-03');
-    const end = new Date('2025-03-09');
-    await service.sendWeeklyReport({
-      roiOneXTwo: 0.04,
-      betsPlaced: 87,
-      brierScore: 0.22,
-      periodStart: start,
-      periodEnd: end,
-    });
-
-    expect(mail.sendWeeklyReport).toHaveBeenCalledWith(
-      expect.objectContaining({
-        roiOneXTwo: 0.04,
-        betsPlaced: 87,
-        periodStart: start.toISOString(),
-        periodEnd: end.toISOString(),
-      }),
-    );
   });
 
   it('delegates to mail.sendMlModelMissing', async () => {
@@ -362,28 +315,6 @@ describe('NotificationService — list & mark read', () => {
         body: '2 nouveaux événements ajoutés',
         payload: { subscriptionId: 'sub-1', created: 2 },
       },
-    });
-  });
-
-  it('marks all visible notifications as read', async () => {
-    const prisma = makePrisma();
-    vi.mocked(prisma.client.notification.findMany).mockResolvedValue([
-      { id: 'n1' } as never,
-      { id: 'n2' } as never,
-    ]);
-    const service = new NotificationService(
-      new NotificationRepository(prisma),
-      makeMail(),
-    );
-
-    await service.markAllRead('user-1', UserRole.OPERATOR);
-
-    expect(prisma.client.userNotificationRead.createMany).toHaveBeenCalledWith({
-      data: [
-        { userId: 'user-1', notificationId: 'n1' },
-        { userId: 'user-1', notificationId: 'n2' },
-      ],
-      skipDuplicates: true,
     });
   });
 });

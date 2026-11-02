@@ -54,15 +54,6 @@ export class NotificationController {
     );
   }
 
-  @Patch('read-all')
-  @HttpCode(204)
-  markAllRead(@CurrentSession() session: AuthSession): Promise<void> {
-    return this.notificationService.markAllRead(
-      session.user.id,
-      session.user.role,
-    );
-  }
-
   @Patch(':id/read')
   @HttpCode(204)
   markRead(

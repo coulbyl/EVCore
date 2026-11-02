@@ -1,32 +1,18 @@
 import { describe, it, expect, vi } from 'vitest';
-import Decimal from 'decimal.js';
 import { Market } from '@evcore/db';
 import { RiskService } from './risk.service';
 import type { RiskRepository, SettledLegRow } from './risk.repository';
-import type { PrismaService } from '@/prisma.service';
 import type { NotificationService } from '@modules/notification/notification.service';
-
-function makePrismaMock(
-  suspension: { id: string; active: boolean } | null = null,
-): PrismaService {
-  return {
-    client: {
-      bet: { findMany: vi.fn().mockResolvedValue([]) },
-      marketSuspension: {
-        findFirst: vi.fn().mockResolvedValue(suspension),
-        create: vi.fn().mockResolvedValue({ id: 'new-suspension' }),
-      },
-    },
-  } as unknown as PrismaService;
-}
 
 function makeRepositoryMock(
   legs: SettledLegRow[] = [],
-  alertedRecently = false,
+  state: { alertedRecently?: boolean; suspended?: boolean } = {},
 ): RiskRepository {
   return {
     findSettledLegs: vi.fn().mockResolvedValue(legs),
-    hasRoiAlertSince: vi.fn().mockResolvedValue(alertedRecently),
+    hasRoiAlertSince: vi.fn().mockResolvedValue(state.alertedRecently ?? false),
+    hasActiveSuspension: vi.fn().mockResolvedValue(state.suspended ?? false),
+    createSuspension: vi.fn().mockResolvedValue(undefined),
   } as unknown as RiskRepository;
 }
 
@@ -37,15 +23,12 @@ function makeNotificationMock(): NotificationService {
   return {
     sendRoiAlert: vi.fn().mockResolvedValue(undefined),
     sendMarketSuspensionAlert: vi.fn().mockResolvedValue(undefined),
-    sendBrierScoreAlert: vi.fn().mockResolvedValue(undefined),
-    sendWeeklyReport: vi.fn().mockResolvedValue(undefined),
   } as unknown as NotificationService;
 }
 
 describe('RiskService.isMarketSuspended', () => {
   it('returns false when no active suspension exists', async () => {
     const service = new RiskService(
-      makePrismaMock(),
       makeNotificationMock(),
       makeRepositoryMock(),
     );
@@ -54,9 +37,8 @@ describe('RiskService.isMarketSuspended', () => {
 
   it('returns true when an active suspension exists', async () => {
     const service = new RiskService(
-      makePrismaMock({ id: 'susp-1', active: true }),
       makeNotificationMock(),
-      makeRepositoryMock(),
+      makeRepositoryMock([], { suspended: true }),
     );
     expect(await service.isMarketSuspended(Market.ONE_X_TWO)).toBe(true);
   });
@@ -65,7 +47,6 @@ describe('RiskService.isMarketSuspended', () => {
 describe('RiskService.checkMarketRoi', () => {
   it('returns insufficient_data under 30 settled legs', async () => {
     const service = new RiskService(
-      makePrismaMock(),
       makeNotificationMock(),
       makeRepositoryMock([]),
     );
@@ -77,7 +58,6 @@ describe('RiskService.checkMarketRoi', () => {
   it('returns ok when the window ROI is above the alert threshold', async () => {
     const legs = Array.from({ length: 30 }, () => won(2));
     const service = new RiskService(
-      makePrismaMock(),
       makeNotificationMock(),
       makeRepositoryMock(legs),
     );
@@ -90,11 +70,7 @@ describe('RiskService.checkMarketRoi', () => {
   it('sends one ROI alert when 30+ legs are under -10%, then stays quiet for the cooldown', async () => {
     const legs = Array.from({ length: 30 }, () => lost());
     const notification = makeNotificationMock();
-    const first = new RiskService(
-      makePrismaMock(),
-      notification,
-      makeRepositoryMock(legs),
-    );
+    const first = new RiskService(notification, makeRepositoryMock(legs));
     expect((await first.checkMarketRoi(Market.ONE_X_TWO)).action).toBe(
       'alerted',
     );
@@ -102,9 +78,8 @@ describe('RiskService.checkMarketRoi', () => {
     expect(notification.sendMarketSuspensionAlert).not.toHaveBeenCalled();
 
     const second = new RiskService(
-      makePrismaMock(),
       notification,
-      makeRepositoryMock(legs, true),
+      makeRepositoryMock(legs, { alertedRecently: true }),
     );
     expect((await second.checkMarketRoi(Market.ONE_X_TWO)).action).toBe(
       'alerted',
@@ -118,17 +93,13 @@ describe('RiskService.checkMarketRoi', () => {
       ...Array.from({ length: 20 }, () => won(2)),
       ...Array.from({ length: 40 }, () => lost()),
     ];
-    const prisma = makePrismaMock(null);
+    const repository = makeRepositoryMock(legs);
     const notification = makeNotificationMock();
-    const service = new RiskService(
-      prisma,
-      notification,
-      makeRepositoryMock(legs),
-    );
+    const service = new RiskService(notification, repository);
     const result = await service.checkMarketRoi(Market.ONE_X_TWO);
     expect(result.action).toBe('suspended');
     expect(result.roi.toNumber()).toBeCloseTo(-1 / 3, 4);
-    expect(prisma.client.marketSuspension.create).toHaveBeenCalledOnce();
+    expect(repository.createSuspension).toHaveBeenCalledOnce();
     expect(notification.sendMarketSuspensionAlert).toHaveBeenCalledOnce();
   });
 
@@ -139,69 +110,23 @@ describe('RiskService.checkMarketRoi', () => {
       ...Array.from({ length: 10 }, () => won(5)),
       ...Array.from({ length: 50 }, () => lost()),
     ];
-    const prisma = makePrismaMock(null);
+    const repository = makeRepositoryMock(legs);
     const notification = makeNotificationMock();
-    const service = new RiskService(
-      prisma,
-      notification,
-      makeRepositoryMock(legs),
-    );
+    const service = new RiskService(notification, repository);
     const result = await service.checkMarketRoi(Market.ONE_X_TWO);
     expect(result.roi.toNumber()).toBeLessThan(-0.15);
     expect(result.action).toBe('alerted');
-    expect(prisma.client.marketSuspension.create).not.toHaveBeenCalled();
+    expect(repository.createSuspension).not.toHaveBeenCalled();
   });
 
   it('does not double-suspend an already suspended market', async () => {
     const legs = Array.from({ length: 50 }, () => lost());
-    const prisma = makePrismaMock({ id: 'existing', active: true });
+    const repository = makeRepositoryMock(legs, { suspended: true });
     const notification = makeNotificationMock();
-    const service = new RiskService(
-      prisma,
-      notification,
-      makeRepositoryMock(legs),
-    );
+    const service = new RiskService(notification, repository);
     const result = await service.checkMarketRoi(Market.ONE_X_TWO);
     expect(result.action).toBe('suspended');
-    expect(prisma.client.marketSuspension.create).not.toHaveBeenCalled();
+    expect(repository.createSuspension).not.toHaveBeenCalled();
     expect(notification.sendMarketSuspensionAlert).not.toHaveBeenCalled();
-  });
-});
-
-describe('RiskService.checkBrierScore', () => {
-  it('sends alert when Brier score exceeds threshold (0.30)', async () => {
-    const notification = makeNotificationMock();
-    const service = new RiskService(
-      makePrismaMock(),
-      notification,
-      makeRepositoryMock(),
-    );
-    await service.checkBrierScore('season-1', new Decimal('0.35'));
-    expect(notification.sendBrierScoreAlert).toHaveBeenCalledWith(
-      'season-1',
-      0.35,
-    );
-  });
-
-  it('does not send alert when Brier score is at or below threshold', async () => {
-    const notification = makeNotificationMock();
-    const service = new RiskService(
-      makePrismaMock(),
-      notification,
-      makeRepositoryMock(),
-    );
-    await service.checkBrierScore('season-1', new Decimal('0.30'));
-    expect(notification.sendBrierScoreAlert).not.toHaveBeenCalled();
-  });
-
-  it('does not send alert when Brier score is well below threshold', async () => {
-    const notification = makeNotificationMock();
-    const service = new RiskService(
-      makePrismaMock(),
-      notification,
-      makeRepositoryMock(),
-    );
-    await service.checkBrierScore('season-1', new Decimal('0.20'));
-    expect(notification.sendBrierScoreAlert).not.toHaveBeenCalled();
   });
 });
