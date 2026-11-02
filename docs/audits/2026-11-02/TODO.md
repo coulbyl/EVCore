@@ -48,7 +48,7 @@ _Mesures de départ (copie de prod du 02/11, 7,9 Go) : `odds_snapshot` 6,1 Go / 
 
 ## E. Base
 
-- [ ] E1 `feat(db): pg_stat_statements` — extension + `shared_preload_libraries` ; p95 de la fiche relevé avant / après.
+- [x] E1 `feat(db): pg_stat_statements` — extension + `shared_preload_libraries`. _Fait : `command` du service Postgres (prod et dev) avec `shared_preload_libraries=pg_stat_statements`, migration `20261102180000_add_pg_stat_statements` (requête de lecture en commentaire). **Le déploiement redémarre Postgres** (configuration du conteneur changée) : quelques secondes de coupure, l'API et le worker se reconnectent. Première lecture sur la copie locale, une passe d'analyse de 18 matchs : ~1,2 s de base au total ; en tête `team_stats` (9 ms × 34) et l'historique `odds_snapshot` (9,8 ms × 28) — l'analyse lit encore l'historique des cotes, pas `odds_latest` : piste pour un lot suivant. Le p95 de la fiche se lira dans les journaux de prod (`GET /matches/:id/sheet`, journal des requêtes) après déploiement._
 - [ ] E2 `perf(db): drop redundant indexes`.
 - [ ] E3 `refactor(adjustment): Prisma out of the controller`.
 
