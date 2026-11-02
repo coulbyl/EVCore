@@ -13,6 +13,8 @@ export type PushPayload = {
   body: string;
   // Opened when the user taps the notification (defaults to the dashboard root).
   url?: string;
+  /** The bell's row this push announces: tapping it marks the row read. */
+  notificationId?: string;
 };
 
 type Vapid = { publicKey: string; privateKey: string; subject: string };

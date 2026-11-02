@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { NotFoundException } from '@nestjs/common';
 import type { AdminJournalService } from '@modules/admin-journal/admin-journal.service';
 import type { NotificationService } from '@modules/notification/notification.service';
-import type { PushService } from '@modules/push/push.service';
 import type { AnnouncementsRepository } from './announcements.repository';
 import { AnnouncementsService } from './announcements.service';
 
@@ -41,18 +40,17 @@ function harness(state: { published: boolean } | null) {
       ]),
     ),
   };
-  const push = { sendToAllUsers: vi.fn(() => Promise.resolve()) };
+  // The bell's row and the push both go through deliverAnnouncement.
   const notification = {
-    sendAnnouncementPublished: vi.fn(() => Promise.resolve()),
+    deliverAnnouncement: vi.fn(() => Promise.resolve()),
   };
   const journal = { record: vi.fn(() => Promise.resolve()) };
   const service = new AnnouncementsService(
     repository as unknown as AnnouncementsRepository,
-    push as unknown as PushService,
     notification as unknown as NotificationService,
     journal as unknown as AdminJournalService,
   );
-  return { service, repository, push, journal };
+  return { service, repository, notification, journal };
 }
 
 describe('AnnouncementsService (team side)', () => {
@@ -63,27 +61,27 @@ describe('AnnouncementsService (team side)', () => {
   });
 
   it('publishing a draft notifies the players and journals it', async () => {
-    const { service, push, journal } = harness({ published: false });
+    const { service, notification, journal } = harness({ published: false });
     await service.update('a1', 'u1', { published: true });
-    expect(push.sendToAllUsers).toHaveBeenCalledTimes(1);
+    expect(notification.deliverAnnouncement).toHaveBeenCalledTimes(1);
     expect(journal.record).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'announcement' }),
     );
   });
 
   it('unpublishing notifies nobody and journals it', async () => {
-    const { service, push, journal } = harness({ published: true });
+    const { service, notification, journal } = harness({ published: true });
     await service.update('a1', 'u1', { published: false });
-    expect(push.sendToAllUsers).not.toHaveBeenCalled();
+    expect(notification.deliverAnnouncement).not.toHaveBeenCalled();
     expect(journal.record).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'announcement_withdrawn' }),
     );
   });
 
   it('editing a published text notifies nobody again', async () => {
-    const { service, push, journal } = harness({ published: true });
+    const { service, notification, journal } = harness({ published: true });
     await service.update('a1', 'u1', { title: 'Corners, mis à jour' });
-    expect(push.sendToAllUsers).not.toHaveBeenCalled();
+    expect(notification.deliverAnnouncement).not.toHaveBeenCalled();
     expect(journal.record).not.toHaveBeenCalled();
   });
 

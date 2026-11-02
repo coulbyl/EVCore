@@ -3,7 +3,6 @@ import Decimal from 'decimal.js';
 import { NotificationType } from '@evcore/db';
 import { FOLLOWED_SETTLED_WINDOW } from '@config/slip-digest.constants';
 import { NotificationService } from '@modules/notification/notification.service';
-import { PushService } from '@modules/push/push.service';
 import { mapWithConcurrency } from '@utils/async.utils';
 import { createLogger } from '@utils/logger';
 import {
@@ -61,7 +60,6 @@ export class FollowedSettledService {
   constructor(
     private readonly repository: FollowedSettledRepository,
     private readonly notification: NotificationService,
-    private readonly push: PushService,
   ) {}
 
   async notifyEvening(
@@ -98,7 +96,7 @@ export class FollowedSettledService {
         const message = composeFollowedSettled(coupon);
         // The notification is the record of what was announced: no record,
         // no push, and the next run tries again.
-        const recorded = await this.notification.notifyUser({
+        const recorded = await this.notification.deliverToUser({
           userId,
           type: NotificationType.FOLLOWED_SETTLED,
           title: message.title,
@@ -107,13 +105,9 @@ export class FollowedSettledService {
             couponProposalId: couponId,
             evening: evening.toISOString().slice(0, 10),
           },
-        });
-        if (!recorded) return;
-        await this.push.sendToUser(userId, {
-          title: message.title,
-          body: message.body,
           url: `/me?coupon=${couponId}`,
         });
+        if (!recorded) return;
         sent += 1;
       },
     );

@@ -8,6 +8,7 @@ import {
   UserRole,
 } from '@evcore/db';
 import { MailService } from '@modules/mail/mail.service';
+import { PushService } from '@modules/push/push.service';
 import { NotificationRepository } from './notification.repository';
 
 const logger = createLogger('notification-service');
@@ -73,6 +74,7 @@ export class NotificationService {
   constructor(
     private readonly repository: NotificationRepository,
     private readonly mail: MailService,
+    private readonly push: PushService,
   ) {}
 
   private allowedTypes(role: UserRole): NotificationType[] {
@@ -180,22 +182,32 @@ export class NotificationService {
     });
   }
 
-  // Broadcast (userId null) — mirrors AnnouncementsService's existing push
-  // notification, doesn't replace it: this is what makes a published
-  // announcement show up in the bell / `/dashboard/notifications` too,
-  // instead of only ever reaching users who already granted push permission.
-  async sendAnnouncementPublished(payload: {
+  /**
+   * A published announcement, to every player: the bell's broadcast row,
+   * then the push (its author excepted). The row reaches those who never
+   * granted the push too.
+   */
+  async deliverAnnouncement(input: {
     announcementId: string;
     title: string;
     body: string;
     href: string | null;
+    authorId: string;
   }): Promise<void> {
     await this.save({
       type: NotificationType.ANNOUNCEMENT_PUBLISHED,
-      title: payload.title,
-      body: payload.body,
-      payload: { announcementId: payload.announcementId, href: payload.href },
+      title: input.title,
+      body: input.body,
+      payload: { announcementId: input.announcementId, href: input.href },
     });
+    await this.push.sendToAllUsers(
+      {
+        title: input.title,
+        body: input.body,
+        url: input.href ?? '/notifications',
+      },
+      input.authorId,
+    );
   }
 
   async list(query: {
@@ -338,27 +350,33 @@ export class NotificationService {
     );
   }
 
-  // Notification personnelle (userId non-null) — voir SaveNotificationInput
-  // pour le régime broadcast (types système/ops). Ne throw jamais : un échec
-  // de persistance ne doit pas faire échouer l'appelant (settlement, matching…).
-  async notifyUser(input: {
+  /**
+   * A personal notification (userId non-null): the bell's row, then — only
+   * once it is written — the push that opens `url`. The row is the record
+   * of what was announced: a job that keys on it ("not yet notified") tries
+   * again on its next run, and never pushes twice. The recipient's
+   * preference (morning brief, team replies…) is applied by the caller's
+   * recipient query, in bulk. Never throws: a failed write must not fail
+   * the caller (settlement, digests). True when the row is written.
+   */
+  async deliverToUser(input: {
     userId: string;
     type: NotificationType;
     title: string;
     body: string;
     payload?: Prisma.InputJsonValue;
+    /** Opened when the push is tapped. */
+    url: string;
   }): Promise<boolean> {
-    // Vrai si la notification est écrite : un job qui s'en sert comme trace
-    // de ce qu'il a annoncé ne pousse rien d'autre sans elle.
+    let notificationId: string;
     try {
-      await this.repository.create({
+      notificationId = await this.repository.create({
         userId: input.userId,
         type: input.type,
         title: input.title,
         body: input.body,
         payload: input.payload,
       });
-      return true;
     } catch (error) {
       logger.error(
         {
@@ -370,6 +388,13 @@ export class NotificationService {
       );
       return false;
     }
+    await this.push.sendToUser(input.userId, {
+      title: input.title,
+      body: input.body,
+      url: input.url,
+      notificationId,
+    });
+    return true;
   }
 
   private async save(input: SaveNotificationInput): Promise<void> {

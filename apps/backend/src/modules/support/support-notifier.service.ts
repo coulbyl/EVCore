@@ -61,19 +61,14 @@ export class SupportNotifierService {
    */
   async notifyUser(userId: string, message: SupportMessageDto): Promise<void> {
     const title = "Nouveau message de l'équipe EVCore";
-    await Promise.all([
-      this.push.sendToUser(userId, {
-        title,
-        body: notificationBody(message),
-        url: '/me/messages',
-      }),
-      this.notification.notifyUser({
-        userId,
-        type: NotificationType.SUPPORT_MESSAGE,
-        title,
-        body: notificationBody(message),
-        payload: { conversationId: message.conversationId },
-      }),
-    ]);
+    // The row first, the push only once it exists (NotificationService).
+    await this.notification.deliverToUser({
+      userId,
+      type: NotificationType.SUPPORT_MESSAGE,
+      title,
+      body: notificationBody(message),
+      payload: { conversationId: message.conversationId },
+      url: '/me/messages',
+    });
   }
 }

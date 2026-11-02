@@ -22,8 +22,13 @@ export type BroadcastNotificationRef = {
 export class NotificationRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: Prisma.NotificationUncheckedCreateInput): Promise<void> {
-    await this.prisma.client.notification.create({ data });
+  /** The new row's id: the push names the notification it opens. */
+  async create(data: Prisma.NotificationUncheckedCreateInput): Promise<string> {
+    const row = await this.prisma.client.notification.create({
+      data,
+      select: { id: true },
+    });
+    return row.id;
   }
 
   findPage(query: {

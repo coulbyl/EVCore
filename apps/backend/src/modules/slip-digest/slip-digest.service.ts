@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { NotificationType } from '@evcore/db';
 import { NotificationService } from '@modules/notification/notification.service';
-import { PushService } from '@modules/push/push.service';
 import { MailService } from '@modules/mail/mail.service';
 import { createLogger } from '@utils/logger';
 import { classForTargetOddsMin } from '@evcore/analysis-core';
@@ -42,7 +41,6 @@ export class SlipDigestService {
   constructor(
     private readonly repository: SlipDigestRepository,
     private readonly notification: NotificationService,
-    private readonly push: PushService,
     private readonly mail: MailService,
     private readonly coupons: CouponService,
   ) {}
@@ -160,18 +158,16 @@ export class SlipDigestService {
       });
       if (!message) continue;
       if (notified.has(recipient.id)) continue;
-      await this.notification.notifyUser({
+      // No row, no push nor e-mail: the next run tries this player again.
+      const recorded = await this.notification.deliverToUser({
         userId: recipient.id,
         type: NotificationType.MORNING_BRIEF,
         title: message.title,
         body: message.body,
         payload: { day, followedIds: bucket.followedIds },
-      });
-      await this.push.sendToUser(recipient.id, {
-        title: message.title,
-        body: message.body,
         url: '/today?from=morning',
       });
+      if (!recorded) continue;
       const email = digestEmailOf(recipient);
       if (email) {
         await this.mail.sendPlayerDigest(email, {

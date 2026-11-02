@@ -32,7 +32,7 @@ _Mesures de départ (copie de prod du 02/11, 7,9 Go) : `odds_snapshot` 6,1 Go / 
 
 ## N. Notifications
 
-- [ ] N1 `refactor(notification): one deliver() for the bell and the push` — préférence, ligne, puis push ; les 5 appelants n'appellent plus que lui.
+- [x] N1 `refactor(notification): one deliver() for the bell and the push` — ligne, puis push ; les 5 appelants n'appellent plus que lui. _Fait : `NotificationService.deliverToUser()` écrit la ligne de la cloche et ne pousse que si elle est écrite (le push porte désormais l'id de la ligne), `deliverAnnouncement()` pour la diffusion. Matinée, relevé du lundi, résultat d'un coupon suivi et réponse de l'équipe passent par le premier, l'annonce par le second ; `PushService` sort de leurs constructeurs. Corrige deux défauts mesurables : la matinée et le relevé poussaient (et envoyaient l'e-mail) même quand la ligne n'était pas écrite, et la prochaine passe, qui reconnaît un joueur « déjà prévenu » à sa ligne, les relançait : double push ; la réponse de l'équipe partait en parallèle de son écriture. Les préférences restent appliquées dans les requêtes de destinataires, en masse (une lecture de plus par notification n'apporterait rien). Tests : push avec l'id de la ligne, aucun push ni e-mail sans ligne._
 - [ ] N2 `feat(push): deliver through a queue in the worker` — file `push-delivery`, concurrence bornée, nouvel essai sur 429/5xx.
 - [ ] N3 `feat(push): notification id, tag, TTL and urgency` — un push de la même conversation remplace le précédent, le résumé du matin expire à midi.
 - [ ] N4 `feat(web): a tapped push marks its notification read, badge follows live` — `?n=<id>`, `postMessage` → `router.refresh()`, `setAppBadge`.

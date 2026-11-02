@@ -3,7 +3,6 @@ import Decimal from 'decimal.js';
 import { NotificationType } from '@evcore/db';
 import type { NotificationService } from '@modules/notification/notification.service';
 import type { MailService } from '@modules/mail/mail.service';
-import type { PushService } from '@modules/push/push.service';
 import { SlipDigestService, previousUtcDay } from './slip-digest.service';
 import type { CouponService } from '@modules/coupon/coupon.service';
 import type {
@@ -76,27 +75,17 @@ function makeHarness(
     getAbstentions: vi.fn().mockResolvedValue(opts.abstentions ?? []),
   } as unknown as CouponService;
   const notification = {
-    notifyUser: vi.fn().mockResolvedValue(undefined),
+    deliverToUser: vi.fn().mockResolvedValue(true),
   } as unknown as NotificationService;
-  const push = {
-    sendToUser: vi.fn().mockResolvedValue(undefined),
-  } as unknown as PushService;
   const mail = {
     sendPlayerDigest: vi.fn().mockResolvedValue(undefined),
   } as unknown as MailService;
   return {
-    service: new SlipDigestService(
-      repository,
-      notification,
-      push,
-      mail,
-      coupons,
-    ),
+    service: new SlipDigestService(repository, notification, mail, coupons),
     mail,
     repository,
     coupons,
     notification,
-    push,
   };
 }
 
@@ -106,22 +95,29 @@ describe('SlipDigestService.sendDigests', () => {
   });
 
   it('notifies once per player, in-app and push, linking to the home page', async () => {
-    const { service, notification, push } = makeHarness({
+    const { service, notification } = makeHarness({
       follows: [follow('u1', 'c1'), follow('u1', 'c2', { result: 'LOST' })],
     });
     const result = await service.sendDigests(DAY, NOW);
     expect(result.sent).toBe(1);
-    expect(notification.notifyUser).toHaveBeenCalledWith(
+    expect(notification.deliverToUser).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: 'u1',
         type: NotificationType.MORNING_BRIEF,
         payload: { day: DAY, followedIds: ['c1', 'c2'] },
+        url: '/today?from=morning',
       }),
     );
-    expect(push.sendToUser).toHaveBeenCalledWith(
-      'u1',
-      expect.objectContaining({ url: '/today?from=morning' }),
-    );
+  });
+
+  it('sends no email when the row could not be written, and counts nothing', async () => {
+    const { service, notification, mail } = makeHarness({
+      follows: [follow('u1', 'c1')],
+    });
+    vi.mocked(notification.deliverToUser).mockResolvedValue(false);
+    const result = await service.sendDigests(DAY, NOW);
+    expect(result.sent).toBe(0);
+    expect(mail.sendPlayerDigest).not.toHaveBeenCalled();
   });
 
   it('sends the email copy only to a verified address that asked for it', async () => {
@@ -143,14 +139,13 @@ describe('SlipDigestService.sendDigests', () => {
 
   it('skips a paused player entirely', async () => {
     const paused = new Date('2026-11-01T00:00:00Z');
-    const { service, notification, push } = makeHarness({
+    const { service, notification } = makeHarness({
       follows: [follow('u1', 'c1', { pausedUntil: paused })],
       recipients: [{ id: 'u1', pausedUntil: paused }],
     });
     const result = await service.sendDigests(DAY, NOW);
     expect(result).toEqual({ sent: 0, skippedPaused: 1 });
-    expect(notification.notifyUser).not.toHaveBeenCalled();
-    expect(push.sendToUser).not.toHaveBeenCalled();
+    expect(notification.deliverToUser).not.toHaveBeenCalled();
   });
 
   it('never sends the same day twice', async () => {
@@ -159,14 +154,14 @@ describe('SlipDigestService.sendDigests', () => {
       alreadySent: true,
     });
     await service.sendDigests(DAY, NOW);
-    expect(notification.notifyUser).not.toHaveBeenCalled();
+    expect(notification.deliverToUser).not.toHaveBeenCalled();
   });
 
   it('announces a followed coupon once, without any amount', async () => {
     const followed = follow('u2', 'coupon-9');
     const { service, notification } = makeHarness({ follows: [followed] });
     await service.sendDigests(DAY, NOW);
-    expect(notification.notifyUser).toHaveBeenCalledWith(
+    expect(notification.deliverToUser).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: 'u2',
         body: 'Coupon suivi : Coupon cote 2 gagné.',
@@ -179,7 +174,7 @@ describe('SlipDigestService.sendDigests', () => {
       reportedFollows: ['coupon-9'],
     });
     await again.service.sendDigests(DAY, NOW);
-    expect(again.notification.notifyUser).not.toHaveBeenCalled();
+    expect(again.notification.deliverToUser).not.toHaveBeenCalled();
   });
 
   it("brings the day's coupons to a player without results, 1xBet odds first", async () => {
@@ -210,7 +205,7 @@ describe('SlipDigestService.sendDigests', () => {
     const result = await service.sendDigests(DAY, NOW);
     expect(result.sent).toBe(1);
     expect(coupons.getAbstentions).toHaveBeenCalledWith('2026-10-28');
-    const [input] = vi.mocked(notification.notifyUser).mock.calls[0] ?? [];
+    const [input] = vi.mocked(notification.deliverToUser).mock.calls[0] ?? [];
     expect(input?.title).toBe('Ta matinée EVCore');
     expect(input?.body).toContain('Favori 1,30 · Coupon cote 2 2,10');
     expect(input?.body).toContain("Pas de Chasseur Nul aujourd'hui");
@@ -224,7 +219,7 @@ describe('SlipDigestService.sendDigests', () => {
       sent: 0,
       skippedPaused: 0,
     });
-    expect(notification.notifyUser).not.toHaveBeenCalled();
+    expect(notification.deliverToUser).not.toHaveBeenCalled();
   });
 
   it('respects a player who switched the morning off', async () => {
@@ -233,6 +228,6 @@ describe('SlipDigestService.sendDigests', () => {
       recipients: [],
     });
     await service.sendDigests(DAY, NOW);
-    expect(notification.notifyUser).not.toHaveBeenCalled();
+    expect(notification.deliverToUser).not.toHaveBeenCalled();
   });
 });
