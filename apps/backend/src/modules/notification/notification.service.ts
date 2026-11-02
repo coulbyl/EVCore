@@ -8,6 +8,7 @@ import {
   UserRole,
 } from '@evcore/db';
 import { MailService } from '@modules/mail/mail.service';
+import type { OpsLightRedProps } from '@evcore/transactional';
 import { PushService } from '@modules/push/push.service';
 import { PUSH_POLICY } from '@config/push.constants';
 import { NotificationRepository } from './notification.repository';
@@ -135,6 +136,12 @@ export class NotificationService {
       roi,
       betCount,
     });
+    await this.pushOperators({
+      title,
+      body,
+      url: '/admin/engine',
+      tag: `market-${market}`,
+    });
   }
 
   async sendEtlFailureAlert(
@@ -151,6 +158,27 @@ export class NotificationService {
       payload: { queue, jobName, errorMessage },
     });
     await this.mail.sendEtlFailure({ queue, jobName, errorMessage });
+    // One per queue on the phone: a queue failing again replaces it.
+    await this.pushOperators({
+      title,
+      body,
+      url: '/admin/exploitation',
+      tag: `etl-${queue}`,
+    });
+  }
+
+  /**
+   * A light of the admin home turned red (ConsoleWatchService, once per
+   * turn): the e-mail to the team and a push to the admins' phones.
+   */
+  async sendOpsLightRed(props: OpsLightRedProps): Promise<void> {
+    await this.mail.sendOpsLightRed(props);
+    await this.pushOperators({
+      title: `${props.light} au rouge`,
+      body: props.lines[0] ?? "À voir dans l'admin",
+      url: '/admin',
+      tag: `light-${props.light}`,
+    });
   }
 
   async sendWeightAdjustmentAlert(payload: {
@@ -187,11 +215,8 @@ export class NotificationService {
       body,
       payload: { season, unavailableCount, externalIds },
     });
-    await this.mail.sendXgUnavailableReport({
-      season,
-      unavailableCount,
-      externalIds,
-    });
+    // The bell only: a report, nothing to act on, sent once per league
+    // synced (5 to 11 a day in October) — no e-mail, no push.
   }
 
   /**
@@ -415,6 +440,26 @@ export class NotificationService {
       PERSONAL_PUSH_POLICY[input.type] ?? PUSH_POLICY.DEFAULT,
     );
     return true;
+  }
+
+  /** An operations alert on the admins' phones; never throws. */
+  private async pushOperators(input: {
+    title: string;
+    body: string;
+    url: string;
+    tag: string;
+  }): Promise<void> {
+    await this.push
+      .sendToRole(UserRole.ADMIN, input, PUSH_POLICY.OPERATIONS)
+      .catch((error: unknown) =>
+        logger.error(
+          {
+            tag: input.tag,
+            error: error instanceof Error ? error.message : String(error),
+          },
+          'Failed to queue the operations push',
+        ),
+      );
   }
 
   private async save(input: SaveNotificationInput): Promise<void> {

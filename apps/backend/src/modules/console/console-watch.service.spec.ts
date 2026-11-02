@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ConfigService } from '@nestjs/config';
-import type { MailService } from '@modules/mail/mail.service';
+import type { NotificationService } from '@modules/notification/notification.service';
 import { ConsoleWatchService } from './console-watch.service';
 import type { ConsoleRepository } from './console.repository';
 import type { ConsoleService } from './console.service';
@@ -39,6 +39,7 @@ function harness() {
   let engine: LightState = 'green';
   let passesOff: ConsoleStatus['passesOff'] = null;
   const table = fakeTable();
+  // The e-mail and the admins' push both leave through sendOpsLightRed.
   const mail = { sendOpsLightRed: vi.fn(() => Promise.resolve()) };
   const console = {
     getStatus: vi.fn(
@@ -66,7 +67,7 @@ function harness() {
   const service = new ConsoleWatchService(
     console as unknown as ConsoleService,
     table as unknown as ConsoleRepository,
-    mail as unknown as MailService,
+    mail as unknown as NotificationService,
     { get: () => 'https://evcore.app' } as unknown as ConfigService,
   );
   return {

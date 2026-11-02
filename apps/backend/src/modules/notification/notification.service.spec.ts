@@ -97,6 +97,44 @@ describe('NotificationService — persistence', () => {
   });
 });
 
+describe("NotificationService — operations alerts on the admins' phones", () => {
+  it('pushes an ETL failure to the admins, one tag per queue', async () => {
+    const push = makePush();
+    const service = new NotificationService(
+      new NotificationRepository(makePrisma()),
+      makeMail(),
+      push,
+    );
+
+    await service.sendEtlFailureAlert('odds-prematch-sync', 'sync', 'quota');
+
+    expect(push.sendToRole).toHaveBeenCalledWith(
+      UserRole.ADMIN,
+      expect.objectContaining({
+        url: '/admin/exploitation',
+        tag: 'etl-odds-prematch-sync',
+      }),
+      PUSH_POLICY.OPERATIONS,
+    );
+  });
+
+  // No e-mail either: MailService has no sender for it any more.
+  it('keeps the xG report to the bell: no push', async () => {
+    const prisma = makePrisma();
+    const push = makePush();
+    const service = new NotificationService(
+      new NotificationRepository(prisma),
+      makeMail(),
+      push,
+    );
+
+    await service.sendXgUnavailableReport('2026', [1, 2]);
+
+    expect(prisma.client.notification.create).toHaveBeenCalledTimes(1);
+    expect(push.sendToRole).not.toHaveBeenCalled();
+  });
+});
+
 describe('NotificationService — mail delegation', () => {
   let prisma: PrismaService;
   let mail: MailService;

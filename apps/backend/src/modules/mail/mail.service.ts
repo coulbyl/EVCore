@@ -14,7 +14,6 @@ import {
   renderPasswordReset,
   renderRoiAlert,
   renderWeightAdjustment,
-  renderXgUnavailableReport,
   renderSupportMessage,
   renderPlayerDigest,
   type EmailVerificationProps,
@@ -28,7 +27,6 @@ import {
   type SupportMessageProps,
   type PlayerDigestProps,
   type WeightAdjustmentProps,
-  type XgUnavailableReportProps,
 } from '@evcore/transactional';
 
 const logger = createLogger('mail-service');
@@ -147,17 +145,6 @@ export class MailService {
     const { html, text } = await renderWeightAdjustment(props);
     await this.sendToAdmin(
       `Weight Adjustment ${action} — ${props.proposalId}`,
-      html,
-      text,
-    );
-  }
-
-  async sendXgUnavailableReport(
-    props: XgUnavailableReportProps,
-  ): Promise<void> {
-    const { html, text } = await renderXgUnavailableReport(props);
-    await this.sendToAdmin(
-      `Stats Sync — ${props.unavailableCount} fixtures sans xG (${props.season})`,
       html,
       text,
     );

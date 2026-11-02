@@ -12,6 +12,7 @@ import { CouponModule } from '@modules/coupon/coupon.module';
 import { DashboardModule } from '@modules/dashboard/dashboard.module';
 import { EtlModule } from '@modules/etl/etl.module';
 import { MailModule } from '@modules/mail/mail.module';
+import { NotificationModule } from '@modules/notification/notification.module';
 import { ScreensModule } from '@modules/screens/screens.module';
 import { ConsoleEngineService } from './console-engine.service';
 import { ConsolePlayersService } from './console-players.service';
@@ -36,6 +37,7 @@ import { ConsoleService } from './console.service';
     DashboardModule,
     EtlModule,
     MailModule,
+    NotificationModule,
     ScreensModule,
     BullModule.registerQueue({ name: CONSOLE_WATCH.QUEUE }),
     // The passes' queues, read for their last runs (vantage-analysis is the

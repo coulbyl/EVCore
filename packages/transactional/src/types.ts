@@ -29,12 +29,6 @@ export type WeightAdjustmentProps = {
   rolledBackProposalId?: string;
 };
 
-export type XgUnavailableReportProps = {
-  season: string; // e.g. "2022-23"
-  unavailableCount: number;
-  externalIds: number[];
-};
-
 export type EmailVerificationProps = {
   firstName: string;
   code: string;
