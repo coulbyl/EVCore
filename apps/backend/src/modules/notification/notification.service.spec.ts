@@ -135,6 +135,28 @@ describe("NotificationService — operations alerts on the admins' phones", () =
   });
 });
 
+describe('NotificationService — the bell reads 90 days', () => {
+  it('counts no unread notification older than the window', async () => {
+    const prisma = makePrisma();
+    const service = new NotificationService(
+      new NotificationRepository(prisma),
+      makeMail(),
+      makePush(),
+    );
+    const before = Date.now();
+
+    await service.unreadCount('user-1', UserRole.OPERATOR);
+
+    const [args] =
+      vi.mocked(prisma.client.notification.count).mock.calls[0] ?? [];
+    const since = (args as { where: { createdAt: { gte: Date } } }).where
+      .createdAt.gte;
+    const days = (before - since.getTime()) / 86_400_000;
+    expect(days).toBeGreaterThan(89.99);
+    expect(days).toBeLessThan(90.01);
+  });
+});
+
 describe('NotificationService — mail delegation', () => {
   let prisma: PrismaService;
   let mail: MailService;

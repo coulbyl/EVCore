@@ -11,6 +11,7 @@ import { MailService } from '@modules/mail/mail.service';
 import type { OpsLightRedProps } from '@evcore/transactional';
 import { PushService } from '@modules/push/push.service';
 import { PUSH_POLICY } from '@config/push.constants';
+import { NOTIFICATION_BELL_WINDOW_DAYS } from '@config/notification.constants';
 import { NotificationRepository } from './notification.repository';
 
 const logger = createLogger('notification-service');
@@ -62,6 +63,15 @@ const PERSONAL_PUSH_POLICY: Partial<
   [NotificationType.FOLLOWED_SETTLED]: PUSH_POLICY.FOLLOWED_SETTLED,
   [NotificationType.SUPPORT_MESSAGE]: PUSH_POLICY.SUPPORT_MESSAGE,
 };
+
+/** What the bell reads: the last NOTIFICATION_BELL_WINDOW_DAYS days. */
+function bellWindow(now: Date = new Date()): Prisma.NotificationWhereInput {
+  return {
+    createdAt: {
+      gte: new Date(now.getTime() - NOTIFICATION_BELL_WINDOW_DAYS * 86_400_000),
+    },
+  };
+}
 
 function announcementIdOf(payload: Prisma.JsonValue | null): string | null {
   if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
@@ -280,6 +290,7 @@ export class NotificationService {
     // (userId = moi) où `read` sur la ligne elle-même fait foi.
     const where: Prisma.NotificationWhereInput = {
       AND: [
+        bellWindow(),
         categoryFilter,
         query.type ? { type: query.type } : {},
         {
@@ -324,6 +335,7 @@ export class NotificationService {
   ): Promise<{ count: number }> {
     const types = this.allowedTypes(role);
     const count = await this.repository.count({
+      ...bellWindow(),
       OR: [
         { userId: null, type: { in: types }, reads: { none: { userId } } },
         { userId, read: false, type: this.personalTypes(role) },
