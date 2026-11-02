@@ -101,7 +101,8 @@ services:
 
   # S3-compatible attachment storage (support chat). Reachable internally at
   # rustfs:9000 (backend's own admin calls); presigned URLs handed to
-  # browsers use RUSTFS_PUBLIC_ENDPOINT (server .env) — a public HTTPS host
+  # browsers use the public endpoint (Réglages › Intégrations › Stockage,
+  # RUSTFS_PUBLIC_ENDPOINT as fallback) — a public HTTPS host
   # that coulby_studio_net's reverse proxy forwards here unmodified (no path
   # rewrite, query string intact, or the signature breaks).
   rustfs:
