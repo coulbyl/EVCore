@@ -39,7 +39,7 @@ const QUEUE_NAMES = [...Object.values(BULLMQ_QUEUES), SLIP_DIGEST.QUEUE];
  * scheduled there anyway.
  */
 @Injectable()
-export class SchedulingSwitchService
+export class SchedulingSwitchScheduler
   implements OnApplicationBootstrap, OnApplicationShutdown
 {
   private timer: NodeJS.Timeout | null = null;

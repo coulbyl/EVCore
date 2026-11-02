@@ -1,4 +1,4 @@
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
@@ -99,7 +99,7 @@ function toCompetitionPlan(competition: CompetitionRow): CompetitionPlan {
 }
 
 @Injectable()
-export class EtlService implements OnApplicationBootstrap {
+export class EtlService {
   private readonly schedulingEnabled: boolean;
   private readonly dailyQuota: number;
   private readonly avgScheduledFixturesPerLeaguePerDay: number;
@@ -187,7 +187,11 @@ export class EtlService implements OnApplicationBootstrap {
     };
   }
 
-  async onApplicationBootstrap(): Promise<void> {
+  /**
+   * Every recurring ETL pass, upserted in Redis. Called by the worker
+   * process at boot (EtlScheduler), never by the API.
+   */
+  async registerSchedulers(): Promise<void> {
     if (!this.schedulingEnabled) {
       logger.info('ETL scheduling disabled — skipping job scheduler setup');
       return;

@@ -19,10 +19,6 @@ import { ConsolePassesService } from './console-passes.service';
 import { ConsoleQueuesService } from './console-queues.service';
 import { ConsoleSettleService } from './console-settle.service';
 import { ConsoleSettingsService } from './console-settings.service';
-import {
-  ConsoleWatchScheduler,
-  ConsoleWatchWorker,
-} from './console-watch.scheduler';
 import { ConsoleWatchService } from './console-watch.service';
 import { ConsoleExploitationController } from './console-exploitation.controller';
 import { ConsoleIntegrationsController } from './console-integrations.controller';
@@ -68,9 +64,8 @@ import { ConsoleService } from './console.service';
     ConsoleQueuesService,
     ConsoleSettleService,
     ConsoleWatchService,
-    ConsoleWatchScheduler,
-    ConsoleWatchWorker,
   ],
-  exports: [ConsoleService],
+  // The watch and its queue: ConsoleWorkerModule runs the ten-minute check.
+  exports: [ConsoleService, ConsoleWatchService, BullModule],
 })
 export class ConsoleModule {}

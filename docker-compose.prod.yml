@@ -160,6 +160,36 @@ services:
       retries: 3
       start_period: 60s
 
+
+  # The backend's worker process (apps/backend/src/main.worker.ts): every
+  # BullMQ consumer and recurring pass — analysis, odds, settlement, digests.
+  # Same image as `backend`, no HTTP server: the passes no longer hold the
+  # event loop that serves the players' screens. `backend` runs the
+  # migrations at start; the worker waits for it.
+  backend-worker:
+    container_name: evcore-backend-worker
+    image: ghcr.io/coulbyl/evcore-backend:latest
+    restart: unless-stopped
+    command: ["node", "dist/src/main.worker"]
+    env_file:
+      - .env
+    environment:
+      <<: *data-env
+      NODE_ENV: production
+      RUSTFS_ENDPOINT: http://rustfs:9000
+      RUSTFS_BUCKET: ${RUSTFS_BUCKET:-evcore-support}
+    networks:
+      - evcore_internal
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # No HTTP to probe: the image's /health check does not apply. Its health
+    # is its heartbeat, read by the API's GET /health/worker.
+    healthcheck:
+      disable: true
+
   web:
     container_name: evcore-web
     image: ghcr.io/coulbyl/evcore-web:latest

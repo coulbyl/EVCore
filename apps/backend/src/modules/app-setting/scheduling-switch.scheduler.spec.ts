@@ -5,8 +5,8 @@ import type Redis from 'ioredis';
 import type { AppSettingService } from './app-setting.service';
 import {
   SWITCH_PAUSED_KEY,
-  SchedulingSwitchService,
-} from './scheduling-switch.service';
+  SchedulingSwitchScheduler,
+} from './scheduling-switch.scheduler';
 
 function queue(name: string, paused = false) {
   const state = { paused };
@@ -49,7 +49,7 @@ function harness(enabled: boolean, queues: ReturnType<typeof queue>[]) {
     schedulingEnabled: vi.fn(() => Promise.resolve(enabled)),
   } as unknown as AppSettingService;
   const config = { get: vi.fn() } as unknown as ConfigService;
-  const service = new SchedulingSwitchService(
+  const service = new SchedulingSwitchScheduler(
     settings,
     moduleRef,
     redis,
@@ -58,7 +58,7 @@ function harness(enabled: boolean, queues: ReturnType<typeof queue>[]) {
   return { service, redis, settings, marked };
 }
 
-describe('SchedulingSwitchService', () => {
+describe('SchedulingSwitchScheduler', () => {
   it('off: pauses the running queues, marks only those', async () => {
     const running = queue('league-sync');
     const alreadyPaused = queue('stats-backfill', true);

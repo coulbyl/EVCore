@@ -5,34 +5,21 @@ import { BULLMQ_QUEUES } from '../../config/etl.constants';
 import { BettingEngineModule } from '../betting-engine/betting-engine.module';
 import { FixtureModule } from '../fixture/fixture.module';
 import { NotificationModule } from '../notification/notification.module';
-import { RiskModule } from '@modules/risk/risk.module';
 import { RollingStatsModule } from '../rolling-stats/rolling-stats.module';
 import { EtlService } from './etl.service';
 import { EtlController } from './etl.controller';
 import { ApiFootballClient } from './api-football.client';
-import { LeagueSyncWorker } from './workers/league-sync.worker';
-import { FixturesSyncWorker } from './workers/fixtures-sync.worker';
-import { PendingBetsSettlementWorker } from './workers/pending-bets-settlement.worker';
-import { OddsCsvImportWorker } from './workers/odds-csv-import.worker';
-import { StatsSyncWorker } from './workers/stats-sync.worker';
-import { OddsPrematchSyncWorker } from './workers/odds-prematch-sync.worker';
-import { InjuriesSyncWorker } from './workers/injuries-sync.worker';
-import { EloSyncWorker } from './workers/elo-sync.worker';
-import { CoachSyncWorker } from './workers/coachs-sync.worker';
-import { StaleScheduledSyncWorker } from './workers/stale-scheduled-sync.worker';
-import { OddsHistoricalImportWorker } from './workers/odds-historical-import.worker';
-import { BettingEngineAnalysisWorker } from './workers/betting-engine-analysis.worker';
-import { BettingEngineRebuildWorker } from './workers/betting-engine-rebuild.worker';
-import { SameDayAnalysisWorker } from './workers/same-day-analysis.worker';
-import { RollingHorizonWorker } from './workers/rolling-horizon.worker';
-import { SeasonRolloverSyncWorker } from './workers/season-rollover-sync.worker';
-import { StatsBackfillWorker } from './workers/stats-backfill.worker';
 import { StatsBackfillService } from './stats-backfill.service';
 import { CouponModule } from '../coupon/coupon.module';
 import { AdjustmentModule } from '../adjustment/adjustment.module';
 import { AuthModule } from '../auth/auth.module';
 import { FixtureStatisticsModule } from '../fixture-statistics/fixture-statistics.module';
 
+/**
+ * The ETL as the API sees it: the queues it puts jobs on, the services the
+ * admin's relaunches call. Its consumers and schedules live in
+ * EtlWorkerModule, loaded by the worker process only.
+ */
 @Module({
   imports: [
     ConfigModule,
@@ -61,35 +48,10 @@ import { FixtureStatisticsModule } from '../fixture-statistics/fixture-statistic
     FixtureStatisticsModule,
     NotificationModule,
     RollingStatsModule,
-    // Requis par PendingBetsSettlementWorker pour le balayage quotidien du
-    // garde-fou de ROI (tâche J-1) : il exportait RiskService depuis toujours,
-    // mais rien ne l'importait ici, donc la suspension automatique
-    // n'était atteignable que par un appel HTTP manuel.
-    RiskModule,
   ],
   controllers: [EtlController],
-  providers: [
-    EtlService,
-    ApiFootballClient,
-    LeagueSyncWorker,
-    FixturesSyncWorker,
-    PendingBetsSettlementWorker,
-    StaleScheduledSyncWorker,
-    StatsSyncWorker,
-    InjuriesSyncWorker,
-    OddsCsvImportWorker,
-    EloSyncWorker,
-    CoachSyncWorker,
-    OddsPrematchSyncWorker,
-    BettingEngineAnalysisWorker,
-    BettingEngineRebuildWorker,
-    SameDayAnalysisWorker,
-    OddsHistoricalImportWorker,
-    RollingHorizonWorker,
-    SeasonRolloverSyncWorker,
-    StatsBackfillService,
-    StatsBackfillWorker,
-  ],
-  exports: [EtlService, ApiFootballClient, StatsBackfillService],
+  providers: [EtlService, ApiFootballClient, StatsBackfillService],
+  // The queues too: the worker module's processors consume them.
+  exports: [EtlService, ApiFootballClient, StatsBackfillService, BullModule],
 })
 export class EtlModule {}

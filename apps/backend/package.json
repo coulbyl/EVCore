@@ -7,9 +7,11 @@
   "license": "UNLICENSED",
   "scripts": {
     "dev": "nest start --watch",
+    "dev:worker": "nest start --watch --path tsconfig.worker.json --entryFile main.worker",
     "dev:debug": "nest start --debug --watch",
     "build": "nest build",
-    "start": "node dist/main",
+    "start": "node dist/src/main",
+    "start:worker": "node dist/src/main.worker",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "eslint \"{src,test}/**/*.ts\" --max-warnings 0",
     "typecheck": "tsc --noEmit -p tsconfig.json",

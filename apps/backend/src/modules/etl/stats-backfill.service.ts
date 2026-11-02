@@ -1,4 +1,4 @@
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
@@ -51,7 +51,7 @@ export type StatsBackfillStatus = {
 };
 
 @Injectable()
-export class StatsBackfillService implements OnApplicationBootstrap {
+export class StatsBackfillService {
   private readonly scheduled: boolean;
   private readonly cronPattern: string;
 
@@ -74,7 +74,8 @@ export class StatsBackfillService implements OnApplicationBootstrap {
     this.cronPattern = STATS_BACKFILL.CRON;
   }
 
-  async onApplicationBootstrap(): Promise<void> {
+  /** The automatic backfill's schedule; the worker process registers it. */
+  async registerScheduler(): Promise<void> {
     if (!this.scheduled) {
       await this.queue.removeJobScheduler(ETL_SCHEDULER_KEYS.STATS_BACKFILL);
       logger.info('Automatic stats backfill disabled');

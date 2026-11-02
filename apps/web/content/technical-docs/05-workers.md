@@ -4,6 +4,20 @@ EVCore fait tourner deux services autonomes en dehors du backend NestJS : `apps/
 
 ---
 
+## backend-worker : les files et les passes du backend
+
+Depuis le 02/11/2026, le backend tourne en **deux processus** depuis la même image (modèle iddia) :
+
+- `backend` (`src/main.ts`, `AppModule`) : les routes HTTP et la messagerie du support. Il **dépose** des travaux dans les files (relances de l'admin), il n'en consomme aucun.
+- `backend-worker` (`src/main.worker.ts`, `WorkerModule`, `createApplicationContext`, sans serveur HTTP) : les 16 consommateurs BullMQ (ETL, analyse, cotes, règlement, résumés, veille de la console) et toutes les planifications récurrentes (`EtlScheduler`, `StatsBackfillService.registerScheduler`, `ConsoleWatchScheduler`, `SlipDigestScheduler`, l'interrupteur « Passes planifiées » `SchedulingSwitchScheduler`).
+
+Pourquoi : une passe d'analyse calcule le Poisson de tous les matchs ; dans le même processus, chaque requête d'un joueur attendait derrière elle. Règles :
+
+- un nouveau consommateur ou une nouvelle planification va dans un `<domaine>-worker.module.ts` importé par `WorkerModule`, jamais dans `AppModule` ; `src/process-separation.spec.ts` le vérifie (aucun `@Processor` ni `*Scheduler` dans le graphe de l'API) ;
+- les modules de domaine restent communs aux deux processus : leurs contrôleurs sont chargés par le worker mais inertes (pas de serveur HTTP) ;
+- `backend` applique les migrations à son démarrage, `backend-worker` attend qu'il soit sain ;
+- en local : `pnpm dev` lance les deux (`dev` et `dev:worker`), le worker compilé dans `dist-worker/`.
+
 ## ml-worker : correction ML shadow
 
 ### Rôle

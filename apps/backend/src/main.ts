@@ -62,9 +62,14 @@ async function bootstrap() {
     );
   }
 
+  // SIGTERM (container stop): requests in flight finish, then Prisma and
+  // the queues' connections close.
+  app.enableShutdownHooks();
   await app.listen(port, host);
   const appUrl = await app.getUrl();
   console.log(`🚀 Backend running at ${appUrl}`);
-  console.log(`📚 Scalar API reference: ${appUrl}/reference`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`📚 Scalar API reference: ${appUrl}${API_REFERENCE_PATH}`);
+  }
 }
 void bootstrap();
