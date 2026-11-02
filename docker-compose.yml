@@ -53,6 +53,9 @@ services:
     environment:
       DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-evcore}"
       POOL_MODE: transaction
+      # As in prod: Postgres stores SCRAM passwords; the image's default md5
+      # fails every login with « wrong password type ».
+      AUTH_TYPE: scram-sha-256
       MAX_CLIENT_CONN: 100
       DEFAULT_POOL_SIZE: 20
       MAX_PREPARED_STATEMENTS: "100"
