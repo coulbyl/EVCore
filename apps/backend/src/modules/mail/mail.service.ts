@@ -15,8 +15,6 @@ import {
   renderRoiAlert,
   renderWeightAdjustment,
   renderXgUnavailableReport,
-  renderMlModelActivated,
-  renderMlModelMissing,
   renderSupportMessage,
   renderPlayerDigest,
   type EmailVerificationProps,
@@ -25,8 +23,6 @@ import {
   type EtlFailureProps,
   type OpsLightRedProps,
   type MarketSuspensionProps,
-  type MlModelActivatedProps,
-  type MlModelMissingProps,
   type PasswordResetProps,
   type RoiAlertProps,
   type SupportMessageProps,
@@ -151,21 +147,6 @@ export class MailService {
     const { html, text } = await renderWeightAdjustment(props);
     await this.sendToAdmin(
       `Weight Adjustment ${action} — ${props.proposalId}`,
-      html,
-      text,
-    );
-  }
-
-  async sendMlModelActivated(props: MlModelActivatedProps): Promise<void> {
-    const action = props.isRollback ? 'Rollback' : 'Auto-Activé';
-    const { html, text } = await renderMlModelActivated(props);
-    await this.sendToAdmin(`ML Model ${action} — ${props.segment}`, html, text);
-  }
-
-  async sendMlModelMissing(props: MlModelMissingProps): Promise<void> {
-    const { html, text } = await renderMlModelMissing(props);
-    await this.sendToAdmin(
-      `ML Model Missing — ${props.segments.length} segment(s)`,
       html,
       text,
     );

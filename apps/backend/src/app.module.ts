@@ -25,7 +25,6 @@ import { ActivityModule } from './modules/activity/activity.module';
 import { CouponModule } from './modules/coupon/coupon.module';
 import { ScreensModule } from './modules/screens/screens.module';
 import { VerifiedTicketModule } from './modules/verified-ticket/verified-ticket.module';
-import { MlModule } from './modules/ml/ml.module';
 import { AnalysisSheetModule } from './modules/analysis-sheet/analysis-sheet.module';
 import { RedisModule } from './common/redis/redis.module';
 import { validateEnv } from './config/env.schema';
@@ -74,7 +73,6 @@ import { IntegrationsModule } from './modules/integrations/integrations.module';
     ScreensModule,
     VerifiedTicketModule,
     AnalysisSheetModule,
-    MlModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

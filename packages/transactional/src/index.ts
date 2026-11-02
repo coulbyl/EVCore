@@ -8,8 +8,6 @@ export type { XgUnavailableReportProps } from "./types";
 export type { EmailVerificationProps } from "./types";
 export type { EmailChangeCodeProps, EmailChangedProps } from "./types";
 export type { PasswordResetProps } from "./types";
-export type { MlModelActivatedProps } from "./types";
-export type { MlModelMissingProps } from "./types";
 export type { SupportMessageProps } from "./types";
 export type { PlayerDigestProps } from "./types";
 
@@ -24,7 +22,5 @@ export { renderEmailChangeCode } from "./emails/email-change-code";
 export { renderEmailChanged } from "./emails/email-changed";
 export { renderEmailChangeTaken } from "./emails/email-change-taken";
 export { renderPasswordReset } from "./emails/password-reset";
-export { renderMlModelActivated } from "./emails/ml-model-activated";
-export { renderMlModelMissing } from "./emails/ml-model-missing";
 export { renderSupportMessage } from "./emails/support-message";
 export { renderPlayerDigest } from "./emails/player-digest";

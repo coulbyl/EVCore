@@ -83,24 +83,6 @@ describe('NotificationService — persistence', () => {
       }),
     });
   });
-
-  it('persists an ML model missing alert to the database', async () => {
-    const prisma = makePrisma();
-    const service = new NotificationService(
-      new NotificationRepository(prisma),
-      makeMail(),
-    );
-
-    await service.sendMlModelMissingAlert(['CONF:ONE_X_TWO', 'SAFE:BTTS']);
-
-    expect(prisma.client.notification.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        type: NotificationType.ML_MODEL_MISSING,
-        body: expect.stringContaining('CONF:ONE_X_TWO'),
-        payload: { segments: ['CONF:ONE_X_TWO', 'SAFE:BTTS'] },
-      }),
-    });
-  });
 });
 
 describe('NotificationService — mail delegation', () => {
@@ -153,14 +135,6 @@ describe('NotificationService — mail delegation', () => {
     await service.sendWeightAdjustmentAlert(payload);
 
     expect(mail.sendWeightAdjustment).toHaveBeenCalledWith(payload);
-  });
-
-  it('delegates to mail.sendMlModelMissing', async () => {
-    await service.sendMlModelMissingAlert(['CONF:ONE_X_TWO']);
-
-    expect(mail.sendMlModelMissing).toHaveBeenCalledWith({
-      segments: ['CONF:ONE_X_TWO'],
-    });
   });
 });
 

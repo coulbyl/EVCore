@@ -188,42 +188,6 @@ export class NotificationService {
     });
   }
 
-  async sendMlModelActivatedAlert(payload: {
-    versionId: string;
-    segment: string;
-    algorithm: string;
-    brierScore: number;
-    calibrationError: number;
-    roiSimulated: number;
-    isRollback: boolean;
-    rolledBackVersionId?: string;
-  }): Promise<void> {
-    const action = payload.isRollback ? 'Rollback' : 'Auto-Activé';
-    const title = `ML Model ${action} — ${payload.segment} (${payload.versionId})`;
-    const body = payload.isRollback
-      ? `Rollback vers version précédente. Version annulée : ${payload.rolledBackVersionId ?? 'n/a'}`
-      : `Brier: ${payload.brierScore.toFixed(4)}, CalErr: ${payload.calibrationError.toFixed(4)}, ROI: ${(payload.roiSimulated * 100).toFixed(2)}%`;
-    await this.save({
-      type: NotificationType.ML_MODEL_ACTIVATED,
-      title,
-      body,
-      payload: { ...payload },
-    });
-    await this.mail.sendMlModelActivated(payload);
-  }
-
-  async sendMlModelMissingAlert(segments: string[]): Promise<void> {
-    const title = `ML Model Missing — ${segments.length} segment(s)`;
-    const body = `isActive=true en DB mais absent des active_segments ml-worker : ${segments.join(', ')}`;
-    await this.save({
-      type: NotificationType.ML_MODEL_MISSING,
-      title,
-      body,
-      payload: { segments },
-    });
-    await this.mail.sendMlModelMissing({ segments });
-  }
-
   // Broadcast (userId null) — mirrors AnnouncementsService's existing push
   // notification, doesn't replace it: this is what makes a published
   // announcement show up in the bell / `/dashboard/notifications` too,

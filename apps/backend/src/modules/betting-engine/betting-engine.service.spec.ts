@@ -16,7 +16,6 @@ import { blendTeamStats } from './math/probability';
 import type { PrismaService } from '@/prisma.service';
 import type { H2HService } from './h2h.service';
 import type { CongestionService } from './congestion.service';
-import type { MlInferenceService } from '@modules/ml/ml.inference.service';
 import type { ChannelDecisionService } from './channel-decision.service';
 import {
   CHANNEL_DECISION_STATUS,
@@ -113,12 +112,6 @@ function makeCongestionServiceMock(score = 0): CongestionService {
   return {
     computeCongestionScore: vi.fn().mockResolvedValue(score),
   } as unknown as CongestionService;
-}
-
-function makeMlInferenceServiceMock(): MlInferenceService {
-  return {
-    predictShadowCorrection: vi.fn().mockResolvedValue(null),
-  } as unknown as MlInferenceService;
 }
 
 // Stands in for the real ChannelDecisionService in tests that predate the
@@ -413,7 +406,6 @@ describe('BettingEngineService', () => {
       {} as PrismaService,
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
     );
     const ev = service.calculateEV(new Decimal('0.54'), new Decimal('2.0'));
     expect(ev.toNumber()).toBeCloseTo(0.08, 8);
@@ -424,7 +416,6 @@ describe('BettingEngineService', () => {
       {} as PrismaService,
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
     );
     const p = service.computeProbabilities(1.4, 1.1);
 
@@ -438,7 +429,6 @@ describe('BettingEngineService', () => {
       makePrismaMock(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
     );
     const result = await service.analyzeFixture('fixture-id');
 
@@ -489,7 +479,6 @@ describe('BettingEngineService', () => {
       prismaMock,
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
     );
     const result = await service.analyzeFixture('fixture-id');
 
@@ -566,7 +555,6 @@ describe('BettingEngineService', () => {
       prismaMock,
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
       undefined,
       makeChannelDecisionServiceMock(),
     );
@@ -661,7 +649,6 @@ describe('BettingEngineService', () => {
       prismaMock,
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
       undefined,
       makeChannelDecisionServiceMock(),
     );
@@ -729,7 +716,6 @@ describe('BettingEngineService', () => {
       prismaMock,
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
     );
 
     const result = await service.analyzeFixture('fixture-id');
@@ -826,7 +812,6 @@ describe('BettingEngineService', () => {
       prismaMock,
       h2hService,
       congestionService,
-      makeMlInferenceServiceMock(),
       undefined,
       makeChannelDecisionServiceMock(),
     );
@@ -947,7 +932,6 @@ describe('BettingEngineService', () => {
       prismaMock,
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
       deterministicScore: new Decimal('0.7'),
@@ -1033,7 +1017,6 @@ describe('BettingEngineService', () => {
       prismaMock,
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
     );
     const probabilities1423 = {
       home: new Decimal('0.18'),
@@ -1161,7 +1144,6 @@ describe('BettingEngineService', () => {
       prismaMock,
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
     );
     const probabilities1537 = {
       home: new Decimal('0.22'),
@@ -1228,7 +1210,6 @@ describe('BettingEngineService', () => {
       {} as unknown as PrismaService,
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
     );
 
     const htft = makeHtftProbabilities('0.111111');
@@ -1315,7 +1296,6 @@ describe('BettingEngineService', () => {
       {} as unknown as PrismaService,
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
     );
 
     const htft = makeHtftProbabilities('0.111111');
@@ -1402,7 +1382,6 @@ describe('BettingEngineService', () => {
       {} as unknown as PrismaService,
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
     );
 
     const htft = makeHtftProbabilities('0.111111');
@@ -1574,7 +1553,6 @@ describe('BettingEngineService', () => {
       prismaMock,
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makeMlInferenceServiceMock(),
       undefined,
       makeChannelDecisionServiceMock(),
     );
