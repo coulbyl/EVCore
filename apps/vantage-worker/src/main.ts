@@ -3,7 +3,10 @@ import { createLogger } from "./logger";
 import { createLlmClients, findProviderClient } from "./groq/client";
 import { createVantageWorker } from "./queue/worker";
 import { createQueue } from "./queue/queue";
-import { removeObsoleteSchedulers } from "./queue/remove-obsolete-schedulers";
+import {
+  removeObsoleteSchedulers,
+  VANTAGE_SCHEDULERS,
+} from "./queue/remove-obsolete-schedulers";
 
 async function main() {
   const config = loadConfig();
@@ -57,18 +60,17 @@ async function main() {
     logger.error({ err }, "vantage: worker error");
   });
 
-  // Self-scheduling: the worker owns its own repeatable "sweep" job rather
-  // than depending on an external cron. `pnpm sweep` (run-sweep-once.ts)
-  // remains available as an alternative trigger for ops that prefer a host
-  // cron — both are idempotent and safe to run together.
+  // Self-scheduling: the worker owns its own recurring "sweep" rather than
+  // depending on an external cron. `pnpm sweep` (run-sweep-once.ts) remains
+  // available as an alternative trigger for ops that prefer a host cron —
+  // both are idempotent and safe to run together. Job schedulers with a
+  // fixed key (BullMQ 6 drops `queue.add({ repeat })`): an interval or an
+  // hour changed here updates the same scheduler.
   const queue = createQueue(config);
-  await queue.add(
-    "sweep",
-    {},
-    {
-      repeat: { every: config.sweepIntervalMs },
-      jobId: "vantage-recurring-sweep",
-    },
+  await queue.upsertJobScheduler(
+    VANTAGE_SCHEDULERS.sweep.id,
+    { every: config.sweepIntervalMs },
+    { name: VANTAGE_SCHEDULERS.sweep.jobName, data: {} },
   );
 
   // Daily coupon generation (docs/vantage-centric-redesign-2026-09-01.md
@@ -76,13 +78,10 @@ async function main() {
   // the sweep above, no dependency on apps/backend's queue. See
   // config.ts's couponCron doc comment for how its default relates to
   // apps/backend's own analysis cron.
-  await queue.add(
-    "generate-coupons",
-    {},
-    {
-      repeat: { pattern: config.couponCron },
-      jobId: "vantage-recurring-coupon-generation",
-    },
+  await queue.upsertJobScheduler(
+    VANTAGE_SCHEDULERS.coupons.id,
+    { pattern: config.couponCron },
+    { name: VANTAGE_SCHEDULERS.coupons.jobName, data: {} },
   );
 
   // Intraday batch (recheck J-J) — NO LONGER SCHEDULED since 2026-09-16.
@@ -106,9 +105,7 @@ async function main() {
   // Same for the coupon passes at another hour than COUPON_SCHEDULE's: the
   // 20:30 pass and the 21:15 retry (ENV-PROD § 3) keep firing until removed,
   // since a repeatable's key carries its pattern.
-  const removedObsoleteSchedulers = await removeObsoleteSchedulers(queue, {
-    couponCron: config.couponCron,
-  });
+  const removedObsoleteSchedulers = await removeObsoleteSchedulers(queue);
 
   logger.info(
     {
