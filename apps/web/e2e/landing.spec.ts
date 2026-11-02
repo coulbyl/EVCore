@@ -21,7 +21,8 @@ test.describe("Landing", () => {
     const hero = page.getByRole("region", { name: "Favori du jour" });
     await expect(hero.getByText("Paris SG", { exact: true })).toBeVisible();
     await expect(hero.getByText("1,28")).toBeVisible();
-    await expect(hero.getByText("8 sur 10")).toBeVisible();
+    // The One Chance Rule (DESIGN.md): the chance in words, on the coupon.
+    await expect(hero.getByText("Passe 8 fois sur 10")).toBeVisible();
     await expect(
       hero.getByRole("img", { name: /jours gagnés sur/ }),
     ).toBeVisible();

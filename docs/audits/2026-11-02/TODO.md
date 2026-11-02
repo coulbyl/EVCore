@@ -54,5 +54,5 @@ _Mesures de départ (copie de prod du 02/11, 7,9 Go) : `odds_snapshot` 6,1 Go / 
 
 ## F. Fin
 
-- [ ] F1 `test(web): player e2e green on main`.
+- [x] F1 `test(web): player e2e green`. _Fait : 30 échecs (10 tests × 3 largeurs) hérités de `main`, tous des tests en retard sur des changements voulus de l'interface : « One Chance Rule » (5eb8332f, la chance en phrase « Passe 8 fois sur 10 », seule la cote dans les listes), « Hier » en mots (945b49a5), un chasseur sans jour joué dit « Lancé le … » (4aec8d14), titre et retour dans le bandeau hors du `<main>`, bulle « Pourquoi ? » de l'avis IA (ee391364, et le faux backend envoyait encore `sentence` au lieu de `speech`), grands écrans testés avec la session admin par défaut (6 liens de plus). Un parcours devenu instable sous charge (Échap avant l'entrée du focus dans la feuille) attend le focus. Suite complète : 501 réussis, 1 instable corrigé, 0 échec (18 ignorés)._
 - [ ] F2 Revue `/code-review high`, corrections, bilan ici, PR.

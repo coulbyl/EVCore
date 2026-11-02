@@ -31,8 +31,10 @@ test.describe("Matchs", () => {
     const arsenal = at19.getByRole("listitem").filter({ hasText: "Arsenal" });
     await expect(arsenal).toContainText("Arsenal – Chelsea");
     await expect(arsenal).toContainText("Premier League");
-    await expect(arsenal).toContainText("Victoire Arsenal ·");
-    await expect(arsenal.getByText("7 sur 10")).toBeVisible();
+    await expect(arsenal).toContainText("Victoire Arsenal");
+    await expect(arsenal).toContainText("1,60");
+    // The One Chance Rule (DESIGN.md): a list shows the price alone.
+    await expect(arsenal.getByText(/sur 10/)).toHaveCount(0);
 
     // La seconde page de l'API est lue aussi : Betis est à 20:45.
     const at2045 = page.getByRole("region", { name: "Coups d'envoi à 20:45" });
@@ -207,7 +209,7 @@ test.describe("Fiche du match", () => {
     const reading = sheet.getByRole("region", { name: "Notre lecture" });
     await expect(reading).toContainText("Victoire Arsenal");
     await expect(reading).toContainText("1,60");
-    await expect(reading).toContainText("7 sur 10");
+    await expect(reading).toContainText("Passe 7 fois sur 10");
     await expect(reading).toContainText(
       "Arsenal a gagné ses 9 derniers matchs à domicile",
     );
@@ -215,9 +217,12 @@ test.describe("Fiche du match", () => {
     const ai = sheet.getByRole("region", { name: "Avis IA" });
     await expect(ai).toContainText("Match nul");
     await expect(ai).toContainText("3,40");
-    await expect(ai).toContainText(
-      "« Chelsea n'a perdu qu'une fois en 8 déplacements »",
+    // Its text opens from « Pourquoi ? », in a popover (ee391364).
+    await ai.getByRole("button", { name: "Pourquoi ?" }).click();
+    await expect(page.getByRole("dialog", { name: "Avis IA" })).toContainText(
+      "Chelsea n'a perdu qu'une fois en 8 déplacements",
     );
+    await page.keyboard.press("Escape");
     await expect(ai).not.toContainText(/accord/);
 
     const form = sheet.getByRole("region", { name: "Forme" });

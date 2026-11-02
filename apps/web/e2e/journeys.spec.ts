@@ -36,6 +36,9 @@ test.describe("Parcours du joueur", () => {
       .click();
     const sheet = sheetNamed(page, "Combiné du jour");
     await expect(sheet).toBeVisible();
+    // On a wide screen Escape closes the sheet only from inside it: the
+    // focus enters it on open, wait for that before pressing.
+    await expect(sheet).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(page).toHaveURL(/\/today$/);
 
