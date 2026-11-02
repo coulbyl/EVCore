@@ -288,3 +288,38 @@ test.describe("Fiche du match", () => {
     ).toBeVisible();
   });
 });
+
+/**
+ * A slow sheet (A2 of the perf lot): it rises at the tap with grey rows,
+ * the content takes its place without a second slide, and closing it hands
+ * the focus back to the tapped row, not to the page.
+ */
+test.describe("Fiche lente", () => {
+  test("monte au toucher, puis rend le focus à la ligne", async ({
+    page,
+    context,
+  }) => {
+    await context.addCookies([
+      { name: "e2e_slow_sheet", value: "1", domain: "localhost", path: "/" },
+    ]);
+    await page.goto("/matches");
+    const row = page.getByRole("link", { name: /Arsenal – Chelsea/ });
+    await row.focus();
+    await page.keyboard.press("Enter");
+
+    const loading = page
+      .getByRole("dialog", { name: "Chargement" })
+      .or(page.getByRole("complementary", { name: "Chargement" }));
+    await expect(loading).toBeVisible();
+
+    const sheet = page
+      .getByRole("dialog", { name: "Arsenal – Chelsea" })
+      .or(page.getByRole("complementary", { name: "Arsenal – Chelsea" }));
+    await expect(sheet).toBeVisible({ timeout: 15_000 });
+    await expect(sheet).not.toHaveClass(/animate-sheet-up/);
+
+    await page.keyboard.press("Escape");
+    await expect(page).toHaveURL(/\/matches$/);
+    await expect(row).toBeFocused();
+  });
+});

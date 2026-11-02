@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef } from "react";
+import { useId, useRef, useState } from "react";
 import { usePlayerText } from "../text/player-texts";
 import { X } from "lucide-react";
 // clsx alone: no class comes from outside, nothing for tailwind-merge to
@@ -8,6 +8,7 @@ import { X } from "lucide-react";
 import { clsx as cn } from "clsx";
 import { useDragToClose } from "./use-drag-to-close";
 import { useModalSheet } from "./use-modal-sheet";
+import { isSheetOpen } from "./sheet-relay";
 import { useSheetClose } from "./use-sheet-close";
 import { useWideScreen } from "./use-wide-screen";
 
@@ -53,13 +54,19 @@ export function Sheet({
   const drag = useDragToClose({ panelRef, enabled: !wide, onClose: close });
 
   const onBand = tone === "band";
+  // Elle remplace une feuille déjà ouverte (son squelette, une autre fiche) :
+  // la personne n'a rien vu se fermer, rien ne doit remonter.
+  const [continued] = useState(isSheetOpen);
 
   return (
     <>
       <div
         aria-hidden
         onClick={close}
-        className="fixed inset-0 z-50 animate-scrim-in bg-scrim motion-reduce:animate-none lg:hidden"
+        className={cn(
+          "fixed inset-0 z-50 bg-scrim lg:hidden",
+          !continued && "animate-scrim-in motion-reduce:animate-none",
+        )}
       />
       <div
         ref={panelRef}
@@ -69,7 +76,7 @@ export function Sheet({
         tabIndex={-1}
         className={cn(
           "fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col overflow-hidden rounded-t-[1.25rem] bg-card text-card-foreground outline-none",
-          "animate-sheet-up motion-reduce:animate-none",
+          !continued && "animate-sheet-up motion-reduce:animate-none",
           "md:mx-auto md:max-w-[34rem]",
           "lg:sticky lg:inset-x-auto lg:top-0 lg:bottom-auto lg:z-auto lg:mx-0 lg:h-dvh lg:max-h-none lg:w-full lg:max-w-none lg:animate-none lg:rounded-none lg:border-l lg:border-border",
         )}

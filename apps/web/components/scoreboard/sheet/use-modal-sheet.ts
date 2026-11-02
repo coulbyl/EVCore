@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, type RefObject } from "react";
 import { FOCUSABLE_SELECTOR, SHEET_INERT_ATTRIBUTE } from "./sheet-constants";
+import {
+  offerSheetRelay,
+  sheetClosedForGood,
+  takeSheetRelay,
+} from "./sheet-relay";
 
 /**
  * Ce qu'une feuille doit au clavier et aux lecteurs d'écran.
@@ -20,28 +25,30 @@ export function useModalSheet({
   modal: boolean;
   onClose: () => void;
 }): void {
-  // L'élément qui a ouvert la feuille, retenu une seule fois : en mode
-  // strict (développement), React monte, démonte puis remonte le composant,
-  // et au second montage l'élément actif est déjà la feuille elle-même.
+  // L'élément qui a ouvert la feuille. Une feuille qui en remplace une autre
+  // (squelette puis contenu, mode strict de React) reçoit celui de la
+  // précédente : l'élément actif est alors la feuille démontée, ou `body`.
   const openerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const panel = panelRef.current;
     const active = document.activeElement;
-    if (
-      !openerRef.current &&
-      active instanceof HTMLElement &&
+    const relayed = takeSheetRelay();
+    openerRef.current =
+      relayed ??
+      (active instanceof HTMLElement &&
+      active !== document.body &&
       !panel?.contains(active)
-    ) {
-      openerRef.current = active;
-    }
+        ? active
+        : null);
     panel?.focus({ preventScroll: true });
     return () => {
+      offerSheetRelay(openerRef.current);
       // À l'image suivante : l'effet qui rend l'arrière-plan inerte se
-      // nettoie après celui-ci, et un élément inerte refuse le focus. Si la
-      // feuille est toujours là (remontage), elle garde le focus.
+      // nettoie après celui-ci, et un élément inerte refuse le focus. Si une
+      // autre feuille a pris la place, c'est elle qui garde le focus.
       requestAnimationFrame(() => {
-        if (panel?.isConnected) return;
+        if (!sheetClosedForGood()) return;
         const opener = openerRef.current;
         if (opener?.isConnected) opener.focus({ preventScroll: true });
       });

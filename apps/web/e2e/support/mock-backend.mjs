@@ -2979,6 +2979,15 @@ const server = http.createServer((req, res) => {
   }
 
   res.statusCode = status;
+  // A slow sheet, for the loading boundary of the intercepted sheets (A2 of
+  // the perf lot): the test sets the cookie, the server render forwards it.
+  const slowSheet =
+    /\/sheet$/.test((req.url ?? "").split("?")[0]) &&
+    (req.headers.cookie ?? "").includes("e2e_slow_sheet=1");
+  if (slowSheet) {
+    setTimeout(() => res.end(JSON.stringify(body)), 1500);
+    return;
+  }
   res.end(JSON.stringify(body));
 });
 
