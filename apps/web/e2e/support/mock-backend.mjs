@@ -2979,12 +2979,11 @@ const server = http.createServer((req, res) => {
   }
 
   res.statusCode = status;
-  // A slow sheet, for the loading boundary of the intercepted sheets (A2 of
-  // the perf lot): the test sets the cookie, the server render forwards it.
-  const slowSheet =
-    /\/sheet$/.test((req.url ?? "").split("?")[0]) &&
-    (req.headers.cookie ?? "").includes("e2e_slow_sheet=1");
-  if (slowSheet) {
+  // A slow answer, for the loading states of the perf lot (A2, A3): the test
+  // sets `e2e_slow=<last path segment>` (`sheet`, `matches`), the server
+  // render forwards the cookie.
+  const slow = /(?:^|;\s*)e2e_slow=([^;]+)/.exec(req.headers.cookie ?? "");
+  if (slow && (req.url ?? "").split("?")[0].endsWith(`/${slow[1]}`)) {
     setTimeout(() => res.end(JSON.stringify(body)), 1500);
     return;
   }

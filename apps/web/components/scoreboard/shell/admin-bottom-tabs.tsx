@@ -14,6 +14,7 @@ import {
   isTabActive,
 } from "./shell-constants";
 import { TabLed } from "./tab-led";
+import { TabStatusLed } from "./tab-status-led";
 
 const MORE_ID = "admin-more";
 
@@ -62,9 +63,10 @@ export function AdminBottomTabs() {
                     strokeWidth={1.8}
                     className={cn("size-[1.375rem]", active && "text-primary")}
                   />
-                  {active ? (
-                    <TabLed className="absolute -top-2 left-1/2 -translate-x-1/2" />
-                  ) : null}
+                  <TabStatusLed
+                    active={active}
+                    className="absolute -top-2 left-1/2 -translate-x-1/2"
+                  />
                 </span>
                 {section.key === "home"
                   ? t("adminBar.home")

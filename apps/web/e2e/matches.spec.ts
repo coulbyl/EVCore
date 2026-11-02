@@ -300,7 +300,7 @@ test.describe("Fiche lente", () => {
     context,
   }) => {
     await context.addCookies([
-      { name: "e2e_slow_sheet", value: "1", domain: "localhost", path: "/" },
+      { name: "e2e_slow", value: "sheet", domain: "localhost", path: "/" },
     ]);
     await page.goto("/matches");
     const row = page.getByRole("link", { name: /Arsenal – Chelsea/ });
@@ -321,5 +321,37 @@ test.describe("Fiche lente", () => {
     await page.keyboard.press("Escape");
     await expect(page).toHaveURL(/\/matches$/);
     await expect(row).toBeFocused();
+  });
+});
+
+/**
+ * A tab whose screen is slow (A3 of the perf lot): the tapped tab's diode
+ * lights up and pulses until the screen arrives, then stays lit.
+ */
+test.describe("Onglet lent", () => {
+  test("la diode de l'onglet touché pulse jusqu'à l'écran", async ({
+    page,
+    context,
+  }) => {
+    // A player: an admin's bar has no Matchs tab.
+    await context.addCookies([
+      { name: "e2e_slow", value: "matches", domain: "localhost", path: "/" },
+      {
+        name: "evcore_session",
+        value: "player",
+        domain: "localhost",
+        path: "/",
+      },
+    ]);
+    await page.goto("/today");
+    const tab = page
+      .getByRole("navigation", { name: "Onglets" })
+      .locator("visible=true")
+      .getByRole("link", { name: "Matchs", exact: true });
+    await tab.click();
+    await expect(tab.locator('[class*="animate-pulse"]')).toHaveCount(1);
+    await expect(page).toHaveURL(/\/matches$/, { timeout: 15_000 });
+    await expect(tab).toHaveAttribute("aria-current", "page");
+    await expect(tab.locator('[class*="animate-pulse"]')).toHaveCount(0);
   });
 });
