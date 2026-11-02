@@ -15,14 +15,12 @@ import path from "node:path";
  */
 
 const ALL_ROUTES: readonly { name: string; path: string }[] = [
-  { name: "accueil", path: "/dashboard" },
-  { name: "coupons", path: "/dashboard/coupons" },
-  { name: "decisions", path: "/dashboard/decisions" },
-  { name: "avis-ia", path: "/dashboard/arbitrage" },
-  { name: "matchs", path: "/dashboard/fixtures" },
-  { name: "track-record", path: "/dashboard/track-record" },
-  { name: "notifications", path: "/dashboard/notifications" },
-  { name: "compte", path: "/dashboard/params/account/profil" },
+  { name: "aujourdhui", path: "/today" },
+  { name: "matchs", path: "/matches" },
+  { name: "resultats", path: "/results" },
+  { name: "moi", path: "/me" },
+  { name: "notifications", path: "/notifications" },
+  { name: "compte", path: "/me/account" },
 ];
 
 /** Pages publiques, capturées sans session (visiteur anonyme). */

@@ -8,6 +8,7 @@ import {
   AdminUsersRepository,
   type AdminUserRecord,
 } from './admin-users.repository';
+import { AdminJournalService } from '@modules/admin-journal/admin-journal.service';
 import { SessionCache } from '@modules/auth/session-cache';
 import type { ListUsersQueryDto } from './dto/list-users-query.dto';
 import type { UpdateUserDto } from './dto/update-user.dto';
@@ -33,6 +34,7 @@ export class AdminUsersService {
   constructor(
     private readonly repository: AdminUsersRepository,
     private readonly sessionCache: SessionCache,
+    private readonly journal: AdminJournalService,
   ) {}
 
   async listUsers(query: ListUsersQueryDto): Promise<{
@@ -70,8 +72,19 @@ export class AdminUsersService {
         'Vous ne pouvez pas suspendre votre propre compte.',
       );
     }
+    // The last admin demoting themselves would lock everyone out of /admin.
+    if (
+      dto.role !== undefined &&
+      dto.role !== 'ADMIN' &&
+      id === currentUserId
+    ) {
+      throw new ForbiddenException(
+        'Vous ne pouvez pas retirer votre propre rôle admin.',
+      );
+    }
 
-    if (!(await this.repository.exists(id))) {
+    const before = await this.repository.findState(id);
+    if (!before) {
       throw new NotFoundException('User not found');
     }
 
@@ -89,6 +102,25 @@ export class AdminUsersService {
         // Kick the user out immediately instead of waiting for their session to expire.
         await this.repository.deleteSessions(id);
       }
+      // The journal (12-admin.md § 4): a role and a suspension that changed.
+      if (dto.role !== undefined && dto.role !== before.role) {
+        await this.journal.record({
+          actorId: currentUserId,
+          kind: 'role',
+          target: before.email,
+          before: before.role,
+          after: dto.role,
+        });
+      }
+      if (dto.suspended !== undefined && dto.suspended !== before.suspended) {
+        await this.journal.record({
+          actorId: currentUserId,
+          kind: 'suspension',
+          target: before.email,
+          before: before.suspended,
+          after: dto.suspended,
+        });
+      }
       return this.toRow(updated);
     } finally {
       // Rôle, suspension, vérification : la session porte ces champs. Même si
@@ -104,12 +136,19 @@ export class AdminUsersService {
       );
     }
 
-    if (!(await this.repository.exists(id))) {
+    const before = await this.repository.findState(id);
+    if (!before) {
       throw new NotFoundException('User not found');
     }
 
     await this.repository.delete(id);
     this.sessionCache.invalidateUser(id);
+    await this.journal.record({
+      actorId: currentUserId,
+      kind: 'account_deleted',
+      target: await this.journal.forgetEmail(before.email),
+      before: before.role,
+    });
   }
 
   private toRow(u: AdminUserRecord): AdminUserRow {

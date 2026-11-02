@@ -46,7 +46,7 @@ export class AdminAnnouncementsController {
 
   @Delete(':id')
   @HttpCode(204)
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  remove(@Param('id') id: string, @CurrentSession() session: AuthSession) {
+    return this.service.remove({ id, actorId: session.user.id });
   }
 }

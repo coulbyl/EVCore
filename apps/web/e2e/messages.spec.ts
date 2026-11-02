@@ -6,6 +6,18 @@ import { expect, test } from "@playwright/test";
  * garde un message qui n'est pas parti avec « Réessayer ».
  */
 test.describe("Messages", () => {
+  // A player's thread: the team reads its messages in the admin.
+  test.beforeEach(async ({ context }) => {
+    await context.addCookies([
+      {
+        name: "evcore_session",
+        value: "player",
+        domain: "localhost",
+        path: "/",
+      },
+    ]);
+  });
+
   test("le fil : l'accueil automatique, ma question et sa photo, la réponse signée", async ({
     page,
   }) => {

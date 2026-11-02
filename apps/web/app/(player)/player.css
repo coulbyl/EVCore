@@ -1,9 +1,8 @@
 /*
  * The player's stylesheet (15-todo.md C0b): built from the player's own
  * sources only — its screens and the scoreboard components — instead of
- * every class of the dashboard, the editor and driver.js. The landing and
- * /resultats use it too; the dashboard, the legal pages and sign-in keep
- * app/globals.css until their overhaul.
+ * every class of the old dashboard. The public pages use it too; it is
+ * the only stylesheet since the dashboard left (12-admin.md § 0).
  */
 @import "tailwindcss" source(none);
 @source '.';

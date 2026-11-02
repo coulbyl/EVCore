@@ -71,6 +71,7 @@ export default async function PlayerLayout({
         skipLinkLabel={t("skipToContent")}
         legalText={t("legal")}
         sheet={sheet}
+        admin={session.user.role === "ADMIN"}
         dock={
           <TicketDock
             locale={displayLocaleOf(locale)}

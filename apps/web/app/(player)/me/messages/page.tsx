@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
 import { getLocale, getTranslations } from "next-intl/server";
 import { SubpageBand } from "@/components/scoreboard/shell/subpage-band";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import type { SupportMessage } from "@/domains/support/types/support";
 import { serverApiRequest } from "@/lib/api/server-api";
-import { displayLocaleOf, formatTime } from "@/helpers/scoreboard-format";
-import { Composer } from "./components/composer";
-import { MessageBubble } from "./components/message-bubble";
+import { displayLocaleOf } from "@/helpers/scoreboard-format";
+import { Composer } from "@/components/scoreboard/messages/composer";
+import { ThreadList } from "@/components/scoreboard/messages/thread-list";
 import { PushNudge } from "@/components/scoreboard/ui/push-nudge";
-import { ThreadLive } from "./components/thread-live";
+import { ThreadLive } from "@/components/scoreboard/messages/thread-live";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("messages");
@@ -38,12 +40,18 @@ export default async function Page({
 }: {
   searchParams: Promise<{ older?: string }>;
 }) {
-  const [t, params, locale, timeZone] = await Promise.all([
+  const [t, params, locale, timeZone, current] = await Promise.all([
     getTranslations("messages"),
     searchParams,
     getLocale(),
     getPlayerTimeZone(),
+    getPlayerSession(),
   ]);
+  // The team has no support thread of its own: its messages are the
+  // players' (12-admin.md § 3).
+  if (current.status === "signed-in" && current.session.user.role === "ADMIN") {
+    redirect("/admin/messages");
+  }
   const display = displayLocaleOf(locale);
   const older = Math.min(MAX_OLDER, Math.max(0, Number(params.older) || 0));
 
@@ -72,22 +80,6 @@ export default async function Page({
     automatic: t("automatic"),
   };
 
-  const dayOf = (iso: string) =>
-    new Intl.DateTimeFormat("en-CA", { timeZone }).format(new Date(iso));
-  const todayKey = dayOf(new Date().toISOString());
-  const yesterdayKey = dayOf(new Date(Date.now() - 86_400_000).toISOString());
-  const heading = (iso: string) => {
-    const key = dayOf(iso);
-    if (key === todayKey) return t("today");
-    if (key === yesterdayKey) return t("yesterday");
-    return new Intl.DateTimeFormat(INTL[display], {
-      weekday: "short",
-      day: "numeric",
-      month: "long",
-      timeZone,
-    }).format(new Date(iso));
-  };
-
   return (
     <>
       <SubpageBand
@@ -110,40 +102,19 @@ export default async function Page({
         {messages.length === 0 ? (
           <p className="py-6 text-body text-muted-foreground">{t("empty")}</p>
         ) : null}
-        <ol aria-label={t("title")} className="flex flex-col gap-3 pb-3">
-          {messages.map((message, index) => {
-            const previous = messages[index - 1];
-            const newDay =
-              !previous ||
-              dayOf(previous.createdAt) !== dayOf(message.createdAt);
-            const mine = message.senderRole === "OPERATOR";
-            return [
-              newDay ? (
-                <li
-                  key={`day-${message.id}`}
-                  aria-hidden
-                  className="self-center pt-2 text-legal text-muted-foreground"
-                >
-                  {heading(message.createdAt)}
-                </li>
-              ) : null,
-              <MessageBubble
-                key={message.id}
-                message={message}
-                mine={mine}
-                sign={
-                  mine || message.kind === "AUTOMATED" ? null : t("teamSign")
-                }
-                time={formatTime(
-                  new Date(message.createdAt),
-                  display,
-                  timeZone,
-                )}
-                labels={labels}
-              />,
-            ];
-          })}
-        </ol>
+        <ThreadList
+          messages={messages}
+          viewer="OPERATOR"
+          teamSign={t("teamSign")}
+          display={display}
+          timeZone={timeZone}
+          labels={{
+            title: t("title"),
+            today: t("today"),
+            yesterday: t("yesterday"),
+            ...labels,
+          }}
+        />
         <Composer
           serverIds={messages.map((m) => m.id)}
           timeFormat={{ locale: INTL[display] ?? "fr-FR", timeZone }}

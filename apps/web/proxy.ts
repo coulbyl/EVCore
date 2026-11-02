@@ -13,6 +13,7 @@ const PLAYER_ROUTES = [
   "/me",
   "/notifications",
   "/ticket",
+  "/admin",
 ];
 
 function withLocaleCookie(
@@ -31,16 +32,15 @@ function withLocaleCookie(
  * No network call here (docs/refonte-ui/16-performance-et-qualite.md § 2):
  * the proxy only checks that a session cookie is present. Whether that
  * session is still valid is answered once, by the backend, during the
- * render: the player and dashboard layouts send a stale session to login,
- * the auth layout sends a valid one to the dashboard, and the admin pages
- * check the role in their own layout.
+ * render: the player's layout sends a stale session to login, the auth
+ * layout sends a valid one home, and the admin pages check the role in
+ * their own layout.
  */
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const hasSession = request.cookies.has(SESSION_COOKIE);
-  // Les onglets du joueur (app/(player)). Depuis la bascule (15-todo.md,
-  // C19), un joueur qui ouvre /dashboard est renvoyé ici par le layout du
-  // tableau de bord ; l'admin y reste.
+  // Les onglets du joueur (app/(player)). /dashboard n'existe plus : chaque
+  // ancienne adresse mène au nouvel écran (app/dashboard/[[...retired]]).
   const isPlayerRoute = PLAYER_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
@@ -56,8 +56,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
-  // The dashboard layout needs the address too, to send a player from an
-  // old screen to the one that replaces it (helpers/retired-routes.ts).
+  // The player's layout reads the address (to come back after sign-in).
   if (isPlayerRoute || pathname.startsWith("/dashboard")) {
     const headers = new Headers(request.headers);
     headers.set(REQUESTED_PATH_HEADER, `${pathname}${search}`);
@@ -80,5 +79,6 @@ export const config = {
     "/me/:path*",
     "/notifications/:path*",
     "/ticket/:path*",
+    "/admin/:path*",
   ],
 };

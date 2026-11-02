@@ -60,8 +60,11 @@ docker compose up -d
 # Apply DB migrations
 pnpm --filter @evcore/db db:migrate -- --name init
 
-# Seed competitions and optionally an admin user
+# Seed competitions
 pnpm --filter @evcore/db db:seed
+
+# Create the first admin account (asked at the terminal)
+pnpm --filter @evcore/db create-admin
 
 # Start backend in dev mode
 pnpm --filter backend dev
@@ -138,10 +141,6 @@ Key variables (see `.env.example` for the full list):
 
 ```
 DATABASE_URL=postgresql://...
-SEED_ADMIN_EMAIL=admin@evcore.local
-SEED_ADMIN_USERNAME=admin
-SEED_ADMIN_FULL_NAME=EVCore Admin
-SEED_ADMIN_PASSWORD=<choose-a-password>
 REDIS_HOST=localhost
 REDIS_PORT=6379
 API_FOOTBALL_KEY=<your-key>

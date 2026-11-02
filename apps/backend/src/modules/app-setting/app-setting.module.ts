@@ -10,6 +10,6 @@ import { SchedulingSwitchService } from './scheduling-switch.service';
 @Global()
 @Module({
   providers: [AppSettingRepository, AppSettingService, SchedulingSwitchService],
-  exports: [AppSettingService],
+  exports: [AppSettingService, AppSettingRepository],
 })
 export class AppSettingModule {}

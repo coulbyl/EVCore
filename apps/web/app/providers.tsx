@@ -6,9 +6,8 @@ import type { ReactNode } from "react";
 import { ThemeProvider } from "@evcore/ui/components/theme-provider";
 
 /**
- * What every page needs: the theme. React Query and the toasts live with the
- * screens that use them (app/dashboard/providers.tsx), never in the player's
- * JS (docs/refonte-ui/16 § 1).
+ * What every page needs: the theme. Nothing else runs on every page
+ * (docs/refonte-ui/16 § 1).
  */
 export function Providers({ children }: { children: ReactNode }) {
   return <ThemeProvider>{children}</ThemeProvider>;

@@ -8,10 +8,10 @@ export class AccountRepository {
 
   findCredentials(
     userId: string,
-  ): Promise<{ passwordHash: string; role: UserRole } | null> {
+  ): Promise<{ passwordHash: string; role: UserRole; email: string } | null> {
     return this.prisma.client.user.findUnique({
       where: { id: userId },
-      select: { passwordHash: true, role: true },
+      select: { passwordHash: true, role: true, email: true },
     });
   }
 

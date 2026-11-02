@@ -2,8 +2,8 @@ import { expect, test, type BrowserContext } from "@playwright/test";
 
 /**
  * La bascule (15-todo.md C19, 11 § 8) : un joueur qui ouvre une ancienne
- * adresse de /dashboard arrive sur l'écran qui la remplace ; l'admin garde
- * le tableau de bord jusqu'à sa propre refonte.
+ * adresse de /dashboard arrive sur l'écran qui la remplace ; l'admin aussi,
+ * /dashboard n'existe plus (12-admin § 0).
  */
 async function asPlayer(context: BrowserContext) {
   await context.addCookies([
@@ -33,9 +33,23 @@ test.describe("Bascule vers les quatre onglets", () => {
     });
   }
 
-  test("l'admin garde /dashboard", async ({ page }) => {
-    await page.goto("/dashboard");
-    await expect(page).toHaveURL(/\/dashboard$/);
+  for (const [from, to] of [
+    ["/dashboard", "/admin"],
+    ["/dashboard/audit", "/admin/engine"],
+    ["/dashboard/users", "/admin/players"],
+    ["/dashboard/coupons", "/today"],
+  ] as const) {
+    test(`l'admin sur ${from} arrive sur ${to}`, async ({ page }) => {
+      await page.goto(from);
+      await expect(page).toHaveURL(new RegExp(`${to.replace("/", "\\/")}$`));
+    });
+  }
+
+  test("l'ancienne boîte de support mène aux Messages de l'admin", async ({
+    page,
+  }) => {
+    await page.goto("/dashboard/inbox/42");
+    await expect(page).toHaveURL(/\/admin\/messages\/42$/);
   });
 
   test("le ticket demande une session, comme les onglets", async ({

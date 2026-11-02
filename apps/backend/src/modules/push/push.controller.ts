@@ -16,8 +16,8 @@ export class PushController {
   ) {}
 
   @Get('vapid-public-key')
-  getPublicKey(): { publicKey: string | null } {
-    return { publicKey: this.service.getPublicKey() };
+  async getPublicKey(): Promise<{ publicKey: string | null }> {
+    return { publicKey: await this.service.getPublicKey() };
   }
 
   @Post('subscribe')

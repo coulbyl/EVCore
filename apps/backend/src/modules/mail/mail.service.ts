@@ -1,4 +1,5 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
+import { IntegrationsService } from '@modules/integrations/integrations.service';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 import { createLogger } from '@utils/logger';
@@ -9,6 +10,7 @@ import {
   renderEmailChanged,
   renderEmailChangeTaken,
   renderEtlFailure,
+  renderOpsLightRed,
   renderMarketSuspension,
   renderPasswordReset,
   renderRoiAlert,
@@ -24,6 +26,7 @@ import {
   type EmailChangeCodeProps,
   type EmailChangedProps,
   type EtlFailureProps,
+  type OpsLightRedProps,
   type MarketSuspensionProps,
   type MlModelActivatedProps,
   type MlModelMissingProps,
@@ -39,24 +42,31 @@ import {
 const logger = createLogger('mail-service');
 
 @Injectable()
-export class MailService implements OnModuleInit {
-  private resend: Resend | null = null;
-  private readonly from: string;
-  private readonly adminTo: string;
+export class MailService {
+  // One client per key: rebuilt when the key changes in Réglages ›
+  // Intégrations, without a restart.
+  private resend: { apiKey: string; client: Resend } | null = null;
 
-  constructor(private readonly config: ConfigService) {
-    this.from = config.get<string>('RESEND_FROM', 'evcore@localhost');
-    this.adminTo = config.get<string>('RESEND_ADMIN_TO', '');
+  constructor(
+    private readonly config: ConfigService,
+    @Optional() private readonly integrations?: IntegrationsService,
+  ) {}
+
+  /** A field: stored in Réglages › Intégrations, else its .env variable. */
+  private async value(field: string, env: string): Promise<string | undefined> {
+    return (
+      (await this.integrations?.get(`email.${field}`)) ??
+      this.config.get<string>(env)
+    );
   }
 
-  onModuleInit(): void {
-    const apiKey = this.config.get<string>('RESEND_API_KEY');
-    if (!apiKey) {
-      logger.warn('RESEND_API_KEY not set — email sending disabled');
-      return;
+  private async client(): Promise<Resend | null> {
+    const apiKey = await this.value('apiKey', 'RESEND_API_KEY');
+    if (!apiKey) return null;
+    if (this.resend?.apiKey !== apiKey) {
+      this.resend = { apiKey, client: new Resend(apiKey) };
     }
-    this.resend = new Resend(apiKey);
-    logger.info({ from: this.from }, 'Resend email client ready');
+    return this.resend.client;
   }
 
   async sendEmailVerification(
@@ -143,6 +153,12 @@ export class MailService implements OnModuleInit {
     await this.sendToAdmin(`ETL Failure — ${props.queue}`, html, text);
   }
 
+  /** A light of the admin turned red: once per transition (console-watch). */
+  async sendOpsLightRed(props: OpsLightRedProps): Promise<void> {
+    const { html, text } = await renderOpsLightRed(props);
+    await this.sendToAdmin(`${props.light} au rouge`, html, text);
+  }
+
   async sendWeightAdjustment(props: WeightAdjustmentProps): Promise<void> {
     const action = props.isRollback ? 'rolled back' : 'auto-applied';
     const { html, text } = await renderWeightAdjustment(props);
@@ -204,14 +220,15 @@ export class MailService implements OnModuleInit {
     html: string,
     text: string,
   ): Promise<void> {
-    if (!this.adminTo) {
+    const adminTo = (await this.value('adminTo', 'RESEND_ADMIN_TO')) ?? '';
+    if (!adminTo) {
       logger.debug(
         { subject },
         'RESEND_ADMIN_TO not configured — skipping admin email',
       );
       return;
     }
-    await this.sendTo(this.adminTo, subject, { html, text });
+    await this.sendTo(adminTo, subject, { html, text });
   }
 
   private async sendTo(
@@ -219,13 +236,16 @@ export class MailService implements OnModuleInit {
     subject: string,
     body: { html: string; text: string },
   ): Promise<void> {
-    if (!this.resend) {
+    const resend = await this.client();
+    if (!resend) {
       logger.debug({ subject, to }, 'Resend not configured — skipping email');
       return;
     }
+    const from =
+      (await this.value('from', 'RESEND_FROM')) ?? 'evcore@localhost';
 
-    const { error } = await this.resend.emails.send({
-      from: this.from,
+    const { error } = await resend.emails.send({
+      from,
       to,
       subject: `[EVCore] ${subject}`,
       html: body.html,

@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { execFile } from 'node:child_process';
 import { ETL_CONSTANTS } from '@config/etl.constants';
+import { IntegrationsService } from '@modules/integrations/integrations.service';
 import { createLogger } from '@utils/logger';
 
 // Shared API-Football HTTP client. Every ETL worker used to carry its own
@@ -34,14 +35,25 @@ const logger = createLogger('api-football-client');
 
 @Injectable()
 export class ApiFootballClient {
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    // Réglages › Intégrations: the key stored there serves over the .env's.
+    @Optional() private readonly integrations?: IntegrationsService,
+  ) {}
+
+  private async apiKey(): Promise<string> {
+    return (
+      (await this.integrations?.get('apiFootball.key')) ??
+      this.config.getOrThrow<string>('API_FOOTBALL_KEY')
+    );
+  }
 
   // Fetches a JSON endpoint. `attempts` ≥ 1: transient network errors
   // (timeout/DNS/reset) are retried immediately; HTTP errors are returned
   // as-is for the caller to handle (each worker has its own skip/abort
   // policy and logging context).
   async fetchJson(url: string, attempts = 1): Promise<ApiFootballFetchResult> {
-    const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
+    const apiKey = await this.apiKey();
     let last: ApiFootballFetchResult = { response: null };
 
     for (let attempt = 1; attempt <= attempts; attempt++) {

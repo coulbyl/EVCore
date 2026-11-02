@@ -31,6 +31,8 @@ export class EloSyncWorker extends WorkerHost {
     logger.info('Starting Elo sync');
 
     const text = await this.downloadWorldEloTsv();
+    // Download failed, a recent snapshot kept: a done pass, not a failure.
+    if (text === null) return;
     const rows = parseWorldEloTsv(text);
     if (rows.length === 0) {
       throw new Error('Elo TSV parsed to zero mapped ratings');
@@ -58,7 +60,12 @@ export class EloSyncWorker extends WorkerHost {
     );
   }
 
-  private async downloadWorldEloTsv(): Promise<string> {
+  /**
+   * The TSV, or null when the download failed and a snapshot younger than
+   * ELO_SNAPSHOT_MAX_AGE_DAYS is kept. An older or missing snapshot fails
+   * the pass: the admin's « Données » light turns red only then.
+   */
+  private async downloadWorldEloTsv(): Promise<string | null> {
     const curlText = await downloadWorldEloTsvViaCurl();
     if (curlText !== null) return curlText;
 
@@ -74,8 +81,16 @@ export class EloSyncWorker extends WorkerHost {
       );
     }
 
+    const ageMs = Date.now() - existingSnapshot.snapshotAt.getTime();
+    if (ageMs < ETL_CONSTANTS.ELO_SNAPSHOT_MAX_AGE_DAYS * 86_400_000) {
+      logger.warn(
+        { snapshotAt: existingSnapshot.snapshotAt.toISOString() },
+        'Elo TSV download failed; keeping the recent snapshot',
+      );
+      return null;
+    }
     throw new Error(
-      `Elo TSV download failed via curl; keeping existing snapshot from ${existingSnapshot.snapshotAt.toISOString()}`,
+      `Elo TSV download failed via curl; the last snapshot dates from ${existingSnapshot.snapshotAt.toISOString()}`,
     );
   }
 

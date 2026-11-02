@@ -22,7 +22,7 @@ export class PlayerFetchError extends Error {
 export async function playerFetch<T>(
   path: string,
   init: {
-    method: "GET" | "POST" | "PATCH" | "DELETE";
+    method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
     body?: object;
     keepalive?: boolean;
   },

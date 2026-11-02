@@ -64,26 +64,6 @@ services:
       postgres:
         condition: service_healthy
 
-  ml-worker:
-    container_name: evcore-ml-worker
-    image: ghcr.io/${GHCR_OWNER}/evcore-ml-worker:latest
-    restart: unless-stopped
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-evcore}
-      PGBOUNCER_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@pgbouncer:5432/${POSTGRES_DB:-evcore}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      LOG_LEVEL: info
-    volumes:
-      - ml_models:/app/models
-    networks:
-      - evcore_internal
-    depends_on:
-      pgbouncer:
-        condition: service_started
-      redis:
-        condition: service_healthy
-
   # apps/vantage-worker — 20th channel, LLM-derived pick. Postgres+Redis only,
   # never on the backend/web request path. See apps/vantage-worker/README.md.
   vantage-worker:
@@ -112,6 +92,8 @@ services:
       VANTAGE_RESEARCH_PROVIDER: ${VANTAGE_RESEARCH_PROVIDER:-groq}
       GROQ_RESEARCH_MODEL: ${GROQ_RESEARCH_MODEL:-groq/compound-mini}
       TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      # Decrypts the keys of Réglages › Intégrations: the backend's value.
+      SETTINGS_ENCRYPTION_KEY: ${SETTINGS_ENCRYPTION_KEY:-}
       VANTAGE_RESEARCH_COMPETITION_CODES: ${VANTAGE_RESEARCH_COMPETITION_CODES:-}
     networks:
       - evcore_internal
@@ -208,7 +190,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  ml_models:
   rustfs_data:
 
 networks:

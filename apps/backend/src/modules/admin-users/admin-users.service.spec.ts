@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import type { AdminJournalService } from '@modules/admin-journal/admin-journal.service';
 import { AdminUsersService } from './admin-users.service';
 import type {
   AdminUserRecord,
@@ -27,16 +28,26 @@ function makeHarness(exists = true) {
   const repository = {
     listPage: vi.fn().mockResolvedValue({ total: 1, users: [RECORD] }),
     exists: vi.fn().mockResolvedValue(exists),
+    findState: vi
+      .fn()
+      .mockResolvedValue(
+        exists ? { email: 'a@b.c', role: 'OPERATOR', suspended: false } : null,
+      ),
     update: vi.fn().mockResolvedValue(RECORD),
     deleteSessions: vi.fn().mockResolvedValue(undefined),
     delete: vi.fn().mockResolvedValue(undefined),
   } as unknown as AdminUsersRepository;
   const sessionCache = new SessionCache();
   vi.spyOn(sessionCache, 'invalidateUser');
+  const journal = {
+    record: vi.fn().mockResolvedValue(undefined),
+    forgetEmail: vi.fn().mockResolvedValue('a@…'),
+  } as unknown as AdminJournalService;
   return {
-    service: new AdminUsersService(repository, sessionCache),
+    service: new AdminUsersService(repository, sessionCache, journal),
     repository,
     sessionCache,
+    journal,
   };
 }
 
@@ -107,5 +118,41 @@ describe('AdminUsersService', () => {
     await expect(service.deleteUser('ghost', 'admin-1')).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+
+  it('the journal keeps a role and a suspension that changed, and a deletion', async () => {
+    const { service, journal } = makeHarness();
+    await service.updateUser('u1', { role: 'ADMIN', suspended: true }, 'admin');
+    await service.deleteUser('u1', 'admin');
+    expect(journal.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'role',
+        target: 'a@b.c',
+        before: 'OPERATOR',
+        after: 'ADMIN',
+      }),
+    );
+    expect(journal.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'suspension',
+        before: false,
+        after: true,
+      }),
+    );
+    expect(journal.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'account_deleted',
+        actorId: 'admin',
+        target: 'a@…',
+      }),
+    );
+  });
+
+  it('refuses an admin removing their own admin role', async () => {
+    const { service, repository } = makeHarness();
+    await expect(
+      service.updateUser('admin', { role: 'OPERATOR' }, 'admin'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.update).not.toHaveBeenCalled();
   });
 });

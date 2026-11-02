@@ -232,9 +232,14 @@ export function retiredEnvPresent(): string[] {
  * null when the key is missing: a switch in app_setting can name a
  * provider, never supply its secret.
  */
-export function resolveProvider(name: LlmProvider): ResolvedLlmProvider | null {
+export function resolveProvider(
+  name: LlmProvider,
+  /** Keys stored in Réglages › Intégrations (`groq.apiKey`…), over the .env's. */
+  stored?: ReadonlyMap<string, string>,
+): ResolvedLlmProvider | null {
   const defaults = PROVIDER_DEFAULTS[name];
-  const apiKey = process.env[defaults.apiKeyEnv];
+  const apiKey =
+    stored?.get(`${name}.apiKey`) ?? process.env[defaults.apiKeyEnv];
   if (!apiKey) return null;
   return {
     provider: name,
@@ -284,7 +289,7 @@ export function loadConfig(): Config {
     const fallbackDefaults = PROVIDER_DEFAULTS[name];
     llmFallbackProviders.push({
       provider: name,
-      apiKey: required(fallbackDefaults.apiKeyEnv),
+      apiKey: process.env[fallbackDefaults.apiKeyEnv] ?? "",
       model: fallbackDefaults.model,
       baseUrl: fallbackDefaults.baseURL,
     });
@@ -295,7 +300,9 @@ export function loadConfig(): Config {
     redisHost: process.env["REDIS_HOST"] ?? "localhost",
     redisPort: checked.data.REDIS_PORT ?? 6379,
     llmProvider: requestedProvider,
-    llmApiKey: required(providerDefaults.apiKeyEnv),
+    // Optional since Réglages › Intégrations (01/11): the key can live in
+    // the database, read at every pass (settings.ts); empty until then.
+    llmApiKey: process.env[providerDefaults.apiKeyEnv] ?? "",
     llmModel: providerDefaults.model,
     llmBaseUrl: providerDefaults.baseURL,
     llmFallbackProviders,

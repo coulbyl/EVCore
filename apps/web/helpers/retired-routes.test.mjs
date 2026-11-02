@@ -38,8 +38,40 @@ describe("retiredRouteTarget", () => {
     assert.equal(retiredRouteTarget("/dashboards", "OPERATOR"), null);
   });
 
-  it("leaves the admin and the new screens alone", () => {
-    assert.equal(retiredRouteTarget("/dashboard/coupons", "ADMIN"), null);
+  it("leaves the new screens alone", () => {
     assert.equal(retiredRouteTarget("/today", "OPERATOR"), null);
+    assert.equal(retiredRouteTarget("/admin", "ADMIN"), null);
+  });
+
+  it("moves the admin's inbox and diagnostic sheet, ids kept", () => {
+    const cases = {
+      "/dashboard/inbox": "/admin/messages",
+      "/dashboard/inbox/42": "/admin/messages/42",
+      "/dashboard/decisions/match/abc": "/admin/matches/abc",
+    };
+    for (const [from, to] of Object.entries(cases)) {
+      assert.equal(retiredRouteTarget(from, "ADMIN"), to, from);
+    }
+  });
+
+  it("sends the admin's retired pages to the nearest screen", () => {
+    const cases = {
+      "/dashboard": "/admin",
+      "/dashboard/audit": "/admin/engine",
+      "/dashboard/reports": "/admin/engine",
+      "/dashboard/documentation-technique/glossaire": "/admin/engine",
+      "/dashboard/ml": "/admin/engine",
+      "/dashboard/performance": "/admin/engine",
+      "/dashboard/users": "/admin/players",
+      "/dashboard/announcements": "/admin/players/announcements",
+      "/dashboard/decisions": "/matches",
+      "/dashboard/fixtures": "/matches",
+      "/dashboard/coupons": "/today",
+      "/dashboard/params/account": "/me/account",
+      "/dashboard/updates": "/notifications",
+    };
+    for (const [from, to] of Object.entries(cases)) {
+      assert.equal(retiredRouteTarget(from, "ADMIN"), to, from);
+    }
   });
 });

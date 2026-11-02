@@ -1,4 +1,5 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
+import { IntegrationsService } from '@modules/integrations/integrations.service';
 import { ConfigService } from '@nestjs/config';
 import webpush from 'web-push';
 import { UserRole, type PushSubscription } from '@evcore/db';
@@ -14,44 +15,51 @@ export type PushPayload = {
   url?: string;
 };
 
-@Injectable()
-export class PushService implements OnModuleInit {
-  private enabled = false;
+type Vapid = { publicKey: string; privateKey: string; subject: string };
 
+@Injectable()
+export class PushService {
   constructor(
     private readonly config: ConfigService,
     private readonly repo: PushRepository,
+    @Optional() private readonly integrations?: IntegrationsService,
   ) {}
 
-  onModuleInit(): void {
-    const publicKey = this.config.get<string>('VAPID_PUBLIC_KEY');
-    const privateKey = this.config.get<string>('VAPID_PRIVATE_KEY');
-    const subject = this.config.get<string>('VAPID_SUBJECT');
-
-    if (!publicKey || !privateKey || !subject) {
-      logger.warn('VAPID keys not configured — push notifications disabled');
-      return;
-    }
-
-    webpush.setVapidDetails(subject, publicKey, privateKey);
-    this.enabled = true;
-    logger.info('Web push configured');
+  /** A field: stored in Réglages › Intégrations, else its .env variable. */
+  private async value(field: string, env: string): Promise<string | undefined> {
+    return (
+      (await this.integrations?.get(`push.${field}`)) ??
+      this.config.get<string>(env)
+    );
   }
 
-  getPublicKey(): string | null {
-    return this.config.get<string>('VAPID_PUBLIC_KEY') ?? null;
+  /** The VAPID keys that serve now, or null (push disabled). */
+  private async vapid(): Promise<Vapid | null> {
+    const [publicKey, privateKey, subject] = await Promise.all([
+      this.value('publicKey', 'VAPID_PUBLIC_KEY'),
+      this.value('privateKey', 'VAPID_PRIVATE_KEY'),
+      this.value('subject', 'VAPID_SUBJECT'),
+    ]);
+    if (!publicKey || !privateKey || !subject) return null;
+    return { publicKey, privateKey, subject };
+  }
+
+  async getPublicKey(): Promise<string | null> {
+    return (await this.value('publicKey', 'VAPID_PUBLIC_KEY')) ?? null;
   }
 
   async sendToUser(userId: string, payload: PushPayload): Promise<void> {
-    if (!this.enabled) return;
+    const vapid = await this.vapid();
+    if (!vapid) return;
     const subscriptions = await this.repo.findByUserId(userId);
-    await this.deliver(subscriptions, payload);
+    await this.deliver({ subscriptions, payload, vapid });
   }
 
   async sendToRole(role: UserRole, payload: PushPayload): Promise<void> {
-    if (!this.enabled) return;
+    const vapid = await this.vapid();
+    if (!vapid) return;
     const subscriptions = await this.repo.findByRole(role);
-    await this.deliver(subscriptions, payload);
+    await this.deliver({ subscriptions, payload, vapid });
   }
 
   // Broadcast audience — announcements, not a per-user conversation.
@@ -59,15 +67,18 @@ export class PushService implements OnModuleInit {
     payload: PushPayload,
     excludeUserId?: string,
   ): Promise<void> {
-    if (!this.enabled) return;
+    const vapid = await this.vapid();
+    if (!vapid) return;
     const subscriptions = await this.repo.findAll(excludeUserId);
-    await this.deliver(subscriptions, payload);
+    await this.deliver({ subscriptions, payload, vapid });
   }
 
-  private async deliver(
-    subscriptions: PushSubscription[],
-    payload: PushPayload,
-  ): Promise<void> {
+  private async deliver(input: {
+    subscriptions: PushSubscription[];
+    payload: PushPayload;
+    vapid: Vapid;
+  }): Promise<void> {
+    const { subscriptions, payload, vapid } = input;
     await Promise.all(
       subscriptions.map(async (sub) => {
         try {
@@ -77,6 +88,8 @@ export class PushService implements OnModuleInit {
               keys: { p256dh: sub.p256dh, auth: sub.auth },
             },
             JSON.stringify(payload),
+            // Per send: a key changed in Réglages › Intégrations serves at once.
+            { vapidDetails: vapid },
           );
         } catch (error) {
           const statusCode =

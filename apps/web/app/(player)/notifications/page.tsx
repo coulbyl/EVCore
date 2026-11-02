@@ -13,6 +13,7 @@ import {
   formatShortDate,
   formatTime,
 } from "@/helpers/scoreboard-format";
+import { RichText } from "@/components/scoreboard/ui/rich-text";
 import { plainTextOf } from "@/helpers/plain-text";
 import { NotificationLink } from "./components/notification-link";
 
@@ -122,16 +123,18 @@ export default async function Page({
                       ) : null}
                       {plainTextOf(notification.title)}
                     </span>
-                    <span
+                    {/* Announcements are written as formatted text: drawn
+                        safely; inside a row that is a link, no nested link. */}
+                    <RichText
+                      html={notification.body}
+                      linkable={!href}
+                      phrasing
                       className={
                         href
                           ? "line-clamp-2 text-meta text-muted-foreground"
-                          : "whitespace-pre-line text-meta text-muted-foreground"
+                          : "text-meta text-muted-foreground"
                       }
-                    >
-                      {/* Announcements are written as HTML: read as text. */}
-                      {plainTextOf(notification.body)}
-                    </span>
+                    />
                   </span>
                   {href ? (
                     <ChevronRight

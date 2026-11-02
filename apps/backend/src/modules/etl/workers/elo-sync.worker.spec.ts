@@ -141,6 +141,38 @@ describe('EloSyncWorker', () => {
 
     expect(createMany).toHaveBeenCalledTimes(1);
   });
+  function curlFails() {
+    vi.mocked(execFile).mockImplementation((...args) => {
+      const callback = args.at(-1);
+      if (typeof callback === 'function') {
+        callback(new Error('curl: (6) Could not resolve host'), '', '');
+      }
+      return {} as never;
+    });
+  }
+
+  it('a failed download keeping a recent snapshot is a done pass', async () => {
+    curlFails();
+    vi.mocked(prisma.client.nationalTeamEloRating.findFirst).mockResolvedValue({
+      id: 'e1',
+      snapshotAt: new Date(Date.now() - 86_400_000),
+    } as never);
+
+    await expect(worker.process({} as never)).resolves.toBeUndefined();
+    expect(createMany).not.toHaveBeenCalled();
+  });
+
+  it('a failed download with an old snapshot fails the pass', async () => {
+    curlFails();
+    vi.mocked(prisma.client.nationalTeamEloRating.findFirst).mockResolvedValue({
+      id: 'e1',
+      snapshotAt: new Date(Date.now() - 8 * 86_400_000),
+    } as never);
+
+    await expect(worker.process({} as never)).rejects.toThrow(
+      'the last snapshot dates from',
+    );
+  });
 });
 
 describe('downloadWorldEloTsvViaCurl', () => {

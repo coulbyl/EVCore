@@ -207,7 +207,7 @@ export class SupportService {
     mimeType: string;
     sizeBytes: number;
   }): Promise<AttachmentUploadUrlDto> {
-    if (!this.storage.isEnabled()) {
+    if (!(await this.storage.isEnabled())) {
       throw new BadRequestException(
         "L'envoi de fichiers n'est pas disponible pour le moment",
       );
@@ -356,8 +356,14 @@ export class SupportService {
     return this.repo.countUnreadForAdmin();
   }
 
-  async getMessagesForAdmin(conversationId: string) {
-    const conversation = await this.repo.findConversationById(conversationId);
+  async getMessagesForAdmin(conversationId: string): Promise<
+    SupportMessagePageDto & {
+      player: { id: string; fullName: string };
+      adminReadAt: Date | null;
+    }
+  > {
+    const conversation =
+      await this.repo.findConversationWithPlayer(conversationId);
     if (!conversation) {
       throw new NotFoundException('Conversation introuvable');
     }
@@ -365,26 +371,37 @@ export class SupportService {
       conversationId,
       SUPPORT_MESSAGES_PAGINATION.defaultLimit,
     );
-    return this.toPageDto(page);
+    // Who the thread is with, even before anyone wrote (a conversation the
+    // team just opened is in no list yet).
+    return {
+      ...(await this.toPageDto(page)),
+      player: conversation.user,
+      adminReadAt: conversation.adminReadAt,
+    };
   }
 
   async listConversationsForAdmin(): Promise<SupportConversationSummaryDto[]> {
     const rows = await this.repo.listConversationsForAdmin();
     return Promise.all(
-      rows.map(async ({ conversation, lastMessage, unreadCount }) => ({
-        id: conversation.id,
-        userId: conversation.userId,
-        status: conversation.status,
-        userReadAt: conversation.userReadAt,
-        adminReadAt: conversation.adminReadAt,
-        lastMessageAt: conversation.lastMessageAt,
-        createdAt: conversation.createdAt,
-        username: conversation.user.username,
-        fullName: conversation.user.fullName,
-        avatarUrl: conversation.user.avatarUrl,
-        lastMessage: lastMessage ? await this.toMessageDto(lastMessage) : null,
-        unreadCount,
-      })),
+      rows.map(
+        async ({ conversation, lastMessage, unreadCount, playerWrote }) => ({
+          id: conversation.id,
+          userId: conversation.userId,
+          status: conversation.status,
+          userReadAt: conversation.userReadAt,
+          adminReadAt: conversation.adminReadAt,
+          lastMessageAt: conversation.lastMessageAt,
+          createdAt: conversation.createdAt,
+          username: conversation.user.username,
+          fullName: conversation.user.fullName,
+          avatarUrl: conversation.user.avatarUrl,
+          lastMessage: lastMessage
+            ? await this.toMessageDto(lastMessage)
+            : null,
+          unreadCount,
+          playerWrote,
+        }),
+      ),
     );
   }
 }

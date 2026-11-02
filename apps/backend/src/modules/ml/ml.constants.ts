@@ -78,13 +78,9 @@ export const ML_TRAINING_JOB_OPTIONS = {
   removeOnFail: { count: 200 },
 } as const;
 
-export const ML_CRON_SCHEDULES = {
-  CATCH_UP_SWITCH: '0 * * * *', // every hour — catches models trained while QueueEvents was offline
-  HEALTH_CHECK: '*/15 * * * *', // every 15 minutes
-} as const;
-
 export const ML_SCHEDULER_KEYS = {
-  // No longer scheduled (ML-UTILITE § 4): kept to remove it from Redis.
+  // Nothing is scheduled any more (ML retired, 2026-11-01): the keys are
+  // kept to remove what a running deployment holds in Redis.
   RETRAIN_CHECK: 'cron:ml-retrain-check',
   CATCH_UP_SWITCH: 'cron:ml-catch-up-switch',
   HEALTH_CHECK: 'cron:ml-health-check',

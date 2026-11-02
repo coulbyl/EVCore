@@ -50,8 +50,6 @@ import { FixtureStatisticsModule } from '../fixture-statistics/fixture-statistic
       { name: BULLMQ_QUEUES.SAME_DAY_ANALYSIS },
       { name: BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT },
       { name: BULLMQ_QUEUES.ROLLING_HORIZON },
-      { name: BULLMQ_QUEUES.ML_TRAINING },
-      { name: BULLMQ_QUEUES.ML_SCHEDULER },
       { name: BULLMQ_QUEUES.SEASON_ROLLOVER_SYNC },
       { name: BULLMQ_QUEUES.STATS_BACKFILL },
     ),
@@ -93,6 +91,6 @@ import { FixtureStatisticsModule } from '../fixture-statistics/fixture-statistic
     StatsBackfillService,
     StatsBackfillWorker,
   ],
-  exports: [EtlService, ApiFootballClient],
+  exports: [EtlService, ApiFootballClient, StatsBackfillService],
 })
 export class EtlModule {}

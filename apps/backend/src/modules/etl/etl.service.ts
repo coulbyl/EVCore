@@ -148,10 +148,6 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly oddsHistoricalImportQueue: Queue<OddsHistoricalImportJobData>,
     @InjectQueue(BULLMQ_QUEUES.ROLLING_HORIZON)
     private readonly rollingHorizonQueue: Queue<RollingHorizonJobData>,
-    @InjectQueue(BULLMQ_QUEUES.ML_TRAINING)
-    private readonly mlTrainingQueue: Queue,
-    @InjectQueue(BULLMQ_QUEUES.ML_SCHEDULER)
-    private readonly mlSchedulerQueue: Queue,
     @InjectQueue(BULLMQ_QUEUES.BETTING_ENGINE_REBUILD)
     private readonly bettingEngineRebuildQueue: Queue<BettingEngineRebuildJobData>,
     @InjectQueue(BULLMQ_QUEUES.SAME_DAY_ANALYSIS)
@@ -737,8 +733,6 @@ export class EtlService implements OnApplicationBootstrap {
       [BULLMQ_QUEUES.BETTING_ENGINE]: this.bettingEngineQueue,
       [BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT]: this.oddsHistoricalImportQueue,
       [BULLMQ_QUEUES.ROLLING_HORIZON]: this.rollingHorizonQueue,
-      [BULLMQ_QUEUES.ML_TRAINING]: this.mlTrainingQueue,
-      [BULLMQ_QUEUES.ML_SCHEDULER]: this.mlSchedulerQueue,
       [BULLMQ_QUEUES.BETTING_ENGINE_REBUILD]: this.bettingEngineRebuildQueue,
       [BULLMQ_QUEUES.SAME_DAY_ANALYSIS]: this.sameDayAnalysisQueue,
     };

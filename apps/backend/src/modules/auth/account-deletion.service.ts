@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { UserRole } from '@evcore/db';
+import { AdminJournalService } from '@modules/admin-journal/admin-journal.service';
 import { StorageService } from '@modules/storage/storage.service';
 import { createLogger } from '@utils/logger';
 import { AccountRepository } from './account.repository';
@@ -21,10 +22,12 @@ const logger = createLogger('account-deletion');
  */
 @Injectable()
 export class AccountDeletionService {
+  // eslint-disable-next-line max-params -- NestJS constructor injection: the account, its files, its sessions, the admin journal
   constructor(
     private readonly repository: AccountRepository,
     private readonly storage: StorageService,
     private readonly sessionCache: SessionCache,
+    private readonly journal: AdminJournalService,
   ) {}
 
   async deleteAccount(userId: string, password: string): Promise<void> {
@@ -46,6 +49,8 @@ export class AccountDeletionService {
     const attachmentKeys = await this.repository.findAttachmentKeys(userId);
     await this.repository.deleteUser(userId);
     this.sessionCache.invalidateUser(userId);
+    // Les lignes du journal admin sur ce compte ne gardent pas son adresse.
+    await this.journal.forgetEmail(credentials.email);
     // Après la transaction : un fichier orphelin ne bloque rien, un compte à
     // moitié supprimé si.
     await Promise.all(

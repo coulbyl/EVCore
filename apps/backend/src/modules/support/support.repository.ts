@@ -90,6 +90,14 @@ export class SupportRepository {
     });
   }
 
+  /** A conversation with its player's name, for the team's thread. */
+  findConversationWithPlayer(id: string) {
+    return this.prisma.client.supportConversation.findUnique({
+      where: { id },
+      include: { user: { select: { id: true, fullName: true } } },
+    });
+  }
+
   createConversation(userId: string) {
     return this.prisma.client.supportConversation.create({
       data: { userId },
@@ -306,7 +314,7 @@ export class SupportRepository {
     if (conversations.length === 0) return [];
     const ids = conversations.map((conversation) => conversation.id);
 
-    const [lastIds, unreadRows] = await Promise.all([
+    const [lastIds, unreadRows, wroteRows] = await Promise.all([
       this.prisma.client.$queryRaw<{ id: string }[]>`
         SELECT DISTINCT ON ("conversationId") id
         FROM public.support_message
@@ -324,7 +332,17 @@ export class SupportRepository {
           AND (c."adminReadAt" IS NULL OR m."createdAt" > c."adminReadAt")
         GROUP BY m."conversationId"
       `,
+      // The conversations where the player ever wrote: the rest only got
+      // the team's messages (welcome, announcements by hand).
+      this.prisma.client.$queryRaw<{ conversationId: string }[]>`
+        SELECT DISTINCT m."conversationId"
+        FROM public.support_message m
+        JOIN public.support_conversation c ON c.id = m."conversationId"
+        WHERE c.id = ANY(${ids}::uuid[])
+          AND m."senderId" = c."userId"
+      `,
     ]);
+    const wrote = new Set(wroteRows.map((row) => row.conversationId));
     const lastMessages = await this.prisma.client.supportMessage.findMany({
       where: { id: { in: lastIds.map((row) => row.id) } },
       select: MESSAGE_SELECT,
@@ -339,6 +357,7 @@ export class SupportRepository {
       conversation,
       lastMessage: lastByConversation.get(conversation.id) ?? null,
       unreadCount: unreadByConversation.get(conversation.id) ?? 0,
+      playerWrote: wrote.has(conversation.id),
     }));
   }
 }

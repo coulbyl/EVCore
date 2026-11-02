@@ -1,285 +1,4 @@
 {
-  "common": {
-    "loading": "Loading…",
-    "error": "An error occurred",
-    "empty": "No data",
-    "reset": "Reset",
-    "apply": "Apply",
-    "save": "Save",
-    "cancel": "Cancel",
-    "close": "Close",
-    "confirm": "Confirm",
-    "back": "Back",
-    "seeAll": "See all"
-  },
-  "resultBadge": {
-    "won": "Won",
-    "lost": "Lost",
-    "void": "Cancelled",
-    "refunded": "Refunded",
-    "settlementPending": "Settlement pending"
-  },
-  "calibrationVerdict": {
-    "conform": "On target",
-    "slightlyOptimistic": "Slightly optimistic",
-    "optimistic": "Too optimistic",
-    "slightlyCautious": "Slightly cautious",
-    "cautious": "Too cautious",
-    "insufficient": "Too few to read",
-    "inactive": "None settled"
-  },
-  "channelCalibrationStatus": {
-    "within15": "Gap ≤ 15%",
-    "between15And30": "Gap 15–30%",
-    "above30": "Gap > 30%",
-    "notMeasured": "Not measured",
-    "insufficientVolume": "Insufficient volume"
-  },
-  "pwaInstall": {
-    "title": "Install EVCore",
-    "subtitle": "Quick access from your home screen",
-    "iosSafari": "Tap Share, then Add to Home Screen.",
-    "iosOther": "Open EVCore in Safari, tap Share, then Add to Home Screen.",
-    "install": "Install",
-    "close": "Close"
-  },
-  "nav": {
-    "eva": "EVA",
-    "dashboard": "Dashboard",
-    "fixtures": "Fixtures",
-    "navGroupToday": "Today",
-    "navGroupTracking": "Tracking",
-    "navGroupAnalysis": "Analysis",
-    "navGroupAdmin": "Admin",
-    "performance": "Performance",
-    "bankroll": "Stake tracking",
-    "betSlips": "My bet slips",
-    "inbox": "Inbox",
-    "audit": "Audit",
-    "users": "Users",
-    "announcements": "Announcements",
-    "ml": "ML Engine",
-    "reports": "Reports",
-    "engine": "Engine & ETL",
-    "glossary": "Glossary",
-    "technicalDocs": "Technical documentation",
-    "formation": "Training",
-    "trackRecord": "Historical measures",
-    "notifications": "Notifications",
-    "settings": "Settings",
-    "replayTour": "Replay guide",
-    "summary": "Selections summary",
-    "coupons": "Coupons",
-    "decisions": "Decisions",
-    "decisionsShort": "Decisions",
-    "arbitrage": "AI opinion"
-  },
-  "decisions": {
-    "channels": {
-      "VALUE": {
-        "description": "Positive expected value odds."
-      },
-      "SAFE": {
-        "description": "Prudent selections built for steadier returns."
-      },
-      "DOMINANT": {
-        "description": "The model's strongest 1X2 angle."
-      },
-      "BTTS": {
-        "description": "Both teams to score."
-      },
-      "DRAW": {
-        "description": "Draw angle from market-implied probability."
-      },
-      "GOALS": {
-        "description": "Total goals over/under line."
-      },
-      "CLEAN_SHEET": {
-        "description": "A team finishes the match without conceding."
-      },
-      "TEAM_TOTAL": {
-        "description": "Over/under goals scored by a single team."
-      },
-      "WIN_EITHER_HALF": {
-        "description": "A team wins at least one of the two halves."
-      },
-      "FIRST_HALF": {
-        "description": "First-half winner."
-      },
-      "DOUBLE_CHANCE": {
-        "description": "Double chance (1X, X2, or 12)."
-      },
-      "UNDERDOG": {
-        "description": "Backs the market's underdog."
-      },
-      "FAVORITE": {
-        "description": "Backs the market's favorite."
-      },
-      "LIVE_VALUE": {
-        "description": "Value detected live during the match."
-      },
-      "MARKET_MOVE": {
-        "description": "Significant pre-match odds movement detected."
-      },
-      "CONSENSUS": {
-        "description": "Several independent strategies converge on the same pick."
-      },
-      "CONTRARIAN": {
-        "description": "Position against the market."
-      },
-      "AVOID": {
-        "description": "Fixture flagged: implausible model/market divergence."
-      },
-      "CORRECT_SCORE": {
-        "description": "Most likely exact scoreline (observation only, never staked)."
-      },
-      "RESULT_TOTAL_GOALS": {
-        "description": "Match result combined with total goals."
-      },
-      "OVER_UNDER_HT": {
-        "description": "Over/under goals at half-time."
-      },
-      "RESULT_BTTS": {
-        "description": "Match result combined with both teams to score."
-      },
-      "DRAW_NO_BET": {
-        "description": "Result excluding the draw — stake refunded on a draw."
-      },
-      "WIN_TO_NIL": {
-        "description": "A team wins the match without conceding."
-      },
-      "HALF_TIME_FULL_TIME": {
-        "description": "Half-time result combined with the final result."
-      },
-      "VANTAGE": {
-        "description": "Reads every other channel's decision and its observed calibration in this competition; only proposes a pick when it finds a concrete tension between them."
-      }
-    },
-    "reasons": {
-      "score_below_threshold": "Model score below threshold",
-      "no_viable_pick": "No viable pick",
-      "line_movement": "Unfavorable odds movement",
-      "no_safe_candidate": "No safety candidate",
-      "below_threshold": "Probability below threshold",
-      "insufficient_margin": "Insufficient margin",
-      "no_consensus": "No cross-channel consensus",
-      "consensus": "Independent channels converged",
-      "no_avoid_signal": "No avoidance signal",
-      "extreme_divergence": "Extreme model/market divergence",
-      "no_model": "No model probabilities",
-      "no_odds": "No priced scoreline",
-      "no_modelable_scoreline": "No modelable scoreline priced",
-      "below_conviction": "No scoreline confident enough to predict",
-      "BACKFILL": "Backfilled",
-      "VANTAGE_GATED_ODDS": "Read kept but not proposed: odds above 1.80",
-      "VANTAGE_GATED_MARKET": "Read kept but not proposed: recently unreliable bet type",
-      "VANTAGE_GATED_BASIS": "Not proposed: it rested on a disagreement between our own readings"
-    },
-    "statuses": {
-      "SELECTED": "Selected",
-      "REJECTED": "Rejected",
-      "DISABLED": "Disabled",
-      "INSUFFICIENT_DATA": "Insufficient data",
-      "MISSING_ODDS": "Missing odds",
-      "NOT_APPLICABLE": "Not applicable"
-    },
-    "lens": {
-      "matches": "Match"
-    },
-    "avoid": {
-      "banner": "Caution",
-      "tooltipLabel": "Caution signal",
-      "tooltipDetail": "One of the picks below has too large a gap between the model's probability and the market's implied probability (≥ 30 points). Historically the market is right in this case — spot the pick flagged ⚠ and skip it, the others remain valid.",
-      "edge": "gap",
-      "edgeTooltip": "Model/market divergence: {pct} — this pick triggered the Caution signal"
-    },
-    "calibration": {
-      "banner": "Suspect data",
-      "tooltipLabel": "Calibration alert",
-      "tooltipDetail": "The model and the market strongly disagree on this match (flipped favorite or extreme gap across several bookmakers). This almost always signals corrupted input data, not an opportunity: the match is removed from all our coupons and from the home picks. Predictions stay visible for reading; on these matches, above 1.45, our percentages are clearly too optimistic."
-    },
-    "consensus": {
-      "tooltipLabel": "Consensus signal",
-      "tooltipDetail": "Several independent channels selected the same outcome without coordinating. It is an agreement, not a guarantee: CONSENSUS no longer emits a pick or a probability of its own — the one it used to publish was the maximum across the agreeing channels, and therefore optimistic by construction.",
-      "rowLabel": "Agreement:"
-    },
-    "noPick": "No pick retained on this fixture.",
-    "noPickShort": "no pick",
-    "pickCount": "{count, plural, one {# pick} other {# picks}}",
-    "evaluatedCount": "{count, plural, one {# other bet type evaluated} other {# other bet types evaluated}}",
-    "showMorePicks": "{count, plural, one {See the other reading of the match} other {See the # other readings of the match}}",
-    "showLessPicks": "Show less",
-    "filters": {
-      "all": "All",
-      "leagueLabel": "League",
-      "channelLabel": "Bet type",
-      "displayLabel": "Display",
-      "noMatch": "No fixture matches the filters.",
-      "groupByNone": "By kickoff time",
-      "groupByLeague": "Group by league",
-      "searchLeague": "Search a competition…",
-      "noLeagueResults": "No competition.",
-      "searchChannel": "Search a bet type…",
-      "noChannelResults": "No bet type.",
-      "allFilters": "Filters"
-    },
-    "helpLink": "How to read a prediction",
-    "primaryPick": "Our pick",
-    "otherMarketsTitle": "Other readings of the match",
-    "contradictionNote": "“{first}” and “{second}” cannot both come in: each reading is a separate estimate, only Our pick is put forward.",
-    "pageTitle": "Today's decisions",
-    "chances": "about {count} times in {total}",
-    "playableLabel": "{bookmaker} {odds}",
-    "referenceOdds": "ref. {odds}",
-    "oddsLabel": "Odds {odds}",
-    "belowMinimum": "below {bookmaker}'s minimum ({min})"
-  },
-  "arbitrage": {
-    "title": "AI opinion",
-    "intro": "A second reading of each match by our AI, next to Our pick. It often suggests a bet: its track record is right below, losses included.",
-    "description": "The AI rereads our readings of the match and both teams' stats, then suggests a bet or abstains. Its percentages come in about as often as announced, but like the rest of the engine it does not beat the bookmaker's odds: a second reading, not a tip.",
-    "filters": {
-      "all": "All",
-      "play": "Suggested",
-      "noPlay": "No opinion",
-      "label": "Filter"
-    },
-    "verdict": {
-      "play": "Suggested bet",
-      "noPlay": "No opinion"
-    },
-    "ourPick": {
-      "label": "Our pick on this match:",
-      "same": "same bet",
-      "different": "different bet",
-      "none": "Our pick suggests nothing on this match."
-    },
-    "track": {
-      "title": "AI track record",
-      "line": "From {from} to {to}, out of {settled} settled opinions: {realised} came in for {announced} announced, against a market frequency of {market} · fixed stake {result}.",
-      "insufficient": "Not enough settled opinions over 30 days for a track record yet.",
-      "market": "Like the rest of the engine, the AI does not beat the bookmaker's odds over time: a second reading, not a tip.",
-      "link": "Details in Historical measures",
-      "gap": "Gap to the market: {gap} points, give or take {margin}. Only opinions written before kickoff count, as they were published.",
-      "versions": "By version: {list}.",
-      "version": "{version} from {first} to {last} ({settled} opinions)",
-      "aboveMarket": "Over this period the AI does better than the market frequency, beyond the margin of error. One period promises nothing for the next."
-    },
-    "todayLabel": "Today",
-    "today": "{day}: {plays, plural, =0 {no suggested bet} one {# suggested bet} other {# suggested bets}} out of {reads} matches read, {abstentions, plural, =0 {none without opinion} one {# without opinion} other {# without opinion}}.",
-    "finished": "{count, plural, one {Finished match (#)} other {Finished matches (#)}}",
-    "reasoningLabel": "Why",
-    "sourcesLabel": "Sources",
-    "decidedAt": "Decided on {date}",
-    "noPlay": "No reading kept.",
-    "loadError": "The opinions did not load.",
-    "retry": "Try again",
-    "showAll": "See every match read",
-    "emptyTitle": "No reading",
-    "emptyDescription": "The AI opinion has not analysed anything for this date yet.",
-    "emptyFilteredTitle": "Nothing to flag",
-    "emptyFilteredDescription": "No suggested bet for this date."
-  },
   "notifications": {
     "title": "Notifications",
     "empty": "No notifications",
@@ -323,21 +42,6 @@
       "WEEKLY_STATEMENT": "Open home"
     }
   },
-  "updates": {
-    "title": "Announcements",
-    "subtitle": "History of announcements published by the EVCore team.",
-    "empty": "No announcements",
-    "emptyDescription": "Nothing to report right now.",
-    "unread": "Unread",
-    "all": "All",
-    "close": "Close",
-    "isRead": "Read"
-  },
-  "filters": {
-    "label": "Filters",
-    "resetAll": "Reset all",
-    "apply": "Apply"
-  },
   "table": {
     "empty": "No data.",
     "noResults": "No results for these filters."
@@ -350,153 +54,6 @@
   "locale": {
     "fr": "Français",
     "en": "English"
-  },
-  "auth": {
-    "login": "Sign in",
-    "register": "Create account",
-    "logout": "Sign out",
-    "emailOrUsername": "Email or username",
-    "password": "Password",
-    "noAccount": "No account yet?",
-    "alreadyAccount": "Already have an account?",
-    "logoutLoading": "Signing out..."
-  },
-  "account": {
-    "title": "My account",
-    "appearance": "Appearance",
-    "language": "Language",
-    "notifications": "Notifications",
-    "account": "Account",
-    "bankroll": "Currency and stake",
-    "theme": "Theme",
-    "savedAutomatically": "Saved automatically.",
-    "email": "Email",
-    "username": "Username",
-    "bio": "Bio",
-    "phone": "Phone",
-    "phoneConsentLabel": "I agree to be contacted by phone as part of a field outreach effort. Never automated marketing calls.",
-    "phonePlaceholder": "+1 555 000 0000",
-    "phoneAdd": "Add my number",
-    "phoneRemove": "Turn off",
-    "phoneSaveError": "Couldn't save the phone number.",
-    "avatar": "Avatar",
-    "save": "Save",
-    "cancel": "Cancel",
-    "editField": "Edit {field}",
-    "groupAccount": "Account",
-    "groupPreferences": "Preferences",
-    "tabProfile": "Profile",
-    "tabPreferences": "Display",
-    "tabSecurity": "Security",
-    "tabNotifications": "Notifications",
-    "tabBankroll": "Currency and stake",
-    "requires": "Requires:",
-    "avatarSaveError": "Couldn't save the avatar.",
-    "genericError": "Something went wrong.",
-    "badgeNames": {
-      "graduate": "The 5 training sheets read"
-    },
-    "badgesEyebrow": "Progress",
-    "badgesTitle": "My badges",
-    "badgesDescription": "Read the five training sheets to earn the Graduate badge and the Oracle avatar.",
-    "securityTitle": "Authentication & verification",
-    "securitySetupHeading": "Account verification",
-    "accountVerified": "Account verified",
-    "accountNotVerified": "Account not verified",
-    "totpConfigured": "Authenticator app (TOTP) configured.",
-    "emailVerifiedMessage": "Email verified — {email}",
-    "notVerifiedMessage": "Your account isn't verified yet. Some features are unavailable.",
-    "verifyAction": "Verify →",
-    "totpTitle": "Authenticator app",
-    "totpDescription": "Not configured. Add a TOTP app to further secure your account and recover access without email.",
-    "configureAction": "Configure →",
-    "pushNotifications": "Push notifications",
-    "pushNotificationsDescription": "Get notified on this device for messages from the EVCore team and new announcements.",
-    "pushNotificationsToggle": "Enable push notifications",
-    "pushNotificationsUnsupported": "Your browser doesn't support push notifications.",
-    "pushNotificationsDenied": "Notifications blocked — allow them in your browser settings.",
-    "emailNotifications": "Email notifications",
-    "emailNotificationsDescription": "The morning brief and the week, by email too, to a verified address. Off until you turn it on.",
-    "emailNotificationsToggle": "By email too",
-    "bankrollDescription": "Choose the currency displayed in the app.",
-    "displayCurrency": "Display currency",
-    "unitStake": "Unit stake",
-    "unitModeFixed": "Fixed amount",
-    "unitModePct": "% of bankroll",
-    "unitAmountPlaceholder": "e.g. 2,000",
-    "unitPctPlaceholder": "e.g. 1",
-    "unitPctSuffix": "%",
-    "unitOptionalHint": "Optional — pre-fills the bet slip each time it opens",
-    "currencies": {
-      "xof": "CFA Franc (XOF)",
-      "usd": "Dollar ($)",
-      "eur": "Euro (€)"
-    },
-    "roles": {
-      "ADMIN": "Admin"
-    },
-    "phoneNone": "Not set",
-    "responsible": {
-      "title": "Responsible gambling",
-      "body": "Betting carries a risk of loss. Only stake what you can afford to lose, and never to chase losses.",
-      "deletion": "Deleting your account immediately erases everything that belongs to you.",
-      "readPage": "Read the responsible gambling page",
-      "writeTeam": "Write to the team"
-    },
-    "deleteAccount": {
-      "trigger": "Delete my account",
-      "title": "Delete my account",
-      "description": "It is immediate and final. Your declared coupons, stake tracking, badges, conversation with the team and settings are erased. EVCore's public forecasts do not change.",
-      "passwordLabel": "Your password, to confirm",
-      "cancel": "Cancel",
-      "confirm": "Delete for good",
-      "error": "The account could not be deleted.",
-      "pauseHint": "Only need a breather? A break turns off coupons and notifications without erasing anything."
-    },
-    "pause": {
-      "intro": "Need a breather? A break turns off coupons, forecasts and announcement notifications, without erasing anything.",
-      "activeUntil": "You are on a break until {end}.",
-      "trigger": "Take a break",
-      "extend": "Extend the break",
-      "description": "During the break, the app suggests no bet and sends no announcement notification. Your history, stake tracking and training stay available.",
-      "durationLabel": "Break length",
-      "duration": {
-        "1": "24 hours",
-        "7": "7 days",
-        "30": "30 days"
-      },
-      "noReturn": "No going back: the break runs to the end. You can only extend it.",
-      "cancel": "Cancel",
-      "confirm": "Start the break",
-      "error": "The break could not be started."
-    },
-    "emailChange": {
-      "trigger": "Change",
-      "title": "Change e-mail address",
-      "requestDescription": "Enter your new address and your password. We send a code to the new address to check it is yours.",
-      "confirmDescription": "A 6-digit code was just sent to {email}. It is valid for 10 minutes. Nothing received? This address may already have an EVCore account: its owner was told, nothing changed.",
-      "newEmailLabel": "New address",
-      "passwordLabel": "Your password",
-      "codeLabel": "Code received",
-      "restart": "Change address or resend a code",
-      "send": "Send the code",
-      "confirm": "Confirm",
-      "cancel": "Cancel",
-      "error": "The change did not go through. Try again."
-    },
-    "playerNotifications": {
-      "title": "Notifications",
-      "description": "Notifications in the app and on your phone. They never push you to bet.",
-      "morning": "The morning brief, at 8 am UTC",
-      "morningHint": "Yesterday's results and today's coupons, or why there are none.",
-      "weekly": "The Monday statement",
-      "weeklyHint": "Your week, what you followed and how our coupons did.",
-      "followed": "Result of my followed coupons",
-      "followedHint": "The same evening, once the last match is settled.",
-      "replies": "Replies from the team",
-      "repliesHint": "When the team writes to you in Messages.",
-      "error": "Could not save this setting."
-    }
   },
   "performance": {
     "headline": "Overall performance",
@@ -527,212 +84,8 @@
     "proposals": "Proposals",
     "activeSuspensions": "Active suspensions"
   },
-  "dashboard": {
-    "announcements": {
-      "title": "What's new",
-      "dismiss": "Later",
-      "close": "Dismiss announcement",
-      "closeItem": "Hide this announcement",
-      "read": "Read",
-      "markAsRead": "Mark as read"
-    },
-    "leagueRanking": {
-      "title": "League ranking",
-      "period": "Last 30 days · calibration",
-      "empty": "No data over 30 days."
-    },
-    "operatorCard": {
-      "headline": "My performance",
-      "title": "My bet slips summary",
-      "slips": "Slips",
-      "created": "created",
-      "settled": "settled",
-      "settledLong": "settled bets",
-      "winRate": "Win rate",
-      "filterByDate": "Filter by date",
-      "allTime": "All",
-      "modelReturn": "Model return",
-      "notEnoughData": "Not enough data",
-      "winForm": "On form",
-      "neutral": "Neutral",
-      "toWatch": "Gap to review",
-      "pendingResult": "pending result",
-      "pendingResults": "pending results"
-    },
-    "engineHealth": {
-      "headline": "Engine health",
-      "title": "Overview",
-      "globalClose": "Global gap ≤ 15%",
-      "globalModerateGap": "Global gap up to 30%",
-      "globalLargeGap": "Large gap or suspended market",
-      "globalUnknown": "Insufficient volume",
-      "globalRatio": "Calibration ratio",
-      "redChannels": "Channels with gap > 30%",
-      "activeSuspensions": "Suspended markets",
-      "trend": "Trend",
-      "trendCaption": "7d vs 30d",
-      "calibrationCurve": "Calibration curve",
-      "announced": "Announced",
-      "actual": "Actual",
-      "suspendedMarkets": "Suspended markets",
-      "recentAlerts": "Recent alerts (7d)",
-      "channelsByDeviation": "Channels sorted by calibration deviation",
-      "channel": "Channel"
-    },
-    "home": {
-      "couponTitle": "Today's coupons · {date}",
-      "couponsLink": "All coupons",
-      "couponError": "Today's coupon could not be loaded.",
-      "couponEmptyTitle": "No coupon today",
-      "couponEmptyBody": "Today's pool was too thin to compose a coupon without lowering the bar. Abstaining is a result, not a failure.",
-      "longCouponLink": "Today's long coupon (odds {odds}): on the Coupons page",
-      "yesterdayTitle": "Yesterday",
-      "yesterdayLink": "See details",
-      "yesterdayTally": {
-        "won": "{count} won",
-        "lost": "{count} lost",
-        "void": "{count} refunded",
-        "pending": "{count} pending"
-      },
-      "legs": "{count, plural, one {# leg} other {# legs}}",
-      "odds": "odds {odds}",
-      "paid": "paid {odds}",
-      "result": {
-        "won": "Won",
-        "partial": "Won",
-        "lost": "Lost",
-        "void": "Refunded",
-        "pending": "Pending"
-      },
-      "picksTitle": "Today's picks",
-      "picksSubtitle": "Odds between 1.20 and 1.65, one pick per match. Chances come from the odds, bookmaker margin removed.",
-      "pickFrequency": "{count} in {total}",
-      "picksLink": "All decisions",
-      "picksEmpty": "No pick meets the conditions today.",
-      "mySlipsTitle": "My coupons",
-      "mySlipsLink": "My coupons",
-      "mySlipsEmptyTitle": "You have not played anything yet",
-      "mySlipsEmptyBody": "Today's coupon is at the top of this page. A played coupon shows up here with its result.",
-      "mySlipsEmptyLink": "See today's coupon",
-      "mySlipsTally": "{won} won · {lost} lost · {pending} pending",
-      "fixedStake": "Your fixed-stake result",
-      "fixedStakeSample": "{count, plural, one {over # settled bet} other {over # settled bets}}",
-      "fixedStakeNone": "No settled bet yet",
-      "weeklyBriefTitle": "Your week",
-      "pageTitle": "Home",
-      "riskLine": "18+ · Betting carries a risk of loss. Only stake what you can afford to lose."
-    }
-  },
-  "performancePage": {
-    "title": "Performance",
-    "overview": "Overview",
-    "calibration": "Model calibration",
-    "calibrationHint": "Brier score after each automatic recalibration (0 = perfect).",
-    "weights": "Weight timeline",
-    "weightsHint": "Contribution of each factor, adjusted automatically.",
-    "competitions": "ROI by competition",
-    "competitionsPeriod": "Last 30 days",
-    "backtest": "Backtest",
-    "backtestHint": "Historical simulation used to measure the model. The latest result is kept in this browser.",
-    "runBacktest": "Run backtest",
-    "backtestRunning": "Backtest running…",
-    "backtestIdle": "Run a simulation to see how the model would have performed on past data.",
-    "backtestFreshTitle": "Latest run result",
-    "backtestStoredTitle": "Latest result saved on this device",
-    "backtestGeneratedAt": "Calculated on {date} at {time}.",
-    "backtestEmptyTitle": "No market breakdown available",
-    "backtestEmpty": "The backtest completed, but no market-by-market breakdown was returned.",
-    "marketBreakdown": "Market breakdown",
-    "marketBreakdownHint": "Each bar shows the simulated return for one bet type.",
-    "roiSimulated": "Simulated return",
-    "maxDrawdown": "Worst drawdown",
-    "currentWeights": "Current weights",
-    "noCalibrationData": "No recalibration has been applied yet.",
-    "noWeightData": "No learning data yet.",
-    "stats": {
-      "winRate": "Win rate",
-      "netUnits": "Net gain",
-      "settledBets": "Settled bets",
-      "calibrationError": "Calibration error",
-      "brierScore": "Model accuracy",
-      "analyzedBets": "Bets tested"
-    },
-    "chart": {
-      "roi": "Return"
-    },
-    "factors": {
-      "recentForm": "Recent form",
-      "xg": "Expected Goals (xG)",
-      "domExtPerf": "Home/away edge",
-      "leagueVolat": "League stability"
-    },
-    "table": {
-      "competition": "Competition",
-      "analyzed": "Matches 30d",
-      "modelRoi": "Model ROI",
-      "modelWinRate": "Win rate",
-      "myRoi": "My bets",
-      "matches": "matches",
-      "best": "Best ROI",
-      "worst": "Lowest ROI"
-    },
-    "proposalHistory": "Calibration history",
-    "latestBrierScore": "Latest Brier Score",
-    "reliabilityDiagram": "Reliability diagram",
-    "reliabilityDiagramHint": "Model estimated probability vs actual win frequency (the diagonal = perfect calibration).",
-    "reliabilityX": "Est. probability",
-    "reliabilityY": "Actual frequency",
-    "backtestTabEv": "EV channel",
-    "backtestTabSv": "Safety channel",
-    "backtestSvIdle": "Run a simulation to see how the Safety channel would have performed on past data.",
-    "svAvgOdds": "Average odds",
-    "seasonBreakdown": "Season breakdown",
-    "season": "Season",
-    "canalGlobal": "Global",
-    "canalValue": "Value",
-    "canalSafe": "Safe",
-    "period7d": "7 days",
-    "period30d": "30 days",
-    "periodAll": "All",
-    "analysis": "Channel analysis",
-    "analysisHint": "Backtest, calibration and threshold tuning — read straight from the engine outputs.",
-    "tabChannels": "Channel backtest",
-    "tabTuning": "Threshold tuning",
-    "tabCalibration": "Model calibration",
-    "channelsHint": "Flat-stake ROI per channel × league over settled selections.",
-    "calibrationModelHint": "1X2 model quality (Brier / ECE) per league — channel-agnostic.",
-    "tuningHint": "Offline threshold sweep → best observed threshold per league. Advisory result to confirm out of sample.",
-    "runAnalysis": "Run analysis",
-    "analysisWindow": "Window {from} → {to}",
-    "analysisWindowPicker": "Window (default: 1 year)",
-    "analysisIdle": "Run the analysis to see results.",
-    "analysisEmpty": "No data in the window.",
-    "colChannel": "Channel",
-    "colCompetition": "League",
-    "colSettled": "Settled",
-    "colPriced": "Priced",
-    "settledPricedSummary": "{total} ({priced} priced)",
-    "colHitRate": "Hit rate",
-    "colRoi": "ROI",
-    "colVerdict": "Verdict",
-    "colAnalyzed": "Analyzed",
-    "colEce": "ECE",
-    "colCurrent": "Current",
-    "colRecommended": "Best observed threshold",
-    "colRecRoi": "Rec. ROI",
-    "colRecSample": "Sample",
-    "colSegment": "Line",
-    "colTeam": "Team",
-    "goalsSection": "GOALS — over/under sweep (line × side)",
-    "teamTotalSection": "TEAM_TOTAL — per-team sweep (line × side, observation)",
-    "verdict": {
-      "PASS": "Pass",
-      "FAIL": "Fail",
-      "INSUFFICIENT_DATA": "Insufficient"
-    }
-  },
   "matchSheet": {
-    "back": "Decisions",
+    "back": "Back to the match",
     "expectedTitle": "What our model expects",
     "expected": "{home} about {homeGoals} goals, {away} about {awayGoals} goals: {total} goals on average.",
     "expectedNote": "An average, not a predicted score.",
@@ -753,7 +106,7 @@
       "mid": "average"
     },
     "rejectedTitle": "What we set aside, and why",
-    "rejectedIntro": "{evaluated, plural, one {# reading evaluated} other {# readings evaluated}} on this match. The ones we keep are on the Decisions card; {rejected, plural, one {here is the one set aside, with its reason} other {here are the # set aside, with their reason}}.",
+    "rejectedIntro": "{evaluated, plural, one {# reading evaluated} other {# readings evaluated}} on this match; {rejected, plural, one {here is the one set aside, with its reason} other {here are the # set aside, with their reason}}.",
     "rejectedNone": "No reading set aside on this match.",
     "line": "about {count} times in {total} · odds {odds} · {motive}",
     "motive": {
@@ -770,53 +123,7 @@
       "other": "set aside by the engine"
     },
     "noAnalysis": "This match has not been analysed yet.",
-    "seeDecisions": "See the readings we keep on Decisions",
     "openSheet": "Why? See the match sheet"
-  },
-  "fixtureDiagnostics": {
-    "rejection": {
-      "odds_below_floor": "Odds too low",
-      "odds_above_cap": "Odds too high",
-      "ev_below_threshold": "Insufficient value",
-      "ev_above_hard_cap": "Value above hard cap",
-      "ev_above_soft_cap": "Value above cap (calibration)",
-      "filtered_longshot": "Long shot filtered out",
-      "market_suspended": "Market suspended",
-      "probability_too_low": "Probability too low",
-      "quality_score_below_threshold": "Quality too low",
-      "under_high_lambda": "High goals count"
-    },
-    "factors": {
-      "recentForm": "Recent form",
-      "xg": "Chances (xG)",
-      "performanceDomExt": "Home/away edge",
-      "volatiliteLigue": "League stability"
-    },
-    "factorHints": {
-      "recentForm": "Who’s in better form? 50% = balanced. <50% favors away, >50% favors home.",
-      "xg": "Who creates more chances? (xG) 50% = balanced. <50% favors away, >50% favors home.",
-      "performanceDomExt": "Home vs away edge. 50% = balanced. <50% favors away, >50% favors home.",
-      "volatiliteLigue": "League unpredictability: higher = more random (not a home/away edge)."
-    },
-    "table": {
-      "market": "Market",
-      "probability": "Prob.",
-      "odds": "Odds",
-      "value": "Value",
-      "status": "Status",
-      "viable": "Viable"
-    },
-    "empty": {
-      "title": "No analysis available",
-      "description": "This match has not been analysed yet."
-    },
-    "sections": {
-      "factors": "Factors",
-      "analyzedMarkets": "Evaluated readings"
-    },
-    "predictionSummary": {
-      "expectedGoals": "expected goals"
-    }
   },
   "coupons": {
     "pageTitle": "Coupons",
@@ -827,62 +134,6 @@
     "retry": "Try again",
     "aiNote": "These proposals are generated by our AI engine, which continuously improves based on past results. This is not financial advice.",
     "helpLink": "What sets the coupons apart?"
-  },
-  "closingLine": {
-    "label": "Close {odds}",
-    "detail": "Odds just before kickoff at {bookmaker}. The proposed odds were worth {value} against the margin-free closing probability.",
-    "verdict": {
-      "beatsClose": "Better than the closing price: taken at that price it would have been worth {margin} (the bookmaker's margin).",
-      "behindClose": "Worse than the closing price, which is worth {margin} (the bookmaker's margin).",
-      "unknownMargin": "The bookmaker's margin is unknown for this selection, so no comparison with the closing price is possible."
-    }
-  },
-  "couponCard": {
-    "noRecord": "No record yet",
-    "recordInProgress": "Record in progress · {count, plural, one {# day settled} other {# days settled}}",
-    "record": "{won, plural, one {# day won} other {# days won}} out of {settled}, {from} to {to}",
-    "recordDetail": "Worst run: {streak, plural, =0 {no day lost} one {# day lost} other {# days lost in a row}} · fixed stake {result}",
-    "intraday": "Updated during the day",
-    "intradayHint": "Regenerated during the day, close to kickoff: added to the evening coupon already published for this class.",
-    "resultWon": "✓ Won",
-    "resultPartial": "✓ Won · leg refunded",
-    "resultPartialHint": "Every played leg won; at least one leg was refunded, so the paid odds are reduced accordingly.",
-    "resultLost": "✗ Lost",
-    "resultVoid": "Refunded",
-    "resultVoidHint": "Every leg was refunded (postponed or cancelled matches): stake returned.",
-    "odds": "Odds",
-    "reference": "Ref.",
-    "chancesValue": "{count} in {total}",
-    "paid": "Paid",
-    "chances": "Chances",
-    "playable": "Playable",
-    "why": "Why this coupon?",
-    "legChances": "about {count} times in {total}",
-    "legReferencePrefix": "ref.",
-    "legPlayableHint": "Odds at {bookmaker}, the players' bookmaker. Ours come from the most generous books in the snapshot.",
-    "playedByMe": "Already played by you",
-    "inSlip": "In the coupon",
-    "play": "I played it",
-    "replaceTitle": "Replace your slip?",
-    "replaceDescription": "Your slip already holds {count, plural, one {# other pick} other {# other picks}}. A coupon is played on its own: its legs will replace those in the slip.",
-    "replaceConfirm": "Replace",
-    "replaceCancel": "Keep my slip",
-    "addToCoupon": "Add to coupon",
-    "removeFromCoupon": "Remove from coupon",
-    "follow": "Follow this coupon",
-    "following": "Following · result in the morning digest",
-    "legMargin": "{bookmaker} takes {margin}",
-    "operatorMargin": "Margin paid at {bookmaker}: {margin} per leg on average. That is the cost of the bet."
-  },
-  "pause": {
-    "title": "You are on a break",
-    "until": "Until {end}.",
-    "body": "Coupons, forecasts and AI opinions come back on that date. Your history stays available.",
-    "links": {
-      "mySlips": "My coupons",
-      "bankroll": "Stake tracking",
-      "trackRecord": "Track record"
-    }
   },
   "couponAbstentions": {
     "line": "No {product} today: {reason}.",
@@ -906,11 +157,26 @@
       "today": "Today",
       "matches": "Matches",
       "results": "Results",
-      "me": "Me"
+      "me": "Me",
+      "admin": "Admin"
     },
     "close": "Close",
     "legal": "18+ (21+ in Cameroon) · Betting carries a risk of loss · Only stake what you can afford to lose",
-    "unread": "{count} unread"
+    "unread": "{count} unread",
+    "adminSections": {
+      "home": "Home",
+      "engine": "Engine",
+      "players": "Players",
+      "settings": "Settings",
+      "messages": "Messages",
+      "exploitation": "Operations"
+    },
+    "adminBar": {
+      "home": "Home",
+      "more": "More",
+      "adminGroup": "Admin",
+      "playerGroup": "Player side"
+    }
   },
   "scoreboard": {
     "outcome": {
@@ -1091,7 +357,8 @@
         "low_odds": "No reading: the odds are too low to be worth it",
         "suspended": "No reading · this market is suspended on our side",
         "not_sure": "No reading · no chance sure enough"
-      }
+      },
+      "diagnostic": "Match diagnostic"
     },
     "played": "{count, plural, one {# match already played} other {# matches already played}}",
     "bigOnly": "Big leagues"
@@ -1527,6 +794,459 @@
       "failed": "That didn't work. Try again.",
       "code": "Wrong or expired code.",
       "appWrong": "Wrong email or code."
+    }
+  },
+  "console": {
+    "titles": {
+      "home": "Home",
+      "engine": "Engine",
+      "players": "Players",
+      "settings": "Settings",
+      "messages": "Messages",
+      "exploitation": "Operations"
+    },
+    "lights": {
+      "data": "Data",
+      "engine": "Engine",
+      "players": "Players"
+    },
+    "lightStates": {
+      "green": "nothing to do",
+      "orange": "to watch",
+      "red": "red"
+    },
+    "redSince": "since {time}",
+    "todo": {
+      "odds_stale": "No odds fetched for {hours} h",
+      "odds_staleNever": "No odds fetched",
+      "etl_failed": "{count, plural, one {A pass failed} other {# passes failed}}: {last}",
+      "quota": "API-Football quota at the alert threshold: {detail}",
+      "stats_late": "{fixtures, plural, one {# match} other {# matches}} without stats for over 3 days, in {competitions, plural, one {# reliable league} other {# reliable leagues}}",
+      "coupons_missing": "No coupon composed for tomorrow, {date}",
+      "analysis_stopped": "Analysis stopped: last run {hours} h ago",
+      "analysis_stoppedNever": "The analysis never ran",
+      "product_absent": "{product} absent {days} days out of {window}",
+      "market_suspended": "{market} suspended since {date}",
+      "ai_silent": "The AI published nothing for {hours} h",
+      "ai_silentNever": "The AI has published nothing yet",
+      "players_silent": "No player came for {hours} h",
+      "players_silentNever": "No player came",
+      "support_unanswered": "{count, plural, one {A message} other {# messages}} unanswered for over 24 h",
+      "channel_alert": "{channel} in {competition}: {ratio} realised/announced, {sample} legs"
+    },
+    "passesTitle": "Today's passes",
+    "passes": {
+      "stats": "Match stats",
+      "odds_morning": "Odds",
+      "morning_brief": "Morning",
+      "coupons": "Tomorrow's coupons",
+      "ai_combo": "AI combo",
+      "odds_evening": "Odds",
+      "analysis": "Day's analysis"
+    },
+    "passState": {
+      "done": "✓ {time}",
+      "doneJobs": "✓ {time} · {jobs} batches",
+      "failed": "failed",
+      "running": "running for {minutes} min",
+      "waiting": "waiting",
+      "missed": "missed"
+    },
+    "relaunch": "Relaunch",
+    "relaunchFailed": "Not relaunched",
+    "passesOff": "Passes cut since {date} by {by}",
+    "passesOffAnonymous": "Passes cut since {date}",
+    "todayTitle": "Today",
+    "noCoupons": "No coupon today",
+    "yesterday": "{active, plural, one {# active player} other {# active players}} yesterday · {follows, plural, one {# follow} other {# follows}} · {signups, plural, one {# sign-up} other {# sign-ups}}",
+    "engine": {
+      "productsTitle": "Products",
+      "channelsTitle": "Channels × competition",
+      "suspendedTitle": "Suspended markets",
+      "onlyAlerts": "Alerts only",
+      "allCells": "All",
+      "search": "Competition",
+      "searchSubmit": "Search",
+      "days": "{count, plural, one {# d} other {# d}}",
+      "won": "{count} won",
+      "announcedRealised": "announced {announced} · actual {realised}",
+      "tooEarly": "too early",
+      "clv": "CLV {value}",
+      "margin": "margin {value}",
+      "legs": "{count} legs",
+      "retired": "retired",
+      "ai": "AI opinion",
+      "aiOpinions": "{count} opinions",
+      "versions": "By version",
+      "version": "{version} · {from} to {to}",
+      "words": {
+        "conforme": "on track",
+        "optimistic": "optimistic",
+        "alert": "alert",
+        "not_enough": "not enough data"
+      },
+      "noCells": "No cell",
+      "noneSuspended": "No suspended market",
+      "since": "since {date}",
+      "reactivate": "Reactivate",
+      "reactivateTitle": "Reactivate {market}",
+      "reactivateReason": "Reason (required)",
+      "reactivateConfirm": "Confirm the reactivation",
+      "cancel": "Cancel",
+      "reactivateFailed": "Not reactivated",
+      "moreCells": "{count, plural, one {# more cell} other {# more cells}}: search a competition.",
+      "retiredTitle": "Retired",
+      "cellLine": "{count, plural, one {# leg} other {# legs}} · {ratio} actual/announced",
+      "interval": "({low} to {high})",
+      "suspendedNote": "Suspended automatically: ROI of legs settled over 90 days, loss established."
+    },
+    "players": {
+      "monthTitle": "This month",
+      "previousMonth": "Previous month",
+      "currentMonth": "This month",
+      "signups": "{count, plural, one {# sign-up} other {# sign-ups}}",
+      "activated": "{count} activated",
+      "active7": "{count} active over 7 d",
+      "morning": "morning opened {rate}",
+      "morningNone": "morning: none sent",
+      "unanswered": "Unanswered messages",
+      "accountsTitle": "Accounts",
+      "search": "First name or e-mail",
+      "searchSubmit": "Search",
+      "roles": {
+        "ADMIN": "admin",
+        "OPERATOR": "player"
+      },
+      "createdOn": "created {date}",
+      "follows": "{count, plural, =0 {0 follows} one {# follow} other {# follows}}",
+      "pausedUntil": "paused → {date}",
+      "suspended": "suspended",
+      "more": "See more",
+      "noAccounts": "No account",
+      "announce": "Write an announcement",
+      "sheet": {
+        "back": "Back to Players",
+        "followed": "Followed coupons",
+        "noFollowed": "No followed coupon",
+        "thread": "Their message thread",
+        "noThread": "No message yet",
+        "verified": "e-mail verified",
+        "notVerified": "e-mail not verified",
+        "actions": "Actions",
+        "makeAdmin": "Make admin",
+        "makePlayer": "Back to player",
+        "suspend": "Suspend",
+        "unsuspend": "Reactivate the account",
+        "resetLink": "Reset link",
+        "delete": "Delete the account",
+        "deleteConfirm": "Delete {name} for good?",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "failed": "Not done, try again",
+        "copied": "Link to send to the player:",
+        "outcomes": {
+          "won": "won",
+          "lost": "lost",
+          "refunded": "refunded",
+          "pending": "running"
+        }
+      },
+      "announceTitle": "Write an announcement",
+      "announceRule": "One a week at most, never in the evening.",
+      "titleField": "Title",
+      "textField": "Text",
+      "preview": "Notification preview",
+      "publish": "Publish",
+      "noAnnouncements": "No announcement",
+      "withdraw": "Withdraw",
+      "withdrawQuestion": "Withdraw this announcement from the players' bell?",
+      "withdrawConfirm": "Withdraw",
+      "withdrawCancel": "Cancel",
+      "withdrawFailed": "Not withdrawn, try again.",
+      "figures": {
+        "signups": "sign-ups",
+        "activated": "activated",
+        "active7": "active 7 d",
+        "morning": "brief opened"
+      },
+      "lastSeen": "last seen {date}",
+      "neverSeen": "never back",
+      "announcements": {
+        "title": "Announcements",
+        "newTitle": "Write an announcement",
+        "editTitle": "Edit the announcement",
+        "link": "Link (optional)",
+        "linkHint": "Where it leads: an app page (/today) or an https address.",
+        "expires": "Expires on (optional)",
+        "expiresHint": "After this date it leaves the players' bell.",
+        "bold": "Bold",
+        "italic": "Italic",
+        "list": "List",
+        "addLink": "Link",
+        "linkPrompt": "Link address (https://… or /page)",
+        "saveDraft": "Save as draft",
+        "save": "Save",
+        "cancel": "Cancel",
+        "failed": "Not saved, try again.",
+        "states": {
+          "published": "Published",
+          "draft": "Draft",
+          "expired": "Expired"
+        },
+        "publishedOn": "published {date}",
+        "editedOn": "edited {date}",
+        "expiresOn": "expires {date}",
+        "reads": "{count, plural, =0 {read by nobody} one {read by # player} other {read by # players}}",
+        "edit": "Edit",
+        "unpublish": "Unpublish",
+        "remove": "Delete",
+        "removeQuestion": "Delete this announcement? Players will no longer see it.",
+        "removeConfirm": "Delete",
+        "actionFailed": "Not done, try again."
+      }
+    },
+    "settings": {
+      "title": "Settings",
+      "names": {
+        "llm": "LLM provider",
+        "research": "Web research",
+        "quota": "API quota alert threshold",
+        "reserve": "Backfill reserve",
+        "scheduling": "Scheduled passes"
+      },
+      "fromEnv": ".env",
+      "fromEnvDetail": "not written here yet",
+      "fallbacksOf": "fallback: {list}",
+      "noFallback": "no fallback",
+      "researchDetail": "{provider} · {count, plural, =0 {default competitions} one {# competition} other {# competitions}}",
+      "defaultPct": "default {value} %",
+      "defaultCalls": "calls per day · default {value}",
+      "on": "on",
+      "off": "off",
+      "incidentOnly": "cut only during an incident",
+      "changedBy": "changed by {by} on {date}",
+      "save": "Save",
+      "cancel": "Cancel",
+      "failed": "Not saved: value refused or network.",
+      "nextPass": "Taken into account at the next pass.",
+      "primary": "Primary",
+      "fallbacks": "Fallbacks, in order",
+      "researchOn": "Research on",
+      "provider": "Provider",
+      "competitions": "Competitions (codes)",
+      "competitionsHint": "Empty: the big leagues and the European cups.",
+      "cutTitle": "Cut every pass?",
+      "cutBody": "No odds, analysis or coupons while cut. The admin home shows it in red.",
+      "cut": "Cut",
+      "footnote": "A change is taken into account at the next pass. No key is shown here.",
+      "journalTitle": "Journal",
+      "journalBy": "By person",
+      "everyone": "Everyone",
+      "journalEmpty": "No action yet.",
+      "roles": {
+        "ADMIN": "admin",
+        "OPERATOR": "player"
+      },
+      "journal": {
+        "setting": "{name}: {before} → {after}",
+        "market_reactivated": "{market} reactivated · “{reason}”",
+        "role": "{email}'s role: {before} → {after}",
+        "suspended": "{email} suspended",
+        "unsuspended": "{email} restored",
+        "account_deleted": "account {email} deleted",
+        "announcement": "announcement published: “{title}”",
+        "pass_relaunched": "{pass} relaunched",
+        "queue_retried": "{queue} relaunched ({count, plural, one {# failure} other {# failures}})",
+        "queue_cleared": "failure cleared: {queue}",
+        "backfill_paused": "stats catch-up paused",
+        "backfill_resumed": "stats catch-up resumed",
+        "settlement_replayed": "settlement replayed: {target} · {replayed} read again, {corrected} corrected",
+        "settleRange": {
+          "coupons": "coupons from {from} to {to}",
+          "selections": "engine picks from {from} to {to}"
+        },
+        "integration_set": "integration: {field} saved",
+        "integration_cleared": "integration: {field} removed, the .env serves",
+        "announcement_withdrawn": "announcement unpublished: “{title}”",
+        "announcement_deleted": "announcement deleted: “{title}”"
+      },
+      "journalType": "By type",
+      "allTypes": "All",
+      "groups": {
+        "settings": "Settings",
+        "operations": "Operations",
+        "accounts": "Accounts",
+        "announcements": "Announcements"
+      },
+      "integrationsLink": "Integrations",
+      "integrationsHint": "third-party keys and addresses, encrypted",
+      "keyStored": "key stored",
+      "keyMissing": "no key stored"
+    },
+    "messages": {
+      "search": "Find a player",
+      "searchSubmit": "Search",
+      "toAnswer": "To answer",
+      "others": "The others",
+      "waitingFor": "waiting since {time}",
+      "unread": "{count} unread",
+      "you": "You: ",
+      "silent": "{count, plural, one {# player never wrote} other {# players never wrote}}",
+      "showSilent": "Show them",
+      "none": "No messages yet.",
+      "noMatch": "No player by that name.",
+      "back": "Back to messages",
+      "sheet": "Their sheet",
+      "placeholder": "Write to {name}…",
+      "older": "Earlier messages",
+      "pick": "Pick a conversation.",
+      "write": "Write to them",
+      "writeFailed": "Conversation not opened, try again.",
+      "backTo": {
+        "players": "Back to Players",
+        "home": "Back to home"
+      }
+    },
+    "exploitation": {
+      "queuesTitle": "Queues",
+      "readAt": "read at {time} · every 30 s",
+      "queues": {
+        "analysis_soon": "Analysis before kick-off",
+        "odds": "Odds",
+        "ai": "AI opinions",
+        "settlement": "Settlement",
+        "player_mail": "Morning brief and statements",
+        "horizon": "Tomorrow's coupons",
+        "analysis": "Next-day analysis",
+        "season_rollover": "Season rollover",
+        "league": "Matches, stats, injuries",
+        "odds_csv": "CSV closing odds",
+        "stale": "Matches left « upcoming »",
+        "elo": "Elo",
+        "coach": "Coaches",
+        "stats_backfill": "Stats catch-up",
+        "odds_historical": "Historical Pinnacle odds",
+        "rebuild": "Engine replayed on history",
+        "watch": "Lights watch"
+      },
+      "states": {
+        "failed": "failed",
+        "running": "running",
+        "on_time": "on time",
+        "paused": "paused",
+        "on_demand": "on demand"
+      },
+      "failedAt": "{count, plural, one {failed} other {# failed}} · {time}",
+      "runningFor": "running for {minutes} min",
+      "doneAt": "✓ {time}",
+      "yesterdayAt": "yesterday {time}",
+      "nextNow": "next now",
+      "nextIn": "next in {minutes} min",
+      "nextAt": "next at {time}",
+      "nextTomorrow": "next tomorrow {time}",
+      "nextOn": "next on {date}",
+      "paused": "paused",
+      "pausedSince": "paused since {date}",
+      "onDemand": "on demand",
+      "onDemandLast": "on demand · last ✓ {date}",
+      "backfillSeasons": "{done} / {total} seasons",
+      "backfillQuota": "today's quota {used} / {limit}",
+      "retry": "Relaunch",
+      "clear": "Clear the failure",
+      "pause": "Pause",
+      "resume": "Resume",
+      "actionFailed": "Not done, try again.",
+      "watchNote": "The lights watch shows only when it fails.",
+      "settleTitle": "Settle again",
+      "settle": {
+        "legend": "Settle",
+        "coupons": "The coupons",
+        "selections": "The engine's picks",
+        "from": "From",
+        "to": "To",
+        "note": "A result already right does not change. Nothing is sent to players.",
+        "replay": "Replay the settlement",
+        "reading": "Reading…",
+        "failed": "Not done: dates refused (120 days at most) or network.",
+        "confirmTitle": {
+          "coupons": "Replay the coupons' settlement for {range}?",
+          "selections": "Replay the engine picks' settlement for {range}?"
+        },
+        "items": {
+          "coupons": "Coupons in the range",
+          "selections": "Picks of finished matches"
+        },
+        "followers": "Players following them",
+        "unfinished": "Dates still missing results",
+        "confirmNote": "A corrected result updates Results and followed coupons; nothing is sent to players.",
+        "journal": "Logged in the journal, with your name.",
+        "confirm": "Replay",
+        "cancel": "Cancel",
+        "done": "{replayed} read again · {corrected} corrected",
+        "last": "Last pass: {date} · {target} · {actor}",
+        "lastRange": {
+          "coupons": "coupons from {from} to {to}",
+          "selections": "engine picks from {from} to {to}"
+        }
+      },
+      "repoTitle": "From the repository",
+      "repoText": "The rest runs cold, as commands: full sync, per-league operations, history (matches, stats, CSV, Pinnacle), engine replayed on history.",
+      "scheduled": "scheduled, no failure"
+    },
+    "integrations": {
+      "title": "Integrations",
+      "back": "Back to Settings",
+      "intro": "The third-party services' keys and addresses. A secret is encrypted and never shown again; an empty field keeps the .env's value. Taken into account within a minute, without a redeploy.",
+      "noEncryption": "SETTINGS_ENCRYPTION_KEY is not set on the server: secrets cannot be saved here. Addresses can.",
+      "groups": {
+        "data": "Data",
+        "players": "Players",
+        "ai": "Artificial intelligence"
+      },
+      "names": {
+        "apiFootball": "API-Football",
+        "theOddsApi": "The Odds API",
+        "email": "E-mail (Resend)",
+        "push": "Push notifications",
+        "storage": "Attachment storage",
+        "groq": "Groq",
+        "cerebras": "Cerebras",
+        "together": "Together",
+        "fireworks": "Fireworks",
+        "tavily": "Web research (Tavily)"
+      },
+      "fields": {
+        "key": "API key",
+        "apiKey": "API key",
+        "from": "Sender",
+        "adminTo": "Team address",
+        "publicKey": "Public key",
+        "privateKey": "Private key",
+        "subject": "Contact",
+        "endpoint": "Internal address",
+        "publicEndpoint": "Public address",
+        "region": "Region",
+        "bucket": "Bucket",
+        "accessKey": "Access id",
+        "secretKey": "Access secret"
+      },
+      "source": {
+        "stored": "stored here",
+        "env": "read from the .env",
+        "none": "absent"
+      },
+      "secretSet": "•••••••• set",
+      "unreadable": "unreadable with the current key",
+      "setBy": "changed by {by} on {date}",
+      "edit": "Edit",
+      "replace": "Replace",
+      "save": "Save",
+      "cancel": "Cancel",
+      "clear": "Remove",
+      "clearHint": "Removes the stored value: the .env's serves again.",
+      "test": "Test the connection",
+      "testing": "Testing…",
+      "failed": "Not done, try again."
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   CreateBucketCommand,
@@ -11,6 +11,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { IntegrationsService } from '@modules/integrations/integrations.service';
 import { createLogger } from '@utils/logger';
 import { SUPPORT_ATTACHMENT_LIMITS } from '@/config/storage.constants';
 import type {
@@ -53,29 +54,73 @@ export class StorageService implements OnModuleInit {
   private presignClient: S3Client | null = null;
   private bucket = '';
 
-  constructor(private readonly config: ConfigService) {}
+  // What the clients were built from: rebuilt when a value changes in
+  // Réglages › Intégrations, without a restart.
+  private signature: string | null = null;
+
+  constructor(
+    private readonly config: ConfigService,
+    @Optional() private readonly integrations?: IntegrationsService,
+  ) {}
 
   async onModuleInit(): Promise<void> {
-    const accessKeyId = this.config.get<string>('RUSTFS_ACCESS_KEY');
-    const secretAccessKey = this.config.get<string>('RUSTFS_SECRET_KEY');
+    await this.ready();
+  }
+
+  /** A field: stored in Réglages › Intégrations, else its .env variable. */
+  private async value(field: string, env: string): Promise<string | undefined> {
+    return (
+      (await this.integrations?.get(`storage.${field}`)) ??
+      this.config.get<string>(env)
+    );
+  }
+
+  /**
+   * The clients, built from the values that serve now; rebuilt when one of
+   * them changed. False when the credentials are missing.
+   */
+  private async ready(): Promise<boolean> {
+    const [
+      accessKeyId,
+      secretAccessKey,
+      endpointValue,
+      publicValue,
+      regionValue,
+      bucketValue,
+    ] = await Promise.all([
+      this.value('accessKey', 'RUSTFS_ACCESS_KEY'),
+      this.value('secretKey', 'RUSTFS_SECRET_KEY'),
+      this.value('endpoint', 'RUSTFS_ENDPOINT'),
+      this.value('publicEndpoint', 'RUSTFS_PUBLIC_ENDPOINT'),
+      this.value('region', 'RUSTFS_REGION'),
+      this.value('bucket', 'RUSTFS_BUCKET'),
+    ]);
     if (!accessKeyId || !secretAccessKey) {
-      logger.warn(
-        'RUSTFS_ACCESS_KEY/RUSTFS_SECRET_KEY not set — attachment storage disabled',
-      );
-      return;
+      if (this.signature !== '') {
+        logger.warn(
+          'Storage credentials not set (Réglages › Intégrations or RUSTFS_ACCESS_KEY/RUSTFS_SECRET_KEY) — attachment storage disabled',
+        );
+      }
+      this.client = null;
+      this.presignClient = null;
+      this.signature = '';
+      return false;
     }
-
-    const endpoint = this.config.get<string>(
-      'RUSTFS_ENDPOINT',
-      'http://localhost:9000',
-    );
-    const publicEndpoint = this.config.get<string>(
-      'RUSTFS_PUBLIC_ENDPOINT',
+    const endpoint = endpointValue ?? 'http://localhost:9000';
+    const publicEndpoint = publicValue ?? endpoint;
+    const region = regionValue ?? 'us-east-1';
+    const bucket = bucketValue ?? 'evcore-support';
+    const signature = [
       endpoint,
-    );
-    const region = this.config.get<string>('RUSTFS_REGION', 'us-east-1');
-    this.bucket = this.config.get<string>('RUSTFS_BUCKET', 'evcore-support');
+      publicEndpoint,
+      region,
+      bucket,
+      accessKeyId,
+      secretAccessKey,
+    ].join('\u0000');
+    if (signature === this.signature && this.client) return true;
 
+    this.bucket = bucket;
     const credentials = { accessKeyId, secretAccessKey };
     // RustFS (like MinIO) is path-style only — virtual-hosted-style bucket
     // subdomains aren't set up here, and forcePathStyle works everywhere.
@@ -94,16 +139,18 @@ export class StorageService implements OnModuleInit {
             credentials,
             forcePathStyle: true,
           });
+    this.signature = signature;
 
     await this.ensureBucket();
     logger.info(
       { endpoint, publicEndpoint, bucket: this.bucket },
       'Attachment storage ready',
     );
+    return true;
   }
 
-  isEnabled(): boolean {
-    return this.client !== null;
+  async isEnabled(): Promise<boolean> {
+    return this.ready();
   }
 
   private async ensureBucket(): Promise<void> {
@@ -183,6 +230,7 @@ export class StorageService implements OnModuleInit {
   // RustFS rejects the upload outright if the client's real request headers
   // don't match exactly what was requested here (see storage.constants.ts).
   async createUploadUrl(input: UploadUrlRequest): Promise<string> {
+    await this.ready();
     if (!this.presignClient) {
       throw new Error('Attachment storage is not configured');
     }
@@ -199,6 +247,7 @@ export class StorageService implements OnModuleInit {
   }
 
   async createDownloadUrl(input: DownloadUrlRequest): Promise<string> {
+    await this.ready();
     if (!this.presignClient) {
       throw new Error('Attachment storage is not configured');
     }
@@ -220,6 +269,7 @@ export class StorageService implements OnModuleInit {
   // client's self-reported size/type a second time when persisting the
   // SupportAttachment row; read back what RustFS actually stored.
   async headObject(objectKey: string): Promise<HeadObjectResult> {
+    await this.ready();
     if (!this.client) {
       throw new Error('Attachment storage is not configured');
     }
@@ -240,6 +290,7 @@ export class StorageService implements OnModuleInit {
   // Best-effort cleanup for an upload-url that was issued but never turned
   // into a message (user cancelled a recording/attachment before sending).
   async deleteObject(objectKey: string): Promise<void> {
+    await this.ready();
     if (!this.client) return;
     try {
       await this.client.send(

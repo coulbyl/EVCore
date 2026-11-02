@@ -674,6 +674,7 @@ model User {
   createdAt                 DateTime                @default(now())
   updatedAt                 DateTime                @updatedAt
   appSettings               AppSetting[]
+  integrationSettings       IntegrationSetting[]
 
   @@map("users")
   @@schema("public")
@@ -1516,5 +1517,63 @@ model AppSetting {
   updatedBy   User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
 
   @@map("app_setting")
+  @@schema("public")
+}
+
+// Les clés et adresses des services tiers (Réglages › Intégrations, revue
+// admin du 01/11) : une ligne par champ, la valeur d'un secret chiffrée en
+// AES-256-GCM avec SETTINGS_ENCRYPTION_KEY, jamais renvoyée à l'écran. Une
+// ligne absente laisse la variable d'environnement d'origine servir.
+model IntegrationSetting {
+  key         String   @id
+  /// En clair pour une adresse, chiffrée (iv:tag:texte, base64) pour un secret.
+  value       String
+  secret      Boolean
+  updatedAt   DateTime @default(now()) @updatedAt
+  updatedById String?  @db.Uuid
+  updatedBy   User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@map("integration_setting")
+  @@schema("public")
+}
+
+/// A light of the admin's home (docs/refonte-ui/12-admin.md § 1): its
+/// state when last checked, when it changed, and when the team was told it
+/// turned red. One row per light; the e-mail leaves once per transition.
+model ConsoleLight {
+  /// « data », « engine », « players ».
+  light      String    @id
+  /// « green », « orange », « red ».
+  state      String
+  changedAt  DateTime
+  /// The red e-mail of the current red, if sent; null otherwise.
+  notifiedAt DateTime?
+  checkedAt  DateTime
+
+  @@map("console_light")
+  @@schema("public")
+}
+
+/// The admin's one journal (docs/refonte-ui/12-admin.md § 4): every human
+/// action — settings, reactivated markets, roles, suspensions, deletions,
+/// announcements, relaunched passes. Who, when, before, after, why.
+model AdminAction {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  createdAt DateTime @default(now())
+  actorId   String?  @db.Uuid
+  /// The actor's name when it acted: a deleted account keeps its lines.
+  actorName String
+  /// « setting », « market_reactivated », « role », « suspension »,
+  /// « account_deleted », « announcement », « pass_relaunched ».
+  kind      String
+  /// What it acted on: a setting key, a market, an e-mail, a title, a pass.
+  target    String
+  before    Json?
+  after     Json?
+  reason    String?
+
+  @@index([createdAt])
+  @@index([actorId])
+  @@map("admin_action")
   @@schema("public")
 }
