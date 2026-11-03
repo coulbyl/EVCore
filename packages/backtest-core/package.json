@@ -33,7 +33,8 @@
     "backtest:composer": "tsx scripts/backtest-composer.ts",
     "backtest:strategy-ranking": "tsx scripts/backtest-strategy-ranking.ts",
     "backtest:congestion-centering": "tsx scripts/backtest-congestion-centering.ts",
-    "probe:extras": "tsx --env-file=../../apps/backend/.env scripts/probe-api-football.ts --extras"
+    "probe:extras": "tsx --env-file=../../apps/backend/.env scripts/probe-api-football.ts --extras",
+    "probe:inventory": "tsx --env-file-if-exists=../../apps/backend/.env scripts/probe-api-football.ts --inventory"
   },
   "dependencies": {
     "@evcore/analysis-core": "workspace:*",
