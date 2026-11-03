@@ -13,7 +13,7 @@ _Étude du 03/11, demandée par l'utilisateur : « regarde si tu peux booster le
    Au prix du marché, faire aussi mal que le BTTS arrive une fois sur dix, que le Nul quatre fois sur dix. Le Score exact fait mieux que prévu.
 
 2. **On ne peut pas « booster » un chasseur en changeant sa règle sur 5 jours** : ce serait choisir sur du bruit. Les variantes du 28/10 restaient toutes dans un intervalle de ± 8 à ± 10 points sur 112 jambes.
-3. **Le marché tombe juste dans toutes les bandes de cote** (5 à 6 ans de clôtures Pinnacle). La seule manette honnête est la bande : une bande plus basse gagne plus souvent, à une cote plus faible, pour le même coût. C'est un choix de produit, pas un gain.
+3. **Le marché tombe juste dans toutes les bandes de cote** (clôtures Pinnacle en base : 6 644 matchs pour le BTTS, 3 273 pour le nul). La seule manette honnête est la bande : une bande plus basse gagne plus souvent, à une cote plus faible, pour le même coût. C'est un choix de produit, pas un gain.
 4. **Proposition** : ne rien changer aux règles. Relire au 10/12 comme prévu (≈ 40 jambes par chasseur). Ne baisser une bande que si l'on veut un produit qui gagne plus souvent, en le disant comme tel.
 
 ## En direct (`coupon_proposal`, rang 1, 28/10 – 03/11)
