@@ -7,6 +7,7 @@ export type TodayProductKey =
   | "DOUBLE"
   | "HUNTER_BTTS"
   | "HUNTER_DRAW"
+  | "HUNTER_HT_DRAW"
   | "HUNTER_SCORE"
   | "HUNTER_CORNERS"
   | "AI_COMBO";

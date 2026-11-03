@@ -225,6 +225,7 @@
       "DOUBLE": "Odds-2 coupon",
       "HUNTER_BTTS": "Both teams to score hunter",
       "HUNTER_DRAW": "Draw hunter",
+      "HUNTER_HT_DRAW": "Half-time draw hunter",
       "HUNTER_SCORE": "Correct score hunter",
       "HUNTER_CORNERS": "Corners hunter",
       "AI_COMBO": "AI combo"
@@ -235,6 +236,7 @@
       "DOUBLE": "Odds-2 coupon",
       "HUNTER_BTTS": "Both teams to score hunter",
       "HUNTER_DRAW": "Draw hunter",
+      "HUNTER_HT_DRAW": "HT draw hunter",
       "HUNTER_SCORE": "Correct score hunter",
       "HUNTER_CORNERS": "Corners hunter",
       "AI_COMBO": "AI combo"
@@ -245,6 +247,7 @@
       "DOUBLE": "C2",
       "HUNTER_BTTS": "BTS",
       "HUNTER_DRAW": "DRW",
+      "HUNTER_HT_DRAW": "HT",
       "HUNTER_SCORE": "SCO",
       "HUNTER_CORNERS": "COR",
       "AI_COMBO": "AI"
@@ -430,6 +433,7 @@
       "DOUBLE": "Odds 2",
       "HUNTER_BTTS": "Both-score hunter",
       "HUNTER_DRAW": "Draw hunter",
+      "HUNTER_HT_DRAW": "Half-time draw hunter",
       "HUNTER_SCORE": "Exact-score hunter",
       "HUNTER_CORNERS": "Corners hunter",
       "AI_COMBO": "AI combo",
@@ -453,6 +457,7 @@
         "DOUBLE": "Odds-2 coupon",
         "HUNTER_BTTS": "Both-score hunter",
         "HUNTER_DRAW": "Draw hunter",
+        "HUNTER_HT_DRAW": "Half-time draw hunter",
         "HUNTER_SCORE": "Exact-score hunter",
         "HUNTER_CORNERS": "Corners hunter",
         "AI_COMBO": "AI combo",
@@ -467,6 +472,7 @@
         "DOUBLE": "up to three matches, total odds 2 to 3",
         "HUNTER_BTTS": "one match where both teams score, odds 1.45 to 1.90",
         "HUNTER_DRAW": "one draw, odds 2.90 to 3.60",
+        "HUNTER_HT_DRAW": "one half-time draw, odds 2.10 to 2.80",
         "HUNTER_SCORE": "one exact score, odds 6 to 12",
         "HUNTER_CORNERS": "one corners total, odds 1.70 to 2.10",
         "AI_COMBO": "three or four of the AI's own picks, each at odds 1.45 to 1.80, total odds 4 to 10",

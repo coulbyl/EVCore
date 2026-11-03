@@ -47,6 +47,7 @@ export const PRODUCT_ORDER: readonly TodayProductKey[] = [
   "DOUBLE",
   "HUNTER_BTTS",
   "HUNTER_DRAW",
+  "HUNTER_HT_DRAW",
   "HUNTER_SCORE",
   "HUNTER_CORNERS",
   "AI_COMBO",
