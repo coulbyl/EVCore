@@ -44,6 +44,27 @@ export class CouponPricedPoolService {
       from: dayStart,
       to: new Date(dayStart.getTime() + DAY_MS),
     });
+    return this.price(dayStart, rows);
+  }
+
+  /**
+   * Un seul marché du jour, au même prix que le vivier (Chasseur Nul à la
+   * mi-temps) ; voir `findMarketCandidates` pour ce qui l'en distingue.
+   */
+  async loadMarket(forDate: Date, market: string): Promise<PricedPool> {
+    const dayStart = startOfUtcDay(forDate);
+    const rows = await this.repository.findMarketCandidates({
+      from: dayStart,
+      to: new Date(dayStart.getTime() + DAY_MS),
+      market,
+    });
+    return this.price(dayStart, rows);
+  }
+
+  private async price(
+    dayStart: Date,
+    rows: readonly PriceCandidateRow[],
+  ): Promise<PricedPool> {
     const quotes = await this.playableOdds.findPlayableQuotes(
       rows.map((r) => ({
         fixtureId: r.fixtureId,

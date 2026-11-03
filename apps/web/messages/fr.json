@@ -225,6 +225,7 @@
       "DOUBLE": "Coupon cote 2",
       "HUNTER_BTTS": "Chasseur Les deux marquent",
       "HUNTER_DRAW": "Chasseur Nul",
+      "HUNTER_HT_DRAW": "Chasseur Nul à la mi-temps",
       "HUNTER_SCORE": "Chasseur Score exact",
       "HUNTER_CORNERS": "Chasseur Corners",
       "AI_COMBO": "Combiné IA"
@@ -235,6 +236,7 @@
       "DOUBLE": "Coupon cote 2",
       "HUNTER_BTTS": "Chasseur Les deux marquent",
       "HUNTER_DRAW": "Chasseur Nul",
+      "HUNTER_HT_DRAW": "Chasseur Nul MT",
       "HUNTER_SCORE": "Chasseur Score exact",
       "HUNTER_CORNERS": "Chasseur Corners",
       "AI_COMBO": "Combiné IA"
@@ -245,6 +247,7 @@
       "DOUBLE": "C2",
       "HUNTER_BTTS": "BTS",
       "HUNTER_DRAW": "NUL",
+      "HUNTER_HT_DRAW": "MT",
       "HUNTER_SCORE": "SCO",
       "HUNTER_CORNERS": "COR",
       "AI_COMBO": "IA"
@@ -430,6 +433,7 @@
       "DOUBLE": "Cote 2",
       "HUNTER_BTTS": "Chasseur Les deux marquent",
       "HUNTER_DRAW": "Chasseur Nul",
+      "HUNTER_HT_DRAW": "Chasseur Nul à la mi-temps",
       "HUNTER_SCORE": "Chasseur Score exact",
       "HUNTER_CORNERS": "Chasseur Corners",
       "AI_COMBO": "Combiné IA",
@@ -453,6 +457,7 @@
         "DOUBLE": "Coupon cote 2",
         "HUNTER_BTTS": "Chasseur Les deux marquent",
         "HUNTER_DRAW": "Chasseur Nul",
+        "HUNTER_HT_DRAW": "Chasseur Nul à la mi-temps",
         "HUNTER_SCORE": "Chasseur Score exact",
         "HUNTER_CORNERS": "Chasseur Corners",
         "AI_COMBO": "Combiné IA",
@@ -467,6 +472,7 @@
         "DOUBLE": "jusqu'à trois matchs, cote totale de 2 à 3",
         "HUNTER_BTTS": "un match où les deux équipes marquent, cote 1,45 à 1,90",
         "HUNTER_DRAW": "un match nul, cote 2,90 à 3,60",
+        "HUNTER_HT_DRAW": "un match nul à la mi-temps, cote 2,10 à 2,80",
         "HUNTER_SCORE": "un score exact, cote 6 à 12",
         "HUNTER_CORNERS": "un total de corners, cote 1,70 à 2,10",
         "AI_COMBO": "trois ou quatre avis joués par l'IA, chacun coté 1,45 à 1,80, cote totale de 4 à 10",

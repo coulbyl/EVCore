@@ -12,6 +12,7 @@ export const TODAY_PRODUCTS = [
   'DOUBLE',
   'HUNTER_BTTS',
   'HUNTER_DRAW',
+  'HUNTER_HT_DRAW',
   'HUNTER_SCORE',
   'HUNTER_CORNERS',
   'AI_COMBO',
@@ -26,6 +27,7 @@ export const TODAY_HERO_RELAY = [
   'DOUBLE',
   'HUNTER_BTTS',
   'HUNTER_DRAW',
+  'HUNTER_HT_DRAW',
   'HUNTER_SCORE',
   'HUNTER_CORNERS',
 ] as const satisfies readonly (typeof TODAY_PRODUCTS)[number][];

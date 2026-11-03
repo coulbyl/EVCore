@@ -6,6 +6,7 @@ import {
   BTTS_HUNTER,
   CORNERS_HUNTER,
   DRAW_HUNTER,
+  HT_DRAW_HUNTER,
   SCORE_HUNTER,
   composeAiCombo,
   composeCornersHunter,
@@ -48,8 +49,8 @@ export type HunterPassOutcome = {
 
 /**
  * Chasseurs du jour, montrés aux joueurs comme les autres coupons
- * (2026-10-28) : BTTS « oui » et Nul classés par le prix (source
- * PRICE_COMPOSER), Score exact pris parmi les scores retenus par le moteur
+ * (2026-10-28) : BTTS « oui », Nul et Nul à la mi-temps (2026-11-04)
+ * classés par le prix (source PRICE_COMPOSER), Score exact pris parmi les scores retenus par le moteur
  * (source ENGINE). Une sélection par chasseur ou l'abstention, enregistrée.
  */
 @Injectable()
@@ -69,13 +70,31 @@ export class CouponHunterGenerationService {
   ): Promise<HunterPassOutcome[]> {
     const priced = pool ?? (await this.pricedPool.load(forDate));
     const { dayStart } = priced;
-    const scoreRows = (
-      await this.repository.findEngineComboCandidates({
-        from: dayStart,
-        to: new Date(dayStart.getTime() + DAY_MS),
+    const range = { from: dayStart, to: new Date(dayStart.getTime() + DAY_MS) };
+    // Le 1X2 de la mi-temps a son propre vivier : s'il ne se charge pas,
+    // seul le Chasseur Nul à la mi-temps manque, les autres sortent.
+    const [halfTime, engineRows, avoidedIds] = await Promise.all([
+      this.pricedPool
+        .loadMarket(dayStart, HT_DRAW_HUNTER.market)
+        .catch((error: unknown) => {
+          this.logger.error(
+            `Vivier mi-temps non chargé : ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+          return null;
+        }),
+      this.repository.findEngineComboCandidates({
+        ...range,
         excludedChannels: ENGINE_COMBO_POLICY.excludedChannels,
-      })
-    ).filter((r) => r.market === SCORE_HUNTER.market);
+      }),
+      // Les matchs que le méta-canal AVOID signale sont écartés des
+      // chasseurs (plan du 23/10, reste de revue du lot 2).
+      this.repository.findAvoidedFixtureIds(range),
+    ]);
+    const scoreRows = engineRows.filter(
+      (r) => r.market === SCORE_HUNTER.market,
+    );
     const scoreQuotes = await this.playableOdds.findPlayableQuotes(
       scoreRows.map((r) => ({
         fixtureId: r.fixtureId,
@@ -92,20 +111,24 @@ export class CouponHunterGenerationService {
           playableOdds: quote?.operatorOdds ?? quote?.lowestOdds ?? r.odds,
         };
       });
-    // Les matchs que le méta-canal AVOID signale sont écartés des chasseurs
-    // (plan du 23/10, reste de revue du lot 2).
-    const avoided = new Set(
-      await this.repository.findAvoidedFixtureIds({
-        from: dayStart,
-        to: new Date(dayStart.getTime() + DAY_MS),
-      }),
-    );
-    const marketCandidates = priced.candidates.map((c) =>
-      avoided.has(c.fixtureId) ? { ...c, playableOdds: 0 } : c,
-    );
-    const quotes = new Map([...priced.quotes, ...scoreQuotes]);
+    const avoided = new Set(avoidedIds);
+    // Un match signalé reste dans son groupe (pour la marge) mais ne peut
+    // plus devenir une jambe.
+    const playable = (pool: PricedPool) =>
+      pool.candidates.map((c) =>
+        avoided.has(c.fixtureId) ? { ...c, playableOdds: 0 } : c,
+      );
+    const marketCandidates = playable(priced);
+    const quotes = new Map([
+      ...priced.quotes,
+      ...(halfTime?.quotes ?? []),
+      ...scoreQuotes,
+    ]);
     const kickoffs = new Map(
-      [...priced.rows, ...scoreRows].map((r) => [r.fixtureId, r.scheduledAt]),
+      [...priced.rows, ...(halfTime?.rows ?? []), ...scoreRows].map((r) => [
+        r.fixtureId,
+        r.scheduledAt,
+      ]),
     );
     const context = { dayStart, kickoffs, quotes };
 
@@ -122,6 +145,19 @@ export class CouponHunterGenerationService {
         source: CouponSource.PRICE_COMPOSER,
         composition: composeHunterByMarket(marketCandidates, DRAW_HUNTER),
       }),
+      ...(halfTime
+        ? [
+            await this.persist({
+              ...context,
+              spec: HT_DRAW_HUNTER,
+              source: CouponSource.PRICE_COMPOSER,
+              composition: composeHunterByMarket(
+                playable(halfTime),
+                HT_DRAW_HUNTER,
+              ),
+            }),
+          ]
+        : []),
       await this.persist({
         ...context,
         spec: SCORE_HUNTER,

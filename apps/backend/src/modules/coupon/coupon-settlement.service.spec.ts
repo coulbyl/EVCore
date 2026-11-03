@@ -363,6 +363,39 @@ describe('CouponSettlementService.settleProposal — transient POSTPONED and mis
     expect(updateResult).toHaveBeenCalledWith('proposal-1', CouponResult.VOID);
   });
 
+  it('settles a half-time draw on the half-time score, not the final one', async () => {
+    const { service, settleLeg, updateResult } = makeHarness({
+      legs: [
+        makeLeg({
+          id: 'leg-1',
+          fixtureId: 'f1',
+          market: Market.FIRST_HALF_WINNER,
+          pick: 'DRAW',
+          oddsSnapshot: 2.4,
+        }),
+      ],
+      fixtures: [
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.FINISHED,
+          homeScore: 2,
+          awayScore: 1,
+          homeHtScore: 0,
+          awayHtScore: 0,
+        }),
+      ],
+    });
+
+    await service.settleProposal('proposal-1');
+
+    expect(settleLeg).toHaveBeenCalledWith('leg-1', true);
+    expect(updateResult).toHaveBeenCalledWith(
+      'proposal-1',
+      CouponResult.WON,
+      2.4,
+    );
+  });
+
   it('refunds a half-time leg on a FINISHED fixture that never got a half-time score', async () => {
     const { service, settleLeg, updateResult } = makeHarness({
       legs: [

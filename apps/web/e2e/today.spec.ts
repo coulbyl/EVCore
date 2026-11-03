@@ -65,8 +65,10 @@ test.describe("Aujourd'hui", () => {
     await expect(rows.getByText("Combiné du jour")).toBeVisible();
     await expect(rows.getByText("3 matchs")).toBeVisible();
     await expect(rows.getByText("1,41")).toBeVisible();
-    await expect(rows.getByText("Chasseur Nul")).toBeVisible();
+    await expect(rows.getByText("Chasseur Nul", { exact: true })).toBeVisible();
     await expect(rows.getByText("Lazio – Torino")).toBeVisible();
+    await expect(rows.getByText("Chasseur Nul à la mi-temps")).toBeVisible();
+    await expect(rows.getByText("Lens – Lille")).toBeVisible();
     await expect(
       rows.getByText("Pas de Chasseur Corners aujourd'hui"),
     ).toBeVisible();
@@ -233,6 +235,16 @@ test.describe("Feuille du coupon", () => {
     await expect(
       page.getByRole("region", { name: "Favori du jour" }),
     ).toBeAttached();
+  });
+
+  test("le Chasseur Nul à la mi-temps : sa bande au titre, le nul à la pause", async ({
+    page,
+  }) => {
+    await page.goto("/today/coupon/cp-today-nulmt");
+    const sheet = sheetNamed(page, "Chasseur Nul à la mi-temps · 2,10 à 2,80");
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByText("Égalité à la pause")).toBeVisible();
+    await expect(sheet.getByText("2,40").first()).toBeVisible();
   });
 
   // Le chargement de l'onglet a déjà ouvert le flux : Next garde 200 et

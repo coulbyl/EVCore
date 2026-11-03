@@ -37,6 +37,10 @@ describe("classForTargetOddsMin", () => {
     expect(classForTargetOddsMin(10.0)).toBe("BOLD");
   });
 
+  it("resolves the half-time draw hunter on its own 2.10", () => {
+    expect(classForTargetOddsMin(2.1)).toBe("HUNTER_HT_DRAW");
+  });
+
   it("returns null for an unrecognised targetOddsMin", () => {
     expect(classForTargetOddsMin(50.0)).toBeNull();
   });

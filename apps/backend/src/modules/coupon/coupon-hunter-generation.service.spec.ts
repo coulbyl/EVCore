@@ -31,6 +31,9 @@ const PRICES = new Map<string, number>([
   ['f2|ONE_X_TWO|DRAW', 3.3],
   ['f2|ONE_X_TWO|AWAY', 3.6],
   ['f3|CORRECT_SCORE|1:0', 6.5],
+  ['f6|FIRST_HALF_WINNER|HOME', 3.1],
+  ['f6|FIRST_HALF_WINNER|DRAW', 2.4],
+  ['f6|FIRST_HALF_WINNER|AWAY', 3.5],
 ]);
 
 function makeHarness(
@@ -56,6 +59,14 @@ function makeHarness(
         priced('f2', 'ONE_X_TWO/HOME', 2.1),
         priced('f2', 'ONE_X_TWO/DRAW', 3.3),
         priced('f2', 'ONE_X_TWO/AWAY', 3.6),
+      ]),
+    // 1X2 de la mi-temps complet sur f6, nul à 2,40 dans la bande.
+    findMarketCandidates: vi
+      .fn()
+      .mockResolvedValue([
+        priced('f6', 'FIRST_HALF_WINNER/HOME', 3.1),
+        priced('f6', 'FIRST_HALF_WINNER/DRAW', 2.4),
+        priced('f6', 'FIRST_HALF_WINNER/AWAY', 3.5),
       ]),
     findEngineComboCandidates: vi.fn().mockResolvedValue([
       {
@@ -144,13 +155,14 @@ function corners(
 }
 
 describe('CouponHunterGenerationService', () => {
-  it('writes the three hunters of the day, shown like any coupon', async () => {
+  it('writes the hunters of the day, shown like any coupon', async () => {
     const { service, repository } = makeHarness();
     const outcomes = await service.generateForDate(new Date('2026-10-29'));
 
     expect(outcomes.map((o) => [o.hunter, o.outcome])).toEqual([
       ['HUNTER_BTTS', 'composed'],
       ['HUNTER_DRAW', 'composed'],
+      ['HUNTER_HT_DRAW', 'composed'],
       ['HUNTER_SCORE', 'composed'],
       ['HUNTER_CORNERS', 'composed'],
       // No AI play on the day: no AI combo.
@@ -160,15 +172,25 @@ describe('CouponHunterGenerationService', () => {
     expect(calls.map(([input]) => input.profile?.source)).toEqual([
       CouponSource.PRICE_COMPOSER,
       CouponSource.PRICE_COMPOSER,
+      CouponSource.PRICE_COMPOSER,
       CouponSource.ENGINE,
       CouponSource.PRICE_COMPOSER,
     ]);
     expect(calls.map(([input]) => input.profile?.targetOddsMin)).toEqual([
-      1.45, 2.9, 6, 1.7,
+      1.45, 2.9, 2.1, 6, 1.7,
     ]);
+    // Nul à la mi-temps : la fréquence du marché sans marge, jamais 1 / cote.
+    const htDraw = calls[2]?.[0].legs[0];
+    expect(htDraw).toMatchObject({
+      fixtureId: 'f6',
+      market: 'FIRST_HALF_WINNER',
+      pick: 'DRAW',
+      odds: 2.4,
+    });
+    expect(htDraw?.probability).toBeLessThan(1 / 2.4);
     // Corners : le côté le moins cher du championnat fiable, avec sa ligne et
     // son prix 1xBet ; f5 (championnat sans stats) n'est jamais joué.
-    expect(calls[3]?.[0].legs[0]).toMatchObject({
+    expect(calls[4]?.[0].legs[0]).toMatchObject({
       fixtureId: 'f4',
       market: 'CORNERS',
       pick: 'UNDER',
@@ -176,8 +198,14 @@ describe('CouponHunterGenerationService', () => {
       operatorOdds: 1.88,
     });
     // Le score exact annonce la probabilité du marché (marge de grille 27 %).
-    expect(calls[2]?.[0].legs[0]?.probability).toBeCloseTo(1 / 6.5 / 1.27, 3);
-    expect(repository.recordPriceComposerAttempt).toHaveBeenCalledTimes(5);
+    expect(calls[3]?.[0].legs[0]?.probability).toBeCloseTo(1 / 6.5 / 1.27, 3);
+    expect(repository.recordPriceComposerAttempt).toHaveBeenCalledTimes(6);
+    expect(repository.recordPriceComposerAttempt).toHaveBeenCalledWith(
+      expect.objectContaining({
+        outcome: 'composed',
+        pass: expect.objectContaining({ name: 'hunter-hunter_ht_draw' }),
+      }),
+    );
   });
 
   it('never hunts on a match the AVOID meta-channel flags', async () => {
@@ -186,6 +214,38 @@ describe('CouponHunterGenerationService', () => {
     const outcomes = await service.generateForDate(new Date('2026-10-29'));
     expect(outcomes.find((o) => o.hunter === 'HUNTER_DRAW')?.outcome).toBe(
       'abstained',
+    );
+  });
+
+  it('reads the half-time 1X2 on its own pool, the other hunters unharmed when it fails', async () => {
+    const { service, repository } = makeHarness();
+    vi.mocked(repository.findMarketCandidates).mockRejectedValue(
+      new Error('timeout'),
+    );
+    const outcomes = await service.generateForDate(new Date('2026-10-29'));
+    expect(repository.findMarketCandidates).toHaveBeenCalledWith(
+      expect.objectContaining({ market: 'FIRST_HALF_WINNER' }),
+    );
+    expect(outcomes.map((o) => o.hunter)).toEqual([
+      'HUNTER_BTTS',
+      'HUNTER_DRAW',
+      'HUNTER_SCORE',
+      'HUNTER_CORNERS',
+      'AI_COMBO',
+    ]);
+  });
+
+  it('never hunts the half-time draw on a match AVOID flags', async () => {
+    const { service, repository } = makeHarness(['f6']);
+    const outcomes = await service.generateForDate(new Date('2026-10-29'));
+    expect(outcomes.find((o) => o.hunter === 'HUNTER_HT_DRAW')?.outcome).toBe(
+      'abstained',
+    );
+    expect(repository.recordPriceComposerAttempt).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reason: 'no_candidate_in_band',
+        pass: expect.objectContaining({ name: 'hunter-hunter_ht_draw' }),
+      }),
     );
   });
 

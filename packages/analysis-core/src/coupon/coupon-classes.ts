@@ -98,6 +98,7 @@ export type CouponClassName =
   | "DOUBLE"
   | "HUNTER_BTTS"
   | "HUNTER_DRAW"
+  | "HUNTER_HT_DRAW"
   | "HUNTER_SCORE"
   | "HUNTER_CORNERS"
   | "AI_COMBO";
@@ -307,6 +308,25 @@ export const HUNTER_DRAW_CLASS: CouponClass = {
   targetOddsMax: 3.6,
 };
 
+/**
+ * Chasseur Nul à la mi-temps (2026-11-04) : le nul au score de la pause,
+ * l'issue la plus fréquente de son marché, à la cote 1xBet de 2,10 à 2,80.
+ * Le marché est calibré (Pinnacle, 14 291 matchs : 39,7 % annoncés, 40,0 %
+ * réalisés, marge 4,7 %, cote moyenne 2,44 — docs/audits/2026-11-03/
+ * ETUDE-STRATEGIES.md § 3.1) : un produit au prix du marché, classé sur le
+ * coût comme le Chasseur Nul, jamais un avantage. `targetOddsMin` 2,10 : libre
+ * en base, il identifie la proposition.
+ */
+export const HUNTER_HT_DRAW_CLASS: CouponClass = {
+  name: "HUNTER_HT_DRAW",
+  minLegOdds: 2.1,
+  maxLegOdds: 2.8,
+  maxLegs: 1,
+  targetCombinedOdds: 2.1,
+  targetOddsMin: 2.1,
+  targetOddsMax: 2.8,
+};
+
 export const HUNTER_SCORE_CLASS: CouponClass = {
   name: "HUNTER_SCORE",
   minLegOdds: 5,
@@ -365,6 +385,7 @@ export function classForTargetOddsMin(
       DOUBLE_COUPON_CLASS,
       HUNTER_BTTS_CLASS,
       HUNTER_DRAW_CLASS,
+      HUNTER_HT_DRAW_CLASS,
       HUNTER_SCORE_CLASS,
       HUNTER_CORNERS_CLASS,
       AI_COMBO_COUPON_CLASS,

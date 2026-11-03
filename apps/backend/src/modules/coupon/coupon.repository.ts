@@ -987,6 +987,46 @@ export class CouponRepository {
     from: Date;
     to: Date;
   }): Promise<readonly PriceCandidateRow[]> {
+    return this.findPricedRows(
+      opts,
+      Prisma.sql`coalesce(rejection_reason, '') <> 'market_suspended'
+        AND market <> ALL(${[...POOL_EXCLUDED_MARKETS]}::text[])`,
+    );
+  }
+
+  /**
+   * Un marché coté le jour dit, toutes ses issues pour que la marge se
+   * retire sur le groupe complet (Chasseur Nul à la mi-temps, 2026-11-04).
+   *
+   * Contrairement au vivier de `findDoubleCandidates`, le refus
+   * `market_suspended` du moteur n'écarte rien : sur le 1X2 de la mi-temps,
+   * c'est sa porte des championnats sans historique de mi-temps
+   * (`htftCalibrated`), qui rejette ~85 % des lignes pour protéger son
+   * Poisson ; ce produit ne lit que le prix. Une vraie suspension du marché
+   * (`calibration.market_suspension`) reste respectée, comme les alertes de
+   * calibration.
+   */
+  async findMarketCandidates(opts: {
+    from: Date;
+    to: Date;
+    market: string;
+  }): Promise<readonly PriceCandidateRow[]> {
+    return this.findPricedRows(
+      opts,
+      Prisma.sql`market = ${opts.market}
+        AND NOT EXISTS (
+          SELECT 1 FROM calibration.market_suspension s
+          WHERE s.active AND s.market::text = ${opts.market}
+        )`,
+    );
+  }
+
+  /** Ce qui est coté sur les matchs à venir de la plage, hors alertes de
+   * calibration, restreint par `filter`. */
+  private findPricedRows(
+    opts: { from: Date; to: Date },
+    filter: Prisma.Sql,
+  ): Promise<PriceCandidateRow[]> {
     return this.prisma.client.$queryRaw<PriceCandidateRow[]>`
       SELECT "fixtureId",
              competition,
@@ -999,8 +1039,7 @@ export class CouponRepository {
       WHERE "fixtureStatus" NOT IN ('FINISHED', 'POSTPONED', 'CANCELLED')
         AND "scheduledAt" >= ${opts.from}
         AND "scheduledAt" < ${opts.to}
-        AND coalesce(rejection_reason, '') <> 'market_suspended'
-        AND market <> ALL(${[...POOL_EXCLUDED_MARKETS]}::text[])
+        AND ${filter}
         AND "fixtureId" NOT IN (${calibrationAlertedFixtureIds(opts.from, opts.to)})
     `;
   }
@@ -1009,20 +1048,9 @@ export class CouponRepository {
     from: Date;
     to: Date;
   }): Promise<readonly PriceCandidateRow[]> {
-    return this.prisma.client.$queryRaw<PriceCandidateRow[]>`
-      SELECT "fixtureId",
-             competition,
-             market,
-             pick,
-             odds::float                AS odds,
-             ${Prisma.raw(ODDS_BAND_SQL)} AS band,
-             "scheduledAt"
-      FROM public.evaluated_pick
-      WHERE "fixtureStatus" NOT IN ('FINISHED', 'POSTPONED', 'CANCELLED')
-        AND "scheduledAt" >= ${opts.from}
-        AND "scheduledAt" < ${opts.to}
-        AND market <> ALL(${[...POOL_EXCLUDED_MARKETS]}::text[])
-        AND "fixtureId" NOT IN (${calibrationAlertedFixtureIds(opts.from, opts.to)})
-    `;
+    return this.findPricedRows(
+      opts,
+      Prisma.sql`market <> ALL(${[...POOL_EXCLUDED_MARKETS]}::text[])`,
+    );
   }
 }

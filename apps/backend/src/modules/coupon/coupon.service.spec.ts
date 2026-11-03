@@ -186,6 +186,10 @@ describe('CouponService.getProductAbstentions', () => {
     const { passes } = vi.mocked(repo.findAbstentionsBetween).mock.calls[0][0];
     expect(passes).toContainEqual({ pass: 'favourite', targetOddsMin: 1.1 });
     expect(passes).toContainEqual({ pass: 'engine-combo', targetOddsMin: 1.2 });
-    expect(passes).toHaveLength(8);
+    expect(passes).toContainEqual({
+      pass: 'hunter-hunter_ht_draw',
+      targetOddsMin: 2.1,
+    });
+    expect(passes).toHaveLength(9);
   });
 });

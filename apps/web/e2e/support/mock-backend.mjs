@@ -456,6 +456,12 @@ function todayLeg(id, home, away, pick, odds, extra = {}) {
   };
 }
 
+// Les bandes des chasseurs (today-products.ts côté backend).
+const ODDS_BANDS = {
+  HUNTER_DRAW: { min: 2.9, max: 3.6 },
+  HUNTER_HT_DRAW: { min: 2.1, max: 2.8 },
+};
+
 function todayCoupon(id, product, legs, odds, chance) {
   return {
     id: `cp-today-${id}`,
@@ -467,7 +473,7 @@ function todayCoupon(id, product, legs, odds, chance) {
     referenceOdds: odds,
     paidOdds: null,
     chance,
-    oddsBand: product === "HUNTER_DRAW" ? { min: 2.9, max: 3.6 } : null,
+    oddsBand: ODDS_BANDS[product] ?? null,
     followedByMe: false,
     canFollow: true,
     legs,
@@ -1310,6 +1316,20 @@ function todayScreen() {
         ],
         3.4,
         0.3,
+      ),
+      // Chasseur Nul à la mi-temps : le nul à la pause, chance du marché.
+      todayCoupon(
+        "nulmt",
+        "HUNTER_HT_DRAW",
+        [
+          todayLeg("nulmt", "Lens", "Lille", "DRAW", 2.4, {
+            hours: 10,
+            market: "FIRST_HALF_WINNER",
+            chance: 0.4,
+          }),
+        ],
+        2.4,
+        0.4,
       ),
     ],
     absences: [

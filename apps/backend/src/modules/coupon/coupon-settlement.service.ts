@@ -309,6 +309,10 @@ export class CouponSettlementService {
         // A FINISHED fixture whose provider never served a half-time score
         // will never get one: refund the leg, as HT/FT and WIN_EITHER_HALF
         // already do (bet-settlement.ts). Otherwise wait for the score.
+        // Waiting past FINISHED was measured useless on 2026-11-04: of the
+        // 17 finished fixtures without one in 120 days, 16 are friendlies
+        // and all still lacked it weeks later (docs/audits/2026-11-04/
+        // CHASSEUR-NUL-MT.md).
         if (fixture.status === FixtureStatus.FINISHED) {
           await this.repo.settleLeg(leg.id, null);
           voidedLegs++;
