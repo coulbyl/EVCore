@@ -6,6 +6,7 @@ import {
   type CornersQuote,
   BTTS_HUNTER,
   DRAW_HUNTER,
+  HT_DRAW_HUNTER,
   composeHunterByMarket,
   composeScoreHunter,
 } from "./hunter-composer";
@@ -123,6 +124,85 @@ describe("composeHunterByMarket — draw", () => {
     expect(result.outcome).toBe("picked");
     if (result.outcome !== "picked") return;
     expect(result.leg.fixtureId).toBe("f2");
+  });
+});
+
+describe("composeHunterByMarket — half-time draw", () => {
+  const halfTime = (
+    fixtureId: string,
+    [home, draw, away]: [number, number, number],
+    opts: { playable?: number } = {},
+  ): DoubleCandidate[] =>
+    (["HOME", "DRAW", "AWAY"] as const).map((pick, i) => {
+      const odds = [home, draw, away][i] as number;
+      const operatorMargin = 1 / home + 1 / draw + 1 / away - 1;
+      return {
+        fixtureId,
+        market: "FIRST_HALF_WINNER",
+        pick,
+        odds,
+        playableOdds: pick === "DRAW" ? (opts.playable ?? odds) : odds,
+        operatorMargin,
+      };
+    });
+
+  it("takes the cheapest half-time draw in the 2.10–2.80 band", () => {
+    const result = composeHunterByMarket(
+      [
+        // Nul MT à 2,20, marge 6,1 %.
+        ...halfTime("f1", [2.6, 2.2, 4.5]),
+        // Nul MT à 2,50, marge 3,9 % : retenu.
+        ...halfTime("f2", [2.9, 2.5, 3.4]),
+        // Nul MT à 3,10 : hors bande.
+        ...halfTime("f3", [2.9, 3.1, 2.9]),
+      ],
+      HT_DRAW_HUNTER,
+    );
+    expect(result.outcome).toBe("picked");
+    if (result.outcome !== "picked") return;
+    expect(result.leg).toMatchObject({
+      fixtureId: "f2",
+      market: "FIRST_HALF_WINNER",
+      pick: "DRAW",
+      odds: 2.5,
+    });
+    expect(result.candidateCount).toBe(2);
+    // Fréquence du marché sans marge, jamais 1 / cote.
+    expect(result.leg.probability).toBeLessThan(1 / 2.5);
+    expect(result.leg.probability).toBeGreaterThan(0.36);
+  });
+
+  it("never takes the full-time draw for the half-time one", () => {
+    const fullTime = halfTime("f1", [2.9, 2.5, 3.4]).map((c) => ({
+      ...c,
+      market: "ONE_X_TWO",
+    }));
+    expect(composeHunterByMarket(fullTime, HT_DRAW_HUNTER).outcome).toBe(
+      "abstained",
+    );
+  });
+
+  it("skips a match taken out of play (AVOID, unplayable at 1xBet)", () => {
+    const result = composeHunterByMarket(
+      [
+        ...halfTime("f1", [2.9, 2.5, 3.4], { playable: 0 }),
+        ...halfTime("f2", [2.6, 2.2, 4.5]),
+      ],
+      HT_DRAW_HUNTER,
+    );
+    expect(result.outcome).toBe("picked");
+    if (result.outcome !== "picked") return;
+    expect(result.leg.fixtureId).toBe("f2");
+  });
+
+  it("abstains when no half-time draw is in the band", () => {
+    expect(
+      composeHunterByMarket(halfTime("f1", [2.9, 3.1, 2.9]), HT_DRAW_HUNTER),
+    ).toEqual({
+      outcome: "abstained",
+      reason: "no_candidate_in_band",
+      candidateCount: 0,
+    });
   });
 });
 

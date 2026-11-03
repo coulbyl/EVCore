@@ -9,6 +9,7 @@ import type { ComboCandidate } from "./combo-generator";
 import {
   HUNTER_BTTS_CLASS,
   HUNTER_DRAW_CLASS,
+  HUNTER_HT_DRAW_CLASS,
   HUNTER_SCORE_CLASS,
   HUNTER_CORNERS_CLASS,
   type CouponClass,
@@ -21,7 +22,7 @@ import type { DoubleCandidate } from "./double-composer";
  * tout de suite (décision du 2026-10-28 : pas d'ombre), avec la fréquence
  * du marché, et mesurés jambe par jambe en direct. Jamais d'edge.
  *
- * BTTS et Nul (`composeHunterByMarket`) : tout ce qui est coté sur le marché
+ * BTTS, Nul et Nul à la mi-temps (`composeHunterByMarket`) : tout ce qui est coté sur le marché
  * dans la bande, la marge payée chez 1xBet la plus basse d'abord (sa marge
  * typique du marché quand il ne cote pas tout le groupe), puis la
  * probabilité du marché. Le joueur paie 9,3 % en médiane chez 1xBet contre
@@ -53,6 +54,13 @@ export const BTTS_HUNTER: HunterSpec = {
 export const DRAW_HUNTER: HunterSpec = {
   coupon: HUNTER_DRAW_CLASS,
   market: "ONE_X_TWO",
+  pick: "DRAW",
+};
+
+/** Le nul à la mi-temps : même règle que le Nul, sur le 1X2 de la pause. */
+export const HT_DRAW_HUNTER: HunterSpec = {
+  coupon: HUNTER_HT_DRAW_CLASS,
+  market: "FIRST_HALF_WINNER",
   pick: "DRAW",
 };
 
