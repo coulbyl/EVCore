@@ -10,6 +10,7 @@ import { SchedulingSwitchModule } from './modules/app-setting/scheduling-switch.
 import { ConsoleWorkerModule } from './modules/console/console-worker.module';
 import { EtlWorkerModule } from './modules/etl/etl-worker.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
+import { OddsArchiveWorkerModule } from './modules/odds-archive/odds-archive-worker.module';
 import { PushWorkerModule } from './modules/push/push-worker.module';
 import { SlipDigestModule } from './modules/slip-digest/slip-digest.module';
 import { WorkerHeartbeatModule } from './modules/worker-health/worker-heartbeat.module';
@@ -35,6 +36,7 @@ import { PrismaModule } from './prisma.module';
     EtlWorkerModule,
     ConsoleWorkerModule,
     SlipDigestModule,
+    OddsArchiveWorkerModule,
     PushWorkerModule,
     SchedulingSwitchModule,
     WorkerHeartbeatModule,
