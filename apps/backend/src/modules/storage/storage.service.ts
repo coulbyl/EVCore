@@ -1,3 +1,5 @@
+import { createReadStream } from 'node:fs';
+import { stat } from 'node:fs/promises';
 import { Injectable, OnModuleInit, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -53,6 +55,8 @@ export class StorageService implements OnModuleInit {
   // the host baked into the signature differs.
   private presignClient: S3Client | null = null;
   private bucket = '';
+  // Buckets of putFile already checked or created by this process.
+  private readonly provisioned = new Set<string>();
 
   // What the clients were built from: rebuilt when a value changes in
   // Réglages › Intégrations, without a restart.
@@ -150,19 +154,22 @@ export class StorageService implements OnModuleInit {
   }
 
   private async ensureBucket(): Promise<void> {
+    await this.createBucketIfMissing(this.bucket);
+    await this.ensureCors();
+  }
+
+  private async createBucketIfMissing(bucket: string): Promise<void> {
     if (!this.client) return;
     try {
-      await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }));
+      await this.client.send(new HeadBucketCommand({ Bucket: bucket }));
     } catch {
       // HeadBucket fails identically (403/404, no distinguishable "not
       // found" code across S3-compatible stores) whether the bucket is
       // missing or merely unreachable — CreateBucket is the safe next
       // step either way: it's idempotent from our side (see catch below).
       try {
-        await this.client.send(
-          new CreateBucketCommand({ Bucket: this.bucket }),
-        );
-        logger.info({ bucket: this.bucket }, 'Attachment bucket created');
+        await this.client.send(new CreateBucketCommand({ Bucket: bucket }));
+        logger.info({ bucket }, 'Bucket created');
       } catch (error) {
         // BucketAlreadyOwnedByYou (single-tenant stores like RustFS return
         // this on a second create) is the expected race on a multi-replica
@@ -172,14 +179,10 @@ export class StorageService implements OnModuleInit {
           code !== 'BucketAlreadyOwnedByYou' &&
           code !== 'BucketAlreadyExists'
         ) {
-          logger.error(
-            { error, bucket: this.bucket },
-            'Failed to provision attachment bucket',
-          );
+          logger.error({ error, bucket }, 'Failed to provision bucket');
         }
       }
     }
-    await this.ensureCors();
   }
 
   // RustFS never emits Access-Control-Allow-Origin on its own — unlike the
@@ -281,6 +284,44 @@ export class StorageService implements OnModuleInit {
     } catch {
       return { exists: false, contentLength: null, contentType: null };
     }
+  }
+
+  /**
+   * Uploads a local file from the server itself, to a bucket of its own
+   * (the odds archive): never through a presigned URL, never public.
+   * Returns the size RustFS reports for the stored object.
+   */
+  async putFile(input: {
+    bucket: string;
+    key: string;
+    filePath: string;
+    contentType: string;
+  }): Promise<number> {
+    await this.ready();
+    if (!this.client) throw new Error('Object storage is not configured');
+    if (!this.provisioned.has(input.bucket)) {
+      await this.createBucketIfMissing(input.bucket);
+      this.provisioned.add(input.bucket);
+    }
+    const { size } = await stat(input.filePath);
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: input.bucket,
+        Key: input.key,
+        Body: createReadStream(input.filePath),
+        ContentLength: size,
+        ContentType: input.contentType,
+      }),
+    );
+    const head = await this.client.send(
+      new HeadObjectCommand({ Bucket: input.bucket, Key: input.key }),
+    );
+    if (head.ContentLength !== size) {
+      throw new Error(
+        `${input.key}: stored ${head.ContentLength ?? 'no'} bytes of ${size}`,
+      );
+    }
+    return size;
   }
 
   // Best-effort cleanup for an upload-url that was issued but never turned

@@ -27,6 +27,11 @@ import {
   prematchCohortSql,
   type PrismaClient,
 } from "@evcore/db";
+import {
+  mergeArchivedRows,
+  type ArchivedOddsRow,
+  type ArchivedOddsSource,
+} from "./archived-odds";
 
 // The structural fix behind docs/backtest-harness-architecture.md: instead
 // of trusting every backtest script to remember "don't read the future",
@@ -96,7 +101,48 @@ export type CouponCalibrationObservation = {
 };
 
 export class PointInTimeLoader {
-  constructor(private readonly client: PrismaClient = prisma) {}
+  // `archive`: the Parquet months (archived-odds.ts). Without it, a price
+  // before the close of an archived month is simply not there.
+  constructor(
+    private readonly client: PrismaClient = prisma,
+    private readonly archive: ArchivedOddsSource | null = null,
+  ) {}
+
+  /** The base's rows of these fixtures plus the archive's, each once. */
+  // `before`: only rows captured and priced before it, in both sources.
+  private async oddsRows(
+    fixtureIds: string[],
+    before?: Date,
+  ): Promise<ArchivedOddsRow[]> {
+    const [base, archived] = await Promise.all([
+      this.client.oddsSnapshot.findMany({
+        where: {
+          fixtureId: { in: fixtureIds },
+          ...(before && {
+            createdAt: { lt: before },
+            snapshotAt: { lt: before },
+          }),
+        },
+        select: {
+          id: true,
+          fixtureId: true,
+          bookmaker: true,
+          market: true,
+          pick: true,
+          odds: true,
+          snapshotAt: true,
+          createdAt: true,
+          homeOdds: true,
+          drawOdds: true,
+          awayOdds: true,
+        },
+      }),
+      this.archive
+        ? this.archive.rowsFor(fixtureIds, before)
+        : Promise.resolve([]),
+    ]);
+    return mergeArchivedRows<ArchivedOddsRow>(base, archived);
+  }
 
   // Chronologically ordered, finished fixtures with a settled score — the
   // replay universe. Never returns SCHEDULED/IN_PROGRESS/POSTPONED/CANCELLED
@@ -474,24 +520,7 @@ export class PointInTimeLoader {
     fixtureId: string,
     context: PointInTimeContext,
   ): Promise<FullOddsSnapshot | null> {
-    const rows = await this.client.oddsSnapshot.findMany({
-      where: {
-        fixtureId,
-        createdAt: { lt: context.asOf },
-        snapshotAt: { lt: context.asOf },
-      },
-      select: {
-        bookmaker: true,
-        market: true,
-        pick: true,
-        odds: true,
-        snapshotAt: true,
-        createdAt: true,
-        homeOdds: true,
-        drawOdds: true,
-        awayOdds: true,
-      },
-    });
+    const rows = await this.oddsRows([fixtureId], context.asOf);
     return assembleFullOddsSnapshot(rows, context.asOf);
   }
 
@@ -515,21 +544,7 @@ export class PointInTimeLoader {
     if (requests.length === 0) return result;
     const captureGuard = options.captureGuard ?? "createdAt";
 
-    const rows = await this.client.oddsSnapshot.findMany({
-      where: { fixtureId: { in: requests.map((r) => r.fixtureId) } },
-      select: {
-        fixtureId: true,
-        bookmaker: true,
-        market: true,
-        pick: true,
-        odds: true,
-        snapshotAt: true,
-        createdAt: true,
-        homeOdds: true,
-        drawOdds: true,
-        awayOdds: true,
-      },
-    });
+    const rows = await this.oddsRows(requests.map((r) => r.fixtureId));
 
     const rowsByFixture = new Map<string, typeof rows>();
     for (const row of rows) {

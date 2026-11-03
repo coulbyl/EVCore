@@ -837,7 +837,9 @@ export class FixtureRepository {
       });
       if (existing) {
         await this.prisma.client.oddsSnapshot.update({
-          where: { id: existing.id },
+          where: {
+            id_snapshotAt: { id: existing.id, snapshotAt: where.snapshotAt },
+          },
           data: { odds: leg.odds, observedAt },
         });
         return;
@@ -854,7 +856,9 @@ export class FixtureRepository {
         });
         if (!raceWinner) throw error;
         await this.prisma.client.oddsSnapshot.update({
-          where: { id: raceWinner.id },
+          where: {
+            id_snapshotAt: { id: raceWinner.id, snapshotAt: where.snapshotAt },
+          },
           data: { odds: leg.odds, observedAt },
         });
       }
@@ -945,7 +949,9 @@ export class FixtureRepository {
     });
     if (existing) {
       await this.prisma.client.oddsSnapshot.update({
-        where: { id: existing.id },
+        where: {
+          id_snapshotAt: { id: existing.id, snapshotAt: where.snapshotAt },
+        },
         data: { odds, observedAt },
       });
       return;
@@ -971,7 +977,9 @@ export class FixtureRepository {
       });
       if (!raceWinner) throw error;
       await this.prisma.client.oddsSnapshot.update({
-        where: { id: raceWinner.id },
+        where: {
+          id_snapshotAt: { id: raceWinner.id, snapshotAt: where.snapshotAt },
+        },
         data: { odds, observedAt },
       });
     }
@@ -1379,7 +1387,9 @@ export class FixtureRepository {
     });
     if (existing) {
       return this.prisma.client.oddsSnapshot.update({
-        where: { id: existing.id },
+        where: {
+          id_snapshotAt: { id: existing.id, snapshotAt: where.snapshotAt },
+        },
         data: {
           homeOdds: data.homeOdds,
           drawOdds: data.drawOdds,
@@ -1416,7 +1426,9 @@ export class FixtureRepository {
       if (!raceWinner) throw error;
 
       return this.prisma.client.oddsSnapshot.update({
-        where: { id: raceWinner.id },
+        where: {
+          id_snapshotAt: { id: raceWinner.id, snapshotAt: where.snapshotAt },
+        },
         data: {
           homeOdds: data.homeOdds,
           drawOdds: data.drawOdds,

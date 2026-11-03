@@ -250,7 +250,8 @@ export type QueueKey =
   | "odds_historical"
   | "rebuild"
   | "watch"
-  | "push";
+  | "push"
+  | "odds_archive";
 
 export type QueueView = {
   key: QueueKey;
@@ -272,10 +273,18 @@ export type BackfillView = {
   reserve: number;
 };
 
+export type OddsArchiveView = {
+  lastMonth: string | null;
+  parquetBytes: number;
+  tableBytes: number;
+  defaultRows: number;
+};
+
 export type QueuesScreen = {
   at: string;
   queues: QueueView[];
   backfill: BackfillView | null;
+  oddsArchive: OddsArchiveView | null;
 };
 
 export type SettleKind = "coupons" | "selections";

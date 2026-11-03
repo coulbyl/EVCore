@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import Decimal from "decimal.js";
 import { PointInTimeLoader } from "./point-in-time-loader";
+import { mergeArchivedRows } from "./archived-odds";
 import type { PrismaClient } from "@evcore/db";
 
 const ASOF = new Date("2026-08-09T12:00:00.000Z");
@@ -278,5 +279,62 @@ describe("PointInTimeLoader.loadOddsBatch captureGuard", () => {
       { captureGuard: "snapshotAt" },
     );
     expect(tooEarly.get("f1")).toBeNull();
+  });
+});
+
+describe("PointInTimeLoader with the odds archive", () => {
+  const kickoff = new Date("2026-10-10T15:00:00.000Z");
+  const price = (id: string, hoursBefore: number, home: number) => ({
+    id,
+    fixtureId: "f1",
+    bookmaker: "Pinnacle",
+    market: "ONE_X_TWO",
+    pick: null,
+    odds: null,
+    snapshotAt: new Date(kickoff.getTime() - hoursBefore * 3_600_000),
+    createdAt: new Date(kickoff.getTime() - hoursBefore * 3_600_000),
+    homeOdds: new Decimal(home),
+    drawOdds: new Decimal(3.4),
+    awayOdds: new Decimal(3.6),
+  });
+  // The base kept the closing price; the archive has every row, that one too.
+  const closing = price("closing", 0.2, 2.1);
+  const client = {
+    oddsSnapshot: { findMany: vi.fn().mockResolvedValue([closing]) },
+  } as unknown as PrismaClient;
+  const archive = {
+    rowsFor: vi.fn().mockResolvedValue([price("t-24h", 24, 1.9), closing]),
+  };
+
+  it("reads a price before the close from the archive", async () => {
+    const loader = new PointInTimeLoader(client, archive);
+    const asOf = new Date(kickoff.getTime() - 12 * 3_600_000);
+    const result = await loader.loadOddsBatch([{ fixtureId: "f1", asOf }]);
+    expect(result.get("f1")?.homeOdds.toNumber()).toBe(1.9);
+    expect(archive.rowsFor).toHaveBeenCalledWith(["f1"], undefined);
+  });
+
+  it("without it, the archived month only has the kept prices", async () => {
+    const loader = new PointInTimeLoader(client);
+    const asOf = new Date(kickoff.getTime() - 12 * 3_600_000);
+    const result = await loader.loadOddsBatch([{ fixtureId: "f1", asOf }]);
+    expect(result.get("f1")).toBeNull();
+  });
+});
+
+describe("mergeArchivedRows", () => {
+  it("keeps each row once, the base's first", () => {
+    expect(
+      mergeArchivedRows(
+        [{ id: "a", v: "base" }],
+        [
+          { id: "a", v: "archive" },
+          { id: "b", v: "archive" },
+        ],
+      ),
+    ).toEqual([
+      { id: "a", v: "base" },
+      { id: "b", v: "archive" },
+    ]);
   });
 });

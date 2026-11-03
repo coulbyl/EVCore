@@ -10,6 +10,7 @@ import { getQueueToken } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import type Redis from 'ioredis';
 import { BULLMQ_QUEUES } from '@config/etl.constants';
+import { ODDS_ARCHIVE } from '@config/odds-archive.constants';
 import { SLIP_DIGEST } from '@config/slip-digest.constants';
 import { REDIS_CLIENT } from '@/common/redis/redis.tokens';
 import { createLogger } from '@utils/logger';
@@ -22,7 +23,11 @@ export const SCHEDULING_SWITCH_INTERVAL_MS = 60_000;
 /** The queues the switch paused itself, the only ones it resumes. */
 export const SWITCH_PAUSED_KEY = 'evcore:scheduling-switch:paused';
 
-const QUEUE_NAMES = [...Object.values(BULLMQ_QUEUES), SLIP_DIGEST.QUEUE];
+const QUEUE_NAMES = [
+  ...Object.values(BULLMQ_QUEUES),
+  SLIP_DIGEST.QUEUE,
+  ODDS_ARCHIVE.QUEUE,
+];
 
 /**
  * « Passes planifiées » (12-admin § 4), for an incident: turned off, every

@@ -40,7 +40,7 @@ import {
   shrinkOverUnderProbabilities,
   type TeamStatsInput,
 } from "@evcore/analysis-core";
-import { PointInTimeLoader } from "../src";
+import { loaderFromEnv } from "./odds-archive";
 
 const FROM_DATE = new Date("2024-07-01T00:00:00.000Z");
 const SPLIT_DATE = new Date("2026-01-01T00:00:00.000Z");
@@ -195,7 +195,7 @@ async function main() {
   );
   out();
 
-  const loader = new PointInTimeLoader();
+  const { loader, close: closeArchive } = await loaderFromEnv();
   const fixtures = await loader.listFixtures({
     from: FROM_DATE,
     to: new Date(),
@@ -367,6 +367,7 @@ async function main() {
 
   writeFileSync(outputPath, lines.join("\n") + "\n");
   console.log(`\nRapport écrit : ${outputPath}`);
+  closeArchive();
 }
 
 main()

@@ -5,6 +5,7 @@
 // the future" is a compile-time-impossible mistake, not a review discipline.
 // Enforced by architecture.guard.spec.ts.
 export * from "./point-in-time-loader";
+export * from "./archived-odds";
 export * from "./replay-engine";
 export * from "./backtest-runner";
 export * from "./validation-protocol";

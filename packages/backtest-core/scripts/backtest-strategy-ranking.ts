@@ -66,7 +66,8 @@ import {
   type StrategyDecision,
   type TeamStatsInput,
 } from "@evcore/analysis-core";
-import { PointInTimeLoader, type ReplayFixture } from "../src";
+import type { ReplayFixture } from "../src";
+import { loaderFromEnv } from "./odds-archive";
 
 const FROM_DATE = new Date("2025-01-01T00:00:00.000Z");
 const SPLIT_DATE = new Date("2026-01-01T00:00:00.000Z");
@@ -322,7 +323,7 @@ async function main() {
   );
   out();
 
-  const loader = new PointInTimeLoader();
+  const { loader, close: closeArchive } = await loaderFromEnv();
   const fixtures = await loader.listFixtures({
     from: FROM_DATE,
     to: new Date(),
@@ -479,6 +480,7 @@ async function main() {
 
   writeFileSync(outputPath, lines.join("\n") + "\n");
   console.log(`Rapport écrit : ${outputPath}`);
+  closeArchive();
 }
 
 main()

@@ -146,6 +146,7 @@ export const CONSOLE_QUEUES = [
   { key: 'rebuild', queue: 'betting-engine-rebuild', kind: 'on_demand' },
   { key: 'watch', queue: 'console-watch', kind: 'silent' },
   { key: 'push', queue: 'push-delivery', kind: 'on_demand' },
+  { key: 'odds_archive', queue: 'odds-archive', kind: 'scheduled' },
 ] as const;
 
 export type ConsoleQueueKey = (typeof CONSOLE_QUEUES)[number]['key'];

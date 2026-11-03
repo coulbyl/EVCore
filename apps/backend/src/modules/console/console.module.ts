@@ -1,5 +1,6 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
+import { OddsArchiveModule } from '@modules/odds-archive/odds-archive.module';
 import {
   CONSOLE_PASSES,
   CONSOLE_QUEUES,
@@ -38,6 +39,7 @@ import { ConsoleService } from './console.service';
     EtlModule,
     MailModule,
     NotificationModule,
+    OddsArchiveModule,
     ScreensModule,
     BullModule.registerQueue({ name: CONSOLE_WATCH.QUEUE }),
     // The passes' queues, read for their last runs (vantage-analysis is the
