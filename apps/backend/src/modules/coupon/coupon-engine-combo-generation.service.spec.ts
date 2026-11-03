@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
+import type {
+  PlayableOddsRepository,
+  PlayableQuote,
+} from '../betting-engine/pricing/playable-odds.repository';
 import {
   CouponEngineComboGenerationService,
   ENGINE_LONG_PROFILE,
@@ -137,7 +140,10 @@ describe('CouponEngineComboGenerationService', () => {
       cell(),
       cell({ competition: 'PL' }),
     ]);
-    const quote = (fixtureId: string, operatorMargin: number) => [
+    const quote = (
+      fixtureId: string,
+      operatorMargin: number,
+    ): [string, PlayableQuote] => [
       `${fixtureId}|OVER_UNDER|OVER_1_5`,
       {
         fixtureId,
