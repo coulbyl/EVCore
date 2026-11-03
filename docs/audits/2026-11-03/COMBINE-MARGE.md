@@ -2,14 +2,15 @@
 
 _03/11/2026, phase 5 étape 2 du plan du 03/11 (`docs/plan-strategies-2026-11-03.md`). Copie de prod du 03/11. Script : `packages/backtest-core/scripts/backtest-engine-combo-margin.ts` (`pnpm --filter @evcore/backtest-core backtest:engine-combo-margin`), sortie : `outputs/backtest-engine-combo-margin.txt`._
 
-> **À rejouer avant fusion.** La revue de code (`/code-review high`) a durci la règle après ce rejeu : « chance égale » se lit maintenant aussi sur la fréquence sans marge du marché (Shin, relevé 1xBet), pas seulement sur la probabilité du moteur — le moteur seul laissait passer une jambe plus longue où il s'écarte du prix, et l'écart annoncé est anti-prédictif. Les chiffres ci-dessous sont ceux de la règle d'avant (fenêtre sur le moteur seul). Le second rejeu, avec la lecture appariée des seules jambes échangées (retirées contre prises à la place), a été coupé par l'arrêt de la base locale le 03/11 vers 15 h 45. À relancer : `DATABASE_URL=postgresql://claude_check:claude_check@localhost:5433/evcore pnpm --filter @evcore/backtest-core backtest:engine-combo-margin`. La nouvelle règle ne peut échanger que des jambes à chance égale des deux côtés, donc un sous-ensemble des cas d'avant ; si la marge ne baisse plus ou si les jambes prises réalisent nettement moins que les jambes retirées, remettre la règle de la moins chère.
+> **Rejoué le 03/11 au soir avec la règle de la revue** : « chance égale » se lit sur la probabilité du moteur **et** sur la fréquence sans marge du marché chez 1xBet (Shin). Les chiffres ci-dessous sont ceux de cette règle, celle qui est expédiée. Le premier rejeu (moteur seul) donnait 8,93 % → 8,52 % sur 20 jambes changées : la règle durcie échange moins, et gagne moins.
 
 ## Réponse courte
 
-1. **Expédié.** Dans chaque championnat retenu, parmi les jambes éligibles dont la probabilité est à 2 points de celle de la moins chère, le Combiné prend maintenant la marge 1xBet la plus basse (`COMBO_CONFIG.marginTieBreak`, politique `engine-combo-v2`).
-2. **Marge payée par jambe : 8,93 % → 8,52 %** sur 49 jours, et elle baisse dans les deux moitiés (8,24 → 8,00 et 9,38 → 8,87).
-3. **Réalisé ÷ annoncé par jambe : 1,020 [0,935 ; 1,105] → 1,028** sur 95 / 94 jambes. Le nouveau ratio est dans l'intervalle de l'ancien : rien ne bouge hors du bruit.
-4. **L'effet est petit** : 20 jambes changent sur 16 jours (sur 48 jours composés). C'est un gain de coût de 0,4 point par jambe, pas un avantage ; il ne change ni les championnats retenus ni la sélection mise en avant de chaque match.
+1. **Expédié, petit.** Dans chaque championnat retenu, parmi les jambes éligibles à 2 points de la moins chère sur la probabilité du moteur et sur la fréquence du marché, le Combiné prend la marge 1xBet la plus basse (`COMBO_CONFIG.marginTieBreak`, politique `engine-combo-v2`).
+2. **Marge payée par jambe : 8,93 % → 8,87 %** sur 49 jours (8,24 → 8,21 et 9,38 → 9,30 par moitié). **11 jambes changent, sur 11 jours.**
+3. **Réalisé ÷ annoncé par jambe : 1,020 [0,935 ; 1,105] → 1,044** sur 95 / 94 jambes, dans l'intervalle de l'ancien.
+4. **Lecture appariée des seules jambes échangées** : les 11 retirées réalisaient 72,7 % pour 83,4 % annoncés (0,87), les 10 prises à la place 90,0 % pour 83,2 % (1,08), marge 8,61 % → 8,08 %. Sens favorable, intervalles larges (± 0,3) : du bruit, mais pas de signe que la règle prenne de moins bonnes jambes.
+5. **Ce n'est pas un avantage** : un gain de coût de 0,06 point par jambe en moyenne (0,5 point sur une jambe échangée). Si les relectures en direct montrent que la marge payée ne baisse pas, retirer l'option (pas de flag dormant).
 
 ## Hypothèse, fixée avant le rejeu
 
@@ -32,24 +33,31 @@ Chaque jour du 14/09 (premier prix 1xBet en base : 13/09) au 02/11, à l'heure d
 
 Le vivier est fait des sélections que le moteur a écrites à l'époque : ce qui change est le compositeur, son entrée est celle qu'il aurait vue. Jambes réglées par le résultat enregistré de la sélection.
 
-## Résultats, par jambe
+## Résultats, par jambe (règle expédiée)
 
 | Période       | Règle           | Jours composés (gagnés) | Jambes | Annoncé | Réalisé | Réalisé ÷ annoncé (IC 95 %) | Marge 1xBet (connue) | Cote 1xBet |
 | ------------- | --------------- | ----------------------: | -----: | ------: | ------: | --------------------------: | -------------------: | ---------: |
 | 14/09 → 07/10 | la moins chère  |                 23 (15) |     45 |   0,807 |   0,822 |       1,019 [0,880 ; 1,157] |       8,24 % (32/45) |      1,222 |
-|               | départage marge |                 23 (14) |     45 |   0,811 |   0,800 |       0,987 [0,843 ; 1,131] |       8,00 % (33/45) |      1,230 |
+|               | départage marge |                 23 (15) |     45 |   0,807 |   0,822 |       1,018 [0,880 ; 1,157] |       8,21 % (32/45) |      1,221 |
 | 08/10 → 01/11 | la moins chère  |                 25 (20) |     50 |   0,862 |   0,880 |       1,021 [0,916 ; 1,125] |       9,38 % (50/50) |      1,165 |
-|               | départage marge |                 25 (21) |     49 |   0,863 |   0,918 |       1,064 [0,975 ; 1,153] |       8,87 % (49/49) |      1,186 |
+|               | départage marge |                 25 (21) |     49 |   0,862 |   0,918 |       1,066 [0,977 ; 1,154] |       9,30 % (49/49) |      1,163 |
 | **Total**     | la moins chère  |                 48 (35) |     95 |   0,836 |   0,853 |       1,020 [0,935 ; 1,105] |       8,93 % (82/95) |      1,187 |
-|               | départage marge |                 48 (35) |     94 |   0,838 |   0,862 |   **1,028** [0,945 ; 1,112] |   **8,52 %** (82/94) |      1,203 |
+|               | départage marge |                 48 (36) |     94 |   0,836 |   0,872 |   **1,044** [0,963 ; 1,124] |   **8,87 %** (81/94) |      1,186 |
+
+Jambes échangées seules (appariées) :
+
+|                   | Jambes | Annoncé | Réalisé | Réalisé ÷ annoncé (IC 95 %) | Marge 1xBet | Fréquence 1xBet | Cote 1xBet |
+| ----------------- | -----: | ------: | ------: | --------------------------- | ----------: | --------------: | ---------: |
+| Retirées          |     11 |   0,834 |   0,727 | 0,872 [0,556 ; 1,188]       |      8,61 % |           0,787 |      1,201 |
+| Prises à la place |     10 |   0,832 |   0,900 | 1,082 [0,859 ; 1,306]       |      8,08 % |           0,799 |      1,191 |
 
 Lecture :
 
-- **La marge baisse partout**, de 0,24 à 0,51 point par jambe selon la moitié. Sur les seules 20 jambes changées, l'écart est d'environ 1,7 point chacune.
-- **Le ratio ne bouge pas** : −0,03 sur la première moitié, +0,04 sur la seconde, chaque fois dans l'intervalle (± 0,09 à 0,14 sur 45 à 50 jambes). La jambe prise à la place est, par construction, à 2 points de probabilité près : il n'y a pas de raison qu'elle gagne moins souvent, et elle ne le fait pas.
-- **La cote 1xBet monte un peu** (1,187 → 1,203) : à chance égale, une marge plus basse paie plus.
-- Les jours gagnés (35 / 35) ne disent rien : le ROI ou la réussite d'un coupon n'ont pas de puissance à ce volume ; seule la lecture par jambe compte.
+- **La marge baisse dans les deux moitiés**, de 0,03 et 0,08 point par jambe ; sur les jambes échangées, de 0,5 point chacune.
+- **Le ratio ne bouge pas hors du bruit** (± 0,08 à 0,14). Les jambes prises à la place ont une fréquence de marché égale ou plus haute (0,799 contre 0,787) : la règle durcie ne prend pas de jambe plus longue.
+- Les jours gagnés (35 → 36) ne disent rien : la réussite d'un coupon n'a pas de puissance à ce volume ; seule la lecture par jambe compte.
 - 13 jambes sur 95 n'ont pas de marge connue, toutes dans la première quinzaine (relevés 1xBet incomplets au démarrage).
+- Premier rejeu, règle d'avant la revue (moteur seul) : 8,93 % → 8,52 %, ratio 1,028, 20 jambes changées sur 16 jours.
 
 ## Ce qui a changé dans le code
 

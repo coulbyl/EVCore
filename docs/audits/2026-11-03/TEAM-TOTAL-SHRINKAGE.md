@@ -2,7 +2,7 @@
 
 _03/11/2026, phase 5 étape 1 du plan du 03/11 (`docs/plan-strategies-2026-11-03.md`). Copie de prod du 03/11. Script : `packages/backtest-core/scripts/backtest-team-total-band-shrinkage.ts` (`pnpm --filter @evcore/backtest-core backtest:team-total-band-shrinkage`), chaîne de production partagée avec le rejeu du 06/10 dans `scripts/production-chain.ts`. Sortie : `outputs/backtest-team-total-band-shrinkage.txt`._
 
-> **À rejouer.** La revue de code a relevé que ce rejeu retirait chaque choix seul : sur une ligne, PLUS et MOINS ne faisaient plus 1 quand un seul des deux était dans la tranche, ce que la production (`shrinkTeamTotal`) ne fait jamais. Le script corrigé retire la ligne (PLUS vers son taux de base, MOINS = 1 − PLUS). Son rejeu a été coupé par l'arrêt de la base locale le 03/11 vers 15 h 45 ; les chiffres ci-dessous sont ceux d'avant la correction. À relancer : `NODE_OPTIONS=--max-old-space-size=6144 DATABASE_URL=postgresql://claude_check:claude_check@localhost:5433/evcore pnpm --filter @evcore/backtest-core backtest:team-total-band-shrinkage`. Le verdict ne change que si la tranche passe 0,90 dans les deux sens.
+> **Rejoué le 03/11 au soir avec le script corrigé par la revue** (la ligne entière est retirée : PLUS vers son taux de base, MOINS = 1 − PLUS, comme `shrinkTeamTotal`). Mêmes chiffres hors échantillon que ci-dessous : ajusté sur l'ancienne moitié (F = 0,8), tranche 0,792 → 0,781 ; ajusté sur la récente (F = 0,4), tranche 0,836 → 0,854 ; sous 1,45, 0,960 → 0,960 et 0,928 → 0,922. Verdict inchangé : rien n'est expédié. Sortie : `outputs/backtest-team-total-band-shrinkage.txt`.
 
 ## Réponse courte
 
