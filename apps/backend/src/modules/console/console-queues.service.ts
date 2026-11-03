@@ -13,13 +13,18 @@ import {
 } from '@config/console.constants';
 import { AdminJournalService } from '@modules/admin-journal/admin-journal.service';
 import { StatsBackfillService } from '@modules/etl/stats-backfill.service';
+import { OddsArchiveRepository } from '@modules/odds-archive/odds-archive.repository';
 import { createLogger } from '@utils/logger';
 import {
   queueListOf,
   type QueueReading,
   type QueueView,
 } from './console-queues';
-import type { BackfillView, QueuesScreen } from './console.types';
+import type {
+  BackfillView,
+  OddsArchiveView,
+  QueuesScreen,
+} from './console.types';
 
 const logger = createLogger('console-queues');
 const HOUR_MS = 60 * 60 * 1000;
@@ -34,16 +39,19 @@ const FAILED_READ = 50;
  */
 @Injectable()
 export class ConsoleQueuesService {
+  // eslint-disable-next-line max-params -- NestJS constructor injection: the queues, the catch-up, the journal, the odds archive
   constructor(
     private readonly moduleRef: ModuleRef,
     private readonly backfill: StatsBackfillService,
     private readonly journal: AdminJournalService,
+    private readonly oddsArchive: OddsArchiveRepository,
   ) {}
 
   async getScreen(now: Date = new Date()): Promise<QueuesScreen> {
-    const [readings, backfill] = await Promise.all([
+    const [readings, backfill, oddsArchive] = await Promise.all([
       Promise.all(CONSOLE_QUEUES.map((q) => this.read(q.key))),
       this.backfillView(),
+      this.oddsArchiveView(),
     ]);
     return {
       at: now.toISOString(),
@@ -52,6 +60,7 @@ export class ConsoleQueuesService {
         now,
       ),
       backfill,
+      oddsArchive,
     };
   }
 
@@ -174,6 +183,19 @@ export class ConsoleQueuesService {
       };
     } catch (err) {
       logger.warn({ err, key }, 'Queue unreadable');
+      return null;
+    }
+  }
+
+  private async oddsArchiveView(): Promise<OddsArchiveView | null> {
+    try {
+      const summary = await this.oddsArchive.summary();
+      return {
+        ...summary,
+        lastMonth: summary.lastMonth?.toISOString().slice(0, 7) ?? null,
+      };
+    } catch (err) {
+      logger.warn({ err }, 'Odds archive unreadable');
       return null;
     }
   }

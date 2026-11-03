@@ -246,10 +246,21 @@ export type BackfillView = {
   reserve: number;
 };
 
+/** Exploitation › Les files: the odds archive's own figures. */
+export type OddsArchiveView = {
+  lastMonth: string | null;
+  months: number;
+  parquetBytes: number;
+  rowsArchived: number;
+  tableBytes: number;
+  defaultRows: number;
+};
+
 export type QueuesScreen = {
   at: string;
   queues: QueueView[];
   backfill: BackfillView | null;
+  oddsArchive: OddsArchiveView | null;
 };
 
 export type SettleKind = 'coupons' | 'selections';

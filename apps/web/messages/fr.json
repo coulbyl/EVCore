@@ -1128,7 +1128,8 @@
         "odds_historical": "Cotes Pinnacle historiques",
         "rebuild": "Moteur rejoué sur l'historique",
         "watch": "Veille des voyants",
-        "push": "Notifications push"
+        "push": "Notifications push",
+        "odds_archive": "Archive des cotes"
       },
       "states": {
         "failed": "échec",
@@ -1152,6 +1153,9 @@
       "onDemandLast": "à la demande · dernier ✓ {date}",
       "backfillSeasons": "{done} / {total} saisons",
       "backfillQuota": "quota du jour {used} / {limit}",
+      "archiveLine": "dernier mois {month} · base {table} · archive {archive}",
+      "archiveNone": "aucun mois archivé · base {table}",
+      "archiveDefault": "{count, plural, one {# cote hors partition} other {# cotes hors partition}}",
       "retry": "Relancer",
       "clear": "Effacer l'échec",
       "pause": "Mettre en pause",
