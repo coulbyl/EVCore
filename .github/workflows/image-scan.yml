@@ -1,0 +1,73 @@
+name: Image scan
+
+# The deploy scans each image before pushing it (deploy.yml): a blocked scan
+# was only seen after merging (02/11, the package managers of the Node base
+# image). The same build and scan run on a pull request that can change what
+# an image holds; nothing is pushed.
+on:
+  pull_request:
+    paths:
+      - "apps/*/Dockerfile"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".trivyignore"
+      - ".github/workflows/image-scan.yml"
+      - ".github/workflows/deploy.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: Build and scan ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [backend, web, vantage-worker]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # Same release and digest as deploy.yml.
+      - name: Install Trivy
+        env:
+          TRIVY_VERSION: 0.75.0
+          TRIVY_SHA256: c6e65abddb348e25f10549df887045629cf28cc72453cd1c63acb717316b3f3f
+        run: |
+          set -euo pipefail
+          archive="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/aquasecurity/trivy/releases/download/v$TRIVY_VERSION/$archive"
+          echo "$TRIVY_SHA256  $RUNNER_TEMP/$archive" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" trivy
+
+      # The web's API address only matters at run time of the real image; any
+      # value builds the same dependencies.
+      - name: Build image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          outputs: type=docker,dest=${{ runner.temp }}/image.tar
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://api.example.invalid
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/evcore-${{ matrix.app }}:buildcache
+
+      - name: Scan image
+        run: |
+          set -euo pipefail
+          scan() {
+            "$RUNNER_TEMP/trivy" image --input "$RUNNER_TEMP/image.tar" --scanners vuln \
+              --severity CRITICAL,HIGH --cache-dir "$RUNNER_TEMP/trivy-cache" --no-progress \
+              --skip-version-check --ignorefile .trivyignore "$@"
+          }
+          scan
+          scan --ignore-unfixed --exit-code 1 --quiet
