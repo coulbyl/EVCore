@@ -243,3 +243,15 @@ export function sanitizeReasonText(text: string): string {
       )
   );
 }
+
+/**
+ * A text that still narrates VANTAGE's rules (« seuil », « fourchette »,
+ * « raw_stats »…) despite the prompt (v6): it is kept, never shown as an
+ * opinion on the match. 95 % of v5 no-play texts did (03/11).
+ */
+const RULE_WORDS =
+  /seuil|fourchette|near_threshold|raw_stats|lecture proche|d[ée]j[àa] couverts?/i;
+
+export function speaksOfRules(text: string): boolean {
+  return RULE_WORDS.test(text);
+}

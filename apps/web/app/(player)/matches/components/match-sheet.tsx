@@ -57,6 +57,12 @@ export async function MatchSheetView({ id }: { id: string }) {
   const display = displayLocaleOf(locale);
   const muted = sheet.state === "postponed";
 
+  const decidedAt = (iso: string) =>
+    t("aiDecidedAt", {
+      date: formatShortDate(new Date(iso), display, timeZone),
+      time: formatTime(new Date(iso), display, timeZone),
+    });
+
   return (
     <Sheet
       title={`${sheet.home.name} – ${sheet.away.name}`}
@@ -125,18 +131,7 @@ export async function MatchSheetView({ id }: { id: string }) {
                 }}
               />
               <p className="text-meta text-muted-foreground">
-                {t("aiDecidedAt", {
-                  date: formatShortDate(
-                    new Date(sheet.aiAbstention.decidedAt),
-                    display,
-                    timeZone,
-                  ),
-                  time: formatTime(
-                    new Date(sheet.aiAbstention.decidedAt),
-                    display,
-                    timeZone,
-                  ),
-                })}
+                {decidedAt(sheet.aiAbstention.decidedAt)}
               </p>
             </>
           ) : !sheet.ai ? (
@@ -161,18 +156,7 @@ export async function MatchSheetView({ id }: { id: string }) {
                 />
               ) : null}
               <p className="text-meta text-muted-foreground">
-                {t("aiDecidedAt", {
-                  date: formatShortDate(
-                    new Date(sheet.ai.decidedAt),
-                    display,
-                    timeZone,
-                  ),
-                  time: formatTime(
-                    new Date(sheet.ai.decidedAt),
-                    display,
-                    timeZone,
-                  ),
-                })}
+                {decidedAt(sheet.ai.decidedAt)}
               </p>
             </>
           )}

@@ -35,7 +35,7 @@ Exemple de refus v5 : _« Aucun marché ne satisfait simultanément notre fourch
 - **VANTAGE v6 (`vantage-v6-match-voice`)** :
   - Le texte d'un refus devient un avis sur le match : qui a l'avantage, le visage probable de la rencontre, avec les équipes et leurs chiffres, puis pourquoi ne pas parier, en mots de parieur.
   - Les règles internes sont interdites dans **tous** les textes, avis joués compris.
-  - Le refus est marqué `voice: "match"` dans `reasonDetails`.
+  - Le refus est marqué `voice: "match"` dans `reasonDetails`, sauf si son texte cite encore une règle (`speaksOfRules`) : il reste alors caché, jamais coupé ni rejeté.
   - La version change, donc la cohorte v6 se lit à part : le prompt a changé, même si la règle de jeu est la même.
 - **Fiche de match** : un refus v6 s'affiche « L'IA ne parie pas sur ce match », avec « Pourquoi ? » (le texte) et l'heure de la décision.
   - Un refus antérieur à la v6 reste « Pas d'avis » : son texte décrit les règles.
