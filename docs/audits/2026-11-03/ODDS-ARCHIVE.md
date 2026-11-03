@@ -4,14 +4,14 @@ _Branche `feat/odds-archive`, depuis `main` (540283d7). Mesures sur la prod (tun
 
 ## 1. Le constat
 
-| Mesure | Valeur |
-| --- | --- |
-| Taille de `odds_snapshot` en prod | 7,1 Go (3,3 Go de données, 3,8 Go d'index) sur une base de 9,2 Go ; 26,2 M lignes |
-| Croissance | ~4 M lignes par semaine depuis le 05/10 (0,7 M fin août), soit ~1 Go par semaine |
-| Lignes par match joué (300 matchs tirés au hasard, 60 derniers jours) | 5 509 : ~811 combinaisons bookmaker × marché × choix × ligne, relevées 6,8 fois chacune |
-| Âge des lignes (échantillon 0,5 %) | 85 % de matchs joués depuis plus de 7 jours, 14 % joués cette semaine, 1 % à venir |
-| Lignes gardées si l'on ne conserve qu'ouverture + clôture (`PREMATCH`) et tout `HISTORICAL` | 29 % (71 % archivables) |
-| Parquet (zstd) | 18 octets par ligne, contre ~284 dans Postgres index compris : 16 fois moins ; une semaine (1,45 M lignes) exportée en 2,1 s |
+| Mesure                                                                                      | Valeur                                                                                                                       |
+| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Taille de `odds_snapshot` en prod                                                           | 7,1 Go (3,3 Go de données, 3,8 Go d'index) sur une base de 9,2 Go ; 26,2 M lignes                                            |
+| Croissance                                                                                  | ~4 M lignes par semaine depuis le 05/10 (0,7 M fin août), soit ~1 Go par semaine                                             |
+| Lignes par match joué (300 matchs tirés au hasard, 60 derniers jours)                       | 5 509 : ~811 combinaisons bookmaker × marché × choix × ligne, relevées 6,8 fois chacune                                      |
+| Âge des lignes (échantillon 0,5 %)                                                          | 85 % de matchs joués depuis plus de 7 jours, 14 % joués cette semaine, 1 % à venir                                           |
+| Lignes gardées si l'on ne conserve qu'ouverture + clôture (`PREMATCH`) et tout `HISTORICAL` | 29 % (71 % archivables)                                                                                                      |
+| Parquet (zstd)                                                                              | 18 octets par ligne, contre ~284 dans Postgres index compris : 16 fois moins ; une semaine (1,45 M lignes) exportée en 2,1 s |
 
 ## 2. Qui lit l'historique
 
@@ -39,50 +39,43 @@ Pour une partition mensuelle close (tous ses matchs joués depuis plus de 7 jour
 
 ## 4. La mécanique — native, sans extension
 
-- **`odds_snapshot` partitionnée par mois de `snapshotAt`** (`PARTITION BY RANGE`). Les clés uniques d'une table partitionnée incluent la clé de partition : la clé primaire devient `(id, snapshotAt)` (Prisma `@@id([id, snapshotAt])`) ; la clé unique `(fixtureId, bookmaker, market, pick, line, snapshotAt)` la contient déjà. Les six mises à jour par `id` de `fixture.repository.ts` passent à la clé composée (elles lisent la ligne juste avant). Le déclencheur `odds_latest` et les deux vues restent sur la table mère, inchangés.
-- **Archive** : un fichier Parquet par mois, `odds-archive/odds_snapshot/YYYY-MM.parquet` sur RustFS (bucket dédié), écrit par DuckDB (`@duckdb/node-api`) qui lit la partition par l'extension `postgres` ; relu par DuckDB pour les études (`read_parquet('s3://…')`).
-- **Job mensuel** dans le worker (`OddsArchiveScheduler`, le 20 de chaque mois) pour le mois M−1 dont tous les matchs ont plus de 7 jours (une cote est prise au plus ~10 jours avant le match ; le 20, le mois précédent est clos depuis 20 jours) :
-  1. exporter toute la partition en Parquet, puis **vérifier** : même nombre de lignes, même somme de contrôle (`count`, `min/max(snapshotAt)`, somme des `odds`) relus depuis le fichier ;
-  2. construire une table compacte avec les seules lignes gardées (règle § 3), ses index ;
-  3. dans une transaction courte : détacher l'ancienne partition, attacher la compacte, supprimer l'ancienne ; la place est rendue tout de suite, sans `DELETE` ni `VACUUM FULL` ;
-  4. noter le mois archivé (`odds_archive_month` : mois, lignes avant / après, fichier, somme de contrôle) ; un mois déjà noté n'est jamais refait ;
-  5. créer d'avance les partitions des deux mois à venir (et une partition par défaut qui ne doit rester vide, surveillée par la console).
-- **Interrupteur** : le job respecte « Passes planifiées » ; une passe de cotes qui tombe pendant l'échange attend son verrou (quelques secondes).
+- **`odds_snapshot` partitionnée par mois de `snapshotAt`** (`PARTITION BY RANGE`, migration `20261103120000`). Les clés uniques d'une table partitionnée incluent la clé de partition : la clé primaire devient `(id, snapshotAt)` (Prisma `@@id([id, snapshotAt])`) ; la clé unique `(fixtureId, bookmaker, market, pick, line, snapshotAt)` la contient déjà. Les six mises à jour par `id` de `fixture.repository.ts` passent à la clé composée (elles connaissent le `snapshotAt`). Le déclencheur `odds_latest` est posé sur la table mère, chaque partition en hérite ; les deux vues sont relues sur elle.
+- **Archive** : un fichier Parquet (zstd) par mois, `odds_snapshot/AAAA-MM.parquet` dans le bucket `evcore-odds-archive` de RustFS. Le worker lit les lignes par un curseur Postgres (en texte), DuckDB (`@duckdb/node-api`, local, **sans extension**) les reçoit et écrit le fichier, le client S3 existant le dépose. Relu par DuckDB pour les études (`DuckDbOddsArchive`, `packages/backtest-core`).
+- **Job quotidien** dans le worker (`OddsArchiveService`, file `odds-archive`, 03:30 UTC) :
+  1. créer d'avance les partitions du mois en cours et des deux suivants (une partition par défaut existe, qui doit rester vide ; la console la surveille) ;
+  2. pour chaque partition finie depuis 14 jours et absente du journal : exporter toutes ses lignes, mois par mois, dans **un seul instantané** en lecture seule (`REPEATABLE READ`) ; relire chaque fichier et comparer à la base : nombre de lignes, somme des `odds`, premier et dernier `snapshotAt` ; déposer, puis comparer la taille stockée ;
+  3. construire à côté une table compacte avec les lignes gardées (règle § 3, plus toutes les lignes d'un match joué il y a moins de 7 jours), ses clés, ses index, sa clé étrangère et une contrainte de borne, pour que l'attachement ne relise rien ;
+  4. dans une transaction courte : verrouiller la table mère, vérifier que la partition n'a pas bougé depuis l'export (nombre de lignes, dernière observation), détacher et supprimer l'ancienne, attacher la compacte sous le même nom, écrire le journal `odds_archive_month` (mois, fichier, octets, lignes avant et après, somme de contrôle). Un écart : rien n'est touché, la nuit suivante recommence ;
+  5. un mois noté au journal n'est jamais refait.
+- **Interrupteur** : la file est coupée avec les autres par « Passes planifiées » ; l'échange attend au plus 30 s son verrou.
 
-## 5. La conversion initiale (une fois)
+## 5. La conversion initiale
 
-Fenêtre courte, passes planifiées coupées dans l'admin :
-
-1. créer la table mère partitionnée et les partitions mensuelles depuis la plus ancienne cote ;
-2. exporter en Parquet tous les mois clos, vérifiés comme au § 4 ;
-3. copier dans les partitions : tout pour les mois récents, les seules lignes gardées pour les mois clos ;
-4. échanger les noms (`odds_snapshot` → `odds_snapshot_legacy`, la nouvelle prend le nom), recréer le déclencheur et les vues ;
-5. contrôler (comptes par mois, clôtures identiques sur un échantillon, `odds_latest` inchangée), puis supprimer `odds_snapshot_legacy` après une semaine.
-
-La migration Prisma ne contient que le schéma ; la copie est un script (`packages/db/scripts/partition-odds-snapshot.ts`) lancé par l'utilisateur, répété d'abord sur la copie locale. Durée mesurée sur la copie locale : voir § 7.
+Pas de recopie : la migration renomme l'ancienne table en `odds_snapshot_legacy`, passe sa clé primaire à `(id, snapshotAt)`, déplace les lignes de novembre (0,7 M sur la copie) dans leur partition, et l'attache comme partition de tout ce qui précède le 1er novembre 2026 ; ses index sont repris tels quels. **35 s sur la copie du 03/11**, dont 10 s pour l'index de la clé composée et 16 s pour novembre ; la table est verrouillée pendant ce temps (passes de cotes en attente). L'ancienne partition est archivée par le même job dès le 15/11, puis remplacée par `odds_snapshot_history`.
 
 ## 6. Ce qui ne change pas
 
-Les écrans, le moteur, le règlement, le CLV et les coupons lisent les mêmes tables et vues, avec les mêmes lignes pour tout ce dont ils ont besoin. Les scripts d'étude qui lisent une cote à un instant précis ou tout l'historique passent par un lecteur commun (`packages/backtest-core`, `loadArchivedOdds`) qui interroge Parquet pour les mois archivés et la base pour le reste.
+Les écrans, le moteur, le règlement, le CLV et les coupons lisent les mêmes tables et vues, avec les mêmes lignes pour tout ce dont ils ont besoin. Les scripts d'étude qui lisent une cote à un instant précis passent par `PointInTimeLoader` (`packages/backtest-core`), qui fusionne la base et les fichiers Parquet ligne par ligne quand `ODDS_ARCHIVE_DIR` désigne une copie locale du bucket. L'extraction de l'`apps/ml-worker` (Python, non déployé depuis le 01/11) n'est pas branchée : à faire avec le lot ML v2.
 
-## 7. Mesures sur la copie locale (à compléter)
+## 7. Mesures sur la copie locale (dump du 03/11)
 
-- Sélection des lignes gardées (règle § 3 hors ancres de coupon, négligeables) : **11,19 M lignes gardées sur 26,2 M (43 %), 15,0 M archivées (57 %)**, en 1 min 56 s. Plus que les 29 % de l'échantillon : la semaine en cours est gardée entière, et les deux définitions de la clôture le sont quand elles diffèrent.
-- Place attendue : ~4 Go rendus sur 7,1 (lignes et index au prorata) ; archive Parquet ~270 Mo.
-- Conversion complète (copie de 11,2 M lignes, index, échange) : estimée à une dizaine de minutes ; mesurée par le script de la ligne 2 avant toute fenêtre en prod.
-- Croissance ensuite : ~43 % des ~4 M lignes hebdomadaires restent, soit ~0,45 Go par semaine au lieu de ~1, et rien ne s'accumule au-delà d'un mois clos.
+- **Migration** : 35 s, table verrouillée (index de la clé composée 10 s, déplacement de novembre 16 s, contrainte de borne 1 s, attachement 4 ms). Aucune dérive Prisma ; toutes les migrations passent sur une base vide.
+- **Archive de l'ancienne partition** (passe simulée au 16/11) : 25,5 M lignes en 47 mois, exportées, relues et déposées en ~4 min 30 ; compactage ~4 min ; échange en moins d'une seconde. **8 min 40 au total.** 8,52 M lignes gardées (33 %), partition de 2,1 Go ; archive de **435 Mo** (17 octets par ligne).
+- **Mêmes réponses avant et après**, sur les matchs du 01/10 au 20/10 (empreinte md5 de chaque lecture) : `odds_closing_line` (1 226 783 lignes), `odds_opening_line` (1 228 778), dernière cote par `snapshotAt` (1 228 856), cote connue à la publication des 17 989 couples coupon × prix : identiques.
+- **Lecture d'étude** : un match d'octobre relu dans les fichiers, 9 047 lignes, autant qu'en base avant l'archive, en 89 ms.
+- **Seconde passe** : rien à refaire (0 s). Passe simulée au 02/01/2027 : partitions de février et mars créées, novembre (0,7 M lignes) archivé en 12 s.
+- **Croissance ensuite** : environ un tiers des ~4 M lignes hebdomadaires reste en base une fois le mois archivé, soit ~0,35 Go par semaine au lieu de ~1.
 
 ## 8. Les lignes de travail (un commit chacune)
 
-1. `feat(db): odds_snapshot partitioned by month` — migration du schéma, `@@id([id, snapshotAt])`, mises à jour par clé composée, tests du dépôt.
-2. `feat(db): one-off partitioning script` — conversion, vérifications, mesurée sur la copie locale.
-3. `feat(etl): monthly odds archive to Parquet on RustFS` — export DuckDB, vérification, compactage, échange, journal `odds_archive_month`, partitions à venir.
-4. `feat(console): odds archive in Exploitation` — dernier mois archivé, taille, partition par défaut vide.
-5. `feat(backtest): read archived odds` — lecteur commun base + Parquet, branché sur les scripts point-in-time et l'extraction ML.
-6. `docs: exploitation — odds archive` — lancer la conversion, relire un mois, restaurer un mois depuis Parquet.
+1. `feat(db): odds_snapshot partitioned by month` — migration (conversion comprise, pas de script à part), `@@id([id, snapshotAt])`, mises à jour par clé composée, journal `odds_archive_month`.
+2. `feat(etl): nightly odds archive to Parquet on RustFS` — `OddsArchiveService` : partitions d'avance, export DuckDB vérifié, compactage, échange.
+3. `feat(console): odds archive in Exploitation` — la file, le dernier mois archivé, la taille de la table et de l'archive, la partition par défaut.
+4. `feat(backtest): read archived odds` — `DuckDbOddsArchive` et `PointInTimeLoader`, branchés sur les trois scripts de rejeu (`ODDS_ARCHIVE_DIR`).
+5. `docs: exploitation — odds archive`.
 
-## 9. À décider
+## 9. Décidé le 03/11
 
-1. **Délai** : 7 jours après le match (proposé) — le règlement et le CLV sont faits bien avant.
-2. **Rétention de l'archive** : tout garder (proposé ; ~1 Go par an au rythme actuel).
-3. **Fenêtre de la conversion initiale** : de nuit, passes coupées ; durée au § 7.
+1. **Délai** : un mois est archivé 14 jours après sa fin ; les lignes d'un match joué il y a moins de 7 jours restent entières.
+2. **Rétention de l'archive** : tout garder (~0,5 Go par an au rythme actuel).
+3. **Conversion** : dans la migration, au déploiement, hors des passes du soir.
