@@ -81,6 +81,19 @@ enum Market {
   ODD_EVEN_HT
   HIGHEST_SCORING_HALF
   TEAM_TO_SCORE_FIRST
+  // Ajoutés 2026-11-03 (plan des stratégies, phase 3) : mesurés avant tout
+  // produit. La ligne vit dans `line` : seuil de corners d'une équipe (,5),
+  // nombre minimal de tirs d'un joueur, minute du 1X2 à la minute. Les
+  // marchés de joueurs portent `pick` = `P<externalId>` (« No Goalscorer » =
+  // `NONE`).
+  CORNERS_HOME
+  CORNERS_AWAY
+  CORNERS_1X2
+  GOAL_SCORER_ANYTIME
+  GOAL_SCORER_FIRST
+  PLAYER_SHOTS
+  PLAYER_SHOTS_ON_TARGET
+  MINUTE_1X2
 
   @@schema("public")
 }
@@ -344,6 +357,9 @@ model Team {
   logoUrl       String?
   competitionId String                   @db.Uuid
   competition   Competition              @relation(fields: [competitionId], references: [id])
+  // Last /players/squads answer written for this team, empty or not: the
+  // weekly sync retries only what is due (player_squad).
+  squadSyncedAt DateTime?
   homeFixtures  Fixture[]                @relation("HomeTeam")
   awayFixtures  Fixture[]                @relation("AwayTeam")
   stats         TeamStats[]
@@ -351,6 +367,7 @@ model Team {
   fixtureEvents FixtureEvent[]
   lineups       FixtureLineup[]
   playerStats   FixturePlayerStatistic[]
+  squad         PlayerSquad[]
   coachTenures  CoachTenure[]
   createdAt     DateTime                 @default(now())
 
@@ -483,6 +500,30 @@ model Player {
   updatedAt   DateTime  @updatedAt
 
   @@map("player")
+  @@schema("public")
+}
+
+// A team's squad as API-Football lists it (/players/squads?team=), synced
+// weekly for the teams playing soon. It identifies the players the odds name
+// (`GOAL_SCORER_*`, `PLAYER_SHOTS*`): the odds give names, never ids. `name`
+// is the squad's own spelling (often "K. Mbappé"), kept apart from
+// `player.name`, which the match statistics write in full. A sync replaces
+// the team's rows: a player who left is no longer listed.
+model PlayerSquad {
+  id               String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  teamId           String   @db.Uuid
+  team             Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  playerExternalId Int
+  name             String
+  number           Int?
+  // Goalkeeper / Defender / Midfielder / Attacker
+  position         String?
+  observedAt       DateTime
+  createdAt        DateTime @default(now())
+
+  @@unique([teamId, playerExternalId])
+  @@index([playerExternalId])
+  @@map("player_squad")
   @@schema("public")
 }
 

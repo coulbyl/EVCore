@@ -43,6 +43,18 @@ export const Market = {
   ODD_EVEN_HT: "ODD_EVEN_HT",
   HIGHEST_SCORING_HALF: "HIGHEST_SCORING_HALF",
   TEAM_TO_SCORE_FIRST: "TEAM_TO_SCORE_FIRST",
+  // Ajoutés 2026-11-03 (plan des stratégies, phase 3), mesurés avant tout
+  // produit. Ligne dans `line` : seuil de corners d'une équipe (,5), nombre
+  // minimal de tirs d'un joueur, minute du 1X2 à la minute. Les marchés de
+  // joueurs portent `pick` = `P<externalId>` ; « No Goalscorer » = `NONE`.
+  CORNERS_HOME: "CORNERS_HOME",
+  CORNERS_AWAY: "CORNERS_AWAY",
+  CORNERS_1X2: "CORNERS_1X2",
+  GOAL_SCORER_ANYTIME: "GOAL_SCORER_ANYTIME",
+  GOAL_SCORER_FIRST: "GOAL_SCORER_FIRST",
+  PLAYER_SHOTS: "PLAYER_SHOTS",
+  PLAYER_SHOTS_ON_TARGET: "PLAYER_SHOTS_ON_TARGET",
+  MINUTE_1X2: "MINUTE_1X2",
 } as const;
 
 export type Market = (typeof Market)[keyof typeof Market];
