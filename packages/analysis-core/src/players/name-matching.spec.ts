@@ -29,6 +29,19 @@ const SQUAD: SquadCandidate[] = [
   { playerExternalId: 16, names: ["B. Šeško"] },
   { playerExternalId: 17, names: ["M. Ødegaard", "Martin Ødegaard"] },
   { playerExternalId: 18, names: ["Nicolás González"] },
+  // The real pass of 03/11 (eight Champions League matches of 04/11).
+  { playerExternalId: 19, names: ["Vinícius Júnior"] },
+  { playerExternalId: 20, names: ["J. A. Morante"] },
+  { playerExternalId: 21, names: ["Alisson Santos"] },
+  { playerExternalId: 22, names: ["A. Zambo Anguissa"] },
+  { playerExternalId: 23, names: ["Hwang In-Beom"] },
+  { playerExternalId: 24, names: ["Luís Gomes"] },
+  { playerExternalId: 25, names: ["K. Peprah Oppong"] },
+  { playerExternalId: 26, names: ["Jacobo Ramón Naveros"] },
+  { playerExternalId: 27, names: ["Willy Kambwala Ndengushi"] },
+  { playerExternalId: 28, names: ["T. N. Koren"] },
+  { playerExternalId: 29, names: ["L. Mercan"] },
+  { playerExternalId: 30, names: ["T. Douvikas"] },
 ];
 
 const matched = (name: string, squad = SQUAD) => {
@@ -55,6 +68,16 @@ describe("matchPlayerName", () => {
     ["Benjamin Sesko", 16],
     ["Martin Odegaard", 17],
     ["Nico Gonzalez", 18],
+    ["Vinicius Jr.", 19],
+    ["Jose Morante", 20],
+    ["de Almeida Alisson Santos", 21],
+    ["Andre-Franck Anguissa", 22],
+    ["In-Beom Hwang", 23],
+    ["Domingos Luis Gomes", 24],
+    ["Kojo Oppong", 25],
+    ["Jacobo Ramon", 26],
+    ["Willy Kambwala", 27],
+    ["Tian Nai Koren", 28],
   ])("%s → %i", (name, id) => {
     expect(matched(name)).toBe(id);
   });
@@ -62,6 +85,11 @@ describe("matchPlayerName", () => {
   it("leaves a player the squad does not list unmatched", () => {
     expect(matched("Vitor Reis")).toBe("unmatched");
     expect(matched("Lorenzo Paratici")).toBe("unmatched");
+  });
+
+  it("another initial or a nickname stays unmatched", () => {
+    expect(matched("Munir Mercan")).toBe("unmatched");
+    expect(matched("Anastasios Douvikas")).toBe("unmatched");
   });
 
   it("an initial shared by two players is ambiguous, never a guess", () => {

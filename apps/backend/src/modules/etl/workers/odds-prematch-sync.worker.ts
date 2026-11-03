@@ -18,6 +18,7 @@ import {
   OPERATOR_EXTENDED_MARKETS,
   REFERENCE_BOOKMAKER,
   API_FOOTBALL_BET_IDS,
+  MARKET_BOOKMAKERS,
 } from '@config/etl.constants';
 import { NotificationService } from '../../notification/notification.service';
 import { formatDateUtc } from '@utils/date.utils';
@@ -28,6 +29,14 @@ import {
   ApiFootballClient,
   isQuotaExceededError,
 } from '../api-football.client';
+import { PlayerSquadRepository } from '../../fixture-events/player-squad.repository';
+import {
+  extractNewMarketOdds,
+  inspectNewMarkets,
+  type FixtureSquads,
+  type NewMarketDiagnostic,
+  type PlayerMatchTally,
+} from './odds-new-markets';
 
 // Passing date as job data makes the worker testable and supports backfill:
 // with `date` the job syncs that single day; otherwise it covers tomorrow up
@@ -82,10 +91,12 @@ type ExtendedMarketCoverage = Map<
 // each call, so 10+ fixtures easily exceeds the default 30 s lock timeout.
 @Processor(BULLMQ_QUEUES.ODDS_PREMATCH_SYNC, { lockDuration: 600_000 })
 export class OddsPrematchSyncWorker extends WorkerHost {
+  // eslint-disable-next-line max-params -- Nest DI constructor.
   constructor(
     private readonly fixtureService: FixtureService,
     private readonly apiFootball: ApiFootballClient,
     private readonly notification: NotificationService,
+    private readonly squads: PlayerSquadRepository,
   ) {
     super();
   }
@@ -131,6 +142,8 @@ export class OddsPrematchSyncWorker extends WorkerHost {
     // Rencontres déjà commencées rencontrées en mode horizon (voir ci-dessous).
     let alreadyStarted = 0;
     const extendedCoverage: ExtendedMarketCoverage = new Map();
+    const newMarketCoverage: NewMarketCoverage = new Map();
+    const players = emptyPlayerTally();
     // En mode clôture, l'espacement doit rester sous la durée de la fenêtre :
     // voir ODDS_CLOSING_RATE_LIMIT_MS.
     const rateLimitMs = closing
@@ -241,12 +254,20 @@ export class OddsPrematchSyncWorker extends WorkerHost {
         extendedCoverage,
         inspectExtendedMarkets(match.bookmakers, REFERENCE_BOOKMAKER),
       );
+      mergeNewMarketCoverage(
+        newMarketCoverage,
+        inspectNewMarkets(match.bookmakers),
+      );
 
       // A DB write failure for one fixture (e.g. an out-of-range odds value —
       // CORRECT_SCORE on an obscure scoreline can spike well past three
       // digits) must not abort the whole run: skip this fixture and keep
       // going, same as the network/validation skip paths above.
       try {
+        // Squads only when a book that prices players is in the answer.
+        const squads = pricesPlayers(match.bookmakers)
+          ? await this.squads.findForFixture(fixtureId)
+          : null;
         // 1X2 from every priority bookmaker (not only the primary one): the
         // engine derives a median implied probability across books for the
         // model↔market coherence gate — a single book is too easy an outlier.
@@ -293,12 +314,16 @@ export class OddsPrematchSyncWorker extends WorkerHost {
           resultBttsOdds: additionalOdds.resultBttsOdds,
         });
 
-        await this.persistExtendedMarkets({
-          fixtureId,
-          bookmaker: odds.bookmaker,
-          snapshotAt,
-          bookmakers: match.bookmakers,
-        });
+        addPlayerTally(
+          players,
+          await this.persistExtendedMarkets({
+            fixtureId,
+            bookmaker: odds.bookmaker,
+            snapshotAt,
+            bookmakers: match.bookmakers,
+            squads,
+          }),
+        );
 
         // Store secondary market odds from every other ingested bookmaker.
         // Each bookmaker's OVER_UNDER/BTTS/HTFT/OU_HT/FHW data is stored
@@ -329,12 +354,16 @@ export class OddsPrematchSyncWorker extends WorkerHost {
             Object.keys(secondary.resultTotalGoalsOdds).length > 0 ||
             Object.keys(secondary.resultBttsOdds).length > 0;
           if (!hasData) continue;
-          await this.persistExtendedMarkets({
-            fixtureId,
-            bookmaker: bk.name,
-            snapshotAt,
-            bookmakers: match.bookmakers,
-          });
+          addPlayerTally(
+            players,
+            await this.persistExtendedMarkets({
+              fixtureId,
+              bookmaker: bk.name,
+              snapshotAt,
+              bookmakers: match.bookmakers,
+              squads,
+            }),
+          );
           await this.fixtureService.upsertSecondaryMarketOdds({
             fixtureId,
             bookmaker: bk.name,
@@ -381,6 +410,7 @@ export class OddsPrematchSyncWorker extends WorkerHost {
       'Odds prematch sync complete',
     );
     reportExtendedMarketCoverage(extendedCoverage);
+    reportNewMarketCoverage(newMarketCoverage, players);
 
     if (closing) this.reportClosingCoverage(synced, missedKickoff);
 
@@ -492,7 +522,8 @@ export class OddsPrematchSyncWorker extends WorkerHost {
     bookmaker: string;
     snapshotAt: Date;
     bookmakers: OddsBookmaker[];
-  }): Promise<void> {
+    squads: FixtureSquads | null;
+  }): Promise<PlayerMatchTally> {
     const { fullTime, firstHalf } = extractAsianHandicapOdds(
       input.bookmakers,
       input.bookmaker,
@@ -541,10 +572,130 @@ export class OddsPrematchSyncWorker extends WorkerHost {
         entry.legs,
       );
     }
+
+    // Phase 3 markets: kept only at their books (MARKET_BOOKMAKERS).
+    const added = extractNewMarketOdds({
+      bookmakers: input.bookmakers,
+      bookmakerName: input.bookmaker,
+      squads: input.squads,
+    });
+    for (const entry of added.lineMarkets) {
+      await this.fixtureService.upsertLineMarketOdds(
+        context,
+        entry.market,
+        entry.legs,
+      );
+    }
+    for (const entry of added.fixedMarkets) {
+      await this.fixtureService.upsertFixedOutcomeOdds(
+        context,
+        entry.market,
+        entry.legs,
+      );
+    }
+    return added.players;
   }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+type NewMarketCoverage = Map<
+  string,
+  {
+    market: string;
+    bookmaker: string;
+    fixturesWithRaw: number;
+    rawValues: number;
+    parsedValues: number;
+    rejectedLabels: Set<string>;
+  }
+>;
+
+const PLAYER_BOOKMAKERS: readonly string[] = [
+  ...MARKET_BOOKMAKERS.GOAL_SCORER_ANYTIME,
+  ...MARKET_BOOKMAKERS.GOAL_SCORER_FIRST,
+  ...MARKET_BOOKMAKERS.PLAYER_SHOTS,
+  ...MARKET_BOOKMAKERS.PLAYER_SHOTS_ON_TARGET,
+];
+
+function pricesPlayers(bookmakers: readonly OddsBookmaker[]): boolean {
+  return bookmakers.some((book) => PLAYER_BOOKMAKERS.includes(book.name));
+}
+
+function emptyPlayerTally(): PlayerMatchTally {
+  return { priced: 0, matched: 0, ambiguous: 0, unmatched: [] };
+}
+
+function addPlayerTally(total: PlayerMatchTally, tally: PlayerMatchTally) {
+  total.priced += tally.priced;
+  total.matched += tally.matched;
+  total.ambiguous += tally.ambiguous;
+  total.unmatched.push(...tally.unmatched);
+}
+
+function mergeNewMarketCoverage(
+  coverage: NewMarketCoverage,
+  diagnostics: readonly NewMarketDiagnostic[],
+): void {
+  for (const diagnostic of diagnostics) {
+    const key = `${diagnostic.market}@${diagnostic.bookmaker}`;
+    const current = coverage.get(key) ?? {
+      market: diagnostic.market,
+      bookmaker: diagnostic.bookmaker,
+      fixturesWithRaw: 0,
+      rawValues: 0,
+      parsedValues: 0,
+      rejectedLabels: new Set<string>(),
+    };
+    if (diagnostic.rawValues > 0) current.fixturesWithRaw += 1;
+    current.rawValues += diagnostic.rawValues;
+    current.parsedValues += diagnostic.parsedValues;
+    for (const label of diagnostic.rejectedLabels) {
+      current.rejectedLabels.add(label);
+    }
+    coverage.set(key, current);
+  }
+}
+
+/**
+ * Phase 3 markets, per book that keeps them, and the players their odds
+ * named: priced (per market), matched to a squad, ambiguous. A name never
+ * matched is never stored, so this log is the only place it shows.
+ */
+function reportNewMarketCoverage(
+  coverage: NewMarketCoverage,
+  players: PlayerMatchTally,
+): void {
+  const markets = [...coverage.values()].map((entry) => ({
+    ...entry,
+    rejectedLabels: [...entry.rejectedLabels].slice(0, 10),
+  }));
+  logger.info(
+    {
+      markets,
+      players: {
+        priced: players.priced,
+        matched: players.matched,
+        ambiguous: players.ambiguous,
+        matchRate:
+          players.priced === 0
+            ? null
+            : Number((players.matched / players.priced).toFixed(3)),
+        unmatched: [...new Set(players.unmatched)].slice(0, 30),
+      },
+    },
+    'New market ingestion coverage',
+  );
+  const parserFailures = markets.filter(
+    (entry) => entry.rawValues > 0 && entry.parsedValues === 0,
+  );
+  if (parserFailures.length > 0) {
+    logger.warn(
+      { markets: parserFailures },
+      'New markets received raw values but parsed none',
+    );
+  }
+}
 
 /**
  * Les marchés de REFERENCE_ONLY_MARKETS ne sont conservés que chez le book de

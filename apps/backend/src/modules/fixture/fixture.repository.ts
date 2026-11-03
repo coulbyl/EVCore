@@ -871,7 +871,12 @@ export class FixtureRepository {
       | 'OVER_UNDER_2H'
       | 'CORNERS'
       | 'CORNERS_HT'
-      | 'CARDS',
+      | 'CARDS'
+      | 'CORNERS_HOME'
+      | 'CORNERS_AWAY'
+      | 'PLAYER_SHOTS'
+      | 'PLAYER_SHOTS_ON_TARGET'
+      | 'MINUTE_1X2',
     legs: ReadonlyArray<{ pick: string; line: number; odds: number }>,
   ): Promise<void> {
     const source = context.source ?? OddsSnapshotSource.PREMATCH;
@@ -938,7 +943,10 @@ export class FixtureRepository {
       | 'ODD_EVEN'
       | 'ODD_EVEN_HT'
       | 'HIGHEST_SCORING_HALF'
-      | 'TEAM_TO_SCORE_FIRST',
+      | 'TEAM_TO_SCORE_FIRST'
+      | 'CORNERS_1X2'
+      | 'GOAL_SCORER_ANYTIME'
+      | 'GOAL_SCORER_FIRST',
     legs: ReadonlyArray<{ pick: string; odds: number }>,
   ): Promise<void> {
     const ctx = {
@@ -981,7 +989,10 @@ export class FixtureRepository {
       | 'ODD_EVEN'
       | 'ODD_EVEN_HT'
       | 'HIGHEST_SCORING_HALF'
-      | 'TEAM_TO_SCORE_FIRST',
+      | 'TEAM_TO_SCORE_FIRST'
+      | 'CORNERS_1X2'
+      | 'GOAL_SCORER_ANYTIME'
+      | 'GOAL_SCORER_FIRST',
     pick: string,
     odds: number | null,
   ): Promise<void> {

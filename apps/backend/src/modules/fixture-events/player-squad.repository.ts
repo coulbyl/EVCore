@@ -138,6 +138,26 @@ export class PlayerSquadRepository {
     return result;
   }
 
+  /** The squads of a fixture's two teams; empty for a team never synced. */
+  async findForFixture(fixtureId: string): Promise<{
+    home: SquadCandidate[];
+    away: SquadCandidate[];
+  } | null> {
+    const fixture = await this.prisma.client.fixture.findUnique({
+      where: { id: fixtureId },
+      select: { homeTeamId: true, awayTeamId: true },
+    });
+    if (!fixture) return null;
+    const squads = await this.findCandidates([
+      fixture.homeTeamId,
+      fixture.awayTeamId,
+    ]);
+    return {
+      home: squads.get(fixture.homeTeamId) ?? [],
+      away: squads.get(fixture.awayTeamId) ?? [],
+    };
+  }
+
   /** Teams playing between `from` and `to`, and those with a squad since `since`. */
   async countCoverage(input: {
     from: Date;

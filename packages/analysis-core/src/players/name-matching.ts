@@ -88,8 +88,18 @@ export function normalizePlayerName(name: string): string[] {
     .replace(/[øæœßđðłıþ]/g, (letter) => LETTER_FOLDS[letter] ?? letter)
     .replace(/['’`´]/g, "")
     .replace(/[.\-_,]/g, " ");
-  return folded.split(/\s+/).filter((token) => token.length > 0);
+  return folded
+    .split(/\s+/)
+    .filter((token) => token.length > 0)
+    .map((token) => NAME_SUFFIXES[token] ?? token);
 }
+
+/** "Vinicius Jr." and "Vinícius Júnior" are one spelling. */
+const NAME_SUFFIXES: Readonly<Record<string, string>> = {
+  jr: "junior",
+  snr: "senior",
+  sr: "senior",
+};
 
 const sameTokens = (a: readonly string[], b: readonly string[]): boolean =>
   a.length === b.length && a.every((token, index) => token === b[index]);
@@ -99,15 +109,30 @@ const endsWith = (tokens: readonly string[], tail: readonly string[]) =>
   tokens.length >= tail.length &&
   sameTokens(tokens.slice(tokens.length - tail.length), tail);
 
-/** "K. Mbappe" against "Kylian Mbappe": initial, then the whole surname. */
+/** "J. A. Morante" → initials ["j", "a"], surname ["morante"]. */
+function splitInitials(tokens: readonly string[]): {
+  initials: string[];
+  surname: string[];
+} {
+  const cut = tokens.findIndex((token) => token.length > 1);
+  return cut <= 0
+    ? { initials: [], surname: [...tokens] }
+    : { initials: tokens.slice(0, cut), surname: tokens.slice(cut) };
+}
+
+/**
+ * "K. Mbappe" against "Kylian Mbappe", "J. A. Morante" against "Jose
+ * Morante": first initial, then the whole surname.
+ */
 function initialAndSurname(
   abbreviated: readonly string[],
   full: readonly string[],
 ): boolean {
-  const [initial, ...surname] = abbreviated;
-  if (initial === undefined || initial.length !== 1) return false;
+  const { initials, surname } = splitInitials(abbreviated);
+  const [initial] = initials;
   const [first] = full;
   return (
+    initial !== undefined &&
     first !== undefined &&
     first.length > 1 &&
     full.length > surname.length &&
@@ -117,6 +142,10 @@ function initialAndSurname(
 }
 
 const exact: Rule = (priced, known) => sameTokens(priced, known);
+
+/** Same words, another order ("In-Beom Hwang" / "Hwang In-Beom"). */
+const reordered: Rule = (priced, known) =>
+  priced.length > 1 && sameTokens([...priced].sort(), [...known].sort());
 
 /**
  * Initial + surname either way, or both full names sharing their first and
@@ -132,6 +161,45 @@ const compatible: Rule = (priced, known) => {
   if (pricedFirst === undefined || knownFirst === undefined) return false;
   if (pricedFirst.length === 1 || knownFirst.length === 1) return false;
   return pricedFirst === knownFirst && priced.at(-1) === known.at(-1);
+};
+
+/**
+ * One name inside the other: a full name (two words or more) ending the
+ * other ("Alisson Santos" / "de Almeida Alisson Santos"), or the same first
+ * word with every word of the shorter in the longer ("Willy Kambwala" /
+ * "Willy Kambwala Ndengushi").
+ */
+const contained: Rule = (priced, known) => {
+  const [shorter, longer] =
+    priced.length <= known.length ? [priced, known] : [known, priced];
+  if (shorter.length < 2 || shorter.some((token) => token.length === 1)) {
+    return false;
+  }
+  if (endsWith(longer, shorter)) return true;
+  return (
+    shorter[0] === longer[0] && shorter.every((token) => longer.includes(token))
+  );
+};
+
+/**
+ * Initial and last word only, middle names apart ("K. Peprah Oppong" /
+ * "Kojo Oppong").
+ */
+const initialAndLast: Rule = (priced, known) => {
+  const check = (abbreviated: readonly string[], full: readonly string[]) => {
+    const { initials, surname } = splitInitials(abbreviated);
+    const [initial] = initials;
+    const [first] = full;
+    return (
+      initial !== undefined &&
+      first !== undefined &&
+      first.length > 1 &&
+      full.length > 1 &&
+      first.startsWith(initial) &&
+      surname.at(-1) === full.at(-1)
+    );
+  };
+  return check(known, priced) || check(priced, known);
 };
 
 /**
@@ -164,7 +232,15 @@ const singleWord: Rule = (priced, known) => {
   return other[0] === single || other.at(-1) === single;
 };
 
-const RULES: readonly Rule[] = [exact, compatible, shortFirstName, singleWord];
+const RULES: readonly Rule[] = [
+  exact,
+  reordered,
+  compatible,
+  contained,
+  shortFirstName,
+  initialAndLast,
+  singleWord,
+];
 
 export function matchPlayerName(
   name: string,

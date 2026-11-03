@@ -30,6 +30,7 @@ import { COHERENCE_BOOKMAKERS } from '../../betting-engine/ev.constants';
 import type { FixtureService } from '../../fixture/fixture.service';
 import type { ConfigService } from '@nestjs/config';
 import type { NotificationService } from '../../notification/notification.service';
+import type { PlayerSquadRepository } from '../../fixture-events/player-squad.repository';
 import type { Job } from 'bullmq';
 import type { OddsPrematchSyncJobData } from './odds-prematch-sync.worker';
 
@@ -256,10 +257,13 @@ const notification = {
 // transient errors, HTTP marker parsing) stays covered through the worker.
 const apiFootball = new ApiFootballClient(config as unknown as ConfigService);
 
+const squads = { findForFixture: vi.fn().mockResolvedValue(null) };
+
 const worker = new OddsPrematchSyncWorker(
   fixtureService as unknown as FixtureService,
   apiFootball,
   notification as unknown as NotificationService,
+  squads as unknown as PlayerSquadRepository,
 );
 
 const makeJob = (data: OddsPrematchSyncJobData = {}) =>
