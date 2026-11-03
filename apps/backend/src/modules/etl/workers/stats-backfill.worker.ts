@@ -1,11 +1,16 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import type { Job } from 'bullmq';
 import { createLogger } from '@utils/logger';
-import { BULLMQ_QUEUES, STATS_BACKFILL } from '@config/etl.constants';
+import {
+  BULLMQ_QUEUES,
+  FIXTURE_EVENTS,
+  STATS_BACKFILL,
+} from '@config/etl.constants';
 import { NotificationService } from '@modules/notification/notification.service';
 import { FixtureService } from '../../fixture/fixture.service';
 import { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 import {
+  fixturesWithinBudget,
   isStatsBackfillParked,
   rankStatsBackfillSeasons,
   statsBackfillLotSize,
@@ -20,13 +25,24 @@ import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 export type StatsBackfillJobData = Record<string, never>;
 
+// The events lot of a tick: fixtures with team statistics but without
+// events, lineups and player statistics, in what the stats lot left of the
+// budget.
+export type EventsBackfillLotResult = {
+  status: 'lot-done' | 'lot-aborted' | 'nothing-left';
+  count: number;
+  written: number;
+  synced: number;
+  calls: number;
+};
+
 export type StatsBackfillTickResult =
   | {
-      status:
-        | 'routine-stats-sync'
-        | 'quota-unknown'
-        | 'budget-exhausted'
-        | 'nothing-left';
+      status: 'routine-stats-sync' | 'quota-unknown' | 'budget-exhausted';
+    }
+  | {
+      status: 'nothing-left';
+      events?: EventsBackfillLotResult;
     }
   | {
       status: 'lot-done' | 'lot-aborted';
@@ -34,7 +50,10 @@ export type StatsBackfillTickResult =
       seasonName: string;
       updated: number;
       remainingAfterJob: number;
+      events?: EventsBackfillLotResult;
     };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const logger = createLogger('stats-backfill-worker');
 
@@ -48,6 +67,8 @@ export class StatsBackfillWorker extends WorkerHost {
   // MAX_FIXTURE_ATTEMPTS a fixture is left alone so a permanently failing id
   // neither blocks its season nor burns a call on every tick.
   private readonly failedAttempts = new Map<number, number>();
+  // Same rule for the events lot (missing from the answer, rejected).
+  private readonly failedEventAttempts = new Map<number, number>();
 
   // eslint-disable-next-line max-params -- worker orchestrates focused feature services.
   constructor(
@@ -84,6 +105,24 @@ export class StatsBackfillWorker extends WorkerHost {
       return { status: 'budget-exhausted' };
     }
 
+    const stats = await this.runStatsPart(budget);
+    // A quota stop ends the tick: nothing more is spent.
+    if (stats.result.status === 'lot-aborted') return stats.result;
+
+    const left = budget - stats.calls;
+    const events = left > 0 ? await this.runEventsLot(left) : null;
+    return events && events.status !== 'nothing-left'
+      ? { ...stats.result, events }
+      : stats.result;
+  }
+
+  private async runStatsPart(budget: number): Promise<{
+    result: Extract<
+      StatsBackfillTickResult,
+      { status: 'nothing-left' | 'lot-done' | 'lot-aborted' }
+    >;
+    calls: number;
+  }> {
     const seasons = rankStatsBackfillSeasons(
       await this.fixtureService.findStatsBackfillCandidates(
         new Date(STATS_BACKFILL.MIN_SEASON_START),
@@ -105,14 +144,76 @@ export class StatsBackfillWorker extends WorkerHost {
     }
 
     logger.debug('Stats backfill — no season left to process');
-    return { status: 'nothing-left' };
+    return { result: { status: 'nothing-left' }, calls: 0 };
+  }
+
+  // Events, lineups and player statistics of fixtures that already have
+  // their team statistics, most recent first, 20 per call. Only fixtures
+  // past the grace period: a recent one may still receive them, and the
+  // routine sync already wrote what it had.
+  private async runEventsLot(budget: number): Promise<EventsBackfillLotResult> {
+    const lotSize = Math.min(
+      FIXTURE_EVENTS.BACKFILL_MAX_FIXTURES_PER_LOT,
+      fixturesWithinBudget(budget),
+    );
+    const excluded = [...this.failedEventAttempts.entries()]
+      .filter(([, attempts]) => attempts >= STATS_BACKFILL.MAX_FIXTURE_ATTEMPTS)
+      .map(([externalId]) => externalId);
+    const lot = await this.fixtureService.findEventsBackfillPending({
+      before: new Date(
+        Date.now() - FIXTURE_EVENTS.INCOMPLETE_GRACE_DAYS * DAY_MS,
+      ),
+      limit: lotSize,
+      excludeExternalIds: excluded,
+    });
+    if (lot.length === 0) {
+      return {
+        status: 'nothing-left',
+        count: 0,
+        written: 0,
+        synced: 0,
+        calls: 0,
+      };
+    }
+
+    const result = await this.statsSync.syncFixtures(lot, 'details-only');
+    for (const externalId of result.details.failedExternalIds) {
+      this.failedEventAttempts.set(
+        externalId,
+        (this.failedEventAttempts.get(externalId) ?? 0) + 1,
+      );
+    }
+
+    const events: EventsBackfillLotResult = {
+      status: result.abortReason === null ? 'lot-done' : 'lot-aborted',
+      count: lot.length,
+      written: result.details.written,
+      synced: result.details.synced,
+      calls: result.calls,
+    };
+    logger.info(
+      {
+        ...events,
+        rejected: result.details.rejected,
+        failed: result.details.failedExternalIds.length,
+        abortReason: result.abortReason,
+      },
+      'Events backfill lot complete',
+    );
+    return events;
   }
 
   private async runLot(input: {
     season: RankedStatsBackfillSeason;
     pending: PendingStatisticsFixture[];
     lotSize: number;
-  }): Promise<StatsBackfillTickResult> {
+  }): Promise<{
+    result: Extract<
+      StatsBackfillTickResult,
+      { status: 'lot-done' | 'lot-aborted' }
+    >;
+    calls: number;
+  }> {
     const { season, pending, lotSize } = input;
     const lot = pending.slice(0, lotSize);
 
@@ -186,11 +287,14 @@ export class StatsBackfillWorker extends WorkerHost {
     }
 
     return {
-      status: result.abortReason === null ? 'lot-done' : 'lot-aborted',
-      competitionCode: season.competitionCode,
-      seasonName: season.seasonName,
-      updated: result.updated,
-      remainingAfterJob,
+      result: {
+        status: result.abortReason === null ? 'lot-done' : 'lot-aborted',
+        competitionCode: season.competitionCode,
+        seasonName: season.seasonName,
+        updated: result.updated,
+        remainingAfterJob,
+      },
+      calls: result.calls,
     };
   }
 

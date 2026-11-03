@@ -31,6 +31,8 @@ import { oneDayWindow } from '@utils/date.utils';
  */
 const ODDS_WRITE_CONCURRENCY = 5;
 
+export type EventsCoverageRow = { synced: number; total: number };
+
 export type StatsBackfillCandidateRow = {
   seasonId: string;
   seasonName: string;
@@ -617,6 +619,53 @@ export class FixtureRepository {
       },
       orderBy: { scheduledAt: 'asc' },
     });
+  }
+
+  // Finished fixtures whose team statistics are in but whose events,
+  // lineups and player statistics are not, kicked off before `before`
+  // (a recent match may still receive them: the routine sync wrote what it
+  // had), most recent first. Feeds the events backfill.
+  findEventsBackfillPending(input: {
+    before: Date;
+    limit: number;
+    excludeExternalIds: readonly number[];
+  }): Promise<
+    Array<{
+      externalId: number;
+      homeTeam: { externalId: number };
+      awayTeam: { externalId: number };
+    }>
+  > {
+    return this.prisma.client.fixture.findMany({
+      where: {
+        status: 'FINISHED',
+        statisticsSyncedAt: { not: null },
+        eventsSyncedAt: null,
+        scheduledAt: { lt: input.before },
+        ...(input.excludeExternalIds.length > 0
+          ? { externalId: { notIn: [...input.excludeExternalIds] } }
+          : {}),
+      },
+      select: {
+        externalId: true,
+        homeTeam: { select: { externalId: true } },
+        awayTeam: { select: { externalId: true } },
+      },
+      orderBy: { scheduledAt: 'desc' },
+      take: input.limit,
+    });
+  }
+
+  // Events coverage of the fixtures with team statistics: how many have
+  // their events, lineups and player statistics.
+  async countEventsCoverage(): Promise<EventsCoverageRow> {
+    const [row] = await this.prisma.client.$queryRaw<EventsCoverageRow[]>`
+      SELECT count(*) FILTER (WHERE "eventsSyncedAt" IS NOT NULL)::int AS synced,
+             count(*)::int AS total
+      FROM public.fixture
+      WHERE status = 'FINISHED' AND "statisticsSyncedAt" IS NOT NULL
+    `;
+    return row ?? { synced: 0, total: 0 };
   }
 
   // One row per season of an active backtest competition with finished

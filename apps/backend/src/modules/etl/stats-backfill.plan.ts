@@ -120,10 +120,3 @@ export function statsBackfillLotSize(
 export function fixturesWithinBudget(budget: number): number {
   return Math.max(0, budget) * ETL_CONSTANTS.FIXTURES_BY_IDS_BATCH_SIZE;
 }
-
-// Calls a lot of `fixtures` spends.
-export function callsForFixtures(fixtures: number): number {
-  return Math.ceil(
-    Math.max(0, fixtures) / ETL_CONSTANTS.FIXTURES_BY_IDS_BATCH_SIZE,
-  );
-}

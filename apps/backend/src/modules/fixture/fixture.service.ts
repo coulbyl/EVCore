@@ -12,6 +12,7 @@ import {
   type UpsertOddsSnapshotInput,
   type UpsertSecondaryMarketOddsInput,
   type SyncFixtureStateResult,
+  type EventsCoverageRow,
   type StatsBackfillCandidateRow,
 } from './fixture.repository';
 import { MatchLegDetectionService } from './match-leg-detection.service';
@@ -282,6 +283,24 @@ export class FixtureService {
     }>
   > {
     return this.fixtureRepository.findFinishedWithoutStatistics(seasonId);
+  }
+
+  findEventsBackfillPending(input: {
+    before: Date;
+    limit: number;
+    excludeExternalIds: readonly number[];
+  }): Promise<
+    Array<{
+      externalId: number;
+      homeTeam: { externalId: number };
+      awayTeam: { externalId: number };
+    }>
+  > {
+    return this.fixtureRepository.findEventsBackfillPending(input);
+  }
+
+  countEventsCoverage(): Promise<EventsCoverageRow> {
+    return this.fixtureRepository.countEventsCoverage();
   }
 
   findStatsBackfillCandidates(
