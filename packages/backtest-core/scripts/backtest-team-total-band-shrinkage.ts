@@ -7,8 +7,8 @@
  * (1 796 jambes) et 0,96 sous 1,45 (docs/audits/2026-11-03/
  * ETUDE-STRATEGIES.md § 2.1). Plan stratégies, phase 5, étape 1.
  *
- * HYPOTHÈSE, FIXÉE AVANT LE REJEU. Ramener la probabilité d'un choix TEAM_TOTAL
- * coté dans [1,45 ; 1,80[ vers le taux de base de ce choix (côté × ligne ×
+ * HYPOTHÈSE, FIXÉE AVANT LE REJEU. Ramener la probabilité d'une ligne TEAM_TOTAL
+ * dont un choix est coté dans [1,45 ; 1,80[ vers le taux de base de ce choix (côté × ligne ×
  * sens, toutes ligues confondues, mesuré sur la moitié d'ajustement) —
  * p' = base + F × (p − base), même forme que les blocs de OU_SHRINKAGE_CONFIG
  * — fait passer le ratio réalisé/annoncé de la tranche au-dessus de 0,90 hors
@@ -140,15 +140,26 @@ function shrinkSide(input: {
       ? context.probabilities.teamTotalHome
       : context.probabilities.teamTotalAway;
   const shrunk: TeamTotalProba = { ...map };
+  const market = marketOf(side);
+  const inBand = (pick: string) => {
+    const odds = resolveSelectionOdds(context.odds, market, pick);
+    return odds !== null && odds.gte(BAND.min) && odds.lessThan(BAND.max);
+  };
+  // Shrink the line, not the pick: OVER toward its base, UNDER = 1 − OVER,
+  // as shrinkTeamTotal does in production. Shrinking OVER toward its base
+  // is shrinking UNDER toward its own (both rates come from the same
+  // matches), so the line moves once whichever side is in the band.
   for (const pick of Object.keys(map) as PickKey[]) {
-    const probability = map[pick];
+    if (!pick.startsWith("OVER_")) continue;
+    const under = pick.replace("OVER_", "UNDER_") as PickKey;
+    const over = map[pick];
     const base = bases.get(`${side}:${pick}`);
-    if (probability === undefined || base === undefined) continue;
-    const odds = resolveSelectionOdds(context.odds, marketOf(side), pick);
-    if (odds === null || odds.lessThan(BAND.min) || odds.gte(BAND.max)) {
-      continue;
-    }
-    shrunk[pick] = base.plus(probability.minus(base).times(factor));
+    if (over === undefined || base === undefined) continue;
+    if (!inBand(pick) && !inBand(under)) continue;
+    const overShrunk = base.plus(over.minus(base).times(factor));
+    shrunk[pick] = overShrunk;
+    if (map[under] !== undefined)
+      shrunk[under] = new Decimal(1).minus(overShrunk);
   }
   return shrunk;
 }

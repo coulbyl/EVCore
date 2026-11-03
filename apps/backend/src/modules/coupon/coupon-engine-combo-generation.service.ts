@@ -55,9 +55,10 @@ export const ENGINE_LONG_PROFILE: EngineCouponProfile = {
 };
 
 /**
- * Génère le combiné du jour sur les sélections du moteur : trois « Notre
- * sélection » de l'écran Décisions, une par championnat, les moins chères
- * d'abord (règle et mesure dans COMBO_COUPON_CLASS). Même vivier et même
+ * Génère le combiné du jour sur les sélections du moteur : des « Notre
+ * sélection » de l'écran Décisions, une par championnat, les championnats
+ * dans l'ordre de leur jambe la moins chère et, dans chacun, la marge 1xBet
+ * la plus basse à chance égale (règle et mesure dans COMBO_COUPON_CLASS). Même vivier et même
  * calibration que l'écran, pour que ce que l'utilisateur voit sur un match
  * et ce qu'on lui propose en combiné soient la même chose.
  */
@@ -96,11 +97,19 @@ export class CouponEngineComboGenerationService {
         pick: r.pick,
       })),
     );
-    // La marge 1xBet du choix voyage avec lui : le combiné départage par
-    // elle à chance égale (COMBO_CONFIG.marginTieBreak).
+    // La marge 1xBet du choix et sa fréquence sans marge (même relevé)
+    // voyagent avec lui : le combiné départage par la marge à chance égale
+    // (COMBO_CONFIG.marginTieBreak).
     const rows = allRows
       .filter((r) => playableAtOperator(r, quotes))
-      .map((r) => ({ ...r, margin: operatorPrice(r, quotes).operatorMargin }));
+      .map((r) => {
+        const price = operatorPrice(r, quotes);
+        return {
+          ...r,
+          margin: price.operatorMargin,
+          fairProbability: price.operatorFairProbability,
+        };
+      });
 
     const selection = profile.compose(rows, calibration);
     const pass = {

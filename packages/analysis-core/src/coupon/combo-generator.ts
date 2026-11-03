@@ -1,11 +1,13 @@
+import Decimal from "decimal.js";
 import { COMBO_COUPON_CLASS, LONG_COUPON_CLASS } from "./coupon-classes";
 
 /**
  * Combiné du jour sur les sélections du moteur (voir COMBO_COUPON_CLASS pour
  * la mesure). Reproduit exactement la sélection mise en avant par l'écran
  * Décisions (`primaryPick`, apps/web) — même pastille de confiance, mêmes
- * paliers — puis en garde trois, une par championnat, les moins chères
- * d'abord.
+ * paliers — puis en garde une par championnat, les championnats dans
+ * l'ordre de leur jambe la moins chère ; dans chacun, à chance égale, la
+ * marge 1xBet la plus basse (`marginTieBreak`).
  */
 export type ComboCandidate = {
   fixtureId: string;
@@ -20,6 +22,11 @@ export type ComboCandidate = {
    * choix ; null ou absente quand le book ne cote pas tout le groupe.
    */
   margin?: number | null;
+  /**
+   * Fréquence sans marge du choix chez ce book (Shin, même relevé que
+   * `margin`) ; null ou absente si le groupe est incomplet.
+   */
+  fairProbability?: number | null;
 };
 
 /** Calibration d'un canal sur une compétition : réel / annoncé et volume. */
@@ -153,14 +160,31 @@ export function eligibleComboLegs(
       odds: c.odds,
       probability: c.probability,
       ...(c.margin === undefined ? {} : { margin: c.margin }),
+      ...(c.fairProbability === undefined
+        ? {}
+        : { fairProbability: c.fairProbability }),
     }));
+}
+
+/** `value` est-il à `window` au plus sous `reference` ? En Decimal. */
+function withinWindowBelow(input: {
+  value: number;
+  reference: number;
+  window: number;
+}): boolean {
+  return new Decimal(input.value).gte(
+    new Decimal(input.reference).minus(input.window),
+  );
 }
 
 /**
  * La jambe la moins chère du groupe (le premier, trié par cote croissante),
- * ou, parmi celles dont la probabilité est à `window` près de la sienne, la
- * marge connue la plus basse. Une marge inconnue ne gagne jamais contre une
- * marge connue ; à marge égale, la moins chère.
+ * ou, parmi celles à chance égale, la marge connue la plus basse. « Chance
+ * égale » se lit deux fois : probabilité du moteur ET fréquence sans marge du
+ * marché à `window` près de celles de la moins chère — le moteur seul
+ * laisserait passer une jambe plus longue où il s'écarte du prix (l'écart
+ * annoncé est anti-prédictif). Une marge ou une fréquence inconnue ne
+ * départage jamais ; à marge égale, la moins chère.
  */
 function lowestMarginAmongTies(
   group: readonly ComboCandidate[],
@@ -168,13 +192,23 @@ function lowestMarginAmongTies(
 ): ComboCandidate | undefined {
   const head = group[0];
   if (!head) return undefined;
-  let best: ComboCandidate | null = null;
+  const headFair = head.fairProbability;
+  if (headFair == null) return head;
+  let best: { leg: ComboCandidate; margin: number } | null = null;
   for (const c of group) {
-    if (c.margin == null || !Number.isFinite(c.margin)) continue;
-    if (c.probability < head.probability - window) continue;
-    if (best === null || c.margin < (best.margin as number)) best = c;
+    const margin = c.margin;
+    const fair = c.fairProbability;
+    if (margin == null || !Number.isFinite(margin) || fair == null) continue;
+    const tied =
+      withinWindowBelow({
+        value: c.probability,
+        reference: head.probability,
+        window,
+      }) && withinWindowBelow({ value: fair, reference: headFair, window });
+    if (!tied) continue;
+    if (best === null || margin < best.margin) best = { leg: c, margin };
   }
-  return best ?? head;
+  return best?.leg ?? head;
 }
 
 export function composeEngineCombo(

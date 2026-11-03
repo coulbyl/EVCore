@@ -42,6 +42,7 @@ import {
   OPERATOR_MIN_ODDS,
   POOL_EXCLUDED_MARKETS,
   priceOutcomeGroups,
+  shinOutcomeGroups,
   type CalibrationCell,
   type ComboCandidate,
   type ComboConfig,
@@ -224,6 +225,7 @@ function priceAtOperator(rows: readonly QuoteRow[]): {
   operatorOdds: Map<string, number>;
   lowestOdds: Map<string, number>;
   margins: Map<string, number>;
+  fairs: Map<string, number>;
 } {
   const operatorOdds = new Map<string, number>();
   const lowestOdds = new Map<string, number>();
@@ -233,6 +235,7 @@ function priceAtOperator(rows: readonly QuoteRow[]): {
     if (low === undefined || row.odds < low) lowestOdds.set(key, row.odds);
   }
   const margins = new Map<string, number>();
+  const fairs = new Map<string, number>();
   for (const bookmaker of OPERATOR_BOOKMAKERS) {
     const bookRows = rows.filter((row) => row.bookmaker === bookmaker);
     const lastSnapshot = new Map<string, number>();
@@ -253,8 +256,14 @@ function priceAtOperator(rows: readonly QuoteRow[]): {
       const key = quoteKey(priced);
       if (!margins.has(key)) margins.set(key, priced.margin.toNumber());
     }
+    for (const priced of shinOutcomeGroups(current)) {
+      const key = quoteKey(priced);
+      if (!fairs.has(key)) {
+        fairs.set(key, priced.fair.toDecimalPlaces(4).toNumber());
+      }
+    }
   }
-  return { operatorOdds, lowestOdds, margins };
+  return { operatorOdds, lowestOdds, margins, fairs };
 }
 
 function record(acc: Acc, legs: readonly Leg[] | null) {
@@ -353,6 +362,9 @@ async function main() {
     return acc;
   };
   let changedLegs = 0;
+  // Paired reading: only the legs the tie-break swaps, out and in.
+  const swappedOut: Leg[] = [];
+  const swappedIn: Leg[] = [];
   let changedDays = 0;
 
   for (const day of days) {
@@ -361,7 +373,7 @@ async function main() {
       loadCandidates(day, asOf),
       loadCalibration(day, asOf),
     ]);
-    const { operatorOdds, lowestOdds, margins } = priceAtOperator(
+    const { operatorOdds, lowestOdds, margins, fairs } = priceAtOperator(
       await loadQuotes(candidates, asOf),
     );
     const pool: Candidate[] = candidates
@@ -370,10 +382,14 @@ async function main() {
           operatorOdds.get(quoteKey(c)) ?? lowestOdds.get(quoteKey(c));
         return price === undefined || price >= OPERATOR_MIN_ODDS;
       })
-      .map((c) => ({ ...c, margin: margins.get(quoteKey(c)) ?? null }));
+      .map((c) => ({
+        ...c,
+        margin: margins.get(quoteKey(c)) ?? null,
+        fairProbability: fairs.get(quoteKey(c)) ?? null,
+      }));
     const byKey = new Map(pool.map((c) => [`${c.channel}|${quoteKey(c)}`, c]));
     const window = day < middle ? "ancienne" : "récente";
-    const picked: string[][] = [];
+    const picked: Leg[][] = [];
     for (const rule of rules) {
       const selection = composeEngineCombo(pool, calibration, rule.config);
       const legs =
@@ -387,13 +403,18 @@ async function main() {
               };
             })
           : null;
-      picked.push((legs ?? []).map((l) => `${l.channel}|${quoteKey(l)}`));
+      picked.push(legs ?? []);
       for (const w of [window, "total"]) record(accFor(w, rule.label), legs);
     }
-    const [current, candidate] = picked;
-    const differs = (current ?? []).filter(
-      (key) => !(candidate ?? []).includes(key),
-    ).length;
+    const legKey = (l: Leg) => `${l.channel}|${quoteKey(l)}`;
+    const [current = [], candidate = []] = picked;
+    const currentKeys = new Set(current.map(legKey));
+    const candidateKeys = new Set(candidate.map(legKey));
+    const removed = current.filter((l) => !candidateKeys.has(legKey(l)));
+    const added = candidate.filter((l) => !currentKeys.has(legKey(l)));
+    swappedOut.push(...removed);
+    swappedIn.push(...added);
+    const differs = removed.length;
     changedLegs += differs;
     changedDays += differs > 0 ? 1 : 0;
     console.log(
@@ -414,6 +435,22 @@ async function main() {
     }
     out();
   }
+  for (const [label, legs] of [
+    ["jambes retirées", swappedOut],
+    ["jambes prises à la place", swappedIn],
+  ] as const) {
+    const acc = emptyAcc();
+    acc.days = 1;
+    record(acc, legs);
+    const known = legs.filter((l) => l.fairProbability != null);
+    const fair =
+      known.reduce((sum, l) => sum + (l.fairProbability ?? 0), 0) /
+      Math.max(known.length, 1);
+    out(
+      `  ${label.padEnd(26)} ${formatAcc(acc).replace(/^jours [^|]*\| /, "")} | fréquence 1xBet ${fair.toFixed(3)}`,
+    );
+  }
+  out();
   const [currentRule, newRule] = rules;
   if (!currentRule || !newRule) throw new Error("rules");
   const current = accFor("total", currentRule.label);

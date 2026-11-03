@@ -18,6 +18,7 @@ function cand(
     pick: "OVER_1_5",
     odds: 1.25,
     probability: 0.8,
+    fairProbability: 0.78,
     ...over,
   };
 }
@@ -139,6 +140,49 @@ describe("composeEngineCombo", () => {
       if (result.outcome === "picked") {
         expect(result.legs.map((l) => l.fixtureId)).toEqual(["a", "d"]);
       }
+    });
+
+    it("keeps the cheapest when the market says the cheaper-margin leg is less likely, whatever the engine says", () => {
+      const result = composeEngineCombo(
+        [
+          cand({ fixtureId: "a", odds: 1.22, probability: 0.82, margin: 0.09 }),
+          // Engine tied (0.83), market 13 points lower: a claimed edge.
+          cand({
+            fixtureId: "b",
+            odds: 1.45,
+            probability: 0.83,
+            fairProbability: 0.65,
+            margin: 0.03,
+          }),
+          cand({ fixtureId: "d", odds: 1.3, competition: "PL" }),
+        ],
+        cells,
+        withTieBreak,
+      );
+      expect(result.outcome).toBe("picked");
+      if (result.outcome === "picked") {
+        expect(result.legs.map((l) => l.fixtureId)).toEqual(["a", "d"]);
+      }
+    });
+
+    it("keeps the cheapest when its own market frequency is unknown", () => {
+      const result = composeEngineCombo(
+        [
+          cand({
+            fixtureId: "a",
+            odds: 1.22,
+            margin: 0.09,
+            fairProbability: null,
+          }),
+          cand({ fixtureId: "b", odds: 1.23, margin: 0.02 }),
+          cand({ fixtureId: "d", odds: 1.3, competition: "PL" }),
+        ],
+        cells,
+        withTieBreak,
+      );
+      expect(result.outcome === "picked" && result.legs[0]?.fixtureId).toBe(
+        "a",
+      );
     });
 
     it("never lets an unknown margin beat a known one, and falls back to the cheapest when none is known", () => {

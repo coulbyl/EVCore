@@ -242,8 +242,11 @@ async function main() {
     for (const fixture of batch) {
       const asOf = new Date(fixture.scheduledAt.getTime() - DECISION_LEAD_MS);
       const odds = oddsByFixture.get(fixture.id) ?? null;
-      const context = await replayContext({ loader, fixture, odds, asOf });
-      if (!context || odds === null) {
+      const context =
+        odds === null
+          ? null
+          : await replayContext({ loader, fixture, odds, asOf });
+      if (!context) {
         skipped += 1;
         continue;
       }

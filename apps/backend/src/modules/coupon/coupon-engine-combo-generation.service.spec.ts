@@ -152,7 +152,7 @@ describe('CouponEngineComboGenerationService', () => {
         operatorOdds: 1.2,
         operatorBookmaker: '1xBet',
         operatorMargin,
-        operatorFairProbability: null,
+        operatorFairProbability: 0.8,
         lowestOdds: 1.2,
         lowestBookmaker: '1xBet',
       },

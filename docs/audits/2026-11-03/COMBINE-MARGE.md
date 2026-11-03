@@ -2,6 +2,8 @@
 
 _03/11/2026, phase 5 étape 2 du plan du 03/11 (`docs/plan-strategies-2026-11-03.md`). Copie de prod du 03/11. Script : `packages/backtest-core/scripts/backtest-engine-combo-margin.ts` (`pnpm --filter @evcore/backtest-core backtest:engine-combo-margin`), sortie : `outputs/backtest-engine-combo-margin.txt`._
 
+> **À rejouer avant fusion.** La revue de code (`/code-review high`) a durci la règle après ce rejeu : « chance égale » se lit maintenant aussi sur la fréquence sans marge du marché (Shin, relevé 1xBet), pas seulement sur la probabilité du moteur — le moteur seul laissait passer une jambe plus longue où il s'écarte du prix, et l'écart annoncé est anti-prédictif. Les chiffres ci-dessous sont ceux de la règle d'avant (fenêtre sur le moteur seul). Le second rejeu, avec la lecture appariée des seules jambes échangées (retirées contre prises à la place), a été coupé par l'arrêt de la base locale le 03/11 vers 15 h 45. À relancer : `DATABASE_URL=postgresql://claude_check:claude_check@localhost:5433/evcore pnpm --filter @evcore/backtest-core backtest:engine-combo-margin`. La nouvelle règle ne peut échanger que des jambes à chance égale des deux côtés, donc un sous-ensemble des cas d'avant ; si la marge ne baisse plus ou si les jambes prises réalisent nettement moins que les jambes retirées, remettre la règle de la moins chère.
+
 ## Réponse courte
 
 1. **Expédié.** Dans chaque championnat retenu, parmi les jambes éligibles dont la probabilité est à 2 points de celle de la moins chère, le Combiné prend maintenant la marge 1xBet la plus basse (`COMBO_CONFIG.marginTieBreak`, politique `engine-combo-v2`).
