@@ -45,6 +45,13 @@ export const RESULTS_PRODUCTS = [
     retired: false,
   },
   {
+    key: 'HUNTER_HT_DRAW',
+    source: 'PRICE_COMPOSER',
+    targetOddsMin: 2.1,
+    launchedOn: '2026-11-04',
+    retired: false,
+  },
+  {
     key: 'HUNTER_SCORE',
     source: 'ENGINE',
     targetOddsMin: 6,

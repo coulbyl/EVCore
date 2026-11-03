@@ -7,6 +7,7 @@ import {
   HUNTER_BTTS_CLASS,
   HUNTER_CORNERS_CLASS,
   HUNTER_DRAW_CLASS,
+  HUNTER_HT_DRAW_CLASS,
   HUNTER_SCORE_CLASS,
   type CouponClass,
 } from '@evcore/analysis-core';
@@ -25,6 +26,7 @@ export const TODAY_PRODUCT_TARGETS: readonly number[] = [
   DOUBLE_COUPON_CLASS,
   HUNTER_BTTS_CLASS,
   HUNTER_DRAW_CLASS,
+  HUNTER_HT_DRAW_CLASS,
   HUNTER_SCORE_CLASS,
   HUNTER_CORNERS_CLASS,
   AI_COMBO_COUPON_CLASS,
@@ -70,6 +72,7 @@ export function productRank(product: TodayProductKey): number {
 const HUNTER_BANDS: Readonly<Partial<Record<TodayProductKey, CouponClass>>> = {
   HUNTER_BTTS: HUNTER_BTTS_CLASS,
   HUNTER_DRAW: HUNTER_DRAW_CLASS,
+  HUNTER_HT_DRAW: HUNTER_HT_DRAW_CLASS,
   HUNTER_SCORE: HUNTER_SCORE_CLASS,
   HUNTER_CORNERS: HUNTER_CORNERS_CLASS,
 };

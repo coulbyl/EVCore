@@ -132,7 +132,8 @@ describe('ResultsService.getResults', () => {
       'HUNTER_DRAW',
       'HUNTER_SCORE',
       'HUNTER_CORNERS',
-      // AI_COMBO is launched on 2026-11-04, after NOW: not listed yet.
+      // AI_COMBO and HUNTER_HT_DRAW are launched on 2026-11-04, after NOW:
+      // not listed yet.
     ]);
     const admin = await service.getResults(
       { period: '90', isAdmin: true },
