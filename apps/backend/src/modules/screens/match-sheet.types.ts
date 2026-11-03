@@ -32,6 +32,16 @@ export type SheetAiOpinion = SheetPick & {
   decidedAt: string;
 };
 
+/**
+ * The AI looked at the match and would not bet: its opinion on the match,
+ * without a pick (v6 texts only; earlier ones narrate its rules).
+ */
+export type SheetAiAbstention = {
+  speech: string;
+  /** When it decided, ISO. */
+  decidedAt: string;
+};
+
 export type SheetTeamForm = {
   /** Last results, oldest first, all competitions. */
   last: ('won' | 'drawn' | 'lost')[];
@@ -70,6 +80,8 @@ export type MatchSheet = {
   setAsideReason: SetAsideReason | null;
   /** Null: « Pas d'avis ». */
   ai: SheetAiOpinion | null;
+  /** The AI's no-bet opinion, when it has no pick on the match. */
+  aiAbstention: SheetAiAbstention | null;
   form: { home: SheetTeamForm; away: SheetTeamForm };
   /** « 4 victoires d'Arsenal sur les 6 derniers », or null. */
   headToHead: string | null;

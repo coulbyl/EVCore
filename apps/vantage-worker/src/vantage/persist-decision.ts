@@ -45,11 +45,15 @@ export async function persistVantageDecision(
   // that doesn't change its reading), but so an audit can always see exactly
   // what was available to it, same spirit as logging deterministic `features`
   // on every ModelRun.
+  // `voice: "match"` (v6): a no-play text written as an opinion on the
+  // match, which the match sheet shows; older ones narrate the rules and
+  // stay hidden.
   const reasonDetails = {
     text: response.reasonDetails,
     ...(response.verdict === "play" && response.basis
       ? { basis: response.basis }
       : {}),
+    ...(response.verdict === "no_play" ? { voice: "match" } : {}),
     ...(research ? { researchCitations: research.citations } : {}),
   };
   const newSelection =

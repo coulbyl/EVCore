@@ -39,7 +39,14 @@ import { sanitizeReasonText } from "./sanitize-reason";
 // a team. Décisions now tells the player such pairs are separate estimates,
 // not a reason to bet (docs/audits/2026-10-27/AVIS-IA.md). Bumped so the
 // v5 cohort is read on its own.
-const CONFIG_VERSION = "vantage-v5-no-tension";
+// v6-match-voice (2026-11-03): a no-play text is an opinion on the match
+// (who has the edge, why no bet, in a punter's words), shown on the match
+// sheet. Measured on v5 (28/10–03/11): 95 % of no-play texts narrated the
+// rules (« seuil », « fourchette », « raw_stats »), so none could be shown;
+// 20 % of the matches the AI reads end in a no-play
+// (docs/audits/2026-11-03/AVIS-IA-ABSTENTION.md). Bumped so v6 is read on
+// its own.
+const CONFIG_VERSION = "vantage-v6-match-voice";
 
 /** Same empirically-justified floor used elsewhere in the system — see
  * apps/backend/src/modules/coupon/coupon.constants.ts's MIN_LEG_ODDS and

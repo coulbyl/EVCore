@@ -38,6 +38,7 @@ import type { MatchesDay } from './dto/matches-query.dto';
 import type {
   MatchSheet,
   SetAsideReason,
+  SheetAiAbstention,
   SheetAiOpinion,
   SheetPick,
   SheetReading,
@@ -205,6 +206,7 @@ export class MatchSheetService {
             })
           : null,
       ai: ai ? aiOpinionOf(ai, reading, quoteOf) : null,
+      aiAbstention: ai ? null : aiAbstentionOf(aiRows),
       form: {
         home: formOf(homeHistory, kickoff),
         away: formOf(awayHistory, kickoff),
@@ -325,6 +327,21 @@ function aiOpinionOf(
     speech: speechOf(ai.text),
     decidedAt: ai.decidedAt.toISOString(),
   };
+}
+
+/**
+ * The AI read the match and would not bet: an opinion too (03/11), shown
+ * when its text speaks of the match (`voice: match`, VANTAGE v6), never a
+ * text that narrates its rules.
+ */
+export function aiAbstentionOf(
+  rows: readonly AiOpinionRow[],
+): SheetAiAbstention | null {
+  const row = rows.find((r) => r.status === 'REJECTED' && r.voice === 'match');
+  const speech = row ? speechOf(row.text) : null;
+  return row && speech
+    ? { speech, decidedAt: row.decidedAt.toISOString() }
+    : null;
 }
 
 /**

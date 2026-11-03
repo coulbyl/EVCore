@@ -184,6 +184,7 @@ describe('MatchSheetService', () => {
       ai: [
         {
           status: 'SELECTED',
+          voice: null,
           decidedAt: new Date('2026-10-31T13:41:00Z'),
           text: 'Chelsea n’a perdu qu’une fois en huit déplacements. Le reste du texte.',
           market: 'ONE_X_TWO',
@@ -217,6 +218,7 @@ describe('MatchSheetService', () => {
       ai: [
         {
           status: 'SELECTED',
+          voice: null,
           decidedAt: new Date('2026-10-31T13:41:00Z'),
           text: null,
           market: 'ONE_X_TWO',
@@ -230,6 +232,7 @@ describe('MatchSheetService', () => {
       ai: [
         {
           status: 'REJECTED',
+          voice: null,
           decidedAt: new Date('2026-10-31T13:41:00Z'),
           text: 'x',
           market: null,
@@ -239,6 +242,29 @@ describe('MatchSheetService', () => {
       ],
     }).service.getSheet(FX, NOW);
     expect(silent.ai).toBeNull();
+    // A pre-v6 no-play narrates its rules: nothing shown.
+    expect(silent.aiAbstention).toBeNull();
+  });
+
+  it("shows the AI's no-bet opinion when it speaks of the match (v6)", async () => {
+    const sheet = await harness({
+      ai: [
+        {
+          status: 'REJECTED',
+          voice: 'match',
+          decidedAt: new Date('2026-11-03T09:10:00Z'),
+          text: ' Levadia domine, mais le favori est trop cher à ce prix. ',
+          market: null,
+          pick: null,
+          result: null,
+        },
+      ],
+    }).service.getSheet(FX, NOW);
+    expect(sheet.ai).toBeNull();
+    expect(sheet.aiAbstention).toEqual({
+      speech: 'Levadia domine, mais le favori est trop cher à ce prix.',
+      decidedAt: '2026-11-03T09:10:00.000Z',
+    });
   });
 
   it('form: five squares oldest first, and the days of rest', async () => {

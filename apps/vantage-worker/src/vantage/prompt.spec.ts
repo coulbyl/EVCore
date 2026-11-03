@@ -149,6 +149,20 @@ describe("buildUserPrompt", () => {
     );
   });
 
+  it("a no-play text is an opinion on the match, never the rules (v6, 2026-11-03: 95 % of v5 no-play texts narrated them)", () => {
+    expect(SYSTEM_PROMPT).toContain(
+      'Sur un "no_play", le joueur lit ton avis sur le match, pas ta procédure',
+    );
+    for (const word of [
+      '"seuil"',
+      '"fourchette"',
+      '"raw_stats"',
+      '"near_threshold"',
+    ]) {
+      expect(SYSTEM_PROMPT).toContain(word);
+    }
+  });
+
   it("asks for the basis of a play and states the play budget (2026-10-13: v3 played 70 % of fixtures against a prompt saying no_play is the norm)", () => {
     expect(SYSTEM_PROMPT).toContain('"basis"');
     expect(SYSTEM_PROMPT).toContain(
