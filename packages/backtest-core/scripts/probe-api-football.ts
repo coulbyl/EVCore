@@ -8,9 +8,13 @@
  * Usage :
  *   pnpm --filter @evcore/backtest-core probe:api-football
  *   pnpm --filter @evcore/backtest-core probe:extras  (marchés hors buts)
+ *   pnpm --filter @evcore/backtest-core probe:inventory  (tous les marchés,
+ *     par book, sur dix championnats)
  *
- * La clé est lue dans API_FOOTBALL_KEY depuis l'environnement (le script est
- * lancé avec --env-file). Elle n'est ni affichée, ni journalisée, ni écrite.
+ * La clé est lue dans API_FOOTBALL_KEY depuis l'environnement. Depuis le
+ * 01/11 elle vit dans Réglages › Intégrations, plus dans le .env : la passer
+ * au lancement (`API_FOOTBALL_KEY=… pnpm …`). Elle n'est ni affichée, ni
+ * journalisée, ni écrite.
  */
 const BASE = "https://v3.football.api-sports.io";
 const KEY = process.env.API_FOOTBALL_KEY;
@@ -245,6 +249,76 @@ async function probeExtras(): Promise<void> {
   }
 }
 
+/** PL, Liga, Serie A, Bundesliga, Ligue 1, Portugal, Pays-Bas, C1, MLS, Brésil. */
+const INVENTORY_LEAGUES = [39, 140, 135, 78, 61, 94, 88, 2, 253, 71];
+
+/**
+ * `--inventory` (2026-11-03) : tous les types de paris de l'API, et pour
+ * chacun, sur le prochain match de dix championnats, combien de matchs le
+ * cotent chez chaque book et quels libellés il porte. Une vingtaine de
+ * requêtes ; la sortie est un tableau Markdown, rien n'est écrit en base.
+ */
+async function probeInventory(): Promise<void> {
+  const catalogue = await section("Types de paris", "/odds/bets");
+  const names = new Map(
+    asArray(catalogue?.response).map((bet) => [
+      Number(bet.id),
+      String(bet.name),
+    ]),
+  );
+  line("types de paris", names.size);
+
+  // bet id → book → matchs qui le cotent ; bet id → libellés vus.
+  const quoted = new Map<number, Map<string, number>>();
+  const labels = new Map<number, Set<string>>();
+  let matches = 0;
+  for (const league of INVENTORY_LEAGUES) {
+    const fixtures = await get(`/fixtures?league=${league}&next=1`);
+    const fixture = asArray(fixtures.response)[0]?.fixture as
+      | Record<string, unknown>
+      | undefined;
+    if (!fixture) continue;
+    const odds = await get(`/odds?fixture=${String(fixture.id)}`);
+    const books = asArray(asArray(odds.response)[0]?.bookmakers);
+    if (books.length === 0) continue;
+    matches += 1;
+    for (const book of books) {
+      for (const bet of asArray(book.bets)) {
+        const id = Number(bet.id);
+        const perBook = quoted.get(id) ?? new Map<string, number>();
+        perBook.set(
+          String(book.name),
+          (perBook.get(String(book.name)) ?? 0) + 1,
+        );
+        quoted.set(id, perBook);
+        const seen = labels.get(id) ?? new Set<string>();
+        for (const value of asArray(bet.values).slice(0, 6)) {
+          seen.add(String(value.value));
+        }
+        labels.set(id, seen);
+      }
+    }
+  }
+
+  console.log(`\n## Marchés cotés sur ${matches} matchs à venir\n`);
+  console.log("| id | Pari | Books (matchs cotés) | Libellés vus |");
+  console.log("| ---: | --- | --- | --- |");
+  const ids = [...quoted.keys()].sort((a, b) => a - b);
+  for (const id of ids) {
+    const books = [...(quoted.get(id) ?? new Map<string, number>()).entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => `${name} ${count}`)
+      .join(", ");
+    const seen = [...(labels.get(id) ?? new Set<string>())]
+      .slice(0, 6)
+      .join(" · ");
+    console.log(`| ${id} | ${names.get(id) ?? "?"} | ${books} | ${seen} |`);
+  }
+  const never = [...names.entries()].filter(([id]) => !quoted.has(id));
+  console.log(`\n## Types jamais cotés sur ces matchs (${never.length})\n`);
+  console.log(never.map(([id, name]) => `${id} ${name}`).join(" · "));
+}
+
 async function main(): Promise<void> {
   if (!KEY) {
     console.error("API_FOOTBALL_KEY absente de l'environnement.");
@@ -255,6 +329,11 @@ async function main(): Promise<void> {
     "Sonde API-Football — la clé est lue dans l'environnement, jamais affichée.",
   );
   await probePlan();
+  if (process.argv.includes("--inventory")) {
+    await probeInventory();
+    console.log("\nFin de la sonde.");
+    return;
+  }
   if (process.argv.includes("--extras")) {
     await probeExtras();
     console.log("\nFin de la sonde.");
