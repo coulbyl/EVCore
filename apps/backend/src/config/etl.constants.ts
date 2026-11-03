@@ -246,9 +246,13 @@ export const API_FOOTBALL_BOOKMAKERS = {
 /**
  * Marchés de la liste ci-dessous gardés aussi chez le book des joueurs
  * (OPERATOR_BOOKMAKERS, 1xBet) : le Chasseur Corners se joue au prix 1xBet
- * (lot 6, 2026-10-29). Les autres books restent exclus, pour le volume.
+ * (lot 6, 2026-10-29). Les cartons depuis le 03/11 : le marché tombe juste
+ * chez Pinnacle (50,1 % annoncés, 48,7–51,3 % réalisés sur 1 836 matchs),
+ * et il faut le prix 1xBet pour décider d'un chasseur
+ * (docs/audits/2026-11-03/CORNERS-TIRS-CARTONS.md). Les autres books restent
+ * exclus, pour le volume.
  */
-export const OPERATOR_EXTENDED_MARKETS = ['CORNERS'] as const;
+export const OPERATOR_EXTENDED_MARKETS = ['CORNERS', 'CARDS'] as const;
 
 export const REFERENCE_ONLY_MARKETS = [
   'OVER_UNDER_2H',
