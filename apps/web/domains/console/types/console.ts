@@ -270,6 +270,8 @@ export type BackfillView = {
   pending: number;
   /** Finished fixtures past the stats sync, and those with their events. */
   events: { synced: number; total: number };
+  /** Teams playing in the next ten days, and those with a squad this week. */
+  squads: { synced: number; total: number };
   quota: { used: number; limit: number } | null;
   reserve: number;
 };

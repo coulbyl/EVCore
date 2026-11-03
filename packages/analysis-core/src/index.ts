@@ -15,6 +15,7 @@ export * from "./probability";
 export * from "./score";
 export { BETTING_ENGINE_CONFIG_VERSION } from "./score/engine-version";
 export * from "./settlement";
+export * from "./players";
 export * from "./selection";
 export * from "./strategies";
 export * from "./metrics";

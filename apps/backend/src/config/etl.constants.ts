@@ -390,6 +390,21 @@ export const FIXTURE_EVENTS = {
   BACKFILL_MAX_FIXTURES_PER_LOT: 200,
 } as const;
 
+// Squads (/players/squads?team=, one call per team): they identify the
+// players the odds name (plan des stratégies, phase 3). Synced for the teams
+// playing in the next HORIZON_DAYS, again every REFRESH_DAYS, inside the stats
+// backfill's budget, after its stats lot. The first ticks after a deploy
+// write every team due (~600 for ten days of fixtures), then a weekly
+// refresh.
+export const PLAYER_SQUADS = {
+  HORIZON_DAYS: 10,
+  REFRESH_DAYS: 7,
+  MAX_TEAMS_PER_LOT: 40,
+  RATE_LIMIT_MS: 1_500,
+  // A team whose call fails this many times is left until the restart.
+  MAX_ATTEMPTS: 3,
+} as const;
+
 export const STATS_BACKFILL = {
   // Toutes les 5 minutes — un lot de 100 dure ~3 min 30 ; la file dédiée
   // (concurrence 1) empêche deux lots de se chevaucher. Le budget, pas la

@@ -4,6 +4,7 @@ import { FixtureEventRepository } from './fixture-event.repository';
 import { FixtureLineupRepository } from './fixture-lineup.repository';
 import { FixturePlayerStatisticRepository } from './fixture-player-statistic.repository';
 import { PlayerRepository } from './player.repository';
+import { PlayerSquadRepository } from './player-squad.repository';
 import { FixtureEventsService } from './fixture-events.service';
 
 @Module({
@@ -13,8 +14,13 @@ import { FixtureEventsService } from './fixture-events.service';
     FixtureLineupRepository,
     FixturePlayerStatisticRepository,
     PlayerRepository,
+    PlayerSquadRepository,
     FixtureEventsService,
   ],
-  exports: [FixtureEventsService, FixtureEventRepository],
+  exports: [
+    FixtureEventsService,
+    FixtureEventRepository,
+    PlayerSquadRepository,
+  ],
 })
 export class FixtureEventsModule {}

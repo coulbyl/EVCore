@@ -17,6 +17,8 @@ import type {
   StatsSyncBatchResult,
   StatsSyncWorker,
 } from './stats-sync.worker';
+import type { SquadsSyncService } from '../squads-sync.service';
+import type { PlayerSquadRepository } from '../../fixture-events/player-squad.repository';
 
 const JOB = {} as Job<StatsBackfillJobData>;
 
@@ -71,6 +73,14 @@ describe('StatsBackfillWorker', () => {
   const statsSync = { syncFixtures: vi.fn() };
   const rollingStats = { backfillSeason: vi.fn().mockResolvedValue({}) };
   const notification = { sendEtlFailureAlert: vi.fn() };
+  const squadsSync = { syncDue: vi.fn() };
+  const NO_SQUAD_DUE = {
+    status: 'nothing-left',
+    teams: 0,
+    written: 0,
+    players: 0,
+    calls: 0,
+  } as const;
 
   const leagueSyncQueue = { getJobs: vi.fn() };
 
@@ -85,11 +95,13 @@ describe('StatsBackfillWorker', () => {
         {
           statsBackfillDailyReserve: vi.fn().mockResolvedValue(2_500),
         } as unknown as AppSettingService,
+        {} as PlayerSquadRepository,
       ),
       fixtureService as unknown as FixtureService,
       statsSync as unknown as StatsSyncWorker,
       rollingStats as unknown as RollingStatsService,
       notification as unknown as NotificationService,
+      squadsSync as unknown as SquadsSyncService,
     );
 
   beforeEach(() => {
@@ -97,6 +109,7 @@ describe('StatsBackfillWorker', () => {
     config.get.mockReturnValue(undefined);
     leagueSyncQueue.getJobs.mockResolvedValue([]);
     fixtureService.findEventsBackfillPending.mockResolvedValue([]);
+    squadsSync.syncDue.mockResolvedValue(NO_SQUAD_DUE);
     apiFootball.getQuotaUsage.mockResolvedValue({
       current: 1_000,
       limitDay: 7_500,
@@ -391,6 +404,56 @@ describe('StatsBackfillWorker', () => {
       const calls = fixtureService.findEventsBackfillPending.mock.calls;
       expect(calls[2]?.[0].excludeExternalIds).toEqual([]);
       expect(calls[3]?.[0].excludeExternalIds).toEqual([888]);
+    });
+
+    it('runs the squads lot before the events lot, in the same budget', async () => {
+      // 10 calls above the reserve: 3 for squads, 7 left for events.
+      apiFootball.getQuotaUsage.mockResolvedValue({
+        current: 4_990,
+        limitDay: 7_500,
+      });
+      fixtureService.findStatsBackfillCandidates.mockResolvedValue([]);
+      squadsSync.syncDue.mockResolvedValue({
+        status: 'lot-done',
+        teams: 3,
+        written: 3,
+        players: 90,
+        calls: 3,
+      });
+      fixtureService.findEventsBackfillPending.mockResolvedValue(
+        pendingFixtures(20),
+      );
+      statsSync.syncFixtures.mockResolvedValue(
+        batch({ calls: 1, details: details({ written: 20, synced: 20 }) }),
+      );
+
+      const result = await makeWorker().process(JOB);
+
+      expect(squadsSync.syncDue).toHaveBeenCalledWith(10);
+      expect(
+        fixtureService.findEventsBackfillPending.mock.calls[0]?.[0],
+      ).toMatchObject({ limit: 140 });
+      expect(result).toMatchObject({
+        status: 'nothing-left',
+        squads: { status: 'lot-done', written: 3 },
+        events: { status: 'lot-done', written: 20 },
+      });
+    });
+
+    it('spends nothing more after a quota stop in the squads lot', async () => {
+      fixtureService.findStatsBackfillCandidates.mockResolvedValue([]);
+      squadsSync.syncDue.mockResolvedValue({
+        status: 'lot-aborted',
+        teams: 5,
+        written: 1,
+        players: 30,
+        calls: 2,
+      });
+
+      const result = await makeWorker().process(JOB);
+
+      expect(result).toMatchObject({ squads: { status: 'lot-aborted' } });
+      expect(fixtureService.findEventsBackfillPending).not.toHaveBeenCalled();
     });
 
     it('stays idle when nothing is missing', async () => {

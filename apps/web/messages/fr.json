@@ -1172,6 +1172,7 @@
       "onDemandLast": "à la demande · dernier ✓ {date}",
       "backfillSeasons": "{done} / {total} saisons",
       "backfillEvents": "événements {done} / {total}",
+      "backfillSquads": "effectifs {done} / {total}",
       "backfillQuota": "quota du jour {used} / {limit}",
       "archiveLine": "dernier mois {month} · base {table} · archive {archive}",
       "archiveNone": "aucun mois archivé · base {table}",
