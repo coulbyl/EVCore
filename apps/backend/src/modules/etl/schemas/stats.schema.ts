@@ -10,7 +10,7 @@ const StatisticEntrySchema = z.object({
   value: z.union([z.number(), z.string(), z.null()]),
 });
 
-const TeamStatisticsSchema = z.object({
+export const TeamStatisticsSchema = z.object({
   team: z.object({
     id: z.number().int().positive(),
     name: z.string(),

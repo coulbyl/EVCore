@@ -1,5 +1,5 @@
 import type { ConfigService } from '@nestjs/config';
-import { STATS_BACKFILL } from '@config/etl.constants';
+import { ETL_CONSTANTS, STATS_BACKFILL } from '@config/etl.constants';
 import type { StatsBackfillCandidateRow } from '../fixture/fixture.repository';
 import type { ApiFootballQuotaUsage } from './api-football.client';
 
@@ -112,5 +112,18 @@ export function statsBackfillLotSize(
     attempted < STATS_BACKFILL.PROBE_LOT_SIZE
       ? STATS_BACKFILL.PROBE_LOT_SIZE - attempted
       : STATS_BACKFILL.MAX_FIXTURES_PER_LOT;
-  return Math.max(0, Math.min(cap, budget));
+  return Math.max(0, Math.min(cap, fixturesWithinBudget(budget)));
+}
+
+// Fixtures the budget (in calls) pays for: one /fixtures?ids= call serves
+// FIXTURES_BY_IDS_BATCH_SIZE of them.
+export function fixturesWithinBudget(budget: number): number {
+  return Math.max(0, budget) * ETL_CONSTANTS.FIXTURES_BY_IDS_BATCH_SIZE;
+}
+
+// Calls a lot of `fixtures` spends.
+export function callsForFixtures(fixtures: number): number {
+  return Math.ceil(
+    Math.max(0, fixtures) / ETL_CONSTANTS.FIXTURES_BY_IDS_BATCH_SIZE,
+  );
 }

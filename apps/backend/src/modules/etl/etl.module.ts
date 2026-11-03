@@ -14,6 +14,7 @@ import { CouponModule } from '../coupon/coupon.module';
 import { AdjustmentModule } from '../adjustment/adjustment.module';
 import { AuthModule } from '../auth/auth.module';
 import { FixtureStatisticsModule } from '../fixture-statistics/fixture-statistics.module';
+import { FixtureEventsModule } from '../fixture-events/fixture-events.module';
 
 /**
  * The ETL as the API sees it: the queues it puts jobs on, the services the
@@ -46,6 +47,7 @@ import { FixtureStatisticsModule } from '../fixture-statistics/fixture-statistic
     BettingEngineModule,
     FixtureModule,
     FixtureStatisticsModule,
+    FixtureEventsModule,
     NotificationModule,
     RollingStatsModule,
   ],

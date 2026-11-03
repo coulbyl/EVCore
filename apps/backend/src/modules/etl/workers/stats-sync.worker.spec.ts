@@ -8,6 +8,7 @@ import type { PrismaService } from '@/prisma.service';
 import type { Job } from 'bullmq';
 import type { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 import type { FixtureStatisticsService } from '../../fixture-statistics/fixture-statistics.service';
+import type { FixtureEventsService } from '../../fixture-events/fixture-events.service';
 import { XgSource } from '@evcore/db';
 import { execFile } from 'node:child_process';
 
@@ -15,30 +16,81 @@ vi.mock('node:child_process', () => ({
   execFile: vi.fn(),
 }));
 
-// Minimal valid statistics response for two teams
-function buildStatisticsResponse(homeXg: string | null, awayXg: string | null) {
+vi.mock('@utils/async.utils', () => ({
+  sleep: vi.fn().mockResolvedValue(undefined),
+}));
+
+type TeamStats = { team: { id: number; name: string }; statistics: unknown[] };
+
+// One /fixtures?ids= entry: teams 33 (home) / 40 (away) unless told otherwise.
+function entry(
+  externalId: number,
+  opts: {
+    statistics?: TeamStats[];
+    homeId?: number;
+    awayId?: number;
+    details?: Record<string, unknown>;
+  } = {},
+) {
+  const homeId = opts.homeId ?? 33;
+  const awayId = opts.awayId ?? 40;
   return {
-    get: 'fixtures/statistics',
-    parameters: { fixture: '12345' },
-    results: 2,
-    response: [
+    fixture: { id: externalId },
+    teams: { home: { id: homeId }, away: { id: awayId } },
+    statistics: opts.statistics ?? teamStats('0.76', '1.23'),
+    events: [
       {
-        team: { id: 33, name: 'Manchester United' },
-        statistics: [
-          { type: 'Shots on Goal', value: 5 },
-          { type: 'expected_goals', value: homeXg },
-        ],
-      },
-      {
-        team: { id: 40, name: 'Liverpool' },
-        statistics: [
-          { type: 'Shots on Goal', value: 3 },
-          { type: 'expected_goals', value: awayXg },
-        ],
+        time: { elapsed: 12, extra: null },
+        team: { id: homeId, name: 'Home' },
+        player: { id: 7, name: 'Scorer' },
+        assist: { id: null, name: null },
+        type: 'Goal',
+        detail: 'Normal Goal',
+        comments: null,
       },
     ],
+    lineups: [],
+    players: [],
+    ...opts.details,
   };
 }
+
+function teamStats(homeXg: string | null, awayXg: string | null): TeamStats[] {
+  return [
+    {
+      team: { id: 33, name: 'Manchester United' },
+      statistics: [
+        { type: 'Shots on Goal', value: 5 },
+        { type: 'expected_goals', value: homeXg },
+      ],
+    },
+    {
+      team: { id: 40, name: 'Liverpool' },
+      statistics: [
+        { type: 'Shots on Goal', value: 3 },
+        { type: 'expected_goals', value: awayXg },
+      ],
+    },
+  ];
+}
+
+function fixturesAnswer(entries: unknown[]) {
+  return {
+    get: 'fixtures',
+    parameters: { ids: '' },
+    errors: [],
+    results: entries.length,
+    response: entries,
+  };
+}
+
+const LEAGUES_EMPTY = {
+  get: 'leagues',
+  parameters: {},
+  errors: [],
+  results: 0,
+  response: [],
+};
 
 const PL_COMPETITION_ROW = {
   id: 'comp-pl',
@@ -87,21 +139,17 @@ describe('StatsSyncWorker', () => {
   } satisfies Partial<NotificationService>;
 
   const rollingStatsService = {
-    backfillSeason: vi.fn().mockResolvedValue({
-      seasonId: 'season-id',
-      fixtureCount: 1,
-      upsertCount: 2,
-      teamStatsWritten: 2,
-      createdCount: 2,
-      updatedCount: 0,
-      durationMs: 1,
-    }),
+    backfillSeason: vi.fn(),
   } satisfies Partial<RollingStatsService>;
 
   const fixtureStatistics = {
-    persistFinalStatistics: vi.fn().mockResolvedValue(4),
-    markUnavailable: vi.fn().mockResolvedValue(undefined),
+    persistFinalStatistics: vi.fn(),
+    markUnavailable: vi.fn(),
   } satisfies Partial<FixtureStatisticsService>;
+
+  const fixtureEvents = {
+    persistDetails: vi.fn(),
+  } satisfies Partial<FixtureEventsService>;
 
   const prisma = {
     client: {
@@ -120,7 +168,45 @@ describe('StatsSyncWorker', () => {
     prisma as unknown as PrismaService,
     rollingStatsService as unknown as RollingStatsService,
     fixtureStatistics as unknown as FixtureStatisticsService,
+    fixtureEvents as unknown as FixtureEventsService,
   );
+
+  const JOB = {
+    data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
+  } as Job<{ season: number; competitionCode: string; leagueId: number }>;
+
+  // Answers /leagues with an empty list and every /fixtures?ids= call with
+  // `answer(ids)`; records the ids asked.
+  function serve(
+    answer: (ids: number[]) => { body: unknown; status?: number },
+  ): number[][] {
+    const asked: number[][] = [];
+    execFileMock.mockImplementation((...args) => {
+      const curlArgs = args[1] as string[];
+      const url = curlArgs[curlArgs.length - 1] ?? '';
+      const callback = args[args.length - 1] as (
+        error: Error | null,
+        stdout: string,
+      ) => void;
+      const match = /fixtures\?ids=([\d-]+)/.exec(url);
+      if (!match?.[1]) {
+        callback(
+          null,
+          `${JSON.stringify(LEAGUES_EMPTY)}\n__EVCORE_HTTP_CODE__:200`,
+        );
+        return {} as never;
+      }
+      const ids = match[1].split('-').map(Number);
+      asked.push(ids);
+      const { body, status = 200 } = answer(ids);
+      callback(
+        null,
+        `${typeof body === 'string' ? body : JSON.stringify(body)}\n__EVCORE_HTTP_CODE__:${status}`,
+      );
+      return {} as never;
+    });
+    return asked;
+  }
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -132,6 +218,13 @@ describe('StatsSyncWorker', () => {
     fixtureService.markXgUnavailable.mockResolvedValue(undefined);
     fixtureStatistics.persistFinalStatistics.mockResolvedValue(4);
     fixtureStatistics.markUnavailable.mockResolvedValue(undefined);
+    fixtureEvents.persistDetails.mockResolvedValue({
+      status: 'written',
+      events: 1,
+      lineups: 0,
+      playerStatistics: 0,
+      synced: false,
+    });
     rollingStatsService.backfillSeason.mockResolvedValue({
       seasonId: 'season-id',
       fixtureCount: 1,
@@ -147,52 +240,30 @@ describe('StatsSyncWorker', () => {
     execFileMock.mockReset();
   });
 
-  it('skips fixtures when API returns non-ok status', async () => {
+  it('aborts on a 429 without marking anything', async () => {
     fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
       fixtureWithoutStatistics(12345),
     ]);
+    serve(() => ({ body: { errors: { rate: 'limited' } }, status: 429 }));
 
-    execFileMock.mockImplementation((...args) => {
-      const callback = args[args.length - 1] as (
-        error: Error | null,
-        stdout: string,
-      ) => void;
-      callback(null, '{"errors":{"rate":"limited"}}\n__EVCORE_HTTP_CODE__:429');
-      return {} as never;
-    });
-
-    await worker.process({
-      data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
-    } as Job<{ season: number; competitionCode: string; leagueId: number }>);
+    await worker.process(JOB);
 
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
+    expect(fixtureService.markXgUnavailable).not.toHaveBeenCalled();
+    expect(fixtureEvents.persistDetails).not.toHaveBeenCalled();
     expect(rollingStatsService.backfillSeason).not.toHaveBeenCalled();
-  }, 15_000);
+  });
 
   it('aborts on an exhausted daily quota without marking fixtures unavailable', async () => {
-    fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
-      fixtureWithoutStatistics(55501),
-      fixtureWithoutStatistics(55502),
-    ]);
-
-    // API-Football signals quota exhaustion with a 200 and an errors object.
-    execFileMock.mockImplementation((...args) => {
-      const callback = args[args.length - 1] as (
-        error: Error | null,
-        stdout: string,
-      ) => void;
-      callback(
-        null,
-        `${JSON.stringify({
-          get: 'fixtures/statistics',
-          parameters: { fixture: '55501' },
-          errors: { requests: 'You have reached the request limit' },
-          results: 0,
-          response: [],
-        })}\n__EVCORE_HTTP_CODE__:200`,
-      );
-      return {} as never;
-    });
+    const asked = serve(() => ({
+      body: {
+        get: 'fixtures',
+        parameters: { ids: '55501-55502' },
+        errors: { requests: 'You have reached the request limit' },
+        results: 0,
+        response: [],
+      },
+    }));
 
     const result = await worker.syncFixtures([
       fixtureWithoutStatistics(55501),
@@ -203,34 +274,53 @@ describe('StatsSyncWorker', () => {
       abortReason: 'quota',
       updated: 0,
       statisticsUnavailable: 0,
+      calls: 1,
     });
-    expect(execFileMock).toHaveBeenCalledTimes(1);
+    expect(asked).toEqual([[55501, 55502]]);
     expect(fixtureService.markXgUnavailable).not.toHaveBeenCalled();
     expect(fixtureStatistics.markUnavailable).not.toHaveBeenCalled();
   });
 
-  it('extracts expected_goals from API response and calls updateXg', async () => {
+  it('asks 20 fixtures per call and keeps what came before a quota stop', async () => {
+    const fixtures = Array.from({ length: 45 }, (_, i) =>
+      fixtureWithoutStatistics(1000 + i),
+    );
+    let call = 0;
+    const asked = serve((ids) => {
+      call++;
+      if (call === 3) {
+        return {
+          body: {
+            get: 'fixtures',
+            errors: { requests: 'limit' },
+            response: [],
+          },
+        };
+      }
+      return { body: fixturesAnswer(ids.map((id) => entry(id))) };
+    });
+
+    const result = await worker.syncFixtures(fixtures);
+
+    expect(asked.map((ids) => ids.length)).toEqual([20, 20, 5]);
+    expect(asked[1]?.[0]).toBe(1020);
+    expect(result).toMatchObject({
+      abortReason: 'quota',
+      updated: 40,
+      calls: 3,
+      details: { written: 40 },
+    });
+    expect(fixtureService.markXgUnavailable).not.toHaveBeenCalled();
+  });
+
+  it('writes statistics, xG and events of every fixture of the answer', async () => {
     fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
       fixtureWithoutStatistics(99999),
     ]);
+    serve((ids) => ({ body: fixturesAnswer(ids.map((id) => entry(id))) }));
 
-    execFileMock.mockImplementation((...args) => {
-      const callback = args[args.length - 1] as (
-        error: Error | null,
-        stdout: string,
-      ) => void;
-      callback(
-        null,
-        `${JSON.stringify(buildStatisticsResponse('0.76', '1.23'))}\n__EVCORE_HTTP_CODE__:200`,
-      );
-      return {} as never;
-    });
+    await worker.process(JOB);
 
-    await worker.process({
-      data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
-    } as Job<{ season: number; competitionCode: string; leagueId: number }>);
-
-    expect(fixtureService.updateXg).toHaveBeenCalledOnce();
     expect(fixtureService.updateXg).toHaveBeenCalledWith({
       externalId: 99999,
       homeXg: 0.76,
@@ -238,7 +328,23 @@ describe('StatsSyncWorker', () => {
       homeXgSource: XgSource.API_FOOTBALL,
       awayXgSource: XgSource.API_FOOTBALL,
     });
-    expect(fixtureStatistics.persistFinalStatistics).toHaveBeenCalledOnce();
+    expect(fixtureStatistics.persistFinalStatistics).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fixtureExternalId: 99999,
+        teams: [
+          expect.objectContaining({ externalTeamId: 33 }),
+          expect.objectContaining({ externalTeamId: 40 }),
+        ],
+      }),
+    );
+    expect(fixtureEvents.persistDetails).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fixtureExternalId: 99999,
+        details: expect.objectContaining({
+          events: [expect.objectContaining({ detail: 'Normal Goal' })],
+        }),
+      }),
+    );
     expect(rollingStatsService.backfillSeason).toHaveBeenCalledWith(
       'season-id',
     );
@@ -248,21 +354,15 @@ describe('StatsSyncWorker', () => {
     fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
       fixtureWithoutStatistics(99998),
     ]);
-    const response = buildStatisticsResponse('0.76', '1.23');
-    response.response.reverse();
+    serve((ids) => ({
+      body: fixturesAnswer(
+        ids.map((id) =>
+          entry(id, { statistics: teamStats('0.76', '1.23').reverse() }),
+        ),
+      ),
+    }));
 
-    execFileMock.mockImplementation((...args) => {
-      const callback = args[args.length - 1] as (
-        error: Error | null,
-        stdout: string,
-      ) => void;
-      callback(null, `${JSON.stringify(response)}\n__EVCORE_HTTP_CODE__:200`);
-      return {} as never;
-    });
-
-    await worker.process({
-      data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
-    } as Job<{ season: number; competitionCode: string; leagueId: number }>);
+    await worker.process(JOB);
 
     expect(fixtureService.updateXg).toHaveBeenCalledWith(
       expect.objectContaining({ homeXg: 0.76, awayXg: 1.23 }),
@@ -273,22 +373,13 @@ describe('StatsSyncWorker', () => {
     fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
       fixtureWithoutStatistics(11111),
     ]);
+    serve((ids) => ({
+      body: fixturesAnswer(
+        ids.map((id) => entry(id, { statistics: teamStats(null, null) })),
+      ),
+    }));
 
-    execFileMock.mockImplementation((...args) => {
-      const callback = args[args.length - 1] as (
-        error: Error | null,
-        stdout: string,
-      ) => void;
-      callback(
-        null,
-        `${JSON.stringify(buildStatisticsResponse(null, null))}\n__EVCORE_HTTP_CODE__:200`,
-      );
-      return {} as never;
-    });
-
-    await worker.process({
-      data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
-    } as Job<{ season: number; competitionCode: string; leagueId: number }>);
+    await worker.process(JOB);
 
     // Proxy: shots_on_goal × 0.40 — home: 5×0.40=2.00, away: 3×0.40=1.20
     expect(fixtureService.updateXg).toHaveBeenCalledWith({
@@ -299,48 +390,35 @@ describe('StatsSyncWorker', () => {
       awayXgSource: XgSource.SHOTS_PROXY,
     });
     expect(fixtureService.markXgUnavailable).not.toHaveBeenCalled();
-    expect(rollingStatsService.backfillSeason).toHaveBeenCalledWith(
-      'season-id',
-    );
   });
 
   it('falls back to shots proxy when expected_goals field is absent', async () => {
     fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
       fixtureWithoutStatistics(44444, 52, 42),
     ]);
-
     // Response without expected_goals field (2022-23 first half pattern)
-    const responseWithoutXg = {
-      get: 'fixtures/statistics',
-      parameters: { fixture: '44444' },
-      results: 2,
-      response: [
-        {
-          team: { id: 52, name: 'Crystal Palace' },
-          statistics: [{ type: 'Shots on Goal', value: 2 }],
-        },
-        {
-          team: { id: 42, name: 'Arsenal' },
-          statistics: [{ type: 'Shots on Goal', value: 5 }],
-        },
-      ],
-    };
+    serve((ids) => ({
+      body: fixturesAnswer(
+        ids.map((id) =>
+          entry(id, {
+            homeId: 52,
+            awayId: 42,
+            statistics: [
+              {
+                team: { id: 52, name: 'Crystal Palace' },
+                statistics: [{ type: 'Shots on Goal', value: 2 }],
+              },
+              {
+                team: { id: 42, name: 'Arsenal' },
+                statistics: [{ type: 'Shots on Goal', value: 5 }],
+              },
+            ],
+          }),
+        ),
+      ),
+    }));
 
-    execFileMock.mockImplementation((...args) => {
-      const callback = args[args.length - 1] as (
-        error: Error | null,
-        stdout: string,
-      ) => void;
-      callback(
-        null,
-        `${JSON.stringify(responseWithoutXg)}\n__EVCORE_HTTP_CODE__:200`,
-      );
-      return {} as never;
-    });
-
-    await worker.process({
-      data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
-    } as Job<{ season: number; competitionCode: string; leagueId: number }>);
+    await worker.process(JOB);
 
     // Proxy: shots_on_goal × 0.40 — home: 2×0.40=0.80, away: 5×0.40=2.00
     expect(fixtureService.updateXg).toHaveBeenCalledWith({
@@ -350,34 +428,16 @@ describe('StatsSyncWorker', () => {
       homeXgSource: XgSource.SHOTS_PROXY,
       awayXgSource: XgSource.SHOTS_PROXY,
     });
-    expect(rollingStatsService.backfillSeason).toHaveBeenCalledWith(
-      'season-id',
-    );
   });
 
-  it('skips all fixtures when findFinishedWithoutXg returns empty list', async () => {
+  it('calls only /leagues when no fixture is pending', async () => {
     fixtureService.findFinishedWithoutStatistics.mockResolvedValue([]);
-    // The worker still calls /leagues once to resolve the Season's date
-    // range (fetchLeagueSeasonDates) before checking for xg-missing
-    // fixtures — answer it with a harmless empty leagues response.
-    execFileMock.mockImplementation((...args) => {
-      const callback = args[args.length - 1] as (
-        error: Error | null,
-        stdout: string,
-      ) => void;
-      callback(
-        null,
-        `${JSON.stringify({ get: 'leagues', parameters: {}, errors: [], results: 0, response: [] })}\n__EVCORE_HTTP_CODE__:200`,
-      );
-      return {} as never;
-    });
+    const asked = serve(() => ({ body: fixturesAnswer([]) }));
 
-    await worker.process({
-      data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
-    } as Job<{ season: number; competitionCode: string; leagueId: number }>);
+    await worker.process(JOB);
 
     expect(execFileMock).toHaveBeenCalledTimes(1);
-    expect(fixtureService.updateXg).not.toHaveBeenCalled();
+    expect(asked).toEqual([]);
     expect(rollingStatsService.backfillSeason).not.toHaveBeenCalled();
   });
 
@@ -387,90 +447,141 @@ describe('StatsSyncWorker', () => {
       isActive: false,
     });
 
-    await worker.process({
-      data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
-    } as Job<{ season: number; competitionCode: string; leagueId: number }>);
+    await worker.process(JOB);
 
     expect(fixtureService.upsertCompetition).not.toHaveBeenCalled();
     expect(fixtureService.findFinishedWithoutStatistics).not.toHaveBeenCalled();
     expect(execFileMock).not.toHaveBeenCalled();
-    expect(rollingStatsService.backfillSeason).not.toHaveBeenCalled();
   });
 
-  it('marks xgUnavailable when statistics response has < 2 teams', async () => {
+  it('marks statistics unavailable with fewer than 2 teams, still writes the events', async () => {
     fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
       fixtureWithoutStatistics(33333),
     ]);
+    serve((ids) => ({
+      body: fixturesAnswer(
+        ids.map((id) =>
+          entry(id, {
+            statistics: [
+              {
+                team: { id: 33, name: 'Manchester United' },
+                statistics: [{ type: 'Shots on Goal', value: 5 }],
+              },
+            ],
+          }),
+        ),
+      ),
+    }));
 
-    const singleTeamResponse = {
-      get: 'fixtures/statistics',
-      parameters: { fixture: '33333' },
-      results: 1,
-      response: [
-        {
-          team: { id: 33, name: 'Manchester United' },
-          statistics: [{ type: 'Shots on Goal', value: 5 }],
-        },
-      ],
-    };
-
-    execFileMock.mockImplementation((...args) => {
-      const callback = args[args.length - 1] as (
-        error: Error | null,
-        stdout: string,
-      ) => void;
-      callback(
-        null,
-        `${JSON.stringify(singleTeamResponse)}\n__EVCORE_HTTP_CODE__:200`,
-      );
-      return {} as never;
-    });
-
-    await worker.process({
-      data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
-    } as Job<{ season: number; competitionCode: string; leagueId: number }>);
+    await worker.process(JOB);
 
     expect(fixtureService.markXgUnavailable).toHaveBeenCalledWith(33333);
     expect(fixtureStatistics.markUnavailable).toHaveBeenCalledWith(33333);
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
+    expect(fixtureEvents.persistDetails).toHaveBeenCalledOnce();
     expect(rollingStatsService.backfillSeason).not.toHaveBeenCalled();
   });
 
-  it('skips fixture when statistics response has < 2 teams', async () => {
-    fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
-      fixtureWithoutStatistics(22222),
+  it('marks statistics unavailable when their teams are not the fixture', async () => {
+    serve((ids) => ({
+      body: fixturesAnswer(ids.map((id) => entry(id))),
+    }));
+
+    const result = await worker.syncFixtures([
+      fixtureWithoutStatistics(22222, 33, 99),
     ]);
 
-    const singleTeamResponse = {
-      get: 'fixtures/statistics',
-      parameters: { fixture: '22222' },
-      results: 1,
-      response: [
-        {
-          team: { id: 33, name: 'Manchester United' },
-          statistics: [{ type: 'Shots on Goal', value: 5 }],
-        },
-      ],
-    };
+    expect(result.statisticsUnavailable).toBe(1);
+    expect(fixtureStatistics.markUnavailable).toHaveBeenCalledWith(22222);
+  });
 
+  it('leaves a fixture missing from the answer pending, never unavailable', async () => {
+    serve((ids) => ({ body: fixturesAnswer([entry(ids[0] ?? 0)]) }));
+
+    const result = await worker.syncFixtures([
+      fixtureWithoutStatistics(70001),
+      fixtureWithoutStatistics(70002),
+    ]);
+
+    expect(result).toMatchObject({
+      updated: 1,
+      skipped: 1,
+      failedExternalIds: [70002],
+      details: { written: 1, failedExternalIds: [70002] },
+    });
+    expect(fixtureService.markXgUnavailable).not.toHaveBeenCalled();
+    expect(fixtureStatistics.markUnavailable).not.toHaveBeenCalled();
+  });
+
+  it('rejects a malformed answer as a whole: nothing written, nothing marked', async () => {
+    serve(() => ({ body: { get: 'fixtures', response: 'oops' } }));
+
+    const result = await worker.syncFixtures([
+      fixtureWithoutStatistics(80001),
+      fixtureWithoutStatistics(80002),
+    ]);
+
+    expect(result).toMatchObject({
+      updated: 0,
+      skipped: 2,
+      failedExternalIds: [80001, 80002],
+    });
+    expect(fixtureStatistics.persistFinalStatistics).not.toHaveBeenCalled();
+    expect(fixtureStatistics.markUnavailable).not.toHaveBeenCalled();
+    expect(fixtureEvents.persistDetails).not.toHaveBeenCalled();
+  });
+
+  it('keeps the team statistics when the events block of a match is malformed', async () => {
+    serve((ids) => ({
+      body: fixturesAnswer([
+        entry(ids[0] ?? 0, { details: { lineups: 'oops' } }),
+        entry(ids[1] ?? 0),
+      ]),
+    }));
+
+    const result = await worker.syncFixtures([
+      fixtureWithoutStatistics(81001),
+      fixtureWithoutStatistics(81002),
+    ]);
+
+    expect(result.updated).toBe(2);
+    expect(result.details).toMatchObject({
+      written: 1,
+      rejected: 1,
+      failedExternalIds: [81001],
+    });
+    expect(fixtureEvents.persistDetails).toHaveBeenCalledOnce();
+    expect(fixtureStatistics.markUnavailable).not.toHaveBeenCalled();
+  });
+
+  it('leaves statistics alone in details-only mode', async () => {
+    serve((ids) => ({ body: fixturesAnswer(ids.map((id) => entry(id))) }));
+
+    const result = await worker.syncFixtures(
+      [fixtureWithoutStatistics(90001)],
+      'details-only',
+    );
+
+    expect(result).toMatchObject({ updated: 0, details: { written: 1 } });
+    expect(fixtureService.updateXg).not.toHaveBeenCalled();
+    expect(fixtureStatistics.persistFinalStatistics).not.toHaveBeenCalled();
+    expect(fixtureStatistics.markUnavailable).not.toHaveBeenCalled();
+  });
+
+  it('skips a batch on a network error, leaving it pending', async () => {
     execFileMock.mockImplementation((...args) => {
-      const callback = args[args.length - 1] as (
-        error: Error | null,
-        stdout: string,
-      ) => void;
-      callback(
-        null,
-        `${JSON.stringify(singleTeamResponse)}\n__EVCORE_HTTP_CODE__:200`,
-      );
+      const callback = args[args.length - 1] as (error: Error | null) => void;
+      callback(Object.assign(new Error('Operation timed out'), { code: 28 }));
       return {} as never;
     });
 
-    await worker.process({
-      data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
-    } as Job<{ season: number; competitionCode: string; leagueId: number }>);
+    const result = await worker.syncFixtures([fixtureWithoutStatistics(91001)]);
 
-    expect(fixtureService.updateXg).not.toHaveBeenCalled();
-    expect(rollingStatsService.backfillSeason).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      skipped: 1,
+      failedExternalIds: [91001],
+      abortReason: null,
+    });
   });
 });
 

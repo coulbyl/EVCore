@@ -52,6 +52,8 @@ function batch(overrides: Partial<StatsSyncBatchResult>): StatsSyncBatchResult {
     statisticsUnavailable: 0,
     xgUnavailableIds: [],
     failedExternalIds: [],
+    details: { written: 0, synced: 0, rejected: 0, failedExternalIds: [] },
+    calls: 0,
     abortReason: null,
     ...overrides,
   };
@@ -162,8 +164,9 @@ describe('StatsBackfillWorker', () => {
   });
 
   it('runs one lot on the highest-priority season, capped by the budget', async () => {
+    // 2 calls left above the reserve: 40 fixtures at 20 per call.
     apiFootball.getQuotaUsage.mockResolvedValue({
-      current: 4_960,
+      current: 4_998,
       limitDay: 7_500,
     });
     fixtureService.findStatsBackfillCandidates.mockResolvedValue([

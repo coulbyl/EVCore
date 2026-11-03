@@ -4,6 +4,7 @@ import { BettingEngineModule } from '../betting-engine/betting-engine.module';
 import { CouponModule } from '../coupon/coupon.module';
 import { FixtureModule } from '../fixture/fixture.module';
 import { FixtureStatisticsModule } from '../fixture-statistics/fixture-statistics.module';
+import { FixtureEventsModule } from '../fixture-events/fixture-events.module';
 import { NotificationModule } from '../notification/notification.module';
 import { RiskModule } from '../risk/risk.module';
 import { RollingStatsModule } from '../rolling-stats/rolling-stats.module';
@@ -39,6 +40,7 @@ import { StatsBackfillWorker } from './workers/stats-backfill.worker';
     CouponModule,
     FixtureModule,
     FixtureStatisticsModule,
+    FixtureEventsModule,
     NotificationModule,
     // The daily market sweep of PendingBetsSettlementWorker.
     RiskModule,

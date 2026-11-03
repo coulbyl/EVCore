@@ -121,8 +121,9 @@ describe('statsBackfillLotSize', () => {
     );
   });
 
-  it('never exceeds the remaining budget', () => {
-    expect(statsBackfillLotSize({ synced: 50, unavailable: 0 }, 37)).toBe(37);
+  it('never exceeds what the remaining calls pay for (20 per call)', () => {
+    expect(statsBackfillLotSize({ synced: 50, unavailable: 0 }, 2)).toBe(40);
+    expect(statsBackfillLotSize({ synced: 50, unavailable: 0 }, 0)).toBe(0);
   });
 });
 
