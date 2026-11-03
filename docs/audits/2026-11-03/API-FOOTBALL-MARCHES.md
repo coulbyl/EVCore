@@ -91,22 +91,38 @@ Stats de match en base (`fixture_statistic`, collectées chaque nuit à 04:00 UT
 
 Non collectés, offerts par l'API : événements du match (buts et cartons à la minute, remplacements), compositions, blessures (`/injuries`), stats par joueur (`/fixtures/players`), stats par mi-temps (`half` de `/fixtures/statistics`).
 
-## 6. Ces données pour le moteur
+## 6. Ces données pour le moteur : mesuré, elles n'apportent rien au-delà de la cote
 
-L'idée est bonne, mais on la juge sur la bonne mesure. Le moteur est derrière le marché : Brier 0,639 contre 0,599, et un poids optimal du moteur de 0 % (CLAUDE.md). Les stats de match font déjà partie de ce que le marché sait : le prix de Pinnacle intègre les tirs et les xG de chaque équipe. Une stat n'aide le moteur que si elle explique **ce que la cote de clôture ne dit pas**, c'est-à-dire le résidu entre le réalisé et la probabilité du marché.
+Le moteur est derrière le marché : Brier 0,639 contre 0,599, poids optimal 0 % (CLAUDE.md). Une stat ne l'aide que si elle explique **ce que la cote de clôture ne dit pas**, c'est-à-dire le résidu entre le réalisé et la probabilité du marché. C'est ce qu'on a mesuré (`scripts/match-stats-residual.py`, copie du 03/11).
 
-Étude à faire sur la copie de prod, avant tout code moteur :
+**Méthode.**
 
-1. Pour chaque match fini avec une clôture Pinnacle, prendre la moyenne glissante d'avant-match de chaque équipe (5 et 10 derniers matchs) : tirs cadrés pour et contre, tirs dans la surface, corners, possession, xG, et leur écart à la moyenne du championnat.
-2. Mesurer si ces variables prédisent le résidu sur le 1X2, le plus/moins 2,5 et le BTTS, hors échantillon par période, comme le re-fit par championnat du 06/10. Si oui, elles deviennent des variables du modèle « grille de marché + ML » (ML v2, phase 3). Si non, on le saura en une étude.
-3. Mêmes variables pour les marchés de stats eux-mêmes (corners, tirs) : là, un modèle maison a plus de chances qu'en buts, parce que les books y mettent moins de soin. C'est l'hypothèse de ML-V2 pour les corners.
+- Sur chaque match fini avec une clôture Pinnacle à moins de 24 h, on prend la moyenne d'avant-match de chaque équipe sur ses 8 derniers matchs (puis 5) : buts, tirs cadrés, tirs, tirs dans la surface, corners, xG, possession et fautes, pour et contre.
+- Variables testées : l'écart entre les équipes pour le 1X2, la somme des deux pour le plus/moins.
+- Deux régressions logistiques : la probabilité du marché recalibrée, puis la même avec ces variables.
+- Apprentissage avant le 01/07/2025, test après : 7 000 à 11 700 matchs selon la variable.
 
-Le point de départ sera le facteur `XG_SHOTS_PROXY_FACTOR`, qui sert déjà de xG de repli à partir des tirs.
+**Résultat, en gain de log-loss hors échantillon** (‰, avec un intervalle à 95 % ; positif = les stats aident) :
+
+| Cible               |         Buts | Tirs, cadrés, surface, corners |           xG |         Tout |
+| ------------------- | -----------: | -----------------------------: | -----------: | -----------: |
+| Victoire à domicile | +0,00 ± 0,08 |                   −0,01 ± 0,40 | +0,05 ± 0,07 | −0,22 ± 0,90 |
+| Nul                 | +0,03 ± 0,13 |                   +0,01 ± 0,35 | −0,18 ± 0,28 | −0,23 ± 0,59 |
+| Plus de 2,5 buts    | −0,00 ± 0,00 |                   −2,11 ± 1,66 | −1,50 ± 1,53 | −2,09 ± 2,38 |
+
+Sur 5 matchs : les mêmes ordres de grandeur, aucun gain hors du bruit (meilleur : +0,45 ± 1,11 ‰ sur le plus/moins). Les BTTS ont trop peu de clôtures Pinnacle anciennes pour être mesurés.
+
+**Lecture.** La cote de clôture contient déjà tout ce que disent les tirs, les xG et les corners des dernières semaines : les ajouter ne bouge pas le log-loss d'un millième. Le Brier reste identique à la 4e décimale. Rendre le moteur meilleur sur ces données le rapprocherait du marché, sans jamais le dépasser. Ce n'est donc pas une piste pour battre la cote.
+
+**Là où les stats restent utiles :**
+
+- **régler** les marchés de stats (corners, tirs, cartons), ce qu'elles font déjà pour le Chasseur Corners ;
+- **les marchés de stats eux-mêmes**, que les books soignent moins : la même étude refaite sur les lignes de corners (prix Pinnacle et 1xBet contre `corner_kicks`) dira si un modèle maison voit quelque chose que la cote corners ne voit pas. C'est l'hypothèse ML v2 (phase 3), à mesurer de la même façon, sur le résidu.
 
 ## 7. Ordre proposé
 
 1. Renouveler l'abonnement avant le 05/11.
 2. Ingérer les corners par équipe (57/58), corners 1X2 (55), corners handicap (56) ; mesurer leur calibration sur deux semaines, puis les chasseurs correspondants.
-3. Étude du résidu (§ 6), avec la base locale relancée.
+3. Étude du résidu sur les marchés de corners (§ 6, dernière ligne) ; sur les buts, elle est faite : rien à gagner.
 4. Ingérer tirs et tirs cadrés Bet365 (87, 211), compter le volume ; produit seulement s'il suit.
 5. Plus tard, si un produit le demande : événements du match (buteurs, minutes), stats par mi-temps (corners mi-temps).
