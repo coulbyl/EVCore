@@ -884,10 +884,13 @@ model NationalTeamEloRating {
   @@schema("public")
 }
 
-// Odds snapshots — scaffolded for Phase 2 (prematch odds integration).
-// Not used in MVP.
+// Every price we captured. Partitioned by month of `snapshotAt` (hand-written
+// in migration 20261103120000): a partitioned table's keys must contain the
+// partition key, hence the composite primary key. Closed months are archived
+// to Parquet and compacted to the rows the app still reads
+// (docs/audits/2026-11-03/ODDS-ARCHIVE.md, OddsArchiveService).
 model OddsSnapshot {
-  id         String             @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  id         String             @default(dbgenerated("uuidv7()")) @db.Uuid
   fixtureId  String             @db.Uuid
   fixture    Fixture            @relation(fields: [fixtureId], references: [id])
   bookmaker  String
@@ -929,6 +932,7 @@ model OddsSnapshot {
   // duplicates back in. Prisma's own model below doesn't express the NULLS
   // NOT DISTINCT clause — do not let `prisma migrate dev` regenerate this
   // constraint as a plain UNIQUE, it would reopen the ONE_X_TWO race.
+  @@id([id, snapshotAt])
   @@unique([fixtureId, bookmaker, market, pick, line, snapshotAt])
   @@index([fixtureId, snapshotAt])
   @@index([snapshotAt])
@@ -1575,5 +1579,26 @@ model AdminAction {
   @@index([createdAt])
   @@index([actorId])
   @@map("admin_action")
+  @@schema("public")
+}
+
+/// One line per archived month of `odds_snapshot` (OddsArchiveService): the
+/// month's every row went to Parquet, verified, then the partition was
+/// compacted to the rows the app still reads. A month noted here is never
+/// archived again.
+model OddsArchiveMonth {
+  /// First day of the month (UTC).
+  month        DateTime @id @db.Date
+  /// Key of the Parquet file in the archive bucket.
+  objectKey    String
+  parquetBytes BigInt
+  /// Rows of the month at export, and the ones kept in the base.
+  rowsTotal    Int
+  rowsKept     Int
+  /// Sum of `odds` over the month, read back from the file: the checksum.
+  oddsSum      Decimal  @db.Decimal(20, 3)
+  archivedAt   DateTime @default(now())
+
+  @@map("odds_archive_month")
   @@schema("public")
 }
