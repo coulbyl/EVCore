@@ -15,6 +15,10 @@ import type {
   ReadingCandidateRow,
   SheetHeaderRow,
 } from './matches.repository';
+import type {
+  FixtureEventRepository,
+  SheetEventRow,
+} from '@modules/fixture-events/fixture-event.repository';
 import {
   MatchSheetService,
   speechOf,
@@ -116,6 +120,7 @@ function harness(input: {
   history?: TeamMatchRow[];
   quotes?: [string, PlayableQuote][];
   reasons?: string[];
+  events?: SheetEventRow[];
 }) {
   const repository = {
     findSheetHeader: vi
@@ -135,8 +140,17 @@ function harness(input: {
   const history = {
     findTeamHistories: vi.fn().mockResolvedValue(input.history ?? homeWins(6)),
   } as unknown as LegFactRepository;
+  const fixtureEvents = {
+    findSheetEvents: vi.fn().mockResolvedValue(input.events ?? []),
+  } as unknown as FixtureEventRepository;
   return {
-    service: new MatchSheetService(repository, playableOdds, history),
+    service: new MatchSheetService(
+      repository,
+      playableOdds,
+      history,
+      fixtureEvents,
+    ),
+    fixtureEvents,
     repository,
     playableOdds,
     history,
@@ -450,5 +464,86 @@ describe('speechOf', () => {
   it('says nothing for an empty text', () => {
     expect(speechOf(null)).toBeNull();
     expect(speechOf('   ')).toBeNull();
+  });
+});
+
+describe('MatchSheetService — scorers and red cards', () => {
+  const event = (overrides: Partial<SheetEventRow>): SheetEventRow => ({
+    ordinal: 0,
+    teamId: 'ars',
+    minute: 12,
+    extraMinute: null,
+    type: 'GOAL',
+    detail: 'Normal Goal',
+    playerName: 'Konsa',
+    ...overrides,
+  });
+  const finished = header({
+    scheduledAt: new Date('2026-10-29T19:00:00.000Z'),
+    status: 'FINISHED',
+    homeScore: 2,
+    awayScore: 0,
+  });
+
+  it('lists the goals and red cards of a finished match', async () => {
+    const { service } = harness({
+      header: finished,
+      events: [
+        event({
+          ordinal: 2,
+          minute: 45,
+          extraMinute: 1,
+          detail: 'Penalty',
+          playerName: 'Gyökeres',
+        }),
+        event({ ordinal: 0 }),
+        event({
+          ordinal: 1,
+          teamId: 'che',
+          type: 'CARD',
+          detail: 'Red Card',
+          minute: 30,
+          playerName: 'Caicedo',
+        }),
+      ],
+    });
+
+    const sheet = await service.getSheet(FX, NOW);
+
+    expect(sheet.scorers).toEqual([
+      {
+        minute: 12,
+        extraMinute: null,
+        player: 'Konsa',
+        team: 'home',
+        kind: 'goal',
+      },
+      {
+        minute: 45,
+        extraMinute: 1,
+        player: 'Gyökeres',
+        team: 'home',
+        kind: 'penalty',
+      },
+    ]);
+    expect(sheet.redCards).toEqual([
+      { minute: 30, extraMinute: null, player: 'Caicedo', team: 'away' },
+    ]);
+  });
+
+  it('reads no event for a match still to come', async () => {
+    const { service, fixtureEvents } = harness({});
+
+    const sheet = await service.getSheet(FX, NOW);
+
+    expect(fixtureEvents.findSheetEvents).not.toHaveBeenCalled();
+    expect(sheet.scorers).toBeNull();
+    expect(sheet.redCards).toBeNull();
+  });
+
+  it('shows nothing when the events are not in yet', async () => {
+    const { service } = harness({ header: finished, events: [] });
+    const sheet = await service.getSheet(FX, NOW);
+    expect(sheet.scorers).toBeNull();
   });
 });

@@ -5,6 +5,7 @@ import { VerifiedTicketModule } from '@modules/verified-ticket/verified-ticket.m
 import { PlayableOddsRepository } from '@modules/betting-engine/pricing/playable-odds.repository';
 import { LegFactRepository } from '@modules/coupon/leg-fact/leg-fact.repository';
 import { MatchSheetService } from './match-sheet.service';
+import { FixtureEventsModule } from '@modules/fixture-events/fixture-events.module';
 import { ResultsController } from './results.controller';
 import { ResultsRepository } from './results.repository';
 import { ResultsService } from './results.service';
@@ -29,7 +30,12 @@ import { SupportRepository } from '@modules/support/support.repository';
  * knows a screen's shape. Composes from repositories, returns a flat DTO.
  */
 @Module({
-  imports: [AuthModule, CouponModule, VerifiedTicketModule],
+  imports: [
+    AuthModule,
+    CouponModule,
+    VerifiedTicketModule,
+    FixtureEventsModule,
+  ],
   controllers: [
     TodayController,
     MatchesController,

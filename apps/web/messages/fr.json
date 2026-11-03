@@ -354,6 +354,13 @@
       "inProgress": "En cours",
       "postponed": "Reporté",
       "halfTime": "mi-temps {home}-{away}",
+      "events": {
+        "scorers": "Buts",
+        "redCards": "Cartons rouges",
+        "redCard": "carton rouge",
+        "penalty": "(p.)",
+        "ownGoal": "(c.s.c.)"
+      },
       "result": {
         "won": "gagné",
         "lost": "perdu",

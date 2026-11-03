@@ -354,6 +354,13 @@
       "inProgress": "In progress",
       "postponed": "Postponed",
       "halfTime": "half-time {home}-{away}",
+      "events": {
+        "scorers": "Goals",
+        "redCards": "Red cards",
+        "redCard": "red card",
+        "penalty": "(pen.)",
+        "ownGoal": "(o.g.)"
+      },
       "result": {
         "won": "won",
         "lost": "lost",
