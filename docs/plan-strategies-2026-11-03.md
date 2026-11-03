@@ -247,5 +247,24 @@ Chaque sous-phase commence par `report:new-markets` sur la fenêtre, et ne livre
 
 - [x] 5.1 `docs(audit): TEAM_TOTAL shrinkage refit on 1.45–1.80` (+ config si validé) _Fait : rien d'expédié (`docs/audits/2026-11-03/TEAM-TOTAL-SHRINKAGE.md`). Rejeu de la chaîne de production sur 5 900 matchs (01/06 → 03/11), retrait vers le taux de base appliqué aux choix cotés 1,45–1,80, F choisi sur une moitié, mesuré une fois sur l'autre : tranche 0,792 → 0,781 (F 0,8) et 0,836 → 0,854 (F 0,4), jamais au-dessus de 0,90 ; sous 1,45 inchangé. Aucun F ne corrige, même F = 0 : l'écart est au prix, pas au taux de base — seule la grille de marché en entrée (phase 3 redéfinie) le corrigerait. Le rejeu du 06/10 partage maintenant `scripts/production-chain.ts`._
 - [x] 5.2 `feat(coupon): engine combo breaks ties on the lowest margin` (+ rejeu) _Fait : expédié, activé (`COMBO_CONFIG.marginTieBreak`, fenêtre 2 points, politique `engine-combo-v2`) ; `docs/audits/2026-11-03/COMBINE-MARGE.md`. Rejeu du compositeur sur 49 jours de prix 1xBet (14/09 → 01/11), à 17 h la veille, vivier et calibration connus à cet instant : marge payée par jambe 8,93 % → 8,52 % (baisse dans les deux moitiés), réalisé ÷ annoncé 1,020 [0,935 ; 1,105] → 1,028 sur 95 / 94 jambes, dans le bruit. 20 jambes changent sur 16 jours. Le départage ne joue qu'entre matchs d'un même championnat : la sélection mise en avant de chaque match et les championnats retenus ne changent pas ; une marge inconnue ne gagne jamais. 49 jours au lieu de 90 : 1xBet n'est relevé que depuis le 13/09._
-- [ ] 5.3 décision plafond IA (après v6)
+- [ ] 5.3 décision plafond IA (après v6) _Reporté : la copie locale (03/11) n'a aucun avis `vantage-v6-match-voice` ; aucun plafond n'est codé. À relire vers le 10/11 sur une copie fraîche, avec au moins 7 jours de v6. Part de jeu par jour, dernier avis d'avant coup d'envoi par match (validée sur v5 : 72–89 % par jour du 30/10 au 04/11) :_
+
+  ```sql
+  WITH latest AS (
+    SELECT DISTINCT ON (h."fixtureId") h."fixtureId", h.status, f."scheduledAt"
+    FROM vantage_decision_history h
+    JOIN fixture f ON f.id = h."fixtureId"
+    WHERE h."configVersion" = 'vantage-v6-match-voice'
+      AND h."createdAt" < f."scheduledAt"
+    ORDER BY h."fixtureId", h."createdAt" DESC, h.id DESC
+  )
+  SELECT date_trunc('day', "scheduledAt")::date AS day,
+         count(*) AS fixtures,
+         count(*) FILTER (WHERE status = 'SELECTED') AS plays,
+         round(avg((status = 'SELECTED')::int), 3) AS play_share
+  FROM latest GROUP BY 1 ORDER BY 1;
+  ```
+
+  _Règle : si la part de jeu reste au-dessus de 50 % (médiane des jours à 20 matchs ou plus), plafond déterministe dans `apps/vantage-worker` après la réponse du modèle : par jour de coup d'envoi, garder les N avis joués à la plus haute probabilité calibrée (N et la part visée dans `config/`, N = 30 % des matchs analysés du jour, le budget du prompt), les autres écrits en refus commenté (raison propre, texte de l'avis gardé) ; jugé par jambe (réalisé ÷ annoncé des avis gardés contre écartés), jamais sur un ROI. Sous 50 %, rien. Décision avec l'utilisateur sur les chiffres._
+
 - [ ] PR
