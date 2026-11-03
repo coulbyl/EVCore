@@ -217,6 +217,10 @@ export const FAVOURITE_COUPON_CLASS: CouponClass = {
  * par probabilité du moteur, les mêmes trois jambes gagnent 67 % des jours
  * avec une série de 8 — le prix classe mieux que le moteur, comme partout.
  *
+ * 2026-11-03 : dans un championnat, à chance égale (2 points près), la
+ * marge 1xBet la plus basse plutôt que la cote la plus courte
+ * (COMBO_CONFIG.marginTieBreak, docs/audits/2026-11-03/COMBINE-MARGE.md).
+ *
  * `targetOddsMin`/`targetOddsMax` composent la clé unique de
  * `coupon_proposal` avec la source ENGINE : disjoints des autres classes.
  */

@@ -1,11 +1,13 @@
+import Decimal from "decimal.js";
 import { COMBO_COUPON_CLASS, LONG_COUPON_CLASS } from "./coupon-classes";
 
 /**
  * Combiné du jour sur les sélections du moteur (voir COMBO_COUPON_CLASS pour
  * la mesure). Reproduit exactement la sélection mise en avant par l'écran
  * Décisions (`primaryPick`, apps/web) — même pastille de confiance, mêmes
- * paliers — puis en garde trois, une par championnat, les moins chères
- * d'abord.
+ * paliers — puis en garde une par championnat, les championnats dans
+ * l'ordre de leur jambe la moins chère ; dans chacun, à chance égale, la
+ * marge 1xBet la plus basse (`marginTieBreak`).
  */
 export type ComboCandidate = {
   fixtureId: string;
@@ -15,6 +17,16 @@ export type ComboCandidate = {
   pick: string;
   odds: number;
   probability: number;
+  /**
+   * Marge payée chez le book des joueurs (1xBet) sur le groupe d'issues du
+   * choix ; null ou absente quand le book ne cote pas tout le groupe.
+   */
+  margin?: number | null;
+  /**
+   * Fréquence sans marge du choix chez ce book (Shin, même relevé que
+   * `margin`) ; null ou absente si le groupe est incomplet.
+   */
+  fairProbability?: number | null;
 };
 
 /** Calibration d'un canal sur une compétition : réel / annoncé et volume. */
@@ -33,6 +45,12 @@ export type ComboConfig = {
   minSample: number;
   goodRatio: number;
   badRatio: number;
+  /**
+   * Départage par la marge : dans un championnat, parmi les jambes dont la
+   * probabilité est à `window` près de celle de la jambe la moins chère, la
+   * marge connue la plus basse. Absent : la moins chère.
+   */
+  marginTieBreak?: { window: number };
 };
 
 export const COMBO_CONFIG: ComboConfig = {
@@ -42,6 +60,10 @@ export const COMBO_CONFIG: ComboConfig = {
   minSample: 30,
   goodRatio: 0.85,
   badRatio: 0.7,
+  // 2026-11-03, rejeu sur 49 jours de prix 1xBet (docs/audits/2026-11-03/
+  // COMBINE-MARGE.md) : marge payée par jambe 8,93 % → 8,52 %, réalisé ÷
+  // annoncé 1,020 → 1,028 (dans le bruit), dans les deux moitiés.
+  marginTieBreak: { window: 0.02 },
 };
 
 export type ComboSelection =
@@ -137,7 +159,56 @@ export function eligibleComboLegs(
       pick: c.pick,
       odds: c.odds,
       probability: c.probability,
+      ...(c.margin === undefined ? {} : { margin: c.margin }),
+      ...(c.fairProbability === undefined
+        ? {}
+        : { fairProbability: c.fairProbability }),
     }));
+}
+
+/** `value` est-il à `window` au plus sous `reference` ? En Decimal. */
+function withinWindowBelow(input: {
+  value: number;
+  reference: number;
+  window: number;
+}): boolean {
+  return new Decimal(input.value).gte(
+    new Decimal(input.reference).minus(input.window),
+  );
+}
+
+/**
+ * La jambe la moins chère du groupe (le premier, trié par cote croissante),
+ * ou, parmi celles à chance égale, la marge connue la plus basse. « Chance
+ * égale » se lit deux fois : probabilité du moteur ET fréquence sans marge du
+ * marché à `window` près de celles de la moins chère — le moteur seul
+ * laisserait passer une jambe plus longue où il s'écarte du prix (l'écart
+ * annoncé est anti-prédictif). Une marge ou une fréquence inconnue ne
+ * départage jamais ; à marge égale, la moins chère.
+ */
+function lowestMarginAmongTies(
+  group: readonly ComboCandidate[],
+  window: number,
+): ComboCandidate | undefined {
+  const head = group[0];
+  if (!head) return undefined;
+  const headFair = head.fairProbability;
+  if (headFair == null) return head;
+  let best: { leg: ComboCandidate; margin: number } | null = null;
+  for (const c of group) {
+    const margin = c.margin;
+    const fair = c.fairProbability;
+    if (margin == null || !Number.isFinite(margin) || fair == null) continue;
+    const tied =
+      withinWindowBelow({
+        value: c.probability,
+        reference: head.probability,
+        window,
+      }) && withinWindowBelow({ value: fair, reference: headFair, window });
+    if (!tied) continue;
+    if (best === null || margin < best.margin) best = { leg: c, margin };
+  }
+  return best?.leg ?? head;
 }
 
 export function composeEngineCombo(
@@ -147,13 +218,21 @@ export function composeEngineCombo(
 ): ComboSelection {
   const eligible = eligibleComboLegs(candidates, calibration, config);
 
-  // Une par championnat, les moins chères d'abord.
-  const legs: ComboCandidate[] = [];
-  const competitions = new Set<string>();
+  // Une par championnat, les championnats dans l'ordre de leur jambe la
+  // moins chère ; dans chacun, la moins chère ou, avec le départage, la
+  // marge la plus basse à chance égale.
+  const byCompetition = new Map<string, ComboCandidate[]>();
   for (const c of eligible) {
-    if (competitions.has(c.competition)) continue;
-    competitions.add(c.competition);
-    legs.push(c);
+    const group = byCompetition.get(c.competition) ?? [];
+    group.push(c);
+    byCompetition.set(c.competition, group);
+  }
+  const legs: ComboCandidate[] = [];
+  for (const group of byCompetition.values()) {
+    const leg = config.marginTieBreak
+      ? lowestMarginAmongTies(group, config.marginTieBreak.window)
+      : group[0];
+    if (leg) legs.push(leg);
     if (legs.length === config.legs) break;
   }
 

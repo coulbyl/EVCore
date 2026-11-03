@@ -1,0 +1,94 @@
+TEAM_TOTAL, retrait sur la tranche 1.45–1.8 — 2026-11-03T19:41:17.172Z
+Décision à coup d'envoi − 1 h, depuis 2026-06-01. Grille F : 1 / 0.8 / 0.6 / 0.4 / 0.2 / 0.
+
+6085 matchs terminés dans des ligues où TEAM_TOTAL tourne.
+5900 rejoués, 185 ignorés (team_stats ou cotes absents à asOf).
+Coupure : 2026-09-09T19:00 — ancienne 2945 matchs, récente 2955.
+
+== Ajustement sur la moitié ancienne, test sur la moitié récente ==
+Taux de base (ancienne) : AWAY:OVER_0_5 0.706 · AWAY:OVER_1_5 0.365 · AWAY:OVER_2_5 0.149 · AWAY:OVER_3_5 0.051 · AWAY:OVER_4_5 0.017 · AWAY:OVER_5_5 0.004 · AWAY:OVER_6_5 0.001 · AWAY:UNDER_0_5 0.294 · AWAY:UNDER_1_5 0.635 · AWAY:UNDER_2_5 0.851 · AWAY:UNDER_3_5 0.949 · AWAY:UNDER_4_5 0.983 · AWAY:UNDER_5_5 0.996 · AWAY:UNDER_6_5 0.999 · HOME:OVER_0_5 0.771 · HOME:OVER_1_5 0.456 · HOME:OVER_2_5 0.213 · HOME:OVER_3_5 0.080 · HOME:OVER_4_5 0.031 · HOME:OVER_5_5 0.008 · HOME:OVER_6_5 0.003 · HOME:UNDER_0_5 0.229 · HOME:UNDER_1_5 0.544 · HOME:UNDER_2_5 0.787 · HOME:UNDER_3_5 0.920 · HOME:UNDER_4_5 0.969 · HOME:UNDER_5_5 0.992 · HOME:UNDER_6_5 0.997
+  moitié ancienne
+    F=1.0 sélections 2873/2945
+      < 1.45       n  2057 annoncé 0.800 réalisé 0.742 ratio 0.928 [0.904 ; 0.952] cote 1.28
+      1.45–1.8  n   371 annoncé 0.764 réalisé 0.639 ratio 0.836 [0.772 ; 0.900] cote 1.56
+    F=0.8 sélections 2872/2945
+      < 1.45       n  2075 annoncé 0.800 réalisé 0.743 ratio 0.929 [0.905 ; 0.952] cote 1.28
+      1.45–1.8  n   352 annoncé 0.750 réalisé 0.651 ratio 0.868 [0.801 ; 0.934] cote 1.55
+    F=0.6 sélections 2877/2945
+      < 1.45       n  2070 annoncé 0.801 réalisé 0.743 ratio 0.929 [0.905 ; 0.952] cote 1.28
+      1.45–1.8  n   364 annoncé 0.740 réalisé 0.637 ratio 0.862 [0.795 ; 0.928] cote 1.56
+    F=0.4 sélections 2882/2945
+      < 1.45       n  2042 annoncé 0.802 réalisé 0.741 ratio 0.924 [0.900 ; 0.948] cote 1.28
+      1.45–1.8  n   397 annoncé 0.738 réalisé 0.632 ratio 0.856 [0.792 ; 0.921] cote 1.56
+    F=0.2 sélections 2892/2945
+      < 1.45       n  1992 annoncé 0.804 réalisé 0.744 ratio 0.926 [0.902 ; 0.949] cote 1.28
+      1.45–1.8  n   459 annoncé 0.748 réalisé 0.636 ratio 0.851 [0.792 ; 0.910] cote 1.57
+    F=0.0 sélections 2902/2945
+      < 1.45       n  1934 annoncé 0.806 réalisé 0.744 ratio 0.922 [0.898 ; 0.947] cote 1.28
+      1.45–1.8  n   529 annoncé 0.760 réalisé 0.612 ratio 0.806 [0.751 ; 0.860] cote 1.57
+  moitié récente (hors échantillon)
+    F=1.0 sélections 2848/2955
+      < 1.45       n  2457 annoncé 0.789 réalisé 0.757 ratio 0.960 [0.938 ; 0.981] cote 1.28
+      1.45–1.8  n   367 annoncé 0.740 réalisé 0.586 ratio 0.792 [0.724 ; 0.860] cote 1.55
+    F=0.8 sélections 2850/2955
+      < 1.45       n  2463 annoncé 0.789 réalisé 0.757 ratio 0.960 [0.939 ; 0.982] cote 1.28
+      1.45–1.8  n   363 annoncé 0.730 réalisé 0.570 ratio 0.781 [0.711 ; 0.851] cote 1.56
+    F=0.6 sélections 2853/2955
+      < 1.45       n  2449 annoncé 0.789 réalisé 0.756 ratio 0.958 [0.936 ; 0.979] cote 1.28
+      1.45–1.8  n   382 annoncé 0.726 réalisé 0.571 ratio 0.786 [0.718 ; 0.855] cote 1.56
+    F=0.4 sélections 2865/2955
+      < 1.45       n  2387 annoncé 0.791 réalisé 0.756 ratio 0.955 [0.934 ; 0.977] cote 1.28
+      1.45–1.8  n   457 annoncé 0.728 réalisé 0.578 ratio 0.794 [0.732 ; 0.856] cote 1.57
+    F=0.2 sélections 2882/2955
+      < 1.45       n  2296 annoncé 0.794 réalisé 0.751 ratio 0.946 [0.924 ; 0.968] cote 1.28
+      1.45–1.8  n   568 annoncé 0.744 réalisé 0.590 ratio 0.793 [0.738 ; 0.847] cote 1.58
+    F=0.0 sélections 2888/2955
+      < 1.45       n  2224 annoncé 0.796 réalisé 0.753 ratio 0.946 [0.924 ; 0.969] cote 1.28
+      1.45–1.8  n   649 annoncé 0.762 réalisé 0.596 ratio 0.782 [0.733 ; 0.832] cote 1.58
+  F retenu sur ancienne : 0.8
+  hors échantillon (récente) : tranche 0.792 → 0.781 (≤ 0,90), sous 1.45 0.960 → 0.960 (tenu)
+
+== Ajustement sur la moitié récente, test sur la moitié ancienne ==
+Taux de base (récente) : AWAY:OVER_0_5 0.723 · AWAY:OVER_1_5 0.370 · AWAY:OVER_2_5 0.152 · AWAY:OVER_3_5 0.057 · AWAY:OVER_4_5 0.016 · AWAY:OVER_5_5 0.005 · AWAY:OVER_6_5 0.001 · AWAY:UNDER_0_5 0.277 · AWAY:UNDER_1_5 0.630 · AWAY:UNDER_2_5 0.848 · AWAY:UNDER_3_5 0.943 · AWAY:UNDER_4_5 0.984 · AWAY:UNDER_5_5 0.995 · AWAY:UNDER_6_5 0.999 · HOME:OVER_0_5 0.796 · HOME:OVER_1_5 0.488 · HOME:OVER_2_5 0.225 · HOME:OVER_3_5 0.093 · HOME:OVER_4_5 0.038 · HOME:OVER_5_5 0.012 · HOME:OVER_6_5 0.003 · HOME:UNDER_0_5 0.204 · HOME:UNDER_1_5 0.512 · HOME:UNDER_2_5 0.775 · HOME:UNDER_3_5 0.907 · HOME:UNDER_4_5 0.962 · HOME:UNDER_5_5 0.988 · HOME:UNDER_6_5 0.997
+  moitié récente
+    F=1.0 sélections 2848/2955
+      < 1.45       n  2457 annoncé 0.789 réalisé 0.757 ratio 0.960 [0.938 ; 0.981] cote 1.28
+      1.45–1.8  n   367 annoncé 0.740 réalisé 0.586 ratio 0.792 [0.724 ; 0.860] cote 1.55
+    F=0.8 sélections 2848/2955
+      < 1.45       n  2458 annoncé 0.789 réalisé 0.757 ratio 0.959 [0.938 ; 0.981] cote 1.28
+      1.45–1.8  n   366 annoncé 0.729 réalisé 0.566 ratio 0.776 [0.706 ; 0.845] cote 1.56
+    F=0.6 sélections 2853/2955
+      < 1.45       n  2427 annoncé 0.790 réalisé 0.755 ratio 0.956 [0.934 ; 0.978] cote 1.28
+      1.45–1.8  n   404 annoncé 0.726 réalisé 0.562 ratio 0.774 [0.708 ; 0.841] cote 1.56
+    F=0.4 sélections 2867/2955
+      < 1.45       n  2367 annoncé 0.792 réalisé 0.755 ratio 0.954 [0.932 ; 0.975] cote 1.28
+      1.45–1.8  n   479 annoncé 0.728 réalisé 0.580 ratio 0.797 [0.736 ; 0.857] cote 1.56
+    F=0.2 sélections 2876/2955
+      < 1.45       n  2272 annoncé 0.795 réalisé 0.754 ratio 0.948 [0.925 ; 0.970] cote 1.28
+      1.45–1.8  n   585 annoncé 0.744 réalisé 0.573 ratio 0.770 [0.716 ; 0.824] cote 1.57
+    F=0.0 sélections 2873/2955
+      < 1.45       n  2193 annoncé 0.797 réalisé 0.753 ratio 0.945 [0.923 ; 0.968] cote 1.28
+      1.45–1.8  n   665 annoncé 0.765 réalisé 0.591 ratio 0.772 [0.724 ; 0.821] cote 1.58
+  moitié ancienne (hors échantillon)
+    F=1.0 sélections 2873/2945
+      < 1.45       n  2057 annoncé 0.800 réalisé 0.742 ratio 0.928 [0.904 ; 0.952] cote 1.28
+      1.45–1.8  n   371 annoncé 0.764 réalisé 0.639 ratio 0.836 [0.772 ; 0.900] cote 1.56
+    F=0.8 sélections 2874/2945
+      < 1.45       n  2068 annoncé 0.800 réalisé 0.743 ratio 0.928 [0.905 ; 0.952] cote 1.28
+      1.45–1.8  n   361 annoncé 0.750 réalisé 0.637 ratio 0.849 [0.783 ; 0.916] cote 1.55
+    F=0.6 sélections 2878/2945
+      < 1.45       n  2057 annoncé 0.801 réalisé 0.742 ratio 0.926 [0.903 ; 0.950] cote 1.28
+      1.45–1.8  n   378 annoncé 0.740 réalisé 0.627 ratio 0.848 [0.782 ; 0.914] cote 1.56
+    F=0.4 sélections 2882/2945
+      < 1.45       n  2027 annoncé 0.803 réalisé 0.740 ratio 0.922 [0.898 ; 0.945] cote 1.28
+      1.45–1.8  n   412 annoncé 0.739 réalisé 0.631 ratio 0.854 [0.791 ; 0.917] cote 1.56
+    F=0.2 sélections 2893/2945
+      < 1.45       n  1960 annoncé 0.806 réalisé 0.743 ratio 0.922 [0.898 ; 0.946] cote 1.28
+      1.45–1.8  n   492 annoncé 0.748 réalisé 0.632 ratio 0.846 [0.789 ; 0.903] cote 1.57
+    F=0.0 sélections 2896/2945
+      < 1.45       n  1894 annoncé 0.808 réalisé 0.742 ratio 0.918 [0.894 ; 0.943] cote 1.28
+      1.45–1.8  n   563 annoncé 0.762 réalisé 0.611 ratio 0.802 [0.749 ; 0.855] cote 1.57
+  F retenu sur récente : 0.4
+  hors échantillon (ancienne) : tranche 0.836 → 0.854 (≤ 0,90), sous 1.45 0.928 → 0.922 (tenu)
+
+VERDICT : l'hypothèse ne tient pas hors échantillon dans les deux sens — rien n'est expédié.

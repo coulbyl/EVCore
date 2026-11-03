@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
+import type {
+  PlayableOddsRepository,
+  PlayableQuote,
+} from '../betting-engine/pricing/playable-odds.repository';
 import {
   CouponEngineComboGenerationService,
   ENGINE_LONG_PROFILE,
@@ -100,7 +103,7 @@ describe('CouponEngineComboGenerationService', () => {
     expect(input?.profile).toMatchObject({
       source: 'ENGINE',
       targetOddsMin: 1.2,
-      policyVersion: 'engine-combo-v1',
+      policyVersion: 'engine-combo-v2',
     });
     expect(repository.findChannelCompetitionCalibration).toHaveBeenCalledWith(
       new Date('2026-07-15T00:00:00.000Z'),
@@ -122,9 +125,52 @@ describe('CouponEngineComboGenerationService', () => {
     expect(repository.recordPriceComposerAttempt).toHaveBeenCalledWith(
       expect.objectContaining({
         outcome: 'abstained',
-        pass: { name: 'engine-combo', policyVersion: 'engine-combo-v1' },
+        pass: { name: 'engine-combo', policyVersion: 'engine-combo-v2' },
       }),
     );
+  });
+
+  it('breaks a near tie inside a competition on the lowest 1xBet margin', async () => {
+    repository.findEngineComboCandidates.mockResolvedValue([
+      row({ fixtureId: 'a', odds: 1.22, probability: 0.82 }),
+      row({ fixtureId: 'b', odds: 1.25, probability: 0.81 }),
+      row({ fixtureId: 'c', odds: 1.3, competition: 'PL' }),
+    ]);
+    repository.findChannelCompetitionCalibration.mockResolvedValue([
+      cell(),
+      cell({ competition: 'PL' }),
+    ]);
+    const quote = (
+      fixtureId: string,
+      operatorMargin: number,
+    ): [string, PlayableQuote] => [
+      `${fixtureId}|OVER_UNDER|OVER_1_5`,
+      {
+        fixtureId,
+        market: 'OVER_UNDER',
+        pick: 'OVER_1_5',
+        operatorOdds: 1.2,
+        operatorBookmaker: '1xBet',
+        operatorMargin,
+        operatorFairProbability: 0.8,
+        lowestOdds: 1.2,
+        lowestBookmaker: '1xBet',
+      },
+    ];
+    service = new CouponEngineComboGenerationService(
+      repository as unknown as CouponRepository,
+      {
+        findPlayableQuotes: vi
+          .fn()
+          .mockResolvedValue(new Map([quote('a', 0.09), quote('b', 0.04)])),
+      } as unknown as PlayableOddsRepository,
+    );
+
+    await service.generateForDate(FOR_DATE);
+
+    const input = repository.upsertPriceComposerProposal.mock.calls[0]?.[0];
+    expect(input?.legs.map((l) => l.fixtureId)).toEqual(['b', 'c']);
+    expect(input?.legs[0]?.operatorMargin).toBe(0.04);
   });
 
   it('composes the long coupon longest-first to the 2.5 target under the LONG class', async () => {

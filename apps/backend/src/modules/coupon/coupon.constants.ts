@@ -384,7 +384,9 @@ export const ENGINE_LONG_POLICY = {
 } as const;
 
 export const ENGINE_COMBO_POLICY = {
-  version: 'engine-combo-v1',
+  // v2 (2026-11-03) : départage par la marge 1xBet à chance égale
+  // (COMBO_CONFIG.marginTieBreak) ; les jambes se comparent par version.
+  version: 'engine-combo-v2',
   pass: 'engine-combo',
   calibrationWindowDays: 90,
   /** Canaux jamais mis en avant sur Décisions (méta-canaux, VALUE/SAFE,

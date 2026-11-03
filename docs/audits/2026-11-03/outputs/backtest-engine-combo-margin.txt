@@ -1,0 +1,21 @@
+Combiné du jour, départage par la marge 1xBet à 2 points — 2026-11-03T19:41:16.911Z
+Composition à 17 h UTC la veille, calibration 90 jours, depuis 2026-09-14.
+
+49 jours, coupure 2026-10-08. Jambes changées par le départage : 11 sur 11 jours.
+
+== ANCIENNE ==
+  actuelle (la moins chère)  jours 23/24 (gagnés 15) | jambes 45 annoncé 0.807 réalisé 0.822 ratio 1.019 [0.880 ; 1.157] | marge 1xBet 8.24 % (connue 32/45) | cote 1xBet 1.222
+  départage marge            jours 23/24 (gagnés 15) | jambes 45 annoncé 0.807 réalisé 0.822 ratio 1.018 [0.880 ; 1.157] | marge 1xBet 8.21 % (connue 32/45) | cote 1xBet 1.221
+
+== RÉCENTE ==
+  actuelle (la moins chère)  jours 25/25 (gagnés 20) | jambes 50 annoncé 0.862 réalisé 0.880 ratio 1.021 [0.916 ; 1.125] | marge 1xBet 9.38 % (connue 50/50) | cote 1xBet 1.165
+  départage marge            jours 25/25 (gagnés 21) | jambes 49 annoncé 0.862 réalisé 0.918 ratio 1.066 [0.977 ; 1.154] | marge 1xBet 9.30 % (connue 49/49) | cote 1xBet 1.163
+
+== TOTAL ==
+  actuelle (la moins chère)  jours 48/49 (gagnés 35) | jambes 95 annoncé 0.836 réalisé 0.853 ratio 1.020 [0.935 ; 1.105] | marge 1xBet 8.93 % (connue 82/95) | cote 1xBet 1.187
+  départage marge            jours 48/49 (gagnés 36) | jambes 94 annoncé 0.836 réalisé 0.872 ratio 1.044 [0.963 ; 1.124] | marge 1xBet 8.87 % (connue 81/94) | cote 1xBet 1.186
+
+  jambes retirées            jambes 11 annoncé 0.834 réalisé 0.727 ratio 0.872 [0.556 ; 1.188] | marge 1xBet 8.61 % (connue 11/11) | cote 1xBet 1.201 | fréquence 1xBet 0.787
+  jambes prises à la place   jambes 10 annoncé 0.832 réalisé 0.900 ratio 1.082 [0.859 ; 1.306] | marge 1xBet 8.08 % (connue 10/10) | cote 1xBet 1.191 | fréquence 1xBet 0.799
+
+VERDICT : la marge baisse et le ratio reste dans le bruit — expédier.
