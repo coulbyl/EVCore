@@ -21,6 +21,7 @@ import {
   type CouponCalibrationObservation,
   type CouponReplaySelection,
 } from "../src/point-in-time-loader";
+import { oddsArchiveFromEnv } from "./odds-archive";
 
 type ReplayRow = {
   candidate: CouponLeg;
@@ -413,7 +414,7 @@ async function main(): Promise<void> {
   const to = parseDay(option("--to") ?? "2026-09-13", "--to");
   if (from > to) throw new Error("--from must be before --to");
 
-  const loader = new PointInTimeLoader();
+  const loader = new PointInTimeLoader(undefined, await oddsArchiveFromEnv());
   const replayDays: Array<{ day: string; rows: ReplayRow[] }> = [];
   for (let day = from; day <= to; day = addDays(day, 1)) {
     const asOf = new Date(day);

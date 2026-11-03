@@ -6,7 +6,7 @@
   "ui": "tui",
   // Read at runtime by a server, never a build input: passed through, kept
   // out of every task's hash (apps/web/lib/api/server-api.ts).
-  "globalPassThroughEnv": ["API_INTERNAL_URL"],
+  "globalPassThroughEnv": ["API_INTERNAL_URL", "ODDS_ARCHIVE_DIR"],
   "globalEnv": [
     "NODE_ENV",
     "API_FOOTBALL_KEY",
