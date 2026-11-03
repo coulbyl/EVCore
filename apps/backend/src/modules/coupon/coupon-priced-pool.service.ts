@@ -44,6 +44,27 @@ export class CouponPricedPoolService {
       from: dayStart,
       to: new Date(dayStart.getTime() + DAY_MS),
     });
+    return this.price(dayStart, rows);
+  }
+
+  /**
+   * Le 1X2 de la mi-temps du jour, au même traitement que le vivier
+   * (Chasseur Nul à la mi-temps) ; voir `findHalfTimeResultCandidates` pour
+   * ce qui l'en distingue.
+   */
+  async loadHalfTimeResult(forDate: Date): Promise<PricedPool> {
+    const dayStart = startOfUtcDay(forDate);
+    const rows = await this.repository.findHalfTimeResultCandidates({
+      from: dayStart,
+      to: new Date(dayStart.getTime() + DAY_MS),
+    });
+    return this.price(dayStart, rows);
+  }
+
+  private async price(
+    dayStart: Date,
+    rows: readonly PriceCandidateRow[],
+  ): Promise<PricedPool> {
     const quotes = await this.playableOdds.findPlayableQuotes(
       rows.map((r) => ({
         fixtureId: r.fixtureId,

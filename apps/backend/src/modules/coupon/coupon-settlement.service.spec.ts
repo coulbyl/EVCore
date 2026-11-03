@@ -363,6 +363,66 @@ describe('CouponSettlementService.settleProposal — transient POSTPONED and mis
     expect(updateResult).toHaveBeenCalledWith('proposal-1', CouponResult.VOID);
   });
 
+  it('waits for the half-time score of a recently FINISHED fixture', async () => {
+    const { service, settleLeg, updateResult } = makeHarness({
+      legs: [
+        makeLeg({
+          id: 'leg-1',
+          fixtureId: 'f1',
+          market: Market.FIRST_HALF_WINNER,
+          pick: 'DRAW',
+        }),
+      ],
+      fixtures: [
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.FINISHED,
+          homeScore: 1,
+          awayScore: 1,
+        }),
+      ],
+    });
+
+    await service.settleProposal('proposal-1');
+
+    // Neither lost nor refunded yet: the score may still come.
+    expect(settleLeg).not.toHaveBeenCalled();
+    expect(updateResult).not.toHaveBeenCalled();
+  });
+
+  it('settles a half-time draw on the half-time score, not the final one', async () => {
+    const { service, settleLeg, updateResult } = makeHarness({
+      legs: [
+        makeLeg({
+          id: 'leg-1',
+          fixtureId: 'f1',
+          market: Market.FIRST_HALF_WINNER,
+          pick: 'DRAW',
+          oddsSnapshot: 2.4,
+        }),
+      ],
+      fixtures: [
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.FINISHED,
+          homeScore: 2,
+          awayScore: 1,
+          homeHtScore: 0,
+          awayHtScore: 0,
+        }),
+      ],
+    });
+
+    await service.settleProposal('proposal-1');
+
+    expect(settleLeg).toHaveBeenCalledWith('leg-1', true);
+    expect(updateResult).toHaveBeenCalledWith(
+      'proposal-1',
+      CouponResult.WON,
+      2.4,
+    );
+  });
+
   it('refunds a half-time leg on a FINISHED fixture that never got a half-time score', async () => {
     const { service, settleLeg, updateResult } = makeHarness({
       legs: [
@@ -378,6 +438,8 @@ describe('CouponSettlementService.settleProposal — transient POSTPONED and mis
         makeFixture({
           id: 'f1',
           status: FixtureStatus.FINISHED,
+          // Past the 14-day grace delay: the score will never come.
+          scheduledAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
           homeScore: 2,
           awayScore: 0,
         }),

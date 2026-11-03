@@ -34,6 +34,7 @@ import {
   HUNTER_CORNERS_CLASS,
   AI_COMBO_COUPON_CLASS,
   HUNTER_DRAW_CLASS,
+  HUNTER_HT_DRAW_CLASS,
   HUNTER_SCORE_CLASS,
   DRAW_STAKED_LEAGUES,
   POOL_ELIGIBLE_CHANNELS,
@@ -430,6 +431,9 @@ export const PRICE_COMPOSER_POLICY = {
  */
 export const COUPON_SETTLEMENT_POLICY = {
   postponedVoidDelayMs: 24 * 60 * 60 * 1_000,
+  // Jambe de mi-temps d'un match fini sans score de la pause : attendue,
+  // puis remboursée après le même délai que les stats des corners.
+  halfTimeScoreGraceDays: CORNERS_HUNTER_POLICY.statsGraceDays,
   // Fenêtre de fraîcheur de la ligne de clôture, partagée avec les
   // sélections de canal : voir betting-engine/pricing/closing-line.constants.ts.
   closingLineMaxHoursBeforeKickoff: CLOSING_LINE_POLICY.maxHoursBeforeKickoff,
@@ -451,6 +455,7 @@ const ABSTENTION_PASSES: Readonly<Record<string, CouponClass>> = {
   double: DOUBLE_COUPON_CLASS,
   'hunter-hunter_btts': HUNTER_BTTS_CLASS,
   'hunter-hunter_draw': HUNTER_DRAW_CLASS,
+  'hunter-hunter_ht_draw': HUNTER_HT_DRAW_CLASS,
   'hunter-hunter_score': HUNTER_SCORE_CLASS,
   'hunter-hunter_corners': HUNTER_CORNERS_CLASS,
   'ai-combo': AI_COMBO_COUPON_CLASS,

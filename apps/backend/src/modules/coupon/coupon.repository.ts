@@ -1005,6 +1005,43 @@ export class CouponRepository {
     `;
   }
 
+  /**
+   * Le 1X2 de la mi-temps coté le jour dit (Chasseur Nul à la mi-temps,
+   * 2026-11-04), les trois issues de chaque match pour que la marge se
+   * retire sur le groupe complet.
+   *
+   * Contrairement au vivier de `findDoubleCandidates`, la porte du moteur
+   * sur les championnats sans historique de mi-temps (`htftCalibrated`,
+   * qui rejette ~85 % de ces lignes en `market_suspended`) n'écarte rien :
+   * elle protège le Poisson du moteur, et ce produit ne lit que le prix.
+   * Une vraie suspension du marché (`calibration.market_suspension`) reste
+   * respectée, comme les alertes de calibration.
+   */
+  async findHalfTimeResultCandidates(opts: {
+    from: Date;
+    to: Date;
+  }): Promise<readonly PriceCandidateRow[]> {
+    return this.prisma.client.$queryRaw<PriceCandidateRow[]>`
+      SELECT "fixtureId",
+             competition,
+             market,
+             pick,
+             odds::float                AS odds,
+             ${Prisma.raw(ODDS_BAND_SQL)} AS band,
+             "scheduledAt"
+      FROM public.evaluated_pick
+      WHERE "fixtureStatus" NOT IN ('FINISHED', 'POSTPONED', 'CANCELLED')
+        AND "scheduledAt" >= ${opts.from}
+        AND "scheduledAt" < ${opts.to}
+        AND market = 'FIRST_HALF_WINNER'
+        AND NOT EXISTS (
+          SELECT 1 FROM calibration.market_suspension s
+          WHERE s.active AND s.market::text = 'FIRST_HALF_WINNER'
+        )
+        AND "fixtureId" NOT IN (${calibrationAlertedFixtureIds(opts.from, opts.to)})
+    `;
+  }
+
   async findPriceCandidates(opts: {
     from: Date;
     to: Date;

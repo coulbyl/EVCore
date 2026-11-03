@@ -6,6 +6,7 @@ import {
   BTTS_HUNTER,
   CORNERS_HUNTER,
   DRAW_HUNTER,
+  HT_DRAW_HUNTER,
   SCORE_HUNTER,
   composeAiCombo,
   composeCornersHunter,
@@ -48,8 +49,8 @@ export type HunterPassOutcome = {
 
 /**
  * Chasseurs du jour, montrés aux joueurs comme les autres coupons
- * (2026-10-28) : BTTS « oui » et Nul classés par le prix (source
- * PRICE_COMPOSER), Score exact pris parmi les scores retenus par le moteur
+ * (2026-10-28) : BTTS « oui », Nul et Nul à la mi-temps (2026-11-04)
+ * classés par le prix (source PRICE_COMPOSER), Score exact pris parmi les scores retenus par le moteur
  * (source ENGINE). Une sélection par chasseur ou l'abstention, enregistrée.
  */
 @Injectable()
@@ -69,6 +70,7 @@ export class CouponHunterGenerationService {
   ): Promise<HunterPassOutcome[]> {
     const priced = pool ?? (await this.pricedPool.load(forDate));
     const { dayStart } = priced;
+    const halfTime = await this.pricedPool.loadHalfTimeResult(dayStart);
     const scoreRows = (
       await this.repository.findEngineComboCandidates({
         from: dayStart,
@@ -100,12 +102,23 @@ export class CouponHunterGenerationService {
         to: new Date(dayStart.getTime() + DAY_MS),
       }),
     );
-    const marketCandidates = priced.candidates.map((c) =>
-      avoided.has(c.fixtureId) ? { ...c, playableOdds: 0 } : c,
-    );
-    const quotes = new Map([...priced.quotes, ...scoreQuotes]);
+    // Un match signalé reste dans son groupe (pour la marge) mais ne peut
+    // plus devenir une jambe.
+    const playable = (pool: PricedPool) =>
+      pool.candidates.map((c) =>
+        avoided.has(c.fixtureId) ? { ...c, playableOdds: 0 } : c,
+      );
+    const marketCandidates = playable(priced);
+    const quotes = new Map([
+      ...priced.quotes,
+      ...halfTime.quotes,
+      ...scoreQuotes,
+    ]);
     const kickoffs = new Map(
-      [...priced.rows, ...scoreRows].map((r) => [r.fixtureId, r.scheduledAt]),
+      [...priced.rows, ...halfTime.rows, ...scoreRows].map((r) => [
+        r.fixtureId,
+        r.scheduledAt,
+      ]),
     );
     const context = { dayStart, kickoffs, quotes };
 
@@ -121,6 +134,12 @@ export class CouponHunterGenerationService {
         spec: DRAW_HUNTER,
         source: CouponSource.PRICE_COMPOSER,
         composition: composeHunterByMarket(marketCandidates, DRAW_HUNTER),
+      }),
+      await this.persist({
+        ...context,
+        spec: HT_DRAW_HUNTER,
+        source: CouponSource.PRICE_COMPOSER,
+        composition: composeHunterByMarket(playable(halfTime), HT_DRAW_HUNTER),
       }),
       await this.persist({
         ...context,
