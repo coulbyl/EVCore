@@ -54,6 +54,7 @@ function batch(overrides: Partial<StatsSyncBatchResult>): StatsSyncBatchResult {
     failedExternalIds: [],
     details: { written: 0, synced: 0, rejected: 0, failedExternalIds: [] },
     calls: 0,
+    rejectedCalls: 0,
     abortReason: null,
     ...overrides,
   };

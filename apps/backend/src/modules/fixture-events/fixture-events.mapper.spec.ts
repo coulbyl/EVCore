@@ -178,6 +178,34 @@ describe('toFixtureDetailRows', () => {
     );
   });
 
+  it('keeps the statistics of a player without a name or games block', () => {
+    const rows = toFixtureDetailRows({
+      details: details((entry) => {
+        const team = (
+          entry.players as {
+            players: {
+              player: { id: number; name: string | null };
+              statistics: { games: unknown }[];
+            }[];
+          }[]
+        )[0];
+        const first = team?.players[0];
+        const block = first?.statistics[0];
+        if (!first || !block) throw new Error('sample player missing');
+        first.player.name = null;
+        block.games = null;
+      }),
+      teams: TEAMS,
+    });
+    const first = rows.playerStatistics[0];
+    expect(first).toMatchObject({
+      minutes: null,
+      rating: null,
+      substitute: null,
+    });
+    expect(first?.shotsTotal).not.toBeUndefined();
+  });
+
   it('is incomplete when one of the three blocks is empty', () => {
     const rows = toFixtureDetailRows({
       details: details((entry) => {

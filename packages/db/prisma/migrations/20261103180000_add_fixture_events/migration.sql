@@ -74,7 +74,7 @@ CREATE TABLE "public"."fixture_player_statistic" (
     "minutes" INTEGER,
     "position" TEXT,
     "rating" DECIMAL(4,2),
-    "substitute" BOOLEAN NOT NULL,
+    "substitute" BOOLEAN,
     "shotsTotal" INTEGER,
     "shotsOn" INTEGER,
     "goals" INTEGER,

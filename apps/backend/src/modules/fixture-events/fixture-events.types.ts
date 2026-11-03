@@ -34,7 +34,7 @@ export type FixturePlayerStatisticRow = {
   position: string | null;
   /** As the API wrote it ("7.2"); a Decimal at the Prisma boundary. */
   rating: string | null;
-  substitute: boolean;
+  substitute: boolean | null;
   shotsTotal: number | null;
   shotsOn: number | null;
   goals: number | null;

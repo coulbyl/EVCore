@@ -128,6 +128,20 @@ describe('FixtureEventsService.persistDetails', () => {
     expect(events.markSynced).not.toHaveBeenCalled();
   });
 
+  it('a block sent empty keeps the one already written', async () => {
+    await service.persistDetails({
+      fixtureExternalId: 1557450,
+      observedAt: new Date('2026-10-29T14:00:00Z'),
+      details: details((entry) => {
+        entry.lineups = [];
+      }),
+    });
+    expect(events.replaceForFixture).toHaveBeenCalled();
+    expect(playerStatistics.replaceForFixture).toHaveBeenCalled();
+    expect(lineups.replaceForFixture).not.toHaveBeenCalled();
+    expect(events.markSynced).toHaveBeenCalled();
+  });
+
   it('rejects a match naming a team that is neither side, writing nothing', async () => {
     events.findFixtureIdentity.mockResolvedValue({
       fixtureId: 'fixture-1',

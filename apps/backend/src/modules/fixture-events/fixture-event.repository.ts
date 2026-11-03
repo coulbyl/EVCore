@@ -11,6 +11,7 @@ export type SheetEventRow = {
   extraMinute: number | null;
   type: FixtureEventType;
   detail: string;
+  comments: string | null;
   playerName: string | null;
 };
 
@@ -92,6 +93,7 @@ export class FixtureEventRepository {
         extraMinute: true,
         type: true,
         detail: true,
+        comments: true,
         playerName: true,
       },
       orderBy: { ordinal: 'asc' },

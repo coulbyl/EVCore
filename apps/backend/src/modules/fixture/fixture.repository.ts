@@ -621,10 +621,14 @@ export class FixtureRepository {
     });
   }
 
-  // Finished fixtures whose team statistics are in but whose events,
-  // lineups and player statistics are not, kicked off before `before`
-  // (a recent match may still receive them: the routine sync wrote what it
-  // had), most recent first. Feeds the events backfill.
+  // Finished fixtures the stats sync is done with (team statistics in, or
+  // unavailable: API-Football may still cover its events) whose events,
+  // lineups and player statistics are not, kicked off before `before` (a
+  // recent match may still receive them: the routine sync wrote what it
+  // had), most recent first. Feeds the events backfill; a fixture whose
+  // answer stays empty is marked after one call (past the grace period).
+  // Fixtures still waiting for their statistics are left to the stats sync,
+  // which fetches their events in the same call.
   findEventsBackfillPending(input: {
     before: Date;
     limit: number;
@@ -639,7 +643,10 @@ export class FixtureRepository {
     return this.prisma.client.fixture.findMany({
       where: {
         status: 'FINISHED',
-        statisticsSyncedAt: { not: null },
+        OR: [
+          { statisticsSyncedAt: { not: null } },
+          { statisticsUnavailable: true },
+        ],
         eventsSyncedAt: null,
         scheduledAt: { lt: input.before },
         ...(input.excludeExternalIds.length > 0
@@ -656,14 +663,15 @@ export class FixtureRepository {
     });
   }
 
-  // Events coverage of the fixtures with team statistics: how many have
-  // their events, lineups and player statistics.
+  // Events coverage of the finished fixtures the stats sync is done with:
+  // how many have their events, lineups and player statistics.
   async countEventsCoverage(): Promise<EventsCoverageRow> {
     const [row] = await this.prisma.client.$queryRaw<EventsCoverageRow[]>`
       SELECT count(*) FILTER (WHERE "eventsSyncedAt" IS NOT NULL)::int AS synced,
              count(*)::int AS total
       FROM public.fixture
-      WHERE status = 'FINISHED' AND "statisticsSyncedAt" IS NOT NULL
+      WHERE status = 'FINISHED'
+        AND ("statisticsSyncedAt" IS NOT NULL OR "statisticsUnavailable")
     `;
     return row ?? { synced: 0, total: 0 };
   }

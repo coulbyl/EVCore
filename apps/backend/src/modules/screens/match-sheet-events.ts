@@ -10,11 +10,19 @@ const GOAL_KINDS: Readonly<Record<string, SheetScorer['kind']>> = {
 
 const RED_CARDS = new Set(['Red Card', 'Second Yellow card']);
 
+// A shoot-out kick is listed as a goal; it is not one of the score's.
+const SHOOTOUT = 'Penalty Shootout';
+
+// The sheet's score is the full-time one (fixture.homeScore, 90 minutes
+// and their stoppage time): extra-time goals (91' to 120') are not in it.
+const LAST_REGULATION_MINUTE = 90;
+
 /**
  * The scorers and red cards of a finished match (plan 03/11, phase 2),
  * from its API-Football events. A goal without a scorer is left out: the
  * API keeps a goal cancelled by the VAR that way (3 of 399 matches,
- * 03/11). An own goal's event names the team it counts for. When the goals
+ * 03/11), and so is a shoot-out kick. An own goal's event names the team
+ * it counts for. When the goals
  * left do not make the score, nothing is shown rather than a wrong list.
  */
 export function sheetEventsOf(input: {
@@ -45,6 +53,8 @@ export function sheetEventsOf(input: {
     if (team === null || event.playerName === null) continue;
     const at = { minute: event.minute, extraMinute: event.extraMinute };
     if (event.type === FixtureEventType.GOAL) {
+      if (event.comments === SHOOTOUT) continue;
+      if (event.minute > LAST_REGULATION_MINUTE) continue;
       const kind = GOAL_KINDS[event.detail];
       if (kind) scorers.push({ ...at, player: event.playerName, team, kind });
     } else if (

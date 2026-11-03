@@ -97,12 +97,14 @@ export function toFixtureDetailRows(input: {
       const id = identityOf(player.id);
       if (id === null) continue;
       // The statistics block names the player in full: it wins over the
-      // lineup's spelling.
-      players.set(id, {
-        externalId: id,
-        name: player.name,
-        photoUrl: player.photo ?? null,
-      });
+      // lineup's spelling. Without a name, the player row waits for one.
+      if (player.name) {
+        players.set(id, {
+          externalId: id,
+          name: player.name,
+          photoUrl: player.photo ?? null,
+        });
+      }
       const block = statistics[0];
       if (!block) continue;
       const key = `${teamId}:${id}`;
@@ -160,10 +162,10 @@ function playerStatisticRow(input: {
   return {
     teamId: input.teamId,
     playerExternalId: input.playerExternalId,
-    minutes: block.games.minutes ?? null,
-    position: block.games.position ?? null,
-    rating: ratingOf(block.games.rating),
-    substitute: block.games.substitute,
+    minutes: block.games?.minutes ?? null,
+    position: block.games?.position ?? null,
+    rating: ratingOf(block.games?.rating),
+    substitute: block.games?.substitute ?? null,
     shotsTotal: block.shots?.total ?? null,
     shotsOn: block.shots?.on ?? null,
     goals: block.goals?.total ?? null,

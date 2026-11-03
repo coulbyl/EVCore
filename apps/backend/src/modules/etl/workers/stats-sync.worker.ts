@@ -16,6 +16,7 @@ import { FixtureService } from '../../fixture/fixture.service';
 import {
   ETL_CONSTANTS,
   DEFAULT_SEASON_START_MONTH,
+  STATS_BACKFILL,
 } from '@config/etl.constants';
 import { sleep } from '@utils/async.utils';
 import { NotificationService } from '../../notification/notification.service';
@@ -71,6 +72,8 @@ export type StatsSyncBatchResult = {
   };
   // /fixtures?ids= calls spent.
   calls: number;
+  // Calls whose answer failed the envelope schema.
+  rejectedCalls: number;
   abortReason: 'quota' | null;
 };
 
@@ -78,6 +81,11 @@ const logger = createLogger('stats-sync-worker');
 
 @Injectable()
 export class StatsSyncWorker {
+  // Routine sync: non-quota failures per fixture since process start.
+  private readonly failedAttempts = new Map<number, number>();
+  // UTC day of the last alert on rejected answers: one a day at most.
+  private rejectionAlertDay: string | null = null;
+
   // eslint-disable-next-line max-params -- worker orchestrates focused feature services.
   constructor(
     private readonly fixtureService: FixtureService,
@@ -143,8 +151,17 @@ export class StatsSyncWorker {
         seasonFallbackEndDate(season, seasonStartMonth),
     });
 
-    const pendingFixtures =
-      await this.fixtureService.findFinishedWithoutStatistics(seasonRecord.id);
+    // A fixture that keeps failing (missing from the answer, rejected call)
+    // is left alone after MAX_FIXTURE_ATTEMPTS until the next restart: it
+    // must not hold the 20 oldest places of every routine call. Never marked
+    // unavailable on that basis (the backfill retries it on its own count).
+    const pendingFixtures = (
+      await this.fixtureService.findFinishedWithoutStatistics(seasonRecord.id)
+    ).filter(
+      ({ externalId }) =>
+        (this.failedAttempts.get(externalId) ?? 0) <
+        STATS_BACKFILL.MAX_FIXTURE_ATTEMPTS,
+    );
     const maxPerJob =
       syncScope === 'backfill'
         ? ETL_CONSTANTS.STATS_BACKFILL_MAX_FIXTURES_PER_JOB
@@ -171,7 +188,14 @@ export class StatsSyncWorker {
       details,
       calls,
       abortReason,
+      failedExternalIds,
     } = await this.syncFixtures(fixtures);
+    for (const externalId of failedExternalIds) {
+      this.failedAttempts.set(
+        externalId,
+        (this.failedAttempts.get(externalId) ?? 0) + 1,
+      );
+    }
 
     if (abortReason !== null) {
       logger.warn(
@@ -238,6 +262,7 @@ export class StatsSyncWorker {
         failedExternalIds: [],
       },
       calls: 0,
+      rejectedCalls: 0,
       abortReason: null,
     };
     const fail = (externalId: number): void => {
@@ -268,6 +293,7 @@ export class StatsSyncWorker {
           { ids, status: res.status, body: res.body },
           'API-FOOTBALL quota or rate limit reached — aborting batch',
         );
+        await this.alertOnRejections(tally);
         return { ...tally, abortReason: 'quota' };
       }
 
@@ -291,6 +317,7 @@ export class StatsSyncWorker {
           'Zod validation failed on /fixtures?ids= — skipping batch',
         );
         ids.forEach(fail);
+        tally.rejectedCalls++;
         continue;
       }
 
@@ -318,7 +345,27 @@ export class StatsSyncWorker {
       }
     }
 
+    await this.alertOnRejections(tally);
     return tally;
+  }
+
+  // CLAUDE.md: a Zod failure on ETL data triggers an alert. One a day at
+  // most (every routine job and backfill tick share this worker): a schema
+  // drift would otherwise send one per competition or per five minutes.
+  private async alertOnRejections(tally: StatsSyncBatchResult): Promise<void> {
+    if (tally.rejectedCalls === 0 && tally.details.rejected === 0) return;
+    const day = new Date().toISOString().slice(0, 10);
+    if (this.rejectionAlertDay === day) return;
+    this.rejectionAlertDay = day;
+    try {
+      await this.notification.sendEtlFailureAlert(
+        'stats-sync',
+        'fixtures-by-ids',
+        `${tally.rejectedCalls} /fixtures?ids= answer(s) rejected by the schema, ${tally.details.rejected} match(es) without their events, lineups and player statistics (rejected or not written) — left pending; see the stats-sync-worker logs`,
+      );
+    } catch (error) {
+      logger.error({ err: error }, 'Rejection alert could not be sent');
+    }
   }
 
   // Team statistics and xG, exactly as /fixtures/statistics was handled:
@@ -414,7 +461,7 @@ export class StatsSyncWorker {
     const details = FixtureByIdDetailsSchema.safeParse(input.entry);
     if (!details.success) {
       logger.warn(
-        { externalId, issues: details.error.issues.slice(0, 5) },
+        { externalId, issues: details.error.issues },
         'Zod validation failed on events/lineups/players — left pending',
       );
       tally.details.rejected++;
@@ -422,11 +469,23 @@ export class StatsSyncWorker {
       return;
     }
 
-    const written = await this.fixtureEvents.persistDetails({
-      fixtureExternalId: externalId,
-      observedAt: input.observedAt,
-      details: details.data,
-    });
+    let written: Awaited<ReturnType<FixtureEventsService['persistDetails']>>;
+    try {
+      written = await this.fixtureEvents.persistDetails({
+        fixtureExternalId: externalId,
+        observedAt: input.observedAt,
+        details: details.data,
+      });
+    } catch (error) {
+      // Never costs the other fixtures of the call their statistics.
+      logger.error(
+        { externalId, err: error },
+        'Writing events/lineups/players failed — left pending',
+      );
+      tally.details.rejected++;
+      tally.details.failedExternalIds.push(externalId);
+      return;
+    }
     if (written.status === 'rejected') {
       logger.warn(
         { externalId, reason: written.reason },

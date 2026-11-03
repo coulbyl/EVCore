@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-// Schema for API-FOOTBALL GET /fixtures/statistics?fixture={id}
-// Reference: https://www.api-football.com/documentation-v3#tag/Fixtures/operation/get-fixtures-statistics
-// Returns exactly 2 team objects (home then away) — ordered as listed in the fixture.
+// A team's final statistics, as API-Football writes them in the
+// `statistics` block of /fixtures?ids= (fixture-full.schema.ts) — the same
+// shape /fixtures/statistics?fixture={id} returned before 03/11.
 
 const StatisticEntrySchema = z.object({
   type: z.string(),
@@ -18,15 +18,4 @@ export const TeamStatisticsSchema = z.object({
   statistics: z.array(StatisticEntrySchema),
 });
 
-export const ApiFootballStatisticsResponseSchema = z.object({
-  get: z.literal('fixtures/statistics'),
-  parameters: z.record(z.string(), z.string()),
-  results: z.number().int().nonnegative(),
-  // API always returns exactly 2 team objects (home then away) for a played fixture
-  response: z.array(TeamStatisticsSchema).length(2),
-});
-
 export type TeamStatistics = z.infer<typeof TeamStatisticsSchema>;
-export type ApiFootballStatisticsResponse = z.infer<
-  typeof ApiFootballStatisticsResponseSchema
->;

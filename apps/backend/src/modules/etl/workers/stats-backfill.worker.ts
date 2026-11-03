@@ -147,8 +147,8 @@ export class StatsBackfillWorker extends WorkerHost {
     return { result: { status: 'nothing-left' }, calls: 0 };
   }
 
-  // Events, lineups and player statistics of fixtures that already have
-  // their team statistics, most recent first, 20 per call. Only fixtures
+  // Events, lineups and player statistics of fixtures the stats sync is
+  // done with, most recent first, 20 per call. Only fixtures
   // past the grace period: a recent one may still receive them, and the
   // routine sync already wrote what it had.
   private async runEventsLot(budget: number): Promise<EventsBackfillLotResult> {

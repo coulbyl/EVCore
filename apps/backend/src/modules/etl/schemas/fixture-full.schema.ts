@@ -34,7 +34,7 @@ export const FixtureByIdIdentitySchema = z.object({
   teams: z.object({ home: TeamRefSchema, away: TeamRefSchema }),
 });
 
-// Same rule as ApiFootballStatisticsResponseSchema.response.
+// Same rule as /fixtures/statistics had: exactly two teams.
 export const FixtureByIdStatisticsSchema = z
   .array(TeamStatisticsSchema)
   .length(2);
@@ -82,14 +82,16 @@ const FixtureLineupSchema = z.object({
 // Loose: the whole block is kept as `raw`, including fields not read today
 // (duels, dribbles, passes accuracy).
 const PlayerStatisticBlockSchema = z.looseObject({
-  games: z.looseObject({
-    minutes: count,
-    number: count,
-    position: z.string().nullish(),
-    rating: z.union([z.string(), z.number()]).nullish(),
-    captain: z.boolean().nullish(),
-    substitute: z.boolean(),
-  }),
+  games: z
+    .looseObject({
+      minutes: count,
+      number: count,
+      position: z.string().nullish(),
+      rating: z.union([z.string(), z.number()]).nullish(),
+      captain: z.boolean().nullish(),
+      substitute: z.boolean().nullish(),
+    })
+    .nullish(),
   offsides: count,
   shots: z.looseObject({ total: count, on: count }).nullish(),
   goals: z
@@ -113,7 +115,7 @@ const TeamPlayersSchema = z.object({
     z.object({
       player: z.object({
         id: z.number().int().nonnegative(),
-        name: z.string(),
+        name: z.string().nullish(),
         photo: z.string().nullish(),
       }),
       statistics: z.array(PlayerStatisticBlockSchema),

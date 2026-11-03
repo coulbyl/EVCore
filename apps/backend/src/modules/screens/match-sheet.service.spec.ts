@@ -475,6 +475,7 @@ describe('MatchSheetService — scorers and red cards', () => {
     extraMinute: null,
     type: 'GOAL',
     detail: 'Normal Goal',
+    comments: null,
     playerName: 'Konsa',
     ...overrides,
   });

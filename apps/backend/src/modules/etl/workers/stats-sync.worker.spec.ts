@@ -568,6 +568,88 @@ describe('StatsSyncWorker', () => {
     expect(fixtureStatistics.markUnavailable).not.toHaveBeenCalled();
   });
 
+  it('the routine leaves a fixture alone after three misses, never unavailable', async () => {
+    fixtureService.findFinishedWithoutStatistics.mockResolvedValue([
+      fixtureWithoutStatistics(71001),
+      fixtureWithoutStatistics(71002),
+    ]);
+    // 71001 never comes back in the answer.
+    const asked = serve((ids) => ({
+      body: fixturesAnswer(
+        ids.filter((id) => id !== 71001).map((id) => entry(id)),
+      ),
+    }));
+    const routine = new StatsSyncWorker(
+      fixtureService as unknown as FixtureService,
+      apiFootball,
+      notification as unknown as NotificationService,
+      prisma as unknown as PrismaService,
+      rollingStatsService as unknown as RollingStatsService,
+      fixtureStatistics as unknown as FixtureStatisticsService,
+      fixtureEvents as unknown as FixtureEventsService,
+    );
+
+    for (let run = 0; run < 4; run++) await routine.process(JOB);
+
+    expect(asked.slice(0, 3)).toEqual([
+      [71001, 71002],
+      [71001, 71002],
+      [71001, 71002],
+    ]);
+    expect(asked[3]).toEqual([71002]);
+    expect(fixtureStatistics.markUnavailable).not.toHaveBeenCalled();
+  });
+
+  it('a failed events write never costs the other fixtures their statistics', async () => {
+    fixtureEvents.persistDetails
+      .mockRejectedValueOnce(new Error('deadlock'))
+      .mockResolvedValue({
+        status: 'written',
+        events: 1,
+        lineups: 0,
+        playerStatistics: 0,
+        synced: true,
+      });
+    serve((ids) => ({ body: fixturesAnswer(ids.map((id) => entry(id))) }));
+
+    const result = await worker.syncFixtures([
+      fixtureWithoutStatistics(72001),
+      fixtureWithoutStatistics(72002),
+    ]);
+
+    expect(result.updated).toBe(2);
+    expect(result.details).toMatchObject({
+      written: 1,
+      rejected: 1,
+      failedExternalIds: [72001],
+    });
+  });
+
+  it('alerts once a day on rejected answers', async () => {
+    serve((ids) => ({
+      body: fixturesAnswer(
+        ids.map((id) => entry(id, { details: { players: 'oops' } })),
+      ),
+    }));
+    const alerting = new StatsSyncWorker(
+      fixtureService as unknown as FixtureService,
+      apiFootball,
+      notification as unknown as NotificationService,
+      prisma as unknown as PrismaService,
+      rollingStatsService as unknown as RollingStatsService,
+      fixtureStatistics as unknown as FixtureStatisticsService,
+      fixtureEvents as unknown as FixtureEventsService,
+    );
+
+    await alerting.syncFixtures([fixtureWithoutStatistics(73001)]);
+    await alerting.syncFixtures([fixtureWithoutStatistics(73002)]);
+
+    expect(notification.sendEtlFailureAlert).toHaveBeenCalledOnce();
+    expect(notification.sendEtlFailureAlert.mock.calls[0]?.[2]).toContain(
+      '1 match(es)',
+    );
+  });
+
   it('skips a batch on a network error, leaving it pending', async () => {
     execFileMock.mockImplementation((...args) => {
       const callback = args[args.length - 1] as (error: Error | null) => void;

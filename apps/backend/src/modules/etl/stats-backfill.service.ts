@@ -48,8 +48,9 @@ export type StatsBackfillStatus = {
   };
   next: StatsBackfillSeasonView[];
   parked: StatsBackfillSeasonView[];
-  // Fixtures with team statistics, and of them those with their events,
-  // lineups and player statistics (the events lot of each tick).
+  // Finished fixtures the stats sync is done with, and of them those with
+  // their events, lineups and player statistics (the events lot of each
+  // tick).
   events: { synced: number; total: number };
 };
 

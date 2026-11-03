@@ -9,6 +9,7 @@ const event = (overrides: Partial<SheetEventRow>): SheetEventRow => ({
   extraMinute: null,
   type: 'GOAL',
   detail: 'Normal Goal',
+  comments: null,
   playerName: 'Scorer',
   ...overrides,
 });
@@ -77,6 +78,42 @@ describe('sheetEventsOf', () => {
       { home: 1, away: 0 },
     );
     expect(result?.scorers.map((s) => s.player)).toEqual(['Rohr']);
+  });
+
+  it('keeps stoppage time, leaves out extra time (not in the full-time score)', () => {
+    const result = of(
+      [
+        event({ ordinal: 0, minute: 90, extraMinute: 4, playerName: 'Late' }),
+        event({ ordinal: 1, minute: 105, extraMinute: 1, playerName: 'Extra' }),
+        event({ ordinal: 2, minute: 118, playerName: 'Extra 2' }),
+      ],
+      { home: 1, away: 0 },
+    );
+    expect(result?.scorers.map((s) => s.player)).toEqual(['Late']);
+  });
+
+  it('leaves out the kicks of a penalty shoot-out', () => {
+    const result = of(
+      [
+        event({ ordinal: 0, minute: 30 }),
+        event({ ordinal: 1, minute: 70, teamId: 'away-id' }),
+        event({
+          ordinal: 2,
+          minute: 120,
+          detail: 'Penalty',
+          comments: 'Penalty Shootout',
+        }),
+        event({
+          ordinal: 3,
+          minute: 120,
+          teamId: 'away-id',
+          detail: 'Penalty',
+          comments: 'Penalty Shootout',
+        }),
+      ],
+      { home: 1, away: 1 },
+    );
+    expect(result?.scorers).toHaveLength(2);
   });
 
   it('shows nothing rather than a list that does not make the score', () => {

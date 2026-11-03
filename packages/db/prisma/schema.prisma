@@ -555,7 +555,7 @@ model FixturePlayerStatistic {
   minutes          Int?
   position         String?
   rating           Decimal? @db.Decimal(4, 2)
-  substitute       Boolean
+  substitute       Boolean?
   shotsTotal       Int?
   shotsOn          Int?
   goals            Int?

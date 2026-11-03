@@ -26,8 +26,7 @@ export class FixtureEventsService {
    * writes the same rows. The match is marked synced once the API returned
    * all three, or once it is old enough that what came is all there is
    * (FIXTURE_EVENTS.INCOMPLETE_GRACE_DAYS); until then the backfill takes
-   * it again. An answer with none of the three never erases rows already
-   * written.
+   * it again. An empty block never erases rows already written.
    */
   async persistDetails(input: {
     fixtureExternalId: number;
@@ -59,29 +58,24 @@ export class FixtureEventsService {
       rows.complete ||
       observedAt.getTime() - identity.scheduledAt.getTime() >=
         FIXTURE_EVENTS.INCOMPLETE_GRACE_DAYS * DAY_MS;
-    const empty =
-      rows.events.length === 0 &&
-      rows.lineups.length === 0 &&
-      rows.playerStatistics.length === 0;
-
+    // A block the API sent empty never erases one already written: the
+    // answer may come before the API has it (lineups, player statistics).
     await this.players.upsertMany(rows.players);
     await this.events.transaction(async (tx) => {
-      if (!empty) {
-        const write = { tx, fixtureId: identity.fixtureId, observedAt };
+      const write = { tx, fixtureId: identity.fixtureId, observedAt };
+      if (rows.events.length > 0) {
         await this.events.replaceForFixture({ ...write, rows: rows.events });
+      }
+      if (rows.lineups.length > 0) {
         await this.lineups.replaceForFixture({ ...write, rows: rows.lineups });
+      }
+      if (rows.playerStatistics.length > 0) {
         await this.playerStatistics.replaceForFixture({
           ...write,
           rows: rows.playerStatistics,
         });
       }
-      if (synced) {
-        await this.events.markSynced({
-          tx,
-          fixtureId: identity.fixtureId,
-          observedAt,
-        });
-      }
+      if (synced) await this.events.markSynced(write);
     });
 
     return {
