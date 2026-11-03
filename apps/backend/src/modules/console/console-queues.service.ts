@@ -209,6 +209,7 @@ export class ConsoleQueuesService {
         completedSeasons: status.totals.completedSeasons,
         seasons: status.totals.seasons,
         pending: status.totals.pending,
+        events: status.events,
         quota: status.quota
           ? { used: status.quota.current, limit: status.quota.limitDay }
           : null,

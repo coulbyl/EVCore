@@ -268,6 +268,8 @@ export type BackfillView = {
   completedSeasons: number;
   seasons: number;
   pending: number;
+  /** Fixtures with team statistics, and those with their events too. */
+  events: { synced: number; total: number };
   quota: { used: number; limit: number } | null;
   reserve: number;
 };

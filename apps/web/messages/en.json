@@ -1171,6 +1171,7 @@
       "onDemand": "on demand",
       "onDemandLast": "on demand · last ✓ {date}",
       "backfillSeasons": "{done} / {total} seasons",
+      "backfillEvents": "events {done} / {total}",
       "backfillQuota": "today's quota {used} / {limit}",
       "archiveLine": "last month {month} · base {table} · archive {archive}",
       "archiveNone": "no month archived · base {table}",

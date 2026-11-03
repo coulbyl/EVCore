@@ -48,6 +48,9 @@ export type StatsBackfillStatus = {
   };
   next: StatsBackfillSeasonView[];
   parked: StatsBackfillSeasonView[];
+  // Fixtures with team statistics, and of them those with their events,
+  // lineups and player statistics (the events lot of each tick).
+  events: { synced: number; total: number };
 };
 
 @Injectable()
@@ -149,13 +152,14 @@ export class StatsBackfillService {
   }
 
   async getStatus(): Promise<StatsBackfillStatus> {
-    const [paused, usage, candidates, reserve] = await Promise.all([
+    const [paused, usage, candidates, reserve, events] = await Promise.all([
       this.queue.isPaused(),
       this.apiFootball.getQuotaUsage(),
       this.fixtureService.findStatsBackfillCandidates(
         new Date(STATS_BACKFILL.MIN_SEASON_START),
       ),
       this.settings.statsBackfillDailyReserve(),
+      this.fixtureService.countEventsCoverage(),
     ]);
     const ranked = rankStatsBackfillSeasons(candidates, new Date());
     const view = (
@@ -190,6 +194,7 @@ export class StatsBackfillService {
         .slice(0, STATUS_QUEUE_PREVIEW)
         .map(view),
       parked: open.filter((season) => season.parked).map(view),
+      events,
     };
   }
 }

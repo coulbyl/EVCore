@@ -1171,6 +1171,7 @@
       "onDemand": "à la demande",
       "onDemandLast": "à la demande · dernier ✓ {date}",
       "backfillSeasons": "{done} / {total} saisons",
+      "backfillEvents": "événements {done} / {total}",
       "backfillQuota": "quota du jour {used} / {limit}",
       "archiveLine": "dernier mois {month} · base {table} · archive {archive}",
       "archiveNone": "aucun mois archivé · base {table}",
