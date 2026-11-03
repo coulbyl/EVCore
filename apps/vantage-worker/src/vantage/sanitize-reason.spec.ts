@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeReasonText } from "./sanitize-reason";
+import { sanitizeReasonText, speaksOfRules } from "./sanitize-reason";
 
 describe("sanitizeReasonText", () => {
   it("translates market and pick codes to French labels", () => {
@@ -85,5 +85,24 @@ describe("sanitizeReasonText", () => {
     expect(sanitizeReasonText("Le DRAWING board et HOMEWORK.")).toBe(
       "Le DRAWING board et HOMEWORK.",
     );
+  });
+});
+
+describe("speaksOfRules (v6, 03/11)", () => {
+  it("spots a text that narrates the rules", () => {
+    expect(
+      speaksOfRules(
+        "Aucun signal proche du seuil ne dispose d'une cote dans la fourchette.",
+      ),
+    ).toBe(true);
+    expect(speaksOfRules("Aucune base raw_stats ne reste.")).toBe(true);
+  });
+
+  it("lets an opinion on the match through", () => {
+    expect(
+      speaksOfRules(
+        "Levadia domine largement Narva, mais le favori est trop cher à ce prix.",
+      ),
+    ).toBe(false);
   });
 });

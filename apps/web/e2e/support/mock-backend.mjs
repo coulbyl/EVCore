@@ -648,6 +648,7 @@ function matchSheet(fixtureId) {
             decidedAt: "2026-10-30T13:41:00.000Z",
           }
         : null,
+    aiAbstention: null,
     form: {
       home: { last: ["won", "won", "lost", "won", "drawn"], restDays: 3 },
       away: { last: ["won", "drawn", "drawn", "lost", "won"], restDays: 6 },

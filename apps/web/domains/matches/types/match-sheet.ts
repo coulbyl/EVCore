@@ -22,6 +22,13 @@ export type SheetAiOpinion = SheetPick & {
   decidedAt: string;
 };
 
+/** The AI's no-bet opinion on the match. */
+export type SheetAiAbstention = {
+  speech: string;
+  /** When it decided, ISO. */
+  decidedAt: string;
+};
+
 export type SheetTeamForm = {
   /** Oldest first. */
   last: ("won" | "drawn" | "lost")[];
@@ -43,6 +50,7 @@ export type MatchSheet = {
   /** Why a set-aside match has no reading (06 § 4–5). */
   setAsideReason: "divergence" | "low_odds" | "suspended" | "not_sure" | null;
   ai: SheetAiOpinion | null;
+  aiAbstention: SheetAiAbstention | null;
   form: { home: SheetTeamForm; away: SheetTeamForm };
   headToHead: string | null;
   otherPicks: SheetPick[];

@@ -57,6 +57,8 @@ export type SheetHeaderRow = MatchRow & {
 export type AiOpinionRow = {
   status: string;
   text: string | null;
+  /** `match` when the text is an opinion on the match (no-play, v6). */
+  voice: string | null;
   /** When the AI wrote it. */
   decidedAt: Date;
   market: string | null;
@@ -234,6 +236,7 @@ export class MatchesRepository {
       WITH latest AS (
         SELECT cd.id, cd.status::text AS status,
                cd."reasonDetails"->>'text' AS text,
+               cd."reasonDetails"->>'voice' AS voice,
                cd."createdAt" AS "decidedAt"
         FROM public.channel_decision cd
         JOIN public.model_run mr ON mr.id = cd."modelRunId"
@@ -244,7 +247,7 @@ export class MatchesRepository {
         ORDER BY cd."createdAt" DESC
         LIMIT 1
       )
-      SELECT latest.status, latest.text, latest."decidedAt",
+      SELECT latest.status, latest.text, latest.voice, latest."decidedAt",
              cs.market::text AS market, cs.pick,
              cs.result::text AS result
       FROM latest

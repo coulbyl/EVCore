@@ -128,7 +128,7 @@ describe("analyzeFixture — MAX_ODDS cap and self-calibration gate (v4, 2026-10
     expect(persistVantageGateRejection).toHaveBeenCalledWith(
       expect.objectContaining({
         reasonCode: "VANTAGE_GATED_BASIS",
-        configVersion: "vantage-v5-no-tension",
+        configVersion: "vantage-v6-match-voice",
         market: "ONE_X_TWO",
         pick: "HOME",
         text: expect.stringContaining("désaccord entre nos propres lectures"),

@@ -3,6 +3,7 @@ import { STRATEGY_CHANNEL } from "@evcore/analysis-core";
 import type { VantageResponse } from "./response-schema";
 import type { SituationalResearch } from "../research";
 import type { KnownQuote } from "./analyze-fixture";
+import { speaksOfRules } from "./sanitize-reason";
 
 /** Writes VANTAGE's decision as a normal ChannelDecision + ChannelSelection,
  * attached to the fixture's existing ModelRun — the exact same shape every
@@ -45,10 +46,16 @@ export async function persistVantageDecision(
   // that doesn't change its reading), but so an audit can always see exactly
   // what was available to it, same spirit as logging deterministic `features`
   // on every ModelRun.
+  // `voice: "match"` (v6): a no-play text written as an opinion on the
+  // match, which the match sheet shows; one that still names a rule, and
+  // every older one, stays hidden.
   const reasonDetails = {
     text: response.reasonDetails,
     ...(response.verdict === "play" && response.basis
       ? { basis: response.basis }
+      : {}),
+    ...(response.verdict === "no_play" && !speaksOfRules(response.reasonDetails)
+      ? { voice: "match" }
       : {}),
     ...(research ? { researchCitations: research.citations } : {}),
   };

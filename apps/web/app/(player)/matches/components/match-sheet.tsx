@@ -57,6 +57,12 @@ export async function MatchSheetView({ id }: { id: string }) {
   const display = displayLocaleOf(locale);
   const muted = sheet.state === "postponed";
 
+  const decidedAt = (iso: string) =>
+    t("aiDecidedAt", {
+      date: formatShortDate(new Date(iso), display, timeZone),
+      time: formatTime(new Date(iso), display, timeZone),
+    });
+
   return (
     <Sheet
       title={`${sheet.home.name} – ${sheet.away.name}`}
@@ -68,9 +74,7 @@ export async function MatchSheetView({ id }: { id: string }) {
           t={t}
           locale={display}
           timeZone={timeZone}
-          diagnosticHref={
-            admin ? `/admin/matches/${sheet.fixtureId}` : null
-          }
+          diagnosticHref={admin ? `/admin/matches/${sheet.fixtureId}` : null}
         />
       }
     >
@@ -114,7 +118,23 @@ export async function MatchSheetView({ id }: { id: string }) {
         </Section>
 
         <Section title={t("ai")}>
-          {!sheet.ai ? (
+          {sheet.aiAbstention && !sheet.ai ? (
+            <>
+              <p className="text-body">{t("aiAbstains")}</p>
+              <AiSpeech
+                id={`ai-speech-${sheet.fixtureId}`}
+                speech={sheet.aiAbstention.speech}
+                labels={{
+                  open: t("aiSpeech"),
+                  title: t("ai"),
+                  close: t("aiSpeechClose"),
+                }}
+              />
+              <p className="text-meta text-muted-foreground">
+                {decidedAt(sheet.aiAbstention.decidedAt)}
+              </p>
+            </>
+          ) : !sheet.ai ? (
             <p className="text-body text-muted-foreground">{t("noAi")}</p>
           ) : (
             <>
@@ -136,18 +156,7 @@ export async function MatchSheetView({ id }: { id: string }) {
                 />
               ) : null}
               <p className="text-meta text-muted-foreground">
-                {t("aiDecidedAt", {
-                  date: formatShortDate(
-                    new Date(sheet.ai.decidedAt),
-                    display,
-                    timeZone,
-                  ),
-                  time: formatTime(
-                    new Date(sheet.ai.decidedAt),
-                    display,
-                    timeZone,
-                  ),
-                })}
+                {decidedAt(sheet.ai.decidedAt)}
               </p>
             </>
           )}

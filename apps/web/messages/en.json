@@ -335,6 +335,7 @@
       },
       "ai": "AI opinion",
       "noAi": "No opinion",
+      "aiAbstains": "The AI would not bet on this match",
       "sameAsReading": "Same bet as our reading",
       "aiSpeech": "Why?",
       "aiDecidedAt": "Decided on {date} at {time}",

@@ -335,6 +335,7 @@
       },
       "ai": "Avis IA",
       "noAi": "Pas d'avis",
+      "aiAbstains": "L'IA ne parie pas sur ce match",
       "sameAsReading": "Même pari que notre lecture",
       "aiSpeech": "Pourquoi ?",
       "aiDecidedAt": "Décidé le {date} à {time}",
