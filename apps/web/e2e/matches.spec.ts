@@ -312,9 +312,8 @@ test.describe("Fiche lente", () => {
     await row.focus();
     await page.keyboard.press("Enter");
 
-    const loading = page
-      .getByRole("dialog", { name: "Chargement" })
-      .or(page.getByRole("complementary", { name: "Chargement" }));
+    // The skeleton is plain markup (no JavaScript loaded with the tabs).
+    const loading = page.locator("[data-sheet-skeleton]");
     await expect(loading).toBeVisible();
 
     const sheet = page

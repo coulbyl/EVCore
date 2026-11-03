@@ -1,7 +1,7 @@
 /**
  * Une feuille qui en remplace une autre sans que la personne l'ait fermée :
- * le squelette de chargement (`loading.tsx` des feuilles interceptées) puis
- * la vraie feuille, ou une fiche ouverte depuis un coupon. Pour React ce
+ * le mode strict de React, ou une fiche ouverte depuis un coupon (le
+ * squelette des feuilles interceptées, sans JavaScript, se lit dans le DOM). Pour React ce
  * sont deux montages ; pour la personne, une seule feuille.
  *
  * - La suivante ne rejoue pas la montée (`isSheetOpen`, lu au rendu, avant
@@ -17,9 +17,18 @@
 let openSheets = 0;
 let relayedOpener: HTMLElement | null = null;
 
-/** Une feuille est montée : celle qu'on rend prend sa place sans animation. */
+/**
+ * Une feuille, ou le squelette d'une feuille interceptée (sans JavaScript,
+ * `SheetSkeleton`), est à l'écran : celle qu'on rend prend sa place sans
+ * animation. Lu au rendu ; jamais vrai à l'hydratation d'une page chargée
+ * d'un bloc, où aucun squelette n'est rendu.
+ */
 export function isSheetOpen(): boolean {
-  return openSheets > 0;
+  return (
+    openSheets > 0 ||
+    (typeof document !== "undefined" &&
+      document.querySelector("[data-sheet-skeleton]") !== null)
+  );
 }
 
 /** À l'ouverture : l'ouvreur transmis par la feuille remplacée, s'il y en a un. */
