@@ -1,3 +1,4 @@
+import { readdir } from "node:fs/promises";
 import { DuckDBInstance, type DuckDBConnection } from "@duckdb/node-api";
 import type { RawOddsRow } from "@evcore/analysis-core";
 
@@ -46,6 +47,11 @@ export class DuckDbOddsArchive implements ArchivedOddsSource {
   ) {}
 
   static async open(dir: string): Promise<DuckDbOddsArchive> {
+    // Said at once, not after minutes of a replay: a wrong or empty folder.
+    const files = (await readdir(dir)).filter((f) => f.endsWith(".parquet"));
+    if (files.length === 0) {
+      throw new Error(`No archived odds month (*.parquet) in ${dir}`);
+    }
     const instance = await DuckDBInstance.create(":memory:");
     const connection = await instance.connect();
     const glob = `${dir.replace(/\/$/, "")}/*.parquet`.replaceAll("'", "''");

@@ -49,7 +49,7 @@ export class ParquetMonthWriter {
     const instance = await DuckDBInstance.create(':memory:', {
       memory_limit: ODDS_ARCHIVE.DUCKDB_MEMORY_LIMIT,
       temp_directory: dir,
-      threads: '2',
+      threads: ODDS_ARCHIVE.DUCKDB_THREADS,
     });
     const connection = await instance.connect();
     return new ParquetMonthWriter(instance, connection, dir);

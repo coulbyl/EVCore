@@ -111,7 +111,8 @@ export class OddsArchiveRepository {
 
   async createPartition(partition: OddsPartition): Promise<void> {
     await this.prisma.client.$transaction([
-      this.prisma.client.$executeRaw`SET LOCAL lock_timeout = '10s'`,
+      this.prisma.client
+        .$executeRaw`SET LOCAL lock_timeout = ${Prisma.raw(`'${ODDS_ARCHIVE.CREATE_LOCK_TIMEOUT}'`)}`,
       this.prisma.client.$executeRaw`
         CREATE TABLE IF NOT EXISTS ${ident(partition.name)}
         PARTITION OF ${ident(ODDS_PARTITIONS.PARENT)} ${rangeSql(partition)}
@@ -123,7 +124,7 @@ export class OddsArchiveRepository {
   async countDefaultRows(): Promise<number> {
     const [row] = await this.prisma.client.$queryRaw<{ rows: number }[]>`
       SELECT count(*)::int AS rows FROM (
-        SELECT 1 FROM ${ident(ODDS_PARTITIONS.DEFAULT)} LIMIT 100000
+        SELECT 1 FROM ${ident(ODDS_PARTITIONS.DEFAULT)} LIMIT ${ODDS_ARCHIVE.DEFAULT_ROWS_COUNT_CAP}
       ) d
     `;
     return row?.rows ?? 0;
@@ -173,7 +174,7 @@ export class OddsArchiveRepository {
       {
         isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
         timeout: ODDS_ARCHIVE.TRANSACTION_TIMEOUT_MS,
-        maxWait: 60_000,
+        maxWait: ODDS_ARCHIVE.TRANSACTION_MAX_WAIT_MS,
       },
     );
   }
@@ -198,8 +199,9 @@ export class OddsArchiveRepository {
     `;
     // Kept: every non-PREMATCH row; every row of a match not settled yet;
     // per price, the closing line by observation (odds_closing_line), the
-    // last by snapshotAt (odds_latest and the history readers), the opening
-    // (odds_opening_line); per coupon leg, the price known at its
+    // last by snapshotAt (odds_latest and the history readers), the last
+    // captured before kickoff (OddsSnapshotLoader, an engine replay on a
+    // finished match), the opening (odds_opening_line); per coupon leg, the price known at its
     // publication for every pick of its market (priceUnpricedLegs reads the
     // sibling picks for the margin). Each is the arg-max of its reader over
     // a subset of the partition, so the reader still finds the same row.
@@ -237,6 +239,13 @@ export class OddsArchiveRepository {
                 id, "snapshotAt"
          FROM prematch
          WHERE "snapshotAt" <= "scheduledAt"
+         ORDER BY "fixtureId", bookmaker, market, pick, line,
+                  "snapshotAt" DESC, id DESC)
+        UNION ALL
+        (SELECT DISTINCT ON ("fixtureId", bookmaker, market, pick, line)
+                id, "snapshotAt"
+         FROM prematch
+         WHERE "snapshotAt" <= "scheduledAt" AND "createdAt" <= "scheduledAt"
          ORDER BY "fixtureId", bookmaker, market, pick, line,
                   "snapshotAt" DESC, id DESC)
         UNION ALL
@@ -301,16 +310,22 @@ export class OddsArchiveRepository {
     const parent = ident(ODDS_PARTITIONS.PARENT);
     await this.prisma.client.$transaction(
       async (tx) => {
+        const unchanged = async (): Promise<void> => {
+          const now = await this.fingerprintWith(tx, input.partition.name);
+          if (
+            now.rows !== input.expected.rows ||
+            now.lastTouched?.getTime() !== input.expected.lastTouched?.getTime()
+          ) {
+            throw new StaleExportError(input.partition.name);
+          }
+        };
+        // Once unlocked: a partition already moved fails here, and the
+        // locked read below finds its pages in cache (seconds, not tens).
+        await unchanged();
         await tx.$executeRaw`SET LOCAL lock_timeout = ${Prisma.raw(`'${ODDS_ARCHIVE.SWAP_LOCK_TIMEOUT}'`)}`;
         // Parent first, partitions with it: the order every writer takes.
         await tx.$executeRaw`LOCK TABLE ${parent} IN ACCESS EXCLUSIVE MODE`;
-        const now = await this.fingerprintWith(tx, input.partition.name);
-        if (
-          now.rows !== input.expected.rows ||
-          now.lastTouched?.getTime() !== input.expected.lastTouched?.getTime()
-        ) {
-          throw new StaleExportError(input.partition.name);
-        }
+        await unchanged();
         await tx.$executeRaw`ALTER TABLE ${parent} DETACH PARTITION ${ident(input.partition.name)}`;
         await tx.$executeRaw`DROP TABLE ${ident(input.partition.name)}`;
         await tx.$executeRaw`ALTER TABLE ${ident(input.compact)} RENAME TO ${Prisma.raw(`"${input.target}"`)}`;
@@ -327,7 +342,10 @@ export class OddsArchiveRepository {
           })),
         });
       },
-      { timeout: ODDS_ARCHIVE.TRANSACTION_TIMEOUT_MS, maxWait: 60_000 },
+      {
+        timeout: ODDS_ARCHIVE.TRANSACTION_TIMEOUT_MS,
+        maxWait: ODDS_ARCHIVE.TRANSACTION_MAX_WAIT_MS,
+      },
     );
   }
 

@@ -24,10 +24,17 @@ export const ODDS_ARCHIVE = {
   KEY_PREFIX: 'odds_snapshot',
   // Rows read per FETCH while exporting (~14 text columns each).
   FETCH_ROWS: 20_000,
-  // DuckDB stays small beside the worker: it spills to its file past this.
+  // DuckDB stays small beside the worker: it spills to disk past this.
   DUCKDB_MEMORY_LIMIT: '512MB',
-  // The swap waits this long for the table, else retries the next night.
+  DUCKDB_THREADS: '2',
+  // The swap waits this long for the table, else retries the next night;
+  // creating a month ahead, this long.
   SWAP_LOCK_TIMEOUT: '30s',
+  CREATE_LOCK_TIMEOUT: '10s',
+  // A transaction waits this long for a pool connection.
+  TRANSACTION_MAX_WAIT_MS: 60_000,
+  // The default partition is counted up to here: it must stay empty.
+  DEFAULT_ROWS_COUNT_CAP: 100_000,
   // Holding the export snapshot for a large month (the legacy partition is
   // 25 M rows) takes minutes.
   TRANSACTION_TIMEOUT_MS: 60 * 60_000,

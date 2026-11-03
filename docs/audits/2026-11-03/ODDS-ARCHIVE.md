@@ -33,7 +33,7 @@ Deux pièges relevés par l'inventaire, dont la règle de conservation tient com
 Pour une partition mensuelle close (tous ses matchs joués depuis plus de 7 jours), on garde :
 
 - toutes les lignes `HISTORICAL` ;
-- par (match, bookmaker, marché, choix, ligne), parmi les `PREMATCH` d'avant le coup d'envoi : la dernière par heure d'observation, la dernière par `snapshotAt`, la première par `createdAt` ;
+- par (match, bookmaker, marché, choix, ligne), parmi les `PREMATCH` d'avant le coup d'envoi : la dernière par heure d'observation, la dernière par `snapshotAt`, la dernière par `snapshotAt` relevée avant le coup d'envoi (`createdAt`, ce que lit le moteur rejoué sur un match fini), la première par `createdAt` ;
 - pour chaque jambe de coupon (`coupon_proposal_leg`), la ligne en vigueur à `generatedAt` du coupon pour son (match, marché, choix, ligne) chez les bookmakers opérateurs ;
 - rien d'autre : les relevés intermédiaires et les relevés d'après le coup d'envoi (0,9 %) partent dans l'archive.
 
@@ -51,7 +51,7 @@ Pour une partition mensuelle close (tous ses matchs joués depuis plus de 7 jour
 
 ## 5. La conversion initiale
 
-Pas de recopie : la migration renomme l'ancienne table en `odds_snapshot_legacy`, passe sa clé primaire à `(id, snapshotAt)`, déplace les lignes de novembre (0,7 M sur la copie) dans leur partition, et l'attache comme partition de tout ce qui précède le 1er novembre 2026 ; ses index sont repris tels quels. **35 s sur la copie du 03/11**, dont 10 s pour l'index de la clé composée et 16 s pour novembre ; la table est verrouillée pendant ce temps (passes de cotes en attente). L'ancienne partition est archivée par le même job dès le 15/11, puis remplacée par `odds_snapshot_history`.
+Pas de recopie : la migration renomme l'ancienne table en `odds_snapshot_legacy`, passe sa clé primaire à `(id, snapshotAt)`, déplace les lignes de novembre dans leur partition (chargées dans une table nue, clés et index posés ensuite), et l'attache comme partition de tout ce qui précède le 1er novembre 2026 ; ses index sont repris tels quels. **Environ 20 s sur la copie du 03/11** : 10 à 16 s pour l'index de la clé composée, 4 s pour les 0,7 M lignes de novembre. Novembre coûte ~6 s par million de lignes, et la prod en écrit ~4 M par semaine : ~45 s pour un déploiement le 08/11. La table est verrouillée pendant ce temps (passes de cotes en attente). L'ancienne partition est archivée par le même job dès le 15/11, puis remplacée par `odds_snapshot_history`.
 
 ## 6. Ce qui ne change pas
 
@@ -59,7 +59,7 @@ Les écrans, le moteur, le règlement, le CLV et les coupons lisent les mêmes t
 
 ## 7. Mesures sur la copie locale (dump du 03/11)
 
-- **Migration** : 35 s, table verrouillée (index de la clé composée 10 s, déplacement de novembre 16 s, contrainte de borne 1 s, attachement 4 ms). Aucune dérive Prisma ; toutes les migrations passent sur une base vide.
+- **Migration** : ~20 s, table verrouillée (index de la clé composée 10 à 16 s, novembre 4 s pour 0,7 M lignes, contrainte de borne 1 s, attachements quelques ms). Première version, novembre inséré dans une partition déjà indexée : 16 s pour novembre, 35 s au total. Aucune dérive Prisma ; toutes les migrations passent sur une base vide.
 - **Archive de l'ancienne partition** (passe simulée au 16/11) : 25,5 M lignes en 47 mois, exportées, relues et déposées en ~4 min 30 ; compactage ~4 min ; échange en moins d'une seconde. **8 min 40 au total.** 8,52 M lignes gardées (33 %), partition de 2,1 Go ; archive de **435 Mo** (17 octets par ligne).
 - **Mêmes réponses avant et après**, sur les matchs du 01/10 au 20/10 (empreinte md5 de chaque lecture) : `odds_closing_line` (1 226 783 lignes), `odds_opening_line` (1 228 778), dernière cote par `snapshotAt` (1 228 856), cote connue à la publication des 17 989 couples coupon × prix : identiques.
 - **Lecture d'étude** : un match d'octobre relu dans les fichiers, 9 047 lignes, autant qu'en base avant l'archive, en 89 ms.

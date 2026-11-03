@@ -90,14 +90,14 @@ export class OddsArchiveService {
       const compact = `${target}_next`;
       // The files go up while the compact copy is built: only the swap
       // needs both.
-      const [stored, kept] = await Promise.all([
+      const [stored, kept] = await settleBoth(
         this.upload(writer),
         this.repo.buildCompact({
           partition,
           compact,
           settledBefore: settledBefore(now),
         }),
-      ]);
+      );
       const journal: ArchivedMonthRow[] = stored.map(
         ({ aggregate, ...file }) => ({
           month: aggregate.month,
@@ -163,4 +163,15 @@ export class OddsArchiveService {
     }
     return stored;
   }
+}
+
+/**
+ * Both, or the first failure once both are done: the work directory is
+ * removed and the job ends only when neither still runs.
+ */
+async function settleBoth<A, B>(a: Promise<A>, b: Promise<B>): Promise<[A, B]> {
+  const [ra, rb] = await Promise.allSettled([a, b]);
+  if (ra.status === 'rejected') throw ra.reason;
+  if (rb.status === 'rejected') throw rb.reason;
+  return [ra.value, rb.value];
 }

@@ -9,7 +9,7 @@
 --
 -- Sans recopier 26 M de lignes : l'ancienne table devient la partition de
 -- tout ce qui précède le 1er novembre 2026 (`odds_snapshot_legacy`). Seules
--- les lignes de novembre (~0,7 M sur la copie du 03/11) sont déplacées. La
+-- les lignes de novembre sont déplacées (~4 M par semaine en prod). La
 -- partition ancienne sera compactée par le même job une fois ses matchs
 -- joués, puis remplacée par `odds_snapshot_history`.
 --
@@ -18,7 +18,7 @@
 -- contient déjà. Aucune clé étrangère ne pointe vers `odds_snapshot.id`.
 --
 -- Le script entier tient un verrou exclusif sur la table : les passes de
--- cotes attendent (quelques minutes, mesurées sur la copie : voir le plan).
+-- cotes attendent. Sa durée croît avec novembre (mesures dans le plan, § 5).
 
 -- 1. L'ancienne table, renommée avec ses index (les noms d'index sont
 --    uniques par schéma : la table mère reprend les noms de Prisma).
@@ -58,21 +58,36 @@ ALTER TABLE "public"."odds_snapshot"
   ADD CONSTRAINT "odds_snapshot_fixtureId_fkey" FOREIGN KEY ("fixtureId")
   REFERENCES "public"."fixture"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
--- 3. Les mois à venir, et une partition par défaut qui doit rester vide (le
---    job crée les mois suivants d'avance ; la console la surveille).
-CREATE TABLE "public"."odds_snapshot_y2026m11" PARTITION OF "public"."odds_snapshot"
+-- 3. Novembre quitte l'ancienne table. Chargé dans une table nue, ses clés
+--    et index posés après coup puis attaché : bien plus rapide qu'une
+--    insertion dans une partition déjà indexée. Le déclencheur n'est pas
+--    encore posé : `odds_latest` garde ses lignes, mêmes `id`.
+CREATE TABLE "public"."odds_snapshot_y2026m11" (
+  LIKE "public"."odds_snapshot_legacy" INCLUDING DEFAULTS
+);
+INSERT INTO "public"."odds_snapshot_y2026m11"
+SELECT * FROM "public"."odds_snapshot_legacy" WHERE "snapshotAt" >= '2026-11-01';
+DELETE FROM "public"."odds_snapshot_legacy" WHERE "snapshotAt" >= '2026-11-01';
+ALTER TABLE "public"."odds_snapshot_y2026m11"
+  ADD PRIMARY KEY ("id", "snapshotAt"),
+  ADD UNIQUE NULLS NOT DISTINCT ("fixtureId", "bookmaker", "market", "pick", "line", "snapshotAt"),
+  ADD FOREIGN KEY ("fixtureId") REFERENCES "public"."fixture"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  ADD CONSTRAINT "odds_snapshot_y2026m11_bound"
+    CHECK ("snapshotAt" >= '2026-11-01' AND "snapshotAt" < '2026-12-01');
+CREATE INDEX ON "public"."odds_snapshot_y2026m11" ("fixtureId", "snapshotAt");
+CREATE INDEX ON "public"."odds_snapshot_y2026m11" ("snapshotAt");
+ALTER TABLE "public"."odds_snapshot"
+  ATTACH PARTITION "public"."odds_snapshot_y2026m11"
   FOR VALUES FROM ('2026-11-01') TO ('2026-12-01');
+ALTER TABLE "public"."odds_snapshot_y2026m11" DROP CONSTRAINT "odds_snapshot_y2026m11_bound";
+
+-- 4. Les mois suivants, et une partition par défaut qui doit rester vide (le
+--    job crée les mois suivants d'avance ; la console la surveille).
 CREATE TABLE "public"."odds_snapshot_y2026m12" PARTITION OF "public"."odds_snapshot"
   FOR VALUES FROM ('2026-12-01') TO ('2027-01-01');
 CREATE TABLE "public"."odds_snapshot_y2027m01" PARTITION OF "public"."odds_snapshot"
   FOR VALUES FROM ('2027-01-01') TO ('2027-02-01');
 CREATE TABLE "public"."odds_snapshot_default" PARTITION OF "public"."odds_snapshot" DEFAULT;
-
--- 4. Novembre quitte l'ancienne table (le déclencheur n'est pas encore posé :
---    `odds_latest` garde ses lignes, mêmes `id`).
-INSERT INTO "public"."odds_snapshot"
-SELECT * FROM "public"."odds_snapshot_legacy" WHERE "snapshotAt" >= '2026-11-01';
-DELETE FROM "public"."odds_snapshot_legacy" WHERE "snapshotAt" >= '2026-11-01';
 
 -- 5. L'ancienne table devient la partition de tout ce qui précède. La
 --    contrainte prouve la borne : l'attachement ne relit pas la table.
