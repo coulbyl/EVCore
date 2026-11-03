@@ -13,7 +13,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * nor a retired one (the Monday statement's set since 2026-10-29).
  */
 export const WEEK_PRODUCTS: readonly string[] = RESULTS_PRODUCTS.filter(
-  (p) => !p.retired && p.source !== 'LLM',
+  (p) => !p.retired && (p.source as string) !== 'LLM',
 ).map((p) => p.key);
 
 export type ProductWeek = {

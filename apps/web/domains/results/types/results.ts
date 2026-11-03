@@ -15,6 +15,7 @@ export const RESULTS_PRODUCT_KEYS = [
   "HUNTER_DRAW",
   "HUNTER_SCORE",
   "HUNTER_CORNERS",
+  "AI_COMBO",
   "COMBO_AI",
   "LONG",
   "UNIQUE",

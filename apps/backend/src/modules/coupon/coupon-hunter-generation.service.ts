@@ -2,14 +2,17 @@ import { Injectable, Logger } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { CouponSource } from '@evcore/db';
 import {
+  AI_COMBO_COUPON_CLASS,
   BTTS_HUNTER,
   CORNERS_HUNTER,
   DRAW_HUNTER,
   SCORE_HUNTER,
+  composeAiCombo,
   composeCornersHunter,
   composeHunterByMarket,
   composeScoreHunter,
   priceCornersSides,
+  type AiComboCandidate,
   type HunterComposition,
   type HunterSpec,
   type Market,
@@ -25,6 +28,7 @@ import {
   type PlayableQuote,
 } from '../betting-engine/pricing/playable-odds.repository';
 import {
+  AI_COMBO_POLICY,
   CORNERS_HUNTER_POLICY,
   ENGINE_COMBO_POLICY,
   HUNTER_POLICY,
@@ -127,7 +131,119 @@ export class CouponHunterGenerationService {
         ),
       }),
       await this.persistCorners({ dayStart, avoided }),
+      await this.persistAiCombo({ dayStart, avoided }),
     ];
+  }
+
+  /**
+   * Combiné IA (2026-11-03) : trois ou quatre avis joués par l'IA sur les
+   * matchs du jour, au prix 1xBet de 1,45 à 1,80, un par championnat, les
+   * moins chers d'abord, cote combinée 4 à 10 ; hors matchs AVOID. Un avis
+   * sans fréquence du marché chez 1xBet (groupe incomplet) n'entre pas : sa
+   * chance serait inconnue.
+   */
+  private async persistAiCombo(input: {
+    dayStart: Date;
+    avoided: ReadonlySet<string>;
+  }): Promise<HunterPassOutcome> {
+    const { dayStart } = input;
+    const plays = (
+      await this.repository.findAiPlays({
+        from: dayStart,
+        to: new Date(dayStart.getTime() + DAY_MS),
+      })
+    ).filter((p) => !input.avoided.has(p.fixtureId));
+    const quotes = await this.playableOdds.findPlayableQuotes(
+      plays.map((p) => ({
+        fixtureId: p.fixtureId,
+        market: p.market,
+        pick: p.pick,
+      })),
+      { operatorOnly: true },
+    );
+    const candidates: AiComboCandidate[] = plays.flatMap((p) => {
+      const quote = quotes.get(playableQuoteKey(p));
+      return quote?.operatorOdds != null &&
+        quote.operatorFairProbability != null
+        ? [
+            {
+              fixtureId: p.fixtureId,
+              competition: p.competition,
+              market: p.market,
+              pick: p.pick,
+              operatorOdds: quote.operatorOdds,
+              operatorMargin: quote.operatorMargin,
+              probability: quote.operatorFairProbability,
+            },
+          ]
+        : [];
+    });
+    const composition = composeAiCombo(candidates);
+    const pass = {
+      name: 'ai-combo',
+      policyVersion: AI_COMBO_POLICY.version,
+    };
+    const base = {
+      hunter: AI_COMBO_COUPON_CLASS.name,
+      candidateCount: composition.candidateCount,
+    };
+    if (composition.outcome === 'abstained') {
+      await this.repository.recordPriceComposerAttempt({
+        forDate: dayStart,
+        outcome: 'abstained',
+        candidateCount: composition.candidateCount,
+        reason: composition.reason,
+        pass,
+      });
+      return { ...base, outcome: 'abstained' };
+    }
+    const kickoffs = new Map(plays.map((p) => [p.fixtureId, p.scheduledAt]));
+    // Fréquence du marché × cote : la chance affichée au joueur.
+    const expectedReturn = new Decimal(composition.jointProbability)
+      .times(composition.combinedOdds)
+      .toNumber();
+    const lastKickoff = Math.max(
+      ...composition.legs.map(
+        (leg) => kickoffs.get(leg.fixtureId)?.getTime() ?? dayStart.getTime(),
+      ),
+    );
+    const { proposalId, created } =
+      await this.repository.upsertPriceComposerProposal({
+        forDate: dayStart,
+        combinedOdds: composition.combinedOdds,
+        expectedReturn,
+        lastFixtureScheduledAt: new Date(lastKickoff),
+        legs: composition.legs.map((leg) => ({
+          fixtureId: leg.fixtureId,
+          market: leg.market as Market,
+          pick: leg.pick,
+          line: null,
+          odds: leg.operatorOdds,
+          expectedReturn: new Decimal(leg.probability)
+            .times(leg.operatorOdds)
+            .toNumber(),
+          probability: leg.probability,
+          ...operatorPrice(leg, quotes),
+        })),
+        profile: {
+          source: CouponSource.PRICE_COMPOSER,
+          targetOddsMin: AI_COMBO_COUPON_CLASS.targetOddsMin,
+          targetOddsMax: AI_COMBO_COUPON_CLASS.targetOddsMax,
+          policyVersion: AI_COMBO_POLICY.version,
+        },
+      });
+    await this.repository.recordPriceComposerAttempt({
+      forDate: dayStart,
+      outcome: created ? 'composed' : 'preserved',
+      candidateCount: composition.candidateCount,
+      proposalId,
+      pass,
+    });
+    this.logger.log(
+      `Combiné IA ${dayStart.toISOString().slice(0, 10)} : ` +
+        `${composition.legs.length} jambes à ${composition.combinedOdds}`,
+    );
+    return { ...base, outcome: 'composed' };
   }
 
   /**

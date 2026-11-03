@@ -57,4 +57,12 @@ Un **Combiné IA 4–10**, montré sur Aujourd'hui après les chasseurs :
 
 Il remplacerait le combiné IA à 2 jambes, qui ne sert plus qu'à la comparaison jambe à jambe avec le moteur. Cette comparaison est faite : l'IA est calibrée et ne bat pas la cote (`docs/audits/2026-10-29/BILAN-IA.md`).
 
-**À trancher** : remettre un produit « IA » sur Aujourd'hui revient sur la décision du 29/10 (« le combiné LLM n'est pas un produit de cet écran »). Je ne l'ai donc pas livré. Avec un oui, il s'agit d'une classe dans `analysis-core`, d'un compositeur dans le module coupon (passe de 17 h), de la source de proposition et d'une carte Aujourd'hui.
+**Décidé le 03/11** : l'utilisateur revient sur la décision du 29/10, et le Combiné IA est affiché.
+
+## Ce que livre la PR
+
+- **`AI_COMBO_COUPON_CLASS`** (`analysis-core`) : jambes de 1,45 à 1,80, au plus 4, cote combinée de 4 à 10. `composeAiCombo` applique la règle ci-dessus : un avis par championnat et par match, la marge 1xBet la plus basse d'abord, puis la fréquence du marché.
+- **Composition** : à la passe du soir (17:00 UTC la veille), avec les chasseurs (`CouponHunterGenerationService`). Elle reprend le dernier avis de l'IA par match du jour quand il joue (`CouponRepository.findAiPlays`), hors matchs signalés par AVOID, au prix 1xBet. Un avis sans fréquence du marché chez 1xBet (groupe incomplet) n'entre pas. Source `PRICE_COMPOSER`, bande 4. L'abstention est enregistrée (`ai-combo`).
+- **Chance affichée** : la fréquence du marché chez 1xBet, comme pour les chasseurs, jamais la probabilité de l'IA.
+- **Écrans** : « Combiné IA » sur Aujourd'hui, après les chasseurs ; dans Résultats (depuis le 04/11) ; dans le résumé du matin.
+- **L'ancien combiné IA à 2 jambes** (source LLM) est retiré de Résultats : seuls les admins le voient encore. Le vantage-worker continue de le composer. L'arrêter supprimerait un appel au modèle par soir ; ce sera à décider.

@@ -226,7 +226,8 @@
       "HUNTER_BTTS": "Chasseur Les deux marquent",
       "HUNTER_DRAW": "Chasseur Nul",
       "HUNTER_SCORE": "Chasseur Score exact",
-      "HUNTER_CORNERS": "Chasseur Corners"
+      "HUNTER_CORNERS": "Chasseur Corners",
+      "AI_COMBO": "Combiné IA"
     },
     "shortNames": {
       "FAVOURITE": "Favori",
@@ -235,7 +236,8 @@
       "HUNTER_BTTS": "Chasseur Les deux marquent",
       "HUNTER_DRAW": "Chasseur Nul",
       "HUNTER_SCORE": "Chasseur Score exact",
-      "HUNTER_CORNERS": "Chasseur Corners"
+      "HUNTER_CORNERS": "Chasseur Corners",
+      "AI_COMBO": "Combiné IA"
     },
     "codes": {
       "FAVOURITE": "FAV",
@@ -244,7 +246,8 @@
       "HUNTER_BTTS": "BTS",
       "HUNTER_DRAW": "NUL",
       "HUNTER_SCORE": "SCO",
-      "HUNTER_CORNERS": "COR"
+      "HUNTER_CORNERS": "COR",
+      "AI_COMBO": "IA"
     },
     "yesterday": "Hier",
     "week": "Ta semaine",
@@ -428,7 +431,8 @@
       "HUNTER_DRAW": "Chasseur Nul",
       "HUNTER_SCORE": "Chasseur Score exact",
       "HUNTER_CORNERS": "Chasseur Corners",
-      "COMBO_AI": "Combiné IA",
+      "AI_COMBO": "Combiné IA",
+      "COMBO_AI": "Combiné IA à 2 jambes",
       "LONG": "Coupon long",
       "UNIQUE": "Coupon unique IA"
     },
@@ -450,7 +454,8 @@
         "HUNTER_DRAW": "Chasseur Nul",
         "HUNTER_SCORE": "Chasseur Score exact",
         "HUNTER_CORNERS": "Chasseur Corners",
-        "COMBO_AI": "Combiné IA",
+        "AI_COMBO": "Combiné IA",
+        "COMBO_AI": "Combiné IA à 2 jambes",
         "LONG": "Coupon long",
         "UNIQUE": "Coupon unique IA",
         "AI": "Avis IA"
@@ -463,7 +468,8 @@
         "HUNTER_DRAW": "un match nul, cote 2,90 à 3,60",
         "HUNTER_SCORE": "un score exact, cote 6 à 12",
         "HUNTER_CORNERS": "un total de corners, cote 1,70 à 2,10",
-        "COMBO_AI": "le combiné choisi par l'IA dans le même vivier",
+        "AI_COMBO": "trois ou quatre avis joués par l'IA, chacun coté 1,45 à 1,80, cote totale de 4 à 10",
+        "COMBO_AI": "retiré de l'offre",
         "LONG": "retiré de l'offre",
         "UNIQUE": "retiré de l'offre",
         "AI": "un pari de l'IA par match, réglé à la cote du jour"

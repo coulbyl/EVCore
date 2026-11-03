@@ -49,6 +49,7 @@ export const PRODUCT_ORDER: readonly TodayProductKey[] = [
   "HUNTER_DRAW",
   "HUNTER_SCORE",
   "HUNTER_CORNERS",
+  "AI_COMBO",
 ];
 
 /** Réglé : la carte montre ✓, ✗ ou « Remboursé » à la place de la cote. */

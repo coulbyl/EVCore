@@ -22,6 +22,7 @@ const FOLLOWED_LABEL: Record<string, string> = {
   HUNTER_DRAW: 'Chasseur Match nul',
   HUNTER_SCORE: 'Chasseur Score exact',
   HUNTER_CORNERS: 'Chasseur Corners',
+  AI_COMBO: 'Combiné IA',
 };
 
 /** Noms courts des produits, comme sur l'Accueil. */
@@ -33,6 +34,7 @@ export const PRODUCT_SHORT_LABEL: Readonly<Record<string, string>> = {
   HUNTER_DRAW: 'Chasseur Nul',
   HUNTER_SCORE: 'Chasseur Score',
   HUNTER_CORNERS: 'Chasseur Corners',
+  AI_COMBO: 'Combiné IA',
 };
 
 /** Raisons d'abstention, mêmes mots que l'écran (couponAbstentions). */

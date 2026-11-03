@@ -8,3 +8,4 @@ export * from "./favourite-generator";
 export * from "./combo-generator";
 export * from "./double-composer";
 export * from "./hunter-composer";
+export * from "./ai-combo-composer";
