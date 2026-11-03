@@ -48,15 +48,15 @@ export class CouponPricedPoolService {
   }
 
   /**
-   * Le 1X2 de la mi-temps du jour, au même traitement que le vivier
-   * (Chasseur Nul à la mi-temps) ; voir `findHalfTimeResultCandidates` pour
-   * ce qui l'en distingue.
+   * Un seul marché du jour, au même prix que le vivier (Chasseur Nul à la
+   * mi-temps) ; voir `findMarketCandidates` pour ce qui l'en distingue.
    */
-  async loadHalfTimeResult(forDate: Date): Promise<PricedPool> {
+  async loadMarket(forDate: Date, market: string): Promise<PricedPool> {
     const dayStart = startOfUtcDay(forDate);
-    const rows = await this.repository.findHalfTimeResultCandidates({
+    const rows = await this.repository.findMarketCandidates({
       from: dayStart,
       to: new Date(dayStart.getTime() + DAY_MS),
+      market,
     });
     return this.price(dayStart, rows);
   }

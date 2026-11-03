@@ -29,6 +29,7 @@ def load(path):
             "margin": over - 1,
             "fair": (1 / d) / over,
             "won": int(r["hht"]) == int(r["aht"]),
+            "hours": float(r["hours"]),
         }
     return by_book
 
@@ -125,6 +126,13 @@ def main():
     picks = replay(pin, "Pinnacle 2.10-2.80")
     by_year(picks)
     replay(pin, "Pinnacle 2.20-2.70 (study band)", 2.20, 2.70)
+
+    # CLAUDE.md : un dernier prix à 24 h n'est pas une clôture. Les seuls
+    # prix à moins de 3 h du coup d'envoi.
+    fresh = [r for r in pin if r["hours"] <= 3]
+    print("\n== Pinnacle, prix à moins de 3 h ==")
+    calibration(fresh, "Pinnacle <= 3 h, all")
+    replay(fresh, "Pinnacle <= 3 h, 2.10-2.80")
 
     # Prix 1xBet : même règle, moins l'écart de marge. Sur les jours où
     # 1xBet cote le match retenu, le paiement réel chez lui.

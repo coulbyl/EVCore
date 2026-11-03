@@ -306,13 +306,14 @@ export class CouponSettlementService {
         fixture.awayScore !== null;
 
       if (isHtMarket && !hasHtScores) {
-        // A FINISHED fixture without a half-time score waits for it (a late
-        // sync fills it); past the stats grace delay it never will: refund
-        // the leg, never count it lost (Chasseur Nul à la mi-temps, 11-04).
-        const htGraceOver =
-          now - fixture.scheduledAt.getTime() >=
-          COUPON_SETTLEMENT_POLICY.halfTimeScoreGraceDays * 24 * 60 * 60 * 1000;
-        if (fixture.status === FixtureStatus.FINISHED && htGraceOver) {
+        // A FINISHED fixture whose provider never served a half-time score
+        // will never get one: refund the leg, as HT/FT and WIN_EITHER_HALF
+        // already do (bet-settlement.ts). Otherwise wait for the score.
+        // Waiting past FINISHED was measured useless on 2026-11-04: of the
+        // 17 finished fixtures without one in 120 days, 16 are friendlies
+        // and all still lacked it weeks later (docs/audits/2026-11-04/
+        // CHASSEUR-NUL-MT.md).
+        if (fixture.status === FixtureStatus.FINISHED) {
           await this.repo.settleLeg(leg.id, null);
           voidedLegs++;
           continue;

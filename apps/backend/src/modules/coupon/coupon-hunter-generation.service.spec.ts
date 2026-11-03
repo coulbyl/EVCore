@@ -61,7 +61,7 @@ function makeHarness(
         priced('f2', 'ONE_X_TWO/AWAY', 3.6),
       ]),
     // 1X2 de la mi-temps complet sur f6, nul à 2,40 dans la bande.
-    findHalfTimeResultCandidates: vi
+    findMarketCandidates: vi
       .fn()
       .mockResolvedValue([
         priced('f6', 'FIRST_HALF_WINNER/HOME', 3.1),
@@ -215,6 +215,24 @@ describe('CouponHunterGenerationService', () => {
     expect(outcomes.find((o) => o.hunter === 'HUNTER_DRAW')?.outcome).toBe(
       'abstained',
     );
+  });
+
+  it('reads the half-time 1X2 on its own pool, the other hunters unharmed when it fails', async () => {
+    const { service, repository } = makeHarness();
+    vi.mocked(repository.findMarketCandidates).mockRejectedValue(
+      new Error('timeout'),
+    );
+    const outcomes = await service.generateForDate(new Date('2026-10-29'));
+    expect(repository.findMarketCandidates).toHaveBeenCalledWith(
+      expect.objectContaining({ market: 'FIRST_HALF_WINNER' }),
+    );
+    expect(outcomes.map((o) => o.hunter)).toEqual([
+      'HUNTER_BTTS',
+      'HUNTER_DRAW',
+      'HUNTER_SCORE',
+      'HUNTER_CORNERS',
+      'AI_COMBO',
+    ]);
   });
 
   it('never hunts the half-time draw on a match AVOID flags', async () => {

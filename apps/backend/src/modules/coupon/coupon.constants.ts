@@ -431,9 +431,6 @@ export const PRICE_COMPOSER_POLICY = {
  */
 export const COUPON_SETTLEMENT_POLICY = {
   postponedVoidDelayMs: 24 * 60 * 60 * 1_000,
-  // Jambe de mi-temps d'un match fini sans score de la pause : attendue,
-  // puis remboursée après le même délai que les stats des corners.
-  halfTimeScoreGraceDays: CORNERS_HUNTER_POLICY.statsGraceDays,
   // Fenêtre de fraîcheur de la ligne de clôture, partagée avec les
   // sélections de canal : voir betting-engine/pricing/closing-line.constants.ts.
   closingLineMaxHoursBeforeKickoff: CLOSING_LINE_POLICY.maxHoursBeforeKickoff,
