@@ -245,7 +245,7 @@ Chaque sous-phase commence par `report:new-markets` sur la fenêtre, et ne livre
 
 ### Phase 5 — `feat/engine-tuning`
 
-- [ ] 5.1 `docs(audit): TEAM_TOTAL shrinkage refit on 1.45–1.80` (+ config si validé)
+- [x] 5.1 `docs(audit): TEAM_TOTAL shrinkage refit on 1.45–1.80` (+ config si validé) _Fait : rien d'expédié (`docs/audits/2026-11-03/TEAM-TOTAL-SHRINKAGE.md`). Rejeu de la chaîne de production sur 5 900 matchs (01/06 → 03/11), retrait vers le taux de base appliqué aux choix cotés 1,45–1,80, F choisi sur une moitié, mesuré une fois sur l'autre : tranche 0,792 → 0,781 (F 0,8) et 0,836 → 0,854 (F 0,4), jamais au-dessus de 0,90 ; sous 1,45 inchangé. Aucun F ne corrige, même F = 0 : l'écart est au prix, pas au taux de base — seule la grille de marché en entrée (phase 3 redéfinie) le corrigerait. Le rejeu du 06/10 partage maintenant `scripts/production-chain.ts`._
 - [ ] 5.2 `feat(coupon): engine combo breaks ties on the lowest margin` (+ rejeu)
 - [ ] 5.3 décision plafond IA (après v6)
 - [ ] PR
