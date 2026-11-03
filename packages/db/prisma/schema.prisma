@@ -337,19 +337,22 @@ model Standing {
 }
 
 model Team {
-  id            String             @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  externalId    Int                @unique // football-data.org ID
+  id            String                   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  externalId    Int                      @unique // football-data.org ID
   name          String
   shortName     String
   logoUrl       String?
-  competitionId String             @db.Uuid
-  competition   Competition        @relation(fields: [competitionId], references: [id])
-  homeFixtures  Fixture[]          @relation("HomeTeam")
-  awayFixtures  Fixture[]          @relation("AwayTeam")
+  competitionId String                   @db.Uuid
+  competition   Competition              @relation(fields: [competitionId], references: [id])
+  homeFixtures  Fixture[]                @relation("HomeTeam")
+  awayFixtures  Fixture[]                @relation("AwayTeam")
   stats         TeamStats[]
   fixtureStats  FixtureStatistic[]
+  fixtureEvents FixtureEvent[]
+  lineups       FixtureLineup[]
+  playerStats   FixturePlayerStatistic[]
   coachTenures  CoachTenure[]
-  createdAt     DateTime           @default(now())
+  createdAt     DateTime                 @default(now())
 
   @@map("team")
   @@schema("public")
@@ -402,10 +405,16 @@ model Fixture {
   xgUnavailable          Boolean                  @default(false) // true = API returned no stats, skip on retry
   statisticsSyncedAt     DateTime?
   statisticsUnavailable  Boolean                  @default(false)
+  // Events, lineups and player statistics from /fixtures?ids= written and
+  // complete (or the match old enough that what came is all there is).
+  eventsSyncedAt         DateTime?
   modelRuns              ModelRun[]
   bets                   Bet[]
   teamStats              TeamStats[]
   fixtureStatistics      FixtureStatistic[]
+  events                 FixtureEvent[]
+  lineups                FixtureLineup[]
+  playerStatistics       FixturePlayerStatistic[]
   oddsSnapshots          OddsSnapshot[]
   oddsLatest             OddsLatest[]
   couponLegs             CouponProposalLeg[]
@@ -419,6 +428,7 @@ model Fixture {
   @@index([status, scheduledAt])
   @@index([seasonId, status, scheduledAt])
   @@index([seasonId, status, statisticsSyncedAt])
+  @@index([eventsSyncedAt, scheduledAt])
   @@index([homeTeamId, status, scheduledAt])
   @@index([awayTeamId, status, scheduledAt])
   @@map("fixture")
@@ -446,6 +456,128 @@ model FixtureStatistic {
   @@index([fixtureId, type])
   @@index([teamId, type, observedAt])
   @@map("fixture_statistic")
+  @@schema("public")
+}
+
+enum FixtureEventType {
+  GOAL
+  CARD
+  SUBSTITUTION
+  VAR
+
+  @@schema("public")
+}
+
+// A player known to API-Football: filled by the lineups and player
+// statistics of /fixtures?ids= (id + name), completed later by the squads.
+model Player {
+  id          String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  externalId  Int       @unique
+  name        String
+  firstname   String?
+  lastname    String?
+  nationality String?
+  birthDate   DateTime? @db.Date
+  photoUrl    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("player")
+  @@schema("public")
+}
+
+// One event of a match as API-Football lists it (/fixtures?ids=): goals,
+// cards, substitutions, VAR decisions. `ordinal` is the rank in the
+// response; a re-sync replaces the fixture's events atomically. Player ids
+// are API-Football's, without a foreign key (an event may name a player no
+// lineup listed).
+model FixtureEvent {
+  id               String           @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  fixtureId        String           @db.Uuid
+  fixture          Fixture          @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  teamId           String           @db.Uuid
+  team             Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  ordinal          Int
+  minute           Int
+  extraMinute      Int?
+  type             FixtureEventType
+  // The API's text: Normal Goal, Penalty, Own Goal, Missed Penalty, Yellow Card, Red Card, …
+  detail           String
+  comments         String?
+  playerExternalId Int?
+  playerName       String?
+  assistExternalId Int?
+  assistName       String?
+  observedAt       DateTime
+  createdAt        DateTime         @default(now())
+
+  @@unique([fixtureId, ordinal])
+  @@index([fixtureId, type])
+  @@index([playerExternalId, type])
+  @@map("fixture_event")
+  @@schema("public")
+}
+
+// A team's sheet for a match: starters and substitutes.
+model FixtureLineup {
+  id               String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  fixtureId        String   @db.Uuid
+  fixture          Fixture  @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  teamId           String   @db.Uuid
+  team             Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  playerExternalId Int
+  playerName       String
+  number           Int?
+  // G / D / M / F
+  position         String?
+  grid             String?
+  starter          Boolean
+  formation        String?
+  coachExternalId  Int?
+  observedAt       DateTime
+  createdAt        DateTime @default(now())
+
+  @@unique([fixtureId, teamId, playerExternalId])
+  @@index([playerExternalId])
+  @@map("fixture_lineup")
+  @@schema("public")
+}
+
+// A player's final statistics for a match. A null count is unknown, never
+// zero (the API leaves many fields null); `raw` keeps the whole block.
+model FixturePlayerStatistic {
+  id               String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  fixtureId        String   @db.Uuid
+  fixture          Fixture  @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  teamId           String   @db.Uuid
+  team             Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  playerExternalId Int
+  minutes          Int?
+  position         String?
+  rating           Decimal? @db.Decimal(4, 2)
+  substitute       Boolean
+  shotsTotal       Int?
+  shotsOn          Int?
+  goals            Int?
+  assists          Int?
+  saves            Int?
+  passesTotal      Int?
+  passesKey        Int?
+  tackles          Int?
+  foulsCommitted   Int?
+  foulsDrawn       Int?
+  yellow           Int?
+  red              Int?
+  offsides         Int?
+  penaltyScored    Int?
+  penaltyMissed    Int?
+  raw              Json
+  observedAt       DateTime
+  createdAt        DateTime @default(now())
+
+  @@unique([fixtureId, teamId, playerExternalId])
+  @@index([playerExternalId])
+  @@map("fixture_player_statistic")
   @@schema("public")
 }
 
