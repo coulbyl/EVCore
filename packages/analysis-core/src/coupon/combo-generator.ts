@@ -15,6 +15,11 @@ export type ComboCandidate = {
   pick: string;
   odds: number;
   probability: number;
+  /**
+   * Marge payée chez le book des joueurs (1xBet) sur le groupe d'issues du
+   * choix ; null ou absente quand le book ne cote pas tout le groupe.
+   */
+  margin?: number | null;
 };
 
 /** Calibration d'un canal sur une compétition : réel / annoncé et volume. */
@@ -33,6 +38,12 @@ export type ComboConfig = {
   minSample: number;
   goodRatio: number;
   badRatio: number;
+  /**
+   * Départage par la marge : dans un championnat, parmi les jambes dont la
+   * probabilité est à `window` près de celle de la jambe la moins chère, la
+   * marge connue la plus basse. Absent : la moins chère.
+   */
+  marginTieBreak?: { window: number };
 };
 
 export const COMBO_CONFIG: ComboConfig = {
@@ -42,6 +53,10 @@ export const COMBO_CONFIG: ComboConfig = {
   minSample: 30,
   goodRatio: 0.85,
   badRatio: 0.7,
+  // 2026-11-03, rejeu sur 49 jours de prix 1xBet (docs/audits/2026-11-03/
+  // COMBINE-MARGE.md) : marge payée par jambe 8,93 % → 8,52 %, réalisé ÷
+  // annoncé 1,020 → 1,028 (dans le bruit), dans les deux moitiés.
+  marginTieBreak: { window: 0.02 },
 };
 
 export type ComboSelection =
@@ -137,7 +152,29 @@ export function eligibleComboLegs(
       pick: c.pick,
       odds: c.odds,
       probability: c.probability,
+      ...(c.margin === undefined ? {} : { margin: c.margin }),
     }));
+}
+
+/**
+ * La jambe la moins chère du groupe (le premier, trié par cote croissante),
+ * ou, parmi celles dont la probabilité est à `window` près de la sienne, la
+ * marge connue la plus basse. Une marge inconnue ne gagne jamais contre une
+ * marge connue ; à marge égale, la moins chère.
+ */
+function lowestMarginAmongTies(
+  group: readonly ComboCandidate[],
+  window: number,
+): ComboCandidate | undefined {
+  const head = group[0];
+  if (!head) return undefined;
+  let best: ComboCandidate | null = null;
+  for (const c of group) {
+    if (c.margin == null || !Number.isFinite(c.margin)) continue;
+    if (c.probability < head.probability - window) continue;
+    if (best === null || c.margin < (best.margin as number)) best = c;
+  }
+  return best ?? head;
 }
 
 export function composeEngineCombo(
@@ -147,13 +184,21 @@ export function composeEngineCombo(
 ): ComboSelection {
   const eligible = eligibleComboLegs(candidates, calibration, config);
 
-  // Une par championnat, les moins chères d'abord.
-  const legs: ComboCandidate[] = [];
-  const competitions = new Set<string>();
+  // Une par championnat, les championnats dans l'ordre de leur jambe la
+  // moins chère ; dans chacun, la moins chère ou, avec le départage, la
+  // marge la plus basse à chance égale.
+  const byCompetition = new Map<string, ComboCandidate[]>();
   for (const c of eligible) {
-    if (competitions.has(c.competition)) continue;
-    competitions.add(c.competition);
-    legs.push(c);
+    const group = byCompetition.get(c.competition) ?? [];
+    group.push(c);
+    byCompetition.set(c.competition, group);
+  }
+  const legs: ComboCandidate[] = [];
+  for (const group of byCompetition.values()) {
+    const leg = config.marginTieBreak
+      ? lowestMarginAmongTies(group, config.marginTieBreak.window)
+      : group[0];
+    if (leg) legs.push(leg);
     if (legs.length === config.legs) break;
   }
 

@@ -96,7 +96,11 @@ export class CouponEngineComboGenerationService {
         pick: r.pick,
       })),
     );
-    const rows = allRows.filter((r) => playableAtOperator(r, quotes));
+    // La marge 1xBet du choix voyage avec lui : le combiné départage par
+    // elle à chance égale (COMBO_CONFIG.marginTieBreak).
+    const rows = allRows
+      .filter((r) => playableAtOperator(r, quotes))
+      .map((r) => ({ ...r, margin: operatorPrice(r, quotes).operatorMargin }));
 
     const selection = profile.compose(rows, calibration);
     const pass = {

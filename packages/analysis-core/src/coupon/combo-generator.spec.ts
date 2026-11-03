@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  COMBO_CONFIG,
   composeEngineCombo,
   composeEngineLong,
   eligibleComboLegs,
@@ -82,6 +83,99 @@ describe("composeEngineCombo", () => {
       outcome: "abstained",
       reason: "not_enough_calibrated_short_legs",
       candidateCount: 1,
+    });
+  });
+
+  it("ships with the margin tie-break on, two points wide", () => {
+    expect(COMBO_CONFIG.marginTieBreak).toEqual({ window: 0.02 });
+  });
+
+  describe("margin tie-break", () => {
+    const cells = [
+      green,
+      { ...green, competition: "PL" },
+      { ...green, competition: "SA" },
+    ];
+    const withTieBreak = {
+      ...COMBO_CONFIG,
+      legs: 2,
+      marginTieBreak: { window: 0.02 },
+    };
+
+    it("takes, within a competition, the lowest margin among legs within the window of the cheapest", () => {
+      const result = composeEngineCombo(
+        [
+          cand({ fixtureId: "a", odds: 1.22, probability: 0.82, margin: 0.09 }),
+          cand({
+            fixtureId: "b",
+            odds: 1.25,
+            probability: 0.805,
+            margin: 0.03,
+          }),
+          cand({ fixtureId: "c", odds: 1.24, probability: 0.81, margin: 0.06 }),
+          cand({ fixtureId: "d", odds: 1.3, competition: "PL", margin: 0.05 }),
+        ],
+        cells,
+        withTieBreak,
+      );
+      expect(result.outcome).toBe("picked");
+      if (result.outcome === "picked") {
+        expect(result.legs.map((l) => l.fixtureId)).toEqual(["b", "d"]);
+        expect(result.legs[0]?.margin).toBe(0.03);
+      }
+    });
+
+    it("keeps the cheapest when the cheaper-margin leg is more than the window less likely", () => {
+      const result = composeEngineCombo(
+        [
+          cand({ fixtureId: "a", odds: 1.22, probability: 0.82, margin: 0.09 }),
+          cand({ fixtureId: "b", odds: 1.3, probability: 0.79, margin: 0.02 }),
+          cand({ fixtureId: "d", odds: 1.3, competition: "PL" }),
+        ],
+        cells,
+        withTieBreak,
+      );
+      expect(result.outcome).toBe("picked");
+      if (result.outcome === "picked") {
+        expect(result.legs.map((l) => l.fixtureId)).toEqual(["a", "d"]);
+      }
+    });
+
+    it("never lets an unknown margin beat a known one, and falls back to the cheapest when none is known", () => {
+      const result = composeEngineCombo(
+        [
+          cand({ fixtureId: "a", odds: 1.22, probability: 0.82, margin: null }),
+          cand({ fixtureId: "b", odds: 1.23, probability: 0.82, margin: 0.08 }),
+          cand({ fixtureId: "d", odds: 1.3, competition: "PL" }),
+          cand({ fixtureId: "e", odds: 1.31, competition: "PL" }),
+        ],
+        cells,
+        withTieBreak,
+      );
+      expect(result.outcome).toBe("picked");
+      if (result.outcome === "picked") {
+        expect(result.legs.map((l) => l.fixtureId)).toEqual(["b", "d"]);
+      }
+    });
+
+    it("keeps the competitions the cheapest-first rule would take", () => {
+      const legs = [
+        cand({ fixtureId: "a", odds: 1.21, margin: 0.09 }),
+        cand({ fixtureId: "b", odds: 1.22, competition: "PL", margin: 0.01 }),
+        cand({ fixtureId: "c", odds: 1.4, competition: "SA", margin: 0.01 }),
+      ];
+      const plain = composeEngineCombo(legs, cells, {
+        ...COMBO_CONFIG,
+        legs: 2,
+        marginTieBreak: undefined,
+      });
+      const tied = composeEngineCombo(legs, cells, withTieBreak);
+      expect(
+        plain.outcome === "picked" && plain.legs.map((l) => l.fixtureId),
+      ).toEqual(["a", "b"]);
+      expect(
+        tied.outcome === "picked" && tied.legs.map((l) => l.fixtureId),
+      ).toEqual(["a", "b"]);
     });
   });
 
