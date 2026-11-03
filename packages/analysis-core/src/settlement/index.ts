@@ -7,3 +7,4 @@ export {
   resolveCornersBetStatus,
 } from "./bet-settlement";
 export * from "./stat-markets";
+export * from "./match-facts";

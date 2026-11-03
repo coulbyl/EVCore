@@ -1,19 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { FixtureStatus, StatisticSource } from '@evcore/db';
-import type {
-  MatchEventFact,
-  MatchFacts,
-  MatchSide,
-  TeamStatFact,
+import {
+  buildMatchFacts,
+  MATCH_FACT_STAT_TYPES,
+  type MatchFacts,
+  type MatchFactsRows,
 } from '@evcore/analysis-core';
 import { PrismaService } from '@/prisma.service';
-
-/** fixture_statistic types the phase 3 markets settle on. */
-const STAT_TYPES = {
-  corners: 'corner_kicks',
-  shotsTotal: 'total_shots',
-  shotsOn: 'shots_on_goal',
-} as const;
 
 type FactsFixtureRow = {
   id: string;
@@ -28,102 +21,29 @@ type FactsFixtureRow = {
     type: string;
     value: { toString(): string };
   }[];
-  events: {
-    teamId: string;
-    ordinal: number;
-    minute: number;
-    extraMinute: number | null;
-    type: MatchEventFact['type'];
-    detail: string;
-    comments: string | null;
-    playerExternalId: number | null;
-    playerName: string | null;
-    assistExternalId: number | null;
-  }[];
-  lineups: { teamId: string; playerExternalId: number; starter: boolean }[];
-  playerStatistics: {
-    teamId: string;
-    playerExternalId: number;
-    minutes: number | null;
-    shotsTotal: number | null;
-    shotsOn: number | null;
-  }[];
+  events: MatchFactsRows['events'][number][];
+  lineups: MatchFactsRows['lineups'][number][];
+  playerStatistics: MatchFactsRows['playerStatistics'][number][];
 };
 
-/**
- * The facts of a match as the phase 3 settlement reads them. The score only
- * once the match is finished; events, lineups and player statistics null
- * until reported — events count as reported once `eventsSyncedAt` is set,
- * even with no row (a match without a goal nor a card).
- */
+/** The facts of a stored match (rules in buildMatchFacts). */
 export function matchFactsOf(row: FactsFixtureRow): MatchFacts {
-  const sideOf = (teamId: string): MatchSide | null =>
-    teamId === row.homeTeamId
-      ? 'home'
-      : teamId === row.awayTeamId
-        ? 'away'
-        : null;
-  const team = (teamId: string): TeamStatFact => {
-    const value = (type: string): number | null => {
-      const stat = row.fixtureStatistics.find(
-        (entry) => entry.teamId === teamId && entry.type === type,
-      );
-      return stat === undefined ? null : Number(stat.value.toString());
-    };
-    return {
-      corners: value(STAT_TYPES.corners),
-      shotsTotal: value(STAT_TYPES.shotsTotal),
-      shotsOn: value(STAT_TYPES.shotsOn),
-    };
-  };
-  const sided = <T extends { teamId: string }>(rows: readonly T[]) =>
-    rows.flatMap((entry) => {
-      const side = sideOf(entry.teamId);
-      return side === null ? [] : [{ ...entry, side }];
-    });
-
-  return {
-    score:
-      row.status === FixtureStatus.FINISHED &&
-      row.homeScore !== null &&
-      row.awayScore !== null
-        ? { home: row.homeScore, away: row.awayScore }
-        : null,
-    teams: { home: team(row.homeTeamId), away: team(row.awayTeamId) },
-    events:
-      row.events.length === 0 && row.eventsSyncedAt === null
-        ? null
-        : row.events.map((event) => ({
-            side: sideOf(event.teamId),
-            ordinal: event.ordinal,
-            minute: event.minute,
-            extraMinute: event.extraMinute,
-            type: event.type,
-            detail: event.detail,
-            comments: event.comments,
-            playerExternalId: event.playerExternalId,
-            playerName: event.playerName,
-            assistExternalId: event.assistExternalId,
-          })),
-    lineups:
-      row.lineups.length === 0
-        ? null
-        : sided(row.lineups).map((entry) => ({
-            side: entry.side,
-            playerExternalId: entry.playerExternalId,
-            starter: entry.starter,
-          })),
-    playerStats:
-      row.playerStatistics.length === 0
-        ? null
-        : sided(row.playerStatistics).map((entry) => ({
-            side: entry.side,
-            playerExternalId: entry.playerExternalId,
-            minutes: entry.minutes,
-            shotsTotal: entry.shotsTotal,
-            shotsOn: entry.shotsOn,
-          })),
-  };
+  return buildMatchFacts({
+    finished: row.status === FixtureStatus.FINISHED,
+    homeTeamId: row.homeTeamId,
+    awayTeamId: row.awayTeamId,
+    homeScore: row.homeScore,
+    awayScore: row.awayScore,
+    eventsReported: row.eventsSyncedAt !== null,
+    statistics: row.fixtureStatistics.map((stat) => ({
+      teamId: stat.teamId,
+      type: stat.type,
+      value: Number(stat.value.toString()),
+    })),
+    events: row.events,
+    lineups: row.lineups,
+    playerStatistics: row.playerStatistics,
+  });
 }
 
 @Injectable()
@@ -147,7 +67,7 @@ export class MatchFactsRepository {
         eventsSyncedAt: true,
         fixtureStatistics: {
           where: {
-            type: { in: Object.values(STAT_TYPES) },
+            type: { in: Object.values(MATCH_FACT_STAT_TYPES) },
             source: StatisticSource.API_FOOTBALL,
           },
           select: { teamId: true, type: true, value: true },
