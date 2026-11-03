@@ -49,7 +49,6 @@ export type ConsolePassKey =
   | 'odds_morning'
   | 'morning_brief'
   | 'coupons'
-  | 'ai_combo'
   | 'odds_evening'
   | 'analysis';
 
@@ -88,13 +87,6 @@ export const CONSOLE_PASSES: readonly {
     at: { hour: 17, minute: 0 },
     queue: 'rolling-horizon',
     job: { name: 'rolling-horizon' },
-    relaunch: true,
-  },
-  {
-    key: 'ai_combo',
-    at: { hour: 17, minute: 45 },
-    queue: 'vantage-analysis',
-    job: { name: 'generate-coupons' },
     relaunch: true,
   },
   {

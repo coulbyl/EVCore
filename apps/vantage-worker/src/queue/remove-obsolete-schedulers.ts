@@ -1,18 +1,22 @@
 import type { Queue } from "bullmq";
 
-const OBSOLETE_INTRADAY_JOB_NAME = "generate-intraday-coupons";
+/**
+ * Passes that no longer exist: the intraday coupons (2026-09-16) and the LLM
+ * combo (2026-11-03, replaced by the backend's Combiné IA). Any scheduler of
+ * theirs still in Redis is removed at boot.
+ */
+const RETIRED_JOB_NAMES: ReadonlySet<string> = new Set([
+  "generate-intraday-coupons",
+  "generate-coupons",
+]);
 
 /**
- * The two recurring passes, as job schedulers (BullMQ's upsertJobScheduler,
- * which BullMQ 6 requires): one fixed key each, so changing the interval or
- * the hour updates the same scheduler instead of adding one.
+ * The recurring pass, as a job scheduler (BullMQ's upsertJobScheduler,
+ * which BullMQ 6 requires): one fixed key, so changing the interval updates
+ * the same scheduler instead of adding one.
  */
 export const VANTAGE_SCHEDULERS = {
   sweep: { id: "vantage-recurring-sweep", jobName: "sweep" },
-  coupons: {
-    id: "vantage-recurring-coupon-generation",
-    jobName: "generate-coupons",
-  },
 } as const;
 
 const SCHEDULED_JOB_IDS = new Map<string, string>(
@@ -22,20 +26,17 @@ const SCHEDULED_JOB_IDS = new Map<string, string>(
 type SchedulerQueue = Pick<Queue, "getJobSchedulers" | "removeJobScheduler">;
 
 /**
- * Retire les planifications qui ne doivent plus tirer : toutes les variantes
- * de l'ancien cron intraday, et toute passe `sweep` ou `generate-coupons`
- * qui n'est pas son planificateur à clé fixe (VANTAGE_SCHEDULERS) — les
- * anciennes répétitions posées par `queue.add({ repeat })`, dont la clé
- * hachée porte le motif : la passe de 20 h 30, la reprise de 21 h 15
- * (ENV-PROD § 3), et les deux répétitions d'avant le passage aux
- * planificateurs (02/11), qui sinon tireraient en double.
+ * Retire les planifications qui ne doivent plus tirer : toute passe retirée
+ * (coupons intraday, combiné LLM), et toute passe `sweep` qui n'est pas son
+ * planificateur à clé fixe (VANTAGE_SCHEDULERS) — les anciennes répétitions
+ * posées par `queue.add({ repeat })`, qui sinon tireraient en double.
  */
 export async function removeObsoleteSchedulers(
   queue: SchedulerQueue,
 ): Promise<number> {
   const schedulers = await queue.getJobSchedulers();
   const obsolete = schedulers.filter((job) => {
-    if (job.name === OBSOLETE_INTRADAY_JOB_NAME) return true;
+    if (RETIRED_JOB_NAMES.has(job.name ?? "")) return true;
     const id = SCHEDULED_JOB_IDS.get(job.name ?? "");
     return id !== undefined && job.key !== id;
   });

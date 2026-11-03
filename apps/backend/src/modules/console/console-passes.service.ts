@@ -9,10 +9,8 @@ import { CONSOLE_PASSES, type ConsolePassKey } from '@config/console.constants';
 import { ETL_SCHEDULER_KEYS } from '@config/etl.constants';
 import { AdminJournalService } from '@modules/admin-journal/admin-journal.service';
 import { EtlService } from '@modules/etl/etl.service';
-import { formatDateUtc } from '@utils/date.utils';
 import { passesOf, type PassJob, type PassView } from './console-passes';
 
-const DAY_MS = 24 * 60 * 60 * 1000;
 // The last jobs of a queue: enough for a day (completed jobs keep 100).
 const JOBS_READ = 300;
 
@@ -95,7 +93,7 @@ export class ConsolePassesService {
     if (!pass.relaunch || !before?.canRelaunch) {
       throw new ConflictException('Cette passe ne se relance pas maintenant');
     }
-    await this.launch(pass.key, now);
+    await this.launch(pass.key);
     await this.journal.record({
       actorId: input.actorId,
       kind: 'pass_relaunched',
@@ -106,7 +104,7 @@ export class ConsolePassesService {
     return after ?? before;
   }
 
-  private async launch(key: ConsolePassKey, now: Date): Promise<void> {
+  private async launch(key: ConsolePassKey): Promise<void> {
     switch (key) {
       case 'stats':
         return this.etl.triggerStatsSync();
@@ -124,11 +122,6 @@ export class ConsolePassesService {
         await queue?.add('rolling-horizon', scheduler?.template?.data ?? {});
         return;
       }
-      case 'ai_combo':
-        await this.queues.get('vantage-analysis')?.add('generate-coupons', {
-          date: formatDateUtc(new Date(now.getTime() + DAY_MS)),
-        });
-        return;
       case 'morning_brief':
         return;
     }

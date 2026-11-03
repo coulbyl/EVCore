@@ -73,45 +73,15 @@ async function main() {
     { name: VANTAGE_SCHEDULERS.sweep.jobName, data: {} },
   );
 
-  // Daily coupon generation (docs/vantage-centric-redesign-2026-09-01.md
-  // §9bis) — its own independent cron, same self-scheduling principle as
-  // the sweep above, no dependency on apps/backend's queue. See
-  // config.ts's couponCron doc comment for how its default relates to
-  // apps/backend's own analysis cron.
-  await queue.upsertJobScheduler(
-    VANTAGE_SCHEDULERS.coupons.id,
-    { pattern: config.couponCron },
-    { name: VANTAGE_SCHEDULERS.coupons.jobName, data: {} },
-  );
-
-  // Intraday batch (recheck J-J) — NO LONGER SCHEDULED since 2026-09-16.
-  //
-  // Measured over 2026-09-04..09-11, evening pass versus intraday pass, legs
-  // settled: realised 42.7 % versus 42.6 % — identical, with overlapping
-  // intervals (ratio 0.681 ± 9.9 versus 0.810 ± 14.1). It bought nothing
-  // measurable while costing one LLM call per hour, and because
-  // persist-coupon-proposal upserts on
-  // (forDate, signalWindowDays, targetOddsMin, targetOddsMax, rank), each hourly
-  // pass overwrote the previous one: what the database held was the last state
-  // before kickoff, never what was actually proposed. A proposal that mutates
-  // through the day cannot be compared leg-by-leg against another generator,
-  // which is precisely what running two sources in parallel requires.
-  //
-  // `runIntradayCouponGeneration` and its "generate-intraday-coupons" handler
-  // stay callable for a manual pass; only the recurring registration is gone.
-  // A repeatable job already registered in Redis keeps firing until it is
-  // explicitly removed, so removing the `queue.add` above would not have been
-  // enough on a running deployment.
-  // Same for the coupon passes at another hour than COUPON_SCHEDULE's: the
-  // 20:30 pass and the 21:15 retry (ENV-PROD § 3) keep firing until removed,
-  // since a repeatable's key carries its pattern.
+  // The coupon passes are gone: the intraday batch since 2026-09-16, the
+  // LLM combo since 2026-11-03 (replaced by the backend's Combiné IA, the
+  // AI's own plays at 4–10). Their schedulers, still in Redis on a running
+  // deployment, are removed here.
   const removedObsoleteSchedulers = await removeObsoleteSchedulers(queue);
 
   logger.info(
     {
       sweepIntervalMs: config.sweepIntervalMs,
-      couponCron: config.couponCron,
-      couponIntradayWindowHours: config.couponIntradayWindowHours,
       removedObsoleteSchedulers,
       retiredEnv: retiredEnvPresent(),
       llmProvider: config.llmProvider,

@@ -21,40 +21,42 @@ const removedKeys = (mock: ReturnType<typeof vi.fn>) =>
   mock.mock.calls.map(([key]) => key as string);
 
 describe("removeObsoleteSchedulers", () => {
-  it("keeps the two fixed-key schedulers", async () => {
+  it("keeps the sweep's fixed-key scheduler", async () => {
     const { queue, removeJobScheduler } = queueWith([
       { key: VANTAGE_SCHEDULERS.sweep.id, name: "sweep" },
-      {
-        key: VANTAGE_SCHEDULERS.coupons.id,
-        name: "generate-coupons",
-        pattern: "45 17 * * *",
-      },
     ]);
 
     expect(await removeObsoleteSchedulers(queue)).toBe(0);
     expect(removeJobScheduler).not.toHaveBeenCalled();
   });
 
-  it("removes the repeatables of before the schedulers, whose hashed keys would fire twice", async () => {
+  it("removes a sweep repeatable of before the schedulers, whose hashed key would fire twice", async () => {
     const { queue, removeJobScheduler } = queueWith([
       { key: VANTAGE_SCHEDULERS.sweep.id, name: "sweep" },
       { key: "sweep:vantage-recurring-sweep::30000", name: "sweep" },
+    ]);
+
+    expect(await removeObsoleteSchedulers(queue)).toBe(1);
+    expect(removedKeys(removeJobScheduler)).toEqual([
+      "sweep:vantage-recurring-sweep::30000",
+    ]);
+  });
+
+  it("removes every LLM combo schedule, cut on 2026-11-03", async () => {
+    const { queue, removeJobScheduler } = queueWith([
+      { key: VANTAGE_SCHEDULERS.sweep.id, name: "sweep" },
       {
-        key: VANTAGE_SCHEDULERS.coupons.id,
+        key: "vantage-recurring-coupon-generation",
         name: "generate-coupons",
         pattern: "45 17 * * *",
       },
-      { key: "old-1745", name: "generate-coupons", pattern: "45 17 * * *" },
       { key: "old-2030", name: "generate-coupons", pattern: "30 20 * * *" },
-      { key: "retry-2115", name: "generate-coupons", pattern: "15 21 * * *" },
     ]);
 
-    expect(await removeObsoleteSchedulers(queue)).toBe(4);
+    expect(await removeObsoleteSchedulers(queue)).toBe(2);
     expect(removedKeys(removeJobScheduler)).toEqual([
-      "sweep:vantage-recurring-sweep::30000",
-      "old-1745",
+      "vantage-recurring-coupon-generation",
       "old-2030",
-      "retry-2115",
     ]);
   });
 
