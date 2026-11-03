@@ -3,6 +3,7 @@ import { BetStatus, CouponResult, FixtureStatus, Market } from '@evcore/db';
 import {
   CORNERS_HUNTER_POLICY,
   COUPON_SETTLEMENT_POLICY,
+  STAT_MARKET_SETTLEMENT,
 } from './coupon.constants';
 import {
   resolveCornersBetStatus,
@@ -286,9 +287,13 @@ export class CouponSettlementService {
           allResolved = false;
           continue;
         }
+        const graceDays =
+          leg.market === Market.CORNERS
+            ? CORNERS_HUNTER_POLICY.statsGraceDays
+            : STAT_MARKET_SETTLEMENT.graceDays;
         const graceOver =
           now - fixture.scheduledAt.getTime() >=
-          CORNERS_HUNTER_POLICY.statsGraceDays * 24 * 60 * 60 * 1000;
+          graceDays * 24 * 60 * 60 * 1000;
         const line = leg.line === null ? null : Number(leg.line);
         let status: BetStatus | null;
         if (leg.market === Market.CORNERS) {

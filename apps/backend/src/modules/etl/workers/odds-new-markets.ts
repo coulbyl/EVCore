@@ -2,6 +2,7 @@ import {
   matchPlayerName,
   NO_GOALSCORER_PICK,
   playerPick,
+  type PlayerNameMatch,
   type SquadCandidate,
 } from '@evcore/analysis-core';
 import {
@@ -116,25 +117,34 @@ export function splitPlayerLine(
   return line >= 1 ? { name: matched[1], line } : null;
 }
 
+export function emptyPlayerTally(): PlayerMatchTally {
+  return { priced: 0, matched: 0, ambiguous: 0, unmatched: [] };
+}
+
+export function addPlayerTally(
+  total: PlayerMatchTally,
+  tally: PlayerMatchTally,
+): void {
+  total.priced += tally.priced;
+  total.matched += tally.matched;
+  total.ambiguous += tally.ambiguous;
+  total.unmatched.push(...tally.unmatched);
+}
+
 /**
- * A player market: each name matched against the squad, the pick the
- * player's `P<externalId>`. An unmatched or ambiguous name is not stored (a
+ * A player market: each name matched (`match`: against the squad of his
+ * team, when known), the pick the player's `P<externalId>`. An unmatched or ambiguous name is not stored (a
  * wrong id would settle another player's bet), nor are two names that land
  * on the same player and line. `withLine`: « Name - N » (shots); without,
  * a name alone (scorers), « No Goalscorer » → NONE when `noScorer`.
  */
 export function parsePlayerMarket(input: {
   bet: Bet | undefined;
-  squad: readonly SquadCandidate[];
+  match: (name: string) => PlayerNameMatch;
   withLine: boolean;
   noScorer?: boolean;
 }): { legs: NewLineLeg[]; tally: PlayerMatchTally } {
-  const tally: PlayerMatchTally = {
-    priced: 0,
-    matched: 0,
-    ambiguous: 0,
-    unmatched: [],
-  };
+  const tally = emptyPlayerTally();
   if (!input.bet) return { legs: [], tally };
 
   const byKey = new Map<string, NewLineLeg[]>();
@@ -150,7 +160,7 @@ export function parsePlayerMarket(input: {
       ? splitPlayerLine(label)
       : { name: label, line: 0 };
     if (parsed === null) continue;
-    const match = matchPlayerName(parsed.name, input.squad);
+    const match = input.match(parsed.name);
     names.set(parsed.name, match.status);
     if (match.status !== 'matched') continue;
     push(byKey, {
@@ -195,12 +205,7 @@ export function extractNewMarketOdds(input: {
   fixedMarkets: Array<{ market: NewFixedMarket; legs: NewFixedLeg[] }>;
   players: PlayerMatchTally;
 } {
-  const players: PlayerMatchTally = {
-    priced: 0,
-    matched: 0,
-    ambiguous: 0,
-    unmatched: [],
-  };
+  const players = emptyPlayerTally();
   const book = input.bookmakers.find((b) => b.name === input.bookmakerName);
   if (!book) return { lineMarkets: [], fixedMarkets: [], players };
   const betById = (id: number) => book.bets.find((b) => b.id === id);
@@ -215,12 +220,7 @@ export function extractNewMarketOdds(input: {
   const addFixed = (market: NewFixedMarket, legs: NewFixedLeg[]) => {
     if (legs.length > 0) fixedMarkets.push({ market, legs });
   };
-  const count = (tally: PlayerMatchTally) => {
-    players.priced += tally.priced;
-    players.matched += tally.matched;
-    players.ambiguous += tally.ambiguous;
-    players.unmatched.push(...tally.unmatched);
-  };
+  const count = (tally: PlayerMatchTally) => addPlayerTally(players, tally);
 
   if (kept('CORNERS_HOME')) {
     addLine(
@@ -251,7 +251,7 @@ export function extractNewMarketOdds(input: {
 
   const squads = input.squads;
   if (squads !== null) {
-    const both = [...squads.home, ...squads.away];
+    const scorerMatch = scorerMatcher(squads, sidesOfPricedPlayers(book));
     const scorers = (
       market: 'GOAL_SCORER_ANYTIME' | 'GOAL_SCORER_FIRST',
       id: number,
@@ -259,7 +259,7 @@ export function extractNewMarketOdds(input: {
       if (!kept(market)) return;
       const parsed = parsePlayerMarket({
         bet: betById(id),
-        squad: both,
+        match: scorerMatch,
         withLine: false,
         noScorer: market === 'GOAL_SCORER_FIRST',
       });
@@ -280,7 +280,7 @@ export function extractNewMarketOdds(input: {
       const legs = (['home', 'away'] as const).flatMap((side) => {
         const parsed = parsePlayerMarket({
           bet: betById(ids[side]),
-          squad: squads[side],
+          match: (name) => matchPlayerName(name, squads[side]),
           withLine: true,
         });
         count(parsed.tally);
@@ -299,6 +299,52 @@ export function extractNewMarketOdds(input: {
   }
 
   return { lineMarkets, fixedMarkets, players };
+}
+
+/**
+ * The team of each name the book's player shots lists price (they are per
+ * team: 240/269 home, 241/275 away); a name in both is left out.
+ */
+function sidesOfPricedPlayers(
+  book: OddsBookmaker,
+): Map<string, 'home' | 'away'> {
+  const sides = new Map<string, 'home' | 'away' | null>();
+  const lists: ReadonlyArray<readonly [number, 'home' | 'away']> = [
+    [API_FOOTBALL_BET_IDS.PLAYER_SHOTS_HOME, 'home'],
+    [API_FOOTBALL_BET_IDS.PLAYER_SHOTS_ON_TARGET_HOME, 'home'],
+    [API_FOOTBALL_BET_IDS.PLAYER_SHOTS_AWAY, 'away'],
+    [API_FOOTBALL_BET_IDS.PLAYER_SHOTS_ON_TARGET_AWAY, 'away'],
+  ];
+  for (const [id, side] of lists) {
+    for (const value of book.bets.find((bet) => bet.id === id)?.values ?? []) {
+      const parsed = splitPlayerLine(String(value.value));
+      if (parsed === null) continue;
+      const seen = sides.get(parsed.name);
+      sides.set(parsed.name, seen === undefined || seen === side ? side : null);
+    }
+  }
+  return new Map(
+    [...sides].flatMap(([name, side]) => (side === null ? [] : [[name, side]])),
+  );
+}
+
+/**
+ * Scorers are priced for both teams at once. A name whose team the shots
+ * lists give is matched in that team's squad; any other, in both squads
+ * with the strict rules only — a player missing from his own squad must
+ * not land, by a guess, on a player of the other team.
+ */
+function scorerMatcher(
+  squads: FixtureSquads,
+  sides: ReadonlyMap<string, 'home' | 'away'>,
+): (name: string) => PlayerNameMatch {
+  const both = [...squads.home, ...squads.away];
+  return (name) => {
+    const side = sides.get(name);
+    return side === undefined
+      ? matchPlayerName(name, both, { strict: true })
+      : matchPlayerName(name, squads[side]);
+  };
 }
 
 /** A new market at one book it is kept at: what came, what was understood. */
@@ -336,7 +382,9 @@ function readsAs(market: BookScopedMarket, value: Bet['values'][number]) {
   switch (market) {
     case 'CORNERS_HOME':
     case 'CORNERS_AWAY':
-      return /^(Over|Under)\s*\d+(?:\.\d+)?$/i.test(String(value.value).trim());
+      // Kept = the .5 lines: an integer line counts as rejected, so a book
+      // sending integer lines only still raises the « parsed none » warning.
+      return parseCornersTeam(bet).length === 1;
     case 'CORNERS_1X2':
     case 'MINUTE_1X2':
       return parseResult(bet).length === 1;

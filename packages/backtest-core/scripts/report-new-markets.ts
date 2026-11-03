@@ -142,10 +142,20 @@ async function loadFacts(
         FROM public.fixture_player_statistic WHERE "fixtureId" = ANY(${ids})`),
     ]);
 
-  const of = <T extends { fixtureId: string }>(
-    rows: readonly T[],
-    id: string,
-  ) => rows.filter((row) => row.fixtureId === id);
+  // Grouped once by fixture: a filter per fixture would be quadratic.
+  const byFixture = <T extends { fixtureId: string }>(rows: readonly T[]) => {
+    const groups = new Map<string, T[]>();
+    for (const row of rows) {
+      const group = groups.get(row.fixtureId);
+      if (group) group.push(row);
+      else groups.set(row.fixtureId, [row]);
+    }
+    return (id: string): T[] => groups.get(id) ?? [];
+  };
+  const statisticsOf = byFixture(statistics);
+  const eventsOf = byFixture(events);
+  const lineupsOf = byFixture(lineups);
+  const playerStatisticsOf = byFixture(playerStatistics);
   const facts = new Map<string, MatchFacts>();
   for (const fixture of fixtures) {
     facts.set(
@@ -157,14 +167,14 @@ async function loadFacts(
         homeScore: fixture.homeScore,
         awayScore: fixture.awayScore,
         eventsReported: fixture.eventsSyncedAt !== null,
-        statistics: of(statistics, fixture.id).map((row) => ({
+        statistics: statisticsOf(fixture.id).map((row) => ({
           teamId: row.teamId,
           type: row.type,
           value: Number(row.value),
         })),
-        events: of(events, fixture.id),
-        lineups: of(lineups, fixture.id),
-        playerStatistics: of(playerStatistics, fixture.id),
+        events: eventsOf(fixture.id),
+        lineups: lineupsOf(fixture.id),
+        playerStatistics: playerStatisticsOf(fixture.id),
       }),
     );
   }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { matchPlayerName, type SquadCandidate } from '@evcore/analysis-core';
 import { ApiFootballOddsResponseSchema } from '../schemas/odds.schema';
 import {
   extractNewMarketOdds,
@@ -235,7 +236,7 @@ describe('new markets — players at Bet365', () => {
         ['Jaydan Kamason', '9.50'],
         ['J. Kamason', '9.00'],
       ]),
-      squad: SQUADS.home,
+      match: (name) => matchPlayerName(name, SQUADS.home),
       withLine: false,
     });
     expect(parsed.legs).toEqual([]);
@@ -244,14 +245,64 @@ describe('new markets — players at Bet365', () => {
   it('an ambiguous name is counted and not stored', () => {
     const parsed = parsePlayerMarket({
       bet: parsedBet(92, [['Tyler Fletcher', '9.50']]),
-      squad: [
-        { playerExternalId: 10, names: ['T. Fletcher'] },
-        { playerExternalId: 11, names: ['T. Fletcher'] },
-      ],
+      match: (name) =>
+        matchPlayerName(name, [
+          { playerExternalId: 10, names: ['T. Fletcher'] },
+          { playerExternalId: 11, names: ['T. Fletcher'] },
+        ]),
       withLine: false,
     });
     expect(parsed.legs).toEqual([]);
     expect(parsed.tally).toMatchObject({ priced: 1, ambiguous: 1 });
+  });
+
+  it('a scorer of unknown team matches strictly: no guess on the other team', () => {
+    const squads: FixtureSquads = {
+      home: [{ playerExternalId: 1, names: ['Matheus Cunha'] }],
+      away: [{ playerExternalId: 7, names: ['Rodrigo Riquelme'] }],
+    };
+    const book = (bets: ReturnType<typeof parsedBet>[]) => [
+      { id: 8, name: 'Bet365', bets },
+    ];
+    const scorers = parsedBet(92, [['Rodrigo', '6.00']]);
+    const alone = extractNewMarketOdds({
+      bookmakers: book([scorers]),
+      bookmakerName: 'Bet365',
+      squads,
+    });
+    expect(marketOf(alone, 'GOAL_SCORER_ANYTIME')).toEqual([]);
+
+    // The away shots list names him: matched in the away squad only.
+    const placed = extractNewMarketOdds({
+      bookmakers: book([scorers, parsedBet(241, [['Rodrigo - 1', '1.50']])]),
+      bookmakerName: 'Bet365',
+      squads,
+    });
+    expect(marketOf(placed, 'GOAL_SCORER_ANYTIME')).toEqual([
+      { pick: 'P7', odds: 6 },
+    ]);
+  });
+
+  it('a scorer the shots lists place is not matched in the other squad', () => {
+    const squads: FixtureSquads = {
+      home: [{ playerExternalId: 1, names: ['J. Kamason'] }],
+      away: [] as SquadCandidate[],
+    };
+    const result = extractNewMarketOdds({
+      bookmakers: [
+        {
+          id: 8,
+          name: 'Bet365',
+          bets: [
+            parsedBet(92, [['Jaydan Kamason', '9.50']]),
+            parsedBet(241, [['Jaydan Kamason - 1', '1.50']]),
+          ],
+        },
+      ],
+      bookmakerName: 'Bet365',
+      squads,
+    });
+    expect(marketOf(result, 'GOAL_SCORER_ANYTIME')).toEqual([]);
   });
 
   it('splits « Name - N », hyphenated names included', () => {
@@ -277,9 +328,11 @@ describe('inspectNewMarkets', () => {
       parsedValues: 1,
       rejectedLabels: ['Jaydan Kamason'],
     });
+    // Integer lines are not kept: counted as rejected.
     expect(at('CORNERS_HOME', '1xBet')).toMatchObject({
       rawValues: 4,
-      parsedValues: 4,
+      parsedValues: 2,
+      rejectedLabels: ['Over 4.0', 'Under 4.0'],
     });
   });
 });

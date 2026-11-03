@@ -347,6 +347,18 @@ export const AI_COMBO_POLICY = {
  * jamais comptée perdue. (`fixture_statistic` est réécrite à chaque
  * synchronisation : sa date d'écriture ne dit pas quand la stat est arrivée.)
  */
+/**
+ * The phase 3 markets (team corners, corners 1X2, scorers, player shots,
+ * minute 1X2), settled on the match's statistics, events, lineups and
+ * player statistics: a leg whose facts are still unknown this many days
+ * after kickoff is refunded, never counted lost. The events of a match are
+ * taken as complete three days after it (FIXTURE_EVENTS.INCOMPLETE_GRACE_DAYS)
+ * and the backfill retries the rest: two weeks leave it room.
+ */
+export const STAT_MARKET_SETTLEMENT = {
+  graceDays: 14,
+} as const;
+
 export const CORNERS_HUNTER_POLICY = {
   operatorBookmaker: '1xBet',
   referenceBookmaker: 'Pinnacle',

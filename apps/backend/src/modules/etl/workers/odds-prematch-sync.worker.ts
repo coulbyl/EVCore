@@ -31,6 +31,8 @@ import {
 } from '../api-football.client';
 import { PlayerSquadRepository } from '../../fixture-events/player-squad.repository';
 import {
+  addPlayerTally,
+  emptyPlayerTally,
   extractNewMarketOdds,
   inspectNewMarkets,
   type FixtureSquads,
@@ -144,6 +146,9 @@ export class OddsPrematchSyncWorker extends WorkerHost {
     const extendedCoverage: ExtendedMarketCoverage = new Map();
     const newMarketCoverage: NewMarketCoverage = new Map();
     const players = emptyPlayerTally();
+    // Fixtures whose player markets came with a team without a squad: their
+    // players cannot be identified, nothing of them is stored.
+    let withoutSquad = 0;
     // En mode clôture, l'espacement doit rester sous la durée de la fenêtre :
     // voir ODDS_CLOSING_RATE_LIMIT_MS.
     const rateLimitMs = closing
@@ -268,6 +273,12 @@ export class OddsPrematchSyncWorker extends WorkerHost {
         const squads = pricesPlayers(match.bookmakers)
           ? await this.squads.findForFixture(fixtureId)
           : null;
+        if (
+          squads !== null &&
+          (squads.home.length === 0 || squads.away.length === 0)
+        ) {
+          withoutSquad++;
+        }
         // 1X2 from every priority bookmaker (not only the primary one): the
         // engine derives a median implied probability across books for the
         // model↔market coherence gate — a single book is too easy an outlier.
@@ -411,6 +422,14 @@ export class OddsPrematchSyncWorker extends WorkerHost {
     );
     reportExtendedMarketCoverage(extendedCoverage);
     reportNewMarketCoverage(newMarketCoverage, players);
+    if (withoutSquad > 0) {
+      // The squads sync runs in the stats backfill tick: off or starved,
+      // the player markets store nothing.
+      logger.warn(
+        { fixtures: withoutSquad, dates: dateLabel },
+        'Player markets priced for teams without a squad — not stored',
+      );
+    }
 
     if (closing) this.reportClosingCoverage(synced, missedKickoff);
 
@@ -620,17 +639,6 @@ const PLAYER_BOOKMAKERS: readonly string[] = [
 
 function pricesPlayers(bookmakers: readonly OddsBookmaker[]): boolean {
   return bookmakers.some((book) => PLAYER_BOOKMAKERS.includes(book.name));
-}
-
-function emptyPlayerTally(): PlayerMatchTally {
-  return { priced: 0, matched: 0, ambiguous: 0, unmatched: [] };
-}
-
-function addPlayerTally(total: PlayerMatchTally, tally: PlayerMatchTally) {
-  total.priced += tally.priced;
-  total.matched += tally.matched;
-  total.ambiguous += tally.ambiguous;
-  total.unmatched.push(...tally.unmatched);
 }
 
 function mergeNewMarketCoverage(

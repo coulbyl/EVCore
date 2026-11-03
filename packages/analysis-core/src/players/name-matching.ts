@@ -45,6 +45,13 @@ const HTML_ENTITIES: Readonly<Record<string, string>> = {
   nbsp: " ",
 };
 
+/** A valid Unicode code point as text; null out of range. */
+function codePoint(value: number): string | null {
+  return Number.isInteger(value) && value >= 0 && value <= 0x10ffff
+    ? String.fromCodePoint(value)
+    : null;
+}
+
 /**
  * Undoes the provider's two text faults, seen in the squads of 03/11:
  * HTML entities ("N. O&apos;Reilly") and UTF-8 read as Latin-1
@@ -57,10 +64,10 @@ export function repairProviderText(text: string): string {
     (entity, body: string) => {
       const lower = body.toLowerCase();
       if (lower.startsWith("#x")) {
-        return String.fromCodePoint(Number.parseInt(lower.slice(2), 16));
+        return codePoint(Number.parseInt(lower.slice(2), 16)) ?? entity;
       }
       if (lower.startsWith("#")) {
-        return String.fromCodePoint(Number.parseInt(lower.slice(1), 10));
+        return codePoint(Number.parseInt(lower.slice(1), 10)) ?? entity;
       }
       return HTML_ENTITIES[lower] ?? entity;
     },
@@ -232,19 +239,25 @@ const singleWord: Rule = (priced, known) => {
   return other[0] === single || other.at(-1) === single;
 };
 
+/** Rules that tie a name to one person; the loose ones guess. */
+const STRICT_RULES: readonly Rule[] = [exact, reordered, compatible, contained];
 const RULES: readonly Rule[] = [
-  exact,
-  reordered,
-  compatible,
-  contained,
+  ...STRICT_RULES,
   shortFirstName,
   initialAndLast,
   singleWord,
 ];
 
+/**
+ * `strict`: the loose rules (short first name, initial and last word,
+ * single word) are left out. For a name whose team is not known (scorers
+ * are priced for both teams at once): a player missing from his own squad
+ * must not land, by a guess, on a player of the other team.
+ */
 export function matchPlayerName(
   name: string,
   squad: readonly SquadCandidate[],
+  options: { strict?: boolean } = {},
 ): PlayerNameMatch {
   const priced = normalizePlayerName(name);
   if (priced.length === 0) return { status: "unmatched" };
@@ -255,7 +268,7 @@ export function matchPlayerName(
       .filter((tokens) => tokens.length > 0),
   }));
 
-  for (const rule of RULES) {
+  for (const rule of options.strict ? STRICT_RULES : RULES) {
     const ids = new Set(
       known
         .filter((candidate) =>

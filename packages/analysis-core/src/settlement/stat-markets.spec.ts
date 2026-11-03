@@ -387,6 +387,61 @@ describe("player shots", () => {
     expect(shots("P11", 1, false, noTeam)).toBeNull();
   });
 
+  it("a null minutes count is not « did not play » when something shows him on the pitch", () => {
+    const f = facts({
+      playerStats: [
+        {
+          side: "home",
+          playerExternalId: 11,
+          minutes: null,
+          shotsTotal: 2,
+          shotsOn: 2,
+        },
+        {
+          side: "home",
+          playerExternalId: 12,
+          minutes: null,
+          shotsTotal: null,
+          shotsOn: 0,
+        },
+        {
+          side: "home",
+          playerExternalId: 13,
+          minutes: 22,
+          shotsTotal: 2,
+          shotsOn: null,
+        },
+        {
+          side: "away",
+          playerExternalId: 20,
+          minutes: 90,
+          shotsTotal: 1,
+          shotsOn: 1,
+        },
+        {
+          side: "away",
+          playerExternalId: 21,
+          minutes: 90,
+          shotsTotal: 1,
+          shotsOn: 0,
+        },
+      ],
+    });
+    // 11: shots without minutes. 12: a starter (lineup) without minutes.
+    expect(shots("P11", 1, true, f)).toBe(WON);
+    expect(shots("P12", 1, true, f)).toBe(LOST);
+  });
+
+  it("a player on the pitch without a statistics row stays unknown", () => {
+    const f = facts();
+    const withoutStarter = facts({
+      playerStats: (f.playerStats ?? []).filter(
+        (row) => row.playerExternalId !== 12,
+      ),
+    });
+    expect(shots("P12", 1, true, withoutStarter)).toBeNull();
+  });
+
   it("refunds a line or pick it cannot read", () => {
     expect(shots("P11", 0)).toBe(VOID);
     expect(shots("P11", 1.5)).toBe(VOID);

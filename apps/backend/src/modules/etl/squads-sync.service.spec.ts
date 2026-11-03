@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PlayerSquadRepository } from '@modules/fixture-events/player-squad.repository';
 import type { ApiFootballClient } from './api-football.client';
+import type { NotificationService } from '@modules/notification/notification.service';
 import { SquadsSyncService } from './squads-sync.service';
 
 vi.mock('@utils/async.utils', () => ({ sleep: vi.fn() }));
@@ -34,15 +35,18 @@ describe('SquadsSyncService', () => {
     replaceSquad: vi.fn(),
   };
   const apiFootball = { fetchJson: vi.fn() };
+  const notification = { sendEtlFailureAlert: vi.fn() };
   const service = () =>
     new SquadsSyncService(
       apiFootball as unknown as ApiFootballClient,
       squads as unknown as PlayerSquadRepository,
+      notification as unknown as NotificationService,
     );
 
   beforeEach(() => {
     vi.clearAllMocks();
     squads.replaceSquad.mockResolvedValue(undefined);
+    notification.sendEtlFailureAlert.mockResolvedValue(undefined);
   });
 
   it('asks for the teams due in the next ten days, a week stale, within the budget', async () => {
@@ -106,6 +110,60 @@ describe('SquadsSyncService', () => {
 
     expect(result).toMatchObject({ status: 'lot-aborted', calls: 1 });
     expect(squads.replaceSquad).not.toHaveBeenCalled();
+  });
+
+  it('alerts once a day on answers Zod rejects', async () => {
+    squads.findTeamsDue.mockResolvedValue([{ teamId: 't9', externalId: 9 }]);
+    apiFootball.fetchJson.mockResolvedValue({
+      response: { status: 200, body: { response: [{ team: {} }] } },
+    });
+    const sync = service();
+
+    await sync.syncDue(40, new Date('2026-11-04T08:00:00Z'));
+    await sync.syncDue(40, new Date('2026-11-04T08:05:00Z'));
+    expect(notification.sendEtlFailureAlert).toHaveBeenCalledTimes(1);
+    await sync.syncDue(40, new Date('2026-11-05T08:00:00Z'));
+    expect(notification.sendEtlFailureAlert).toHaveBeenCalledTimes(2);
+  });
+
+  it('a write that throws fails the team, not the lot', async () => {
+    squads.findTeamsDue.mockResolvedValue([
+      { teamId: 't50', externalId: 50 },
+      { teamId: 't33', externalId: 33 },
+    ]);
+    apiFootball.fetchJson
+      .mockResolvedValueOnce(answer(50))
+      .mockResolvedValueOnce(answer(33));
+    squads.replaceSquad
+      .mockRejectedValueOnce(new Error('deadlock'))
+      .mockResolvedValueOnce(undefined);
+
+    await expect(service().syncDue(40)).resolves.toMatchObject({
+      status: 'lot-done',
+      written: 1,
+      calls: 2,
+    });
+  });
+
+  it('a success clears the failures of a team', async () => {
+    squads.findTeamsDue.mockResolvedValue([{ teamId: 't9', externalId: 9 }]);
+    const broken = {
+      response: { status: 200, body: { response: [{ team: {} }] } },
+    };
+    apiFootball.fetchJson
+      .mockResolvedValueOnce(broken)
+      .mockResolvedValueOnce(broken)
+      .mockResolvedValueOnce(answer(9))
+      .mockResolvedValueOnce(broken)
+      .mockResolvedValueOnce(broken);
+    const sync = service();
+
+    for (let tick = 0; tick < 5; tick++) await sync.syncDue(40);
+
+    // Two failures, a success, two failures: never three in a row.
+    expect(squads.findTeamsDue.mock.calls[4]?.[0].excludeExternalIds).toEqual(
+      [],
+    );
   });
 
   it('leaves a team that keeps failing after three attempts', async () => {

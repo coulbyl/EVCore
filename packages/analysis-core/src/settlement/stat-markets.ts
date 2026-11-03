@@ -218,17 +218,42 @@ function participation(facts: MatchFacts, playerId: number): Participation {
       },
     };
   }
-  // No entry event: the statistics decide (minutes on the pitch), when
-  // they were reported.
+  // No entry event: the statistics decide, when they were reported.
   if (facts.playerStats === null || facts.playerStats.length === 0) {
     return null;
   }
   const stats = facts.playerStats.find(
     (row) => row.playerExternalId === playerId,
   );
-  return stats && (stats.minutes ?? 0) > 0
+  return stats && onThePitch(stats)
     ? { played: true, enteredAt: null }
     : { played: false };
+}
+
+/**
+ * A statistics row that shows the player on the pitch: minutes, or a shot
+ * (a count the API filled though it left the minutes null). A bench
+ * player's row has neither — the API's way of saying he did not play.
+ */
+function onThePitch(row: PlayerStatFact): boolean {
+  return (
+    (row.minutes ?? 0) > 0 ||
+    (row.shotsTotal ?? 0) > 0 ||
+    (row.shotsOn ?? 0) > 0
+  );
+}
+
+/** A starter, or a substitute an event brought on. */
+function listedOnThePitch(facts: MatchFacts, playerId: number): boolean {
+  return (
+    (facts.lineups ?? []).some(
+      (row) => row.playerExternalId === playerId && row.starter,
+    ) ||
+    (facts.events ?? []).some(
+      (event) =>
+        event.type === "SUBSTITUTION" && event.assistExternalId === playerId,
+    )
+  );
 }
 
 /**
@@ -303,10 +328,12 @@ export function resolvePlayerShotsBetStatus(input: {
   const stats = facts.playerStats;
   if (stats === null || stats.length === 0) return null;
   const row = stats.find((entry) => entry.playerExternalId === playerId);
-  if (!row || (row.minutes ?? 0) <= 0) {
-    // Statistics reported: a player missing or without minutes did not play.
-    return BetStatus.VOID;
-  }
+  const played =
+    (row !== undefined && onThePitch(row)) || listedOnThePitch(facts, playerId);
+  // Statistics reported, nothing shows him on the pitch: he did not play.
+  if (!played) return BetStatus.VOID;
+  // He played, his row is missing: his count is not known.
+  if (row === undefined) return null;
 
   const count = (entry: PlayerStatFact) =>
     (onTarget ? entry.shotsOn : entry.shotsTotal) ?? 0;

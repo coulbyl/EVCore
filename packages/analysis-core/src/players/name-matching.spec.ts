@@ -120,6 +120,25 @@ describe("matchPlayerName", () => {
   });
 });
 
+describe("matchPlayerName — strict", () => {
+  it("keeps the rules that tie a name to one person, drops the guesses", () => {
+    expect(matchPlayerName("Jaydan Kamason", SQUAD, { strict: true })).toEqual({
+      status: "matched",
+      playerExternalId: 1,
+    });
+    expect(matchPlayerName("Willy Kambwala", SQUAD, { strict: true })).toEqual({
+      status: "matched",
+      playerExternalId: 27,
+    });
+    // Guesses: single word, short first name, initial and last word.
+    for (const name of ["Mario Hermoso", "Nico Gonzalez", "Kojo Oppong"]) {
+      expect(matchPlayerName(name, SQUAD, { strict: true }).status).toBe(
+        "unmatched",
+      );
+    }
+  });
+});
+
 describe("normalizePlayerName", () => {
   it("folds accents, special letters, apostrophes and hyphens", () => {
     expect(normalizePlayerName("Martin Ødegaard")).toEqual([
@@ -140,6 +159,11 @@ describe("repairProviderText", () => {
     expect(repairProviderText("N. O&apos;Reilly")).toBe("N. O'Reilly");
     expect(repairProviderText("A. MaksimoviÄ\u0087")).toBe("A. Maksimović");
     expect(repairProviderText("JoÃ£o FÃ©lix")).toBe("João Félix");
+  });
+
+  it("leaves an out-of-range entity as it is", () => {
+    expect(repairProviderText("A&#99999999;B")).toBe("A&#99999999;B");
+    expect(repairProviderText("A&#xFFFFFFF;B")).toBe("A&#xFFFFFFF;B");
   });
 
   it("leaves clean text alone", () => {
