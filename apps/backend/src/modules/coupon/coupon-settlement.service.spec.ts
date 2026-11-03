@@ -7,6 +7,8 @@ import type { PlayableOddsRepository } from '../betting-engine/pricing/playable-
 import type { ClosingLineRow } from '../betting-engine/pricing/closing-line';
 import type { OddsClosingLineRepository } from '../betting-engine/pricing/odds-closing-line.repository';
 import type { ProductDayService } from './product-day/product-day.service';
+import type { MatchFacts } from '@evcore/analysis-core';
+import type { MatchFactsRepository } from '../fixture-events/match-facts.repository';
 
 function makeLeg(overrides: {
   id: string;
@@ -65,6 +67,7 @@ function makeHarness(input: {
   fixtures: ReturnType<typeof makeFixture>[];
   closingLines?: ClosingLineRow[];
   quotes?: Map<string, PlayableQuote>;
+  facts?: Map<string, MatchFacts>;
 }) {
   const settleLeg = vi.fn().mockResolvedValue(undefined);
   const updateResult = vi.fn().mockResolvedValue(undefined);
@@ -99,13 +102,18 @@ function makeHarness(input: {
     refreshRecent: vi.fn().mockResolvedValue(3),
   } as unknown as ProductDayService;
 
+  const findFacts = vi.fn().mockResolvedValue(input.facts ?? new Map());
+  const matchFactsMock = { findFacts } as unknown as MatchFactsRepository;
+
   return {
     service: new CouponSettlementService(
       repoMock,
       closingRepoMock,
       playableMock,
       productDays,
+      matchFactsMock,
     ),
+    findFacts,
     repoMock,
     productDays,
     applyLegOperatorPrices,
@@ -679,6 +687,235 @@ describe('CouponSettlementService.settleProposal — corners from match stats', 
     });
     await late.service.settleProposal('proposal-1');
     expect(late.settleLeg).toHaveBeenCalledWith('l1', null);
+  });
+});
+
+describe('CouponSettlementService.settleProposal — phase 3 markets from match facts', () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  // 1-0, P11 scored at 30'; P13 on the bench and never came on.
+  const facts = (overrides: Partial<MatchFacts> = {}): MatchFacts => ({
+    score: { home: 1, away: 0 },
+    teams: {
+      home: { corners: 7, shotsTotal: 3, shotsOn: 2 },
+      away: { corners: 2, shotsTotal: 1, shotsOn: 0 },
+    },
+    events: [
+      {
+        side: 'home',
+        ordinal: 0,
+        minute: 30,
+        extraMinute: null,
+        type: 'GOAL',
+        detail: 'Normal Goal',
+        comments: null,
+        playerExternalId: 11,
+        playerName: 'Player 11',
+        assistExternalId: null,
+      },
+    ],
+    lineups: [
+      { side: 'home', playerExternalId: 11, starter: true },
+      { side: 'home', playerExternalId: 13, starter: false },
+      { side: 'away', playerExternalId: 20, starter: true },
+    ],
+    playerStats: [
+      {
+        side: 'home',
+        playerExternalId: 11,
+        minutes: 90,
+        shotsTotal: 3,
+        shotsOn: 2,
+      },
+      {
+        side: 'home',
+        playerExternalId: 13,
+        minutes: null,
+        shotsTotal: null,
+        shotsOn: null,
+      },
+      {
+        side: 'away',
+        playerExternalId: 20,
+        minutes: 90,
+        shotsTotal: 1,
+        shotsOn: 0,
+      },
+    ],
+    ...overrides,
+  });
+  const finished = (daysAgo = 2) =>
+    makeFixture({
+      id: 'f1',
+      status: FixtureStatus.FINISHED,
+      homeScore: 1,
+      awayScore: 0,
+      scheduledAt: new Date(Date.now() - daysAgo * DAY),
+    });
+
+  it('grades a scorer, a player shots line and a minute result', async () => {
+    const { service, settleLeg, updateResult } = makeHarness({
+      legs: [
+        makeLeg({
+          id: 'l1',
+          fixtureId: 'f1',
+          market: Market.GOAL_SCORER_ANYTIME,
+          pick: 'P11',
+        }),
+        makeLeg({
+          id: 'l2',
+          fixtureId: 'f1',
+          market: Market.PLAYER_SHOTS_ON_TARGET,
+          pick: 'P11',
+          line: 2,
+        }),
+        makeLeg({
+          id: 'l3',
+          fixtureId: 'f1',
+          market: Market.MINUTE_1X2,
+          pick: 'DRAW',
+          line: 15,
+        }),
+        makeLeg({
+          id: 'l4',
+          fixtureId: 'f1',
+          market: Market.CORNERS_1X2,
+          pick: 'HOME',
+        }),
+      ],
+      fixtures: [finished()],
+      facts: new Map([['f1', facts()]]),
+    });
+    await service.settleProposal('proposal-1');
+    expect(settleLeg.mock.calls).toEqual([
+      ['l1', true],
+      ['l2', true],
+      ['l3', true],
+      ['l4', true],
+    ]);
+    expect(updateResult).toHaveBeenCalledWith(
+      'proposal-1',
+      CouponResult.WON,
+      16,
+    );
+  });
+
+  it('refunds a player who did not play, never a loss', async () => {
+    const { service, settleLeg, updateResult } = makeHarness({
+      legs: [
+        makeLeg({
+          id: 'l1',
+          fixtureId: 'f1',
+          market: Market.GOAL_SCORER_ANYTIME,
+          pick: 'P13',
+        }),
+        makeLeg({
+          id: 'l2',
+          fixtureId: 'f1',
+          market: Market.CORNERS_HOME,
+          pick: 'OVER',
+          line: 5.5,
+          oddsSnapshot: 1.8,
+        }),
+      ],
+      fixtures: [finished()],
+      facts: new Map([['f1', facts()]]),
+    });
+    await service.settleProposal('proposal-1');
+    expect(settleLeg).toHaveBeenCalledWith('l1', null);
+    expect(updateResult).toHaveBeenCalledWith(
+      'proposal-1',
+      CouponResult.PARTIAL,
+      1.8,
+    );
+  });
+
+  it('waits while the facts are unknown, then refunds after the grace period', async () => {
+    const unknown = facts({ events: null, lineups: null, playerStats: null });
+    const leg = () =>
+      makeLeg({
+        id: 'l1',
+        fixtureId: 'f1',
+        market: Market.GOAL_SCORER_FIRST,
+        pick: 'P11',
+      });
+
+    const recent = makeHarness({
+      legs: [leg()],
+      fixtures: [finished(2)],
+      facts: new Map([['f1', unknown]]),
+    });
+    await recent.service.settleProposal('proposal-1');
+    expect(recent.settleLeg).not.toHaveBeenCalled();
+    expect(recent.updateResult).not.toHaveBeenCalled();
+
+    const late = makeHarness({
+      legs: [leg()],
+      fixtures: [finished(15)],
+      facts: new Map([['f1', unknown]]),
+    });
+    await late.service.settleProposal('proposal-1');
+    expect(late.settleLeg).toHaveBeenCalledWith('l1', null);
+    expect(late.updateResult).toHaveBeenCalledWith(
+      'proposal-1',
+      CouponResult.VOID,
+    );
+  });
+
+  it('a second pass writes nothing new; late facts grade a refunded leg', async () => {
+    const settled = makeHarness({
+      legs: [
+        makeLeg({
+          id: 'l1',
+          fixtureId: 'f1',
+          market: Market.GOAL_SCORER_ANYTIME,
+          pick: 'P11',
+          isCorrect: true,
+        }),
+      ],
+      fixtures: [finished()],
+      facts: new Map([['f1', facts()]]),
+    });
+    await settled.service.settleProposal('proposal-1');
+    expect(settled.settleLeg).not.toHaveBeenCalled();
+
+    // Refunded at the grace period (isCorrect null), the events arrive.
+    const corrected = makeHarness({
+      legs: [
+        makeLeg({
+          id: 'l1',
+          fixtureId: 'f1',
+          market: Market.GOAL_SCORER_ANYTIME,
+          pick: 'P20',
+          isCorrect: null,
+        }),
+      ],
+      fixtures: [finished(20)],
+      facts: new Map([['f1', facts()]]),
+    });
+    await corrected.service.settleProposal('proposal-1');
+    expect(corrected.settleLeg).toHaveBeenCalledWith('l1', false);
+    expect(corrected.updateResult).toHaveBeenCalledWith(
+      'proposal-1',
+      CouponResult.LOST,
+    );
+  });
+
+  it('waits for the end of the match without reading the facts', async () => {
+    const { service, settleLeg, findFacts } = makeHarness({
+      legs: [
+        makeLeg({
+          id: 'l1',
+          fixtureId: 'f1',
+          market: Market.MINUTE_1X2,
+          pick: 'DRAW',
+          line: 15,
+        }),
+      ],
+      fixtures: [makeFixture({ id: 'f1', status: FixtureStatus.IN_PROGRESS })],
+    });
+    await service.settleProposal('proposal-1');
+    expect(settleLeg).not.toHaveBeenCalled();
+    expect(findFacts).not.toHaveBeenCalled();
   });
 });
 

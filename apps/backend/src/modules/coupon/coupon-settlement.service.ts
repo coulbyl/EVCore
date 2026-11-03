@@ -4,7 +4,13 @@ import {
   CORNERS_HUNTER_POLICY,
   COUPON_SETTLEMENT_POLICY,
 } from './coupon.constants';
-import { resolveCornersBetStatus } from '@evcore/analysis-core';
+import {
+  resolveCornersBetStatus,
+  resolveStatMarketBetStatus,
+  STAT_SETTLED_MARKETS,
+  type MatchFacts,
+} from '@evcore/analysis-core';
+import { MatchFactsRepository } from '../fixture-events/match-facts.repository';
 import {
   resolveFirstHalfBetStatus,
   resolveHalfTimeFullTimeBetStatus,
@@ -101,6 +107,7 @@ export class CouponSettlementService {
     private readonly closingLines: OddsClosingLineRepository,
     private readonly playableOdds: PlayableOddsRepository,
     private readonly productDays: ProductDayService,
+    private readonly matchFacts: MatchFactsRepository,
   ) {}
 
   /**
@@ -213,6 +220,17 @@ export class CouponSettlementService {
     const fixtureMap = new Map(fixtures.map((f) => [f.id, f]));
     await this.recordClosingLines(proposal.legs, fixtureMap);
     const now = Date.now();
+    // Events, lineups and player statistics, read once per proposal and
+    // only when a leg needs them (phase 3 markets).
+    let facts: Map<string, MatchFacts> | null = null;
+    const factsOf = async (fixtureId: string): Promise<MatchFacts | null> => {
+      facts ??= await this.matchFacts.findFacts(
+        proposal.legs
+          .filter((leg) => STAT_SETTLED_MARKETS.has(leg.market))
+          .map((leg) => leg.fixtureId),
+      );
+      return facts.get(fixtureId) ?? null;
+    };
 
     let allResolved = true;
     let voidedLegs = 0;
@@ -254,10 +272,16 @@ export class CouponSettlementService {
         continue;
       }
 
-      // Corners (lot 6) : réglés sur les stats de match, une fois le match
-      // terminé. Sans stats, on attend ; passé le délai de grâce, la jambe
-      // est remboursée, jamais comptée perdue.
-      if (leg.market === Market.CORNERS) {
+      // Corners (lot 6) and the phase 3 markets (team corners, corners
+      // 1X2, scorers, player shots, minute 1X2): settled on the match's
+      // statistics, events, lineups and player statistics, once it is
+      // finished. Unknown, we wait; past the grace period the leg is
+      // refunded, never counted lost. Recomputed on every pass: data that
+      // arrives after a refund grades the leg.
+      if (
+        leg.market === Market.CORNERS ||
+        STAT_SETTLED_MARKETS.has(leg.market)
+      ) {
         if (fixture.status !== FixtureStatus.FINISHED) {
           allResolved = false;
           continue;
@@ -265,14 +289,25 @@ export class CouponSettlementService {
         const graceOver =
           now - fixture.scheduledAt.getTime() >=
           CORNERS_HUNTER_POLICY.statsGraceDays * 24 * 60 * 60 * 1000;
-        const status =
-          leg.line === null
-            ? BetStatus.VOID
-            : resolveCornersBetStatus(
-                leg.pick,
-                Number(leg.line),
-                fixture.totalCorners,
-              );
+        const line = leg.line === null ? null : Number(leg.line);
+        let status: BetStatus | null;
+        if (leg.market === Market.CORNERS) {
+          status =
+            line === null
+              ? BetStatus.VOID
+              : resolveCornersBetStatus(leg.pick, line, fixture.totalCorners);
+        } else {
+          const matchFacts = await factsOf(fixture.id);
+          status =
+            matchFacts === null
+              ? null
+              : resolveStatMarketBetStatus({
+                  market: leg.market,
+                  pick: leg.pick,
+                  line,
+                  facts: matchFacts,
+                });
+        }
         if (status === null && !graceOver) {
           allResolved = false;
           continue;

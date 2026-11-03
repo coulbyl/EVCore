@@ -6,3 +6,4 @@ export {
   resolveWinEitherHalfBetStatus,
   resolveCornersBetStatus,
 } from "./bet-settlement";
+export * from "./stat-markets";
