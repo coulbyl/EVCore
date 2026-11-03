@@ -74,7 +74,14 @@ RUN mkdir -p /deploy-ws/node_modules/.pnpm/node_modules \
 ################################################################################
 # Stage 4 — Runner: minimal image with only what's needed at runtime
 ################################################################################
-FROM base AS runner
+# The runtime starts from a clean Node image, not from `base`: no package
+# manager at run time. npm, npx, corepack (with the pnpm it prepared) and yarn
+# only serve to install; their own dependencies are what the image scan
+# flagged on 02/11 (brace-expansion, tar, undici, pnpm 10.33…), none of ours.
+FROM node:24-alpine AS runner
+RUN apk upgrade --no-cache \
+ && rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx \
+      /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg /opt/yarn-*
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PRISMA_SCHEMA_ENGINE_BINARY=/app/prisma-engines/schema-engine
