@@ -212,12 +212,12 @@ Chaque sous-phase commence par `report:new-markets` sur la fenêtre, et ne livre
 
 ### Phase 1 — `feat/hunter-ht-draw`
 
-- [ ] 1.1 `feat(analysis-core): HUNTER_HT_DRAW class and spec`
-- [ ] 1.2 `feat(coupon): half-time draw hunter in the evening pass` (vivier, génération, abstention)
-- [ ] 1.3 `feat(screens): half-time draw hunter on Aujourd'hui, Résultats, digest`
-- [ ] 1.4 `feat(web): half-time draw hunter — labels, types, mock, e2e`
-- [ ] 1.5 `docs(audit): half-time draw hunter replayed on Pinnacle closings`
-- [ ] PR après `/code-review high`
+- [x] 1.1 `feat(analysis-core): HUNTER_HT_DRAW class and spec` _Fait : `HUNTER_HT_DRAW_CLASS` (2,10–2,80, `targetOddsMin` 2,10 libre en base), `HT_DRAW_HUNTER` servi tel quel par `composeHunterByMarket` ; specs bande, coût, AVOID (cote jouable nulle), abstention, nul plein match jamais pris._
+- [x] 1.2 `feat(coupon): half-time draw hunter in the evening pass` (vivier, génération, abstention) _Fait : le vivier commun aurait écarté ~85 % des lignes (porte `htftCalibrated` du moteur, en `market_suspended`) : vivier propre `findMarketCandidates` / `CouponPricedPoolService.loadMarket`, qui ne respecte que la vraie suspension (`calibration.market_suspension`) et les alertes de calibration ; `findPlayableQuotes` sert déjà Shin sur le groupe à trois issues, rien ajouté ; chargé à part (un échec n'emporte que ce chasseur) ; `hunter-hunter_ht_draw`. Règlement inchangé : remboursé dès le match fini sans score à la mi-temps (attendre 14 j mesuré inutile, voir le rapport). Copie locale : 12 nuls dans la bande le 04/11, composé à 2,39 chez 1xBet, chance 38,8 %._
+- [x] 1.3 `feat(screens): half-time draw hunter on Aujourd'hui, Résultats, digest` _Fait : après `HUNTER_DRAW` dans `TODAY_PRODUCTS` et `TODAY_HERO_RELAY`, cible et bande, `RESULTS_PRODUCTS` lancé le 2026-11-04, deux libellés du résumé ; `today-products.spec`. `console-rules` n'énumère pas les produits._
+- [x] 1.4 `feat(web): half-time draw hunter — labels, types, mock, e2e` _Fait : types, ordre, messages fr/en (codes MT / HT), le pari se lit déjà « Égalité à la pause » ; mock et `today.spec` écrits, **non lancés** (Playwright démarre `next dev`, consigne de ne pas lancer de serveur ; la CI ne lance pas l'e2e)._
+- [x] 1.5 `docs(audit): half-time draw hunter replayed on Pinnacle closings` _Fait : `docs/audits/2026-11-04/CHASSEUR-NUL-MT.md` — 847 jours sur 889, 39,7 % ± 3,3 réalisés pour 40,3 % annoncés à cote 2,40, retour 0,950 chez Pinnacle (~0,90 chez 1xBet), pire série 12 sur trois ans (l'arithmétique de 2 sur 5 ; ~6 sur sept semaines)._
+- [x] PR après `/code-review high` _Fait : 9 constats ; corrigés : attente de 14 j retirée (dépassait la fenêtre de 7 j de Résultats, touchait tous les coupons à jambe de mi-temps), vivier mi-temps isolé et parallèle, requête commune, marché tiré de la spec, prix Pinnacle < 3 h relus dans le rapport ; non retenu : filtre des championnats sans score de mi-temps (seuls les amicaux en manquent, non analysés sur ce marché)._
 
 ### Phase 2 — `feat/fixture-events`
 
