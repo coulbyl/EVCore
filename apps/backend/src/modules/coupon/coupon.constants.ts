@@ -32,6 +32,7 @@ import {
   FAVOURITE_COUPON_CLASS,
   HUNTER_BTTS_CLASS,
   HUNTER_CORNERS_CLASS,
+  AI_COMBO_COUPON_CLASS,
   HUNTER_DRAW_CLASS,
   HUNTER_SCORE_CLASS,
   DRAW_STAKED_LEAGUES,
@@ -330,6 +331,11 @@ export const HUNTER_POLICY = {
   version: 'hunter-v1',
 } as const;
 
+/** Combiné IA (2026-11-03, AI_COMBO_COUPON_CLASS d'@evcore/analysis-core). */
+export const AI_COMBO_POLICY = {
+  version: 'ai-combo-v1',
+} as const;
+
 /**
  * Chasseur Corners (lot 6, 2026-10-29). Le pari se règle sur les stats de
  * match (synchronisées chaque nuit à 04:00 UTC). Elles arrivent pour tous les
@@ -447,6 +453,7 @@ const ABSTENTION_PASSES: Readonly<Record<string, CouponClass>> = {
   'hunter-hunter_draw': HUNTER_DRAW_CLASS,
   'hunter-hunter_score': HUNTER_SCORE_CLASS,
   'hunter-hunter_corners': HUNTER_CORNERS_CLASS,
+  'ai-combo': AI_COMBO_COUPON_CLASS,
 };
 
 export const ABSTENTION_PASS_CLASS: Readonly<Record<string, string>> =

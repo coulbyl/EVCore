@@ -99,7 +99,8 @@ export type CouponClassName =
   | "HUNTER_BTTS"
   | "HUNTER_DRAW"
   | "HUNTER_SCORE"
-  | "HUNTER_CORNERS";
+  | "HUNTER_CORNERS"
+  | "AI_COMBO";
 
 export type CouponClass = {
   name: CouponClassName;
@@ -332,6 +333,25 @@ export const HUNTER_CORNERS_CLASS: CouponClass = {
   targetOddsMax: 2.1,
 };
 
+/**
+ * Combiné IA (2026-11-03) : trois ou quatre avis joués par l'IA, cote 1xBet
+ * de 1,45 à 1,80, un par championnat, la marge la plus basse d'abord, pour
+ * une cote combinée de 4 à 10. Les avis de l'IA sont calibrés dans cette
+ * bande (0,99 sur 1 359 avis, 08/09–03/11) ; rejoué sur 44 jours : composé
+ * 36 jours, cote ~5,2, gagné un jour sur trois (annoncé un sur quatre),
+ * pire série 8 (docs/audits/2026-11-03/COMBINE-IA-4-10.md). Arithmétique
+ * des jambes calibrées, jamais un avantage.
+ */
+export const AI_COMBO_COUPON_CLASS: CouponClass = {
+  name: "AI_COMBO",
+  minLegOdds: 1.45,
+  maxLegOdds: 1.8,
+  maxLegs: 4,
+  targetCombinedOdds: 4,
+  targetOddsMin: 4,
+  targetOddsMax: 10,
+};
+
 /** Retrouve la classe d'une proposition persistée depuis son `targetOddsMin`. */
 export function classForTargetOddsMin(
   targetOddsMin: number,
@@ -347,6 +367,7 @@ export function classForTargetOddsMin(
       HUNTER_DRAW_CLASS,
       HUNTER_SCORE_CLASS,
       HUNTER_CORNERS_CLASS,
+      AI_COMBO_COUPON_CLASS,
       ...COUPON_CLASSES,
     ].find((c) => c.targetOddsMin === targetOddsMin)?.name ?? null
   );

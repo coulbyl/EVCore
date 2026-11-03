@@ -1,4 +1,5 @@
 import {
+  AI_COMBO_COUPON_CLASS,
   classForTargetOddsMin,
   COMBO_COUPON_CLASS,
   DOUBLE_COUPON_CLASS,
@@ -26,6 +27,7 @@ export const TODAY_PRODUCT_TARGETS: readonly number[] = [
   HUNTER_DRAW_CLASS,
   HUNTER_SCORE_CLASS,
   HUNTER_CORNERS_CLASS,
+  AI_COMBO_COUPON_CLASS,
 ].map((couponClass) => couponClass.targetOddsMin);
 
 const PRODUCTS: ReadonlySet<string> = new Set(TODAY_PRODUCTS);

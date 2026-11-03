@@ -8,23 +8,13 @@ import {
   scheduledPassesEnabled,
 } from "../settings";
 import { analyzeFixture } from "../vantage/analyze-fixture";
-import {
-  runCouponGeneration,
-  runIntradayCouponGeneration,
-} from "../coupon/run-coupon-generation";
 import { runSweep } from "./scheduler";
 import {
   createQueue,
   createRedisConnection,
   VANTAGE_QUEUE_NAME,
 } from "./queue";
-import type { AnalyzeJobData, CouponJobData, VantageJobData } from "./queue";
-
-function tomorrowUtc(): string {
-  const now = new Date();
-  const tomorrow = new Date(now.getTime() + 86_400_000);
-  return tomorrow.toISOString().slice(0, 10);
-}
+import type { AnalyzeJobData, VantageJobData } from "./queue";
 
 export function createVantageWorker(
   config: Config,
@@ -44,7 +34,7 @@ export function createVantageWorker(
       // switch; a skipped sweep enqueues no analysis either.
       if (
         job.repeatJobKey &&
-        (job.name === "sweep" || job.name === "generate-coupons") &&
+        job.name === "sweep" &&
         !(await scheduledPassesEnabled(logger))
       ) {
         logger.warn(
@@ -63,23 +53,6 @@ export function createVantageWorker(
         const { fixtureId } = job.data as AnalyzeJobData;
         const live = await readLiveConfig(config, logger);
         return analyzeFixture(fixtureId, liveClients(live), live, logger);
-      }
-      if (job.name === "generate-coupons") {
-        const { date } = job.data as CouponJobData;
-        const live = await readLiveConfig(config, logger);
-        return runCouponGeneration(
-          date ?? tomorrowUtc(),
-          liveClients(live),
-          logger,
-        );
-      }
-      if (job.name === "generate-intraday-coupons") {
-        const live = await readLiveConfig(config, logger);
-        return runIntradayCouponGeneration(
-          config.couponIntradayWindowHours,
-          liveClients(live),
-          logger,
-        );
       }
       logger.warn({ jobName: job.name }, "vantage: unknown job name, skipping");
       return undefined;

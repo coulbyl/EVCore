@@ -44,10 +44,6 @@ export async function ProductRows({
     getLocale(),
   ]);
   const display = displayLocaleOf(locale);
-  // The AI's own coupon sits with its opinions, below the bar: the products
-  // above are the ones Aujourd'hui shows and a player follows.
-  const followed = products.filter((p) => p.product !== AI_COMBO);
-  const aiCombo = products.find((p) => p.product === AI_COMBO);
   const row = (product: ProductSummary) => {
     const played = product.won + product.lost;
     return (
@@ -81,9 +77,8 @@ export async function ProductRows({
   };
   return (
     <div className="flex flex-col">
-      <ul className="divide-y divide-border">{followed.map(row)}</ul>
+      <ul className="divide-y divide-border">{products.map(row)}</ul>
       <ul className="divide-y divide-border border-t-2 border-foreground">
-        {aiCombo ? row(aiCombo) : null}
         <ResultRow
           href={sheetHref(AI_SLUG, period, base)}
           name={t("ai")}
@@ -102,8 +97,6 @@ export async function ProductRows({
     </div>
   );
 }
-
-const AI_COMBO = "COMBO_AI";
 
 type Translate = Awaited<ReturnType<typeof getTranslations<"results">>>;
 

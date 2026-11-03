@@ -59,11 +59,19 @@ export const RESULTS_PRODUCTS = [
     retired: false,
   },
   {
+    key: 'AI_COMBO',
+    source: 'PRICE_COMPOSER',
+    targetOddsMin: 4,
+    launchedOn: '2026-11-04',
+    retired: false,
+  },
+  // Replaced on 2026-11-03 by the Combiné IA 4–10 (AI_COMBO).
+  {
     key: 'COMBO_AI',
     source: 'LLM',
     targetOddsMin: 1.2,
     launchedOn: '2026-10-14',
-    retired: false,
+    retired: true,
   },
   // Retired on 2026-10-29 (the long coupon, the 5–15 price coupon).
   {

@@ -33,8 +33,20 @@ const PRICES = new Map<string, number>([
   ['f3|CORRECT_SCORE|1:0', 6.5],
 ]);
 
-function makeHarness(avoided: string[] = [], reliable: string[] = ['c1']) {
+function makeHarness(
+  avoided: string[] = [],
+  reliable: string[] = ['c1'],
+  aiPlays: {
+    fixtureId: string;
+    competition: string;
+    market: string;
+    pick: string;
+  }[] = [],
+) {
   const repository = {
+    findAiPlays: vi
+      .fn()
+      .mockResolvedValue(aiPlays.map((p) => ({ ...p, scheduledAt: KICKOFF }))),
     // BTTS coté complet sur f1 (dans la bande) ; 1X2 complet sur f2.
     findDoubleCandidates: vi
       .fn()
@@ -89,6 +101,10 @@ function makeHarness(avoided: string[] = [], reliable: string[] = ['c1']) {
                   operatorOdds: odds,
                   operatorBookmaker: '1xBet',
                   operatorMargin: null,
+                  // The AI plays (a…) carry their market frequency.
+                  operatorFairProbability: k.fixtureId.startsWith('a')
+                    ? 0.95 / odds
+                    : null,
                   lowestOdds: odds,
                   lowestBookmaker: '1xBet',
                 },
@@ -137,6 +153,8 @@ describe('CouponHunterGenerationService', () => {
       ['HUNTER_DRAW', 'composed'],
       ['HUNTER_SCORE', 'composed'],
       ['HUNTER_CORNERS', 'composed'],
+      // No AI play on the day: no AI combo.
+      ['AI_COMBO', 'abstained'],
     ]);
     const calls = vi.mocked(repository.upsertPriceComposerProposal).mock.calls;
     expect(calls.map(([input]) => input.profile?.source)).toEqual([
@@ -159,7 +177,7 @@ describe('CouponHunterGenerationService', () => {
     });
     // Le score exact annonce la probabilité du marché (marge de grille 27 %).
     expect(calls[2]?.[0].legs[0]?.probability).toBeCloseTo(1 / 6.5 / 1.27, 3);
-    expect(repository.recordPriceComposerAttempt).toHaveBeenCalledTimes(4);
+    expect(repository.recordPriceComposerAttempt).toHaveBeenCalledTimes(5);
   });
 
   it('never hunts on a match the AVOID meta-channel flags', async () => {
@@ -197,5 +215,49 @@ describe('CouponHunterGenerationService', () => {
     expect(repository.recordPriceComposerAttempt).toHaveBeenCalledWith(
       expect.objectContaining({ reason: 'no_operator_price' }),
     );
+  });
+
+  it("writes the AI combo from the AI's own plays, cheapest first, one per league", async () => {
+    PRICES.set('a1|BTTS|YES', 1.7);
+    PRICES.set('a2|OVER_UNDER|OVER_2_5', 1.6);
+    PRICES.set('a3|ONE_X_TWO|HOME', 1.65);
+    const { service, repository } = makeHarness(
+      [],
+      ['c1'],
+      [
+        { fixtureId: 'a1', competition: 'PL', market: 'BTTS', pick: 'YES' },
+        {
+          fixtureId: 'a2',
+          competition: 'SA',
+          market: 'OVER_UNDER',
+          pick: 'OVER_2_5',
+        },
+        {
+          fixtureId: 'a3',
+          competition: 'LL',
+          market: 'ONE_X_TWO',
+          pick: 'HOME',
+        },
+      ],
+    );
+    const outcomes = await service.generateForDate(new Date('2026-10-29'));
+    expect(outcomes.at(-1)).toMatchObject({
+      hunter: 'AI_COMBO',
+      outcome: 'composed',
+    });
+    const calls = vi.mocked(repository.upsertPriceComposerProposal).mock.calls;
+    const combo = calls.at(-1)?.[0];
+    expect(combo?.profile).toMatchObject({
+      source: CouponSource.PRICE_COMPOSER,
+      targetOddsMin: 4,
+      targetOddsMax: 10,
+    });
+    // 1.7 × 1.6 × 1.65 = 4.488, three leagues.
+    expect(combo?.combinedOdds).toBe(4.488);
+    expect(combo?.legs.map((l) => l.fixtureId).sort()).toEqual([
+      'a1',
+      'a2',
+      'a3',
+    ]);
   });
 });

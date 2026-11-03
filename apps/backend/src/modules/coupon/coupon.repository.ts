@@ -105,6 +105,14 @@ export type EngineComboCandidateRow = {
   scheduledAt: Date;
 };
 
+export type AiPlayRow = {
+  fixtureId: string;
+  competition: string;
+  market: string;
+  pick: string;
+  scheduledAt: Date;
+};
+
 export type ChannelCompetitionCalibrationRow = {
   channel: string;
   competition: string;
@@ -667,6 +675,41 @@ export class CouponRepository {
         AND NOT (s.channel::text = ANY(${[...opts.excludedChannels]}::text[]))
         AND s.market::text <> ALL(${[...POOL_EXCLUDED_MARKETS]}::text[])
         AND s."fixtureId" NOT IN (${calibrationAlertedFixtureIds(opts.from, opts.to)})
+    `;
+  }
+
+  /**
+   * Les avis joués par l'IA sur les matchs à venir de la plage (Combiné IA,
+   * 2026-11-03) : son dernier avis par match, quand il joue, avec son pari.
+   * Jamais un avis remplacé par une analyse plus récente qui ne joue pas.
+   */
+  async findAiPlays(opts: {
+    from: Date;
+    to: Date;
+  }): Promise<readonly AiPlayRow[]> {
+    return this.prisma.client.$queryRaw<AiPlayRow[]>`
+      WITH latest AS (
+        SELECT DISTINCT ON (mr."fixtureId")
+               mr."fixtureId", cd.id, cd.status
+        FROM public.channel_decision cd
+        JOIN public.model_run mr ON mr.id = cd."modelRunId"
+        JOIN public.fixture f ON f.id = mr."fixtureId"
+        WHERE cd.channel = 'VANTAGE'
+          AND f.status = 'SCHEDULED'
+          AND f."scheduledAt" >= ${opts.from}
+          AND f."scheduledAt" < ${opts.to}
+          AND f."scheduledAt" > now()
+        ORDER BY mr."fixtureId", cd."createdAt" DESC
+      )
+      SELECT l."fixtureId", c.code AS competition,
+             cs.market::text AS market, cs.pick, f."scheduledAt"
+      FROM latest l
+      JOIN public.channel_selection cs
+        ON cs."channelDecisionId" = l.id AND cs.rank = 1
+      JOIN public.fixture f ON f.id = l."fixtureId"
+      JOIN public.season se ON se.id = f."seasonId"
+      JOIN public.competition c ON c.id = se."competitionId"
+      WHERE l.status = 'SELECTED'
     `;
   }
 

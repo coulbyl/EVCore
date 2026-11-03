@@ -8,7 +8,8 @@ export type TodayProductKey =
   | "HUNTER_BTTS"
   | "HUNTER_DRAW"
   | "HUNTER_SCORE"
-  | "HUNTER_CORNERS";
+  | "HUNTER_CORNERS"
+  | "AI_COMBO";
 
 export type TodayCouponState = "upcoming" | "live" | "won" | "lost" | "void";
 

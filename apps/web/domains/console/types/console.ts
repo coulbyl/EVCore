@@ -88,7 +88,6 @@ export type PassKey =
   | "odds_morning"
   | "morning_brief"
   | "coupons"
-  | "ai_combo"
   | "odds_evening"
   | "analysis";
 

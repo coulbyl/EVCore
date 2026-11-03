@@ -32,9 +32,6 @@ describe('CONSOLE_PASSES', () => {
     expect(COUPON_SCHEDULE.HORIZON_PASS_CRON).toBe(
       `0 ${hourOf('coupons')} * * *`,
     );
-    expect(COUPON_SCHEDULE.LLM_COUPON_CRON).toBe(
-      `45 ${hourOf('ai_combo')} * * *`,
-    );
     expect(ETL_CRON_SCHEDULES.BETTING_ENGINE_ANALYSIS).toBe(
       `0 ${hourOf('analysis')} * * *`,
     );

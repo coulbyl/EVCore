@@ -2,9 +2,10 @@
 // (docs/refonte-ui/16-performance-et-qualite.md § 3).
 
 // The products of « Aujourd'hui », in screen order (01 § 6, 04 § 4): the
-// Favori first, then the Combiné, the Coupon cote 2 and the hunters. The
-// LLM combo, the long coupon and the 5–15 coupon are not products of this
-// screen (decided 2026-10-29).
+// Favori first, then the Combiné, the Coupon cote 2, the hunters and the
+// Combiné IA (the AI's own plays at 4–10, decided 2026-11-03, which revokes
+// the 29/10 « no AI product here »). The LLM combo, the long coupon and the
+// 5–15 coupon are not products of this screen.
 export const TODAY_PRODUCTS = [
   'FAVOURITE',
   'COMBO',
@@ -13,6 +14,7 @@ export const TODAY_PRODUCTS = [
   'HUNTER_DRAW',
   'HUNTER_SCORE',
   'HUNTER_CORNERS',
+  'AI_COMBO',
 ] as const;
 
 // Who takes the hero card (03, 04 § 5): the Favori, then the Combiné when

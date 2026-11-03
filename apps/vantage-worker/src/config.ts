@@ -1,5 +1,4 @@
 import "dotenv/config";
-import { COUPON_SCHEDULE } from "@evcore/analysis-core";
 import { z } from "zod";
 
 /** Every provider here speaks the same OpenAI-compatible chat-completions
@@ -132,16 +131,6 @@ export type Config = {
    * VANTAGE_RESEARCH_COMPETITION_CODES if the big-leagues default isn't
    * what you want. */
   researchCompetitionCodes: string[];
-  /** The daily coupon-generation pass (BullMQ repeatable job, see
-   * main.ts/queue/worker.ts): COUPON_SCHEDULE.LLM_COUPON_CRON, 17:45 UTC,
-   * shared with apps/backend's 17:00 horizon pass that composes every
-   * other coupon of the day on the same pool (ENV-PROD § 3). The 21:15
-   * retry pass is gone: proposals are immutable, it paid an LLM call each
-   * evening to keep the one already published. */
-  couponCron: string;
-  /** How far ahead (hours from "now") the manual intraday pass looks for
-   * fixtures — apps/backend's same-day re-analysis window (3 h). */
-  couponIntradayWindowHours: number;
 };
 
 // PL=Premier League(ENG), LL=La Liga(ESP), BL1=Bundesliga(GER),
@@ -162,8 +151,6 @@ const DEFAULT_RESEARCH_COMPETITION_CODES = [
 const SWEEP_INTERVAL_MS = 300_000;
 /** The agentic search model when research runs on Groq. */
 const GROQ_RESEARCH_MODEL = "groq/compound-mini";
-/** apps/backend's same-day re-analysis window, in hours. */
-const COUPON_INTRADAY_WINDOW_HOURS = 3;
 
 function required(key: string): string {
   const value = process.env[key];
@@ -322,7 +309,5 @@ export function loadConfig(): Config {
           .map((code) => code.trim())
           .filter(Boolean)
       : DEFAULT_RESEARCH_COMPETITION_CODES,
-    couponCron: COUPON_SCHEDULE.LLM_COUPON_CRON,
-    couponIntradayWindowHours: COUPON_INTRADAY_WINDOW_HOURS,
   };
 }

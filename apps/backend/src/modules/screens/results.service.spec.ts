@@ -118,7 +118,7 @@ describe('ResultsService.getResults', () => {
     });
   });
 
-  it('lists the products a player sees, in screen order, then the AI', async () => {
+  it('lists the products a player sees, in screen order; the two-leg AI combo is retired', async () => {
     const { service } = harness({});
     const screen = await service.getResults(
       { period: '90', isAdmin: false },
@@ -132,7 +132,7 @@ describe('ResultsService.getResults', () => {
       'HUNTER_DRAW',
       'HUNTER_SCORE',
       'HUNTER_CORNERS',
-      'COMBO_AI',
+      // AI_COMBO is launched on 2026-11-04, after NOW: not listed yet.
     ]);
     const admin = await service.getResults(
       { period: '90', isAdmin: true },
