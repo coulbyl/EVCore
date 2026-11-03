@@ -2,15 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
+import { addDays } from 'date-fns';
 import type { Job } from 'bullmq';
 import { createLogger } from '@utils/logger';
 import {
   BULLMQ_QUEUES,
   ETL_SCHEDULER_KEYS,
+  PLAYER_SQUADS,
   STATS_BACKFILL,
 } from '@config/etl.constants';
 import { AppSettingService } from '@modules/app-setting/app-setting.service';
 import { FixtureService } from '../fixture/fixture.service';
+import { PlayerSquadRepository } from '../fixture-events/player-squad.repository';
 import {
   ApiFootballClient,
   type ApiFootballQuotaUsage,
@@ -52,6 +55,9 @@ export type StatsBackfillStatus = {
   // their events, lineups and player statistics (the events lot of each
   // tick).
   events: { synced: number; total: number };
+  // Teams playing in the next ten days, and of them those whose squad was
+  // written in the last week (the squads lot of each tick).
+  squads: { synced: number; total: number };
 };
 
 @Injectable()
@@ -69,6 +75,7 @@ export class StatsBackfillService {
     private readonly fixtureService: FixtureService,
     private readonly apiFootball: ApiFootballClient,
     private readonly settings: AppSettingService,
+    private readonly squads: PlayerSquadRepository,
   ) {
     // STATS_BACKFILL_ENABLED=false still holds: its production value is not
     // known (ENV-NETTOYAGE § 1), so the deploy must not turn the backfill on.
@@ -153,15 +160,22 @@ export class StatsBackfillService {
   }
 
   async getStatus(): Promise<StatsBackfillStatus> {
-    const [paused, usage, candidates, reserve, events] = await Promise.all([
-      this.queue.isPaused(),
-      this.apiFootball.getQuotaUsage(),
-      this.fixtureService.findStatsBackfillCandidates(
-        new Date(STATS_BACKFILL.MIN_SEASON_START),
-      ),
-      this.settings.statsBackfillDailyReserve(),
-      this.fixtureService.countEventsCoverage(),
-    ]);
+    const now = new Date();
+    const [paused, usage, candidates, reserve, events, squads] =
+      await Promise.all([
+        this.queue.isPaused(),
+        this.apiFootball.getQuotaUsage(),
+        this.fixtureService.findStatsBackfillCandidates(
+          new Date(STATS_BACKFILL.MIN_SEASON_START),
+        ),
+        this.settings.statsBackfillDailyReserve(),
+        this.fixtureService.countEventsCoverage(),
+        this.squads.countCoverage({
+          from: now,
+          to: addDays(now, PLAYER_SQUADS.HORIZON_DAYS),
+          since: addDays(now, -PLAYER_SQUADS.REFRESH_DAYS),
+        }),
+      ]);
     const ranked = rankStatsBackfillSeasons(candidates, new Date());
     const view = (
       season: (typeof ranked)[number],
@@ -196,6 +210,7 @@ export class StatsBackfillService {
         .map(view),
       parked: open.filter((season) => season.parked).map(view),
       events,
+      squads: { synced: squads.synced, total: squads.teams },
     };
   }
 }

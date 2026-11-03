@@ -10,6 +10,7 @@ import { EtlService } from './etl.service';
 import { EtlController } from './etl.controller';
 import { ApiFootballClient } from './api-football.client';
 import { StatsBackfillService } from './stats-backfill.service';
+import { SquadsSyncService } from './squads-sync.service';
 import { CouponModule } from '../coupon/coupon.module';
 import { AdjustmentModule } from '../adjustment/adjustment.module';
 import { AuthModule } from '../auth/auth.module';
@@ -52,8 +53,19 @@ import { FixtureEventsModule } from '../fixture-events/fixture-events.module';
     RollingStatsModule,
   ],
   controllers: [EtlController],
-  providers: [EtlService, ApiFootballClient, StatsBackfillService],
+  providers: [
+    EtlService,
+    ApiFootballClient,
+    StatsBackfillService,
+    SquadsSyncService,
+  ],
   // The queues too: the worker module's processors consume them.
-  exports: [EtlService, ApiFootballClient, StatsBackfillService, BullModule],
+  exports: [
+    EtlService,
+    ApiFootballClient,
+    StatsBackfillService,
+    SquadsSyncService,
+    BullModule,
+  ],
 })
 export class EtlModule {}

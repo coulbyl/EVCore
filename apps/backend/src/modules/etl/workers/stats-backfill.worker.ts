@@ -18,6 +18,10 @@ import {
 } from '../stats-backfill.plan';
 import { StatsBackfillService } from '../stats-backfill.service';
 import {
+  SquadsSyncService,
+  type SquadsLotResult,
+} from '../squads-sync.service';
+import {
   StatsSyncWorker,
   type PendingStatisticsFixture,
 } from './stats-sync.worker';
@@ -42,6 +46,7 @@ export type StatsBackfillTickResult =
     }
   | {
       status: 'nothing-left';
+      squads?: SquadsLotResult;
       events?: EventsBackfillLotResult;
     }
   | {
@@ -50,6 +55,7 @@ export type StatsBackfillTickResult =
       seasonName: string;
       updated: number;
       remainingAfterJob: number;
+      squads?: SquadsLotResult;
       events?: EventsBackfillLotResult;
     };
 
@@ -77,6 +83,7 @@ export class StatsBackfillWorker extends WorkerHost {
     private readonly statsSync: StatsSyncWorker,
     private readonly rollingStatsService: RollingStatsService,
     private readonly notification: NotificationService,
+    private readonly squadsSync: SquadsSyncService,
   ) {
     super();
   }
@@ -109,11 +116,20 @@ export class StatsBackfillWorker extends WorkerHost {
     // A quota stop ends the tick: nothing more is spent.
     if (stats.result.status === 'lot-aborted') return stats.result;
 
-    const left = budget - stats.calls;
+    // Squads before the events catch-up: the odds of the coming days need
+    // them, the events of past matches can wait a tick.
+    let left = budget - stats.calls;
+    const squads = left > 0 ? await this.squadsSync.syncDue(left) : null;
+    if (squads?.status === 'lot-aborted') {
+      return { ...stats.result, squads };
+    }
+    left -= squads?.calls ?? 0;
     const events = left > 0 ? await this.runEventsLot(left) : null;
-    return events && events.status !== 'nothing-left'
-      ? { ...stats.result, events }
-      : stats.result;
+    return {
+      ...stats.result,
+      ...(squads && squads.status !== 'nothing-left' ? { squads } : {}),
+      ...(events && events.status !== 'nothing-left' ? { events } : {}),
+    };
   }
 
   private async runStatsPart(budget: number): Promise<{

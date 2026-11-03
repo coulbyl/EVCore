@@ -3,6 +3,7 @@ import {
   Market,
   assembleFullOddsSnapshot,
   resolveSelectionOdds,
+  STAT_SETTLED_MARKETS,
   type FullOddsSnapshot,
   type RawOddsRow,
 } from "@evcore/analysis-core";
@@ -85,7 +86,9 @@ export async function loadFullOddsSnapshot(
   fixtureId: string,
 ): Promise<FullOddsSnapshot | null> {
   const rows: RawOddsRow[] = await prisma.oddsSnapshot.findMany({
-    where: { fixtureId },
+    // The phase 3 markets (scorers, player shots, …: hundreds of rows a
+    // fixture) are not part of the snapshot.
+    where: { fixtureId, market: { notIn: [...STAT_SETTLED_MARKETS] } },
     select: RAW_ODDS_ROW_SELECT,
   });
   return assembleFullOddsSnapshot(rows, new Date());

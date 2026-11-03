@@ -10,3 +10,4 @@ export * from "./replay-engine";
 export * from "./backtest-runner";
 export * from "./validation-protocol";
 export * from "./iso-week";
+export * from "./new-markets-report";

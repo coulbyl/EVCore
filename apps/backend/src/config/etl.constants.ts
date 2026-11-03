@@ -259,6 +259,35 @@ export const API_FOOTBALL_BOOKMAKERS = {
  */
 export const OPERATOR_EXTENDED_MARKETS = ['CORNERS', 'CARDS'] as const;
 
+/**
+ * Marchés de la phase 3 du plan des stratégies (03/11), et les seuls books
+ * chez qui on les garde : le joueur parie chez le book de son choix, mais
+ * les garder partout doublerait le volume pour rien. Corners : 1xBet (le
+ * prix des joueurs) et Pinnacle (la référence) ; joueurs : Bet365, seul à
+ * les coter ; minute : les trois qui la cotent (Bet365 seulement à la
+ * 10e). Les lignes de corners d'équipe ne sont gardées qu'en ,5.
+ */
+export const MARKET_BOOKMAKERS = {
+  CORNERS_HOME: ['1xBet', 'Pinnacle'],
+  CORNERS_AWAY: ['1xBet', 'Pinnacle'],
+  CORNERS_1X2: ['1xBet', 'Pinnacle'],
+  GOAL_SCORER_ANYTIME: ['Bet365'],
+  GOAL_SCORER_FIRST: ['Bet365'],
+  PLAYER_SHOTS: ['Bet365'],
+  PLAYER_SHOTS_ON_TARGET: ['Bet365'],
+  MINUTE_1X2: ['Marathonbet', 'Betano', 'Bet365'],
+} as const satisfies Record<string, readonly string[]>;
+
+export type BookScopedMarket = keyof typeof MARKET_BOOKMAKERS;
+
+/**
+ * Tirs par joueur : lignes gardées jusqu'à « au moins 3 ». Bet365 cote une
+ * échelle de 1 à 10 tirs par joueur (193 à 239 lignes par match et par
+ * relevé le 03/11) ; au-delà de 3, cotes de 6 à 21 sur des issues rares,
+ * qu'aucun produit ne vise, pour 45 % du volume.
+ */
+export const PLAYER_SHOTS_MAX_LINE = 3;
+
 export const REFERENCE_ONLY_MARKETS = [
   'OVER_UNDER_2H',
   'CORNERS',
@@ -339,6 +368,28 @@ export const API_FOOTBALL_BET_IDS = {
   ODD_EVEN_HT: 22,
   HIGHEST_SCORING_HALF: 11,
   TEAM_TO_SCORE_FIRST: 14,
+  // Plan des stratégies, phase 3 (inventaire du 03/11,
+  // docs/audits/2026-11-03/API-FOOTBALL-MARCHES.md). Corners d'une équipe
+  // (« Over 4.5 », lignes entières aussi), corners 1X2 (qui en obtient le
+  // plus), buteurs (noms des joueurs, « No Goalscorer » au premier buteur),
+  // tirs par joueur (« Matheus Cunha - 2 » = au moins 2), 1X2 à la minute.
+  CORNERS_1X2: 55,
+  CORNERS_HOME: 57,
+  CORNERS_AWAY: 58,
+  GOAL_SCORER_ANYTIME: 92,
+  GOAL_SCORER_FIRST: 93,
+  PLAYER_SHOTS_HOME: 240,
+  PLAYER_SHOTS_AWAY: 241,
+  PLAYER_SHOTS_ON_TARGET_HOME: 269,
+  // Chez Bet365 le 03/11, cet id portait des noms seuls (la liste des
+  // buteurs, à d'autres cotes), sans nombre de tirs : rejetés par le
+  // parseur, visibles dans le diagnostic.
+  PLAYER_SHOTS_ON_TARGET_AWAY: 275,
+  MINUTE_1X2_10: 54,
+  MINUTE_1X2_15: 136,
+  MINUTE_1X2_30: 139,
+  MINUTE_1X2_60: 137,
+  MINUTE_1X2_75: 138,
   // Halftime variant (id 51) deferred: 0 occurrences across every
   // bookmaker in the live sample checked 2026-07-18, not just the 5
   // priority ones — no data to build or test against.
@@ -388,6 +439,21 @@ export const FIXTURE_EVENTS = {
   // Rattrapage : matchs par lot (10 appels de 20), après le lot de stats du
   // même passage, dans le même budget.
   BACKFILL_MAX_FIXTURES_PER_LOT: 200,
+} as const;
+
+// Squads (/players/squads?team=, one call per team): they identify the
+// players the odds name (plan des stratégies, phase 3). Synced for the teams
+// playing in the next HORIZON_DAYS, again every REFRESH_DAYS, inside the stats
+// backfill's budget, after its stats lot. The first ticks after a deploy
+// write every team due (~600 for ten days of fixtures), then a weekly
+// refresh.
+export const PLAYER_SQUADS = {
+  HORIZON_DAYS: 10,
+  REFRESH_DAYS: 7,
+  MAX_TEAMS_PER_LOT: 40,
+  RATE_LIMIT_MS: 1_500,
+  // A team whose call fails this many times is left until the restart.
+  MAX_ATTEMPTS: 3,
 } as const;
 
 export const STATS_BACKFILL = {

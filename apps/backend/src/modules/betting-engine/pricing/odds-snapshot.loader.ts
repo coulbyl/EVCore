@@ -4,8 +4,14 @@ import Decimal from 'decimal.js';
 import {
   assembleFullOddsSnapshot,
   OVER_UNDER_PICKS,
+  STAT_SETTLED_MARKETS,
   type RawOddsRow,
 } from '@evcore/analysis-core';
+
+// The phase 3 markets (scorers, player shots, minute 1X2, team corners:
+// hundreds of rows a fixture) feed no engine reader: kept out of the
+// unfiltered loads.
+const NOT_ENGINE_MARKETS = { notIn: [...STAT_SETTLED_MARKETS] };
 import { PrismaService } from '@/prisma.service';
 import type { FullOddsSnapshot } from '../betting-engine.types';
 
@@ -79,6 +85,7 @@ export class OddsSnapshotLoader {
           fixtureId,
           ...pointInTimeOddsWhere(cutoff),
         })),
+        market: NOT_ENGINE_MARKETS,
       },
       select: RAW_ODDS_ROW_SELECT,
     });
@@ -414,6 +421,7 @@ export class OddsSnapshotLoader {
         })),
         odds: { not: null },
         pick: { not: null },
+        market: NOT_ENGINE_MARKETS,
       },
       select: {
         fixtureId: true,

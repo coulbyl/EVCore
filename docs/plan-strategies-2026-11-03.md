@@ -197,7 +197,7 @@ Chaque sous-phase commence par `report:new-markets` sur la fenêtre, et ne livre
 ## Migrations (toutes lancées en prod par l'utilisateur, au déploiement)
 
 1. Phase 2 : `player`, `fixture_event`, `fixture_lineup`, `fixture_player_statistic`.
-2. Phase 3 : enum `Market` (+8 valeurs), `player_squad`.
+2. Phase 3 : enum `Market` (+8 valeurs), `player_squad`, `team."squadSyncedAt"` (`20261104090000_add_new_odds_markets_and_player_squad`).
 3. Phase 4 : aucune (classes = `targetOddsMin`).
 
 ## Hors plan (noté)
@@ -230,12 +230,12 @@ Chaque sous-phase commence par `report:new-markets` sur la fenêtre, et ne livre
 
 ### Phase 3 — `feat/new-odds-markets`
 
-- [ ] 3.1 `feat(db): eight markets and player_squad`
-- [ ] 3.2 `feat(etl): squads sync and player name matching`
-- [ ] 3.3 `feat(etl): ingest team corners, corners 1X2, scorers, player shots, minute 1X2`
-- [ ] 3.4 `feat(settlement): resolvers for the eight markets, unknown stays unknown`
-- [ ] 3.5 `feat(backtest): report:new-markets — market frequency vs realised by odds band`
-- [ ] PR
+- [x] 3.1 `feat(db): eight markets and player_squad` _Fait : migration `20261104090000_add_new_odds_markets_and_player_squad` (une seule : `ADD VALUE` passe en transaction tant que rien n'y utilise la valeur), `player_squad` avec `name` (l'orthographe de l'effectif, « K. Mbappé », gardée à part de `player.name` que les stats de match écrivent en entier) et `team."squadSyncedAt"` (ce qui a été rapporté, pour ne reprendre que le dû) ; aucune colonne sur `odds_snapshot` (archive inchangée)._
+- [x] 3.2 `feat(etl): squads sync and player name matching` _Fait : `SquadsSyncService` dans le passage du rattrapage, après les stats et avant les événements (40 équipes, 1 appel chacune) : équipes des 10 prochains jours sans effectif ou vieux d'une semaine (461 sur la copie locale, donc le « premier passage » = les premiers passages après déploiement) ; réponse vide n'efface rien ; l'API écrit des entités HTML et de l'UTF-8 lu en Latin-1 (« N. O&apos;Reilly », « MaksimoviÄ ») : réparés. `matchPlayerName` (analysis-core) : exact, ordre inversé, initiales + nom, nom contenu, prénom court, initiale + dernier mot, nom unique ; deux joueurs à la première règle qui trouve = ambigu, non apparié. « effectifs N / M » sur la ligne du rattrapage._
+- [x] 3.3 `feat(etl): ingest team corners, corners 1X2, scorers, player shots, minute 1X2` _Fait : `odds-new-markets.ts`, `MARKET_BOOKMAKERS` ; corners 1X2 chez 1xBet seulement (Pinnacle ne le cote pas) ; tirs par joueur gardés jusqu'à « au moins 3 » (`PLAYER_SHOTS_MAX_LINE`, 45 % du volume au-delà, cotes 6–21) ; Bet365 id 275 portait des noms sans nombre de tirs le 03/11 : rejeté, visible au diagnostic. Copie locale, 8 matchs de C1 du 04/11 (14 effectifs + 8 cotes) : 2 394 lignes, ~302 par match et par relevé en plus de 1 123 (+27 % sur une grande affiche, beaucoup moins ailleurs : sans Bet365 joueurs ~40) ; 1 195 noms appariés sur 1 302 (91,8 %) avant réglage, 12 des 30 premiers manqués récupérés après._
+- [x] 3.4 `feat(settlement): resolvers for the eight markets, unknown stays unknown` _Fait : `stat-markets.ts` (analysis-core) et `MatchFactsRepository` ; buteurs à la Bet365 (csc exclu, premier buteur après un csc = le suivant, remplaçant entré après le premier but remboursé, « No Goalscorer » gagnant si seulement des csc) ; tirs réglés seulement si les joueurs de l'équipe font le total de l'équipe (cadrés 797/798 équipes, tirs 424/798 : les totaux par joueur en oublient) ; minute = buts de minute ≤ ligne (45+2 = 45e). Coupons : même chemin que CORNERS, délai propre `STAT_MARKET_SETTLEMENT` (14 j)._
+- [x] 3.5 `feat(backtest): report:new-markets — market frequency vs realised by odds band` _Fait : `odds_closing_line` ≤ 3 h (les cotes de buteurs ne bougent plus à 2 h), mêmes résolveurs que le règlement, sans marge par normalisation des groupes fermés (plus/moins, 1X2 ; buteurs et tirs : 1/cote seulement), IC de Wilson ; tourne à vide sur la copie locale, vérifié de bout en bout sur des cotes fictives._
+- [x] PR après `/code-review high` _Fait : 10 constats ; corrigés : buteurs appariés dans l'effectif de leur équipe (placés par les listes de tirs) sinon strictement, minutes nulles ≠ « n'a pas joué », entité HTML hors plage qui aurait bloqué chaque passage, échecs d'une équipe remis à zéro au succès, alerte Zod quotidienne, avertissement si des joueurs sont cotés sans effectif, diagnostic des lignes entières, lecteurs de cotes du moteur et de VANTAGE sans les huit marchés, délai de remboursement propre, rapport groupé par match ; non retenu : un planificateur à part pour les effectifs (le plan les veut dans la réserve du rattrapage ; l'avertissement et la ligne Exploitation rendent la dépendance visible)._
 
 ### Phase 4 — `feat/hunter-corners-team`, `feat/scorer-of-the-day`, `feat/hunter-cards-minute`
 

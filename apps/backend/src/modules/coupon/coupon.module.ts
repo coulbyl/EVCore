@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { FixtureEventsModule } from '../fixture-events/fixture-events.module';
 import { AuthModule } from '@modules/auth/auth.module';
 import { PrismaModule } from '@/prisma.module';
 import { CouponRepository } from './coupon.repository';
@@ -29,7 +30,7 @@ import { ProductWeekService } from './product-day/product-week.service';
 // duplicate registration only CouponPoolService needed. See
 // docs/vantage-centric-redesign-2026-09-01.md §9bis.
 @Module({
-  imports: [PrismaModule, AuthModule],
+  imports: [PrismaModule, AuthModule, FixtureEventsModule],
   controllers: [CouponController],
   providers: [
     CouponRepository,
