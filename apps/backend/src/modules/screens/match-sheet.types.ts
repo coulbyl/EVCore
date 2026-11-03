@@ -61,6 +61,25 @@ export type SetAsideReason =
   | 'suspended'
   | 'not_sure';
 
+/** A goal of a finished match, under the score: « 45+1' Gyökeres (p.) ». */
+export type SheetScorer = {
+  minute: number;
+  /** Stoppage time: the 1 of 45+1. */
+  extraMinute: number | null;
+  player: string;
+  /** The side the goal counts for (an own goal counts for the other team). */
+  team: 'home' | 'away';
+  kind: 'goal' | 'penalty' | 'own';
+};
+
+/** A player sent off, with the side he played for. */
+export type SheetRedCard = {
+  minute: number;
+  extraMinute: number | null;
+  player: string;
+  team: 'home' | 'away';
+};
+
 /** GET /matches/:id/sheet: the player's match sheet (06 § 2–4). */
 export type MatchSheet = {
   fixtureId: string;
@@ -87,4 +106,11 @@ export type MatchSheet = {
   headToHead: string | null;
   /** The main 1xBet lines and the engine's other picks, market chance. */
   otherPicks: SheetPick[];
+  /**
+   * A finished match's goals, by minute. Null before the end, and when its
+   * events are not in or do not add up to the score (unknown, never wrong).
+   */
+  scorers: SheetScorer[] | null;
+  /** A finished match's red cards; null whenever `scorers` is. */
+  redCards: SheetRedCard[] | null;
 };

@@ -354,6 +354,13 @@
       "inProgress": "In progress",
       "postponed": "Postponed",
       "halfTime": "half-time {home}-{away}",
+      "events": {
+        "scorers": "Goals",
+        "redCards": "Red cards",
+        "redCard": "red card",
+        "penalty": "(pen.)",
+        "ownGoal": "(o.g.)"
+      },
       "result": {
         "won": "won",
         "lost": "lost",
@@ -1164,6 +1171,7 @@
       "onDemand": "on demand",
       "onDemandLast": "on demand · last ✓ {date}",
       "backfillSeasons": "{done} / {total} seasons",
+      "backfillEvents": "events {done} / {total}",
       "backfillQuota": "today's quota {used} / {limit}",
       "archiveLine": "last month {month} · base {table} · archive {archive}",
       "archiveNone": "no month archived · base {table}",

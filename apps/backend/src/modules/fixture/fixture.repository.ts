@@ -31,6 +31,8 @@ import { oneDayWindow } from '@utils/date.utils';
  */
 const ODDS_WRITE_CONCURRENCY = 5;
 
+export type EventsCoverageRow = { synced: number; total: number };
+
 export type StatsBackfillCandidateRow = {
   seasonId: string;
   seasonName: string;
@@ -617,6 +619,61 @@ export class FixtureRepository {
       },
       orderBy: { scheduledAt: 'asc' },
     });
+  }
+
+  // Finished fixtures the stats sync is done with (team statistics in, or
+  // unavailable: API-Football may still cover its events) whose events,
+  // lineups and player statistics are not, kicked off before `before` (a
+  // recent match may still receive them: the routine sync wrote what it
+  // had), most recent first. Feeds the events backfill; a fixture whose
+  // answer stays empty is marked after one call (past the grace period).
+  // Fixtures still waiting for their statistics are left to the stats sync,
+  // which fetches their events in the same call.
+  findEventsBackfillPending(input: {
+    before: Date;
+    limit: number;
+    excludeExternalIds: readonly number[];
+  }): Promise<
+    Array<{
+      externalId: number;
+      homeTeam: { externalId: number };
+      awayTeam: { externalId: number };
+    }>
+  > {
+    return this.prisma.client.fixture.findMany({
+      where: {
+        status: 'FINISHED',
+        OR: [
+          { statisticsSyncedAt: { not: null } },
+          { statisticsUnavailable: true },
+        ],
+        eventsSyncedAt: null,
+        scheduledAt: { lt: input.before },
+        ...(input.excludeExternalIds.length > 0
+          ? { externalId: { notIn: [...input.excludeExternalIds] } }
+          : {}),
+      },
+      select: {
+        externalId: true,
+        homeTeam: { select: { externalId: true } },
+        awayTeam: { select: { externalId: true } },
+      },
+      orderBy: { scheduledAt: 'desc' },
+      take: input.limit,
+    });
+  }
+
+  // Events coverage of the finished fixtures the stats sync is done with:
+  // how many have their events, lineups and player statistics.
+  async countEventsCoverage(): Promise<EventsCoverageRow> {
+    const [row] = await this.prisma.client.$queryRaw<EventsCoverageRow[]>`
+      SELECT count(*) FILTER (WHERE "eventsSyncedAt" IS NOT NULL)::int AS synced,
+             count(*)::int AS total
+      FROM public.fixture
+      WHERE status = 'FINISHED'
+        AND ("statisticsSyncedAt" IS NOT NULL OR "statisticsUnavailable")
+    `;
+    return row ?? { synced: 0, total: 0 };
   }
 
   // One row per season of an active backtest competition with finished

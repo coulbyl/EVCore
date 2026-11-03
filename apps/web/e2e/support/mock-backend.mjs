@@ -660,6 +660,31 @@ function matchSheet(fixtureId) {
       away: { last: ["won", "drawn", "drawn", "lost", "won"], restDays: 6 },
     },
     headToHead: isArsenal ? "4 victoires d'Arsenal sur les 6 derniers" : null,
+    // A finished match's goals and red cards, from its events (phase 2 of
+    // the 03/11 plan): Paris SG – Lens 2-0, an own goal and a penalty.
+    scorers:
+      fixtureId === "y-psg"
+        ? [
+            {
+              minute: 12,
+              extraMinute: null,
+              player: "Haidara",
+              team: "home",
+              kind: "own",
+            },
+            {
+              minute: 45,
+              extraMinute: 1,
+              player: "Dembélé",
+              team: "home",
+              kind: "penalty",
+            },
+          ]
+        : null,
+    redCards:
+      fixtureId === "y-psg"
+        ? [{ minute: 63, extraMinute: null, player: "Sotoca", team: "away" }]
+        : null,
     otherPicks:
       item.withoutReading === "not_priced"
         ? []

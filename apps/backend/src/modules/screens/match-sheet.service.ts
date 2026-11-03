@@ -35,6 +35,11 @@ import {
   type SheetHeaderRow,
 } from './matches.repository';
 import type { MatchesDay } from './dto/matches-query.dto';
+import {
+  FixtureEventRepository,
+  type SheetEventRow,
+} from '@modules/fixture-events/fixture-event.repository';
+import { sheetEventsOf } from './match-sheet-events';
 import type {
   MatchSheet,
   SetAsideReason,
@@ -56,8 +61,9 @@ type DatedMatch = PastMatch & { scheduledAt: Date };
 
 /**
  * GET /matches/:id/sheet: the player's match sheet (docs/refonte-ui/06
- * § 2–4). Five SQL queries: the match and its last meetings, the engine's
- * picks, the AI's opinion, the two teams' last matches, the 1xBet prices.
+ * § 2–4). Six SQL queries: the match and its last meetings, the engine's
+ * picks, the AI's opinion, the two teams' last matches, the 1xBet prices,
+ * and a finished match's events.
  */
 /** What a sheet reads, shared between the players who open it. */
 type SheetReads = {
@@ -67,6 +73,8 @@ type SheetReads = {
   historyRows: TeamMatchRow[];
   quotes: Map<string, PlayableQuote>;
   rejectionReasons: string[];
+  /** A finished match's events; empty before the end. */
+  events: SheetEventRow[];
 };
 
 @Injectable()
@@ -81,10 +89,12 @@ export class MatchSheetService {
     maxKeys: SCREEN_READS_MAX_KEYS,
   });
 
+  // eslint-disable-next-line max-params -- Nest injection of the sheet's reads.
   constructor(
     private readonly repository: MatchesRepository,
     private readonly playableOdds: PlayableOddsRepository,
     private readonly history: LegFactRepository,
+    private readonly fixtureEvents: FixtureEventRepository,
   ) {}
 
   async getSheet(
@@ -100,7 +110,7 @@ export class MatchSheetService {
     return this.sheetOf({ ...reads, kickoff: reads.header.scheduledAt, now });
   }
 
-  /** Five SQL queries; null for an unknown match. */
+  /** Six SQL queries (events only once finished); null for an unknown match. */
   private async readSheet(
     fixtureId: string,
     now: Date,
@@ -113,7 +123,7 @@ export class MatchSheetService {
     if (!header) return null;
     const kickoff = header.scheduledAt;
 
-    const [candidates, aiRows, historyRows, rejectionReasons] =
+    const [candidates, aiRows, historyRows, rejectionReasons, events] =
       await Promise.all([
         this.repository.findReadingCandidates({
           fixtureIds: [fixtureId],
@@ -130,6 +140,9 @@ export class MatchSheetService {
           fixtureId,
           channels: READING_CHANNELS,
         }),
+        header.status === 'FINISHED'
+          ? this.fixtureEvents.findSheetEvents(fixtureId)
+          : Promise.resolve([]),
       ]);
     const ai = aiRows.find((row) => row.status === 'SELECTED' && row.market);
     const quotes = await this.playableOdds.findPlayableQuotes(
@@ -149,6 +162,7 @@ export class MatchSheetService {
       historyRows,
       quotes,
       rejectionReasons,
+      events,
     };
   }
 
@@ -170,6 +184,15 @@ export class MatchSheetService {
     const homeHistory = historyOf(historyRows, header.homeTeamId);
     const awayHistory = historyOf(historyRows, header.awayTeamId);
     const finished = header.status === 'FINISHED';
+    const score = pair(header.homeScore, header.awayScore);
+    const matchEvents = finished
+      ? sheetEventsOf({
+          events: input.events,
+          homeTeamId: header.homeTeamId,
+          awayTeamId: header.awayTeamId,
+          score,
+        })
+      : null;
     const quoteOf = (key: Key) =>
       quotes.get(playableQuoteKey({ fixtureId, ...key }));
 
@@ -177,7 +200,7 @@ export class MatchSheetService {
       fixtureId,
       kickoffAt: kickoff.toISOString(),
       state: stateOf(header, now),
-      score: pair(header.homeScore, header.awayScore),
+      score,
       halfTimeScore: pair(header.homeHalfTimeScore, header.awayHalfTimeScore),
       competition: {
         code: header.competitionCode,
@@ -221,6 +244,8 @@ export class MatchSheetService {
         ),
         finished,
       }),
+      scorers: matchEvents?.scorers ?? null,
+      redCards: matchEvents?.redCards ?? null,
     };
   }
 }

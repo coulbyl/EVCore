@@ -76,12 +76,17 @@ export const ETL_CONSTANTS = {
   API_FOOTBALL_BASE: 'https://v3.football.api-sports.io',
   // Pro plan: 7 500 req/day — keep conservative staggering between season jobs
   API_FOOTBALL_RATE_LIMIT_MS: 6_000,
-  // Delay between /fixtures/statistics calls within a stats-sync job (per fixture)
+  // Delay between two /fixtures?ids= calls of a stats-sync job (one call per
+  // FIXTURES_BY_IDS_BATCH_SIZE fixtures).
   STATS_RATE_LIMIT_MS: 2_000,
+  // /fixtures?ids= takes up to 20 ids and returns, per match, its team
+  // statistics, events, lineups and player statistics in one call.
+  FIXTURES_BY_IDS_BATCH_SIZE: 20,
   // A newly deployed statistics schema can expose every active league as
   // unsynchronised at once. Routine jobs drain slowly across leagues; an
   // operator-triggered backfill may use a larger, still bounded batch.
-  STATS_ROUTINE_MAX_FIXTURES_PER_JOB: 10,
+  // One /fixtures?ids= call: 20 fixtures cost what 1 did before.
+  STATS_ROUTINE_MAX_FIXTURES_PER_JOB: 20,
   STATS_BACKFILL_MAX_FIXTURES_PER_JOB: 100,
   // Prematch odds are fetched for fixtures from J+1 up to J+horizon so each
   // fixture accumulates several snapshots before kickoff — this is what feeds
@@ -371,6 +376,20 @@ export const BULLMQ_QUEUES = {
  * chaque lot : le backfill ne consomme que ce qui dépasse la réserve laissée
  * aux crons de production, et s'arrête net au premier signe de quota épuisé.
  */
+/**
+ * Événements, compositions et stats par joueur (`/fixtures?ids=`, plan des
+ * stratégies du 03/11, phase 2).
+ */
+export const FIXTURE_EVENTS = {
+  // Un match sans événements, compositions ou stats joueurs peut les
+  // recevoir plus tard : il reste « à reprendre » ce nombre de jours après
+  // son coup d'envoi, puis ce qui est venu est tenu pour tout ce qui viendra.
+  INCOMPLETE_GRACE_DAYS: 3,
+  // Rattrapage : matchs par lot (10 appels de 20), après le lot de stats du
+  // même passage, dans le même budget.
+  BACKFILL_MAX_FIXTURES_PER_LOT: 200,
+} as const;
+
 export const STATS_BACKFILL = {
   // Toutes les 5 minutes — un lot de 100 dure ~3 min 30 ; la file dédiée
   // (concurrence 1) empêche deux lots de se chevaucher. Le budget, pas la

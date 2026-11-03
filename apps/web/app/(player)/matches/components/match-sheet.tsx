@@ -24,6 +24,7 @@ import {
 } from "@/helpers/scoreboard-format";
 import { TeamMark } from "../../today/components/team-mark";
 import { AiSpeech } from "./ai-speech";
+import { MatchEvents } from "./match-events";
 import { pickLabel } from "./matches-constants";
 
 /** « Autres paris » shown before « Tous » (maquette Fiche). */
@@ -182,7 +183,8 @@ export async function MatchSheetView({ id }: { id: string }) {
 
 /**
  * On the band: the competition, the two teams, then the time, « En cours »,
- * « Reporté », or the score with the half-time score in small (06 § 3).
+ * « Reporté », or the score with the half-time score in small (06 § 3),
+ * and under it a finished match's scorers and red cards.
  */
 function SheetHeader({
   sheet,
@@ -239,6 +241,7 @@ function SheetHeader({
           ) : null}
         </div>
       ))}
+      <MatchEvents sheet={sheet} />
     </div>
   );
 }

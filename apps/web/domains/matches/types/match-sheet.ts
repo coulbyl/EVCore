@@ -35,6 +35,23 @@ export type SheetTeamForm = {
   restDays: number | null;
 };
 
+/** A goal of a finished match: « 45+1' Gyökeres (p.) ». */
+export type SheetScorer = {
+  minute: number;
+  extraMinute: number | null;
+  player: string;
+  /** The side the goal counts for (an own goal counts for the other team). */
+  team: "home" | "away";
+  kind: "goal" | "penalty" | "own";
+};
+
+export type SheetRedCard = {
+  minute: number;
+  extraMinute: number | null;
+  player: string;
+  team: "home" | "away";
+};
+
 /** GET /matches/:id/sheet (06 § 2–4). */
 export type MatchSheet = {
   fixtureId: string;
@@ -54,4 +71,7 @@ export type MatchSheet = {
   form: { home: SheetTeamForm; away: SheetTeamForm };
   headToHead: string | null;
   otherPicks: SheetPick[];
+  /** A finished match's goals by minute; null when unknown or not over. */
+  scorers: SheetScorer[] | null;
+  redCards: SheetRedCard[] | null;
 };

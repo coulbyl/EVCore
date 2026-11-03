@@ -221,12 +221,12 @@ Chaque sous-phase commence par `report:new-markets` sur la fenêtre, et ne livre
 
 ### Phase 2 — `feat/fixture-events`
 
-- [ ] 2.1 `feat(db): player, fixture_event, fixture_lineup, fixture_player_statistic`
-- [ ] 2.2 `feat(etl): fixtures by ids — one call for stats, events, lineups, player stats`
-- [ ] 2.3 `feat(etl): events backfill within the stats reserve`
-- [ ] 2.4 `feat(screens): scorers and red cards on a finished match sheet`
-- [ ] 2.5 `feat(console): events coverage on the stats line`
-- [ ] PR
+- [x] 2.1 `feat(db): player, fixture_event, fixture_lineup, fixture_player_statistic` _Fait : migration `20261103180000_add_fixture_events` (enum `FixtureEventType`, quatre tables, `fixture."eventsSyncedAt"` + index) ; compteurs des stats joueurs et `substitute` nullables (l'API en laisse beaucoup à null : inconnu ≠ 0) ; `eventsSyncedAt` ajouté au plan : il enregistre « ce qui a été rapporté », sans lui un match sans événements serait repris à chaque passage._
+- [x] 2.2 `feat(etl): fixtures by ids — one call for stats, events, lineups, player stats` _Fait : `stats-sync` par 20 ids, stats d'équipe et xG aux mêmes règles qu'avant ; module `fixture-events` (quatre dépôts, une transaction par match) ; validation en trois couches (enveloppe = l'appel entier, stats d'équipe, bloc événements/compositions/joueurs) ; match absent = en attente, jamais indisponible ; marqué quand les trois blocs sont venus ou à J+3 ; un bloc vide n'efface rien ; l'API écrit l'id 0 pour un inconnu (15 matchs sur 40). Routine passée à 20 matchs par job (1 appel). Copie locale : 4 appels réels, 55 matchs, 962 événements, 2 391 compositions, 1 632 stats joueurs, rejeu identique._
+- [x] 2.3 `feat(etl): events backfill within the stats reserve` _Fait : chaque passage du rattrapage fait son lot de stats puis un lot d'événements (200 matchs, 10 appels) dans le reste du même budget, même file donc même pause ; matchs finis passés par les stats (synchronisées ou indisponibles), au-delà de J+3, du plus récent au plus ancien ; arrêt net au quota ; un match qui échoue trois fois est laissé jusqu'au redémarrage._
+- [x] 2.4 `feat(screens): scorers and red cards on a finished match sheet` _Fait : `scorers` et `redCards` (null avant la fin ou si les buts ne font pas le score : rien plutôt que faux) ; but sans buteur (trace d'un but annulé par la VAR), tirs au but et prolongation écartés ; csc compté pour l'équipe de l'événement, « (c.s.c.) » ; 399/399 matchs de l'échantillon et 41/41 de la copie locale tombent juste. Mock et Playwright écrits, **non lancés** (pas de serveur)._
+- [x] 2.5 `feat(console): events coverage on the stats line` _Fait : « événements N / M » sur la ligne du rattrapage (M = matchs finis passés par les stats)._
+- [x] PR après `/code-review high` _Fait : 10 constats ; corrigés : match absent qui bloquait la routine (plafond de 3 essais), écriture des événements isolée par match, alerte quotidienne sur les rejets Zod, joueur sans nom ou sans `games` qui rejetait tout le match, bloc vide qui effaçait une composition déjà écrite, matchs aux stats indisponibles inclus au rattrapage, tirs au but et prolongation hors des buteurs, schéma `/fixtures/statistics` mort retiré ; non retenus : double lecture de l'identité du match (20 requêtes par appel, négligeable) et dépôt d'événements qui écrit `fixture.eventsSyncedAt` dans sa transaction (même choix que `FixtureStatisticsRepository`)._
 
 ### Phase 3 — `feat/new-odds-markets`
 

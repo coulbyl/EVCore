@@ -52,6 +52,9 @@ function batch(overrides: Partial<StatsSyncBatchResult>): StatsSyncBatchResult {
     statisticsUnavailable: 0,
     xgUnavailableIds: [],
     failedExternalIds: [],
+    details: { written: 0, synced: 0, rejected: 0, failedExternalIds: [] },
+    calls: 0,
+    rejectedCalls: 0,
     abortReason: null,
     ...overrides,
   };
@@ -63,6 +66,7 @@ describe('StatsBackfillWorker', () => {
   const fixtureService = {
     findStatsBackfillCandidates: vi.fn(),
     findFinishedWithoutStatistics: vi.fn(),
+    findEventsBackfillPending: vi.fn(),
   };
   const statsSync = { syncFixtures: vi.fn() };
   const rollingStats = { backfillSeason: vi.fn().mockResolvedValue({}) };
@@ -92,6 +96,7 @@ describe('StatsBackfillWorker', () => {
     vi.clearAllMocks();
     config.get.mockReturnValue(undefined);
     leagueSyncQueue.getJobs.mockResolvedValue([]);
+    fixtureService.findEventsBackfillPending.mockResolvedValue([]);
     apiFootball.getQuotaUsage.mockResolvedValue({
       current: 1_000,
       limitDay: 7_500,
@@ -162,8 +167,9 @@ describe('StatsBackfillWorker', () => {
   });
 
   it('runs one lot on the highest-priority season, capped by the budget', async () => {
+    // 2 calls left above the reserve: 40 fixtures at 20 per call.
     apiFootball.getQuotaUsage.mockResolvedValue({
-      current: 4_960,
+      current: 4_998,
       limitDay: 7_500,
     });
     fixtureService.findStatsBackfillCandidates.mockResolvedValue([
@@ -262,5 +268,139 @@ describe('StatsBackfillWorker', () => {
     // Untried season: probed with a 20-fixture lot, not a full 100.
     expect(statsSync.syncFixtures.mock.calls[0]?.[0]).toHaveLength(20);
     expect(notification.sendEtlFailureAlert).toHaveBeenCalledOnce();
+  });
+
+  describe('events backfill', () => {
+    const details = (
+      overrides: Partial<StatsSyncBatchResult['details']>,
+    ): StatsSyncBatchResult['details'] => ({
+      written: 0,
+      synced: 0,
+      rejected: 0,
+      failedExternalIds: [],
+      ...overrides,
+    });
+
+    it('runs an events lot in what the stats lot left of the budget', async () => {
+      // 10 calls above the reserve; the stats lot spends 2.
+      apiFootball.getQuotaUsage.mockResolvedValue({
+        current: 4_990,
+        limitDay: 7_500,
+      });
+      fixtureService.findStatsBackfillCandidates.mockResolvedValue([
+        candidate({ pending: 40 }),
+      ]);
+      fixtureService.findFinishedWithoutStatistics
+        .mockResolvedValueOnce(pendingFixtures(40))
+        .mockResolvedValueOnce([]);
+      fixtureService.findEventsBackfillPending.mockResolvedValue(
+        pendingFixtures(160, 5_000),
+      );
+      statsSync.syncFixtures
+        .mockResolvedValueOnce(batch({ updated: 40, calls: 2 }))
+        .mockResolvedValueOnce(
+          batch({ calls: 8, details: details({ written: 160, synced: 150 }) }),
+        );
+
+      const result = await makeWorker().process(JOB);
+      const after = Date.now();
+
+      const query = fixtureService.findEventsBackfillPending.mock.calls[0]?.[0];
+      expect(query?.limit).toBe(160);
+      // Only fixtures past the three-day grace period.
+      expect(query?.before.getTime()).toBeLessThanOrEqual(
+        after - 3 * 24 * 60 * 60 * 1000,
+      );
+      expect(statsSync.syncFixtures.mock.calls[1]?.[1]).toBe('details-only');
+      expect(result).toMatchObject({
+        status: 'lot-done',
+        events: {
+          status: 'lot-done',
+          count: 160,
+          written: 160,
+          synced: 150,
+          calls: 8,
+        },
+      });
+    });
+
+    it('runs the events lot when no stats season is left', async () => {
+      fixtureService.findStatsBackfillCandidates.mockResolvedValue([]);
+      fixtureService.findEventsBackfillPending.mockResolvedValue(
+        pendingFixtures(20),
+      );
+      statsSync.syncFixtures.mockResolvedValue(
+        batch({ calls: 1, details: details({ written: 20, synced: 20 }) }),
+      );
+
+      const result = await makeWorker().process(JOB);
+
+      expect(
+        fixtureService.findEventsBackfillPending.mock.calls[0]?.[0],
+      ).toMatchObject({ limit: 200 });
+      expect(result).toMatchObject({
+        status: 'nothing-left',
+        events: { status: 'lot-done', written: 20 },
+      });
+    });
+
+    it('spends nothing more after a quota stop in the stats lot', async () => {
+      fixtureService.findStatsBackfillCandidates.mockResolvedValue([
+        candidate({ pending: 40 }),
+      ]);
+      fixtureService.findFinishedWithoutStatistics.mockResolvedValue(
+        pendingFixtures(40),
+      );
+      statsSync.syncFixtures.mockResolvedValue(
+        batch({ calls: 1, abortReason: 'quota' }),
+      );
+
+      const result = await makeWorker().process(JOB);
+
+      expect(result.status).toBe('lot-aborted');
+      expect(fixtureService.findEventsBackfillPending).not.toHaveBeenCalled();
+      expect(statsSync.syncFixtures).toHaveBeenCalledOnce();
+    });
+
+    it('reports a quota stop of the events lot', async () => {
+      fixtureService.findStatsBackfillCandidates.mockResolvedValue([]);
+      fixtureService.findEventsBackfillPending.mockResolvedValue(
+        pendingFixtures(40),
+      );
+      statsSync.syncFixtures.mockResolvedValue(
+        batch({ calls: 1, abortReason: 'quota' }),
+      );
+
+      await expect(makeWorker().process(JOB)).resolves.toMatchObject({
+        events: { status: 'lot-aborted', written: 0 },
+      });
+    });
+
+    it('stops asking for a fixture that keeps failing', async () => {
+      fixtureService.findStatsBackfillCandidates.mockResolvedValue([]);
+      fixtureService.findEventsBackfillPending.mockResolvedValue(
+        pendingFixtures(1, 888),
+      );
+      statsSync.syncFixtures.mockResolvedValue(
+        batch({ calls: 1, details: details({ failedExternalIds: [888] }) }),
+      );
+      const worker = makeWorker();
+
+      for (let tick = 0; tick < 4; tick++) await worker.process(JOB);
+
+      const calls = fixtureService.findEventsBackfillPending.mock.calls;
+      expect(calls[2]?.[0].excludeExternalIds).toEqual([]);
+      expect(calls[3]?.[0].excludeExternalIds).toEqual([888]);
+    });
+
+    it('stays idle when nothing is missing', async () => {
+      fixtureService.findStatsBackfillCandidates.mockResolvedValue([]);
+
+      await expect(makeWorker().process(JOB)).resolves.toEqual({
+        status: 'nothing-left',
+      });
+      expect(fixtureService.findEventsBackfillPending).toHaveBeenCalledOnce();
+      expect(statsSync.syncFixtures).not.toHaveBeenCalled();
+    });
   });
 });

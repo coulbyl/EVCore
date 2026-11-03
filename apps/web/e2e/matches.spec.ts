@@ -257,6 +257,8 @@ test.describe("Fiche du match", () => {
       ),
     ).toBeVisible();
     await expect(sheet.getByText("Pas d'avis")).toBeVisible();
+    // Pas fini : aucun buteur.
+    await expect(sheet.getByRole("list", { name: "Buts" })).toHaveCount(0);
     await expect(
       sheet.getByRole("region", { name: "Autres paris" }),
     ).toBeVisible();
@@ -271,6 +273,19 @@ test.describe("Fiche du match", () => {
     await page.getByRole("link", { name: /Paris SG – Lens/ }).click();
     const sheet = sheetNamed(page, "Paris SG – Lens");
     await expect(sheet.getByText("mi-temps 1-0")).toBeVisible();
+    // Sous le score : un but par ligne, le csc et le penalty marqués, puis
+    // le carton rouge.
+    const goals = sheet.getByRole("list", { name: "Buts" });
+    await expect(goals.getByRole("listitem")).toHaveCount(2);
+    await expect(goals.getByRole("listitem").first()).toContainText(
+      "12' Haidara (c.s.c.)",
+    );
+    await expect(goals.getByRole("listitem").nth(1)).toContainText(
+      "45+1' Dembélé (p.)",
+    );
+    await expect(
+      sheet.getByRole("list", { name: "Cartons rouges" }),
+    ).toContainText("63' Sotoca");
     await expect(
       sheet
         .getByRole("region", { name: "Notre lecture" })

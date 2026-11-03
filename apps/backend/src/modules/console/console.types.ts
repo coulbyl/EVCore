@@ -243,6 +243,8 @@ export type BackfillView = {
   completedSeasons: number;
   seasons: number;
   pending: number;
+  /** Finished fixtures past the stats sync, and those with their events. */
+  events: { synced: number; total: number };
   quota: { used: number; limit: number } | null;
   reserve: number;
 };
