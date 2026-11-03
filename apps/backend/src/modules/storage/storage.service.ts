@@ -55,6 +55,8 @@ export class StorageService implements OnModuleInit {
   // the host baked into the signature differs.
   private presignClient: S3Client | null = null;
   private bucket = '';
+  // Buckets of putFile already checked or created by this process.
+  private readonly provisioned = new Set<string>();
 
   // What the clients were built from: rebuilt when a value changes in
   // Réglages › Intégrations, without a restart.
@@ -293,10 +295,14 @@ export class StorageService implements OnModuleInit {
     bucket: string;
     key: string;
     filePath: string;
+    contentType: string;
   }): Promise<number> {
     await this.ready();
     if (!this.client) throw new Error('Object storage is not configured');
-    await this.createBucketIfMissing(input.bucket);
+    if (!this.provisioned.has(input.bucket)) {
+      await this.createBucketIfMissing(input.bucket);
+      this.provisioned.add(input.bucket);
+    }
     const { size } = await stat(input.filePath);
     await this.client.send(
       new PutObjectCommand({
@@ -304,7 +310,7 @@ export class StorageService implements OnModuleInit {
         Key: input.key,
         Body: createReadStream(input.filePath),
         ContentLength: size,
-        ContentType: 'application/vnd.apache.parquet',
+        ContentType: input.contentType,
       }),
     );
     const head = await this.client.send(

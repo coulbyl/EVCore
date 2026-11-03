@@ -10,14 +10,12 @@ import {
   archiveObjectKey,
   compactedName,
   monthKey,
-  monthPartitionName,
   monthsToCreate,
   partitionsDue,
   settledBefore,
-  addMonths,
   type OddsPartition,
 } from './odds-archive.plan';
-import { ParquetMonthWriter } from './parquet-month.writer';
+import { ParquetMonthWriter, type WrittenMonth } from './parquet-month.writer';
 
 const logger = createLogger('odds-archive');
 
@@ -50,10 +48,19 @@ export class OddsArchiveService {
   ) {}
 
   async run(now: Date = new Date()): Promise<OddsArchiveRun> {
-    const createdPartitions = await this.createAhead(now);
+    const [partitions, archivedMonths] = await Promise.all([
+      this.repo.listPartitions(),
+      this.repo.archivedMonths(),
+    ]);
+    const ahead = monthsToCreate(partitions, now);
+    for (const partition of ahead) await this.repo.createPartition(partition);
+    const createdPartitions = ahead.map((p) => p.name);
+    if (createdPartitions.length > 0) {
+      logger.info({ createdPartitions }, 'Odds partitions created');
+    }
     const due = partitionsDue({
-      partitions: await this.repo.listPartitions(),
-      archivedMonths: new Set((await this.repo.archivedMonths()).map(monthKey)),
+      partitions,
+      archivedMonths: new Set(archivedMonths.map(monthKey)),
       now,
     });
     const archived: ArchivedPartition[] = [];
@@ -68,22 +75,6 @@ export class OddsArchiveService {
     return { createdPartitions, archived, defaultRows };
   }
 
-  private async createAhead(now: Date): Promise<string[]> {
-    const created: string[] = [];
-    for (const month of monthsToCreate(await this.repo.listPartitions(), now)) {
-      const partition: OddsPartition = {
-        name: monthPartitionName(month),
-        from: month,
-        to: addMonths(month, 1),
-        isDefault: false,
-      };
-      await this.repo.createPartition(partition);
-      created.push(partition.name);
-    }
-    if (created.length > 0) logger.info({ created }, 'Odds partitions created');
-    return created;
-  }
-
   private async archivePartition(
     partition: OddsPartition,
     now: Date,
@@ -91,47 +82,32 @@ export class OddsArchiveService {
     const startedAt = Date.now();
     const writer = await ParquetMonthWriter.open();
     try {
-      const { fingerprint, months } = await this.repo.exportPartition(
+      const { fingerprint } = await this.repo.exportPartition(
         partition.name,
-        {
-          startMonth: () => writer.startMonth(),
-          append: (rows) => writer.append(rows),
-          endMonth: async (aggregate) => {
-            await writer.endMonth(aggregate);
-          },
-        },
+        writer,
       );
-      const stored = new Map<string, { key: string; bytes: number }>();
-      for (const file of writer.written) {
-        const key = archiveObjectKey(file.month);
-        const bytes = await this.storage.putFile({
-          bucket: ODDS_ARCHIVE.BUCKET,
-          key,
-          filePath: file.path,
-        });
-        stored.set(monthKey(file.month), { key, bytes });
-      }
-
       const target = compactedName(partition);
       const compact = `${target}_next`;
-      const kept = await this.repo.buildCompact({
-        partition,
-        compact,
-        settledBefore: settledBefore(now),
-      });
-      const journal: ArchivedMonthRow[] = months.map((aggregate) => {
-        const key = monthKey(aggregate.month);
-        const file = stored.get(key);
-        if (!file) throw new Error(`No stored file for ${key}`);
-        return {
+      // The files go up while the compact copy is built: only the swap
+      // needs both.
+      const [stored, kept] = await Promise.all([
+        this.upload(writer),
+        this.repo.buildCompact({
+          partition,
+          compact,
+          settledBefore: settledBefore(now),
+        }),
+      ]);
+      const journal: ArchivedMonthRow[] = stored.map(
+        ({ aggregate, ...file }) => ({
           month: aggregate.month,
           objectKey: file.key,
           parquetBytes: BigInt(file.bytes),
           rowsTotal: aggregate.rows,
-          rowsKept: kept.get(key) ?? 0,
+          rowsKept: kept.get(monthKey(aggregate.month)) ?? 0,
           oddsSum: aggregate.oddsSum,
-        };
-      });
+        }),
+      );
       // An empty month partition is noted too, so it is not retried.
       if (journal.length === 0 && partition.from) {
         journal.push({
@@ -156,7 +132,10 @@ export class OddsArchiveService {
         months: journal.map((row) => monthKey(row.month)),
         rowsTotal: journal.reduce((sum, row) => sum + row.rowsTotal, 0),
         rowsKept: journal.reduce((sum, row) => sum + row.rowsKept, 0),
-        parquetBytes: [...stored.values()].reduce((s, f) => s + f.bytes, 0),
+        parquetBytes: journal.reduce(
+          (sum, row) => sum + Number(row.parquetBytes),
+          0,
+        ),
       };
       logger.info(
         { ...result, durationMs: Date.now() - startedAt },
@@ -166,5 +145,22 @@ export class OddsArchiveService {
     } finally {
       await writer.close();
     }
+  }
+
+  private async upload(
+    writer: ParquetMonthWriter,
+  ): Promise<(WrittenMonth & { key: string; bytes: number })[]> {
+    const stored: (WrittenMonth & { key: string; bytes: number })[] = [];
+    for (const file of writer.written) {
+      const key = archiveObjectKey(file.aggregate.month);
+      const bytes = await this.storage.putFile({
+        bucket: ODDS_ARCHIVE.BUCKET,
+        key,
+        filePath: file.path,
+        contentType: 'application/vnd.apache.parquet',
+      });
+      stored.push({ ...file, key, bytes });
+    }
+    return stored;
   }
 }

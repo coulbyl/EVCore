@@ -79,8 +79,8 @@ describe('monthsToCreate', () => {
   it('lays out this month and the next two, the missing ones only', () => {
     const existing = [month('2026-11-01', '2026-12-01'), legacy];
     expect(monthsToCreate(existing, new Date('2026-11-30T23:00:00Z'))).toEqual([
-      utc('2026-12-01'),
-      utc('2027-01-01'),
+      month('2026-12-01', '2027-01-01'),
+      month('2027-01-01', '2027-02-01'),
     ]);
   });
 });

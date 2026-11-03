@@ -7,15 +7,20 @@ import {
   type MonthAggregate,
   type OddsTextRow,
 } from './odds-archive.columns';
-import { parsePartitionBound, type OddsPartition } from './odds-archive.plan';
+import {
+  addMonths,
+  monthKey,
+  parsePartitionBound,
+  type OddsPartition,
+} from './odds-archive.plan';
 
 /** What says a partition did not move between its export and its swap. */
 export type PartitionFingerprint = { rows: number; lastTouched: Date | null };
 
 /** Receives a partition month by month, inside the export snapshot. */
 export type ArchiveSink = {
-  startMonth(month: Date): Promise<void>;
-  append(rows: OddsTextRow[]): void | Promise<void>;
+  startMonth(): Promise<void>;
+  append(rows: OddsTextRow[]): void;
   endMonth(aggregate: MonthAggregate): Promise<void>;
 };
 
@@ -33,11 +38,9 @@ export type OddsArchiveSummary = {
   tableBytes: number;
   /** Must stay 0: a price no month partition took. */
   defaultRows: number;
-  months: number;
-  lastMonth: Date | null;
+  /** `2026-10`, the last month archived. */
+  lastMonth: string | null;
   parquetBytes: number;
-  /** Rows only in the archive now. */
-  rowsArchived: number;
 };
 
 export class StaleExportError extends Error {
@@ -56,22 +59,21 @@ function ident(name: string): Prisma.Sql {
   return Prisma.raw(`public."${name}"`);
 }
 
-/** A bound literal, `'2026-11-01 00:00:00.000'`, or MINVALUE / MAXVALUE. */
-function boundLiteral(at: Date | null, open: 'MINVALUE' | 'MAXVALUE'): string {
-  return at ? `'${at.toISOString().replace('T', ' ').replace('Z', '')}'` : open;
+/** A timestamp literal, `'2026-11-01 00:00:00.000'`. */
+function literal(at: Date): string {
+  return `'${at.toISOString().replace('T', ' ').replace('Z', '')}'`;
 }
 
 function rangeSql(partition: OddsPartition): Prisma.Sql {
-  return Prisma.raw(
-    `FOR VALUES FROM (${boundLiteral(partition.from, 'MINVALUE')}) TO (${boundLiteral(partition.to, 'MAXVALUE')})`,
-  );
+  const from = partition.from ? literal(partition.from) : 'MINVALUE';
+  const to = partition.to ? literal(partition.to) : 'MAXVALUE';
+  return Prisma.raw(`FOR VALUES FROM (${from}) TO (${to})`);
 }
 
 function boundCheckSql(partition: OddsPartition): Prisma.Sql {
   const clauses = [
-    partition.from &&
-      `"snapshotAt" >= ${boundLiteral(partition.from, 'MINVALUE')}`,
-    partition.to && `"snapshotAt" < ${boundLiteral(partition.to, 'MAXVALUE')}`,
+    partition.from && `"snapshotAt" >= ${literal(partition.from)}`,
+    partition.to && `"snapshotAt" < ${literal(partition.to)}`,
   ].filter(Boolean);
   return Prisma.raw(clauses.join(' AND '));
 }
@@ -117,9 +119,12 @@ export class OddsArchiveRepository {
     ]);
   }
 
+  /** Counted up to a bound: it must stay empty, a cheap read either way. */
   async countDefaultRows(): Promise<number> {
     const [row] = await this.prisma.client.$queryRaw<{ rows: number }[]>`
-      SELECT count(*)::int AS rows FROM ${ident(ODDS_PARTITIONS.DEFAULT)}
+      SELECT count(*)::int AS rows FROM (
+        SELECT 1 FROM ${ident(ODDS_PARTITIONS.DEFAULT)} LIMIT 100000
+      ) d
     `;
     return row?.rows ?? 0;
   }
@@ -133,32 +138,37 @@ export class OddsArchiveRepository {
   async exportPartition(
     partition: string,
     sink: ArchiveSink,
-  ): Promise<{ fingerprint: PartitionFingerprint; months: MonthAggregate[] }> {
+  ): Promise<{ fingerprint: PartitionFingerprint }> {
     return this.prisma.client.$transaction(
       async (tx) => {
         await tx.$executeRaw`SET TRANSACTION READ ONLY`;
-        const fingerprint = await this.fingerprintWith(tx, partition);
-        const months = await tx.$queryRaw<MonthAggregate[]>`
+        await assertColumnsMatch(tx);
+        const rows = await tx.$queryRaw<
+          (MonthAggregate & { lastTouched: Date | null })[]
+        >`
           SELECT date_trunc('month', "snapshotAt") AS month,
                  count(*)::int AS rows,
                  coalesce(sum(odds), 0)::text AS "oddsSum",
                  (extract(epoch FROM min("snapshotAt")) * 1000)::bigint::text AS "firstAtMs",
-                 (extract(epoch FROM max("snapshotAt")) * 1000)::bigint::text AS "lastAtMs"
+                 (extract(epoch FROM max("snapshotAt")) * 1000)::bigint::text AS "lastAtMs",
+                 max(coalesce("observedAt", "createdAt")) AS "lastTouched"
           FROM ${ident(partition)}
           GROUP BY 1
           ORDER BY 1
         `;
+        const months = rows.map(({ lastTouched: _, ...month }) => month);
         for (const aggregate of months) {
-          const next = new Date(
-            Date.UTC(
-              aggregate.month.getUTCFullYear(),
-              aggregate.month.getUTCMonth() + 1,
-              1,
-            ),
-          );
-          await sinkMonth({ tx, partition, aggregate, next, sink });
+          await sinkMonth({ tx, partition, aggregate, sink });
         }
-        return { fingerprint, months };
+        const touched = rows
+          .map((row) => row.lastTouched?.getTime() ?? null)
+          .filter((t): t is number => t !== null);
+        const fingerprint: PartitionFingerprint = {
+          rows: rows.reduce((sum, row) => sum + row.rows, 0),
+          lastTouched:
+            touched.length > 0 ? new Date(Math.max(...touched)) : null,
+        };
+        return { fingerprint };
       },
       {
         isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
@@ -215,28 +225,28 @@ export class OddsArchiveRepository {
       kept AS (
         SELECT id, "snapshotAt" FROM scope
         WHERE source <> 'PREMATCH' OR "scheduledAt" >= ${input.settledBefore}
-        UNION
+        UNION ALL
         (SELECT DISTINCT ON ("fixtureId", bookmaker, market, pick, line)
                 id, "snapshotAt"
          FROM prematch
          WHERE "snapshotAt" < "scheduledAt" AND seen < "scheduledAt"
          ORDER BY "fixtureId", bookmaker, market, pick, line,
                   seen DESC, "snapshotAt" DESC, id DESC)
-        UNION
+        UNION ALL
         (SELECT DISTINCT ON ("fixtureId", bookmaker, market, pick, line)
                 id, "snapshotAt"
          FROM prematch
          WHERE "snapshotAt" <= "scheduledAt"
          ORDER BY "fixtureId", bookmaker, market, pick, line,
                   "snapshotAt" DESC, id DESC)
-        UNION
+        UNION ALL
         (SELECT DISTINCT ON ("fixtureId", bookmaker, market, pick, line)
                 id, "snapshotAt"
          FROM prematch
          WHERE "snapshotAt" < "scheduledAt" AND "createdAt" < "scheduledAt"
          ORDER BY "fixtureId", bookmaker, market, pick, line,
                   "createdAt" ASC, "snapshotAt" ASC, id ASC)
-        UNION
+        UNION ALL
         (SELECT DISTINCT ON (s."fixtureId", s.market, s.pick, s.line,
                              s.bookmaker, a."generatedAt")
                 s.id, s."snapshotAt"
@@ -249,7 +259,8 @@ export class OddsArchiveRepository {
       )
       INSERT INTO ${compact}
       SELECT o.* FROM ${source} o
-      JOIN kept k ON k.id = o.id AND k."snapshotAt" = o."snapshotAt"
+      JOIN (SELECT DISTINCT id, "snapshotAt" FROM kept) k
+        ON k.id = o.id AND k."snapshotAt" = o."snapshotAt"
     `;
     await db.$executeRaw`ALTER TABLE ${compact} ADD PRIMARY KEY ("id", "snapshotAt")`;
     await db.$executeRaw`
@@ -271,9 +282,7 @@ export class OddsArchiveRepository {
       SELECT date_trunc('month', "snapshotAt") AS month, count(*)::int AS rows
       FROM ${compact} GROUP BY 1
     `;
-    return new Map(
-      kept.map((row) => [row.month.toISOString().slice(0, 7), row.rows]),
-    );
+    return new Map(kept.map((row) => [monthKey(row.month), row.rows]));
   }
 
   /**
@@ -324,27 +333,23 @@ export class OddsArchiveRepository {
 
   /** For the console: the base table's size and the archive's. */
   async summary(): Promise<OddsArchiveSummary> {
-    const [size] = await this.prisma.client.$queryRaw<{ bytes: bigint }[]>`
-      SELECT coalesce(sum(pg_total_relation_size(i.inhrelid)), 0)::bigint AS bytes
-      FROM pg_inherits i
-      WHERE i.inhparent = 'public.odds_snapshot'::regclass
-    `;
-    const [journal, defaultRows] = await Promise.all([
+    const [[size], journal, defaultRows] = await Promise.all([
+      this.prisma.client.$queryRaw<{ bytes: bigint }[]>`
+        SELECT coalesce(sum(pg_total_relation_size(i.inhrelid)), 0)::bigint AS bytes
+        FROM pg_inherits i
+        WHERE i.inhparent = 'public.odds_snapshot'::regclass
+      `,
       this.prisma.client.oddsArchiveMonth.aggregate({
-        _count: { _all: true },
         _max: { month: true },
-        _sum: { parquetBytes: true, rowsTotal: true, rowsKept: true },
+        _sum: { parquetBytes: true },
       }),
       this.countDefaultRows(),
     ]);
     return {
       tableBytes: Number(size?.bytes ?? 0n),
       defaultRows,
-      months: journal._count._all,
-      lastMonth: journal._max.month,
+      lastMonth: journal._max.month ? monthKey(journal._max.month) : null,
       parquetBytes: Number(journal._sum.parquetBytes ?? 0n),
-      rowsArchived:
-        (journal._sum.rowsTotal ?? 0) - (journal._sum.rowsKept ?? 0),
     };
   }
 
@@ -361,28 +366,47 @@ export class OddsArchiveRepository {
   }
 }
 
+/**
+ * The file must hold every column of the table: a column added to
+ * `odds_snapshot` and not to ODDS_COLUMNS stops the export before any row
+ * is compacted away.
+ */
+async function assertColumnsMatch(tx: Prisma.TransactionClient): Promise<void> {
+  const rows = await tx.$queryRaw<{ name: string }[]>`
+    SELECT column_name AS name FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'odds_snapshot'
+    ORDER BY ordinal_position
+  `;
+  const live = rows.map((row) => row.name).join(',');
+  const known = ODDS_COLUMNS.map(([name]) => name).join(',');
+  if (live !== known) {
+    throw new Error(
+      `odds_snapshot columns changed: ${live} (archive knows ${known})`,
+    );
+  }
+}
+
 /** One month through a server-side cursor, `FETCH_ROWS` at a time. */
 async function sinkMonth(input: {
   tx: Prisma.TransactionClient;
   partition: string;
   aggregate: MonthAggregate;
-  next: Date;
   sink: ArchiveSink;
 }): Promise<void> {
   const { tx, sink } = input;
-  await sink.startMonth(input.aggregate.month);
+  await sink.startMonth();
   await tx.$executeRaw`
     DECLARE ${Prisma.raw(CURSOR)} NO SCROLL CURSOR FOR
     SELECT ${TEXT_COLUMNS} FROM ${ident(input.partition)}
     WHERE "snapshotAt" >= ${input.aggregate.month}
-      AND "snapshotAt" < ${input.next}
+      AND "snapshotAt" < ${addMonths(input.aggregate.month, 1)}
   `;
   for (;;) {
     const rows = await tx.$queryRawUnsafe<OddsTextRow[]>(
       `FETCH ${ODDS_ARCHIVE.FETCH_ROWS} FROM ${CURSOR}`,
     );
     if (rows.length === 0) break;
-    await sink.append(rows);
+    sink.append(rows);
   }
   await tx.$executeRaw`CLOSE ${Prisma.raw(CURSOR)}`;
   await sink.endMonth(input.aggregate);

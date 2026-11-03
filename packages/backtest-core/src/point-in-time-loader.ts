@@ -109,10 +109,20 @@ export class PointInTimeLoader {
   ) {}
 
   /** The base's rows of these fixtures plus the archive's, each once. */
-  private async oddsRows(fixtureIds: string[]): Promise<ArchivedOddsRow[]> {
+  // `before`: only rows captured and priced before it, in both sources.
+  private async oddsRows(
+    fixtureIds: string[],
+    before?: Date,
+  ): Promise<ArchivedOddsRow[]> {
     const [base, archived] = await Promise.all([
       this.client.oddsSnapshot.findMany({
-        where: { fixtureId: { in: fixtureIds } },
+        where: {
+          fixtureId: { in: fixtureIds },
+          ...(before && {
+            createdAt: { lt: before },
+            snapshotAt: { lt: before },
+          }),
+        },
         select: {
           id: true,
           fixtureId: true,
@@ -127,7 +137,9 @@ export class PointInTimeLoader {
           awayOdds: true,
         },
       }),
-      this.archive ? this.archive.rowsFor(fixtureIds) : Promise.resolve([]),
+      this.archive
+        ? this.archive.rowsFor(fixtureIds, before)
+        : Promise.resolve([]),
     ]);
     return mergeArchivedRows<ArchivedOddsRow>(base, archived);
   }
@@ -508,9 +520,7 @@ export class PointInTimeLoader {
     fixtureId: string,
     context: PointInTimeContext,
   ): Promise<FullOddsSnapshot | null> {
-    const rows = (await this.oddsRows([fixtureId])).filter(
-      (row) => row.createdAt < context.asOf && row.snapshotAt < context.asOf,
-    );
+    const rows = await this.oddsRows([fixtureId], context.asOf);
     return assembleFullOddsSnapshot(rows, context.asOf);
   }
 

@@ -275,9 +275,7 @@ export type BackfillView = {
 
 export type OddsArchiveView = {
   lastMonth: string | null;
-  months: number;
   parquetBytes: number;
-  rowsArchived: number;
   tableBytes: number;
   defaultRows: number;
 };

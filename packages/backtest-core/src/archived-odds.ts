@@ -15,18 +15,28 @@ export type ArchivedOddsRow = RawOddsRow & {
 };
 
 export type ArchivedOddsSource = {
-  rowsFor(fixtureIds: readonly string[]): Promise<ArchivedOddsRow[]>;
+  /** `before`: only rows captured and priced before it. */
+  rowsFor(
+    fixtureIds: readonly string[],
+    before?: Date,
+  ): Promise<ArchivedOddsRow[]>;
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Rows read per query: an IN list this long stays cheap for DuckDB. */
+/** Fixtures per query: an IN list this long stays cheap for DuckDB. */
 const FIXTURES_PER_QUERY = 500;
+
+type ArchiveQueryRow = Omit<ArchivedOddsRow, "snapshotAt" | "createdAt"> & {
+  snapshotAt: number;
+  createdAt: number;
+};
 
 /**
  * Reads the archive's Parquet files from a local directory (copied from
  * the `evcore-odds-archive` bucket, docs/exploitation.md), through DuckDB.
- * Decimals come back as text, timestamps as UTC dates.
+ * The files are sorted by match: a query on a few matches skips most row
+ * groups. Decimals come back as text, timestamps as UTC dates.
  */
 export class DuckDbOddsArchive implements ArchivedOddsSource {
   private constructor(
@@ -42,11 +52,17 @@ export class DuckDbOddsArchive implements ArchivedOddsSource {
     return new DuckDbOddsArchive(instance, connection, glob);
   }
 
-  async rowsFor(fixtureIds: readonly string[]): Promise<ArchivedOddsRow[]> {
+  async rowsFor(
+    fixtureIds: readonly string[],
+    before?: Date,
+  ): Promise<ArchivedOddsRow[]> {
     const ids = [...new Set(fixtureIds)];
     if (ids.some((id) => !UUID.test(id))) {
       throw new Error("rowsFor expects fixture UUIDs");
     }
+    const bound = before
+      ? `AND "createdAt" < epoch_ms(${before.getTime()}) AND "snapshotAt" < epoch_ms(${before.getTime()})`
+      : "";
     const out: ArchivedOddsRow[] = [];
     for (let i = 0; i < ids.length; i += FIXTURES_PER_QUERY) {
       const chunk = ids.slice(i, i + FIXTURES_PER_QUERY);
@@ -59,18 +75,11 @@ export class DuckDbOddsArchive implements ArchivedOddsSource {
                epoch_ms("createdAt") AS "createdAt"
         FROM read_parquet('${this.glob}')
         WHERE "fixtureId" IN (${chunk.map((id) => `'${id}'::UUID`).join(", ")})
+        ${bound}
       `);
-      for (const row of reader.getRowObjectsJS()) {
+      for (const row of reader.getRowObjectsJS() as ArchiveQueryRow[]) {
         out.push({
-          id: String(row.id),
-          fixtureId: String(row.fixtureId),
-          bookmaker: String(row.bookmaker),
-          market: row.market as RawOddsRow["market"],
-          pick: row.pick === null ? null : String(row.pick),
-          odds: row.odds === null ? null : String(row.odds),
-          homeOdds: row.homeOdds === null ? null : String(row.homeOdds),
-          drawOdds: row.drawOdds === null ? null : String(row.drawOdds),
-          awayOdds: row.awayOdds === null ? null : String(row.awayOdds),
+          ...row,
           snapshotAt: new Date(Number(row.snapshotAt)),
           createdAt: new Date(Number(row.createdAt)),
         });

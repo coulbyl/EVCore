@@ -311,7 +311,7 @@ describe("PointInTimeLoader with the odds archive", () => {
     const asOf = new Date(kickoff.getTime() - 12 * 3_600_000);
     const result = await loader.loadOddsBatch([{ fixtureId: "f1", asOf }]);
     expect(result.get("f1")?.homeOdds.toNumber()).toBe(1.9);
-    expect(archive.rowsFor).toHaveBeenCalledWith(["f1"]);
+    expect(archive.rowsFor).toHaveBeenCalledWith(["f1"], undefined);
   });
 
   it("without it, the archived month only has the kept prices", async () => {

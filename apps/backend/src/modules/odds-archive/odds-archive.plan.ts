@@ -1,6 +1,5 @@
+import { subDays } from 'date-fns';
 import { ODDS_ARCHIVE, ODDS_PARTITIONS } from '@config/odds-archive.constants';
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** A partition of `odds_snapshot`, its range read from the catalog. */
 export type OddsPartition = {
@@ -70,12 +69,18 @@ export function parsePartitionBound(
 export function monthsToCreate(
   partitions: readonly OddsPartition[],
   now: Date,
-): Date[] {
+): OddsPartition[] {
   const existing = new Set(partitions.map((p) => p.name));
   const current = monthStart(now);
-  return Array.from({ length: ODDS_ARCHIVE.MONTHS_AHEAD + 1 }, (_, i) =>
-    addMonths(current, i),
-  ).filter((month) => !existing.has(monthPartitionName(month)));
+  return Array.from({ length: ODDS_ARCHIVE.MONTHS_AHEAD + 1 }, (_, i) => {
+    const month = addMonths(current, i);
+    return {
+      name: monthPartitionName(month),
+      from: month,
+      to: addMonths(month, 1),
+      isDefault: false,
+    };
+  }).filter((p) => !existing.has(p.name));
 }
 
 /**
@@ -89,18 +94,22 @@ export function partitionsDue(input: {
   archivedMonths: ReadonlySet<string>;
   now: Date;
 }): OddsPartition[] {
-  const closedBefore =
-    input.now.getTime() - ODDS_ARCHIVE.MONTH_CLOSED_AFTER_DAYS * DAY_MS;
+  const closedBefore = subDays(
+    input.now,
+    ODDS_ARCHIVE.MONTH_CLOSED_AFTER_DAYS,
+  ).getTime();
+  const isDue = (p: OddsPartition): p is OddsPartition & { to: Date } => {
+    if (!p.to || p.to.getTime() > closedBefore) return false;
+    if (p.name === ODDS_PARTITIONS.LEGACY) return true;
+    return (
+      p.name.startsWith(ODDS_PARTITIONS.MONTH_PREFIX) &&
+      p.from !== null &&
+      !input.archivedMonths.has(monthKey(p.from))
+    );
+  };
   return input.partitions
-    .filter((p) => p.to !== null && p.to.getTime() <= closedBefore)
-    .filter((p) => {
-      if (p.name === ODDS_PARTITIONS.LEGACY) return true;
-      if (!p.name.startsWith(ODDS_PARTITIONS.MONTH_PREFIX) || !p.from) {
-        return false;
-      }
-      return !input.archivedMonths.has(monthKey(p.from));
-    })
-    .sort((a, b) => (a.to?.getTime() ?? 0) - (b.to?.getTime() ?? 0));
+    .filter(isDue)
+    .sort((a, b) => a.to.getTime() - b.to.getTime());
 }
 
 /** The name the compacted partition takes in place of the archived one. */
@@ -112,7 +121,5 @@ export function compactedName(partition: OddsPartition): string {
 
 /** Matches played before this instant are settled: their rows compact. */
 export function settledBefore(now: Date): Date {
-  return new Date(
-    now.getTime() - ODDS_ARCHIVE.FIXTURE_SETTLED_AFTER_DAYS * DAY_MS,
-  );
+  return subDays(now, ODDS_ARCHIVE.FIXTURE_SETTLED_AFTER_DAYS);
 }

@@ -1,3 +1,4 @@
+import type { OddsArchiveSummary } from '@modules/odds-archive/odds-archive.repository';
 import type { AdminActionView } from '@modules/admin-journal/admin-journal.types';
 import type { QueueView } from './console-queues';
 /** A light of the admin's home (12 § 1): green, orange or red. */
@@ -247,14 +248,7 @@ export type BackfillView = {
 };
 
 /** Exploitation › Les files: the odds archive's own figures. */
-export type OddsArchiveView = {
-  lastMonth: string | null;
-  months: number;
-  parquetBytes: number;
-  rowsArchived: number;
-  tableBytes: number;
-  defaultRows: number;
-};
+export type OddsArchiveView = OddsArchiveSummary;
 
 export type QueuesScreen = {
   at: string;

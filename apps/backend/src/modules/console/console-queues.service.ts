@@ -189,11 +189,7 @@ export class ConsoleQueuesService {
 
   private async oddsArchiveView(): Promise<OddsArchiveView | null> {
     try {
-      const summary = await this.oddsArchive.summary();
-      return {
-        ...summary,
-        lastMonth: summary.lastMonth?.toISOString().slice(0, 7) ?? null,
-      };
+      return await this.oddsArchive.summary();
     } catch (err) {
       logger.warn({ err }, 'Odds archive unreadable');
       return null;

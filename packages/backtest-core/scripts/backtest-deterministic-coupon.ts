@@ -17,11 +17,10 @@ import {
 } from "@evcore/analysis-core";
 import { prisma } from "@evcore/db";
 import {
-  PointInTimeLoader,
   type CouponCalibrationObservation,
   type CouponReplaySelection,
 } from "../src/point-in-time-loader";
-import { oddsArchiveFromEnv } from "./odds-archive";
+import { loaderFromEnv } from "./odds-archive";
 
 type ReplayRow = {
   candidate: CouponLeg;
@@ -414,7 +413,7 @@ async function main(): Promise<void> {
   const to = parseDay(option("--to") ?? "2026-09-13", "--to");
   if (from > to) throw new Error("--from must be before --to");
 
-  const loader = new PointInTimeLoader(undefined, await oddsArchiveFromEnv());
+  const { loader, close: closeArchive } = await loaderFromEnv();
   const replayDays: Array<{ day: string; rows: ReplayRow[] }> = [];
   for (let day = from; day <= to; day = addDays(day, 1)) {
     const asOf = new Date(day);
@@ -526,6 +525,7 @@ async function main(): Promise<void> {
   ].join("\n");
   writeFileSync(join(reportsDir, `${stem}.md`), markdown);
   console.log(markdown);
+  closeArchive();
 }
 
 main()
