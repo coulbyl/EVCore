@@ -373,7 +373,7 @@ async function main() {
   };
 
   const startedAt = Date.now();
-  const BATCH = 200;
+  const BATCH = 50;
   for (let offset = 0; offset < fixtures.length; offset += BATCH) {
     const batch = fixtures.slice(offset, offset + BATCH);
     const asOfs = batch.map(
