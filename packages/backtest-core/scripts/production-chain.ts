@@ -144,8 +144,11 @@ export async function replayContext(input: {
   fixture: ReplayFixture;
   odds: FullOddsSnapshot | null;
   asOf: Date;
+  // League-strength λ multipliers (LambdaConfig.crossLeagueFactors), for the
+  // inter-league replay; omitted = production today.
+  crossLeagueFactors?: { home: number; away: number };
 }): Promise<StrategyContext | null> {
-  const { loader, fixture, odds, asOf } = input;
+  const { loader, fixture, odds, asOf, crossLeagueFactors } = input;
   const [homeStats, awayStats] = await Promise.all([
     loader.loadTeamStats({
       teamId: fixture.homeTeamId,
@@ -168,6 +171,7 @@ export async function replayContext(input: {
     homeAdvFactor,
     awayDisadvFactor,
     lambdaScale: getLeagueLambdaScale(code),
+    crossLeagueFactors,
   });
   const baseline = probabilitiesFromLambda({
     lambda: baselineLambda,

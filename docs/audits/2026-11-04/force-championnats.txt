@@ -1,0 +1,265 @@
+Force des championnats — rejeu point-in-time, 2026-11-04
+σ a priori 0.2, minimum 10 matchs, décision à coup d'envoi − 1 h.
+
+3295 matchs européens terminés depuis 2023-06-01.
+3136 rejoués (team_stats des deux équipes à l'instant), 159 écartés faute de team_stats.
+Sonde 01a199fc-8f0e-70e7-82e9-0ce2a0d884c3 à 2026-11-02T17:05:37.534Z (UEL) :
+  λ rejoué 1.151 / 1.551, championnats L1 / GRE1
+  forces L1  0.394, GRE1  0.183 → facteurs 1.235 / 0.810, λ 1.421 / 1.256, 1X2 0.322/0.224/0.454 → 0.424/0.229/0.347
+
+═══ Saison 2024-25 : forces ajustées sur 712 matchs antérieurs (24 championnats)
+  PL +0.36  DEN1 +0.35  LL +0.33  BL1 +0.32  SA +0.31  L1 +0.26  NOR1 +0.17  BEL1 +0.12  CZE1 +0.11  POR +0.09  LAT1 +0.06  POL1 +0.05  SUI1 +0.05  AUT1 +0.03  TUR1 -0.00  ERD -0.01  GRE1 -0.01  SVN1 -0.05  ISL1 -0.06  FIN1 -0.10  SCO1 -0.10  SWE1 -0.12  IRL1 -0.22  SRB1 -0.25
+── 2024-25 — tous — 535 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.6245  corrigé  0.5983  Pinnacle  0.5503
+  log-loss 1X2   actuel  1.0388  corrigé  1.0039  Pinnacle  0.9315
+  résidu (Brier moteur − Pinnacle)  actuel  0.0742 [ 0.0483 ;  0.1044]  corrigé  0.0480 [ 0.0275 ;  0.0734]
+  ΔBrier corrigé − actuel -0.0263 [-0.0419 ; -0.0094]   Δlog-loss -0.0349 [-0.0576 ; -0.0104]
+  écart moyen |p − Pinnacle|  actuel 0.1115  corrigé 0.0848
+  part plafonnée ev_above_*  actuel 47.1 %  corrigé 33.6 %
+  retenus actuel   n 362 annoncé 0.342 réalisé 0.279 Pinnacle 0.252 réalisé÷annoncé 0.817 réalisé−Pinnacle  0.027 ± 0.046
+  retenus corrigé  n 398 annoncé 0.345 réalisé 0.294 Pinnacle 0.263 réalisé÷annoncé 0.852 réalisé−Pinnacle  0.031 ± 0.045
+── 2024-25 — Big-5 / autre — 83 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.6246  corrigé  0.5453  Pinnacle  0.4899
+  log-loss 1X2   actuel  1.0369  corrigé  0.9299  Pinnacle  0.8359
+  résidu (Brier moteur − Pinnacle)  actuel  0.1347 [ 0.0691 ;  0.1950]  corrigé  0.0555 [ 0.0174 ;  0.0963]
+  ΔBrier corrigé − actuel -0.0792 [-0.1268 ; -0.0225]   Δlog-loss -0.1070 [-0.1732 ; -0.0267]
+  écart moyen |p − Pinnacle|  actuel 0.1506  corrigé 0.0823
+  part plafonnée ev_above_*  actuel 74.7 %  corrigé 45.8 %
+  retenus actuel   n 60 annoncé 0.272 réalisé 0.267 Pinnacle 0.196 réalisé÷annoncé 0.979 réalisé−Pinnacle  0.071 ± 0.112
+  retenus corrigé  n 76 annoncé 0.279 réalisé 0.211 Pinnacle 0.218 réalisé÷annoncé 0.756 réalisé−Pinnacle -0.008 ± 0.092
+── 2024-25 — autre / Big-5 — 80 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.6976  corrigé  0.6731  Pinnacle  0.6161
+  log-loss 1X2   actuel  1.1401  corrigé  1.1176  Pinnacle  1.0291
+  résidu (Brier moteur − Pinnacle)  actuel  0.0815 [ 0.0106 ;  0.1574]  corrigé  0.0570 [ 0.0168 ;  0.1022]
+  ΔBrier corrigé − actuel -0.0245 [-0.0917 ;  0.0431]   Δlog-loss -0.0225 [-0.1201 ;  0.0770]
+  écart moyen |p − Pinnacle|  actuel 0.1235  corrigé 0.0772
+  part plafonnée ev_above_*  actuel 43.8 %  corrigé 25.0 %
+  retenus actuel   n 52 annoncé 0.397 réalisé 0.269 Pinnacle 0.282 réalisé÷annoncé 0.678 réalisé−Pinnacle -0.013 ± 0.121
+  retenus corrigé  n 52 annoncé 0.375 réalisé 0.308 Pinnacle 0.288 réalisé÷annoncé 0.820 réalisé−Pinnacle  0.020 ± 0.125
+── 2024-25 — autre / autre — 124 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.6376  corrigé  0.6382  Pinnacle  0.6035
+  log-loss 1X2   actuel  1.0607  corrigé  1.0617  Pinnacle  1.0118
+  résidu (Brier moteur − Pinnacle)  actuel  0.0342 [-0.0054 ;  0.0790]  corrigé  0.0347 [ 0.0025 ;  0.0762]
+  ΔBrier corrigé − actuel  0.0006 [-0.0246 ;  0.0270]   Δlog-loss  0.0010 [-0.0345 ;  0.0382]
+  écart moyen |p − Pinnacle|  actuel 0.0851  corrigé 0.0799
+  part plafonnée ev_above_*  actuel 41.9 %  corrigé 33.1 %
+  retenus actuel   n 73 annoncé 0.342 réalisé 0.274 Pinnacle 0.260 réalisé÷annoncé 0.802 réalisé−Pinnacle  0.014 ± 0.102
+  retenus corrigé  n 83 annoncé 0.364 réalisé 0.325 Pinnacle 0.282 réalisé÷annoncé 0.894 réalisé−Pinnacle  0.043 ± 0.101
+── 2024-25 — Big-5 / Big-5 — 88 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.5531  corrigé  0.5500  Pinnacle  0.5557
+  log-loss 1X2   actuel  0.9416  corrigé  0.9366  Pinnacle  0.9418
+  résidu (Brier moteur − Pinnacle)  actuel -0.0027 [-0.0532 ;  0.0452]  corrigé -0.0058 [-0.0537 ;  0.0391]
+  ΔBrier corrigé − actuel -0.0031 [-0.0129 ;  0.0066]   Δlog-loss -0.0050 [-0.0188 ;  0.0087]
+  écart moyen |p − Pinnacle|  actuel 0.0771  corrigé 0.0713
+  part plafonnée ev_above_*  actuel 23.9 %  corrigé 19.3 %
+  retenus actuel   n 67 annoncé 0.358 réalisé 0.343 Pinnacle 0.271 réalisé÷annoncé 0.959 réalisé−Pinnacle  0.072 ± 0.114
+  retenus corrigé  n 69 annoncé 0.360 réalisé 0.333 Pinnacle 0.272 réalisé÷annoncé 0.926 réalisé−Pinnacle  0.061 ± 0.111
+── 2024-25 — inconnu — 160 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.6171  corrigé  0.5840  Pinnacle  0.5046
+  log-loss 1X2   actuel  1.0256  corrigé  0.9775  Pinnacle  0.8646
+  résidu (Brier moteur − Pinnacle)  actuel  0.1125 [ 0.0702 ;  0.1638]  corrigé  0.0794 [ 0.0404 ;  0.1268]
+  ΔBrier corrigé − actuel -0.0332 [-0.0574 ; -0.0114]   Δlog-loss -0.0481 [-0.0826 ; -0.0171]
+  écart moyen |p − Pinnacle|  actuel 0.1245  corrigé 0.1011
+  part plafonnée ev_above_*  actuel 51.2 %  corrigé 40.0 %
+  retenus actuel   n 110 annoncé 0.343 réalisé 0.255 Pinnacle 0.252 réalisé÷annoncé 0.742 réalisé−Pinnacle  0.002 ± 0.081
+  retenus corrigé  n 118 annoncé 0.352 réalisé 0.297 Pinnacle 0.263 réalisé÷annoncé 0.841 réalisé−Pinnacle  0.033 ± 0.082
+
+═══ Saison 2025-26 : forces ajustées sur 1636 matchs antérieurs (25 championnats)
+  PL +0.56  LL +0.44  SA +0.42  BL1 +0.41  L1 +0.38  DEN1 +0.29  NOR1 +0.23  POR +0.23  BEL1 +0.21  ERD +0.20  POL1 +0.20  GRE1 +0.18  CZE1 +0.16  SWE1 +0.11  TUR1 +0.11  SCO1 +0.09  AUT1 +0.05  SUI1 +0.03  SVN1 -0.05  LAT1 -0.07  ISL1 -0.08  FIN1 -0.09  IRL1 -0.10  SRB1 -0.20  EST1 -0.42
+── 2025-26 — tous — 500 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.6136  corrigé  0.5770  Pinnacle  0.5512
+  log-loss 1X2   actuel  1.0272  corrigé  0.9763  Pinnacle  0.9356
+  résidu (Brier moteur − Pinnacle)  actuel  0.0624 [ 0.0374 ;  0.0890]  corrigé  0.0257 [ 0.0107 ;  0.0443]
+  ΔBrier corrigé − actuel -0.0366 [-0.0518 ; -0.0207]   Δlog-loss -0.0509 [-0.0725 ; -0.0297]
+  écart moyen |p − Pinnacle|  actuel 0.1073  corrigé 0.0688
+  part plafonnée ev_above_*  actuel 44.2 %  corrigé 23.8 %
+  retenus actuel   n 375 annoncé 0.327 réalisé 0.221 Pinnacle 0.243 réalisé÷annoncé 0.677 réalisé−Pinnacle -0.022 ± 0.042
+  retenus corrigé  n 382 annoncé 0.330 réalisé 0.259 Pinnacle 0.257 réalisé÷annoncé 0.785 réalisé−Pinnacle  0.003 ± 0.044
+── 2025-26 — Big-5 / autre — 86 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.5911  corrigé  0.5124  Pinnacle  0.5010
+  log-loss 1X2   actuel  0.9945  corrigé  0.8836  Pinnacle  0.8724
+  résidu (Brier moteur − Pinnacle)  actuel  0.0902 [ 0.0099 ;  0.1707]  corrigé  0.0114 [-0.0336 ;  0.0570]
+  ΔBrier corrigé − actuel -0.0787 [-0.1267 ; -0.0258]   Δlog-loss -0.1109 [-0.1816 ; -0.0344]
+  écart moyen |p − Pinnacle|  actuel 0.1459  corrigé 0.0650
+  part plafonnée ev_above_*  actuel 80.2 %  corrigé 33.7 %
+  retenus actuel   n 67 annoncé 0.269 réalisé 0.134 Pinnacle 0.192 réalisé÷annoncé 0.500 réalisé−Pinnacle -0.058 ± 0.082
+  retenus corrigé  n 65 annoncé 0.246 réalisé 0.200 Pinnacle 0.189 réalisé÷annoncé 0.812 réalisé−Pinnacle  0.011 ± 0.097
+── 2025-26 — autre / Big-5 — 83 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.6672  corrigé  0.6200  Pinnacle  0.6053
+  log-loss 1X2   actuel  1.1004  corrigé  1.0343  Pinnacle  1.0108
+  résidu (Brier moteur − Pinnacle)  actuel  0.0618 [-0.0187 ;  0.1440]  corrigé  0.0146 [-0.0192 ;  0.0531]
+  ΔBrier corrigé − actuel -0.0472 [-0.1102 ;  0.0189]   Δlog-loss -0.0660 [-0.1543 ;  0.0280]
+  écart moyen |p − Pinnacle|  actuel 0.1310  corrigé 0.0614
+  part plafonnée ev_above_*  actuel 42.2 %  corrigé 16.9 %
+  retenus actuel   n 55 annoncé 0.416 réalisé 0.291 Pinnacle 0.283 réalisé÷annoncé 0.700 réalisé−Pinnacle  0.008 ± 0.120
+  retenus corrigé  n 57 annoncé 0.372 réalisé 0.298 Pinnacle 0.294 réalisé÷annoncé 0.802 réalisé−Pinnacle  0.004 ± 0.119
+── 2025-26 — autre / autre — 84 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.6155  corrigé  0.5824  Pinnacle  0.5701
+  log-loss 1X2   actuel  1.0271  corrigé  0.9819  Pinnacle  0.9592
+  résidu (Brier moteur − Pinnacle)  actuel  0.0454 [-0.0067 ;  0.1079]  corrigé  0.0123 [-0.0353 ;  0.0732]
+  ΔBrier corrigé − actuel -0.0331 [-0.0584 ; -0.0093]   Δlog-loss -0.0452 [-0.0807 ; -0.0124]
+  écart moyen |p − Pinnacle|  actuel 0.0902  corrigé 0.0759
+  part plafonnée ev_above_*  actuel 41.7 %  corrigé 35.7 %
+  retenus actuel   n 58 annoncé 0.335 réalisé 0.241 Pinnacle 0.259 réalisé÷annoncé 0.720 réalisé−Pinnacle -0.018 ± 0.110
+  retenus corrigé  n 56 annoncé 0.334 réalisé 0.304 Pinnacle 0.255 réalisé÷annoncé 0.909 réalisé−Pinnacle  0.049 ± 0.120
+── 2025-26 — Big-5 / Big-5 — 113 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.5958  corrigé  0.5847  Pinnacle  0.5446
+  log-loss 1X2   actuel  0.9977  corrigé  0.9820  Pinnacle  0.9266
+  résidu (Brier moteur − Pinnacle)  actuel  0.0511 [ 0.0081 ;  0.0902]  corrigé  0.0401 [ 0.0097 ;  0.0709]
+  ΔBrier corrigé − actuel -0.0111 [-0.0308 ;  0.0116]   Δlog-loss -0.0157 [-0.0431 ;  0.0158]
+  écart moyen |p − Pinnacle|  actuel 0.0701  corrigé 0.0621
+  part plafonnée ev_above_*  actuel 17.7 %  corrigé 12.4 %
+  retenus actuel   n 93 annoncé 0.326 réalisé 0.226 Pinnacle 0.250 réalisé÷annoncé 0.693 réalisé−Pinnacle -0.024 ± 0.085
+  retenus corrigé  n 95 annoncé 0.348 réalisé 0.253 Pinnacle 0.271 réalisé÷annoncé 0.727 réalisé−Pinnacle -0.018 ± 0.087
+── 2025-26 — inconnu — 134 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.6087  corrigé  0.5819  Pinnacle  0.5438
+  log-loss 1X2   actuel  1.0278  corrigé  0.9916  Pinnacle  0.9225
+  résidu (Brier moteur − Pinnacle)  actuel  0.0649 [ 0.0185 ;  0.1079]  corrigé  0.0381 [ 0.0144 ;  0.0611]
+  ΔBrier corrigé − actuel -0.0268 [-0.0589 ;  0.0084]   Δlog-loss -0.0362 [-0.0849 ;  0.0146]
+  écart moyen |p − Pinnacle|  actuel 0.1101  corrigé 0.0769
+  part plafonnée ev_above_*  actuel 46.3 %  corrigé 23.9 %
+  retenus actuel   n 102 annoncé 0.313 réalisé 0.225 Pinnacle 0.239 réalisé÷annoncé 0.720 réalisé−Pinnacle -0.014 ± 0.081
+  retenus corrigé  n 109 annoncé 0.340 réalisé 0.257 Pinnacle 0.266 réalisé÷annoncé 0.754 réalisé−Pinnacle -0.009 ± 0.082
+
+═══ Saison 2026-27 : forces ajustées sur 2576 matchs antérieurs (25 championnats)
+  PL +0.56  LL +0.45  BL1 +0.42  SA +0.40  L1 +0.39  DEN1 +0.30  POR +0.27  BEL1 +0.22  POL1 +0.19  NOR1 +0.19  ERD +0.19  GRE1 +0.18  CZE1 +0.15  TUR1 +0.13  SWE1 +0.11  SUI1 +0.09  AUT1 +0.06  SCO1 +0.05  ISL1 -0.07  SVN1 -0.10  IRL1 -0.11  FIN1 -0.12  LAT1 -0.15  SRB1 -0.16  EST1 -0.42
+── 2026-27 — tous — 529 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.6293  corrigé  0.6016  Pinnacle  0.5381
+  log-loss 1X2   actuel  1.0477  corrigé  1.0050  Pinnacle  0.9111
+  résidu (Brier moteur − Pinnacle)  actuel  0.0912 [ 0.0577 ;  0.1309]  corrigé  0.0635 [ 0.0355 ;  0.0950]
+  ΔBrier corrigé − actuel -0.0277 [-0.0431 ; -0.0123]   Δlog-loss -0.0427 [-0.0658 ; -0.0199]
+  écart moyen |p − Pinnacle|  actuel 0.1302  corrigé 0.1057
+  part plafonnée ev_above_*  actuel 47.6 %  corrigé 36.9 %
+  retenus actuel   n 343 annoncé 0.361 réalisé 0.271 Pinnacle 0.255 réalisé÷annoncé 0.752 réalisé−Pinnacle  0.016 ± 0.047
+  retenus corrigé  n 352 annoncé 0.364 réalisé 0.253 Pinnacle 0.265 réalisé÷annoncé 0.695 réalisé−Pinnacle -0.012 ± 0.045
+── 2026-27 — Big-5 / autre — 30 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.4949  corrigé  0.3849  Pinnacle  0.3285
+  log-loss 1X2   actuel  0.8622  corrigé  0.6946  Pinnacle  0.6185
+  résidu (Brier moteur − Pinnacle)  actuel  0.1664 [ 0.0345 ;  0.3400]  corrigé  0.0565 [-0.0148 ;  0.1628]
+  ΔBrier corrigé − actuel -0.1100 [-0.1948 ; -0.0300]   Δlog-loss -0.1676 [-0.3020 ; -0.0495]
+  écart moyen |p − Pinnacle|  actuel 0.1646  corrigé 0.0847
+  part plafonnée ev_above_*  actuel 80.0 %  corrigé 43.3 %
+  retenus actuel   n 16 annoncé 0.241 réalisé 0.125 Pinnacle 0.180 réalisé÷annoncé 0.519 réalisé−Pinnacle -0.055 ± 0.162
+  retenus corrigé  n 20 annoncé 0.263 réalisé 0.250 Pinnacle 0.206 réalisé÷annoncé 0.950 réalisé−Pinnacle  0.044 ± 0.190
+── 2026-27 — autre / Big-5 — 32 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.7201  corrigé  0.6629  Pinnacle  0.6192
+  log-loss 1X2   actuel  1.1778  corrigé  1.0870  Pinnacle  1.0384
+  résidu (Brier moteur − Pinnacle)  actuel  0.1009 [-0.0843 ;  0.2655]  corrigé  0.0437 [-0.0632 ;  0.1416]
+  ΔBrier corrigé − actuel -0.0572 [-0.1422 ;  0.0413]   Δlog-loss -0.0907 [-0.2186 ;  0.0448]
+  écart moyen |p − Pinnacle|  actuel 0.1720  corrigé 0.0852
+  part plafonnée ev_above_*  actuel 68.8 %  corrigé 34.4 %
+  retenus actuel   n 18 annoncé 0.396 réalisé 0.389 Pinnacle 0.279 réalisé÷annoncé 0.981 réalisé−Pinnacle  0.110 ± 0.225
+  retenus corrigé  n 24 annoncé 0.333 réalisé 0.125 Pinnacle 0.246 réalisé÷annoncé 0.376 réalisé−Pinnacle -0.121 ± 0.132
+── 2026-27 — autre / autre — 121 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.6539  corrigé  0.6264  Pinnacle  0.5584
+  log-loss 1X2   actuel  1.0757  corrigé  1.0372  Pinnacle  0.9377
+  résidu (Brier moteur − Pinnacle)  actuel  0.0955 [ 0.0298 ;  0.1614]  corrigé  0.0680 [ 0.0135 ;  0.1175]
+  ΔBrier corrigé − actuel -0.0275 [-0.0581 ;  0.0016]   Δlog-loss -0.0385 [-0.0846 ;  0.0031]
+  écart moyen |p − Pinnacle|  actuel 0.1195  corrigé 0.1003
+  part plafonnée ev_above_*  actuel 47.1 %  corrigé 37.2 %
+  retenus actuel   n 76 annoncé 0.330 réalisé 0.237 Pinnacle 0.237 réalisé÷annoncé 0.717 réalisé−Pinnacle -0.001 ± 0.096
+  retenus corrigé  n 82 annoncé 0.337 réalisé 0.244 Pinnacle 0.249 réalisé÷annoncé 0.723 réalisé−Pinnacle -0.005 ± 0.093
+── 2026-27 — Big-5 / Big-5 — 24 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.5624  corrigé  0.5632  Pinnacle  0.4728
+  log-loss 1X2   actuel  0.9424  corrigé  0.9445  Pinnacle  0.8210
+  résidu (Brier moteur − Pinnacle)  actuel  0.0896 [ 0.0319 ;  0.1528]  corrigé  0.0904 [ 0.0270 ;  0.1638]
+  ΔBrier corrigé − actuel  0.0008 [-0.0311 ;  0.0385]   Δlog-loss  0.0021 [-0.0435 ;  0.0555]
+  écart moyen |p − Pinnacle|  actuel 0.0672  corrigé 0.0704
+  part plafonnée ev_above_*  actuel 20.8 %  corrigé 16.7 %
+  retenus actuel   n 15 annoncé 0.346 réalisé 0.200 Pinnacle 0.265 réalisé÷annoncé 0.578 réalisé−Pinnacle -0.065 ± 0.202
+  retenus corrigé  n 17 annoncé 0.403 réalisé 0.235 Pinnacle 0.323 réalisé÷annoncé 0.584 réalisé−Pinnacle -0.087 ± 0.202
+── 2026-27 — inconnu — 322 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.6286  corrigé  0.6093  Pinnacle  0.5468
+  log-loss 1X2   actuel  1.0493  corrigé  1.0182  Pinnacle  0.9224
+  résidu (Brier moteur − Pinnacle)  actuel  0.0817 [ 0.0447 ;  0.1226]  corrigé  0.0624 [ 0.0273 ;  0.1004]
+  ΔBrier corrigé − actuel -0.0193 [-0.0354 ; -0.0027]   Δlog-loss -0.0312 [-0.0545 ; -0.0067]
+  écart moyen |p − Pinnacle|  actuel 0.1316  corrigé 0.1143
+  part plafonnée ev_above_*  actuel 44.7 %  corrigé 37.9 %
+  retenus actuel   n 218 annoncé 0.378 réalisé 0.289 Pinnacle 0.264 réalisé÷annoncé 0.765 réalisé−Pinnacle  0.025 ± 0.060
+  retenus corrigé  n 209 annoncé 0.384 réalisé 0.273 Pinnacle 0.274 réalisé÷annoncé 0.710 réalisé−Pinnacle -0.001 ± 0.060
+
+═══ Hors échantillon, saisons agrégées
+── toutes saisons — 1564 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.6227  corrigé  0.5926  Pinnacle  0.5465
+  log-loss 1X2   actuel  1.0381  corrigé  0.9954  Pinnacle  0.9259
+  résidu (Brier moteur − Pinnacle)  actuel  0.0762 [ 0.0588 ;  0.0943]  corrigé  0.0461 [ 0.0326 ;  0.0608]
+  ΔBrier corrigé − actuel -0.0300 [-0.0389 ; -0.0207]   Δlog-loss -0.0426 [-0.0559 ; -0.0289]
+  écart moyen |p − Pinnacle|  actuel 0.1165  corrigé 0.0867
+  part plafonnée ev_above_*  actuel 46.4 %  corrigé 31.6 %
+  retenus actuel   n 1080 annoncé 0.342 réalisé 0.256 Pinnacle 0.250 réalisé÷annoncé 0.749 réalisé−Pinnacle  0.007 ± 0.026
+  retenus corrigé  n 1132 annoncé 0.346 réalisé 0.269 Pinnacle 0.262 réalisé÷annoncé 0.779 réalisé−Pinnacle  0.008 ± 0.026
+── Big-5 / autre — 199 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.5906  corrigé  0.5069  Pinnacle  0.4703
+  log-loss 1X2   actuel  0.9922  corrigé  0.8744  Pinnacle  0.8189
+  résidu (Brier moteur − Pinnacle)  actuel  0.1202 [ 0.0745 ;  0.1697]  corrigé  0.0366 [ 0.0086 ;  0.0645]
+  ΔBrier corrigé − actuel -0.0837 [-0.1157 ; -0.0512]   Δlog-loss -0.1178 [-0.1643 ; -0.0710]
+  écart moyen |p − Pinnacle|  actuel 0.1507  corrigé 0.0752
+  part plafonnée ev_above_*  actuel 77.9 %  corrigé 40.2 %
+  retenus actuel   n 143 annoncé 0.267 réalisé 0.189 Pinnacle 0.192 réalisé÷annoncé 0.707 réalisé−Pinnacle -0.004 ± 0.064
+  retenus corrigé  n 161 annoncé 0.264 réalisé 0.211 Pinnacle 0.205 réalisé÷annoncé 0.801 réalisé−Pinnacle  0.006 ± 0.063
+── autre / Big-5 — 195 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.6883  corrigé  0.6488  Pinnacle  0.6120
+  log-loss 1X2   actuel  1.1294  corrigé  1.0771  Pinnacle  1.0228
+  résidu (Brier moteur − Pinnacle)  actuel  0.0763 [ 0.0226 ;  0.1277]  corrigé  0.0368 [ 0.0093 ;  0.0644]
+  ΔBrier corrigé − actuel -0.0395 [-0.0787 ;  0.0019]   Δlog-loss -0.0522 [-0.1086 ;  0.0063]
+  écart moyen |p − Pinnacle|  actuel 0.1346  corrigé 0.0718
+  part plafonnée ev_above_*  actuel 47.2 %  corrigé 23.1 %
+  retenus actuel   n 125 annoncé 0.405 réalisé 0.296 Pinnacle 0.282 réalisé÷annoncé 0.730 réalisé−Pinnacle  0.014 ± 0.080
+  retenus corrigé  n 133 annoncé 0.366 réalisé 0.271 Pinnacle 0.283 réalisé÷annoncé 0.739 réalisé−Pinnacle -0.012 ± 0.076
+── autre / autre — 329 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.6380  corrigé  0.6196  Pinnacle  0.5784
+  log-loss 1X2   actuel  1.0576  corrigé  1.0323  Pinnacle  0.9711
+  résidu (Brier moteur − Pinnacle)  actuel  0.0596 [ 0.0266 ;  0.0980]  corrigé  0.0413 [ 0.0126 ;  0.0706]
+  ΔBrier corrigé − actuel -0.0183 [-0.0345 ; -0.0022]   Δlog-loss -0.0253 [-0.0491 ; -0.0019]
+  écart moyen |p − Pinnacle|  actuel 0.0991  corrigé 0.0864
+  part plafonnée ev_above_*  actuel 43.8 %  corrigé 35.3 %
+  retenus actuel   n 207 annoncé 0.336 réalisé 0.251 Pinnacle 0.251 réalisé÷annoncé 0.749 réalisé−Pinnacle -0.000 ± 0.059
+  retenus corrigé  n 221 annoncé 0.346 réalisé 0.290 Pinnacle 0.263 réalisé÷annoncé 0.836 réalisé−Pinnacle  0.026 ± 0.060
+── Big-5 / Big-5 — 225 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.5755  corrigé  0.5688  Pinnacle  0.5413
+  log-loss 1X2   actuel  0.9699  corrigé  0.9603  Pinnacle  0.9213
+  résidu (Brier moteur − Pinnacle)  actuel  0.0342 [ 0.0044 ;  0.0635]  corrigé  0.0275 [ 0.0009 ;  0.0536]
+  ΔBrier corrigé − actuel -0.0067 [-0.0183 ;  0.0051]   Δlog-loss -0.0096 [-0.0258 ;  0.0068]
+  écart moyen |p − Pinnacle|  actuel 0.0725  corrigé 0.0666
+  part plafonnée ev_above_*  actuel 20.4 %  corrigé 15.6 %
+  retenus actuel   n 175 annoncé 0.340 réalisé 0.269 Pinnacle 0.259 réalisé÷annoncé 0.790 réalisé−Pinnacle  0.009 ± 0.066
+  retenus corrigé  n 181 annoncé 0.358 réalisé 0.282 Pinnacle 0.276 réalisé÷annoncé 0.788 réalisé−Pinnacle  0.006 ± 0.066
+── inconnu — 616 matchs avec clôture Pinnacle
+  Brier 1X2      actuel  0.6213  corrigé  0.5968  Pinnacle  0.5352
+  log-loss 1X2   actuel  1.0385  corrigé  1.0018  Pinnacle  0.9074
+  résidu (Brier moteur − Pinnacle)  actuel  0.0861 [ 0.0615 ;  0.1135]  corrigé  0.0616 [ 0.0393 ;  0.0838]
+  ΔBrier corrigé − actuel -0.0245 [-0.0367 ; -0.0124]   Δlog-loss -0.0366 [-0.0552 ; -0.0191]
+  écart moyen |p − Pinnacle|  actuel 0.1251  corrigé 0.1027
+  part plafonnée ev_above_*  actuel 46.8 %  corrigé 35.4 %
+  retenus actuel   n 430 annoncé 0.354 réalisé 0.265 Pinnacle 0.255 réalisé÷annoncé 0.750 réalisé−Pinnacle  0.010 ± 0.042
+  retenus corrigé  n 436 annoncé 0.365 réalisé 0.275 Pinnacle 0.269 réalisé÷annoncé 0.755 réalisé−Pinnacle  0.006 ± 0.042
+
+Règle figée : saisons améliorées 3/3 (≥ 2), IC agrégé sous 0 : oui, types dégradés : aucun.
+Verdict : EXPÉDIER.
+
+Carte de production — 3136 matchs jusqu'au 2026-10-22 :
+  PL: 0.580,
+  LL: 0.465,
+  BL1: 0.425,
+  SA: 0.407,
+  L1: 0.394,
+  DEN1: 0.301,
+  POR: 0.283,
+  BEL1: 0.246,
+  NOR1: 0.194,
+  POL1: 0.189,
+  ERD: 0.183,
+  GRE1: 0.183,
+  TUR1: 0.145,
+  CZE1: 0.133,
+  SUI1: 0.100,
+  SWE1: 0.089,
+  AUT1: 0.072,
+  SCO1: 0.059,
+  FIN1: -0.103,
+  SVN1: -0.121,
+  ISL1: -0.131,
+  SRB1: -0.136,
+  IRL1: -0.148,
+  LAT1: -0.200,
+  EST1: -0.361,
