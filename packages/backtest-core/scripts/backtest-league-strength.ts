@@ -53,16 +53,19 @@ import { join } from "node:path";
 import Decimal from "decimal.js";
 import { prisma } from "@evcore/db";
 import {
+  brierScoreOneXTwo,
   calculateEV,
   crossLeagueLambdaFactors,
   EV_HARD_CAP,
   fitLeagueStrengths,
+  getOneXTwoOutcome,
   LEAGUE_STRENGTH_MIN_MATCHES,
   LEAGUE_STRENGTH_PRIOR_SD,
   removeOverround,
   type FullOddsSnapshot,
   type LeagueStrengthObservation,
   type LeagueStrengths,
+  type OneXTwoOutcome,
   type StrategyContext,
 } from "@evcore/analysis-core";
 import type { PointInTimeLoader, ReplayFixture } from "../src";
@@ -87,9 +90,16 @@ const MIN_SEASONS_IMPROVED = 2;
 const Z95 = 1.96;
 const CONCURRENCY = 8;
 
-type Outcome = "HOME" | "DRAW" | "AWAY";
+type Outcome = OneXTwoOutcome;
 const OUTCOMES: readonly Outcome[] = ["HOME", "DRAW", "AWAY"];
 type Triple = Record<Outcome, number>;
+const MATCH_TYPES = [
+  "Big-5 / autre",
+  "autre / Big-5",
+  "autre / autre",
+  "Big-5 / Big-5",
+  "inconnu",
+] as const;
 
 type Item = {
   fixture: ReplayFixture;
@@ -111,14 +121,22 @@ function tripleOf(context: StrategyContext): Triple {
   };
 }
 
+const fmtTriple = (p: Triple): string =>
+  `${p.HOME.toFixed(3)}/${p.DRAW.toFixed(3)}/${p.AWAY.toFixed(3)}`;
+
 function resultOf(fixture: ReplayFixture): Outcome {
-  if (fixture.homeScore > fixture.awayScore) return "HOME";
-  if (fixture.homeScore < fixture.awayScore) return "AWAY";
-  return "DRAW";
+  return getOneXTwoOutcome(fixture.homeScore, fixture.awayScore);
 }
 
 function brier(p: Triple, y: Outcome): number {
-  return OUTCOMES.reduce((sum, k) => sum + (p[k] - (k === y ? 1 : 0)) ** 2, 0);
+  return brierScoreOneXTwo([
+    { home: p.HOME, draw: p.DRAW, away: p.AWAY, actual: y },
+  ]);
+}
+
+/** Decision instant of a fixture: kickoff − 1 h. */
+function asOfOf(fixture: ReplayFixture): Date {
+  return new Date(fixture.scheduledAt.getTime() - DECISION_LEAD_MS);
 }
 
 function logLoss(p: Triple, y: Outcome): number {
@@ -258,6 +276,57 @@ async function mapLimit<T, R>(
   return out;
 }
 
+// The corrected pass replays a fixture at the same instant as the base pass
+// with only the λ factors changed: every point-in-time read is the same, so
+// it reuses the base pass's instead of querying again.
+const MEMOIZED_READS = new Set([
+  "loadTeamStats",
+  "loadH2HScore",
+  "loadH2HMarketSignals",
+  "loadCongestionScore",
+]);
+
+function memoizedLoader(loader: PointInTimeLoader): PointInTimeLoader {
+  const cache = new Map<string, unknown>();
+  return new Proxy(loader, {
+    get(target, prop, receiver) {
+      const value: unknown = Reflect.get(target, prop, receiver);
+      if (
+        typeof value !== "function" ||
+        typeof prop !== "string" ||
+        !MEMOIZED_READS.has(prop)
+      ) {
+        return value;
+      }
+      return (input: unknown): unknown => {
+        const key = `${prop}|${JSON.stringify(input)}`;
+        if (!cache.has(key)) cache.set(key, value.call(target, input));
+        return cache.get(key);
+      };
+    },
+  });
+}
+
+/** The engine context at `asOf` and the national league of each side. */
+async function replayWithLeagues(input: {
+  loader: PointInTimeLoader;
+  fixture: ReplayFixture;
+  odds: FullOddsSnapshot | null;
+  asOf: Date;
+}): Promise<{
+  context: StrategyContext | null;
+  homeLeague: string | null;
+  awayLeague: string | null;
+}> {
+  const { loader, fixture, asOf } = input;
+  const [context, homeLeague, awayLeague] = await Promise.all([
+    replayContext(input),
+    loader.loadDomesticLeague({ teamId: fixture.homeTeamId, asOf }),
+    loader.loadDomesticLeague({ teamId: fixture.awayTeamId, asOf }),
+  ]);
+  return { context, homeLeague, awayLeague };
+}
+
 async function replayBase(
   loader: PointInTimeLoader,
   out: (line?: string) => void,
@@ -272,7 +341,7 @@ async function replayBase(
   const oddsByFixture = await loader.loadOddsBatch(
     fixtures.map((f) => ({
       fixtureId: f.id,
-      asOf: new Date(f.scheduledAt.getTime() - DECISION_LEAD_MS),
+      asOf: asOfOf(f),
     })),
     // The 2023–2025 PREMATCH rows were imported after kickoff: bound by
     // bookmaker time only (point-in-time-loader.ts, captureGuard).
@@ -282,13 +351,17 @@ async function replayBase(
     `${fixtures.length} matchs européens terminés depuis ${FROM_DATE.toISOString().slice(0, 10)}.`,
   );
   const replayed = await mapLimit(fixtures, async (fixture) => {
-    const asOf = new Date(fixture.scheduledAt.getTime() - DECISION_LEAD_MS);
     const odds = oddsByFixture.get(fixture.id) ?? null;
-    const [base, homeLeague, awayLeague] = await Promise.all([
-      replayContext({ loader, fixture, odds, asOf }),
-      loader.loadDomesticLeague({ teamId: fixture.homeTeamId, asOf }),
-      loader.loadDomesticLeague({ teamId: fixture.awayTeamId, asOf }),
-    ]);
+    const {
+      context: base,
+      homeLeague,
+      awayLeague,
+    } = await replayWithLeagues({
+      loader,
+      fixture,
+      odds,
+      asOf: asOfOf(fixture),
+    });
     if (base === null) return null;
     const item: Item = {
       fixture,
@@ -344,14 +417,11 @@ async function replayCorrected(input: {
       item.corrected = item.base;
       return;
     }
-    const asOf = new Date(
-      item.fixture.scheduledAt.getTime() - DECISION_LEAD_MS,
-    );
     item.corrected = await replayContext({
       loader,
       fixture: item.fixture,
       odds: item.odds,
-      asOf,
+      asOf: asOfOf(item.fixture),
       crossLeagueFactors: factors,
     });
   });
@@ -496,11 +566,12 @@ async function probe(input: {
     homeHtScore: null,
     awayHtScore: null,
   };
-  const [context, homeLeague, awayLeague] = await Promise.all([
-    replayContext({ loader, fixture, odds: null, asOf }),
-    loader.loadDomesticLeague({ teamId: fixture.homeTeamId, asOf }),
-    loader.loadDomesticLeague({ teamId: fixture.awayTeamId, asOf }),
-  ]);
+  const { context, homeLeague, awayLeague } = await replayWithLeagues({
+    loader,
+    fixture,
+    odds: null,
+    asOf,
+  });
   out(
     `Sonde ${fixtureId} à ${asOf.toISOString()} (${fixture.competitionCode}) :`,
   );
@@ -528,8 +599,8 @@ async function probe(input: {
       `  forces ${homeLeague} ${fmt(strengths[homeLeague ?? ""] ?? 0, 3)}, ${awayLeague} ${fmt(strengths[awayLeague ?? ""] ?? 0, 3)} ` +
         `→ facteurs ${factors.home.toFixed(3)} / ${factors.away.toFixed(3)}, ` +
         `λ ${corrected?.lambdaHome?.toFixed(3)} / ${corrected?.lambdaAway?.toFixed(3)}, ` +
-        `1X2 ${tripleOf(context).HOME.toFixed(3)}/${tripleOf(context).DRAW.toFixed(3)}/${tripleOf(context).AWAY.toFixed(3)} → ` +
-        `${corrected ? `${tripleOf(corrected).HOME.toFixed(3)}/${tripleOf(corrected).DRAW.toFixed(3)}/${tripleOf(corrected).AWAY.toFixed(3)}` : "n/a"}`,
+        `1X2 ${fmtTriple(tripleOf(context))} → ` +
+        `${corrected ? fmtTriple(tripleOf(corrected)) : "n/a"}`,
     );
   }
 }
@@ -542,7 +613,8 @@ async function main(): Promise<void> {
   };
   const arg = (name: string): string | undefined =>
     process.argv.find((a) => a.startsWith(`--${name}=`))?.split("=")[1];
-  const { loader, close } = await loaderFromEnv();
+  const { loader: rawLoader, close } = await loaderFromEnv();
+  const loader = memoizedLoader(rawLoader);
   const probeId = arg("probe");
   const probeAsOf = arg("as-of");
 
@@ -584,13 +656,7 @@ async function main(): Promise<void> {
     const { lines: block, delta } = describe(target, `${season} — tous`);
     block.forEach((l) => out(l));
     results.push({ season, delta: delta.mean });
-    for (const type of [
-      "Big-5 / autre",
-      "autre / Big-5",
-      "autre / autre",
-      "Big-5 / Big-5",
-      "inconnu",
-    ]) {
+    for (const type of MATCH_TYPES) {
       describe(
         target.filter((i) => matchType(i) === type),
         `${season} — ${type}`,
@@ -603,13 +669,7 @@ async function main(): Promise<void> {
   const pooled = describe(evaluated, "toutes saisons");
   pooled.lines.forEach((l) => out(l));
   const degraded: string[] = [];
-  for (const type of [
-    "Big-5 / autre",
-    "autre / Big-5",
-    "autre / autre",
-    "Big-5 / Big-5",
-    "inconnu",
-  ]) {
+  for (const type of MATCH_TYPES) {
     const d = describe(
       evaluated.filter((i) => matchType(i) === type),
       type,
