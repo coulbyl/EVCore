@@ -9,21 +9,20 @@
 import {
   type LambdaConfig,
   crossLeagueLambdaFactors,
-  getLeagueStrengths,
-  isEuropeanCompetition,
+  LEAGUE_STRENGTH_MAP,
   getLeagueHomeAwayFactors,
   getLeagueLambdaScale,
   getLeagueMeanLambda,
 } from '@evcore/analysis-core';
 
-// `leagues` (the national league of each side) only matters in a European
-// fixture: there the λ carry the league-strength factors
-// (docs/audits/2026-11-04/FORCE-CHAMPIONNATS.md). Everywhere else it is
-// ignored and the config is the league's own.
+// `leagues` is the national league of each side, which the caller reads for
+// a European fixture only: the λ then carry the league-strength factors
+// (docs/audits/2026-11-04/FORCE-CHAMPIONNATS.md). Without it the factors
+// are 1 / 1.
 export function buildLambdaConfig(
   competitionCode?: string | null,
   leagues?: { home: string | null; away: string | null } | null,
-): LambdaConfig {
+): LambdaConfig & { crossLeagueFactors: { home: number; away: number } } {
   const [homeAdvFactor, awayDisadvFactor] =
     getLeagueHomeAwayFactors(competitionCode);
   return {
@@ -31,15 +30,13 @@ export function buildLambdaConfig(
     homeAdvFactor,
     awayDisadvFactor,
     lambdaScale: getLeagueLambdaScale(competitionCode),
-    ...(isEuropeanCompetition(competitionCode) && leagues
-      ? {
-          crossLeagueFactors: crossLeagueLambdaFactors({
-            homeLeague: leagues.home,
-            awayLeague: leagues.away,
-            strengths: getLeagueStrengths(),
-          }),
-        }
-      : {}),
+    crossLeagueFactors: leagues
+      ? crossLeagueLambdaFactors({
+          homeLeague: leagues.home,
+          awayLeague: leagues.away,
+          strengths: LEAGUE_STRENGTH_MAP,
+        })
+      : { home: 1, away: 1 },
   };
 }
 

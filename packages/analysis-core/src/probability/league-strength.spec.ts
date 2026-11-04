@@ -6,7 +6,7 @@ import {
   type LeagueStrengthObservation,
 } from "./league-strength";
 import { deriveLambdas } from "./match-stats";
-import { getLeagueStrengths } from "./league-strength-map";
+import { LEAGUE_STRENGTH_MAP } from "./league-strength-map";
 
 const obs = (
   homeLeague: string | null,
@@ -39,7 +39,7 @@ describe("fitLeagueStrengths", () => {
     // 1.5. Stationarity: 10·(3 − 1.5e^r) − 10·(0 − 1.5e^−r) = r / σ².
     const fit = fitLeagueStrengths(
       Array.from({ length: 10 }, () => obs("PL", null, [3, 0])),
-      { priorSd: 0.2, minMatches: 1, iterations: 200 },
+      { priorSd: 0.2, minMatches: 1 },
     );
     const r = fit.PL!;
     const residual =
@@ -64,6 +64,36 @@ describe("fitLeagueStrengths", () => {
       { priorSd: 0.2, minMatches: 5 },
     );
     expect(fit).toEqual({});
+  });
+
+  it("keeps the fitted values of a mixed four-league sample", () => {
+    // Frozen output of the fit on a fixed pseudo-random sample, so a
+    // rewrite of the loop cannot move a strength.
+    const leagues = ["PL", "L1", "GRE1", "EST1", null] as const;
+    let seed = 7;
+    const rnd = (): number => {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
+    };
+    const sample: LeagueStrengthObservation[] = [];
+    for (let i = 0; i < 300; i++) {
+      const homeLeague = leagues[Math.floor(rnd() * 5)]!;
+      const awayLeague = leagues[Math.floor(rnd() * 5)]!;
+      sample.push({
+        homeLeague,
+        awayLeague,
+        lambdaHome: 0.8 + rnd(),
+        lambdaAway: 0.6 + rnd(),
+        homeGoals: Math.floor(rnd() * 4),
+        awayGoals: Math.floor(rnd() * 3),
+      });
+    }
+    const fit = fitLeagueStrengths(sample, { priorSd: 0.2, minMatches: 10 });
+    expect(Object.keys(fit).sort()).toEqual(["EST1", "GRE1", "L1", "PL"]);
+    expect(fit.EST1!).toBeCloseTo(-0.05151272745535451, 9);
+    expect(fit.GRE1!).toBeCloseTo(-0.1066765373525373, 9);
+    expect(fit.L1!).toBeCloseTo(-0.0438613854885329, 9);
+    expect(fit.PL!).toBeCloseTo(-0.09651228218325182, 9);
   });
 
   it("shrinks harder with a tighter prior", () => {
@@ -145,9 +175,9 @@ describe("deriveLambdas with crossLeagueFactors", () => {
   });
 });
 
-describe("getLeagueStrengths", () => {
+describe("LEAGUE_STRENGTH_MAP", () => {
   it("puts the Big-5 above the small leagues and every factor inside the bound", () => {
-    const s = getLeagueStrengths();
+    const s = LEAGUE_STRENGTH_MAP;
     expect(s.PL!).toBeGreaterThan(s.GRE1!);
     expect(s.L1!).toBeGreaterThan(s.EST1!);
     for (const home of Object.keys(s)) {
@@ -167,7 +197,7 @@ describe("getLeagueStrengths", () => {
     const f = crossLeagueLambdaFactors({
       homeLeague: "L1",
       awayLeague: "GRE1",
-      strengths: getLeagueStrengths(),
+      strengths: LEAGUE_STRENGTH_MAP,
     });
     expect(f.home).toBeCloseTo(Math.exp(0.211), 3);
     expect(f.away).toBeCloseTo(Math.exp(-0.211), 3);

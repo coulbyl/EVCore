@@ -82,11 +82,10 @@ export {
   type LeagueStrengths,
   LEAGUE_STRENGTH_PRIOR_SD,
   LEAGUE_STRENGTH_MIN_MATCHES,
-  LEAGUE_STRENGTH_MAX_FACTOR,
   fitLeagueStrengths,
   crossLeagueLambdaFactors,
 } from "./league-strength";
-export { getLeagueStrengths } from "./league-strength-map";
+export { LEAGUE_STRENGTH_MAP } from "./league-strength-map";
 export {
   type ResolveEffectiveTeamStatsInput,
   EUROPEAN_COMPETITION_CODE_SET,

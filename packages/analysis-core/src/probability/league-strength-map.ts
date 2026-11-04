@@ -12,7 +12,7 @@ import type { LeagueStrengths } from "./league-strength";
 // Read relative to 0 = a team without any league line in the base (clubs
 // from leagues we do not ingest). A league missing here keeps 0. Refit at
 // each European season start (July), with the same script.
-const LEAGUE_STRENGTH_MAP: LeagueStrengths = {
+export const LEAGUE_STRENGTH_MAP: LeagueStrengths = {
   PL: 0.58,
   LL: 0.465,
   BL1: 0.425,
@@ -39,7 +39,3 @@ const LEAGUE_STRENGTH_MAP: LeagueStrengths = {
   LAT1: -0.2,
   EST1: -0.361,
 };
-
-export function getLeagueStrengths(): LeagueStrengths {
-  return LEAGUE_STRENGTH_MAP;
-}

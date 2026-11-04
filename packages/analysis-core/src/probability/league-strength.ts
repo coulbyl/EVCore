@@ -31,7 +31,6 @@ export type LeagueStrengthObservation = {
 export type LeagueStrengthFitOptions = {
   priorSd: number;
   minMatches: number;
-  iterations?: number;
 };
 
 // Log-strength per league code; a missing code means 0 (factor 1).
@@ -46,7 +45,8 @@ export const LEAGUE_STRENGTH_MIN_MATCHES = 10;
 // Hard bound on one λ multiplier, whatever the fit says.
 export const LEAGUE_STRENGTH_MAX_FACTOR = 1.5;
 
-const DEFAULT_ITERATIONS = 50;
+// Coordinate-Newton sweeps; the fit converges well before.
+const FIT_ITERATIONS = 50;
 
 function isInterLeague(observation: LeagueStrengthObservation): boolean {
   return (
@@ -79,15 +79,23 @@ export function fitLeagueStrengths(
   const of = (league: string | null): number =>
     league === null ? 0 : (strength.get(league) ?? 0);
   const precision = 1 / (options.priorSd * options.priorSd);
+  // Each fitted league's fixtures, in sample order, with +1 when it plays at
+  // home and −1 away.
+  const byLeague = new Map<
+    string,
+    { o: LeagueStrengthObservation; sign: 1 | -1 }[]
+  >(fitted.map((l) => [l, []]));
+  for (const o of usable) {
+    if (o.homeLeague !== null) byLeague.get(o.homeLeague)?.push({ o, sign: 1 });
+    if (o.awayLeague !== null)
+      byLeague.get(o.awayLeague)?.push({ o, sign: -1 });
+  }
 
-  for (let i = 0; i < (options.iterations ?? DEFAULT_ITERATIONS); i++) {
+  for (let i = 0; i < FIT_ITERATIONS; i++) {
     for (const league of fitted) {
       let gradient = -precision * of(league);
       let curvature = precision;
-      for (const o of usable) {
-        const sign =
-          o.homeLeague === league ? 1 : o.awayLeague === league ? -1 : 0;
-        if (sign === 0) continue;
+      for (const { o, sign } of byLeague.get(league) ?? []) {
         const diff = of(o.homeLeague) - of(o.awayLeague);
         const muHome = o.lambdaHome * Math.exp(diff);
         const muAway = o.lambdaAway * Math.exp(-diff);
