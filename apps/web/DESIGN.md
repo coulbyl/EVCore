@@ -127,7 +127,7 @@ Chaque chiffre d'EVCore se lit comme un score sur le bandeau d'une retransmissio
 
 Le monde ne prête que quatre choses à l'interface : le type, la palette, la densité et un geste signature. La navigation et les contrôles sont ceux qu'un téléphone a déjà (barre d'onglets, feuille qui monte, liens, interrupteurs). Un écran tient en un bandeau encre, une carte au plus, des lignes filetées et une barre d'onglets. Clair par défaut, parce que le joueur lit dehors ; le sombre suit le réglage du téléphone.
 
-Ce document décrit le monde de la refonte, construit sous la racine `.scoreboard` (`apps/web/app/styles/scoreboard.css`). Les anciens écrans gardent le thème de `@evcore/ui` jusqu'à leur suppression (docs/refonte-ui/15-todo.md, E1).
+Ce document décrit le monde de la refonte, construit sous la racine `.scoreboard` (`apps/web/app/styles/scoreboard.css`). Les anciens écrans et leur thème `@evcore/ui` sont partis le 31/10 (docs/refonte-ui/15-todo.md, E1) ; `@evcore/ui` ne sert plus que de boîte à outils (`cn`, `ThemeProvider`). L'admin (`app/(player)/admin`, PR #285, docs/refonte-ui/12-admin.md) suit le même système : même coquille, mêmes composants `components/scoreboard/`, avec seulement une colonne plus large sur grand écran (`data-admin-wide`) et les mots techniques que le joueur ne voit jamais.
 
 **Key Characteristics:**
 

@@ -1,8 +1,9 @@
 # Pièces jointes support chat (vocaux, photos, fichiers) — architecture
 
-> Statut : backend + infra Docker + frontend implémentés sur cette branche.
-> Non vérifié en conditions réelles dans cette session — voir §7 (limite
-> d'environnement, pas un doute sur la conception).
+> Statut : en production. Module `apps/backend/src/modules/storage/`,
+> service `rustfs` dans `docker-compose.prod.yml`, migration
+> `20260905190000_add_support_attachments` ; côté joueur, photo et vocal dans
+> Moi › Messages (`/me/messages`), côté équipe dans Admin › Messages.
 
 ## 1. Pourquoi RustFS plutôt que MinIO
 
@@ -86,25 +87,17 @@ Allowlist mime + taille par type dans `config/storage.constants.ts` (images
 démarrage du backend s'il n'existe pas encore (`HeadBucket` puis
 `CreateBucket` si absent) — aucune étape manuelle dans la console RustFS.
 
-## 7. Limite de vérification dans cette session
+## 7. Réglages et autres usages du stockage
 
-L'environnement d'exécution de cette session bloque les pulls Docker Hub
-(politique d'egress du proxy — confirmé via
-`curl http://127.0.0.1:45623/__agentproxy/status`, échec `403` sur
-`production.cloudfront.docker.com`). Il n'a donc pas été possible de faire
-tourner un vrai conteneur RustFS ni Postgres ici pour un test de bout en
-bout. Ce qui a été vérifié dans cette session :
-
-- Schéma Prisma + migration SQL écrite à la main (`prisma generate` valide
-  le schéma ; pas de `prisma migrate dev` réel — pas de Postgres accessible).
-- `docker compose config` sur les deux fichiers compose (dev + prod) — la
-  configuration s'interpole et se résout sans erreur.
-- Tests unitaires du service (mocks du repository/`StorageService`) — la
-  logique métier (validation, résolution d'attachment, pagination) est
-  couverte.
-- Recherche documentaire RustFS (compatibilité S3, presigned URLs, variables
-  d'environnement) — voir sources §1.
-
-Ce qui reste à valider avant mise en prod : `pnpm --filter @evcore/db
-db:migrate` contre une vraie base, puis un envoi réel (vocal + image) en
-suivant le flux du §2 avec `docker compose up rustfs`.
+- Endpoint, endpoint public, région et bucket se lisent d'abord dans
+  Réglages › Intégrations (`storage.*`, `IntegrationsService`), puis dans
+  l'environnement (`RUSTFS_*`) ; les identifiants restent des secrets du
+  `.env` serveur.
+- `StorageService` sert aussi l'archive mensuelle des cotes en Parquet
+  (`modules/odds-archive/`, table `odds_archive_month`) et la suppression de
+  compte (`auth/account-deletion.service.ts`, qui efface les pièces jointes
+  du joueur).
+- Le web n'ouvre plus de socket (aucun client socket.io dans `apps/web`) :
+  ouvrir le fil le marque lu, il est relu chaque minute et au retour sur
+  l'onglet. `support.gateway.ts` émet toujours l'étape 5 du §2, sans
+  écouteur côté web.

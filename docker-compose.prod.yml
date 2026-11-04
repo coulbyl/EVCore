@@ -87,7 +87,8 @@ services:
       postgres:
         condition: service_healthy
 
-  # apps/vantage-worker — the LLM's coupon and opinions. Postgres + Redis only,
+  # apps/vantage-worker — the AI's opinions (Avis IA); the Combiné IA is composed
+  # from them by the backend. Postgres + Redis only,
   # never on the backend/web request path. See apps/vantage-worker/README.md.
   # Reads the same .env as the backend (SETTINGS_ENCRYPTION_KEY, and the LLM
   # keys while Réglages › Intégrations has none).

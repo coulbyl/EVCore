@@ -4,7 +4,9 @@ This document is the "why", not the "how to run it" (that's the [README](../READ
 
 ## What VANTAGE is, precisely
 
-VANTAGE is a 20th `StrategyChannel`. Like GOALS or DOMINANT, it can produce a `ChannelDecision` with a `ChannelSelection` (market, pick, probability) that the coupon composer can pick up, and it is tracked on Historique vérifiable exactly like every other channel — same ROI, same hit rate, same "a negative channel stays displayed as negative."
+VANTAGE is a 20th `StrategyChannel`. Like GOALS or DOMINANT, it produces a `ChannelDecision` with a `ChannelSelection` (market, pick, probability), shown to the player as the **Avis IA** (match sheet, a line of Résultats). Its track record is read in calibration (realised ÷ announced), never ROI, on `vantage_decision_history` — one frozen row per decision, never the live `channel_decision` row that a re-analysis overwrites. A no-play is shown on the match sheet too, when its text speaks of the match (`voice: match`, v6).
+
+VANTAGE composes no coupon (its LLM combo was cut on 2026-11-03). The backend's Combiné IA (`AI_COMBO_COUPON_CLASS`, source `PRICE_COMPOSER`) reads the plays VANTAGE wrote in the 1.45–1.80 band and composes them one per competition, lowest 1xBet margin first (`composeAiCombo`, `@evcore/analysis-core`) — that is the backend's decision, not this worker's.
 
 What makes it different is only its _source_: every other channel computes its pick from Poisson/statistical math over structured data. VANTAGE's pick — when it has one — comes from an LLM reading the other 19 channels' decisions on one match, plus their measured reliability on that competition.
 
@@ -22,9 +24,9 @@ docs/archive/EVCORE-spec-v1.md §14.3 already describes an "OpenClaw" component:
 VANTAGE deliberately does not go through that door. Two reasons:
 
 1. **It doesn't need to.** The scoring-loop integration exists to _blend_ an LLM opinion into an existing pick. VANTAGE doesn't blend — it proposes its own, separately tracked pick. That sidesteps the 30% cap, the "not before MVP" gate, and the human-approval requirement for introducing an LLM into the scoring loop entirely, because none of those rules are about _this_.
-2. **A channel is the honest unit of trust this system already has.** "Read the data, propose a pick, get measured against real outcomes, earn (or lose) trust over time via calibration, never ROI" is exactly the admission process every channel already goes through (see project memory: _admission par calibration_ — ratio réel/annoncé, never ROI, every non-meta channel is admitted and the composer chooses). Wrapping VANTAGE in a new, bespoke trust mechanism would just be reinventing that.
+2. **A channel is the honest unit of trust this system already has.** "Read the data, propose a pick, get measured against real outcomes, earn (or lose) trust over time via calibration, never ROI" is exactly the admission process every channel already goes through (see project memory: _admission par calibration_ — ratio réel/annoncé, never ROI, every non-meta channel is admitted). Wrapping VANTAGE in a new, bespoke trust mechanism would just be reinventing that.
 
-VANTAGE is **not** added to `META_STRATEGY_CHANNELS` (CONSENSUS/CONTRARIAN/AVOID) even though, like them, it reads `previousDecisions` before running — because unlike them, it emits a real, slippable pick. It is a normal channel that happens to run after every other channel has decided, and happens to be computed by an LLM instead of a formula.
+VANTAGE is **not** added to `META_STRATEGY_CHANNELS` (CONSENSUS/CONTRARIAN/AVOID) even though, like them, it reads `previousDecisions` before running — because unlike them, it emits a real pick. It is a normal channel that happens to run after every other channel has decided, and happens to be computed by an LLM instead of a formula.
 
 ## Why a match-first read, not a market-first scan
 
@@ -50,7 +52,7 @@ Three 2026 benchmarks specifically evaluate LLMs as football forecasters (WC2026
 - **Calibration and profitability are not the same thing.** Two agents with near-identical Brier scores (Grok, Claude) landed at +10.3% and −18.1% ROI respectively — the gap was in how each turned a probability into a stake, not in the probability itself. This is the exact failure mode this project already measured on its own channels (claimed edge is anti-predictive) — now confirmed independently, on LLMs, by outside research.
 - **Search/context access mattered more than model choice** — open-book forecasting (real web access to news) improved Brier scores by 4.3%, a bigger effect than any model-vs-model difference measured.
 
-Practical consequence: VANTAGE runs on `gpt-oss-120b` not because it's "the best" model for this — no such thing was found to exist — but because it's cheap, fast, and served identically (same model id family) by every provider `LLM_PROVIDER` supports (Groq, Cerebras, Together, Fireworks — see config.ts). Stale as of 2026-08-30: this section used to say Groq was "the project's only sanctioned LLM provider" — prod has since moved to `LLM_PROVIDER=cerebras` as primary (Groq's Developer tier being closed for new signups made its 8000 TPM shared tier the bottleneck at full 68-league verdict volume), with Groq kept as a configured fallback. The effort that matters is the quality of the context VANTAGE receives and the discipline of measuring it afterward, not the model name.
+Practical consequence: VANTAGE runs on `gpt-oss-120b` not because it's "the best" model for this — no such thing was found to exist — but because it's cheap, fast, and served identically (same model id family) by every provider the worker supports (Groq, Cerebras, Together, Fireworks — see `src/config.ts`). The verdict call goes through a provider chain: a primary (`LLM_PROVIDER`) then ordered fallbacks (`LLM_PROVIDER_FALLBACKS`), tried on a 429, 5xx or timeout; the `app_setting` row `llm.providers` overrides both at every pass, and the keys can live in Réglages › Intégrations (`src/settings.ts`). Groq's closed Developer tier (8000 TPM shared) is why it is no longer the obvious primary. The effort that matters is the quality of the context VANTAGE receives and the discipline of measuring it afterward, not the model name.
 
 ## Cost
 

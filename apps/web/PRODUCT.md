@@ -6,7 +6,7 @@
 
 web
 
-Application Next.js installable en PWA, utilisée d'abord sur téléphone, dans le style « tableau d'affichage » de la refonte (`docs/refonte-ui/`). Les écrans d'administration (`/dashboard` : audit, moteur, ML, rapports, utilisateurs, support) sont utilisés sur ordinateur par l'équipe, en attendant leur propre refonte (`docs/refonte-ui/12-admin.md`).
+Application Next.js installable en PWA, utilisée d'abord sur téléphone, dans le style « tableau d'affichage » de la refonte (`docs/refonte-ui/`). Les écrans d'administration (`app/(player)/admin` : Moteur, Exploitation, Matchs, Joueurs, Messages, Réglages) ont été refondus dans le même style avec la PR #285 (`docs/refonte-ui/12-admin.md`) et sont aussi utilisables sur téléphone ; `/dashboard` n'existe plus, ses anciennes adresses redirigent vers l'écran le plus proche (`apps/web/helpers/retired-routes.ts`).
 
 ## Users
 
@@ -47,7 +47,7 @@ Face aux pronostiqueurs Telegram (« 100 % », « sûr », captures de tickets g
 ## Operating Context
 
 - **Rythme quotidien** : les coupons et sélections sont publiés la veille au soir et ajustés le jour même ; les résultats sont réglés après les matchs. Le volume varie fortement : 20 à 30 matchs analysés en semaine, 120 à 160 le samedi et le dimanche.
-- **Produits du jour** : le Favori du jour (un match, cote 1,20–1,35), le Combiné du jour, le Coupon cote 2 et les chasseurs (Les deux marquent, Nul, Score exact, Corners), montrés tout de suite et mesurés en direct ; l'Avis IA est une ligne à part de Résultats. Le coupon long et le coupon unique IA sont retirés.
+- **Produits du jour** : le Favori du jour (un match, cote 1,20–1,35), le Combiné du jour, le Coupon cote 2, les chasseurs (Les deux marquent, Nul, Nul à la mi-temps, Score exact, Corners) et le Combiné IA (cote 4–10, composé par le backend à partir des avis joués de l'IA), montrés tout de suite et mesurés en direct (`TodayProductKey`, `apps/web/domains/today/types/today.ts`) ; l'Avis IA est une ligne à part de Résultats. Le coupon long et l'ancien combiné de l'IA à deux jambes sont retirés.
 - **Écrans du joueur (refonte, 2026-10-31)** : quatre onglets — Aujourd'hui (le coupon héros, les autres coupons, Hier), Matchs (une lecture par match, la fiche de match, Hier · Aujourd'hui · Demain), Résultats (une ligne par produit et l'Avis IA, leur détail, Hier, Ta semaine), Moi (coupons suivis, Messages, Aide, Jeu responsable, Compte) — plus Mon ticket et la cloche. Côté visiteur : la landing, `/resultats`, l'inscription, la connexion et les pages légales.
 - **Conditions d'usage** : téléphone Android d'entrée et de milieu de gamme, réseau mobile 3G/4G variable, écran consulté en extérieur, souvent pressé (« avant quelle heure dois-je jouer ? »).
 - **Où le joueur découvre EVCore** : Facebook, TikTok, groupes et chaînes WhatsApp et Telegram, bouche-à-oreille.
@@ -62,7 +62,7 @@ Face aux pronostiqueurs Telegram (« 100 % », « sûr », captures de tickets g
 
 - « Sélection », « coupon », « jambe » (une sélection dans un coupon), « cote », « chances », « Écarté », « Remboursé » (pas « Annulé » pour un pari rendu).
 - Les codes de canal (`DRAW`, `SAFE`, `BTTS`, `DOMINANT`…) ne s'affichent jamais bruts : toujours le libellé traduit.
-- **Le bookmaker n'est pas nommé dans les phrases** (tranché le 2026-10-31, docs/audits/2026-10-31/REVUE-CONFORMITE-TEXTES.md) : « la cote », « la marge du bookmaker ». La source des cotes (1xBet, via API-Football) est citée une seule fois, dans l'Aide, comme une source, avec « EVCore n'a aucun lien avec lui ». Le calcul et les données gardent 1xBet.
+- **Le bookmaker n'est pas nommé dans les phrases** (tranché le 2026-10-31, docs/audits/2026-10-31/REVUE-CONFORMITE-TEXTES.md) : « la cote ». Aucune marge du bookmaker n'est montrée au joueur (ni « 1xBet garde X % », ni coût du marché, sur aucun coupon, match, ticket, image ou fiche d'aide) : elle se lirait comme un dénigrement ; elle reste réservée à l'admin. La source des cotes (1xBet, via API-Football) est citée une seule fois, dans l'Aide, comme une source, avec « EVCore n'a aucun lien avec lui ». Le calcul et les données gardent 1xBet.
 - Une probabilité se lit en fréquence quand c'est possible (« environ 1 jour sur 2 »).
 
 **Règles de rédaction (contraintes durables, plan marketing §5)** :
@@ -97,7 +97,7 @@ Chiffres réels, utilisables avec leur période et leur effectif :
 - Bande de cotes 1,20–1,65, du 11 au 16/10/2026, 1 499 sélections réglées : 73,6 % réalisées pour 73,0 % annoncées (`docs/audits/2026-10-17/PREMIERE-LECTURE.md`).
 - Avis IA du 13 au 24/10/2026, 300 sélections réglées : 64,7 % réalisées pour 63,9 % annoncées ; écart au marché sans marge +1,0 point ± 2,7 (pas mieux que la cote), à mise fixe −2,3 % ; l'IA jouait 80 % des matchs lus (`docs/audits/2026-10-27/AVIS-IA.md`).
 - Coupon cote 2 sur 120 jours : composé par cellule, 55 % de jours gagnés pour 55 % annoncés ; composé par la probabilité du moteur, 50 % pour 72 % (`docs/audits/2026-10-24/COUPON-COTE-2-JOURS.md`).
-- Fiches d'aide : neuf fiches courtes en français et en anglais (`apps/web/domains/help/help-sheets.ts`), qui remplacent les 15 contenus de Formation et le Glossaire (retirés le 2026-10-31).
+- Fiches d'aide : huit fiches courtes en français et en anglais (`apps/web/domains/help/help-sheets.ts`), qui remplacent les 15 contenus de Formation et le Glossaire (retirés le 2026-10-31).
 
 **Absences à ne jamais fabriquer** : aucun témoignage, aucun utilisateur payant, aucun tarif, aucune presse, aucun partenariat, aucun rendement positif. La landing de la refonte ne montre plus de volumes d'ensemble : seulement le héros du jour et des comptes datés (« 11 jours gagnés sur 14, depuis le 13/10 »).
 
@@ -113,5 +113,5 @@ Chiffres réels, utilisables avec leur période et leur effectif :
 
 - Téléphones d'entrée de gamme, réseau lent : poids de page et nombre de requêtes maîtrisés, lisibilité en plein soleil (contrastes WCAG AA minimum, 4,5:1 pour le texte).
 - Lecture rapide sur petit écran : texte lu à 12 px minimum, cibles tactiles de 44 px.
-- Littératie numérique et statistique variable : aucune notion (cote, probabilité, marge, calibration) affichée sans explication accessible au doigt, pas seulement au survol.
+- Littératie numérique et statistique variable : aucune notion (cote, probabilité, calibration) affichée sans explication accessible au doigt, pas seulement au survol.
 - Jeu responsable : âge et conditions cochés à l'inscription, ligne 18+ en pied de chaque écran, pause de 1 à 30 jours (paris fermés, résultats ouverts), suppression du compte, ressources d'aide ; à terme, limites.

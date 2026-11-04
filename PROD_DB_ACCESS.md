@@ -116,21 +116,19 @@ Si `postgresql-client` est installé (`sudo apt install postgresql-client`), on 
 | Table                                                | Utilité                                                                                                                                             |
 | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `fixture`                                            | Matchs, scores, **`leg`/`round`/`aggregateHomeGoals`/`aggregateAwayGoals`** — essentiel pour le contexte aller/retour en coupe d'Europe             |
-| `model_run`                                          | Une ligne par analyse (rolling horizon), `features` JSON contient `shadow_predictions`, `calibration_alert`, lambda, etc.                           |
-| `channel_decision` / `channel_selection`             | Décisions par canal (EV/SAFE/DOMINANT/BTTS/DRAW/GOALS/TEAM_TOTAL/...), avec `probability`, `odds`, `ev`, `result`, `qualityScore`                   |
-| `coupon_proposal`                                    | Coupons générés automatiquement, avec **`jointProbability`** et `combinedOdds` déjà calculés — la métrique qu'un post-mortem manuel doit reproduire |
+| `model_run`                                          | Une ligne par analyse (rolling horizon, 5 à 7 par match avant le coup d'envoi), `features` JSON contient `calibration_alert`, lambda, etc.          |
+| `channel_decision` / `channel_selection`             | Décisions par canal (DOMINANT/BTTS/DRAW/GOALS/TEAM_TOTAL/VANTAGE/..., VALUE/SAFE en observation seulement), avec `probability`, `odds`, `ev`, `result` |
+| `coupon_proposal`                                    | Coupons générés automatiquement (`source` : PRICE_COMPOSER, ENGINE ; LLM pour l'ancien combiné de l'IA, coupé le 03/11), avec **`jointProbability`** et `combinedOdds` déjà calculés           |
 | `coupon_proposal_leg`                                | Jambes d'un coupon automatique, avec `isCorrect` par jambe                                                                                          |
-| `bet_slip` / `bet_slip_item`                         | Paris réels placés (si trackés côté produit)                                                                                                        |
-| `subscription` / `subscription_event`                | Abonnements coupon — utile pour l'axe "pourquoi l'abonnement se dégrade"                                                                            |
 | `team_stats`, `standing`, `national_team_elo_rating` | Contexte forme/classement, utile pour comprendre une dérive de calibration                                                                          |
-| `odds_snapshot`                                      | Historique des cotes captées                                                                                                                        |
+| `odds_snapshot`                                      | Historique des cotes captées, partitionné par mois ; les mois anciens sont archivés en Parquet (`odds_archive_month` : fichier, lignes gardées)   |
+| `vantage_decision_history`                           | Une ligne figée par avis de l'IA (VANTAGE) — c'est là que se lit son bilan, jamais sur la ligne vivante de `channel_decision`                       |
+| `fixture_event` / `fixture_lineup` / `fixture_player_statistic` / `player_squad` | Événements, compositions, stats joueurs (`/fixtures?ids=`) et effectifs — règlement des nouveaux marchés (buteurs, tirs, minute…) |
 
-## Pistes d'investigation ouvertes (à creuser avec cet accès)
+## Rappels avant toute statistique
 
-Ces questions ont motivé la mise en place de cet accès — à reprendre dans une session dédiée avec un vrai historique (pas juste 1 jour) :
-
-1. **Coupons automatiques qui ne font jamais 3/3 ou 2/3** — croiser `coupon_proposal` + `coupon_proposal_leg` sur une fenêtre large (30-60 jours), regarder si `jointProbability` est correctement calibrée (taux de réussite réel vs jointProbability annoncée) ou si le calcul est systématiquement optimiste.
-2. **Coupons longshot qui ne se déclenchent jamais** — regarder les critères de génération (`signalScore`, `targetOddsMin/Max`, `status`) dans `coupon_proposal` pour voir si le seuil de déclenchement est trop strict ou si le pipeline de génération longshot a un bug qui l'empêche de produire des candidats.
-3. **Dégradation de l'abonnement coupon (mauvaise sélection des legs gagnantes)** — croiser `subscription`/`subscription_event` avec `channel_selection.result` dans le temps, voir si la dégradation vient d'un canal spécifique, d'une compétition spécifique, ou d'une dérive de calibration généralisée (cf. mémoire `CONSENSUS/DOMINANT en dérive`).
+1. **Ne jamais compter `channel_selection` brut** : chaque ré-analyse écrit sa ligne (5 à 7 par pari réel). Lire la vue `channel_selection_deduped`, ou reproduire ses deux filtres (`DISTINCT ON (channel, fixtureId, market, pick)` sur la dernière analyse, et `mr."analyzedAt" < f."scheduledAt"` pour exclure les rétro-analyses).
+2. **Clôture et ouverture** : `odds_closing_line` / `odds_opening_line` donnent le dernier et le premier prix avant le coup d'envoi par match, book, marché, pick et ligne — **toujours filtrer sur `hoursBeforeKickoff`** (un dernier relevé à 24 h n'est pas une clôture). Pour les marchés récents (Asian Handicap…), la ligne est dans `odds_snapshot.line`, jamais à parser dans `pick`.
+3. **Juger par jambe** (réalisé ÷ annoncé), jamais sur un ROI de coupon : il n'a aucune puissance statistique à nos volumes.
 
 _Fichier à mettre à jour si l'architecture d'accès change (rotation de clé, changement d'hébergeur, port Postgres publié différemment, etc.)._
