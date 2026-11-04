@@ -40,6 +40,10 @@ export type LambdaConfig = {
   // too high/low for a league (measured 2026-06-30: stable across seasons).
   // Optional, default 1.0 (no change) for unlisted leagues.
   lambdaScale?: number;
+  // League-strength multipliers for a fixture between teams of different
+  // national leagues (crossLeagueLambdaFactors, league-strength.ts).
+  // Optional, default 1 / 1: a league fixture never carries one.
+  crossLeagueFactors?: { home: number; away: number };
 };
 
 // Bayesian shrinkage weight toward the league mean lambda.
@@ -145,9 +149,18 @@ export function deriveLambdas(
     (1 - LAMBDA_SHRINKAGE_FACTOR) * config.meanLambda;
 
   const scale = config.lambdaScale ?? 1;
+  const strength = config.crossLeagueFactors ?? { home: 1, away: 1 };
   return {
-    home: clamp(rawHome * config.homeAdvFactor * scale, 0.05, 5),
-    away: clamp(rawAway * config.awayDisadvFactor * scale, 0.05, 5),
+    home: clamp(
+      rawHome * config.homeAdvFactor * scale * strength.home,
+      0.05,
+      5,
+    ),
+    away: clamp(
+      rawAway * config.awayDisadvFactor * scale * strength.away,
+      0.05,
+      5,
+    ),
   };
 }
 
