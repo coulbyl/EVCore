@@ -1,9 +1,7 @@
 import Decimal from 'decimal.js';
 import {
-  type BetStatus,
   OPERATOR_BOOKMAKERS,
   playerIdOfPick,
-  resolveCornersBetStatus,
   resolveStatMarketBetStatus,
   shinProbabilities,
   type MatchFacts,
@@ -289,8 +287,8 @@ function shotLines(
 
 /**
  * Once the match is over, by the resolvers that settle the coupons' legs.
- * Unknown is not lost: facts not in yet, or a market without a resolver
- * (cards), stay unsettled.
+ * Unknown is not lost: facts not in yet, or cards whose two counts of a
+ * red disagree, stay unsettled.
  */
 export function resultOf(input: {
   market: SheetNewMarket;
@@ -299,27 +297,12 @@ export function resultOf(input: {
 }): SheetPick['result'] {
   const { market, row, settle } = input;
   if (!settle.finished || settle.facts === null) return null;
-  const facts = settle.facts;
-  let status: BetStatus | null;
-  if (market === 'CARDS') {
-    status = null;
-  } else if (market === 'CORNERS') {
-    const { home, away } = facts.teams;
-    status =
-      row.line === null || home.corners === null || away.corners === null
-        ? null
-        : resolveCornersBetStatus(
-            row.pick,
-            row.line,
-            home.corners + away.corners,
-          );
-  } else {
-    status = resolveStatMarketBetStatus({
+  return settledResultOf(
+    resolveStatMarketBetStatus({
       market,
       pick: row.pick,
       line: row.line,
-      facts,
-    });
-  }
-  return settledResultOf(status);
+      facts: settle.facts,
+    }),
+  );
 }

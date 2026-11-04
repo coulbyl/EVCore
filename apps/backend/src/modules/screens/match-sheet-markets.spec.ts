@@ -28,8 +28,20 @@ function facts(overrides: Partial<MatchFacts> = {}): MatchFacts {
   return {
     score: { home: 1, away: 0 },
     teams: {
-      home: { corners: 6, shotsTotal: 12, shotsOn: 5 },
-      away: { corners: 4, shotsTotal: 8, shotsOn: 2 },
+      home: {
+        corners: 6,
+        shotsTotal: 12,
+        shotsOn: 5,
+        yellowCards: null,
+        redCards: null,
+      },
+      away: {
+        corners: 4,
+        shotsTotal: 8,
+        shotsOn: 2,
+        yellowCards: null,
+        redCards: null,
+      },
     },
     events: [
       {
@@ -264,8 +276,20 @@ describe('resultOf (after the match)', () => {
   it('unknown is not lost: corners not reported, no facts, cards', () => {
     const noCorners = facts({
       teams: {
-        home: { corners: null, shotsTotal: null, shotsOn: null },
-        away: { corners: 4, shotsTotal: null, shotsOn: null },
+        home: {
+          corners: null,
+          shotsTotal: null,
+          shotsOn: null,
+          yellowCards: null,
+          redCards: null,
+        },
+        away: {
+          corners: 4,
+          shotsTotal: null,
+          shotsOn: null,
+          yellowCards: null,
+          redCards: null,
+        },
       },
     });
     expect(
@@ -282,7 +306,7 @@ describe('resultOf (after the match)', () => {
         settle: finished(null),
       }),
     ).toBeNull();
-    // No resolver settles the cards market: unsettled, never ✗.
+    // Cards not reported: unsettled, never ✗.
     expect(
       resultOf({
         market: 'CARDS',
@@ -290,6 +314,35 @@ describe('resultOf (after the match)', () => {
         settle: finished(facts()),
       }),
     ).toBeNull();
+  });
+
+  it('cards on the statistics, unknown when the two counts of a red disagree', () => {
+    // Chelsea – Manchester United, 31/10: 1 + 4 yellows, one red: 6 or 7.
+    const carded = finished(
+      facts({
+        teams: {
+          home: {
+            corners: 6,
+            shotsTotal: 12,
+            shotsOn: 5,
+            yellowCards: 1,
+            redCards: 0,
+          },
+          away: {
+            corners: 4,
+            shotsTotal: 8,
+            shotsOn: 2,
+            yellowCards: 4,
+            redCards: 1,
+          },
+        },
+      }),
+    );
+    const cards = (pick: string, line: number) =>
+      resultOf({ market: 'CARDS', row: { pick, line }, settle: carded });
+    expect(cards('OVER', 4.5)).toBe('won');
+    expect(cards('UNDER', 5.5)).toBe('lost');
+    expect(cards('OVER', 6.5)).toBeNull();
   });
 
   it('the phase 3 resolvers settle corners 1X2, scorers and the minute', () => {

@@ -696,8 +696,20 @@ describe('CouponSettlementService.settleProposal — phase 3 markets from match 
   const facts = (overrides: Partial<MatchFacts> = {}): MatchFacts => ({
     score: { home: 1, away: 0 },
     teams: {
-      home: { corners: 7, shotsTotal: 3, shotsOn: 2 },
-      away: { corners: 2, shotsTotal: 1, shotsOn: 0 },
+      home: {
+        corners: 7,
+        shotsTotal: 3,
+        shotsOn: 2,
+        yellowCards: null,
+        redCards: null,
+      },
+      away: {
+        corners: 2,
+        shotsTotal: 1,
+        shotsOn: 0,
+        yellowCards: null,
+        redCards: null,
+      },
     },
     events: [
       {
@@ -797,6 +809,51 @@ describe('CouponSettlementService.settleProposal — phase 3 markets from match 
       CouponResult.WON,
       16,
     );
+  });
+
+  it('grades cards when both counts of a red agree, waits when they do not', async () => {
+    // Bournemouth – Milan, 22/10: 2 + 3 yellows, one red: 6 or 7 cards.
+    const carded = facts({
+      teams: {
+        home: {
+          corners: 7,
+          shotsTotal: 3,
+          shotsOn: 2,
+          yellowCards: 2,
+          redCards: 0,
+        },
+        away: {
+          corners: 2,
+          shotsTotal: 1,
+          shotsOn: 0,
+          yellowCards: 3,
+          redCards: 1,
+        },
+      },
+    });
+    const { service, settleLeg, updateResult } = makeHarness({
+      legs: [
+        makeLeg({
+          id: 'l1',
+          fixtureId: 'f1',
+          market: Market.CARDS,
+          pick: 'OVER',
+          line: 5.5,
+        }),
+        makeLeg({
+          id: 'l2',
+          fixtureId: 'f1',
+          market: Market.CARDS,
+          pick: 'OVER',
+          line: 6.5,
+        }),
+      ],
+      fixtures: [finished()],
+      facts: new Map([['f1', carded]]),
+    });
+    await service.settleProposal('proposal-1');
+    expect(settleLeg.mock.calls).toEqual([['l1', true]]);
+    expect(updateResult).not.toHaveBeenCalled();
   });
 
   it('refunds a player who did not play, never a loss', async () => {

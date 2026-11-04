@@ -6,9 +6,9 @@ import {
   STAT_MARKET_SETTLEMENT,
 } from './coupon.constants';
 import {
+  FACT_SETTLED_MARKETS,
   resolveCornersBetStatus,
   resolveStatMarketBetStatus,
-  STAT_SETTLED_MARKETS,
   type MatchFacts,
 } from '@evcore/analysis-core';
 import { MatchFactsRepository } from '../fixture-events/match-facts.repository';
@@ -222,12 +222,16 @@ export class CouponSettlementService {
     await this.recordClosingLines(proposal.legs, fixtureMap);
     const now = Date.now();
     // Events, lineups and player statistics, read once per proposal and
-    // only when a leg needs them (phase 3 markets).
+    // only when a leg needs them (phase 3 markets, cards).
     let facts: Map<string, MatchFacts> | null = null;
     const factsOf = async (fixtureId: string): Promise<MatchFacts | null> => {
       facts ??= await this.matchFacts.findFacts(
         proposal.legs
-          .filter((leg) => STAT_SETTLED_MARKETS.has(leg.market))
+          .filter(
+            (leg) =>
+              leg.market !== Market.CORNERS &&
+              FACT_SETTLED_MARKETS.has(leg.market),
+          )
           .map((leg) => leg.fixtureId),
       );
       return facts.get(fixtureId) ?? null;
@@ -274,15 +278,12 @@ export class CouponSettlementService {
       }
 
       // Corners (lot 6) and the phase 3 markets (team corners, corners
-      // 1X2, scorers, player shots, minute 1X2): settled on the match's
-      // statistics, events, lineups and player statistics, once it is
-      // finished. Unknown, we wait; past the grace period the leg is
+      // 1X2, scorers, player shots, minute 1X2) and cards: settled on the
+      // match's statistics, events, lineups and player statistics, once it
+      // is finished. Unknown, we wait; past the grace period the leg is
       // refunded, never counted lost. Recomputed on every pass: data that
       // arrives after a refund grades the leg.
-      if (
-        leg.market === Market.CORNERS ||
-        STAT_SETTLED_MARKETS.has(leg.market)
-      ) {
+      if (FACT_SETTLED_MARKETS.has(leg.market)) {
         if (fixture.status !== FixtureStatus.FINISHED) {
           allResolved = false;
           continue;

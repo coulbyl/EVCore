@@ -52,8 +52,20 @@ describe('matchFactsOf', () => {
     const facts = matchFactsOf(row());
     expect(facts.score).toEqual({ home: 1, away: 0 });
     expect(facts.teams).toEqual({
-      home: { corners: 7, shotsTotal: null, shotsOn: 4 },
-      away: { corners: 2, shotsTotal: null, shotsOn: null },
+      home: {
+        corners: 7,
+        shotsTotal: null,
+        shotsOn: 4,
+        yellowCards: null,
+        redCards: null,
+      },
+      away: {
+        corners: 2,
+        shotsTotal: null,
+        shotsOn: null,
+        yellowCards: null,
+        redCards: null,
+      },
     });
     expect(facts.events?.[0]).toMatchObject({ side: 'home', minute: 30 });
     // A row of a team that is neither side is dropped.
@@ -69,6 +81,25 @@ describe('matchFactsOf', () => {
         shotsOn: 0,
       },
     ]);
+  });
+
+  it('cards: no red row with the yellows reported is none; no yellow row is unknown', () => {
+    const facts = matchFactsOf(
+      row({
+        fixtureStatistics: [
+          { teamId: 'home', type: 'yellow_cards', value: '2.000' },
+          { teamId: 'away', type: 'yellow_cards', value: '3.000' },
+          { teamId: 'away', type: 'red_cards', value: '1.000' },
+        ],
+      }),
+    );
+    expect(facts.teams.home).toMatchObject({ yellowCards: 2, redCards: 0 });
+    expect(facts.teams.away).toMatchObject({ yellowCards: 3, redCards: 1 });
+    // The default row has corners but no card row: unknown, not zero.
+    expect(matchFactsOf(row()).teams.home).toMatchObject({
+      yellowCards: null,
+      redCards: null,
+    });
   });
 
   it('no score before the end of the match', () => {

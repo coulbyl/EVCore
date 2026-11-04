@@ -519,8 +519,20 @@ describe('MatchSheetService, the new markets in « Autres paris »', () => {
       await results({
         score: { home: 1, away: 0 },
         teams: {
-          home: { corners: 3, shotsTotal: null, shotsOn: null },
-          away: { corners: 7, shotsTotal: null, shotsOn: null },
+          home: {
+            corners: 3,
+            shotsTotal: null,
+            shotsOn: null,
+            yellowCards: null,
+            redCards: null,
+          },
+          away: {
+            corners: 7,
+            shotsTotal: null,
+            shotsOn: null,
+            yellowCards: null,
+            redCards: null,
+          },
         },
         events: [],
         lineups: [{ side: 'home', playerExternalId: 9, starter: true }],

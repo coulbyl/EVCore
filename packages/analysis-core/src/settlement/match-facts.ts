@@ -10,6 +10,8 @@ export const MATCH_FACT_STAT_TYPES = {
   corners: "corner_kicks",
   shotsTotal: "total_shots",
   shotsOn: "shots_on_goal",
+  yellowCards: "yellow_cards",
+  redCards: "red_cards",
 } as const;
 
 type TeamRow = { teamId: string };
@@ -56,10 +58,20 @@ export function buildMatchFacts(rows: MatchFactsRows): MatchFacts {
       rows.statistics.find(
         (entry) => entry.teamId === teamId && entry.type === type,
       )?.value ?? null;
+    const yellowCards = value(MATCH_FACT_STAT_TYPES.yellowCards);
     return {
       corners: value(MATCH_FACT_STAT_TYPES.corners),
       shotsTotal: value(MATCH_FACT_STAT_TYPES.shotsTotal),
       shotsOn: value(MATCH_FACT_STAT_TYPES.shotsOn),
+      yellowCards,
+      // The API leaves the red cards it has none of at null, and the row is
+      // then not written: 68 992 team-matches have their yellows and no red
+      // row, and the 8 of them the stored events cover (03–04/11) had
+      // no red card. With the yellows reported, no red row is none; without them,
+      // the team's cards are unknown.
+      redCards:
+        value(MATCH_FACT_STAT_TYPES.redCards) ??
+        (yellowCards === null ? null : 0),
     };
   };
   const sided = <T extends TeamRow>(list: readonly T[]) =>
