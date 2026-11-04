@@ -439,6 +439,14 @@ export const FIXTURE_EVENTS = {
   // Rattrapage : matchs par lot (10 appels de 20), après le lot de stats du
   // même passage, dans le même budget.
   BACKFILL_MAX_FIXTURES_PER_LOT: 200,
+  // A match finished in the last NOT_REPORTED_WINDOW_HOURS with no event
+  // written yet (the API had none when it was first asked, or the answer was
+  // rejected) is asked again in the backfill's events lot, at most every
+  // NOT_REPORTED_RETRY_MINUTES: its scorers show within the hour instead of
+  // after the grace period. Keyed on « not yet reported », never on the date
+  // alone, so a late answer is still taken.
+  NOT_REPORTED_WINDOW_HOURS: 24,
+  NOT_REPORTED_RETRY_MINUTES: 30,
 } as const;
 
 // Squads (/players/squads?team=, one call per team): they identify the

@@ -621,16 +621,18 @@ export class FixtureRepository {
     });
   }
 
-  // Finished fixtures the stats sync is done with (team statistics in, or
-  // unavailable: API-Football may still cover its events) whose events,
-  // lineups and player statistics are not, kicked off before `before` (a
-  // recent match may still receive them: the routine sync wrote what it
-  // had), most recent first. Feeds the events backfill; a fixture whose
-  // answer stays empty is marked after one call (past the grace period).
-  // Fixtures still waiting for their statistics are left to the stats sync,
-  // which fetches their events in the same call.
+  // Finished fixtures whose events, lineups and player statistics are not
+  // synced, most recent first, for the events backfill:
+  // - kicked off before `before` (past the grace period) and done with by
+  //   the stats sync (team statistics in, or unavailable: API-Football may
+  //   still cover its events) — a fixture whose answer stays empty is marked
+  //   after one call; one still waiting for its statistics is left to the
+  //   stats sync, which fetches its events in the same call;
+  // - or kicked off since `notReportedSince` with no event written yet,
+  //   whatever its statistics: its scorers must not wait for them.
   findEventsBackfillPending(input: {
     before: Date;
+    notReportedSince: Date;
     limit: number;
     excludeExternalIds: readonly number[];
   }): Promise<
@@ -643,12 +645,20 @@ export class FixtureRepository {
     return this.prisma.client.fixture.findMany({
       where: {
         status: 'FINISHED',
-        OR: [
-          { statisticsSyncedAt: { not: null } },
-          { statisticsUnavailable: true },
-        ],
         eventsSyncedAt: null,
-        scheduledAt: { lt: input.before },
+        OR: [
+          {
+            scheduledAt: { lt: input.before },
+            OR: [
+              { statisticsSyncedAt: { not: null } },
+              { statisticsUnavailable: true },
+            ],
+          },
+          {
+            scheduledAt: { gte: input.notReportedSince },
+            events: { none: {} },
+          },
+        ],
         ...(input.excludeExternalIds.length > 0
           ? { externalId: { notIn: [...input.excludeExternalIds] } }
           : {}),

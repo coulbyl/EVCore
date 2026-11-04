@@ -287,6 +287,7 @@ export class FixtureService {
 
   findEventsBackfillPending(input: {
     before: Date;
+    notReportedSince: Date;
     limit: number;
     excludeExternalIds: readonly number[];
   }): Promise<

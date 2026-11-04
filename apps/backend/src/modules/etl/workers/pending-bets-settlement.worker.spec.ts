@@ -11,6 +11,7 @@ import type { CouponSettlementService } from '../../coupon/coupon-settlement.ser
 import type { CacheService } from '@common/redis/cache.service';
 import type { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 import type { RiskService } from '../../risk/risk.service';
+import type { FixtureEventsService } from '../../fixture-events/fixture-events.service';
 import { PendingBetsSettlementWorker } from './pending-bets-settlement.worker';
 
 vi.mock('node:child_process', () => ({
@@ -166,6 +167,10 @@ describe('PendingBetsSettlementWorker', () => {
     checkAllMarkets: vi.fn().mockResolvedValue([]),
   } satisfies Partial<RiskService>;
 
+  const fixtureEvents = {
+    persistDetails: vi.fn(),
+  } satisfies Partial<FixtureEventsService>;
+
   const worker = new PendingBetsSettlementWorker(
     fixtureService as unknown as FixtureService,
     bettingEngineService as unknown as BettingEngineService,
@@ -181,6 +186,14 @@ describe('PendingBetsSettlementWorker', () => {
       apiFootball: new ApiFootballClient(config as unknown as ConfigService),
       couponSettlement: couponSettlement as unknown as CouponSettlementService,
       cache: cache as unknown as CacheService,
+      fixtureEvents: fixtureEvents as unknown as FixtureEventsService,
+    });
+    fixtureEvents.persistDetails.mockResolvedValue({
+      status: 'written',
+      events: 1,
+      lineups: 0,
+      playerStatistics: 0,
+      synced: false,
     });
     fixtureService.syncFixtureState.mockResolvedValue({
       affectsRollingStats: true,
@@ -225,6 +238,68 @@ describe('PendingBetsSettlementWorker', () => {
       'season-1',
       expect.objectContaining({ changedFixtureIds: expect.any(Set) }),
     );
+  });
+
+  it('writes the events of the answer that says FINISHED, before settling', async () => {
+    const body = buildFixtureResponse('FT');
+    Object.assign(body.response[0] ?? {}, {
+      events: [
+        {
+          time: { elapsed: 58, extra: null },
+          team: { id: 1 },
+          player: { id: 1485, name: 'Bruno Fernandes' },
+          assist: { id: null, name: null },
+          type: 'Goal',
+          detail: 'Penalty',
+          comments: null,
+        },
+      ],
+      lineups: [],
+      players: [],
+    });
+    mockCurlStdoutOnce(buildCurlStdout(body));
+
+    await worker.process({ data: {} } as Job<Record<string, never>>);
+
+    expect(fixtureEvents.persistDetails).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fixtureExternalId: 999,
+        details: expect.objectContaining({
+          events: [expect.objectContaining({ detail: 'Penalty' })],
+        }),
+      }),
+    );
+    expect(
+      fixtureEvents.persistDetails.mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      bettingEngineService.settleOpenBets.mock.invocationCallOrder[0] ?? 0,
+    );
+  });
+
+  it('settles a finished fixture whose events cannot be written', async () => {
+    const body = buildFixtureResponse('FT');
+    Object.assign(body.response[0] ?? {}, {
+      events: [],
+      lineups: [],
+      players: [],
+    });
+    mockCurlStdoutOnce(buildCurlStdout(body));
+    fixtureEvents.persistDetails.mockRejectedValueOnce(new Error('db down'));
+
+    await worker.process({ data: {} } as Job<Record<string, never>>);
+
+    expect(bettingEngineService.settleOpenBets).toHaveBeenCalledWith(
+      'fixture-1',
+    );
+  });
+
+  it('writes no events for an answer without them', async () => {
+    mockCurlStdoutOnce(buildCurlStdout(buildFixtureResponse('FT')));
+
+    await worker.process({ data: {} } as Job<Record<string, never>>);
+
+    expect(fixtureEvents.persistDetails).not.toHaveBeenCalled();
+    expect(bettingEngineService.settleOpenBets).toHaveBeenCalled();
   });
 
   it('settles on the 90-minute score, not the post-extra-time score (AET)', async () => {

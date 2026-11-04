@@ -17,6 +17,11 @@ import { CouponSettlementService } from '../../coupon/coupon-settlement.service'
 import { NotificationService } from '../../notification/notification.service';
 import { AdjustmentService } from '../../adjustment/adjustment.service';
 import { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
+import { FixtureEventsService } from '../../fixture-events/fixture-events.service';
+import {
+  ApiFootballFixturesByIdsResponseSchema,
+  FixtureByIdDetailsSchema,
+} from '../schemas/fixture-full.schema';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 export type PendingBetsSettlementJobData = Record<string, never>;
@@ -41,6 +46,9 @@ export class PendingBetsSettlementWorker extends WorkerHost {
 
   @Inject(CouponSettlementService)
   private couponSettlement!: CouponSettlementService;
+
+  @Inject(FixtureEventsService)
+  private fixtureEvents!: FixtureEventsService;
 
   // eslint-disable-next-line max-params -- DI constructor, same convention as FixturesSyncWorker.
   constructor(
@@ -159,6 +167,12 @@ export class PendingBetsSettlementWorker extends WorkerHost {
 
         finishedFixtures++;
 
+        // The answer that says FINISHED carries the events, lineups and
+        // player statistics too (/fixtures?id= is /fixtures?ids= of one):
+        // written now, the scorers show within this pass instead of waiting
+        // for the stats sync. Before the settlement, which reads them.
+        await this.persistDetails(fixture.externalId, res.body);
+
         const { settled } = await this.bettingEngineService.settleOpenBets(
           fixture.id,
         );
@@ -203,6 +217,43 @@ export class PendingBetsSettlementWorker extends WorkerHost {
       logger.info(
         { calibration },
         'Calibration check complete after settlement',
+      );
+    }
+  }
+
+  // Never costs the fixture its settlement: a rejected or failed write
+  // leaves the events pending for the stats sync and its backfill.
+  private async persistDetails(
+    externalId: number,
+    body: unknown,
+  ): Promise<void> {
+    try {
+      const envelope = ApiFootballFixturesByIdsResponseSchema.safeParse(body);
+      const details = FixtureByIdDetailsSchema.safeParse(
+        envelope.success ? envelope.data.response[0] : undefined,
+      );
+      if (!details.success) {
+        logger.warn(
+          { externalId, issues: details.error.issues },
+          'Zod validation failed on events/lineups/players — left pending',
+        );
+        return;
+      }
+      const written = await this.fixtureEvents.persistDetails({
+        fixtureExternalId: externalId,
+        observedAt: new Date(),
+        details: details.data,
+      });
+      if (written.status === 'rejected') {
+        logger.warn(
+          { externalId, reason: written.reason },
+          'Events/lineups/players rejected — left pending',
+        );
+      }
+    } catch (error) {
+      logger.error(
+        { externalId, err: error },
+        'Writing events/lineups/players failed — left pending',
       );
     }
   }
