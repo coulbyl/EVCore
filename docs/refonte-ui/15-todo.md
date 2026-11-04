@@ -202,6 +202,11 @@ PR https://github.com/coulbyl/EVCore/pull/282 ouverte (C–F). Avant la phase G,
 - [ ] **Avis IA** : « Décidé le 03/11 » avec une cote du moment de l'avis ; dire si la cote affichée est celle d'aujourd'hui. Une lecture et un avis compatibles (moins de buts pour Rennes, les deux marquent) peuvent se lire comme une contradiction.
 - [ ] **« Autres paris » sans chance** : voulu (« la chance n'est dite qu'une fois »), mais c'est là qu'elle aiderait à comparer 1,24 et 3,67. À rediscuter.
 - [ ] **Libellés des nouveaux marchés en français même en anglais**, comme les autres libellés de paris : à traduire avec eux.
+- [ ] **Minute en direct jusqu'à 30 min de retard.** Elle vient du passage de règlement (un `/fixtures?id=` par match, toutes les 30 min). Pour 5–10 min sans plus d'appels : grouper les matchs en cours par 20 dans un `/fixtures?ids=` et passer plus souvent (touche le règlement, `/code-review high`).
+- [ ] **Un champ inattendu rejetait tout un match.** Un événement VAR à `detail: null` faisait rejeter événements, compositions et stats joueurs de Man United – Roma (03/11). Corrigé pour `detail` ; relire les schémas Zod de `/fixtures?ids=` (`fixture-full.schema.ts`) contre des réponses réelles pour les autres champs que l'API laisse vides.
+- [ ] **Feuille ouverte depuis une feuille = remplacée.** Choix fait le 04/11 (rien dans les docs) : fermer l'Aide ouverte par « ? » d'une fiche produit ramène à Résultats, pas à la fiche (09 § 82 laisse plutôt attendre la fiche). À trancher.
+- [ ] **Libellé du chevron fixe.** Il revient là d'où l'on vient, mais dit toujours la même chose (« Aujourd'hui » sur Notifications, même venu de Résultats).
+- [ ] **Chevrons publics** (`band-title`, écrans d'authentification) non revus par l'audit de navigation du 04/11.
 - [ ] `auth.service.spec` (code TOTP) échoue de temps en temps selon l'heure : rendre le test indépendant de l'horloge.
 
 ## À relire plus tard (hors lots)
