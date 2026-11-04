@@ -37,7 +37,16 @@ export function NotificationLink({
     <Link
       href={href ?? "/notifications"}
       onClick={(event) => {
-        if (!unread || !isPlainClick(event)) return;
+        if (!unread) return;
+        // A new tab or window: the browser navigates, the read still goes.
+        if (!isPlainClick(event)) {
+          startTransition(async () => {
+            dropOne();
+            await markNotificationRead(id, null).catch(() => undefined);
+            announceBellChange();
+          });
+          return;
+        }
         event.preventDefault();
         startTransition(async () => {
           dropOne();
