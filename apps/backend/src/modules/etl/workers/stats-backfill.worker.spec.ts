@@ -38,11 +38,7 @@ function candidate(
   };
 }
 
-function pendingFixtures(
-  count: number,
-  firstId = 1,
-  scheduledAt = new Date(),
-) {
+function pendingFixtures(count: number, firstId = 1, scheduledAt = new Date()) {
   return Array.from({ length: count }, (_, i) => ({
     externalId: firstId + i,
     scheduledAt,
