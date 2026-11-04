@@ -296,6 +296,7 @@ export class FixtureService {
   }): Promise<
     Array<{
       externalId: number;
+      scheduledAt: Date;
       homeTeam: { externalId: number };
       awayTeam: { externalId: number };
     }>

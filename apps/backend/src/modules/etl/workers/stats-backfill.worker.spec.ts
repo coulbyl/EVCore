@@ -38,9 +38,14 @@ function candidate(
   };
 }
 
-function pendingFixtures(count: number, firstId = 1) {
+function pendingFixtures(
+  count: number,
+  firstId = 1,
+  scheduledAt = new Date(),
+) {
   return Array.from({ length: count }, (_, i) => ({
     externalId: firstId + i,
+    scheduledAt,
     homeTeam: { externalId: 33 },
     awayTeam: { externalId: 40 },
   }));
@@ -431,6 +436,32 @@ describe('StatsBackfillWorker', () => {
           fixtureService.findEventsBackfillPending.mock.calls[2]?.[0]
             .excludeExternalIds,
         ).toEqual([]);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('holds back only the recent matches it asked', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      try {
+        vi.setSystemTime(new Date('2026-11-03T22:10:00Z'));
+        fixtureService.findStatsBackfillCandidates.mockResolvedValue([]);
+        fixtureService.findEventsBackfillPending.mockResolvedValue([
+          ...pendingFixtures(1, 1, new Date('2026-11-03T19:00:00Z')),
+          ...pendingFixtures(1, 2, new Date('2026-10-20T19:00:00Z')),
+        ]);
+        statsSync.syncFixtures.mockResolvedValue(
+          batch({ calls: 1, details: details({ written: 2 }) }),
+        );
+        const worker = makeWorker();
+
+        await worker.process(JOB);
+        vi.setSystemTime(new Date('2026-11-03T22:15:00Z'));
+        await worker.process(JOB);
+        expect(
+          fixtureService.findEventsBackfillPending.mock.calls[1]?.[0]
+            .excludeExternalIds,
+        ).toEqual([1]);
       } finally {
         vi.useRealTimers();
       }

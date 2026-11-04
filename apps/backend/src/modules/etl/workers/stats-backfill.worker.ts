@@ -188,11 +188,12 @@ export class StatsBackfillWorker extends WorkerHost {
         .map(([externalId]) => externalId),
       ...this.eventsAskedAt.keys(),
     ];
+    const notReportedSince = new Date(
+      now - FIXTURE_EVENTS.NOT_REPORTED_WINDOW_HOURS * 3_600_000,
+    );
     const lot = await this.fixtureService.findEventsBackfillPending({
       before: new Date(now - FIXTURE_EVENTS.INCOMPLETE_GRACE_DAYS * DAY_MS),
-      notReportedSince: new Date(
-        now - FIXTURE_EVENTS.NOT_REPORTED_WINDOW_HOURS * 3_600_000,
-      ),
+      notReportedSince,
       limit: lotSize,
       excludeExternalIds: [...new Set(excluded)],
     });
@@ -207,9 +208,14 @@ export class StatsBackfillWorker extends WorkerHost {
     }
 
     const result = await this.statsSync.syncFixtures(lot, 'details-only');
-    // A quota stop asked nothing: those fixtures are not held back.
+    // A quota stop asked nothing: those fixtures are not held back. Only the
+    // recent ones are: an older match comes back on its failed attempts.
     if (result.abortReason === null) {
-      for (const { externalId } of lot) this.eventsAskedAt.set(externalId, now);
+      for (const { externalId, scheduledAt } of lot) {
+        if (scheduledAt >= notReportedSince) {
+          this.eventsAskedAt.set(externalId, now);
+        }
+      }
     }
     for (const externalId of result.details.failedExternalIds) {
       this.failedEventAttempts.set(

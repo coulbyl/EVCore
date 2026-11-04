@@ -648,6 +648,7 @@ export class FixtureRepository {
   }): Promise<
     Array<{
       externalId: number;
+      scheduledAt: Date;
       homeTeam: { externalId: number };
       awayTeam: { externalId: number };
     }>
@@ -675,6 +676,7 @@ export class FixtureRepository {
       },
       select: {
         externalId: true,
+        scheduledAt: true,
         homeTeam: { select: { externalId: true } },
         awayTeam: { select: { externalId: true } },
       },
