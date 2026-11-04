@@ -72,6 +72,27 @@ export class NotificationRepository {
     });
   }
 
+  /** The broadcasts matching `where`, with what an announcement's read needs. */
+  findBroadcastReadTargets(
+    where: Prisma.NotificationWhereInput,
+  ): Promise<BroadcastNotificationRef[]> {
+    return this.prisma.client.notification.findMany({
+      where,
+      select: { id: true, type: true, payload: true },
+    });
+  }
+
+  /** Personal rows matching `where` become read; how many changed. */
+  async markPersonalReadWhere(
+    where: Prisma.NotificationWhereInput,
+  ): Promise<number> {
+    const { count } = await this.prisma.client.notification.updateMany({
+      where,
+      data: { read: true, readAt: new Date() },
+    });
+    return count;
+  }
+
   async markBroadcastRead(
     userId: string,
     notificationId: string,

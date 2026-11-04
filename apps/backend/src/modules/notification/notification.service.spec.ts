@@ -149,8 +149,8 @@ describe('NotificationService — the bell reads 90 days', () => {
 
     const [args] =
       vi.mocked(prisma.client.notification.count).mock.calls[0] ?? [];
-    const since = (args as { where: { createdAt: { gte: Date } } }).where
-      .createdAt.gte;
+    const since = (args as { where: { AND: [{ createdAt: { gte: Date } }] } })
+      .where.AND[0].createdAt.gte;
     const days = (before - since.getTime()) / 86_400_000;
     expect(days).toBeGreaterThan(89.99);
     expect(days).toBeLessThan(90.01);
@@ -241,7 +241,7 @@ describe('NotificationService — list & mark read', () => {
     const result = await service.list({
       limit: 20,
       offset: 0,
-      unread: true,
+      status: 'unread',
       userId: 'user-1',
       role: UserRole.OPERATOR,
     });
@@ -440,9 +440,16 @@ describe('NotificationService — ce que chaque rôle voit des diffusions', () =
   function typesPassedToPrisma(prisma: PrismaService): NotificationType[] {
     const count = (prisma.client.notification.count as ReturnType<typeof vi.fn>)
       .mock.calls[0]?.[0] as {
-      where: { OR: [{ type: { in: NotificationType[] } }] };
+      where: {
+        AND: [
+          unknown,
+          unknown,
+          unknown,
+          { OR: [{ type: { in: NotificationType[] } }] },
+        ];
+      };
     };
-    return count.where.OR[0].type.in;
+    return count.where.AND[3].OR[0].type.in;
   }
 
   it("un opérateur ne reçoit que les annonces parmi les diffusions — jamais les alertes d'ingénierie", async () => {
@@ -482,13 +489,22 @@ describe('NotificationService — messages retirés et un seul état « lu »', 
     const where = (prisma.client.notification.count as ReturnType<typeof vi.fn>)
       .mock.calls[0]?.[0] as {
       where: {
-        OR: [
+        AND: [
           unknown,
-          { type: { in?: NotificationType[]; notIn?: NotificationType[] } },
+          unknown,
+          unknown,
+          {
+            OR: [
+              unknown,
+              {
+                type: { in?: NotificationType[]; notIn?: NotificationType[] };
+              },
+            ];
+          },
         ];
       };
     };
-    return where.where.OR[1].type;
+    return where.where.AND[3].OR[1].type;
   }
 
   it('la cloche du joueur ne reçoit que ses cinq sortes (09 § 6)', async () => {
@@ -586,5 +602,139 @@ describe('NotificationService — messages retirés et un seul état « lu »', 
       },
       data: { read: true, readAt: expect.any(Date) },
     });
+  });
+});
+
+describe('NotificationService — the badge, the list and « tout marquer comme lu » cover one set', () => {
+  function serviceWith(prisma: PrismaService): NotificationService {
+    return new NotificationService(
+      new NotificationRepository(prisma),
+      makeMail(),
+      makePush(),
+    );
+  }
+
+  it('the badge counts exactly what the « Non lues » list counts', async () => {
+    const prisma = makePrisma();
+    const service = serviceWith(prisma);
+
+    await service.unreadCount('user-1', UserRole.ADMIN);
+    await service.list({
+      limit: 20,
+      offset: 0,
+      status: 'unread',
+      userId: 'user-1',
+      role: UserRole.ADMIN,
+    });
+
+    const calls = vi.mocked(prisma.client.notification.count).mock.calls;
+    // The window's date differs by milliseconds between the two calls.
+    const shape = (call: unknown) =>
+      JSON.stringify(call, (key, value: unknown) =>
+        key === 'gte' ? 'window' : value,
+      );
+    expect(shape(calls[0]?.[0])).toBe(shape(calls[1]?.[0]));
+  });
+
+  it('« Lues » keeps the broadcasts this player read and the personal rows marked read', async () => {
+    const prisma = makePrisma();
+    await serviceWith(prisma).list({
+      limit: 20,
+      offset: 0,
+      status: 'read',
+      userId: 'user-1',
+      role: UserRole.OPERATOR,
+    });
+
+    const [args] =
+      vi.mocked(prisma.client.notification.findMany).mock.calls[0] ?? [];
+    const or = (
+      args as {
+        where: { AND: [unknown, unknown, unknown, { OR: unknown[] }] };
+      }
+    ).where.AND[3].OR;
+    expect(or[0]).toMatchObject({
+      userId: null,
+      reads: { some: { userId: 'user-1' } },
+    });
+    expect(or[1]).toMatchObject({ userId: 'user-1', read: true });
+  });
+
+  it('« Alertes techniques » holds the engineering alerts only', async () => {
+    const prisma = makePrisma();
+    await serviceWith(prisma).list({
+      limit: 20,
+      offset: 0,
+      category: 'technical',
+      userId: 'admin-1',
+      role: UserRole.ADMIN,
+    });
+
+    const [args] =
+      vi.mocked(prisma.client.notification.findMany).mock.calls[0] ?? [];
+    const category = (args as { where: { AND: [unknown, unknown] } }).where
+      .AND[1] as { type: { in: NotificationType[] } };
+    expect(category.type.in).toContain(NotificationType.ETL_FAILURE);
+    expect(category.type.in).toContain(NotificationType.XG_UNAVAILABLE_REPORT);
+    expect(category.type.in).not.toContain(
+      NotificationType.ANNOUNCEMENT_PUBLISHED,
+    );
+    expect(category.type.in).not.toContain(NotificationType.MORNING_BRIEF);
+  });
+
+  it('marks every unread broadcast and personal row read, the announcement with it', async () => {
+    const prisma = makePrisma();
+    vi.mocked(prisma.client.notification.findMany).mockResolvedValue([
+      { id: 'b1', type: NotificationType.ETL_FAILURE, payload: null },
+      {
+        id: 'b2',
+        type: NotificationType.ANNOUNCEMENT_PUBLISHED,
+        payload: { announcementId: 'ann-1' },
+      },
+    ] as never);
+    vi.mocked(prisma.client.notification.updateMany).mockResolvedValue({
+      count: 3,
+    });
+    vi.mocked(prisma.client.announcement.findMany).mockResolvedValue([
+      { id: 'ann-1' },
+    ] as never);
+
+    const result = await serviceWith(prisma).markAllRead({
+      userId: 'user-1',
+      role: UserRole.ADMIN,
+    });
+
+    expect(result).toEqual({ marked: 5 });
+    expect(prisma.client.userNotificationRead.createMany).toHaveBeenCalledWith({
+      data: [
+        { userId: 'user-1', notificationId: 'b1' },
+        { userId: 'user-1', notificationId: 'b2' },
+      ],
+      skipDuplicates: true,
+    });
+    const [update] =
+      vi.mocked(prisma.client.notification.updateMany).mock.calls[0] ?? [];
+    expect(update?.where).toMatchObject({
+      AND: [expect.anything(), { userId: 'user-1' }],
+    });
+    expect(prisma.client.announcementRead.createMany).toHaveBeenCalledWith({
+      data: [{ userId: 'user-1', announcementId: 'ann-1' }],
+      skipDuplicates: true,
+    });
+  });
+
+  it('a second pass finds nothing left and writes nothing more', async () => {
+    const prisma = makePrisma();
+    const result = await serviceWith(prisma).markAllRead({
+      userId: 'user-1',
+      role: UserRole.OPERATOR,
+      category: 'player',
+    });
+
+    expect(result).toEqual({ marked: 0 });
+    expect(
+      prisma.client.userNotificationRead.createMany,
+    ).not.toHaveBeenCalled();
+    expect(prisma.client.announcementRead.createMany).not.toHaveBeenCalled();
   });
 });

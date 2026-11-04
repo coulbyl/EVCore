@@ -4,6 +4,7 @@ import {
   HttpCode,
   Param,
   Patch,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -11,6 +12,7 @@ import type { AuthSession } from '@modules/auth/auth.types';
 import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
 import { CurrentSession } from '@modules/auth/current-session.decorator';
 import { NotificationQueryDto } from './dto/notification-query.dto';
+import { NotificationReadAllDto } from './dto/notification-read-all.dto';
 import {
   NotificationService,
   type NotificationView,
@@ -36,7 +38,7 @@ export class NotificationController {
     return this.notificationService.list({
       limit: query.limit,
       offset: query.offset,
-      unread: query.unread,
+      status: query.status ?? (query.unread ? 'unread' : undefined),
       category: query.category,
       type: query.type,
       userId: session.user.id,
@@ -52,6 +54,20 @@ export class NotificationController {
       session.user.id,
       session.user.role,
     );
+  }
+
+  /** « Tout marquer comme lu » (the screen's kind filter in the query). */
+  @Post('read-all')
+  @HttpCode(200)
+  markAllRead(
+    @Query() query: NotificationReadAllDto,
+    @CurrentSession() session: AuthSession,
+  ): Promise<{ marked: number }> {
+    return this.notificationService.markAllRead({
+      userId: session.user.id,
+      role: session.user.role,
+      category: query.category,
+    });
   }
 
   @Patch(':id/read')

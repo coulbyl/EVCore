@@ -10,7 +10,17 @@ import {
 } from 'class-validator';
 import { NotificationType } from '@evcore/db';
 
-export type NotificationCategory = 'announcement' | 'alert';
+export const NOTIFICATION_CATEGORIES = [
+  'announcement',
+  'alert',
+  'technical',
+  'player',
+] as const;
+export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
+
+export const NOTIFICATION_READ_STATUSES = ['unread', 'read'] as const;
+export type NotificationReadStatus =
+  (typeof NOTIFICATION_READ_STATUSES)[number];
 
 export class NotificationQueryDto {
   @IsOptional()
@@ -26,18 +36,22 @@ export class NotificationQueryDto {
   @Min(0)
   offset: number = 0;
 
+  /** Legacy spelling of `status=unread`, still accepted. */
   @IsOptional()
   @Transform(({ value }: { value: string }) => value === 'true')
   @IsBoolean()
   unread?: boolean;
 
-  // Merged Notifications screen (docs/archive/vantage-centric-redesign-2026-09-01.md
-  // §0 point 3) — "announcement" is exactly ANNOUNCEMENT_PUBLISHED,
-  // "alert" is every other type. Not a new data model: ANNOUNCEMENT_PUBLISHED
-  // already mirrors a published Announcement into this same table
-  // (notification.service.ts).
+  /** The screen's « Non lues » / « Lues »; absent, both. */
   @IsOptional()
-  @IsIn(['announcement', 'alert'])
+  @IsIn(NOTIFICATION_READ_STATUSES)
+  status?: NotificationReadStatus;
+
+  // "announcement" is exactly ANNOUNCEMENT_PUBLISHED, "alert" every other
+  // type; "technical" the engineering alerts (only an admin has them),
+  // "player" everything else (notification.service.ts, categoryWhere).
+  @IsOptional()
+  @IsIn(NOTIFICATION_CATEGORIES)
   category?: NotificationCategory;
 
   // Un seul type (le point de la semaine de l'Accueil lit le dernier

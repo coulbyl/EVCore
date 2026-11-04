@@ -13,6 +13,10 @@ import { PushService } from '@modules/push/push.service';
 import { PUSH_POLICY } from '@config/push.constants';
 import { NOTIFICATION_BELL_WINDOW_DAYS } from '@config/notification.constants';
 import { NotificationRepository } from './notification.repository';
+import type {
+  NotificationCategory,
+  NotificationReadStatus,
+} from './dto/notification-query.dto';
 
 const logger = createLogger('notification-service');
 
@@ -83,6 +87,53 @@ function announcementIdOf(payload: Prisma.JsonValue | null): string | null {
 
 export type NotificationView = Omit<Notification, 'read' | 'readAt'> & {
   isRead: boolean;
+};
+
+/**
+ * The engineering alerts (ETL, stats, ROI, suspension, ML, weights): only
+ * an admin's bell holds them (allowedTypes), grouped under « Alertes
+ * techniques » on the screen.
+ */
+export const TECHNICAL_TYPES: NotificationType[] = [
+  NotificationType.ROI_ALERT,
+  NotificationType.MARKET_SUSPENSION,
+  NotificationType.BRIER_ALERT,
+  NotificationType.WEEKLY_REPORT,
+  NotificationType.ETL_FAILURE,
+  NotificationType.WEIGHT_ADJUSTMENT,
+  NotificationType.XG_UNAVAILABLE_REPORT,
+  NotificationType.ML_MODEL_ACTIVATED,
+  NotificationType.ML_MODEL_MISSING,
+];
+
+/**
+ * "announcement" is exactly ANNOUNCEMENT_PUBLISHED and "alert" every other
+ * type (the merged screen of 2026-09-01); "technical" the engineering
+ * alerts and "player" everything else — what a player's bell holds.
+ */
+function categoryWhere(
+  category: NotificationCategory | undefined,
+): Prisma.NotificationWhereInput {
+  switch (category) {
+    case 'announcement':
+      return { type: NotificationType.ANNOUNCEMENT_PUBLISHED };
+    case 'alert':
+      return { type: { not: NotificationType.ANNOUNCEMENT_PUBLISHED } };
+    case 'technical':
+      return { type: { in: TECHNICAL_TYPES } };
+    case 'player':
+      return { type: { notIn: TECHNICAL_TYPES } };
+    default:
+      return {};
+  }
+}
+
+type NotificationFeedFilter = {
+  userId: string;
+  role: UserRole;
+  status?: NotificationReadStatus;
+  category?: NotificationCategory;
+  type?: NotificationType;
 };
 
 type SaveNotificationInput = {
@@ -268,59 +319,62 @@ export class NotificationService {
       );
   }
 
-  async list(query: {
-    limit: number;
-    offset: number;
-    unread?: boolean;
-    category?: 'announcement' | 'alert';
-    type?: NotificationType;
-    userId: string;
-    role: UserRole;
-  }): Promise<{
-    data: NotificationView[];
-    total: number;
-    limit: number;
-    offset: number;
-  }> {
-    const types = this.allowedTypes(query.role);
-    // Écran Notifications fusionné (docs/archive/vantage-centric-redesign-2026-09-01.md
-    // §0 point 3) — "announcement" est exactement ANNOUNCEMENT_PUBLISHED,
-    // "alert" tout le reste. AND-é sur le OR broadcast/personnel ci-dessous :
-    // les notifications personnelles ne sont jamais ANNOUNCEMENT_PUBLISHED
-    // (toujours broadcast, voir sendAnnouncementPublished), donc ce filtre
-    // les exclut naturellement en mode "announcement".
-    const categoryFilter: Prisma.NotificationWhereInput =
-      query.category === 'announcement'
-        ? { type: NotificationType.ANNOUNCEMENT_PUBLISHED }
-        : query.category === 'alert'
-          ? { type: { not: NotificationType.ANNOUNCEMENT_PUBLISHED } }
+  /**
+   * The one description of « what this player's bell holds »: the list,
+   * the badge and « tout marquer comme lu » all read it, so a count and
+   * the list next to it always cover the same set (review-expectations).
+   * Two regimes merged (schema.prisma § Notification): a broadcast,
+   * filtered by role and read through UserNotificationRead, and a personal
+   * row (userId = me) whose own `read` is the truth.
+   */
+  private feedWhere(
+    filter: NotificationFeedFilter,
+  ): Prisma.NotificationWhereInput {
+    const { userId, status } = filter;
+    const broadcastRead: Prisma.NotificationWhereInput =
+      status === 'unread'
+        ? { reads: { none: { userId } } }
+        : status === 'read'
+          ? { reads: { some: { userId } } }
           : {};
-    // Deux régimes mergés (voir schema.prisma§Notification) : le broadcast
-    // filtré par rôle + lu via UserNotificationRead, et le personnel
-    // (userId = moi) où `read` sur la ligne elle-même fait foi.
-    const where: Prisma.NotificationWhereInput = {
+    const personalRead: Prisma.NotificationWhereInput =
+      status === 'unread'
+        ? { read: false }
+        : status === 'read'
+          ? { read: true }
+          : {};
+    return {
       AND: [
         bellWindow(),
-        categoryFilter,
-        query.type ? { type: query.type } : {},
+        categoryWhere(filter.category),
+        filter.type ? { type: filter.type } : {},
         {
           OR: [
             {
               userId: null,
-              type: { in: types },
-              ...(query.unread
-                ? { reads: { none: { userId: query.userId } } }
-                : {}),
+              type: { in: this.allowedTypes(filter.role) },
+              ...broadcastRead,
             },
             {
-              userId: query.userId,
-              type: this.personalTypes(query.role),
-              ...(query.unread ? { read: false } : {}),
+              userId,
+              type: this.personalTypes(filter.role),
+              ...personalRead,
             },
           ],
         },
       ],
     };
+  }
+
+  async list(
+    query: NotificationFeedFilter & { limit: number; offset: number },
+  ): Promise<{
+    data: NotificationView[];
+    total: number;
+    limit: number;
+    offset: number;
+  }> {
+    const where = this.feedWhere(query);
     const [raw, total] = await Promise.all([
       this.repository.findPage({
         where,
@@ -339,19 +393,45 @@ export class NotificationService {
     return { data, total, limit: query.limit, offset: query.offset };
   }
 
+  /** The bell's badge: exactly the list's « Non lues » with no other filter. */
   async unreadCount(
     userId: string,
     role: UserRole,
   ): Promise<{ count: number }> {
-    const types = this.allowedTypes(role);
-    const count = await this.repository.count({
-      ...bellWindow(),
-      OR: [
-        { userId: null, type: { in: types }, reads: { none: { userId } } },
-        { userId, read: false, type: this.personalTypes(role) },
-      ],
-    });
+    const count = await this.repository.count(
+      this.feedWhere({ userId, role, status: 'unread' }),
+    );
     return { count };
+  }
+
+  /**
+   * « Tout marquer comme lu », within the screen's filter (the technical
+   * alerts alone, for instance): the same set the list shows unread, so
+   * the badge drops by what the list showed. Replayable — a second pass
+   * finds nothing left to mark. Returns how many were marked.
+   */
+  async markAllRead(filter: {
+    userId: string;
+    role: UserRole;
+    category?: NotificationCategory;
+  }): Promise<{ marked: number }> {
+    const unread = this.feedWhere({ ...filter, status: 'unread' });
+    const broadcasts = await this.repository.findBroadcastReadTargets({
+      AND: [unread, { userId: null }],
+    });
+    await this.repository.markBroadcastsRead(
+      filter.userId,
+      broadcasts.map((row) => row.id),
+    );
+    const personal = await this.repository.markPersonalReadWhere({
+      AND: [unread, { userId: filter.userId }],
+    });
+    const announcementIds = broadcasts
+      .filter((row) => row.type === NotificationType.ANNOUNCEMENT_PUBLISHED)
+      .map((row) => announcementIdOf(row.payload))
+      .filter((id): id is string => id !== null);
+    await this.syncAnnouncementReads(filter.userId, announcementIds);
+    return { marked: broadcasts.length + personal };
   }
 
   async markRead(notificationId: string, userId: string): Promise<void> {
