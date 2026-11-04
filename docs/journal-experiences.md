@@ -618,12 +618,15 @@ les familles jointes ressortent 2 à 3 fois plus chères, en accord avec l'audit
 d'efficience du 15/09. Tableau dans `docs/archive/plan-mesure-bout-en-bout.md` §3.
 **Relu le soir même après le re-règlement en prod** (couverture 76–78 %) :
 l'écart entre prix pris et prix de clôture est nul pour tous les canaux à deux
-erreurs types près ; seuls RESULT_BTTS (+1,1 pt) et RESULT_TOTAL_GOALS (+0,9 pt)
+erreurs types près ; seuls RESULT*BTTS (+1,1 pt) et RESULT_TOTAL_GOALS (+0,9 pt)
 ressortent, sur des marchés qui coûtent 12,8 et 13,7 % à la clôture, et sans
 book connu (mélange de maisons possible). Le moteur paie la marge, ni plus ni
 moins. **Décisions** : E-2 accepté ; aucune suspension de canal ; les trois
 marchés joints exclus du vivier LLM sur leur coût mesuré
-(`CLOSING_COST_EXCLUDED_MARKETS`, politique `unified-5-15-v1.1`) ; E-4
+(`CLOSING_COST_EXCLUDED_MARKETS`, politique `unified-5-15-v1.1` — \_note
+2026-11-04 : ce coupon 5–15 est retiré, le LLM ne le produit plus depuis le
+13/10 et le coupon prix 5–15 a été supprimé le 29/10 ; la constante reste dans
+`coupon-classes.ts` pour lire les jambes publiées*) ; E-4
 reformulé sur l'écart à la clôture. **Verdict : ouvert sur l'écart** — relire
 quand 500 sélections par canal porteront leur book (`oddsBookmaker`), ce qui
 lèvera le doute du mélange de maisons.
@@ -660,3 +663,163 @@ dire quoi que ce soit, et c'est le rapport qui tranchera avec le temps.
 **Marge payée (E-5/E-6).** Calculée à l'assemblage du relevé et écrite avec la
 sélection ; aucune sélection de la base ne la porte encore. **Verdict :
 ouvert** — `report:margin-paid` à J+7.
+
+## 2026-10-18 — Désactiver les championnats qui tirent vers le bas
+
+### Un championnat mal calibré sur 90 jours le reste-t-il ?
+
+**Verdict : fermée.** Sur 90 jours, l'écart entre extrêmes dépasse le bruit
+(Veikkausliiga 0,83, Ligue 1 1,08, n ≈ 200, écart-type 0,04–0,05). Mais entre
+juillet–août et septembre–octobre, sur 52 championnats ayant ≥ 40 sélections
+dans chaque période, **corrélation 0,06** entre classements ; les dix pires
+remontent tous vers la moyenne, trois passent au-dessus de 1. Désactiver en
+septembre les dix pires de l'été aurait retiré 14 % des sélections (1 044
+gagnantes) pour un taux de perte de 31 % contre 30 % et 2,5 points de
+calibration (0,953 contre 0,978), à la limite du bruit ; ne garder que les dix
+meilleurs fait pire (0,955). Même résultat que championnat × marché au 16/09
+(r = −0,02). Ne rouvrir que pour un championnat sous 0,85 sur deux périodes
+disjointes (aucun aujourd'hui). Source :
+[CHAMPIONNATS.md](audits/2026-10-18/CHAMPIONNATS.md).
+
+## 2026-10-28 — Les sélections que le moteur laisse
+
+### Sous-estime-t-on ce qu'on rejette ?
+
+**Verdict : fermée côté argent, ouvert côté composition.** 458 611 sélections
+envisagées sur 116 jours, une analyse par match. Par rapport à ses propres
+chiffres, oui : les rejets « probabilité trop faible » sont annoncés à 36,5 %
+et passent 58,5 % (+21,9 ± 3,4 points), et à 89 % annoncés le moteur réalise
+76 %. Par rapport au marché sans marge, rien : tous les groupes passent à ±1
+point, tous perdent de −3 à −9 % à mise fixe, et la persistance des cellules
+est nulle (r = −0,04). À même marché et même tranche, vivier 66,9 % contre
+66,5 % laissé : le choix du moteur n'ajoute rien à prix égal, et le
+désaccord moteur-marché n'a aucune pente. Décidé : le coupon cote 2 compose
+sur tout le coté, classé par le prix (114 jours sur 115, coût attendu −7,9 %
+au lieu de −9,4 %, 44 % annoncés pour 48 % ± 9 réalisés). Piège mesuré :
+élargir le vivier en gardant le classement par taux passé de la cellule
+annonce 53 % et réalise 35 à 46 %. Source :
+[SELECTIONS-LAISSEES.md](audits/2026-10-28/SELECTIONS-LAISSEES.md).
+
+## 2026-10-29 — L'utilité du ML, et ce qu'il peut faire à la place
+
+### La correction ML en ombre bat-elle le marché ?
+
+**Verdict : fermée.** 16 617 sélections réglées avec un prix de marché (5 957
+matchs) : écart au marché de +0,026 de Brier pour l'ombre, pire que le moteur
+(+0,014) ; poids optimal −0,05 [−0,09 ; −0,00]. Là où elle « aide »
+(DOMINANT, VALUE), elle ne fait que rapprocher le moteur du prix (corrélation
+0,71). Un modèle appris sur toutes nos features (logistique, gradient
+boosting) est moins bon que le prix seul sur les cinq issues testées, de
++0,002 à +0,006 de Brier hors échantillon ; aucune feature ne dépasse 0,045 de
+corrélation avec le résidu. Ombre coupée, `ML_CORRECTION` constante `false`.
+Ne rouvrir qu'avec une information que le marché n'a pas encore. Source :
+[ML-UTILITE.md](audits/2026-10-29/ML-UTILITE.md).
+
+### Une grille de score déduite du prix fait-elle mieux que 1xBet ?
+
+**Verdict : ouvert.** λ, λ et ρ (Dixon-Coles) ajustés sur Pinnacle sans marge :
+grille calibrée à la quatrième décimale sur 294 000 lignes de score exact, et
+Brier meilleur que 1xBet sur chacun de ses marchés (1X2 0,1938 contre 0,1944,
+plus/moins 0,1896 contre 0,1918…). Chez 1xBet, rien n'est payé au-dessus du
+juste de façon exploitable (0,16 ligne par match, +0,002 [−0,14 ; +0,17]).
+Décidé le 29/10 : la grille devient l'entrée du moteur (Phase 3 redéfinie,
+lots ML-1 à ML-4), jugée sur le résidu contre Pinnacle ; ce n'est pas un
+avantage sur le book, c'est la fin de la sur-promesse. Source :
+[ML-V2-PROPOSITION.md](audits/2026-10-29/ML-V2-PROPOSITION.md).
+
+### Un accumulateur à cote 8–30 peut-il gagner plus souvent que sa cote ?
+
+**Verdict : impossible.** 102 journées, toutes les façons d'empiler testées :
+à cible 8–15 la fréquence est de 9 à 11 % des jours pour 9 à 11 % dits par la
+cote (jambes 1,40–1,80 : 8 gagnés sur 92, 1 sur 12, pire série 22 jours) ; à
+15–30, 2 à 7 % pour 5 à 6 %, séries de 25 à 54 jours. La fréquence suit
+`(1 − marge)^jambes / cote`, jamais la composition. Le coupon long 2,5–5 et le
+coupon prix 5–15 sont retirés ; un chasseur d'accumulateur 8–15 reste à
+livrer comme pari à « 1 jour sur 10 », jamais comme produit qui gagne. Source :
+[ACCUMULATEUR.md](audits/2026-10-29/ACCUMULATEUR.md).
+
+### Le marché des corners est-il mal coté ?
+
+**Verdict : fermée.** 1 564 matchs avec cotes Pinnacle : 49,9 % annoncés, 49,9 %
+réalisés (± 1,5) ; à mise fixe −5,4 % sur le plus et −5,7 % sur le moins, la
+marge. Cartons : même résultat (535 matchs). 1xBet ne cote que les corners
+parmi les extras, à ~9,5 % de marge. Rejeu de la règle du Chasseur Corners
+(côté le moins cher, 1,70–2,10) : 38 jours sur 39, 52,6 % ± 16,1 réalisés
+pour 51,2 % de marché. Livré comme pari de variété, 42 championnats aux stats
+fiables. Source : [CORNERS.md](audits/2026-10-29/CORNERS.md).
+
+### L'avis de l'IA bat-il la cote ?
+
+**Verdict : sans signal.** Cohorte figée sur `vantage_decision_history`
+(08/09 – 24/10, 951 avis) : v4 réalise 65,7 % pour 63,7 % annoncés (bien
+calibrée), −2,6 % à mise fixe ; v3 était sur-confiante de 5 points (−7,4 %).
+Au-dessus de 1,80, 40,5 % réalisés pour 50,9 % annoncés, d'où le plafond
+`MAX_ODDS = 1,80`. Jambes de coupon cotées 1xBet : 26 à 66 par source, écarts
+dans le bruit (± 15 à 18 points). Relire la cohorte v5. Source :
+[BILAN-IA.md](audits/2026-10-29/BILAN-IA.md).
+
+## 2026-11-03 — Étude des stratégies et nouveaux marchés
+
+### Les stats de match (tirs, xG, corners) ajoutent-elles à la cote de clôture ?
+
+**Verdict : fermée.** Régression logistique prix seul contre prix + moyennes
+d'avant-match sur 8 (puis 5) matchs, apprentissage avant le 01/07/2025, test
+après, 7 000 à 11 700 matchs : gain de log-loss hors échantillon nul partout
+(1X2 domicile +0,00 ± 0,08 ‰ sur les buts, −0,22 ± 0,90 ‰ sur tout ; plus de
+2,5 −2,09 ± 2,38 ‰). Les stats servent à régler les marchés de stats, pas à
+battre le prix. Source :
+[API-FOOTBALL-MARCHES.md](audits/2026-11-03/API-FOOTBALL-MARCHES.md) § 6.
+
+### Les stratégies en place et les marchés à ouvrir
+
+**Verdict : ouvert.** Depuis le 13/10, jambe par jambe : Favori 15/18, Combiné
+39/46, Cote 2 8/10, au-dessus de la fréquence annoncée ; aucune règle à
+changer, les seuls leviers sont la marge payée et le plafond 1,80. Buteurs :
+sur 10 matchs, les cotes impliquent 8 buteurs par match pour 2 à 3 réels, un
+joueur coté 2,5–4 (annoncé 32 %) marque 13 % du temps — pari plaisir à la
+fréquence réelle, jamais un avantage. Corners par équipe et 1X2, minute 1X2,
+tirs cadrés par joueur : cotés et réglables. Livré : 8 marchés ingérés et
+réglés (#301) sans rien montrer, événements et compositions via
+`/fixtures?ids=` (#300) ; les produits se décident après mesure (phase 4 du
+plan). Source : [ETUDE-STRATEGIES.md](audits/2026-11-03/ETUDE-STRATEGIES.md).
+
+### Un combiné IA à cote 4–10 tient-il ?
+
+**Verdict : ouvert.** Les avis joués de l'IA entre 1,45 et 1,80 sont calibrés
+(0,99 en v3, 1,05 en v4, 1,10 en v5 ± 0,06), contre 0,94 pour le moteur dans
+la même tranche ; au-delà de 1,80, v5 tombe à 0,62. Règle rejouée (3–4 avis
+1,45–1,80, un par championnat, le moins cher d'abord) : 36 jours sur 44, cote
+~5,2, gagné 12 fois (33 %) pour 25 % annoncés, pire série 8. C'est
+l'arithmétique de jambes calibrées ; le retour mesuré n'a aucune puissance,
+attendre la marge (~0,9 au prix 1xBet). Livré (#296). Source :
+[COMBINE-IA-4-10.md](audits/2026-11-03/COMBINE-IA-4-10.md).
+
+### Un retrait plus fort corrige-t-il TEAM_TOTAL sur 1,45–1,80 ?
+
+**Verdict : fermée.** 5 900 matchs rejoués avec la chaîne de production,
+hypothèse et protocole figés avant : ratio de la tranche 0,792 → 0,781 (F = 0,8)
+et 0,836 → 0,854 (F = 0,4) hors échantillon, jamais au-dessus de 0,90 ; même
+F = 0 donne 0,78 à 0,87. L'écart est au prix, pas au taux de base : seule la
+grille de marché en entrée le corrigerait. Rien d'expédié. Source :
+[TEAM-TOTAL-SHRINKAGE.md](audits/2026-11-03/TEAM-TOTAL-SHRINKAGE.md).
+
+### Départager le Combiné du jour par la marge 1xBet
+
+**Verdict : ouvert (expédié, petit).** 49 jours rejoués à l'heure de
+composition : marge payée par jambe 8,93 % → 8,87 %, 11 jambes changées sur 11
+jours, réalisé ÷ annoncé 1,020 [0,935 ; 1,105] → 1,044. Pas un avantage : 0,06
+point de coût par jambe. Expédié en `engine-combo-v2`
+(`COMBO_CONFIG.marginTieBreak`) ; à retirer si la marge payée ne baisse pas en
+direct. Source : [COMBINE-MARGE.md](audits/2026-11-03/COMBINE-MARGE.md).
+
+## 2026-11-04 — Chasseur Nul à la mi-temps
+
+### Le nul à la pause, un pari au prix du marché ?
+
+**Verdict : fermée comme avantage, livré comme variété.** 14 291 clôtures
+Pinnacle : 39,7 % annoncés, 40,0 % ± 0,8 réalisés, marge 4,7 % ; 1xBet prend
+9,9 % sur ce marché. Règle rejouée (un nul MT par jour, 2,10–2,80, marge la
+plus basse d'abord) : 847 jours sur 889, cote 2,40, 39,7 % ± 3,3 gagnés pour
+40,3 % annoncés, retour 0,950 ± 0,079 au prix Pinnacle, ~0,90 chez 1xBet,
+pire série 12 jours. Livré (`HUNTER_HT_DRAW`, #299). Source :
+[CHASSEUR-NUL-MT.md](audits/2026-11-04/CHASSEUR-NUL-MT.md).

@@ -1,5 +1,9 @@
 # Plan de rentabilité EVCore
 
+> **Figé le 04/11 : la suite est suivie dans [ROADMAP.md](../ROADMAP.md) et
+> [docs/plan-strategies-2026-11-03.md](plan-strategies-2026-11-03.md).**
+> Les cases ci-dessous ne sont plus tenues à jour au-delà de cette date.
+
 > Document vivant. Source de vérité pour le chantier « devenir rentable ».
 > Ouvert le 2026-09-15 après l'audit complet du moteur, des canaux, des
 > championnats, des marchés et de l'ingestion.
@@ -415,14 +419,25 @@ compteur en shadow. `/fixtures/lineups` n'est jamais appelé.
 
 ### C.2 Compositions
 
-- [ ] `C-11` Créer les tables `lineup` et `lineup_player`.
+- [x] `C-11` Créer les tables `lineup` et `lineup_player`.
       _Acceptation_ : migration + repository.
-- [ ] `C-12` Nouveau worker `lineups-sync` appelant `/fixtures/lineups`.
+      _Fait autrement (#300, 2026-11-03)_ : une seule table `fixture_lineup`
+      (titulaires et remplaçants, `starter`), plus `fixture_event` et
+      `fixture_player_statistic`, repository `fixture-lineup.repository.ts`.
+- [x] `C-12` Nouveau worker `lineups-sync` appelant `/fixtures/lineups`.
       _Acceptation_ : formation, XI et remplaçants persistés pour une rencontre test.
-- [ ] `C-13` Cadence : T−45 min, puis re-tentative à T−20 min si absent.
-      _Acceptation_ : ≥ 70 % des rencontres analysées ont une compo avant le coup d'envoi.
-- [ ] `C-14` Historiser la formation annoncée (4-2-3-1, etc.).
+      _Fait autrement (#300)_ : pas de worker dédié ; un appel `/fixtures?ids=`
+      (20 matchs) ramène événements, compositions et stats joueurs
+      (`modules/fixture-events/`).
+- [-] `C-13` Cadence : T−45 min, puis re-tentative à T−20 min si absent.
+  _Acceptation_ : ≥ 70 % des rencontres analysées ont une compo avant le coup d'envoi.
+  _Annulé 2026-11-04_ : les compositions sont collectées après le match
+  (règlement, historique). Avant le coup d'envoi, API-Football les publie
+  20 à 40 min avant et 1xBet suit déjà Pinnacle : fenêtre mesurée sans
+  valeur (`docs/audits/2026-10-29/ML-V2-PROPOSITION.md` § 2.3).
+- [x] `C-14` Historiser la formation annoncée (4-2-3-1, etc.).
       _Acceptation_ : colonne `formation` renseignée.
+      _Fait (#300)_ : `fixture_lineup.formation`.
 - [ ] `C-15` Feature « titulaires habituels absents » : intersection entre le
       XI annoncé et le XI moyen des 5 derniers matchs.
       _Acceptation_ : feature point-in-time, testée sans fuite.
@@ -543,25 +558,29 @@ Aujourd'hui inexistant.
   aucun canal ne bat la clôture (écarts de −0,45 à +0,75 pt, dans le bruit ou
   sans book connu) ; les trois marchés joints coûtent 12,8 à 16,5 % contre 3,7
   à 7,0 % ailleurs → exclus du vivier LLM (`CLOSING_COST_EXCLUDED_MARKETS`,
-  politique `unified-5-15-v1.1`). Reste : la suspension automatique par (a), à
+  politique `unified-5-15-v1.1` — _coupon 5–15 supprimé depuis : le LLM ne le
+  produit plus depuis le 13/10, le coupon prix 5–15 est retiré le 29/10_). Reste : la suspension automatique par (a), à
   écrire quand les sélections au book connu atteignent 500 par canal.
-- [~] `E-5` Comptabilité de la marge : pour chaque pari, marge payée sur la
-  ligne effectivement prise.
-  _Acceptation_ : colonne `marginPaid` renseignée.
-  _Code fait 2026-10-11_ : la marge est calculée à l'assemblage du relevé
-  (`attachMargins`, analysis-core) — surcote du groupe d'issues complet
-  chez le book retenu, à l'instant du prix — et écrite par le moteur avec
-  la sélection (`channel_selection.marginPaid`), sans attendre la clôture.
-  Migration `20261011000000_add_channel_selection_margins` **à enregistrer
-  par `db:deploy`**. Acceptation à lire sur `report:margin-paid` une
-  semaine après : seules les sélections écrites après déploiement la
-  portent.
-- [~] `E-6` Rapport « marge payée vs marge minimale disponible » par jour.
-  _Acceptation_ : écart quotidien mesuré, cible < 0,5 point.
-  _Code fait 2026-10-11_ : `marginBest` (plus basse marge offerte sur le
-  groupe par un book du relevé au même instant) écrite avec la sélection ;
-  `report:margin-paid` par marché et par book retenu, écart ± erreur type
-  contre la cible.
+- [x] `E-5` Comptabilité de la marge : pour chaque pari, marge payée sur la
+      ligne effectivement prise.
+      _Acceptation_ : colonne `marginPaid` renseignée.
+      _Code fait 2026-10-11_ : la marge est calculée à l'assemblage du relevé
+      (`attachMargins`, analysis-core) — surcote du groupe d'issues complet
+      chez le book retenu, à l'instant du prix — et écrite par le moteur avec
+      la sélection (`channel_selection.marginPaid`), sans attendre la clôture.
+      Migration `20261011000000_add_channel_selection_margins` **à enregistrer
+      par `db:deploy`**. Acceptation à lire sur `report:margin-paid` une
+      semaine après : seules les sélections écrites après déploiement la
+      portent.
+- [x] `E-6` Rapport « marge payée vs marge minimale disponible » par jour.
+      _Acceptation_ : écart quotidien mesuré, cible < 0,5 point.
+      _Livré (E-5 et E-6) avec le lot 3 (#277, 2026-10-29)_ : coupons et chasseurs
+      classés et stockés sur la marge 1xBet payée (9,3 % médiane,
+      `docs/audits/2026-10-29/MARGES-1XBET.md`).
+      _Code fait 2026-10-11_ : `marginBest` (plus basse marge offerte sur le
+      groupe par un book du relevé au même instant) écrite avec la sélection ;
+      `report:margin-paid` par marché et par book retenu, écart ± erreur type
+      contre la cible.
 - [ ] `E-7` Attribution : décomposer le résultat en biais favori, signal
       modèle, courtage, chance.
       _Acceptation_ : décomposition qui somme au ROI observé, à 0,1 point près.
@@ -601,11 +620,17 @@ gagner.
 
 **Dépendances** : `C`, `D`, `E`.
 
-- [ ] `F-1` Établir la référence : Brier du marché (clôture Pinnacle) par
+- [x] `F-1` Établir la référence : Brier du marché (clôture Pinnacle) par
       marché et par championnat.
       _Acceptation_ : tableau de référence commité.
-- [ ] `F-2` Mesurer le Brier du moteur contre cette référence.
+      _Fait 2026-09-16_ : Brier du marché 0,59920 sur 3 633 rencontres
+      (`docs/journal-experiences.md`, « Le moteur est-il meilleur que le prix
+      du marché ? »).
+- [x] `F-2` Mesurer le Brier du moteur contre cette référence.
       _Acceptation_ : écart chiffré, par marché.
+      _Fait 2026-09-16_ : moteur 0,63874, écart +0,0395 ± 0,0080, poids optimal
+      du moteur dans un mélange avec le prix 0 %. Repris par canal le
+      2026-10-29 (`docs/audits/2026-10-29/ML-UTILITE.md`).
 - [ ] `F-3` Objectif explicite : battre le Brier du marché, pas celui du hasard.
       _Acceptation_ : critère écrit dans la config de calibration.
 - [ ] `F-4` Recalibrer les probabilités du moteur sur la clôture plutôt que sur
@@ -692,9 +717,13 @@ règle.
 - [ ] `H-4` Dimensionner la bankroll pour absorber le pire creux observé
       multiplié par une marge de sécurité.
       _Acceptation_ : règle chiffrée et justifiée.
-- [ ] `H-5` Kelly fractionné : à n'introduire qu'après validation de l'edge et
-      derrière le flag de phase produit existant.
-      _Acceptation_ : flag respecté, jamais activé sans edge mesuré.
+- [-] `H-5` Kelly fractionné : à n'introduire qu'après validation de l'edge et
+  derrière le flag de phase produit existant.
+  _Acceptation_ : flag respecté, jamais activé sans edge mesuré.
+  _Retiré_ : le code Kelly est supprimé (commit `58e30f07`) et
+  `KELLY_ENABLED` figure parmi les variables retirées
+  (`RETIRED_ENV`, `apps/backend/src/config/env.schema.ts`). Aucun edge
+  mesuré ne le justifie.
 - [ ] `H-6` Plafond d'exposition par journée et par championnat.
       _Acceptation_ : constantes en config, testées.
 - [ ] `H-7` Arrêt automatique sur drawdown : suspension au-delà d'un seuil.
