@@ -20,9 +20,13 @@ import {
   computeCongestionScoreFromTeams,
   CONGESTION_UPCOMING_WINDOW_MS,
   POOL_ELIGIBLE_CHANNELS,
+  MARKET_GRID_BOOKMAKERS,
+  MARKET_GRID_MARKETS,
+  type RawOddsRow,
 } from "@evcore/analysis-core";
 import {
   prisma,
+  Prisma,
   BetStatus,
   FixtureStatus,
   prematchCohortSql,
@@ -597,6 +601,97 @@ export class PointInTimeLoader {
           asOf,
         ),
       );
+    }
+    return result;
+  }
+  /**
+   * The market-grid books' rows (MARKET_GRID_BOOKMAKERS × MARKET_GRID_MARKETS)
+   * as they existed at each request's `asOf`: priced AND captured before it,
+   * the production rule (OddsSnapshotLoader keeps PREMATCH rows created
+   * before the cutoff; every HISTORICAL row was imported after its kickoff,
+   * so the capture bound excludes them too). One query for the batch, one
+   * array per request, in request order.
+   */
+  async loadMarketGridRowsBatch(
+    requests: ReadonlyArray<{ fixtureId: string; asOf: Date }>,
+  ): Promise<RawOddsRow[][]> {
+    if (requests.length === 0) return [];
+    const fixtureIds = [...new Set(requests.map((r) => r.fixtureId))];
+    const [base, archived] = await Promise.all([
+      this.client.oddsSnapshot.findMany({
+        where: {
+          fixtureId: { in: fixtureIds },
+          bookmaker: { in: [...MARKET_GRID_BOOKMAKERS] },
+          market: { in: [...MARKET_GRID_MARKETS] },
+          line: null,
+        },
+        select: {
+          id: true,
+          fixtureId: true,
+          bookmaker: true,
+          market: true,
+          pick: true,
+          odds: true,
+          snapshotAt: true,
+          createdAt: true,
+          homeOdds: true,
+          drawOdds: true,
+          awayOdds: true,
+        },
+      }),
+      this.archive
+        ? this.archive.rowsFor(fixtureIds)
+        : Promise.resolve([] as ArchivedOddsRow[]),
+    ]);
+    const rows = mergeArchivedRows<ArchivedOddsRow>(
+      base,
+      archived.filter(
+        (row) =>
+          MARKET_GRID_BOOKMAKERS.includes(row.bookmaker) &&
+          MARKET_GRID_MARKETS.includes(row.market),
+      ),
+    );
+    const byFixture = new Map<string, ArchivedOddsRow[]>();
+    for (const row of rows) {
+      const bucket = byFixture.get(row.fixtureId);
+      if (bucket) bucket.push(row);
+      else byFixture.set(row.fixtureId, [row]);
+    }
+    return requests.map(({ fixtureId, asOf }) =>
+      (byFixture.get(fixtureId) ?? []).filter(
+        (row) => row.createdAt < asOf && row.snapshotAt < asOf,
+      ),
+    );
+  }
+
+  /**
+   * One book's closing prices (odds_closing_line: last pre-kickoff row per
+   * market, pick and line), observed at most `maxHoursBeforeKickoff` before
+   * kickoff — a last row a day out is not a closing line. SETTLEMENT TRUTH,
+   * like the score: read after the decision to judge it, never fed into
+   * one. Rows with a line column (Asian Handicap) are left out.
+   */
+  async loadClosingPricesBatch(
+    fixtureIds: readonly string[],
+    options: { bookmaker: string; maxHoursBeforeKickoff: number },
+  ): Promise<Map<string, RawOddsRow[]>> {
+    const result = new Map<string, RawOddsRow[]>();
+    if (fixtureIds.length === 0) return result;
+    const rows = await this.client.$queryRaw<
+      Array<RawOddsRow & { fixtureId: string }>
+    >(Prisma.sql`
+      SELECT "fixtureId"::text AS "fixtureId", bookmaker, market::text AS market,
+             pick, odds, "homeOdds", "drawOdds", "awayOdds", "snapshotAt"
+      FROM odds_closing_line
+      WHERE "fixtureId" = ANY(${[...fixtureIds]}::uuid[])
+        AND bookmaker = ${options.bookmaker}
+        AND line IS NULL
+        AND "hoursBeforeKickoff" <= ${options.maxHoursBeforeKickoff}
+    `);
+    for (const row of rows) {
+      const bucket = result.get(row.fixtureId);
+      if (bucket) bucket.push(row);
+      else result.set(row.fixtureId, [row]);
     }
     return result;
   }
