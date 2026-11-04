@@ -1,6 +1,6 @@
 # ML-2a — la dépendance des buts (Dixon-Coles) sur la grille
 
-Rejeu du 2026-11-04 sur la base locale (copie de prod jusqu'au 03/11). C'est le sous-modèle D du lot ML-2 de [ML-V2-PROPOSITION.md](../2026-10-29/ML-V2-PROPOSITION.md), mesuré avec la méthode de [ML1-GRILLE-MARCHE.md](ML1-GRILLE-MARCHE.md). Script : `pnpm --filter @evcore/backtest-core backtest:goal-dependence`. Sortie complète : [ml2a-dependance-buts.txt](ml2a-dependance-buts.txt). Verdict : **non expédié**. Le critère D2 (BTTS contre la clôture Pinnacle) ne peut pas être mesuré. Le module reste dans le code, sans effet en prod (`MARKET_GRID_RHO` vide, donc ρ = 0).
+Rejeu du 2026-11-04 sur la base locale (copie de prod jusqu'au 03/11). C'est le sous-modèle D du lot ML-2 de [ML-V2-PROPOSITION.md](../2026-10-29/ML-V2-PROPOSITION.md), mesuré avec la méthode de [ML1-GRILLE-MARCHE.md](ML1-GRILLE-MARCHE.md). Script : `pnpm --filter @evcore/backtest-core backtest:goal-dependence`. Sortie complète : [ml2a-dependance-buts.txt](ml2a-dependance-buts.txt). Verdict de l'agent : non expédié, le critère D2 (BTTS contre la clôture Pinnacle) ne pouvant pas être mesuré. **Décision de l'utilisateur le 04/11 : expédié** (voir § 5).
 
 ## 1. Le rejet du 30/06 tient-il encore ?
 
@@ -44,3 +44,11 @@ Avec la grille, les λ viennent du prix. Le seul défaut qui reste est celui de 
 - **Pourquoi on n'expédie pas.** La règle disait BTTS contre Pinnacle, et ce juge n'existe pas pour 2026. On n'en choisit pas un autre après avoir vu les données. Pour rouvrir, il faut une décision humaine : figer un D2 mesurable (le nul interne contre la clôture Pinnacle, ou BTTS sur les clôtures HISTORICAL de 2023 à mai 2026), puis rejouer.
 - **Ce qui reste dans le code.** `computeMarketGrid(rows, cutoff, { rho })`, `marketGridRho`, `MARKET_GRID_RHO` (vide), le τ de `dixon-coles.ts` et `scoreDependenceRho` pour CORRECT_SCORE. ρ = 0 redonne la grille actuelle au bit près (test). Le backend n'est pas branché.
 - **Limite du juge.** La clôture Pinnacle des plus/moins 2,5 est stockée sous les picks `OVER` et `UNDER`, sans ligne (`odds_closing_line`). Le juge `OVER_2_5` du script, et celui de ML-1, ne la trouve donc pas. À corriger dans l'ETL ou dans le juge, avant le prochain rejeu.
+
+## 5. Décision du 04/11 : expédié
+
+Les trois critères mesurables (D1, D3, D4) sont tenus, dont un gain significatif sur le score exact ; D2 n'est ni tenu ni raté, faute de clôture Pinnacle BTTS en 2026. L'utilisateur a choisi d'expédier, avec un garde-fou en direct à la place de D2 :
+
+- `MARKET_GRID_RHO` reçoit la carte finale (14 384 grilles, global −0,05) ; ρ ne s'applique que quand la source est la grille.
+- **Remplaçant de D2, suivi en production** : le nul réalisé contre la fréquence de la clôture Pinnacle sans marge (1X2), par mois, sur les matchs analysés par la grille (`features.market_grid.rho` non nul). Indicatif au rejeu : −0,0135 → −0,0038. Relu le 10/12 ; si le biais repasse sous −0,01 ou que DRAW se dégrade, retour à ρ = 0 (vider la carte), sans autre changement.
+- Ce choix a été fait après avoir vu les chiffres : il n'a pas la valeur d'un critère figé d'avance, d'où le suivi en direct.

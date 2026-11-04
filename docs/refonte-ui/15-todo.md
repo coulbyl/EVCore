@@ -221,6 +221,10 @@ PR https://github.com/coulbyl/EVCore/pull/282 ouverte (C–F). Avant la phase G,
 
 - [ ] **Chance des jambes de coupon sous 1,80 = celle du moteur** (`legChanceOf`). La lecture d'un match montre la fréquence du marché à toutes les cotes depuis le 04/11 (`docs/audits/2026-11-04/CHANCE-LECTURE.md` : réalisé ÷ annoncé 1,002 marché contre 0,945 moteur sur 1,20–1,45, 1,071 contre 0,899 sur 1,45–1,80) ; relire les jambes de coupon de la même façon et aligner.
 
+- [ ] **Clôture Pinnacle du plus/moins 2,5 stockée sans ligne** : les lignes `OVER`/`UNDER` (sans `_2_5` dans le pick ni `line`) ne sont pas retrouvées par les juges `OVER_2_5` des rejeux ML-1 et ML-2a ; les totaux n'ont donc pas été jugés contre Pinnacle. Corriger l'ingestion ou la lecture (ligne lue depuis le pick ou la colonne), puis rejouer le juge des totaux.
+- [ ] **Pinnacle BTTS plus relevé avant match depuis le 04/05** (seulement en HISTORICAL) : critère D2 de ML-2a non mesurable. Voir si API-Football le sert encore en prématch et le réingérer.
+- [ ] **ρ de la grille (ML-2a) en suivi** : nul réalisé contre la clôture Pinnacle par mois sur les matchs à ρ non nul ; relu le 10/12, retour à ρ = 0 si le biais repasse sous −0,01.
+
 ## À relire plus tard (hors lots)
 
 - **Blessures : étudier le branchement** (décidé le 01/11). `league-sync` les collecte chaque jour à 06:00 (un appel API-Football par championnat) et les écrit en ombre sur l'analyse (`shadow_injuries`), mais ni le moteur, ni l'IA, ni un écran ne les lit. On ne coupe pas la collecte. À étudier : quoi en faire (contexte de l'IA, fiche de match, facteur du moteur jugé sur le résidu contre le marché) et comment le mesurer avant de le montrer. Inventaire : `docs/refonte-ui/exploitation-inventaire.md`.

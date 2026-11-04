@@ -863,7 +863,7 @@ avantage : réalisé − Pinnacle +0,007 ± 0,011. Expédié (`MARKET_GRID`). So
 
 ### Un ρ de Dixon-Coles par championnat corrige-t-il les petits scores de la grille ?
 
-**Verdict : ouvert (non expédié).** Le rejet du 30/06 portait sur les λ du
+**Verdict : expédié le 04/11 par décision de l'utilisateur** (D2 non mesurable, remplacé par un suivi en direct du nul contre la clôture Pinnacle, relu le 10/12). Rejeu : Le rejet du 30/06 portait sur les λ du
 moteur-stats, et ne tient plus sur la grille. ρ par championnat (maximum de
 vraisemblance, rétréci vers le global, walk-forward mensuel ; global −0,05) sur
 7 214 matchs de 2026 : nul réalisé ÷ annoncé 1,100 → 1,058, 1-0/0-1
@@ -871,6 +871,6 @@ vraisemblance, rétréci vers le global, walk-forward mensuel ; global −0,05) 
 [−0,0020 ; −0,0004] ; nul interne contre la clôture Pinnacle −0,0135 →
 −0,0038. Les canaux sont inchangés (1,005 → 1,005, aucun dégradé). Le critère
 D2, BTTS contre Pinnacle, n'est pas mesurable : Pinnacle ne clôture pas BTTS
-dans le flux de 2026. Non expédié, module laissé à ρ = 0. Rouvrir exige un D2
-mesurable, figé avant un nouveau rejeu. Source :
+dans le flux de 2026. L'agent concluait « non expédié » ; l'utilisateur a choisi
+d'expédier avec ce suivi (retour à ρ = 0 si le nul se dégrade). Source :
 [ML2A-DEPENDANCE-BUTS.md](audits/2026-11-04/ML2A-DEPENDANCE-BUTS.md).
