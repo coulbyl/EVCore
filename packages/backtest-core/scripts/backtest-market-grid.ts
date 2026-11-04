@@ -75,18 +75,14 @@ import {
   CLOSING_COST_EXCLUDED_MARKETS,
   FILTER_STRATEGY_CHANNELS,
   META_STRATEGY_CHANNELS,
-  resolveFirstHalfBetStatus,
-  resolveHalfTimeFullTimeBetStatus,
-  resolvePickBetStatus,
-  resolveWinEitherHalfBetStatus,
-  shinDoubleChance,
+  shinOneXTwo,
   shinOutcomeGroups,
   type MarketGridResult,
   type RawOddsRow,
   type StrategyContext,
   type StrategyChannel,
 } from "@evcore/analysis-core";
-import type { ReplayFixture } from "../src";
+import { bootstrapDaySums, settleReplayPick } from "../src";
 import { loaderFromEnv } from "./odds-archive";
 import { replayContext } from "./production-chain";
 
@@ -121,46 +117,11 @@ type Leg = {
   pool: boolean;
 };
 
-// ── Seeded bootstrap by day ────────────────────────────────────────────────
-function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/** Day-block bootstrap of a statistic computed from per-day sums. */
-function bootstrap(
+// ── Bootstrap by day (seeded, src/day-bootstrap.ts) ─────────────────────────
+const bootstrap = (
   days: readonly number[][],
   stat: (sums: number[]) => number,
-): { value: number; lo: number; hi: number } {
-  const width = days[0]?.length ?? 0;
-  const total = (indices: Iterable<number>): number[] => {
-    const sums = new Array<number>(width).fill(0);
-    for (const i of indices) {
-      const day = days[i] as number[];
-      for (let k = 0; k < width; k++) sums[k] = (sums[k] ?? 0) + (day[k] ?? 0);
-    }
-    return sums;
-  };
-  const value = stat(total(days.keys()));
-  const rng = mulberry32(20261104);
-  const draws: number[] = [];
-  for (let b = 0; b < BOOTSTRAP; b++) {
-    const picks = Array.from({ length: days.length }, () =>
-      Math.floor(rng() * days.length),
-    );
-    const v = stat(total(picks));
-    if (Number.isFinite(v)) draws.push(v);
-  }
-  draws.sort((x, y) => x - y);
-  const at = (q: number) => draws[Math.floor(q * (draws.length - 1))] ?? NaN;
-  return { value, lo: at(0.025), hi: at(0.975) };
-}
+) => bootstrapDaySums(days, stat, { draws: BOOTSTRAP, seed: 20261104 });
 
 /** Per-day sums of `fields(leg)` for the legs, keyed by day. */
 function perDay(
@@ -187,33 +148,6 @@ const signed = (r: { value: number; lo: number; hi: number }, d = 3) => {
 };
 
 // ── Settlement and closing truth ───────────────────────────────────────────
-function settle(fixture: ReplayFixture, market: Market, pick: string) {
-  const { homeScore, awayScore, homeHtScore, awayHtScore } = fixture;
-  switch (market) {
-    case Market.OVER_UNDER_HT:
-    case Market.FIRST_HALF_WINNER:
-      return resolveFirstHalfBetStatus(pick, homeHtScore, awayHtScore);
-    case Market.HALF_TIME_FULL_TIME:
-      return resolveHalfTimeFullTimeBetStatus({
-        pick,
-        homeHtScore,
-        awayHtScore,
-        homeScore,
-        awayScore,
-      });
-    case Market.TO_WIN_EITHER_HALF:
-      return resolveWinEitherHalfBetStatus(
-        pick,
-        homeHtScore,
-        awayHtScore,
-        homeScore,
-        awayScore,
-      );
-    default:
-      return resolvePickBetStatus(market, pick, homeScore, awayScore);
-  }
-}
-
 /** Fair closing probability per `${market}|${pick}`, Shin within each group. */
 function closingFair(rows: readonly RawOddsRow[]): Map<string, number> {
   const fair = new Map<string, number>();
@@ -223,22 +157,14 @@ function closingFair(rows: readonly RawOddsRow[]): Map<string, number> {
     pick: string;
     odds: number;
   }[] = [];
+  let oneXTwo: ReturnType<typeof shinOneXTwo> = null;
   for (const row of rows) {
     if (row.market === Market.ONE_X_TWO) {
-      const sides = [
-        ["HOME", row.homeOdds],
-        ["DRAW", row.drawOdds],
-        ["AWAY", row.awayOdds],
-      ] as const;
-      for (const [pick, odds] of sides) {
-        if (odds !== null)
-          priced.push({
-            fixtureId: "f",
-            market: row.market,
-            pick,
-            odds: Number(odds),
-          });
-      }
+      oneXTwo = shinOneXTwo({
+        home: row.homeOdds,
+        draw: row.drawOdds,
+        away: row.awayOdds,
+      });
     } else if (row.pick && row.odds !== null) {
       priced.push({
         fixtureId: "f",
@@ -251,23 +177,29 @@ function closingFair(rows: readonly RawOddsRow[]): Map<string, number> {
   for (const r of shinOutcomeGroups(priced)) {
     fair.set(`${r.market}|${r.pick}`, r.fair.toNumber());
   }
-  const oneXTwo = priced
-    .filter((r) => r.market === Market.ONE_X_TWO)
-    .map((r) => ({ pick: r.pick, odds: new Decimal(r.odds) }));
-  const dc = shinDoubleChance(oneXTwo);
-  for (const [pick, p] of dc ?? []) {
-    const key = `${Market.DOUBLE_CHANCE}|${pick}`;
-    if (!fair.has(key)) fair.set(key, p.toNumber());
-  }
-  const home = fair.get(`${Market.ONE_X_TWO}|HOME`);
-  const away = fair.get(`${Market.ONE_X_TWO}|AWAY`);
-  if (home !== undefined && away !== undefined) {
+  if (oneXTwo) {
+    const { home, draw, away } = oneXTwo;
+    const derived: Array<[Market, string, Decimal]> = [
+      [Market.ONE_X_TWO, "HOME", home],
+      [Market.ONE_X_TWO, "DRAW", draw],
+      [Market.ONE_X_TWO, "AWAY", away],
+      // Double chance and draw-no-bet from the same 1X2.
+      [Market.DOUBLE_CHANCE, "1X", home.plus(draw)],
+      [Market.DOUBLE_CHANCE, "X2", draw.plus(away)],
+      [Market.DOUBLE_CHANCE, "12", home.plus(away)],
+    ];
+    for (const [market, pick, p] of derived) {
+      fair.set(`${market}|${pick}`, p.toNumber());
+    }
+    // Draw-no-bet priced by the book itself keeps its own Shin price.
+    const h = home.toNumber();
+    const a = away.toNumber();
     for (const [pick, p] of [
-      ["HOME", home],
-      ["AWAY", away],
+      ["HOME", h],
+      ["AWAY", a],
     ] as const) {
       const key = `${Market.DRAW_NO_BET}|${pick}`;
-      if (!fair.has(key)) fair.set(key, p / (home + away));
+      if (!fair.has(key)) fair.set(key, p / (h + a));
     }
   }
   return fair;
@@ -471,7 +403,7 @@ async function main() {
             const key = `${decision.channel}|${sel.market}`;
             if (seen.has(key) || sel.odds === undefined) continue;
             seen.add(key);
-            const status = settle(fixture, sel.market, sel.pick);
+            const status = settleReplayPick(fixture, sel);
             if (status !== "WON" && status !== "LOST") continue;
             const p = sel.probability.toNumber();
             const o = sel.odds.toNumber();

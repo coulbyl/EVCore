@@ -11,3 +11,5 @@ export * from "./backtest-runner";
 export * from "./validation-protocol";
 export * from "./iso-week";
 export * from "./new-markets-report";
+export * from "./day-bootstrap";
+export * from "./settle-pick";

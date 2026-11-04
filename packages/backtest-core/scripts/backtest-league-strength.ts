@@ -68,7 +68,7 @@ import {
   type OneXTwoOutcome,
   type StrategyContext,
 } from "@evcore/analysis-core";
-import type { PointInTimeLoader, ReplayFixture } from "../src";
+import { meanCi, type PointInTimeLoader, type ReplayFixture } from "../src";
 import { loaderFromEnv } from "./odds-archive";
 import { replayContext } from "./production-chain";
 
@@ -162,53 +162,10 @@ function capOf(competition: string, k: Outcome): Decimal {
   return SOFT_CAPS[`${competition}|${k}`] ?? EV_HARD_CAP;
 }
 
-// ─── Bootstrap by day ──────────────────────────────────────────────────────
+// ─── Bootstrap by day (seeded, src/day-bootstrap.ts) ─────────────────────
 
-function mulberry32(seed: number): () => number {
-  let a = seed;
-  return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/** Mean of `values` and its 95 % interval, resampling whole days. */
-function meanCi(rows: ReadonlyArray<{ day: string; value: number }>): {
-  mean: number;
-  lo: number;
-  hi: number;
-} {
-  if (rows.length === 0) return { mean: NaN, lo: NaN, hi: NaN };
-  const byDay = new Map<string, number[]>();
-  for (const r of rows) {
-    const bucket = byDay.get(r.day);
-    if (bucket) bucket.push(r.value);
-    else byDay.set(r.day, [r.value]);
-  }
-  const days = [...byDay.values()];
-  const mean = rows.reduce((s, r) => s + r.value, 0) / rows.length;
-  const random = mulberry32(20261104);
-  const draws: number[] = [];
-  for (let b = 0; b < BOOTSTRAP_DRAWS; b++) {
-    let sum = 0;
-    let n = 0;
-    for (let i = 0; i < days.length; i++) {
-      const day = days[Math.floor(random() * days.length)]!;
-      for (const v of day) sum += v;
-      n += day.length;
-    }
-    draws.push(sum / n);
-  }
-  draws.sort((x, y) => x - y);
-  return {
-    mean,
-    lo: draws[Math.floor(0.025 * BOOTSTRAP_DRAWS)]!,
-    hi: draws[Math.floor(0.975 * BOOTSTRAP_DRAWS)]!,
-  };
-}
+const dayCi = (rows: ReadonlyArray<{ day: string; value: number }>) =>
+  meanCi(rows, { draws: BOOTSTRAP_DRAWS, seed: 20261104 });
 
 // ─── Data ──────────────────────────────────────────────────────────────────
 
@@ -505,16 +462,16 @@ function describe(
   });
   const avg = (f: (r: (typeof per)[number]) => number) =>
     per.length === 0 ? NaN : per.reduce((s, r) => s + f(r), 0) / per.length;
-  const delta = meanCi(
+  const delta = dayCi(
     per.map((r) => ({ day: r.day, value: r.bCorr - r.bBase })),
   );
-  const deltaLog = meanCi(
+  const deltaLog = dayCi(
     per.map((r) => ({ day: r.day, value: r.lCorr - r.lBase })),
   );
-  const resBase = meanCi(
+  const resBase = dayCi(
     per.map((r) => ({ day: r.day, value: r.bBase - r.bPin })),
   );
-  const resCorr = meanCi(
+  const resCorr = dayCi(
     per.map((r) => ({ day: r.day, value: r.bCorr - r.bPin })),
   );
   const rBase = retained(rows, (i) => tripleOf(i.base));
