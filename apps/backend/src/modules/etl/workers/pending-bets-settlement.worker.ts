@@ -244,6 +244,7 @@ export class PendingBetsSettlementWorker extends WorkerHost {
         fixtureExternalId: externalId,
         observedAt: new Date(),
         details: details.data,
+        provisional: true,
       });
       if (written.status === 'rejected') {
         logger.warn(

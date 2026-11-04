@@ -120,6 +120,22 @@ describe('newMarketPicksOf', () => {
     expect(picks).toEqual([]);
   });
 
+  it('over and under updated minutes apart still read as one quote', () => {
+    const picks = newMarketPicksOf({
+      rows: [
+        row('CARDS', 'OVER', { line: 3.5, odds: 1.9 }),
+        row('CARDS', 'UNDER', {
+          line: 3.5,
+          odds: 1.9,
+          at: new Date('2026-11-04T17:03:00.000Z'),
+        }),
+      ],
+      playerNames: new Map(),
+      settle: BEFORE,
+    });
+    expect(keys(picks)).toEqual(['CARDS/OVER/3.5', 'CARDS/UNDER/3.5']);
+  });
+
   it('corners 1X2: the three outcomes, their chances summing to one', () => {
     const picks = newMarketPicksOf({
       rows: [

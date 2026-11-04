@@ -97,7 +97,9 @@ export class TicketService {
               ? {
                   home: single.home.name,
                   away: single.away.name,
-                  score: single.score,
+                  // Final only: the ticket has no clock to tell a live score.
+                  score:
+                    single.clock?.kind === 'finished' ? single.score : null,
                 }
               : null,
           }

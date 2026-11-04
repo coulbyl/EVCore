@@ -290,6 +290,9 @@ export class PlayableOddsRepository {
   async findMarketPrices(input: {
     fixtureId: string;
     markets: readonly string[];
+    /** Bounds on snapshotAt, constants so the monthly partitions prune. */
+    kickoff: Date;
+    since: Date;
   }): Promise<MarketPriceRow[]> {
     if (input.markets.length === 0) return [];
     return this.prisma.client.$queryRaw<MarketPriceRow[]>`
@@ -297,12 +300,12 @@ export class PlayableOddsRepository {
              o.market::text AS market, o.pick, o.line::float AS line,
              o.bookmaker, o.odds::float AS odds, o."snapshotAt"
       FROM public.odds_snapshot o
-      JOIN public.fixture f ON f.id = o."fixtureId"
       WHERE o."fixtureId" = ${input.fixtureId}::uuid
         AND o.market::text = ANY(ARRAY[${Prisma.join(input.markets)}]::text[])
         AND o.pick IS NOT NULL
         AND o.odds IS NOT NULL
-        AND o."snapshotAt" <= f."scheduledAt"
+        AND o."snapshotAt" <= ${input.kickoff}
+        AND o."snapshotAt" >= ${input.since}
       ORDER BY o.market, o.line, o.pick, o.bookmaker, o."snapshotAt" DESC
     `;
   }

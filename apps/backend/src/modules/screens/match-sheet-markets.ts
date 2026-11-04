@@ -12,6 +12,7 @@ import {
   SHEET_NEW_MARKETS,
   SHEET_OTHER_BOOKMAKERS,
   SHEET_PLAYER_SHOTS_SHOWN,
+  SHEET_QUOTE_MAX_GAP_MINUTES,
   SHEET_SCORERS_SHOWN,
 } from '@config/screens.constants';
 import type { MarketPriceRow } from '@modules/betting-engine/pricing/playable-odds.repository';
@@ -112,10 +113,17 @@ type Chosen = { row: MarketPriceRow; chance: number | null };
 
 const at = (row: MarketPriceRow) => new Date(row.snapshotAt).getTime();
 
-/** Shin's frequencies of one book's group, read at one instant; else null. */
+/** Shin's frequencies of one book's group, read as one quote (its prices
+ * within SHEET_QUOTE_MAX_GAP_MINUTES of each other); else null. */
 function fairOf(group: readonly MarketPriceRow[]): Map<string, Decimal> | null {
-  const first = group[0];
-  if (!first || group.some((row) => at(row) !== at(first))) return null;
+  if (group.length === 0) return null;
+  const times = group.map(at);
+  if (
+    Math.max(...times) - Math.min(...times) >
+    SHEET_QUOTE_MAX_GAP_MINUTES * 60_000
+  ) {
+    return null;
+  }
   return shinProbabilities(
     group.map((row) => ({ pick: row.pick, odds: new Decimal(row.odds) })),
   );

@@ -160,6 +160,12 @@ export const SHEET_OTHER_BOOKMAKERS = [
 // Scorers (anytime, first): the players the market makes most likely, by
 // their price at the chosen book.
 export const SHEET_SCORERS_SHOWN = 3;
+// The picks of one book's group read as one quote when their last prices
+// are this close: a book updates OVER and UNDER in separate snapshots.
+export const SHEET_QUOTE_MAX_GAP_MINUTES = 60;
+// How far before kick-off the sheet looks for prices: bounds the scan of
+// the monthly odds_snapshot partitions.
+export const SHEET_PRICES_LOOKBACK_DAYS = 14;
 
 // Player shots (and on target): the player lines nearest an even chance,
 // one line per player.

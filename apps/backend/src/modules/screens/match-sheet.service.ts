@@ -10,6 +10,7 @@ import {
   SCREEN_READS_TTL_MS,
   SHEET_MAIN_LINES,
   SHEET_NEW_MARKETS,
+  SHEET_PRICES_LOOKBACK_DAYS,
 } from '@config/screens.constants';
 import { SharedReads } from '@utils/shared-reads';
 import {
@@ -170,6 +171,10 @@ export class MatchSheetService {
       this.playableOdds.findMarketPrices({
         fixtureId,
         markets: SHEET_NEW_MARKETS,
+        kickoff,
+        since: new Date(
+          kickoff.getTime() - SHEET_PRICES_LOOKBACK_DAYS * DAY_MS,
+        ),
       }),
       finished
         ? this.matchFacts
