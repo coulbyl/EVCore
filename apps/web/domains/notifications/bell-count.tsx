@@ -2,6 +2,7 @@
 
 import { unstable_rethrow } from "next/navigation";
 import { createContext, useContext, useEffect, useOptimistic } from "react";
+import { markNotificationRead } from "@/domains/notifications/actions/notification-actions";
 
 /**
  * The bell's badge: the unread count the player's layout read on the server
@@ -93,11 +94,30 @@ export function useBellChanged(listener: () => void): void {
  * navigation runs. Caught here, it is not thrown at an error boundary that
  * would remount the screen (or, from the layout, the whole shell).
  */
-export function isActionRedirect(error: unknown): boolean {
+function isActionRedirect(error: unknown): boolean {
   try {
     unstable_rethrow(error);
     return false;
   } catch {
     return true;
+  }
+}
+
+/**
+ * Marks a row read (the server action), then leads to `href` — pushed, or
+ * in place of the address with `replace` — in the same round trip. True
+ * when the read was written: redirected to `href`, the router is already
+ * going there. False offline, or for a build the server no longer has:
+ * the caller leads on by itself.
+ */
+export async function readNotification(
+  id: string,
+  href: string | null,
+  replace = false,
+): Promise<boolean> {
+  try {
+    return (await markNotificationRead(id, href, replace)).written;
+  } catch (error) {
+    return isActionRedirect(error);
   }
 }

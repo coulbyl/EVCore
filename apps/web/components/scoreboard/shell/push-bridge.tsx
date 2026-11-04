@@ -4,10 +4,9 @@ import { useCallback, useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useDocumentVisible } from "@/components/scoreboard/states/use-document-visible";
 import { playerFetch } from "@/lib/api/player-fetch";
-import { markNotificationRead } from "@/domains/notifications/actions/notification-actions";
 import {
   announceBellChange,
-  isActionRedirect,
+  readNotification,
   useBell,
   useBellChanged,
 } from "@/domains/notifications/bell-count";
@@ -56,12 +55,7 @@ export function PushBridge() {
       // One action: the read, then the clean address in place of this one,
       // the layout drawn again with it. Not written (the row may be gone),
       // the parameter leaves all the same.
-      let written = false;
-      try {
-        written = (await markNotificationRead(id, clean, true)).written;
-      } catch (error) {
-        written = isActionRedirect(error);
-      }
+      const written = await readNotification(id, clean, true);
       if (written) announceBellChange();
       else router.replace(clean, { scroll: false });
     });

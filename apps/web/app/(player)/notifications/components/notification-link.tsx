@@ -4,10 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { isPlainClick } from "@/components/scoreboard/sheet/sheet-constants";
-import { markNotificationRead } from "@/domains/notifications/actions/notification-actions";
 import {
   announceBellChange,
-  isActionRedirect,
+  readNotification,
   useBell,
 } from "@/domains/notifications/bell-count";
 
@@ -42,7 +41,7 @@ export function NotificationLink({
         if (!isPlainClick(event)) {
           startTransition(async () => {
             dropOne();
-            await markNotificationRead(id, null).catch(() => undefined);
+            await readNotification(id, null);
             announceBellChange();
           });
           return;
@@ -50,14 +49,7 @@ export function NotificationLink({
         event.preventDefault();
         startTransition(async () => {
           dropOne();
-          let written = false;
-          try {
-            written = (await markNotificationRead(id, href)).written;
-          } catch (error) {
-            // Redirected to `href`: written, and the router goes there.
-            // Otherwise offline, or a build the server no longer has.
-            written = isActionRedirect(error);
-          }
+          const written = await readNotification(id, href);
           announceBellChange();
           if (!written && href) router.push(href);
         });
