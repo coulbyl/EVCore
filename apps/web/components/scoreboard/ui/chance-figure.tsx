@@ -9,8 +9,11 @@ import { ChanceLeds } from "./chance-leds";
  *
  * `phrasing="about"` est la voix du ticket (07 § 3) : « environ 1 fois sur
  * 9 ». `phrasing="passes"` dit ce que le chiffre compte, là où le joueur
- * décide (le coupon, notre lecture) : « Passe 8 fois sur 10 ». Une
- * probabilité illisible n'affiche rien.
+ * décide (le coupon, notre lecture) : « Passe 8 fois sur 10 ».
+ * `phrasing="compact"` tient à côté d'une cote, dans une liste (« Autres
+ * paris » de la fiche, 04/11) : « 8/10 », « 1/3 », « moins de 1/200 »,
+ * sans diodes, en petit et en gris. Une probabilité illisible n'affiche
+ * rien.
  */
 export function ChanceFigure({
   probability,
@@ -34,13 +37,15 @@ export function ChanceFigure({
   const chance = chanceOf(probability);
   if (!chance) return null;
 
-  const leds = showLeds ? ledsOf(chance) : null;
+  const compact = phrasing === "compact";
+  const leds = showLeds && !compact ? ledsOf(chance) : null;
   const text = written(chance, phrasing, t);
   const spoken = spokenOf(chance, t);
   // « Passe 8 fois sur 10 » is a phrase: it stays on one line a step below
   // the bare figure.
-  const figure =
-    size === "lg" && phrasing !== "passes"
+  const figure = compact
+    ? "text-meta font-normal text-muted-foreground"
+    : size === "lg" && phrasing !== "passes"
       ? "text-figure"
       : size === "sm"
         ? "text-bet"
@@ -59,7 +64,7 @@ export function ChanceFigure({
         />
       ) : null}
       <span
-        aria-hidden={leds ? true : undefined}
+        aria-hidden={leds || compact ? true : undefined}
         className={cn("score font-bold whitespace-nowrap", figure)}
       >
         {text}
@@ -70,7 +75,7 @@ export function ChanceFigure({
 }
 
 type Translate = ReturnType<typeof useTranslations<"scoreboard.chance">>;
-type Phrasing = "short" | "about" | "passes";
+type Phrasing = "short" | "about" | "passes" | "compact";
 
 function written(chance: Chance, phrasing: Phrasing, t: Translate) {
   if (phrasing === "passes") {
@@ -88,6 +93,19 @@ function written(chance: Chance, phrasing: Phrasing, t: Translate) {
         return t.rich("passesOneIn", { total: chance.total, verb });
       case "rarerThan":
         return t.rich("passesRarerThan", { total: chance.total, verb });
+    }
+  }
+  if (phrasing === "compact") {
+    switch (chance.kind) {
+      case "outOfTen":
+        return t("compactOutOfTen", {
+          count: chance.count,
+          total: chance.total,
+        });
+      case "oneIn":
+        return t("compactOneIn", { total: chance.total });
+      case "rarerThan":
+        return t("compactRarerThan", { total: chance.total });
     }
   }
   const about = phrasing === "about";

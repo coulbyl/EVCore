@@ -214,6 +214,9 @@
       "passesOutOfTen": "<verb>Lands</verb> {count} times in {total}",
       "passesOneIn": "<verb>Lands</verb> 1 time in {total}",
       "passesRarerThan": "<verb>Lands</verb> less than 1 time in {total}",
+      "compactOutOfTen": "{count}/{total}",
+      "compactOneIn": "1/{total}",
+      "compactRarerThan": "less than 1/{total}",
       "spokenOutOfTen": "{count} chances in {total}",
       "spokenOneIn": "1 chance in {total}",
       "spokenRarerThan": "less than one chance in {total}"
