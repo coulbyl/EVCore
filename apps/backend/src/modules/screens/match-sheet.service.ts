@@ -407,6 +407,18 @@ function aiOpinionOf(
 }
 
 /**
+ * The sheet shows an « Avis IA » for these rows: the AI's pick, or its
+ * no-play spoken about the match (aiAbstentionOf). The list's sparkle
+ * (GET /matches) reads the same rule.
+ */
+export function hasAiOpinion(rows: readonly AiOpinionRow[]): boolean {
+  return (
+    rows.some((row) => row.status === 'SELECTED' && row.market) ||
+    aiAbstentionOf(rows) !== null
+  );
+}
+
+/**
  * The AI read the match and would not bet: an opinion too (03/11), shown
  * when its text speaks of the match (`voice: match`, VANTAGE v6), never a
  * text that narrates its rules.

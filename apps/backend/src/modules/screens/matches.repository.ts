@@ -261,6 +261,41 @@ export class MatchesRepository {
   }
 
   /**
+   * findAiOpinion for a page of matches, in one query: each match's latest
+   * AI decision before kick-off, with its pick. A match the AI never read
+   * has no row.
+   */
+  findAiOpinions(
+    fixtureIds: readonly string[],
+  ): Promise<(AiOpinionRow & { fixtureId: string })[]> {
+    if (fixtureIds.length === 0) return Promise.resolve([]);
+    return this.prisma.client.$queryRaw<
+      (AiOpinionRow & { fixtureId: string })[]
+    >`
+      WITH latest AS (
+        SELECT DISTINCT ON (mr."fixtureId")
+               mr."fixtureId", cd.id, cd.status::text AS status,
+               cd."reasonDetails"->>'text' AS text,
+               cd."reasonDetails"->>'voice' AS voice,
+               cd."createdAt" AS "decidedAt"
+        FROM public.channel_decision cd
+        JOIN public.model_run mr ON mr.id = cd."modelRunId"
+        JOIN public.fixture f ON f.id = mr."fixtureId"
+        WHERE mr."fixtureId" = ANY(${fixtureIds}::uuid[])
+          AND cd.channel = 'VANTAGE'
+          AND cd."createdAt" < f."scheduledAt"
+        ORDER BY mr."fixtureId", cd."createdAt" DESC
+      )
+      SELECT latest."fixtureId", latest.status, latest.text, latest.voice,
+             latest."decidedAt", cs.market::text AS market, cs.pick,
+             cs.result::text AS result
+      FROM latest
+      LEFT JOIN public.channel_selection cs
+        ON cs."channelDecisionId" = latest.id AND cs.rank = 1
+    `;
+  }
+
+  /**
    * Why the engine turned a match's picks down (06 § 4–5): the reason codes
    * of the rejected decisions of its latest analysis before kick-off, on
    * the channels a player sees.
