@@ -134,3 +134,4 @@ Vers le **10/12**, sur une copie de prod fraîche, par jambe :
 Autres dates :
 
 - 15/11 : première archive Parquet de `odds_snapshot_legacy` ([exploitation](docs/exploitation.md)).
+- Juillet (début de la saison européenne) : ré-ajuster `LEAGUE_STRENGTH_MAP` avec `backtest:league-strength` et recopier la carte de production du rapport ([FORCE-CHAMPIONNATS](docs/audits/2026-11-04/FORCE-CHAMPIONNATS.md)).
