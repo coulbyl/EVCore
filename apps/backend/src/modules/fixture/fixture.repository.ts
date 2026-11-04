@@ -370,6 +370,7 @@ export class FixtureRepository {
           awayScore: data.awayScore,
           homeHtScore: data.homeHtScore,
           awayHtScore: data.awayHtScore,
+          ...liveClockOf(data),
         },
         select: { id: true },
       });
@@ -391,7 +392,8 @@ export class FixtureRepository {
         awayScore: input.awayScore,
         homeHtScore: input.homeHtScore,
         awayHtScore: input.awayHtScore,
-        status: 'FINISHED',
+        status: FixtureStatus.FINISHED,
+        ...liveClockOf({ status: FixtureStatus.FINISHED }),
       },
     });
   }
@@ -459,7 +461,8 @@ export class FixtureRepository {
         awayScore: scores.awayScore,
         homeHtScore: scores.homeHtScore,
         awayHtScore: scores.awayHtScore,
-        status: 'FINISHED',
+        status: FixtureStatus.FINISHED,
+        ...liveClockOf({ status: FixtureStatus.FINISHED }),
       },
     });
     return { id };
@@ -1719,10 +1722,14 @@ function isUniqueConstraintError(error: unknown): boolean {
 }
 
 /**
- * The clock columns a state sync writes: the API's while in progress, none
- * once the match is not (finished, postponed, or back to scheduled).
+ * The clock columns every status write carries: the API's while in progress
+ * (kept as stored when the write has none), none once the match is not
+ * (finished, postponed, or back to scheduled).
  */
-export function liveClockOf(input: SyncFixtureStateInput): {
+export function liveClockOf(input: {
+  status: FixtureStatus;
+  live?: SyncFixtureStateInput['live'];
+}): {
   liveStatus?: string | null;
   liveElapsed?: number | null;
 } {
