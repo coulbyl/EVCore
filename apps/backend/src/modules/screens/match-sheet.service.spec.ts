@@ -23,11 +23,8 @@ import type {
   FixtureEventRepository,
   SheetEventRow,
 } from '@modules/fixture-events/fixture-event.repository';
-import {
-  MatchSheetService,
-  speechOf,
-  setAsideReasonOf,
-} from './match-sheet.service';
+import { MatchSheetService, setAsideReasonOf } from './match-sheet.service';
+import { speechOf } from './matches-reading';
 
 const NOW = new Date('2026-10-30T15:00:00.000Z');
 const FX = '0190a000-0000-7000-8000-000000000001';
@@ -138,7 +135,7 @@ function harness(input: {
     findReadingCandidates: vi
       .fn()
       .mockResolvedValue(input.candidates ?? [candidate()]),
-    findAiOpinion: vi.fn().mockResolvedValue(input.ai ?? []),
+    findAiOpinions: vi.fn().mockResolvedValue(input.ai ?? []),
     findRejectionReasons: vi.fn().mockResolvedValue(input.reasons ?? []),
   } as unknown as MatchesRepository;
   const playableOdds = {

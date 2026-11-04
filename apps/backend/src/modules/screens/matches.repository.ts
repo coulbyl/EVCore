@@ -232,38 +232,9 @@ export class MatchesRepository {
   }
 
   /**
-   * The AI's (VANTAGE) latest decision before kick-off on a match, its text
-   * and its pick. Nothing when it never looked at the match.
-   */
-  findAiOpinion(fixtureId: string): Promise<AiOpinionRow[]> {
-    return this.prisma.client.$queryRaw<AiOpinionRow[]>`
-      WITH latest AS (
-        SELECT cd.id, cd.status::text AS status,
-               cd."reasonDetails"->>'text' AS text,
-               cd."reasonDetails"->>'voice' AS voice,
-               cd."createdAt" AS "decidedAt"
-        FROM public.channel_decision cd
-        JOIN public.model_run mr ON mr.id = cd."modelRunId"
-        JOIN public.fixture f ON f.id = mr."fixtureId"
-        WHERE mr."fixtureId" = ${fixtureId}::uuid
-          AND cd.channel = 'VANTAGE'
-          AND cd."createdAt" < f."scheduledAt"
-        ORDER BY cd."createdAt" DESC
-        LIMIT 1
-      )
-      SELECT latest.status, latest.text, latest.voice, latest."decidedAt",
-             cs.market::text AS market, cs.pick,
-             cs.result::text AS result
-      FROM latest
-      LEFT JOIN public.channel_selection cs
-        ON cs."channelDecisionId" = latest.id AND cs.rank = 1
-    `;
-  }
-
-  /**
-   * findAiOpinion for a page of matches, in one query: each match's latest
-   * AI decision before kick-off, with its pick. A match the AI never read
-   * has no row.
+   * The AI's (VANTAGE) latest decision before kick-off on each of these
+   * matches, in one query: its status, text and pick. A match the AI never
+   * read has no row.
    */
   findAiOpinions(
     fixtureIds: readonly string[],

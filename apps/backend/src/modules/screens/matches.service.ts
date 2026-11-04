@@ -12,10 +12,15 @@ import {
   PlayableOddsRepository,
   type PlayableQuote,
 } from '@modules/betting-engine/pricing/playable-odds.repository';
-import { groupBy, readingOf, stateOf, uniqueKeys } from './matches-reading';
+import {
+  groupBy,
+  hasAiOpinion,
+  readingOf,
+  stateOf,
+  uniqueKeys,
+} from './matches-reading';
 import { formatDateUtc, startOfUtcDay } from '@utils/date.utils';
 import type { MatchesDay } from './dto/matches-query.dto';
-import { hasAiOpinion } from './match-sheet.service';
 import {
   MatchesRepository,
   type AiOpinionRow,
