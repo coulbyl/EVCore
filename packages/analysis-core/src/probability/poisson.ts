@@ -537,7 +537,8 @@ function buildFactorialCache(maxN: number): number[] {
 
 // Full-time exact-score distribution: P(home=h, away=a) for every scoreline on a
 // 0..maxGoals grid, as a map keyed "H:A". Built from the SAME normalized Poisson
-// distributions as 1X2/Over-Under/BTTS (independent product — Dixon-Coles was
+// distributions as 1X2/Over-Under/BTTS (independent product unless `rho` is set,
+// market grid only, ML2A-DEPENDANCE-BUTS.md — Dixon-Coles on stats λ was
 // empirically rejected 2026-06-30: no gain on goal markets, worse on exact score),
 // so it is coherent with them: summing cells by outcome reproduces the 1X2 vector.
 // The grid captures essentially all realistically-priced scorelines; tail cells

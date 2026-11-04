@@ -113,6 +113,8 @@ fréquence réelle est mesurée (IC ≤ ± 8 points sur la bande visée).
 
 - [x] **ML-1** grille de marché dans `analysis-core` (Shin, λ ajustés ; ρ laissé à ML-2), moteur branché avec repli (`MARKET_GRID` / `POISSON_MAIN`), rejeu 2026 : réalisé ÷ annoncé 0,956 → 1,005, résidu 1X2 contre la clôture Pinnacle +0,032 → +0,001, 5 critères tenus, expédié le 04/11 ([ML1-GRILLE-MARCHE.md](docs/audits/2026-11-04/ML1-GRILLE-MARCHE.md)).
 - [ ] **ML-2** mi-temps et dépendance des buts (sous-modèles A et D).
+  - [x] **D** (dépendance, ML-2a) mesuré le 04/11, **non expédié** : ρ par championnat (global −0,05) corrige la moitié du défaut des petits scores (nul 1,100 → 1,058, log-perte du score exact −0,0012 [−0,0020 ; −0,0004]), canaux inchangés, mais D2 (BTTS contre Pinnacle) non mesurable en 2026 ; module à ρ = 0, à rouvrir avec un D2 mesurable figé avant rejeu ([ML2A-DEPENDANCE-BUTS.md](docs/audits/2026-11-04/ML2A-DEPENDANCE-BUTS.md)).
+  - [ ] **A** (mi-temps).
 - [ ] **ML-3** corners et cartons (sous-modèle B).
 - [ ] **ML-4** retrait de marge appris sur 1xBet (sous-modèle C).
 
