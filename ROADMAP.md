@@ -92,7 +92,7 @@ SaaS, multi-tenant, API interne. Rien de commencé.
 
 Ordre décidé le 04/11 : [docs/plan-2026-11-04.md](docs/plan-2026-11-04.md) — 1. le 15-todo, 2. le moteur (force des championnats, puis ML), 3. les produits datés, 4. plus tard.
 
-Fait le 04/11, étape 2 (premier lot) : force des championnats sur λ en coupe d'Europe ([FORCE-CHAMPIONNATS.md](docs/audits/2026-11-04/FORCE-CHAMPIONNATS.md)) — `LEAGUE_STRENGTH_MAP` à ré-ajuster chaque juillet avec `backtest:league-strength`. Suite : lots ML-1 → ML-4.
+Fait le 04/11, étape 2 (premier lot) : force des championnats sur λ en coupe d'Europe ([FORCE-CHAMPIONNATS.md](docs/audits/2026-11-04/FORCE-CHAMPIONNATS.md)) — `LEAGUE_STRENGTH_MAP` à ré-ajuster chaque juillet avec `backtest:league-strength`. Puis ML-1 (grille de marché, expédiée). Suite : lots ML-2 → ML-4.
 
 ### Plan stratégies — phase 4 (après mesure)
 
@@ -111,7 +111,7 @@ fréquence réelle est mesurée (IC ≤ ± 8 points sur la bande visée).
 
 ### Phase 3 — lots ML (à planifier)
 
-- [ ] **ML-1** grille de marché dans `analysis-core` (Shin, λ/ρ, tous marchés), moteur branché avec repli, rejeu 2026 et rapport du résidu contre Pinnacle par canal.
+- [x] **ML-1** grille de marché dans `analysis-core` (Shin, λ ajustés ; ρ laissé à ML-2), moteur branché avec repli (`MARKET_GRID` / `POISSON_MAIN`), rejeu 2026 : réalisé ÷ annoncé 0,956 → 1,005, résidu 1X2 contre la clôture Pinnacle +0,032 → +0,001, 5 critères tenus, expédié le 04/11 ([ML1-GRILLE-MARCHE.md](docs/audits/2026-11-04/ML1-GRILLE-MARCHE.md)).
 - [ ] **ML-2** mi-temps et dépendance des buts (sous-modèles A et D).
 - [ ] **ML-3** corners et cartons (sous-modèle B).
 - [ ] **ML-4** retrait de marge appris sur 1xBet (sous-modèle C).
