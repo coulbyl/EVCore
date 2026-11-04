@@ -1029,6 +1029,9 @@ model Notification {
 
   @@index([read, createdAt])
   @@index([userId, read, createdAt])
+  // The bell's broadcasts (userId IS NULL AND createdAt >= the window),
+  // read or not: the index above puts `read` between the two.
+  @@index([userId, createdAt])
   @@map("notification")
   @@schema("public")
 }
