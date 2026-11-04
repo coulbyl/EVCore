@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { hasInAppHistory } from "../sheet/in-app-history";
-import { isSheetPath } from "../sheet/sheet-constants";
+import { isPlainClick, isSheetPath } from "../sheet/sheet-constants";
+import { useSheetClose } from "../sheet/use-sheet-close";
 
 /**
  * Le retour d'une page sous un onglet : là d'où l'on vient, comme le bouton
@@ -27,29 +27,20 @@ export function BackLink({
   className?: string;
   children: React.ReactNode;
 }) {
-  const router = useRouter();
+  // The same back as a sheet's close; the parent page scrolls to its top.
+  const back = useSheetClose(href, { scroll: true });
   return (
     <Link
       href={href}
       aria-label={label}
       className={className}
       onClick={(event) => {
-        if (
-          event.button !== 0 ||
-          event.metaKey ||
-          event.ctrlKey ||
-          event.shiftKey ||
-          event.altKey
-        ) {
-          return;
-        }
+        if (!isPlainClick(event)) return;
         event.preventDefault();
-        if (hasInAppHistory()) {
-          router.back();
-        } else if (isSheetPath(href)) {
+        if (!hasInAppHistory() && isSheetPath(href)) {
           window.location.replace(href);
         } else {
-          router.replace(href);
+          back();
         }
       }}
     >
