@@ -296,17 +296,19 @@ export class PlayableOddsRepository {
   }): Promise<MarketPriceRow[]> {
     if (input.markets.length === 0) return [];
     return this.prisma.client.$queryRaw<MarketPriceRow[]>`
-      SELECT DISTINCT ON (o.market, o.line, o.pick, o.bookmaker)
+      SELECT DISTINCT ON (o.bookmaker, o.market, o.pick, o.line)
              o.market::text AS market, o.pick, o.line::float AS line,
              o.bookmaker, o.odds::float AS odds, o."snapshotAt"
       FROM public.odds_snapshot o
       WHERE o."fixtureId" = ${input.fixtureId}::uuid
-        AND o.market::text = ANY(ARRAY[${Prisma.join(input.markets)}]::text[])
+        AND o.market = ANY(ARRAY[${Prisma.join(input.markets)}]::"Market"[])
         AND o.pick IS NOT NULL
         AND o.odds IS NOT NULL
         AND o."snapshotAt" <= ${input.kickoff}
         AND o."snapshotAt" >= ${input.since}
-      ORDER BY o.market, o.line, o.pick, o.bookmaker, o."snapshotAt" DESC
+      -- The unique index's order (fixtureId, bookmaker, market, pick, line,
+      -- snapshotAt): the latest price of each key read off the index.
+      ORDER BY o.bookmaker, o.market, o.pick, o.line, o."snapshotAt" DESC
     `;
   }
 
