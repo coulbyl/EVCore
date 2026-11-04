@@ -49,6 +49,9 @@ export type SheetHeaderRow = MatchRow & {
   awayTeamId: string;
   homeHalfTimeScore: number | null;
   awayHalfTimeScore: number | null;
+  /** The API's clock while in progress (fixture.liveStatus, liveElapsed). */
+  liveStatus: string | null;
+  liveElapsed: number | null;
   /** Last finished meetings, most recent first: goals of this sheet's home and away teams. */
   meetings: { homeGoals: number; awayGoals: number }[] | null;
 };
@@ -189,6 +192,7 @@ export class MatchesRepository {
              f."homeScore", f."awayScore",
              f."homeHtScore" AS "homeHalfTimeScore",
              f."awayHtScore" AS "awayHalfTimeScore",
+             f."liveStatus", f."liveElapsed",
              f."homeTeamId", f."awayTeamId",
              ht.name AS "homeName", ht."shortName" AS "homeShortName",
              ht."logoUrl" AS "homeLogoUrl",

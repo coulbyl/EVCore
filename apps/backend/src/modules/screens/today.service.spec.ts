@@ -39,6 +39,8 @@ function leg(overrides: Partial<TodayLegRow>): TodayLegRow {
     fixtureStatus: 'SCHEDULED',
     homeScore: null,
     awayScore: null,
+    liveStatus: null,
+    liveElapsed: null,
     homeName: 'Paris Saint-Germain',
     homeShortName: 'PSG',
     homeLogoUrl: null,
@@ -248,6 +250,27 @@ describe('TodayService', () => {
     expect(combo?.odds).toBeNull();
     expect(combo?.referenceOdds).toBe(1.28);
     expect(combo?.legs[1]?.odds).toBeNull();
+  });
+
+  it('a leg in play shows its live score and its minute', async () => {
+    const { service } = harness({
+      legs: [
+        leg({
+          fixtureStatus: 'IN_PROGRESS',
+          homeScore: 0,
+          awayScore: 2,
+          liveStatus: '2H',
+          liveElapsed: 67,
+          scheduledAt: new Date(NOW.getTime() - 80 * 60_000),
+        }),
+      ],
+    });
+    const [coupon] = (await service.getToday('user-1', NOW)).coupons;
+    expect(coupon?.legs[0]).toMatchObject({
+      state: 'live',
+      score: { home: 0, away: 2 },
+      clock: { kind: 'live', minute: 67 },
+    });
   });
 
   it('a won leg without a 1xBet price leaves the paid odds unknown', async () => {

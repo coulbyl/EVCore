@@ -40,6 +40,8 @@ function header(overrides: Partial<SheetHeaderRow> = {}): SheetHeaderRow {
     homeScore: null,
     awayScore: null,
     homeHalfTimeScore: null,
+    liveStatus: null,
+    liveElapsed: null,
     awayHalfTimeScore: null,
     homeTeamId: 'ars',
     awayTeamId: 'che',

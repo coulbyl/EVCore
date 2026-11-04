@@ -43,6 +43,8 @@ function leg(
     fixtureStatus: settled ? 'FINISHED' : 'SCHEDULED',
     homeScore: settled ? 2 : null,
     awayScore: settled ? 0 : null,
+    liveStatus: null,
+    liveElapsed: null,
     homeName: 'Paris Saint-Germain',
     homeShortName: 'PSG',
     homeLogoUrl: null,

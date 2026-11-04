@@ -46,6 +46,7 @@ import {
   type SheetEventRow,
 } from '@modules/fixture-events/fixture-event.repository';
 import { sheetEventsOf } from './match-sheet-events';
+import { matchClockOf } from './match-clock';
 import type {
   MatchSheet,
   SetAsideReason,
@@ -239,6 +240,7 @@ export class MatchSheetService {
       kickoffAt: kickoff.toISOString(),
       state: stateOf(header, now),
       score,
+      clock: matchClockOf(header, now),
       halfTimeScore: pair(header.homeHalfTimeScore, header.awayHalfTimeScore),
       competition: {
         code: header.competitionCode,

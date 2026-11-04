@@ -1,3 +1,4 @@
+import type { MatchClock } from './match-clock';
 import type { MatchState, MatchWithoutReading } from './matches.types';
 import type { TodayTeam } from './today.types';
 
@@ -103,6 +104,8 @@ export type MatchSheet = {
   kickoffAt: string;
   state: MatchState;
   score: { home: number; away: number } | null;
+  /** « 67' », « MT » while played (same rule as the coupons' legs). */
+  clock: MatchClock | null;
   halfTimeScore: { home: number; away: number } | null;
   competition: { code: string; name: string };
   home: TodayTeam;
