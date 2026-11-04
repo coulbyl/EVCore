@@ -143,6 +143,7 @@ export class PendingBetsSettlementWorker extends WorkerHost {
             awayScore: nextState.awayScore,
             homeHtScore: nextState.homeHtScore,
             awayHtScore: nextState.awayHtScore,
+            live: nextState.live,
           });
         if (affectsRollingStats && seasonId && fixtureId) {
           const changed = changedBySeason.get(seasonId) ?? new Set<string>();
@@ -280,6 +281,7 @@ function mapFixtureState(item: ApiFootballFixture): {
   awayScore: number | null;
   homeHtScore: number | null;
   awayHtScore: number | null;
+  live: { status: string; elapsed: number | null };
 } {
   return {
     scheduledAt: new Date(item.fixture.date),
@@ -293,6 +295,11 @@ function mapFixtureState(item: ApiFootballFixture): {
     awayScore: item.score.fulltime.away ?? item.goals.away,
     homeHtScore: item.score.halftime.home,
     awayHtScore: item.score.halftime.away,
+    // Stored only while in progress (liveClockOf).
+    live: {
+      status: item.fixture.status.short,
+      elapsed: item.fixture.status.elapsed,
+    },
   };
 }
 

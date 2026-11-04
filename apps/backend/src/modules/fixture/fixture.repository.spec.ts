@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FixtureRepository } from './fixture.repository';
+import { FixtureRepository, liveClockOf } from './fixture.repository';
 import type { PrismaService } from '@/prisma.service';
 
 describe('FixtureRepository scheduled fixture queries', () => {
@@ -710,5 +710,38 @@ describe('FixtureRepository.upsertOddsSnapshot — Result/Total Goals / Result/B
     );
     expect(marketsSeen.has('RESULT_TOTAL_GOALS')).toBe(false);
     expect(marketsSeen.has('RESULT_BTTS')).toBe(false);
+  });
+});
+
+describe('liveClockOf', () => {
+  const base = {
+    externalId: 1635695,
+    scheduledAt: new Date('2026-11-03T20:00:00Z'),
+    homeScore: 0,
+    awayScore: 2,
+    homeHtScore: null,
+    awayHtScore: null,
+  };
+
+  it('writes the API clock of a match in progress', () => {
+    expect(
+      liveClockOf({
+        ...base,
+        status: 'IN_PROGRESS',
+        live: { status: '2H', elapsed: 67 },
+      }),
+    ).toEqual({ liveStatus: '2H', liveElapsed: 67 });
+  });
+
+  it('keeps the stored clock when the sync brings none', () => {
+    expect(liveClockOf({ ...base, status: 'IN_PROGRESS' })).toEqual({});
+  });
+
+  it('clears the clock once the match is no longer in progress', () => {
+    for (const status of ['FINISHED', 'SCHEDULED', 'POSTPONED'] as const) {
+      expect(
+        liveClockOf({ ...base, status, live: { status: 'FT', elapsed: 90 } }),
+      ).toEqual({ liveStatus: null, liveElapsed: null });
+    }
   });
 });

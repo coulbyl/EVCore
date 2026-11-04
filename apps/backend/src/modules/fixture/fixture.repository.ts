@@ -123,6 +123,8 @@ type SyncFixtureStateInput = {
   awayScore: number | null;
   homeHtScore: number | null;
   awayHtScore: number | null;
+  // The API's clock while in progress; omitted, the stored one is kept.
+  live?: { status: string; elapsed: number | null };
 };
 
 export type SyncFixtureStateResult = {
@@ -420,6 +422,7 @@ export class FixtureRepository {
           awayScore: input.awayScore,
           homeHtScore: input.homeHtScore,
           awayHtScore: input.awayHtScore,
+          ...liveClockOf(input),
         },
       });
 
@@ -1703,4 +1706,20 @@ function isUniqueConstraintError(error: unknown): boolean {
     error instanceof Prisma.PrismaClientKnownRequestError &&
     error.code === 'P2002'
   );
+}
+
+/**
+ * The clock columns a state sync writes: the API's while in progress, none
+ * once the match is not (finished, postponed, or back to scheduled).
+ */
+export function liveClockOf(input: SyncFixtureStateInput): {
+  liveStatus?: string | null;
+  liveElapsed?: number | null;
+} {
+  if (input.status !== FixtureStatus.IN_PROGRESS) {
+    return { liveStatus: null, liveElapsed: null };
+  }
+  return input.live
+    ? { liveStatus: input.live.status, liveElapsed: input.live.elapsed }
+    : {};
 }

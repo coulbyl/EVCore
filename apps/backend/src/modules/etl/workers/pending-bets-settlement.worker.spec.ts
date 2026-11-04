@@ -230,6 +230,7 @@ describe('PendingBetsSettlementWorker', () => {
       awayScore: 1,
       homeHtScore: 1,
       awayHtScore: 0,
+      live: expect.any(Object),
     });
     expect(bettingEngineService.settleOpenBets).toHaveBeenCalledWith(
       'fixture-1',
@@ -318,6 +319,7 @@ describe('PendingBetsSettlementWorker', () => {
       awayScore: 2,
       homeHtScore: 1,
       awayHtScore: 0,
+      live: expect.any(Object),
     });
   });
 
@@ -328,6 +330,24 @@ describe('PendingBetsSettlementWorker', () => {
 
     expect(fixtureService.syncFixtureState).toHaveBeenCalledOnce();
     expect(bettingEngineService.settleOpenBets).not.toHaveBeenCalled();
+  });
+
+  it('passes the clock of a match in progress', async () => {
+    const body = buildFixtureResponse('NS');
+    Object.assign(body.response[0]?.fixture.status ?? {}, {
+      short: '2H',
+      elapsed: 67,
+    });
+    mockCurlStdoutOnce(buildCurlStdout(body));
+
+    await worker.process({ data: {} } as Job<Record<string, never>>);
+
+    expect(fixtureService.syncFixtureState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'IN_PROGRESS',
+        live: { status: '2H', elapsed: 67 },
+      }),
+    );
   });
 
   it('throws on non-ok API response', async () => {
@@ -380,6 +400,7 @@ describe('PendingBetsSettlementWorker', () => {
       awayScore: 1,
       homeHtScore: 1,
       awayHtScore: 0,
+      live: expect.any(Object),
     });
     expect(bettingEngineService.settleOpenBets).toHaveBeenCalledWith(
       'fixture-2',

@@ -117,6 +117,8 @@ type SyncFixtureStateInput = {
   awayScore: number | null;
   homeHtScore: number | null;
   awayHtScore: number | null;
+  // The API's clock while in progress; omitted, the stored one is kept.
+  live?: { status: string; elapsed: number | null };
 };
 
 @Injectable()
