@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { isSheetPath } from "./sheet-constants";
+import { isPlainClick, isSheetPath } from "./sheet-constants";
 
 /**
  * Une feuille à la fois, à l'écran comme dans l'historique. Pendant qu'une
@@ -22,22 +22,23 @@ export function useSheetReplace(): void {
   const router = useRouter();
   useEffect(() => {
     function onClick(event: MouseEvent) {
-      if (
-        event.defaultPrevented ||
-        event.button !== 0 ||
-        event.metaKey ||
-        event.ctrlKey ||
-        event.shiftKey ||
-        event.altKey
-      ) {
-        return;
-      }
+      if (event.defaultPrevented || !isPlainClick(event)) return;
       const anchor =
         event.target instanceof Element
           ? event.target.closest<HTMLAnchorElement>("a[href]")
           : null;
       if (!anchor || anchor.hasAttribute("download")) return;
       if (anchor.target && anchor.target !== "_self") return;
+      // Most links are root-relative (`next/link`): one that is no sheet is
+      // let through before any URL is built.
+      const raw = anchor.getAttribute("href") ?? "";
+      if (
+        raw.startsWith("/") &&
+        !raw.startsWith("//") &&
+        !isSheetPath(raw.split(/[?#]/, 1)[0] ?? "")
+      ) {
+        return;
+      }
       const url = new URL(anchor.href, window.location.href);
       if (url.origin !== window.location.origin) return;
       if (!isSheetPath(url.pathname)) return;

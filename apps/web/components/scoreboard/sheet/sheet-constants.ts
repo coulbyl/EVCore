@@ -60,6 +60,26 @@ const SHEET_PATHS: readonly RegExp[] = [
   /^\/dev\/components\/sheet$/,
 ];
 
+/**
+ * Un clic simple (bouton principal, sans touche de modification) : un clic
+ * modifié ouvre un nouvel onglet ou une fenêtre, et passe tel quel.
+ */
+export function isPlainClick(event: {
+  button: number;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  shiftKey: boolean;
+  altKey: boolean;
+}): boolean {
+  return (
+    event.button === 0 &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    !event.altKey
+  );
+}
+
 /** Cette adresse (chemin seul, sans requête) s'ouvre-t-elle en feuille ? */
 export function isSheetPath(pathname: string): boolean {
   return SHEET_PATHS.some((pattern) => pattern.test(pathname));
