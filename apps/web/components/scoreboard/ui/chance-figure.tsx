@@ -69,7 +69,7 @@ export function ChanceFigure({
   );
 }
 
-type Translate = ReturnType<typeof useTranslations<"scoreboard.chance">>;
+export type Translate = ReturnType<typeof useTranslations<"scoreboard.chance">>;
 type Phrasing = "short" | "about" | "passes";
 
 function written(chance: Chance, phrasing: Phrasing, t: Translate) {
@@ -106,7 +106,8 @@ function written(chance: Chance, phrasing: Phrasing, t: Translate) {
   }
 }
 
-function spokenOf(chance: Chance, t: Translate) {
+/** What a screen reader says of a chance: « 1 chance sur 6 ». */
+export function spokenOf(chance: Chance, t: Translate) {
   switch (chance.kind) {
     case "outOfTen":
       return t("spokenOutOfTen", { count: chance.count, total: chance.total });
