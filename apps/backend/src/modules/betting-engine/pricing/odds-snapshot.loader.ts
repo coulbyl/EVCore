@@ -135,16 +135,7 @@ export class OddsSnapshotLoader {
           ),
         },
       },
-      select: {
-        bookmaker: true,
-        market: true,
-        pick: true,
-        odds: true,
-        snapshotAt: true,
-        homeOdds: true,
-        drawOdds: true,
-        awayOdds: true,
-      },
+      select: RAW_ODDS_ROW_SELECT,
     });
   }
 

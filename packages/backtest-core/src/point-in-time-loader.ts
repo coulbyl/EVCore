@@ -5,6 +5,7 @@ import type {
   H2HMarketSignals,
   H2HScorelineSignal,
   TeamCongestionInputs,
+  Market,
 } from "@evcore/analysis-core";
 import {
   assembleFullOddsSnapshot,
@@ -118,6 +119,7 @@ export class PointInTimeLoader {
   private async oddsRows(
     fixtureIds: string[],
     before?: Date,
+    scope?: { bookmakers: readonly string[]; markets: readonly Market[] },
   ): Promise<ArchivedOddsRow[]> {
     const [base, archived] = await Promise.all([
       this.client.oddsSnapshot.findMany({
@@ -126,6 +128,10 @@ export class PointInTimeLoader {
           ...(before && {
             createdAt: { lt: before },
             snapshotAt: { lt: before },
+          }),
+          ...(scope && {
+            bookmaker: { in: [...scope.bookmakers] },
+            market: { in: [...scope.markets] },
           }),
         },
         select: {
@@ -146,7 +152,16 @@ export class PointInTimeLoader {
         ? this.archive.rowsFor(fixtureIds, before)
         : Promise.resolve([]),
     ]);
-    return mergeArchivedRows<ArchivedOddsRow>(base, archived);
+    return mergeArchivedRows<ArchivedOddsRow>(
+      base,
+      scope
+        ? archived.filter(
+            (row) =>
+              scope.bookmakers.includes(row.bookmaker) &&
+              scope.markets.includes(row.market),
+          )
+        : archived,
+    );
   }
 
   // Chronologically ordered, finished fixtures with a settled score — the
@@ -616,40 +631,10 @@ export class PointInTimeLoader {
     requests: ReadonlyArray<{ fixtureId: string; asOf: Date }>,
   ): Promise<RawOddsRow[][]> {
     if (requests.length === 0) return [];
-    const fixtureIds = [...new Set(requests.map((r) => r.fixtureId))];
-    const [base, archived] = await Promise.all([
-      this.client.oddsSnapshot.findMany({
-        where: {
-          fixtureId: { in: fixtureIds },
-          bookmaker: { in: [...MARKET_GRID_BOOKMAKERS] },
-          market: { in: [...MARKET_GRID_MARKETS] },
-          line: null,
-        },
-        select: {
-          id: true,
-          fixtureId: true,
-          bookmaker: true,
-          market: true,
-          pick: true,
-          odds: true,
-          snapshotAt: true,
-          createdAt: true,
-          homeOdds: true,
-          drawOdds: true,
-          awayOdds: true,
-        },
-      }),
-      this.archive
-        ? this.archive.rowsFor(fixtureIds)
-        : Promise.resolve([] as ArchivedOddsRow[]),
-    ]);
-    const rows = mergeArchivedRows<ArchivedOddsRow>(
-      base,
-      archived.filter(
-        (row) =>
-          MARKET_GRID_BOOKMAKERS.includes(row.bookmaker) &&
-          MARKET_GRID_MARKETS.includes(row.market),
-      ),
+    const rows = await this.oddsRows(
+      [...new Set(requests.map((r) => r.fixtureId))],
+      undefined,
+      { bookmakers: MARKET_GRID_BOOKMAKERS, markets: MARKET_GRID_MARKETS },
     );
     const byFixture = new Map<string, ArchivedOddsRow[]>();
     for (const row of rows) {
