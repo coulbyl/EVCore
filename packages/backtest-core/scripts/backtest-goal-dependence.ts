@@ -339,9 +339,10 @@ async function historicalTraining(
       SELECT "fixtureId"::text AS "fixtureId", bookmaker, market::text AS market,
              pick, odds, "homeOdds", "drawOdds", "awayOdds", "snapshotAt"
       FROM odds_snapshot
-      WHERE "fixtureId"::text IN (${Prisma.join(batch.map((f) => f.id))})
+      WHERE "fixtureId" = ANY(${batch.map((f) => f.id)}::uuid[])
         AND bookmaker IN (${Prisma.join([...MARKET_GRID_BOOKMAKERS])})
         AND market::text IN (${Prisma.join([...MARKET_GRID_MARKETS])})
+        AND "snapshotAt" >= ${TRAIN_FROM}
         AND "snapshotAt" < ${FROM}`);
     const byFixture = new Map<string, RawOddsRow[]>();
     for (const row of rows) {
@@ -375,6 +376,9 @@ async function historicalTraining(
         });
       }
     }
+    console.log(
+      `[entraînement ${Math.min(offset + 500, fixtures.length)}/${fixtures.length}] ${out.length} grilles`,
+    );
   }
   return out;
 }
