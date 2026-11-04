@@ -27,7 +27,10 @@ import type { EloSyncJobData } from './workers/elo-sync.worker';
 import type { CoachSyncJobData } from './workers/coachs-sync.worker';
 import type { StaleScheduledSyncJobData } from './workers/stale-scheduled-sync.worker';
 import type { OddsPrematchSyncJobData } from './workers/odds-prematch-sync.worker';
-import { RISK_MARKET_SWEEP_JOB } from './workers/pending-bets-settlement.worker';
+import {
+  LIVE_FIXTURES_JOB,
+  RISK_MARKET_SWEEP_JOB,
+} from './workers/pending-bets-settlement.worker';
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
 import type { BettingEngineAnalysisJobData } from './workers/betting-engine-analysis.worker';
 import type { BettingEngineRebuildJobData } from './workers/betting-engine-rebuild.worker';
@@ -295,6 +298,16 @@ export class EtlService {
       { pattern: this.cronSchedules.PENDING_BETS_SETTLEMENT },
       {
         name: 'pending-bets-settlement-sync',
+        data: {} satisfies PendingBetsSettlementJobData,
+      },
+    );
+
+    // Same queue, so it never runs alongside the settlement pass.
+    await this.pendingBetsSettlementQueue.upsertJobScheduler(
+      ETL_SCHEDULER_KEYS.LIVE_FIXTURES,
+      { pattern: this.cronSchedules.LIVE_FIXTURES },
+      {
+        name: LIVE_FIXTURES_JOB,
         data: {} satisfies PendingBetsSettlementJobData,
       },
     );

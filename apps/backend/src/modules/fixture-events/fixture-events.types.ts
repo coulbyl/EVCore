@@ -1,3 +1,4 @@
+import type { FixtureByIdDetails } from '../etl/schemas/fixture-full.schema';
 import type { FixtureEventType, Prisma } from '@evcore/db';
 
 export type FixtureEventRow = {
@@ -79,5 +80,27 @@ export type FixtureDetailWriteResult =
       playerStatistics: number;
       /** fixture.eventsSyncedAt set: nothing left to fetch. */
       synced: boolean;
+      /** Invalid events, lineups or player blocks left out, per block. */
+      dropped: FixtureByIdDetails['dropped'];
     }
-  | { status: 'rejected'; reason: string };
+  | {
+      status: 'rejected';
+      cause: FixtureDetailRejectionCause;
+      reason: string;
+      /** « Home – Away » when the fixture is known. */
+      match: string | null;
+    };
+
+/**
+ * Why a match's events, lineups and player statistics were not written —
+ * what the operators' alert names, match by match.
+ */
+export type FixtureDetailRejectionCause =
+  // The answer names a fixture we do not have.
+  | 'unknown-fixture'
+  // The events, lineups or players block is missing or not an array.
+  | 'missing-block'
+  // A team that is neither side of the fixture.
+  | 'unknown-team'
+  // The database write failed.
+  | 'write-failed';

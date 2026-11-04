@@ -1,5 +1,4 @@
-import { FixtureEventType } from '@evcore/db';
-import type { SheetEventRow } from '@modules/fixture-events/fixture-event.repository';
+import type { MatchEventFact } from '@evcore/analysis-core';
 import type { SheetRedCard, SheetScorer } from './match-sheet.types';
 
 const GOAL_KINDS: Readonly<Record<string, SheetScorer['kind']>> = {
@@ -26,19 +25,12 @@ const LAST_REGULATION_MINUTE = 90;
  * left do not make the score, nothing is shown rather than a wrong list.
  */
 export function sheetEventsOf(input: {
-  events: readonly SheetEventRow[];
-  homeTeamId: string;
-  awayTeamId: string;
+  /** The match facts' events, their team resolved to a side. */
+  events: readonly MatchEventFact[];
   score: { home: number; away: number } | null;
 }): { scorers: SheetScorer[]; redCards: SheetRedCard[] } | null {
   const { events, score } = input;
   if (events.length === 0 || score === null) return null;
-  const sideOf = (teamId: string): 'home' | 'away' | null =>
-    teamId === input.homeTeamId
-      ? 'home'
-      : teamId === input.awayTeamId
-        ? 'away'
-        : null;
   const ordered = [...events].sort(
     (a, b) =>
       a.minute - b.minute ||
@@ -49,16 +41,16 @@ export function sheetEventsOf(input: {
   const scorers: SheetScorer[] = [];
   const redCards: SheetRedCard[] = [];
   for (const event of ordered) {
-    const team = sideOf(event.teamId);
+    const team = event.side;
     if (team === null || event.playerName === null) continue;
     const at = { minute: event.minute, extraMinute: event.extraMinute };
-    if (event.type === FixtureEventType.GOAL) {
+    if (event.type === 'GOAL') {
       if (event.comments === SHOOTOUT) continue;
       if (event.minute > LAST_REGULATION_MINUTE) continue;
       const kind = GOAL_KINDS[event.detail];
       if (kind) scorers.push({ ...at, player: event.playerName, team, kind });
     } else if (
-      event.type === FixtureEventType.CARD &&
+      event.type === 'CARD' &&
       RED_CARDS.has(event.detail) &&
       !cancelled(event, events)
     ) {
@@ -76,14 +68,14 @@ export function sheetEventsOf(input: {
 
 /** A red card the VAR took back: same team, same player. */
 function cancelled(
-  card: SheetEventRow,
-  events: readonly SheetEventRow[],
+  card: MatchEventFact,
+  events: readonly MatchEventFact[],
 ): boolean {
   return events.some(
     (event) =>
-      event.type === FixtureEventType.VAR &&
+      event.type === 'VAR' &&
       event.detail === 'Red card cancelled' &&
-      event.teamId === card.teamId &&
+      event.side === card.side &&
       event.playerName === card.playerName,
   );
 }

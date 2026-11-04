@@ -186,7 +186,7 @@ export async function CouponSheetBody({
   );
 }
 
-function LegBlock({
+async function LegBlock({
   leg,
   locale,
   timeZone,
@@ -202,6 +202,7 @@ function LegBlock({
     refunded: string;
   };
 }) {
+  const bets = await getTranslations("betLabels");
   const muted = leg.state === "postponed" || leg.state === "void";
   // The match's clock (« 67' », « MT », « Terminé ») once kicked off.
   const clock = leg.clock ? formatClock(leg.clock, labels) : null;
@@ -245,7 +246,7 @@ function LegBlock({
         </div>
       ))}
       <div className="flex items-baseline justify-between gap-3 ps-[2.375rem]">
-        <span className="text-body font-medium">{legPickLabel(leg)}</span>
+        <span className="text-body font-medium">{legPickLabel(leg, bets)}</span>
         <span className="flex items-center gap-2">
           {leg.state === "won" ||
           leg.state === "lost" ||

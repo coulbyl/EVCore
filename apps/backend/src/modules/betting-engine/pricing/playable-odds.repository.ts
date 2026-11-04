@@ -61,6 +61,9 @@ export type MarketPriceRow = {
   snapshotAt: Date;
 };
 
+/** A MarketPriceRow of a read over several fixtures. */
+export type FixtureMarketPriceRow = MarketPriceRow & { fixtureId: string };
+
 type QuoteRow = {
   fixtureId: string;
   market: string;
@@ -284,31 +287,51 @@ export class PlayableOddsRepository {
 
   /**
    * Every book's last price before kick-off on every pick and line of these
-   * markets, for one fixture: the match sheet chooses its lines from them
-   * (corners, cards, scorers, player shots, minute 1X2).
+   * markets, per fixture: the match sheet chooses its lines from them
+   * (corners, cards, scorers, player shots, minute 1X2), « Mon ticket »
+   * prices its bets of these markets on them. One read for every fixture,
+   * each bounded by its own window (sheetPriceWindow).
    */
   async findMarketPrices(input: {
-    fixtureId: string;
+    fixtures: readonly {
+      fixtureId: string;
+      /** Bounds on snapshotAt, constants so the monthly partitions prune. */
+      kickoff: Date;
+      since: Date;
+    }[];
     markets: readonly string[];
-    /** Bounds on snapshotAt, constants so the monthly partitions prune. */
-    kickoff: Date;
-    since: Date;
-  }): Promise<MarketPriceRow[]> {
-    if (input.markets.length === 0) return [];
-    return this.prisma.client.$queryRaw<MarketPriceRow[]>`
-      SELECT DISTINCT ON (o.bookmaker, o.market, o.pick, o.line)
+  }): Promise<FixtureMarketPriceRow[]> {
+    const { fixtures, markets } = input;
+    if (markets.length === 0 || fixtures.length === 0) return [];
+    const earliest = new Date(
+      Math.min(...fixtures.map((f) => f.since.getTime())),
+    );
+    const latest = new Date(
+      Math.max(...fixtures.map((f) => f.kickoff.getTime())),
+    );
+    const windows = Prisma.join(
+      fixtures.map(
+        (f) =>
+          Prisma.sql`(o."fixtureId" = ${f.fixtureId}::uuid AND o."snapshotAt" <= ${f.kickoff} AND o."snapshotAt" >= ${f.since})`,
+      ),
+      ' OR ',
+    );
+    return this.prisma.client.$queryRaw<FixtureMarketPriceRow[]>`
+      SELECT DISTINCT ON (o."fixtureId", o.bookmaker, o.market, o.pick, o.line)
+             o."fixtureId"::text AS "fixtureId",
              o.market::text AS market, o.pick, o.line::float AS line,
              o.bookmaker, o.odds::float AS odds, o."snapshotAt"
       FROM public.odds_snapshot o
-      WHERE o."fixtureId" = ${input.fixtureId}::uuid
-        AND o.market = ANY(ARRAY[${Prisma.join(input.markets)}]::"Market"[])
+      WHERE o."fixtureId" = ANY(ARRAY[${Prisma.join(fixtures.map((f) => f.fixtureId))}]::uuid[])
+        AND o.market = ANY(ARRAY[${Prisma.join(markets)}]::"Market"[])
         AND o.pick IS NOT NULL
         AND o.odds IS NOT NULL
-        AND o."snapshotAt" <= ${input.kickoff}
-        AND o."snapshotAt" >= ${input.since}
+        AND o."snapshotAt" <= ${latest}
+        AND o."snapshotAt" >= ${earliest}
+        AND (${windows})
       -- The unique index's order (fixtureId, bookmaker, market, pick, line,
       -- snapshotAt): the latest price of each key read off the index.
-      ORDER BY o.bookmaker, o.market, o.pick, o.line, o."snapshotAt" DESC
+      ORDER BY o."fixtureId", o.bookmaker, o.market, o.pick, o.line, o."snapshotAt" DESC
     `;
   }
 

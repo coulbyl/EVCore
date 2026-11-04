@@ -23,12 +23,6 @@ export type SheetPick = {
   chance: number | null;
   /** Once the match is over: did it land; null while unknown. */
   result: 'won' | 'lost' | 'void' | null;
-  /**
-   * « Mon ticket » can take it: priced at 1xBet and settled on the score.
-   * Not the markets of SHEET_NEW_MARKETS: the ticket keeps no line, prices
-   * at 1xBet only and settles on the score alone.
-   */
-  addable: boolean;
 };
 
 /** « Notre lecture »: the same pick as the list, with its fact. */
@@ -44,6 +38,11 @@ export type SheetReading = SheetPick & {
 export type SheetAiOpinion = SheetPick & {
   /** The AI played the same pick as our reading. */
   sameAsReading: boolean;
+  /**
+   * Another pick than our reading, that one final score makes win with it
+   * (06 § 7): said so a player does not read a contradiction in it.
+   */
+  passesWithReading: boolean;
   /** Its text, whole, opened from its pick, or nothing (06 § 2). */
   speech: string | null;
   /** When it decided, ISO: « Décidé le 31/10 à 13:41 ». */

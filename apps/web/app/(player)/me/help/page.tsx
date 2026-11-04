@@ -18,16 +18,14 @@ export default async function Page() {
   const [t, locale] = await Promise.all([getTranslations("help"), getLocale()]);
   return (
     <>
-      <SubpageBand
-        title={t("title")}
-        back={{ href: "/me", label: t("back") }}
-      />
+      <SubpageBand title={t("title")} back={{ href: "/me" }} />
       <div className="flex flex-col px-4 pt-2 pb-4 lg:px-6">
         <RowList label={t("sheets")}>
           {helpSheets(displayLocaleOf(locale)).map((sheet) => (
             <Row
               key={sheet.slug}
               href={`/me/help/${sheet.slug}`}
+              sheet
               title={sheet.title}
             />
           ))}

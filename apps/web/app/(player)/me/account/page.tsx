@@ -71,10 +71,7 @@ export default async function Page() {
 
   return (
     <>
-      <SubpageBand
-        title={t("title")}
-        back={{ href: "/me", label: t("back") }}
-      />
+      <SubpageBand title={t("title")} back={{ href: "/me" }} />
       <div className="flex flex-col divide-y divide-border px-4 pb-4 lg:px-6">
         <section className={section} aria-label={t("profile")}>
           <h2 className={heading}>{t("profile")}</h2>

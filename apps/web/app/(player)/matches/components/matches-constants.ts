@@ -1,4 +1,8 @@
-import { formatPickWithTeams, formatStatPick } from "@/helpers/fixture";
+import {
+  formatPickWithTeams,
+  formatStatPick,
+  type BetLabels,
+} from "@/helpers/fixture";
 import { formatTime, type DisplayLocale } from "@/helpers/scoreboard-format";
 import {
   MATCHES_DAYS,
@@ -36,7 +40,8 @@ export function dayHref(day: MatchesDay, big = false): string {
 
 /**
  * A bet named with its team or its player: « Victoire Arsenal », « Plus de
- * 2,5 buts », « Saka marque », « Arsenal : plus de 4,5 corners ».
+ * 2,5 buts », « Saka marque », « Arsenal obtient plus de 4,5 corners »;
+ * `t` reads the `betLabels` messages.
  */
 export function pickLabel(
   bet: {
@@ -46,19 +51,18 @@ export function pickLabel(
     player?: string | null;
   },
   teams: { home: { name: string }; away: { name: string } },
+  t: BetLabels,
 ): string {
   const names = { home: teams.home.name, away: teams.away.name };
-  return (
-    formatStatPick(bet, names) ??
-    formatPickWithTeams(bet.pick, bet.market, names)
-  );
+  return formatStatPick(bet, names, t) ?? formatPickWithTeams(bet, names, t);
 }
 
 /** The reading of a row of the list. */
 export function readingLabel(
   item: MatchItem & { reading: MatchReading },
+  t: BetLabels,
 ): string {
-  return pickLabel(item.reading, item);
+  return pickLabel(item.reading, item, t);
 }
 
 export type HourGroup<T extends MatchItem> = { time: string; items: T[] };

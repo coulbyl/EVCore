@@ -249,7 +249,8 @@ describe('MatchesService', () => {
       market: 'OVER_UNDER',
       pick: 'OVER_1_5',
       odds: 1.3,
-      chance: 0.85,
+      // Chosen on the engine's 0.85, shown with the market's 0.58.
+      chance: 0.58,
       result: null,
     });
     expect(item?.withoutReading).toBeNull();
@@ -306,36 +307,47 @@ describe('MatchesService', () => {
     expect(line?.reading).toMatchObject({ market: 'TEAM_TOTAL_HOME' });
   });
 
-  it("above 1,80 the chance is the market's; without it the pick is left out", async () => {
+  it("the chance is the market's; without it, or under 40 %, the pick is left out", async () => {
     const draw = candidate({
       channel: 'DRAW',
       market: 'ONE_X_TWO',
       pick: 'DRAW',
-      probability: new Prisma.Decimal('0.3400'),
+      probability: new Prisma.Decimal('0.4600'),
     });
     const priced = harness({
       candidates: [draw],
       quotes: [
         quote('ONE_X_TWO', 'DRAW', {
-          operatorOdds: 3.3,
-          operatorFairProbability: 0.29,
+          operatorOdds: 2.3,
+          operatorFairProbability: 0.41,
         }),
       ],
     });
     const [item] = (await priced.service.getMatches({ day: 'today' }, NOW))
       .items;
-    expect(item?.reading?.chance).toBe(0.29);
+    expect(item?.reading?.chance).toBe(0.41);
 
-    const unknown = harness({
+    // Under 1.80 too: never the engine's chance in place of the market's.
+    const home = harness({
+      candidates: [candidate()],
+      quotes: [quote('ONE_X_TWO', 'HOME', { operatorFairProbability: null })],
+    });
+    const [noFair] = (await home.service.getMatches({ day: 'today' }, NOW))
+      .items;
+    expect(noFair?.reading).toBeNull();
+    expect(noFair?.withoutReading).toBe('rejected');
+
+    // Detroit City – Hartford (31/10): the draw at 3.04, 1 chance in 3.
+    const third = harness({
       candidates: [draw],
       quotes: [
         quote('ONE_X_TWO', 'DRAW', {
-          operatorOdds: 3.3,
-          operatorFairProbability: null,
+          operatorOdds: 3.04,
+          operatorFairProbability: 0.31,
         }),
       ],
     });
-    const [none] = (await unknown.service.getMatches({ day: 'today' }, NOW))
+    const [none] = (await third.service.getMatches({ day: 'today' }, NOW))
       .items;
     expect(none?.reading).toBeNull();
     expect(none?.withoutReading).toBe('rejected');

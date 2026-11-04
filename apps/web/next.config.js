@@ -16,6 +16,13 @@ const nextConfig = {
     // `@evcore/ui` is one barrel of 54 exports, Radix and Sonner among them:
     // a page importing one of them got all (C0, measured in A12).
     optimizePackageImports: ["@evcore/ui"],
+    // The notifications' server actions (04/11) check Origin against Host:
+    // behind the production proxy the Host may be the container's, so the
+    // public domain is allowed explicitly (sitemap.ts and the public layout
+    // name the same one).
+    serverActions: {
+      allowedOrigins: ["c-evcore.com", "www.c-evcore.com"],
+    },
   },
   async redirects() {
     return [

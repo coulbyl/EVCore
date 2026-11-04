@@ -38,9 +38,8 @@ export default async function PublicResultsPage({
 }: {
   searchParams: Promise<{ period?: string | string[] }>;
 }) {
-  const [shell, landing, t, params, locale] = await Promise.all([
+  const [shell, t, params, locale] = await Promise.all([
     getTranslations("shell"),
-    getTranslations("landing"),
     getTranslations("results"),
     searchParams,
     getLocale(),
@@ -52,10 +51,7 @@ export default async function PublicResultsPage({
   return (
     <>
       <VisitorBand>
-        <BandTitle
-          title={shell("tabs.results")}
-          back={{ href: "/", label: landing("home") }}
-        />
+        <BandTitle title={shell("tabs.results")} back={{ href: "/" }} />
       </VisitorBand>
       <main
         id="contenu"

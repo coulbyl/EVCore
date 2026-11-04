@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { SheetLink } from "@/components/scoreboard/sheet/sheet-link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { YesterdaySummary } from "@/components/scoreboard/ui/yesterday-summary";
 import {
@@ -38,7 +38,7 @@ export async function ResultsYesterdayLine({
     const hero = screen.week.products.find((p) => p.played > 0);
     if (!hero) return null;
     return (
-      <Link
+      <SheetLink
         href={sheetHref(WEEK_SLUG, period)}
         className="flex flex-wrap items-baseline gap-x-3 rounded-md focus-visible:outline-2 focus-visible:outline-led-on"
       >
@@ -47,7 +47,7 @@ export async function ResultsYesterdayLine({
         <span className="score text-bet font-semibold">
           {t("weekSummary", { won: hero.won, played: hero.played })}
         </span>
-      </Link>
+      </SheetLink>
     );
   }
 

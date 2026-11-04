@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { SheetLink } from "../sheet/sheet-link";
 import { ChevronRight, X } from "lucide-react";
 import { clsx } from "clsx";
 import {
@@ -184,7 +185,7 @@ export function TicketView({ locale }: { locale: DisplayLocale }) {
       ) : null}
 
       {hero ? (
-        <Link
+        <SheetLink
           href={`/today/coupon/${hero.couponId}`}
           className="mt-3 flex min-h-13 items-center gap-3 border-b border-border text-body font-medium focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
         >
@@ -205,7 +206,7 @@ export function TicketView({ locale }: { locale: DisplayLocale }) {
             strokeWidth={2}
             className="size-[1.125rem] shrink-0 text-icon-subtle"
           />
-        </Link>
+        </SheetLink>
       ) : null}
     </div>
   );
@@ -324,17 +325,20 @@ export function TicketFooter({
             {formatOdds(totals.odds, locale)}
           </span>
         </p>
-        <p className="flex flex-col items-end gap-1 text-end">
-          <span className="text-meta text-muted-foreground">
-            {t("yourChances")}
-          </span>
-          <TicketChance
-            probability={totals.chance}
-            phrasing={totals.legCount === 1 ? "short" : "about"}
-            tone="surface"
-            className="flex flex-col items-end gap-1.5 text-title"
-          />
-        </p>
+        {/* Unknown with a scorer or shots bet: not said, never guessed. */}
+        {totals.chance !== null ? (
+          <p className="flex flex-col items-end gap-1 text-end">
+            <span className="text-meta text-muted-foreground">
+              {t("yourChances")}
+            </span>
+            <TicketChance
+              probability={totals.chance}
+              phrasing={totals.legCount === 1 ? "short" : "about"}
+              tone="surface"
+              className="flex flex-col items-end gap-1.5 text-title"
+            />
+          </p>
+        ) : null}
       </div>
       {!online ? (
         <p className="text-meta text-muted-foreground">
@@ -383,7 +387,7 @@ function ShareButton({
     const open = new Set(
       quote.legs.filter((l) => l.state === "open").map((l) => l.fixtureId),
     );
-    const chance = chanceOf(totals.chance);
+    const chance = totals.chance === null ? null : chanceOf(totals.chance);
     const single = totals.legCount === 1;
     const words = !chance
       ? ""
@@ -415,7 +419,10 @@ function ShareButton({
             })),
           totalOddsLabel: t("totalOdds"),
           totalOdds: formatOdds(totals.odds, locale),
-          about: single || chance?.kind === "rarerThan" ? "" : t("imageAbout"),
+          about:
+            !chance || single || chance.kind === "rarerThan"
+              ? ""
+              : t("imageAbout"),
           chance: words,
           leds: chance ? ledsOf(chance) : null,
           ours:

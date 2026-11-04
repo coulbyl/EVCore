@@ -1,5 +1,6 @@
 // Settlement of the markets of phase 3 of the strategies plan (03/11):
-// team corners, corners 1X2, scorers, player shots, 1X2 at a given minute.
+// team corners, corners 1X2, scorers, player shots, 1X2 at a given minute;
+// and of the two totals kept since lot 6 and 03/11, corners and cards.
 //
 // Every resolver answers WON, LOST, VOID (the book refunds: the player did
 // not play, a line met exactly) or null — not known yet. Null is never a
@@ -51,6 +52,10 @@ export type TeamStatFact = {
   corners: number | null;
   shotsTotal: number | null;
   shotsOn: number | null;
+  /** Yellow cards shown, the second yellow of a sending-off excluded. */
+  yellowCards: number | null;
+  /** Red cards shown, a second yellow's included. */
+  redCards: number | null;
 };
 
 export type MatchFacts = {
@@ -347,6 +352,44 @@ export function resolvePlayerShotsBetStatus(input: {
   return count(row) >= line ? BetStatus.WON : BetStatus.LOST;
 }
 
+/**
+ * Total cards of the match over or under `line` (CARDS, API-Football bet 80
+ * « Cards Over/Under », 1xBet and Pinnacle). The bet's name does not say
+ * how a red card counts, and books differ: one each card shown, or a red
+ * worth two. Measured on 1 836 Pinnacle lines (03/11,
+ * docs/audits/2026-11-03/CORNERS-TIRS-CARTONS.md), the market sits between
+ * the two counts (50,1 % announced; 48,7 % realised at one per red, 51,3 %
+ * at two): the data cannot tell them apart. So the leg is settled only when
+ * both counts give the same answer, the statistics' yellows plus the reds
+ * once, and plus the reds twice (a sending-off on a second yellow is one
+ * yellow and one red in the statistics: 2 or 3 cards, the two usual
+ * counts). No red card, or a line both counts clear on the same side:
+ * settled. A line between them: unknown, never lost. A met integer line
+ * refunds, as for corners.
+ */
+export function resolveCardsBetStatus(input: {
+  pick: string;
+  line: number;
+  facts: MatchFacts;
+}): BetStatus | null {
+  const { pick, line, facts } = input;
+  if (pick !== "OVER" && pick !== "UNDER") return BetStatus.VOID;
+  const { home, away } = facts.teams;
+  if (
+    home.yellowCards === null ||
+    home.redCards === null ||
+    away.yellowCards === null ||
+    away.redCards === null
+  ) {
+    return null;
+  }
+  const yellows = home.yellowCards + away.yellowCards;
+  const reds = home.redCards + away.redCards;
+  const once = resolveCornersBetStatus(pick, line, yellows + reds);
+  const twice = resolveCornersBetStatus(pick, line, yellows + 2 * reds);
+  return once === twice ? once : null;
+}
+
 /** The eight markets these resolvers settle. */
 export const STAT_SETTLED_MARKETS: ReadonlySet<Market> = new Set<Market>([
   Market.CORNERS_HOME,
@@ -360,9 +403,20 @@ export const STAT_SETTLED_MARKETS: ReadonlySet<Market> = new Set<Market>([
 ]);
 
 /**
- * One leg of a phase 3 market against the match facts; null = not known
- * yet. A market outside STAT_SETTLED_MARKETS, or a line its market needs
- * and does not have, is refunded.
+ * Every market settled on the match facts: STAT_SETTLED_MARKETS and the
+ * totals of corners and cards. Kept apart from STAT_SETTLED_MARKETS, which
+ * also says which markets the engine and the AI leave out of their prices.
+ */
+export const FACT_SETTLED_MARKETS: ReadonlySet<Market> = new Set<Market>([
+  ...STAT_SETTLED_MARKETS,
+  Market.CORNERS,
+  Market.CARDS,
+]);
+
+/**
+ * One leg of a market of FACT_SETTLED_MARKETS against the match facts;
+ * null = not known yet. Any other market, or a line its market needs and
+ * does not have, is refunded.
  */
 export function resolveStatMarketBetStatus(input: {
   market: Market;
@@ -372,6 +426,17 @@ export function resolveStatMarketBetStatus(input: {
 }): BetStatus | null {
   const { market, pick, line, facts } = input;
   switch (market) {
+    case Market.CORNERS: {
+      const { home, away } = facts.teams;
+      if (line === null) return BetStatus.VOID;
+      return home.corners === null || away.corners === null
+        ? null
+        : resolveCornersBetStatus(pick, line, home.corners + away.corners);
+    }
+    case Market.CARDS:
+      return line === null
+        ? BetStatus.VOID
+        : resolveCardsBetStatus({ pick, line, facts });
     case Market.CORNERS_HOME:
       return line === null
         ? BetStatus.VOID

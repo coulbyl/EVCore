@@ -2,24 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { XgSource } from '@evcore/db';
 import { Job } from 'bullmq';
 import { createLogger } from '@utils/logger';
-import {
-  ApiFootballClient,
-  isQuotaExceededError,
-} from '../api-football.client';
-import {
-  ApiFootballFixturesByIdsResponseSchema,
-  FixtureByIdDetailsSchema,
-  droppedCount,
-  FixtureByIdIdentitySchema,
-  FixtureByIdStatisticsSchema,
-} from '../schemas/fixture-full.schema';
+import { ApiFootballClient } from '../api-football.client';
+import { FixtureByIdStatisticsSchema } from '../schemas/fixture-full.schema';
+import { loadFixturesByIds } from '../fixtures-by-ids.loader';
 import { FixtureService } from '../../fixture/fixture.service';
 import {
   ETL_CONSTANTS,
   DEFAULT_SEASON_START_MONTH,
   STATS_BACKFILL,
 } from '@config/etl.constants';
-import { sleep } from '@utils/async.utils';
 import { NotificationService } from '../../notification/notification.service';
 import { seasonNameFromYear } from '@utils/season.utils';
 import {
@@ -35,6 +26,7 @@ import { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 import { fetchLeagueSeasonDates } from '../league-season-dates';
 import { FixtureStatisticsService } from '../../fixture-statistics/fixture-statistics.service';
 import { FixtureEventsService } from '../../fixture-events/fixture-events.service';
+import type { FixtureDetailRejectionCause } from '../../fixture-events/fixture-events.types';
 
 export type StatsSyncJobData = {
   season: number;
@@ -66,8 +58,9 @@ export type StatsSyncBatchResult = {
     written: number;
     // Of which marked eventsSyncedAt (nothing left to fetch).
     synced: number;
-    // Zod or team mismatch: nothing written, left pending.
-    rejected: number;
+    // Block missing, team mismatch or failed write: nothing written, left
+    // pending; each with its cause, for the operators' alert.
+    rejections: DetailRejection[];
     // Invalid events, lineups or player blocks left out of written matches.
     dropped: number;
     // Missing, failed or rejected — what the events backfill counts.
@@ -78,6 +71,12 @@ export type StatsSyncBatchResult = {
   // Calls whose answer failed the envelope schema.
   rejectedCalls: number;
   abortReason: 'quota' | null;
+};
+
+export type DetailRejection = {
+  externalId: number;
+  cause: FixtureDetailRejectionCause;
+  match: string | null;
 };
 
 const logger = createLogger('stats-sync-worker');
@@ -217,7 +216,7 @@ export class StatsSyncWorker {
         calls,
         eventsWritten: details.written,
         eventsSynced: details.synced,
-        eventsRejected: details.rejected,
+        eventsRejected: details.rejections.length,
       },
       'Stats sync complete',
     );
@@ -261,7 +260,7 @@ export class StatsSyncWorker {
       details: {
         written: 0,
         synced: 0,
-        rejected: 0,
+        rejections: [],
         dropped: 0,
         failedExternalIds: [],
       },
@@ -275,89 +274,39 @@ export class StatsSyncWorker {
       tally.details.failedExternalIds.push(externalId);
     };
 
-    const batchSize = ETL_CONSTANTS.FIXTURES_BY_IDS_BATCH_SIZE;
-    for (let start = 0; start < fixtures.length; start += batchSize) {
-      const batch = fixtures.slice(start, start + batchSize);
-      if (start > 0) await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
+    const load = await loadFixturesByIds({
+      apiFootball: this.apiFootball,
+      externalIds: fixtures.map((fixture) => fixture.externalId),
+      logger,
+    });
+    tally.calls = load.calls;
+    tally.rejectedCalls = load.rejectedCalls;
 
-      const ids = batch.map((fixture) => fixture.externalId);
-      const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?ids=${ids.join('-')}`;
-      const curlResult = await this.apiFootball.fetchJson(url);
-      tally.calls++;
-
-      if (curlResult.response === null) {
-        logger.warn({ ids }, 'Transient network error — skipping batch');
-        ids.forEach(fail);
+    // Nothing is marked for a fixture left without its answer: retried.
+    const observedAt = new Date();
+    for (const fixture of fixtures) {
+      const entry = load.entries.get(fixture.externalId);
+      if (entry === undefined) {
+        if (load.missed.has(fixture.externalId)) fail(fixture.externalId);
         continue;
       }
-      const res = curlResult.response;
-
-      if (res.status === 429 || isQuotaExceededError(res.body)) {
-        logger.warn(
-          { ids, status: res.status, body: res.body },
-          'API-FOOTBALL quota or rate limit reached — aborting batch',
-        );
-        await this.alertOnRejections(tally);
-        return { ...tally, abortReason: 'quota' };
+      if (mode === 'all') {
+        await this.persistStatistics({ fixture, entry, tally });
       }
-
-      if (res.status < 200 || res.status >= 300) {
-        logger.warn(
-          { ids, status: res.status },
-          'API-FOOTBALL error — skipping batch',
-        );
-        ids.forEach(fail);
-        continue;
-      }
-
-      // The envelope is the whole call: rejected, nothing is written and
-      // nothing is marked — every fixture stays pending.
-      const envelope = ApiFootballFixturesByIdsResponseSchema.safeParse(
-        res.body,
-      );
-      if (!envelope.success) {
-        logger.warn(
-          { ids, issues: envelope.error.issues },
-          'Zod validation failed on /fixtures?ids= — skipping batch',
-        );
-        ids.forEach(fail);
-        tally.rejectedCalls++;
-        continue;
-      }
-
-      const entries = new Map<number, unknown>();
-      for (const entry of envelope.data.response) {
-        const identity = FixtureByIdIdentitySchema.safeParse(entry);
-        if (identity.success) entries.set(identity.data.fixture.id, entry);
-      }
-
-      const observedAt = new Date();
-      for (const fixture of batch) {
-        const entry = entries.get(fixture.externalId);
-        if (entry === undefined) {
-          logger.warn(
-            { externalId: fixture.externalId },
-            'Fixture missing from /fixtures?ids= answer — left pending',
-          );
-          fail(fixture.externalId);
-          continue;
-        }
-        if (mode === 'all') {
-          await this.persistStatistics({ fixture, entry, tally });
-        }
-        await this.persistDetails({ fixture, entry, observedAt, tally });
-      }
+      await this.persistDetails({ fixture, entry, observedAt, tally });
     }
 
     await this.alertOnRejections(tally);
-    return tally;
+    return load.quotaReached ? { ...tally, abortReason: 'quota' } : tally;
   }
 
   // CLAUDE.md: a Zod failure on ETL data triggers an alert. One a day at
   // most (every routine job and backfill tick share this worker): a schema
   // drift would otherwise send one per competition or per five minutes.
   private async alertOnRejections(tally: StatsSyncBatchResult): Promise<void> {
-    if (tally.rejectedCalls === 0 && tally.details.rejected === 0) return;
+    if (tally.rejectedCalls === 0 && tally.details.rejections.length === 0) {
+      return;
+    }
     const day = new Date().toISOString().slice(0, 10);
     if (this.rejectionAlertDay === day) return;
     this.rejectionAlertDay = day;
@@ -365,7 +314,10 @@ export class StatsSyncWorker {
       await this.notification.sendEtlFailureAlert(
         'stats-sync',
         'fixtures-by-ids',
-        `${tally.rejectedCalls} /fixtures?ids= answer(s) rejected by the schema, ${tally.details.rejected} match(es) without their events, lineups and player statistics (rejected or not written) — left pending; see the stats-sync-worker logs`,
+        rejectionAlertMessage({
+          rejectedCalls: tally.rejectedCalls,
+          rejections: tally.details.rejections,
+        }),
       );
     } catch (error) {
       logger.error({ err: error }, 'Rejection alert could not be sent');
@@ -451,65 +403,83 @@ export class StatsSyncWorker {
     tally.updated++;
   }
 
-  // Events, lineups and player statistics: validated together, written
-  // together. A rejection leaves the match pending (never unavailable) and
-  // never touches its team statistics.
+  // Events, lineups and player statistics, through their one writer. A
+  // rejection leaves the match pending (never unavailable) and never
+  // touches its team statistics.
   private async persistDetails(input: {
     fixture: PendingStatisticsFixture;
     entry: unknown;
     observedAt: Date;
     tally: StatsSyncBatchResult;
   }): Promise<void> {
-    const { fixture, tally } = input;
-    const { externalId } = fixture;
-    const details = FixtureByIdDetailsSchema.safeParse(input.entry);
-    if (!details.success) {
-      logger.warn(
-        { externalId, issues: details.error.issues },
-        'Zod validation failed on events/lineups/players — left pending',
-      );
-      tally.details.rejected++;
-      tally.details.failedExternalIds.push(externalId);
-      return;
-    }
-    const dropped = droppedCount(details.data);
-    if (dropped > 0) {
-      logger.warn(
-        { externalId, dropped: details.data.dropped },
-        'Invalid events/lineups/players left out — the rest is written',
-      );
-      tally.details.dropped += dropped;
-    }
-
-    let written: Awaited<ReturnType<FixtureEventsService['persistDetails']>>;
-    try {
-      written = await this.fixtureEvents.persistDetails({
-        fixtureExternalId: externalId,
-        observedAt: input.observedAt,
-        details: details.data,
-      });
-    } catch (error) {
-      // Never costs the other fixtures of the call their statistics.
-      logger.error(
-        { externalId, err: error },
-        'Writing events/lineups/players failed — left pending',
-      );
-      tally.details.rejected++;
-      tally.details.failedExternalIds.push(externalId);
-      return;
-    }
+    const { tally } = input;
+    const { externalId } = input.fixture;
+    const written = await this.fixtureEvents.writeEntry({
+      fixtureExternalId: externalId,
+      observedAt: input.observedAt,
+      entry: input.entry,
+    });
     if (written.status === 'rejected') {
-      logger.warn(
-        { externalId, reason: written.reason },
-        'Events/lineups/players rejected — left pending',
-      );
-      tally.details.rejected++;
+      tally.details.rejections.push({
+        externalId,
+        cause: written.cause,
+        match: written.match,
+      });
       tally.details.failedExternalIds.push(externalId);
       return;
     }
+    const { events, lineups, players } = written.dropped;
+    tally.details.dropped += events + lineups + players;
     tally.details.written++;
     if (written.synced) tally.details.synced++;
   }
+}
+
+const REJECTION_CAUSE_LABELS: Record<FixtureDetailRejectionCause, string> = {
+  'unknown-team': 'unknown team',
+  'missing-block': 'events, lineups or players block missing',
+  'write-failed': 'database write failed',
+  'unknown-fixture': 'fixture not in the database',
+};
+
+// How many matches the alert names per cause before « and N more ».
+const ALERT_MATCHES_PER_CAUSE = 5;
+
+/**
+ * The stats-sync alert, readable in the admin bell: the rejected calls,
+ * then the matches left without events grouped by cause, each named.
+ */
+export function rejectionAlertMessage(input: {
+  rejectedCalls: number;
+  rejections: readonly DetailRejection[];
+}): string {
+  const parts: string[] = [];
+  if (input.rejectedCalls > 0) {
+    parts.push(
+      `${input.rejectedCalls} /fixtures?ids= answer(s) rejected whole by the schema (Zod), every match left pending`,
+    );
+  }
+  const byCause = new Map<FixtureDetailRejectionCause, DetailRejection[]>();
+  for (const rejection of input.rejections) {
+    const group = byCause.get(rejection.cause) ?? [];
+    group.push(rejection);
+    byCause.set(rejection.cause, group);
+  }
+  if (byCause.size > 0) {
+    const groups = [...byCause].map(([cause, group]) => {
+      const named = group
+        .slice(0, ALERT_MATCHES_PER_CAUSE)
+        .map(({ externalId, match }) =>
+          match === null ? `#${externalId}` : `${match} (#${externalId})`,
+        );
+      const more = group.length - named.length;
+      return `${REJECTION_CAUSE_LABELS[cause]} — ${group.length}: ${named.join(', ')}${more > 0 ? ` and ${more} more` : ''}`;
+    });
+    parts.push(
+      `${input.rejections.length} match(es) without their events, lineups and player statistics, left pending. ${groups.join('. ')}`,
+    );
+  }
+  return `${parts.join('. ')}.`;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

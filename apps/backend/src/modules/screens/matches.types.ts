@@ -11,8 +11,8 @@ export type MatchReading = {
   /** The 1xBet price; a reading always has one. */
   odds: number;
   /**
-   * The engine's probability up to ENGINE_CHANCE_MAX_ODDS, the market's
-   * frequency without margin above (06 § 2).
+   * The market's frequency without margin at 1xBet (Shin), at every price:
+   * closer to what lands than the engine's (READING_MIN_CHANCE, 06 § 2).
    */
   chance: number;
   /** Settled reading (Hier): its mark; null until then. */

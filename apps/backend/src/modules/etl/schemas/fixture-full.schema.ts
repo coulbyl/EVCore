@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { API_FOOTBALL_STATUSES } from './fixture.schema';
 import { TeamStatisticsSchema } from './stats.schema';
 
 // Schemas for API-Football GET /fixtures?ids=a-b-c (up to 20 ids): per match
@@ -25,6 +26,15 @@ import { TeamStatisticsSchema } from './stats.schema';
 // cancelled goal), and a person the API does not know has id 0 (measured on
 // 15 of 40 matches, 03/11): the schemas accept both, the writers treat
 // either as no identity.
+//
+// Read again on 04/11 against two real answers of 20 ids (20 finished
+// matches of 20 championships, 20 not started): no key was ever missing,
+// and the nulls the API really sends are, besides those above, a scorer's
+// id (Sparta Rotterdam's 85' goal, Eredivisie 01/11), a substitute's id and
+// grid, a formation, a coach's photo, the minute, goals and score of a match
+// not started (empty arrays for its four blocks), and a team whose
+// `statistics` is an empty array. All accepted; the players block's id
+// follows the other two blocks (null or 0, no identity).
 
 export const ApiFootballFixturesByIdsResponseSchema = z.object({
   get: z.literal('fixtures'),
@@ -33,6 +43,33 @@ export const ApiFootballFixturesByIdsResponseSchema = z.object({
 });
 
 const TeamRefSchema = z.object({ id: z.number().int().positive() });
+
+const nullableGoals = z.number().int().nonnegative().nullish();
+const ScoreHalfSchema = z
+  .object({ home: nullableGoals, away: nullableGoals })
+  .nullish();
+
+// What the settlement and the live minute read of an entry: its state and
+// score. Everything a match not started leaves null is nullish (measured
+// 04/11: status.elapsed, goals, every score half); the rest of the entry
+// (venue, referee, periods, logos) is not read and not validated.
+export const FixtureByIdStateSchema = z.object({
+  fixture: z.object({
+    id: z.number().int().positive(),
+    date: z.iso.datetime({ offset: true }),
+    status: z.object({
+      short: z.preprocess(
+        (v) => (typeof v === 'string' ? v.toUpperCase() : v),
+        z.enum(API_FOOTBALL_STATUSES),
+      ),
+      elapsed: z.number().int().nullish(),
+    }),
+  }),
+  goals: z.object({ home: nullableGoals, away: nullableGoals }).nullish(),
+  score: z
+    .object({ halftime: ScoreHalfSchema, fulltime: ScoreHalfSchema })
+    .nullish(),
+});
 
 export const FixtureByIdIdentitySchema = z.object({
   fixture: z.object({ id: z.number().int().positive() }),
@@ -123,7 +160,9 @@ const TeamPlayersSchema = z.object({
   players: z.array(
     z.object({
       player: z.object({
-        id: z.number().int().nonnegative(),
+        // Null in the two other blocks for the same unknown people (04/11):
+        // required here, one of them cost his team's whole block.
+        id: z.number().int().nonnegative().nullish(),
         name: z.string().nullish(),
         photo: z.string().nullish(),
       }),
@@ -172,6 +211,7 @@ export function droppedCount(details: FixtureByIdDetails): number {
 }
 
 export type FixtureByIdIdentity = z.infer<typeof FixtureByIdIdentitySchema>;
+export type FixtureByIdState = z.infer<typeof FixtureByIdStateSchema>;
 export type FixtureByIdDetails = z.output<typeof FixtureByIdDetailsSchema>;
 export type ApiFixtureEvent = z.infer<typeof FixtureEventSchema>;
 export type ApiFixtureLineup = z.infer<typeof FixtureLineupSchema>;

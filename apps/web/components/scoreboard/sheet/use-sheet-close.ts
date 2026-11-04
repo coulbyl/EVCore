@@ -12,7 +12,7 @@ import { hasInAppHistory } from "./in-app-history";
  * `fallbackHref`, l'écran sous la feuille : revenir en arrière sortirait du
  * site, et une entrée poussée rouvrirait la feuille au retour du navigateur.
  * L'écran sous la feuille garde son défilement ; `scroll: true` pour une
- * page qui en remplace une autre (BackLink).
+ * page qui laisse place à son parent (BackLink).
  */
 export function useSheetClose(
   fallbackHref: string,

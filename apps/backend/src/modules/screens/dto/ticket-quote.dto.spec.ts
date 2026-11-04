@@ -52,4 +52,22 @@ describe('TicketQuoteDto', () => {
       'day',
     ]);
   });
+
+  it('keeps the line and the player of a new market, a line in hundredths', async () => {
+    expect(
+      await errorsFor({
+        legs: [
+          { ...leg(1), market: 'CORNERS', pick: 'OVER', line: 9.5 },
+          { ...leg(2), market: 'GOAL_SCORER_ANYTIME', pick: 'P1100' },
+          { ...leg(3), market: 'MINUTE_1X2', pick: 'DRAW', line: 15 },
+          { ...leg(4), line: null },
+        ],
+      }),
+    ).toEqual([]);
+    for (const line of [-1, 9.555, 'nine', 500]) {
+      expect(
+        await errorsFor({ legs: [{ ...leg(1), market: 'CARDS', line }] }),
+      ).toContain('legs.line');
+    }
+  });
 });

@@ -290,7 +290,6 @@ export class FixtureService {
 
   findEventsBackfillPending(input: {
     before: Date;
-    notReportedSince: Date;
     limit: number;
     excludeExternalIds: readonly number[];
   }): Promise<
@@ -334,6 +333,13 @@ export class FixtureService {
     now: Date,
   ): Promise<PendingSettlementFixture[]> {
     return this.fixtureRepository.findPendingSettlementFixtures(now);
+  }
+
+  findLiveFixtures(input: {
+    now: Date;
+    since: Date;
+  }): Promise<PendingSettlementFixture[]> {
+    return this.fixtureRepository.findLiveFixtures(input);
   }
 
   findPastScheduledFixtures(

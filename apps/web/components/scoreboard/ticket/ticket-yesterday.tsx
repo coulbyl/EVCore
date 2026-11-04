@@ -48,7 +48,8 @@ export function YesterdayTicket({
   const { quote, totals } = ticket;
   const settled = quote ? ticketOutcome(quote) : null;
   const outcome = settled?.outcome ?? "pending";
-  const chance = totals ? chanceOf(totals.chance) : null;
+  const chance =
+    totals && totals.chance !== null ? chanceOf(totals.chance) : null;
   const legs = [...ticket.legs].sort((a, b) =>
     a.kickoffAt.localeCompare(b.kickoffAt),
   );

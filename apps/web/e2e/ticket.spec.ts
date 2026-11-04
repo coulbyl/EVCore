@@ -7,6 +7,7 @@ import { expect, test, type Page } from "@playwright/test";
  */
 const ARSENAL = "00000000-0000-4000-8000-617273000000";
 const LAZIO = "00000000-0000-4000-8000-6c617a000000";
+const PSG = "00000000-0000-4000-8000-707367000000";
 
 const sheetNamed = (page: Page, name: string) =>
   page
@@ -116,6 +117,50 @@ test.describe("Mon ticket", () => {
     ).toBeVisible();
     await page.goto("/matches");
     await expect(bar(page)).toContainText("1 match");
+  });
+
+  test("les nouveaux marchés : la ligne part au serveur, un buteur sans chance", async ({
+    page,
+  }) => {
+    await page.goto(`/matches/${PSG}`);
+    const others = sheetNamed(page, "Paris SG – Marseille").getByRole(
+      "region",
+      { name: "Autres paris" },
+    );
+    await others.getByText(/^Tous les \d+$/).click();
+    const quoted = page.waitForRequest((request) =>
+      request.url().endsWith("/ticket/quote"),
+    );
+    await others
+      .getByRole("button", {
+        name: "Ajouter à mon ticket – Plus de 9,5 corners",
+      })
+      .click();
+    await page.goto("/matches");
+    expect((await quoted).postDataJSON()?.legs).toEqual([
+      {
+        fixtureId: PSG,
+        market: "CORNERS",
+        pick: "OVER",
+        line: 9.5,
+      },
+    ]);
+    await expect(bar(page)).toContainText("1,90");
+    await expect(bar(page)).toContainText("5 sur 10");
+
+    // The scorer replaces it (one bet per match): its price, no chance.
+    await page.goto(`/matches/${PSG}`);
+    await others.getByText(/^Tous les \d+$/).click();
+    await others
+      .getByRole("button", { name: "Ajouter à mon ticket – Dembélé marque" })
+      .click();
+    await expect(page.getByText("Un seul pari par match")).toBeVisible();
+    await page.goto("/ticket");
+    const sheet = sheetNamed(page, "Mon ticket");
+    await expect(sheet.getByRole("listitem")).toHaveCount(1);
+    await expect(sheet).toContainText("Dembélé marque");
+    await expect(sheet).toContainText("2,75");
+    await expect(sheet.getByText("Tes chances")).toHaveCount(0);
   });
 
   test("retirer un pari, vider le ticket", async ({ page }) => {

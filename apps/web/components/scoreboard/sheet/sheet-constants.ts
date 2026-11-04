@@ -46,21 +46,6 @@ export const FOCUSABLE_SELECTOR = [
 export const SHEET_INERT_ATTRIBUTE = "data-sheet-inert";
 
 /**
- * Les adresses qui s'ouvrent en feuille : une par route interceptée de la
- * fente `@sheet` (`(.)matches/[id]`, `(.)ticket`, …), tenues à jour par
- * `app/(player)/@sheet/sheet-slot.test.mjs`.
- */
-const SHEET_PATHS: readonly RegExp[] = [
-  /^\/matches\/[^/]+$/,
-  /^\/today\/coupon\/[^/]+$/,
-  /^\/results\/coupon\/[^/]+$/,
-  /^\/results\/[^/]+$/,
-  /^\/ticket$/,
-  /^\/me\/help\/[^/]+$/,
-  /^\/dev\/components\/sheet$/,
-];
-
-/**
  * Un clic simple (bouton principal, sans touche de modification) : un clic
  * modifié ouvre un nouvel onglet ou une fenêtre, et passe tel quel.
  */
@@ -78,9 +63,4 @@ export function isPlainClick(event: {
     !event.shiftKey &&
     !event.altKey
   );
-}
-
-/** Cette adresse (chemin seul, sans requête) s'ouvre-t-elle en feuille ? */
-export function isSheetPath(pathname: string): boolean {
-  return SHEET_PATHS.some((pattern) => pattern.test(pathname));
 }

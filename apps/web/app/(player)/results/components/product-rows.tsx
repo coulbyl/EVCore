@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { SheetLink } from "@/components/scoreboard/sheet/sheet-link";
 import { ChevronRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { FormStrip } from "@/components/scoreboard/ui/form-strip";
@@ -125,7 +125,7 @@ function ResultRow({
 }) {
   return (
     <li>
-      <Link
+      <SheetLink
         href={href}
         className="-mx-2 flex min-h-14 items-center gap-2 rounded-md px-2 py-2 hover:bg-muted/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
       >
@@ -153,7 +153,7 @@ function ResultRow({
           strokeWidth={2}
           className="size-[1.125rem] shrink-0 text-icon-subtle"
         />
-      </Link>
+      </SheetLink>
     </li>
   );
 }

@@ -3,8 +3,10 @@ export type TicketQuoteLeg = {
   fixtureId: string;
   market: string;
   pick: string;
+  line: number | null;
   kickoffAt: string | null;
   state: "open" | "started" | "postponed" | "unknown";
+  /** 1xBet's; another book's for the new markets 1xBet does not price. */
   odds: number | null;
   fair: number | null;
   /** Once the match is over (07 § 6); `void` when postponed. */
@@ -15,7 +17,8 @@ export type TicketQuoteLeg = {
 export type TicketTotals = {
   legCount: number;
   odds: number;
-  chance: number;
+  /** Null when a bet counted has no frequency (a scorer): never guessed. */
+  chance: number | null;
 };
 
 export type TicketQuote = {
@@ -44,12 +47,20 @@ export type TicketLeg = {
   fixtureId: string;
   market: string;
   pick: string;
-  /** Named on the server with its team: « Victoire Arsenal ». */
+  /**
+   * The line of the new markets (corners, cards, shots, minute), as the
+   * sheet gave it; absent or null for the others (and older tickets).
+   */
+  line?: number | null;
+  /**
+   * Named with its team or its player: « Victoire Arsenal », « Saka
+   * marque ». The player's name is kept here; the pick carries his id.
+   */
   label: string;
   home: Team;
   away: Team;
   kickoffAt: string;
-  /** The 1xBet price at the last quote (or when added). */
+  /** The price at the last quote (or when added). */
   odds: number;
   /** Moved by more than 5 % at the last quote: said once (07 § 6). */
   oddsMoved?: boolean;

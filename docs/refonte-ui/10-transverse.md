@@ -87,6 +87,13 @@ L'application est faite pour le téléphone ; sur un écran large elle ne change
 - **Vérifie ton ticket** : la barre basse devient une ligne fixe en bas de la colonne centrale.
 - **Rien de plus sur ordinateur** : pas de tableau, pas de colonnes supplémentaires, pas de filtres de plus. L'admin, lui, est fait pour l'ordinateur et a ses propres règles.
 
+**Retours et feuilles** (téléphone comme ordinateur, revus le 04/11) :
+
+- **Une feuille à la fois** : une feuille ouverte alors qu'une autre est à l'écran (un coupon depuis le détail d'un produit, un autre match de la liste à côté sur écran large) la remplace dans l'historique ; la refermer ramène à l'écran dessous. Tout lien vers une feuille passe par `SheetLink` (et le code par `useOpenSheet`) ; un lien ordinaire vers une feuille s'empile.
+- **Exception, l'Aide d'un « ? »** ([09](09-moi.md) § 3) : ouverte depuis une feuille, elle s'empile, et la refermer ramène à la feuille d'où l'on vient, puis à l'écran dessous.
+- **Le chevron d'une page** revient là d'où l'on vient, sans pousser d'entrée, et sans historique (lien direct, rechargement) remplace l'adresse par l'écran parent. Son libellé dit lequel : « Retour aux résultats » venu de Résultats, « Retour à Aujourd'hui » sans historique. Même règle pour les écrans du visiteur (connexion, inscription, mot de passe, /resultats).
+- **L'analyse d'un match** sans historique revient à Matchs avec la feuille du match par-dessus, sans recharger la page : refermer la feuille laisse Matchs.
+
 ## 5. Les mentions obligatoires
 
 - **Une ligne fixe** en pied de chaque écran du joueur, sous les onglets : « 18+ · Parier comporte des risques de perte ». Toujours la même, jamais masquée, jamais plus grande.

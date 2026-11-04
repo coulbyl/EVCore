@@ -7,8 +7,9 @@ import type { TicketLeg, TicketQuote, TicketState } from "./ticket-types";
 const inFlight = new Map<string, Promise<void>>();
 
 /**
- * Prices the ticket now on the server (POST /ticket/quote): the 1xBet price
- * and fair frequency of each bet, the three figures in decimal, the hero of
+ * Prices the ticket now on the server (POST /ticket/quote): the price (1xBet's,
+ * another book's for a new market 1xBet does not price) and fair frequency
+ * of each bet, the three figures in decimal, the hero of
  * day. `verify`: the player opened the sheet on a composition not yet
  * counted today; the server counts it, anonymously (07 § 7). `day`: the
  * ticket of yesterday, settled, compared with that day's hero (07 § 6). One call in
@@ -26,10 +27,11 @@ export function quoteTicket(
   const call = playerFetch<TicketQuote>("/ticket/quote", {
     method: "POST",
     body: {
-      legs: legs.map(({ fixtureId, market, pick }) => ({
+      legs: legs.map(({ fixtureId, market, pick, line }) => ({
         fixtureId,
         market,
         pick,
+        ...(line == null ? {} : { line }),
       })),
       ...(verify ? { verify: true } : {}),
       ...(day ? { day } : {}),

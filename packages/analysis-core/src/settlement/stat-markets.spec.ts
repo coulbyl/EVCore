@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BetStatus, Market } from "../types";
 import {
+  resolveCardsBetStatus,
   resolveCorners1x2BetStatus,
   resolveGoalScorerBetStatus,
   resolveMinute1x2BetStatus,
@@ -58,8 +59,20 @@ function facts(overrides: Partial<MatchFacts> = {}): MatchFacts {
   return {
     score: { home: 1, away: 1 },
     teams: {
-      home: { corners: 6, shotsTotal: 4, shotsOn: 2 },
-      away: { corners: 3, shotsTotal: 2, shotsOn: 1 },
+      home: {
+        corners: 6,
+        shotsTotal: 4,
+        shotsOn: 2,
+        yellowCards: null,
+        redCards: null,
+      },
+      away: {
+        corners: 3,
+        shotsTotal: 2,
+        shotsOn: 1,
+        yellowCards: null,
+        redCards: null,
+      },
     },
     events: [
       goal("away", 7, 20),
@@ -365,8 +378,20 @@ describe("player shots", () => {
   it("a team whose players do not add up stays unknown", () => {
     const f = facts({
       teams: {
-        home: { corners: 6, shotsTotal: 9, shotsOn: 2 },
-        away: { corners: 3, shotsTotal: 2, shotsOn: 1 },
+        home: {
+          corners: 6,
+          shotsTotal: 9,
+          shotsOn: 2,
+          yellowCards: null,
+          redCards: null,
+        },
+        away: {
+          corners: 3,
+          shotsTotal: 2,
+          shotsOn: 1,
+          yellowCards: null,
+          redCards: null,
+        },
       },
     });
     expect(shots("P11", 1, false, f)).toBeNull();
@@ -380,8 +405,20 @@ describe("player shots", () => {
     expect(shots("P11", 1, false, facts({ playerStats: [] }))).toBeNull();
     const noTeam = facts({
       teams: {
-        home: { corners: null, shotsTotal: null, shotsOn: null },
-        away: { corners: 3, shotsTotal: 2, shotsOn: 1 },
+        home: {
+          corners: null,
+          shotsTotal: null,
+          shotsOn: null,
+          yellowCards: null,
+          redCards: null,
+        },
+        away: {
+          corners: 3,
+          shotsTotal: 2,
+          shotsOn: 1,
+          yellowCards: null,
+          redCards: null,
+        },
       },
     });
     expect(shots("P11", 1, false, noTeam)).toBeNull();
@@ -484,5 +521,111 @@ describe("resolveStatMarketBetStatus", () => {
         facts: f,
       }),
     ).toBe(VOID);
+  });
+});
+
+describe("cards", () => {
+  // Real matches (fixture_statistic): the home side's yellows and reds,
+  // then the away side's.
+  const cards = (
+    home: [number | null, number | null],
+    away: [number | null, number | null],
+  ): MatchFacts =>
+    facts({
+      teams: {
+        home: {
+          corners: null,
+          shotsTotal: null,
+          shotsOn: null,
+          yellowCards: home[0],
+          redCards: home[1],
+        },
+        away: {
+          corners: null,
+          shotsTotal: null,
+          shotsOn: null,
+          yellowCards: away[0],
+          redCards: away[1],
+        },
+      },
+    });
+  const cardsOf = (f: MatchFacts, pick: string, line: number) =>
+    resolveCardsBetStatus({ pick, line, facts: f });
+
+  it("no red card: the yellows decide (Arsenal – Everton, 24/10: 1 + 3)", () => {
+    const f = cards([1, 0], [3, 0]);
+    expect(cardsOf(f, "OVER", 3.5)).toBe(WON);
+    expect(cardsOf(f, "UNDER", 3.5)).toBe(LOST);
+    expect(cardsOf(f, "UNDER", 4.5)).toBe(WON);
+    // A met integer line refunds.
+    expect(cardsOf(f, "OVER", 4)).toBe(VOID);
+  });
+
+  it("a red card: settled when both counts agree, unknown between them (Bournemouth – Milan, 22/10: 2 + 3 yellows, 1 red)", () => {
+    // 6 cards at one per red, 7 at two.
+    const f = cards([2, 0], [3, 1]);
+    expect(cardsOf(f, "OVER", 5.5)).toBe(WON);
+    expect(cardsOf(f, "UNDER", 4.5)).toBe(LOST);
+    expect(cardsOf(f, "UNDER", 7.5)).toBe(WON);
+    expect(cardsOf(f, "OVER", 6.5)).toBeNull();
+    expect(cardsOf(f, "UNDER", 6.5)).toBeNull();
+    // Refunded at one count, won at the other: unknown, never lost.
+    expect(cardsOf(f, "OVER", 6)).toBeNull();
+    expect(cardsOf(f, "OVER", 7)).toBeNull();
+  });
+
+  it("two reds widen the gap (Celta de Vigo II – Cordoba, 31/10: 3 + 2 yellows, 2 reds)", () => {
+    // 7 or 9.
+    const f = cards([3, 0], [2, 2]);
+    expect(cardsOf(f, "OVER", 6.5)).toBe(WON);
+    expect(cardsOf(f, "OVER", 7.5)).toBeNull();
+    expect(cardsOf(f, "UNDER", 8.5)).toBeNull();
+    expect(cardsOf(f, "UNDER", 9.5)).toBe(WON);
+  });
+
+  it("a side's cards not reported: unknown", () => {
+    expect(cardsOf(cards([null, null], [3, 0]), "OVER", 0.5)).toBeNull();
+    expect(cardsOf(cards([1, null], [3, 0]), "OVER", 0.5)).toBeNull();
+  });
+
+  it("a pick that is neither over nor under is refunded", () => {
+    expect(cardsOf(cards([1, 0], [3, 0]), "YES", 3.5)).toBe(VOID);
+  });
+
+  it("goes through resolveStatMarketBetStatus, with corners", () => {
+    const f = cards([1, 0], [3, 0]);
+    expect(
+      resolveStatMarketBetStatus({
+        market: Market.CARDS,
+        pick: "OVER",
+        line: 3.5,
+        facts: f,
+      }),
+    ).toBe(WON);
+    expect(
+      resolveStatMarketBetStatus({
+        market: Market.CARDS,
+        pick: "OVER",
+        line: null,
+        facts: f,
+      }),
+    ).toBe(VOID);
+    // Corners: the two sides' total (6 + 3 in facts()).
+    expect(
+      resolveStatMarketBetStatus({
+        market: Market.CORNERS,
+        pick: "OVER",
+        line: 8.5,
+        facts: facts(),
+      }),
+    ).toBe(WON);
+    expect(
+      resolveStatMarketBetStatus({
+        market: Market.CORNERS,
+        pick: "OVER",
+        line: 8.5,
+        facts: cards([1, 0], [3, 0]),
+      }),
+    ).toBeNull();
   });
 });

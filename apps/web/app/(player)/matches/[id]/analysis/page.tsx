@@ -58,6 +58,7 @@ export default async function Page({
 
   const display = displayLocaleOf(await getLocale());
   const teams = { home: sheet.homeTeam, away: sheet.awayTeam };
+  const bets = await getTranslations("betLabels");
   const run = sheet.modelRun;
   const kickoff = new Date(sheet.scheduledAt).toLocaleString(
     display === "en" ? "en-GB" : "fr-FR",
@@ -125,7 +126,7 @@ export default async function Page({
         subtitle={`${sheet.competition}${
           sheet.country ? ` · ${translateCountry(sheet.country, display)}` : ""
         } · ${kickoff}`}
-        back={{ href: `/matches/${id}`, label: t("back") }}
+        back={{ href: `/matches/${id}`, under: "/matches", label: t("back") }}
       />
       <div className="flex flex-col gap-6 px-4 pt-3 pb-4 lg:px-6">
         {!run ? (
@@ -200,7 +201,7 @@ export default async function Page({
                           className="flex flex-col gap-0.5"
                         >
                           <span className="text-body">
-                            {formatPickWithTeams(pick.pick, pick.market, teams)}
+                            {formatPickWithTeams(pick, teams, bets)}
                           </span>
                           <span className="text-meta text-muted-foreground">
                             {t("line", {

@@ -7,13 +7,17 @@ import {
   IsOptional,
   IsDateString,
   IsEnum,
+  IsNumber,
   IsUUID,
   Matches,
+  Max,
   MaxLength,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import { Market } from '@evcore/db';
 import { VERIFIED_TICKET_LIMITS } from '@config/verified-ticket.constants';
+import { TICKET_LINE_MAX } from '@config/screens.constants';
 
 export class TicketLegDto {
   @IsUUID()
@@ -25,6 +29,16 @@ export class TicketLegDto {
   @Matches(/^[A-Z0-9_]+$/)
   @MaxLength(40)
   pick!: string;
+
+  /**
+   * The line of a market that keeps it apart from `pick` (corners, cards,
+   * player shots, the minute of a minute's 1X2), as the sheet gave it.
+   */
+  @IsOptional()
+  @IsNumber({ allowNaN: false, allowInfinity: false, maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(TICKET_LINE_MAX)
+  line?: number | null;
 }
 
 /** The bets of « Mon ticket », as the device keeps them (07 § 4). */

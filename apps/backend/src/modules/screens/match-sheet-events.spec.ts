@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { SheetEventRow } from '@modules/fixture-events/fixture-event.repository';
+import type { MatchEventFact } from '@evcore/analysis-core';
 import { sheetEventsOf } from './match-sheet-events';
 
-const event = (overrides: Partial<SheetEventRow>): SheetEventRow => ({
+// The stored row's team, resolved to a side as buildMatchFacts does.
+type Row = Omit<MatchEventFact, 'side'> & { teamId: string };
+
+const event = (overrides: Partial<Row>): Row => ({
   ordinal: 0,
   teamId: 'home-id',
   minute: 10,
@@ -11,17 +14,18 @@ const event = (overrides: Partial<SheetEventRow>): SheetEventRow => ({
   detail: 'Normal Goal',
   comments: null,
   playerName: 'Scorer',
+  playerExternalId: null,
+  assistExternalId: null,
   ...overrides,
 });
 
-const of = (
-  events: SheetEventRow[],
-  score: { home: number; away: number } | null,
-) =>
+const of = (events: Row[], score: { home: number; away: number } | null) =>
   sheetEventsOf({
-    events,
-    homeTeamId: 'home-id',
-    awayTeamId: 'away-id',
+    events: events.map(({ teamId, ...rest }) => ({
+      ...rest,
+      side:
+        teamId === 'home-id' ? 'home' : teamId === 'away-id' ? 'away' : null,
+    })),
     score,
   });
 

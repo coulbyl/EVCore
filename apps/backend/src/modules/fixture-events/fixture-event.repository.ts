@@ -1,23 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import type { FixtureEventType, Prisma } from '@evcore/db';
+import type { Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import type { FixtureEventRow } from './fixture-events.types';
-
-/** An event as the match sheet reads it. */
-export type SheetEventRow = {
-  ordinal: number;
-  teamId: string;
-  minute: number;
-  extraMinute: number | null;
-  type: FixtureEventType;
-  detail: string;
-  comments: string | null;
-  playerName: string | null;
-};
 
 export type FixtureDetailIdentity = {
   fixtureId: string;
   scheduledAt: Date;
+  /** « Home – Away », for the operators' alerts. */
+  label: string;
   /** Provider team id → our team id, both sides. */
   teams: ReadonlyMap<number, string>;
 };
@@ -34,14 +24,15 @@ export class FixtureEventRepository {
       select: {
         id: true,
         scheduledAt: true,
-        homeTeam: { select: { id: true, externalId: true } },
-        awayTeam: { select: { id: true, externalId: true } },
+        homeTeam: { select: { id: true, externalId: true, name: true } },
+        awayTeam: { select: { id: true, externalId: true, name: true } },
       },
     });
     if (!fixture) return null;
     return {
       fixtureId: fixture.id,
       scheduledAt: fixture.scheduledAt,
+      label: `${fixture.homeTeam.name} – ${fixture.awayTeam.name}`,
       teams: new Map([
         [fixture.homeTeam.externalId, fixture.homeTeam.id],
         [fixture.awayTeam.externalId, fixture.awayTeam.id],
@@ -79,24 +70,6 @@ export class FixtureEventRepository {
     await input.tx.fixture.update({
       where: { id: input.fixtureId },
       data: { eventsSyncedAt: input.observedAt },
-    });
-  }
-
-  /** Every event of a match, in response order. */
-  findSheetEvents(fixtureId: string): Promise<SheetEventRow[]> {
-    return this.prisma.client.fixtureEvent.findMany({
-      where: { fixtureId },
-      select: {
-        ordinal: true,
-        teamId: true,
-        minute: true,
-        extraMinute: true,
-        type: true,
-        detail: true,
-        comments: true,
-        playerName: true,
-      },
-      orderBy: { ordinal: 'asc' },
     });
   }
 }

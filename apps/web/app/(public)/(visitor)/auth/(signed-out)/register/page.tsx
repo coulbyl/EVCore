@@ -15,10 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RegisterPage() {
   const t = await getTranslations("playerAuth");
   return (
-    <AuthScreen
-      title={t("register.title")}
-      back={{ href: "/", label: t("back") }}
-    >
+    <AuthScreen title={t("register.title")} back={{ href: "/" }}>
       <RegisterForm
         labels={{
           firstName: t("fields.firstName"),

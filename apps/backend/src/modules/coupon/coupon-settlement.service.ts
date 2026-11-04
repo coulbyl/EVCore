@@ -1,16 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { BetStatus, CouponResult, FixtureStatus, Market } from '@evcore/db';
-import {
-  CORNERS_HUNTER_POLICY,
-  COUPON_SETTLEMENT_POLICY,
-  STAT_MARKET_SETTLEMENT,
-} from './coupon.constants';
-import {
-  resolveCornersBetStatus,
-  resolveStatMarketBetStatus,
-  STAT_SETTLED_MARKETS,
-  type MatchFacts,
-} from '@evcore/analysis-core';
+import { COUPON_SETTLEMENT_POLICY } from './coupon.constants';
+import { FACT_SETTLED_MARKETS, type MatchFacts } from '@evcore/analysis-core';
+import { settleFactLeg } from './fact-leg-settlement';
 import { MatchFactsRepository } from '../fixture-events/match-facts.repository';
 import {
   resolveFirstHalfBetStatus,
@@ -222,12 +214,12 @@ export class CouponSettlementService {
     await this.recordClosingLines(proposal.legs, fixtureMap);
     const now = Date.now();
     // Events, lineups and player statistics, read once per proposal and
-    // only when a leg needs them (phase 3 markets).
+    // only when a leg needs them (phase 3 markets, cards).
     let facts: Map<string, MatchFacts> | null = null;
     const factsOf = async (fixtureId: string): Promise<MatchFacts | null> => {
       facts ??= await this.matchFacts.findFacts(
         proposal.legs
-          .filter((leg) => STAT_SETTLED_MARKETS.has(leg.market))
+          .filter((leg) => FACT_SETTLED_MARKETS.has(leg.market))
           .map((leg) => leg.fixtureId),
       );
       return facts.get(fixtureId) ?? null;
@@ -274,50 +266,27 @@ export class CouponSettlementService {
       }
 
       // Corners (lot 6) and the phase 3 markets (team corners, corners
-      // 1X2, scorers, player shots, minute 1X2): settled on the match's
-      // statistics, events, lineups and player statistics, once it is
-      // finished. Unknown, we wait; past the grace period the leg is
-      // refunded, never counted lost. Recomputed on every pass: data that
-      // arrives after a refund grades the leg.
-      if (
-        leg.market === Market.CORNERS ||
-        STAT_SETTLED_MARKETS.has(leg.market)
-      ) {
+      // 1X2, scorers, player shots, minute 1X2) and cards: settled on the
+      // match's statistics, events, lineups and player statistics, once it
+      // is finished (rules in settleFactLeg, shared with « Mon ticket »).
+      if (FACT_SETTLED_MARKETS.has(leg.market)) {
         if (fixture.status !== FixtureStatus.FINISHED) {
           allResolved = false;
           continue;
         }
-        const graceDays =
-          leg.market === Market.CORNERS
-            ? CORNERS_HUNTER_POLICY.statsGraceDays
-            : STAT_MARKET_SETTLEMENT.graceDays;
-        const graceOver =
-          now - fixture.scheduledAt.getTime() >=
-          graceDays * 24 * 60 * 60 * 1000;
-        const line = leg.line === null ? null : Number(leg.line);
-        let status: BetStatus | null;
-        if (leg.market === Market.CORNERS) {
-          status =
-            line === null
-              ? BetStatus.VOID
-              : resolveCornersBetStatus(leg.pick, line, fixture.totalCorners);
-        } else {
-          const matchFacts = await factsOf(fixture.id);
-          status =
-            matchFacts === null
-              ? null
-              : resolveStatMarketBetStatus({
-                  market: leg.market,
-                  pick: leg.pick,
-                  line,
-                  facts: matchFacts,
-                });
-        }
-        if (status === null && !graceOver) {
+        const status = settleFactLeg({
+          market: leg.market,
+          pick: leg.pick,
+          line: leg.line === null ? null : Number(leg.line),
+          facts: await factsOf(fixture.id),
+          kickoff: fixture.scheduledAt,
+          now: new Date(now),
+        });
+        if (status === null) {
           allResolved = false;
           continue;
         }
-        if (status === null || status === BetStatus.VOID) {
+        if (status === BetStatus.VOID) {
           await this.repo.settleLeg(leg.id, null);
           voidedLegs++;
           continue;

@@ -129,6 +129,8 @@ type SyncFixtureStateInput = {
 
 export type SyncFixtureStateResult = {
   affectsRollingStats: boolean;
+  /** The status or a score (full or half time) differs from the stored one. */
+  changed: boolean;
   seasonId: string | null;
   fixtureId: string | null;
 };
@@ -416,7 +418,12 @@ export class FixtureRepository {
         },
       });
       if (!existing) {
-        return { affectsRollingStats: false, seasonId: null, fixtureId: null };
+        return {
+          affectsRollingStats: false,
+          changed: false,
+          seasonId: null,
+          fixtureId: null,
+        };
       }
 
       await tx.fixture.update({
@@ -434,6 +441,12 @@ export class FixtureRepository {
 
       return {
         affectsRollingStats: fixtureStateAffectsRollingStats(existing, input),
+        changed:
+          existing.status !== input.status ||
+          existing.homeScore !== input.homeScore ||
+          existing.awayScore !== input.awayScore ||
+          existing.homeHtScore !== input.homeHtScore ||
+          existing.awayHtScore !== input.awayHtScore,
         seasonId: existing.seasonId,
         fixtureId: existing.id,
       };
@@ -632,17 +645,15 @@ export class FixtureRepository {
   }
 
   // Finished fixtures whose events, lineups and player statistics are not
-  // synced, most recent first, for the events backfill:
-  // - kicked off before `before` (past the grace period) and done with by
-  //   the stats sync (team statistics in, or unavailable: API-Football may
-  //   still cover its events) — a fixture whose answer stays empty is marked
-  //   after one call; one still waiting for its statistics is left to the
-  //   stats sync, which fetches its events in the same call;
-  // - or kicked off since `notReportedSince` with no event written yet,
-  //   whatever its statistics: its scorers must not wait for them.
+  // synced, most recent first, for the events backfill: kicked off before
+  // `before` (past the grace period) and done with by the stats sync (team
+  // statistics in, or unavailable: API-Football may still cover its events)
+  // — a fixture whose answer stays empty is marked after one call; one still
+  // waiting for its statistics is left to the stats sync, which fetches its
+  // events in the same call. A recent match is the live pass's
+  // (findLiveFixtures).
   findEventsBackfillPending(input: {
     before: Date;
-    notReportedSince: Date;
     limit: number;
     excludeExternalIds: readonly number[];
   }): Promise<
@@ -657,18 +668,10 @@ export class FixtureRepository {
       where: {
         status: 'FINISHED',
         eventsSyncedAt: null,
+        scheduledAt: { lt: input.before },
         OR: [
-          {
-            scheduledAt: { lt: input.before },
-            OR: [
-              { statisticsSyncedAt: { not: null } },
-              { statisticsUnavailable: true },
-            ],
-          },
-          {
-            scheduledAt: { gte: input.notReportedSince },
-            events: { none: {} },
-          },
+          { statisticsSyncedAt: { not: null } },
+          { statisticsUnavailable: true },
         ],
         ...(input.excludeExternalIds.length > 0
           ? { externalId: { notIn: [...input.excludeExternalIds] } }
@@ -813,25 +816,62 @@ export class FixtureRepository {
     });
   }
 
+  // The live pass: analysed (or bet) fixtures kicked off in [since, now)
+  // that are not done — not finished yet, or finished without an event
+  // written (the API had none at the whistle). One rule for the live
+  // minute, the early settlement and the scorers at the whistle.
+  async findLiveFixtures(input: {
+    now: Date;
+    since: Date;
+  }): Promise<PendingSettlementFixture[]> {
+    return this.findSettlementFixtures({
+      scheduledAt: { gte: input.since, lt: input.now },
+      AND: [
+        {
+          OR: [
+            { bets: { some: { status: 'PENDING' } } },
+            { modelRuns: { some: {} } },
+          ],
+        },
+        {
+          OR: [
+            {
+              status: {
+                in: [FixtureStatus.SCHEDULED, FixtureStatus.IN_PROGRESS],
+              },
+            },
+            { status: FixtureStatus.FINISHED, events: { none: {} } },
+          ],
+        },
+      ],
+    });
+  }
+
   async findPendingSettlementFixtures(
     now: Date,
   ): Promise<PendingSettlementFixture[]> {
-    const fixtures = await this.prisma.client.fixture.findMany({
-      where: {
-        OR: [
-          // fixtures with pending bets — always process regardless of scheduledAt
-          { bets: { some: { status: 'PENDING' } } },
-          // NO_BET fixtures analyzed by the model that have passed their kick-off
-          // (no Bet records created, but need score + status synced for future calibration)
-          {
-            modelRuns: { some: {} },
-            status: {
-              in: [FixtureStatus.SCHEDULED, FixtureStatus.IN_PROGRESS],
-            },
-            scheduledAt: { lt: now },
+    return this.findSettlementFixtures({
+      OR: [
+        // fixtures with pending bets — always process regardless of scheduledAt
+        { bets: { some: { status: 'PENDING' } } },
+        // NO_BET fixtures analyzed by the model that have passed their kick-off
+        // (no Bet records created, but need score + status synced for future calibration)
+        {
+          modelRuns: { some: {} },
+          status: {
+            in: [FixtureStatus.SCHEDULED, FixtureStatus.IN_PROGRESS],
           },
-        ],
-      },
+          scheduledAt: { lt: now },
+        },
+      ],
+    });
+  }
+
+  private async findSettlementFixtures(
+    where: Prisma.FixtureWhereInput,
+  ): Promise<PendingSettlementFixture[]> {
+    const fixtures = await this.prisma.client.fixture.findMany({
+      where,
       select: {
         id: true,
         externalId: true,

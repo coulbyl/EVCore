@@ -19,11 +19,15 @@ import type {
   ReadingCandidateRow,
   SheetHeaderRow,
 } from './matches.repository';
-import type {
-  FixtureEventRepository,
-  SheetEventRow,
-} from '@modules/fixture-events/fixture-event.repository';
-import { MatchSheetService, setAsideReasonOf } from './match-sheet.service';
+import type { MatchEventFact } from '@evcore/analysis-core';
+
+/** A stored event, its team the home ('ars') or away ('che') side. */
+type EventRow = Omit<MatchEventFact, 'side'> & { teamId: string };
+import {
+  bothCanWin,
+  MatchSheetService,
+  setAsideReasonOf,
+} from './match-sheet.service';
 import { speechOf } from './matches-reading';
 
 const NOW = new Date('2026-10-30T15:00:00.000Z');
@@ -116,6 +120,26 @@ function homeWins(count: number): TeamMatchRow[] {
   }));
 }
 
+function factsWithEvents(events: readonly EventRow[]): MatchFacts {
+  const team = {
+    corners: null,
+    shotsTotal: null,
+    shotsOn: null,
+    yellowCards: null,
+    redCards: null,
+  };
+  return {
+    score: null,
+    teams: { home: team, away: team },
+    events: events.map(({ teamId, ...event }) => ({
+      ...event,
+      side: teamId === 'ars' ? 'home' : teamId === 'che' ? 'away' : null,
+    })),
+    lineups: null,
+    playerStats: null,
+  };
+}
+
 function harness(input: {
   header?: SheetHeaderRow | null;
   candidates?: ReadingCandidateRow[];
@@ -123,7 +147,8 @@ function harness(input: {
   history?: TeamMatchRow[];
   quotes?: [string, PlayableQuote][];
   reasons?: string[];
-  events?: SheetEventRow[];
+  /** A finished match's events: its facts carry them. */
+  events?: EventRow[];
   marketRows?: MarketPriceRow[];
   playerNames?: Map<number, string>;
   facts?: MatchFacts | null;
@@ -147,15 +172,12 @@ function harness(input: {
   const history = {
     findTeamHistories: vi.fn().mockResolvedValue(input.history ?? homeWins(6)),
   } as unknown as LegFactRepository;
-  const fixtureEvents = {
-    findSheetEvents: vi.fn().mockResolvedValue(input.events ?? []),
-  } as unknown as FixtureEventRepository;
+  const facts =
+    input.facts ?? (input.events ? factsWithEvents(input.events) : null);
   const matchFacts = {
     findFacts: vi
       .fn()
-      .mockResolvedValue(
-        new Map(input.facts ? [[FX, input.facts] as const] : []),
-      ),
+      .mockResolvedValue(new Map(facts ? [[FX, facts] as const] : [])),
   } as unknown as MatchFactsRepository;
   const squads = {
     findDisplayNames: vi
@@ -167,13 +189,11 @@ function harness(input: {
       repository,
       playableOdds,
       history,
-      fixtureEvents,
       matchFacts,
       squads,
     ),
     matchFacts,
     squads,
-    fixtureEvents,
     repository,
     playableOdds,
     history,
@@ -210,9 +230,9 @@ describe('MatchSheetService', () => {
       pick: 'HOME',
       line: null,
       player: null,
-      addable: true,
       odds: 1.65,
-      chance: 0.7,
+      // The market's frequency, not the engine's 0.70 (04/11).
+      chance: 0.58,
       result: null,
       fact: 'Arsenal a gagné ses 6 derniers matchs à domicile',
     });
@@ -238,11 +258,12 @@ describe('MatchSheetService', () => {
       pick: 'DRAW',
       line: null,
       player: null,
-      addable: true,
       odds: 3.4,
       chance: 0.27,
       result: null,
       sameAsReading: false,
+      // Victoire Arsenal and the draw: no score makes both win.
+      passesWithReading: false,
       speech:
         'Chelsea n’a perdu qu’une fois en huit déplacements. Le reste du texte.',
       decidedAt: '2026-10-31T13:41:00.000Z',
@@ -254,6 +275,28 @@ describe('MatchSheetService', () => {
       'OVER_UNDER/UNDER',
       'BTTS/YES',
     ]);
+  });
+
+  it("says when the AI's other pick can pass with our reading", () => {
+    const under = { market: 'TEAM_TOTAL_HOME', pick: 'UNDER_2_5' };
+    // Rennes under 2.5 and both teams score: 1–1.
+    expect(bothCanWin(under, { market: 'BTTS', pick: 'YES' })).toBe(true);
+    expect(
+      bothCanWin(
+        { market: 'ONE_X_TWO', pick: 'HOME' },
+        { market: 'ONE_X_TWO', pick: 'AWAY' },
+      ),
+    ).toBe(false);
+    expect(
+      bothCanWin(
+        { market: 'OVER_UNDER', pick: 'UNDER' },
+        { market: 'RESULT_TOTAL_GOALS', pick: 'HOME_UNDER_3_5' },
+      ),
+    ).toBe(true);
+    // Another fact than the final score: nothing said.
+    expect(
+      bothCanWin(under, { market: 'FIRST_HALF_WINNER', pick: 'HOME' }),
+    ).toBe(false);
   });
 
   it('says when the AI played our pick, with our chance, and nothing when it did not play', async () => {
@@ -270,7 +313,7 @@ describe('MatchSheetService', () => {
         },
       ],
     }).service.getSheet(FX, NOW);
-    expect(same.ai).toMatchObject({ sameAsReading: true, chance: 0.7 });
+    expect(same.ai).toMatchObject({ sameAsReading: true, chance: 0.58 });
     const silent = await harness({
       ai: [
         {
@@ -439,7 +482,6 @@ describe('MatchSheetService', () => {
       pick: 'HOME',
       line: null,
       player: null,
-      addable: true,
       odds: 1.65,
       chance: 0.58,
       result: null,
@@ -471,7 +513,7 @@ describe('MatchSheetService, the new markets in « Autres paris »', () => {
     },
   ];
 
-  it('follow the main lines with their price, never addable, names read once', async () => {
+  it('follow the main lines with their price, names read once', async () => {
     const { service, squads, matchFacts } = harness({
       marketRows: rows,
       playerNames: new Map([[9, 'Bukayo Saka']]),
@@ -484,7 +526,7 @@ describe('MatchSheetService, the new markets in « Autres paris »', () => {
       'CORNERS_1X2/AWAY',
       'GOAL_SCORER_ANYTIME/P9',
     ]);
-    expect(added[0]).toMatchObject({ odds: 1.6, result: null, addable: false });
+    expect(added[0]).toMatchObject({ odds: 1.6, result: null });
     expect(added[3]).toEqual({
       market: 'GOAL_SCORER_ANYTIME',
       pick: 'P9',
@@ -493,7 +535,6 @@ describe('MatchSheetService, the new markets in « Autres paris »', () => {
       odds: 2.1,
       chance: null,
       result: null,
-      addable: false,
     });
     expect(squads.findDisplayNames).toHaveBeenCalledWith([9]);
     // Before the end, no facts are read.
@@ -519,8 +560,20 @@ describe('MatchSheetService, the new markets in « Autres paris »', () => {
       await results({
         score: { home: 1, away: 0 },
         teams: {
-          home: { corners: 3, shotsTotal: null, shotsOn: null },
-          away: { corners: 7, shotsTotal: null, shotsOn: null },
+          home: {
+            corners: 3,
+            shotsTotal: null,
+            shotsOn: null,
+            yellowCards: null,
+            redCards: null,
+          },
+          away: {
+            corners: 7,
+            shotsTotal: null,
+            shotsOn: null,
+            yellowCards: null,
+            redCards: null,
+          },
         },
         events: [],
         lineups: [{ side: 'home', playerExternalId: 9, starter: true }],
@@ -583,7 +636,7 @@ describe('speechOf', () => {
 });
 
 describe('MatchSheetService — scorers and red cards', () => {
-  const event = (overrides: Partial<SheetEventRow>): SheetEventRow => ({
+  const event = (overrides: Partial<EventRow>): EventRow => ({
     ordinal: 0,
     teamId: 'ars',
     minute: 12,
@@ -592,6 +645,8 @@ describe('MatchSheetService — scorers and red cards', () => {
     detail: 'Normal Goal',
     comments: null,
     playerName: 'Konsa',
+    playerExternalId: null,
+    assistExternalId: null,
     ...overrides,
   });
   const finished = header({
@@ -648,11 +703,11 @@ describe('MatchSheetService — scorers and red cards', () => {
   });
 
   it('reads no event for a match still to come', async () => {
-    const { service, fixtureEvents } = harness({});
+    const { service, matchFacts } = harness({});
 
     const sheet = await service.getSheet(FX, NOW);
 
-    expect(fixtureEvents.findSheetEvents).not.toHaveBeenCalled();
+    expect(matchFacts.findFacts).not.toHaveBeenCalled();
     expect(sheet.scorers).toBeNull();
     expect(sheet.redCards).toBeNull();
   });

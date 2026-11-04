@@ -63,6 +63,44 @@ function fit(context: CanvasRenderingContext2D, text: string, width: number) {
   return `${cut.trimEnd()}…`;
 }
 
+/**
+ * The font size at which `text` fits `width`: `size` when it fits, else
+ * smaller in proportion (a text's width grows with its size), never under
+ * `min`. A bet's label is made smaller rather than cut: « moins de 4,5
+ * cartons » must not lose its line (only below `min` does fit() cut).
+ */
+export function sizeToFit(input: {
+  /** The text's width at a given size. */
+  measure: (size: number) => number;
+  width: number;
+  size: number;
+  min: number;
+}): number {
+  const { measure, width, size, min } = input;
+  const wide = measure(size);
+  if (wide <= width) return size;
+  return Math.max(min, Math.floor((size * width) / wide));
+}
+
+/** Writes a bet's label at `size`, smaller when it is long (sizeToFit). */
+function drawLabel(
+  c: CanvasRenderingContext2D,
+  text: string,
+  at: { x: number; y: number; width: number; size: number; font: string },
+) {
+  const size = sizeToFit({
+    measure: (px) => {
+      c.font = `500 ${px}px ${at.font}`;
+      return c.measureText(text).width;
+    },
+    width: at.width,
+    size: at.size,
+    min: Math.max(18, Math.floor(at.size * 0.7)),
+  });
+  c.font = `500 ${size}px ${at.font}`;
+  c.fillText(fit(c, text, at.width), at.x, at.y);
+}
+
 export async function drawTicketImage(input: ShareImageInput): Promise<Blob> {
   const look = lookOfPage();
   // The scoreboard fonts may not be loaded at this size yet.
@@ -117,26 +155,19 @@ export async function drawTicketImage(input: ShareImageInput): Promise<Blob> {
     c.textAlign = "right";
     c.fillText(leg.odds, WIDTH - PAD, y + (twoLines ? row * 0.62 : row * 0.72));
     c.textAlign = "left";
-    c.font = `500 ${size}px ${look.body}`;
     if (twoLines) {
       c.fillStyle = look.muted;
       c.font = `500 26px ${look.body}`;
       c.fillText(fit(c, leg.teams, inner - oddsWidth - 24), PAD, y + 30);
-      c.fillStyle = look.text;
-      c.font = `500 ${size}px ${look.body}`;
-      c.fillText(
-        fit(c, leg.label, inner - oddsWidth - 24),
-        PAD,
-        y + row * 0.72,
-      );
-    } else {
-      c.fillStyle = look.text;
-      c.fillText(
-        fit(c, leg.label, inner - oddsWidth - 24),
-        PAD,
-        y + row * 0.72,
-      );
     }
+    c.fillStyle = look.text;
+    drawLabel(c, leg.label, {
+      x: PAD,
+      y: y + row * 0.72,
+      width: inner - oddsWidth - 24,
+      size,
+      font: look.body,
+    });
   });
 
   // The total odds.

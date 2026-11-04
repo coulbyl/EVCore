@@ -30,7 +30,7 @@ export default async function VerifyPage() {
   return (
     <AuthScreen
       title={t("verify.title")}
-      back={{ href: "/today", label: t("back") }}
+      back={{ href: "/today" }}
       intro={t("verify.intro", { email: session.user.email })}
     >
       <VerifyEmailForm

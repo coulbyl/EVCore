@@ -205,6 +205,8 @@ test.describe("Fiche du match", () => {
     const sheet = sheetNamed(page, "Arsenal – Chelsea");
     await expect(sheet).toBeVisible();
     await expect(sheet.getByText("Premier League")).toBeVisible();
+    // Another day than today: the time says its day (04/11).
+    await expect(sheet.getByText(/^\S+ \d{2}\/\d{2} · 19:00$/)).toBeVisible();
 
     const reading = sheet.getByRole("region", { name: "Notre lecture" });
     await expect(reading).toContainText("Victoire Arsenal");
@@ -217,6 +219,8 @@ test.describe("Fiche du match", () => {
     const ai = sheet.getByRole("region", { name: "Avis IA" });
     await expect(ai).toContainText("Match nul");
     await expect(ai).toContainText("3,40");
+    // Its price is today's, not the one it decided on (04/11).
+    await expect(ai).toContainText(/Décidé le .+ · cote actuelle/);
     // Its text opens from « Pourquoi ? », in a popover (ee391364).
     await ai.getByRole("button", { name: "Pourquoi ?" }).click();
     await expect(page.getByRole("dialog", { name: "Avis IA" })).toContainText(
@@ -233,6 +237,9 @@ test.describe("Fiche du match", () => {
       form.getByRole("img", { name: "2 victoires, 2 nuls, 1 défaite" }),
     ).toBeVisible();
     await expect(form).toContainText("repos 3 j");
+    // What the marks mean, visible (04/11).
+    await expect(form).toContainText("victoire");
+    await expect(form).toContainText("5 derniers matchs, toutes compétitions");
     await expect(form).toContainText(
       "4 victoires d'Arsenal sur les 6 derniers",
     );

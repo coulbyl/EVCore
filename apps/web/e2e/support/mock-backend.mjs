@@ -612,13 +612,12 @@ function matchSheet(fixtureId) {
   if (!item) return null;
   const finished = item.state === "finished";
   const settle = (result) => (finished ? result : null);
-  // As the backend's mainPick: no line, no player, « Mon ticket » takes it.
+  // As the backend's mainPick: no line, no player.
   const mainPick = (market, pickName) => ({
     market,
     pick: pickName,
     line: null,
     player: null,
-    addable: true,
   });
   const pick = (market, pickName, odds, chance, result) => ({
     ...mainPick(market, pickName),
@@ -651,6 +650,7 @@ function matchSheet(fixtureId) {
       ? {
           ...pick("ONE_X_TWO", "DRAW", 3.4, 0.28, null),
           sameAsReading: false,
+          passesWithReading: false,
           speech: "Chelsea n'a perdu qu'une fois en 8 déplacements",
           decidedAt: "2026-10-30T13:41:00.000Z",
         }
@@ -658,6 +658,7 @@ function matchSheet(fixtureId) {
         ? {
             ...pick("OVER_UNDER", "OVER", 1.6, 0.62, null),
             sameAsReading: true,
+            passesWithReading: false,
             speech: null,
             decidedAt: "2026-10-30T13:41:00.000Z",
           }
@@ -703,6 +704,30 @@ function matchSheet(fixtureId) {
             pick("BTTS", "YES", 1.7, 0.55, "lost"),
             pick("OVER_UNDER", "UNDER", 2.05, 0.48, "lost"),
             pick("BTTS", "NO", 2.1, 0.45, "won"),
+            // The new markets (03/11), on Paris SG – Marseille only: a line
+            // with its chance, a scorer priced at another book, no chance.
+            ...(fixtureId === matchUuid("psg")
+              ? [
+                  {
+                    market: "CORNERS",
+                    pick: "OVER",
+                    line: 9.5,
+                    player: null,
+                    odds: 1.9,
+                    chance: 0.5,
+                    result: null,
+                  },
+                  {
+                    market: "GOAL_SCORER_ANYTIME",
+                    pick: "P1100",
+                    line: null,
+                    player: "Dembélé",
+                    odds: 2.75,
+                    chance: null,
+                    result: null,
+                  },
+                ]
+              : []),
           ],
   };
 }
@@ -717,7 +742,10 @@ function ticketQuote(body) {
       ? [sheet.reading, sheet.ai, ...sheet.otherPicks].filter(Boolean)
       : [];
     const bet = bets.find(
-      (b) => b.market === leg.market && b.pick === leg.pick,
+      (b) =>
+        b.market === leg.market &&
+        b.pick === leg.pick &&
+        (b.line ?? null) === (leg.line ?? null),
     );
     const moved =
       sheet?.home.name === "Arsenal" &&
@@ -727,6 +755,7 @@ function ticketQuote(body) {
     const postponed = sheet?.state === "postponed";
     return {
       ...leg,
+      line: leg.line ?? null,
       kickoffAt: sheet?.kickoffAt ?? null,
       state: !sheet
         ? "unknown"
@@ -745,8 +774,11 @@ function ticketQuote(body) {
         : null,
     };
   });
-  const counted = legs.filter((l) => l.state === "open" && l.odds && l.fair);
-  if (body.verify && counted.length > 0) verifiedTickets += 1;
+  // As the backend's totalsOf: every open priced bet; the chance unknown
+  // when one of them has none (a scorer), and then not counted.
+  const counted = legs.filter((l) => l.state === "open" && l.odds);
+  const known = counted.every((l) => l.fair !== null);
+  if (body.verify && counted.length > 0 && known) verifiedTickets += 1;
   const product = (f) => counted.reduce((acc, l) => acc * f(l), 1);
   return {
     legs,
@@ -754,7 +786,7 @@ function ticketQuote(body) {
       ? {
           legCount: counted.length,
           odds: Math.round(product((l) => l.odds) * 1000) / 1000,
-          chance: product((l) => l.fair),
+          chance: known ? product((l) => l.fair) : null,
         }
       : null,
     hero: body.day
@@ -2496,6 +2528,11 @@ const TRACK_RECORD_SUMMARY = {
 // (docs/refonte-ui/16-performance-et-qualite.md § 2).
 let authMeReads = 0;
 let verifiedTickets = 0;
+// The bell's reads, written by Next's server actions (Node, out of the
+// browser's sight): the rows read since the last reset, and each call.
+const readNotifications = new Set();
+let notificationReads = [];
+let readAllCalls = [];
 
 const AUTH_BODY_ROUTES = new Set([
   "/auth/register",
@@ -2556,10 +2593,22 @@ function route(method, url, cookie = "") {
   if (method === "OPTIONS") return [200, {}];
   if (path === "/health") return [200, { ok: true }];
   if (path === "/__e2e/stats")
-    return [200, { authMeReads, verifiedTickets, supportReadCalls }];
+    return [
+      200,
+      {
+        authMeReads,
+        verifiedTickets,
+        supportReadCalls,
+        notificationReads,
+        readAllCalls,
+      },
+    ];
   if (path === "/__e2e/reset") {
     authMeReads = 0;
     verifiedTickets = 0;
+    readNotifications.clear();
+    notificationReads = [];
+    readAllCalls = [];
     return [200, { ok: true }];
   }
   if (path === "/auth/me") {
@@ -2944,14 +2993,30 @@ function route(method, url, cookie = "") {
   if (path.startsWith("/bet-slips")) return [200, []];
   if (path.startsWith("/audit")) return [200, EMPTY_AUDIT];
   if (path.startsWith("/predictions")) return [200, []];
-  // The mock never marks anything read: both reads answer the same count.
-  const unreadNotifications = NOTIFICATIONS.filter((n) => !n.isRead).length;
+  // A read is kept until /__e2e/reset: the list, the count and the
+  // answers of both reads follow it, as on the real backend.
+  const bell = NOTIFICATIONS.map((n) =>
+    readNotifications.has(n.id) ? { ...n, isRead: true } : n,
+  );
+  const unreadCount = () =>
+    bell.filter((n) => !n.isRead && !readNotifications.has(n.id)).length;
   if (path.startsWith("/notifications/unread-count"))
-    return [200, { count: unreadNotifications }];
-  if (path === "/notifications/read-all" && method === "POST")
-    return [200, { unread: unreadNotifications }];
-  if (/^\/notifications\/[^/]+\/read$/.test(path))
-    return [200, { unread: unreadNotifications }];
+    return [200, { count: unreadCount() }];
+  if (path === "/notifications/read-all" && method === "POST") {
+    const category = new URLSearchParams(url.split("?")[1] ?? "").get(
+      "category",
+    );
+    readAllCalls.push(category ?? "all");
+    for (const n of bell)
+      if (!category || n.category === category) readNotifications.add(n.id);
+    return [200, { unread: unreadCount() }];
+  }
+  if (/^\/notifications\/[^/]+\/read$/.test(path)) {
+    const id = decodeURIComponent(path.split("/")[2] ?? "");
+    notificationReads.push(id);
+    readNotifications.add(id);
+    return [200, { unread: unreadCount() }];
+  }
   if (path.startsWith("/notifications")) {
     // Les filtres du vrai backend : ?type= (point de la semaine de
     // l'Accueil), ?status= et ?category= (écran Notifications), filtrés ici
@@ -2960,7 +3025,7 @@ function route(method, url, cookie = "") {
     const type = query.get("type");
     const status = query.get("status");
     const category = query.get("category");
-    const data = NOTIFICATIONS.filter(
+    const data = bell.filter(
       (n) =>
         (!type || n.type === type) &&
         (status !== "unread" || !n.isRead) &&

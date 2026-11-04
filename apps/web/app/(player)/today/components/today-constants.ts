@@ -1,4 +1,8 @@
-import { formatLinePick, formatPickWithTeams } from "@/helpers/fixture";
+import {
+  formatLinePick,
+  formatPickWithTeams,
+  type BetLabels,
+} from "@/helpers/fixture";
 import { formatClock, type ClockLabels } from "@/helpers/scoreboard-format";
 import type { Outcome } from "@/components/scoreboard/ui/outcome";
 import type {
@@ -13,13 +17,10 @@ import type {
 export const HERO_FORM_DAYS = 10;
 
 /** The bet named with its team: « Victoire PSG », « Plus de 9,5 corners ». */
-export function legPickLabel(leg: TodayLeg): string {
+export function legPickLabel(leg: TodayLeg, t: BetLabels): string {
   return (
-    formatLinePick(leg.pick, leg.market, leg.line) ??
-    formatPickWithTeams(leg.pick, leg.market, {
-      home: leg.home.name,
-      away: leg.away.name,
-    })
+    formatLinePick(leg, t) ??
+    formatPickWithTeams(leg, { home: leg.home.name, away: leg.away.name }, t)
   );
 }
 

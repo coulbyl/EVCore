@@ -44,10 +44,8 @@ function makeFixture(overrides: {
   awayScore?: number | null;
   homeHtScore?: number | null;
   awayHtScore?: number | null;
-  totalCorners?: number | null;
 }) {
   return {
-    totalCorners: overrides.totalCorners ?? null,
     id: overrides.id,
     status: overrides.status,
     // Two days ago by default: a POSTPONED fixture this old is voided.
@@ -639,6 +637,35 @@ describe('CouponSettlementService.settleProposal — corners from match stats', 
       oddsSnapshot: 1.9,
     });
 
+  const cornersFacts = (home: number | null, away: number | null) =>
+    new Map<string, MatchFacts>([
+      [
+        'f1',
+        {
+          score: { home: 1, away: 0 },
+          teams: {
+            home: {
+              corners: home,
+              shotsTotal: null,
+              shotsOn: null,
+              yellowCards: null,
+              redCards: null,
+            },
+            away: {
+              corners: away,
+              shotsTotal: null,
+              shotsOn: null,
+              yellowCards: null,
+              redCards: null,
+            },
+          },
+          events: null,
+          lineups: null,
+          playerStats: null,
+        },
+      ],
+    ]);
+
   it('settles the leg on the total of both teams', async () => {
     const { service, settleLeg } = makeHarness({
       legs: [cornersLeg('OVER')],
@@ -648,12 +675,43 @@ describe('CouponSettlementService.settleProposal — corners from match stats', 
           status: FixtureStatus.FINISHED,
           homeScore: 1,
           awayScore: 0,
-          totalCorners: 11,
         }),
       ],
+      facts: cornersFacts(6, 5),
     });
     await service.settleProposal('proposal-1');
     expect(settleLeg).toHaveBeenCalledWith('l1', true);
+  });
+
+  it('a second pass writes nothing; a corrected count regrades the leg', async () => {
+    const fixtures = [
+      makeFixture({
+        id: 'f1',
+        status: FixtureStatus.FINISHED,
+        homeScore: 1,
+        awayScore: 0,
+      }),
+    ];
+    const again = makeHarness({
+      legs: [makeLeg({ ...cornersLeg('OVER'), isCorrect: true })],
+      fixtures,
+      facts: cornersFacts(6, 5),
+    });
+    await again.service.settleProposal('proposal-1');
+    expect(again.settleLeg).not.toHaveBeenCalled();
+
+    // Won on 11 corners, the provider corrects to 9: the leg is lost.
+    const corrected = makeHarness({
+      legs: [makeLeg({ ...cornersLeg('OVER'), isCorrect: true })],
+      fixtures,
+      facts: cornersFacts(5, 4),
+    });
+    await corrected.service.settleProposal('proposal-1');
+    expect(corrected.settleLeg).toHaveBeenCalledWith('l1', false);
+    expect(corrected.updateResult).toHaveBeenCalledWith(
+      'proposal-1',
+      CouponResult.LOST,
+    );
   });
 
   it('waits for the stats, then refunds after the grace period, never a loss', async () => {
@@ -668,12 +726,14 @@ describe('CouponSettlementService.settleProposal — corners from match stats', 
           scheduledAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
         }),
       ],
+      facts: cornersFacts(4, null),
     });
     await recent.service.settleProposal('proposal-1');
     expect(recent.settleLeg).not.toHaveBeenCalled();
     expect(recent.updateResult).not.toHaveBeenCalled();
 
     const late = makeHarness({
+      facts: cornersFacts(4, null),
       legs: [cornersLeg('UNDER')],
       fixtures: [
         makeFixture({
@@ -696,8 +756,20 @@ describe('CouponSettlementService.settleProposal — phase 3 markets from match 
   const facts = (overrides: Partial<MatchFacts> = {}): MatchFacts => ({
     score: { home: 1, away: 0 },
     teams: {
-      home: { corners: 7, shotsTotal: 3, shotsOn: 2 },
-      away: { corners: 2, shotsTotal: 1, shotsOn: 0 },
+      home: {
+        corners: 7,
+        shotsTotal: 3,
+        shotsOn: 2,
+        yellowCards: null,
+        redCards: null,
+      },
+      away: {
+        corners: 2,
+        shotsTotal: 1,
+        shotsOn: 0,
+        yellowCards: null,
+        redCards: null,
+      },
     },
     events: [
       {
@@ -797,6 +869,51 @@ describe('CouponSettlementService.settleProposal — phase 3 markets from match 
       CouponResult.WON,
       16,
     );
+  });
+
+  it('grades cards when both counts of a red agree, waits when they do not', async () => {
+    // Bournemouth – Milan, 22/10: 2 + 3 yellows, one red: 6 or 7 cards.
+    const carded = facts({
+      teams: {
+        home: {
+          corners: 7,
+          shotsTotal: 3,
+          shotsOn: 2,
+          yellowCards: 2,
+          redCards: 0,
+        },
+        away: {
+          corners: 2,
+          shotsTotal: 1,
+          shotsOn: 0,
+          yellowCards: 3,
+          redCards: 1,
+        },
+      },
+    });
+    const { service, settleLeg, updateResult } = makeHarness({
+      legs: [
+        makeLeg({
+          id: 'l1',
+          fixtureId: 'f1',
+          market: Market.CARDS,
+          pick: 'OVER',
+          line: 5.5,
+        }),
+        makeLeg({
+          id: 'l2',
+          fixtureId: 'f1',
+          market: Market.CARDS,
+          pick: 'OVER',
+          line: 6.5,
+        }),
+      ],
+      fixtures: [finished()],
+      facts: new Map([['f1', carded]]),
+    });
+    await service.settleProposal('proposal-1');
+    expect(settleLeg.mock.calls).toEqual([['l1', true]]);
+    expect(updateResult).not.toHaveBeenCalled();
   });
 
   it('refunds a player who did not play, never a loss', async () => {

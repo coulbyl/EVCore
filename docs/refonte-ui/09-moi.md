@@ -79,7 +79,7 @@ Formation et Glossaire deviennent **un index de fiches courtes**, sans vidéo, s
 ```
 
 - **Une fiche = un écran**, 150 mots au plus, un exemple chiffré, pas de lien sortant sauf vers l'écran concerné. Les anciennes adresses de Formation redirigent.
-- **Le « ? » contextuel** : à côté d'un mot nouveau ailleurs dans l'application (« 8 sur 10 », « jusqu'à 3 semaines sans gain »), un toucher ouvre la fiche directement, par-dessus l'écran, et la referme d'un geste. C'est l'explication « au doigt » déjà en place (TapHint), ramenée à une seule source.
+- **Le « ? » contextuel** : à côté d'un mot nouveau ailleurs dans l'application (« 8 sur 10 », « jusqu'à 3 semaines sans gain »), un toucher ouvre la fiche directement, par-dessus l'écran, et la referme d'un geste. C'est l'explication « au doigt » déjà en place (TapHint), ramenée à une seule source. Ouverte depuis une feuille (la fiche d'un produit), elle se pose sur elle et la refermer y ramène : seule exception à « une feuille à la fois » ([10](10-transverse.md) § 4), tranchée le 04/11.
 - **Le glossaire** disparaît comme page : chaque terme devient soit une fiche, soit une ligne dans une fiche. Un mot qui n'a pas sa place dans une fiche n'a pas sa place à l'écran.
 - La dernière ligne mène à Messages.
 
@@ -158,7 +158,7 @@ Elle est dans l'en-tête de chaque onglet, pas dans Moi, mais elle mène au mêm
 ```
 
 - **Quatre sortes** et pas plus : la matinée, la semaine, une réponse de l'équipe, une annonce. Chaque ligne mène quelque part : Aujourd'hui, Résultats (Ta semaine), Messages, ou l'annonce.
-- ~~**Pas d'onglets** Toutes / Non lues / Annonces / Alertes : la liste est courte (une à deux lignes par jour), l'onglet ne sert plus.~~ _Revu le 04/11 à la demande de l'utilisateur : filtres Toutes / Non lues · N / Lues pour tous, Tout / Joueur / Alertes techniques pour l'admin (seule exception à la règle d'une rangée), « Tout marquer comme lu » limité au filtre affiché ; filtrage côté serveur, choix gardé dans l'adresse._ Le badge de la cloche compte les non-lues ; ouvrir la liste ne marque rien, toucher une ligne la marque.
+- ~~**Pas d'onglets** Toutes / Non lues / Annonces / Alertes : la liste est courte (une à deux lignes par jour), l'onglet ne sert plus.~~ _Revu le 04/11 à la demande de l'utilisateur : filtres Toutes / Non lues · N / Lues pour tous, Tout / Joueur / Alertes techniques pour l'admin (seule exception à la règle d'une rangée), « Tout marquer comme lu » limité au filtre affiché ; filtrage côté serveur, choix gardé dans l'adresse._ Le badge de la cloche compte les non-lues ; ouvrir la liste ne marque rien, toucher une ligne la marque. _Depuis le 04/11 : toucher une ligne non lue (ou « Tout marquer comme lu ») est une action serveur qui marque, redessine la mise en page (la cloche et la liste, lues dans la même requête) et mène où la ligne parle, en un aller-retour ; le badge baisse dès le toucher. Les autres onglets, un push reçu et le retour sur l'onglet redessinent la mise en page ; aucun compte n'est gardé dans le navigateur._
 - **Les alertes d'exploitation** (ROI, suspension, ETL, ML) ne sont jamais envoyées au joueur ; elles vivent dans l'admin.
 - **Une annonce importante** peut aussi s'afficher une fois en haut d'Aujourd'hui, refermable ([02](02-les-4-onglets.md) § 1).
 

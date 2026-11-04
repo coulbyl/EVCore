@@ -16,7 +16,8 @@ export function TicketChance({
   tone = "band",
   className,
 }: {
-  probability: number;
+  /** Null when unknown (a bet without a frequency): nothing is said. */
+  probability: number | null;
   /** `short` for a single bet: « 6 sur 10 », not « environ ». */
   phrasing?: "about" | "short";
   showLeds?: boolean;
@@ -25,7 +26,7 @@ export function TicketChance({
   className?: string;
 }) {
   const t = usePlayerText("scoreboard.chance");
-  const chance = chanceOf(probability);
+  const chance = probability === null ? null : chanceOf(probability);
   if (!chance) return null;
   const values: Record<string, string> =
     chance.kind === "outOfTen"

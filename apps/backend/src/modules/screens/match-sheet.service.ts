@@ -10,7 +10,6 @@ import {
   SCREEN_READS_TTL_MS,
   SHEET_MAIN_LINES,
   SHEET_NEW_MARKETS,
-  SHEET_PRICES_LOOKBACK_DAYS,
 } from '@config/screens.constants';
 import { SharedReads } from '@utils/shared-reads';
 import {
@@ -24,16 +23,21 @@ import {
   type MarketPriceRow,
   type PlayableQuote,
 } from '@modules/betting-engine/pricing/playable-odds.repository';
-import type { MatchFacts } from '@evcore/analysis-core';
+import { BetStatus, Market } from '@evcore/db';
+import { resolvePickBetStatus, type MatchFacts } from '@evcore/analysis-core';
 import { MatchFactsRepository } from '@modules/fixture-events/match-facts.repository';
 import { PlayerSquadRepository } from '@modules/fixture-events/player-squad.repository';
-import { newMarketPicksOf, pricedPlayerIds } from './match-sheet-markets';
+import {
+  newMarketPicksOf,
+  pricedPlayerIds,
+  sheetPriceWindow,
+} from './match-sheet-markets';
 import { legFact, of, type PastMatch } from '@modules/coupon/leg-fact/leg-fact';
 import {
   LegFactRepository,
   type TeamMatchRow,
 } from '@modules/coupon/leg-fact/leg-fact.repository';
-import { startOfUtcDay } from '@utils/date.utils';
+import { DAY_MS, startOfUtcDay } from '@utils/date.utils';
 import {
   aiAbstentionOf,
   readingOf,
@@ -49,10 +53,6 @@ import {
   type SheetHeaderRow,
 } from './matches.repository';
 import type { MatchesDay } from './dto/matches-query.dto';
-import {
-  FixtureEventRepository,
-  type SheetEventRow,
-} from '@modules/fixture-events/fixture-event.repository';
 import { sheetEventsOf } from './match-sheet-events';
 import { matchClockOf } from './match-clock';
 import type {
@@ -65,8 +65,6 @@ import type {
 } from './match-sheet.types';
 import type { MatchReading } from './matches.types';
 import { MIN_LEG_ODDS } from '@modules/coupon/coupon.constants';
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 type Key = { market: string; pick: string };
 
@@ -88,13 +86,14 @@ type SheetReads = {
   historyRows: TeamMatchRow[];
   quotes: Map<string, PlayableQuote>;
   rejectionReasons: string[];
-  /** A finished match's events; empty before the end. */
-  events: SheetEventRow[];
   /** Every book's prices on the markets of SHEET_NEW_MARKETS. */
   marketRows: MarketPriceRow[];
   /** The names of the players those prices name. */
   playerNames: Map<number, string>;
-  /** A finished match's facts (statistics, events, lineups); else null. */
+  /**
+   * A finished match's facts (statistics, events, lineups; its scorers and
+   * red cards are read on these events); else null.
+   */
   facts: MatchFacts | null;
 };
 
@@ -115,7 +114,6 @@ export class MatchSheetService {
     private readonly repository: MatchesRepository,
     private readonly playableOdds: PlayableOddsRepository,
     private readonly history: LegFactRepository,
-    private readonly fixtureEvents: FixtureEventRepository,
     private readonly matchFacts: MatchFactsRepository,
     private readonly squads: PlayerSquadRepository,
   ) {}
@@ -152,7 +150,6 @@ export class MatchSheetService {
       aiRows,
       historyRows,
       rejectionReasons,
-      events,
       { marketRows, playerNames },
       facts,
     ] = await Promise.all([
@@ -171,17 +168,10 @@ export class MatchSheetService {
         fixtureId,
         channels: READING_CHANNELS,
       }),
-      finished
-        ? this.fixtureEvents.findSheetEvents(fixtureId)
-        : Promise.resolve([]),
       this.playableOdds
         .findMarketPrices({
-          fixtureId,
+          fixtures: [sheetPriceWindow(fixtureId, kickoff)],
           markets: SHEET_NEW_MARKETS,
-          kickoff,
-          since: new Date(
-            kickoff.getTime() - SHEET_PRICES_LOOKBACK_DAYS * DAY_MS,
-          ),
         })
         .then(async (rows) => ({
           marketRows: rows,
@@ -213,7 +203,6 @@ export class MatchSheetService {
       historyRows,
       quotes,
       rejectionReasons,
-      events,
       marketRows,
       playerNames,
       facts,
@@ -239,14 +228,10 @@ export class MatchSheetService {
     const awayHistory = historyOf(historyRows, header.awayTeamId);
     const finished = header.status === 'FINISHED';
     const score = pair(header.homeScore, header.awayScore);
-    const matchEvents = finished
-      ? sheetEventsOf({
-          events: input.events,
-          homeTeamId: header.homeTeamId,
-          awayTeamId: header.awayTeamId,
-          score,
-        })
-      : null;
+    const matchEvents =
+      finished && input.facts?.events
+        ? sheetEventsOf({ events: input.facts.events, score })
+        : null;
     const quoteOf = (key: Key) =>
       quotes.get(playableQuoteKey({ fixtureId, ...key }));
 
@@ -356,19 +341,18 @@ function pair(
 }
 
 /**
- * A pick of the markets « Mon ticket » takes (the reading, the AI's, the
- * main lines and the engine's others): no line, no player, addable. The new
- * markets are not (match-sheet-markets.ts).
+ * A pick of the main markets (the reading, the AI's, the main lines and the
+ * engine's others): no line, no player. The new markets carry theirs
+ * (match-sheet-markets.ts).
  */
 function mainPick(
   key: Key,
-): Pick<SheetPick, 'market' | 'pick' | 'line' | 'player' | 'addable'> {
+): Pick<SheetPick, 'market' | 'pick' | 'line' | 'player'> {
   return {
     market: key.market,
     pick: key.pick,
     line: null,
     player: null,
-    addable: true,
   };
 }
 
@@ -426,9 +410,56 @@ function aiOpinionOf(
       : (quote?.operatorFairProbability ?? null),
     result: resultOf(ai.result),
     sameAsReading,
+    passesWithReading:
+      reading !== null && !sameAsReading && bothCanWin(reading, key),
     speech: speechOf(ai.text),
     decidedAt: ai.decidedAt.toISOString(),
   };
+}
+
+/** The markets settled on the final score alone (resolvePickBetStatus). */
+const FULL_TIME_MARKETS: ReadonlySet<string> = new Set<Market>([
+  Market.ONE_X_TWO,
+  Market.DOUBLE_CHANCE,
+  Market.OVER_UNDER,
+  Market.BTTS,
+  Market.DRAW_NO_BET,
+  Market.TEAM_TOTAL_HOME,
+  Market.TEAM_TOTAL_AWAY,
+  Market.CLEAN_SHEET_HOME,
+  Market.CLEAN_SHEET_AWAY,
+  Market.WIN_TO_NIL_HOME,
+  Market.WIN_TO_NIL_AWAY,
+  Market.CORRECT_SCORE,
+  Market.RESULT_TOTAL_GOALS,
+  Market.RESULT_BTTS,
+]);
+
+/** Goals per team tried: every line priced is under it. */
+const SCORES_TRIED = 10;
+
+/**
+ * Two bets settled on the final score that one score makes both win
+ * (06 § 7: « l'équipe marque » and « victoire de l'équipe » pass together).
+ * False when one of them reads another fact (half-time, corners, a
+ * player…): the sheet then says nothing rather than guess.
+ */
+export function bothCanWin(
+  a: { market: string; pick: string },
+  b: { market: string; pick: string },
+): boolean {
+  if (!FULL_TIME_MARKETS.has(a.market) || !FULL_TIME_MARKETS.has(b.market)) {
+    return false;
+  }
+  for (let home = 0; home <= SCORES_TRIED; home += 1) {
+    for (let away = 0; away <= SCORES_TRIED; away += 1) {
+      const wins = (bet: { market: string; pick: string }) =>
+        resolvePickBetStatus(bet.market as Market, bet.pick, home, away) ===
+        BetStatus.WON;
+      if (wins(a) && wins(b)) return true;
+    }
+  }
+  return false;
 }
 
 /** One team's matches, most recent first (rows come per venue). */
