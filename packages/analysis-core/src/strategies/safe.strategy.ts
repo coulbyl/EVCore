@@ -43,7 +43,7 @@ import {
 // a refinement that needed several OVER_UNDER lines simultaneously, which a
 // single specialist channel (GOALS picks exactly one line) can't provide
 // through previousDecisions. Dropped rather than special-cased back onto the
-// raw pool — revisit during the calibration pass (ROADMAP.md, "Audit de
+// raw pool — revisit during the calibration pass (docs/archive/ROADMAP-history-2026-11.md, "Audit de
 // calibration par marché × ligue") if dropping it measurably hurts SAFE's
 // ROI.
 export class SafeStrategy implements ChannelStrategy {

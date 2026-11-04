@@ -1595,7 +1595,7 @@ model ChatUsage {
 // (dedicated "CALIBRATION SCHEMA" section) were removed 2026-08-18 — built
 // with a real migration (Étape 5) but never wired to a caller;
 // model-calibration.service.ts/channel-tuning.service.ts use
-// BacktestRepository for persistence instead. See docs/archive/TODO-2026-10.md/ROADMAP.md.
+// BacktestRepository for persistence instead. See docs/archive/TODO-2026-10.md and docs/archive/ROADMAP-history-2026-11.md.
 
 // Un jour où le joueur a ouvert l'app (2026-10-29) : la mesure d'activité,
 // chez nous, sans outil tiers. Écrit au plus une fois par joueur et par jour

@@ -1,64 +1,58 @@
 # EVCore
 
-> Autonomous value-driven sports betting engine built around Expected Value (EV) mathematics.
+> Probability-driven football analysis engine. It analyses and proposes; it never places a bet on a user's behalf.
 
 EVCore is a probabilistic football-analysis system whose decisions, prices and
-outcomes are meant to be measured prospectively. The backend remains the final
+outcomes are measured prospectively, leg by leg. The backend remains the final
 authority for numerical validation and publication.
 
-**Status:** audit remediation and prospective observation. Historical backtests
-are research evidence; they are not proof of future profitability.
+**Status:** in production. The engine is measured behind the market (Brier
+0.639 against 0.599, optimal blend weight 0 %), so products are ranked on the
+measured price, not on the engine's claimed edge. Historical backtests are
+research evidence, not proof of future profitability.
 
 ---
 
 ## What it does
 
-- Collects live and historical football data (fixtures, results, xG, odds) via API-Football
-- Computes match probabilities using a Poisson model weighted by 4 deterministic features
-- Evaluates all markets (1X2, Over/Under 2.5, BTTS, Double Chance, 12 combo-match pairs) for value bets where `EV ≥ 8%`
-- Applies fractional Kelly (0.25×) for stake sizing
-- Identifie les value bets unitaires filtrés par un score de qualité déterministe.
-- Filters picks with adverse line movement (> 10% odds drop over 7 days)
-- Tracks calibration, ROI, drawdown, data lineage and explicit abstentions
-- Sends alerts via Email when opportunities, anomalies, or auto-calibrations are detected
-- Generates at most one immutable daily coupon with combined odds between 5 and
-  15, or records an abstention when the constraints cannot be satisfied
-
-The earlier EPL reconstruction reported Brier 0.592 and simulated ROI +2.28%,
-but the September 2026 audit found that the old measurement pipeline could mix
-versions, retrospective analyses and repeated selections. Those figures remain
-historical research results and must not be presented as a validated live edge.
+- Collects fixtures, results, stats, events, lineups and odds from many bookmakers via API-Football; odds history is partitioned by month and archived to Parquet.
+- Scores every fixture with Poisson-family prediction channels (`docs/prediction-engine-families.md`), settles every selection and measures calibration (realised ÷ announced) and closing-line value per leg.
+- Suspends a market automatically when its loss is established over 90 days of deduplicated selections.
+- Publishes the player products: Pari sûr du jour, Combiné du jour, coupon cote 2, hunters (BTTS, draw, correct score, corners, half-time draw), Combiné IA 4–10, and an AI opinion per match (`apps/vantage-worker`).
+- Never frames a claimed edge (`p − 1/odds`) as quality: it is anti-predictive and used as a ceiling. Product details: [EVCORE.md](EVCORE.md).
 
 ---
 
 ## Stack
 
-| Layer         | Technology                                   |
-| ------------- | -------------------------------------------- |
-| Monorepo      | pnpm + Turborepo                             |
-| Backend       | NestJS + TypeScript (strict)                 |
-| Database      | PostgreSQL + Prisma                          |
-| Queues        | BullMQ + Redis                               |
-| Validation    | Zod (external data) + class-validator (DTOs) |
-| Math          | decimal.js, Poisson model                    |
-| Notifications | Nodemailer (SMTP) + in-app DB                |
-| Infra         | Docker Compose, GitHub Actions               |
+| Layer         | Technology                                                 |
+| ------------- | ---------------------------------------------------------- |
+| Monorepo      | pnpm + Turborepo                                           |
+| Backend       | NestJS + TypeScript (strict), API and worker processes     |
+| Web           | Next.js                                                    |
+| Database      | PostgreSQL 18 + Prisma 7, PgBouncer                        |
+| Queues        | BullMQ + Redis                                             |
+| Storage       | RustFS (S3-compatible): support attachments, odds archive  |
+| Validation    | Zod (external data) + class-validator (DTOs)               |
+| Math          | decimal.js, Poisson model                                  |
+| Notifications | Resend (email), Web Push, in-app                           |
+| Infra         | Docker Compose, GitHub Actions (images scanned with Trivy) |
 
 ---
 
 ## Getting started
 
-**Requirements:** Node.js >= 18, pnpm 9, Docker
+**Requirements:** Node.js >= 22, pnpm 10, Docker
 
 ```bash
 # Install dependencies
 pnpm install
 
-# Start infrastructure (PostgreSQL + Redis + Mailpit)
+# Start infrastructure (PostgreSQL, PgBouncer, Redis, RustFS, Mailpit, vantage-worker)
 docker compose up -d
 
 # Apply DB migrations
-pnpm --filter @evcore/db db:migrate -- --name init
+pnpm --filter @evcore/db db:migrate
 
 # Seed competitions
 pnpm --filter @evcore/db db:seed
@@ -66,8 +60,8 @@ pnpm --filter @evcore/db db:seed
 # Create the first admin account (asked at the terminal)
 pnpm --filter @evcore/db create-admin
 
-# Start backend in dev mode
-pnpm --filter backend dev
+# Start the apps in dev mode (turbo `dev` + `dev:worker`: web, backend API, backend worker, vantage-worker)
+pnpm dev
 ```
 
 Run all quality checks:
@@ -78,20 +72,17 @@ pnpm typecheck   # TypeScript (no emit)
 pnpm --filter backend test  # Vitest unit tests
 ```
 
-Useful maintenance commands:
-
-```bash
-pnpm --filter @evcore/db db:stats
-```
-
 Default service endpoints (dev):
 
-| Service    | URL                     |
-| ---------- | ----------------------- |
-| Backend    | `http://localhost:3000` |
-| PostgreSQL | `localhost:5432`        |
-| Redis      | `localhost:6379`        |
-| Mailpit UI | `http://localhost:8025` |
+| Service     | URL                     |
+| ----------- | ----------------------- |
+| Web         | `http://localhost:3000` |
+| Backend API | `http://localhost:3001` |
+| PostgreSQL  | `localhost:5432`        |
+| PgBouncer   | `localhost:5433`        |
+| Redis       | `localhost:6379`        |
+| RustFS (S3) | `http://localhost:9000` |
+| Mailpit UI  | `http://localhost:8025` |
 
 Production endpoints:
 
@@ -106,108 +97,78 @@ Production endpoints:
 
 ```
 apps/
-  backend/    # NestJS API — Betting Engine, ETL workers, pick generator
-  web/        # Next.js dashboard (in progress)
+  backend/         # NestJS API + worker: ETL, betting engine, coupons, settlement, admin
+  web/             # Next.js app (public, player, admin)
+  vantage-worker/  # LLM opinions per match (VANTAGE), BullMQ consumer
+  ml-worker/       # Python training code (Phase 3, redefined); not in the compose files
 packages/
-  db/                # Prisma schema + generated client (@evcore/db)
+  analysis-core/     # Pure engine core shared by the backend and backtests
+  backtest-core/     # Point-in-time backtest harness
+  db/                # Prisma schema, migrations, scripts (@evcore/db)
   transactional/     # React Email templates (@evcore/transactional)
   ui/                # Shared React component library (@repo/ui)
   eslint-config/     # Shared ESLint rules
   typescript-config/ # Shared TypeScript configs
 ```
 
-### Backend modules
-
-| Module            | Role                                                        |
-| ----------------- | ----------------------------------------------------------- |
-| `etl/`            | BullMQ workers: fixtures, results, stats, odds (live + CSV) |
-| `betting-engine/` | Poisson model, EV calculation, pick selection, settlement   |
-| `adjustment/`     | Calibration, auto-apply AdjustmentProposal, rollback        |
-| `risk/`           | ROI alerts, market suspension, Brier alerts, weekly report  |
-| `notification/`   | Email (SMTP) + in-app notifications                         |
-| `fixture/`        | Fixture + OddsSnapshot storage                              |
-| `rolling-stats/`  | Rolling form, xG, dom/ext performance, league volatility    |
-
-### xG data hygiene
-
-- `stats-sync` now treats `expected_goals: null` as unavailable data, not as `0`.
-- When historical xG coverage is missing, rolling stats fall back to recent goals instead of persisting misleading `0/0` xG snapshots.
-
 ---
 
 ## Environment variables
 
-Key variables (see `.env.example` for the full list):
+The `.env` holds **secrets and addresses only**. Every decision (hours,
+thresholds, flags) lives in `apps/backend/src/config/`; operator switches live
+in the `app_setting` table, edited in the admin screen **Réglages**; third-party
+keys can be stored encrypted in **Réglages › Intégrations**, the `.env` value
+serving as fallback. The backend validates its environment at start
+(`apps/backend/src/config/env.schema.ts`) and warns about retired variables.
+
+Backend (see `apps/backend/.env.example`):
 
 ```
-DATABASE_URL=postgresql://...
-REDIS_HOST=localhost
-REDIS_PORT=6379
-API_FOOTBALL_KEY=<your-key>
-API_FOOTBALL_DAILY_QUOTA=7500
-API_FOOTBALL_QUOTA_ALERT_PCT=80
-API_FOOTBALL_AVG_DAILY_FIXTURES_PER_LEAGUE=10
-API_FOOTBALL_AVG_DAILY_STATS_FIXTURES_PER_LEAGUE=2
+# Process
+NODE_ENV  PORT  HOST  LOG_LEVEL  LOG_DIR
 
-# Email (dev: Mailpit on port 1025)
-SMTP_ENABLED=true
-SMTP_HOST=localhost
-SMTP_PORT=1025
-SMTP_FROM=evcore@localhost
-SMTP_TO=admin@localhost
+# Addresses
+DATABASE_URL  PGBOUNCER_URL  DATABASE_POOL_MAX  REDIS_HOST  REDIS_PORT
+APP_URL  CORS_ORIGINS  AUTH_COOKIE_DOMAIN
+RUSTFS_ENDPOINT  RUSTFS_PUBLIC_ENDPOINT  RUSTFS_REGION  RUSTFS_BUCKET
 
-# Feature flags
-KELLY_ENABLED=false
-ETL_SCHEDULING_ENABLED=false
-ETL_FIXTURES_SYNC_CRON=0 2 * * *
-ETL_PENDING_BETS_SETTLEMENT_CRON=*/30 * * * *
-ETL_STALE_SCHEDULED_SYNC_CRON=15 7 * * *
-ETL_STATS_SYNC_CRON=0 4 * * *
-ETL_INJURIES_SYNC_CRON=0 6 * * *
-ETL_ODDS_CSV_IMPORT_CRON=0 5 * * 1
-ETL_ELO_SYNC_CRON=0 3 * * *
-ETL_ODDS_PREMATCH_SYNC_CRON=0 18 * * *
-ETL_BETTING_ENGINE_ANALYSIS_CRON=0 20 * * *
-ODDS_SNAPSHOT_RETENTION_DAYS=30
+# Secrets
+TOTP_APP_SECRET (required in production)  ADMIN_API_TOKEN  SETTINGS_ENCRYPTION_KEY
+API_FOOTBALL_KEY  THE_ODDS_API_KEY
+RESEND_API_KEY  RESEND_FROM  RESEND_ADMIN_TO
+VAPID_PUBLIC_KEY  VAPID_PRIVATE_KEY  VAPID_SUBJECT
+RUSTFS_ACCESS_KEY  RUSTFS_SECRET_KEY
 
-# CORS (prod: restrict to frontend domain)
-CORS_ORIGIN=https://c-evcore.com
+# This machine
+ETL_SCHEDULING_ENABLED   # false on a local copy of production
 ```
 
-### Rate-limit / quota tuning (10 leagues first prod)
-
-- Keep `API_FOOTBALL_RATE_LIMIT_MS=6000` to avoid spikes.
-- Use 10 active leagues with realistic assumptions:
-  - `API_FOOTBALL_AVG_DAILY_FIXTURES_PER_LEAGUE=10`
-  - `API_FOOTBALL_AVG_DAILY_STATS_FIXTURES_PER_LEAGUE=2`
-- Estimated daily API calls: about `280/day` (`~3.7%` of a `7500/day` quota).
-- The backend logs this estimate on startup and emits a warning when it crosses `API_FOOTBALL_QUOTA_ALERT_PCT`.
+The vantage-worker has its own `apps/vantage-worker/.env.example` (LLM
+providers, research provider).
 
 ---
 
 ## Documentation
 
-| File                                                | Purpose                                                       |
-| --------------------------------------------------- | ------------------------------------------------------------- |
-| [docs/archive/EVCORE-spec-v1.md](docs/archive/EVCORE-spec-v1.md)                              | Full product specification — architecture, model, constraints |
-| [ROADMAP.md](ROADMAP.md)                            | Implementation roadmap — phase-by-phase checklist             |
-| [docs/archive/TODO-2026-10.md](docs/archive/TODO-2026-10.md)                                  | Current work plan and upcoming blocs                          |
-| [OPENCLAW.md](OPENCLAW.md)                          | OpenClaw policy — stand-by post-prod + activation criteria    |
-| [GRAFANA.md](GRAFANA.md)                            | Grafana policy — stand-by post-prod + activation criteria     |
-| [CLAUDE.md](CLAUDE.md)                              | AI coding conventions (Claude Code)                           |
-| [Audit 2026-09-13](docs/audits/2026-09-13/AUDIT.md) | Remediation plan and acceptance status                        |
+| File                                                       | Purpose                                                         |
+| ---------------------------------------------------------- | --------------------------------------------------------------- |
+| [EVCORE.md](EVCORE.md)                                     | Product specification                                           |
+| [ROADMAP.md](ROADMAP.md)                                   | Current state, phases and open work                             |
+| [TODO.md](TODO.md)                                         | Open items outside the roadmap                                  |
+| [CLAUDE.md](CLAUDE.md)                                     | Coding conventions and measured results that override intuition |
+| [docs/exploitation.md](docs/exploitation.md)               | Operations: worker, manual syncs, odds archive, integrations    |
+| [PROD_DB_ACCESS.md](PROD_DB_ACCESS.md)                     | Read-only access to the production database                     |
+| [docs/journal-experiences.md](docs/journal-experiences.md) | What was tried and measured                                     |
+| [docs/archive/](docs/archive/)                             | Finished plans, the v1 spec, the roadmap history                |
 
 ---
 
 ## Phase status
 
-| Phase             | Status         | Key deliverable                                                             |
-| ----------------- | -------------- | --------------------------------------------------------------------------- |
-| MVP Phase 1       | ⚠️ Superseded  | Historical backtest; validation claims withdrawn after the 2026-09 audit    |
-| Phase 2 Bloc 1    | ✅ Complete    | Live odds pipeline, multi-league ETL                                        |
-| Phase 2 Bloc 2    | ✅ Complete    | ETL hardening, Kelly fractional                                             |
-| Phase 2 Bloc 3    | ✅ Complete    | Per-pick EV engine (204 tests)                                              |
-| Phase 2 Bloc 4    | 🚧 In progress | Shadow data collection, auto-activation loop                                |
-| Phase 2 Bloc 5    | ✅ Complete    | Pick settlement, result notifications                                       |
-| Phase 2 Bloc 6    | 🚧 In progress | HT/FT end-to-end livré, OpenClaw/Grafana stand-by post-prod, TimescaleDB    |
-| Audit remediation | 🚧 In progress | Unified immutable coupon, point-in-time cohorts and prospective measurement |
+| Phase   | Status                  | Content                                                                                                                                      |
+| ------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| MVP     | ✅ Done                 | Historical import, Poisson, backtest, calibration loop; March 2026 validation figures withdrawn as proof                                     |
+| Phase 2 | ✅ In production        | Live odds, multi-league ETL, channels, settlement, CLV, deterministic coupons, AI opinions; Kelly, Grafana, TimescaleDB and OpenClaw dropped |
+| Phase 3 | 📋 Redefined 2026-10-29 | Market grid as engine input; ML only for what the price does not say, judged on the residual vs Pinnacle                                     |
+| Phase 4 | Future                  | SaaS, multi-tenant                                                                                                                           |
