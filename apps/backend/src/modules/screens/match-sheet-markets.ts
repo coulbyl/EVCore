@@ -9,11 +9,13 @@ import {
 import {
   SHEET_NEW_MARKETS,
   SHEET_OTHER_BOOKMAKERS,
+  SHEET_PRICES_LOOKBACK_DAYS,
   SHEET_PLAYER_SHOTS_SHOWN,
   SHEET_QUOTE_MAX_GAP_MINUTES,
   SHEET_SCORERS_SHOWN,
 } from '@config/screens.constants';
 import type { MarketPriceRow } from '@modules/betting-engine/pricing/playable-odds.repository';
+import { DAY_MS } from '@utils/date.utils';
 import type { SheetPick } from './match-sheet.types';
 import { groupBy, resultOf as settledResultOf } from './matches-reading';
 
@@ -46,6 +48,21 @@ function bookFirst(books: Iterable<string>): string | undefined {
   )[0];
 }
 
+/**
+ * The prices a match's new markets are read on: before its kick-off, over
+ * the SHEET_PRICES_LOOKBACK_DAYS before it (the sheet and « Mon ticket »).
+ */
+export function sheetPriceWindow(
+  fixtureId: string,
+  kickoff: Date,
+): { fixtureId: string; kickoff: Date; since: Date } {
+  return {
+    fixtureId,
+    kickoff,
+    since: new Date(kickoff.getTime() - SHEET_PRICES_LOOKBACK_DAYS * DAY_MS),
+  };
+}
+
 /** The player ids the scorer and shots picks of these rows name. */
 export function pricedPlayerIds(rows: readonly MarketPriceRow[]): number[] {
   return [
@@ -75,7 +92,7 @@ export function newMarketPicksOf(input: {
   for (const market of SHEET_NEW_MARKETS) {
     const rows = byMarket.get(market);
     if (!rows) continue;
-    const chosen = CHOOSERS[market](rows, input.playerNames);
+    const chosen = READINGS[market].choose(rows, input.playerNames);
     for (const { row, chance } of chosen) {
       const playerId = playerIdOfPick(row.pick);
       picks.push({
@@ -100,20 +117,6 @@ type Chooser = (
   names: ReadonlyMap<number, string>,
 ) => Chosen[];
 
-/** How each market chooses its lines (one market's rows, every book). */
-const CHOOSERS: Record<SheetNewMarket, Chooser> = {
-  CORNERS: overUnderLine,
-  CORNERS_HOME: overUnderLine,
-  CORNERS_AWAY: overUnderLine,
-  CARDS: overUnderLine,
-  CORNERS_1X2: completeResult,
-  MINUTE_1X2: minuteGroup,
-  GOAL_SCORER_ANYTIME: scorers,
-  GOAL_SCORER_FIRST: scorers,
-  PLAYER_SHOTS: shotLines,
-  PLAYER_SHOTS_ON_TARGET: shotLines,
-};
-
 const at = (row: MarketPriceRow) => new Date(row.snapshotAt).getTime();
 
 /** Shin's frequencies of one book's group, read as one quote (its prices
@@ -135,25 +138,32 @@ function fairOf(group: readonly MarketPriceRow[]): Map<string, Decimal> | null {
 const chanceOf = (fair: Map<string, Decimal> | null, pick: string) =>
   fair?.get(pick)?.toDecimalPlaces(4).toNumber() ?? null;
 
+type Pair = { over: MarketPriceRow; under: MarketPriceRow };
+
+/** The over and the under of one book's group on one line, both or none. */
+function overUnderPair(group: readonly MarketPriceRow[]): Pair | null {
+  const over = group.find((row) => row.pick === 'OVER');
+  const under = group.find((row) => row.pick === 'UNDER');
+  return over && under ? { over, under } : null;
+}
+
 /**
  * Over and under of one line: at the first book pricing both sides of a
  * line at one instant, the line whose over is nearest an even chance (Shin
  * on the pair); the lower line on a tie.
  */
 function overUnderLine(rows: readonly MarketPriceRow[]): Chosen[] {
-  type Pair = { over: MarketPriceRow; under: MarketPriceRow };
   const pairs = new Map<string, Pair[]>();
   const byBookLine = groupBy(
     rows.filter((row) => row.line !== null),
     (row) => `${row.bookmaker}|${row.line}`,
   );
   for (const group of byBookLine.values()) {
-    const over = group.find((row) => row.pick === 'OVER');
-    const under = group.find((row) => row.pick === 'UNDER');
-    if (!over || !under) continue;
-    pairs.set(over.bookmaker, [
-      ...(pairs.get(over.bookmaker) ?? []),
-      { over, under },
+    const pair = overUnderPair(group);
+    if (!pair) continue;
+    pairs.set(pair.over.bookmaker, [
+      ...(pairs.get(pair.over.bookmaker) ?? []),
+      pair,
     ]);
   }
   const book = bookFirst(pairs.keys());
@@ -180,6 +190,13 @@ function overUnderLine(rows: readonly MarketPriceRow[]): Chosen[] {
   }));
 }
 
+/** The rows of the three outcomes of a 1X2. */
+function outcomesOf(rows: readonly MarketPriceRow[]): MarketPriceRow[] {
+  return rows.filter((row) =>
+    (RESULT_PICKS as readonly string[]).includes(row.pick),
+  );
+}
+
 /** One book's rows price all three outcomes. */
 function isComplete(group: readonly MarketPriceRow[]): boolean {
   const picks = new Set(group.map((row) => row.pick));
@@ -188,9 +205,7 @@ function isComplete(group: readonly MarketPriceRow[]): boolean {
 
 /** Corners 1X2 and a minute's 1X2: the first book pricing all three outcomes. */
 function completeResult(rows: readonly MarketPriceRow[]): Chosen[] {
-  const outcomes = rows.filter((row) =>
-    (RESULT_PICKS as readonly string[]).includes(row.pick),
-  );
+  const outcomes = outcomesOf(rows);
   const complete = [
     ...groupBy(outcomes, (row) => row.bookmaker).entries(),
   ].filter(([, group]) => isComplete(group));
@@ -284,42 +299,44 @@ function shotLines(
     .map((row) => ({ row, chance: null }));
 }
 
-/** The over/under markets of SHEET_NEW_MARKETS, read on a pair. */
-const OVER_UNDER_MARKETS: ReadonlySet<string> = new Set([
-  'CORNERS',
-  'CORNERS_HOME',
-  'CORNERS_AWAY',
-  'CARDS',
-]);
-
-/** The 1X2 markets of SHEET_NEW_MARKETS, read on their three outcomes. */
-const RESULT_MARKETS: ReadonlySet<string> = new Set([
-  'CORNERS_1X2',
-  'MINUTE_1X2',
-]);
-
 /**
  * The frequencies of one book's group on one line, as the sheet reads
- * them: the over/under pair, the three outcomes of a 1X2; null for the
- * scorers and the shots (no complete group) or a group incomplete.
+ * them: the over/under pair, the three outcomes of a 1X2; null for a group
+ * incomplete.
  */
-function groupFair(
-  market: string,
+type GroupFair = (
   group: readonly MarketPriceRow[],
-): Map<string, Decimal> | null {
-  if (OVER_UNDER_MARKETS.has(market)) {
-    const over = group.find((row) => row.pick === 'OVER');
-    const under = group.find((row) => row.pick === 'UNDER');
-    return over && under ? fairOf([over, under]) : null;
-  }
-  if (RESULT_MARKETS.has(market)) {
-    const outcomes = group.filter((row) =>
-      (RESULT_PICKS as readonly string[]).includes(row.pick),
-    );
-    return isComplete(outcomes) ? fairOf(outcomes) : null;
-  }
-  return null;
-}
+) => Map<string, Decimal> | null;
+
+const pairFair: GroupFair = (group) => {
+  const pair = overUnderPair(group);
+  return pair ? fairOf([pair.over, pair.under]) : null;
+};
+
+const resultFair: GroupFair = (group) => {
+  const outcomes = outcomesOf(group);
+  return isComplete(outcomes) ? fairOf(outcomes) : null;
+};
+
+/** Scorers and shots: no complete group, no frequency. */
+const noFair: GroupFair = () => null;
+
+/**
+ * How each market of SHEET_NEW_MARKETS is read: how it chooses its lines
+ * (one market's rows, every book) and the frequencies of one book's group.
+ */
+const READINGS: Record<SheetNewMarket, { choose: Chooser; fair: GroupFair }> = {
+  CORNERS: { choose: overUnderLine, fair: pairFair },
+  CORNERS_HOME: { choose: overUnderLine, fair: pairFair },
+  CORNERS_AWAY: { choose: overUnderLine, fair: pairFair },
+  CARDS: { choose: overUnderLine, fair: pairFair },
+  CORNERS_1X2: { choose: completeResult, fair: resultFair },
+  MINUTE_1X2: { choose: minuteGroup, fair: resultFair },
+  GOAL_SCORER_ANYTIME: { choose: scorers, fair: noFair },
+  GOAL_SCORER_FIRST: { choose: scorers, fair: noFair },
+  PLAYER_SHOTS: { choose: shotLines, fair: noFair },
+  PLAYER_SHOTS_ON_TARGET: { choose: shotLines, fair: noFair },
+};
 
 /**
  * A bet of the new markets priced again (« Mon ticket »), from the same
@@ -348,8 +365,7 @@ export function quoteNewMarketPick(input: {
     priced.map((row) => [
       row.bookmaker,
       chanceOf(
-        groupFair(
-          market,
+        READINGS[market].fair(
           onLine.filter((other) => other.bookmaker === row.bookmaker),
         ),
         pick,
