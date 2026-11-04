@@ -19,10 +19,10 @@ import type {
   ReadingCandidateRow,
   SheetHeaderRow,
 } from './matches.repository';
-import type {
-  FixtureEventRepository,
-  SheetEventRow,
-} from '@modules/fixture-events/fixture-event.repository';
+import type { MatchEventFact } from '@evcore/analysis-core';
+
+/** A stored event, its team the home ('ars') or away ('che') side. */
+type EventRow = Omit<MatchEventFact, 'side'> & { teamId: string };
 import {
   bothCanWin,
   MatchSheetService,
@@ -120,6 +120,26 @@ function homeWins(count: number): TeamMatchRow[] {
   }));
 }
 
+function factsWithEvents(events: readonly EventRow[]): MatchFacts {
+  const team = {
+    corners: null,
+    shotsTotal: null,
+    shotsOn: null,
+    yellowCards: null,
+    redCards: null,
+  };
+  return {
+    score: null,
+    teams: { home: team, away: team },
+    events: events.map(({ teamId, ...event }) => ({
+      ...event,
+      side: teamId === 'ars' ? 'home' : teamId === 'che' ? 'away' : null,
+    })),
+    lineups: null,
+    playerStats: null,
+  };
+}
+
 function harness(input: {
   header?: SheetHeaderRow | null;
   candidates?: ReadingCandidateRow[];
@@ -127,7 +147,8 @@ function harness(input: {
   history?: TeamMatchRow[];
   quotes?: [string, PlayableQuote][];
   reasons?: string[];
-  events?: SheetEventRow[];
+  /** A finished match's events: its facts carry them. */
+  events?: EventRow[];
   marketRows?: MarketPriceRow[];
   playerNames?: Map<number, string>;
   facts?: MatchFacts | null;
@@ -151,15 +172,12 @@ function harness(input: {
   const history = {
     findTeamHistories: vi.fn().mockResolvedValue(input.history ?? homeWins(6)),
   } as unknown as LegFactRepository;
-  const fixtureEvents = {
-    findSheetEvents: vi.fn().mockResolvedValue(input.events ?? []),
-  } as unknown as FixtureEventRepository;
+  const facts =
+    input.facts ?? (input.events ? factsWithEvents(input.events) : null);
   const matchFacts = {
     findFacts: vi
       .fn()
-      .mockResolvedValue(
-        new Map(input.facts ? [[FX, input.facts] as const] : []),
-      ),
+      .mockResolvedValue(new Map(facts ? [[FX, facts] as const] : [])),
   } as unknown as MatchFactsRepository;
   const squads = {
     findDisplayNames: vi
@@ -171,13 +189,11 @@ function harness(input: {
       repository,
       playableOdds,
       history,
-      fixtureEvents,
       matchFacts,
       squads,
     ),
     matchFacts,
     squads,
-    fixtureEvents,
     repository,
     playableOdds,
     history,
@@ -620,7 +636,7 @@ describe('speechOf', () => {
 });
 
 describe('MatchSheetService — scorers and red cards', () => {
-  const event = (overrides: Partial<SheetEventRow>): SheetEventRow => ({
+  const event = (overrides: Partial<EventRow>): EventRow => ({
     ordinal: 0,
     teamId: 'ars',
     minute: 12,
@@ -629,6 +645,8 @@ describe('MatchSheetService — scorers and red cards', () => {
     detail: 'Normal Goal',
     comments: null,
     playerName: 'Konsa',
+    playerExternalId: null,
+    assistExternalId: null,
     ...overrides,
   });
   const finished = header({
@@ -685,11 +703,11 @@ describe('MatchSheetService — scorers and red cards', () => {
   });
 
   it('reads no event for a match still to come', async () => {
-    const { service, fixtureEvents } = harness({});
+    const { service, matchFacts } = harness({});
 
     const sheet = await service.getSheet(FX, NOW);
 
-    expect(fixtureEvents.findSheetEvents).not.toHaveBeenCalled();
+    expect(matchFacts.findFacts).not.toHaveBeenCalled();
     expect(sheet.scorers).toBeNull();
     expect(sheet.redCards).toBeNull();
   });

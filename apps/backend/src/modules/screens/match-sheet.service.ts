@@ -10,7 +10,6 @@ import {
   SCREEN_READS_TTL_MS,
   SHEET_MAIN_LINES,
   SHEET_NEW_MARKETS,
-  SHEET_PRICES_LOOKBACK_DAYS,
 } from '@config/screens.constants';
 import { SharedReads } from '@utils/shared-reads';
 import {
@@ -28,13 +27,17 @@ import { BetStatus, Market } from '@evcore/db';
 import { resolvePickBetStatus, type MatchFacts } from '@evcore/analysis-core';
 import { MatchFactsRepository } from '@modules/fixture-events/match-facts.repository';
 import { PlayerSquadRepository } from '@modules/fixture-events/player-squad.repository';
-import { newMarketPicksOf, pricedPlayerIds } from './match-sheet-markets';
+import {
+  newMarketPicksOf,
+  pricedPlayerIds,
+  sheetPriceWindow,
+} from './match-sheet-markets';
 import { legFact, of, type PastMatch } from '@modules/coupon/leg-fact/leg-fact';
 import {
   LegFactRepository,
   type TeamMatchRow,
 } from '@modules/coupon/leg-fact/leg-fact.repository';
-import { startOfUtcDay } from '@utils/date.utils';
+import { DAY_MS, startOfUtcDay } from '@utils/date.utils';
 import {
   aiAbstentionOf,
   readingOf,
@@ -50,10 +53,6 @@ import {
   type SheetHeaderRow,
 } from './matches.repository';
 import type { MatchesDay } from './dto/matches-query.dto';
-import {
-  FixtureEventRepository,
-  type SheetEventRow,
-} from '@modules/fixture-events/fixture-event.repository';
 import { sheetEventsOf } from './match-sheet-events';
 import { matchClockOf } from './match-clock';
 import type {
@@ -66,8 +65,6 @@ import type {
 } from './match-sheet.types';
 import type { MatchReading } from './matches.types';
 import { MIN_LEG_ODDS } from '@modules/coupon/coupon.constants';
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 type Key = { market: string; pick: string };
 
@@ -89,13 +86,14 @@ type SheetReads = {
   historyRows: TeamMatchRow[];
   quotes: Map<string, PlayableQuote>;
   rejectionReasons: string[];
-  /** A finished match's events; empty before the end. */
-  events: SheetEventRow[];
   /** Every book's prices on the markets of SHEET_NEW_MARKETS. */
   marketRows: MarketPriceRow[];
   /** The names of the players those prices name. */
   playerNames: Map<number, string>;
-  /** A finished match's facts (statistics, events, lineups); else null. */
+  /**
+   * A finished match's facts (statistics, events, lineups; its scorers and
+   * red cards are read on these events); else null.
+   */
   facts: MatchFacts | null;
 };
 
@@ -116,7 +114,6 @@ export class MatchSheetService {
     private readonly repository: MatchesRepository,
     private readonly playableOdds: PlayableOddsRepository,
     private readonly history: LegFactRepository,
-    private readonly fixtureEvents: FixtureEventRepository,
     private readonly matchFacts: MatchFactsRepository,
     private readonly squads: PlayerSquadRepository,
   ) {}
@@ -153,7 +150,6 @@ export class MatchSheetService {
       aiRows,
       historyRows,
       rejectionReasons,
-      events,
       { marketRows, playerNames },
       facts,
     ] = await Promise.all([
@@ -172,17 +168,10 @@ export class MatchSheetService {
         fixtureId,
         channels: READING_CHANNELS,
       }),
-      finished
-        ? this.fixtureEvents.findSheetEvents(fixtureId)
-        : Promise.resolve([]),
       this.playableOdds
         .findMarketPrices({
-          fixtureId,
+          fixtures: [sheetPriceWindow(fixtureId, kickoff)],
           markets: SHEET_NEW_MARKETS,
-          kickoff,
-          since: new Date(
-            kickoff.getTime() - SHEET_PRICES_LOOKBACK_DAYS * DAY_MS,
-          ),
         })
         .then(async (rows) => ({
           marketRows: rows,
@@ -214,7 +203,6 @@ export class MatchSheetService {
       historyRows,
       quotes,
       rejectionReasons,
-      events,
       marketRows,
       playerNames,
       facts,
@@ -240,14 +228,10 @@ export class MatchSheetService {
     const awayHistory = historyOf(historyRows, header.awayTeamId);
     const finished = header.status === 'FINISHED';
     const score = pair(header.homeScore, header.awayScore);
-    const matchEvents = finished
-      ? sheetEventsOf({
-          events: input.events,
-          homeTeamId: header.homeTeamId,
-          awayTeamId: header.awayTeamId,
-          score,
-        })
-      : null;
+    const matchEvents =
+      finished && input.facts?.events
+        ? sheetEventsOf({ events: input.facts.events, score })
+        : null;
     const quoteOf = (key: Key) =>
       quotes.get(playableQuoteKey({ fixtureId, ...key }));
 
