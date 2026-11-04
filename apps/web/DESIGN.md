@@ -252,7 +252,9 @@ Des angles doux, jamais ronds au point d'adoucir le propos : 6 px pour les zones
 - **Bandeau :** encre, marque en `title` 700, cloche et initiale en cercles de 44 px bordés de `band-rule`.
 
 ### Ligne de score (signature)
+
 « Hier · Favori ✓ 1,24 · 4 gagnés sur 7 › » (revue du 31/10) : le premier produit en clair avec son ✓ ou ✗ dessiné en SVG et la cote payée après un gain, puis le compte des coupons gagnés ; un toucher ouvre la feuille d'hier, où chaque produit est nommé. Les codes à trois lettres (`FAV ✓ · COM ✓ · C2 ✗`) se lisaient comme des codes internes dès sept produits ; ils ne restent qu'en têtes de colonnes du tableau de la semaine. Gagné en vert, perdu en rouge, sur le bandeau aussi, dans les teintes `win-band` et `loss-band`, lisibles sur l'encre. Un lecteur d'écran entend le nom complet et l'issue en mots.
+
 ### Diodes de chance
 
 Cercles de 10, 14 ou 22 px. Allumée : ambre bordée de `led-amber-edge` en clair. Éteinte : anneau `icon-subtle` sur fond clair, disque `band-rule` sur l'encre et en sombre. Jusqu'à 20 diodes ; au-delà, le nombre seul.

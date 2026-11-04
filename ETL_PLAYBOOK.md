@@ -103,12 +103,12 @@ Séquence par ligue :
 
 Ensuite, passer la compétition à `isActive: true` en base (hors seed) : elle entre dans les syncs quotidiennes (`fixtures`/`stats`/`injuries`/`odds-prematch`) et dans le rebuild (`POST /etl/rebuild/betting-engine`). Rien d'autre à lancer pour le suivi courant.
 
-| Groupe | Source des cotes | Codes |
-| --- | --- | --- |
-| A | `odds-csv` (gratuit) | `ARG1`, `AUT1`, `DEN1`, `IRL1`, `SCO1`, `BEL1`, `GRE1`, `RUS1` |
-| A | `odds-historical` (payant) | `KSA1`, `AUS1`, `CHI1`, `D3`, `BRA2` (seasonStartMonth=3, aligner si besoin) |
-| Fix | `odds-historical` seul (fixtures/stats déjà en sync) | `KOR1`, `UNL` |
-| B | aucune, observation seule | `ARG2`, `CHI2`, `KOR2`, `CHN2`, `FIN2`, `USA2` |
+| Groupe | Source des cotes                                     | Codes                                                                        |
+| ------ | ---------------------------------------------------- | ---------------------------------------------------------------------------- |
+| A      | `odds-csv` (gratuit)                                 | `ARG1`, `AUT1`, `DEN1`, `IRL1`, `SCO1`, `BEL1`, `GRE1`, `RUS1`               |
+| A      | `odds-historical` (payant)                           | `KSA1`, `AUS1`, `CHI1`, `D3`, `BRA2` (seasonStartMonth=3, aligner si besoin) |
+| Fix    | `odds-historical` seul (fixtures/stats déjà en sync) | `KOR1`, `UNL`                                                                |
+| B      | aucune, observation seule                            | `ARG2`, `CHI2`, `KOR2`, `CHN2`, `FIN2`, `USA2`                               |
 
 Exemple complet pour `ARG1` (remplacer le code ; pour le groupe B, s'arrêter après les stats et les rolling-stats) :
 

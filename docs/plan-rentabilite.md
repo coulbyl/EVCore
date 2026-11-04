@@ -539,7 +539,7 @@ Aujourd'hui inexistant.
       **à enregistrer par `db:deploy`** ; `settleRange` (coupons et
       sélections) remplit l'historique. Couverture à vérifier une semaine
       après déploiement : la capture T−10 n'est visible qu'avec `observedAt`.
-      Voir [plan-mesure-bout-en-bout.md](plan-mesure-bout-en-bout.md).
+      Voir [plan-mesure-bout-en-bout.md](archive/plan-mesure-bout-en-bout.md).
 - [~] `E-3` Tableau de bord CLV par canal, marché, championnat, book.
   _Acceptation_ : rapport régénérable.
   _Code fait 2026-10-07_ : `report:coupon-clv` (backtest-core), source ×

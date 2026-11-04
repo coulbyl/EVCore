@@ -5,7 +5,7 @@ Contrat de la fiche JSON enrichie. Source de vérité du typage :
 Exemple réel sur 3 matchs : [`examples/analysis-sheet-v2-example.json`](examples/analysis-sheet-v2-example.json).
 
 Audit préalable et justification de chaque choix :
-[`audit-fiche-v2-2026-09-12.md`](audit-fiche-v2-2026-09-12.md).
+[`audit-fiche-v2-2026-09-12.md`](archive/audit-fiche-v2-2026-09-12.md).
 
 ---
 

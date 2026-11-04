@@ -113,17 +113,17 @@ Si `postgresql-client` est installé (`sudo apt install postgresql-client`), on 
 
 ## Tables utiles pour l'analyse (repérées en explorant le schéma)
 
-| Table                                                | Utilité                                                                                                                                             |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fixture`                                            | Matchs, scores, **`leg`/`round`/`aggregateHomeGoals`/`aggregateAwayGoals`** — essentiel pour le contexte aller/retour en coupe d'Europe             |
-| `model_run`                                          | Une ligne par analyse (rolling horizon, 5 à 7 par match avant le coup d'envoi), `features` JSON contient `calibration_alert`, lambda, etc.          |
-| `channel_decision` / `channel_selection`             | Décisions par canal (DOMINANT/BTTS/DRAW/GOALS/TEAM_TOTAL/VANTAGE/..., VALUE/SAFE en observation seulement), avec `probability`, `odds`, `ev`, `result` |
-| `coupon_proposal`                                    | Coupons générés automatiquement (`source` : PRICE_COMPOSER, ENGINE ; LLM pour l'ancien combiné de l'IA, coupé le 03/11), avec **`jointProbability`** et `combinedOdds` déjà calculés           |
-| `coupon_proposal_leg`                                | Jambes d'un coupon automatique, avec `isCorrect` par jambe                                                                                          |
-| `team_stats`, `standing`, `national_team_elo_rating` | Contexte forme/classement, utile pour comprendre une dérive de calibration                                                                          |
-| `odds_snapshot`                                      | Historique des cotes captées, partitionné par mois ; les mois anciens sont archivés en Parquet (`odds_archive_month` : fichier, lignes gardées)   |
-| `vantage_decision_history`                           | Une ligne figée par avis de l'IA (VANTAGE) — c'est là que se lit son bilan, jamais sur la ligne vivante de `channel_decision`                       |
-| `fixture_event` / `fixture_lineup` / `fixture_player_statistic` / `player_squad` | Événements, compositions, stats joueurs (`/fixtures?ids=`) et effectifs — règlement des nouveaux marchés (buteurs, tirs, minute…) |
+| Table                                                                            | Utilité                                                                                                                                                                              |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `fixture`                                                                        | Matchs, scores, **`leg`/`round`/`aggregateHomeGoals`/`aggregateAwayGoals`** — essentiel pour le contexte aller/retour en coupe d'Europe                                              |
+| `model_run`                                                                      | Une ligne par analyse (rolling horizon, 5 à 7 par match avant le coup d'envoi), `features` JSON contient `calibration_alert`, lambda, etc.                                           |
+| `channel_decision` / `channel_selection`                                         | Décisions par canal (DOMINANT/BTTS/DRAW/GOALS/TEAM_TOTAL/VANTAGE/..., VALUE/SAFE en observation seulement), avec `probability`, `odds`, `ev`, `result`                               |
+| `coupon_proposal`                                                                | Coupons générés automatiquement (`source` : PRICE_COMPOSER, ENGINE ; LLM pour l'ancien combiné de l'IA, coupé le 03/11), avec **`jointProbability`** et `combinedOdds` déjà calculés |
+| `coupon_proposal_leg`                                                            | Jambes d'un coupon automatique, avec `isCorrect` par jambe                                                                                                                           |
+| `team_stats`, `standing`, `national_team_elo_rating`                             | Contexte forme/classement, utile pour comprendre une dérive de calibration                                                                                                           |
+| `odds_snapshot`                                                                  | Historique des cotes captées, partitionné par mois ; les mois anciens sont archivés en Parquet (`odds_archive_month` : fichier, lignes gardées)                                      |
+| `vantage_decision_history`                                                       | Une ligne figée par avis de l'IA (VANTAGE) — c'est là que se lit son bilan, jamais sur la ligne vivante de `channel_decision`                                                        |
+| `fixture_event` / `fixture_lineup` / `fixture_player_statistic` / `player_squad` | Événements, compositions, stats joueurs (`/fixtures?ids=`) et effectifs — règlement des nouveaux marchés (buteurs, tirs, minute…)                                                    |
 
 ## Rappels avant toute statistique
 
