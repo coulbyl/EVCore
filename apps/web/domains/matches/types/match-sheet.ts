@@ -19,8 +19,6 @@ export type SheetPick = {
   chance: number | null;
   /** Null while unknown: never shown as lost. */
   result: "won" | "lost" | "void" | null;
-  /** « Mon ticket » can take it (not the new markets yet). */
-  addable: boolean;
 };
 
 export type SheetReading = SheetPick & { fact: string | null };

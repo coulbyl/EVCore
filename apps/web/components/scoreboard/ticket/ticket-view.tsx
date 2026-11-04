@@ -324,17 +324,20 @@ export function TicketFooter({
             {formatOdds(totals.odds, locale)}
           </span>
         </p>
-        <p className="flex flex-col items-end gap-1 text-end">
-          <span className="text-meta text-muted-foreground">
-            {t("yourChances")}
-          </span>
-          <TicketChance
-            probability={totals.chance}
-            phrasing={totals.legCount === 1 ? "short" : "about"}
-            tone="surface"
-            className="flex flex-col items-end gap-1.5 text-title"
-          />
-        </p>
+        {/* Unknown with a scorer or shots bet: not said, never guessed. */}
+        {totals.chance !== null ? (
+          <p className="flex flex-col items-end gap-1 text-end">
+            <span className="text-meta text-muted-foreground">
+              {t("yourChances")}
+            </span>
+            <TicketChance
+              probability={totals.chance}
+              phrasing={totals.legCount === 1 ? "short" : "about"}
+              tone="surface"
+              className="flex flex-col items-end gap-1.5 text-title"
+            />
+          </p>
+        ) : null}
       </div>
       {!online ? (
         <p className="text-meta text-muted-foreground">
@@ -383,7 +386,7 @@ function ShareButton({
     const open = new Set(
       quote.legs.filter((l) => l.state === "open").map((l) => l.fixtureId),
     );
-    const chance = chanceOf(totals.chance);
+    const chance = totals.chance === null ? null : chanceOf(totals.chance);
     const single = totals.legCount === 1;
     const words = !chance
       ? ""
@@ -415,7 +418,10 @@ function ShareButton({
             })),
           totalOddsLabel: t("totalOdds"),
           totalOdds: formatOdds(totals.odds, locale),
-          about: single || chance?.kind === "rarerThan" ? "" : t("imageAbout"),
+          about:
+            !chance || single || chance.kind === "rarerThan"
+              ? ""
+              : t("imageAbout"),
           chance: words,
           leds: chance ? ledsOf(chance) : null,
           ours:

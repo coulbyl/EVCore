@@ -4,7 +4,12 @@ import { useState } from "react";
 import { Check, Plus } from "lucide-react";
 import { clsx } from "clsx";
 import { usePlayerText } from "../text/player-texts";
-import { addToTicket, removeFromTicket, TICKET_MAX_LEGS } from "./ticket-store";
+import {
+  addToTicket,
+  legKey,
+  removeFromTicket,
+  TICKET_MAX_LEGS,
+} from "./ticket-store";
 import type { TicketLeg } from "./ticket-types";
 import { useTicket } from "./use-ticket";
 
@@ -13,18 +18,13 @@ import { useTicket } from "./use-ticket";
  * ticket », ✓ once in it (a second tap takes it out). A bet on a match
  * already in the ticket replaces the other, and says so once: « Un seul pari
  * par match ». Full: « 15 au plus ». Only shown for a match still to come
- * that 1xBet prices (the sheet decides).
+ * with a price (the sheet decides).
  */
 export function AddToTicket({ leg }: { leg: Omit<TicketLeg, "oddsMoved"> }) {
   const t = usePlayerText("ticket");
   const ticket = useTicket();
   const [said, setSaid] = useState<string | null>(null);
-  const inTicket = ticket.legs.some(
-    (l) =>
-      l.fixtureId === leg.fixtureId &&
-      l.market === leg.market &&
-      l.pick === leg.pick,
-  );
+  const inTicket = ticket.legs.some((l) => legKey(l) === legKey(leg));
   const full =
     !inTicket &&
     ticket.legs.length >= TICKET_MAX_LEGS &&

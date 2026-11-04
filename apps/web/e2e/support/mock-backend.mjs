@@ -612,13 +612,12 @@ function matchSheet(fixtureId) {
   if (!item) return null;
   const finished = item.state === "finished";
   const settle = (result) => (finished ? result : null);
-  // As the backend's mainPick: no line, no player, « Mon ticket » takes it.
+  // As the backend's mainPick: no line, no player.
   const mainPick = (market, pickName) => ({
     market,
     pick: pickName,
     line: null,
     player: null,
-    addable: true,
   });
   const pick = (market, pickName, odds, chance, result) => ({
     ...mainPick(market, pickName),
@@ -703,6 +702,30 @@ function matchSheet(fixtureId) {
             pick("BTTS", "YES", 1.7, 0.55, "lost"),
             pick("OVER_UNDER", "UNDER", 2.05, 0.48, "lost"),
             pick("BTTS", "NO", 2.1, 0.45, "won"),
+            // The new markets (03/11), on Paris SG – Marseille only: a line
+            // with its chance, a scorer priced at another book, no chance.
+            ...(fixtureId === matchUuid("psg")
+              ? [
+                  {
+                    market: "CORNERS",
+                    pick: "OVER",
+                    line: 9.5,
+                    player: null,
+                    odds: 1.9,
+                    chance: 0.5,
+                    result: null,
+                  },
+                  {
+                    market: "GOAL_SCORER_ANYTIME",
+                    pick: "P1100",
+                    line: null,
+                    player: "Dembélé",
+                    odds: 2.75,
+                    chance: null,
+                    result: null,
+                  },
+                ]
+              : []),
           ],
   };
 }
@@ -717,7 +740,10 @@ function ticketQuote(body) {
       ? [sheet.reading, sheet.ai, ...sheet.otherPicks].filter(Boolean)
       : [];
     const bet = bets.find(
-      (b) => b.market === leg.market && b.pick === leg.pick,
+      (b) =>
+        b.market === leg.market &&
+        b.pick === leg.pick &&
+        (b.line ?? null) === (leg.line ?? null),
     );
     const moved =
       sheet?.home.name === "Arsenal" &&
@@ -727,6 +753,7 @@ function ticketQuote(body) {
     const postponed = sheet?.state === "postponed";
     return {
       ...leg,
+      line: leg.line ?? null,
       kickoffAt: sheet?.kickoffAt ?? null,
       state: !sheet
         ? "unknown"
@@ -745,8 +772,11 @@ function ticketQuote(body) {
         : null,
     };
   });
-  const counted = legs.filter((l) => l.state === "open" && l.odds && l.fair);
-  if (body.verify && counted.length > 0) verifiedTickets += 1;
+  // As the backend's totalsOf: every open priced bet; the chance unknown
+  // when one of them has none (a scorer), and then not counted.
+  const counted = legs.filter((l) => l.state === "open" && l.odds);
+  const known = counted.every((l) => l.fair !== null);
+  if (body.verify && counted.length > 0 && known) verifiedTickets += 1;
   const product = (f) => counted.reduce((acc, l) => acc * f(l), 1);
   return {
     legs,
@@ -754,7 +784,7 @@ function ticketQuote(body) {
       ? {
           legCount: counted.length,
           odds: Math.round(product((l) => l.odds) * 1000) / 1000,
-          chance: product((l) => l.fair),
+          chance: known ? product((l) => l.fair) : null,
         }
       : null,
     hero: body.day

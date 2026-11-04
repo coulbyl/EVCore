@@ -254,22 +254,19 @@ function SheetHeader({
 }
 
 /**
- * The [+] of a bet (06 § 2, 07 § 4): a match still to come, a bet 1xBet
- * prices that the ticket can take. Live, finished or postponed: none
- * (06 § 3). Not the new markets (corners, cards, scorers, shots, minute):
- * the ticket keeps no line nor player, prices at 1xBet only and settles on
- * the score alone.
+ * The [+] of a bet (06 § 2, 07 § 4): a match still to come, a bet with a
+ * price. Live, finished or postponed: none (06 § 3). The new markets keep
+ * their line, and their player in the label.
  */
 function AddButton({ pick, sheet }: { pick: SheetPick; sheet: MatchSheet }) {
-  if (sheet.state !== "upcoming" || pick.odds === null || !pick.addable) {
-    return null;
-  }
+  if (sheet.state !== "upcoming" || pick.odds === null) return null;
   return (
     <AddToTicket
       leg={{
         fixtureId: sheet.fixtureId,
         market: pick.market,
         pick: pick.pick,
+        line: pick.line,
         label: pickLabel(pick, sheet),
         home: sheet.home,
         away: sheet.away,

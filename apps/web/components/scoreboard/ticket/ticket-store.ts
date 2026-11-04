@@ -88,12 +88,17 @@ export function serverTicketSnapshot(): TicketState {
   return EMPTY;
 }
 
+/** One bet: its match, market, pick and line (never rounded). */
+export function legKey(
+  leg: Pick<TicketLeg, "fixtureId" | "market" | "pick" | "line">,
+): string {
+  const base = `${leg.fixtureId}|${leg.market}|${leg.pick}`;
+  return leg.line == null ? base : `${base}|${leg.line}`;
+}
+
 /** The composition a quote prices: the bets, in a stable order. */
 export function ticketKey(legs: readonly TicketLeg[]): string {
-  return legs
-    .map((leg) => `${leg.fixtureId}|${leg.market}|${leg.pick}`)
-    .sort()
-    .join(",");
+  return legs.map(legKey).sort().join(",");
 }
 
 export type AddResult = "added" | "replaced" | "full";
