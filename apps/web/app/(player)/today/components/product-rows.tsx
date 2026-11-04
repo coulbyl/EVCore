@@ -1,7 +1,11 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { Row, RowList } from "@/components/scoreboard/ui/row-list";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
-import { displayLocaleOf, formatTime } from "@/helpers/scoreboard-format";
+import {
+  clockLabelsOf,
+  displayLocaleOf,
+  formatTime,
+} from "@/helpers/scoreboard-format";
 import type { TodayAbsence, TodayCoupon } from "@/domains/today/types/today";
 import { CouponValue } from "./coupon-value";
 import { legLiveLine, nextKickoff, playedLegs } from "./today-constants";
@@ -42,11 +46,7 @@ export async function ProductRows({
     return null;
   }
   const next = nextKickoff(followedInProgress);
-  const clockLabels = {
-    inProgress: t("inProgress"),
-    halfTime: t("halfTimeShort"),
-    finished: t("finished"),
-  };
+  const clockLabels = clockLabelsOf(t);
 
   return (
     <RowList label={t("otherCoupons")}>

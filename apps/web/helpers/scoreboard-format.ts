@@ -116,14 +116,32 @@ export type MatchClock =
   | { kind: "half_time" }
   | { kind: "finished" };
 
+/** Les mots de l'horloge (formatClock), tirés des messages de l'écran. */
+export type ClockLabels = {
+  inProgress: string;
+  halfTime: string;
+  finished: string;
+};
+
+/**
+ * Les mots de l'horloge depuis les messages d'un écran qui porte les clés
+ * `inProgress`, `halfTimeShort` et `finished` (today, matches.sheet).
+ */
+export function clockLabelsOf(
+  t: (key: "inProgress" | "halfTimeShort" | "finished") => string,
+): ClockLabels {
+  return {
+    inProgress: t("inProgress"),
+    halfTime: t("halfTimeShort"),
+    finished: t("finished"),
+  };
+}
+
 /**
  * « 67' », « MT », « Terminé » ; « En cours » quand la minute n'est pas
  * encore relevée. Les mots viennent des messages de l'écran.
  */
-export function formatClock(
-  clock: MatchClock,
-  labels: { inProgress: string; halfTime: string; finished: string },
-): string {
+export function formatClock(clock: MatchClock, labels: ClockLabels): string {
   if (clock.kind === "half_time") return labels.halfTime;
   if (clock.kind === "finished") return labels.finished;
   return clock.minute === null ? labels.inProgress : `${clock.minute}'`;

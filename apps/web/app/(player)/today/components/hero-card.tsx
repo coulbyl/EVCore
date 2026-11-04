@@ -6,6 +6,7 @@ import { ResultMark } from "@/components/scoreboard/ui/result-mark";
 import { FormStrip } from "@/components/scoreboard/ui/form-strip";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import {
+  clockLabelsOf,
   displayLocaleOf,
   formatClock,
   formatTime,
@@ -65,11 +66,7 @@ export async function HeroCard({
   const won = outcomes.filter((o) => o === "won").length;
   const played = outcomes.filter((o) => o === "won" || o === "lost").length;
   const settled = isSettled(coupon.state);
-  const clockLabels = {
-    inProgress: t("inProgress"),
-    halfTime: t("halfTimeShort"),
-    finished: t("finished"),
-  };
+  const clockLabels = clockLabelsOf(t);
 
   return (
     <section

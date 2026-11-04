@@ -16,6 +16,7 @@ import type {
 } from "@/domains/matches/types/match-sheet";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import {
+  clockLabelsOf,
   displayLocaleOf,
   formatClock,
   formatOdds,
@@ -206,11 +207,7 @@ function SheetHeader({
   const status =
     sheet.state === "live"
       ? sheet.clock
-        ? formatClock(sheet.clock, {
-            inProgress: t("inProgress"),
-            halfTime: t("halfTimeShort"),
-            finished: t("finished"),
-          })
+        ? formatClock(sheet.clock, clockLabelsOf(t))
         : t("inProgress")
       : sheet.state === "postponed"
         ? t("postponed")

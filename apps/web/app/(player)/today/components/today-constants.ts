@@ -1,5 +1,5 @@
 import { formatLinePick, formatPickWithTeams } from "@/helpers/fixture";
-import { formatClock } from "@/helpers/scoreboard-format";
+import { formatClock, type ClockLabels } from "@/helpers/scoreboard-format";
 import type { Outcome } from "@/components/scoreboard/ui/outcome";
 import type {
   TodayCoupon,
@@ -63,13 +63,6 @@ export function isSettled(state: TodayCouponState): boolean {
 export function playedLegs(coupon: TodayCoupon): TodayLeg[] {
   return coupon.legs.filter((leg) => leg.state !== "postponed");
 }
-
-/** The words of a leg's clock (formatClock), from the « today » messages. */
-export type ClockLabels = {
-  inProgress: string;
-  halfTime: string;
-  finished: string;
-};
 
 /**
  * A leg's match once kicked off: « 0-2 · 67' », « 1-1 · MT »,

@@ -9,10 +9,12 @@ import { ResultMark } from "@/components/scoreboard/ui/result-mark";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import { getToday } from "@/domains/today/use-cases/get-today";
 import {
+  clockLabelsOf,
   displayLocaleOf,
   formatClock,
   formatOdds,
   formatTime,
+  type ClockLabels,
   type DisplayLocale,
 } from "@/helpers/scoreboard-format";
 import type {
@@ -23,7 +25,7 @@ import type {
 import { CouponValue } from "./coupon-value";
 import { FollowButton } from "./follow-button";
 import { TeamMark } from "./team-mark";
-import { isSettled, legPickLabel, type ClockLabels } from "./today-constants";
+import { isSettled, legPickLabel } from "./today-constants";
 
 /**
  * A coupon of « Aujourd'hui » and its product's form, read from the same
@@ -153,9 +155,7 @@ export async function CouponSheetBody({
           locale={display}
           timeZone={timeZone}
           labels={{
-            inProgress: t("inProgress"),
-            halfTime: t("halfTimeShort"),
-            finished: t("finished"),
+            ...clockLabelsOf(t),
             postponed: t("postponed"),
             won: t("won"),
             lost: t("lost"),
