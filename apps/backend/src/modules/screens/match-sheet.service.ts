@@ -349,6 +349,23 @@ function pair(
   return home === null || away === null ? null : { home, away };
 }
 
+/**
+ * A pick of the markets « Mon ticket » takes (the reading, the AI's, the
+ * main lines and the engine's others): no line, no player, addable. The new
+ * markets are not (match-sheet-markets.ts).
+ */
+function mainPick(
+  key: Key,
+): Pick<SheetPick, 'market' | 'pick' | 'line' | 'player' | 'addable'> {
+  return {
+    market: key.market,
+    pick: key.pick,
+    line: null,
+    player: null,
+    addable: true,
+  };
+}
+
 function readingOnSheet(
   reading: MatchReading,
   header: SheetHeaderRow,
@@ -370,11 +387,7 @@ function readingOnSheet(
     },
   });
   return {
-    market: reading.market,
-    pick: reading.pick,
-    line: null,
-    player: null,
-    addable: true,
+    ...mainPick(reading),
     odds: reading.odds,
     chance: reading.chance,
     result: reading.result,
@@ -398,10 +411,7 @@ function aiOpinionOf(
     reading.market === key.market &&
     reading.pick === key.pick;
   return {
-    ...key,
-    line: null,
-    player: null,
-    addable: true,
+    ...mainPick(key),
     odds: quote?.operatorOdds ?? null,
     // One bet, one chance on the sheet: the AI's pick when it is ours reads
     // the reading's chance, never a second figure next to it.
@@ -545,10 +555,7 @@ function otherPicksOf(input: {
     if (seen.has(id) || quote?.operatorOdds == null) return;
     seen.add(id);
     picks.push({
-      ...key,
-      line: null,
-      player: null,
-      addable: true,
+      ...mainPick(key),
       odds: quote.operatorOdds,
       chance: quote.operatorFairProbability,
       result,

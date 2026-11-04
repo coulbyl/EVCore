@@ -612,12 +612,16 @@ function matchSheet(fixtureId) {
   if (!item) return null;
   const finished = item.state === "finished";
   const settle = (result) => (finished ? result : null);
-  const pick = (market, pickName, odds, chance, result) => ({
+  // As the backend's mainPick: no line, no player, « Mon ticket » takes it.
+  const mainPick = (market, pickName) => ({
     market,
     pick: pickName,
     line: null,
     player: null,
     addable: true,
+  });
+  const pick = (market, pickName, odds, chance, result) => ({
+    ...mainPick(market, pickName),
     odds,
     chance,
     result: settle(result),
@@ -635,9 +639,7 @@ function matchSheet(fixtureId) {
     reading: item.reading
       ? {
           ...item.reading,
-          line: null,
-          player: null,
-          addable: true,
+          ...mainPick(item.reading.market, item.reading.pick),
           fact: isArsenal
             ? "Arsenal a gagné ses 9 derniers matchs à domicile"
             : null,
