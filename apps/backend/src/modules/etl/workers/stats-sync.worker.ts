@@ -8,8 +8,6 @@ import {
 } from '../api-football.client';
 import {
   ApiFootballFixturesByIdsResponseSchema,
-  FixtureByIdDetailsSchema,
-  droppedCount,
   FixtureByIdIdentitySchema,
   FixtureByIdStatisticsSchema,
 } from '../schemas/fixture-full.schema';
@@ -35,6 +33,7 @@ import { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 import { fetchLeagueSeasonDates } from '../league-season-dates';
 import { FixtureStatisticsService } from '../../fixture-statistics/fixture-statistics.service';
 import { FixtureEventsService } from '../../fixture-events/fixture-events.service';
+import type { FixtureDetailRejectionCause } from '../../fixture-events/fixture-events.types';
 
 export type StatsSyncJobData = {
   season: number;
@@ -66,8 +65,11 @@ export type StatsSyncBatchResult = {
     written: number;
     // Of which marked eventsSyncedAt (nothing left to fetch).
     synced: number;
-    // Zod or team mismatch: nothing written, left pending.
+    // Block missing, team mismatch or failed write: nothing written, left
+    // pending.
     rejected: number;
+    // Each of them with its cause, for the operators' alert.
+    rejections: DetailRejection[];
     // Invalid events, lineups or player blocks left out of written matches.
     dropped: number;
     // Missing, failed or rejected — what the events backfill counts.
@@ -78,6 +80,12 @@ export type StatsSyncBatchResult = {
   // Calls whose answer failed the envelope schema.
   rejectedCalls: number;
   abortReason: 'quota' | null;
+};
+
+export type DetailRejection = {
+  externalId: number;
+  cause: FixtureDetailRejectionCause;
+  match: string | null;
 };
 
 const logger = createLogger('stats-sync-worker');
@@ -262,6 +270,7 @@ export class StatsSyncWorker {
         written: 0,
         synced: 0,
         rejected: 0,
+        rejections: [],
         dropped: 0,
         failedExternalIds: [],
       },
@@ -451,62 +460,34 @@ export class StatsSyncWorker {
     tally.updated++;
   }
 
-  // Events, lineups and player statistics: validated together, written
-  // together. A rejection leaves the match pending (never unavailable) and
-  // never touches its team statistics.
+  // Events, lineups and player statistics, through their one writer. A
+  // rejection leaves the match pending (never unavailable) and never
+  // touches its team statistics.
   private async persistDetails(input: {
     fixture: PendingStatisticsFixture;
     entry: unknown;
     observedAt: Date;
     tally: StatsSyncBatchResult;
   }): Promise<void> {
-    const { fixture, tally } = input;
-    const { externalId } = fixture;
-    const details = FixtureByIdDetailsSchema.safeParse(input.entry);
-    if (!details.success) {
-      logger.warn(
-        { externalId, issues: details.error.issues },
-        'Zod validation failed on events/lineups/players — left pending',
-      );
-      tally.details.rejected++;
-      tally.details.failedExternalIds.push(externalId);
-      return;
-    }
-    const dropped = droppedCount(details.data);
-    if (dropped > 0) {
-      logger.warn(
-        { externalId, dropped: details.data.dropped },
-        'Invalid events/lineups/players left out — the rest is written',
-      );
-      tally.details.dropped += dropped;
-    }
-
-    let written: Awaited<ReturnType<FixtureEventsService['persistDetails']>>;
-    try {
-      written = await this.fixtureEvents.persistDetails({
-        fixtureExternalId: externalId,
-        observedAt: input.observedAt,
-        details: details.data,
-      });
-    } catch (error) {
-      // Never costs the other fixtures of the call their statistics.
-      logger.error(
-        { externalId, err: error },
-        'Writing events/lineups/players failed — left pending',
-      );
-      tally.details.rejected++;
-      tally.details.failedExternalIds.push(externalId);
-      return;
-    }
+    const { tally } = input;
+    const { externalId } = input.fixture;
+    const written = await this.fixtureEvents.writeEntry({
+      fixtureExternalId: externalId,
+      observedAt: input.observedAt,
+      entry: input.entry,
+    });
     if (written.status === 'rejected') {
-      logger.warn(
-        { externalId, reason: written.reason },
-        'Events/lineups/players rejected — left pending',
-      );
       tally.details.rejected++;
+      tally.details.rejections.push({
+        externalId,
+        cause: written.cause,
+        match: written.match,
+      });
       tally.details.failedExternalIds.push(externalId);
       return;
     }
+    const { events, lineups, players } = written.dropped;
+    tally.details.dropped += events + lineups + players;
     tally.details.written++;
     if (written.synced) tally.details.synced++;
   }

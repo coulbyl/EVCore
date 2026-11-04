@@ -59,6 +59,7 @@ function batch(overrides: Partial<StatsSyncBatchResult>): StatsSyncBatchResult {
       written: 0,
       synced: 0,
       rejected: 0,
+      rejections: [],
       dropped: 0,
       failedExternalIds: [],
     },
@@ -297,6 +298,7 @@ describe('StatsBackfillWorker', () => {
       written: 0,
       synced: 0,
       rejected: 0,
+      rejections: [],
       dropped: 0,
       failedExternalIds: [],
       ...overrides,
@@ -397,70 +399,24 @@ describe('StatsBackfillWorker', () => {
       });
     });
 
-    it('asks recent matches with no event yet, at most every 30 minutes', async () => {
-      vi.useFakeTimers({ toFake: ['Date'] });
-      try {
-        vi.setSystemTime(new Date('2026-11-03T22:10:00Z'));
-        fixtureService.findStatsBackfillCandidates.mockResolvedValue([]);
-        fixtureService.findEventsBackfillPending.mockResolvedValue(
-          pendingFixtures(1, 1635695),
-        );
-        statsSync.syncFixtures.mockResolvedValue(
-          batch({ calls: 1, details: details({ written: 1 }) }),
-        );
-        const worker = makeWorker();
+    it('leaves recent matches to the live pass: no not-reported branch', async () => {
+      fixtureService.findStatsBackfillCandidates.mockResolvedValue([]);
+      fixtureService.findEventsBackfillPending.mockResolvedValue(
+        pendingFixtures(1, 1635695),
+      );
+      statsSync.syncFixtures.mockResolvedValue(
+        batch({ calls: 1, details: details({ written: 1 }) }),
+      );
+      const worker = makeWorker();
 
-        await worker.process(JOB);
-        const first = fixtureService.findEventsBackfillPending.mock.calls[0];
-        // Not yet reported: kicked off within the last 24 hours.
-        expect(first?.[0].notReportedSince).toEqual(
-          new Date('2026-11-02T22:10:00Z'),
-        );
-        expect(first?.[0].excludeExternalIds).toEqual([]);
+      await worker.process(JOB);
+      await worker.process(JOB);
 
-        vi.setSystemTime(new Date('2026-11-03T22:15:00Z'));
-        await worker.process(JOB);
-        expect(
-          fixtureService.findEventsBackfillPending.mock.calls[1]?.[0]
-            .excludeExternalIds,
-        ).toEqual([1635695]);
-
-        // The mock answered it again at 22:15 (a query would not have).
-        vi.setSystemTime(new Date('2026-11-03T22:46:00Z'));
-        await worker.process(JOB);
-        expect(
-          fixtureService.findEventsBackfillPending.mock.calls[2]?.[0]
-            .excludeExternalIds,
-        ).toEqual([]);
-      } finally {
-        vi.useRealTimers();
-      }
-    });
-
-    it('holds back only the recent matches it asked', async () => {
-      vi.useFakeTimers({ toFake: ['Date'] });
-      try {
-        vi.setSystemTime(new Date('2026-11-03T22:10:00Z'));
-        fixtureService.findStatsBackfillCandidates.mockResolvedValue([]);
-        fixtureService.findEventsBackfillPending.mockResolvedValue([
-          ...pendingFixtures(1, 1, new Date('2026-11-03T19:00:00Z')),
-          ...pendingFixtures(1, 2, new Date('2026-10-20T19:00:00Z')),
-        ]);
-        statsSync.syncFixtures.mockResolvedValue(
-          batch({ calls: 1, details: details({ written: 2 }) }),
-        );
-        const worker = makeWorker();
-
-        await worker.process(JOB);
-        vi.setSystemTime(new Date('2026-11-03T22:15:00Z'));
-        await worker.process(JOB);
-        expect(
-          fixtureService.findEventsBackfillPending.mock.calls[1]?.[0]
-            .excludeExternalIds,
-        ).toEqual([1]);
-      } finally {
-        vi.useRealTimers();
-      }
+      const [first, second] =
+        fixtureService.findEventsBackfillPending.mock.calls;
+      expect(first?.[0]).not.toHaveProperty('notReportedSince');
+      // Nothing is held back between ticks but failures.
+      expect(second?.[0].excludeExternalIds).toEqual([]);
     });
 
     it('does not hold back the fixtures of an events lot stopped by the quota', async () => {
@@ -492,16 +448,7 @@ describe('StatsBackfillWorker', () => {
       );
       const worker = makeWorker();
 
-      // A tick every 31 minutes: past the retry delay of a recent match.
-      vi.useFakeTimers({ toFake: ['Date'] });
-      try {
-        for (let tick = 0; tick < 4; tick++) {
-          vi.setSystemTime(Date.UTC(2026, 10, 3, 20) + tick * 31 * 60_000);
-          await worker.process(JOB);
-        }
-      } finally {
-        vi.useRealTimers();
-      }
+      for (let tick = 0; tick < 4; tick++) await worker.process(JOB);
 
       const calls = fixtureService.findEventsBackfillPending.mock.calls;
       expect(calls[2]?.[0].excludeExternalIds).toEqual([]);

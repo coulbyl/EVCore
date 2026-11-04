@@ -211,7 +211,13 @@ const REAL_FINISHED = {
       ],
       substitutes: [
         {
-          player: { id: null, name: 'Scorer', number: 19, pos: 'F', grid: null },
+          player: {
+            id: null,
+            name: 'Scorer',
+            number: 19,
+            pos: 'F',
+            grid: null,
+          },
         },
       ],
     },

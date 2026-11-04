@@ -439,14 +439,30 @@ export const FIXTURE_EVENTS = {
   // Rattrapage : matchs par lot (10 appels de 20), après le lot de stats du
   // même passage, dans le même budget.
   BACKFILL_MAX_FIXTURES_PER_LOT: 200,
-  // A match finished in the last NOT_REPORTED_WINDOW_HOURS with no event
-  // written yet (the API had none when it was first asked, or the answer was
-  // rejected) is asked again in the backfill's events lot, at most every
-  // NOT_REPORTED_RETRY_MINUTES: its scorers show within the hour instead of
-  // after the grace period. Keyed on « not yet reported », never on the date
-  // alone, so a late answer is still taken.
-  NOT_REPORTED_WINDOW_HOURS: 24,
-  NOT_REPORTED_RETRY_MINUTES: 30,
+  // The answer of the full-time whistle (the live pass, ~2 h after kick-off)
+  // is written at once — the scorers show within minutes — but never marks
+  // the match synced: the API still corrects scorers and player statistics
+  // after it. Only a complete answer taken this long after kick-off does
+  // (FixtureEventsService.isSynced, the one rule).
+  FINAL_AFTER_HOURS: 4,
+} as const;
+
+/**
+ * The live pass (ETL_CRON_SCHEDULES.LIVE_FIXTURES) and the settlement pass
+ * fetch their matches 20 per /fixtures?ids= call (FIXTURES_BY_IDS_BATCH_SIZE)
+ * instead of one /fixtures?id= each.
+ *
+ * Calls a day, replayed on the 939 matches of 24/10–02/11 (a match pending
+ * from kick-off to ~2 h after): one call per match every 30 min was ~456;
+ * the live pass every 5 min costs ~256 and the batched 30-min pass ~45, so
+ * ~300 for a minute at most 5 min late instead of 30 (peak: 77 matches at
+ * once, 4 calls a pass). Plan Pro: 7 500.
+ */
+export const LIVE_FIXTURES = {
+  // A match is followed from its kick-off for this long: ~2 h to the
+  // whistle, then its events retried every pass while the API has none.
+  // Later, the 30-min settlement pass and the stats sync take it.
+  WINDOW_HOURS: 4,
 } as const;
 
 // Squads (/players/squads?team=, one call per team): they identify the
@@ -590,6 +606,11 @@ export const API_FOOTBALL_QUOTA = {
 export const ETL_CRON_SCHEDULES = {
   FIXTURES_SYNC: '0 2 * * *', // 02:00 UTC daily
   PENDING_BETS_SETTLEMENT: '*/30 * * * *', // every 30 minutes
+  // Every 5 minutes, on the same queue (LIVE_FIXTURES_JOB): the matches
+  // kicked off within LIVE_FIXTURES.WINDOW_HOURS and not done, 20 per
+  // /fixtures?ids= call — the live minute, the early settlement and the
+  // scorers at the whistle. See LIVE_FIXTURES for the call count.
+  LIVE_FIXTURES: '*/5 * * * *',
   STALE_SCHEDULED_SYNC: '15 7 * * *', // 07:15 UTC daily — reconcile past fixtures still marked SCHEDULED
   STATS_SYNC: '0 4 * * *', // 04:00 UTC daily
   INJURIES_SYNC: '0 6 * * *', // 06:00 UTC daily — shadow injuries refresh
@@ -659,6 +680,7 @@ export const ETL_CRON_SCHEDULES = {
 export const ETL_SCHEDULER_KEYS = {
   LEAGUE_SYNC: 'cron:league-sync',
   PENDING_BETS_SETTLEMENT: 'cron:pending-bets-settlement',
+  LIVE_FIXTURES: 'cron:live-fixtures',
   STALE_SCHEDULED_SYNC: 'cron:stale-scheduled-sync',
   ODDS_CSV_IMPORT: 'cron:odds-csv-import',
   ODDS_CLOSING_SYNC: 'cron:odds-closing-sync',

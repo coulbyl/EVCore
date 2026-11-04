@@ -4,14 +4,19 @@ import { RiskService } from '../../risk/risk.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { FixtureStatus } from '@evcore/db';
 import { createLogger } from '@utils/logger';
-import { ApiFootballClient } from '../api-football.client';
-import { BULLMQ_QUEUES, ETL_CONSTANTS } from '@config/etl.constants';
+import { sleep } from '@utils/async.utils';
 import {
-  ApiFootballFixturesResponseSchema,
-  type ApiFootballFixture,
-  type ApiFootballStatus,
-} from '../schemas/fixture.schema';
+  ApiFootballClient,
+  isQuotaExceededError,
+} from '../api-football.client';
+import {
+  BULLMQ_QUEUES,
+  ETL_CONSTANTS,
+  LIVE_FIXTURES,
+} from '@config/etl.constants';
+import { type ApiFootballStatus } from '../schemas/fixture.schema';
 import { FixtureService } from '../../fixture/fixture.service';
+import type { PendingSettlementFixture } from '../../fixture/fixture.repository';
 import { BettingEngineService } from '../../betting-engine/betting-engine.service';
 import { CouponSettlementService } from '../../coupon/coupon-settlement.service';
 import { NotificationService } from '../../notification/notification.service';
@@ -19,8 +24,10 @@ import { AdjustmentService } from '../../adjustment/adjustment.service';
 import { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 import { FixtureEventsService } from '../../fixture-events/fixture-events.service';
 import {
-  FixtureByIdDetailsSchema,
-  droppedCount,
+  ApiFootballFixturesByIdsResponseSchema,
+  FixtureByIdIdentitySchema,
+  FixtureByIdStateSchema,
+  type FixtureByIdState,
 } from '../schemas/fixture-full.schema';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
 
@@ -33,11 +40,38 @@ export type PendingBetsSettlementJobData = Record<string, never>;
  */
 export const RISK_MARKET_SWEEP_JOB = 'risk-market-sweep';
 
+/**
+ * Nom du job de la relève du direct (ETL_CRON_SCHEDULES.LIVE_FIXTURES) :
+ * même travail que le règlement, sur les seuls matchs commencés depuis
+ * LIVE_FIXTURES.WINDOW_HOURS et pas finis (findLiveFixtures), toutes les
+ * 5 minutes.
+ */
+export const LIVE_FIXTURES_JOB = 'live-fixtures';
+
+type PassTally = {
+  finishedFixtures: number;
+  // Of which stored not FINISHED before this pass (a transition).
+  newlyFinished: number;
+  settledBets: number;
+  failedFixtures: number;
+  skippedFixtures: number;
+  // /fixtures?ids= calls spent.
+  calls: number;
+};
+
+// One fixture's validated state, and its raw entry for the events writer.
+type FixtureEntry = { state: FixtureByIdState; raw: unknown };
+
+const HOUR_MS = 60 * 60 * 1000;
+
 const logger = createLogger('pending-bets-settlement-worker');
 
 @Injectable()
 @Processor(BULLMQ_QUEUES.PENDING_BETS_SETTLEMENT)
 export class PendingBetsSettlementWorker extends WorkerHost {
+  // Bets settled by the live passes since the last calibration check.
+  private settledSinceCalibration = 0;
+
   @Inject(NotificationService)
   private notification!: NotificationService;
 
@@ -67,19 +101,32 @@ export class PendingBetsSettlementWorker extends WorkerHost {
       return;
     }
 
-    const fixtures = await this.fixtureService.findPendingSettlementFixtures(
-      new Date(),
-    );
+    const live = job.name === LIVE_FIXTURES_JOB;
+    const now = new Date();
+    const fixtures = live
+      ? await this.fixtureService.findLiveFixtures({
+          now,
+          since: new Date(now.getTime() - LIVE_FIXTURES.WINDOW_HOURS * HOUR_MS),
+        })
+      : await this.fixtureService.findPendingSettlementFixtures(now);
+    // Nothing kicked off: no call, nothing to settle.
+    if (live && fixtures.length === 0) return;
 
     logger.info(
-      { fixtureCount: fixtures.length },
-      'Starting pending bets settlement sync',
+      { fixtureCount: fixtures.length, live },
+      live
+        ? 'Starting live fixtures pass'
+        : 'Starting pending bets settlement sync',
     );
 
-    let finishedFixtures = 0;
-    let settledBets = 0;
-    let failedFixtures = 0;
-    let skippedFixtures = 0;
+    const tally: PassTally = {
+      finishedFixtures: 0,
+      newlyFinished: 0,
+      settledBets: 0,
+      failedFixtures: 0,
+      skippedFixtures: 0,
+      calls: 0,
+    };
     // Same rationale as stale-scheduled-sync.worker.ts: this is the other
     // fallback path that finalizes fixtures outside the routine
     // fixtures-sync job, so it must trigger the same rolling-stats refresh
@@ -88,106 +135,19 @@ export class PendingBetsSettlementWorker extends WorkerHost {
     // landing here (2026-09-07 ISL1 incident).
     const changedBySeason = new Map<string, Set<string>>();
 
+    const entries = await this.fetchEntries(fixtures, tally);
     for (const fixture of fixtures) {
+      const entry = entries.get(fixture.externalId);
+      if (entry === undefined) continue;
       try {
-        const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?id=${fixture.externalId}`;
-        const curlResult = await this.apiFootball.fetchJson(url);
-
-        if (curlResult.response === null) {
-          skippedFixtures++;
-          logger.warn(
-            { externalId: fixture.externalId },
-            'Transient network error while fetching fixture settlement state — skipping fixture',
-          );
-          continue;
+        const changed = await this.applyEntry({ fixture, entry, tally });
+        if (changed) {
+          const ids = changedBySeason.get(changed.seasonId) ?? new Set();
+          ids.add(changed.fixtureId);
+          changedBySeason.set(changed.seasonId, ids);
         }
-        const res = curlResult.response;
-
-        if (res.status < 200 || res.status >= 300) {
-          failedFixtures++;
-          logger.error(
-            { externalId: fixture.externalId, status: res.status },
-            'API-FOOTBALL returned non-ok response during settlement sync',
-          );
-          continue;
-        }
-
-        const parsed = ApiFootballFixturesResponseSchema.safeParse(res.body);
-
-        if (!parsed.success) {
-          failedFixtures++;
-          logger.error(
-            { externalId: fixture.externalId, issues: parsed.error.issues },
-            'Zod validation failed during settlement sync — skipping fixture',
-          );
-          continue;
-        }
-
-        const apiFixture = parsed.data.response[0];
-        if (!apiFixture) {
-          skippedFixtures++;
-          logger.warn(
-            { externalId: fixture.externalId },
-            'Fixture not returned by API-FOOTBALL during settlement sync',
-          );
-          continue;
-        }
-
-        const nextState = mapFixtureState(apiFixture);
-        const { affectsRollingStats, seasonId, fixtureId } =
-          await this.fixtureService.syncFixtureState({
-            externalId: fixture.externalId,
-            scheduledAt: nextState.scheduledAt,
-            status: nextState.status,
-            homeScore: nextState.homeScore,
-            awayScore: nextState.awayScore,
-            homeHtScore: nextState.homeHtScore,
-            awayHtScore: nextState.awayHtScore,
-            live: nextState.live,
-          });
-        if (affectsRollingStats && seasonId && fixtureId) {
-          const changed = changedBySeason.get(seasonId) ?? new Set<string>();
-          changed.add(fixtureId);
-          changedBySeason.set(seasonId, changed);
-        }
-
-        // Early settlement — resolve irrevocable outcomes (BTTS YES/NO, OVER/UNDER
-        // thresholds, HT markets) without waiting for FINISHED.
-        if (nextState.status === 'IN_PROGRESS') {
-          if (nextState.homeScore !== null && nextState.awayScore !== null) {
-            const { settled: earlySettled } =
-              await this.bettingEngineService.settleEarlyBets(fixture.id);
-            settledBets += earlySettled;
-          }
-          continue;
-        }
-
-        if (nextState.status !== 'FINISHED') {
-          continue;
-        }
-
-        finishedFixtures++;
-
-        // The answer that says FINISHED carries the events, lineups and
-        // player statistics too (/fixtures?id= is /fixtures?ids= of one):
-        // written now, the scorers show within this pass instead of waiting
-        // for the stats sync. Before the settlement, which reads them. Once
-        // only — when the match turns FINISHED, or while it has no event —
-        // not on every pass a bet stays pending: the stats sync corrects
-        // them after.
-        if (fixture.status !== 'FINISHED' || !fixture.hasEvents) {
-          // Same body ApiFootballFixturesResponseSchema validated: its
-          // `response` is an array, read raw for the blocks it strips.
-          const entry = (res.body as { response: unknown[] }).response[0];
-          await this.persistDetails(fixture.externalId, entry);
-        }
-
-        const { settled } = await this.bettingEngineService.settleOpenBets(
-          fixture.id,
-        );
-        settledBets += settled;
       } catch (error) {
-        failedFixtures++;
+        tally.failedFixtures++;
         logger.error(
           {
             externalId: fixture.externalId,
@@ -206,22 +166,32 @@ export class PendingBetsSettlementWorker extends WorkerHost {
 
     logger.info(
       {
+        live,
         fixtureCount: fixtures.length,
-        finishedFixtures,
-        settledBets,
-        failedFixtures,
-        skippedFixtures,
+        ...tally,
         seasonsRefreshed: changedBySeason.size,
       },
-      'Pending bets settlement sync complete',
+      live
+        ? 'Live fixtures pass complete'
+        : 'Pending bets settlement sync complete',
     );
 
-    // Always attempt coupon settlement — the guard `finishedFixtures > 0` was a
-    // bug: once fixtures were already finished from a prior run, subsequent worker
-    // executions had finishedFixtures=0 and coupons were never settled.
-    await this.couponSettlement.settleReadyProposals();
+    // The settlement pass always settles coupons — the guard
+    // `finishedFixtures > 0` was a bug: once fixtures were already finished
+    // from a prior run, subsequent executions had finishedFixtures=0 and
+    // coupons were never settled. The live pass does on a whistle or a bet
+    // settled — a transition, not a state: a finished match retried for its
+    // events settles nothing again —, so a coupon settles minutes after its
+    // last whistle.
+    if (!live || tally.newlyFinished > 0 || tally.settledBets > 0) {
+      await this.couponSettlement.settleReadyProposals();
+    }
 
-    if (settledBets > 0) {
+    // The calibration check reads every settled bet: once per settlement
+    // pass, for the bets settled by it or by the live passes before it.
+    this.settledSinceCalibration += tally.settledBets;
+    if (!live && this.settledSinceCalibration > 0) {
+      this.settledSinceCalibration = 0;
       const calibration = await this.adjustmentService.runCalibrationCheck();
       logger.info(
         { calibration },
@@ -230,45 +200,161 @@ export class PendingBetsSettlementWorker extends WorkerHost {
     }
   }
 
-  // Never costs the fixture its settlement: a rejected or failed write
-  // leaves the events pending for the stats sync and its backfill.
-  private async persistDetails(
-    externalId: number,
-    entry: unknown,
-  ): Promise<void> {
-    try {
-      const details = FixtureByIdDetailsSchema.safeParse(entry);
-      if (!details.success) {
+  // The answers of the given fixtures, FIXTURES_BY_IDS_BATCH_SIZE per
+  // /fixtures?ids= call. A fixture missing from the map was counted
+  // skipped (transient, absent, quota) or failed (rejected answer).
+  private async fetchEntries(
+    fixtures: readonly PendingSettlementFixture[],
+    tally: PassTally,
+  ): Promise<Map<number, FixtureEntry>> {
+    const entries = new Map<number, FixtureEntry>();
+    const batchSize = ETL_CONSTANTS.FIXTURES_BY_IDS_BATCH_SIZE;
+    for (let start = 0; start < fixtures.length; start += batchSize) {
+      const ids = fixtures
+        .slice(start, start + batchSize)
+        .map((fixture) => fixture.externalId);
+      if (start > 0) await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
+
+      const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?ids=${ids.join('-')}`;
+      const curlResult = await this.apiFootball.fetchJson(url);
+      tally.calls++;
+
+      if (curlResult.response === null) {
+        tally.skippedFixtures += ids.length;
         logger.warn(
-          { externalId, issues: details.error.issues },
-          'Zod validation failed on events/lineups/players — left pending',
+          { ids },
+          'Transient network error while fetching fixture settlement state — skipping batch',
         );
-        return;
+        continue;
       }
-      if (droppedCount(details.data) > 0) {
+      const res = curlResult.response;
+
+      if (res.status === 429 || isQuotaExceededError(res.body)) {
+        // Nothing more is asked: the rest waits for the next pass.
+        tally.skippedFixtures += fixtures.length - start;
         logger.warn(
-          { externalId, dropped: details.data.dropped },
-          'Invalid events/lineups/players left out — the rest is written',
+          { ids, status: res.status },
+          'API-FOOTBALL quota or rate limit reached — settlement pass stopped',
         );
+        break;
       }
-      const written = await this.fixtureEvents.persistDetails({
-        fixtureExternalId: externalId,
-        observedAt: new Date(),
-        details: details.data,
-        provisional: true,
-      });
-      if (written.status === 'rejected') {
-        logger.warn(
-          { externalId, reason: written.reason },
-          'Events/lineups/players rejected — left pending',
+
+      if (res.status < 200 || res.status >= 300) {
+        tally.failedFixtures += ids.length;
+        logger.error(
+          { ids, status: res.status },
+          'API-FOOTBALL returned non-ok response during settlement sync',
         );
+        continue;
       }
-    } catch (error) {
-      logger.error(
-        { externalId, err: error },
-        'Writing events/lineups/players failed — left pending',
+
+      const envelope = ApiFootballFixturesByIdsResponseSchema.safeParse(
+        res.body,
       );
+      if (!envelope.success) {
+        tally.failedFixtures += ids.length;
+        logger.error(
+          { ids, issues: envelope.error.issues },
+          'Zod validation failed during settlement sync — skipping batch',
+        );
+        continue;
+      }
+
+      // One malformed entry never costs the other nineteen their state.
+      const answered = new Set<number>();
+      for (const raw of envelope.data.response) {
+        const state = FixtureByIdStateSchema.safeParse(raw);
+        if (!state.success) {
+          const id = FixtureByIdIdentitySchema.safeParse(raw);
+          if (id.success) answered.add(id.data.fixture.id);
+          tally.failedFixtures++;
+          logger.error(
+            {
+              externalId: id.success ? id.data.fixture.id : null,
+              issues: state.error.issues,
+            },
+            'Zod validation failed during settlement sync — skipping fixture',
+          );
+          continue;
+        }
+        answered.add(state.data.fixture.id);
+        entries.set(state.data.fixture.id, { state: state.data, raw });
+      }
+      for (const externalId of ids) {
+        if (answered.has(externalId)) continue;
+        tally.skippedFixtures++;
+        logger.warn(
+          { externalId },
+          'Fixture not returned by API-FOOTBALL during settlement sync',
+        );
+      }
     }
+    return entries;
+  }
+
+  // One fixture's answer: its state, its early or final settlement, and at
+  // the whistle its events. Returns the fixture when its rolling stats need
+  // a refresh.
+  private async applyEntry(input: {
+    fixture: PendingSettlementFixture;
+    entry: FixtureEntry;
+    tally: PassTally;
+  }): Promise<{ seasonId: string; fixtureId: string } | null> {
+    const { fixture, entry, tally } = input;
+    const nextState = mapFixtureState(entry.state);
+    const { affectsRollingStats, seasonId, fixtureId } =
+      await this.fixtureService.syncFixtureState({
+        externalId: fixture.externalId,
+        scheduledAt: nextState.scheduledAt,
+        status: nextState.status,
+        homeScore: nextState.homeScore,
+        awayScore: nextState.awayScore,
+        homeHtScore: nextState.homeHtScore,
+        awayHtScore: nextState.awayHtScore,
+        live: nextState.live,
+      });
+    const changed =
+      affectsRollingStats && seasonId && fixtureId
+        ? { seasonId, fixtureId }
+        : null;
+
+    // Early settlement — resolve irrevocable outcomes (BTTS YES/NO, OVER/UNDER
+    // thresholds, HT markets) without waiting for FINISHED.
+    if (nextState.status === 'IN_PROGRESS') {
+      if (nextState.homeScore !== null && nextState.awayScore !== null) {
+        const { settled } = await this.bettingEngineService.settleEarlyBets(
+          fixture.id,
+        );
+        tally.settledBets += settled;
+      }
+      return changed;
+    }
+
+    if (nextState.status !== 'FINISHED') return changed;
+
+    tally.finishedFixtures++;
+    if (fixture.status !== 'FINISHED') tally.newlyFinished++;
+
+    // The answer that says FINISHED carries the events, lineups and player
+    // statistics too: written now through the one writer, the scorers show
+    // within this pass instead of waiting for the stats sync, which
+    // corrects them after (FixtureEventsService.isSynced). Before the
+    // settlement, which reads them. Once — when the match turns FINISHED,
+    // or while it has no event — not on every pass a bet stays pending. A
+    // rejection never costs the fixture its settlement.
+    if (fixture.status !== 'FINISHED' || !fixture.hasEvents) {
+      await this.fixtureEvents.writeEntry({
+        fixtureExternalId: fixture.externalId,
+        observedAt: new Date(),
+        entry: entry.raw,
+      });
+    }
+
+    const { settled } = await this.bettingEngineService.settleOpenBets(
+      fixture.id,
+    );
+    tally.settledBets += settled;
+    return changed;
   }
 
   @OnWorkerEvent('failed')
@@ -286,7 +372,7 @@ export class PendingBetsSettlementWorker extends WorkerHost {
   }
 }
 
-function mapFixtureState(item: ApiFootballFixture): {
+function mapFixtureState(item: FixtureByIdState): {
   scheduledAt: Date;
   status: FixtureStatus;
   homeScore: number | null;
@@ -303,14 +389,14 @@ function mapFixtureState(item: ApiFootballFixture): {
     // running total, which for AET/PEN matches includes ET+penalty goals).
     // Settlement markets resolve on regulation time only; before minute 90
     // fulltime is null, so fall back to `goals` for live in-progress tracking.
-    homeScore: item.score.fulltime.home ?? item.goals.home,
-    awayScore: item.score.fulltime.away ?? item.goals.away,
-    homeHtScore: item.score.halftime.home,
-    awayHtScore: item.score.halftime.away,
+    homeScore: item.score?.fulltime?.home ?? item.goals?.home ?? null,
+    awayScore: item.score?.fulltime?.away ?? item.goals?.away ?? null,
+    homeHtScore: item.score?.halftime?.home ?? null,
+    awayHtScore: item.score?.halftime?.away ?? null,
     // Stored only while in progress (liveClockOf).
     live: {
       status: item.fixture.status.short,
-      elapsed: item.fixture.status.elapsed,
+      elapsed: item.fixture.status.elapsed ?? null,
     },
   };
 }

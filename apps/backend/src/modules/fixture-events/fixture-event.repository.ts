@@ -18,6 +18,8 @@ export type SheetEventRow = {
 export type FixtureDetailIdentity = {
   fixtureId: string;
   scheduledAt: Date;
+  /** « Home – Away », for the operators' alerts. */
+  label: string;
   /** Provider team id → our team id, both sides. */
   teams: ReadonlyMap<number, string>;
 };
@@ -34,14 +36,15 @@ export class FixtureEventRepository {
       select: {
         id: true,
         scheduledAt: true,
-        homeTeam: { select: { id: true, externalId: true } },
-        awayTeam: { select: { id: true, externalId: true } },
+        homeTeam: { select: { id: true, externalId: true, name: true } },
+        awayTeam: { select: { id: true, externalId: true, name: true } },
       },
     });
     if (!fixture) return null;
     return {
       fixtureId: fixture.id,
       scheduledAt: fixture.scheduledAt,
+      label: `${fixture.homeTeam.name} – ${fixture.awayTeam.name}`,
       teams: new Map([
         [fixture.homeTeam.externalId, fixture.homeTeam.id],
         [fixture.awayTeam.externalId, fixture.awayTeam.id],

@@ -8,7 +8,7 @@ import type { PrismaService } from '@/prisma.service';
 import type { Job } from 'bullmq';
 import type { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 import type { FixtureStatisticsService } from '../../fixture-statistics/fixture-statistics.service';
-import type { FixtureEventsService } from '../../fixture-events/fixture-events.service';
+import { FixtureEventsService } from '../../fixture-events/fixture-events.service';
 import { XgSource } from '@evcore/db';
 import { execFile } from 'node:child_process';
 
@@ -147,9 +147,14 @@ describe('StatsSyncWorker', () => {
     markUnavailable: vi.fn(),
   } satisfies Partial<FixtureStatisticsService>;
 
-  const fixtureEvents = {
-    persistDetails: vi.fn(),
-  } satisfies Partial<FixtureEventsService>;
+  // The real writer (its Zod, its causes), its database write stubbed.
+  const fixtureEvents = new FixtureEventsService(
+    ...([{}, {}, {}, {}] as unknown as ConstructorParameters<
+      typeof FixtureEventsService
+    >),
+  );
+  const persistDetails = vi.fn<FixtureEventsService['persistDetails']>();
+  fixtureEvents.persistDetails = persistDetails;
 
   const prisma = {
     client: {
@@ -168,7 +173,7 @@ describe('StatsSyncWorker', () => {
     prisma as unknown as PrismaService,
     rollingStatsService as unknown as RollingStatsService,
     fixtureStatistics as unknown as FixtureStatisticsService,
-    fixtureEvents as unknown as FixtureEventsService,
+    fixtureEvents,
   );
 
   const JOB = {
@@ -218,12 +223,13 @@ describe('StatsSyncWorker', () => {
     fixtureService.markXgUnavailable.mockResolvedValue(undefined);
     fixtureStatistics.persistFinalStatistics.mockResolvedValue(4);
     fixtureStatistics.markUnavailable.mockResolvedValue(undefined);
-    fixtureEvents.persistDetails.mockResolvedValue({
+    persistDetails.mockResolvedValue({
       status: 'written',
       events: 1,
       lineups: 0,
       playerStatistics: 0,
       synced: false,
+      dropped: { events: 0, lineups: 0, players: 0 },
     });
     rollingStatsService.backfillSeason.mockResolvedValue({
       seasonId: 'season-id',
@@ -250,7 +256,7 @@ describe('StatsSyncWorker', () => {
 
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
     expect(fixtureService.markXgUnavailable).not.toHaveBeenCalled();
-    expect(fixtureEvents.persistDetails).not.toHaveBeenCalled();
+    expect(persistDetails).not.toHaveBeenCalled();
     expect(rollingStatsService.backfillSeason).not.toHaveBeenCalled();
   });
 
@@ -337,7 +343,7 @@ describe('StatsSyncWorker', () => {
         ],
       }),
     );
-    expect(fixtureEvents.persistDetails).toHaveBeenCalledWith(
+    expect(persistDetails).toHaveBeenCalledWith(
       expect.objectContaining({
         fixtureExternalId: 99999,
         details: expect.objectContaining({
@@ -478,7 +484,7 @@ describe('StatsSyncWorker', () => {
     expect(fixtureService.markXgUnavailable).toHaveBeenCalledWith(33333);
     expect(fixtureStatistics.markUnavailable).toHaveBeenCalledWith(33333);
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
-    expect(fixtureEvents.persistDetails).toHaveBeenCalledOnce();
+    expect(persistDetails).toHaveBeenCalledOnce();
     expect(rollingStatsService.backfillSeason).not.toHaveBeenCalled();
   });
 
@@ -528,7 +534,7 @@ describe('StatsSyncWorker', () => {
     });
     expect(fixtureStatistics.persistFinalStatistics).not.toHaveBeenCalled();
     expect(fixtureStatistics.markUnavailable).not.toHaveBeenCalled();
-    expect(fixtureEvents.persistDetails).not.toHaveBeenCalled();
+    expect(persistDetails).not.toHaveBeenCalled();
   });
 
   it('keeps the team statistics when the events block of a match is malformed', async () => {
@@ -550,7 +556,7 @@ describe('StatsSyncWorker', () => {
       rejected: 1,
       failedExternalIds: [81001],
     });
-    expect(fixtureEvents.persistDetails).toHaveBeenCalledOnce();
+    expect(persistDetails).toHaveBeenCalledOnce();
     expect(fixtureStatistics.markUnavailable).not.toHaveBeenCalled();
   });
 
@@ -586,7 +592,7 @@ describe('StatsSyncWorker', () => {
       prisma as unknown as PrismaService,
       rollingStatsService as unknown as RollingStatsService,
       fixtureStatistics as unknown as FixtureStatisticsService,
-      fixtureEvents as unknown as FixtureEventsService,
+      fixtureEvents,
     );
 
     for (let run = 0; run < 4; run++) await routine.process(JOB);
@@ -601,7 +607,7 @@ describe('StatsSyncWorker', () => {
   });
 
   it('a failed events write never costs the other fixtures their statistics', async () => {
-    fixtureEvents.persistDetails
+    persistDetails
       .mockRejectedValueOnce(new Error('deadlock'))
       .mockResolvedValue({
         status: 'written',
@@ -609,6 +615,7 @@ describe('StatsSyncWorker', () => {
         lineups: 0,
         playerStatistics: 0,
         synced: true,
+        dropped: { events: 0, lineups: 0, players: 0 },
       });
     serve((ids) => ({ body: fixturesAnswer(ids.map((id) => entry(id))) }));
 
@@ -638,7 +645,7 @@ describe('StatsSyncWorker', () => {
       prisma as unknown as PrismaService,
       rollingStatsService as unknown as RollingStatsService,
       fixtureStatistics as unknown as FixtureStatisticsService,
-      fixtureEvents as unknown as FixtureEventsService,
+      fixtureEvents,
     );
 
     await alerting.syncFixtures([fixtureWithoutStatistics(73001)]);
