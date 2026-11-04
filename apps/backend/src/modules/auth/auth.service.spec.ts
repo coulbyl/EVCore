@@ -1,4 +1,12 @@
-import { describe, it, expect, vi, beforeAll, afterEach, beforeEach } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeAll,
+  afterEach,
+  beforeEach,
+} from 'vitest';
 import { Prisma } from '@evcore/db';
 import {
   BadRequestException,
