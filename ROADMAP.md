@@ -90,6 +90,8 @@ SaaS, multi-tenant, API interne. Rien de commencé.
 
 ## Chantiers ouverts
 
+Ordre décidé le 04/11 : [docs/plan-2026-11-04.md](docs/plan-2026-11-04.md) — 1. le 15-todo, 2. le moteur (force des championnats, puis ML), 3. les produits datés, 4. plus tard.
+
 ### Plan stratégies — phase 4 (après mesure)
 
 Source : [docs/plan-strategies-2026-11-03.md](docs/plan-strategies-2026-11-03.md).
