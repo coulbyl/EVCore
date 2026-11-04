@@ -66,7 +66,7 @@ export function deriveMarketsFromPoisson(input: {
   return deriveMarketsFromDistributions(homeDist, awayDist, oneXTwo);
 }
 
-function poissonProbaFromDistributions(
+export function poissonProbaFromDistributions(
   homeDist: number[],
   awayDist: number[],
 ): ThreeWayProba {

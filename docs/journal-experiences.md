@@ -840,3 +840,21 @@ production sur 1 564 matchs avec clôture Pinnacle : Brier 1X2 −0,030
 retenus +0,008 ± 0,026. Expédié (`LEAGUE_STRENGTH_MAP`, à ré-ajuster chaque
 juillet). Source :
 [FORCE-CHAMPIONNATS.md](audits/2026-11-04/FORCE-CHAMPIONNATS.md).
+
+## 2026-11-04 — Grille de marché comme source des probabilités (ML-1)
+
+### Les canaux sont-ils calibrés quand ils lisent la grille impliquée par Pinnacle ?
+
+**Verdict : ouvert (expédié).** Grille de score depuis le premier book affûté
+(Pinnacle, Bet365 sinon), marge retirée par Shin, λ ajustés sur 1X2 + lignes
+de buts (ρ = 0), rejouée point-in-time à T−1 h sur 7 545 matchs de 2026
+(16 canaux de Phase 1, une jambe par match × canal × marché), règle
+d'expédition figée avant le rejeu. Grille disponible 95 % (Pinnacle 99,6 % des
+cas, 4,7 % de prix contradictoires → repli). Réalisé ÷ annoncé 0,956
+[0,942 ; 0,970] → **1,005 [0,994 ; 1,017]** ; ΔBrier contre la clôture
+Pinnacle +0,0092 → +0,0005 ; résidu 1X2 par match +0,032 → +0,001 ;
+RESULT_BTTS 0,744 → 0,961 ; aucun canal dégradé ; plafond `MAX_LEG_EDGE`
+atteint par 8 % des jambes → 0,2 % ; jours à deux jambes 1,20–1,50 inchangés.
+Calculée la veille à 17 h, le mouvement de ligne coûte 0,0002 de Brier. Pas un
+avantage : réalisé − Pinnacle +0,007 ± 0,011. Expédié (`MARKET_GRID`). Source :
+[ML1-GRILLE-MARCHE.md](audits/2026-11-04/ML1-GRILLE-MARCHE.md).

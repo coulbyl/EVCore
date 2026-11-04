@@ -1,6 +1,6 @@
 # Familles de moteurs prédictifs
 
-> Statut (mis à jour le 2026-11-04) : note de cadrage stratégique — **§0.3
+> Statut (mis à jour le 2026-11-04, ML-1 en production) : note de cadrage stratégique — **§0.3
 > chantiers 2 et 3 faits** (VALUE/SAFE en Phase 2 le 2026-08-18, audit marché ×
 > ligue le 2026-08-22) ; reste le chantier 1 (Famille A'), **en pause** (§0.3).
 > La suite du moteur ne passe plus par ce découpage mais par la Phase 3
@@ -38,7 +38,7 @@ VALUE/SAFE, la phase à laquelle ils s'exécutent.
 | DOMINANT, GOALS, CLEAN_SHEET, TEAM_TOTAL, DOUBLE_CHANCE, DRAW_NO_BET, WIN_TO_NIL, RESULT_TOTAL_GOALS, RESULT_BTTS, BTTS | 1X2, O/U, Clean Sheet, Team Total, DC, DNB, WTN, composites, BTTS | **A — Poisson plein-match**        | Existant, mature (`lambda.home`/`lambda.away`, corrigé H2H)                                                                                                                                                                                                                          |
 | CORRECT_SCORE                                                                                                           | Score exact                                                       | **A-bis — matrice complète**       | Existant, validé 2026-08-15 (signal H2H scoreline)                                                                                                                                                                                                                                   |
 | WIN_EITHER_HALF, OVER_UNDER_HT, FIRST_HALF (marché FIRST_HALF_WINNER), HALF_TIME_FULL_TIME                              | Marchés mi-temps                                                  | **A' — distribution buts 1ère MT** | `lambda × 0.44` fixe, sans calibration ligue/équipe (`FIRST_HALF_GOAL_FRACTION`, `probability/poisson.ts:23`), mesuré bien calibré en agrégat (§0.3) ; OVER_UNDER_HT tourne (`over-under-ht.config.ts`) — le « HT Over désactivé » ne valait que pour la Coupe du monde (2026-07-01) |
-| DRAW                                                                                                                    | ONE_X_TWO (DRAW)                                                  | **D — implicite marché**           | Existant, correct (`1/drawOdds`)                                                                                                                                                                                                                                                     |
+| DRAW                                                                                                                    | ONE_X_TWO (DRAW)                                                  | **D — implicite marché**           | Existant, correct (`1/drawOdds`) ; depuis le 2026-11-04 (ML-1) tous les canaux ci-dessus lisent aussi la grille de marché (Famille D) quand un prix affûté existe, la famille indiquée devenant leur repli                                                                           |
 | VALUE, SAFE                                                                                                             | transversal                                                       | _filtres_, pas une famille         | Phase 2 depuis le 2026-08-18 (`FILTER_STRATEGY_CHANNELS`, `orchestrator.ts`) ; tournent en observation, exclus du vivier de coupon (`POOL_EXCLUDED_CHANNELS`), plus de bet ni d'affichage                                                                                            |
 | CONSENSUS, AVOID                                                                                                        | méta                                                              | lisent tout le reste               | Phase 3 (`META_STRATEGY_CHANNELS`) ; CONTRARIAN est déclaré dans l'enum mais volontairement non implémenté                                                                                                                                                                           |
 | VANTAGE (hors registre)                                                                                                 | tous                                                              | avis LLM, pas une famille          | `apps/vantage-worker`, lit les décisions des trois phases                                                                                                                                                                                                                            |
@@ -157,9 +157,17 @@ strictement une reformulation interne de ce qui existe déjà.
   ROADMAP.md) : décision prise que la **grille de score déduite du prix
   affûté** (λ, ρ depuis Pinnacle, Bet365 sinon) devienne l'entrée du moteur, le
   Poisson-stats devenant le repli ; le ML n'apprend que ce que le prix ne dit
-  pas (mi-temps, corners/cartons, marge, dépendance). Lots ML-1 → ML-4 ;
-  **pas encore codé au 2026-11-04** (aucun module de grille dans
-  `analysis-core`). Autrement dit, la Famille D devient la famille par défaut.
+  pas (mi-temps, corners/cartons, marge, dépendance). Lots ML-1 → ML-4.
+  **ML-1 en production le 2026-11-04** (`packages/analysis-core/src/market-grid/`,
+  `predictionSource = MARKET_GRID`, rapport
+  `docs/audits/2026-11-04/ML1-GRILLE-MARCHE.md`) : quand Pinnacle (Bet365
+  sinon) cote un 1X2 et une ligne de buts, les 16 canaux de Phase 1 lisent la
+  grille (Shin, λ ajustés, ρ = 0 jusqu'à ML-2) ; le Poisson-stats est le
+  repli (≈ 5 % des matchs) et donne toujours le score déterministe. Rejeu
+  2026 : réalisé ÷ annoncé 0,956 → 1,005, résidu 1X2 contre la clôture
+  Pinnacle +0,032 → +0,001. **La Famille D est désormais la famille par
+  défaut** ; les familles A, A-bis et A' restent les moteurs de repli, et A'
+  (mi-temps, `λ × 0.44`) s'applique aux λ de la grille.
 - **Famille D déjà en production hors canaux** : les chasseurs
   (`coupon/hunter-composer.ts`) classent sur le coût du marché avec la
   fréquence sans marge comme probabilité — BTTS, Nul, **Nul à la mi-temps**

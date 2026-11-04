@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import Decimal from "decimal.js";
-import { shinDoubleChance, shinOutcomeGroups, shinProbabilities } from "./shin";
+import {
+  shinDoubleChance,
+  shinOneXTwo,
+  shinOutcomeGroups,
+  shinProbabilities,
+} from "./shin";
 
 const group = (odds: Record<string, number>) =>
   Object.entries(odds).map(([pick, o]) => ({ pick, odds: new Decimal(o) }));
@@ -123,5 +128,22 @@ describe("shinOutcomeGroups", () => {
         p.fair.toDecimalPlaces(6).toNumber(),
       ]),
     ).toEqual([["f1", "1X", 0.862757]]);
+  });
+});
+
+describe("shinOneXTwo", () => {
+  it("is the HOME/DRAW/AWAY group of shinProbabilities", () => {
+    const fair = shinOneXTwo({ home: "2.10", draw: "3.40", away: "3.70" });
+    const group3 = shinProbabilities(
+      group({ HOME: 2.1, DRAW: 3.4, AWAY: 3.7 }),
+    );
+    expect(fair?.home.toNumber()).toBe(group3?.get("HOME")?.toNumber());
+    expect(fair?.draw.toNumber()).toBe(group3?.get("DRAW")?.toNumber());
+    expect(fair?.away.toNumber()).toBe(group3?.get("AWAY")?.toNumber());
+  });
+
+  it("is null when an odds is missing or not above 1", () => {
+    expect(shinOneXTwo({ home: "2.10", draw: null, away: "3.70" })).toBeNull();
+    expect(shinOneXTwo({ home: "1", draw: "3.40", away: "3.70" })).toBeNull();
   });
 });

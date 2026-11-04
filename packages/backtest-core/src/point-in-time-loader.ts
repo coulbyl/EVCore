@@ -5,6 +5,7 @@ import type {
   H2HMarketSignals,
   H2HScorelineSignal,
   TeamCongestionInputs,
+  Market,
 } from "@evcore/analysis-core";
 import {
   assembleFullOddsSnapshot,
@@ -20,9 +21,13 @@ import {
   computeCongestionScoreFromTeams,
   CONGESTION_UPCOMING_WINDOW_MS,
   POOL_ELIGIBLE_CHANNELS,
+  MARKET_GRID_BOOKMAKERS,
+  MARKET_GRID_MARKETS,
+  type RawOddsRow,
 } from "@evcore/analysis-core";
 import {
   prisma,
+  Prisma,
   BetStatus,
   FixtureStatus,
   prematchCohortSql,
@@ -114,6 +119,7 @@ export class PointInTimeLoader {
   private async oddsRows(
     fixtureIds: string[],
     before?: Date,
+    scope?: { bookmakers: readonly string[]; markets: readonly Market[] },
   ): Promise<ArchivedOddsRow[]> {
     const [base, archived] = await Promise.all([
       this.client.oddsSnapshot.findMany({
@@ -122,6 +128,10 @@ export class PointInTimeLoader {
           ...(before && {
             createdAt: { lt: before },
             snapshotAt: { lt: before },
+          }),
+          ...(scope && {
+            bookmaker: { in: [...scope.bookmakers] },
+            market: { in: [...scope.markets] },
           }),
         },
         select: {
@@ -142,7 +152,16 @@ export class PointInTimeLoader {
         ? this.archive.rowsFor(fixtureIds, before)
         : Promise.resolve([]),
     ]);
-    return mergeArchivedRows<ArchivedOddsRow>(base, archived);
+    return mergeArchivedRows<ArchivedOddsRow>(
+      base,
+      scope
+        ? archived.filter(
+            (row) =>
+              scope.bookmakers.includes(row.bookmaker) &&
+              scope.markets.includes(row.market),
+          )
+        : archived,
+    );
   }
 
   // Chronologically ordered, finished fixtures with a settled score — the
@@ -597,6 +616,67 @@ export class PointInTimeLoader {
           asOf,
         ),
       );
+    }
+    return result;
+  }
+  /**
+   * The market-grid books' rows (MARKET_GRID_BOOKMAKERS × MARKET_GRID_MARKETS)
+   * as they existed at each request's `asOf`: priced AND captured before it,
+   * the production rule (OddsSnapshotLoader keeps PREMATCH rows created
+   * before the cutoff; every HISTORICAL row was imported after its kickoff,
+   * so the capture bound excludes them too). One query for the batch, one
+   * array per request, in request order.
+   */
+  async loadMarketGridRowsBatch(
+    requests: ReadonlyArray<{ fixtureId: string; asOf: Date }>,
+  ): Promise<RawOddsRow[][]> {
+    if (requests.length === 0) return [];
+    const rows = await this.oddsRows(
+      [...new Set(requests.map((r) => r.fixtureId))],
+      undefined,
+      { bookmakers: MARKET_GRID_BOOKMAKERS, markets: MARKET_GRID_MARKETS },
+    );
+    const byFixture = new Map<string, ArchivedOddsRow[]>();
+    for (const row of rows) {
+      const bucket = byFixture.get(row.fixtureId);
+      if (bucket) bucket.push(row);
+      else byFixture.set(row.fixtureId, [row]);
+    }
+    return requests.map(({ fixtureId, asOf }) =>
+      (byFixture.get(fixtureId) ?? []).filter(
+        (row) => row.createdAt < asOf && row.snapshotAt < asOf,
+      ),
+    );
+  }
+
+  /**
+   * One book's closing prices (odds_closing_line: last pre-kickoff row per
+   * market, pick and line), observed at most `maxHoursBeforeKickoff` before
+   * kickoff — a last row a day out is not a closing line. SETTLEMENT TRUTH,
+   * like the score: read after the decision to judge it, never fed into
+   * one. Rows with a line column (Asian Handicap) are left out.
+   */
+  async loadClosingPricesBatch(
+    fixtureIds: readonly string[],
+    options: { bookmaker: string; maxHoursBeforeKickoff: number },
+  ): Promise<Map<string, RawOddsRow[]>> {
+    const result = new Map<string, RawOddsRow[]>();
+    if (fixtureIds.length === 0) return result;
+    const rows = await this.client.$queryRaw<
+      Array<RawOddsRow & { fixtureId: string }>
+    >(Prisma.sql`
+      SELECT "fixtureId"::text AS "fixtureId", bookmaker, market::text AS market,
+             pick, odds, "homeOdds", "drawOdds", "awayOdds", "snapshotAt"
+      FROM odds_closing_line
+      WHERE "fixtureId" = ANY(${[...fixtureIds]}::uuid[])
+        AND bookmaker = ${options.bookmaker}
+        AND line IS NULL
+        AND "hoursBeforeKickoff" <= ${options.maxHoursBeforeKickoff}
+    `);
+    for (const row of rows) {
+      const bucket = result.get(row.fixtureId);
+      if (bucket) bucket.push(row);
+      else result.set(row.fixtureId, [row]);
     }
     return result;
   }

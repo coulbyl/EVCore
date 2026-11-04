@@ -143,6 +143,27 @@ describe('buildLambdaTrace', () => {
     ]);
   });
 
+  it('ne marque aucune étape du moteur-stats sous la grille de marché', () => {
+    const trace = buildLambdaTrace({
+      features: {
+        predictionSource: 'MARKET_GRID',
+        lambdaHome: 1.5,
+        lambdaAway: 1.2,
+        h2h_correction_applied: false,
+        h2h_market_signals_applied: false,
+        shadow_h2h: 0.6,
+        congestion_correction_applied: false,
+        shadow_congestion: 0.1,
+      },
+      config: CONFIG,
+      gamma: GAMMA,
+    });
+
+    expect(trace.steps.filter((s) => s.applied)).toEqual([]);
+    expect(trace.baseDerivation).toBe('final_is_base');
+    expect(trace.notes.join(' ')).toContain('grille de score');
+  });
+
   it('expose les paramètres de ligue et la formule de deriveLambdas', () => {
     const trace = buildLambdaTrace({
       features: { lambdaHome: 1.4, lambdaAway: 1.1 },

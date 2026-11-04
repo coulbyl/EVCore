@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Market } from "../types";
-import { outcomeGroup } from "./outcome-groups";
+import { outcomeGroup, overUnderPickLine } from "./outcome-groups";
 
 describe("outcomeGroup", () => {
   it("rend le triplet 1X2 pour un choix à trois issues", () => {
@@ -70,5 +70,17 @@ describe("outcomeGroup", () => {
     expect(outcomeGroup(Market.ONE_X_TWO, "1X")).toBeNull();
     expect(outcomeGroup(Market.OVER_UNDER, "YES")).toBeNull();
     expect(outcomeGroup(Market.RESULT_TOTAL_GOALS, "HOME_OVER")).toBeNull();
+  });
+});
+
+describe("overUnderPickLine", () => {
+  it("lit le côté et la ligne, la clé nue étant 2.5", () => {
+    expect(overUnderPickLine("OVER")).toEqual({ side: "OVER", line: 2.5 });
+    expect(overUnderPickLine("UNDER_1_5")).toEqual({
+      side: "UNDER",
+      line: 1.5,
+    });
+    expect(overUnderPickLine("OVER_0_5")).toEqual({ side: "OVER", line: 0.5 });
+    expect(overUnderPickLine("YES")).toBeNull();
   });
 });

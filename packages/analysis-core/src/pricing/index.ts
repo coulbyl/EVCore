@@ -1,4 +1,5 @@
 export {
+  BOOKMAKER_PREFERENCE,
   bookmakerRank,
   pickBestBookmaker,
   rowsForMarketBookmaker,
@@ -20,7 +21,7 @@ export {
   overUnderOpposite,
   oppositePick,
 } from "./market-fair";
-export { outcomeGroup } from "./outcome-groups";
+export { outcomeGroup, overUnderPickLine } from "./outcome-groups";
 export type { OutcomeGroup } from "./outcome-groups";
 export {
   marketProbability,
@@ -32,6 +33,7 @@ export type { PricedRow } from "./market-probability";
 export * from "./operator";
 export {
   shinProbabilities,
+  shinOneXTwo,
   shinDoubleChance,
   shinOutcomeGroups,
 } from "./shin";

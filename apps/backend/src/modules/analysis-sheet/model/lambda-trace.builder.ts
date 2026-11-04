@@ -78,8 +78,22 @@ export function buildLambdaTrace(input: {
   const congestionApplied =
     readBoolean(features, 'congestion_correction_applied') ?? false;
   const congestionScore = readNumber(features, 'shadow_congestion');
+  // Lot ML-1 : sous la grille de marché, λ et probabilités sont lus sur le
+  // prix affûté ; les étapes du moteur-stats ci-dessous n'ont pas servi.
+  const fromMarketGrid =
+    (features as Record<string, unknown> | null)?.['predictionSource'] ===
+    'MARKET_GRID';
+  const h2hMarketSignalsApplied =
+    readBoolean(features, 'h2h_market_signals_applied') ?? !fromMarketGrid;
+  const GRID_REASON =
+    'Probabilités tirées de la grille de marché (prix affûté, marge retirée par Shin) : étape du moteur-stats non appliquée.';
 
   const notes: string[] = [];
+  if (fromMarketGrid) {
+    notes.push(
+      'λ ajustés sur la grille de score implicite du prix affûté (Pinnacle, Bet365 sinon), pas dérivés des statistiques : la formule de deriveLambdas ne les produit pas (market_grid, statsLambdaHome/Away).',
+    );
+  }
   const steps: LambdaTraceStep[] = [];
 
   const final =
@@ -185,35 +199,38 @@ export function buildLambdaTrace(input: {
   steps.push({
     name: 'three_way_empirical_blend',
     target: 'probabilities',
-    applied: true,
+    applied: !fromMarketGrid,
     lambdaDelta: null,
     input: null,
-    reason:
-      'Mélange des probabilités 1X2 Poisson vers les taux empiriques de victoire ' +
-      'domicile/extérieur et de nul des deux équipes (poids par ligue, ' +
-      'getLeagueThreeWayEmpiricalBlendWeight). N’affecte que le 1X2.',
+    reason: fromMarketGrid
+      ? GRID_REASON
+      : 'Mélange des probabilités 1X2 Poisson vers les taux empiriques de victoire ' +
+        'domicile/extérieur et de nul des deux équipes (poids par ligue, ' +
+        'getLeagueThreeWayEmpiricalBlendWeight). N’affecte que le 1X2.',
   });
 
   steps.push({
     name: 'over_under_shrinkage',
     target: 'probabilities',
-    applied: true,
+    applied: !fromMarketGrid,
     lambdaDelta: null,
     input: null,
-    reason:
-      'Shrinkage des probabilités Over/Under vers le taux de base de la ligue, ' +
-      'pour les ligues dont la pente de calibration mesurée est proche de zéro ' +
-      '(getOverUnderShrinkageConfig). N’affecte que OVER_UNDER.',
+    reason: fromMarketGrid
+      ? GRID_REASON
+      : 'Shrinkage des probabilités Over/Under vers le taux de base de la ligue, ' +
+        'pour les ligues dont la pente de calibration mesurée est proche de zéro ' +
+        '(getOverUnderShrinkageConfig). N’affecte que OVER_UNDER.',
   });
 
   steps.push({
     name: 'h2h_market_signal_shift',
     target: 'probabilities',
-    applied: h2hScore !== null,
+    applied: h2hMarketSignalsApplied && h2hScore !== null,
     lambdaDelta: null,
     input: h2hScore,
-    reason:
-      h2hScore !== null
+    reason: fromMarketGrid
+      ? GRID_REASON
+      : h2hScore !== null
         ? 'Décalage logit par marché à partir des taux H2H (BTTS, Over 2.5, clean sheet, win-to-nil).'
         : 'Signaux H2H par marché indisponibles : aucun décalage appliqué.',
   });
@@ -224,8 +241,9 @@ export function buildLambdaTrace(input: {
     applied: congestionApplied && congestionScore !== null,
     lambdaDelta: null,
     input: congestionScore,
-    reason:
-      congestionApplied && congestionScore !== null
+    reason: fromMarketGrid
+      ? GRID_REASON
+      : congestionApplied && congestionScore !== null
         ? `Décalage logit sur Over 2.5 et BTTS à partir du score de congestion ${congestionScore} (0 = calendrier normal).`
         : 'Correction de congestion inactive pour ce ModelRun.',
   });

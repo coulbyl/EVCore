@@ -1,0 +1,524 @@
+import Decimal from "decimal.js";
+import { Market } from "../types";
+import type { RawOddsRow } from "../pricing/odds-assembly";
+import { shinOneXTwo, shinOutcomeGroups } from "../pricing/shin";
+import { overUnderPickLine } from "../pricing/outcome-groups";
+import {
+  buildPoissonDistributions,
+  deriveMarketsFromPoisson,
+  poissonProbaFromDistributions,
+} from "../probability/poisson";
+import type { ThreeWayProba } from "../probability/markets";
+import type { MatchProbabilities } from "../selection/types";
+import {
+  MARKET_GRID_BOOKMAKERS,
+  MARKET_GRID_LAMBDA_MAX,
+  MARKET_GRID_LAMBDA_MIN,
+  MARKET_GRID_MARKETS,
+  MARKET_GRID_MAX_GOALS,
+  MARKET_GRID_MAX_RMSE,
+  MARKET_GRID_ONE_X_TWO_WEIGHT,
+  MARKET_GRID_LOOKBACK_DAYS,
+  MARKET_GRID_SAME_INSTANT_MINUTES,
+} from "./market-grid.config";
+
+/**
+ * The score grid implied by a sharp book (lot ML-1,
+ * docs/audits/2026-10-29/ML-V2-PROPOSITION.md § 2.2).
+ *
+ * 1. The first book of MARKET_GRID_BOOKMAKERS with a complete 1X2 and at
+ *    least one complete total-goals line at `cutoff` is read, alone.
+ * 2. Each complete group loses its margin by Shin's method
+ *    (`shinProbabilities`), never proportionally.
+ * 3. λ home and λ away of two independent Poisson laws are fitted by
+ *    weighted least squares on those fair probabilities (1X2 × 3, every
+ *    total and team-total line × 1).
+ * 4. Every market is derived from that grid by the same functions as the
+ *    statistics engine (`deriveMarketsFromPoisson`), so the channels read the
+ *    same shape; the 1X2 itself is the book's fair 1X2, which an independent
+ *    Poisson pair cannot always reproduce exactly (the draw).
+ *
+ * The dependence ρ (Dixon-Coles) is not fitted: a per-fixture ρ on noisy
+ * lines is what sub-model D of lot ML-2 replaces with a per-league value, and
+ * the engine's derivations assume independent margins (Dixon-Coles was
+ * rejected on our data on 2026-06-30, poisson.ts).
+ *
+ * Solver variables are floating point, as in `shinProbabilities`; every
+ * probability handed to the engine is a Decimal.
+ */
+
+export type MarketGridLine = {
+  market: Market;
+  line: number;
+  overOdds: Decimal;
+  underOdds: Decimal;
+  fairOver: Decimal;
+};
+
+export type MarketGridQuotes = {
+  bookmaker: string;
+  /** Latest bookmaker time among the rows used. */
+  snapshotAt: Date;
+  oneXTwoOdds: { home: Decimal; draw: Decimal; away: Decimal };
+  fairOneXTwo: ThreeWayProba;
+  lines: MarketGridLine[];
+};
+
+export type MarketGridFit = {
+  lambdaHome: number;
+  lambdaAway: number;
+  /** Weighted root-mean-square gap between the grid and its targets. */
+  rmse: number;
+};
+
+export type MarketGridResult =
+  | {
+      status: "ok";
+      quotes: MarketGridQuotes;
+      fit: MarketGridFit;
+      probabilities: MatchProbabilities;
+    }
+  | {
+      status: "unavailable";
+      reason: "no_sharp_quotes" | "fit_error";
+      quotes: MarketGridQuotes | null;
+      fit: MarketGridFit | null;
+    };
+
+type FitTargets = {
+  oneXTwo: ThreeWayProba;
+  lines: ReadonlyArray<{ market: Market; line: number; fairOver: Decimal }>;
+};
+
+function latest<T extends { snapshotAt: Date }>(rows: readonly T[]): T | null {
+  let best: T | null = null;
+  for (const row of rows) {
+    if (!best || row.snapshotAt.getTime() > best.snapshotAt.getTime()) {
+      best = row;
+    }
+  }
+  return best;
+}
+
+function toDecimal(value: { toString(): string } | null): Decimal | null {
+  if (value === null) return null;
+  const d = new Decimal(value.toString());
+  return d.gt(1) ? d : null;
+}
+
+function quotesForBook(
+  rows: readonly RawOddsRow[],
+  bookmaker: string,
+): MarketGridQuotes | null {
+  const bookRows = rows.filter((row) => row.bookmaker === bookmaker);
+
+  const oneXTwoRow = latest(
+    bookRows.filter(
+      (row) =>
+        row.market === Market.ONE_X_TWO &&
+        toDecimal(row.homeOdds) &&
+        toDecimal(row.drawOdds) &&
+        toDecimal(row.awayOdds),
+    ),
+  );
+  if (!oneXTwoRow) return null;
+  const oneXTwoOdds = {
+    home: toDecimal(oneXTwoRow.homeOdds) as Decimal,
+    draw: toDecimal(oneXTwoRow.drawOdds) as Decimal,
+    away: toDecimal(oneXTwoRow.awayOdds) as Decimal,
+  };
+  const fairOneXTwo = shinOneXTwo(oneXTwoOdds);
+  if (!fairOneXTwo) return null;
+
+  // Every line is read at the 1X2's instant: a row priced further than
+  // MARKET_GRID_SAME_INSTANT_MINUTES from it is another market state and is
+  // ignored, so the grid never pairs an OVER of one moment with an UNDER or
+  // a 1X2 of another. Then the latest row per (market, pick) in that window.
+  const anchor = oneXTwoRow.snapshotAt.getTime();
+  const tolerance = MARKET_GRID_SAME_INSTANT_MINUTES * 60_000;
+  const byPick = new Map<string, RawOddsRow[]>();
+  for (const row of bookRows) {
+    if (row.market === Market.ONE_X_TWO || !row.pick) continue;
+    if (!toDecimal(row.odds)) continue;
+    if (Math.abs(row.snapshotAt.getTime() - anchor) > tolerance) continue;
+    const key = `${row.market}|${row.pick}`;
+    const bucket = byPick.get(key);
+    if (bucket) bucket.push(row);
+    else byPick.set(key, [row]);
+  }
+  const picked = [...byPick.values()].map(
+    (bucket) => latest(bucket) as RawOddsRow,
+  );
+
+  // Margin removed per complete OVER/UNDER pair (outcome-groups.ts pairs
+  // OVER_x with UNDER_x only), by Shin.
+  const priced = shinOutcomeGroups(
+    picked.map((row) => ({
+      fixtureId: "",
+      market: row.market,
+      pick: row.pick as string,
+      odds: Number(row.odds),
+      row,
+    })),
+  );
+  const pairs = new Map<
+    string,
+    {
+      market: Market;
+      line: number;
+      over?: Decimal;
+      under?: Decimal;
+      fairOver?: Decimal;
+    }
+  >();
+  let snapshotAt = oneXTwoRow.snapshotAt;
+  for (const entry of priced) {
+    const parsed = overUnderPickLine(entry.pick);
+    if (!parsed) continue;
+    const key = `${entry.market}|${parsed.line}`;
+    const pair = pairs.get(key) ?? {
+      market: entry.row.market,
+      line: parsed.line,
+    };
+    const odds = toDecimal(entry.row.odds) as Decimal;
+    if (parsed.side === "OVER") {
+      pair.over = odds;
+      pair.fairOver = entry.fair;
+    } else {
+      pair.under = odds;
+    }
+    pairs.set(key, pair);
+    if (entry.row.snapshotAt.getTime() > snapshotAt.getTime()) {
+      snapshotAt = entry.row.snapshotAt;
+    }
+  }
+
+  const lines: MarketGridLine[] = [];
+  for (const pair of pairs.values()) {
+    if (!pair.over || !pair.under || !pair.fairOver) continue;
+    lines.push({
+      market: pair.market,
+      line: pair.line,
+      overOdds: pair.over,
+      underOdds: pair.under,
+      fairOver: pair.fairOver,
+    });
+  }
+  if (!lines.some((line) => line.market === Market.OVER_UNDER)) return null;
+
+  lines.sort((a, b) =>
+    a.market === b.market ? a.line - b.line : a.market < b.market ? -1 : 1,
+  );
+  return { bookmaker, snapshotAt, oneXTwoOdds, fairOneXTwo, lines };
+}
+
+/**
+ * The prices the grid is fitted on: the first book of MARKET_GRID_BOOKMAKERS
+ * with a complete 1X2 and at least one complete total-goals line among the
+ * rows priced at or before `cutoff`, within MARKET_GRID_LOOKBACK_DAYS (the
+ * latest 1X2, then the lines priced within MARKET_GRID_SAME_INSTANT_MINUTES
+ * of it, latest row per pick). `null` when no book qualifies.
+ */
+export function selectMarketGridQuotes(
+  rows: readonly RawOddsRow[],
+  cutoff: Date,
+): MarketGridQuotes | null {
+  const since = cutoff.getTime() - MARKET_GRID_LOOKBACK_DAYS * 86_400_000;
+  const usable = rows.filter(
+    (row) =>
+      row.snapshotAt.getTime() <= cutoff.getTime() &&
+      row.snapshotAt.getTime() >= since &&
+      MARKET_GRID_MARKETS.includes(row.market),
+  );
+  for (const bookmaker of MARKET_GRID_BOOKMAKERS) {
+    const quotes = quotesForBook(usable, bookmaker);
+    if (quotes) return quotes;
+  }
+  return null;
+}
+
+type ModelTargets = {
+  oneXTwo: [number, number, number];
+  lines: ReadonlyArray<{ market: Market; line: number; over: number }>;
+};
+
+type Evaluation = { x: [number, number]; residuals: number[]; loss: number };
+
+/** P(goals > line) of a goal distribution. */
+function overLine(dist: readonly number[], line: number): number {
+  return dist.reduce((sum, p, goals) => (goals > line ? sum + p : sum), 0);
+}
+
+/** Residuals (grid − target) and weighted loss of the grid at `x`. */
+function evaluate(x: [number, number], targets: ModelTargets): Evaluation {
+  const { distHome, distAway } = buildPoissonDistributions(
+    x[0],
+    x[1],
+    MARKET_GRID_MAX_GOALS,
+  );
+  const oneXTwo = poissonProbaFromDistributions(distHome, distAway);
+  const total = new Array<number>(distHome.length + distAway.length).fill(0);
+  for (let h = 0; h < distHome.length; h++) {
+    for (let a = 0; a < distAway.length; a++) {
+      total[h + a] =
+        (total[h + a] ?? 0) + (distHome[h] ?? 0) * (distAway[a] ?? 0);
+    }
+  }
+  const residuals = [
+    oneXTwo.home.toNumber() - targets.oneXTwo[0],
+    oneXTwo.draw.toNumber() - targets.oneXTwo[1],
+    oneXTwo.away.toNumber() - targets.oneXTwo[2],
+  ];
+  for (const target of targets.lines) {
+    const dist =
+      target.market === Market.TEAM_TOTAL_HOME
+        ? distHome
+        : target.market === Market.TEAM_TOTAL_AWAY
+          ? distAway
+          : total;
+    residuals.push(overLine(dist, target.line) - target.over);
+  }
+  const loss = residuals.reduce(
+    (sum, r, i) => sum + (i < 3 ? MARKET_GRID_ONE_X_TWO_WEIGHT : 1) * r * r,
+    0,
+  );
+  return { x, residuals, loss };
+}
+
+function clampLambda(value: number): number {
+  return Math.min(
+    MARKET_GRID_LAMBDA_MAX,
+    Math.max(MARKET_GRID_LAMBDA_MIN, value),
+  );
+}
+
+/**
+ * Starting point read off the prices: the Poisson total whose P(> line)
+ * matches the fair total-goals line closest to 2.5 (bisection), split by
+ * the 1X2 (home share = P(home) + P(draw) / 2).
+ */
+function startFromPrices(targets: ModelTargets): [number, number] {
+  const totals = targets.lines.filter((l) => l.market === Market.OVER_UNDER);
+  const reference = totals.reduce<(typeof totals)[number] | null>(
+    (best, l) =>
+      !best || Math.abs(l.line - 2.5) < Math.abs(best.line - 2.5) ? l : best,
+    null,
+  );
+  let mu = 2.6;
+  if (reference) {
+    let lo = 2 * MARKET_GRID_LAMBDA_MIN;
+    let hi = 2 * MARKET_GRID_LAMBDA_MAX;
+    for (let i = 0; i < 60; i++) {
+      mu = (lo + hi) / 2;
+      const { distHome } = buildPoissonDistributions(
+        mu,
+        MARKET_GRID_LAMBDA_MIN,
+        2 * MARKET_GRID_MAX_GOALS,
+      );
+      if (overLine(distHome, reference.line) < reference.over) lo = mu;
+      else hi = mu;
+    }
+  }
+  const share = Math.min(
+    0.9,
+    Math.max(0.1, targets.oneXTwo[0] + targets.oneXTwo[1] / 2),
+  );
+  return [clampLambda(mu * share), clampLambda(mu * (1 - share))];
+}
+
+const MAX_ITERATIONS = 100;
+const STEP = 1e-6;
+const TOLERANCE = 1e-12;
+
+/**
+ * Levenberg-Marquardt on (λ home, λ away), numerical Jacobian, clamped. The
+ * residuals of the last accepted step are carried to the next iteration.
+ */
+function levenbergMarquardt(
+  start: [number, number],
+  targets: ModelTargets,
+): Evaluation {
+  let current = evaluate(start, targets);
+  let mu = 1e-3;
+  for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
+    const { x, residuals } = current;
+    const jacobian = [0, 1].map((k) => {
+      const up: [number, number] = [x[0], x[1]];
+      const down: [number, number] = [x[0], x[1]];
+      up[k] = (up[k] as number) + STEP;
+      down[k] = (down[k] as number) - STEP;
+      const rUp = evaluate(up, targets).residuals;
+      const rDown = evaluate(down, targets).residuals;
+      return rUp.map((r, i) => (r - (rDown[i] ?? 0)) / (2 * STEP));
+    });
+    const [j0, j1] = jacobian as [number[], number[]];
+    let a00 = 0;
+    let a01 = 0;
+    let a11 = 0;
+    let g0 = 0;
+    let g1 = 0;
+    residuals.forEach((r, i) => {
+      const w = i < 3 ? MARKET_GRID_ONE_X_TWO_WEIGHT : 1;
+      const d0 = j0[i] ?? 0;
+      const d1 = j1[i] ?? 0;
+      a00 += w * d0 * d0;
+      a01 += w * d0 * d1;
+      a11 += w * d1 * d1;
+      g0 += w * d0 * r;
+      g1 += w * d1 * r;
+    });
+    let improved = false;
+    for (let attempt = 0; attempt < 10 && !improved; attempt++) {
+      const b00 = a00 * (1 + mu);
+      const b11 = a11 * (1 + mu);
+      const det = b00 * b11 - a01 * a01;
+      if (Math.abs(det) < 1e-300) break;
+      const step0 = -(b11 * g0 - a01 * g1) / det;
+      const step1 = -(b00 * g1 - a01 * g0) / det;
+      const candidate = evaluate(
+        [clampLambda(x[0] + step0), clampLambda(x[1] + step1)],
+        targets,
+      );
+      if (candidate.loss < current.loss) {
+        const gain = current.loss - candidate.loss;
+        current = candidate;
+        mu = Math.max(mu / 3, 1e-12);
+        improved = true;
+        if (gain < TOLERANCE) return current;
+      } else {
+        mu *= 4;
+      }
+    }
+    if (!improved) break;
+  }
+  return current;
+}
+
+/**
+ * λ home and λ away whose independent Poisson grid reproduces the fair
+ * targets best (weighted least squares from one start read off the prices).
+ * Deterministic: same targets → same λ.
+ */
+export function fitMarketGridLambdas(targets: FitTargets): MarketGridFit {
+  const modelTargets: ModelTargets = {
+    oneXTwo: [
+      targets.oneXTwo.home.toNumber(),
+      targets.oneXTwo.draw.toNumber(),
+      targets.oneXTwo.away.toNumber(),
+    ],
+    lines: targets.lines.map((line) => ({
+      market: line.market,
+      line: line.line,
+      over: line.fairOver.toNumber(),
+    })),
+  };
+  const solved = levenbergMarquardt(
+    startFromPrices(modelTargets),
+    modelTargets,
+  );
+  const totalWeight =
+    3 * MARKET_GRID_ONE_X_TWO_WEIGHT + modelTargets.lines.length;
+  return {
+    lambdaHome: solved.x[0],
+    lambdaAway: solved.x[1],
+    rmse: Math.sqrt(solved.loss / totalWeight),
+  };
+}
+
+/**
+ * Every market probability from a fitted grid, in the statistics engine's
+ * shape: the book's fair 1X2, everything else derived from the grid.
+ */
+export function marketGridProbabilities(
+  fit: Pick<MarketGridFit, "lambdaHome" | "lambdaAway">,
+  fairOneXTwo: ThreeWayProba,
+): MatchProbabilities {
+  return {
+    ...fairOneXTwo,
+    ...deriveMarketsFromPoisson({
+      lambdaHome: fit.lambdaHome,
+      lambdaAway: fit.lambdaAway,
+      oneXTwo: fairOneXTwo,
+      maxGoals: MARKET_GRID_MAX_GOALS,
+    }),
+  };
+}
+
+/**
+ * The market grid of a fixture at `cutoff`, from its raw odds rows (any
+ * book, any market: the rest is ignored). `unavailable` when no sharp book
+ * prices a complete 1X2 and a total-goals line, or when its prices
+ * contradict each other beyond MARKET_GRID_MAX_RMSE; the caller then keeps
+ * its statistics engine.
+ */
+export function computeMarketGrid(
+  rows: readonly RawOddsRow[],
+  cutoff: Date,
+): MarketGridResult {
+  const quotes = selectMarketGridQuotes(rows, cutoff);
+  if (!quotes) {
+    return {
+      status: "unavailable",
+      reason: "no_sharp_quotes",
+      quotes: null,
+      fit: null,
+    };
+  }
+  const fit = fitMarketGridLambdas({
+    oneXTwo: quotes.fairOneXTwo,
+    lines: quotes.lines,
+  });
+  if (!(fit.rmse <= MARKET_GRID_MAX_RMSE)) {
+    return { status: "unavailable", reason: "fit_error", quotes, fit };
+  }
+  return {
+    status: "ok",
+    quotes,
+    fit,
+    probabilities: marketGridProbabilities(fit, quotes.fairOneXTwo),
+  };
+}
+
+/**
+ * JSON trace of a grid for `model_run.features.market_grid`: the book, the
+ * prices it read, the fitted λ and the fit error, or why it was not used.
+ */
+export function summarizeMarketGrid(result: MarketGridResult): {
+  status: MarketGridResult["status"];
+  reason: string | null;
+  bookmaker: string | null;
+  snapshotAt: string | null;
+  lambdaHome: number | null;
+  lambdaAway: number | null;
+  rmse: number | null;
+  prices: {
+    oneXTwo: { home: number; draw: number; away: number };
+    lines: { market: string; line: number; over: number; under: number }[];
+  } | null;
+} {
+  const { quotes, fit } = result;
+  return {
+    status: result.status,
+    reason: result.status === "unavailable" ? result.reason : null,
+    bookmaker: quotes?.bookmaker ?? null,
+    snapshotAt: quotes?.snapshotAt.toISOString() ?? null,
+    lambdaHome: fit?.lambdaHome ?? null,
+    lambdaAway: fit?.lambdaAway ?? null,
+    rmse: fit?.rmse ?? null,
+    prices: quotes
+      ? {
+          oneXTwo: {
+            home: quotes.oneXTwoOdds.home.toNumber(),
+            draw: quotes.oneXTwoOdds.draw.toNumber(),
+            away: quotes.oneXTwoOdds.away.toNumber(),
+          },
+          lines: quotes.lines.map((line) => ({
+            market: line.market,
+            line: line.line,
+            over: line.overOdds.toNumber(),
+            under: line.underOdds.toNumber(),
+          })),
+        }
+      : null,
+  };
+}
