@@ -615,6 +615,9 @@ function matchSheet(fixtureId) {
   const pick = (market, pickName, odds, chance, result) => ({
     market,
     pick: pickName,
+    line: null,
+    player: null,
+    addable: true,
     odds,
     chance,
     result: settle(result),
@@ -632,6 +635,9 @@ function matchSheet(fixtureId) {
     reading: item.reading
       ? {
           ...item.reading,
+          line: null,
+          player: null,
+          addable: true,
           fact: isArsenal
             ? "Arsenal a gagné ses 9 derniers matchs à domicile"
             : null,

@@ -1,4 +1,4 @@
-import { formatLinePick, formatPickWithTeams } from "@/helpers/fixture";
+import { formatPickWithTeams, formatStatPick } from "@/helpers/fixture";
 import { formatTime, type DisplayLocale } from "@/helpers/scoreboard-format";
 import {
   MATCHES_DAYS,
@@ -34,17 +34,23 @@ export function dayHref(day: MatchesDay, big = false): string {
   return query ? `/matches?${query}` : "/matches";
 }
 
-/** A bet named with its team: « Victoire Arsenal », « Plus de 2,5 buts ». */
+/**
+ * A bet named with its team or its player: « Victoire Arsenal », « Plus de
+ * 2,5 buts », « Saka marque », « Arsenal : plus de 4,5 corners ».
+ */
 export function pickLabel(
-  bet: { market: string; pick: string },
+  bet: {
+    market: string;
+    pick: string;
+    line?: number | null;
+    player?: string | null;
+  },
   teams: { home: { name: string }; away: { name: string } },
 ): string {
+  const names = { home: teams.home.name, away: teams.away.name };
   return (
-    formatLinePick(bet.pick, bet.market, null) ??
-    formatPickWithTeams(bet.pick, bet.market, {
-      home: teams.home.name,
-      away: teams.away.name,
-    })
+    formatStatPick(bet, names) ??
+    formatPickWithTeams(bet.pick, bet.market, names)
   );
 }
 

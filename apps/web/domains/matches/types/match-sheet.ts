@@ -5,11 +5,21 @@ import type { MatchState, MatchWithoutReading } from "./matches";
 export type SheetPick = {
   market: string;
   pick: string;
-  /** The 1xBet price; null when 1xBet does not price it. */
+  /** The line kept apart from `pick` (corners, cards, shots, minute). */
+  line: number | null;
+  /** The player a scorer or shots bet names. */
+  player: string | null;
+  /**
+   * The 1xBet price; for the new markets, another book's when 1xBet does
+   * not price it (never named). Null when unpriced.
+   */
   odds: number | null;
   /** In [0, 1]; null when unknown. */
   chance: number | null;
+  /** Null while unknown: never shown as lost. */
   result: "won" | "lost" | "void" | null;
+  /** « Mon ticket » can take it (not the new markets yet). */
+  addable: boolean;
 };
 
 export type SheetReading = SheetPick & { fact: string | null };
