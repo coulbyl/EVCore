@@ -8,14 +8,21 @@
 // staking decision) and produces the plain LambdaConfig the core needs.
 import {
   type LambdaConfig,
+  crossLeagueLambdaFactors,
+  LEAGUE_STRENGTH_MAP,
   getLeagueHomeAwayFactors,
   getLeagueLambdaScale,
   getLeagueMeanLambda,
 } from '@evcore/analysis-core';
 
+// `leagues` is the national league of each side, which the caller reads for
+// a European fixture only: the λ then carry the league-strength factors
+// (docs/audits/2026-11-04/FORCE-CHAMPIONNATS.md). Without it the factors
+// are 1 / 1.
 export function buildLambdaConfig(
   competitionCode?: string | null,
-): LambdaConfig {
+  leagues?: { home: string | null; away: string | null } | null,
+): LambdaConfig & { crossLeagueFactors: { home: number; away: number } } {
   const [homeAdvFactor, awayDisadvFactor] =
     getLeagueHomeAwayFactors(competitionCode);
   return {
@@ -23,6 +30,13 @@ export function buildLambdaConfig(
     homeAdvFactor,
     awayDisadvFactor,
     lambdaScale: getLeagueLambdaScale(competitionCode),
+    crossLeagueFactors: leagues
+      ? crossLeagueLambdaFactors({
+          homeLeague: leagues.home,
+          awayLeague: leagues.away,
+          strengths: LEAGUE_STRENGTH_MAP,
+        })
+      : { home: 1, away: 1 },
   };
 }
 

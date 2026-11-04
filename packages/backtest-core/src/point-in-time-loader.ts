@@ -8,6 +8,7 @@ import type {
 } from "@evcore/analysis-core";
 import {
   assembleFullOddsSnapshot,
+  DOMESTIC_LEAGUE_EXCLUDED_CODES,
   isEuropeanCompetition,
   isNationalTeamCompetition,
   resolveEffectiveTeamStats,
@@ -387,6 +388,39 @@ export class PointInTimeLoader {
       crossCompStats,
       gamesPlayedThisSeason,
     });
+  }
+
+  // The team's national league as of `asOf`: the competition of its most
+  // recent team_stats line before `asOf` outside
+  // DOMESTIC_LEAGUE_EXCLUDED_CODES (European cups, national-team
+  // competitions, friendlies). Null when the team has no
+  // such line yet. Bounded by the line's fixture kickoff, like loadTeamStats.
+  async loadDomesticLeague(input: {
+    teamId: string;
+    asOf: Date;
+  }): Promise<string | null> {
+    const row = await this.client.teamStats.findFirst({
+      where: {
+        teamId: input.teamId,
+        afterFixture: {
+          scheduledAt: { lt: input.asOf },
+          season: {
+            competition: {
+              code: { notIn: [...DOMESTIC_LEAGUE_EXCLUDED_CODES] },
+            },
+          },
+        },
+      },
+      orderBy: { afterFixture: { scheduledAt: "desc" } },
+      select: {
+        afterFixture: {
+          select: {
+            season: { select: { competition: { select: { code: true } } } },
+          },
+        },
+      },
+    });
+    return row?.afterFixture.season.competition.code ?? null;
   }
 
   // Finished head-to-head legs strictly before `asOf`, newest first — point-

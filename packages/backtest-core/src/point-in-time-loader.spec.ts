@@ -112,6 +112,38 @@ describe("PointInTimeLoader.loadTeamStats", () => {
   });
 });
 
+describe("PointInTimeLoader.loadDomesticLeague", () => {
+  it("reads the last league line before asOf, outside cups, national teams and friendlies", async () => {
+    const findFirst = vi.fn().mockResolvedValue({
+      afterFixture: { season: { competition: { code: "GRE1" } } },
+    });
+    const loader = new PointInTimeLoader(
+      makeClient({ findFirst, count: vi.fn() }),
+    );
+    await expect(
+      loader.loadDomesticLeague({ teamId: "t", asOf: ASOF }),
+    ).resolves.toBe("GRE1");
+    const where = findFirst.mock.calls[0]![0].where;
+    expect(where.afterFixture.scheduledAt).toEqual({ lt: ASOF });
+    const excluded: string[] = where.afterFixture.season.competition.code.notIn;
+    expect(excluded).toEqual(
+      expect.arrayContaining(["UCL", "UEL", "UECL", "WC", "FRI"]),
+    );
+  });
+
+  it("is null for a team without any league line yet", async () => {
+    const loader = new PointInTimeLoader(
+      makeClient({
+        findFirst: vi.fn().mockResolvedValue(null),
+        count: vi.fn(),
+      }),
+    );
+    await expect(
+      loader.loadDomesticLeague({ teamId: "t", asOf: ASOF }),
+    ).resolves.toBeNull();
+  });
+});
+
 describe("PointInTimeLoader.loadCouponSelections", () => {
   it("bounds runs, decisions and selections by asOf and excludes VANTAGE", async () => {
     const findMany = vi.fn().mockResolvedValue([]);

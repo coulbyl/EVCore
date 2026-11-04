@@ -49,6 +49,17 @@ export const NATIONAL_TEAM_COMPETITION_CODE_SET = new Set([
   "COPA",
 ]);
 
+// Competitions that are not a team's national league: the European cups, the
+// national-team competitions and friendlies. A team's national league is the
+// competition of its last team_stats line outside these codes (league
+// strength: TeamLeagueRepository in apps/backend, PointInTimeLoader.
+// loadDomesticLeague in @evcore/backtest-core).
+export const DOMESTIC_LEAGUE_EXCLUDED_CODES: readonly string[] = [
+  ...EUROPEAN_COMPETITION_CODE_SET,
+  ...NATIONAL_TEAM_COMPETITION_CODE_SET,
+  "FRI",
+];
+
 export function isNationalTeamCompetition(
   code: string | null | undefined,
 ): boolean {

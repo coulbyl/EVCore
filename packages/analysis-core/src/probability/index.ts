@@ -77,8 +77,19 @@ export {
   applyCongestionSignalCorrection,
 } from "./congestion-signal-correction";
 export {
+  type LeagueStrengthObservation,
+  type LeagueStrengthFitOptions,
+  type LeagueStrengths,
+  LEAGUE_STRENGTH_PRIOR_SD,
+  LEAGUE_STRENGTH_MIN_MATCHES,
+  fitLeagueStrengths,
+  crossLeagueLambdaFactors,
+} from "./league-strength";
+export { LEAGUE_STRENGTH_MAP } from "./league-strength-map";
+export {
   type ResolveEffectiveTeamStatsInput,
   EUROPEAN_COMPETITION_CODE_SET,
+  DOMESTIC_LEAGUE_EXCLUDED_CODES,
   isEuropeanCompetition,
   EUROPEAN_CROSS_COMP_FORM_WEIGHT,
   EUROPEAN_CROSS_COMP_XG_WEIGHT,
