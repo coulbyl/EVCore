@@ -219,7 +219,7 @@ export class BettingEngineService {
       rawProbabilities,
       lambda,
       features,
-      crossLeagueFactors: lambdaConfig.crossLeagueFactors ?? null,
+      crossLeagueFactors: lambdaConfig.crossLeagueFactors,
     };
   }
 
@@ -466,7 +466,17 @@ export class BettingEngineService {
     let leagues: { home: string | null; away: string | null } | null = null;
 
     if (isEuropeanCompetition(competitionCode)) {
-      const [homeLeague, awayLeague] = await Promise.all([
+      const [homeCross, awayCross, homeLeague, awayLeague] = await Promise.all([
+        this.findCrossCompStats({
+          teamId: fixture.homeTeamId,
+          beforeDate: fixture.scheduledAt,
+          excludeSeasonId: fixture.seasonId,
+        }),
+        this.findCrossCompStats({
+          teamId: fixture.awayTeamId,
+          beforeDate: fixture.scheduledAt,
+          excludeSeasonId: fixture.seasonId,
+        }),
         this.teamLeagues.findDomesticLeagueCode({
           teamId: fixture.homeTeamId,
           beforeDate: fixture.scheduledAt,
@@ -477,18 +487,6 @@ export class BettingEngineService {
         }),
       ]);
       leagues = { home: homeLeague, away: awayLeague };
-      const [homeCross, awayCross] = await Promise.all([
-        this.findCrossCompStats({
-          teamId: fixture.homeTeamId,
-          beforeDate: fixture.scheduledAt,
-          excludeSeasonId: fixture.seasonId,
-        }),
-        this.findCrossCompStats({
-          teamId: fixture.awayTeamId,
-          beforeDate: fixture.scheduledAt,
-          excludeSeasonId: fixture.seasonId,
-        }),
-      ]);
 
       if (homeCross) {
         effectiveHomeStats = homeStats
@@ -1110,7 +1108,7 @@ export class BettingEngineService {
           : {
               homeLeague: leagues.home,
               awayLeague: leagues.away,
-              ...(crossLeagueFactors ?? { home: 1, away: 1 }),
+              ...crossLeagueFactors,
             },
       shadow_lineups: null,
       shadow_injuries: null,

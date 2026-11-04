@@ -33,8 +33,8 @@ export type MatchComputation = {
   lambda: { home: number; away: number };
   features: MatchupFeatures;
   // League-strength factors applied to λ (European fixtures between two
-  // leagues); null when none applied.
-  crossLeagueFactors: { home: number; away: number } | null;
+  // leagues); 1 / 1 everywhere else.
+  crossLeagueFactors: { home: number; away: number };
 };
 
 export type { DeterministicFeatures };
