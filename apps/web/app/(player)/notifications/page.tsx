@@ -30,7 +30,7 @@ import { RichText } from "@/components/scoreboard/ui/rich-text";
 import { plainTextOf } from "@/helpers/plain-text";
 import { NotificationLink } from "./components/notification-link";
 import { MarkAllRead } from "./components/mark-all-read";
-import { UnreadDrawn } from "./components/unread-drawn";
+import { BellSync } from "./components/bell-sync";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("playerNotifications");
@@ -101,8 +101,9 @@ export default async function Page({
   const display = displayLocaleOf(locale);
   const pages = Math.min(MAX_PAGES, 1 + Math.max(0, Number(params.more) || 0));
   const list = getNotifications(filter.status, filter.kind, PAGE * pages);
-  // The badge's count (read once for the layout too): the list is drawn
-  // with it, and redrawn when it moves (UnreadDrawn).
+  // The badge's count, read once for the layout too in a full render; after
+  // a navigation the layout keeps its own, drawn again if it differs
+  // (BellSync).
   const [{ data, total }, unreadTotal, badge] = await Promise.all([
     list,
     unreadOf(filter, list),
@@ -147,9 +148,7 @@ export default async function Page({
 
   return (
     <>
-      {badge !== null ? (
-        <UnreadDrawn count={badge} render={crypto.randomUUID()} />
-      ) : null}
+      {badge !== null ? <BellSync count={badge} /> : null}
       <SubpageBand title={t("title")} back={{ href: "/today" }} />
       <div className="flex flex-col px-4 pb-4 lg:px-6">
         <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
@@ -226,10 +225,10 @@ export default async function Page({
               return (
                 <li key={notification.id}>
                   {/* An announcement shows here in full: touching it
-                      marks it read and reads the list again. */}
+                      marks it read and draws the list again. */}
                   <NotificationLink
                     id={notification.id}
-                    href={href ?? "/notifications"}
+                    href={href}
                     unread={unread}
                   >
                     {body}

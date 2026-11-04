@@ -10,15 +10,12 @@ import { BellLink } from "./bell-link";
 export function BandActions({
   initial,
   avatarUrl,
-  unread,
   labels,
   className,
 }: {
   initial: string;
   /** The player's avatar, shown in place of the initial once chosen. */
   avatarUrl?: string | null;
-  /** Unread notifications: the bell's badge (09 § 6); null when its read failed. */
-  unread: number | null;
   labels: { notifications: string; me: string; unread: string };
   className?: string;
 }) {
@@ -28,7 +25,6 @@ export function BandActions({
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
       <BellLink
-        unread={unread}
         labels={{
           notifications: labels.notifications,
           unread: labels.unread,

@@ -2526,6 +2526,11 @@ const TRACK_RECORD_SUMMARY = {
 // (docs/refonte-ui/16-performance-et-qualite.md § 2).
 let authMeReads = 0;
 let verifiedTickets = 0;
+// The bell's reads, written by Next's server actions (Node, out of the
+// browser's sight): the rows read since the last reset, and each call.
+const readNotifications = new Set();
+let notificationReads = [];
+let readAllCalls = [];
 
 const AUTH_BODY_ROUTES = new Set([
   "/auth/register",
@@ -2586,10 +2591,22 @@ function route(method, url, cookie = "") {
   if (method === "OPTIONS") return [200, {}];
   if (path === "/health") return [200, { ok: true }];
   if (path === "/__e2e/stats")
-    return [200, { authMeReads, verifiedTickets, supportReadCalls }];
+    return [
+      200,
+      {
+        authMeReads,
+        verifiedTickets,
+        supportReadCalls,
+        notificationReads,
+        readAllCalls,
+      },
+    ];
   if (path === "/__e2e/reset") {
     authMeReads = 0;
     verifiedTickets = 0;
+    readNotifications.clear();
+    notificationReads = [];
+    readAllCalls = [];
     return [200, { ok: true }];
   }
   if (path === "/auth/me") {
@@ -2974,14 +2991,30 @@ function route(method, url, cookie = "") {
   if (path.startsWith("/bet-slips")) return [200, []];
   if (path.startsWith("/audit")) return [200, EMPTY_AUDIT];
   if (path.startsWith("/predictions")) return [200, []];
-  // The mock never marks anything read: both reads answer the same count.
-  const unreadNotifications = NOTIFICATIONS.filter((n) => !n.isRead).length;
+  // A read is kept until /__e2e/reset: the list, the count and the
+  // answers of both reads follow it, as on the real backend.
+  const bell = NOTIFICATIONS.map((n) =>
+    readNotifications.has(n.id) ? { ...n, isRead: true } : n,
+  );
+  const unreadCount = () =>
+    bell.filter((n) => !n.isRead && !readNotifications.has(n.id)).length;
   if (path.startsWith("/notifications/unread-count"))
-    return [200, { count: unreadNotifications }];
-  if (path === "/notifications/read-all" && method === "POST")
-    return [200, { unread: unreadNotifications }];
-  if (/^\/notifications\/[^/]+\/read$/.test(path))
-    return [200, { unread: unreadNotifications }];
+    return [200, { count: unreadCount() }];
+  if (path === "/notifications/read-all" && method === "POST") {
+    const category = new URLSearchParams(url.split("?")[1] ?? "").get(
+      "category",
+    );
+    readAllCalls.push(category ?? "all");
+    for (const n of bell)
+      if (!category || n.category === category) readNotifications.add(n.id);
+    return [200, { unread: unreadCount() }];
+  }
+  if (/^\/notifications\/[^/]+\/read$/.test(path)) {
+    const id = decodeURIComponent(path.split("/")[2] ?? "");
+    notificationReads.push(id);
+    readNotifications.add(id);
+    return [200, { unread: unreadCount() }];
+  }
   if (path.startsWith("/notifications")) {
     // Les filtres du vrai backend : ?type= (point de la semaine de
     // l'Accueil), ?status= et ?category= (écran Notifications), filtrés ici
@@ -2990,7 +3023,7 @@ function route(method, url, cookie = "") {
     const type = query.get("type");
     const status = query.get("status");
     const category = query.get("category");
-    const data = NOTIFICATIONS.filter(
+    const data = bell.filter(
       (n) =>
         (!type || n.type === type) &&
         (status !== "unread" || !n.isRead) &&

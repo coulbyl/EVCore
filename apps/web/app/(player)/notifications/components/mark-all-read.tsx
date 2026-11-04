@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { markAllNotificationsRead } from "@/domains/notifications/use-unread-count";
+import { useTransition } from "react";
+import { markAllNotificationsRead } from "@/domains/notifications/actions/notification-actions";
+import { announceBellChange } from "@/domains/notifications/bell-count";
 import type { FeedKind } from "@/domains/notifications/helpers/notification-feed";
 
 /**
  * « Tout marquer comme lu », within the kind shown (an admin's technical
- * alerts alone): the server marks what the list counts unread and answers
- * the badge's new count; the list is drawn again with it (UnreadDrawn).
+ * alerts alone): a server action marks what the list counts unread and
+ * draws the layout again, badge and list together.
  */
 export function MarkAllRead({
   kind,
@@ -16,15 +17,21 @@ export function MarkAllRead({
   kind: FeedKind;
   label: string;
 }) {
-  const [pending, setPending] = useState(false);
+  const [pending, startTransition] = useTransition();
 
   return (
     <button
       type="button"
       disabled={pending}
       onClick={() => {
-        setPending(true);
-        void markAllNotificationsRead(kind).finally(() => setPending(false));
+        startTransition(async () => {
+          const { written } = await markAllNotificationsRead(kind).catch(
+            () => ({
+              written: false,
+            }),
+          );
+          if (written) announceBellChange();
+        });
       }}
       className="flex min-h-11 items-center rounded-md px-2 text-body font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:text-muted-foreground"
     >

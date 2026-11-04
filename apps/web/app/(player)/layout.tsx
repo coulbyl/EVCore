@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { PushBridge } from "@/components/scoreboard/shell/push-bridge";
+import { BellCountProvider } from "@/domains/notifications/bell-count";
 import { BandActions } from "@/components/scoreboard/shell/band-actions";
 import { getUnreadCount } from "@/domains/notifications/use-cases/get-notifications";
 import { ScoreboardShell } from "@/components/scoreboard/shell/scoreboard-shell";
@@ -69,34 +70,39 @@ export default async function PlayerLayout({
 
   return (
     <PlayerTextsProvider texts={texts}>
-      <ScoreboardShell
-        skipLinkLabel={t("skipToContent")}
-        legalText={t("legal")}
-        sheet={sheet}
-        admin={session.user.role === "ADMIN"}
-        dock={
-          <TicketDock
-            locale={displayLocaleOf(locale)}
-            paused={activePauseEnd(session.user.pausedUntil) !== null}
+      {/* The bell's count, one for the band, the rail and the screen. */}
+      <BellCountProvider unread={unread}>
+        <ScoreboardShell
+          skipLinkLabel={t("skipToContent")}
+          legalText={t("legal")}
+          sheet={sheet}
+          admin={session.user.role === "ADMIN"}
+          dock={
+            <TicketDock
+              locale={displayLocaleOf(locale)}
+              paused={activePauseEnd(session.user.pausedUntil) !== null}
+            />
+          }
+          railFooter={
+            <BandActions
+              initial={initialOf(session.user)}
+              avatarUrl={session.user.avatarUrl}
+              labels={{
+                notifications: t("notifications"),
+                me: t("tabs.me"),
+                unread: t.raw("unread") as string,
+              }}
+            />
+          }
+        >
+          <TimeZoneSync
+            cookieName={TIME_ZONE_COOKIE}
+            serverTimeZone={timeZone}
           />
-        }
-        railFooter={
-          <BandActions
-            initial={initialOf(session.user)}
-            avatarUrl={session.user.avatarUrl}
-            unread={unread}
-            labels={{
-              notifications: t("notifications"),
-              me: t("tabs.me"),
-              unread: t.raw("unread") as string,
-            }}
-          />
-        }
-      >
-        <TimeZoneSync cookieName={TIME_ZONE_COOKIE} serverTimeZone={timeZone} />
-        <PushBridge unread={unread} />
-        {children}
-      </ScoreboardShell>
+          <PushBridge />
+          {children}
+        </ScoreboardShell>
+      </BellCountProvider>
     </PlayerTextsProvider>
   );
 }

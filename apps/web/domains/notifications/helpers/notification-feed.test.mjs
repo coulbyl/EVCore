@@ -5,7 +5,6 @@ import {
   feedHref,
   feedQuery,
   hrefOf,
-  newerReading,
   parseFeedFilter,
 } from "./notification-feed.ts";
 import { adminSectionHref } from "../../../components/scoreboard/shell/shell-constants.ts";
@@ -61,20 +60,5 @@ describe("hrefOf", () => {
     assert.equal(player("MORNING_BRIEF"), "/today");
     assert.equal(player("SUPPORT_MESSAGE"), "/me/messages");
     assert.equal(player("ANNOUNCEMENT_PUBLISHED"), null);
-  });
-});
-
-describe("newerReading", () => {
-  it("an answer older than the one shown does not bring back its count", () => {
-    const shown = { count: 0, asOf: 2_000 };
-    assert.deepEqual(newerReading(shown, { count: 3, asOf: 1_000 }), shown);
-    assert.deepEqual(newerReading(shown, { count: 1, asOf: 3_000 }), {
-      count: 1,
-      asOf: 3_000,
-    });
-    assert.deepEqual(newerReading(null, { count: 2, asOf: 1 }), {
-      count: 2,
-      asOf: 1,
-    });
   });
 });

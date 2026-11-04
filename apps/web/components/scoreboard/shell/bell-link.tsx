@@ -3,23 +3,22 @@
 import Link from "next/link";
 import { Bell } from "lucide-react";
 import { clsx as cn } from "clsx";
-import { useUnreadCount } from "@/domains/notifications/use-unread-count";
+import { useBell } from "@/domains/notifications/bell-count";
 
 /**
- * La cloche et son badge (09 § 6). Le compte est celui de l'onglet
- * (`useUnreadCount`) : il baisse dès qu'une ligne est lue et monte à
- * l'arrivée d'une notification, sans attendre que l'écran soit redessiné.
+ * La cloche et son badge (09 § 6) : le compte lu par la mise en page du
+ * joueur (`useBell`), le même sur le bandeau et la colonne gauche. Il baisse
+ * dès qu'une ligne est touchée, et suit la mise en page redessinée après une
+ * lecture, un push ou la lecture d'un autre onglet.
  */
 export function BellLink({
-  unread,
   labels,
   className,
 }: {
-  unread: number | null;
   labels: { notifications: string; unread: string };
   className?: string;
 }) {
-  const count = useUnreadCount(unread);
+  const count = useBell().count ?? 0;
   return (
     <Link
       href="/notifications"

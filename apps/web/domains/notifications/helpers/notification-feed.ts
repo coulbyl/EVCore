@@ -81,18 +81,3 @@ export function hrefOf(
   const section = ADMIN_SECTION_OF[type];
   return section ? adminHref(section) : (PLAYER_HREFS[type] ?? null);
 }
-
-/** The badge's count and when this browser read it (Date.now()). */
-export type UnreadReading = { count: number; asOf: number };
-
-/**
- * Whether a reading replaces the one shown, both read on this browser's
- * clock: an answer that left before the shown one arrived after it is
- * ignored rather than bringing back a notification already read.
- */
-export function newerReading(
-  shown: UnreadReading | null,
-  next: UnreadReading,
-): UnreadReading {
-  return shown === null || next.asOf >= shown.asOf ? next : shown;
-}

@@ -37,8 +37,8 @@ export const getNotifications = cache(
 );
 
 /**
- * The bell's badge: unread notifications, shared by the band and the left
- * rail within a request. It only seeds the tab (use-unread-count.ts). A
+ * The bell's badge: unread notifications, read by the player's layout
+ * (BellCountProvider) and by the Notifications list in the same request. A
  * failed read is null — no badge rather than an error, and never a « 0 »
  * that would hide a live count.
  */

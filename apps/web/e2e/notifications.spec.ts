@@ -1,4 +1,43 @@
-import { expect, test, type Page } from "@playwright/test";
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type Page,
+} from "@playwright/test";
+
+/**
+ * The reads are server actions: Next writes them to the fake backend from
+ * Node, out of the browser's sight. The fake backend keeps them (a read row
+ * stays read, the count follows) until it is reset, and lists them.
+ */
+const MOCK = `http://127.0.0.1:${process.env.E2E_MOCK_PORT ?? 3099}`;
+
+async function resetBell(request: APIRequestContext) {
+  await request.post(`${MOCK}/__e2e/reset`);
+}
+
+async function bellCalls(request: APIRequestContext) {
+  const stats = (await (await request.get(`${MOCK}/__e2e/stats`)).json()) as {
+    notificationReads: string[];
+    readAllCalls: string[];
+  };
+  return stats;
+}
+
+/** Another device reads a row: the fake backend marks it, no tab knows. */
+async function readElsewhere(request: APIRequestContext, id: string) {
+  await request.patch(`${MOCK}/notifications/${id}/read`);
+}
+
+/** The bell on screen (the band's on a phone, the rail's on a computer). */
+const bell = (page: Page) =>
+  page.locator("a[href='/notifications']:visible").first();
+
+const unreadLabel = (count: number) =>
+  count > 0 ? `Notifications, ${count} non lues` : "Notifications";
+
+test.beforeEach(async ({ request }) => resetBell(request));
+test.afterEach(async ({ request }) => resetBell(request));
 
 /**
  * La cloche (09 § 6, maquette Cloche) : le compte des non-lues sur la
@@ -15,11 +54,8 @@ test.describe("Notifications", () => {
 
   test("la liste : les plus récentes d'abord, sans onglet ; ouvrir ne marque rien", async ({
     page,
+    request,
   }) => {
-    let reads = 0;
-    page.on("request", (r) => {
-      if (/\/notifications\/[^/]+\/read$/.test(r.url())) reads += 1;
-    });
     await page.goto("/notifications");
     await expect(
       page.getByRole("heading", { name: "Notifications" }),
@@ -30,27 +66,61 @@ test.describe("Notifications", () => {
       list.getByRole("img", { name: "non lue" }).first(),
     ).toBeVisible();
     await expect(page.getByRole("tab")).toHaveCount(0);
-    expect(reads).toBe(0);
+    expect((await bellCalls(request)).notificationReads).toEqual([]);
     await expect(
       page.getByRole("link", { name: "Réglables dans Compte" }),
     ).toHaveAttribute("href", "/me/account");
   });
 
-  test("toucher la matinée la marque lue et mène à Aujourd'hui", async ({
+  test("toucher la matinée la marque lue et mène à Aujourd'hui, la cloche baissée", async ({
     page,
+    request,
   }) => {
     await page.goto("/notifications");
-    const read = page.waitForRequest(
-      (r) =>
-        r.url().endsWith("/notifications/n5/read") && r.method() === "PATCH",
-    );
+    // The admin of the fake backend: the morning, an announcement, an alert.
+    await expect(bell(page)).toHaveAttribute("aria-label", unreadLabel(3));
     await page
       .getByRole("listitem")
       .filter({ hasText: "Ta matinée EVCore" })
       .getByRole("link")
       .click();
-    await read;
     await expect(page).toHaveURL(/\/today$/);
+    // Today's band and the rail drawn by the same action: one fewer.
+    await expect(bell(page)).toHaveAttribute("aria-label", unreadLabel(2));
+    expect((await bellCalls(request)).notificationReads).toEqual(["n5"]);
+    // The history: Notifications is behind Today, as after a tap on a link.
+    await page.goBack();
+    await expect(page).toHaveURL(/\/notifications$/);
+  });
+
+  test("une annonce se lit sur place : la ligne et la cloche redessinées", async ({
+    page,
+    request,
+  }) => {
+    await page.goto("/notifications");
+    const row = page
+      .getByRole("listitem")
+      .filter({ hasText: "Nouvelles fiches de formation" });
+    await expect(row.getByRole("img", { name: "non lue" })).toBeVisible();
+    await row.getByRole("link").click();
+    await expect(row.getByRole("img", { name: "non lue" })).toHaveCount(0);
+    await expect(page).toHaveURL(/\/notifications$/);
+    await expect(bell(page)).toHaveAttribute("aria-label", unreadLabel(2));
+    expect((await bellCalls(request)).notificationReads).toEqual(["n1"]);
+  });
+
+  test("une ligne déjà lue est un simple lien : rien n'est écrit", async ({
+    page,
+    request,
+  }) => {
+    await page.goto("/notifications");
+    await page
+      .getByRole("listitem")
+      .filter({ hasText: "Réponse de l'équipe" })
+      .getByRole("link")
+      .click();
+    await expect(page).toHaveURL(/\/me\/messages$/);
+    expect((await bellCalls(request)).notificationReads).toEqual([]);
   });
 });
 
@@ -112,36 +182,36 @@ test.describe("Notifications — filtres", () => {
 
   test("Tout marquer comme lu : un seul appel, dans le filtre affiché", async ({
     page,
+    request,
   }) => {
     await page.goto("/notifications?kind=technical");
-    const readAll = page.waitForRequest(
-      (r) =>
-        r.url().endsWith("/notifications/read-all?category=technical") &&
-        r.method() === "POST",
-    );
+    const list = page.getByRole("list", { name: "Notifications" });
+    await expect(list.getByRole("img", { name: "non lue" })).toHaveCount(1);
     await page.getByRole("button", { name: "Tout marquer comme lu" }).click();
-    await readAll;
+    // The list and the bell drawn again with the alert read; the player's
+    // rows stay unread.
+    await expect(list.getByRole("img", { name: "non lue" })).toHaveCount(0);
+    await expect(bell(page)).toHaveAttribute("aria-label", unreadLabel(2));
+    await expect(
+      page.getByRole("button", { name: "Tout marquer comme lu" }),
+    ).toHaveCount(0);
+    expect((await bellCalls(request)).readAllCalls).toEqual(["technical"]);
   });
 });
 
 /**
- * La cloche suit la lecture sans attendre que l'écran soit redessiné : la
- * colonne gauche vit dans le layout, qu'aucune navigation ne redessine.
+ * La cloche est celle de la mise en page, redessinée après une lecture :
+ * dans l'onglet, dans les autres, au retour sur l'onglet, et quand la liste
+ * en compte d'autres.
  */
 test.describe("Notifications — la cloche synchronisée", () => {
   test("lire dans un onglet fait baisser la cloche de l'autre", async ({
     context,
   }) => {
-    const bell = context.pages()[0] ?? (await context.newPage());
-    await bell.goto("/today");
-    await expect(
-      bell.getByRole("link", { name: /^Notifications, \d+ non lues$/ }).first(),
-    ).toBeVisible();
+    const other = context.pages()[0] ?? (await context.newPage());
+    await other.goto("/results");
+    await expect(bell(other)).toHaveAttribute("aria-label", unreadLabel(3));
 
-    // The read answers the badge's new count (no second request).
-    await context.route("**/notifications/*/read", (route) =>
-      route.fulfill({ json: { unread: 0 } }),
-    );
     const reader = await context.newPage();
     await reader.goto("/notifications");
     await reader
@@ -150,69 +220,50 @@ test.describe("Notifications — la cloche synchronisée", () => {
       .getByRole("link")
       .click();
     await expect(reader).toHaveURL(/\/today$/);
-    // /today's server count (the mock never marks anything read) only seeds
-    // an empty bell: it never raises the badge back over the tab's reading.
-    await expect(
-      reader.getByRole("link", { name: "Notifications", exact: true }).first(),
-    ).toBeVisible();
-
-    await expect(
-      bell.getByRole("link", { name: "Notifications", exact: true }).first(),
-    ).toBeVisible();
+    await expect(bell(reader)).toHaveAttribute("aria-label", unreadLabel(2));
+    // The other tab hears it and draws its layout again (it is visible:
+    // Playwright's pages all are).
+    await expect(bell(other)).toHaveAttribute("aria-label", unreadLabel(2));
   });
 
-  test("revenir sur l'onglet relit le compte (une notification arrivée sans push)", async ({
+  test("revenir sur l'onglet relit le compte (lu ailleurs, sans push)", async ({
     page,
+    request,
   }) => {
     await page.goto("/today");
-    await page.route("**/notifications/unread-count", (route) =>
-      route.fulfill({ json: { count: 7 } }),
-    );
-    const badge = page
-      .getByRole("link", { name: "Notifications, 7 non lues" })
-      .first();
+    await expect(bell(page)).toHaveAttribute("aria-label", unreadLabel(3));
+    await readElsewhere(request, "n5");
     // Until the page is hydrated, nobody listens: hide and show until heard.
     await expect(async () => {
       await setVisibility(page, "hidden");
       await setVisibility(page, "visible");
-      await expect(badge).toBeVisible({ timeout: 1_000 });
+      await expect(bell(page)).toHaveAttribute("aria-label", unreadLabel(2), {
+        timeout: 1_000,
+      });
     }).toPass();
   });
 
-  test("un compte changé ailleurs redessine la liste, une seule fois", async ({
-    context,
+  test("la liste et la cloche comptent le même ensemble", async ({
+    page,
+    request,
   }) => {
-    const list = context.pages()[0] ?? (await context.newPage());
-    await list.goto("/notifications");
+    await page.goto("/today");
+    await expect(bell(page)).toHaveAttribute("aria-label", unreadLabel(3));
+    // Read on another device: the layout, drawn before, does not know.
+    await readElsewhere(request, "n5");
+    // The rail's bell sits under Next's dev indicator on a wide screen.
+    await bell(page).focus();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/\/notifications$/);
+    const list = page.getByRole("list", { name: "Notifications" });
+    await expect(list.getByRole("img", { name: "non lue" })).toHaveCount(2);
+    // The list counts two: the bell is drawn again with it.
+    await expect(bell(page)).toHaveAttribute("aria-label", unreadLabel(2));
     await expect(
-      list.getByRole("list", { name: "Notifications" }),
+      page
+        .getByRole("navigation", { name: "Afficher" })
+        .getByRole("link", { name: "Non lues · 2" }),
     ).toBeVisible();
-    let redraws = 0;
-    list.on("request", (r) => {
-      if (
-        r.headers()["rsc"] === "1" &&
-        new URL(r.url()).pathname === "/notifications"
-      )
-        redraws += 1;
-    });
-    // Another tab read a row: its count reaches this tab on the channel.
-    const other = await context.newPage();
-    await other.goto("/today");
-    // Until the list is hydrated, nobody listens: post until heard, once.
-    await expect(async () => {
-      if (redraws === 0)
-        await other.evaluate(() =>
-          new BroadcastChannel("evcore-bell").postMessage({
-            count: 0,
-            asOf: Date.now(),
-          }),
-        );
-      await list.waitForTimeout(100);
-      expect(redraws).toBeGreaterThan(0);
-    }).toPass();
-    // The redrawn list's count is the confirmed one: nothing more to redraw.
-    await list.waitForTimeout(1_500);
-    expect(redraws).toBe(1);
   });
 });
 
@@ -235,6 +286,7 @@ test.describe("Push touché", () => {
   test("marque sa notification lue et nettoie l'adresse", async ({
     page,
     context,
+    request,
   }) => {
     await context.addCookies([
       {
@@ -244,14 +296,14 @@ test.describe("Push touché", () => {
         path: "/",
       },
     ]);
-    const read = page.waitForRequest(
-      (request) =>
-        request.url().endsWith("/notifications/notif-push-1/read") &&
-        request.method() === "PATCH",
-    );
-    await page.goto("/today?from=morning&n=notif-push-1");
-    await read;
+    await page.goto("/today?from=morning&n=n5");
     // The morning visit is counted and `from` dropped (lot 4), `n` read.
     await expect(page).toHaveURL(/\/today$/);
+    // The fake backend serves the same bell to everyone: three unread.
+    await expect(bell(page)).toHaveAttribute("aria-label", unreadLabel(2));
+    // Development mounts twice: the same row, read twice at most.
+    expect(new Set((await bellCalls(request)).notificationReads)).toEqual(
+      new Set(["n5"]),
+    );
   });
 });
