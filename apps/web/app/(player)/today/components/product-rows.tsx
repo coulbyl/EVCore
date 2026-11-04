@@ -56,6 +56,7 @@ export async function ProductRows({
           <Row
             key={coupon.id}
             href={`${couponPath}/${coupon.id}`}
+            sheet
             title={t(`products.${coupon.product}`)}
             meta={
               single

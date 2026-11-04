@@ -43,6 +43,7 @@ export async function FollowedRows({
                 ? `/results/coupon/${coupon.id}`
                 : `/today/coupon/${coupon.id}`
             }
+            sheet
             leading={
               settled ? null : (
                 <span className="score inline-block w-12 text-meta font-semibold">

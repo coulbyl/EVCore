@@ -28,6 +28,7 @@ export default async function Page() {
             <Row
               key={sheet.slug}
               href={`/me/help/${sheet.slug}`}
+              sheet
               title={sheet.title}
             />
           ))}

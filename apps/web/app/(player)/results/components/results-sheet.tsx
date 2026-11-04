@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { SheetLink } from "@/components/scoreboard/sheet/sheet-link";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -553,7 +553,7 @@ function DayRow({
   }
   return (
     <li>
-      <Link
+      <SheetLink
         href={href}
         className="-mx-2 flex min-h-12 items-center gap-3 rounded-md px-2 py-2 hover:bg-muted/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
       >
@@ -563,7 +563,7 @@ function DayRow({
           strokeWidth={2}
           className="size-4 shrink-0 text-icon-subtle"
         />
-      </Link>
+      </SheetLink>
     </li>
   );
 }

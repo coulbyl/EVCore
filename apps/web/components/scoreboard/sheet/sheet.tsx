@@ -10,7 +10,6 @@ import { useDragToClose } from "./use-drag-to-close";
 import { useModalSheet } from "./use-modal-sheet";
 import { isSheetOpen } from "./sheet-relay";
 import { useSheetClose } from "./use-sheet-close";
-import { useSheetReplace } from "./use-sheet-replace";
 import { useWideScreen } from "./use-wide-screen";
 
 /**
@@ -51,7 +50,6 @@ export function Sheet({
   const panelRef = useRef<HTMLDivElement>(null);
   const wide = useWideScreen();
   const close = useSheetClose(fallbackHref);
-  useSheetReplace();
   useModalSheet({ panelRef, modal: !wide, onClose: close });
   const drag = useDragToClose({ panelRef, enabled: !wide, onClose: close });
 

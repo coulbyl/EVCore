@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@evcore/ui/cn";
+import { SheetLink } from "../sheet/sheet-link";
 
 /**
  * Les lignes filetées : la liste du tableau d'affichage, une chose par ligne,
@@ -28,10 +29,12 @@ export function RowList({
  * Une ligne : à gauche ce qui l'identifie (`leading`, une pastille, une
  * heure), au milieu son titre et sa ligne secondaire, à droite sa valeur
  * (une cote, « 7 sur 10 ») et, si elle mène quelque part, un chevron.
- * Le texte se replie, il n'est jamais tronqué.
+ * Le texte se replie, il n'est jamais tronqué. `sheet` : la ligne ouvre une
+ * feuille (un coupon, une fiche d'Aide), qui remplace celle déjà ouverte.
  */
 export function Row({
   href,
+  sheet = false,
   title,
   meta,
   leading,
@@ -41,6 +44,8 @@ export function Row({
   className,
 }: {
   href?: string;
+  /** `href` opens in a sheet (`SheetLink`). */
+  sheet?: boolean;
   title: React.ReactNode;
   meta?: React.ReactNode;
   leading?: React.ReactNode;
@@ -82,11 +87,12 @@ export function Row({
   );
 
   const layout = cn("flex min-h-14 items-center gap-3 py-2", className);
+  const RowLink = sheet ? SheetLink : Link;
 
   return (
     <li>
       {href ? (
-        <Link
+        <RowLink
           href={href}
           className={cn(
             layout,
@@ -94,7 +100,7 @@ export function Row({
           )}
         >
           {body}
-        </Link>
+        </RowLink>
       ) : (
         <div className={layout}>{body}</div>
       )}

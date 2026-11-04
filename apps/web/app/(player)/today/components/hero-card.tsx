@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import Link from "next/link";
+import { SheetLink } from "@/components/scoreboard/sheet/sheet-link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ChanceFigure } from "@/components/scoreboard/ui/chance-figure";
 import { ResultMark } from "@/components/scoreboard/ui/result-mark";
@@ -74,7 +74,7 @@ export async function HeroCard({
       className="relative flex flex-col gap-3 rounded-[0.875rem] border border-border bg-card p-4 text-card-foreground"
     >
       {couponPath !== null ? (
-        <Link
+        <SheetLink
           href={`${couponPath}/${coupon.id}`}
           aria-label={t("open", { product: t(`products.${coupon.product}`) })}
           className="absolute inset-0 rounded-[0.875rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"

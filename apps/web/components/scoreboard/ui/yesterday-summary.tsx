@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { SheetLink } from "../sheet/sheet-link";
 import { ChevronRight } from "lucide-react";
 import { ResultMark } from "./result-mark";
 
@@ -31,7 +31,7 @@ export function YesterdaySummary({
   outcomeLabels: { won: string; lost: string; void: string };
 }) {
   return (
-    <Link
+    <SheetLink
       href={href}
       className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md focus-visible:outline-2 focus-visible:outline-led-on"
     >
@@ -58,6 +58,6 @@ export function YesterdaySummary({
         strokeWidth={2}
         className="ms-auto size-[1.125rem] text-band-muted"
       />
-    </Link>
+    </SheetLink>
   );
 }

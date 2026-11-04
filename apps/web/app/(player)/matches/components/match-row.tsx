@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { SheetLink } from "@/components/scoreboard/sheet/sheet-link";
 import { ChevronRight, Sparkles, TicketCheck } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { ResultMark } from "@/components/scoreboard/ui/result-mark";
@@ -156,7 +156,7 @@ async function MatchLink({
   const t = await getTranslations("ticket");
   return (
     <li data-search={searchOf(item)}>
-      <Link
+      <SheetLink
         href={`/matches/${item.fixtureId}`}
         className={
           (muted ? "text-muted-foreground " : "") +
@@ -183,7 +183,7 @@ async function MatchLink({
           strokeWidth={2}
           className="size-[1.125rem] shrink-0 text-icon-subtle"
         />
-      </Link>
+      </SheetLink>
     </li>
   );
 }
