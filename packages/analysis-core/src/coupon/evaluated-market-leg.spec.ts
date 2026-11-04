@@ -9,7 +9,7 @@ import { resolveEvaluatedMarketLeg } from "./evaluated-market-leg";
 // 2026-08-16: the real coupon pool (getPoolForRange) only ever read one
 // already-staked Bet/channelDecision per channel per fixture, never the full
 // per-fixture market evaluation — exactly the "selectedPicks vs evaluatedPicks"
-// gap COUPON_ANALYSIS_TEMPLATE.md documents for manual analysis.
+// gap docs/archive/COUPON_ANALYSIS_TEMPLATE.md documents for manual analysis.
 function makeEvaluated(overrides: {
   market: string;
   pick?: string;
@@ -65,7 +65,7 @@ describe("resolveEvaluatedMarketLeg", () => {
     expect(resolveEvaluatedMarketLeg(evaluated, opts)).toBeNull();
   });
 
-  it("admits an EV/odds-rejected pick when includeEvRejected is on (COUPON_ANALYSIS_TEMPLATE.md Étape 0: not a reliability rejection)", () => {
+  it("admits an EV/odds-rejected pick when includeEvRejected is on (docs/archive/COUPON_ANALYSIS_TEMPLATE.md Étape 0: not a reliability rejection)", () => {
     const evaluated = makeEvaluated({
       market: "ONE_X_TWO",
       status: "rejected",
@@ -119,7 +119,7 @@ describe("resolveEvaluatedMarketLeg", () => {
     );
   });
 
-  it("excludes unmapped markets (e.g. CORRECT_SCORE — immature signal, see TODO.md)", () => {
+  it("excludes unmapped markets (e.g. CORRECT_SCORE — immature signal, see docs/archive/TODO-2026-10.md)", () => {
     const evaluated = makeEvaluated({ market: "CORRECT_SCORE", pick: "1-0" });
     expect(resolveEvaluatedMarketLeg(evaluated, baseOpts)).toBeNull();
   });

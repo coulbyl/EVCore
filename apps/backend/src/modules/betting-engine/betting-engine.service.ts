@@ -216,7 +216,7 @@ export class BettingEngineService {
   }
 
   // 1X2 empirical blend + O/U shrinkage, shared by computeFromTeamStats and
-  // the H2H lambda-adjustment path (docs/h2h-service-v2-plan.md §4) so a
+  // the H2H lambda-adjustment path (docs/archive/h2h-service-v2-plan.md §4) so a
   // recomputed lambda pair goes through the exact same calibration steps.
   probabilitiesFromLambda(input: {
     lambda: { home: number; away: number };
@@ -637,7 +637,7 @@ export class BettingEngineService {
       competitionCode,
     );
 
-    // H2H v2.0 (docs/h2h-service-v2-plan.md §4, scope large): the favorite is
+    // H2H v2.0 (docs/archive/h2h-service-v2-plan.md §4, scope large): the favorite is
     // defined from the pre-correction 1X2 probabilities (no circularity),
     // then — if enabled and a score exists (n>=3 H2H legs) — lambdaHome/Away
     // are nudged toward the H2H-dominant side and every derived market
@@ -662,7 +662,7 @@ export class BettingEngineService {
         fixtureDate: fixture.scheduledAt,
         limit: 5,
       }),
-      // v2.2 (docs/h2h-service-v2-plan.md §3.3) — per-market rates. Combined
+      // v2.2 (docs/archive/h2h-service-v2-plan.md §3.3) — per-market rates. Combined
       // backtest confirmed a real gain on top of the H2H lambda correction
       // below (6/6 markets, memory project-h2h-market-signals-ready,
       // packages/db/reports/backtest-h2h-market-signals-combined-2026-07-28.txt),
@@ -1432,7 +1432,7 @@ export class BettingEngineService {
   }
 
   /**
-   * Same-day recheck (docs/vantage-centric-redesign-2026-09-01.md,
+   * Same-day recheck (docs/archive/vantage-centric-redesign-2026-09-01.md,
    * project_no_same_day_reanalysis.md) — re-analyzes only fixtures kicking
    * off within `windowHours` from now, never the whole day. `analyzeByDate`
    * re-analyzing every SCHEDULED fixture for "today" regardless of kickoff

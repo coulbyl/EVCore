@@ -139,7 +139,7 @@ export type TeamGoals = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * ⚠ Avertissement de provenance (audit 2026-09-12, docs/audit-fiche-v2-2026-09-12.md
+ * ⚠ Avertissement de provenance (audit 2026-09-12, docs/archive/audit-fiche-v2-2026-09-12.md
  * §2.2). La colonne `fixture.homeXg/awayXg` a reçu, selon les périodes et les
  * matchs, soit le xG réel d'API-Football, soit un proxy `tirs cadrés × 0.4`
  * (XG_SHOTS_PROXY_FACTOR) — sans qu'aucune colonne n'enregistre lequel.

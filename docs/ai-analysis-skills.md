@@ -11,11 +11,11 @@ Les fichiers canoniques vivent dans `.agents/skills/`; les liens relatifs
 dans `.claude/skills/` rendent les mêmes instructions accessibles à Claude
 Code, sans dupliquer les politiques. `AGENTS.md` indique leur routage.
 
-| Skill                   | Utilisation                                                                                     | Exemple de demande                                                                           |
-| ----------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `betting`               | Diagnostic déterministe hors ligne des cotes, de-vig, EV, Kelly, arbitrage, combiné indépendant | « Utilise betting pour contrôler l'EV de ces prix. »                                         |
-| `evcore-forecast-audit` | Fraîcheur, calibration, edge, classement Top-N, replay chronologique                            | « Utilise evcore-forecast-audit pour comprendre la surévaluation des premiers picks. »       |
-| `evcore-coupon-review`  | Pool, contrôles, probabilité jointe, LLM versus shadow déterministe, settlement                 | « Utilise evcore-coupon-review pour comparer les deux compositions sur les mêmes journées. » |
+| Skill                   | Utilisation                                                                                       | Exemple de demande                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `betting`               | Diagnostic déterministe hors ligne des cotes, de-vig, EV, Kelly, arbitrage, combiné indépendant   | « Utilise betting pour contrôler l'EV de ces prix. »                                                  |
+| `evcore-forecast-audit` | Fraîcheur, calibration, edge, classement Top-N, replay chronologique                              | « Utilise evcore-forecast-audit pour comprendre la surévaluation des premiers picks. »                |
+| `evcore-coupon-review`  | Pool, contrôles, probabilité jointe, sources PRICE_COMPOSER / ENGINE jugées par jambe, settlement | « Utilise evcore-coupon-review pour comparer les deux sources jambe à jambe sur les mêmes journées. » |
 
 Les deux skills EVCore sont originaux et s'appuient sur les implémentations
 existantes. Aucun coefficient ni seuil venant d'un autre projet n'est copié.

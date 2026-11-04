@@ -3,7 +3,7 @@
  * `coupon.constants.ts` cites `apps/backend/reports/backtest-selected-params.json`
  * (2026-05-19, Train ROI +100.3% / Test ROI +61.8% / hit 51.5% / PASS) as the
  * source of `COUPON_PARAMS` — that file doesn't exist in this repo (documented
- * gap, `docs/formation-content-maintenance.md` §5). This script replaces it
+ * gap, `docs/archive/formation-content-maintenance.md` §5). This script replaces it
  * with a real, rerunnable validation, on ACTUAL settled `CouponProposal` rows
  * (not a resimulation) — every one of these coupons was really generated and
  * really settled under the live pipeline since 2023-04-15.

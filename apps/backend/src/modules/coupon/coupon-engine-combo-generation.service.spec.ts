@@ -3,10 +3,7 @@ import type {
   PlayableOddsRepository,
   PlayableQuote,
 } from '../betting-engine/pricing/playable-odds.repository';
-import {
-  CouponEngineComboGenerationService,
-  ENGINE_LONG_PROFILE,
-} from './coupon-engine-combo-generation.service';
+import { CouponEngineComboGenerationService } from './coupon-engine-combo-generation.service';
 import type {
   ChannelCompetitionCalibrationRow,
   CouponRepository,
@@ -171,31 +168,5 @@ describe('CouponEngineComboGenerationService', () => {
     const input = repository.upsertPriceComposerProposal.mock.calls[0]?.[0];
     expect(input?.legs.map((l) => l.fixtureId)).toEqual(['b', 'c']);
     expect(input?.legs[0]?.operatorMargin).toBe(0.04);
-  });
-
-  it('composes the long coupon longest-first to the 2.5 target under the LONG class', async () => {
-    repository.findEngineComboCandidates.mockResolvedValue([
-      row({ fixtureId: 'a', odds: 1.7 }),
-      row({ fixtureId: 'b', odds: 1.75, competition: 'PL' }),
-      row({ fixtureId: 'c', odds: 1.3, competition: 'SA' }),
-    ]);
-    repository.findChannelCompetitionCalibration.mockResolvedValue([
-      cell(),
-      cell({ competition: 'PL' }),
-      cell({ competition: 'SA' }),
-    ]);
-
-    const result = await service.generateForDate(FOR_DATE, ENGINE_LONG_PROFILE);
-
-    expect(result).toMatchObject({ outcome: 'composed' });
-    const input = repository.upsertPriceComposerProposal.mock.calls[0]?.[0];
-    expect(input?.legs.map((l) => l.fixtureId)).toEqual(['b', 'a']);
-    expect(input?.combinedOdds).toBeCloseTo(1.75 * 1.7, 6);
-    expect(input?.profile).toMatchObject({
-      source: 'ENGINE',
-      targetOddsMin: 2.5,
-      targetOddsMax: 5,
-      policyVersion: 'engine-long-v1',
-    });
   });
 });

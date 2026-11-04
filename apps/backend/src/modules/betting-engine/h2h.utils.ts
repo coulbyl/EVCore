@@ -1,4 +1,4 @@
-// docs/h2h-service-v2-plan.md §4 — scope large : le signal H2H (validé sur
+// docs/archive/h2h-service-v2-plan.md §4 — scope large : le signal H2H (validé sur
 // P(favori gagne) uniquement, backtest-h2h-brier-gain.ts) est appliqué en
 // ajustant lambdaHome/lambdaAway avant le calcul des marchés Poisson, plutôt
 // qu'en corrigeant une seule probabilité isolément. Comme tous les marchés

@@ -1,6 +1,6 @@
 # Plan — backtest de calibration historique des nouveaux marchés (sans cotes)
 
-> Complément à `docs/new-markets-safe-value-backtest.md`. Ce document couvre
+> Complément à `docs/archive/new-markets-safe-value-backtest.md`. Ce document couvre
 > une question différente et **exécutable dès maintenant**, sans attendre
 > l'accumulation de cotes forward : le modèle est-il **bien calibré** sur
 > les 10 nouveaux marchés (DRAW_NO_BET, TEAM_TOTAL_HOME/AWAY,
@@ -12,7 +12,7 @@
 ## 1. L'idée
 
 On n'a pas de cotes historiques pour ces marchés (voir
-`docs/new-markets-safe-value-backtest.md` §2), donc pas de backtest ROI/EV
+`docs/archive/new-markets-safe-value-backtest.md` §2), donc pas de backtest ROI/EV
 classique possible tout de suite. **Mais la calibration ne dépend pas des
 cotes** — seulement de deux choses qu'on a déjà en base depuis 3+ saisons :
 
@@ -134,7 +134,7 @@ d'investir du temps à attendre des cotes forward dessus.
       dérivent — biais systématique HOME sous-estimé / AWAY sur-estimé sur
       tous les marchés (voir résumé dans la conversation du 2026-07-19),
       sinon calibration saine partout (ECE < 0.07)
-- [ ] Faire le lien avec `docs/new-markets-safe-value-backtest.md` : les
+- [ ] Faire le lien avec `docs/archive/new-markets-safe-value-backtest.md` : les
       marchés bien calibrés ici sont les candidats prioritaires une fois les
       cotes forward disponibles pour le vrai backtest ROI/SAFE
 - [x] Creuser le biais HOME/AWAY — confirmé structurel (pas du bruit) via

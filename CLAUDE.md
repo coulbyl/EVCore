@@ -6,13 +6,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **EVCore** is an autonomous, probability-driven sports betting engine. It analyses and proposes — it never places a bet on a user's behalf.
 
-**19 prediction channels** emit a decision, grouped by the generating process that feeds them rather than by market (`docs/prediction-engine-families.md`): full-match Poisson (DOMINANT, GOALS, BTTS, DOUBLE_CHANCE, TEAM_TOTAL, CLEAN_SHEET, …), first-half distribution (FIRST_HALF, OVER_UNDER_HT, HALF_TIME_FULL_TIME, WIN_EITHER_HALF), and market-implied (DRAW). VALUE and SAFE are **Phase-2 filters**, not independent scanners: they re-select among Phase-1 decisions. CONSENSUS/CONTRARIAN/AVOID are Phase-3 meta-channels that emit no pick of their own.
+**20 strategies** run per fixture (`V1_STRATEGIES`, `packages/analysis-core/src/strategies/registry.ts`), grouped by the generating process that feeds them rather than by market (`docs/prediction-engine-families.md`):
 
-Channel naming is always the English code (`DRAW`, `SAFE`, `BTTS`, `DOUBLE_CHANCE`) — the old French tags (NUL, SV, BB, CONF) are retired everywhere in code.
+- **16 Phase-1 market channels**: full-match Poisson (DOMINANT, GOALS, BTTS, DOUBLE_CHANCE, TEAM_TOTAL, CLEAN_SHEET, CORRECT_SCORE, RESULT_TOTAL_GOALS, RESULT_BTTS, DRAW_NO_BET, WIN_TO_NIL), first-half distribution (FIRST_HALF, OVER_UNDER_HT, HALF_TIME_FULL_TIME, WIN_EITHER_HALF) and market-implied (DRAW).
+- **2 Phase-2 filters**, VALUE and SAFE: not independent scanners, they re-select among Phase-1 decisions. They keep running for observation only — no bet, no display since 2026-09-03.
+- **2 Phase-3 meta-channels**, CONSENSUS and AVOID, which emit no pick of their own. CONTRARIAN is declared in the enum but deliberately **not implemented** (no edge in disagreeing with the market, study of 2026-06-23); UNDERDOG, FAVORITE, LIVE_VALUE and MARKET_MOVE are enum leftovers that never run (`UNIMPLEMENTED_STRATEGY_CHANNELS`).
 
-It is a disciplined probabilistic decision system — not a tip generator or AI chatbot. The system targets long-term ROI through deterministic data scoring (70%) refined by LLM context (30%), with the backend always acting as the final authority.
+Two more channels sit outside the engine: **VANTAGE** (the LLM's own pick, the player's "Avis IA", run by `apps/vantage-worker` after every other channel has decided) and **PRICE** (no probability, it only composes already-priced legs by market cost).
 
-⚠️ **Two measured results that override older intuitions in this repo** (audit 2026-08-22, `docs/audit-canaux-investir-2026-08-22.md`):
+Channel naming is always the English code (`DRAW`, `SAFE`, `BTTS`, `DOUBLE_CHANCE`) — the old French tags (NUL, SV, BB, CONF) are retired everywhere in code. The word "canal" is never shown to a player; the admin keeps channels.
+
+It is a disciplined probabilistic decision system — not a tip generator or AI chatbot. Scoring is **100% deterministic**: no LLM output enters the score (`model_run.llmDelta` is always null). The only LLM is VANTAGE, in `apps/vantage-worker`; `apps/backend` is LLM-agnostic. The backend is always the final authority.
+
+⚠️ **Five measured results that override older intuitions in this repo** (audit 2026-08-22, `docs/audits/2026-08-22/audit-canaux-investir.md`):
 
 - **Claimed edge (`p − 1/odds`) is anti-predictive.** Across 51 860 settled selections the realised rate is flat (0.511 → 0.375) while the announced rate climbs from 0.481 to 0.699. It is now used as a **ceiling** (`MAX_LEG_EDGE = 0.10`), never as a selection floor, and ranking is done on calibrated probability. Treat any `EV ≥ 8%` framing found elsewhere in the docs as historical.
 - **Coupon ROI has no statistical power** at current volumes (SE 13–18 points for 10-point differences). The learning loop runs at the **leg** level. Never conclude from a coupon-level ROI.
@@ -20,10 +26,16 @@ It is a disciplined probabilistic decision system — not a tip generator or AI 
 - **Searching more markets does not create edge.** Settling the engine's full opportunity space (1.67M evaluated picks, 17 markets, every fixture) shows every market negative, −4.40% to −12.17%. Competition × market does **not** persist across disjoint periods (correlation −0.022 over 160 cells); what persists strongly (+0.696) is how much each market **costs**. Rank legs on measured price, never on "most likely to land" — that is the EV rule, and it is an over-estimation detector.
 - **Leg calibration collapses above odds 1.80** (388 settled LLM legs): realised/announced 0.899 below 1.45, 0.836 from 1.45 to 1.80, **0.619 above**. Inside a band no channel stands out. Cut on odds, never on channel.
 
-Two coupon generators run in parallel since 2026-09-16, separated by `coupon_proposal.source`: the LLM pipeline (`apps/vantage-worker`, class `UNIQUE`) and the deterministic price composer (`composeByPrice`, channel `PRICE`). Compare them **per leg**, never by coupon ROI.
+Coupons are composed by the backend (`apps/backend/src/modules/coupon`, classes in `packages/analysis-core/src/coupon/coupon-classes.ts`) and separated by `coupon_proposal.source`:
 
-Read [EVCORE.md](EVCORE.md) for the full product specification before making any architectural decision.
-Check [ROADMAP.md](ROADMAP.md) to know the current implementation state before adding or modifying any feature.
+- `PRICE_COMPOSER`: Favori du jour (`FAVOURITE`, one leg 1.20–1.35), Coupon cote 2 (`DOUBLE`), the hunters (`HUNTER_BTTS`, `HUNTER_DRAW`, `HUNTER_HT_DRAW`, `HUNTER_CORNERS`) and the Combiné IA (`AI_COMBO`, legs 1.45–1.80, combined 4–10, composed from the AI's played opinions).
+- `ENGINE`: Combiné du jour (`COMBO`, 2 legs 1.20–1.50 from the engine's calibrated picks, `engine-combo-v2` breaks ties on the 1xBet margin) and the Chasseur Score exact (`HUNTER_SCORE`).
+- `LLM`: no longer written — the LLM combo was cut on 2026-11-03; old rows stay for history.
+
+The price coupon 5–15 (`UNIQUE`) and the engine long coupon (`LONG`) are no longer written since 2026-11-04; their old rows stay visible to admins in Résultats. Compare products **per leg**, never by coupon ROI.
+
+Read [EVCORE.md](EVCORE.md) for the current product specification before making any architectural decision (the original v1 spec is archived in `docs/archive/EVCORE-spec-v1.md`, history only).
+Check [ROADMAP.md](ROADMAP.md) for the current state and the open work before adding or modifying any feature.
 
 ## Database access
 
@@ -140,10 +152,10 @@ Do not:
 
 ## Commands
 
-This is a **pnpm monorepo** managed by Turborepo. Use `pnpm` (v9), not `npm` or `yarn`. Node >= 18 required.
+This is a **pnpm monorepo** managed by Turborepo. Use `pnpm` (v10, `packageManager` in `package.json`), not `npm` or `yarn`. Node >= 22 required.
 
 ```bash
-pnpm dev           # Run all apps in dev mode (web :3000, docs :3001)
+pnpm dev           # All apps in dev mode: web :3000, backend API :3001 + backend worker (dev:worker)
 pnpm build         # Build all packages and apps
 pnpm lint          # ESLint across all packages
 pnpm format        # Prettier on all .ts, .tsx, .md files
@@ -153,11 +165,15 @@ pnpm typecheck     # TypeScript type-checking (no emit)
 Scope a command to one package:
 
 ```bash
-pnpm --filter backend dev
-pnpm --filter @repo/ui build
+pnpm --filter backend dev          # API only; worker: pnpm --filter backend dev:worker
+pnpm --filter @evcore/ui build
 ```
 
-Tests: Vitest (backend). Run with `pnpm --filter backend test`. No test framework on frontend yet.
+Tests:
+
+- Vitest: `pnpm --filter backend test`, `pnpm --filter @evcore/analysis-core test`, `pnpm --filter @evcore/backtest-core test`, `pnpm --filter vantage-worker test`.
+- Web: Playwright e2e in `apps/web/e2e` (`pnpm --filter web e2e`) and `node --test` helpers (`pnpm --filter web test:unit`).
+- ml-worker: `pytest` in `apps/ml-worker`.
 
 ---
 
@@ -167,51 +183,61 @@ Tests: Vitest (backend). Run with `pnpm --filter backend test`. No test framewor
 
 ```
 apps/
-  backend/    # NestJS API + Betting Engine (to be created)
-  web/        # Next.js dashboard (port 3000)
-  docs/       # Next.js docs (port 3001)
+  backend/         # NestJS, two processes: main.ts (HTTP API, :3001) + main.worker.ts (BullMQ workers)
+  web/             # Next.js app, player + admin (port 3000)
+  vantage-worker/  # The only LLM in the repo: VANTAGE opinions ("Avis IA"), Groq/Cerebras/Together/Fireworks
+  ml-worker/       # Python (Phase 3 groundwork); its shadow correction is off (ML_CORRECTION: false)
 packages/
-  ui/                # Shared React component library (@repo/ui)
-  eslint-config/     # Shared ESLint configs (@repo/eslint-config)
-  typescript-config/ # Shared TS configs (@repo/typescript-config)
+  analysis-core/     # @evcore/analysis-core — pure engine: probabilities, strategies, coupon classes and composers, settlement, EV math
+  backtest-core/     # @evcore/backtest-core — point-in-time replays and backtest scripts
+  db/                # @evcore/db — Prisma schema, migrations, generated client
+  transactional/     # @evcore/transactional — React Email templates
+  ui/                # @evcore/ui — shared React components
+  eslint-config/     # @evcore/eslint-config
+  typescript-config/ # @evcore/typescript-config
 ```
 
 ### Backend Module Structure (NestJS)
 
 ```
 apps/backend/src/
+  main.ts / app.module.ts            # HTTP API process
+  main.worker.ts / worker.module.ts  # worker process (ETL, analysis, coupons, settlement, push)
   modules/
-    fixture/           # Fixtures + results
-    betting-engine/    # EV scoring + decision
-    etl/               # Data ingestion workers (BullMQ)
-    model-run/         # ModelRun storage + audit
-    adjustment/        # AdjustmentProposal + learning loop
-    notification/      # Email (Nodemailer) + in-app notifications
-  common/
-    guards/
-    interceptors/
-    decorators/
-    filters/
-  config/              # All constants and env config
-  prisma/              # Prisma client singleton
+    etl/              # API-Football ingestion workers (BullMQ), odds, stats, squads
+    fixture/          # Fixtures + results
+    betting-engine/   # Deterministic scoring, channel decisions, ModelRun
+    coupon/           # Daily coupon generation, settlement, follows
+    adjustment/       # AdjustmentProposal + learning loop (auto-apply + rollback)
+    risk/             # Automatic market suspension
+    odds-archive/     # Monthly Parquet archive of odds_snapshot (RustFS)
+    notification/     # In-app notifications
+    mail/             # Email via Resend (templates in packages/transactional)
+    push/             # Web push
+    app-setting/      # Operating settings editable from the admin screen
+    …                 # auth, admin-*, announcements, support, console, screens, …
+  common/             # guards, interceptors, decorators, filters
+  config/             # Constants and env schema (env = secrets + addresses only)
 ```
 
-Each module follows: `*.module.ts` → `*.controller.ts` → `*.service.ts` → `*.repository.ts` → `dto/` → `entities/`
+Each module follows: `*.module.ts` → `*.controller.ts` → `*.service.ts` → `*.repository.ts` → `dto/`
 
 ### System Data Flow
 
 ```
-ETL Workers (BullMQ/Kestra)
+ETL workers (BullMQ, API-Football + CSV imports)
         ↓ [Zod validated]
-PostgreSQL (single source of truth)
+PostgreSQL 18 (single source of truth; odds_snapshot partitioned by month,
+               closed months archived as Parquet on RustFS)
         ↓
-Betting Engine Service (deterministic 70%)
+Betting engine (deterministic, @evcore/analysis-core)
         ↓
-OpenClaw (LLM delta, capped 30%) — Phase 2 only
+ModelRun + channel_decision / channel_selection
         ↓
-Backend Validation (authority)
-        ↓
-ModelRun stored + notification alert
+Daily coupon generation (PRICE_COMPOSER, ENGINE) → settlement → notifications
+
+VANTAGE (apps/vantage-worker) reads the decisions and writes its own opinion
+next to them — never into the score.
 ```
 
 ### Component Responsibilities
@@ -220,9 +246,9 @@ ModelRun stored + notification alert
 | -------------- | ----------------------------------------------- | ------------------------------ |
 | ETL Workers    | Collect + normalize data                        | Infer or fill missing data     |
 | PostgreSQL     | Historical truth                                | —                              |
-| Betting Engine | Probabilistic scoring + EV                      | Call LLM for raw data          |
+| Betting Engine | Probabilistic scoring + decisions               | Call an LLM                    |
 | Backend        | Validation, risk control, auto-apply + rollback | Bypass Zod or rate-limit rules |
-| OpenClaw       | Contextual delta only                           | Be primary data source         |
+| VANTAGE        | Its own opinion, shown as "Avis IA"             | Feed the engine's score        |
 
 ---
 
@@ -235,7 +261,7 @@ ModelRun stored + notification alert
 - `max-params` : **3 paramètres maximum** par fonction/méthode. Au-delà, regrouper en un objet options : `function foo(opts: { a, b, c, d })` — jamais 4 paramètres positionnels. Seule exception : un constructeur d'injection NestJS (pas d'objet d'options possible), avec `// eslint-disable-next-line max-params -- <raison>`.
 - `no-unused-vars` : tout import ou variable non utilisé doit être supprimé avant commit.
 
-**Frontend web** (`--max-warnings 3`) — 2 warnings pré-existants dans `page-shell.tsx` (balises `<img>`). Ne pas en ajouter de nouveaux.
+**Frontend web** (`--max-warnings 3` dans `apps/web/package.json`) — le lint passe aujourd'hui sans aucun warning ; la marge de 3 n'est pas un quota, ne pas en ajouter.
 
 - `no-unused-vars` : même règle — supprimer les imports inutiles immédiatement.
 
@@ -288,7 +314,7 @@ Rules:
 
 ### Validation
 
-- **Zod** for all external data (ETL ingestion, third-party API responses, OpenClaw output)
+- **Zod** for all external data (ETL ingestion, third-party API responses, LLM output in `apps/vantage-worker`)
 - **class-validator** for all NestJS DTO (inbound HTTP requests)
 - Validate at system boundaries only — trust internal service calls
 - If Zod parse fails on ETL data: reject the entire payload, log with full context, trigger notification alert
@@ -304,18 +330,18 @@ Rules:
 - **Never use native `number` for odds, EV, probabilities, or bankroll calculations**
 - Use `decimal.js` for all odds and EV math
 - Probability values must always be in `[0, 1]` — assert this at ingestion
-- EV formula: `EV = (probability × odds) - 1` — defined once in `config/ev.constants.ts`, never inline
+- EV formula: `EV = (probability × odds) - 1` — defined once in `calculateEV()` (`packages/analysis-core/src/ev/ev-math.ts`); EV constants (`EV_THRESHOLD`, …) live in `apps/backend/src/modules/betting-engine/ev.constants.ts`. Never inline
 
 ---
 
 ## EVCore-Specific Rules
 
-These rules reflect the product specification in EVCORE.md and must never be bypassed.
+These rules reflect the product specification in [EVCORE.md](EVCORE.md) and must never be bypassed.
 
 ### Hard constraints (backend enforces, never client)
 
-- EV threshold: `≥ 0.08` — defined in config, never hardcoded inline. Still gates the VALUE channel, but **it is no longer a quality signal**: see the anti-predictive edge result in the overview. Every surface that stakes now applies `MAX_LEG_EDGE = 0.10` as a ceiling on top of it, which is the exact complement — most VALUE picks therefore land in Investir's "Écarté" view. Do not add new selection logic keyed on EV or edge.
-- OpenClaw weight cap: `≤ 0.30` — enforced server-side, never trust frontend or LLM output
+- EV threshold: `≥ 0.08` — defined in config, never hardcoded inline. Still gates the VALUE channel, but **it is no longer a quality signal**: see the anti-predictive edge result in the overview. Coupon composition applies `MAX_LEG_EDGE = 0.10` as a ceiling on top of it, which is the exact complement, and VALUE no longer stakes or shows. Do not add new selection logic keyed on EV or edge.
+- No LLM output enters the score. If one ever does, it is capped at `0.30` server-side (never trust frontend or LLM output) and needs a human decision first
 - Weight adjustment: minimum 50 bets on market, maximum 5% change per week
 - Market suspension: automatic at ROI < -15% over 50+ settled legs — measured on `channel_selection_deduped` over a trailing 90 days (never the `bet` table), with the loss established (95 % upper bound of the ROI below zero) so a bad week alone suspends nothing — never manual shortcut
 - `AdjustmentProposal` is **auto-applied** by the backend when calibration triggers; humans see the applied proposal and can rollback via `POST /adjustment/:id/rollback`
@@ -326,15 +352,15 @@ These rules reflect the product specification in EVCORE.md and must never be byp
 - Rolling back an auto-applied `AdjustmentProposal`
 - Reactivating a suspended market
 - Changing EV threshold
-- Introducing OpenClaw into the scoring loop (not before MVP validation)
+- Introducing any LLM output into the scoring loop
 - Manually disabling a factor auto-activé par la boucle d'apprentissage (rollback via `AdjustmentProposal`)
 
 ### Money, settlement and totals — review expectations
 
-Measured mistakes from the PR #275 review (2026-10-28). Full list, cases and fixing commits in [docs/review-expectations.md](docs/review-expectations.md); read it before touching settlement, the bankroll, slip results or a scheduled job.
+Measured mistakes from the PR #275 review (2026-10-28). Full list, cases and fixing commits in [docs/review-expectations.md](docs/review-expectations.md); read it before touching settlement, results, follows or a scheduled job. The user bankroll and slips (`bankroll_transaction`, `bet_slip`) were removed on 2026-10-31; the rules still hold for what settles today (`bet`, `coupon_proposal` and its legs, `coupon_follow`, digests).
 
-- **Every bankroll write must survive a replay.** Settlement re-runs on every pass and `bankroll_transaction` has no `(betId, type)` uniqueness: credit on a _transition_ to settled, never on a state, and test both a second pass and a post-payout correction (WON → VOID, LOST → WON).
-- **A count and the amounts next to it cover the same set.** "N coupons réglés, misé X": X comes from those N only (`sumSlipMoney` / web `sumSlipResults`); a pending slip's whole stake is "encore en jeu".
+- **Every settlement write must survive a replay.** Settlement re-runs on every pass: count, credit or notify on a _transition_ to settled, never on a state, and test both a second pass and a post-settlement correction (WON → VOID, LOST → WON).
+- **A count and the amounts next to it cover the same set.** "N coupons réglés, X gagnés": X comes from those N only; a pending coupon is "encore en jeu", never counted as settled.
 - **Unknown is not zero.** A value that cannot be computed (a win without recorded odds) is excluded and counted apart, never shown as 0 or as a loss — the same rule in every calculator of the domain.
 - **A dated job must handle late arrivals.** Key on "not yet reported" (record what was reported) over a sliding window, never on the date window alone.
 - **Decimal products too.** Odds and probability products used in comparisons or stored go through `decimal.js`; convert to `number` only at the Prisma/API boundary.
@@ -345,7 +371,7 @@ Measured mistakes from the PR #275 review (2026-10-28). Full list, cases and fix
 ### What AI must never generate in this codebase
 
 - Code that lets LLM output bypass Zod schema validation
-- Kelly criterion formula (not before Phase 2 config flag is set)
+- Kelly staking — removed (`KELLY_ENABLED` is in `RETIRED_ENV`, `apps/backend/src/config/env.schema.ts`); bringing it back needs a new human decision
 - Auto-reactivation of suspended markets
 - Direct Prisma calls outside of repository files — including in a service that already has some: when you touch it, move its queries to a repository instead of adding one more
 - Hardcoded numeric thresholds that belong in `config/`
@@ -356,7 +382,7 @@ Measured mistakes from the PR #275 review (2026-10-28). Full list, cases and fix
 ## ETL Rules
 
 - Each BullMQ job validates its payload with Zod **before any DB write** — partial data is rejected entirely
-- Respect rate limits: FBref 1 req/3s, Understat custom delay
+- Respect the rate limits in `apps/backend/src/config/etl.constants.ts` (`API_FOOTBALL_RATE_LIMIT_MS`, `STATS_RATE_LIMIT_MS`, …); API-Football Pro plan, 7 500 calls a day
 - Every `ModelRun` must log: `fixture_id`, `features`, `deterministic_score`, `llm_delta` (if any), `final_score`, `decision`
 - `odds_snapshot` is mandatory in phase live — `decision: NO_BET` if missing
 - Fixture marked `POSTPONED` → no `ModelRun` generated
@@ -377,17 +403,19 @@ Measured mistakes from the PR #275 review (2026-10-28). Full list, cases and fix
 
 Before adding any feature, verify it belongs to the current phase:
 
-| Feature                                    | Phase                          |
-| ------------------------------------------ | ------------------------------ |
-| Historical import, backtest, calibration   | MVP                            |
-| Odds integration, EV simulation, live data | Phase 2                        |
-| OpenClaw integration                       | Phase 2 (after MVP validation) |
-| Grafana dashboards, TimescaleDB            | Phase 2                        |
-| Kelly criterion, multi-league              | Phase 2                        |
-| Python worker (scikit-learn calibration)   | Phase 3                        |
-| ML model (XGBoost), Monte Carlo            | Phase 3                        |
+| Feature                                                                                                           | Status                                                                                                                                                                  |
+| ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Historical import, backtest, calibration                                                                          | MVP — done                                                                                                                                                              |
+| Odds integration (11 books), EV simulation, live data                                                             | Phase 2 — done                                                                                                                                                          |
+| Automatic market suspension, auto-applied adjustments + rollback                                                  | Phase 2 — done                                                                                                                                                          |
+| OpenClaw / LLM delta in the score                                                                                 | Abandoned — the only LLM is VANTAGE, outside the score                                                                                                                  |
+| Grafana dashboards, TimescaleDB                                                                                   | Abandoned — replaced by monthly partitioning of `odds_snapshot` + Parquet archive (RustFS) and the admin console                                                        |
+| Kelly criterion                                                                                                   | Removed (`KELLY_ENABLED` retired) — needs a new human decision                                                                                                          |
+| Multi-league                                                                                                      | Done                                                                                                                                                                    |
+| Python worker (scikit-learn calibration), ML shadow correction                                                    | Built, then retired from the decision path (`ML_CORRECTION: false`, `docs/audits/2026-10-29/ML-UTILITE.md`)                                                             |
 | Market grid as engine input + ML for what the price does not say (half-time, corners, learned margin, dependence) | Phase 3, redefined 2026-10-29 (`docs/audits/2026-10-29/ML-V2-PROPOSITION.md`); judged on the residual vs Pinnacle, never on absolute Brier; no ML call at analysis time |
-| SaaS, multi-tenant                         | Phase 4                        |
+| Multi-sport (`docs/multi-sport-extension.md`), Loto (`loto.md`)                                                   | Future, not planned                                                                                                                                                     |
+| SaaS, multi-tenant                                                                                                | Phase 4 — future                                                                                                                                                        |
 
 If asked to implement something from a future phase, flag it and ask for confirmation.
 

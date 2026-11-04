@@ -119,7 +119,7 @@ function flatBetRoi(
 type FlatBet = { status: string; oddsSnapshot: { toString(): string } | null };
 
 // Same floor CLAUDE.md/VANTAGE's own guardrail use for "poorly calibrated"
-// (docs/vantage-centric-redesign-2026-09-01.md §4 point 3, §5.8) — ratio
+// (docs/archive/vantage-centric-redesign-2026-09-01.md §4 point 3, §5.8) — ratio
 // réel/annoncé below this is measured overconfident enough to distrust.
 // Reused here for consistency: this page previously classified by ROI
 // (§5.4 of that doc) even though DRAW was flagged "Négatif" on ROI while

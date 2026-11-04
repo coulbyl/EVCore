@@ -21,7 +21,7 @@ export const BTTS_DEFAULT: ChannelStrategyLeagueConfig = {
 // avoids. The thresholds below (backtested for YES) now apply to NO too;
 // re-deriving them with NO's own hit-rate history is deferred to the
 // broader staking-policy pass (ROI-based promotion doesn't fit an
-// independent-legs coupon model either — see TODO.md).
+// independent-legs coupon model either — see docs/archive/TODO-2026-10.md).
 export const BTTS_CONFIG: Record<string, ChannelStrategyLeagueConfig> = {
   // Result-derived 2026-07-09 (no priced BTTS odds): base BTTS-yes rate
   // 0.40 (low-scoring league). 0.50 gives 40.8% HR (n=120/1463, cov 8.2%)

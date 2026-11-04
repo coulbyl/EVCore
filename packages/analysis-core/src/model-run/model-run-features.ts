@@ -4,7 +4,7 @@
 // reaching into the JSON independently. Moved here from
 // apps/backend/src/utils/model-run.utils.ts 2026-09-03 — pure (no Prisma/
 // NestJS), needed by apps/vantage-worker's own coupon pool query too (see
-// docs/vantage-centric-redesign-2026-09-01.md §9bis).
+// docs/archive/vantage-centric-redesign-2026-09-01.md §9bis).
 
 export type PredictionSource =
   | "POISSON_MAIN"

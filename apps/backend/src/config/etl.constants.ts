@@ -587,7 +587,7 @@ export const ETL_CRON_SCHEDULES = {
   INJURIES_SYNC: '0 6 * * *', // 06:00 UTC daily — shadow injuries refresh
   ODDS_CSV_IMPORT: '0 5 * * 1', // 05:00 UTC every Monday
   ELO_SYNC: '0 3 * * *', // 03:00 UTC daily — refresh friendly-match Elo reference data
-  // 01:00 UTC every Sunday — coach changes are rare (docs/h2h-service-v2-plan.md
+  // 01:00 UTC every Sunday — coach changes are rare (docs/archive/h2h-service-v2-plan.md
   // §3.4), and a full pass is ~1725 teams * 6s rate limit ≈ 2.9h, so weekly is
   // plenty. Runs before the Sunday FIXTURES_SYNC/STATS_SYNC/INJURIES_SYNC batch.
   COACH_SYNC: '0 1 * * 0',

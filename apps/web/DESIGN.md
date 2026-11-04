@@ -127,7 +127,7 @@ Chaque chiffre d'EVCore se lit comme un score sur le bandeau d'une retransmissio
 
 Le monde ne prête que quatre choses à l'interface : le type, la palette, la densité et un geste signature. La navigation et les contrôles sont ceux qu'un téléphone a déjà (barre d'onglets, feuille qui monte, liens, interrupteurs). Un écran tient en un bandeau encre, une carte au plus, des lignes filetées et une barre d'onglets. Clair par défaut, parce que le joueur lit dehors ; le sombre suit le réglage du téléphone.
 
-Ce document décrit le monde de la refonte, construit sous la racine `.scoreboard` (`apps/web/app/styles/scoreboard.css`). Les anciens écrans gardent le thème de `@evcore/ui` jusqu'à leur suppression (docs/refonte-ui/15-todo.md, E1).
+Ce document décrit le monde de la refonte, construit sous la racine `.scoreboard` (`apps/web/app/styles/scoreboard.css`). Les anciens écrans et leur thème `@evcore/ui` sont partis le 31/10 (docs/refonte-ui/15-todo.md, E1) ; `@evcore/ui` ne sert plus que de boîte à outils (`cn`, `ThemeProvider`). L'admin (`app/(player)/admin`, PR #285, docs/refonte-ui/12-admin.md) suit le même système : même coquille, mêmes composants `components/scoreboard/`, avec seulement une colonne plus large sur grand écran (`data-admin-wide`) et les mots techniques que le joueur ne voit jamais.
 
 **Key Characteristics:**
 
@@ -252,7 +252,9 @@ Des angles doux, jamais ronds au point d'adoucir le propos : 6 px pour les zones
 - **Bandeau :** encre, marque en `title` 700, cloche et initiale en cercles de 44 px bordés de `band-rule`.
 
 ### Ligne de score (signature)
+
 « Hier · Favori ✓ 1,24 · 4 gagnés sur 7 › » (revue du 31/10) : le premier produit en clair avec son ✓ ou ✗ dessiné en SVG et la cote payée après un gain, puis le compte des coupons gagnés ; un toucher ouvre la feuille d'hier, où chaque produit est nommé. Les codes à trois lettres (`FAV ✓ · COM ✓ · C2 ✗`) se lisaient comme des codes internes dès sept produits ; ils ne restent qu'en têtes de colonnes du tableau de la semaine. Gagné en vert, perdu en rouge, sur le bandeau aussi, dans les teintes `win-band` et `loss-band`, lisibles sur l'encre. Un lecteur d'écran entend le nom complet et l'issue en mots.
+
 ### Diodes de chance
 
 Cercles de 10, 14 ou 22 px. Allumée : ambre bordée de `led-amber-edge` en clair. Éteinte : anneau `icon-subtle` sur fond clair, disque `band-rule` sur l'encre et en sombre. Jusqu'à 20 diodes ; au-delà, le nombre seul.

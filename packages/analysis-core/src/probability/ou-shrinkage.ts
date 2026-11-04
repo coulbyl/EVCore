@@ -9,7 +9,7 @@ import type {
 
 // Over/Under probability shrinkage for data-poor leagues.
 //
-// Diagnosis (docs/data-poor-leagues-calibration.md + NOR2 audit 2026-07-03):
+// Diagnosis (docs/archive/data-poor-leagues-calibration.md + NOR2 audit 2026-07-03):
 // in leagues without reliable xG the model captures the league's goal LEVEL
 // (mean λ is unbiased) but not individual matches — corr(λ_total, actual
 // goals) ≈ 0 on every NOR2 season, and the measured calibration slope of the
@@ -144,7 +144,7 @@ export type ResultTotalGoalsShrinkageBlock = Partial<
 >;
 
 // Per-league config — GENERATED from the forward-validated batch backtest
-// (2026-07-03, see docs/data-poor-leagues-calibration.md). Shipping rule per
+// (2026-07-03, see docs/archive/data-poor-leagues-calibration.md). Shipping rule per
 // block: held-out Brier improves by ≥ 0.001 (train = all seasons but the
 // most recent; test = the most recent). Factors are then re-fitted on the
 // full sample; base rates come from the 2 most recent seasons. `factor: 1`
@@ -1731,7 +1731,7 @@ const RESULT_BTTS_SHRINKAGE: Record<
   // en coupes UEFA reste mauvais même aux tranches d'edge les plus basses,
   // cohérent avec un problème de SEUIL de sélection Phase 1
   // (result-btts.config.ts), pas de calibration de proba — reste à traiter
-  // séparément, voir TODO.md).
+  // séparément, voir docs/archive/TODO-2026-10.md).
   UCL: { resultBtts: { DRAW: { factor: 0.5, base: 0.13 } } },
   UEL: { resultBtts: { DRAW: { factor: 0.5, base: 0.13 } } },
   UECL: { resultBtts: { DRAW: { factor: 0.5, base: 0.13 } } },

@@ -89,7 +89,7 @@ export class FixturesSyncWorker {
     // line in this job carries the human-readable season label, not just
     // the raw start-year integer — `season: 2026` alone reads as "last
     // season" for anyone unfamiliar with the start-year convention (mixed
-    // up for real on 2026-08-12; see TODO.md).
+    // up for real on 2026-08-12; see docs/archive/TODO-2026-10.md).
     const seasonStartMonth =
       competitionMeta.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH;
     const seasonName = seasonNameFromYear(

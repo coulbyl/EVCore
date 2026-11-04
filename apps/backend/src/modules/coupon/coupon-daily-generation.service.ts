@@ -1,9 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
-  CouponPriceGenerationService,
-  type PriceGenerationOutcome,
-} from './coupon-price-generation.service';
-import {
   CouponFavouriteGenerationService,
   type FavouriteGenerationOutcome,
 } from './coupon-favourite-generation.service';
@@ -19,7 +15,6 @@ import {
 import {
   CouponEngineComboGenerationService,
   ENGINE_COMBO_PROFILE,
-  ENGINE_LONG_PROFILE,
   type EngineComboGenerationOutcome,
 } from './coupon-engine-combo-generation.service';
 import { CouponLegFactService } from './leg-fact/coupon-leg-fact.service';
@@ -27,11 +22,9 @@ import { CouponLegFactService } from './leg-fact/coupon-leg-fact.service';
 type Failed = { outcome: 'failed'; error: string };
 
 export type DailyGenerationOutcome = {
-  price: PriceGenerationOutcome | Failed;
   favourite: FavouriteGenerationOutcome | Failed;
   double: DoubleGenerationOutcome | Failed;
   combo: EngineComboGenerationOutcome | Failed;
-  long: EngineComboGenerationOutcome | Failed;
   /** Chasseurs BTTS, Nul et Score exact. */
   hunters: HunterPassOutcome[] | Failed;
   /** Le fait sous chaque jambe, écrit après toutes les passes. */
@@ -49,7 +42,6 @@ export class CouponDailyGenerationService {
 
   // eslint-disable-next-line max-params -- one injected generator per daily pass.
   constructor(
-    private readonly price: CouponPriceGenerationService,
     private readonly favourite: CouponFavouriteGenerationService,
     private readonly double: CouponDoubleGenerationService,
     private readonly combo: CouponEngineComboGenerationService,
@@ -68,9 +60,6 @@ export class CouponDailyGenerationService {
       return undefined;
     });
     const outcome = {
-      price: await this.guard('price composer', () =>
-        this.price.generateForDate(forDate),
-      ),
       favourite: await this.guard('favourite', () =>
         this.favourite.generateForDate(forDate),
       ),
@@ -79,9 +68,6 @@ export class CouponDailyGenerationService {
       ),
       combo: await this.guard('engine combo', () =>
         this.combo.generateForDate(forDate, ENGINE_COMBO_PROFILE),
-      ),
-      long: await this.guard('engine long', () =>
-        this.combo.generateForDate(forDate, ENGINE_LONG_PROFILE),
       ),
       hunters: await this.guard('hunters', () =>
         this.hunters.generateForDate(forDate, pool),

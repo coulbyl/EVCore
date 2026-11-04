@@ -5,7 +5,7 @@
 > nouveau le 2026-09-02 après fidélité pixel-perfect de l'écran Decisions au composant réel
 > et ajout des 10 variantes mobile. Fait suite à
 > une session d'audit qui a mesuré la calibration réelle des canaux
-> (`docs/audit-canaux-investir-2026-08-22.md`), diagnostiqué 3 bugs concrets sur VANTAGE
+> (`docs/audits/2026-08-22/audit-canaux-investir.md`), diagnostiqué 3 bugs concrets sur VANTAGE
 > (métrique ROI halluciné, signal externe dégénéré, correction ML mal ciblée — corrigés le
 > jour même dans `apps/vantage-worker/src/context/shadow-signals.ts`) et confirmé que le
 > Coupon Composer reconstruit le 22-23 août pioche encore dans des canaux non calibrés
@@ -38,7 +38,7 @@ Dans l'ordre, chaque étape se termine par une vérification sur données réell
 passer à la suivante — jamais sur la conviction que "ça devrait marcher" (voir §8) :
 
 1. **Corriger le bug P0 bet-slip** (`POST /bet-slips` rejette un item construit hors
-   `betId` direct — TODO.md, section front web 2026-08-31). Prérequis technique à tout le
+   `betId` direct — docs/archive/TODO-2026-10.md, section front web 2026-08-31). Prérequis technique à tout le
    reste : c'est le même endpoint qui portera le bouton "Envoyer à VANTAGE" du drawer.
 2. **Restreindre le pool du Composer actuel** aux canaux calibrés (retirer `topN`,
    admettre par ratio réel/annoncé — déjà diagnostiqué dans l'audit du 22-08, indépendant
@@ -135,7 +135,7 @@ combien d'options restent, et sur mobile la maquette plafonnait arbitrairement l
 4. Les filtres actifs redescendent en chips retirables (✕) dans la barre, pour que l'état
    reste visible sans rouvrir le tiroir.
 5. Le tiroir canaux exclut volontairement CONSENSUS/CONTRARIAN/AVOID (méta-canaux Phase-3
-   qui n'émettent pas de pick propre — voir EVCORE.md/CLAUDE.md).
+   qui n'émettent pas de pick propre — voir docs/archive/EVCORE-spec-v1.md/CLAUDE.md).
 
 Appliqué à Decisions et Arbitrage, desktop + mobile, sur la maquette. **Statut : idée et
 pattern actés dans ce doc ; la représentation visuelle produite sur la maquette elle-même
@@ -296,7 +296,7 @@ Audit de fond sur `channel_decision.channel='VANTAGE'` depuis le tout premier en
   n=105) ; `OVER_UNDER` un peu sous (0,87, n=63).
 - **Surconfiance concentrée en tranche 80-90% de probabilité annoncée** (écart réel/annoncé
   de 20 points, le pire de toutes les tranches) — même motif que "confiance inhabituellement
-  haute" documenté dans `COUPON_ANALYSIS_TEMPLATE.md` Étape 6.
+  haute" documenté dans `docs/archive/COUPON_ANALYSIS_TEMPLATE.md` Étape 6.
 - **Détail méthodologique pour §9** : les stats de calibration sont agrégées par
   canal+compétition, jamais par pick précis (HOME/AWAY/DRAW confondus dans la même
   moyenne) — à corriger si ce mécanisme est réutilisé pour scorer le pool du générateur de
@@ -368,7 +368,7 @@ lint propres. Ne pas réintroduire sans ré-auditer le ml-worker en profondeur d
 | Suivi par canal personnalisé              | `apps/backend/src/modules/subscriptions/` — sources `CHANNEL_DRAW`, `CHANNEL_BTTS`, etc. déjà définies                                                       | **Faible** — retirer le cadre mise/ROI, brancher sur la calibration déjà calculée ailleurs ; exposé côté front comme section de l'onglet Personnalisation, plus d'écran Abonnements séparé (§2ter) |
 | Paramètres avec onglets                   | `/dashboard/params/account` — Profil (badges), Préférences (thème/langue), Sécurité, Notifications (push/email), Bankroll (devise/mise) déjà tous construits | **Faible** — ajouter un 6ᵉ onglet suit le patron existant ; nav interne à repasser d'onglets à plat à un rail latéral groupé (§2ter)                                                               |
 | Onboarding                                | Tour passif driver.js déjà là (`domains/onboarding/onboarding-steps.ts`, 24 étapes) mais **aucune ne collecte d'input**                                      | **Moyen** — nouveau mécanisme (modal/étapes actives), distinct du tour, à insérer avant lui                                                                                                        |
-| Coupon jouable par plusieurs utilisateurs | `bet_slip` par utilisateur, `bet_slip_item` référence un `betId` partagé — le modèle n'empêche pas N bet slips indépendants sur les mêmes jambes             | **Faible**, hérite du bug P0 déjà ouvert (TODO.md)                                                                                                                                                 |
+| Coupon jouable par plusieurs utilisateurs | `bet_slip` par utilisateur, `bet_slip_item` référence un `betId` partagé — le modèle n'empêche pas N bet slips indépendants sur les mêmes jambes             | **Faible**, hérite du bug P0 déjà ouvert (docs/archive/TODO-2026-10.md)                                                                                                                                                 |
 | Raisonnement contextuel VANTAGE           | `apps/vantage-worker/src/vantage/prompt.ts` + `context/build-match-context.ts` — détection de tension entre canaux déjà en place                             | **Moyen** — étendre d'un raisonnement mono-pick à un coupon multi-jambes soumis par un utilisateur                                                                                                 |
 | Génération de coupon par LLM (3/jour)     | N'existe pas — VANTAGE ne produit qu'un verdict par fixture                                                                                                  | **Élevé** — nouveau prompt, nouvelle boucle, filtre de validation déterministe après coup (§4.1)                                                                                                   |
 | Suppression de VALUE/SAFE                 | Code isolé (`ev.constants.ts`, `POOL_EXCLUDED_CHANNELS`)                                                                                                     | **Faible** techniquement — le vrai travail est produit (§5.1)                                                                                                                                      |
@@ -397,7 +397,7 @@ lint propres. Ne pas réintroduire sans ré-auditer le ml-worker en profondeur d
 ### 5.1 Stratégie de remplacement de VALUE — résolu
 
 Les picks **propres** à VALUE (8% de son volume, n=173) faisaient **+14,1% ROI** contre
--0,8% pour ses doublons dans l'audit du 22-08 (`docs/audit-canaux-investir-2026-08-22.md`
+-0,8% pour ses doublons dans l'audit du 22-08 (`docs/audits/2026-08-22/audit-canaux-investir.md`
 §2.3, ratio de calibration 0,845 vs 0,721) — seul endroit du système où une sélection
 semblait ajouter de la valeur. L'audit notait lui-même : "n=173 ne suffit pas, il faut un
 backtest dédié — à valider avant de shipper".
@@ -461,7 +461,7 @@ rien à corriger.
 
 **Décidé** (déjà tranché avant cette entrée, confirmé le 2026-09-03) : Eva **ne devient pas**
 une expérience personnalisée ou un chat élargi — elle reste strictement un **outil
-d'export de la fiche EVCore** (l'"export 'fiche EVCore'" que `COUPON_ANALYSIS_TEMPLATE.md`
+d'export de la fiche EVCore** (l'"export 'fiche EVCore'" que `docs/archive/COUPON_ANALYSIS_TEMPLATE.md`
 identifie déjà comme prérequis outillage à l'Étape 0 : avoir `evaluatedPicks` complet par
 fixture sans dépendre d'un accès DB live à chaque analyse). Ça règle du même coup le
 recoupement fonctionnel avec la personnalisation VANTAGE qui restait ouvert : il n'y a plus
@@ -606,7 +606,7 @@ et le doublon du bouton "Ajouter à mon bet slip" sur l'écran retiré (§2).
 
 ## 9. Générateur de coupon VANTAGE — comment garantir la qualité (2026-09-03)
 
-Point de départ : `COUPON_ANALYSIS_TEMPLATE.md` (v1, 2026-08-12) documente une méthode
+Point de départ : `docs/archive/COUPON_ANALYSIS_TEMPLATE.md` (v1, 2026-08-12) documente une méthode
 manuelle d'analyse de coupon, écrite après plusieurs post-mortems de coupons cassés. Un
 essai antérieur de la faire suivre telle quelle par un LLM en une seule passe n'a pas donné
 de bon résultat. Presque tous les bugs que le template documente sont des défauts que
@@ -624,7 +624,7 @@ code, pas un prompt.
    `evaluatedPicks` en entier (pas seulement `selectedPicks`/`candidatePicks` top-5),
    applique tous les garde-fous que le template a dû découvrir à la main (lambda total sur
    toutes les lignes Under, pas juste 2,5 ; exclusion totale `avoidFlag` ; plafond EV
-   corrigé ~0,35 ; tiers A/B/C/D à jour depuis TODO.md ; **et le garde-fou §4.3 réellement
+   corrigé ~0,35 ; tiers A/B/C/D à jour depuis docs/archive/TODO-2026-10.md ; **et le garde-fou §4.3 réellement
    câblé**, cf. §5.8), et sort un pool de ~30-50 candidats déjà scorés selon les deux modes
    du template (Fiabilité et Valeur).
 2. **VANTAGE ne reçoit que ce pool réduit**, pour la seule Étape 2 (synthèse qualitative) :
@@ -985,7 +985,7 @@ bounds.maxCombinedOdds]` ET atteindre `couponClass.targetCombinedOdds` — même
 
 **Boucle relance-avec-retour écrite** (`compose-coupon-class.ts`) — un point important
 découvert en l'écrivant : `requestVantageCompletion` appelle à `temperature: 0`
-(EVCORE.md §14.3, garde-fou de reproductibilité), donc relancer avec un prompt IDENTIQUE
+(docs/archive/EVCORE-spec-v1.md §14.3, garde-fou de reproductibilité), donc relancer avec un prompt IDENTIQUE
 après un rejet aurait juste reproduit la même sortie rejetée. `buildCouponSelectionUserPrompt`
 prend maintenant un `feedback` optionnel (la raison du rejet précédent), injecté dans le
 prompt de la tentative suivante — "corrige ce problème précis", jamais une relance
@@ -1631,7 +1631,7 @@ réutilisé tel quel dans `OnboardingWizard`, portait trois défauts :
 **Confirmé le 2026-09-04** : migration `hasCompletedOnboarding` appliquée en
 base, et l'onboarding actif + le redémarrage du tour passif qui en dépend
 vérifiés en vrai navigateur sur un compte neuf — plus rien "à confirmer" sur
-ce chantier (TODO.md P0 correspondant coché).
+ce chantier (docs/archive/TODO-2026-10.md P0 correspondant coché).
 
 Bug de données trouvé au passage : **4 canaux fantômes** (`UNDERDOG`, `FAVORITE`,
 `LIVE_VALUE`, `MARKET_MOVE`) fuitaient dans la liste suivable avec `n=0`
@@ -1800,7 +1800,7 @@ appliquer avant de tester en vrai.
 ## Divers post-chantier — perf Matchs, badge de rôle, accessibilité, téléphone, signup (2026-09-04)
 
 Hors chantier VANTAGE à proprement parler (repris ici pour garder une trace
-chronologique unique de la session) — détail complet dans TODO.md, section
+chronologique unique de la session) — détail complet dans docs/archive/TODO-2026-10.md, section
 "Front web côté joueur — audit UX externe" :
 
 - **Page Matchs 2-3× plus lente** — la pagination existait déjà côté

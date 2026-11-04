@@ -81,7 +81,7 @@ Plus rien ne l'appelle depuis le 02/11/2026 : le module ML du backend (planifica
 Ce que VANTAGE ne fait jamais (`apps/vantage-worker/docs/architecture.md`) :
 
 - il ne modifie jamais le score, le pick ou la probabilité d'un autre canal ;
-- il n'influence jamais la boucle de scoring déterministe — `ModelRun.llmDelta` / `ModelRun.openclawRaw` (réservés pour une future intégration LLM au scoring, EVCORE.md §14.3) restent intouchés ;
+- il n'influence jamais la boucle de scoring déterministe — `ModelRun.llmDelta` / `ModelRun.openclawRaw` (réservés pour une future intégration LLM au scoring, docs/archive/EVCORE-spec-v1.md §14.3) restent intouchés ;
 - il ne « picke » jamais par défaut : le cas courant est `verdict: "no_play"`, stocké en `status: REJECTED` ;
 - il n'invente jamais de marché ou de pick illégal (double validation Zod + légalité de pick, voir plus bas).
 
@@ -122,7 +122,7 @@ VANTAGE n'est ni un canal Phase 1 (Poisson plein-match / mi-temps / implicite ma
 
 ### Proposition d'élargissement de contexte (non implémentée)
 
-`apps/vantage-worker/docs/context-expansion-proposal.md` (statut : **proposition, rien codé**, daté du 2026-08-29) documente deux pistes pour enrichir le contexte que VANTAGE reçoit :
+`docs/archive/vantage-worker/context-expansion-proposal.md` (statut : **proposition, rien codé**, daté du 2026-08-29) documente deux pistes pour enrichir le contexte que VANTAGE reçoit :
 
 - **Piste C** : exposer aux prompts les probabilités internes qu'un canal calcule même quand il abstient (`REJECTED`), aujourd'hui perdues car aucune `ChannelSelection` n'est écrite sur un rejet.
 - **Piste A** : donner à VANTAGE l'accès à des signaux bruts que les canaux déterministes ne modélisent pas, notamment `ModelRun.features.shadow_predictions` (second avis d'API-Football, vraiment indépendant du pipeline λ maison) et `shadow_ml_by_channel` (la correction ml-worker décrite plus haut — jamais injectée dans un canal, donc une information réellement nouvelle pour VANTAGE).

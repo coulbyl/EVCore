@@ -8,7 +8,7 @@
  * computePoissonMarkets -> shrinkOverUnderProbabilities), puis compare à
  * l'issue réelle (score FT/HT déjà en base). Aucune cote nécessaire.
  *
- * Voir docs/new-markets-calibration-backtest.md pour le plan complet.
+ * Voir docs/archive/new-markets-calibration-backtest.md pour le plan complet.
  *
  * Simplifications documentées (cf. §6 du plan) :
  * - LambdaConfig utilise les valeurs par défaut de prod (meanLambda=1.4,

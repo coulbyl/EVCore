@@ -1,699 +1,179 @@
-# 📘 Projet : Betting Engine Autonome (Value-Driven System)
+# EVCore — spécification de l'existant
 
-## 1. Vision du projet
-
-Construire un moteur autonome de sélection de paris sportifs basé sur :
-
-- 📊 Probabilités estimées
-- 📈 Expected Value (EV)
-- 🎯 Architecture multi-canal — canaux pilotés par la cote (EV, SV) et canaux de prédiction pure par marché (voir §3.3, une vingtaine de canaux au 2026-08-16, en croissance à mesure que chaque marché du domaine reçoit son propre canal — ceci n'est plus une liste figée à 5)
-- 🔁 Auto-évaluation et calibration
-- 🧠 Apprentissage progressif contrôlé
-- ⚖️ Équilibre mathématique + gestion du risque
-- 🧱 Architecture robuste et mesurable
-
-Le système ne sera **pas un chatbot**, mais un moteur décisionnel autonome.
+> État au 2026-11-04. Ce document décrit ce qu'EVCore **est aujourd'hui**.
+> Les règles pour les agents de code sont dans [CLAUDE.md](CLAUDE.md), l'état
+> des chantiers dans [ROADMAP.md](ROADMAP.md). La spécification d'origine
+> (v1, moteur EV + delta LLM 30 %) est archivée dans
+> [docs/archive/EVCORE-spec-v1.md](docs/archive/EVCORE-spec-v1.md) : historique
+> seulement, plusieurs de ses principes ont été réfutés par la mesure.
 
 ---
 
-# 2. Principes fondamentaux
+## 1. Ce qu'est EVCore
 
-## 2.1 Séparation stricte des responsabilités
+EVCore analyse les matchs de football et **propose** des paris. Il ne place
+jamais de pari pour un joueur, ne tient plus de bankroll ni de bulletin
+utilisateur (supprimés le 2026-10-31) : le joueur voit les propositions, peut
+« suivre » un coupon, et lit les résultats réglés.
 
-| Composant        | Rôle                                  |
-| ---------------- | ------------------------------------- |
-| Data Engine      | Collecte et normalisation des données |
-| Database         | Source de vérité historique           |
-| Betting Engine   | Analyse probabiliste + scoring        |
-| Backend (NestJS) | Autorité, validation, contrôle risque |
-| IA (LLM)         | Raffinement contextuel uniquement     |
-
----
-
-## 2.2 Règles stratégiques
-
-- ❌ Pas de dépendance LLM pour les données brutes
-- ✅ Données déterministes obligatoires
-- ✅ Apprentissage validé par backend (Option B)
-- ✅ EV prioritaire sur taux de réussite (canaux basés sur la cote : EV/SV) — hit rate/conviction prioritaire sur les canaux de prédiction pure (argmax par marché, indépendants des cotes — voir §3.3)
-- ✅ Volume modéré, variance contrôlée
-- ✅ “No Bet” autorisé
+C'est un système de décision probabiliste discipliné, pas un générateur de
+tips ni un chatbot. Le score est **100 % déterministe** ; le seul LLM du dépôt
+(VANTAGE, « Avis IA ») donne un avis à côté, jamais dans le score.
 
 ---
 
-# 3. Scope initial (MVP)
+## 2. Principes mesurés
 
-## 3.1 Ligues ciblées
+Ces résultats priment sur toute intuition plus ancienne du dépôt
+(détails et chiffres dans CLAUDE.md, sources dans `docs/audits/`).
 
-- Premier League
-- Serie A
-- La Liga
-- Ligue 1
+1. **Le moteur est derrière le marché.** Brier 0,639 contre 0,599 pour le
+   marché sur 3 633 matchs ; le poids optimal du moteur dans un mélange avec
+   le prix est 0 %. Toute nouveauté se juge sur le **résidu** par rapport au
+   prix (Pinnacle), jamais sur le Brier absolu.
+2. **L'edge annoncé (`p − 1/cote`) est anti-prédictif.** Plus il est grand,
+   plus le moteur se trompe. Il sert de **plafond** (`MAX_LEG_EDGE = 0.10`),
+   jamais de plancher. Le seuil `EV ≥ 0.08` ne garde plus que le canal VALUE,
+   qui ne mise ni ne s'affiche.
+3. **Validation par jambe, jamais par ROI de coupon.** À nos volumes l'erreur
+   type d'un ROI de coupon est de 13 à 18 points. On mesure réalisé ÷ annoncé
+   sur des jambes dédupliquées (`channel_selection_deduped`).
+4. **Le coût du marché est ce qui persiste.** Les 17 marchés du moteur sont
+   tous négatifs (−4,4 % à −12,2 %) ; championnat × marché ne persiste pas
+   d'une période à l'autre (r = −0,02), la marge de chaque marché persiste
+   (r = +0,70). On classe les jambes sur le prix mesuré.
+5. **La calibration s'effondre au-dessus de 1,80.** Réalisé ÷ annoncé : 0,90
+   sous 1,45, 0,84 de 1,45 à 1,80, 0,62 au-delà. On coupe sur la cote, jamais
+   sur le canal.
 
-Phase 1 : Premier League uniquement.
-
----
-
-## 3.2 Source de données
-
-### Historique (MVP)
-
-| Source                       | Données                                         | Accès                                  |
-| ---------------------------- | ----------------------------------------------- | -------------------------------------- |
-| **football-data.org**        | Fixtures, résultats, standings                  | API REST — Premier League forever free |
-| **FBref** (scraping Cheerio) | Stats équipes, forme, performance dom/ext       | Scraping — 1 req/3s                    |
-| **Understat**                | **xG (Expected Goals)** par match et par équipe | Scraping Node.js                       |
-| **API-Sports**               | Odds historiques 15+ ans                        | Free 100 req/jour                      |
-
-Minimum 3 saisons historiques avant tout backtest.
-
-### Live (Phase 2)
-
-| Source           | Données                                         | Accès                      |
-| ---------------- | ----------------------------------------------- | -------------------------- |
-| **API-Football** | Fixtures + odds intégrées, livescores           | Free 100 req/jour → payant |
-| **The Odds API** | Odds haute fréquence (5-10 min), 30+ bookmakers | Payant                     |
-
-- Snapshot des odds horodaté obligatoire
-- Versioning temporel de chaque snapshot
+Conséquence : les produits sont des **paris au prix du marché**, présentés
+honnêtement (« arithmétique des jambes calibrées, jamais un avantage »).
 
 ---
 
-## 3.3 Marchés ciblés
+## 3. Produits joueur
 
-### MVP (Phase 1)
+Composés chaque jour par le backend pour le lendemain
+(`apps/backend/src/modules/coupon`), classes et bandes dans
+`packages/analysis-core/src/coupon/coupon-classes.ts`. Le joueur voit les
+cotes 1xBet (plancher 1,20 : sous ce seuil les cotes de référence sont trop
+généreuses par rapport à 1xBet, `docs/audits/2026-10-18/COTES-JOUABLES.md`).
 
-Ces 4 marchés partagent le même modèle sous-jacent (probabilité de buts par équipe) — un seul modèle les couvre :
+| Produit (écran Aujourd'hui) | Classe           | Source         | Bande                                                                                                                     |
+| --------------------------- | ---------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Favori du jour              | `FAVOURITE`      | PRICE_COMPOSER | 1 jambe, 1,20–1,35                                                                                                        |
+| Combiné du jour             | `COMBO`          | ENGINE         | 2 jambes 1,20–1,50, sélections calibrées du moteur, une par championnat, départage par la marge 1xBet (`engine-combo-v2`) |
+| Coupon cote 2               | `DOUBLE`         | PRICE_COMPOSER | 2 jambes (3 si aucune paire) 1,20–1,80, cote combinée 2–3, tout le coté classé par la probabilité du marché sans marge    |
+| Chasseur Les deux marquent  | `HUNTER_BTTS`    | PRICE_COMPOSER | 1 sélection 1,45–1,90 ou abstention                                                                                       |
+| Chasseur Nul                | `HUNTER_DRAW`    | PRICE_COMPOSER | 1 sélection 2,90–3,60                                                                                                     |
+| Chasseur Nul à la mi-temps  | `HUNTER_HT_DRAW` | PRICE_COMPOSER | 1 sélection 2,10–2,80                                                                                                     |
+| Chasseur Score exact        | `HUNTER_SCORE`   | ENGINE         | 1 sélection 5–12                                                                                                          |
+| Chasseur Corners            | `HUNTER_CORNERS` | PRICE_COMPOSER | 1 sélection 1,70–2,10, prix 1xBet                                                                                         |
+| Combiné IA                  | `AI_COMBO`       | PRICE_COMPOSER | jusqu'à 4 avis joués de l'IA 1,45–1,80, cote combinée 4–10                                                                |
 
-| Marché             | Description                                  |
-| ------------------ | -------------------------------------------- |
-| **1X2**            | Victoire domicile / Nul / Victoire extérieur |
-| **Over/Under 2.5** | Total buts dans le match                     |
-| **BTTS**           | Les deux équipes marquent (Yes/No)           |
-| **Double Chance**  | 1X, X2, 12 — dérivé des probabilités 1X2     |
+Mesures de référence (historique, pas des promesses) : Favori 84 % de jours
+gagnants à cote 1,26 sur 86 jours ; Combiné à deux jambes 71 % à cote 1,55
+(`COTES-JOUABLES.md`) ; Coupon cote 2 43,6 % annoncés pour 48 % ± 9 réalisés
+sur 115 jours (`docs/audits/2026-10-28/SELECTIONS-LAISSEES.md`) ; Combiné IA
+gagné environ un jour sur trois à cote ~5,2 (`docs/audits/2026-11-03/COMBINE-IA-4-10.md`).
 
-### Canaux de décision
+Le coupon prix 5–15 (`UNIQUE`) et le coupon long moteur (`LONG`) ne sont plus
+écrits depuis le 2026-11-04, et le combiné LLM a été coupé le 2026-11-03 :
+leurs anciens coupons restent visibles des admins dans Résultats.
 
-> **Nomenclature** : les codes de canal sont en anglais dans tout le code —
-> `VALUE`, `SAFE`, `DOMINANT`, `DRAW`, `BTTS`. Les tags historiques EV, SV,
-> CONF, NUL, BB qui subsistent dans les tableaux ci-dessous sont les anciens
-> noms des trois premiers ; ils ne correspondent à aucun identifiant réel.
-
-**Filtres de Phase 2 (VALUE, SAFE)**
-
-Ils ne scannent plus `evaluatedMarkets` : ils re-sélectionnent parmi les
-décisions déjà prises par les canaux de marché (voir la redéfinition
-architecturale plus bas, livrée le 2026-08-18).
-
-| Canal             | Critère           | Portée                    |
-| ----------------- | ----------------- | ------------------------- |
-| **VALUE** (ex-EV) | edge ≥ 0.10       | toute décision de Phase 1 |
-| **SAFE** (ex-SV)  | P ≥ 68% + EV ≥ 0% | toute décision de Phase 1 |
-
-⚠️ **Le critère de VALUE est mesuré anti-prédictif** (audit 2026-08-22,
-51 860 sélections : taux réel plat 0.511 → 0.375 pendant que l'annoncé monte à
-0.699). Toute surface de mise applique donc `MAX_LEG_EDGE = 0.10` en
-**plafond**, complément exact du seuil du canal — la plupart des picks VALUE
-atterrissent dans la vue « Écarté » d'Investir. Ne pas ajouter de nouvelle
-logique de sélection indexée sur l'EV ou l'edge. La piste en cours est de
-réduire VALUE à ses picks propres (8% de ses sélections, les seuls qui ne
-soient pas des doublons de Phase 1), non validée à ce jour.
-
-**Canaux de prédiction (Phase 1 — un par marché)**
-
-| Canal                   | Critère                           | Marché                       | Signal                                                |
-| ----------------------- | --------------------------------- | ---------------------------- | ----------------------------------------------------- |
-| **CONF** (Confiance)    | P_max ≥ seuil ligue               | ONE_X_TWO                    | argmax(HOME, DRAW, AWAY)                              |
-| **BTTS**                | P(BTTS) ≥ seuil ligue             | BTTS                         | YES uniquement                                        |
-| **DRAW** (Nul)          | 1/drawOdds ≥ seuil ligue          | ONE_X_TWO                    | DRAW uniquement                                       |
-| **GOALS**               | P(side) ≥ seuil ligne/ligue       | OVER_UNDER (1.5/2.5/3.5/4.5) | meilleur (ligne × side) par EV                        |
-| **CLEAN_SHEET**         | P(clean sheet) ≥ seuil ligue      | CLEAN_SHEET_HOME/AWAY        | argmax(HOME, AWAY), YES uniquement                    |
-| **TEAM_TOTAL**          | P(side) ≥ seuil ligne/ligue       | TEAM_TOTAL_HOME/AWAY         | meilleur (équipe × ligne × side)                      |
-| **WIN_EITHER_HALF**     | P(side) ≥ seuil ligue             | TO_WIN_EITHER_HALF           | argmax(HOME, AWAY)                                    |
-| **CORRECT_SCORE**       | P(score) ≥ seuil global           | CORRECT_SCORE                | argmax probabilité (pas EV — évite le bruit longshot) |
-| **RESULT_TOTAL_GOALS**  | P(side×ligne UNDER) ≥ seuil ligue | RESULT_TOTAL_GOALS           | meilleur (side × ligne) par EV                        |
-| **OVER_UNDER_HT**       | P(side) ≥ seuil ligue             | OVER_UNDER_HT                | meilleur (ligne × side) par EV                        |
-| **RESULT_BTTS**         | P(side×issue) ≥ seuil ligue       | RESULT_BTTS                  | meilleur (side × YES/NO) par EV                       |
-| **DRAW_NO_BET**         | P(side) ≥ seuil ligue             | DRAW_NO_BET                  | argmax(HOME, AWAY)                                    |
-| **WIN_TO_NIL**          | P(side) ≥ seuil ligue             | WIN_TO_NIL_HOME/AWAY         | argmax(HOME, AWAY), YES uniquement                    |
-| **DOUBLE_CHANCE**       | P(combo) ≥ seuil global           | DOUBLE_CHANCE                | meilleur (1X/X2/12) par EV                            |
-| **FIRST_HALF_WINNER**   | P_max HT ≥ seuil ligue            | FIRST_HALF_WINNER            | argmax(HOME, DRAW, AWAY) à la mi-temps                |
-| **HALF_TIME_FULL_TIME** | P(combo) ≥ seuil global           | HALF_TIME_FULL_TIME          | argmax probabilité sur la grille 9 cases HT×FT        |
-
-Les seuils des canaux de prédiction sont configurés par ligue dans `prediction.constants.ts` et calibrés par backtest avant activation. Le canal DRAW utilise la probabilité implicite bookmaker (`1/drawOdds`) comme signal principal — le modèle Poisson est un mauvais discriminateur de nul (plafond structurel ~0.32). CLEAN_SHEET, TEAM_TOTAL et WIN_EITHER_HALF ont été ajoutés le 2026-07-18 : entièrement câblés (moteur, settlement, UI). Aucune cote historique n'existe pour ces marchés (uniquement la sync PREMATCH forward, démarrée le même jour), donc pas de vrai backtest ROI possible — les trois tournent en **OBSERVATION** avec un seuil dérivé du taux de base réel par ligue (jamais misé, même méthodologie que GOALS ; TEAM_TOTAL doublé sur la dimension équipe, avec exclusion des lignes quasi-certaines > 90% de base rate).
-
-CORRECT_SCORE (2026-06-30) et les 8 canaux ajoutés le 2026-08-16 (RESULT_TOTAL_GOALS, OVER_UNDER_HT, RESULT_BTTS, DRAW_NO_BET, WIN_TO_NIL, DOUBLE_CHANCE, FIRST_HALF_WINNER, HALF_TIME_FULL_TIME) complètent la couverture de l'enum `Market` — chaque marché a désormais un canal de prédiction dédié plutôt que de dépendre uniquement de la sélection opportuniste d'EV. ⚠️ **Périmètre de staking réécrit le 2026-08-22.** Le pool de coupon ne part plus d'une liste positive de canaux stakés : il prend tout canal non-méta et non-filtre (`POOL_EXCLUDED_CHANNELS` ne retire que CONSENSUS/CONTRARIAN/AVOID et VALUE/SAFE). L'admission se juge sur la **calibration** — ratio réalisé/annoncé — et non sur le ROI, qui n'a aucune puissance statistique à ces volumes. Les restrictions par ligue qui subsistent (`DRAW_STAKED_LEAGUES`, `BTTS_STAKED_LEAGUES`) sont documentées à leur point de définition, avec pour BTTS un risque ouvert consigné dans TODO.md.
-
-Côté surface de consultation, Investir sépare les canaux dont le **ROI shrinké** (Bayes empirique) reste positif — deux sur dix-neuf au dernier relevé — de ceux en observation, et affiche à part ce que les garde-fous écartent.
-
-> **Redéfinition architecturale (2026-08-17 — livrée le 2026-08-18 pour VALUE/SAFE)** :
-> un canal n'est plus un consommateur direct et indépendant du socle Poisson
-> unique — c'est un lecteur de **famille de moteur prédictif** (un processus
-> générateur par famille, plusieurs canaux/marchés peuvent partager la même
-> famille). EV et SV cessent d'être des chercheurs de valeur indépendants
-> scannant tous les marchés ; ils deviennent des **filtres** appliqués aux
-> décisions déjà prises par les canaux de marché — **c'est le cas depuis le
-> 2026-08-18** (orchestrateur à 3 phases). Le reste du cadrage (moteur λ
-> mi-temps dédié notamment) n'est pas implémenté. Voir
-> `docs/prediction-engine-families.md` (cadrage, portée football actuelle en
-> §0) et `docs/channel-strategy-architecture.md` (orchestration, phases mises
-> à jour en conséquence).
+L'écran Décisions montre « Notre sélection » par match (les canaux du moteur
+calibrés sur la compétition) ; la fiche de match expose toutes les données
+brutes, sans jamais filtrer ni classer.
 
 ---
 
-### Marchés pré-combinés (RESULT_TOTAL_GOALS, RESULT_BTTS)
+## 4. Avis IA (VANTAGE)
 
-Retiré (2026-07-18) : le système précédent combinait deux marchés synthétiquement
-(probabilité jointe Poisson + cote corrélée estimée). Il est remplacé par de vrais
-marchés bookmaker pré-combinés — résultat × total de buts (`RESULT_TOTAL_GOALS`) et
-résultat × BTTS (`RESULT_BTTS`) — qui portent une cote réelle plutôt qu'estimée. Ce
-ne sont pas des combos à deux jambes mais des marchés à pick composé (comme
-`HALF_TIME_FULL_TIME`). Voir `docs/market-coverage-expansion.md`.
-
-### Phase 2+
-
-| Marché                    | Prérequis                                                              |
-| ------------------------- | ---------------------------------------------------------------------- |
-| **Mi-temps/Fin de match** | Nécessite stats de mi-temps (buts avant 45') — dépend des sources live |
-
----
-
-## 3.4 Architecture MVP
-
-### Tables principales
-
-- Competition
-- Season
-- Team
-- Fixture
-- Bet
-- ModelRun
-- AdjustmentProposal
+- Vit entièrement dans `apps/vantage-worker` (fournisseurs Groq, Cerebras,
+  Together, Fireworks) ; `apps/backend` n'a aucun client LLM.
+- Lit les décisions de tous les canaux sur un match et la fiabilité mesurée de
+  chacun, puis forme **son propre** avis (marché, probabilité) ; ce n'est
+  jamais un delta sur un autre score.
+- Cote plafonnée à 1,80 (`MAX_ODDS`) : au-delà, l'avis est affiché comme
+  « lecture retenue mais non proposée ».
+- Version courante `vantage-v6-match-voice` : un non-jeu est un avis sur le
+  match en mots de parieur, montré sur la fiche.
+- Sortie validée par Zod ; le bilan se lit sur `vantage_decision_history`.
+- Mesuré : calibré, ne bat pas la cote.
 
 ---
 
-## 3.5 Pipeline MVP
+## 5. Règles côté joueur
 
-1. Import historique
-2. Calcul stats rolling
-3. Génération probabilités
-4. Backtest
-5. Analyse calibration
-6. Rapport performance
-
-Pas d’odds au début.
-
----
-
-# 4. Modèle décisionnel
-
-## 4.1 Scoring hybride (C)
-
-### Étape 1 — Scoring déterministe (70%)
-
-Le score déterministe est la somme pondérée des facteurs **activés**. Tous les facteurs sont calculés en permanence — les facteurs désactivés sont loggés en mode shadow dans `ModelRun.features` sans contribuer au score.
-
-**Facteurs core (toujours activés) :**
-
-| Feature                 | Définition                                                                                                  | Fenêtre                    | Source       |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------- | ------------ |
-| **Forme récente**       | 5 derniers matchs, décroissance exponentielle (facteur 0.8) — poids : 1.0 / 0.8 / 0.64 / 0.51 / 0.41        | Rolling, tout contexte     | API-Football |
-| **xG (Expected Goals)** | xG marqués et encaissés séparés — probabilité réelle de but par tir, bien supérieur à la moyenne buts brute | Rolling 10 derniers matchs | API-Football |
-| **Performance dom/ext** | Taux victoire / nul / défaite selon le contexte du match (domicile ou extérieur)                            | Toute la saison en cours   | API-Football |
-| **Volatilité ligue**    | Écart-type des totaux de buts par match dans la ligue (via distribution de Poisson)                         | Toute la saison en cours   | API-Football |
-
-**Facteurs additionnels activés (Phase 2) :**
-
-| Feature           | Définition                                                                                                    | Source                   |
-| ----------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| **Line movement** | Mouvement de cote Pinnacle entre premier et dernier snapshot. Mouvement > 10% contre notre pick → pick exclu. | OddsSnapshots en DB      |
-| **Injuries**      | Absences joueurs clés (gardien, attaquants). 3+ titulaires absents → fixture exclue.                          | API-Football `/injuries` |
-
-**Facteurs shadow (calculés, non activés, auto-activation possible) :**
-
-| Feature        | Définition                                           | Activation                                        |
-| -------------- | ---------------------------------------------------- | ------------------------------------------------- |
-| **H2H**        | 5 dernières confrontations directes                  | Auto si corrélation Spearman > 0.15 sur 50+ paris |
-| **Congestion** | Jours depuis dernier match, charge calendrier        | Auto si corrélation Spearman > 0.15 sur 50+ paris |
-| **Lineups**    | Compositions officielles (post-hoc, ~1h avant match) | Auto si corrélation Spearman > 0.15 sur 50+ paris |
-
-> **Note :** Le xG remplace la moyenne buts brute. Il reflète la qualité des occasions créées et concédées, pas seulement le score final — ce qui réduit le bruit lié aux matchs atypiques et améliore le Brier Score.
-
-**Pondérations initiales (facteurs core activés) :**
-
-| Feature                        | Poids |
-| ------------------------------ | ----- |
-| Forme récente                  | 30%   |
-| xG (marqués/encaissés)         | 30%   |
-| Performance domicile/extérieur | 25%   |
-| Volatilité ligue               | 15%   |
-
-Ces poids sont ajustables par la boucle d'apprentissage après 50+ paris, dans la limite de 5%/semaine. L'activation d'un nouveau facteur shadow déclenche une redistribution automatique des poids via `AdjustmentProposal`.
-
-### Étape 2 — Raffinement LLM (30%)
-
-- Cohérence contextuelle
-
-Backend valide toujours.
+- Le mot « canal » n'apparaît jamais : on parle de types de pari, nommés avec
+  les équipes. L'admin garde les canaux.
+- Jamais de marge bookmaker ni de « 1xBet garde X % » côté joueur (coupon,
+  match, ticket, image, aide) : réservé à l'admin.
+- La chance affichée au joueur est la **fréquence du marché** (probabilité
+  sans marge), pas la probabilité du moteur.
+- Les lignes de pari ne sont jamais arrondies (« moins de 2,5 » ≠ « moins de 3 »).
+- Une valeur inconnue est exclue et comptée à part, jamais montrée comme 0.
 
 ---
 
-## 4.2 Format d'output
+## 6. Architecture
 
-Le Betting Engine produit un objet JSON par fixture analysée, stocké dans `ModelRun` et transmis au backend pour validation :
-
-```json
-{
-  "fixture_id": "epl_2024_matchday28_mci_vs_ars",
-  "analyzed_at": "2024-03-10T09:00:00Z",
-  "model_run_id": "run_00421",
-  "decision": "BET | NO_BET",
-  "bets": [
-    {
-      "market": "1X2 | OVER_UNDER | BTTS | DOUBLE_CHANCE",
-      "pick": "HOME | DRAW | AWAY | OVER | UNDER | YES | NO | 1X | X2 | 12",
-      "prob_estimated": 0.62,
-      "odds_snapshot": 1.85,
-      "ev": 0.147,
-      "stake_pct": 0.01,
-      "score": {
-        "deterministic": 0.71,
-        "llm_delta": 0.04,
-        "final": 0.75
-      },
-      "features": {
-        "forme_recente": 0.68,
-        "xg": 0.74,
-        "performance_dom_ext": 0.65,
-        "volatilite_ligue": 0.42
-      }
-    }
-  ],
-  "openclaw_raw": {},
-  "validated_by_backend": true
-}
-```
-
-- `decision` au niveau fixture — une seule décision globale par match
-- `llm_delta` isolé du score déterministe — contribution OpenClaw auditable indépendamment
-- `features` loggées à chaque run — permet de rejouer n'importe quel `ModelRun`
-- `odds_snapshot` obligatoire en phase live
-- `validated_by_backend` — trace explicite de l'autorité backend
+1. Monorepo pnpm 10 + Turborepo, Node ≥ 22, TypeScript strict.
+2. `apps/backend` : NestJS en deux processus, API HTTP (`main.ts`) et workers
+   BullMQ (`main.worker.ts`).
+3. `packages/analysis-core` : noyau pur (probabilités, 20 stratégies, classes
+   et composeurs de coupon, règlement, calcul d'EV), sans I/O.
+4. `packages/backtest-core` : rejeux point-in-time du pipeline actuel.
+5. `packages/db` : schéma Prisma 7, PostgreSQL 18.
+6. `apps/web` : Next.js, joueur et admin, style « tableau d'affichage ».
+7. `apps/vantage-worker` : le seul LLM (Avis IA).
+8. `apps/ml-worker` : Python, préparation Phase 3, correction d'ombre coupée.
+9. Mails via Resend (`packages/transactional`), push web, notifications in-app.
+10. Variables d'environnement = secrets et adresses ; les réglages
+    d'exploitation vivent dans `app_setting` et l'écran admin.
 
 ---
 
-# 5. Stratégie Value & Risk
+## 7. Données
 
-## 5.1 Expected Value (EV)
-
-Formule :
-
-EV = (Probabilité × Cote) − 1
-
-Seuil initial :
-
-- EV ≥ 8%
-
-⚠️ Ce seuil existe toujours dans le code (`EV_THRESHOLD`, gate du canal VALUE)
-mais **il ne sélectionne pas sur une quantité prédictive** — voir l'encadré de
-§ « Canaux de décision ». Un plafond `MAX_LEG_EDGE = 0.10` s'applique
-par-dessus sur toute surface de mise, et le classement se fait partout sur la
-probabilité calibrée.
+- **API-Football** (plan Pro, 7 500 appels par jour) : matchs, résultats,
+  statistiques, événements, compositions et stats joueurs via
+  `/fixtures?ids=`, effectifs (`player_squad`), blessures, entraîneurs.
+- **Cotes de 11 bookmakers** (`ODDS_INGESTION_BOOKMAKER_IDS` : Pinnacle,
+  Bet365, Unibet, Marathonbet, Bwin, 1xBet, Betano, William Hill, Betfair,
+  BetVictor, SBO). Pinnacle est la référence, 1xBet le book du joueur.
+- Imports historiques : football-data.co.uk (CSV), eloratings.net.
+- `odds_snapshot` est partitionné par mois ; les mois clos sont archivés en
+  Parquet sur RustFS (`modules/odds-archive`).
+- Chaque `ModelRun` journalise fixture, features, score déterministe,
+  `llmDelta` (toujours nul), score final et décision. Pas de cote → `NO_BET`.
 
 ---
 
-## 5.2 Volume recommandé
+## 8. Règles dures (le backend fait foi)
 
-- 4–8 paris par semaine
-- No bet autorisé
-- 1% bankroll par pari (fixe au début)
-
----
-
-## 5.3 Approche choisie
-
-✔️ ROI stable
-✔️ EV strict
-✔️ Pas de Kelly au début
-✔️ Ajustement progressif des poids
-
----
-
-# 6. Boucle d’apprentissage (Option B)
-
-## Après chaque match :
-
-1. Log probabilité estimée
-2. Log résultat réel
-3. Calcul erreur calibration
-4. Proposer ajustement
-
-Backend décide :
-
-- Appliquer partiellement
-- Refuser
-- Geler un marché
+- **Suspension automatique de marché** : ROI < −15 % sur 50 jambes réglées ou
+  plus, mesuré sur `channel_selection_deduped` sur 90 jours glissants, avec la
+  perte établie (borne haute à 95 % sous zéro). Jamais de réactivation
+  automatique.
+- **Ajustements auto-appliqués** (`AdjustmentProposal`) : au moins 50 paris
+  sur le marché, au plus 5 % de variation, une application par marché tous
+  les 7 jours ; rollback par `POST /adjustment/:id/rollback`.
+- **Aucune sortie LLM dans le score.** Si cela devait changer : plafond 0,30
+  côté serveur et décision humaine préalable.
+- **Pas de Kelly** : retiré (`KELLY_ENABLED` dans `RETIRED_ENV`).
+- Décisions humaines : rollback d'un ajustement, réactivation d'un marché
+  suspendu, changement du seuil d'EV, entrée d'un LLM dans le score,
+  désactivation manuelle d'un facteur appris.
 
 ---
 
-# 7. Métriques clés
-
-- Brier Score
-- Calibration Error
-- ROI glissant
-- Drawdown max
-- EV moyen
-- ROI par compétition (Priorité 1)
-- ROI par marché au sein de la compétition
-- ROI par plage de cote
-
----
-
-# 8. Contraintes majeures
-
-- Pas de changement de poids < 50 paris
-- Variation max 5% / semaine
-- Snapshot des odds obligatoire en phase live
-
-### Gestion des cas d'erreur données
-
-| Cas                         | Comportement                                                                                                          |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **Match reporté/annulé**    | Fixture marquée `POSTPONED` — aucun `ModelRun` généré, paris existants annulés                                        |
-| **Source ETL indisponible** | Job BullMQ retenté 3× avec backoff exponentiel — alerte si échec total                                                |
-| **Odds manquantes**         | `decision: NO_BET` automatique — pas d'analyse sans snapshot odds en phase live                                       |
-| **Données insuffisantes**   | Moins de 5 matchs joués en saison → feature `forme_recente` exclue du scoring, poids redistribués proportionnellement |
-
----
-
-### Seuils de suspension par marché
-
-| Niveau           | Condition                                       | Action                                                   |
-| ---------------- | ----------------------------------------------- | -------------------------------------------------------- |
-| **Alerte**       | ROI < -10% sur les 30 derniers paris du marché  | Log + notification, aucune action automatique            |
-| **Suspension**   | ROI < -15% sur un minimum de 50 paris du marché | Gel automatique du marché, révision manuelle obligatoire |
-| **Réactivation** | Décision backend uniquement                     | Jamais automatique                                       |
-
-- La suspension s'applique par marché indépendamment — un marché suspendu n'affecte pas les autres
-- Aucune suspension possible avant 50 paris sur le marché concerné
-
----
-
-# 9. MVP (3 mois)
-
-## Mois 1
-
-- Import historique
-- Modèle probabiliste simple
-- Backtest complet
-- Calibration
-
-## Mois 2
-
-- Ajout odds
-- Calcul EV
-- Simulation value bets
-- Tracking ROI
-
-## Mois 3
-
-- Automatisation quotidienne
-- Hybride scan + monitor
-- Apprentissage validé
-- Stabilisation
-
----
-
-# 10. LTS (Long Term Strategy)
-
-## Phase 2
-
-- Kelly fractionnelle (0.25)
-- Multi-ligues actives
-- Diversification corrélations
-- Multi-bookmakers
-- **Grafana** — dashboards ROI, Brier Score, drawdown (connexion directe PostgreSQL)
-- **TimescaleDB** — extension PostgreSQL pour odds snapshots haute fréquence (90% compression, 1000x faster queries)
-
-## Phase 3
-
-- Modèle ML léger (XGBoost)
-- Détection marché inefficience
-- Simulation Monte Carlo
-- Gestion dynamique drawdown
-- **Python worker** — backtesting avancé (`sports-betting`) + calibration probabiliste (`scikit-learn` : Platt Scaling, isotonic regression, reliability diagrams)
-
-## Phase 4
-
-- SaaS possible
-- Multi-tenant
-- Groupe premium
-- API interne
-
----
-
-# 11. Règles psychologiques intégrées
-
-- Le système peut perdre 10 fois d’affilée
-- Drawdown de 10–15% normal
-- Évaluation sur 150–300 bets minimum
-- Pas d’optimisation court terme
-
----
-
-# 12. Philosophie finale
-
-Ce projet n’est pas :
-
-- Un générateur de pronostics excitants
-- Un outil court terme
-- Un système basé sur intuition
-
-C’est :
-
-> Un moteur probabiliste discipliné,
-> Multi-canal (cotes : EV, SV — prédiction par marché : voir §3.3),
-> Mesurable,
-> Auto-calibré,
-> Construit pour survivre à la variance.
-
----
-
-# 13. Étape immédiate suivante
-
-1. Importer 3 saisons EPL
-2. Construire modèle simple
-3. Backtester
-4. Mesurer calibration
-
-Ne rien complexifier avant validation.
-
----
-
-# 14. Stack Technique
-
-## 14.1 Backend
-
-- **Framework** : NestJS
-- **Langage** : TypeScript
-- **ORM** : Prisma
-- **Base de données** : PostgreSQL
-- **Queue & Scheduling** : BullMQ + Redis
-- **Validation** : Zod ou class-validator
-- **Tests** : Vitest
-- **Build** : SWC
-
----
-
-## 14.2 Data Engine (ETL)
-
-### Orchestration
-
-- **Kestra** (open source) — orchestrateur ETL YAML-based, remplace le scheduling manuel BullMQ
-  - Monitoring visuel, historique d'exécution, retries configurables
-  - Wrape les workers Node.js existants sans réécriture
-- **BullMQ + Redis** — conservé pour les workers Node.js de traitement
-
-### Jobs principaux
-
-| Job             | Déclencheur            | Source                      |
-| --------------- | ---------------------- | --------------------------- |
-| `fixtures_sync` | Quotidien              | football-data.org           |
-| `results_sync`  | Post-match             | football-data.org           |
-| `xg_sync`       | Post-match             | Understat (scraping)        |
-| `stats_sync`    | Hebdomadaire           | FBref (scraping)            |
-| `odds_snapshot` | Pré-match (phase live) | API-Football / The Odds API |
-
-### Librairies
-
-- **HTTP / Scraping** : Axios + Cheerio
-- **Validation données** : Zod (schéma strict sur chaque ingestion)
-- **Math / Modèle probabiliste** :
-  - `jStat` — distributions de Poisson (standard football)
-  - `decimal.js` — arithmétique précise sur les cotes
-  - `simple-statistics` — écart-type, calibration error, corrélation
-- **Logging** : Pino
-
----
-
-## 14.3 Intelligence & IA
-
-- OpenClaw (runtime agent)
-- LLM externe (GPT / Claude selon coût)
-- Rôle :
-  - Raffinement contextuel
-  - Construction ticket
-  - Proposition ajustement poids
-
-LLM non utilisé pour :
-
-- Scraping
-- Source de fixtures
-- Données primaires
-
-### Contraintes d'encadrement OpenClaw
-
-OpenClaw est un composant contraint, pas une boîte noire. Trois risques identifiés et leurs garde-fous :
-
-**Hallucination**
-
-- Les prompts sont strictement structurés — OpenClaw reçoit les données déjà calculées par le moteur déterministe, jamais de question ouverte
-- Chaque output est validé contre un schéma Zod — toute réponse non conforme est rejetée automatiquement
-
-**Manque de reproductibilité**
-
-- `temperature: 0` sur tous les appels de scoring
-- Chaque appel est loggé intégralement : input exact, output exact, timestamp, version du prompt
-- Les propositions OpenClaw sont stockées séparément du score final pour permettre l'audit de sa contribution réelle
-
-**Dérive de confiance (poids réel > 30%)**
-
-- Le plafond de 30% est hard-codé côté backend — OpenClaw ne peut pas le dépasser
-- Son output est un `delta` numérique sur le score, jamais un raisonnement narratif que le système interpréterait librement
-
-**Timing d'introduction**
-
-- OpenClaw n'entre pas dans la boucle avant la fin du MVP
-- Il faut un ROI et un Brier Score de référence mesurés (modèle 100% déterministe) avant d'introduire le LLM — pour pouvoir quantifier sa contribution réelle et le retirer s'il n'apporte rien
-
----
-
-## 14.4 Notifications & Alertes
-
-- **Nodemailer** (SMTP) — email transactionnel (alertes moteur, rapports hebdomadaires)
-  - Kill-switch `SMTP_ENABLED` — désactivé par défaut en dev, Mailpit en local (port 1025/8025)
-  - En prod : `SMTP_HOST/PORT/USER/PASSWORD` (Gmail, SES, etc.)
-- **In-app** — notifications PostgreSQL consultables via `GET /notifications`
-
-**Événements notifiés :**
-
-| Événement                            | Canal         | Priorité |
-| ------------------------------------ | ------------- | -------- |
-| Picks du jour générés (≥ 1 pari)     | Email + Slack | Haute    |
-| NO BET du jour (0 opportunité)       | Email + Slack | Normale  |
-| Marché suspendu automatiquement      | Slack + Email | Haute    |
-| Échec total job ETL                  | Slack + Email | Critique |
-| Rapport hebdomadaire ROI/Brier Score | Email         | Normale  |
-
----
-
-## 14.5 Infrastructure
-
-- Docker Compose (local & prod)
-- VPS (Hetzner recommandé)
-- Reverse proxy (Nginx)
-- CI/CD (GitHub Actions)
-
----
-
-## 14.6 Architecture globale
-
-```
-Data Engine (ETL)
-        ↓
-PostgreSQL
-        ↓
-Betting Engine (NestJS)
-        ↓
-OpenClaw (IA refine)
-        ↓
-Validation Backend
-        ↓
-Stockage + Tracking
-```
-
----
-
-## 14.7 Philosophie technique
-
-- Données déterministes
-- IA interprétative
-- Backend autorité
-- Système mesurable
-- Scalabilité possible vers SaaS
-
----
-
-# 15. Nom du Projet
-
-## 🎯 Nom officiel
-
-# **EVCore**
-
-Domaine : **evcore.live**
-
----
-
-## Signification
-
-- **EV** → _Expected Value_, concept fondateur — le moteur ne génère un pick que lorsqu'il y a un avantage mathématique mesurable
-- **Core** → moteur central, discipline, fondation structurelle
-
-Le système a évolué au-delà du seul canal EV : il opère désormais sur une vingtaine de canaux (voir §3.3 pour la liste complète et le statut staké/observation de chacun), mais l'Expected Value reste le critère primaire pour les canaux basés sur les cotes (EV/SV).
-
-Le nom reflète :
-
-> Un moteur construit autour de l’avantage mathématique,
-> avec une approche rigoureuse et long terme.
-
----
-
-## Positionnement
-
-EVCore n’est pas :
-
-- Un générateur de “tips”
-- Un outil émotionnel
-- Un système court terme
-
-EVCore est :
-
-- Un moteur probabiliste
-- Un système value-driven
-- Un framework d’optimisation long terme
-- Un outil mesurable et calibré
-
----
-
-## Vision associée au nom
-
-EVCore représente :
-
-- Discipline
-- Structure
-- Mathématiques appliquées
-- Calibration continue
-- Gestion intelligente du risque
-
----
-
-## Extension future
-
-Le nom permet une évolution naturelle vers :
-
-- EVCore Engine
-- EVCore Analytics
-- EVCore Pro
-- EVCore AI
-
----
+## 9. Futur (non planifié)
+
+- **Phase 3, redéfinie le 2026-10-29** : la grille de marché comme entrée du
+  moteur, et du ML seulement pour ce que le prix ne dit pas (mi-temps,
+  corners, marge apprise, dépendance), validé contre Pinnacle, sans appel ML
+  à l'analyse (`docs/audits/2026-10-29/ML-V2-PROPOSITION.md`).
+- **Multi-sport** : cadrage dans `docs/multi-sport-extension.md`.
+- **Loto Bonheur CI** : module de collecte et d'analyse décrit dans `loto.md`.
+- **SaaS, multi-tenant** : Phase 4.

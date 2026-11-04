@@ -5,7 +5,7 @@
 //
 // ⚠ `roi` est calculé et exposé parce qu'il est demandé, mais il n'a AUCUNE
 // puissance statistique ici : erreur-type de 13 à 18 points pour des écarts de
-// 10 points (audit 2026-08-22, docs/audit-canaux-investir-2026-08-22.md).
+// 10 points (audit 2026-08-22, docs/audits/2026-08-22/audit-canaux-investir.md).
 // Une décision prise sur le ROI d'une cellule serait prise sur du bruit.
 
 import Decimal from 'decimal.js';

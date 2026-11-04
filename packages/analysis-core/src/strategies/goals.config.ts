@@ -1430,7 +1430,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
   // shrinkage (probability/ou-shrinkage.ts, factor 0.25 toward the recent
   // base rates), so thresholds follow the standard base−0.05 rule on the
   // RECENT blend. Root cause (no xG in data-poor leagues) tracked in
-  // docs/data-poor-leagues-calibration.md.
+  // docs/archive/data-poor-leagues-calibration.md.
   NOR2: {
     lines: [
       {

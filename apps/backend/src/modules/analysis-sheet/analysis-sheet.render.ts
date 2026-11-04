@@ -55,7 +55,7 @@ export type AnalysisSheetPickHistoryEntry = {
 // own EV/odds/probability gates), this is the full pool a manual coupon
 // analysis needs: a `rejected` status here means the pick failed a
 // single-bet EV/odds floor, not that it's unreliable for a combo leg
-// (COUPON_ANALYSIS_TEMPLATE.md, étape 0).
+// (docs/archive/COUPON_ANALYSIS_TEMPLATE.md, étape 0).
 export type AnalysisSheetJsonEvaluatedPick = {
   market: string;
   pick: string;

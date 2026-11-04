@@ -12,7 +12,6 @@ function row(overrides: Partial<PriceCandidateRow> = {}): PriceCandidateRow {
     market: 'ONE_X_TWO',
     pick: 'HOME',
     odds: 1.25,
-    band: '<1.3',
     scheduledAt: new Date('2026-10-13T18:00:00.000Z'),
     ...overrides,
   };

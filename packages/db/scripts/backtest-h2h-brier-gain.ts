@@ -1,10 +1,10 @@
 /// <reference types="node" />
 /**
- * docs/h2h-service-v2-plan.md §5, item 2 — backtest-h2h-signal-value.ts a
+ * docs/archive/h2h-service-v2-plan.md §5, item 2 — backtest-h2h-signal-value.ts a
  * montré que le score H2H v2.0 (seuil n>=3, decay=0.8, nul=0.5, désormais
  * implémenté dans h2h.service.ts) corrèle avec le résidu (actual-modelProb)
  * du modèle 1X2 (r=0.0785). Une corrélation isolée ne suffit pas à décider
- * d'une activation (docs/h2h-integration-evaluation.md, "Test d'apport
+ * d'une activation (docs/archive/h2h-integration-evaluation.md, "Test d'apport
  * incremental") : ce script mesure le gain réel de Brier score sur une
  * correction calibrée du modèle complet, avec séparation chronologique
  * train/validation stricte (le coefficient est appris sur le train, jamais
@@ -52,7 +52,7 @@ const BETA_GRID: number[] = Array.from(
   { length: 25 },
   (_, i) => Math.round((-0.6 + i * 0.05) * 100) / 100,
 ); // -0.60 .. 0.60 pas 0.05
-const MIN_VALIDATION_SAMPLE = 200; // docs/h2h-integration-evaluation.md — "Evaluation initiale"
+const MIN_VALIDATION_SAMPLE = 200; // docs/archive/h2h-integration-evaluation.md — "Evaluation initiale"
 const MIN_GROUP_SAMPLE = 100; // seuil "Exploration" (doc) — sous ce volume, groupe reporté mais non concluant
 
 type FixtureRow = {
@@ -444,7 +444,7 @@ async function main() {
     out();
     out(
       `  Validation n=${validation.length} < seuil minimal ${MIN_VALIDATION_SAMPLE} ` +
-        "(docs/h2h-integration-evaluation.md, 'Evaluation initiale') — " +
+        "(docs/archive/h2h-integration-evaluation.md, 'Evaluation initiale') — " +
         "résultat à traiter comme exploratoire, pas comme décision d'activation.",
     );
   }
@@ -535,7 +535,7 @@ async function main() {
           `(beta=${bestBeta.toFixed(2)}, Brier ${baselineValBrier.toFixed(6)} -> ${correctedValBrier.toFixed(6)}).`,
   );
   out(
-    "  Rappel (docs/h2h-integration-evaluation.md, 'Critères d'activation') : " +
+    "  Rappel (docs/archive/h2h-integration-evaluation.md, 'Critères d'activation') : " +
       "une amélioration de Brier seule ne suffit pas — vérifier aussi la stabilité " +
       "sur plusieurs périodes/compétitions et le volume minimal par marché avant toute activation.",
   );

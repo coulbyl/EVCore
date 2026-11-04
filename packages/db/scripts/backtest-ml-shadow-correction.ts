@@ -1,6 +1,6 @@
 /// <reference types="node" />
 /**
- * docs/ml-worker-sync.md — la correction ML (`computeShadowMlByChannel`,
+ * docs/archive/ml-worker-sync.md — la correction ML (`computeShadowMlByChannel`,
  * betting-engine.service.ts) est calculée en shadow depuis le 2026-07-01
  * mais n'a jamais été validée hors du dataset d'entraînement lui-même : les
  * métriques `roiShadow`/`brierScore` de `ml_model_version.metrics` viennent
@@ -8,7 +8,7 @@
  * contre les vraies décisions prises en prod. L'audit du 2026-08-12 a montré
  * que ce chiffre peut être trompeur (BTTS:BTTS et ALL sont restés "meilleurs
  * sur le papier" pendant 6 semaines alors que leur fichier modèle était mort
- * — voir TODO.md).
+ * — voir docs/archive/TODO-2026-10.md).
  *
  * Ce script évalue la correction ML **comme elle a réellement tourné en
  * prod** : pour chaque `ChannelSelection` rang 1 réglée (WON/LOST), on

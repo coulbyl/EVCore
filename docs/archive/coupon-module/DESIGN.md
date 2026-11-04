@@ -345,7 +345,7 @@ couverture avant de coder l'Étape 1.
 ## 4. Plan d'implémentation (ordonné, respecte phases + règles)
 
 Chaque étape réutilise l'existant. **Aucune nouvelle activation sans backtest
-séparé par ligue/marché** (règle TODO.md).
+séparé par ligue/marché** (règle docs/archive/TODO-2026-10.md).
 
 > **État courant (juin 2026)** — Le **fil calibration est terminé** : B0 (bug SQL),
 > B3 (meanError), B6 (5 canaux), B-ODDS (cote+EV BTTS/DOMINANT), B-TEMP (as-of),
@@ -447,7 +447,7 @@ findLatestOddsSnapshot`, as-of coup d'envoi) ; helper `computeMarketFair`
 > `computeJointProbability`, `estimateComboOdds`, colonnes
 > `comboMarket`/`comboPick`) a été supprimé au profit de vrais marchés
 > bookmaker pré-combinés (`RESULT_TOTAL_GOALS`, `RESULT_BTTS` — Niveau 2.b,
-> voir `docs/market-coverage-expansion.md`), qui donnent une cote réelle là
+> voir `docs/archive/market-coverage-expansion.md`), qui donnent une cote réelle là
 > où ce système approximait un prix. Section conservée pour l'historique.
 
 - ✅ Générateur pur `buildComboCandidates` ([combo-candidates.ts](combo-candidates.ts)) :
@@ -455,7 +455,7 @@ findLatestOddsSnapshot`, as-of coup d'envoi) ; helper `computeMarketFair`
   (`computeJointProbability`, jamais `p1×p2`), cote combinée corrélée
   (`estimateComboOdds`), EV via `calculateEV`, gate `EV joint ≥ getLeagueEvThreshold`.
   Marchés non cotés des deux côtés → skip (pas de cote inventée). Conforme
-  EVCORE.md § Combos-match.
+  docs/archive/EVCORE-spec-v1.md § Combos-match.
 - ✅ Un combo = **une jambe** (un slot fixture) portant 2 marchés corrélés, canal
   `VALUE` (sélection sur EV jointe pure). `ScoredPick.comboMarket/comboPick` ;
   `scorePicks` garde la proba jointe (pas de calibration mono-marché).

@@ -14,7 +14,7 @@ export { STRATEGY_CHANNEL };
 
 // Three phases, one accumulating decisions map — each phase sees every
 // decision made by the phases before it (docs/prediction-engine-families.md
-// §0, docs/channel-strategy-architecture.md §5):
+// §0, docs/archive/channel-strategy-architecture.md §5):
 //
 //   Phase 1 — market-specialized channels (DOMINANT, BTTS, DRAW, GOALS, …):
 //     each is the specialist for its own market/family, deciding from the

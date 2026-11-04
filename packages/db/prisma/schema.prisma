@@ -1,5 +1,5 @@
 // EVCore — Prisma Schema
-// See EVCORE.md section 3.4 for table descriptions
+// See docs/archive/EVCORE-spec-v1.md section 3.4 for table descriptions
 // See CLAUDE.md for repository conventions
 
 generator client {
@@ -376,7 +376,7 @@ model Team {
 }
 
 // Managerial spell history per team — feeds the `sameCoach` H2H discount
-// proxy (docs/h2h-service-v2-plan.md §3.4, v2.3a): "does this past H2H leg
+// proxy (docs/archive/h2h-service-v2-plan.md §3.4, v2.3a): "does this past H2H leg
 // still reflect the same tactical philosophy". One row per tenure;
 // endDate null = still in charge as of last sync (coachs-sync.worker.ts,
 // API-Football GET /coachs?team={id}).
@@ -631,7 +631,7 @@ model TeamStats {
   afterFixtureId String  @db.Uuid
   afterFixture   Fixture @relation(fields: [afterFixtureId], references: [id])
 
-  // Feature values used in the deterministic scoring model (see EVCORE.md §4.1)
+  // Feature values used in the deterministic scoring model (see docs/archive/EVCORE-spec-v1.md §4.1)
   recentForm       Decimal @db.Decimal(5, 4) // weighted 5-match form (decay 0.8)
   xgFor            Decimal @db.Decimal(5, 3) // rolling xG scored (10 matches)
   xgAgainst        Decimal @db.Decimal(5, 3) // rolling xG conceded (10 matches)
@@ -793,7 +793,7 @@ model User {
   // jamais activé d'office (2026-10-31).
   emailNotificationsEnabled Boolean                 @default(false)
   // Optional, collected in the Profil settings tab — never at registration
-  // (TODO.md: keeping signup low-friction). phoneNumberConsentGiven gates
+  // (docs/archive/TODO-2026-10.md: keeping signup low-friction). phoneNumberConsentGiven gates
   // collection: the frontend only shows the phone input once consent is
   // toggled on, and revoking consent clears the stored number server-side
   // (AuthService.updateMe) rather than keeping it around unconsented.
@@ -1193,7 +1193,7 @@ model CouponProposal {
   // voidées. `null` tant que non réglé ; égale à `combinedOdds` sur un WON sans
   // void. Distincte de `combinedOdds` (cote proposée à l'origine, affichée
   // ailleurs) pour ne jamais perdre la valeur initialement annoncée. Voir
-  // TODO.md "Agrégats ROI/summary ignorent silencieusement PARTIAL/VOID".
+  // docs/archive/TODO-2026-10.md "Agrégats ROI/summary ignorent silencieusement PARTIAL/VOID".
   realizedOdds           Decimal?             @db.Decimal(8, 3)
   jointProbability       Decimal              @db.Decimal(5, 4)
   signalScore            Decimal              @db.Decimal(5, 4)
@@ -1207,7 +1207,7 @@ model CouponProposal {
   lastFixtureScheduledAt DateTime
   legs                   CouponProposalLeg[]
   // Real, verifiable engagement — never a fabricated count (CLAUDE.md/
-  // docs/vantage-centric-redesign-2026-09-01.md §4 point 6: no social proof
+  // docs/archive/vantage-centric-redesign-2026-09-01.md §4 point 6: no social proof
   // without real data behind it). One row per distinct viewer/player, not
   // one per page load/click — see CouponProposalView and CouponFollow.
   views                  CouponProposalView[]
@@ -1595,7 +1595,7 @@ model ChatUsage {
 // (dedicated "CALIBRATION SCHEMA" section) were removed 2026-08-18 — built
 // with a real migration (Étape 5) but never wired to a caller;
 // model-calibration.service.ts/channel-tuning.service.ts use
-// BacktestRepository for persistence instead. See TODO.md/ROADMAP.md.
+// BacktestRepository for persistence instead. See docs/archive/TODO-2026-10.md and docs/archive/ROADMAP-history-2026-11.md.
 
 // Un jour où le joueur a ouvert l'app (2026-10-29) : la mesure d'activité,
 // chez nous, sans outil tiers. Écrit au plus une fois par joueur et par jour

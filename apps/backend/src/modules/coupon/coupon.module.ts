@@ -6,7 +6,6 @@ import { CouponRepository } from './coupon.repository';
 import { CouponFollowRepository } from './coupon-follow.repository';
 import { CouponSettlementService } from './coupon-settlement.service';
 import { CouponService } from './coupon.service';
-import { CouponPriceGenerationService } from './coupon-price-generation.service';
 import { CouponFavouriteGenerationService } from './coupon-favourite-generation.service';
 import { CouponHunterGenerationService } from './coupon-hunter-generation.service';
 import { CouponPricedPoolService } from './coupon-priced-pool.service';
@@ -28,7 +27,7 @@ import { ProductWeekService } from './product-day/product-week.service';
 // CalibrationService/OddsSnapshotLoader are still registered in their real
 // homes (adjustment.module.ts/betting-engine.module.ts) — this was a
 // duplicate registration only CouponPoolService needed. See
-// docs/vantage-centric-redesign-2026-09-01.md §9bis.
+// docs/archive/vantage-centric-redesign-2026-09-01.md §9bis.
 @Module({
   imports: [PrismaModule, AuthModule, FixtureEventsModule],
   controllers: [CouponController],
@@ -42,7 +41,6 @@ import { ProductWeekService } from './product-day/product-week.service';
     PlayableOddsRepository,
     CouponSettlementService,
     CouponService,
-    CouponPriceGenerationService,
     CouponFavouriteGenerationService,
     CouponPricedPoolService,
     CouponDoubleGenerationService,
@@ -61,7 +59,6 @@ import { ProductWeekService } from './product-day/product-week.service';
     ProductWeekService,
     CouponSettlementService,
     CouponRepository,
-    CouponPriceGenerationService,
     CouponFavouriteGenerationService,
     CouponDailyGenerationService,
   ],

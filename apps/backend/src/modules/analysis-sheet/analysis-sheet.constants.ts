@@ -11,7 +11,7 @@ export const ANALYSIS_SHEET_LIMITS = {
 
 // Channels covered by the sheet — the "primary" staked/decided channels
 // (excludes meta-channels AVOID/CONSENSUS and the not-yet-viable
-// CORRECT_SCORE, which has near-zero settled volume — see docs/ml-worker-sync.md).
+// CORRECT_SCORE, which has near-zero settled volume — see docs/archive/ml-worker-sync.md).
 export const ANALYSIS_SHEET_CHANNELS = [
   'VALUE',
   'SAFE',

@@ -242,7 +242,7 @@ describe('buildJsonSheet', () => {
       status: 'viable',
       rejectionReason: null,
       // 0.6757 (calibrated) - 0.4856 (raw Poisson) — the same divergence
-      // discussed in COUPON_ANALYSIS_TEMPLATE.md étape 0.
+      // discussed in docs/archive/COUPON_ANALYSIS_TEMPLATE.md étape 0.
       adjustmentDelta: expect.closeTo(0.1901, 4),
     });
     expect(picks?.[1]).toMatchObject({

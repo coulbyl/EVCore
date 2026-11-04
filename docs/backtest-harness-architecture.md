@@ -1,9 +1,13 @@
 # Harnais de backtest — cadrage architecture
 
-> Statut : `packages/backtest-core` fonctionnel (fixtures, cotes, team
-> stats, H2H, congestion, `BacktestRunner`, premier script CLI). Non
-> finalisé — Elo FRI pas extrait, les 27 scripts existants pas migrés (voir
-> §6 pour où ils doivent migrer — pas `packages/db/scripts`).
+> Statut (mis à jour le 2026-11-04) : `packages/backtest-core` fonctionnel
+> (fixtures, cotes, team stats, H2H, congestion, `BacktestRunner` dans
+> `src/backtest-runner.ts`, archive de cotes, protocole de validation) et
+> **23 scripts CLI** dans `packages/backtest-core/scripts/` (19 importent le
+> harnais). Non finalisé — Elo FRI pas extrait, et les anciens scripts
+> `packages/db/scripts/backtest-*.ts` pas migrés : ils sont **42** aujourd'hui
+> (≈ 18 000 lignes), les 10 du §1 toujours en place (voir §6 pour où ils
+> doivent migrer — pas `packages/db/scripts`).
 >
 > Objectif : remplacer 27 scripts de backtest indépendants (11 338 lignes,
 > `packages/db/scripts/backtest-*.ts`), sans harnais partagé, par un socle
@@ -78,7 +82,7 @@ fonction avec `cutoff7d` pour son filtre de mouvement de cote — inopérant en
 prod sur 16 marchés sur 17 avant le fix. Tout backtest rejouant une date
 passée sur un marché hors 1X2 récupérait silencieusement des cotes du futur.
 
-**Fix** (voir TODO.md "Bugs & dette technique") : `cutoff` filtré
+**Fix** (voir docs/archive/TODO-2026-10.md "Bugs & dette technique") : `cutoff` filtré
 systématiquement partout. Suite backend complète (956 tests) verte après
 fix. **Puis extraction** : la logique pure d'assemblage des cotes
 (`assembleFullOddsSnapshot` et ses dépendances — `pickBestBookmaker`,
@@ -120,7 +124,17 @@ packages/backtest-core/
                                  toucher @evcore/db (garde-fou testé)
     replay-engine.ts          ← boucle chronologique (fixtures = événements,
                                  walk strict par scheduledAt)
-    backtest-runner.ts        ← façade CLI (à venir)
+    backtest-runner.ts        ← façade CLI (livrée : assemble les entrées
+                                 point-in-time d'un match, pas encore la
+                                 probabilité finale)
+    archived-odds.ts          ← lecture de l'archive Parquet des mois clos
+                                 d'`odds_snapshot` (#294), fusionnée par id
+                                 dans PointInTimeLoader
+    validation-protocol.ts    ← sélection puis validation figées (E-11)
+    new-markets-report.ts     ← fréquence du marché sans marge contre
+                                 réalisé, par marché × book × tranche (#301,
+                                 `report:new-markets`)
+    iso-week.ts               ← semaine ISO-8601 partagée (2026-09-16)
     architecture.guard.spec.ts
 ```
 
@@ -216,7 +230,7 @@ structuré pareil (utils purs + service I/O, avec ses propres tests), donc
 le même patron s'applique — reporté : c'est un canal de niche (V1 limitée à
 `ONE_X_TWO`, fallback hors pipeline Poisson principal), pas nécessaire pour
 que le harnais couvre le cas majoritaire des compétitions domestiques/
-européennes/sélections nationales en tournoi. Voir TODO.md.
+européennes/sélections nationales en tournoi. Voir docs/archive/TODO-2026-10.md.
 
 ## 6. Où vivent les scripts CLI — correction 2026-08-18
 
@@ -238,6 +252,12 @@ contrôle de santé pour vérifier que la couverture est suffisante avant d'en
 lancer un. `pnpm --filter @evcore/backtest-core run backtest:coverage-check
 -- --from=... --to=... [--competition=...]`, rapport écrit dans
 `packages/backtest-core/reports/`.
+
+_État au 2026-11-04 : 23 scripts dans `packages/backtest-core/scripts/`
+(backtests de coupon et de composeur, `production-chain.ts` partagé par les
+rejeux, `odds-archive.ts`, rapports CLV/marge/fraîcheur/nouveaux marchés) —
+ce sont des scripts nouveaux, aucun des anciens `packages/db/scripts/backtest-*.ts`
+n'a été déplacé._
 
 Migration des 27 scripts existants (`packages/db/scripts/backtest-*.ts`) :
 même conclusion — ceux qui adoptent le harnais migrent physiquement vers

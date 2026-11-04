@@ -1,7 +1,7 @@
 /// <reference types="node" />
 /**
  * Étude de `calibration_alert` (garde-fou de cohérence modèle↔marché) pour
- * OVER_UNDER — TODO.md flague qu'`assessMarketCoherence()` ne prend en
+ * OVER_UNDER — docs/archive/TODO-2026-10.md flague qu'`assessMarketCoherence()` ne prend en
  * entrée que les probabilités 1X2, jamais O/U, alors que le post-mortem du
  * 13-14/08 a montré un écart de +19pp (rawPoisson vs calibré) sur une jambe
  * Under 3.5 qui a cassé un coupon — du même ordre que les écarts qui ont

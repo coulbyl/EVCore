@@ -2,7 +2,7 @@
 # Usage: python3 ou-shrinkage-picks-guard.py generated_config.txt picks.csv
 # generated_config.txt = the TS entries emitted by ou-shrinkage-generate-config.py.
 # picks.csv export: settled SAFE/VALUE OVER_UNDER/BTTS/OVER_UNDER_HT
-# channel_selections with odds + lambdas (see docs/data-poor-leagues-calibration.md).
+# channel_selections with odds + lambdas (see docs/archive/data-poor-leagues-calibration.md).
 """Guard: what happens to real settled SAFE/VALUE O/U picks under shrinkage?
 
 For each settled pick in a shipped league, recompute the shrunk probability

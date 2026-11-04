@@ -2,7 +2,7 @@
 /**
  * Calibration walk-forward de OVER_UNDER_HT (over/under buts 1ère mi-temps) —
  * même protocole que TEAM_TOTAL/RESULT_TOTAL_GOALS
- * (docs/data-poor-leagues-calibration.md) : régresser la probabilité Poisson
+ * (docs/archive/data-poor-leagues-calibration.md) : régresser la probabilité Poisson
  * brute sur l'issue HT réelle par ligue+ligne, valider hors échantillon
  * (train = toutes saisons sauf la plus récente ; test = la plus récente),
  * ne livrer un bloc que si le Brier tenu-à-l'écart s'améliore d'au moins

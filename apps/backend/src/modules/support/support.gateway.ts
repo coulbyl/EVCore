@@ -33,7 +33,7 @@ function resolveCorsOrigins(): string[] {
 }
 
 // Real-time layer for the human support chat (feedback + personal questions,
-// see docs/business-model.md §6/§8). Every operator has exactly one
+// see docs/archive/business-model.md §6/§8). Every operator has exactly one
 // conversation and joins its room on connect; every admin joins a single
 // shared room and receives all conversations' messages there — filtered
 // client-side — since the current scale (~24 users) doesn't warrant

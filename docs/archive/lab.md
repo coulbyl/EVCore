@@ -2,7 +2,7 @@
 
 > Cadrage d'un refactor d'architecture. Objectif : robustesse et cohérence avant tout.
 > Statut repo au moment du cadrage : **Phase 3** (ML en shadow, calibration déjà opérationnelle).
-> À lire avec [ROADMAP.md](ROADMAP.md), [EVCORE.md](EVCORE.md), [CLAUDE.md](CLAUDE.md).
+> À lire avec [ROADMAP.md](ROADMAP.md), [docs/archive/EVCORE-spec-v1.md](docs/archive/EVCORE-spec-v1.md), [CLAUDE.md](CLAUDE.md).
 
 ## 1. Problème réel à résoudre
 

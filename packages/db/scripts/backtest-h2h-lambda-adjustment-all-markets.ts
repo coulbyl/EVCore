@@ -1,6 +1,6 @@
 /// <reference types="node" />
 /**
- * docs/h2h-service-v2-plan.md §4 — le choix produit (2026-07-23) est un scope
+ * docs/archive/h2h-service-v2-plan.md §4 — le choix produit (2026-07-23) est un scope
  * "large" pour la correction H2H : au lieu de ne corriger que l'EV du pick
  * 1X2 favori (backtest-h2h-brier-gain.ts), on ajuste lambdaHome/lambdaAway
  * eux-mêmes avant `computePoissonMarkets`. Comme TOUS les marchés dérivés

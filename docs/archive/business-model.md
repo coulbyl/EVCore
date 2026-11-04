@@ -3,7 +3,7 @@
 > Document de cadrage stratégique, pas un plan d'implémentation. Rien ici n'est encore
 > construit côté billing — voir §8 pour ce qui manque techniquement.
 > Analyse basée sur une lecture complète du code (backend, ml-worker Python, web) et des
-> données réelles en base au 2026-07-16, pas sur la description aspirationnelle d'EVCORE.md.
+> données réelles en base au 2026-07-16, pas sur la description aspirationnelle d'docs/archive/EVCORE-spec-v1.md.
 > Mise à jour 2026-07-16 : chat support 1:1 + notifications web push (support et annonces) +
 > opt-in email par utilisateur construits depuis la version précédente — voir §2 et §6.
 > Mise à jour 2026-07-16 (bis) : recadrage stratégique — EVCore n'a pas encore été promu,
@@ -12,7 +12,7 @@
 > traction observée. Positionnement produit clarifié : on ne vend pas des "canaux", on vend de
 > l'analyse curatée, des coupons composés, et de l'accompagnement — voir §6. Le pricing est
 > dynamique par construction, pas un catalogue figé — voir §6.
-> Contexte technique : [EVCORE.md](../EVCORE.md) · État d'avancement : [ROADMAP.md](../ROADMAP.md)
+> Contexte technique : [docs/archive/EVCORE-spec-v1.md](../EVCORE.md) · État d'avancement : [ROADMAP.md](../ROADMAP.md)
 > Maintenance des chiffres cités (formation + ce document) : [formation-content-maintenance.md](./formation-content-maintenance.md)
 
 ---

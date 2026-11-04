@@ -1,7 +1,7 @@
 /// <reference types="node" />
 /**
  * The missing "combined" test flagged in H2HService (h2h.service.ts:24-30)
- * and docs/h2h-service-v2-plan.md §3.3: `backtest-h2h-market-signals.ts`
+ * and docs/archive/h2h-service-v2-plan.md §3.3: `backtest-h2h-market-signals.ts`
  * deliberately isolates the per-market H2H signal's value against the
  * PRE-H2H model (baseline excludes the lambda correction, "on teste la
  * valeur ADDITIONNELLE du signal par marché au-dessus du modèle pré-H2H").

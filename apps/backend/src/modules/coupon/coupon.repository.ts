@@ -8,44 +8,10 @@ import {
   Prisma,
   StrategyChannel,
 } from '@evcore/db';
-import {
-  POOL_EXCLUDED_MARKETS,
-  UNIFIED_COUPON_CLASS,
-} from '@evcore/analysis-core';
-import {
-  PRICE_COMPOSER_POLICY,
-  PRICE_COMPOSER_SIGNAL_WINDOW_DAYS,
-} from './coupon.constants';
+import { POOL_EXCLUDED_MARKETS } from '@evcore/analysis-core';
+import { PRICE_COMPOSER_SIGNAL_WINDOW_DAYS } from './coupon.constants';
 import { PrismaService } from '@/prisma.service';
 import { startOfUtcDay } from '@utils/date.utils';
-
-/**
- * Découpage des cotes en tranches, partagé par la calibration et le vivier.
- *
- * Une seule définition : deux expressions séparées finiraient par diverger, et
- * le compositeur appliquerait alors à une jambe le coût d'une autre tranche.
- * Les bornes suivent les paliers mesurés sur la calibration des jambes —
- * ratio 0,899 sous 1,45, 0,836 entre 1,45 et 1,80, 0,619 au-delà.
- *
- * Au-dessus de 2,5 les tranches sont FERMÉES. Une tranche ouverte « 2,5+ »
- * créditait à une jambe à cote 12 le coût moyen d'une cellule faite à 3,5,
- * alors que la queue coûte bien plus (mesuré le 2026-10-05, `evaluated_pick`
- * réglé : ONE_X_TWO 2,5–3,5 → 0,926 ; 5–7 → 0,996 ; 7+ → 0,585 sur 588
- * jambes ; OVER_UNDER 5–7 → 0,856 ; 7+ → 0,714). Le compositeur minimise le
- * coût total, donc prend le moins de jambes possible : la plus longue d'une
- * tranche ouverte gagnait à coût crédité égal.
- */
-const ODDS_BAND_SQL = `CASE
-  WHEN odds < 1.3 THEN '<1.3'
-  WHEN odds < 1.45 THEN '1.3-1.45'
-  WHEN odds < 1.6 THEN '1.45-1.6'
-  WHEN odds < 1.8 THEN '1.6-1.8'
-  WHEN odds < 2.5 THEN '1.8-2.5'
-  WHEN odds < 3.5 THEN '2.5-3.5'
-  WHEN odds < 5 THEN '3.5-5'
-  WHEN odds < 7 THEN '5-7'
-  ELSE '7+'
-END`;
 
 /**
  * Matchs du créneau dont la dernière analyse d'avant-match porte l'alerte de
@@ -85,14 +51,6 @@ function calibrationAlertedFixtureIds(from: Date, to: Date): Prisma.Sql {
           END
   `;
 }
-
-export type MarketCostCell = {
-  market: string;
-  band: string;
-  legCount: number;
-  meanPayout: number;
-  payoutVariance: number;
-};
 
 export type EngineComboCandidateRow = {
   fixtureId: string;
@@ -140,7 +98,6 @@ export type PriceCandidateRow = {
   market: string;
   pick: string;
   odds: number;
-  band: string;
   scheduledAt: Date;
 };
 
@@ -410,48 +367,10 @@ export class CouponRepository {
   }
 
   /**
-   * Coût mesuré de chaque cellule (marché × tranche de cote).
-   *
-   * Lit `evaluated_pick`, qui règle contre le score tout ce que le moteur a
-   * envisagé — retenus comme rejetés. Le vivier du compositeur sort de la même
-   * vue : calibrer sur un espace et composer dans un autre donnerait des coûts
-   * qui ne s'appliquent à rien.
-   *
-   * `won IS NULL` sur une rencontre terminée n'est un remboursement que pour
-   * un Draw No Bet sur match nul : il rapporte exactement la mise. Pour tout
-   * autre marché, NULL veut dire « non réglable » — score de mi-temps absent,
-   * ou marché sans règle de règlement dans la vue (handicap asiatique,
-   * corners, cartons, …). Les compter comme remboursés leur donnerait un coût
-   * nul et le compositeur les préférerait à tout le reste.
-   */
-  async findMarketCostCalibration(
-    before: Date,
-  ): Promise<readonly MarketCostCell[]> {
-    return this.prisma.client.$queryRaw<MarketCostCell[]>`
-      WITH settled AS (
-        SELECT market,
-               ${Prisma.raw(ODDS_BAND_SQL)} AS band,
-               CASE WHEN won IS NULL THEN 1 WHEN won THEN odds ELSE 0 END AS payout
-        FROM public.evaluated_pick
-        WHERE "fixtureStatus" = 'FINISHED'
-          AND "scheduledAt" < ${before}
-          AND (won IS NOT NULL OR market = 'DRAW_NO_BET')
-      )
-      SELECT market,
-             band,
-             count(*)::int              AS "legCount",
-             avg(payout)::float         AS "meanPayout",
-             coalesce(var_pop(payout), 0)::float AS "payoutVariance"
-      FROM settled
-      GROUP BY market, band
-    `;
-  }
-
-  /**
    * Écrit la proposition du compositeur et ses jambes en une transaction.
    *
    * `source` fait partie de la clé unique : l'upsert ne peut donc jamais
-   * écraser la proposition du LLM du même jour sur la même cible.
+   * écraser la proposition d'une autre source du même jour sur la même cible.
    *
    * Une proposition existante n'est jamais réécrite : `created` dit si
    * cette passe l'a écrite ou l'a trouvée publiée (la passe de 21 h trouve
@@ -481,12 +400,9 @@ export class CouponRepository {
       /** Fréquence de Shin chez 1xBet, du même relevé que operatorOdds. */
       operatorFairProbability?: number | null;
     }[];
-    /**
-     * Profil écrit dans la clé unique et dans `reasoning.policyVersion`. Par
-     * défaut le coupon long 5–15 du compositeur ; le pari sûr du jour passe
-     * sa propre bande (FAVOURITE_COUPON_CLASS) et sa propre version.
-     */
-    profile?: {
+    /** Profil écrit dans la clé unique et dans `reasoning.policyVersion` :
+     * la bande et la version de la classe qui compose. */
+    profile: {
       targetOddsMin: number;
       targetOddsMax: number;
       policyVersion: string;
@@ -496,11 +412,7 @@ export class CouponRepository {
       legCanal?: StrategyChannel;
     };
   }): Promise<{ proposalId: string; created: boolean }> {
-    const profile = input.profile ?? {
-      targetOddsMin: UNIFIED_COUPON_CLASS.targetOddsMin,
-      targetOddsMax: UNIFIED_COUPON_CLASS.targetOddsMax,
-      policyVersion: PRICE_COMPOSER_POLICY.version,
-    };
+    const { profile } = input;
     const key = {
       forDate: startOfUtcDay(input.forDate),
       source: profile.source ?? CouponSource.PRICE_COMPOSER,
@@ -596,15 +508,13 @@ export class CouponRepository {
     candidateCount: number;
     reason?: string;
     proposalId?: string;
-    /** Par défaut la passe du compositeur 5–15 ; le pari sûr passe la sienne. */
-    pass?: { name: string; policyVersion: string };
+    pass: { name: string; policyVersion: string };
   }): Promise<void> {
     await this.prisma.client.couponGenerationAttempt.create({
       data: {
         forDate: startOfUtcDay(input.forDate),
-        policyVersion:
-          input.pass?.policyVersion ?? PRICE_COMPOSER_POLICY.version,
-        pass: input.pass?.name ?? 'price-composer',
+        policyVersion: input.pass.policyVersion,
+        pass: input.pass.name,
         outcome: input.outcome,
         candidateCount: input.candidateCount,
         reason: input.reason ?? null,
@@ -1033,7 +943,6 @@ export class CouponRepository {
              market,
              pick,
              odds::float                AS odds,
-             ${Prisma.raw(ODDS_BAND_SQL)} AS band,
              "scheduledAt"
       FROM public.evaluated_pick
       WHERE "fixtureStatus" NOT IN ('FINISHED', 'POSTPONED', 'CANCELLED')

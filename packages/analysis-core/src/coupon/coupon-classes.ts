@@ -1,6 +1,6 @@
 // Moved from apps/backend/src/modules/coupon/coupon.constants.ts 2026-09-03 —
 // apps/vantage-worker's Phase B LLM selection step (one call per class, see
-// docs/vantage-centric-redesign-2026-09-01.md §9bis) needs the exact same
+// docs/archive/vantage-centric-redesign-2026-09-01.md §9bis) needs the exact same
 // class definitions apps/backend used to build CouponComposerService.compose()
 // calls with, so the two can never drift on what "SAFE"/"BALANCED"/"BOLD"
 // mean.

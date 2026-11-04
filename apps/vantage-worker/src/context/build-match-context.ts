@@ -50,7 +50,7 @@ export const VANTAGE_SELF_CALIBRATION = {
  * entirely 2026-09-03: a follow-up audit found VANTAGE actively using the
  * signal on DOMINANT produced worse verdicts, not better (ratio 0.43 vs
  * 1.13 real/announced when the correction was followed vs ignored, n=27) —
- * see docs/vantage-centric-redesign-2026-09-01.md §5.8/project memory
+ * see docs/archive/vantage-centric-redesign-2026-09-01.md §5.8/project memory
  * project_vantage_context_expansion. Not re-added without a fresh audit.
  *
  * `shadow_predictions` (API-Football's own `/predictions`, an "independent

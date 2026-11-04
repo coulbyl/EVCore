@@ -1,15 +1,19 @@
 # Familles de moteurs prédictifs
 
-> Statut : note de cadrage stratégique — **§0.3 chantier 2 livré** (2026-08-18),
-> le reste non implémenté.
+> Statut (mis à jour le 2026-11-04) : note de cadrage stratégique — **§0.3
+> chantiers 2 et 3 faits** (VALUE/SAFE en Phase 2 le 2026-08-18, audit marché ×
+> ligue le 2026-08-22) ; reste le chantier 1 (Famille A'), **en pause** (§0.3).
+> La suite du moteur ne passe plus par ce découpage mais par la Phase 3
+> redéfinie le 2026-10-29 (grille de marché en entrée, ML jugé sur le résidu
+> contre Pinnacle — `docs/audits/2026-10-29/ML-V2-PROPOSITION.md`, voir §0.4).
 >
 > Objectif : identifier les **familles de moteurs prédictifs** qu'EVCore doit
 > porter — pas marché par marché, pas sport par sport, mais par **processus
 > générateur partagé** — pour que l'architecture des canaux
-> (`docs/channel-strategy-architecture.md`) s'articule sur des fondations
+> (`docs/archive/channel-strategy-architecture.md`) s'articule sur des fondations
 > qui n'auront pas besoin d'être redécoupées à chaque nouveau marché.
 >
-> **Portée actuelle : football, marchés déjà en scope (EVCORE.md §3.3)
+> **Portée actuelle : football, marchés déjà en scope (docs/archive/EVCORE-spec-v1.md §3.3)
 > uniquement.** La section 0 ci-dessous est la portée de travail réelle. Les
 > sections 1 à 4 (cross-sport) sont une vision long terme volontairement mise
 > en pause — voir `docs/multi-sport-extension.md` §5 : ne pas ouvrir de sport
@@ -21,24 +25,32 @@
 
 ### 0.1 Carte canal → famille
 
-EVCore a aujourd'hui 20 canaux actifs (`registry.ts`, `V1_STRATEGIES`). Le
-nombre ne change pas : ce qui change, c'est la famille qui nourrit chacun, et
-pour VALUE/SAFE, la phase à laquelle ils s'exécutent.
+Le registre déterministe compte 20 stratégies (`packages/analysis-core/src/strategies/registry.ts`,
+`V1_STRATEGIES`) : 16 canaux de marché en Phase 1, VALUE et SAFE en Phase 2,
+CONSENSUS et AVOID en Phase 3. Deux canaux vivent **hors registre** : VANTAGE
+(avis LLM, `apps/vantage-worker`, après les trois phases) et PRICE (composeur
+par le prix, `coupon/price-composer.ts`, aucune probabilité propre). Le nombre
+ne change pas : ce qui change, c'est la famille qui nourrit chacun, et pour
+VALUE/SAFE, la phase à laquelle ils s'exécutent.
 
-| Canal(aux)                                                                                                              | Marché(s)                                                         | Famille                            | Statut du moteur                                                                                                                                                                        |
-| ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DOMINANT, GOALS, CLEAN_SHEET, TEAM_TOTAL, DOUBLE_CHANCE, DRAW_NO_BET, WIN_TO_NIL, RESULT_TOTAL_GOALS, RESULT_BTTS, BTTS | 1X2, O/U, Clean Sheet, Team Total, DC, DNB, WTN, composites, BTTS | **A — Poisson plein-match**        | Existant, mature (`lambda.home`/`lambda.away`, corrigé H2H)                                                                                                                             |
-| CORRECT_SCORE                                                                                                           | Score exact                                                       | **A-bis — matrice complète**       | Existant, validé 2026-08-15 (signal H2H scoreline)                                                                                                                                      |
-| WIN_EITHER_HALF, OVER_UNDER_HT, FIRST_HALF_WINNER, HALF_TIME_FULL_TIME                                                  | Marchés mi-temps                                                  | **A' — distribution buts 1ère MT** | **Faux moteur** : `lambda × 0.44` fixe, aucune calibration ligue/équipe (`FIRST_HALF_GOAL_FRACTION`, poisson.ts:23) — cause probable du HT Over désactivé (recalibration WC 2026-07-01) |
-| DRAW                                                                                                                    | ONE_X_TWO (DRAW)                                                  | **D — implicite marché**           | Existant, correct (`1/drawOdds`)                                                                                                                                                        |
-| VALUE, SAFE                                                                                                             | transversal                                                       | _filtres_, pas une famille         | Existant mais mal placé — scanne `evaluatedMarkets` en Phase 1 au lieu de filtrer les décisions Phase 1 des 16 autres canaux                                                            |
-| CONSENSUS, AVOID                                                                                                        | méta                                                              | lisent tout le reste               | Existant, Phase 2                                                                                                                                                                       |
+| Canal(aux)                                                                                                              | Marché(s)                                                         | Famille                            | Statut du moteur                                                                                                                                                                                                                                                                     |
+| ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| DOMINANT, GOALS, CLEAN_SHEET, TEAM_TOTAL, DOUBLE_CHANCE, DRAW_NO_BET, WIN_TO_NIL, RESULT_TOTAL_GOALS, RESULT_BTTS, BTTS | 1X2, O/U, Clean Sheet, Team Total, DC, DNB, WTN, composites, BTTS | **A — Poisson plein-match**        | Existant, mature (`lambda.home`/`lambda.away`, corrigé H2H)                                                                                                                                                                                                                          |
+| CORRECT_SCORE                                                                                                           | Score exact                                                       | **A-bis — matrice complète**       | Existant, validé 2026-08-15 (signal H2H scoreline)                                                                                                                                                                                                                                   |
+| WIN_EITHER_HALF, OVER_UNDER_HT, FIRST_HALF (marché FIRST_HALF_WINNER), HALF_TIME_FULL_TIME                              | Marchés mi-temps                                                  | **A' — distribution buts 1ère MT** | `lambda × 0.44` fixe, sans calibration ligue/équipe (`FIRST_HALF_GOAL_FRACTION`, `probability/poisson.ts:23`), mesuré bien calibré en agrégat (§0.3) ; OVER_UNDER_HT tourne (`over-under-ht.config.ts`) — le « HT Over désactivé » ne valait que pour la Coupe du monde (2026-07-01) |
+| DRAW                                                                                                                    | ONE_X_TWO (DRAW)                                                  | **D — implicite marché**           | Existant, correct (`1/drawOdds`)                                                                                                                                                                                                                                                     |
+| VALUE, SAFE                                                                                                             | transversal                                                       | _filtres_, pas une famille         | Phase 2 depuis le 2026-08-18 (`FILTER_STRATEGY_CHANNELS`, `orchestrator.ts`) ; tournent en observation, exclus du vivier de coupon (`POOL_EXCLUDED_CHANNELS`), plus de bet ni d'affichage                                                                                            |
+| CONSENSUS, AVOID                                                                                                        | méta                                                              | lisent tout le reste               | Phase 3 (`META_STRATEGY_CHANNELS`) ; CONTRARIAN est déclaré dans l'enum mais volontairement non implémenté                                                                                                                                                                           |
+| VANTAGE (hors registre)                                                                                                 | tous                                                              | avis LLM, pas une famille          | `apps/vantage-worker`, lit les décisions des trois phases                                                                                                                                                                                                                            |
+| PRICE (hors registre)                                                                                                   | tous                                                              | **D** (coût mesuré du marché)      | `coupon/price-composer.ts` : classe des jambes déjà cotées, n'émet aucune probabilité                                                                                                                                                                                                |
 
 ### 0.2 Pipeline de lecture d'une fiche de match (cible)
 
 1. **Fiche brute** (inchangé) — `BettingEngineService.analyzeFixture()` :
-   stats rolling, xG, forme dom/ext, volatilité ligue, blessures/H2H/congestion
-   (shadow), dernière snapshot de cotes.
+   stats rolling, xG, forme dom/ext, volatilité ligue, H2H (corrige λ et, par
+   marché, BTTS/OVER25/CLEAN_SHEET/WIN_TO_NIL), congestion (correction OVER25/BTTS
+   derrière `FEATURE_FLAGS.SCORING.CONGESTION`), blessures (seul signal resté en
+   ombre, `INJURIES: false`), dernière snapshot de cotes.
 2. **Chaque famille calcule sa distribution indépendamment** à partir de
    cette même fiche :
    - Famille A : `lambda.home`/`lambda.away` (existant) ;
@@ -53,6 +65,9 @@ pour VALUE/SAFE, la phase à laquelle ils s'exécutent.
    moteur de famille contribue sa tranche de marchés.
 4. **`buildStrategyContext()` groupe par marché** (`evaluatedMarkets`) —
    mécaniquement inchangé, juste alimenté par plusieurs moteurs.
+   _Note 2026-11-04 : `evaluatedMarkets` est toujours construit
+   (`context-builder.ts`) mais **plus lu par aucune stratégie** depuis le
+   passage de VALUE/SAFE en Phase 2 — code mort, seuls des tests s'en servent._
 5. **Orchestrateur, 3 phases** :
    - **Phase 1 — 16 canaux de marché** : chacun choisit la meilleure
      prédiction de son marché, dans sa famille.
@@ -68,12 +83,19 @@ pour VALUE/SAFE, la phase à laquelle ils s'exécutent.
 
 ### 0.3 Chantiers concrets, dans l'ordre
 
-1. **Famille A'** (toujours à faire, et devenu le chantier n°1) : remplacer
+1. **Famille A'** — **en pause** (tranché le 2026-11-04) : remplacer
    `FIRST_HALF_GOAL_FRACTION = 0.44` par un ratio
    calibré par ligue (voire par équipe si le volume le permet) sur la donnée
    réelle de buts avant 45'. Mono-sport, mono-famille, corrige un biais déjà
    identifié (HT Over désactivé) — premier cas réel pour valider le
    découpage avant de toucher à VALUE/SAFE.
+   _Pourquoi en pause : la constante est mesurée à 0,444 sur 40 550 matchs
+   terminés (commentaire de `probability/poisson.ts:16-23`, P(HT Over 1.5)
+   modélisée 0,351 contre 0,353 réelle) et le walk-forward OVER_UNDER_HT la
+   trouve bien calibrée là où le canal tourne
+   (`docs/archive/channel-strategy-architecture.md`). Le « HT Over désactivé »
+   ne concernait que la Coupe du monde. La mi-temps est désormais le lot ML-2
+   de la Phase 3 redéfinie (§0.4), jugé contre les lignes Pinnacle._
    - **À vérifier à ce moment-là** (noté 2026-08-17, pas encore fait) :
      `OU_HT_PICKS` ne couvre que `0.5`/`1.5` (`ouHT` dans `poisson.ts`,
      `pick-evaluation.ts`) — contrairement à `OVER_UNDER` plein-match qui va
@@ -124,6 +146,32 @@ pour VALUE/SAFE, la phase à laquelle ils s'exécutent.
 Aucun de ces trois chantiers n'ouvre de nouveau marché ni de nouveau sport —
 strictement une reformulation interne de ce qui existe déjà.
 
+### 0.4 Depuis septembre : le moteur est derrière le marché (ajout 2026-11-04)
+
+- **Mesure** (2026-09-16, `docs/journal-experiences.md`) : Brier 0,639 pour le
+  moteur contre 0,599 pour le marché sur 3 633 matchs ; le poids optimal du
+  moteur dans un mélange avec le prix est **0 %**. Toute famille construite sur
+  nos features se juge donc sur le **résidu** contre le prix, jamais sur le
+  Brier absolu.
+- **Phase 3 redéfinie le 2026-10-29** (`docs/audits/2026-10-29/ML-V2-PROPOSITION.md`,
+  ROADMAP.md) : décision prise que la **grille de score déduite du prix
+  affûté** (λ, ρ depuis Pinnacle, Bet365 sinon) devienne l'entrée du moteur, le
+  Poisson-stats devenant le repli ; le ML n'apprend que ce que le prix ne dit
+  pas (mi-temps, corners/cartons, marge, dépendance). Lots ML-1 → ML-4 ;
+  **pas encore codé au 2026-11-04** (aucun module de grille dans
+  `analysis-core`). Autrement dit, la Famille D devient la famille par défaut.
+- **Famille D déjà en production hors canaux** : les chasseurs
+  (`coupon/hunter-composer.ts`) classent sur le coût du marché avec la
+  fréquence sans marge comme probabilité — BTTS, Nul, **Nul à la mi-temps**
+  (`HUNTER_HT_DRAW`, marché FIRST_HALF_WINNER/DRAW, cote 1xBet 2,10–2,80, livré
+  le 2026-11-04) et **Corners** (lot 6, 2026-10-29, plus/moins à la ligne
+  principale).
+- **Nouveaux marchés ingérés** (#301, 2026-11-03) : CORNERS_HOME, CORNERS_AWAY,
+  CORNERS_1X2, GOAL_SCORER_ANYTIME, GOAL_SCORER_FIRST, PLAYER_SHOTS,
+  PLAYER_SHOTS_ON_TARGET, MINUTE_1X2 — cotes et règlement seulement, **aucun
+  produit montré** ; la décision est la phase 4 de
+  `docs/plan-strategies-2026-11-03.md`, après mesure.
+
 ---
 
 ## 1. Vision long terme — familles cross-sport (non prioritaire)
@@ -169,6 +217,8 @@ football.
   Half — tout ce qui dérive de la distribution de buts fin de match (déjà la
   « Famille 1 » identifiée dans cette conversation).
 - **Marchés couverts (football, pas encore modélisés séparément)** :
+  _(note 2026-11-04 : CARDS et CORNERS sont ingérés ; aucun λ dédié n'existe,
+  le Chasseur Corners lit la fréquence du marché — Famille D, §0.4)_
   **cartons/bookings** — la littérature confirme qu'un modèle Poisson dédié
   (pas le même λ que les buts) capture bien le comptage de cartons, avec un
   effet arbitre significatif (± 20 % ou plus selon l'arbitre désigné) et une
@@ -256,7 +306,7 @@ HT/FT, Result + Total Goals, Result + BTTS au football ; race-to-X combiné
 au moneyline en basket ; combos set + total au tennis. Ce ne sont pas de
 nouveaux processus générateurs — ce sont des **combinaisons du produit
 cartésien** de sorties déjà produites par une (ou deux) famille(s)
-existante(s). EVCore a déjà appris cette leçon une fois (EVCORE.md
+existante(s). EVCore a déjà appris cette leçon une fois (docs/archive/EVCORE-spec-v1.md
 §3.3 « Marchés pré-combinés ») : préférer une vraie cote bookmaker
 pré-combinée à une probabilité jointe synthétique recalculée en interne.
 Cette couche devrait être un **module de pricing composite** générique,
@@ -269,19 +319,19 @@ gagnés au tennis. Ce n'est pas une famille à part — c'est le **même
 générateur que la famille du sport, appliqué à la granularité joueur**
 plutôt qu'équipe, ajusté par un facteur d'usage (usage rate / minutes
 projetées / rôle dans le système de jeu). Explicitement **hors scope
-EVCORE.md aujourd'hui** (pas dans le §3.3 marchés ciblés) — à ne pas ouvrir
+docs/archive/EVCORE-spec-v1.md aujourd'hui** (pas dans le §3.3 marchés ciblés) — à ne pas ouvrir
 sans le même arbitrage de phase que multi-sport (cf. `CLAUDE.md`, table
 Phase Boundaries), simplement noté ici pour que l'architecture n'ait pas à
 être redécoupée le jour où la question se posera.
 
 ### 1.4 Ce que ça change pour l'architecture cible
 
-| Famille                               | Processus                         | Sports concernés (aujourd'hui + à terme)                                              | Statut EVCore                                             |
-| ------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| A — Arrivée discrète (Poisson/NegBin) | Comptage d'événements rares       | Football (buts ✅, cartons/corners à construire), basket (fautes), hockey (pénalités) | Moteur buts existant ; cartons = 2ᵉ instance à construire |
-| B — Marge/total continu               | Score dense, quasi-normal         | Basket, football américain, handball                                                  | Inexistant — nécessaire si basket s'ouvre                 |
-| C — Hiérarchique point→jeu→set        | Chaîne Markov/binomiale imbriquée | Tennis, volleyball, tennis de table, badminton                                        | Inexistant — pressenti pour le 2ᵉ sport (tennis)          |
-| D — Implicite marché (fallback)       | Aucun — lecture de cote dévigée   | Tous, marché par marché où le moteur interne est prouvé faible                        | Existant sur DRAW, à généraliser comme pattern explicite  |
+| Famille                               | Processus                         | Sports concernés (aujourd'hui + à terme)                                                     | Statut EVCore                                                                    |
+| ------------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| A — Arrivée discrète (Poisson/NegBin) | Comptage d'événements rares       | Football (buts ✅, cartons/corners ingérés sans moteur), basket (fautes), hockey (pénalités) | Moteur buts existant ; cartons/corners lus par le marché (D), λ dédié = lot ML-3 |
+| B — Marge/total continu               | Score dense, quasi-normal         | Basket, football américain, handball                                                         | Inexistant — nécessaire si basket s'ouvre                                        |
+| C — Hiérarchique point→jeu→set        | Chaîne Markov/binomiale imbriquée | Tennis, volleyball, tennis de table, badminton                                               | Inexistant — pressenti pour le 2ᵉ sport (tennis)                                 |
+| D — Implicite marché (fallback)       | Aucun — lecture de cote dévigée   | Tous, marché par marché où le moteur interne est prouvé faible                               | Existant sur DRAW, à généraliser comme pattern explicite                         |
 
 La conséquence architecturale directe : la couche `ChannelStrategy` /
 `StrategyContext` (déjà découplée du calcul de probabilité, voir
@@ -290,7 +340,7 @@ une famille B ou C apparaît — elle consomme déjà une `probabilities` /
 `evaluatedMarkets` générique. Ce qui doit changer, c'est en amont : au lieu
 d'un seul générateur (`lambda` Poisson football) injecté dans
 `buildStrategyContext`, il faut une interface `PredictionEngine` par
-famille, et chaque (sport, marché) déclare quelle famille l'alimente. Le
+famille (_jamais créée au 2026-11-04_), et chaque (sport, marché) déclare quelle famille l'alimente. Le
 sport n'écrit pas « son » socle from scratch — il branche ses paramètres
 d'entrée sur le moteur de famille qui correspond à son processus générateur,
 et n'écrit un nouveau moteur que si sa famille n'existe pas encore (ex.
@@ -310,6 +360,9 @@ Famille C, juste de nouveaux paramètres).
    instances (buts + cartons, même famille, deux moteurs) — c'est un
    chantier mono-sport, mono-famille, donc sans le risque du multi-sport, et
    ça validerait le découpage avant d'ouvrir un sport.
+   _Note 2026-11-04 : dépassé. Cartons et corners sont ingérés et lus par le
+   marché (Famille D) ; un moteur dédié n'est envisagé que comme lot ML-3 de
+   la Phase 3, et seulement s'il égale le prix Pinnacle._
 4. Traiter la Famille D (implicite marché) comme un **pattern de première
    classe**, pas une exception DRAW — tout marché de toute famille peut y
    basculer si l'audit de calibration (déjà demandé plus tôt dans cette

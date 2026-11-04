@@ -19,7 +19,6 @@ function priced(
     market,
     pick,
     odds,
-    band: 'x',
     scheduledAt: KICKOFF,
   };
 }

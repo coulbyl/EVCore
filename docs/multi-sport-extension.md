@@ -51,8 +51,13 @@ vocation à le devenir :
 | Calibration + couche de correction ML     | ✅           | Réentraînée par sport                     |
 | Discipline de risque (seuils, suspension) | ✅           | Identique, alimentée par le volume        |
 
+> Note 2026-11-04 : la ligne « un socle par sport » est précisée par
+> [prediction-engine-families.md §1.1](prediction-engine-families.md) — un
+> moteur par **famille de processus générateur**, partagé entre sports ; le
+> socle propre au sport se réduit à ses paramètres d'entrée.
+
 L'architecture des canaux de stratégie
-([channel-strategy-architecture.md](channel-strategy-architecture.md)) est, de
+([channel-strategy-architecture.md](archive/channel-strategy-architecture.md)) est, de
 fait, **le précurseur du multi-sport** : elle sépare le socle commun des
 stratégies qui l'interprètent. Le multi-sport ajoute un cran d'abstraction :
 plusieurs **socles** (un par sport) derrière la même colonne stratégie/décision.
@@ -70,6 +75,17 @@ pas remplies :
    ≈ +19,6 %, ROI réel ≈ −54,9 % sur l'échantillon de référence ; seul
    `SV / OVER_UNDER` est sain à +5,2 %). Construire un second sport sur une base
    non porteuse, c'est bâtir le 2ᵉ étage avant que le 1ᵉʳ soit porteur.
+
+   _Mise à jour 2026-11-04 : la précondition tient, ses termes ont changé.
+   L'ombre ML a été jugée inutile et coupée (`docs/audits/2026-10-29/ML-UTILITE.md`,
+   `ML_CORRECTION` constante `false`) ; les tags `EV`/`SV`/`CONF` sont retirés
+   (canaux VALUE/SAFE/CONSENSUS). Le vrai blocage est mesuré : **le moteur est
+   derrière le marché** (Brier 0,639 contre 0,599, poids optimal du moteur
+   0 % — `docs/journal-experiences.md`). La Phase 3 redéfinie le 29/10
+   (`docs/audits/2026-10-29/ML-V2-PROPOSITION.md`) fait de la grille de marché
+   l'entrée du moteur et juge tout ML sur le résidu contre Pinnacle ; c'est
+   ce critère, pas une « promotion du ML », qui dira si le football est porteur._
+
 2. **L'abstraction `sport` existe dans le schéma** (Market, ChannelSelection,
    socle pluggable), livrée à la suite du refactor des canaux.
 
@@ -161,6 +177,9 @@ données fiable apparaît.
    **promouvoir le ML hors shadow et corriger le biais top-picks**. C'est
    l'« ouverture » à plus forte valeur : elle transforme un moteur non prouvé en
    socle de confiance.
+   _(2026-11-04 : refactor des canaux fait, ombre ML abandonnée ; lire « mener
+   la Phase 3 redéfinie — grille de marché, ML jugé sur le résidu contre
+   Pinnacle » à la place de « promouvoir le ML hors shadow », cf. §3.)_
 2. **Quand le football est porteur** : abstraire `sport` dans le schéma, puis
    prototyper le **tennis comme 2ᵉ socle** derrière la même colonne
    stratégie/décision. Vrai chantier d'architecture, pas une config.
@@ -170,7 +189,7 @@ données fiable apparaît.
 
 Ordre de priorité d'effort de développement, à terme :
 
-1. Football ⚽ — continuer à améliorer (calibration, ML hors shadow) ;
+1. Football ⚽ — continuer à améliorer (calibration, Phase 3 redéfinie : grille de marché + ML jugé sur le résidu) ;
 2. Tennis 🎾 — 2ᵉ socle, après préconditions §3 ;
 3. Basketball 🏀 — si le 2ᵉ socle valide le pattern multi-sport ;
 4. Esports 🎮 — uniquement si une source de données fiable émerge.

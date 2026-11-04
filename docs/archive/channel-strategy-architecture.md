@@ -15,7 +15,7 @@
 > `VALUE`/`SAFE` (nommés `EV`/`SAFE` plus bas, voir note) sont **passés en
 > Phase 2** (`FILTER_STRATEGY_CHANNELS`, `orchestrator.ts`) : ils filtrent
 > les décisions déjà prises par les canaux de marché au lieu de re-scanner
-> `evaluatedMarkets`, désormais mort (plus lu par aucun canal — TODO.md).
+> `evaluatedMarkets`, désormais mort (plus lu par aucun canal — docs/archive/TODO-2026-10.md).
 >
 > La Famille A' (mi-temps) reste, elle, en pause — pas construite : le
 > backtest walk-forward déjà existant sur OVER_UNDER_HT montre que la

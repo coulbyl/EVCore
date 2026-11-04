@@ -100,7 +100,6 @@ services:
       # unset key fails loudly instead, inside the container, only when
       # someone actually runs `--profile vantage up`.
       GROQ_API_KEY: ${GROQ_API_KEY:-}
-      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
       LOG_LEVEL: info
     depends_on:
       pgbouncer:

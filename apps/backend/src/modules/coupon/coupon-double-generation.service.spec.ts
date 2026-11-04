@@ -18,7 +18,6 @@ function overUnder(
     fixtureId,
     competition: 'L1',
     market: 'OVER_UNDER',
-    band: '',
     scheduledAt: new Date(
       `2026-10-29T${fixtureId === 'f-2' ? '20' : '18'}:00:00.000Z`,
     ),

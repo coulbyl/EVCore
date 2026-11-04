@@ -1,6 +1,6 @@
 /// <reference types="node" />
 /**
- * docs/h2h-service-v2-plan.md §3.2 (v2.1) — teste si sur-pondérer les manches
+ * docs/archive/h2h-service-v2-plan.md §3.2 (v2.1) — teste si sur-pondérer les manches
  * H2H où la même équipe jouait déjà à domicile que dans la fixture cible
  * (VENUE_WEIGHTED) capte plus de signal que le score v2.0 actuel
  * (IMPROVED : seuil n>=3, decay=0.8, nul=0.5, implémenté dans h2h.service.ts)

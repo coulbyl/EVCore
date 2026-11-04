@@ -41,7 +41,7 @@ function readSnapshotNumber(value: unknown): number | null {
 // vrai pool de coupon) ne lit que les `Bet`/`channelDecision` déjà
 // matérialisés, une seule jambe par canal par match — jamais les autres
 // marchés évalués sur le même match. Exactement le trou documenté par
-// `COUPON_ANALYSIS_TEMPLATE.md` (Étape 0) : "parcourir evaluatedPicks en
+// `docs/archive/COUPON_ANALYSIS_TEMPLATE.md` (Étape 0) : "parcourir evaluatedPicks en
 // entier, pas juste selectedPicks". Élargi le 2026-09-03
 // (`includeEvRejected` on resolveEvaluatedMarketLeg below) pour aussi
 // admettre un pick rejeté pour une raison EV/cote seule (pas de fiabilité) —
@@ -59,7 +59,7 @@ function readSnapshotNumber(value: unknown): number | null {
 // - ONE_X_TWO → DOMINANT (son propre marché).
 // - TEAM_TOTAL_HOME/AWAY → TEAM_TOTAL, BTTS → BTTS (marchés dédiés).
 // - CORRECT_SCORE → exclu (absent de ce mapping) — signal immature (AUC=0.51,
-//   quasi hasard ; voir TODO.md / mémoire project_correct_score_immature),
+//   quasi hasard ; voir docs/archive/TODO-2026-10.md / mémoire project_correct_score_immature),
 //   jamais staké nulle part.
 // - Tout le reste (OVER_UNDER, OVER_UNDER_HT, DOUBLE_CHANCE,
 //   HALF_TIME_FULL_TIME, FIRST_HALF_WINNER, DRAW_NO_BET, CLEAN_SHEET_*,
@@ -86,7 +86,7 @@ export const EVALUATED_MARKET_CANAL: Record<string, StrategyChannel> = {
   RESULT_TOTAL_GOALS: STRATEGY_CHANNEL.RESULT_TOTAL_GOALS,
   RESULT_BTTS: STRATEGY_CHANNEL.RESULT_BTTS,
   // CORRECT_SCORE stays out: its scoreline signal is validated for
-  // reasonDetails only, never for staking (TODO.md, 2026-08-15).
+  // reasonDetails only, never for staking (docs/archive/TODO-2026-10.md, 2026-08-15).
 } as const;
 
 // Rejection reasons that mean the pick genuinely fails on reliability grounds
@@ -94,7 +94,7 @@ export const EVALUATED_MARKET_CANAL: Record<string, StrategyChannel> = {
 // floor) — never a legitimate candidate, even for a hand-built combo. Every
 // other rejectionReason (ev_above_hard_cap/ev_above_soft_cap/ev_below_threshold,
 // odds_below_floor/odds_above_cap) is about the single-bet auto-stake
-// threshold, which COUPON_ANALYSIS_TEMPLATE.md (Étape 0/5) is explicit is
+// threshold, which docs/archive/COUPON_ANALYSIS_TEMPLATE.md (Étape 0/5) is explicit is
 // "hors sujet" for judging a leg's reliability inside a combo — see
 // `getPickRejectionReason` (../selection/pick-validation.ts) for where each
 // reason is actually raised.
@@ -143,7 +143,7 @@ export function resolveEvaluatedMarketLeg(
      * (see RELIABILITY_REJECTION_REASONS) — off by default so the existing
      * real coupon pool (getPoolForRange's includeEvaluatedMarkets) keeps its
      * current viable-only behaviour unchanged. Set by the LLM candidate pool
-     * (docs/vantage-centric-redesign-2026-09-01.md §9 point 1), which needs
+     * (docs/archive/vantage-centric-redesign-2026-09-01.md §9 point 1), which needs
      * the full evaluatedPicks population, not just what already cleared the
      * single-bet EV floor.
      */

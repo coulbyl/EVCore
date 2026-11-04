@@ -61,7 +61,7 @@ export class UpdateMeDto {
 
   // Format libre (pas de région imposée — IsPhoneNumber(undefined) accepte
   // n'importe quel indicatif international valide, cf. décision produit
-  // 2026-09-04, TODO.md "pas de numéro de téléphone collecté").
+  // 2026-09-04, docs/archive/TODO-2026-10.md "pas de numéro de téléphone collecté").
   @IsOptional()
   @IsPhoneNumber(undefined)
   phoneNumber?: string;

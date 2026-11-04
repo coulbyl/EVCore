@@ -145,7 +145,7 @@ par la position domicile/extérieur, pas par la force relative.
 **Chaque signal doit être validé indépendamment** avant intégration, avec
 le même protocole que §1 : calculer le modelProb actuel du canal
 correspondant (déjà backtesté pour CLEAN_SHEET/TEAM_TOTAL/WIN_EITHER_HALF
-dans `docs/new-markets-calibration-backtest.md`), calculer le résidu
+dans `docs/archive/new-markets-calibration-backtest.md`), calculer le résidu
 (réel − modelProb), corréler avec le signal H2H candidat. Risque à
 anticiper : l'échantillon par (paire d'équipes × marché) sera plus petit
 que pour le score de résultat global — certains signaux pourraient ne pas

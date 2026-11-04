@@ -26,7 +26,7 @@ import { describe, expect, it } from 'vitest';
 
 // analysis-core OWNS the domain enums (dependency inversion); Prisma persists
 // them. The two must stay byte-identical. This file is the single anti-drift
-// guard required by the architecture decision (lab.md §2-bis):
+// guard required by the architecture decision (docs/archive/lab.md §2-bis):
 //
 //   1. COMPILE-TIME — `AssertEqual` fails `tsc` if either union gains/loses a
 //      member, so a `schema.prisma` change unmatched in analysis-core (or the
