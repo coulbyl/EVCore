@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 /**
  * La cloche (09 § 6, maquette Cloche) : le compte des non-lues sur la
@@ -138,8 +138,9 @@ test.describe("Notifications — la cloche synchronisée", () => {
       bell.getByRole("link", { name: /^Notifications, \d+ non lues$/ }).first(),
     ).toBeVisible();
 
-    await context.route("**/notifications/unread-count", (route) =>
-      route.fulfill({ json: { count: 0 } }),
+    // The read answers the badge's new count (no second request).
+    await context.route("**/notifications/*/read", (route) =>
+      route.fulfill({ json: { unread: 0 } }),
     );
     const reader = await context.newPage();
     await reader.goto("/notifications");
@@ -170,15 +171,61 @@ test.describe("Notifications — la cloche synchronisée", () => {
     const badge = page
       .getByRole("link", { name: "Notifications, 7 non lues" })
       .first();
-    // Until the page is hydrated, nobody listens: dispatch until heard.
+    // Until the page is hydrated, nobody listens: hide and show until heard.
     await expect(async () => {
-      await page.evaluate(() =>
-        document.dispatchEvent(new Event("visibilitychange")),
-      );
+      await setVisibility(page, "hidden");
+      await setVisibility(page, "visible");
       await expect(badge).toBeVisible({ timeout: 1_000 });
     }).toPass();
   });
+
+  test("un compte changé ailleurs redessine la liste, une seule fois", async ({
+    context,
+  }) => {
+    const list = context.pages()[0] ?? (await context.newPage());
+    await list.goto("/notifications");
+    await expect(
+      list.getByRole("list", { name: "Notifications" }),
+    ).toBeVisible();
+    let redraws = 0;
+    list.on("request", (r) => {
+      if (
+        r.headers()["rsc"] === "1" &&
+        new URL(r.url()).pathname === "/notifications"
+      )
+        redraws += 1;
+    });
+    // Another tab read a row: its count reaches this tab on the channel.
+    const other = await context.newPage();
+    await other.goto("/today");
+    // Until the list is hydrated, nobody listens: post until heard, once.
+    await expect(async () => {
+      if (redraws === 0)
+        await other.evaluate(() =>
+          new BroadcastChannel("evcore-bell").postMessage({
+            count: 0,
+            asOf: Date.now(),
+          }),
+        );
+      await list.waitForTimeout(100);
+      expect(redraws).toBeGreaterThan(0);
+    }).toPass();
+    // The redrawn list's count is the confirmed one: nothing more to redraw.
+    await list.waitForTimeout(1_500);
+    expect(redraws).toBe(1);
+  });
 });
+
+/** The tab hidden or shown, as the browser would say it. */
+async function setVisibility(page: Page, state: "hidden" | "visible") {
+  await page.evaluate((next) => {
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      get: () => next,
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+  }, state);
+}
 
 /**
  * A tapped push opens its page with ?n=<id> (public/sw.js, N4 of the perf

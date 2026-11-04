@@ -2944,11 +2944,14 @@ function route(method, url, cookie = "") {
   if (path.startsWith("/bet-slips")) return [200, []];
   if (path.startsWith("/audit")) return [200, EMPTY_AUDIT];
   if (path.startsWith("/predictions")) return [200, []];
+  // The mock never marks anything read: both reads answer the same count.
+  const unreadNotifications = NOTIFICATIONS.filter((n) => !n.isRead).length;
   if (path.startsWith("/notifications/unread-count"))
-    return [200, { count: NOTIFICATIONS.filter((n) => !n.isRead).length }];
+    return [200, { count: unreadNotifications }];
   if (path === "/notifications/read-all" && method === "POST")
-    return [200, { marked: NOTIFICATIONS.filter((n) => !n.isRead).length }];
-  if (/^\/notifications\/[^/]+\/read$/.test(path)) return [204, null];
+    return [200, { unread: unreadNotifications }];
+  if (/^\/notifications\/[^/]+\/read$/.test(path))
+    return [200, { unread: unreadNotifications }];
   if (path.startsWith("/notifications")) {
     // Les filtres du vrai backend : ?type= (point de la semaine de
     // l'Accueil), ?status= et ?category= (écran Notifications), filtrés ici

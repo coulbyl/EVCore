@@ -1,15 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { playerFetch } from "@/lib/api/player-fetch";
-import { refreshUnread } from "@/domains/notifications/use-unread-count";
+import { markAllNotificationsRead } from "@/domains/notifications/use-unread-count";
 import type { FeedKind } from "@/domains/notifications/helpers/notification-feed";
 
 /**
  * « Tout marquer comme lu », within the kind shown (an admin's technical
- * alerts alone): the server marks what the list counts unread, then the
- * badge is read again, and the list once with it.
+ * alerts alone): the server marks what the list counts unread and answers
+ * the badge's new count; the list is drawn again with it (UnreadDrawn).
  */
 export function MarkAllRead({
   kind,
@@ -18,9 +16,7 @@ export function MarkAllRead({
   kind: FeedKind;
   label: string;
 }) {
-  const router = useRouter();
   const [pending, setPending] = useState(false);
-  const query = kind === "all" ? "" : `?category=${kind}`;
 
   return (
     <button
@@ -28,14 +24,7 @@ export function MarkAllRead({
       disabled={pending}
       onClick={() => {
         setPending(true);
-        playerFetch(`/notifications/read-all${query}`, { method: "POST" })
-          .then(() => refreshUnread())
-          .catch(() => false)
-          .then((changed) => {
-            setPending(false);
-            // A changed count redraws the list already (PushBridge).
-            if (!changed) router.refresh();
-          });
+        void markAllNotificationsRead(kind).finally(() => setPending(false));
       }}
       className="flex min-h-11 items-center rounded-md px-2 text-body font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:text-muted-foreground"
     >

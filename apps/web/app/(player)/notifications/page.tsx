@@ -30,6 +30,7 @@ import { RichText } from "@/components/scoreboard/ui/rich-text";
 import { plainTextOf } from "@/helpers/plain-text";
 import { NotificationLink } from "./components/notification-link";
 import { MarkAllRead } from "./components/mark-all-read";
+import { UnreadDrawn } from "./components/unread-drawn";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("playerNotifications");
@@ -101,9 +102,12 @@ export default async function Page({
   const display = displayLocaleOf(locale);
   const pages = Math.min(MAX_PAGES, 1 + Math.max(0, Number(params.more) || 0));
   const list = getNotifications(filter.status, filter.kind, PAGE * pages);
-  const [{ data, total }, unreadTotal] = await Promise.all([
+  // The badge's count (read once for the layout too): the list is drawn
+  // with it, and redrawn when it moves (UnreadDrawn).
+  const [{ data, total }, unreadTotal, badge] = await Promise.all([
     list,
     unreadOf(filter, list),
+    getUnreadCount(),
   ]);
   const statusChips = FEED_STATUSES.map((status) => ({
     key: status,
@@ -144,6 +148,9 @@ export default async function Page({
 
   return (
     <>
+      {badge !== null ? (
+        <UnreadDrawn count={badge} render={crypto.randomUUID()} />
+      ) : null}
       <SubpageBand
         title={t("title")}
         back={{ href: "/today", label: shell("tabs.today") }}

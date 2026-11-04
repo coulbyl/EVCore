@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useSyncExternalStore } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { playerFetch } from "@/lib/api/player-fetch";
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useDocumentVisible } from "@/components/scoreboard/states/use-document-visible";
 import {
+  markNotificationRead,
   refreshUnread,
-  shownCountMarkedHere,
   useUnreadCount,
 } from "@/domains/notifications/use-unread-count";
 
@@ -15,92 +15,67 @@ const NOTIFICATION_PARAM = "n";
 /** Coming back to the tab reads the count again, at most this often. */
 const RETURN_REFRESH_MS = 15_000;
 
-function onVisibility(listener: () => void): () => void {
-  document.addEventListener("visibilitychange", listener);
-  return () => document.removeEventListener("visibilitychange", listener);
-}
-
 /**
  * Between the service worker, the bell and the screens (no markup):
  *
  * - a tapped push opens its page with `?n=<id>`: that notification is
- *   marked read, the parameter leaves the address, the badge reads again;
+ *   marked read, the parameter leaves the address;
  * - a push arriving while the app is open reads the count again;
  * - coming back to the tab reads the count again (a notification written
  *   meanwhile, for a player who never granted the push);
- * - on Notifications, a count changed elsewhere than its own rows (a push,
- *   another tab, a return) redraws the list with it, once the tab is shown;
  * - the installed app's icon shows the same count (App Badging API, where
  *   the browser has it).
+ *
+ * The Notifications list redraws itself when the count moves (UnreadDrawn).
  */
 export function PushBridge({ unread }: { unread: number | null }) {
   const router = useRouter();
-  const pathname = usePathname();
   const count = useUnreadCount(unread);
-  const visible = useSyncExternalStore(
-    onVisibility,
-    () => document.visibilityState === "visible",
-    () => true,
-  );
-
-  // The count the list on screen was drawn with. A row touched here leads
-  // away, or redraws the list itself once its read is written.
-  const drawn = useRef(count);
-  // Opening Notifications reads the count again: its chip is drawn from the
-  // server, and the badge must count the same set (a notification written
-  // since, for a player who never granted the push).
-  useEffect(() => {
-    if (pathname === "/notifications") void refreshUnread();
-  }, [pathname]);
-  useEffect(() => {
-    if (pathname !== "/notifications" || shownCountMarkedHere()) {
-      drawn.current = count;
-      return;
-    }
-    if (!visible || drawn.current === count) return;
-    drawn.current = count;
-    router.refresh();
-  }, [count, pathname, visible, router]);
+  const visible = useDocumentVisible();
+  // When the count was last read for a push or a return; and whether the
+  // tab was hidden since the screen showed (a first showing reads nothing:
+  // the server has just counted).
+  const last = useRef(0);
+  const wasHidden = useRef(false);
 
   useEffect(() => {
     const url = new URL(window.location.href);
     const id = url.searchParams.get(NOTIFICATION_PARAM);
     if (!id) return;
     url.searchParams.delete(NOTIFICATION_PARAM);
-    void playerFetch(`/notifications/${encodeURIComponent(id)}/read`, {
-      method: "PATCH",
-    })
-      .catch(() => undefined)
-      .finally(() => {
-        void refreshUnread();
-        // A new address: the screen is drawn again, the read with it.
-        router.replace(`${url.pathname}${url.search}${url.hash}`, {
-          scroll: false,
-        });
+    // Not optimistic: the row may have been read already.
+    void markNotificationRead(id, { optimistic: false }).finally(() => {
+      // A new address: the screen is drawn again, the read with it.
+      router.replace(`${url.pathname}${url.search}${url.hash}`, {
+        scroll: false,
       });
+    });
   }, [router]);
 
   useEffect(() => {
     const sw = navigator.serviceWorker;
     if (!sw) return;
     const onMessage = (event: MessageEvent<{ type?: string }>) => {
-      if (event.data?.type === "push") void refreshUnread();
+      if (event.data?.type !== "push") return;
+      last.current = Date.now();
+      void refreshUnread();
     };
     sw.addEventListener("message", onMessage);
     return () => sw.removeEventListener("message", onMessage);
   }, []);
 
   useEffect(() => {
+    if (!visible) {
+      wasHidden.current = true;
+      return;
+    }
+    if (!wasHidden.current) return;
+    wasHidden.current = false;
     // The first return reads at once: the screen may have been drawn long ago.
-    let last = 0;
-    const onReturn = () => {
-      if (document.visibilityState !== "visible") return;
-      if (Date.now() - last < RETURN_REFRESH_MS) return;
-      last = Date.now();
-      void refreshUnread();
-    };
-    return onVisibility(onReturn);
-  }, []);
+    if (Date.now() - last.current < RETURN_REFRESH_MS) return;
+    last.current = Date.now();
+    void refreshUnread();
+  }, [visible]);
 
   useEffect(() => {
     const nav = navigator as Navigator & {
