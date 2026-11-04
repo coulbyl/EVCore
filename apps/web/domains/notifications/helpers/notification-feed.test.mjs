@@ -48,16 +48,25 @@ describe("feedQuery and feedHref", () => {
 });
 
 describe("hrefOf", () => {
+  const adminHref = (section) => `/admin/${section}`;
   it("leads a technical alert to its admin screen", () => {
-    assert.equal(hrefOf("ETL_FAILURE"), "/admin/exploitation");
-    assert.equal(hrefOf("MARKET_SUSPENSION"), "/admin/engine");
-    assert.equal(hrefOf("ANNOUNCEMENT_PUBLISHED"), null);
-    assert.equal(hrefOf("XG_UNAVAILABLE_REPORT"), "/admin/exploitation");
+    const technical = (type) =>
+      hrefOf({ type, category: "technical" }, adminHref);
+    assert.equal(technical("ETL_FAILURE"), "/admin/exploitation");
+    assert.equal(technical("XG_UNAVAILABLE_REPORT"), "/admin/exploitation");
+    assert.equal(technical("MARKET_SUSPENSION"), "/admin/engine");
+    assert.equal(technical("SLIPS_SETTLED_DIGEST"), null);
+  });
+  it("leads a player's row where it is about; an announcement stays here", () => {
+    const player = (type) => hrefOf({ type, category: "player" }, adminHref);
+    assert.equal(player("MORNING_BRIEF"), "/today");
+    assert.equal(player("SUPPORT_MESSAGE"), "/me/messages");
+    assert.equal(player("ANNOUNCEMENT_PUBLISHED"), null);
   });
 });
 
 describe("newerReading", () => {
-  it("a screen restored from the cache does not bring back an older count", () => {
+  it("an answer older than the one shown does not bring back its count", () => {
     const shown = { count: 0, asOf: 2_000 };
     assert.deepEqual(newerReading(shown, { count: 3, asOf: 1_000 }), shown);
     assert.deepEqual(newerReading(shown, { count: 1, asOf: 3_000 }), {

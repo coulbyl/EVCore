@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Bell } from "lucide-react";
 import { cn } from "@evcore/ui/cn";
-import type { UnreadReading } from "@/domains/notifications/helpers/notification-feed";
 import { useUnreadCount } from "@/domains/notifications/use-unread-count";
 
 /**
@@ -16,7 +15,7 @@ export function BellLink({
   labels,
   className,
 }: {
-  unread: UnreadReading | null;
+  unread: number | null;
   labels: { notifications: string; unread: string };
   className?: string;
 }) {

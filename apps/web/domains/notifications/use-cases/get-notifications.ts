@@ -3,7 +3,7 @@ import { serverApiRequest } from "@/lib/api/server-api";
 import {
   feedQuery,
   type FeedFilter,
-  type UnreadReading,
+  type NotificationCategory,
 } from "../helpers/notification-feed";
 
 /** Mirror of the backend's NotificationView, the fields the list shows. */
@@ -20,6 +20,7 @@ export type PlayerNotification = {
   body: string;
   createdAt: string;
   isRead: boolean;
+  category: NotificationCategory;
 };
 
 /**
@@ -36,18 +37,17 @@ export const getNotifications = cache(
 );
 
 /**
- * The bell's badge: unread notifications, and when they were read (the
- * tab keeps the newest reading, use-unread-count.ts). Shared by the band
- * and the left rail within a request; a failed read is null — no badge
- * rather than an error, and never a « 0 » that would hide a live count.
+ * The bell's badge: unread notifications, shared by the band and the left
+ * rail within a request. It only seeds the tab (use-unread-count.ts). A
+ * failed read is null — no badge rather than an error, and never a « 0 »
+ * that would hide a live count.
  */
-export const getUnreadCount = cache(async (): Promise<UnreadReading | null> => {
-  const asOf = Date.now();
+export const getUnreadCount = cache(async (): Promise<number | null> => {
   try {
     const { count } = await serverApiRequest<{ count: number }>(
       "/notifications/unread-count",
     );
-    return { count, asOf };
+    return count;
   } catch {
     return null;
   }

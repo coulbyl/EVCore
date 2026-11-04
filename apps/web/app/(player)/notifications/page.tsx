@@ -4,13 +4,24 @@ import { ChevronRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { SubpageBand } from "@/components/scoreboard/shell/subpage-band";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
-import { getNotifications } from "@/domains/notifications/use-cases/get-notifications";
 import {
+  getNotifications,
+  getUnreadCount,
+} from "@/domains/notifications/use-cases/get-notifications";
+import {
+  FEED_KINDS,
+  FEED_STATUSES,
   feedHref,
   hrefOf,
   parseFeedFilter,
   type FeedFilter,
+  type FeedKind,
+  type FeedStatus,
 } from "@/domains/notifications/helpers/notification-feed";
+import {
+  ADMIN_SECTIONS,
+  type AdminSectionKey,
+} from "@/components/scoreboard/shell/shell-constants";
 import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
 import { ChipGroup } from "@/components/scoreboard/ui/chip-group";
 import {
@@ -31,6 +42,38 @@ export async function generateMetadata(): Promise<Metadata> {
 const PAGE = 30;
 const MAX_PAGES = 5;
 const INTL: Record<string, string> = { fr: "fr-FR", en: "en-GB" };
+
+const STATUS_LABELS = {
+  all: "statusAll",
+  unread: "statusUnread",
+  read: "statusRead",
+} as const satisfies Record<FeedStatus, string>;
+
+const KIND_LABELS = {
+  all: "kindAll",
+  player: "kindPlayer",
+  technical: "kindTechnical",
+} as const satisfies Record<FeedKind, string>;
+
+function adminHref(section: AdminSectionKey): string {
+  return ADMIN_SECTIONS.find((s) => s.key === section)?.href ?? "/admin";
+}
+
+/**
+ * The unread of the kind shown: the chip's count and « tout marquer ». The
+ * « Non lues » list counts them already, and with no kind the badge's
+ * count is the same set (already read for the layout); a read list has
+ * none to count.
+ */
+async function unreadOf(
+  filter: FeedFilter,
+  list: Promise<{ total: number }>,
+): Promise<number> {
+  if (filter.status === "read") return 0;
+  if (filter.status === "unread") return (await list).total;
+  if (filter.kind === "all") return (await getUnreadCount()) ?? 0;
+  return (await getNotifications("unread", filter.kind, 1)).total;
+}
 
 /**
  * La cloche (09 § 6, maquette Cloche) : une liste sans onglet, les plus
@@ -64,36 +107,23 @@ export default async function Page({
   const filter = parseFeedFilter(params, admin);
   const display = displayLocaleOf(locale);
   const pages = Math.min(MAX_PAGES, 1 + Math.max(0, Number(params.more) || 0));
-  // The unread of the kind shown: the chip's count and « tout marquer »,
-  // from the same filter as the list (a read list has none to count).
-  const [{ data, total }, unread] = await Promise.all([
-    getNotifications(filter.status, filter.kind, PAGE * pages),
-    filter.status === "read"
-      ? Promise.resolve(null)
-      : getNotifications("unread", filter.kind, 1),
+  const list = getNotifications(filter.status, filter.kind, PAGE * pages);
+  const [{ data, total }, unreadTotal] = await Promise.all([
+    list,
+    unreadOf(filter, list),
   ]);
-  const unreadTotal = unread?.total ?? 0;
-  const statusChips = (["all", "unread", "read"] as const).map((status) => ({
+  const statusChips = FEED_STATUSES.map((status) => ({
     key: status,
     label:
-      status === "all"
-        ? t("statusAll")
-        : status === "read"
-          ? t("statusRead")
-          : unreadTotal > 0
-            ? t("statusUnreadCount", { count: unreadTotal })
-            : t("statusUnread"),
+      status === "unread" && unreadTotal > 0
+        ? t("statusUnreadCount", { count: unreadTotal })
+        : t(STATUS_LABELS[status]),
     href: feedHref({ ...filter, status }),
     active: filter.status === status,
   }));
-  const kindChips = (["all", "player", "technical"] as const).map((kind) => ({
+  const kindChips = FEED_KINDS.map((kind) => ({
     key: kind,
-    label:
-      kind === "all"
-        ? t("kindAll")
-        : kind === "player"
-          ? t("kindPlayer")
-          : t("kindTechnical"),
+    label: t(KIND_LABELS[kind]),
     href: feedHref({ ...filter, kind }),
     active: filter.kind === kind,
   }));
@@ -149,7 +179,7 @@ export default async function Page({
           <ul aria-label={t("title")} className="divide-y divide-border">
             {data.map((notification) => {
               const { day, time } = when(notification.createdAt);
-              const href = hrefOf(notification.type);
+              const href = hrefOf(notification, adminHref);
               // A row that leads somewhere shows two lines: a technical
               // alert's list of raw ids is read whole on its admin screen.
               const clamp = href !== null;

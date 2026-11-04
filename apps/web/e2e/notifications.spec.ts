@@ -149,6 +149,11 @@ test.describe("Notifications — la cloche synchronisée", () => {
       .getByRole("link")
       .click();
     await expect(reader).toHaveURL(/\/today$/);
+    // /today's server count (the mock never marks anything read) only seeds
+    // an empty bell: it never raises the badge back over the tab's reading.
+    await expect(
+      reader.getByRole("link", { name: "Notifications", exact: true }).first(),
+    ).toBeVisible();
 
     await expect(
       bell.getByRole("link", { name: "Notifications", exact: true }).first(),

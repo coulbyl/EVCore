@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { cn } from "@evcore/ui/cn";
-import type { UnreadReading } from "@/domains/notifications/helpers/notification-feed";
 import { BellLink } from "./bell-link";
 
 /**
@@ -19,7 +18,7 @@ export function BandActions({
   /** The player's avatar, shown in place of the initial once chosen. */
   avatarUrl?: string | null;
   /** Unread notifications: the bell's badge (09 § 6); null when its read failed. */
-  unread: UnreadReading | null;
+  unread: number | null;
   labels: { notifications: string; me: string; unread: string };
   className?: string;
 }) {

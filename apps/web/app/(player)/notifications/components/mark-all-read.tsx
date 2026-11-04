@@ -9,7 +9,7 @@ import type { FeedKind } from "@/domains/notifications/helpers/notification-feed
 /**
  * « Tout marquer comme lu », within the kind shown (an admin's technical
  * alerts alone): the server marks what the list counts unread, then the
- * badge and the list are read again together.
+ * badge is read again, and the list once with it.
  */
 export function MarkAllRead({
   kind,
@@ -30,10 +30,11 @@ export function MarkAllRead({
         setPending(true);
         playerFetch(`/notifications/read-all${query}`, { method: "POST" })
           .then(() => refreshUnread())
-          .catch(() => undefined)
-          .finally(() => {
+          .catch(() => false)
+          .then((changed) => {
             setPending(false);
-            router.refresh();
+            // A changed count redraws the list already (PushBridge).
+            if (!changed) router.refresh();
           });
       }}
       className="flex min-h-11 items-center rounded-md px-2 text-body font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:text-muted-foreground"

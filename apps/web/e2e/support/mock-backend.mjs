@@ -1988,17 +1988,16 @@ const ADMIN_NOTIFICATIONS = [
   ],
 ];
 
-/** notification.service.ts, TECHNICAL_TYPES: an admin's bell only. */
-const TECHNICAL_NOTIFICATION_TYPES = [
-  "ROI_ALERT",
-  "MARKET_SUSPENSION",
-  "BRIER_ALERT",
-  "WEEKLY_REPORT",
-  "ETL_FAILURE",
-  "WEIGHT_ADJUSTMENT",
-  "XG_UNAVAILABLE_REPORT",
-  "ML_MODEL_ACTIVATED",
-  "ML_MODEL_MISSING",
+/**
+ * notification.service.ts, categoryOf: what a player's bell can hold is
+ * « player », the rest « technical » (an admin's bell only).
+ */
+const PLAYER_NOTIFICATION_TYPES = [
+  "ANNOUNCEMENT_PUBLISHED",
+  "MORNING_BRIEF",
+  "WEEKLY_STATEMENT",
+  "FOLLOWED_SETTLED",
+  "SUPPORT_MESSAGE",
 ];
 
 const NOTIFICATIONS = [
@@ -2015,6 +2014,7 @@ const NOTIFICATIONS = [
       ? lastMondayAt(8).toISOString()
       : todayAt(hours),
   isRead,
+  category: PLAYER_NOTIFICATION_TYPES.includes(type) ? "player" : "technical",
 }));
 
 const MATCH_DECISIONS = [
@@ -2957,14 +2957,12 @@ function route(method, url, cookie = "") {
     const type = query.get("type");
     const status = query.get("status");
     const category = query.get("category");
-    const technical = (n) => TECHNICAL_NOTIFICATION_TYPES.includes(n.type);
     const data = NOTIFICATIONS.filter(
       (n) =>
         (!type || n.type === type) &&
         (status !== "unread" || !n.isRead) &&
         (status !== "read" || n.isRead) &&
-        (category !== "technical" || technical(n)) &&
-        (category !== "player" || !technical(n)),
+        (!category || n.category === category),
     );
     const limit = Number(query.get("limit") ?? 20);
     return [

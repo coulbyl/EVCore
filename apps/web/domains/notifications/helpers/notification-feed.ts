@@ -43,44 +43,54 @@ export function feedHref(filter: FeedFilter, more = 0): string {
   return search ? `/notifications?${search}` : "/notifications";
 }
 
+import type { AdminSectionKey } from "@/components/scoreboard/shell/shell-constants";
+
+/** The backend's NotificationView.category: what a player's bell can hold, or not. */
+export type NotificationCategory = "player" | "technical";
+
+const PLAYER_HREFS: Partial<Record<string, string>> = {
+  MORNING_BRIEF: "/today",
+  WEEKLY_STATEMENT: "/results/week",
+  FOLLOWED_SETTLED: "/me?tab=settled",
+  SUPPORT_MESSAGE: "/me/messages",
+};
+
+/** The admin screen that shows a technical alert. */
+const ADMIN_SECTION_OF: Partial<Record<string, AdminSectionKey>> = {
+  ETL_FAILURE: "exploitation",
+  XG_UNAVAILABLE_REPORT: "exploitation",
+  ROI_ALERT: "engine",
+  MARKET_SUSPENSION: "engine",
+  BRIER_ALERT: "engine",
+  WEEKLY_REPORT: "engine",
+  WEIGHT_ADJUSTMENT: "engine",
+  ML_MODEL_ACTIVATED: "engine",
+  ML_MODEL_MISSING: "engine",
+};
+
 /**
  * Where a row leads (09 § 6). A technical alert leads to the admin screen
- * that shows it; an announcement, and the rest, show in full here (null).
+ * that shows it (`adminHref`, from ADMIN_SECTIONS); an announcement, and
+ * the rest, show in full here (null).
  */
-export function hrefOf(type: string): string | null {
-  switch (type) {
-    case "MORNING_BRIEF":
-      return "/today";
-    case "WEEKLY_STATEMENT":
-      return "/results/week";
-    case "FOLLOWED_SETTLED":
-      return "/me?tab=settled";
-    case "SUPPORT_MESSAGE":
-      return "/me/messages";
-    case "ETL_FAILURE":
-    case "XG_UNAVAILABLE_REPORT":
-      return "/admin/exploitation";
-    case "ROI_ALERT":
-    case "MARKET_SUSPENSION":
-    case "BRIER_ALERT":
-    case "WEEKLY_REPORT":
-    case "WEIGHT_ADJUSTMENT":
-    case "ML_MODEL_ACTIVATED":
-    case "ML_MODEL_MISSING":
-      return "/admin/engine";
-    default:
-      return null;
+export function hrefOf(
+  notification: { type: string; category: NotificationCategory },
+  adminHref: (section: AdminSectionKey) => string,
+): string | null {
+  if (notification.category === "technical") {
+    const section = ADMIN_SECTION_OF[notification.type];
+    return section ? adminHref(section) : null;
   }
+  return PLAYER_HREFS[notification.type] ?? null;
 }
 
-/** The badge's count and when the server (or this tab) read it. */
+/** The badge's count and when this browser read it (Date.now()). */
 export type UnreadReading = { count: number; asOf: number };
 
 /**
- * Whether a reading replaces the one shown. A screen restored from the
- * router's cache (back, forward) carries the count of when it was drawn:
- * older than the one shown, it is ignored rather than bringing back a
- * notification already read.
+ * Whether a reading replaces the one shown, both read on this browser's
+ * clock: an answer that left before the shown one arrived after it is
+ * ignored rather than bringing back a notification already read.
  */
 export function newerReading(
   shown: UnreadReading | null,
