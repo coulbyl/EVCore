@@ -98,10 +98,42 @@ describe('FixtureByIdDetailsSchema', () => {
     expect(FixtureByIdDetailsSchema.safeParse(match).success).toBe(true);
   });
 
-  it('rejects an event without a minute', () => {
+  // Manchester United–Roma, 03/11: the VAR check on the 58' penalty came
+  // with `detail: null`, and the whole match lost its events.
+  it('accepts a VAR event without a detail', () => {
     const match = entry();
+    Object.assign(match.events[0] ?? {}, { type: 'Var', detail: null });
+    expect(FixtureByIdDetailsSchema.safeParse(match).success).toBe(true);
+  });
+
+  it('leaves out an event without a minute, never the match', () => {
+    const match = entry();
+    const total = match.events.length;
     Object.assign(match.events[0]?.time ?? {}, { elapsed: null });
-    expect(FixtureByIdDetailsSchema.safeParse(match).success).toBe(false);
+    const parsed = FixtureByIdDetailsSchema.parse(match);
+    expect(parsed.events).toHaveLength(total - 1);
+    expect(parsed.lineups).toHaveLength(match.lineups.length);
+    expect(parsed.players).toHaveLength(match.players.length);
+    expect(parsed.dropped).toEqual({ events: 1, lineups: 0, players: 0 });
+  });
+
+  it('leaves out an invalid lineup or player block alone', () => {
+    const match = entry();
+    Object.assign(match.lineups[0] ?? {}, { startXI: null });
+    Object.assign(match.players[1] ?? {}, { team: { id: null } });
+    const parsed = FixtureByIdDetailsSchema.parse(match);
+    expect(parsed.lineups).toHaveLength(match.lineups.length - 1);
+    expect(parsed.players).toHaveLength(match.players.length - 1);
+    expect(parsed.events).toHaveLength(match.events.length);
+    expect(parsed.dropped).toEqual({ events: 0, lineups: 1, players: 1 });
+  });
+
+  it('counts nothing dropped on a clean match', () => {
+    expect(FixtureByIdDetailsSchema.parse(entry()).dropped).toEqual({
+      events: 0,
+      lineups: 0,
+      players: 0,
+    });
   });
 
   it('rejects a match whose players block is missing', () => {

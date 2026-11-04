@@ -16,7 +16,9 @@ import type {
 } from "@/domains/matches/types/match-sheet";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import {
+  clockLabelsOf,
   displayLocaleOf,
+  formatClock,
   formatOdds,
   formatShortDate,
   formatTime,
@@ -51,10 +53,10 @@ export async function MatchSheetView({ id }: { id: string }) {
     getPlayerTimeZone(),
     getPlayerSession(),
   ]);
-  // An admin opens the match's diagnostic from here (12-admin.md § 2):
-  // λ, factors, every reading the engine set aside with its reason.
-  const admin =
-    session.status === "signed-in" && session.session.user.role === "ADMIN";
+  // Every signed-in player opens the match's analysis from here (12-admin
+  // § 2, open to players since 04/11): λ, factors, every reading the engine
+  // set aside with its reason.
+  const signedIn = session.status === "signed-in";
   const display = displayLocaleOf(locale);
   const muted = sheet.state === "postponed";
 
@@ -75,7 +77,9 @@ export async function MatchSheetView({ id }: { id: string }) {
           t={t}
           locale={display}
           timeZone={timeZone}
-          diagnosticHref={admin ? `/admin/matches/${sheet.fixtureId}` : null}
+          analysisHref={
+            signedIn ? `/matches/${sheet.fixtureId}/analysis` : null
+          }
         />
       }
     >
@@ -191,18 +195,20 @@ function SheetHeader({
   t,
   locale,
   timeZone,
-  diagnosticHref,
+  analysisHref,
 }: {
   sheet: MatchSheet;
   t: Translate;
   locale: DisplayLocale;
   timeZone: string;
-  /** Admins only: the match's diagnostic. */
-  diagnosticHref: string | null;
+  /** Signed-in players: the match's analysis. */
+  analysisHref: string | null;
 }) {
   const status =
     sheet.state === "live"
-      ? t("inProgress")
+      ? sheet.clock
+        ? formatClock(sheet.clock, clockLabelsOf(t))
+        : t("inProgress")
       : sheet.state === "postponed"
         ? t("postponed")
         : sheet.state === "finished" && sheet.halfTimeScore
@@ -216,10 +222,10 @@ function SheetHeader({
         <span>{sheet.competition.name}</span>
         <span className="flex items-center gap-2">
           {status ? <span className="score">{status}</span> : null}
-          {diagnosticHref ? (
+          {analysisHref ? (
             <Link
-              href={diagnosticHref}
-              aria-label={t("diagnostic")}
+              href={analysisHref}
+              aria-label={t("analysis")}
               className="flex size-8 items-center justify-center rounded-full text-band-muted hover:text-band-foreground focus-visible:outline-2 focus-visible:outline-led-on"
             >
               <Stethoscope aria-hidden className="size-4" strokeWidth={2} />
@@ -248,10 +254,15 @@ function SheetHeader({
 
 /**
  * The [+] of a bet (06 § 2, 07 § 4): a match still to come, a bet 1xBet
- * prices. Live, finished or postponed: none (06 § 3).
+ * prices that the ticket can take. Live, finished or postponed: none
+ * (06 § 3). Not the new markets (corners, cards, scorers, shots, minute):
+ * the ticket keeps no line nor player, prices at 1xBet only and settles on
+ * the score alone.
  */
 function AddButton({ pick, sheet }: { pick: SheetPick; sheet: MatchSheet }) {
-  if (sheet.state !== "upcoming" || pick.odds === null) return null;
+  if (sheet.state !== "upcoming" || pick.odds === null || !pick.addable) {
+    return null;
+  }
   return (
     <AddToTicket
       leg={{
@@ -287,7 +298,7 @@ function Section({
 }
 
 /**
- * A bet with its 1xBet price, « Victoire Arsenal 1,65 », and its mark once
+ * A bet with its price, « Victoire Arsenal 1,65 », and its mark once
  * the match is over. Its chance is told once, under our reading only.
  */
 function PickLine({
@@ -379,9 +390,10 @@ function FormLine({
 }
 
 /**
- * The main 1xBet lines and the engine's other picks, by market chance, with
- * their price only (06 § 2); once the match is over, what landed, without
- * the price (06 § 3).
+ * The main 1xBet lines, the engine's other picks by market chance, then the
+ * new markets (corners, cards, scorers, shots, minute), with their price
+ * only (06 § 2); once the match is over, what landed, without the price
+ * (06 § 3), nothing while it is not known.
  */
 function OtherPicks({
   sheet,
@@ -395,7 +407,7 @@ function OtherPicks({
   const finished = sheet.state === "finished";
   const line = (pick: SheetPick) => (
     <li
-      key={`${pick.market}|${pick.pick}`}
+      key={`${pick.market}|${pick.pick}|${pick.line ?? ""}`}
       className="flex items-baseline justify-between gap-3 py-2"
     >
       <span className="text-body">{pickLabel(pick, sheet)}</span>

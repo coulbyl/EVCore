@@ -36,6 +36,7 @@ function harness(input: {
         home: { name: 'Paris SG' },
         away: { name: 'Lens' },
         score: { home: 2, away: 0 },
+        clock: { kind: 'finished' },
       },
     ],
   });

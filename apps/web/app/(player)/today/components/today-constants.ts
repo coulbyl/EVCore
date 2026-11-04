@@ -1,4 +1,5 @@
 import { formatLinePick, formatPickWithTeams } from "@/helpers/fixture";
+import { formatClock, type ClockLabels } from "@/helpers/scoreboard-format";
 import type { Outcome } from "@/components/scoreboard/ui/outcome";
 import type {
   TodayCoupon,
@@ -61,4 +62,15 @@ export function isSettled(state: TodayCouponState): boolean {
 /** Les matchs encore joués : un match reporté sort du compte (04 § 5). */
 export function playedLegs(coupon: TodayCoupon): TodayLeg[] {
   return coupon.legs.filter((leg) => leg.state !== "postponed");
+}
+
+/**
+ * A leg's match once kicked off: « 0-2 · 67' », « 1-1 · MT »,
+ * « 2-0 · Terminé »; the clock alone before the first live score.
+ */
+export function legLiveLine(leg: TodayLeg, labels: ClockLabels): string | null {
+  // `clock` is absent from an answer older than the field.
+  if (!leg.clock) return null;
+  const clock = formatClock(leg.clock, labels);
+  return leg.score ? `${leg.score.home}-${leg.score.away} · ${clock}` : clock;
 }

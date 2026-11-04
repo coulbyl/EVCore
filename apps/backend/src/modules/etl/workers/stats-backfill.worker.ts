@@ -75,6 +75,9 @@ export class StatsBackfillWorker extends WorkerHost {
   private readonly failedAttempts = new Map<number, number>();
   // Same rule for the events lot (missing from the answer, rejected).
   private readonly failedEventAttempts = new Map<number, number>();
+  // When each fixture was last asked in an events lot: a recent match not
+  // yet reported is asked again only once NOT_REPORTED_RETRY_MINUTES passed.
+  private readonly eventsAskedAt = new Map<number, number>();
 
   // eslint-disable-next-line max-params -- worker orchestrates focused feature services.
   constructor(
@@ -163,24 +166,36 @@ export class StatsBackfillWorker extends WorkerHost {
     return { result: { status: 'nothing-left' }, calls: 0 };
   }
 
-  // Events, lineups and player statistics of fixtures the stats sync is
-  // done with, most recent first, 20 per call. Only fixtures
-  // past the grace period: a recent one may still receive them, and the
-  // routine sync already wrote what it had.
+  // Events, lineups and player statistics, most recent first, 20 per call:
+  // fixtures the stats sync is done with past the grace period, and recent
+  // ones with no event written yet (findEventsBackfillPending), each asked
+  // at most every NOT_REPORTED_RETRY_MINUTES.
   private async runEventsLot(budget: number): Promise<EventsBackfillLotResult> {
     const lotSize = Math.min(
       FIXTURE_EVENTS.BACKFILL_MAX_FIXTURES_PER_LOT,
       fixturesWithinBudget(budget),
     );
-    const excluded = [...this.failedEventAttempts.entries()]
-      .filter(([, attempts]) => attempts >= STATS_BACKFILL.MAX_FIXTURE_ATTEMPTS)
-      .map(([externalId]) => externalId);
+    const now = Date.now();
+    const retryAfter = now - FIXTURE_EVENTS.NOT_REPORTED_RETRY_MINUTES * 60_000;
+    for (const [externalId, askedAt] of this.eventsAskedAt) {
+      if (askedAt <= retryAfter) this.eventsAskedAt.delete(externalId);
+    }
+    const excluded = [
+      ...[...this.failedEventAttempts.entries()]
+        .filter(
+          ([, attempts]) => attempts >= STATS_BACKFILL.MAX_FIXTURE_ATTEMPTS,
+        )
+        .map(([externalId]) => externalId),
+      ...this.eventsAskedAt.keys(),
+    ];
+    const notReportedSince = new Date(
+      now - FIXTURE_EVENTS.NOT_REPORTED_WINDOW_HOURS * 3_600_000,
+    );
     const lot = await this.fixtureService.findEventsBackfillPending({
-      before: new Date(
-        Date.now() - FIXTURE_EVENTS.INCOMPLETE_GRACE_DAYS * DAY_MS,
-      ),
+      before: new Date(now - FIXTURE_EVENTS.INCOMPLETE_GRACE_DAYS * DAY_MS),
+      notReportedSince,
       limit: lotSize,
-      excludeExternalIds: excluded,
+      excludeExternalIds: [...new Set(excluded)],
     });
     if (lot.length === 0) {
       return {
@@ -193,6 +208,15 @@ export class StatsBackfillWorker extends WorkerHost {
     }
 
     const result = await this.statsSync.syncFixtures(lot, 'details-only');
+    // A quota stop asked nothing: those fixtures are not held back. Only the
+    // recent ones are: an older match comes back on its failed attempts.
+    if (result.abortReason === null) {
+      for (const { externalId, scheduledAt } of lot) {
+        if (scheduledAt >= notReportedSince) {
+          this.eventsAskedAt.set(externalId, now);
+        }
+      }
+    }
     for (const externalId of result.details.failedExternalIds) {
       this.failedEventAttempts.set(
         externalId,

@@ -7,6 +7,7 @@ import type {
   PlayableQuote,
 } from '@modules/betting-engine/pricing/playable-odds.repository';
 import type {
+  AiOpinionRow,
   MatchRow,
   MatchesRepository,
   ReadingCandidateRow,
@@ -77,11 +78,13 @@ function quote(
 function harness(input: {
   rows?: MatchRow[];
   candidates?: ReadingCandidateRow[];
+  aiRows?: (AiOpinionRow & { fixtureId: string })[];
   quotes?: [string, PlayableQuote][];
 }) {
   const repository = {
     findDayPage: vi.fn().mockResolvedValue(input.rows ?? [match()]),
     findReadingCandidates: vi.fn().mockResolvedValue(input.candidates ?? []),
+    findAiOpinions: vi.fn().mockResolvedValue(input.aiRows ?? []),
   } as unknown as MatchesRepository;
   const playableOdds = {
     findPlayableQuotes: vi.fn().mockResolvedValue(new Map(input.quotes ?? [])),
@@ -93,7 +96,65 @@ function harness(input: {
   };
 }
 
+function aiRow(
+  overrides: Partial<AiOpinionRow & { fixtureId: string }>,
+): AiOpinionRow & { fixtureId: string } {
+  return {
+    fixtureId: 'fx-1',
+    status: 'SELECTED',
+    text: 'Arsenal domine à domicile.',
+    voice: null,
+    decidedAt: new Date('2026-10-30T08:00:00.000Z'),
+    market: 'ONE_X_TWO',
+    pick: 'HOME',
+    result: 'PENDING',
+    ...overrides,
+  };
+}
+
 describe('MatchesService', () => {
+  it('marks the matches the sheet shows an AI opinion for, in one read', async () => {
+    const rows = ['fx-1', 'fx-2', 'fx-3', 'fx-4'].map((fixtureId) =>
+      match({ fixtureId }),
+    );
+    const { service, repository } = harness({
+      rows,
+      aiRows: [
+        aiRow({ fixtureId: 'fx-1' }),
+        // A no-play spoken about the match: an opinion too.
+        aiRow({
+          fixtureId: 'fx-2',
+          status: 'REJECTED',
+          voice: 'match',
+          market: null,
+          pick: null,
+        }),
+        // A no-play that narrates its rules: no opinion shown.
+        aiRow({
+          fixtureId: 'fx-3',
+          status: 'REJECTED',
+          voice: null,
+          market: null,
+          pick: null,
+        }),
+      ],
+    });
+    const screen = await service.getMatches({ day: 'today' }, NOW);
+    expect(screen.items.map((item) => item.ai)).toEqual([
+      true,
+      true,
+      false,
+      false,
+    ]);
+    expect(repository.findAiOpinions).toHaveBeenCalledOnce();
+    expect(repository.findAiOpinions).toHaveBeenCalledWith([
+      'fx-1',
+      'fx-2',
+      'fx-3',
+      'fx-4',
+    ]);
+  });
+
   it('reads the UTC day asked, one page plus one to know if more follow', async () => {
     const { service, repository } = harness({});
     const screen = await service.getMatches({ day: 'yesterday' }, NOW);

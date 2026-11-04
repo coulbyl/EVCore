@@ -11,7 +11,12 @@ import {
   type PlayableQuote,
 } from '@modules/betting-engine/pricing/playable-odds.repository';
 import type { MatchesDay } from './dto/matches-query.dto';
-import type { MatchRow, ReadingCandidateRow } from './matches.repository';
+import type {
+  AiOpinionRow,
+  MatchRow,
+  ReadingCandidateRow,
+} from './matches.repository';
+import type { SheetAiAbstention } from './match-sheet.types';
 import type {
   MatchReading,
   MatchState,
@@ -116,6 +121,7 @@ function isSpeaking(pick: { market: string; pick: string }): boolean {
   return picks == null || picks.includes(pick.pick);
 }
 
+/** A bet's status as the player reads it; pending or unknown is null. */
 export function resultOf(
   result: ReadingCandidateRow['result'],
 ): MatchReading['result'] {
@@ -152,4 +158,41 @@ export function groupBy<T>(
     groups.set(key, group);
   }
   return groups;
+}
+
+/**
+ * The sheet shows an « Avis IA » for these rows: the AI's pick, or its
+ * no-play spoken about the match (aiAbstentionOf). The list's sparkle
+ * (GET /matches) reads the same rule.
+ */
+export function hasAiOpinion(rows: readonly AiOpinionRow[]): boolean {
+  return (
+    rows.some((row) => row.status === 'SELECTED' && row.market) ||
+    aiAbstentionOf(rows) !== null
+  );
+}
+
+/**
+ * The AI read the match and would not bet: an opinion too (03/11), shown
+ * when its text speaks of the match (`voice: match`, VANTAGE v6), never a
+ * text that narrates its rules.
+ */
+export function aiAbstentionOf(
+  rows: readonly AiOpinionRow[],
+): SheetAiAbstention | null {
+  const row = rows.find((r) => r.status === 'REJECTED' && r.voice === 'match');
+  const speech = row ? speechOf(row.text) : null;
+  return row && speech
+    ? { speech, decidedAt: row.decidedAt.toISOString() }
+    : null;
+}
+
+/**
+ * The AI's text as the player reads it: whole, as it wrote it (decided
+ * 31/10). Its figures are its reasons; the words a player should not read
+ * are fixed in VANTAGE's prompt, never cut here. Nothing when it is empty.
+ */
+export function speechOf(text: string | null): string | null {
+  const speech = text?.trim() ?? '';
+  return speech === '' ? null : speech;
 }

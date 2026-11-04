@@ -49,6 +49,9 @@ export type SheetHeaderRow = MatchRow & {
   awayTeamId: string;
   homeHalfTimeScore: number | null;
   awayHalfTimeScore: number | null;
+  /** The API's clock while in progress (fixture.liveStatus, liveElapsed). */
+  liveStatus: string | null;
+  liveElapsed: number | null;
   /** Last finished meetings, most recent first: goals of this sheet's home and away teams. */
   meetings: { homeGoals: number; awayGoals: number }[] | null;
 };
@@ -189,6 +192,7 @@ export class MatchesRepository {
              f."homeScore", f."awayScore",
              f."homeHtScore" AS "homeHalfTimeScore",
              f."awayHtScore" AS "awayHalfTimeScore",
+             f."liveStatus", f."liveElapsed",
              f."homeTeamId", f."awayTeamId",
              ht.name AS "homeName", ht."shortName" AS "homeShortName",
              ht."logoUrl" AS "homeLogoUrl",
@@ -228,27 +232,33 @@ export class MatchesRepository {
   }
 
   /**
-   * The AI's (VANTAGE) latest decision before kick-off on a match, its text
-   * and its pick. Nothing when it never looked at the match.
+   * The AI's (VANTAGE) latest decision before kick-off on each of these
+   * matches, in one query: its status, text and pick. A match the AI never
+   * read has no row.
    */
-  findAiOpinion(fixtureId: string): Promise<AiOpinionRow[]> {
-    return this.prisma.client.$queryRaw<AiOpinionRow[]>`
+  findAiOpinions(
+    fixtureIds: readonly string[],
+  ): Promise<(AiOpinionRow & { fixtureId: string })[]> {
+    if (fixtureIds.length === 0) return Promise.resolve([]);
+    return this.prisma.client.$queryRaw<
+      (AiOpinionRow & { fixtureId: string })[]
+    >`
       WITH latest AS (
-        SELECT cd.id, cd.status::text AS status,
+        SELECT DISTINCT ON (mr."fixtureId")
+               mr."fixtureId", cd.id, cd.status::text AS status,
                cd."reasonDetails"->>'text' AS text,
                cd."reasonDetails"->>'voice' AS voice,
                cd."createdAt" AS "decidedAt"
         FROM public.channel_decision cd
         JOIN public.model_run mr ON mr.id = cd."modelRunId"
         JOIN public.fixture f ON f.id = mr."fixtureId"
-        WHERE mr."fixtureId" = ${fixtureId}::uuid
+        WHERE mr."fixtureId" = ANY(${fixtureIds}::uuid[])
           AND cd.channel = 'VANTAGE'
           AND cd."createdAt" < f."scheduledAt"
-        ORDER BY cd."createdAt" DESC
-        LIMIT 1
+        ORDER BY mr."fixtureId", cd."createdAt" DESC
       )
-      SELECT latest.status, latest.text, latest.voice, latest."decidedAt",
-             cs.market::text AS market, cs.pick,
+      SELECT latest."fixtureId", latest.status, latest.text, latest.voice,
+             latest."decidedAt", cs.market::text AS market, cs.pick,
              cs.result::text AS result
       FROM latest
       LEFT JOIN public.channel_selection cs

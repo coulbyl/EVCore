@@ -9,9 +9,12 @@ import { ResultMark } from "@/components/scoreboard/ui/result-mark";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import { getToday } from "@/domains/today/use-cases/get-today";
 import {
+  clockLabelsOf,
   displayLocaleOf,
+  formatClock,
   formatOdds,
   formatTime,
+  type ClockLabels,
   type DisplayLocale,
 } from "@/helpers/scoreboard-format";
 import type {
@@ -152,7 +155,7 @@ export async function CouponSheetBody({
           locale={display}
           timeZone={timeZone}
           labels={{
-            inProgress: t("inProgress"),
+            ...clockLabelsOf(t),
             postponed: t("postponed"),
             won: t("won"),
             lost: t("lost"),
@@ -192,8 +195,7 @@ function LegBlock({
   leg: TodayLeg;
   locale: DisplayLocale;
   timeZone: string;
-  labels: {
-    inProgress: string;
+  labels: ClockLabels & {
     postponed: string;
     won: string;
     lost: string;
@@ -201,12 +203,12 @@ function LegBlock({
   };
 }) {
   const muted = leg.state === "postponed" || leg.state === "void";
+  // The match's clock (« 67' », « MT », « Terminé ») once kicked off.
+  const clock = leg.clock ? formatClock(leg.clock, labels) : null;
   const status =
-    leg.state === "live"
-      ? labels.inProgress
-      : leg.state === "postponed"
-        ? labels.postponed
-        : formatTime(new Date(leg.kickoffAt), locale, timeZone);
+    leg.state === "postponed"
+      ? labels.postponed
+      : (clock ?? formatTime(new Date(leg.kickoffAt), locale, timeZone));
 
   return (
     <article
@@ -221,12 +223,20 @@ function LegBlock({
           [leg.home, leg.score?.home, status],
           [leg.away, leg.score?.away, leg.competition.name],
         ] as const
-      ).map(([team, goals, aside]) => (
+      ).map(([team, goals, aside], index) => (
         <div key={team.name} className="flex items-center gap-2.5">
           <TeamMark team={team} />
           <span className="flex-1 text-bet font-medium">{team.name}</span>
           {goals !== undefined ? (
-            <span className="score text-title font-bold">{goals}</span>
+            <>
+              {/* With the score, the clock stays beside it on the first line. */}
+              {index === 0 && clock ? (
+                <span className="score text-meta text-muted-foreground">
+                  {clock}
+                </span>
+              ) : null}
+              <span className="score text-title font-bold">{goals}</span>
+            </>
           ) : (
             <span className="score text-meta text-muted-foreground">
               {aside}

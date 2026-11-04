@@ -11,6 +11,7 @@ import type { CouponSettlementService } from '../../coupon/coupon-settlement.ser
 import type { CacheService } from '@common/redis/cache.service';
 import type { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 import type { RiskService } from '../../risk/risk.service';
+import type { FixtureEventsService } from '../../fixture-events/fixture-events.service';
 import { PendingBetsSettlementWorker } from './pending-bets-settlement.worker';
 
 vi.mock('node:child_process', () => ({
@@ -166,6 +167,10 @@ describe('PendingBetsSettlementWorker', () => {
     checkAllMarkets: vi.fn().mockResolvedValue([]),
   } satisfies Partial<RiskService>;
 
+  const fixtureEvents = {
+    persistDetails: vi.fn(),
+  } satisfies Partial<FixtureEventsService>;
+
   const worker = new PendingBetsSettlementWorker(
     fixtureService as unknown as FixtureService,
     bettingEngineService as unknown as BettingEngineService,
@@ -181,6 +186,14 @@ describe('PendingBetsSettlementWorker', () => {
       apiFootball: new ApiFootballClient(config as unknown as ConfigService),
       couponSettlement: couponSettlement as unknown as CouponSettlementService,
       cache: cache as unknown as CacheService,
+      fixtureEvents: fixtureEvents as unknown as FixtureEventsService,
+    });
+    fixtureEvents.persistDetails.mockResolvedValue({
+      status: 'written',
+      events: 1,
+      lineups: 0,
+      playerStatistics: 0,
+      synced: false,
     });
     fixtureService.syncFixtureState.mockResolvedValue({
       affectsRollingStats: true,
@@ -194,6 +207,8 @@ describe('PendingBetsSettlementWorker', () => {
         id: 'fixture-1',
         externalId: 999,
         scheduledAt: new Date('2025-03-15T20:00:00Z'),
+        status: 'IN_PROGRESS',
+        hasEvents: false,
         season: {
           competition: {
             leagueId: 39,
@@ -217,6 +232,7 @@ describe('PendingBetsSettlementWorker', () => {
       awayScore: 1,
       homeHtScore: 1,
       awayHtScore: 0,
+      live: expect.any(Object),
     });
     expect(bettingEngineService.settleOpenBets).toHaveBeenCalledWith(
       'fixture-1',
@@ -225,6 +241,107 @@ describe('PendingBetsSettlementWorker', () => {
       'season-1',
       expect.objectContaining({ changedFixtureIds: expect.any(Set) }),
     );
+  });
+
+  it('writes the events of the answer that says FINISHED, before settling', async () => {
+    const body = buildFixtureResponse('FT');
+    Object.assign(body.response[0] ?? {}, {
+      events: [
+        {
+          time: { elapsed: 58, extra: null },
+          team: { id: 1 },
+          player: { id: 1485, name: 'Bruno Fernandes' },
+          assist: { id: null, name: null },
+          type: 'Goal',
+          detail: 'Penalty',
+          comments: null,
+        },
+      ],
+      lineups: [],
+      players: [],
+    });
+    mockCurlStdoutOnce(buildCurlStdout(body));
+
+    await worker.process({ data: {} } as Job<Record<string, never>>);
+
+    expect(fixtureEvents.persistDetails).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fixtureExternalId: 999,
+        details: expect.objectContaining({
+          events: [expect.objectContaining({ detail: 'Penalty' })],
+        }),
+      }),
+    );
+    expect(
+      fixtureEvents.persistDetails.mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      bettingEngineService.settleOpenBets.mock.invocationCallOrder[0] ?? 0,
+    );
+  });
+
+  describe('a fixture already stored FINISHED (a bet still pending)', () => {
+    const finishedWithEvents = (hasEvents: boolean) => {
+      fixtureService.findPendingSettlementFixtures.mockResolvedValue([
+        {
+          id: 'fixture-1',
+          externalId: 999,
+          scheduledAt: new Date('2025-03-15T20:00:00Z'),
+          status: 'FINISHED',
+          hasEvents,
+          season: { competition: { leagueId: 39, code: 'PL' } },
+        },
+      ]);
+      const body = buildFixtureResponse('FT');
+      Object.assign(body.response[0] ?? {}, {
+        events: [],
+        lineups: [],
+        players: [],
+      });
+      mockCurlStdoutOnce(buildCurlStdout(body));
+    };
+
+    it('does not write its events again', async () => {
+      finishedWithEvents(true);
+
+      await worker.process({ data: {} } as Job<Record<string, never>>);
+
+      expect(fixtureEvents.persistDetails).not.toHaveBeenCalled();
+      expect(bettingEngineService.settleOpenBets).toHaveBeenCalled();
+    });
+
+    it('writes them while it has none', async () => {
+      finishedWithEvents(false);
+
+      await worker.process({ data: {} } as Job<Record<string, never>>);
+
+      expect(fixtureEvents.persistDetails).toHaveBeenCalledOnce();
+    });
+  });
+
+  it('settles a finished fixture whose events cannot be written', async () => {
+    const body = buildFixtureResponse('FT');
+    Object.assign(body.response[0] ?? {}, {
+      events: [],
+      lineups: [],
+      players: [],
+    });
+    mockCurlStdoutOnce(buildCurlStdout(body));
+    fixtureEvents.persistDetails.mockRejectedValueOnce(new Error('db down'));
+
+    await worker.process({ data: {} } as Job<Record<string, never>>);
+
+    expect(bettingEngineService.settleOpenBets).toHaveBeenCalledWith(
+      'fixture-1',
+    );
+  });
+
+  it('writes no events for an answer without them', async () => {
+    mockCurlStdoutOnce(buildCurlStdout(buildFixtureResponse('FT')));
+
+    await worker.process({ data: {} } as Job<Record<string, never>>);
+
+    expect(fixtureEvents.persistDetails).not.toHaveBeenCalled();
+    expect(bettingEngineService.settleOpenBets).toHaveBeenCalled();
   });
 
   it('settles on the 90-minute score, not the post-extra-time score (AET)', async () => {
@@ -243,6 +360,7 @@ describe('PendingBetsSettlementWorker', () => {
       awayScore: 2,
       homeHtScore: 1,
       awayHtScore: 0,
+      live: expect.any(Object),
     });
   });
 
@@ -253,6 +371,24 @@ describe('PendingBetsSettlementWorker', () => {
 
     expect(fixtureService.syncFixtureState).toHaveBeenCalledOnce();
     expect(bettingEngineService.settleOpenBets).not.toHaveBeenCalled();
+  });
+
+  it('passes the clock of a match in progress', async () => {
+    const body = buildFixtureResponse('NS');
+    Object.assign(body.response[0]?.fixture.status ?? {}, {
+      short: '2H',
+      elapsed: 67,
+    });
+    mockCurlStdoutOnce(buildCurlStdout(body));
+
+    await worker.process({ data: {} } as Job<Record<string, never>>);
+
+    expect(fixtureService.syncFixtureState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'IN_PROGRESS',
+        live: { status: '2H', elapsed: 67 },
+      }),
+    );
   });
 
   it('throws on non-ok API response', async () => {
@@ -272,6 +408,8 @@ describe('PendingBetsSettlementWorker', () => {
         id: 'fixture-1',
         externalId: 999,
         scheduledAt: new Date('2025-03-15T20:00:00Z'),
+        status: 'IN_PROGRESS',
+        hasEvents: false,
         season: {
           competition: {
             leagueId: 39,
@@ -283,6 +421,8 @@ describe('PendingBetsSettlementWorker', () => {
         id: 'fixture-2',
         externalId: 1000,
         scheduledAt: new Date('2025-03-15T21:00:00Z'),
+        status: 'IN_PROGRESS',
+        hasEvents: false,
         season: {
           competition: {
             leagueId: 39,
@@ -305,6 +445,7 @@ describe('PendingBetsSettlementWorker', () => {
       awayScore: 1,
       homeHtScore: 1,
       awayHtScore: 0,
+      live: expect.any(Object),
     });
     expect(bettingEngineService.settleOpenBets).toHaveBeenCalledWith(
       'fixture-2',

@@ -31,6 +31,9 @@ export type TodayLegRow = {
   fixtureStatus: string;
   homeScore: number | null;
   awayScore: number | null;
+  /** The API's clock while in progress (fixture.liveStatus, liveElapsed). */
+  liveStatus: string | null;
+  liveElapsed: number | null;
   homeName: string;
   homeShortName: string;
   homeLogoUrl: string | null;
@@ -64,6 +67,7 @@ function legColumns(userId: string | null): Prisma.Sql {
            l."operatorFairProbability", l.fact, l."isCorrect", l."settledAt",
            f.id AS "fixtureId", f."scheduledAt",
            f.status::text AS "fixtureStatus", f."homeScore", f."awayScore",
+           f."liveStatus", f."liveElapsed",
            ht.name AS "homeName", ht."shortName" AS "homeShortName",
            ht."logoUrl" AS "homeLogoUrl",
            at.name AS "awayName", at."shortName" AS "awayShortName",

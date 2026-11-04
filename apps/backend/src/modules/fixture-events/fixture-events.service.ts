@@ -32,6 +32,9 @@ export class FixtureEventsService {
     fixtureExternalId: number;
     observedAt: Date;
     details: FixtureByIdDetails;
+    /** The answer of the full-time whistle: written, never marked synced
+     * (the API still corrects scorers and player statistics after it). */
+    provisional?: boolean;
   }): Promise<FixtureDetailWriteResult> {
     const identity = await this.events.findFixtureIdentity(
       input.fixtureExternalId,
@@ -55,9 +58,10 @@ export class FixtureEventsService {
 
     const observedAt = input.observedAt;
     const synced =
-      rows.complete ||
-      observedAt.getTime() - identity.scheduledAt.getTime() >=
-        FIXTURE_EVENTS.INCOMPLETE_GRACE_DAYS * DAY_MS;
+      input.provisional !== true &&
+      (rows.complete ||
+        observedAt.getTime() - identity.scheduledAt.getTime() >=
+          FIXTURE_EVENTS.INCOMPLETE_GRACE_DAYS * DAY_MS);
     // A block the API sent empty never erases one already written: the
     // answer may come before the API has it (lineups, player statistics).
     await this.players.upsertMany(rows.players);

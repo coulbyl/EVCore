@@ -8,14 +8,11 @@ import { test, expect } from "@playwright/test";
  *  3. No horizontal overflow
  */
 
-// The admin's screens that read the e2e backend (12-admin § 2, § 3).
+// Screens that read the e2e backend (12-admin § 2, § 3): the admin's
+// messages, the analysis of a match (every player since 04/11).
 const PAGES = [
   { name: "messages", path: "/admin/messages", adminOnly: true },
-  {
-    name: "diagnostic",
-    path: "/admin/matches/fx-m1",
-    adminOnly: true,
-  },
+  { name: "analysis", path: "/matches/fx-m1/analysis" },
 ] as const;
 
 for (const page of PAGES) {

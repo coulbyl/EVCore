@@ -4,6 +4,7 @@ import {
   TODAY_FORM_WINDOW_DAYS,
   TODAY_HERO_RELAY,
 } from '@config/screens.constants';
+import { matchClockOf, shownScoreOf } from './match-clock';
 import { CouponService } from '@modules/coupon/coupon.service';
 import { ProductWeekService } from '@modules/coupon/product-day/product-week.service';
 import {
@@ -292,12 +293,8 @@ function legOf(row: TodayLegRow, now: Date): TodayLeg {
     // Empty means « nothing solid »: no sentence either way.
     fact: row.fact || null,
     state: legState(row, now),
-    score:
-      row.fixtureStatus === 'FINISHED' &&
-      row.homeScore !== null &&
-      row.awayScore !== null
-        ? { home: row.homeScore, away: row.awayScore }
-        : null,
+    score: shownScoreOf({ ...row, status: row.fixtureStatus }),
+    clock: matchClockOf({ ...row, status: row.fixtureStatus }, now),
   };
 }
 

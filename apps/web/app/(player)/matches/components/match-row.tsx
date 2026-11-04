@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, TicketCheck } from "lucide-react";
+import { ChevronRight, Sparkles, TicketCheck } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { ResultMark } from "@/components/scoreboard/ui/result-mark";
 import type { MatchItem, MatchReading } from "@/domains/matches/types/matches";
@@ -236,8 +236,27 @@ function MatchTitle({
         className={muted ? "block text-body" : "block text-body font-medium"}
       >
         {item.home.name} – {item.away.name}
+        {item.ai ? <AiMark /> : null}
       </span>
       <span className="block text-meta text-muted-foreground">{meta}</span>
     </span>
+  );
+}
+
+/**
+ * The match has an « Avis IA » on its sheet (the AI's pick or its spoken
+ * no-play): a sparkle after the teams, never what the opinion is.
+ */
+async function AiMark() {
+  const t = await getTranslations("matches");
+  return (
+    <Sparkles
+      role="img"
+      aria-label={t("aiOpinion")}
+      strokeWidth={2}
+      className="ms-1.5 inline size-3.5 align-[-0.125em] text-muted-foreground"
+    >
+      <title>{t("aiOpinion")}</title>
+    </Sparkles>
   );
 }

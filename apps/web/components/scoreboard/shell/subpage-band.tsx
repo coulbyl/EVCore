@@ -1,11 +1,12 @@
-import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import { BackLink } from "./back-link";
 import { PlayerBand } from "./player-band";
 
 /**
  * The band of a page under a tab (Messages, Aide… under Moi): the way
- * back to the tab, the page's title as the screen's heading, and one short
- * line under it when the page has one.
+ * back (where the player came from, else `back.href`, see `BackLink`),
+ * the page's title as the screen's heading, and one short line under it
+ * when the page has one.
  */
 export async function SubpageBand({
   title,
@@ -19,13 +20,13 @@ export async function SubpageBand({
   return (
     <PlayerBand>
       <div className="flex items-start gap-1">
-        <Link
+        <BackLink
           href={back.href}
-          aria-label={back.label}
+          label={back.label}
           className="-ms-2 flex size-11 shrink-0 items-center justify-center rounded-full text-band-muted hover:text-band-foreground focus-visible:outline-2 focus-visible:outline-led-on"
         >
           <ChevronLeft aria-hidden strokeWidth={2} className="size-6" />
-        </Link>
+        </BackLink>
         <div className="flex min-h-11 flex-col justify-center">
           <h1 className="score text-title font-semibold">{title}</h1>
           {subtitle ? (

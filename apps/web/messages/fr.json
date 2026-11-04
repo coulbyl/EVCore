@@ -85,6 +85,7 @@
     "activeSuspensions": "Suspensions actives"
   },
   "matchSheet": {
+    "title": "Analyse du match",
     "back": "Retour au match",
     "expectedTitle": "Ce que notre modèle attend",
     "expected": "{home} environ {homeGoals} {homeUnit}, {away} environ {awayGoals} {awayUnit} : {total} buts en moyenne.",
@@ -257,6 +258,7 @@
     "yourProduct": "Ton {product}",
     "weekProduct": "{product} : {won} jours gagnés sur {played}",
     "inProgress": "En cours",
+    "halfTimeShort": "MT",
     "follow": "Suivre",
     "followed": "Suivi",
     "followError": "Le suivi n'est pas passé. Réessaie.",
@@ -294,6 +296,7 @@
     "yesterdayCount": "{won, plural, one {# gagné} other {# gagnés}} sur {played}"
   },
   "matches": {
+    "aiOpinion": "Avis de l'IA sur ce match",
     "days": {
       "label": "Jour",
       "yesterday": "Hier",
@@ -352,6 +355,8 @@
       "otherPicks": "Autres paris",
       "all": "Tous les {count}",
       "inProgress": "En cours",
+      "halfTimeShort": "MT",
+      "finished": "Terminé",
       "postponed": "Reporté",
       "halfTime": "mi-temps {home}-{away}",
       "events": {
@@ -372,7 +377,7 @@
         "suspended": "Pas de lecture · ce marché est suspendu chez nous",
         "not_sure": "Pas de lecture · aucune chance assez sûre"
       },
-      "diagnostic": "Diagnostic du match"
+      "analysis": "Analyse du match"
     },
     "played": "{count, plural, one {# match déjà joué} other {# matchs déjà joués}}",
     "bigOnly": "Grands championnats"

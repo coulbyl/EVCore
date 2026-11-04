@@ -425,6 +425,11 @@ model Fixture {
   // Events, lineups and player statistics from /fixtures?ids= written and
   // complete (or the match old enough that what came is all there is).
   eventsSyncedAt         DateTime?
+  // While IN_PROGRESS, the API's clock at the last settlement pass (every
+  // 30 minutes): its short status (1H, HT, 2H, ET, BT, P, INT) and the
+  // minute played. Null otherwise.
+  liveStatus             String?
+  liveElapsed            Int?
   modelRuns              ModelRun[]
   bets                   Bet[]
   teamStats              TeamStats[]

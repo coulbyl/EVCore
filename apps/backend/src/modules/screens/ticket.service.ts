@@ -1,5 +1,4 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { BetStatus } from '@evcore/db';
 import { resolveSelectionFinalResult } from '@modules/betting-engine/channel-selection-settlement';
 import Decimal from 'decimal.js';
 import {
@@ -8,6 +7,7 @@ import {
 } from '@modules/betting-engine/pricing/playable-odds.repository';
 import { VerifiedTicketService } from '@modules/verified-ticket/verified-ticket.service';
 import { MatchesRepository } from './matches.repository';
+import { resultOf } from './matches-reading';
 import { TodayService } from './today.service';
 import type { TicketLegDto } from './dto/ticket-quote.dto';
 import type { TicketQuote, TicketQuoteLeg } from './ticket.types';
@@ -97,7 +97,9 @@ export class TicketService {
               ? {
                   home: single.home.name,
                   away: single.away.name,
-                  score: single.score,
+                  // Final only: the ticket has no clock to tell a live score.
+                  score:
+                    single.clock?.kind === 'finished' ? single.score : null,
                 }
               : null,
           }
@@ -143,14 +145,7 @@ export function settlementOf(
     },
   );
   return {
-    result:
-      status === BetStatus.WON
-        ? 'won'
-        : status === BetStatus.LOST
-          ? 'lost'
-          : status === BetStatus.VOID
-            ? 'void'
-            : null,
+    result: resultOf(status),
     score: { home: fixture.homeScore, away: fixture.awayScore },
   };
 }

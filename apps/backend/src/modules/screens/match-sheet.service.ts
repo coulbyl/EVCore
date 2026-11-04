@@ -9,6 +9,8 @@ import {
   SCREEN_READS_MAX_KEYS,
   SCREEN_READS_TTL_MS,
   SHEET_MAIN_LINES,
+  SHEET_NEW_MARKETS,
+  SHEET_PRICES_LOOKBACK_DAYS,
 } from '@config/screens.constants';
 import { SharedReads } from '@utils/shared-reads';
 import {
@@ -19,15 +21,27 @@ import {
 import {
   PlayableOddsRepository,
   playableQuoteKey,
+  type MarketPriceRow,
   type PlayableQuote,
 } from '@modules/betting-engine/pricing/playable-odds.repository';
+import type { MatchFacts } from '@evcore/analysis-core';
+import { MatchFactsRepository } from '@modules/fixture-events/match-facts.repository';
+import { PlayerSquadRepository } from '@modules/fixture-events/player-squad.repository';
+import { newMarketPicksOf, pricedPlayerIds } from './match-sheet-markets';
 import { legFact, of, type PastMatch } from '@modules/coupon/leg-fact/leg-fact';
 import {
   LegFactRepository,
   type TeamMatchRow,
 } from '@modules/coupon/leg-fact/leg-fact.repository';
 import { startOfUtcDay } from '@utils/date.utils';
-import { readingOf, resultOf, stateOf, uniqueKeys } from './matches-reading';
+import {
+  aiAbstentionOf,
+  readingOf,
+  resultOf,
+  speechOf,
+  stateOf,
+  uniqueKeys,
+} from './matches-reading';
 import {
   MatchesRepository,
   type AiOpinionRow,
@@ -40,10 +54,10 @@ import {
   type SheetEventRow,
 } from '@modules/fixture-events/fixture-event.repository';
 import { sheetEventsOf } from './match-sheet-events';
+import { matchClockOf } from './match-clock';
 import type {
   MatchSheet,
   SetAsideReason,
-  SheetAiAbstention,
   SheetAiOpinion,
   SheetPick,
   SheetReading,
@@ -61,9 +75,10 @@ type DatedMatch = PastMatch & { scheduledAt: Date };
 
 /**
  * GET /matches/:id/sheet: the player's match sheet (docs/refonte-ui/06
- * § 2–4). Six SQL queries: the match and its last meetings, the engine's
- * picks, the AI's opinion, the two teams' last matches, the 1xBet prices,
- * and a finished match's events.
+ * § 2–4). The match and its last meetings, the engine's picks, the AI's
+ * opinion, the two teams' last matches, the 1xBet prices, the prices of
+ * the new markets and their players' names, and a finished match's events
+ * and facts.
  */
 /** What a sheet reads, shared between the players who open it. */
 type SheetReads = {
@@ -75,6 +90,12 @@ type SheetReads = {
   rejectionReasons: string[];
   /** A finished match's events; empty before the end. */
   events: SheetEventRow[];
+  /** Every book's prices on the markets of SHEET_NEW_MARKETS. */
+  marketRows: MarketPriceRow[];
+  /** The names of the players those prices name. */
+  playerNames: Map<number, string>;
+  /** A finished match's facts (statistics, events, lineups); else null. */
+  facts: MatchFacts | null;
 };
 
 @Injectable()
@@ -95,6 +116,8 @@ export class MatchSheetService {
     private readonly playableOdds: PlayableOddsRepository,
     private readonly history: LegFactRepository,
     private readonly fixtureEvents: FixtureEventRepository,
+    private readonly matchFacts: MatchFactsRepository,
+    private readonly squads: PlayerSquadRepository,
   ) {}
 
   async getSheet(
@@ -110,7 +133,7 @@ export class MatchSheetService {
     return this.sheetOf({ ...reads, kickoff: reads.header.scheduledAt, now });
   }
 
-  /** Six SQL queries (events only once finished); null for an unknown match. */
+  /** The sheet's reads (events and facts only once finished); null for an unknown match. */
   private async readSheet(
     fixtureId: string,
     now: Date,
@@ -123,27 +146,55 @@ export class MatchSheetService {
     if (!header) return null;
     const kickoff = header.scheduledAt;
 
-    const [candidates, aiRows, historyRows, rejectionReasons, events] =
-      await Promise.all([
-        this.repository.findReadingCandidates({
-          fixtureIds: [fixtureId],
-          channels: READING_CHANNELS,
-        }),
-        this.repository.findAiOpinion(fixtureId),
-        this.history.findTeamHistories({
-          teamIds: [header.homeTeamId, header.awayTeamId],
-          since: new Date(kickoff.getTime() - LEG_FACT_HISTORY_DAYS * DAY_MS),
-          before: kickoff,
-          perVenue: LEG_FACT_HISTORY_MATCHES,
-        }),
-        this.repository.findRejectionReasons({
+    const finished = header.status === 'FINISHED';
+    const [
+      candidates,
+      aiRows,
+      historyRows,
+      rejectionReasons,
+      events,
+      { marketRows, playerNames },
+      facts,
+    ] = await Promise.all([
+      this.repository.findReadingCandidates({
+        fixtureIds: [fixtureId],
+        channels: READING_CHANNELS,
+      }),
+      this.repository.findAiOpinions([fixtureId]),
+      this.history.findTeamHistories({
+        teamIds: [header.homeTeamId, header.awayTeamId],
+        since: new Date(kickoff.getTime() - LEG_FACT_HISTORY_DAYS * DAY_MS),
+        before: kickoff,
+        perVenue: LEG_FACT_HISTORY_MATCHES,
+      }),
+      this.repository.findRejectionReasons({
+        fixtureId,
+        channels: READING_CHANNELS,
+      }),
+      finished
+        ? this.fixtureEvents.findSheetEvents(fixtureId)
+        : Promise.resolve([]),
+      this.playableOdds
+        .findMarketPrices({
           fixtureId,
-          channels: READING_CHANNELS,
-        }),
-        header.status === 'FINISHED'
-          ? this.fixtureEvents.findSheetEvents(fixtureId)
-          : Promise.resolve([]),
-      ]);
+          markets: SHEET_NEW_MARKETS,
+          kickoff,
+          since: new Date(
+            kickoff.getTime() - SHEET_PRICES_LOOKBACK_DAYS * DAY_MS,
+          ),
+        })
+        .then(async (rows) => ({
+          marketRows: rows,
+          playerNames: await this.squads.findDisplayNames(
+            pricedPlayerIds(rows),
+          ),
+        })),
+      finished
+        ? this.matchFacts
+            .findFacts([fixtureId])
+            .then((byId) => byId.get(fixtureId) ?? null)
+        : Promise.resolve(null),
+    ]);
     const ai = aiRows.find((row) => row.status === 'SELECTED' && row.market);
     const quotes = await this.playableOdds.findPlayableQuotes(
       [
@@ -163,6 +214,9 @@ export class MatchSheetService {
       quotes,
       rejectionReasons,
       events,
+      marketRows,
+      playerNames,
+      facts,
     };
   }
 
@@ -201,6 +255,7 @@ export class MatchSheetService {
       kickoffAt: kickoff.toISOString(),
       state: stateOf(header, now),
       score,
+      clock: matchClockOf(header, now),
       halfTimeScore: pair(header.homeHalfTimeScore, header.awayHalfTimeScore),
       competition: {
         code: header.competitionCode,
@@ -243,7 +298,13 @@ export class MatchSheetService {
           p?.market && p.pick ? [{ market: p.market, pick: p.pick }] : [],
         ),
         finished,
-      }),
+      }).concat(
+        newMarketPicksOf({
+          rows: input.marketRows,
+          playerNames: input.playerNames,
+          settle: { finished, facts: input.facts },
+        }),
+      ),
       scorers: matchEvents?.scorers ?? null,
       redCards: matchEvents?.redCards ?? null,
     };
@@ -294,6 +355,23 @@ function pair(
   return home === null || away === null ? null : { home, away };
 }
 
+/**
+ * A pick of the markets « Mon ticket » takes (the reading, the AI's, the
+ * main lines and the engine's others): no line, no player, addable. The new
+ * markets are not (match-sheet-markets.ts).
+ */
+function mainPick(
+  key: Key,
+): Pick<SheetPick, 'market' | 'pick' | 'line' | 'player' | 'addable'> {
+  return {
+    market: key.market,
+    pick: key.pick,
+    line: null,
+    player: null,
+    addable: true,
+  };
+}
+
 function readingOnSheet(
   reading: MatchReading,
   header: SheetHeaderRow,
@@ -315,8 +393,7 @@ function readingOnSheet(
     },
   });
   return {
-    market: reading.market,
-    pick: reading.pick,
+    ...mainPick(reading),
     odds: reading.odds,
     chance: reading.chance,
     result: reading.result,
@@ -340,7 +417,7 @@ function aiOpinionOf(
     reading.market === key.market &&
     reading.pick === key.pick;
   return {
-    ...key,
+    ...mainPick(key),
     odds: quote?.operatorOdds ?? null,
     // One bet, one chance on the sheet: the AI's pick when it is ours reads
     // the reading's chance, never a second figure next to it.
@@ -352,31 +429,6 @@ function aiOpinionOf(
     speech: speechOf(ai.text),
     decidedAt: ai.decidedAt.toISOString(),
   };
-}
-
-/**
- * The AI read the match and would not bet: an opinion too (03/11), shown
- * when its text speaks of the match (`voice: match`, VANTAGE v6), never a
- * text that narrates its rules.
- */
-export function aiAbstentionOf(
-  rows: readonly AiOpinionRow[],
-): SheetAiAbstention | null {
-  const row = rows.find((r) => r.status === 'REJECTED' && r.voice === 'match');
-  const speech = row ? speechOf(row.text) : null;
-  return row && speech
-    ? { speech, decidedAt: row.decidedAt.toISOString() }
-    : null;
-}
-
-/**
- * The AI's text as the player reads it: whole, as it wrote it (decided
- * 31/10). Its figures are its reasons; the words a player should not read
- * are fixed in VANTAGE's prompt, never cut here. Nothing when it is empty.
- */
-export function speechOf(text: string | null): string | null {
-  const speech = text?.trim() ?? '';
-  return speech === '' ? null : speech;
 }
 
 /** One team's matches, most recent first (rows come per venue). */
@@ -454,7 +506,8 @@ function headToHeadOf(header: SheetHeaderRow): string | null {
 /**
  * « Autres paris » (06 § 2): the main lines 1xBet prices, then the
  * engine's other picks it prices, by chance; never the reading or the AI's
- * pick again. Every chance is the market's frequency.
+ * pick again. Every chance is the market's frequency. The new markets
+ * (match-sheet-markets.ts) follow.
  */
 function otherPicksOf(input: {
   header: SheetHeaderRow;
@@ -471,7 +524,7 @@ function otherPicksOf(input: {
     if (seen.has(id) || quote?.operatorOdds == null) return;
     seen.add(id);
     picks.push({
-      ...key,
+      ...mainPick(key),
       odds: quote.operatorOdds,
       chance: quote.operatorFairProbability,
       result,

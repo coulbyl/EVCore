@@ -85,6 +85,7 @@
     "activeSuspensions": "Active suspensions"
   },
   "matchSheet": {
+    "title": "Match analysis",
     "back": "Back to the match",
     "expectedTitle": "What our model expects",
     "expected": "{home} about {homeGoals} goals, {away} about {awayGoals} goals: {total} goals on average.",
@@ -257,6 +258,7 @@
     "yourProduct": "Your {product}",
     "weekProduct": "{product}: {won} days won out of {played}",
     "inProgress": "In play",
+    "halfTimeShort": "HT",
     "follow": "Follow",
     "followed": "Following",
     "followError": "Following did not go through. Try again.",
@@ -294,6 +296,7 @@
     "yesterdayCount": "{won} won of {played}"
   },
   "matches": {
+    "aiOpinion": "AI opinion on this match",
     "days": {
       "label": "Day",
       "yesterday": "Yesterday",
@@ -352,6 +355,8 @@
       "otherPicks": "Other bets",
       "all": "All {count}",
       "inProgress": "In progress",
+      "halfTimeShort": "HT",
+      "finished": "Finished",
       "postponed": "Postponed",
       "halfTime": "half-time {home}-{away}",
       "events": {
@@ -372,7 +377,7 @@
         "suspended": "No reading · this market is suspended on our side",
         "not_sure": "No reading · no chance sure enough"
       },
-      "diagnostic": "Match diagnostic"
+      "analysis": "Match analysis"
     },
     "played": "{count, plural, one {# match already played} other {# matches already played}}",
     "bigOnly": "Big leagues"

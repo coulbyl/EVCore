@@ -118,6 +118,80 @@ export function formatLinePick(
 }
 
 /**
+ * Les marchés relevés depuis le 03/11 (corners d'équipe, corners 1X2,
+ * cartons, buteurs, tirs d'un joueur, 1X2 à une minute) et le total de
+ * corners, en clair avec l'équipe ou le joueur : « Arsenal : plus de 4,5
+ * corners », « Saka marque », « Saka : au moins 2 tirs cadrés », « Arsenal
+ * mène après 30 minutes ». La ligne telle que le book la cote, jamais
+ * arrondie. Null pour un autre marché, ou quand le pari ne se lit pas (un
+ * joueur sans nom, une ligne absente) : l'appelant garde son libellé.
+ */
+export function formatStatPick(
+  bet: {
+    market: string;
+    pick: string;
+    line?: number | null;
+    player?: string | null;
+  },
+  teams: { home: string; away: string },
+): string | null {
+  const { market, pick } = bet;
+  const line = bet.line ?? null;
+  const player = bet.player ?? null;
+  const number = (value: number) => value.toLocaleString("fr-FR");
+  const overUnder = (unit: string): string | null => {
+    if (line === null) return null;
+    if (pick === "OVER") return `plus de ${number(line)} ${unit}`;
+    if (pick === "UNDER") return `moins de ${number(line)} ${unit}`;
+    return null;
+  };
+  const capital = (text: string | null) =>
+    text === null ? null : `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
+
+  switch (market) {
+    case "CORNERS":
+      return formatLinePick(pick, market, line);
+    case "CARDS":
+      return capital(overUnder("cartons"));
+    case "CORNERS_HOME":
+    case "CORNERS_AWAY": {
+      const label = overUnder("corners");
+      const team = market === "CORNERS_HOME" ? teams.home : teams.away;
+      return label === null ? null : `${team} : ${label}`;
+    }
+    case "CORNERS_1X2":
+      if (pick === "HOME") return `Plus de corners pour ${teams.home}`;
+      if (pick === "AWAY") return `Plus de corners pour ${teams.away}`;
+      if (pick === "DRAW") return "Autant de corners pour les deux équipes";
+      return null;
+    case "MINUTE_1X2": {
+      if (line === null) return null;
+      const after = `après ${number(line)} minutes`;
+      if (pick === "HOME") return `${teams.home} mène ${after}`;
+      if (pick === "AWAY") return `${teams.away} mène ${after}`;
+      if (pick === "DRAW") return `Égalité ${after}`;
+      return null;
+    }
+    case "GOAL_SCORER_ANYTIME":
+      return player === null ? null : `${player} marque`;
+    case "GOAL_SCORER_FIRST":
+      if (pick === "NONE") return "Aucun buteur";
+      return player === null ? null : `${player} marque le premier but`;
+    case "PLAYER_SHOTS":
+    case "PLAYER_SHOTS_ON_TARGET": {
+      if (player === null || line === null) return null;
+      const words = market === "PLAYER_SHOTS" ? ["tir"] : ["tir", "cadré"];
+      const shots = words
+        .map((word) => (line >= 2 ? `${word}s` : word))
+        .join(" ");
+      return `${player} : au moins ${number(line)} ${shots}`;
+    }
+    default:
+      return null;
+  }
+}
+
+/**
  * Le pari en clair, avec le nom des équipes : « Victoire Arsenal », « Burnley
  * ou nul », « Arsenal n'encaisse pas ». Le joueur lit un pari, pas un canal
  * (décision du 2026-10-27, docs/audits/2026-10-27/DECISIONS.md) : « Domicile »

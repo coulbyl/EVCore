@@ -162,11 +162,13 @@ _Branche `feat/refonte-ui`. Cocher au fur et à mesure ; chaque ligne est un com
 PR https://github.com/coulbyl/EVCore/pull/282 ouverte (C–F). Avant la phase G, on revoit chaque écran ensemble : l'utilisateur regarde son serveur local (localhost:3000, extension Moby pour le téléphone) sur une copie de la base de prod, envoie des captures ; on critique, on corrige sur `feat/refonte-ui`, un commit poussé par correction (la PR suit seule).
 
 **Méthode.**
+
 - Jamais le faux backend e2e pour une revue : on juge l'écran sur les vraies données, un écran vide se juge comme un état.
 - Pour vérifier soi-même : un compte jetable (`POST http://127.0.0.1:3001/auth/register` avec `email`, `password`, `firstName`, `confirmAge`, `acceptTerms`), le cookie `evcore_session` posé sur le domaine `localhost`, captures Playwright (`@playwright/test`, script temporaire dans `apps/web`, supprimé après) sur le serveur de l'utilisateur, puis `POST /auth/me/delete` avec le mot de passe.
 - La base locale : Postgres Docker `evcore-postgres` sur le port 5432, restaurée depuis `backups/evcore_db_evcore-2026-10-31_10-42-51.sql`.
 
 **Revu et corrigé.**
+
 - Landing, `/resultats`, inscription, connexion : bandeau d'encre, dernier coupon gagnant les jours sans héros, revue de conformité des textes (`docs/audits/2026-10-31/REVUE-CONFORMITE-TEXTES.md`, points 1 à 4 appliqués).
 - Aujourd'hui : états vides en carte, ligne « Hier » en mots (vert gagné, rouge perdu), cote payée d'un coupon gagné = cotes 1xBet de ses jambes gagnées.
 - Matchs : lignes sur deux niveaux, matchs joués repliés en haut, puce « Grands championnats ». Libellés : ne jamais arrondir une ligne (« moins de 2,5 » ≠ « moins de 3 ») ; seuls 0,5 d'équipe et double chance 12 passent en mots.
@@ -187,6 +189,28 @@ PR https://github.com/coulbyl/EVCore/pull/282 ouverte (C–F). Avant la phase G,
 **Reste.** La phase G (admin).
 
 **Ouverts, sans suite immédiate.** Budget LCP froid rouge en CI (« on cherchera un vrai gain après »), ressource d'aide locale, relecture juridique.
+
+## Limites relevées le 04/11 (feuille de match, nouveaux marchés, navigation)
+
+À reprendre après la PR `feat/sheet-new-markets`.
+
+- [ ] **« + » sur les nouveaux marchés.** Corners, cartons, buteurs, tirs et 1X2 à la minute s'affichent dans « Autres paris », mais leur « + » est masqué (`addable: false`) : le ticket ne garde ni la ligne (« plus de 4,5 corners ») ni le joueur, ne cote que chez 1xBet et ne règle que sur le score. Il faut : `line` et le joueur dans le ticket (DTO, stockage, clé), une cote d'un autre book quand 1xBet ne cote pas, et un règlement sur les faits du match dans `settlementOf`.
+- [ ] **Cartons jamais réglés.** Aucun résolveur pour CARDS : après le match ces paris restent sans résultat. L'écrire à partir des stats de cartons déjà collectées (`fixture_statistic`), avec « inconnu ≠ perdu ».
+- [ ] **Chance de la lecture sous 1,80 = celle du moteur.** « Rennes : moins de 2,5 buts » à 1,20 affichait « 9 fois sur 10 » alors que le marché dit ~8 et que sa propre phrase dit 7 sur 10. Mesurer sur les lectures réglées réalisé ÷ annoncé, chance du moteur contre fréquence du marché, puis trancher (`readingOf`, `ENGINE_CHANCE_MAX_ODDS`).
+- [ ] **Libellé des paris d'équipe.** « Rennes : moins de 2,5 buts » se confond avec « Moins de 2,5 buts » du match juste en dessous : écrire « Rennes marque moins de 2,5 buts » (ligne jamais arrondie).
+- [ ] **En-tête de la feuille** : l'heure sans le jour (ouverte à J-2, on ne sait pas quand) ; **Forme** : ✓ ✗ — sans légende, nom d'équipe tronqué (« Olympiakos Pir… ») alors qu'il reste de la place.
+- [ ] **Avis IA** : « Décidé le 03/11 » avec une cote du moment de l'avis ; dire si la cote affichée est celle d'aujourd'hui. Une lecture et un avis compatibles (moins de buts pour Rennes, les deux marquent) peuvent se lire comme une contradiction.
+- [ ] **« Autres paris » sans chance** : voulu (« la chance n'est dite qu'une fois »), mais c'est là qu'elle aiderait à comparer 1,24 et 3,67. À rediscuter.
+- [ ] **Libellés des nouveaux marchés en français même en anglais**, comme les autres libellés de paris : à traduire avec eux.
+- [ ] **Minute en direct jusqu'à 30 min de retard.** Elle vient du passage de règlement (un `/fixtures?id=` par match, toutes les 30 min). Pour 5–10 min sans plus d'appels : grouper les matchs en cours par 20 dans un `/fixtures?ids=` et passer plus souvent (touche le règlement, `/code-review high`).
+- [ ] **Un champ inattendu rejetait tout un match.** Un événement VAR à `detail: null` faisait rejeter événements, compositions et stats joueurs de Man United – Roma (03/11). Corrigé pour `detail` ; relire les schémas Zod de `/fixtures?ids=` (`fixture-full.schema.ts`) contre des réponses réelles pour les autres champs que l'API laisse vides.
+- [ ] **Feuille ouverte depuis une feuille = remplacée.** Choix fait le 04/11 (rien dans les docs) : fermer l'Aide ouverte par « ? » d'une fiche produit ramène à Résultats, pas à la fiche (09 § 82 laisse plutôt attendre la fiche). À trancher.
+- [ ] **Libellé du chevron fixe.** Il revient là d'où l'on vient, mais dit toujours la même chose (« Aujourd'hui » sur Notifications, même venu de Résultats).
+- [ ] **Chevrons publics** (`band-title`, écrans d'authentification) non revus par l'audit de navigation du 04/11.
+- [ ] **Un seul écrivain des événements d'un match.** Depuis #304, le passage de règlement écrit aussi les événements au coup de sifflet final (provisoires), à côté de stats-sync et de son rattrapage (`eventsAskedAt`, `NOT_REPORTED_*`, branche « récent sans événement » de `findEventsBackfillPending`). Plus simple : le règlement signale seulement le match fini (ou met en file un stats-sync pour lui) et stats-sync reste le seul écrivain, sa requête « en attente » couvrant les matchs finis récemment sans événement.
+- [ ] **« Une feuille à la fois » par un lien de feuille.** `useSheetReplace` écoute tous les clics de la page (capture sur `window`) pendant qu'une feuille est ouverte et réécrit les liens vers une feuille ; il ne voit pas les `router.push` faits par le code. Plus propre : un `SheetLink` (ou un `replace` passé par le contexte de la feuille) utilisé par les liens à l'intérieur des feuilles.
+- [ ] **Liste des routes de feuille générée.** `isSheetPath` recopie en expressions régulières les dossiers `@sheet/(.)…`, et un test vérifie qu'il n'en manque pas (pas qu'elles sont justes). `BackLink` recharge la page entière (`window.location.replace`) quand le parent est une feuille. Plus simple : générer la liste depuis l'arborescence au build, ou donner à l'analyse un parent non intercepté pour que `router.replace` suffise.
+- [ ] `auth.service.spec` (code TOTP) échoue de temps en temps selon l'heure : rendre le test indépendant de l'horloge.
 
 ## À relire plus tard (hors lots)
 

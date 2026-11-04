@@ -1,3 +1,4 @@
+import type { MatchClock } from './match-clock';
 import type { TODAY_PRODUCTS } from '@config/screens.constants';
 
 /** A product of « Aujourd'hui » (screens.constants.ts). */
@@ -45,8 +46,10 @@ export type TodayLeg = {
   /** One sentence about the bet (04 § 1); null when there is none. */
   fact: string | null;
   state: TodayLegState;
-  /** Full-time score, once the match is finished. */
+  /** The score while the match is played (last settlement pass), then the full-time one. */
   score: { home: number; away: number } | null;
+  /** « 67' », « MT », « Terminé »; null before kick-off and once postponed. */
+  clock: MatchClock | null;
 };
 
 export type TodayCoupon = {

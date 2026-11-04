@@ -128,6 +128,49 @@ export const SHEET_MAIN_LINES = [
   { market: 'BTTS', pick: 'NO' },
 ] as const;
 
+// « Autres paris », the markets ingested since 03/11 (corners, cards,
+// scorers, player shots, 1X2 at a minute): shown at once, without waiting
+// for a measure, to watch them together (decided 2026-11-04). One price
+// each, the book's own: 1xBet when it prices the market, else the first of
+// SHEET_OTHER_BOOKMAKERS that does (a market priced only at Bet365 stays
+// playable elsewhere). The book is never named to the player. Read in this
+// order, after the main lines and the engine's picks.
+export const SHEET_NEW_MARKETS = [
+  'CORNERS',
+  'CORNERS_HOME',
+  'CORNERS_AWAY',
+  'CORNERS_1X2',
+  'CARDS',
+  'MINUTE_1X2',
+  'GOAL_SCORER_ANYTIME',
+  'GOAL_SCORER_FIRST',
+  'PLAYER_SHOTS',
+  'PLAYER_SHOTS_ON_TARGET',
+] as const;
+
+// After 1xBet, the books whose price the sheet shows, in this order; any
+// other book after them, by name.
+export const SHEET_OTHER_BOOKMAKERS = [
+  'Bet365',
+  'Pinnacle',
+  'Betano',
+  'Marathonbet',
+] as const;
+
+// Scorers (anytime, first): the players the market makes most likely, by
+// their price at the chosen book.
+export const SHEET_SCORERS_SHOWN = 3;
+// The picks of one book's group read as one quote when their last prices
+// are this close: a book updates OVER and UNDER in separate snapshots.
+export const SHEET_QUOTE_MAX_GAP_MINUTES = 60;
+// How far before kick-off the sheet looks for prices: bounds the scan of
+// the monthly odds_snapshot partitions.
+export const SHEET_PRICES_LOOKBACK_DAYS = 14;
+
+// Player shots (and on target): the player lines nearest an even chance,
+// one line per player.
+export const SHEET_PLAYER_SHOTS_SHOWN = 2;
+
 // « Forme »: five squares per team, all competitions.
 export const SHEET_FORM_MATCHES = 5;
 

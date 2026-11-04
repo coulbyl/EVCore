@@ -12,11 +12,18 @@ import {
   PlayableOddsRepository,
   type PlayableQuote,
 } from '@modules/betting-engine/pricing/playable-odds.repository';
-import { groupBy, readingOf, stateOf, uniqueKeys } from './matches-reading';
+import {
+  groupBy,
+  hasAiOpinion,
+  readingOf,
+  stateOf,
+  uniqueKeys,
+} from './matches-reading';
 import { formatDateUtc, startOfUtcDay } from '@utils/date.utils';
 import type { MatchesDay } from './dto/matches-query.dto';
 import {
   MatchesRepository,
+  type AiOpinionRow,
   type MatchRow,
   type MatchesCursor,
   type ReadingCandidateRow,
@@ -33,13 +40,12 @@ const DAY_OFFSET: Record<MatchesDay, number> = {
 
 /**
  * GET /matches?day=: « Matchs » (docs/refonte-ui/06 § 1), one page at a
- * time. Three SQL queries per page: the matches, the engine's picks, the
- * 1xBet prices of those picks.
+ * time. Four SQL queries per page: the matches, the engine's picks, the
+ * AI's latest decisions, the 1xBet prices of the engine's picks.
  *
- * No AI sign on the list (decided 2026-10-30): a different pick from the AI
- * is a choice, not a contradiction, and no measure yet says its
- * disagreement predicts anything; it would add doubt without information.
- * The AI's opinion lives in the match sheet, as one more pick.
+ * The list marks a match the AI has an opinion on (04/11, at the user's
+ * request), never what that opinion is nor whether it differs from ours:
+ * the opinion itself stays in the match sheet, as one more pick.
  */
 @Injectable()
 export class MatchesService {
@@ -70,13 +76,14 @@ export class MatchesService {
     // Decoded before the shared read: a forged cursor is a 400 for its
     // sender, never a cached failure.
     const after = input.cursor ? decodeCursor(input.cursor) : null;
-    const { rows, candidates, quotes } = await this.pages.get(
+    const { rows, candidates, aiRows, quotes } = await this.pages.get(
       [formatDateUtc(from), search ?? '', input.cursor ?? ''].join('|'),
       () => this.readPage({ from, search, after }),
       now.getTime(),
     );
     const page = rows.slice(0, MATCHES_PAGE_SIZE);
     const byFixture = groupBy(candidates, (c) => c.fixtureId);
+    const aiByFixture = groupBy(aiRows, (row) => row.fixtureId);
     const last = page.at(-1);
     return {
       day: input.day,
@@ -85,6 +92,7 @@ export class MatchesService {
         itemOf({
           row,
           candidates: byFixture.get(row.fixtureId) ?? [],
+          ai: hasAiOpinion(aiByFixture.get(row.fixtureId) ?? []),
           quotes,
           day: input.day,
           now,
@@ -95,7 +103,7 @@ export class MatchesService {
     };
   }
 
-  /** Three SQL queries: the matches, the engine's picks, their 1xBet prices. */
+  /** Four SQL queries: the matches, the engine's picks, the AI's decisions, the picks' 1xBet prices. */
   private async readPage(input: {
     from: Date;
     search: string | null;
@@ -109,16 +117,22 @@ export class MatchesService {
       limit: MATCHES_PAGE_SIZE + 1,
       leaguePriority: MATCHES_LEAGUE_PRIORITY,
     });
-    const candidates = await this.repository.findReadingCandidates({
-      fixtureIds: rows.slice(0, MATCHES_PAGE_SIZE).map((row) => row.fixtureId),
-      channels: READING_CHANNELS,
-    });
+    const fixtureIds = rows
+      .slice(0, MATCHES_PAGE_SIZE)
+      .map((row) => row.fixtureId);
+    const [candidates, aiRows] = await Promise.all([
+      this.repository.findReadingCandidates({
+        fixtureIds,
+        channels: READING_CHANNELS,
+      }),
+      this.repository.findAiOpinions(fixtureIds),
+    ]);
     // The screen shows 1xBet's price only: its rows alone.
     const quotes = await this.playableOdds.findPlayableQuotes(
       uniqueKeys(candidates),
       { operatorOnly: true },
     );
-    return { rows, candidates, quotes };
+    return { rows, candidates, aiRows, quotes };
   }
 }
 
@@ -126,12 +140,14 @@ type PageReads = {
   /** One more than the page: its presence says another page follows. */
   rows: MatchRow[];
   candidates: ReadingCandidateRow[];
+  aiRows: (AiOpinionRow & { fixtureId: string })[];
   quotes: Map<string, PlayableQuote>;
 };
 
 function itemOf(input: {
   row: MatchRow;
   candidates: readonly ReadingCandidateRow[];
+  ai: boolean;
   quotes: Map<string, PlayableQuote>;
   day: MatchesDay;
   now: Date;
@@ -165,6 +181,7 @@ function itemOf(input: {
     },
     reading: 'reading' in choice ? choice.reading : null,
     withoutReading: 'without' in choice ? choice.without : null,
+    ai: input.ai,
   };
 }
 

@@ -143,7 +143,8 @@ function eventRow(input: {
       minute: event.time.elapsed,
       extraMinute: event.time.extra ?? null,
       type,
-      detail: event.detail,
+      // The column is the API's text: none given, none stored.
+      detail: event.detail ?? '',
       comments: event.comments ?? null,
       playerExternalId: identityOf(event.player?.id),
       playerName: event.player?.name ?? null,

@@ -17,6 +17,11 @@ import { CouponSettlementService } from '../../coupon/coupon-settlement.service'
 import { NotificationService } from '../../notification/notification.service';
 import { AdjustmentService } from '../../adjustment/adjustment.service';
 import { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
+import { FixtureEventsService } from '../../fixture-events/fixture-events.service';
+import {
+  FixtureByIdDetailsSchema,
+  droppedCount,
+} from '../schemas/fixture-full.schema';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 export type PendingBetsSettlementJobData = Record<string, never>;
@@ -41,6 +46,9 @@ export class PendingBetsSettlementWorker extends WorkerHost {
 
   @Inject(CouponSettlementService)
   private couponSettlement!: CouponSettlementService;
+
+  @Inject(FixtureEventsService)
+  private fixtureEvents!: FixtureEventsService;
 
   // eslint-disable-next-line max-params -- DI constructor, same convention as FixturesSyncWorker.
   constructor(
@@ -135,6 +143,7 @@ export class PendingBetsSettlementWorker extends WorkerHost {
             awayScore: nextState.awayScore,
             homeHtScore: nextState.homeHtScore,
             awayHtScore: nextState.awayHtScore,
+            live: nextState.live,
           });
         if (affectsRollingStats && seasonId && fixtureId) {
           const changed = changedBySeason.get(seasonId) ?? new Set<string>();
@@ -158,6 +167,20 @@ export class PendingBetsSettlementWorker extends WorkerHost {
         }
 
         finishedFixtures++;
+
+        // The answer that says FINISHED carries the events, lineups and
+        // player statistics too (/fixtures?id= is /fixtures?ids= of one):
+        // written now, the scorers show within this pass instead of waiting
+        // for the stats sync. Before the settlement, which reads them. Once
+        // only — when the match turns FINISHED, or while it has no event —
+        // not on every pass a bet stays pending: the stats sync corrects
+        // them after.
+        if (fixture.status !== 'FINISHED' || !fixture.hasEvents) {
+          // Same body ApiFootballFixturesResponseSchema validated: its
+          // `response` is an array, read raw for the blocks it strips.
+          const entry = (res.body as { response: unknown[] }).response[0];
+          await this.persistDetails(fixture.externalId, entry);
+        }
 
         const { settled } = await this.bettingEngineService.settleOpenBets(
           fixture.id,
@@ -207,6 +230,47 @@ export class PendingBetsSettlementWorker extends WorkerHost {
     }
   }
 
+  // Never costs the fixture its settlement: a rejected or failed write
+  // leaves the events pending for the stats sync and its backfill.
+  private async persistDetails(
+    externalId: number,
+    entry: unknown,
+  ): Promise<void> {
+    try {
+      const details = FixtureByIdDetailsSchema.safeParse(entry);
+      if (!details.success) {
+        logger.warn(
+          { externalId, issues: details.error.issues },
+          'Zod validation failed on events/lineups/players — left pending',
+        );
+        return;
+      }
+      if (droppedCount(details.data) > 0) {
+        logger.warn(
+          { externalId, dropped: details.data.dropped },
+          'Invalid events/lineups/players left out — the rest is written',
+        );
+      }
+      const written = await this.fixtureEvents.persistDetails({
+        fixtureExternalId: externalId,
+        observedAt: new Date(),
+        details: details.data,
+        provisional: true,
+      });
+      if (written.status === 'rejected') {
+        logger.warn(
+          { externalId, reason: written.reason },
+          'Events/lineups/players rejected — left pending',
+        );
+      }
+    } catch (error) {
+      logger.error(
+        { externalId, err: error },
+        'Writing events/lineups/players failed — left pending',
+      );
+    }
+  }
+
   @OnWorkerEvent('failed')
   onFailed(
     job: Job<PendingBetsSettlementJobData> | undefined,
@@ -229,6 +293,7 @@ function mapFixtureState(item: ApiFootballFixture): {
   awayScore: number | null;
   homeHtScore: number | null;
   awayHtScore: number | null;
+  live: { status: string; elapsed: number | null };
 } {
   return {
     scheduledAt: new Date(item.fixture.date),
@@ -242,6 +307,11 @@ function mapFixtureState(item: ApiFootballFixture): {
     awayScore: item.score.fulltime.away ?? item.goals.away,
     homeHtScore: item.score.halftime.home,
     awayHtScore: item.score.halftime.away,
+    // Stored only while in progress (liveClockOf).
+    live: {
+      status: item.fixture.status.short,
+      elapsed: item.fixture.status.elapsed,
+    },
   };
 }
 

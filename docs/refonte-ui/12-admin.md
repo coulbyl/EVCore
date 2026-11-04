@@ -44,11 +44,11 @@ Chaque matin : **est-ce que tout tourne ?**, **est-ce que le moteur tient ce qu'
 
 - **Trois voyants**, une règle chacun, écrite une fois :
 
-| Voyant | Rouge si | Orange si |
-| --- | --- | --- |
-| **Données** | pas de cotes depuis 24 h, une passe en échec, ou le quota API-Football au seuil d'alerte | un relevé manqué, ou des stats de match en retard de plus de 3 jours sur un championnat fiable |
-| **Moteur** | aucun coupon de demain composé après 17 h 30, ou la passe d'analyse arrêtée | un produit absent, un canal × compétition sous 0,85 avec perte établie, un marché suspendu, l'IA sans publication |
-| **Joueurs** | zéro connexion depuis 48 h, ou une inscription en échec | un message sans réponse depuis plus de 24 h |
+| Voyant      | Rouge si                                                                                 | Orange si                                                                                                         |
+| ----------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Données** | pas de cotes depuis 24 h, une passe en échec, ou le quota API-Football au seuil d'alerte | un relevé manqué, ou des stats de match en retard de plus de 3 jours sur un championnat fiable                    |
+| **Moteur**  | aucun coupon de demain composé après 17 h 30, ou la passe d'analyse arrêtée              | un produit absent, un canal × compétition sous 0,85 avec perte établie, un marché suspendu, l'IA sans publication |
+| **Joueurs** | zéro connexion depuis 48 h, ou une inscription en échec                                  | un message sans réponse depuis plus de 24 h                                                                       |
 
 - **À faire** : les lignes viennent des règles du système (calibration, suspension, abstention répétée, stats manquantes, passe en échec, message sans réponse). Chaque ligne a son chiffre et mène à l'endroit où l'on agit. Elle disparaît quand la cause disparaît ; rien à « marquer comme lu ». Quand il n'y a rien : « Rien à faire ».
 - **Les passes d'aujourd'hui**, dans l'ordre de la journée, avec l'heure prévue (celle du code), le dernier passage et son résultat ; **Relancer** sur une passe en échec ou en attente (tranché le 29/10). Une passe en cours grise le bouton et dit « en cours depuis 4 min ». Les actions lourdes (rattrapage de stats par saison, règlement forcé) ne sont pas des boutons : ce sont des commandes, documentées dans le dépôt.
@@ -83,6 +83,7 @@ Un écran, trois blocs l'un sous l'autre, une bascule 30 j · 90 j · Tout, une 
 - **Canaux × compétition** : 90 jours glissants, ratio réalisé/annoncé avec son intervalle, le mot (conforme, optimiste, pas assez de recul, alerte), la suspension. Une seule bascule : « seulement les alertes ». C'est la source des lignes « À faire ».
 - **Marchés suspendus** : le marché, depuis quand, la mesure qui a suspendu, **Réactiver** (décision humaine, confirmation, motif, journalisé). Jamais de réactivation automatique.
 - **La fiche de diagnostic d'un match** (λ, facteurs, picks évalués et motifs de rejet, cotes des books, CLV) **n'a plus de liste à elle** : un admin l'ouvre depuis l'onglet Matchs du joueur, par une icône sur la fiche joueur. Elle ne trie rien ([project_fiche_diagnostic_only]).
+  - _04/11 : ouverte à tout joueur connecté, sous le nom « Analyse du match » (`/matches/[id]/analysis`, l'ancienne adresse `/admin/matches/[id]` y redirige) : la garder pour l'admin était du gâchis pour qui veut aller en profondeur._
 - **Les outils** (backtest, tuning, calibration modèle, rapports par segment) sortent de l'interface : ce sont des scripts du dépôt, avec leurs rapports dans `docs/audits/`. Une page qui lance un backtest n'a jamais servi à autre chose qu'à le relancer.
 
 ## 3. Joueurs — viennent-ils ?
@@ -135,15 +136,15 @@ Décidé le 29/10 ([ENV-PROD](../audits/2026-10-29/ENV-PROD.md) § 6). Une page 
 
 ## 5. Les états
 
-| État | Ce qu'on montre |
-| --- | --- |
-| **Rien à faire** | Trois voyants verts, « Rien à faire », les passes de la journée. |
-| **Passe en cours** | « en cours depuis 4 min », Relancer grisé. |
-| **Passe en échec** | Ligne rouge dans les passes **et** ligne « À faire » ; Relancer actif ; le motif au toucher (le message de la file d'attente, pas plus). |
-| **Voyant rouge** | La ligne « À faire » en tête, l'e-mail parti, l'heure du passage au rouge. |
-| **Marché suspendu** | Ligne « À faire » tant qu'il l'est ; Réactiver demande confirmation et motif. |
-| **Réglage sans clé** | Valeur grisée, « pas de clé dans l'environnement ». |
-| **Aucun joueur ce mois** | Les quatre chiffres à 0, sans commentaire. |
+| État                     | Ce qu'on montre                                                                                                                          |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Rien à faire**         | Trois voyants verts, « Rien à faire », les passes de la journée.                                                                         |
+| **Passe en cours**       | « en cours depuis 4 min », Relancer grisé.                                                                                               |
+| **Passe en échec**       | Ligne rouge dans les passes **et** ligne « À faire » ; Relancer actif ; le motif au toucher (le message de la file d'attente, pas plus). |
+| **Voyant rouge**         | La ligne « À faire » en tête, l'e-mail parti, l'heure du passage au rouge.                                                               |
+| **Marché suspendu**      | Ligne « À faire » tant qu'il l'est ; Réactiver demande confirmation et motif.                                                            |
+| **Réglage sans clé**     | Valeur grisée, « pas de clé dans l'environnement ».                                                                                      |
+| **Aucun joueur ce mois** | Les quatre chiffres à 0, sans commentaire.                                                                                               |
 
 ## 6. Ce qu'il faut construire
 

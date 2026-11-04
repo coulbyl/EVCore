@@ -138,6 +138,36 @@ export class PlayerSquadRepository {
     return result;
   }
 
+  /**
+   * The name a player reads for each of these players: the full name the
+   * match statistics wrote, else the squad's spelling. A player we know
+   * under neither is left out.
+   */
+  async findDisplayNames(
+    playerExternalIds: readonly number[],
+  ): Promise<Map<number, string>> {
+    if (playerExternalIds.length === 0) return new Map();
+    const rows = await this.prisma.client.$queryRaw<
+      { playerExternalId: number; name: string | null }[]
+    >`
+      SELECT ids.id AS "playerExternalId",
+             coalesce(p.name, (
+               SELECT ps.name FROM public.player_squad ps
+               WHERE ps."playerExternalId" = ids.id
+               ORDER BY ps."observedAt" DESC LIMIT 1
+             )) AS name
+      FROM unnest(${[...playerExternalIds]}::int[]) AS ids(id)
+      LEFT JOIN public.player p ON p."externalId" = ids.id
+    `;
+    return new Map(
+      rows.flatMap((row) =>
+        row.name === null || row.name.trim() === ''
+          ? []
+          : [[row.playerExternalId, row.name.trim()] as const],
+      ),
+    );
+  }
+
   /** The squads of a fixture's two teams; empty for a team never synced. */
   async findForFixture(fixtureId: string): Promise<{
     home: SquadCandidate[];

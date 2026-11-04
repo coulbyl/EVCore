@@ -612,9 +612,16 @@ function matchSheet(fixtureId) {
   if (!item) return null;
   const finished = item.state === "finished";
   const settle = (result) => (finished ? result : null);
-  const pick = (market, pickName, odds, chance, result) => ({
+  // As the backend's mainPick: no line, no player, « Mon ticket » takes it.
+  const mainPick = (market, pickName) => ({
     market,
     pick: pickName,
+    line: null,
+    player: null,
+    addable: true,
+  });
+  const pick = (market, pickName, odds, chance, result) => ({
+    ...mainPick(market, pickName),
     odds,
     chance,
     result: settle(result),
@@ -632,6 +639,7 @@ function matchSheet(fixtureId) {
     reading: item.reading
       ? {
           ...item.reading,
+          ...mainPick(item.reading.market, item.reading.pick),
           fact: isArsenal
             ? "Arsenal a gagné ses 9 derniers matchs à domicile"
             : null,
@@ -663,7 +671,7 @@ function matchSheet(fixtureId) {
     // A finished match's goals and red cards, from its events (phase 2 of
     // the 03/11 plan): Paris SG – Lens 2-0, an own goal and a penalty.
     scorers:
-      fixtureId === "y-psg"
+      fixtureId === matchUuid("y-psg")
         ? [
             {
               minute: 12,
@@ -682,7 +690,7 @@ function matchSheet(fixtureId) {
           ]
         : null,
     redCards:
-      fixtureId === "y-psg"
+      fixtureId === matchUuid("y-psg")
         ? [{ minute: 63, extraMinute: null, player: "Sotoca", team: "away" }]
         : null,
     otherPicks:
@@ -2610,7 +2618,22 @@ function route(method, url, cookie = "") {
   // évaluées de la première rencontre de FIXTURE_ROWS.
   const sheetMatch = path.match(/^\/fixture\/([^/]+)\/sheet$/);
   if (sheetMatch) {
-    const group = MATCH_DECISIONS.find((m) => m.fixtureId === sheetMatch[1]);
+    // A match of the Matchs list has its analysis too: the stethoscope of
+    // its sheet leads there (navigation.spec.ts).
+    const listed = matchSheet(sheetMatch[1]);
+    const group =
+      MATCH_DECISIONS.find((m) => m.fixtureId === sheetMatch[1]) ??
+      (listed
+        ? {
+            fixtureId: listed.fixtureId,
+            homeTeam: listed.home.name,
+            awayTeam: listed.away.name,
+            competitionName: listed.competition.name,
+            country: null,
+            scheduledAt: listed.kickoffAt,
+            score: null,
+          }
+        : undefined);
     if (!group) return [404, { message: "Match introuvable" }];
     const base = FIXTURE_ROWS[0];
     return [

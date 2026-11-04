@@ -13,6 +13,7 @@ import {
   type UpsertSecondaryMarketOddsInput,
   type SyncFixtureStateResult,
   type EventsCoverageRow,
+  type PendingSettlementFixture,
   type StatsBackfillCandidateRow,
 } from './fixture.repository';
 import { MatchLegDetectionService } from './match-leg-detection.service';
@@ -117,6 +118,8 @@ type SyncFixtureStateInput = {
   awayScore: number | null;
   homeHtScore: number | null;
   awayHtScore: number | null;
+  // The API's clock while in progress; omitted, the stored one is kept.
+  live?: { status: string; elapsed: number | null };
 };
 
 @Injectable()
@@ -287,11 +290,13 @@ export class FixtureService {
 
   findEventsBackfillPending(input: {
     before: Date;
+    notReportedSince: Date;
     limit: number;
     excludeExternalIds: readonly number[];
   }): Promise<
     Array<{
       externalId: number;
+      scheduledAt: Date;
       homeTeam: { externalId: number };
       awayTeam: { externalId: number };
     }>
@@ -325,19 +330,9 @@ export class FixtureService {
     return this.fixtureRepository.markXgUnavailable(externalId);
   }
 
-  findPendingSettlementFixtures(now: Date): Promise<
-    {
-      id: string;
-      externalId: number;
-      scheduledAt: Date;
-      season: {
-        competition: {
-          leagueId: number;
-          code: string;
-        };
-      };
-    }[]
-  > {
+  findPendingSettlementFixtures(
+    now: Date,
+  ): Promise<PendingSettlementFixture[]> {
     return this.fixtureRepository.findPendingSettlementFixtures(now);
   }
 

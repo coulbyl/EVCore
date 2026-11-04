@@ -123,6 +123,8 @@ type SyncFixtureStateInput = {
   awayScore: number | null;
   homeHtScore: number | null;
   awayHtScore: number | null;
+  // The API's clock while in progress; omitted, the stored one is kept.
+  live?: { status: string; elapsed: number | null };
 };
 
 export type SyncFixtureStateResult = {
@@ -272,10 +274,14 @@ export type UpsertSecondaryMarketOddsInput = {
   source?: OddsSnapshotSource;
 };
 
-type PendingSettlementFixture = {
+export type PendingSettlementFixture = {
   id: string;
   externalId: number;
   scheduledAt: Date;
+  // The stored state before this pass: the settlement writes the events of
+  // a match only once (when it turns FINISHED, or while it has none).
+  status: FixtureStatus;
+  hasEvents: boolean;
   season: {
     competition: {
       leagueId: number;
@@ -364,6 +370,7 @@ export class FixtureRepository {
           awayScore: data.awayScore,
           homeHtScore: data.homeHtScore,
           awayHtScore: data.awayHtScore,
+          ...liveClockOf(data),
         },
         select: { id: true },
       });
@@ -385,7 +392,8 @@ export class FixtureRepository {
         awayScore: input.awayScore,
         homeHtScore: input.homeHtScore,
         awayHtScore: input.awayHtScore,
-        status: 'FINISHED',
+        status: FixtureStatus.FINISHED,
+        ...liveClockOf({ status: FixtureStatus.FINISHED }),
       },
     });
   }
@@ -420,6 +428,7 @@ export class FixtureRepository {
           awayScore: input.awayScore,
           homeHtScore: input.homeHtScore,
           awayHtScore: input.awayHtScore,
+          ...liveClockOf(input),
         },
       });
 
@@ -452,7 +461,8 @@ export class FixtureRepository {
         awayScore: scores.awayScore,
         homeHtScore: scores.homeHtScore,
         awayHtScore: scores.awayHtScore,
-        status: 'FINISHED',
+        status: FixtureStatus.FINISHED,
+        ...liveClockOf({ status: FixtureStatus.FINISHED }),
       },
     });
     return { id };
@@ -621,21 +631,24 @@ export class FixtureRepository {
     });
   }
 
-  // Finished fixtures the stats sync is done with (team statistics in, or
-  // unavailable: API-Football may still cover its events) whose events,
-  // lineups and player statistics are not, kicked off before `before` (a
-  // recent match may still receive them: the routine sync wrote what it
-  // had), most recent first. Feeds the events backfill; a fixture whose
-  // answer stays empty is marked after one call (past the grace period).
-  // Fixtures still waiting for their statistics are left to the stats sync,
-  // which fetches their events in the same call.
+  // Finished fixtures whose events, lineups and player statistics are not
+  // synced, most recent first, for the events backfill:
+  // - kicked off before `before` (past the grace period) and done with by
+  //   the stats sync (team statistics in, or unavailable: API-Football may
+  //   still cover its events) — a fixture whose answer stays empty is marked
+  //   after one call; one still waiting for its statistics is left to the
+  //   stats sync, which fetches its events in the same call;
+  // - or kicked off since `notReportedSince` with no event written yet,
+  //   whatever its statistics: its scorers must not wait for them.
   findEventsBackfillPending(input: {
     before: Date;
+    notReportedSince: Date;
     limit: number;
     excludeExternalIds: readonly number[];
   }): Promise<
     Array<{
       externalId: number;
+      scheduledAt: Date;
       homeTeam: { externalId: number };
       awayTeam: { externalId: number };
     }>
@@ -643,18 +656,27 @@ export class FixtureRepository {
     return this.prisma.client.fixture.findMany({
       where: {
         status: 'FINISHED',
-        OR: [
-          { statisticsSyncedAt: { not: null } },
-          { statisticsUnavailable: true },
-        ],
         eventsSyncedAt: null,
-        scheduledAt: { lt: input.before },
+        OR: [
+          {
+            scheduledAt: { lt: input.before },
+            OR: [
+              { statisticsSyncedAt: { not: null } },
+              { statisticsUnavailable: true },
+            ],
+          },
+          {
+            scheduledAt: { gte: input.notReportedSince },
+            events: { none: {} },
+          },
+        ],
         ...(input.excludeExternalIds.length > 0
           ? { externalId: { notIn: [...input.excludeExternalIds] } }
           : {}),
       },
       select: {
         externalId: true,
+        scheduledAt: true,
         homeTeam: { select: { externalId: true } },
         awayTeam: { select: { externalId: true } },
       },
@@ -791,10 +813,10 @@ export class FixtureRepository {
     });
   }
 
-  findPendingSettlementFixtures(
+  async findPendingSettlementFixtures(
     now: Date,
   ): Promise<PendingSettlementFixture[]> {
-    return this.prisma.client.fixture.findMany({
+    const fixtures = await this.prisma.client.fixture.findMany({
       where: {
         OR: [
           // fixtures with pending bets — always process regardless of scheduledAt
@@ -814,6 +836,8 @@ export class FixtureRepository {
         id: true,
         externalId: true,
         scheduledAt: true,
+        status: true,
+        events: { select: { id: true }, take: 1 },
         season: {
           select: {
             competition: {
@@ -827,6 +851,10 @@ export class FixtureRepository {
       },
       orderBy: { scheduledAt: 'asc' },
     });
+    return fixtures.map(({ events, ...fixture }) => ({
+      ...fixture,
+      hasEvents: events.length > 0,
+    }));
   }
 
   findPastScheduledFixtures(
@@ -1693,4 +1721,24 @@ function isUniqueConstraintError(error: unknown): boolean {
     error instanceof Prisma.PrismaClientKnownRequestError &&
     error.code === 'P2002'
   );
+}
+
+/**
+ * The clock columns every status write carries: the API's while in progress
+ * (kept as stored when the write has none), none once the match is not
+ * (finished, postponed, or back to scheduled).
+ */
+export function liveClockOf(input: {
+  status: FixtureStatus;
+  live?: SyncFixtureStateInput['live'];
+}): {
+  liveStatus?: string | null;
+  liveElapsed?: number | null;
+} {
+  if (input.status !== FixtureStatus.IN_PROGRESS) {
+    return { liveStatus: null, liveElapsed: null };
+  }
+  return input.live
+    ? { liveStatus: input.live.status, liveElapsed: input.live.elapsed }
+    : {};
 }

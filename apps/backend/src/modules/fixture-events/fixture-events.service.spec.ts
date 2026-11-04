@@ -52,6 +52,19 @@ describe('FixtureEventsService.persistDetails', () => {
     );
   });
 
+  it('writes a provisional answer without marking the match synced', async () => {
+    const result = await service.persistDetails({
+      fixtureExternalId: 1557450,
+      observedAt: new Date('2026-10-25T17:00:00Z'),
+      details: details(),
+      provisional: true,
+    });
+
+    expect(result).toMatchObject({ status: 'written', synced: false });
+    expect(events.replaceForFixture).toHaveBeenCalled();
+    expect(events.markSynced).not.toHaveBeenCalled();
+  });
+
   it('replaces the three blocks in one transaction and marks a complete match', async () => {
     const observedAt = new Date('2026-10-25T17:00:00Z');
     const result = await service.persistDetails({

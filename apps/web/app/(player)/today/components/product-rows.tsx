@@ -1,10 +1,14 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { Row, RowList } from "@/components/scoreboard/ui/row-list";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
-import { displayLocaleOf, formatTime } from "@/helpers/scoreboard-format";
+import {
+  clockLabelsOf,
+  displayLocaleOf,
+  formatTime,
+} from "@/helpers/scoreboard-format";
 import type { TodayAbsence, TodayCoupon } from "@/domains/today/types/today";
 import { CouponValue } from "./coupon-value";
-import { nextKickoff, playedLegs } from "./today-constants";
+import { legLiveLine, nextKickoff, playedLegs } from "./today-constants";
 
 /**
  * Sous le héros (02 § 1) : les autres coupons du jour en lignes (nom, le
@@ -42,6 +46,7 @@ export async function ProductRows({
     return null;
   }
   const next = nextKickoff(followedInProgress);
+  const clockLabels = clockLabelsOf(t);
 
   return (
     <RowList label={t("otherCoupons")}>
@@ -54,7 +59,12 @@ export async function ProductRows({
             title={t(`products.${coupon.product}`)}
             meta={
               single
-                ? `${single.home.name} – ${single.away.name}`
+                ? [
+                    `${single.home.name} – ${single.away.name}`,
+                    legLiveLine(single, clockLabels),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")
                 : t("matches", { count: playedLegs(coupon).length })
             }
             value={<CouponValue coupon={coupon} locale={display} size="row" />}
