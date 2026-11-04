@@ -2,22 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { XgSource } from '@evcore/db';
 import { Job } from 'bullmq';
 import { createLogger } from '@utils/logger';
-import {
-  ApiFootballClient,
-  isQuotaExceededError,
-} from '../api-football.client';
-import {
-  ApiFootballFixturesByIdsResponseSchema,
-  FixtureByIdIdentitySchema,
-  FixtureByIdStatisticsSchema,
-} from '../schemas/fixture-full.schema';
+import { ApiFootballClient } from '../api-football.client';
+import { FixtureByIdStatisticsSchema } from '../schemas/fixture-full.schema';
+import { loadFixturesByIds } from '../fixtures-by-ids.loader';
 import { FixtureService } from '../../fixture/fixture.service';
 import {
   ETL_CONSTANTS,
   DEFAULT_SEASON_START_MONTH,
   STATS_BACKFILL,
 } from '@config/etl.constants';
-import { sleep } from '@utils/async.utils';
 import { NotificationService } from '../../notification/notification.service';
 import { seasonNameFromYear } from '@utils/season.utils';
 import {
@@ -66,9 +59,7 @@ export type StatsSyncBatchResult = {
     // Of which marked eventsSyncedAt (nothing left to fetch).
     synced: number;
     // Block missing, team mismatch or failed write: nothing written, left
-    // pending.
-    rejected: number;
-    // Each of them with its cause, for the operators' alert.
+    // pending; each with its cause, for the operators' alert.
     rejections: DetailRejection[];
     // Invalid events, lineups or player blocks left out of written matches.
     dropped: number;
@@ -225,7 +216,7 @@ export class StatsSyncWorker {
         calls,
         eventsWritten: details.written,
         eventsSynced: details.synced,
-        eventsRejected: details.rejected,
+        eventsRejected: details.rejections.length,
       },
       'Stats sync complete',
     );
@@ -269,7 +260,6 @@ export class StatsSyncWorker {
       details: {
         written: 0,
         synced: 0,
-        rejected: 0,
         rejections: [],
         dropped: 0,
         failedExternalIds: [],
@@ -284,89 +274,39 @@ export class StatsSyncWorker {
       tally.details.failedExternalIds.push(externalId);
     };
 
-    const batchSize = ETL_CONSTANTS.FIXTURES_BY_IDS_BATCH_SIZE;
-    for (let start = 0; start < fixtures.length; start += batchSize) {
-      const batch = fixtures.slice(start, start + batchSize);
-      if (start > 0) await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
+    const load = await loadFixturesByIds({
+      apiFootball: this.apiFootball,
+      externalIds: fixtures.map((fixture) => fixture.externalId),
+      logger,
+    });
+    tally.calls = load.calls;
+    tally.rejectedCalls = load.rejectedCalls;
 
-      const ids = batch.map((fixture) => fixture.externalId);
-      const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?ids=${ids.join('-')}`;
-      const curlResult = await this.apiFootball.fetchJson(url);
-      tally.calls++;
-
-      if (curlResult.response === null) {
-        logger.warn({ ids }, 'Transient network error — skipping batch');
-        ids.forEach(fail);
+    // Nothing is marked for a fixture left without its answer: retried.
+    const observedAt = new Date();
+    for (const fixture of fixtures) {
+      const entry = load.entries.get(fixture.externalId);
+      if (entry === undefined) {
+        if (load.missed.has(fixture.externalId)) fail(fixture.externalId);
         continue;
       }
-      const res = curlResult.response;
-
-      if (res.status === 429 || isQuotaExceededError(res.body)) {
-        logger.warn(
-          { ids, status: res.status, body: res.body },
-          'API-FOOTBALL quota or rate limit reached — aborting batch',
-        );
-        await this.alertOnRejections(tally);
-        return { ...tally, abortReason: 'quota' };
+      if (mode === 'all') {
+        await this.persistStatistics({ fixture, entry, tally });
       }
-
-      if (res.status < 200 || res.status >= 300) {
-        logger.warn(
-          { ids, status: res.status },
-          'API-FOOTBALL error — skipping batch',
-        );
-        ids.forEach(fail);
-        continue;
-      }
-
-      // The envelope is the whole call: rejected, nothing is written and
-      // nothing is marked — every fixture stays pending.
-      const envelope = ApiFootballFixturesByIdsResponseSchema.safeParse(
-        res.body,
-      );
-      if (!envelope.success) {
-        logger.warn(
-          { ids, issues: envelope.error.issues },
-          'Zod validation failed on /fixtures?ids= — skipping batch',
-        );
-        ids.forEach(fail);
-        tally.rejectedCalls++;
-        continue;
-      }
-
-      const entries = new Map<number, unknown>();
-      for (const entry of envelope.data.response) {
-        const identity = FixtureByIdIdentitySchema.safeParse(entry);
-        if (identity.success) entries.set(identity.data.fixture.id, entry);
-      }
-
-      const observedAt = new Date();
-      for (const fixture of batch) {
-        const entry = entries.get(fixture.externalId);
-        if (entry === undefined) {
-          logger.warn(
-            { externalId: fixture.externalId },
-            'Fixture missing from /fixtures?ids= answer — left pending',
-          );
-          fail(fixture.externalId);
-          continue;
-        }
-        if (mode === 'all') {
-          await this.persistStatistics({ fixture, entry, tally });
-        }
-        await this.persistDetails({ fixture, entry, observedAt, tally });
-      }
+      await this.persistDetails({ fixture, entry, observedAt, tally });
     }
 
     await this.alertOnRejections(tally);
-    return tally;
+    return load.quotaReached ? { ...tally, abortReason: 'quota' } : tally;
   }
 
   // CLAUDE.md: a Zod failure on ETL data triggers an alert. One a day at
   // most (every routine job and backfill tick share this worker): a schema
   // drift would otherwise send one per competition or per five minutes.
   private async alertOnRejections(tally: StatsSyncBatchResult): Promise<void> {
-    if (tally.rejectedCalls === 0 && tally.details.rejected === 0) return;
+    if (tally.rejectedCalls === 0 && tally.details.rejections.length === 0) {
+      return;
+    }
     const day = new Date().toISOString().slice(0, 10);
     if (this.rejectionAlertDay === day) return;
     this.rejectionAlertDay = day;
@@ -480,7 +420,6 @@ export class StatsSyncWorker {
       entry: input.entry,
     });
     if (written.status === 'rejected') {
-      tally.details.rejected++;
       tally.details.rejections.push({
         externalId,
         cause: written.cause,

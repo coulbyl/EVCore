@@ -58,7 +58,6 @@ function batch(overrides: Partial<StatsSyncBatchResult>): StatsSyncBatchResult {
     details: {
       written: 0,
       synced: 0,
-      rejected: 0,
       rejections: [],
       dropped: 0,
       failedExternalIds: [],
@@ -297,7 +296,6 @@ describe('StatsBackfillWorker', () => {
     ): StatsSyncBatchResult['details'] => ({
       written: 0,
       synced: 0,
-      rejected: 0,
       rejections: [],
       dropped: 0,
       failedExternalIds: [],

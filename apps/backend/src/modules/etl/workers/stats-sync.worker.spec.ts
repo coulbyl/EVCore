@@ -557,7 +557,6 @@ describe('StatsSyncWorker', () => {
     expect(result.updated).toBe(2);
     expect(result.details).toMatchObject({
       written: 1,
-      rejected: 1,
       failedExternalIds: [81001],
     });
     expect(persistDetails).toHaveBeenCalledOnce();
@@ -631,7 +630,6 @@ describe('StatsSyncWorker', () => {
     expect(result.updated).toBe(2);
     expect(result.details).toMatchObject({
       written: 1,
-      rejected: 1,
       failedExternalIds: [72001],
     });
   });

@@ -11,7 +11,10 @@ import { FixtureLineupRepository } from './fixture-lineup.repository';
 import { FixturePlayerStatisticRepository } from './fixture-player-statistic.repository';
 import { PlayerRepository } from './player.repository';
 import { toFixtureDetailRows, UnknownTeamError } from './fixture-events.mapper';
-import type { FixtureDetailWriteResult } from './fixture-events.types';
+import type {
+  FixtureDetailRejectionCause,
+  FixtureDetailWriteResult,
+} from './fixture-events.types';
 
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
@@ -51,14 +54,10 @@ export class FixtureEventsService {
         { externalId, issues: parsed.error.issues },
         'Events, lineups or players block missing — left pending',
       );
-      return {
-        status: 'rejected',
-        cause: 'missing-block',
-        reason: parsed.error.issues
-          .map((issue) => issue.path.join('.'))
-          .join(', '),
-        match: null,
-      };
+      return rejectedWrite(
+        'missing-block',
+        parsed.error.issues.map((issue) => issue.path.join('.')).join(', '),
+      );
     }
     if (droppedCount(parsed.data) > 0) {
       logger.warn(
@@ -84,12 +83,7 @@ export class FixtureEventsService {
         { externalId, err: error },
         'Writing events/lineups/players failed — left pending',
       );
-      return {
-        status: 'rejected',
-        cause: 'write-failed',
-        reason: error instanceof Error ? error.message : String(error),
-        match: null,
-      };
+      return rejectedWrite('write-failed', messageOf(error));
     }
   }
 
@@ -107,12 +101,10 @@ export class FixtureEventsService {
       input.fixtureExternalId,
     );
     if (!identity) {
-      return {
-        status: 'rejected',
-        cause: 'unknown-fixture',
-        reason: `Fixture not found: ${input.fixtureExternalId}`,
-        match: null,
-      };
+      return rejectedWrite(
+        'unknown-fixture',
+        `Fixture not found: ${input.fixtureExternalId}`,
+      );
     }
 
     let rows: ReturnType<typeof toFixtureDetailRows>;
@@ -123,12 +115,7 @@ export class FixtureEventsService {
       });
     } catch (error) {
       if (error instanceof UnknownTeamError) {
-        return {
-          status: 'rejected',
-          cause: 'unknown-team',
-          reason: error.message,
-          match: identity.label,
-        };
+        return rejectedWrite('unknown-team', error.message, identity.label);
       }
       throw error;
     }
@@ -163,12 +150,7 @@ export class FixtureEventsService {
         if (synced) await this.events.markSynced(write);
       });
     } catch (error) {
-      return {
-        status: 'rejected',
-        cause: 'write-failed',
-        reason: error instanceof Error ? error.message : String(error),
-        match: identity.label,
-      };
+      return rejectedWrite('write-failed', messageOf(error), identity.label);
     }
 
     return {
@@ -181,6 +163,18 @@ export class FixtureEventsService {
     };
   }
 }
+
+/** A write refused, with its cause and the match when it is known. */
+function rejectedWrite(
+  cause: FixtureDetailRejectionCause,
+  reason: string,
+  match: string | null = null,
+): FixtureDetailWriteResult {
+  return { status: 'rejected', cause, reason, match };
+}
+
+const messageOf = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
 
 /**
  * The one rule of « synced » (fixture.eventsSyncedAt, nothing left to

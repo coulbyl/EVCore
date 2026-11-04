@@ -210,7 +210,7 @@ export class StatsBackfillWorker extends WorkerHost {
     logger.info(
       {
         ...events,
-        rejected: result.details.rejected,
+        rejected: result.details.rejections.length,
         failed: result.details.failedExternalIds.length,
         abortReason: result.abortReason,
       },
