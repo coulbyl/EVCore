@@ -60,7 +60,6 @@ import type {
   FullOddsSnapshot,
   MatchComputation,
   MatchProbabilities,
-  PredictionSource,
   TeamStatsInput,
   ViablePick,
 } from './betting-engine.types';
@@ -88,6 +87,7 @@ import {
   summarizeMarketGrid,
 } from '@evcore/analysis-core';
 import { getPickOdds } from './pricing/odds-mapping';
+import { resolveProbabilitySource } from './math/probability-source';
 import {
   summarizeEvaluatedPicks,
   summarizePick,
@@ -675,11 +675,15 @@ export class BettingEngineService {
     const favoriteTeamId = favoriteIsHome
       ? fixture.homeTeamId
       : fixture.awayTeamId;
+    const oddsCutoff = new Date(
+      Math.min(Date.now(), fixture.scheduledAt.getTime()),
+    );
     const [
       shadowH2h,
       shadowH2hMarketSignals,
       shadowH2hScoreline,
       shadowCongestion,
+      marketGridRows,
     ] = await Promise.all([
       this.h2hService.computeH2HScore({
         homeTeamId: fixture.homeTeamId,
@@ -722,6 +726,7 @@ export class BettingEngineService {
         awayTeamId: fixture.awayTeamId,
         fixtureDate: fixture.scheduledAt,
       }),
+      this.oddsLoader.findMarketGridRows(fixtureId, oddsCutoff),
     ]);
 
     const h2hCorrectionApplied =
@@ -758,28 +763,39 @@ export class BettingEngineService {
       ? applyCongestionSignalCorrection(postH2hProbabilities, shadowCongestion)
       : postH2hProbabilities;
 
-    // Market grid (lot ML-1, docs/audits/2026-11-04/ML1-GRILLE-MARCHE.md):
-    // when a sharp book prices a complete 1X2 and a total-goals line, the
-    // probabilities and λ come from the score grid its prices imply (Shin,
-    // fitted λ); the statistics engine above stays the fallback and still
-    // gives the deterministic score. The channels read the same shape.
-    const oddsCutoff = new Date(
-      Math.min(Date.now(), fixture.scheduledAt.getTime()),
-    );
-    const marketGrid = FEATURE_FLAGS.SCORING.MARKET_GRID
-      ? computeMarketGrid(
-          await this.oddsLoader.findMarketGridRows(fixtureId, oddsCutoff),
-          oddsCutoff,
-        )
-      : null;
-    const gridFit = marketGrid?.status === 'ok' ? marketGrid : null;
-    const predictionSource: PredictionSource = gridFit
-      ? 'MARKET_GRID'
-      : 'POISSON_MAIN';
-    const probabilities = gridFit ? gridFit.probabilities : statsProbabilities;
-    const lambda = gridFit
-      ? { home: gridFit.fit.lambdaHome, away: gridFit.fit.lambdaAway }
-      : statsLambda;
+    // Source of the probabilities (lot ML-1,
+    // docs/audits/2026-11-04/ML1-GRILLE-MARCHE.md). The market grid — the
+    // score grid a sharp book's prices imply (Shin, fitted λ) — when it
+    // prices a complete 1X2 and a total-goals line coherently; the
+    // statistics engine above otherwise. Its λ and probabilities feed the
+    // picks and the channels. Two things stay on the statistics engine
+    // whatever the source, as before ML-1:
+    //   - the BET / NO_BET decision and deterministicScore (team-stats
+    //     features, computeFromTeamStats);
+    //   - the « Données suspectes » coherence gates below, which compare the
+    //     statistics output to the market: their job is to catch corrupted
+    //     inputs (team stats, λ), and the grid is the market itself.
+    const marketGrid = computeMarketGrid(marketGridRows, oddsCutoff);
+    const {
+      source: predictionSource,
+      lambda,
+      probabilities,
+      rawProbabilities: sourceRawProbabilities,
+      appliedCorrections,
+    } = resolveProbabilitySource({
+      marketGrid,
+      stats: {
+        lambda: statsLambda,
+        probabilities: statsProbabilities,
+        rawProbabilities,
+        appliedCorrections: {
+          h2hLambda: h2hCorrectionApplied,
+          h2hMarketSignals: FEATURE_FLAGS.SCORING.H2H_MARKET_SIGNALS,
+          congestion: congestionCorrectionApplied,
+        },
+      },
+    });
+    const gridApplied = predictionSource === 'MARKET_GRID';
 
     const lambdaFloorHit =
       lambda.home <= MIN_LAMBDA + Number.EPSILON ||
@@ -802,6 +818,7 @@ export class BettingEngineService {
       );
     }
 
+    // Statistics engine, whatever the probability source (see above).
     const deterministicDecision = deterministicScore.greaterThanOrEqualTo(
       getModelScoreThreshold(getFixtureCompetitionCode(fixture)),
     )
@@ -907,11 +924,12 @@ export class BettingEngineService {
           oddsCutoff,
         )
       ).filter((book) => COHERENCE_BOOKMAKERS.includes(book.bookmaker));
+      // The statistics output, whatever the source (see the source above).
       calibrationAlert = assessMarketCoherence({
         modelProbabilities: {
-          home: probabilities.home,
-          draw: probabilities.draw,
-          away: probabilities.away,
+          home: statsProbabilities.home,
+          draw: statsProbabilities.draw,
+          away: statsProbabilities.away,
         },
         books: oneXTwoBooks,
       });
@@ -940,6 +958,7 @@ export class BettingEngineService {
     // calibrate one).
     let calibrationAlertOverUnder: OverUnderCalibrationAlert[] | null = null;
     if (OVER_UNDER_CALIBRATION_GATE.ENABLED) {
+      // Statistics output against the market, as for the 1X2 gate.
       const overUnderBooks =
         await this.oddsLoader.findLatestOverUnderOddsPerBookmaker(
           fixtureId,
@@ -955,25 +974,25 @@ export class BettingEngineService {
           line: '1_5',
           overPick: 'OVER_1_5',
           underPick: 'UNDER_1_5',
-          overProbability: probabilities.over15,
+          overProbability: statsProbabilities.over15,
         },
         {
           line: '2_5',
           overPick: 'OVER',
           underPick: 'UNDER',
-          overProbability: probabilities.over25,
+          overProbability: statsProbabilities.over25,
         },
         {
           line: '3_5',
           overPick: 'OVER_3_5',
           underPick: 'UNDER_3_5',
-          overProbability: probabilities.over35,
+          overProbability: statsProbabilities.over35,
         },
         {
           line: '4_5',
           overPick: 'OVER_4_5',
           underPick: 'UNDER_4_5',
-          overProbability: probabilities.over45,
+          overProbability: statsProbabilities.over45,
         },
       ];
 
@@ -1095,12 +1114,13 @@ export class BettingEngineService {
     const modelRunFeatures: Record<string, unknown> = {
       engineConfigVersion: BETTING_ENGINE_CONFIG_VERSION,
       predictionSource,
-      market_grid: marketGrid ? summarizeMarketGrid(marketGrid) : null,
+      market_grid: summarizeMarketGrid(marketGrid),
       // The statistics engine's own output, kept when the grid replaces it
-      // so the two stay comparable fixture by fixture.
-      statsLambdaHome: statsLambda.home,
-      statsLambdaAway: statsLambda.away,
-      statsProbabilities: gridFit
+      // so the two stay comparable fixture by fixture (null otherwise: it
+      // is then lambdaHome / probabilities themselves).
+      statsLambdaHome: gridApplied ? statsLambda.home : null,
+      statsLambdaAway: gridApplied ? statsLambda.away : null,
+      statsProbabilities: gridApplied
         ? mapProbabilitiesToNumber(statsProbabilities)
         : null,
       recentForm: features.recentForm.toNumber(),
@@ -1111,17 +1131,21 @@ export class BettingEngineService {
       lambdaAway: lambda.away,
       offensiveBalance: computeOffensiveBalance(lambda.home, lambda.away),
       probabilities: mapProbabilitiesToNumber(probabilities),
-      // Unadjusted Poisson output, before the 1X2 blend + O/U shrinkage —
-      // lets the analysis sheet expose an adjustmentDelta per market so the
+      // Unadjusted Poisson output of the source (statistics: before the 1X2
+      // blend + O/U shrinkage; grid: before its fair 1X2) — lets the
+      // analysis sheet expose an adjustmentDelta per market so the
       // adjustment layer is auditable pick by pick (rapport-dev 2026-07-09).
-      rawPoissonProbability: mapProbabilitiesToNumber(rawProbabilities),
+      rawPoissonProbability: mapProbabilitiesToNumber(sourceRawProbabilities),
       lambdaFloorHit,
       shadow_lineMovement: shadowLineMovement,
       calibration_alert: calibrationAlert,
       calibration_alert_over_under: calibrationAlertOverUnder,
       shadow_predictions: shadowPredictions,
       shadow_h2h: shadowH2h,
-      h2h_correction_applied: h2hCorrectionApplied,
+      // Corrections that shaped `probabilities`: all false under the grid,
+      // whose output discards them (shadow_* keep the signals themselves).
+      h2h_correction_applied: appliedCorrections.h2hLambda,
+      h2h_market_signals_applied: appliedCorrections.h2hMarketSignals,
       shadow_h2h_btts: shadowH2hMarketSignals.btts,
       shadow_h2h_over25: shadowH2hMarketSignals.over25,
       shadow_h2h_clean_sheet_home: shadowH2hMarketSignals.cleanSheetHome,
@@ -1132,7 +1156,7 @@ export class BettingEngineService {
       shadow_h2h_scoreline: shadowH2hScoreline.scoreline,
       shadow_h2h_scoreline_confidence: shadowH2hScoreline.confidence,
       shadow_congestion: shadowCongestion,
-      congestion_correction_applied: congestionCorrectionApplied,
+      congestion_correction_applied: appliedCorrections.congestion,
       league_strength:
         leagues === null
           ? null
