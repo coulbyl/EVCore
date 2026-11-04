@@ -155,12 +155,22 @@ function mockCurlErrorOnce(message: string, code?: number) {
   }) as unknown as typeof execFile);
 }
 
+const emptyAnswer = {
+  status: 'written',
+  events: 0,
+  lineups: 0,
+  playerStatistics: 0,
+  synced: false,
+  dropped: { events: 0, lineups: 0, players: 0 },
+} as const;
+
 describe('PendingBetsSettlementWorker', () => {
   const fixtureService = {
     findPendingSettlementFixtures: vi.fn(),
     findLiveFixtures: vi.fn(),
     syncFixtureState: vi.fn().mockResolvedValue({
       affectsRollingStats: true,
+      changed: true,
       seasonId: 'season-1',
       fixtureId: 'fixture-1',
     }),
@@ -231,8 +241,10 @@ describe('PendingBetsSettlementWorker', () => {
       dropped: { events: 0, lineups: 0, players: 0 },
     });
     bettingEngineService.settleEarlyBets.mockResolvedValue({ settled: 0 });
+    fixtureService.findLiveFixtures.mockResolvedValue([]);
     fixtureService.syncFixtureState.mockResolvedValue({
       affectsRollingStats: true,
+      changed: true,
       seasonId: 'season-1',
       fixtureId: 'fixture-1',
     });
@@ -553,6 +565,26 @@ describe('PendingBetsSettlementWorker', () => {
     expect(adjustmentService.runCalibrationCheck).toHaveBeenCalledOnce();
   });
 
+  it('leaves the matches the live pass follows out of the settlement pass', async () => {
+    fixtureService.findPendingSettlementFixtures.mockResolvedValue([
+      pendingFixture(1),
+      pendingFixture(2),
+    ]);
+    fixtureService.findLiveFixtures.mockResolvedValue([pendingFixture(1)]);
+    mockCurlStdoutOnce(
+      buildCurlStdout(buildBatchResponse([{ status: 'FT', id: 1002 }])),
+    );
+
+    await worker.process({ data: {} } as Job<Record<string, never>>);
+
+    expect(fixtureService.syncFixtureState).toHaveBeenCalledOnce();
+    expect(fixtureService.syncFixtureState).toHaveBeenCalledWith(
+      expect.objectContaining({ externalId: 1002 }),
+    );
+    // Its coupons settle anyway: the settlement pass always does.
+    expect(couponSettlement.settleReadyProposals).toHaveBeenCalledOnce();
+  });
+
   describe('the live pass', () => {
     const liveJob = { name: LIVE_FIXTURES_JOB, data: {} } as Job<
       Record<string, never>
@@ -562,7 +594,13 @@ describe('PendingBetsSettlementWorker', () => {
       fixtureService.findLiveFixtures.mockResolvedValue([
         pendingFixture(1, 'FINISHED'),
       ]);
-      bettingEngineService.settleOpenBets.mockResolvedValue({ settled: 0 });
+      fixtureService.syncFixtureState.mockResolvedValue({
+        affectsRollingStats: false,
+        changed: false,
+        seasonId: 'season-1',
+        fixtureId: 'fixture-1',
+      });
+      fixtureEvents.writeEntry.mockResolvedValue(emptyAnswer);
       mockCurlStdoutOnce(
         buildCurlStdout(buildBatchResponse([{ status: 'FT', id: 1001 }])),
       );
@@ -570,7 +608,91 @@ describe('PendingBetsSettlementWorker', () => {
       await worker.process(liveJob);
 
       expect(fixtureEvents.writeEntry).toHaveBeenCalledOnce();
+      expect(bettingEngineService.settleOpenBets).not.toHaveBeenCalled();
       expect(couponSettlement.settleReadyProposals).not.toHaveBeenCalled();
+    });
+
+    it('settles the coupons when the events of a finished match arrive', async () => {
+      fixtureService.findLiveFixtures.mockResolvedValue([
+        pendingFixture(1, 'FINISHED'),
+      ]);
+      fixtureService.syncFixtureState.mockResolvedValue({
+        affectsRollingStats: false,
+        changed: false,
+        seasonId: 'season-1',
+        fixtureId: 'fixture-1',
+      });
+      bettingEngineService.settleOpenBets.mockResolvedValue({ settled: 0 });
+      mockCurlStdoutOnce(
+        buildCurlStdout(buildBatchResponse([{ status: 'FT', id: 1001 }])),
+      );
+
+      await worker.process(liveJob);
+
+      expect(couponSettlement.settleReadyProposals).toHaveBeenCalledOnce();
+    });
+
+    it('gives up on a finished match answered without events, the settlement pass too', async () => {
+      const finished = pendingFixture(1, 'FINISHED');
+      fixtureService.findLiveFixtures.mockResolvedValue([finished]);
+      fixtureService.findPendingSettlementFixtures.mockResolvedValue([]);
+      fixtureEvents.writeEntry.mockResolvedValue(emptyAnswer);
+      for (let i = 0; i < LIVE_FIXTURES.MAX_EMPTY_EVENTS_ANSWERS; i++) {
+        mockCurlStdoutOnce(
+          buildCurlStdout(buildBatchResponse([{ status: 'FT', id: 1001 }])),
+        );
+        await worker.process(liveJob);
+      }
+      expect(execFile).toHaveBeenCalledTimes(
+        LIVE_FIXTURES.MAX_EMPTY_EVENTS_ANSWERS,
+      );
+
+      await worker.process(liveJob);
+
+      // Out of the live pass: no call, and nothing left for the coupons.
+      expect(execFile).toHaveBeenCalledTimes(
+        LIVE_FIXTURES.MAX_EMPTY_EVENTS_ANSWERS,
+      );
+      // Out of the window, its count is forgotten.
+      fixtureService.findLiveFixtures.mockResolvedValue([]);
+      await worker.process(liveJob);
+      fixtureService.findLiveFixtures.mockResolvedValue([finished]);
+      mockCurlStdoutOnce(
+        buildCurlStdout(buildBatchResponse([{ status: 'FT', id: 1001 }])),
+      );
+      await worker.process(liveJob);
+      expect(execFile).toHaveBeenCalledTimes(
+        LIVE_FIXTURES.MAX_EMPTY_EVENTS_ANSWERS + 1,
+      );
+    });
+
+    it('settles early bets only when the score moved', async () => {
+      fixtureService.findLiveFixtures.mockResolvedValue([pendingFixture(1)]);
+      const inPlay = () =>
+        buildCurlStdout(
+          (() => {
+            const body = buildBatchResponse([{ status: 'FT', id: 1001 }]);
+            Object.assign(body.response[0]?.fixture.status ?? {}, {
+              short: '2H',
+              long: 'Second Half',
+              elapsed: 60,
+            });
+            return body;
+          })(),
+        );
+      mockCurlStdoutOnce(inPlay());
+      await worker.process(liveJob);
+      expect(bettingEngineService.settleEarlyBets).toHaveBeenCalledOnce();
+
+      fixtureService.syncFixtureState.mockResolvedValue({
+        affectsRollingStats: false,
+        changed: false,
+        seasonId: 'season-1',
+        fixtureId: 'fixture-1',
+      });
+      mockCurlStdoutOnce(inPlay());
+      await worker.process(liveJob);
+      expect(bettingEngineService.settleEarlyBets).toHaveBeenCalledOnce();
     });
     it('asks nothing and settles nothing when no match has kicked off', async () => {
       fixtureService.findLiveFixtures.mockResolvedValue([]);

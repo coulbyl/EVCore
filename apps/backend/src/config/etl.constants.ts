@@ -463,6 +463,10 @@ export const LIVE_FIXTURES = {
   // whistle, then its events retried every pass while the API has none.
   // Later, the 30-min settlement pass and the stats sync take it.
   WINDOW_HOURS: 4,
+  // A finished match the API answers without any event this many times
+  // leaves the live pass (one call every 5 min for up to 4 h otherwise):
+  // the stats sync and its events backfill take it.
+  MAX_EMPTY_EVENTS_ANSWERS: 3,
 } as const;
 
 // Squads (/players/squads?team=, one call per team): they identify the

@@ -129,6 +129,8 @@ type SyncFixtureStateInput = {
 
 export type SyncFixtureStateResult = {
   affectsRollingStats: boolean;
+  /** The status or a score (full or half time) differs from the stored one. */
+  changed: boolean;
   seasonId: string | null;
   fixtureId: string | null;
 };
@@ -416,7 +418,12 @@ export class FixtureRepository {
         },
       });
       if (!existing) {
-        return { affectsRollingStats: false, seasonId: null, fixtureId: null };
+        return {
+          affectsRollingStats: false,
+          changed: false,
+          seasonId: null,
+          fixtureId: null,
+        };
       }
 
       await tx.fixture.update({
@@ -434,6 +441,12 @@ export class FixtureRepository {
 
       return {
         affectsRollingStats: fixtureStateAffectsRollingStats(existing, input),
+        changed:
+          existing.status !== input.status ||
+          existing.homeScore !== input.homeScore ||
+          existing.awayScore !== input.awayScore ||
+          existing.homeHtScore !== input.homeHtScore ||
+          existing.awayHtScore !== input.awayHtScore,
         seasonId: existing.seasonId,
         fixtureId: existing.id,
       };
