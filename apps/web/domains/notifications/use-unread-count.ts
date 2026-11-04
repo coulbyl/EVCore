@@ -89,14 +89,18 @@ function subscribe(listener: () => void): () => void {
 export function useUnreadCount(server: UnreadReading | null): number {
   const count = server?.count;
   const asOf = server?.asOf;
+  // Stamped on this browser's clock when it arrives: the server's own
+  // Date.now() is another clock, and a browser running ahead would keep a
+  // stale local reading over every fresher server count.
   useEffect(() => {
-    if (count !== undefined && asOf !== undefined) apply({ count, asOf });
+    if (count !== undefined && asOf !== undefined) {
+      apply({ count, asOf: Date.now() });
+    }
   }, [count, asOf]);
   const live = useSyncExternalStore(
     subscribe,
     () => reading,
     () => null,
   );
-  if (server === null) return live?.count ?? 0;
-  return (live !== null && live.asOf >= server.asOf ? live : server).count;
+  return (live ?? server)?.count ?? 0;
 }

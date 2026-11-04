@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { isPlainClick } from "@/components/scoreboard/sheet/sheet-constants";
 import { playerFetch } from "@/lib/api/player-fetch";
 import {
   markedReadLocally,
@@ -39,12 +40,7 @@ export function NotificationLink({
       onClick={(event) => {
         if (!unread) return;
         // A new tab or window: the read goes, the navigation is the browser's.
-        const plain =
-          event.button === 0 &&
-          !event.metaKey &&
-          !event.ctrlKey &&
-          !event.shiftKey &&
-          !event.altKey;
+        const plain = isPlainClick(event);
         const read = playerFetch(
           `/notifications/${encodeURIComponent(id)}/read`,
           { method: "PATCH", keepalive: true },
