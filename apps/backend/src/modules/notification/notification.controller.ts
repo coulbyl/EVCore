@@ -38,7 +38,7 @@ export class NotificationController {
     return this.notificationService.list({
       limit: query.limit,
       offset: query.offset,
-      status: query.status ?? (query.unread ? 'unread' : undefined),
+      status: query.status,
       category: query.category,
       type: query.type,
       userId: session.user.id,

@@ -77,56 +77,50 @@ function bellWindow(now: Date = new Date()): Prisma.NotificationWhereInput {
   };
 }
 
-function announcementIdOf(payload: Prisma.JsonValue | null): string | null {
-  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
-    const id = payload.announcementId;
-    return typeof id === 'string' ? id : null;
-  }
-  return null;
+/** The announcement a row announces, if it is one still pointing at it. */
+function announcementIdOfRow(row: {
+  type: NotificationType;
+  payload: Prisma.JsonValue | null;
+}): string | null {
+  const { type, payload } = row;
+  if (type !== NotificationType.ANNOUNCEMENT_PUBLISHED) return null;
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload))
+    return null;
+  const id = payload.announcementId;
+  return typeof id === 'string' ? id : null;
 }
 
-export type NotificationView = Omit<Notification, 'read' | 'readAt'> & {
-  isRead: boolean;
-};
-
 /**
- * The engineering alerts (ETL, stats, ROI, suspension, ML, weights): only
- * an admin's bell holds them (allowedTypes), grouped under « Alertes
- * techniques » on the screen.
+ * « Joueur » is what a player's bell can hold (the two closed lists above);
+ * « Alertes techniques » everything else, which only an admin's bell holds
+ * (allowedTypes, personalTypes).
  */
-export const TECHNICAL_TYPES: NotificationType[] = [
-  NotificationType.ROI_ALERT,
-  NotificationType.MARKET_SUSPENSION,
-  NotificationType.BRIER_ALERT,
-  NotificationType.WEEKLY_REPORT,
-  NotificationType.ETL_FAILURE,
-  NotificationType.WEIGHT_ADJUSTMENT,
-  NotificationType.XG_UNAVAILABLE_REPORT,
-  NotificationType.ML_MODEL_ACTIVATED,
-  NotificationType.ML_MODEL_MISSING,
+const PLAYER_CATEGORY_TYPES: NotificationType[] = [
+  ...OPERATOR_TYPES,
+  ...PLAYER_PERSONAL_TYPES,
 ];
 
-/**
- * "announcement" is exactly ANNOUNCEMENT_PUBLISHED and "alert" every other
- * type (the merged screen of 2026-09-01); "technical" the engineering
- * alerts and "player" everything else — what a player's bell holds.
- */
+export function categoryOf(type: NotificationType): NotificationCategory {
+  return PLAYER_CATEGORY_TYPES.includes(type) ? 'player' : 'technical';
+}
+
 function categoryWhere(
   category: NotificationCategory | undefined,
 ): Prisma.NotificationWhereInput {
   switch (category) {
-    case 'announcement':
-      return { type: NotificationType.ANNOUNCEMENT_PUBLISHED };
-    case 'alert':
-      return { type: { not: NotificationType.ANNOUNCEMENT_PUBLISHED } };
-    case 'technical':
-      return { type: { in: TECHNICAL_TYPES } };
     case 'player':
-      return { type: { notIn: TECHNICAL_TYPES } };
+      return { type: { in: PLAYER_CATEGORY_TYPES } };
+    case 'technical':
+      return { type: { notIn: PLAYER_CATEGORY_TYPES } };
     default:
       return {};
   }
 }
+
+export type NotificationView = Omit<Notification, 'read' | 'readAt'> & {
+  isRead: boolean;
+  category: NotificationCategory;
+};
 
 type NotificationFeedFilter = {
   userId: string;
@@ -331,18 +325,13 @@ export class NotificationService {
     filter: NotificationFeedFilter,
   ): Prisma.NotificationWhereInput {
     const { userId, status } = filter;
+    // Absent, both: no read filter on either regime.
+    const isRead = status === undefined ? undefined : status === 'read';
+    const reads = isRead ? { some: { userId } } : { none: { userId } };
     const broadcastRead: Prisma.NotificationWhereInput =
-      status === 'unread'
-        ? { reads: { none: { userId } } }
-        : status === 'read'
-          ? { reads: { some: { userId } } }
-          : {};
+      isRead === undefined ? {} : { reads };
     const personalRead: Prisma.NotificationWhereInput =
-      status === 'unread'
-        ? { read: false }
-        : status === 'read'
-          ? { read: true }
-          : {};
+      isRead === undefined ? {} : { read: isRead };
     return {
       AND: [
         bellWindow(),
@@ -388,6 +377,7 @@ export class NotificationService {
       ({ reads, read, readAt: _ra, ...n }) => ({
         ...n,
         isRead: n.userId ? read : reads.length > 0,
+        category: categoryOf(n.type),
       }),
     );
     return { data, total, limit: query.limit, offset: query.offset };
@@ -416,22 +406,32 @@ export class NotificationService {
     category?: NotificationCategory;
   }): Promise<{ marked: number }> {
     const unread = this.feedWhere({ ...filter, status: 'unread' });
-    const broadcasts = await this.repository.findBroadcastReadTargets({
-      AND: [unread, { userId: null }],
-    });
+    const [broadcasts, personal] = await Promise.all([
+      this.markBroadcastsReadWhere(filter.userId, {
+        AND: [unread, { userId: null }],
+      }),
+      this.repository.markPersonalReadWhere({
+        AND: [unread, { userId: filter.userId }],
+      }),
+    ]);
+    return { marked: broadcasts + personal };
+  }
+
+  /** The broadcasts matching `where` become read, announcements with them. */
+  private async markBroadcastsReadWhere(
+    userId: string,
+    where: Prisma.NotificationWhereInput,
+  ): Promise<number> {
+    const broadcasts = await this.repository.findBroadcastReadTargets(where);
     await this.repository.markBroadcastsRead(
-      filter.userId,
+      userId,
       broadcasts.map((row) => row.id),
     );
-    const personal = await this.repository.markPersonalReadWhere({
-      AND: [unread, { userId: filter.userId }],
-    });
     const announcementIds = broadcasts
-      .filter((row) => row.type === NotificationType.ANNOUNCEMENT_PUBLISHED)
-      .map((row) => announcementIdOf(row.payload))
+      .map(announcementIdOfRow)
       .filter((id): id is string => id !== null);
-    await this.syncAnnouncementReads(filter.userId, announcementIds);
-    return { marked: broadcasts.length + personal };
+    await this.syncAnnouncementReads(userId, announcementIds);
+    return broadcasts.length;
   }
 
   async markRead(notificationId: string, userId: string): Promise<void> {
@@ -444,10 +444,7 @@ export class NotificationService {
       return;
     }
     await this.repository.markBroadcastRead(userId, notificationId);
-    const announcementId =
-      notification.type === NotificationType.ANNOUNCEMENT_PUBLISHED
-        ? announcementIdOf(notification.payload)
-        : null;
+    const announcementId = announcementIdOfRow(notification);
     if (announcementId)
       await this.syncAnnouncementReads(userId, [announcementId]);
   }

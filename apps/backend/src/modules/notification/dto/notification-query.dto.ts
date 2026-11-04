@@ -1,21 +1,8 @@
 import { Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsEnum,
-  IsIn,
-  IsInt,
-  IsOptional,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsEnum, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { NotificationType } from '@evcore/db';
 
-export const NOTIFICATION_CATEGORIES = [
-  'announcement',
-  'alert',
-  'technical',
-  'player',
-] as const;
+export const NOTIFICATION_CATEGORIES = ['technical', 'player'] as const;
 export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
 
 export const NOTIFICATION_READ_STATUSES = ['unread', 'read'] as const;
@@ -36,20 +23,13 @@ export class NotificationQueryDto {
   @Min(0)
   offset: number = 0;
 
-  /** Legacy spelling of `status=unread`, still accepted. */
-  @IsOptional()
-  @Transform(({ value }: { value: string }) => value === 'true')
-  @IsBoolean()
-  unread?: boolean;
-
   /** The screen's « Non lues » / « Lues »; absent, both. */
   @IsOptional()
   @IsIn(NOTIFICATION_READ_STATUSES)
   status?: NotificationReadStatus;
 
-  // "announcement" is exactly ANNOUNCEMENT_PUBLISHED, "alert" every other
-  // type; "technical" the engineering alerts (only an admin has them),
-  // "player" everything else (notification.service.ts, categoryWhere).
+  // "player" what a player's bell holds, "technical" everything else (only
+  // an admin has them) — notification.service.ts, categoryOf.
   @IsOptional()
   @IsIn(NOTIFICATION_CATEGORIES)
   category?: NotificationCategory;

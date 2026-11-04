@@ -52,6 +52,21 @@ function makePush(): PushService {
   } as unknown as PushService;
 }
 
+/** The `where` of the first call to a Prisma mock (count, findMany…). */
+function whereOf(fn: unknown): unknown {
+  const [args] = vi.mocked(fn as (a: unknown) => unknown).mock.calls[0] ?? [];
+  return (args as { where?: unknown } | undefined)?.where;
+}
+
+/** A feed `where` holding, among its AND, an OR with these regimes. */
+function feedWith(...regimes: unknown[]): unknown {
+  return expect.objectContaining({
+    AND: expect.arrayContaining([
+      expect.objectContaining({ OR: expect.arrayContaining(regimes) }),
+    ]),
+  });
+}
+
 describe('NotificationService — persistence', () => {
   it('persists a ROI alert to the database', async () => {
     const prisma = makePrisma();
@@ -147,11 +162,11 @@ describe('NotificationService — the bell reads 90 days', () => {
 
     await service.unreadCount('user-1', UserRole.OPERATOR);
 
-    const [args] =
-      vi.mocked(prisma.client.notification.count).mock.calls[0] ?? [];
-    const since = (args as { where: { AND: [{ createdAt: { gte: Date } }] } })
-      .where.AND[0].createdAt.gte;
-    const days = (before - since.getTime()) / 86_400_000;
+    const { AND } = whereOf(prisma.client.notification.count) as {
+      AND: { createdAt?: { gte: Date } }[];
+    };
+    const since = AND.find((clause) => clause.createdAt)?.createdAt?.gte;
+    const days = (before - (since?.getTime() ?? 0)) / 86_400_000;
     expect(days).toBeGreaterThan(89.99);
     expect(days).toBeLessThan(90.01);
   });
@@ -249,60 +264,6 @@ describe('NotificationService — list & mark read', () => {
     expect(result.total).toBe(1);
     expect(result.data).toHaveLength(1);
     expect(result.data[0]?.isRead).toBe(false);
-  });
-
-  it('filters to ANNOUNCEMENT_PUBLISHED only when category is "announcement"', async () => {
-    const prisma = makePrisma();
-
-    const service = new NotificationService(
-      new NotificationRepository(prisma),
-      makeMail(),
-      makePush(),
-    );
-    await service.list({
-      limit: 20,
-      offset: 0,
-      category: 'announcement',
-      userId: 'user-1',
-      role: UserRole.OPERATOR,
-    });
-
-    expect(prisma.client.notification.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          AND: expect.arrayContaining([
-            { type: NotificationType.ANNOUNCEMENT_PUBLISHED },
-          ]),
-        }),
-      }),
-    );
-  });
-
-  it('excludes ANNOUNCEMENT_PUBLISHED when category is "alert"', async () => {
-    const prisma = makePrisma();
-
-    const service = new NotificationService(
-      new NotificationRepository(prisma),
-      makeMail(),
-      makePush(),
-    );
-    await service.list({
-      limit: 20,
-      offset: 0,
-      category: 'alert',
-      userId: 'user-1',
-      role: UserRole.OPERATOR,
-    });
-
-    expect(prisma.client.notification.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          AND: expect.arrayContaining([
-            { type: { not: NotificationType.ANNOUNCEMENT_PUBLISHED } },
-          ]),
-        }),
-      }),
-    );
   });
 
   it('marks a single notification as read via upsert', async () => {
@@ -437,19 +398,22 @@ describe('NotificationService — list & mark read', () => {
 });
 
 describe('NotificationService — ce que chaque rôle voit des diffusions', () => {
-  function typesPassedToPrisma(prisma: PrismaService): NotificationType[] {
-    const count = (prisma.client.notification.count as ReturnType<typeof vi.fn>)
-      .mock.calls[0]?.[0] as {
-      where: {
-        AND: [
-          unknown,
-          unknown,
-          unknown,
-          { OR: [{ type: { in: NotificationType[] } }] },
-        ];
-      };
-    };
-    return count.where.AND[3].OR[0].type.in;
+  function broadcastTypes(prisma: PrismaService): NotificationType[] {
+    let types: NotificationType[] = [];
+    expect(whereOf(prisma.client.notification.count)).toEqual(
+      feedWith(
+        expect.objectContaining({
+          userId: null,
+          type: {
+            in: expect.toSatisfy((value: NotificationType[]) => {
+              types = value;
+              return Array.isArray(value);
+            }),
+          },
+        }),
+      ),
+    );
+    return types;
   }
 
   it("un opérateur ne reçoit que les annonces parmi les diffusions — jamais les alertes d'ingénierie", async () => {
@@ -460,7 +424,7 @@ describe('NotificationService — ce que chaque rôle voit des diffusions', () =
       makePush(),
     );
     await service.unreadCount('user-1', UserRole.OPERATOR);
-    const types = typesPassedToPrisma(prisma);
+    const types = broadcastTypes(prisma);
     expect(types).toEqual([NotificationType.ANNOUNCEMENT_PUBLISHED]);
     expect(types).not.toContain(NotificationType.ROI_ALERT);
     expect(types).not.toContain(NotificationType.MARKET_SUSPENSION);
@@ -475,36 +439,18 @@ describe('NotificationService — ce que chaque rôle voit des diffusions', () =
       makePush(),
     );
     await service.unreadCount('admin-1', UserRole.ADMIN);
-    expect(typesPassedToPrisma(prisma)).toEqual(
-      Object.values(NotificationType),
-    );
+    expect(broadcastTypes(prisma)).toEqual(Object.values(NotificationType));
   });
 });
 
 describe('NotificationService — messages retirés et un seul état « lu »', () => {
-  function personalTypesOf(prisma: PrismaService): {
-    in?: NotificationType[];
-    notIn?: NotificationType[];
-  } {
-    const where = (prisma.client.notification.count as ReturnType<typeof vi.fn>)
-      .mock.calls[0]?.[0] as {
-      where: {
-        AND: [
-          unknown,
-          unknown,
-          unknown,
-          {
-            OR: [
-              unknown,
-              {
-                type: { in?: NotificationType[]; notIn?: NotificationType[] };
-              },
-            ];
-          },
-        ];
-      };
-    };
-    return where.where.AND[3].OR[1].type;
+  function expectPersonalTypes(
+    prisma: PrismaService,
+    type: { in: NotificationType[] } | { notIn: NotificationType[] },
+  ): void {
+    expect(whereOf(prisma.client.notification.count)).toEqual(
+      feedWith(expect.objectContaining({ userId: expect.any(String), type })),
+    );
   }
 
   it('la cloche du joueur ne reçoit que ses cinq sortes (09 § 6)', async () => {
@@ -515,7 +461,7 @@ describe('NotificationService — messages retirés et un seul état « lu »', 
       makePush(),
     );
     await service.unreadCount('user-1', UserRole.OPERATOR);
-    expect(personalTypesOf(prisma)).toEqual({
+    expectPersonalTypes(prisma, {
       in: [
         NotificationType.MORNING_BRIEF,
         NotificationType.WEEKLY_STATEMENT,
@@ -533,7 +479,7 @@ describe('NotificationService — messages retirés et un seul état « lu »', 
       makePush(),
     );
     await service.unreadCount('admin-1', UserRole.ADMIN);
-    expect(personalTypesOf(prisma)).toEqual({
+    expectPersonalTypes(prisma, {
       notIn: [
         NotificationType.SUBSCRIPTION_EVENTS_ADDED,
         NotificationType.SUBSCRIPTION_SETTLED,
@@ -646,40 +592,73 @@ describe('NotificationService — the badge, the list and « tout marquer comme 
       role: UserRole.OPERATOR,
     });
 
-    const [args] =
-      vi.mocked(prisma.client.notification.findMany).mock.calls[0] ?? [];
-    const or = (
-      args as {
-        where: { AND: [unknown, unknown, unknown, { OR: unknown[] }] };
-      }
-    ).where.AND[3].OR;
-    expect(or[0]).toMatchObject({
-      userId: null,
-      reads: { some: { userId: 'user-1' } },
-    });
-    expect(or[1]).toMatchObject({ userId: 'user-1', read: true });
+    expect(whereOf(prisma.client.notification.findMany)).toEqual(
+      feedWith(
+        expect.objectContaining({
+          userId: null,
+          reads: { some: { userId: 'user-1' } },
+        }),
+        expect.objectContaining({ userId: 'user-1', read: true }),
+      ),
+    );
   });
 
-  it('« Alertes techniques » holds the engineering alerts only', async () => {
+  it('« Joueur » is what a player can hold, « Alertes techniques » the rest', async () => {
+    const playerTypes = [
+      NotificationType.ANNOUNCEMENT_PUBLISHED,
+      NotificationType.MORNING_BRIEF,
+      NotificationType.WEEKLY_STATEMENT,
+      NotificationType.FOLLOWED_SETTLED,
+      NotificationType.SUPPORT_MESSAGE,
+    ];
+    for (const [category, type] of [
+      ['player', { in: playerTypes }],
+      ['technical', { notIn: playerTypes }],
+    ] as const) {
+      const prisma = makePrisma();
+      await serviceWith(prisma).list({
+        limit: 20,
+        offset: 0,
+        category,
+        userId: 'admin-1',
+        role: UserRole.ADMIN,
+      });
+      expect(whereOf(prisma.client.notification.findMany)).toEqual(
+        expect.objectContaining({ AND: expect.arrayContaining([{ type }]) }),
+      );
+    }
+  });
+
+  it('each row carries its category', async () => {
     const prisma = makePrisma();
-    await serviceWith(prisma).list({
+    const row = (id: string, type: NotificationType) => ({
+      id,
+      userId: null,
+      type,
+      title: 't',
+      body: 'b',
+      payload: null,
+      read: false,
+      readAt: null,
+      createdAt: new Date(),
+      reads: [],
+    });
+    vi.mocked(prisma.client.notification.findMany).mockResolvedValue([
+      row('a', NotificationType.ETL_FAILURE),
+      row('b', NotificationType.ANNOUNCEMENT_PUBLISHED),
+      row('c', NotificationType.SLIPS_SETTLED_DIGEST),
+    ] as never);
+    const { data } = await serviceWith(prisma).list({
       limit: 20,
       offset: 0,
-      category: 'technical',
       userId: 'admin-1',
       role: UserRole.ADMIN,
     });
-
-    const [args] =
-      vi.mocked(prisma.client.notification.findMany).mock.calls[0] ?? [];
-    const category = (args as { where: { AND: [unknown, unknown] } }).where
-      .AND[1] as { type: { in: NotificationType[] } };
-    expect(category.type.in).toContain(NotificationType.ETL_FAILURE);
-    expect(category.type.in).toContain(NotificationType.XG_UNAVAILABLE_REPORT);
-    expect(category.type.in).not.toContain(
-      NotificationType.ANNOUNCEMENT_PUBLISHED,
-    );
-    expect(category.type.in).not.toContain(NotificationType.MORNING_BRIEF);
+    expect(data.map((n) => n.category)).toEqual([
+      'technical',
+      'player',
+      'technical',
+    ]);
   });
 
   it('marks every unread broadcast and personal row read, the announcement with it', async () => {
@@ -712,9 +691,7 @@ describe('NotificationService — the badge, the list and « tout marquer comme 
       ],
       skipDuplicates: true,
     });
-    const [update] =
-      vi.mocked(prisma.client.notification.updateMany).mock.calls[0] ?? [];
-    expect(update?.where).toMatchObject({
+    expect(whereOf(prisma.client.notification.updateMany)).toEqual({
       AND: [expect.anything(), { userId: 'user-1' }],
     });
     expect(prisma.client.announcementRead.createMany).toHaveBeenCalledWith({
