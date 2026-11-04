@@ -1,3 +1,4 @@
+import type { MatchClock } from "@/helpers/scoreboard-format";
 import type { TodayTeam } from "@/domains/today/types/today";
 import type { MatchState, MatchWithoutReading } from "./matches";
 
@@ -68,6 +69,8 @@ export type MatchSheet = {
   kickoffAt: string;
   state: MatchState;
   score: { home: number; away: number } | null;
+  /** « 67' », « MT » while played. */
+  clock: MatchClock | null;
   halfTimeScore: { home: number; away: number } | null;
   competition: { code: string; name: string };
   home: TodayTeam;

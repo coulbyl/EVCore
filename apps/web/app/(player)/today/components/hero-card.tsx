@@ -5,7 +5,11 @@ import { ChanceFigure } from "@/components/scoreboard/ui/chance-figure";
 import { ResultMark } from "@/components/scoreboard/ui/result-mark";
 import { FormStrip } from "@/components/scoreboard/ui/form-strip";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
-import { displayLocaleOf, formatTime } from "@/helpers/scoreboard-format";
+import {
+  displayLocaleOf,
+  formatClock,
+  formatTime,
+} from "@/helpers/scoreboard-format";
 import type {
   TodayCoupon,
   TodayProductForm,
@@ -16,6 +20,7 @@ import { TeamMark } from "./team-mark";
 import {
   HERO_FORM_DAYS,
   isSettled,
+  legLiveLine,
   legPickLabel,
   playedLegs,
   recentForm,
@@ -60,6 +65,11 @@ export async function HeroCard({
   const won = outcomes.filter((o) => o === "won").length;
   const played = outcomes.filter((o) => o === "won" || o === "lost").length;
   const settled = isSettled(coupon.state);
+  const clockLabels = {
+    inProgress: t("inProgress"),
+    halfTime: t("halfTimeShort"),
+    finished: t("finished"),
+  };
 
   return (
     <section
@@ -79,7 +89,9 @@ export async function HeroCard({
         </h2>
         <span className="text-meta text-muted-foreground">
           {coupon.state === "live"
-            ? t("inProgress")
+            ? single?.clock
+              ? formatClock(single.clock, clockLabels)
+              : t("inProgress")
             : settled
               ? t("finished")
               : formatTime(new Date(coupon.firstKickoffAt), display, timeZone)}
@@ -109,33 +121,34 @@ export async function HeroCard({
         </div>
       ) : (
         <ul className="flex flex-col gap-2">
-          {coupon.legs.map((leg) => (
-            <li key={leg.fixtureId} className="flex items-center gap-3">
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="text-body font-medium">
-                  {leg.home.name} – {leg.away.name}
-                  {leg.score ? (
-                    <span className="score ms-2 font-semibold">
-                      {leg.score.home}-{leg.score.away}
-                    </span>
-                  ) : null}
+          {coupon.legs.map((leg) => {
+            const live = legLiveLine(leg, clockLabels);
+            return (
+              <li key={leg.fixtureId} className="flex items-center gap-3">
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-body font-medium">
+                    {leg.home.name} – {leg.away.name}
+                    {live ? (
+                      <span className="score ms-2 font-semibold">{live}</span>
+                    ) : null}
+                  </span>
+                  <span className="text-meta text-muted-foreground">
+                    {leg.state === "postponed"
+                      ? t("postponed")
+                      : legPickLabel(leg)}
+                  </span>
                 </span>
-                <span className="text-meta text-muted-foreground">
-                  {leg.state === "postponed"
-                    ? t("postponed")
-                    : legPickLabel(leg)}
-                </span>
-              </span>
-              {leg.state === "won" ||
-              leg.state === "lost" ||
-              leg.state === "void" ? (
-                <ResultMark
-                  kind={leg.state}
-                  label={t(leg.state === "void" ? "refunded" : leg.state)}
-                />
-              ) : null}
-            </li>
-          ))}
+                {leg.state === "won" ||
+                leg.state === "lost" ||
+                leg.state === "void" ? (
+                  <ResultMark
+                    kind={leg.state}
+                    label={t(leg.state === "void" ? "refunded" : leg.state)}
+                  />
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
       )}
 

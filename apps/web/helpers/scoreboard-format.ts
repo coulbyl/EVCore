@@ -107,6 +107,28 @@ export function formatFrancs(amount: number, locale: DisplayLocale): string {
   }).format(amount)} F`;
 }
 
+/**
+ * L'horloge d'un match (GET /today, la feuille de match) : la minute jouée
+ * au dernier relevé, la mi-temps, la fin.
+ */
+export type MatchClock =
+  | { kind: "live"; minute: number | null }
+  | { kind: "half_time" }
+  | { kind: "finished" };
+
+/**
+ * « 67' », « MT », « Terminé » ; « En cours » quand la minute n'est pas
+ * encore relevée. Les mots viennent des messages de l'écran.
+ */
+export function formatClock(
+  clock: MatchClock,
+  labels: { inProgress: string; halfTime: string; finished: string },
+): string {
+  if (clock.kind === "half_time") return labels.halfTime;
+  if (clock.kind === "finished") return labels.finished;
+  return clock.minute === null ? labels.inProgress : `${clock.minute}'`;
+}
+
 /** L'heure sur 24 heures, dans le fuseau de l'appareil : « 19:00 ». */
 export function formatTime(
   date: Date,

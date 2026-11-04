@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   chanceOf,
+  formatClock,
   formatOdds,
   formatShortDate,
   formatTime,
@@ -126,5 +127,26 @@ describe("dates and times", () => {
     assert.equal(isValidTimeZone("Not/AZone"), false);
     assert.equal(isValidTimeZone(""), false);
     assert.equal(isValidTimeZone(null), false);
+  });
+});
+
+describe("formatClock", () => {
+  const labels = {
+    inProgress: "En cours",
+    halfTime: "MT",
+    finished: "Terminé",
+  };
+
+  it("écrit la minute relevée, la mi-temps et la fin", () => {
+    assert.equal(formatClock({ kind: "live", minute: 67 }, labels), "67'");
+    assert.equal(formatClock({ kind: "half_time" }, labels), "MT");
+    assert.equal(formatClock({ kind: "finished" }, labels), "Terminé");
+  });
+
+  it("dit « En cours » sans minute relevée", () => {
+    assert.equal(
+      formatClock({ kind: "live", minute: null }, labels),
+      "En cours",
+    );
   });
 });

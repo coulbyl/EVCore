@@ -258,6 +258,7 @@
     "yourProduct": "Your {product}",
     "weekProduct": "{product}: {won} days won out of {played}",
     "inProgress": "In play",
+    "halfTimeShort": "HT",
     "follow": "Follow",
     "followed": "Following",
     "followError": "Following did not go through. Try again.",
@@ -353,6 +354,8 @@
       "otherPicks": "Other bets",
       "all": "All {count}",
       "inProgress": "In progress",
+      "halfTimeShort": "HT",
+      "finished": "Finished",
       "postponed": "Postponed",
       "halfTime": "half-time {home}-{away}",
       "events": {

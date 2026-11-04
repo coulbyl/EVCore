@@ -258,6 +258,7 @@
     "yourProduct": "Ton {product}",
     "weekProduct": "{product} : {won} jours gagnés sur {played}",
     "inProgress": "En cours",
+    "halfTimeShort": "MT",
     "follow": "Suivre",
     "followed": "Suivi",
     "followError": "Le suivi n'est pas passé. Réessaie.",
@@ -353,6 +354,8 @@
       "otherPicks": "Autres paris",
       "all": "Tous les {count}",
       "inProgress": "En cours",
+      "halfTimeShort": "MT",
+      "finished": "Terminé",
       "postponed": "Reporté",
       "halfTime": "mi-temps {home}-{away}",
       "events": {

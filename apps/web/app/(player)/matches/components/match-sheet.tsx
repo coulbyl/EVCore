@@ -17,6 +17,7 @@ import type {
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import {
   displayLocaleOf,
+  formatClock,
   formatOdds,
   formatShortDate,
   formatTime,
@@ -204,7 +205,13 @@ function SheetHeader({
 }) {
   const status =
     sheet.state === "live"
-      ? t("inProgress")
+      ? sheet.clock
+        ? formatClock(sheet.clock, {
+            inProgress: t("inProgress"),
+            halfTime: t("halfTimeShort"),
+            finished: t("finished"),
+          })
+        : t("inProgress")
       : sheet.state === "postponed"
         ? t("postponed")
         : sheet.state === "finished" && sheet.halfTimeScore
