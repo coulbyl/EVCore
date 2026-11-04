@@ -1,6 +1,7 @@
 import Decimal from 'decimal.js';
 import {
   ENGINE_CHANCE_MAX_ODDS,
+  READING_MIN_CHANCE,
   READING_SPEAKING_PICKS,
   READING_SPEAKING_TOLERANCE,
   TOMORROW_READINGS_UNTIL_HOUR_UTC,
@@ -42,9 +43,11 @@ export function stateOf(row: MatchRow, now: Date): MatchState {
  * its latest analysis that 1xBet prices at MIN_LEG_ODDS or more, the best
  * speaking pick (who wins, double chance, over/under 2.5) when its chance is
  * within READING_SPEAKING_TOLERANCE of the best chance, the best chance
- * otherwise. The chance is the engine's up to ENGINE_CHANCE_MAX_ODDS and the
- * market's frequency above; a pick above the threshold without that
- * frequency is left out rather than shown with the engine's.
+ * otherwise. The engine ranks on its own chance up to ENGINE_CHANCE_MAX_ODDS
+ * and on the market's above; the chance shown is always the market's
+ * frequency without margin (READING_MIN_CHANCE, measured 04/11). A pick
+ * without that frequency, or under READING_MIN_CHANCE, is left out rather
+ * than shown with the engine's.
  */
 export function readingOf(input: {
   candidates: readonly ReadingCandidateRow[];
@@ -66,7 +69,8 @@ export function readingOf(input: {
       ? [{ ...c, market: c.market, pick: c.pick, probability: c.probability }]
       : [],
   );
-  type Choice = { reading: MatchReading; chance: Decimal };
+  // `rank`: the chance the engine chooses on; the reading shows the market's.
+  type Choice = { reading: MatchReading; rank: Decimal };
   let best: Choice | null = null;
   let bestSpeaking: Choice | null = null;
   let priced = false;
@@ -81,32 +85,32 @@ export function readingOf(input: {
     if (quote?.operatorOdds == null) continue;
     priced = true;
     if (quote.operatorOdds < MIN_LEG_ODDS) continue;
-    const chance =
+    if (quote.operatorFairProbability === null) continue;
+    const shown = new Decimal(quote.operatorFairProbability);
+    if (shown.lt(READING_MIN_CHANCE)) continue;
+    const rank =
       quote.operatorOdds > ENGINE_CHANCE_MAX_ODDS
-        ? quote.operatorFairProbability === null
-          ? null
-          : new Decimal(quote.operatorFairProbability)
+        ? shown
         : new Decimal(pick.probability.toString());
-    if (chance === null) continue;
     const choice: Choice = {
-      chance,
+      rank,
       reading: {
         market: pick.market,
         pick: pick.pick,
         odds: quote.operatorOdds,
-        chance: chance.toDecimalPlaces(4).toNumber(),
+        chance: shown.toDecimalPlaces(4).toNumber(),
         result: resultOf(pick.result),
       },
     };
-    if (!best || chance.gt(best.chance)) best = choice;
-    if (isSpeaking(pick) && (!bestSpeaking || chance.gt(bestSpeaking.chance))) {
+    if (!best || rank.gt(best.rank)) best = choice;
+    if (isSpeaking(pick) && (!bestSpeaking || rank.gt(bestSpeaking.rank))) {
       bestSpeaking = choice;
     }
   }
   if (
     best &&
     bestSpeaking &&
-    best.chance.minus(bestSpeaking.chance).lte(READING_SPEAKING_TOLERANCE)
+    best.rank.minus(bestSpeaking.rank).lte(READING_SPEAKING_TOLERANCE)
   ) {
     best = bestSpeaking;
   }

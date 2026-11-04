@@ -211,7 +211,8 @@ describe('MatchSheetService', () => {
       line: null,
       player: null,
       odds: 1.65,
-      chance: 0.7,
+      // The market's frequency, not the engine's 0.70 (04/11).
+      chance: 0.58,
       result: null,
       fact: 'Arsenal a gagné ses 6 derniers matchs à domicile',
     });
@@ -268,7 +269,7 @@ describe('MatchSheetService', () => {
         },
       ],
     }).service.getSheet(FX, NOW);
-    expect(same.ai).toMatchObject({ sameAsReading: true, chance: 0.7 });
+    expect(same.ai).toMatchObject({ sameAsReading: true, chance: 0.58 });
     const silent = await harness({
       ai: [
         {

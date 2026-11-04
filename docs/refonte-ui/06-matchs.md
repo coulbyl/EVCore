@@ -85,7 +85,7 @@ Toucher une ligne ouvre une feuille, comme le coupon dans [04](04-aujourdhui-en-
 
 ### Les chances affichées
 
-Toutes les chances de la fiche viennent de la **même source** que les coupons. Avec ML v2 ([ML-V2-PROPOSITION](../audits/2026-10-29/ML-V2-PROPOSITION.md)), c'est la grille de marché : « 7 sur 10 » veut dire 7 sur 10, sur tous les paris, y compris « Autres paris ». En attendant, c'est la probabilité calibrée du moteur pour nos lectures **jusqu'à la cote 1,80**, et la fréquence du marché sans marge au-dessus (tranché le 29/10 : au-dessus de 1,80 le moteur annonce 34 % là où il réalise 29 %, [ACCUMULATEUR.md](../audits/2026-10-29/ACCUMULATEUR.md) § 6) ; pour « Autres paris », la fréquence du marché. La fiche ne mélange pas les deux sur une même ligne.
+Toutes les chances de la fiche viennent de la **même source** que les coupons. Avec ML v2 ([ML-V2-PROPOSITION](../audits/2026-10-29/ML-V2-PROPOSITION.md)), c'est la grille de marché : « 7 sur 10 » veut dire 7 sur 10, sur tous les paris, y compris « Autres paris ». En attendant, c'est la fréquence du marché sans marge (Shin chez 1xBet) **à toutes les cotes**, lecture comprise (tranché le 04/11, [CHANCE-LECTURE.md](../audits/2026-11-04/CHANCE-LECTURE.md) : sous 1,80 la chance du moteur tombait à 0,945 puis 0,899 de son annonce, celle du marché à 1,002 et 1,071) ; le moteur choisit toujours la lecture. Sous 40 % de chance, pas de lecture. Les coupons gardent la chance du moteur jusqu'à 1,80.
 
 ## 3. La fiche dans le temps
 

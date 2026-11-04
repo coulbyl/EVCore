@@ -47,6 +47,20 @@ export const ENGINE_CHANCE_MAX_ODDS = 1.8;
 // 80.0 % for 75.7 %.
 export const READING_SPEAKING_TOLERANCE = 0.1;
 
+// A match's reading shows the market's frequency without margin (Shin on
+// 1xBet's group) at every price, never the engine's: on 2 594 settled
+// readings at 1.20–1.80 (2026-09-01 → 11-02, production copy) the engine's
+// chance landed 0.945 of its announce at 1.20–1.45 and 0.899 at 1.45–1.80,
+// the market's 1.002 and 1.071 (docs/audits/2026-11-04/CHANCE-LECTURE.md).
+// The engine still chooses the reading, on the chance it ranked with until
+// then (its own up to ENGINE_CHANCE_MAX_ODDS, the market's above).
+//
+// Under this frequency a match has no reading: 64 of 2 715 readings (2.4 %),
+// draws and unders priced 2.5 and more, announced 30 % and landed 24 %; the
+// readings thin out between 0.35 and 0.45 (31, 1.1 %) before the body at
+// 0.60–0.80 (88 %). « 1 chance sur 3 » is not a reading.
+export const READING_MIN_CHANCE = 0.4;
+
 // The speaking picks: market → picks, `null` for every pick of the market.
 // OVER_UNDER keeps its line in `pick`: OVER/UNDER is the 2.5 line.
 export const READING_SPEAKING_PICKS: Readonly<
