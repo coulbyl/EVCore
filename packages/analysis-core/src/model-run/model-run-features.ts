@@ -11,7 +11,11 @@ export type PredictionSource =
   | "FRI_ELO_REAL"
   | "FRI_ELO_POISSON"
   | "FRI_ELO_INTERNAL"
-  | "ODDS_DEVIG";
+  | "ODDS_DEVIG"
+  // Lot ML-1 (docs/audits/2026-11-04/ML1-GRILLE-MARCHE.md): probabilities
+  // from the score grid implied by the sharp book's prices; POISSON_MAIN is
+  // then the statistics fallback.
+  | "MARKET_GRID";
 
 // ── EVA evaluation context ────────────────────────────────────────────────────
 
@@ -306,7 +310,9 @@ function readPredictionSource(value: object): PredictionSource | null {
   const raw = readString(value, "predictionSource");
   if (
     raw === "POISSON_MAIN" ||
+    raw === "MARKET_GRID" ||
     raw === "FRI_ELO_REAL" ||
+    raw === "FRI_ELO_POISSON" ||
     raw === "FRI_ELO_INTERNAL" ||
     raw === "ODDS_DEVIG"
   ) {

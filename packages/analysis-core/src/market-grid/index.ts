@@ -8,4 +8,5 @@ export {
   fitMarketGridLambdas,
   marketGridProbabilities,
   computeMarketGrid,
+  summarizeMarketGrid,
 } from "./market-grid";

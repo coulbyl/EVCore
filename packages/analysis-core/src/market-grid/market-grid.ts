@@ -460,3 +460,47 @@ export function computeMarketGrid(
     probabilities: marketGridProbabilities(fit, quotes.fairOneXTwo),
   };
 }
+
+/**
+ * JSON trace of a grid for `model_run.features.market_grid`: the book, the
+ * prices it read, the fitted λ and the fit error, or why it was not used.
+ */
+export function summarizeMarketGrid(result: MarketGridResult): {
+  status: MarketGridResult["status"];
+  reason: string | null;
+  bookmaker: string | null;
+  snapshotAt: string | null;
+  lambdaHome: number | null;
+  lambdaAway: number | null;
+  rmse: number | null;
+  prices: {
+    oneXTwo: { home: number; draw: number; away: number };
+    lines: { market: string; line: number; over: number; under: number }[];
+  } | null;
+} {
+  const { quotes, fit } = result;
+  return {
+    status: result.status,
+    reason: result.status === "unavailable" ? result.reason : null,
+    bookmaker: quotes?.bookmaker ?? null,
+    snapshotAt: quotes?.snapshotAt.toISOString() ?? null,
+    lambdaHome: fit?.lambdaHome ?? null,
+    lambdaAway: fit?.lambdaAway ?? null,
+    rmse: fit?.rmse ?? null,
+    prices: quotes
+      ? {
+          oneXTwo: {
+            home: quotes.oneXTwoOdds.home.toNumber(),
+            draw: quotes.oneXTwoOdds.draw.toNumber(),
+            away: quotes.oneXTwoOdds.away.toNumber(),
+          },
+          lines: quotes.lines.map((line) => ({
+            market: line.market,
+            line: line.line,
+            over: line.overOdds.toNumber(),
+            under: line.underOdds.toNumber(),
+          })),
+        }
+      : null,
+  };
+}

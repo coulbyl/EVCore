@@ -7,6 +7,7 @@ import {
   computeMarketGrid,
   fitMarketGridLambdas,
   selectMarketGridQuotes,
+  summarizeMarketGrid,
 } from "./market-grid";
 
 const AT = new Date("2026-10-20T18:00:00.000Z");
@@ -271,5 +272,33 @@ describe("selectMarketGridQuotes", () => {
       "OVER_UNDER:2.5",
       "TEAM_TOTAL_HOME:1.5",
     ]);
+  });
+});
+
+describe("summarizeMarketGrid", () => {
+  it("traces the book, the prices read and the fitted λ", () => {
+    const summary = summarizeMarketGrid(
+      computeMarketGrid(
+        bookRows({ bookmaker: "Bet365", lambdaHome: 1.3, lambdaAway: 1.2 }),
+        AT,
+      ),
+    );
+    expect(summary).toMatchObject({
+      status: "ok",
+      reason: null,
+      bookmaker: "Bet365",
+      snapshotAt: BEFORE.toISOString(),
+    });
+    expect(summary.prices?.lines).toHaveLength(3);
+    expect(summary.lambdaHome).toBeCloseTo(1.3, 3);
+  });
+
+  it("says why the grid was not used", () => {
+    expect(summarizeMarketGrid(computeMarketGrid([], AT))).toMatchObject({
+      status: "unavailable",
+      reason: "no_sharp_quotes",
+      prices: null,
+      lambdaHome: null,
+    });
   });
 });
